@@ -24,6 +24,8 @@ round-trip, including after you drag them.
 Early. The canvas works and the round-trip is verified; the architecture
 domain model on top of it is being built.
 
+To run it end to end with Codex and voice, see [`TESTING.md`](TESTING.md).
+
 See [`DESIGN.md`](DESIGN.md) for the design and roadmap, [`CLAUDE.md`](CLAUDE.md)
 for how to build and run it, and [`FLIP_WHITEBOARD.md`](FLIP_WHITEBOARD.md) for
 the touchscreen setup.
