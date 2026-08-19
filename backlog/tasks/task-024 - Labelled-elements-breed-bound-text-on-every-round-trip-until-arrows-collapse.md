@@ -1,11 +1,11 @@
 ---
 id: TASK-024
 title: Labelled elements breed bound text on every round-trip until arrows collapse
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-19 21:29'
-updated_date: '2026-08-19 22:08'
+updated_date: '2026-08-19 22:11'
 labels:
   - needs-triage
   - ready-for-agent
@@ -15,10 +15,10 @@ ordinal: 24000
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A labelled element that round-trips through the browser gains no additional bound text elements
-- [ ] #2 An arrow's geometry survives repeated sync cycles; height does not collapse
-- [ ] #3 Existing polluted boards can be repaired, not just prevented
-- [ ] #4 Regression test covers a labelled shape and a labelled arrow across several sync cycles
+- [x] #1 A labelled element that round-trips through the browser gains no additional bound text elements
+- [x] #2 An arrow's geometry survives repeated sync cycles; height does not collapse
+- [x] #3 Existing polluted boards can be repaired, not just prevented
+- [x] #4 Regression test covers a labelled shape and a labelled arrow across several sync cycles
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -64,6 +64,10 @@ REPAIR (scripts/repair-labels.mjs, live board or saved file): loaded the pollute
 REGRESSION CHECK: scripts/check-labels.mjs, wired in as 'bun run test:labels' and into 'bun run test'. Models all three parties headlessly (a converter written to duplicate exactly like the real one, the pane's baseline diff, the server's merge-not-replace upsert) and asserts across 25 cycles for a labelled shape AND a labelled arrow. 34 checks. Its first assertion is that the model still reproduces the bug with containment removed, so it cannot pass by being toothless — confirmed by mutation: stubbing planLabelExpansion fails 18 checks, stubbing adoptReusedLabelIds makes a label vanish entirely. Full suite green (mcp/bind/obsidian/changes/labels/library).
 
 KNOWN RESIDUAL, unchanged by this fix and worth its own task: the stored label seed is never updated when a HUMAN retypes a label in the browser, so the next conversion pass rewrites their text back to the seed. That was already the behaviour (the old code re-expanded the stale seed into a duplicate that won), so this is not a regression — but with labels now singular it is visible as a revert rather than as litter.
+
+Orchestrator verification on the user's own polluted board. Before: 151 elements, 121 of them text. Repair dry-run reported 99 texts to delete and 5 containers to re-bind, then the real run brought it to 52 with one bound text per container and all 12 nodes keeping their kinds and bindings. Ten agent update cycles with a browser attached left the count at 52, where each cycle previously added a text element. Screenshot shows the diagram readable again. Full suite green: 108 obsidian, 34 labels, 26 library, plus the stdio, bind and change checks.
+
+Worth recording that the agent shipped a simpler fix first, found it made renaming a silent no-op, and replaced it. That failure is the reason the design reuses the bound text id rather than freezing the label.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -97,3 +101,9 @@ The server stores the agent-facing convenience field named label on the element,
 So the fix is to make the bound text element the single source of truth: once one exists, the label and text fields must not persist on the stored element.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Labelled elements no longer breed bound text. A pure module decides per element whether to expand, pass through, or rebuild and reclaim the existing text id, so a re-expansion that changes nothing reads as no change. Includes a repair for boards already polluted, and a regression check whose first assertion is that the bug still reproduces with containment removed, so it cannot pass by being toothless.
+<!-- SECTION:FINAL_SUMMARY:END -->
