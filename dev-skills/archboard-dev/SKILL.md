@@ -1,15 +1,15 @@
 ---
-name: whiteboard-dev
+name: archboard-dev
 description: Procedures for working on the whiteboard fork itself — rebuilding after changes, merging upstream mcp_excalidraw, syncing skills, and verifying the canvas round-trip end to end. Use when changing this repo's own source, taking upstream changes, or checking that a canvas change actually works.
 ---
 
-# Working on the whiteboard fork
+# Working on archboard
 
 Repo-local skill. Not published — see `dev-skills/README.md` for why this is
 separate from `skills/`.
 
 Always-on context lives in `CLAUDE.md`; fork rationale and roadmap in
-`FORK.md`. This skill is the procedural half: how to actually do the recurring
+`DESIGN.md`. This skill is the procedural half: how to actually do the recurring
 jobs.
 
 ## Rebuild after changing source
@@ -52,29 +52,24 @@ catch it.
 Elements that came back through the browser are tagged
 `"source": "frontend_sync"`.
 
-## Merging upstream
+## Taking something from upstream
 
-`main` is based on upstream v2.0.0 (`6ddbe98`) with full history, and staying
-mergeable is a deliberate constraint — upstream is actively releasing.
+Archboard is **not** kept mergeable with `yctimlin/mcp_excalidraw`. Do not run
+`git merge upstream/main` — it will drag in conventions we have deliberately
+replaced. Restructure freely; upstream's opinion is not a constraint.
+
+The remote is kept for reference and for cherry-picking a specific fix:
 
 ```bash
 git fetch upstream
-git log --oneline HEAD..upstream/main     # what is new
-git merge upstream/main
-bunx tsc && bunx vite build               # always rebuild after a merge
+git log --oneline HEAD..upstream/main            # what changed there
+git log -p upstream/main -- path/to/file.ts      # read before taking
+git cherry-pick <sha>                            # only when it clearly applies
+bunx tsc && bunx vite build                      # always rebuild after
 ```
 
-Expect conflicts in `.gitignore` — we deliberately diverge there, in a marked
-`fork divergences` block:
-
-- `docs/*` un-ignored for `docs/agents/` (agent configuration is tracked)
-- `*.excalidraw` un-ignored for `diagrams/` (committed diagrams are a
-  deliverable, not build output)
-- `.claude/` and `.agents/` blanket ignores replaced with precise
-  `.claude/skills/` + `.agents/skills/` (only the derived subpaths)
-
-Keep our patches surgical and upstreamable. Prefer fixing something in a way
-upstream would accept over a local hack.
+Prefer reading their fix and reimplementing it our way over importing their
+structure wholesale.
 
 ## Syncing skills
 
