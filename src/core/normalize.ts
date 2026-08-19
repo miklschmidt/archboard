@@ -1,6 +1,7 @@
 import path from 'path';
 import { generateId, ServerElement, normalizeFontFamily } from '../types.js';
 import { ALLOWED_EXPORT_DIR } from './config.js';
+import { DEFAULT_FILL_STYLE, DEFAULT_SHAPE_BACKGROUND, FILLABLE_TYPES } from './appearance.js';
 
 // Safe file path validation to prevent path traversal attacks
 export function sanitizeFilePath(filePath: string): string {
@@ -50,10 +51,21 @@ export interface ElementInput {
   [key: string]: unknown;
 }
 
+// A closed shape created without a stated background gets one, because a
+// transparent shape can only be tapped on its stroke (appearance.ts). Saying
+// `"backgroundColor": "transparent"` explicitly still means transparent — an
+// agent that wants a see-through zone can have one, it just has to ask.
+function applyDefaultFill(element: ServerElement): void {
+  if (!FILLABLE_TYPES.has(element.type)) return;
+  if (element.backgroundColor !== undefined) return;
+  element.backgroundColor = DEFAULT_SHAPE_BACKGROUND;
+  if ((element as any).fillStyle === undefined) (element as any).fillStyle = DEFAULT_FILL_STYLE;
+}
+
 // Shared element preparation: id generation, arrow binding conversion,
-// fontFamily normalization, default points for bound arrows, timestamps,
-// and text→label conversion. Used by create/batch-create in both the MCP
-// server and the CLI so the two front-ends produce identical elements.
+// fontFamily normalization, default points for bound arrows, default fill,
+// timestamps, and text→label conversion. Used by create/batch-create in both
+// the MCP server and the CLI so the two front-ends produce identical elements.
 export function prepareElement(elementData: ElementInput): ServerElement {
   const { startElementId, endElementId, id: customId, ...elementProps } = elementData;
   const id = customId || generateId();
@@ -78,6 +90,8 @@ export function prepareElement(elementData: ElementInput): ServerElement {
   if ((startElementId || endElementId) && !elementProps.points) {
     (element as any).points = [[0, 0], [100, 0]];
   }
+
+  applyDefaultFill(element);
 
   // Convert text to label format for Excalidraw
   return convertTextToLabel(element);
