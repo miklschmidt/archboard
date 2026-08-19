@@ -13,6 +13,8 @@ import { BoardBar } from './BoardBar'
 import { BoardDialog, type BoardDialogMode } from './BoardDialog'
 import { ConfirmDialog } from './ConfirmDialog'
 import { ConflictDialog } from './ConflictDialog'
+import { InstallLibraryDialog } from './InstallLibraryDialog'
+import { useLibrary } from './useLibrary'
 import { BoardConflictError, clearBoard, fetchCurrentBoard, newBoard, openBoard, saveBoard } from '../canvas/api'
 import type { SaveRequest } from '../canvas/api'
 import type { BoardInfo, BoardWriteConflict, PaneStatus } from '../types'
@@ -48,6 +50,10 @@ export function Shell(): JSX.Element {
   const [conflict, setConflict] = useState<{ conflict: BoardWriteConflict; request: SaveRequest } | null>(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<Notice | null>(null)
+
+  // One palette behind however many panes are on screen, held on the server so
+  // that a second tab, a second machine and the agent all see the same one.
+  const library = useLibrary()
 
   const onStatus = useCallback((status: PaneStatus) => {
     setStatuses((previous) => {
@@ -203,6 +209,15 @@ export function Shell(): JSX.Element {
     return () => clearTimeout(timer)
   }, [notice])
 
+  // A refused or failed library install says so in the same place everything
+  // else does. It is taken off the library rather than left there, so the
+  // notice bar stays the one thing that shows a message.
+  useEffect(() => {
+    if (!library.error) return
+    setNotice({ kind: 'error', text: library.error })
+    library.dismissError()
+  }, [library.error, library.dismissError])
+
   return (
     <div className="shell" data-theme={theme}>
       <BoardBar
@@ -245,6 +260,9 @@ export function Shell(): JSX.Element {
             onThemeChange={setTheme}
             onFocus={setFocused}
             label={panes.length > 1 ? `pane ${index + 1}` : undefined}
+            libraryItems={library.items}
+            onLibraryChange={library.reportFromPane}
+            onLibraryChangedElsewhere={library.applyFromServer}
           />
         ))}
       </main>
@@ -268,6 +286,15 @@ export function Shell(): JSX.Element {
           onOverwrite={handleOverwrite}
           onSaveAs={() => { setConflict(null); setDialogError(null); setDialog('save-as') }}
           onCancel={() => setConflict(null)}
+        />
+      )}
+
+      {library.pending && (
+        <InstallLibraryDialog
+          install={library.pending}
+          busy={library.busy}
+          onConfirm={library.acceptInstall}
+          onCancel={library.declineInstall}
         />
       )}
 

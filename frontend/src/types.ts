@@ -105,6 +105,8 @@ export interface WebSocketMessage {
   offsetX?: number;
   offsetY?: number;
   files?: any;
+  /** Library items, on `library_changed`. Never elements. */
+  items?: unknown[];
 }
 
 /** What one pane tells the shell about itself. */

@@ -5,9 +5,9 @@
 // around it — which is what makes a second pane a one-line change in the shell
 // rather than a second copy of the sync logic.
 
-import React from 'react'
-import { Excalidraw } from '@excalidraw/excalidraw'
-import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
+import React, { useEffect, useRef, useState } from 'react'
+import { Excalidraw, getLibraryItemsHash } from '@excalidraw/excalidraw'
+import type { ExcalidrawImperativeAPI, LibraryItems } from '@excalidraw/excalidraw/types'
 import { useCanvasSession } from './useCanvasSession'
 import type { PaneStatus } from '../types'
 // The one thing the browser half shares with the server half by import rather
@@ -31,12 +31,38 @@ interface CanvasPaneProps {
   onFocus: (paneId: string) => void
   /** Shown only when more than one pane is mounted. */
   label?: string
+  /**
+   * The stencil palette, owned by the shell. A pane renders it and reports
+   * what the human did to it; it is not board content and never reaches the
+   * element store or a change report.
+   */
+  libraryItems: LibraryItems
+  onLibraryChange: (items: LibraryItems) => void
+  onLibraryChangedElsewhere: (items: LibraryItems) => void
 }
 
 export function CanvasPane({
-  paneId, primary, focused, theme, onStatus, onThemeChange, onFocus, label
+  paneId, primary, focused, theme, onStatus, onThemeChange, onFocus, label,
+  libraryItems, onLibraryChange, onLibraryChangedElsewhere
 }: CanvasPaneProps): JSX.Element {
-  const session = useCanvasSession({ paneId, primary, focused, onStatus })
+  const session = useCanvasSession({
+    paneId, primary, focused, onStatus, onLibraryChanged: onLibraryChangedElsewhere
+  })
+
+  // Excalidraw keeps its own copy of the library per instance, so the shell's
+  // copy has to be pushed in. Guarded by content hash: pushing fires
+  // onLibraryChange, and an ungated push would hand the shell back what it
+  // just sent and write it to the server again, forever.
+  const [api, setApi] = useState<ExcalidrawImperativeAPI | null>(null)
+  const appliedHashRef = useRef(0)
+
+  useEffect(() => {
+    if (!api) return
+    const hash = getLibraryItemsHash(libraryItems)
+    if (hash === appliedHashRef.current) return
+    appliedHashRef.current = hash
+    void api.updateLibrary({ libraryItems, merge: false })
+  }, [api, libraryItems])
 
   const interacted = (): void => {
     session.markInteracted()
@@ -61,7 +87,14 @@ export function CanvasPane({
       )}
       <div className="pane-canvas" ref={session.attachPaneElement}>
         <Excalidraw
-          excalidrawAPI={(api: ExcalidrawImperativeAPI) => session.attachExcalidraw(api)}
+          excalidrawAPI={(instance: ExcalidrawImperativeAPI) => {
+            setApi(instance)
+            session.attachExcalidraw(instance)
+          }}
+          onLibraryChange={(next) => {
+            appliedHashRef.current = getLibraryItemsHash(next)
+            onLibraryChange(next)
+          }}
           onChange={(_elements, appState) => {
             if (appState?.theme && appState.theme !== theme) onThemeChange(appState.theme)
             session.handleChange(appState)
