@@ -12,6 +12,10 @@
 // and ids longer than 8 characters are renamed to a fresh 8-char id with
 // every scene reference rewired — so files we write and files the plugin
 // re-saves stay block-reference-compatible.
+//
+// A save regenerates the scene and nothing else: see "note regions" below.
+// Everything a human wrote in the note — frontmatter, prose above the data
+// section, prose below it — is carried across verbatim.
 
 import { canonicalizeKeys } from './expand-elements.js';
 
@@ -237,6 +241,148 @@ function renderFrontmatter(lines: string[]): string {
   return `---\n${lines.join('\n')}\n---\n`;
 }
 
+// --- note regions ------------------------------------------------------
+//
+// By the plugin's own convention a drawing note is two documents in one file:
+// markdown above `# Excalidraw Data` is *the note* — the human's space, which
+// is the whole reason a vault was chosen for persistence (ADR 0004) — and
+// everything from that heading down is the plugin's serialised scene. So a
+// note is four regions, of which archboard owns exactly one:
+//
+//   frontmatter  `---` .. `---`, round-tripped verbatim (see above)
+//   body         up to `# Excalidraw Data`: the human's markdown, verbatim
+//   data         the heading .. the closing fence of the Drawing block:
+//                regenerated on every save — this is the scene
+//   trailing     everything after that fence: verbatim. Normally just the
+//                `%%` closing the comment the plugin opened before
+//                `## Drawing`, but a human who writes below it keeps it too.
+//
+// Regenerating the body — which is what archboard used to do — is silent data
+// loss on the human's own writing, and it lands on every save rather than
+// only on a forced one (TASK-017).
+
+const BANNER = '==⚠  Switch to EXCALIDRAW VIEW in the MORE OPTIONS menu of this document. ⚠==';
+// Enough of the banner to recognise one the plugin worded differently.
+const BANNER_MARKER = 'Switch to EXCALIDRAW VIEW';
+// The blank lines are the plugin's own shape, kept so a note archboard writes
+// from scratch is byte-identical to one the plugin would have written.
+const DEFAULT_BODY = `${BANNER}\n\n\n`;
+const DEFAULT_TRAILING = '\n%%';
+
+const DATA_HEADING_RE = /^# Excalidraw Data[ \t]*$/;
+const FENCE_RE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
+
+interface Line { start: number; text: string }
+
+function eachLine(text: string): Line[] {
+  const out: Line[] = [];
+  let i = 0;
+  for (;;) {
+    let nl = text.indexOf('\n', i);
+    const atEnd = nl === -1;
+    if (atEnd) nl = text.length;
+    let end = nl;
+    if (end > i && text[end - 1] === '\r') end--;
+    out.push({ start: i, text: text.slice(i, end) });
+    if (atEnd) return out;
+    i = nl + 1;
+  }
+}
+
+function lineStartAt(text: string, offset: number): number {
+  return text.lastIndexOf('\n', offset - 1) + 1;
+}
+
+// A `# Excalidraw Data` line that could be the start of the data region.
+// `structural` means it is shaped like the real one — the plugin (and this
+// module) always follow the heading with a `##` subsection or the `%%` that
+// opens the Drawing comment, and prose almost never does.
+interface HeadingCandidate { offset: number; structural: boolean }
+
+// Candidates in document order, skipping headings inside fenced code blocks:
+// a human documenting the format writes the plugin's headings in a fence, and
+// swallowing their fence would be the very bug this region model exists to
+// stop. Fence tracking only has to survive the human's own prose — the real
+// heading comes before the scene, so nothing in the serialised scene can
+// unbalance the scan that finds it.
+function dataHeadingCandidates(text: string): HeadingCandidate[] {
+  const lines = eachLine(text);
+  const out: HeadingCandidate[] = [];
+  let fence: string | null = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!.text;
+    const fenced = FENCE_RE.exec(line);
+    if (fence !== null) {
+      // A closing fence is the same character, at least as long, info-free.
+      if (fenced && fenced[1]![0] === fence[0] && fenced[1]!.length >= fence.length && fenced[2]!.trim() === '') {
+        fence = null;
+      }
+      continue;
+    }
+    if (fenced) { fence = fenced[1]!; continue; }
+    if (!DATA_HEADING_RE.test(line)) continue;
+    let j = i + 1;
+    while (j < lines.length && lines[j]!.text.trim() === '') j++;
+    const next = j < lines.length ? lines[j]!.text : '';
+    out.push({ offset: lines[i]!.start, structural: next.startsWith('##') || next.trim() === '%%' });
+  }
+  return out;
+}
+
+// Where the data region starts when the note has a Drawing block but no
+// heading archboard is willing to trust: the `%%` that opens the comment, or
+// the `## Drawing` line itself.
+function drawingRegionStart(text: string, block: DrawingBlock): number {
+  const drawingLine = block.start + (text.startsWith('\r\n', block.start) ? 2 : 1);
+  const previous = lineStartAt(text, block.start);
+  return text.slice(previous, block.start).trim() === '%%' ? previous : drawingLine;
+}
+
+// The note text below the frontmatter, which is where every region above the
+// frontmatter's own ends.
+function contentAfterFrontmatter(content: string): string {
+  const text = content.replace(/^﻿/, '');
+  const open = /^---[ \t]*(?:\r?\n|$)/.exec(text);
+  if (!open) return text;
+  const closer = /^(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/gm;
+  closer.lastIndex = open[0].length;
+  const close = closer.exec(text);
+  if (!close) return text; // unclosed: frontmatterLinesFor refuses the write
+  return text.slice(close.index + close[0].length);
+}
+
+// The banner is the plugin's "this file is a drawing" affordance. It is added
+// only when archboard is the one introducing the data section — never injected
+// into a note that already has one, because that would rewrite a note whose
+// human deleted the banner on purpose and break losslessness for it.
+function bodyWithBanner(text: string): string {
+  let body = text;
+  if (body !== '' && !body.endsWith('\n')) body += '\n';
+  if (body.includes(BANNER_MARKER)) return body;
+  return body === '' ? DEFAULT_BODY : `${body}\n${DEFAULT_BODY}`;
+}
+
+interface PreservedRegions { body: string; trailing: string }
+
+// Split the destination into the regions a save must carry across untouched.
+function preservedRegions(existing: string | null | undefined): PreservedRegions {
+  if (existing === undefined || existing === null) return { body: DEFAULT_BODY, trailing: DEFAULT_TRAILING };
+  const text = contentAfterFrontmatter(existing);
+  if (text.trim() === '') return { body: DEFAULT_BODY, trailing: DEFAULT_TRAILING };
+
+  const block = locateDrawingBlock(text);
+  const candidates = dataHeadingCandidates(text).filter((c) => block === null || c.offset < block.start);
+  // The first plugin-shaped heading is the data section. Falling back to the
+  // *last* candidate matters: with a Drawing block present, leaving any
+  // `# Excalidraw Data` line in the preserved body would duplicate the heading
+  // on write and duplicate it again on the next save.
+  const heading = candidates.find((c) => c.structural) ?? (block ? candidates[candidates.length - 1] : undefined);
+
+  const start = heading ? heading.offset : block ? drawingRegionStart(text, block) : null;
+  if (start === null) return { body: bodyWithBanner(text), trailing: DEFAULT_TRAILING };
+  return { body: text.slice(0, start), trailing: block ? text.slice(block.end) : DEFAULT_TRAILING };
+}
+
 // `existing` is the current content of the destination file, when there is
 // one; pass nothing to get the plugin's default frontmatter. Throws when the
 // destination's frontmatter cannot be read safely — callers must treat that as
@@ -259,6 +405,7 @@ export function wrapSceneAsObsidianMd(
   const frontmatter = renderFrontmatter(
     upsertFrontmatterLines(frontmatterLinesFor(existing), options.frontmatter ?? [])
   );
+  const { body, trailing } = preservedRegions(existing);
   const wrapped = structuredClone(scene);
   wrapped.type = 'excalidraw';
   wrapped.version = 2;
@@ -278,41 +425,54 @@ export function wrapSceneAsObsidianMd(
   }
 
   const textSection = entries.length ? entries.join('\n\n') + '\n' : '';
-  return `${frontmatter}==⚠  Switch to EXCALIDRAW VIEW in the MORE OPTIONS menu of this document. ⚠==
-
-
-# Excalidraw Data
+  return `${frontmatter}${body}# Excalidraw Data
 ## Text Elements
 ${textSection}
 %%
 ## Drawing
 \`\`\`json
 ${JSON.stringify(canonicalizeKeys(wrapped), null, '\t')}
-\`\`\`
-%%`;
+\`\`\`${trailing}`;
+}
+
+// The closing fence must sit at the start of a line: element text can contain
+// ``` inside the JSON strings, but a line of pretty-printed JSON never begins
+// with a backtick (this mirrors the plugin's own DRAWING_REG).
+//
+// Every line break matches `\r?\n`: files authored on Windows (or by the
+// Obsidian plugin there) use CRLF, and requiring a bare `\n` made every such
+// file fail with a misleading "No Drawing block found".
+const DRAWING_COMPRESSED_RE = /\r?\n##? Drawing\r?\n[^`]*```compressed-json\r?\n([\s\S]*?)\r?\n```/;
+const DRAWING_PLAIN_RE = /\r?\n##? Drawing\r?\n[^`]*```json\r?\n([\s\S]*?)\r?\n```/;
+
+interface DrawingBlock { start: number; end: number; compressed: boolean; payload: string }
+
+// One locator for both directions. Reading the scene and deciding which bytes
+// a save may regenerate must never disagree about which block is the drawing.
+function locateDrawingBlock(md: string): DrawingBlock | null {
+  const compressed = DRAWING_COMPRESSED_RE.exec(md);
+  const plain = compressed ? null : DRAWING_PLAIN_RE.exec(md);
+  const match = compressed ?? plain;
+  if (!match) return null;
+  return {
+    start: match.index,
+    end: match.index + match[0].length,
+    compressed: compressed !== null,
+    payload: match[1]!
+  };
 }
 
 export function extractSceneJsonFromObsidianMd(md: string): string {
-  // The closing fence must sit at the start of a line: element text can
-  // contain ``` inside the JSON strings, but a line of pretty-printed JSON
-  // never begins with a backtick (this mirrors the plugin's own DRAWING_REG).
-  //
-  // Every line break matches `\r?\n`: files authored on Windows (or by the
-  // Obsidian plugin there) use CRLF, and requiring a bare `\n` made every
-  // such file fail with a misleading "No Drawing block found".
-  const compressed = md.match(/\r?\n##? Drawing\r?\n[^`]*```compressed-json\r?\n([\s\S]*?)\r?\n```/);
-  if (compressed) {
-    const json = decompressFromBase64(compressed[1]!.replace(/\s/g, ''));
-    if (!json) throw new Error('Failed to decompress the Drawing block');
-    JSON.parse(json);
-    return json;
+  const block = locateDrawingBlock(md);
+  if (!block) throw new Error('No Drawing block found — not an .excalidraw.md file?');
+  if (!block.compressed) {
+    JSON.parse(block.payload);
+    return block.payload;
   }
-  const plain = md.match(/\r?\n##? Drawing\r?\n[^`]*```json\r?\n([\s\S]*?)\r?\n```/);
-  if (plain) {
-    JSON.parse(plain[1]!);
-    return plain[1]!;
-  }
-  throw new Error('No Drawing block found — not an .excalidraw.md file?');
+  const json = decompressFromBase64(block.payload.replace(/\s/g, ''));
+  if (!json) throw new Error('Failed to decompress the Drawing block');
+  JSON.parse(json);
+  return json;
 }
 
 // lz-string decompressFromBase64 (pieroxy/lz-string, MIT), inlined to keep
