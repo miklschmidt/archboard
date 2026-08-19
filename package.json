@@ -9,21 +9,21 @@
     "archboard": "dist/bin.js"
   },
   "scripts": {
-    "start": "npm run build:server && node dist/index.js",
+    "start": "bun run build:server && node dist/index.js",
     "cli": "node dist/bin.js",
-    "canvas": "npm run build:server && node dist/server.js",
-    "build": "npm run build:frontend && npm run build:server",
-    "build:frontend": "vite build",
-    "build:server": "npx tsc",
-    "build:types": "npx tsc --emitDeclarationOnly",
-    "dev": "concurrently \"npm run dev:server\" \"vite\"",
-    "dev:server": "npx tsc --watch",
-    "production": "npm run build && npm run canvas",
+    "canvas": "bun run build:server && node dist/server.js",
+    "build": "bun run build:frontend && bun run build:server",
+    "build:frontend": "bunx vite build",
+    "build:server": "bunx tsc",
+    "build:types": "bunx tsc --emitDeclarationOnly",
+    "dev": "bunx concurrently \"bun run dev:server\" \"bunx vite\"",
+    "dev:server": "bunx tsc --watch",
+    "production": "bun run build && bun run canvas",
     "sync:skills": "node scripts/sync-skills.mjs",
-    "test": "npm run test:mcp && npm run test:bind",
-    "test:bind": "npm run build:server && node scripts/check-local-bind.mjs",
-    "test:mcp": "npm run build:server && node scripts/check-mcp-stdio.mjs",
-    "type-check": "npx tsc --noEmit"
+    "test": "bun run test:mcp && bun run test:bind",
+    "test:bind": "bun run build:server && node scripts/check-local-bind.mjs",
+    "test:mcp": "bun run build:server && node scripts/check-mcp-stdio.mjs",
+    "type-check": "bunx tsc --noEmit"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.0",
@@ -54,37 +54,18 @@
     "typescript": "^5.8.3",
     "vite": "^6.3.5"
   },
-  "keywords": [
-    "mcp",
-    "mcp-server",
-    "excalidraw",
-    "model-context-protocol",
-    "ai",
-    "drawing",
-    "diagrams",
-    "canvas",
-    "real-time",
-    "websocket",
-    "visualization",
-    "claude",
-    "ai-tools",
-    "claude-skill",
-    "agent-skills",
-    "cli",
-    "ai-agents"
-  ],
   "author": {
-    "name": "yctimlin",
-    "email": "c22647809@gmail.com"
+    "name": "Mikkel Schmidt",
+    "email": "mikkel.schmidt@gmail.com"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yctimlin/mcp_excalidraw.git"
+    "url": "https://github.com/miklschmidt/archboard.git"
   },
-  "homepage": "https://github.com/yctimlin/mcp_excalidraw#readme",
+  "homepage": "https://github.com/miklschmidt/archboard#readme",
   "bugs": {
-    "url": "https://github.com/yctimlin/mcp_excalidraw/issues"
+    "url": "https://github.com/miklschmidt/archboard/issues"
   },
   "engines": {
     "node": ">=20.0.0"
