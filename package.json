@@ -1,12 +1,12 @@
 {
-  "name": "mcp-excalidraw-server",
-  "version": "2.0.0",
-  "description": "Excalidraw toolkit for AI coding agents — agent skill, CLI, and MCP server with a live canvas",
+  "name": "archboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Internal architecture canvas: a live Excalidraw board that agents and humans build, explore, and refactor code and infrastructure architecture on together.",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
-    "mcp-excalidraw-server": "dist/bin.js",
-    "excalidraw-canvas": "dist/bin.js"
+    "archboard": "dist/bin.js"
   },
   "scripts": {
     "start": "npm run build:server && node dist/index.js",
@@ -19,7 +19,6 @@
     "dev": "concurrently \"npm run dev:server\" \"vite\"",
     "dev:server": "npx tsc --watch",
     "production": "npm run build && npm run canvas",
-    "prepublishOnly": "npm run build",
     "sync:skills": "node scripts/sync-skills.mjs",
     "test": "npm run test:mcp && npm run test:bind",
     "test:bind": "npm run build:server && node scripts/check-local-bind.mjs",
@@ -89,17 +88,5 @@
   },
   "engines": {
     "node": ">=20.0.0"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
-  },
-  "files": [
-    "src/**/*",
-    "dist/**/*",
-    "skills/**/*",
-    "*.d.ts",
-    "README.md",
-    "LICENSE"
-  ]
+  }
 }

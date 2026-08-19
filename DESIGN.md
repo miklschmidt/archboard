@@ -1,16 +1,18 @@
-# Fork rationale and Codex integration design
+# Design and Codex integration
 
-Why this is a fork of [yctimlin/mcp_excalidraw](https://github.com/yctimlin/mcp_excalidraw),
-and how it plugs into Codex + GPT-Live voice.
+What archboard is building on top of its Excalidraw base, and how it plugs into
+Codex + GPT-Live voice.
 
 Everything below marked "verified" was established by reading the code at
 `/home/msc/Projects/codex` (@ `f5a3dc5540`) or by testing this build. Nothing
 here is inferred from documentation.
 
-## Why fork
+## What the base gives us, and what it doesn't
 
-Not for the mermaid sync bug — that was a 1.1.0 defect, already fixed in
-upstream v2.0.0, and we now build from source. The reasons that remain:
+Archboard starts from [yctimlin/mcp_excalidraw](https://github.com/yctimlin/mcp_excalidraw)
+v2.0.0 because the expensive part — the Excalidraw element schema, bindings,
+rendering, mermaid conversion, and a 26-tool CLI/MCP surface — is already
+solved there. What it does not give us:
 
 | Gap | Why it blocks us |
 |---|---|
@@ -19,8 +21,15 @@ upstream v2.0.0, and we now build from source. The reasons that remain:
 | No multi-document | One global canvas; no variants, no per-project boards |
 | No change-event feed | Nothing to react to when the human draws |
 
-Keep patches surgical and upstreamable. Upstream is active (v2.0.0 released
-2026-08-09, live fix branches). `git merge upstream/main` must stay viable.
+**We are not staying mergeable.** Archboard diverges for our use case without
+regard for whether upstream would accept the change. Restructure freely: rename
+things, delete what we don't use, break their conventions where ours are better.
+The `upstream` remote is kept for reference and occasional cherry-picking, not
+as a merge target.
+
+Note this was not the original plan — the early docs and commits optimised for
+upstreamability. If something looks conservative for no reason, that is why, and
+it can go.
 
 ## The constraint that drives the design
 
