@@ -186,7 +186,8 @@ export type WebSocketMessageType =
   | 'export_image_request'
   | 'set_viewport'
   | 'files_added'
-  | 'file_deleted';
+  | 'file_deleted'
+  | 'selection_changed';
 
 export interface InitialElementsMessage extends WebSocketMessage {
   type: 'initial_elements';
@@ -217,6 +218,15 @@ export interface SyncStatusMessage extends WebSocketMessage {
   type: 'sync_status';
   elementCount: number;
   timestamp: string;
+}
+
+// Pushed whenever the reported selection changes, so a later change-event feed
+// or a second pane can follow it without polling.
+export interface SelectionChangedMessage extends WebSocketMessage {
+  type: 'selection_changed';
+  elementIds: string[];
+  clientId: string | null;
+  at: string;
 }
 
 export interface MermaidConvertMessage extends WebSocketMessage {
@@ -277,6 +287,17 @@ export interface SetViewportMessage extends WebSocketMessage {
   offsetY?: number;
 }
 
+// Selection types
+//
+// Selection is what a human has picked on the board — the thing they mean when
+// they say "map this to the payments service". One canvas, one selection:
+// whichever browser client reported last owns it (see /api/selection).
+export interface CanvasSelection {
+  elementIds: string[];
+  clientId: string;
+  at: string;
+}
+
 // Snapshot types
 export interface Snapshot {
   name: string;
@@ -289,6 +310,10 @@ export const elements = new Map<string, ServerElement>();
 
 // In-memory storage for snapshots
 export const snapshots = new Map<string, Snapshot>();
+
+// The current selection, or null when nothing is selected. A mutable holder so
+// the server can swap the value while importers keep a single reference.
+export const selectionState: { current: CanvasSelection | null } = { current: null };
 
 // In-memory file storage for image elements (Excalidraw BinaryFiles)
 export interface ExcalidrawFile {
