@@ -40,10 +40,15 @@
 // WHAT IT DELIBERATELY CANNOT SAY. Everything under
 // `CompareResult.layout.cannotExpress` applies here unchanged: absolute
 // position, tidiness, edge geometry, movement below the cluster/region
-// thresholds. One caveat is specific to live diffing: region is measured
-// against the board's own node bounding box, so adding one far-flung box
-// re-frames every region at once. That shows up as a crowd of region changes
-// with a structural change beside it; read the structural change, not the crowd.
+// thresholds. Region is the one to keep in mind here: it is a place within a
+// frame drawn round the board's nodes, so the frame moves when the board does
+// and a name can change without its node changing. Compare anchors that frame
+// to the nodes on both sides and reports a region change only for a node whose
+// own centre moved, which between two states of one board is decidable — so a
+// box added at the edge no longer reports its neighbours as having moved. What
+// remains unsayable is the converse: a box left exactly where it was while
+// everything around it was rearranged is not reported at all. The boxes that
+// were actually dragged are, and that is the event.
 
 import { ServerElement } from '../types.js';
 import { BoardIdentity } from './board.js';
@@ -516,9 +521,9 @@ export function headlineFor(change: SemanticChange): string {
   }
   if (c.nodesMoved > 0) {
     // Not every "moved" is equally meaningful: containment, grouping and
-    // cluster membership are deliberate acts, whereas region can shift simply
-    // because something else was added and re-framed the board. Headline the
-    // deliberate ones when there are any.
+    // cluster membership say who a node now belongs with, whereas region only
+    // says roughly where it sits and is the coarsest thing this can notice.
+    // Headline the ones that name a relationship when there are any.
     const rank = (m: (typeof change.nodes.moved)[number]) =>
       ['cluster', 'container', 'group'].some(k => k in m.changes) ? 0 : 1;
     const ordered = [...change.nodes.moved].sort((a, b) => rank(a) - rank(b));
