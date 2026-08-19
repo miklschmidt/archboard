@@ -31,6 +31,17 @@ export interface BoardState {
   // the next save can preserve its frontmatter and anything else the vault put
   // there verbatim.
   note?: string;
+  // What archboard last saw at `file`: the sha-256 of the bytes it read there,
+  // or of the bytes it wrote there. A save compares the destination against
+  // this and refuses when they differ, because the difference is somebody
+  // else's work (ADR 0006).
+  //
+  // Pinned to a path rather than to the board, so a save-as cannot carry a
+  // baseline onto a file archboard has never read. A board archboard invented
+  // — scratch, or `board new` — has no baseline at all, and that is the same
+  // situation as a changed file: there are bytes at the destination that this
+  // process has not seen.
+  baseline?: { file: string; hash: string; at: string };
   loadedAt?: string;
   savedAt?: string;
 }
@@ -100,6 +111,25 @@ export function setActiveBoard(key: string): BoardState {
   if (!board) throw new Error(`Board "${key}" is not open`);
   activeKey = key;
   return board;
+}
+
+// The most recent bytes archboard has seen at `file`, or null when it has never
+// seen any. Asked of every open board rather than of one, because a baseline
+// belongs to the path: `board save --as other` writes a file that a different
+// open board may be the one that read it. Where more than one board has a
+// claim, the newest wins — that is the last moment archboard actually looked.
+export function baselineForFile(file: string): { hash: string; at: string } | null {
+  let best: { hash: string; at: string } | null = null;
+  for (const board of boards.values()) {
+    const baseline = board.baseline;
+    if (!baseline || baseline.file !== file) continue;
+    if (!best || baseline.at > best.at) best = { hash: baseline.hash, at: baseline.at };
+  }
+  return best;
+}
+
+export function recordBaseline(board: BoardState, file: string, hash: string): void {
+  board.baseline = { file, hash, at: new Date().toISOString() };
 }
 
 export function boardSummaries(): Array<{

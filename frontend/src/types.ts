@@ -56,6 +56,21 @@ export interface BoardInfo {
   loadedAt?: string;
 }
 
+/**
+ * A save the server refused because the note at the destination is not the one
+ * archboard read (ADR 0006). Carries the three outcomes rather than leaving the
+ * UI to invent them, so every surface offers the same choice.
+ */
+export interface BoardWriteConflict {
+  board: string;
+  file: string;
+  reason: 'changed' | 'unseen';
+  lastReadAt?: string;
+  fileModifiedAt?: string;
+  outcomes: { reload: string; overwrite: string; saveAs: string };
+  message: string;
+}
+
 export interface BoardListing {
   vault: string;
   boards: Array<{ key: string; identity: BoardIdentity; file?: string }>;

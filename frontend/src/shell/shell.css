@@ -276,6 +276,23 @@
   border-top: 1px solid var(--border);
 }
 
+/* A refused save offers three outcomes, each with the price of taking it.
+   A two-column grid so the buttons line up and the reasons read as a list. */
+.choices {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px 16px;
+  margin: 14px 0 4px;
+}
+
+.choices .btn-big { min-width: 190px; }
+
+.choice-why {
+  font-size: 13px;
+  color: var(--ink-quiet);
+}
+
 .field {
   display: flex;
   flex-direction: column;

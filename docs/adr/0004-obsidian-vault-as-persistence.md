@@ -24,11 +24,18 @@ moves. Absolute `file://` paths break on any other machine. Each repo keeps its
 own `CONTEXT.md` and ADRs where they already are; board-to-code links resolve
 through a machine-local registry rather than living in the vault.
 
+## Known shortfall
+
+The premise above claims a vault gives prose alongside the diagrams for free. It
+does not yet: an archboard save regenerates the note body, so prose a human
+writes outside the Drawing block is destroyed (TASK-017). Frontmatter survives;
+prose does not. Until that is fixed, treat a board note as diagram-only.
+
 ## Status note
 Originally recorded as provisional pending two blockers, both now closed:
 export preserves custom frontmatter (TASK-002) and boards are addressable,
 persisted vault notes (TASK-003) — verified idempotent and byte-lossless
 across both.
-The two-writer risk is decided but not yet implemented: see ADR 0006, which
-chooses detection over prevention. Until TASK-010 lands, saving is
-last-writer-wins and says so on every save.
+The two-writer risk is settled by ADR 0006, which chooses detection over
+prevention: archboard hashes a note when it reads it, verifies that hash before
+writing, and refuses the save when the file changed underneath (TASK-010).

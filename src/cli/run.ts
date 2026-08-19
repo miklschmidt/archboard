@@ -31,19 +31,21 @@ const COMMANDS: Record<string, Command> = {
   demote: { handler: demote, summary: 'Turn nodes back into plain elements', usage: 'demote [--ids a,b,c] [--text]  (default target is the live selection; demotes every element of each node it touches)' },
   board: {
     handler: board,
-    summary: 'Load, save and list boards in the vault (last-writer-wins on save)',
+    summary: 'Load, save and list boards in the vault',
     usage: [
       'board list | current | new <name> [--variant v] [--level system|service|module]',
-      '        | open <name[@variant]> [--variant v] [--reload] | save [--as <name>] [--variant v] [--level l]',
+      '        | open <name[@variant]> [--variant v] [--reload] | save [--as <name>] [--variant v] [--level l] [--force]',
       '',
       '  A board is one .excalidraw.md note in the vault at ARCHBOARD_VAULT; the canvas holds one at a time.',
       '  The variant "current" owns the bare name — the architecture that exists. Every other variant is',
       '  addressed and stored as name@variant, so three-way option comparison is just three names.',
       '',
-      '  SAVING IS LAST-WRITER-WINS. archboard does not check whether the note changed since it was opened,',
-      '  and the Obsidian Excalidraw plugin holds its own copy of any board open there — whoever writes last',
-      '  wins and the other side is gone. Close the board in Obsidian before saving it here. The conflict',
-      '  policy is TASK-010 and has not been decided; there is no hash check, lock or file watch yet.'
+      '  SAVES ARE CHECKED, NOT LOCKED. archboard hashes a note when it reads it and verifies that hash',
+      '  before writing. If the note changed underneath — Obsidian, a sync client, another editor — the',
+      '  save is refused, nothing is written, and it exits 5 naming three ways out: reload the note',
+      '  (`board open <name> --reload`), overwrite it (`board save --force`), or keep both',
+      '  (`board save --as <other>`). archboard never picks for you. Nothing is locked, so keep a board',
+      '  open in one editor at a time: the check catches a changed file, not a copy in another app\'s memory.'
     ].join('\n')
   },
   describe: { handler: scene.describe, summary: 'AI-readable scene description (plain text)', usage: 'describe' },
@@ -78,7 +80,8 @@ function printHelp(): void {
     '  and raw-content output when --out is omitted (`export` scene JSON,',
     '  `screenshot --format svg`).',
     '  Diagnostics go to stderr.',
-    '  Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required.',
+    '  Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required,',
+    '               5 board write refused (the note changed on disk).',
     '  Canvas-driving commands auto-start the server (disable with EXCALIDRAW_NO_AUTOSTART=1).',
     '  Canvas URL comes from EXPRESS_SERVER_URL (default http://127.0.0.1:3000) or --url.',
     '',
@@ -92,6 +95,7 @@ function exitCodeFor(error: unknown): number {
   const code = (error as any)?.code;
   if (code === 'CANVAS_UNREACHABLE') return 3;
   if (code === 'BROWSER_REQUIRED') return 4;
+  if (code === 'BOARD_CONFLICT') return 5;
   return 1;
 }
 
