@@ -6,6 +6,7 @@ Private, never published.
 
 - Display setup (Samsung Flip WM75FX): `FLIP_WHITEBOARD.md`
 - Design and roadmap: `DESIGN.md`
+- Running it end to end with Codex: `TESTING.md`
 
 ## Relationship to upstream
 
