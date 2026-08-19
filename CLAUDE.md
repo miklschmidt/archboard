@@ -1,25 +1,27 @@
-# Whiteboard — agent-driven architecture canvas
+# archboard — agent-driven architecture canvas
 
-A fork of [yctimlin/mcp_excalidraw](https://github.com/yctimlin/mcp_excalidraw)
-(MIT), being tailored into a live canvas for building, exploring, and
+An internal tool: a live Excalidraw canvas for building, exploring, and
 refactoring **code and infrastructure architecture** by voice with an agent.
+Private, never published.
 
 - Display setup (Samsung Flip WM75FX): `FLIP_WHITEBOARD.md`
-- Fork rationale and roadmap: `FORK.md`
+- Design and roadmap: `DESIGN.md`
 
-## Fork baseline
+## Relationship to upstream
 
-`main` is based on upstream `v2.0.0` (`6ddbe98`, 2026-08-09) with full upstream
-history, so `git merge upstream/main` stays viable. Keep patches surgical and
-upstreamable — upstream is actively releasing.
+`main` is based on [yctimlin/mcp_excalidraw](https://github.com/yctimlin/mcp_excalidraw)
+`v2.0.0` (`6ddbe98`, 2026-08-09) with full upstream history retained.
 
-```bash
-git fetch upstream && git log --oneline upstream/main   # check for new work
-```
+**Archboard is diverging deliberately and is not kept mergeable.** Restructure
+freely — rename things, delete what we don't use, break upstream conventions
+where ours are better. The `upstream` remote exists for reference and occasional
+cherry-picking, not as a merge target. Early docs and commits optimised for
+upstreamability; that constraint is gone.
 
-Upstream tags v2.0.0 in git but has **never published it to npm** (npm `latest`
-is 1.1.0, from 2026-07-06). We build from source; do not `bun add
-mcp-excalidraw-server`.
+Archboard is **private and never published to npm** (`"private": true`). Upstream
+tags v2.0.0 in git but never published it either — npm `latest` is 1.1.0, from
+2026-07-06, and two releases behind. Always build from source; never
+`bun add mcp-excalidraw-server`.
 
 ## Build and run
 
@@ -49,22 +51,26 @@ Open <http://127.0.0.1:3000>. A browser tab is required for `screenshot`,
 clone has no skills until you restore them:
 
 ```bash
-skills experimental_install     # 28 mattpocock skills, from skills-lock.json
-node scripts/sync-skills.mjs    # our excalidraw-skill, from canonical skills/
-ln -sfn ../../.agents/skills/excalidraw-skill .claude/skills/excalidraw-skill
+skills experimental_install     # 28 third-party skills, from skills-lock.json
+node scripts/sync-skills.mjs    # ours, from skills/ and dev-skills/
 ```
+
+The sync creates the `.claude/skills/` symlinks itself; no manual linking.
 
 Everything else under `.claude/` — `settings.json`, `commands/`, `agents/` — is
 authored configuration and **is** tracked.
 
-Our `excalidraw-skill` is deliberately absent from `skills-lock.json`: it isn't
-third-party, it is synced from the canonical tracked copy under `skills/`, and
-keeping it out of the lock stops the skills tool from clobbering it. Edit
-`skills/excalidraw-skill/`, then re-run the sync.
+Our own skills come from two tracked sources, split by audience:
 
-On this machine the synced copy is additionally patched to call
-`bin/canvas` instead of `npx`, which the canonical copy deliberately does not
-hardcode.
+- `skills/` — for consumers of the canvas; must stay portable, no
+  machine-specific paths
+- `dev-skills/` — for people working on archboard; may reference repo paths
+
+Neither is in `skills-lock.json`, which pins only third-party skills — that
+keeps the skills tool from clobbering ours.
+
+`~/.claude/skills/excalidraw-skill` is a symlink to the synced copy, so the
+canvas skill works in other repos and cannot drift.
 
 ## The loop
 
