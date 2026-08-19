@@ -25,18 +25,21 @@ tags v2.0.0 in git but never published it either — npm `latest` is 1.1.0, from
 
 ## Build and run
 
-This box has node + bun but **no npm/npx**, so the `npm run *` scripts in
-`package.json` do not work. Drive the tools directly:
+This box has node + bun but **no npm/npx**. The `package.json` scripts now shell
+out to bun, so run them with `bun run`, never `npm run`:
 
 ```bash
 bun install
-bunx tsc            # build:server  -> dist/
-bunx vite build     # build:frontend -> dist/frontend/
+bun run build       # -> dist/ and dist/frontend/
+bun run type-check
+bun run test        # MCP stdio wire checks + loopback-bind check
 
 ./bin/canvas start  # canvas server on 127.0.0.1:3000
 ./bin/canvas status
 ./bin/canvas stop
 ```
+
+Or drive the tools directly: `bunx tsc` (server), `bunx vite build` (frontend).
 
 `bun install` intermittently fails extracting a tarball; just run it again.
 
@@ -52,7 +55,7 @@ clone has no skills until you restore them:
 
 ```bash
 skills experimental_install     # 28 third-party skills, from skills-lock.json
-node scripts/sync-skills.mjs    # ours, from skills/ and dev-skills/
+node scripts/sync-skills.mjs    # ours, from skills/
 ```
 
 The sync creates the `.claude/skills/` symlinks itself; no manual linking.
@@ -60,14 +63,14 @@ The sync creates the `.claude/skills/` symlinks itself; no manual linking.
 Everything else under `.claude/` — `settings.json`, `commands/`, `agents/` — is
 authored configuration and **is** tracked.
 
-Our own skills come from two tracked sources, split by audience:
+`skills/` is our single tracked source: any subdirectory with a `SKILL.md` is a
+skill, so adding one means adding a directory. Portability is a property of the
+individual skill, not the location — `excalidraw-skill` is used outside this
+repo so it stays path-free, while maintainer-facing skills like `archboard-dev`
+may reference repo paths freely.
 
-- `skills/` — for consumers of the canvas; must stay portable, no
-  machine-specific paths
-- `dev-skills/` — for people working on archboard; may reference repo paths
-
-Neither is in `skills-lock.json`, which pins only third-party skills — that
-keeps the skills tool from clobbering ours.
+Our skills are deliberately absent from `skills-lock.json`, which pins only
+third-party skills — that keeps the skills tool from clobbering ours.
 
 `~/.claude/skills/excalidraw-skill` is a symlink to the synced copy, so the
 canvas skill works in other repos and cannot drift.
