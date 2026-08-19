@@ -43,6 +43,29 @@ bunx vite build     # build:frontend -> dist/frontend/
 Open <http://127.0.0.1:3000>. A browser tab is required for `screenshot`,
 `mermaid`, image export, and viewport control; pure JSON ops work headless.
 
+## Skills (after a fresh clone)
+
+`.agents/skills/` and `.claude/skills/` are **derived and untracked**, so a
+clone has no skills until you restore them:
+
+```bash
+skills experimental_install     # 28 mattpocock skills, from skills-lock.json
+node scripts/sync-skills.mjs    # our excalidraw-skill, from canonical skills/
+ln -sfn ../../.agents/skills/excalidraw-skill .claude/skills/excalidraw-skill
+```
+
+Everything else under `.claude/` — `settings.json`, `commands/`, `agents/` — is
+authored configuration and **is** tracked.
+
+Our `excalidraw-skill` is deliberately absent from `skills-lock.json`: it isn't
+third-party, it is synced from the canonical tracked copy under `skills/`, and
+keeping it out of the lock stops the skills tool from clobbering it. Edit
+`skills/excalidraw-skill/`, then re-run the sync.
+
+On this machine the synced copy is additionally patched to call
+`bin/canvas` instead of `npx`, which the canonical copy deliberately does not
+hardcode.
+
 ## The loop
 
 ```

@@ -10,11 +10,12 @@ description: Excalidraw canvas toolkit for creating, editing, and refining diagr
 Three interfaces drive the same live canvas. Pick the first one that applies:
 
 1. **MCP tools** — if `excalidraw/*` tools (e.g. `batch_create_elements`) are in your tool list, prefer them: results land directly in your context, and screenshots come back as images without touching disk.
-2. **CLI** (default when no MCP tools are present):
+2. **CLI** (default when no MCP tools are present). Use whichever applies:
    ```bash
-   npx -y mcp-excalidraw-server <command>
+   npx -y mcp-excalidraw-server <command>   # installed from npm
+   ./bin/canvas <command>                   # working inside this repo
    ```
-   No setup needed — any canvas-touching command **auto-starts the canvas server** on `http://127.0.0.1:3000` (first `npx` run downloads the package). If the CLI is installed globally (`npm i -g mcp-excalidraw-server`), the shorter alias `excalidraw-canvas <command>` works too.
+   No setup needed — any canvas-touching command **auto-starts the canvas server** on `http://127.0.0.1:3000`. If the CLI is installed globally, the shorter alias `excalidraw-canvas <command>` works too. Inside the repo, `bin/canvas` drives the local `dist/` build and resolves from any cwd; prefer it there, since a published npm build may lag the source.
 3. **REST API** (last resort, e.g. from application code): HTTP endpoints on `http://127.0.0.1:3000` — see `references/cheatsheet.md` for payloads. The server must already be running.
 
 The canvas URL comes from `EXPRESS_SERVER_URL` (default `http://127.0.0.1:3000`). Remind the user to open that URL in a browser — screenshots, image export, mermaid conversion, and viewport control need an open tab (CLI exits with code 4 when it's missing).

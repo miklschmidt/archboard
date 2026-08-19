@@ -1,40 +1,90 @@
 #!/usr/bin/env node
-// Sync the canonical skill (skills/excalidraw-skill) to the repo-local agent
-// copy (.agents/skills/excalidraw-skill, which .claude/skills symlinks to).
+// Sync this repo's authored skills into the agent directories.
 //
-// skills/ is the single source of truth: it is published to npm and installed
-// by `mcp-excalidraw-server install-skill`. Edit there, then run:
-//   npm run sync:skills
+// Two tracked sources, deliberately separate:
+//
+//   skills/       DISTRIBUTABLE. Published to npm (package.json `files`) and
+//                 installed by consumers via `mcp-excalidraw-server
+//                 install-skill`. Must stay portable — no machine-specific
+//                 paths.
+//   dev-skills/   REPO-LOCAL. Skills for working *on* this repo. Tracked, but
+//                 never published. May reference repo paths like bin/canvas.
+//
+// Both sync into .agents/skills/<name>, which .claude/skills/<name> symlinks
+// to. Those two directories are derived and gitignored; third-party skills
+// also land in .agents/skills/ via `skills experimental_install`, and this
+// script leaves them alone.
+//
+// Run: node scripts/sync-skills.mjs
 
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const repoRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const canonical = path.join(repoRoot, 'skills', 'excalidraw-skill');
-const agentCopy = path.join(repoRoot, '.agents', 'skills', 'excalidraw-skill');
-const claudeLink = path.join(repoRoot, '.claude', 'skills', 'excalidraw-skill');
+const agentSkills = path.join(repoRoot, '.agents', 'skills');
+const claudeSkills = path.join(repoRoot, '.claude', 'skills');
 
-if (!fs.existsSync(path.join(canonical, 'SKILL.md'))) {
-  console.error(`Canonical skill not found at ${canonical}`);
+const SOURCES = [
+  { dir: path.join(repoRoot, 'skills'), label: 'distributable' },
+  { dir: path.join(repoRoot, 'dev-skills'), label: 'repo-local' },
+];
+
+/** Skill dirs are those containing a SKILL.md. */
+function discover(sourceDir) {
+  if (!fs.existsSync(sourceDir)) return [];
+  return fs
+    .readdirSync(sourceDir, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .filter((e) => fs.existsSync(path.join(sourceDir, e.name, 'SKILL.md')))
+    .map((e) => e.name);
+}
+
+fs.mkdirSync(agentSkills, { recursive: true });
+fs.mkdirSync(claudeSkills, { recursive: true });
+
+let synced = 0;
+const seen = new Map();
+
+for (const { dir, label } of SOURCES) {
+  for (const name of discover(dir)) {
+    if (seen.has(name)) {
+      console.error(
+        `Error: skill "${name}" exists in both ${seen.get(name)} and ${label} sources. Names must be unique.`
+      );
+      process.exit(1);
+    }
+    seen.set(name, label);
+
+    const from = path.join(dir, name);
+    const to = path.join(agentSkills, name);
+
+    // Replace rather than overlay, so deleted files don't linger.
+    fs.rmSync(to, { recursive: true, force: true });
+    fs.cpSync(from, to, { recursive: true });
+
+    // .claude/skills/<name> must be a symlink into .agents/skills/<name>.
+    const link = path.join(claudeSkills, name);
+    const wanted = path.join('..', '..', '.agents', 'skills', name);
+    let ok = false;
+    try {
+      ok = fs.readlinkSync(link) === wanted;
+    } catch {
+      ok = false;
+    }
+    if (!ok) {
+      fs.rmSync(link, { recursive: true, force: true });
+      fs.symlinkSync(wanted, link);
+    }
+
+    console.log(`  ${label.padEnd(14)} ${name}`);
+    synced += 1;
+  }
+}
+
+if (synced === 0) {
+  console.error('No skills found. Expected SKILL.md under skills/* or dev-skills/*.');
   process.exit(1);
 }
 
-// Replace (not overlay) so deleted files don't linger in the agent copy
-fs.rmSync(agentCopy, { recursive: true, force: true });
-fs.mkdirSync(path.dirname(agentCopy), { recursive: true });
-fs.cpSync(canonical, agentCopy, { recursive: true });
-console.log(`Synced ${canonical} -> ${agentCopy}`);
-
-// Verify the .claude symlink still points into .agents
-try {
-  const linkTarget = fs.readlinkSync(claudeLink);
-  const resolved = path.resolve(path.dirname(claudeLink), linkTarget);
-  if (resolved !== agentCopy) {
-    console.warn(`Warning: ${claudeLink} points to ${resolved}, expected ${agentCopy}`);
-  } else {
-    console.log(`Verified symlink ${claudeLink} -> ${linkTarget}`);
-  }
-} catch {
-  console.warn(`Warning: ${claudeLink} is not a symlink (or missing); .claude may hold a stale copy.`);
-}
+console.log(`Synced ${synced} authored skill(s) into .agents/skills/ with .claude/skills/ symlinks.`);
