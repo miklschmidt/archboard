@@ -4,7 +4,7 @@ title: 'Expose the library catalogue to agents: CLI, MCP, and the skill'
 status: To Do
 assignee: []
 created_date: '2026-08-19 21:43'
-updated_date: '2026-08-19 21:50'
+updated_date: '2026-08-19 22:08'
 labels:
   - needs-triage
 dependencies:
@@ -50,5 +50,11 @@ What remains here:
 - the skill section, which is still the layer that decides whether any of it gets used
 
 Open question that should be settled before building the MCP half: the user has asked whether to keep the MCP surface at all, given it is ~1618 lines against the CLI's ~1500 for the same capabilities over the same core, and both consumers have a shell. If MCP goes, this task loses its middle acceptance criterion. Do not build an MCP tool for the library until that is decided.
+---
+
+author: @claude
+created: 2026-08-19 22:08
+---
+Unblocked by ADR 0008: MCP stays, so the library MCP tool is worth building. Build the CLI side first and treat the tool as following it.
 ---
 <!-- COMMENTS:END -->
