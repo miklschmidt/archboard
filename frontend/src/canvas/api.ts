@@ -1,6 +1,7 @@
 // Every server call the browser makes, in one place, so a pane and the shell
 // disagree about nothing.
 
+import type { LibraryItems } from '@excalidraw/excalidraw/types'
 import type { BoardIdentity, BoardInfo, BoardListing, BoardWriteConflict, ServerElement } from '../types'
 import type { ChangeReport } from './changes'
 
@@ -94,6 +95,26 @@ export interface PaneReport {
 /** The one call that empties a board. Confirmed in the shell, never here. */
 export function clearBoard(board: string | null) {
   return json<{ count: number }>(`/api/elements/clear${boardQuery(board)}`, { method: 'DELETE' })
+}
+
+// ─── The library ──────────────────────────────────────────────
+//
+// Stencils, not board content: these never go near /api/elements, and nothing
+// they carry reaches the element store until a human drags one onto a canvas.
+
+export function fetchLibrary() {
+  return json<{ items: LibraryItems; seeded: string[]; file: string | null; vaultBacked: boolean }>(
+    '/api/library'
+  )
+}
+
+/** The whole palette, because Excalidraw reports the whole palette. */
+export function putLibrary(items: LibraryItems) {
+  return json<{ count: number; file: string | null; vaultBacked: boolean }>('/api/library', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items })
+  })
 }
 
 // ─── Boards ───────────────────────────────────────────────────

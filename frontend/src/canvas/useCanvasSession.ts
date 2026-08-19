@@ -20,6 +20,7 @@ import {
 } from '@excalidraw/excalidraw'
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
+import type { LibraryItems } from '@excalidraw/excalidraw/types'
 import { convertMermaidToExcalidraw, DEFAULT_MERMAID_CONFIG } from '../utils/mermaidConverter'
 import type { BoardIdentity, PaneStatus, ServerElement, WebSocketMessage } from '../types'
 import { cleanElementForExcalidraw, convertElementsPreservingImageProps } from './elements'
@@ -56,6 +57,12 @@ export interface CanvasSessionOptions {
   /** Is this the pane the human last touched? Reported, not enforced. */
   focused: boolean
   onStatus: (status: PaneStatus) => void
+  /**
+   * Another tab changed the stencil palette. Handed straight up to the shell,
+   * which owns the library — a library item is not board content, so nothing
+   * about it touches the element store, the baseline, or a change report.
+   */
+  onLibraryChanged?: (items: LibraryItems) => void
 }
 
 export interface CanvasSession {
@@ -72,7 +79,9 @@ export interface CanvasSession {
   markInteracted: () => void
 }
 
-export function useCanvasSession({ paneId, primary, focused, onStatus }: CanvasSessionOptions): CanvasSession {
+export function useCanvasSession({
+  paneId, primary, focused, onStatus, onLibraryChanged
+}: CanvasSessionOptions): CanvasSession {
   // A pane is a client in its own right: it holds a selection the server can
   // retire when this pane goes away, and it must be able to skip the echo of
   // its own change reports.
@@ -692,6 +701,15 @@ export function useCanvasSession({ paneId, primary, focused, onStatus }: CanvasS
       case 'selection_changed':
         break
 
+      // Boardless on purpose: one palette sits behind every board, so this is
+      // applied whatever this pane is showing. Only the primary pane forwards
+      // it, or two panes would hand the shell the same news twice.
+      case 'library_changed':
+        if (primaryRef.current && Array.isArray(data.items)) {
+          onLibraryChanged?.(data.items as LibraryItems)
+        }
+        break
+
       case 'export_image_request':
         if (primaryRef.current) await answerExport(data)
         break
@@ -709,7 +727,8 @@ export function useCanvasSession({ paneId, primary, focused, onStatus }: CanvasS
     }
   }, [
     adoptBoard, answerExport, answerMermaid, answerViewport, applyServerElements,
-    applyServerScene, clientId, hasPendingChanges, loadBoard, noteChange, removeElements, sendReport
+    applyServerScene, clientId, hasPendingChanges, loadBoard, noteChange, onLibraryChanged,
+    removeElements, sendReport
   ])
 
   const connect = useCallback((): void => {

@@ -67,6 +67,7 @@ import { ChangeOrigin, changeFeed } from './core/change-feed.js';
 import type { ChangeEvent } from './core/change-feed.js';
 import { narrateChange } from './core/changes.js';
 import { injectTest, injectionStatus, startInjection } from './core/injection.js';
+import { LibraryItem, readLibrary, writeLibrary } from './core/library.js';
 
 // Load environment variables
 dotenv.config();
@@ -117,6 +118,24 @@ function broadcast(message: WebSocketMessage, board: string): void {
         client.send(data);
       }
     } catch (err) {
+      logger.warn('Failed to send to client, removing');
+      clients.delete(client);
+    }
+  });
+}
+
+// Broadcast something that is not about a board.
+//
+// Only the library qualifies today: it is one palette behind every board, so a
+// client applies it without asking which board the message came from. Kept
+// separate from broadcast() so that omitting the board key stays a deliberate
+// act rather than a missing argument.
+function broadcastBoardless(message: WebSocketMessage): void {
+  const data = JSON.stringify(message);
+  clients.forEach(client => {
+    try {
+      if (client.readyState === WebSocket.OPEN) client.send(data);
+    } catch {
       logger.warn('Failed to send to client, removing');
       clients.delete(client);
     }
@@ -2119,6 +2138,72 @@ app.get('/api/boards/compare', (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Error comparing boards:', error);
     res.status(boardErrorStatus(error)).json({ success: false, error: (error as Error).message });
+  }
+});
+
+// ─── The library ──────────────────────────────────────────────
+//
+// The stencil palette, which is not a board and never becomes one. These two
+// routes are the whole of it: the browser reads the library when it mounts and
+// writes back whatever Excalidraw says the library now is. Nothing here goes
+// near an element store or the change feed — a stencil only becomes elements
+// when a human drags it onto a canvas, and by then it has arrived through the
+// ordinary change-report path like anything else they drew.
+
+app.get('/api/library', (_req: Request, res: Response) => {
+  try {
+    const state = readLibrary();
+    res.json({
+      success: true,
+      items: state.items,
+      seeded: state.seeded,
+      origins: state.origins,
+      file: state.file,
+      vaultBacked: state.vaultBacked
+    });
+  } catch (error) {
+    logger.error('Error reading library:', error);
+    res.status(500).json({ success: false, error: (error as Error).message });
+  }
+});
+
+// Replace the library. The browser sends the whole set because that is what
+// Excalidraw hands it — there is no library delta to be had — and last write
+// wins, which is honest for a palette two tabs are unlikely to edit at once.
+// The result is broadcast so the other tabs stop being the stale one.
+app.put('/api/library', (req: Request, res: Response) => {
+  try {
+    const body = z.object({
+      items: z.array(z.object({
+        id: z.string(),
+        status: z.enum(['published', 'unpublished']).optional(),
+        elements: z.array(z.any()),
+        created: z.number().optional(),
+        name: z.string().optional()
+      }).passthrough())
+    }).parse(req.body ?? {});
+
+    const items: LibraryItem[] = body.items.map(item => ({
+      id: item.id,
+      status: item.status ?? 'published',
+      elements: item.elements,
+      created: item.created ?? Date.now(),
+      ...(item.name ? { name: item.name } : {})
+    }));
+
+    const state = writeLibrary(items);
+    // Including the tab that sent it. It recognises its own write by content
+    // rather than by a client id, so there is no echo to suppress here.
+    broadcastBoardless({
+      type: 'library_changed',
+      items: state.items,
+      timestamp: new Date().toISOString()
+    });
+    res.json({ success: true, count: state.items.length, file: state.file, vaultBacked: state.vaultBacked });
+  } catch (error) {
+    logger.error('Error writing library:', error);
+    res.status(error instanceof z.ZodError ? 400 : 500)
+      .json({ success: false, error: (error as Error).message });
   }
 });
 
