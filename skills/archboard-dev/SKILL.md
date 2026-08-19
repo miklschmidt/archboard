@@ -33,13 +33,17 @@ only breaks with a browser attached.
 ./bin/canvas clear --yes
 cat <<'EOF' | ./bin/canvas add
 [{"type":"rectangle","x":100,"y":100,"width":300,"height":120,
+  "backgroundColor":"#e3f2fd",
   "label":{"text":"Probe"},
-  "link":"file:///tmp/probe.ts",
-  "customData":{"kind":"service","variant":"current"}}]
+  "customData":{"archboard":{"node":"probe","kind":"service"}}}]
 EOF
-./bin/canvas describe
+./bin/canvas describe                  # reads as 1 node, not 1 rectangle
 ./bin/canvas query --type rectangle    # customData + link visible here
 ```
+
+Metadata goes under `customData.archboard` (ADR 0003) — namespaced, never flat,
+because the Obsidian plugin writes its own top-level keys. The background fill
+is not decoration: a transparent shape cannot be clicked in its interior.
 
 Then open <http://127.0.0.1:3000>, **drag the box**, and re-run `query`. The
 position must change and `customData` / `link` must survive. That frontend
@@ -48,6 +52,13 @@ catch it.
 
 Elements that came back through the browser are tagged
 `"source": "frontend_sync"`.
+
+To exercise the full interaction, click the box in the browser and then:
+
+```bash
+./bin/canvas selection --text          # what the human has picked
+./bin/canvas promote --kind service --name "Probe" --path src/core/promote.ts
+```
 
 ## Taking something from upstream
 
@@ -81,8 +92,9 @@ than overlays, so deleted files don't linger, and it leaves the third-party
 skills in `.agents/skills/` alone.
 
 `excalidraw-skill` is used outside this repo too, so keep it portable — **no
-machine-specific paths**. It names both `npx -y mcp-excalidraw-server` and
-`./bin/canvas` so it works inside and outside the repo without local patching.
+machine-specific paths**. It names both `archboard` (the package's single bin,
+for use outside the repo) and `./bin/canvas` (inside it), so it works in both
+places without local patching.
 Maintainer-facing skills like this one may reference repo paths freely.
 
 `~/.claude/skills/excalidraw-skill` is a symlink to this repo's synced copy, so
@@ -93,9 +105,13 @@ sync updates it automatically.
 
 - **npm `latest` is 1.1.0**, two releases behind. Upstream tags v2.0.0 in git but
   never published it. Never `bun add mcp-excalidraw-server`; build from source.
-- **`describe` ignores `customData` and `link`** (TASK-001). Use `query` until
-  that is fixed — the agent's main read path is currently blind to the semantic
-  model.
+- **A shape with `backgroundColor: transparent` is only hit-testable on its
+  stroke.** Clicking its interior selects nothing. This will make you think
+  selection is broken when it is not — give test shapes a background, or click
+  the border.
+- **`describe` degrades above 120 nodes** to a per-kind rollup rather than
+  dumping every node. That is deliberate (narratability); use `query` when you
+  need the exhaustive set.
 - **The canvas is in-memory** and clears on server restart. Export or snapshot
   deliberately.
 - **`export --out` does not `mkdir -p`** — create the directory first.
