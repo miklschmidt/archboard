@@ -129,13 +129,32 @@ open the file.
 Elements synced from the browser are tagged `"source": "frontend_sync"`, which
 distinguishes human edits from agent-authored elements.
 
+**Shapes are filled by default, because a transparent shape can only be tapped
+on its stroke.** Excalidraw hit-tests an interior only when the shape is
+"draggable from inside" — `!isTransparent(backgroundColor)` or a bound label —
+so a hollow unlabelled box swallows every tap aimed at its middle. Three
+defaults close that (TASK-009), all from the palette in `src/core/appearance.ts`:
+
+- `add` / `batch_create` give a rectangle, ellipse or diamond `#ffffff` +
+  `fillStyle: solid` unless the caller states a `backgroundColor`. Passing
+  `"transparent"` explicitly still means transparent.
+- The browser seeds the same default, so a **hand-drawn** box is filled the
+  moment it is drawn — which matters, because a box has to be tappable before
+  it can be selected and promoted.
+- `promote` repaints a node in its kind's pastel — service purple, queue
+  orange, datastore cyan, gateway blue, external gray — but only when nobody
+  chose a colour (still transparent, or still the neutral default). `demote`
+  leaves the fill alone; reverting it would make the node untappable again.
+
+White on a light canvas, near-black on a dark one: the board looks as it did,
+it is only now tappable. `describe` stays quiet about the default fill and
+still prints a colour someone chose.
+
 ## Known gaps (our work)
 
 Tracked in Backlog.md; `backlog task list --plain` is authoritative.
 
 - **No change-event feed.** Agent must poll; wrong shape for full-duplex voice.
-- **A node with a transparent background is only selectable by its stroke**, so
-  tapping the middle of a hollow box picks nothing. (TASK-009)
 - `export --out` does not `mkdir -p`.
 - **The canvas holds one board for every pane.** The shell can mount a second
   pane, but the server has a single active board, so both panes show it. Per-pane
@@ -153,7 +172,8 @@ readable via `selection` / `get_selection`
 binding (TASK-005). The CLI and MCP handshake identify as `archboard`
 (TASK-008). A shell hosts the canvas, the server is authoritative over element
 state, clearing asks first, and boards and variants are openable from the UI
-(TASK-016).
+(TASK-016). Shapes are filled by default, so tapping the middle of a box —
+agent-drawn or hand-drawn — selects it (TASK-009).
 
 ## Names on the wire
 

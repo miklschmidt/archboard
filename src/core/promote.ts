@@ -2,6 +2,13 @@ import { execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { ServerElement } from '../types.js';
+import {
+  DEFAULT_FILL_STYLE,
+  DEFAULT_SHAPE_BACKGROUND,
+  FILLABLE_TYPES,
+  backgroundForKind,
+  isTransparentBackground
+} from './appearance.js';
 
 // Promotion — declaring a set of elements to be a node, giving it a kind and
 // usually a binding in the same act (CONTEXT.md).
@@ -273,6 +280,8 @@ export interface ElementUpdate {
   id: string;
   customData: Record<string, unknown>;
   link?: string | null;
+  backgroundColor?: string;
+  fillStyle?: string;
 }
 
 export interface PromotionPlan {
@@ -319,6 +328,27 @@ function partition(targets: ServerElement[], board: ServerElement[]): {
     return el.type === 'text' && container && targetIds.has(container);
   };
   return { shapes: targets.filter(el => !isFoldedLabel(el)), labelsByContainer };
+}
+
+// Promotion is where a box becomes a node, so it is also where the board gets
+// to show that. Two jobs at once:
+//
+//  - hit-testing, for anything still transparent: a shape drawn before this
+//    existed, or imported, is only tappable on its stroke (appearance.ts), and
+//    a node nobody can tap is a node nobody can re-select and talk about.
+//  - meaning: the kind's pastel makes a node look unlike a scratch box, which
+//    is the one thing every node has and the thing a human reads at a glance.
+//
+// Applied only when nobody has expressed a preference — transparent, or still
+// wearing the neutral default. A colour someone actually chose is never
+// overwritten. Demotion deliberately does not undo it: reverting to
+// transparent would take the interior hit-test away again.
+function fillFor(el: ServerElement, kind: Kind): Pick<ElementUpdate, 'backgroundColor' | 'fillStyle'> {
+  if (!FILLABLE_TYPES.has(el.type)) return {};
+  const current = typeof el.backgroundColor === 'string' ? el.backgroundColor.toLowerCase() : undefined;
+  const unchosen = isTransparentBackground(el.backgroundColor) || current === DEFAULT_SHAPE_BACKGROUND;
+  if (!unchosen) return {};
+  return { backgroundColor: backgroundForKind(kind), fillStyle: DEFAULT_FILL_STYLE };
 }
 
 function mergedCustomData(el: ServerElement, block: ArchboardBlock): Record<string, unknown> {
@@ -430,7 +460,8 @@ export function planPromotion(request: PromotionRequest): PromotionPlan {
         customData: mergedCustomData(el, block),
         // Rebinding has to clear a link the previous binding left behind —
         // otherwise the shape stays tappable to the file it used to mean.
-        ...(binding ? { link: binding.link ?? null } : {})
+        ...(binding ? { link: binding.link ?? null } : {}),
+        ...fillFor(el, kind)
       });
     }
 

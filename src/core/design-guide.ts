@@ -28,6 +28,12 @@ export const DIAGRAM_DESIGN_GUIDE = `# Excalidraw Diagram Design Guide
 | Light Gray   | #e9ecef   | #868e96           |
 | White        | #ffffff   | #1e1e1e           |
 
+A closed shape created without a \`backgroundColor\` gets White + \`fillStyle: solid\`,
+because a transparent shape is only selectable on its stroke — nobody can tap it
+in the middle. Pass \`"backgroundColor": "transparent"\` to opt out on purpose.
+Promotion repaints an uncoloured node in its kind's fill: service Light Purple,
+queue Light Orange, datastore Light Cyan, gateway Light Blue, external Light Gray.
+
 ## Sizing Rules
 
 - **Minimum shape size**: width >= 120px, height >= 60px; width >= labelChars * 12 keeps labels on one line

@@ -1,4 +1,5 @@
 import { ServerElement } from '../types.js';
+import { DEFAULT_SHAPE_BACKGROUND } from './appearance.js';
 
 // Build an AI-readable description of the current canvas.
 //
@@ -599,7 +600,12 @@ function plainLine(o: Item): string {
   if (el.text) parts.push(`text: "${el.text}"`);
   if (el.label?.text) parts.push(`label: "${el.label.text}"`);
   else if (o.labelText && !el.text) parts.push(`label: "${o.labelText}"`);
-  if (el.backgroundColor && el.backgroundColor !== 'transparent') parts.push(`bg: ${el.backgroundColor}`);
+  // A colour is worth a word only when someone chose it. The default fill is
+  // on nearly every shape now (it is what makes them tappable), so printing it
+  // would add a column of noise to the agent's main read path.
+  if (el.backgroundColor
+    && el.backgroundColor !== 'transparent'
+    && el.backgroundColor.toLowerCase() !== DEFAULT_SHAPE_BACKGROUND) parts.push(`bg: ${el.backgroundColor}`);
   if (el.strokeColor && el.strokeColor !== '#000000') parts.push(`stroke: ${el.strokeColor}`);
   if (el.link) parts.push(`link: ${el.link}`);
   if (Object.keys(o.meta.foreign).length > 0) parts.push(`customData: ${pairs(o.meta.foreign)}`);

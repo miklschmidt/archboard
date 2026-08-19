@@ -42,8 +42,10 @@ EOF
 ```
 
 Metadata goes under `customData.archboard` (ADR 0003) — namespaced, never flat,
-because the Obsidian plugin writes its own top-level keys. The background fill
-is not decoration: a transparent shape cannot be clicked in its interior.
+because the Obsidian plugin writes its own top-level keys. The explicit
+`backgroundColor` above is only there to show one being honoured — since
+TASK-009 a shape gets a fill on its own (`src/core/appearance.ts`), which is
+what makes its interior tappable.
 
 Then open <http://127.0.0.1:3000>, **drag the box**, and re-run `query`. The
 position must change and `customData` / `link` must survive. That frontend
@@ -106,9 +108,13 @@ sync updates it automatically.
 - **npm `latest` is 1.1.0**, two releases behind. Upstream tags v2.0.0 in git but
   never published it. Never `bun add mcp-excalidraw-server`; build from source.
 - **A shape with `backgroundColor: transparent` is only hit-testable on its
-  stroke.** Clicking its interior selects nothing. This will make you think
-  selection is broken when it is not — give test shapes a background, or click
-  the border.
+  stroke** — with one exception that will waste an afternoon if you don't know
+  it. Excalidraw's rule is `!isTransparent(backgroundColor) ||
+  hasBoundTextElement(el) || ...`, so a *labelled* transparent shape does hit-test
+  inside and an unlabelled one does not. A test built on a labelled probe
+  therefore passes whether or not fills work. Since TASK-009 shapes are filled
+  by default (`src/core/appearance.ts`), so this only bites on shapes made
+  before that or explicitly opted out with `"backgroundColor": "transparent"`.
 - **`describe` degrades above 120 nodes** to a per-kind rollup rather than
   dumping every node. That is deliberate (narratability); use `query` when you
   need the exhaustive set.

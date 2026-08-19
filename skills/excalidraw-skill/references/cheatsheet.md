@@ -216,6 +216,7 @@ Every element endpoint also takes `?board=<key>`; without it they act on the act
 
 Stroke/fill pairs: `#e03131`/`#ffc9c9` red, `#2f9e44`/`#b2f2bb` green, `#1971c2`/`#a5d8ff` blue, `#9c36b5`/`#eebefa` purple, `#e8590c`/`#ffd8a8` orange, `#0c8599`/`#99e9f2` cyan, `#868e96`/`#e9ecef` gray.
 Styling: `"fillStyle": "solid"` for crisp flat fills (default is sketchy hachure); `"strokeStyle": "dashed"` for zone borders / async arrows.
+Fills: a rectangle/ellipse/diamond created without a `backgroundColor` gets a neutral white solid fill, because a transparent shape is only selectable on its stroke. Say `"backgroundColor": "transparent"` to opt out. `promote` repaints an uncoloured node in its kind's pastel.
 Sizing: shapes ≥ 120×60 with width ≥ `labelChars * 12`, fonts ≥ 16 (titles ≥ 20), gaps 40–80px (120px+ for labeled arrows), align to a 20px grid.
 Order of work: background zones → primary shapes (with `text`) → arrows (bound via ids) → annotations → refine (align/distribute/screenshot).
 MCP mode has the full guide behind the `read_diagram_guide` tool.

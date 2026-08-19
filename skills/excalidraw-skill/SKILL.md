@@ -74,6 +74,8 @@ The canvas uses a 2D coordinate grid: **(0, 0) is the origin**, **x increases ri
 - Pair pastel `backgroundColor` fills with their darker `strokeColor` (palette in the cheatsheet)
 - `"strokeStyle": "dashed"` on zone borders and async arrows reads as "boundary / background"
 
+**Shapes come filled, and that is load-bearing.** A rectangle, ellipse or diamond you create without a `backgroundColor` gets a neutral white fill and `fillStyle: solid`, because a shape with a transparent background is only selectable on its ~2px stroke — a human cannot tap it in the middle to pick it. State a colour to override, or `"backgroundColor": "transparent"` to opt out deliberately (a see-through zone that must not hide what it overlaps). Note that a fill hides anything beneath it, so draw background zones before the shapes that sit inside them.
+
 ---
 
 ## Layout Anti-Patterns (Critical for Complex Diagrams)
@@ -265,9 +267,14 @@ archboard promote --kind service --path src/payments/service.ts --text
   rather than the element id. `--node <id>` forces one; re-promoting an
   existing node keeps its id.
 - **`--ids a,b,c`** overrides the selection, for elements you just drew.
+- **A node is repainted in its kind's colour** — service purple, queue orange,
+  datastore cyan, gateway blue, external gray — so a node reads as one at a
+  glance and a hollow shape someone drew before this becomes tappable in its
+  middle. Only shapes nobody has coloured are touched; a chosen colour stands.
 - **`demote`** puts nodes back: touching any element of a node demotes the
   whole node, strips only the `archboard` block, and leaves other tools'
-  `customData` alone.
+  `customData` alone. The fill stays — taking it away would make the shape
+  untappable in its interior again.
 
 `promote_selection` and `demote_selection` are the MCP equivalents.
 
