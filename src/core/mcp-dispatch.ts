@@ -45,6 +45,13 @@ import {
   boardConflictOf,
   compareBoardsOnCanvas
 } from './canvas-client.js';
+import {
+  readCatalogue,
+  catalogueText,
+  insertStencil,
+  AmbiguousStencilError,
+  UnknownStencilError
+} from './library-catalogue.js';
 import { wrapSceneAsObsidianMd } from './obsidian-md.js';
 import { describeScene } from './describe.js';
 import {
@@ -716,6 +723,72 @@ export async function callExcalidrawTool(
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
         };
+      }
+      case 'list_library_items': {
+        logger.info('Listing library items via MCP');
+        const catalogue = await readCatalogue();
+        // The table, not the JSON: 111 stencils as pretty-printed objects is a
+        // thousand lines of context to answer "what can I draw with", and the
+        // table already carries every field a caller picks on.
+        return {
+          content: [{ type: 'text', text: catalogueText(catalogue) }]
+        };
+      }
+      case 'insert_library_item': {
+        const params = z.object({
+          name: z.string().min(1).optional(),
+          source: z.string().min(1).optional(),
+          itemId: z.string().min(1).optional(),
+          x: z.number(),
+          y: z.number()
+        }).refine(
+          value => value.name !== undefined || value.itemId !== undefined,
+          { message: 'Give the stencil a name (from list_library_items), or its itemId.' }
+        ).parse(args ?? {});
+        logger.info('Inserting library item via MCP', { name: params.name, itemId: params.itemId });
+
+        try {
+          const result = await insertStencil(params);
+          // The elements themselves are the stencil's own artwork — dozens of
+          // shapes with points and bindings — and the caller asked for a
+          // picture, not its geometry. Ids are what a follow-up needs.
+          return {
+            content: [{
+              type: 'text',
+              text: `Inserted "${result.name}" from ${result.source ?? 'installed'} at (${result.at.x}, ${result.at.y}) ` +
+                `as ${result.count} plain elements.\n\n` +
+                JSON.stringify({
+                  name: result.name,
+                  source: result.source,
+                  itemId: result.id,
+                  at: result.at,
+                  count: result.count,
+                  elementIds: result.elements.map(el => el.id)
+                }, null, 2)
+            }]
+          };
+        } catch (error) {
+          // Which "Database" the human meant is not ours to guess, so the
+          // candidates come back named and the call is refused (as save_board
+          // refuses a conflicting write) rather than resolved arbitrarily.
+          if (error instanceof AmbiguousStencilError) {
+            return {
+              content: [{
+                type: 'text',
+                text: `${error.message} Call again with source set to one of them, or with itemId.\n\n` +
+                  JSON.stringify({ ambiguous: error.wanted, candidates: error.candidates }, null, 2)
+              }],
+              isError: true
+            };
+          }
+          if (error instanceof UnknownStencilError) {
+            return {
+              content: [{ type: 'text', text: `${error.message} Call list_library_items to see what is available.` }],
+              isError: true
+            };
+          }
+          throw error;
+        }
       }
       case 'describe_scene': {
         logger.info('Describing scene via MCP');

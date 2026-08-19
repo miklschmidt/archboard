@@ -474,6 +474,38 @@ export const tools: Tool[] = [
     }
   },
   {
+    name: 'list_library_items',
+    description:
+      "The stencil palette: ready-made shapes — cloud icons, servers, databases, queues, browsers, people — that " +
+      'a human drags onto a board and you can place by name. Kept on the canvas server, so this is the same ' +
+      'palette the browser shows. Each entry carries what it takes to pick one WITHOUT seeing it drawn: name, ' +
+      'the library it came from as source, its size, how many elements it is made of, and any words drawn inside ' +
+      'it, which is often what really tells one icon from another. Names are unique only within a source — several ' +
+      'libraries ship a "Database" — so pass source to insert_library_item alongside a name that appears twice ' +
+      'here. Call this before insert_library_item: nothing else lists what exists.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'insert_library_item',
+    description:
+      'Place a stencil from the palette onto the canvas at (x, y), which is its TOP-LEFT corner — the stencil ' +
+      'keeps its own size, so read width and height from list_library_items and leave room. The copy is ordinary ' +
+      'elements you can then move, restyle, label, bind arrows to, or promote; nothing about it stays special. ' +
+      'Identify it by name from list_library_items, adding source when more than one library uses that name, or ' +
+      'by itemId to be exact. An ambiguous name is REFUSED with every candidate named rather than guessed at.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Stencil name, as listed by list_library_items. Case-insensitive.' },
+        source: { type: 'string', description: 'Which library the name belongs to, when more than one uses it.' },
+        itemId: { type: 'string', description: 'The catalogue id, instead of a name. Unambiguous by construction.' },
+        x: { type: 'number', description: 'Canvas x for the stencil\'s left edge.' },
+        y: { type: 'number', description: 'Canvas y for the stencil\'s top edge.' }
+      },
+      required: ['x', 'y']
+    }
+  },
+  {
     name: 'describe_scene',
     description: 'Get an AI-readable description of the current canvas: element types, positions, connections, labels, spatial layout, and bounding box. Use this to understand what is on the canvas before making changes.',
     inputSchema: {

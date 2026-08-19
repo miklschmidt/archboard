@@ -1,6 +1,6 @@
 ---
 name: excalidraw-skill
-description: Excalidraw canvas toolkit for creating, editing, and refining diagrams on a live canvas. Use when an agent needs to (1) draw or lay out diagrams, (2) iteratively refine them by describing the scene and screenshotting its own work, (3) export/import .excalidraw files or PNG/SVG images, (4) save/restore canvas snapshots, (5) convert Mermaid to Excalidraw, or (6) perform element-level CRUD, alignment, distribution, grouping, duplication, and locking. Primary interface is the bundled CLI (archboard <command>) which auto-starts the canvas server; MCP tools cover the same canvas for clients with no shell, and a REST API for application code.
+description: Excalidraw canvas toolkit for creating, editing, and refining diagrams on a live canvas. Use when an agent needs to (1) draw or lay out diagrams, (2) iteratively refine them by describing the scene and screenshotting its own work, (3) export/import .excalidraw files or PNG/SVG images, (4) save/restore canvas snapshots, (5) convert Mermaid to Excalidraw, (6) perform element-level CRUD, alignment, distribution, grouping, duplication, and locking, or (7) place ready-made stencils from the shape library. Primary interface is the bundled CLI (archboard <command>) which auto-starts the canvas server; MCP tools cover the same canvas for clients with no shell, and a REST API for application code.
 ---
 
 # Excalidraw Skill
@@ -39,6 +39,7 @@ Results are JSON on stdout — except `describe` (plain text) and raw-content ou
 | Layout operations | `arrange align\|distribute\|group\|ungroup\|lock\|unlock\|duplicate --ids a,b,c [--to left\|horizontal\|...]` |
 | Scene files | `export [--out scene.excalidraw]`, `import [scene.excalidraw|-] [--replace]` — a `.excalidraw.md` out path writes Obsidian's format (see File I/O) |
 | Mermaid → canvas | `mermaid [diagram.mmd|-]` (or stdin) |
+| Ready-made shapes | `library list [--text]`, `library insert <name> --x <x> --y <y> [--source <lib>]` — see Stencils |
 | Boards (named, persisted) | `board list\|current\|new <name>\|open <name[@variant]>\|save` — see Boards |
 | Diff two variants | `compare <from> [to]` — semantic diff keyed on node identity; see Comparing Variants |
 | Snapshots | `snapshot save\|list\|restore <name>` |
@@ -315,6 +316,27 @@ archboard promote --kind service --path src/payments/service.ts --text
 3. `update <id> --set '{...}'` to resize/recolor/move; `delete <id>` to remove; or bundle everything in one `apply` patch. **Bound arrows re-route automatically when you move or resize their endpoints** — no need to delete and recreate them.
 4. `screenshot` to confirm the change looks right.
 5. If updates fail: check the ID exists with `get <id>`; unlock with `arrange unlock --ids <id>` if locked.
+
+## Workflow: Stencils
+
+The library is a palette of ready-made shapes — cloud icons, servers, database drums, browsers, people — that a human drags onto a board. It lives on the canvas server, so you can place one by name with no browser open.
+
+```bash
+archboard library list --text                                         # what exists
+archboard library insert "Load balancer" --x 200 --y 120 --source system-design
+```
+
+The listing is built to be chosen from without rendering anything: name, **size**, element count, source library, id, and in quotes what the stencil says when that is not just its name. Size does real work here — one library's "Docker" is 73x95 and another's is 1224x509.
+
+`--x`/`--y` place the **top-left corner** and the stencil keeps its own size, so read `width`/`height` off the listing and leave room for it.
+
+A name is unique only within the library it came from — four of them ship a "Database" — so an ambiguous name is **refused** with every candidate named. Retry with `--source`, or with `--id` from the listing.
+
+What lands is ordinary elements: move, restyle, label, bind arrows to them, `promote` them. They carry `customData.library` recording where they came from, and nothing else about them is special.
+
+Reach for a stencil when the thing is recognisable furniture — a queue, a CDN, a user. A labelled rectangle is still the right shape for a service box.
+
+`list_library_items` and `insert_library_item` are the MCP equivalents (`itemId` for `--id`).
 
 ## Workflow: Mermaid Conversion
 

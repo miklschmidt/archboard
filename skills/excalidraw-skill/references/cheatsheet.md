@@ -50,6 +50,13 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 | `board save [--as <name>] [--variant v] [--level l] [--force]` | Write it to the vault; **refused (exit 5) if the note changed on disk** — `--force` overwrites anyway |
 | `compare <from> [to]` | Semantic diff between two variants, joined on node identity; opens nothing and leaves the canvas alone. One address finds the other variant itself |
 
+### Stencil Library
+
+| Command | Description |
+|---------|-------------|
+| `library list [--text]` | The palette of ready-made shapes: name, source library, size, element count, and the words drawn inside each — enough to choose one without rendering it |
+| `library insert <name> --x <x> --y <y> [--source <lib>] [--id <itemId>]` | Copy a stencil onto the canvas with its top-left at `--x,--y`, as ordinary elements. A name several libraries use exits 2 with the candidates named |
+
 ### Arrange
 
 | Command | Description |
@@ -139,6 +146,13 @@ Requires `ARCHBOARD_VAULT`. The canvas holds exactly one board at a time.
 | `new_board` | Start an empty board | `board` |
 | `save_board` | Write the open board to the vault; **refused if the note changed on disk** (`force` overwrites anyway) | (none) |
 | `compare_boards` | Semantic diff between two variants, joined on node identity (`customData.archboard.node`). Complete and unsummarised — narrate it yourself. Reads a board from memory when it is open, else from its note; the canvas is untouched. Check `summary.comparable` and `layout.cannotExpress` before making claims | `from` (`to` optional) |
+
+### Stencil Library
+
+| Tool | Description | Required params |
+|------|-------------|-----------------|
+| `list_library_items` | The palette of ready-made shapes, one line each: name, source library, size, element count, and the words drawn inside — enough to pick one without rendering it | (none) |
+| `insert_library_item` | Copy a stencil onto the canvas with its top-left at `x`, `y`, as ordinary elements. A name several libraries use is refused with the candidates named — retry with `source` or `itemId` | `x`, `y`, and `name` or `itemId` |
 
 ### Viewport & Camera
 
