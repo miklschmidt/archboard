@@ -3,6 +3,7 @@ import type { SelectionReport } from './describe.js';
 import { ServerElement } from '../types.js';
 import { EXPRESS_SERVER_URL, ENABLE_CANVAS_SYNC } from './config.js';
 import type { BoardWriteConflict } from './board.js';
+import type { CompareResult } from './compare.js';
 
 // API Response types
 export interface ApiResponse {
@@ -338,6 +339,14 @@ export async function saveBoard(params: {
   force?: boolean;
 }): Promise<BoardResponse> {
   return postBoard('/api/boards/save', params);
+}
+
+// A structured semantic diff between two boards. Read-only on the server: it
+// reads whichever copy of each side is authoritative (memory when the board is
+// open, the vault note otherwise) and never touches the board on screen.
+export async function compareBoardsOnCanvas(params: { from: string; to?: string }): Promise<CompareResult> {
+  const query = new URLSearchParams({ from: params.from, ...(params.to ? { to: params.to } : {}) });
+  return requestJson<CompareResult>(`/api/boards/compare?${query.toString()}`);
 }
 
 export async function sendMermaid(mermaidDiagram: string, config?: Record<string, unknown>): Promise<ApiResponse> {

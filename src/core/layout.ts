@@ -1,0 +1,72 @@
+// Layout primitives shared by the read-back paths.
+//
+// On the Flip, moving a box is a statement about the design (CLAUDE.md), so
+// every surface that reads a board back has to be able to say something about
+// where things sit. The two things worth saying are the same everywhere:
+// **what is near what** (proximity clustering) and **whereabouts on the board**
+// (a coarse region name). Both are relative — they survive the board being
+// panned, zoomed, or tidied wholesale — which is exactly why they are the ones
+// worth reporting and raw coordinates are not.
+//
+// Extracted here because `describe` and `compare` must agree: a cluster the
+// read-back names has to be the same cluster the diff says was split.
+
+export interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface BoundingBox {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
+// How close two shapes have to be before a human would call them "together".
+// Roughly one box-width of whitespace: closer than this and the gap reads as
+// layout, wider and it reads as separation.
+export const CLUSTER_GAP = 160;
+
+// Connected components under "within CLUSTER_GAP of each other", largest first.
+// Union-find rather than a distance matrix so a chain of near-neighbours reads
+// as one cluster, which is how a human sees a row of boxes.
+export function clusterBoxes<T extends Box>(items: T[], gap = CLUSTER_GAP): T[][] {
+  const parent = items.map((_, i) => i);
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i]!)));
+  const near = (a: T, b: T) =>
+    a.x - gap < b.x + b.w && b.x - gap < a.x + a.w &&
+    a.y - gap < b.y + b.h && b.y - gap < a.y + a.h;
+  for (let i = 0; i < items.length; i++) {
+    for (let j = i + 1; j < items.length; j++) {
+      if (near(items[i]!, items[j]!)) parent[find(j)] = find(i);
+    }
+  }
+  const groups = new Map<number, T[]>();
+  items.forEach((item, i) => {
+    const root = find(i);
+    if (!groups.has(root)) groups.set(root, []);
+    groups.get(root)!.push(item);
+  });
+  return [...groups.values()].sort((a, b) => b.length - a.length);
+}
+
+// Whereabouts on the board, as a human would point: thirds of the bounding box
+// in each axis. Relative to the box rather than to the canvas origin, so the
+// name means the same thing on a board that was drawn at (0,0) and one drawn
+// three screens to the right.
+export function regionName(cx: number, cy: number, box: BoundingBox): string {
+  const third = (v: number, lo: number, hi: number) => {
+    if (hi - lo < 1) return 1;
+    const t = (v - lo) / (hi - lo);
+    return t < 0.34 ? 0 : t < 0.67 ? 1 : 2;
+  };
+  const rows = ['top', 'middle', 'bottom'];
+  const cols = ['left', 'centre', 'right'];
+  const r = third(cy, box.minY, box.maxY);
+  const c = third(cx, box.minX, box.maxX);
+  if (r === 1 && c === 1) return 'centre';
+  return `${rows[r]}-${cols[c]}`;
+}

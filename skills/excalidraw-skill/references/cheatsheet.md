@@ -48,6 +48,7 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 | `board new <name> [--variant v] [--level l]` | Empty board; in memory until saved |
 | `board open <name[@variant]> [--reload]` | Load a board onto the canvas (swaps the scene) |
 | `board save [--as <name>] [--variant v] [--level l] [--force]` | Write it to the vault; **refused (exit 5) if the note changed on disk** — `--force` overwrites anyway |
+| `compare <from> [to]` | Semantic diff between two variants, joined on node identity; opens nothing and leaves the canvas alone. One address finds the other variant itself |
 
 ### Arrange
 
@@ -126,6 +127,7 @@ Requires `ARCHBOARD_VAULT`. The canvas holds exactly one board at a time.
 | `open_board` | Load a board onto the canvas | `board` (`name` or `name@variant`) |
 | `new_board` | Start an empty board | `board` |
 | `save_board` | Write the open board to the vault; **refused if the note changed on disk** (`force` overwrites anyway) | (none) |
+| `compare_boards` | Semantic diff between two variants, joined on node identity (`customData.archboard.node`). Complete and unsummarised — narrate it yourself. Reads a board from memory when it is open, else from its note; the canvas is untouched. Check `summary.comparable` and `layout.cannotExpress` before making claims | `from` (`to` optional) |
 
 ### Viewport & Camera
 
@@ -196,6 +198,7 @@ Every element endpoint also takes `?board=<key>`; without it they act on the act
 | `POST` | `/api/boards/open` | `{board, variant?, level?, reload?}` — swaps the canvas |
 | `POST` | `/api/boards/new` | `{board, variant?, level?}` — empty, unsaved |
 | `POST` | `/api/boards/save` | `{name?, variant?, level?, force?}` — writes the note; **409 + `conflict` if it changed on disk** |
+| `GET` | `/api/boards/compare?from=&to=` | Semantic diff between two boards; read-only, never opens or switches a board. `to` optional when the board has exactly one other variant |
 
 ### Snapshots
 

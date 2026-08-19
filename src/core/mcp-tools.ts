@@ -450,6 +450,30 @@ export const tools: Tool[] = [
     }
   },
   {
+    name: 'compare_boards',
+    description:
+      "Structured semantic diff between two variants of a board — 'payments' against 'payments@option-a'. " +
+      'Joined on NODE IDENTITY (the stable id promotion assigns), not on element ids or geometry, so two ' +
+      'variants drawn independently still compare. Returns nodes and edges added, removed, changed (with ' +
+      'the before and after of every field that changed) and unchanged, plus layout as relative structure: ' +
+      'which nodes sit together, what contains what, what is grouped, whereabouts on the board, relative ' +
+      'direction between related nodes, and relative size. Never coordinate deltas — and the result names, ' +
+      'under layout.cannotExpress, the layout changes this model deliberately cannot see, which you must ' +
+      'not claim it can. THE OUTPUT IS DELIBERATELY COMPLETE AND UNSUMMARISED: it is data for you to ' +
+      'narrate, so read all of it and compose the explanation yourself. Neither board is opened and the ' +
+      'canvas is not disturbed; a board already open is read from memory (unsaved work included) and any ' +
+      'other from its note, which each side reports as source. Give one address and the other side is ' +
+      "found among that board's variants.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        from: { type: 'string', description: "The board to diff FROM, usually the architecture that exists: 'payments'." },
+        to: { type: 'string', description: "The board to diff TO, usually the proposal: 'payments@option-a'. Omit to find the other variant automatically." }
+      },
+      required: ['from']
+    }
+  },
+  {
     name: 'describe_scene',
     description: 'Get an AI-readable description of the current canvas: element types, positions, connections, labels, spatial layout, and bounding box. Use this to understand what is on the canvas before making changes.',
     inputSchema: {
