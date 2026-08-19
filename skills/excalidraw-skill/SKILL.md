@@ -274,3 +274,4 @@ Round-trips are safe: text-element block references follow the plugin's own id r
 ## References
 
 - `references/cheatsheet.md`: full CLI reference, the 26 MCP tools, REST API endpoints + payload shapes, and the diagram design guide (colors, sizing).
+- `references/architecture-workflow.md`: **read this when the canvas is being used to build/explore/refactor codebase architecture with a human.** Covers the read-back loop, binding nodes to code via `customData`/`link`, and reading a human's edits as design intent.

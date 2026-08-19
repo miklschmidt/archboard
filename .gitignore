@@ -22,4 +22,9 @@ public/dist/
 
 .DS_Store
 
-docs/
+docs/*
+# --- fork divergences from upstream ---
+# Agent configuration read by the engineering skills is tracked.
+!docs/agents/
+# Committed architecture diagrams are a deliverable, not a build artifact.
+!diagrams/*.excalidraw
