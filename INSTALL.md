@@ -128,6 +128,29 @@ diagram in the repo as well, export one:
 archboard export --out docs/architecture.excalidraw
 ```
 
+## On macOS
+
+Archboard was developed on Linux. Most of it is platform-neutral, and the two
+places that are not already handle darwin: the pidfile goes to
+`~/Library/Application Support`, and so do the logs.
+
+Three things to know.
+
+`bin/canvas` calls `realpath`, which modern macOS has but older versions do
+not. If the symlink route above gives you `realpath: command not found`, either
+`brew install coreutils` or call `dist/bin.js` with node directly.
+
+**Board names are case-sensitive here and your filesystem probably is not.**
+APFS is case-insensitive by default, so `payments` and `Payments` are two
+boards in archboard and one file on disk. You will not lose work over it: a
+save onto a note archboard has not read is refused rather than overwritten
+(ADR 0006), and a note whose frontmatter disagrees with its path says so. But
+you will get a puzzling refusal. Pick one casing per board and stay with it
+until TASK-032 settles this.
+
+That also means a vault is not yet portable between macOS and Linux if any two
+board names differ only in case.
+
 ## Telling an agent which board covers this repo
 
 Nothing connects a repository to its board automatically. An agent in a fresh
