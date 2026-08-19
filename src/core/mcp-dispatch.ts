@@ -15,6 +15,7 @@ import {
   createElementOnCanvas,
   batchCreateElementsOnCanvas,
   getElements,
+  getPanes,
   getSelection,
   searchElements,
   clearCanvas,
@@ -733,6 +734,15 @@ export async function callExcalidrawTool(
 
         return {
           content: [{ type: 'text', text: selection.text }]
+        };
+      }
+      case 'get_panes': {
+        logger.info('Reading pane view state via MCP');
+
+        const report = await getPanes();
+
+        return {
+          content: [{ type: 'text', text: report.text }]
         };
       }
       case 'promote_selection':

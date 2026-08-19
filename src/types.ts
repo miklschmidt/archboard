@@ -343,7 +343,16 @@ export const snapshots = new Map<string, Snapshot>();
 
 // The current selection, or null when nothing is selected. A mutable holder so
 // the server can swap the value while importers keep a single reference.
-export const selectionState: { current: CanvasSelection | null } = { current: null };
+//
+// `current` answers "what does the human mean by *this*" — one canvas, one
+// selection, last writer wins. `byClient` answers a different question: what is
+// picked in *each* pane, which is not the same thing once two panes are on
+// screen, because a pane the human clicked away from still shows its selection.
+// `panes` reads the map; `selection` reads `current`; both stay true.
+export const selectionState: {
+  current: CanvasSelection | null;
+  byClient: Map<string, CanvasSelection>;
+} = { current: null, byClient: new Map() };
 
 // In-memory file storage for image elements (Excalidraw BinaryFiles)
 export interface ExcalidrawFile {

@@ -767,3 +767,60 @@ export function buildSelectionReport(
     text: lines.join('\n'),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Naming a selection in a few words
+// ---------------------------------------------------------------------------
+
+/** What a selection is, in the fewest words that still identify it. */
+export interface SelectionNames {
+  /** Selected ids the board has an element for, after folding. */
+  count: number;
+  nodeCount: number;
+  /** Up to `max` of them, in reading order. */
+  names: string[];
+  /** How many named things `names` left out. */
+  more: number;
+  /** Selected ids with no element on the board. */
+  missing: number;
+}
+
+/**
+ * Name what is selected without describing it.
+ *
+ * `buildSelectionReport` answers "what did the human pick, in enough detail to
+ * act on it"; this answers "what would you call it out loud" — which is all a
+ * per-pane report needs, and is bounded no matter how much is selected. It goes
+ * through the same folding as the full report (bound text into its container, a
+ * multi-element node into one thing) so the two never disagree about how many
+ * things are selected or what they are called.
+ */
+export function nameSelection(
+  ids: string[],
+  allElements: ServerElement[],
+  max = 4
+): SelectionNames {
+  const byId = new Map<string, ServerElement>();
+  for (const el of allElements) byId.set(el.id, el);
+  const folded = foldBoundText(allElements, byId);
+
+  const selected: Item[] = [];
+  let missing = 0;
+  for (const id of ids) {
+    const el = byId.get(id);
+    if (!el) { missing += 1; continue; }
+    selected.push(toItem(el, folded));
+  }
+
+  const items = foldNodes(selected).items;
+  items.sort(readingOrder);
+
+  const named = items.filter(i => i.labelText || i.meta.name);
+  return {
+    count: items.length,
+    nodeCount: items.filter(i => i.isNode).length,
+    names: named.slice(0, max).map(i => i.name),
+    more: Math.max(0, named.length - max),
+    missing
+  };
+}

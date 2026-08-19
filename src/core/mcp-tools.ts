@@ -490,6 +490,14 @@ export const tools: Tool[] = [
     }
   },
   {
+    name: 'get_panes',
+    description: "What the human is currently looking at. One entry per pane on screen, in reading order: where it sits (left, right, top, bottom), which board and variant it holds, how much of that board is in view, and what is selected in it. Call this to resolve spatial deixis — \"the left one\", \"this pane\", \"move that box over there\" — before acting on anything the human pointed at rather than named. Returns VIEW STATE ONLY, never the elements, so it is cheap enough to call every turn; use get_canvas_description for what is actually on a board. No pane at all means no browser is open, which is normal, not an error.",
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    }
+  },
+  {
     name: 'promote_selection',
     description: "Promotion: declare what the human has selected to be an architecture node — give it a kind, a stable node identity, and usually a binding to code, in one act. Call this for \"map this to the payments service\", \"these are the queues\", \"this box is the auth gateway\". Operates on the current selection by default, so no element ids need to be spoken; pass elementIds only when acting on something you just drew. One call makes ONE node out of everything selected (one kind, one name, one binding = one node's worth of meaning); set each=true to make one node per selected shape instead, which only accepts a kind.",
     inputSchema: {
