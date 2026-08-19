@@ -68,10 +68,120 @@ function renameElementId(elements: any[], oldId: string, newId: string): void {
   }
 }
 
-export function wrapSceneAsObsidianMd(scene: Record<string, any>): string {
+// --- frontmatter -------------------------------------------------------
+//
+// A board's identity (board / variant / level) lives in the note's
+// frontmatter, and a vault note may carry any number of other keys — aliases,
+// cssclasses, whatever the human or another plugin put there. Export must not
+// be the thing that deletes them, so when the destination file already exists
+// its frontmatter body is carried across *verbatim*: the raw lines are
+// round-tripped rather than parsed into a map and re-emitted, which keeps key
+// order, comments, quoting and block scalars exactly as the user wrote them
+// and avoids taking on a YAML dependency for a format we only need to read
+// well enough to spot key names.
+
+// Emitted when the destination has no frontmatter of its own. The blank lines
+// are the Obsidian Excalidraw plugin's own shape, kept so a fresh export is
+// byte-identical to what the plugin itself would write.
+const DEFAULT_FRONTMATTER_LINES = ['', 'excalidraw-plugin: parsed', 'tags: [excalidraw]', ''];
+
+// Keys the Obsidian Excalidraw plugin needs to open the note as a drawing.
+// Only added when absent — an existing value is the user's to control.
+const REQUIRED_FRONTMATTER: ReadonlyArray<[key: string, line: string]> = [
+  ['excalidraw-plugin', 'excalidraw-plugin: parsed'],
+  ['tags', 'tags: [excalidraw]']
+];
+
+// Top-level `key:` — YAML allows a lot here, but a plain unquoted or quoted
+// scalar key is the entire vocabulary Obsidian frontmatter uses in practice.
+const FRONTMATTER_KEY_RE = /^(?:(["'])(.*?)\1|([^:#\s][^:]*?))\s*:(?:\s|$)/;
+
+export type FrontmatterScan =
+  | { kind: 'none' }
+  | { kind: 'ok'; lines: string[] }
+  | { kind: 'malformed'; reason: string };
+
+function frontmatterKey(line: string): string | null {
+  const m = FRONTMATTER_KEY_RE.exec(line);
+  if (!m) return null;
+  return (m[2] ?? m[3] ?? '').trim().toLowerCase();
+}
+
+// Reads the frontmatter block of an existing note. Deliberately conservative:
+// anything it cannot account for is reported as malformed rather than guessed
+// at, because the caller's fallback for "malformed" is to refuse to write
+// (never destroy content) while its fallback for "none" is to overwrite.
+export function scanFrontmatter(content: string): FrontmatterScan {
+  const text = content.replace(/^﻿/, '');
+  if (text.trim() === '') return { kind: 'none' };
+  // Obsidian only honours frontmatter that starts on the very first line.
+  if (!/^---[ \t]*(\r?\n|$)/.test(text)) return { kind: 'none' };
+
+  const lines = text.split(/\r?\n/);
+  let end = -1;
+  for (let i = 1; i < lines.length; i++) {
+    if (/^(---|\.\.\.)[ \t]*$/.test(lines[i]!)) {
+      end = i;
+      break;
+    }
+  }
+  if (end === -1) {
+    return { kind: 'malformed', reason: 'frontmatter block is never closed by a "---" line' };
+  }
+
+  const body = lines.slice(1, end);
+  for (const line of body) {
+    if (line.trim() === '') continue;
+    if (/^\s/.test(line)) continue; // continuation / nested block / list item
+    if (line.startsWith('#')) continue; // comment
+    if (frontmatterKey(line) === null) {
+      return { kind: 'malformed', reason: `frontmatter line is not a "key: value" pair: ${JSON.stringify(line)}` };
+    }
+  }
+  return { kind: 'ok', lines: body };
+}
+
+// The frontmatter body to write, given the destination's current content.
+// Existing lines survive untouched; required keys are appended after the last
+// non-blank line so the block keeps whatever trailing blank line it had.
+function frontmatterLinesFor(existing: string | undefined | null): string[] {
+  if (existing === undefined || existing === null) return [...DEFAULT_FRONTMATTER_LINES];
+  const scan = scanFrontmatter(existing);
+  if (scan.kind === 'malformed') {
+    throw new Error(
+      `Refusing to overwrite the destination: ${scan.reason}. ` +
+      'Fix or remove its frontmatter, then export again.'
+    );
+  }
+  if (scan.kind === 'none') return [...DEFAULT_FRONTMATTER_LINES];
+
+  const lines = [...scan.lines];
+  const present = new Set(
+    lines.filter((l) => !/^\s/.test(l)).map(frontmatterKey).filter((k): k is string => k !== null)
+  );
+  const missing = REQUIRED_FRONTMATTER.filter(([key]) => !present.has(key)).map(([, line]) => line);
+  if (missing.length === 0) return lines;
+
+  let insertAt = lines.length;
+  while (insertAt > 0 && lines[insertAt - 1]!.trim() === '') insertAt--;
+  lines.splice(insertAt, 0, ...missing);
+  return lines;
+}
+
+function renderFrontmatter(lines: string[]): string {
+  return `---\n${lines.join('\n')}\n---\n`;
+}
+
+// `existing` is the current content of the destination file, when there is
+// one; pass nothing to get the plugin's default frontmatter. Throws when the
+// destination's frontmatter cannot be read safely — callers must treat that as
+// "do not write" rather than falling back to a fresh header.
+export function wrapSceneAsObsidianMd(scene: Record<string, any>, existing?: string | null): string {
   if (!Array.isArray(scene.elements)) {
     throw new Error('Not an Excalidraw scene: missing elements array');
   }
+  // Resolved first so an unreadable destination fails before any work.
+  const frontmatter = renderFrontmatter(frontmatterLinesFor(existing));
   const wrapped = structuredClone(scene);
   wrapped.type = 'excalidraw';
   wrapped.version = 2;
@@ -91,13 +201,7 @@ export function wrapSceneAsObsidianMd(scene: Record<string, any>): string {
   }
 
   const textSection = entries.length ? entries.join('\n\n') + '\n' : '';
-  return `---
-
-excalidraw-plugin: parsed
-tags: [excalidraw]
-
----
-==⚠  Switch to EXCALIDRAW VIEW in the MORE OPTIONS menu of this document. ⚠==
+  return `${frontmatter}==⚠  Switch to EXCALIDRAW VIEW in the MORE OPTIONS menu of this document. ⚠==
 
 
 # Excalidraw Data

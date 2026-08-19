@@ -11,7 +11,7 @@ import {
   sendMermaid
 } from '../../core/canvas-client.js';
 import { buildSceneFile, importScene } from '../../core/scene-io.js';
-import { wrapSceneAsObsidianMd } from '../../core/obsidian-md.js';
+import { wrapSceneAsObsidianMd, isObsidianExcalidrawMd } from '../../core/obsidian-md.js';
 import { describeScene } from '../../core/describe.js';
 import { exportToExcalidrawUrl } from '../../core/share-url.js';
 import { EXPRESS_SERVER_URL } from '../../core/config.js';
@@ -64,10 +64,22 @@ export async function screenshot(argv: string[]): Promise<void> {
   printJson({ success: true, file: resolved, format });
 }
 
+// The current content of an export destination, or undefined when there is
+// nothing there to preserve. Anything unreadable is treated as absent — the
+// write itself will surface the real problem.
+function readExistingTarget(resolved: string): string | undefined {
+  try {
+    return fs.readFileSync(resolved, 'utf-8');
+  } catch {
+    return undefined;
+  }
+}
+
 export async function exportCmd(argv: string[]): Promise<void> {
   const { flags } = parseArgs(argv, {
     out: { takesValue: true },
-    format: { takesValue: true }
+    format: { takesValue: true },
+    force: { takesValue: false }
   });
 
   const outPath = typeof flags.out === 'string' ? flags.out : undefined;
@@ -79,14 +91,25 @@ export async function exportCmd(argv: string[]): Promise<void> {
     throw new CliUsageError('--format must be json or obsidian');
   }
 
+  const resolved = outPath ? path.resolve(outPath) : undefined;
+  // An Obsidian note carries state the scene does not — board identity and
+  // any other frontmatter the vault put there — so the destination is read
+  // before it is overwritten, and its frontmatter is carried across.
+  const existing = resolved && format === 'obsidian' ? readExistingTarget(resolved) : undefined;
+  if (existing !== undefined && existing.trim() !== '' && !isObsidianExcalidrawMd(existing) && !flags.force) {
+    throw new CliUsageError(
+      `${resolved} exists and is not an Obsidian .excalidraw.md file; exporting would overwrite it. ` +
+      'Pass --force to overwrite it anyway (its frontmatter is still preserved).'
+    );
+  }
+
   await ensureCanvasRunning();
   const { scene, elementCount } = await buildSceneFile();
   const output = format === 'obsidian'
-    ? wrapSceneAsObsidianMd(scene)
+    ? wrapSceneAsObsidianMd(scene, existing)
     : JSON.stringify(scene, null, 2);
 
-  if (outPath) {
-    const resolved = path.resolve(outPath);
+  if (resolved) {
     fs.writeFileSync(resolved, output, 'utf-8');
     printJson({ success: true, file: resolved, elements: elementCount, format });
     return;
