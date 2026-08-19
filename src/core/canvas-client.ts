@@ -365,6 +365,55 @@ export async function sendMermaid(mermaidDiagram: string, config?: Record<string
   });
 }
 
+// ---- Change feed -------------------------------------------------------
+//
+// Semantic changes since a cursor. Read-only, and cheap enough to poll: the
+// server holds the events, so this never re-transmits the board.
+export interface ChangeFeedResponse {
+  success: boolean;
+  board: string;
+  feedId?: string;
+  cursor: number;
+  since?: string;
+  events: Array<Record<string, any>>;
+  coalesced?: Record<string, any> | null;
+  truncated?: boolean;
+  message?: string;
+  feed?: Record<string, any>;
+  injection?: Record<string, any>;
+}
+
+export async function getChanges(params: {
+  since?: number;
+  board?: string;
+  coalesce?: boolean;
+  detail?: boolean;
+}): Promise<ChangeFeedResponse> {
+  const query = new URLSearchParams();
+  query.set('since', String(params.since ?? 0));
+  if (params.board) query.set('board', params.board);
+  if (params.coalesce) query.set('coalesce', '1');
+  if (params.detail) query.set('detail', '1');
+  return requestJson<ChangeFeedResponse>(`/api/changes?${query.toString()}`);
+}
+
+export interface InjectionReport {
+  success: boolean;
+  [key: string]: any;
+}
+
+export async function getInjection(): Promise<InjectionReport> {
+  return requestJson<InjectionReport>('/api/injection');
+}
+
+export async function postInjectionTest(params: { text?: string; loud?: boolean }): Promise<InjectionReport> {
+  return requestJson<InjectionReport>('/api/injection/test', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params)
+  });
+}
+
 // ---- Strict CRUD variants (throw on failure) ----
 // syncToCanvas deliberately swallows errors so MCP tools degrade gracefully;
 // the CLI wants hard failures with real error messages instead.
