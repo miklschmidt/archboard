@@ -39,6 +39,7 @@ Results are JSON on stdout — except `describe` (plain text) and raw-content ou
 | Scene files | `export [--out scene.excalidraw]`, `import [scene.excalidraw|-] [--replace]` — a `.excalidraw.md` out path writes Obsidian's format (see File I/O) |
 | Mermaid → canvas | `mermaid [diagram.mmd|-]` (or stdin) |
 | Boards (named, persisted) | `board list\|current\|new <name>\|open <name[@variant]>\|save` — see Boards |
+| Diff two variants | `compare <from> [to]` — semantic diff keyed on node identity; see Comparing Variants |
 | Snapshots | `snapshot save\|list\|restore <name>` |
 | Share link | `share` (encrypted upload → excalidraw.com URL) |
 | Wipe canvas | `clear --yes` |
@@ -326,6 +327,23 @@ Never pass `--force` / `force: true` unless the human has said to overwrite.
 Nothing is locked, and the check reads the file, not another app's memory: a board open in Obsidian can still write its unsaved copy back afterwards. Keep a board open in one editor at a time.
 
 Before any board is opened the canvas holds a `scratch` board with no home in the vault; `board save --as <name>` gives it one.
+
+## Workflow: Comparing Variants
+
+```bash
+archboard compare payments payments@option-a   # what the proposal changes
+archboard compare payments                     # finds the other variant itself
+```
+
+The diff is joined on **node identity** — `customData.archboard.node`, the id promotion assigns — not on element ids or geometry. Two variants are separate notes drawn independently, so nothing else about them lines up. Nodes that were never promoted have no id and therefore cannot be compared: they come back in a per-side inventory instead, and `summary.comparable` is false when the join found nothing at all. That is the fix to reach for when a diff looks empty but the boards obviously differ — promote both sides.
+
+Neither board is opened and the canvas is not disturbed. A board already open is read from memory, unsaved work included; any other is read straight from its note. Each side says which happened under `source`.
+
+**The output is deliberately complete and unsummarised.** Nodes and edges added, removed, changed (with the before and after of every field) and unchanged, plus the whole layout model. It is data for you to narrate — read it and compose the explanation yourself; do not ask for a shorter version.
+
+**Layout is reported as relative structure, never coordinates**: which nodes sit together (`cluster`), what shape contains them (`container`), what is explicitly grouped (`group`), whereabouts on the board (`region`), the coarse direction between related nodes (`relation`), and size against the board's median node (`prominence`). Every one of those survives the board being panned, zoomed or tidied — which is the point, because a 12px nudge means nothing and a rearranged subsystem means a lot.
+
+Read `layout.cannotExpress` in the result before saying anything about layout. It lists what this model is blind to by design — absolute position, tidiness, edge routing, movement below the thresholds — and those are claims you must not make on its behalf.
 
 ## Workflow: File I/O
 

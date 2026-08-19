@@ -246,22 +246,29 @@ Ordered by dependency, not ambition. Backlog.md is authoritative —
   item.
 - **Obsidian export preserves custom frontmatter** (TASK-002), so board
   identity can live there. Prerequisite for everything multi-board.
+- **Selection published to the server** (TASK-004), so the agent can act on
+  what the human has picked rather than on ids nobody said out loud.
+- **Promotion** (TASK-005) — declare selected elements a node and bind it in
+  one gesture. The most touchscreen-native interaction in the product, and
+  where the node ids `compare` joins on come from.
+- **Multi-document** (TASK-003) — boards as individual vault files with
+  identity in frontmatter, reaching the element store and the WebSocket
+  protocol, not just the file layer. Includes the two-writer behaviour against
+  Obsidian (ADR 0006).
+- **`compare`** (TASK-007) — structured semantic diff between two variants,
+  joined on node identity. Structured output only; prose is the agent's job.
+  Written for **sufficiency, not narratability**: the consumer is a full agent
+  thread that narrates the result itself and can ask a follow-up question, so
+  nothing is summarised and nothing is truncated. Layout is carried as relative
+  structure — cluster membership, containment, grouping, region, coarse
+  direction, relative size — because a rearrangement is a statement about the
+  design but a coordinate delta is noise; the result names what that model
+  cannot express so the narrator does not overclaim.
 
 **Next**
 
-- **Selection published to the server** (TASK-004). Today it never leaves the
-  browser, so the agent cannot act on what you have picked.
-- **Promotion** (TASK-005) — declare selected elements a node and bind it, in
-  one gesture. The most touchscreen-native interaction in the product.
-- **Multi-document** (TASK-003) — boards as individual vault files with
-  identity in frontmatter. The element store is currently keyed by element id
-  with no board dimension, so this reaches the store and the WebSocket
-  protocol, not just the file layer. Includes defining the two-writer
-  behaviour against Obsidian.
 - **`panes`** (TASK-006) — what board and variant sit where, plus selection.
   View state only. Exists to resolve spatial deixis for voice.
-- **`compare`** (TASK-007) — structured semantic diff between two variants,
-  keyed on node identity. Structured output only; prose is the agent's job.
 
 **Later**
 
