@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Drives this fork's own build (dist/). This box has node+bun but no npm/npx.
+exec node "$(dirname "$(realpath "$0")")/../dist/bin.js" "$@"
