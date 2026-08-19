@@ -8,6 +8,8 @@ import { promote, demote } from './commands/promote.js';
 import { snapshot } from './commands/snapshot.js';
 import { board } from './commands/board.js';
 import { compare } from './commands/compare.js';
+import { changes } from './commands/changes.js';
+import { inject } from './commands/inject.js';
 import { arrange } from './commands/arrange.js';
 import { installSkill } from './commands/install-skill.js';
 
@@ -86,6 +88,45 @@ const COMMANDS: Record<string, Command> = {
       '  "current" variant is always the from side. Neither board is opened: a board already open is',
       '  read from memory (unsaved work included), any other straight from its note, and the board on',
       '  the canvas is left exactly as it was.'
+    ].join('\n')
+  },
+  changes: {
+    handler: changes,
+    summary: 'Semantic changes on the board since a cursor — what it became, not which pixels moved',
+    usage: [
+      'changes [--since <cursor>] [--board <key>] [--coalesce] [--detail] [--text]',
+      '',
+      '  Nodes and edges added, removed, changed, promoted, rerouted; layout as relative structure',
+      '  (who sits with whom, what contains what, whereabouts, which side of what) — the same',
+      '  vocabulary `compare` uses, on one board across time instead of two boards side by side.',
+      '',
+      '  A drag is ONE event, reported when the board settles, or none at all: element deltas never',
+      '  surface, and a change that is only colour or a nudge too small to mean anything is not an',
+      '  event. Nothing is emitted for it and the baseline does not move, so small movements still',
+      '  add up until they cross a threshold.',
+      '',
+      '  Cursor-based, for a caller that runs once per turn and remembers where it got to. Pass the',
+      '  cursor from the last response as --since; --coalesce answers with one net diff from there',
+      '  to now instead of a replay of every event in between.'
+    ].join('\n')
+  },
+  inject: {
+    handler: inject,
+    summary: 'Whether the canvas can push board changes into a live Codex thread, and a probe to prove it',
+    usage: [
+      'inject status | inject test [--note "..."] [--loud]',
+      '',
+      '  Board changes reach a running Codex thread through the app-server control socket, quietly:',
+      '  `thread/inject_items` appends to the thread\'s history without starting a turn, so the agent',
+      '  sees the change next time it speaks and nothing is interrupted.',
+      '',
+      '  OFF unless the canvas server was started with ARCHBOARD_INJECT=1, and off regardless when the',
+      '  canvas is bound to anything but loopback — anything that can reach the canvas could otherwise',
+      '  drive the coding agent (ADR 0005). Both are decided at server start; there is nothing to turn',
+      '  on from here. `status` says which of those applies, and which thread would be told.',
+      '',
+      '  `test` injects a message that says it is a test, for checking the wiring without touching a',
+      '  board. --loud sends it through `turn/steer` instead, for that one probe.'
     ].join('\n')
   },
   describe: { handler: scene.describe, summary: 'AI-readable scene description (plain text)', usage: 'describe' },

@@ -151,11 +151,30 @@ White on a light canvas, near-black on a dark one: the board looks as it did,
 it is only now tappable. `describe` stays quiet about the default fill and
 still prints a colour someone chose.
 
+**The board reports what it became, not what moved.** Every mutation feeds a
+settle window (default 1.2 s); when the board goes still, the state is diffed
+against the last state anybody was told about, in `compare`'s vocabulary —
+nodes and edges added, removed, promoted, rerouted; clusters, containment,
+groups, whereabouts, relative direction. One drag is one event, or none: a
+nudge that changes nothing nameable, or only a colour, emits nothing *and does
+not move the baseline*, so small movements still add up until they mean
+something. Read it with `changes [--since <cursor>] [--coalesce] [--text]`;
+`--coalesce` gives one net diff since a cursor, which is the shape a
+per-turn hook wants. Cursors are per canvas process — watch `feedId`.
+
+**The canvas can push those events into a live Codex thread, but only when
+asked.** `ARCHBOARD_INJECT=1` at server start arms it; a non-loopback bind
+refuses regardless (ADR 0005 — anything that can reach the canvas could
+otherwise drive the agent). Quiet by default: `thread/inject_items` appends to
+thread history without starting a turn. `ARCHBOARD_INJECT_LOUD=1` allows
+`turn/steer`, which interrupts and makes the agent speak — an experiment, off
+by default. The agent's own drawing is never injected back at it. See
+`inject status` and TESTING.md §6.
+
 ## Known gaps (our work)
 
 Tracked in Backlog.md; `backlog task list --plain` is authoritative.
 
-- **No change-event feed.** Agent must poll; wrong shape for full-duplex voice.
 - `export --out` does not `mkdir -p`.
 - **The canvas holds one board for every pane.** The shell can mount a second
   pane, and `panes` reports each pane's own board — but the server has a single

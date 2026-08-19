@@ -63,6 +63,10 @@ import {
 import { buildScene } from './core/scene-io.js';
 import { CURRENT_VARIANT } from './core/board.js';
 import { CompareSideInput, compareBoards } from './core/compare.js';
+import { ChangeOrigin, changeFeed } from './core/change-feed.js';
+import type { ChangeEvent } from './core/change-feed.js';
+import { narrateChange } from './core/changes.js';
+import { injectTest, injectionStatus, startInjection } from './core/injection.js';
 
 // Load environment variables
 dotenv.config();
@@ -117,6 +121,17 @@ function broadcast(message: WebSocketMessage, board: string): void {
       clients.delete(client);
     }
   });
+}
+
+// Tell the change feed a board moved, without telling it what moved.
+//
+// Every mutating route calls this after it has succeeded. The feed looks at
+// settled board states, never at the delta, so all it needs is which board and
+// who did it: `human` for the browser's change reports, `agent` for the API
+// routes an agent or the CLI drives. That distinction is load-bearing
+// downstream — narrating the agent's own drawing back at it is noise.
+function noteChange(key: string, board: BoardState, origin: ChangeOrigin): void {
+  changeFeed.record(key, board.identity, () => Array.from(board.elements.values()), origin);
 }
 
 function normalizeLineBreakMarkup(text: string): string {
@@ -382,6 +397,7 @@ app.post('/api/elements', (req: Request, res: Response) => {
       element: element
     };
     broadcast(message, boardKeyForRequest);
+    noteChange(boardKeyForRequest, board, 'agent');
 
     res.json({
       success: true,
@@ -462,6 +478,7 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
       element: updatedElement
     };
     broadcast(message, boardKeyForRequest);
+    noteChange(boardKeyForRequest, board, 'agent');
 
     // Moving/resizing a shape must drag its bound arrows along
     const geometryChanged = ['x', 'y', 'width', 'height']
@@ -504,6 +521,8 @@ app.delete('/api/elements/clear', (req: Request, res: Response) => {
       type: 'canvas_cleared',
       timestamp: new Date().toISOString()
     }, boardKeyForRequest);
+
+    noteChange(boardKeyForRequest, board, 'agent');
 
     logger.info(`Canvas cleared: ${count} elements removed from board "${boardKeyForRequest}"`);
 
@@ -551,6 +570,7 @@ app.delete('/api/elements/:id', (req: Request, res: Response) => {
       elementId: id!
     };
     broadcast(message, boardKeyForRequest);
+    noteChange(boardKeyForRequest, board, 'agent');
 
     res.json({
       success: true,
@@ -831,6 +851,7 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
       elements: createdElements
     };
     broadcast(message, boardKeyForRequest);
+    noteChange(boardKeyForRequest, board, 'agent');
 
     res.json({
       success: true,
@@ -871,6 +892,7 @@ app.post('/api/elements/from-mermaid', (req: Request, res: Response) => {
       config: config || {},
       timestamp: new Date().toISOString()
     }, activeBoardKey());
+    changeFeed.expectAgentEcho(activeBoardKey());
 
     // Return the diagram for frontend processing
     res.json({
@@ -969,6 +991,9 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
         timestamp: now
       } as ElementsChangedMessage, boardKeyForRequest);
 
+      // The one path a human's own hands come in on.
+      noteChange(boardKeyForRequest, board, 'human');
+
       logger.info(
         `Change report from ${clientId ?? 'an unidentified client'} on "${boardKeyForRequest}": ` +
         `+${created.length} ~${updated.length} -${deleted.length} (${elements.size} on the board)`
@@ -990,6 +1015,129 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
       success: false,
       error: (error as Error).message
     });
+  }
+});
+
+// ─── Change feed ──────────────────────────────────────────────
+//
+// Semantic changes, not element deltas: what the board *became*, said in the
+// same vocabulary `compare` uses. See core/change-feed.ts for why an event
+// exists at all — briefly, a drag is one event, at rest, or none at all.
+//
+// Two shapes, because there are two consumers:
+//   ?since=N            the events after cursor N, for something watching live
+//   ?since=N&coalesce=1 one diff from cursor N to now, for a per-turn hook that
+//                       wants the net difference rather than a replay to merge
+//
+// `detail` (the whole compare result) is off unless asked: it is complete and
+// therefore large, and the narration in `text` is what most callers use.
+app.get('/api/changes', (req: Request, res: Response) => {
+  try {
+    const since = Number(req.query.since ?? 0);
+    if (!Number.isFinite(since) || since < 0) {
+      return res.status(400).json({ success: false, error: 'since must be a cursor from a previous response' });
+    }
+    const board = typeof req.query.board === 'string' && req.query.board ? req.query.board : activeBoardKey();
+    const wantDetail = req.query.detail === '1' || req.query.detail === 'true';
+    const coalesce = req.query.coalesce === '1' || req.query.coalesce === 'true';
+    // A caller reading the feed wants the board as it is, not as it was 1.2s
+    // ago, so an open settle window is closed before answering.
+    if (req.query.settle !== '0') changeFeed.settle(board);
+
+    // A cursor ahead of the feed's own is not "nothing has happened": it came
+    // from a previous canvas process, since the board lives in memory and the
+    // count restarts with it. Saying "nothing changed" to that would be the
+    // most damaging wrong answer available.
+    if (since > changeFeed.cursor) {
+      return res.json({
+        success: true,
+        board,
+        feedId: changeFeed.status().feedId,
+        cursor: changeFeed.cursor,
+        events: [],
+        ...(coalesce ? { coalesced: null } : {}),
+        truncated: true,
+        message:
+          `Cursor ${since} is ahead of this feed (now at ${changeFeed.cursor}), so it was issued by a previous ` +
+          'canvas process — the board is held in memory and the count restarts with the server. Treat this as ' +
+          'a fresh start: take the cursor in this response, and read the board with `describe`. Watch `feedId` ' +
+          'to notice the next restart.'
+      });
+    }
+
+
+    const strip = (event: ChangeEvent) =>
+      (wantDetail ? event : { ...event, change: { ...event.change, detail: undefined } });
+
+    if (coalesce) {
+      const net = changeFeed.coalesce(since, board);
+      if (!net) {
+        return res.json({
+          success: true,
+          board,
+          cursor: changeFeed.cursor,
+          coalesced: null,
+          truncated: true,
+          message:
+            `Cursor ${since} is older than the change feed's memory of board "${board}", so the net diff ` +
+            'since then cannot be computed. Take the cursor in this response as a fresh start, and read ' +
+            'the board itself with `describe` if you need to know where things stand.'
+        });
+      }
+      return res.json({
+        success: true,
+        board,
+        feedId: changeFeed.status().feedId,
+        cursor: net.cursor,
+        since: net.since,
+        events: net.events.map(strip),
+        coalesced: {
+          significance: net.change.significance,
+          headline: net.change.headline,
+          text: narrateChange(net.change),
+          counts: net.change.counts,
+          nodes: net.change.nodes,
+          edges: net.change.edges,
+          layout: net.change.layout,
+          warnings: net.change.warnings,
+          ...(wantDetail ? { detail: net.change.detail } : {})
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      board,
+      feedId: changeFeed.status().feedId,
+      cursor: changeFeed.cursor,
+      events: changeFeed.since(since, board).map(strip),
+      feed: changeFeed.status(),
+      injection: injectionStatus()
+    });
+  } catch (error) {
+    logger.error('Error reading the change feed:', error);
+    res.status(400).json({ success: false, error: (error as Error).message });
+  }
+});
+
+// ─── Injection (push to a live Codex thread) ──────────────────
+//
+// Read-only status, plus a probe. Arming is NOT a request the canvas can
+// serve: it happens at startup, from ARCHBOARD_INJECT and the bound address,
+// because an HTTP endpoint that could switch it on would be exactly the hole
+// ADR 0005 is about.
+app.get('/api/injection', (_req: Request, res: Response) => {
+  res.json({ success: true, ...injectionStatus() });
+});
+
+app.post('/api/injection/test', async (req: Request, res: Response) => {
+  try {
+    const note = typeof req.body?.note === 'string' ? req.body.note : undefined;
+    const loud = req.body?.loud === true ? true : req.body?.loud === false ? false : undefined;
+    const result = await injectTest(note, loud);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    res.status(409).json({ success: false, error: (error as Error).message, status: injectionStatus() });
   }
 });
 
@@ -1571,6 +1719,10 @@ function identityResponse(key: string, board: BoardState) {
 // render the new one.
 function switchCanvasTo(key: string): BoardState {
   const board = setActiveBoard(key);
+  // A board arriving wholesale is not a change anybody made, so the feed takes
+  // the new state as its baseline rather than reporting several hundred
+  // additions and burying the first real edit under them.
+  changeFeed.reset(key, board.identity, () => Array.from(board.elements.values()));
   // The selection belongs to the board that was on screen; it means nothing on
   // the new one. Every pane is about to be shown the new board, so no pane's
   // selection survives either.
@@ -2098,6 +2250,11 @@ async function startServer(): Promise<void> {
     // server that never came up; lets `archboard stop` find us.
     writePidFile(PORT, process.pid);
     ownsPidFile = true;
+
+    // Injection is armed here, with the address actually bound, and only here:
+    // whether the canvas may drive a coding agent depends on where it can be
+    // reached from, which is not known before this point (ADR 0005).
+    startInjection(HOST);
   });
 
   const shutdown = (signal: NodeJS.Signals): void => {

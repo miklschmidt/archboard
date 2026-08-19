@@ -19,7 +19,7 @@ solved there. What it does not give us:
 | `describe` ignores `customData`/`link` | The agent's primary read path is blind to the semantic model |
 | No persistence | In-memory; "current vs proposed" work cannot survive a restart |
 | No multi-document | One global canvas; no variants, no per-project boards |
-| No change-event feed | Nothing to react to when the human draws |
+| No change-event feed | Nothing to react to when the human draws — **since TASK-018/019 there is one, and it can push to a live thread** |
 
 **We are not staying mergeable.** Archboard diverges for our use case without
 regard for whether upstream would accept the change. Restructure freely: rename
