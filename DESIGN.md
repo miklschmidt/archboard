@@ -264,11 +264,16 @@ Ordered by dependency, not ambition. Backlog.md is authoritative —
   direction, relative size — because a rearrangement is a statement about the
   design but a coordinate delta is noise; the result names what that model
   cannot express so the narrator does not overclaim.
-
-**Next**
-
-- **`panes`** (TASK-006) — what board and variant sit where, plus selection.
-  View state only. Exists to resolve spatial deixis for voice.
+- **`panes`** (TASK-006) — what the human is currently looking at: per pane,
+  where it sits on the glass, which board and variant it holds, how much of that
+  board is in view, and what is picked in it. **View state only**, and that line
+  is load-bearing: it exists to resolve spatial deixis for a voice model that
+  cannot see the screen, which means it has to be affordable on every turn, which
+  it stops being the moment somebody inlines the elements to save a round trip.
+  `describe` and `compare` are where contents live. Reporting only — pointing
+  panes at different boards is TASK-021, and the shape does not change when it
+  lands, because each pane already reports the board it adopted rather than the
+  server's active one.
 
 **Later**
 

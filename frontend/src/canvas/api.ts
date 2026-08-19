@@ -65,6 +65,32 @@ export function reportChanges(
   })
 }
 
+/**
+ * Tell the server what this pane currently has in front of the human: which
+ * board, where the pane sits on the glass, and what of the board is in view.
+ *
+ * Pushed rather than polled, for the same reason selection is: an agent asking
+ * "what am I looking at" must get an answer off server state, not by waking a
+ * browser. Registration lives exactly as long as this pane's socket, so an
+ * unsplit or a closed tab retires it without anyone saying so.
+ */
+export function reportPane(pane: PaneReport): Promise<{ success: true; registered: boolean; paneCount: number }> {
+  return post('/api/panes', pane)
+}
+
+export interface PaneReport {
+  clientId: string
+  paneId: string
+  board: string
+  primary: boolean
+  focused: boolean
+  elementCount: number
+  /** Where the pane is in the page, in CSS pixels. */
+  rect: { x: number; y: number; width: number; height: number }
+  /** Which part of the board is on screen, in scene coordinates. */
+  viewport: { x: number; y: number; width: number; height: number; zoom: number }
+}
+
 /** The one call that empties a board. Confirmed in the shell, never here. */
 export function clearBoard(board: string | null) {
   return json<{ count: number }>(`/api/elements/clear${boardQuery(board)}`, { method: 'DELETE' })

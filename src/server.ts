@@ -27,6 +27,7 @@ import {
   normalizeFontFamily
 } from './types.js';
 import { buildSelectionReport } from './core/describe.js';
+import { buildPanesReport, PaneRegistration } from './core/panes.js';
 import { z } from 'zod';
 import WebSocket from 'ws';
 import { isMainModule } from './core/entry.js';
@@ -93,6 +94,12 @@ const clients = new Set<WebSocket>();
 // same id is sent with every selection post, which is what lets a disconnect
 // retire that client's selection.
 const clientIds = new Map<WebSocket, string>();
+
+// What is on screen right now, one entry per pane, keyed by the same client id.
+// A pane is in here only while its socket is open: closing a tab or unsplitting
+// takes the registration with it, so `panes` can never report a pane that is no
+// longer in front of anybody. Empty is the normal headless state.
+const panes = new Map<string, PaneRegistration>();
 
 // Broadcast to all connected clients.
 //
@@ -166,6 +173,12 @@ wss.on('connection', (ws: WebSocket, req) => {
     clientIds.delete(ws);
     // A closed or reloaded tab must not leave a selection standing: whatever it
     // had picked is no longer on anyone's screen.
+    if (closingId) {
+      selectionState.byClient.delete(closingId);
+      // The pane itself is gone for the same reason — a closed tab, or a pane
+      // unsplit out of the shell. Reporting it would be reporting a ghost.
+      panes.delete(closingId);
+    }
     if (closingId && selectionState.current?.clientId === closingId) {
       selectionState.current = null;
       broadcastSelection();
@@ -480,7 +493,8 @@ app.delete('/api/elements/clear', (req: Request, res: Response) => {
     const count = board.elements.size;
     board.elements.clear();
 
-    // Nothing is on the board, so nothing can be selected.
+    // Nothing is on the board, so nothing can be selected — in any pane.
+    selectionState.byClient.clear();
     if (selectionState.current) {
       selectionState.current = null;
       broadcastSelection();
@@ -1011,9 +1025,15 @@ app.post('/api/selection', (req: Request, res: Response) => {
   }
 
   const { elementIds, clientId } = parsed.data;
+  const at = new Date().toISOString();
   selectionState.current = elementIds.length === 0
     ? null
-    : { elementIds, clientId, at: new Date().toISOString() };
+    : { elementIds, clientId, at };
+  // Per pane, an empty selection is a fact about that pane rather than the
+  // absence of one: the human deselected *there* while another pane may still
+  // hold something.
+  if (elementIds.length === 0) selectionState.byClient.delete(clientId);
+  else selectionState.byClient.set(clientId, { elementIds, clientId, at });
 
   logger.info(`Selection from ${clientId}: ${elementIds.length} element(s)`);
   broadcastSelection();
@@ -1033,6 +1053,67 @@ app.get('/api/selection', (_req: Request, res: Response) => {
     clients.size
   );
   res.json({ success: true, board: activeBoardKey(), ...report });
+});
+
+// ─── Panes ────────────────────────────────────────────────────
+//
+// What the human is currently looking at: which pane holds which board, where
+// it sits on the glass, how much of the board is on screen, and what is picked
+// in it. View state, never contents — see core/panes.ts for why that line is
+// worth holding.
+//
+// Like selection, this is pushed by the browser and read back off the server,
+// so reading it costs a map lookup and never a browser round-trip.
+
+const RectSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  width: z.number(),
+  height: z.number()
+});
+
+const PaneSchema = z.object({
+  clientId: z.string().min(1),
+  paneId: z.string().min(1),
+  // The board this pane adopted. Today it is always the active one; reading the
+  // pane's own answer is what keeps this report honest when it stops being.
+  board: z.string().min(1),
+  primary: z.boolean(),
+  focused: z.boolean(),
+  elementCount: z.number().int().nonnegative(),
+  rect: RectSchema,
+  viewport: RectSchema.extend({ zoom: z.number().positive() })
+});
+
+app.post('/api/panes', (req: Request, res: Response) => {
+  const parsed = PaneSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ success: false, error: parsed.error.errors[0]?.message ?? 'Invalid pane' });
+  }
+  const registration: PaneRegistration = { ...parsed.data, at: new Date().toISOString() };
+  // A pane exists exactly as long as its socket. A report arriving without one
+  // is a pane on its way out — React tears the canvas down in its own order, so
+  // a last change can be reported after the close — and registering it would
+  // resurrect the ghost the close just retired.
+  const live = Array.from(clientIds.values()).includes(registration.clientId);
+  if (!live) {
+    return res.json({ success: true, registered: false, paneCount: panes.size });
+  }
+  panes.set(registration.clientId, registration);
+  res.json({ success: true, registered: true, paneCount: panes.size });
+});
+
+app.get('/api/panes', (_req: Request, res: Response) => {
+  const report = buildPanesReport(Array.from(panes.values()), {
+    identity: (key) => boards.get(key)?.identity ?? null,
+    elements: (key) => {
+      const board = boards.get(key);
+      return board ? Array.from(board.elements.values()) : [];
+    },
+    selection: (clientId) => selectionState.byClient.get(clientId) ?? null,
+    canvasUrl: `http://${formatHostForUrl(HOST)}:${PORT}`
+  });
+  res.json({ success: true, activeBoard: activeBoardKey(), ...report });
 });
 
 // ─── Files API (for image elements) ───────────────────────────
@@ -1491,7 +1572,9 @@ function identityResponse(key: string, board: BoardState) {
 function switchCanvasTo(key: string): BoardState {
   const board = setActiveBoard(key);
   // The selection belongs to the board that was on screen; it means nothing on
-  // the new one.
+  // the new one. Every pane is about to be shown the new board, so no pane's
+  // selection survives either.
+  selectionState.byClient.clear();
   if (selectionState.current) {
     selectionState.current = null;
   }

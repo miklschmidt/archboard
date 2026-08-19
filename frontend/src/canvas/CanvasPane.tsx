@@ -19,6 +19,11 @@ interface CanvasPaneProps {
   paneId: string
   /** The pane that answers export / viewport / mermaid requests. */
   primary: boolean
+  /**
+   * Is this the pane the human last touched? Reported to the server as part of
+   * "what am I looking at", and only drawn as a highlight when there is more
+   * than one pane to distinguish — a lone pane is trivially the focused one.
+   */
   focused: boolean
   theme: 'light' | 'dark'
   onStatus: (status: PaneStatus) => void
@@ -31,7 +36,7 @@ interface CanvasPaneProps {
 export function CanvasPane({
   paneId, primary, focused, theme, onStatus, onThemeChange, onFocus, label
 }: CanvasPaneProps): JSX.Element {
-  const session = useCanvasSession({ paneId, primary, onStatus })
+  const session = useCanvasSession({ paneId, primary, focused, onStatus })
 
   const interacted = (): void => {
     session.markInteracted()
@@ -40,7 +45,7 @@ export function CanvasPane({
 
   return (
     <section
-      className={`pane${focused ? ' pane-focused' : ''}`}
+      className={`pane${label && focused ? ' pane-focused' : ''}`}
       onPointerDownCapture={interacted}
       onKeyDownCapture={interacted}
       aria-label={label ?? 'canvas'}
@@ -54,7 +59,7 @@ export function CanvasPane({
           <span className={`dot ${session.connected ? 'dot-live' : 'dot-dead'}`} />
         </div>
       )}
-      <div className="pane-canvas">
+      <div className="pane-canvas" ref={session.attachPaneElement}>
         <Excalidraw
           excalidrawAPI={(api: ExcalidrawImperativeAPI) => session.attachExcalidraw(api)}
           onChange={(_elements, appState) => {
