@@ -29,6 +29,11 @@
 // pure and dependency-free so the browser (which enforces it), the repair
 // script (which undoes past violations) and the regression check (which proves
 // it holds) all read from the same sentence.
+//
+// That is the inbound half. Outbound, the authority is the other way round —
+// the bound text is what the label says and the stored seed follows it — so a
+// human retyping a box on the board is not written back out from under them
+// (`labelStatements`, TASK-028).
 
 /** A `boundElements` entry: a shape's forward reference to a text or arrow. */
 export interface BoundRef {
@@ -272,6 +277,76 @@ export function adoptReusedLabelIds<T extends LabelledElement>(
       )
     } as unknown as T;
   });
+}
+
+// ---------------------------------------------------------------------------
+// Following the human
+// ---------------------------------------------------------------------------
+
+/**
+ * The label a change report has to state, so the stored seed follows the text
+ * a human just typed.
+ *
+ * Containment above only settles what happens on the way *in*: the seed says
+ * what the label reads, and the bound text is rebuilt to match. Nothing said
+ * what happens on the way *out*, and the answer used to be "nothing" — a human
+ * retyping a label changed the text element and left the seed saying the old
+ * name forever. The seed is the thing the next conversion pass reads, so the
+ * board wrote their edit back out again: a rename that silently reverts, at
+ * the one place the whole tool depends on a human editing and an agent reading
+ * it back (TASK-028).
+ *
+ * The temptation is to arbitrate — timestamps, provenance, some rule for
+ * telling a human's rename apart from an agent's `update --set '{"text":...}'`,
+ * which produces exactly the same disagreement in the opposite direction. That
+ * is guesswork, and it is unnecessary, because the two never travel the same
+ * way. An agent's rename arrives *inbound* as a seed the browser has not seen;
+ * a human's rename leaves *outbound* as text the server has not seen. Give
+ * each direction one authority — inbound, the seed; outbound, the text — and
+ * there is nothing to arbitrate. A disagreement is only ever resolved by
+ * whichever direction is currently carrying news.
+ *
+ * That holds only if the outbound correction is immediate, which is why this
+ * belongs on the report path rather than on the next conversion: as long as a
+ * stale seed sits on the server, any delivery that happens to carry that
+ * container along (an agent moving the box, a fresh page load) hands the stale
+ * seed back to containment, which dutifully applies it. Stating the label
+ * alongside the text closes that window to the length of one report.
+ *
+ * Only the keeper text speaks for a container — the one Excalidraw actually
+ * draws — so a stray second text element that somehow gets reported cannot
+ * rewrite the label out from under the one on screen.
+ */
+export interface LabelStatement {
+  /** The container whose stored label must follow. */
+  id: string;
+  label: { text: string };
+}
+
+export function labelStatements(
+  upserts: readonly LabelledElement[],
+  scene: readonly LabelledElement[]
+): LabelStatement[] {
+  const reported = new Set<string>();
+  for (const element of upserts) {
+    if (element && isText(element) && typeof element.id === 'string') reported.add(element.id);
+  }
+  if (reported.size === 0) return [];
+
+  const byId = new Map<string, LabelledElement>();
+  for (const element of scene) {
+    if (element && typeof element.id === 'string') byId.set(element.id, element);
+  }
+
+  const statements: LabelStatement[] = [];
+  for (const [containerId, textIds] of boundTextsByContainer(scene)) {
+    const keeper = textIds[0] as string;
+    if (!reported.has(keeper)) continue;
+    const text = byId.get(keeper)?.text;
+    if (typeof text !== 'string') continue;
+    statements.push({ id: containerId, label: { text } });
+  }
+  return statements;
 }
 
 // ---------------------------------------------------------------------------

@@ -23,8 +23,13 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const { planLabelExpansion, adoptReusedLabelIds, boundTextsByContainer, planLabelRepair } =
-  await import(join(__dirname, '..', 'dist', 'core', 'labels.js'));
+const {
+  planLabelExpansion,
+  adoptReusedLabelIds,
+  boundTextsByContainer,
+  planLabelRepair,
+  labelStatements
+} = await import(join(__dirname, '..', 'dist', 'core', 'labels.js'));
 
 let failures = 0;
 let checks = 0;
@@ -75,9 +80,43 @@ function expand(elements) {
   return out;
 }
 
+/**
+ * frontend/src/canvas/elements.ts: once a container has its text element, the
+ * seed that produced it is not kept in the scene. Modelled because the whole
+ * outbound rule rests on it — a seed the pane still held would outlive the
+ * delivery that carried it and get written back over a human's typing.
+ */
+function dropSpentSeeds(scene) {
+  const labelled = boundTextsByContainer(scene);
+  return scene.map((element) => {
+    if (!labelled.has(element.id) || !('label' in element)) return element;
+    const { label: _label, ...rest } = element;
+    return rest;
+  });
+}
+
 /** frontend/src/canvas/changes.ts: a pane reports only what its baseline lacks. */
 function fingerprint(element) {
   return JSON.stringify(Object.keys(element).sort().map((key) => [key, element[key]]));
+}
+
+/**
+ * frontend/src/canvas/changes.ts, the outbound half: a reported bound text goes
+ * with a statement of what its container's label now reads. `state` is the fix
+ * under test here, the way `contain` is for the inbound half.
+ */
+function reportOf(scene, baseline, { state }) {
+  const upserts = scene
+    .filter((element) => baseline.get(element.id) !== fingerprint(element))
+    .map((element) => ({ ...element }));
+  if (!state) return upserts;
+  const byId = new Map(upserts.map((element) => [element.id, element]));
+  for (const statement of labelStatements(upserts, scene)) {
+    const reported = byId.get(statement.id);
+    if (reported) reported.label = statement.label;
+    else if (baseline.has(statement.id)) upserts.push({ id: statement.id, label: statement.label });
+  }
+  return upserts;
 }
 
 /** POST /api/elements/changes: upserts are *merged*, so stored fields survive. */
@@ -89,22 +128,33 @@ function applyUpserts(store, upserts) {
 
 /**
  * One full round trip: the server broadcasts, the pane converts what it got,
- * and reports back anything the conversion produced that it had not seen.
- * `contain` is the fix under test.
+ * a human may type into it, and it reports back anything it had not seen.
+ * `contain` and `state` are the two halves of the fix under test.
  */
-function cycle(store, baseline, { contain }) {
+function cycle(store, baseline, { contain, state = contain, types }) {
   const broadcast = [...store.values()];
   const planned = contain ? planLabelExpansion(broadcast) : { elements: broadcast, reuse: new Map() };
   const expanded = expand(planned.elements);
-  const scene = contain ? adoptReusedLabelIds(expanded, planned.reuse) : expanded;
+  const adopted = contain ? adoptReusedLabelIds(expanded, planned.reuse) : expanded;
+  const scene = contain ? dropSpentSeeds(adopted) : adopted;
 
-  const upserts = scene.filter((element) => baseline.get(element.id) !== fingerprint(element));
-  const deletes = [...baseline.keys()].filter((id) => !scene.some((element) => element.id === id));
+  // Somebody at the board retypes a label. It lands in the text element and
+  // nowhere else — Excalidraw has no `label`, and the container has nothing new
+  // to say — which is exactly why the seed on the server goes stale.
+  const typed = types
+    ? scene.map((element) => {
+        const wanted = element.type === 'text' ? types[element.containerId] : undefined;
+        return wanted === undefined ? element : { ...element, text: wanted };
+      })
+    : scene;
+
+  const upserts = reportOf(typed, baseline, { state });
+  const deletes = [...baseline.keys()].filter((id) => !typed.some((element) => element.id === id));
   baseline.clear();
-  for (const element of scene) baseline.set(element.id, fingerprint(element));
+  for (const element of typed) baseline.set(element.id, fingerprint(element));
   applyUpserts(store, upserts);
   for (const id of deletes) store.delete(id);
-  return { scene, upserts };
+  return { scene: typed, upserts };
 }
 
 function boardOf(elements) {
@@ -222,6 +272,87 @@ const CYCLES = 25;
   assert(store.get(shapeLabel).text === 'IdentityService', `shape label reads ${JSON.stringify(store.get(shapeLabel).text)}`);
   assert(store.get(arrowLabel).text === 'gRPC', `arrow label reads ${JSON.stringify(store.get(arrowLabel).text)}`);
   assert(store.size === 6, `renaming changed the element count to ${store.size}`);
+}
+
+// --- a human retyping a label keeps it ---------------------------------------
+//
+// The other direction, and the one the inbound rule alone gets wrong. A person
+// retypes a box on the board: the words land in the text element, the seed on
+// the server still says the old name, and the seed is what the next conversion
+// pass expands. Unless the report says otherwise, the board writes their edit
+// back out again.
+
+{
+  const store = boardOf(drawn());
+  const baseline = new Map();
+  for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+
+  const before = boundTextsByContainer([...store.values()]);
+  const shapeLabel = before.get('svc')[0];
+  const arrowLabel = before.get('wire')[0];
+
+  cycle(store, baseline, { contain: true, types: { svc: 'Ledger', wire: 'AMQP' } });
+  for (let i = 0; i < CYCLES; i++) cycle(store, baseline, { contain: true });
+
+  const after = boundTextsByContainer([...store.values()]);
+  assert(store.get(shapeLabel).text === 'Ledger', `a retyped shape label reads ${JSON.stringify(store.get(shapeLabel).text)}`);
+  assert(store.get(arrowLabel).text === 'AMQP', `a retyped arrow label reads ${JSON.stringify(store.get(arrowLabel).text)}`);
+  assert(store.get('svc').label?.text === 'Ledger', `the stored seed did not follow: ${JSON.stringify(store.get('svc').label)}`);
+  assert(store.get('wire').label?.text === 'AMQP', `the stored arrow seed did not follow: ${JSON.stringify(store.get('wire').label)}`);
+  assert(store.size === 6, `retyping a label changed the element count to ${store.size}`);
+  assert(after.get('svc')?.length === 1, `retyping left ${after.get('svc')?.length} labels on the shape`);
+  assert(after.get('wire')?.length === 1, `retyping left ${after.get('wire')?.length} labels on the arrow`);
+  assert(after.get('svc')[0] === shapeLabel, 'a retyped shape label became a different element');
+  assert(after.get('wire')[0] === arrowLabel, 'a retyped arrow label became a different element');
+
+  // A page reload is the pass that showed the revert most plainly: the whole
+  // board comes back from the server at once, so every seed is delivered again.
+  const reloaded = new Map();
+  cycle(store, reloaded, { contain: true });
+  assert(store.get(shapeLabel).text === 'Ledger', `reloading reverted the shape label to ${JSON.stringify(store.get(shapeLabel).text)}`);
+  assert(store.get(arrowLabel).text === 'AMQP', `reloading reverted the arrow label to ${JSON.stringify(store.get(arrowLabel).text)}`);
+}
+
+// --- and it is the statement that keeps it, not luck -------------------------
+//
+// Same run with the outbound half removed. If this does not revert, the check
+// above is passing for some reason other than the fix.
+
+{
+  const store = boardOf(drawn());
+  const baseline = new Map();
+  for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true, state: false });
+  const shapeLabel = boundTextsByContainer([...store.values()]).get('svc')[0];
+
+  cycle(store, baseline, { contain: true, state: false, types: { svc: 'Ledger' } });
+  assert(store.get(shapeLabel).text === 'Ledger', 'the model never got the human edit to the server at all');
+  for (let i = 0; i < 3; i++) cycle(store, baseline, { contain: true, state: false });
+  assert(
+    store.get(shapeLabel).text === 'AuthService',
+    'without the label statement the model failed to reproduce the revert, so it is toothless'
+  );
+}
+
+// --- an agent renaming after a human still wins ------------------------------
+//
+// The two directions must not cancel each other out: the seed following the
+// text outbound cannot make the seed powerless inbound.
+
+{
+  const store = boardOf(drawn());
+  const baseline = new Map();
+  for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+  const shapeLabel = boundTextsByContainer([...store.values()]).get('svc')[0];
+
+  cycle(store, baseline, { contain: true, types: { svc: 'Ledger' } });
+  for (let i = 0; i < 3; i++) cycle(store, baseline, { contain: true });
+  store.set('svc', { ...store.get('svc'), label: { text: 'PostingEngine' } });
+  for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+
+  assert(store.get(shapeLabel).text === 'PostingEngine', `an agent rename after a human edit reads ${JSON.stringify(store.get(shapeLabel).text)}`);
+  assert(store.get('svc').label?.text === 'PostingEngine', 'the agent rename did not settle in the stored seed');
+  assert(boundTextsByContainer([...store.values()]).get('svc')?.length === 1, 'the two directions between them grew a second label');
+  assert(store.size === 6, `the two directions between them changed the element count to ${store.size}`);
 }
 
 // --- an element drawn later still gets its label, exactly once --------------
