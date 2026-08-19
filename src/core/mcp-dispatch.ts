@@ -37,6 +37,16 @@ import {
 import { buildSceneFile, importScene } from './scene-io.js';
 import { wrapSceneAsObsidianMd } from './obsidian-md.js';
 import { describeScene } from './describe.js';
+import {
+  KINDS,
+  demotionSummary,
+  normalizeKind,
+  planDemotion,
+  planPromotion,
+  promotionSummary,
+  resolveBinding,
+  validateNodeId
+} from './promote.js';
 import { exportToExcalidrawUrl } from './share-url.js';
 import { DIAGRAM_DESIGN_GUIDE } from './design-guide.js';
 import { sceneState, ensureCanvasReadyForMcpTool, toolNeedsCanvasBeforeDispatch } from './canvas-state.js';
@@ -636,6 +646,88 @@ export async function callExcalidrawTool(
 
         return {
           content: [{ type: 'text', text: selection.text }]
+        };
+      }
+      case 'promote_selection':
+      case 'demote_selection': {
+        const params = z.object({
+          kind: z.string().optional(),
+          name: z.string().optional(),
+          node: z.string().optional(),
+          path: z.string().optional(),
+          repo: z.string().optional(),
+          branch: z.string().optional(),
+          commit: z.string().optional(),
+          variant: z.string().optional(),
+          level: z.string().optional(),
+          each: z.boolean().optional(),
+          elementIds: z.array(z.string()).optional()
+        }).parse(args || {});
+
+        const promoting = name === 'promote_selection';
+        logger.info(`${promoting ? 'Promoting' : 'Demoting'} via MCP`);
+
+        const board = await getElements();
+        const byId = new Map(board.map(el => [el.id, el]));
+
+        let targets: ServerElement[];
+        if (params.elementIds) {
+          const missing = params.elementIds.filter(id => !byId.has(id));
+          if (missing.length > 0) throw new Error(`No element on the canvas with id ${missing.join(', ')}`);
+          targets = params.elementIds.map(id => byId.get(id)!);
+        } else {
+          const selection = await getSelection();
+          if (selection.elementIds.length === 0) {
+            throw new Error(
+              `Nothing is selected on the board, so there is nothing to ${promoting ? 'promote' : 'demote'}. ` +
+              `Ask the human to select the shapes, or pass elementIds.`
+            );
+          }
+          targets = selection.elementIds.map(id => byId.get(id)).filter(Boolean) as ServerElement[];
+          if (targets.length === 0) throw new Error('The selected ids are not on the canvas any more.');
+        }
+
+        let summary: string;
+        let payload: unknown;
+        if (promoting) {
+          if (!params.kind) throw new Error(`kind is required (one of: ${KINDS.join(', ')})`);
+          const binding = params.path
+            ? resolveBinding({
+                path: params.path,
+                ...(params.repo ? { repo: params.repo } : {}),
+                ...(params.branch ? { branch: params.branch } : {}),
+                ...(params.commit ? { commit: params.commit } : {})
+              })
+            : undefined;
+          const plan = planPromotion({
+            targets,
+            board,
+            kind: normalizeKind(params.kind),
+            ...(params.name ? { name: params.name } : {}),
+            ...(params.node ? { nodeId: validateNodeId(params.node) } : {}),
+            ...(binding ? { binding } : {}),
+            ...(params.variant ? { variant: params.variant } : {}),
+            ...(params.level ? { level: params.level } : {}),
+            ...(params.each ? { each: true } : {})
+          });
+          for (const update of plan.updates) {
+            const applied = await updateElementOnCanvas(update as Partial<ServerElement> & { id: string });
+            if (!applied) throw new Error(`Failed to write metadata to element ${update.id}: canvas unavailable`);
+          }
+          summary = promotionSummary(plan, binding?.note);
+          payload = plan.nodes;
+        } else {
+          const plan = planDemotion(targets, board);
+          for (const update of plan.updates) {
+            const applied = await updateElementOnCanvas(update as Partial<ServerElement> & { id: string });
+            if (!applied) throw new Error(`Failed to strip metadata from element ${update.id}: canvas unavailable`);
+          }
+          summary = demotionSummary(plan);
+          payload = plan.nodes;
+        }
+
+        return {
+          content: [{ type: 'text', text: `${summary}\n\n${JSON.stringify(payload, null, 2)}` }]
         };
       }
       case 'get_canvas_screenshot': {
