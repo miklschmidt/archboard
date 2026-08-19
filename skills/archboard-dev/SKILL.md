@@ -5,17 +5,14 @@ description: Procedures for working on the whiteboard fork itself — rebuilding
 
 # Working on archboard
 
-Repo-local skill. Not published — see `dev-skills/README.md` for why this is
-separate from `skills/`.
-
 Always-on context lives in `CLAUDE.md`; fork rationale and roadmap in
 `DESIGN.md`. This skill is the procedural half: how to actually do the recurring
 jobs.
 
 ## Rebuild after changing source
 
-This box has node + bun but **no npm/npx**, so `npm run *` scripts do not work.
-Drive the tools directly:
+This box has node + bun but **no npm/npx**. The `package.json` scripts shell out
+to bun, so use `bun run <script>` — never `npm run`. Or drive the tools directly:
 
 ```bash
 bunx tsc            # server -> dist/
@@ -74,14 +71,19 @@ structure wholesale.
 ## Syncing skills
 
 ```bash
-node scripts/sync-skills.mjs      # skills/ + dev-skills/ -> .agents/ -> .claude/
+node scripts/sync-skills.mjs      # skills/ -> .agents/skills/ -> .claude/skills/
 skills experimental_install       # third-party, from skills-lock.json
 ```
 
-`skills/` is for consumers of the canvas and must stay portable — **no
+`skills/` is the single tracked source: every subdirectory with a `SKILL.md` is
+synced, so adding a skill is just adding a directory. The sync replaces rather
+than overlays, so deleted files don't linger, and it leaves the third-party
+skills in `.agents/skills/` alone.
+
+`excalidraw-skill` is used outside this repo too, so keep it portable — **no
 machine-specific paths**. It names both `npx -y mcp-excalidraw-server` and
 `./bin/canvas` so it works inside and outside the repo without local patching.
-`dev-skills/` is for maintainers and may reference repo paths freely.
+Maintainer-facing skills like this one may reference repo paths freely.
 
 `~/.claude/skills/excalidraw-skill` is a symlink to this repo's synced copy, so
 the canvas skill is available in other repos and cannot drift. Re-running the
