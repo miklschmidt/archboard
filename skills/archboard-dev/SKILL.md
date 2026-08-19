@@ -123,7 +123,14 @@ sync updates it automatically.
 - **Saving a board is last-writer-wins** against Obsidian, on purpose, until
   TASK-010 decides the policy. Do not "fix" it with a hash check or a watcher.
 - **`export --out` does not `mkdir -p`** — create the directory first.
-- The page title still says "Excalidraw POC - Backend API Integration".
+- **The browser never sends a scene.** It reports a delta to
+  `POST /api/elements/changes` against a baseline of what that tab has actually
+  received, and the server merges it. There is no endpoint that replaces a
+  board wholesale from a client, and adding one back would reopen the
+  stale-tab-truncates-the-board hole (TASK-016). Deletions only ever name ids
+  the reporting tab already held.
+- **A second pane shows the same board as the first**, because the server has
+  one active board. The shell mounts panes; per-pane boards are TASK-006.
 
 ## Tracker
 

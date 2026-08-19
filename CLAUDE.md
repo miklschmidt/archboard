@@ -101,11 +101,18 @@ Established by testing this build, not by reading docs.
 | Human drags / edits / hand-draws | yes, automatically |
 | `./bin/canvas mermaid` | **yes** — fixed in v2 |
 
-The one-way mermaid behaviour was a **1.1.0 bug**, fixed upstream by an explicit
-`await syncToBackend()` after conversion. Do not design around it.
+The one-way mermaid behaviour was a **1.1.0 bug**, fixed upstream by reporting
+the converted elements after conversion. Do not design around it.
+
+**The server is authoritative over the board.** A browser never sends a scene:
+it reports a delta — `POST /api/elements/changes` with `upserts` and `deletes` —
+computed against a baseline of the elements that tab has actually received, and
+the server applies it. A tab therefore cannot name, and so cannot destroy, an
+element it has never seen. The upstream `POST /api/elements/sync`, which cleared
+the board's element map and refilled it from one tab, is gone (TASK-016).
 
 **`customData` and `link` both survive the full round-trip**, including the
-frontend sync after a human drags an element. Verified with a real drag:
+change report a human's drag produces. Verified with a real drag:
 position changed, both fields intact. This is the metadata channel — no sidecar
 file, no encoding paths into labels.
 
@@ -135,7 +142,9 @@ Tracked in Backlog.md; `backlog task list --plain` is authoritative.
 - **A node with a transparent background is only selectable by its stroke**, so
   tapping the middle of a hollow box picks nothing. (TASK-009)
 - `export --out` does not `mkdir -p`.
-- Page title is still "Excalidraw POC - Backend API Integration".
+- **The canvas holds one board for every pane.** The shell can mount a second
+  pane, but the server has a single active board, so both panes show it. Per-pane
+  boards are TASK-006's territory.
 
 Closed: `describe` surfaces `customData` and `link`, separates nodes from plain
 elements, and folds bound labels and multi-element nodes (TASK-001). Obsidian
@@ -145,7 +154,9 @@ protocol carry a board key (TASK-003). Selection reaches the server and is
 readable via `selection` / `get_selection`
 (TASK-004). Promotion declares a selection to be a node with a git-resolved
 binding (TASK-005). The CLI and MCP handshake identify as `archboard`
-(TASK-008).
+(TASK-008). A shell hosts the canvas, the server is authoritative over element
+state, clearing asks first, and boards and variants are openable from the UI
+(TASK-016).
 
 ## Names on the wire
 

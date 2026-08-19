@@ -168,7 +168,7 @@ Notes:
 | `DELETE` | `/api/elements/clear` | Clear all elements |
 | `GET` | `/api/elements/search?type=...` | Search with filters (exact string match + bbox) |
 | `POST` | `/api/elements/batch` | Batch create |
-| `POST` | `/api/elements/sync` | Overwrite import (clear + write) |
+| `POST` | `/api/elements/changes` | Browser change report: {upserts, deletes} merged into the board |
 | `POST` | `/api/elements/from-mermaid` | Mermaid conversion via frontend |
 
 ### Export
