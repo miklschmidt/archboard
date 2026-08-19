@@ -13,9 +13,7 @@ public/dist/
 
 # Editor artifacts
 .cursor/
-.claude/
 .agent/
-.agents/
 
 # Development artifacts
 *.excalidraw
@@ -28,3 +26,12 @@ docs/*
 !docs/agents/
 # Committed architecture diagrams are a deliverable, not a build artifact.
 !diagrams/*.excalidraw
+
+# Agent skills are derived, not authored, so they stay untracked:
+#   .agents/skills/  28 third-party skills pinned by skills-lock.json,
+#                    plus excalidraw-skill synced from canonical skills/
+#   .claude/skills/  symlinks into .agents/skills/
+# Everything else under .claude/ and .agents/ (settings.json, commands/,
+# agents/) is authored configuration and IS tracked.
+.agents/skills/
+.claude/skills/
