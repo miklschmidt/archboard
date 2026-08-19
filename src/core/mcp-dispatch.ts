@@ -40,7 +40,8 @@ import {
   boardHeading,
   openBoard,
   newBoard,
-  saveBoard
+  saveBoard,
+  boardConflictOf
 } from './canvas-client.js';
 import { wrapSceneAsObsidianMd } from './obsidian-md.js';
 import { describeScene } from './describe.js';
@@ -678,13 +679,26 @@ export async function callExcalidrawTool(
         const params = z.object({
           name: z.string().optional(),
           variant: z.string().optional(),
-          level: z.string().optional()
+          level: z.string().optional(),
+          force: z.boolean().optional()
         }).parse(args ?? {});
-        logger.info('Saving board via MCP', { name: params.name });
-        const result = await saveBoard(params);
-        return {
-          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
-        };
+        logger.info('Saving board via MCP', { name: params.name, force: params.force });
+        try {
+          const result = await saveBoard(params);
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        } catch (error) {
+          // A refused write is a decision the human has to make, so it comes
+          // back as the message plus the three commands, not as a bare failure
+          // string the model has to reconstruct intent from (ADR 0006).
+          const conflict = boardConflictOf(error);
+          if (!conflict) throw error;
+          return {
+            content: [{ type: 'text', text: `${conflict.message}\n\n${JSON.stringify({ conflict }, null, 2)}` }],
+            isError: true
+          };
+        }
       }
       case 'describe_scene': {
         logger.info('Describing scene via MCP');

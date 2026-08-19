@@ -120,8 +120,12 @@ sync updates it automatically.
   whatever you were testing. Set it before `./bin/canvas start` — the canvas
   server does the vault I/O, so exporting it after the server is up changes
   nothing.
-- **Saving a board is last-writer-wins** against Obsidian, on purpose, until
-  TASK-010 decides the policy. Do not "fix" it with a hash check or a watcher.
+- **A board save can be refused, and that is the design** (ADR 0006). archboard
+  records the sha-256 of a note's bytes when it reads it and verifies it before
+  writing; a file that changed underneath is reported, never overwritten. Do not
+  "fix" this by reloading or merging — both were considered and rejected,
+  because an Excalidraw scene has no merge and reloading just swaps which side
+  loses silently. `--force` exists for the human, not for you.
 - **`export --out` does not `mkdir -p`** — create the directory first.
 - **The browser never sends a scene.** It reports a delta to
   `POST /api/elements/changes` against a baseline of what that tab has actually

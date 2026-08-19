@@ -438,13 +438,14 @@ export const tools: Tool[] = [
   },
   {
     name: 'save_board',
-    description: "Write the board the canvas is holding back to its .excalidraw.md note in the vault, preserving the note's frontmatter and prose. Pass name to save it as a different board (which is how the unnamed scratch board gets a name). LAST WRITER WINS: nothing checks whether the note changed since it was opened, so if the same board is open in Obsidian its in-memory copy will overwrite this one or be overwritten by it. Say so when reporting a save.",
+    description: "Write the board the canvas is holding back to its .excalidraw.md note in the vault, preserving the note's frontmatter and prose. Pass name to save it as a different board (which is how the unnamed scratch board gets a name). THE SAVE CAN BE REFUSED: archboard hashes a note when it reads it and verifies that hash before writing, so if the file changed underneath (Obsidian, a sync client, another editor) or archboard has never read what is at that address, nothing is written and the refusal comes back with three ways out — reload the note (open_board with reload, discarding the canvas), overwrite it (force, discarding the note), or save under another name. Relay the refusal and those three choices to the human and let them pick; never choose for them.",
     inputSchema: {
       type: 'object',
       properties: {
         name: { type: 'string', description: 'Save as this board instead of the current one. Accepts name or name@variant.' },
         variant: { type: 'string', description: 'Save as this variant of the same board.' },
-        level: { type: 'string', description: 'Set the board\'s abstraction tier: system, service, or module.' }
+        level: { type: 'string', description: 'Set the board\'s abstraction tier: system, service, or module.' },
+        force: { type: 'boolean', description: 'Overwrite a note archboard has not seen, destroying whatever it holds. Only ever pass this after a refused save when the human has said to overwrite.' }
       }
     }
   },

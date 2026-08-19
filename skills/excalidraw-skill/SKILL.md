@@ -306,7 +306,17 @@ archboard board current                     # which board am I drawing on?
 
 **Identity** — `board`, `variant`, `level` — lives in the note's frontmatter and round-trips. Everything else in the frontmatter is preserved verbatim across a save, so a note's aliases, tags and prose properties survive.
 
-**Saving is last-writer-wins.** archboard does not check whether the note changed since it was opened, and the Obsidian Excalidraw plugin holds its own in-memory copy of any board open there. Whoever saves last wins and the other side's edits are gone, with no warning. Close the board in Obsidian before saving it here, and say so when you report a save.
+**A save can be refused.** archboard hashes a note when it reads it and verifies that hash before writing, so a note that changed underneath — Obsidian, a sync client, another editor — is never overwritten: nothing is written, `board save` exits 5, and `save_board` comes back as an error. Excalidraw scenes do not merge, so somebody has to choose which copy survives, and it is not you. Report the refusal and offer the three ways out:
+
+| Outcome | Command | What it costs |
+|---|---|---|
+| Reload | `board open <name> --reload` | the canvas as it stands now |
+| Overwrite | `board save --force` | whatever the note on disk holds |
+| Save elsewhere | `board save --as <other>` | nothing — both copies are kept |
+
+Never pass `--force` / `force: true` unless the human has said to overwrite.
+
+Nothing is locked, and the check reads the file, not another app's memory: a board open in Obsidian can still write its unsaved copy back afterwards. Keep a board open in one editor at a time.
 
 Before any board is opened the canvas holds a `scratch` board with no home in the vault; `board save --as <name>` gives it one.
 

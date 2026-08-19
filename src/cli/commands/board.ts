@@ -6,7 +6,8 @@ import {
   getCurrentBoard,
   openBoard,
   newBoard,
-  saveBoard
+  saveBoard,
+  boardConflictOf
 } from '../../core/canvas-client.js';
 
 const SUBCOMMANDS = ['list', 'current', 'new', 'open', 'save'] as const;
@@ -88,15 +89,44 @@ export async function board(argv: string[]): Promise<void> {
   }
 
   // save
-  const { flags } = parseArgs(rest, { ...ADDRESS_FLAGS, as: { takesValue: true } });
-  const result = await saveBoard({
-    ...(flags.as ? { name: flags.as as string } : {}),
-    ...(flags.variant ? { variant: flags.variant as string } : {}),
-    ...(flags.level ? { level: flags.level as string } : {})
+  const { flags } = parseArgs(rest, {
+    ...ADDRESS_FLAGS,
+    as: { takesValue: true },
+    force: { takesValue: false }
   });
-  // Surfaced on every save, not only the first: this is the whole of the
-  // two-writer story until TASK-010 decides one, and a policy nobody is told
-  // about is the same as no policy.
-  if (result.warning) note(result.warning);
+
+  let result;
+  try {
+    result = await saveBoard({
+      ...(flags.as ? { name: flags.as as string } : {}),
+      ...(flags.variant ? { variant: flags.variant as string } : {}),
+      ...(flags.level ? { level: flags.level as string } : {}),
+      ...(flags.force ? { force: true } : {})
+    });
+  } catch (error) {
+    const conflict = boardConflictOf(error);
+    if (!conflict) throw error;
+    // A refused save is an answer, not a crash: the message goes to stderr for
+    // the human, the structured conflict to stdout for whatever is scripting
+    // this, and the exit code says which of the two happened.
+    note(conflict.message);
+    printJson({ success: false, conflict });
+    const quiet = new Error(conflict.message);
+    (quiet as any).quiet = true;
+    (quiet as any).code = 'BOARD_CONFLICT';
+    throw quiet;
+  }
+
+  if (result.forced) {
+    note(`Overwrote ${result.file} on your say-so; whatever that note held is gone.`);
+  } else if (result.overwrote) {
+    // The convention, stated where it is actionable: the check catches a note
+    // that has already changed on disk, and cannot see a copy still sitting in
+    // another editor's memory.
+    note(
+      'Saved after checking the note had not changed on disk. archboard cannot see an unsaved copy ' +
+      'held in Obsidian, so keep a board open in one editor at a time.'
+    );
+  }
   printJson(result);
 }

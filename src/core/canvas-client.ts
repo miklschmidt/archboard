@@ -2,6 +2,7 @@ import logger from '../utils/logger.js';
 import type { SelectionReport } from './describe.js';
 import { ServerElement } from '../types.js';
 import { EXPRESS_SERVER_URL, ENABLE_CANVAS_SYNC } from './config.js';
+import type { BoardWriteConflict } from './board.js';
 
 // API Response types
 export interface ApiResponse {
@@ -149,9 +150,23 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${EXPRESS_SERVER_URL}${path}`, init);
   const data = await response.json().catch(() => null) as any;
   if (!response.ok) {
-    throw new Error(data?.error || `HTTP server error: ${response.status} ${response.statusText}`);
+    const error = new Error(data?.error || `HTTP server error: ${response.status} ${response.statusText}`);
+    // A refused board write is a result, not a fault: it carries the three
+    // outcomes the caller has to choose between, so the body has to survive
+    // being turned into an Error. See ADR 0006.
+    if (data?.conflict) {
+      (error as any).code = 'BOARD_CONFLICT';
+      (error as any).conflict = data.conflict as BoardWriteConflict;
+    }
+    throw error;
   }
   return data as T;
+}
+
+// A save the server refused because the destination changed underneath it.
+export function boardConflictOf(error: unknown): BoardWriteConflict | null {
+  const conflict = (error as any)?.conflict;
+  return conflict && typeof conflict === 'object' ? conflict as BoardWriteConflict : null;
 }
 
 export async function getElements(): Promise<ServerElement[]> {
@@ -247,7 +262,7 @@ export interface BoardResponse {
   saved?: boolean;
   elements?: number;
   overwrote?: boolean;
-  warning?: string;
+  forced?: boolean;
   declaredKey?: string;
 }
 
@@ -318,6 +333,9 @@ export async function saveBoard(params: {
   variant?: string;
   level?: string;
   board?: string;
+  // Overwrite a destination archboard has not seen. The human's call, never
+  // archboard's — see ADR 0006.
+  force?: boolean;
 }): Promise<BoardResponse> {
   return postBoard('/api/boards/save', params);
 }

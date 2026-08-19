@@ -36,15 +36,19 @@ import {
   BoardState,
   activeBoard,
   activeBoardKey,
+  baselineForFile,
   boardSummaries,
   boards,
   getOrCreateBoard,
+  recordBaseline,
   resolveBoard,
   setActiveBoard
 } from './core/board-store.js';
 import {
   BoardIdentity,
   boardKey,
+  describeWriteConflict,
+  hashBoardBytes,
   listBoards,
   makeIdentity,
   parseBoardKey,
@@ -1442,16 +1446,14 @@ app.get('/api/snapshots/:name', (req: Request, res: Response) => {
 // that one gets swapped: open reads a note into the store and points the canvas
 // at it, save writes the store back out.
 //
-// SAVING IS LAST-WRITER-WINS. archboard holds the board in memory and the
-// Obsidian Excalidraw plugin holds its own copy when the same note is open
-// there; neither knows about the other, so whoever writes last wins and the
-// other's edits are gone. Nothing here detects that — no hashing, no locking,
-// no file watching. The policy is TASK-010 and is awaiting a decision; until
-// then every save says so out loud rather than letting the default become the
-// answer by silence.
-const LAST_WRITER_WINS_WARNING =
-  'Last writer wins: archboard does not check whether this note changed since it was opened. ' +
-  'If the same board is open in Obsidian, close it there before saving here (TASK-010).';
+// WRITES ARE CHECKED, NOT LOCKED (ADR 0006). archboard records the sha-256 of a
+// note's bytes when it reads it, and verifies that hash against the destination
+// before it writes. If the two differ, the file changed underneath — Obsidian,
+// a sync client, another editor — and the save is refused with nothing written,
+// because an Excalidraw scene cannot be merged and overwriting would delete
+// work nobody was told about. Deliberately not locking and deliberately not
+// reloading: two writers can still both hold the board, and the human picks
+// which copy survives.
 
 const BoardAddressSchema = z.object({
   board: z.string().min(1),
@@ -1579,6 +1581,8 @@ app.post('/api/boards/open', (req: Request, res: Response) => {
     const count = ingestSceneElements(board, Array.isArray(scene) ? scene : (scene.elements ?? []));
     board.file = loaded.file;
     board.note = loaded.raw;
+    // The bytes just read are the baseline the next save is checked against.
+    recordBaseline(board, loaded.file, loaded.hash);
     board.loadedAt = new Date().toISOString();
     switchCanvasTo(openedKey);
 
@@ -1632,6 +1636,9 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     const body = req.body ?? {};
     const source = boardFromRequest(req);
     const sourceBoard = source.board;
+    // The human's "overwrite it anyway" — one of the three outcomes a conflict
+    // offers. Never set by archboard on its own behalf.
+    const force = body.force === true;
 
     // With a name, this is a save-as; without one, the board keeps its own
     // identity and only the fields actually passed are changed.
@@ -1655,14 +1662,36 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     const file = vaultPathFor(target);
     fs.mkdirSync(path.dirname(file), { recursive: true });
 
-    // Read the destination rather than trusting the copy taken at load: a save
-    // must preserve whatever frontmatter is there NOW. This is not a conflict
-    // check — see LAST_WRITER_WINS_WARNING.
-    let existingNote: string | undefined;
+    // Read the destination as it is NOW, for two jobs at once: its frontmatter
+    // and prose are carried into the note being written, and its hash is what
+    // the baseline is checked against.
+    let destination: Buffer | undefined;
     try {
-      existingNote = fs.readFileSync(file, 'utf-8');
-    } catch { /* new note */ }
-    const overwrote = existingNote !== undefined;
+      destination = fs.readFileSync(file);
+    } catch { /* nothing there: nothing to conflict with */ }
+    const existingNote = destination?.toString('utf-8');
+    const overwrote = destination !== undefined;
+
+    // The check. A file at the destination has to be one archboard has already
+    // seen — the copy it read at open, or the copy it wrote at the last save.
+    // Anything else is somebody else's work, and there is no merge for it.
+    const expected = baselineForFile(file);
+    if (destination && !force) {
+      const actualHash = hashBoardBytes(destination);
+      if (!expected || expected.hash !== actualHash) {
+        const conflict = describeWriteConflict({
+          target,
+          file,
+          reason: expected ? 'changed' : 'unseen',
+          ...(expected ? { expectedHash: expected.hash, lastReadAt: expected.at } : {}),
+          actualHash,
+          fileModifiedAt: fs.statSync(file).mtime.toISOString(),
+          saveCommand: body.name ? `board save --as ${boardKey(target)}` : 'board save'
+        });
+        logger.warn(`Board save refused: "${boardKey(target)}" changed underneath archboard at ${file}`);
+        return res.status(409).json({ success: false, error: conflict.message, conflict });
+      }
+    }
 
     const filesObj: Record<string, ExcalidrawFile> = {};
     files.forEach((f, id) => { filesObj[id] = f; });
@@ -1671,7 +1700,8 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
       filesObj as unknown as Record<string, any>
     );
     const note = renderBoardNote(scene, existingNote, target);
-    fs.writeFileSync(file, note, 'utf-8');
+    const bytes = Buffer.from(note, 'utf-8');
+    fs.writeFileSync(file, bytes);
 
     // The board is now that board: saving under a new name renames it in the
     // store too, so the next save goes to the same place.
@@ -1684,6 +1714,8 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     }
     savedBoard.file = file;
     savedBoard.note = note;
+    // What archboard has now seen at this path is what it just wrote.
+    recordBaseline(savedBoard, file, hashBoardBytes(bytes));
     savedBoard.savedAt = new Date().toISOString();
     if (wasActive && targetKey !== source.key) switchCanvasTo(targetKey);
 
@@ -1694,7 +1726,7 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
       file,
       elements: elementCount,
       overwrote,
-      warning: LAST_WRITER_WINS_WARNING
+      ...(force && overwrote ? { forced: true } : {})
     });
   } catch (error) {
     logger.error('Error saving board:', error);

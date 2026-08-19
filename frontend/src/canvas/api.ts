@@ -1,13 +1,26 @@
 // Every server call the browser makes, in one place, so a pane and the shell
 // disagree about nothing.
 
-import type { BoardIdentity, BoardInfo, BoardListing, ServerElement } from '../types'
+import type { BoardIdentity, BoardInfo, BoardListing, BoardWriteConflict, ServerElement } from '../types'
 import type { ChangeReport } from './changes'
+
+/**
+ * A refused board write. Distinct from a plain Error because the shell has to
+ * offer the human a choice rather than show them a message: it is an outcome of
+ * saving, not a fault.
+ */
+export class BoardConflictError extends Error {
+  constructor(public readonly conflict: BoardWriteConflict) {
+    super(conflict.message)
+    this.name = 'BoardConflictError'
+  }
+}
 
 async function json<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init)
   const body = await response.json().catch(() => ({}))
   if (!response.ok || body?.success === false) {
+    if (body?.conflict) throw new BoardConflictError(body.conflict as BoardWriteConflict)
     throw new Error(body?.error ?? `${init?.method ?? 'GET'} ${url} failed (${response.status})`)
   }
   return body as T
@@ -67,7 +80,7 @@ export function fetchBoards() {
   return json<BoardListing>('/api/boards')
 }
 
-export function openBoard(address: Partial<BoardIdentity> & { board: string }) {
+export function openBoard(address: Partial<BoardIdentity> & { board: string; reload?: boolean }) {
   return post<BoardInfo>('/api/boards/open', address)
 }
 
@@ -75,9 +88,18 @@ export function newBoard(address: Partial<BoardIdentity> & { board: string }) {
   return post<BoardInfo>('/api/boards/new', address)
 }
 
-export function saveBoard(as?: { name?: string; variant?: string; level?: string }) {
-  return post<BoardInfo & { file: string; warning: string; overwrote: boolean }>(
+/** Throws BoardConflictError when the note at the destination is not ours to overwrite. */
+export function saveBoard(as?: SaveRequest) {
+  return post<BoardInfo & { file: string; overwrote: boolean; forced?: boolean }>(
     '/api/boards/save',
     as ?? {}
   )
+}
+
+export interface SaveRequest {
+  name?: string
+  variant?: string
+  level?: string
+  /** The human's "overwrite it anyway", never the shell's own initiative. */
+  force?: boolean
 }
