@@ -21,6 +21,9 @@ function resolvedName(item: { id: string; name?: string | null }): string | null
   return item.name ?? LIBRARY_NAME_OVERLAY[item.id] ?? null;
 }
 
+// The CLI's side of the surface-parity check reads this list.
+export const ACTIONS = ['list', 'insert'] as const;
+
 export async function library(argv: string[]): Promise<void> {
   // The action is always the first bare token; parsing flags happens inside
   // each subcommand so each gets its own spec and unknown flags are caught

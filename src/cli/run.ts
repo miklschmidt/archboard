@@ -5,19 +5,23 @@ import * as elements from './commands/elements.js';
 import * as scene from './commands/scene.js';
 import { panes, selection } from './commands/selection.js';
 import { promote, demote } from './commands/promote.js';
-import { snapshot } from './commands/snapshot.js';
-import { board } from './commands/board.js';
+import { snapshot, ACTIONS as SNAPSHOT_ACTIONS } from './commands/snapshot.js';
+import { board, SUBCOMMANDS as BOARD_SUBCOMMANDS } from './commands/board.js';
 import { compare } from './commands/compare.js';
 import { changes } from './commands/changes.js';
-import { inject } from './commands/inject.js';
-import { arrange } from './commands/arrange.js';
+import { inject, SUBCOMMANDS as INJECT_SUBCOMMANDS } from './commands/inject.js';
+import { arrange, OPERATIONS as ARRANGE_OPERATIONS } from './commands/arrange.js';
 import { installSkill } from './commands/install-skill.js';
-import { library } from './commands/library.js';
+import { library, ACTIONS as LIBRARY_ACTIONS } from './commands/library.js';
 
 interface Command {
   handler: (argv: string[]) => Promise<void>;
   summary: string;
   usage: string;
+  // Present when the command takes a subcommand, from the list the command's
+  // own dispatcher validates against. This is the CLI half of what
+  // `scripts/check-surface-parity.mjs` compares with the MCP tool list.
+  subcommands?: readonly string[];
 }
 
 const COMMANDS: Record<string, Command> = {
@@ -51,6 +55,7 @@ const COMMANDS: Record<string, Command> = {
   demote: { handler: demote, summary: 'Turn nodes back into plain elements', usage: 'demote [--ids a,b,c] [--text]  (default target is the live selection; demotes every element of each node it touches)' },
   board: {
     handler: board,
+    subcommands: BOARD_SUBCOMMANDS,
     summary: 'Load, save and list boards in the vault',
     usage: [
       'board list | current | new <name> [--variant v] [--level system|service|module]',
@@ -113,6 +118,7 @@ const COMMANDS: Record<string, Command> = {
   },
   inject: {
     handler: inject,
+    subcommands: INJECT_SUBCOMMANDS,
     summary: 'Whether the canvas can push board changes into a live Codex thread, and a probe to prove it',
     usage: [
       'inject status | inject test [--note "..."] [--loud]',
@@ -135,13 +141,26 @@ const COMMANDS: Record<string, Command> = {
   export: { handler: scene.exportCmd, summary: 'Export the scene as .excalidraw JSON or Obsidian .excalidraw.md', usage: 'export [--out scene.excalidraw | note.excalidraw.md] [--format json|obsidian] [--force] (a .md out path implies obsidian; --force overwrites a non-Excalidraw destination, still preserving its frontmatter)' },
   import: { handler: scene.importCmd, summary: 'Import a .excalidraw or Obsidian .excalidraw.md file (merge by default)', usage: 'import [scene.excalidraw|note.excalidraw.md|-] [--replace] (or stdin)' },
   mermaid: { handler: scene.mermaid, summary: 'Render a Mermaid diagram onto the canvas (needs a browser tab)', usage: 'mermaid [diagram.mmd|-] (or stdin)' },
-  snapshot: { handler: snapshot, summary: 'Save / list / restore named canvas snapshots', usage: 'snapshot save|list|restore [name] [--force]  (a snapshot belongs to the board it was taken on; --force restores it onto a different one)' },
-  library: { handler: library, summary: 'What stencils are in the library, and dropping one onto the board', usage: 'library list [--text] | library insert <name> --x <x> --y <y> [--source <file>] [--id <libraryItemId>]  (the palette lives on the canvas server, not in a browser profile, which is why an agent can read and place from it without a browser)' },
-  arrange: { handler: arrange, summary: 'Align, distribute, group, lock, duplicate elements', usage: 'arrange align|distribute|group|ungroup|lock|unlock|duplicate --ids a,b,c [--to left|horizontal|...]' },
+  snapshot: { handler: snapshot, subcommands: SNAPSHOT_ACTIONS, summary: 'Save / list / restore named canvas snapshots', usage: 'snapshot save|list|restore [name] [--force]  (a snapshot belongs to the board it was taken on; --force restores it onto a different one)' },
+  library: { handler: library, subcommands: LIBRARY_ACTIONS, summary: 'What stencils are in the library, and dropping one onto the board', usage: 'library list [--text] | library insert <name> --x <x> --y <y> [--source <file>] [--id <libraryItemId>]  (the palette lives on the canvas server, not in a browser profile, which is why an agent can read and place from it without a browser)' },
+  arrange: { handler: arrange, subcommands: ARRANGE_OPERATIONS, summary: 'Align, distribute, group, lock, duplicate elements', usage: 'arrange align|distribute|group|ungroup|lock|unlock|duplicate --ids a,b,c [--to left|horizontal|...]' },
   share: { handler: scene.share, summary: 'Export to a shareable excalidraw.com URL', usage: 'share' },
   clear: { handler: scene.clear, summary: 'Clear the whole canvas', usage: 'clear --yes' },
   'install-skill': { handler: installSkill, summary: 'Install the bundled agent skill', usage: 'install-skill [--dir <skills-root>] [--target claude|codex|<skills-root>] [--print-source]' }
 };
+
+/**
+ * Every way the CLI can be invoked, as `{ name, subcommands }` — the command
+ * table read as data. `scripts/check-surface-parity.mjs` uses it to hold the
+ * MCP tool list against the CLI, so that MCP cannot quietly fall behind the
+ * surface agents actually use (ADR 0008).
+ */
+export function cliSurface(): { name: string; subcommands: readonly string[] }[] {
+  return Object.entries(COMMANDS).map(([name, command]) => ({
+    name,
+    subcommands: command.subcommands ?? []
+  }));
+}
 
 function printHelp(): void {
   const lines = [

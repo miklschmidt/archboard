@@ -10,9 +10,17 @@ import {
   batchCreateElementsStrict
 } from '../../core/canvas-client.js';
 
+// Validated up front so a `case` added below without a line here is
+// unreachable: the surface-parity check reads this list as the CLI's side.
+export const ACTIONS = ['save', 'list', 'restore'] as const;
+
 export async function snapshot(argv: string[]): Promise<void> {
   const { positionals, flags } = parseArgs(argv, { force: { takesValue: false } });
   const [action, name] = positionals;
+
+  if (!action || !(ACTIONS as readonly string[]).includes(action)) {
+    throw new CliUsageError(`Usage: snapshot ${ACTIONS.join('|')} [name]`);
+  }
 
   await ensureCanvasRunning();
 

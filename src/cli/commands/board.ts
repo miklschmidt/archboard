@@ -10,7 +10,7 @@ import {
   boardConflictOf
 } from '../../core/canvas-client.js';
 
-const SUBCOMMANDS = ['list', 'current', 'new', 'open', 'save'] as const;
+export const SUBCOMMANDS = ['list', 'current', 'new', 'open', 'save'] as const;
 
 // Boards are addressed as `name` or `name@variant` — `current` is the variant
 // that owns the bare name, because it is the architecture that exists.
