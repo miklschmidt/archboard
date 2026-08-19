@@ -88,6 +88,17 @@ interface ApiResponse {
 type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
 const AUTO_SYNC_DEBOUNCE_MS = 1200;
 
+// Selection is published on its own short debounce, not the element sync's:
+// picking something is high-frequency and cheap (ids only), while syncing the
+// scene is expensive. 150ms coalesces a lasso drag — which fires onChange
+// continuously — into a single POST once the pointer settles, while still
+// feeling immediate to someone talking to an agent about "these boxes".
+const SELECTION_DEBOUNCE_MS = 150;
+
+// This tab's identity, for last-writer-wins selection and so the server can
+// retire our selection when we disconnect.
+const CLIENT_ID = `tab-${Math.random().toString(36).slice(2, 10)}`;
+
 // Helper function to clean elements for Excalidraw
 const cleanElementForExcalidraw = (element: ServerElement): Partial<ExcalidrawElement> => {
   const {
@@ -333,6 +344,12 @@ function App(): JSX.Element {
   const suppressAutoSyncCountRef = useRef<number>(0)
   const userInteractedRef = useRef<boolean>(false)
 
+  // Selection publishing state. lastPublishedRef holds the id set we last sent,
+  // so an onChange that did not actually change the selection costs nothing.
+  const selectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastPublishedSelectionRef = useRef<string>('')
+  const pendingSelectionRef = useRef<string[] | null>(null)
+
   const applySceneUpdateWithoutAutoSync = (
     api: ExcalidrawImperativeAPI,
     scene: Parameters<ExcalidrawImperativeAPI['updateScene']>[0]
@@ -348,6 +365,9 @@ function App(): JSX.Element {
     return () => {
       if (autoSyncTimerRef.current) {
         clearTimeout(autoSyncTimerRef.current)
+      }
+      if (selectionTimerRef.current) {
+        clearTimeout(selectionTimerRef.current)
       }
     }
   }, [])
@@ -413,7 +433,9 @@ function App(): JSX.Element {
     }
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsUrl = `${protocol}//${window.location.host}`
+    // Identify the tab on the socket: when it closes, the server drops any
+    // selection this tab left behind.
+    const wsUrl = `${protocol}//${window.location.host}/?clientId=${encodeURIComponent(CLIENT_ID)}`
 
     websocketRef.current = new WebSocket(wsUrl)
 
@@ -867,6 +889,55 @@ function App(): JSX.Element {
     }
   }
 
+  // Push the current selection to the server. Ids only — the server resolves
+  // labels, node-ness and bindings from the scene it already holds, so this
+  // stays tiny no matter how big the board is.
+  const publishSelection = async (elementIds: string[]): Promise<void> => {
+    try {
+      const response = await fetch('/api/selection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ elementIds, clientId: CLIENT_ID })
+      })
+      if (!response.ok) {
+        console.warn('Selection publish failed:', response.status)
+        lastPublishedSelectionRef.current = ''
+      }
+    } catch (error) {
+      console.warn('Selection publish error:', error)
+      // Force a resend next time rather than leaving the server stale.
+      lastPublishedSelectionRef.current = ''
+    }
+  }
+
+  // Called on every Excalidraw onChange. Cheap on the common path: if the id
+  // set is unchanged we do nothing at all, so dragging an element around never
+  // touches the selection channel.
+  const handleSelectionChange = (appState: { selectedElementIds?: Record<string, boolean> } | null): void => {
+    const ids = Object.entries(appState?.selectedElementIds ?? {})
+      .filter(([, selected]) => selected)
+      .map(([id]) => id)
+      .sort()
+    const key = ids.join(',')
+    if (key === lastPublishedSelectionRef.current && pendingSelectionRef.current === null) {
+      return
+    }
+    pendingSelectionRef.current = ids
+
+    if (selectionTimerRef.current) {
+      clearTimeout(selectionTimerRef.current)
+    }
+    selectionTimerRef.current = setTimeout(() => {
+      selectionTimerRef.current = null
+      const pending = pendingSelectionRef.current ?? []
+      pendingSelectionRef.current = null
+      const pendingKey = pending.join(',')
+      if (pendingKey === lastPublishedSelectionRef.current) return
+      lastPublishedSelectionRef.current = pendingKey
+      void publishSelection(pending)
+    }, SELECTION_DEBOUNCE_MS)
+  }
+
   const scheduleAutoSync = (): void => {
     if (!isConnected || !excalidrawAPI) {
       return
@@ -976,6 +1047,7 @@ function App(): JSX.Element {
           <Excalidraw
             excalidrawAPI={(api: ExcalidrawAPIRefValue) => setExcalidrawAPI(api)}
             onChange={(_elements, appState) => {
+              handleSelectionChange(appState)
               if (appState?.theme && appState.theme !== theme) {
                 setTheme(appState.theme)
                 try {

@@ -24,8 +24,10 @@ import {
   SyncStatusMessage,
   InitialElementsMessage,
   Snapshot,
+  selectionState,
   normalizeFontFamily
 } from './types.js';
+import { buildSelectionReport } from './core/describe.js';
 import { z } from 'zod';
 import WebSocket from 'ws';
 import { isMainModule } from './core/entry.js';
@@ -57,6 +59,10 @@ app.use('/assets/fonts', express.static(
 
 // WebSocket connections
 const clients = new Set<WebSocket>();
+// Browser client id per socket, taken from the ?clientId= connect param. The
+// same id is sent with every selection post, which is what lets a disconnect
+// retire that client's selection.
+const clientIds = new Map<WebSocket, string>();
 
 // Broadcast to all connected clients
 function broadcast(message: WebSocketMessage): void {
@@ -80,9 +86,11 @@ function normalizeLineBreakMarkup(text: string): string {
 }
 
 // WebSocket connection handling
-wss.on('connection', (ws: WebSocket) => {
+wss.on('connection', (ws: WebSocket, req) => {
   clients.add(ws);
-  logger.info('New WebSocket connection established');
+  const clientId = new URL(req.url ?? '/', 'http://localhost').searchParams.get('clientId');
+  if (clientId) clientIds.set(ws, clientId);
+  logger.info(`New WebSocket connection established${clientId ? ` (client ${clientId})` : ''}`);
 
   // Send current elements to new client
   const filesObj: Record<string, ExcalidrawFile> = {};
@@ -104,6 +112,15 @@ wss.on('connection', (ws: WebSocket) => {
 
   ws.on('close', () => {
     clients.delete(ws);
+    const closingId = clientIds.get(ws);
+    clientIds.delete(ws);
+    // A closed or reloaded tab must not leave a selection standing: whatever it
+    // had picked is no longer on anyone's screen.
+    if (closingId && selectionState.current?.clientId === closingId) {
+      selectionState.current = null;
+      broadcastSelection();
+      logger.info(`Selection cleared: owning client ${closingId} disconnected`);
+    }
     logger.info('WebSocket connection closed');
   });
 
@@ -401,6 +418,12 @@ app.delete('/api/elements/clear', (req: Request, res: Response) => {
   try {
     const count = elements.size;
     elements.clear();
+
+    // Nothing is on the board, so nothing can be selected.
+    if (selectionState.current) {
+      selectionState.current = null;
+      broadcastSelection();
+    }
 
     broadcast({
       type: 'canvas_cleared',
@@ -862,6 +885,61 @@ app.post('/api/elements/sync', (req: Request, res: Response) => {
       details: 'Internal server error during sync operation'
     });
   }
+});
+
+// ─── Selection ────────────────────────────────────────────────
+//
+// Selection is what a human has picked on the board, and it changes on every
+// click — far more often than the scene itself. So it gets its own channel
+// rather than riding the debounced element sync: the browser posts ids only
+// (tens of bytes), and reading it back never re-transmits the scene.
+//
+// One canvas, one selection. Whichever browser client reported last owns it
+// (last writer wins); when that client disconnects, the selection is dropped.
+
+const SelectionSchema = z.object({
+  elementIds: z.array(z.string()),
+  clientId: z.string().min(1)
+});
+
+function broadcastSelection(): void {
+  const current = selectionState.current;
+  broadcast({
+    type: 'selection_changed',
+    elementIds: current?.elementIds ?? [],
+    clientId: current?.clientId ?? null,
+    at: current?.at ?? new Date().toISOString()
+  });
+}
+
+app.post('/api/selection', (req: Request, res: Response) => {
+  const parsed = SelectionSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ success: false, error: parsed.error.errors[0]?.message ?? 'Invalid selection' });
+  }
+
+  const { elementIds, clientId } = parsed.data;
+  selectionState.current = elementIds.length === 0
+    ? null
+    : { elementIds, clientId, at: new Date().toISOString() };
+
+  logger.info(`Selection from ${clientId}: ${elementIds.length} element(s)`);
+  broadcastSelection();
+
+  res.json({
+    success: true,
+    count: elementIds.length,
+    elementIds
+  });
+});
+
+app.get('/api/selection', (_req: Request, res: Response) => {
+  const report = buildSelectionReport(
+    selectionState.current,
+    Array.from(elements.values()),
+    clients.size
+  );
+  res.json({ success: true, ...report });
 });
 
 // ─── Files API (for image elements) ───────────────────────────

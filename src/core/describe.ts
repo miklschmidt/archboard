@@ -137,6 +137,41 @@ interface Edge {
 
 const isConnector = (t: string) => t === 'arrow' || t === 'line';
 
+// A labelled shape comes back from a frontend sync as a shape plus a separate
+// text element. Fold the text into its container so one node reads as one
+// thing — both for the whole-scene description and for a selection, where the
+// human selected the container and the label lives on the child.
+interface Folded {
+  hidden: Set<string>;                // text elements folded away
+  labelOf: Map<string, string>;       // container id -> label text
+}
+
+function foldBoundText(all: ServerElement[], byId: Map<string, ServerElement>): Folded {
+  const hidden = new Set<string>();
+  const labelOf = new Map<string, string>();
+  for (const el of all) {
+    const container = (el as any).containerId;
+    if (el.type === 'text' && container && byId.has(container) && container !== el.id) {
+      hidden.add(el.id);
+      const text = el.text ?? (el as any).originalText;
+      if (text) labelOf.set(container, String(text));
+    }
+  }
+  return { hidden, labelOf };
+}
+
+function toItem(el: ServerElement, folded: Folded): Item {
+  const meta = readMeta(el);
+  const labelText = el.label?.text ?? el.text ?? folded.labelOf.get(el.id);
+  return {
+    el, meta, labelText,
+    name: labelText || meta.name || el.id,
+    isNode: meta.isNode && !isConnector(el.type),
+    fromBoard: el.source === 'frontend_sync',
+    x: el.x, y: el.y, w: el.width || 0, h: el.height || 0,
+  };
+}
+
 function bindingOf(el: any, end: 'start' | 'end'): string | undefined {
   const binding = end === 'start' ? el.startBinding : el.endBinding;
   return binding?.elementId ?? (end === 'start' ? el.start?.id : el.end?.id);
@@ -226,32 +261,12 @@ export function describeScene(allElements: ServerElement[]): string {
   const byId = new Map<string, ServerElement>();
   for (const el of allElements) byId.set(el.id, el);
 
-  // Fold bound text into its container: after a frontend sync a labelled shape
-  // comes back as a shape plus a separate text element, and listing both makes
-  // one node read as two.
-  const foldedLabel = new Map<string, string>();
-  const folded = new Set<string>();
-  for (const el of allElements) {
-    const container = (el as any).containerId;
-    if (el.type === 'text' && container && byId.has(container) && container !== el.id) {
-      folded.add(el.id);
-      const text = el.text ?? (el as any).originalText;
-      if (text) foldedLabel.set(container, String(text));
-    }
-  }
+  const folded = foldBoundText(allElements, byId);
 
   const items: Item[] = [];
   for (const el of allElements) {
-    if (folded.has(el.id)) continue;
-    const meta = readMeta(el);
-    const labelText = el.label?.text ?? el.text ?? foldedLabel.get(el.id);
-    items.push({
-      el, meta, labelText,
-      name: labelText || meta.name || el.id,
-      isNode: meta.isNode && !isConnector(el.type),
-      fromBoard: el.source === 'frontend_sync',
-      x: el.x, y: el.y, w: el.width || 0, h: el.height || 0,
-    });
+    if (folded.hidden.has(el.id)) continue;
+    items.push(toItem(el, folded));
   }
 
   const nodes = items.filter(i => i.isNode).sort(readingOrder);
@@ -274,7 +289,7 @@ export function describeScene(allElements: ServerElement[]): string {
   const variantCounts = counts(nodes.map(n => n.meta.variant));
   const levelCounts = counts(nodes.map(n => n.meta.level));
   const boundNodes = nodes.filter(n => n.meta.binding).length;
-  const fromBoard = items.filter(i => i.fromBoard).length + folded.size;
+  const fromBoard = items.filter(i => i.fromBoard).length + folded.hidden.size;
 
   // Edges: arrows resolved to node names. Ids stay so callers that parse them
   // keep working.
@@ -321,7 +336,7 @@ export function describeScene(allElements: ServerElement[]): string {
     `${edges.length} edge${edges.length === 1 ? '' : 's'}`,
     `${others.length} plain`,
   ];
-  if (folded.size > 0) composition.push(`${folded.size} bound label${folded.size === 1 ? '' : 's'} folded in`);
+  if (folded.hidden.size > 0) composition.push(`${folded.hidden.size} bound label${folded.hidden.size === 1 ? '' : 's'} folded in`);
   lines.push(`Total elements: ${allElements.length} (${composition.join(', ')})`);
   if (nodes.length > 0) {
     lines.push(`Kinds: ${renderCounts(kindCounts, KIND_ORDER)}`);
@@ -567,4 +582,130 @@ function summarise(s: {
   if (s.others.length > 0) notes.push(`${plural(s.others.length, 'plain element')} alongside`);
 
   return `${clauses.join(' ')}${notes.length ? `; ${joinList(notes)}` : ''}.`;
+}
+
+// ---------------------------------------------------------------------------
+// Selection — what a human has picked on the board
+// ---------------------------------------------------------------------------
+//
+// Same read-path discipline as the scene description: an agent has to be able
+// to re-narrate this in one spoken sentence ("you've got the two payment
+// services selected"), so `summary` comes first and the per-element lines are
+// the same ones `describe` uses.
+
+export interface SelectedElement {
+  id: string;
+  type: string;
+  label?: string;
+  isNode: boolean;      // carries archboard metadata — stands for an architectural unit
+  kind?: string;
+  binding?: string;
+  variant?: string;
+  level?: string;
+  link?: string | null;
+  fromBoard: boolean;   // last written by a human on the board, not by an agent
+  x: number; y: number; width: number; height: number;
+}
+
+export interface SelectionReport {
+  elementIds: string[];
+  count: number;
+  nodeCount: number;
+  elements: SelectedElement[];
+  missingIds: string[];   // selected ids the server has no element for
+  clientId: string | null;
+  at: string | null;
+  browserClients: number;
+  summary: string;        // one line, speakable
+  text: string;           // summary + per-element detail
+}
+
+function selectedElement(item: Item): SelectedElement {
+  return {
+    id: item.el.id,
+    type: item.el.type,
+    ...(item.labelText ? { label: item.labelText } : {}),
+    isNode: item.isNode,
+    ...(item.meta.kind ? { kind: item.meta.kind } : {}),
+    ...(item.meta.binding ? { binding: item.meta.binding } : {}),
+    ...(item.meta.variant ? { variant: item.meta.variant } : {}),
+    ...(item.meta.level ? { level: item.meta.level } : {}),
+    ...(item.el.link ? { link: item.el.link } : {}),
+    fromBoard: item.fromBoard,
+    x: item.x, y: item.y, width: item.w, height: item.h,
+  };
+}
+
+function selectionSummary(items: Item[], missing: number): string {
+  if (items.length === 0 && missing === 0) return 'Nothing is selected on the board.';
+
+  const nodes = items.filter(i => i.isNode);
+  const plain = items.filter(i => !i.isNode);
+  const named = (list: Item[]) => joinList(list.slice(0, 6).map(i => `"${i.name}"`)) +
+    (list.length > 6 ? `, and ${list.length - 6} more` : '');
+
+  const clauses: string[] = [];
+  if (nodes.length > 0) {
+    const kinds = renderCounts(counts(nodes.map(n => n.meta.kind ?? UNTYPED)), KIND_ORDER);
+    clauses.push(`${plural(nodes.length, 'node')} (${kinds}) — ${named(nodes)}`);
+  }
+  if (plain.length > 0) {
+    const withLabel = plain.filter(p => p.labelText);
+    const detail = withLabel.length > 0 ? ` — ${named(withLabel)}` : '';
+    clauses.push(`${plural(plain.length, 'plain element')} (${renderCounts(counts(plain.map(p => p.el.type)))})${detail}`);
+  }
+  if (missing > 0) clauses.push(`${missing} selected id${missing === 1 ? '' : 's'} not on the canvas`);
+
+  const total = items.length + missing;
+  return `${plural(total, 'element')} selected: ${joinList(clauses)}.`;
+}
+
+// Build the selection read-out. `allElements` is the server's current scene —
+// selection is stored as ids only, and the semantic detail is resolved here so
+// the wire payload from the browser stays tiny.
+export function buildSelectionReport(
+  selection: { elementIds: string[]; clientId: string; at: string } | null,
+  allElements: ServerElement[],
+  browserClients: number
+): SelectionReport {
+  const byId = new Map<string, ServerElement>();
+  for (const el of allElements) byId.set(el.id, el);
+  const folded = foldBoundText(allElements, byId);
+
+  const ids = selection?.elementIds ?? [];
+  const items: Item[] = [];
+  const missingIds: string[] = [];
+  for (const id of ids) {
+    const el = byId.get(id);
+    if (!el) { missingIds.push(id); continue; }
+    items.push(toItem(el, folded));
+  }
+  items.sort(readingOrder);
+
+  const summary = selectionSummary(items, missingIds.length);
+  const lines = [summary];
+  const showLevel = new Set(items.map(i => i.meta.level).filter(Boolean)).size > 1;
+  for (const item of items) {
+    lines.push(`  ${item.isNode ? nodeLine(item, showLevel) : plainLine(item)}`);
+  }
+  if (missingIds.length > 0) {
+    lines.push(`  not on the canvas: ${missingIds.join(', ')}`);
+  }
+  if (selection) {
+    lines.push(`Reported by browser client ${selection.clientId} at ${selection.at}` +
+      ` (${browserClients} browser client${browserClients === 1 ? '' : 's'} connected).`);
+  }
+
+  return {
+    elementIds: ids,
+    count: ids.length,
+    nodeCount: items.filter(i => i.isNode).length,
+    elements: items.map(selectedElement),
+    missingIds,
+    clientId: selection?.clientId ?? null,
+    at: selection?.at ?? null,
+    browserClients,
+    summary,
+    text: lines.join('\n'),
+  };
 }

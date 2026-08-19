@@ -15,6 +15,7 @@ import {
   createElementOnCanvas,
   batchCreateElementsOnCanvas,
   getElements,
+  getSelection,
   searchElements,
   clearCanvas,
   exportImage,
@@ -245,13 +246,21 @@ export async function callExcalidrawTool(
 
         let result: any;
         switch (resource) {
-          case 'scene':
+          case 'scene': {
+            let selectedElements: string[] = [];
+            try {
+              await ensureCanvasReadyForMcpTool();
+              selectedElements = (await getSelection()).elementIds;
+            } catch (error) {
+              logger.warn(`Could not read selection: ${(error as Error).message}`);
+            }
             result = {
               theme: sceneState.theme,
               viewport: sceneState.viewport,
-              selectedElements: Array.from(sceneState.selectedElements)
+              selectedElements
             };
             break;
+          }
           case 'library':
           case 'elements':
             try {
@@ -618,6 +627,15 @@ export async function callExcalidrawTool(
 
         return {
           content: [{ type: 'text', text: describeScene(allElements) }]
+        };
+      }
+      case 'get_selection': {
+        logger.info('Reading canvas selection via MCP');
+
+        const selection = await getSelection();
+
+        return {
+          content: [{ type: 'text', text: selection.text }]
         };
       }
       case 'get_canvas_screenshot': {
