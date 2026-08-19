@@ -90,7 +90,9 @@ network. Tunnel over SSH or restrict to a trusted VLAN.
 - **Touch cable:** touch is a separate USB-B upstream port. Don't assume it
   rides the USB-C video link — test both, expect to need the upstream cable.
 - **Scaling:** 3840x2160 on 75" is tiny at arm's length. Set a deliberate
-  display scale, and lean on Excalidraw's own zoom.
+  display scale on the driving machine and lean on Excalidraw's own zoom.
+  Deliberately *not* an in-app concern: archboard has no large-display mode and
+  does not need one yet.
 
 ## Not worth pursuing
 

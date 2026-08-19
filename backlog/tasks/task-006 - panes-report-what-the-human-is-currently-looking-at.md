@@ -4,13 +4,11 @@ title: 'panes: report what the human is currently looking at'
 status: To Do
 assignee: []
 created_date: '2026-08-19 14:50'
-updated_date: '2026-08-19 16:51'
+updated_date: '2026-08-19 16:59'
 labels:
   - needs-triage
 dependencies:
-  - TASK-003
-  - TASK-004
-  - TASK-015
+  - TASK-016
 ordinal: 6000
 ---
 

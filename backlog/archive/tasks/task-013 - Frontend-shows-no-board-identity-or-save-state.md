@@ -4,7 +4,7 @@ title: Frontend shows no board identity or save state
 status: To Do
 assignee: []
 created_date: '2026-08-19 16:51'
-updated_date: '2026-08-19 16:51'
+updated_date: '2026-08-19 16:59'
 labels:
   - needs-triage
 dependencies:
@@ -18,3 +18,13 @@ ordinal: 13000
 - [ ] #2 Unsaved-vs-saved state is visible
 - [ ] #3 Page title reflects the open board instead of 'Excalidraw POC - Backend API Integration'
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @claude
+created: 2026-08-19 16:59
+---
+Superseded by TASK-016 (build the archboard shell). The shell rebuilds the header and hosting layer, so fixing these separately would be work thrown away — they are acceptance criteria there instead.
+---
+<!-- COMMENTS:END -->
