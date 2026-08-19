@@ -150,6 +150,68 @@ assert(
   'new set: the newly seeded stencils carry no attribution'
 );
 
+// --- choosing and placing a stencil ------------------------------------------
+//
+// The catalogue is what both surfaces (`library list` / `library insert` and
+// `list_library_items` / `insert_library_item`) are made of, so the two
+// decisions it makes for them are pinned here: which stencil a name means, and
+// what a placed copy is. Both are pure — no canvas server involved.
+
+const { chooseStencil, remapElements, AmbiguousStencilError, UnknownStencilError } =
+  await import(join(__dirname, '..', 'dist', 'core', 'library-catalogue.js'));
+
+const entries = [
+  { id: 'one', name: 'Database', source: 'cloud', elements: 6, width: 66, height: 101, text: null },
+  { id: 'two', name: 'Database', source: 'drwnio', elements: 4, width: 199, height: 253, text: null },
+  { id: 'three', name: 'Server rack', source: 'cloud', elements: 104, width: 224, height: 287, text: null }
+];
+
+function refusal(query) {
+  try {
+    chooseStencil(entries, query);
+    return null;
+  } catch (error) {
+    return error;
+  }
+}
+
+assert(chooseStencil(entries, { name: 'server rack' }).id === 'three', 'choose: a name is not matched case-insensitively');
+assert(chooseStencil(entries, { name: 'Database', source: 'drwnio' }).id === 'two', 'choose: source does not settle a shared name');
+assert(chooseStencil(entries, { itemId: 'one' }).id === 'one', 'choose: an id does not select');
+
+const ambiguous = refusal({ name: 'Database' });
+assert(ambiguous instanceof AmbiguousStencilError, 'choose: a name two libraries use was resolved instead of refused');
+assert(ambiguous?.candidates.length === 2, 'choose: the refusal does not carry both candidates');
+assert(
+  ambiguous?.message.includes('cloud') && ambiguous?.message.includes('drwnio'),
+  'choose: the refusal does not name the sources, so the caller cannot answer it'
+);
+assert(refusal({ name: 'Nothing' }) instanceof UnknownStencilError, 'choose: an unknown name did not refuse');
+assert(refusal({ itemId: 'nope' }) instanceof UnknownStencilError, 'choose: an unknown id did not refuse');
+assert(refusal({ name: 'Database', source: 'system-design' }) instanceof UnknownStencilError, 'choose: a source nothing matches did not refuse');
+
+// Placing a copy: fresh ids everywhere, every internal reference following
+// them, and the whole thing translated so its top-left lands where asked.
+const stencil = [
+  { id: 'a', type: 'rectangle', x: 500, y: 400, width: 100, height: 50, groupIds: ['g'] },
+  { id: 'b', type: 'draw', x: 520, y: 460, width: 10, height: 10, groupIds: ['g'], startBinding: { elementId: 'a', focus: 0 }, endBinding: { elementId: 'a', focus: 1 } },
+  { id: 'c', type: 'text', x: 505, y: 405, width: 40, height: 20, containerId: 'a', groupIds: [] }
+];
+const placed = remapElements(stencil, 0, 0, { library: { item: 'Fixture' } });
+
+assert(placed.every(el => !['a', 'b', 'c'].includes(el.id)), 'insert: element ids were reused, so a second insert would collide');
+assert(new Set(placed.map(el => el.id)).size === 3, 'insert: two placed elements share an id');
+assert(placed[0].x === 0 && placed[0].y === 0, 'insert: the top-left corner did not land where asked');
+assert(placed[1].x === 20 && placed[1].y === 60, 'insert: the stencil was distorted rather than translated');
+assert(placed[1].type === 'arrow', 'insert: the v1 "draw" type was not translated to "arrow"');
+assert(placed[1].startBinding.elementId === placed[0].id, 'insert: an arrow binding still points at the original id');
+assert(placed[1].start.id === placed[0].id, "insert: the server's own start/end binding was not set");
+assert(placed[2].containerId === placed[0].id, 'insert: a bound label still points at the original container');
+assert(placed[0].groupIds[0] === placed[1].groupIds[0], 'insert: grouped elements were split into different groups');
+assert(placed[0].groupIds[0] !== 'g', 'insert: the group id was reused, so two inserts would be one group');
+assert(placed[0].customData.library.item === 'Fixture', 'insert: the placed copy does not record where it came from');
+assert(stencil[0].x === 500 && stencil[0].id === 'a', 'insert: the library item itself was mutated');
+
 fs.rmSync(vault, { recursive: true, force: true });
 
 if (failures > 0) {

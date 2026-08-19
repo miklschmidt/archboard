@@ -8,7 +8,7 @@
 // then be broken on the one day someone opens archboard in Claude Desktop —
 // which is the whole reason for keeping it. This check is what notices.
 //
-// Parity is not one-to-one. 35 tools against 28 commands, because a command
+// Parity is not one-to-one. 37 tools against 28 commands, because a command
 // may take a subcommand: `arrange group` and `board save` are each one tool's
 // worth of surface. So the comparison is between MCP tool names and CLI
 // ENTRIES — a command, or a command plus subcommand — paired explicitly below.
@@ -66,6 +66,8 @@ const PAIRS = [
   ['arrange lock', ['lock_elements']],
   ['arrange unlock', ['unlock_elements']],
   ['arrange duplicate', ['duplicate_elements']],
+  ['library list', ['list_library_items']],
+  ['library insert', ['insert_library_item']],
   ['snapshot save', ['snapshot_scene']],
   ['snapshot restore', ['restore_snapshot']]
 ];
@@ -86,8 +88,6 @@ const CLI_ONLY = {
   'install-skill': 'installs skill files into a skills root on this machine — a filesystem act for the agent that has one.',
   'board current': '`list_boards` already returns `active`, so the answer is on MCP without a second tool.',
   'snapshot list': 'MCP lags. `snapshot_scene` and `restore_snapshot` exist with no listing tool, so an MCP client has to remember the names it saved.',
-  'library list': 'MCP lags. The stencil palette (ADR 0007) is CLI-only; `get_resource: "library"` is an upstream misnomer that returns elements.',
-  'library insert': 'MCP lags. Same as `library list` — nothing places a stencil over MCP.',
   'inject status': 'injection is decided when the canvas server starts, from ARCHBOARD_INJECT and the bound address (ADR 0005); reading and probing it is an operator act on the host, not canvas work.',
   'inject test': 'as `inject status` — a wiring probe for the machine running the canvas.'
 };
