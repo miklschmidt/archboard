@@ -33,7 +33,10 @@
 // That is the inbound half. Outbound, the authority is the other way round —
 // the bound text is what the label says and the stored seed follows it — so a
 // human retyping a box on the board is not written back out from under them
-// (`labelStatements`, TASK-028).
+// (`labelStatements`, TASK-028). Emptying a label is the same direction but a
+// different act — Excalidraw deletes the text element rather than editing it,
+// so there is no statement to make and the seed has to be struck out instead
+// (`labelClearances`, TASK-029).
 
 /** A `boundElements` entry: a shape's forward reference to a text or arrow. */
 export interface BoundRef {
@@ -347,6 +350,83 @@ export function labelStatements(
     statements.push({ id: containerId, label: { text } });
   }
   return statements;
+}
+
+/**
+ * The label a change report has to *un*state, because the text element that
+ * was saying it has been deleted.
+ *
+ * Emptying a label is not a rename with an empty string. Excalidraw treats a
+ * bound text submitted blank as a deletion: it marks the text element
+ * `isDeleted` and unbinds it from its container, so the report that follows
+ * carries no text upsert for `labelStatements` to attach a statement to. The
+ * stored seed is therefore never corrected, and the next full load expands it
+ * again — the old words reappearing over a box somebody deliberately cleared
+ * (TASK-029).
+ *
+ * The obvious repair is to clear the seed whenever a container turns up with
+ * no bound text. That is wrong, and it undoes TASK-024: a shape an agent has
+ * just labelled, whose seed has not been expanded yet, looks exactly the same
+ * from the outside. Absence is not evidence. What distinguishes the two is
+ * that a deletion leaves something behind — the deleted text element itself,
+ * still in the scene, still naming its container. A seed that was never
+ * expanded leaves nothing, so it can never be mistaken for one.
+ *
+ * Hence the four conditions below. The last one — that the report is already
+ * saying something about this container — is not about correctness but about
+ * silence: a tombstone lingers in the scene until the next delivery rebuilds
+ * it, and without the guard every report in that window would restate the same
+ * clearance and bump the element's version for nothing.
+ *
+ * Both `label` and `text` are stated null because `labelSeedOf` reads either,
+ * and the server merges an upsert onto what it holds rather than replacing it:
+ * clearing only one leaves the seed alive in the other.
+ */
+export interface LabelClearance {
+  /** The container whose stored label must go. */
+  id: string;
+  label: null;
+  text: null;
+}
+
+export function labelClearances(
+  upserts: readonly LabelledElement[],
+  deletes: readonly string[],
+  scene: readonly LabelledElement[]
+): LabelClearance[] {
+  const bereaved: Array<{ container: string; text: string }> = [];
+  for (const element of scene) {
+    if (!element || live(element) || !isText(element)) continue;
+    const container = element.containerId;
+    if (typeof container !== 'string' || !container) continue;
+    bereaved.push({ container, text: element.id });
+  }
+  if (bereaved.length === 0) return [];
+
+  const alive = new Set<string>();
+  for (const element of scene) {
+    if (element && typeof element.id === 'string' && live(element)) alive.add(element.id);
+  }
+  const stillLabelled = boundTextsByContainer(scene);
+
+  // What this report already speaks about, so a clearance rides an existing
+  // conversation rather than starting a new one on every pass.
+  const news = new Set<string>(deletes);
+  for (const element of upserts) {
+    if (element && typeof element.id === 'string') news.add(element.id);
+  }
+
+  const clearances: LabelClearance[] = [];
+  const said = new Set<string>();
+  for (const { container, text } of bereaved) {
+    if (said.has(container)) continue;
+    if (!alive.has(container)) continue;
+    if (stillLabelled.has(container)) continue;
+    if (!news.has(container) && !news.has(text)) continue;
+    said.add(container);
+    clearances.push({ id: container, label: null, text: null });
+  }
+  return clearances;
 }
 
 // ---------------------------------------------------------------------------
