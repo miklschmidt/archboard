@@ -34,7 +34,7 @@ export async function buildSceneFile(): Promise<ExportedScene> {
   const excalidrawScene: Record<string, any> = {
     type: 'excalidraw',
     version: 2,
-    source: 'mcp-excalidraw-server',
+    source: 'archboard',
     elements: exportElements,
     appState: {
       viewBackgroundColor: '#ffffff',
