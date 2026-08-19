@@ -20,8 +20,9 @@
     "dev:server": "bunx tsc --watch",
     "production": "bun run build && bun run canvas",
     "sync:skills": "node scripts/sync-skills.mjs",
-    "test": "bun run test:mcp && bun run test:bind",
+    "test": "bun run test:mcp && bun run test:bind && bun run test:obsidian",
     "test:bind": "bun run build:server && node scripts/check-local-bind.mjs",
+    "test:obsidian": "bun run build:server && node scripts/check-obsidian-md.mjs",
     "test:mcp": "bun run build:server && node scripts/check-mcp-stdio.mjs",
     "type-check": "bunx tsc --noEmit && bunx tsc --noEmit -p tsconfig.frontend.json"
   },
