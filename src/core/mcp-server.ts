@@ -5,7 +5,17 @@ import { packageVersion } from './version.js';
 import { tools } from './mcp-tools.js';
 import { callExcalidrawTool } from './mcp-dispatch.js';
 
-const SERVER_NAME = 'mcp-excalidraw-server';
+// The MCP identity advertised in `initialize`'s serverInfo (2025 era) and in
+// the per-result `_meta` serverInfo stamp (2026-07-28). Renamed from the
+// upstream `mcp-excalidraw-server` deliberately, and safe to rename because
+// nothing keys off it: MCP tool names are flat (`create_element`, …) and are
+// never namespaced by the server name, and a client's `mcpServers` key — the
+// thing that does prefix tools in a client UI — is chosen by whoever writes
+// the config, not derived from this string. So a client entry keyed
+// `excalidraw` keeps showing `excalidraw/*` tools either way, and no client
+// config needs editing. The only visible change is the name a client displays
+// for this server.
+const SERVER_NAME = 'archboard';
 const SERVER_DESCRIPTION =
   'Programmatic canvas toolkit for Excalidraw with file I/O, image export, and real-time sync';
 const SERVER_VERSION = packageVersion();

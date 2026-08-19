@@ -1464,7 +1464,7 @@ async function startServer(): Promise<void> {
     logger.info(`WebSocket server running on ws://${hostForUrl}:${PORT}`);
 
     // Written only after listen succeeds so stale files can't shadow a
-    // server that never came up; lets `excalidraw-canvas stop` find us.
+    // server that never came up; lets `archboard stop` find us.
     writePidFile(PORT, process.pid);
     ownsPidFile = true;
   });

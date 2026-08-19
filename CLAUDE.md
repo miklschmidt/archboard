@@ -131,16 +131,34 @@ Tracked in Backlog.md; `backlog task list --plain` is authoritative.
   element id with no board dimension at all, so "load board X" does not exist.
   (TASK-003)
 - **No change-event feed.** Agent must poll; wrong shape for full-duplex voice.
-- **Selection never leaves the browser**, so the agent cannot act on what you
-  have picked. (TASK-004)
+- **A node with a transparent background is only selectable by its stroke**, so
+  tapping the middle of a hollow box picks nothing. (TASK-009)
 - `export --out` does not `mkdir -p`.
-- CLI and MCP still identify as `mcp-excalidraw-server`. (TASK-008)
 - Page title is still "Excalidraw POC - Backend API Integration".
 
-Closed: `describe` now surfaces `customData` and `link`, separates nodes from
-plain elements, and folds bound labels back into their containers (TASK-001).
-Obsidian export preserves custom frontmatter, so board identity survives
-(TASK-002).
+Closed: `describe` surfaces `customData` and `link`, separates nodes from plain
+elements, and folds bound labels and multi-element nodes (TASK-001). Obsidian
+export preserves custom frontmatter, so board identity survives (TASK-002).
+Selection reaches the server and is readable via `selection` / `get_selection`
+(TASK-004). Promotion declares a selection to be a node with a git-resolved
+binding (TASK-005). The CLI and MCP handshake identify as `archboard`
+(TASK-008).
+
+## Names on the wire
+
+`archboard` is the CLI's own name in help and errors, the MCP `serverInfo.name`
+in the `initialize` handshake, and the `source` stamped into exported
+`.excalidraw` scenes. No MCP client config needs to change: tool names are flat
+(`create_element`, …) and never namespaced by the server name — a client's
+`mcpServers` key, which is what prefixes tools in a client UI, is chosen in the
+config, not derived from `serverInfo.name`.
+
+Two internal identity strings deliberately keep the old spelling, because they
+are handshakes between our own processes rather than anything a user reads:
+`mcp-excalidraw-canvas` in `/health` (`CANVAS_SERVICE_NAME`, how the client
+proves it is not talking to a foreign service on the port) and the
+`excalidraw-canvas` state directory holding the pidfile (renaming it would
+orphan a running server's pidfile). Neither is printed by any command.
 
 ## Artifacts
 

@@ -128,7 +128,7 @@ function assertModernResult(result, label) {
   assertEqual(result.resultType, 'complete', `${label}: resultType`);
   const serverInfo = result._meta?.[SERVER_INFO_META_KEY];
   assert(serverInfo !== undefined, `${label}: missing ${SERVER_INFO_META_KEY} in _meta`);
-  assertEqual(serverInfo.name, 'mcp-excalidraw-server', `${label}: serverInfo.name`);
+  assertEqual(serverInfo.name, 'archboard', `${label}: serverInfo.name`);
 }
 
 // tools/list and server/discover are CacheableResult extenders on 2026-07-28.
@@ -237,7 +237,7 @@ async function checkLegacyInitialize() {
 
   const initResult = resultOf(responses.find(r => r.id === 1), 'initialize');
   assertEqual(initResult.protocolVersion, LEGACY_VERSION, 'initialize: negotiated protocol version');
-  assertEqual(initResult.serverInfo?.name, 'mcp-excalidraw-server', 'initialize: serverInfo.name');
+  assertEqual(initResult.serverInfo?.name, 'archboard', 'initialize: serverInfo.name');
   assert(initResult.capabilities?.tools !== undefined, 'initialize: tools capability must be advertised');
   assert(initResult.resultType === undefined, 'initialize: 2025-era results must not carry resultType');
 
