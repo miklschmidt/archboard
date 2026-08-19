@@ -4,6 +4,7 @@ import * as server from './commands/server.js';
 import * as elements from './commands/elements.js';
 import * as scene from './commands/scene.js';
 import { selection } from './commands/selection.js';
+import { promote, demote } from './commands/promote.js';
 import { snapshot } from './commands/snapshot.js';
 import { arrange } from './commands/arrange.js';
 import { installSkill } from './commands/install-skill.js';
@@ -25,6 +26,8 @@ const COMMANDS: Record<string, Command> = {
   get: { handler: elements.get, summary: 'Get one element by id', usage: 'get <id>' },
   query: { handler: elements.query, summary: 'Query elements (server + typed client-side filters)', usage: 'query [--type rectangle] [--bbox x0,y0,x1,y1] [--filter locked=true] [--filter-json \'{...}\']' },
   selection: { handler: selection, summary: 'What a human currently has selected on the board', usage: 'selection [--text]' },
+  promote: { handler: promote, summary: 'Declare the selected elements a node — kind, identity, binding', usage: 'promote --kind service|queue|datastore|gateway|external [--ids a,b,c] [--name "Payments"] [--node payments] [--path src/payments/service.ts] [--repo host/owner/name] [--branch main] [--commit sha] [--variant current] [--level system|service|module] [--each] [--text]  (default target is the live selection; --each makes one node per selected shape)' },
+  demote: { handler: demote, summary: 'Turn nodes back into plain elements', usage: 'demote [--ids a,b,c] [--text]  (default target is the live selection; demotes every element of each node it touches)' },
   describe: { handler: scene.describe, summary: 'AI-readable scene description (plain text)', usage: 'describe' },
   screenshot: { handler: scene.screenshot, summary: 'Capture the canvas (needs an open browser tab)', usage: 'screenshot [--out file.png] [--format png|svg] [--no-background]' },
   export: { handler: scene.exportCmd, summary: 'Export the scene as .excalidraw JSON or Obsidian .excalidraw.md', usage: 'export [--out scene.excalidraw | note.excalidraw.md] [--format json|obsidian] [--force] (a .md out path implies obsidian; --force overwrites a non-Excalidraw destination, still preserving its frontmatter)' },
