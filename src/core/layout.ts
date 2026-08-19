@@ -53,10 +53,37 @@ export function clusterBoxes<T extends Box>(items: T[], gap = CLUSTER_GAP): T[][
   return [...groups.values()].sort((a, b) => b.length - a.length);
 }
 
+// The box round a set of boxes. Null for an empty set, which is the only
+// honest answer: a frame drawn round nothing has no thirds.
+export function boundingBoxOf(boxes: Box[]): BoundingBox | null {
+  if (boxes.length === 0) return null;
+  return {
+    minX: Math.min(...boxes.map(b => b.x)),
+    minY: Math.min(...boxes.map(b => b.y)),
+    maxX: Math.max(...boxes.map(b => b.x + b.w)),
+    maxY: Math.max(...boxes.map(b => b.y + b.h))
+  };
+}
+
+// Did this shape's centre stay put? `regionName` reads the centre and nothing
+// else, so an unchanged centre is a proof: whatever new region name the shape
+// has been handed, it came from the frame moving and not from the shape.
+// Absolute, and therefore only ever true when the two sides share a coordinate
+// system — which is the case it is for.
+export function sameCentre(a: Box, b: Box, tolerance = 1): boolean {
+  return Math.abs((a.x + a.w / 2) - (b.x + b.w / 2)) <= tolerance &&
+    Math.abs((a.y + a.h / 2) - (b.y + b.h / 2)) <= tolerance;
+}
+
 // Whereabouts on the board, as a human would point: thirds of the bounding box
 // in each axis. Relative to the box rather than to the canvas origin, so the
 // name means the same thing on a board that was drawn at (0,0) and one drawn
 // three screens to the right.
+//
+// The frame is a choice, and it matters: whatever the box is drawn round moves
+// every name inside it. `compare` therefore draws it round the nodes both
+// boards have, not round everything on each board, so that arriving and
+// departing nodes cannot rename their neighbours' whereabouts.
 export function regionName(cx: number, cy: number, box: BoundingBox): string {
   const third = (v: number, lo: number, hi: number) => {
     if (hi - lo < 1) return 1;
