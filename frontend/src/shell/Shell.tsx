@@ -12,8 +12,10 @@ import { CanvasPane } from '../canvas/CanvasPane'
 import { BoardBar } from './BoardBar'
 import { BoardDialog, type BoardDialogMode } from './BoardDialog'
 import { ConfirmDialog } from './ConfirmDialog'
-import { clearBoard, fetchCurrentBoard, newBoard, openBoard, saveBoard } from '../canvas/api'
-import type { BoardInfo, PaneStatus } from '../types'
+import { ConflictDialog } from './ConflictDialog'
+import { BoardConflictError, clearBoard, fetchCurrentBoard, newBoard, openBoard, saveBoard } from '../canvas/api'
+import type { SaveRequest } from '../canvas/api'
+import type { BoardInfo, BoardWriteConflict, PaneStatus } from '../types'
 import './shell.css'
 
 const THEME_KEY = 'archboard-theme'
@@ -41,6 +43,9 @@ export function Shell(): JSX.Element {
   const [dialog, setDialog] = useState<BoardDialogMode | null>(null)
   const [dialogError, setDialogError] = useState<string | null>(null)
   const [confirmingClear, setConfirmingClear] = useState(false)
+  // A refused save, plus the request that was refused — so "overwrite" repeats
+  // exactly the save the human already asked for, rather than a rebuilt guess.
+  const [conflict, setConflict] = useState<{ conflict: BoardWriteConflict; request: SaveRequest } | null>(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<Notice | null>(null)
 
@@ -113,6 +118,29 @@ export function Shell(): JSX.Element {
     }
   }, [dialog])
 
+  // Every path that writes the vault goes through here, so there is exactly one
+  // place that knows a save can come back refused.
+  const attemptSave = useCallback((request: SaveRequest) =>
+    run(async () => {
+      try {
+        const saved = await saveBoard(request)
+        setBoardInfo(saved)
+        setDialog(null)
+        setConflict(null)
+        setNotice({
+          kind: 'info',
+          text: saved.forced
+            ? `Overwrote ${saved.file}. Whatever that note held is gone.`
+            : `Saved ${saved.board} to ${saved.file}.`
+        })
+      } catch (error) {
+        if (!(error instanceof BoardConflictError)) throw error
+        setDialog(null)
+        setDialogError(null)
+        setConflict({ conflict: error.conflict, request })
+      }
+    }), [run])
+
   const handleOpen = (address: { board: string; variant?: string; level?: string }) =>
     run(async () => {
       const opened = await openBoard(address)
@@ -130,12 +158,7 @@ export function Shell(): JSX.Element {
     })
 
   const handleSaveAs = (address: { board: string; variant?: string; level?: string }) =>
-    run(async () => {
-      const saved = await saveBoard({ name: address.board, variant: address.variant, level: address.level })
-      setBoardInfo(saved)
-      setDialog(null)
-      setNotice({ kind: 'info', text: `Saved ${saved.board} to ${saved.file}. ${saved.warning}` })
-    })
+    attemptSave({ name: address.board, variant: address.variant, level: address.level })
 
   const handleSave = () => {
     // The scratch board has no home in the vault, so saving it is a naming
@@ -144,11 +167,25 @@ export function Shell(): JSX.Element {
       setDialog('save-as')
       return
     }
+    void attemptSave({})
+  }
+
+  // The three ways out of a conflict. Each is the human picking which copy
+  // survives; the shell never picks one on its own.
+  const handleReload = () => {
+    const key = conflict?.conflict.board
+    if (!key) return
     void run(async () => {
-      const saved = await saveBoard()
-      setBoardInfo(saved)
-      setNotice({ kind: 'info', text: `Saved ${saved.board} to ${saved.file}. ${saved.warning}` })
+      const opened = await openBoard({ board: key, reload: true })
+      setBoardInfo(opened)
+      setConflict(null)
+      setNotice({ kind: 'info', text: `Reloaded ${opened.board} from the vault.` })
     })
+  }
+
+  const handleOverwrite = () => {
+    if (!conflict) return
+    void attemptSave({ ...conflict.request, force: true })
   }
 
   const handleClear = () =>
@@ -220,6 +257,17 @@ export function Shell(): JSX.Element {
           error={dialogError}
           onSubmit={dialog === 'open' ? handleOpen : dialog === 'new' ? handleNew : handleSaveAs}
           onCancel={() => { setDialog(null); setDialogError(null) }}
+        />
+      )}
+
+      {conflict && (
+        <ConflictDialog
+          conflict={conflict.conflict}
+          busy={busy}
+          onReload={handleReload}
+          onOverwrite={handleOverwrite}
+          onSaveAs={() => { setConflict(null); setDialogError(null); setDialog('save-as') }}
+          onCancel={() => setConflict(null)}
         />
       )}
 

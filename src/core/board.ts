@@ -19,6 +19,7 @@
 // different abstraction levels are different subjects, so they get different
 // names.
 
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { ARCHBOARD_VAULT } from './config.js';
@@ -214,6 +215,89 @@ export function identityFromFrontmatter(content: string): BoardIdentity | null {
   }
 }
 
+// ─── Write conflicts ──────────────────────────────────────────
+//
+// A save is refused when the destination holds bytes archboard has not seen:
+// either the note changed after archboard read it, or archboard never read it
+// at all. Both mean the same thing — writing would delete something nobody was
+// told about — so both are reported the same way, with the three outcomes a
+// human can pick between. archboard never picks (ADR 0006).
+
+export type BoardConflictReason = 'changed' | 'unseen';
+
+export interface BoardWriteConflict {
+  board: string;
+  file: string;
+  reason: BoardConflictReason;
+  expectedHash?: string;
+  actualHash: string;
+  lastReadAt?: string;
+  fileModifiedAt?: string;
+  // The three ways out, as commands that can be run verbatim. Every surface
+  // renders these; none of them invents a fourth.
+  outcomes: { reload: string; overwrite: string; saveAs: string };
+  message: string;
+}
+
+// A name for the copy on the canvas that cannot collide with what is on disk:
+// a variant, because "the same board, a different take on it" is exactly what
+// variants are for.
+export function suggestSaveAsName(identity: Pick<BoardIdentity, 'board' | 'variant'>): string {
+  const suffix = identity.variant === CURRENT_VARIANT ? 'from-canvas' : `${identity.variant}-from-canvas`;
+  return `${identity.board}@${suffix}`;
+}
+
+const clock = (iso: string | undefined): string =>
+  iso ? new Date(iso).toISOString().replace('T', ' ').slice(0, 19) + ' UTC' : 'unknown';
+
+export function describeWriteConflict(input: {
+  target: BoardIdentity;
+  file: string;
+  reason: BoardConflictReason;
+  expectedHash?: string;
+  actualHash: string;
+  lastReadAt?: string;
+  fileModifiedAt?: string;
+  // How the save that was refused was addressed, so "run it again with --force"
+  // is a command that actually does what it says.
+  saveCommand: string;
+}): BoardWriteConflict {
+  const key = boardKey(input.target);
+  const outcomes = {
+    reload: `board open ${key} --reload`,
+    overwrite: `${input.saveCommand} --force`,
+    saveAs: `board save --as ${suggestSaveAsName(input.target)}`
+  };
+
+  const lead = input.reason === 'changed'
+    ? `Refusing to save "${key}": ${input.file} changed on disk after archboard read it, so saving would ` +
+      'delete that change. Nothing was written.\n' +
+      `archboard read the note at ${clock(input.lastReadAt)}; the file was last modified ${clock(input.fileModifiedAt)}.`
+    : `Refusing to save "${key}": there is already a note at ${input.file} that archboard has never read, ` +
+      'so it cannot tell what saving would delete. Nothing was written.\n' +
+      `That file was last modified ${clock(input.fileModifiedAt)}.`;
+
+  const message = [
+    lead,
+    'Excalidraw scenes do not merge, so one of the two copies has to lose. Choose which:',
+    `  reload     take the note, discard the canvas   ->  ${outcomes.reload}`,
+    `  overwrite  keep the canvas, discard the note   ->  ${outcomes.overwrite}`,
+    `  elsewhere  keep both, under another name       ->  ${outcomes.saveAs}`
+  ].join('\n');
+
+  return {
+    board: key,
+    file: input.file,
+    reason: input.reason,
+    ...(input.expectedHash ? { expectedHash: input.expectedHash } : {}),
+    actualHash: input.actualHash,
+    ...(input.lastReadAt ? { lastReadAt: input.lastReadAt } : {}),
+    ...(input.fileModifiedAt ? { fileModifiedAt: input.fileModifiedAt } : {}),
+    outcomes,
+    message
+  };
+}
+
 // Render a board as an Obsidian note. `existingNote` is the current content of
 // the destination when there is one: its frontmatter and everything else the
 // vault put there is carried across verbatim, and only the identity keys are
@@ -240,6 +324,19 @@ function readHead(filePath: string, bytes = FRONTMATTER_PROBE_BYTES): string {
   } finally {
     fs.closeSync(handle);
   }
+}
+
+// The identity of a board file's *contents* — how archboard tells whether the
+// note changed underneath it between reading it and writing it (ADR 0006).
+//
+// SHA-256 over the raw bytes, not over the parsed scene: a save rewrites the
+// whole note — frontmatter, prose and scene alike — so the whole note is what
+// has to be unchanged for that write to be safe. Bytes rather than the decoded
+// string, so a note archboard cannot decode cleanly still compares honestly.
+// Content rather than mtime, because a sync client will happily restamp a file
+// it did not change, and an editor can change one within a clock tick.
+export function hashBoardBytes(bytes: Buffer): string {
+  return crypto.createHash('sha256').update(bytes).digest('hex');
 }
 
 export interface VaultBoard {
@@ -304,6 +401,9 @@ export interface LoadedBoard {
   identity: BoardIdentity;
   file: string;
   raw: string;
+  // The hash of the bytes this was read from: the baseline a later save checks
+  // the file against before it overwrites it.
+  hash: string;
   sceneJson: string;
   // What the note's own frontmatter claims, when that is a different board
   // than the one being opened. See VaultBoard.declaredKey.
@@ -318,13 +418,16 @@ export interface LoadedBoard {
 // created has no archboard keys at all until archboard first saves it.
 export function readBoardFile(identity: Pick<BoardIdentity, 'board' | 'variant'>, root = requireVaultRoot()): LoadedBoard | null {
   const file = vaultPathFor(identity, root);
-  let raw: string;
+  let bytes: Buffer;
   try {
-    raw = fs.readFileSync(file, 'utf-8');
+    // Read bytes, then decode. The baseline hash has to be of what is on disk,
+    // so decoding is a separate step that cannot get between the two.
+    bytes = fs.readFileSync(file);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
     throw error;
   }
+  const raw = bytes.toString('utf-8');
   if (!isObsidianExcalidrawMd(raw)) {
     throw new Error(
       `${file} exists but is not an Obsidian .excalidraw.md note — refusing to read it as a board.`
@@ -337,6 +440,7 @@ export function readBoardFile(identity: Pick<BoardIdentity, 'board' | 'variant'>
     file,
     // The whole note, so a later save can carry its frontmatter across verbatim.
     raw,
+    hash: hashBoardBytes(bytes),
     sceneJson: extractSceneJsonFromObsidianMd(raw),
     ...(declared && boardKey(declared) !== boardKey(asked) ? { declaredKey: boardKey(declared) } : {})
   };

@@ -133,11 +133,6 @@ distinguishes human edits from agent-authored elements.
 
 Tracked in Backlog.md; `backlog task list --plain` is authoritative.
 
-- **Saving a board is last-writer-wins.** archboard does not check whether the
-  note changed since it was opened, and the Obsidian Excalidraw plugin holds its
-  own copy of any board open there — whoever writes last wins, silently. Close a
-  board in Obsidian before saving it here. The conflict policy is TASK-010 and
-  is awaiting a decision; there is deliberately no hash check, lock or watch yet.
 - **No change-event feed.** Agent must poll; wrong shape for full-duplex voice.
 - **A node with a transparent background is only selectable by its stroke**, so
   tapping the middle of a hollow box picks nothing. (TASK-009)
@@ -146,7 +141,9 @@ Tracked in Backlog.md; `backlog task list --plain` is authoritative.
   pane, but the server has a single active board, so both panes show it. Per-pane
   boards are TASK-006's territory.
 
-Closed: `describe` surfaces `customData` and `link`, separates nodes from plain
+Closed: board writes are checked, not last-writer-wins — a note that changed on
+disk is refused, never overwritten (TASK-010).
+`describe` surfaces `customData` and `link`, separates nodes from plain
 elements, and folds bound labels and multi-element nodes (TASK-001). Obsidian
 export preserves custom frontmatter, so board identity survives (TASK-002).
 Boards are addressable, persisted vault notes and the store and the WebSocket
@@ -209,7 +206,25 @@ frontmatter — aliases, cssclasses, comments, whatever Obsidian put there — i
 carried across a save verbatim, so export stays idempotent (two saves are
 byte-identical) and lossless (open then save is byte-identical).
 
-**Saving is last-writer-wins.** See Known gaps.
+**A save can be refused.** archboard records the sha-256 of a note's bytes when
+it reads it and verifies that hash against the destination before writing, so a
+note that changed underneath — Obsidian, a sync client, another editor — is
+never overwritten. The save is refused with nothing written: `board save` exits
+5, `save_board` returns an error, and the shell's Save puts up a dialog. Each
+names the same three outcomes, and archboard picks none of them (ADR 0006):
+
+| Outcome | How | What it costs |
+|---|---|---|
+| Reload | `board open <name> --reload` | the canvas as it stands |
+| Overwrite | `board save --force` | whatever the note holds |
+| Save elsewhere | `board save --as <other>` | nothing; both copies kept |
+
+The same refusal covers a destination archboard has never read — a `board new`
+whose file appeared underneath it, or a `--as` onto an existing note.
+
+Nothing is locked, and the check reads the file rather than another app's
+memory, so a board open in Obsidian can still write its unsaved copy back
+afterwards: **keep a board open in one editor at a time.**
 
 The board key reaches the store, the REST API (`?board=` on every element
 route) and the WebSocket protocol (every broadcast names its board; a

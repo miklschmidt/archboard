@@ -47,7 +47,7 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 | `board current` | Identity of the board the canvas is holding |
 | `board new <name> [--variant v] [--level l]` | Empty board; in memory until saved |
 | `board open <name[@variant]> [--reload]` | Load a board onto the canvas (swaps the scene) |
-| `board save [--as <name>] [--variant v] [--level l]` | Write it to the vault — **last-writer-wins** |
+| `board save [--as <name>] [--variant v] [--level l] [--force]` | Write it to the vault; **refused (exit 5) if the note changed on disk** — `--force` overwrites anyway |
 
 ### Arrange
 
@@ -125,7 +125,7 @@ Requires `ARCHBOARD_VAULT`. The canvas holds exactly one board at a time.
 | `list_boards` | Vault boards + open boards + active | (none) |
 | `open_board` | Load a board onto the canvas | `board` (`name` or `name@variant`) |
 | `new_board` | Start an empty board | `board` |
-| `save_board` | Write the open board to the vault (**last-writer-wins**) | (none) |
+| `save_board` | Write the open board to the vault; **refused if the note changed on disk** (`force` overwrites anyway) | (none) |
 
 ### Viewport & Camera
 
@@ -195,7 +195,7 @@ Every element endpoint also takes `?board=<key>`; without it they act on the act
 | `GET` | `/api/boards/current` | Identity of the active board |
 | `POST` | `/api/boards/open` | `{board, variant?, level?, reload?}` — swaps the canvas |
 | `POST` | `/api/boards/new` | `{board, variant?, level?}` — empty, unsaved |
-| `POST` | `/api/boards/save` | `{name?, variant?, level?}` — writes the note; last-writer-wins |
+| `POST` | `/api/boards/save` | `{name?, variant?, level?, force?}` — writes the note; **409 + `conflict` if it changed on disk** |
 
 ### Snapshots
 
