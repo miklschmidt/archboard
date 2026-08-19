@@ -38,4 +38,16 @@ PREVIOUSLY SEEN, NOT CONNECTED. The excalidraw-skill's Error Recovery section de
 
 THE FIX is to make the bound text the single source of truth: drop / from the stored element once a bound text element exists. Evidence preserved as snapshot 'user-edits-evidence' and /tmp/user-edits.excalidraw.
 ---
+
+author: @claude
+created: 2026-08-19 21:29
+---
+CORRECTION to the comment above: unescaped backticks let the shell eat three words, so the key sentence is unreadable. The field name that went missing each time is: label
+
+Restated cleanly, no backticks:
+
+The server stores the agent-facing convenience field named label on the element, and never strips it once a real bound text element exists. normalize.ts:134 actively re-adds it. On broadcast, the frontend runs Excalidraw's convertToExcalidrawElements (frontend/src/canvas/elements.ts:225), which expands that label field into a NEW text element with a fresh random id. The frontend reports it back as an upsert; the server stores it and still keeps the label field; the next cycle mints another one.
+
+So the fix is to make the bound text element the single source of truth: once one exists, the label and text fields must not persist on the stored element.
+---
 <!-- COMMENTS:END -->
