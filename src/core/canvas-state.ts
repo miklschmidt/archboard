@@ -10,14 +10,15 @@ import { ensureCanvasRunning } from './spawn.js';
 export interface SceneState {
   theme: string;
   viewport: { x: number; y: number; zoom: number };
-  selectedElements: Set<string>;
   groups: Map<string, string[]>;
 }
 
+// Selection deliberately does not live here: it is owned by the browser and
+// held by the canvas server (GET /api/selection), so that every reader sees
+// the same thing the human is looking at.
 export const sceneState: SceneState = {
   theme: 'light',
   viewport: { x: 0, y: 0, zoom: 1 },
-  selectedElements: new Set(),
   groups: new Map()
 };
 

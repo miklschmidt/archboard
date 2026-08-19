@@ -1,4 +1,5 @@
 import logger from '../utils/logger.js';
+import type { SelectionReport } from './describe.js';
 import { ServerElement } from '../types.js';
 import { EXPRESS_SERVER_URL, ENABLE_CANVAS_SYNC } from './config.js';
 
@@ -165,6 +166,12 @@ export async function searchElements(queryParams: URLSearchParams): Promise<Serv
 
 export async function clearCanvas(): Promise<ApiResponse> {
   return requestJson<ApiResponse>('/api/elements/clear', { method: 'DELETE' });
+}
+
+// What a human currently has picked on the board. Ids plus enough semantic
+// detail (label, node-ness, kind, binding) to act on without a scene fetch.
+export async function getSelection(): Promise<SelectionReport & { success: boolean }> {
+  return requestJson<SelectionReport & { success: boolean }>('/api/selection');
 }
 
 export async function getFiles(): Promise<Record<string, any>> {

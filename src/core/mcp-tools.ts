@@ -412,6 +412,14 @@ export const tools: Tool[] = [
     }
   },
   {
+    name: 'get_selection',
+    description: "What the human currently has selected on the canvas — the elements they mean when they say \"this\" or \"these\". Returns element ids plus labels, whether each is an archboard node, its kind and binding. Call this when an instruction refers to selected elements instead of naming them. Cheap: it reads pushed state, not the whole scene.",
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    }
+  },
+  {
     name: 'get_canvas_screenshot',
     description: 'Take a screenshot of the current canvas and return it as an image. Requires the canvas frontend to be open in a browser. Use this to visually verify what the diagram looks like.',
     inputSchema: {

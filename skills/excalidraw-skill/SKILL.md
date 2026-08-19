@@ -32,6 +32,7 @@ Results are JSON on stdout — except `describe` (plain text) and raw-content ou
 | Read one / query many | `get <id>`, `query [--type t] [--bbox x0,y0,x1,y1] [--filter k=v] [--filter-json '{...}']` |
 | Update / delete | `update <id> --set '{...}'`, `delete <id> [...]` |
 | Understand the scene | `describe` (plain-text summary: ids, positions, labels, connections) |
+| What the human has picked | `selection [--text]` — the elements they mean by "this" / "these" |
 | See the scene | `screenshot [--out f.png]` (PNG without `--out` → temp file path in JSON; SVG without `--out` → raw SVG) |
 | Layout operations | `arrange align\|distribute\|group\|ungroup\|lock\|unlock\|duplicate --ids a,b,c [--to left\|horizontal\|...]` |
 | Scene files | `export [--out scene.excalidraw]`, `import [scene.excalidraw|-] [--replace]` — a `.excalidraw.md` out path writes Obsidian's format (see File I/O) |
@@ -212,6 +213,26 @@ add elements
   → update rate-limiter --set '{"x": 520}' → screenshot → "all checks pass"
   → proceed
 ```
+
+## Workflow: Act on What the Human Selected
+
+When someone says "make **these** two a group" or "map **this** to the payments
+service", read the selection instead of guessing at ids:
+
+```bash
+npx -y mcp-excalidraw-server selection --text
+# 2 elements selected: 2 nodes (service(2)) — "AuthService" and "Payments".
+#   [id1] "AuthService" | bound src/auth/service.ts | at (100, 100) | ...
+```
+
+The browser pushes the selection as it changes, so this is a plain server read —
+no browser round-trip and no scene transfer. Without `--text` it prints JSON with
+`elementIds` plus each element's label, whether it is a node, its kind and
+binding. `get_selection` is the MCP equivalent.
+
+One canvas, one selection: with several tabs open the one that reported last
+owns it (`clientId` and `at` say which and when), and closing a tab drops the
+selection it left behind.
 
 ## Workflow: Refine an Existing Diagram
 
