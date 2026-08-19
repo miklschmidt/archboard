@@ -1,5 +1,6 @@
 import type { Tool } from '@modelcontextprotocol/server';
 import { EXCALIDRAW_ELEMENT_TYPES } from '../types.js';
+import { KINDS } from './promote.js';
 
 // Tool definitions
 export const tools: Tool[] = [
@@ -417,6 +418,41 @@ export const tools: Tool[] = [
     inputSchema: {
       type: 'object',
       properties: {}
+    }
+  },
+  {
+    name: 'promote_selection',
+    description: "Promotion: declare what the human has selected to be an architecture node — give it a kind, a stable node identity, and usually a binding to code, in one act. Call this for \"map this to the payments service\", \"these are the queues\", \"this box is the auth gateway\". Operates on the current selection by default, so no element ids need to be spoken; pass elementIds only when acting on something you just drew. One call makes ONE node out of everything selected (one kind, one name, one binding = one node's worth of meaning); set each=true to make one node per selected shape instead, which only accepts a kind.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        kind: {
+          type: 'string',
+          enum: [...KINDS],
+          description: 'What sort of architectural unit this node stands for. A controlled vocabulary — anything else is rejected.'
+        },
+        name: { type: 'string', description: "What to call the node. Defaults to the label on the largest selected shape." },
+        node: { type: 'string', description: 'Explicit node id (slugified). Omit to derive one from the name; pass an existing id to re-promote or to join an identity used on another board.' },
+        path: { type: 'string', description: 'Bind the node to code: a path, absolute or relative to the working directory. Repo identity, branch and commit are resolved from git.' },
+        repo: { type: 'string', description: 'Repository identity (host/owner/name) when it cannot be resolved from git.' },
+        branch: { type: 'string', description: 'Branch at which the binding is confirmed. Defaults to the checked-out branch.' },
+        commit: { type: 'string', description: 'Commit at which the binding is confirmed. Defaults to HEAD.' },
+        variant: { type: 'string', description: "Which variant of the board this node belongs to. Defaults to 'current' — the architecture that exists." },
+        level: { type: 'string', description: 'Abstraction tier: system, service, or module.' },
+        each: { type: 'boolean', description: 'Promote every selected shape into its own node, named from its own label. Rejects name, node and path, which belong to a single node.' },
+        elementIds: { type: 'array', items: { type: 'string' }, description: 'Override the selection with explicit element ids.' }
+      },
+      required: ['kind']
+    }
+  },
+  {
+    name: 'demote_selection',
+    description: 'Reverse a promotion: strip archboard metadata from the selected nodes so they become plain elements again. A node may be several elements, so touching any one of them demotes the whole node. Other tools\' customData is left alone.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        elementIds: { type: 'array', items: { type: 'string' }, description: 'Override the selection with explicit element ids.' }
+      }
     }
   },
   {

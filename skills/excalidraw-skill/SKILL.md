@@ -33,6 +33,7 @@ Results are JSON on stdout — except `describe` (plain text) and raw-content ou
 | Update / delete | `update <id> --set '{...}'`, `delete <id> [...]` |
 | Understand the scene | `describe` (plain-text summary: ids, positions, labels, connections) |
 | What the human has picked | `selection [--text]` — the elements they mean by "this" / "these" |
+| Make the selection a node | `promote --kind service [--path src/x.ts] [--name "X"]` — kind, identity and binding in one act; `demote` undoes it |
 | See the scene | `screenshot [--out f.png]` (PNG without `--out` → temp file path in JSON; SVG without `--out` → raw SVG) |
 | Layout operations | `arrange align\|distribute\|group\|ungroup\|lock\|unlock\|duplicate --ids a,b,c [--to left\|horizontal\|...]` |
 | Scene files | `export [--out scene.excalidraw]`, `import [scene.excalidraw|-] [--replace]` — a `.excalidraw.md` out path writes Obsidian's format (see File I/O) |
@@ -233,6 +234,41 @@ binding. `get_selection` is the MCP equivalent.
 One canvas, one selection: with several tabs open the one that reported last
 owns it (`clientId` and `at` say which and when), and closing a tab drops the
 selection it left behind.
+
+## Workflow: Promotion — Turn the Selection Into a Node
+
+"Map this to the payments service" is a **promotion**: declaring the selected
+elements to be a node, giving it a kind and usually a binding in the same act.
+It works off the live selection, so no element ids are ever spoken.
+
+```bash
+npx -y mcp-excalidraw-server promote --kind service --path src/payments/service.ts --text
+# Promoted 2 elements to the service "Payments API" (node payments-api),
+# bound to github.com/acme/api:src/payments/service.ts@main (62f0cef).
+```
+
+- **`--kind`** is required, from a controlled vocabulary: `service`, `queue`,
+  `datastore`, `gateway`, `external`. Anything else is refused — the vocabulary
+  grows deliberately, not per diagram.
+- **One call makes one node** out of everything selected: one kind, one name,
+  one binding is one node's worth of meaning. Use **`--each`** for "these are
+  all queues" — one node per selected shape, named from its own label, kind
+  only. A shape and its bound label are one thing either way.
+- **`--path`** binds the node to code. Repo identity, branch and commit come
+  from git so history can trace a file that later moves; `link` is only set
+  when the path really resolves here, so a tap on the board never opens
+  nothing. `--repo/--branch/--commit` override the resolution.
+- **Node identity** is a slug of the name (`payments-api`), unique on the
+  board, stored as `customData.archboard.node`. It survives redraws, drags and
+  export/import, and is the join key when two variants are compared — quote it
+  rather than the element id. `--node <id>` forces one; re-promoting an
+  existing node keeps its id.
+- **`--ids a,b,c`** overrides the selection, for elements you just drew.
+- **`demote`** puts nodes back: touching any element of a node demotes the
+  whole node, strips only the `archboard` block, and leaves other tools'
+  `customData` alone.
+
+`promote_selection` and `demote_selection` are the MCP equivalents.
 
 ## Workflow: Refine an Existing Diagram
 

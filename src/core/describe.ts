@@ -31,6 +31,8 @@ const UNTYPED = 'untyped';
 interface Meta {
   isNode: boolean;
   namespaced: boolean;
+  node?: string;   // stable node identity, distinct from the element id
+  bindingPath?: string;  // the raw path inside the binding, for link de-duping
   kind?: string;
   binding?: string;
   variant?: string;
@@ -71,6 +73,12 @@ function formatBinding(v: unknown): string | undefined {
   return `${repo}${path ?? '?'}${branch}${commit}`;
 }
 
+function bindingPathOf(v: unknown): string | undefined {
+  if (typeof v === 'string') return v.trim() || undefined;
+  if (v && typeof v === 'object' && typeof (v as any).path === 'string') return (v as any).path;
+  return undefined;
+}
+
 function readMeta(el: ServerElement): Meta {
   const meta: Meta = { isNode: false, namespaced: false, extra: {}, foreign: {} };
   const custom = el.customData;
@@ -95,12 +103,21 @@ function readMeta(el: ServerElement): Meta {
   for (const [k, v] of Object.entries(source)) {
     if (!namespaced && !(FLAT_KEYS as readonly string[]).includes(k)) continue;
     switch (k) {
+      case 'node': meta.node = scalarText(v) || undefined; break;
       case 'kind': meta.kind = scalarText(v) || undefined; break;
       case 'variant': meta.variant = scalarText(v) || undefined; break;
       case 'level': meta.level = scalarText(v) || undefined; break;
       case 'name': meta.name = scalarText(v) || undefined; break;
-      case 'binding': meta.binding = formatBinding(v); break;
-      case 'path': if (!meta.binding) meta.binding = formatBinding(v); break;
+      case 'binding':
+        meta.binding = formatBinding(v);
+        meta.bindingPath = bindingPathOf(v);
+        break;
+      case 'path':
+        if (!meta.binding) {
+          meta.binding = formatBinding(v);
+          meta.bindingPath = bindingPathOf(v);
+        }
+        break;
       default: meta.extra[k] = v;
     }
   }
@@ -122,6 +139,7 @@ interface Item {
   labelText?: string;  // label / text / folded bound text
   isNode: boolean;
   fromBoard: boolean;  // synced back from the browser: a human touched it
+  members: number;     // elements making up this node (1 unless folded, below)
   x: number; y: number; w: number; h: number;
 }
 
@@ -168,8 +186,44 @@ function toItem(el: ServerElement, folded: Folded): Item {
     name: labelText || meta.name || el.id,
     isNode: meta.isNode && !isConnector(el.type),
     fromBoard: el.source === 'frontend_sync',
+    members: 1,
     x: el.x, y: el.y, w: el.width || 0, h: el.height || 0,
   };
+}
+
+// A node can be several elements: promoting a multi-element selection gives
+// every element in it the same node id. Fold them the same way bound labels
+// are folded, so the read-back says one node rather than three — the primary
+// is the largest element (the one a human points at) and the rest are its
+// members.
+interface NodeFold {
+  items: Item[];                   // members removed
+  hidden: number;
+  primaryOf: Map<string, string>;  // any member element id -> primary element id
+}
+
+function foldNodes(items: Item[]): NodeFold {
+  const groups = new Map<string, Item[]>();
+  for (const item of items) {
+    if (!item.isNode || !item.meta.node) continue;
+    const list = groups.get(item.meta.node) ?? [];
+    list.push(item);
+    groups.set(item.meta.node, list);
+  }
+
+  const hidden = new Set<string>();
+  const primaryOf = new Map<string, string>();
+  for (const group of groups.values()) {
+    if (group.length < 2) continue;
+    const primary = [...group].sort((a, b) => (b.w * b.h) - (a.w * a.h) || readingOrder(a, b))[0]!;
+    primary.members = group.length;
+    for (const member of group) {
+      primaryOf.set(member.el.id, primary.el.id);
+      if (member !== primary) hidden.add(member.el.id);
+    }
+  }
+
+  return { items: items.filter(i => !hidden.has(i.el.id)), hidden: hidden.size, primaryOf };
 }
 
 function bindingOf(el: any, end: 'start' | 'end'): string | undefined {
@@ -263,16 +317,22 @@ export function describeScene(allElements: ServerElement[]): string {
 
   const folded = foldBoundText(allElements, byId);
 
-  const items: Item[] = [];
+  const allItems: Item[] = [];
   for (const el of allElements) {
     if (folded.hidden.has(el.id)) continue;
-    items.push(toItem(el, folded));
+    allItems.push(toItem(el, folded));
   }
+
+  const nodeFold = foldNodes(allItems);
+  const items = nodeFold.items;
 
   const nodes = items.filter(i => i.isNode).sort(readingOrder);
   const others = items.filter(i => !i.isNode && !isConnector(i.el.type)).sort(readingOrder);
   const connectors = items.filter(i => isConnector(i.el.type));
-  const nameOf = new Map(items.map(i => [i.el.id, i.name]));
+  // Names resolve for every element, folded members included, so an arrow
+  // drawn to a member still names its node.
+  const nameOf = new Map(allItems.map(i => [i.el.id, i.name]));
+  const primary = (id: string | undefined) => (id ? nodeFold.primaryOf.get(id) ?? id : id);
 
   // Bounding box over everything, as before.
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -289,15 +349,15 @@ export function describeScene(allElements: ServerElement[]): string {
   const variantCounts = counts(nodes.map(n => n.meta.variant));
   const levelCounts = counts(nodes.map(n => n.meta.level));
   const boundNodes = nodes.filter(n => n.meta.binding).length;
-  const fromBoard = items.filter(i => i.fromBoard).length + folded.hidden.size;
+  const fromBoard = allItems.filter(i => i.fromBoard).length + folded.hidden.size;
 
   // Edges: arrows resolved to node names. Ids stay so callers that parse them
   // keep working.
   const edges: Edge[] = [];
   for (const item of connectors) {
     const el: any = item.el;
-    const fromId = bindingOf(el, 'start');
-    const toId = bindingOf(el, 'end');
+    const fromId = primary(bindingOf(el, 'start'));
+    const toId = primary(bindingOf(el, 'end'));
     if (!fromId && !toId) continue;
     edges.push({
       arrow: item.el,
@@ -337,6 +397,7 @@ export function describeScene(allElements: ServerElement[]): string {
     `${others.length} plain`,
   ];
   if (folded.hidden.size > 0) composition.push(`${folded.hidden.size} bound label${folded.hidden.size === 1 ? '' : 's'} folded in`);
+  if (nodeFold.hidden > 0) composition.push(`${nodeFold.hidden} node member${nodeFold.hidden === 1 ? '' : 's'} folded in`);
   lines.push(`Total elements: ${allElements.length} (${composition.join(', ')})`);
   if (nodes.length > 0) {
     lines.push(`Kinds: ${renderCounts(kindCounts, KIND_ORDER)}`);
@@ -497,7 +558,13 @@ function geometry(i: Item): string {
 }
 
 function nodeLine(n: Item, showLevel: boolean): string {
-  const parts = [`[${n.el.id}] "${n.name}"`];
+  // Node identity leads: it is the join key across variants and boards, and
+  // the only handle that survives a redraw.
+  const parts = [`${n.meta.node ? `<${n.meta.node}>` : `[${n.el.id}]`} "${n.name}"`];
+  if (n.meta.node) parts.push(`element ${n.el.id}${n.members > 1 ? ` +${n.members - 1} more` : ''}`);
+  // The label is what the board shows and what a human points at; a declared
+  // name only earns a mention when the two have diverged.
+  if (n.meta.name && n.labelText && n.meta.name !== n.labelText) parts.push(`declared "${n.meta.name}"`);
   parts.push(n.meta.binding ? `bound ${n.meta.binding}` : 'unbound');
   if (n.meta.variant && n.meta.variant !== 'current') parts.push(`variant ${n.meta.variant}`);
   if (showLevel && n.meta.level) parts.push(`level ${n.meta.level}`);
@@ -511,8 +578,14 @@ function nodeLine(n: Item, showLevel: boolean): string {
 // Only the things the main line didn't already say.
 function nodeExtras(n: Item): string {
   const parts: string[] = [];
+  // The link is only worth a line when it says something the binding didn't:
+  // a `file://` that just re-states the bound path is noise on every node.
   const link = n.el.link;
-  if (link && !(n.meta.binding && link.includes(n.meta.binding))) parts.push(`link ${link}`);
+  const echoesBinding = !!link && (
+    (!!n.meta.binding && link.includes(n.meta.binding)) ||
+    (!!n.meta.bindingPath && link.endsWith(n.meta.bindingPath))
+  );
+  if (link && !echoesBinding) parts.push(`link ${link}`);
   if (!n.meta.namespaced && n.meta.isNode) parts.push('(flat customData, not namespaced)');
   if (Object.keys(n.meta.extra).length > 0) parts.push(pairs(n.meta.extra));
   if (Object.keys(n.meta.foreign).length > 0) parts.push(`other customData: ${pairs(n.meta.foreign)}`);
@@ -598,6 +671,7 @@ export interface SelectedElement {
   type: string;
   label?: string;
   isNode: boolean;      // carries archboard metadata — stands for an architectural unit
+  node?: string;        // stable node identity, when promoted
   kind?: string;
   binding?: string;
   variant?: string;
@@ -626,6 +700,7 @@ function selectedElement(item: Item): SelectedElement {
     type: item.el.type,
     ...(item.labelText ? { label: item.labelText } : {}),
     isNode: item.isNode,
+    ...(item.meta.node ? { node: item.meta.node } : {}),
     ...(item.meta.kind ? { kind: item.meta.kind } : {}),
     ...(item.meta.binding ? { binding: item.meta.binding } : {}),
     ...(item.meta.variant ? { variant: item.meta.variant } : {}),
@@ -673,13 +748,16 @@ export function buildSelectionReport(
   const folded = foldBoundText(allElements, byId);
 
   const ids = selection?.elementIds ?? [];
-  const items: Item[] = [];
+  const selected: Item[] = [];
   const missingIds: string[] = [];
   for (const id of ids) {
     const el = byId.get(id);
     if (!el) { missingIds.push(id); continue; }
-    items.push(toItem(el, folded));
+    selected.push(toItem(el, folded));
   }
+  // Fold multi-element nodes here too: picking all three pieces of one node
+  // and saying "this" means one thing, and the summary has to agree.
+  const items = foldNodes(selected).items;
   items.sort(readingOrder);
 
   const summary = selectionSummary(items, missingIds.length);
