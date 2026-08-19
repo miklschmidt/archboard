@@ -124,13 +124,23 @@ distinguishes human edits from agent-authored elements.
 
 ## Known gaps (our work)
 
-- **`describe` ignores `customData` and `link`.** The agent's primary read path
-  is blind to the semantic model. Fixing this is prerequisite to everything else.
-- **No persistence.** In-memory; dies with the server.
-- **No multi-document.** One global canvas — no current/proposed variants.
+Tracked in Backlog.md; `backlog task list --plain` is authoritative.
+
+- **No persistence.** In-memory; dies with the server. (TASK-003)
+- **No multi-document.** One global canvas — the element store is keyed by
+  element id with no board dimension at all, so "load board X" does not exist.
+  (TASK-003)
 - **No change-event feed.** Agent must poll; wrong shape for full-duplex voice.
+- **Selection never leaves the browser**, so the agent cannot act on what you
+  have picked. (TASK-004)
 - `export --out` does not `mkdir -p`.
+- CLI and MCP still identify as `mcp-excalidraw-server`. (TASK-008)
 - Page title is still "Excalidraw POC - Backend API Integration".
+
+Closed: `describe` now surfaces `customData` and `link`, separates nodes from
+plain elements, and folds bound labels back into their containers (TASK-001).
+Obsidian export preserves custom frontmatter, so board identity survives
+(TASK-002).
 
 ## Artifacts
 
