@@ -231,28 +231,49 @@ Not worth it. A `UserPromptSubmit` hook that does its own diffing gets most of
 the benefit at none of the maintenance cost. Revisit only if Codex ever exposes
 `TurnInputContributor` registration to plugins.
 
-## Fork roadmap
+## Roadmap
 
-Ordered by dependency, not ambition.
+Ordered by dependency, not ambition. Backlog.md is authoritative —
+`backlog task list --plain`; this is the narrative version.
 
-1. **`describe` surfaces the semantic model.** `customData` and `link` are
-   invisible to the agent's main read path today. Everything else is worthless
-   until this lands.
-2. **A compressed architectural description mode.** Cluster/relationship prose
-   rather than an element dump, sized for the 2,500-token hook budget and the
-   1,000-token voice budget.
-3. **Persistence + multi-document**, with `current` / `proposed` variants and a
-   diff between them.
-4. **Change-event feed** — the canvas emits semantic change events (node added,
-   edge severed, cluster split), which feeds both the hook's diffing and the
-   turn-injection trigger.
-5. **App-server client** — `thread/inject_items` for quiet updates, `turn/steer`
-   for loud ones, behind an explicit opt-in switch (see Security).
-6. **`canvas-hook` binary** — `UserPromptSubmit` handler with its own state file.
-   Lower priority than it looked: it is the *fallback* for when no daemon is
-   running, since injection is strictly better when one is.
-7. **Architecture node kinds** — service, queue, datastore, gateway, external.
-   Boxes-and-arrows with infra-flavoured types; no resource graph underneath.
+**Done**
+
+- **`describe` surfaces the semantic model** (TASK-001). Nodes separated from
+  plain elements, grouped by kind, bindings and links resolved, bound labels
+  folded back into their containers, and a speakable summary line leading. It
+  degrades to a per-kind rollup on large scenes rather than dumping, which
+  absorbed most of what was originally a separate "compressed description mode"
+  item.
+- **Obsidian export preserves custom frontmatter** (TASK-002), so board
+  identity can live there. Prerequisite for everything multi-board.
+
+**Next**
+
+- **Selection published to the server** (TASK-004). Today it never leaves the
+  browser, so the agent cannot act on what you have picked.
+- **Promotion** (TASK-005) — declare selected elements a node and bind it, in
+  one gesture. The most touchscreen-native interaction in the product.
+- **Multi-document** (TASK-003) — boards as individual vault files with
+  identity in frontmatter. The element store is currently keyed by element id
+  with no board dimension, so this reaches the store and the WebSocket
+  protocol, not just the file layer. Includes defining the two-writer
+  behaviour against Obsidian.
+- **`panes`** (TASK-006) — what board and variant sit where, plus selection.
+  View state only. Exists to resolve spatial deixis for voice.
+- **`compare`** (TASK-007) — structured semantic diff between two variants,
+  keyed on node identity. Structured output only; prose is the agent's job.
+
+**Later**
+
+- **Change-event feed** — semantic change events (node added, edge severed,
+  cluster split) feeding both the hook's diffing and the turn-injection trigger.
+- **App-server client** — `thread/inject_items` for quiet updates, `turn/steer`
+  for loud ones, behind an explicit opt-in switch (see Security).
+- **`canvas-hook` binary** — `UserPromptSubmit` handler with its own state file.
+  The fallback for when no daemon is running; injection is better when one is.
+- **Architecture node kinds** as a controlled vocabulary — service, queue,
+  datastore, gateway, external. Boxes-and-arrows with infra-flavoured types; no
+  resource graph underneath.
 
 ## Verified element metadata
 
