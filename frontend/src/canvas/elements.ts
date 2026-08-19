@@ -10,6 +10,7 @@
 import { convertToExcalidrawElements } from '@excalidraw/excalidraw'
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
 import type { ServerElement } from '../types'
+import { adoptReusedLabelIds, planLabelExpansion } from '../../../src/core/labels'
 
 // Helper function to clean elements for Excalidraw
 export const cleanElementForExcalidraw = (element: ServerElement): Partial<ExcalidrawElement> => {
@@ -218,13 +219,25 @@ export const convertElementsPreservingImageProps = (
 ): Partial<ExcalidrawElement>[] => {
   if (elements.length === 0) return []
 
-  const validatedElements = validateAndFixBindings(elements)
+  // `label` is expanded into a bound text element by the converter below, and
+  // it invents a fresh id every time it does — so a label that already has its
+  // text element must either be left alone or rebuilt under that element's
+  // existing name. Otherwise the copies breed on every sync (src/core/labels.ts,
+  // TASK-024). This runs after binding validation so a reference to a text
+  // element that is not on the board no longer counts as a label.
+  const { elements: plannedElements, reuse } = planLabelExpansion(
+    validateAndFixBindings(elements) as Array<Partial<ExcalidrawElement> & { id: string }>
+  )
+  const validatedElements = plannedElements as Partial<ExcalidrawElement>[]
   const imageElements = validatedElements.filter(isImageElement).map(normalizeImageElement)
   const freedrawElements = validatedElements.filter(isFreedrawElement).map(normalizeFreedrawElement)
   const nonImageElements = validatedElements.filter(el => !isImageElement(el) && !isFreedrawElement(el))
   // convertToExcalidrawElements may expand labeled shapes into [shape, textElement],
   // so we cannot assume a 1:1 mapping — return all converted elements directly.
   const convertedNonImageElements = convertToExcalidrawElements(nonImageElements as any, { regenerateIds: false })
-  const restoredNonImageElements = restoreBindings(convertedNonImageElements, nonImageElements)
+  const restoredNonImageElements = adoptReusedLabelIds(
+    restoreBindings(convertedNonImageElements, nonImageElements) as Array<Partial<ExcalidrawElement> & { id: string }>,
+    reuse
+  ) as Partial<ExcalidrawElement>[]
   return recenterBoundShapeTextElements([...restoredNonImageElements, ...imageElements, ...freedrawElements])
 }
