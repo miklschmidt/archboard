@@ -113,10 +113,10 @@ archboard promote --kind service --path ~/Projects/payments-api/src/index.ts
 
 A relative path is resolved against an ambient working directory, and that is
 currently a trap. From the wrong directory, if a file of that name happens to
-exist there, you get a confident binding to the wrong repository. Over MCP it is worse still: a client with no shell cannot set a working
-directory at all, so a relative path there resolves by accident rather than by
-intent. TASK-031 is fixing this; until it lands,
-absolute paths are the only reliable form.
+exist there, you get a confident binding to the wrong repository. Over MCP it
+is worse, because a client with no shell cannot set a working directory at all,
+so a relative path there resolves by accident rather than by intent. TASK-031
+is fixing this. Until it lands, absolute paths are the only reliable form.
 
 `--repo`, `--branch` and `--commit` override the resolution when you need to
 name something git cannot tell you.
