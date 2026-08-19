@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-19 21:29'
-updated_date: '2026-08-19 21:42'
+updated_date: '2026-08-19 21:49'
 labels:
   - needs-triage
   - ready-for-agent
@@ -31,6 +31,16 @@ ordinal: 24000
 5. Regression check: scripts/check-labels.mjs, wired in as bun run test:labels. Drives dist/core/labels.js through a simulated expander that mimics convertToExcalidrawElements (mints a fresh text id whenever it sees a label) plus the server's merge semantics, across many cycles, for a labelled shape and a labelled arrow. Fails if any container ends with more than one bound text or an arrow's points degenerate.
 6. Verify live on 3300 with a browser attached: many cycles, bound-text count stays 1 each, arrow height holds; then run the repair over the polluted /tmp/user-edits.excalidraw scene loaded onto 3300 and show the counts collapse to 1 and arrow geometry return.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reproduced on an isolated canvas (port 3300, own browser tab, labelled rect + labelled arrow). Every agent-driven update that reaches the browser minted one extra bound text per touched labelled element: 3 elements -> 22 in 8 cycles, 19 of them text, boxA 9 / arr1 9 / boxB 1. Confirms the mechanism exactly.
+
+Fix: new pure module src/core/labels.ts (dropRedundantLabels / boundTextsByContainer / planLabelRepair, no imports, no DOM) called from frontend/src/canvas/elements.ts immediately after validateAndFixBindings and before convertToExcalidrawElements. An element that already carries a live bound text element has its label/text seed removed, so the converter has nothing to expand; an element with a label and no bound text keeps it and still grows exactly one. Detection reads both directions of the binding (the text's containerId and the container's boundElements) because the two disagree while a board is half-synced.
+
+Verified with the same scenario after rebuilding: 15 agent update cycles with a browser attached and the bound texts already server-side (put there by a real human drag) -> element count fixed at 6, exactly one bound text per container every cycle, arrow points tracking the moving shape correctly instead of degenerating.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
