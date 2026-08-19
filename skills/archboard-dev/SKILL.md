@@ -133,6 +133,16 @@ sync updates it automatically.
   because an Excalidraw scene has no merge and reloading just swaps which side
   loses silently. `--force` exists for the human, not for you.
 - **`export --out` does not `mkdir -p`** — create the directory first.
+- **The library is server state, not browser state** (ADR 0007). It is in
+  `<vault>/.archboard/library.excalidrawlib`, seeded from `libraries/` on first
+  read, and pushed to every pane over the socket — so `library list` answers
+  with no browser open, and clearing a browser profile costs nothing. Two
+  consequences when testing: the seed only happens once per vault (delete that
+  file to re-run it), and a stencil dragged onto a canvas is plain elements from
+  that moment on, so `describe` will never mention the library.
+- **Opening the library sidebar with 111 stencils takes several seconds** —
+  Excalidraw renders a preview per item. That is its cost, not ours; do not read
+  it as the sync path hanging.
 - **The browser never sends a scene.** It reports a delta to
   `POST /api/elements/changes` against a baseline of what that tab has actually
   received, and the server merges it. There is no endpoint that replaces a

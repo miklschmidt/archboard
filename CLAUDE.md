@@ -285,6 +285,26 @@ mkdir -p diagrams
 Commit diagrams alongside the code change so architecture decisions are
 reviewable in the diff.
 
+## Stencils
+
+The library — the palette shapes are dragged from — lives on the canvas server,
+not in browser storage (ADR 0007), so every pane and every tab shares one and an
+agent can read it:
+
+```bash
+./bin/canvas library list --text
+```
+
+Seven curated libraries ship in `libraries/` (111 stencils, attributed per file
+in `libraries/README.md`) and are seeded into the store the first time it is
+read, so they need no network fetch. **Add to Excalidraw** on
+libraries.excalidraw.com works: the returning `#addLibrary=` hash is fetched
+under an allowlist and installed after a prompt.
+
+A stencil is not board content. Dragging one onto a canvas produces ordinary
+elements that reach the server through the normal change report; nothing about
+the library touches the element store or the change feed.
+
 ## Agent skills
 
 ### Issue tracker
