@@ -35,6 +35,18 @@ _Avoid_: box, component, entity, vertex, block
 A connection between two nodes standing for a dependency, call, or flow.
 _Avoid_: arrow, link, connector, relation, line
 
+**Library**:
+The palette of stencils available to drag onto any board. One per canvas
+server, shared by every pane and every tab (ADR 0007). Never a synonym for the
+vault, which is where boards live.
+_Avoid_: palette, assets, collection, shapes panel
+
+**Stencil**:
+One item in the library: a small group of elements kept for reuse. It carries
+no architectural meaning until it is on a board and promoted, and it stops
+being a stencil the moment it is dragged onto one.
+_Avoid_: symbol, icon, template, component, widget
+
 ### Meaning
 
 **Kind**:
@@ -74,7 +86,8 @@ _Avoid_: version, revision, branch, mode, state
 
 **Vault**:
 The cross-repository collection in which every board is persisted.
-_Avoid_: library, workspace, store, repository, folder
+_Avoid_: library (it means the stencil palette here), workspace, store,
+repository, folder
 
 ### Working
 
