@@ -4,7 +4,7 @@ title: Bindings resolve against an ambient working directory
 status: To Do
 assignee: []
 created_date: '2026-08-19 23:03'
-updated_date: '2026-08-19 23:03'
+updated_date: '2026-08-19 23:09'
 labels:
   - needs-triage
   - ready-for-agent
@@ -41,5 +41,15 @@ DIRECTION, not a design. Stop resolving against an ambient directory. A binding 
 The cross-repo case is the one to design for. A system board whose boxes belong to five repositories should be buildable in one session, without cd between promotions, and it is the case a naming convention cannot rescue.
 
 INSTALL.md currently tells people to run promotion from inside the repo the code belongs to. That is a workaround for this flaw dressed as guidance, and should go when this lands.
+---
+
+author: @claude
+created: 2026-08-19 23:09
+---
+CORRECTION to the comment above, from the user. I wrote that the MCP path "is the path voice-driven promotion takes". That is wrong. Voice delegates to a Codex thread, the thread has a shell, and since TASK-027 the skill tells it to use the CLI. Voice-driven promotion therefore runs the CLI with the thread's own working directory, which is the repo Codex is working in: meaningful and visible.
+
+BROKEN 2 still stands, on better grounds. MCP exists for a client with no shell (ADR 0008), and such a client cannot express a working directory at all. So the ambient cwd is not merely invisible there, it is unreachable by design: the caller has no way to set it, and the value used belongs to whatever process the client happened to spawn. A relative path over MCP is therefore not resolvable by intent, only by accident.
+
+That reframes the fix rather than changing it. Do not treat MCP as an edge case of the CLI's cwd handling. Treat it as the surface that proves an ambient directory is the wrong idea: the caller must be able to name the repository, because on that surface there is nothing ambient to fall back to.
 ---
 <!-- COMMENTS:END -->
