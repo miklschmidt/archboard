@@ -112,8 +112,16 @@ sync updates it automatically.
 - **`describe` degrades above 120 nodes** to a per-kind rollup rather than
   dumping every node. That is deliberate (narratability); use `query` when you
   need the exhaustive set.
-- **The canvas is in-memory** and clears on server restart. Export or snapshot
-  deliberately.
+- **The canvas is in-memory** and clears on server restart. A board survives
+  only what `board save` wrote to the vault — unsaved edits, and the whole
+  `scratch` board, die with the process. Export or save deliberately.
+- **Board commands need `ARCHBOARD_VAULT`** and there is no default, so a shell
+  without it makes every board command fail on the vault message rather than on
+  whatever you were testing. Set it before `./bin/canvas start` — the canvas
+  server does the vault I/O, so exporting it after the server is up changes
+  nothing.
+- **Saving a board is last-writer-wins** against Obsidian, on purpose, until
+  TASK-010 decides the policy. Do not "fix" it with a hash check or a watcher.
 - **`export --out` does not `mkdir -p`** — create the directory first.
 - The page title still says "Excalidraw POC - Backend API Integration".
 

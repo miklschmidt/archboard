@@ -1,5 +1,5 @@
 ---
-status: accepted (provisional)
+status: accepted
 ---
 
 # Boards persist as files in an Obsidian vault spanning repositories
@@ -24,14 +24,11 @@ moves. Absolute `file://` paths break on any other machine. Each repo keeps its
 own `CONTEXT.md` and ADRs where they already are; board-to-code links resolve
 through a machine-local registry rather than living in the vault.
 
-## Why provisional
-
-Two blockers, both known and tracked. Export currently destroys custom
-frontmatter (TASK-002), which is where board identity is meant to live. And
-there is no multi-document support at all — the server holds one global,
-unkeyed element map (TASK-003), so "load board X, save board X" does not exist.
-
-The unresolved risk is **two writers**: archboard holds the canvas in memory and
-the Obsidian plugin holds scene state in memory when a board is open, neither
-knows about the other, and last-writer-wins would silently eat edits. That needs
-a defined answer, not a hope.
+## Status note
+Originally recorded as provisional pending two blockers, both now closed:
+export preserves custom frontmatter (TASK-002) and boards are addressable,
+persisted vault notes (TASK-003) — verified idempotent and byte-lossless
+across both.
+The two-writer risk is decided but not yet implemented: see ADR 0006, which
+chooses detection over prevention. Until TASK-010 lands, saving is
+last-writer-wins and says so on every save.
