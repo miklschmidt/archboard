@@ -3,6 +3,7 @@
 ## Defaults
 
 - Canvas base URL: `EXPRESS_SERVER_URL` (default `http://127.0.0.1:3000`); CLI also accepts `--url <canvasUrl>`
+- Board vault: `ARCHBOARD_VAULT` (no default — board commands fail until it is set)
 - Canvas health: `GET /health` or `archboard status`
 - Auto-start: any canvas-touching CLI command starts the server if it's down (opt out with `EXCALIDRAW_NO_AUTOSTART=1`)
 
@@ -42,6 +43,11 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 | `share` | Encrypted upload → shareable excalidraw.com URL |
 | `clear --yes` | Wipe the canvas |
 | `snapshot save\|list\|restore [name]` | Named canvas snapshots |
+| `board list` | Boards in the vault, boards open in this session, which is active |
+| `board current` | Identity of the board the canvas is holding |
+| `board new <name> [--variant v] [--level l]` | Empty board; in memory until saved |
+| `board open <name[@variant]> [--reload]` | Load a board onto the canvas (swaps the scene) |
+| `board save [--as <name>] [--variant v] [--level l]` | Write it to the vault — **last-writer-wins** |
 
 ### Arrange
 
@@ -110,6 +116,17 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 | `snapshot_scene` | Save named snapshot | `name` |
 | `restore_snapshot` | Restore from snapshot | `name` |
 
+### Boards
+
+Requires `ARCHBOARD_VAULT`. The canvas holds exactly one board at a time.
+
+| Tool | Description | Required params |
+|------|-------------|-----------------|
+| `list_boards` | Vault boards + open boards + active | (none) |
+| `open_board` | Load a board onto the canvas | `board` (`name` or `name@variant`) |
+| `new_board` | Start an empty board | `board` |
+| `save_board` | Write the open board to the vault (**last-writer-wins**) | (none) |
+
 ### Viewport & Camera
 
 | Tool | Description | Required params |
@@ -167,6 +184,18 @@ Notes:
 |--------|----------|-------------|
 | `POST` | `/api/viewport` | Set viewport/camera; body may include `scrollToContent`, `scrollToElementIds`, `viewportZoomFactor`, `scrollToElementId`, `zoom`, `offsetX`, `offsetY` (needs frontend) |
 | `POST` | `/api/viewport/result` | Frontend posts viewport result back |
+
+### Boards
+
+Every element endpoint also takes `?board=<key>`; without it they act on the active board.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/boards` | Vault listing + open boards + active key |
+| `GET` | `/api/boards/current` | Identity of the active board |
+| `POST` | `/api/boards/open` | `{board, variant?, level?, reload?}` — swaps the canvas |
+| `POST` | `/api/boards/new` | `{board, variant?, level?}` — empty, unsaved |
+| `POST` | `/api/boards/save` | `{name?, variant?, level?}` — writes the note; last-writer-wins |
 
 ### Snapshots
 

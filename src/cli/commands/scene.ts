@@ -8,7 +8,8 @@ import {
   getElements,
   clearCanvas,
   exportImage,
-  sendMermaid
+  sendMermaid,
+  boardHeading
 } from '../../core/canvas-client.js';
 import { buildSceneFile, importScene } from '../../core/scene-io.js';
 import { wrapSceneAsObsidianMd, isObsidianExcalidrawMd } from '../../core/obsidian-md.js';
@@ -25,8 +26,9 @@ export async function describe(argv: string[]): Promise<void> {
   parseArgs(argv, {});
   await ensureCanvasRunning();
   const elements = await getElements();
+  const heading = await boardHeading();
   // Plain text by design: this is the human/agent-readable scene summary
-  process.stdout.write(describeScene(elements) + '\n');
+  process.stdout.write((heading ? heading + '\n\n' : '') + describeScene(elements) + '\n');
 }
 
 export async function screenshot(argv: string[]): Promise<void> {

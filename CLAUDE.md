@@ -126,10 +126,11 @@ distinguishes human edits from agent-authored elements.
 
 Tracked in Backlog.md; `backlog task list --plain` is authoritative.
 
-- **No persistence.** In-memory; dies with the server. (TASK-003)
-- **No multi-document.** One global canvas — the element store is keyed by
-  element id with no board dimension at all, so "load board X" does not exist.
-  (TASK-003)
+- **Saving a board is last-writer-wins.** archboard does not check whether the
+  note changed since it was opened, and the Obsidian Excalidraw plugin holds its
+  own copy of any board open there — whoever writes last wins, silently. Close a
+  board in Obsidian before saving it here. The conflict policy is TASK-010 and
+  is awaiting a decision; there is deliberately no hash check, lock or watch yet.
 - **No change-event feed.** Agent must poll; wrong shape for full-duplex voice.
 - **A node with a transparent background is only selectable by its stroke**, so
   tapping the middle of a hollow box picks nothing. (TASK-009)
@@ -139,7 +140,9 @@ Tracked in Backlog.md; `backlog task list --plain` is authoritative.
 Closed: `describe` surfaces `customData` and `link`, separates nodes from plain
 elements, and folds bound labels and multi-element nodes (TASK-001). Obsidian
 export preserves custom frontmatter, so board identity survives (TASK-002).
-Selection reaches the server and is readable via `selection` / `get_selection`
+Boards are addressable, persisted vault notes and the store and the WebSocket
+protocol carry a board key (TASK-003). Selection reaches the server and is
+readable via `selection` / `get_selection`
 (TASK-004). Promotion declares a selection to be a node with a git-resolved
 binding (TASK-005). The CLI and MCP handshake identify as `archboard`
 (TASK-008).
@@ -159,6 +162,50 @@ are handshakes between our own processes rather than anything a user reads:
 proves it is not talking to a foreign service on the port) and the
 `excalidraw-canvas` state directory holding the pidfile (renaming it would
 orphan a running server's pidfile). Neither is printed by any command.
+
+## Boards
+
+A **board** is a named diagram persisted as one `.excalidraw.md` note in an
+Obsidian vault (ADR 0004). The canvas holds exactly one at a time; `board open`
+is how that one gets swapped.
+
+Set the vault before anything board-shaped works — it spans repositories, so
+there is deliberately no default:
+
+```bash
+export ARCHBOARD_VAULT=/path/to/vault    # or put it in .env
+```
+
+```bash
+./bin/canvas board list                       # what the vault has, what is open
+./bin/canvas board new payments --level service
+./bin/canvas board save                       # writes payments.excalidraw.md
+./bin/canvas board open payments@option-a     # swaps the canvas
+./bin/canvas board current                    # identity of the open board
+```
+
+Addressing: `current` is the privileged variant — the architecture that exists —
+so it owns the bare name and the bare filename. Every other variant is
+`name@variant`, stored as `name@variant.excalidraw.md`. Variant is an open set,
+so a three-way option comparison is just `payments@option-a`, `@option-b`,
+`@option-c` next to `payments`. A name may contain `/` to nest the note in vault
+folders.
+
+Identity lives in the note's frontmatter as plain `board`, `variant` and `level`
+properties, and round-trips. The path is the address; the frontmatter is the
+record, and `board open` says so when the two disagree. Everything else in the
+frontmatter — aliases, cssclasses, comments, whatever Obsidian put there — is
+carried across a save verbatim, so export stays idempotent (two saves are
+byte-identical) and lossless (open then save is byte-identical).
+
+**Saving is last-writer-wins.** See Known gaps.
+
+The board key reaches the store, the REST API (`?board=` on every element
+route) and the WebSocket protocol (every broadcast names its board; a
+`board_switched` message swaps the browser's scene). Callers that say nothing
+about boards get the active one, which is what everything written before boards
+existed means. Before any board is opened the canvas holds a `scratch` board
+that has no home in the vault until `board save --as <name>` gives it one.
 
 ## Artifacts
 

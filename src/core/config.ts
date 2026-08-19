@@ -12,3 +12,10 @@ export const EXCALIDRAW_NO_AUTOSTART = process.env.EXCALIDRAW_NO_AUTOSTART === '
 
 // Safe file path validation base directory (see sanitizeFilePath)
 export const ALLOWED_EXPORT_DIR = process.env.EXCALIDRAW_EXPORT_DIR || process.cwd();
+
+// The Obsidian vault every board is persisted into (ADR 0004). Deliberately
+// has no default: the vault spans repositories, so guessing at the current
+// working directory would scatter boards across checkouts and quietly create a
+// different "vault" per cwd. Unset means the board commands refuse to run and
+// say so — see requireVaultRoot() in core/board.ts.
+export const ARCHBOARD_VAULT = process.env.ARCHBOARD_VAULT || undefined;

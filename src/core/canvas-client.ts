@@ -215,11 +215,111 @@ export async function listSnapshots(): Promise<{ success: boolean; snapshots: an
   return requestJson('/api/snapshots');
 }
 
-export async function getSnapshot(name: string): Promise<{ name: string; elements: ServerElement[]; createdAt: string }> {
-  const data = await requestJson<{ success: boolean; snapshot: { name: string; elements: ServerElement[]; createdAt: string } }>(
+export async function getSnapshot(name: string): Promise<{ name: string; board?: string; elements: ServerElement[]; createdAt: string }> {
+  const data = await requestJson<{ success: boolean; snapshot: { name: string; board?: string; elements: ServerElement[]; createdAt: string } }>(
     `/api/snapshots/${encodeURIComponent(name)}`
   );
   return data.snapshot;
+}
+
+// ---- Boards ----
+// The canvas server owns the vault I/O: it holds the store, so making it read
+// and write the notes keeps the whole scene off the wire on every save and
+// means the CLI, the MCP server and the browser all get the same answer.
+
+export interface BoardIdentityPayload {
+  board: string;
+  variant: string;
+  level?: string;
+}
+
+export interface BoardResponse {
+  success: boolean;
+  board: string;
+  identity: BoardIdentityPayload;
+  elementCount: number;
+  vaultBacked: boolean;
+  file?: string;
+  savedAt?: string;
+  loadedAt?: string;
+  source?: 'vault' | 'memory';
+  created?: boolean;
+  saved?: boolean;
+  elements?: number;
+  overwrote?: boolean;
+  warning?: string;
+  declaredKey?: string;
+}
+
+export interface BoardListResponse {
+  success: boolean;
+  vault: string;
+  boards: Array<{ key: string; identity: BoardIdentityPayload; file: string; declaredKey?: string }>;
+  open: Array<{
+    key: string;
+    identity: BoardIdentityPayload;
+    elementCount: number;
+    vaultBacked: boolean;
+    file?: string;
+    active: boolean;
+    savedAt?: string;
+    loadedAt?: string;
+  }>;
+  active: string;
+}
+
+// One line naming the board a read is about. Best effort: an older canvas
+// server, or one that cannot reach its vault, still answers scene questions.
+export async function boardHeading(): Promise<string> {
+  try {
+    const current = await getCurrentBoard();
+    const level = current.identity?.level ? `, level ${current.identity.level}` : '';
+    return `Board: ${current.board}${level}`;
+  } catch {
+    return '';
+  }
+}
+
+export async function listBoardsOnCanvas(): Promise<BoardListResponse> {
+  return requestJson<BoardListResponse>('/api/boards');
+}
+
+export async function getCurrentBoard(): Promise<BoardResponse> {
+  return requestJson<BoardResponse>('/api/boards/current');
+}
+
+async function postBoard(path: string, body: Record<string, unknown>): Promise<BoardResponse> {
+  return requestJson<BoardResponse>(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+}
+
+export async function openBoard(params: {
+  board: string;
+  variant?: string;
+  level?: string;
+  reload?: boolean;
+}): Promise<BoardResponse> {
+  return postBoard('/api/boards/open', params);
+}
+
+export async function newBoard(params: {
+  board: string;
+  variant?: string;
+  level?: string;
+}): Promise<BoardResponse> {
+  return postBoard('/api/boards/new', params);
+}
+
+export async function saveBoard(params: {
+  name?: string;
+  variant?: string;
+  level?: string;
+  board?: string;
+}): Promise<BoardResponse> {
+  return postBoard('/api/boards/save', params);
 }
 
 export async function sendMermaid(mermaidDiagram: string, config?: Record<string, unknown>): Promise<ApiResponse> {

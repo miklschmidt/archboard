@@ -38,6 +38,7 @@ Results are JSON on stdout — except `describe` (plain text) and raw-content ou
 | Layout operations | `arrange align\|distribute\|group\|ungroup\|lock\|unlock\|duplicate --ids a,b,c [--to left\|horizontal\|...]` |
 | Scene files | `export [--out scene.excalidraw]`, `import [scene.excalidraw|-] [--replace]` — a `.excalidraw.md` out path writes Obsidian's format (see File I/O) |
 | Mermaid → canvas | `mermaid [diagram.mmd|-]` (or stdin) |
+| Boards (named, persisted) | `board list\|current\|new <name>\|open <name[@variant]>\|save` — see Boards |
 | Snapshots | `snapshot save\|list\|restore <name>` |
 | Share link | `share` (encrypted upload → excalidraw.com URL) |
 | Wipe canvas | `clear --yes` |
@@ -286,6 +287,28 @@ echo 'graph TD
   B --> C[(DB)]' | archboard mermaid
 ```
 Requires an open browser tab (conversion runs in the frontend; exit code 4 tells you to open the canvas URL). Afterwards `screenshot` to verify layout. If the auto-layout is poor (nodes crowded, edges crossing), find problem elements with `describe` and reposition them with `update`.
+
+## Workflow: Boards
+
+A **board** is a named diagram persisted as one `.excalidraw.md` note in an Obsidian vault. The canvas holds exactly one board at a time, so opening a board swaps what is on screen.
+
+Boards need a vault: set `ARCHBOARD_VAULT` to its path. There is no default — the vault deliberately spans repositories — so board commands fail with that message until it is set.
+
+```bash
+archboard board list                        # what the vault has; what is open; which is active
+archboard board new payments --level service # empty board, in memory until saved
+archboard board save                        # write it to <vault>/payments.excalidraw.md
+archboard board open payments@option-a      # swap the canvas to another board
+archboard board current                     # which board am I drawing on?
+```
+
+**Addressing.** `current` is the privileged variant — the architecture that exists — so it owns the bare name (`payments`). Every other variant is a proposal, addressed `name@variant` and stored as `name@variant.excalidraw.md`. Variant is an open set, so comparing three options is just three boards: `payments@option-a`, `payments@option-b`, `payments@option-c`. A name may contain `/` to nest the note in vault folders.
+
+**Identity** — `board`, `variant`, `level` — lives in the note's frontmatter and round-trips. Everything else in the frontmatter is preserved verbatim across a save, so a note's aliases, tags and prose properties survive.
+
+**Saving is last-writer-wins.** archboard does not check whether the note changed since it was opened, and the Obsidian Excalidraw plugin holds its own in-memory copy of any board open there. Whoever saves last wins and the other side's edits are gone, with no warning. Close the board in Obsidian before saving it here, and say so when you report a save.
+
+Before any board is opened the canvas holds a `scratch` board with no home in the vault; `board save --as <name>` gives it one.
 
 ## Workflow: File I/O
 
