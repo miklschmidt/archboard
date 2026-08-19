@@ -555,3 +555,24 @@ export async function getHealth(timeoutMs = 2000): Promise<HealthStatus> {
 export async function getSyncStatus(): Promise<Record<string, unknown>> {
   return requestJson('/api/sync/status');
 }
+
+// ─── The library ──────────────────────────────────────────────
+//
+// Read-only from here. The palette is edited in a browser, where the shapes
+// are; the reason an agent can see it at all is that it lives on the server
+// (ADR 0007) rather than in some tab's localStorage — which is what makes
+// "put a Redis on the board" a question with an answer.
+
+export interface LibraryResponse {
+  success: boolean;
+  items: Array<{ id: string; name?: string; status: string; created: number; elements: unknown[] }>;
+  seeded: string[];
+  /** Which curated set each seeded stencil came from, by item id. */
+  origins: Record<string, string>;
+  file: string | null;
+  vaultBacked: boolean;
+}
+
+export async function getLibrary(): Promise<LibraryResponse> {
+  return requestJson<LibraryResponse>('/api/library');
+}

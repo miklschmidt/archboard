@@ -193,7 +193,10 @@ export type WebSocketMessageType =
   | 'files_added'
   | 'file_deleted'
   | 'selection_changed'
-  | 'board_switched';
+  | 'board_switched'
+  // The stencil palette changed. Boardless on purpose: the library is not a
+  // board's content, so every client applies it whatever it is showing.
+  | 'library_changed';
 
 export interface InitialElementsMessage extends WebSocketMessage {
   type: 'initial_elements';
