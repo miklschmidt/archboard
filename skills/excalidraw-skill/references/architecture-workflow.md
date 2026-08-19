@@ -38,8 +38,9 @@ cue to ask what the new box maps to, or to propose a binding.
 
 ## Drawing an architecture pass
 
-Author with `add` / `batch_create`, not `mermaid` — mermaid output stays in the
-browser until someone presses "Sync to Backend" (see `CLAUDE.md`).
+Author with `add` / `batch_create` rather than `mermaid`: mermaid is converted
+in the browser and only reaches the board as a change report from that tab, so
+it needs a tab open and gives you no ids back to work with.
 
 Guidance that holds up on a big screen:
 

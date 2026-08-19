@@ -20,7 +20,7 @@ import {
   ElementUpdatedMessage,
   ElementDeletedMessage,
   BatchCreatedMessage,
-  SyncStatusMessage,
+  ElementsChangedMessage,
   InitialElementsMessage,
   Snapshot,
   selectionState,
@@ -153,15 +153,6 @@ wss.on('connection', (ws: WebSocket, req) => {
     ...(files.size > 0 ? { files: filesObj } : {})
   };
   ws.send(JSON.stringify(initialMessage));
-
-  // Send sync status to new client
-  const syncMessage: SyncStatusMessage = {
-    type: 'sync_status',
-    board: activeBoardKey(),
-    elementCount: board.elements.size,
-    timestamp: new Date().toISOString()
-  };
-  ws.send(JSON.stringify(syncMessage));
 
   ws.on('close', () => {
     clients.delete(ws);
@@ -877,90 +868,107 @@ app.post('/api/elements/from-mermaid', (req: Request, res: Response) => {
   }
 });
 
-// Sync elements from frontend (overwrite sync)
-app.post('/api/elements/sync', (req: Request, res: Response) => {
+// ─── Change reports from the browser ──────────────────────────
+//
+// The browser reports what changed; the server decides what the board is.
+//
+// This replaces POST /api/elements/sync, which cleared the board's element map
+// and refilled it from whatever a tab happened to be holding. That made every
+// tab the authority on the entire board on every keystroke, so a tab that was
+// stale, still loading, or showing a board mid-switch could truncate work it
+// had never seen. Nothing here can do that: the server removes only ids a
+// client names explicitly, and a client can only name ids it received in the
+// first place.
+//
+// Upserts are merged, not substituted, so server-side fields the browser does
+// not model — createdAt, the monotonic version, anything a later feature
+// stamps on an element — survive a human dragging the shape.
+const ElementChangesSchema = z.object({
+  upserts: z.array(z.record(z.any())).default([]),
+  deletes: z.array(z.string()).default([]),
+  clientId: z.string().optional(),
+  timestamp: z.string().optional()
+});
+
+app.post('/api/elements/changes', (req: Request, res: Response) => {
   try {
     const { key: boardKeyForRequest, board } = boardFromRequest(req);
     const elements = board.elements;
-    const { elements: frontendElements, timestamp } = req.body;
+    const { upserts, deletes, clientId, timestamp } = ElementChangesSchema.parse(req.body ?? {});
 
-    logger.info(`Sync request received: ${frontendElements.length} elements`, {
-      timestamp,
-      board: boardKeyForRequest,
-      elementCount: frontendElements.length
-    });
+    const now = new Date().toISOString();
+    const created: ServerElement[] = [];
+    const updated: ServerElement[] = [];
 
-    // Validate input data
-    if (!Array.isArray(frontendElements)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Expected elements to be an array'
-      });
+    for (const raw of upserts) {
+      const {
+        board: _board,
+        id: rawId,
+        createdAt: _createdAt,
+        updatedAt: _updatedAt,
+        version: _version,
+        syncedAt: _syncedAt,
+        source: _source,
+        syncTimestamp: _syncTimestamp,
+        ...incoming
+      } = raw as Record<string, any>;
+      const id = typeof rawId === 'string' && rawId.length > 0 ? rawId : generateId();
+      const existing = elements.get(id);
+      const element = {
+        ...(existing ?? {}),
+        ...incoming,
+        id,
+        createdAt: existing?.createdAt ?? now,
+        updatedAt: now,
+        version: (existing?.version ?? 0) + 1,
+        source: 'frontend_sync',
+        syncedAt: now,
+        ...(timestamp ? { syncTimestamp: timestamp } : {})
+      } as ServerElement;
+      elements.set(id, element);
+      (existing ? updated : created).push(element);
     }
 
-    // Record element count before sync
-    const beforeCount = elements.size;
+    // Only ids the board actually holds. A client naming something already
+    // gone is telling the server news it already has, not making an error.
+    const deleted: string[] = [];
+    for (const id of deletes) {
+      if (elements.delete(id)) deleted.push(id);
+    }
 
-    // 1. Clear existing memory storage
-    elements.clear();
-    logger.info(`Cleared existing elements: ${beforeCount} elements removed`);
+    if (created.length > 0 || updated.length > 0 || deleted.length > 0) {
+      // Carries the reporting client so that client can skip its own echo:
+      // re-applying a change already on screen is at best a wasted render and
+      // at worst a shape snapping back mid-drag.
+      broadcast({
+        type: 'elements_changed',
+        created,
+        updated,
+        deleted,
+        origin: clientId ?? null,
+        timestamp: now
+      } as ElementsChangedMessage, boardKeyForRequest);
 
-    // 2. Batch write new data
-    let successCount = 0;
-    const processedElements: ServerElement[] = [];
+      logger.info(
+        `Change report from ${clientId ?? 'an unidentified client'} on "${boardKeyForRequest}": ` +
+        `+${created.length} ~${updated.length} -${deleted.length} (${elements.size} on the board)`
+      );
+    }
 
-    frontendElements.forEach((element: any, index: number) => {
-      try {
-        // Ensure element has ID, generate one if missing
-        const elementId = element.id || generateId();
-
-        // Add server metadata
-        const processedElement: ServerElement = {
-          ...element,
-          id: elementId,
-          syncedAt: new Date().toISOString(),
-          source: 'frontend_sync',
-          syncTimestamp: timestamp,
-          version: 1
-        };
-
-        // Store to memory
-        elements.set(elementId, processedElement);
-        processedElements.push(processedElement);
-        successCount++;
-
-      } catch (elementError) {
-        logger.warn(`Failed to process element ${index}:`, elementError);
-      }
-    });
-
-    logger.info(`Sync completed: ${successCount}/${frontendElements.length} elements synced`);
-
-    // 3. Broadcast sync event to all WebSocket clients
-    broadcast({
-      type: 'elements_synced',
-      count: successCount,
-      timestamp: new Date().toISOString(),
-      source: 'manual_sync'
-    }, boardKeyForRequest);
-
-    // 4. Return sync results
     res.json({
       success: true,
       board: boardKeyForRequest,
-      message: `Successfully synced ${successCount} elements`,
-      count: successCount,
-      syncedAt: new Date().toISOString(),
-      beforeCount,
-      afterCount: elements.size
+      created: created.length,
+      updated: updated.length,
+      deleted: deleted.length,
+      count: elements.size,
+      appliedAt: now
     });
-
   } catch (error) {
-    logger.error('Sync error:', error);
+    logger.error('Error applying a change report:', error);
     res.status(boardErrorStatus(error)).json({
       success: false,
-      error: (error as Error).message,
-      details: 'Internal server error during sync operation'
+      error: (error as Error).message
     });
   }
 });

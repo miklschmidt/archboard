@@ -185,8 +185,7 @@ export type WebSocketMessageType =
   | 'element_updated'
   | 'element_deleted'
   | 'elements_batch_created'
-  | 'elements_synced'
-  | 'sync_status'
+  | 'elements_changed'
   | 'mermaid_convert'
   | 'canvas_cleared'
   | 'export_image_request'
@@ -233,9 +232,18 @@ export interface BatchCreatedMessage extends WebSocketMessage {
   elements: ServerElement[];
 }
 
-export interface SyncStatusMessage extends WebSocketMessage {
-  type: 'sync_status';
-  elementCount: number;
+// The result of a browser's change report, after the server applied it. Named
+// per-effect rather than as one scene so a client can tell "this element is
+// new" from "this element moved" from "this element is gone" without diffing.
+//
+// `origin` is the client that reported the change. That client already has the
+// result on screen and skips its own echo; every other client applies it.
+export interface ElementsChangedMessage extends WebSocketMessage {
+  type: 'elements_changed';
+  created: ServerElement[];
+  updated: ServerElement[];
+  deleted: string[];
+  origin: string | null;
   timestamp: string;
 }
 

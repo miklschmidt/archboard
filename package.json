@@ -23,7 +23,7 @@
     "test": "bun run test:mcp && bun run test:bind",
     "test:bind": "bun run build:server && node scripts/check-local-bind.mjs",
     "test:mcp": "bun run build:server && node scripts/check-mcp-stdio.mjs",
-    "type-check": "bunx tsc --noEmit"
+    "type-check": "bunx tsc --noEmit && bunx tsc --noEmit -p tsconfig.frontend.json"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.0",
