@@ -10,7 +10,7 @@
 import { convertToExcalidrawElements } from '@excalidraw/excalidraw'
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
 import type { ServerElement } from '../types'
-import { adoptReusedLabelIds, planLabelExpansion } from '../../../src/core/labels'
+import { adoptReusedLabelIds, boundTextsByContainer, planLabelExpansion } from '../../../src/core/labels'
 
 // Helper function to clean elements for Excalidraw
 export const cleanElementForExcalidraw = (element: ServerElement): Partial<ExcalidrawElement> => {
@@ -214,6 +214,27 @@ const restoreBindings = (
   });
 };
 
+// A `label` is a message the server sends, not a property of what is on
+// screen: once it has been turned into a bound text element, that text element
+// *is* the label, and the copy of the words left on the container is only a
+// record of what the last delivery said. Leaving it in the scene makes that
+// record outlive its delivery — a human retypes the box, and the next merge
+// hands the stale words back to the converter, which writes them over the top
+// (TASK-028). So a container that has its text element keeps no seed, and any
+// seed reaching containment is therefore news from the message just received.
+const dropSpentLabelSeeds = (
+  elements: Partial<ExcalidrawElement>[]
+): Partial<ExcalidrawElement>[] => {
+  const labelled = boundTextsByContainer(elements as Array<Partial<ExcalidrawElement> & { id: string }>)
+  if (labelled.size === 0) return elements
+  return elements.map((element) => {
+    if (!element.id || !labelled.has(element.id)) return element
+    if (!('label' in element)) return element
+    const { label: _label, ...rest } = element as Record<string, any>
+    return rest as Partial<ExcalidrawElement>
+  })
+}
+
 export const convertElementsPreservingImageProps = (
   elements: Partial<ExcalidrawElement>[]
 ): Partial<ExcalidrawElement>[] => {
@@ -239,5 +260,7 @@ export const convertElementsPreservingImageProps = (
     restoreBindings(convertedNonImageElements, nonImageElements) as Array<Partial<ExcalidrawElement> & { id: string }>,
     reuse
   ) as Partial<ExcalidrawElement>[]
-  return recenterBoundShapeTextElements([...restoredNonImageElements, ...imageElements, ...freedrawElements])
+  return dropSpentLabelSeeds(
+    recenterBoundShapeTextElements([...restoredNonImageElements, ...imageElements, ...freedrawElements])
+  )
 }
