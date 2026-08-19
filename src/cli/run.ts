@@ -136,7 +136,7 @@ const COMMANDS: Record<string, Command> = {
   import: { handler: scene.importCmd, summary: 'Import a .excalidraw or Obsidian .excalidraw.md file (merge by default)', usage: 'import [scene.excalidraw|note.excalidraw.md|-] [--replace] (or stdin)' },
   mermaid: { handler: scene.mermaid, summary: 'Render a Mermaid diagram onto the canvas (needs a browser tab)', usage: 'mermaid [diagram.mmd|-] (or stdin)' },
   snapshot: { handler: snapshot, summary: 'Save / list / restore named canvas snapshots', usage: 'snapshot save|list|restore [name] [--force]  (a snapshot belongs to the board it was taken on; --force restores it onto a different one)' },
-  library: { handler: library, summary: 'What stencils are in the library', usage: 'library list [--text]  (the palette lives on the canvas server, not in a browser profile, which is why an agent can read it at all)' },
+  library: { handler: library, summary: 'What stencils are in the library, and dropping one onto the board', usage: 'library list [--text] | library insert <name> --x <x> --y <y> [--source <file>] [--id <libraryItemId>]  (the palette lives on the canvas server, not in a browser profile, which is why an agent can read and place from it without a browser)' },
   arrange: { handler: arrange, summary: 'Align, distribute, group, lock, duplicate elements', usage: 'arrange align|distribute|group|ungroup|lock|unlock|duplicate --ids a,b,c [--to left|horizontal|...]' },
   share: { handler: scene.share, summary: 'Export to a shareable excalidraw.com URL', usage: 'share' },
   clear: { handler: scene.clear, summary: 'Clear the whole canvas', usage: 'clear --yes' },
