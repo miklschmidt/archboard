@@ -4,7 +4,7 @@ title: 'Multi-document: boards as individual vault files'
 status: To Do
 assignee: []
 created_date: '2026-08-19 13:55'
-updated_date: '2026-08-19 15:24'
+updated_date: '2026-08-19 15:38'
 labels:
   - needs-triage
 dependencies:
@@ -15,8 +15,9 @@ ordinal: 3000
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 A board can be loaded and saved by name, not one global canvas
-- [ ] #2 Board identity lives in frontmatter (board, variant, level)
-- [ ] #3 Concurrent-writer behaviour with Obsidian is defined and documented
+- [ ] #2 The element store and WebSocket protocol carry a board key
+- [ ] #3 Board identity (board, variant, level) lives in frontmatter and round-trips
+- [ ] #4 Until TASK-010 lands, saving is last-writer-wins and that is documented, not silent
 <!-- AC:END -->
 
 ## Comments
