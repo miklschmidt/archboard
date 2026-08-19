@@ -6,6 +6,7 @@ import * as scene from './commands/scene.js';
 import { selection } from './commands/selection.js';
 import { promote, demote } from './commands/promote.js';
 import { snapshot } from './commands/snapshot.js';
+import { board } from './commands/board.js';
 import { arrange } from './commands/arrange.js';
 import { installSkill } from './commands/install-skill.js';
 
@@ -28,12 +29,29 @@ const COMMANDS: Record<string, Command> = {
   selection: { handler: selection, summary: 'What a human currently has selected on the board', usage: 'selection [--text]' },
   promote: { handler: promote, summary: 'Declare the selected elements a node — kind, identity, binding', usage: 'promote --kind service|queue|datastore|gateway|external [--ids a,b,c] [--name "Payments"] [--node payments] [--path src/payments/service.ts] [--repo host/owner/name] [--branch main] [--commit sha] [--variant current] [--level system|service|module] [--each] [--text]  (default target is the live selection; --each makes one node per selected shape)' },
   demote: { handler: demote, summary: 'Turn nodes back into plain elements', usage: 'demote [--ids a,b,c] [--text]  (default target is the live selection; demotes every element of each node it touches)' },
+  board: {
+    handler: board,
+    summary: 'Load, save and list boards in the vault (last-writer-wins on save)',
+    usage: [
+      'board list | current | new <name> [--variant v] [--level system|service|module]',
+      '        | open <name[@variant]> [--variant v] [--reload] | save [--as <name>] [--variant v] [--level l]',
+      '',
+      '  A board is one .excalidraw.md note in the vault at ARCHBOARD_VAULT; the canvas holds one at a time.',
+      '  The variant "current" owns the bare name — the architecture that exists. Every other variant is',
+      '  addressed and stored as name@variant, so three-way option comparison is just three names.',
+      '',
+      '  SAVING IS LAST-WRITER-WINS. archboard does not check whether the note changed since it was opened,',
+      '  and the Obsidian Excalidraw plugin holds its own copy of any board open there — whoever writes last',
+      '  wins and the other side is gone. Close the board in Obsidian before saving it here. The conflict',
+      '  policy is TASK-010 and has not been decided; there is no hash check, lock or file watch yet.'
+    ].join('\n')
+  },
   describe: { handler: scene.describe, summary: 'AI-readable scene description (plain text)', usage: 'describe' },
   screenshot: { handler: scene.screenshot, summary: 'Capture the canvas (needs an open browser tab)', usage: 'screenshot [--out file.png] [--format png|svg] [--no-background]' },
   export: { handler: scene.exportCmd, summary: 'Export the scene as .excalidraw JSON or Obsidian .excalidraw.md', usage: 'export [--out scene.excalidraw | note.excalidraw.md] [--format json|obsidian] [--force] (a .md out path implies obsidian; --force overwrites a non-Excalidraw destination, still preserving its frontmatter)' },
   import: { handler: scene.importCmd, summary: 'Import a .excalidraw or Obsidian .excalidraw.md file (merge by default)', usage: 'import [scene.excalidraw|note.excalidraw.md|-] [--replace] (or stdin)' },
   mermaid: { handler: scene.mermaid, summary: 'Render a Mermaid diagram onto the canvas (needs a browser tab)', usage: 'mermaid [diagram.mmd|-] (or stdin)' },
-  snapshot: { handler: snapshot, summary: 'Save / list / restore named canvas snapshots', usage: 'snapshot save|list|restore [name]' },
+  snapshot: { handler: snapshot, summary: 'Save / list / restore named canvas snapshots', usage: 'snapshot save|list|restore [name] [--force]  (a snapshot belongs to the board it was taken on; --force restores it onto a different one)' },
   arrange: { handler: arrange, summary: 'Align, distribute, group, lock, duplicate elements', usage: 'arrange align|distribute|group|ungroup|lock|unlock|duplicate --ids a,b,c [--to left|horizontal|...]' },
   share: { handler: scene.share, summary: 'Export to a shareable excalidraw.com URL', usage: 'share' },
   clear: { handler: scene.clear, summary: 'Clear the whole canvas', usage: 'clear --yes' },

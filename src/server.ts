@@ -8,7 +8,6 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import logger from './utils/logger.js';
 import {
-  elements,
   files,
   snapshots,
   generateId,
@@ -32,6 +31,31 @@ import { z } from 'zod';
 import WebSocket from 'ws';
 import { isMainModule } from './core/entry.js';
 import { writePidFile, removePidFile } from './core/pidfile.js';
+import fs from 'fs';
+import {
+  BoardState,
+  activeBoard,
+  activeBoardKey,
+  boardSummaries,
+  boards,
+  getOrCreateBoard,
+  resolveBoard,
+  setActiveBoard
+} from './core/board-store.js';
+import {
+  BoardIdentity,
+  boardKey,
+  listBoards,
+  makeIdentity,
+  parseBoardKey,
+  readBoardFile,
+  renderBoardNote,
+  requireVaultRoot,
+  validateLevel,
+  validateVariant,
+  vaultPathFor
+} from './core/board.js';
+import { buildScene } from './core/scene-io.js';
 
 // Load environment variables
 dotenv.config();
@@ -64,9 +88,12 @@ const clients = new Set<WebSocket>();
 // retire that client's selection.
 const clientIds = new Map<WebSocket, string>();
 
-// Broadcast to all connected clients
-function broadcast(message: WebSocketMessage): void {
-  const data = JSON.stringify(message);
+// Broadcast to all connected clients.
+//
+// The board key is not optional: a client showing board A has to be able to
+// drop a message about board B rather than merge it into what it is rendering.
+function broadcast(message: WebSocketMessage, board: string): void {
+  const data = JSON.stringify({ ...message, board });
   clients.forEach(client => {
     try {
       if (client.readyState === WebSocket.OPEN) {
@@ -85,6 +112,24 @@ function normalizeLineBreakMarkup(text: string): string {
     .replace(/\n{3,}/g, '\n\n');
 }
 
+// Which board a request is about. `?board=` (or a `board` field in the body)
+// names one explicitly; everything written before boards existed says nothing
+// and means the board the canvas is holding.
+function boardFromRequest(req: Request): { key: string; board: BoardState } {
+  const fromQuery = typeof req.query.board === 'string' ? req.query.board : undefined;
+  const fromBody = req.body && typeof req.body === 'object' && typeof req.body.board === 'string'
+    ? req.body.board as string
+    : undefined;
+  return resolveBoard(fromQuery ?? fromBody);
+}
+
+// An unopened board is a client error, not a server fault.
+function boardErrorStatus(error: unknown): number {
+  return /is not open|Invalid board name|Invalid variant|Invalid level|No vault configured|outside the vault/.test(
+    (error as Error).message
+  ) ? 400 : 500;
+}
+
 // WebSocket connection handling
 wss.on('connection', (ws: WebSocket, req) => {
   clients.add(ws);
@@ -92,12 +137,19 @@ wss.on('connection', (ws: WebSocket, req) => {
   if (clientId) clientIds.set(ws, clientId);
   logger.info(`New WebSocket connection established${clientId ? ` (client ${clientId})` : ''}`);
 
-  // Send current elements to new client
+  // Send the active board to the new client — which board this is, not just
+  // its elements, so the tab knows what it is showing from the first frame.
+  const board = activeBoard();
   const filesObj: Record<string, ExcalidrawFile> = {};
   files.forEach((f, id) => { filesObj[id] = f; });
-  const initialMessage: InitialElementsMessage & { files?: Record<string, ExcalidrawFile> } = {
+  const initialMessage: InitialElementsMessage & {
+    files?: Record<string, ExcalidrawFile>;
+    identity: BoardIdentity;
+  } = {
     type: 'initial_elements',
-    elements: Array.from(elements.values()),
+    board: activeBoardKey(),
+    identity: board.identity,
+    elements: Array.from(board.elements.values()),
     ...(files.size > 0 ? { files: filesObj } : {})
   };
   ws.send(JSON.stringify(initialMessage));
@@ -105,7 +157,8 @@ wss.on('connection', (ws: WebSocket, req) => {
   // Send sync status to new client
   const syncMessage: SyncStatusMessage = {
     type: 'sync_status',
-    elementCount: elements.size,
+    board: activeBoardKey(),
+    elementCount: board.elements.size,
     timestamp: new Date().toISOString()
   };
   ws.send(JSON.stringify(syncMessage));
@@ -269,15 +322,17 @@ const UpdateElementSchema = z.object({
 // Get all elements
 app.get('/api/elements', (req: Request, res: Response) => {
   try {
-    const elementsArray = Array.from(elements.values());
+    const { key, board } = boardFromRequest(req);
+    const elementsArray = Array.from(board.elements.values());
     res.json({
       success: true,
+      board: key,
       elements: elementsArray,
       count: elementsArray.length
     });
   } catch (error) {
     logger.error('Error fetching elements:', error);
-    res.status(500).json({
+    res.status(boardErrorStatus(error)).json({
       success: false,
       error: (error as Error).message
     });
@@ -287,14 +342,17 @@ app.get('/api/elements', (req: Request, res: Response) => {
 // Create new element
 app.post('/api/elements', (req: Request, res: Response) => {
   try {
+    const { key: boardKeyForRequest, board } = boardFromRequest(req);
+    const elements = board.elements;
     const params = CreateElementSchema.parse(req.body);
-    logger.info('Creating element via API', { type: params.type });
+    logger.info('Creating element via API', { type: params.type, board: boardKeyForRequest });
 
     // Prioritize passed ID (for MCP sync), otherwise generate new ID
     const id = params.id || generateId();
+    const { board: _boardField, ...elementParams } = params as typeof params & { board?: string };
     const element: ServerElement = {
       id,
-      ...params,
+      ...elementParams,
       fontFamily: normalizeFontFamily(params.fontFamily),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -303,7 +361,7 @@ app.post('/api/elements', (req: Request, res: Response) => {
 
     // Resolve arrow bindings against existing elements
     if (element.type === 'arrow' || element.type === 'line') {
-      resolveArrowBindings([element]);
+      resolveArrowBindings([element], elements);
     }
 
     elements.set(id, element);
@@ -313,10 +371,11 @@ app.post('/api/elements', (req: Request, res: Response) => {
       type: 'element_created',
       element: element
     };
-    broadcast(message);
+    broadcast(message, boardKeyForRequest);
 
     res.json({
       success: true,
+      board: boardKeyForRequest,
       element: element
     });
   } catch (error) {
@@ -331,9 +390,12 @@ app.post('/api/elements', (req: Request, res: Response) => {
 // Update element
 app.put('/api/elements/:id', (req: Request, res: Response) => {
   try {
+    const { key: boardKeyForRequest, board } = boardFromRequest(req);
+    const elements = board.elements;
     const { id } = req.params;
     const body = req.body && typeof req.body === 'object' ? req.body : {};
-    const updates = UpdateElementSchema.parse({ id, ...body });
+    const { board: _boardField, ...updates } = UpdateElementSchema.parse({ id, ...body }) as
+      Record<string, any>;
 
     if (!id) {
       return res.status(400).json({
@@ -389,19 +451,20 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
       type: 'element_updated',
       element: updatedElement
     };
-    broadcast(message);
+    broadcast(message, boardKeyForRequest);
 
     // Moving/resizing a shape must drag its bound arrows along
     const geometryChanged = ['x', 'y', 'width', 'height']
       .some(key => Object.prototype.hasOwnProperty.call(body, key));
     if (geometryChanged && updatedElement.type !== 'arrow' && updatedElement.type !== 'line') {
-      for (const arrow of rerouteBoundArrows(id)) {
-        broadcast({ type: 'element_updated', element: arrow } as ElementUpdatedMessage);
+      for (const arrow of rerouteBoundArrows(id, elements)) {
+        broadcast({ type: 'element_updated', element: arrow } as ElementUpdatedMessage, boardKeyForRequest);
       }
     }
 
     res.json({
       success: true,
+      board: boardKeyForRequest,
       element: updatedElement
     });
   } catch (error) {
@@ -416,8 +479,9 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
 // Clear all elements (must be before /:id route)
 app.delete('/api/elements/clear', (req: Request, res: Response) => {
   try {
-    const count = elements.size;
-    elements.clear();
+    const { key: boardKeyForRequest, board } = boardFromRequest(req);
+    const count = board.elements.size;
+    board.elements.clear();
 
     // Nothing is on the board, so nothing can be selected.
     if (selectionState.current) {
@@ -428,18 +492,19 @@ app.delete('/api/elements/clear', (req: Request, res: Response) => {
     broadcast({
       type: 'canvas_cleared',
       timestamp: new Date().toISOString()
-    });
+    }, boardKeyForRequest);
 
-    logger.info(`Canvas cleared: ${count} elements removed`);
+    logger.info(`Canvas cleared: ${count} elements removed from board "${boardKeyForRequest}"`);
 
     res.json({
       success: true,
+      board: boardKeyForRequest,
       message: `Cleared ${count} elements`,
       count
     });
   } catch (error) {
     logger.error('Error clearing canvas:', error);
-    res.status(500).json({
+    res.status(boardErrorStatus(error)).json({
       success: false,
       error: (error as Error).message
     });
@@ -449,6 +514,8 @@ app.delete('/api/elements/clear', (req: Request, res: Response) => {
 // Delete element
 app.delete('/api/elements/:id', (req: Request, res: Response) => {
   try {
+    const { key: boardKeyForRequest, board } = boardFromRequest(req);
+    const elements = board.elements;
     const { id } = req.params;
 
     if (!id) {
@@ -472,10 +539,11 @@ app.delete('/api/elements/:id', (req: Request, res: Response) => {
       type: 'element_deleted',
       elementId: id!
     };
-    broadcast(message);
+    broadcast(message, boardKeyForRequest);
 
     res.json({
       success: true,
+      board: boardKeyForRequest,
       message: `Element ${id} deleted successfully`
     });
   } catch (error) {
@@ -490,8 +558,9 @@ app.delete('/api/elements/:id', (req: Request, res: Response) => {
 // Query elements with filters
 app.get('/api/elements/search', (req: Request, res: Response) => {
   try {
-    const { type, x_min, x_max, y_min, y_max, ...filters } = req.query;
-    let results = Array.from(elements.values());
+    const { board } = boardFromRequest(req);
+    const { type, x_min, x_max, y_min, y_max, board: _boardParam, ...filters } = req.query;
+    let results = Array.from(board.elements.values());
 
     // Filter by type if specified
     if (type && typeof type === 'string') {
@@ -539,6 +608,8 @@ app.get('/api/elements/search', (req: Request, res: Response) => {
 // Get element by ID
 app.get('/api/elements/:id', (req: Request, res: Response) => {
   try {
+    const { board } = boardFromRequest(req);
+    const elements = board.elements;
     const { id } = req.params;
 
     if (!id) {
@@ -623,12 +694,12 @@ function computeEdgePoint(
 }
 
 // Helper: resolve arrow bindings in a batch
-function resolveArrowBindings(batchElements: ServerElement[]): void {
+function resolveArrowBindings(batchElements: ServerElement[], boardElements: Map<string, ServerElement>): void {
   const elementMap = new Map<string, ServerElement>();
   batchElements.forEach(el => elementMap.set(el.id, el));
 
-  // Also check existing elements for cross-batch references
-  elements.forEach((el, id) => {
+  // Also check existing elements on the same board for cross-batch references
+  boardElements.forEach((el, id) => {
     if (!elementMap.has(id)) elementMap.set(id, el);
   });
 
@@ -690,14 +761,14 @@ function resolveArrowBindings(batchElements: ServerElement[]): void {
 // visual connection follows the shape — bindings are otherwise only resolved
 // at creation time, which left arrows floating at stale coordinates when
 // update/align/distribute moved their endpoints. Returns the re-routed arrows.
-function rerouteBoundArrows(movedId: string): ServerElement[] {
+function rerouteBoundArrows(movedId: string, boardElements: Map<string, ServerElement>): ServerElement[] {
   const rerouted: ServerElement[] = [];
-  elements.forEach(el => {
+  boardElements.forEach(el => {
     if (el.type !== 'arrow' && el.type !== 'line') return;
     const startRef = (el as any).start as { id: string } | undefined;
     const endRef = (el as any).end as { id: string } | undefined;
     if (startRef?.id !== movedId && endRef?.id !== movedId) return;
-    resolveArrowBindings([el]);
+    resolveArrowBindings([el], boardElements);
     el.updatedAt = new Date().toISOString();
     el.version = (el.version || 0) + 1;
     rerouted.push(el);
@@ -708,6 +779,8 @@ function rerouteBoundArrows(movedId: string): ServerElement[] {
 // Batch create elements
 app.post('/api/elements/batch', (req: Request, res: Response) => {
   try {
+    const { key: boardKeyForRequest, board } = boardFromRequest(req);
+    const elements = board.elements;
     const { elements: elementsToCreate } = req.body;
 
     if (!Array.isArray(elementsToCreate)) {
@@ -736,7 +809,7 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
     });
 
     // Resolve arrow bindings (computes positions, startBinding, endBinding, boundElements)
-    resolveArrowBindings(createdElements);
+    resolveArrowBindings(createdElements, elements);
 
     // Store all elements after binding resolution
     createdElements.forEach(el => elements.set(el.id, el));
@@ -746,10 +819,11 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
       type: 'elements_batch_created',
       elements: createdElements
     };
-    broadcast(message);
+    broadcast(message, boardKeyForRequest);
 
     res.json({
       success: true,
+      board: boardKeyForRequest,
       elements: createdElements,
       count: createdElements.length
     });
@@ -785,7 +859,7 @@ app.post('/api/elements/from-mermaid', (req: Request, res: Response) => {
       mermaidDiagram,
       config: config || {},
       timestamp: new Date().toISOString()
-    });
+    }, activeBoardKey());
 
     // Return the diagram for frontend processing
     res.json({
@@ -806,10 +880,13 @@ app.post('/api/elements/from-mermaid', (req: Request, res: Response) => {
 // Sync elements from frontend (overwrite sync)
 app.post('/api/elements/sync', (req: Request, res: Response) => {
   try {
+    const { key: boardKeyForRequest, board } = boardFromRequest(req);
+    const elements = board.elements;
     const { elements: frontendElements, timestamp } = req.body;
 
     logger.info(`Sync request received: ${frontendElements.length} elements`, {
       timestamp,
+      board: boardKeyForRequest,
       elementCount: frontendElements.length
     });
 
@@ -865,11 +942,12 @@ app.post('/api/elements/sync', (req: Request, res: Response) => {
       count: successCount,
       timestamp: new Date().toISOString(),
       source: 'manual_sync'
-    });
+    }, boardKeyForRequest);
 
     // 4. Return sync results
     res.json({
       success: true,
+      board: boardKeyForRequest,
       message: `Successfully synced ${successCount} elements`,
       count: successCount,
       syncedAt: new Date().toISOString(),
@@ -879,7 +957,7 @@ app.post('/api/elements/sync', (req: Request, res: Response) => {
 
   } catch (error) {
     logger.error('Sync error:', error);
-    res.status(500).json({
+    res.status(boardErrorStatus(error)).json({
       success: false,
       error: (error as Error).message,
       details: 'Internal server error during sync operation'
@@ -909,7 +987,7 @@ function broadcastSelection(): void {
     elementIds: current?.elementIds ?? [],
     clientId: current?.clientId ?? null,
     at: current?.at ?? new Date().toISOString()
-  });
+  }, activeBoardKey());
 }
 
 app.post('/api/selection', (req: Request, res: Response) => {
@@ -934,12 +1012,13 @@ app.post('/api/selection', (req: Request, res: Response) => {
 });
 
 app.get('/api/selection', (_req: Request, res: Response) => {
+  const board = activeBoard();
   const report = buildSelectionReport(
     selectionState.current,
-    Array.from(elements.values()),
+    Array.from(board.elements.values()),
     clients.size
   );
-  res.json({ success: true, ...report });
+  res.json({ success: true, board: activeBoardKey(), ...report });
 });
 
 // ─── Files API (for image elements) ───────────────────────────
@@ -960,7 +1039,7 @@ app.post('/api/files', (req: Request, res: Response) => {
     }
   }
   // Broadcast files to connected clients
-  broadcast({ type: 'files_added', files: fileList });
+  broadcast({ type: 'files_added', files: fileList }, activeBoardKey());
   res.json({ success: true, count: fileList.length });
 });
 
@@ -968,7 +1047,7 @@ app.post('/api/files', (req: Request, res: Response) => {
 app.delete('/api/files/:id', (req: Request, res: Response) => {
   const id = req.params.id as string;
   if (files.delete(id)) {
-    broadcast({ type: 'file_deleted', fileId: id });
+    broadcast({ type: 'file_deleted', fileId: id }, activeBoardKey());
     res.json({ success: true });
   } else {
     res.status(404).json({ success: false, error: `File with ID ${id} not found` });
@@ -1024,11 +1103,14 @@ app.post('/api/export/image', (req: Request, res: Response) => {
     // sync to the canonical server state before exporting
     const filesObj: Record<string, ExcalidrawFile> = {};
     files.forEach((f, id) => { filesObj[id] = f; });
+    const exportBoard = activeBoard();
     broadcast({
       type: 'initial_elements',
-      elements: Array.from(elements.values()),
+      board: activeBoardKey(),
+      identity: exportBoard.identity,
+      elements: Array.from(exportBoard.elements.values()),
       ...(files.size > 0 ? { files: filesObj } : {})
-    } as InitialElementsMessage & { files?: Record<string, ExcalidrawFile> });
+    } as InitialElementsMessage & { files?: Record<string, ExcalidrawFile> }, activeBoardKey());
 
     // Give browsers time to process the reload before requesting export
     setTimeout(() => {
@@ -1037,7 +1119,7 @@ app.post('/api/export/image', (req: Request, res: Response) => {
         requestId,
         format,
         background: background ?? true
-      });
+      }, activeBoardKey());
     }, 800);
 
     exportPromise
@@ -1195,7 +1277,7 @@ app.post('/api/viewport', (req: Request, res: Response) => {
       zoom,
       offsetX,
       offsetY
-    });
+    }, activeBoardKey());
 
     viewportPromise
       .then(result => {
@@ -1268,18 +1350,21 @@ app.post('/api/snapshots', (req: Request, res: Response) => {
       });
     }
 
+    const { key: boardKeyForRequest, board } = boardFromRequest(req);
     const snapshot: Snapshot = {
       name,
-      elements: Array.from(elements.values()),
+      board: boardKeyForRequest,
+      elements: Array.from(board.elements.values()),
       createdAt: new Date().toISOString()
     };
 
     snapshots.set(name, snapshot);
-    logger.info(`Snapshot saved: "${name}" with ${snapshot.elements.length} elements`);
+    logger.info(`Snapshot saved: "${name}" with ${snapshot.elements.length} elements from board "${boardKeyForRequest}"`);
 
     res.json({
       success: true,
       name,
+      board: boardKeyForRequest,
       elementCount: snapshot.elements.length,
       createdAt: snapshot.createdAt
     });
@@ -1297,6 +1382,7 @@ app.get('/api/snapshots', (req: Request, res: Response) => {
   try {
     const list = Array.from(snapshots.values()).map(s => ({
       name: s.name,
+      board: s.board,
       elementCount: s.elements.length,
       createdAt: s.createdAt
     }));
@@ -1341,6 +1427,273 @@ app.get('/api/snapshots/:name', (req: Request, res: Response) => {
   }
 });
 
+// ─── Boards ───────────────────────────────────────────────────
+//
+// A board is a named diagram persisted as one .excalidraw.md note in the vault
+// (ADR 0004). The canvas holds exactly one at a time, so these routes are how
+// that one gets swapped: open reads a note into the store and points the canvas
+// at it, save writes the store back out.
+//
+// SAVING IS LAST-WRITER-WINS. archboard holds the board in memory and the
+// Obsidian Excalidraw plugin holds its own copy when the same note is open
+// there; neither knows about the other, so whoever writes last wins and the
+// other's edits are gone. Nothing here detects that — no hashing, no locking,
+// no file watching. The policy is TASK-010 and is awaiting a decision; until
+// then every save says so out loud rather than letting the default become the
+// answer by silence.
+const LAST_WRITER_WINS_WARNING =
+  'Last writer wins: archboard does not check whether this note changed since it was opened. ' +
+  'If the same board is open in Obsidian, close it there before saving here (TASK-010).';
+
+const BoardAddressSchema = z.object({
+  board: z.string().min(1),
+  variant: z.string().optional(),
+  level: z.string().optional()
+});
+
+// A board address as callers write it: "payments", "payments@proposed", or a
+// name plus an explicit variant. The key form is what a human says and what
+// `board list` prints, so it is accepted everywhere a board is named.
+function identityFromParams(params: { board: string; variant?: string; level?: string }): BoardIdentity {
+  const base = params.variant
+    ? makeIdentity({ board: params.board, variant: params.variant })
+    : parseBoardKey(params.board);
+  return { ...base, ...(params.level ? { level: validateLevel(params.level) } : {}) };
+}
+
+function identityResponse(key: string, board: BoardState) {
+  return {
+    board: key,
+    identity: board.identity,
+    elementCount: board.elements.size,
+    vaultBacked: board.vaultBacked,
+    ...(board.file ? { file: board.file } : {}),
+    ...(board.savedAt ? { savedAt: board.savedAt } : {}),
+    ...(board.loadedAt ? { loadedAt: board.loadedAt } : {})
+  };
+}
+
+// Point the canvas at a board and tell every client to swap. Sends the whole
+// scene rather than a delta: nothing about the old board's elements helps
+// render the new one.
+function switchCanvasTo(key: string): BoardState {
+  const board = setActiveBoard(key);
+  // The selection belongs to the board that was on screen; it means nothing on
+  // the new one.
+  if (selectionState.current) {
+    selectionState.current = null;
+  }
+  broadcast({
+    type: 'board_switched',
+    identity: board.identity,
+    elements: Array.from(board.elements.values()),
+    timestamp: new Date().toISOString()
+  }, key);
+  broadcastSelection();
+  return board;
+}
+
+// Take a scene's elements into a board's store. Mirrors the batch-create path
+// (ids preserved, server metadata stamped) so a loaded board behaves exactly
+// like one that was drawn.
+function ingestSceneElements(board: BoardState, sceneElements: any[]): number {
+  board.elements.clear();
+  const loaded: ServerElement[] = [];
+  for (const raw of sceneElements) {
+    if (!raw || typeof raw !== 'object') continue;
+    const element: ServerElement = {
+      ...raw,
+      id: raw.id || generateId(),
+      createdAt: raw.createdAt ?? new Date().toISOString(),
+      updatedAt: raw.updatedAt ?? new Date().toISOString(),
+      version: raw.version ?? 1
+    };
+    loaded.push(element);
+  }
+  loaded.forEach(el => board.elements.set(el.id, el));
+  return loaded.length;
+}
+
+// What exists: every board in the vault, plus the ones open in this process.
+app.get('/api/boards', (_req: Request, res: Response) => {
+  try {
+    const vault = requireVaultRoot();
+    res.json({
+      success: true,
+      vault,
+      boards: listBoards(vault),
+      open: boardSummaries(),
+      active: activeBoardKey()
+    });
+  } catch (error) {
+    logger.error('Error listing boards:', error);
+    res.status(boardErrorStatus(error)).json({ success: false, error: (error as Error).message });
+  }
+});
+
+// Which board the canvas is holding.
+app.get('/api/boards/current', (_req: Request, res: Response) => {
+  res.json({ success: true, ...identityResponse(activeBoardKey(), activeBoard()) });
+});
+
+// Open a board from the vault onto the canvas.
+app.post('/api/boards/open', (req: Request, res: Response) => {
+  try {
+    const params = BoardAddressSchema.extend({ reload: z.boolean().optional() }).parse(req.body ?? {});
+    const asked = identityFromParams(params);
+    const key = boardKey(asked);
+
+    // A board already open keeps whatever unsaved work it has: switching away
+    // and back must not be a way to silently lose edits. reload is the explicit
+    // "throw mine away, take the file's".
+    if (boards.has(key) && !params.reload) {
+      const board = switchCanvasTo(key);
+      return res.json({ success: true, ...identityResponse(key, board), source: 'memory' });
+    }
+
+    const loaded = readBoardFile(asked);
+    if (!loaded) {
+      return res.status(404).json({
+        success: false,
+        error:
+          `No board "${key}" in the vault at ${requireVaultRoot()}. ` +
+          `Run \`board list\` to see what is there, or \`board new ${key}\` to start it.`
+      });
+    }
+
+    const scene = JSON.parse(loaded.sceneJson);
+    // The note's level wins unless the caller stated one — opening a board is
+    // not usually a claim about what level it sits at.
+    const { key: openedKey, board } = getOrCreateBoard(
+      { ...loaded.identity, ...(asked.level ? { level: asked.level } : {}) },
+      true
+    );
+    const count = ingestSceneElements(board, Array.isArray(scene) ? scene : (scene.elements ?? []));
+    board.file = loaded.file;
+    board.note = loaded.raw;
+    board.loadedAt = new Date().toISOString();
+    switchCanvasTo(openedKey);
+
+    logger.info(`Board opened: "${openedKey}" (${count} elements) from ${loaded.file}`);
+    res.json({
+      success: true,
+      ...identityResponse(openedKey, board),
+      source: 'vault',
+      ...(loaded.declaredKey ? { declaredKey: loaded.declaredKey } : {})
+    });
+  } catch (error) {
+    logger.error('Error opening board:', error);
+    res.status(boardErrorStatus(error)).json({ success: false, error: (error as Error).message });
+  }
+});
+
+// Start a new, empty board. It exists in memory only until it is saved.
+app.post('/api/boards/new', (req: Request, res: Response) => {
+  try {
+    const identity = identityFromParams(BoardAddressSchema.parse(req.body ?? {}));
+    const key = boardKey(identity);
+    if (boards.has(key)) {
+      return res.status(409).json({
+        success: false,
+        error: `Board "${key}" is already open. Switch to it with \`board open ${key}\`.`
+      });
+    }
+    if (fs.existsSync(vaultPathFor(identity))) {
+      return res.status(409).json({
+        success: false,
+        error: `Board "${key}" already exists in the vault. Open it instead, or choose another name or variant.`
+      });
+    }
+
+    const { key: newKey, board } = getOrCreateBoard(identity, true);
+    board.file = vaultPathFor(identity);
+    switchCanvasTo(newKey);
+    logger.info(`Board created: "${newKey}" (empty, unsaved)`);
+    res.json({ success: true, ...identityResponse(newKey, board), created: true, saved: false });
+  } catch (error) {
+    logger.error('Error creating board:', error);
+    res.status(boardErrorStatus(error)).json({ success: false, error: (error as Error).message });
+  }
+});
+
+// Write a board to the vault. With no address it saves the board the canvas is
+// holding under its own identity; with one it saves as that board instead
+// (which is also how the scratch board gets a name).
+app.post('/api/boards/save', (req: Request, res: Response) => {
+  try {
+    const body = req.body ?? {};
+    const source = boardFromRequest(req);
+    const sourceBoard = source.board;
+
+    // With a name, this is a save-as; without one, the board keeps its own
+    // identity and only the fields actually passed are changed.
+    const target: BoardIdentity = body.name
+      ? identityFromParams({ board: String(body.name), variant: body.variant, level: body.level })
+      : {
+        ...sourceBoard.identity,
+        ...(body.variant ? { variant: validateVariant(String(body.variant)) } : {}),
+        ...(body.level ? { level: validateLevel(String(body.level)) } : {})
+      };
+
+    if (!sourceBoard.vaultBacked && !body.name) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'The canvas is holding the scratch board, which has no home in the vault. ' +
+          'Give it a name to save it: `board save --as <name>`.'
+      });
+    }
+
+    const file = vaultPathFor(target);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+
+    // Read the destination rather than trusting the copy taken at load: a save
+    // must preserve whatever frontmatter is there NOW. This is not a conflict
+    // check — see LAST_WRITER_WINS_WARNING.
+    let existingNote: string | undefined;
+    try {
+      existingNote = fs.readFileSync(file, 'utf-8');
+    } catch { /* new note */ }
+    const overwrote = existingNote !== undefined;
+
+    const filesObj: Record<string, ExcalidrawFile> = {};
+    files.forEach((f, id) => { filesObj[id] = f; });
+    const { scene, elementCount } = buildScene(
+      Array.from(sourceBoard.elements.values()),
+      filesObj as unknown as Record<string, any>
+    );
+    const note = renderBoardNote(scene, existingNote, target);
+    fs.writeFileSync(file, note, 'utf-8');
+
+    // The board is now that board: saving under a new name renames it in the
+    // store too, so the next save goes to the same place.
+    const targetKey = boardKey(target);
+    const wasActive = source.key === activeBoardKey();
+    const { board: savedBoard } = getOrCreateBoard(target, true);
+    if (targetKey !== source.key) {
+      savedBoard.elements.clear();
+      sourceBoard.elements.forEach((el, id) => savedBoard.elements.set(id, el));
+    }
+    savedBoard.file = file;
+    savedBoard.note = note;
+    savedBoard.savedAt = new Date().toISOString();
+    if (wasActive && targetKey !== source.key) switchCanvasTo(targetKey);
+
+    logger.info(`Board saved: "${targetKey}" (${elementCount} elements) -> ${file}`);
+    res.json({
+      success: true,
+      ...identityResponse(targetKey, savedBoard),
+      file,
+      elements: elementCount,
+      overwrote,
+      warning: LAST_WRITER_WINS_WARNING
+    });
+  } catch (error) {
+    logger.error('Error saving board:', error);
+    res.status(boardErrorStatus(error)).json({ success: false, error: (error as Error).message });
+  }
+});
+
 // Serve the frontend
 app.get('/', (req: Request, res: Response) => {
   const htmlFile = path.join(__dirname, '../dist/frontend/index.html');
@@ -1357,7 +1710,8 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    elements_count: elements.size,
+    elements_count: activeBoard().elements.size,
+    board: activeBoardKey(),
     websocket_clients: clients.size,
     // Identity for `stop`: it must only ever signal a process that both
     // identifies as this service AND self-reports its pid — never a pid
@@ -1371,7 +1725,8 @@ app.get('/health', (req: Request, res: Response) => {
 app.get('/api/sync/status', (req: Request, res: Response) => {
   res.json({
     success: true,
-    elementCount: elements.size,
+    board: activeBoardKey(),
+    elementCount: activeBoard().elements.size,
     timestamp: new Date().toISOString(),
     memoryUsage: {
       heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024), // MB

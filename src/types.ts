@@ -168,8 +168,14 @@ export interface SyncResponse extends ApiResponse {
 }
 
 // WebSocket message types
+//
+// Every message carries the board it is about. The canvas holds one board at a
+// time, so a client that is showing board A must be able to tell that an
+// element_created for board B is not its business — otherwise a board switch
+// races with in-flight broadcasts and the wrong elements land on screen.
 export interface WebSocketMessage {
   type: WebSocketMessageType;
+  board?: string;
   [key: string]: any;
 }
 
@@ -187,11 +193,24 @@ export type WebSocketMessageType =
   | 'set_viewport'
   | 'files_added'
   | 'file_deleted'
-  | 'selection_changed';
+  | 'selection_changed'
+  | 'board_switched';
 
 export interface InitialElementsMessage extends WebSocketMessage {
   type: 'initial_elements';
   elements: ServerElement[];
+  board: string;
+}
+
+// The canvas is now showing a different board. Carries the whole scene rather
+// than a delta: nothing about board A's elements helps render board B, so the
+// client replaces what it has instead of merging.
+export interface BoardSwitchedMessage extends WebSocketMessage {
+  type: 'board_switched';
+  board: string;
+  identity: { board: string; variant: string; level?: string };
+  elements: ServerElement[];
+  timestamp: string;
 }
 
 export interface ElementCreatedMessage extends WebSocketMessage {
@@ -301,12 +320,15 @@ export interface CanvasSelection {
 // Snapshot types
 export interface Snapshot {
   name: string;
+  // Which board the snapshot was taken from — a snapshot of one board says
+  // nothing about another, and restoring across boards would be a data loss.
+  board: string;
   elements: ServerElement[];
   createdAt: string;
 }
 
-// In-memory storage for Excalidraw elements
-export const elements = new Map<string, ServerElement>();
+// The element store lives in core/board-store.ts: it is keyed by board now,
+// not one global map (see that file for why).
 
 // In-memory storage for snapshots
 export const snapshots = new Map<string, Snapshot>();

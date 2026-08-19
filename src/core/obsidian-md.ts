@@ -107,6 +107,71 @@ function frontmatterKey(line: string): string | null {
   return (m[2] ?? m[3] ?? '').trim().toLowerCase();
 }
 
+// The scalar after `key:`, unquoted. Anything that is not a plain scalar on
+// the same line (a list, a nested block, a block scalar) reads as undefined —
+// the caller's keys are always plain scalars, and misreading someone else's
+// structure would be worse than not reading it.
+function frontmatterScalar(line: string): string | undefined {
+  const colon = line.indexOf(':');
+  if (colon === -1) return undefined;
+  const raw = line.slice(colon + 1).trim();
+  if (raw === '') return undefined;
+  const quoted = /^(["'])([\s\S]*)\1$/.exec(raw);
+  if (quoted) return quoted[2];
+  return raw.replace(/\s+#.*$/, '').trim();
+}
+
+// Quote only when a bare scalar would be misread: YAML indicators at the
+// start, an embedded ": " or " #", or surrounding whitespace. Everything else
+// stays unquoted so the frontmatter reads the way a human would have typed it.
+function yamlScalar(value: string): string {
+  const needsQuotes =
+    value === '' ||
+    value !== value.trim() ||
+    /^[-?:,[\]{}#&*!|>'"%@`]/.test(value) ||
+    /:\s/.test(value) ||
+    /\s#/.test(value) ||
+    /[\r\n]/.test(value);
+  if (!needsQuotes) return value;
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+// Read one top-level frontmatter key from a note. Returns undefined when the
+// note has no readable frontmatter or the key is absent.
+export function readFrontmatterValue(content: string, key: string): string | undefined {
+  const scan = scanFrontmatter(content);
+  if (scan.kind !== 'ok') return undefined;
+  const wanted = key.toLowerCase();
+  for (const line of scan.lines) {
+    if (/^\s/.test(line)) continue;
+    if (frontmatterKey(line) === wanted) return frontmatterScalar(line);
+  }
+  return undefined;
+}
+
+// Set frontmatter keys in place. Idempotent by construction: a key already
+// holding the wanted value leaves its line byte-for-byte untouched, so
+// re-exporting an unchanged board produces an identical file. A changed value
+// rewrites only that line, keeping the key's position (and therefore the rest
+// of the block's ordering and formatting) intact. A new key is appended after
+// the last non-blank line, the same place REQUIRED_FRONTMATTER goes.
+function upsertFrontmatterLines(lines: string[], entries: ReadonlyArray<[string, string]>): string[] {
+  const out = [...lines];
+  for (const [key, value] of entries) {
+    const wanted = key.toLowerCase();
+    const rendered = `${key}: ${yamlScalar(value)}`;
+    const at = out.findIndex((line) => !/^\s/.test(line) && frontmatterKey(line) === wanted);
+    if (at !== -1) {
+      if (frontmatterScalar(out[at]!) !== value) out[at] = rendered;
+      continue;
+    }
+    let insertAt = out.length;
+    while (insertAt > 0 && out[insertAt - 1]!.trim() === '') insertAt--;
+    out.splice(insertAt, 0, rendered);
+  }
+  return out;
+}
+
 // Reads the frontmatter block of an existing note. Deliberately conservative:
 // anything it cannot account for is reported as malformed rather than guessed
 // at, because the caller's fallback for "malformed" is to refuse to write
@@ -176,12 +241,24 @@ function renderFrontmatter(lines: string[]): string {
 // one; pass nothing to get the plugin's default frontmatter. Throws when the
 // destination's frontmatter cannot be read safely — callers must treat that as
 // "do not write" rather than falling back to a fresh header.
-export function wrapSceneAsObsidianMd(scene: Record<string, any>, existing?: string | null): string {
+export interface WrapOptions {
+  // Frontmatter keys to set on the note — board identity, in practice. Upsert
+  // semantics: unchanged values leave their lines untouched.
+  frontmatter?: ReadonlyArray<[key: string, value: string]>;
+}
+
+export function wrapSceneAsObsidianMd(
+  scene: Record<string, any>,
+  existing?: string | null,
+  options: WrapOptions = {}
+): string {
   if (!Array.isArray(scene.elements)) {
     throw new Error('Not an Excalidraw scene: missing elements array');
   }
   // Resolved first so an unreadable destination fails before any work.
-  const frontmatter = renderFrontmatter(frontmatterLinesFor(existing));
+  const frontmatter = renderFrontmatter(
+    upsertFrontmatterLines(frontmatterLinesFor(existing), options.frontmatter ?? [])
+  );
   const wrapped = structuredClone(scene);
   wrapped.type = 'excalidraw';
   wrapped.version = 2;

@@ -1,11 +1,11 @@
 ---
 id: TASK-003
 title: 'Multi-document: boards as individual vault files'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-19 13:55'
-updated_date: '2026-08-19 16:01'
+updated_date: '2026-08-19 16:58'
 labels:
   - needs-triage
 dependencies:
@@ -15,10 +15,10 @@ ordinal: 3000
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A board can be loaded and saved by name, not one global canvas
-- [ ] #2 The element store and WebSocket protocol carry a board key
-- [ ] #3 Board identity (board, variant, level) lives in frontmatter and round-trips
-- [ ] #4 Until TASK-010 lands, saving is last-writer-wins and that is documented, not silent
+- [x] #1 A board can be loaded and saved by name, not one global canvas
+- [x] #2 The element store and WebSocket protocol carry a board key
+- [x] #3 Board identity (board, variant, level) lives in frontmatter and round-trips
+- [x] #4 Until TASK-010 lands, saving is last-writer-wins and that is documented, not silent
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -38,6 +38,22 @@ ordinal: 3000
 
 <!-- SECTION:NOTES:BEGIN -->
 Implementation landed (pre-verification): board-keyed store in src/core/board-store.ts (scratch board at boot so pre-board callers are unchanged), addressing/vault I/O in src/core/board.ts, idempotent frontmatter upsert in obsidian-md.ts, /api/boards {list,current,open,new,save} + ?board= on every element route, board key on every WebSocket broadcast plus a new board_switched message, board-aware frontend, `archboard board` CLI, and list/open/new/save_board MCP tools. Frontmatter keys are plain board/variant/level (Obsidian properties are the note author's space, unlike customData which the plugin writes into). Vault root is ARCHBOARD_VAULT with no default.
+
+Verified behaviourally against a real vault and a real browser.
+
+- new payments (level service) -> add 2 nodes -> save -> note written with board/variant/level in frontmatter; describe leads with the board.
+- Idempotency: save twice, byte-identical (cmp). Held again after hand-adding aliases/cssclasses/a comment to the frontmatter, and again after a human drag through the browser.
+- Losslessness: board open payments --reload then save is byte-identical to the file before (cmp).
+- Custom frontmatter (aliases list, cssclasses, a '#' comment) survives a save untouched, in place.
+- Switching: opened payments@option-a and payments@option-b, canvas swapped each time; reopening payments brought back its own elements and identity; option-b kept its 2 elements while payments was edited.
+- Server restart then board list/open: content and identity came back from the vault.
+- Browser: header shows the board (payments @option-a etc.), a CLI board open swaps the scene with no stale elements, a fresh page load lands on the right board, and a human drag reached the right board's store with customData intact and source=frontend_sync.
+- Nested names work (team/billing -> <vault>/team/billing.excalidraw.md, directory created).
+- Guards: unknown board, scratch board saved without a name, ?board= for a board that is not open, and cross-board snapshot restore all fail with actionable messages and exit 1.
+- No vault configured: canvas still works, only board commands refuse, naming ARCHBOARD_VAULT.
+- bun run test: 5 MCP stdio wire checks + the loopback bind check pass. bunx tsc and bunx vite build clean.
+
+Orchestrator verification against a fresh vault: board new/save wrote payments.excalidraw.md with board/variant/level in frontmatter; two consecutive saves byte-identical (idempotent); open --reload then save byte-identical (lossless) — both properties TASK-002 established survived a refactor that reached the store and the WS protocol. Three-way variants work (payments, @option-a) and board open swaps rather than merges: the Cache node present in @option-a is absent from payments and returns on switching back. describe leads with 'Board: payments@option-a, level service'. Last-writer-wins is printed on every save. bun run test green.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -61,3 +77,9 @@ RECOMMENDATION: C as the mechanism plus A as the documented convention. The hash
 Not implementing until confirmed.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Boards are addressable vault notes: name plus variant, with current privileged so it owns the bare name. The store is Map<boardKey, BoardState> with one active board, the REST routes resolve ?board=, and every WS broadcast names its board with a board_switched message replacing the browser scene. Identity lives in frontmatter as plain board/variant/level properties and round-trips; all other frontmatter is carried verbatim so idempotency and losslessness hold. Vault root is ARCHBOARD_VAULT with no default, since the vault spans repositories. Verified end to end including a server restart.
+<!-- SECTION:FINAL_SUMMARY:END -->

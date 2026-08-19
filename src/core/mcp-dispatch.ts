@@ -35,6 +35,13 @@ import {
   duplicateElements
 } from './geometry.js';
 import { buildSceneFile, importScene } from './scene-io.js';
+import {
+  listBoardsOnCanvas,
+  boardHeading,
+  openBoard,
+  newBoard,
+  saveBoard
+} from './canvas-client.js';
 import { wrapSceneAsObsidianMd } from './obsidian-md.js';
 import { describeScene } from './describe.js';
 import {
@@ -630,13 +637,63 @@ export async function callExcalidrawTool(
           }]
         };
       }
+      case 'list_boards': {
+        logger.info('Listing boards via MCP');
+        const result = await listBoardsOnCanvas();
+        return {
+          content: [{ type: 'text', text: JSON.stringify({
+            vault: result.vault,
+            active: result.active,
+            boards: result.boards,
+            open: result.open
+          }, null, 2) }]
+        };
+      }
+      case 'open_board': {
+        const params = z.object({
+          board: z.string().min(1),
+          variant: z.string().optional(),
+          level: z.string().optional(),
+          reload: z.boolean().optional()
+        }).parse(args ?? {});
+        logger.info('Opening board via MCP', { board: params.board });
+        const result = await openBoard(params);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+        };
+      }
+      case 'new_board': {
+        const params = z.object({
+          board: z.string().min(1),
+          variant: z.string().optional(),
+          level: z.string().optional()
+        }).parse(args ?? {});
+        logger.info('Creating board via MCP', { board: params.board });
+        const result = await newBoard(params);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+        };
+      }
+      case 'save_board': {
+        const params = z.object({
+          name: z.string().optional(),
+          variant: z.string().optional(),
+          level: z.string().optional()
+        }).parse(args ?? {});
+        logger.info('Saving board via MCP', { name: params.name });
+        const result = await saveBoard(params);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+        };
+      }
       case 'describe_scene': {
         logger.info('Describing scene via MCP');
 
         const allElements = await getElements();
+        const heading = await boardHeading();
 
         return {
-          content: [{ type: 'text', text: describeScene(allElements) }]
+          content: [{ type: 'text', text: (heading ? heading + '\n\n' : '') + describeScene(allElements) }]
         };
       }
       case 'get_selection': {

@@ -23,13 +23,26 @@ export interface ExportedScene {
 // deterministic ids/seeds so re-exporting an unchanged scene is byte-stable.
 export async function buildSceneFile(): Promise<ExportedScene> {
   const sceneElements = await getElements();
-  const exportElements = expandElementsForExport(sceneElements, { deterministic: true });
 
   // Fetch files for image elements
   let sceneFiles: Record<string, any> = {};
   try {
     sceneFiles = await getFiles();
   } catch { /* files endpoint may not exist */ }
+
+  return buildScene(sceneElements, sceneFiles);
+}
+
+// The same scene, built from elements already in hand. The canvas server saves
+// boards out of its own store, so it must not have to fetch itself over HTTP —
+// and it must produce byte-identical output to `export`, which is what keeps
+// export idempotent and import/export lossless no matter which path wrote the
+// file.
+export function buildScene(
+  sceneElements: ServerElement[],
+  sceneFiles: Record<string, any> = {}
+): ExportedScene {
+  const exportElements = expandElementsForExport(sceneElements, { deterministic: true });
 
   const excalidrawScene: Record<string, any> = {
     type: 'excalidraw',

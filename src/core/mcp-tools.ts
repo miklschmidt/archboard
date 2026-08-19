@@ -405,6 +405,50 @@ export const tools: Tool[] = [
     }
   },
   {
+    name: 'list_boards',
+    description: "Every board in the vault, plus which ones are open in this session and which one the canvas is currently holding. A board is a named, persisted diagram; the canvas shows exactly one at a time. Call this before opening a board to see what exists.",
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'open_board',
+    description: "Load a board from the vault onto the canvas, replacing whatever board was there. Address it as 'payments' or 'payments@proposed' — the variant 'current' is the architecture that exists and owns the bare name, every other variant is a proposal. A board already open keeps its unsaved work and is simply switched back to; pass reload to discard that and re-read the file.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        board: { type: 'string', description: "Board address: 'payments' or 'payments@proposed'." },
+        variant: { type: 'string', description: "Variant, if not given as part of the address. Defaults to 'current'." },
+        level: { type: 'string', description: 'Abstraction tier: system, service, or module. Overrides what the note declares.' },
+        reload: { type: 'boolean', description: 'Discard the in-memory copy and re-read the vault file.' }
+      },
+      required: ['board']
+    }
+  },
+  {
+    name: 'new_board',
+    description: "Start a new, empty board and put it on the canvas. It lives in memory only until save_board writes it to the vault. Refuses a name the vault already has — open that one instead. Use a new variant of an existing name (e.g. payments@option-a) to author a proposal alongside the current architecture.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        board: { type: 'string', description: "Board address: 'payments' or 'payments@option-a'." },
+        variant: { type: 'string', description: "Variant, if not given as part of the address. Defaults to 'current'." },
+        level: { type: 'string', description: 'Abstraction tier: system, service, or module.' }
+      },
+      required: ['board']
+    }
+  },
+  {
+    name: 'save_board',
+    description: "Write the board the canvas is holding back to its .excalidraw.md note in the vault, preserving the note's frontmatter and prose. Pass name to save it as a different board (which is how the unnamed scratch board gets a name). LAST WRITER WINS: nothing checks whether the note changed since it was opened, so if the same board is open in Obsidian its in-memory copy will overwrite this one or be overwritten by it. Say so when reporting a save.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Save as this board instead of the current one. Accepts name or name@variant.' },
+        variant: { type: 'string', description: 'Save as this variant of the same board.' },
+        level: { type: 'string', description: 'Set the board\'s abstraction tier: system, service, or module.' }
+      }
+    }
+  },
+  {
     name: 'describe_scene',
     description: 'Get an AI-readable description of the current canvas: element types, positions, connections, labels, spatial layout, and bounding box. Use this to understand what is on the canvas before making changes.',
     inputSchema: {

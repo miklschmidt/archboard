@@ -55,8 +55,16 @@ interface ServerElement {
   link?: string | null;
 }
 
+interface BoardIdentity {
+  board: string;
+  variant: string;
+  level?: string;
+}
+
 interface WebSocketMessage {
   type: string;
+  board?: string;
+  identity?: BoardIdentity;
   element?: ServerElement;
   elements?: ServerElement[];
   elementId?: string;
@@ -325,6 +333,16 @@ function App(): JSX.Element {
   const [isConnected, setIsConnected] = useState<boolean>(false)
   const websocketRef = useRef<WebSocket | null>(null)
 
+  // Which board this tab is showing. The canvas holds exactly one board at a
+  // time, and every server message names the board it is about — so the tab
+  // has to know its own board to tell "an element was added to what I am
+  // looking at" from "an element was added to some other board".
+  //
+  // The ref is what handlers read (they are attached at mount and would
+  // otherwise capture a stale value); the state is what the header renders.
+  const [board, setBoard] = useState<BoardIdentity | null>(null)
+  const boardKeyRef = useRef<string | null>(null)
+
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window === 'undefined') return 'light'
     try {
@@ -394,12 +412,40 @@ function App(): JSX.Element {
     }
   }, [excalidrawAPI, isConnected])
 
+  // Adopt a board: this tab is now showing it, and anything it had queued for
+  // the previous one is void.
+  const adoptBoard = (key: string | undefined, identity: BoardIdentity | undefined): void => {
+    if (!key) return
+    if (boardKeyRef.current !== key && autoSyncTimerRef.current) {
+      // A debounced sync of the board we just left must not fire into the one
+      // we just arrived at.
+      clearTimeout(autoSyncTimerRef.current)
+      autoSyncTimerRef.current = null
+      userInteractedRef.current = false
+    }
+    boardKeyRef.current = key
+    if (identity) setBoard(identity)
+    else setBoard((previous) => (previous && previous.board === key ? previous : { board: key, variant: 'current' }))
+  }
+
   const loadExistingElements = async (): Promise<void> => {
     try {
+      // Which board first: the elements that follow only mean something once
+      // the tab knows whose they are.
+      try {
+        const currentResponse = await fetch('/api/boards/current')
+        if (currentResponse.ok) {
+          const current = await currentResponse.json() as { board?: string; identity?: BoardIdentity }
+          adoptBoard(current.board, current.identity)
+        }
+      } catch (error) {
+        console.warn('Could not read the current board:', error)
+      }
+
       const response = await fetch('/api/elements')
       const result: ApiResponse = await response.json()
 
-      if (result.success && result.elements && result.elements.length > 0) {
+      if (result.success && result.elements) {
         const cleanedElements = result.elements.map(cleanElementForExcalidraw)
         const convertedElements = convertElementsPreservingImageProps(cleanedElements)
         if (excalidrawAPI) {
@@ -477,6 +523,17 @@ function App(): JSX.Element {
       return
     }
 
+    // Board routing. Every server message names the board it is about; a
+    // message about a board this tab is not showing is not ours to apply.
+    // board_switched and initial_elements are the exceptions — they are how the
+    // tab learns which board it is on.
+    const declaresBoard = data.type === 'board_switched' || data.type === 'initial_elements'
+    if (declaresBoard) {
+      adoptBoard(data.board, data.identity)
+    } else if (data.board && boardKeyRef.current && data.board !== boardKeyRef.current) {
+      return
+    }
+
     try {
       const currentElements = excalidrawAPI.getSceneElements()
       const mergeAndApplySceneElements = (incomingElements: Partial<ExcalidrawElement>[]): void => {
@@ -520,6 +577,22 @@ function App(): JSX.Element {
             excalidrawAPI.addFiles(Object.values((data as any).files))
           }
           break
+
+        // The canvas is showing a different board now. Replace the scene
+        // outright — merging board A's elements into board B is exactly the
+        // bug this message exists to prevent — and take an empty board as
+        // genuinely empty rather than as "no news".
+        case 'board_switched': {
+          const switchedElements = (data.elements ?? []).map(cleanElementForExcalidraw)
+          applySceneUpdateWithoutAutoSync(excalidrawAPI, {
+            elements: switchedElements.length > 0
+              ? convertElementsPreservingImageProps(switchedElements)
+              : [],
+            captureUpdate: CaptureUpdateAction.IMMEDIATELY
+          })
+          console.log(`Board switched to "${data.board}" (${switchedElements.length} elements)`)
+          break
+        }
 
         case 'files_added':
           if (Array.isArray((data as any).files)) {
@@ -851,16 +924,23 @@ function App(): JSX.Element {
       const backendElements = activeElements.map(convertToBackendFormat)
 
       // 4. Send to backend
-      const response = await fetch('/api/elements/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          elements: backendElements,
-          timestamp: new Date().toISOString()
-        })
-      })
+      // The board key rides with the elements: if a switch lands while this
+      // request is in flight, the server still files them under the board they
+      // actually came from instead of the one now on screen.
+      const syncBoard = boardKeyRef.current
+      const response = await fetch(
+        syncBoard ? `/api/elements/sync?board=${encodeURIComponent(syncBoard)}` : '/api/elements/sync',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            elements: backendElements,
+            timestamp: new Date().toISOString()
+          })
+        }
+      )
 
       if (response.ok) {
         const result: ApiResponse = await response.json()
@@ -964,13 +1044,17 @@ function App(): JSX.Element {
   const clearCanvas = async (): Promise<void> => {
     if (excalidrawAPI) {
       try {
-        // Get all current elements and delete them from backend
-        const response = await fetch('/api/elements')
+        // Name the board explicitly: this wipes a board, and doing it to the
+        // wrong one because a switch landed mid-request is not recoverable.
+        const boardParam = boardKeyRef.current
+          ? `?board=${encodeURIComponent(boardKeyRef.current)}`
+          : ''
+        const response = await fetch(`/api/elements${boardParam}`)
         const result: ApiResponse = await response.json()
 
         if (result.success && result.elements) {
           const deletePromises = result.elements.map(element =>
-            fetch(`/api/elements/${element.id}`, { method: 'DELETE' })
+            fetch(`/api/elements/${element.id}${boardParam}`, { method: 'DELETE' })
           )
           await Promise.all(deletePromises)
         }
@@ -995,7 +1079,12 @@ function App(): JSX.Element {
     <div className="app" data-theme={theme}>
       {/* Header */}
       <div className="header">
-        <h1>Excalidraw Canvas</h1>
+        <h1>
+          {board ? board.board : 'Excalidraw Canvas'}
+          {board && board.variant !== 'current' && (
+            <span className="board-variant"> @{board.variant}</span>
+          )}
+        </h1>
         <div className="controls">
           <div className="status">
             <div className={`status-dot ${isConnected ? 'status-connected' : 'status-disconnected'}`}></div>
