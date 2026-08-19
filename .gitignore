@@ -20,16 +20,13 @@ public/dist/
 
 .DS_Store
 
-docs/*
 # --- archboard ---
-# Agent configuration read by the engineering skills is tracked.
-!docs/agents/
 # Committed architecture diagrams are a deliverable, not a build artifact.
 !diagrams/*.excalidraw
 
 # Agent skills are derived, not authored, so they stay untracked:
-#   .agents/skills/  28 third-party skills pinned by skills-lock.json,
-#                    plus excalidraw-skill synced from canonical skills/
+#   .agents/skills/  third-party skills pinned by skills-lock.json, plus our
+#                    own skills synced from the tracked skills/ directory
 #   .claude/skills/  symlinks into .agents/skills/
 # Everything else under .claude/ and .agents/ (settings.json, commands/,
 # agents/) is authored configuration and IS tracked.
