@@ -143,6 +143,60 @@ const diff = (before, after) => diffBoardStates(before, after, identity, 'paymen
     diff(base, recoloured).significance === 'cosmetic');
 }
 
+// --- region, and the frame it is measured in (TASK-022) ---------------------
+//
+// A region name is a place inside a frame drawn round the board's nodes, so
+// the frame moves when the board does. Observed live: adding one box past the
+// right edge stretched the frame and the feed said two boxes nobody had
+// touched had "moved" — noise in the JSON, and a false statement about a human
+// once it reaches a thread as prose.
+{
+  // Far enough apart that each box is its own cluster, so region is the only
+  // signal in play and nothing here is carried by cluster membership.
+  const spread = [
+    box('a', 0, 0, 'alpha'), box('b', 700, 0, 'bravo'), box('c', 1400, 0, 'charlie'),
+    box('d', 0, 600, 'delta'), box('e', 1400, 600, 'echo')
+  ];
+  const regionMoves = change => change.nodes.moved.filter(m => 'region' in m.changes);
+
+  const added = diff(spread, [...spread, box('z', 2600, 0, 'zulu')]);
+  check('a node added past the right edge does not move the nodes nobody touched',
+    regionMoves(added).length === 0,
+    regionMoves(added).map(m => `${m.name} ${JSON.stringify(m.changes.region)}`).join('; '));
+  check('  and the arriving node is still placed at the right of the frame it arrived in',
+    added.detail.nodes.added[0]?.layout.region === 'top-right',
+    added.detail.nodes.added[0]?.layout.region);
+  check('  and the frame is the box round the nodes both sides have, not round everything',
+    added.detail.to.regionFrame.maxX === 1600 && added.detail.to.nodeBox.maxX === 2800,
+    `frame ${added.detail.to.regionFrame.maxX}, nodes ${added.detail.to.nodeBox.maxX}`);
+
+  const removed = diff(spread, spread.filter(el => el.id !== 'c'));
+  check('a node deleted from the right edge does not move the nodes nobody touched',
+    regionMoves(removed).length === 0,
+    regionMoves(removed).map(m => m.name).join('; '));
+
+  // The other half: the frame can also be stretched by a node that really was
+  // dragged. The drag is the event; its bystanders are not.
+  const dragged = spread.map(el => (el.id === 'b' ? { ...el, x: 1400, y: 300 } : el));
+  const genuine = diff(spread, dragged);
+  check('a node genuinely dragged across the board still reports its new region',
+    regionMoves(genuine).map(m => m.node).join() === 'bravo',
+    regionMoves(genuine).map(m => m.node).join());
+  check('  and it reports where it went',
+    genuine.nodes.moved[0]?.changes.region?.to === 'middle-right',
+    JSON.stringify(genuine.nodes.moved[0]?.changes.region));
+  check('  while the nodes it was dragged past are not called moved',
+    regionMoves(genuine).every(m => m.node === 'bravo'));
+
+  check('panning the whole board reports nothing at all',
+    diff(spread, spread.map(el => ({ ...el, x: el.x + 5000, y: el.y + 5000 }))).significance === 'none');
+
+  const rearranged = diff(spread, spread.map((el, i) => ({ ...el, x: 0, y: i * 700 })));
+  check('a board rearranged wholesale still reports the boxes that were moved',
+    rearranged.significance === 'layout' && regionMoves(rearranged).length >= 3,
+    `${rearranged.significance}, ${regionMoves(rearranged).length} region moves`);
+}
+
 // ---------------------------------------------------------------------------
 // Feed
 // ---------------------------------------------------------------------------

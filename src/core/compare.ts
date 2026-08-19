@@ -33,7 +33,10 @@
 //                box someone drew round a subsystem
 //   group        Excalidraw group membership — grouping is the one layout act
 //                that is unambiguously deliberate
-//   region       whereabouts on the board, in thirds of the *node* bounding box
+//   region       whereabouts on the board, in thirds of the box round the
+//                nodes *both* boards have — anchored to the join, as cluster
+//                is, so an arriving or departing node cannot rename its
+//                neighbours' whereabouts
 //   relation     the coarse direction between two nodes (above / left-of /
 //                above-left …), computed only for pairs that are edge-connected
 //                or co-clustered on either side — relations among things that
@@ -56,10 +59,14 @@
 //   · ordering inside a cluster, unless the pair is edge-connected or
 //     co-clustered (co-clustered pairs are, so this mostly bites between
 //     clusters).
-//   · region is relative to each board's own node bounding box, so the two
-//     sides' thirds are not the same physical place. Adding one far-flung node
-//     re-frames every region on that side; `boxAspectDiverged` warns when the
-//     two frames are shaped differently enough for that to matter.
+//   · region is relative to each side's own frame, so the two sides' thirds
+//     are not the same physical place; `boxAspectDiverged` warns when the two
+//     frames are shaped differently enough for that to matter. Below two
+//     shared nodes there is nothing to anchor the frame to and each side falls
+//     back to its own node box, where one far-flung node re-frames everything.
+//   · a node left exactly where it was while the board was rearranged round it.
+//     Its region name moved, but nothing about the node did, so no region
+//     change is reported for it — the nodes that were moved report instead.
 //   · absolute size, colour and stroke, which are reported per node as
 //     `cosmetic` and never counted as a semantic change.
 //
@@ -82,7 +89,15 @@
 import { ServerElement } from '../types.js';
 import { BoardIdentity } from './board.js';
 import { ArchboardBlock, LogicalAddress, archboardBlock, labelOf, nodeIdOf } from './promote.js';
-import { Box, BoundingBox, CLUSTER_GAP, clusterBoxes, regionName } from './layout.js';
+import {
+  Box,
+  BoundingBox,
+  CLUSTER_GAP,
+  boundingBoxOf,
+  clusterBoxes,
+  regionName,
+  sameCentre
+} from './layout.js';
 
 // ---------------------------------------------------------------------------
 // Inputs and outputs
@@ -114,7 +129,13 @@ export interface SideSummary {
   nodeCount: number;
   edgeCount: number;
   plainCount: number;
+  // The box round every node on this board — a fact about the board itself.
   nodeBox: BoundingBox | null;
+  // The box the region names on this side are thirds of. Drawn round the nodes
+  // both boards have, so that a node present on only one side cannot rename
+  // its neighbours' whereabouts; equal to `nodeBox` when the two boards share
+  // fewer than two nodes and there is nothing better to anchor to.
+  regionFrame: BoundingBox | null;
 }
 
 export interface NodeFacts {
@@ -397,6 +418,9 @@ interface BoardModel {
   clusters: ClusterFacts[];
   groups: ClusterFacts[];
   nodeBox: BoundingBox | null;
+  // Filled in by `reframeRegions` once both sides are built and the join is
+  // known — every `region` on this model is thirds of it.
+  regionFrame: BoundingBox | null;
   warnings: string[];
 }
 
@@ -568,13 +592,7 @@ function buildBoard(input: CompareSideInput): BoardModel {
   }
 
   // --- layout signals -------------------------------------------------------
-  const nodeBoxes = models.map(m => m.box);
-  const nodeBox: BoundingBox | null = models.length === 0 ? null : {
-    minX: Math.min(...nodeBoxes.map(b => b.x)),
-    minY: Math.min(...nodeBoxes.map(b => b.y)),
-    maxX: Math.max(...nodeBoxes.map(b => b.x + b.w)),
-    maxY: Math.max(...nodeBoxes.map(b => b.y + b.h))
-  };
+  const nodeBox = boundingBoxOf(models.map(m => m.box));
 
   // Clusters. A cluster gets a synthetic id per side; the thing that compares
   // across sides is its *membership*, never its id.
@@ -734,8 +752,53 @@ function buildBoard(input: CompareSideInput): BoardModel {
     clusters,
     groups,
     nodeBox,
+    // Provisional: thirds of this board's own nodes, which is the only frame
+    // available before the other side is known. `reframeRegions` replaces it.
+    regionFrame: nodeBox,
     warnings
   };
+}
+
+// Re-draw the frame the region names are thirds of, now that both sides exist.
+//
+// Region is the one layout signal whose *name* depends on something other than
+// the node it describes. The frame is the box round the nodes, so a node that
+// arrives at the edge of the board — or leaves it — stretches or shrinks the
+// frame and hands every other node a new region name. The diff then reports
+// nodes nobody touched as having moved, and the change feed states that in
+// prose: "Payment Events moved". It is noise in `compare` and a false claim
+// about a human in the feed.
+//
+// So the frame is drawn round the nodes the join actually joined, exactly as
+// the cluster signal already restricts itself to shared membership. Arriving
+// and departing nodes are still *placed* in that frame — a node added off to
+// the right is reported at the right — they just no longer redraw it.
+//
+// Below two shared nodes there is nothing to anchor to (one node's box, or
+// none, gives a frame that names everything "centre"), so the board's own node
+// box stands and the pre-existing caveat applies unchanged.
+function reframeRegions(model: BoardModel, shared: Set<string>): void {
+  const anchors = [...model.nodes.values()].filter(m => shared.has(m.node)).map(m => m.box);
+  const frame = anchors.length >= 2 ? boundingBoxOf(anchors) : model.nodeBox;
+  model.regionFrame = frame;
+  const at = (x: number, y: number, w: number, h: number) =>
+    frame ? regionName(x + w / 2, y + h / 2, frame) : 'centre';
+
+  for (const m of model.nodes.values()) m.region = at(m.box.x, m.box.y, m.box.w, m.box.h);
+
+  for (const cluster of model.clusters) {
+    const boxes = cluster.members.map(n => model.nodes.get(n)?.box).filter((b): b is Box => !!b);
+    if (boxes.length === 0) continue;
+    const cx = boxes.reduce((s, b) => s + b.x + b.w / 2, 0) / boxes.length;
+    const cy = boxes.reduce((s, b) => s + b.y + b.h / 2, 0) / boxes.length;
+    cluster.region = frame ? regionName(cx, cy, frame) : 'centre';
+  }
+
+  const byId = new Map(model.elements.map(el => [el.id, el]));
+  for (const plain of model.plain.labelled) {
+    const el = byId.get(plain.id);
+    if (el) plain.region = at(el.x, el.y, el.width || 0, el.height || 0);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1075,8 +1138,13 @@ const LAYOUT_METHOD: Record<string, string> = {
     'Keyed by node id when the container is itself a node, else by its label.',
   group: 'Excalidraw group membership, as a set of node ids. Excalidraw group ids are random per board, so ' +
     'only the membership compares.',
-  region: 'Whereabouts on the board, in thirds of that board\'s own node bounding box. Relative to the board, ' +
-    'so the two sides\' thirds are not the same physical place — see boxAspectDiverged.',
+  region: 'Whereabouts on the board, in thirds of the box round the nodes both boards have (reported per ' +
+    'side as regionFrame). Anchored to the shared nodes so that a node present on only one side cannot ' +
+    'rename its neighbours\' whereabouts; nodes on one side only are still placed in that frame, and are ' +
+    'clamped to an edge third when they sit outside it. Reported as a change only when the node\'s own ' +
+    'centre moved, so a region name that shifted because the frame did is not called movement. Still ' +
+    'relative to each side\'s own frame, so the two sides\' thirds are not the same physical place — see ' +
+    'boxAspectDiverged.',
   relation: 'Coarse direction between two nodes (above / below / left-of / right-of / above-left …), computed ' +
     'only for pairs that are edge-connected or co-clustered on either side.',
   prominence: 'Node area against the median node on its own board: smaller / typical / larger. Relative, so ' +
@@ -1089,7 +1157,9 @@ const LAYOUT_CANNOT_EXPRESS = [
   'Tidiness: alignment, even spacing, straightened or orthogonal edges produce no signal at all.',
   'Edge geometry: an edge dragged round an obstacle keeps its endpoints and reads as unchanged.',
   'Ordering between clusters that share no edge — relations are only computed for pairs that are edge-connected or co-clustered.',
-  'Region names are relative to each board\'s own node bounding box, so one far-flung node re-frames every region on that side.',
+  'Region names are relative to each side\'s own frame — the box round the nodes both boards have — so "top-left" on one is not the same physical place as on the other; see boxAspectDiverged.',
+  'A node that stayed exactly where it was while the board was rearranged round it reports no region change, because its region name only moved when the frame did. The nodes that were actually moved still report; read those.',
+  'Where two boards share fewer than two nodes there is nothing to anchor the frame to, so each side is framed by its own nodes and one far-flung node re-frames every region on that side.',
   'Size, colour and stroke are reported per node as `cosmetic` and never counted as a change to the architecture.'
 ];
 
@@ -1097,6 +1167,14 @@ export function compareBoards(fromInput: CompareSideInput, toInput: CompareSideI
   const A = buildBoard(fromInput);
   const B = buildBoard(toInput);
   const warnings = [...A.warnings, ...B.warnings];
+
+  // The nodes the join actually joined. Layout is only compared in terms of
+  // these, so an added node cannot make its neighbours look like they moved:
+  // cluster membership ignores them (see `layoutFields`) and the region frame
+  // is drawn round them and nothing else.
+  const sharedIds = new Set([...A.nodes.keys()].filter(id => B.nodes.has(id)));
+  reframeRegions(A, sharedIds);
+  reframeRegions(B, sharedIds);
 
   const side = (input: CompareSideInput, model: BoardModel): SideSummary => ({
     board: input.key,
@@ -1110,7 +1188,8 @@ export function compareBoards(fromInput: CompareSideInput, toInput: CompareSideI
     nodeCount: model.nodes.size,
     edgeCount: model.edges.length,
     plainCount: model.plain.count,
-    nodeBox: model.nodeBox
+    nodeBox: model.nodeBox,
+    regionFrame: model.regionFrame
   });
 
   // --- nodes ----------------------------------------------------------------
@@ -1122,9 +1201,6 @@ export function compareBoards(fromInput: CompareSideInput, toInput: CompareSideI
   const moved: CompareResult['layout']['moved'] = [];
   let layoutSignalsChanged = 0;
   let shared = 0;
-  // The nodes the join actually joined. Layout is only compared in terms of
-  // these, so an added node cannot make its neighbours look like they moved.
-  const sharedIds = new Set([...A.nodes.keys()].filter(id => B.nodes.has(id)));
 
   for (const id of [...allNodeIds].sort()) {
     const a = A.nodes.get(id);
@@ -1143,6 +1219,22 @@ export function compareBoards(fromInput: CompareSideInput, toInput: CompareSideI
       layoutFields(a, A.clusters, A.groups, sharedIds),
       layoutFields(b, B.clusters, B.groups, sharedIds)
     );
+    // Anchoring the frame to the shared nodes stops arrivals and departures
+    // renaming anybody's region, but a *shared* node dragged to a new extreme
+    // still stretches the frame, and its stationary neighbours are handed new
+    // region names for it. Region is read off the centre and nothing else, so
+    // a centre that did not move is proof the new name came from the frame:
+    // report it and the feed says "X moved", which is false about X.
+    //
+    // Only ever true when both sides are in one coordinate system — the same
+    // board a moment apart, or a variant copied from its sibling — which is
+    // exactly where "moved" is read as a claim about something someone did.
+    // Two independently drawn variants never trip it, and there the anchored
+    // frame carries the weight on its own.
+    //
+    // A board rearranged wholesale is untouched by this: every centre moved,
+    // so nothing is suppressed and every move is still reported.
+    if (layout.region && sameCentre(a.box, b.box)) delete layout.region;
     layoutSignalsChanged += Object.keys(layout).length;
     if (Object.keys(layout).length > 0) {
       moved.push({ node: id, name: b.name, changes: layout });
@@ -1229,15 +1321,18 @@ export function compareBoards(fromInput: CompareSideInput, toInput: CompareSideI
 
   const aspect = (box: BoundingBox | null) =>
     box && box.maxY - box.minY > 1 ? (box.maxX - box.minX) / (box.maxY - box.minY) : null;
-  const aspectA = aspect(A.nodeBox), aspectB = aspect(B.nodeBox);
+  // Measured on the region frames, since those are what the region names are
+  // thirds of. Both are drawn round the same set of nodes, so a divergence
+  // here is a real difference in how the two boards lay those nodes out.
+  const aspectA = aspect(A.regionFrame), aspectB = aspect(B.regionFrame);
   const boxAspectDiverged = aspectA !== null && aspectB !== null &&
     (aspectA / aspectB > 1.5 || aspectB / aspectA > 1.5);
   if (boxAspectDiverged) {
     warnings.push(
-      'The two boards frame their nodes differently enough (aspect ratio differs by more than half again) ' +
-      'that region names are not directly comparable — "top-left" on one is not the same physical place as ' +
-      'on the other. Read cluster, container and relation changes instead; region changes here may be an ' +
-      'artefact of the frame rather than anything anyone moved.'
+      'The two boards frame the nodes they share differently enough (aspect ratio differs by more than half ' +
+      'again) that region names are not directly comparable — "top-left" on one is not the same physical ' +
+      'place as on the other. Read cluster, container and relation changes instead; region changes here may ' +
+      'be an artefact of the frame rather than anything anyone moved.'
     );
   }
 
