@@ -41,7 +41,8 @@ import {
   openBoard,
   newBoard,
   saveBoard,
-  boardConflictOf
+  boardConflictOf,
+  compareBoardsOnCanvas
 } from './canvas-client.js';
 import { wrapSceneAsObsidianMd } from './obsidian-md.js';
 import { describeScene } from './describe.js';
@@ -699,6 +700,21 @@ export async function callExcalidrawTool(
             isError: true
           };
         }
+      }
+      case 'compare_boards': {
+        const params = z.object({
+          from: z.string().min(1),
+          to: z.string().optional()
+        }).parse(args ?? {});
+        logger.info('Comparing boards via MCP', { from: params.from, to: params.to });
+        const result = await compareBoardsOnCanvas(params);
+        // The whole diff, unabridged. This tool exists to be sufficient rather
+        // than narratable: the model reading it is the one that will compose
+        // the explanation, so summarising here would delete the material it
+        // needs. See src/core/compare.ts.
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+        };
       }
       case 'describe_scene': {
         logger.info('Describing scene via MCP');

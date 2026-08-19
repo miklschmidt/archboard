@@ -7,6 +7,7 @@ import { selection } from './commands/selection.js';
 import { promote, demote } from './commands/promote.js';
 import { snapshot } from './commands/snapshot.js';
 import { board } from './commands/board.js';
+import { compare } from './commands/compare.js';
 import { arrange } from './commands/arrange.js';
 import { installSkill } from './commands/install-skill.js';
 
@@ -46,6 +47,29 @@ const COMMANDS: Record<string, Command> = {
       '  (`board open <name> --reload`), overwrite it (`board save --force`), or keep both',
       '  (`board save --as <other>`). archboard never picks for you. Nothing is locked, so keep a board',
       '  open in one editor at a time: the check catches a changed file, not a copy in another app\'s memory.'
+    ].join('\n')
+  },
+  compare: {
+    handler: compare,
+    summary: 'Structured semantic diff between two variants of a board',
+    usage: [
+      'compare <from> [to]        e.g. compare payments payments@option-a',
+      '',
+      '  Diffs two boards on NODE IDENTITY (customData.archboard.node), not on element ids or',
+      '  geometry, so two variants authored independently still compare. Nodes and edges added,',
+      '  removed, changed (with what changed about each) and unchanged; layout expressed as',
+      '  relative structure — who sits with whom, what contains what, what is grouped, whereabouts,',
+      '  relative direction, relative size — never as coordinate deltas. The output names what that',
+      '  model deliberately cannot express, under layout.cannotExpress.',
+      '',
+      '  Output is JSON and complete: nothing is summarised into prose and nothing is truncated,',
+      '  because the caller is expected to narrate it. Elements that are not nodes have no identity',
+      '  across boards, so they are inventoried per side rather than diffed.',
+      '',
+      '  With one address the other side is found among that board\'s variants in the vault, and the',
+      '  "current" variant is always the from side. Neither board is opened: a board already open is',
+      '  read from memory (unsaved work included), any other straight from its note, and the board on',
+      '  the canvas is left exactly as it was.'
     ].join('\n')
   },
   describe: { handler: scene.describe, summary: 'AI-readable scene description (plain text)', usage: 'describe' },

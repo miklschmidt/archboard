@@ -1,5 +1,6 @@
 import { ServerElement } from '../types.js';
 import { DEFAULT_SHAPE_BACKGROUND } from './appearance.js';
+import { CLUSTER_GAP, clusterBoxes, regionName } from './layout.js';
 
 // Build an AI-readable description of the current canvas.
 //
@@ -262,41 +263,14 @@ const readingOrder = (a: Item, b: Item) => {
 // so it has to survive into the read-back.
 // ---------------------------------------------------------------------------
 
-const CLUSTER_GAP = 160;
-
+// The clustering itself lives in layout.ts, shared with `compare` so the two
+// agree on what "together" means — a cluster the read-back names has to be the
+// same cluster the diff says was split. Only the budget is local: below three
+// nodes there is nothing worth saying, and above four hundred the pairwise pass
+// is not worth its cost inside a description.
 function clusterNodes(nodes: Item[]): Item[][] {
   if (nodes.length < 3 || nodes.length > 400) return [];
-  const parent = nodes.map((_, i) => i);
-  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i]!)));
-  const near = (a: Item, b: Item) =>
-    a.x - CLUSTER_GAP < b.x + b.w && b.x - CLUSTER_GAP < a.x + a.w &&
-    a.y - CLUSTER_GAP < b.y + b.h && b.y - CLUSTER_GAP < a.y + a.h;
-  for (let i = 0; i < nodes.length; i++) {
-    for (let j = i + 1; j < nodes.length; j++) {
-      if (near(nodes[i]!, nodes[j]!)) parent[find(j)] = find(i);
-    }
-  }
-  const groups = new Map<number, Item[]>();
-  nodes.forEach((n, i) => {
-    const root = find(i);
-    if (!groups.has(root)) groups.set(root, []);
-    groups.get(root)!.push(n);
-  });
-  return [...groups.values()].sort((a, b) => b.length - a.length);
-}
-
-function regionName(cx: number, cy: number, box: { minX: number; minY: number; maxX: number; maxY: number }): string {
-  const third = (v: number, lo: number, hi: number) => {
-    if (hi - lo < 1) return 1;
-    const t = (v - lo) / (hi - lo);
-    return t < 0.34 ? 0 : t < 0.67 ? 1 : 2;
-  };
-  const rows = ['top', 'middle', 'bottom'];
-  const cols = ['left', 'centre', 'right'];
-  const r = third(cy, box.minY, box.maxY);
-  const c = third(cx, box.minX, box.maxX);
-  if (r === 1 && c === 1) return 'centre';
-  return `${rows[r]}-${cols[c]}`;
+  return clusterBoxes(nodes, CLUSTER_GAP);
 }
 
 // ---------------------------------------------------------------------------
