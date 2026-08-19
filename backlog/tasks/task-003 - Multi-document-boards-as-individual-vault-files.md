@@ -4,9 +4,11 @@ title: 'Multi-document: boards as individual vault files'
 status: To Do
 assignee: []
 created_date: '2026-08-19 13:55'
+updated_date: '2026-08-19 14:04'
 labels:
   - needs-triage
-dependencies: []
+dependencies:
+  - TASK-002
 ordinal: 3000
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: archboard-dev
-description: Procedures for working on the whiteboard fork itself — rebuilding after changes, merging upstream mcp_excalidraw, syncing skills, and verifying the canvas round-trip end to end. Use when changing this repo's own source, taking upstream changes, or checking that a canvas change actually works.
+description: Procedures for working on archboard itself — rebuilding with bun, syncing skills, cherry-picking from upstream mcp_excalidraw rather than merging it, and verifying the canvas round-trip end to end with a browser attached. Use when changing this repo's own source, taking a fix from upstream, or checking that a canvas change actually works.
 ---
 
 # Working on archboard
