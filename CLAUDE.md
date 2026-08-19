@@ -158,8 +158,8 @@ Tracked in Backlog.md; `backlog task list --plain` is authoritative.
 - **No change-event feed.** Agent must poll; wrong shape for full-duplex voice.
 - `export --out` does not `mkdir -p`.
 - **The canvas holds one board for every pane.** The shell can mount a second
-  pane, but the server has a single active board, so both panes show it. Per-pane
-  boards are TASK-006's territory.
+  pane, and `panes` reports each pane's own board — but the server has a single
+  active board, so both panes show it. Per-pane boards are TASK-021.
 
 Closed: board writes are checked, not last-writer-wins — a note that changed on
 disk is refused, never overwritten (TASK-010).

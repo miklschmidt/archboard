@@ -239,7 +239,7 @@ export function Shell(): JSX.Element {
             key={paneId}
             paneId={paneId}
             primary={index === 0}
-            focused={panes.length > 1 && paneId === focused}
+            focused={paneId === focused}
             theme={theme}
             onStatus={onStatus}
             onThemeChange={setTheme}

@@ -24,7 +24,8 @@ import { convertMermaidToExcalidraw, DEFAULT_MERMAID_CONFIG } from '../utils/mer
 import type { BoardIdentity, PaneStatus, ServerElement, WebSocketMessage } from '../types'
 import { cleanElementForExcalidraw, convertElementsPreservingImageProps } from './elements'
 import { baselineFrom, diffAgainstBaseline, fingerprint, isEmpty, type Baseline } from './changes'
-import { fetchCurrentBoard, fetchElements, fetchFiles, reportChanges } from './api'
+import { fetchCurrentBoard, fetchElements, fetchFiles, reportChanges, reportPane } from './api'
+import type { PaneReport } from './api'
 
 // A human edit should be on the server before they finish saying what they
 // did. The report is a delta now, not the scene, so this can be short without
@@ -37,6 +38,13 @@ const REPORT_RETRY_MS = 2000
 // feeling immediate to someone talking to an agent about "these boxes".
 const SELECTION_DEBOUNCE_MS = 150
 
+// What the pane looks like from outside: where it sits, which board it holds,
+// what of that board is on screen. It changes on every scroll and zoom, so it
+// gets its own debounce and is only sent when it has actually changed — an
+// agent must be able to read it every turn, which it can only afford if the
+// browser is not posting it continuously.
+const PANE_DEBOUNCE_MS = 300
+
 export interface CanvasSessionOptions {
   paneId: string
   /**
@@ -45,18 +53,26 @@ export interface CanvasSessionOptions {
    * once. The primary pane answers; the rest only render.
    */
   primary: boolean
+  /** Is this the pane the human last touched? Reported, not enforced. */
+  focused: boolean
   onStatus: (status: PaneStatus) => void
 }
 
 export interface CanvasSession {
   attachExcalidraw: (api: ExcalidrawImperativeAPI) => void
+  /**
+   * The element the canvas fills. Watched for resize, because splitting the
+   * shell halves a pane without anything on the canvas changing — and a pane
+   * that reported its old size would put itself in the wrong place on screen.
+   */
+  attachPaneElement: (element: HTMLElement | null) => void
   connected: boolean
   board: BoardIdentity | null
   handleChange: (appState: { selectedElementIds?: Record<string, boolean>; theme?: string } | null) => void
   markInteracted: () => void
 }
 
-export function useCanvasSession({ paneId, primary, onStatus }: CanvasSessionOptions): CanvasSession {
+export function useCanvasSession({ paneId, primary, focused, onStatus }: CanvasSessionOptions): CanvasSession {
   // A pane is a client in its own right: it holds a selection the server can
   // retire when this pane goes away, and it must be able to skip the echo of
   // its own change reports.
@@ -97,8 +113,107 @@ export function useCanvasSession({ paneId, primary, onStatus }: CanvasSessionOpt
   useEffect(() => { statusRef.current = onStatus }, [onStatus])
   const primaryRef = useRef(primary)
   useEffect(() => { primaryRef.current = primary }, [primary])
+  const focusedRef = useRef(focused)
+
+  const paneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const publishedPaneRef = useRef('')
+  const paneElementRef = useRef<HTMLElement | null>(null)
+  const paneObserverRef = useRef<ResizeObserver | null>(null)
 
   const boardRef = useRef<BoardIdentity | null>(null)
+
+  // ─── Telling the server what is on screen ────────────────────
+
+  /**
+   * What this pane has in front of the human, right now.
+   *
+   * The board is the one *this pane* adopted, not whatever the server considers
+   * active — today they are always the same, and the day a pane can hold its
+   * own board they will not be, and nothing here has to change.
+   */
+  const paneReport = useCallback((): PaneReport | null => {
+    const api = apiRef.current
+    const board = boardKeyRef.current
+    if (!api || !board) return null
+    const appState = api.getAppState()
+    const zoom = appState.zoom?.value || 1
+    // Measured off the DOM rather than taken from appState: Excalidraw catches
+    // up with a resize on its own schedule, and a pane that reported a stale
+    // width would place itself wrong — which is the one thing this must not do.
+    const box = paneElementRef.current?.getBoundingClientRect()
+    const rect = {
+      x: box?.left ?? appState.offsetLeft ?? 0,
+      y: box?.top ?? appState.offsetTop ?? 0,
+      width: box?.width ?? appState.width ?? 0,
+      height: box?.height ?? appState.height ?? 0
+    }
+    return {
+      clientId,
+      paneId,
+      board,
+      primary: primaryRef.current,
+      focused: focusedRef.current,
+      elementCount: api.getSceneElements().length,
+      rect,
+      // Scene coordinates, so it can be compared with element positions
+      // directly — "the box at 400,200 is on screen in the left pane".
+      viewport: {
+        x: -(appState.scrollX ?? 0),
+        y: -(appState.scrollY ?? 0),
+        width: rect.width / zoom,
+        height: rect.height / zoom,
+        zoom
+      }
+    }
+  }, [clientId, paneId])
+
+  const schedulePaneReport = useCallback((immediate = false): void => {
+    // A pane on its way off the glass has nothing to say about what is on it.
+    // Excalidraw can fire a last onChange after our teardown, and reporting
+    // that would put the pane back in front of an agent after it was gone.
+    if (closedRef.current) return
+    if (paneTimerRef.current) clearTimeout(paneTimerRef.current)
+    const send = (): void => {
+      paneTimerRef.current = null
+      if (closedRef.current) return
+      const report = paneReport()
+      if (!report) return
+      // Rounded before comparing, so a sub-pixel scroll is not a change worth
+      // a POST — this is the difference between cheap and chatty.
+      const key = JSON.stringify(report, (_k, v) => typeof v === 'number' ? Math.round(v) : v)
+      if (key === publishedPaneRef.current) return
+      publishedPaneRef.current = key
+      void reportPane(report).then((result) => {
+        // The server refuses a pane whose socket is gone. Forget that we sent
+        // this, so a reconnection re-announces rather than assuming it stuck.
+        if (!result.registered) publishedPaneRef.current = ''
+      }).catch((error) => {
+        // Nothing is lost by a failed report except its freshness, and the next
+        // change resends — but only if this one is not remembered as sent.
+        publishedPaneRef.current = ''
+        console.warn('Pane report failed:', error)
+      })
+    }
+    if (immediate) send()
+    else paneTimerRef.current = setTimeout(send, PANE_DEBOUNCE_MS)
+  }, [paneReport])
+
+  useEffect(() => {
+    focusedRef.current = focused
+    schedulePaneReport()
+  }, [focused, schedulePaneReport])
+
+  const attachPaneElement = useCallback((element: HTMLElement | null): void => {
+    if (paneElementRef.current === element) return
+    paneObserverRef.current?.disconnect()
+    paneObserverRef.current = null
+    paneElementRef.current = element
+    if (!element || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => schedulePaneReport())
+    observer.observe(element)
+    paneObserverRef.current = observer
+    schedulePaneReport()
+  }, [schedulePaneReport])
 
   const publishStatus = useCallback((): void => {
     statusRef.current({
@@ -109,7 +224,8 @@ export function useCanvasSession({ paneId, primary, onStatus }: CanvasSessionOpt
       elementCount: apiRef.current?.getSceneElements().length ?? 0,
       lastChangeAt: lastChangeAtRef.current
     })
-  }, [paneId])
+    schedulePaneReport()
+  }, [paneId, schedulePaneReport])
 
   const setBoardIdentity = useCallback((identity: BoardIdentity | null): void => {
     boardRef.current = identity
@@ -610,6 +726,9 @@ export function useCanvasSession({ paneId, primary, onStatus }: CanvasSessionOpt
     socket.onopen = () => {
       connectedRef.current = true
       setConnected(true)
+      // The server retires a pane when its socket closes, so a reconnection has
+      // to re-announce this one even though nothing about it changed.
+      publishedPaneRef.current = ''
       publishStatus()
       // No fetch here: the server opens every connection, including a
       // reconnection, by sending the board it is holding.
@@ -648,6 +767,10 @@ export function useCanvasSession({ paneId, primary, onStatus }: CanvasSessionOpt
       if (reportTimerRef.current) clearTimeout(reportTimerRef.current)
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current)
       if (selectionTimerRef.current) clearTimeout(selectionTimerRef.current)
+      if (paneTimerRef.current) clearTimeout(paneTimerRef.current)
+      paneObserverRef.current?.disconnect()
+      // Closing the socket is also how this pane stops being reported: an
+      // unsplit pane is off the glass, and the server drops it on the close.
       socketRef.current?.close(1000)
     }
   }, [flushWithBeacon])
@@ -655,11 +778,14 @@ export function useCanvasSession({ paneId, primary, onStatus }: CanvasSessionOpt
   const handleChange = useCallback((appState: any): void => {
     handleSelectionChange(appState)
     scheduleReport()
-  }, [handleSelectionChange, scheduleReport])
+    // Scrolling and zooming reach the server nowhere else, and they are half of
+    // what "what am I looking at" means.
+    schedulePaneReport()
+  }, [handleSelectionChange, scheduleReport, schedulePaneReport])
 
   const markInteracted = useCallback((): void => {
     userInteractedRef.current = true
   }, [])
 
-  return { attachExcalidraw, connected, board, handleChange, markInteracted }
+  return { attachExcalidraw, attachPaneElement, connected, board, handleChange, markInteracted }
 }

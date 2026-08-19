@@ -140,7 +140,15 @@ sync updates it automatically.
   stale-tab-truncates-the-board hole (TASK-016). Deletions only ever name ids
   the reporting tab already held.
 - **A second pane shows the same board as the first**, because the server has
-  one active board. The shell mounts panes; per-pane boards are TASK-006.
+  one active board. `panes` still reports each pane's board separately — it
+  reads what the pane itself adopted, not the server's active pointer — so the
+  two lines are identical today and will not be once panes can be pointed at
+  different boards (TASK-021).
+- **A pane exists only while its socket is open.** `panes` is fed by pushes from
+  the browser keyed by client id, and the close handler retires the pane and its
+  selection together. So a closed tab or an unsplit disappears from the report
+  with nothing to clean up, and no browser at all reports as no panes — which is
+  a normal state, not an error.
 
 ## Tracker
 

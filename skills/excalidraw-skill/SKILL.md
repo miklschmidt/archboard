@@ -33,6 +33,7 @@ Results are JSON on stdout — except `describe` (plain text) and raw-content ou
 | Update / delete | `update <id> --set '{...}'`, `delete <id> [...]` |
 | Understand the scene | `describe` (plain-text summary: ids, positions, labels, connections) |
 | What the human has picked | `selection [--text]` — the elements they mean by "this" / "these" |
+| What the human is looking at | `panes [--text]` — pane by pane: where it sits, which board, what is in view, what is picked there |
 | Make the selection a node | `promote --kind service [--path src/x.ts] [--name "X"]` — kind, identity and binding in one act; `demote` undoes it |
 | See the scene | `screenshot [--out f.png]` (PNG without `--out` → temp file path in JSON; SVG without `--out` → raw SVG) |
 | Layout operations | `arrange align\|distribute\|group\|ungroup\|lock\|unlock\|duplicate --ids a,b,c [--to left\|horizontal\|...]` |
@@ -238,6 +239,34 @@ binding. `get_selection` is the MCP equivalent.
 One canvas, one selection: with several tabs open the one that reported last
 owns it (`clientId` and `at` say which and when), and closing a tab drops the
 selection it left behind.
+
+## Workflow: Resolve "the Left One" — What Is on Screen
+
+`selection` says what the human means by *this*. `panes` says what is in front
+of them, which is what "the left one", "that pane", and "move that box over
+there" need:
+
+```bash
+archboard panes --text
+# 2 panes, side by side, showing payments (current, system).
+# Every pane shows the same board because this server holds one board at a time.
+#   1. left · payments (current, system) · 20 elements · view (0,0) 1568x1576 @1.00x · selected: 1 node — "API Gateway" · focused · answers screenshots
+#   2. right · payments (current, system) · 20 elements · view (71,72) 1426x1432 @1.10x · selected: 1 node — "Payments DB"
+```
+
+Per pane: its place in reading order, the board and variant it holds, how many
+elements are on it, the part of the board in view (scene coordinates, so it
+compares directly with element positions), and what is picked there. `focused`
+is the pane the human last touched; `answers screenshots` is the one `screenshot`
+captures. `get_panes` is the MCP equivalent.
+
+**This is view state, never board contents** — that is what keeps it cheap
+enough to read on every turn. Use `describe` for what is on a board.
+
+A pane is reported only while its tab is open, so unsplitting or closing a tab
+removes it with no cleanup, and **no pane at all is normal**: it means nobody has
+a browser open, not that anything is wrong. Everything except `screenshot`,
+`mermaid`, image export and viewport control works headless.
 
 ## Workflow: Promotion — Turn the Selection Into a Node
 

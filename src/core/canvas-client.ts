@@ -1,5 +1,6 @@
 import logger from '../utils/logger.js';
 import type { SelectionReport } from './describe.js';
+import type { PanesReport } from './panes.js';
 import { ServerElement } from '../types.js';
 import { EXPRESS_SERVER_URL, ENABLE_CANVAS_SYNC } from './config.js';
 import type { BoardWriteConflict } from './board.js';
@@ -188,6 +189,13 @@ export async function clearCanvas(): Promise<ApiResponse> {
 // detail (label, node-ness, kind, binding) to act on without a scene fetch.
 export async function getSelection(): Promise<SelectionReport & { success: boolean }> {
   return requestJson<SelectionReport & { success: boolean }>('/api/selection');
+}
+
+// What the human is currently looking at: one entry per pane on screen, with
+// the board it holds, where it sits, how much of it is in view, and what is
+// picked in it. View state only — cheap enough to read every turn.
+export async function getPanes(): Promise<PanesReport & { success: boolean; activeBoard: string }> {
+  return requestJson<PanesReport & { success: boolean; activeBoard: string }>('/api/panes');
 }
 
 export async function getFiles(): Promise<Record<string, any>> {
