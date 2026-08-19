@@ -1,8 +1,9 @@
 ---
 id: TASK-025
 title: Name and index the library items so agents can use them
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-19 21:39'
 updated_date: '2026-08-19 21:39'
 labels:

@@ -1,10 +1,11 @@
 ---
 id: TASK-024
 title: Labelled elements breed bound text on every round-trip until arrows collapse
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-19 21:29'
-updated_date: '2026-08-19 21:29'
+updated_date: '2026-08-19 21:42'
 labels:
   - needs-triage
   - ready-for-agent
@@ -19,6 +20,17 @@ ordinal: 24000
 - [ ] #3 Existing polluted boards can be repaired, not just prevented
 - [ ] #4 Regression test covers a labelled shape and a labelled arrow across several sync cycles
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Reproduce on an isolated canvas (PORT=3300, own browser tab): labelled rect + labelled arrow, force repeated sync cycles, count bound texts per cycle.
+2. New pure module src/core/labels.ts (no imports, no DOM): boundTextIndex(), dropRedundantLabels(), planLabelRepair(). Shared by the frontend, the repair script and the regression check.
+3. Containment in frontend/src/canvas/elements.ts: run dropRedundantLabels() before convertToExcalidrawElements so an element that already carries a live bound text element never has its label/text expanded again. An element with a label and NO bound text still gets one, exactly once.
+4. Repair: scripts/repair-labels.mjs. Against a live board (--board, --port) or an .excalidraw file: keep one bound text per container, delete the rest, prune boundElements to the keeper, strip the now-stale label/text from the container, then trigger the server's own rerouteBoundArrows by re-PUTting each bound shape's geometry so collapsed arrow points are recomputed.
+5. Regression check: scripts/check-labels.mjs, wired in as bun run test:labels. Drives dist/core/labels.js through a simulated expander that mimics convertToExcalidrawElements (mints a fresh text id whenever it sees a label) plus the server's merge semantics, across many cycles, for a labelled shape and a labelled arrow. Fails if any container ends with more than one bound text or an arrow's points degenerate.
+6. Verify live on 3300 with a browser attached: many cycles, bound-text count stays 1 each, arrow height holds; then run the repair over the polluted /tmp/user-edits.excalidraw scene loaded onto 3300 and show the counts collapse to 1 and arrow geometry return.
+<!-- SECTION:PLAN:END -->
 
 ## Comments
 
