@@ -12,6 +12,13 @@ import {
   Direction
 } from '../../core/geometry.js';
 
+// The operations, in one place, because the surface-parity check pairs each of
+// them with an MCP tool. Validated up front, so a `case` added to the switch
+// without a line here is unreachable — the list cannot silently fall behind.
+export const OPERATIONS = [
+  'align', 'distribute', 'group', 'ungroup', 'lock', 'unlock', 'duplicate'
+] as const;
+
 const ALIGNMENTS = new Set(['left', 'center', 'right', 'top', 'middle', 'bottom']);
 const DIRECTIONS = new Set(['horizontal', 'vertical']);
 
@@ -31,6 +38,9 @@ export async function arrange(argv: string[]): Promise<void> {
   });
 
   const op = positionals[0];
+  if (!op || !(OPERATIONS as readonly string[]).includes(op)) {
+    throw new CliUsageError(`Usage: arrange ${OPERATIONS.join('|')} ...`);
+  }
   await ensureCanvasRunning();
 
   switch (op) {

@@ -67,7 +67,9 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 | `install-skill --dir <skills-root>` | Install this skill into an agent-chosen project/global skills root (replaces any existing copy) |
 | `help [command]`, `--version` | Usage and version |
 
-## MCP Tools (26 total)
+## MCP Tools
+
+The MCP surface for clients that cannot run the CLI. `scripts/check-surface-parity.mjs` in the archboard repo fails if a tool is missing from this table.
 
 ### Element CRUD
 
@@ -99,6 +101,15 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 | `describe_scene` | AI-readable scene description (types, positions, labels, connections, bounding box) | (none) |
 | `get_canvas_screenshot` | Returns PNG image of canvas for visual verification | (optional) `background` |
 | `get_resource` | Get scene/library/theme/elements | `resource` |
+| `get_selection` | What the human has selected — the elements they mean by "this" / "these", with node kind and binding | (none) |
+| `get_panes` | What the human is looking at, pane by pane: position on screen, board + variant, how much is in view, what is picked there. View state only | (none) |
+
+### Nodes
+
+| Tool | Description | Required params |
+|------|-------------|-----------------|
+| `promote_selection` | Declare the selection an architecture node: kind, identity and binding in one act. `each: true` makes one node per selected shape | `kind` |
+| `demote_selection` | Strip archboard metadata back off; touching one element demotes the whole node | (none) |
 
 ### File I/O & Export
 

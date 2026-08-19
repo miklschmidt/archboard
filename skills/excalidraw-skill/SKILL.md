@@ -1,21 +1,21 @@
 ---
 name: excalidraw-skill
-description: Excalidraw canvas toolkit for creating, editing, and refining diagrams on a live canvas. Use when an agent needs to (1) draw or lay out diagrams, (2) iteratively refine them by describing the scene and screenshotting its own work, (3) export/import .excalidraw files or PNG/SVG images, (4) save/restore canvas snapshots, (5) convert Mermaid to Excalidraw, or (6) perform element-level CRUD, alignment, distribution, grouping, duplication, and locking. Primary interface is the bundled CLI (archboard <command>) which auto-starts the canvas server; MCP tools and a REST API are equivalent alternatives.
+description: Excalidraw canvas toolkit for creating, editing, and refining diagrams on a live canvas. Use when an agent needs to (1) draw or lay out diagrams, (2) iteratively refine them by describing the scene and screenshotting its own work, (3) export/import .excalidraw files or PNG/SVG images, (4) save/restore canvas snapshots, (5) convert Mermaid to Excalidraw, or (6) perform element-level CRUD, alignment, distribution, grouping, duplication, and locking. Primary interface is the bundled CLI (archboard <command>) which auto-starts the canvas server; MCP tools cover the same canvas for clients with no shell, and a REST API for application code.
 ---
 
 # Excalidraw Skill
 
 ## Step 0: Pick an Interface
 
-Three interfaces drive the same live canvas. Pick the first one that applies:
+Three interfaces drive the same live canvas. The CLI is the default; the other two serve callers that cannot run it.
 
-1. **MCP tools** — if the canvas tools (e.g. `batch_create_elements`) are in your tool list, prefer them: results land directly in your context, and screenshots come back as images without touching disk. Their display prefix depends on the key the MCP client's config gives this server, so match on the tool names, not the prefix.
-2. **CLI** (default when no MCP tools are present). Use whichever applies:
+1. **CLI** — use it whenever you can run a shell. Capabilities land here first, so it is the fullest surface.
    ```bash
    ./bin/canvas <command>   # inside the archboard checkout — drives the local dist/ build
    archboard <command>      # anywhere else, if the bin is on your PATH
    ```
    No setup needed — any canvas-touching command **auto-starts the canvas server** on `http://127.0.0.1:3000`. The package is private and never published, so there is nothing to install from npm: build from source. Inside the checkout, `bin/canvas` resolves from any cwd and always runs the current build, so prefer it there. Examples below say `archboard`; substitute `./bin/canvas` when you are in the repo.
+2. **MCP tools** — the way in for a client with no shell. Same canvas, renamed: `batch_create_elements` for `add`, `describe_scene` for `describe`, and so on (full table in `references/cheatsheet.md`). Their display prefix depends on the key the MCP client's config gives this server, so match on the tool names, not the prefix. One thing they do that the CLI cannot: `get_canvas_screenshot` returns the image as content in your context, where `screenshot` writes a PNG you then read back.
 3. **REST API** (last resort, e.g. from application code): HTTP endpoints on `http://127.0.0.1:3000` — see `references/cheatsheet.md` for payloads. The server must already be running.
 
 The canvas URL comes from `EXPRESS_SERVER_URL` (default `http://127.0.0.1:3000`). Remind the user to open that URL in a browser — screenshots, image export, mermaid conversion, and viewport control need an open tab (CLI exits with code 4 when it's missing).
@@ -147,7 +147,7 @@ If you find any issue: **stop, fix it, re-screenshot, then continue.** Say "I se
 
 **Create elements directly** when: you need precise layout control, the diagram type doesn't map to Mermaid well (e.g., custom architecture, annotated cloud diagrams), or you want elements positioned in a specific coordinate grid.
 
-### Steps (CLI shown; MCP tools are 1:1 — see cheatsheet)
+### Steps (CLI shown; the MCP tool for each is in the cheatsheet)
 
 1. Plan your coordinate grid — map out tiers and x-positions before writing JSON. (MCP mode: call `read_diagram_guide` for colors/sizing; the same guidance lives in `references/cheatsheet.md`.)
 2. Optional fresh start: `archboard clear --yes`
@@ -418,5 +418,5 @@ Round-trips are safe: text-element block references follow the plugin's own id r
 
 ## References
 
-- `references/cheatsheet.md`: full CLI reference, the 26 MCP tools, REST API endpoints + payload shapes, and the diagram design guide (colors, sizing).
+- `references/cheatsheet.md`: full CLI reference, the MCP tool table, REST API endpoints + payload shapes, and the diagram design guide (colors, sizing).
 - `references/architecture-workflow.md`: **read this when the canvas is being used to build/explore/refactor codebase architecture with a human.** Covers the read-back loop, binding nodes to code via `customData`/`link`, and reading a human's edits as design intent.
