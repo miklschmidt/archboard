@@ -103,11 +103,23 @@ archboard board new payments --level service
 archboard board open payments
 ```
 
-Bindings resolve from the repository you are standing in. `promote --path
-src/payments/index.ts` reads the repo identity from that repo's git origin and
-records the branch and commit, so run promotion from inside the repo the code
-belongs to. Promoting a path from the wrong working directory records the wrong
-repository, and nothing will tell you.
+**Use absolute paths when you promote.** Binding walks up from the resolved
+path to find the enclosing git repository, so an absolute path is correct
+wherever you happen to be standing:
+
+```bash
+archboard promote --kind service --path ~/Projects/payments-api/src/index.ts
+```
+
+A relative path is resolved against an ambient working directory, and that is
+currently a trap. From the wrong directory, if a file of that name happens to
+exist there, you get a confident binding to the wrong repository. Worse, over
+MCP the ambient directory belongs to the server process the client spawned, so
+it is neither yours nor visible. TASK-031 is fixing this; until it lands,
+absolute paths are the only reliable form.
+
+`--repo`, `--branch` and `--commit` override the resolution when you need to
+name something git cannot tell you.
 
 Boards do not belong to the repo and are not committed to it. If you want a
 diagram in the repo as well, export one:
