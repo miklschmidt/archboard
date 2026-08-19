@@ -10,6 +10,10 @@ import { Excalidraw } from '@excalidraw/excalidraw'
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 import { useCanvasSession } from './useCanvasSession'
 import type { PaneStatus } from '../types'
+// The one thing the browser half shares with the server half by import rather
+// than by copy: the two defaults have to be the same colour, or a box someone
+// draws by hand and a box the agent draws stop matching.
+import { DEFAULT_FILL_STYLE, DEFAULT_SHAPE_BACKGROUND } from '../../../src/core/appearance'
 
 interface CanvasPaneProps {
   paneId: string
@@ -57,7 +61,19 @@ export function CanvasPane({
             if (appState?.theme && appState.theme !== theme) onThemeChange(appState.theme)
             session.handleChange(appState)
           }}
-          initialData={{ elements: [], appState: { theme } }}
+          // Excalidraw defaults new shapes to a transparent background, and a
+          // transparent shape is only hit-testable on its stroke — so a box
+          // drawn by hand could not be tapped in the middle to select it, which
+          // is the first half of every promotion. Seeding the item defaults
+          // fixes it at the moment of drawing; the picker still overrides.
+          initialData={{
+            elements: [],
+            appState: {
+              theme,
+              currentItemBackgroundColor: DEFAULT_SHAPE_BACKGROUND,
+              currentItemFillStyle: DEFAULT_FILL_STYLE
+            }
+          }}
         />
       </div>
     </section>
