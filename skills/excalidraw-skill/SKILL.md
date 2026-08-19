@@ -412,7 +412,7 @@ Round-trips are safe: text-element block references follow the plugin's own id r
 - **Arrow not connecting?** Verify element IDs with `get <id>`. Make sure `startElementId`/`endElementId` match existing element IDs.
 - **Canvas in a bad state?** `snapshot save` first, then `clear --yes` and rebuild. Or `snapshot restore` to go back.
 - **Element won't update?** It may be locked — `arrange unlock --ids <id>` first.
-- **Duplicate text elements / element count doubling?** The frontend auto-sync timer periodically writes the full Excalidraw scene back to the server. Excalidraw internally generates a bound text element for every shape with a label; clearing and re-sending elements can re-inject cached bound texts. Clean up: `query --type text` to find elements with a `containerId`, `delete` the unwanted ones, wait a few seconds for auto-sync to settle. The safest prevention: **never put labels on background zone rectangles** — use free-standing text elements.
+- **Duplicate text elements / element count climbing on its own?** A label is stored on its shape as `label`, and the browser expands it into a bound text element. Expanding it more than once used to mint a *new* text element each time, so labels bred on every sync until arrows collapsed under the stack. Fixed: a label that already has a text element keeps that element. On a board polluted before the fix, `query --type text` shows the copies — several texts sharing one `containerId` — and `delete` removes all but one; the arrows they were bound to may also need their geometry restored by nudging the shapes they connect. Labelling shapes, including background zones, is safe.
 
 ---
 
