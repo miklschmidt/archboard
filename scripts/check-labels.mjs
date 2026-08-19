@@ -28,7 +28,8 @@ const {
   adoptReusedLabelIds,
   boundTextsByContainer,
   planLabelRepair,
-  labelStatements
+  labelStatements,
+  labelClearances
 } = await import(join(__dirname, '..', 'dist', 'core', 'labels.js'));
 
 let failures = 0;
@@ -56,7 +57,9 @@ function expand(elements) {
   const out = [];
   for (const element of elements) {
     const seed = element.type === 'text' ? undefined : (element.label?.text ?? element.text);
-    if (seed === undefined) {
+    // `if (element.label?.text)` is the real converter's own guard: a label
+    // that is absent, null or empty is not expanded into anything.
+    if (typeof seed !== 'string' || seed === '') {
       out.push(element);
       continue;
     }
@@ -101,22 +104,66 @@ function fingerprint(element) {
 }
 
 /**
- * frontend/src/canvas/changes.ts, the outbound half: a reported bound text goes
- * with a statement of what its container's label now reads. `state` is the fix
- * under test here, the way `contain` is for the inbound half.
+ * Somebody clears a label. Excalidraw does not leave an empty text element
+ * behind: a bound text submitted blank is marked `isDeleted` and unbound from
+ * its container (App.handleTextWysiwyg -> fixBindingsAfterDeletion). So the
+ * scene keeps the deleted element — with its `containerId` — while the live
+ * board has neither the text nor the binding.
  */
-function reportOf(scene, baseline, { state }) {
-  const upserts = scene
+function blank(scene, empties) {
+  const doomed = new Set();
+  for (const element of scene) {
+    if (element.type === 'text' && empties[element.containerId]) doomed.add(element.id);
+  }
+  if (doomed.size === 0) return scene;
+  return scene.map((element) => {
+    if (doomed.has(element.id)) return { ...element, text: '', isDeleted: true };
+    if (!Array.isArray(element.boundElements)) return element;
+    if (!element.boundElements.some((ref) => doomed.has(ref.id))) return element;
+    return { ...element, boundElements: element.boundElements.filter((ref) => !doomed.has(ref.id)) };
+  });
+}
+
+/**
+ * frontend/src/canvas/changes.ts, the outbound half: a reported bound text goes
+ * with a statement of what its container's label now reads, and a *deleted*
+ * bound text with the striking out of the seed that would otherwise be expanded
+ * back over it. `state` and `clear` are the two fixes under test here, the way
+ * `contain` is for the inbound half.
+ *
+ * A report is built from the live board — deleted elements are never upserted
+ * and never enter the baseline — but it is computed against the scene
+ * *including* them, because that is the only place the fact of a deletion is
+ * recorded.
+ */
+function reportOf(scene, baseline, { state, clear }) {
+  const alive = scene.filter((element) => !element.isDeleted);
+  const upserts = alive
     .filter((element) => baseline.get(element.id) !== fingerprint(element))
     .map((element) => ({ ...element }));
-  if (!state) return upserts;
+  const kept = new Set(alive.map((element) => element.id));
+  const deletes = [...baseline.keys()].filter((id) => !kept.has(id));
+
   const byId = new Map(upserts.map((element) => [element.id, element]));
-  for (const statement of labelStatements(upserts, scene)) {
-    const reported = byId.get(statement.id);
-    if (reported) reported.label = statement.label;
-    else if (baseline.has(statement.id)) upserts.push({ id: statement.id, label: statement.label });
+  if (state) {
+    for (const statement of labelStatements(upserts, scene)) {
+      const reported = byId.get(statement.id);
+      if (reported) reported.label = statement.label;
+      else if (baseline.has(statement.id)) upserts.push({ id: statement.id, label: statement.label });
+    }
   }
-  return upserts;
+  if (clear) {
+    for (const clearance of labelClearances(upserts, deletes, scene)) {
+      const reported = byId.get(clearance.id);
+      if (reported) {
+        reported.label = null;
+        reported.text = null;
+      } else if (baseline.has(clearance.id)) {
+        upserts.push({ id: clearance.id, label: null, text: null });
+      }
+    }
+  }
+  return { upserts, deletes };
 }
 
 /** POST /api/elements/changes: upserts are *merged*, so stored fields survive. */
@@ -131,7 +178,7 @@ function applyUpserts(store, upserts) {
  * a human may type into it, and it reports back anything it had not seen.
  * `contain` and `state` are the two halves of the fix under test.
  */
-function cycle(store, baseline, { contain, state = contain, types }) {
+function cycle(store, baseline, { contain, state = contain, clear = contain, types, empties }) {
   const broadcast = [...store.values()];
   const planned = contain ? planLabelExpansion(broadcast) : { elements: broadcast, reuse: new Map() };
   const expanded = expand(planned.elements);
@@ -148,13 +195,19 @@ function cycle(store, baseline, { contain, state = contain, types }) {
       })
     : scene;
 
-  const upserts = reportOf(typed, baseline, { state });
-  const deletes = [...baseline.keys()].filter((id) => !typed.some((element) => element.id === id));
+  // Or clears one, which is a deletion rather than an edit.
+  const edited = empties ? blank(typed, empties) : typed;
+
+  const { upserts, deletes } = reportOf(edited, baseline, { state, clear });
   baseline.clear();
-  for (const element of typed) baseline.set(element.id, fingerprint(element));
+  // A pane agrees only what is on the board; a deleted element is news it has
+  // already delivered, so the next diff must not keep claiming it.
+  for (const element of edited) {
+    if (!element.isDeleted) baseline.set(element.id, fingerprint(element));
+  }
   applyUpserts(store, upserts);
   for (const id of deletes) store.delete(id);
-  return { scene: typed, upserts };
+  return { scene: edited, upserts, deletes };
 }
 
 function boardOf(elements) {
@@ -353,6 +406,156 @@ const CYCLES = 25;
   assert(store.get('svc').label?.text === 'PostingEngine', 'the agent rename did not settle in the stored seed');
   assert(boundTextsByContainer([...store.values()]).get('svc')?.length === 1, 'the two directions between them grew a second label');
   assert(store.size === 6, `the two directions between them changed the element count to ${store.size}`);
+}
+
+// --- a human clearing a label keeps it cleared -------------------------------
+//
+// Emptying is not retyping with an empty string. Excalidraw deletes the bound
+// text element, so there is no text upsert for a statement to ride on, and the
+// seed the deleted element came from sits on the server waiting to be expanded
+// straight back over the box somebody just cleared.
+
+{
+  const store = boardOf(drawn());
+  const baseline = new Map();
+  for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+
+  const before = boundTextsByContainer([...store.values()]);
+  const shapeLabel = before.get('svc')[0];
+  const arrowLabel = before.get('wire')[0];
+
+  const { deletes } = cycle(store, baseline, { contain: true, empties: { svc: true, wire: true } });
+  assert(deletes.includes(shapeLabel), 'clearing a label did not report the text element as deleted');
+  assert(!store.has(shapeLabel), 'the cleared shape label survived on the server');
+  assert(!store.has(arrowLabel), 'the cleared arrow label survived on the server');
+
+  for (let i = 0; i < CYCLES; i++) cycle(store, baseline, { contain: true });
+  const after = boundTextsByContainer([...store.values()]);
+  assert(after.get('svc') === undefined, `a cleared shape label grew back ${after.get('svc')?.length} bound texts`);
+  assert(after.get('wire') === undefined, `a cleared arrow label grew back ${after.get('wire')?.length} bound texts`);
+  assert(!store.get('svc').label?.text, `the seed survived the clearing: ${JSON.stringify(store.get('svc').label)}`);
+  assert(!store.get('wire').label?.text, `the arrow seed survived the clearing: ${JSON.stringify(store.get('wire').label)}`);
+  assert(store.size === 4, `clearing two of three labels left ${store.size} elements, expected 4`);
+
+  // The label 'Gateway' was never touched and must be exactly where it was.
+  const gateway = after.get('gw');
+  assert(gateway?.length === 1, `clearing other labels left ${gateway?.length} on the untouched shape`);
+  assert(store.get(gateway[0]).text === 'Gateway', 'clearing a label disturbed a different one');
+  assert(store.get('gw').label?.text === 'Gateway', 'clearing a label struck out a different seed');
+
+  // A page reload is the pass that brought the old words back: the whole board
+  // arrives from the server at once, so every surviving seed is expanded again.
+  const reloaded = new Map();
+  cycle(store, reloaded, { contain: true });
+  assert(
+    boundTextsByContainer([...store.values()]).get('svc') === undefined,
+    'reloading brought the cleared shape label back'
+  );
+  assert(store.size === 4, `reloading a board with cleared labels left ${store.size} elements`);
+
+  // And the box can be labelled again afterwards: striking out the seed must
+  // not leave the container unable to hold one.
+  store.set('svc', { ...store.get('svc'), label: { text: 'Ledger' } });
+  for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+  const relabelled = boundTextsByContainer([...store.values()]).get('svc');
+  assert(relabelled?.length === 1, `relabelling a cleared shape gave it ${relabelled?.length ?? 0} bound texts`);
+  assert(store.get(relabelled[0]).text === 'Ledger', 'a cleared shape could not be labelled again');
+}
+
+// --- and it is the clearance that keeps it cleared, not luck -----------------
+//
+// The same run with the clearance removed. If this does not bring the old
+// words back, the check above is passing for some other reason than the fix.
+
+{
+  const store = boardOf(drawn());
+  const baseline = new Map();
+  for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true, clear: false });
+  const shapeLabel = boundTextsByContainer([...store.values()]).get('svc')[0];
+
+  cycle(store, baseline, { contain: true, clear: false, empties: { svc: true } });
+  assert(!store.has(shapeLabel), 'the model never got the deletion to the server at all');
+  for (let i = 0; i < 3; i++) cycle(store, baseline, { contain: true, clear: false });
+
+  const revived = boundTextsByContainer([...store.values()]).get('svc');
+  assert(
+    revived?.length === 1 && store.get(revived[0]).text === 'AuthService',
+    'without the clearance the model failed to reproduce the label coming back, so it is toothless'
+  );
+}
+
+// --- absence is not a deletion -----------------------------------------------
+//
+// The trap. A shape an agent has just labelled, whose seed has not been
+// expanded yet, has no bound text — exactly like a shape whose label was
+// cleared. Reading that as a clearance would wipe the agent's label and undo
+// TASK-024. Only the deleted text element itself tells them apart.
+
+{
+  const scene = [
+    // An agent's label, delivered and not yet expanded.
+    { id: 'svc', type: 'rectangle', label: { text: 'AuthService' } },
+    // A human's, just cleared: the text element is gone and unbound.
+    { id: 'gw', type: 'rectangle', boundElements: [] },
+    { id: 'gw-label', type: 'text', containerId: 'gw', text: '', isDeleted: true }
+  ];
+  const upserts = [{ id: 'svc' }, { id: 'gw', boundElements: [] }];
+  const clearances = labelClearances(upserts, ['gw-label'], scene);
+  assert(clearances.length === 1, `expected one clearance, got ${clearances.length}`);
+  assert(clearances[0]?.id === 'gw', `the clearance named ${clearances[0]?.id}, not the cleared container`);
+  assert(clearances[0]?.label === null && clearances[0]?.text === null, 'a clearance must strike out both seed fields');
+  assert(
+    !clearances.some((clearance) => clearance.id === 'svc'),
+    'an unexpanded agent label was read as a deletion'
+  );
+
+  // A container that still has a label is not bereaved, however many of its
+  // text elements have been deleted along the way.
+  const stillLabelled = [
+    { id: 'gw', type: 'rectangle', boundElements: [{ id: 'gw-keeper', type: 'text' }] },
+    { id: 'gw-keeper', type: 'text', containerId: 'gw', text: 'Gateway' },
+    { id: 'gw-stray', type: 'text', containerId: 'gw', text: '', isDeleted: true }
+  ];
+  assert(
+    labelClearances([{ id: 'gw' }], ['gw-stray'], stillLabelled).length === 0,
+    'a container that still shows a label was told to clear it'
+  );
+
+  // A deleted element the report is not talking about is old news. Restating
+  // the clearance on every later pass would rewrite the element for nothing.
+  assert(
+    labelClearances([], [], scene).length === 0,
+    'a lingering deleted label kept restating its clearance'
+  );
+
+  // Nor is a container that went with it something to make statements about.
+  const bothGone = [
+    { id: 'gw', type: 'rectangle', isDeleted: true },
+    { id: 'gw-label', type: 'text', containerId: 'gw', text: 'Gateway', isDeleted: true }
+  ];
+  assert(
+    labelClearances([], ['gw-label', 'gw'], bothGone).length === 0,
+    'a deleted container was sent a label clearance'
+  );
+}
+
+// --- clearing and retyping do not get in each other's way --------------------
+
+{
+  const store = boardOf(drawn());
+  const baseline = new Map();
+  for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+  const shapeLabel = boundTextsByContainer([...store.values()]).get('svc')[0];
+
+  // One box cleared and another retyped in the same pass.
+  cycle(store, baseline, { contain: true, empties: { gw: true }, types: { svc: 'Ledger' } });
+  for (let i = 0; i < CYCLES; i++) cycle(store, baseline, { contain: true });
+
+  assert(store.get(shapeLabel).text === 'Ledger', `the retyped label reads ${JSON.stringify(store.get(shapeLabel).text)}`);
+  assert(store.get('svc').label?.text === 'Ledger', 'the retyped seed did not follow while another label was cleared');
+  assert(boundTextsByContainer([...store.values()]).get('gw') === undefined, 'the cleared label came back');
+  assert(!store.get('gw').label?.text, 'the cleared seed survived alongside a retype');
+  assert(store.size === 5, `clearing one label and retyping another left ${store.size} elements, expected 5`);
 }
 
 // --- an element drawn later still gets its label, exactly once --------------
