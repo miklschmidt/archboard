@@ -12,7 +12,7 @@
 `archboard <command>` (or `./bin/canvas <command>` inside the archboard checkout).
 JSON results on stdout — except `describe` (plain text) and raw-content output when `--out` is omitted (`export` scene JSON, `screenshot --format svg`). Diagnostics on stderr. Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required, 5 board write refused. Explicit `start` overrides `EXCALIDRAW_NO_AUTOSTART=1`.
 
-**`--board <key>` is global and required on every command that touches a board** — `add`, `apply`, `get`, `query`, `update`, `delete`, `describe`, `export`, `import`, `mermaid`, `share`, `clear`, `snapshot`, `promote`, `demote`, `changes`, `arrange`, `library insert`, `board save`, `board info`. There is no default board and no fallback: a pane holds its own board, two panes hold two, so a call that names none is refused with the open boards listed (ADR 0009). Commands about the browser rather than a board — `panes`, `selection`, `screenshot`, `status`, `board list`, `library list`, `compare` — take no board.
+**`--board <key>` is global and required on every command that touches a board** — `add`, `apply`, `get`, `query`, `update`, `delete`, `describe`, `export`, `import`, `mermaid`, `share`, `clear`, `snapshot`, `promote`, `demote`, `changes`, `arrange`, `library insert`, `board save`, `board info`. There is no default board and no fallback: a pane holds its own board, two panes hold two, so a call that names none is refused with the open boards listed (ADR 0009). Commands about the browser rather than a board — `panes`, `pane close`, `selection`, `screenshot`, `viewport`, `status`, `board list`, `library list`, `compare` — take no board. `pane open` takes an optional `--board`: the board to put in the new pane.
 
 ### Server
 
@@ -38,7 +38,7 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 | Command | Description |
 |---------|-------------|
 | `describe` | AI-readable scene summary (ids, positions, labels, connections) — plain text |
-| `screenshot` | PNG/SVG capture; `--out f.png`, `--format png\|svg`, `--no-background`; PNG without `--out` → temp file path in JSON, SVG without `--out` → raw SVG (**browser tab required**) |
+| `screenshot` | PNG/SVG capture of one pane; `--out f.png`, `--format png\|svg`, `--no-background`, `--pane <spec>`; PNG without `--out` → temp file path in JSON, SVG without `--out` → raw SVG. With two panes open, name the one you drew in or you photograph the other (**browser tab required**) |
 | `export [--out f.excalidraw] [--format json\|obsidian]` | Scene as .excalidraw JSON (stdout without `--out`); a `.md` out path writes Obsidian's .excalidraw.md format |
 | `import [file\|-] [--replace]` | Import .excalidraw JSON or Obsidian .excalidraw.md (merge by default) |
 | `mermaid [file\|-]` | Render Mermaid onto the canvas (**browser tab required**) |
@@ -50,8 +50,19 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 | `board info --board <key>` | Identity and save state of one board |
 | `board new <name> [--variant v] [--level l] [--pane <spec>]` | Empty board; in memory until saved |
 | `board open <name[@variant]> [--reload] [--pane <spec>]` | Show a board in a pane. `--pane` takes `left`, `right`, `top`, `bottom`, a 1-based position, `primary`, or a pane id — required when more than one pane is open, since which half of the screen is not something to guess |
-| `board save --board <key> [--as <name>] [--variant v] [--level l] [--force]` | Write it to the vault; **refused (exit 5) if the note changed on disk** — `--force` overwrites anyway. `--variant v` is how a board is **branched** into a proposal: it writes `<key>@v`, carries the level across, and moves every pane that was holding the source onto the branch. `--as` branches too but drops the level unless `--level` comes with it |
+| `board save --board <key> [--as <name>] [--variant v] [--level l] [--force]` | Write it to the vault; **refused (exit 5) if the note changed on disk** — `--force` overwrites anyway. `--variant v` is how a board is **branched** into a proposal: it writes `<key>@v` and carries the level across. `--as` branches the same way, level included. **A branch moves nothing on screen** (ADR 0012): the panes holding the source keep holding it, and the branch is not showing until `pane open --board <key>@v` or `board open`. The answer says which — `saveKind`, `savedFrom`, `panes.moved`, `panes.kept`. Naming the scratch board is the one save that does move a pane |
 | `compare <from> [to]` | Semantic diff between two variants, joined on node identity; opens nothing and leaves the canvas alone. One address finds the other variant itself |
+
+### Panes and camera
+
+A pane is a slot holding one board, and two panes are how the architecture that exists sits beside a proposal. All four of these need a browser tab and exit 4 without one: a pane exists only while a tab renders it.
+
+| Command | Description |
+|---------|-------------|
+| `panes [--text]` | Read-only: which pane holds which board, where it sits, how much is in view, what is picked there |
+| `pane open [--board <key>]` | Make a **new** pane and open that board into it — the whole side-by-side move in one command. It cannot be aimed at an existing pane, so it cannot overwrite the board somebody is reading. Without `--board` the new pane shows whatever was already on screen. Two panes is the limit |
+| `pane close <spec>` | Close one pane. `spec` is `left`, `right`, `top`, `bottom`, a 1-based position, `primary`, `focused`, or a pane id, and is **always required** — which board comes off the screen is not something to guess. The board is untouched and stays open on the canvas; the last pane cannot be closed |
+| `viewport --fit \| --ids a,b,c \| --element <id> \| --zoom n` | Point one pane's camera; exactly one of the four. `--fit` frames the whole board, `--ids` frames those elements, `--element` centres on one without changing zoom, `--zoom` with `--offset-x`/`--offset-y` sets it by hand. `--zoom-factor f` is the padding on a fit, so it needs `--fit` or `--ids`. `--pane <spec>` says which half moves |
 
 ### Stencil Library
 
@@ -147,7 +158,7 @@ Requires `ARCHBOARD_VAULT`. A pane holds exactly one board; two panes hold two. 
 | `list_boards` | Vault boards, open boards, and what each pane is showing | (none) |
 | `open_board` | Show a board in a pane; `pane` (`left`, `right`, `1`…) is required when more than one is open | `board` (`name` or `name@variant`) |
 | `new_board` | Start an empty board and show it in a pane | `board` |
-| `save_board` | Write a board to the vault; **refused if the note changed on disk** (`force` overwrites anyway). `variant` branches the board into a proposal, which is what makes it comparable | `board` |
+| `save_board` | Write a board to the vault; **refused if the note changed on disk** (`force` overwrites anyway). `variant` branches the board into a proposal, which is what makes it comparable; a branch moves no pane, so `open_pane` it | `board` |
 | `compare_boards` | Semantic diff between two variants, joined on node identity (`customData.archboard.node`). Complete and unsummarised — narrate it yourself. Reads a board from memory when it is open, else from its note; the canvas is untouched. Check `summary.comparable` and `layout.cannotExpress` before making claims | `from` (`to` optional) |
 
 ### Panes
