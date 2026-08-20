@@ -523,9 +523,12 @@ function buildBoard(input: CompareSideInput): BoardModel {
   const nodes = new Map(models.map(m => [m.node, m]));
 
   // A node whose recorded variant is not the board's own was copied from
-  // another variant and never re-promoted. Harmless to the diff — the variant
-  // field is not what the join is on — but it is the trace of a copy, and the
-  // human is usually the only one who knows whether that was deliberate.
+  // another variant and never re-promoted. Not harmless: `variantAnomaly` is a
+  // semantic field, so every such node is reported as changed, and a board
+  // full of them buries whatever the real difference was. Branching restamps
+  // the copy (`restampVariant`, TASK-035) precisely so this stays rare enough
+  // to be worth saying out loud. When it does fire it is the trace of a copy,
+  // and the human is usually the only one who knows whether it was deliberate.
   const stale = models.filter(m => m.variant && m.variant !== input.identity.variant);
   if (stale.length > 0) {
     warnings.push(

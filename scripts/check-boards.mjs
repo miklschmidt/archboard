@@ -98,7 +98,9 @@ const { resolvePaneSpec, soloPane, panesInOrder } = await import(dist('core/pane
 // The canvas, with two panes on it
 // ---------------------------------------------------------------------------
 
-const PORT = 33337;
+// A free-ish port per run, so several checkouts can run this concurrently.
+// A fixed port made every agent working on this repo serialise on it.
+const PORT = Number(process.env.PORT || 33000 + Math.floor(Math.random() * 2000));
 const base = `http://127.0.0.1:${PORT}`;
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), 'archboard-boards-'));
 
@@ -270,6 +272,69 @@ try {
 
   left.socket.close();
   await sleep(100);
+
+  // --- branching a proposal, then diffing it (TASK-035) -------------------
+  //
+  // `save --as` is how a proposal starts, so the diff between a board and the
+  // branch taken off it has to read as "here is the one thing that changed".
+  // It used to read as "every node changed", because the copy still recorded
+  // the variant each node was promoted under.
+
+  const promoted = (node, label, x, kind) => ({
+    type: 'rectangle', x, y: 400, width: 160, height: 80,
+    label: { text: label },
+    customData: { archboard: { node, kind, variant: 'current' } }
+  });
+
+  await api('POST', '/api/boards/new', { board: 'ledger', level: 'service' });
+  const ledgerIds = [];
+  for (const spec of [['api', 'API', 0, 'gateway'], ['worker', 'Worker', 300, 'service'], ['store', 'Store', 600, 'datastore']]) {
+    const made = await api('POST', '/api/elements?board=ledger', promoted(...spec));
+    ledgerIds.push(made.body?.element?.id ?? made.body?.id);
+  }
+  await api('POST', '/api/boards/save?board=ledger');
+
+  const branched = await api('POST', '/api/boards/save?board=ledger', { name: 'ledger', variant: 'option-a' });
+  check('save --as branches the board', branched.status === 200 && branched.body?.board === 'ledger@option-a');
+
+  const onBranch = await api('GET', '/api/elements?board=ledger@option-a');
+  const branchVariants = (onBranch.body?.elements ?? []).map(el => el.customData?.archboard?.variant);
+  check('  and every node on the copy records the variant it was saved as',
+    branchVariants.length === 3 && branchVariants.every(v => v === 'option-a'),
+    branchVariants.join(','));
+
+  const onOrigin = await api('GET', '/api/elements?board=ledger');
+  check('  while the board it was branched from is untouched',
+    (onOrigin.body?.elements ?? []).every(el => el.customData?.archboard?.variant === 'current'));
+
+  const branchNote = fs.readFileSync(branched.body.file, 'utf-8');
+  check('  including in the note on disk, which is what compare reads',
+    !/"variant"\s*:\s*"current"/.test(branchNote) && /"variant"\s*:\s*"option-a"/.test(branchNote));
+
+  await api('DELETE', `/api/elements/${ledgerIds[1]}?board=ledger@option-a`);
+  await api('POST', '/api/boards/save?board=ledger@option-a');
+  const diff = await api('GET', '/api/boards/compare?from=ledger&to=ledger@option-a');
+  check('the diff reports the one node the human removed',
+    diff.body?.summary?.nodesRemoved === 1 && diff.body?.nodes?.removed?.[0]?.node === 'worker');
+  check('  and nothing else as changed', diff.body?.summary?.nodesChanged === 0,
+    JSON.stringify(diff.body?.nodes?.changed?.map(c => c.changes) ?? []));
+  check('  and the nodes nobody touched as unchanged', diff.body?.summary?.nodesUnchanged === 2);
+  check('  with no stale-variant warning to explain away',
+    !(diff.body?.warnings ?? []).some(w => /different variant/.test(w)));
+
+  // The check is still worth having: a node pasted onto a board that was never
+  // branched keeps the variant it came from, and that is worth saying.
+  await api('POST', '/api/boards/new', { board: 'billing', level: 'service' });
+  await api('POST', '/api/boards/new', { board: 'billing@option-b', level: 'service' });
+  await api('POST', '/api/elements?board=billing', promoted('gw', 'Gateway', 0, 'gateway'));
+  await api('POST', '/api/elements?board=billing@option-b', promoted('gw', 'Gateway', 0, 'gateway'));
+  await api('POST', '/api/boards/save?board=billing');
+  await api('POST', '/api/boards/save?board=billing@option-b');
+  const copied = await api('GET', '/api/boards/compare?from=billing&to=billing@option-b');
+  check('a node copied between boards without re-promotion still reports variantAnomaly',
+    copied.body?.nodes?.changed?.[0]?.changes?.variantAnomaly?.to === 'current');
+  check('  and still warns about it',
+    (copied.body?.warnings ?? []).some(w => /different variant/.test(w)));
 } finally {
   server.kill('SIGTERM');
   await sleep(200);
