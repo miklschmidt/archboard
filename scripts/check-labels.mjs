@@ -1,23 +1,31 @@
 #!/usr/bin/env bun
 
-// The label feedback loop, run to exhaustion in a few milliseconds.
+// There is one representation of a label, and this is the proof.
 //
-// A labelled element used to grow one extra bound text element on every trip
-// through the browser, forever, because Excalidraw's
-// convertToExcalidrawElements mints a text element with a new random id every
-// time it sees a `label`, and the `label` that produced the first one stayed on
-// the stored element (TASK-024). It only shows up over several cycles, and only
-// when the three parties are all present: the converter that expands, the pane
-// that reports what it did not have before, and the server that merges an
-// upsert onto an element it never strips.
+// A label is a text element bound to a shape. It used to be that and a `label`
+// seed on the shape and a conversion between them running on every delivery,
+// and the count grew by one on every trip through the browser, forever: a board
+// of 41 drawn elements reached 284 and five arrow labels were duplicated 42
+// times each (TASK-024). Renaming brought the old name back (TASK-028) and
+// clearing brought the old text back (TASK-029).
 //
-// So all three are modelled here — small, exact, and headless, since the real
-// converter needs a DOM. The point of the model is that it is *hostile*: the
-// expander is written to duplicate, exactly like the real one, and the first
-// check below proves it does when containment is removed. What is under test is
-// that planLabelExpansion / adoptReusedLabelIds hold the line anyway — without
-// making labels immutable, which would be the other way to get the count right
-// and would break renaming.
+// Under ADR 0015 the conversion happens once, at the write boundary, and
+// nothing converts on the way out. So a label is expanded when it is written
+// and never again, and the loop that grew it cannot turn.
+//
+// WHAT IS MODELLED AND WHY. The real write boundary is used — this file's
+// `boardOf` calls `expandElementsForExport`, the one converter, exactly as
+// `src/server.ts` does. What is modelled is the *pane*: the baseline it
+// reports against, the human typing into a text element, and Excalidraw's
+// deletion of a bound text somebody emptied. Those need a DOM, and the loop
+// they close is the one that has to be run to exhaustion rather than looked at.
+//
+// The model stays hostile on purpose. `expand()` below is Excalidraw's
+// `convertToExcalidrawElements` in the one respect that mattered — it mints a
+// fresh text element every time it sees a seed, whether or not one exists —
+// and the first check runs it on the delivery path to show the count still
+// explodes there. That is what "a conversion on read is a second converter"
+// costs, kept in front of anyone who reads this file.
 
 import fs from 'node:fs';
 import os from 'node:os';
@@ -27,8 +35,6 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const {
-  planLabelExpansion,
-  adoptReusedLabelIds,
   boundTextsByContainer,
   planLabelRepair,
   labelStatements,
@@ -41,6 +47,8 @@ const {
   labelTextIdFor
 } = await import(join(__dirname, '..', 'src', 'core', 'labels.ts'));
 const { isBlockId } = await import(join(__dirname, '..', 'src', 'core', 'ids.ts'));
+const { expandElementsForExport, expandForBoard, relabelBoundTexts } =
+  await import(join(__dirname, '..', 'src', 'core', 'expand-elements.ts'));
 
 let failures = 0;
 let checks = 0;
@@ -189,16 +197,17 @@ function applyUpserts(store, upserts) {
 }
 
 /**
- * One full round trip: the server broadcasts, the pane converts what it got,
- * a human may type into it, and it reports back anything it had not seen.
- * `contain` and `state` are the two halves of the fix under test.
+ * One full round trip: the server broadcasts, the pane renders what it got, a
+ * human may type into it, and it reports back anything it had not seen.
+ *
+ * `contain` is the arrangement under test. True is ADR 0015: the board already
+ * holds the text elements, so a delivery is handed over as it stands and there
+ * is nothing to convert. False is what this replaced — a second converter, run
+ * on every delivery, minting a text element for every seed it sees.
  */
 function cycle(store, baseline, { contain, state = contain, clear = contain, types, empties }) {
   const broadcast = [...store.values()];
-  const planned = contain ? planLabelExpansion(broadcast) : { elements: broadcast, reuse: new Map() };
-  const expanded = expand(planned.elements);
-  const adopted = contain ? adoptReusedLabelIds(expanded, planned.reuse) : expanded;
-  const scene = contain ? dropSpentSeeds(adopted) : adopted;
+  const scene = contain ? broadcast : dropSpentSeeds(expand(broadcast));
 
   // Somebody at the board retypes a label. It lands in the text element and
   // nowhere else — Excalidraw has no `label`, and the container has nothing new
@@ -225,8 +234,26 @@ function cycle(store, baseline, { contain, state = contain, clear = contain, typ
   return { scene: edited, upserts, deletes };
 }
 
+/**
+ * An agent's write, through the code that performs one.
+ *
+ * `expandForBoard` and `relabelBoundTexts` are the write boundary itself, the
+ * same two calls `src/server.ts` makes; only the merge and the storing are
+ * modelled, because those are HTTP and a Map. So the text elements are on the
+ * board before any pane has seen it, which is the change everything below
+ * turns on — a headless board used to carry labels that existed only as seeds
+ * and only became elements when a browser happened to render one.
+ */
+function write(store, statements) {
+  const merged = statements.map((statement) => ({ ...(store.get(statement.id) ?? {}), ...statement }));
+  for (const element of merged) store.set(element.id, element);
+  for (const element of relabelBoundTexts(merged, store)) store.set(element.id, element);
+  for (const element of expandForBoard(merged, store)) store.set(element.id, element);
+  return store;
+}
+
 function boardOf(elements) {
-  return new Map(elements.map((element) => [element.id, element]));
+  return write(new Map(), elements);
 }
 
 function worstLabelCount(elements) {
@@ -252,6 +279,125 @@ const drawn = () => [
 ];
 
 const CYCLES = 25;
+
+// --- the converter's constants, one at a time -------------------------------
+//
+// `docs/design/server-is-the-truth.md` §1C listed fourteen fields on which our
+// converter and Excalidraw's `convertToExcalidrawElements` produced different
+// documents, and stage 5 was to correct ours to theirs. Twelve constants, an
+// id scheme and two measured fields.
+//
+// Eight of the twelve turned out not to be about Excalidraw. That table
+// compares two converters, and the second one is now deleted; what matters is
+// whether a document is a fixed point, and `scripts/check-fixed-point.mjs`
+// measured that directly. Rendered in a real browser, the only field Excalidraw
+// rewrote was `index`. `roundness: null` and `strokeWidth: 1` on a freedraw and
+// an absent `strokeColor` were that converter declining to choose, not
+// Excalidraw's own defaults, and adopting them would have made every
+// agent-drawn shape differ from every hand-drawn one.
+//
+// So each row below says which of the two it is: a default read out of
+// Excalidraw's own `DEFAULT_ELEMENT_PROPS` and `AppState`, or a field the
+// renderer insists on.
+
+{
+  const one = (element) => expandElementsForExport([element], { deterministic: true });
+  const only = (element, type) => one(element).find((el) => el.type === type);
+  const box = { id: 'r1', type: 'rectangle', x: 0, y: 0, width: 200, height: 100 };
+
+  // 1-3. Excalifont at 20, for a standalone text and for either kind of label.
+  // `currentItemFontFamily` is Excalifont and `currentItemFontSize` is 20, so
+  // this is what a human typing on the board gets. Virgil is deprecated in
+  // Excalidraw, and 16 and 14 came from nowhere in particular.
+  const standalone = only({ id: 't1', type: 'text', x: 0, y: 0, text: 'caption' }, 'text');
+  assert(standalone.fontFamily === 5, `a standalone text is fontFamily ${standalone.fontFamily}, not Excalifont`);
+  assert(standalone.fontSize === 20, `a standalone text is fontSize ${standalone.fontSize}, not 20`);
+  const shapeLabel = only({ ...box, label: { text: 'AuthService' } }, 'text');
+  assert(shapeLabel.fontFamily === 5, `a shape's label is fontFamily ${shapeLabel.fontFamily}, not Excalifont`);
+  assert(shapeLabel.fontSize === 20, `a shape's label is fontSize ${shapeLabel.fontSize}, not 20`);
+  const arrowLabel = only(
+    { id: 'a1', type: 'arrow', x: 0, y: 0, points: [[0, 0], [100, 0]], label: { text: 'gRPC' } }, 'text');
+  assert(arrowLabel.fontSize === 20, `an arrow's label is fontSize ${arrowLabel.fontSize}, not 20`);
+  assert(arrowLabel.fontFamily === 5, `an arrow's label is fontFamily ${arrowLabel.fontFamily}, not Excalifont`);
+
+  // 4. A bound text's strokeWidth. `DEFAULT_ELEMENT_PROPS.strokeWidth` is 2,
+  // and the bound text was the one element written at 1.
+  assert(shapeLabel.strokeWidth === 2, `a bound text is strokeWidth ${shapeLabel.strokeWidth}, not 2`);
+
+  // 5-6. A standalone text is left-aligned and top-aligned — `currentItemTextAlign`
+  // is `left` and the vertical default is `top`. A bound one is centred both
+  // ways, which is how Excalidraw draws a label inside a box.
+  assert(standalone.textAlign === 'left', `a standalone text is ${standalone.textAlign}-aligned, not left`);
+  assert(standalone.verticalAlign === 'top', `a standalone text is ${standalone.verticalAlign}, not top`);
+  assert(shapeLabel.textAlign === 'center' && shapeLabel.verticalAlign === 'middle',
+    'a bound text is not centred in its container');
+
+  // 7. REJECTED. `currentItemRoundness` is `round`, so a rectangle a human
+  // draws is rounded. The `null` in the table is the other converter declining
+  // to choose, and taking it would have made agent-drawn boxes square-cornered
+  // on every board.
+  assert(JSON.stringify(only(box, 'rectangle').roundness) === '{"type":3}',
+    'a rectangle is not rounded, so it will not match one a human drew');
+
+  // 8-9. REJECTED, both. `DEFAULT_ELEMENT_PROPS` is strokeWidth 2 and
+  // strokeColor #1e1e1e, for freedraw as for everything else. The 1 and the
+  // absent colour in the table are `convertToExcalidrawElements` not handling
+  // freedraw at all — the frontend used to route it around that converter for
+  // exactly that reason — and "absent" is not a value a stroke can have.
+  const stroke = only({ id: 'f1', type: 'freedraw', x: 0, y: 0, points: [[0, 0], [10, 10]] }, 'freedraw');
+  assert(stroke.strokeWidth === 2, `a freedraw is strokeWidth ${stroke.strokeWidth}, not the default 2`);
+  assert(stroke.strokeColor === '#1e1e1e', `a freedraw is ${stroke.strokeColor}, not the default stroke colour`);
+
+  // 10. `elbowed` belongs to an arrow. A line carrying it is carrying a field
+  // Excalidraw's line type does not have.
+  const line = only({ id: 'l1', type: 'line', x: 0, y: 0, points: [[0, 0], [100, 0]] }, 'line');
+  assert(!('elbowed' in line), 'a line was given an `elbowed` field');
+  assert(only({ id: 'a2', type: 'arrow', x: 0, y: 0, points: [[0, 0], [100, 0]] }, 'arrow').elbowed === false,
+    'an arrow was not told whether it is elbowed');
+
+  // 11. A freedraw carries a stroke's own record of how it was drawn. A
+  // hand-drawn one always has these three; one an agent wrote had none, and
+  // the browser filled them in on delivery so the note never learned.
+  assert(stroke.lastCommittedPoint === null, 'a freedraw has no lastCommittedPoint');
+  assert(Array.isArray(stroke.pressures), 'a freedraw has no pressures');
+  assert(stroke.simulatePressure === true, 'a freedraw does not say its pressure is simulated');
+
+  // 12. REJECTED. The half-stroke inset on a bound arrow's points was
+  // `convertToExcalidrawElements` keeping an arrowhead off a shape's border,
+  // and it is gone with that converter. The server already routes a bound
+  // arrow edge to edge with a gap of its own, and the browser does not ask for
+  // the inset back: the fixed-point check reports nothing on these points.
+  const arrow = only({
+    id: 'a3', type: 'arrow', x: 0, y: 0, points: [[0, 0], [84, 0]],
+    startBinding: { elementId: 'r1', focus: 0, gap: 4 }
+  }, 'arrow');
+  assert(JSON.stringify(arrow.points) === '[[0,0],[84,0]]',
+    `a bound arrow's path was rewritten to ${JSON.stringify(arrow.points)}`);
+
+  // And the id scheme, which is the thirteenth row: a label is named from its
+  // container, in the shape every id is minted in, so nothing renames it.
+  assert(shapeLabel.id === labelTextIdFor('r1'),
+    `a label is named ${shapeLabel.id}, not the id derived from its container`);
+  assert(isBlockId(shapeLabel.id), `a label's id is not a block id (${shapeLabel.id})`);
+
+  // The two measured rows. Only one of them is measured: Excalidraw's
+  // getTextHeight is fontSize x lineHeight x lineCount and touches no glyphs.
+  assert(shapeLabel.width === 114.5,
+    `"AuthService" at Excalifont 20 is ${shapeLabel.width} wide, and Chrome says 114.5`);
+  assert(shapeLabel.height === 25, `and ${shapeLabel.height} tall, not 20 x 1.25`);
+  assert(shapeLabel.x === 0 + (200 - 114.5) / 2 && shapeLabel.y === 0 + (100 - 25) / 2,
+    `a label sits at ${shapeLabel.x},${shapeLabel.y} and its container centres it elsewhere`);
+
+  // `index` is the one field a render did rewrite, because `a${n}` stops
+  // increasing at ten: `a10` sorts before `a2`. A board of twelve came back
+  // with five indices repaired.
+  const twelve = expandElementsForExport(
+    Array.from({ length: 12 }, (_, i) => ({ id: `e${i}`, type: 'rectangle', x: i * 10, y: 0, width: 10, height: 10 })),
+    { deterministic: true });
+  const indices = twelve.map((el) => el.index);
+  assert(indices.every((value, i) => i === 0 || indices[i - 1] < value),
+    `the indices of a twelve-element board do not increase: ${indices.join(' ')}`);
+}
 
 // --- the model reproduces the bug when containment is removed ---------------
 //
@@ -344,7 +490,7 @@ const CYCLES = 25;
 
   // And the rename path keeps it: the label still answers to the same name
   // after its text changes.
-  store.set('svc', { ...store.get('svc'), label: { text: 'IdentityService' } });
+  write(store, [{ id: 'svc', label: { text: 'IdentityService' } }]);
   for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
   assert(
     boundTextsByContainer([...store.values()]).get('svc')?.[0] === seen[0],
@@ -354,33 +500,34 @@ const CYCLES = 25;
 
 {
   // The id is derived from the container, so a label cleared and written again
-  // must not be handed the cleared element's name back — the deleted element is
-  // still in the document, and two elements cannot share a name.
-  const scene = [
+  // must not be handed the cleared element's name back — the struck-out element
+  // is still in the document, and two elements cannot share a name.
+  //
+  // This is the one thing stage 2 put into `adoptReusedLabelIds` that had to
+  // survive its deletion. It did, by moving to where the name is chosen: the
+  // converter asks `labelTextIdFor` for a name nothing in the document holds,
+  // deleted elements included.
+  const written = expandElementsForExport([
     { id: 'svc', type: 'rectangle', x: 0, y: 0, width: 200, height: 80, label: { text: 'AuthService' } },
     { id: labelTextIdFor('svc'), type: 'text', containerId: 'svc', text: '', isDeleted: true }
-  ];
-  const planned = planLabelExpansion(scene);
-  const wanted = planned.reuse.get('svc') ?? { id: undefined };
-  assert(wanted.id !== undefined, 'a label with no live text element was not named');
-  assert(wanted.id !== labelTextIdFor('svc'), 'a re-expanded label took the cleared element’s name');
-  assert(isBlockId(wanted.id), `the salted name is not a block id (${wanted.id})`);
+  ], { forStore: true });
 
-  // A label that says nothing is not expanded, so there is nothing to name.
-  assert(
-    planLabelExpansion([{ id: 'bare', type: 'rectangle', x: 0, y: 0, width: 10, height: 10 }]).reuse.size === 0,
-    'an unlabelled shape was given a label id'
-  );
+  const fresh = written.find((element) => element.type === 'text' && !element.isDeleted);
+  assert(fresh !== undefined, 'a label with no live text element was not expanded');
+  assert(fresh.id !== labelTextIdFor('svc'), 'a re-expanded label took the cleared element’s name');
+  assert(isBlockId(fresh.id), `the salted name is not a block id (${fresh.id})`);
 
-  // And the cleared element keeps its own name through the adoption, so the
-  // scene does not end up with two elements answering to one.
-  const adopted = adoptReusedLabelIds(expand(planned.elements), planned.reuse);
-  const ids = adopted.map((element) => element.id);
-  assert(new Set(ids).size === ids.length, `adoption produced a duplicate id: ${ids.join(', ')}`);
+  const ids = written.map((element) => element.id);
+  assert(new Set(ids).size === ids.length, `expansion produced a duplicate id: ${ids.join(', ')}`);
   assert(
-    adopted.some((element) => element.isDeleted && element.id === labelTextIdFor('svc')),
+    written.some((element) => element.isDeleted && element.id === labelTextIdFor('svc')),
     'the cleared label was renamed onto the new one'
   );
+
+  // A label that says nothing is not expanded, so there is nothing to name.
+  const bare = expandElementsForExport(
+    [{ id: 'bare', type: 'rectangle', x: 0, y: 0, width: 10, height: 10 }], { forStore: true });
+  assert(bare.length === 1, 'an unlabelled shape was given a label');
 }
 
 // --- renaming still renames, and renames the same element -------------------
@@ -399,8 +546,8 @@ const CYCLES = 25;
   const arrowLabel = before.get('wire')[0];
 
   // What `update <id> --set '{"text": ...}'` leaves on the server.
-  store.set('svc', { ...store.get('svc'), label: { text: 'IdentityService' } });
-  store.set('wire', { ...store.get('wire'), label: { text: 'gRPC' } });
+  write(store, [{ id: 'svc', label: { text: 'IdentityService' } }]);
+  write(store, [{ id: 'wire', label: { text: 'gRPC' } }]);
   for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
 
   const after = boundTextsByContainer([...store.values()]);
@@ -456,6 +603,13 @@ const CYCLES = 25;
 //
 // Same run with the outbound half removed. If this does not revert, the check
 // above is passing for some reason other than the fix.
+//
+// The revert needs one more thing than it used to. Nothing expands a label on
+// the way out any more, so a stale seed sits there harmlessly until an agent
+// writes to the container it is on — and then the write boundary reads it and
+// puts the old words back over the human's. Moving a box is enough. That is
+// the whole reason the seed is still stated under stage 5 and the reason
+// stage 6 deletes the seed rather than the statement.
 
 {
   const store = boardOf(drawn());
@@ -465,10 +619,31 @@ const CYCLES = 25;
 
   cycle(store, baseline, { contain: true, state: false, types: { svc: 'Ledger' } });
   assert(store.get(shapeLabel).text === 'Ledger', 'the model never got the human edit to the server at all');
+  write(store, [{ id: 'svc', x: 40 }]);
   for (let i = 0; i < 3; i++) cycle(store, baseline, { contain: true, state: false });
   assert(
     store.get(shapeLabel).text === 'AuthService',
     'without the label statement the model failed to reproduce the revert, so it is toothless'
+  );
+}
+
+// --- and an agent write does not revert it when the statement is made --------
+//
+// The same nudge, with the statement in place. Moving a box is the commonest
+// thing an agent does to one, and it must not carry a rename with it.
+
+{
+  const store = boardOf(drawn());
+  const baseline = new Map();
+  for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+  const shapeLabel = boundTextsByContainer([...store.values()]).get('svc')[0];
+
+  cycle(store, baseline, { contain: true, types: { svc: 'Ledger' } });
+  write(store, [{ id: 'svc', x: 40 }]);
+  for (let i = 0; i < 3; i++) cycle(store, baseline, { contain: true });
+  assert(
+    store.get(shapeLabel).text === 'Ledger',
+    `moving the box reverted its label to ${JSON.stringify(store.get(shapeLabel).text)}`
   );
 }
 
@@ -485,7 +660,7 @@ const CYCLES = 25;
 
   cycle(store, baseline, { contain: true, types: { svc: 'Ledger' } });
   for (let i = 0; i < 3; i++) cycle(store, baseline, { contain: true });
-  store.set('svc', { ...store.get('svc'), label: { text: 'PostingEngine' } });
+  write(store, [{ id: 'svc', label: { text: 'PostingEngine' } }]);
   for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
 
   assert(store.get(shapeLabel).text === 'PostingEngine', `an agent rename after a human edit reads ${JSON.stringify(store.get(shapeLabel).text)}`);
@@ -541,7 +716,7 @@ const CYCLES = 25;
 
   // And the box can be labelled again afterwards: striking out the seed must
   // not leave the container unable to hold one.
-  store.set('svc', { ...store.get('svc'), label: { text: 'Ledger' } });
+  write(store, [{ id: 'svc', label: { text: 'Ledger' } }]);
   for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
   const relabelled = boundTextsByContainer([...store.values()]).get('svc');
   assert(relabelled?.length === 1, `relabelling a cleared shape gave it ${relabelled?.length ?? 0} bound texts`);
@@ -561,6 +736,10 @@ const CYCLES = 25;
 
   cycle(store, baseline, { contain: true, clear: false, empties: { svc: true } });
   assert(!store.has(shapeLabel), 'the model never got the deletion to the server at all');
+  // As with the rename above, the seed is inert until an agent writes to the
+  // container carrying it. Then the write boundary reads it and puts the words
+  // a human deleted back on the board.
+  write(store, [{ id: 'svc', x: 40 }]);
   for (let i = 0; i < 3; i++) cycle(store, baseline, { contain: true, clear: false });
 
   const revived = boundTextsByContainer([...store.values()]).get('svc');
@@ -651,7 +830,7 @@ const CYCLES = 25;
   const baseline = new Map();
   for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
 
-  store.set('cache', { id: 'cache', type: 'rectangle', x: 0, y: 200, width: 200, height: 80, label: { text: 'Cache' } });
+  write(store, [{ id: 'cache', type: 'rectangle', x: 0, y: 200, width: 200, height: 80, label: { text: 'Cache' } }]);
   for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
 
   const labels = boundTextsByContainer([...store.values()]);
@@ -667,44 +846,45 @@ const CYCLES = 25;
 // must still be drawn, which means the reference has to be restored.
 
 {
-  const oneWay = [
-    { id: 'svc', type: 'rectangle', x: 0, y: 0, width: 200, height: 80, label: { text: 'AuthService' } },
-    { id: 'svc-label', type: 'text', containerId: 'svc', text: 'AuthService' }
-  ];
-  const { elements: planned } = planLabelExpansion(oneWay);
-  const container = planned.find((element) => element.id === 'svc');
+  const board = new Map([
+    ['svc', { id: 'svc', type: 'rectangle', x: 0, y: 0, width: 200, height: 80, label: { text: 'AuthService' } }],
+    ['svclabel', { id: 'svclabel', type: 'text', containerId: 'svc', text: 'AuthService' }]
+  ]);
+  const written = expandForBoard([board.get('svc')], board);
+  const container = written.find((element) => element.id === 'svc');
   assert(
-    (container.boundElements ?? []).some((ref) => ref.type === 'text' && ref.id === 'svc-label'),
+    (container.boundElements ?? []).some((ref) => ref.type === 'text' && ref.id === 'svclabel'),
     'a one-directional binding was not repaired, so the label would not be drawn'
   );
-  assert(container.label === undefined, 'a label that already exists was left to be expanded again');
-  assert(planned.length === 2, 'the existing text element was disturbed by a label that had not changed');
+  assert(written.length === 1, `the container grew a second label: ${written.length} elements`);
 }
 
 // --- a text element is content, not a label --------------------------------
 
 {
-  const standalone = [{ id: 'note', type: 'text', x: 0, y: 0, text: 'a note to self' }];
-  const { elements: planned } = planLabelExpansion(standalone);
-  assert(planned[0].text === 'a note to self', 'a standalone text element lost its content');
+  const written = expandForBoard(
+    [{ id: 'note', type: 'text', x: 0, y: 0, text: 'a note to self' }], new Map());
+  assert(written.length === 1 && written[0].text === 'a note to self',
+    'a standalone text element lost its content or grew a label');
 }
 
-// --- a label with no bound text is still a label ----------------------------
+// --- a label with no bound text becomes one ---------------------------------
 
 {
-  const seeded = [{ id: 'svc', type: 'rectangle', label: { text: 'AuthService' } }];
-  assert(
-    planLabelExpansion(seeded).elements[0].label?.text === 'AuthService',
-    'an unexpanded label was dropped'
-  );
+  const seeded = expandForBoard(
+    [{ id: 'svc', type: 'rectangle', x: 0, y: 0, width: 200, height: 80, label: { text: 'AuthService' } }],
+    new Map());
+  assert(seeded.length === 2, `an unexpanded label produced ${seeded.length} elements, not two`);
+  assert(seeded.find((el) => el.type === 'text')?.text === 'AuthService', 'an unexpanded label was dropped');
 
   // A reference to a text element that is not on the board is not a label
   // either — an element left holding one must still be able to grow a real one.
-  const dangling = [{ id: 'svc', type: 'rectangle', label: { text: 'AuthService' }, boundElements: [{ id: 'gone', type: 'text' }] }];
-  assert(
-    planLabelExpansion(dangling).elements[0].label?.text === 'AuthService',
-    'a dangling reference suppressed a real label'
-  );
+  const dangling = expandForBoard([{
+    id: 'svc', type: 'rectangle', x: 0, y: 0, width: 200, height: 80,
+    label: { text: 'AuthService' }, boundElements: [{ id: 'gone', type: 'text' }]
+  }], new Map());
+  assert(dangling.find((el) => el.type === 'text')?.text === 'AuthService',
+    'a dangling reference suppressed a real label');
 }
 
 // --- repair puts a polluted board back ---------------------------------------
@@ -1001,21 +1181,23 @@ const sceneBox = (elements) => ({
       ]
     });
 
-    // A pane reports what Excalidraw made of those labels: one bound text each,
-    // placed where the renderer draws it. Everything after this is the server
-    // moving containers on its own, with no browser to correct it.
-    const upserts = [];
-    for (const element of await elementsOn()) {
-      if (!element.label?.text) continue;
-      const width = element.label.text.length * 10;
-      const anchor = labelAnchorOf(element);
-      upserts.push({ ...element, boundElements: [...(element.boundElements ?? []), { id: `${element.id}-l`, type: 'text' }] });
-      upserts.push({
-        id: `${element.id}-l`, type: 'text', containerId: element.id, text: element.label.text,
-        x: anchor.x - width / 2, y: anchor.y - 12.5, width, height: 25
-      });
+    // The bound texts are already there, and no pane made them.
+    //
+    // This is what stage 5 changed. A label used to reach a text element only
+    // when a browser rendered it: the write left `label: {text}` on the shape,
+    // Excalidraw's converter expanded it on delivery, and the pane reported
+    // back what it had made. So a headless board had labels nothing could read
+    // and this check had to manufacture that report itself. Now the one
+    // converter runs at the write boundary and four labelled elements are
+    // eight elements on the board (ADR 0015).
+    const seeded = await elementsOn();
+    assert(seeded.length === 8,
+      `four labelled elements became ${seeded.length} on the board, not eight`);
+    const seededLabels = boundTextsByContainer(seeded);
+    for (const id of ['svc', 'gw', 'pg', 'wire']) {
+      assert(seededLabels.get(id)?.length === 1,
+        `${id} came back with ${seededLabels.get(id)?.length ?? 0} bound texts, not one`);
     }
-    await api('POST', `/api/elements/changes${board}`, { upserts, deletes: [], clientId: 'pane' });
     assert((await driftOn('scratch')).length === 0, 'the seeded board was drifted before anything moved');
 
     await api('PUT', `/api/elements/svc${board}`, { x: 100, y: 900 });
