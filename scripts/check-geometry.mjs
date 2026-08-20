@@ -33,6 +33,8 @@ const { extentOf, measureLinear, remeasureLinear, isPathElement } = await import
 const { boxOf, boundingBoxOf, clusterBoxes, regionName } = await import(dist('core/layout.js'));
 const { describeScene, buildSelectionReport } = await import(dist('core/describe.js'));
 const { labelAnchorOf } = await import(dist('core/labels.js'));
+const { compareBoards } = await import(dist('core/compare.js'));
+const { planPromotion } = await import(dist('core/promote.js'));
 
 let failures = 0;
 let checks = 0;
@@ -128,6 +130,87 @@ for (const [name, arrow] of Object.entries(arrows)) {
   const settled = { ...stale, width: 300.2, height: 199.9 };
   assert(remeasureLinear(settled) === undefined,
     'a fifth of a pixel is not a resize, and saying it is wakes the change feed for nothing');
+}
+
+// ─── The diff and the naming ─────────────────────────────────
+//
+// `compare` and `promote` are pure over an array of elements, so they can be
+// asked directly. Both used to read a box off `x, y, width, height`, and both
+// decide something a human hears: what a node's geometry is, where a plain
+// element sits, and which shape the node is named after.
+
+// A connector never joins a node group, so the element that carries a path
+// into one is a freedraw: a shape somebody drew by hand and then promoted.
+// Both strokes below run up and to the left, so each stores an origin that is
+// the far corner of the board it covers.
+{
+  const node = (id, name) => ({ archboard: { node: id, kind: 'service', name } });
+  const elements = [
+    // `hub` is a small box with a stroke reaching out of it. The stroke's
+    // origin is 1100px away from the box; its far end lands on it.
+    { id: 'hub-box', type: 'rectangle', x: 300, y: 250, width: 200, height: 100,
+      label: { text: 'Hub' }, customData: node('hub', 'Hub') },
+    { id: 'hub-stroke', type: 'freedraw', x: 1600, y: 1200, width: 1300, height: 950,
+      points: [[0, 0], [-1300, -950]], customData: node('hub', 'Hub') },
+    // `stale` carries a size its path does not agree with, which is what any
+    // board written before the server started re-measuring holds. Measured, it
+    // is a scratch of 40x30 next to a 300x120 box; taken at its word it is the
+    // biggest thing on the board and speaks for the node.
+    { id: 'stale-box', type: 'rectangle', x: 3000, y: 3000, width: 300, height: 120,
+      label: { text: 'Payments' }, customData: node('stale', 'Payments') },
+    { id: 'stale-stroke', type: 'freedraw', x: 3400, y: 3300, width: 5000, height: 5000,
+      points: [[0, 0], [-40, -30]], customData: node('stale', 'Payments') },
+    { id: 'far-box', type: 'rectangle', x: 5000, y: 5000, width: 200, height: 100,
+      label: { text: 'Far' }, customData: node('far', 'Far') },
+    // Not promoted and not a connector, so it is a plain element, and it
+    // carries a path — plain elements are placed by the same rule or not at all.
+    { id: 'scribble', type: 'freedraw', x: 5000, y: 5000, width: 4500, height: 4400,
+      points: [[0, 0], [-4500, -4400]], label: { text: 'note' } }
+  ];
+  const identity = { board: 'geometry', variant: 'current' };
+  const side = { key: 'geometry', identity, elements, source: 'memory' };
+  const result = compareBoards(side, { ...side, key: 'geometry@copy' });
+  const factsFor = (id) => result.nodes.unchanged.find((n) => n.node === id)?.facts;
+
+  const hub = factsFor('hub');
+  assert(hub !== undefined, 'compare should have found the hub node');
+  // (300,250) to (1600,1200): the box plus the stroke that reaches it. Read
+  // the old way the node is 2600x1900 and most of it is board nobody drew on.
+  assert(hub.cosmetic.width === 1300 && hub.cosmetic.height === 950,
+    `a node holding a leftward stroke is 1300x950, not ${hub.cosmetic.width}x${hub.cosmetic.height}`);
+  // Two elements that touch are one place. Measured by origin the stroke sits
+  // 1100px from its own box, and compare warns a human about a node that is
+  // not scattered at all.
+  const scattered = result.warnings.filter((w) => w.includes('separate places'));
+  assert(scattered.length === 0,
+    `nothing here is scattered, but compare said so: ${scattered.join(' / ')}`);
+
+  // The node's primary is what the node is reported as being. A stale size on
+  // a scratch is enough to make the scratch speak for the box.
+  const stale = factsFor('stale');
+  assert(stale?.cosmetic.type === 'rectangle',
+    `the node should be reported as the box it is, not as a ${stale?.cosmetic.type}`);
+
+  // Whereabouts. The stroke is drawn back across the middle of the board;
+  // its origin is off the bottom-right corner of everything.
+  const scribble = result.plain.to.labelled.find((p) => p.id === 'scribble');
+  assert(scribble !== undefined, 'compare should have reported the labelled freedraw');
+  assert(scribble.region === 'centre',
+    `a stroke drawn back across the board is in the centre, not the ${scribble.region} where its origin is`);
+}
+
+// Naming a node: the biggest labelled shape is the one a human would read, so
+// "biggest" has to be measured. A stale size is exactly what an arrow carries
+// on any board written before the server started re-measuring, and it is
+// enough to hand the node's name to the connector.
+{
+  const box = { id: 'box', type: 'rectangle', x: 0, y: 0, width: 300, height: 120, label: { text: 'Payments' } };
+  const arrow = { id: 'arrow', type: 'arrow', x: 400, y: 300, width: 5000, height: 5000,
+    points: [[0, 0], [-40, -30]], label: { text: 'calls' } };
+  const board = [box, arrow];
+  const plan = planPromotion({ targets: board, board, kind: 'service' });
+  assert(plan.nodes.length === 1 && plan.nodes[0].name === 'Payments',
+    `promoting a box and an arrow names the node after the box, not "${plan.nodes[0]?.name}"`);
 }
 
 // ─── The board ───────────────────────────────────────────────
