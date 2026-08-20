@@ -1,7 +1,7 @@
 // The canvas, reloadable, for developing archboard itself.
 //
 //     bun run dev:canvas        # bun --hot src/dev-canvas.ts
-//     ./bin/canvas reload       # and this is what reloads it
+//     bun run reload       # and this is what reloads it
 //
 // WHY THERE IS AN ENTRY AT ALL, rather than `bun --hot src/server.ts`:
 //
@@ -85,6 +85,6 @@ if (generation !== gate.generation) {
     }
   } else {
     console.log('canvas running under dev-canvas. Saving a file changes nothing; ' +
-      'reload with `./bin/canvas reload`.');
+      'reload with `bun run reload`.');
   }
 }

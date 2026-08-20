@@ -34,7 +34,8 @@
     "test:repos": "bun scripts/check-repos.mjs",
     "test:parity": "bun scripts/check-surface-parity.mjs",
     "test:module-scope": "bun scripts/check-module-scope.mjs && bun scripts/check-module-scope.mjs --self-test",
-    "test:hot": "bun scripts/check-hot-reload.mjs"
+    "test:hot": "bun scripts/check-hot-reload.mjs",
+    "reload": "bun scripts/reload.mjs"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.0",

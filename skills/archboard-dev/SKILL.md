@@ -29,7 +29,7 @@ working on the server itself, reload instead of restarting:
 
 ```bash
 bun run dev:canvas     # the canvas, reloadable, keeping the boards
-./bin/canvas reload    # and this is what reloads it
+bun run reload    # and this is what reloads it
 ```
 
 A reload re-evaluates modules inside the running process, so the port, the open
@@ -39,7 +39,7 @@ tabs, the boards, the panes and the change feed's cursor all survive. It is not
 **Saving a file does not reload anything.** `bun --hot` re-evaluates the whole
 module graph on any change, so the trigger is narrowed to a command: the entry
 bun watches (`src/dev-canvas.ts`) re-imports the canvas only when
-`./bin/canvas reload` moves a reload token. A canvas from `canvas start` cannot
+`bun run reload` moves a reload token. A canvas from `canvas start` cannot
 reload at all and says so.
 
 Anything long-lived you add to the server has to go through `kept()` in
