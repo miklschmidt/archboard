@@ -27,10 +27,9 @@ const LOCAL_VAULT_DIR = path.join('.archboard', 'vault');
 // worth writing down, because only then is it something an agent cannot guess.
 const DEFAULT_CANVAS_URL = 'http://127.0.0.1:3000';
 
-// The published package layout is <root>/{dist,skills,...}; this module
-// compiles to dist/cli/commands/, so the package root is three levels up.
-// Resolving relative to the module path keeps this working from the npx
-// cache and global installs alike.
+// The checkout layout is <root>/{src,skills,bin,...}; this module lives at
+// src/cli/commands/, so the root is three levels up. Resolving relative to the
+// module path keeps this working from any cwd.
 function packageRoot(): string {
   return fileURLToPath(new URL('../../..', import.meta.url));
 }
@@ -88,7 +87,7 @@ function realpathOrNull(candidate: string): string | null {
 export function resolveInvocation(): { command: string; onPath: boolean } {
   const root = packageRoot();
   const wrapper = path.join(root, 'bin', 'canvas');
-  const entry = path.join(root, 'dist', 'bin.js');
+  const entry = path.join(root, 'src', 'bin.ts');
   const ours = new Set(
     [wrapper, entry].map(realpathOrNull).filter((value): value is string => value !== null)
   );
@@ -100,7 +99,7 @@ export function resolveInvocation(): { command: string; onPath: boolean } {
   }
 
   if (fs.existsSync(wrapper)) return { command: wrapper, onPath: false };
-  return { command: `node ${entry}`, onPath: false };
+  return { command: `bun ${entry}`, onPath: false };
 }
 
 /** The git repository containing `from`, or `from` itself when there is none. */
@@ -182,6 +181,9 @@ function renderBlock(options: {
     '```bash',
     `${cli} status`,
     '```',
+    '',
+    'archboard runs its TypeScript directly, so bun has to be on PATH for any of',
+    'this to work.',
     '',
     `The canvas server starts on the first command and serves ${canvasUrl ?? 'http://127.0.0.1:3000'}.`,
     'Open that in a browser to watch, or to let a human move things. Drawing,',

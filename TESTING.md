@@ -3,20 +3,23 @@
 How to get from a fresh checkout to Codex driving a board by voice. Written to
 be followed, not skimmed.
 
-## 1. Build
+## 1. Install
 
 ```bash
 cd /home/msc/Projects/whiteboard
 bun install                 # retry if it fails extracting a tarball
-bunx tsc && bunx vite build
+bunx vite build             # the frontend, the only thing that is built
 ```
+
+bun runs the server and the CLI straight from `src/`, so there is no compile
+step for them (ADR 0014). bun has to be on PATH for anything here to work.
 
 Restore skills if this is a fresh clone — `.agents/skills/` and
 `.claude/skills/` are derived and untracked:
 
 ```bash
 skills experimental_install
-node scripts/sync-skills.mjs
+bun scripts/sync-skills.mjs
 ```
 
 ## 2. Pick a vault
@@ -40,11 +43,16 @@ Archboard runs as an MCP stdio server when invoked with no arguments. In
 
 ```toml
 [mcp_servers.archboard]
-command = "node"
-args = ["/home/msc/Projects/whiteboard/dist/bin.js"]
+command = "bun"
+args = ["/home/msc/Projects/whiteboard/src/bin.ts"]
 env = { ARCHBOARD_VAULT = "/path/to/vault" }
 startup_timeout_sec = 20
 ```
+
+The client spawns this, so `bun` has to resolve on the PATH the client inherits.
+A launcher started from a desktop session often has a shorter PATH than your
+shell does; if the server never comes up, put the absolute path from
+`which bun` in `command`.
 
 Codex supports **stdio and streamable-http only** — no SSE, no websocket — and
 negotiates MCP `2025-06-18` by default.

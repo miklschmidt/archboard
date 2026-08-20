@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 // Where an arrow is, according to everything that reads the board.
 //
@@ -27,15 +27,15 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const dist = (p) => join(__dirname, '..', 'dist', p);
+const src = (p) => join(__dirname, '..', 'src', p);
 
-const { extentOf, measureLinear, remeasureLinear, isPathElement } = await import(dist('core/geometry.js'));
-const { boxOf, boundingBoxOf, clusterBoxes, regionName } = await import(dist('core/layout.js'));
-const { describeScene, buildSelectionReport } = await import(dist('core/describe.js'));
-const { labelAnchorOf } = await import(dist('core/labels.js'));
-const { compareBoards } = await import(dist('core/compare.js'));
-const { planPromotion } = await import(dist('core/promote.js'));
-const { expandElementsForExport } = await import(dist('core/expand-elements.js'));
+const { extentOf, measureLinear, remeasureLinear, isPathElement } = await import(src('core/geometry.ts'));
+const { boxOf, boundingBoxOf, clusterBoxes, regionName } = await import(src('core/layout.ts'));
+const { describeScene, buildSelectionReport } = await import(src('core/describe.ts'));
+const { labelAnchorOf } = await import(src('core/labels.ts'));
+const { compareBoards } = await import(src('core/compare.ts'));
+const { planPromotion } = await import(src('core/promote.ts'));
+const { expandElementsForExport } = await import(src('core/expand-elements.ts'));
 
 let failures = 0;
 let checks = 0;
@@ -261,7 +261,7 @@ for (const [name, arrow] of Object.entries(arrows)) {
   const PORT = 37000 + Math.floor(Math.random() * 2000);
   const base = `http://127.0.0.1:${PORT}`;
   const vault = fs.mkdtempSync(join(os.tmpdir(), 'archboard-geometry-'));
-  const server = spawn(process.execPath, [dist('server.js')], {
+  const server = spawn(process.execPath, [src('server.ts')], {
     env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', ARCHBOARD_VAULT: vault, LOG_LEVEL: 'error' },
     stdio: ['ignore', 'ignore', 'ignore']
   });

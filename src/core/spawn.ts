@@ -41,7 +41,7 @@ function isLoopbackUrl(): boolean {
 function unreachableError(reason: string): Error {
   const error = new Error(
     `Canvas server is not reachable at ${EXPRESS_SERVER_URL} (${reason}). ` +
-    `Start it with \`archboard start\` (\`./bin/canvas start\` in the repo) or \`node dist/server.js\`.`
+    `Start it with \`archboard start\` (\`./bin/canvas start\` in the repo) or \`bun src/server.ts\`.`
   );
   (error as any).code = 'CANVAS_UNREACHABLE';
   return error;
@@ -104,9 +104,11 @@ export async function ensureCanvasRunning(options: { timeoutMs?: number; force?:
     throw unreachableError('refusing to auto-start a non-loopback canvas URL');
   }
 
-  // dist/core/spawn.js -> dist/server.js; spawn args must be path strings
-  const serverJs = fileURLToPath(new URL('../server.js', import.meta.url));
-  const child = spawn(process.execPath, [serverJs], {
+  // src/core/spawn.ts -> src/server.ts; spawn args must be path strings.
+  // process.execPath is the bun that is running us, which is what can read a
+  // .ts entry point at all.
+  const serverEntry = fileURLToPath(new URL('../server.ts', import.meta.url));
+  const child = spawn(process.execPath, [serverEntry], {
     detached: true,
     stdio: 'ignore',
     env: { ...process.env, PORT: String(canvasPort()), HOST: spawnBindHost() }

@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 // Undo a board that bred labels.
 //
 // Before TASK-024 was fixed, every trip a labelled element made through the
@@ -45,8 +45,8 @@
 //   ./bin/canvas board save --board <name>
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { boundTextDrift, planLabelRepair, recentreBoundTexts } from '../dist/core/labels.js';
-import { remeasureLinear } from '../dist/core/geometry.js';
+import { boundTextDrift, planLabelRepair, recentreBoundTexts } from '../src/core/labels.ts';
+import { remeasureLinear } from '../src/core/geometry.ts';
 
 const args = process.argv.slice(2);
 const flag = (name) => {

@@ -99,7 +99,8 @@ const wss = new WebSocketServer({ server });
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Serve static files from the build directory
+// Serve static files from the frontend build. The server itself runs from
+// src/ under bun, so dist/ now holds nothing but what vite put there.
 const staticDir = path.join(__dirname, '../dist');
 app.use(express.static(staticDir));
 // Also serve frontend assets
@@ -2928,7 +2929,7 @@ app.get('/', (req: Request, res: Response) => {
   res.sendFile(htmlFile, (err) => {
     if (err) {
       logger.error('Error serving frontend:', err);
-      res.status(404).send('Frontend not found. Please run "npm run build" first.');
+      res.status(404).send('Frontend not found. Please run "bun run build" first.');
     }
   });
 });
@@ -3071,7 +3072,7 @@ async function startServer(): Promise<void> {
 }
 
 // Start the canvas server only when this file is the process entry point
-// (`node dist/server.js`, `npm run canvas`, or spawned by the CLI/MCP
+// (`bun src/server.ts`, `bun run canvas`, or spawned by the CLI/MCP
 // auto-start). Importing this module must never start the server.
 if (isMainModule(import.meta.url)) {
   void startServer();

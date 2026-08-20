@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 //
 // A proposal is a branch of the board it proposes against (TASK-043).
 //
@@ -43,7 +43,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const dist = p => path.join(repoRoot, 'dist', p);
+const src = p => path.join(repoRoot, 'src', p);
 const SELF = 'scripts/check-branch-compare.mjs';
 
 let failures = 0;
@@ -61,10 +61,10 @@ const PORT = Number(process.env.PORT || 35000 + Math.floor(Math.random() * 2000)
 const base = `http://127.0.0.1:${PORT}`;
 process.env.EXPRESS_SERVER_URL = base;
 
-const { planPromotion } = await import(dist('core/promote.js'));
-const { describeScene } = await import(dist('core/describe.js'));
-const { insertStencil } = await import(dist('core/library-catalogue.js'));
-const { setRequestedBoard } = await import(dist('core/canvas-client.js'));
+const { planPromotion } = await import(src('core/promote.ts'));
+const { describeScene } = await import(src('core/describe.ts'));
+const { insertStencil } = await import(src('core/library-catalogue.ts'));
+const { setRequestedBoard } = await import(src('core/canvas-client.ts'));
 
 // ---------------------------------------------------------------------------
 // What a branched proposal looks like, in compare's own vocabulary
@@ -97,7 +97,7 @@ function notABranch(diff) {
 
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), 'archboard-branch-'));
 
-const server = spawn(process.execPath, [dist('server.js')], {
+const server = spawn(process.execPath, [src('server.ts')], {
   env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', ARCHBOARD_VAULT: vault, LOG_LEVEL: 'error' },
   stdio: ['ignore', 'ignore', 'pipe']
 });

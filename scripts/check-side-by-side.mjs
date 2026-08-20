@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 //
 // A proposal goes beside the current architecture, not on top of it (TASK-049).
 //
@@ -49,7 +49,7 @@ import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const dist = p => path.join(repoRoot, 'dist', p);
+const src = p => path.join(repoRoot, 'src', p);
 const SELF = 'scripts/check-side-by-side.mjs';
 
 let failures = 0;
@@ -68,7 +68,7 @@ const base = `http://127.0.0.1:${PORT}`;
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), 'archboard-sidebyside-'));
 const shots = fs.mkdtempSync(path.join(os.tmpdir(), 'archboard-shots-'));
 
-const server = spawn(process.execPath, [dist('server.js')], {
+const server = spawn(process.execPath, [src('server.ts')], {
   env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', ARCHBOARD_VAULT: vault, LOG_LEVEL: 'error' },
   stdio: ['ignore', 'ignore', 'pipe']
 });
@@ -92,10 +92,10 @@ const api = async (method, url, body) => {
  * The CLI is the surface the eval grades, and it is not a thin wrapper here:
  * `pane open --board <key>` is two server calls stitched together in
  * canvas-client, and stitching them the other way round is exactly the bug.
- * So this drives dist/bin.js rather than the routes underneath it.
+ * So this drives src/bin.ts rather than the routes underneath it.
  */
 const cli = (args, stdin) => new Promise(resolve => {
-  const child = spawn(process.execPath, [dist('bin.js'), ...args], {
+  const child = spawn(process.execPath, [src('bin.ts'), ...args], {
     env: {
       ...process.env,
       EXPRESS_SERVER_URL: base,

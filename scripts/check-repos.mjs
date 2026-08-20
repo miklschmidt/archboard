@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 //
 // A binding names a repository, not a directory (TASK-031, ADR 0011).
 //
@@ -22,7 +22,7 @@ import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const dist = p => path.join(repoRoot, 'dist', p);
+const src = p => path.join(repoRoot, 'src', p);
 
 let failures = 0;
 const check = (label, cond, extra = '') => {
@@ -60,9 +60,9 @@ const betaRoot = makeRepo('beta', 'https://github.com/acme/beta.git');
 const ALPHA = 'github.com/acme/alpha';
 const BETA = 'github.com/acme/beta';
 
-const { resolveBinding, PromotionError } = await import(dist('core/promote.js'));
+const { resolveBinding, PromotionError } = await import(src('core/promote.ts'));
 const { declareRepo, checkoutFor, listRepos, forgetRepo, registryPath } =
-  await import(dist('core/repo-registry.js'));
+  await import(src('core/repo-registry.ts'));
 
 // ---------------------------------------------------------------------------
 // The registry
@@ -198,7 +198,7 @@ const base = `http://127.0.0.1:${PORT}`;
 const vault = path.join(scratch, 'vault');
 fs.mkdirSync(vault);
 
-const server = spawn(process.execPath, [dist('server.js')], {
+const server = spawn(process.execPath, [src('server.ts')], {
   env: {
     ...process.env,
     PORT: String(PORT),
@@ -229,7 +229,7 @@ const cli = (args, cwd = nowhere) => {
   // Both streams, always: the CLI puts results on stdout and everything it
   // wants a human to notice on stderr, and several checks here are about what
   // it says rather than what it returns.
-  const run = spawnSync(process.execPath, [dist('bin.js'), ...args], {
+  const run = spawnSync(process.execPath, [src('bin.ts'), ...args], {
     cwd,
     encoding: 'utf-8',
     env: {
@@ -292,7 +292,7 @@ try {
   // in. Nobody chose that directory and nobody can see it.
 
   const mcp = (tool, args, cwd) => new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [dist('index.js')], {
+    const child = spawn(process.execPath, [src('index.ts')], {
       cwd,
       env: {
         ...process.env,
@@ -406,7 +406,7 @@ try {
 
   // The vault half on its own, with nothing open, which is what another
   // machine's canvas would see.
-  const { boardsForRepo } = await import(dist('core/repo-boards.js'));
+  const { boardsForRepo } = await import(src('core/repo-boards.ts'));
   const fromVault = boardsForRepo(ALPHA, [], vault);
   check('the same board is found by reading the vault alone',
     fromVault.boards.some(b => b.key === 'systems' && b.source === 'vault'),
