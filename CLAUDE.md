@@ -35,8 +35,8 @@ bun install
 bun run build       # -> dist/ and dist/frontend/
 bun run type-check
 bun run test        # stdio wire, loopback bind, obsidian, changes, geometry,
-                    # labels, library, boards + panes, skill install,
-                    # repo bindings, CLI/MCP surface parity
+                    # labels, library, boards + panes, branch vs redraw,
+                    # skill install, repo bindings, CLI/MCP surface parity
 
 ./bin/canvas start  # canvas server on 127.0.0.1:3000
 ./bin/canvas status
