@@ -10,7 +10,6 @@ import logger from './utils/logger.js';
 import {
   files,
   snapshots,
-  generateId,
   EXCALIDRAW_ELEMENT_TYPES,
   ServerElement,
   ExcalidrawElementType,
@@ -26,6 +25,7 @@ import {
   selectionState,
   normalizeFontFamily
 } from './types.js';
+import { IdsInUse, mintId } from './core/ids.js';
 import { buildSelectionReport } from './core/describe.js';
 import {
   buildPanesReport,
@@ -545,7 +545,7 @@ app.post('/api/elements', (req: Request, res: Response) => {
     const { key: boardKeyForRequest, board } = boardFromRequest(req, 'Creating an element');
     const elements = board.elements;
     // Prioritize passed ID (for MCP sync), otherwise generate new ID
-    const element = buildCreatedElement(req.body);
+    const element = buildCreatedElement(req.body, elements);
     const id = element.id;
     logger.info('Creating element via API', { type: element.type, board: boardKeyForRequest });
 
@@ -1051,11 +1051,11 @@ function mergeElementUpdate(existing: ServerElement, body: Record<string, any>):
 }
 
 /** Build one new element from what a caller stated. Not yet on the board. */
-function buildCreatedElement(raw: unknown): ServerElement {
+function buildCreatedElement(raw: unknown, inUse: IdsInUse): ServerElement {
   const params = CreateElementSchema.parse(raw);
   const { board: _boardField, ...elementParams } = params as typeof params & { board?: string };
   return {
-    id: params.id || generateId(),
+    id: params.id || mintId(inUse),
     ...elementParams,
     fontFamily: normalizeFontFamily(params.fontFamily),
     createdAt: new Date().toISOString(),
@@ -1108,8 +1108,18 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
       });
     }
 
+    // The batch reaches the board's map only after bindings are resolved, so
+    // an id minted here has to avoid what the batch has already named as well
+    // as what the board holds.
+    const mintedInBatch = new Set<string>();
+    const taken = { has: (id: string) => elements.has(id) || mintedInBatch.has(id) };
+
     // Prioritize passed ID (for MCP sync), otherwise generate new ID
-    const createdElements: ServerElement[] = elementsToCreate.map(buildCreatedElement);
+    const createdElements: ServerElement[] = elementsToCreate.map(elementData => {
+      const element = buildCreatedElement(elementData, taken);
+      mintedInBatch.add(element.id);
+      return element;
+    });
 
     // Resolve arrow bindings (computes positions, startBinding, endBinding, boundElements)
     resolveArrowBindings(createdElements, elements);
@@ -1285,7 +1295,7 @@ function applyReportedChanges(
       syncTimestamp: _syncTimestamp,
       ...incoming
     } = raw as Record<string, any>;
-    const id = typeof rawId === 'string' && rawId.length > 0 ? rawId : generateId();
+    const id = typeof rawId === 'string' && rawId.length > 0 ? rawId : mintId(elements);
     const existing = elements.get(id);
     const element = {
       ...(existing ?? {}),
@@ -1341,7 +1351,7 @@ function applyAgentChanges(
       if (merge.geometryChanged || merge.reboundArrow) moved.push(existing.id);
       updated.set(existing.id, merge.element);
     } else {
-      const element = buildCreatedElement(raw);
+      const element = buildCreatedElement(raw, elements);
       elements.set(element.id, element);
       created.push(element);
     }
@@ -1984,7 +1994,7 @@ app.post('/api/export/image', (req: Request, res: Response) => {
       return res.status(503).json(noBrowserBody('Taking a picture of the canvas'));
     }
 
-    const requestId = generateId();
+    const requestId = mintId(pendingExports);
 
     const exportPromise = new Promise<{ format: string; data: string }>((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -2181,7 +2191,7 @@ app.post('/api/viewport', (req: Request, res: Response) => {
       return res.status(503).json(noBrowserBody('Moving the camera'));
     }
 
-    const requestId = generateId();
+    const requestId = mintId(pendingViewports);
 
     const viewportPromise = new Promise<{ success: boolean; message: string }>((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -2534,15 +2544,21 @@ function paneResponse(pane: PaneRegistration | null): Record<string, unknown> {
 function ingestSceneElements(board: BoardState, sceneElements: any[]): number {
   board.elements.clear();
   const loaded: ServerElement[] = [];
+  // The board's own map is emptied above and filled below, so the names the
+  // scene brings with it are the only ones a mint here has to avoid.
+  const taken = new Set<string>(
+    sceneElements.filter((raw) => raw && typeof raw.id === 'string').map((raw) => raw.id as string)
+  );
   for (const raw of sceneElements) {
     if (!raw || typeof raw !== 'object') continue;
     const element: ServerElement = {
       ...raw,
-      id: raw.id || generateId(),
+      id: raw.id || mintId(taken),
       createdAt: raw.createdAt ?? new Date().toISOString(),
       updatedAt: raw.updatedAt ?? new Date().toISOString(),
       version: raw.version ?? 1
     };
+    taken.add(element.id);
     loaded.push(element);
   }
   loaded.forEach(el => board.elements.set(el.id, el));

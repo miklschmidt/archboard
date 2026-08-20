@@ -1,5 +1,6 @@
 import fs from 'fs';
-import { generateId, ServerElement } from '../types.js';
+import { ServerElement } from '../types.js';
+import { mintId } from './ids.js';
 import {
   getElements,
   getFiles,
@@ -103,7 +104,7 @@ export async function importScene(options: {
   // Batch create the imported elements
   const elementsToCreate = importElements.map(el => ({
     ...el,
-    id: el.id || generateId(),
+    id: el.id || mintId(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     version: 1

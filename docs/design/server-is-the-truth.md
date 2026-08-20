@@ -282,12 +282,19 @@ it, because the human's next keystroke still goes to an element that is gone.
 **So every id the server mints is one to eight characters from Obsidian's block
 alphabet, minted once, at the write boundary.** Then the note writer has nothing
 to rename and an echo can never rename an element out from under a cursor.
-`generateId` already produces eight-character ids. `stableId8`'s collision
-handling moves from the writing site to the minting site, which is where it
-belongs.
+`stableId8`'s collision handling moves from the writing site to the minting
+site, which is where it belongs.
 
 This is worth doing on its own, before stage 1, because it removes silent data
 loss from the code as it stands today.
+
+**Correction, from doing it (TASK-069).** This section claimed `generateId`
+already produced eight-character ids. It did not: it was
+`Date.now().toString(36) + Math.random().toString(36).substring(2)`, 18 or 19
+characters, so every id the server minted needed renaming on the way into a
+note. `expandElementsForExport` was a third renaming site the section missed,
+naming a bound text `${container}-label`. Everything else here stands, including
+the four measured renames, which `check-obsidian-md` now pins as golden values.
 
 ---
 

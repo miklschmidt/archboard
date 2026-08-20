@@ -14,7 +14,8 @@
 // once the note is the only copy of the board (ADR 0015), and twenty separate
 // acquisitions of the board's lock with nineteen gaps between them (ADR 0016).
 
-import { generateId, ServerElement } from '../types.js';
+import { ServerElement } from '../types.js';
+import { mintId } from './ids.js';
 import { applyElementChanges, batchCreateElementsOnCanvas, getElements } from './canvas-client.js';
 import { extentOf } from './geometry.js';
 
@@ -175,7 +176,7 @@ export async function setElementsLocked(
 export async function groupElements(
   elementIds: string[]
 ): Promise<{ groupId: string; elementIds: string[]; successCount: number }> {
-  const groupId = generateId();
+  const groupId = mintId();
   const elementsToGroup = await targets(elementIds);
 
   if (elementsToGroup.length === 0) {
@@ -221,11 +222,18 @@ export async function duplicateElements(
   offsetY = 20
 ): Promise<{ duplicates: ServerElement[]; canvasElements: ServerElement[] | null; offsetX: number; offsetY: number }> {
   const originals = await targets(elementIds);
+  // The originals, plus every copy made so far: a duplicate must not be handed
+  // the name of something already on the board or of an earlier copy. The set
+  // is threaded through the mapping rather than filled from it afterwards, so
+  // each copy reserves its name at the moment it is minted.
+  const taken = new Set<string>(elementIds);
   const duplicates: ServerElement[] = originals.map((original) => {
     const { createdAt, updatedAt, version, syncedAt, source, syncTimestamp, ...rest } = original as any;
+    const copyId = mintId(taken);
+    taken.add(copyId);
     return {
       ...rest,
-      id: generateId(),
+      id: copyId,
       x: original.x + offsetX,
       y: original.y + offsetY,
       createdAt: new Date().toISOString(),

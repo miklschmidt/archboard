@@ -1,5 +1,6 @@
 import path from 'path';
-import { generateId, ServerElement, normalizeFontFamily } from '../types.js';
+import { ServerElement, normalizeFontFamily } from '../types.js';
+import { mintId } from './ids.js';
 import { ALLOWED_EXPORT_DIR } from './config.js';
 import { DEFAULT_FILL_STYLE, DEFAULT_SHAPE_BACKGROUND, FILLABLE_TYPES } from './appearance.js';
 
@@ -68,7 +69,7 @@ function applyDefaultFill(element: ServerElement): void {
 // the MCP server and the CLI so the two front-ends produce identical elements.
 export function prepareElement(elementData: ElementInput): ServerElement {
   const { startElementId, endElementId, id: customId, ...elementProps } = elementData;
-  const id = customId || generateId();
+  const id = customId || mintId();
   const element: ServerElement = {
     id,
     ...elementProps,

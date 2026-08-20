@@ -13,16 +13,19 @@
 // every scene reference rewired — so files we write and files the plugin
 // re-saves stay block-reference-compatible.
 //
+// That rename is a last resort, not a step. Every id archboard mints is
+// already a block id (`ids.ts`), so on a board this server wrote there is
+// nothing here to rename; what is left for it are ids that came from
+// somewhere else — Excalidraw's own 21-character nanoids, an imported scene,
+// a hand-edited note. The rename is deterministic and the derivation has not
+// changed, so a note written by an older archboard keeps the ids it has.
+//
 // A save regenerates the scene and nothing else: see "note regions" below.
 // Everything a human wrote in the note — frontmatter, prose above the data
 // section, prose below it — is carried across verbatim.
 
 import { canonicalizeKeys } from './expand-elements.js';
-
-const ID_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-// Obsidian block ids are alphanumeric-and-dash only — an id containing "_"
-// would be written as an unresolvable block reference, so rename those too.
-const BLOCK_ID_RE = /^[A-Za-z0-9-]{1,8}$/;
+import { derivedId, isBlockId } from './ids.js';
 
 export function isObsidianExcalidrawMd(content: string): boolean {
   // Raw scene JSON always starts with { or [ — never treat it as markdown,
@@ -30,32 +33,6 @@ export function isObsidianExcalidrawMd(content: string): boolean {
   const head = content.trimStart();
   if (head.startsWith('{') || head.startsWith('[')) return false;
   return content.includes('# Excalidraw Data') || /^---[\s\S]*?excalidraw-plugin:/m.test(content);
-}
-
-// FNV-1a 32-bit hash — stable positive int from a string
-function fnv1a(str: string): number {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 0x01000193);
-  }
-  return h >>> 0;
-}
-
-// Deterministic 8-char block id derived from the original element id, so
-// re-exporting the same scene produces the same block ids and links from
-// other vault notes stay intact across exports.
-function stableId8(sourceId: string, used: Set<string>): string {
-  for (let attempt = 0; ; attempt++) {
-    const salted = attempt === 0 ? sourceId : `${sourceId}:${attempt}`;
-    let bits = (BigInt(fnv1a(salted)) << 32n) | BigInt(fnv1a(`${salted}#2`));
-    let id = '';
-    for (let i = 0; i < 8; i++) {
-      id += ID_ALPHABET[Number(bits % BigInt(ID_ALPHABET.length))];
-      bits /= BigInt(ID_ALPHABET.length);
-    }
-    if (!used.has(id)) return id;
-  }
 }
 
 function renameElementId(elements: any[], oldId: string, newId: string): void {
@@ -415,8 +392,10 @@ export function wrapSceneAsObsidianMd(
   const entries: string[] = [];
   for (const el of wrapped.elements) {
     if (el.type !== 'text' || el.isDeleted) continue;
-    if (!BLOCK_ID_RE.test(el.id)) {
-      const newId = stableId8(el.id, used);
+    // Nothing archboard minted lands here. An id that does came from
+    // elsewhere and cannot be written as a block reference as it stands.
+    if (!isBlockId(el.id)) {
+      const newId = derivedId(el.id, used);
       used.add(newId);
       renameElementId(wrapped.elements, el.id, newId);
     }
