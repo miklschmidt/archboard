@@ -67,6 +67,8 @@ export async function status(argv: string[]): Promise<void> {
     sync = await getSyncStatus();
   } catch { /* health is enough */ }
 
+  const stale = staleSource(health);
+
   printJson({
     running: true,
     url: EXPRESS_SERVER_URL,
@@ -74,6 +76,49 @@ export async function status(argv: string[]): Promise<void> {
     pid: health.pid ?? readPidFile(canvasPort()) ?? undefined,
     elements: health.elements_count,
     browserClients: health.websocket_clients,
+    ...(stale ? { stale } : {}),
     ...sync
   });
+
+  // On stderr as well as in the JSON, because this is the answer to a question
+  // nobody knew to ask. Somebody running `status` is usually already confused
+  // about why an edit had no effect.
+  if (stale) note(stale.says);
+}
+
+interface StaleSource {
+  startedAt: string;
+  changedFile: string;
+  changedAt: string;
+  says: string;
+}
+
+/**
+ * Is the canvas running code older than the source on disk?
+ *
+ * The comparison is the server's, because only the server knows which files it
+ * loaded and when it read them. This turns the answer into a sentence and picks
+ * the remedy: a canvas under `bun run dev:canvas` can re-read its source
+ * without losing what is on screen, and one started any other way cannot
+ * (ADR 0014), so it is never told to reload when reloading would 409 at it.
+ */
+function staleSource(health: { source?: { stale: boolean; newestFile: string | null; newestAt: string | null; evaluatedAt: string }; reloadable?: boolean }): StaleSource | null {
+  const source = health.source;
+  if (!source?.stale || !source.newestFile || !source.newestAt) return null;
+  const remedy = health.reloadable
+    ? 'Pick it up with `bun run reload`, which keeps every board and pane on screen.'
+    : 'Restart it to pick that up: `archboard stop && archboard start`. ' +
+      'That drops every unsaved board, so save first.';
+  // Clock time, not the ISO stamps the JSON carries: the sentence is read by
+  // somebody who is looking at their own terminal wondering why their edit did
+  // nothing, and "14:02:11" is the thing they can place.
+  const clock = (at: string): string => new Date(at).toLocaleTimeString();
+  return {
+    startedAt: source.evaluatedAt,
+    changedFile: source.newestFile,
+    changedAt: source.newestAt,
+    says:
+      `This canvas read its source at ${clock(source.evaluatedAt)} and ${source.newestFile} ` +
+      `changed at ${clock(source.newestAt)}, so it is answering from the older code. ${remedy}`
+  };
 }

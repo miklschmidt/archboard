@@ -42,7 +42,7 @@ bun run test        # type-check, CI coverage, module scope, then stdio wire,
                     # loopback bind, obsidian, changes, one write per intent,
                     # geometry, labels, library, boards + panes, branch vs
                     # redraw, proposal beside source, skill install, repo
-                    # bindings, CLI/MCP surface parity, hot reload
+                    # bindings, CLI/MCP surface parity, staleness, hot reload
 
 ./bin/canvas start  # canvas server on 127.0.0.1:3000
 ./bin/canvas status
@@ -59,6 +59,17 @@ on PATH.
 that is already running.** A process reads its source at start, so a change to
 anything the *server* executes needs a restart or a reload. The CLI, which is a
 fresh process every time, already has it.
+
+**Ask, rather than guess which of the three copies you are looking at**
+(TASK-056). `./bin/canvas status` compares when the canvas read its source
+against the files it actually loaded, and when it is behind it names the file,
+the two times and the remedy: `bun run reload` where a reload is armed,
+`archboard stop && archboard start` where it is not. It says nothing at all
+when the two agree. The tab is the third copy and goes stale on its own
+schedule, when somebody rebuilds `dist/frontend` under it; it now hears about
+that at its next interaction, in the reply to the pane report it already
+sends, instead of finding out ten seconds later through a command timing out
+on it.
 
 **The canvas can reload in place, and it keeps everything on screen. You ask
 for the reload; saving a file does not cause one.**

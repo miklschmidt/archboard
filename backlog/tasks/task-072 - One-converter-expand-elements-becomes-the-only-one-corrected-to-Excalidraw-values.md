@@ -3,9 +3,11 @@ id: TASK-072
 title: >-
   One converter: expand-elements becomes the only one, corrected to Excalidraw
   values
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-20 20:14'
+updated_date: '2026-08-20 21:46'
 labels: []
 dependencies:
   - TASK-070
