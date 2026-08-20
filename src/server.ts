@@ -48,6 +48,7 @@ import {
   boards,
   getOrCreateBoard,
   recordBaseline,
+  replaceBoardElements,
   resolveBoard,
   openBoardKeys,
   SCRATCH_KEY
@@ -55,10 +56,12 @@ import {
 import {
   BoardIdentity,
   boardKey,
+  classifyBoardSave,
   describeWriteConflict,
   hashBoardBytes,
   listBoards,
   makeIdentity,
+  panesFollowSave,
   parseBoardKey,
   readBoardFile,
   renderBoardNote,
@@ -2280,18 +2283,20 @@ function primaryPaneBoard(): string {
   return (pane && paneBoards.get(pane.clientId)) ?? pane?.board ?? SCRATCH_KEY;
 }
 
-/** Where a board landed, for the caller who did not say. */
-function paneResponse(pane: PaneRegistration | null): Record<string, unknown> {
-  if (!pane) return { pane: null };
+/** One pane, named the way a human would point at it: "the left pane". */
+function paneRef(pane: PaneRegistration): Record<string, unknown> {
   const entry = panesInOrder(Array.from(panes.values())).find(p => p.pane.clientId === pane.clientId);
   return {
-    pane: {
-      paneId: pane.paneId,
-      clientId: pane.clientId,
-      place: entry?.place ?? 'the only pane',
-      position: entry?.position ?? 1
-    }
+    paneId: pane.paneId,
+    clientId: pane.clientId,
+    place: entry?.place ?? 'the only pane',
+    position: entry?.position ?? 1
   };
+}
+
+/** Where a board landed, for the caller who did not say. */
+function paneResponse(pane: PaneRegistration | null): Record<string, unknown> {
+  return { pane: pane ? paneRef(pane) : null };
 }
 
 // Take a scene's elements into a board's store. Mirrors the batch-create path
@@ -2491,12 +2496,21 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
 
     // With a name, this is a save-as; without one, the board keeps its own
     // identity and only the fields actually passed are changed.
+    //
+    // Either way the level comes across unless the caller states another one.
+    // A branch is the same subject at the same abstraction tier, and level is
+    // board identity from a vocabulary the project grew on purpose, so
+    // `--as payments@option-a` must not quietly produce a proposal at no level
+    // while the board it came from sits at system (TASK-039). `--variant`
+    // always did this, by keeping the source's identity; `--as` built a fresh
+    // one and dropped it.
+    const level = body.level ?? sourceBoard.identity.level;
     const target: BoardIdentity = body.name
-      ? identityFromParams({ board: String(body.name), variant: body.variant, level: body.level })
+      ? identityFromParams({ board: String(body.name), variant: body.variant, level })
       : {
         ...sourceBoard.identity,
         ...(body.variant ? { variant: validateVariant(String(body.variant)) } : {}),
-        ...(body.level ? { level: validateLevel(String(body.level)) } : {})
+        ...(level ? { level: validateLevel(String(level)) } : {})
       };
 
     if (!sourceBoard.vaultBacked && !body.name) {
@@ -2542,8 +2556,6 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
       }
     }
 
-    // The board is now that board: saving under a new name renames it in the
-    // store too, so the next save goes to the same place.
     const targetKey = boardKey(target);
     // Saving under another address is branching, and the branch is a board of
     // its own variant, so every node on it is restamped to say so. Without
@@ -2552,7 +2564,10 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     // plain save is deliberately left alone: a node that records a foreign
     // variant on a board nobody branched really was copied in, and that is
     // what `variantAnomaly` is for.
-    const branched = targetKey !== source.key;
+    const kind = classifyBoardSave({ key: source.key, vaultBacked: sourceBoard.vaultBacked }, targetKey);
+    // Both senses of "wrote somewhere else": naming scratch and branching a
+    // board that has a home. They differ over panes, not over elements.
+    const branched = kind !== 'same-board';
     const saved = branched
       ? restampVariant(Array.from(sourceBoard.elements.values()), target.variant)
       : Array.from(sourceBoard.elements.values());
@@ -2567,37 +2582,52 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     const bytes = Buffer.from(note, 'utf-8');
     fs.writeFileSync(file, bytes);
 
-    // Whoever was looking at the source board is looking at the renamed one:
-    // every pane that held it follows, and a pane on some other board is left
-    // exactly where it was.
+    // Who was looking at the board that was saved. Whether they move depends
+    // on what the save was: giving the scratch board a name renames the thing
+    // in front of them, branching writes a second board and leaves the first
+    // one alone (ADR 0012).
     const watching = Array.from(panes.values()).filter(
       pane => (paneBoards.get(pane.clientId) ?? pane.board) === source.key
     );
     const { board: savedBoard } = getOrCreateBoard(target, true);
-    if (branched) {
-      savedBoard.elements.clear();
-      // The restamped copies, so the canvas holds what the note holds. A
-      // restamped element is a new object, which is also what keeps the board
-      // it was branched from unchanged.
-      for (const el of saved) savedBoard.elements.set(el.id, el);
-    }
+    // The restamped elements, so the canvas holds what the note holds — and
+    // copies of them, so the branch and the board it came from share no
+    // objects at all. Restamping already replaced the promoted ones; the plain
+    // ones were still shared, and a branch that can edit its source is not a
+    // branch (TASK-042).
+    if (branched) replaceBoardElements(savedBoard, saved);
     savedBoard.file = file;
     savedBoard.note = note;
     // What archboard has now seen at this path is what it just wrote.
     recordBaseline(savedBoard, file, hashBoardBytes(bytes));
     savedBoard.savedAt = new Date().toISOString();
-    if (targetKey !== source.key) {
-      for (const pane of watching) switchPaneTo(pane, targetKey);
-    }
+    const moved = panesFollowSave(kind) ? watching : [];
+    for (const pane of moved) switchPaneTo(pane, targetKey);
 
-    logger.info(`Board saved: "${targetKey}" (${elementCount} elements) -> ${file}`);
+    logger.info(
+      `Board saved: "${targetKey}" (${elementCount} elements) -> ${file}` +
+      (kind === 'same-board' ? '' : ` [${kind}]`) +
+      (moved.length ? `, panes moved: ${moved.map(pane => pane.paneId).join(', ')}` : '')
+    );
     res.json({
       success: true,
       ...identityResponse(targetKey, savedBoard),
       file,
       elements: elementCount,
       overwrote,
-      ...(force && overwrote ? { forced: true } : {})
+      ...(force && overwrote ? { forced: true } : {}),
+      // What the save did to the screen, named the way `board open` names it.
+      // A branch moves nothing, so `kept` is how the answer says the source is
+      // still where it was and the board just written is not on show anywhere.
+      // A save back to the board's own note had no screen decision to make, so
+      // both lists are empty rather than reporting panes that were never at
+      // risk of moving.
+      saveKind: kind,
+      savedFrom: source.key,
+      panes: {
+        moved: moved.map(paneRef),
+        kept: (kind === 'branch' ? watching : []).map(paneRef)
+      }
     });
   } catch (error) {
     logger.error('Error saving board:', error);

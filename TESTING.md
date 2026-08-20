@@ -86,6 +86,9 @@ Ask the agent to read a codebase and draw its architecture. Then, on the board:
 3. **Save**: `./bin/canvas board save --board payments`.
 4. **Branch a variant**: `./bin/canvas board save --board payments --as payments@option-a`,
    then rearrange it — move a box out of a cluster, cut an edge, add a node.
+   The branch is written but not put on screen: whatever pane held `payments`
+   still holds it, because branching is how you get something to compare
+   against (ADR 0012). Open the branch where you want it, as in step 6.
 5. **Compare**: ask the agent what changed between `payments` and
    `payments@option-a`.
 6. **Put them side by side**: `./bin/canvas pane open --board payments@option-a`.
