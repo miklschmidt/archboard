@@ -2671,7 +2671,12 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
       savedFrom: source.key,
       panes: {
         moved: moved.map(paneRef),
-        kept: (kind === 'branch' ? watching : []).map(paneRef)
+        kept: (kind === 'branch' ? watching : []).map(paneRef),
+        // The rest of the glass, because the branch that moved nothing has to
+        // be told how to get on screen, and the answer depends on whether
+        // there is still room for a pane (TASK-054). The caller cannot see
+        // that from where it stands, so the save says it.
+        onScreen: boardsOnScreen()
       }
     });
   } catch (error) {
