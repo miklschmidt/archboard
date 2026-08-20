@@ -112,6 +112,33 @@ export function extentOf(element: Measurable | null | undefined): Extent {
   return { x, y, width: finite(element?.width) ?? 0, height: finite(element?.height) ?? 0 };
 }
 
+/** A region of board to ask a question about. Any side may be unbounded. */
+export interface Region {
+  xMin: number;
+  xMax: number;
+  yMin: number;
+  yMax: number;
+}
+
+/**
+ * Is any part of this element inside the region?
+ *
+ * Overlap, not containment, and measured rather than read off `x, y`. An
+ * arrow's origin is its first point, so asking whether that one point is in
+ * range answers a question nobody asked: an arrow that crosses the region is
+ * missed if it started outside, and one that merely starts there is caught
+ * whatever it does next (TASK-044). Both are the same element judged by where
+ * it happens to begin.
+ *
+ * Inclusive on every edge, so an element flush against a boundary is inside
+ * it, and a point-sized element is judged the same way a box is.
+ */
+export function overlapsRegion(element: Measurable | null | undefined, region: Region): boolean {
+  const extent = extentOf(element);
+  return extent.x <= region.xMax && extent.x + extent.width >= region.xMin &&
+    extent.y <= region.yMax && extent.y + extent.height >= region.yMin;
+}
+
 /**
  * The element's `width`/`height` restated from its path, when the two have
  * drifted apart. Undefined when there is nothing to correct, so a caller can

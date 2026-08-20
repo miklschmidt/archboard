@@ -81,7 +81,7 @@ import { narrateChange } from './core/changes.js';
 import { injectTest, injectionStatus, startInjection } from './core/injection.js';
 import { LibraryItem, readLibrary, writeLibrary } from './core/library.js';
 import { recentreBoundTexts } from './core/labels.js';
-import { remeasureLinear } from './core/geometry.js';
+import { overlapsRegion, remeasureLinear } from './core/geometry.js';
 
 // Load environment variables
 dotenv.config();
@@ -754,19 +754,17 @@ app.get('/api/elements/search', (req: Request, res: Response) => {
       results = results.filter(element => element.type === type);
     }
 
-    // Filter by bounding box if specified
+    // Filter by bounding box if specified. An element is in the region when
+    // any part of it is, measured from its path where it has one — asking
+    // where an arrow starts is not asking where it goes (TASK-044).
     if (x_min !== undefined || x_max !== undefined || y_min !== undefined || y_max !== undefined) {
-      const xMin = x_min !== undefined ? Number(x_min) : -Infinity;
-      const xMax = x_max !== undefined ? Number(x_max) : Infinity;
-      const yMin = y_min !== undefined ? Number(y_min) : -Infinity;
-      const yMax = y_max !== undefined ? Number(y_max) : Infinity;
-
-      results = results.filter(el =>
-        el.x >= xMin &&
-        el.x <= xMax &&
-        el.y >= yMin &&
-        el.y <= yMax
-      );
+      const region = {
+        xMin: x_min !== undefined ? Number(x_min) : -Infinity,
+        xMax: x_max !== undefined ? Number(x_max) : Infinity,
+        yMin: y_min !== undefined ? Number(y_min) : -Infinity,
+        yMax: y_max !== undefined ? Number(y_max) : Infinity
+      };
+      results = results.filter(el => overlapsRegion(el, region));
     }
 
     // Apply additional exact-match filters
