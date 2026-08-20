@@ -1,5 +1,7 @@
 # Dependencies
-node_modules/
+# No trailing slash: each agent worktree symlinks node_modules rather than
+# installing 506MB again, and a trailing slash does not match a symlink.
+node_modules
 
 # Build artifacts
 dist/
