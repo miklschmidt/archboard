@@ -396,9 +396,15 @@ export interface BoardResponse {
   /**
    * What the save did to the screen. `moved` is the panes it repointed at the
    * board just written, which only happens when scratch got a name; `kept` is
-   * the panes deliberately left on the board that was saved from.
+   * the panes deliberately left on the board that was saved from; `onScreen`
+   * is every pane and what it holds, which is what says whether there is room
+   * for the board just written to sit beside its source.
    */
-  panes?: { moved: PaneRef[]; kept: PaneRef[] };
+  panes?: {
+    moved: PaneRef[];
+    kept: PaneRef[];
+    onScreen?: Array<{ paneId: string; place: string; board: string }>;
+  };
 }
 
 export interface PaneRef {

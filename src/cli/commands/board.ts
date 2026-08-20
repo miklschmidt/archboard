@@ -10,7 +10,7 @@ import {
   saveBoard,
   boardConflictOf
 } from '../../core/canvas-client.js';
-import { paneWords } from '../../core/panes.js';
+import { paneWords, MAX_PANES } from '../../core/panes.js';
 
 export const SUBCOMMANDS = ['list', 'info', 'new', 'open', 'save'] as const;
 
@@ -79,6 +79,44 @@ function listPanes(refs: Array<{ place: string }>): string {
   const noun = places.length === 1 ? 'pane' : 'panes';
   if (places.length === 1) return `the ${places[0]} ${noun}`;
   return `the ${places.slice(0, -1).join(', ')} and ${places[places.length - 1]} ${noun}`;
+}
+
+/**
+ * How to put a branch on screen without losing the board it came from.
+ *
+ * A branch exists so that the architecture that exists can sit beside the one
+ * being proposed (ADR 0012), which is why the save leaves every pane where it
+ * was. The command offered here has to keep that true. `pane open` makes a
+ * pane and cannot target an existing one, so it can never take a board off the
+ * screen; `board open` replaces whatever the pane it names is holding, and
+ * with one pane on screen that is the source itself. So this offered
+ * `board open` for years and told the caller to undo the save's whole point by
+ * hand (TASK-054).
+ *
+ * `board open` is right once the screen is full, because then there is no
+ * other way up. It says which board each pane would lose, so the choice is
+ * made with the cost in view.
+ */
+function howToShowBranch(
+  branch: string,
+  onScreen: Array<{ place: string; board: string }>
+): string {
+  if (onScreen.length === 0) {
+    return 'No pane is open, so nothing is showing either board. Open the canvas in a browser, ' +
+      `then \`pane open --board ${branch}\`.`;
+  }
+  if (onScreen.length < MAX_PANES) {
+    return `Put it beside ${onScreen.length === 1 ? 'that one' : 'those'} with ` +
+      `\`pane open --board ${branch}\`, which makes a pane rather than taking one.`;
+  }
+  // Overlapping tabs are placed "tab 1 of 2", which is a description rather
+  // than something to type, so those are pointed at by position instead.
+  const spec = (place: string, index: number): string =>
+    (place.includes(' ') ? String(index + 1) : place);
+  const cost = onScreen
+    .map((pane, index) => `\`board open ${branch} --pane ${spec(pane.place, index)}\` replaces "${pane.board}"`)
+    .join(', ');
+  return `The screen is full, so putting it up takes a board off: ${cost}.`;
 }
 
 export async function board(argv: string[]): Promise<void> {
@@ -260,8 +298,7 @@ export async function board(argv: string[]): Promise<void> {
         ? `Nothing moved: ${listPanes(kept)} still ${kept.length > 1 ? 'hold' : 'holds'} ` +
           `"${result.savedFrom}", and the branch is not showing anywhere. `
         : `No pane was holding "${result.savedFrom}", and the branch is not showing anywhere either. `) +
-      `Put it on screen with \`board open ${result.board}\`, which asks for a pane ` +
-      'when more than one is open.'
+      howToShowBranch(result.board, result.panes?.onScreen ?? [])
     );
   }
 
