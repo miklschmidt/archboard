@@ -42,8 +42,8 @@ the day someone finally opens archboard in Claude Desktop, which defeats the
 reason for keeping it. Something has to catch the drift rather than trusting
 that we will remember.
 
-`scripts/check-surface-parity.mjs` is that something, in `bun run test`. It
-pairs each MCP tool with the CLI entry that does the same job — a command, or
-a command plus subcommand, which is how 35 tools meet 42 entries — and fails on
-anything unpaired. What stays unpaired on purpose is listed there with its
-reason, and printed on every run, so an asymmetry has to keep justifying itself.
+A check in the test run is that something. It pairs every tool with the
+command that does the same job and fails on anything unpaired. What stays
+unpaired on purpose carries a written reason, printed on every run, so an
+asymmetry has to keep justifying itself rather than being noticed once and
+forgotten.

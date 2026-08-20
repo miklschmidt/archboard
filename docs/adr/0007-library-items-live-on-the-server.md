@@ -48,6 +48,5 @@ Two things this deliberately does not do. Library items never enter a board's
 element store, its baseline, or the change feed: a stencil becomes elements only
 when a human drags it onto a canvas, and it arrives there through the ordinary
 change-report path like anything else they drew. And nothing on the server
-fetches a library URL — the browser does that, under the allowlist in
-`frontend/src/shell/addLibrary.ts` — so the canvas server never becomes a fetch
-proxy for whatever a web page put in a hash.
+fetches a library URL. The browser does that, against an allowlist, so the
+canvas never becomes a fetch proxy for whatever a web page put in a hash.
