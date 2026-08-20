@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 //
 // A board per pane, and a board named on every call (TASK-021, ADR 0009).
 //
@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const dist = p => path.join(repoRoot, 'dist', p);
+const src = p => path.join(repoRoot, 'src', p);
 
 let failures = 0;
 const check = (label, cond, extra = '') => {
@@ -41,14 +41,14 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const {
   resolveBoard, openBoardKeys, SCRATCH_KEY, boards: boardStore,
   getOrCreateBoard, replaceBoardElements
-} = await import(dist('core/board-store.js'));
-const { BoardRequiredError } = await import(dist('core/board-target.js'));
-const { resolvePaneSpec, soloPane, panesInOrder, MAX_PANES } = await import(dist('core/panes.js'));
-const { planPromotion } = await import(dist('core/promote.js'));
+} = await import(src('core/board-store.ts'));
+const { BoardRequiredError } = await import(src('core/board-target.ts'));
+const { resolvePaneSpec, soloPane, panesInOrder, MAX_PANES } = await import(src('core/panes.ts'));
+const { planPromotion } = await import(src('core/promote.ts'));
 const {
   boardKey, makeIdentity, parseBoardKey, boardDisplayName,
   normalizeBoardKey, vaultPathFor, listBoards, readBoardFile, identityFrontmatter
-} = await import(dist('core/board.js'));
+} = await import(src('core/board.ts'));
 
 // Board addresses are case-insensitive and unicode-normalised (ADR 0010).
 // Boards get named out loud, and a human cannot pronounce casing, so two
@@ -203,8 +203,8 @@ const {
 // shared reference looks exactly like a copy. It listens on an ephemeral port
 // of its own and is closed again, so it never meets the spawned server below.
 {
-  const { default: app } = await import(dist('server.js'));
-  const { snapshots } = await import(dist('types.js'));
+  const { default: app } = await import(src('server.ts'));
+  const { snapshots } = await import(src('types.ts'));
   const listener = app.listen(0, '127.0.0.1');
   await new Promise(resolve => listener.once('listening', resolve));
   const at = `http://127.0.0.1:${listener.address().port}`;
@@ -358,7 +358,7 @@ const PORT = Number(process.env.PORT || 33000 + Math.floor(Math.random() * 2000)
 const base = `http://127.0.0.1:${PORT}`;
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), 'archboard-boards-'));
 
-const server = spawn(process.execPath, [dist('server.js')], {
+const server = spawn(process.execPath, [src('server.ts')], {
   env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', ARCHBOARD_VAULT: vault, LOG_LEVEL: 'error' },
   stdio: ['ignore', 'ignore', 'pipe']
 });
@@ -761,7 +761,7 @@ try {
   // The exit code is the part a script reads, so it is checked through the CLI
   // rather than inferred from the status.
   const cli = (args) => new Promise(resolve => {
-    const child = spawn(process.execPath, [dist('bin.js'), ...args], {
+    const child = spawn(process.execPath, [src('bin.ts'), ...args], {
       env: {
         ...process.env,
         EXPRESS_SERVER_URL: base,

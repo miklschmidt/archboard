@@ -25,30 +25,45 @@ tags v2.0.0 in git but never published it either — npm `latest` is 1.1.0, from
 2026-07-06, and two releases behind. Always build from source; never
 `bun add mcp-excalidraw-server`.
 
-## Build and run
+## Run it (there is no build step)
 
-This box has node + bun but **no npm/npx**. The `package.json` scripts now shell
-out to bun, so run them with `bun run`, never `npm run`:
+bun runs TypeScript, so the server and the CLI are started from `src/` and
+there is nothing to compile (ADR 0014). Only the frontend is built, because a
+browser cannot be handed TypeScript, and that is vite's job.
+
+This box has node + bun but **no npm/npx**. The `package.json` scripts shell out
+to bun, so run them with `bun run`, never `npm run`:
 
 ```bash
 bun install
-bun run build       # -> dist/ and dist/frontend/
+bun run build       # frontend only -> dist/frontend/
 bun run type-check
-bun run test        # stdio wire, loopback bind, obsidian, changes, geometry,
-                    # labels, library, boards + panes, branch vs redraw,
-                    # proposal beside source, skill install, repo bindings,
-                    # CLI/MCP surface parity
+bun run test        # type-check, then stdio wire, loopback bind, obsidian,
+                    # changes, geometry, labels, library, boards + panes,
+                    # branch vs redraw, proposal beside source, skill install,
+                    # repo bindings, CLI/MCP surface parity
 
 ./bin/canvas start  # canvas server on 127.0.0.1:3000
 ./bin/canvas status
 ./bin/canvas stop
 ```
 
-Or drive the tools directly: `bunx tsc` (server), `bunx vite build` (frontend).
-
 `bun install` intermittently fails extracting a tarball; just run it again.
 
-`bin/canvas` wraps `dist/bin.js` and resolves from any cwd. Use it, never `npx`.
+`bin/canvas` runs `src/bin.ts` with bun and resolves from any cwd. Use it, never
+`npx`. Anything that spawns archboard — an MCP client, a shell alias — needs bun
+on PATH.
+
+**Editing source changes behaviour on the next command, but not in a server
+that is already running.** A process reads its source once, at start. Restart
+the canvas after changing anything under `src/` that the server executes, and
+remember that a restart drops every unsaved board. `bun run dev:reload` restarts
+on every file save, which is why it is not what `canvas start` does. The
+frontend has real hot reload through `bun run dev` (vite on :5173, proxying the
+API to :3000).
+
+`bun run type-check` is the only thing that type-checks now, and `bun run test`
+runs it first, so a type error still fails the suite.
 
 Open <http://127.0.0.1:3000>. A browser tab is required for `screenshot`,
 `mermaid`, image export, and viewport control; pure JSON ops work headless.
@@ -60,7 +75,7 @@ clone has no skills until you restore them:
 
 ```bash
 skills experimental_install     # 28 third-party skills, from skills-lock.json
-node scripts/sync-skills.mjs    # ours, from skills/
+bun scripts/sync-skills.mjs     # ours, from skills/
 ```
 
 The sync creates the `.claude/skills/` symlinks itself; no manual linking.

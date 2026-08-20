@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 //
 // Semantic change events (TASK-018) and app-server injection (TASK-019).
 //
@@ -22,7 +22,7 @@ import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const dist = p => path.join(repoRoot, 'dist', p);
+const src = p => path.join(repoRoot, 'src', p);
 
 let failures = 0;
 const check = (label, cond, extra = '') => {
@@ -62,7 +62,7 @@ const scene = () => [
 // Engine
 // ---------------------------------------------------------------------------
 
-const { diffBoardStates, narrateChange } = await import(dist('core/changes.js'));
+const { diffBoardStates, narrateChange } = await import(src('core/changes.ts'));
 const diff = (before, after) => diffBoardStates(before, after, identity, 'payments');
 
 {
@@ -152,7 +152,7 @@ const diff = (before, after) => diffBoardStates(before, after, identity, 'paymen
 // Nothing on screen shows it, because Excalidraw recomputes a bound label's
 // position from its container at draw time.
 
-const { boundTextDrift } = await import(dist('core/labels.js'));
+const { boundTextDrift } = await import(src('core/labels.ts'));
 
 {
   const base = scene();
@@ -255,8 +255,8 @@ const { boundTextDrift } = await import(dist('core/labels.js'));
 // ---------------------------------------------------------------------------
 
 process.env.ARCHBOARD_SETTLE_MS = '60000';    // long, so only explicit settles fire
-const { changeFeed } = await import(dist('core/change-feed.js'));
-const { copyElements } = await import(dist('core/board-store.js'));
+const { changeFeed } = await import(src('core/change-feed.ts'));
+const { copyElements } = await import(src('core/board-store.ts'));
 
 {
   let elements = scene();
@@ -396,7 +396,7 @@ fs.chmodSync(socketPath, 0o600);
 process.env.CODEX_HOME = home;
 process.env.ARCHBOARD_INJECT_DEBOUNCE_MS = '150';
 process.env.ARCHBOARD_INJECT_MIN_INTERVAL_MS = '150';
-const injection = await import(dist('core/injection.js'));
+const injection = await import(src('core/injection.ts'));
 
 {
   process.env.ARCHBOARD_INJECT = '1';

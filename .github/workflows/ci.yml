@@ -21,27 +21,21 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # bun runs the server and the CLI from src/, so tsc is a checker and
+      # never an emitter here (ADR 0014).
       - name: Type check
-        run: bunx tsc --noEmit
-
-      - name: Build server
-        run: bunx tsc
+        run: bun run type-check
 
       - name: Build frontend
         run: bunx vite build
 
-      - name: Check build artifacts
-        run: |
-          echo "Checking if build artifacts exist..."
-          test -f dist/index.js || (echo "dist/index.js not found" && exit 1)
-          test -f dist/server.js || (echo "dist/server.js not found" && exit 1)
-          test -d dist/frontend || (echo "dist/frontend not found" && exit 1)
-          echo "All build artifacts present!"
+      - name: Check the frontend bundle exists
+        run: test -d dist/frontend || (echo "dist/frontend not found" && exit 1)
 
       - name: Run MCP stdio wire tests
-        run: node scripts/check-mcp-stdio.mjs
+        run: bun scripts/check-mcp-stdio.mjs
 
       # The canvas server has no authentication, so binding beyond loopback
       # would expose it. Guard that invariant in CI.
       - name: Verify server binds loopback only
-        run: node scripts/check-local-bind.mjs
+        run: bun scripts/check-local-bind.mjs

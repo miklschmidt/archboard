@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 // Does the MCP surface still match the CLI?
 //
@@ -28,8 +28,8 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
 
-const { tools } = await import(join(repoRoot, 'dist', 'core', 'mcp-tools.js'));
-const { cliSurface } = await import(join(repoRoot, 'dist', 'cli', 'run.js'));
+const { tools } = await import(join(repoRoot, 'src', 'core', 'mcp-tools.ts'));
+const { cliSurface } = await import(join(repoRoot, 'src', 'cli', 'run.ts'));
 
 // --- the mapping -------------------------------------------------------------
 //

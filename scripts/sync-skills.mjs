@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 // Sync this repo's authored skills into the agent directories.
 //
 // One tracked source: skills/. Every subdirectory holding a SKILL.md is a

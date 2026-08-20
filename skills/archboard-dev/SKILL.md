@@ -9,20 +9,28 @@ Always-on context lives in `CLAUDE.md`; fork rationale and roadmap in
 `DESIGN.md`. This skill is the procedural half: how to actually do the recurring
 jobs.
 
-## Rebuild after changing source
+## After changing source
 
-This box has node + bun but **no npm/npx**. The `package.json` scripts shell out
-to bun, so use `bun run <script>` — never `npm run`. Or drive the tools directly:
+There is no build step for the server or the CLI. bun runs the TypeScript, so
+`./bin/canvas` picks up a source change on the next command (ADR 0014). Two
+things still do not:
 
 ```bash
-bunx tsc            # server -> dist/
-bunx vite build     # frontend -> dist/frontend/
-./bin/canvas stop && ./bin/canvas start
+bunx vite build     # frontend/src/ changed -> dist/frontend/
+./bin/canvas stop && ./bin/canvas start   # src/ that the SERVER executes changed
 ```
 
-Changing anything under `frontend/src/` needs the vite build; server-only
-changes need just `tsc`. `bun install` intermittently fails extracting a
-tarball — run it again.
+A running process read its source at start, so a server route keeps its old
+behaviour until it is restarted while the CLI already has the new one. That
+split is what made TASK-056 confusing.
+
+**A restart drops every unsaved board**, so save first, or ask. `bun run
+dev:reload` restarts on every file save and costs the same thing, which is why
+`canvas start` never watches.
+
+This box has node + bun but **no npm/npx**. The `package.json` scripts shell out
+to bun, so use `bun run <script>` — never `npm run`. `bun install` intermittently
+fails extracting a tarball — run it again.
 
 ## Verify a canvas change actually works
 
@@ -79,7 +87,7 @@ git fetch upstream
 git log --oneline HEAD..upstream/main            # what changed there
 git log -p upstream/main -- path/to/file.ts      # read before taking
 git cherry-pick <sha>                            # only when it clearly applies
-bunx tsc && bunx vite build                      # always rebuild after
+bun run type-check && bun run test               # always check after
 ```
 
 Prefer reading their fix and reimplementing it our way over importing their
@@ -88,7 +96,7 @@ structure wholesale.
 ## Syncing skills
 
 ```bash
-node scripts/sync-skills.mjs      # skills/ -> .agents/skills/ -> .claude/skills/
+bun scripts/sync-skills.mjs      # skills/ -> .agents/skills/ -> .claude/skills/
 skills experimental_install       # third-party, from skills-lock.json
 ```
 

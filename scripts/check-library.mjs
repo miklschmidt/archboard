@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 // Store checks for the stencil library.
 //
@@ -28,7 +28,7 @@ process.env.ARCHBOARD_VAULT = vault;
 
 const {
   parseLibraryFile, curatedSets, readLibrary, writeLibrary, resetLibraryCache, libraryFilePath
-} = await import(join(__dirname, '..', 'dist', 'core', 'library.js'));
+} = await import(join(__dirname, '..', 'src', 'core', 'library.ts'));
 
 let failures = 0;
 let checks = 0;
@@ -158,7 +158,7 @@ assert(
 // what a placed copy is. Both are pure — no canvas server involved.
 
 const { chooseStencil, remapElements, AmbiguousStencilError, UnknownStencilError } =
-  await import(join(__dirname, '..', 'dist', 'core', 'library-catalogue.js'));
+  await import(join(__dirname, '..', 'src', 'core', 'library-catalogue.ts'));
 
 const entries = [
   { id: 'one', name: 'Database', source: 'cloud', elements: 6, width: 66, height: 101, text: null },

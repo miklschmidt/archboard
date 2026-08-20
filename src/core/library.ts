@@ -59,7 +59,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // The curated sets ship in the checkout, not in the frontend bundle: the
 // browser never needs them, because it gets the library from the server like
-// everything else. Resolved from dist/core/ back to the repo root.
+// everything else. Resolved from src/core/ back to the repo root.
 const CURATED_DIR = path.resolve(__dirname, '../../libraries');
 
 export function libraryFilePath(): string | null {

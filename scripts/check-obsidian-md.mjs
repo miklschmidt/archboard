@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 // Note-region checks for the Obsidian .excalidraw.md writer.
 //
@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const { wrapSceneAsObsidianMd, extractSceneJsonFromObsidianMd } = await import(
-  join(__dirname, '..', 'dist', 'core', 'obsidian-md.js')
+  join(__dirname, '..', 'src', 'core', 'obsidian-md.ts')
 );
 
 let failures = 0;

@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
-# Drives this fork's own build (dist/). This box has node+bun but no npm/npx.
-exec node "$(dirname "$(realpath "$0")")/../dist/bin.js" "$@"
+# Runs the CLI straight from src/. bun executes TypeScript, so there is no
+# build step and no compiled copy to go stale (ADR 0014). Needs bun on PATH.
+exec bun "$(dirname "$(realpath "$0")")/../src/bin.ts" "$@"

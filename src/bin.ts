@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 // The package's single bin entry (`archboard`; `bin/canvas` in the repo):
 //
@@ -8,7 +8,7 @@
 // IMPORTANT: never statically import ./index.js or ./server.js here.
 // index.js evaluates the whole MCP module graph, and server.js used to start
 // the Express canvas server on import — the CLI must only ever reach the
-// canvas by spawning dist/server.js as a child process (see core/spawn.ts).
+// canvas by spawning src/server.ts as a child process (see core/spawn.ts).
 
 // Disable colors to prevent ANSI color codes from breaking JSON parsing
 process.env.NODE_DISABLE_COLORS = '1';

@@ -29,17 +29,20 @@ see which vault this machine uses, and it cannot see that `archboard` is not on
 PATH here. Both of those live in the installing human's head unless the install
 writes them down.
 
-## 1. Build it once
+## 1. Set it up once
 
 ```bash
 git clone <your fork> ~/Projects/archboard
 cd ~/Projects/archboard
 bun install                 # retry if it fails extracting a tarball
-bunx tsc && bunx vite build
+bunx vite build             # the frontend, the only thing that is built
 ```
 
 The package is private and never published, so there is nothing to install from
-npm. Build from source, and rebuild after pulling.
+npm. bun runs the server and the CLI from `src/`, so there is nothing to compile
+for them and nothing to rebuild after pulling (ADR 0014) — only the frontend,
+and only when `frontend/` changed. **bun has to be on PATH**, including the PATH
+of anything that spawns archboard.
 
 ## 2. Put the CLI where an agent will find it
 
@@ -51,7 +54,7 @@ ln -s ~/Projects/archboard/bin/canvas ~/.local/bin/archboard
 ```
 
 `bin/canvas` resolves its own location, so the symlink works from any working
-directory and always runs the current build. Every example in the skill says
+directory and always runs the current source. Every example in the skill says
 `archboard`, so this is the name to use.
 
 Skipping this is survivable. `install-skill` checks whether an `archboard` on
@@ -145,11 +148,15 @@ client config:
 
 ```toml
 [mcp_servers.archboard]
-command = "node"
-args = ["/home/you/Projects/archboard/dist/bin.js"]
+command = "bun"
+args = ["/home/you/Projects/archboard/src/bin.ts"]
 env = { ARCHBOARD_VAULT = "/home/you/vaults/architecture" }
 startup_timeout_sec = 20
 ```
+
+The client spawns that command, so `bun` has to resolve on the PATH the client
+inherits, which for a desktop app is often shorter than your shell's. If the
+server never starts, put the absolute path from `which bun` in `command`.
 
 The tool prefix a client shows comes from the key you choose there, not from
 anything archboard sets.
@@ -198,7 +205,7 @@ Three things to know.
 
 `bin/canvas` calls `realpath`, which modern macOS has but older versions do
 not. If the symlink route above gives you `realpath: command not found`, either
-`brew install coreutils` or call `dist/bin.js` with node directly.
+`brew install coreutils` or run `bun /path/to/archboard/src/bin.ts` directly.
 
 **Board names are case-sensitive here and your filesystem probably is not.**
 APFS is case-insensitive by default, so `payments` and `Payments` are two
