@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-20 20:14'
-updated_date: '2026-08-20 20:14'
+updated_date: '2026-08-20 20:39'
 labels: []
 dependencies: []
 references:
@@ -47,6 +47,7 @@ STAY GREEN. Land the check asserting today's measured baseline rather than zero,
 - [ ] #2 Version, versionNonce, updated and the server timestamps are ignored, and what is ignored is stated in the script
 - [ ] #3 How a browser is driven in the check suite is decided and written down, since no existing check drives one
 - [ ] #4 The check runs against today code and records today baseline rather than failing, and is not yet part of bun run test
+- [ ] #5 The check drives a real browser with agent-browser, and reads the rendered elements back with eval
 <!-- AC:END -->
 
 ## Comments
@@ -55,5 +56,29 @@ STAY GREEN. Land the check asserting today's measured baseline rather than zero,
 created: 2026-08-20 20:14
 ---
 No dependency on TASK-069 on purpose: this is check infrastructure and can be built in parallel with the id work. Its recorded baseline will shift once TASK-069 lands, which is a re-run rather than a rewrite.
+---
+
+author: @claude
+created: 2026-08-20 20:38
+---
+The unknown in this task is resolved, from the user: a headless script can drive a real browser with `agent-browser`, which is on PATH here (/run/current-system/sw/bin/agent-browser) and ships alongside chromium.
+
+It is a browser automation CLI with the commands this check needs: `open` to load the canvas, `eval <js>` to read Excalidraw's elements back out of the running page, and `screenshot` if a failure ever needs looking at. Run `agent-browser skills get core --full` before writing against it; it ships its own usage guide and the maintainers say to prefer that over guessing from flag docs.
+
+So this stops being a spike and becomes an ordinary task. Two things follow.
+
+The plan's contingency is dead. docs/design/the-plan.md says that if driving a browser from a check turns out to be impossible, the converter stage has no acceptance test. It is possible, so the converter stage keeps its acceptance test and that paragraph should go when this lands.
+
+The reason it was unknown at all is worth recording: no script under scripts/ drives a browser today. All fifteen checks stand WebSocket clients in for panes and say so in their comments. That was read as evidence it could not be done, when it only ever showed that nobody had.
+---
+
+author: @claude
+created: 2026-08-20 20:39
+---
+CI note, from the user. If this check is to run in CI, something has to run `agent-browser install` there first, to fetch the browser it drives. On this machine it is already installed alongside chromium; a fresh CI runner has neither.
+
+That also needs a headless run and no display, which the tool supports but which is worth proving on a runner rather than assuming from a laptop where a browser is already working.
+
+Sequencing: this is only a CI concern once CI runs the suite at all. Today it runs two of the fifteen checks (TASK-082), so a browser check would not execute there even after it is written. Do not wire the install step into CI as part of this task; do it as part of whichever task puts the suite in CI, so the two land together and the runner is proved once.
 ---
 <!-- COMMENTS:END -->

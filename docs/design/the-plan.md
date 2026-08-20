@@ -392,18 +392,28 @@ The three outcomes are three different amounts of work and one of them puts a
 documented hole in ADR 0015. Nothing in stage 5 should start before this
 reports.
 
-**How a check drives a browser.** Gates stage 5's acceptance, owned by
-TASK-071. No script in `scripts/` drives one today, so this is a new dependency
-rather than a new file. If it turns out to be impossible here, stage 5 has no
-acceptance test and that changes how stage 5 is reviewed.
+**How a check drives a browser.** Answered. `agent-browser` is on PATH on this
+machine and is a browser automation CLI with `open`, `eval` and `screenshot`,
+which is everything the check needs to load a board and read back what
+Excalidraw rendered. Run `agent-browser skills get core --full` before writing
+against it.
 
-**What a canvas with no vault does.** Gates stage 8, owned by TASK-077.
-`ARCHBOARD_VAULT` is deliberately unset by default, because the vault spans
-repositories (ADR 0004). Today the canvas boots and shows scratch with no vault
-set, and only board-shaped commands fail. Under stage 8 there is nowhere to put
-board content at all. Refusing to start, falling back to the state directory,
-and keeping scratch in memory as a documented exception are all defensible and
-they are not the same product.
+Running it in CI is a separate matter: a fresh runner has neither
+`agent-browser` nor a browser, so something has to install one there. That
+belongs with TASK-082 rather than here, because CI runs two of the fifteen
+checks today and a new one would not execute there either way.
+
+This was listed as an open question because no script in `scripts/` drives a
+browser today: all fifteen checks stand WebSocket clients in for panes and say
+so. That showed nobody had done it, not that it could not be done. TASK-071 is
+therefore an ordinary task rather than a spike, and stage 5 keeps its
+acceptance test.
+
+**What a canvas with no vault does.** Answered by the user: it refuses to
+start, and the refusal points at the install step that chooses a vault.
+Choosing one is already an explicit part of installing archboard into a
+repository, so the ordinary path is unaffected. Recorded in ADR 0015 with
+both rejected alternatives. Owned by TASK-077.
 
 **What is allowed to stay in memory.** Gates stage 8, owned by TASK-078. ADR
 0015's carve-out names sockets, pane registrations, focus and selection. It does
