@@ -47,6 +47,7 @@ import {
   boards,
   getOrCreateBoard,
   recordBaseline,
+  replaceBoardElements,
   resolveBoard,
   openBoardKeys,
   SCRATCH_KEY
@@ -2249,7 +2250,9 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     // variant on a board nobody branched really was copied in, and that is
     // what `variantAnomaly` is for.
     const kind = classifyBoardSave({ key: source.key, vaultBacked: sourceBoard.vaultBacked }, targetKey);
-    const branched = targetKey !== source.key;
+    // Both senses of "wrote somewhere else": naming scratch and branching a
+    // board that has a home. They differ over panes, not over elements.
+    const branched = kind !== 'same-board';
     const saved = branched
       ? restampVariant(Array.from(sourceBoard.elements.values()), target.variant)
       : Array.from(sourceBoard.elements.values());
@@ -2272,13 +2275,12 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
       pane => (paneBoards.get(pane.clientId) ?? pane.board) === source.key
     );
     const { board: savedBoard } = getOrCreateBoard(target, true);
-    if (branched) {
-      savedBoard.elements.clear();
-      // The restamped copies, so the canvas holds what the note holds. A
-      // restamped element is a new object, which is also what keeps the board
-      // it was branched from unchanged.
-      for (const el of saved) savedBoard.elements.set(el.id, el);
-    }
+    // The restamped elements, so the canvas holds what the note holds — and
+    // copies of them, so the branch and the board it came from share no
+    // objects at all. Restamping already replaced the promoted ones; the plain
+    // ones were still shared, and a branch that can edit its source is not a
+    // branch (TASK-042).
+    if (branched) replaceBoardElements(savedBoard, saved);
     savedBoard.file = file;
     savedBoard.note = note;
     // What archboard has now seen at this path is what it just wrote.
