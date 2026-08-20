@@ -36,6 +36,19 @@ export async function board(argv: string[]): Promise<void> {
   if (sub === 'list') {
     parseArgs(rest, {});
     const result = await listBoardsOnCanvas();
+    // Two notes at one address. Only one of them can be opened, so this is
+    // said out loud rather than left in the JSON (ADR 0010).
+    const collisions = (result.boards ?? []).filter(entry => entry.collidesWith?.length);
+    const reported = new Set<string>();
+    for (const entry of collisions) {
+      if (reported.has(entry.key)) continue;
+      reported.add(entry.key);
+      note(
+        `"${entry.key}" is the address of ${(entry.collidesWith?.length ?? 0) + 1} notes that differ only in ` +
+        `casing or accents: ${[entry.file, ...(entry.collidesWith ?? [])].join(', ')}. ` +
+        `Board names are case-insensitive, so only ${entry.file} is reachable. Rename or delete the others.`
+      );
+    }
     printJson({
       success: true,
       vault: result.vault,
