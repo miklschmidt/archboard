@@ -86,6 +86,7 @@ import { injectTest, injectionStatus, startInjection } from './core/injection.js
 import { LibraryItem, readLibrary, writeLibrary } from './core/library.js';
 import { recentreBoundTexts } from './core/labels.js';
 import { overlapsRegion, remeasureLinear } from './core/geometry.js';
+import { frontendState, sourceState } from './core/staleness.js';
 
 // Load environment variables
 dotenv.config();
@@ -1662,14 +1663,27 @@ const PaneSchema = z.object({
   focused: z.boolean(),
   elementCount: z.number().int().nonnegative(),
   rect: RectSchema,
-  viewport: RectSchema.extend({ zoom: z.number().positive() })
+  viewport: RectSchema.extend({ zoom: z.number().positive() }),
+  // Which bundle this tab is running. Optional: a tab from before this existed,
+  // and anything that is not a browser, simply says nothing and hears nothing.
+  build: z.string().optional()
 });
 
+// A pane says what it is showing, and hears back whether it is out of date.
+//
+// This is the pulse a browser already has. A pane posts here when it connects,
+// on every change, and on every scroll, resize and zoom, so a tab that was
+// opened before somebody rebuilt the frontend finds out at its next
+// interaction. The alternative on offer was for the tab to discover it by
+// having a command time out on it ten seconds later, which is what used to
+// happen and what TASK-056 is about.
 app.post('/api/panes', (req: Request, res: Response) => {
   const parsed = PaneSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ success: false, error: parsed.error.errors[0]?.message ?? 'Invalid pane' });
   }
+  const frontend = frontendState(parsed.data.build);
+  const staleFrontend = frontend.stale ? frontend : undefined;
   const registration: PaneRegistration = { ...parsed.data, at: new Date().toISOString() };
   // A pane exists exactly as long as its socket. A report arriving without one
   // is a pane on its way out — React tears the canvas down in its own order, so
@@ -1677,14 +1691,14 @@ app.post('/api/panes', (req: Request, res: Response) => {
   // resurrect the ghost the close just retired.
   const live = Array.from(clientIds.values()).includes(registration.clientId);
   if (!live) {
-    return res.json({ success: true, registered: false, paneCount: panes.size });
+    return res.json({ success: true, registered: false, paneCount: panes.size, staleFrontend });
   }
   const isNew = !panes.has(registration.clientId);
   panes.set(registration.clientId, registration);
   // A pane that was asked for has arrived. Registration is the acknowledgement
   // — see the pane layout section below for why it is that and not a reply.
   if (isNew) notePaneOpened(registration);
-  res.json({ success: true, registered: true, paneCount: panes.size });
+  res.json({ success: true, registered: true, paneCount: panes.size, staleFrontend });
 });
 
 app.get('/api/panes', (_req: Request, res: Response) => {
@@ -3153,7 +3167,12 @@ app.get('/health', (req: Request, res: Response) => {
     // Whether this canvas can be told to reload. True only under
     // `bun run dev:canvas`; a canvas started any other way watches nothing
     // (ADR 0014).
-    reloadable: reloadIsAskable()
+    reloadable: reloadIsAskable(),
+    // Whether this process is running the source that is on disk now, and
+    // which build the frontend has been rebuilt to. A long-lived process has no
+    // symptom of its own for either, so it has to be asked (TASK-056).
+    source: sourceState(),
+    frontendBuild: frontendState(null).current
   });
 });
 

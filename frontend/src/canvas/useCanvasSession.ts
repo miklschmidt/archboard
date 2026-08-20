@@ -25,7 +25,7 @@ import { convertMermaidToExcalidraw, DEFAULT_MERMAID_CONFIG } from '../utils/mer
 import type { BoardIdentity, PaneStatus, ServerElement, WebSocketMessage } from '../types'
 import { cleanElementForExcalidraw, convertElementsPreservingImageProps } from './elements'
 import { baselineFrom, diffAgainstBaseline, fingerprint, isEmpty, type Baseline } from './changes'
-import { fetchElements, fetchFiles, reportChanges, reportPane } from './api'
+import { fetchElements, fetchFiles, loadedBundle, reportChanges, reportPane } from './api'
 import type { PaneReport } from './api'
 
 // A human edit should be on the server before they finish saying what they
@@ -138,6 +138,9 @@ export function useCanvasSession({
 
   const paneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const publishedPaneRef = useRef('')
+  // The build this tab has already been told about, so it is said once and not
+  // once per scroll.
+  const staleBuildRef = useRef('')
   const paneElementRef = useRef<HTMLElement | null>(null)
   const paneObserverRef = useRef<ResizeObserver | null>(null)
 
@@ -176,6 +179,7 @@ export function useCanvasSession({
       primary: primaryRef.current,
       focused: focusedRef.current,
       elementCount: api.getSceneElements().length,
+      build: loadedBundle(),
       rect,
       // Scene coordinates, so it can be compared with element positions
       // directly — "the box at 400,200 is on screen in the left pane".
@@ -209,6 +213,16 @@ export function useCanvasSession({
         // The server refuses a pane whose socket is gone. Forget that we sent
         // this, so a reconnection re-announces rather than assuming it stuck.
         if (!result.registered) publishedPaneRef.current = ''
+        // Somebody rebuilt the frontend while this tab was open, so this tab is
+        // running old code. Said here, at the pane's own pulse, rather than
+        // discovered ten seconds later by a command timing out on a tab that
+        // does not know how to answer it (TASK-056). Once per build: this
+        // fires on every scroll otherwise.
+        const stale = result.staleFrontend
+        if (stale?.message && staleBuildRef.current !== stale.current) {
+          staleBuildRef.current = stale.current ?? ''
+          console.warn(stale.message)
+        }
       }).catch((error) => {
         // Nothing is lost by a failed report except its freshness, and the next
         // change resends — but only if this one is not remembered as sent.

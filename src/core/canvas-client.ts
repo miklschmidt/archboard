@@ -766,6 +766,17 @@ export interface HealthStatus {
   // Identity fields (v1.1+); `stop` requires both before signaling anything
   service?: string;
   pid?: number;
+  /** True only under `bun run dev:canvas` (ADR 0014). */
+  reloadable?: boolean;
+  /** Whether the canvas is running the source on disk now (TASK-056). */
+  source?: {
+    evaluatedAt: string;
+    newestFile: string | null;
+    newestAt: string | null;
+    stale: boolean;
+  };
+  /** The entry script the built frontend names now, or null if nothing is built. */
+  frontendBuild?: string | null;
 }
 
 export async function getHealth(timeoutMs = 2000): Promise<HealthStatus> {

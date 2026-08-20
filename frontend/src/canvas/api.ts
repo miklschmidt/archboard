@@ -77,8 +77,34 @@ export function reportChanges(
  * browser. Registration lives exactly as long as this pane's socket, so an
  * unsplit or a closed tab retires it without anyone saying so.
  */
-export function reportPane(pane: PaneReport): Promise<{ success: true; registered: boolean; paneCount: number }> {
+export function reportPane(pane: PaneReport): Promise<PaneReply> {
   return post('/api/panes', pane)
+}
+
+export interface PaneReply {
+  success: true
+  registered: boolean
+  paneCount: number
+  /**
+   * Set when this tab is running a bundle the canvas no longer serves, i.e.
+   * somebody rebuilt the frontend after the tab was opened (TASK-056).
+   */
+  staleFrontend?: { loaded: string | null; current: string | null; message: string | null }
+}
+
+/**
+ * The entry script this tab loaded, hash and all.
+ *
+ * Read off the tag in the served index.html rather than baked in at build time,
+ * so the tab and the canvas are reading the same fact from the same place: the
+ * canvas reads that tag out of `dist/frontend/index.html` on disk, this reads
+ * it out of the document that was actually delivered. A vite dev server names
+ * a source file here instead of a hashed bundle, and the canvas knows to say
+ * nothing about that.
+ */
+export function loadedBundle(): string | undefined {
+  const script = document.querySelector('script[type="module"][src]')
+  return script?.getAttribute('src') ?? undefined
 }
 
 export interface PaneReport {
@@ -92,6 +118,8 @@ export interface PaneReport {
   rect: { x: number; y: number; width: number; height: number }
   /** Which part of the board is on screen, in scene coordinates. */
   viewport: { x: number; y: number; width: number; height: number; zoom: number }
+  /** Which bundle this tab is running, so the canvas can say when it is old. */
+  build?: string
 }
 
 /** The one call that empties a board. Confirmed in the shell, never here. */
