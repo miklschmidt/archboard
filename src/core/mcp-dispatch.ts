@@ -328,10 +328,9 @@ export async function callExcalidrawTool(
         const { elementIds } = params;
 
         try {
+          // Membership is recorded in `groupIds` on the elements and nowhere
+          // else, so another client sees this group and it outlives this one.
           const result = await groupElements(elementIds);
-
-          // Keep the legacy in-process group map in sync
-          sceneState.groups.set(result.groupId, elementIds);
 
           logger.info('Grouping elements', { elementIds, groupId: result.groupId, successCount: result.successCount });
 
@@ -347,12 +346,10 @@ export async function callExcalidrawTool(
         const { groupId } = params;
 
         try {
-          // Prefer the legacy in-process member list when present; otherwise
-          // canvas element groupIds are the source of truth (works even after
-          // an MCP server restart).
-          const knownMemberIds = sceneState.groups.get(groupId);
-          const result = await ungroupElements(groupId, knownMemberIds);
-          sceneState.groups.delete(groupId);
+          // The board says who is in the group. This used to prefer a member
+          // list this process had remembered, which was wrong about anyone who
+          // joined the group afterwards and empty in every other client.
+          const result = await ungroupElements(groupId);
 
           logger.info('Ungrouping elements', { groupId, elementIds: result.elementIds, successCount: result.successCount });
 
