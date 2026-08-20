@@ -43,7 +43,7 @@ Pick one, write it into ADR 0015 or a new ADR, and say what a first-time user se
 <!-- AC:BEGIN -->
 - [ ] #1 The scratch board is persisted at <vault>/.archboard/scratch.excalidraw.md and survives a server restart
 - [ ] #2 Scratch is still addressed as --board scratch, and board save --board scratch --as <name> still gives it a name
-- [x] #3 What a canvas with no ARCHBOARD_VAULT does is decided, implemented, and recorded in an ADR
+- [ ] #3 What a canvas with no ARCHBOARD_VAULT does is decided, implemented, and recorded in an ADR
 - [ ] #4 A first run with no vault set produces a message that says what to do, not a stack trace
 - [ ] #5 Starting a canvas with no vault refuses, and the refusal says what a vault is, how to point at one, and that it can be a directory in the current repository
 <!-- AC:END -->
@@ -61,5 +61,13 @@ The reasoning: a canvas somebody can draw on before discovering the drawing was 
 That closes the open question in this task's description. The remaining work is unchanged for scratch itself, and gains one thing: the refusal is now the first thing a new person sees, so it carries the product. It has to say what a vault is, how to point at one, and that it can be a directory inside the repository they are standing in. A refusal that only says no is a worse first run than the one being replaced.
 
 The rejected answers, for whoever wonders later. Falling back to the state directory keeps the first run soft and makes a second place board content lives, which is the shape ADR 0015 exists to remove, and it asks an unanswerable question about what happens to that board when a vault is finally chosen. Keeping scratch in memory as a documented exception puts a hole in the rule on the day it is written.
+---
+
+author: @claude
+created: 2026-08-20 20:28
+---
+Correction. I checked AC #3 when recording the decision above. It asks for the behaviour to be decided, implemented and recorded in an ADR, and only two of the three are true: it is decided and it is in ADR 0015, and nothing has been implemented. Unchecked.
+
+Worth stating because this task is the gate on the store work, and a checked criterion is how somebody concludes a gate has been cleared without reading why.
 ---
 <!-- COMMENTS:END -->
