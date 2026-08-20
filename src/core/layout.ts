@@ -11,11 +11,26 @@
 // Extracted here because `describe` and `compare` must agree: a cluster the
 // read-back names has to be the same cluster the diff says was split.
 
+import { extentOf, type Measurable } from './geometry.js';
+
 export interface Box {
   x: number;
   y: number;
   w: number;
   h: number;
+}
+
+// The one way to turn an element into a Box, because the obvious way is wrong
+// for arrows: an arrow's stored `x, y` is its first point, not its top-left,
+// and an arrow that runs leftwards or upwards is nowhere inside
+// `x .. x + width`. Everything in this file is fed boxes, so a reader that
+// builds one by hand puts arrows in the wrong cluster, the wrong region and
+// outside the frame — and those signals are what an agent narrates back when a
+// human rearranges the board (TASK-038). `geometry.ts` does the measuring;
+// this is the adapter into Box's vocabulary.
+export function boxOf(element: Measurable | null | undefined): Box {
+  const extent = extentOf(element);
+  return { x: extent.x, y: extent.y, w: extent.width, h: extent.height };
 }
 
 export interface BoundingBox {

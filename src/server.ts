@@ -75,6 +75,7 @@ import { narrateChange } from './core/changes.js';
 import { injectTest, injectionStatus, startInjection } from './core/injection.js';
 import { LibraryItem, readLibrary, writeLibrary } from './core/library.js';
 import { recentreBoundTexts } from './core/labels.js';
+import { remeasureLinear } from './core/geometry.js';
 
 // Load environment variables
 dotenv.config();
@@ -497,6 +498,7 @@ app.post('/api/elements', (req: Request, res: Response) => {
     if (element.type === 'arrow' || element.type === 'line') {
       resolveArrowBindings([element], elements);
     }
+    sizeFromPath(element);
 
     elements.set(id, element);
 
@@ -576,10 +578,17 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
       }
     }
 
+    const changed = (key: string) => Object.prototype.hasOwnProperty.call(body, key);
+
+    // New points, new size. Width and height are not a second opinion about a
+    // linear element, they are the size of its path, so a caller that states
+    // the path has stated them too and any it sent alongside is the old
+    // arrow's (TASK-038).
+    if (changed('points')) sizeFromPath(updatedElement);
+
     elements.set(id, updatedElement);
 
     const isLinear = updatedElement.type === 'arrow' || updatedElement.type === 'line';
-    const changed = (key: string) => Object.prototype.hasOwnProperty.call(body, key);
     const geometryChanged = ['x', 'y', 'width', 'height', 'points', 'angle'].some(changed);
     // Pointing an arrow at a different shape is a re-route, not an annotation.
     // Creating one resolves the path from its refs; re-stating them has to do
@@ -845,6 +854,22 @@ function computeEdgePoint(
   }
 }
 
+// Restate a path element's width and height from the path itself, and say
+// whether that changed anything.
+//
+// A linear element keeps its size in its points, and its `x, y` is the first
+// of them rather than a top-left corner (geometry.ts). Every reader that
+// places an arrow reads these numbers, so the server owes them the truth
+// wherever it writes a path: on creation, on a re-route, and on a caller
+// re-pointing an arrow by hand.
+function sizeFromPath(element: ServerElement): boolean {
+  const measured = remeasureLinear(element);
+  if (!measured) return false;
+  element.width = measured.width;
+  element.height = measured.height;
+  return true;
+}
+
 // Helper: resolve arrow bindings in a batch
 function resolveArrowBindings(batchElements: ServerElement[], boardElements: Map<string, ServerElement>): void {
   const elementMap = new Map<string, ServerElement>();
@@ -898,10 +923,13 @@ function resolveArrowBindings(batchElements: ServerElement[], boardElements: Map
       y: endPt.y + (endDy / endDist) * GAP
     };
 
-    // Set arrow position and points
+    // Set arrow position and points, and say how big the arrow now is: writing
+    // a path without re-measuring left every arrow the server had re-routed
+    // recorded at the size it used to be (TASK-038).
     el.x = finalStart.x;
     el.y = finalStart.y;
     el.points = [[0, 0], [finalEnd.x - finalStart.x, finalEnd.y - finalStart.y]];
+    sizeFromPath(el);
 
     // Do NOT delete `start` and `end` here.
     // Excalidraw's frontend `convertToExcalidrawElements` method looks for these exact properties
@@ -987,6 +1015,10 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
 
     // Resolve arrow bindings (computes positions, startBinding, endBinding, boundElements)
     resolveArrowBindings(createdElements, elements);
+
+    // An arrow drawn as a bare path, bound to nothing, never went through the
+    // re-router, so this is where its size gets stated (TASK-038).
+    createdElements.forEach(sizeFromPath);
 
     // Store all elements after binding resolution
     createdElements.forEach(el => elements.set(el.id, el));
