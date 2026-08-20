@@ -300,6 +300,50 @@ export function identityFromFrontmatter(content: string): BoardIdentity | null {
   }
 }
 
+// ─── What a save did to the address, and who follows it ───────
+//
+// `board save` writes to one of three places, and they are three different
+// acts even though one command spells all of them (ADR 0012).
+
+export type BoardSaveKind =
+  // The board saved itself back to its own note. Nothing about the address
+  // changed and there is nothing to say about panes.
+  | 'same-board'
+  // The scratch board got its first home. Scratch is a placeholder, not a
+  // subject, so the drawing a pane is holding has just become a named board.
+  | 'named'
+  // A board with a home was written to a second address as well. The source
+  // keeps its note, its baseline and its place in the store: nothing was
+  // renamed and nothing moved.
+  | 'branch';
+
+export function classifyBoardSave(
+  source: { key: string; vaultBacked: boolean },
+  targetKey: string
+): BoardSaveKind {
+  if (targetKey === source.key) return 'same-board';
+  return source.vaultBacked ? 'branch' : 'named';
+}
+
+/**
+ * Whether the panes holding the source should move onto what was just written.
+ *
+ * Only when the board they were holding has stopped being worth looking at,
+ * which is exactly the scratch case: the placeholder and its new name hold the
+ * same drawing, and leaving a pane on `scratch` would show a copy of the board
+ * that was just created.
+ *
+ * A branch does not move anything. You branch in order to compare, so taking
+ * the source off screen at the moment the proposal is created is the opposite
+ * of what was asked for, and the same reasoning covers the "save elsewhere"
+ * way out of a write conflict (ADR 0006), which parks a copy and means to go
+ * on working on the original. `board open` chooses what is on screen; a save
+ * writes a file (ADR 0012).
+ */
+export function panesFollowSave(kind: BoardSaveKind): boolean {
+  return kind === 'named';
+}
+
 // ─── Write conflicts ──────────────────────────────────────────
 //
 // A save is refused when the destination holds bytes archboard has not seen:

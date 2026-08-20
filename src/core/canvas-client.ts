@@ -384,7 +384,29 @@ export interface BoardResponse {
   forced?: boolean;
   declaredKey?: string;
   /** Where the board landed, when the act was one that put it on screen. */
-  pane?: { paneId: string; clientId: string; place: string; position: number } | null;
+  pane?: PaneRef | null;
+  /**
+   * What a save did to the address (ADR 0012): wrote the board back to its own
+   * note, gave the scratch board its first home, or branched a board that
+   * already had one.
+   */
+  saveKind?: 'same-board' | 'named' | 'branch';
+  /** The board the save read from, which is only interesting when it differs. */
+  savedFrom?: string;
+  /**
+   * What the save did to the screen. `moved` is the panes it repointed at the
+   * board just written, which only happens when scratch got a name; `kept` is
+   * the panes deliberately left on the board that was saved from.
+   */
+  panes?: { moved: PaneRef[]; kept: PaneRef[] };
+}
+
+export interface PaneRef {
+  paneId: string;
+  clientId: string;
+  /** "left", "right", "the only pane" — how a human points at it. */
+  place: string;
+  position: number;
 }
 
 export interface BoardListResponse {
