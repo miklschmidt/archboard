@@ -14,7 +14,6 @@ interface BoardBarProps {
   boardKey: string | null
   elementCount: number
   connected: boolean
-  vaultBacked: boolean
   savedAt: string | null
   dirty: boolean
   paneCount: number
@@ -30,15 +29,14 @@ interface BoardBarProps {
 const clock = (iso: string): string =>
   new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
-function saveState(vaultBacked: boolean, savedAt: string | null, dirty: boolean): string {
-  if (!vaultBacked) return 'not in the vault'
+function saveState(savedAt: string | null, dirty: boolean): string {
   if (dirty) return 'unsaved changes'
   if (savedAt) return `saved ${clock(savedAt)}`
   return 'no changes'
 }
 
 export function BoardBar({
-  identity, boardKey, elementCount, connected, vaultBacked, savedAt, dirty,
+  identity, boardKey, elementCount, connected, savedAt, dirty,
   paneCount, onOpen, onNew, onSave, onClear, onAddPane, onClosePane, busy
 }: BoardBarProps): JSX.Element {
   return (
@@ -54,7 +52,7 @@ export function BoardBar({
         {identity?.level && <span className="chip chip-quiet">{identity.level}</span>}
         <span className="meta">{elementCount} element{elementCount === 1 ? '' : 's'}</span>
         <span className={`meta ${dirty ? 'meta-dirty' : ''}`}>
-          {saveState(vaultBacked, savedAt, dirty)}
+          {saveState(savedAt, dirty)}
         </span>
       </div>
 
