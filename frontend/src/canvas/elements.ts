@@ -10,7 +10,12 @@
 import { convertToExcalidrawElements } from '@excalidraw/excalidraw'
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
 import type { ServerElement } from '../types'
-import { adoptReusedLabelIds, boundTextsByContainer, planLabelExpansion } from '../../../src/core/labels'
+import {
+  adoptReusedLabelIds,
+  boundTextsByContainer,
+  planLabelExpansion,
+  rescueDriftedBoundTexts
+} from '../../../src/core/labels'
 
 // Helper function to clean elements for Excalidraw
 export const cleanElementForExcalidraw = (element: ServerElement): Partial<ExcalidrawElement> => {
@@ -124,6 +129,30 @@ const recenterBoundShapeTextElements = (
       x: container.x + (container.width - textElement.width) / 2,
       y: container.y + (container.height - textElement.height) / 2,
     }
+  })
+}
+
+// The same job for an arrow, which the rule above does not cover because
+// `isShapeContainerType` is only the three box shapes. An arrow's label was
+// therefore reported at whatever position the converter minted it at, and on a
+// real board that came out over a thousand pixels from the arrow — invisible,
+// because Excalidraw recomputes the position before it draws, and ruinous to
+// everything that reads coordinates instead of pixels (TASK-034).
+//
+// Rescued rather than re-centred: the pane puts a label back on the thing it
+// names when the record is plainly wrong, and otherwise leaves Excalidraw's own
+// placement alone. See rescueDriftedBoundTexts for why the distinction matters.
+const rescueStrayBoundTextElements = (
+  elements: Partial<ExcalidrawElement>[]
+): Partial<ExcalidrawElement>[] => {
+  const moves = new Map(
+    rescueDriftedBoundTexts(elements as Array<Partial<ExcalidrawElement> & { id: string }>)
+      .map((move) => [move.id, move])
+  )
+  if (moves.size === 0) return elements
+  return elements.map((element) => {
+    const move = element.id ? moves.get(element.id) : undefined
+    return move ? { ...element, x: move.x, y: move.y } : element
   })
 }
 
@@ -261,6 +290,8 @@ export const convertElementsPreservingImageProps = (
     reuse
   ) as Partial<ExcalidrawElement>[]
   return dropSpentLabelSeeds(
-    recenterBoundShapeTextElements([...restoredNonImageElements, ...imageElements, ...freedrawElements])
+    rescueStrayBoundTextElements(
+      recenterBoundShapeTextElements([...restoredNonImageElements, ...imageElements, ...freedrawElements])
+    )
   )
 }

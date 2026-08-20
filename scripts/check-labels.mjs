@@ -19,6 +19,9 @@
 // making labels immutable, which would be the other way to get the count right
 // and would break renaming.
 
+import fs from 'node:fs';
+import os from 'node:os';
+import { spawn } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -29,7 +32,12 @@ const {
   boundTextsByContainer,
   planLabelRepair,
   labelStatements,
-  labelClearances
+  labelClearances,
+  labelAnchorOf,
+  boundTextPlacement,
+  recentreBoundTexts,
+  boundTextDrift,
+  rescueDriftedBoundTexts
 } = await import(join(__dirname, '..', 'dist', 'core', 'labels.js'));
 
 let failures = 0;
@@ -652,6 +660,336 @@ const CYCLES = 25;
   for (let i = 0; i < CYCLES; i++) cycle(reopened, freshBaseline, { contain: true });
   assert(reopened.size === 6, `repaired board grew back to ${reopened.size} elements`);
   assert(worstLabelCount([...reopened.values()]) === 1, 'repaired board started duplicating again');
+}
+
+// --- a label sits where its container puts it -------------------------------
+//
+// Excalidraw recomputes a bound text's position from its container every time
+// it draws one, so stored coordinates that are wrong still look right. The
+// readers that work from coordinates rather than pixels — the scene bounding
+// box, and so zoom-to-fit and the crop of an image export, and the relative
+// position signals `describe` and `compare` are built on — get the wrong
+// answer, quietly (TASK-034).
+
+const placed = () => [
+  { id: 'svc', type: 'rectangle', x: 0, y: 0, width: 200, height: 80 },
+  { id: 'svc-label', type: 'text', containerId: 'svc', x: 50, y: 27, width: 100, height: 26, text: 'AuthService' },
+  { id: 'wire', type: 'arrow', x: 200, y: 40, width: 200, height: 0, points: [[0, 0], [200, 0]] },
+  { id: 'wire-label', type: 'text', containerId: 'wire', x: 275, y: 27, width: 50, height: 26, text: 'HTTP' }
+];
+
+{
+  const [shape, , arrow] = placed();
+  assert(
+    JSON.stringify(labelAnchorOf(shape)) === JSON.stringify({ x: 100, y: 40 }),
+    `a shape hangs its label from ${JSON.stringify(labelAnchorOf(shape))}, not its centre`
+  );
+  assert(
+    JSON.stringify(labelAnchorOf(arrow)) === JSON.stringify({ x: 300, y: 40 }),
+    `a two-point arrow hangs its label from ${JSON.stringify(labelAnchorOf(arrow))}, not its midpoint`
+  );
+
+  // Excalidraw takes the middle vertex of an odd-length path and the midpoint
+  // of the middle segment of an even one, so an elbowed arrow labels itself at
+  // the bend rather than at the average of its ends.
+  const elbow = { id: 'e', type: 'arrow', x: 0, y: 0, points: [[0, 0], [100, 0], [100, 100]] };
+  assert(
+    JSON.stringify(labelAnchorOf(elbow)) === JSON.stringify({ x: 100, y: 0 }),
+    `an odd-length path anchors at ${JSON.stringify(labelAnchorOf(elbow))}, not its middle vertex`
+  );
+
+  // An arrow measures itself from its points, never from the stored width and
+  // height: the server re-routes a path without re-measuring the box round it.
+  const stale = { id: 's', type: 'arrow', x: 0, y: 0, width: 9999, height: 9999, points: [[0, 0], [200, 0]] };
+  assert(
+    labelAnchorOf(stale)?.x === 100,
+    'an arrow trusted its stale width instead of its points'
+  );
+
+  // The answer has to be knowable, or there is no answer. Moving a label to a
+  // guess is worse than leaving it where somebody can see it is wrong.
+  assert(labelAnchorOf({ id: 'p', type: 'arrow', x: 0, y: 0 }) === undefined, 'a pathless arrow invented an anchor');
+  assert(labelAnchorOf({ id: 'n', type: 'rectangle' }) === undefined, 'a shape with no coordinates invented an anchor');
+  assert(
+    boundTextPlacement(placed()[0], { id: 't', type: 'text' }) === undefined,
+    'an unmeasured label was given a position'
+  );
+}
+
+// --- moving, resizing and re-routing all take the label with them ------------
+//
+// The three ways a container's geometry changes under the API, each modelled as
+// the server does it: the container is written, then every bound text it holds
+// is settled back onto it.
+
+function settle(elements, ids) {
+  const moves = new Map(recentreBoundTexts(elements, ids).map((move) => [move.id, move]));
+  return elements.map((element) => {
+    const move = moves.get(element.id);
+    return move ? { ...element, x: move.x, y: move.y } : element;
+  });
+}
+
+const sceneBox = (elements) => ({
+  minX: Math.min(...elements.map((el) => el.x)),
+  minY: Math.min(...elements.map((el) => el.y)),
+  maxX: Math.max(...elements.map((el) => el.x + (el.width ?? 0))),
+  maxY: Math.max(...elements.map((el) => el.y + (el.height ?? 0)))
+});
+
+{
+  const start = placed();
+  assert(boundTextDrift(start).length === 0, 'the fixture starts out drifted');
+
+  // Moved.
+  const moved = start.map((el) => (el.id === 'svc' ? { ...el, x: 0, y: 900 } : el));
+  const strayed = boundTextDrift(moved);
+  assert(strayed.length === 1 && strayed[0].textId === 'svc-label',
+    `moving a box did not strand its label (${strayed.length} drifted)`);
+  assert(strayed[0].distance > 800, `the stranded label reads ${Math.round(strayed[0].distance)}px from its box`);
+  // The phantom region: the box is at y=900 and the label it left behind holds
+  // the top of the scene at y=27, so everything that frames the board frames a
+  // rectangle of empty canvas nearly nine hundred pixels tall.
+  const strandedBox = sceneBox(moved.filter((el) => el.id.startsWith('svc')));
+  assert(strandedBox.maxY - strandedBox.minY > 900,
+    `the model does not reproduce the phantom region (${Math.round(strandedBox.maxY - strandedBox.minY)}px tall)`);
+  const settledMove = settle(moved, ['svc']);
+  assert(boundTextDrift(settledMove).length === 0, 'settling did not bring the moved label along');
+  assert(settledMove.find((el) => el.id === 'svc-label').y === 927, 'the moved label did not land on its box');
+  const closedBox = sceneBox(settledMove.filter((el) => el.id.startsWith('svc')));
+  assert(closedBox.minY === 900 && closedBox.maxY === 980, 'the phantom region survived settling');
+
+  // Resized. Nobody has abandoned the label here — it is still inside the box —
+  // so the invariant stays quiet and it is the settle that has to notice.
+  const resized = start.map((el) => (el.id === 'svc' ? { ...el, width: 600, height: 400 } : el));
+  assert(recentreBoundTexts(resized, ['svc']).length === 1, 'resizing a box did not knock its label off centre');
+  const settledResize = settle(resized, ['svc']);
+  assert(boundTextDrift(settledResize).length === 0, 'settling did not re-centre the resized box\'s label');
+  const centred = settledResize.find((el) => el.id === 'svc-label');
+  assert(centred.x === 250 && centred.y === 187, `the resized box's label sits at ${centred.x},${centred.y}`);
+
+  // Re-routed: the arrow's path is recomputed, which moves its midpoint.
+  const rerouted = start.map((el) =>
+    el.id === 'wire' ? { ...el, x: 200, y: 40, points: [[0, 0], [300, 400]] } : el);
+  assert(recentreBoundTexts(rerouted, ['wire']).length === 1, 're-routing an arrow did not leave its label behind');
+  const settledRoute = settle(rerouted, ['wire']);
+  assert(boundTextDrift(settledRoute).length === 0, 'settling did not move the re-routed label to the new midpoint');
+  const onWire = settledRoute.find((el) => el.id === 'wire-label');
+  assert(onWire.x === 325 && onWire.y === 227, `the re-routed label sits at ${onWire.x},${onWire.y}`);
+
+  // A settle that has nothing to do says nothing, so an update that moved
+  // nothing cannot bump a text element's version or wake the change feed.
+  assert(recentreBoundTexts(start).length === 0, 'a settled board still had labels to move');
+  assert(recentreBoundTexts(settledMove, ['wire']).length === 0, 'settling one container disturbed another');
+}
+
+// --- the invariant is generous about alignment and strict about abandonment --
+
+{
+  // Excalidraw parks a top-aligned label against the container's top edge, so
+  // the check has to allow half a container's worth of offset. It is looking
+  // for a label the board forgot, not a label with an opinion.
+  const topAligned = placed().map((el) => (el.id === 'svc-label' ? { ...el, y: 5 } : el));
+  assert(boundTextDrift(topAligned).length === 0, 'a top-aligned label was read as drift');
+
+  // A duplicate that is nowhere near its container is still drift: every one
+  // of them counts, not just the one Excalidraw happens to draw.
+  const twinned = [
+    ...placed(),
+    { id: 'svc-copy', type: 'text', containerId: 'svc', x: -900, y: -900, width: 100, height: 26, text: 'AuthService' }
+  ];
+  assert(
+    boundTextDrift(twinned).some((entry) => entry.textId === 'svc-copy'),
+    'a stray duplicate label was not reported as drifted'
+  );
+
+  // Nothing to measure is not drift. A board mid-repair must not fail a check
+  // for facts it does not have.
+  assert(
+    boundTextDrift([{ id: 'c', type: 'rectangle' }, { id: 'c-l', type: 'text', containerId: 'c', text: 'x' }]).length === 0,
+    'a container with no coordinates was reported as drifted'
+  );
+}
+
+// --- the pane rescues a lost label and fine-tunes nothing --------------------
+//
+// The browser has to be more careful than the server. Excalidraw is the
+// authority on where it draws a label, and it does not always agree with this
+// module to the pixel — a curved multi-point arrow hangs its label from the
+// bezier. Correcting a pixel would start the argument all over again: the pane
+// moves it, Excalidraw moves it back, the report carries that, the next
+// delivery moves it again. So the pane acts only where the record is plainly
+// wrong, which is what `frontend/src/canvas/elements.ts` calls on every
+// conversion.
+
+{
+  const start = placed();
+  assert(rescueDriftedBoundTexts(start).length === 0, 'a settled board was rearranged by the rescue');
+
+  // Excalidraw's own placement, a few pixels from ours. Left alone.
+  const nudged = start.map((el) => (el.id === 'wire-label' ? { ...el, x: el.x + 6, y: el.y - 4 } : el));
+  assert(rescueDriftedBoundTexts(nudged).length === 0,
+    'the pane argued with Excalidraw over a few pixels, which is how the loop starts');
+
+  // What the converter actually did to a real arrow label: minted it more than
+  // a thousand pixels from the arrow, where nothing on screen shows it.
+  const lost = start.map((el) => (el.id === 'wire-label' ? { ...el, x: 15, y: -82 } : el));
+  const rescue = rescueDriftedBoundTexts(lost);
+  assert(rescue.length === 1 && rescue[0].id === 'wire-label',
+    `the rescue moved ${rescue.length} label(s), expected the lost one`);
+  assert(Math.round(rescue[0].x) === 275 && Math.round(rescue[0].y) === 27,
+    `the rescued arrow label was sent to ${Math.round(rescue[0].x)},${Math.round(rescue[0].y)}`);
+  const rescued = lost.map((el) => (el.id === 'wire-label' ? { ...el, x: rescue[0].x, y: rescue[0].y } : el));
+  assert(boundTextDrift(rescued).length === 0, 'the rescue did not put the label back on its arrow');
+  assert(rescueDriftedBoundTexts(rescued).length === 0, 'the rescue is not a fixed point');
+}
+
+// --- and every fixture in this file holds the invariant ----------------------
+//
+// The boards the rest of these checks build are the ones this is run over: if
+// containment, a rename or a repair ever moves a label off the thing it names,
+// it fails here.
+
+{
+  const boards = { drawn: drawn(), placed: placed() };
+  const store = boardOf(drawn());
+  const baseline = new Map();
+  for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+  boards['round-tripped'] = [...store.values()];
+
+  const polluted = boardOf(drawn());
+  const pollutedBaseline = new Map();
+  for (let i = 0; i < CYCLES; i++) cycle(polluted, pollutedBaseline, { contain: false });
+  const plan = planLabelRepair([...polluted.values()]);
+  const doomed = new Set(plan.removeIds);
+  boards.repaired = [...polluted.values()].filter((element) => !doomed.has(element.id));
+
+  for (const [name, elements] of Object.entries(boards)) {
+    const drifted = boundTextDrift(elements);
+    assert(
+      drifted.length === 0,
+      `${name}: ${drifted.length} bound text(s) further from their container than its size allows` +
+        (drifted[0] ? ` — ${JSON.stringify(drifted[0].text)} at ${Math.round(drifted[0].distance)}px` : '')
+    );
+  }
+}
+
+// --- and the server actually applies it --------------------------------------
+//
+// The rest of this file is a model. This is the real update path: a real
+// server, a labelled shape and a labelled arrow with real bound text elements,
+// moved and resized and re-routed over HTTP the way `update`, `apply`, `arrange
+// align` and `arrange distribute` all do it — and then saved to a vault note
+// and opened again, because a board that comes back drifted is a board every
+// later screenshot frames wrongly.
+
+{
+  // A different port each run, so two checkouts running the suite at once do
+  // not serialise on one, and so this never lands on somebody's real canvas.
+  const PORT = 35000 + Math.floor(Math.random() * 2000);
+  const base = `http://127.0.0.1:${PORT}`;
+  const vault = fs.mkdtempSync(join(os.tmpdir(), 'archboard-labels-'));
+  const server = spawn(process.execPath, [join(__dirname, '..', 'dist', 'server.js')], {
+    env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', ARCHBOARD_VAULT: vault, LOG_LEVEL: 'error' },
+    stdio: ['ignore', 'ignore', 'ignore']
+  });
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const api = async (method, url, body) => {
+    const response = await fetch(`${base}${url}`, {
+      method,
+      ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    });
+    return response.json().catch(() => null);
+  };
+  const board = '?board=scratch';
+  const elementsOn = async (key = 'scratch') =>
+    (await api('GET', `/api/elements?board=${encodeURIComponent(key)}`))?.elements ?? [];
+  const driftOn = async (key) => boundTextDrift(await elementsOn(key));
+
+  try {
+    for (let i = 0; i < 100; i++) {
+      try { await fetch(`${base}/health`); break; } catch { await sleep(100); }
+    }
+
+    await api('POST', `/api/elements/batch${board}`, {
+      elements: [
+        { id: 'svc', type: 'rectangle', x: 100, y: 100, width: 200, height: 100, label: { text: 'AuthService' } },
+        { id: 'gw', type: 'rectangle', x: 600, y: 100, width: 200, height: 100, label: { text: 'Gateway' } },
+        { id: 'pg', type: 'rectangle', x: 600, y: 700, width: 200, height: 100, label: { text: 'Postgres' } },
+        {
+          id: 'wire', type: 'arrow', x: 300, y: 150, width: 300, height: 0,
+          start: { id: 'svc' }, end: { id: 'gw' }, label: { text: 'HTTP' }
+        }
+      ]
+    });
+
+    // A pane reports what Excalidraw made of those labels: one bound text each,
+    // placed where the renderer draws it. Everything after this is the server
+    // moving containers on its own, with no browser to correct it.
+    const upserts = [];
+    for (const element of await elementsOn()) {
+      if (!element.label?.text) continue;
+      const width = element.label.text.length * 10;
+      const anchor = labelAnchorOf(element);
+      upserts.push({ ...element, boundElements: [...(element.boundElements ?? []), { id: `${element.id}-l`, type: 'text' }] });
+      upserts.push({
+        id: `${element.id}-l`, type: 'text', containerId: element.id, text: element.label.text,
+        x: anchor.x - width / 2, y: anchor.y - 12.5, width, height: 25
+      });
+    }
+    await api('POST', `/api/elements/changes${board}`, { upserts, deletes: [], clientId: 'pane' });
+    assert((await driftOn('scratch')).length === 0, 'the seeded board was drifted before anything moved');
+
+    await api('PUT', `/api/elements/svc${board}`, { x: 100, y: 900 });
+    let drifted = await driftOn('scratch');
+    assert(drifted.length === 0,
+      `moving a shape stranded ${drifted.length} label(s): ${drifted.map((d) => `${d.text} ${Math.round(d.distance)}px`).join(', ')}`);
+
+    await api('PUT', `/api/elements/gw${board}`, { width: 500, height: 400 });
+    drifted = await driftOn('scratch');
+    assert(drifted.length === 0,
+      `resizing a shape stranded ${drifted.length} label(s): ${drifted.map((d) => `${d.text} ${Math.round(d.distance)}px`).join(', ')}`);
+
+    await api('PUT', `/api/elements/wire${board}`, { points: [[0, 0], [400, 500]] });
+    assert((await driftOn('scratch')).length === 0, 're-pointing an arrow stranded its label');
+
+    await api('PUT', `/api/elements/wire${board}`, { end: { id: 'pg' } });
+    const wire = (await elementsOn()).find((element) => element.id === 'wire');
+    assert(
+      JSON.stringify(wire.points) !== JSON.stringify([[0, 0], [400, 500]]),
+      'pointing an arrow at a different shape did not re-route it'
+    );
+    assert((await driftOn('scratch')).length === 0, 're-binding an arrow stranded its label');
+
+    // The stray label is not just close enough — it is where Excalidraw draws
+    // it, to the pixel, so the scene box is the box a person would draw.
+    const scene = await elementsOn();
+    const byId = new Map(scene.map((element) => [element.id, element]));
+    for (const [containerId, textIds] of boundTextsByContainer(scene)) {
+      const text = byId.get(textIds[0]);
+      const wanted = boundTextPlacement(byId.get(containerId), text);
+      assert(
+        Math.abs(text.x - wanted.x) < 0.5 && Math.abs(text.y - wanted.y) < 0.5,
+        `${JSON.stringify(text.text)} is stored at ${Math.round(text.x)},${Math.round(text.y)} ` +
+        `where its container draws it at ${Math.round(wanted.x)},${Math.round(wanted.y)}`
+      );
+    }
+
+    // Saved to a note and opened again: what the vault holds is what the board
+    // becomes, so the invariant has to survive the round trip.
+    const saved = await api('POST', `/api/boards/save${board}`, { name: 'labelled' });
+    assert(saved?.success === true, `saving the board failed: ${JSON.stringify(saved?.error ?? saved)}`);
+    const reopened = await api('POST', '/api/boards/open', { board: 'labelled' });
+    assert(reopened?.success === true, `reopening the board failed: ${JSON.stringify(reopened?.error ?? reopened)}`);
+    const back = await driftOn('labelled');
+    assert(back.length === 0,
+      `a board saved and reopened came back with ${back.length} drifted label(s): ` +
+      back.map((d) => `${d.text} ${Math.round(d.distance)}px`).join(', '));
+  } finally {
+    server.kill('SIGTERM');
+    await sleep(200);
+    fs.rmSync(vault, { recursive: true, force: true });
+  }
 }
 
 if (failures > 0) {
