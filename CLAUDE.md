@@ -104,27 +104,25 @@ drops every unsaved board, so save first, or ask.
 `bun run type-check` is the only thing that type-checks now, and `bun run test`
 runs it first, so a type error still fails the suite.
 
-**One check drives a real browser, and it is not in `bun run test`.**
+**One check drives a real browser, and running the suite needs one.**
 `bun run test:browser` (`scripts/check-fixed-point.mjs`, TASK-071) writes a
 board, renders it in headless Chrome through `agent-browser`, reads back what
 the pane is holding, and reports every element and field Excalidraw changed.
 Everything else in `scripts/` stands a WebSocket in for a pane, which cannot
 catch a renderer disagreeing with us. It rebuilds `dist/frontend` first,
 because that is half of what it measures, and it takes about eleven seconds.
-It is out of the suite on purpose: it asserts today's baseline of 8 of 12
-elements changed rather than the zero we want, and TASK-072 is what flips it
-and wires it in.
+**It reports zero, and zero is asserted** (TASK-072): what archboard writes is
+a document Excalidraw does not change. Without `agent-browser` on PATH it exits
+2 — "I could not run" — rather than claiming a pass, so `bun run test` needs it.
 
 **A push runs the whole chain** (TASK-082). `.github/workflows/ci.yml` runs
 `bun run test` and nothing else, so a check added to `package.json` runs on
 main without anybody touching the workflow. It used to name two scripts of its
 own while the suite grew to seventeen around it, which is why
-`bun run test:suites` now fails when a `test:*` script is in neither the chain
-nor the skip list in `scripts/check-ci-suites.mjs`. One suite is on that list:
-`test:browser`, which CI runs in a job of its own that installs `agent-browser`
-and its Chrome, and which cannot fail the build until TASK-072 turns its
-baseline into zero. The chain takes 58 seconds on a 13th-gen i7, and
-`test:mcp`, `test:boards` and `test:side-by-side` are two thirds of that.
+`bun run test:suites` fails when a `test:*` script is in neither the chain nor
+the skip list in `scripts/check-ci-suites.mjs`. **That list is empty.** The
+chain takes 58 seconds on a 13th-gen i7 plus the browser check, and `test:mcp`,
+`test:boards` and `test:side-by-side` are two thirds of the rest.
 
 Open <http://127.0.0.1:3000>. A browser tab is required for `screenshot`,
 `mermaid`, image export, and viewport control; pure JSON ops work headless.
@@ -212,6 +210,35 @@ is about. An agent's batched write is otherwise the same write a single-element
 settling happens once at the end of the intent rather than once per element.
 `bun run test:one-write` counts writes on the wire through a proxy, so a loop
 cannot pass itself off as a batch.
+
+**There is one converter, it runs on the way in, and nothing converts on the
+way out** (ADR 0015, TASK-072). An agent writes `label: {text}` on a shape;
+Excalidraw has no such field, and a label there is a separate text element with
+a measured width and a computed position. `src/core/expand-elements.ts` turns
+one into the other, at the write boundary, and the board holds the result. So a
+labelled box is **two elements** — itself and its label — from the moment it is
+written, `batch_create` of four labelled shapes answers with eight, and a
+headless board no longer carries labels that only become elements when somebody
+happens to open a browser.
+
+There used to be a second converter: the pane ran Excalidraw's own
+`convertToExcalidrawElements` on every delivery, and then six passes of ours
+put right what it had done. Given one board of nine elements the two produced
+documents differing on fourteen fields. That is gone, along with
+`restoreBindings`, `planLabelExpansion`, `adoptReusedLabelIds`,
+`dropSpentLabelSeeds`, `recenterBoundShapeTextElements` and
+`rescueStrayBoundTextElements`.
+
+**A text element's width is measured, not estimated.** Excalidraw's width for a
+piece of text is exactly what the browser's `measureText` returns, so
+`src/core/measure-text.ts` reproduces it from the woff2 subsets already inside
+`@excalidraw/excalidraw` — advance widths, GPOS kerning, GSUB ligatures, face
+selection by `unicode-range`, no shaping across a space. It agrees with Chrome
+to within 0.0012 px across 130,000 measurements. The old estimate of
+0.6 x fontSize per character made `AuthService` 76.7 px too wide and every
+label three times too tall. Height is not measured by anybody: Excalidraw's is
+`fontSize * lineHeight * lineCount`, with `lineHeight` a per-family constant.
+See `docs/design/measuring-text-outside-a-browser.md`.
 
 **`customData` and `link` both survive the full round-trip**, including the
 change report a human's drag produces. Verified with a real drag:

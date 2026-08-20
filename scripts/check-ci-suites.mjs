@@ -28,17 +28,14 @@ const workflowPath = join(repoRoot, '.github', 'workflows', 'ci.yml');
 
 // --- what the chain is allowed to leave out ---------------------------------
 //
-// One entry, and it should be empty again by the end of stage 5.
+// Nothing. `test:browser` was the one entry, because it asserted a baseline of
+// 8 of 12 elements changed rather than guarding a property. Stage 5 made that
+// zero (TASK-072), so it guards now, and it is in the chain — which means the
+// suite needs `agent-browser` and a browser. That is the cost of being able to
+// tell whether a board we write is one Excalidraw agrees with; nothing else in
+// `scripts/` can, because every other check stands a socket in for a pane.
 
-const SKIPPED = {
-  'test:browser':
-    'it measures rather than guards. `scripts/check-fixed-point.mjs` asserts the ' +
-    'baseline taken on 2026-08-20, where 8 of 12 elements come back changed when ' +
-    'Excalidraw renders a board we wrote, and a run reporting zero is a failure ' +
-    'there until TASK-072 makes zero true. Putting it in the chain would also make ' +
-    'every developer machine need a browser to run `bun run test`. CI runs it in a ' +
-    'job of its own, which is where the browser is installed.'
-};
+const SKIPPED = {};
 
 let failures = 0;
 const fail = message => { failures += 1; console.error(`FAIL: ${message}`); };
