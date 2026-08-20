@@ -17,7 +17,7 @@ import { InstallLibraryDialog } from './InstallLibraryDialog'
 import { useLibrary } from './useLibrary'
 import { BoardConflictError, clearBoard, fetchBoardInfo, newBoard, openBoard, saveBoard } from '../canvas/api'
 import type { SaveRequest } from '../canvas/api'
-import type { BoardInfo, BoardWriteConflict, PaneStatus } from '../types'
+import type { BoardInfo, BoardSaveResult, BoardWriteConflict, PaneRef, PaneStatus } from '../types'
 import './shell.css'
 
 const THEME_KEY = 'archboard-theme'
@@ -37,7 +37,59 @@ function initialTheme(): 'light' | 'dark' {
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-interface Notice { kind: 'info' | 'error'; text: string }
+// `hold` keeps a notice up until it is clicked away. A message that tells you
+// what to type is no use if it leaves before you have typed it.
+interface Notice { kind: 'info' | 'error'; text: string; hold?: boolean }
+
+/** "the only pane", "the left pane", "the left and right panes". */
+function listPanes(refs: PaneRef[]): string {
+  const places = refs.map((ref) => (ref.place === 'the only pane' ? 'only' : ref.place))
+  if (places.length === 1) return `the ${places[0]} pane`
+  return `the ${places.slice(0, -1).join(', ')} and ${places[places.length - 1]} panes`
+}
+
+/**
+ * What to say about a save. Three acts wear one button (ADR 0012), and the one
+ * that needs saying out loud is the branch: it writes a second board and puts
+ * it nowhere, so the message names the panes still holding the source and the
+ * command that puts the branch on screen.
+ */
+function saveNotice(saved: BoardSaveResult, paneCount: number): Notice {
+  const wrote = saved.forced
+    ? `Overwrote ${saved.file}. Whatever that note held is gone.`
+    : `Saved "${saved.board}" to ${saved.file}.`
+  const moved = saved.panes?.moved ?? []
+  const kept = saved.panes?.kept ?? []
+
+  if (saved.saveKind === 'branch') {
+    const source = `"${saved.savedFrom}"`
+    const stayed = kept.length
+      ? `${listPanes(kept)} still ${kept.length > 1 ? 'hold' : 'holds'} ${source}`
+      : `no pane was holding ${source}`
+    // `pane open` makes a pane rather than taking one, so it is the move that
+    // cannot overwrite the board being read. It has nowhere to go once the
+    // shell is full, and then the only way up is over a board on screen.
+    const show = paneCount < MAX_PANES
+      ? `Put it up beside this one with \`pane open --board ${saved.board}\`.`
+      : `Both panes are full, so put it up with \`board open ${saved.board} --pane left\`` +
+        ' or `--pane right`, which replaces the board in that pane.'
+    return {
+      kind: 'info',
+      hold: true,
+      text: `${wrote} That branches ${source}, and a branch moves nothing: ` +
+        `${stayed}, and the branch is not on screen anywhere. ${show}`
+    }
+  }
+
+  if (moved.length) {
+    return {
+      kind: 'info',
+      text: `${wrote} It is showing in ${listPanes(moved)}, which held "${saved.savedFrom}".`
+    }
+  }
+
+  return { kind: 'info', text: wrote }
+}
 
 export function Shell(): JSX.Element {
   // A pane is a slot holding its own canvas. One is the normal case; the list
@@ -174,22 +226,31 @@ export function Shell(): JSX.Element {
     run(async () => {
       try {
         const saved = await saveBoard(request)
-        setBoardInfo(saved)
+        // Whether this pane is now holding what was written is the server's
+        // answer to give, not the shell's to assume. A save used to move the
+        // panes on the board it wrote, so adopting the answer was always
+        // right; a branch writes a second board and moves nothing (ADR 0012),
+        // and adopting it there dates this pane's board by another board's
+        // save. `boardInfo` is the baseline behind the dirty indicator, so
+        // that is the indicator pointing at a board nobody is looking at.
+        const kind = saved.saveKind ?? 'same-board'
+        const holdingIt = kind === 'branch'
+          ? false
+          : kind === 'named'
+            ? (saved.panes?.moved ?? []).some((pane) => pane.clientId === status?.clientId)
+            : saved.board === boardKey
+        if (holdingIt) setBoardInfo(saved)
+        else void refreshBoardInfo(boardKey)
         setDialog(null)
         setConflict(null)
-        setNotice({
-          kind: 'info',
-          text: saved.forced
-            ? `Overwrote ${saved.file}. Whatever that note held is gone.`
-            : `Saved ${saved.board} to ${saved.file}.`
-        })
+        setNotice(saveNotice(saved, panes.length))
       } catch (error) {
         if (!(error instanceof BoardConflictError)) throw error
         setDialog(null)
         setDialogError(null)
         setConflict({ conflict: error.conflict, request })
       }
-    }), [run])
+    }), [run, boardKey, status?.clientId, refreshBoardInfo, panes.length])
 
   // A board is opened INTO a pane. With one pane the server takes that one;
   // with two it needs telling, which is what the dialog's pane picker is for.
@@ -260,7 +321,7 @@ export function Shell(): JSX.Element {
     })
 
   useEffect(() => {
-    if (!notice) return
+    if (!notice || notice.hold) return
     const timer = setTimeout(() => setNotice(null), 9000)
     return () => clearTimeout(timer)
   }, [notice])
@@ -298,7 +359,11 @@ export function Shell(): JSX.Element {
       />
 
       {notice && (
-        <div className={`notice notice-${notice.kind}`} onClick={() => setNotice(null)}>
+        <div
+          className={`notice notice-${notice.kind}${notice.hold ? ' notice-hold' : ''}`}
+          title="Click to dismiss"
+          onClick={() => setNotice(null)}
+        >
           {notice.text}
         </div>
       )}

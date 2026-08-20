@@ -56,6 +56,32 @@ export interface BoardInfo {
   loadedAt?: string;
 }
 
+/** One pane, named the way an answer points at it: "left", "the only pane". */
+export interface PaneRef {
+  paneId: string;
+  clientId: string;
+  place: string;
+  position: number;
+}
+
+/**
+ * What a save did, as the server classified it (ADR 0012). A save writes a
+ * file and does not choose what is on screen, so the answer says which of the
+ * three acts it was and which panes it moved. Reading `saveKind` is how the
+ * shell knows whether the pane in front of the human is holding what was just
+ * written: after a branch it is not.
+ */
+export interface BoardSaveResult extends BoardInfo {
+  file: string;
+  overwrote: boolean;
+  forced?: boolean;
+  saveKind?: 'same-board' | 'named' | 'branch';
+  /** The board the save read from, which is only interesting when it differs. */
+  savedFrom?: string;
+  /** `moved` was repointed at what was written; `kept` was left on the source. */
+  panes?: { moved: PaneRef[]; kept: PaneRef[] };
+}
+
 /**
  * A save the server refused because the note at the destination is not the one
  * archboard read (ADR 0006). Carries the three outcomes rather than leaving the
