@@ -76,6 +76,12 @@ Excalifont width is 203.6598 and whose fallback width is 163.2715. It is
 neither regime. Worth pinning down, because something is adding roughly 5 px,
 and `BOUND_TEXT_PADDING` in Excalidraw is 5.
 
+**Placed, in stage 5.** It is Virgil at 20 px, which is what our converter wrote
+for a standalone text before this stage corrected it, and the measurer gives
+208.860 for it. Not padding, and not a third regime: a third *font*. It showed
+up the moment the fixed-point check's font gate was fixed and that check started
+rendering in the font the note names.
+
 ## Summing advance widths is not enough, and the rest is small
 
 Advance widths alone reproduced all five reference strings, which is why they
@@ -222,12 +228,25 @@ It is deprecated in Excalidraw and nothing archboard writes chooses it, but a
 board that already carries it has no honest server-side width, and stage 5 has
 to decide what to do rather than discover it.
 
+**Decided in stage 5: nothing.** `canMeasure(2)` is false and the converter
+leaves such an element's width and height exactly as it found them, rather than
+inventing a number. `measureText` reports every character as unmeasured so a
+caller can say so. The same answer covers a character outside every family that
+ships a file.
+
 **Xiaolai and Segoe UI Emoji are untested.** Xiaolai is Excalifont's CJK
 fallback and ships as 209 subsets; I did not load them. Any character outside
 the chosen family falls through to Xiaolai, then to Segoe UI Emoji, then to a
 system font, and the last of those is unmeasurable for the same reason Helvetica
 is. In the corpus, 9 of 607 strings had a character outside Excalifont, all of
 them Greek capitals in randomly generated text.
+
+Stage 5 implements the fallback to Xiaolai anyway, and says in the source that
+it is untested against Chrome: it is Excalidraw's own declared chain applied to
+a method that agrees with Chrome everywhere it has been checked, and the
+alternative is counting a character as zero wide. Xiaolai's 209 subsets cost
+nothing until one is needed, because a face is parsed the first time a
+character selects it.
 
 **One browser, one box.** Headless Chrome 150 on Linux at `devicePixelRatio` 1.
 Not tested: another Chrome version, another platform, a HiDPI display, or

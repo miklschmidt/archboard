@@ -184,8 +184,10 @@ try {
 
   const panesBefore = (await api('GET', '/api/panes')).body;
   const elementsBefore = (await api('GET', `/api/elements?board=${boardKey}`)).body;
-  check('two elements are on the board and nothing has saved them',
-    elementsBefore.count === 2, String(elementsBefore.count));
+  // Two labelled boxes, so four elements: a label is a text element on the
+  // board from the moment the box is written (ADR 0015, TASK-072).
+  check('two boxes are on the board and nothing has saved them',
+    elementsBefore.count === 4, String(elementsBefore.count));
   check('the pane is registered holding that board',
     panesBefore.panes?.[0]?.board === boardKey, JSON.stringify(panesBefore.panes?.[0]?.board));
 
@@ -216,7 +218,7 @@ try {
     !output.slice(quietFrom).includes('re-evaluated in place'),
     JSON.stringify(output.slice(quietFrom).trim().slice(0, 200)));
   const afterSaves = (await api('GET', `/api/elements?board=${boardKey}`)).body;
-  check('  so the unsaved elements are untouched', afterSaves.count === 2, String(afterSaves.count));
+  check('  so the unsaved elements are untouched', afterSaves.count === 4, String(afterSaves.count));
   check('  and the probe route is still absent, because no new source has run',
     (await api('GET', '/__reload_probe')).status === 404);
 
@@ -274,7 +276,7 @@ try {
 
   const elementsAfter = (await api('GET', `/api/elements?board=${boardKey}`)).body;
   check('the unsaved elements are still on the board',
-    elementsAfter.count === 2, String(elementsAfter.count));
+    elementsAfter.count === 4, String(elementsAfter.count));
   check('  and they are the same elements, not redrawn ones',
     elementsAfter.elements.map(e => e.id).sort().join() ===
     elementsBefore.elements.map(e => e.id).sort().join());
@@ -302,7 +304,10 @@ try {
   const created = seen.slice(beforeBroadcast).filter(m => m.type === 'element_created');
   check('a pane connected before the reload still hears broadcasts', created.length >= 1,
     JSON.stringify(seen.slice(beforeBroadcast).map(m => m.type)));
-  check('  and hears each one exactly once, not once per reload', created.length === 1,
+  // Counted by element rather than by message: one labelled box is a box and
+  // its label, so one write is two creations and each of them must arrive once.
+  const createdOnce = new Set(created.map(m => m.element?.id)).size === created.length;
+  check('  and hears each one exactly once, not once per reload', createdOnce,
     `${created.length} copies`);
 
   await sleep(SETTLE_MS + 400);
@@ -336,7 +341,7 @@ try {
     brokenLog.includes('THE RELOAD BROKE SOMETHING'),
     JSON.stringify(brokenLog.trim().slice(-300)));
   check('  naming the board and what it lost',
-    /board "scratch" went from 3 elements to 0/.test(brokenLog),
+    /board "scratch" went from 6 elements to 0/.test(brokenLog),
     JSON.stringify(brokenLog.match(/board "[^"]*"[^\n]*/)?.[0] ?? ''));
   check('  and the connected tab is told too, not just the terminal',
     seen.slice(brokenFrom).some(m => m.type === 'reload_broken'),

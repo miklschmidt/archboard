@@ -43,11 +43,13 @@ The suites are `type-check`, `module-scope`, `mcp`, `bind`, `obsidian`,
 `install`, `repos`, `parity` and `hot`. The risk lines below name them. Stage 1
 added a sixteenth, `one-write`, which counts the writes an intent costs on the
 wire, and TASK-082 a seventeenth, `suites`, which fails when a check is in
-neither `bun run test` nor a written-down skip list.
+neither `bun run test` nor a written-down skip list. Stage 5 added `text`, which
+pins the measurer against Chrome's numbers, and moved `browser` into the chain,
+which makes nineteen.
 
 All of them run on a push now. Until TASK-082 the workflow ran two, so this
 plan's safety net was a net anybody could forget to hold. The chain takes 58
-seconds on a 13th-gen i7.
+seconds on a 13th-gen i7, plus the browser check.
 
 ## Stage 1. Batch the fan-out
 
@@ -283,6 +285,45 @@ it passing, with its subject moving from "the seed and the text stay in step" to
 `geometry`, `changes`, `boards`, `branch` and `side-by-side` all read element
 shape and all move.
 
+**Done.** `test:browser` reports **0 of 12 elements changed** and is in the
+chain. Three things this stage found that the paragraphs above have wrong.
+
+**Eight of the twelve constants are not about Excalidraw.** Section 1C compares
+two converters, and the second one is the one being deleted. Rendering the same
+board with the frontend's conversion removed and nothing else changed, the only
+field Excalidraw itself rewrote was `index` — 5 elements of 12. So the table is
+a specification for matching `convertToExcalidrawElements`, which is not the
+goal; the goal is the fixed point, and that is what settled each row. Adopted,
+because they are Excalidraw's own `DEFAULT_ELEMENT_PROPS` and `AppState` and so
+are what a hand-drawn element carries: Excalifont, `fontSize` 20 everywhere,
+`strokeWidth` 2 on a bound text, `textAlign: left` and `verticalAlign: top` on a
+standalone text, freedraw's `lastCommittedPoint`, `pressures` and
+`simulatePressure`, `elbowed` on arrows only. Rejected: `roundness: null` on a
+rectangle (`currentItemRoundness` is `round`, so this would square-corner every
+agent-drawn box while hand-drawn ones stayed round), freedraw `strokeWidth: 1`
+and an absent `strokeColor` (that converter does not handle freedraw at all —
+which is why the frontend routed freedraw around it — and "absent" is not a
+value a stroke can have), and the half-stroke inset on a bound arrow's points
+(arrowhead clearance belonging to the converter being removed).
+
+**`index` was ours, and it was a real bug.** `a${n}` stops increasing at ten
+because `a10` sorts before `a2`, so every board past nine elements handed
+Excalidraw indices it had to repair. Now issued from `fractionalIndex` over the
+whole document in z-order.
+
+**Excalidraw does not re-measure a text element it is handed.** It accepts a
+wrong width silently, which means the fixed-point check cannot catch one — its
+"plant something Excalidraw must correct" probe had to move from a wrong width
+to a duplicated `index`. It also means the widths in a note have to be right
+rather than close: nothing downstream will notice.
+
+Two smaller things. The measurer needed its arithmetic rearranged to agree with
+a browser to the ulp — units summed as integers and scaled once per
+units-per-em, not per glyph and not per word. And `expandForBoard` had to take
+on `planLabelExpansion`'s one-way binding repair, because a write that names a
+container without its `boundElements` would otherwise read as a label nobody
+had expanded.
+
 ## Stage 6. Delete the label seed
 
 **TASK-073.** After stage 5.
@@ -302,6 +343,16 @@ stop being possible rather than staying fixed.
 The seed stays as input. An agent still writes `{"label": {"text": "..."}}`, and
 `describe` still folds a container and its bound text into one line, so nothing
 an agent does gets harder.
+
+**What stage 5 changed about this.** The rule no longer runs every cycle. The
+seed is inert until an agent writes to the container carrying it, because
+nothing expands anything on the way out any more — and then the write boundary
+reads it and puts the old words back over a human's typing. Both reverts still
+reproduce and `check-labels` pins them; it takes one extra step, an agent
+nudging the box. So `labelStatements` and `labelClearances` are still
+load-bearing under stage 5, and stage 6 has one caller to think about rather
+than a loop: `relabelBoundTexts` in `expand-elements.ts`, which is what reads
+the seed on a write.
 
 **Risks:** `labels` again, `changes` and `branch` because `compare` reads labels
 to name nodes, `obsidian`.

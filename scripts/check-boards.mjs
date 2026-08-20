@@ -809,15 +809,21 @@ try {
   const branched = await api('POST', '/api/boards/save?board=ledger', { name: 'ledger', variant: 'option-a' });
   check('save --as branches the board', branched.status === 200 && branched.body?.board === 'ledger@option-a');
 
+  // Nodes only. A labelled shape is two elements on the board — itself and its
+  // bound text — and only the one somebody promoted carries a node record.
+  const variantsOf = body => (body?.elements ?? [])
+    .filter(el => el.customData?.archboard?.node)
+    .map(el => el.customData.archboard.variant);
+
   const onBranch = await api('GET', '/api/elements?board=ledger@option-a');
-  const branchVariants = (onBranch.body?.elements ?? []).map(el => el.customData?.archboard?.variant);
+  const branchVariants = variantsOf(onBranch.body);
   check('  and every node on the copy records the variant it was saved as',
     branchVariants.length === 3 && branchVariants.every(v => v === 'option-a'),
     branchVariants.join(','));
 
   const onOrigin = await api('GET', '/api/elements?board=ledger');
   check('  while the board it was branched from is untouched',
-    (onOrigin.body?.elements ?? []).every(el => el.customData?.archboard?.variant === 'current'));
+    variantsOf(onOrigin.body).every(v => v === 'current'), variantsOf(onOrigin.body).join(','));
 
   const branchNote = fs.readFileSync(branched.body.file, 'utf-8');
   check('  including in the note on disk, which is what compare reads',
@@ -957,7 +963,8 @@ try {
     JSON.stringify(rebranch.body?.panes));
   check('  and names the board it branched from', rebranch.body?.savedFrom === 'ledger');
   const offScreen = await api('GET', '/api/elements?board=ledger@option-c');
-  check('  and the branch is a real board, just not one on screen', offScreen.body?.count === 4,
+  // Three labelled shapes, their three labels and a loose note: seven.
+  check('  and the branch is a real board, just not one on screen', offScreen.body?.count === 7,
     `count ${offScreen.body?.count}`);
   check('  carrying the unpromoted element too, content and all',
     (offScreen.body?.elements ?? []).some(el => el.type === 'text' && el.text === 'a note to self'));
@@ -1091,15 +1098,19 @@ try {
   const stored = (await api('GET', '/api/elements?board=idcheck')).body?.elements ?? [];
   const blockShaped = id => /^[A-Za-z0-9-]{1,8}$/.test(id);
   const longIds = stored.map(el => el.id).filter(id => !blockShaped(id));
+  // Seven, not four: the three labels are text elements on the board from the
+  // moment they are written, because the one converter runs at the write
+  // boundary rather than on the way into the note (ADR 0015, TASK-072).
   check('every id the server minted is short enough to be a block reference',
-    stored.length === 4 && longIds.length === 0, longIds.join(', '));
+    stored.length === 7 && longIds.length === 0,
+    longIds.length > 0 ? longIds.join(', ') : `${stored.length} elements`);
 
   const savedIds = await api('POST', '/api/boards/save?board=idcheck');
   check('  and the board saves', savedIds.status === 200, savedIds.body?.error);
   const idNote = fs.readFileSync(savedIds.body.file, 'utf-8');
   const sceneJson = JSON.parse(idNote.match(/```json\n([\s\S]*?)\n```/)[1]);
   const inNote = sceneJson.elements.map(el => el.id);
-  check('  expanding the labels adds three text elements, not more',
+  check('  and the note holds what the board holds, expanding nothing further',
     sceneJson.elements.length === 7, `${sceneJson.elements.length} elements in the note`);
   const renamed = inNote.filter(id => !blockShaped(id));
   check('  and writing the note renamed none of them', renamed.length === 0, renamed.join(', '));

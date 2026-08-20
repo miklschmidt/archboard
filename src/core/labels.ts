@@ -1,48 +1,45 @@
 // A label is one text element, and it stays the same text element.
 //
-// The server stores a label the way an agent writes one — `label: {text}` on
-// the shape itself — but Excalidraw has no such field. A label there is a
-// separate text element bound to the shape, and the browser manufactures one
-// by handing the shape to `convertToExcalidrawElements`, which mints a text
-// element with a brand-new random id every single time it sees a `label`.
+// An agent writes a label the way it reads — `label: {text}` on the shape —
+// and Excalidraw has no such field: a label there is a separate text element
+// bound to the shape. Something has to turn one into the other, and for a long
+// while two somethings did. The browser handed every delivery to
+// `convertToExcalidrawElements`, which mints a text element with a brand-new
+// random id every single time it sees a `label`, and the seed that produced
+// the first one stayed on the stored element.
 //
-// Minting is right exactly once. On the second pass it closes a loop: the new
-// text element syncs back to the server, the server merges it while keeping
-// the `label` that produced it, and the next broadcast expands that same label
-// into yet another text element. Nothing converges. A board of 41 drawn
-// elements reached 284, five arrow labels were duplicated 42 times each, and
-// the arrows carrying the stacks were mangled into hairlines nobody could see
-// or grab — so it read as arrows deleting themselves, and adjusting one only
-// spun the loop faster (TASK-024).
+// So nothing converged. The new text element synced back, the server merged it
+// while keeping the seed, and the next broadcast expanded that seed again. A
+// board of 41 drawn elements reached 284, five arrow labels were duplicated 42
+// times each, and the arrows carrying the stacks were mangled into hairlines
+// nobody could see or grab — so it read as arrows deleting themselves, and
+// adjusting one only spun the loop faster (TASK-024).
 //
-// The fix is not to stop expanding labels; it is to stop expanding them into
-// *new* elements. `label` stays what it has always been — the statement of
-// what this element's label says — and a shape that already has a text element
-// for it keeps that element:
+// Under ADR 0015 there is one conversion, it happens at the write boundary,
+// and nothing converts on the way out. `expand-elements.ts` is that
+// conversion; the id it gives a label comes from `labelTextIdFor` below, so
+// two places deriving a name for one label agree without telling each other,
+// and so the name is already short enough to be an Obsidian block reference
+// and the note writer has nothing to rename (TASK-069).
 //
-//   the label already says this        leave the text element completely alone
-//   the label now says something else  re-expand it, but under the text
-//                                      element's existing id
-//
-// So the count is fixed at one per container, whatever happens, while an agent
-// renaming a box still sees the box renamed. This module is that rule, kept
-// pure so the browser (which enforces it), the repair script (which undoes
-// past violations) and the regression check (which proves it holds) all read
+// What is left here is everything about a label that is not the conversion,
+// kept pure so the server, the repair script and the regression check all read
 // from the same sentence. Its one import, `geometry.ts`, is pure for the same
 // reason and for the same readers.
 //
-// That is the inbound half. Outbound, the authority is the other way round —
-// the bound text is what the label says and the stored seed follows it — so a
-// human retyping a box on the board is not written back out from under them
-// (`labelStatements`, TASK-028). Emptying a label is the same direction but a
-// different act — Excalidraw deletes the text element rather than editing it,
-// so there is no statement to make and the seed has to be struck out instead
-// (`labelClearances`, TASK-029).
+// Outbound, the authority runs the other way: the bound text is what the label
+// says and the stored seed follows it, so a human retyping a box on the board
+// is not written back out from under them (`labelStatements`, TASK-028).
+// Emptying a label is the same direction but a different act — Excalidraw
+// deletes the text element rather than editing it, so there is no statement to
+// make and the seed has to be struck out instead (`labelClearances`,
+// TASK-029). Both go when the seed does, in stage 6 of
+// `docs/design/the-plan.md`.
 //
-// Both of those are about what a label *says*. Where it *sits* is a third
-// question of the same shape: the container decides, Excalidraw recomputes it
-// at draw time, and so the stored coordinates can be wrong for a long while
-// with nothing on screen to show it (`boundTextPlacement`, TASK-034).
+// Those are about what a label *says*. Where it *sits* is a third question of
+// the same shape: the container decides, Excalidraw recomputes it at draw time,
+// and so the stored coordinates can be wrong for a long while with nothing on
+// screen to show it (`boundTextPlacement`, TASK-034).
 
 import { measureLinear } from './geometry.js';
 import { derivedId, type IdsInUse } from './ids.js';
@@ -50,12 +47,11 @@ import { derivedId, type IdsInUse } from './ids.js';
 /**
  * The name the text element for a container's label answers to.
  *
- * Derived from the container rather than invented, so the two places that
- * expand a label — the browser, through `convertToExcalidrawElements`, and the
- * server, through `expandElementsForExport` — arrive at the same name without
- * either telling the other. Derived in the shape every id is minted in, so the
- * note writer has nothing to rename and an echo cannot rename a label out from
- * under somebody typing into it (`ids.ts`, TASK-069).
+ * Derived from the container rather than invented, so a label that is expanded
+ * again — a board rewritten, a note read by an older archboard — keeps the
+ * name it had, without anybody having to record it. Derived in the shape every
+ * id is minted in, so the note writer has nothing to rename and an echo cannot
+ * rename a label out from under somebody typing into it (`ids.ts`, TASK-069).
  *
  * `inUse` is every id on the board, including deleted ones: a label expanded
  * where an earlier one was cleared must not be handed the cleared element's
@@ -162,183 +158,6 @@ export function boundTextsByContainer(
 }
 
 // ---------------------------------------------------------------------------
-// Containment
-// ---------------------------------------------------------------------------
-
-/** The identity an expanded label must adopt: never one the converter chose. */
-export interface ReusedLabel {
-  /** The text element id the expansion has to answer to. */
-  id: string;
-  /** Excalidraw's own per-element bookkeeping, carried over so that a
-   *  re-expansion that changes nothing visible reads as no change at all. */
-  seed?: unknown;
-  versionNonce?: unknown;
-  version?: unknown;
-  index?: unknown;
-}
-
-export interface LabelExpansion<T> {
-  /** What to hand `convertToExcalidrawElements`. */
-  elements: T[];
-  /** container id -> the identity the label it expands must take. */
-  reuse: Map<string, ReusedLabel>;
-}
-
-/**
- * Decide, for each labelled element, whether its label still needs expanding —
- * and if so, what the result is obliged to be called.
- *
- * Three cases, and the middle one is the whole bug:
- *
- *   no bound text yet     the label is expanded normally, and the text element
- *                         it becomes is named here rather than by the
- *                         converter, which invents a 21-character nanoid the
- *                         note writer would then have to rename (TASK-069)
- *   bound text, same text the label is spent: the seed is removed so the
- *                         converter has nothing to expand, and the text
- *                         element is passed through untouched — same id, same
- *                         styling, same everything
- *   bound text, new text  the seed is a rename. The old text element is
- *                         withheld from the converter so the label is rebuilt
- *                         properly (measured, positioned, wrapped), and its id
- *                         is recorded so the rebuilt one adopts it
- *
- * Withholding the text element also obliges us to make sure the rebuilt label
- * will actually be drawn, which is a separate fact from the text element
- * existing: Excalidraw shows a bound text because its *container* points at
- * it, and a board can easily hold the binding in one direction only — a pane
- * reports a text element the moment a human types, while the container it
- * belongs to has nothing new to say and is never reported. So where only the
- * text names the container, the reference back is restored here rather than
- * left for someone to notice as a shape that has mysteriously gone blank.
- */
-export function planLabelExpansion<T extends LabelledElement>(
-  elements: readonly T[]
-): LabelExpansion<T> {
-  const labelled = boundTextsByContainer(elements);
-
-  const byId = new Map<string, T>();
-  for (const element of elements) byId.set(element.id, element);
-
-  const reuse = new Map<string, ReusedLabel>();
-  const withheld = new Set<string>();
-
-  // Every id the scene holds, deleted ones included: a name is taken until the
-  // element carrying it is gone from the document, not merely struck out.
-  const taken = new Set<string>(byId.keys());
-
-  const planned = elements.map((element) => {
-    if (isText(element)) return element;
-    const textIds = labelled.get(element.id);
-    if (!textIds || textIds.length === 0) {
-      // A label with no text element yet. The converter is about to mint one
-      // and name it itself; name it here instead, so the id is in the shape
-      // every id is minted in and nothing downstream has cause to change it.
-      const fresh = labelSeedOf(element);
-      if (typeof fresh === 'string' && fresh !== '') {
-        const id = labelTextIdFor(element.id, taken);
-        taken.add(id);
-        reuse.set(element.id, { id });
-      }
-      return element;
-    }
-
-    const keeper = byId.get(textIds[0] as string);
-    if (!keeper) return element;
-
-    const refs = Array.isArray(element.boundElements) ? element.boundElements : [];
-    const seed = labelSeedOf(element);
-
-    // The label already says this, or there is no seed to say anything: the
-    // text element stands as it is. Only the reference back may need mending.
-    if (seed === undefined || seed === (keeper.text ?? '')) {
-      const named = refs.some((ref) => ref?.type === 'text' && textIds.includes(ref.id));
-      if (seed === undefined && named) return element;
-      const { label: _label, text: _text, ...rest } = element;
-      if (named) return rest as unknown as T;
-      return {
-        ...rest,
-        boundElements: [...refs, { id: keeper.id, type: 'text' }]
-      } as unknown as T;
-    }
-
-    // A rename. Hold the old text element back and let the converter rebuild
-    // the label from the seed — under the old element's name.
-    withheld.add(keeper.id);
-    reuse.set(element.id, {
-      id: keeper.id,
-      seed: (keeper as Record<string, unknown>).seed,
-      versionNonce: (keeper as Record<string, unknown>).versionNonce,
-      version: (keeper as Record<string, unknown>).version,
-      index: (keeper as Record<string, unknown>).index
-    });
-    return {
-      ...element,
-      boundElements: refs.filter((ref) => ref?.type !== 'text')
-    } as unknown as T;
-  });
-
-  return {
-    elements: planned.filter((element) => !withheld.has(element.id)),
-    reuse
-  };
-}
-
-/**
- * Give every freshly expanded label the identity it was supposed to keep.
- *
- * The converter names what it mints, so this is where the promise made by
- * `planLabelExpansion` is kept: each new text element is renamed back to the
- * element it replaces, and every reference to the invented id — the
- * container's `boundElements` above all — is rewritten to match. Do this and
- * the board sees an edited label rather than a new one, which is the whole
- * difference between a rename and a leak.
- */
-export function adoptReusedLabelIds<T extends LabelledElement>(
-  converted: readonly T[],
-  reuse: ReadonlyMap<string, ReusedLabel>
-): T[] {
-  if (reuse.size === 0) return converted as T[];
-
-  const rename = new Map<string, ReusedLabel>();
-  for (const element of converted) {
-    if (!isText(element)) continue;
-    // A struck-out text element is the record of a label somebody cleared, not
-    // the label. Renaming it onto the identity a *new* expansion was promised
-    // would put two elements under one name.
-    if (!live(element)) continue;
-    const container = element.containerId;
-    if (typeof container !== 'string') continue;
-    const wanted = reuse.get(container);
-    if (!wanted || wanted.id === element.id) continue;
-    rename.set(element.id, wanted);
-  }
-  if (rename.size === 0) return converted as T[];
-
-  return converted.map((element) => {
-    const wanted = rename.get(element.id);
-    if (wanted) {
-      const next = { ...element, id: wanted.id } as unknown as Record<string, unknown>;
-      // Excalidraw's own counters come along, so a re-expansion that produces
-      // the same label as last time is indistinguishable from no expansion.
-      if (wanted.seed !== undefined) next.seed = wanted.seed;
-      if (wanted.versionNonce !== undefined) next.versionNonce = wanted.versionNonce;
-      if (wanted.version !== undefined) next.version = wanted.version;
-      if (wanted.index !== undefined) next.index = wanted.index;
-      return next as unknown as T;
-    }
-    if (!Array.isArray(element.boundElements)) return element;
-    if (!element.boundElements.some((ref) => ref && rename.has(ref.id))) return element;
-    return {
-      ...element,
-      boundElements: element.boundElements.map((ref) =>
-        ref && rename.has(ref.id) ? { ...ref, id: rename.get(ref.id)!.id } : ref
-      )
-    } as unknown as T;
-  });
-}
-
-// ---------------------------------------------------------------------------
 // Following the human
 // ---------------------------------------------------------------------------
 
@@ -346,14 +165,14 @@ export function adoptReusedLabelIds<T extends LabelledElement>(
  * The label a change report has to state, so the stored seed follows the text
  * a human just typed.
  *
- * Containment above only settles what happens on the way *in*: the seed says
- * what the label reads, and the bound text is rebuilt to match. Nothing said
- * what happens on the way *out*, and the answer used to be "nothing" — a human
+ * The conversion settles what happens on the way *in*: the seed says what the
+ * label reads, and the bound text is written to match. Nothing said what
+ * happens on the way *out*, and the answer used to be "nothing" — a human
  * retyping a label changed the text element and left the seed saying the old
- * name forever. The seed is the thing the next conversion pass reads, so the
- * board wrote their edit back out again: a rename that silently reverts, at
- * the one place the whole tool depends on a human editing and an agent reading
- * it back (TASK-028).
+ * name forever. The seed is what the write boundary reads, so the next agent
+ * write to that shape put the old words back: a rename that silently reverts,
+ * at the one place the whole tool depends on a human editing and an agent
+ * reading it back (TASK-028).
  *
  * The temptation is to arbitrate — timestamps, provenance, some rule for
  * telling a human's rename apart from an agent's `update --set '{"text":...}'`,
