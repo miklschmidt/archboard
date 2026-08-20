@@ -211,6 +211,11 @@ export function panesInOrder(
 }
 
 /** Everything `--pane` accepts, for the message that lists them. */
+// Every spelling here has to be taught, and a spelling that is never needed is
+// a spelling that can only drift. `only` used to be accepted and named nowhere:
+// it matched just when one pane was open, and that is exactly when --pane can be
+// left off, because `soloPane` resolves it. Closing the last pane is refused, so
+// it had no use there either (TASK-050).
 const PANE_SPECS = 'a place (left, right, top, bottom), a position (1, 2), `focused`, `primary`, or a pane id';
 
 /**
@@ -268,8 +273,7 @@ export function resolvePaneSpec(
     entry.pane.clientId === spec.trim() ||
     String(entry.position) === wanted ||
     (wanted === 'focused' && entry.pane.focused) ||
-    (wanted === 'primary' && entry.pane.primary) ||
-    (wanted === 'only' && ordered.length === 1)
+    (wanted === 'primary' && entry.pane.primary)
   );
 
   if (matches.length === 1) return matches[0]!.pane;

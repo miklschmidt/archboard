@@ -86,7 +86,9 @@ _Avoid_: mapping, tagging, assignment, conversion
 
 **Level**:
 The abstraction tier a board sits at, drawn from a controlled vocabulary that
-grows as new tiers are genuinely needed — initially system, service, module.
+grows as new tiers are genuinely needed — initially system, service, module. A
+node carries one only to say it differs from its board; a node that says
+nothing is at its board's level.
 _Avoid_: layer, depth, zoom, tier, granularity
 
 **Drill-down**:

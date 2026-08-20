@@ -1,9 +1,11 @@
 ---
 id: TASK-050
 title: The --pane only spec is accepted but undocumented
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@claude'
 created_date: '2026-08-20 04:11'
+updated_date: '2026-08-20 08:32'
 labels: []
 dependencies: []
 references:
@@ -33,3 +35,11 @@ Worth noting that `only` reads well: with one pane on screen its place is "the o
 - [ ] #2 The pane spec list is the same in matchesSpec, PANE_SPECS, run.ts help and the skill
 - [ ] #3 A check asserts those lists agree, so they cannot drift again
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Dropped `only` rather than documenting it. It matched only when exactly one pane was open, and that is precisely when --pane can be omitted because soloPane resolves it; closing the last pane is refused outright, so it had no use there either. It could never be the only way to say anything, and every extra spelling is one more thing to teach and one more place to drift.
+
+Four checks in scripts/check-boards.mjs read PANE_SPECS out of src/core/panes.ts and the usage text out of src/cli/run.ts and assert both name the same specs, then assert `only` is now refused with the refusal listing what does work. That covers AC3 without a fifth copy of the list.
+<!-- SECTION:NOTES:END -->

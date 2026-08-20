@@ -568,6 +568,10 @@ export function planPromotion(request: PromotionRequest): PromotionPlan {
       kind,
       ...(declared ? { name: declared } : {}),
       variant,
+      // Not defaulted from the board, unlike `variant` (ADR 0013). A node records a
+      // level only to say it differs from its board, and `describe` shows one only
+      // when a board's nodes carry more than one. Stamping every node with the
+      // board's own level would remove the only thing the field says.
       ...(request.level ? { level: request.level } : {}),
       ...(binding ? { binding: binding.address } : {})
     };
