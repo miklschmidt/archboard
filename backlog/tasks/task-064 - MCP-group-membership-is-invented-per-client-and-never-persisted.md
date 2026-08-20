@@ -1,10 +1,10 @@
 ---
 id: TASK-064
 title: MCP group membership is invented per client and never persisted
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-08-20 19:04'
-updated_date: '2026-08-20 20:17'
+updated_date: '2026-08-20 21:15'
 labels: []
 dependencies:
   - TASK-068
@@ -33,10 +33,52 @@ Either groups belong on the board, alongside the other element metadata that sur
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A group made over MCP is visible to another MCP client on the same canvas, and to the CLI
-- [ ] #2 A group survives the MCP client that made it exiting, because it is recorded in groupIds on the elements and nowhere else
-- [ ] #3 sceneState.groups is gone from src/core/canvas-state.ts, and ungroup no longer needs a seeded member list
+- [x] #1 A group made over MCP is visible to another MCP client on the same canvas, and to the CLI
+- [x] #2 A group survives the MCP client that made it exiting, because it is recorded in groupIds on the elements and nowhere else
+- [x] #3 sceneState.groups is gone from src/core/canvas-state.ts, and ungroup no longer needs a seeded member list
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Delete sceneState.groups from src/core/canvas-state.ts. Board content in a process is what ADR 0015 forbids, and groupIds on the elements already holds the fact.
+2. Drop the knownMemberIds seed from ungroupElements: with group and ungroup routed through the batched write there is nothing left to seed it from, and mcp-dispatch stops writing to and reading from the map.
+3. Prove it where it broke: a canvas-backed section in the MCP wire check. Two MCP clients on one canvas, a group made through one and read back through the other and over HTTP; the client that made it exits and the group is still on the elements. Then the case the stale map got wrong — a member joins the group after it was made, through a browser change report, and the client that made the group ungroups it. Seeded from its own map it leaves the newcomer carrying a dead groupId.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+WHAT MOVED. `sceneState.groups` is gone from src/core/canvas-state.ts, with a note
+saying why it cannot come back. src/core/mcp-dispatch.ts no longer writes to it
+on group or reads it on ungroup. `ungroupElements` lost its `knownMemberIds`
+parameter: with TASK-068 landed, group and ungroup both go through the batched
+write and there is nothing left to seed it from.
+
+WHERE THE PROOF IS. A canvas-backed section in scripts/check-mcp-stdio.mjs, the
+one check in that file that is not hermetic, because what it is about is two MCP
+clients and a canvas disagreeing. It spawns a canvas, holds two MCP connections
+open at once, groups through the first, reads it back through the second and
+over HTTP, has a browser-shaped change report put a third element into the
+group, ungroups through the first client, and then kills that client and checks
+the board still records a group it made.
+
+REVERT-PROOF. Restore canvas-state.ts, mcp-dispatch.ts and element-ops.ts to the
+TASK-068 commit and the mcp suite goes to 1 of 6 failed:
+
+    not ok - a group is on the board, not in the client that made it
+      ungrouping left c carrying a group that no longer exists
+
+Worth being exact about which half was broken. With the map back, the two
+visibility criteria still pass, because `groupElements` always wrote groupIds to
+the canvas as well as to the map. The seed is what actually corrupted a board: a
+member list remembered when the group was made is wrong about everyone who
+joined afterwards, and ungroup left them carrying a dead groupId. The map's
+other two costs, a group invisible to another client and a group that dies with
+its client, were latent rather than reachable through the tools as they stood.
+
+bun run test green: 16 suites, mcp now 6 checks.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
@@ -77,3 +119,9 @@ rather than before it. It is stage 1 of docs/design/the-plan.md.
 Acceptance criteria edited.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The MCP process no longer keeps its own record of which elements are grouped. sceneState.groups is deleted, ungroupElements has no seeded member list, and groupIds on the elements is the only place membership lives — which is why the CLI never had this bug. Proved by a canvas-backed section in the MCP wire check: two MCP clients on one canvas, a group read back through the other one, a third element added to the group by a browser report, and the group still on the board after the client that made it exits. Reverting the three files fails that check on the assertion that ungrouping leaves nobody carrying a dead groupId.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -314,6 +314,12 @@ time, because stencils are made of arrows as well as lines and a type test
 would put promotion at the mercy of the tool an artist reached for. The one
 case where promoting costs something, an arrow bound between two other nodes,
 is a `compare` warning rather than a silent loss (TASK-053).
+A group is on the board, in `groupIds` on the elements, and nowhere else. The
+MCP process used to keep its own map of which elements were in which group, so
+two MCP clients disagreed, a group died with the client that made it, and
+ungrouping used a remembered member list that was wrong about anyone who had
+joined the group since. Grouping over the CLI never had any of that, because it
+only ever wrote to the elements (TASK-064).
 
 ## Names on the wire
 
