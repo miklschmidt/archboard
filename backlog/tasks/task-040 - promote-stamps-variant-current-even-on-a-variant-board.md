@@ -105,4 +105,10 @@ AC3, for whoever owns skills/excalidraw-skill/ (a sibling agent holds that direc
 
 Nothing in references/cheatsheet.md or evals/evals.json teaches the workaround, so those stay as they are.
 ---
+
+author: @claude
+created: 2026-08-20 04:18
+---
+AC1 and AC2 are done and verified in commit 5e4ab2b. AC3 is the only thing left and it is a four-passage edit to skills/excalidraw-skill/, spelled out in the comment above. Leaving this In Progress rather than Done, since the workaround the task exists to delete is still in the skill.
+---
 <!-- COMMENTS:END -->
