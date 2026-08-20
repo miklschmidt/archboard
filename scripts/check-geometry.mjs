@@ -246,7 +246,7 @@ for (const [name, arrow] of Object.entries(arrows)) {
   const arrow = { id: 'arrow', type: 'arrow', x: 400, y: 300, width: 5000, height: 5000,
     points: [[0, 0], [-40, -30]], label: { text: 'calls' } };
   const board = [box, arrow];
-  const plan = planPromotion({ targets: board, board, kind: 'service' });
+  const plan = planPromotion({ targets: board, board, kind: 'service', boardVariant: 'current' });
   assert(plan.nodes.length === 1 && plan.nodes[0].name === 'Payments',
     `promoting a box and an arrow names the node after the box, not "${plan.nodes[0]?.name}"`);
 }
