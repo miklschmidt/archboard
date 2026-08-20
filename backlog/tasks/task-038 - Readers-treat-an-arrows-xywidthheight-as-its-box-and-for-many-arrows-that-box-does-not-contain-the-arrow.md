@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-20 03:22'
-updated_date: '2026-08-20 03:44'
+updated_date: '2026-08-20 03:45'
 labels: []
 dependencies: []
 references:
@@ -96,3 +96,17 @@ src/core/promote.ts (TASK-031 and TASK-030 hold it). Line ~413 picks a selection
 Everything else that reads a position or a size now goes through geometry.extentOf or layout.boxOf.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+An arrow is now placed by its path everywhere the board is read.
+
+src/core/geometry.ts became the pure measurement module — extentOf, measureLinear, remeasureLinear, isPathElement — deciding by an element's points rather than by its type name, so freedraw is covered too. The canvas operations it used to hold (align, distribute, group, lock, duplicate) moved to src/core/element-ops.ts, which is what lets labels.ts and anything else the browser bundles share the measurement. src/core/layout.ts gained boxOf, the one way to turn an element into a Box; describe now measures its items, its scene bounding box, its clusters and its selection report through it; align and distribute reason in extent space; library-catalogue sizes and places a stencil by measurement; repair-labels re-measures through the same helper.
+
+The server restates width and height wherever it writes a path: on create (single and batch), inside resolveArrowBindings, which covers every re-route and re-binding, and on a PUT carrying points.
+
+Verified with scripts/check-geometry.mjs, new and wired into bun run test: 39 checks over the four directions an arrow can be drawn in, a path negative in both axes, a bent path, a freedraw stroke, and a live server holding a board of leftward and upward arrows read back through the scene box, the cluster and region signals and the selection report. Both halves of the defect were shown reachable: with extentOf reverted in dist the check fails 15 of 39, including the scene box cropping an arrow point at (-200,-100); with the server re-measure reverted it fails 3 of 39, including the re-route. bun run test passes end to end and bun run type-check passes for both projects.
+
+AC 1 is left unchecked. src/core/compare.ts (four sites) and src/core/promote.ts (one) still read an element's box as top-left plus size; both files were held by other agents, so the exact lines are recorded in a comment instead of edited.
+<!-- SECTION:FINAL_SUMMARY:END -->
