@@ -2,7 +2,7 @@ import { parseArgs, CliUsageError } from '../args.js';
 import { printJson } from '../util.js';
 import { ensureCanvasRunning } from '../../core/spawn.js';
 import {
-  getCurrentBoard,
+  getBoardInfo,
   saveSnapshot,
   listSnapshots,
   getSnapshot,
@@ -47,17 +47,19 @@ export async function snapshot(argv: string[]): Promise<void> {
       // A snapshot is of one board. Restoring it onto a different one would
       // clear that board and refill it with someone else's elements, which is
       // a data loss no undo covers — so it takes saying so.
-      const current = await getCurrentBoard().catch(() => null);
-      if (snap.board && current?.board && snap.board !== current.board && !flags.force) {
+      // The board being restored ONTO is the one named on the command line —
+      // there is no current board to infer it from (ADR 0009).
+      const current = await getBoardInfo();
+      if (snap.board && snap.board !== current.board && !flags.force) {
         throw new Error(
-          `Snapshot "${name}" was taken on board "${snap.board}", but the canvas is holding ` +
-          `"${current.board}". Restoring would replace "${current.board}" with it. ` +
-          `Open "${snap.board}" first, or pass --force.`
+          `Snapshot "${name}" was taken on board "${snap.board}", but you named "${current.board}". ` +
+          `Restoring would replace "${current.board}" with it. ` +
+          `Pass --board ${snap.board} to put it back where it came from, or --force to overwrite this one.`
         );
       }
       await clearCanvas();
       await batchCreateElementsStrict(snap.elements);
-      printJson({ success: true, name, board: current?.board ?? null, restored: snap.elements.length });
+      printJson({ success: true, name, board: current.board, restored: snap.elements.length });
       return;
     }
     default:

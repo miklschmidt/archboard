@@ -24,11 +24,19 @@ const address = (name: string, variant: string): string => {
 
 interface BoardDialogProps {
   mode: BoardDialogMode
-  /** The board on the canvas, used to seed "another variant of this one". */
+  /** The board in the pane being worked in, to seed "another variant of this". */
   current: BoardIdentity | null
+  /**
+   * The panes a board can be opened into. Offered as a choice only when there
+   * is more than one — with a split on screen, which half a board lands in is
+   * the human's call, and the canvas refuses to pick one for them.
+   */
+  panes?: Array<{ clientId: string; label: string; board: string | null }>
+  /** The pane to offer first: the one being worked in. */
+  defaultPane?: string | null
   busy?: boolean
   error?: string | null
-  onSubmit: (address: { board: string; variant?: string; level?: string }) => void
+  onSubmit: (address: { board: string; variant?: string; level?: string; pane?: string }) => void
   onCancel: () => void
 }
 
@@ -39,7 +47,7 @@ const TITLES: Record<BoardDialogMode, string> = {
 }
 
 export function BoardDialog({
-  mode, current, busy, error, onSubmit, onCancel
+  mode, current, panes = [], defaultPane, busy, error, onSubmit, onCancel
 }: BoardDialogProps): JSX.Element {
   const [listing, setListing] = useState<BoardListing | null>(null)
   const [listError, setListError] = useState<string | null>(null)
@@ -47,6 +55,9 @@ export function BoardDialog({
   const [name, setName] = useState(mode === 'open' ? '' : (current?.board ?? ''))
   const [variant, setVariant] = useState('current')
   const [level, setLevel] = useState(current?.level ?? '')
+  // Only ever asked about when it could be wrong: one pane, no question.
+  const asksForPane = mode !== 'save-as' && panes.length > 1
+  const [pane, setPane] = useState(defaultPane ?? panes[0]?.clientId ?? '')
 
   useEffect(() => {
     if (mode !== 'open') return
@@ -70,21 +81,24 @@ export function BoardDialog({
       .map((key) => ({
         key,
         open: open.has(key),
-        active: key === listing.active,
+        onScreen: listing.onScreen.some((shown) => shown.board === key),
         inVault: listing.boards.some((entry) => entry.key === key)
       }))
   }, [listing, filter])
+
+  const intoPane = asksForPane && pane ? { pane } : {}
 
   const submitTyped = (): void => {
     const board = (mode === 'open' ? filter : name).trim()
     if (!board) return
     onSubmit(
       mode === 'open'
-        ? { board }
+        ? { board, ...intoPane }
         : {
           board,
           variant: variant.trim() || 'current',
-          ...(level.trim() ? { level: level.trim() } : {})
+          ...(level.trim() ? { level: level.trim() } : {}),
+          ...intoPane
         }
     )
   }
@@ -104,6 +118,19 @@ export function BoardDialog({
       }
     >
       {error && <p className="notice notice-error">{error}</p>}
+
+      {asksForPane && (
+        <label className="field">
+          <span>Into which pane</span>
+          <select value={pane} onChange={(event) => setPane(event.target.value)}>
+            {panes.map((entry) => (
+              <option key={entry.clientId} value={entry.clientId}>
+                {entry.label}{entry.board ? ` — showing ${entry.board}` : ''}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       {mode === 'open' ? (
         <>
@@ -125,13 +152,13 @@ export function BoardDialog({
               {entries.map((entry) => (
                 <li key={entry.key}>
                   <button
-                    className={`board-row${entry.active ? ' board-row-active' : ''}`}
-                    onClick={() => onSubmit({ board: entry.key })}
+                    className={`board-row${entry.onScreen ? ' board-row-active' : ''}`}
+                    onClick={() => onSubmit({ board: entry.key, ...intoPane })}
                     disabled={busy}
                   >
                     <span className="board-row-key">{entry.key}</span>
-                    {entry.active && <span className="chip chip-quiet">on the canvas</span>}
-                    {!entry.active && entry.open && <span className="chip chip-quiet">open</span>}
+                    {entry.onScreen && <span className="chip chip-quiet">on screen</span>}
+                    {!entry.onScreen && entry.open && <span className="chip chip-quiet">open</span>}
                     {!entry.inVault && <span className="chip chip-quiet">unsaved</span>}
                   </button>
                 </li>

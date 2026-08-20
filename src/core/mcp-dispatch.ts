@@ -24,6 +24,7 @@ import {
   saveSnapshot,
   getSnapshot,
   sendMermaid,
+  setRequestedBoard,
   ApiResponse
 } from './canvas-client.js';
 import { sanitizeFilePath, prepareElement, prepareElementUpdate } from './normalize.js';
@@ -149,13 +150,19 @@ export async function callExcalidrawTool(
   name: string,
   args: Record<string, unknown> | undefined
 ): Promise<CallToolResult> {
+  // Which board this call is about, taken from what the client passed and
+  // applied to every canvas request the call makes. Set here rather than in 40
+  // case arms so that a tool cannot be the one that forgot; cleared afterwards
+  // so nothing leaks into the next call. A tool that names no board reaches a
+  // canvas that refuses it, which is the point (ADR 0009).
+  setRequestedBoard(typeof args?.board === 'string' ? args.board : null);
   try {
     logger.info(`Handling tool call: ${name}`);
 
     if (toolNeedsCanvasBeforeDispatch(name)) {
       await ensureCanvasReadyForMcpTool();
     }
-    
+
     switch (name) {
       case 'create_element': {
         const params = ElementSchema.parse(args);
@@ -653,9 +660,9 @@ export async function callExcalidrawTool(
         return {
           content: [{ type: 'text', text: JSON.stringify({
             vault: result.vault,
-            active: result.active,
             boards: result.boards,
-            open: result.open
+            open: result.open,
+            onScreen: result.onScreen
           }, null, 2) }]
         };
       }
@@ -664,7 +671,8 @@ export async function callExcalidrawTool(
           board: z.string().min(1),
           variant: z.string().optional(),
           level: z.string().optional(),
-          reload: z.boolean().optional()
+          reload: z.boolean().optional(),
+          pane: z.string().optional()
         }).parse(args ?? {});
         logger.info('Opening board via MCP', { board: params.board });
         const result = await openBoard(params);
@@ -676,7 +684,8 @@ export async function callExcalidrawTool(
         const params = z.object({
           board: z.string().min(1),
           variant: z.string().optional(),
-          level: z.string().optional()
+          level: z.string().optional(),
+          pane: z.string().optional()
         }).parse(args ?? {});
         logger.info('Creating board via MCP', { board: params.board });
         const result = await newBoard(params);
@@ -1000,5 +1009,7 @@ export async function callExcalidrawTool(
       content: [{ type: 'text', text: `Error: ${(error as Error).message}` }],
       isError: true
     };
+  } finally {
+    setRequestedBoard(null);
   }
 }
