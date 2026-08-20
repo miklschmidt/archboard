@@ -125,13 +125,15 @@ export function getOrCreateBoard(identity: BoardIdentity, vaultBacked: boolean):
 /**
  * Elements that share nothing with the ones handed in.
  *
- * Two things keep a copy of a board and mean it: a branch, which exists so the
- * source can stay put (TASK-042), and a snapshot, whose entire job is to be
- * the copy you go back to (TASK-048). Both used to hold the live board's own
- * element objects. Nothing failed, because every path that changes an element
- * replaces the object rather than editing it — but that invariant was never
- * written down and nothing enforced it, and a copy that only works while every
- * future writer remembers a rule is not a copy.
+ * Three things keep a copy of a board and mean it: a branch, which exists so
+ * the source can stay put (TASK-042); a snapshot, whose entire job is to be
+ * the copy you go back to (TASK-048); and the change feed's baseline, which is
+ * what "the board as anybody was last told it stood" means (TASK-052). All
+ * three used to hold the live board's own element objects. Nothing failed,
+ * because every path that changes an element replaces the object rather than
+ * editing it — but that invariant was never written down and nothing enforced
+ * it, and a copy that only works while every future writer remembers a rule is
+ * not a copy.
  *
  * It is the same reasoning that removed the sync path in TASK-016: two things
  * holding one scene is how one of them silently overwrites the other.
