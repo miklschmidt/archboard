@@ -14,6 +14,7 @@ import {
   getElementFromCanvas,
   createElementOnCanvas,
   batchCreateElementsOnCanvas,
+  getBoardInfo,
   getElements,
   getPanes,
   getSelection,
@@ -920,10 +921,16 @@ export async function callExcalidrawTool(
                 ...(params.commit ? { commit: params.commit } : {})
               }, { kind: 'none', surface: 'MCP' })
             : undefined;
+          // The board argument is required on this tool, so the variant a node
+          // promoted here belongs to is already known. Asking the caller for it
+          // again is how every node on a proposal board ended up claiming
+          // `current` (TASK-040).
+          const identity = await getBoardInfo();
           const plan = planPromotion({
             targets,
             board,
             kind: normalizeKind(params.kind),
+            boardVariant: identity.identity.variant,
             ...(params.name ? { name: params.name } : {}),
             ...(params.node ? { nodeId: validateNodeId(params.node) } : {}),
             ...(binding ? { binding } : {}),
