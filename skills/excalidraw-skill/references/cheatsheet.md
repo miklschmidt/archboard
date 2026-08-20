@@ -44,12 +44,13 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 | `mermaid [file\|-]` | Render Mermaid onto the canvas (**browser tab required**) |
 | `share` | Encrypted upload → shareable excalidraw.com URL |
 | `clear --yes` | Wipe the canvas |
-| `snapshot save\|list\|restore [name]` | Named canvas snapshots |
+| `snapshot save\|list\|restore [name] [--force]` | Named canvas snapshots; a snapshot belongs to the board it was taken on, and `--force` restores it onto a different one |
+| `changes [--since <cursor>] [--coalesce] [--detail] [--text]` | What the board became since a cursor, in `compare`'s vocabulary. One drag is one event; a nudge or a recolour is none. `--coalesce` gives one net diff since the cursor, which is what a once-per-turn read wants. Cursors belong to a canvas process, so watch `feedId`. No MCP equivalent |
 | `board list` | Boards in the vault, boards open in this session, and which board each pane is showing |
 | `board info --board <key>` | Identity and save state of one board |
 | `board new <name> [--variant v] [--level l] [--pane <spec>]` | Empty board; in memory until saved |
 | `board open <name[@variant]> [--reload] [--pane <spec>]` | Show a board in a pane. `--pane` takes `left`, `right`, `top`, `bottom`, a 1-based position, `primary`, or a pane id — required when more than one pane is open, since which half of the screen is not something to guess |
-| `board save --board <key> [--as <name>] [--variant v] [--level l] [--force]` | Write it to the vault; **refused (exit 5) if the note changed on disk** — `--force` overwrites anyway |
+| `board save --board <key> [--as <name>] [--variant v] [--level l] [--force]` | Write it to the vault; **refused (exit 5) if the note changed on disk** — `--force` overwrites anyway. `--variant v` is how a board is **branched** into a proposal: it writes `<key>@v`, carries the level across, and moves every pane that was holding the source onto the branch. `--as` branches too but drops the level unless `--level` comes with it |
 | `compare <from> [to]` | Semantic diff between two variants, joined on node identity; opens nothing and leaves the canvas alone. One address finds the other variant itself |
 
 ### Stencil Library
@@ -146,7 +147,7 @@ Requires `ARCHBOARD_VAULT`. A pane holds exactly one board; two panes hold two. 
 | `list_boards` | Vault boards, open boards, and what each pane is showing | (none) |
 | `open_board` | Show a board in a pane; `pane` (`left`, `right`, `1`…) is required when more than one is open | `board` (`name` or `name@variant`) |
 | `new_board` | Start an empty board and show it in a pane | `board` |
-| `save_board` | Write a board to the vault; **refused if the note changed on disk** (`force` overwrites anyway) | `board` |
+| `save_board` | Write a board to the vault; **refused if the note changed on disk** (`force` overwrites anyway). `variant` branches the board into a proposal, which is what makes it comparable | `board` |
 | `compare_boards` | Semantic diff between two variants, joined on node identity (`customData.archboard.node`). Complete and unsummarised — narrate it yourself. Reads a board from memory when it is open, else from its note; the canvas is untouched. Check `summary.comparable` and `layout.cannotExpress` before making claims | `from` (`to` optional) |
 
 ### Stencil Library
