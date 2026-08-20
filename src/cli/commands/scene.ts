@@ -35,7 +35,8 @@ export async function screenshot(argv: string[]): Promise<void> {
   const { flags } = parseArgs(argv, {
     out: { takesValue: true },
     format: { takesValue: true },
-    'no-background': { takesValue: false }
+    'no-background': { takesValue: false },
+    pane: { takesValue: true }
   });
 
   const format = (flags.format as string | undefined) ?? 'png';
@@ -46,7 +47,13 @@ export async function screenshot(argv: string[]): Promise<void> {
   await ensureCanvasRunning();
   await requireBrowserClient('screenshot');
 
-  const result = await exportImage(format, !flags['no-background']);
+  // A picture is of one pane, and with a proposal in the second one the pane
+  // that answers by default is the wrong half of the wall.
+  const result = await exportImage(
+    format,
+    !flags['no-background'],
+    typeof flags.pane === 'string' ? flags.pane : undefined
+  );
 
   let outPath = flags.out as string | undefined;
   if (!outPath && format === 'svg') {

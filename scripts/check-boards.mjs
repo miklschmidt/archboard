@@ -40,7 +40,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const { resolveBoard, openBoardKeys, SCRATCH_KEY } = await import(dist('core/board-store.js'));
 const { BoardRequiredError } = await import(dist('core/board-target.js'));
-const { resolvePaneSpec, soloPane, panesInOrder } = await import(dist('core/panes.js'));
+const { resolvePaneSpec, soloPane, panesInOrder, MAX_PANES } = await import(dist('core/panes.js'));
 const {
   boardKey, makeIdentity, parseBoardKey, boardDisplayName,
   normalizeBoardKey, vaultPathFor, listBoards, readBoardFile, identityFrontmatter
@@ -157,6 +157,14 @@ const {
   try { resolvePaneSpec(two, 'middle'); } catch (error) { unknown = error; }
   check('an unknown pane is refused, and the message lists the real ones',
     /No pane called "middle"/.test(unknown?.message ?? '') && /payments@option-a/.test(unknown?.message ?? ''));
+  check('  and with the screen full it does not offer to make another',
+    !/pane open/.test(unknown?.message ?? ''));
+
+  let missing = null;
+  try { resolvePaneSpec([two[1]], 'right'); } catch (error) { missing = error; }
+  check('a pane that could exist but does not says how to make it (TASK-033)',
+    /archboard pane open/.test(missing?.message ?? ''), missing?.message);
+  check('two panes is what the shell lays out', MAX_PANES === 2);
 
   check('with one pane, no pane needs naming', soloPane([two[1]]).clientId === 'a');
   check('with no pane, a board can be loaded without being shown', soloPane([]) === null);
@@ -194,27 +202,60 @@ const api = async (method, url, body) => {
   return { status: response.status, body: await response.json().catch(() => null) };
 };
 
+// The shell, in miniature.
+//
+// Pane layout lives in the browser, so `pane open` is a request the canvas
+// makes of whatever is rendering it. Answering it means mounting another pane,
+// which here is another socket and another registration — exactly what the
+// real shell produces, minus the pixels. Without this the harness could test
+// the refusals and nothing else.
+const shell = { panes: [] };
+let paneSerial = 0;
+
 /** A pane: a socket, a registration, and a note of everything it was sent. */
 async function openPane(clientId, x, { primary = false, focused = false } = {}) {
   const socket = new WebSocket(`ws://127.0.0.1:${PORT}/?clientId=${clientId}`);
   const seen = [];
-  socket.on('message', data => seen.push(JSON.parse(data.toString())));
+  let pane;
+  socket.on('message', data => {
+    const message = JSON.parse(data.toString());
+    seen.push(message);
+    // What a browser does with each of these, in one line apiece.
+    if (message.type === 'pane_open') void shellOpen();
+    else if (message.type === 'pane_close') void shellClose(pane);
+    else if (message.type === 'set_viewport') {
+      void api('POST', '/api/viewport/result', { requestId: message.requestId, success: true });
+    }
+  });
   await new Promise((resolve, reject) => {
     socket.once('open', resolve);
     socket.once('error', reject);
   });
   await sleep(80);
-  const pane = {
+  const registration = {
     clientId, paneId: clientId, primary, focused, elementCount: 0,
     rect: { x, y: 0, width: 640, height: 800 },
     viewport: { x: 0, y: 0, width: 640, height: 800, zoom: 1 }
   };
   // The board a pane reports is the one it was told to hold, which is what a
   // browser does after it adopts a board_switched.
-  const adopt = key => api('POST', '/api/panes', { ...pane, board: key });
+  const adopt = key => api('POST', '/api/panes', { ...registration, board: key });
   const board = () => [...seen].reverse().find(m => m.type === 'initial_elements' || m.type === 'board_switched')?.board;
   await adopt(board());
-  return { socket, seen, adopt, board, since: () => seen.length };
+  pane = { clientId, socket, seen, adopt, board, registration, since: () => seen.length };
+  shell.panes.push(pane);
+  return pane;
+}
+
+/** Another pane, to the right of what is already there. */
+async function shellOpen() {
+  return openPane(`p-shell-${++paneSerial}`, shell.panes.length * 640);
+}
+
+/** One pane gone: the socket closes, and the server retires it on the close. */
+async function shellClose(pane) {
+  shell.panes = shell.panes.filter(entry => entry !== pane);
+  pane.socket.close();
 }
 
 try {
@@ -342,7 +383,137 @@ try {
   check('  and the pane still open keeps its own board',
     alone.body?.panes?.[0]?.board === 'payments');
 
+  // --- making and unmaking panes (TASK-033) ------------------------------
+  //
+  // One pane is on screen at this point, holding `payments`. Everything below
+  // is what a thread that cannot click has to be able to do instead.
+
+  const lonely = await api('GET', '/api/panes');
+  check('with one pane, the report says how to get a second',
+    /archboard pane open/.test(lonely.body?.text ?? ''), lonely.body?.text);
+
+  const noSuchPane = await api('POST', '/api/boards/open', { board: 'payments@option-a', pane: 'right' });
+  check('opening into a pane that does not exist is still refused', noSuchPane.status === 400);
+  check('  and the refusal now says how to make it, not just that it is missing',
+    /archboard pane open/.test(noSuchPane.body?.error ?? ''), noSuchPane.body?.error);
+
+  const closingTheLast = await api('POST', '/api/panes/close', { pane: '1' });
+  check('the only pane cannot be closed', closingTheLast.status === 409);
+  check('  and the refusal says the board is unaffected either way',
+    /board is unaffected/.test(closingTheLast.body?.error ?? ''));
+
+  const leftBeforeSplit = left.since();
+  const split = await api('POST', '/api/panes/open');
+  check('a pane can be opened with no browser interaction', split.status === 200, split.body?.error);
+  check('  and the answer says where it landed', split.body?.pane?.place === 'right', JSON.stringify(split.body?.pane));
+  check('  and there are two panes now', split.body?.paneCount === 2);
+  const second = shell.panes.find(entry => entry.clientId === split.body?.pane?.clientId);
+  check('  the new pane is a real registration, not a promise', Boolean(second));
+  check('  it starts on what was already on screen', second?.board() === 'payments');
+  check('  and the pane the human was reading was not touched',
+    left.seen.slice(leftBeforeSplit).every(m => m.type !== 'board_switched'),
+    JSON.stringify(left.seen.slice(leftBeforeSplit).map(m => m.type)));
+
+  const intoTheNewOne = await api('POST', '/api/boards/open', { board: 'payments@option-a', pane: 'right' });
+  check('the board an agent wanted beside the current one opens into it',
+    intoTheNewOne.status === 200 && intoTheNewOne.body?.pane?.place === 'right');
+  await sleep(120);
+  await second.adopt('payments@option-a');
+  check('  so the two variants are side by side',
+    (await api('GET', '/api/panes')).body?.sameBoard === false);
+
+  const full = await api('POST', '/api/panes/open');
+  check('a third pane is refused, because the shell lays out two', full.status === 409);
+  check('  and the refusal names what is on screen and what to do instead',
+    /payments@option-a/.test(full.body?.error ?? '') && /pane close/.test(full.body?.error ?? ''),
+    full.body?.error);
+
+  const unnamed = await api('POST', '/api/panes/close', {});
+  check('closing a pane without saying which is refused', unnamed.status === 400);
+  check('  and the refusal spells out both options',
+    /pane close left/.test(unnamed.body?.error ?? '') && /pane close right/.test(unnamed.body?.error ?? ''),
+    unnamed.body?.error);
+
+  // --- addressing the browser at a pane ----------------------------------
+
+  const leftBeforeCamera = left.since();
+  const secondBeforeCamera = second.since();
+  const camera = await api('POST', '/api/viewport', { scrollToContent: true, pane: 'right' });
+  check('the camera can be pointed at the second pane', camera.status === 200, camera.body?.error);
+  check('  and it moved there', second.seen.slice(secondBeforeCamera).some(m => m.type === 'set_viewport'));
+  check('  and nowhere else', left.seen.slice(leftBeforeCamera).every(m => m.type !== 'set_viewport'));
+
+  const badCamera = await api('POST', '/api/viewport', { scrollToContent: true, pane: 'middle' });
+  check('a camera aimed at no pane is refused rather than sent somewhere',
+    badCamera.status === 400 && /No pane called "middle"/.test(badCamera.body?.error ?? ''));
+
+  const leftBeforePicture = left.since();
+  const secondBeforePicture = second.since();
+  const picture = api('POST', '/api/export/image', { format: 'png', pane: 'right' });
+  await sleep(1400);
+  check('a picture can be taken of the second pane',
+    second.seen.slice(secondBeforePicture).some(m => m.type === 'export_image_request'));
+  check('  and the first pane is not the one photographed',
+    left.seen.slice(leftBeforePicture).every(m => m.type !== 'export_image_request'));
+  await api('POST', '/api/export/image/result', {
+    requestId: second.seen.slice(secondBeforePicture).find(m => m.type === 'export_image_request')?.requestId,
+    format: 'png',
+    data: 'aGk='
+  });
+  check('  and the picture comes back', (await picture).status === 200);
+
+  // --- unmaking one ------------------------------------------------------
+
+  const unsplit = await api('POST', '/api/panes/close', { pane: 'right' });
+  check('a named pane can be closed', unsplit.status === 200, unsplit.body?.error);
+  check('  and the answer says which one went', unsplit.body?.closed?.place === 'right');
+  check('  leaving one pane', unsplit.body?.paneCount === 1);
+  const survivor = await api('GET', '/api/panes');
+  check('  which is the one that was not named', survivor.body?.panes?.[0]?.paneId === 'p-left');
+  const orphan = await api('GET', '/api/boards');
+  check('  and the board it was showing is still open, just not on screen',
+    orphan.body?.open?.some(entry => entry.key === 'payments@option-a'));
+
   left.socket.close();
+  await sleep(200);
+
+  // --- with nothing on screen --------------------------------------------
+
+  const headlessOpen = await api('POST', '/api/panes/open');
+  check('with no browser, a pane cannot be invented', headlessOpen.status === 503);
+  check('  and the caller is told which kind of problem it is',
+    headlessOpen.body?.code === 'BROWSER_REQUIRED');
+  const headlessClose = await api('POST', '/api/panes/close', { pane: 'left' });
+  check('closing one says the same', headlessClose.body?.code === 'BROWSER_REQUIRED');
+  const headlessCamera = await api('POST', '/api/viewport', { scrollToContent: true });
+  check('and so does the camera', headlessCamera.body?.code === 'BROWSER_REQUIRED');
+  const headlessPicture = await api('POST', '/api/export/image', { format: 'png' });
+  check('and so does a picture', headlessPicture.body?.code === 'BROWSER_REQUIRED');
+
+  // The exit code is the part a script reads, so it is checked through the CLI
+  // rather than inferred from the status.
+  const cli = (args) => new Promise(resolve => {
+    const child = spawn(process.execPath, [dist('bin.js'), ...args], {
+      env: {
+        ...process.env,
+        EXPRESS_SERVER_URL: base,
+        EXCALIDRAW_NO_AUTOSTART: '1',
+        ARCHBOARD_VAULT: vault,
+        LOG_LEVEL: 'error'
+      },
+      stdio: ['ignore', 'ignore', 'pipe']
+    });
+    let stderr = '';
+    child.stderr.on('data', chunk => { stderr += chunk.toString(); });
+    child.on('exit', code => resolve({ code, stderr }));
+  });
+
+  for (const args of [['pane', 'open'], ['pane', 'close', 'right'], ['viewport', '--fit'], ['screenshot']]) {
+    const run = await cli(args);
+    check(`\`${args.join(' ')}\` exits 4 when no browser is open`, run.code === 4, `exit ${run.code}`);
+    check('  saying so in words', /browser/i.test(run.stderr), run.stderr.trim());
+  }
+
   await sleep(100);
 
   // --- branching a proposal, then diffing it (TASK-035) -------------------

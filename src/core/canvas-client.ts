@@ -230,6 +230,77 @@ export async function getPanes(): Promise<PanesReport & { success: boolean; acti
   return requestJson<PanesReport & { success: boolean; activeBoard: string }>('/api/panes');
 }
 
+// ---- Pane layout ----
+//
+// Splitting the canvas used to be a click, which meant a thread that could
+// only talk had no way to put a proposal beside the architecture it changes.
+// It reused the pane the human was reading instead (TASK-033).
+
+export interface PaneAddress {
+  paneId: string;
+  clientId: string;
+  place: string;
+  position: number;
+}
+
+export interface PaneLayoutResponse {
+  success: boolean;
+  pane?: PaneAddress | null;
+  closed?: PaneAddress & { board: string };
+  paneCount: number;
+  onScreen: Array<{ paneId: string; place: string; board: string }>;
+  /** The board that was opened into the new pane, when one was named. */
+  board?: BoardResponse;
+}
+
+/**
+ * Split the canvas, and put a board in the new half if one was named.
+ *
+ * Two calls on purpose. The pane is made first and answers with its own id,
+ * and the board is then opened into that id through the one route that knows
+ * how to open a board — vault load, unsaved work kept, frontmatter mismatch
+ * reported. A second copy of that logic living behind a layout command is how
+ * the two would drift.
+ *
+ * The pane survives a board that does not: the caller is told both facts
+ * rather than left guessing whether the split happened.
+ */
+export async function openPane(params: { board?: string } = {}): Promise<PaneLayoutResponse> {
+  const created = await requestJson<PaneLayoutResponse>('/api/panes/open', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({})
+  });
+  if (!params.board) return created;
+
+  const target = created.pane?.clientId;
+  try {
+    const board = await openBoard({ board: params.board, ...(target ? { pane: target } : {}) });
+    return { ...created, board };
+  } catch (error) {
+    const where = created.pane ? `the ${created.pane.place} pane` : 'a new pane';
+    const failure = new Error(
+      `The canvas was split, but "${params.board}" did not open into ${where}: ` +
+      `${(error as Error).message}` +
+      (created.pane
+        ? ` The pane is on screen showing what it inherited. Point it somewhere with ` +
+          `\`board open <name> --pane ${created.pane.place}\`, or close it with \`pane close ${created.pane.place}\`.`
+        : '')
+    );
+    (failure as any).code = (error as any)?.code;
+    throw failure;
+  }
+}
+
+/** Close one pane, named the way `--pane` names one. */
+export async function closePane(pane: string): Promise<PaneLayoutResponse> {
+  return requestJson<PaneLayoutResponse>('/api/panes/close', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pane })
+  });
+}
+
 export async function getFiles(): Promise<Record<string, any>> {
   const data = await requestJson<{ files?: Record<string, any> }>('/api/files');
   return data.files || {};
@@ -243,11 +314,17 @@ export async function postFiles(files: any[]): Promise<void> {
   });
 }
 
-export async function exportImage(format: 'png' | 'svg', background = true): Promise<{ success: boolean; format: string; data: string }> {
+// A picture of one pane. `pane` names which — without it the pane that answers
+// for the browser is photographed, which with a single pane is that pane.
+export async function exportImage(
+  format: 'png' | 'svg',
+  background = true,
+  pane?: string
+): Promise<{ success: boolean; format: string; data: string }> {
   return requestJson('/api/export/image', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ format, background })
+    body: JSON.stringify({ format, background, ...(pane ? { pane } : {}) })
   });
 }
 

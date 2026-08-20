@@ -5,6 +5,8 @@ import * as server from './commands/server.js';
 import * as elements from './commands/elements.js';
 import * as scene from './commands/scene.js';
 import { panes, selection } from './commands/selection.js';
+import { pane, SUBCOMMANDS as PANE_SUBCOMMANDS } from './commands/pane.js';
+import { viewport } from './commands/viewport.js';
 import { promote, demote } from './commands/promote.js';
 import { repo, SUBCOMMANDS as REPO_SUBCOMMANDS } from './commands/repo.js';
 import { snapshot, ACTIONS as SNAPSHOT_ACTIONS } from './commands/snapshot.js';
@@ -68,6 +70,47 @@ const COMMANDS: Record<string, Command> = {
       '  the directory you are standing in. That last one says which repository that turned out to be,',
       '  because it is the one the caller did not name. Naming the repo is what lets one board bind',
       '  nodes in five of them without a single `cd`.'
+    ].join('\n')
+  },
+  pane: {
+    handler: pane,
+    subcommands: PANE_SUBCOMMANDS,
+    summary: 'Split the canvas into another pane, or close one',
+    usage: [
+      'pane open [--board <key>] | pane close <left|right|1|2|primary|focused|pane id>',
+      '',
+      '  A pane is a slot holding one board, and two panes are how the architecture that exists sits',
+      '  beside a proposal. Layout used to be a click in the browser, so a thread that could only',
+      '  talk had one pane and reused it — which meant overwriting the board the human was reading.',
+      '',
+      '  `pane open --board <key>` is the whole side-by-side move in one command: it makes a new pane',
+      '  and opens that board into it. It CANNOT target an existing pane, so it cannot overwrite one.',
+      '  With no --board the new pane shows whatever was already on screen, like pressing Split.',
+      '',
+      '  Two panes is the limit the shell lays out. A pane exists only while a browser tab is',
+      '  rendering it, so both of these need one open and exit 4 when there is none — nothing here',
+      '  invents a pane on a headless canvas. Closing a pane takes a board off the screen and does',
+      '  nothing to the board itself; the last pane cannot be closed.',
+      '',
+      '  `archboard panes` (plural) is the read: which pane holds which board, and what is in view.'
+    ].join('\n')
+  },
+  viewport: {
+    handler: viewport,
+    summary: 'Point a pane\'s camera: fit, centre, or zoom (needs a browser tab)',
+    usage: [
+      'viewport --fit [--zoom-factor 0.8] [--pane <spec>]',
+      'viewport --ids a,b,c [--zoom-factor 0.8] [--pane <spec>]',
+      'viewport --element <id> [--pane <spec>]',
+      'viewport --zoom 1.5 [--offset-x 0] [--offset-y 0] [--pane <spec>]',
+      '',
+      '  Exactly one of those four. --fit frames everything on the board, --ids frames those elements,',
+      '  --element centres on one without changing zoom, and the last sets the camera by hand.',
+      '  --zoom-factor is the padding on a fit: lower leaves more room around the content.',
+      '',
+      '  It names a PANE, not a board, because a pane holds one board and that settles which is meant',
+      '  (ADR 0009). With one pane on screen that is the one; with two, --pane says which half moves,',
+      '  and without it the pane that answers for the browser does.'
     ].join('\n')
   },
   demote: { handler: demote, summary: 'Turn nodes back into plain elements', usage: 'demote [--ids a,b,c] [--text]  (default target is the live selection; demotes every element of each node it touches)' },
@@ -187,7 +230,17 @@ const COMMANDS: Record<string, Command> = {
     ].join('\n')
   },
   describe: { handler: scene.describe, summary: 'AI-readable scene description (plain text)', usage: 'describe' },
-  screenshot: { handler: scene.screenshot, summary: 'Capture the canvas (needs an open browser tab)', usage: 'screenshot [--out file.png] [--format png|svg] [--no-background]' },
+  screenshot: {
+    handler: scene.screenshot,
+    summary: 'Capture one pane (needs an open browser tab)',
+    usage: [
+      'screenshot [--out file.png] [--format png|svg] [--no-background] [--pane <spec>]',
+      '',
+      '  A picture of one pane, so with two on screen it takes --pane left|right|1|2 to say which',
+      '  half. Without it the pane that answers for the browser is photographed, which with a single',
+      '  pane is that pane — and with two is the one you may not have drawn in.'
+    ].join('\n')
+  },
   export: { handler: scene.exportCmd, summary: 'Export the scene as .excalidraw JSON or Obsidian .excalidraw.md', usage: 'export [--out scene.excalidraw | note.excalidraw.md] [--format json|obsidian] [--force] (a .md out path implies obsidian; --force overwrites a non-Excalidraw destination, still preserving its frontmatter)' },
   import: { handler: scene.importCmd, summary: 'Import a .excalidraw or Obsidian .excalidraw.md file (merge by default)', usage: 'import [scene.excalidraw|note.excalidraw.md|-] [--replace] (or stdin)' },
   mermaid: { handler: scene.mermaid, summary: 'Render a Mermaid diagram onto the canvas (needs a browser tab)', usage: 'mermaid [diagram.mmd|-] (or stdin)' },

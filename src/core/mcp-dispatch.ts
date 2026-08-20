@@ -17,6 +17,8 @@ import {
   getElements,
   getPanes,
   getSelection,
+  openPane,
+  closePane,
   searchElements,
   clearCanvas,
   exportImage,
@@ -562,12 +564,13 @@ export async function callExcalidrawTool(
         const params = z.object({
           format: z.enum(['png', 'svg']),
           filePath: z.string().optional(),
-          background: z.boolean().optional()
+          background: z.boolean().optional(),
+          pane: z.string().min(1).optional()
         }).parse(args);
 
-        logger.info('Exporting to image via MCP', { format: params.format });
+        logger.info('Exporting to image via MCP', { format: params.format, pane: params.pane });
 
-        const result = await exportImage(params.format, params.background ?? true);
+        const result = await exportImage(params.format, params.background ?? true, params.pane);
 
         if (params.filePath) {
           const safeImagePath = sanitizeFilePath(params.filePath);
@@ -829,6 +832,36 @@ export async function callExcalidrawTool(
           content: [{ type: 'text', text: report.text }]
         };
       }
+      case 'open_pane': {
+        const params = z.object({ board: z.string().min(1).optional() }).parse(args ?? {});
+        logger.info('Opening a pane via MCP', { board: params.board });
+
+        const result = await openPane(params.board ? { board: params.board } : {});
+        const place = result.pane?.place ?? 'a new pane';
+        const landed = result.board
+          ? `"${result.board.board}" is showing in the ${place} pane, beside what was already there. ` +
+            `Name it on every call that touches it: board "${result.board.board}".`
+          : `Opened the ${place} pane, showing what was already on screen. ` +
+            'Point it somewhere with open_board.';
+        return {
+          content: [{ type: 'text', text: `${landed}\n\n${JSON.stringify(result, null, 2)}` }]
+        };
+      }
+      case 'close_pane': {
+        const params = z.object({ pane: z.string().min(1) }).parse(args ?? {});
+        logger.info('Closing a pane via MCP', { pane: params.pane });
+
+        const result = await closePane(params.pane);
+        return {
+          content: [{
+            type: 'text',
+            text:
+              `Closed the ${result.closed?.place ?? params.pane} pane. "${result.closed?.board}" is off ` +
+              'the screen and otherwise untouched — still open on the canvas.\n\n' +
+              JSON.stringify(result, null, 2)
+          }]
+        };
+      }
       case 'promote_selection':
       case 'demote_selection': {
         const params = z.object({
@@ -920,12 +953,13 @@ export async function callExcalidrawTool(
       }
       case 'get_canvas_screenshot': {
         const params = z.object({
-          background: z.boolean().optional()
+          background: z.boolean().optional(),
+          pane: z.string().min(1).optional()
         }).parse(args || {});
 
-        logger.info('Taking canvas screenshot via MCP');
+        logger.info('Taking canvas screenshot via MCP', { pane: params.pane });
 
-        const result = await exportImage('png', params.background ?? true);
+        const result = await exportImage('png', params.background ?? true, params.pane);
 
         return {
           content: [
@@ -968,7 +1002,10 @@ export async function callExcalidrawTool(
           scrollToElementId: z.string().min(1).optional(),
           zoom: z.number().min(0.1).max(10).optional(),
           offsetX: z.number().optional(),
-          offsetY: z.number().optional()
+          offsetY: z.number().optional(),
+          // Which pane's camera. Without it the pane that answers for the
+          // browser moves, which with one pane on screen is that pane.
+          pane: z.string().min(1).optional()
         }).superRefine((params, ctx) => {
           const modes = [
             params.scrollToContent === true,
