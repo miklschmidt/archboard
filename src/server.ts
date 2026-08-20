@@ -74,6 +74,7 @@ import type { ChangeEvent } from './core/change-feed.js';
 import { narrateChange } from './core/changes.js';
 import { injectTest, injectionStatus, startInjection } from './core/injection.js';
 import { LibraryItem, readLibrary, writeLibrary } from './core/library.js';
+import { recentreBoundTexts } from './core/labels.js';
 
 // Load environment variables
 dotenv.config();
@@ -577,6 +578,17 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
 
     elements.set(id, updatedElement);
 
+    const isLinear = updatedElement.type === 'arrow' || updatedElement.type === 'line';
+    const changed = (key: string) => Object.prototype.hasOwnProperty.call(body, key);
+    const geometryChanged = ['x', 'y', 'width', 'height', 'points', 'angle'].some(changed);
+    // Pointing an arrow at a different shape is a re-route, not an annotation.
+    // Creating one resolves the path from its refs; re-stating them has to do
+    // the same, or the arrow keeps its old path until some shape it is bound
+    // to happens to move and the server recomputes it as a side effect.
+    const reboundArrow = isLinear &&
+      ['start', 'end', 'startBinding', 'endBinding'].some(changed);
+    if (reboundArrow) resolveArrowBindings([updatedElement], elements);
+
     // Broadcast to all connected clients
     const message: ElementUpdatedMessage = {
       type: 'element_updated',
@@ -585,13 +597,25 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
     broadcast(message, boardKeyForRequest);
     noteChange(boardKeyForRequest, board, 'agent');
 
-    // Moving/resizing a shape must drag its bound arrows along
-    const geometryChanged = ['x', 'y', 'width', 'height']
-      .some(key => Object.prototype.hasOwnProperty.call(body, key));
-    if (geometryChanged && updatedElement.type !== 'arrow' && updatedElement.type !== 'line') {
-      for (const arrow of rerouteBoundArrows(id, elements)) {
-        broadcast({ type: 'element_updated', element: arrow } as ElementUpdatedMessage, boardKeyForRequest);
+    // Whatever moved, its label moves with it: the element itself, and — when a
+    // shape moved — every arrow the server dragged along behind it.
+    const settled: string[] = [];
+    if (geometryChanged || reboundArrow) {
+      settled.push(id);
+      // A label that was itself re-measured has to be re-placed by whatever it
+      // labels: it is half a size bigger, so it is half a size off centre.
+      if (typeof updatedElement.containerId === 'string' && updatedElement.containerId) {
+        settled.push(updatedElement.containerId);
       }
+      if (geometryChanged && !isLinear) {
+        for (const arrow of rerouteBoundArrows(id, elements)) {
+          broadcast({ type: 'element_updated', element: arrow } as ElementUpdatedMessage, boardKeyForRequest);
+          settled.push(arrow.id);
+        }
+      }
+    }
+    for (const text of settleBoundTexts(settled, elements)) {
+      broadcast({ type: 'element_updated', element: text } as ElementUpdatedMessage, boardKeyForRequest);
     }
 
     res.json({
@@ -902,6 +926,31 @@ function rerouteBoundArrows(movedId: string, boardElements: Map<string, ServerEl
     rerouted.push(el);
   });
   return rerouted;
+}
+
+// A label belongs to the thing it names, so moving that thing has to move the
+// label with it. Excalidraw recomputes a bound text's position from its
+// container on every draw, which is why nothing on screen ever complained
+// about this — but the stored coordinates are what the scene bounding box,
+// zoom-to-fit, the crop of an image export and layout.ts's relative-position
+// signals all read, and those had been reading a label the board left behind
+// (TASK-034). Returns the text elements that moved, for broadcasting.
+function settleBoundTexts(
+  containerIds: string[],
+  boardElements: Map<string, ServerElement>
+): ServerElement[] {
+  if (containerIds.length === 0) return [];
+  const moved: ServerElement[] = [];
+  for (const move of recentreBoundTexts([...boardElements.values()], containerIds)) {
+    const text = boardElements.get(move.id);
+    if (!text) continue;
+    text.x = move.x;
+    text.y = move.y;
+    text.updatedAt = new Date().toISOString();
+    text.version = (text.version || 0) + 1;
+    moved.push(text);
+  }
+  return moved;
 }
 
 // Batch create elements

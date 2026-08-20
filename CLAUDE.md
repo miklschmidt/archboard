@@ -197,6 +197,9 @@ state, clearing asks first, and boards and variants are openable from the UI
 agent-drawn or hand-drawn — selects it (TASK-009). Each pane holds its own
 board, so current and proposed sit side by side, and every call names the board
 it means — there is no active board left to resolve against (TASK-021, ADR 0009).
+A bound label goes where its container goes, so moving, resizing or re-routing
+through the API leaves no label stranded and no phantom region in the scene box
+(TASK-034).
 
 ## Names on the wire
 

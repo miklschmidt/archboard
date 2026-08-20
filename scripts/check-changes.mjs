@@ -143,6 +143,59 @@ const diff = (before, after) => diffBoardStates(before, after, identity, 'paymen
     diff(base, recoloured).significance === 'cosmetic');
 }
 
+// --- a label left behind tells the reader the wrong thing (TASK-034) --------
+//
+// A node's box is the box round the shape *and* its bound label. So a label
+// whose stored coordinates were never moved when its container was does not
+// merely sit in the wrong place: it stretches the node it belongs to across
+// everything in between, and the read-back describes that instead of the move.
+// Nothing on screen shows it, because Excalidraw recomputes a bound label's
+// position from its container at draw time.
+
+const { boundTextDrift } = await import(dist('core/labels.js'));
+
+{
+  const base = scene();
+  const moved = base.map(el => (el.id === 'b' ? { ...el, y: 900 } : el));
+  const stranded = moved;
+  const carried = moved.map(el => (el.id === 'bl' ? { ...el, y: 940 } : el));
+
+  check('a label left behind is drift, and the invariant says so',
+    boundTextDrift(stranded).length === 1 && boundTextDrift(stranded)[0].textId === 'bl',
+    JSON.stringify(boundTextDrift(stranded).map(d => d.textId)));
+  check('  while a label that came along is not',
+    boundTextDrift(carried).length === 0);
+
+  const wrong = diff(base, stranded);
+  const right = diff(base, carried);
+  check('a dragged node leaves the cluster it was in', right.nodes.moved.length === 3 &&
+    right.nodes.moved.every(node => 'cluster' in node.changes));
+  check('  and with its label left behind, the same drag reports none of that',
+    wrong.nodes.moved.length === 1 && !('cluster' in wrong.nodes.moved[0].changes),
+    JSON.stringify(wrong.nodes.moved.map(node => Object.keys(node.changes))));
+  check('  it reports the node growing instead, which is not what happened',
+    wrong.nodes.moved[0]?.changes.prominence?.to === 'larger');
+}
+
+{
+  // Every board this file builds holds the invariant, so a change here that
+  // strands a label fails the check that reads boards rather than the one that
+  // moves them.
+  const boards = {
+    scene: scene(),
+    'with an unpromoted box': [...scene(), box('z', 620, 300), label('zl', 'z', 'Redis', 620, 300)],
+    'a shape and its first bound label': [
+      { ...box('a', 0, 0, 'gateway', 'gateway'), label: { text: 'Gateway' } },
+      label('al', 'a', 'Gateway', 0, 0)
+    ]
+  };
+  for (const [name, elements] of Object.entries(boards)) {
+    const drifted = boundTextDrift(elements);
+    check(`${name}: every bound label sits on the thing it names`, drifted.length === 0,
+      drifted.map(d => `${d.text} ${Math.round(d.distance)}px`).join(', '));
+  }
+}
+
 // --- region, and the frame it is measured in (TASK-022) ---------------------
 //
 // A region name is a place inside a frame drawn round the board's nodes, so
