@@ -156,23 +156,41 @@ Our estimate is 0.6 x fontSize per character. It is not a bad estimate that
 needs tuning, it is the wrong kind of answer. On "AuthService" it is 76.7 px too
 wide and every label height it writes is three times the truth.
 
-Reading Excalifont's woff2 subsets with fontkit and summing advance widths does
-not reproduce Chrome either, and is out by 4.6 to 40.4 px across five strings
-with a ratio that is not constant. The cheapest hypothesis, untested, is that
-Chrome fell back to a system font because Excalifont had not finished loading
-when the reference numbers were taken. Testing it is small: load the font
-explicitly, await `document.fonts.ready`, measure the same five strings.
+**Answered: outcome 1.** A pure-JavaScript measurer reproduces Chrome exactly,
+with no native dependency, reading the woff2 subsets already shipped inside
+`@excalidraw/excalidraw`. ADR 0015 needs no amending, and stage 5 converts once
+on write with nothing left for a browser to correct. The finding is
+`docs/design/measuring-text-outside-a-browser.md`.
 
-Three outcomes, and they are three different amounts of work for stage 5:
-a pure-JavaScript measurer with no native dependency, a native canvas on a box
-that currently has none, or the server writing the geometry it can compute and
-the first browser correcting the text. The third is a real second
-representation, confined to two fields on one element type instead of fifteen
-fields on all of them. It is better than shipping widths that are 76 px wrong,
-and it does not satisfy ADR 0015, so if it is taken the ADR says so rather than
-being quietly weakened.
+The cheapest hypothesis was right, and the table it was measured against was
+wrong. In one page, one canvas context and one font string, "a standalone
+caption" measures 163.2715 px before Excalifont's `FontFace`s are added and
+203.6598 px after — and 163.2715 is also exactly what Chrome returns for an
+invented family name and for `20px serif`. The Chrome column in
+`server-is-the-truth.md` was taken on the last-resort font, so the advance-width
+sum that was reported as wrong had been right all along.
 
-**Risks:** none. No production code changes.
+`document.fonts.check` cannot see that, which matters past this stage: it
+returned true for `20px Excalifont` before a single `FontFace` had been added,
+because a family absent from the font set has nothing pending. It does not
+distinguish loaded from nonexistent, so nothing should gate on it.
+
+Summing advances is still not enough. Five things sit on top, each found by
+measurement: GPOS pair kerning, GSUB ligatures reached through a
+chained-context lookup, no shaping across a space because Blink shapes word by
+word, face selection by `@font-face` `unicode-range` with the last declaration
+winning rather than by cmap coverage, and U+00AD laid out as zero width. With
+those the measurer agreed with Chrome on 63,175 ASCII pairs across all seven
+shipped families, 5,600 single codepoints, 57,600 Latin and Latin-Ext pairs, a
+607-string corpus and six font sizes, worst disagreement 0.0012 px.
+
+What it does not cover: Nunito kerns across its own subset boundary in a way
+neither file states (511 of 58,564 pairs, worst 2.34 px), Helvetica is
+`local: true` and ships no file so no server can measure it, and Xiaolai and
+Segoe UI Emoji are untested. Stage 5 writes `fontFamily` 5, which shows none of
+the Nunito problem.
+
+**Risks:** none. No production code changed.
 
 ## Stage 4. Build the check that can tell
 
@@ -228,8 +246,24 @@ Its twelve constants are corrected against the table in
 and 14 to 20, bound text `strokeWidth` 1 to 2, standalone text `textAlign` and
 `verticalAlign`, rectangle `roundness`, freedraw `strokeWidth` and
 `strokeColor`, `elbowed` on a line, `lastCommittedPoint` on freedraw, and arrow
-points inset by half the stroke width. Twelve constants are a morning. The two
-measured fields are whatever stage 3 said they are.
+points inset by half the stroke width. Twelve constants are a morning. The measured fields
+are not two but one: stage 3 established that `getTextHeight` is
+`fontSize * lineHeight * lineCount` with `lineHeight` a per-family constant, so
+only width needs measuring.
+
+Width costs more than the constants do. The measurer is about 750 lines — a
+woff2 reader, enough OpenType layout for kerning and ligatures, and glue — with
+no new package, against fonts already on disk. Call the stage a day plus the
+constants rather than a morning. The parse cache belongs in `kept()`, or
+`test:module-scope` will refuse it.
+
+One thing has to be fixed here or this stage cannot be shown to have worked.
+`scripts/check-fixed-point.mjs` waits for fonts by asking `document.fonts.check`,
+which stage 3 found returns true for a family that is not present at all. Its
+recorded baseline was measured on the fallback font. Left alone, stage 5 writes
+correct Excalifont widths, the check keeps rendering on the fallback, and the
+difference never reaches zero however right the converter is. It should assert a
+known Excalifont width instead.
 
 `frontend/src/canvas/elements.ts` stops converting on read, and with it go
 `restoreBindings`, `planLabelExpansion`, `adoptReusedLabelIds`,
@@ -418,10 +452,9 @@ is a new agent-facing action on both surfaces. `install`, for the documentation.
 Six things are open. Four of them gate a stage and are on the task that owns
 them.
 
-**How text is measured outside a browser.** Gates stage 5, owned by TASK-070.
-The three outcomes are three different amounts of work and one of them puts a
-documented hole in ADR 0015. Nothing in stage 5 should start before this
-reports.
+**How text is measured outside a browser.** Answered by TASK-070: outcome 1, a
+pure-JavaScript measurer, so ADR 0015 stands unamended and stage 5 is not
+gated. Stage 3 has the numbers.
 
 **How a check drives a browser.** Settled by TASK-071, and it costs no
 dependency: `agent-browser` is already on PATH, and two of its commands carry
