@@ -1,10 +1,11 @@
 ---
 id: TASK-061
 title: A board note is written without being made atomic
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@claude'
 created_date: '2026-08-20 19:04'
-updated_date: '2026-08-20 20:18'
+updated_date: '2026-08-20 22:04'
 labels: []
 dependencies: []
 references:
@@ -32,11 +33,37 @@ The investigating agent tried to measure the race window with a two-process stat
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A board note is written by rename, so a reader sees the old note or the new one and never a partial
-- [ ] #2 The same holds for every writer of a vault note
-- [ ] #3 The bytes are flushed to disk before the rename, so a crash cannot leave the new name pointing at a short file
-- [ ] #4 The cost is recorded where it can be found: the fsync is over half the measured write budget and is deliberate, not an oversight
+- [x] #1 A board note is written by rename, so a reader sees the old note or the new one and never a partial
+- [x] #2 The same holds for every writer of a vault note
+- [x] #3 The bytes are flushed to disk before the rename, so a crash cannot leave the new name pointing at a short file
+- [x] #4 The cost is recorded where it can be found: the fsync is over half the measured write budget and is deliberate, not an oversight
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Add src/core/atomic-write.ts: one writeFileAtomic(file, bytes) that writes a hidden sibling temp file, fsyncs the data, renames over the destination, and unlinks the temp on failure. Temp name is a dotfile with a .tmp suffix so a vault never shows it and listBoards never matches it.
+2. Point every writer of a vault note at it: the board save in src/server.ts, the library in src/core/library.ts. Fold src/core/repo-registry.ts's own rename onto the same helper so there is one idiom.
+3. Record the cost where it is found: a header comment on the helper naming the 5.15-5.25 ms of the 6.21 ms cycle and that it is deliberate.
+4. Prove atomicity rather than correctness in scripts/check-boards.mjs: hold a read fd and a second hard link across a save and assert both still hold the whole old note, assert the destination's inode changed, assert no temp file is left in the vault and board list does not see one.
+5. Check ADR 0006 still holds across the rename: baseline recorded from the bytes written, a note changed underneath still refused.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Landed as src/core/atomic-write.ts: writeFileAtomic(file, data) opens a hidden sibling temp file, writes, fsyncs the data, closes, renames over the destination, then best-effort fsyncs the directory. A failure unlinks the temp and rethrows, so the destination is left as it was.
+
+Three writers point at it: the board note save in src/server.ts, the vault library in src/core/library.ts, and src/core/repo-registry.ts, whose own temp-file-and-rename it replaces so there is one idiom rather than two.
+
+The temp name is `.<basename>.<pid>.tmp`. A dotfile, so listBoards skips it before it reaches the .excalidraw.md test and Obsidian does not show it, and a .tmp suffix so nothing walking a vault by extension can take it for a board.
+
+ADR 0006 is unaffected. The destination is never opened for writing, so what lands at the path is exactly the bytes that were hashed, and recordBaseline still records the hash of what was written. The refusal path is untouched: the conflict check happens before any temp file exists, and a refused save still creates nothing, empty directories included. check-boards still proves the changed-underneath refusal per board.
+
+Proof is in scripts/check-boards.mjs, and it is about the window rather than the contents. A save is made with an open read fd and a second hard link held across it, and both still hold the whole old note afterwards while the path has a new inode. Reverting src/server.ts to fs.writeFileSync fails 4 checks: the held fd (reads 3322 bytes of new note where 1861 were expected), the hard link, the inode, and the static check that the three modules use the shared helper. Removing the fsync alone fails 1: the order check, which patches fs.fsyncSync and fs.renameSync and asserts fsync lands first.
+
+Validation: bun run test green, 18 suites, exit 0.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
@@ -88,3 +115,9 @@ created: 2026-08-20 20:18
 Correction to the comment above: the stage number was written before the plan was finalised. This is stage 8 of docs/design/the-plan.md, not stage 6. The sequencing it describes is unchanged: before TASK-078.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A vault note is written by rename, not by truncate-and-fill. src/core/atomic-write.ts holds the one implementation — temp file, fsync, rename, directory fsync — and the board save, the library and the checkout registry all use it; repo-registry's hand-rolled version is gone. The temp file is a dotfile with a .tmp suffix, so it is invisible to listBoards and to Obsidian. ADR 0006's hash check is unchanged, since the bytes hashed are exactly the bytes that land at the path. Proved in scripts/check-boards.mjs by holding a read fd and a second hard link across a save: both still hold the whole old note, and the path has a new inode. Reverting to fs.writeFileSync fails 4 checks; dropping the fsync fails 1. The fsync cost (5.15-5.25 ms of a 6.21 ms cycle) is recorded in the module header and in CLAUDE.md as deliberate. bun run test green.
+<!-- SECTION:FINAL_SUMMARY:END -->
