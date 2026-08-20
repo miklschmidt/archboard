@@ -14,7 +14,6 @@
 // once the note is the only copy of the board (ADR 0015), and twenty separate
 // acquisitions of the board's lock with nineteen gaps between them (ADR 0016).
 
-import logger from '../utils/logger.js';
 import { generateId, ServerElement } from '../types.js';
 import { applyElementChanges, batchCreateElementsOnCanvas, getElements } from './canvas-client.js';
 import { extentOf } from './geometry.js';
@@ -191,25 +190,14 @@ export async function groupElements(
   return { groupId, elementIds, successCount: elementsToGroup.length };
 }
 
-// Ungroup by finding the group's members through their groupIds. Optionally
-// seeded with a known member list (the MCP server's legacy in-memory group map)
-// for backward compatibility.
+// Ungroup by finding the group's members through their groupIds, which is the
+// only place membership is recorded. It used to accept a seeded member list for
+// groups the MCP process had made and remembered; that map is gone, along with
+// the two bugs it caused (TASK-064).
 export async function ungroupElements(
-  groupId: string,
-  knownMemberIds?: string[]
+  groupId: string
 ): Promise<{ groupId: string; ungrouped: boolean; elementIds: string[]; successCount: number }> {
-  const board = await getElements();
-  let members = board.filter(el => (el.groupIds || []).includes(groupId));
-  if (knownMemberIds && knownMemberIds.length > 0) {
-    const byId = new Map(board.map(el => [el.id, el]));
-    const seeded: ServerElement[] = [];
-    for (const id of knownMemberIds) {
-      const element = byId.get(id);
-      if (element) seeded.push(element);
-      else logger.warn(`Element ${id} not found on canvas, skipping ungroup`);
-    }
-    if (seeded.length > 0) members = seeded;
-  }
+  const members = (await getElements()).filter(el => (el.groupIds || []).includes(groupId));
 
   if (members.length === 0) {
     throw new Error(`Group ${groupId} not found`);

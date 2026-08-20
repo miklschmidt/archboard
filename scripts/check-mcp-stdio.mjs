@@ -8,6 +8,8 @@
 // MCP client's config spawns the same entry point the same way, and bun is
 // what can read a .ts entry at all (ADR 0014).
 
+import fs from 'node:fs';
+import os from 'node:os';
 import { spawn } from 'node:child_process';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -256,12 +258,144 @@ async function checkLegacyInitialize() {
   assert(callResult.resultType === undefined, 'legacy tools/call: 2025-era results must not carry resultType');
 }
 
+// ─── Grouping, against a real canvas ─────────────────────────
+//
+// The one check here that is not hermetic, because what it is about is two MCP
+// clients and a canvas disagreeing.
+//
+// The MCP process used to keep its own map of which elements were in which
+// group. So a group made by one client was invisible to the next one, it died
+// when the client exited, and the member list it remembered went stale the
+// moment anybody else touched the group. `groupIds` on the elements is the only
+// record now (TASK-064).
+
+/** A live MCP connection, one tool call at a time. */
+function mcpSession(env) {
+  const child = spawn(runtime, runtimeArgs, {
+    cwd: repoRoot,
+    env: { ...process.env, LOG_LEVEL: 'error', EXCALIDRAW_NO_AUTOSTART: '1', ...env },
+    stdio: ['pipe', 'pipe', 'pipe']
+  });
+  const waiting = new Map();
+  let stdout = '';
+  let stderr = '';
+  child.stdout.on('data', (chunk) => {
+    stdout += chunk.toString();
+    const lines = stdout.split('\n');
+    stdout = lines.pop() ?? '';
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const message = JSON.parse(line);
+      const resolve = waiting.get(message.id);
+      if (resolve) {
+        waiting.delete(message.id);
+        resolve(message);
+      }
+    }
+  });
+  child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
+
+  let nextId = 1;
+  return {
+    async call(name, args) {
+      const id = nextId++;
+      const answer = new Promise((resolve, reject) => {
+        waiting.set(id, resolve);
+        setTimeout(() => reject(new Error(`${name} timed out.${stderr ? `\nstderr:\n${stderr}` : ''}`)), RESPONSE_TIMEOUT_MS);
+      });
+      child.stdin.write(`${JSON.stringify({
+        jsonrpc: '2.0', id, method: 'tools/call',
+        params: { name, arguments: args, _meta: envelope() }
+      })}\n`);
+      const result = resultOf(await answer, name);
+      assert(result.isError !== true, `${name}: ${JSON.stringify(result.content)}`);
+      return JSON.parse(result.content[0].text);
+    },
+    close() {
+      child.kill('SIGKILL');
+    }
+  };
+}
+
+async function checkGroupsLiveOnTheBoard() {
+  const port = 34000 + Math.floor(Math.random() * 900);
+  const base = `http://127.0.0.1:${port}`;
+  const vault = fs.mkdtempSync(join(os.tmpdir(), 'archboard-mcp-groups-'));
+  const canvas = spawn(runtime, [join(repoRoot, 'src', 'server.ts')], {
+    env: { ...process.env, PORT: String(port), HOST: '127.0.0.1', ARCHBOARD_VAULT: vault, LOG_LEVEL: 'error' },
+    stdio: ['ignore', 'ignore', 'ignore']
+  });
+  const env = { EXPRESS_SERVER_URL: base };
+  const api = async (method, url, body) => {
+    const response = await fetch(`${base}${url}`, {
+      method,
+      ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    });
+    return response.json().catch(() => null);
+  };
+  const elementsOn = async () => (await api('GET', '/api/elements?board=scratch'))?.elements ?? [];
+  const groupsOf = async (id) => ((await elementsOn()).find((el) => el.id === id)?.groupIds) ?? [];
+
+  const first = mcpSession(env);
+  let second;
+  try {
+    for (let i = 0; i < 100; i++) {
+      try { await fetch(`${base}/health`); break; } catch { await new Promise((r) => setTimeout(r, 100)); }
+    }
+    await api('POST', '/api/elements/batch?board=scratch', {
+      elements: [
+        { id: 'a', type: 'rectangle', x: 0, y: 0, width: 100, height: 50 },
+        { id: 'b', type: 'rectangle', x: 200, y: 0, width: 100, height: 50 },
+        { id: 'c', type: 'rectangle', x: 400, y: 0, width: 100, height: 50 }
+      ]
+    });
+
+    const { groupId } = await first.call('group_elements', { board: 'scratch', elementIds: ['a', 'b'] });
+    assert(typeof groupId === 'string' && groupId.length > 0, 'group_elements: no groupId came back');
+
+    // Another client, and the CLI's own view of the board: the group is on the
+    // elements, so both of them can see it.
+    second = mcpSession(env);
+    const seen = await second.call('get_resource', { board: 'scratch', resource: 'elements' });
+    const seenGroups = seen.elements.find((el) => el.id === 'a')?.groupIds ?? [];
+    assert(seenGroups.includes(groupId), `a second MCP client cannot see the group: ${JSON.stringify(seenGroups)}`);
+    assert((await groupsOf('a')).includes(groupId), 'the board does not record the group');
+
+    // A human drags a third box into the group, which the client that made it
+    // knows nothing about.
+    await api('POST', '/api/elements/changes?board=scratch', {
+      upserts: [{ id: 'c', groupIds: [groupId] }],
+      deletes: [],
+      clientId: 'pane'
+    });
+
+    await first.call('ungroup_elements', { board: 'scratch', groupId });
+    for (const id of ['a', 'b', 'c']) {
+      assert(!(await groupsOf(id)).includes(groupId),
+        `ungrouping left ${id} carrying a group that no longer exists: ${JSON.stringify(await groupsOf(id))}`);
+    }
+
+    // And a group outlives whatever made it.
+    const { groupId: lasting } = await first.call('group_elements', { board: 'scratch', elementIds: ['a', 'b'] });
+    first.close();
+    await new Promise((r) => setTimeout(r, 200));
+    assert((await groupsOf('a')).includes(lasting), 'the group died with the client that made it');
+  } finally {
+    first.close();
+    second?.close();
+    canvas.kill('SIGTERM');
+    await new Promise((r) => setTimeout(r, 200));
+    fs.rmSync(vault, { recursive: true, force: true });
+  }
+}
+
 const checks = [
   ['server/discover advertises the modern era', checkDiscovery],
   ['direct tool calls work without initialization', checkDirectCallWithoutInitialization],
   ['unsupported protocol revisions are refused', checkUnsupportedVersion],
   ['malformed _meta envelopes are refused', checkInvalidEnvelope],
-  [`legacy ${LEGACY_VERSION} initialize still works`, checkLegacyInitialize]
+  [`legacy ${LEGACY_VERSION} initialize still works`, checkLegacyInitialize],
+  ['a group is on the board, not in the client that made it', checkGroupsLiveOnTheBoard]
 ];
 
 let failed = 0;
