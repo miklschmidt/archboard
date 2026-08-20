@@ -54,6 +54,30 @@ open, which has focus, what a person has selected, which browsers are
 connected: none of it can live in a note, all of it dies with the tab, and a
 reading of this decision that forbade it would be unimplementable.
 
+**Nor is a record of what a board used to be.** The change feed keeps the board
+as it stood when it last told anyone, so that it can say what changed since.
+Snapshots keep a state somebody asked to be able to return to. Both look like
+copies of a board and neither is a second claim about the present one. A note
+holds what a board is now and has never held what it was, so this is not
+duplicated truth, it is the only place that history exists at all. The rule is
+about which copy answers the question "what is on this board", and that answer
+is always the note.
+
+## A board with no home in the vault
+
+The canvas has always been able to open before anybody has chosen a vault, and
+it starts by showing a board that has no note behind it. Under this decision
+that board has nowhere to be, because the only place board content may live is
+a note.
+
+Three answers are defensible and they are not the same product: give that board
+a home in a default location, make choosing a vault a precondition of drawing
+anything, or keep it as an explicitly unpersisted scratchpad whose contents are
+understood to be lost. This ADR does not pick one. It records that the question
+exists and is owned, because a decision that says "everything is a note" while
+one board silently is not would be the same class of gap it was written to
+close.
+
 ## Consequences
 
 **A write returns the resulting board.** A canvas renders what the note holds
