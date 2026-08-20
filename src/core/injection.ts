@@ -42,6 +42,7 @@
 
 import { ChangeEvent, changeFeed } from './change-feed.js';
 import { AppServerControl, SocketCheck, checkSocket, codexHome, controlSocketPath } from './app-server-control.js';
+import { kept } from './hot.js';
 import logger from '../utils/logger.js';
 
 const truthy = (value: string | undefined) => value === '1' || value === 'true' || value === 'yes';
@@ -481,7 +482,11 @@ class Injector {
   }
 }
 
-const injector = new Injector();
+// Kept across a hot reload, like the feed it subscribes to. Injection is armed
+// once, from the address the server actually bound (ADR 0005), and a second
+// Injector would subscribe a second time and push every event into the thread
+// twice (src/core/hot.ts).
+const injector = kept('injector', () => new Injector());
 
 export function startInjection(host: string): void {
   injector.start(host);

@@ -41,7 +41,7 @@ bun run type-check
 bun run test        # type-check, then stdio wire, loopback bind, obsidian,
                     # changes, geometry, labels, library, boards + panes,
                     # branch vs redraw, proposal beside source, skill install,
-                    # repo bindings, CLI/MCP surface parity
+                    # repo bindings, CLI/MCP surface parity, hot reload
 
 ./bin/canvas start  # canvas server on 127.0.0.1:3000
 ./bin/canvas status
@@ -55,12 +55,35 @@ bun run test        # type-check, then stdio wire, loopback bind, obsidian,
 on PATH.
 
 **Editing source changes behaviour on the next command, but not in a server
-that is already running.** A process reads its source once, at start. Restart
-the canvas after changing anything under `src/` that the server executes, and
-remember that a restart drops every unsaved board. `bun run dev:reload` restarts
-on every file save, which is why it is not what `canvas start` does. The
-frontend has real hot reload through `bun run dev` (vite on :5173, proxying the
-API to :3000).
+that is already running.** A process reads its source at start, so a change to
+anything the *server* executes needs a restart or a reload. The CLI, which is a
+fresh process every time, already has it.
+
+**The canvas can reload in place, and it keeps everything on screen.**
+
+```bash
+bun run dev:canvas   # bun --hot: the canvas, reloading on every save
+bun run dev          # that plus vite on :5173, for frontend work
+```
+
+`bun --hot` re-evaluates changed modules inside the running process, which is a
+different thing from `bun --watch` restarting it. The port stays bound, the
+browser tabs keep their WebSockets, the boards keep their unsaved elements, the
+panes keep their registrations, and the change feed keeps its id and cursor. The
+server prints `reloaded in place` when it happens.
+
+**So state that must survive a reload lives in `kept()`** (`src/core/hot.ts`),
+not in module scope, which is rebuilt. Boards, panes, sockets, selection,
+snapshots, files, the library, the change feed and the injector all go through
+it, and anything new that a browser tab can see has to. Two traps come with it:
+a module that creates something at evaluation time must check first (re-running
+`boards.set(SCRATCH_KEY, …)` would blank the scratch board), and a handler on a
+kept object must be replaced rather than added. `bun run test:hot` edits real
+source files under a real canvas and checks all of it.
+
+**`canvas start` watches nothing**, and that is deliberate (ADR 0014): a reload
+a developer asked for is cheap, one caused by a stray file save under a human's
+hands is not. Restarting still drops every unsaved board, so save first, or ask.
 
 `bun run type-check` is the only thing that type-checks now, and `bun run test`
 runs it first, so a type error still fails the suite.
