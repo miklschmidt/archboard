@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
 import { spawn } from 'node:child_process';
+import fs from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -15,6 +16,10 @@ const runtimeArgs = [serverPath];
 const port = Number(process.env.PORT || 32000 + Math.floor(Math.random() * 2000));
 const startupTimeoutMs = 5000;
 const duplicateExitTimeoutMs = 2500;
+// A compiled server left in dist/ by a checkout from before ADR 0014, and its
+// control in the bundle the canvas is meant to serve (TASK-058).
+const staleProbe = 'check-local-bind-stale-server.js';
+const frontendProbe = 'check-local-bind-frontend.js';
 
 function spawnCanvas(host) {
   const env = {
@@ -57,6 +62,50 @@ async function endpointResponds(url, timeoutMs = 500) {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function fetchStatus(url, timeoutMs = 1000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    return response.status;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// Plant one file in dist/ and one in dist/frontend/, so the next two requests
+// tell apart "the canvas serves the frontend bundle" from "the canvas serves
+// whatever is in dist". Returns what to delete afterwards, deepest first, which
+// includes any directory this had to make.
+function plantStaticProbes() {
+  const planted = [];
+  const makeDir = dir => {
+    if (fs.existsSync(dir)) return;
+    makeDir(dirname(dir));
+    fs.mkdirSync(dir);
+    planted.unshift(dir);
+  };
+  const write = (dir, name) => {
+    makeDir(dir);
+    const file = join(dir, name);
+    if (fs.existsSync(file)) throw new Error(`Static probe would overwrite ${file}.`);
+    fs.writeFileSync(file, '// planted by check-local-bind.mjs\n');
+    planted.unshift(file);
+    return file;
+  };
+
+  const dist = join(repoRoot, 'dist');
+  write(dist, staleProbe);
+  write(join(dist, 'frontend'), frontendProbe);
+
+  return () => {
+    for (const entry of planted) {
+      if (fs.statSync(entry).isDirectory()) fs.rmdirSync(entry);
+      else fs.unlinkSync(entry);
+    }
+  };
 }
 
 async function waitForHealth(url, timeoutMs, child, getOutput) {
@@ -108,6 +157,7 @@ async function killChild(child) {
 let first;
 let second;
 let bindAll;
+let removeStaticProbes;
 
 try {
   first = spawnCanvas();
@@ -118,6 +168,28 @@ try {
   if (await endpointResponds(`http://[::1]:${port}/health`)) {
     throw new Error('Default canvas server should not listen on IPv6 loopback.');
   }
+
+  removeStaticProbes = plantStaticProbes();
+
+  const frontendStatus = await fetchStatus(`http://127.0.0.1:${port}/${frontendProbe}`);
+  if (frontendStatus !== 200) {
+    throw new Error(
+      `A file in dist/frontend answered ${frontendStatus}, not 200. ` +
+      'The canvas is not serving the frontend bundle, so the next assertion would pass for the wrong reason.'
+    );
+  }
+
+  const staleStatus = await fetchStatus(`http://127.0.0.1:${port}/${staleProbe}`);
+  if (staleStatus !== 404) {
+    throw new Error(
+      `A file in dist/ but outside dist/frontend answered ${staleStatus}, not 404. ` +
+      'The canvas is serving the whole of dist, so a compiled server left there by an older ' +
+      'checkout is reachable over http (TASK-058).'
+    );
+  }
+
+  removeStaticProbes();
+  removeStaticProbes = undefined;
 
   second = spawnCanvas();
   const secondOutput = collectOutput(second);
@@ -143,7 +215,8 @@ try {
 
   console.log(
     `Local bind check passed on port ${port} using ${runtimeName}: ` +
-    'default bind is IPv4 loopback only, duplicate startup fails, and HOST=:: is guarded.'
+    'default bind is IPv4 loopback only, only dist/frontend is served, duplicate startup fails, ' +
+    'and HOST=:: is guarded.'
   );
 
   await killChild(first);
@@ -157,6 +230,7 @@ try {
     console.error(bindAllOutput());
   }
 } catch (error) {
+  if (removeStaticProbes) removeStaticProbes();
   if (bindAll) await killChild(bindAll);
   if (second) await killChild(second);
   if (first) await killChild(first);

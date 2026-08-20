@@ -132,11 +132,15 @@ const wss = wiring.wss;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Serve static files from the frontend build. The server itself runs from
-// src/ under bun, so dist/ now holds nothing but what vite put there.
-const staticDir = path.join(__dirname, '../dist');
-app.use(express.static(staticDir));
-// Also serve frontend assets
+// Serve the frontend bundle, and only that.
+//
+// This used to mount `../dist` as well, which meant whatever a build tool had
+// left in that directory was reachable over http by path. Under ADR 0014 vite
+// writes nothing but `dist/frontend`, so today that mount adds nothing. But a
+// checkout from before ADR 0014 still has a compiled server, CLI and every core
+// module sitting in `dist/`, and the broad mount served all of it. What is
+// reachable is now this line's decision rather than a build tool's.
+// `scripts/check-local-bind.mjs` plants a file in `dist/` and checks it 404s.
 app.use(express.static(path.join(__dirname, '../dist/frontend')));
 // Serve Excalidraw fonts so the font subsetting worker can fetch them for export
 app.use('/assets/fonts', express.static(
