@@ -411,34 +411,36 @@ export const tools: Tool[] = [
   },
   {
     name: 'open_board',
-    description: "Load a board from the vault onto the canvas, replacing whatever board was there. Address it as 'payments' or 'payments@proposed' — the variant 'current' is the architecture that exists and owns the bare name, every other variant is a proposal. A board already open keeps its unsaved work and is simply switched back to; pass reload to discard that and re-read the file.",
+    description: "Show a board from the vault in a pane, replacing whatever that pane was showing. With one pane on screen it goes there; with two, name one with 'pane' (left, right, 1, 2) or the call is refused rather than putting it on the half nobody asked for. With no browser open the board is loaded but nothing shows it. Address it as 'payments' or 'payments@proposed' — the variant 'current' is the architecture that exists and owns the bare name, every other variant is a proposal. A board already open keeps its unsaved work and is simply switched back to; pass reload to discard that and re-read the file.",
     inputSchema: {
       type: 'object',
       properties: {
         board: { type: 'string', description: "Board address: 'payments' or 'payments@proposed'." },
         variant: { type: 'string', description: "Variant, if not given as part of the address. Defaults to 'current'." },
         level: { type: 'string', description: 'Abstraction tier: system, service, or module. Overrides what the note declares.' },
-        reload: { type: 'boolean', description: 'Discard the in-memory copy and re-read the vault file.' }
+        reload: { type: 'boolean', description: 'Discard the in-memory copy and re-read the vault file.' },
+        pane: { type: 'string', description: "Which pane to show it in: 'left', 'right', 'top', 'bottom', a 1-based position, or a pane id. Required when more than one pane is open." }
       },
       required: ['board']
     }
   },
   {
     name: 'new_board',
-    description: "Start a new, empty board and put it on the canvas. It lives in memory only until save_board writes it to the vault. Refuses a name the vault already has — open that one instead. Use a new variant of an existing name (e.g. payments@option-a) to author a proposal alongside the current architecture.",
+    description: "Start a new, empty board and show it in a pane (name one with 'pane' when more than one is open). It lives in memory only until save_board writes it to the vault. Refuses a name the vault already has — open that one instead. Use a new variant of an existing name (e.g. payments@option-a) to author a proposal alongside the current architecture.",
     inputSchema: {
       type: 'object',
       properties: {
         board: { type: 'string', description: "Board address: 'payments' or 'payments@option-a'." },
         variant: { type: 'string', description: "Variant, if not given as part of the address. Defaults to 'current'." },
-        level: { type: 'string', description: 'Abstraction tier: system, service, or module.' }
+        level: { type: 'string', description: 'Abstraction tier: system, service, or module.' },
+        pane: { type: 'string', description: "Which pane to show it in. Required when more than one pane is open." }
       },
       required: ['board']
     }
   },
   {
     name: 'save_board',
-    description: "Write the board the canvas is holding back to its .excalidraw.md note in the vault, preserving the note's frontmatter and prose. Pass name to save it as a different board (which is how the unnamed scratch board gets a name). THE SAVE CAN BE REFUSED: archboard hashes a note when it reads it and verifies that hash before writing, so if the file changed underneath (Obsidian, a sync client, another editor) or archboard has never read what is at that address, nothing is written and the refusal comes back with three ways out — reload the note (open_board with reload, discarding the canvas), overwrite it (force, discarding the note), or save under another name. Relay the refusal and those three choices to the human and let them pick; never choose for them.",
+    description: "Write the named board back to its .excalidraw.md note in the vault, preserving the note's frontmatter and prose. Pass name to save it as a different board (which is how the unnamed scratch board gets a name). THE SAVE CAN BE REFUSED: archboard hashes a note when it reads it and verifies that hash before writing, so if the file changed underneath (Obsidian, a sync client, another editor) or archboard has never read what is at that address, nothing is written and the refusal comes back with three ways out — reload the note (open_board with reload, discarding the canvas), overwrite it (force, discarding the note), or save under another name. Relay the refusal and those three choices to the human and let them pick; never choose for them.",
     inputSchema: {
       type: 'object',
       properties: {
@@ -635,3 +637,47 @@ export const tools: Tool[] = [
     }
   }
 ];
+
+// ─── Every tool that touches a board says which one ───────────
+//
+// There is no default board and no "the board on the canvas" to fall back to:
+// two panes hold two boards, so a call that names none has no answer and is
+// refused by the canvas (ADR 0009). The parameter is therefore REQUIRED, not
+// optional — a client that leaves it out should be told by its own schema
+// validation rather than by a round trip.
+//
+// Applied here rather than typed into thirty schemas by hand, so the list of
+// board-scoped tools is legible in one place and a tool cannot be the one that
+// forgot.
+const BOARD_SCOPED = [
+  'create_element', 'update_element', 'delete_element', 'get_element',
+  'query_elements', 'batch_create_elements', 'clear_canvas',
+  'describe_scene', 'export_scene', 'import_scene', 'export_to_excalidraw_url',
+  'create_from_mermaid', 'insert_library_item',
+  'group_elements', 'ungroup_elements', 'align_elements', 'distribute_elements',
+  'lock_elements', 'unlock_elements', 'duplicate_elements',
+  'snapshot_scene', 'restore_snapshot', 'save_board',
+  'promote_selection', 'demote_selection'
+];
+
+// `get_resource` reads the board for `scene` and `elements` but not for
+// `library` or `theme`, so naming one is allowed rather than demanded.
+const BOARD_OPTIONAL = ['get_resource'];
+
+const BOARD_PARAM = {
+  type: 'string',
+  description:
+    "Which board to act on: 'payments', or 'payments@option-a' for a variant. " +
+    'There is no default — a pane holds its own board, so nothing on this canvas ' +
+    'means "the board". Call list_boards for what is open and get_panes for what is on screen.'
+} as const;
+
+for (const tool of tools) {
+  const schema = tool.inputSchema as { properties?: Record<string, unknown>; required?: string[] };
+  if (BOARD_SCOPED.includes(tool.name)) {
+    schema.properties = { board: { ...BOARD_PARAM }, ...(schema.properties ?? {}) };
+    schema.required = [...new Set([...(schema.required ?? []), 'board'])];
+  } else if (BOARD_OPTIONAL.includes(tool.name)) {
+    schema.properties = { board: { ...BOARD_PARAM }, ...(schema.properties ?? {}) };
+  }
+}

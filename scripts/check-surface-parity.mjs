@@ -86,7 +86,7 @@ const CLI_ONLY = {
   apply: 'one process spawn instead of three, which is a CLI cost. An MCP client reaches the same state with the create/update/delete tools in one turn.',
   changes: 'MCP lags. The change feed landed CLI-first for the voice loop; an MCP client can read the board with `describe_scene` but cannot ask what changed.',
   'install-skill': 'installs skill files into a skills root on this machine — a filesystem act for the agent that has one.',
-  'board current': '`list_boards` already returns `active`, so the answer is on MCP without a second tool.',
+  'board info': 'MCP lags. `list_boards` returns every open board with its element count and file, which answers most of what `board info` does, but not its save state.',
   'snapshot list': 'MCP lags. `snapshot_scene` and `restore_snapshot` exist with no listing tool, so an MCP client has to remember the names it saved.',
   'inject status': 'injection is decided when the canvas server starts, from ARCHBOARD_INJECT and the bound address (ADR 0005); reading and probing it is an operator act on the host, not canvas work.',
   'inject test': 'as `inject status` — a wiring probe for the machine running the canvas.'

@@ -2,17 +2,25 @@
 //
 // Before multi-document there was a single global `elements` map: every element
 // in the process implicitly belonged to one unnamed board, so "load board X"
-// had nowhere to put X. The store is now a registry of boards, each holding its
-// own elements, plus a pointer to the one the canvas is showing.
+// had nowhere to put X. The store is a registry of boards, each holding its
+// own elements — and nothing else. There is no pointer to a current one.
 //
-// A canvas holds exactly one board at a time (CONTEXT.md), and this server
-// drives one canvas — so exactly one board is *active*, and every existing
-// caller that says nothing about boards means that one. The registry keeps the
-// boards that have been opened this session, which is what makes switching away
-// and back instant and is the shape panes (TASK-006) will need; it is not a
-// cache of the vault, and nothing here is written to disk until a save.
+// A canvas holds exactly one board at a time (CONTEXT.md) and a pane is a slot
+// holding its own canvas, so the number of boards on screen is the number of
+// panes. The registry keeps every board opened this session, which is what
+// makes switching away and back instant and what lets two panes hold two
+// boards at once; it is not a cache of the vault, and nothing here is written
+// to disk until a save.
+//
+// The pointer that used to live here — `activeKey`, "the board" — is gone. It
+// answered for every caller that named no board, and with a board per pane
+// there is nothing for it to point at that is not a guess. So resolveBoard()
+// requires a key and refuses without one (ADR 0009), and this module is the
+// single place every board-blind caller funnelled through, which is why the
+// refusal only had to be written once.
 
 import { ServerElement } from '../types.js';
+import { BoardRequiredError } from './board-target.js';
 import {
   BoardIdentity,
   boardKey,
@@ -52,40 +60,33 @@ function newBoardState(identity: BoardIdentity, vaultBacked: boolean): BoardStat
   return { identity, elements: new Map(), vaultBacked };
 }
 
-// The board the canvas boots holding. Unnamed work has to land somewhere, and
-// every pre-board caller (`add`, `describe`, the browser) targets it without
-// knowing boards exist.
-const scratchIdentity = makeIdentity({ board: SCRATCH_BOARD });
-boards.set(boardKey(scratchIdentity), newBoardState(scratchIdentity, false));
+// The board a pane shows when nothing else is on screen: somewhere for work
+// that has not been given a name yet. It is a board like any other and has to
+// be named like any other — `--board scratch` — but it exists from boot, so a
+// first-time user has something in front of them and something to name.
+export const SCRATCH_KEY = boardKey(makeIdentity({ board: SCRATCH_BOARD }));
+boards.set(SCRATCH_KEY, newBoardState(makeIdentity({ board: SCRATCH_BOARD }), false));
 
-let activeKey = boardKey(scratchIdentity);
-
-export function activeBoardKey(): string {
-  return activeKey;
+/** Every board this canvas has open, for the message that lists them. */
+export function openBoardKeys(): string[] {
+  return Array.from(boards.keys()).sort();
 }
 
-export function activeBoard(): BoardState {
-  const board = boards.get(activeKey);
-  if (board) return board;
-  // Unreachable unless a board was deleted out from under the pointer; recover
-  // rather than serving undefined to every element route.
-  const identity = makeIdentity({ board: SCRATCH_BOARD });
-  const fresh = newBoardState(identity, false);
-  activeKey = boardKey(identity);
-  boards.set(activeKey, fresh);
-  return fresh;
-}
-
-// Resolve the board a request names. An absent key means the active board,
-// which is what every caller written before boards existed means.
-export function resolveBoard(key?: string | null): { key: string; board: BoardState } {
+// Resolve the board a request names — and it has to name one.
+//
+// There is deliberately no else-branch here. The pointer this function used to
+// fall back to is gone (ADR 0009): with a board per pane there is no single
+// board for it to point at, and any answer invented for a caller who named
+// none is a write landing somewhere nobody chose.
+export function resolveBoard(key?: string | null, what?: string): { key: string; board: BoardState } {
   if (key === undefined || key === null || key === '') {
-    return { key: activeKey, board: activeBoard() };
+    throw new BoardRequiredError(openBoardKeys(), what);
   }
   const board = boards.get(key);
   if (!board) {
     throw new Error(
-      `Board "${key}" is not open. Open it first (\`board open ${key}\`), or omit the board key to target the active board.`
+      `Board "${key}" is not open. Open it first (\`board open ${key}\`). ` +
+      `Open right now: ${openBoardKeys().join(', ')}.`
     );
   }
   return { key, board };
@@ -104,13 +105,6 @@ export function getOrCreateBoard(identity: BoardIdentity, vaultBacked: boolean):
   const board = newBoardState(identity, vaultBacked);
   boards.set(key, board);
   return { key, board };
-}
-
-export function setActiveBoard(key: string): BoardState {
-  const board = boards.get(key);
-  if (!board) throw new Error(`Board "${key}" is not open`);
-  activeKey = key;
-  return board;
 }
 
 // The most recent bytes archboard has seen at `file`, or null when it has never
@@ -138,7 +132,6 @@ export function boardSummaries(): Array<{
   elementCount: number;
   vaultBacked: boolean;
   file?: string;
-  active: boolean;
   savedAt?: string;
   loadedAt?: string;
 }> {
@@ -148,7 +141,6 @@ export function boardSummaries(): Array<{
     elementCount: board.elements.size,
     vaultBacked: board.vaultBacked,
     ...(board.file ? { file: board.file } : {}),
-    active: key === activeKey,
     ...(board.savedAt ? { savedAt: board.savedAt } : {}),
     ...(board.loadedAt ? { loadedAt: board.loadedAt } : {})
   }));

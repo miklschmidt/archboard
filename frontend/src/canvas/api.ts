@@ -119,31 +119,39 @@ export function putLibrary(items: LibraryItems) {
 
 // ─── Boards ───────────────────────────────────────────────────
 
-export function fetchCurrentBoard() {
-  return json<BoardInfo & { success: true }>('/api/boards/current')
+/**
+ * One board's identity and save state. Named, always: there is no "the current
+ * board" on the server any more — a pane asks about the board it holds, and
+ * the shell asks about the board in the pane the human is using (ADR 0009).
+ */
+export function fetchBoardInfo(board: string) {
+  return json<BoardInfo & { success: true }>(`/api/boards/info?board=${encodeURIComponent(board)}`)
 }
 
 export function fetchBoards() {
   return json<BoardListing>('/api/boards')
 }
 
-export function openBoard(address: Partial<BoardIdentity> & { board: string; reload?: boolean }) {
+/** `pane` is the pane to show it in — required once more than one is open. */
+export function openBoard(address: Partial<BoardIdentity> & { board: string; reload?: boolean; pane?: string }) {
   return post<BoardInfo>('/api/boards/open', address)
 }
 
-export function newBoard(address: Partial<BoardIdentity> & { board: string }) {
+export function newBoard(address: Partial<BoardIdentity> & { board: string; pane?: string }) {
   return post<BoardInfo>('/api/boards/new', address)
 }
 
 /** Throws BoardConflictError when the note at the destination is not ours to overwrite. */
-export function saveBoard(as?: SaveRequest) {
+export function saveBoard(as: SaveRequest) {
   return post<BoardInfo & { file: string; overwrote: boolean; forced?: boolean }>(
     '/api/boards/save',
-    as ?? {}
+    as
   )
 }
 
 export interface SaveRequest {
+  /** Which board to write. Required: the server has no default (ADR 0009). */
+  board: string
   name?: string
   variant?: string
   level?: string

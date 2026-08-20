@@ -30,16 +30,20 @@ Do not trust a green build. The round-trip is the thing that breaks, and it
 only breaks with a browser attached.
 
 ```bash
-./bin/canvas clear --yes
-cat <<'EOF' | ./bin/canvas add
+./bin/canvas clear --board scratch --yes
+cat <<'EOF' | ./bin/canvas add --board scratch
 [{"type":"rectangle","x":100,"y":100,"width":300,"height":120,
   "backgroundColor":"#e3f2fd",
   "label":{"text":"Probe"},
   "customData":{"archboard":{"node":"probe","kind":"service"}}}]
 EOF
-./bin/canvas describe                  # reads as 1 node, not 1 rectangle
-./bin/canvas query --type rectangle    # customData + link visible here
+./bin/canvas describe --board scratch                # reads as 1 node, not 1 rectangle
+./bin/canvas query --board scratch --type rectangle  # customData + link visible here
 ```
+
+Every command that touches a board names it, and one that does not is refused
+(ADR 0009). `scratch` is what a lone pane holds, so it is the board a probe
+usually wants.
 
 Metadata goes under `customData.archboard` (ADR 0003) — namespaced, never flat,
 because the Obsidian plugin writes its own top-level keys. The explicit
@@ -59,7 +63,7 @@ To exercise the full interaction, click the box in the browser and then:
 
 ```bash
 ./bin/canvas selection --text          # what the human has picked
-./bin/canvas promote --kind service --name "Probe" --path src/core/promote.ts
+./bin/canvas promote --board scratch --kind service --name "Probe" --path src/core/promote.ts
 ```
 
 ## Taking something from upstream
@@ -119,7 +123,7 @@ sync updates it automatically.
   dumping every node. That is deliberate (narratability); use `query` when you
   need the exhaustive set.
 - **The canvas is in-memory** and clears on server restart. A board survives
-  only what `board save` wrote to the vault — unsaved edits, and the whole
+  only what `board save --board <key>` wrote to the vault — unsaved edits, and the whole
   `scratch` board, die with the process. Export or save deliberately.
 - **Board commands need `ARCHBOARD_VAULT`** and there is no default, so a shell
   without it makes every board command fail on the vault message rather than on
@@ -149,11 +153,18 @@ sync updates it automatically.
   board wholesale from a client, and adding one back would reopen the
   stale-tab-truncates-the-board hole (TASK-016). Deletions only ever name ids
   the reporting tab already held.
-- **A second pane shows the same board as the first**, because the server has
-  one active board. `panes` still reports each pane's board separately — it
-  reads what the pane itself adopted, not the server's active pointer — so the
-  two lines are identical today and will not be once panes can be pointed at
-  different boards (TASK-021).
+- **A second pane starts on what the first is showing, and is then pointed
+  somewhere else** — `board open <name> --pane right`. The switch reaches that
+  pane's socket alone (`sendToPane`, not `broadcast`), only that pane's
+  selection is retired, and the change feed is reset only when the board was
+  not already on screen in another pane. A regression here looks like the other
+  pane's scene being replaced, so test with two boards, never two panes on one.
+- **There is no active board to fall back to** (ADR 0009). `activeBoardKey()`
+  and friends are deleted, `resolveBoard()` requires a key, and every
+  board-blind caller funnels through it — which is why the refusal only had to
+  be written once. If you add a route that reads or writes elements, call
+  `boardFromRequest(req, 'What it is doing')` and the refusal comes with it.
+  Do not add a default "for convenience": that is the whole bug.
 - **A pane exists only while its socket is open.** `panes` is fed by pushes from
   the browser keyed by client id, and the close handler retires the pane and its
   selection together. So a closed tab or an unsplit disappears from the report

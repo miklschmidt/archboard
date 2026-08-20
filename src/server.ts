@@ -27,7 +27,14 @@ import {
   normalizeFontFamily
 } from './types.js';
 import { buildSelectionReport } from './core/describe.js';
-import { buildPanesReport, PaneRegistration } from './core/panes.js';
+import {
+  buildPanesReport,
+  PaneRegistration,
+  panesInOrder,
+  resolvePaneSpec,
+  soloPane
+} from './core/panes.js';
+import { BoardRequiredError } from './core/board-target.js';
 import { z } from 'zod';
 import WebSocket from 'ws';
 import { isMainModule } from './core/entry.js';
@@ -35,15 +42,14 @@ import { writePidFile, removePidFile } from './core/pidfile.js';
 import fs from 'fs';
 import {
   BoardState,
-  activeBoard,
-  activeBoardKey,
   baselineForFile,
   boardSummaries,
   boards,
   getOrCreateBoard,
   recordBaseline,
   resolveBoard,
-  setActiveBoard
+  openBoardKeys,
+  SCRATCH_KEY
 } from './core/board-store.js';
 import {
   BoardIdentity,
@@ -106,10 +112,42 @@ const clientIds = new Map<WebSocket, string>();
 // longer in front of anybody. Empty is the normal headless state.
 const panes = new Map<string, PaneRegistration>();
 
+// Which board each pane has been pointed at, keyed by client id.
+//
+// This is the *authority*: what the server has decided a pane holds. The
+// registration above carries what the pane says it is rendering, which is the
+// same thing a beat later, and reporting the pane's own answer is what keeps
+// `panes` a description of the glass rather than a restatement of this map.
+//
+// Entries outlive the socket on purpose. A dropped connection reconnects with
+// the same client id, and a pane that came back showing a different board than
+// it had a second ago would undo an arrangement the human made by hand.
+const paneBoards = new Map<string, string>();
+
+/** What each pane holds, in reading order. */
+function boardsOnScreen(): Array<{ paneId: string; place: string; board: string }> {
+  return panesInOrder(Array.from(panes.values())).map(entry => ({
+    paneId: entry.pane.paneId,
+    place: entry.place,
+    board: paneBoards.get(entry.pane.clientId) ?? entry.pane.board
+  }));
+}
+
+/** The live sockets belonging to one pane. */
+function socketsFor(clientId: string): WebSocket[] {
+  const found: WebSocket[] = [];
+  clientIds.forEach((id, socket) => {
+    if (id === clientId && socket.readyState === WebSocket.OPEN) found.push(socket);
+  });
+  return found;
+}
+
 // Broadcast to all connected clients.
 //
 // The board key is not optional: a client showing board A has to be able to
 // drop a message about board B rather than merge it into what it is rendering.
+// With two panes on two boards that filter stops being a formality — it is the
+// only thing keeping an edit on one board out of the other one's scene.
 function broadcast(message: WebSocketMessage, board: string): void {
   const data = JSON.stringify({ ...message, board });
   clients.forEach(client => {
@@ -122,6 +160,26 @@ function broadcast(message: WebSocketMessage, board: string): void {
       clients.delete(client);
     }
   });
+}
+
+// Send to one pane, named by client id.
+//
+// A board switch is the message this exists for: it replaces the receiving
+// pane's whole scene, so sending it to every socket is how one pane's `board
+// open` used to drag the other pane along with it.
+function sendToPane(clientId: string, message: WebSocketMessage, board: string): boolean {
+  const data = JSON.stringify({ ...message, board });
+  let delivered = false;
+  for (const socket of socketsFor(clientId)) {
+    try {
+      socket.send(data);
+      delivered = true;
+    } catch {
+      logger.warn('Failed to send to a pane, removing');
+      clients.delete(socket);
+    }
+  }
+  return delivered;
 }
 
 // Broadcast something that is not about a board.
@@ -159,22 +217,52 @@ function normalizeLineBreakMarkup(text: string): string {
     .replace(/\n{3,}/g, '\n\n');
 }
 
-// Which board a request is about. `?board=` (or a `board` field in the body)
-// names one explicitly; everything written before boards existed says nothing
-// and means the board the canvas is holding.
-function boardFromRequest(req: Request): { key: string; board: BoardState } {
+// Which board a request is about. `?board=` or a `board` field in the body —
+// and one of them has to be there. A request that names no board is refused
+// (ADR 0009); `what` is the name of the operation, so the refusal can say what
+// it was that needed a board.
+function boardFromRequest(req: Request, what?: string): { key: string; board: BoardState } {
   const fromQuery = typeof req.query.board === 'string' ? req.query.board : undefined;
   const fromBody = req.body && typeof req.body === 'object' && typeof req.body.board === 'string'
     ? req.body.board as string
     : undefined;
-  return resolveBoard(fromQuery ?? fromBody);
+  return resolveBoard(fromQuery ?? fromBody, what);
 }
 
-// An unopened board is a client error, not a server fault.
+// A board that was not named, or was named and is not open, is a client error
+// rather than a server fault.
 function boardErrorStatus(error: unknown): number {
-  return /is not open|Invalid board name|Invalid variant|Invalid level|No vault configured|outside the vault/.test(
+  if (error instanceof BoardRequiredError) return error.status;
+  return /is not open|Invalid board name|Invalid variant|Invalid level|No vault configured|outside the vault|No pane called|matches \d+ panes|No pane is open|needs a pane/.test(
     (error as Error).message
   ) ? 400 : 500;
+}
+
+// The refusal, as a body. Carries the open boards as data so a caller can act
+// on it without parsing the sentence.
+function boardErrorBody(error: unknown): Record<string, unknown> {
+  const base = { success: false, error: (error as Error).message };
+  if (error instanceof BoardRequiredError) {
+    return { ...base, code: error.code, open: error.open };
+  }
+  return base;
+}
+
+/**
+ * What a pane opening for the first time should show.
+ *
+ * A split is "another look at what I am working on", so a new pane starts on
+ * whatever is already in front of the human and is then pointed somewhere else
+ * deliberately. With nothing on screen there is nothing to copy, and the
+ * server's active board — the last one opened — is the only answer available.
+ */
+function boardForNewPane(clientId: string): string {
+  const remembered = paneBoards.get(clientId);
+  if (remembered && boards.has(remembered)) return remembered;
+  const existing = Array.from(panes.values());
+  const reference = existing.find(pane => pane.primary) ?? existing.find(pane => pane.focused) ?? existing[0];
+  const key = reference ? paneBoards.get(reference.clientId) ?? reference.board : null;
+  return key && boards.has(key) ? key : SCRATCH_KEY;
 }
 
 // WebSocket connection handling
@@ -184,9 +272,13 @@ wss.on('connection', (ws: WebSocket, req) => {
   if (clientId) clientIds.set(ws, clientId);
   logger.info(`New WebSocket connection established${clientId ? ` (client ${clientId})` : ''}`);
 
-  // Send the active board to the new client — which board this is, not just
-  // its elements, so the tab knows what it is showing from the first frame.
-  const board = activeBoard();
+  // Which board this pane gets, and it is a board *for this pane* — not "the"
+  // board, which no longer exists as a single thing. A pane that has been here
+  // before (a dropped socket, not a new tab) resumes what it was holding,
+  // because a reconnect must not undo an arrangement the human made by hand.
+  const startingKey = clientId ? boardForNewPane(clientId) : SCRATCH_KEY;
+  if (clientId) paneBoards.set(clientId, startingKey);
+  const board = boards.get(startingKey)!;
   const filesObj: Record<string, ExcalidrawFile> = {};
   files.forEach((f, id) => { filesObj[id] = f; });
   const initialMessage: InitialElementsMessage & {
@@ -194,7 +286,7 @@ wss.on('connection', (ws: WebSocket, req) => {
     identity: BoardIdentity;
   } = {
     type: 'initial_elements',
-    board: activeBoardKey(),
+    board: startingKey,
     identity: board.identity,
     elements: Array.from(board.elements.values()),
     ...(files.size > 0 ? { files: filesObj } : {})
@@ -366,7 +458,7 @@ const UpdateElementSchema = z.object({
 // Get all elements
 app.get('/api/elements', (req: Request, res: Response) => {
   try {
-    const { key, board } = boardFromRequest(req);
+    const { key, board } = boardFromRequest(req, 'Listing elements');
     const elementsArray = Array.from(board.elements.values());
     res.json({
       success: true,
@@ -376,17 +468,14 @@ app.get('/api/elements', (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error fetching elements:', error);
-    res.status(boardErrorStatus(error)).json({
-      success: false,
-      error: (error as Error).message
-    });
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
 });
 
 // Create new element
 app.post('/api/elements', (req: Request, res: Response) => {
   try {
-    const { key: boardKeyForRequest, board } = boardFromRequest(req);
+    const { key: boardKeyForRequest, board } = boardFromRequest(req, 'Creating an element');
     const elements = board.elements;
     const params = CreateElementSchema.parse(req.body);
     logger.info('Creating element via API', { type: params.type, board: boardKeyForRequest });
@@ -425,17 +514,14 @@ app.post('/api/elements', (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error creating element:', error);
-    res.status(400).json({
-      success: false,
-      error: (error as Error).message
-    });
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
 });
 
 // Update element
 app.put('/api/elements/:id', (req: Request, res: Response) => {
   try {
-    const { key: boardKeyForRequest, board } = boardFromRequest(req);
+    const { key: boardKeyForRequest, board } = boardFromRequest(req, 'Updating an element');
     const elements = board.elements;
     const { id } = req.params;
     const body = req.body && typeof req.body === 'object' ? req.body : {};
@@ -515,23 +601,27 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error updating element:', error);
-    res.status(400).json({
-      success: false,
-      error: (error as Error).message
-    });
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
 });
 
 // Clear all elements (must be before /:id route)
 app.delete('/api/elements/clear', (req: Request, res: Response) => {
   try {
-    const { key: boardKeyForRequest, board } = boardFromRequest(req);
+    const { key: boardKeyForRequest, board } = boardFromRequest(req, 'Clearing a board');
     const count = board.elements.size;
     board.elements.clear();
 
-    // Nothing is on the board, so nothing can be selected — in any pane.
-    selectionState.byClient.clear();
-    if (selectionState.current) {
+    // Nothing is on this board, so nothing on it can be selected — in any pane
+    // showing it. A pane on another board keeps its pick; its elements are
+    // still there.
+    for (const [clientId] of selectionState.byClient) {
+      if (paneBoards.get(clientId) === boardKeyForRequest) {
+        selectionState.byClient.delete(clientId);
+      }
+    }
+    const owner = selectionState.current?.clientId;
+    if (owner && paneBoards.get(owner) === boardKeyForRequest) {
       selectionState.current = null;
       broadcastSelection();
     }
@@ -553,17 +643,14 @@ app.delete('/api/elements/clear', (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error clearing canvas:', error);
-    res.status(boardErrorStatus(error)).json({
-      success: false,
-      error: (error as Error).message
-    });
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
 });
 
 // Delete element
 app.delete('/api/elements/:id', (req: Request, res: Response) => {
   try {
-    const { key: boardKeyForRequest, board } = boardFromRequest(req);
+    const { key: boardKeyForRequest, board } = boardFromRequest(req, 'Deleting an element');
     const elements = board.elements;
     const { id } = req.params;
 
@@ -598,17 +685,14 @@ app.delete('/api/elements/:id', (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error deleting element:', error);
-    res.status(500).json({
-      success: false,
-      error: (error as Error).message
-    });
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
 });
 
 // Query elements with filters
 app.get('/api/elements/search', (req: Request, res: Response) => {
   try {
-    const { board } = boardFromRequest(req);
+    const { board } = boardFromRequest(req, 'Querying elements');
     const { type, x_min, x_max, y_min, y_max, board: _boardParam, ...filters } = req.query;
     let results = Array.from(board.elements.values());
 
@@ -648,17 +732,14 @@ app.get('/api/elements/search', (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error querying elements:', error);
-    res.status(500).json({
-      success: false,
-      error: (error as Error).message
-    });
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
 });
 
 // Get element by ID
 app.get('/api/elements/:id', (req: Request, res: Response) => {
   try {
-    const { board } = boardFromRequest(req);
+    const { board } = boardFromRequest(req, 'Getting an element');
     const elements = board.elements;
     const { id } = req.params;
 
@@ -684,10 +765,7 @@ app.get('/api/elements/:id', (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error fetching element:', error);
-    res.status(500).json({
-      success: false,
-      error: (error as Error).message
-    });
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
 });
 
@@ -829,7 +907,7 @@ function rerouteBoundArrows(movedId: string, boardElements: Map<string, ServerEl
 // Batch create elements
 app.post('/api/elements/batch', (req: Request, res: Response) => {
   try {
-    const { key: boardKeyForRequest, board } = boardFromRequest(req);
+    const { key: boardKeyForRequest, board } = boardFromRequest(req, 'Creating elements');
     const elements = board.elements;
     const { elements: elementsToCreate } = req.body;
 
@@ -880,10 +958,7 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error batch creating elements:', error);
-    res.status(400).json({
-      success: false,
-      error: (error as Error).message
-    });
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
 });
 
@@ -904,14 +979,36 @@ app.post('/api/elements/from-mermaid', (req: Request, res: Response) => {
       hasConfig: !!config
     });
 
-    // Broadcast to all WebSocket clients to process the Mermaid diagram
-    broadcast({
+    // Conversion happens in the browser, in the pane that answers for it, and
+    // the elements land on whatever board that pane is holding. So the caller's
+    // board and the primary pane's board have to be the same board — if they
+    // are not, refuse rather than convert into the wrong one.
+    const { key: wanted } = boardFromRequest(req, 'Mermaid conversion');
+    const pane = primaryPane();
+    if (!pane) {
+      return res.status(503).json({
+        success: false,
+        error: 'No browser is open, and mermaid conversion happens in the browser. Open the canvas first.'
+      });
+    }
+    const showing = primaryPaneBoard();
+    if (showing !== wanted) {
+      return res.status(409).json({
+        success: false,
+        error:
+          `Mermaid converts in the pane that answers for the browser, and that pane is showing "${showing}", ` +
+          `not "${wanted}". Nothing was converted. Ask for "${showing}", or put "${wanted}" in that pane ` +
+          `first (\`board open ${wanted} --pane primary\`).`
+      });
+    }
+
+    sendToPane(pane.clientId, {
       type: 'mermaid_convert',
       mermaidDiagram,
       config: config || {},
       timestamp: new Date().toISOString()
-    }, activeBoardKey());
-    changeFeed.expectAgentEcho(activeBoardKey());
+    }, showing);
+    changeFeed.expectAgentEcho(showing);
 
     // Return the diagram for frontend processing
     res.json({
@@ -922,10 +1019,7 @@ app.post('/api/elements/from-mermaid', (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error processing Mermaid diagram:', error);
-    res.status(400).json({
-      success: false,
-      error: (error as Error).message
-    });
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
 });
 
@@ -953,7 +1047,7 @@ const ElementChangesSchema = z.object({
 
 app.post('/api/elements/changes', (req: Request, res: Response) => {
   try {
-    const { key: boardKeyForRequest, board } = boardFromRequest(req);
+    const { key: boardKeyForRequest, board } = boardFromRequest(req, 'A change report');
     const elements = board.elements;
     const { upserts, deletes, clientId, timestamp } = ElementChangesSchema.parse(req.body ?? {});
 
@@ -1030,10 +1124,7 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error applying a change report:', error);
-    res.status(boardErrorStatus(error)).json({
-      success: false,
-      error: (error as Error).message
-    });
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
 });
 
@@ -1056,7 +1147,7 @@ app.get('/api/changes', (req: Request, res: Response) => {
     if (!Number.isFinite(since) || since < 0) {
       return res.status(400).json({ success: false, error: 'since must be a cursor from a previous response' });
     }
-    const board = typeof req.query.board === 'string' && req.query.board ? req.query.board : activeBoardKey();
+    const { key: board } = boardFromRequest(req, 'changes');
     const wantDetail = req.query.detail === '1' || req.query.detail === 'true';
     const coalesce = req.query.coalesce === '1' || req.query.coalesce === 'true';
     // A caller reading the feed wants the board as it is, not as it was 1.2s
@@ -1167,22 +1258,27 @@ app.post('/api/injection/test', async (req: Request, res: Response) => {
 // rather than riding the debounced element sync: the browser posts ids only
 // (tens of bytes), and reading it back never re-transmits the scene.
 //
-// One canvas, one selection. Whichever browser client reported last owns it
-// (last writer wins); when that client disconnects, the selection is dropped.
+// One selection per pane, keyed by client id, plus a last-writer-wins `current`
+// for the callers that ask for "the selection" without naming a pane. When a
+// client disconnects its selection is dropped with it.
 
 const SelectionSchema = z.object({
   elementIds: z.array(z.string()),
   clientId: z.string().min(1)
 });
 
+// Boardless: a selection names the client that made it, and a pane that reads
+// this decides what to do with it by whose it is, not by which board it is on.
+// Tagging it with a board would only give panes on other boards a reason to
+// drop a message that was never about their board in the first place.
 function broadcastSelection(): void {
   const current = selectionState.current;
-  broadcast({
+  broadcastBoardless({
     type: 'selection_changed',
     elementIds: current?.elementIds ?? [],
     clientId: current?.clientId ?? null,
     at: current?.at ?? new Date().toISOString()
-  }, activeBoardKey());
+  });
 }
 
 app.post('/api/selection', (req: Request, res: Response) => {
@@ -1213,13 +1309,18 @@ app.post('/api/selection', (req: Request, res: Response) => {
 });
 
 app.get('/api/selection', (_req: Request, res: Response) => {
-  const board = activeBoard();
+  // Named out of the board the selecting pane is holding, which with two panes
+  // on two boards is the only place those ids exist. No resolution and no
+  // ambiguity: whoever picked the elements settles which board they are on.
+  const owner = selectionState.current?.clientId;
+  const key = (owner ? paneBoards.get(owner) : undefined) ?? SCRATCH_KEY;
+  const board = boards.get(key);
   const report = buildSelectionReport(
     selectionState.current,
-    Array.from(board.elements.values()),
+    board ? Array.from(board.elements.values()) : [],
     clients.size
   );
-  res.json({ success: true, board: activeBoardKey(), ...report });
+  res.json({ success: true, board: key, ...report });
 });
 
 // ─── Panes ────────────────────────────────────────────────────
@@ -1242,8 +1343,9 @@ const RectSchema = z.object({
 const PaneSchema = z.object({
   clientId: z.string().min(1),
   paneId: z.string().min(1),
-  // The board this pane adopted. Today it is always the active one; reading the
-  // pane's own answer is what keeps this report honest when it stops being.
+  // The board this pane adopted — what it is actually rendering, which is what
+  // makes the report a description of the glass rather than an echo of what
+  // the server thinks it sent.
   board: z.string().min(1),
   primary: z.boolean(),
   focused: z.boolean(),
@@ -1280,7 +1382,7 @@ app.get('/api/panes', (_req: Request, res: Response) => {
     selection: (clientId) => selectionState.byClient.get(clientId) ?? null,
     canvasUrl: `http://${formatHostForUrl(HOST)}:${PORT}`
   });
-  res.json({ success: true, activeBoard: activeBoardKey(), ...report });
+  res.json({ success: true, ...report });
 });
 
 // ─── Files API (for image elements) ───────────────────────────
@@ -1300,8 +1402,9 @@ app.post('/api/files', (req: Request, res: Response) => {
       files.set(f.id, { id: f.id, dataURL: f.dataURL, mimeType: f.mimeType || 'image/png', created: f.created || Date.now() });
     }
   }
-  // Broadcast files to connected clients
-  broadcast({ type: 'files_added', files: fileList }, activeBoardKey());
+  // Boardless, like the library: an image blob is addressed by file id from
+  // whichever board references it, so every pane takes it.
+  broadcastBoardless({ type: 'files_added', files: fileList });
   res.json({ success: true, count: fileList.length });
 });
 
@@ -1309,7 +1412,7 @@ app.post('/api/files', (req: Request, res: Response) => {
 app.delete('/api/files/:id', (req: Request, res: Response) => {
   const id = req.params.id as string;
   if (files.delete(id)) {
-    broadcast({ type: 'file_deleted', fileId: id }, activeBoardKey());
+    broadcastBoardless({ type: 'file_deleted', fileId: id });
     res.json({ success: true });
   } else {
     res.status(404).json({ success: false, error: `File with ID ${id} not found` });
@@ -1361,27 +1464,44 @@ app.post('/api/export/image', (req: Request, res: Response) => {
       pendingExports.set(requestId, { resolve, reject, timeout, collectionTimeout: null, bestResult: null });
     });
 
-    // Re-broadcast current elements so all connected clients (including stale ones)
-    // sync to the canonical server state before exporting
+    // Re-send the board to the pane that will answer, so a stale tab exports
+    // what the server holds rather than what it last happened to render. Sent
+    // to that pane alone and carrying that pane's own board: broadcasting it
+    // would replace every other pane's scene with this one's board, which is
+    // exactly the yank per-pane boards exist to prevent.
     const filesObj: Record<string, ExcalidrawFile> = {};
     files.forEach((f, id) => { filesObj[id] = f; });
-    const exportBoard = activeBoard();
-    broadcast({
+    const answering = primaryPane();
+    if (!answering) {
+      return res.status(503).json({
+        success: false,
+        error: 'No frontend client connected. Open the canvas in a browser first.'
+      });
+    }
+    const exportKey = primaryPaneBoard();
+    const exportBoard = boards.get(exportKey);
+    if (!exportBoard) {
+      return res.status(409).json({
+        success: false,
+        error: `The pane that answers for the browser is showing "${exportKey}", which this canvas no longer holds.`
+      });
+    }
+    sendToPane(answering.clientId, {
       type: 'initial_elements',
-      board: activeBoardKey(),
+      board: exportKey,
       identity: exportBoard.identity,
       elements: Array.from(exportBoard.elements.values()),
       ...(files.size > 0 ? { files: filesObj } : {})
-    } as InitialElementsMessage & { files?: Record<string, ExcalidrawFile> }, activeBoardKey());
+    } as InitialElementsMessage & { files?: Record<string, ExcalidrawFile> }, exportKey);
 
-    // Give browsers time to process the reload before requesting export
+    // Give the browser time to process the reload before requesting export
     setTimeout(() => {
-      broadcast({
+      sendToPane(answering.clientId, {
         type: 'export_image_request',
         requestId,
         format,
         background: background ?? true
-      }, activeBoardKey());
+      }, exportKey);
     }, 800);
 
     exportPromise
@@ -1529,7 +1649,16 @@ app.post('/api/viewport', (req: Request, res: Response) => {
       pendingViewports.set(requestId, { resolve, reject, timeout });
     });
 
-    broadcast({
+    const answering = primaryPane();
+    if (!answering) {
+      return res.status(503).json({
+        success: false,
+        error: 'No frontend client connected. Open the canvas in a browser first.'
+      });
+    }
+    // Addressed to the pane that answers, about the board that pane holds: a
+    // scroll-to-element only means anything on the board holding the element.
+    sendToPane(answering.clientId, {
       type: 'set_viewport',
       requestId,
       scrollToContent,
@@ -1539,7 +1668,7 @@ app.post('/api/viewport', (req: Request, res: Response) => {
       zoom,
       offsetX,
       offsetY
-    }, activeBoardKey());
+    }, primaryPaneBoard());
 
     viewportPromise
       .then(result => {
@@ -1612,7 +1741,7 @@ app.post('/api/snapshots', (req: Request, res: Response) => {
       });
     }
 
-    const { key: boardKeyForRequest, board } = boardFromRequest(req);
+    const { key: boardKeyForRequest, board } = boardFromRequest(req, 'Saving a snapshot');
     const snapshot: Snapshot = {
       name,
       board: boardKeyForRequest,
@@ -1632,10 +1761,7 @@ app.post('/api/snapshots', (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error saving snapshot:', error);
-    res.status(500).json({
-      success: false,
-      error: (error as Error).message
-    });
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
 });
 
@@ -1692,9 +1818,10 @@ app.get('/api/snapshots/:name', (req: Request, res: Response) => {
 // ─── Boards ───────────────────────────────────────────────────
 //
 // A board is a named diagram persisted as one .excalidraw.md note in the vault
-// (ADR 0004). The canvas holds exactly one at a time, so these routes are how
-// that one gets swapped: open reads a note into the store and points the canvas
-// at it, save writes the store back out.
+// (ADR 0004). A pane holds exactly one at a time, so these routes are how a
+// pane's board gets swapped: open reads a note into the store and points ONE
+// pane at it, save writes the store back out. Nothing here has an opinion
+// about what any other pane is showing.
 //
 // WRITES ARE CHECKED, NOT LOCKED (ADR 0006). archboard records the sha-256 of a
 // note's bytes when it reads it, and verifies that hash against the destination
@@ -1733,30 +1860,99 @@ function identityResponse(key: string, board: BoardState) {
   };
 }
 
-// Point the canvas at a board and tell every client to swap. Sends the whole
-// scene rather than a delta: nothing about the old board's elements helps
-// render the new one.
-function switchCanvasTo(key: string): BoardState {
-  const board = setActiveBoard(key);
+/**
+ * Point one pane at a board.
+ *
+ * The message goes to that pane's socket alone. Broadcasting it — which is
+ * what this did while the server held one board — is the same thing as
+ * declaring that every pane shows the same board, because `board_switched`
+ * replaces the receiving pane's whole scene.
+ *
+ * `pane` is null when nothing is on screen: the board still becomes the
+ * server's active one, which is what a later pane will adopt and what an
+ * unqualified caller means while there is no pane to disagree.
+ */
+function switchPaneTo(pane: PaneRegistration | null, key: string): BoardState {
+  const board = boards.get(key);
+  if (!board) throw new Error(`Board "${key}" is not open`);
   // A board arriving wholesale is not a change anybody made, so the feed takes
   // the new state as its baseline rather than reporting several hundred
-  // additions and burying the first real edit under them.
-  changeFeed.reset(key, board.identity, () => Array.from(board.elements.values()));
-  // The selection belongs to the board that was on screen; it means nothing on
-  // the new one. Every pane is about to be shown the new board, so no pane's
-  // selection survives either.
-  selectionState.byClient.clear();
-  if (selectionState.current) {
-    selectionState.current = null;
+  // additions and burying the first real edit under them. Only when the board
+  // was not already on screen somewhere: another pane may be part way through
+  // an edit on it, and resetting would swallow that.
+  const alreadyShown = boardsOnScreen().some(
+    shown => shown.board === key && shown.paneId !== pane?.paneId
+  );
+  if (!alreadyShown) {
+    changeFeed.reset(key, board.identity, () => Array.from(board.elements.values()));
   }
-  broadcast({
+
+  if (!pane) return board;
+  paneBoards.set(pane.clientId, key);
+
+  // The selection belonged to the board that pane was showing and means
+  // nothing on this one. Only that pane's: the other pane is still looking at
+  // whatever it had picked.
+  selectionState.byClient.delete(pane.clientId);
+  if (selectionState.current?.clientId === pane.clientId) {
+    selectionState.current = null;
+    broadcastSelection();
+  }
+
+  sendToPane(pane.clientId, {
     type: 'board_switched',
     identity: board.identity,
     elements: Array.from(board.elements.values()),
     timestamp: new Date().toISOString()
   }, key);
-  broadcastSelection();
   return board;
+}
+
+/**
+ * The pane a board request is addressed to.
+ *
+ * A named pane is taken literally. An unnamed one is only allowed where it
+ * cannot be wrong: one pane on screen means that pane, no pane on screen means
+ * the board is loaded without being shown, and two panes means say which
+ * (src/core/panes.ts). The response always names where the board landed.
+ */
+function paneFromRequest(spec: unknown): PaneRegistration | null {
+  const registrations = Array.from(panes.values());
+  if (typeof spec === 'string' && spec.trim()) return resolvePaneSpec(registrations, spec);
+  return soloPane(registrations);
+}
+
+/**
+ * The pane that answers requests addressed to "the browser".
+ *
+ * Image export, viewport control and mermaid conversion are answered exactly
+ * once, by the primary pane, and each of them is about whatever board that
+ * pane is holding. Nothing here resolves "the board" — the pane's board *is*
+ * the answer, so these cannot be ambiguous, only mismatched, which is
+ * something a caller can be told.
+ */
+function primaryPane(): PaneRegistration | null {
+  const registrations = Array.from(panes.values());
+  return registrations.find(pane => pane.primary) ?? registrations[0] ?? null;
+}
+
+function primaryPaneBoard(): string {
+  const pane = primaryPane();
+  return (pane && paneBoards.get(pane.clientId)) ?? pane?.board ?? SCRATCH_KEY;
+}
+
+/** Where a board landed, for the caller who did not say. */
+function paneResponse(pane: PaneRegistration | null): Record<string, unknown> {
+  if (!pane) return { pane: null };
+  const entry = panesInOrder(Array.from(panes.values())).find(p => p.pane.clientId === pane.clientId);
+  return {
+    pane: {
+      paneId: pane.paneId,
+      clientId: pane.clientId,
+      place: entry?.place ?? 'the only pane',
+      position: entry?.position ?? 1
+    }
+  };
 }
 
 // Take a scene's elements into a board's store. Mirrors the batch-create path
@@ -1789,32 +1985,45 @@ app.get('/api/boards', (_req: Request, res: Response) => {
       vault,
       boards: listBoards(vault),
       open: boardSummaries(),
-      active: activeBoardKey()
+      onScreen: boardsOnScreen()
     });
   } catch (error) {
     logger.error('Error listing boards:', error);
-    res.status(boardErrorStatus(error)).json({ success: false, error: (error as Error).message });
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
 });
 
-// Which board the canvas is holding.
-app.get('/api/boards/current', (_req: Request, res: Response) => {
-  res.json({ success: true, ...identityResponse(activeBoardKey(), activeBoard()) });
+// One board's identity and save state. Named, like everything else: there is
+// no "the board the canvas is holding" to ask about any more — a pane asks
+// about its own, and `panes` says what each pane holds.
+app.get('/api/boards/info', (req: Request, res: Response) => {
+  try {
+    const { key, board } = boardFromRequest(req, 'board info');
+    res.json({ success: true, ...identityResponse(key, board) });
+  } catch (error) {
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+  }
 });
 
 // Open a board from the vault onto the canvas.
 app.post('/api/boards/open', (req: Request, res: Response) => {
   try {
-    const params = BoardAddressSchema.extend({ reload: z.boolean().optional() }).parse(req.body ?? {});
+    const params = BoardAddressSchema.extend({
+      reload: z.boolean().optional(),
+      pane: z.string().optional()
+    }).parse(req.body ?? {});
     const asked = identityFromParams(params);
     const key = boardKey(asked);
+    // Which pane this lands in, resolved before anything is read from disk so
+    // that a bad pane spec fails without having changed the store.
+    const pane = paneFromRequest(params.pane);
 
     // A board already open keeps whatever unsaved work it has: switching away
     // and back must not be a way to silently lose edits. reload is the explicit
     // "throw mine away, take the file's".
     if (boards.has(key) && !params.reload) {
-      const board = switchCanvasTo(key);
-      return res.json({ success: true, ...identityResponse(key, board), source: 'memory' });
+      const board = switchPaneTo(pane, key);
+      return res.json({ success: true, ...identityResponse(key, board), source: 'memory', ...paneResponse(pane) });
     }
 
     const loaded = readBoardFile(asked);
@@ -1840,26 +2049,32 @@ app.post('/api/boards/open', (req: Request, res: Response) => {
     // The bytes just read are the baseline the next save is checked against.
     recordBaseline(board, loaded.file, loaded.hash);
     board.loadedAt = new Date().toISOString();
-    switchCanvasTo(openedKey);
+    switchPaneTo(pane, openedKey);
 
-    logger.info(`Board opened: "${openedKey}" (${count} elements) from ${loaded.file}`);
+    logger.info(
+      `Board opened: "${openedKey}" (${count} elements) from ${loaded.file}` +
+      (pane ? ` into pane ${pane.paneId}` : ' (no pane open)')
+    );
     res.json({
       success: true,
       ...identityResponse(openedKey, board),
       source: 'vault',
+      ...paneResponse(pane),
       ...(loaded.declaredKey ? { declaredKey: loaded.declaredKey } : {})
     });
   } catch (error) {
     logger.error('Error opening board:', error);
-    res.status(boardErrorStatus(error)).json({ success: false, error: (error as Error).message });
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
 });
 
 // Start a new, empty board. It exists in memory only until it is saved.
 app.post('/api/boards/new', (req: Request, res: Response) => {
   try {
-    const identity = identityFromParams(BoardAddressSchema.parse(req.body ?? {}));
+    const params = BoardAddressSchema.extend({ pane: z.string().optional() }).parse(req.body ?? {});
+    const identity = identityFromParams(params);
     const key = boardKey(identity);
+    const pane = paneFromRequest(params.pane);
     if (boards.has(key)) {
       return res.status(409).json({
         success: false,
@@ -1875,12 +2090,18 @@ app.post('/api/boards/new', (req: Request, res: Response) => {
 
     const { key: newKey, board } = getOrCreateBoard(identity, true);
     board.file = vaultPathFor(identity);
-    switchCanvasTo(newKey);
+    switchPaneTo(pane, newKey);
     logger.info(`Board created: "${newKey}" (empty, unsaved)`);
-    res.json({ success: true, ...identityResponse(newKey, board), created: true, saved: false });
+    res.json({
+      success: true,
+      ...identityResponse(newKey, board),
+      created: true,
+      saved: false,
+      ...paneResponse(pane)
+    });
   } catch (error) {
     logger.error('Error creating board:', error);
-    res.status(boardErrorStatus(error)).json({ success: false, error: (error as Error).message });
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
 });
 
@@ -1890,7 +2111,7 @@ app.post('/api/boards/new', (req: Request, res: Response) => {
 app.post('/api/boards/save', (req: Request, res: Response) => {
   try {
     const body = req.body ?? {};
-    const source = boardFromRequest(req);
+    const source = boardFromRequest(req, 'Saving a board');
     const sourceBoard = source.board;
     // The human's "overwrite it anyway" — one of the three outcomes a conflict
     // offers. Never set by archboard on its own behalf.
@@ -1962,7 +2183,12 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     // The board is now that board: saving under a new name renames it in the
     // store too, so the next save goes to the same place.
     const targetKey = boardKey(target);
-    const wasActive = source.key === activeBoardKey();
+    // Whoever was looking at the source board is looking at the renamed one:
+    // every pane that held it follows, and a pane on some other board is left
+    // exactly where it was.
+    const watching = Array.from(panes.values()).filter(
+      pane => (paneBoards.get(pane.clientId) ?? pane.board) === source.key
+    );
     const { board: savedBoard } = getOrCreateBoard(target, true);
     if (targetKey !== source.key) {
       savedBoard.elements.clear();
@@ -1973,7 +2199,9 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     // What archboard has now seen at this path is what it just wrote.
     recordBaseline(savedBoard, file, hashBoardBytes(bytes));
     savedBoard.savedAt = new Date().toISOString();
-    if (wasActive && targetKey !== source.key) switchCanvasTo(targetKey);
+    if (targetKey !== source.key) {
+      for (const pane of watching) switchPaneTo(pane, targetKey);
+    }
 
     logger.info(`Board saved: "${targetKey}" (${elementCount} elements) -> ${file}`);
     res.json({
@@ -1986,7 +2214,7 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error saving board:', error);
-    res.status(boardErrorStatus(error)).json({ success: false, error: (error as Error).message });
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
 });
 
@@ -2011,7 +2239,7 @@ function loadSideForCompare(key: string): CompareSideInput | null {
       elements: Array.from(live.elements.values()).filter(el => !el.isDeleted),
       source: 'memory',
       ...(live.file ? { file: live.file } : {}),
-      active: key === activeBoardKey(),
+      onScreen: boardsOnScreen().some(shown => shown.board === key),
       ...(live.savedAt ? { savedAt: live.savedAt } : {}),
       ...(live.loadedAt ? { loadedAt: live.loadedAt } : {})
     };
@@ -2027,7 +2255,7 @@ function loadSideForCompare(key: string): CompareSideInput | null {
     elements: raw.filter(el => el && typeof el === 'object' && !el.isDeleted) as ServerElement[],
     source: 'vault',
     file: loaded.file,
-    active: false
+    onScreen: false
   };
 }
 
@@ -2137,7 +2365,7 @@ app.get('/api/boards/compare', (req: Request, res: Response) => {
     res.json(result);
   } catch (error) {
     logger.error('Error comparing boards:', error);
-    res.status(boardErrorStatus(error)).json({ success: false, error: (error as Error).message });
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
 });
 
@@ -2223,8 +2451,8 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    elements_count: activeBoard().elements.size,
-    board: activeBoardKey(),
+    boards_open: boards.size,
+    elements_count: Array.from(boards.values()).reduce((total, b) => total + b.elements.size, 0),
     websocket_clients: clients.size,
     // Identity for `stop`: it must only ever signal a process that both
     // identifies as this service AND self-reports its pid — never a pid
@@ -2238,8 +2466,7 @@ app.get('/health', (req: Request, res: Response) => {
 app.get('/api/sync/status', (req: Request, res: Response) => {
   res.json({
     success: true,
-    board: activeBoardKey(),
-    elementCount: activeBoard().elements.size,
+    boards: boardSummaries().map(b => ({ board: b.key, elementCount: b.elementCount })),
     timestamp: new Date().toISOString(),
     memoryUsage: {
       heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024), // MB
