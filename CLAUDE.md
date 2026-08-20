@@ -197,7 +197,12 @@ the board's element map and refilled it from one tab, is gone (TASK-016).
 **One thing somebody asked for is one write.** Aligning twenty boxes, or
 distributing, locking, grouping or ungrouping them, or applying a patch of
 creates, updates and deletes, reaches the canvas as a single change report
-(TASK-068). Every one of those used to be one HTTP write per element. That is
+(TASK-068). So does promoting a node, demoting one, and deleting several ids at
+once, on the CLI and over MCP alike (TASK-083). Promotion is where it bites
+hardest: a node is not one element, and the shipped PostgreSQL stencil is seven
+lines, so declaring it a datastore used to cost seven writes for one sentence
+somebody said out loud. Every one of those used to be one HTTP write per
+element. That is
 wasteful today and it is lost updates once the note is the only copy of the
 board, because each write becomes a read-modify-write cycle against one file
 (ADR 0015), and it is twenty separate acquisitions of the board's lock with
