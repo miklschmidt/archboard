@@ -90,7 +90,9 @@ import { narrateChange } from './core/changes.js';
 import { injectTest, injectionStatus, startInjection } from './core/injection.js';
 import { LibraryItem, readLibrary, writeLibrary } from './core/library.js';
 import { recentreBoundTexts } from './core/labels.js';
-import { expandForBoard, relabelBoundTexts } from './core/expand-elements.js';
+import {
+  expandForBoard, relabelBoundTexts, repairIndices, settleDeletions
+} from './core/expand-elements.js';
 import { overlapsRegion, remeasureLinear } from './core/geometry.js';
 import { frontendState, sourceState } from './core/staleness.js';
 
@@ -585,11 +587,21 @@ app.post('/api/elements', (req: Request, res: Response) => {
     // element before the board holds either of them.
     const written = expandForBoard([element], elements);
     for (const el of written) elements.set(el.id, el);
+    // z-order for whatever was just made, so the board holds a document the
+    // renderer does not have to repair (TASK-074).
+    const madeIds = new Set(written.map(el => el.id));
+    const repaired = repairIndices(elements).filter(el => !madeIds.has(el.id));
     const stored = elements.get(id) as ServerElement;
 
     // Broadcast to all connected clients
     for (const el of written) {
-      broadcast({ type: 'element_created', element: el } as ElementCreatedMessage, boardKeyForRequest);
+      broadcast({
+        type: 'element_created',
+        element: elements.get(el.id) ?? el
+      } as ElementCreatedMessage, boardKeyForRequest);
+    }
+    for (const el of repaired) {
+      broadcast({ type: 'element_updated', element: el } as ElementUpdatedMessage, boardKeyForRequest);
     }
     noteChange(boardKeyForRequest, board, 'agent');
 
@@ -645,6 +657,8 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
     const written = expandForBoard([updatedElement], elements);
     for (const el of written) elements.set(el.id, el);
     const expanded = written.filter(el => el.id !== id);
+    const namedIds = new Set([id, ...restated.map(el => el.id), ...expanded.map(el => el.id)]);
+    const repaired = repairIndices(elements).filter(el => !namedIds.has(el.id));
 
     // Broadcast to all connected clients
     const message: ElementUpdatedMessage = {
@@ -653,10 +667,19 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
     };
     broadcast(message, boardKeyForRequest);
     for (const el of restated) {
-      broadcast({ type: 'element_updated', element: el } as ElementUpdatedMessage, boardKeyForRequest);
+      broadcast({
+        type: 'element_updated',
+        element: elements.get(el.id) ?? el
+      } as ElementUpdatedMessage, boardKeyForRequest);
     }
     for (const el of expanded) {
-      broadcast({ type: 'element_created', element: el } as ElementCreatedMessage, boardKeyForRequest);
+      broadcast({
+        type: 'element_created',
+        element: elements.get(el.id) ?? el
+      } as ElementCreatedMessage, boardKeyForRequest);
+    }
+    for (const el of repaired) {
+      broadcast({ type: 'element_updated', element: el } as ElementUpdatedMessage, boardKeyForRequest);
     }
     noteChange(boardKeyForRequest, board, 'agent');
 
@@ -745,19 +768,24 @@ app.delete('/api/elements/:id', (req: Request, res: Response) => {
     }
 
     elements.delete(id);
+    // A label goes with the box it names, and nothing is left pointing at
+    // what has gone (TASK-074).
+    const { alsoDeleted, changed } = settleDeletions([id!], elements);
 
     // Broadcast to all connected clients
-    const message: ElementDeletedMessage = {
-      type: 'element_deleted',
-      elementId: id!
-    };
-    broadcast(message, boardKeyForRequest);
+    for (const elementId of [id!, ...alsoDeleted]) {
+      broadcast({ type: 'element_deleted', elementId } as ElementDeletedMessage, boardKeyForRequest);
+    }
+    for (const el of changed) {
+      broadcast({ type: 'element_updated', element: el } as ElementUpdatedMessage, boardKeyForRequest);
+    }
     noteChange(boardKeyForRequest, board, 'agent');
 
     res.json({
       success: true,
       board: boardKeyForRequest,
-      message: `Element ${id} deleted successfully`
+      message: `Element ${id} deleted successfully`,
+      ...(alsoDeleted.length > 0 ? { alsoDeleted } : {})
     });
   } catch (error) {
     logger.error('Error deleting element:', error);
@@ -1198,20 +1226,28 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
     // is the count the board holds: a labelled box is a box and its label.
     const written = expandForBoard(createdElements, elements);
     written.forEach(el => elements.set(el.id, el));
+    // z-order, so the board holds a document the renderer does not have to
+    // repair (TASK-074).
+    const madeIds = new Set(written.map(el => el.id));
+    const repaired = repairIndices(elements).filter(el => !madeIds.has(el.id));
+    const stored = written.map(el => elements.get(el.id) ?? el);
 
     // Broadcast to all connected clients
     const message: BatchCreatedMessage = {
       type: 'elements_batch_created',
-      elements: written
+      elements: stored
     };
     broadcast(message, boardKeyForRequest);
+    for (const el of repaired) {
+      broadcast({ type: 'element_updated', element: el } as ElementUpdatedMessage, boardKeyForRequest);
+    }
     noteChange(boardKeyForRequest, board, 'agent');
 
     res.json({
       success: true,
       board: boardKeyForRequest,
-      elements: written,
-      count: written.length
+      elements: stored,
+      count: stored.length
     });
   } catch (error) {
     logger.error('Error batch creating elements:', error);
@@ -1337,6 +1373,46 @@ interface AppliedChanges {
 }
 
 /**
+ * What the board owes the write, once the write itself has been applied: a
+ * label that goes with the box it named, references that point at something,
+ * and a z-order.
+ *
+ * Every write ends here, because the answer to a write is the resulting
+ * document (ADR 0015) and a document is not a result if the renderer has to
+ * repair it first. Two repairs the pane was quietly making on delivery are now
+ * made once, here, where they are part of what the board became and everybody
+ * is told: `elementsForScene` nulls a `containerId` pointing at a deleted
+ * container, and Excalidraw assigns an `index` to an element that has none.
+ * `scripts/check-live-session.mjs` caught both as the pane and the server
+ * disagreeing about a document.
+ */
+function settleDocument(
+  applied: AppliedChanges,
+  elements: Map<string, ServerElement>
+): AppliedChanges {
+  const { alsoDeleted, changed } = settleDeletions(applied.deleted, elements);
+  const repaired = repairIndices(elements);
+  if (alsoDeleted.length === 0 && changed.length === 0 && repaired.length === 0) return applied;
+
+  const created = new Map(applied.created.map(element => [element.id, element]));
+  const updated = new Map(applied.updated.map(element => [element.id, element]));
+  for (const element of [...changed, ...repaired]) {
+    if (created.has(element.id)) created.set(element.id, element);
+    else updated.set(element.id, element);
+  }
+  // An element the write made and this then took away is gone, not created.
+  for (const id of alsoDeleted) {
+    created.delete(id);
+    updated.delete(id);
+  }
+  return {
+    created: Array.from(created.values()).filter(element => elements.has(element.id)),
+    updated: Array.from(updated.values()).filter(element => elements.has(element.id)),
+    deleted: [...applied.deleted, ...alsoDeleted]
+  };
+}
+
+/**
  * A browser's report of what a person did. The browser holds the elements, so
  * this is a merge and nothing more: no re-routing, no re-placing of labels,
  * because Excalidraw has already done all of that on screen and reported it.
@@ -1387,7 +1463,7 @@ function applyReportedChanges(
     if (elements.delete(id)) deleted.push(id);
   }
 
-  return { created, updated, deleted };
+  return settleDocument({ created, updated, deleted }, elements);
 }
 
 /**
@@ -1464,11 +1540,11 @@ function applyAgentChanges(
   }
 
   // An element written and then deleted in the same intent is gone, not changed.
-  return {
+  return settleDocument({
     created,
     updated: Array.from(updated.values()).filter(element => elements.has(element.id)),
     deleted
-  };
+  }, elements);
 }
 
 app.post('/api/elements/changes', (req: Request, res: Response) => {
@@ -1512,11 +1588,23 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
       deleted: deleted.length,
       count: elements.size,
       appliedAt: now,
-      // What the write created, in the form the board now holds it: the server
-      // mints ids, so this is the half of the result an agent cannot work out
-      // for itself. What the write *changed* is not echoed here — that is
-      // TASK-074, and a browser does not need either.
-      ...(origin === 'agent' ? { elements: created } : {})
+      // A pane gets the board back, whole (TASK-074). It is what stops a
+      // session accumulating divergence: every write is a resync, and the pane
+      // renders the document rather than its own running total of deltas
+      // (ADR 0015). Safe to hand back unconditionally because this response
+      // was computed from what that pane just sent, so it cannot be missing
+      // it — which is exactly what another writer's broadcast can be, and why
+      // that one is still merged by id.
+      //
+      // An agent gets something smaller, because a 300-element board is 60,000
+      // tokens and `align` in a loop would pull twenty of them through a
+      // context to move twenty boxes (TASK-075). For now that is what the
+      // write created, in the form the board now holds it: the server mints
+      // ids, so this is the half of the result an agent cannot work out for
+      // itself.
+      ...(origin === 'agent'
+        ? { elements: created }
+        : { document: Array.from(elements.values()) })
     });
   } catch (error) {
     logger.error('Error applying a change report:', error);
