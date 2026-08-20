@@ -64,7 +64,9 @@ import {
   describeWriteConflict,
   hashBoardBytes,
   listBoards,
+  LoadedBoard,
   makeIdentity,
+  SCRATCH_BOARD,
   panesFollowSave,
   parseBoardKey,
   readBoardFile,
@@ -2421,7 +2423,9 @@ function identityResponse(key: string, board: BoardState) {
     board: key,
     identity: board.identity,
     elementCount: board.elements.size,
-    vaultBacked: board.vaultBacked,
+    // Scratch has a note like every other board; what it has not got is a name
+    // anybody chose. See boardSummaries().
+    placeholder: key === SCRATCH_KEY,
     ...(board.file ? { file: board.file } : {}),
     ...(board.savedAt ? { savedAt: board.savedAt } : {}),
     ...(board.loadedAt ? { loadedAt: board.loadedAt } : {})
@@ -2679,8 +2683,7 @@ app.post('/api/boards/open', (req: Request, res: Response) => {
     // The note's level wins unless the caller stated one — opening a board is
     // not usually a claim about what level it sits at.
     const { key: openedKey, board } = getOrCreateBoard(
-      { ...loaded.identity, ...(asked.level ? { level: asked.level } : {}) },
-      true
+      { ...loaded.identity, ...(asked.level ? { level: asked.level } : {}) }
     );
     const count = ingestSceneElements(board, Array.isArray(scene) ? scene : (scene.elements ?? []));
     board.file = loaded.file;
@@ -2745,7 +2748,7 @@ app.post('/api/boards/new', (req: Request, res: Response) => {
     // not started.
     const pane = paneFromRequest(params.pane);
 
-    const { key: newKey, board } = getOrCreateBoard(identity, true);
+    const { key: newKey, board } = getOrCreateBoard(identity);
     board.file = vaultPathFor(identity);
     switchPaneTo(pane, newKey);
     logger.info(`Board created: "${newKey}" (empty, unsaved)`);
@@ -2793,15 +2796,6 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
         ...(level ? { level: validateLevel(String(level)) } : {})
       };
 
-    if (!sourceBoard.vaultBacked && !body.name) {
-      return res.status(400).json({
-        success: false,
-        error:
-          'The canvas is holding the scratch board, which has no home in the vault. ' +
-          'Give it a name to save it: `board save --as <name>`.'
-      });
-    }
-
     const file = vaultPathFor(target);
 
     // Read the destination as it is NOW, for two jobs at once: its frontmatter
@@ -2843,7 +2837,7 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     // plain save is deliberately left alone: a node that records a foreign
     // variant on a board nobody branched really was copied in, and that is
     // what `variantAnomaly` is for.
-    const kind = classifyBoardSave({ key: source.key, vaultBacked: sourceBoard.vaultBacked }, targetKey);
+    const kind = classifyBoardSave(source.key, targetKey);
     // Both senses of "wrote somewhere else": naming scratch and branching a
     // board that has a home. They differ over panes, not over elements.
     const branched = kind !== 'same-board';
@@ -2872,7 +2866,7 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     const watching = Array.from(panes.values()).filter(
       pane => (paneBoards.get(pane.clientId) ?? pane.board) === source.key
     );
-    const { board: savedBoard } = getOrCreateBoard(target, true);
+    const { board: savedBoard } = getOrCreateBoard(target);
     // The restamped elements, so the canvas holds what the note holds — and
     // copies of them, so the branch and the board it came from share no
     // objects at all. Restamping already replaced the promoted ones; the plain
@@ -3276,6 +3270,41 @@ server.on('error', (error: NodeJS.ErrnoException) => {
   process.exit(1);
 });
 
+/**
+ * Take the scratch board's note, if there is one.
+ *
+ * Scratch is where a first run draws, and it used to be the one board that
+ * lived in the process and nowhere else, so quitting the canvas threw it away
+ * without saying so. It has a note now like every other board (ADR 0015),
+ * `<vault>/.archboard/scratch.excalidraw.md`, and this is where the canvas
+ * picks it back up.
+ *
+ * Nothing is written here. A vault that has never held a scratch note gets one
+ * when the board is first saved, which is how `board new` behaves too.
+ */
+function adoptScratchBoard(): void {
+  const identity = makeIdentity({ board: SCRATCH_BOARD });
+  const { board } = getOrCreateBoard(identity);
+  let loaded: LoadedBoard | null = null;
+  try {
+    loaded = readBoardFile(identity);
+  } catch (error) {
+    // A scratch note we cannot read is not worth refusing to start over: it is
+    // a scratch pad, the vault holds the boards that matter, and the file is
+    // left alone rather than replaced.
+    logger.warn(`Scratch note ignored: ${(error as Error).message}`);
+  }
+  board.file = loaded?.file ?? vaultPathFor(identity);
+  if (!loaded) return;
+
+  const scene = JSON.parse(loaded.sceneJson);
+  const count = ingestSceneElements(board, Array.isArray(scene) ? scene : (scene.elements ?? []));
+  board.note = loaded.raw;
+  recordBaseline(board, loaded.file, loaded.hash);
+  board.loadedAt = new Date().toISOString();
+  logger.info(`Scratch board picked up where it was left: ${count} element(s) from ${loaded.file}`);
+}
+
 async function startServer(): Promise<void> {
   // A hot reload re-runs this file, entry point and all, inside a process that
   // is already serving. Everything that had to happen once has happened: the
@@ -3310,6 +3339,10 @@ async function startServer(): Promise<void> {
       process.exit(1);
     }
   }
+
+  // Before the port opens, so the first request cannot arrive at a scratch
+  // board that is about to be filled in from a note.
+  adoptScratchBoard();
 
   // Only the process that actually wrote the pidfile may remove it —
   // a concurrent-start loser exiting on EADDRINUSE must not delete the

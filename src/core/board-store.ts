@@ -33,9 +33,11 @@ import {
 export interface BoardState {
   identity: BoardIdentity;
   elements: Map<string, ServerElement>;
-  // Whether this board has a home in the vault. The scratch board the canvas
-  // boots with does not until it is saved under a name.
-  vaultBacked: boolean;
+  // Where this board's note is, or would be. Every board has one, scratch
+  // included (ADR 0015): the vault is the only place board content may live,
+  // so a board the process held and the vault did not would be the exception
+  // that turns that rule into a preference. The file is not written until a
+  // save, so `file` set with no `savedAt` means "nothing there yet".
   file?: string;
   // The note exactly as it was read from (or last written to) disk. Carried so
   // the next save can preserve its frontmatter and anything else the vault put
@@ -47,8 +49,9 @@ export interface BoardState {
   // else's work (ADR 0006).
   //
   // Pinned to a path rather than to the board, so a save-as cannot carry a
-  // baseline onto a file archboard has never read. A board archboard invented
-  // — scratch, or `board new` — has no baseline at all, and that is the same
+  // baseline onto a file archboard has never read. A board archboard has not
+  // read a note for — one `board new` just started, or a scratch board whose
+  // note does not exist yet — has no baseline at all, and that is the same
   // situation as a changed file: there are bytes at the destination that this
   // process has not seen.
   baseline?: { file: string; hash: string; at: string };
@@ -61,19 +64,24 @@ export interface BoardState {
 // throws a human's rearrangement away (src/core/hot.ts, ADR 0014).
 export const boards = kept('boards', () => new Map<string, BoardState>());
 
-function newBoardState(identity: BoardIdentity, vaultBacked: boolean): BoardState {
-  return { identity, elements: new Map(), vaultBacked };
+function newBoardState(identity: BoardIdentity): BoardState {
+  return { identity, elements: new Map() };
 }
 
 // The board a pane shows when nothing else is on screen: somewhere for work
 // that has not been given a name yet. It is a board like any other and has to
 // be named like any other — `--board scratch` — but it exists from boot, so a
 // first-time user has something in front of them and something to name.
+//
+// Its note is `<vault>/.archboard/scratch.excalidraw.md`, and the canvas
+// adopts whatever is there when it starts (`adoptScratchBoard` in server.ts).
+// The path is not resolved here, because this module is loaded by processes
+// that have no vault and no business demanding one.
 export const SCRATCH_KEY = boardKey(makeIdentity({ board: SCRATCH_BOARD }));
 // Only when it is missing. A hot reload re-runs this line with the scratch
 // board already open, and setting it again would blank whatever is on it.
 if (!boards.has(SCRATCH_KEY)) {
-  boards.set(SCRATCH_KEY, newBoardState(makeIdentity({ board: SCRATCH_BOARD }), false));
+  boards.set(SCRATCH_KEY, newBoardState(makeIdentity({ board: SCRATCH_BOARD })));
 }
 
 /** Every board this canvas has open, for the message that lists them. */
@@ -106,7 +114,7 @@ export function resolveBoard(key?: string | null, what?: string): { key: string;
   return { key: normalized, board };
 }
 
-export function getOrCreateBoard(identity: BoardIdentity, vaultBacked: boolean): { key: string; board: BoardState } {
+export function getOrCreateBoard(identity: BoardIdentity): { key: string; board: BoardState } {
   const key = boardKey(identity);
   const existing = boards.get(key);
   if (existing) {
@@ -122,10 +130,9 @@ export function getOrCreateBoard(identity: BoardIdentity, vaultBacked: boolean):
         ? {}
         : { displayName: existing.identity.displayName })
     };
-    if (vaultBacked) existing.vaultBacked = true;
     return { key, board: existing };
   }
-  const board = newBoardState(identity, vaultBacked);
+  const board = newBoardState(identity);
   boards.set(key, board);
   return { key, board };
 }
@@ -184,7 +191,7 @@ export function boardSummaries(): Array<{
   key: string;
   identity: BoardIdentity;
   elementCount: number;
-  vaultBacked: boolean;
+  placeholder: boolean;
   file?: string;
   savedAt?: string;
   loadedAt?: string;
@@ -193,7 +200,10 @@ export function boardSummaries(): Array<{
     key,
     identity: board.identity,
     elementCount: board.elements.size,
-    vaultBacked: board.vaultBacked,
+    // Scratch is a board with a note but not a name anybody chose, and that is
+    // the only thing about it that is different. Said on the wire so a surface
+    // can offer "give this a name" without knowing what scratch is called.
+    placeholder: key === SCRATCH_KEY,
     ...(board.file ? { file: board.file } : {}),
     ...(board.savedAt ? { savedAt: board.savedAt } : {}),
     ...(board.loadedAt ? { loadedAt: board.loadedAt } : {})

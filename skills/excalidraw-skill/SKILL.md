@@ -513,7 +513,7 @@ Never pass `--force` / `force: true` unless the human has said to overwrite.
 
 Nothing is locked, and the check reads the file, not another app's memory: a board open in Obsidian can still write its unsaved copy back afterwards. Keep a board open in one editor at a time.
 
-A pane opened with nothing else on screen holds `scratch`: a board like any other, named like any other (`--board scratch`), with no home in the vault until `board save --board scratch --as <name>` gives it one.
+A pane opened with nothing else on screen holds `scratch`: a board like any other, named like any other (`--board scratch`). Its note is `<vault>/.archboard/scratch.excalidraw.md`, out of the way of the vault's real boards and picked up again when the canvas restarts, so a sketch is not lost by accident. What it has not got is a name somebody chose, and `board save --board scratch --as <name>` gives it one — the one save that takes the pane with it.
 
 ## Workflow: Variants and comparison
 

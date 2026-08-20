@@ -540,10 +540,18 @@ nothing about boards is refused.
 
 The canvas boots holding a `scratch` board, so a first run has something in
 front of it — a board like any other, named like any other
-(`--board scratch`), with no home in the vault until
-`board save --board scratch --as <name>` gives it one. A pane that is opened
-with nothing else on screen shows scratch; a second pane shows whatever the
-first is showing, until it is pointed somewhere else.
+(`--board scratch`). A pane that is opened with nothing else on screen shows
+scratch; a second pane shows whatever the first is showing, until it is
+pointed somewhere else.
+
+Scratch has a note like every other board (TASK-077, ADR 0015), at
+`<vault>/.archboard/scratch.excalidraw.md` — the vault's hidden directory,
+where the stencil library already lives, so Obsidian's note list stays notes
+and `board list` walks past it. The canvas picks that note up when it starts,
+so a sketch outlives the process that drew it. What scratch has not got is a
+name anybody chose, and `board save --board scratch --as <name>` is what gives
+it one: still the one save that takes the pane with it, because the placeholder
+and its new name hold the same drawing.
 
 ## Bindings name a repository, not a directory
 

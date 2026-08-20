@@ -155,8 +155,10 @@ sync updates it automatically.
   dumping every node. That is deliberate (narratability); use `query` when you
   need the exhaustive set.
 - **The canvas is in-memory** and clears on server restart. A board survives
-  only what `board save --board <key>` wrote to the vault — unsaved edits, and the whole
-  `scratch` board, die with the process. Export or save deliberately.
+  only what `board save --board <key>` wrote to the vault, `scratch` included —
+  it has a note of its own now (`<vault>/.archboard/scratch.excalidraw.md`) and
+  the canvas picks that note up at start, but only a save puts anything in it.
+  Export or save deliberately.
 - **Board commands need `ARCHBOARD_VAULT`** and there is no default, so a shell
   without it makes every board command fail on the vault message rather than on
   whatever you were testing. Set it before `./bin/canvas start` — the canvas

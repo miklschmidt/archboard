@@ -1117,6 +1117,98 @@ try {
     check(`  and is named after it, so the browser would agree`,
       el.id === labelTextIdFor(el.containerId), `${el.id} vs ${labelTextIdFor(el.containerId)}`);
   }
+
+  // --- scratch has a home, and goes back to it (TASK-077) ----------------
+  //
+  // The board a first run draws on used to live in the process and nowhere
+  // else, so quitting the canvas threw it away without saying so. It has a
+  // note now like every other board (ADR 0015), in the vault's own hidden
+  // directory beside the library, and this is the check that it is really
+  // there afterwards. Its own canvas and its own vault, because the point is
+  // what a restart does and the canvas above is holding the rest of the file.
+
+  const scratchVault = fs.mkdtempSync(path.join(os.tmpdir(), 'archboard-scratch-'));
+  let scratchPort = PORT + 137;
+  let scratchBase = `http://127.0.0.1:${scratchPort}`;
+  const scratchNote = path.join(scratchVault, '.archboard', 'scratch.excalidraw.md');
+
+  // Started twice, so "is it up" has to mean "is OUR canvas up". A port this
+  // did not pick is a port something else may be holding, and a canvas that
+  // answers with somebody else's pid would make every check below read as a
+  // scratch bug. The port moves rather than the check failing.
+  const startScratchCanvas = async () => {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const child = spawn(process.execPath, [src('server.ts')], {
+        env: { ...process.env, PORT: String(scratchPort), HOST: '127.0.0.1', ARCHBOARD_VAULT: scratchVault, LOG_LEVEL: 'error' },
+        stdio: ['ignore', 'ignore', 'ignore']
+      });
+      for (let i = 0; i < 150; i++) {
+        try {
+          const health = await (await fetch(`${scratchBase}/health`)).json();
+          if (health?.pid === child.pid) return child;
+          break;
+        } catch { await sleep(100); }
+      }
+      child.kill('SIGKILL');
+      scratchPort += 1;
+      scratchBase = `http://127.0.0.1:${scratchPort}`;
+    }
+    throw new Error(`no canvas of ours came up for the scratch checks (last port ${scratchPort - 1})`);
+  };
+  const scratchApi = async (method, url, body) => {
+    const response = await fetch(`${scratchBase}${url}`, {
+      method,
+      ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    });
+    return { status: response.status, body: await response.json().catch(() => null) };
+  };
+
+  let scratchCanvas = await startScratchCanvas();
+  try {
+    const firstInfo = await scratchApi('GET', '/api/boards/info?board=scratch');
+    check('scratch keeps its own name and says where its note goes',
+      firstInfo.body?.board === 'scratch' && firstInfo.body?.file === scratchNote,
+      firstInfo.body?.file);
+    check('  and is the one board marked a placeholder, because nobody named it',
+      firstInfo.body?.placeholder === true, JSON.stringify(firstInfo.body?.placeholder));
+
+    await scratchApi('POST', '/api/elements?board=scratch', {
+      type: 'rectangle', x: 5, y: 5, width: 60, height: 30, label: { text: 'thinking' }
+    });
+    const savedScratch = await scratchApi('POST', '/api/boards/save?board=scratch');
+    check('saving scratch writes its own note rather than demanding a name',
+      savedScratch.status === 200 && savedScratch.body?.file === scratchNote,
+      savedScratch.body?.error ?? savedScratch.body?.file);
+    check('  and the note is on disk, in the vault\'s hidden directory',
+      fs.existsSync(scratchNote));
+
+    // A note in a dot-directory is archboard's, not the vault's. It must not
+    // turn up among somebody's boards, and `board list` walks past dot
+    // directories for exactly this reason.
+    const listed = await scratchApi('GET', '/api/boards');
+    check('  without turning up in the vault\'s list of boards',
+      (listed.body?.boards ?? []).length === 0, JSON.stringify(listed.body?.boards));
+    check('  while still being open, and addressable, like any other board',
+      (listed.body?.open ?? []).some(b => b.key === 'scratch'),
+      JSON.stringify((listed.body?.open ?? []).map(b => b.key)));
+
+    scratchCanvas.kill('SIGTERM');
+    await sleep(300);
+    scratchCanvas = await startScratchCanvas();
+
+    const after = await scratchApi('GET', '/api/elements?board=scratch');
+    const drawn = (after.body?.elements ?? []).find(el => el.type === 'rectangle');
+    check('and the drawing is still there after the canvas is restarted',
+      drawn?.width === 60 && drawn?.height === 30, JSON.stringify(after.body?.elements?.length));
+    const reopened = await scratchApi('GET', '/api/boards/info?board=scratch');
+    check('  read back from the note, not invented empty',
+      reopened.body?.elementCount === 2 && typeof reopened.body?.loadedAt === 'string',
+      JSON.stringify(reopened.body));
+  } finally {
+    scratchCanvas.kill('SIGTERM');
+    await sleep(200);
+    fs.rmSync(scratchVault, { recursive: true, force: true });
+  }
 } finally {
   server.kill('SIGTERM');
   await sleep(200);

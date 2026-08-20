@@ -72,7 +72,11 @@ a note.
 
 **The canvas refuses to start without a vault.** There is nowhere to put a
 board, so it does not offer one. The board it used to open on gets a home in
-the vault like every other board.
+the vault like every other board: `<vault>/.archboard/scratch.excalidraw.md`,
+in the hidden directory the stencil library already uses, because it is
+archboard's note rather than one somebody made. It is addressed, opened and
+saved exactly like any other board, and it is the one board `board list` does
+not offer, for the same reason Obsidian does not show it.
 
 A canvas somebody can draw on before discovering the drawing was never anywhere
 is worse than a canvas that will not open yet, and it is worse in the way that
