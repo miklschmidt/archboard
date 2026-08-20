@@ -285,6 +285,13 @@ too, on `--as` as well as `--variant`: a branch is the same subject at the same
 abstraction tier, and level is board identity from a vocabulary the project
 grew on purpose (TASK-039).
 
+A branch shares no element objects with the board it came from. It used to
+share every one the restamp did not replace, so two boards held one set of
+objects behind two names, and the only thing keeping that from being a bug was
+that every write path replaces an element rather than editing one. That
+invariant was never written down and nothing enforced it, so the copy is deep
+now and a check mutates a branched element in place to prove it (TASK-042).
+
 **A branch moves nothing on screen** (ADR 0011). You branched in order to
 compare, so the panes holding the source keep holding it and the branch is put
 up with `board open` like any other board. `board open` and `board new` are the
