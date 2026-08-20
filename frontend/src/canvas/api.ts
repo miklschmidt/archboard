@@ -56,21 +56,37 @@ export function fetchFiles(board: string | null) {
 }
 
 /**
- * Tell the server what changed. The board rides in the query string so that a
- * switch landing mid-flight files the change under the board it came from
- * rather than the one now on screen.
+ * Tell the server what changed, and get the board back.
+ *
+ * The board rides in the query string so that a switch landing mid-flight
+ * files the change under the board it came from rather than the one now on
+ * screen.
+ *
+ * `document` is the whole board as the server now holds it, and it is what
+ * makes a write a resync rather than one more delta on a running total
+ * (ADR 0015, TASK-074). It is safe to render outright because it was computed
+ * from what this pane just sent.
  */
 export function reportChanges(
   board: string | null,
   report: ChangeReport,
   clientId: string
-): Promise<{ created: number; updated: number; deleted: number; count: number }> {
+): Promise<ChangeReportReply> {
   return post(`/api/elements/changes${boardQuery(board)}`, {
     upserts: report.upserts,
     deletes: report.deletes,
     clientId,
     timestamp: new Date().toISOString()
   })
+}
+
+export interface ChangeReportReply {
+  created: number
+  updated: number
+  deleted: number
+  count: number
+  /** The board, whole, as the server holds it now. */
+  document?: ServerElement[]
 }
 
 /**

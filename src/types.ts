@@ -30,6 +30,13 @@ export interface ExcalidrawElementBase {
   boundElements?: readonly ExcalidrawBoundElement[] | null;
   updated?: number;
   containerId?: string | null;
+  /**
+   * z-order, as a fractional index. Excalidraw's own field, and a field of the
+   * note like any other: an element without one is a document the renderer has
+   * to repair, which under ADR 0015 is a board with two answers. Issued and
+   * kept valid by `repairIndices` (TASK-074).
+   */
+  index?: string | null;
 }
 
 export interface ExcalidrawTextElement extends ExcalidrawElementBase {

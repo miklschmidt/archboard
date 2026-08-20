@@ -94,6 +94,165 @@ export function fractionalIndex(position: number): string {
   return (INDEX_DIGITS[36 + width - 1] as string) + digits;   // 36 is 'a'
 }
 
+/**
+ * The position `fractionalIndex` would have been given to produce this key, or
+ * null for a key from anywhere else.
+ *
+ * Excalidraw's scheme is wider than ours: it puts a key *between* two others
+ * when a human sends one shape behind another, and those have no position in
+ * our integer run. Saying null for those is the honest answer, and the repair
+ * below treats it as "needs one of ours".
+ */
+export function indexPosition(key: string): number | null {
+  const width = INDEX_DIGITS.indexOf(key[0] as string) - 36 + 1;   // 36 is 'a'
+  if (width < 1 || key.length !== width + 1) return null;
+  let offset = 0;
+  let span = INDEX_DIGITS.length;
+  for (let w = 1; w < width; w++) {
+    offset += span;
+    span *= INDEX_DIGITS.length;
+  }
+  let value = 0;
+  for (let i = 1; i < key.length; i++) {
+    const digit = INDEX_DIGITS.indexOf(key[i] as string);
+    if (digit < 0) return null;
+    value = value * INDEX_DIGITS.length + digit;
+  }
+  return offset + value;
+}
+
+/**
+ * Elements in z-order: by the index they carry, and by where they already sit
+ * for anything that carries none.
+ */
+function inZOrder<T extends { index?: string | null }>(elements: T[]): T[] {
+  return elements
+    .map((element, position) => ({ element, position }))
+    .sort((a, b) => {
+      const ai = typeof a.element.index === 'string' ? a.element.index : null;
+      const bi = typeof b.element.index === 'string' ? b.element.index : null;
+      if (ai !== null && bi !== null && ai !== bi) return ai < bi ? -1 : 1;
+      return a.position - b.position;
+    })
+    .map(({ element }) => element);
+}
+
+/**
+ * What a board owes an element that has just been deleted.
+ *
+ * Three things point at an element by id, and every one of them is a hole once
+ * the element is gone. A bound text names its container in `containerId`, a
+ * container names its label and its arrows in `boundElements`, and an arrow
+ * names both ends in `startBinding` and `endBinding`.
+ *
+ * The pane repairs the first two on delivery, in `elementsForScene` — it has
+ * to, because Excalidraw dereferences them as it renders and a pointer at
+ * nothing is the one shape it will not survive. So a store that leaves them is
+ * a store holding a document the renderer rewrites, which under ADR 0015 is a
+ * board with two answers, and `scripts/check-live-session.mjs` catches it as
+ * one: delete a labelled box and the server keeps the words pointing at a shape
+ * that is not there while the pane shows them loose.
+ *
+ * A label goes with its container rather than being cut loose, because a label
+ * is part of the thing it names. Deleting a box and leaving its word floating
+ * is not what anybody means by deleting the box, and it is not what Excalidraw
+ * does when a human presses delete on one.
+ *
+ * Returns the ids that went with them and the elements it had to rewrite.
+ */
+export function settleDeletions(
+  deleted: readonly string[],
+  board: Map<string, ServerElement>
+): { alsoDeleted: string[]; changed: ServerElement[] } {
+  if (deleted.length === 0) return { alsoDeleted: [], changed: [] };
+  const gone = new Set(deleted);
+
+  // A label belongs to its container, so it goes too.
+  const alsoDeleted: string[] = [];
+  for (const element of board.values()) {
+    const container = element.containerId;
+    if (typeof container === 'string' && gone.has(container)) {
+      alsoDeleted.push(element.id);
+      gone.add(element.id);
+    }
+  }
+  for (const id of alsoDeleted) board.delete(id);
+
+  const changed: ServerElement[] = [];
+  for (const element of board.values()) {
+    const refs = Array.isArray(element.boundElements) ? element.boundElements : null;
+    const kept = refs?.filter((ref: any) => !(ref && gone.has(ref.id)));
+    const loosened = refs !== null && kept !== undefined && kept.length !== refs.length;
+    const starts = (element as any).startBinding;
+    const ends = (element as any).endBinding;
+    const unbindStart = starts && gone.has(starts.elementId);
+    const unbindEnd = ends && gone.has(ends.elementId);
+    if (!loosened && !unbindStart && !unbindEnd) continue;
+    const repaired = {
+      ...element,
+      ...(loosened ? { boundElements: kept as ServerElement['boundElements'] } : {}),
+      ...(unbindStart ? { startBinding: null } : {}),
+      ...(unbindEnd ? { endBinding: null } : {})
+    } as ServerElement;
+    board.set(repaired.id, repaired);
+    changed.push(repaired);
+  }
+  return { alsoDeleted, changed };
+}
+
+/**
+ * Give every element on a board an `index`, and leave the valid ones alone.
+ *
+ * `index` is z-order, it is a field of the note like any other, and until this
+ * existed the store simply had none: an element an agent created carried no
+ * index at all, Excalidraw assigned one the moment it rendered, and the pane
+ * and the server then held two different documents for the rest of the session
+ * (found by `scripts/check-live-session.mjs`). Under ADR 0015 that is a board
+ * with two answers, and a write cannot return a document the renderer has to
+ * repair.
+ *
+ * REPAIR, NOT RESTATEMENT. The exporter above reissues every index from its
+ * position, which is right for a note — one document, written whole. Doing
+ * that to a live board would rewrite all 300 indices every time somebody
+ * deleted a shape near the front, and every one of those is an element the
+ * write has to report as changed. So this keeps any index that is already
+ * increasing and only issues one where the run breaks: after a creation that
+ * is the new element and nothing else, and after a deletion it is nothing at
+ * all.
+ *
+ * The board is left in z-order, because z-order is the order a document is
+ * written in and the store is what a document is built from.
+ *
+ * Returns the elements it had to change, for whoever is reporting the write.
+ */
+export function repairIndices(board: Map<string, ServerElement>): ServerElement[] {
+  const held = [...board.values()];
+  const ordered = inZOrder(held);
+  const changed: ServerElement[] = [];
+  const settled: ServerElement[] = [];
+  let last = -1;
+  for (const element of ordered) {
+    const position = typeof element.index === 'string' ? indexPosition(element.index) : null;
+    if (position !== null && position > last) {
+      last = position;
+      settled.push(element);
+      continue;
+    }
+    last += 1;
+    // Replaced rather than edited: a snapshot or a branch may be holding a
+    // deep copy taken from this one, and every write path here replaces
+    // (TASK-042).
+    const repaired = { ...element, index: fractionalIndex(last) };
+    changed.push(repaired);
+    settled.push(repaired);
+  }
+  const reordered = ordered.some((element, at) => element !== held[at]);
+  if (changed.length === 0 && !reordered) return changed;
+  board.clear();
+  for (const element of settled) board.set(element.id, element);
+  return changed;
+}
+
 // Canonical key order for exported elements: identity/geometry first, the
 // rest alphabetical — so a no-op import→export cycle is byte-identical and
 // committed .excalidraw files produce minimal git diffs.
@@ -395,17 +554,10 @@ export function expandElementsForExport(
   // holds the rest: restating a partial document's indices would renumber it
   // against elements it cannot see.
   if (!forStore) {
-    const order = cleanedExportElements
-      .map((element, position) => ({ element, position }))
-      .sort((a, b) => {
-        const ai = typeof a.element.index === 'string' ? a.element.index : null;
-        const bi = typeof b.element.index === 'string' ? b.element.index : null;
-        if (ai !== null && bi !== null && ai !== bi) return ai < bi ? -1 : 1;
-        return a.position - b.position;
-      });
-    order.forEach(({ element }, position) => { element.index = fractionalIndex(position); });
+    const order = inZOrder(cleanedExportElements);
+    order.forEach((element, position) => { element.index = fractionalIndex(position); });
     cleanedExportElements.length = 0;
-    cleanedExportElements.push(...order.map(({ element }) => element));
+    cleanedExportElements.push(...order);
   }
 
   return deterministic ? canonicalizeKeys(cleanedExportElements) : cleanedExportElements;
