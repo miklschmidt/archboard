@@ -224,7 +224,11 @@ export const tools: Tool[] = [
   },
   {
     name: 'create_from_mermaid',
-    description: 'Convert a Mermaid diagram to Excalidraw elements and render them on the canvas',
+    description:
+      'Convert a Mermaid diagram to Excalidraw elements and render them on the canvas. ' +
+      'Conversion runs in the browser, in the pane holding the board you name, so a browser ' +
+      'tab is required and the board has to be on screen. There is no pane argument: the board ' +
+      'settles which pane. Refused, converting nothing, when no pane is holding that board.',
     inputSchema: {
       type: 'object',
       properties: {

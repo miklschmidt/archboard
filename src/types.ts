@@ -339,6 +339,14 @@ export interface Snapshot {
   // Which board the snapshot was taken from — a snapshot of one board says
   // nothing about another, and restoring across boards would be a data loss.
   board: string;
+  /**
+   * A deep copy of the board as it stood, sharing no object with it.
+   *
+   * The whole value of a snapshot is that editing the board cannot reach it,
+   * so this is built with `copyElements` rather than from the live map
+   * (TASK-048). Restoring goes back out through batch-create, which builds
+   * fresh objects again, so a snapshot can be restored more than once.
+   */
   elements: ServerElement[];
   createdAt: string;
 }

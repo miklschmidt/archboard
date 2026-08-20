@@ -515,7 +515,18 @@ export async function compareBoardsOnCanvas(params: { from: string; to?: string 
   return requestJson<CompareResult>(`/api/boards/compare?${query.toString()}`);
 }
 
-export async function sendMermaid(mermaidDiagram: string, config?: Record<string, unknown>): Promise<ApiResponse> {
+/**
+ * Hand a Mermaid diagram to the pane holding this call's board.
+ *
+ * No pane argument, on purpose. Conversion runs in a pane and the elements
+ * land on the board that pane holds, so the board already decides which pane
+ * (ADR 0009, TASK-046). The answer names the pane it went to, because that is
+ * the half of the screen the diagram is about to appear on.
+ */
+export async function sendMermaid(
+  mermaidDiagram: string,
+  config?: Record<string, unknown>
+): Promise<ApiResponse & { board?: string; pane?: PaneRef | null }> {
   return requestJson('/api/elements/from-mermaid', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
