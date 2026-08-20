@@ -1,0 +1,331 @@
+#!/usr/bin/env node
+
+// Where an arrow is, according to everything that reads the board.
+//
+// An Excalidraw arrow stores an origin and a path: `x, y` is its FIRST POINT
+// and `points` are offsets from it, free to run negative. So for an arrow
+// drawn leftwards or upwards the range `x .. x + width` is the board the arrow
+// came from, not the board it covers, and for one drawn up and to the left the
+// two do not overlap at all. Every reader here used to assume top-left plus
+// size: the scene bounding box, and through layout.ts the cluster, region and
+// relative-direction signals that `describe` and `compare` report — which are
+// what an agent narrates back when a human rearranges the board (TASK-038).
+//
+// Compounding it, the server wrote an arrow's points on every re-route and
+// left `width` and `height` as it found them, so a moved arrow was recorded at
+// the size it used to be. `scripts/repair-labels.mjs` had been quietly
+// re-measuring since TASK-024, which is why nobody saw it.
+//
+// Two halves below. The first is arithmetic and needs nothing. The second
+// builds a real board on a real server, out of arrows that run leftwards,
+// upwards, and both at once, and reads it back the way the product does.
+
+import fs from 'node:fs';
+import os from 'node:os';
+import { spawn } from 'node:child_process';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const dist = (p) => join(__dirname, '..', 'dist', p);
+
+const { extentOf, measureLinear, remeasureLinear, isPathElement } = await import(dist('core/geometry.js'));
+const { boxOf, boundingBoxOf, clusterBoxes, regionName } = await import(dist('core/layout.js'));
+const { describeScene, buildSelectionReport } = await import(dist('core/describe.js'));
+const { labelAnchorOf } = await import(dist('core/labels.js'));
+
+let failures = 0;
+let checks = 0;
+const assert = (condition, message) => {
+  checks += 1;
+  if (condition) return;
+  failures += 1;
+  console.error(`FAIL: ${message}`);
+};
+const near = (a, b, slack = 0.5) => Math.abs(a - b) <= slack;
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// ─── The arithmetic ──────────────────────────────────────────
+
+// The four directions an arrow can be drawn in, all of them 300x200, all of
+// them covering exactly the square from (200,300) to (500,500). Only the
+// origin moves — which is the whole point: four elements whose stored `x, y`
+// are four different corners and which are the same arrow on screen.
+const arrows = {
+  'right and down': { type: 'arrow', x: 200, y: 300, points: [[0, 0], [300, 200]] },
+  'left and down': { type: 'arrow', x: 500, y: 300, points: [[0, 0], [-300, 200]] },
+  'right and up': { type: 'arrow', x: 200, y: 500, points: [[0, 0], [300, -200]] },
+  'left and up': { type: 'arrow', x: 500, y: 500, points: [[0, 0], [-300, -200]] }
+};
+
+for (const [name, arrow] of Object.entries(arrows)) {
+  const extent = extentOf(arrow);
+  assert(
+    near(extent.x, 200) && near(extent.y, 300) && near(extent.width, 300) && near(extent.height, 200),
+    `an arrow running ${name} covers (200,300) 300x200, not ${JSON.stringify(extent)}`
+  );
+}
+
+// The one the old formula got backwards, stated on its own so the check says
+// what the bug was: negative in both axes, and its stored origin is the
+// far corner of the box it covers.
+{
+  const arrow = arrows['left and up'];
+  const extent = extentOf(arrow);
+  assert(
+    arrow.x >= extent.x + extent.width && arrow.y >= extent.y + extent.height,
+    'the check is not exercising the bug: this arrow should start at the far corner of the box it covers'
+  );
+  assert(
+    boundingBoxOf([boxOf(arrow)]).maxX === 500 && boundingBoxOf([boxOf(arrow)]).minX === 200,
+    `a frame drawn round one leftward arrow is the arrow: ${JSON.stringify(boundingBoxOf([boxOf(arrow)]))}`
+  );
+}
+
+// A bent path is measured over every point, not over its endpoints: an arrow
+// routed round an obstacle covers the detour too.
+{
+  const bent = { type: 'arrow', x: 0, y: 0, points: [[0, 0], [-40, -90], [60, 10], [10, 40]] };
+  const extent = extentOf(bent);
+  assert(
+    extent.x === -40 && extent.y === -90 && extent.width === 100 && extent.height === 130,
+    `a bent path is measured over all of it, not ${JSON.stringify(extent)}`
+  );
+}
+
+// A path decides, not a type name. Freedraw stores a stroke the same way an
+// arrow stores a path, so a stroke drawn up and to the left is placed by the
+// same rule and a linear type nobody has added yet is right by default.
+{
+  const stroke = { type: 'freedraw', x: 900, y: 900, points: [[0, 0], [-50, -60], [-10, -20]] };
+  assert(isPathElement(stroke), 'a freedraw stroke carries a path');
+  const extent = extentOf(stroke);
+  assert(extent.x === 850 && extent.y === 840 && extent.width === 50 && extent.height === 60,
+    `a freedraw stroke is measured from its stroke, not ${JSON.stringify(extent)}`);
+}
+
+// Everything without a path keeps the answer it already had.
+{
+  const box = { type: 'rectangle', x: 10, y: 20, width: 200, height: 100 };
+  const extent = extentOf(box);
+  assert(extent.x === 10 && extent.y === 20 && extent.width === 200 && extent.height === 100,
+    'a box is its own extent');
+  assert(!isPathElement(box), 'a rectangle carries no path');
+  assert(extentOf({ type: 'arrow', x: 5, y: 6, points: [] }).width === 0,
+    'an arrow with no path falls back to its stored size');
+  assert(remeasureLinear(box) === undefined, 'there is nothing to re-measure about a rectangle');
+}
+
+// measureLinear and remeasureLinear: the size of a path, and whether the
+// element already says so.
+{
+  assert(measureLinear([[0, 0], [-300, -200]]).width === 300, 'a leftward path is 300 wide, not -300');
+  assert(measureLinear(undefined) === undefined, 'no path, no measurement');
+  const stale = { type: 'arrow', x: 500, y: 500, width: 10, height: 10, points: [[0, 0], [-300, -200]] };
+  const fixed = remeasureLinear(stale);
+  assert(fixed?.width === 300 && fixed?.height === 200,
+    `a stale arrow re-measures to 300x200, not ${JSON.stringify(fixed)}`);
+  const settled = { ...stale, width: 300.2, height: 199.9 };
+  assert(remeasureLinear(settled) === undefined,
+    'a fifth of a pixel is not a resize, and saying it is wakes the change feed for nothing');
+}
+
+// ─── The board ───────────────────────────────────────────────
+//
+// A real server, real bound arrows, and the readers that carry the product.
+
+{
+  // A different port each run, so two checkouts running the suite at once do
+  // not serialise on one, and so this never lands on somebody's real canvas.
+  const PORT = 37000 + Math.floor(Math.random() * 2000);
+  const base = `http://127.0.0.1:${PORT}`;
+  const vault = fs.mkdtempSync(join(os.tmpdir(), 'archboard-geometry-'));
+  const server = spawn(process.execPath, [dist('server.js')], {
+    env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', ARCHBOARD_VAULT: vault, LOG_LEVEL: 'error' },
+    stdio: ['ignore', 'ignore', 'ignore']
+  });
+  const api = async (method, url, body) => {
+    const response = await fetch(`${base}${url}`, {
+      method,
+      ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    });
+    return response.json().catch(() => null);
+  };
+  const board = '?board=scratch';
+  const elementsOn = async () => (await api('GET', `/api/elements${board}`))?.elements ?? [];
+  const node = (id, name) => ({ archboard: { node: id, kind: 'service', name } });
+
+  try {
+    for (let i = 0; i < 100; i++) {
+      try { await fetch(`${base}/health`); break; } catch { await sleep(100); }
+    }
+
+    // `hub` is the far corner. Every arrow leaves it, so every arrow runs
+    // leftwards, upwards, or both, and every one of them stores an origin
+    // that is outside the box it covers.
+    await api('POST', `/api/elements/batch${board}`, {
+      elements: [
+        { id: 'hub', type: 'rectangle', x: 1600, y: 1200, width: 200, height: 100, label: { text: 'Hub' }, customData: node('hub', 'Hub') },
+        { id: 'west', type: 'rectangle', x: 200, y: 1200, width: 200, height: 100, label: { text: 'West' }, customData: node('west', 'West') },
+        { id: 'north', type: 'rectangle', x: 1600, y: 200, width: 200, height: 100, label: { text: 'North' }, customData: node('north', 'North') },
+        { id: 'northwest', type: 'rectangle', x: 200, y: 200, width: 200, height: 100, label: { text: 'Northwest' }, customData: node('northwest', 'Northwest') },
+        // Sized wrongly on purpose: what the caller asks for is a connection,
+        // and the server works out the path. The size has to follow the path
+        // it worked out rather than the one the caller guessed.
+        { id: 'to-west', type: 'arrow', x: 1600, y: 1250, width: 10, height: 10, start: { id: 'hub' }, end: { id: 'west' } },
+        { id: 'to-north', type: 'arrow', x: 1700, y: 1200, width: 10, height: 10, start: { id: 'hub' }, end: { id: 'north' } },
+        { id: 'to-northwest', type: 'arrow', x: 1600, y: 1200, width: 10, height: 10, start: { id: 'hub' }, end: { id: 'northwest' } },
+        // Bound to nothing and drawn off past the top-left corner of
+        // everything else, so it is the element that decides where the scene
+        // box ends — and the one a box built from `x .. x + width` cuts off.
+        { id: 'stray', type: 'arrow', x: 200, y: 200, points: [[0, 0], [-400, -300]] }
+      ]
+    });
+
+    const linearsOn = async () => (await elementsOn()).filter((el) => el.type === 'arrow' || el.type === 'line');
+    const badlySized = (arrows) => arrows.filter((el) => remeasureLinear(el) !== undefined);
+
+    const drawn = await linearsOn();
+    assert(drawn.length === 4, `the board should hold four arrows, not ${drawn.length}`);
+    assert(
+      drawn.every((el) => el.points.some(([px, py]) => px < 0 || py < 0)),
+      'the check is not exercising the bug: every arrow here should run leftwards or upwards'
+    );
+    assert(
+      drawn.find((el) => el.id === 'to-northwest').points.some(([px, py]) => px < 0 && py < 0),
+      'the up-and-left arrow should be negative in both axes'
+    );
+    assert(badlySized(drawn).length === 0,
+      `${badlySized(drawn).length} arrow(s) were created at a size their points do not agree with: ` +
+      badlySized(drawn).map((el) => `${el.id} ${el.width}x${el.height}`).join(', '));
+
+    // A re-route is where the stale size came from: the server writes new
+    // points for every arrow bound to a shape that moved.
+    await api('PUT', `/api/elements/hub${board}`, { x: 2400, y: 1800 });
+    const rerouted = await linearsOn();
+    const bound = rerouted.filter((el) => el.id !== 'stray');
+    assert(
+      bound.every((el) => {
+        const was = drawn.find((d) => d.id === el.id);
+        return JSON.stringify(was.points) !== JSON.stringify(el.points);
+      }),
+      'moving the hub should have re-routed all three arrows bound to it'
+    );
+    assert(badlySized(rerouted).length === 0,
+      `re-routing left ${badlySized(rerouted).length} arrow(s) at a stale size: ` +
+      badlySized(rerouted).map((el) => `${el.id} ${el.width}x${el.height} vs ${JSON.stringify(remeasureLinear(el))}`).join(', '));
+
+    // And a caller re-pointing an arrow by hand: the path is the statement,
+    // the size follows it.
+    await api('PUT', `/api/elements/to-west${board}`, { points: [[0, 0], [-900, -400]] });
+    const repointed = (await linearsOn()).find((el) => el.id === 'to-west');
+    assert(near(repointed.width, 900) && near(repointed.height, 400),
+      `re-pointing an arrow left it ${repointed.width}x${repointed.height}, not 900x400`);
+
+    // --- the scene bounding box contains every arrow ------------------------
+    const scene = await elementsOn();
+    const reported = /Bounding box: \((-?\d+), (-?\d+)\) to \((-?\d+), (-?\d+)\)/.exec(describeScene(scene));
+    assert(reported !== null, 'describe did not report a bounding box');
+    const [minX, minY, maxX, maxY] = reported.slice(1).map(Number);
+    const outside = [];
+    for (const el of scene) {
+      if (!Array.isArray(el.points)) continue;
+      for (const [px, py] of el.points) {
+        const x = el.x + px;
+        const y = el.y + py;
+        if (x < minX - 1 || x > maxX + 1 || y < minY - 1 || y > maxY + 1) outside.push(`${el.id} (${Math.round(x)},${Math.round(y)})`);
+      }
+    }
+    assert(outside.length === 0,
+      `the scene box (${minX},${minY})-(${maxX},${maxY}) crops ${outside.length} arrow point(s): ${outside.join(', ')}`);
+
+    // And the box is no bigger than the board either, which is the other half
+    // of the same mistake: a frame stretched to swallow an origin that is not
+    // a corner crops nothing but frames empty canvas, and every screenshot
+    // inherits it. Worked out here from the raw points rather than through the
+    // helper under test, so the two are independent statements.
+    const trueEdges = (el) => {
+      if (!Array.isArray(el.points) || el.points.length === 0) {
+        return { x0: el.x, y0: el.y, x1: el.x + (el.width || 0), y1: el.y + (el.height || 0) };
+      }
+      const xs = el.points.map(([px]) => el.x + px);
+      const ys = el.points.map(([, py]) => el.y + py);
+      return { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) };
+    };
+    const edges = scene.map(trueEdges);
+    assert(
+      near(minX, Math.min(...edges.map((e) => e.x0)), 1) && near(minY, Math.min(...edges.map((e) => e.y0)), 1) &&
+      near(maxX, Math.max(...edges.map((e) => e.x1)), 1) && near(maxY, Math.max(...edges.map((e) => e.y1)), 1),
+      `the box is (${minX},${minY})-(${maxX},${maxY}) but the board runs ` +
+      `(${Math.round(Math.min(...edges.map((e) => e.x0)))},${Math.round(Math.min(...edges.map((e) => e.y0)))})-` +
+      `(${Math.round(Math.max(...edges.map((e) => e.x1)))},${Math.round(Math.max(...edges.map((e) => e.y1)))})`
+    );
+
+    // --- layout places the arrows where they are drawn ----------------------
+    //
+    // layout.ts is fed boxes, so this is the check that the boxes are right:
+    // the same board, measured both ways, and only one of them agrees with
+    // where the arrow is on screen.
+    const frame = boundingBoxOf(scene.map(boxOf));
+    const staleBox = (el) => ({ x: el.x, y: el.y, w: el.width || 0, h: el.height || 0 });
+    const centreOf = (box) => ({ cx: box.x + box.w / 2, cy: box.y + box.h / 2 });
+
+    const misnamed = [];
+    for (const el of scene.filter((e) => e.type === 'arrow')) {
+      // An arrow's midpoint is where Excalidraw hangs its label, which is the
+      // one place on an arrow both sides already agree about.
+      const drawnMid = labelAnchorOf(el);
+      const measured = centreOf(boxOf(el));
+      const assumed = centreOf(staleBox(el));
+      assert(near(measured.cx, drawnMid.x, 1) && near(measured.cy, drawnMid.y, 1),
+        `${el.id}: measured centre (${Math.round(measured.cx)},${Math.round(measured.cy)}) is not where the arrow is drawn (${Math.round(drawnMid.x)},${Math.round(drawnMid.y)})`);
+      assert(Math.hypot(assumed.cx - drawnMid.x, assumed.cy - drawnMid.y) > 100,
+        `${el.id}: top-left-plus-size happens to be right here, so this board is not exercising the bug`);
+      const named = regionName(measured.cx, measured.cy, frame);
+      if (named !== regionName(assumed.cx, assumed.cy, frame)) misnamed.push(`${el.id} is ${named}`);
+    }
+    // Being far out is not the same as being *reported* wrong, and region is
+    // the signal a human hears. On this board it changes the answer.
+    assert(misnamed.length > 0,
+      'no arrow here changes region between the two ways of measuring, so this board proves nothing about region');
+
+    // Clustering: an arrow sits with the shapes it connects, because that is
+    // where a human sees it. Measured by its origin it joins whatever happens
+    // to be at the corner it started from.
+    const westArrow = scene.find((el) => el.id === 'to-north');
+    const withNorth = clusterBoxes([
+      { id: 'north', ...boxOf(scene.find((el) => el.id === 'north')) },
+      { id: 'to-north', ...boxOf(westArrow) }
+    ]);
+    assert(withNorth.length === 1 && withNorth[0].length === 2,
+      'the arrow into North clusters with North, because it reaches it');
+    const stale = clusterBoxes([
+      { id: 'north', ...boxOf(scene.find((el) => el.id === 'north')) },
+      { id: 'to-north', ...staleBox(westArrow) }
+    ]);
+    assert(stale.length === 2,
+      'the check is not exercising the bug: measured the old way the arrow should miss North entirely');
+
+    // The selection report is the other reader a human meets directly: tap an
+    // arrow on the Flip and this is what the agent is told it selected.
+    const report = buildSelectionReport(
+      { elementIds: ['to-northwest'], clientId: 'pane', at: new Date().toISOString() },
+      scene,
+      0
+    );
+    const selected = report.elements[0];
+    const arrowBox = boxOf(scene.find((el) => el.id === 'to-northwest'));
+    assert(near(selected.x, arrowBox.x, 1) && near(selected.y, arrowBox.y, 1) && near(selected.width, arrowBox.w, 1),
+      `selecting a leftward arrow reported ${JSON.stringify(selected)} rather than the board it covers`);
+  } finally {
+    server.kill('SIGTERM');
+    await sleep(200);
+    fs.rmSync(vault, { recursive: true, force: true });
+  }
+}
+
+if (failures > 0) {
+  console.error(`\n${failures} of ${checks} geometry checks failed`);
+  process.exit(1);
+}
+console.log(`geometry: ${checks} checks passed`);
