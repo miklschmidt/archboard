@@ -217,6 +217,14 @@ export async function clearCanvas(): Promise<ApiResponse> {
   return requestJson<ApiResponse>('/api/elements/clear', { method: 'DELETE' });
 }
 
+// Ask the canvas to re-evaluate its source, keeping everything on screen.
+// Refused unless it was started with `bun run dev:canvas` (ADR 0014).
+export async function reloadCanvas(): Promise<{ success: boolean; generation: number; pid: number }> {
+  return requestJson<{ success: boolean; generation: number; pid: number }>(
+    '/api/reload', { method: 'POST' }
+  );
+}
+
 // What a human currently has picked on the board. Ids plus enough semantic
 // detail (label, node-ness, kind, binding) to act on without a scene fetch.
 export async function getSelection(): Promise<SelectionReport & { success: boolean }> {

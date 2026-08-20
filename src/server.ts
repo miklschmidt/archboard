@@ -41,6 +41,7 @@ import { z } from 'zod';
 import WebSocket from 'ws';
 import { isMainModule } from './core/entry.js';
 import { kept } from './core/hot.js';
+import { askForReload, reloadIsAskable } from './core/reload-token.js';
 import { writePidFile, removePidFile } from './core/pidfile.js';
 import fs from 'fs';
 import {
@@ -2987,8 +2988,37 @@ app.get('/health', (req: Request, res: Response) => {
     // identifies as this service AND self-reports its pid — never a pid
     // from a stale pidfile or an unrelated app squatting on the port.
     service: 'mcp-excalidraw-canvas',
-    pid: process.pid
+    pid: process.pid,
+    // Whether this canvas can be told to reload. True only under
+    // `bun run dev:canvas`; a canvas started any other way watches nothing
+    // (ADR 0014).
+    reloadable: reloadIsAskable()
   });
+});
+
+// Ask the canvas to re-evaluate its source.
+//
+// This is the whole trigger, and it is a request rather than a file save on
+// purpose: a reload re-runs every module in the graph inside a process holding
+// unsaved boards and open sockets, so it happens at a moment somebody chose
+// (ADR 0014). Writing the reload token is all this does; bun notices the new
+// bytes and `src/dev-canvas.ts` does the rest, canary included.
+app.post('/api/reload', (req: Request, res: Response) => {
+  if (!reloadIsAskable()) {
+    res.status(409).json({
+      success: false,
+      error: 'This canvas cannot reload: it was not started with `bun run dev:canvas`. ' +
+        'Restart it that way, or restart the canvas to pick up your changes, ' +
+        'which drops every unsaved board, so save first.'
+    });
+    return;
+  }
+  try {
+    const generation = askForReload();
+    res.json({ success: true, generation, pid: process.pid });
+  } catch (error) {
+    res.status(500).json({ success: false, error: (error as Error).message });
+  }
 });
 
 // Sync status endpoint
@@ -3076,11 +3106,15 @@ async function startServer(): Promise<void> {
   // with it.
   if (wiring.listening) {
     // Straight to stderr, not through the logger: this is only ever printed
-    // under `bun --hot`, where somebody is watching a terminal and needs to
-    // know their edit is live. The logger's console transport carries warnings
-    // and errors only, and a reload is neither.
+    // under `bun run dev:canvas`, where somebody is watching a terminal and
+    // needs to know their edit is live. The logger's console transport carries
+    // warnings and errors only, and a reload is neither.
+    //
+    // It says what it did and nothing about what survived. The reload canary
+    // is what checks that, afterwards, and it once followed a line here
+    // claiming "same boards" onto a report that the board had been emptied.
     process.stderr.write(
-      `Canvas server reloaded in place: same port, same sockets, same boards (pid ${process.pid}).\n`
+      `Canvas server source re-evaluated in place; the port was already bound (pid ${process.pid}).\n`
     );
     return;
   }
