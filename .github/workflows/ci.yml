@@ -6,10 +6,20 @@ on:
   pull_request:
     branches: [ main ]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
-    name: Build and Type Check
+  # The whole suite, as one step, on purpose. This workflow used to name two
+  # scripts of its own while the suite grew to seventeen around it, so the list
+  # now lives in the `test` script in package.json where it is already
+  # maintained, and `test:suites` fails when a check is in neither the chain nor
+  # the skip list (TASK-082).
+  suite:
+    name: Type check, build, and the whole suite
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -21,21 +31,71 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # bun runs the server and the CLI from src/, so tsc is a checker and
-      # never an emitter here (ADR 0014).
-      - name: Type check
-        run: bun run type-check
-
+      # Only the frontend is built: bun runs the server and the CLI from src/,
+      # so tsc is a checker and never an emitter here (ADR 0014). The chain
+      # type-checks both projects before any canvas starts.
       - name: Build frontend
-        run: bunx vite build
+        run: bun run build
 
       - name: Check the frontend bundle exists
         run: test -d dist/frontend || (echo "dist/frontend not found" && exit 1)
 
-      - name: Run MCP stdio wire tests
-        run: bun scripts/check-mcp-stdio.mjs
+      # The type check and seventeen suites. Every suite that needs a canvas
+      # starts its own on a random port with a throwaway vault, so nothing here
+      # reads a vault, a registry or a running server off the machine it lands
+      # on. 58 seconds on a 13th-gen i7. A runner is slower, and the 20 minutes
+      # above is a ceiling, not an estimate.
+      - name: Run the suite
+        run: bun run test
 
-      # The canvas server has no authentication, so binding beyond loopback
-      # would expose it. Guard that invariant in CI.
-      - name: Verify server binds loopback only
-        run: bun scripts/check-local-bind.mjs
+  # Rendering is the one thing a WebSocket cannot stand in for, so this check
+  # opens a real headless Chrome (TASK-071). It is out of the chain because a
+  # developer should not need a browser to run `bun run test`, and out of the
+  # required build because of what it asserts today. That is the baseline taken
+  # on 2026-08-20, where 8 of 12 elements come back changed after Excalidraw
+  # renders a board we wrote. The target is zero. TASK-072 is what makes zero
+  # true, empties that table and drops `continue-on-error` from here.
+  #
+  # Until somebody has watched this job go green on a runner, a red X on it
+  # would also be as likely to mean "Chrome renders text differently there" as
+  # "archboard regressed", and the field-level table is what will say which.
+  browser:
+    name: Fixed point in a real browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # Pinned to the version the check was written against: it reads the scene
+      # back through the React fiber and drives the browser through `open` and
+      # `eval`, which is 0.34.0's behaviour. Nothing in package.json depends on
+      # it, and no developer needs it to run `bun run test`.
+      - name: Install agent-browser
+        run: |
+          bun add --global agent-browser@0.34.0
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+
+      # `install` downloads Chrome into ~/.agent-browser/browsers rather than
+      # trusting whatever the image ships; --with-deps adds the system libraries
+      # through apt, which needs the passwordless sudo a GitHub runner has.
+      # `agent-browser doctor` is what to run here when this step is the one
+      # that broke.
+      - name: Install the browser
+        run: agent-browser install --with-deps
+
+      # The check renders dist/frontend, not src, so the bundle is half of what
+      # it measures. Build it here and tell the check not to build it again.
+      - name: Build frontend
+        run: bun run build
+
+      - name: Render a board and diff what came back
+        run: bun run test:browser --skip-build
