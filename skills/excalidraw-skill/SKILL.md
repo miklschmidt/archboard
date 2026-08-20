@@ -460,6 +460,8 @@ A name is unique only within the library it came from — four of them ship a "D
 
 What lands is ordinary elements: move, restyle, label, bind arrows to them, `promote` them. They carry `customData.library` recording where they came from, and nothing else about them is special.
 
+A stencil is several elements, so promote all of them in one call and they become one node. Pass `--name`: a stencil drawn out of lines carries no label to derive a node id from, and promotion refuses rather than guess.
+
 Reach for a stencil when the thing is recognisable furniture — a queue, a CDN, a user. A labelled rectangle is still the right shape for a service box.
 
 `list_library_items` and `insert_library_item` are the MCP equivalents (`itemId` for `--id`).

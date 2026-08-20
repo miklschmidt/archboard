@@ -219,6 +219,17 @@ to be (TASK-038, `src/core/geometry.ts`).
 Panes are made and unmade from the command line, and a picture or a camera move
 names the pane it means, so a thread that cannot click can put two boards side
 by side and see both (TASK-033).
+A promoted element is part of its node whatever it is drawn from. `line` and
+`arrow` used to be read as connectors before anything looked at the metadata,
+so a datastore promoted from the shipped PostgreSQL stencil, which is seven
+lines and nothing else, was reported as promoted and then left out of
+`describe` and `compare` entirely. Promotion is the explicit act and it now
+outranks the element type: a connector carrying a node id is part of that node,
+and one carrying none is still a connector. Nothing is refused at promotion
+time, because stencils are made of arrows as well as lines and a type test
+would put promotion at the mercy of the tool an artist reached for. The one
+case where promoting costs something, an arrow bound between two other nodes,
+is a `compare` warning rather than a silent loss (TASK-053).
 
 ## Names on the wire
 

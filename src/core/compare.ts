@@ -344,6 +344,9 @@ export interface CompareResult {
 const CONNECTOR_TYPES = new Set(['arrow', 'line']);
 const CONTAINER_TYPES = new Set(['rectangle', 'ellipse', 'diamond', 'frame']);
 
+// An arrow or a line is a connector until somebody promotes it. Promotion is
+// an explicit act, so what an element carries outranks what it is drawn from,
+// and only an element with no node id is read as a connector here (TASK-053).
 const isConnector = (type: string) => CONNECTOR_TYPES.has(type);
 
 function bindingEnd(el: any, end: 'start' | 'end'): string | undefined {
@@ -446,11 +449,16 @@ function buildBoard(input: CompareSideInput): BoardModel {
   }
 
   // --- nodes: elements grouped by node id -----------------------------------
+  //
+  // Every element carrying a node id, whatever it is drawn from. A stencil is
+  // an arbitrary set of primitives, and the shipped PostgreSQL one is seven
+  // lines, so a type test here made promoting it report success and produce a
+  // node no reader could see (TASK-053).
   const groupsByNode = new Map<string, ServerElement[]>();
   const nodeOfElement = new Map<string, string>();
   for (const el of all) {
     const id = nodeIdOf(el);
-    if (!id || isConnector(el.type)) continue;
+    if (!id) continue;
     const list = groupsByNode.get(id) ?? [];
     list.push(el);
     groupsByNode.set(id, list);
@@ -539,12 +547,29 @@ function buildBoard(input: CompareSideInput): BoardModel {
   }
 
   // --- edges: connectors resolved to node ids -------------------------------
+  //
+  // A promoted connector is skipped, because it is already a node up above and
+  // the two loops have to divide the board rather than overlap it.
+  // `promotedConnectors` collects the ones that would have been edges, so the
+  // human hears what the promotion cost instead of watching a dependency
+  // disappear.
   const edges: EdgeModel[] = [];
   const unresolved: UnresolvedConnector[] = [];
+  const promotedConnectors: Array<{ node: string; from: string; to: string }> = [];
   for (const el of all) {
     if (!isConnector(el.type)) continue;
     const startId = bindingEnd(el as any, 'start');
     const endId = bindingEnd(el as any, 'end');
+    const ownNode = nodeOfElement.get(el.id);
+    if (ownNode) {
+      const from = startId ? nodeOfElement.get(startId) : undefined;
+      const to = endId ? nodeOfElement.get(endId) : undefined;
+      // Two different nodes at its ends is what made it an edge. A connector
+      // inside a stencil binds elements of the one node it belongs to, and
+      // that was never a dependency, so it goes quietly.
+      if (from && to && from !== to) promotedConnectors.push({ node: ownNode, from, to });
+      continue;
+    }
     const fromNode = startId ? nodeOfElement.get(startId) : undefined;
     const toNode = endId ? nodeOfElement.get(endId) : undefined;
     const block = archboardBlock(el) ?? {};
@@ -588,6 +613,20 @@ function buildBoard(input: CompareSideInput): BoardModel {
           ? 'both ends land on elements that are not nodes'
           : `the ${fromNode ? 'target' : 'source'} end lands on an element that is not a node`
     });
+  }
+
+  // A connector that was promoted and also joins two other nodes is the one
+  // case where reading it as a node loses something: it used to be a
+  // dependency, and now it is part of a shape. Usually the trace of a
+  // selection that swept up an arrow it did not mean. Demote it to get the
+  // edge back.
+  const nameOfNode = (id: string) => nodes.get(id)?.name ?? id;
+  for (const { node, from, to } of promotedConnectors) {
+    warnings.push(
+      `On "${input.key}" node "${nameOfNode(node)}" includes a connector drawn from ` +
+      `"${nameOfNode(from)}" to "${nameOfNode(to)}". A promoted element is part of its node, so that ` +
+      'connection is not compared as an edge. Demote the connector if it was meant to be one.'
+    );
   }
 
   for (const edge of edges) {
@@ -712,6 +751,10 @@ function buildBoard(input: CompareSideInput): BoardModel {
   }
 
   // --- plain elements -------------------------------------------------------
+  //
+  // Whatever belongs to no node, is no connector and labels nothing. A
+  // promoted connector falls out on the first test, so the three passes still
+  // divide the board between them.
   const plainElements = all.filter(el =>
     !nodeOfElement.has(el.id) && !isConnector(el.type) && !boundLabelOf.has(el.id));
   const byType: Record<string, number> = {};

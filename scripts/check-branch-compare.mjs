@@ -27,6 +27,11 @@
 // the eval checks the choice. The last section here holds the two halves
 // together by making the eval file declare which of its entries is which.
 //
+// The last two sections check the same path with a node that is not a box: a
+// stencil from the shipped library, and a connector somebody promoted. Both
+// belong here rather than in check-library.mjs, because what broke was not the
+// palette but what the readers made of what it placed (TASK-053).
+//
 // No browser: elements, promotion, save, branch and compare are all server
 // state, so the whole path runs headlessly against a real canvas server on a
 // random port with a throwaway vault.
@@ -48,7 +53,18 @@ const check = (label, cond, extra = '') => {
 };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+// The canvas this file talks to. Decided before the imports because config.ts
+// captures EXPRESS_SERVER_URL at module load, and `insertStencil` reaches the
+// canvas through it, on the same path `library insert` and
+// `insert_library_item` take.
+const PORT = Number(process.env.PORT || 35000 + Math.floor(Math.random() * 2000));
+const base = `http://127.0.0.1:${PORT}`;
+process.env.EXPRESS_SERVER_URL = base;
+
 const { planPromotion } = await import(dist('core/promote.js'));
+const { describeScene } = await import(dist('core/describe.js'));
+const { insertStencil } = await import(dist('core/library-catalogue.js'));
+const { setRequestedBoard } = await import(dist('core/canvas-client.js'));
 
 // ---------------------------------------------------------------------------
 // What a branched proposal looks like, in compare's own vocabulary
@@ -79,8 +95,6 @@ function notABranch(diff) {
 // The canvas
 // ---------------------------------------------------------------------------
 
-const PORT = Number(process.env.PORT || 35000 + Math.floor(Math.random() * 2000));
-const base = `http://127.0.0.1:${PORT}`;
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), 'archboard-branch-'));
 
 const server = spawn(process.execPath, [dist('server.js')], {
@@ -127,9 +141,21 @@ const addArrow = (board, from, to) =>
  * a variant board, and that default is being changed under TASK-040.
  */
 async function promote(board, elementId, kind, variant) {
+  return promoteTogether(board, [elementId], kind, variant);
+}
+
+/**
+ * The same act over a whole stencil: many elements, one node. A stencil drawn
+ * out of lines carries no label to derive an id from, so the name is spoken,
+ * which is what the CLI's `--name` is for.
+ */
+async function promoteTogether(board, elementIds, kind, variant, name) {
   const all = await elementsOn(board);
-  const target = all.find(el => el.id === elementId);
-  const plan = planPromotion({ targets: [target], board: all, kind, variant, level: 'service' });
+  const wanted = new Set(elementIds);
+  const targets = all.filter(el => wanted.has(el.id));
+  const plan = planPromotion({
+    targets, board: all, kind, variant, level: 'service', ...(name ? { name } : {})
+  });
   for (const update of plan.updates) {
     await api('PUT', `/api/elements/${update.id}?board=${encodeURIComponent(board)}`, update);
   }
@@ -248,6 +274,107 @@ try {
     freshDiff?.summary?.comparable === false && freshDiff?.summary?.identical === false);
   check('  and says what to do instead',
     (freshDiff?.warnings ?? []).some(w => /share no node ids/.test(w) && /copy of the current board/.test(w)));
+
+  // --- a node made out of a stencil ---------------------------------------
+  //
+  // The skill tells an agent to look in the library before drawing primitives,
+  // and a stencil is whatever primitives its artist reached for: the shipped
+  // PostgreSQL is seven `line` elements and nothing else. Both readers used to
+  // take any line for a connector and refuse to see a node in one, so
+  // promotion reported success, the metadata was on the board, and the
+  // datastore appeared in neither the read-back nor the diff. Not added, not
+  // removed, not changed, no warning (TASK-053).
+
+  await api('POST', '/api/boards/new', { board: 'storage', level: 'service' });
+  const ledger = await addBox('storage', 'Ledger Service', 0, 100);
+  await promote('storage', ledger, 'service', 'current');
+
+  setRequestedBoard('storage');
+  const stencil = await insertStencil({ name: 'PostgreSQL', source: 'drwnio', x: 400, y: 100 });
+  setRequestedBoard(null);
+  const stencilTypes = [...new Set(stencil.elements.map(el => el.type))];
+  check('the shipped library holds a stencil drawn out of nothing but lines',
+    stencil.count === 7 && stencilTypes.join() === 'line',
+    `${stencil.count} elements: ${stencilTypes.join(',')}`);
+
+  const dbNode = await promoteTogether(
+    'storage', stencil.elements.map(el => el.id), 'datastore', 'current', 'Ledger DB');
+  check('  promoting the whole stencil gives it one node id', dbNode === 'ledger-db', String(dbNode));
+  const promoted = (await elementsOn('storage')).filter(el => el.customData?.archboard?.node === 'ledger-db');
+  check('  carried by every line it is made of', promoted.length === 7, `${promoted.length} of 7`);
+
+  const readBack = describeScene(await elementsOn('storage'));
+  check('  and the read-back counts it as a node', /\(2 nodes,/.test(readBack),
+    readBack.split('\n').find(l => l.startsWith('Total elements')));
+  check('  names it', readBack.includes('Ledger DB'));
+  check('  and reads no edge into it', /0 edges/.test(readBack));
+
+  await api('POST', '/api/boards/save?board=storage');
+  const storageBranch = await api('POST', '/api/boards/save?board=storage', { name: 'storage', variant: 'option-a' });
+  check('the board branches with the stencil node on it',
+    storageBranch.status === 200 && storageBranch.body?.board === 'storage@option-a');
+
+  const replica = await addBox('storage@option-a', 'Ledger Replica', 400, 400);
+  await promote('storage@option-a', replica, 'datastore', 'option-a');
+  await api('POST', '/api/boards/save?board=storage@option-a');
+
+  const storageDiff = (await api('GET', '/api/boards/compare?from=storage&to=storage@option-a')).body;
+  check('  and compare sees the stencil node on both sides',
+    storageDiff?.summary?.sharedNodes === 2, `sharedNodes ${storageDiff?.summary?.sharedNodes}`);
+  check('  reports it unchanged by name',
+    (storageDiff?.nodes?.unchanged ?? []).some(n => n.node === 'ledger-db'),
+    JSON.stringify((storageDiff?.nodes?.unchanged ?? []).map(n => n.node)));
+  check('  not as something added or removed',
+    storageDiff?.summary?.nodesAdded === 1 && storageDiff?.summary?.nodesRemoved === 0 &&
+    storageDiff?.nodes?.added?.[0]?.node === 'ledger-replica');
+  check('  and no line of it is left over as a connector bound to nothing',
+    (storageDiff?.edges?.unresolved?.to ?? []).length === 0,
+    JSON.stringify(storageDiff?.edges?.unresolved?.to ?? []));
+
+  // --- a connector that got promoted --------------------------------------
+  //
+  // The other half of the same rule. An element carrying a node id is part of
+  // that node, so it is not also a candidate edge: the two loops divide the
+  // board rather than counting one element twice. Nothing refuses this at
+  // promotion time, because stencils are made of arrows as well as lines and a
+  // type test there would put promotion at the mercy of the tool an artist
+  // reached for. That leaves one case where promoting costs something: an
+  // arrow swept into a selection stops being the dependency it was drawn as,
+  // and `compare` says so rather than letting it disappear.
+
+  await api('POST', '/api/boards/new', { board: 'wiring', level: 'service' });
+  const web = await addBox('wiring', 'Web', 0, 100);
+  const worker = await addBox('wiring', 'Worker', 400, 100);
+  await promote('wiring', web, 'service', 'current');
+  await promote('wiring', worker, 'service', 'current');
+  await addArrow('wiring', web, worker);
+  await api('POST', '/api/boards/save?board=wiring');
+  await api('POST', '/api/boards/save?board=wiring', { name: 'wiring', variant: 'option-a' });
+
+  // The selection a human makes with a finger: the box, and the arrow that
+  // happened to be under it.
+  const onWiring = await elementsOn('wiring@option-a');
+  const arrow = onWiring.find(el => el.type === 'arrow');
+  const sweptIn = await promoteTogether(
+    'wiring@option-a', [worker, arrow.id], 'service', 'option-a');
+  check('an arrow swept into a promotion joins the node it was promoted with',
+    sweptIn === 'worker', String(sweptIn));
+
+  const wiringRead = describeScene(await elementsOn('wiring@option-a'));
+  check('  the read-back counts it once, as part of that node', /\(2 nodes, 0 edges/.test(wiringRead),
+    wiringRead.split('\n').find(l => l.startsWith('Total elements')));
+
+  await api('POST', '/api/boards/save?board=wiring@option-a');
+
+  const wiringDiff = (await api('GET', '/api/boards/compare?from=wiring&to=wiring@option-a')).body;
+  check('  and stops being an edge, rather than being counted as both',
+    wiringDiff?.summary?.edgesRemoved === 1 && wiringDiff?.summary?.edgesAdded === 0,
+    `removed ${wiringDiff?.summary?.edgesRemoved}, added ${wiringDiff?.summary?.edgesAdded}`);
+  check('  which compare says out loud, naming the connection that went',
+    (wiringDiff?.warnings ?? []).some(w => /includes a connector/.test(w) && /"Web"/.test(w) && /"Worker"/.test(w)),
+    JSON.stringify(wiringDiff?.warnings ?? []));
+  check('  and both nodes are still the same two nodes',
+    wiringDiff?.summary?.sharedNodes === 2 && wiringDiff?.summary?.nodesRemoved === 0);
 
   // --- the half a script cannot check -------------------------------------
   //

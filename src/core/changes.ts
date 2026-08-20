@@ -84,8 +84,10 @@ export function isAnonymousNode(node: string): boolean {
  */
 export function withSyntheticNodeIds(elements: ServerElement[]): ServerElement[] {
   return elements.map(el => {
-    if (CONNECTOR_TYPES.has(el.type)) return el;
+    // A real node id first, whatever the element is drawn from: a promoted
+    // line is a node, and compare reads it as one (TASK-053).
     if (nodeIdOf(el)) return el;
+    if (CONNECTOR_TYPES.has(el.type)) return el;
     // A bound label belongs to its container and compare folds it in there;
     // giving it its own node would double-count the shape it labels.
     if ((el as any).containerId) return el;

@@ -155,6 +155,11 @@ interface Edge {
   fromBoard: boolean;
 }
 
+// A connector is an arrow or a line that nobody promoted. Promotion is an
+// explicit act, so an element carrying a node id is part of that node whatever
+// its type: 74 of the 111 shipped stencils contain a line and 10 are made of
+// nothing else, and a datastore promoted from one of those used to read as no
+// node at all (TASK-053).
 const isConnector = (t: string) => t === 'arrow' || t === 'line';
 
 // A labelled shape comes back from a frontend sync as a shape plus a separate
@@ -186,7 +191,7 @@ function toItem(el: ServerElement, folded: Folded): Item {
   return {
     el, meta, labelText,
     name: labelText || meta.name || el.id,
-    isNode: meta.isNode && !isConnector(el.type),
+    isNode: meta.isNode,
     fromBoard: el.source === 'frontend_sync',
     members: 1,
     // Measured rather than read straight off the element: an arrow keeps its
@@ -306,7 +311,9 @@ export function describeScene(allElements: ServerElement[]): string {
 
   const nodes = items.filter(i => i.isNode).sort(readingOrder);
   const others = items.filter(i => !i.isNode && !isConnector(i.el.type)).sort(readingOrder);
-  const connectors = items.filter(i => isConnector(i.el.type));
+  // A promoted arrow or line is a node and nothing else, so it is not counted
+  // here as well: the two loops have to divide the board, not overlap it.
+  const connectors = items.filter(i => !i.isNode && isConnector(i.el.type));
   // Names resolve for every element, folded members included, so an arrow
   // drawn to a member still names its node.
   const nameOf = new Map(allItems.map(i => [i.el.id, i.name]));
