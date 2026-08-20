@@ -190,8 +190,14 @@ try {
   const savedCurrent = await api('POST', '/api/boards/save?board=payments');
   check('the source board saves as one note',
     savedCurrent.status === 200 && fs.existsSync(savedCurrent.body?.file ?? ''));
-  check('  with its three nodes promoted',
-    (await elementsOn('payments')).filter(el => el.customData?.archboard?.node).length === 3);
+  // Distinct nodes, not stamped elements. Promoting a labelled box stamps its
+  // bound label too — a shape and its label are one thing, not two — and since
+  // stage 5 that label is on the board from the moment the box is written
+  // rather than only after a browser has rendered it (TASK-072).
+  const nodesOn = async (board) => new Set(
+    (await elementsOn(board)).map(el => el.customData?.archboard?.node).filter(Boolean));
+  check('  with its three nodes promoted', (await nodesOn('payments')).size === 3,
+    [...await nodesOn('payments')].join(', '));
 
   // --- the proposal, branched from it ------------------------------------
 
