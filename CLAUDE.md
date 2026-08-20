@@ -42,7 +42,8 @@ bun run test        # type-check, CI coverage, module scope, then stdio wire,
                     # loopback bind, obsidian, changes, one write per intent,
                     # geometry, text metrics, labels, library, boards + panes,
                     # branch vs redraw, proposal beside source, skill install,
-                    # repo bindings, CLI/MCP surface parity, hot reload
+                    # repo bindings, CLI/MCP surface parity, staleness, hot
+                    # reload, and a board rendered in a real browser
 
 ./bin/canvas start  # canvas server on 127.0.0.1:3000
 ./bin/canvas status
@@ -59,6 +60,17 @@ on PATH.
 that is already running.** A process reads its source at start, so a change to
 anything the *server* executes needs a restart or a reload. The CLI, which is a
 fresh process every time, already has it.
+
+**Ask, rather than guess which of the three copies you are looking at**
+(TASK-056). `./bin/canvas status` compares when the canvas read its source
+against the files it actually loaded, and when it is behind it names the file,
+the two times and the remedy: `bun run reload` where a reload is armed,
+`archboard stop && archboard start` where it is not. It says nothing at all
+when the two agree. The tab is the third copy and goes stale on its own
+schedule, when somebody rebuilds `dist/frontend` under it; it now hears about
+that at its next interaction, in the reply to the pane report it already
+sends, instead of finding out ten seconds later through a command timing out
+on it.
 
 **The canvas can reload in place, and it keeps everything on screen. You ask
 for the reload; saving a file does not cause one.**
@@ -195,7 +207,12 @@ the board's element map and refilled it from one tab, is gone (TASK-016).
 **One thing somebody asked for is one write.** Aligning twenty boxes, or
 distributing, locking, grouping or ungrouping them, or applying a patch of
 creates, updates and deletes, reaches the canvas as a single change report
-(TASK-068). Every one of those used to be one HTTP write per element. That is
+(TASK-068). So does promoting a node, demoting one, and deleting several ids at
+once, on the CLI and over MCP alike (TASK-083). Promotion is where it bites
+hardest: a node is not one element, and the shipped PostgreSQL stencil is seven
+lines, so declaring it a datastore used to cost seven writes for one sentence
+somebody said out loud. Every one of those used to be one HTTP write per
+element. That is
 wasteful today and it is lost updates once the note is the only copy of the
 board, because each write becomes a read-modify-write cycle against one file
 (ADR 0015), and it is twenty separate acquisitions of the board's lock with
@@ -409,8 +426,12 @@ line, `?board=` on the API, or the required `board` argument on an MCP tool.
 The refusal lists what is open, so the next step is on screen at the moment of
 the mistake.
 
-Set the vault before anything board-shaped works — it spans repositories, so
-there is deliberately no default:
+**A canvas with no vault refuses to start** (ADR 0015). Every board is a note,
+so there is nowhere to put one, and a canvas somebody can draw on before
+discovering the drawing was never anywhere is the worse failure. The vault
+spans repositories, so there is deliberately no default and nothing to guess
+from; `install-skill` is the step that chooses one, and the refusal points at
+it. Set it before the server starts:
 
 ```bash
 export ARCHBOARD_VAULT=/path/to/vault    # or put it in .env
@@ -544,17 +565,47 @@ Nothing is locked, and the check reads the file rather than another app's
 memory, so a board open in Obsidian can still write its unsaved copy back
 afterwards: **keep a board open in one editor at a time.**
 
+**A write that is allowed goes through a rename, so a reader sees the old note
+or the new one and never a partial** (TASK-061, `src/core/atomic-write.ts`).
+The bytes go to a hidden sibling temp file, get flushed to disk, and then one
+rename swaps the directory entry — which also leaves anyone who already had the
+note open holding the whole old note rather than a truncated one. Every writer
+of a vault note uses it, and so does the checkout registry, because a second
+atomic-write idiom is how the first one goes stale. **The fsync is over half
+the cost of a write** — 5.15 to 5.25 ms of the 6.21 ms cycle
+`docs/design/server-is-the-truth.md` measured at 55 elements, flat in the size
+of the board — and it is what stops a crash leaving the new name pointing at a
+short file. It was accepted when ADR 0015 was; do not optimise it away without
+reopening that.
+
 The board key reaches the store, the REST API (`?board=` on every element
 route) and the WebSocket protocol (every broadcast names its board, and
 `board_switched` goes to the one pane it was addressed to). A caller that says
 nothing about boards is refused.
 
+**A picture on a board belongs to that board** (TASK-060). An image element
+carries a `fileId` and the scene's `files` map is keyed by it, which is the only
+thing in the format that says which images are whose — so a board's images are
+the ones its own elements draw, and they live on the board and go into its note.
+`/api/files` is board-scoped like every other content route. It used to be one
+map per process, keyed by file id and shared by every open board, so saving one
+board wrote every other open board's pictures into its note, and reopening a
+board dropped the picture data and kept the hole.
+
 The canvas boots holding a `scratch` board, so a first run has something in
 front of it — a board like any other, named like any other
-(`--board scratch`), with no home in the vault until
-`board save --board scratch --as <name>` gives it one. A pane that is opened
-with nothing else on screen shows scratch; a second pane shows whatever the
-first is showing, until it is pointed somewhere else.
+(`--board scratch`). A pane that is opened with nothing else on screen shows
+scratch; a second pane shows whatever the first is showing, until it is
+pointed somewhere else.
+
+Scratch has a note like every other board (TASK-077, ADR 0015), at
+`<vault>/.archboard/scratch.excalidraw.md` — the vault's hidden directory,
+where the stencil library already lives, so Obsidian's note list stays notes
+and `board list` walks past it. The canvas picks that note up when it starts,
+so a sketch outlives the process that drew it. What scratch has not got is a
+name anybody chose, and `board save --board scratch --as <name>` is what gives
+it one: still the one save that takes the pane with it, because the placeholder
+and its new name hold the same drawing.
 
 ## Bindings name a repository, not a directory
 

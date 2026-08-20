@@ -20,7 +20,7 @@
 // refusal only had to be written once.
 
 import { kept } from './hot.js';
-import { ServerElement } from '../types.js';
+import { ExcalidrawFile, ServerElement } from '../types.js';
 import { BoardRequiredError } from './board-target.js';
 import {
   BoardIdentity,
@@ -33,9 +33,23 @@ import {
 export interface BoardState {
   identity: BoardIdentity;
   elements: Map<string, ServerElement>;
-  // Whether this board has a home in the vault. The scratch board the canvas
-  // boots with does not until it is saved under a name.
-  vaultBacked: boolean;
+  /**
+   * The images this board's elements draw, keyed by the `fileId` an image
+   * element carries. Excalidraw's own model: a scene has a `files` map and an
+   * image element names an entry in it, so a board's images are exactly the
+   * ones its elements reference (TASK-060).
+   *
+   * This used to be one map for the whole process, keyed by file id and shared
+   * by every open board, which is what made saving board A write board B's
+   * images into A's note. A file id says nothing about which board it belongs
+   * to; only an element does.
+   */
+  files: Map<string, ExcalidrawFile>;
+  // Where this board's note is, or would be. Every board has one, scratch
+  // included (ADR 0015): the vault is the only place board content may live,
+  // so a board the process held and the vault did not would be the exception
+  // that turns that rule into a preference. The file is not written until a
+  // save, so `file` set with no `savedAt` means "nothing there yet".
   file?: string;
   // The note exactly as it was read from (or last written to) disk. Carried so
   // the next save can preserve its frontmatter and anything else the vault put
@@ -47,8 +61,9 @@ export interface BoardState {
   // else's work (ADR 0006).
   //
   // Pinned to a path rather than to the board, so a save-as cannot carry a
-  // baseline onto a file archboard has never read. A board archboard invented
-  // — scratch, or `board new` — has no baseline at all, and that is the same
+  // baseline onto a file archboard has never read. A board archboard has not
+  // read a note for — one `board new` just started, or a scratch board whose
+  // note does not exist yet — has no baseline at all, and that is the same
   // situation as a changed file: there are bytes at the destination that this
   // process has not seen.
   baseline?: { file: string; hash: string; at: string };
@@ -61,19 +76,24 @@ export interface BoardState {
 // throws a human's rearrangement away (src/core/hot.ts, ADR 0014).
 export const boards = kept('boards', () => new Map<string, BoardState>());
 
-function newBoardState(identity: BoardIdentity, vaultBacked: boolean): BoardState {
-  return { identity, elements: new Map(), vaultBacked };
+function newBoardState(identity: BoardIdentity): BoardState {
+  return { identity, elements: new Map(), files: new Map() };
 }
 
 // The board a pane shows when nothing else is on screen: somewhere for work
 // that has not been given a name yet. It is a board like any other and has to
 // be named like any other — `--board scratch` — but it exists from boot, so a
 // first-time user has something in front of them and something to name.
+//
+// Its note is `<vault>/.archboard/scratch.excalidraw.md`, and the canvas
+// adopts whatever is there when it starts (`adoptScratchBoard` in server.ts).
+// The path is not resolved here, because this module is loaded by processes
+// that have no vault and no business demanding one.
 export const SCRATCH_KEY = boardKey(makeIdentity({ board: SCRATCH_BOARD }));
 // Only when it is missing. A hot reload re-runs this line with the scratch
 // board already open, and setting it again would blank whatever is on it.
 if (!boards.has(SCRATCH_KEY)) {
-  boards.set(SCRATCH_KEY, newBoardState(makeIdentity({ board: SCRATCH_BOARD }), false));
+  boards.set(SCRATCH_KEY, newBoardState(makeIdentity({ board: SCRATCH_BOARD })));
 }
 
 /** Every board this canvas has open, for the message that lists them. */
@@ -106,7 +126,7 @@ export function resolveBoard(key?: string | null, what?: string): { key: string;
   return { key: normalized, board };
 }
 
-export function getOrCreateBoard(identity: BoardIdentity, vaultBacked: boolean): { key: string; board: BoardState } {
+export function getOrCreateBoard(identity: BoardIdentity): { key: string; board: BoardState } {
   const key = boardKey(identity);
   const existing = boards.get(key);
   if (existing) {
@@ -122,10 +142,9 @@ export function getOrCreateBoard(identity: BoardIdentity, vaultBacked: boolean):
         ? {}
         : { displayName: existing.identity.displayName })
     };
-    if (vaultBacked) existing.vaultBacked = true;
     return { key, board: existing };
   }
-  const board = newBoardState(identity, vaultBacked);
+  const board = newBoardState(identity);
   boards.set(key, board);
   return { key, board };
 }
@@ -161,6 +180,49 @@ export function replaceBoardElements(board: BoardState, elements: ServerElement[
   for (const element of copyElements(elements)) board.elements.set(element.id, element);
 }
 
+/**
+ * The images a set of elements draws, out of everything a board holds.
+ *
+ * An image element names its data with `fileId`, so this is Excalidraw's own
+ * answer to "which images does this board use" rather than a guess at one. A
+ * file nothing points at is not written into a note (TASK-060).
+ */
+export function filesUsedBy(
+  elements: Iterable<Pick<ServerElement, 'fileId'>>,
+  available: ReadonlyMap<string, ExcalidrawFile>
+): Record<string, ExcalidrawFile> {
+  const used: Record<string, ExcalidrawFile> = {};
+  for (const element of elements) {
+    const id = element.fileId;
+    if (typeof id !== 'string') continue;
+    const file = available.get(id);
+    if (file) used[id] = file;
+  }
+  return used;
+}
+
+/**
+ * Give a board copies of some images, replacing whatever it held.
+ *
+ * Takes a scene's `files` object, which is keyed by file id. The key is the
+ * authority on the id: an entry read out of a note may carry an `id` field or
+ * may not, and the key is the thing an image element's `fileId` matches.
+ */
+export function replaceBoardFiles(board: BoardState, files: Record<string, unknown>): void {
+  board.files.clear();
+  for (const [id, raw] of Object.entries(files)) {
+    if (!raw || typeof raw !== 'object') continue;
+    const file = raw as Partial<ExcalidrawFile>;
+    if (typeof file.dataURL !== 'string') continue;
+    board.files.set(id, {
+      id,
+      dataURL: file.dataURL,
+      mimeType: typeof file.mimeType === 'string' ? file.mimeType : 'image/png',
+      created: typeof file.created === 'number' ? file.created : Date.now()
+    });
+  }
+}
+
 // The most recent bytes archboard has seen at `file`, or null when it has never
 // seen any. Asked of every open board rather than of one, because a baseline
 // belongs to the path: `board save --as other` writes a file that a different
@@ -184,7 +246,7 @@ export function boardSummaries(): Array<{
   key: string;
   identity: BoardIdentity;
   elementCount: number;
-  vaultBacked: boolean;
+  placeholder: boolean;
   file?: string;
   savedAt?: string;
   loadedAt?: string;
@@ -193,7 +255,10 @@ export function boardSummaries(): Array<{
     key,
     identity: board.identity,
     elementCount: board.elements.size,
-    vaultBacked: board.vaultBacked,
+    // Scratch is a board with a note but not a name anybody chose, and that is
+    // the only thing about it that is different. Said on the wire so a surface
+    // can offer "give this a name" without knowing what scratch is called.
+    placeholder: key === SCRATCH_KEY,
     ...(board.file ? { file: board.file } : {}),
     ...(board.savedAt ? { savedAt: board.savedAt } : {}),
     ...(board.loadedAt ? { loadedAt: board.loadedAt } : {})

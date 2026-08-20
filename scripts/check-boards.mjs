@@ -1128,6 +1128,312 @@ try {
     check(`  and is named after it, so the browser would agree`,
       el.id === labelTextIdFor(el.containerId), `${el.id} vs ${labelTextIdFor(el.containerId)}`);
   }
+
+  // --- scratch has a home, and goes back to it (TASK-077) ----------------
+  //
+  // The board a first run draws on used to live in the process and nowhere
+  // else, so quitting the canvas threw it away without saying so. It has a
+  // note now like every other board (ADR 0015), in the vault's own hidden
+  // directory beside the library, and this is the check that it is really
+  // there afterwards. Its own canvas and its own vault, because the point is
+  // what a restart does and the canvas above is holding the rest of the file.
+
+  const scratchVault = fs.mkdtempSync(path.join(os.tmpdir(), 'archboard-scratch-'));
+  let scratchPort = PORT + 137;
+  let scratchBase = `http://127.0.0.1:${scratchPort}`;
+  const scratchNote = path.join(scratchVault, '.archboard', 'scratch.excalidraw.md');
+
+  // Started twice, so "is it up" has to mean "is OUR canvas up". A port this
+  // did not pick is a port something else may be holding, and a canvas that
+  // answers with somebody else's pid would make every check below read as a
+  // scratch bug. The port moves rather than the check failing.
+  const startScratchCanvas = async () => {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const child = spawn(process.execPath, [src('server.ts')], {
+        env: { ...process.env, PORT: String(scratchPort), HOST: '127.0.0.1', ARCHBOARD_VAULT: scratchVault, LOG_LEVEL: 'error' },
+        stdio: ['ignore', 'ignore', 'ignore']
+      });
+      for (let i = 0; i < 150; i++) {
+        try {
+          const health = await (await fetch(`${scratchBase}/health`)).json();
+          if (health?.pid === child.pid) return child;
+          break;
+        } catch { await sleep(100); }
+      }
+      child.kill('SIGKILL');
+      scratchPort += 1;
+      scratchBase = `http://127.0.0.1:${scratchPort}`;
+    }
+    throw new Error(`no canvas of ours came up for the scratch checks (last port ${scratchPort - 1})`);
+  };
+  const scratchApi = async (method, url, body) => {
+    const response = await fetch(`${scratchBase}${url}`, {
+      method,
+      ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    });
+    return { status: response.status, body: await response.json().catch(() => null) };
+  };
+
+  let scratchCanvas = await startScratchCanvas();
+  try {
+    const firstInfo = await scratchApi('GET', '/api/boards/info?board=scratch');
+    check('scratch keeps its own name and says where its note goes',
+      firstInfo.body?.board === 'scratch' && firstInfo.body?.file === scratchNote,
+      firstInfo.body?.file);
+    check('  and is the one board marked a placeholder, because nobody named it',
+      firstInfo.body?.placeholder === true, JSON.stringify(firstInfo.body?.placeholder));
+
+    await scratchApi('POST', '/api/elements?board=scratch', {
+      type: 'rectangle', x: 5, y: 5, width: 60, height: 30, label: { text: 'thinking' }
+    });
+    const savedScratch = await scratchApi('POST', '/api/boards/save?board=scratch');
+    check('saving scratch writes its own note rather than demanding a name',
+      savedScratch.status === 200 && savedScratch.body?.file === scratchNote,
+      savedScratch.body?.error ?? savedScratch.body?.file);
+    check('  and the note is on disk, in the vault\'s hidden directory',
+      fs.existsSync(scratchNote));
+
+    // A note in a dot-directory is archboard's, not the vault's. It must not
+    // turn up among somebody's boards, and `board list` walks past dot
+    // directories for exactly this reason.
+    const listed = await scratchApi('GET', '/api/boards');
+    check('  without turning up in the vault\'s list of boards',
+      (listed.body?.boards ?? []).length === 0, JSON.stringify(listed.body?.boards));
+    check('  while still being open, and addressable, like any other board',
+      (listed.body?.open ?? []).some(b => b.key === 'scratch'),
+      JSON.stringify((listed.body?.open ?? []).map(b => b.key)));
+
+    scratchCanvas.kill('SIGTERM');
+    await sleep(300);
+    scratchCanvas = await startScratchCanvas();
+
+    const after = await scratchApi('GET', '/api/elements?board=scratch');
+    const drawn = (after.body?.elements ?? []).find(el => el.type === 'rectangle');
+    check('and the drawing is still there after the canvas is restarted',
+      drawn?.width === 60 && drawn?.height === 30, JSON.stringify(after.body?.elements?.length));
+    const reopened = await scratchApi('GET', '/api/boards/info?board=scratch');
+    check('  read back from the note, not invented empty',
+      reopened.body?.elementCount === 2 && typeof reopened.body?.loadedAt === 'string',
+      JSON.stringify(reopened.body));
+  } finally {
+    scratchCanvas.kill('SIGTERM');
+    await sleep(200);
+    fs.rmSync(scratchVault, { recursive: true, force: true });
+  }
+
+  // --- a note is written by rename (TASK-061, ADR 0015) -------------------
+  //
+  // Not "the file has the right contents afterwards", which a bare
+  // writeFileSync passes too. The property is about the window in the middle
+  // of the write, and it is proved by holding two references to the old note
+  // across a save: an open file descriptor, which is what a reader mid-write
+  // has, and a second hard link, which is that reader's file surviving the
+  // write. A truncate-and-fill takes both of those down with it. A rename
+  // leaves the old inode whole and gives the path a new one.
+
+  const witnessDir = fs.mkdtempSync(path.join(os.tmpdir(), 'archboard-witness-'));
+  try {
+    await api('POST', '/api/boards/new', { board: 'atomic' });
+    await api('POST', '/api/elements?board=atomic', {
+      type: 'rectangle', x: 0, y: 0, width: 100, height: 60, label: { text: 'before' }
+    });
+    const firstSave = await api('POST', '/api/boards/save?board=atomic');
+    check('a board is saved for the atomicity check', firstSave.status === 200, firstSave.body?.error);
+    const note = firstSave.body.file;
+
+    const before = fs.readFileSync(note, 'utf-8');
+    const beforeInode = fs.statSync(note).ino;
+    // The reader who opened the note a moment before the second save.
+    const heldOpen = fs.openSync(note, 'r');
+    // And their copy of it, by inode rather than by bytes.
+    const witness = path.join(witnessDir, 'witness.md');
+    fs.linkSync(note, witness);
+
+    await api('POST', '/api/elements?board=atomic', {
+      type: 'rectangle', x: 200, y: 0, width: 100, height: 60, label: { text: 'after' }
+    });
+    const secondSave = await api('POST', '/api/boards/save?board=atomic');
+    check('  and saved again over itself', secondSave.status === 200, secondSave.body?.error);
+    const after = fs.readFileSync(note, 'utf-8');
+    check('  the note really changed, so there is a write to be atomic about',
+      after !== before && after.includes('after'));
+
+    const throughHeldFd = fs.readFileSync(heldOpen, 'utf-8');
+    fs.closeSync(heldOpen);
+    check('a reader holding the note open across the write still has the whole old note',
+      throughHeldFd === before,
+      `${throughHeldFd.length} bytes through the fd vs ${before.length} before the save`);
+    check('  and so does a second link to it, so the old bytes were never truncated',
+      fs.readFileSync(witness, 'utf-8') === before);
+    check('  because the path got a new inode rather than the old one being refilled',
+      fs.statSync(note).ino !== beforeInode);
+
+    const strays = fs.readdirSync(vault).filter(name => name.endsWith('.tmp'));
+    check('nothing named .tmp is left in the vault', strays.length === 0, strays.join(', '));
+    const listedAfter = await api('GET', '/api/boards');
+    check('  and the vault listing sees one board named atomic, not a second',
+      (listedAfter.body?.boards ?? []).filter(b => b.key === 'atomic').length === 1);
+
+    // The temp file's name is the other half of "cannot be mistaken for a
+    // board": a dotfile with a .tmp suffix, which `listBoards` skips twice over
+    // and Obsidian does not show. Asserted against the helper rather than
+    // against a race, because the file only exists for the length of a write.
+    const { writeFileAtomic, tempPathFor } = await import(src('core/atomic-write.ts'));
+    const tempName = path.basename(tempPathFor(path.join(vault, 'payments.excalidraw.md')));
+    check('the temp file a write goes through is hidden from a vault',
+      tempName.startsWith('.') && tempName.endsWith('.tmp'), tempName);
+
+    // The fsync, and that it lands before the rename. A rename is atomic to
+    // readers whatever else happens; it is the fsync that stops the new name
+    // pointing at a short file after a crash, and it is over half the cost of
+    // a write, so something has to notice if it is quietly dropped.
+    const realFsync = fs.fsyncSync;
+    const realRename = fs.renameSync;
+    const order = [];
+    fs.fsyncSync = fd => { order.push('fsync'); return realFsync(fd); };
+    fs.renameSync = (from, to) => { order.push('rename'); return realRename(from, to); };
+    try {
+      writeFileAtomic(path.join(witnessDir, 'ordered.md'), 'contents\n');
+    } finally {
+      fs.fsyncSync = realFsync;
+      fs.renameSync = realRename;
+    }
+    check('the bytes are flushed to disk before the rename', order[0] === 'fsync' && order[1] === 'rename',
+      order.join(' -> '));
+    check('  and the file is there afterwards',
+      fs.readFileSync(path.join(witnessDir, 'ordered.md'), 'utf-8') === 'contents\n');
+
+    // Every writer of a vault note, not only the board save. A second idiom is
+    // how the first one goes stale, so the rule is that these modules do not
+    // call writeFileSync on a path at all.
+    for (const module of ['server.ts', 'core/library.ts', 'core/repo-registry.ts']) {
+      const source = fs.readFileSync(src(module), 'utf-8');
+      check(`  ${module} writes through the shared atomic write`,
+        !/\bfs\.writeFileSync\(/.test(source) && /writeFileAtomic\(/.test(source));
+    }
+  } finally {
+    fs.rmSync(witnessDir, { recursive: true, force: true });
+  }
+
+  // --- a board's images are its own (TASK-060, ADR 0015) ------------------
+  //
+  // Nothing in archboard's data model used to say which board an image
+  // belonged to: one map per process, keyed by file id, shared by every open
+  // board. Excalidraw's format does say, and it is the only thing that does —
+  // an image element carries `fileId` and the scene's `files` map is keyed by
+  // it. So a board's images are the ones its own elements draw, which is a
+  // relation rather than a guess.
+
+  const pngA = 'data:image/png;base64,QUJPQVJEQUFBQQ==';
+  const pngB = 'data:image/png;base64,QUJPQVJEQkJCQg==';
+  const imageOn = (board, fileId, x) => api('POST', `/api/elements?board=${board}`, {
+    type: 'image', x, y: 0, width: 80, height: 80, fileId
+  });
+
+  await api('POST', '/api/boards/new', { board: 'picsa' });
+  await api('POST', '/api/boards/new', { board: 'picsb' });
+  const addedA = await api('POST', '/api/files?board=picsa', {
+    files: [{ id: 'img-a', dataURL: pngA, mimeType: 'image/png' }]
+  });
+  await api('POST', '/api/files?board=picsb', {
+    files: [{ id: 'img-b', dataURL: pngB, mimeType: 'image/png' }]
+  });
+  check('an image is added to the board that is drawing it', addedA.status === 200 && addedA.body?.board === 'picsa');
+  await imageOn('picsa', 'img-a', 0);
+  await imageOn('picsb', 'img-b', 0);
+
+  const onlyA = await api('GET', '/api/files?board=picsa');
+  check('  and asking one board for its images gets that board\'s',
+    Object.keys(onlyA.body?.files ?? {}).join(',') === 'img-a');
+  const noBoard = await api('GET', '/api/files');
+  check('  while asking without naming a board is refused, like every other route',
+    noBoard.status === 400, JSON.stringify(noBoard.body?.error ?? '').slice(0, 80));
+
+  const savedPicsA = await api('POST', '/api/boards/save?board=picsa');
+  const savedPicsB = await api('POST', '/api/boards/save?board=picsb');
+  check('both boards with images save', savedPicsA.status === 200 && savedPicsB.status === 200);
+  const noteA = fs.readFileSync(savedPicsA.body.file, 'utf-8');
+  const noteB = fs.readFileSync(savedPicsB.body.file, 'utf-8');
+  check('a saved note carries its own board\'s image', noteA.includes(pngA));
+  check('  and not the other board\'s, which was open at the same time', !noteA.includes(pngB));
+  check('  and the same the other way round', noteB.includes(pngB) && !noteB.includes(pngA));
+
+  // An image nothing draws is not an image the board uses. The filter is
+  // reachability from the elements, so a file left over from a deleted picture
+  // does not ride along into the note for ever.
+  await api('POST', '/api/files?board=picsa', {
+    files: [{ id: 'img-orphan', dataURL: 'data:image/png;base64,T1JQSEFO', mimeType: 'image/png' }]
+  });
+  const withOrphan = await api('POST', '/api/boards/save?board=picsa');
+  check('an image no element draws is left out of the note',
+    withOrphan.status === 200 &&
+    !fs.readFileSync(withOrphan.body.file, 'utf-8').includes('T1JQSEFO'));
+
+  // The read half, and the dangerous one. Under ADR 0015 the note is rewritten
+  // from what was read, so an image that does not come back off disk is
+  // deleted by the next write rather than merely failing to render.
+  //
+  // Opened cold, from a note this process has never held, because a board that
+  // is already open keeps the images it has in memory and would answer from
+  // those whether the read half works or not.
+  const coldFile = path.join(vault, 'picsc.excalidraw.md');
+  fs.writeFileSync(coldFile, noteA.replace(/^board: picsa$/m, 'board: picsc'));
+  const cold = await api('POST', '/api/boards/open', { board: 'picsc' });
+  check('a board opened from a note nothing here has held loads', cold.status === 200, cold.body?.error);
+  const coldFiles = await api('GET', '/api/files?board=picsc');
+  check('  and its images come off the disk with it',
+    coldFiles.body?.files?.['img-a']?.dataURL === pngA,
+    JSON.stringify(Object.keys(coldFiles.body?.files ?? {})));
+  const resaved = await api('POST', '/api/boards/save?board=picsc');
+  check('  so writing back what was just read keeps the image rather than dropping it',
+    resaved.status === 200 && fs.readFileSync(resaved.body.file, 'utf-8').includes(pngA),
+    resaved.body?.error);
+
+  // A pane gets the pictures with the board. `board_switched` used to carry
+  // elements and no files, so an image element arrived with nothing to draw.
+  const picPane = await openPane('p-pics', 0, { primary: true, focused: true });
+  await api('POST', '/api/boards/open', { board: 'picsb' });
+  await sleep(120);
+  const switched = [...picPane.seen].reverse().find(m => m.type === 'board_switched');
+  check('a pane pointed at a board with pictures is sent the pictures',
+    switched?.files?.['img-b']?.dataURL === pngB, JSON.stringify(Object.keys(switched?.files ?? {})));
+  picPane.socket.close();
+  await sleep(150);
+
+  // A branch of a board with images is a board with images. It gets copies,
+  // for the same reason it gets copies of the elements (TASK-042).
+  const branchedPics = await api('POST', '/api/boards/save?board=picsa', { variant: 'option-p' });
+  check('a branch of a board with images carries them', branchedPics.status === 200);
+  const branchFiles = await api('GET', '/api/files?board=picsa@option-p');
+  check('  as its own copy, not a reference to the source\'s',
+    branchFiles.body?.files?.['img-a']?.dataURL === pngA &&
+    branchFiles.body.files['img-a'] !== onlyA.body.files['img-a']);
+  check('  and its note has the image in it too',
+    fs.readFileSync(branchedPics.body.file, 'utf-8').includes(pngA));
+
+  // The property, on its own, at the place every scene is assembled. This is
+  // the one that still means something under ADR 0015, where a note is written
+  // by things other than `board save` — the filter is not on the save path, it
+  // is on the only path that builds a scene.
+  {
+    const { buildScene } = await import(src('core/scene-io.ts'));
+    const everyImage = {
+      'img-a': { id: 'img-a', dataURL: pngA, mimeType: 'image/png' },
+      'img-b': { id: 'img-b', dataURL: pngB, mimeType: 'image/png' }
+    };
+    const built = buildScene(
+      [{ id: 'e1', type: 'image', x: 0, y: 0, width: 10, height: 10, fileId: 'img-a' }],
+      everyImage
+    );
+    check('a scene built from one board\'s elements carries only the images they draw',
+      Object.keys(built.scene.files ?? {}).join(',') === 'img-a');
+    const noImages = buildScene(
+      [{ id: 'e2', type: 'rectangle', x: 0, y: 0, width: 10, height: 10 }],
+      everyImage
+    );
+    check('  and a board that draws none has no files key at all',
+      noImages.scene.files === undefined);
+  }
 } finally {
   server.kill('SIGTERM');
   await sleep(200);
