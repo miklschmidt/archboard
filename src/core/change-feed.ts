@@ -32,6 +32,7 @@ import { EventEmitter } from 'events';
 import { randomUUID } from 'crypto';
 import { ServerElement } from '../types.js';
 import { BoardIdentity } from './board.js';
+import { copyElements } from './board-store.js';
 import { SemanticChange, diffBoardStates, narrateChange } from './changes.js';
 import logger from '../utils/logger.js';
 
@@ -68,7 +69,22 @@ const MAX_CHECKPOINTS = 24;
 interface BoardWatch {
   key: string;
   identity: BoardIdentity;
-  /** The board as of the last emitted event (or the last reset). */
+  /**
+   * The board as of the last emitted event (or the last reset).
+   *
+   * A deep copy, through the same `copyElements` a branch and a snapshot use.
+   * It used to be a spread, which left `customData` and `boundElements` shared
+   * with the live board — the two fields a baseline most needs held still,
+   * since one is the semantic channel (ADR 0003) and the other is how a label
+   * belongs to its container.
+   *
+   * This is the quietest of the three places that hazard turned up (TASK-042,
+   * TASK-048, TASK-052). A branch or a snapshot that shares objects hands back
+   * visibly wrong data. A baseline that shares them hands back silence: the
+   * board moves, the baseline moves with it, the diff finds nothing and nobody
+   * learns there was anything to look at. That silence reaches the agent too,
+   * because this feed is what injection pushes into a live thread.
+   */
   baseline: ServerElement[];
   baselineAt: string;
   timer: NodeJS.Timeout | null;
@@ -84,14 +100,6 @@ interface Checkpoint {
   board: string;
   at: string;
   elements: ServerElement[];
-}
-
-// Elements are stored as a fresh array of frozen-enough copies: routes rebuild
-// element objects rather than mutating them, but a baseline that shared
-// references with the live store would be one careless `Object.assign` away
-// from diffing a board against itself and always finding nothing.
-function snapshot(elements: ServerElement[]): ServerElement[] {
-  return elements.map(el => ({ ...el }));
 }
 
 class ChangeFeed extends EventEmitter {
@@ -129,7 +137,7 @@ class ChangeFeed extends EventEmitter {
     this.watches.set(key, {
       key,
       identity,
-      baseline: snapshot(read()),
+      baseline: copyElements(read()),
       baselineAt: new Date().toISOString(),
       timer: null,
       firstPendingAt: null,
@@ -237,7 +245,7 @@ class ChangeFeed extends EventEmitter {
     this.checkpoints.push({ cursor: event.cursor, board: key, at: watch.baselineAt, elements: watch.baseline });
     if (this.checkpoints.length > MAX_CHECKPOINTS) this.checkpoints.shift();
 
-    watch.baseline = snapshot(after);
+    watch.baseline = copyElements(after);
     watch.baselineAt = at;
 
     this.events.push(event);
