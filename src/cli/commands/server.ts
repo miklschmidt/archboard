@@ -1,7 +1,7 @@
 import { parseArgs } from '../args.js';
 import { printJson, note } from '../util.js';
 import { ensureCanvasRunning, stopCanvas, canvasPort, isCanvasHealth, foreignServiceError } from '../../core/spawn.js';
-import { getHealth, getSyncStatus } from '../../core/canvas-client.js';
+import { getHealth, getSyncStatus, reloadCanvas } from '../../core/canvas-client.js';
 import { EXPRESS_SERVER_URL } from '../../core/config.js';
 import { readPidFile } from '../../core/pidfile.js';
 
@@ -25,6 +25,23 @@ export async function stop(argv: string[]): Promise<void> {
   parseArgs(argv, {});
   const result = await stopCanvas();
   printJson(result);
+}
+
+// Reload the canvas in place, rather than restarting it.
+//
+// A restart drops every unsaved board, which is the one thing this tool
+// collects and cannot recompute. A reload keeps the port, the sockets, the
+// boards, the panes and the change feed's cursor, and re-runs the source.
+//
+// It is a command rather than a file-save trigger on purpose (ADR 0014): a
+// reload re-evaluates every module in the graph inside a live process, so the
+// moment it happens should be one somebody picked.
+export async function reload(argv: string[]): Promise<void> {
+  parseArgs(argv, {});
+  const result = await reloadCanvas();
+  note(`Asked the canvas to reload (generation ${result.generation}). ` +
+    'Watch the dev terminal: it reports what the reload cost, and says so loudly if it cost anything.');
+  printJson({ reloading: true, generation: result.generation, pid: result.pid });
 }
 
 export async function status(argv: string[]): Promise<void> {
