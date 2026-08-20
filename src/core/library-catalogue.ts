@@ -25,6 +25,7 @@ import { getLibrary, batchCreateElementsStrict } from './canvas-client.js';
 import type { ServerElement } from '../types.js';
 import { prepareElement } from './normalize.js';
 import { LIBRARY_NAME_OVERLAY } from './library-names.js';
+import { extentOf } from './geometry.js';
 
 /** One stencil, described well enough to be picked without being drawn. */
 export interface CatalogueEntry {
@@ -76,12 +77,17 @@ function resolvedName(item: { id: string; name?: string | null }): string | null
   return item.name ?? LIBRARY_NAME_OVERLAY[item.id] ?? null;
 }
 
+// How big the stencil is, measured rather than assumed: a connector inside it
+// stores an origin and a path, not a top-left and a size, so a stencil with a
+// leftward arrow in it used to be listed at the wrong size (geometry.ts,
+// TASK-038).
 function boundingBox(elements: RawElement[]): { width: number; height: number } {
   if (elements.length === 0) return { width: 0, height: 0 };
-  const minX = Math.min(...elements.map(el => el.x ?? 0));
-  const minY = Math.min(...elements.map(el => el.y ?? 0));
-  const maxX = Math.max(...elements.map(el => (el.x ?? 0) + (el.width ?? 0)));
-  const maxY = Math.max(...elements.map(el => (el.y ?? 0) + (el.height ?? 0)));
+  const boxes = elements.map(extentOf);
+  const minX = Math.min(...boxes.map(b => b.x));
+  const minY = Math.min(...boxes.map(b => b.y));
+  const maxX = Math.max(...boxes.map(b => b.x + b.width));
+  const maxY = Math.max(...boxes.map(b => b.y + b.height));
   return { width: Math.round(maxX - minX), height: Math.round(maxY - minY) };
 }
 
@@ -273,8 +279,11 @@ export function remapElements(
   }
   const mapId = (id: string | undefined | null) => (id != null && idMap.has(id) ? idMap.get(id)! : id);
 
-  const minX = Math.min(...elements.map(el => el.x ?? 0));
-  const minY = Math.min(...elements.map(el => el.y ?? 0));
+  // Where the stencil starts, so the drop lands under the pointer. Measured,
+  // for the same reason as boundingBox above.
+  const boxes = elements.map(extentOf);
+  const minX = Math.min(...boxes.map(b => b.x));
+  const minY = Math.min(...boxes.map(b => b.y));
   const dx = targetX - minX;
   const dy = targetY - minY;
 

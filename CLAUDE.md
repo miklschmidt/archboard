@@ -34,9 +34,9 @@ out to bun, so run them with `bun run`, never `npm run`:
 bun install
 bun run build       # -> dist/ and dist/frontend/
 bun run type-check
-bun run test        # stdio wire, loopback bind, obsidian, changes, labels,
-                    # library, boards + panes, skill install, repo bindings,
-                    # CLI/MCP surface parity
+bun run test        # stdio wire, loopback bind, obsidian, changes, geometry,
+                    # labels, library, boards + panes, skill install,
+                    # repo bindings, CLI/MCP surface parity
 
 ./bin/canvas start  # canvas server on 127.0.0.1:3000
 ./bin/canvas status
@@ -210,6 +210,11 @@ working directory, and a machine-local registry says where each repository is
 checked out here (TASK-031, ADR 0011). An agent standing in a repository can ask
 which boards describe it, answered from the bindings rather than from board
 names (TASK-030).
+An arrow is placed by its path, not by `x, y, width, height`. Its `x, y` is
+its first point, so an arrow drawn leftwards or upwards sits nowhere inside
+`x .. x + width`. The server also restates `width` and `height` every time it
+writes a path, so a re-routed arrow is no longer recorded at the size it used
+to be (TASK-038, `src/core/geometry.ts`).
 
 ## Names on the wire
 

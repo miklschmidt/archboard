@@ -26,9 +26,10 @@
 //
 // So the count is fixed at one per container, whatever happens, while an agent
 // renaming a box still sees the box renamed. This module is that rule, kept
-// pure and dependency-free so the browser (which enforces it), the repair
-// script (which undoes past violations) and the regression check (which proves
-// it holds) all read from the same sentence.
+// pure so the browser (which enforces it), the repair script (which undoes
+// past violations) and the regression check (which proves it holds) all read
+// from the same sentence. Its one import, `geometry.ts`, is pure for the same
+// reason and for the same readers.
 //
 // That is the inbound half. Outbound, the authority is the other way round —
 // the bound text is what the label says and the stored seed follows it — so a
@@ -42,6 +43,8 @@
 // question of the same shape: the container decides, Excalidraw recomputes it
 // at draw time, and so the stored coordinates can be wrong for a long while
 // with nothing on screen to show it (`boundTextPlacement`, TASK-034).
+
+import { measureLinear } from './geometry.js';
 
 /** A `boundElements` entry: a shape's forward reference to a text or arrow. */
 export interface BoundRef {
@@ -528,12 +531,8 @@ function anchorSlack(container: LabelledElement): number {
   // thing that fails a board.
   const SLACK = 8;
   if (isLinear(container)) {
-    const points = Array.isArray(container.points) ? container.points : [];
-    const xs = points.map((p) => num(p?.[0]) ?? 0);
-    const ys = points.map((p) => num(p?.[1]) ?? 0);
-    const width = xs.length > 0 ? Math.max(...xs) - Math.min(...xs) : 0;
-    const height = ys.length > 0 ? Math.max(...ys) - Math.min(...ys) : 0;
-    return Math.hypot(width, height) / 2 + SLACK;
+    const path = measureLinear(container.points);
+    return Math.hypot(path?.width ?? 0, path?.height ?? 0) / 2 + SLACK;
   }
   return Math.hypot(num(container.width) ?? 0, num(container.height) ?? 0) / 2 + SLACK;
 }

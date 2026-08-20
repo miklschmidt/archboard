@@ -1,250 +1,138 @@
-import logger from '../utils/logger.js';
-import { generateId, ServerElement } from '../types.js';
-import {
-  getElementFromCanvas,
-  updateElementOnCanvas,
-  batchCreateElementsOnCanvas,
-  getElements
-} from './canvas-client.js';
+// Where an element actually is, and how big it actually is.
+//
+// For a box shape those two questions are answered by `x, y, width, height`,
+// and every reader in this repo used to assume that was true of everything.
+// It is not true of an arrow. Excalidraw stores a linear element as an origin
+// plus a path: `x, y` is its FIRST POINT, and `points` are offsets from that
+// point which are free to be negative. An arrow drawn right-to-left has its
+// origin on the right, so `x .. x + width` is the stretch of board the arrow
+// came from rather than the stretch it occupies, and for an arrow running up
+// and to the left the two ranges do not overlap at all (TASK-038).
+//
+// The same shape of bug bit bound labels: TASK-034's `boundTextDrift` was
+// immune only because it measured arrows from their points. This module is
+// that measurement, pulled out so every reader can share it.
+//
+// Two things follow from being the shared home:
+//
+//   · it is pure and dependency-free, like `labels.ts`, because the browser
+//     imports the modules that need it and cannot have winston or a fetch
+//     client dragged in behind them. The canvas operations that used to live
+//     in this file (align, distribute, group, duplicate) are in
+//     `element-ops.ts`.
+//   · it decides by `points`, not by `type`. Anything carrying a path is
+//     measured from that path — arrows, lines, and freedraw, whose strokes are
+//     stored the same way — so a new linear type is right by default rather
+//     than wrong until somebody remembers this file.
 
-export type Alignment = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom';
-export type Direction = 'horizontal' | 'vertical';
-
-export async function alignElements(
-  elementIds: string[],
-  alignment: Alignment
-): Promise<{ aligned: boolean; elementIds: string[]; alignment: Alignment; successCount: number }> {
-  // Fetch all elements
-  const elementsToAlign: ServerElement[] = [];
-  for (const id of elementIds) {
-    const el = await getElementFromCanvas(id);
-    if (el) elementsToAlign.push(el);
-  }
-
-  if (elementsToAlign.length < 2) {
-    throw new Error('Need at least 2 elements to align');
-  }
-
-  // Calculate alignment target
-  let updateFn: (el: ServerElement) => { x?: number; y?: number };
-  switch (alignment) {
-    case 'left': {
-      const minX = Math.min(...elementsToAlign.map(el => el.x));
-      updateFn = () => ({ x: minX });
-      break;
-    }
-    case 'right': {
-      const maxRight = Math.max(...elementsToAlign.map(el => el.x + (el.width || 0)));
-      updateFn = (el) => ({ x: maxRight - (el.width || 0) });
-      break;
-    }
-    case 'center': {
-      const centers = elementsToAlign.map(el => el.x + (el.width || 0) / 2);
-      const avgCenter = centers.reduce((a, b) => a + b, 0) / centers.length;
-      updateFn = (el) => ({ x: avgCenter - (el.width || 0) / 2 });
-      break;
-    }
-    case 'top': {
-      const minY = Math.min(...elementsToAlign.map(el => el.y));
-      updateFn = () => ({ y: minY });
-      break;
-    }
-    case 'bottom': {
-      const maxBottom = Math.max(...elementsToAlign.map(el => el.y + (el.height || 0)));
-      updateFn = (el) => ({ y: maxBottom - (el.height || 0) });
-      break;
-    }
-    case 'middle': {
-      const middles = elementsToAlign.map(el => el.y + (el.height || 0) / 2);
-      const avgMiddle = middles.reduce((a, b) => a + b, 0) / middles.length;
-      updateFn = (el) => ({ y: avgMiddle - (el.height || 0) / 2 });
-      break;
-    }
-  }
-
-  // Apply updates
-  const updatePromises = elementsToAlign.map(async (el) => {
-    const coords = updateFn(el);
-    return await updateElementOnCanvas({ id: el.id, ...coords });
-  });
-  const results = await Promise.all(updatePromises);
-  const successCount = results.filter(r => r).length;
-
-  if (successCount === 0) {
-    throw new Error('Failed to align any elements: HTTP server unavailable');
-  }
-
-  return { aligned: true, elementIds, alignment, successCount };
+/** As much of an element as placing it requires. */
+export interface Measurable {
+  x?: unknown;
+  y?: unknown;
+  width?: unknown;
+  height?: unknown;
+  points?: unknown;
 }
 
-export async function distributeElements(
-  elementIds: string[],
-  direction: Direction
-): Promise<{ distributed: boolean; elementIds: string[]; direction: Direction; count: number }> {
-  // Fetch all elements
-  const elementsToDist: ServerElement[] = [];
-  for (const id of elementIds) {
-    const el = await getElementFromCanvas(id);
-    if (el) elementsToDist.push(el);
-  }
-
-  if (elementsToDist.length < 3) {
-    throw new Error('Need at least 3 elements to distribute');
-  }
-
-  if (direction === 'horizontal') {
-    // Sort by x position
-    elementsToDist.sort((a, b) => a.x - b.x);
-    const first = elementsToDist[0]!;
-    const last = elementsToDist[elementsToDist.length - 1]!;
-    const totalSpan = (last.x + (last.width || 0)) - first.x;
-    const totalElementWidth = elementsToDist.reduce((sum, el) => sum + (el.width || 0), 0);
-    const gap = (totalSpan - totalElementWidth) / (elementsToDist.length - 1);
-
-    let currentX = first.x;
-    for (const el of elementsToDist) {
-      await updateElementOnCanvas({ id: el.id, x: currentX });
-      currentX += (el.width || 0) + gap;
-    }
-  } else {
-    // Sort by y position
-    elementsToDist.sort((a, b) => a.y - b.y);
-    const first = elementsToDist[0]!;
-    const last = elementsToDist[elementsToDist.length - 1]!;
-    const totalSpan = (last.y + (last.height || 0)) - first.y;
-    const totalElementHeight = elementsToDist.reduce((sum, el) => sum + (el.height || 0), 0);
-    const gap = (totalSpan - totalElementHeight) / (elementsToDist.length - 1);
-
-    let currentY = first.y;
-    for (const el of elementsToDist) {
-      await updateElementOnCanvas({ id: el.id, y: currentY });
-      currentY += (el.height || 0) + gap;
-    }
-  }
-
-  return { distributed: true, elementIds, direction, count: elementsToDist.length };
+/** An axis-aligned box in scene coordinates, in the element's own vocabulary. */
+export interface Extent {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
-export async function setElementsLocked(
-  elementIds: string[],
-  locked: boolean
-): Promise<{ elementIds: string[]; successCount: number }> {
-  const updatePromises = elementIds.map(async (id) => {
-    return await updateElementOnCanvas({ id, locked });
-  });
+const finite = (v: unknown): number | undefined =>
+  typeof v === 'number' && Number.isFinite(v) ? v : undefined;
 
-  const results = await Promise.all(updatePromises);
-  const successCount = results.filter(result => result).length;
-
-  if (successCount === 0) {
-    throw new Error(`Failed to ${locked ? 'lock' : 'unlock'} any elements: HTTP server unavailable`);
+/** The offsets of a path, dropping anything that is not a pair of numbers. */
+function pathOffsets(points: unknown): { xs: number[]; ys: number[] } | undefined {
+  if (!Array.isArray(points) || points.length === 0) return undefined;
+  const xs: number[] = [];
+  const ys: number[] = [];
+  for (const point of points) {
+    const px = finite(Array.isArray(point) ? point[0] : (point as any)?.x);
+    const py = finite(Array.isArray(point) ? point[1] : (point as any)?.y);
+    if (px === undefined || py === undefined) continue;
+    xs.push(px);
+    ys.push(py);
   }
-
-  return { elementIds, successCount };
+  return xs.length === 0 ? undefined : { xs, ys };
 }
 
-// Group elements by appending a fresh groupId to each element's groupIds on
-// the canvas. Canvas element state (not process-local memory) is the source
-// of truth so per-invocation clients like the CLI behave identically.
-export async function groupElements(
-  elementIds: string[]
-): Promise<{ groupId: string; elementIds: string[]; successCount: number }> {
-  const groupId = generateId();
-
-  // Fetch existing groups and append new groupId to preserve multi-group membership
-  const updatePromises = elementIds.map(async (id) => {
-    const element = await getElementFromCanvas(id);
-    const existingGroups = element?.groupIds || [];
-    const updatedGroupIds = [...existingGroups, groupId];
-    return await updateElementOnCanvas({ id, groupIds: updatedGroupIds });
-  });
-
-  const results = await Promise.all(updatePromises);
-  const successCount = results.filter(result => result).length;
-
-  if (successCount === 0) {
-    throw new Error('Failed to group any elements: HTTP server unavailable');
-  }
-
-  return { groupId, elementIds, successCount };
+/**
+ * How big a path is. Not a second opinion about the element's size — for a
+ * linear element this *is* its size, which is why the server has to state it
+ * again every time it writes new points.
+ *
+ * Undefined when the path says nothing measurable, because a guessed size is
+ * worse than the stale one it would replace.
+ */
+export function measureLinear(points: unknown): { width: number; height: number } | undefined {
+  const offsets = pathOffsets(points);
+  if (!offsets) return undefined;
+  return {
+    width: Math.max(...offsets.xs) - Math.min(...offsets.xs),
+    height: Math.max(...offsets.ys) - Math.min(...offsets.ys)
+  };
 }
 
-// Ungroup by finding members via canvas groupIds. Optionally seeded with a
-// known member list (the MCP server's legacy in-memory group map) for
-// backward compatibility.
-export async function ungroupElements(
-  groupId: string,
-  knownMemberIds?: string[]
-): Promise<{ groupId: string; ungrouped: boolean; elementIds: string[]; successCount: number }> {
-  let memberIds = knownMemberIds;
-  if (!memberIds || memberIds.length === 0) {
-    const allElements = await getElements();
-    memberIds = allElements
-      .filter(el => (el.groupIds || []).includes(groupId))
-      .map(el => el.id);
-  }
-
-  if (memberIds.length === 0) {
-    throw new Error(`Group ${groupId} not found`);
-  }
-
-  // Update elements on canvas, removing only this specific groupId
-  const updatePromises = memberIds.map(async (id) => {
-    // Fetch current element to get existing groupIds
-    const element = await getElementFromCanvas(id);
-    if (!element) {
-      logger.warn(`Element ${id} not found on canvas, skipping ungroup`);
-      return null;
-    }
-
-    // Remove only the specific groupId, preserve others
-    const updatedGroupIds = (element.groupIds || []).filter(gid => gid !== groupId);
-    return await updateElementOnCanvas({ id, groupIds: updatedGroupIds });
-  });
-
-  const results = await Promise.all(updatePromises);
-  const successCount = results.filter(result => result !== null).length;
-
-  if (successCount === 0) {
-    throw new Error('Failed to ungroup: no elements were updated (elements may not exist on canvas)');
-  }
-
-  return { groupId, ungrouped: true, elementIds: memberIds, successCount };
+/** Does this element carry a path, and therefore keep its size in it? */
+export function isPathElement(element: Measurable | null | undefined): boolean {
+  return pathOffsets(element?.points) !== undefined;
 }
 
-export async function duplicateElements(
-  elementIds: string[],
-  offsetX = 20,
-  offsetY = 20
-): Promise<{ duplicates: ServerElement[]; canvasElements: ServerElement[] | null; offsetX: number; offsetY: number }> {
-  const duplicates: ServerElement[] = [];
-  for (const id of elementIds) {
-    const original = await getElementFromCanvas(id);
-    if (!original) {
-      logger.warn(`Element ${id} not found, skipping duplicate`);
-      continue;
-    }
-
-    const { createdAt, updatedAt, version, syncedAt, source, syncTimestamp, ...rest } = original as any;
-    const duplicate: ServerElement = {
-      ...rest,
-      id: generateId(),
-      x: original.x + offsetX,
-      y: original.y + offsetY,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      version: 1
+/**
+ * The box this element occupies: top-left corner, and size.
+ *
+ * For an element with a path this is measured from the path, so an arrow that
+ * runs leftwards or upwards reports the board it covers rather than the board
+ * to the right of where it started. For everything else it is the stored
+ * `x, y, width, height`, which for those elements is already the answer.
+ *
+ * A missing coordinate reads as 0 rather than as undefined: every caller here
+ * is placing an element on a board next to its neighbours, and one element
+ * excusing itself from the frame is a worse answer than one drawn at the
+ * origin.
+ */
+export function extentOf(element: Measurable | null | undefined): Extent {
+  const x = finite(element?.x) ?? 0;
+  const y = finite(element?.y) ?? 0;
+  const offsets = pathOffsets(element?.points);
+  if (offsets) {
+    const minX = Math.min(...offsets.xs);
+    const minY = Math.min(...offsets.ys);
+    return {
+      x: x + minX,
+      y: y + minY,
+      width: Math.max(...offsets.xs) - minX,
+      height: Math.max(...offsets.ys) - minY
     };
-    duplicates.push(duplicate);
   }
+  return { x, y, width: finite(element?.width) ?? 0, height: finite(element?.height) ?? 0 };
+}
 
-  if (duplicates.length === 0) {
-    throw new Error('No elements could be duplicated (none found)');
+/**
+ * The element's `width`/`height` restated from its path, when the two have
+ * drifted apart. Undefined when there is nothing to correct, so a caller can
+ * use the answer as "is there an update to make" without a second comparison.
+ *
+ * Half a pixel of tolerance, matching the rest of the repo: a rounding error
+ * is not a resize, and bumping an element's version for one wakes the change
+ * feed over nothing.
+ */
+export function remeasureLinear(
+  element: Measurable | null | undefined
+): { width: number; height: number } | undefined {
+  const measured = measureLinear(element?.points);
+  if (!measured) return undefined;
+  const width = finite(element?.width);
+  const height = finite(element?.height);
+  if (
+    width !== undefined && height !== undefined &&
+    Math.abs(width - measured.width) < 0.5 && Math.abs(height - measured.height) < 0.5
+  ) {
+    return undefined;
   }
-
-  const canvasElements = await batchCreateElementsOnCanvas(duplicates);
-  if (!canvasElements) {
-    throw new Error('Failed to duplicate elements: HTTP server unavailable');
-  }
-  return { duplicates, canvasElements, offsetX, offsetY };
+  return measured;
 }
