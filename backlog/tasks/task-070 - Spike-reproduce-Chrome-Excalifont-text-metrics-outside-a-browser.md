@@ -4,6 +4,7 @@ title: 'Spike: reproduce Chrome Excalifont text metrics outside a browser'
 status: To Do
 assignee: []
 created_date: '2026-08-20 20:14'
+updated_date: '2026-08-20 21:11'
 labels: []
 dependencies: []
 references:
@@ -53,3 +54,13 @@ DELIVERABLE. A written answer, in docs/design/, naming which of the three it is 
 - [ ] #3 If a native canvas is the answer, it is installed on this box and its metrics compared against Chrome to the pixel, or the attempt and its failure are recorded
 - [ ] #4 The finding is written to docs/design/ and no code under src/ or frontend/ is changed
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @claude
+created: 2026-08-20 21:11
+---
+Measured while building TASK-071's browser check, which can now put strings on a board and read Chrome's own measurement back. The section 3 hypothesis that Chrome had fallen back to a system font because Excalifont had not loaded is ruled out: five standalone texts at fontSize 20 with fontFamily 5, rendered with document.fonts reporting Excalifont loaded, came back at 163.271484375, 99.970703125, 52.197265625, 37.75390625 and 47.802734375 for 'a standalone caption', 'AuthService', 'Queue', 'Gate' and 'gRPC'. Those are the Chrome column of the table to three decimals, so the font was loaded when that table was taken and the 4.6 to 40.4 px fontkit gap is real. That leaves the other two candidates: Excalidraw applies something on top of the raw advance, or fontkit picks different glyphs than the browser's shaper. bun run test:browser is the cheapest way to take more readings — put text on the board, read what the browser holds.
+---
+<!-- COMMENTS:END -->

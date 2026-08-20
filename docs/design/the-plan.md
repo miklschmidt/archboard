@@ -178,9 +178,18 @@ Land it asserting today's measured baseline rather than zero, and leave it out
 of `bun run test` until stage 5 can flip it. That way it lands without breaking
 anything and the converter work has an unambiguous target.
 
+**Landed** as `scripts/check-fixed-point.mjs`, run with `bun run test:browser`.
+Its board is eight agent-drawn elements, twelve once the note writer has
+expanded the labels, and **8 of those 12 come back changed**: four texts
+re-measured and moved, `rawText` dropped from all five, `index` rewritten on
+four, both arrows inset by half a stroke width, and freedraw handed
+`lastCommittedPoint`, `pressures` and `simulatePressure`. It asserts field
+names rather than values, so the text measurements can move without the check
+crying wolf, and it plants a width Excalidraw must correct at the end to prove
+a zero would be a real zero rather than a broken read-back.
+
 **Risks:** none to the existing suites, because it is not wired into them yet.
-The risk is that a browser cannot be driven from a check at all, in which case
-stage 5 loses its acceptance test, which is worth learning now.
+The risk was that a browser cannot be driven from a check at all. It can.
 
 ## Stage 5. One converter
 
@@ -392,22 +401,25 @@ The three outcomes are three different amounts of work and one of them puts a
 documented hole in ADR 0015. Nothing in stage 5 should start before this
 reports.
 
-**How a check drives a browser.** Answered. `agent-browser` is on PATH on this
-machine and is a browser automation CLI with `open`, `eval` and `screenshot`,
-which is everything the check needs to load a board and read back what
-Excalidraw rendered. Run `agent-browser skills get core --full` before writing
-against it.
+**How a check drives a browser.** Settled by TASK-071, and it costs no
+dependency: `agent-browser` is already on PATH, and two of its commands carry
+the whole check. `open` points a headless Chrome of its own at the throwaway
+canvas, and `eval` runs the read-back in the page. Nothing is added to
+`package.json` and no browser is bundled, which is why the check exits 2 rather
+than failing when it cannot find either — a fresh CI runner has neither, and
+that is TASK-082.
 
-Running it in CI is a separate matter: a fresh runner has neither
-`agent-browser` nor a browser, so something has to install one there. That
-belongs with TASK-082 rather than here, because CI runs two of the fifteen
-checks today and a new one would not execute there either way.
+The read-back is the part that could have gone wrong. The frontend exposes no
+handle on the Excalidraw API, so `scripts/check-fixed-point.mjs` walks the
+React fiber up from the `.excalidraw` node to the App instance and asks its
+scene. That is an internal, and it is still better than the alternative:
+forcing a change report needs a keystroke to arm the pane, and the keystroke
+edits the board, so the report would mix Excalidraw's corrections with the
+check's own typing.
 
-This was listed as an open question because no script in `scripts/` drives a
-browser today: all fifteen checks stand WebSocket clients in for panes and say
-so. That showed nobody had done it, not that it could not be done. TASK-071 is
-therefore an ordinary task rather than a spike, and stage 5 keeps its
-acceptance test.
+This was open because no script in `scripts/` drove a browser: all fifteen
+stood WebSocket clients in for panes and said so. That showed nobody had done
+it, not that it could not be done, and stage 5 keeps its acceptance test.
 
 **What a canvas with no vault does.** Answered by the user: it refuses to
 start, and the refusal points at the install step that chooses a vault.

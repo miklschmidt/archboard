@@ -35,6 +35,7 @@
     "test:parity": "bun scripts/check-surface-parity.mjs",
     "test:module-scope": "bun scripts/check-module-scope.mjs && bun scripts/check-module-scope.mjs --self-test",
     "test:hot": "bun scripts/check-hot-reload.mjs",
+    "test:browser": "bun scripts/check-fixed-point.mjs",
     "reload": "bun scripts/reload.mjs"
   },
   "dependencies": {

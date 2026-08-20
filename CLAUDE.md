@@ -104,6 +104,17 @@ drops every unsaved board, so save first, or ask.
 `bun run type-check` is the only thing that type-checks now, and `bun run test`
 runs it first, so a type error still fails the suite.
 
+**One check drives a real browser, and it is not in `bun run test`.**
+`bun run test:browser` (`scripts/check-fixed-point.mjs`, TASK-071) writes a
+board, renders it in headless Chrome through `agent-browser`, reads back what
+the pane is holding, and reports every element and field Excalidraw changed.
+Everything else in `scripts/` stands a WebSocket in for a pane, which cannot
+catch a renderer disagreeing with us. It rebuilds `dist/frontend` first,
+because that is half of what it measures, and it takes about eleven seconds.
+It is out of the suite on purpose: it asserts today's baseline of 8 of 12
+elements changed rather than the zero we want, and TASK-072 is what flips it
+and wires it in.
+
 Open <http://127.0.0.1:3000>. A browser tab is required for `screenshot`,
 `mermaid`, image export, and viewport control; pure JSON ops work headless.
 

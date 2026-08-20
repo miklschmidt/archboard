@@ -3,10 +3,11 @@ id: TASK-071
 title: >-
   A check that renders a board in a real browser and reports what the browser
   changed
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@claude'
 created_date: '2026-08-20 20:14'
-updated_date: '2026-08-20 20:39'
+updated_date: '2026-08-20 21:12'
 labels: []
 dependencies: []
 references:
@@ -43,12 +44,39 @@ STAY GREEN. Land the check asserting today's measured baseline rather than zero,
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A check writes a board covering every agent-creatable element type, renders it in a real browser, and reports every element and field the browser changed
-- [ ] #2 Version, versionNonce, updated and the server timestamps are ignored, and what is ignored is stated in the script
-- [ ] #3 How a browser is driven in the check suite is decided and written down, since no existing check drives one
-- [ ] #4 The check runs against today code and records today baseline rather than failing, and is not yet part of bun run test
-- [ ] #5 The check drives a real browser with agent-browser, and reads the rendered elements back with eval
+- [x] #1 A check writes a board covering every agent-creatable element type, renders it in a real browser, and reports every element and field the browser changed
+- [x] #2 Version, versionNonce, updated and the server timestamps are ignored, and what is ignored is stated in the script
+- [x] #3 How a browser is driven in the check suite is decided and written down, since no existing check drives one
+- [x] #4 The check runs against today code and records today baseline rather than failing, and is not yet part of bun run test
+- [x] #5 The check drives a real browser with agent-browser, and reads the rendered elements back with eval
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Settle how a check drives a browser: agent-browser (already on PATH) with a session of its own, open + eval, no new dependency.
+2. Find a read-back: the frontend exposes no Excalidraw handle, so walk the React fiber from the .excalidraw node to the App instance and read its scene. Rejected forcing a change report, which needs a keystroke to arm the pane and so edits the board it is measuring.
+3. scripts/check-fixed-point.mjs: throwaway canvas on a free random port with a throwaway vault, a board covering every agent-creatable type, saved so the document under test is the note our exporter writes, reopened with reload into the browser's pane.
+4. Wait for document.fonts.ready and for the scene to stop moving, then diff what the pane holds against what the server holds, field by field, ignoring the six fields cleanElementForExcalidraw strips plus versionNonce and updated.
+5. Assert field names rather than values, against today's measured baseline, and plant a width Excalidraw must correct so a future zero cannot be a broken read-back.
+6. Wire it as test:browser only, out of bun run test until TASK-072 flips the baseline to zero.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+A browser can be driven from a check, and it costs no dependency. agent-browser is on PATH already; two commands carry the whole check (open, eval) and it brings its own headless Chrome. The check runs in its own session so it cannot touch a tab a human is using, and on a free random port with a throwaway vault like every other check.
+
+The read-back was the part that could have failed. The frontend exposes no handle on the Excalidraw API, so the check walks the React fiber up from the .excalidraw node to the App instance and calls scene.getElementsIncludingDeleted(). That is an internal; when it breaks it fails loudly with 'no Excalidraw app instance' rather than reporting a false zero. The alternative, forcing a change report, is worse: a pane only reports once userInteractedRef is set, so arming it needs a keystroke, and the keystroke edits the board, mixing the check's typing into the corrections it is trying to measure.
+
+Two things move under the check after the render. Excalidraw loads a scene's fonts when the scene arrives and re-measures text once they land, and re-routes bound arrows when the labels they point at change size. So the check waits for document.fonts.ready and then polls until the scene is byte-identical across three consecutive reads. It also asserts field names rather than values, because whether the text measurement lands on the fallback or on Virgil depends on font-load timing, and pinning 208.85975646972656 would make this a font-version detector.
+
+Measured baseline, 2026-08-20: 8 of 12 elements come back changed. Four texts re-measured and moved (width, height, x, y), rawText dropped from all five texts, index rewritten on four elements, both arrows inset by half a stroke width, freedraw handed lastCommittedPoint, pressures and simulatePressure. The board is 8 agent-drawn elements; the note writer expands the labels to 12.
+
+Ignored: createdAt, updatedAt, syncedAt, source, syncTimestamp, version, versionNonce, updated. The first six are exactly what cleanElementForExcalidraw strips on the way into the scene, so the browser never sees them; a check asserts that list still matches the frontend so the two cannot drift apart.
+
+11 seconds end to end including the frontend rebuild, which it does itself because dist/frontend is half of what it measures.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
@@ -82,3 +110,9 @@ That also needs a headless run and no display, which the tool supports but which
 Sequencing: this is only a CI concern once CI runs the suite at all. Today it runs two of the fifteen checks (TASK-082), so a browser check would not execute there even after it is written. Do not wire the install step into CI as part of this task; do it as part of whichever task puts the suite in CI, so the two land together and the runner is proved once.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+scripts/check-fixed-point.mjs, run with bun run test:browser, writes a board covering every element type an agent can create, saves it so the document under test is the note our exporter writes, renders it in a real headless Chrome through agent-browser, and reports every element and field the browser changed. Verified by running it: 8 of 12 elements come back changed, with the fields named per element, reproducibly across runs and in 11 seconds including the frontend rebuild it does itself. It asserts that baseline rather than zero, so it lands green; TASK-072 flips it to zero and adds it to bun run test. A planted width Excalidraw must correct proves a zero would be real rather than a broken read-back, and bun run test is still green because the check is deliberately outside it.
+<!-- SECTION:FINAL_SUMMARY:END -->
