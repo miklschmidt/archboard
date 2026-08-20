@@ -79,14 +79,14 @@ export function faceFileFor(codepoint: number, fontFamily: number): string | und
 }
 
 export interface LineMeasurement {
-  /** Width in em, so one measurement serves every font size. */
-  em: number;
+  /** Width in pixels, at the font size asked for. */
+  width: number;
   /** Characters no shipped file covers, whose width is therefore not counted. */
   missing: string[];
 }
 
 /**
- * One line of text, in em.
+ * One line of text, in pixels at `fontSize`.
  *
  * Split into words first and into single-face runs inside a word, because a
  * subset boundary changes which file a glyph is drawn from but not whether it
@@ -99,9 +99,9 @@ export interface LineMeasurement {
  * Latin pairs, in the one family that shows it. Excalifont — the family
  * archboard writes — has no disagreement of this kind anywhere.
  */
-export function measureLineEm(text: string, fontFamily: number): LineMeasurement {
+export function measureLine(text: string, fontSize: number, fontFamily: number): LineMeasurement {
   const stack = faceStack(fontFamily);
-  if (stack.length === 0) return { em: 0, missing: [...text] };
+  if (stack.length === 0) return { width: 0, missing: [...text] };
 
   interface Run { face: LoadedFace | undefined; chars: string[] }
   const words: Array<{ runs: Run[] }> = [];
@@ -126,7 +126,16 @@ export function measureLineEm(text: string, fontFamily: number): LineMeasurement
     run.chars.push(ch);
   }
 
-  let em = 0;
+  // Advances are integers in font units, so they are summed as integers and
+  // scaled once — `units * fontSize / unitsPerEm`, in that order, per distinct
+  // units-per-em rather than per run. Every other arrangement leaves an ulp
+  // behind: dividing as each advance is added gave `AuthService`
+  // 114.50000000000001 against the browser's 114.5, scaling an em figure
+  // afterwards gave `Queue` 58.760000000000005, and scaling per run gave
+  // `a standalone caption` 203.66000000000003 because it is three words. A
+  // note carrying a width one ulp off a browser's is a difference something
+  // downstream has to either notice or hide.
+  const unitsPer = new Map<number, number>();
   const missing: string[] = [];
   for (const { runs } of words) {
     let previous: { face: LoadedFace; glyph: number } | null = null;
@@ -139,21 +148,25 @@ export function measureLineEm(text: string, fontFamily: number): LineMeasurement
       const { font, gsub, gpos } = run.face;
       let glyphs = run.chars.map((ch) => font.cmap.get(ch.codePointAt(0) as number) as number);
       if (gsub) glyphs = gsub.substitute(glyphs);
+      let units = 0;
       for (const glyph of glyphs) {
-        em += (font.advances[glyph] ?? 0) / font.unitsPerEm;
+        units += font.advances[glyph] ?? 0;
         if (previous && previous.face === run.face && gpos) {
-          em += gpos.kern(previous.glyph, glyph) / font.unitsPerEm;
+          units += gpos.kern(previous.glyph, glyph);
         }
         previous = { face: run.face, glyph };
       }
+      unitsPer.set(font.unitsPerEm, (unitsPer.get(font.unitsPerEm) ?? 0) + units);
     }
   }
-  return { em, missing };
+  let width = 0;
+  for (const [unitsPerEm, units] of unitsPer) width += units * fontSize / unitsPerEm;
+  return { width, missing };
 }
 
 /** One line of text, in pixels at `fontSize`. */
 export function measureLineWidth(text: string, fontSize: number, fontFamily: number): number {
-  return measureLineEm(text, fontFamily).em * fontSize;
+  return measureLine(text, fontSize, fontFamily).width;
 }
 
 export interface TextSize {
@@ -181,8 +194,8 @@ export function measureText(
   let width = 0;
   const missing: string[] = [];
   for (const line of lines) {
-    const measured = measureLineEm(line, fontFamily);
-    width = Math.max(width, measured.em * fontSize);
+    const measured = measureLine(line, fontSize, fontFamily);
+    width = Math.max(width, measured.width);
     missing.push(...measured.missing);
   }
   const perLine = lineHeight ?? lineHeightOf(fontFamily);

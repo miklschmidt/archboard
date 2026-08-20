@@ -1,15 +1,42 @@
 import { ServerElement, normalizeFontFamily } from '../types.js';
-import { LabelledElement, labelAnchorOf, labelTextIdFor } from './labels.js';
-import { fnv1a } from './ids.js';
+import {
+  LabelledElement, boundTextPlacement, boundTextsByContainer, labelSeedOf, labelTextIdFor
+} from './labels.js';
+import { fnv1a, type IdsInUse } from './ids.js';
+import { lineHeightOf } from './fonts.js';
+import { canMeasure, measureText } from './measure-text.js';
 
-// Expand the server's agent-friendly element format into real Excalidraw
-// elements: strip server metadata, add Excalidraw defaults, generate bound
-// text elements for `label`/`text` on shapes and arrows, and resolve arrow
-// bindings — so exported scenes render fully in third-party consumers
-// (excalidraw.com, the Obsidian Excalidraw plugin) without a browser tab.
+// The one conversion, in one direction, at one boundary (ADR 0015).
 //
-// Extracted from share-url.ts (cleanElementsForShare), which shares this
-// exact conversion for the encrypted excalidraw.com upload.
+// An agent writes `{"type":"rectangle","label":{"text":"AuthService"}}`.
+// Excalidraw has no `label` field: a label there is a separate text element
+// bound to the shape, with a measured width, a computed position and about
+// thirty other properties. Something has to turn one into the other.
+//
+// There used to be two somethings. This one, on the way into a note, and
+// Excalidraw's own `convertToExcalidrawElements` in the browser on the way
+// into a pane — a converter we did not control, which we then patched by hand.
+// Given one board of nine elements the two produced documents differing on
+// fourteen fields. Divergence between two copies of one thing is invisible
+// until it is expensive, and it was: a label that multiplied every time the
+// board went round the loop, a rename that came back, a cleared label that
+// refilled itself, a label that drifted a thousand pixels from its arrow.
+//
+// So there is one of these, it runs on the way in, and nothing converts on the
+// way out. What a reader gets is what Excalidraw renders.
+//
+// WHAT "CORRECT" MEANS HERE. Not "matches what `convertToExcalidrawElements`
+// would have produced" — that converter is gone, and eight of the fourteen
+// differences turned out to describe its own fallbacks rather than anything
+// Excalidraw insists on. The property is that a document we write is a fixed
+// point: rendered in a real browser, nothing comes back changed.
+// `scripts/check-fixed-point.mjs` is that check and it is the arbiter.
+//
+// Measured with that check, against this version of Excalidraw, the only
+// thing a render rewrites is `index` — so the defaults below come from
+// Excalidraw's own `DEFAULT_ELEMENT_PROPS` and `AppState` rather than from a
+// second converter's output, and they are the values a shape a human drew
+// would carry.
 
 export interface ExpandOptions {
   // Derive seeds, versionNonces, and `updated` timestamps from element ids
@@ -17,6 +44,53 @@ export interface ExpandOptions {
   // of an unchanged scene are byte-identical (keeps committed .excalidraw
   // files diff-clean).
   deterministic?: boolean;
+  /**
+   * Elements bound for the board's own map rather than for a file.
+   *
+   * The difference is bookkeeping, not conversion: the store keeps
+   * `createdAt`, `updatedAt`, `source` and the server's `version`, and keeps
+   * the `label`, `start` and `end` an agent wrote, because the settle and
+   * re-route passes read them. The conversion either way is this one.
+   */
+  forStore?: boolean;
+  /** Ids already spoken for elsewhere, so an expanded label cannot take one. */
+  inUse?: IdsInUse;
+}
+
+// Excalidraw's defaults, from its own bundle rather than from anything's
+// output: `DEFAULT_ELEMENT_PROPS` for the shared properties, `AppState` for
+// what a freshly drawn element gets.
+const DEFAULT_FONT_FAMILY = 5;        // Excalifont. Virgil, our old default, is deprecated.
+const DEFAULT_FONT_SIZE = 20;
+const DEFAULT_TEXT_ALIGN = 'left';    // for a standalone text; a bound one is centred
+const DEFAULT_VERTICAL_ALIGN = 'top';
+const DEFAULT_STROKE_WIDTH = 2;
+
+// Excalidraw's `index` is a fractional index, and it is the z-order. Two rules
+// make one valid: the strings increase along the array, and each parses. Ours
+// used to be `a${n}`, which breaks at ten elements — `a10` sorts before `a2` —
+// so a board of twelve came back from a render with five indices repaired.
+//
+// These are the integer keys of the same scheme: one leading letter saying how
+// many digits follow, then base-62 digits. `a0` through `az`, then `b00`.
+const INDEX_DIGITS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+export function fractionalIndex(position: number): string {
+  let width = 1;
+  let offset = 0;
+  let span = INDEX_DIGITS.length;
+  // `a` holds 62, `b` holds 62², and so on; `az` < `b00` because `a` < `b`.
+  while (position >= offset + span && width < 26) {
+    offset += span;
+    width += 1;
+    span *= INDEX_DIGITS.length;
+  }
+  let remaining = position - offset;
+  let digits = '';
+  for (let i = 0; i < width; i++) {
+    digits = (INDEX_DIGITS[remaining % INDEX_DIGITS.length] as string) + digits;
+    remaining = Math.floor(remaining / INDEX_DIGITS.length);
+  }
+  return (INDEX_DIGITS[36 + width - 1] as string) + digits;   // 36 is 'a'
 }
 
 // Canonical key order for exported elements: identity/geometry first, the
@@ -42,7 +116,7 @@ export function expandElementsForExport(
   sourceElements: ServerElement[],
   options: ExpandOptions = {}
 ): Record<string, any>[] {
-  const { deterministic = false } = options;
+  const { deterministic = false, forStore = false } = options;
   const seedFor = (key: string): number =>
     deterministic ? (fnv1a(key) % 2147483646) + 1 : Math.floor(Math.random() * 2147483647);
   const updatedFor = (el: any): number => {
@@ -56,11 +130,14 @@ export function expandElementsForExport(
 
   const cleanedExportElements: Record<string, any>[] = [];
   const boundTextElements: Record<string, any>[] = [];
-  let indexCounter = 0;
 
   // Every name the scene already spends, so a label expanded here cannot be
-  // handed one of them.
-  const taken = new Set<string>(sourceElements.map((el) => el.id));
+  // handed one of them. `inUse` carries the rest of the board when this is
+  // converting one write rather than a whole scene.
+  const named = new Set<string>(sourceElements.map((el) => el.id));
+  const taken: IdsInUse = {
+    has: (id: string) => named.has(id) || (options.inUse?.has(id) ?? false)
+  };
 
   function makeBaseElement(el: any, rest: any): Record<string, any> {
     return {
@@ -69,13 +146,17 @@ export function expandElementsForExport(
       strokeColor: rest.strokeColor ?? '#1e1e1e',
       backgroundColor: rest.backgroundColor ?? 'transparent',
       fillStyle: rest.fillStyle ?? 'solid',
-      strokeWidth: rest.strokeWidth ?? 2,
+      strokeWidth: rest.strokeWidth ?? DEFAULT_STROKE_WIDTH,
       strokeStyle: rest.strokeStyle ?? 'solid',
       roughness: rest.roughness ?? 1,
       opacity: rest.opacity ?? 100,
       groupIds: rest.groupIds ?? [],
       frameId: rest.frameId ?? null,
-      index: rest.index ?? `a${indexCounter++}`,
+      // Rounded, because `currentItemRoundness` is `round` and a box a human
+      // draws is rounded. `convertToExcalidrawElements` produced `null` here,
+      // which is that converter declining to choose rather than Excalidraw
+      // wanting square corners, and adopting it would have made every
+      // agent-drawn box differ from every hand-drawn one.
       roundness: rest.roundness ?? (
         el.type === 'rectangle' || el.type === 'diamond' || el.type === 'ellipse'
           ? { type: 3 } : null
@@ -83,7 +164,7 @@ export function expandElementsForExport(
       seed: rest.seed ?? seedFor(`${el.id}:seed`),
       version: rest.version ?? 1,
       versionNonce: rest.versionNonce ?? seedFor(`${el.id}:nonce`),
-      isDeleted: false,
+      isDeleted: rest.isDeleted ?? false,
       boundElements: rest.boundElements ?? null,
       updated: updatedFor(el),
       link: rest.link ?? null,
@@ -92,37 +173,47 @@ export function expandElementsForExport(
   }
 
   for (const el of sourceElements) {
-    // Strip server-only fields
+    // Strip server-only fields. They come back at the end of the loop when
+    // these elements are going to the board's own map rather than to a file,
+    // because there that bookkeeping is the point.
     const {
-      createdAt, updatedAt, syncedAt, source: _src,
+      createdAt, updatedAt, syncedAt, source: keptSource,
       syncTimestamp, label, start, end, text,
-      version: _ver,
+      version: serverVersion,
       ...rest
     } = el as any;
 
     const base = makeBaseElement(el, rest);
+    const restoreServerFields = (element: Record<string, any>): Record<string, any> => {
+      if (!forStore) return element;
+      if (createdAt !== undefined) element.createdAt = createdAt;
+      if (updatedAt !== undefined) element.updatedAt = updatedAt;
+      if (syncedAt !== undefined) element.syncedAt = syncedAt;
+      if (keptSource !== undefined) element.source = keptSource;
+      if (syncTimestamp !== undefined) element.syncTimestamp = syncTimestamp;
+      if (serverVersion !== undefined) element.version = serverVersion;
+      // The seed and the arrow's refs stay on the element the store holds:
+      // `resolveArrowBindings` and the settle pass read them, and stage 6 of
+      // docs/design/the-plan.md is what removes the seed for good.
+      if (label !== undefined) element.label = label;
+      if (start !== undefined) element.start = start;
+      if (end !== undefined) element.end = end;
+      return element;
+    };
 
     // Standalone text elements: keep text directly
     if (el.type === 'text') {
-      base.text = text ?? '';
-      base.originalText = text ?? '';
-      base.fontSize = rest.fontSize ?? 20;
-      // Agent-created text often has no dimensions (server stores null);
-      // third-party consumers clip width-less text, so estimate like the
-      // design guide does (~0.6×fontSize per char, 1.25 line height).
-      if (base.width == null || base.height == null) {
-        const lines = String(base.text).split('\n');
-        const longestLine = Math.max(1, ...lines.map((l: string) => l.length));
-        base.width = base.width ?? Math.ceil(longestLine * base.fontSize * 0.6);
-        base.height = base.height ?? Math.ceil(lines.length * base.fontSize * 1.25);
-      }
-      base.fontFamily = normalizeFontFamily(rest.fontFamily) ?? 1;
-      base.textAlign = rest.textAlign ?? 'center';
-      base.verticalAlign = rest.verticalAlign ?? 'middle';
+      base.text = text ?? rest.text ?? '';
+      base.originalText = rest.originalText ?? base.text;
+      base.fontSize = rest.fontSize ?? DEFAULT_FONT_SIZE;
+      base.fontFamily = normalizeFontFamily(rest.fontFamily) ?? DEFAULT_FONT_FAMILY;
+      base.textAlign = rest.textAlign ?? DEFAULT_TEXT_ALIGN;
+      base.verticalAlign = rest.verticalAlign ?? DEFAULT_VERTICAL_ALIGN;
       base.autoResize = rest.autoResize ?? true;
-      base.lineHeight = rest.lineHeight ?? 1.25;
+      base.lineHeight = rest.lineHeight ?? lineHeightOf(base.fontFamily);
       base.containerId = rest.containerId ?? null;
-      cleanedExportElements.push(base);
+      sizeText(base);
+      cleanedExportElements.push(restoreServerFields(base));
       continue;
     }
 
@@ -149,75 +240,71 @@ export function expandElementsForExport(
       }
       base.startArrowhead = rest.startArrowhead ?? null;
       base.endArrowhead = rest.endArrowhead ?? (el.type === 'arrow' ? 'arrow' : null);
-      base.elbowed = rest.elbowed ?? false;
+      // Only an arrow can be elbowed. A line carrying `elbowed: false` is a
+      // field Excalidraw's line type does not have.
+      if (el.type === 'arrow') base.elbowed = rest.elbowed ?? false;
+    }
+
+    // Freedraw carries a stroke's own record of how it was drawn. A hand-drawn
+    // one always has these; one an agent wrote had none, so the browser filled
+    // them in on delivery and the note never learned.
+    if (el.type === 'freedraw') {
+      base.points = rest.points ?? [];
+      base.pressures = rest.pressures ?? [];
+      base.simulatePressure = rest.simulatePressure ?? true;
+      base.lastCommittedPoint = rest.lastCommittedPoint ?? null;
     }
 
     // Generate a bound text element for `label`/`text` on shapes and arrows —
     // unless the element already carries a bound text reference (a scene
     // synced from a browser tab, or a re-imported expanded export).
+    // A reference to a text element that is not here is not a label. An
+    // element left holding one — a pane that reported a deletion, a scene
+    // edited by hand — must still be able to grow a real one.
+    //
+    // Judged against the whole document when there is one. A write names a few
+    // elements and the board holds the rest, so `expandForBoard` is where the
+    // references are squared with the board before this can be asked.
     const labelText = label?.text || text;
     const hasBoundText = Array.isArray(base.boundElements) &&
-      base.boundElements.some((b: any) => b?.type === 'text');
+      base.boundElements.some((b: any) => b?.type === 'text' &&
+        (forStore || sourceElements.some((other) => other.id === b.id && other.type === 'text')));
     if (labelText && !hasBoundText) {
       // Named the same way the browser's expansion names it (labels.ts), so
       // whichever of the two gets there first, the label keeps one name — and
       // that name is short enough to be a block reference, so writing the note
       // does not rename it (TASK-069).
       const textId = labelTextIdFor(base.id, taken);
-      taken.add(textId);
+      named.add(textId);
       // Add binding reference to parent
       base.boundElements = [
         ...(Array.isArray(base.boundElements) ? base.boundElements : []),
         { type: 'text', id: textId }
       ];
 
-      // Compute text position: centered in shape, or at arrow midpoint
-      let textX: number, textY: number, textW: number, textH: number;
       const isArrow = el.type === 'arrow' || el.type === 'line';
+      const fontSize = rest.fontSize ?? DEFAULT_FONT_SIZE;
+      const fontFamily = normalizeFontFamily(rest.fontFamily) ?? DEFAULT_FONT_FAMILY;
+      const lineHeight = lineHeightOf(fontFamily);
 
-      if (isArrow) {
-        // The midpoint of the path, which for anything past two points is not
-        // halfway down the first segment. `labelAnchorOf` is Excalidraw's own
-        // rule — the middle vertex of an odd-length path, the midpoint of the
-        // middle segment of an even one — and the skill recommends waypoints
-        // for routing round obstacles, so bent arrows are the common case
-        // rather than the exotic one (TASK-044).
-        const anchor = labelAnchorOf(base as LabelledElement);
-        const midX = anchor?.x ?? base.x;
-        const midY = anchor?.y ?? base.y;
-        const labelW = Math.max(labelText.length * 10, 60);
-        textX = midX - labelW / 2;
-        textY = midY - 12;
-        textW = labelW;
-        textH = 24;
-      } else {
-        // Center inside shape container
-        const containerW = base.width ?? 160;
-        const containerH = base.height ?? 80;
-        textX = base.x + 10;
-        textY = base.y + containerH / 4;
-        textW = containerW - 20;
-        textH = containerH / 2;
-      }
-
-      boundTextElements.push({
+      const label = {
         id: textId,
         type: 'text',
-        x: textX,
-        y: textY,
-        width: textW,
-        height: textH,
+        // Placed below, once its size is known.
+        x: base.x,
+        y: base.y,
+        width: 0,
+        height: 0,
         angle: 0,
         strokeColor: isArrow ? '#1e1e1e' : base.strokeColor,
         backgroundColor: 'transparent',
         fillStyle: 'solid',
-        strokeWidth: 1,
+        strokeWidth: DEFAULT_STROKE_WIDTH,
         strokeStyle: 'solid',
         roughness: 1,
         opacity: 100,
         groupIds: [],
         frameId: null,
-        index: `a${indexCounter++}`,
         roundness: null,
         seed: seedFor(`${textId}:seed`),
         version: 1,
@@ -229,17 +316,28 @@ export function expandElementsForExport(
         locked: false,
         text: labelText,
         originalText: labelText,
-        fontSize: isArrow ? 14 : (rest.fontSize ?? 16),
-        fontFamily: normalizeFontFamily(rest.fontFamily) ?? 1,
+        fontSize,
+        fontFamily,
         textAlign: 'center',
         verticalAlign: 'middle',
         autoResize: true,
-        lineHeight: 1.25,
+        lineHeight,
         containerId: base.id
-      });
+      } as Record<string, any>;
+
+      // A label has no opinion about where it is: it is as wide as its glyphs
+      // and its container decides the rest. Both used to be guesses — an
+      // estimate of 0.6 x fontSize per character, and a rectangle a quarter of
+      // the way down its container — and both were wrong by tens of pixels on
+      // every board (`labels.ts`, `measure-text.ts`).
+      sizeText(label);
+      const placement = boundTextPlacement(base as LabelledElement, label as LabelledElement);
+      if (placement) { label.x = placement.x; label.y = placement.y; }
+
+      boundTextElements.push(label);
     }
 
-    cleanedExportElements.push(base);
+    cleanedExportElements.push(restoreServerFields(base));
   }
 
   // Patch shapes' boundElements to include connected arrows
@@ -277,5 +375,137 @@ export function expandElementsForExport(
   // Append all bound text elements after their parents
   cleanedExportElements.push(...boundTextElements);
 
+  // Restate `index` over the whole document, in one increasing run.
+  //
+  // z-order is what `index` means, so the existing order is kept: elements
+  // sort by the index they arrived with, and anything without one keeps its
+  // place in the array. What changes is that the values are then reissued from
+  // `fractionalIndex`, which is monotonic past ten elements where `a${n}` was
+  // not. A board of twelve came back from a render with five indices repaired
+  // because `a10` sorts before `a2`.
+  //
+  // Not done for the store, where a write names a few elements and the board
+  // holds the rest: restating a partial document's indices would renumber it
+  // against elements it cannot see.
+  if (!forStore) {
+    const order = cleanedExportElements
+      .map((element, position) => ({ element, position }))
+      .sort((a, b) => {
+        const ai = typeof a.element.index === 'string' ? a.element.index : null;
+        const bi = typeof b.element.index === 'string' ? b.element.index : null;
+        if (ai !== null && bi !== null && ai !== bi) return ai < bi ? -1 : 1;
+        return a.position - b.position;
+      });
+    order.forEach(({ element }, position) => { element.index = fractionalIndex(position); });
+    cleanedExportElements.length = 0;
+    cleanedExportElements.push(...order.map(({ element }) => element));
+  }
+
   return deterministic ? canonicalizeKeys(cleanedExportElements) : cleanedExportElements;
+}
+
+/**
+ * One agent write, converted: the elements to store.
+ *
+ * This is the boundary ADR 0015 names, and the two callers that matter both go
+ * through it — `src/server.ts` on every agent write, and `check-labels.mjs`,
+ * which runs the label loop to exhaustion and would prove nothing about a copy
+ * of this. What comes back is the elements handed in, now complete, followed
+ * by any label the conversion had to expand.
+ */
+export function expandForBoard(
+  written: ServerElement[],
+  board: ReadonlyMap<string, ServerElement>
+): ServerElement[] {
+  if (written.length === 0) return [];
+
+  // A container whose label the board already holds keeps it, whichever
+  // direction the binding is recorded in.
+  //
+  // The two are recorded separately and a write can carry one of them: a pane
+  // reports the text element the instant a human types into it, while the
+  // container it belongs to has nothing new to say and is never reported. A
+  // write that then restated the container without its `boundElements` would
+  // look to the converter like a label nobody had expanded, and it would
+  // expand a second one. So the reference is restored here, before anything
+  // decides whether there is a label to make.
+  const labelled = boundTextsByContainer([...board.values()]);
+  const mended = written.map((element) => {
+    const textIds = labelled.get(element.id) ?? [];
+    const refs = Array.isArray(element.boundElements) ? element.boundElements : [];
+    // A reference to a text element the board does not hold is not a label,
+    // and leaving it would suppress the real one.
+    const live = refs.filter((ref) =>
+      ref?.type !== 'text' || textIds.includes(ref.id) || board.has(ref.id));
+    const named = live.some((ref) => ref?.type === 'text' && textIds.includes(ref.id));
+    if (named || textIds.length === 0) {
+      return live.length === refs.length
+        ? element
+        : { ...element, boundElements: live.length > 0 ? live : null } as ServerElement;
+    }
+    return {
+      ...element,
+      boundElements: [...live, { id: textIds[0] as string, type: 'text' }]
+    } as ServerElement;
+  });
+
+  return expandElementsForExport(mended, {
+    forStore: true,
+    inUse: { has: (id: string) => board.has(id) }
+  }) as unknown as ServerElement[];
+}
+
+/**
+ * A label that now says something else, as the text element it has to become.
+ *
+ * Expansion only ever mints a text element for a container that has none, so a
+ * rename would otherwise leave the seed and the text element disagreeing —
+ * which is TASK-028, where a human's rename kept coming back. The text element
+ * is the label, so the rename is written into it, and it is re-measured on the
+ * way through. Nothing is stored here; the caller owns the board.
+ */
+export function relabelBoundTexts(
+  written: readonly ServerElement[],
+  board: ReadonlyMap<string, ServerElement>
+): ServerElement[] {
+  const labelled = boundTextsByContainer([...board.values()]);
+  const relabelled: ServerElement[] = [];
+  for (const container of written) {
+    const wanted = labelSeedOf(container as LabelledElement);
+    if (wanted === undefined) continue;
+    const textId = labelled.get(container.id)?.[0];
+    if (!textId) continue;
+    const existing = board.get(textId);
+    if (!existing || existing.text === wanted) continue;
+    const [remeasured] = expandForBoard(
+      [{ ...existing, text: wanted, originalText: wanted } as ServerElement], board);
+    if (remeasured) relabelled.push(remeasured);
+  }
+  return relabelled;
+}
+
+/**
+ * A text element's size, which is a measurement and not an opinion.
+ *
+ * Excalidraw's width for a piece of text is exactly what the browser's
+ * `measureText` returns and its height is `fontSize * lineHeight * lineCount`,
+ * so whatever a caller sent alongside the text is the last text's size — the
+ * same reasoning that made the server restate an arrow's width and height
+ * every time it writes a path (TASK-038).
+ *
+ * Two exceptions. `autoResize: false` is the one case where Excalidraw lets a
+ * text keep a width its glyphs do not imply, because a human dragged it there.
+ * And a family that ships no file — Helvetica resolves to whatever the
+ * viewer's system calls Helvetica — has no honest server-side width at all, so
+ * whatever the element carries is left alone.
+ */
+function sizeText(element: Record<string, any>): void {
+  if (element.autoResize === false) return;
+  const fontFamily = typeof element.fontFamily === 'number' ? element.fontFamily : DEFAULT_FONT_FAMILY;
+  if (!canMeasure(fontFamily)) return;
+  const fontSize = typeof element.fontSize === 'number' ? element.fontSize : DEFAULT_FONT_SIZE;
+  const lineHeight = typeof element.lineHeight === 'number' ? element.lineHeight : undefined;
+  const measured = measureText(String(element.text ?? ''), fontSize, fontFamily, lineHeight);
+  element.width = measured.width;
+  element.height = measured.height;
 }

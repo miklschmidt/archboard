@@ -85,6 +85,7 @@ import { narrateChange } from './core/changes.js';
 import { injectTest, injectionStatus, startInjection } from './core/injection.js';
 import { LibraryItem, readLibrary, writeLibrary } from './core/library.js';
 import { recentreBoundTexts } from './core/labels.js';
+import { expandForBoard, relabelBoundTexts } from './core/expand-elements.js';
 import { overlapsRegion, remeasureLinear } from './core/geometry.js';
 
 // Load environment variables
@@ -555,20 +556,22 @@ app.post('/api/elements', (req: Request, res: Response) => {
     }
     sizeFromPath(element);
 
-    elements.set(id, element);
+    // Converted here, because here is the boundary: a label becomes its text
+    // element before the board holds either of them.
+    const written = expandForBoard([element], elements);
+    for (const el of written) elements.set(el.id, el);
+    const stored = elements.get(id) as ServerElement;
 
     // Broadcast to all connected clients
-    const message: ElementCreatedMessage = {
-      type: 'element_created',
-      element: element
-    };
-    broadcast(message, boardKeyForRequest);
+    for (const el of written) {
+      broadcast({ type: 'element_created', element: el } as ElementCreatedMessage, boardKeyForRequest);
+    }
     noteChange(boardKeyForRequest, board, 'agent');
 
     res.json({
       success: true,
       board: boardKeyForRequest,
-      element: element
+      element: stored
     });
   } catch (error) {
     logger.error('Error creating element:', error);
@@ -607,17 +610,30 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
     elements.set(id, updatedElement);
     if (reboundArrow) resolveArrowBindings([updatedElement], elements);
 
+    // A label this write states is either a rename of the text element that
+    // already carries it, or one that has to be expanded.
+    const restated = restateLabels([updatedElement], elements);
+    const expanded = expandForBoard([updatedElement], elements).filter(el => el.id !== id);
+    for (const el of expanded) elements.set(el.id, el);
+
     // Broadcast to all connected clients
     const message: ElementUpdatedMessage = {
       type: 'element_updated',
-      element: updatedElement
+      element: elements.get(id) as ServerElement
     };
     broadcast(message, boardKeyForRequest);
+    for (const el of restated) {
+      broadcast({ type: 'element_updated', element: el } as ElementUpdatedMessage, boardKeyForRequest);
+    }
+    for (const el of expanded) {
+      broadcast({ type: 'element_created', element: el } as ElementCreatedMessage, boardKeyForRequest);
+    }
     noteChange(boardKeyForRequest, board, 'agent');
 
     // Whatever moved, its label moves with it: the element itself, and — when a
-    // shape moved — every arrow the server dragged along behind it.
-    const consequences = geometryChanged || reboundArrow
+    // shape moved — every arrow the server dragged along behind it. A label
+    // that was just re-measured has moved too, by half the change in its width.
+    const consequences = geometryChanged || reboundArrow || restated.length > 0
       ? settleAfterWrite([id], elements)
       : [];
     for (const element of consequences) {
@@ -627,7 +643,7 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
     res.json({
       success: true,
       board: boardKeyForRequest,
-      element: updatedElement
+      element: elements.get(id) as ServerElement
     });
   } catch (error) {
     logger.error('Error updating element:', error);
@@ -1050,6 +1066,25 @@ function mergeElementUpdate(existing: ServerElement, body: Record<string, any>):
   };
 }
 
+/**
+ * A label this write renamed, written into the text element that carries it
+ * and put back on the board. `relabelBoundTexts` decides; this is the
+ * bookkeeping the board owes on top, and `settleAfterWrite` moves the label
+ * afterwards because it is now a different width.
+ */
+function restateLabels(
+  written: ServerElement[],
+  boardElements: Map<string, ServerElement>
+): ServerElement[] {
+  const restated = relabelBoundTexts(written, boardElements);
+  for (const element of restated) {
+    element.updatedAt = new Date().toISOString();
+    element.version = (boardElements.get(element.id)?.version || 0) + 1;
+    boardElements.set(element.id, element);
+  }
+  return restated;
+}
+
 /** Build one new element from what a caller stated. Not yet on the board. */
 function buildCreatedElement(raw: unknown, inUse: IdsInUse): ServerElement {
   const params = CreateElementSchema.parse(raw);
@@ -1128,13 +1163,15 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
     // re-router, so this is where its size gets stated (TASK-038).
     createdElements.forEach(sizeFromPath);
 
-    // Store all elements after binding resolution
-    createdElements.forEach(el => elements.set(el.id, el));
+    // Converted once, on the way in (ADR 0015), so the count that comes back
+    // is the count the board holds: a labelled box is a box and its label.
+    const written = expandForBoard(createdElements, elements);
+    written.forEach(el => elements.set(el.id, el));
 
     // Broadcast to all connected clients
     const message: BatchCreatedMessage = {
       type: 'elements_batch_created',
-      elements: createdElements
+      elements: written
     };
     broadcast(message, boardKeyForRequest);
     noteChange(boardKeyForRequest, board, 'agent');
@@ -1142,8 +1179,8 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
     res.json({
       success: true,
       board: boardKeyForRequest,
-      elements: createdElements,
-      count: createdElements.length
+      elements: written,
+      count: written.length
     });
   } catch (error) {
     logger.error('Error batch creating elements:', error);
@@ -1341,6 +1378,7 @@ function applyAgentChanges(
   const updated = new Map<string, ServerElement>();
   const moved: string[] = [];
 
+  const written: ServerElement[] = [];
   for (const raw of upserts) {
     const rawId = typeof raw.id === 'string' && raw.id.length > 0 ? raw.id : undefined;
     const existing = rawId ? elements.get(rawId) : undefined;
@@ -1350,10 +1388,12 @@ function applyAgentChanges(
       if (merge.reboundArrow) resolveArrowBindings([merge.element], elements);
       if (merge.geometryChanged || merge.reboundArrow) moved.push(existing.id);
       updated.set(existing.id, merge.element);
+      written.push(merge.element);
     } else {
       const element = buildCreatedElement(raw, elements);
       elements.set(element.id, element);
       created.push(element);
+      written.push(element);
     }
   }
 
@@ -1362,6 +1402,24 @@ function applyAgentChanges(
   if (created.length > 0) {
     resolveArrowBindings(created, elements);
     created.forEach(sizeFromPath);
+  }
+
+  // And then the one conversion, over everything this write named, once the
+  // geometry it depends on has settled (ADR 0015).
+  for (const label of restateLabels(written, elements)) {
+    updated.set(label.id, label);
+    moved.push(label.id);
+  }
+  const namedIds = new Set(written.map(el => el.id));
+  for (const el of expandForBoard(written, elements)) {
+    elements.set(el.id, el);
+    if (namedIds.has(el.id)) {
+      if (updated.has(el.id)) updated.set(el.id, el);
+      const at = created.findIndex(c => c.id === el.id);
+      if (at !== -1) created[at] = el;
+    } else {
+      created.push(el);
+    }
   }
 
   const deleted: string[] = [];

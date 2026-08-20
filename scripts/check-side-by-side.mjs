@@ -236,9 +236,12 @@ try {
   const savedSource = await cli(['board', 'save', '--board', 'payments']);
   check('the source board saves as one note',
     savedSource.code === 0 && fs.existsSync(savedSource.json?.file ?? ''), savedSource.stderr.trim());
-  check('  with its three nodes promoted',
-    (await api('GET', '/api/elements?board=payments')).body?.elements
-      ?.filter(el => el.customData?.archboard?.node).length === 3);
+  // Distinct nodes, not stamped elements: promoting a labelled box stamps its
+  // bound label too, and that label is on the board from the moment the box is
+  // written (TASK-072).
+  const promotedNodes = new Set((await api('GET', '/api/elements?board=payments')).body?.elements
+    ?.map(el => el.customData?.archboard?.node).filter(Boolean));
+  check('  with its three nodes promoted', promotedNodes.size === 3, [...promotedNodes].join(', '));
   const sourceHeld = (await api('GET', '/api/elements?board=payments')).body?.count;
 
   // --- branching moves nothing (ADR 0012) --------------------------------
