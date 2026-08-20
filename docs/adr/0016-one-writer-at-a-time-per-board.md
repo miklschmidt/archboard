@@ -62,6 +62,16 @@ It does not lock somebody out of their own wall, and no agent may make a
 the claim, the agent is told it has lost it, and it stops rather than fighting
 for it.
 
+**Revoking is not undoing.** Every write an agent has already made is already
+in the note, because that is what ADR 0015 means. So a revoked claim leaves a
+board part way through whatever the agent was doing, and nothing rolls that
+back. A claim is therefore not a transaction, and an agent holding one cannot
+treat the board as private until it is finished: it has to leave the board
+sensible after each write, or do the work on a variant and swap when it is
+done. The skill teaches that alongside when to claim, because an agent that
+believes it has exclusive use until it says otherwise will eventually be wrong
+in the middle of a restructure.
+
 ## The lock is a broadcast, not only a guard
 
 A canvas applies a change the instant a finger moves. Refusing that change when
