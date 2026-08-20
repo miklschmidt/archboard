@@ -287,6 +287,7 @@ export interface BoardIdentityPayload {
   board: string;
   variant: string;
   level?: string;
+  displayName?: string;
 }
 
 export interface BoardResponse {
@@ -312,7 +313,7 @@ export interface BoardResponse {
 export interface BoardListResponse {
   success: boolean;
   vault: string;
-  boards: Array<{ key: string; identity: BoardIdentityPayload; file: string; declaredKey?: string }>;
+  boards: Array<{ key: string; identity: BoardIdentityPayload; file: string; declaredKey?: string; collidesWith?: string[] }>;
   open: Array<{
     key: string;
     identity: BoardIdentityPayload;
