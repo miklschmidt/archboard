@@ -345,8 +345,12 @@ now and a check mutates a branched element in place to prove it (TASK-042).
 
 **A branch moves nothing on screen** (ADR 0012). You branched in order to
 compare, so the panes holding the source keep holding it and the branch is put
-up with `board open` like any other board. `board open` and `board new` are the
-commands that choose what is showing; a save writes a file. The one exception
+up as a separate act. `pane open --board <key>@v` is that act while there is
+room, because it makes a pane and cannot be aimed at an existing one, so the
+source cannot be lost; `board open` is for a full screen, where showing the
+branch means taking some board off, and the save's answer says which board each
+pane would lose (TASK-054). `board open` and `board new` are the commands that
+choose what is showing; a save writes a file. The one exception
 is naming the scratch board — `board save --board scratch --as <name>` — where
 the placeholder and its new name hold the same drawing and there is nothing to
 stay behind for, so the pane comes with it. Either way the answer names the
