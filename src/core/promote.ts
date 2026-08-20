@@ -339,6 +339,14 @@ export interface PromotionRequest {
   name?: string;
   nodeId?: string;
   binding?: ResolvedBinding;
+  // The variant of the board being promoted on, which is what a node promoted
+  // there belongs to. Required, because there is no sensible guess: defaulting
+  // it to `current` stamped every node on `payments@option-a` as belonging to
+  // `payments`, and `compare` reported each one as a `variantAnomaly`
+  // (TASK-040). The board is named on every call, so this is always knowable.
+  boardVariant: string;
+  // An override, for the rare promotion that means a variant other than the
+  // board's own. Nothing has to pass it to be correct.
   variant?: string;
   level?: string;
   each?: boolean;                // one node per selected shape instead of one node
@@ -367,8 +375,6 @@ export interface PromotionPlan {
   nodes: PlannedNode[];
   updates: ElementUpdate[];
 }
-
-const DEFAULT_VARIANT = 'current';
 
 export function labelOf(el: ServerElement, board: ServerElement[]): string | undefined {
   const direct = el.label?.text ?? el.text;
@@ -484,7 +490,9 @@ export function planPromotion(request: PromotionRequest): PromotionPlan {
     throw new PromotionError('The selection is only bound labels — select the shapes they belong to.');
   }
 
-  const variant = request.variant ?? DEFAULT_VARIANT;
+  // A node's variant is a fact about the board it sits on, not something the
+  // caller has to state. `restampVariant` says the same thing for a branch.
+  const variant = request.variant ?? request.boardVariant;
   // Ids belonging to the nodes we are about to (re)write are not "taken" — a
   // re-promotion keeps its node id rather than sliding to name-2.
   const rewriting = new Set(shapes.map(nodeIdOf).filter(Boolean) as string[]);
