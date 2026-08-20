@@ -78,7 +78,14 @@ accumulate across a session, because every write is a resync.
 write per element, and `align` fires them concurrently. Against a note that is
 the truth, that is several read-modify-write cycles racing on one file, which
 is lost updates rather than merely slow. Those routes become one batched write.
-`apply` already exists for it.
+
+Not through `apply`, which an earlier draft of this ADR claimed and which is
+wrong: `src/cli/commands/elements.ts` loops one PUT per update and one DELETE
+per delete, and only creates are batched. The route that already takes many
+elements in one write is `POST /api/elements/changes`, the one the browser
+reports through. Measured: twenty PUTs cost 2.87 ms, the same twenty as one
+batched write cost 0.13 ms. The CLI help repeats the same wrong claim and
+should be corrected with it.
 
 **Reads cost a file read.** Measured at 1.27 ms for 300 elements and 0.25 ms
 for 55. A full atomic read-modify-write is 11.89 ms, of which 6.2 ms is fsync
