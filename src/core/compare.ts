@@ -94,6 +94,7 @@ import {
   BoundingBox,
   CLUSTER_GAP,
   boundingBoxOf,
+  boxOf,
   clusterBoxes,
   regionName,
   sameCentre
@@ -350,16 +351,14 @@ function bindingEnd(el: any, end: 'start' | 'end'): string | undefined {
   return binding?.elementId ?? (end === 'start' ? el.start?.id : el.end?.id);
 }
 
+// A node is whatever carries its id, and an arrow can carry one, so this is
+// measured through `boxOf` rather than read off `x, y, width, height`: an
+// arrow's origin is its first point (TASK-038).
 function unionBox(elements: ServerElement[]): Box {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const el of elements) {
-    minX = Math.min(minX, el.x);
-    minY = Math.min(minY, el.y);
-    maxX = Math.max(maxX, el.x + (el.width || 0));
-    maxY = Math.max(maxY, el.y + (el.height || 0));
-  }
-  if (!Number.isFinite(minX)) return { x: 0, y: 0, w: 0, h: 0 };
-  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+  const boxes = elements.map(el => boxOf(el));
+  const frame = boundingBoxOf(boxes);
+  if (!frame) return { x: 0, y: 0, w: 0, h: 0 };
+  return { x: frame.minX, y: frame.minY, w: frame.maxX - frame.minX, h: frame.maxY - frame.minY };
 }
 
 function formatBinding(binding: LogicalAddress | string | undefined): string | undefined {
@@ -471,8 +470,8 @@ function buildBoard(input: CompareSideInput): BoardModel {
   const models: NodeModel[] = [];
   for (const [id, elements] of groupsByNode) {
     const shapes = elements.filter(el => !boundLabelOf.has(el.id));
-    const ranked = [...(shapes.length ? shapes : elements)]
-      .sort((a, b) => ((b.width || 0) * (b.height || 0)) - ((a.width || 0) * (a.height || 0)));
+    const area = (el: ServerElement) => { const b = boxOf(el); return b.w * b.h; };
+    const ranked = [...(shapes.length ? shapes : elements)].sort((a, b) => area(b) - area(a));
     const primary = ranked[0]!;
 
     // Merge the archboard block across the node's elements, primary first:
@@ -663,10 +662,12 @@ function buildBoard(input: CompareSideInput): BoardModel {
     const b = m.box;
     for (const cand of containerCandidates) {
       if (nodeOfElement.get(cand.id) === m.node) continue;
-      const cw = cand.width || 0, ch = cand.height || 0;
-      const area = cw * ch;
-      const contains = cand.x <= b.x && cand.y <= b.y &&
-        cand.x + cw >= b.x + b.w && cand.y + ch >= b.y + b.h;
+      // Measured, like everything else, though CONTAINER_TYPES carries no path
+      // today: the rule is the same rule wherever a box is read (TASK-038).
+      const c = boxOf(cand);
+      const area = c.w * c.h;
+      const contains = c.x <= b.x && c.y <= b.y &&
+        c.x + c.w >= b.x + b.w && c.y + c.h >= b.y + b.h;
       if (!contains || area <= b.w * b.h * 1.2) continue;
       if (area < bestArea) { best = cand; bestArea = area; }
     }
@@ -699,9 +700,7 @@ function buildBoard(input: CompareSideInput): BoardModel {
     // id says — but the human should hear about it, because it is usually a
     // stray element that got promoted along with the box.
     if (m.elements.length > 1) {
-      const spread = clusterBoxes(m.elements.map(el => ({
-        x: el.x, y: el.y, w: el.width || 0, h: el.height || 0
-      })), CLUSTER_GAP);
+      const spread = clusterBoxes(m.elements.map(el => boxOf(el)), CLUSTER_GAP);
       if (spread.length > 1) {
         warnings.push(
           `On "${input.key}" node "${m.node}" is made of ${m.elements.length} elements that sit in ` +
@@ -731,13 +730,12 @@ function buildBoard(input: CompareSideInput): BoardModel {
       if (k !== 'archboard') foreign[k] = v;
     }
     if (label) {
+      const b = boxOf(el);
       labelled.push({
         id: el.id,
         type: el.type,
         label,
-        region: nodeBox
-          ? regionName(el.x + (el.width || 0) / 2, el.y + (el.height || 0) / 2, nodeBox)
-          : 'centre',
+        region: nodeBox ? regionName(b.x + b.w / 2, b.y + b.h / 2, nodeBox) : 'centre',
         humanDrawn: el.source === 'frontend_sync',
         ...(el.link ? { link: el.link } : {}),
         ...(Object.keys(foreign).length ? { foreignCustomData: foreign } : {})
@@ -802,7 +800,9 @@ function reframeRegions(model: BoardModel, shared: Set<string>): void {
   const byId = new Map(model.elements.map(el => [el.id, el]));
   for (const plain of model.plain.labelled) {
     const el = byId.get(plain.id);
-    if (el) plain.region = at(el.x, el.y, el.width || 0, el.height || 0);
+    if (!el) continue;
+    const b = boxOf(el);
+    plain.region = at(b.x, b.y, b.w, b.h);
   }
 }
 

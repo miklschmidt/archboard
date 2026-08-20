@@ -10,6 +10,7 @@ import {
   backgroundForKind,
   isTransparentBackground
 } from './appearance.js';
+import { extentOf } from './geometry.js';
 
 // Promotion — declaring a set of elements to be a node, giving it a kind and
 // usually a binding in the same act (CONTEXT.md).
@@ -512,8 +513,14 @@ export function planPromotion(request: PromotionRequest): PromotionPlan {
     // Name the node after whatever it already answers to: an explicit --name,
     // else the biggest labelled shape in the set (the one a human would read),
     // else the binding's file, else its existing node id.
+    //
+    // Biggest is measured, not read off `width` and `height`: a selection can
+    // hold an arrow, whose stored size is the box round its path and whose
+    // stored origin is its first point, so the untouched numbers can hand the
+    // node's name to the connector instead of the box (TASK-038).
+    const areaOf = (el: ServerElement) => { const e = extentOf(el); return e.width * e.height; };
     const labelled = shapes
-      .map(el => ({ el, label: labelOf(el, board), area: (el.width || 0) * (el.height || 0) }))
+      .map(el => ({ el, label: labelOf(el, board), area: areaOf(el) }))
       .filter(x => x.label)
       .sort((a, b) => b.area - a.area);
     const fromBinding = binding ? path.basename(binding.address.path).replace(/\.[^.]+$/, '') : undefined;
