@@ -2,7 +2,9 @@
 // disagree about nothing.
 
 import type { LibraryItems } from '@excalidraw/excalidraw/types'
-import type { BoardIdentity, BoardInfo, BoardListing, BoardWriteConflict, ServerElement } from '../types'
+import type {
+  BoardIdentity, BoardInfo, BoardListing, BoardSaveResult, BoardWriteConflict, ServerElement
+} from '../types'
 import type { ChangeReport } from './changes'
 
 /**
@@ -143,10 +145,7 @@ export function newBoard(address: Partial<BoardIdentity> & { board: string; pane
 
 /** Throws BoardConflictError when the note at the destination is not ours to overwrite. */
 export function saveBoard(as: SaveRequest) {
-  return post<BoardInfo & { file: string; overwrote: boolean; forced?: boolean }>(
-    '/api/boards/save',
-    as
-  )
+  return post<BoardSaveResult>('/api/boards/save', as)
 }
 
 export interface SaveRequest {
