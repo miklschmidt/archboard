@@ -1209,6 +1209,100 @@ try {
     await sleep(200);
     fs.rmSync(scratchVault, { recursive: true, force: true });
   }
+
+  // --- a note is written by rename (TASK-061, ADR 0015) -------------------
+  //
+  // Not "the file has the right contents afterwards", which a bare
+  // writeFileSync passes too. The property is about the window in the middle
+  // of the write, and it is proved by holding two references to the old note
+  // across a save: an open file descriptor, which is what a reader mid-write
+  // has, and a second hard link, which is that reader's file surviving the
+  // write. A truncate-and-fill takes both of those down with it. A rename
+  // leaves the old inode whole and gives the path a new one.
+
+  const witnessDir = fs.mkdtempSync(path.join(os.tmpdir(), 'archboard-witness-'));
+  try {
+    await api('POST', '/api/boards/new', { board: 'atomic' });
+    await api('POST', '/api/elements?board=atomic', {
+      type: 'rectangle', x: 0, y: 0, width: 100, height: 60, label: { text: 'before' }
+    });
+    const firstSave = await api('POST', '/api/boards/save?board=atomic');
+    check('a board is saved for the atomicity check', firstSave.status === 200, firstSave.body?.error);
+    const note = firstSave.body.file;
+
+    const before = fs.readFileSync(note, 'utf-8');
+    const beforeInode = fs.statSync(note).ino;
+    // The reader who opened the note a moment before the second save.
+    const heldOpen = fs.openSync(note, 'r');
+    // And their copy of it, by inode rather than by bytes.
+    const witness = path.join(witnessDir, 'witness.md');
+    fs.linkSync(note, witness);
+
+    await api('POST', '/api/elements?board=atomic', {
+      type: 'rectangle', x: 200, y: 0, width: 100, height: 60, label: { text: 'after' }
+    });
+    const secondSave = await api('POST', '/api/boards/save?board=atomic');
+    check('  and saved again over itself', secondSave.status === 200, secondSave.body?.error);
+    const after = fs.readFileSync(note, 'utf-8');
+    check('  the note really changed, so there is a write to be atomic about',
+      after !== before && after.includes('after'));
+
+    const throughHeldFd = fs.readFileSync(heldOpen, 'utf-8');
+    fs.closeSync(heldOpen);
+    check('a reader holding the note open across the write still has the whole old note',
+      throughHeldFd === before,
+      `${throughHeldFd.length} bytes through the fd vs ${before.length} before the save`);
+    check('  and so does a second link to it, so the old bytes were never truncated',
+      fs.readFileSync(witness, 'utf-8') === before);
+    check('  because the path got a new inode rather than the old one being refilled',
+      fs.statSync(note).ino !== beforeInode);
+
+    const strays = fs.readdirSync(vault).filter(name => name.endsWith('.tmp'));
+    check('nothing named .tmp is left in the vault', strays.length === 0, strays.join(', '));
+    const listedAfter = await api('GET', '/api/boards');
+    check('  and the vault listing sees one board named atomic, not a second',
+      (listedAfter.body?.boards ?? []).filter(b => b.key === 'atomic').length === 1);
+
+    // The temp file's name is the other half of "cannot be mistaken for a
+    // board": a dotfile with a .tmp suffix, which `listBoards` skips twice over
+    // and Obsidian does not show. Asserted against the helper rather than
+    // against a race, because the file only exists for the length of a write.
+    const { writeFileAtomic, tempPathFor } = await import(src('core/atomic-write.ts'));
+    const tempName = path.basename(tempPathFor(path.join(vault, 'payments.excalidraw.md')));
+    check('the temp file a write goes through is hidden from a vault',
+      tempName.startsWith('.') && tempName.endsWith('.tmp'), tempName);
+
+    // The fsync, and that it lands before the rename. A rename is atomic to
+    // readers whatever else happens; it is the fsync that stops the new name
+    // pointing at a short file after a crash, and it is over half the cost of
+    // a write, so something has to notice if it is quietly dropped.
+    const realFsync = fs.fsyncSync;
+    const realRename = fs.renameSync;
+    const order = [];
+    fs.fsyncSync = fd => { order.push('fsync'); return realFsync(fd); };
+    fs.renameSync = (from, to) => { order.push('rename'); return realRename(from, to); };
+    try {
+      writeFileAtomic(path.join(witnessDir, 'ordered.md'), 'contents\n');
+    } finally {
+      fs.fsyncSync = realFsync;
+      fs.renameSync = realRename;
+    }
+    check('the bytes are flushed to disk before the rename', order[0] === 'fsync' && order[1] === 'rename',
+      order.join(' -> '));
+    check('  and the file is there afterwards',
+      fs.readFileSync(path.join(witnessDir, 'ordered.md'), 'utf-8') === 'contents\n');
+
+    // Every writer of a vault note, not only the board save. A second idiom is
+    // how the first one goes stale, so the rule is that these modules do not
+    // call writeFileSync on a path at all.
+    for (const module of ['server.ts', 'core/library.ts', 'core/repo-registry.ts']) {
+      const source = fs.readFileSync(src(module), 'utf-8');
+      check(`  ${module} writes through the shared atomic write`,
+        !/\bfs\.writeFileSync\(/.test(source) && /writeFileAtomic\(/.test(source));
+    }
+  } finally {
+    fs.rmSync(witnessDir, { recursive: true, force: true });
+  }
 } finally {
   server.kill('SIGTERM');
   await sleep(200);

@@ -537,6 +537,19 @@ Nothing is locked, and the check reads the file rather than another app's
 memory, so a board open in Obsidian can still write its unsaved copy back
 afterwards: **keep a board open in one editor at a time.**
 
+**A write that is allowed goes through a rename, so a reader sees the old note
+or the new one and never a partial** (TASK-061, `src/core/atomic-write.ts`).
+The bytes go to a hidden sibling temp file, get flushed to disk, and then one
+rename swaps the directory entry — which also leaves anyone who already had the
+note open holding the whole old note rather than a truncated one. Every writer
+of a vault note uses it, and so does the checkout registry, because a second
+atomic-write idiom is how the first one goes stale. **The fsync is over half
+the cost of a write** — 5.15 to 5.25 ms of the 6.21 ms cycle
+`docs/design/server-is-the-truth.md` measured at 55 elements, flat in the size
+of the board — and it is what stops a crash leaving the new name pointing at a
+short file. It was accepted when ADR 0015 was; do not optimise it away without
+reopening that.
+
 The board key reaches the store, the REST API (`?board=` on every element
 route) and the WebSocket protocol (every broadcast names its board, and
 `board_switched` goes to the one pane it was addressed to). A caller that says

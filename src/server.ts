@@ -43,6 +43,7 @@ import { isMainModule } from './core/entry.js';
 import { kept } from './core/hot.js';
 import { askForReload, reloadIsAskable } from './core/reload-token.js';
 import { writePidFile, removePidFile } from './core/pidfile.js';
+import { writeFileAtomic } from './core/atomic-write.js';
 import fs from 'fs';
 import {
   BoardState,
@@ -2858,7 +2859,12 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     // check: a refused save has to leave the vault as it found it, empty
     // directories included.
     fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, bytes);
+    // By rename, so a reader sees the old note or the new one and never a
+    // partial (TASK-061). The note is on its way to being the only copy of the
+    // board (ADR 0015), and the destination is never opened for writing, so
+    // ADR 0006's check is unchanged: what lands at the path is exactly these
+    // bytes, and their hash is what the next save is checked against.
+    writeFileAtomic(file, bytes);
 
     // Who was looking at the board that was saved. Whether they move depends
     // on what the save was: giving the scratch board a name renames the thing
