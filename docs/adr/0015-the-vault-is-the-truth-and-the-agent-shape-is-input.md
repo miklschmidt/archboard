@@ -74,16 +74,21 @@ a note.
 board, so it does not offer one. The board it used to open on gets a home in
 the vault like every other board.
 
-That turns a soft first run into a hard stop, which is a real cost and the
-right one. A canvas somebody can draw on before discovering the drawing was
-never anywhere is worse than a canvas that will not open yet, and it is worse
-in the way that costs the most: silently, and only once there is something to
-lose.
+A canvas somebody can draw on before discovering the drawing was never anywhere
+is worse than a canvas that will not open yet, and it is worse in the way that
+costs the most: silently, and only once there is something to lose.
 
-So the refusal carries the product. It is the first thing a new person sees, it
-has to say what a vault is, how to point at one, and that it can be a directory
-inside the repository they are standing in. A refusal that only says no is a
-worse first run than the one being replaced.
+This is a smaller change to the experience than it sounds, because choosing a
+vault is already an explicit step of installing archboard into a repository,
+and that step is usually run by an agent rather than by hand. On the ordinary
+path a vault has been chosen, created and written down before anybody starts a
+canvas. Being explicit there is what keeps the first run good, and it is the
+right place for the choice: it is a decision about where a person's work lives,
+not something to guess at on their behalf when they are already drawing.
+
+The refusal is therefore a backstop for a canvas started without that step, not
+a place to teach what a vault is. It should say that installation chooses one
+and how to run it.
 
 **Rejected: fall back to somewhere outside the vault.** It keeps the first run
 soft, and it makes a second place where board content lives, which is the shape
