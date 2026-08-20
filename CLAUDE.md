@@ -35,7 +35,7 @@ bun install
 bun run build       # -> dist/ and dist/frontend/
 bun run type-check
 bun run test        # stdio wire, loopback bind, obsidian, changes, labels,
-                    # library, boards + panes, CLI/MCP surface parity
+                    # library, boards + panes, repo bindings, CLI/MCP parity
 
 ./bin/canvas start  # canvas server on 127.0.0.1:3000
 ./bin/canvas status
@@ -197,6 +197,9 @@ state, clearing asks first, and boards and variants are openable from the UI
 agent-drawn or hand-drawn — selects it (TASK-009). Each pane holds its own
 board, so current and proposed sit side by side, and every call names the board
 it means — there is no active board left to resolve against (TASK-021, ADR 0009).
+A binding comes from a repository the caller named rather than from an ambient
+working directory, and a machine-local registry says where each repository is
+checked out here (TASK-031, ADR 0010).
 
 ## Names on the wire
 
@@ -296,6 +299,49 @@ front of it — a board like any other, named like any other
 `board save --board scratch --as <name>` gives it one. A pane that is opened
 with nothing else on screen shows scratch; a second pane shows whatever the
 first is showing, until it is pointed somewhere else.
+
+## Bindings name a repository, not a directory
+
+A binding is a logical address: a repository identity, a path inside it, and the
+branch and commit it was confirmed at. It is never a directory on this laptop,
+because the vault spans repositories (ADR 0004).
+
+**Nothing resolves against an ambient working directory any more** (ADR 0010).
+`resolveBinding` takes an explicit origin and has no default, and every answer
+says which of four ways it used:
+
+| Give it | `resolvedFrom` | What you get |
+|---|---|---|
+| an absolute path | `path` | the repo git says that file is in |
+| `--repo <identity> --path <inside it>` | `registry` | the registered checkout, from anywhere |
+| a relative path, on the CLI | `cwd` | resolved, and told which directory and which repo that was |
+| a repo nothing here has | `declared` | the address recorded, no link, and how to register it |
+
+Over MCP a bare relative path is **refused**. That server is spawned by the
+client, so its cwd is whichever directory the client happened to be in, and a
+shell-less client cannot set or see it. That surface is the proof, not the edge
+case.
+
+Where each repository is on this machine is the checkout registry, one JSON file
+in the state directory:
+
+```bash
+./bin/canvas repo add ~/src/payments     # identity comes from git origin, not from you
+./bin/canvas repo list --text
+./bin/canvas repo forget github.com/acme/payments
+```
+
+It also fills itself: every binding that resolves through a real path records
+where that repo was found. `ARCHBOARD_REPOS` overrides the file, which is how
+the tests keep off the real one.
+
+This is what makes a **system board covering five repositories** buildable in
+one session, with no `cd` between promotions:
+
+```bash
+./bin/canvas promote --board systems --ids abc --kind service \
+  --repo github.com/acme/payments --path src/service.ts
+```
 
 ## Artifacts
 
