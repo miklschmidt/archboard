@@ -312,7 +312,17 @@ export interface BoardResponse {
 export interface BoardListResponse {
   success: boolean;
   vault: string;
-  boards: Array<{ key: string; identity: BoardIdentityPayload; file: string; declaredKey?: string }>;
+  // With ?repo=, each entry also carries where it was read from and the nodes
+  // bound to that repository, and `file` is absent for a board that only exists
+  // on the canvas so far.
+  boards: Array<{
+    key: string;
+    identity: BoardIdentityPayload;
+    file?: string;
+    declaredKey?: string;
+    source?: 'vault' | 'memory';
+    nodes?: Array<{ node: string; kind?: string; name?: string; path: string; branch?: string; commit?: string }>;
+  }>;
   open: Array<{
     key: string;
     identity: BoardIdentityPayload;
@@ -324,6 +334,10 @@ export interface BoardListResponse {
   }>;
   /** What each pane is holding right now, in reading order. */
   onScreen: Array<{ paneId: string; place: string; board: string }>;
+  /** Set when the listing was narrowed to one repository (TASK-030). */
+  repo?: string;
+  scanned?: number;
+  unreadable?: Array<{ file: string; reason: string }>;
 }
 
 // One line naming the board a read is about. Best effort: an older canvas
@@ -338,8 +352,12 @@ export async function boardHeading(): Promise<string> {
   }
 }
 
-export async function listBoardsOnCanvas(): Promise<BoardListResponse> {
-  return requestJson<BoardListResponse>('/api/boards');
+// Every board, or only the ones describing one repository. The identity is
+// resolved by the caller: the canvas server's working directory is nobody's
+// (ADR 0010), so it never turns a path into a repository.
+export async function listBoardsOnCanvas(repo?: string): Promise<BoardListResponse> {
+  const query = repo ? `?repo=${encodeURIComponent(repo)}` : '';
+  return requestJson<BoardListResponse>(`/api/boards${query}`);
 }
 
 // One board's identity and save state. There is no "the current board" to ask

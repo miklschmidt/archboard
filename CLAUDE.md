@@ -199,7 +199,9 @@ board, so current and proposed sit side by side, and every call names the board
 it means — there is no active board left to resolve against (TASK-021, ADR 0009).
 A binding comes from a repository the caller named rather than from an ambient
 working directory, and a machine-local registry says where each repository is
-checked out here (TASK-031, ADR 0010).
+checked out here (TASK-031, ADR 0010). An agent standing in a repository can ask
+which boards describe it, answered from the bindings rather than from board
+names (TASK-030).
 
 ## Names on the wire
 
@@ -342,6 +344,30 @@ one session, with no `cd` between promotions:
 ./bin/canvas promote --board systems --ids abc --kind service \
   --repo github.com/acme/payments --path src/service.ts
 ```
+
+## Which boards describe this repo
+
+Bindings answer it in reverse, so an agent that has just opened a strange
+repository can find its architecture with nothing written down anywhere:
+
+```bash
+./bin/canvas board list --here --text                   # the repo you are in
+./bin/canvas board list --repo github.com/acme/payments --text
+```
+
+```
+Boards describing github.com/acme/payments:
+  systems (current, system, vault)
+    Payments [service] -> src/service.ts
+Open one with `board open systems`.
+```
+
+It reads the bindings, not the names, so the five-repo system board is found
+from any of the five even though it is named after none of them. A board open
+on the canvas is read from memory, so a binding made a minute ago and not yet
+saved still counts. `--here` resolves the working directory in the CLI process
+and prints the identity it found. The server is only ever given an identity,
+never a path. Over MCP, `list_boards` takes the same `repo` argument.
 
 ## Artifacts
 

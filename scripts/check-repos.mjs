@@ -18,7 +18,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -226,22 +226,20 @@ const api = async (method, url, body) => {
 // The CLI, run from a directory that is neither repository. The point is that
 // where it runs from stops mattering once the repo is named.
 const cli = (args, cwd = nowhere) => {
-  try {
-    const out = execFileSync(process.execPath, [dist('bin.js'), ...args], {
-      cwd,
-      encoding: 'utf-8',
-      env: {
-        ...process.env,
-        EXPRESS_SERVER_URL: base,
-        ARCHBOARD_REPOS: registry,
-        EXCALIDRAW_NO_AUTOSTART: '1'
-      },
-      stdio: ['ignore', 'pipe', 'pipe']
-    });
-    return { ok: true, out };
-  } catch (error) {
-    return { ok: false, out: error.stdout?.toString() ?? '', err: error.stderr?.toString() ?? '' };
-  }
+  // Both streams, always: the CLI puts results on stdout and everything it
+  // wants a human to notice on stderr, and several checks here are about what
+  // it says rather than what it returns.
+  const run = spawnSync(process.execPath, [dist('bin.js'), ...args], {
+    cwd,
+    encoding: 'utf-8',
+    env: {
+      ...process.env,
+      EXPRESS_SERVER_URL: base,
+      ARCHBOARD_REPOS: registry,
+      EXCALIDRAW_NO_AUTOSTART: '1'
+    }
+  });
+  return { ok: run.status === 0, out: run.stdout ?? '', err: run.stderr ?? '' };
 };
 
 try {
@@ -293,7 +291,7 @@ try {
   // accident, to whichever directory the client happened to start the server
   // in. Nobody chose that directory and nobody can see it.
 
-  const mcp = (args, cwd) => new Promise((resolve, reject) => {
+  const mcp = (tool, args, cwd) => new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [dist('index.js')], {
       cwd,
       env: {
@@ -325,7 +323,7 @@ try {
       id: 1,
       method: 'tools/call',
       params: {
-        name: 'promote_selection',
+        name: tool,
         arguments: args,
         _meta: {
           'io.modelcontextprotocol/protocolVersion': '2026-07-28',
@@ -337,6 +335,7 @@ try {
   });
 
   const ambientMcp = await mcp(
+    'promote_selection',
     { board, elementIds: [alphaId], kind: 'service', path: 'src/service.ts' },
     alphaRoot
   );
@@ -345,6 +344,7 @@ try {
     /no working directory to resolve it against/.test(ambientText), ambientText.slice(0, 160));
 
   const namedMcp = await mcp(
+    'promote_selection',
     { board, elementIds: [betaId], kind: 'service', path: 'src/service.ts', repo: BETA },
     alphaRoot
   );
@@ -355,6 +355,69 @@ try {
   const listed = cli(['repo', 'list', '--text']);
   check('`repo list` says what can be named from anywhere',
     listed.out.includes(ALPHA) && listed.out.includes(BETA));
+
+  // -------------------------------------------------------------------------
+  // Which boards describe this repository (TASK-030)
+  // -------------------------------------------------------------------------
+  //
+  // The board built above is exactly the hard case: it spans two repositories
+  // and is named after neither, so no naming convention could find it.
+
+  const saved = await api('POST', `/api/boards/save?board=${board}`);
+  check('the cross-repo board saves to the vault', saved.status === 200, JSON.stringify(saved.body).slice(0, 120));
+
+  const fromAlpha = cli(['board', 'list', '--repo', ALPHA, '--text']);
+  const fromBeta = cli(['board', 'list', '--repo', BETA, '--text']);
+  check('a board is found from a repository it has a node in', fromAlpha.out.includes('systems'), fromAlpha.err);
+  check('  and from the other repository on the same board', fromBeta.out.includes('systems'), fromBeta.err);
+  check('  listing the node that matched, not just the board name',
+    /Alpha \[service\] -> src\/service\.ts/.test(fromAlpha.out), fromAlpha.out);
+  check('  and only that repository\'s nodes', !/Beta \[/.test(fromAlpha.out), fromAlpha.out);
+  check('  with the command to open it', /board open systems/.test(fromAlpha.out));
+
+  const fromStranger = cli(['board', 'list', '--repo', 'github.com/acme/stranger', '--text']);
+  check('a repository nothing describes gets a plain no', /No board/.test(fromStranger.out), fromStranger.out);
+  check('  which says how many boards were read, so it is not mistaken for an empty vault',
+    /board\(s\) read/.test(fromStranger.out));
+
+  // The question an agent actually asks: it is standing somewhere and does not
+  // know what covers it.
+  const here = cli(['board', 'list', '--here', '--text'], alphaRoot);
+  check('an agent standing in a repo finds its boards without being told which',
+    here.out.includes('systems'), here.err);
+  check('  and is told which repository that directory turned out to be',
+    here.err.includes(ALPHA), here.err);
+
+  const notARepo = cli(['board', 'list', '--here', '--text'], nowhere);
+  check('--here outside a repository is a usage error, not an empty answer',
+    !notARepo.ok && /not inside a git repository/.test(notARepo.err));
+
+  // Unsaved work counts: a board open on the canvas is read from memory.
+  await api('POST', '/api/boards/new', { board: 'drafts' });
+  const draftBox = await api('POST', '/api/elements?board=drafts',
+    { type: 'rectangle', x: 0, y: 0, width: 200, height: 80, label: { text: 'Draft' } });
+  const draftId = draftBox.body?.element?.id ?? draftBox.body?.id;
+  cli(['promote', '--board', 'drafts', '--ids', draftId, '--kind', 'service',
+    '--repo', ALPHA, '--path', 'src/service.ts']);
+  const withDraft = cli(['board', 'list', '--repo', ALPHA]);
+  const draftEntry = JSON.parse(withDraft.out).boards.find(b => b.key === 'drafts');
+  check('a board open on the canvas but never saved is still an answer', Boolean(draftEntry), withDraft.out.slice(0, 200));
+  check('  and says it came from memory rather than a note', draftEntry?.source === 'memory');
+
+  // The vault half on its own, with nothing open, which is what another
+  // machine's canvas would see.
+  const { boardsForRepo } = await import(dist('core/repo-boards.js'));
+  const fromVault = boardsForRepo(ALPHA, [], vault);
+  check('the same board is found by reading the vault alone',
+    fromVault.boards.some(b => b.key === 'systems' && b.source === 'vault'),
+    JSON.stringify(fromVault.boards.map(b => b.key)));
+  check('  with the binding read back out of the note',
+    fromVault.boards.find(b => b.key === 'systems')?.nodes?.[0]?.path === 'src/service.ts');
+
+  const mcpBoards = await mcp('list_boards', { repo: BETA }, alphaRoot);
+  const mcpText = mcpBoards.result?.content?.[0]?.text ?? '';
+  check('a shell-less client can ask the same question by naming the repository',
+    mcpText.includes('systems') && mcpText.includes(BETA), mcpText.slice(0, 160));
 } finally {
   server.kill('SIGTERM');
   await sleep(200);

@@ -23,6 +23,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { ARCHBOARD_VAULT } from './config.js';
+import { ServerElement } from '../types.js';
 import {
   readFrontmatterValue,
   isObsidianExcalidrawMd,
@@ -337,6 +338,18 @@ function readHead(filePath: string, bytes = FRONTMATTER_PROBE_BYTES): string {
 // it did not change, and an editor can change one within a clock tick.
 export function hashBoardBytes(bytes: Buffer): string {
   return crypto.createHash('sha256').update(bytes).digest('hex');
+}
+
+// The live elements of a board note, from its raw bytes. Deleted elements are
+// dropped, because a scene keeps its tombstones and nothing outside Excalidraw
+// wants them.
+export function extractSceneElements(note: string): ServerElement[] {
+  if (!isObsidianExcalidrawMd(note)) {
+    throw new Error('not an Obsidian .excalidraw.md note');
+  }
+  const scene = JSON.parse(extractSceneJsonFromObsidianMd(note));
+  const raw: any[] = Array.isArray(scene) ? scene : (scene.elements ?? []);
+  return raw.filter(el => el && typeof el === 'object' && !el.isDeleted) as ServerElement[];
 }
 
 export interface VaultBoard {

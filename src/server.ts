@@ -68,6 +68,7 @@ import {
 } from './core/board.js';
 import { buildScene } from './core/scene-io.js';
 import { CURRENT_VARIANT } from './core/board.js';
+import { boardsForRepo } from './core/repo-boards.js';
 import { CompareSideInput, compareBoards } from './core/compare.js';
 import { ChangeOrigin, changeFeed } from './core/change-feed.js';
 import type { ChangeEvent } from './core/change-feed.js';
@@ -1977,9 +1978,35 @@ function ingestSceneElements(board: BoardState, sceneElements: any[]): number {
 }
 
 // What exists: every board in the vault, plus the ones open in this process.
-app.get('/api/boards', (_req: Request, res: Response) => {
+//
+// With ?repo=<identity>, the answer is narrowed to the boards that describe
+// that repository: the ones with nodes bound to it, each listing which nodes
+// matched (TASK-030). The identity is resolved by the caller, never here, for
+// the same reason bindings are (ADR 0010) — this process's working directory is
+// nobody's.
+app.get('/api/boards', (req: Request, res: Response) => {
   try {
     const vault = requireVaultRoot();
+    const repo = typeof req.query.repo === 'string' ? req.query.repo.trim() : '';
+    if (repo) {
+      const open = Array.from(boards.entries()).map(([key, board]) => ({
+        key,
+        identity: board.identity,
+        elements: Array.from(board.elements.values()),
+        ...(board.file ? { file: board.file } : {})
+      }));
+      const found = boardsForRepo(repo, open, vault);
+      return res.json({
+        success: true,
+        vault,
+        repo,
+        boards: found.boards,
+        scanned: found.scanned,
+        ...(found.unreadable.length ? { unreadable: found.unreadable } : {}),
+        open: boardSummaries(),
+        onScreen: boardsOnScreen()
+      });
+    }
     res.json({
       success: true,
       vault,

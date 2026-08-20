@@ -655,11 +655,13 @@ export async function callExcalidrawTool(
         };
       }
       case 'list_boards': {
-        logger.info('Listing boards via MCP');
-        const result = await listBoardsOnCanvas();
+        const params = z.object({ repo: z.string().optional() }).parse(args || {});
+        logger.info('Listing boards via MCP', { repo: params.repo });
+        const result = await listBoardsOnCanvas(params.repo);
         return {
           content: [{ type: 'text', text: JSON.stringify({
             vault: result.vault,
+            ...(result.repo ? { repo: result.repo, scanned: result.scanned } : {}),
             boards: result.boards,
             open: result.open,
             onScreen: result.onScreen
