@@ -544,20 +544,10 @@ app.post('/api/elements', (req: Request, res: Response) => {
   try {
     const { key: boardKeyForRequest, board } = boardFromRequest(req, 'Creating an element');
     const elements = board.elements;
-    const params = CreateElementSchema.parse(req.body);
-    logger.info('Creating element via API', { type: params.type, board: boardKeyForRequest });
-
     // Prioritize passed ID (for MCP sync), otherwise generate new ID
-    const id = params.id || generateId();
-    const { board: _boardField, ...elementParams } = params as typeof params & { board?: string };
-    const element: ServerElement = {
-      id,
-      ...elementParams,
-      fontFamily: normalizeFontFamily(params.fontFamily),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      version: 1
-    };
+    const element = buildCreatedElement(req.body);
+    const id = element.id;
+    logger.info('Creating element via API', { type: element.type, board: boardKeyForRequest });
 
     // Resolve arrow bindings against existing elements
     if (element.type === 'arrow' || element.type === 'line') {
@@ -593,8 +583,6 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
     const elements = board.elements;
     const { id } = req.params;
     const body = req.body && typeof req.body === 'object' ? req.body : {};
-    const { board: _boardField, ...updates } = UpdateElementSchema.parse({ id, ...body }) as
-      Record<string, any>;
 
     if (!id) {
       return res.status(400).json({
@@ -611,56 +599,12 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
       });
     }
 
-    const updatedElement: ServerElement = {
-      ...existingElement,
-      ...updates,
-      fontFamily: updates.fontFamily !== undefined ? normalizeFontFamily(updates.fontFamily) : existingElement.fontFamily,
-      updatedAt: new Date().toISOString(),
-      version: (existingElement.version || 0) + 1
-    };
-
-    // Keep Excalidraw text source in sync when clients update text via REST.
-    // If originalText lags behind text, rendered wrapping/position can drift.
-    const hasTextUpdate = Object.prototype.hasOwnProperty.call(body, 'text');
-    const hasOriginalTextUpdate = Object.prototype.hasOwnProperty.call(body, 'originalText');
-    if (updatedElement.type === EXCALIDRAW_ELEMENT_TYPES.TEXT && hasTextUpdate && !hasOriginalTextUpdate) {
-      const incomingText = updates.text ?? '';
-      const existingText = typeof existingElement.text === 'string' ? existingElement.text : '';
-      const existingOriginalText = typeof existingElement.originalText === 'string'
-        ? existingElement.originalText
-        : '';
-      const existingOriginalHasBr = /<\s*b\s*r\s*\/?\s*>/i.test(existingOriginalText);
-      const normalizedExistingText = normalizeLineBreakMarkup(existingText);
-      const normalizedExistingOriginalText = normalizeLineBreakMarkup(existingOriginalText);
-
-      // Handle common cleanup flow: caller normalizes the rendered text value.
-      // In this case, prefer normalized originalText so words aren't split by stale wraps.
-      if (existingOriginalHasBr && incomingText === normalizedExistingText && normalizedExistingOriginalText) {
-        updatedElement.text = normalizedExistingOriginalText;
-        updatedElement.originalText = normalizedExistingOriginalText;
-      } else {
-        updatedElement.originalText = incomingText;
-      }
-    }
-
-    const changed = (key: string) => Object.prototype.hasOwnProperty.call(body, key);
-
-    // New points, new size. Width and height are not a second opinion about a
-    // linear element, they are the size of its path, so a caller that states
-    // the path has stated them too and any it sent alongside is the old
-    // arrow's (TASK-038).
-    if (changed('points')) sizeFromPath(updatedElement);
+    // One element's worth of the same write a batched report performs, so the
+    // two sizes of write cannot drift apart (see mergeElementUpdate).
+    const { element: updatedElement, geometryChanged, reboundArrow } =
+      mergeElementUpdate(existingElement, body);
 
     elements.set(id, updatedElement);
-
-    const isLinear = updatedElement.type === 'arrow' || updatedElement.type === 'line';
-    const geometryChanged = ['x', 'y', 'width', 'height', 'points', 'angle'].some(changed);
-    // Pointing an arrow at a different shape is a re-route, not an annotation.
-    // Creating one resolves the path from its refs; re-stating them has to do
-    // the same, or the arrow keeps its old path until some shape it is bound
-    // to happens to move and the server recomputes it as a side effect.
-    const reboundArrow = isLinear &&
-      ['start', 'end', 'startBinding', 'endBinding'].some(changed);
     if (reboundArrow) resolveArrowBindings([updatedElement], elements);
 
     // Broadcast to all connected clients
@@ -673,23 +617,11 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
 
     // Whatever moved, its label moves with it: the element itself, and — when a
     // shape moved — every arrow the server dragged along behind it.
-    const settled: string[] = [];
-    if (geometryChanged || reboundArrow) {
-      settled.push(id);
-      // A label that was itself re-measured has to be re-placed by whatever it
-      // labels: it is half a size bigger, so it is half a size off centre.
-      if (typeof updatedElement.containerId === 'string' && updatedElement.containerId) {
-        settled.push(updatedElement.containerId);
-      }
-      if (geometryChanged && !isLinear) {
-        for (const arrow of rerouteBoundArrows(id, elements)) {
-          broadcast({ type: 'element_updated', element: arrow } as ElementUpdatedMessage, boardKeyForRequest);
-          settled.push(arrow.id);
-        }
-      }
-    }
-    for (const text of settleBoundTexts(settled, elements)) {
-      broadcast({ type: 'element_updated', element: text } as ElementUpdatedMessage, boardKeyForRequest);
+    const consequences = geometryChanged || reboundArrow
+      ? settleAfterWrite([id], elements)
+      : [];
+    for (const element of consequences) {
+      broadcast({ type: 'element_updated', element } as ElementUpdatedMessage, boardKeyForRequest);
     }
 
     res.json({
@@ -1044,6 +976,124 @@ function settleBoundTexts(
   return moved;
 }
 
+// ─── One write, at either size ────────────────────────────────
+//
+// A single-element route and a batched change report are the same write in
+// different quantities: one element's merge, one element's creation, and the
+// settling the board owes whatever moved. Three functions, called by both, and
+// not three pairs of functions that have to agree — a batched write quietly
+// doing less than a PUT would be a second update path nobody had written down.
+// One intent is one write (ADR 0015), and it has to be the same write.
+
+interface ElementMerge {
+  element: ServerElement;
+  /** It moved, grew or was re-pathed, so whatever hangs off it has to follow. */
+  geometryChanged: boolean;
+  /** An arrow was pointed at something else, which is a re-route, not an annotation. */
+  reboundArrow: boolean;
+}
+
+/** Merge one caller's statement into the element the board is holding. */
+function mergeElementUpdate(existing: ServerElement, body: Record<string, any>): ElementMerge {
+  const { board: _boardField, ...updates } =
+    UpdateElementSchema.parse({ ...body, id: existing.id }) as Record<string, any>;
+
+  const element: ServerElement = {
+    ...existing,
+    ...updates,
+    fontFamily: updates.fontFamily !== undefined ? normalizeFontFamily(updates.fontFamily) : existing.fontFamily,
+    updatedAt: new Date().toISOString(),
+    version: (existing.version || 0) + 1
+  };
+
+  // Keep Excalidraw text source in sync when clients update text via REST.
+  // If originalText lags behind text, rendered wrapping/position can drift.
+  const hasTextUpdate = Object.prototype.hasOwnProperty.call(body, 'text');
+  const hasOriginalTextUpdate = Object.prototype.hasOwnProperty.call(body, 'originalText');
+  if (element.type === EXCALIDRAW_ELEMENT_TYPES.TEXT && hasTextUpdate && !hasOriginalTextUpdate) {
+    const incomingText = updates.text ?? '';
+    const existingText = typeof existing.text === 'string' ? existing.text : '';
+    const existingOriginalText = typeof existing.originalText === 'string'
+      ? existing.originalText
+      : '';
+    const existingOriginalHasBr = /<\s*b\s*r\s*\/?\s*>/i.test(existingOriginalText);
+    const normalizedExistingText = normalizeLineBreakMarkup(existingText);
+    const normalizedExistingOriginalText = normalizeLineBreakMarkup(existingOriginalText);
+
+    // Handle common cleanup flow: caller normalizes the rendered text value.
+    // In this case, prefer normalized originalText so words aren't split by stale wraps.
+    if (existingOriginalHasBr && incomingText === normalizedExistingText && normalizedExistingOriginalText) {
+      element.text = normalizedExistingOriginalText;
+      element.originalText = normalizedExistingOriginalText;
+    } else {
+      element.originalText = incomingText;
+    }
+  }
+
+  const changed = (key: string) => Object.prototype.hasOwnProperty.call(body, key);
+
+  // New points, new size. Width and height are not a second opinion about a
+  // linear element, they are the size of its path, so a caller that states
+  // the path has stated them too and any it sent alongside is the old
+  // arrow's (TASK-038).
+  if (changed('points')) sizeFromPath(element);
+
+  const isLinear = element.type === 'arrow' || element.type === 'line';
+  return {
+    element,
+    geometryChanged: ['x', 'y', 'width', 'height', 'points', 'angle'].some(changed),
+    // Pointing an arrow at a different shape is a re-route, not an annotation.
+    // Creating one resolves the path from its refs; re-stating them has to do
+    // the same, or the arrow keeps its old path until some shape it is bound
+    // to happens to move and the server recomputes it as a side effect.
+    reboundArrow: isLinear && ['start', 'end', 'startBinding', 'endBinding'].some(changed)
+  };
+}
+
+/** Build one new element from what a caller stated. Not yet on the board. */
+function buildCreatedElement(raw: unknown): ServerElement {
+  const params = CreateElementSchema.parse(raw);
+  const { board: _boardField, ...elementParams } = params as typeof params & { board?: string };
+  return {
+    id: params.id || generateId(),
+    ...elementParams,
+    fontFamily: normalizeFontFamily(params.fontFamily),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    version: 1
+  } as ServerElement;
+}
+
+/**
+ * What the board owes whatever just moved: every arrow bound to it re-routed,
+ * and every bound label put back where the thing it names now is. Returns what
+ * it moved, once each, for whoever is broadcasting.
+ *
+ * A label that was itself re-measured is re-placed by its container, because it
+ * is half a size bigger and therefore half a size off centre.
+ */
+function settleAfterWrite(movedIds: string[], elements: Map<string, ServerElement>): ServerElement[] {
+  if (movedIds.length === 0) return [];
+  const settled: string[] = [];
+  const moved = new Map<string, ServerElement>();
+  for (const id of movedIds) {
+    const element = elements.get(id);
+    if (!element) continue;
+    settled.push(id);
+    if (typeof element.containerId === 'string' && element.containerId) {
+      settled.push(element.containerId);
+    }
+    if (element.type !== 'arrow' && element.type !== 'line') {
+      for (const arrow of rerouteBoundArrows(id, elements)) {
+        moved.set(arrow.id, arrow);
+        settled.push(arrow.id);
+      }
+    }
+  }
+  for (const text of settleBoundTexts(settled, elements)) moved.set(text.id, text);
+  return Array.from(moved.values());
+}
+
 // Batch create elements
 app.post('/api/elements/batch', (req: Request, res: Response) => {
   try {
@@ -1058,23 +1108,8 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
       });
     }
 
-    const createdElements: ServerElement[] = [];
-
-    elementsToCreate.forEach(elementData => {
-      const params = CreateElementSchema.parse(elementData);
-      // Prioritize passed ID (for MCP sync), otherwise generate new ID
-      const id = params.id || generateId();
-      const element: ServerElement = {
-        id,
-        ...params,
-        fontFamily: normalizeFontFamily(params.fontFamily),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        version: 1
-      };
-
-      createdElements.push(element);
-    });
+    // Prioritize passed ID (for MCP sync), otherwise generate new ID
+    const createdElements: ServerElement[] = elementsToCreate.map(buildCreatedElement);
 
     // Resolve arrow bindings (computes positions, startBinding, endBinding, boundElements)
     resolveArrowBindings(createdElements, elements);
@@ -1194,58 +1229,159 @@ app.post('/api/elements/from-mermaid', (req: Request, res: Response) => {
 // Upserts are merged, not substituted, so server-side fields the browser does
 // not model — createdAt, the monotonic version, anything a later feature
 // stamps on an element — survive a human dragging the shape.
+//
+// It is also the one route an agent writes a whole intent through. Aligning
+// twenty boxes is one thing somebody asked for, and it costs one write here
+// rather than twenty (ADR 0015, TASK-068). Who is writing decides two things
+// and nothing else — see `origin`.
 const ElementChangesSchema = z.object({
   upserts: z.array(z.record(z.any())).default([]),
   deletes: z.array(z.string()).default([]),
+  /**
+   * Who is writing. Absent means the browser, which was this route's only
+   * writer when it was written: its elements are stamped `frontend_sync` and
+   * the feed is told a human moved them.
+   *
+   * An agent says so and gets neither. Stamping its own drawing `frontend_sync`
+   * would make it indistinguishable from a human's hands, and calling it human
+   * to the feed would make it eligible to be narrated back into the agent's own
+   * thread (ADR 0005).
+   */
+  origin: z.enum(['human', 'agent']).default('human'),
   clientId: z.string().optional(),
   timestamp: z.string().optional()
 });
+
+interface AppliedChanges {
+  created: ServerElement[];
+  updated: ServerElement[];
+  deleted: string[];
+}
+
+/**
+ * A browser's report of what a person did. The browser holds the elements, so
+ * this is a merge and nothing more: no re-routing, no re-placing of labels,
+ * because Excalidraw has already done all of that on screen and reported it.
+ */
+function applyReportedChanges(
+  elements: Map<string, ServerElement>,
+  upserts: Record<string, any>[],
+  deletes: string[],
+  now: string,
+  timestamp?: string
+): AppliedChanges {
+  const created: ServerElement[] = [];
+  const updated: ServerElement[] = [];
+
+  for (const raw of upserts) {
+    const {
+      board: _board,
+      id: rawId,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      version: _version,
+      syncedAt: _syncedAt,
+      source: _source,
+      syncTimestamp: _syncTimestamp,
+      ...incoming
+    } = raw as Record<string, any>;
+    const id = typeof rawId === 'string' && rawId.length > 0 ? rawId : generateId();
+    const existing = elements.get(id);
+    const element = {
+      ...(existing ?? {}),
+      ...incoming,
+      id,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+      version: (existing?.version ?? 0) + 1,
+      source: 'frontend_sync',
+      syncedAt: now,
+      ...(timestamp ? { syncTimestamp: timestamp } : {})
+    } as ServerElement;
+    elements.set(id, element);
+    (existing ? updated : created).push(element);
+  }
+
+  // Only ids the board actually holds. A client naming something already
+  // gone is telling the server news it already has, not making an error.
+  const deleted: string[] = [];
+  for (const id of deletes) {
+    if (elements.delete(id)) deleted.push(id);
+  }
+
+  return { created, updated, deleted };
+}
+
+/**
+ * An agent's write, however many elements it names. Every element gets what the
+ * single-element routes give it — the same merge, the same creation, the same
+ * bindings — and the board settles once at the end rather than once per
+ * element, so an arrow between two boxes that both moved is re-routed after
+ * both moves instead of after each.
+ *
+ * An upsert whose id the board does not hold is a creation, which is what makes
+ * a patch of creates, updates and deletes one write.
+ */
+function applyAgentChanges(
+  elements: Map<string, ServerElement>,
+  upserts: Record<string, any>[],
+  deletes: string[]
+): AppliedChanges {
+  const created: ServerElement[] = [];
+  const updated = new Map<string, ServerElement>();
+  const moved: string[] = [];
+
+  for (const raw of upserts) {
+    const rawId = typeof raw.id === 'string' && raw.id.length > 0 ? raw.id : undefined;
+    const existing = rawId ? elements.get(rawId) : undefined;
+    if (existing) {
+      const merge = mergeElementUpdate(existing, raw);
+      elements.set(existing.id, merge.element);
+      if (merge.reboundArrow) resolveArrowBindings([merge.element], elements);
+      if (merge.geometryChanged || merge.reboundArrow) moved.push(existing.id);
+      updated.set(existing.id, merge.element);
+    } else {
+      const element = buildCreatedElement(raw);
+      elements.set(element.id, element);
+      created.push(element);
+    }
+  }
+
+  // Bindings resolve once every element in the write is on the board, so an
+  // arrow can be created in the same write as the shapes it joins.
+  if (created.length > 0) {
+    resolveArrowBindings(created, elements);
+    created.forEach(sizeFromPath);
+  }
+
+  const deleted: string[] = [];
+  for (const id of deletes) {
+    if (elements.delete(id)) deleted.push(id);
+  }
+
+  for (const element of settleAfterWrite(moved, elements)) {
+    if (!elements.has(element.id)) continue;
+    updated.set(element.id, element);
+  }
+
+  // An element written and then deleted in the same intent is gone, not changed.
+  return {
+    created,
+    updated: Array.from(updated.values()).filter(element => elements.has(element.id)),
+    deleted
+  };
+}
 
 app.post('/api/elements/changes', (req: Request, res: Response) => {
   try {
     const { key: boardKeyForRequest, board } = boardFromRequest(req, 'A change report');
     const elements = board.elements;
-    const { upserts, deletes, clientId, timestamp } = ElementChangesSchema.parse(req.body ?? {});
+    const { upserts, deletes, origin, clientId, timestamp } = ElementChangesSchema.parse(req.body ?? {});
 
     const now = new Date().toISOString();
-    const created: ServerElement[] = [];
-    const updated: ServerElement[] = [];
-
-    for (const raw of upserts) {
-      const {
-        board: _board,
-        id: rawId,
-        createdAt: _createdAt,
-        updatedAt: _updatedAt,
-        version: _version,
-        syncedAt: _syncedAt,
-        source: _source,
-        syncTimestamp: _syncTimestamp,
-        ...incoming
-      } = raw as Record<string, any>;
-      const id = typeof rawId === 'string' && rawId.length > 0 ? rawId : generateId();
-      const existing = elements.get(id);
-      const element = {
-        ...(existing ?? {}),
-        ...incoming,
-        id,
-        createdAt: existing?.createdAt ?? now,
-        updatedAt: now,
-        version: (existing?.version ?? 0) + 1,
-        source: 'frontend_sync',
-        syncedAt: now,
-        ...(timestamp ? { syncTimestamp: timestamp } : {})
-      } as ServerElement;
-      elements.set(id, element);
-      (existing ? updated : created).push(element);
-    }
-
-    // Only ids the board actually holds. A client naming something already
-    // gone is telling the server news it already has, not making an error.
-    const deleted: string[] = [];
-    for (const id of deletes) {
-      if (elements.delete(id)) deleted.push(id);
-    }
+    const { created, updated, deleted } = origin === 'agent'
+      ? applyAgentChanges(elements, upserts, deletes)
+      : applyReportedChanges(elements, upserts, deletes, now, timestamp);
 
     if (created.length > 0 || updated.length > 0 || deleted.length > 0) {
       // Carries the reporting client so that client can skip its own echo:
@@ -1260,11 +1396,11 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
         timestamp: now
       } as ElementsChangedMessage, boardKeyForRequest);
 
-      // The one path a human's own hands come in on.
-      noteChange(boardKeyForRequest, board, 'human');
+      noteChange(boardKeyForRequest, board, origin);
 
       logger.info(
-        `Change report from ${clientId ?? 'an unidentified client'} on "${boardKeyForRequest}": ` +
+        `Change report from ${clientId ?? (origin === 'agent' ? 'an agent' : 'an unidentified client')} ` +
+        `on "${boardKeyForRequest}": ` +
         `+${created.length} ~${updated.length} -${deleted.length} (${elements.size} on the board)`
       );
     }
@@ -1276,7 +1412,12 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
       updated: updated.length,
       deleted: deleted.length,
       count: elements.size,
-      appliedAt: now
+      appliedAt: now,
+      // What the write created, in the form the board now holds it: the server
+      // mints ids, so this is the half of the result an agent cannot work out
+      // for itself. What the write *changed* is not echoed here — that is
+      // TASK-074, and a browser does not need either.
+      ...(origin === 'agent' ? { elements: created } : {})
     });
   } catch (error) {
     logger.error('Error applying a change report:', error);

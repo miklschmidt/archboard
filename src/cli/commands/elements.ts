@@ -2,6 +2,7 @@ import { parseArgs, CliUsageError } from '../args.js';
 import { printJson, readJsonInput } from '../util.js';
 import { prepareElement, prepareElementUpdate } from '../../core/normalize.js';
 import {
+  applyElementChanges,
   batchCreateElementsStrict,
   updateElementStrict,
   deleteElementStrict,
@@ -46,37 +47,39 @@ export async function apply(argv: string[]): Promise<void> {
 
   await ensureCanvasRunning();
 
-  let created: ServerElement[] = [];
-  if (patch.create?.length) {
-    created = await batchCreateElementsStrict(patch.create.map(el => prepareElement(el)));
-  }
-
-  const updated: ServerElement[] = [];
-  if (patch.update?.length) {
+  // Everything the patch names is resolved against the board before anything
+  // is written, so an id that is not there is refused with nothing applied.
+  // It used to be refused halfway through, with the updates before it already
+  // on the board.
+  const updates: (Partial<ServerElement> & { id: string })[] = [];
+  const deletes = patch.delete ?? [];
+  if (patch.update?.length || deletes.length) {
     const typeById = new Map((await getElements()).map(element => [element.id, element.type]));
-    for (const update of patch.update) {
-      const { id, updates } = normalizePatchUpdate(update);
+    for (const update of patch.update ?? []) {
+      const { id, updates: fields } = normalizePatchUpdate(update);
       const existingType = typeById.get(id);
       if (!existingType) throw new Error(`Element ${id} not found`);
-
-      const element = await updateElementStrict(prepareElementUpdate(id, updates, existingType));
-      typeById.set(id, element.type);
-      updated.push(element);
+      updates.push(prepareElementUpdate(id, fields, existingType));
+    }
+    for (const id of deletes) {
+      if (!typeById.has(id)) throw new Error(`Element ${id} not found`);
     }
   }
 
-  const deleted: string[] = [];
-  for (const id of patch.delete || []) {
-    await deleteElementStrict(id);
-    deleted.push(id);
-  }
+  // One patch, one write: creates, updates and deletes all land in the same
+  // pass over the board, so nothing else can get in between them.
+  const creates = (patch.create ?? []).map(el => prepareElement(el));
+  const result = await applyElementChanges({ upserts: [...creates, ...updates], deletes });
 
   printJson({
     success: true,
-    created: created.length,
-    updated: updated.length,
-    deleted: deleted.length,
-    elements: created
+    created: result.created,
+    // What the patch asked for, not what the board owed it afterwards: the
+    // server also re-routes arrows and re-places labels behind a move, and
+    // counting those here would answer a question nobody asked.
+    updated: updates.length,
+    deleted: result.deleted,
+    elements: result.elements
   });
 }
 

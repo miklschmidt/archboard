@@ -39,10 +39,10 @@ bun install
 bun run build       # frontend only -> dist/frontend/
 bun run type-check
 bun run test        # type-check, module scope, then stdio wire, loopback
-                    # bind, obsidian, changes, geometry, labels, library,
-                    # boards + panes, branch vs redraw, proposal beside source,
-                    # skill install, repo bindings, CLI/MCP surface parity,
-                    # hot reload
+                    # bind, obsidian, changes, one write per intent, geometry,
+                    # labels, library, boards + panes, branch vs redraw,
+                    # proposal beside source, skill install, repo bindings,
+                    # CLI/MCP surface parity, hot reload
 
 ./bin/canvas start  # canvas server on 127.0.0.1:3000
 ./bin/canvas status
@@ -182,6 +182,25 @@ computed against a baseline of the elements that tab has actually received, and
 the server applies it. A tab therefore cannot name, and so cannot destroy, an
 element it has never seen. The upstream `POST /api/elements/sync`, which cleared
 the board's element map and refilled it from one tab, is gone (TASK-016).
+
+**One thing somebody asked for is one write.** Aligning twenty boxes, or
+distributing, locking, grouping or ungrouping them, or applying a patch of
+creates, updates and deletes, reaches the canvas as a single change report
+(TASK-068). Every one of those used to be one HTTP write per element. That is
+wasteful today and it is lost updates once the note is the only copy of the
+board, because each write becomes a read-modify-write cycle against one file
+(ADR 0015), and it is twenty separate acquisitions of the board's lock with
+nineteen gaps for another writer between them (ADR 0016).
+
+The report says who is writing. No `origin` means the browser, which is what
+this route was built for: its elements are stamped `frontend_sync` and the
+change feed is told a human moved them. `origin: "agent"` gets neither, because
+an agent's own drawing narrated back into its own thread is the noise ADR 0005
+is about. An agent's batched write is otherwise the same write a single-element
+`PUT` performs, arrow re-routing and label re-placing included, and that
+settling happens once at the end of the intent rather than once per element.
+`bun run test:one-write` counts writes on the wire through a proxy, so a loop
+cannot pass itself off as a batch.
 
 **`customData` and `link` both survive the full round-trip**, including the
 change report a human's drag produces. Verified with a real drag:

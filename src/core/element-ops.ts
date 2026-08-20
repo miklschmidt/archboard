@@ -1,35 +1,45 @@
 // Operations on elements that already exist on the canvas: align, distribute,
-// group, lock, duplicate. Each one reads the elements from the server, works
-// out where they should go, and writes them back, so this module talks to the
+// group, lock, duplicate. Each one reads the board from the server, works out
+// where everything should go, and writes it back, so this module talks to the
 // network and is server-side only.
 //
 // It used to be called `geometry.ts`, which is now the pure measurement module
 // underneath it — the browser imports that one, and could not import anything
 // that reaches for winston or a fetch client (TASK-038).
+//
+// ONE INTENT IS ONE WRITE. Every operation here reads the board once and writes
+// once, whatever the number of elements it was given. Each used to fetch every
+// element separately and then issue one PUT per element, which is twenty
+// requests for one thing a person asked for — a nuisance today, lost updates
+// once the note is the only copy of the board (ADR 0015), and twenty separate
+// acquisitions of the board's lock with nineteen gaps between them (ADR 0016).
 
 import logger from '../utils/logger.js';
 import { generateId, ServerElement } from '../types.js';
-import {
-  getElementFromCanvas,
-  updateElementOnCanvas,
-  batchCreateElementsOnCanvas,
-  getElements
-} from './canvas-client.js';
+import { applyElementChanges, batchCreateElementsOnCanvas, getElements } from './canvas-client.js';
 import { extentOf } from './geometry.js';
 
 export type Alignment = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom';
 export type Direction = 'horizontal' | 'vertical';
 
+/**
+ * The elements an operation was aimed at, in the order they were named.
+ *
+ * Ids the board does not hold are dropped rather than refused, which is what
+ * the per-element version did by accident (a PUT to a missing id 404'd and was
+ * counted as a failure) and is what an operation over a stale selection wants:
+ * arrange the boxes that are still there.
+ */
+async function targets(elementIds: string[]): Promise<ServerElement[]> {
+  const board = new Map((await getElements()).map(element => [element.id, element]));
+  return elementIds.map(id => board.get(id)).filter((element): element is ServerElement => !!element);
+}
+
 export async function alignElements(
   elementIds: string[],
   alignment: Alignment
 ): Promise<{ aligned: boolean; elementIds: string[]; alignment: Alignment; successCount: number }> {
-  // Fetch all elements
-  const elementsToAlign: ServerElement[] = [];
-  for (const id of elementIds) {
-    const el = await getElementFromCanvas(id);
-    if (el) elementsToAlign.push(el);
-  }
+  const elementsToAlign = await targets(elementIds);
 
   if (elementsToAlign.length < 2) {
     throw new Error('Need at least 2 elements to align');
@@ -78,35 +88,24 @@ export async function alignElements(
     }
   }
 
-  // Apply updates
-  const updatePromises = elementsToAlign.map(async (el) => {
+  const upserts = elementsToAlign.map((el) => {
     const edge = edgeFn(el);
-    const coords = {
+    return {
+      id: el.id,
       ...(edge.x === undefined ? {} : { x: el.x + (edge.x - box(el).x) }),
       ...(edge.y === undefined ? {} : { y: el.y + (edge.y - box(el).y) })
     };
-    return await updateElementOnCanvas({ id: el.id, ...coords });
   });
-  const results = await Promise.all(updatePromises);
-  const successCount = results.filter(r => r).length;
+  await applyElementChanges({ upserts });
 
-  if (successCount === 0) {
-    throw new Error('Failed to align any elements: HTTP server unavailable');
-  }
-
-  return { aligned: true, elementIds, alignment, successCount };
+  return { aligned: true, elementIds, alignment, successCount: upserts.length };
 }
 
 export async function distributeElements(
   elementIds: string[],
   direction: Direction
 ): Promise<{ distributed: boolean; elementIds: string[]; direction: Direction; count: number }> {
-  // Fetch all elements
-  const elementsToDist: ServerElement[] = [];
-  for (const id of elementIds) {
-    const el = await getElementFromCanvas(id);
-    if (el) elementsToDist.push(el);
-  }
+  const elementsToDist = await targets(elementIds);
 
   if (elementsToDist.length < 3) {
     throw new Error('Need at least 3 elements to distribute');
@@ -116,6 +115,7 @@ export async function distributeElements(
   // writes back a translation of the stored origin (see alignElements).
   const boxes = new Map(elementsToDist.map(el => [el.id, extentOf(el)]));
   const box = (el: ServerElement) => boxes.get(el.id)!;
+  const upserts: { id: string; x?: number; y?: number }[] = [];
 
   if (direction === 'horizontal') {
     // Sort by x position
@@ -128,7 +128,7 @@ export async function distributeElements(
 
     let currentX = box(first).x;
     for (const el of elementsToDist) {
-      await updateElementOnCanvas({ id: el.id, x: el.x + (currentX - box(el).x) });
+      upserts.push({ id: el.id, x: el.x + (currentX - box(el).x) });
       currentX += box(el).width + gap;
     }
   } else {
@@ -142,10 +142,12 @@ export async function distributeElements(
 
     let currentY = box(first).y;
     for (const el of elementsToDist) {
-      await updateElementOnCanvas({ id: el.id, y: el.y + (currentY - box(el).y) });
+      upserts.push({ id: el.id, y: el.y + (currentY - box(el).y) });
       currentY += box(el).height + gap;
     }
   }
+
+  await applyElementChanges({ upserts });
 
   return { distributed: true, elementIds, direction, count: elementsToDist.length };
 }
@@ -154,87 +156,75 @@ export async function setElementsLocked(
   elementIds: string[],
   locked: boolean
 ): Promise<{ elementIds: string[]; successCount: number }> {
-  const updatePromises = elementIds.map(async (id) => {
-    return await updateElementOnCanvas({ id, locked });
-  });
+  const elementsToLock = await targets(elementIds);
 
-  const results = await Promise.all(updatePromises);
-  const successCount = results.filter(result => result).length;
-
-  if (successCount === 0) {
-    throw new Error(`Failed to ${locked ? 'lock' : 'unlock'} any elements: HTTP server unavailable`);
+  if (elementsToLock.length === 0) {
+    throw new Error(
+      `Failed to ${locked ? 'lock' : 'unlock'} any elements: none of ${elementIds.join(', ')} are on the board`
+    );
   }
 
-  return { elementIds, successCount };
+  await applyElementChanges({ upserts: elementsToLock.map(el => ({ id: el.id, locked })) });
+
+  return { elementIds, successCount: elementsToLock.length };
 }
 
-// Group elements by appending a fresh groupId to each element's groupIds on
-// the canvas. Canvas element state (not process-local memory) is the source
-// of truth so per-invocation clients like the CLI behave identically.
+// Group elements by appending a fresh groupId to each element's groupIds. The
+// board is the source of truth for who is in a group — `groupIds` is a native
+// Excalidraw field and it round-trips through the note — so every client sees
+// the same groups and a group outlives whatever made it.
 export async function groupElements(
   elementIds: string[]
 ): Promise<{ groupId: string; elementIds: string[]; successCount: number }> {
   const groupId = generateId();
+  const elementsToGroup = await targets(elementIds);
 
-  // Fetch existing groups and append new groupId to preserve multi-group membership
-  const updatePromises = elementIds.map(async (id) => {
-    const element = await getElementFromCanvas(id);
-    const existingGroups = element?.groupIds || [];
-    const updatedGroupIds = [...existingGroups, groupId];
-    return await updateElementOnCanvas({ id, groupIds: updatedGroupIds });
-  });
-
-  const results = await Promise.all(updatePromises);
-  const successCount = results.filter(result => result).length;
-
-  if (successCount === 0) {
-    throw new Error('Failed to group any elements: HTTP server unavailable');
+  if (elementsToGroup.length === 0) {
+    throw new Error(`Failed to group any elements: none of ${elementIds.join(', ')} are on the board`);
   }
 
-  return { groupId, elementIds, successCount };
+  // Append rather than replace, so an element can be in more than one group.
+  await applyElementChanges({
+    upserts: elementsToGroup.map(el => ({ id: el.id, groupIds: [...(el.groupIds || []), groupId] }))
+  });
+
+  return { groupId, elementIds, successCount: elementsToGroup.length };
 }
 
-// Ungroup by finding members via canvas groupIds. Optionally seeded with a
-// known member list (the MCP server's legacy in-memory group map) for
-// backward compatibility.
+// Ungroup by finding the group's members through their groupIds. Optionally
+// seeded with a known member list (the MCP server's legacy in-memory group map)
+// for backward compatibility.
 export async function ungroupElements(
   groupId: string,
   knownMemberIds?: string[]
 ): Promise<{ groupId: string; ungrouped: boolean; elementIds: string[]; successCount: number }> {
-  let memberIds = knownMemberIds;
-  if (!memberIds || memberIds.length === 0) {
-    const allElements = await getElements();
-    memberIds = allElements
-      .filter(el => (el.groupIds || []).includes(groupId))
-      .map(el => el.id);
+  const board = await getElements();
+  let members = board.filter(el => (el.groupIds || []).includes(groupId));
+  if (knownMemberIds && knownMemberIds.length > 0) {
+    const byId = new Map(board.map(el => [el.id, el]));
+    const seeded: ServerElement[] = [];
+    for (const id of knownMemberIds) {
+      const element = byId.get(id);
+      if (element) seeded.push(element);
+      else logger.warn(`Element ${id} not found on canvas, skipping ungroup`);
+    }
+    if (seeded.length > 0) members = seeded;
   }
 
-  if (memberIds.length === 0) {
+  if (members.length === 0) {
     throw new Error(`Group ${groupId} not found`);
   }
 
-  // Update elements on canvas, removing only this specific groupId
-  const updatePromises = memberIds.map(async (id) => {
-    // Fetch current element to get existing groupIds
-    const element = await getElementFromCanvas(id);
-    if (!element) {
-      logger.warn(`Element ${id} not found on canvas, skipping ungroup`);
-      return null;
-    }
-
-    // Remove only the specific groupId, preserve others
-    const updatedGroupIds = (element.groupIds || []).filter(gid => gid !== groupId);
-    return await updateElementOnCanvas({ id, groupIds: updatedGroupIds });
+  // Remove only this groupId, so the other groups an element is in survive.
+  await applyElementChanges({
+    upserts: members.map(el => ({
+      id: el.id,
+      groupIds: (el.groupIds || []).filter(gid => gid !== groupId)
+    }))
   });
 
-  const results = await Promise.all(updatePromises);
-  const successCount = results.filter(result => result !== null).length;
-
-  if (successCount === 0) {
-    throw new Error('Failed to ungroup: no elements were updated (elements may not exist on canvas)');
-  }
-
-  return { groupId, ungrouped: true, elementIds: memberIds, successCount };
+  const elementIds = members.map(el => el.id);
+  return { groupId, ungrouped: true, elementIds, successCount: elementIds.length };
 }
 
 export async function duplicateElements(
@@ -242,16 +232,10 @@ export async function duplicateElements(
   offsetX = 20,
   offsetY = 20
 ): Promise<{ duplicates: ServerElement[]; canvasElements: ServerElement[] | null; offsetX: number; offsetY: number }> {
-  const duplicates: ServerElement[] = [];
-  for (const id of elementIds) {
-    const original = await getElementFromCanvas(id);
-    if (!original) {
-      logger.warn(`Element ${id} not found, skipping duplicate`);
-      continue;
-    }
-
+  const originals = await targets(elementIds);
+  const duplicates: ServerElement[] = originals.map((original) => {
     const { createdAt, updatedAt, version, syncedAt, source, syncTimestamp, ...rest } = original as any;
-    const duplicate: ServerElement = {
+    return {
       ...rest,
       id: generateId(),
       x: original.x + offsetX,
@@ -259,14 +243,14 @@ export async function duplicateElements(
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       version: 1
-    };
-    duplicates.push(duplicate);
-  }
+    } as ServerElement;
+  });
 
   if (duplicates.length === 0) {
     throw new Error('No elements could be duplicated (none found)');
   }
 
+  // Already one write, and one that returns what it created.
   const canvasElements = await batchCreateElementsOnCanvas(duplicates);
   if (!canvasElements) {
     throw new Error('Failed to duplicate elements: HTTP server unavailable');

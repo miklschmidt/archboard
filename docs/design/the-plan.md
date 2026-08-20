@@ -40,7 +40,9 @@ after stage 5 is a chain.
 
 The suites are `type-check`, `module-scope`, `mcp`, `bind`, `obsidian`,
 `changes`, `geometry`, `labels`, `library`, `boards`, `branch`, `side-by-side`,
-`install`, `repos`, `parity` and `hot`. The risk lines below name them.
+`install`, `repos`, `parity` and `hot`. The risk lines below name them. Stage 1
+added a sixteenth, `one-write`, which counts the writes an intent costs on the
+wire.
 
 ## Stage 1. Batch the fan-out
 

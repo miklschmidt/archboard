@@ -1,0 +1,332 @@
+#!/usr/bin/env bun
+
+// One intent, one write.
+//
+// Aligning twenty boxes is one thing a person asked for. It used to cost twenty
+// HTTP writes, and so did distributing, locking, grouping and ungrouping them;
+// `apply` cost one per update and one per delete on top of its batched create.
+// That is a nuisance today. It is lost updates once the note is the only copy
+// of the board and every write is a read-modify-write cycle against it
+// (ADR 0015), and twenty separate acquisitions of the board's lock with
+// nineteen gaps for another writer between them (ADR 0016).
+//
+// So the number of writes is measured rather than asserted about: a counting
+// proxy sits between the client and a real canvas, and every intent below is
+// driven through the code the CLI and MCP both call. Counting on the wire is
+// the point — a check that read the source could not tell a batched call from a
+// loop that happens to be written on one line.
+//
+// The rest of the file is what the batched path must not lose on the way:
+// an agent's write is still an agent's write to the feed and is not stamped as
+// the browser's, a report that says nothing about origin still gets exactly
+// what the browser has always got, and a batched move still drags labels and
+// arrows along behind it the way a single-element PUT does.
+
+import fs from 'node:fs';
+import os from 'node:os';
+import http from 'node:http';
+import { spawn } from 'node:child_process';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const repoRoot = join(__dirname, '..');
+const src = (p) => join(repoRoot, 'src', p);
+
+let failures = 0;
+let checks = 0;
+const assert = (condition, message) => {
+  checks += 1;
+  if (condition) return;
+  failures += 1;
+  console.error(`FAIL: ${message}`);
+};
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const near = (a, b, slack = 0.5) => Math.abs(a - b) <= slack;
+
+// A different port each run, so two checkouts running the suite at once do not
+// serialise on one, and so this never lands on somebody's real canvas.
+const PORT = 39000 + Math.floor(Math.random() * 2000);
+const PROXY_PORT = PORT + 1;
+const SETTLE_MS = 200;
+const base = `http://127.0.0.1:${PORT}`;
+const proxyBase = `http://127.0.0.1:${PROXY_PORT}`;
+const vault = fs.mkdtempSync(join(os.tmpdir(), 'archboard-one-write-'));
+
+const server = spawn(process.execPath, [src('server.ts')], {
+  env: {
+    ...process.env,
+    PORT: String(PORT),
+    HOST: '127.0.0.1',
+    ARCHBOARD_VAULT: vault,
+    ARCHBOARD_SETTLE_MS: String(SETTLE_MS),
+    LOG_LEVEL: 'error'
+  },
+  stdio: ['ignore', 'ignore', 'ignore']
+});
+
+// ─── The counter ─────────────────────────────────────────────
+//
+// Everything the client sends passes through here on its way to the canvas. A
+// write is a POST, PUT or DELETE against an element route; reads are forwarded
+// and ignored, because this is about how many times an intent touches the
+// board, not how many times it looks at it.
+
+let writes = [];
+const proxy = http.createServer((req, res) => {
+  const chunks = [];
+  req.on('data', (chunk) => chunks.push(chunk));
+  req.on('end', async () => {
+    const body = Buffer.concat(chunks);
+    const isWrite = req.method !== 'GET' && req.method !== 'HEAD';
+    if (isWrite && req.url.startsWith('/api/elements')) {
+      writes.push(`${req.method} ${req.url.split('?')[0]}`);
+    }
+    try {
+      const upstream = await fetch(`${base}${req.url}`, {
+        method: req.method,
+        headers: { ...(req.headers['content-type'] ? { 'Content-Type': req.headers['content-type'] } : {}) },
+        ...(body.length > 0 ? { body } : {})
+      });
+      const text = await upstream.text();
+      res.writeHead(upstream.status, { 'Content-Type': upstream.headers.get('content-type') ?? 'application/json' });
+      res.end(text);
+    } catch (error) {
+      res.writeHead(502, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: String(error) }));
+    }
+  });
+});
+await new Promise((resolve) => proxy.listen(PROXY_PORT, '127.0.0.1', resolve));
+
+// The client reads its canvas URL at import time, so the proxy has to be the
+// canvas before anything under src/ is loaded.
+process.env.EXPRESS_SERVER_URL = proxyBase;
+const { setRequestedBoard } = await import(src('core/canvas-client.ts'));
+const ops = await import(src('core/element-ops.ts'));
+const { boundTextPlacement } = await import(src('core/labels.ts'));
+
+const api = async (method, url, body) => {
+  const response = await fetch(`${base}${url}`, {
+    method,
+    ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  });
+  return response.json().catch(() => null);
+};
+const board = '?board=scratch';
+const elementsOn = async () => (await api('GET', `/api/elements${board}`))?.elements ?? [];
+const byId = async () => new Map((await elementsOn()).map((el) => [el.id, el]));
+
+// One intent, and what it cost on the wire.
+const counting = async (what, run) => {
+  writes = [];
+  const result = await run();
+  const spent = writes.slice();
+  assert(spent.length === 1, `${what} should cost one write, not ${spent.length}: ${spent.join(', ') || 'none'}`);
+  return result;
+};
+
+try {
+  for (let i = 0; i < 100; i++) {
+    try { await fetch(`${base}/health`); break; } catch { await sleep(100); }
+  }
+  setRequestedBoard('scratch');
+
+  // ─── Twenty boxes, and the five ways of moving them at once ───
+
+  const boxes = Array.from({ length: 20 }, (_, i) => ({
+    id: `box-${i}`,
+    type: 'rectangle',
+    x: 100 + i * 37,
+    y: 100 + i * 53,
+    width: 120,
+    height: 80
+  }));
+  await api('POST', `/api/elements/batch${board}`, { elements: boxes });
+  const ids = boxes.map((box) => box.id);
+
+  await counting('aligning twenty boxes', () => ops.alignElements(ids, 'left'));
+  let scene = await byId();
+  const lefts = new Set(ids.map((id) => Math.round(scene.get(id).x)));
+  assert(lefts.size === 1, `aligning left should have left one x, not ${lefts.size}`);
+
+  await counting('distributing twenty boxes', () => ops.distributeElements(ids, 'vertical'));
+  scene = await byId();
+  const tops = ids.map((id) => scene.get(id).y).sort((a, b) => a - b);
+  const gaps = tops.slice(1).map((y, i) => y - tops[i]);
+  assert(gaps.every((gap) => near(gap, gaps[0], 0.01)),
+    `distributing should have left even gaps, not ${gaps.map((g) => Math.round(g)).join(', ')}`);
+
+  await counting('locking twenty boxes', () => ops.setElementsLocked(ids, true));
+  scene = await byId();
+  assert(ids.every((id) => scene.get(id).locked === true), 'locking should have locked every box');
+  await counting('unlocking twenty boxes', () => ops.setElementsLocked(ids, false));
+
+  // An element already in a group, to prove the write appends rather than
+  // replaces — the reason grouping used to read every element first.
+  await api('PUT', `/api/elements/box-0${board}`, { groupIds: ['existing'] });
+  const { groupId } = await counting('grouping twenty boxes', () => ops.groupElements(ids));
+  scene = await byId();
+  assert(ids.every((id) => (scene.get(id).groupIds ?? []).includes(groupId)),
+    'grouping should have put every box in the new group');
+  assert((scene.get('box-0').groupIds ?? []).includes('existing'),
+    'grouping dropped a group the element was already in');
+
+  await counting('ungrouping twenty boxes', () => ops.ungroupElements(groupId));
+  scene = await byId();
+  assert(ids.every((id) => !(scene.get(id).groupIds ?? []).includes(groupId)),
+    'ungrouping should have emptied the group');
+  assert((scene.get('box-0').groupIds ?? []).includes('existing'),
+    'ungrouping dropped the other group its member was in');
+
+  // ─── apply, through the CLI a person actually types ───────────
+
+  const patch = {
+    create: [
+      { id: 'made-a', type: 'rectangle', x: 2000, y: 2000, width: 100, height: 50 },
+      { type: 'ellipse', x: 2200, y: 2000, width: 100, height: 50 }
+    ],
+    update: [
+      { id: 'box-1', set: { backgroundColor: '#ffc9c9' } },
+      { id: 'box-2', set: { x: 4000 } }
+    ],
+    delete: ['box-19']
+  };
+  const applied = await counting('a patch of two creates, two updates and a delete', async () => {
+    const child = spawn(process.execPath, [src('bin.ts'), 'apply', '--board', 'scratch', '-'], {
+      cwd: repoRoot,
+      env: { ...process.env, EXPRESS_SERVER_URL: proxyBase, LOG_LEVEL: 'error' },
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+    child.stdin.write(JSON.stringify(patch));
+    child.stdin.end();
+    let out = '';
+    let err = '';
+    child.stdout.on('data', (chunk) => { out += chunk; });
+    child.stderr.on('data', (chunk) => { err += chunk; });
+    const code = await new Promise((resolve) => child.on('exit', resolve));
+    assert(code === 0, `apply exited ${code}: ${err}`);
+    return JSON.parse(out);
+  });
+  assert(applied.created === 2 && applied.updated === 2 && applied.deleted === 1,
+    `apply reported ${JSON.stringify({ created: applied.created, updated: applied.updated, deleted: applied.deleted })}`);
+  assert(Array.isArray(applied.elements) && applied.elements.length === 2 &&
+    applied.elements.every((el) => typeof el.id === 'string' && el.id.length > 0),
+    'apply should still hand back the elements it created, ids and all — the server mints them');
+  scene = await byId();
+  assert(scene.get('box-1').backgroundColor === '#ffc9c9' && near(scene.get('box-2').x, 4000) && !scene.has('box-19'),
+    'the patch did not land: the counts were right and the board is wrong');
+
+  // A patch naming an element that is not there is refused with nothing
+  // written, rather than halfway through with the earlier half applied.
+  {
+    const child = spawn(process.execPath, [src('bin.ts'), 'apply', '--board', 'scratch', '-'], {
+      cwd: repoRoot,
+      env: { ...process.env, EXPRESS_SERVER_URL: proxyBase, LOG_LEVEL: 'error' },
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+    child.stdin.write(JSON.stringify({
+      update: [{ id: 'box-3', set: { x: 9999 } }, { id: 'never-existed', set: { x: 1 } }]
+    }));
+    child.stdin.end();
+    const code = await new Promise((resolve) => child.on('exit', resolve));
+    assert(code !== 0, 'a patch naming an element that is not on the board should be refused');
+    scene = await byId();
+    assert(!near(scene.get('box-3').x, 9999),
+      'the refused patch applied its first update anyway, which is the half-applied write this exists to stop');
+  }
+
+  // ─── Who wrote it ─────────────────────────────────────────────
+  //
+  // The two things `origin` decides, and nothing else.
+
+  // Let everything above settle and be reported, so what follows is measured
+  // from a quiet board rather than coalesced with it.
+  await sleep(SETTLE_MS * 4);
+  const beforeHuman = (await api('GET', `/api/changes?board=scratch&since=0`))?.cursor ?? 0;
+
+  // What the browser sends is unchanged: no origin, so `frontend_sync` and a
+  // human at the feed.
+  await api('POST', `/api/elements/changes${board}`, {
+    upserts: [{ id: 'drawn-by-hand', type: 'rectangle', x: 6000, y: 6000, width: 200, height: 100 }],
+    deletes: [],
+    clientId: 'pane'
+  });
+  scene = await byId();
+  assert(scene.get('drawn-by-hand').source === 'frontend_sync',
+    'a report with no origin should be stamped frontend_sync, exactly as before');
+  await sleep(SETTLE_MS * 4);
+  let feed = await api('GET', `/api/changes?board=scratch&since=${beforeHuman}`);
+  let events = feed?.events ?? [];
+  assert(events.length > 0 && events.every((event) => event.origin === 'human'),
+    `a report with no origin is the human's hands: ${JSON.stringify(events.map((e) => e.origin))}`);
+
+  const cursor = feed.cursor;
+  await ops.alignElements(['drawn-by-hand', 'box-1'], 'top');
+  scene = await byId();
+  assert(scene.get('drawn-by-hand').source === 'frontend_sync',
+    'an agent moving a human\'s box should not take the authorship of it');
+  assert(scene.get('box-1').source === undefined,
+    `an agent's write must not be stamped as the browser's (source: ${scene.get('box-1').source})`);
+  await sleep(SETTLE_MS * 4);
+  feed = await api('GET', `/api/changes?board=scratch&since=${cursor}`);
+  events = feed?.events ?? [];
+  assert(events.length > 0 && events.every((event) => event.origin === 'agent'),
+    `an agent's batched write is the agent's, or it gets narrated back at it (ADR 0005): ` +
+    JSON.stringify(events.map((e) => e.origin)));
+
+  // ─── What a batched move still owes the board ─────────────────
+  //
+  // A single-element PUT drags a bound label along and re-routes every arrow
+  // bound to what moved (TASK-034, TASK-038). A batched write is the same
+  // write, so it owes the same.
+
+  await api('POST', `/api/elements/batch${board}`, {
+    elements: [
+      { id: 'svc', type: 'rectangle', x: 200, y: 8000, width: 200, height: 100 },
+      // Taller, so aligning the two by their bottom edges has to move the
+      // labelled one.
+      { id: 'db', type: 'rectangle', x: 900, y: 8000, width: 200, height: 260 },
+      { id: 'wire', type: 'arrow', x: 400, y: 8050, width: 10, height: 10, start: { id: 'svc' }, end: { id: 'db' } },
+      { id: 'svc-label', type: 'text', containerId: 'svc', text: 'AuthService', x: 250, y: 8038, width: 100, height: 25 }
+    ]
+  });
+  await api('PUT', `/api/elements/svc${board}`, {
+    boundElements: [{ id: 'svc-label', type: 'text' }]
+  });
+  const before = await byId();
+  const wireBefore = JSON.stringify(before.get('wire').points);
+  const placed = (elements) => {
+    const label = elements.get('svc-label');
+    const wanted = boundTextPlacement(elements.get('svc'), label);
+    return near(label.x, wanted.x, 0.5) && near(label.y, wanted.y, 0.5);
+  };
+
+  await counting('aligning a labelled, wired box', () => ops.alignElements(['svc', 'db'], 'bottom'));
+  scene = await byId();
+  assert(near(scene.get('svc').y + scene.get('svc').height, scene.get('db').y + scene.get('db').height),
+    'the two boxes should share a bottom edge');
+  assert(!near(scene.get('svc').y, before.get('svc').y),
+    'the check is not exercising anything: the labelled box did not move');
+  assert(placed(scene),
+    `a batched move stranded a bound label at ${Math.round(scene.get('svc-label').x)},${Math.round(scene.get('svc-label').y)}`);
+  assert(JSON.stringify(scene.get('wire').points) !== wireBefore,
+    'a batched move left an arrow bound to it pointing at where the box used to be');
+
+  // And the settling is part of the same write, not a second one.
+  writes = [];
+  await ops.distributeElements(['svc', 'db', 'box-1'], 'horizontal');
+  assert(writes.length === 1,
+    `re-routing and re-placing behind a batched move must not cost extra writes: ${writes.join(', ')}`);
+} finally {
+  server.kill('SIGTERM');
+  await new Promise((resolve) => proxy.close(resolve));
+  await sleep(200);
+  fs.rmSync(vault, { recursive: true, force: true });
+}
+
+if (failures > 0) {
+  console.error(`\n${failures} of ${checks} one-write checks failed`);
+  process.exit(1);
+}
+console.log(`one-write: ${checks} checks passed`);
