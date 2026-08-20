@@ -440,13 +440,13 @@ export const tools: Tool[] = [
   },
   {
     name: 'save_board',
-    description: "Write the named board back to its .excalidraw.md note in the vault, preserving the note's frontmatter and prose. Pass name to save it as a different board (which is how the unnamed scratch board gets a name). THE SAVE CAN BE REFUSED: archboard hashes a note when it reads it and verifies that hash before writing, so if the file changed underneath (Obsidian, a sync client, another editor) or archboard has never read what is at that address, nothing is written and the refusal comes back with three ways out — reload the note (open_board with reload, discarding the canvas), overwrite it (force, discarding the note), or save under another name. Relay the refusal and those three choices to the human and let them pick; never choose for them.",
+    description: "Write the named board back to its .excalidraw.md note in the vault, preserving the note's frontmatter and prose. Pass name or variant to branch it, which writes a second board and is how a proposal starts; the source board's level comes across unless you pass a different level. BRANCHING MOVES NOTHING ON SCREEN: the panes holding the source keep holding it, and the branch is not showing anywhere until you open_board it, which is what lets current and proposal sit side by side. The answer says which panes moved (panes.moved) and which were left on the source (panes.kept). The one save that does move a pane is giving the scratch board a name. THE SAVE CAN BE REFUSED: archboard hashes a note when it reads it and verifies that hash before writing, so if the file changed underneath (Obsidian, a sync client, another editor) or archboard has never read what is at that address, nothing is written and the refusal comes back with three ways out — reload the note (open_board with reload, discarding the canvas), overwrite it (force, discarding the note), or save under another name. Relay the refusal and those three choices to the human and let them pick; never choose for them.",
     inputSchema: {
       type: 'object',
       properties: {
-        name: { type: 'string', description: 'Save as this board instead of the current one. Accepts name or name@variant.' },
-        variant: { type: 'string', description: 'Save as this variant of the same board.' },
-        level: { type: 'string', description: 'Set the board\'s abstraction tier: system, service, or module.' },
+        name: { type: 'string', description: 'Branch to this board instead of saving in place. Accepts name or name@variant.' },
+        variant: { type: 'string', description: 'Branch to this variant of the same board.' },
+        level: { type: 'string', description: 'Set the board\'s abstraction tier: system, service, or module. Omit on a branch and the source board\'s level carries across.' },
         force: { type: 'boolean', description: 'Overwrite a note archboard has not seen, destroying whatever it holds. Only ever pass this after a refused save when the human has said to overwrite.' }
       }
     }

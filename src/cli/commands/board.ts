@@ -24,6 +24,20 @@ const ADDRESS_FLAGS = {
 // the canvas refuses rather than making it.
 const PANE_FLAG = { pane: { takesValue: true } };
 
+/**
+ * How a human points at panes: "the left pane", "the left and right panes".
+ *
+ * The canvas names a solo pane "the only pane", which already reads as a
+ * phrase, so it loses the article here rather than coming out as "the the only
+ * pane pane".
+ */
+function listPanes(refs: Array<{ place: string }>): string {
+  const places = refs.map(ref => (ref.place === 'the only pane' ? 'only' : ref.place));
+  const noun = places.length === 1 ? 'pane' : 'panes';
+  if (places.length === 1) return `the ${places[0]} ${noun}`;
+  return `the ${places.slice(0, -1).join(', ')} and ${places[places.length - 1]} ${noun}`;
+}
+
 export async function board(argv: string[]): Promise<void> {
   const sub = argv[0];
   if (!sub || !(SUBCOMMANDS as readonly string[]).includes(sub)) {
@@ -79,7 +93,7 @@ export async function board(argv: string[]): Promise<void> {
     note(
       `Board "${result.board}" is empty and exists only in memory until you run ` +
       `\`board save --board ${result.board}\`.` +
-      (result.pane ? ` It is on screen in the ${result.pane.place} pane.` : '')
+      (result.pane ? ` It is on screen in ${listPanes([result.pane])}.` : '')
     );
     printJson(result);
     return;
@@ -102,7 +116,7 @@ export async function board(argv: string[]): Promise<void> {
     // which pane that is is the one thing the caller cannot see from here.
     note(
       result.pane
-        ? `"${result.board}" is showing in the ${result.pane.place} pane. ` +
+        ? `"${result.board}" is showing in ${listPanes([result.pane])}. ` +
           `Commands still name it: \`--board ${result.board}\`.`
         : `"${result.board}" is loaded, but no pane is open, so nothing is showing it.`
     );
@@ -149,6 +163,27 @@ export async function board(argv: string[]): Promise<void> {
     (quiet as any).quiet = true;
     (quiet as any).code = 'BOARD_CONFLICT';
     throw quiet;
+  }
+
+  // What the save did to the screen. A save writes a file; `board open`
+  // chooses what is on show (ADR 0011), so the one case where a save moves a
+  // pane and the one where it deliberately does not both get said out loud.
+  const moved = result.panes?.moved ?? [];
+  const kept = result.panes?.kept ?? [];
+  if (moved.length) {
+    note(
+      `"${result.board}" is now showing in ${listPanes(moved)}, which held the board it was saved from.`
+    );
+  } else if (result.saveKind === 'branch') {
+    note(
+      `Branched "${result.savedFrom}" to "${result.board}". ` +
+      (kept.length
+        ? `Nothing moved: ${listPanes(kept)} still ${kept.length > 1 ? 'hold' : 'holds'} ` +
+          `"${result.savedFrom}", and the branch is not showing anywhere. `
+        : `No pane was holding "${result.savedFrom}", and the branch is not showing anywhere either. `) +
+      `Put it on screen with \`board open ${result.board}\`, which asks for a pane ` +
+      'when more than one is open.'
+    );
   }
 
   if (result.forced) {
