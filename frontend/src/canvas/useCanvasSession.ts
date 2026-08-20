@@ -23,7 +23,7 @@ import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
 import type { LibraryItems } from '@excalidraw/excalidraw/types'
 import { convertMermaidToExcalidraw, DEFAULT_MERMAID_CONFIG } from '../utils/mermaidConverter'
 import type { BoardIdentity, PaneStatus, ServerElement, WebSocketMessage } from '../types'
-import { cleanElementForExcalidraw, convertElementsPreservingImageProps } from './elements'
+import { cleanElementForExcalidraw, elementsForScene } from './elements'
 import { baselineFrom, diffAgainstBaseline, fingerprint, isEmpty, type Baseline } from './changes'
 import { fetchElements, fetchFiles, loadedBundle, reportChanges, reportPane } from './api'
 import type { PaneReport } from './api'
@@ -328,7 +328,7 @@ export function useCanvasSession({
       }
     })
     api.updateScene({
-      elements: convertElementsPreservingImageProps(merged) as any,
+      elements: elementsForScene(merged) as any,
       captureUpdate: CaptureUpdateAction.NEVER
     })
   }, [settle])
@@ -516,7 +516,7 @@ export function useCanvasSession({
     if (!apiRef.current || !boardKeyRef.current) return
     try {
       const { elements } = await fetchElements(boardKeyRef.current)
-      applyServerScene(convertElementsPreservingImageProps(elements.map(cleanElementForExcalidraw)))
+      applyServerScene(elementsForScene(elements.map(cleanElementForExcalidraw)))
       const { files } = await fetchFiles(boardKeyRef.current)
       if (files && Object.keys(files).length > 0) apiRef.current?.addFiles(Object.values(files) as any)
     } catch (error) {
@@ -676,7 +676,7 @@ export function useCanvasSession({
           break
         }
         const elements = (data.elements ?? []).map(cleanElementForExcalidraw)
-        applyServerScene(elements.length > 0 ? convertElementsPreservingImageProps(elements) : [])
+        applyServerScene(elements.length > 0 ? elementsForScene(elements) : [])
         if (data.files) api.addFiles(Object.values(data.files))
         break
       }
@@ -686,7 +686,7 @@ export function useCanvasSession({
       // exists to prevent — and take an empty board as genuinely empty.
       case 'board_switched': {
         const elements = (data.elements ?? []).map(cleanElementForExcalidraw)
-        applyServerScene(elements.length > 0 ? convertElementsPreservingImageProps(elements) : [])
+        applyServerScene(elements.length > 0 ? elementsForScene(elements) : [])
         // The board's images come with it. Without this a pane pointed at a
         // board with pictures on it got the elements and no pictures, and only
         // a reload put them back (TASK-060).
