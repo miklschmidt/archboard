@@ -357,6 +357,31 @@ function mergedCustomData(el: ServerElement, block: ArchboardBlock): Record<stri
   return { ...existing, archboard: { ...previous, ...block } };
 }
 
+// Branching a board: every node on the copy now belongs to the new variant.
+//
+// `board save --as payments@option-a` is how a proposal starts (TESTING.md),
+// and it copies the elements verbatim, so without this every node would still
+// record the variant it was promoted under. compare reads that disagreement as
+// `variantAnomaly` — a node copied between variants and never re-promoted —
+// and would report the whole board changed on the one workflow that is meant
+// to leave it unchanged (TASK-035).
+//
+// Only the variant moves. The node id, kind, name and binding are what make
+// the copy comparable with its origin, and rewriting any of them would sever
+// the join the diff is built on. Elements that were never promoted are
+// returned as they are, and so is every other `customData` key.
+export function restampVariant(elements: ServerElement[], variant: string): ServerElement[] {
+  return elements.map(el => {
+    const block = archboardBlock(el);
+    if (!block) return el;
+    // A node, or something that has been stamped with a variant before.
+    // Anything else is a plain element and has no variant to be wrong about.
+    if (block.node === undefined && block.variant === undefined) return el;
+    if (block.variant === variant) return el;
+    return { ...el, customData: mergedCustomData(el, { variant }) };
+  });
+}
+
 // One node from many elements, or one node per shape?
 //
 // Default: **one node from the whole selection**. A single promotion carries
