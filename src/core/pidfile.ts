@@ -1,23 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { homedir } from 'os';
 import logger from '../utils/logger.js';
-
-/**
- * Platform-compatible state directory for runtime artifacts (pidfile),
- * mirroring the log-path convention in utils/logger.ts.
- */
-function stateDir(): string {
-  if (process.platform === 'darwin') {
-    return path.join(homedir(), 'Library', 'Application Support', 'excalidraw-canvas');
-  }
-  if (process.platform === 'win32') {
-    const base = process.env.LOCALAPPDATA || path.join(homedir(), 'AppData', 'Local');
-    return path.join(base, 'Excalidraw-Canvas');
-  }
-  const xdgState = process.env.XDG_STATE_HOME || path.join(homedir(), '.local', 'state');
-  return path.join(xdgState, 'excalidraw-canvas');
-}
+import { stateDir } from './state-dir.js';
 
 export function pidFilePath(port: number): string {
   return path.join(stateDir(), `server-${port}.pid`);

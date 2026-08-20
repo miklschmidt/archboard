@@ -20,7 +20,7 @@
     "dev:server": "bunx tsc --watch",
     "production": "bun run build && bun run canvas",
     "sync:skills": "node scripts/sync-skills.mjs",
-    "test": "bun run test:mcp && bun run test:bind && bun run test:obsidian && bun run test:changes && bun run test:labels && bun run test:library && bun run test:boards && bun run test:parity",
+    "test": "bun run test:mcp && bun run test:bind && bun run test:obsidian && bun run test:changes && bun run test:labels && bun run test:library && bun run test:boards && bun run test:repos && bun run test:parity",
     "test:bind": "bun run build:server && node scripts/check-local-bind.mjs",
     "test:obsidian": "bun run build:server && node scripts/check-obsidian-md.mjs",
     "test:mcp": "bun run build:server && node scripts/check-mcp-stdio.mjs",
@@ -29,6 +29,7 @@
     "test:labels": "bun run build:server && node scripts/check-labels.mjs",
     "test:library": "bun run build:server && node scripts/check-library.mjs",
     "test:boards": "bun run build:server && node scripts/check-boards.mjs",
+    "test:repos": "bun run build:server && node scripts/check-repos.mjs",
     "test:parity": "bun run build:server && node scripts/check-surface-parity.mjs"
   },
   "dependencies": {
