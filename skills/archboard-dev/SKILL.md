@@ -28,17 +28,29 @@ split is what made TASK-056 confusing.
 working on the server itself, reload instead of restarting:
 
 ```bash
-bun run dev:canvas  # bun --hot: reloads on every save, keeps the boards
+bun run dev:canvas     # the canvas, reloadable, keeping the boards
+./bin/canvas reload    # and this is what reloads it
 ```
 
-`--hot` re-evaluates modules inside the running process, so the port, the open
+A reload re-evaluates modules inside the running process, so the port, the open
 tabs, the boards, the panes and the change feed's cursor all survive. It is not
-`--watch`, which restarts and takes them with it, and it is not what
-`canvas start` does — a reload has to be asked for.
+`--watch`, which restarts and takes them with it.
+
+**Saving a file does not reload anything.** `bun --hot` re-evaluates the whole
+module graph on any change, so the trigger is narrowed to a command: the entry
+bun watches (`src/dev-canvas.ts`) re-imports the canvas only when
+`./bin/canvas reload` moves a reload token. A canvas from `canvas start` cannot
+reload at all and says so.
 
 Anything long-lived you add to the server has to go through `kept()` in
 `src/core/hot.ts`, or a reload will quietly replace it while the tabs stay
-connected. `bun run test:hot` is what catches that.
+connected. Two things catch that so you do not have to remember it:
+
+- `bun run test:module-scope` refuses module-scope state in the canvas's import
+  graph. Waive a false positive with `// hot-safe: <reason>`.
+- Every reload compares boards, panes, sockets and the feed cursor across it,
+  and shouts to the terminal and to every open tab if anything moved.
+  `bun run test:hot` breaks a reload on purpose to prove that works.
 
 This box has node + bun but **no npm/npx**. The `package.json` scripts shell out
 to bun, so use `bun run <script>` — never `npm run`. `bun install` intermittently

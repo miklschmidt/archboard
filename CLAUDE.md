@@ -38,10 +38,11 @@ to bun, so run them with `bun run`, never `npm run`:
 bun install
 bun run build       # frontend only -> dist/frontend/
 bun run type-check
-bun run test        # type-check, then stdio wire, loopback bind, obsidian,
-                    # changes, geometry, labels, library, boards + panes,
-                    # branch vs redraw, proposal beside source, skill install,
-                    # repo bindings, CLI/MCP surface parity, hot reload
+bun run test        # type-check, module scope, then stdio wire, loopback
+                    # bind, obsidian, changes, geometry, labels, library,
+                    # boards + panes, branch vs redraw, proposal beside source,
+                    # skill install, repo bindings, CLI/MCP surface parity,
+                    # hot reload
 
 ./bin/canvas start  # canvas server on 127.0.0.1:3000
 ./bin/canvas status
@@ -59,31 +60,46 @@ that is already running.** A process reads its source at start, so a change to
 anything the *server* executes needs a restart or a reload. The CLI, which is a
 fresh process every time, already has it.
 
-**The canvas can reload in place, and it keeps everything on screen.**
+**The canvas can reload in place, and it keeps everything on screen. You ask
+for the reload; saving a file does not cause one.**
 
 ```bash
-bun run dev:canvas   # bun --hot: the canvas, reloading on every save
-bun run dev          # that plus vite on :5173, for frontend work
+bun run dev:canvas    # the canvas, reloadable
+bun run dev           # that plus vite on :5173, for frontend work
+./bin/canvas reload   # and this is what reloads it
 ```
 
-`bun --hot` re-evaluates changed modules inside the running process, which is a
+`bun --hot` re-evaluates modules inside the running process, which is a
 different thing from `bun --watch` restarting it. The port stays bound, the
 browser tabs keep their WebSockets, the boards keep their unsaved elements, the
-panes keep their registrations, and the change feed keeps its id and cursor. The
-server prints `reloaded in place` when it happens.
+panes keep their registrations, and the change feed keeps its id and cursor.
 
-**So state that must survive a reload lives in `kept()`** (`src/core/hot.ts`),
-not in module scope, which is rebuilt. Boards, panes, sockets, selection,
-snapshots, files, the library, the change feed and the injector all go through
-it, and anything new that a browser tab can see has to. Two traps come with it:
-a module that creates something at evaluation time must check first (re-running
-`boards.set(SCRATCH_KEY, …)` would blank the scratch board), and a handler on a
-kept object must be replaced rather than added. `bun run test:hot` edits real
-source files under a real canvas and checks all of it.
+The trigger is a command because `bun --hot` re-evaluates the **whole module
+graph** on any file change, not the file you edited, and it does that inside a
+process holding work that exists nowhere else. `bun run dev:canvas` runs
+`src/dev-canvas.ts`, a tiny entry that bun watches; it re-imports the canvas
+only when `./bin/canvas reload` moves a reload token. So an ordinary save runs
+ten statements and stops. A canvas started any other way refuses a reload with
+a 409 and says how to get one; `/health` reports `reloadable`.
 
-**`canvas start` watches nothing**, and that is deliberate (ADR 0014): a reload
-a developer asked for is cheap, one caused by a stray file save under a human's
-hands is not. Restarting still drops every unsaved board, so save first, or ask.
+**State that must survive a reload lives in `kept()`** (`src/core/hot.ts`), not
+in module scope, which is rebuilt. Two mechanisms enforce that rather than
+asking you to remember it (TASK-059, ADR 0014):
+
+- `bun run test:module-scope` parses the canvas's import graph and fails on
+  module-scope state: a `new` that is not a frozen lookup table, a literal
+  something writes to, a timer, a listener added without a paired removal, a
+  bind, or a write to long-lived state with no presence guard. Waive a false
+  positive with `// hot-safe: <reason>`. Both TASK-057 bugs are fixtures under
+  `scripts/fixtures/module-scope/`, so the check proves itself on every run.
+- Every reload in dev mode runs a canary (`src/core/reload-canary.ts`) that
+  compares board element counts, pane registrations, the socket count and the
+  feed's id and cursor across the reload, and shouts to the terminal **and**
+  every open tab if anything moved. `bun run test:hot` breaks a reload on
+  purpose to prove it fires.
+
+**`canvas start` watches nothing and cannot reload**, deliberately. Restarting
+drops every unsaved board, so save first, or ask.
 
 `bun run type-check` is the only thing that type-checks now, and `bun run test`
 runs it first, so a type error still fails the suite.
