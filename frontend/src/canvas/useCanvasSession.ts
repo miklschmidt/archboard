@@ -123,6 +123,11 @@ export function useCanvasSession({
   // Raised while we are writing the server's own news into the scene, so that
   // updateScene() does not read back as a human edit and bounce straight home.
   const suppressRef = useRef(0)
+  // How many times this pane has changed under a human's hand. Counted, not
+  // diffed, because the question it answers is "did the human touch anything
+  // while that write was in flight" and a diff cannot tell a human's edit from
+  // another writer's news that arrived in the same moment (TASK-074).
+  const localEditsRef = useRef(0)
   const userInteractedRef = useRef(false)
   const lastChangeAtRef = useRef<string | null>(null)
 
@@ -372,11 +377,41 @@ export function useCanvasSession({
     // The board rides with the delta: if a switch lands while this is in
     // flight the server still files it under the board it came from.
     const target = boardKeyRef.current
+    // Where the human had got to when this report was built. The document that
+    // comes back is an answer to exactly this much of the session.
+    const editsAtSend = localEditsRef.current
     inFlightRef.current = true
     try {
-      await reportChanges(target, report, clientId)
-      // Only now is this what the server holds.
-      baselineRef.current = report.nextBaseline
+      const reply = await reportChanges(target, report, clientId)
+
+      // The board comes back whole, and this pane renders it (ADR 0015,
+      // TASK-074). That is what stops a session accumulating divergence: the
+      // pane stops being a running total of deltas and becomes a view of the
+      // document, re-agreed on every write.
+      //
+      // Applying it outright is safe *here* and nowhere else, because this
+      // response was computed from what this pane just sent. Another writer's
+      // broadcast can be missing local work in flight, which is why that one
+      // is still merged by id, in applyServerElements.
+      //
+      // The one way this response can be missing something is a human editing
+      // during the round trip, which is short but not zero. So the check is
+      // made rather than assumed: if a hand has moved since the report was
+      // built, the document is stale by exactly that edit, and the pane keeps
+      // what it is holding and re-agrees on the next write instead.
+      //
+      // Counted rather than diffed. A diff cannot tell "the human moved a box"
+      // from "another writer's broadcast landed while this was in flight", and
+      // taking the second for the first would refuse the resync on every
+      // interleaved write — which is most of them, in a session with an agent
+      // in it.
+      const handMoved = localEditsRef.current !== editsAtSend
+      if (reply.document && !handMoved) {
+        applyServerScene(elementsForScene(reply.document.map(cleanElementForExcalidraw)))
+      } else {
+        // Only now is this what the server holds.
+        baselineRef.current = report.nextBaseline
+      }
       noteChange()
     } catch (error) {
       // The baseline is untouched, so the very same delta is recomputed next
@@ -389,7 +424,7 @@ export function useCanvasSession({
     } finally {
       inFlightRef.current = false
     }
-  }, [clientId, noteChange])
+  }, [applyServerScene, clientId, noteChange])
 
   /** Does this pane hold edits the server has not accepted? */
   const hasPendingChanges = useCallback((): boolean => {
@@ -409,6 +444,9 @@ export function useCanvasSession({
     // watching never writes, which is what makes a second pane safe.
     if (!userInteractedRef.current) return
     if (suppressRef.current > 0) return
+    // Past both gates, so this really is the human's own hand: the pane has
+    // been touched and nothing of the server's is being written into the scene.
+    localEditsRef.current += 1
     if (reportTimerRef.current) clearTimeout(reportTimerRef.current)
     reportTimerRef.current = setTimeout(() => {
       reportTimerRef.current = null
