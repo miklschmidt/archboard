@@ -24,29 +24,25 @@
 // the scene to stop moving, reads back what the pane is holding, and diffs it
 // against what the server holds, element by element and field by field.
 //
-// It names fields rather than counting elements on purpose. Stage 5 corrects
-// twelve specific constants (docs/design/server-is-the-truth.md, section 1C), and
-// "8 of 12 elements changed" would not tell anyone whether a correction
-// worked.
+// It names fields rather than counting elements on purpose. "8 of 12 elements
+// changed" would not tell anyone which correction had stopped working, and it
+// was the field lists that showed how much of that eight was our own frontend
+// converting on read rather than anything Excalidraw wanted.
 //
-// THE BASELINE IS TODAY, NOT ZERO. The board is not a fixed point yet. The
-// assertion below is the measurement taken on 2026-08-20 against this code:
-// 8 of 12 elements come back changed. **The target is zero**, and TASK-072
-// (stage 5, one converter) is what flips it: it is that task's acceptance
-// test, and it is that task's job to change the table below to an empty one
-// and add this check to `bun run test`. Until then a run that reports zero
-// changes is a failure here, because the harness would be lying.
+// THE BASELINE IS ZERO. It was 8 of 12 when this landed, as a measurement of
+// what stage 5 had to fix; stage 5 fixed it (TASK-072) and the table is empty.
+// A row in it is a regression.
 //
-// SO IT IS NOT IN `bun run test`. Run it on its own:
-//
-//   bun run build            # this check renders dist/frontend, not src
-//   bun run test:browser
+// IT IS IN `bun run test`, which means running the suite needs `agent-browser`
+// and a browser on the machine. That is deliberate: this is the only check
+// that can tell whether a board we write is one Excalidraw agrees with, and a
+// converter that has quietly started disagreeing is not something to find out
+// about on somebody's wall. Without a browser it exits 2 — "I could not run" —
+// rather than claiming a pass.
 //
 // It rebuilds the frontend itself unless given --skip-build, because the
 // frontend is half of what it is measuring and a stale bundle would quietly
-// test the wrong code. Running it in CI is TASK-082's problem: a fresh runner
-// has neither agent-browser nor a browser, and this exits 2 rather than
-// claiming a pass when it cannot find them.
+// test the wrong code. It takes about eleven seconds plus the build.
 //
 // HOW THE BROWSER IS DRIVEN, since nothing here did it before. `agent-browser`
 // on PATH, in a session of its own so it cannot touch a tab a human is using,
@@ -109,41 +105,34 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // 208.85975646972656 would turn this into a font-version detector.
 //
 // A bound text is named after the element it belongs to, because its id is
-// minted by the note writer and saying `GNd4kMNS` here would mean nothing to
+// minted by the converter and saying `GNd4kMNS` here would mean nothing to
 // anyone reading a failure.
 //
-// The table below has not moved since it was first recorded. The *values*
-// have: this check used to render on Chrome's last-resort font, so the widths
-// it diffed against were `20px serif`'s and not Excalidraw's. Fixing the font
-// gate (see below) left the same eight elements changing the same fields, and
-// turned `a standalone caption` from 163.2715 into 208.8598 — which is Virgil
-// at 20 px, and which resolves the one number `measuring-text-outside-a-
-// browser.md` recorded as belonging to neither regime.
-
-const BASELINE = {
-  'text1': ['-rawText', 'width', 'x', 'y'],
-  'draw1': ['+lastCommittedPoint', '+pressures', '+simulatePressure', 'index'],
-  'arr1': ['points'],
-  'arr2': ['index', 'points'],
-  'rect1:label': ['-rawText', 'height', 'index', 'width', 'x', 'y'],
-  'ell1:label': ['-rawText', 'height', 'index', 'width', 'x', 'y'],
-  'dia1:label': ['-rawText', 'height', 'index', 'width', 'x', 'y'],
-  'arr2:label': ['-rawText', 'height', 'index', 'width', 'x', 'y']
-};
-
-// What each of those is, so a failure is readable without the design doc:
+// IT IS EMPTY, AND THAT IS THE POINT. TASK-072 made it empty. The board this
+// check writes is a fixed point: opened in a real browser and rendered,
+// nothing comes back different. Any row appearing here is a regression, and
+// the field names in the failure say which.
 //
-//   width/height/x/y on text   our estimator against Excalidraw's measureText.
-//                              Stage 3 (TASK-070) decides how we measure.
-//   -rawText                   the note writer's field; Excalidraw drops it.
-//   index                      fractional index, rewritten because the
-//                              frontend's convertToExcalidrawElements reorders
-//                              on delivery. Stage 5 deletes that call.
-//   points on an arrow         inset by half the stroke width (section 1C of
-//                              docs/design/server-is-the-truth.md).
-//   +lastCommittedPoint,       freedraw fields our converter never writes.
-//   +pressures,
-//   +simulatePressure
+// What used to be here, and where each of it went (measured on 2026-08-20,
+// then again after each half of stage 5 landed):
+//
+//   width/height/x/y on text   our estimator, 76.7 px wrong on `AuthService`,
+//                              against Excalidraw's measureText. Now measured,
+//                              in `src/core/measure-text.ts`.
+//   -rawText                   dropped by the frontend's converter, not by
+//                              Excalidraw, which keeps it.
+//   index                      `a${n}` stops increasing at ten, because `a10`
+//                              sorts before `a2`. Now `fractionalIndex`.
+//   points on an arrow         inset by half a stroke width by the frontend's
+//                              converter, and gone with it.
+//   +lastCommittedPoint,       freedraw fields our converter never wrote and
+//   +pressures,                the frontend filled in on delivery, so the note
+//   +simulatePressure          never learned them. Now written.
+//
+// Of the eight elements this check used to report, seven were the frontend
+// converting on read. The one thing Excalidraw itself rewrote was `index`.
+
+const BASELINE = {};
 
 const IGNORED = ['createdAt', 'updatedAt', 'syncedAt', 'source', 'syncTimestamp',
   'version', 'versionNonce', 'updated'];
@@ -462,8 +451,11 @@ try {
       { id: 'arr2', type: 'arrow', x: 590, y: 145, points: [[0, 0], [84, 0]], start: { id: 'ell1' }, end: { id: 'dia1' }, label: { text: 'gRPC' } }
     ]
   });
+  // Twelve, not eight: four of those elements carry a label, and a label is a
+  // text element from the moment it is written (ADR 0015).
   check('a board is drawn covering every type an agent can create',
-    made.status === 200 && made.body?.elements?.length === 8, `status ${made.status}`);
+    made.status === 200 && made.body?.elements?.length === 12,
+    `status ${made.status}, ${made.body?.elements?.length} elements`);
 
   // Saved and read back, so the document under test is the note our exporter
   // writes rather than whatever the store happened to be holding.
@@ -533,35 +525,39 @@ try {
   const changedCount = Object.keys(measured.moved).length;
   const baselineCount = Object.keys(BASELINE).length;
 
-  check(`the recorded baseline is ${baselineCount} of ${held.length} elements changed`,
-    changedCount === baselineCount, `this run changed ${changedCount}`);
+  check(baselineCount === 0
+    ? `the board is a fixed point: none of its ${held.length} elements came back changed`
+    : `the recorded baseline is ${baselineCount} of ${held.length} elements changed`,
+  changedCount === baselineCount, `this run changed ${changedCount}`);
   check('  and the fields that moved are the ones the baseline names',
     news.length === 0 && gone.length === 0,
     [news.length ? `newly moving: ${news.join(', ')}` : '',
       gone.length ? `no longer moving: ${gone.join(', ')}` : ''].filter(Boolean).join('; '));
 
-  if (changedCount === 0) {
-    check('the board is a fixed point, which means this check has done its job',
-      false, 'nothing came back changed: flip BASELINE to {} and add test:browser to `bun run test` (TASK-072)');
-  }
-
-  // --- proof that a zero would be real ------------------------------------
+  // --- proof that a zero is real ------------------------------------------
   //
-  // The day stage 5 lands, this check reports zero. A read-back that had
-  // quietly stopped working would report the same zero, so before believing
-  // one, plant something Excalidraw must correct and watch the diff catch it.
+  // This check reports zero now, and a read-back that had quietly stopped
+  // working would report the same zero. So before believing one, plant
+  // something Excalidraw must correct and watch the diff catch it.
   // scripts/check-hot-reload.mjs breaks a reload on purpose for the same
   // reason.
+  //
+  // A duplicated `index`, because that is the only thing Excalidraw was ever
+  // measured correcting. A wrong *width* used to be the plant here and it is
+  // no good: Excalidraw does not re-measure a text element it is handed, which
+  // is a finding of this stage and the reason the widths in a note have to be
+  // right rather than merely close.
 
-  const wrong = { ...held.find(e => e.id === 'text1'), width: 999, height: 999 };
+  const first = held.find(e => e.id === 'rect1');
+  const wrong = { ...held.find(e => e.id === 'text1'), index: first.index };
   await api('POST', '/api/elements/changes?board=fixedpoint', {
     upserts: [wrong], deletes: [], clientId: 'check-fixed-point'
   });
   const afterPlant = await sceneWhenStill();
   const planted = whatMoved(
     (await api('GET', '/api/elements?board=fixedpoint')).body?.elements ?? [], afterPlant);
-  check('a width Excalidraw disagrees with is reported, so a zero here would be real',
-    (planted.moved['text1'] ?? []).includes('width'),
+  check('an index Excalidraw must repair is reported, so the zero above is real',
+    (planted.moved['text1'] ?? []).includes('index'),
     `text1 moved: ${(planted.moved['text1'] ?? ['nothing']).join(', ')}`);
 
   // --- what is ignored is stated, and is what the pane actually drops ------
@@ -592,4 +588,4 @@ if (failures > 0) {
   if (serverStderr.trim()) console.error(serverStderr.trim().split('\n').slice(-10).join('\n'));
   process.exit(1);
 }
-console.log('\nfixed-point: all checks passed. The board is not a fixed point yet; TASK-072 makes it one.');
+console.log('\nfixed-point: all checks passed. What we write is a document Excalidraw does not change.');
