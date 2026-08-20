@@ -118,10 +118,10 @@ Three interfaces drive the same live canvas. The CLI is the default; the other t
 
 1. **CLI** — use it whenever you can run a shell. Capabilities land here first, so it is the fullest surface.
    ```bash
-   ./bin/canvas <command>   # inside the archboard checkout — drives the local dist/ build
+   ./bin/canvas <command>   # inside the archboard checkout — runs the CLI from source
    archboard <command>      # anywhere else, if the bin is on your PATH
    ```
-   No setup needed — any canvas-touching command **auto-starts the canvas server** on `http://127.0.0.1:3000`. The package is private and never published, so there is nothing to install from npm: build from source. Inside the checkout, `bin/canvas` resolves from any cwd and always runs the current build, so prefer it there. Examples below say `archboard`; substitute `./bin/canvas` when you are in the repo.
+   No setup needed — any canvas-touching command **auto-starts the canvas server** on `http://127.0.0.1:3000`. The package is private and never published, so there is nothing to install from npm: run it from a checkout, which needs bun on PATH. Inside the checkout, `bin/canvas` resolves from any cwd and always runs the current source, so prefer it there. Examples below say `archboard`; substitute `./bin/canvas` when you are in the repo.
 2. **MCP tools** — the way in for a client with no shell. Same canvas, renamed: `batch_create_elements` for `add`, `describe_scene` for `describe`, and so on (full table in `references/cheatsheet.md`). Their display prefix depends on the key the MCP client's config gives this server, so match on the tool names, not the prefix. One thing they do that the CLI cannot: `get_canvas_screenshot` returns the image as content in your context, where `screenshot` writes a PNG you then read back.
 3. **REST API** (last resort, e.g. from application code): HTTP endpoints on `http://127.0.0.1:3000` — see `references/cheatsheet.md` for payloads. The server must already be running.
 

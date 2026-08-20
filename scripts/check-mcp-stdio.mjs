@@ -1,8 +1,12 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 // Wire-level checks for the stdio MCP entry point. Every case drives a real
-// `dist/index.js` process over stdin/stdout with hand-written JSON-RPC frames,
+// `src/index.ts` process over stdin/stdout with hand-written JSON-RPC frames,
 // so what is asserted is exactly what a client sees on the wire.
+//
+// The child is spawned with process.execPath, the bun running this file. An
+// MCP client's config spawns the same entry point the same way, and bun is
+// what can read a .ts entry at all (ADR 0014).
 
 import { spawn } from 'node:child_process';
 import { basename, dirname, join } from 'node:path';
@@ -10,10 +14,10 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
-const serverPath = join(repoRoot, 'dist', 'index.js');
-const runtime = process.env.MCP_RUNTIME || process.execPath;
+const serverPath = join(repoRoot, 'src', 'index.ts');
+const runtime = process.execPath;
 const runtimeName = basename(runtime).toLowerCase();
-const runtimeArgs = runtimeName.includes('bun') ? ['run', serverPath] : [serverPath];
+const runtimeArgs = [serverPath];
 
 const MODERN_VERSION = '2026-07-28';
 const LEGACY_VERSION = '2025-06-18';

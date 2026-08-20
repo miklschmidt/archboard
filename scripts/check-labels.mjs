@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 // The label feedback loop, run to exhaustion in a few milliseconds.
 //
@@ -38,7 +38,7 @@ const {
   recentreBoundTexts,
   boundTextDrift,
   rescueDriftedBoundTexts
-} = await import(join(__dirname, '..', 'dist', 'core', 'labels.js'));
+} = await import(join(__dirname, '..', 'src', 'core', 'labels.ts'));
 
 let failures = 0;
 let checks = 0;
@@ -889,7 +889,7 @@ const sceneBox = (elements) => ({
   const PORT = 35000 + Math.floor(Math.random() * 2000);
   const base = `http://127.0.0.1:${PORT}`;
   const vault = fs.mkdtempSync(join(os.tmpdir(), 'archboard-labels-'));
-  const server = spawn(process.execPath, [join(__dirname, '..', 'dist', 'server.js')], {
+  const server = spawn(process.execPath, [join(__dirname, '..', 'src', 'server.ts')], {
     env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', ARCHBOARD_VAULT: vault, LOG_LEVEL: 'error' },
     stdio: ['ignore', 'ignore', 'ignore']
   });

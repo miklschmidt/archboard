@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 // Installing the skill has to leave the next agent a repo it can work in.
 //
@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
-const bin = join(repoRoot, 'dist', 'bin.js');
+const bin = join(repoRoot, 'src', 'bin.ts');
 
 let failures = 0;
 let checks = 0;
@@ -34,7 +34,7 @@ const skillsRoot = join(scratch, 'skills');
 
 // Every run installs into a throwaway skills root, never the machine's own.
 function install(repo, extra = []) {
-  const stdout = execFileSync('node', [bin, 'install-skill', '--dir', skillsRoot, '--repo', repo, ...extra], {
+  const stdout = execFileSync(process.execPath, [bin, 'install-skill', '--dir', skillsRoot, '--repo', repo, ...extra], {
     encoding: 'utf-8',
     stdio: ['ignore', 'pipe', 'pipe'],
     // A vault in the environment is somebody having already answered the
@@ -63,7 +63,7 @@ const BEGIN = '<!-- archboard:begin -->';
 // since exercising it end to end would mean installing for real.
 
 {
-  const { chooseDoc } = await import(join(repoRoot, 'dist', 'cli', 'commands', 'install-skill.js'));
+  const { chooseDoc } = await import(join(repoRoot, 'src', 'cli', 'commands', 'install-skill.ts'));
   const empty = makeRepo('choose');
   assert(chooseDoc(empty, 'claude').file === join(empty, 'CLAUDE.md'), 'installing for claude should create CLAUDE.md');
   assert(chooseDoc(empty, 'codex').file === join(empty, 'AGENTS.md'), 'installing for codex should create AGENTS.md');
@@ -169,7 +169,7 @@ const BEGIN = '<!-- archboard:begin -->';
 {
   const repo = makeRepo('env');
   const vault = join(scratch, 'cross-repo-vault');
-  const stdout = execFileSync('node', [bin, 'install-skill', '--dir', skillsRoot, '--repo', repo], {
+  const stdout = execFileSync(process.execPath, [bin, 'install-skill', '--dir', skillsRoot, '--repo', repo], {
     encoding: 'utf-8',
     stdio: ['ignore', 'pipe', 'pipe'],
     env: { ...process.env, ARCHBOARD_VAULT: vault }

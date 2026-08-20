@@ -34,11 +34,12 @@ the touchscreen setup.
 
 ## Quick start
 
-Requires Node >= 20. This repo uses bun; there is no npm dependency.
+Requires bun. It runs the TypeScript, so the server and the CLI have no build
+step; only the frontend is built (ADR 0014).
 
 ```bash
 bun install
-bunx tsc && bunx vite build
+bunx vite build
 ./bin/canvas start
 ```
 

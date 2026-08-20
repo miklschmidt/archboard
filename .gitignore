@@ -3,9 +3,10 @@
 # installing 506MB again, and a trailing slash does not match a symlink.
 node_modules
 
-# Build artifacts
+# Build artifacts. Only the frontend is built: bun runs the server and the CLI
+# straight from src/, so dist/ holds nothing but what vite put in dist/frontend
+# (ADR 0014). A dist/ left over from before that holds compiled JS nothing reads.
 dist/
-public/dist/
 
 # Environment files
 .env
