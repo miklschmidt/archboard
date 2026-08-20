@@ -258,6 +258,15 @@ so a three-way option comparison is just `payments@option-a`, `@option-b`,
 `@option-c` next to `payments`. A name may contain `/` to nest the note in vault
 folders.
 
+Board names are case-insensitive and unicode-normalised, and the note keeps
+the casing a human typed (ADR 0010). `Payments` and `payments` are one board on
+every platform, because boards get named out loud and a human cannot pronounce
+casing. The address is the lower-case form; `board new Payments` still writes
+`Payments.excalidraw.md` and `board: Payments` in the frontmatter, and a note
+that already exists is found whatever casing it carries. A vault that already
+holds two notes at one address has only one of them reachable, and `board list`
+says so. Variants are slugs, so they are lowercased outright.
+
 Branching is `board save --as <name>@<variant>`, and it restamps every node on
 the copy with the variant it was saved as. Without that the copy would still
 record the variant each node was promoted under, and `compare` would report

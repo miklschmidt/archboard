@@ -2082,10 +2082,17 @@ app.post('/api/boards/new', (req: Request, res: Response) => {
         error: `Board "${key}" is already open. Switch to it with \`board open ${key}\`.`
       });
     }
-    if (fs.existsSync(vaultPathFor(identity))) {
+    const wouldBe = vaultPathFor(identity);
+    if (fs.existsSync(wouldBe)) {
+      // Naming the file matters when the collision is only in casing: the
+      // caller typed `CaseTest`, the vault holds `casetest.excalidraw.md`, and
+      // those are one board (ADR 0010). Without the path the refusal looks
+      // like it is talking about something else.
       return res.status(409).json({
         success: false,
-        error: `Board "${key}" already exists in the vault. Open it instead, or choose another name or variant.`
+        error:
+          `Board "${key}" already exists in the vault, at ${wouldBe}. ` +
+          'Open it instead, or choose another name or variant.'
       });
     }
 
