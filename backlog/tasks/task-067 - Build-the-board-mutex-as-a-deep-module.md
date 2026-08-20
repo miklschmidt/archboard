@@ -4,8 +4,11 @@ title: Build the board mutex as a deep module
 status: To Do
 assignee: []
 created_date: '2026-08-20 20:02'
+updated_date: '2026-08-20 20:17'
 labels: []
-dependencies: []
+dependencies:
+  - TASK-066
+  - TASK-068
 references:
   - docs/adr/0016-one-writer-at-a-time-per-board.md
   - src/server.ts
@@ -46,4 +49,60 @@ Sequence after the batching work: while align and distribute still issue one wri
 - [ ] #5 A pane whose board is locked elsewhere disables interaction before the touch
 - [ ] #6 Two canvas servers over one vault exclude each other, shown by a check
 - [ ] #7 Nothing outside the module touches the lock file or the broadcast
+- [ ] #8 Taking the lock at the start of a human gesture works, given that the change report is a trailing debounce that sends nothing until 400 ms after the finger lifts
+- [ ] #9 A pane that cannot hear the lock broadcast, because its socket has dropped, does not let a human draw on a board somebody else holds
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-08-20 20:12
+---
+Reconciled against ADR 0015 and ADR 0016 (2026-08-20).
+
+Verdict: stands, with two corrections to the design it assumes and one piece of
+scope split out. Sequencing confirmed and now recorded as dependencies.
+
+CORRECTION 1, and it is load-bearing. This task and ADR 0016 both say the first
+change of a gesture takes the lock. Nothing reaches the server at the first
+change. `scheduleReport` at `frontend/src/canvas/useCanvasSession.ts:390` is a
+400 ms trailing debounce, cleared and restarted on every change, with no
+maximum wait, so a continuous drag posts nothing until 400 ms after the finger
+lifts. The nearest immediate signal is the selection publish on a 150 ms
+debounce, which is a different route and does not fire for every gesture. So
+taking the lock at first change needs a new, cheap, immediate message from the
+pane, and that message is part of this module's interface rather than something
+to discover halfway through building it.
+
+CORRECTION 2. Lock state is broadcast over the socket, and change reports are
+deliberately not gated on the socket. The comment at
+`useCanvasSession.ts:391-392` says why: "reporting is an HTTP call, so a dropped
+socket must not also stop a human's edits reaching the server". So a pane whose
+socket has dropped never hears that the board is held, keeps letting the human
+draw, and posts a write that is refused. That is precisely the yank ADR 0016
+exists to prevent, arriving by a different route. The claim has to fail closed:
+a pane that cannot hear about the lock must not believe the board is free.
+
+SCOPE SPLIT. ADR 0016 gained a section after this task was filed: an agent may
+claim a board for longer than one write, with a time to live, renewal, human
+revocation, and a pane that says who holds it and why. None of that is in this
+task's seven acceptance criteria and it is a different amount of work from the
+per-write lock. It has been filed separately and depends on this. This task
+stays the per-write mutex, which is the thing everything else needs.
+
+SEQUENCING. Two dependencies, both now recorded:
+
+- The batching task, for the reason the description already gives: while align
+  and distribute issue one write per element, each would take and release the
+  lock separately.
+- TASK-066, because the lease, the renewal interval and the wait cap are exactly
+  the constants that module is being created to hold, and defining them here
+  would recreate the scattering.
+
+And one ordering that is NOT a dependency, checked rather than assumed. The echo
+does not need the lock. `docs/design/server-is-the-truth.md` section 6 measured
+a drag surviving 70 writes to another element and 40 to itself, and a text
+editor surviving 18 full-document applies. So the stage that makes a write
+return the document can ship before this one.
+---
+<!-- COMMENTS:END -->
