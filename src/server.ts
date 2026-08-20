@@ -2429,18 +2429,23 @@ app.post('/api/boards/open', (req: Request, res: Response) => {
     }).parse(req.body ?? {});
     const asked = identityFromParams(params);
     const key = boardKey(asked);
-    // Which pane this lands in, resolved before anything is read from disk so
-    // that a bad pane spec fails without having changed the store.
-    const pane = paneFromRequest(params.pane);
 
     // A board already open keeps whatever unsaved work it has: switching away
     // and back must not be a way to silently lose edits. reload is the explicit
-    // "throw mine away, take the file's".
+    // "throw mine away, take the file's". There is a board either way here, so
+    // the pane is the only thing left that can go wrong.
     if (boards.has(key) && !params.reload) {
+      const pane = paneFromRequest(params.pane);
       const board = switchPaneTo(pane, key);
       return res.json({ success: true, ...identityResponse(key, board), source: 'memory', ...paneResponse(pane) });
     }
 
+    // Whether there is a board at this address at all, asked before which half
+    // of the screen it would go on. A board that is nowhere is a fact about the
+    // address the caller typed, and putting it behind a question about panes
+    // sends them off to add a --pane and meet a second, different refusal
+    // (TASK-055). Reading the note changes nothing, so the pane is still
+    // resolved before anything is created.
     const loaded = readBoardFile(asked);
     if (!loaded) {
       return res.status(404).json({
@@ -2450,6 +2455,7 @@ app.post('/api/boards/open', (req: Request, res: Response) => {
           `Run \`board list\` to see what is there, or \`board new ${key}\` to start it.`
       });
     }
+    const pane = paneFromRequest(params.pane);
 
     const scene = JSON.parse(loaded.sceneJson);
     // The note's level wins unless the caller stated one — opening a board is
@@ -2489,7 +2495,13 @@ app.post('/api/boards/new', (req: Request, res: Response) => {
     const params = BoardAddressSchema.extend({ pane: z.string().optional() }).parse(req.body ?? {});
     const identity = identityFromParams(params);
     const key = boardKey(identity);
-    const pane = paneFromRequest(params.pane);
+    // Is the name free, before which pane it would show in. Both questions can
+    // refuse and neither creates anything, so the order is only about which
+    // answer the caller gets first, and one of them is about state they cannot
+    // see. A taken name reported second reads as "you fixed the pane, now here
+    // is a different problem", with nothing having said the board exists
+    // (TASK-055). Board is authority and pane is display (ADR 0009), which is
+    // the same order.
     if (boards.has(key)) {
       return res.status(409).json({
         success: false,
@@ -2509,6 +2521,11 @@ app.post('/api/boards/new', (req: Request, res: Response) => {
           'Open it instead, or choose another name or variant.'
       });
     }
+
+    // Which pane it lands in, and the last thing that can refuse. Nothing has
+    // been created at this point, so a refusal here really means the board was
+    // not started.
+    const pane = paneFromRequest(params.pane);
 
     const { key: newKey, board } = getOrCreateBoard(identity, true);
     board.file = vaultPathFor(identity);
@@ -2568,7 +2585,6 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     }
 
     const file = vaultPathFor(target);
-    fs.mkdirSync(path.dirname(file), { recursive: true });
 
     // Read the destination as it is NOW, for two jobs at once: its frontmatter
     // and prose are carried into the note being written, and its hash is what
@@ -2625,6 +2641,10 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     );
     const note = renderBoardNote(scene, existingNote, target);
     const bytes = Buffer.from(note, 'utf-8');
+    // The folder for a nested name, made here rather than before the conflict
+    // check: a refused save has to leave the vault as it found it, empty
+    // directories included.
+    fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, bytes);
 
     // Who was looking at the board that was saved. Whether they move depends
