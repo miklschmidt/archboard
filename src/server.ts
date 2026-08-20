@@ -68,6 +68,7 @@ import {
 } from './core/board.js';
 import { buildScene } from './core/scene-io.js';
 import { CURRENT_VARIANT } from './core/board.js';
+import { restampVariant } from './core/promote.js';
 import { CompareSideInput, compareBoards } from './core/compare.js';
 import { ChangeOrigin, changeFeed } from './core/change-feed.js';
 import type { ChangeEvent } from './core/change-feed.js';
@@ -2130,10 +2131,17 @@ app.post('/api/boards/new', (req: Request, res: Response) => {
         error: `Board "${key}" is already open. Switch to it with \`board open ${key}\`.`
       });
     }
-    if (fs.existsSync(vaultPathFor(identity))) {
+    const wouldBe = vaultPathFor(identity);
+    if (fs.existsSync(wouldBe)) {
+      // Naming the file matters when the collision is only in casing: the
+      // caller typed `CaseTest`, the vault holds `casetest.excalidraw.md`, and
+      // those are one board (ADR 0010). Without the path the refusal looks
+      // like it is talking about something else.
       return res.status(409).json({
         success: false,
-        error: `Board "${key}" already exists in the vault. Open it instead, or choose another name or variant.`
+        error:
+          `Board "${key}" already exists in the vault, at ${wouldBe}. ` +
+          'Open it instead, or choose another name or variant.'
       });
     }
 
@@ -2219,19 +2227,31 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
       }
     }
 
+    // The board is now that board: saving under a new name renames it in the
+    // store too, so the next save goes to the same place.
+    const targetKey = boardKey(target);
+    // Saving under another address is branching, and the branch is a board of
+    // its own variant, so every node on it is restamped to say so. Without
+    // that, `save --as payments@option-a` leaves twelve nodes claiming
+    // "current" and compare reports the whole board changed (TASK-035). A
+    // plain save is deliberately left alone: a node that records a foreign
+    // variant on a board nobody branched really was copied in, and that is
+    // what `variantAnomaly` is for.
+    const branched = targetKey !== source.key;
+    const saved = branched
+      ? restampVariant(Array.from(sourceBoard.elements.values()), target.variant)
+      : Array.from(sourceBoard.elements.values());
+
     const filesObj: Record<string, ExcalidrawFile> = {};
     files.forEach((f, id) => { filesObj[id] = f; });
     const { scene, elementCount } = buildScene(
-      Array.from(sourceBoard.elements.values()),
+      saved,
       filesObj as unknown as Record<string, any>
     );
     const note = renderBoardNote(scene, existingNote, target);
     const bytes = Buffer.from(note, 'utf-8');
     fs.writeFileSync(file, bytes);
 
-    // The board is now that board: saving under a new name renames it in the
-    // store too, so the next save goes to the same place.
-    const targetKey = boardKey(target);
     // Whoever was looking at the source board is looking at the renamed one:
     // every pane that held it follows, and a pane on some other board is left
     // exactly where it was.
@@ -2239,9 +2259,12 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
       pane => (paneBoards.get(pane.clientId) ?? pane.board) === source.key
     );
     const { board: savedBoard } = getOrCreateBoard(target, true);
-    if (targetKey !== source.key) {
+    if (branched) {
       savedBoard.elements.clear();
-      sourceBoard.elements.forEach((el, id) => savedBoard.elements.set(id, el));
+      // The restamped copies, so the canvas holds what the note holds. A
+      // restamped element is a new object, which is also what keeps the board
+      // it was branched from unchanged.
+      for (const el of saved) savedBoard.elements.set(el.id, el);
     }
     savedBoard.file = file;
     savedBoard.note = note;

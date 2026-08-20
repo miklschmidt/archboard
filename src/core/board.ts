@@ -31,9 +31,15 @@ import {
 } from './obsidian-md.js';
 
 export interface BoardIdentity {
+  // The name as a key: normalised, so it is the same string whoever typed it
+  // and whichever filesystem the vault sits on (ADR 0010).
   board: string;
   variant: string;
   level?: string;
+  // The casing a human actually used, carried only when it differs from the
+  // key. It names the note and it is what a vault shows in its sidebar; it is
+  // never what anything is looked up by.
+  displayName?: string;
 }
 
 // The variant that means "the architecture that exists". Privileged: it owns
@@ -73,8 +79,31 @@ const SLUG_RE = /^[a-z0-9]+(?:[-_.][a-z0-9]+)*$/i;
 // are characters that are hostile in a path or in an Obsidian wiki-link.
 const NAME_SEGMENT_BAD_RE = /[@\\:*?"<>|[\]#^]/;
 
+// ─── Normalisation ────────────────────────────────────────────
+//
+// Board addresses are case-insensitive and unicode-normalised (ADR 0010).
+// Boards are named out loud, and a human cannot pronounce casing, so
+// `Payments` and `payments` have to be one board — on Linux, where the
+// filesystem would happily keep two files, as much as on macOS, where it would
+// not. NFC for the same reason one level down: macOS has historically written
+// an accented name decomposed and Linux writes it composed, and the two spell
+// the same word.
+//
+// Case-insensitive is not case-erasing. The casing a human typed names the
+// note and shows in their vault; it is simply never what anything is looked up
+// by. That is exactly how APFS and NTFS behave, so a vault looks the same on
+// every platform archboard runs on.
+export function normalizeBoardKey(key: string): string {
+  return key.trim().normalize('NFC').toLowerCase();
+}
+
+/** The key form of a board name, `/` separators and all. */
+export function normalizeBoardName(name: string): string {
+  return normalizeBoardKey(name);
+}
+
 export function validateBoardName(name: string): string {
-  const trimmed = name.trim();
+  const trimmed = name.trim().normalize('NFC');
   if (trimmed === '') throw new Error('Board name is required');
   if (trimmed.startsWith('/') || trimmed.endsWith('/')) {
     throw new Error(`Invalid board name "${name}": it must not start or end with "/"`);
@@ -100,8 +129,11 @@ export function validateBoardName(name: string): string {
   return trimmed;
 }
 
+// A variant is a slug from a small vocabulary — `current`, `option-a` — not a
+// title anybody reads, so unlike a board name it is lowercased outright and
+// there is no casing to preserve.
 export function validateVariant(variant: string): string {
-  const trimmed = variant.trim();
+  const trimmed = normalizeBoardKey(variant);
   if (trimmed === '') throw new Error('Variant is required');
   if (!SLUG_RE.test(trimmed)) {
     throw new Error(
@@ -128,11 +160,19 @@ export function makeIdentity(input: {
   variant?: string;
   level?: string;
 }): BoardIdentity {
+  const typed = validateBoardName(input.board);
+  const key = normalizeBoardName(typed);
   return {
-    board: validateBoardName(input.board),
+    board: key,
     variant: validateVariant(input.variant ?? CURRENT_VARIANT),
-    ...(input.level !== undefined && input.level !== '' ? { level: validateLevel(input.level) } : {})
+    ...(input.level !== undefined && input.level !== '' ? { level: validateLevel(input.level) } : {}),
+    ...(typed === key ? {} : { displayName: typed })
   };
+}
+
+/** What to call a board on screen and on disk: the casing a human chose. */
+export function boardDisplayName(identity: Pick<BoardIdentity, 'board' | 'displayName'>): string {
+  return identity.displayName ?? identity.board;
 }
 
 // The address of a board: what a human says and what the store is keyed by.
@@ -161,18 +201,57 @@ export function requireVaultRoot(): string {
   return path.resolve(ARCHBOARD_VAULT);
 }
 
+// The entry in `dir` whose name is the same as `wanted` once normalised, or
+// null. One readdir per path segment, which is what a case-insensitive
+// filesystem does in the kernel and what archboard has to do by hand on a
+// case-sensitive one (ADR 0010). Sorted, so a vault that somehow holds two
+// spellings of the same name resolves to the same one every time; `listBoards`
+// reports that as a collision rather than leaving it to be discovered.
+function entryMatching(dir: string, wanted: string): string | null {
+  let entries: string[];
+  try {
+    entries = fs.readdirSync(dir);
+  } catch {
+    return null;
+  }
+  const key = normalizeBoardKey(wanted);
+  return entries.filter(entry => normalizeBoardKey(entry) === key).sort()[0] ?? null;
+}
+
 // Where a board lives. The identity is validated on the way in, so this cannot
 // escape the vault; the containment check is kept anyway because a silent
 // escape here writes a file into someone's home directory.
-export function vaultPathFor(identity: Pick<BoardIdentity, 'board' | 'variant'>, root = requireVaultRoot()): string {
-  const name = validateBoardName(identity.board);
+//
+// A note that already exists wins, whatever casing it was written under: the
+// address is case-insensitive, so `payments` has to find `Payments.excalidraw.md`.
+// A note that does not exist yet is named with the casing the human typed,
+// which is what makes the vault case-preserving as well as case-insensitive.
+export function vaultPathFor(identity: Pick<BoardIdentity, 'board' | 'variant' | 'displayName'>, root = requireVaultRoot()): string {
+  const name = validateBoardName(boardDisplayName(identity));
   const variant = validateVariant(identity.variant);
   const base = variant === CURRENT_VARIANT ? name : `${name}@${variant}`;
-  const resolved = path.resolve(root, `${base}${BOARD_FILE_SUFFIX}`);
-  if (!resolved.startsWith(path.resolve(root) + path.sep)) {
+  const vault = path.resolve(root);
+  const resolved = path.resolve(vault, `${base}${BOARD_FILE_SUFFIX}`);
+  if (!resolved.startsWith(vault + path.sep)) {
     throw new Error(`Refusing to resolve board "${boardKey(identity)}" outside the vault at ${root}`);
   }
-  return resolved;
+  // Walk the vault a segment at a time, taking whatever spelling is on disk.
+  // The moment a segment has no match the rest is a path that does not exist,
+  // so the typed casing is the right name for it.
+  //
+  // No shortcut for a name that already matches byte for byte. It would be
+  // faster and it would make the answer depend on how the caller spelled the
+  // address, which is the one thing this must not do: a vault holding both
+  // `payments` and `Payments` is broken, but it has to be broken the same way
+  // for everybody until somebody renames one. `listBoards` reports it.
+  const segments = `${base}${BOARD_FILE_SUFFIX}`.split('/');
+  let at = vault;
+  for (const [index, segment] of segments.entries()) {
+    const found = entryMatching(at, segment);
+    if (!found) return path.join(at, ...segments.slice(index));
+    at = path.join(at, found);
+  }
+  return at;
 }
 
 // The identity a vault path implies, before frontmatter is consulted.
@@ -189,9 +268,14 @@ export function identityFromVaultPath(filePath: string, root = requireVaultRoot(
 }
 
 // Frontmatter entries for an identity, in the order they are written.
+//
+// The name goes in with the casing a human chose, not the key. The frontmatter
+// is a property a human reads and a Dataview query groups by, and the address
+// is case-insensitive either way (ADR 0010), so there is nothing to gain by
+// showing them the lowercased form of the name they typed.
 export function identityFrontmatter(identity: BoardIdentity): Array<[string, string]> {
   const entries: Array<[string, string]> = [
-    [FRONTMATTER_BOARD, identity.board],
+    [FRONTMATTER_BOARD, boardDisplayName(identity)],
     [FRONTMATTER_VARIANT, identity.variant]
   ];
   if (identity.level) entries.push([FRONTMATTER_LEVEL, identity.level]);
@@ -242,9 +326,9 @@ export interface BoardWriteConflict {
 // A name for the copy on the canvas that cannot collide with what is on disk:
 // a variant, because "the same board, a different take on it" is exactly what
 // variants are for.
-export function suggestSaveAsName(identity: Pick<BoardIdentity, 'board' | 'variant'>): string {
+export function suggestSaveAsName(identity: Pick<BoardIdentity, 'board' | 'variant' | 'displayName'>): string {
   const suffix = identity.variant === CURRENT_VARIANT ? 'from-canvas' : `${identity.variant}-from-canvas`;
-  return `${identity.board}@${suffix}`;
+  return `${boardDisplayName(identity)}@${suffix}`;
 }
 
 const clock = (iso: string | undefined): string =>
@@ -350,6 +434,13 @@ export interface VaultBoard {
   // rather than silently reconciled because it usually means a human moved
   // something and may not have meant to.
   declaredKey?: string;
+  // The other notes in the vault that address the same board. Two notes whose
+  // paths differ only in case, or only in unicode normalisation, are one
+  // address (ADR 0010) and only one of them can be reached — but a
+  // case-sensitive filesystem will hold both, so a vault authored on Linux
+  // before this rule, or by hand, can arrive in this state. Reported rather
+  // than reconciled: which of two notes to keep is not archboard's to decide.
+  collidesWith?: string[];
 }
 
 // Every board in the vault. Walks the whole tree because Obsidian vaults are
@@ -393,7 +484,21 @@ export function listBoards(root = requireVaultRoot()): VaultBoard[] {
   };
 
   walk(vault);
-  found.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+  found.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : a.file < b.file ? -1 : 1));
+
+  // Notes that share a key. `vaultPathFor` picks one of them and the rest are
+  // unreachable, which is a thing to be told rather than to find out.
+  const byKey = new Map<string, VaultBoard[]>();
+  for (const board of found) {
+    const same = byKey.get(board.key);
+    if (same) same.push(board); else byKey.set(board.key, [board]);
+  }
+  for (const same of byKey.values()) {
+    if (same.length < 2) continue;
+    for (const board of same) {
+      board.collidesWith = same.filter(other => other !== board).map(other => other.file);
+    }
+  }
   return found;
 }
 
@@ -416,7 +521,7 @@ export interface LoadedBoard {
 // found; the note's frontmatter supplies `level`, which no path can carry, and
 // is reported when it names a different board — a note the Obsidian plugin
 // created has no archboard keys at all until archboard first saves it.
-export function readBoardFile(identity: Pick<BoardIdentity, 'board' | 'variant'>, root = requireVaultRoot()): LoadedBoard | null {
+export function readBoardFile(identity: Pick<BoardIdentity, 'board' | 'variant' | 'displayName'>, root = requireVaultRoot()): LoadedBoard | null {
   const file = vaultPathFor(identity, root);
   let bytes: Buffer;
   try {
@@ -435,8 +540,20 @@ export function readBoardFile(identity: Pick<BoardIdentity, 'board' | 'variant'>
   }
   const asked = makeIdentity({ board: identity.board, variant: identity.variant });
   const declared = identityFromFrontmatter(raw);
+  // Casing comes from the note, not from whoever typed the address: the note
+  // is where a human chose it and the address is case-insensitive either way.
+  // Its own frontmatter first, then the filename, then the address.
+  const onDisk = identityFromVaultPath(file, root);
+  const displayName =
+    (declared && boardKey(declared) === boardKey(asked) ? declared.displayName : undefined)
+    ?? (onDisk && boardKey(onDisk) === boardKey(asked) ? onDisk.displayName : undefined)
+    ?? asked.displayName;
   return {
-    identity: { ...asked, ...(declared?.level ? { level: declared.level } : {}) },
+    identity: {
+      ...asked,
+      ...(declared?.level ? { level: declared.level } : {}),
+      ...(displayName ? { displayName } : {})
+    },
     file,
     // The whole note, so a later save can carry its frontmatter across verbatim.
     raw,
