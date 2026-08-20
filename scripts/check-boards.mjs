@@ -465,6 +465,31 @@ try {
     unaddressed.status === 400, `got ${unaddressed.status}`);
   check('  and the message names the panes', /--pane left \| right/.test(unaddressed.body?.error ?? ''));
 
+  // A refusal has to mean nothing happened, and it has to name the obstacle
+  // the caller cannot see for themselves (TASK-055). Starting a board with two
+  // panes up is refused on the pane, so the board must not exist afterwards;
+  // and a name that is already taken has to be reported as that, rather than
+  // sending the caller off to add a --pane and meet a second, different
+  // refusal with nothing having said the board was there all along.
+  const unaddressedNew = await api('POST', '/api/boards/new', { board: 'never-made', level: 'service' });
+  check('with two panes, starting a board without naming one is refused as well',
+    unaddressedNew.status === 400, `got ${unaddressedNew.status}`);
+  const afterRefusal = await api('GET', '/api/boards');
+  check('  and the board it refused to start does not exist',
+    !(afterRefusal.body?.open ?? []).some(entry => entry.key === 'never-made'),
+    (afterRefusal.body?.open ?? []).map(entry => entry.key).join(','));
+  check('  and no note was written for it either',
+    !fs.existsSync(path.join(vault, 'never-made.excalidraw.md')));
+
+  const takenName = await api('POST', '/api/boards/new', { board: 'payments' });
+  check('a name already taken is reported as taken, whatever the panes are doing',
+    takenName.status === 409 && /already open/.test(takenName.body?.error ?? ''),
+    takenName.body?.error);
+  const openMissing = await api('POST', '/api/boards/open', { board: 'never-made' });
+  check('and a board that is nowhere says so, rather than asking which pane to put it in',
+    openMissing.status === 404 && /No board "never-made"/.test(openMissing.body?.error ?? ''),
+    openMissing.body?.error);
+
   const leftBefore = left.since();
   const intoRight = await api('POST', '/api/boards/open', { board: 'payments@option-a', pane: 'right' });
   check('naming a pane opens the board there', intoRight.status === 200);
@@ -936,6 +961,25 @@ try {
   check('  carrying the unpromoted element too, content and all',
     (offScreen.body?.elements ?? []).some(el => el.type === 'text' && el.text === 'a note to self'));
 
+  // Having moved nothing, the answer has to say how the branch gets on screen,
+  // and there are two ways with very different costs (TASK-054). `pane open`
+  // makes a pane, so it cannot take a board off; `board open` replaces what a
+  // pane is holding. Which one is right depends on there being room, which the
+  // caller cannot see, so the save reports the whole screen.
+  check('  and reports the screen it left alone, pane by pane',
+    rebranch.body?.panes?.onScreen?.map(p => `${p.place}:${p.board}`).join(',')
+      === 'left:ledger,right:ledger@option-a',
+    JSON.stringify(rebranch.body?.panes?.onScreen));
+
+  const branchedFull = await cli(['board', 'save', '--board', 'ledger', '--variant', 'option-f']);
+  check('with the screen full, the branch answer offers board open',
+    branchedFull.code === 0 && /board open ledger@option-f --pane left/.test(branchedFull.stderr),
+    branchedFull.stderr.trim());
+  check('  and says which board each pane would lose',
+    /--pane left` replaces "ledger"/.test(branchedFull.stderr) &&
+    /--pane right` replaces "ledger@option-a"/.test(branchedFull.stderr),
+    branchedFull.stderr.trim());
+
   // The one save that does move a pane. Scratch is a placeholder, not a
   // subject: after it is named, the placeholder and the named board hold the
   // same drawing, so a pane left on scratch would show a copy of the board it
@@ -959,8 +1003,22 @@ try {
     inPlace.body?.panes?.moved?.length === 0 && inPlace.body?.panes?.kept?.length === 0,
     JSON.stringify(inPlace.body?.panes));
 
-  one.socket.close();
+  // One pane again, so there is room beside it. Now the offer has to be the
+  // command that adds a pane: with one pane on screen, `board open <branch>`
+  // lands in that pane and takes the source off, which is the very move ADR
+  // 0012 stopped the save from making.
   two.socket.close();
+  await sleep(200);
+  const branchedRoom = await cli(['board', 'save', '--board', 'ledger', '--variant', 'option-g']);
+  check('with room for another pane, the branch answer offers pane open --board',
+    branchedRoom.code === 0 && /pane open --board ledger@option-g/.test(branchedRoom.stderr),
+    branchedRoom.stderr.trim());
+  check('  and never names the command that would take the source off screen',
+    !/board open/.test(branchedRoom.stderr), branchedRoom.stderr.trim());
+  check('  while still saying the source stayed put',
+    /the only pane still holds "ledger"/.test(branchedRoom.stderr), branchedRoom.stderr.trim());
+
+  one.socket.close();
   await sleep(200);
 
   // --- one board however it is spelled (TASK-032, ADR 0010) ---------------
