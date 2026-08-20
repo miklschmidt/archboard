@@ -27,19 +27,21 @@
 // from the same sentence. Its one import, `geometry.ts`, is pure for the same
 // reason and for the same readers.
 //
-// Outbound, the authority runs the other way: the bound text is what the label
-// says and the stored seed follows it, so a human retyping a box on the board
-// is not written back out from under them (`labelStatements`, TASK-028).
-// Emptying a label is the same direction but a different act — Excalidraw
-// deletes the text element rather than editing it, so there is no statement to
-// make and the seed has to be struck out instead (`labelClearances`,
-// TASK-029). Both go when the seed does, in stage 6 of
-// `docs/design/the-plan.md`.
+// Nothing here reads a label back off a container, because a container does
+// not carry one. The seed is an input format: the conversion reads it and the
+// board keeps what it said, which is a text element (TASK-073). Storing it as
+// well is what made a label two facts that could disagree, and every rule for
+// settling the disagreement was wrong in a different way. Outbound, a report
+// used to restate the seed from the text so a human's rename survived
+// (`labelStatements`, TASK-028) and strike it out when Excalidraw deleted the
+// text somebody emptied (`labelClearances`, TASK-029). Both are gone with the
+// thing they corrected. A human retyping a label edits a text element, and the
+// text element is the label.
 //
-// Those are about what a label *says*. Where it *sits* is a third question of
-// the same shape: the container decides, Excalidraw recomputes it at draw time,
-// and so the stored coordinates can be wrong for a long while with nothing on
-// screen to show it (`boundTextPlacement`, TASK-034).
+// That is what a label *says*. Where it *sits* is a question of the same shape:
+// the container decides, Excalidraw recomputes it at draw time, and so the
+// stored coordinates can be wrong for a long while with nothing on screen to
+// show it (`boundTextPlacement`, TASK-034).
 
 import { measureLinear } from './geometry.js';
 import { derivedId, type IdsInUse } from './ids.js';
@@ -155,153 +157,6 @@ export function boundTextsByContainer(
   }
 
   return found;
-}
-
-// ---------------------------------------------------------------------------
-// Following the human
-// ---------------------------------------------------------------------------
-
-/**
- * The label a change report has to state, so the stored seed follows the text
- * a human just typed.
- *
- * The conversion settles what happens on the way *in*: the seed says what the
- * label reads, and the bound text is written to match. Nothing said what
- * happens on the way *out*, and the answer used to be "nothing" — a human
- * retyping a label changed the text element and left the seed saying the old
- * name forever. The seed is what the write boundary reads, so the next agent
- * write to that shape put the old words back: a rename that silently reverts,
- * at the one place the whole tool depends on a human editing and an agent
- * reading it back (TASK-028).
- *
- * The temptation is to arbitrate — timestamps, provenance, some rule for
- * telling a human's rename apart from an agent's `update --set '{"text":...}'`,
- * which produces exactly the same disagreement in the opposite direction. That
- * is guesswork, and it is unnecessary, because the two never travel the same
- * way. An agent's rename arrives *inbound* as a seed the browser has not seen;
- * a human's rename leaves *outbound* as text the server has not seen. Give
- * each direction one authority — inbound, the seed; outbound, the text — and
- * there is nothing to arbitrate. A disagreement is only ever resolved by
- * whichever direction is currently carrying news.
- *
- * That holds only if the outbound correction is immediate, which is why this
- * belongs on the report path rather than on the next conversion: as long as a
- * stale seed sits on the server, any delivery that happens to carry that
- * container along (an agent moving the box, a fresh page load) hands the stale
- * seed back to containment, which dutifully applies it. Stating the label
- * alongside the text closes that window to the length of one report.
- *
- * Only the keeper text speaks for a container — the one Excalidraw actually
- * draws — so a stray second text element that somehow gets reported cannot
- * rewrite the label out from under the one on screen.
- */
-export interface LabelStatement {
-  /** The container whose stored label must follow. */
-  id: string;
-  label: { text: string };
-}
-
-export function labelStatements(
-  upserts: readonly LabelledElement[],
-  scene: readonly LabelledElement[]
-): LabelStatement[] {
-  const reported = new Set<string>();
-  for (const element of upserts) {
-    if (element && isText(element) && typeof element.id === 'string') reported.add(element.id);
-  }
-  if (reported.size === 0) return [];
-
-  const byId = new Map<string, LabelledElement>();
-  for (const element of scene) {
-    if (element && typeof element.id === 'string') byId.set(element.id, element);
-  }
-
-  const statements: LabelStatement[] = [];
-  for (const [containerId, textIds] of boundTextsByContainer(scene)) {
-    const keeper = textIds[0] as string;
-    if (!reported.has(keeper)) continue;
-    const text = byId.get(keeper)?.text;
-    if (typeof text !== 'string') continue;
-    statements.push({ id: containerId, label: { text } });
-  }
-  return statements;
-}
-
-/**
- * The label a change report has to *un*state, because the text element that
- * was saying it has been deleted.
- *
- * Emptying a label is not a rename with an empty string. Excalidraw treats a
- * bound text submitted blank as a deletion: it marks the text element
- * `isDeleted` and unbinds it from its container, so the report that follows
- * carries no text upsert for `labelStatements` to attach a statement to. The
- * stored seed is therefore never corrected, and the next full load expands it
- * again — the old words reappearing over a box somebody deliberately cleared
- * (TASK-029).
- *
- * The obvious repair is to clear the seed whenever a container turns up with
- * no bound text. That is wrong, and it undoes TASK-024: a shape an agent has
- * just labelled, whose seed has not been expanded yet, looks exactly the same
- * from the outside. Absence is not evidence. What distinguishes the two is
- * that a deletion leaves something behind — the deleted text element itself,
- * still in the scene, still naming its container. A seed that was never
- * expanded leaves nothing, so it can never be mistaken for one.
- *
- * Hence the four conditions below. The last one — that the report is already
- * saying something about this container — is not about correctness but about
- * silence: a tombstone lingers in the scene until the next delivery rebuilds
- * it, and without the guard every report in that window would restate the same
- * clearance and bump the element's version for nothing.
- *
- * Both `label` and `text` are stated null because `labelSeedOf` reads either,
- * and the server merges an upsert onto what it holds rather than replacing it:
- * clearing only one leaves the seed alive in the other.
- */
-export interface LabelClearance {
-  /** The container whose stored label must go. */
-  id: string;
-  label: null;
-  text: null;
-}
-
-export function labelClearances(
-  upserts: readonly LabelledElement[],
-  deletes: readonly string[],
-  scene: readonly LabelledElement[]
-): LabelClearance[] {
-  const bereaved: Array<{ container: string; text: string }> = [];
-  for (const element of scene) {
-    if (!element || live(element) || !isText(element)) continue;
-    const container = element.containerId;
-    if (typeof container !== 'string' || !container) continue;
-    bereaved.push({ container, text: element.id });
-  }
-  if (bereaved.length === 0) return [];
-
-  const alive = new Set<string>();
-  for (const element of scene) {
-    if (element && typeof element.id === 'string' && live(element)) alive.add(element.id);
-  }
-  const stillLabelled = boundTextsByContainer(scene);
-
-  // What this report already speaks about, so a clearance rides an existing
-  // conversation rather than starting a new one on every pass.
-  const news = new Set<string>(deletes);
-  for (const element of upserts) {
-    if (element && typeof element.id === 'string') news.add(element.id);
-  }
-
-  const clearances: LabelClearance[] = [];
-  const said = new Set<string>();
-  for (const { container, text } of bereaved) {
-    if (said.has(container)) continue;
-    if (!alive.has(container)) continue;
-    if (stillLabelled.has(container)) continue;
-    if (!news.has(container) && !news.has(text)) continue;
-    said.add(container);
-    clearances.push({ id: container, label: null, text: null });
-  }
-  return clearances;
 }
 
 // ---------------------------------------------------------------------------

@@ -13,8 +13,6 @@
 // truncate a board — the failure mode POST /api/elements/sync existed to
 // cause.
 
-import { labelClearances, labelStatements, type LabelledElement } from '../../../src/core/labels'
-
 /** id -> fingerprint of the element as this pane last agreed it stood. */
 export type Baseline = Map<string, string>
 
@@ -87,41 +85,16 @@ export function diffAgainstBaseline(
     if (!nextBaseline.has(id)) deletes.push(id)
   })
 
-  // A bound text element goes with a statement of what the container's label
-  // now reads, because the label a human typed lives in the text element and
-  // the server's copy is what the next conversion pass expands. Without this
-  // the server keeps the old name and hands it straight back — the board
-  // undoing a rename (src/core/labels.ts, TASK-028).
+  // A label needs nothing said about it here. It is a text element, so a
+  // person retyping one produces a text upsert like any other edit and
+  // emptying one produces a delete, and the server has no second copy of the
+  // words for either to correct.
   //
-  // Emptying a label makes no such statement: Excalidraw deletes the text
-  // element instead of editing it, so the seed has to be struck out on the
-  // strength of the deleted element still sitting in the scene (TASK-029).
-  // That is why `scene` here is the scene *including* what has been deleted —
-  // deleted elements are skipped above, so they change nothing about what is
-  // reported, they only say why an id stopped being reported.
-  //
-  // Both are patches, not elements: upserts are merged, so naming just the
-  // label leaves everything else the server knows about the container alone.
-  // Either is only ever made about a container the server already holds — one
-  // in the baseline, or one this very report introduces — so a label can never
-  // conjure an element with no type and no geometry.
-  const byId = new Map(upserts.map((element) => [element.id as string, element]))
-  const asLabelled = (elements: readonly Record<string, any>[]): LabelledElement[] =>
-    elements as unknown as LabelledElement[]
-  for (const statement of labelStatements(asLabelled(upserts), asLabelled(scene))) {
-    const reported = byId.get(statement.id)
-    if (reported) reported.label = statement.label
-    else if (baseline.has(statement.id)) upserts.push({ id: statement.id, label: statement.label })
-  }
-  for (const clearance of labelClearances(asLabelled(upserts), deletes, asLabelled(scene))) {
-    const reported = byId.get(clearance.id)
-    if (reported) {
-      reported.label = null
-      reported.text = null
-    } else if (baseline.has(clearance.id)) {
-      upserts.push({ id: clearance.id, label: null, text: null })
-    }
-  }
+  // This is where two used to be reconciled. A reported bound text carried a
+  // statement of what its container's `label` seed now read (TASK-028), and a
+  // deleted one carried the striking out of that seed (TASK-029), because the
+  // seed was stored and was what the next conversion expanded. The seed is no
+  // longer stored (TASK-073), so there is nothing to keep in step.
 
   return { upserts, deletes, nextBaseline }
 }

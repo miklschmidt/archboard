@@ -636,10 +636,15 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
     if (reboundArrow) resolveArrowBindings([updatedElement], elements);
 
     // A label this write states is either a rename of the text element that
-    // already carries it, or one that has to be expanded.
+    // already carries it, or one that has to be expanded. Either way the
+    // element the board keeps is the converted one, seed consumed and gone —
+    // this route used to keep the merge and store only what the conversion
+    // added, which left the seed on the board for the next write to read
+    // (TASK-073).
     const restated = restateLabels([updatedElement], elements);
-    const expanded = expandForBoard([updatedElement], elements).filter(el => el.id !== id);
-    for (const el of expanded) elements.set(el.id, el);
+    const written = expandForBoard([updatedElement], elements);
+    for (const el of written) elements.set(el.id, el);
+    const expanded = written.filter(el => el.id !== id);
 
     // Broadcast to all connected clients
     const message: ElementUpdatedMessage = {

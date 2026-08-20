@@ -357,6 +357,41 @@ the seed on a write.
 **Risks:** `labels` again, `changes` and `branch` because `compare` reads labels
 to name nodes, `obsidian`.
 
+**Done.** The seed is read at the write boundary and not restored onto the
+element the board keeps, `labelStatements` and `labelClearances` are gone with
+their callers, and `check-labels` is 174 checks. Four things worth carrying
+forward.
+
+**One route was storing an unconverted element.** `PUT /api/elements/:id`
+filtered the container out of the conversion's result and stored only what the
+conversion had added, so on that one path the merge reached the board with its
+seed still on it. Every other write path already stored what came back.
+Reverting just that filter fails one check.
+
+**Stage 5's binding repair survives, narrower.** It exists because a binding is
+written down at both ends and either end can be the one that survives, and the
+converter looks only at the container's end. Deleting the seed did not remove
+the case, it changed which write reaches it: no longer any write to a container
+the board holds a stale seed for, only a write carrying a label of its own,
+which means a rename. Taking the repair out fails three checks.
+
+**Nothing but `check-labels` notices.** With the seed put back on the board, 11
+of 174 label checks fail and `obsidian`, `boards`, `branch`, `side-by-side` and
+the browser check all still pass. The risk list above was wrong about that, and
+it is worth knowing that this property lives in exactly one file.
+
+**`start` and `end` on an arrow are not the same doubling and stayed.**
+TASK-073's first acceptance criterion pairs them with the label seed, on the
+grounds that `start: {id}` and `startBinding.elementId` are one fact spelled
+twice. They are not. `rerouteBoundArrows` reads `start` and `end` to decide
+which arrows the server may re-route when a shape moves, and the arrows that
+carry them are exactly the ones whose path the server computed. An arrow a
+person drew carries `startBinding` and no `start`, and `resolveArrowBindings`
+recomputes a path edge to edge with a fixed gap and no `focus`, so reading the
+binding instead would make an agent nudging a box move every hand-drawn arrow
+attached to it. Removing the refs needs the server to know Excalidraw's binding
+math first, which is its own piece of work.
+
 ## Stage 7. A write returns the document
 
 **TASK-074**, then **TASK-075** and **TASK-076**. After stage 5.
