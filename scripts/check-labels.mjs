@@ -13,6 +13,13 @@
 // nothing converts on the way out. So a label is expanded when it is written
 // and never again, and the loop that grew it cannot turn.
 //
+// The seed itself is gone from the board (TASK-073). It is still how an agent
+// says what a label reads, and it is read once, on the way in; what the board
+// keeps is the text element it became. That is what makes TASK-028 and
+// TASK-029 impossible rather than fixed. Both had needed a rule for which of
+// two spellings won, and the two runs below marked "not luck" put the second
+// spelling back to show that each rule was covering for it.
+//
 // WHAT IS MODELLED AND WHY. The real write boundary is used — this file's
 // `boardOf` calls `expandElementsForExport`, the one converter, exactly as
 // `src/server.ts` does. What is modelled is the *pane*: the baseline it
@@ -37,8 +44,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const {
   boundTextsByContainer,
   planLabelRepair,
-  labelStatements,
-  labelClearances,
   labelAnchorOf,
   boundTextPlacement,
   recentreBoundTexts,
@@ -107,10 +112,11 @@ function expand(elements) {
 }
 
 /**
- * frontend/src/canvas/elements.ts: once a container has its text element, the
- * seed that produced it is not kept in the scene. Modelled because the whole
- * outbound rule rests on it — a seed the pane still held would outlive the
- * delivery that carried it and get written back over a human's typing.
+ * What the pane used to do after converting: once a container had its text
+ * element, the seed that produced it was dropped from the scene. Kept here
+ * because the unfixed model needs it — a seed the pane held on to would be
+ * reported straight back and the loop would be a different loop than the one
+ * TASK-024 was.
  */
 function dropSpentSeeds(scene) {
   const labelled = boundTextsByContainer(scene);
@@ -148,44 +154,28 @@ function blank(scene, empties) {
 }
 
 /**
- * frontend/src/canvas/changes.ts, the outbound half: a reported bound text goes
- * with a statement of what its container's label now reads, and a *deleted*
- * bound text with the striking out of the seed that would otherwise be expanded
- * back over it. `state` and `clear` are the two fixes under test here, the way
- * `contain` is for the inbound half.
+ * frontend/src/canvas/changes.ts: what a pane says, which is a delta and
+ * nothing else.
+ *
+ * It used to say more. A reported bound text carried a statement of what its
+ * container's seed now read, and a deleted one carried the striking out of
+ * that seed, because the seed was stored and was what the next write expanded
+ * (`labelStatements`, `labelClearances`). Both are gone with the seed
+ * (TASK-073), and this function is the shape of that: a rename is a text
+ * upsert, an emptying is a delete, and neither needs a second sentence.
  *
  * A report is built from the live board — deleted elements are never upserted
  * and never enter the baseline — but it is computed against the scene
  * *including* them, because that is the only place the fact of a deletion is
  * recorded.
  */
-function reportOf(scene, baseline, { state, clear }) {
+function reportOf(scene, baseline) {
   const alive = scene.filter((element) => !element.isDeleted);
   const upserts = alive
     .filter((element) => baseline.get(element.id) !== fingerprint(element))
     .map((element) => ({ ...element }));
   const kept = new Set(alive.map((element) => element.id));
   const deletes = [...baseline.keys()].filter((id) => !kept.has(id));
-
-  const byId = new Map(upserts.map((element) => [element.id, element]));
-  if (state) {
-    for (const statement of labelStatements(upserts, scene)) {
-      const reported = byId.get(statement.id);
-      if (reported) reported.label = statement.label;
-      else if (baseline.has(statement.id)) upserts.push({ id: statement.id, label: statement.label });
-    }
-  }
-  if (clear) {
-    for (const clearance of labelClearances(upserts, deletes, scene)) {
-      const reported = byId.get(clearance.id);
-      if (reported) {
-        reported.label = null;
-        reported.text = null;
-      } else if (baseline.has(clearance.id)) {
-        upserts.push({ id: clearance.id, label: null, text: null });
-      }
-    }
-  }
   return { upserts, deletes };
 }
 
@@ -205,7 +195,7 @@ function applyUpserts(store, upserts) {
  * is nothing to convert. False is what this replaced — a second converter, run
  * on every delivery, minting a text element for every seed it sees.
  */
-function cycle(store, baseline, { contain, state = contain, clear = contain, types, empties }) {
+function cycle(store, baseline, { contain, types, empties }) {
   const broadcast = [...store.values()];
   const scene = contain ? broadcast : dropSpentSeeds(expand(broadcast));
 
@@ -222,7 +212,7 @@ function cycle(store, baseline, { contain, state = contain, clear = contain, typ
   // Or clears one, which is a deletion rather than an edit.
   const edited = empties ? blank(typed, empties) : typed;
 
-  const { upserts, deletes } = reportOf(edited, baseline, { state, clear });
+  const { upserts, deletes } = reportOf(edited, baseline);
   baseline.clear();
   // A pane agrees only what is on the board; a deleted element is news it has
   // already delivered, so the next diff must not keep claiming it.
@@ -243,17 +233,43 @@ function cycle(store, baseline, { contain, state = contain, clear = contain, typ
  * board before any pane has seen it, which is the change everything below
  * turns on — a headless board used to carry labels that existed only as seeds
  * and only became elements when a browser happened to render one.
+ *
+ * `keepSeed` is the revert. Until stage 6 the converted element went to the
+ * board still carrying the `label` an agent wrote, so one label was two facts
+ * and the second one went stale the moment somebody at the board retyped the
+ * first. Turning it on here is how the two runs below reproduce TASK-028 and
+ * TASK-029; with it off, which is the code as it stands, neither has anything
+ * to revert to.
  */
-function write(store, statements) {
+function write(store, statements, { keepSeed = false } = {}) {
   const merged = statements.map((statement) => ({ ...(store.get(statement.id) ?? {}), ...statement }));
   for (const element of merged) store.set(element.id, element);
   for (const element of relabelBoundTexts(merged, store)) store.set(element.id, element);
   for (const element of expandForBoard(merged, store)) store.set(element.id, element);
+  if (keepSeed) {
+    for (const element of merged) {
+      const seed = seedOf(element);
+      if (seed !== undefined) store.set(element.id, { ...store.get(element.id), label: { text: seed } });
+    }
+  }
   return store;
 }
 
-function boardOf(elements) {
-  return write(new Map(), elements);
+function boardOf(elements, options) {
+  return write(new Map(), elements, options);
+}
+
+/** What an element's `label`/`text` claims its label reads, if anything. */
+function seedOf(element) {
+  if (element.type === 'text') return undefined;
+  if (typeof element.label?.text === 'string') return element.label.text;
+  if (typeof element.text === 'string') return element.text;
+  return undefined;
+}
+
+/** Every element on a board still carrying a seed, which must be none. */
+function seeded(store) {
+  return [...store.values()].filter((element) => seedOf(element) !== undefined).map((element) => element.id);
 }
 
 function worstLabelCount(elements) {
@@ -399,13 +415,17 @@ const CYCLES = 25;
     `the indices of a twelve-element board do not increase: ${indices.join(' ')}`);
 }
 
-// --- the model reproduces the bug when containment is removed ---------------
+// --- the model reproduces the bug when both halves are put back -------------
 //
 // Without this the check could pass because the model is toothless rather than
-// because the fix works.
+// because the fix works. Both halves are needed to turn the loop, which is the
+// clearest statement of why either one alone would have been enough to stop
+// it: the board has to keep the seed, and something has to expand a seed on
+// the way out. `keepSeed` is stage 5's board, `contain: false` is stage 4's
+// pane, and together they are TASK-024.
 
 {
-  const store = boardOf(drawn());
+  const store = boardOf(drawn(), { keepSeed: true });
   const baseline = new Map();
   for (let i = 0; i < CYCLES; i++) cycle(store, baseline, { contain: false });
   const elements = [...store.values()];
@@ -429,9 +449,9 @@ const CYCLES = 25;
   for (let i = 0; i < CYCLES; i++) {
     const { upserts } = cycle(store, baseline, { contain: true });
     sizes.push(store.size);
-    // Cycle 0 mints the labels; cycle 1 reports the containers once more, with
-    // the spent seed no longer on them. After that a settled board is silent.
-    if (i > 1 && upserts.length > 0) reports += 1;
+    // Cycle 0 is the pane meeting the board for the first time and agreeing
+    // every element on it. After that a settled board is silent.
+    if (i > 0 && upserts.length > 0) reports += 1;
   }
   const elements = [...store.values()];
   const labels = boundTextsByContainer(elements);
@@ -456,6 +476,46 @@ const CYCLES = 25;
     texts.map((t) => t.text).sort().join('|') === 'AuthService|Gateway|HTTP',
     `label text was lost: ${texts.map((t) => t.text).join('|')}`
   );
+
+  // And the label is spelled once. The seed said what to draw, the conversion
+  // drew it, and the board keeps the drawing and not the instruction — which
+  // is the whole of TASK-073, because two spellings needed a rule for which
+  // one wins and every version of that rule was a bug.
+  assert(seeded(store).length === 0, `the board kept a label seed on ${seeded(store).join(', ')}`);
+}
+
+// --- fifty writes and fifty reads of one labelled arrow ---------------------
+//
+// TASK-024 was an arrow, and it took many round trips to get where it got: one
+// arrow carrying 42 copies of its own name and a stored height of
+// 0.9999999999999716, which is why it looked like arrows deleting themselves.
+// A three-cycle check would have watched that happen and called it fine, so
+// this one alternates an agent write with a delivery fifty times and watches
+// the count on every pass rather than at the end.
+
+{
+  const store = boardOf([{
+    id: 'wire', type: 'arrow', x: 0, y: 0, width: 200, height: 0,
+    points: [[0, 0], [200, 0]], label: { text: 'HTTP' }
+  }]);
+  const baseline = new Map();
+  let worst = 0;
+  let biggest = store.size;
+  for (let i = 0; i < 50; i++) {
+    // Moving it is what an agent does most, and it is what re-routed the arrow
+    // and re-measured the label every time round.
+    write(store, [{ id: 'wire', x: i }]);
+    cycle(store, baseline, { contain: true });
+    worst = Math.max(worst, worstLabelCount([...store.values()]));
+    biggest = Math.max(biggest, store.size);
+  }
+
+  assert(worst === 1, `fifty write-and-read cycles took one arrow's label to ${worst} bound texts`);
+  assert(biggest === 2, `fifty cycles grew a two-element board to ${biggest}`);
+  const label = boundTextsByContainer([...store.values()]).get('wire')[0];
+  assert(store.get(label).text === 'HTTP', `the label read ${JSON.stringify(store.get(label).text)} after fifty cycles`);
+  assert(store.get('wire').height === 0, `the arrow collapsed to a height of ${store.get('wire').height}`);
+  assert(seeded(store).length === 0, `fifty cycles left a seed on ${seeded(store).join(', ')}`);
 }
 
 // --- a label is named here, not by the converter (TASK-069) -----------------
@@ -558,15 +618,16 @@ const CYCLES = 25;
   assert(store.get(shapeLabel).text === 'IdentityService', `shape label reads ${JSON.stringify(store.get(shapeLabel).text)}`);
   assert(store.get(arrowLabel).text === 'gRPC', `arrow label reads ${JSON.stringify(store.get(arrowLabel).text)}`);
   assert(store.size === 6, `renaming changed the element count to ${store.size}`);
+  assert(seeded(store).length === 0, `renaming left a seed on ${seeded(store).join(', ')}`);
 }
 
 // --- a human retyping a label keeps it ---------------------------------------
 //
-// The other direction, and the one the inbound rule alone gets wrong. A person
-// retypes a box on the board: the words land in the text element, the seed on
-// the server still says the old name, and the seed is what the next conversion
-// pass expands. Unless the report says otherwise, the board writes their edit
-// back out again.
+// The other direction, and the one that used to need a rule. A person retypes
+// a box on the board: the words land in the text element, and the seed on the
+// server still said the old name. The seed was what the next write to that
+// container expanded, so the board wrote their edit back out from under them
+// (TASK-028). There is no seed now, so there is nothing to lose to.
 
 {
   const store = boardOf(drawn());
@@ -583,8 +644,7 @@ const CYCLES = 25;
   const after = boundTextsByContainer([...store.values()]);
   assert(store.get(shapeLabel).text === 'Ledger', `a retyped shape label reads ${JSON.stringify(store.get(shapeLabel).text)}`);
   assert(store.get(arrowLabel).text === 'AMQP', `a retyped arrow label reads ${JSON.stringify(store.get(arrowLabel).text)}`);
-  assert(store.get('svc').label?.text === 'Ledger', `the stored seed did not follow: ${JSON.stringify(store.get('svc').label)}`);
-  assert(store.get('wire').label?.text === 'AMQP', `the stored arrow seed did not follow: ${JSON.stringify(store.get('wire').label)}`);
+  assert(seeded(store).length === 0, `retyping left a seed to revert to on ${seeded(store).join(', ')}`);
   assert(store.size === 6, `retyping a label changed the element count to ${store.size}`);
   assert(after.get('svc')?.length === 1, `retyping left ${after.get('svc')?.length} labels on the shape`);
   assert(after.get('wire')?.length === 1, `retyping left ${after.get('wire')?.length} labels on the arrow`);
@@ -599,38 +659,39 @@ const CYCLES = 25;
   assert(store.get(arrowLabel).text === 'AMQP', `reloading reverted the arrow label to ${JSON.stringify(store.get(arrowLabel).text)}`);
 }
 
-// --- and it is the statement that keeps it, not luck -------------------------
+// --- and it is the missing seed that keeps it, not luck ----------------------
 //
-// Same run with the outbound half removed. If this does not revert, the check
-// above is passing for some reason other than the fix.
+// The same run with the seed put back, which is the code as it stood under
+// stage 5. If this does not revert, the check above is passing for some reason
+// other than the deletion.
 //
-// The revert needs one more thing than it used to. Nothing expands a label on
-// the way out any more, so a stale seed sits there harmlessly until an agent
-// writes to the container it is on — and then the write boundary reads it and
-// puts the old words back over the human's. Moving a box is enough. That is
-// the whole reason the seed is still stated under stage 5 and the reason
-// stage 6 deletes the seed rather than the statement.
+// The revert takes one more step than it used to. Nothing expands a label on
+// the way out any more, so a stale seed sits there inertly until an agent
+// writes to the container carrying it — and then the write boundary reads it
+// and puts the old words back over the human's. Moving a box is enough, and
+// moving a box is the commonest thing an agent does to one.
 
 {
-  const store = boardOf(drawn());
+  const store = boardOf(drawn(), { keepSeed: true });
   const baseline = new Map();
-  for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true, state: false });
+  for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
   const shapeLabel = boundTextsByContainer([...store.values()]).get('svc')[0];
 
-  cycle(store, baseline, { contain: true, state: false, types: { svc: 'Ledger' } });
+  cycle(store, baseline, { contain: true, types: { svc: 'Ledger' } });
   assert(store.get(shapeLabel).text === 'Ledger', 'the model never got the human edit to the server at all');
-  write(store, [{ id: 'svc', x: 40 }]);
-  for (let i = 0; i < 3; i++) cycle(store, baseline, { contain: true, state: false });
+  assert(store.get('svc').label?.text === 'AuthService', 'the revert did not put a stale seed on the board');
+  write(store, [{ id: 'svc', x: 40 }], { keepSeed: true });
+  for (let i = 0; i < 3; i++) cycle(store, baseline, { contain: true });
   assert(
     store.get(shapeLabel).text === 'AuthService',
-    'without the label statement the model failed to reproduce the revert, so it is toothless'
+    'with the seed back the model failed to reproduce the revert, so it is toothless'
   );
 }
 
-// --- and an agent write does not revert it when the statement is made --------
+// --- and an agent write does not revert it now -------------------------------
 //
-// The same nudge, with the statement in place. Moving a box is the commonest
-// thing an agent does to one, and it must not carry a rename with it.
+// The same nudge, against the board as it is. Moving a box must not carry a
+// rename with it.
 
 {
   const store = boardOf(drawn());
@@ -649,8 +710,9 @@ const CYCLES = 25;
 
 // --- an agent renaming after a human still wins ------------------------------
 //
-// The two directions must not cancel each other out: the seed following the
-// text outbound cannot make the seed powerless inbound.
+// Deleting the seed must not cost an agent its rename. The seed is still the
+// way an agent says what a label reads; what changed is that the write
+// boundary consumes it into the text element instead of keeping a copy.
 
 {
   const store = boardOf(drawn());
@@ -664,17 +726,18 @@ const CYCLES = 25;
   for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
 
   assert(store.get(shapeLabel).text === 'PostingEngine', `an agent rename after a human edit reads ${JSON.stringify(store.get(shapeLabel).text)}`);
-  assert(store.get('svc').label?.text === 'PostingEngine', 'the agent rename did not settle in the stored seed');
-  assert(boundTextsByContainer([...store.values()]).get('svc')?.length === 1, 'the two directions between them grew a second label');
-  assert(store.size === 6, `the two directions between them changed the element count to ${store.size}`);
+  assert(seeded(store).length === 0, `an agent rename left a seed on ${seeded(store).join(', ')}`);
+  assert(boundTextsByContainer([...store.values()]).get('svc')?.length === 1, 'the two renames between them grew a second label');
+  assert(store.size === 6, `the two renames between them changed the element count to ${store.size}`);
 }
 
 // --- a human clearing a label keeps it cleared -------------------------------
 //
 // Emptying is not retyping with an empty string. Excalidraw deletes the bound
-// text element, so there is no text upsert for a statement to ride on, and the
-// seed the deleted element came from sits on the server waiting to be expanded
-// straight back over the box somebody just cleared.
+// text element rather than editing it, so the report says only that an element
+// is gone. That used to leave the seed it had been expanded from sitting on
+// the server, waiting for the next write to that box to put the words back
+// (TASK-029).
 
 {
   const store = boardOf(drawn());
@@ -694,18 +757,16 @@ const CYCLES = 25;
   const after = boundTextsByContainer([...store.values()]);
   assert(after.get('svc') === undefined, `a cleared shape label grew back ${after.get('svc')?.length} bound texts`);
   assert(after.get('wire') === undefined, `a cleared arrow label grew back ${after.get('wire')?.length} bound texts`);
-  assert(!store.get('svc').label?.text, `the seed survived the clearing: ${JSON.stringify(store.get('svc').label)}`);
-  assert(!store.get('wire').label?.text, `the arrow seed survived the clearing: ${JSON.stringify(store.get('wire').label)}`);
+  assert(seeded(store).length === 0, `clearing left a seed to grow back from on ${seeded(store).join(', ')}`);
   assert(store.size === 4, `clearing two of three labels left ${store.size} elements, expected 4`);
 
   // The label 'Gateway' was never touched and must be exactly where it was.
   const gateway = after.get('gw');
   assert(gateway?.length === 1, `clearing other labels left ${gateway?.length} on the untouched shape`);
   assert(store.get(gateway[0]).text === 'Gateway', 'clearing a label disturbed a different one');
-  assert(store.get('gw').label?.text === 'Gateway', 'clearing a label struck out a different seed');
 
   // A page reload is the pass that brought the old words back: the whole board
-  // arrives from the server at once, so every surviving seed is expanded again.
+  // arrives from the server at once, so every surviving seed was expanded again.
   const reloaded = new Map();
   cycle(store, reloaded, { contain: true });
   assert(
@@ -714,8 +775,8 @@ const CYCLES = 25;
   );
   assert(store.size === 4, `reloading a board with cleared labels left ${store.size} elements`);
 
-  // And the box can be labelled again afterwards: striking out the seed must
-  // not leave the container unable to hold one.
+  // And the box can be labelled again afterwards: a container that has been
+  // cleared must still be able to hold a label.
   write(store, [{ id: 'svc', label: { text: 'Ledger' } }]);
   for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
   const relabelled = boundTextsByContainer([...store.values()]).get('svc');
@@ -723,85 +784,58 @@ const CYCLES = 25;
   assert(store.get(relabelled[0]).text === 'Ledger', 'a cleared shape could not be labelled again');
 }
 
-// --- and it is the clearance that keeps it cleared, not luck -----------------
+// --- and it is the missing seed that keeps it cleared, not luck --------------
 //
-// The same run with the clearance removed. If this does not bring the old
-// words back, the check above is passing for some other reason than the fix.
+// The same run with the seed put back. If this does not bring the old words
+// back, the check above is passing for some other reason than the deletion.
 
 {
-  const store = boardOf(drawn());
+  const store = boardOf(drawn(), { keepSeed: true });
   const baseline = new Map();
-  for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true, clear: false });
+  for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
   const shapeLabel = boundTextsByContainer([...store.values()]).get('svc')[0];
 
-  cycle(store, baseline, { contain: true, clear: false, empties: { svc: true } });
+  cycle(store, baseline, { contain: true, empties: { svc: true } });
   assert(!store.has(shapeLabel), 'the model never got the deletion to the server at all');
   // As with the rename above, the seed is inert until an agent writes to the
   // container carrying it. Then the write boundary reads it and puts the words
   // a human deleted back on the board.
-  write(store, [{ id: 'svc', x: 40 }]);
-  for (let i = 0; i < 3; i++) cycle(store, baseline, { contain: true, clear: false });
+  write(store, [{ id: 'svc', x: 40 }], { keepSeed: true });
+  for (let i = 0; i < 3; i++) cycle(store, baseline, { contain: true });
 
   const revived = boundTextsByContainer([...store.values()]).get('svc');
   assert(
     revived?.length === 1 && store.get(revived[0]).text === 'AuthService',
-    'without the clearance the model failed to reproduce the label coming back, so it is toothless'
+    'with the seed back the model failed to reproduce the label coming back, so it is toothless'
   );
 }
 
-// --- absence is not a deletion -----------------------------------------------
+// --- absence is not a deletion, and no longer has to be told apart -----------
 //
-// The trap. A shape an agent has just labelled, whose seed has not been
-// expanded yet, has no bound text — exactly like a shape whose label was
-// cleared. Reading that as a clearance would wipe the agent's label and undo
-// TASK-024. Only the deleted text element itself tells them apart.
+// This used to be the trap. A shape an agent had just labelled, whose seed had
+// not been expanded yet, had no bound text — exactly like a shape whose label a
+// human had cleared. Whatever struck out stale seeds had to tell the two
+// apart, on the strength of the deleted text element still sitting in the
+// scene, or it would wipe the agent's label and undo TASK-024.
+//
+// Neither board carries a seed now, so there are no two states to distinguish.
+// A container the board has not labelled yet gets its label from the write
+// that names it; a container whose label was deleted has nothing to say and
+// gets nothing.
 
 {
-  const scene = [
-    // An agent's label, delivered and not yet expanded.
-    { id: 'svc', type: 'rectangle', label: { text: 'AuthService' } },
-    // A human's, just cleared: the text element is gone and unbound.
-    { id: 'gw', type: 'rectangle', boundElements: [] },
-    { id: 'gw-label', type: 'text', containerId: 'gw', text: '', isDeleted: true }
-  ];
-  const upserts = [{ id: 'svc' }, { id: 'gw', boundElements: [] }];
-  const clearances = labelClearances(upserts, ['gw-label'], scene);
-  assert(clearances.length === 1, `expected one clearance, got ${clearances.length}`);
-  assert(clearances[0]?.id === 'gw', `the clearance named ${clearances[0]?.id}, not the cleared container`);
-  assert(clearances[0]?.label === null && clearances[0]?.text === null, 'a clearance must strike out both seed fields');
-  assert(
-    !clearances.some((clearance) => clearance.id === 'svc'),
-    'an unexpanded agent label was read as a deletion'
-  );
+  const fresh = expandForBoard(
+    [{ id: 'svc', type: 'rectangle', x: 0, y: 0, width: 200, height: 80, label: { text: 'AuthService' } }],
+    new Map());
+  assert(fresh.length === 2, `an agent's label produced ${fresh.length} elements, not a box and its text`);
+  assert(seedOf(fresh.find((el) => el.id === 'svc')) === undefined,
+    'the write boundary handed the seed on to the board instead of consuming it');
 
-  // A container that still has a label is not bereaved, however many of its
-  // text elements have been deleted along the way.
-  const stillLabelled = [
-    { id: 'gw', type: 'rectangle', boundElements: [{ id: 'gw-keeper', type: 'text' }] },
-    { id: 'gw-keeper', type: 'text', containerId: 'gw', text: 'Gateway' },
-    { id: 'gw-stray', type: 'text', containerId: 'gw', text: '', isDeleted: true }
-  ];
-  assert(
-    labelClearances([{ id: 'gw' }], ['gw-stray'], stillLabelled).length === 0,
-    'a container that still shows a label was told to clear it'
-  );
-
-  // A deleted element the report is not talking about is old news. Restating
-  // the clearance on every later pass would rewrite the element for nothing.
-  assert(
-    labelClearances([], [], scene).length === 0,
-    'a lingering deleted label kept restating its clearance'
-  );
-
-  // Nor is a container that went with it something to make statements about.
-  const bothGone = [
-    { id: 'gw', type: 'rectangle', isDeleted: true },
-    { id: 'gw-label', type: 'text', containerId: 'gw', text: 'Gateway', isDeleted: true }
-  ];
-  assert(
-    labelClearances([], ['gw-label', 'gw'], bothGone).length === 0,
-    'a deleted container was sent a label clearance'
-  );
+  const cleared = new Map([
+    ['gw', { id: 'gw', type: 'rectangle', x: 0, y: 0, width: 200, height: 80, boundElements: [] }]
+  ]);
+  const nudged = expandForBoard([{ ...cleared.get('gw'), x: 40 }], cleared);
+  assert(nudged.length === 1, `moving a cleared box grew ${nudged.length - 1} labels`);
 }
 
 // --- clearing and retyping do not get in each other's way --------------------
@@ -817,9 +851,8 @@ const CYCLES = 25;
   for (let i = 0; i < CYCLES; i++) cycle(store, baseline, { contain: true });
 
   assert(store.get(shapeLabel).text === 'Ledger', `the retyped label reads ${JSON.stringify(store.get(shapeLabel).text)}`);
-  assert(store.get('svc').label?.text === 'Ledger', 'the retyped seed did not follow while another label was cleared');
   assert(boundTextsByContainer([...store.values()]).get('gw') === undefined, 'the cleared label came back');
-  assert(!store.get('gw').label?.text, 'the cleared seed survived alongside a retype');
+  assert(seeded(store).length === 0, `a clearing and a retype together left a seed on ${seeded(store).join(', ')}`);
   assert(store.size === 5, `clearing one label and retyping another left ${store.size} elements, expected 5`);
 }
 
@@ -841,16 +874,25 @@ const CYCLES = 25;
 
 // --- a label whose text element the container has forgotten still shows -----
 //
-// A pane reports the text element the instant a human types; the container it
-// belongs to often has nothing new to say and never names it back. The label
-// must still be drawn, which means the reference has to be restored.
+// A binding is recorded in two places and either can be the one that survives:
+// the text element names its container in `containerId`, the container names
+// its text in `boundElements`. A note edited by hand, a scene imported from
+// elsewhere, a pane that reported one and not the other — any of them can
+// leave a board where only the text end of it is written down.
+//
+// The converter looks at the container's end, so on such a board it would read
+// a write carrying a label as a label nobody had expanded, and expand a second
+// one. `expandForBoard` squares the reference against the board first. This is
+// what stage 5 took on from `planLabelExpansion`, and it survives the seed:
+// the write that trips it is a rename, which is a seed by definition.
 
 {
   const board = new Map([
-    ['svc', { id: 'svc', type: 'rectangle', x: 0, y: 0, width: 200, height: 80, label: { text: 'AuthService' } }],
+    ['svc', { id: 'svc', type: 'rectangle', x: 0, y: 0, width: 200, height: 80 }],
     ['svclabel', { id: 'svclabel', type: 'text', containerId: 'svc', text: 'AuthService' }]
   ]);
-  const written = expandForBoard([board.get('svc')], board);
+  const written = expandForBoard(
+    [{ ...board.get('svc'), label: { text: 'IdentityService' } }], board);
   const container = written.find((element) => element.id === 'svc');
   assert(
     (container.boundElements ?? []).some((ref) => ref.type === 'text' && ref.id === 'svclabel'),
@@ -890,7 +932,7 @@ const CYCLES = 25;
 // --- repair puts a polluted board back ---------------------------------------
 
 {
-  const store = boardOf(drawn());
+  const store = boardOf(drawn(), { keepSeed: true });
   const baseline = new Map();
   for (let i = 0; i < CYCLES; i++) cycle(store, baseline, { contain: false });
   const polluted = [...store.values()];
@@ -1190,15 +1232,20 @@ const sceneBox = (elements) => ({
     // and this check had to manufacture that report itself. Now the one
     // converter runs at the write boundary and four labelled elements are
     // eight elements on the board (ADR 0015).
-    const seeded = await elementsOn();
-    assert(seeded.length === 8,
-      `four labelled elements became ${seeded.length} on the board, not eight`);
-    const seededLabels = boundTextsByContainer(seeded);
+    const drawn = await elementsOn();
+    assert(drawn.length === 8,
+      `four labelled elements became ${drawn.length} on the board, not eight`);
+    const drawnLabels = boundTextsByContainer(drawn);
     for (const id of ['svc', 'gw', 'pg', 'wire']) {
-      assert(seededLabels.get(id)?.length === 1,
-        `${id} came back with ${seededLabels.get(id)?.length ?? 0} bound texts, not one`);
+      assert(drawnLabels.get(id)?.length === 1,
+        `${id} came back with ${drawnLabels.get(id)?.length ?? 0} bound texts, not one`);
     }
-    assert((await driftOn('scratch')).length === 0, 'the seeded board was drifted before anything moved');
+    assert((await driftOn('scratch')).length === 0, 'the newly drawn board was drifted before anything moved');
+
+    // And the seed that asked for those labels is not on the board. It was
+    // read, it produced four text elements, and it is spent (TASK-073).
+    const held = drawn.filter((element) => seedOf(element) !== undefined).map((element) => element.id);
+    assert(held.length === 0, `the board came back holding a label seed on ${held.join(', ')}`);
 
     await api('PUT', `/api/elements/svc${board}`, { x: 100, y: 900 });
     let drifted = await driftOn('scratch');
@@ -1234,6 +1281,21 @@ const sceneBox = (elements) => ({
         `where its container draws it at ${Math.round(wanted.x)},${Math.round(wanted.y)}`
       );
     }
+
+    // A rename over the single-element route, which is what `update <id> --set
+    // '{"text": ...}'` performs. The seed is the way to ask for it and it is
+    // still consumed rather than kept: the route used to store the merge and
+    // then store only what the conversion added, which left the old words on
+    // the board for the next write to read back (TASK-073).
+    await api('PUT', `/api/elements/svc${board}`, { label: { text: 'IdentityService' } });
+    const renamed = await elementsOn();
+    const svcLabels = boundTextsByContainer(renamed).get('svc') ?? [];
+    assert(svcLabels.length === 1, `renaming over PUT left svc with ${svcLabels.length} bound texts`);
+    assert(renamed.find((element) => element.id === svcLabels[0])?.text === 'IdentityService',
+      'the rename did not reach the text element that is the label');
+    assert(seedOf(renamed.find((element) => element.id === 'svc')) === undefined,
+      'a rename over PUT left its seed on the board');
+    assert(renamed.length === 8, `renaming changed the board from 8 elements to ${renamed.length}`);
 
     // Saved to a note and opened again: what the vault holds is what the board
     // becomes, so the invariant has to survive the round trip.
