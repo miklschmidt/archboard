@@ -34,7 +34,9 @@ export ARCHBOARD_VAULT=/path/to/vault
 ```
 
 **Set it before starting the server** — the server does the vault I/O, so
-exporting it afterwards changes nothing. Open <http://127.0.0.1:3000>.
+exporting it afterwards changes nothing, and with no vault at all the canvas
+refuses to start and tells you how to get one (ADR 0015). Open
+<http://127.0.0.1:3000>.
 
 ## 3. Wire archboard into Codex
 
@@ -225,5 +227,5 @@ asked for, and refuses to arm when the canvas is not on loopback.
 Read the "Things that will mislead you" section of
 `skills/archboard-dev/SKILL.md` first. It lists the traps that have already
 cost time — including that an *unlabelled* transparent shape cannot be clicked
-in its interior, and that board commands fail on the vault message rather than
-on whatever you were actually testing when `ARCHBOARD_VAULT` is unset.
+in its interior, and that with `ARCHBOARD_VAULT` unset the canvas will not
+start at all, so what you meant to test never runs.

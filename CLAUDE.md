@@ -398,8 +398,12 @@ line, `?board=` on the API, or the required `board` argument on an MCP tool.
 The refusal lists what is open, so the next step is on screen at the moment of
 the mistake.
 
-Set the vault before anything board-shaped works — it spans repositories, so
-there is deliberately no default:
+**A canvas with no vault refuses to start** (ADR 0015). Every board is a note,
+so there is nowhere to put one, and a canvas somebody can draw on before
+discovering the drawing was never anywhere is the worse failure. The vault
+spans repositories, so there is deliberately no default and nothing to guess
+from; `install-skill` is the step that chooses one, and the refusal points at
+it. Set it before the server starts:
 
 ```bash
 export ARCHBOARD_VAULT=/path/to/vault    # or put it in .env

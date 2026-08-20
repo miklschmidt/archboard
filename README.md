@@ -40,10 +40,13 @@ step; only the frontend is built (ADR 0014).
 ```bash
 bun install
 bunx vite build
+export ARCHBOARD_VAULT=/path/to/vault    # every board is a note in one
 ./bin/canvas start
 ```
 
-Then open <http://127.0.0.1:3000>.
+Then open <http://127.0.0.1:3000>. The vault has no default and the canvas will
+not start without one (ADR 0015); `./bin/canvas install-skill` is what chooses
+one for a repository, and the refusal says so.
 
 Every command that touches a board names it. There is no default: a pane holds
 its own board and two panes hold two, so "the board" would be a guess

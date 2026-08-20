@@ -22,7 +22,7 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { ARCHBOARD_VAULT } from './config.js';
+import { ARCHBOARD_VAULT, noVaultMessage } from './config.js';
 import { ServerElement } from '../types.js';
 import {
   readFrontmatterValue,
@@ -207,14 +207,11 @@ export function parseBoardKey(key: string): BoardIdentity {
   return makeIdentity({ board: key.slice(0, at), variant: key.slice(at + 1) });
 }
 
+// A canvas refuses to start without a vault (ADR 0015), so in a running server
+// this cannot fire. It stays as the backstop for anything that reaches vault
+// paths another way, and says the same thing the refusal says.
 export function requireVaultRoot(): string {
-  if (!ARCHBOARD_VAULT) {
-    throw new Error(
-      'No vault configured. Boards persist as .excalidraw.md notes in an Obsidian vault ' +
-      'that spans repositories, so there is no sensible default. Set ARCHBOARD_VAULT to ' +
-      'its absolute path (a .env file in the archboard checkout works) and restart the canvas server.'
-    );
-  }
+  if (!ARCHBOARD_VAULT) throw new Error(noVaultMessage());
   return path.resolve(ARCHBOARD_VAULT);
 }
 

@@ -3,7 +3,7 @@
 ## Defaults
 
 - Canvas base URL: `EXPRESS_SERVER_URL` (default `http://127.0.0.1:3000`); CLI also accepts `--url <canvasUrl>`
-- Board vault: `ARCHBOARD_VAULT` (no default — board commands fail until it is set)
+- Board vault: `ARCHBOARD_VAULT` (no default — the canvas refuses to start until it is set)
 - Canvas health: `GET /health` or `archboard status`
 - Auto-start: any canvas-touching CLI command starts the server if it's down (opt out with `EXCALIDRAW_NO_AUTOSTART=1`)
 
