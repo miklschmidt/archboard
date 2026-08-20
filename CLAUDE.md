@@ -40,9 +40,9 @@ bun run build       # frontend only -> dist/frontend/
 bun run type-check
 bun run test        # type-check, CI coverage, module scope, then stdio wire,
                     # loopback bind, obsidian, changes, one write per intent,
-                    # geometry, labels, library, boards + panes, branch vs
-                    # redraw, proposal beside source, skill install, repo
-                    # bindings, CLI/MCP surface parity, hot reload
+                    # geometry, text metrics, labels, library, boards + panes,
+                    # branch vs redraw, proposal beside source, skill install,
+                    # repo bindings, CLI/MCP surface parity, hot reload
 
 ./bin/canvas start  # canvas server on 127.0.0.1:3000
 ./bin/canvas status
