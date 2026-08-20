@@ -52,6 +52,12 @@ export interface PaneRegistration {
   rect: Rect;
   /** Which part of the board is on screen, in scene coordinates. */
   viewport: Rect & { zoom: number };
+  /**
+   * The entry script this tab loaded, e.g. `/assets/index-B1qk9.js`. Absent
+   * from a tab served by the vite dev server, and from any client that is not
+   * a browser (TASK-056).
+   */
+  build?: string;
   at: string;
 }
 

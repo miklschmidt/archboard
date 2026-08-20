@@ -20,6 +20,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { writeFileAtomic } from './atomic-write.js';
 import { repoIdentityAt, repoRootOf } from './git.js';
 import { stateDir } from './state-dir.js';
 
@@ -107,14 +108,16 @@ function isCheckout(root: string): boolean {
 // Atomic, so a reader never sees half a file, and quiet, so a registry on a
 // read-only filesystem degrades to "archboard learns nothing" rather than
 // failing a promotion that was otherwise fine.
+//
+// The temp-file-and-rename used to be written out here. It is `writeFileAtomic`
+// now, shared with the board note and the library, because a repository with
+// two atomic-write idioms has one of them going stale (TASK-061).
 function write(entries: RegisteredRepo[]): boolean {
   const file = registryPath();
   const body = JSON.stringify(entries, null, 2) + '\n';
   try {
     fs.mkdirSync(path.dirname(file), { recursive: true });
-    const tmp = `${file}.${process.pid}.tmp`;
-    fs.writeFileSync(tmp, body, 'utf-8');
-    fs.renameSync(tmp, file);
+    writeFileAtomic(file, body);
     return true;
   } catch {
     return false;

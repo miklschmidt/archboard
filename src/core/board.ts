@@ -22,7 +22,7 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { ARCHBOARD_VAULT } from './config.js';
+import { ARCHBOARD_VAULT, noVaultMessage } from './config.js';
 import { ServerElement } from '../types.js';
 import {
   readFrontmatterValue,
@@ -47,9 +47,25 @@ export interface BoardIdentity {
 // the unadorned filename and is the default everywhere a variant is optional.
 export const CURRENT_VARIANT = 'current';
 
-// The board the canvas holds before anything has been opened. Not vault-backed:
-// it has nowhere to save to until it is given a name (`board save --as`).
+// The board the canvas holds before anything has been opened: somewhere to put
+// things before there is a name for them. It has a note like every other board
+// (ADR 0015) — the vault is where board content lives, and a board the process
+// held and the vault did not would be the one exception that makes that a
+// suggestion. What it does not have is a name anybody chose, which is what
+// `board save --board scratch --as <name>` is for.
 export const SCRATCH_BOARD = 'scratch';
+
+// Where archboard keeps its own state inside somebody's vault: the library
+// (ADR 0007) and the scratch note. Alongside the boards, out of the way —
+// Obsidian hides dot-directories, so the vault's note list stays notes, and
+// `listBoards` skips them for the same reason. One directory rather than one
+// per thing, so there is a single convention to learn and a single thing to
+// leave alone.
+export const VAULT_STATE_DIR = '.archboard';
+
+export function isScratchKey(key: string): boolean {
+  return normalizeBoardKey(key) === SCRATCH_BOARD;
+}
 
 // Board identity in the note's frontmatter, under the domain's own words.
 // Flat and unprefixed because these are Obsidian *properties*: a human reads
@@ -191,14 +207,11 @@ export function parseBoardKey(key: string): BoardIdentity {
   return makeIdentity({ board: key.slice(0, at), variant: key.slice(at + 1) });
 }
 
+// A canvas refuses to start without a vault (ADR 0015), so in a running server
+// this cannot fire. It stays as the backstop for anything that reaches vault
+// paths another way, and says the same thing the refusal says.
 export function requireVaultRoot(): string {
-  if (!ARCHBOARD_VAULT) {
-    throw new Error(
-      'No vault configured. Boards persist as .excalidraw.md notes in an Obsidian vault ' +
-      'that spans repositories, so there is no sensible default. Set ARCHBOARD_VAULT to ' +
-      'its absolute path (a .env file in the archboard checkout works) and restart the canvas server.'
-    );
-  }
+  if (!ARCHBOARD_VAULT) throw new Error(noVaultMessage());
   return path.resolve(ARCHBOARD_VAULT);
 }
 
@@ -228,6 +241,12 @@ function entryMatching(dir: string, wanted: string): string | null {
 // A note that does not exist yet is named with the casing the human typed,
 // which is what makes the vault case-preserving as well as case-insensitive.
 export function vaultPathFor(identity: Pick<BoardIdentity, 'board' | 'variant' | 'displayName'>, root = requireVaultRoot()): string {
+  // Scratch is archboard's own note, not one somebody made, so it goes with
+  // the rest of archboard's state and keeps the name this file gives it —
+  // no display casing to preserve, and nothing on disk to match against.
+  if (identity.board === SCRATCH_BOARD && identity.variant === CURRENT_VARIANT) {
+    return path.join(path.resolve(root), VAULT_STATE_DIR, `${SCRATCH_BOARD}${BOARD_FILE_SUFFIX}`);
+  }
   const name = validateBoardName(boardDisplayName(identity));
   const variant = validateVariant(identity.variant);
   const base = variant === CURRENT_VARIANT ? name : `${name}@${variant}`;
@@ -309,20 +328,21 @@ export type BoardSaveKind =
   // The board saved itself back to its own note. Nothing about the address
   // changed and there is nothing to say about panes.
   | 'same-board'
-  // The scratch board got its first home. Scratch is a placeholder, not a
-  // subject, so the drawing a pane is holding has just become a named board.
+  // The scratch board got a name. Scratch is a placeholder, not a subject, so
+  // the drawing a pane is holding has just become a board somebody meant.
   | 'named'
   // A board with a home was written to a second address as well. The source
   // keeps its note, its baseline and its place in the store: nothing was
   // renamed and nothing moved.
   | 'branch';
 
-export function classifyBoardSave(
-  source: { key: string; vaultBacked: boolean },
-  targetKey: string
-): BoardSaveKind {
-  if (targetKey === source.key) return 'same-board';
-  return source.vaultBacked ? 'branch' : 'named';
+// Every board has a note, so what tells naming from branching is which board
+// was written FROM. Scratch is the placeholder: writing it somewhere else is
+// the drawing getting a name. Any other board is a subject in its own right,
+// and writing it somewhere else is a second board beside the first.
+export function classifyBoardSave(sourceKey: string, targetKey: string): BoardSaveKind {
+  if (targetKey === sourceKey) return 'same-board';
+  return isScratchKey(sourceKey) ? 'named' : 'branch';
 }
 
 /**

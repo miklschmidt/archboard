@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import logger from '../utils/logger.js';
-import { EXPRESS_SERVER_URL, ENABLE_CANVAS_SYNC, EXCALIDRAW_NO_AUTOSTART } from './config.js';
+import { ARCHBOARD_VAULT, EXPRESS_SERVER_URL, ENABLE_CANVAS_SYNC, EXCALIDRAW_NO_AUTOSTART, noVaultMessage } from './config.js';
 import { getHealth, CANVAS_SERVICE_NAME, foreignServiceError, markCanvasIdentityVerified } from './canvas-client.js';
 
 export { foreignServiceError };
@@ -102,6 +102,16 @@ export async function ensureCanvasRunning(options: { timeoutMs?: number; force?:
 
   if (!isLoopbackUrl()) {
     throw unreachableError('refusing to auto-start a non-loopback canvas URL');
+  }
+
+  // The canvas refuses to start without a vault (ADR 0015), and it is spawned
+  // detached with its stdio thrown away, so its refusal would land nowhere and
+  // the caller would wait eight seconds to be told the server "did not become
+  // healthy". Ask the same question here, where somebody is reading.
+  if (!ARCHBOARD_VAULT) {
+    const error = new Error(noVaultMessage());
+    (error as any).code = 'CANVAS_UNREACHABLE';
+    throw error;
   }
 
   // src/core/spawn.ts -> src/server.ts; spawn args must be path strings.

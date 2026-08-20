@@ -118,12 +118,32 @@ const elementsOn = async () => (await api('GET', `/api/elements${board}`))?.elem
 const byId = async () => new Map((await elementsOn()).map((el) => [el.id, el]));
 
 // One intent, and what it cost on the wire.
-const counting = async (what, run) => {
+const spending = async (what, expected, run) => {
   writes = [];
   const result = await run();
   const spent = writes.slice();
-  assert(spent.length === 1, `${what} should cost one write, not ${spent.length}: ${spent.join(', ') || 'none'}`);
+  assert(spent.length === expected,
+    `${what} should cost ${expected === 1 ? 'one write' : `${expected} writes`}, ` +
+    `not ${spent.length}: ${spent.join(', ') || 'none'}`);
   return result;
+};
+const counting = (what, run) => spending(what, 1, run);
+
+// The CLI a person actually types, pointed at the proxy.
+const cli = async (args, stdin) => {
+  const child = spawn(process.execPath, [src('bin.ts'), ...args], {
+    cwd: repoRoot,
+    env: { ...process.env, EXPRESS_SERVER_URL: proxyBase, LOG_LEVEL: 'error' },
+    stdio: ['pipe', 'pipe', 'pipe']
+  });
+  if (stdin !== undefined) child.stdin.write(stdin);
+  child.stdin.end();
+  let out = '';
+  let err = '';
+  child.stdout.on('data', (chunk) => { out += chunk; });
+  child.stderr.on('data', (chunk) => { err += chunk; });
+  const code = await new Promise((resolve) => child.on('exit', resolve));
+  return { code, out, err };
 };
 
 try {
@@ -318,6 +338,94 @@ try {
   await ops.distributeElements(['svc', 'db', 'box-1'], 'horizontal');
   assert(writes.length === 1,
     `re-routing and re-placing behind a batched move must not cost extra writes: ${writes.join(', ')}`);
+
+  // ─── Promoting a node that is not one element ─────────────────
+  //
+  // Seven lines and nothing else, which is what the shipped PostgreSQL stencil
+  // is. Promotion outranks the element type precisely so a node can be drawn
+  // from one (TASK-053), which makes this the ordinary path and not an edge
+  // case — and it used to cost a PUT per line, on both surfaces.
+
+  const stencil = Array.from({ length: 7 }, (_, i) => ({
+    id: `pg-${i}`,
+    type: 'line',
+    x: 300,
+    y: 12000 + i * 12,
+    width: 160,
+    height: 0,
+    points: [[0, 0], [160, 0]]
+  }));
+  const pgIds = stencil.map((line) => line.id);
+  await api('POST', `/api/elements/batch${board}`, { elements: stencil });
+
+  const nodeIdOf = (element) => element?.customData?.archboard?.node;
+  const promoted = async () => {
+    const now = await byId();
+    return pgIds.map((id) => nodeIdOf(now.get(id)));
+  };
+
+  const cliPromote = await counting('promoting a seven-element stencil on the CLI', () =>
+    cli(['promote', '--board', 'scratch', '--ids', pgIds.join(','), '--kind', 'datastore', '--name', 'PostgreSQL']));
+  assert(cliPromote.code === 0, `promote exited ${cliPromote.code}: ${cliPromote.err}`);
+  let nodes = await promoted();
+  assert(nodes.every((node) => node && node === nodes[0]),
+    `all seven elements should carry one node id, not ${JSON.stringify(nodes)}`);
+
+  await counting('demoting a seven-element node on the CLI', () =>
+    cli(['demote', '--board', 'scratch', '--ids', pgIds.join(',')]));
+  assert((await promoted()).every((node) => node === undefined),
+    'demoting should have stripped the metadata from every element of the node');
+
+  // The same act over MCP, which is a second implementation of it and was the
+  // second fan-out.
+  const { callExcalidrawTool } = await import(src('core/mcp-dispatch.ts'));
+  await counting('promoting a seven-element stencil over MCP', () =>
+    callExcalidrawTool('promote_selection', {
+      board: 'scratch', elementIds: pgIds, kind: 'datastore', name: 'PostgreSQL'
+    }));
+  setRequestedBoard('scratch');
+  nodes = await promoted();
+  assert(nodes.every((node) => node && node === nodes[0]),
+    `promoting over MCP should carry one node id onto all seven, not ${JSON.stringify(nodes)}`);
+
+  await counting('demoting a seven-element node over MCP', () =>
+    callExcalidrawTool('demote_selection', { board: 'scratch', elementIds: pgIds }));
+  setRequestedBoard('scratch');
+  assert((await promoted()).every((node) => node === undefined),
+    'demoting over MCP should have stripped the metadata from every element');
+
+  // A promotion naming something the board does not hold is refused before it
+  // writes, not part way through with the elements before it already stamped.
+  await spending('a promotion naming an element that is not there', 0, async () => {
+    const refused = await cli(['promote', '--board', 'scratch', '--ids', `${pgIds.join(',')},never-existed`,
+      '--kind', 'datastore', '--name', 'PostgreSQL']);
+    assert(refused.code !== 0, 'a promotion naming an element that is not on the board should be refused');
+  });
+  assert((await promoted()).every((node) => node === undefined),
+    'the refused promotion stamped part of the node anyway');
+
+  // ─── delete, with more than one id ────────────────────────────
+
+  await api('POST', `/api/elements/batch${board}`, {
+    elements: ['gone-a', 'gone-b', 'gone-c', 'stays'].map((id, i) => ({
+      id, type: 'rectangle', x: 300 + i * 200, y: 13000, width: 100, height: 60
+    }))
+  });
+
+  await counting('deleting three elements', async () => {
+    const deleted = await cli(['delete', '--board', 'scratch', 'gone-a', 'gone-b', 'gone-c']);
+    assert(deleted.code === 0, `delete exited ${deleted.code}: ${deleted.err}`);
+  });
+  scene = await byId();
+  assert(!scene.has('gone-a') && !scene.has('gone-b') && !scene.has('gone-c'),
+    'deleting three ids in one write should have removed all three');
+
+  await spending('a delete naming an element that is not there', 0, async () => {
+    const refused = await cli(['delete', '--board', 'scratch', 'stays', 'never-existed']);
+    assert(refused.code !== 0, 'deleting an id the board does not hold should be refused');
+  });
+  assert((await byId()).has('stays'),
+    'the refused delete removed the first id anyway, which is the half-applied write this exists to stop');
 } finally {
   server.kill('SIGTERM');
   await new Promise((resolve) => proxy.close(resolve));

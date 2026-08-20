@@ -9,6 +9,7 @@ import {
 } from '../types.js';
 import { EXPRESS_SERVER_URL } from './config.js';
 import {
+  applyElementChanges,
   updateElementOnCanvas,
   deleteElementOnCanvas,
   getElementFromCanvas,
@@ -60,6 +61,7 @@ import { wrapSceneAsObsidianMd } from './obsidian-md.js';
 import { describeScene } from './describe.js';
 import {
   KINDS,
+  ElementUpdate as PlanUpdate,
   demotionSummary,
   normalizeKind,
   planDemotion,
@@ -142,6 +144,30 @@ const QuerySchema = z.object({
 const ResourceSchema = z.object({
   resource: z.enum(['scene', 'library', 'theme', 'elements'])
 });
+
+/**
+ * A promotion or demotion plan, written in one pass.
+ *
+ * One intent is one write (ADR 0015). A node is not one element — the shipped
+ * PostgreSQL stencil is seven lines, and TASK-053 made promotion outrank the
+ * element type precisely so a node could be drawn from one — so this used to
+ * cost a PUT per element and a separate failure message for each.
+ *
+ * customData goes whole: the server merges top-level keys, so an omitted
+ * customData would be left stale rather than cleared, and the plan has already
+ * merged it.
+ */
+async function writePlan(updates: PlanUpdate[], what: string): Promise<void> {
+  if (updates.length === 0) return;
+  try {
+    await applyElementChanges({ upserts: updates as (Partial<ServerElement> & { id: string })[] });
+  } catch (error) {
+    throw new Error(
+      `Failed to ${what} ${updates.length === 1 ? 'element' : 'elements'} ` +
+      `${updates.map(update => update.id).join(', ')}: ${(error as Error).message}`
+    );
+  }
+}
 
 /**
  * Dispatches one `tools/call` invocation. Era-agnostic on purpose: the same
@@ -935,18 +961,12 @@ export async function callExcalidrawTool(
             ...(params.level ? { level: params.level } : {}),
             ...(params.each ? { each: true } : {})
           });
-          for (const update of plan.updates) {
-            const applied = await updateElementOnCanvas(update as Partial<ServerElement> & { id: string });
-            if (!applied) throw new Error(`Failed to write metadata to element ${update.id}: canvas unavailable`);
-          }
+          await writePlan(plan.updates, 'write metadata to');
           summary = promotionSummary(plan, binding?.note);
           payload = plan.nodes;
         } else {
           const plan = planDemotion(targets, board);
-          for (const update of plan.updates) {
-            const applied = await updateElementOnCanvas(update as Partial<ServerElement> & { id: string });
-            if (!applied) throw new Error(`Failed to strip metadata from element ${update.id}: canvas unavailable`);
-          }
+          await writePlan(plan.updates, 'strip metadata from');
           summary = demotionSummary(plan);
           payload = plan.nodes;
         }
