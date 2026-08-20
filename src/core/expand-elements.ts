@@ -1,4 +1,5 @@
 import { ServerElement, normalizeFontFamily } from '../types.js';
+import { LabelledElement, labelAnchorOf } from './labels.js';
 
 // Expand the server's agent-friendly element format into real Excalidraw
 // elements: strip server metadata, add Excalidraw defaults, generate bound
@@ -175,11 +176,15 @@ export function expandElementsForExport(
       const isArrow = el.type === 'arrow' || el.type === 'line';
 
       if (isArrow) {
-        // Position at midpoint of arrow path
-        const pts = base.points || [[0, 0], [100, 0]];
-        const lastPt = pts[pts.length - 1];
-        const midX = base.x + (lastPt[0] / 2);
-        const midY = base.y + (lastPt[1] / 2);
+        // The midpoint of the path, which for anything past two points is not
+        // halfway down the first segment. `labelAnchorOf` is Excalidraw's own
+        // rule — the middle vertex of an odd-length path, the midpoint of the
+        // middle segment of an even one — and the skill recommends waypoints
+        // for routing round obstacles, so bent arrows are the common case
+        // rather than the exotic one (TASK-044).
+        const anchor = labelAnchorOf(base as LabelledElement);
+        const midX = anchor?.x ?? base.x;
+        const midY = anchor?.y ?? base.y;
         const labelW = Math.max(labelText.length * 10, 60);
         textX = midX - labelW / 2;
         textY = midY - 12;

@@ -169,7 +169,9 @@ export async function query(argv: string[]): Promise<void> {
 
   await ensureCanvasRunning();
 
-  // type + bbox filter server-side via the search endpoint
+  // type + bbox filter server-side via the search endpoint. --bbox is a region
+  // to overlap, not a range for an origin to sit in, so an arrow crossing it
+  // is found however far away it started.
   const queryParams = new URLSearchParams();
   if (typeof flags.type === 'string') queryParams.set('type', flags.type);
   if (typeof flags.bbox === 'string') {
