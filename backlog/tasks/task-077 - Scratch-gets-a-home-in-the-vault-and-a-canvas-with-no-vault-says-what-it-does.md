@@ -4,6 +4,7 @@ title: 'Scratch gets a home in the vault, and a canvas with no vault says what i
 status: To Do
 assignee: []
 created_date: '2026-08-20 20:16'
+updated_date: '2026-08-20 20:28'
 labels: []
 dependencies:
   - TASK-061
@@ -13,6 +14,7 @@ references:
   - src/core/board.ts
   - docs/adr/0015-the-vault-is-the-truth-and-the-agent-shape-is-input.md
   - docs/adr/0004-obsidian-vault-as-persistence.md
+priority: high
 type: enhancement
 ordinal: 77000
 ---
@@ -41,6 +43,23 @@ Pick one, write it into ADR 0015 or a new ADR, and say what a first-time user se
 <!-- AC:BEGIN -->
 - [ ] #1 The scratch board is persisted at <vault>/.archboard/scratch.excalidraw.md and survives a server restart
 - [ ] #2 Scratch is still addressed as --board scratch, and board save --board scratch --as <name> still gives it a name
-- [ ] #3 What a canvas with no ARCHBOARD_VAULT does is decided, implemented, and recorded in an ADR
+- [x] #3 What a canvas with no ARCHBOARD_VAULT does is decided, implemented, and recorded in an ADR
 - [ ] #4 A first run with no vault set produces a message that says what to do, not a stack trace
+- [ ] #5 Starting a canvas with no vault refuses, and the refusal says what a vault is, how to point at one, and that it can be a directory in the current repository
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @claude
+created: 2026-08-20 20:28
+---
+Decided by the user: the canvas refuses to start without a vault. Recorded in ADR 0015 under "A board with no home in the vault", along with the two rejected answers and why.
+
+The reasoning: a canvas somebody can draw on before discovering the drawing was never anywhere is worse than a canvas that will not open yet, and it is worse in the way that costs most, silently and only once there is something to lose.
+
+That closes the open question in this task's description. The remaining work is unchanged for scratch itself, and gains one thing: the refusal is now the first thing a new person sees, so it carries the product. It has to say what a vault is, how to point at one, and that it can be a directory inside the repository they are standing in. A refusal that only says no is a worse first run than the one being replaced.
+
+The rejected answers, for whoever wonders later. Falling back to the state directory keeps the first run soft and makes a second place board content lives, which is the shape ADR 0015 exists to remove, and it asks an unanswerable question about what happens to that board when a vault is finally chosen. Keeping scratch in memory as a documented exception puts a hole in the rule on the day it is written.
+---
+<!-- COMMENTS:END -->
