@@ -967,9 +967,10 @@ function resolveArrowBindings(batchElements: ServerElement[], boardElements: Map
     el.points = [[0, 0], [finalEnd.x - finalStart.x, finalEnd.y - finalStart.y]];
     sizeFromPath(el);
 
-    // Do NOT delete `start` and `end` here.
-    // Excalidraw's frontend `convertToExcalidrawElements` method looks for these exact properties
-    // to calculate mathematically sound `startBinding`, `endBinding`, `focus`, `gap`, and `boundElements`.
+    // Do NOT delete `start` and `end` here. They are what says which shapes
+    // this arrow joins, so `rerouteBoundArrows` reads them every time one of
+    // those shapes moves, and the converter turns them into `startBinding`,
+    // `endBinding` and the `boundElements` entries on the shapes themselves.
   }
 }
 
