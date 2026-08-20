@@ -47,6 +47,7 @@ import {
   baselineForFile,
   boardSummaries,
   boards,
+  copyElements,
   getOrCreateBoard,
   recordBaseline,
   replaceBoardElements,
@@ -2095,10 +2096,12 @@ app.post('/api/snapshots', (req: Request, res: Response) => {
     }
 
     const { key: boardKeyForRequest, board } = boardFromRequest(req, 'Saving a snapshot');
+    // A copy, deeply. A snapshot is the thing you go back to, so it must not
+    // be the same objects as the board it is protecting you from (TASK-048).
     const snapshot: Snapshot = {
       name,
       board: boardKeyForRequest,
-      elements: Array.from(board.elements.values()),
+      elements: copyElements(board.elements.values()),
       createdAt: new Date().toISOString()
     };
 

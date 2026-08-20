@@ -465,6 +465,14 @@ mkdir -p diagrams
 Commit diagrams alongside the code change so architecture decisions are
 reviewable in the diff.
 
+A snapshot shares no element objects with the board it was taken from. It used
+to hold the board's own objects, so editing the board in place would have
+edited the snapshot taken to protect against that. Nothing failed, for the same
+unwritten reason a branch got away with it: every write path replaces an element
+rather than editing one. Both copies are deep now, through `copyElements` in
+`src/core/board-store.ts`, and a check mutates a snapshotted element in place to
+prove it (TASK-042, TASK-048).
+
 ## Stencils
 
 The library — the palette shapes are dragged from — lives on the canvas server,
