@@ -91,7 +91,7 @@ export const tools: Tool[] = [
         },
         bbox: {
           type: 'object',
-          description: 'Bounding box filter — only return elements whose origin (x, y) falls within the given coordinate range',
+          description: 'Bounding box filter — only return elements that overlap the given region. An element is measured by its extent, so an arrow is judged by the board its path covers rather than by where it starts',
           properties: {
             x_min: { type: 'number' },
             x_max: { type: 'number' },
