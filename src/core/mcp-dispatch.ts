@@ -35,7 +35,7 @@ import {
   groupElements,
   ungroupElements,
   duplicateElements
-} from './geometry.js';
+} from './element-ops.js';
 import { buildSceneFile, importScene } from './scene-io.js';
 import {
   listBoardsOnCanvas,

@@ -1,6 +1,6 @@
 import { ServerElement } from '../types.js';
 import { DEFAULT_SHAPE_BACKGROUND } from './appearance.js';
-import { CLUSTER_GAP, clusterBoxes, regionName } from './layout.js';
+import { CLUSTER_GAP, boxOf, clusterBoxes, regionName } from './layout.js';
 
 // Build an AI-readable description of the current canvas.
 //
@@ -189,7 +189,10 @@ function toItem(el: ServerElement, folded: Folded): Item {
     isNode: meta.isNode && !isConnector(el.type),
     fromBoard: el.source === 'frontend_sync',
     members: 1,
-    x: el.x, y: el.y, w: el.width || 0, h: el.height || 0,
+    // Measured rather than read straight off the element: an arrow keeps its
+    // size in its points, and its stored `x, y` is its first point, not its
+    // top-left corner (layout.ts's boxOf).
+    ...boxOf(el),
   };
 }
 
@@ -309,13 +312,17 @@ export function describeScene(allElements: ServerElement[]): string {
   const nameOf = new Map(allItems.map(i => [i.el.id, i.name]));
   const primary = (id: string | undefined) => (id ? nodeFold.primaryOf.get(id) ?? id : id);
 
-  // Bounding box over everything, as before.
+  // Bounding box over everything, and over what each element actually covers:
+  // an arrow running leftwards or upwards falls outside its own stored
+  // `x .. x + width`, so a box built from those numbers used to crop the board
+  // it claims to frame (TASK-038).
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const el of allElements) {
-    minX = Math.min(minX, el.x);
-    minY = Math.min(minY, el.y);
-    maxX = Math.max(maxX, el.x + (el.width || 0));
-    maxY = Math.max(maxY, el.y + (el.height || 0));
+    const b = boxOf(el);
+    minX = Math.min(minX, b.x);
+    minY = Math.min(minY, b.y);
+    maxX = Math.max(maxX, b.x + b.w);
+    maxY = Math.max(maxY, b.y + b.h);
   }
   const box = { minX, minY, maxX, maxY };
 

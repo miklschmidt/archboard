@@ -10,7 +10,7 @@ import {
   duplicateElements,
   Alignment,
   Direction
-} from '../../core/geometry.js';
+} from '../../core/element-ops.js';
 
 // The operations, in one place, because the surface-parity check pairs each of
 // them with an MCP tool. Validated up front, so a `case` added to the switch

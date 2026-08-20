@@ -34,8 +34,8 @@ out to bun, so run them with `bun run`, never `npm run`:
 bun install
 bun run build       # -> dist/ and dist/frontend/
 bun run type-check
-bun run test        # stdio wire, loopback bind, obsidian, changes, labels,
-                    # library, boards + panes, CLI/MCP surface parity
+bun run test        # stdio wire, loopback bind, obsidian, changes, geometry,
+                    # labels, library, boards + panes, CLI/MCP surface parity
 
 ./bin/canvas start  # canvas server on 127.0.0.1:3000
 ./bin/canvas status
@@ -199,7 +199,11 @@ board, so current and proposed sit side by side, and every call names the board
 it means — there is no active board left to resolve against (TASK-021, ADR 0009).
 A bound label goes where its container goes, so moving, resizing or re-routing
 through the API leaves no label stranded and no phantom region in the scene box
-(TASK-034).
+(TASK-034). An arrow is placed by its path rather than by `x, y, width,
+height` — its `x, y` is its first point, so one drawn leftwards or upwards is
+nowhere inside `x .. x + width` — and the server restates `width` and `height`
+every time it writes a path, so a re-routed arrow is no longer recorded at the
+size it used to be (TASK-038, `src/core/geometry.ts`).
 
 ## Names on the wire
 

@@ -46,6 +46,7 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { boundTextDrift, planLabelRepair, recentreBoundTexts } from '../dist/core/labels.js';
+import { remeasureLinear } from '../dist/core/geometry.js';
 
 const args = process.argv.slice(2);
 const flag = (name) => {
@@ -215,21 +216,17 @@ if (anchors.size > 0) {
   );
 }
 
-// The re-router writes points and leaves width/height as it found them, which
-// on a mangled arrow is the hairline nobody could grab. They are not a second
-// opinion about the shape — they are the bounding box of the points — so state
-// them again from the points the server just computed.
+// The re-router used to write points and leave width/height as it found them,
+// which on a mangled arrow is the hairline nobody could grab. It re-measures
+// now (TASK-038), so this sweep is for what earlier versions left behind: the
+// same measurement, from the same helper the server uses, over every arrow on
+// the board rather than only the ones this run touched.
 const rerouted = (await json(`${baseUrl}/api/elements${boardQuery}`)).elements;
 let resized = 0;
 for (const el of rerouted) {
-  if (el.type !== 'arrow' && el.type !== 'line') continue;
-  if (!Array.isArray(el.points) || el.points.length === 0) continue;
-  const xs = el.points.map((p) => p[0]);
-  const ys = el.points.map((p) => p[1]);
-  const width = Math.max(...xs) - Math.min(...xs);
-  const height = Math.max(...ys) - Math.min(...ys);
-  if (Math.abs((el.width ?? 0) - width) < 0.5 && Math.abs((el.height ?? 0) - height) < 0.5) continue;
-  await put(el.id, { width, height });
+  const measured = remeasureLinear(el);
+  if (!measured) continue;
+  await put(el.id, measured);
   resized += 1;
 }
 if (resized > 0) console.log(`Re-measured ${resized} arrow(s) whose width/height no longer matched their points.`);
