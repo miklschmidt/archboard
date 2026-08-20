@@ -38,11 +38,11 @@ to bun, so run them with `bun run`, never `npm run`:
 bun install
 bun run build       # frontend only -> dist/frontend/
 bun run type-check
-bun run test        # type-check, module scope, then stdio wire, loopback
-                    # bind, obsidian, changes, one write per intent, geometry,
-                    # labels, library, boards + panes, branch vs redraw,
-                    # proposal beside source, skill install, repo bindings,
-                    # CLI/MCP surface parity, hot reload
+bun run test        # type-check, CI coverage, module scope, then stdio wire,
+                    # loopback bind, obsidian, changes, one write per intent,
+                    # geometry, labels, library, boards + panes, branch vs
+                    # redraw, proposal beside source, skill install, repo
+                    # bindings, CLI/MCP surface parity, hot reload
 
 ./bin/canvas start  # canvas server on 127.0.0.1:3000
 ./bin/canvas status
@@ -114,6 +114,17 @@ because that is half of what it measures, and it takes about eleven seconds.
 It is out of the suite on purpose: it asserts today's baseline of 8 of 12
 elements changed rather than the zero we want, and TASK-072 is what flips it
 and wires it in.
+
+**A push runs the whole chain** (TASK-082). `.github/workflows/ci.yml` runs
+`bun run test` and nothing else, so a check added to `package.json` runs on
+main without anybody touching the workflow. It used to name two scripts of its
+own while the suite grew to seventeen around it, which is why
+`bun run test:suites` now fails when a `test:*` script is in neither the chain
+nor the skip list in `scripts/check-ci-suites.mjs`. One suite is on that list:
+`test:browser`, which CI runs in a job of its own that installs `agent-browser`
+and its Chrome, and which cannot fail the build until TASK-072 turns its
+baseline into zero. The chain takes 58 seconds on a 13th-gen i7, and
+`test:mcp`, `test:boards` and `test:side-by-side` are two thirds of that.
 
 Open <http://127.0.0.1:3000>. A browser tab is required for `screenshot`,
 `mermaid`, image export, and viewport control; pure JSON ops work headless.

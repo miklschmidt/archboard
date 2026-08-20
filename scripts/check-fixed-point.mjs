@@ -152,10 +152,18 @@ if (which.error) {
   process.exit(2);
 }
 
+// The daemon listens on <socket dir>/<session>.sock, and a unix socket path is
+// capped at 103 bytes. The default socket dir follows HOME, so a checkout under
+// a long home directory fails with "session name is too long" before the
+// browser ever opens. Found on a machine with a scrubbed environment while
+// working out what CI needs (TASK-082); a short dir of our own is the fix.
+const socketDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ab-'));
+const browserEnv = { ...process.env, AGENT_BROWSER_SOCKET_DIR: socketDir };
+
 const sessionId = (() => {
   const asked = spawnSync('agent-browser',
     ['session', 'id', '--scope', 'worktree', '--prefix', 'archboard-fixedpoint'],
-    { encoding: 'utf-8' });
+    { encoding: 'utf-8', env: browserEnv });
   const named = asked.stdout?.trim();
   return named || `archboard-fixedpoint-${Math.random().toString(36).slice(2, 10)}`;
 })();
@@ -163,7 +171,7 @@ const sessionId = (() => {
 /** One agent-browser command, in this check's own session. */
 const browser = (args, stdin) => new Promise((resolve, reject) => {
   const child = spawn('agent-browser', ['--session', sessionId, ...args],
-    { stdio: ['pipe', 'pipe', 'pipe'] });
+    { stdio: ['pipe', 'pipe', 'pipe'], env: browserEnv });
   let stdout = '';
   let stderr = '';
   child.stdout.on('data', c => { stdout += c.toString(); });
@@ -477,6 +485,7 @@ try {
   server.kill('SIGTERM');
   await sleep(200);
   fs.rmSync(vault, { recursive: true, force: true });
+  fs.rmSync(socketDir, { recursive: true, force: true });
 }
 
 if (failures > 0) {

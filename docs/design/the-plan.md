@@ -42,7 +42,12 @@ The suites are `type-check`, `module-scope`, `mcp`, `bind`, `obsidian`,
 `changes`, `geometry`, `labels`, `library`, `boards`, `branch`, `side-by-side`,
 `install`, `repos`, `parity` and `hot`. The risk lines below name them. Stage 1
 added a sixteenth, `one-write`, which counts the writes an intent costs on the
-wire.
+wire, and TASK-082 a seventeenth, `suites`, which fails when a check is in
+neither `bun run test` nor a written-down skip list.
+
+All of them run on a push now. Until TASK-082 the workflow ran two, so this
+plan's safety net was a net anybody could forget to hold. The chain takes 58
+seconds on a 13th-gen i7.
 
 ## Stage 1. Batch the fan-out
 
@@ -463,6 +468,12 @@ canvas, and `eval` runs the read-back in the page. Nothing is added to
 `package.json` and no browser is bundled, which is why the check exits 2 rather
 than failing when it cannot find either — a fresh CI runner has neither, and
 that is TASK-082.
+
+TASK-082 answered it with a job of its own that installs `agent-browser` from
+npm and downloads Chrome through `agent-browser install --with-deps`. That job
+cannot fail the build, because the check asserts the 8-of-12 baseline rather
+than the zero we want; stage 5 is what makes it a guard and takes the guard
+rail off.
 
 The read-back is the part that could have gone wrong. The frontend exposes no
 handle on the Excalidraw API, so `scripts/check-fixed-point.mjs` walks the
