@@ -53,7 +53,7 @@ archboard pane open --board payments@option-a              # the branch, in a NE
 
 # 3. change only what the proposal changes
 archboard add --board payments@option-a cache.json
-archboard promote --board payments@option-a --ids cache --kind datastore --variant option-a
+archboard promote --board payments@option-a --ids cache --kind datastore
 archboard board save --board payments@option-a
 
 # 4. look at what you drew, then read the difference
@@ -413,9 +413,10 @@ archboard promote --board payments --kind service --path src/payments/service.ts
   rather than the element id. `--node <id>` forces one; re-promoting an
   existing node keeps its id.
 - **`--ids a,b,c`** overrides the selection, for elements you just drew.
-- **`--variant <v>`** must match the board when the board is not `current`;
-  the default is `current` and a wrong stamp shows up as a change in every
-  `compare`. `--level` records the abstraction tier the same way.
+- **`--variant <v>`** overrides the variant a node records. It defaults to
+  the variant of the board named on the call, so promoting on
+  `payments@option-a` stamps `option-a` with nothing passed. `--level`
+  records the abstraction tier and is not inferred, so pass it or leave it.
 - **A node is repainted in its kind's colour** — service purple, queue orange,
   datastore cyan, gateway blue, external gray — so a node reads as one at a
   glance and a hollow shape someone drew before this becomes tappable in its
@@ -542,13 +543,6 @@ nothing to keep in sync.
 If a variant already exists that was drawn from scratch, do not redraw it
 again: re-promote the nodes that should match with `--node <id>` taken from the
 other side, and the join comes back.
-
-**Promote with the board's own variant.** `promote` stamps `variant: current`
-unless told otherwise, so a node promoted on `payments@option-a` claims to
-belong to `current` and `compare` flags every one of them as changed. Pass
-`--variant option-a` when promoting on a variant board. Nodes copied by the
-branch carry the source's stamp and will be flagged the same way: that is
-bookkeeping, not architecture, and reporting it as a difference is wrong.
 
 ```bash
 archboard compare payments payments@option-a   # what the proposal changes
