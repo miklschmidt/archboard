@@ -190,6 +190,71 @@ const {
   boardStore.delete('branch-sharing@option-a');
 }
 
+// A snapshot shares no element objects with the board it was taken from
+// (TASK-048). The same hazard as the branch above, one route along: POST
+// /api/snapshots built its Snapshot from `Array.from(board.elements.values())`,
+// so editing the board in place would have edited the snapshot taken to
+// protect against exactly that.
+//
+// The route, not just the helper. The express app is imported rather than
+// spawned so that it shares this process's board store, which is the only way
+// object identity is visible at all — over HTTP everything is serialised and a
+// shared reference looks exactly like a copy. It listens on an ephemeral port
+// of its own and is closed again, so it never meets the spawned server below.
+{
+  const { default: app } = await import(dist('server.js'));
+  const { snapshots } = await import(dist('types.js'));
+  const listener = app.listen(0, '127.0.0.1');
+  await new Promise(resolve => listener.once('listening', resolve));
+  const at = `http://127.0.0.1:${listener.address().port}`;
+
+  const live = getOrCreateBoard(makeIdentity({ board: 'snapshot-sharing', level: 'service' }), true).board;
+  const onTheBoard = {
+    id: 's1', type: 'rectangle', x: 0, y: 0, width: 160, height: 80,
+    customData: { archboard: { node: 'api', kind: 'gateway', variant: 'current' } },
+    boundElements: [{ id: 'lbl', type: 'text' }],
+    groupIds: ['g1']
+  };
+  live.elements.set(onTheBoard.id, onTheBoard);
+
+  const taken = await fetch(`${at}/api/snapshots?board=snapshot-sharing`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'before-the-split' })
+  });
+  check('a snapshot can be taken of a board', taken.status === 200, String(taken.status));
+
+  const kept = snapshots.get('before-the-split')?.elements?.[0];
+  check('  and it holds its own element object, not the board\'s',
+    Boolean(kept) && kept !== onTheBoard);
+  check('  and its own nested ones, which is where the meaning is',
+    kept.customData !== onTheBoard.customData &&
+    kept.customData.archboard !== onTheBoard.customData.archboard &&
+    kept.boundElements !== onTheBoard.boundElements &&
+    kept.boundElements[0] !== onTheBoard.boundElements[0] &&
+    kept.groupIds !== onTheBoard.groupIds);
+  check('  holding the same content, so nothing was lost in the copy',
+    JSON.stringify(kept) === JSON.stringify(onTheBoard));
+
+  // The edit a snapshot exists to survive, made the way nothing in the server
+  // makes it: in place. That is the invariant this replaces.
+  onTheBoard.x = 999;
+  onTheBoard.customData.archboard.kind = 'datastore';
+  onTheBoard.boundElements.push({ id: 'extra', type: 'arrow' });
+  onTheBoard.groupIds.push('g2');
+
+  check('mutating the board in place after snapshotting leaves the snapshot unchanged',
+    kept.x === 0 &&
+    kept.customData.archboard.kind === 'gateway' &&
+    kept.boundElements.length === 1 &&
+    kept.groupIds.length === 1,
+    JSON.stringify(kept));
+
+  snapshots.delete('before-the-split');
+  boardStore.delete('snapshot-sharing');
+  await new Promise(resolve => listener.close(resolve));
+}
+
 // Pane addressing shares its reading order with the report, so "right" cannot
 // mean one pane to `--pane` and another to `panes`.
 {
