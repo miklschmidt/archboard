@@ -18,17 +18,34 @@
 //      bindings in the same list are untouched)
 //   3. arrow geometry recomputed, by handing every bound arrow back to the
 //      server's own re-router rather than guessing at the maths here
+//   4. every bound text put back on the thing it labels
+//
+// Step 4 undoes a second, quieter way the two halves drift apart (TASK-034):
+// moving or resizing a container through the API used to leave its bound text
+// where it was. Excalidraw recomputes a label's position from its container
+// before drawing it, so the board looked right while the stored coordinates
+// were hundreds of pixels out — and the scene bounding box, zoom-to-fit, the
+// crop of an image export and the layout signals behind `describe` and
+// `compare` all read the coordinates.
 //
 // Usage:
 //   node scripts/repair-labels.mjs [--url URL] [--board KEY] [--dry-run]
 //   node scripts/repair-labels.mjs --file scene.excalidraw [--out repaired.excalidraw]
 //
-// The file form repairs a saved scene (steps 1 and 2 only — reconstructing
-// arrow geometry needs the board's own bindings resolved, which is the
-// server's job). Default URL is EXPRESS_SERVER_URL or http://127.0.0.1:3000.
+// The file form repairs a saved scene (steps 1, 2 and 4 — reconstructing arrow
+// geometry needs the board's own bindings resolved, which is the server's job).
+// Default URL is EXPRESS_SERVER_URL or http://127.0.0.1:3000.
+//
+// A board in an Obsidian vault is repaired through the canvas rather than by
+// editing the note, so the note's frontmatter and text sections come back
+// intact:
+//
+//   ./bin/canvas board open <name> --reload
+//   node scripts/repair-labels.mjs --board <name>
+//   ./bin/canvas board save --board <name>
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { planLabelRepair } from '../dist/core/labels.js';
+import { boundTextDrift, planLabelRepair, recentreBoundTexts } from '../dist/core/labels.js';
 
 const args = process.argv.slice(2);
 const flag = (name) => {
@@ -67,6 +84,26 @@ function report(plan, elements) {
       `Left alone — they may be somebody's writing:\n  ${plan.orphanIds.join(', ')}`
     );
   }
+  reportDrift(elements);
+}
+
+function reportDrift(elements) {
+  const strays = boundTextDrift(elements);
+  const moves = recentreBoundTexts(elements);
+  if (moves.length === 0) {
+    console.log('\nEvery bound text already sits where its container draws it.');
+    return moves;
+  }
+  console.log(`\n${moves.length} bound text element(s) to put back on the thing they label:`);
+  for (const stray of strays) {
+    console.log(
+      `  ${stray.containerType} ${stray.containerId}: ${JSON.stringify(stray.text)} ` +
+      `— ${Math.round(stray.distance)}px away, which its ${Math.round(stray.allowed)}px of size cannot account for`
+    );
+  }
+  const quiet = moves.length - strays.length;
+  if (quiet > 0) console.log(`  …and ${quiet} more that are merely off centre.`);
+  return moves;
 }
 
 async function json(path, init) {
@@ -91,13 +128,23 @@ if (file) {
   const elements = Array.isArray(scene.elements) ? scene.elements : [];
   const plan = planLabelRepair(elements);
   report(plan, elements);
-  if (dryRun || plan.removeIds.length === 0) process.exit(0);
+  if (dryRun) process.exit(0);
 
   const doomed = new Set(plan.removeIds);
   const rebind = new Map(plan.rebind.map((entry) => [entry.id, entry.boundElements]));
-  scene.elements = elements
+  const kept = elements
     .filter((el) => !doomed.has(el.id))
     .map((el) => (rebind.has(el.id) ? { ...el, boundElements: rebind.get(el.id) } : el));
+
+  // Re-centre after the duplicates are gone, so the label that stays is the one
+  // measured against its container.
+  const moves = new Map(recentreBoundTexts(kept).map((move) => [move.id, move]));
+  scene.elements = kept.map((el) => {
+    const move = moves.get(el.id);
+    return move ? { ...el, x: move.x, y: move.y } : el;
+  });
+  if (plan.removeIds.length === 0 && moves.size === 0) process.exit(0);
+  if (moves.size > 0) console.log(`\nMoved ${moves.size} bound text element(s) back onto their containers.`);
 
   writeFileSync(outFile, `${JSON.stringify(scene, null, 2)}\n`);
   console.log(`\nWrote ${scene.elements.length} elements to ${outFile}.`);
@@ -131,11 +178,16 @@ if (plan.removeIds.length > 0) {
 // touched. So give every arrow those refs — browser-synced arrows carry the
 // same fact as startBinding/endBinding — and then re-state each anchor shape's
 // own x, which is a no-op for the shape and a reroute for its arrows.
+//
+// Only where labels actually bred, though. Re-routing redraws every arrow on
+// the board from the server's own straight-line rule, which is the right thing
+// to do to a hairline nobody can grab and quite the wrong thing to do to a
+// board whose arrows are exactly where somebody put them.
 const byId = new Map(elements.map((el) => [el.id, el]));
 const anchors = new Set();
 let refsAdded = 0;
 
-for (const el of elements) {
+for (const el of plan.removeIds.length > 0 ? elements : []) {
   if (el.type !== 'arrow' && el.type !== 'line') continue;
   const start = el.start?.id ?? el.startBinding?.elementId;
   const end = el.end?.id ?? el.endBinding?.elementId;
@@ -182,8 +234,24 @@ for (const el of rerouted) {
 }
 if (resized > 0) console.log(`Re-measured ${resized} arrow(s) whose width/height no longer matched their points.`);
 
+// Labels last, once every container is where it is finally going to be: the
+// re-route above moves arrows, and an arrow that moves takes its label with it.
+const settled = (await json(`${baseUrl}/api/elements${boardQuery}`)).elements;
+const moves = recentreBoundTexts(settled);
+for (const move of moves) {
+  await put(move.id, { x: move.x, y: move.y });
+}
+if (moves.length > 0) {
+  const worstMove = Math.max(...moves.map((move) => move.distance));
+  console.log(
+    `Put ${moves.length} bound text element(s) back on the thing they label ` +
+    `(the furthest had ${Math.round(worstMove)}px to travel).`
+  );
+}
+
 const after = (await json(`${baseUrl}/api/elements${boardQuery}`)).elements;
 const stillWrong = planLabelRepair(after);
+const stillStray = boundTextDrift(after);
 const perContainer = {};
 for (const el of after) {
   if (el.type !== 'text' || !el.containerId) continue;
@@ -193,6 +261,10 @@ const worst = Math.max(0, ...Object.values(perContainer));
 console.log(
   `\nBoard now holds ${after.length} elements; ` +
   `most bound texts on any one container: ${worst}; ` +
-  `containers still duplicated: ${stillWrong.duplicates.length}.`
+  `containers still duplicated: ${stillWrong.duplicates.length}; ` +
+  `labels still adrift: ${stillStray.length}.`
 );
-process.exit(stillWrong.duplicates.length === 0 ? 0 : 1);
+if (moves.length > 0) {
+  console.log('The note on disk is unchanged until you save: `./bin/canvas board save --board <name>`.');
+}
+process.exit(stillWrong.duplicates.length === 0 && stillStray.length === 0 ? 0 : 1);
