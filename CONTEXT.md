@@ -100,6 +100,12 @@ One of an open set of alternative states of the same board. `current` is
 privileged as the architecture that exists; every other variant is a proposal.
 _Avoid_: version, revision, branch, mode, state
 
+**Note**:
+The file in the vault holding one board. Obsidian's word for a document, kept
+because the file is meant to be opened and edited there as well. The note is
+the board on disk; what the canvas holds is a copy of it.
+_Avoid_: file, document, markdown, page, record
+
 **Vault**:
 The cross-repository collection in which every board is persisted.
 _Avoid_: library (it means the stencil palette here), workspace, store,
