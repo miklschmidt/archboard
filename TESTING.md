@@ -88,11 +88,14 @@ Ask the agent to read a codebase and draw its architecture. Then, on the board:
    then rearrange it — move a box out of a cluster, cut an edge, add a node.
 5. **Compare**: ask the agent what changed between `payments` and
    `payments@option-a`.
-6. **Put them side by side**: press **Split**, then Open… and pick which pane
-   the second board goes in — or
-   `./bin/canvas board open payments@option-a --pane right`. Each pane holds
-   its own board, keeps its own selection, and is saved against its own
-   baseline; `./bin/canvas panes` says which is which.
+6. **Put them side by side**: `./bin/canvas pane open --board payments@option-a`.
+   That splits the canvas and opens the variant into the pane it made, leaving
+   the one you were reading alone — no clicking, so an agent can do it mid
+   sentence. **Split** in the chrome does the same thing by hand. Each pane
+   holds its own board, keeps its own selection, and is saved against its own
+   baseline; `./bin/canvas panes` says which is which,
+   `./bin/canvas screenshot --pane right` pictures one of them, and
+   `./bin/canvas pane close right` puts you back to one.
 
 Step 5 is the one worth watching closely. The tool returns structure; the agent
 narrates it. If the narration is wrong or thin, the question is usually whether

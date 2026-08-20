@@ -10,6 +10,7 @@ import {
   saveBoard,
   boardConflictOf
 } from '../../core/canvas-client.js';
+import { paneWords } from '../../core/panes.js';
 
 export const SUBCOMMANDS = ['list', 'info', 'new', 'open', 'save'] as const;
 
@@ -157,7 +158,7 @@ export async function board(argv: string[]): Promise<void> {
     note(
       `Board "${result.board}" is empty and exists only in memory until you run ` +
       `\`board save --board ${result.board}\`.` +
-      (result.pane ? ` It is on screen in the ${result.pane.place} pane.` : '')
+      (result.pane ? ` It is on screen in ${paneWords(result.pane.place)}.` : '')
     );
     printJson(result);
     return;
@@ -180,7 +181,7 @@ export async function board(argv: string[]): Promise<void> {
     // which pane that is is the one thing the caller cannot see from here.
     note(
       result.pane
-        ? `"${result.board}" is showing in the ${result.pane.place} pane. ` +
+        ? `"${result.board}" is showing in ${paneWords(result.pane.place)}. ` +
           `Commands still name it: \`--board ${result.board}\`.`
         : `"${result.board}" is loaded, but no pane is open, so nothing is showing it.`
     );

@@ -29,6 +29,7 @@ import {
 import { buildSelectionReport } from './core/describe.js';
 import {
   buildPanesReport,
+  MAX_PANES,
   PaneRegistration,
   panesInOrder,
   resolvePaneSpec,
@@ -172,7 +173,19 @@ function broadcast(message: WebSocketMessage, board: string): void {
 // pane's whole scene, so sending it to every socket is how one pane's `board
 // open` used to drag the other pane along with it.
 function sendToPane(clientId: string, message: WebSocketMessage, board: string): boolean {
-  const data = JSON.stringify({ ...message, board });
+  return deliverToPane(clientId, JSON.stringify({ ...message, board }));
+}
+
+// Send one pane something that is about the pane itself rather than about a
+// board: open another one, close this one. Layout is not board news — the
+// receiving pane keeps whatever board it is holding — so stamping a board key
+// on it would be inventing one. Kept separate from sendToPane so that omitting
+// the board stays a deliberate act rather than a missing argument.
+function sendLayoutToPane(clientId: string, message: WebSocketMessage): boolean {
+  return deliverToPane(clientId, JSON.stringify(message));
+}
+
+function deliverToPane(clientId: string, data: string): boolean {
   let delivered = false;
   for (const socket of socketsFor(clientId)) {
     try {
@@ -306,8 +319,10 @@ wss.on('connection', (ws: WebSocket, req) => {
     if (closingId) {
       selectionState.byClient.delete(closingId);
       // The pane itself is gone for the same reason — a closed tab, or a pane
-      // unsplit out of the shell. Reporting it would be reporting a ghost.
+      // taken out of the shell. Reporting it would be reporting a ghost.
       panes.delete(closingId);
+      // And if somebody asked for that pane to go, this is the proof it did.
+      notePaneClosed(closingId);
     }
     if (closingId && selectionState.current?.clientId === closingId) {
       selectionState.current = null;
@@ -1451,7 +1466,11 @@ app.post('/api/panes', (req: Request, res: Response) => {
   if (!live) {
     return res.json({ success: true, registered: false, paneCount: panes.size });
   }
+  const isNew = !panes.has(registration.clientId);
   panes.set(registration.clientId, registration);
+  // A pane that was asked for has arrived. Registration is the acknowledgement
+  // — see the pane layout section below for why it is that and not a reply.
+  if (isNew) notePaneOpened(registration);
   res.json({ success: true, registered: true, paneCount: panes.size });
 });
 
@@ -1466,6 +1485,234 @@ app.get('/api/panes', (_req: Request, res: Response) => {
     canvasUrl: `http://${formatHostForUrl(HOST)}:${PORT}`
   });
   res.json({ success: true, ...report });
+});
+
+// ─── Pane layout ──────────────────────────────────────────────
+//
+// Layout lives in the shell, in the browser, and the server used to learn a
+// pane existed only when its socket registered. That made splitting something
+// only a hand could do: an agent told to put a proposal beside the current
+// architecture had no second pane and no way to ask for one, so it reused the
+// pane in front of the human and overwrote what was there (TASK-033).
+//
+// These two routes ask the browser to change its layout and then wait for the
+// registry to agree. The acknowledgement is the pane appearing in `panes` or
+// its socket closing — never a promise from the shell — because a registration
+// is the only evidence anywhere in this file that a pane exists.
+
+const PANE_LAYOUT_TIMEOUT_MS = 10000;
+
+// How long to wait for the panes to say where they ended up.
+//
+// A pane that has just been mounted, or one that has just been squeezed into
+// half the width, reports its new rectangle a beat later (the browser
+// debounces it). Answering before that arrives means answering out of stale
+// geometry, which is how a plain left/right split came back described as "row
+// 2, column 2". Observed, not guessed: it happened on the first real browser
+// run. This is a cap, not a delay — the wait ends as soon as every pane has
+// re-reported.
+const PANE_SETTLE_CAP_MS = 1500;
+
+interface PendingPaneOpen {
+  resolve: (pane: PaneRegistration) => void;
+  reject: (error: Error) => void;
+  timeout: ReturnType<typeof setTimeout>;
+  /** The panes that already existed, so the new one can be told from them. */
+  known: Set<string>;
+}
+const pendingPaneOpens = new Set<PendingPaneOpen>();
+
+interface PendingPaneClose {
+  clientId: string;
+  resolve: () => void;
+  reject: (error: Error) => void;
+  timeout: ReturnType<typeof setTimeout>;
+}
+const pendingPaneCloses = new Set<PendingPaneClose>();
+
+function notePaneOpened(registration: PaneRegistration): void {
+  for (const pending of [...pendingPaneOpens]) {
+    if (pending.known.has(registration.clientId)) continue;
+    pendingPaneOpens.delete(pending);
+    clearTimeout(pending.timeout);
+    pending.resolve(registration);
+  }
+}
+
+function notePaneClosed(clientId: string): void {
+  for (const pending of [...pendingPaneCloses]) {
+    if (pending.clientId !== clientId) continue;
+    pendingPaneCloses.delete(pending);
+    clearTimeout(pending.timeout);
+    pending.resolve();
+  }
+}
+
+/** No pane means no browser, which is a different thing from a bad request. */
+function noBrowserBody(what: string): Record<string, unknown> {
+  return {
+    success: false,
+    code: 'BROWSER_REQUIRED',
+    error:
+      `${what} needs a canvas open in a browser. A pane exists only while a tab is rendering it, ` +
+      `so there is nothing on screen to split or close. Open http://${formatHostForUrl(HOST)}:${PORT} and retry.`
+  };
+}
+
+const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Wait until every pane has reported itself since the layout was asked for.
+ *
+ * The answer to a layout change names where a pane ended up, and "left" and
+ * "right" are read off the rectangles the panes report. So the report has to
+ * be the one taken after the shell re-laid them out, not the one from before.
+ */
+async function settleAfterLayout(askedAt: string): Promise<void> {
+  const deadline = Date.now() + PANE_SETTLE_CAP_MS;
+  while (Date.now() < deadline) {
+    const all = Array.from(panes.values());
+    if (all.length > 0 && all.every(pane => pane.at > askedAt)) return;
+    await sleep(50);
+  }
+}
+
+// Split the canvas: one more pane, side by side with what is already there.
+//
+// It takes no board. What lands in the new pane is a separate act — `board
+// open ... --pane <the pane this answered with>` — so that opening a board
+// stays the one thing that decides which board a pane holds (ADR 0009).
+app.post('/api/panes/open', async (req: Request, res: Response) => {
+  const answering = primaryPane();
+  if (!answering) return res.status(503).json(noBrowserBody('Opening a pane'));
+
+  if (panes.size >= MAX_PANES) {
+    const showing = panesInOrder(Array.from(panes.values()))
+      .map(entry => `${entry.place} (${paneBoards.get(entry.pane.clientId) ?? entry.pane.board})`)
+      .join(', ');
+    return res.status(409).json({
+      success: false,
+      error:
+        `The canvas is already showing ${panes.size} panes: ${showing}. ` +
+        'Point one of them at another board with `board open <name> --pane <spec>`, ' +
+        'or close one first with `pane close <spec>`.'
+    });
+  }
+
+  const askedAt = new Date().toISOString();
+  let pending!: PendingPaneOpen;
+  const opened = new Promise<PaneRegistration>((resolve, reject) => {
+    pending = {
+      resolve,
+      reject,
+      known: new Set(panes.keys()),
+      timeout: setTimeout(() => {
+        pendingPaneOpens.delete(pending);
+        reject(new Error(
+          'The browser was asked for another pane and none appeared within 10 seconds. ' +
+          'The tab may be running an older build of the canvas — reload it and try again.'
+        ));
+      }, PANE_LAYOUT_TIMEOUT_MS)
+    };
+    pendingPaneOpens.add(pending);
+  });
+
+  if (!sendLayoutToPane(answering.clientId, { type: 'pane_open' })) {
+    pendingPaneOpens.delete(pending);
+    clearTimeout(pending.timeout);
+    return res.status(503).json(noBrowserBody('Opening a pane'));
+  }
+
+  try {
+    const pane = await opened;
+    await settleAfterLayout(askedAt);
+    logger.info(`Pane opened on request: ${pane.paneId} (${panes.size} on screen)`);
+    res.json({
+      success: true,
+      ...paneResponse(panes.get(pane.clientId) ?? pane),
+      paneCount: panes.size,
+      onScreen: boardsOnScreen()
+    });
+  } catch (error) {
+    res.status(504).json({ success: false, error: (error as Error).message });
+  }
+});
+
+// Close one pane, named the way every other pane is named.
+//
+// Always named: unlike opening a board, which can only land somewhere visible
+// and wrong, closing takes a board off the screen, and guessing which one is
+// the mistake that costs the human the half they were reading.
+app.post('/api/panes/close', async (req: Request, res: Response) => {
+  const spec = typeof req.body?.pane === 'string' ? req.body.pane.trim() : '';
+  const registrations = Array.from(panes.values());
+
+  if (registrations.length === 0) return res.status(503).json(noBrowserBody('Closing a pane'));
+
+  if (registrations.length === 1) {
+    return res.status(409).json({
+      success: false,
+      error:
+        'That is the only pane on screen, and closing it would leave the canvas showing nothing ' +
+        'with no way back except reloading the browser. Its board is unaffected either way — ' +
+        'point the pane somewhere else with `board open <name>` instead.'
+    });
+  }
+
+  let target: PaneRegistration;
+  let place: string;
+  try {
+    if (!spec) {
+      throw new Error(
+        'Say which pane to close. ' +
+        panesInOrder(registrations)
+          .map(entry => `\`pane close ${entry.place}\` drops ${entry.pane.board}`)
+          .join(', ') + '.'
+      );
+    }
+    target = resolvePaneSpec(registrations, spec);
+    place = panesInOrder(registrations).find(entry => entry.pane.clientId === target.clientId)?.place ?? spec;
+  } catch (error) {
+    return res.status(400).json({ success: false, error: (error as Error).message });
+  }
+
+  const askedAt = new Date().toISOString();
+  let pending!: PendingPaneClose;
+  const closed = new Promise<void>((resolve, reject) => {
+    pending = {
+      clientId: target.clientId,
+      resolve,
+      reject,
+      timeout: setTimeout(() => {
+        pendingPaneCloses.delete(pending);
+        reject(new Error(
+          `The browser was asked to close the ${place} pane and it is still there after 10 seconds. ` +
+          'The tab may be running an older build of the canvas — reload it and try again.'
+        ));
+      }, PANE_LAYOUT_TIMEOUT_MS)
+    };
+    pendingPaneCloses.add(pending);
+  });
+
+  if (!sendLayoutToPane(target.clientId, { type: 'pane_close' })) {
+    pendingPaneCloses.delete(pending);
+    clearTimeout(pending.timeout);
+    return res.status(503).json(noBrowserBody('Closing a pane'));
+  }
+
+  try {
+    await closed;
+    await settleAfterLayout(askedAt);
+    logger.info(`Pane closed on request: ${target.paneId} (${panes.size} left on screen)`);
+    res.json({
+      success: true,
+      closed: { paneId: target.paneId, clientId: target.clientId, place, board: target.board },
+      paneCount: panes.size,
+      onScreen: boardsOnScreen()
+    });
+  } catch (error) {
+    res.status(504).json({ success: false, error: (error as Error).message });
+  }
 });
 
 // ─── Files API (for image elements) ───────────────────────────
@@ -1514,7 +1761,7 @@ const pendingExports = new Map<string, PendingExport>();
 
 app.post('/api/export/image', (req: Request, res: Response) => {
   try {
-    const { format, background } = req.body;
+    const { format, background, pane } = req.body ?? {};
 
     if (!format || !['png', 'svg'].includes(format)) {
       return res.status(400).json({
@@ -1524,10 +1771,18 @@ app.post('/api/export/image', (req: Request, res: Response) => {
     }
 
     if (clients.size === 0) {
-      return res.status(503).json({
-        success: false,
-        error: 'No frontend client connected. Open the canvas in a browser first.'
-      });
+      return res.status(503).json(noBrowserBody('Taking a picture of the canvas'));
+    }
+
+    // Which pane is photographed. Resolved before anything is promised, and
+    // named for the same reason the camera is: with a proposal in the second
+    // pane, an agent that can only ever picture the first cannot see the thing
+    // it just drew (TASK-033).
+    const answering = typeof pane === 'string' && pane.trim()
+      ? resolvePaneSpec(Array.from(panes.values()), pane)
+      : primaryPane();
+    if (!answering) {
+      return res.status(503).json(noBrowserBody('Taking a picture of the canvas'));
     }
 
     const requestId = generateId();
@@ -1554,19 +1809,12 @@ app.post('/api/export/image', (req: Request, res: Response) => {
     // exactly the yank per-pane boards exist to prevent.
     const filesObj: Record<string, ExcalidrawFile> = {};
     files.forEach((f, id) => { filesObj[id] = f; });
-    const answering = primaryPane();
-    if (!answering) {
-      return res.status(503).json({
-        success: false,
-        error: 'No frontend client connected. Open the canvas in a browser first.'
-      });
-    }
-    const exportKey = primaryPaneBoard();
+    const exportKey = paneBoards.get(answering.clientId) ?? answering.board;
     const exportBoard = boards.get(exportKey);
     if (!exportBoard) {
       return res.status(409).json({
         success: false,
-        error: `The pane that answers for the browser is showing "${exportKey}", which this canvas no longer holds.`
+        error: `The pane being pictured is showing "${exportKey}", which this canvas no longer holds.`
       });
     }
     sendToPane(answering.clientId, {
@@ -1603,7 +1851,8 @@ app.post('/api/export/image', (req: Request, res: Response) => {
       });
   } catch (error) {
     logger.error('Error initiating image export:', error);
-    res.status(500).json({
+    // A pane spec that names nothing is the caller's mistake, not a fault.
+    res.status(boardErrorStatus(error)).json({
       success: false,
       error: (error as Error).message
     });
@@ -1676,7 +1925,12 @@ const viewportRequestSchema = z.object({
   scrollToElementId: z.string().min(1).optional(),
   zoom: z.number().min(0.1).max(10).optional(),
   offsetX: z.number().optional(),
-  offsetY: z.number().optional()
+  offsetY: z.number().optional(),
+  // Which pane's camera. Display, so it defaults where it cannot be wrong: one
+  // pane and it is that one. With two, framing the pane nobody asked for moves
+  // the half of the wall the human was reading, so naming it is how an agent
+  // says which board it means to look at (TASK-033).
+  pane: z.string().min(1).optional()
 }).superRefine((params, ctx) => {
   const modes = [
     params.scrollToContent === true,
@@ -1711,14 +1965,21 @@ app.post('/api/viewport', (req: Request, res: Response) => {
       viewportZoomFactor,
       zoom,
       offsetX,
-      offsetY
+      offsetY,
+      pane
     } = viewportRequestSchema.parse(req.body);
 
     if (clients.size === 0) {
-      return res.status(503).json({
-        success: false,
-        error: 'No frontend client connected. Open the canvas in a browser first.'
-      });
+      return res.status(503).json(noBrowserBody('Moving the camera'));
+    }
+
+    // Resolved before anything is promised, so a pane spec that names nothing
+    // comes back as a refusal listing the panes rather than as a timeout.
+    const answering = pane
+      ? resolvePaneSpec(Array.from(panes.values()), pane)
+      : primaryPane();
+    if (!answering) {
+      return res.status(503).json(noBrowserBody('Moving the camera'));
     }
 
     const requestId = generateId();
@@ -1732,14 +1993,7 @@ app.post('/api/viewport', (req: Request, res: Response) => {
       pendingViewports.set(requestId, { resolve, reject, timeout });
     });
 
-    const answering = primaryPane();
-    if (!answering) {
-      return res.status(503).json({
-        success: false,
-        error: 'No frontend client connected. Open the canvas in a browser first.'
-      });
-    }
-    // Addressed to the pane that answers, about the board that pane holds: a
+    // Addressed to one pane, about the board that pane holds: a
     // scroll-to-element only means anything on the board holding the element.
     sendToPane(answering.clientId, {
       type: 'set_viewport',
@@ -1751,7 +2005,7 @@ app.post('/api/viewport', (req: Request, res: Response) => {
       zoom,
       offsetX,
       offsetY
-    }, primaryPaneBoard());
+    }, paneBoards.get(answering.clientId) ?? answering.board);
 
     viewportPromise
       .then(result => {
@@ -1765,7 +2019,9 @@ app.post('/api/viewport', (req: Request, res: Response) => {
       });
   } catch (error) {
     logger.error('Error initiating viewport change:', error);
-    res.status(error instanceof z.ZodError ? 400 : 500).json({
+    // A pane spec that names nothing is a client error, and boardErrorStatus
+    // is where that judgement already lives.
+    res.status(error instanceof z.ZodError ? 400 : boardErrorStatus(error)).json({
       success: false,
       error: error instanceof z.ZodError
         ? error.issues.map(issue => issue.message).join('; ')

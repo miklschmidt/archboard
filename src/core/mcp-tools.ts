@@ -2,6 +2,23 @@ import type { Tool } from '@modelcontextprotocol/server';
 import { EXCALIDRAW_ELEMENT_TYPES } from '../types.js';
 import { KINDS } from './promote.js';
 
+/**
+ * Which pane an operation addressed to the browser happens in.
+ *
+ * Written once because the whole point is that the three of them agree: a
+ * picture, a camera move and a pane closing all name a pane the same way, and
+ * `left` had better mean the same half of the wall in each. Optional
+ * everywhere it appears — display defaults where it cannot be wrong (ADR
+ * 0009), and with one pane on screen there is only one answer.
+ */
+const PANE_PARAM = {
+  type: 'string',
+  description:
+    "Which pane: 'left', 'right', a 1-based position, 'primary', 'focused', or a pane id. " +
+    'Call get_panes for what is on screen. Leave it out and the pane that answers for the ' +
+    'browser is used, which with a single pane is that pane.'
+} as const;
+
 // Tool definitions
 export const tools: Tool[] = [
   {
@@ -338,7 +355,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'export_to_image',
-    description: 'Export the current canvas to PNG or SVG image. Requires the canvas frontend to be open in a browser.',
+    description: 'Export one pane of the canvas to a PNG or SVG image. Requires the canvas frontend to be open in a browser.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -354,7 +371,8 @@ export const tools: Tool[] = [
         background: {
           type: 'boolean',
           description: 'Include background in export (default: true)'
-        }
+        },
+        pane: { ...PANE_PARAM }
       },
       required: ['format']
     }
@@ -537,6 +555,36 @@ export const tools: Tool[] = [
     }
   },
   {
+    name: 'open_pane',
+    description: "Split the canvas into a second pane and, when a board is named, open that board into the new pane. This is the whole side-by-side move: the architecture that exists stays where it is, and the proposal goes beside it. It cannot be aimed at an existing pane, so it can never overwrite what somebody is reading — use open_board with its `pane` argument to change what an existing pane holds. Two panes is the most the canvas lays out. Needs the canvas open in a browser: a pane exists only while a tab is rendering it.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        board: {
+          type: 'string',
+          description: "Which board to open into the new pane: 'payments', or 'payments@option-a' for a variant. Leave it out and the new pane shows whatever is already on screen."
+        }
+      }
+    }
+  },
+  {
+    name: 'close_pane',
+    description: "Close one pane. Its board comes off the screen and is otherwise untouched — still open on the canvas, with everything drawn on it. Name the pane the way open_board does: 'left', 'right', a 1-based position, 'primary', 'focused', or a pane id. Always name it; the last remaining pane cannot be closed, because an empty canvas has no way back except reloading the browser.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        pane: {
+          type: 'string',
+          description:
+            "Which pane goes: 'left', 'right', a 1-based position, 'primary', 'focused', or a pane id. " +
+            'Call get_panes for what is on screen. Required, unlike everywhere else a pane is named: ' +
+            'which board comes off the screen is not something to guess at.'
+        }
+      },
+      required: ['pane']
+    }
+  },
+  {
     name: 'promote_selection',
     description: "Promotion: declare what the human has selected to be an architecture node — give it a kind, a stable node identity, and usually a binding to code, in one act. Call this for \"map this to the payments service\", \"these are the queues\", \"this box is the auth gateway\". Operates on the current selection by default, so no element ids need to be spoken; pass elementIds only when acting on something you just drew. One call makes ONE node out of everything selected (one kind, one name, one binding = one node's worth of meaning); set each=true to make one node per selected shape instead, which only accepts a kind.",
     inputSchema: {
@@ -573,14 +621,15 @@ export const tools: Tool[] = [
   },
   {
     name: 'get_canvas_screenshot',
-    description: 'Take a screenshot of the current canvas and return it as an image. Requires the canvas frontend to be open in a browser. Use this to visually verify what the diagram looks like.',
+    description: 'Take a screenshot of one pane of the canvas and return it as an image. Requires the canvas frontend to be open in a browser. Use this to visually verify what the diagram looks like — and name the pane once two are open, or you will keep photographing the first one while the board you just drew sits in the second.',
     inputSchema: {
       type: 'object',
       properties: {
         background: {
           type: 'boolean',
           description: 'Include background in screenshot (default: true)'
-        }
+        },
+        pane: { ...PANE_PARAM }
       }
     }
   },
@@ -637,7 +686,8 @@ export const tools: Tool[] = [
         offsetY: {
           type: 'number',
           description: 'Vertical scroll offset'
-        }
+        },
+        pane: { ...PANE_PARAM }
       }
     }
   }
