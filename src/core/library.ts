@@ -16,6 +16,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { VAULT_STATE_DIR } from './board.js';
 import { ARCHBOARD_VAULT } from './config.js';
 import { kept } from './hot.js';
 import logger from '../utils/logger.js';
@@ -48,12 +49,12 @@ export interface LibraryState {
   vaultBacked: boolean;
 }
 
-// Alongside the boards, but out of the way: Obsidian hides dot-directories, so
-// the vault's note list stays notes. The file keeps the standard .excalidrawlib
-// shape and extension, so it can be handed to excalidraw.com or to the Obsidian
-// plugin without conversion; our seeding bookkeeping rides in an extra key,
-// which every reader of that format ignores.
-const LIBRARY_DIR = '.archboard';
+// In the vault's state directory, alongside the scratch note (board.ts): out
+// of the way, because Obsidian hides dot-directories, so the vault's note list
+// stays notes. The file keeps the standard .excalidrawlib shape and extension,
+// so it can be handed to excalidraw.com or to the Obsidian plugin without
+// conversion; our seeding bookkeeping rides in an extra key, which every
+// reader of that format ignores.
 const LIBRARY_FILE = 'library.excalidrawlib';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -65,7 +66,7 @@ const CURATED_DIR = path.resolve(__dirname, '../../libraries');
 
 export function libraryFilePath(): string | null {
   if (!ARCHBOARD_VAULT) return null;
-  return path.join(path.resolve(ARCHBOARD_VAULT), LIBRARY_DIR, LIBRARY_FILE);
+  return path.join(path.resolve(ARCHBOARD_VAULT), VAULT_STATE_DIR, LIBRARY_FILE);
 }
 
 // ─── Reading a .excalidrawlib ─────────────────────────────────

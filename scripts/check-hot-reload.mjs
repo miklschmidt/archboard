@@ -323,9 +323,9 @@ try {
   const brokenFrom = seen.length;
   edit(src('core/board-store.ts'), text => {
     const guarded = 'if (!boards.has(SCRATCH_KEY)) {\n' +
-      '  boards.set(SCRATCH_KEY, newBoardState(makeIdentity({ board: SCRATCH_BOARD }), false));\n' +
+      '  boards.set(SCRATCH_KEY, newBoardState(makeIdentity({ board: SCRATCH_BOARD })));\n' +
       '}';
-    const unguarded = 'boards.set(SCRATCH_KEY, newBoardState(makeIdentity({ board: SCRATCH_BOARD }), false));';
+    const unguarded = 'boards.set(SCRATCH_KEY, newBoardState(makeIdentity({ board: SCRATCH_BOARD })));';
     if (!text.includes(guarded)) throw new Error('board-store.ts no longer has the guard this check removes.');
     return text.replace(guarded, unguarded);
   });
