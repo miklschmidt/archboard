@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-20 18:36'
+updated_date: '2026-08-20 20:08'
 labels: []
 dependencies: []
 references:
@@ -33,3 +34,23 @@ Anyone with a checkout from before ADR 0014 still has compiled server JS sitting
 - [ ] #1 The canvas serves the frontend bundle, not whatever else is in dist
 - [ ] #2 A stale compiled server left in dist by an older checkout is not reachable over http
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-08-20 20:08
+---
+Reconciled against ADR 0015 and ADR 0016 (2026-08-20).
+
+Verdict: stands as written.
+
+Verified in source. `src/server.ts:137-138` still mounts
+`express.static(path.join(__dirname, '../dist'))`, and line 140 separately
+mounts `../dist/frontend`. The broad mount is still there and is still the one
+that would serve whatever a build tool leaves behind.
+
+Neither ADR touches it, and it is independent of TASK-056: they share the file
+`src/server.ts` and nothing else. It sits outside the ordered plan in
+docs/design/the-plan.md and can be picked up at any point.
+---
+<!-- COMMENTS:END -->
