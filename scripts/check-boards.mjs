@@ -41,6 +41,78 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const { resolveBoard, openBoardKeys, SCRATCH_KEY } = await import(dist('core/board-store.js'));
 const { BoardRequiredError } = await import(dist('core/board-target.js'));
 const { resolvePaneSpec, soloPane, panesInOrder } = await import(dist('core/panes.js'));
+const {
+  boardKey, makeIdentity, parseBoardKey, boardDisplayName,
+  normalizeBoardKey, vaultPathFor, listBoards, readBoardFile, identityFrontmatter
+} = await import(dist('core/board.js'));
+
+// Board addresses are case-insensitive and unicode-normalised (ADR 0010).
+// Boards get named out loud, and a human cannot pronounce casing, so two
+// boards that sound the same must not be able to exist. Case-preserving all
+// the same: the note keeps the name a human typed.
+{
+  check('a name is keyed lowercase', makeIdentity({ board: 'Payments' }).board === 'payments');
+  check('  and two spellings are one address',
+    boardKey(parseBoardKey('Payments')) === boardKey(parseBoardKey('payments')));
+  check('  and the casing that was typed is kept for showing',
+    boardDisplayName(parseBoardKey('Payments')) === 'Payments');
+  check('  and a name already lowercase carries nothing extra',
+    parseBoardKey('payments').displayName === undefined);
+  check('a variant is a slug, so it is lowercased outright',
+    boardKey(parseBoardKey('payments@Option-A')) === 'payments@option-a');
+  check('a nested name is normalised segment by segment',
+    boardKey(parseBoardKey('Billing/Ledger')) === 'billing/ledger');
+
+  // macOS has historically written an accented name decomposed and Linux
+  // writes it composed. Same word, so it has to be the same board.
+  const nfc = 'café';        // é
+  const nfd = 'café';       // e + combining acute
+  check('an accented name is one address however it is composed',
+    normalizeBoardKey(nfd) === normalizeBoardKey(nfc) &&
+    boardKey(parseBoardKey(nfd)) === boardKey(parseBoardKey(nfc)));
+
+  check('the frontmatter records the casing a human chose, not the key',
+    identityFrontmatter(makeIdentity({ board: 'Payments' }))
+      .find(([k]) => k === 'board')?.[1] === 'Payments');
+
+  // Against a real vault: case-preserving means a note that exists wins,
+  // whatever it was named, and a note that does not yet exist is named the way
+  // it was asked for.
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'archboard-case-'));
+  try {
+    fs.writeFileSync(path.join(scratch, 'Payments.excalidraw.md'),
+      '---\nboard: Payments\nvariant: current\n---\n\n# Excalidraw Data\n\n## Text Elements\n\n%%\n## Drawing\n```json\n{"type":"excalidraw","version":2,"elements":[],"appState":{}}\n```\n%%\n');
+    check('a note already in the vault is found under its own casing',
+      vaultPathFor(parseBoardKey('payments'), scratch) === path.join(scratch, 'Payments.excalidraw.md'));
+    check('  and reading it reports that casing, not the address that was typed',
+      readBoardFile(parseBoardKey('payments'), scratch)?.identity?.displayName === 'Payments');
+    check('  and it is not reported as declaring a different board',
+      readBoardFile(parseBoardKey('payments'), scratch)?.declaredKey === undefined);
+    check('a note that does not exist yet takes the casing that was asked for',
+      vaultPathFor(parseBoardKey('NewBoard'), scratch) === path.join(scratch, 'NewBoard.excalidraw.md'));
+
+    // The filename a macOS vault would carry: decomposed. Asking for it the
+    // composed way has to find it, or a vault stops being portable.
+    fs.writeFileSync(path.join(scratch, `${nfd}.excalidraw.md`),
+      '---\nboard: café\nvariant: current\n---\n\n# Excalidraw Data\n\n%%\n## Drawing\n```json\n{"type":"excalidraw","version":2,"elements":[],"appState":{}}\n```\n%%\n');
+    check('a decomposed filename is found by its composed spelling',
+      vaultPathFor(parseBoardKey(nfc), scratch) === path.join(scratch, `${nfd}.excalidraw.md`));
+
+    // A case-sensitive filesystem will hold both spellings, so a vault
+    // authored on Linux before this rule can arrive holding two notes at one
+    // address. Only one is reachable, and that is a thing to be told.
+    fs.writeFileSync(path.join(scratch, 'payments.excalidraw.md'),
+      '---\nboard: payments\nvariant: current\n---\n\n# Excalidraw Data\n\n%%\n## Drawing\n```json\n{"type":"excalidraw","version":2,"elements":[],"appState":{}}\n```\n%%\n');
+    const listed = listBoards(scratch);
+    check('two notes at one address are both listed', listed.filter(b => b.key === 'payments').length === 2);
+    check('  and each one names the others it collides with',
+      listed.filter(b => b.key === 'payments').every(b => b.collidesWith?.length === 1));
+    check('  and which one is reachable does not depend on readdir order',
+      vaultPathFor(parseBoardKey('payments'), scratch) === vaultPathFor(parseBoardKey('PAYMENTS'), scratch));
+  } finally {
+    fs.rmSync(scratch, { recursive: true, force: true });
+  }
+}
 
 {
   let refused = null;
@@ -272,6 +344,114 @@ try {
 
   left.socket.close();
   await sleep(100);
+
+  // --- branching a proposal, then diffing it (TASK-035) -------------------
+  //
+  // `save --as` is how a proposal starts, so the diff between a board and the
+  // branch taken off it has to read as "here is the one thing that changed".
+  // It used to read as "every node changed", because the copy still recorded
+  // the variant each node was promoted under.
+
+  const promoted = (node, label, x, kind) => ({
+    type: 'rectangle', x, y: 400, width: 160, height: 80,
+    label: { text: label },
+    customData: { archboard: { node, kind, variant: 'current' } }
+  });
+
+  await api('POST', '/api/boards/new', { board: 'ledger', level: 'service' });
+  const ledgerIds = [];
+  for (const spec of [['api', 'API', 0, 'gateway'], ['worker', 'Worker', 300, 'service'], ['store', 'Store', 600, 'datastore']]) {
+    const made = await api('POST', '/api/elements?board=ledger', promoted(...spec));
+    ledgerIds.push(made.body?.element?.id ?? made.body?.id);
+  }
+  await api('POST', '/api/boards/save?board=ledger');
+
+  const branched = await api('POST', '/api/boards/save?board=ledger', { name: 'ledger', variant: 'option-a' });
+  check('save --as branches the board', branched.status === 200 && branched.body?.board === 'ledger@option-a');
+
+  const onBranch = await api('GET', '/api/elements?board=ledger@option-a');
+  const branchVariants = (onBranch.body?.elements ?? []).map(el => el.customData?.archboard?.variant);
+  check('  and every node on the copy records the variant it was saved as',
+    branchVariants.length === 3 && branchVariants.every(v => v === 'option-a'),
+    branchVariants.join(','));
+
+  const onOrigin = await api('GET', '/api/elements?board=ledger');
+  check('  while the board it was branched from is untouched',
+    (onOrigin.body?.elements ?? []).every(el => el.customData?.archboard?.variant === 'current'));
+
+  const branchNote = fs.readFileSync(branched.body.file, 'utf-8');
+  check('  including in the note on disk, which is what compare reads',
+    !/"variant"\s*:\s*"current"/.test(branchNote) && /"variant"\s*:\s*"option-a"/.test(branchNote));
+
+  await api('DELETE', `/api/elements/${ledgerIds[1]}?board=ledger@option-a`);
+  await api('POST', '/api/boards/save?board=ledger@option-a');
+  const diff = await api('GET', '/api/boards/compare?from=ledger&to=ledger@option-a');
+  check('the diff reports the one node the human removed',
+    diff.body?.summary?.nodesRemoved === 1 && diff.body?.nodes?.removed?.[0]?.node === 'worker');
+  check('  and nothing else as changed', diff.body?.summary?.nodesChanged === 0,
+    JSON.stringify(diff.body?.nodes?.changed?.map(c => c.changes) ?? []));
+  check('  and the nodes nobody touched as unchanged', diff.body?.summary?.nodesUnchanged === 2);
+  check('  with no stale-variant warning to explain away',
+    !(diff.body?.warnings ?? []).some(w => /different variant/.test(w)));
+
+  // The check is still worth having: a node pasted onto a board that was never
+  // branched keeps the variant it came from, and that is worth saying.
+  await api('POST', '/api/boards/new', { board: 'billing', level: 'service' });
+  await api('POST', '/api/boards/new', { board: 'billing@option-b', level: 'service' });
+  await api('POST', '/api/elements?board=billing', promoted('gw', 'Gateway', 0, 'gateway'));
+  await api('POST', '/api/elements?board=billing@option-b', promoted('gw', 'Gateway', 0, 'gateway'));
+  await api('POST', '/api/boards/save?board=billing');
+  await api('POST', '/api/boards/save?board=billing@option-b');
+  const copied = await api('GET', '/api/boards/compare?from=billing&to=billing@option-b');
+  check('a node copied between boards without re-promotion still reports variantAnomaly',
+    copied.body?.nodes?.changed?.[0]?.changes?.variantAnomaly?.to === 'current');
+  check('  and still warns about it',
+    (copied.body?.warnings ?? []).some(w => /different variant/.test(w)));
+
+  // --- one board however it is spelled (TASK-032, ADR 0010) ---------------
+
+  const madeMixed = await api('POST', '/api/boards/new', { board: 'CaseTest', level: 'service' });
+  check('a board named with capitals is addressed in lower case',
+    madeMixed.status === 200 && madeMixed.body?.board === 'casetest');
+  check('  and keeps the casing it was named with', madeMixed.body?.identity?.displayName === 'CaseTest');
+  check('  and its note is named that way too',
+    path.basename(madeMixed.body?.file ?? '') === 'CaseTest.excalidraw.md');
+
+  const otherSpelling = await api('POST', '/api/elements?board=casetest', {
+    type: 'rectangle', x: 0, y: 0, width: 40, height: 40
+  });
+  check('the same board answers to another spelling of its name', otherSpelling.status === 201 || otherSpelling.status === 200);
+  const spelledLoud = await api('GET', '/api/elements?board=CASETEST');
+  check('  and to a third', spelledLoud.body?.count === 1);
+
+  const savedMixed = await api('POST', '/api/boards/save?board=CaseTest');
+  check('saving finds it under any spelling', savedMixed.status === 200);
+  check('  and writes the one note, not a second one',
+    fs.readdirSync(vault).filter(f => /^casetest\.excalidraw\.md$/i.test(f)).length === 1);
+  check('  with the human\'s casing in the frontmatter',
+    /^board: CaseTest$/m.test(fs.readFileSync(savedMixed.body.file, 'utf-8')));
+
+  const collides = await api('POST', '/api/boards/new', { board: 'casetest', level: 'service' });
+  check('a second board differing only in case is refused', collides.status === 409);
+  check('  and the refusal says which board it means',
+    /already open|already exists/.test(collides.body?.error ?? ''), collides.body?.error);
+
+  // A note that appeared under a different casing while archboard was not
+  // looking is the same board, so opening it reaches that file rather than
+  // starting a second one beside it.
+  fs.writeFileSync(path.join(vault, 'Handover.excalidraw.md'),
+    '---\nboard: Handover\nvariant: current\n---\n\n# Excalidraw Data\n\n%%\n## Drawing\n```json\n{"type":"excalidraw","version":2,"elements":[],"appState":{}}\n```\n%%\n');
+  const startedOver = await api('POST', '/api/boards/new', { board: 'handover' });
+  check('starting a board over a note that differs only in case is refused',
+    startedOver.status === 409, startedOver.body?.error);
+  check('  and the refusal names the note it would have collided with',
+    /Handover\.excalidraw\.md/.test(startedOver.body?.error ?? ''));
+
+  const openedLower = await api('POST', '/api/boards/open', { board: 'handover' });
+  check('a note authored under another casing opens by the lower-case address',
+    openedLower.status === 200 && path.basename(openedLower.body?.file ?? '') === 'Handover.excalidraw.md');
+  check('  and is not reported as declaring a different board',
+    openedLower.body?.declaredKey === undefined);
 } finally {
   server.kill('SIGTERM');
   await sleep(200);

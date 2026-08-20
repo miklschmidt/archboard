@@ -25,6 +25,7 @@ import {
   BoardIdentity,
   boardKey,
   makeIdentity,
+  normalizeBoardKey,
   SCRATCH_BOARD
 } from './board.js';
 
@@ -79,17 +80,22 @@ export function openBoardKeys(): string[] {
 // board for it to point at, and any answer invented for a caller who named
 // none is a write landing somewhere nobody chose.
 export function resolveBoard(key?: string | null, what?: string): { key: string; board: BoardState } {
-  if (key === undefined || key === null || key === '') {
+  if (key === undefined || key === null || key.trim() === '') {
     throw new BoardRequiredError(openBoardKeys(), what);
   }
-  const board = boards.get(key);
+  // Addresses are case-insensitive (ADR 0010), so `--board Payments` reaches
+  // the board that was opened as `payments`. Normalising here rather than at
+  // each caller is the same reasoning as the refusal above: this is the one
+  // door every board-shaped request comes through.
+  const normalized = normalizeBoardKey(key);
+  const board = boards.get(normalized);
   if (!board) {
     throw new Error(
-      `Board "${key}" is not open. Open it first (\`board open ${key}\`). ` +
+      `Board "${normalized}" is not open. Open it first (\`board open ${normalized}\`). ` +
       `Open right now: ${openBoardKeys().join(', ')}.`
     );
   }
-  return { key, board };
+  return { key: normalized, board };
 }
 
 export function getOrCreateBoard(identity: BoardIdentity, vaultBacked: boolean): { key: string; board: BoardState } {
@@ -98,7 +104,16 @@ export function getOrCreateBoard(identity: BoardIdentity, vaultBacked: boolean):
   if (existing) {
     // Identity can gain a level (or have one corrected) without the board
     // being reloaded; the address itself cannot change here.
-    existing.identity = identity;
+    //
+    // The display casing is the note's, not the caller's: opening `payments`
+    // must not rename a board somebody created as `Payments`, because the
+    // address is case-insensitive and the request said nothing about casing.
+    existing.identity = {
+      ...identity,
+      ...(identity.displayName || !existing.identity.displayName
+        ? {}
+        : { displayName: existing.identity.displayName })
+    };
     if (vaultBacked) existing.vaultBacked = true;
     return { key, board: existing };
   }
