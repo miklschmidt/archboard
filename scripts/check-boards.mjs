@@ -190,6 +190,71 @@ const {
   boardStore.delete('branch-sharing@option-a');
 }
 
+// A snapshot shares no element objects with the board it was taken from
+// (TASK-048). The same hazard as the branch above, one route along: POST
+// /api/snapshots built its Snapshot from `Array.from(board.elements.values())`,
+// so editing the board in place would have edited the snapshot taken to
+// protect against exactly that.
+//
+// The route, not just the helper. The express app is imported rather than
+// spawned so that it shares this process's board store, which is the only way
+// object identity is visible at all — over HTTP everything is serialised and a
+// shared reference looks exactly like a copy. It listens on an ephemeral port
+// of its own and is closed again, so it never meets the spawned server below.
+{
+  const { default: app } = await import(dist('server.js'));
+  const { snapshots } = await import(dist('types.js'));
+  const listener = app.listen(0, '127.0.0.1');
+  await new Promise(resolve => listener.once('listening', resolve));
+  const at = `http://127.0.0.1:${listener.address().port}`;
+
+  const live = getOrCreateBoard(makeIdentity({ board: 'snapshot-sharing', level: 'service' }), true).board;
+  const onTheBoard = {
+    id: 's1', type: 'rectangle', x: 0, y: 0, width: 160, height: 80,
+    customData: { archboard: { node: 'api', kind: 'gateway', variant: 'current' } },
+    boundElements: [{ id: 'lbl', type: 'text' }],
+    groupIds: ['g1']
+  };
+  live.elements.set(onTheBoard.id, onTheBoard);
+
+  const taken = await fetch(`${at}/api/snapshots?board=snapshot-sharing`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'before-the-split' })
+  });
+  check('a snapshot can be taken of a board', taken.status === 200, String(taken.status));
+
+  const kept = snapshots.get('before-the-split')?.elements?.[0];
+  check('  and it holds its own element object, not the board\'s',
+    Boolean(kept) && kept !== onTheBoard);
+  check('  and its own nested ones, which is where the meaning is',
+    kept.customData !== onTheBoard.customData &&
+    kept.customData.archboard !== onTheBoard.customData.archboard &&
+    kept.boundElements !== onTheBoard.boundElements &&
+    kept.boundElements[0] !== onTheBoard.boundElements[0] &&
+    kept.groupIds !== onTheBoard.groupIds);
+  check('  holding the same content, so nothing was lost in the copy',
+    JSON.stringify(kept) === JSON.stringify(onTheBoard));
+
+  // The edit a snapshot exists to survive, made the way nothing in the server
+  // makes it: in place. That is the invariant this replaces.
+  onTheBoard.x = 999;
+  onTheBoard.customData.archboard.kind = 'datastore';
+  onTheBoard.boundElements.push({ id: 'extra', type: 'arrow' });
+  onTheBoard.groupIds.push('g2');
+
+  check('mutating the board in place after snapshotting leaves the snapshot unchanged',
+    kept.x === 0 &&
+    kept.customData.archboard.kind === 'gateway' &&
+    kept.boundElements.length === 1 &&
+    kept.groupIds.length === 1,
+    JSON.stringify(kept));
+
+  snapshots.delete('before-the-split');
+  boardStore.delete('snapshot-sharing');
+  await new Promise(resolve => listener.close(resolve));
+}
+
 // Pane addressing shares its reading order with the report, so "right" cannot
 // mean one pane to `--pane` and another to `panes`.
 {
@@ -518,6 +583,61 @@ try {
   });
   check('  and the picture comes back', (await picture).status === 200);
 
+  // --- mermaid converts where its board is (TASK-046) --------------------
+  //
+  // Unlike the camera, mermaid takes no pane, and must not. It already names a
+  // board and a board is in at most one pane, so a --pane would be a second
+  // way to say the same thing and a way to say two different things. What is
+  // being proved is that a proposal can be drawn into the right-hand pane
+  // without the current architecture being taken off the left to make room.
+
+  const diagram = { mermaidDiagram: 'graph TD; A[Client] --> B[API];' };
+  const leftBeforeDiagram = left.since();
+  const secondBeforeDiagram = second.since();
+  const intoTheRight = await api('POST', '/api/elements/from-mermaid?board=payments@option-a', diagram);
+  check('mermaid converts in the pane holding the board it was given',
+    intoTheRight.status === 200, intoTheRight.body?.error);
+  check('  which here is the right one, and no --pane was passed or exists',
+    intoTheRight.body?.pane?.place === 'right', JSON.stringify(intoTheRight.body?.pane));
+  check('  and that is not the pane that answers for the browser',
+    second.registration.primary !== true);
+  const arrived = second.seen.slice(secondBeforeDiagram).find(m => m.type === 'mermaid_convert');
+  check('  the diagram reached it', Boolean(arrived));
+  check('  carrying the board that was asked for',
+    arrived?.board === 'payments@option-a', arrived?.board);
+  check('  and the pane holding the current architecture was left alone',
+    left.seen.slice(leftBeforeDiagram).every(m => m.type !== 'mermaid_convert'));
+
+  // The other way round, so this cannot be passing by always picking the right.
+  const leftBeforeOther = left.since();
+  const secondBeforeOther = second.since();
+  const intoTheLeft = await api('POST', '/api/elements/from-mermaid?board=payments', diagram);
+  check('and the board in the left pane converts there',
+    intoTheLeft.status === 200 && intoTheLeft.body?.pane?.place === 'left',
+    JSON.stringify(intoTheLeft.body?.pane));
+  check('  reaching the left pane',
+    left.seen.slice(leftBeforeOther).some(m => m.type === 'mermaid_convert'));
+  check('  and not the right one',
+    second.seen.slice(secondBeforeOther).every(m => m.type !== 'mermaid_convert'));
+
+  // Open, but on no pane. Conversion runs in a canvas, so there is nowhere for
+  // it to happen, and the refusal has to say how to get the board on screen.
+  const leftBeforeOffScreen = left.since();
+  const secondBeforeOffScreen = second.since();
+  const notShowing = await api('POST', '/api/elements/from-mermaid?board=scratch', diagram);
+  check('a board no pane is holding is refused, not converted somewhere else',
+    notShowing.status === 409, JSON.stringify(notShowing.body));
+  check('  with nothing sent to either pane',
+    left.seen.slice(leftBeforeOffScreen).every(m => m.type !== 'mermaid_convert') &&
+    second.seen.slice(secondBeforeOffScreen).every(m => m.type !== 'mermaid_convert'));
+  check('  and the refusal lists the panes and what each is holding',
+    /left \(payments\)/.test(notShowing.body?.error ?? '') &&
+    /right \(payments@option-a\)/.test(notShowing.body?.error ?? ''),
+    notShowing.body?.error);
+  check('  and with the screen full it says which pane to repoint',
+    /board open scratch --pane <left\|right>/.test(notShowing.body?.error ?? ''),
+    notShowing.body?.error);
+
   // --- unmaking one ------------------------------------------------------
 
   const unsplit = await api('POST', '/api/panes/close', { pane: 'right' });
@@ -529,6 +649,17 @@ try {
   const orphan = await api('GET', '/api/boards');
   check('  and the board it was showing is still open, just not on screen',
     orphan.body?.open?.some(entry => entry.key === 'payments@option-a'));
+
+  // Same refusal, one pane fewer, and now there is room for another. So it
+  // offers the command that makes one rather than the one that overwrites the
+  // pane the human is reading.
+  const roomForOne = await api('POST', '/api/elements/from-mermaid?board=payments@option-a', diagram);
+  check('the board just taken off screen can no longer be converted into',
+    roomForOne.status === 409, JSON.stringify(roomForOne.body));
+  check('  and with room on the glass it offers a new pane, not a repointed one',
+    /archboard pane open --board payments@option-a/.test(roomForOne.body?.error ?? '') &&
+    !/board open/.test(roomForOne.body?.error ?? ''),
+    roomForOne.body?.error);
 
   left.socket.close();
   await sleep(200);
@@ -545,6 +676,9 @@ try {
   check('and so does the camera', headlessCamera.body?.code === 'BROWSER_REQUIRED');
   const headlessPicture = await api('POST', '/api/export/image', { format: 'png' });
   check('and so does a picture', headlessPicture.body?.code === 'BROWSER_REQUIRED');
+  const headlessMermaid = await api('POST', '/api/elements/from-mermaid?board=payments', diagram);
+  check('and so does mermaid, which has no pane to convert in either',
+    headlessMermaid.body?.code === 'BROWSER_REQUIRED', JSON.stringify(headlessMermaid.body));
 
   // The exit code is the part a script reads, so it is checked through the CLI
   // rather than inferred from the status.

@@ -123,16 +123,15 @@ export function getOrCreateBoard(identity: BoardIdentity, vaultBacked: boolean):
 }
 
 /**
- * Fill a board with copies of some elements, replacing whatever it held.
+ * Elements that share nothing with the ones handed in.
  *
- * Copies, and deeply. This is how a branch is filled, and `board save --as`
- * used to put the source board's own element objects straight into the
- * branch's map, so two boards held one set of objects behind two names.
- * Nothing failed, because every path that changes an element replaces the
- * object rather than editing it — an invariant nobody had written down and
- * nothing enforced. A branch exists so the source can stay put, and that
- * promise should not rest on every future writer remembering to build a new
- * object (TASK-042).
+ * Two things keep a copy of a board and mean it: a branch, which exists so the
+ * source can stay put (TASK-042), and a snapshot, whose entire job is to be
+ * the copy you go back to (TASK-048). Both used to hold the live board's own
+ * element objects. Nothing failed, because every path that changes an element
+ * replaces the object rather than editing it — but that invariant was never
+ * written down and nothing enforced it, and a copy that only works while every
+ * future writer remembers a rule is not a copy.
  *
  * It is the same reasoning that removed the sync path in TASK-016: two things
  * holding one scene is how one of them silently overwrites the other.
@@ -142,9 +141,14 @@ export function getOrCreateBoard(identity: BoardIdentity, vaultBacked: boolean):
  * `boundElements` is how a label belongs to its container, so a shallow copy
  * would leave exactly the parts worth protecting shared.
  */
+export function copyElements(elements: Iterable<ServerElement>): ServerElement[] {
+  return Array.from(elements, element => structuredClone(element));
+}
+
+/** Fill a board with copies of some elements, replacing whatever it held. */
 export function replaceBoardElements(board: BoardState, elements: ServerElement[]): void {
   board.elements.clear();
-  for (const element of elements) board.elements.set(element.id, structuredClone(element));
+  for (const element of copyElements(elements)) board.elements.set(element.id, element);
 }
 
 // The most recent bytes archboard has seen at `file`, or null when it has never

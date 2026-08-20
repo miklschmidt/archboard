@@ -103,9 +103,11 @@ The two are addressed separately and only one of them is strict.
 - `pane open`, `pane close`, `screenshot` and `viewport` all need a browser tab
   and exit 4 without one. Nothing here invents a pane on a headless canvas.
 
-`mermaid` is the one that still cannot be pointed anywhere: it converts in the
-pane that answers for the browser, so it refuses unless the board you name is
-the board that pane is holding.
+`mermaid` is the other way round: it names a board and takes no `--pane`.
+Conversion runs in the pane holding that board, and there is at most one, so a
+diagram appears beside the current architecture rather than on top of it. It is
+refused, converting nothing, only when no pane holds that board at all, and the
+refusal names the panes on screen and the command that puts the board on one.
 
 Two panes disagreeing is the normal state, not a problem to resolve. Run
 `panes --text` at the start of a turn to see who is holding what.
@@ -466,7 +468,7 @@ echo 'graph TD
   A[Client] --> B[API]
   B --> C[(DB)]' | archboard mermaid --board payments
 ```
-Requires an open browser tab (conversion runs in the frontend; exit code 4 tells you to open the canvas URL). Conversion happens in the pane that answers for the browser, so the board you name has to be the board that pane is holding — if it is not, the call is refused rather than converting into the wrong board. Afterwards `screenshot` to verify layout. If the auto-layout is poor (nodes crowded, edges crossing), find problem elements with `describe` and reposition them with `update`.
+Requires an open browser tab (conversion runs in the frontend; exit code 4 tells you to open the canvas URL). Conversion happens in the pane holding the board you name, so there is no --pane to pass. If no pane is holding that board the call is refused and nothing is converted. Afterwards `screenshot` to verify layout. If the auto-layout is poor (nodes crowded, edges crossing), find problem elements with `describe` and reposition them with `update`.
 
 ## Workflow: Boards
 
