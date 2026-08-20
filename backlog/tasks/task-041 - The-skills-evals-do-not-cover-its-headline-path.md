@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-20 03:30'
-updated_date: '2026-08-20 03:40'
+updated_date: '2026-08-20 03:41'
 labels: []
 dependencies: []
 references:
@@ -58,6 +58,22 @@ Eval 6 facts were checked against the running server: library list --text report
 
 bun run test passes, exit 0, 111 ok lines.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @claude
+created: 2026-08-20 03:41
+---
+Outside this task's scope, named rather than done:
+
+1. Nothing runs evals.json. It is not wired into bun run test and no harness in the repo reads it, so evals 5 and 6 are graded by whoever runs the skill-eval tool against a transcript, not by CI. The format has no programmatic grader, so the fail condition had to go into expected_output as prose (the 'FAILS if ...' clause). If we want the branch-versus-redraw gap enforced on every build, that is a scripts/check-*.mjs, not an eval, and it would be a separate task.
+
+2. compare reports nodesChanged 3 on a freshly branched variant, entirely from variantAnomaly on the copied nodes. TASK-035 (Restamp the variant when a board is branched) is the fix and is in flight on another branch. Eval 5 does not pin nodesChanged for that reason.
+
+3. This worktree merged archboard/backlog-sweep to get TASK-037's rewritten SKILL.md, so the branch carries that merge as well as the eval commit.
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 
