@@ -32,6 +32,7 @@ import {
   MAX_PANES,
   PaneRegistration,
   panesInOrder,
+  paneWords,
   resolvePaneSpec,
   soloPane
 } from './core/panes.js';
@@ -46,6 +47,7 @@ import {
   baselineForFile,
   boardSummaries,
   boards,
+  copyElements,
   getOrCreateBoard,
   recordBaseline,
   replaceBoardElements,
@@ -1078,26 +1080,33 @@ app.post('/api/elements/from-mermaid', (req: Request, res: Response) => {
       hasConfig: !!config
     });
 
-    // Conversion happens in the browser, in the pane that answers for it, and
-    // the elements land on whatever board that pane is holding. So the caller's
-    // board and the primary pane's board have to be the same board — if they
-    // are not, refuse rather than convert into the wrong one.
+    // Conversion happens in the browser, and the elements land on whatever
+    // board the converting pane is holding. So the pane is decided by the board
+    // the caller already named (ADR 0009), not by which pane happens to be
+    // first: a proposal drawn on the right must not need the current
+    // architecture taken off the left to make room for it (TASK-046).
     const { key: wanted } = boardFromRequest(req, 'Mermaid conversion');
-    const pane = primaryPane();
-    if (!pane) {
+    if (panes.size === 0) {
       return res.status(503).json({
         success: false,
+        code: 'BROWSER_REQUIRED',
         error: 'No browser is open, and mermaid conversion happens in the browser. Open the canvas first.'
       });
     }
-    const showing = primaryPaneBoard();
-    if (showing !== wanted) {
+    const pane = paneShowing(wanted);
+    if (!pane) {
+      // The board exists, it is just not on screen, and conversion needs a
+      // canvas to run in. Two ways to give it one, and which is available
+      // depends on whether there is still room on the glass.
+      const room = panes.size < MAX_PANES
+        ? `Put it beside ${panes.size === 1 ? 'that one' : 'those'} with \`archboard pane open --board ${wanted}\`, `
+        : `Put it on screen with \`board open ${wanted} --pane <left|right>\`, `;
       return res.status(409).json({
         success: false,
         error:
-          `Mermaid converts in the pane that answers for the browser, and that pane is showing "${showing}", ` +
-          `not "${wanted}". Nothing was converted. Ask for "${showing}", or put "${wanted}" in that pane ` +
-          `first (\`board open ${wanted} --pane primary\`).`
+          `Mermaid converts in the pane holding the board, and no pane is holding "${wanted}". ` +
+          `Nothing was converted. Panes on screen: ${panesShowingList()}. ` +
+          `${room}then convert again.`
       });
     }
 
@@ -1106,15 +1115,20 @@ app.post('/api/elements/from-mermaid', (req: Request, res: Response) => {
       mermaidDiagram,
       config: config || {},
       timestamp: new Date().toISOString()
-    }, showing);
-    changeFeed.expectAgentEcho(showing);
+    }, wanted);
+    changeFeed.expectAgentEcho(wanted);
 
-    // Return the diagram for frontend processing
+    // Return the diagram for frontend processing, and name the pane it went
+    // to, the way `board open` names the pane a board landed in.
+    const place = panesInOrder(Array.from(panes.values()))
+      .find(entry => entry.pane.clientId === pane.clientId)?.place ?? 'the only pane';
     res.json({
       success: true,
+      board: wanted,
+      ...paneResponse(pane),
       mermaidDiagram,
       config: config || {},
-      message: 'Mermaid diagram sent to frontend for conversion.'
+      message: `Mermaid diagram sent to ${paneWords(place)}, which is holding "${wanted}", for conversion.`
     });
   } catch (error) {
     logger.error('Error processing Mermaid diagram:', error);
@@ -2082,10 +2096,12 @@ app.post('/api/snapshots', (req: Request, res: Response) => {
     }
 
     const { key: boardKeyForRequest, board } = boardFromRequest(req, 'Saving a snapshot');
+    // A copy, deeply. A snapshot is the thing you go back to, so it must not
+    // be the same objects as the board it is protecting you from (TASK-048).
     const snapshot: Snapshot = {
       name,
       board: boardKeyForRequest,
-      elements: Array.from(board.elements.values()),
+      elements: copyElements(board.elements.values()),
       createdAt: new Date().toISOString()
     };
 
@@ -2263,22 +2279,53 @@ function paneFromRequest(spec: unknown): PaneRegistration | null {
 }
 
 /**
- * The pane that answers requests addressed to "the browser".
+ * The pane that answers a request addressed to "the browser" and to no board.
  *
- * Image export, viewport control and mermaid conversion are answered exactly
- * once, by the primary pane, and each of them is about whatever board that
- * pane is holding. Nothing here resolves "the board" — the pane's board *is*
- * the answer, so these cannot be ambiguous, only mismatched, which is
- * something a caller can be told.
+ * Image export and viewport control name a pane or take this one, and neither
+ * of them names a board: a picture is of whatever is on that half of the
+ * screen. So there is nothing here to resolve a board against, and nothing
+ * that could resolve to the wrong one — the caller either says which pane or
+ * gets the first.
+ *
+ * An operation that *does* name a board must not come through here. Use
+ * `paneShowing`: the board it was given already settles which pane, so taking
+ * the first one instead would answer a different question than the one asked.
  */
 function primaryPane(): PaneRegistration | null {
   const registrations = Array.from(panes.values());
   return registrations.find(pane => pane.primary) ?? registrations[0] ?? null;
 }
 
-function primaryPaneBoard(): string {
-  const pane = primaryPane();
-  return (pane && paneBoards.get(pane.clientId)) ?? pane?.board ?? SCRATCH_KEY;
+/** What a pane is holding: the server's record of it, or the pane's own claim. */
+function paneBoardKey(pane: PaneRegistration): string {
+  return paneBoards.get(pane.clientId) ?? pane.board ?? SCRATCH_KEY;
+}
+
+/**
+ * The pane holding a board, for work that happens in the browser but is about
+ * one named board.
+ *
+ * Mermaid converts inside a pane and the elements land on whatever board that
+ * pane holds, so the pane is not a second thing for the caller to choose: the
+ * board says which one (ADR 0009). Asking for `--pane` as well would be a
+ * second way to say the same thing, and so a way to say two different things.
+ *
+ * Two panes may hold one board. Either would convert into the same board, so
+ * this picks rather than refuses, and it picks the primary one so the same
+ * screen gives the same answer twice.
+ */
+function paneShowing(board: string): PaneRegistration | null {
+  const holding = panesInOrder(Array.from(panes.values()))
+    .map(entry => entry.pane)
+    .filter(pane => paneBoardKey(pane) === board);
+  return holding.find(pane => pane.primary) ?? holding[0] ?? null;
+}
+
+/** The panes on screen and what each holds, for a refusal that has to list them. */
+function panesShowingList(): string {
+  return panesInOrder(Array.from(panes.values()))
+    .map(entry => `${entry.position}. ${entry.place} (${paneBoardKey(entry.pane)})`)
+    .join(', ');
 }
 
 /** One pane, named the way a human would point at it: "the left pane". */

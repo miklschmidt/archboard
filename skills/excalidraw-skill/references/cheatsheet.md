@@ -193,7 +193,7 @@ A pane is a slot holding one board. Two panes are how the architecture that exis
 
 | Tool | Description | Required params |
 |------|-------------|-----------------|
-| `create_from_mermaid` | Mermaid diagram to Excalidraw. Converts in the pane that answers for the browser, so `board` has to be the board that pane holds — refused otherwise | `board`, `mermaidDiagram` |
+| `create_from_mermaid` | Mermaid diagram to Excalidraw. Converts in the pane holding `board`, so there is no pane argument; refused, converting nothing, when no pane is holding it | `board`, `mermaidDiagram` |
 
 Notes:
 - **CLI + MCP**: Set `text` on shapes to label them (auto-converts to `label.text`). Use `startElementId`/`endElementId` on arrows.
