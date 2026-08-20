@@ -111,6 +111,14 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // A bound text is named after the element it belongs to, because its id is
 // minted by the note writer and saying `GNd4kMNS` here would mean nothing to
 // anyone reading a failure.
+//
+// The table below has not moved since it was first recorded. The *values*
+// have: this check used to render on Chrome's last-resort font, so the widths
+// it diffed against were `20px serif`'s and not Excalidraw's. Fixing the font
+// gate (see below) left the same eight elements changing the same fields, and
+// turned `a standalone caption` from 163.2715 into 208.8598 — which is Virgil
+// at 20 px, and which resolves the one number `measuring-text-outside-a-
+// browser.md` recorded as belonging to neither regime.
 
 const BASELINE = {
   'text1': ['-rawText', 'width', 'x', 'y'],
@@ -208,14 +216,80 @@ const strip = element => {
   return kept;
 };
 
+// ---------------------------------------------------------------------------
+// The font gate
+// ---------------------------------------------------------------------------
+//
+// A page that has not loaded Excalifont measures every string on Chrome's
+// last-resort font, and this check would then diff our widths against the
+// wrong font's — forever, however right the converter got.
+//
+// `document.fonts` cannot tell you. `check('20px Excalifont')` returned **true
+// in a fresh tab before a single FontFace had been added**, because it asks
+// whether every font in the set that would be used is loaded, and a family
+// with no FontFace at all is not in the set, so nothing is pending and the
+// answer is true. `fonts.ready` has the same hole: it resolves immediately
+// when nothing has been requested yet. This check waited on `ready` and its
+// first recorded baseline was measured on the fallback — `a standalone
+// caption` came back 163.271484375 px wide, which is exactly what Chrome
+// returns for `20px serif` and for an invented family name
+// (docs/design/measuring-text-outside-a-browser.md).
+//
+// The only reliable test is the width itself, so that is what this waits for.
+// The numbers are Chrome's, with the font loaded; the fallback column is what
+// the same string measures with the family absent, and the two are more than
+// ten pixels apart, which no rounding explains.
+
+const FONT_PROBES = {
+  1: { css: 'Virgil', size: 16, text: 'AuthService', loaded: 90.54, fallback: 79.98 },
+  5: { css: 'Excalifont', size: 20, text: 'AuthService', loaded: 114.4999, fallback: 99.97 }
+};
+
+// Asking for the font is half of it. Excalidraw registers its FontFaces
+// without fetching them, so a family is in `document.fonts` and still not
+// loaded until something asks; `load()` is the documented way to ask, and the
+// width is how you find out whether the answer arrived.
+const measureInPage = (css, size, text) => evalInPage(`(async () => {
+  const font = '${size}px ${css}';
+  try { await document.fonts.load(font, ${JSON.stringify(text)}); } catch (e) { /* not registered yet */ }
+  const ctx = document.createElement('canvas').getContext('2d');
+  ctx.font = font;
+  return { width: ctx.measureText(${JSON.stringify(text)}).width };
+})()`);
+
+/** Wait until the page is measuring in the fonts the board is written in. */
+const waitForFonts = async (families) => {
+  for (const fontFamily of families) {
+    const probe = FONT_PROBES[fontFamily];
+    if (!probe) {
+      check(`the page's font for fontFamily ${fontFamily} cannot be confirmed`,
+        false, 'no Chrome width is recorded for it, so this check cannot tell it from the fallback');
+      continue;
+    }
+    let width = null;
+    for (let i = 0; i < 80; i++) {
+      width = (await measureInPage(probe.css, probe.size, probe.text)).width;
+      if (Math.abs(width - probe.loaded) < 0.05) break;
+      await sleep(250);
+    }
+    check(`the page is rendering in ${probe.css}, not the last-resort font`,
+      Math.abs(width - probe.loaded) < 0.05,
+      `"${probe.text}" at ${probe.size}px measures ${width}; ${probe.css} is ${probe.loaded} ` +
+      `and the fallback is ${probe.fallback}`);
+  }
+};
+
 /**
  * The scene once it has stopped moving.
  *
- * Two things move under us. Excalidraw loads a scene's fonts when the scene
- * arrives and re-measures every piece of text once they land, and re-routes
- * bound arrows when the labels they point at change size. Both are seconds
- * after the render, so reading once would report a document nobody ever holds.
- * Waiting for a repeat is the honest way to say "this is what it settled on".
+ * Things move under us. A bound arrow is re-routed when the label it points at
+ * changes size, and that happens a moment after the render, so reading once
+ * would report a document nobody ever holds. Waiting for a repeat is the
+ * honest way to say "this is what it settled on".
+ *
+ * What does *not* happen is a re-measure when a font lands, which is why the
+ * font gate above has to run before the board is delivered rather than being
+ * something this could wait out.
  */
 const sceneWhenStill = async ({ tries = 40, gap = 250 } = {}) => {
   let previous = null;
@@ -411,12 +485,24 @@ try {
   check('  and registers a pane, so there is something rendering',
     panes?.paneCount === 1, `paneCount ${panes?.paneCount ?? 'none'}`);
 
-  // Excalidraw loads the fonts a scene needs when the scene arrives, so a
-  // board opened before the page has any fonts at all measures its text twice.
-  await evalInPage('(async () => { await document.fonts.ready; return document.fonts.status })()');
+  // The fonts have to be there before the board is, and this is the step that
+  // makes sure of it.
+  //
+  // A page that has just loaded has no Excalifont and no Virgil, and measures
+  // every string on Chrome's last-resort font. Whatever is measured then keeps
+  // its widths: the font lands a moment later and nothing goes back over the
+  // scene. That is what this check's first recorded baseline caught without
+  // anybody noticing — `a standalone caption` came back 163.271484375 wide,
+  // which is `20px serif`.
+  //
+  // The families are read off the note rather than assumed, so the gate keeps
+  // meaning what it says when the converter's `fontFamily` constant changes.
+  const written = (await api('GET', '/api/elements?board=fixedpoint')).body?.elements ?? [];
+  const families = [...new Set(written.filter(e => e.type === 'text').map(e => e.fontFamily ?? 1))];
+  await waitForFonts(families);
 
   const opened = await api('POST', '/api/boards/open', { board: 'fixedpoint', reload: true });
-  check('  and the note is re-read into it',
+  check('  and the note is re-read into it, with the fonts already there',
     opened.status === 200 && opened.body?.source === 'vault' && opened.body?.elementCount === 12,
     `${opened.body?.source} / ${opened.body?.elementCount} elements`);
 
@@ -424,6 +510,19 @@ try {
   const held = (await api('GET', '/api/elements?board=fixedpoint')).body?.elements ?? [];
   check('  and the browser is holding every element the server is',
     rendered.length === held.length, `server ${held.length}, browser ${rendered.length}`);
+
+  // And the scene was measured in that font, which the gate above cannot say
+  // on its own: it asks what the page can measure *now*, while a scene
+  // measured before the fonts arrived keeps its fallback widths for good.
+  // This is the assertion that fails if the double open is ever taken out.
+  const AUTHSERVICE = { '1@16': 90.5442, '5@20': 114.4999 };
+  const label = rendered.find(e => e.type === 'text' && e.text === 'AuthService');
+  const wanted = AUTHSERVICE[`${label?.fontFamily}@${label?.fontSize}`];
+  check('  and measured the scene in it, rather than keeping fallback widths',
+    wanted !== undefined && Math.abs(label.width - wanted) < 0.05,
+    wanted === undefined
+      ? `no Chrome width is recorded for "AuthService" at fontFamily ${label?.fontFamily} size ${label?.fontSize}`
+      : `"AuthService" rendered ${label.width} wide, and Chrome measures ${wanted}`);
 
   // --- what the render changed --------------------------------------------
 
