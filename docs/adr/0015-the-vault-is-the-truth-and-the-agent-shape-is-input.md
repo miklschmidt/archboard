@@ -70,13 +70,31 @@ it starts by showing a board that has no note behind it. Under this decision
 that board has nowhere to be, because the only place board content may live is
 a note.
 
-Three answers are defensible and they are not the same product: give that board
-a home in a default location, make choosing a vault a precondition of drawing
-anything, or keep it as an explicitly unpersisted scratchpad whose contents are
-understood to be lost. This ADR does not pick one. It records that the question
-exists and is owned, because a decision that says "everything is a note" while
-one board silently is not would be the same class of gap it was written to
-close.
+**The canvas refuses to start without a vault.** There is nowhere to put a
+board, so it does not offer one. The board it used to open on gets a home in
+the vault like every other board.
+
+That turns a soft first run into a hard stop, which is a real cost and the
+right one. A canvas somebody can draw on before discovering the drawing was
+never anywhere is worse than a canvas that will not open yet, and it is worse
+in the way that costs the most: silently, and only once there is something to
+lose.
+
+So the refusal carries the product. It is the first thing a new person sees, it
+has to say what a vault is, how to point at one, and that it can be a directory
+inside the repository they are standing in. A refusal that only says no is a
+worse first run than the one being replaced.
+
+**Rejected: fall back to somewhere outside the vault.** It keeps the first run
+soft, and it makes a second place where board content lives, which is the shape
+this decision exists to remove. It also asks a question with no good answer:
+when a vault is finally chosen, does that board move, get copied, or get left
+behind.
+
+**Rejected: keep it in memory as a documented exception.** Everything keeps
+working and the rule has a hole in it on the day it is written. One exception
+is how a rule stops being a rule, and this repository has spent long enough
+removing invariants that held only while somebody remembered them.
 
 ## Consequences
 
