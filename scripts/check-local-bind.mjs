@@ -2,6 +2,8 @@
 
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -21,12 +23,18 @@ const duplicateExitTimeoutMs = 2500;
 const staleProbe = 'check-local-bind-stale-server.js';
 const frontendProbe = 'check-local-bind-frontend.js';
 
-function spawnCanvas(host) {
+// A vault of its own, never the one on this machine: a canvas writes into the
+// vault it is given, and these ones are started to be killed.
+const vault = mkdtempSync(join(tmpdir(), 'archboard-bind-'));
+
+function spawnCanvas(host, options = {}) {
   const env = {
     ...process.env,
     PORT: String(port),
+    ARCHBOARD_VAULT: vault,
     LOG_LEVEL: 'error',
   };
+  if (options.noVault) delete env.ARCHBOARD_VAULT;
   if (host) {
     env.HOST = host;
   } else {
@@ -158,6 +166,7 @@ let first;
 let second;
 let bindAll;
 let removeStaticProbes;
+let noVault;
 
 try {
   first = spawnCanvas();
@@ -213,10 +222,59 @@ try {
     throw new Error('Canvas server with HOST=:: exited successfully instead of failing.');
   }
 
+  // No vault, no canvas (ADR 0015). Every board is a note, so there is nowhere
+  // to put one, and this refusal is what a first run meets instead of a canvas
+  // whose drawing turns out to have been nowhere. It is checked here because
+  // this is the file about what happens when a canvas starts.
+  noVault = spawnCanvas(undefined, { noVault: true });
+  const noVaultOutput = collectOutput(noVault);
+  const noVaultExit = await waitForExit(noVault, duplicateExitTimeoutMs);
+
+  if (!noVaultExit) {
+    throw new Error('Canvas server with no ARCHBOARD_VAULT stayed running.');
+  }
+  if (noVaultExit.code === 0) {
+    throw new Error('Canvas server with no ARCHBOARD_VAULT exited successfully instead of refusing.');
+  }
+  const refusal = noVaultOutput();
+  // The message is the product here: a refusal that only says no is a worse
+  // first run than the canvas it replaces, so it has to name the step that
+  // chooses a vault and the variable that carries it.
+  for (const wanted of ['no vault', 'install-skill', 'ARCHBOARD_VAULT']) {
+    if (!refusal.includes(wanted)) {
+      throw new Error(`Canvas server refused with no vault but never said "${wanted}":\n${refusal}`);
+    }
+  }
+
+  // And the CLI says it too, before it spawns anything. A canvas is started
+  // detached with its stdio thrown away, so the refusal above would land
+  // nowhere: without this the answer to `board list` is eight seconds of
+  // silence and "the auto-started server did not become healthy".
+  const cliRefusal = await new Promise(resolve => {
+    const env = { ...process.env, EXPRESS_SERVER_URL: `http://127.0.0.1:${port + 1}`, LOG_LEVEL: 'error' };
+    delete env.ARCHBOARD_VAULT;
+    const child = spawn(runtime, [join(repoRoot, 'src', 'bin.ts'), 'board', 'list'], {
+      cwd: repoRoot, env, stdio: ['ignore', 'ignore', 'pipe']
+    });
+    let stderr = '';
+    child.stderr.on('data', chunk => { stderr += chunk.toString(); });
+    child.on('exit', code => resolve({ code, stderr }));
+  });
+  // 3 is "canvas unreachable", which is what this is: it is not running and it
+  // will not start. A foreign service on the port already exits 3 for the same
+  // reason, so no new code was invented for a new cause of the same outcome.
+  if (cliRefusal.code !== 3) {
+    throw new Error(`CLI with no vault exited ${cliRefusal.code}, wanted 3.\n${cliRefusal.stderr}`);
+  }
+  if (!cliRefusal.stderr.includes('install-skill')) {
+    throw new Error(`CLI with no vault never mentioned install-skill:\n${cliRefusal.stderr}`);
+  }
+
   console.log(
     `Local bind check passed on port ${port} using ${runtimeName}: ` +
-    'default bind is IPv4 loopback only, only dist/frontend is served, duplicate startup fails, ' +
-    'and HOST=:: is guarded.'
+    'default bind is IPv4 loopback only, only dist/frontend is served, duplicate startup ' +
+    'fails, HOST=:: is guarded, and with no vault both the server and the CLI refuse ' +
+    'and say how to get one.'
   );
 
   await killChild(first);
@@ -231,6 +289,7 @@ try {
   }
 } catch (error) {
   if (removeStaticProbes) removeStaticProbes();
+  if (noVault) await killChild(noVault);
   if (bindAll) await killChild(bindAll);
   if (second) await killChild(second);
   if (first) await killChild(first);

@@ -76,6 +76,7 @@ import {
   validateVariant,
   vaultPathFor
 } from './core/board.js';
+import { ARCHBOARD_VAULT, noVaultMessage } from './core/config.js';
 import { buildScene } from './core/scene-io.js';
 import { CURRENT_VARIANT } from './core/board.js';
 import { restampVariant } from './core/promote.js';
@@ -3326,6 +3327,20 @@ async function startServer(): Promise<void> {
       `Canvas server source re-evaluated in place; the port was already bound (pid ${process.pid}).\n`
     );
     return;
+  }
+
+  // No vault, no canvas (ADR 0015). Every board is a note, so a canvas without
+  // a vault has nowhere to put anything, and the failure it used to produce
+  // came later and cost more: the canvas opened, somebody drew on it, and the
+  // drawing turned out to have been nowhere all along.
+  //
+  // Straight to stderr as well as the log, because a first run is exactly the
+  // run whose LOG_LEVEL nobody has set, and the whole value of this is that
+  // the person who started it reads it.
+  if (!ARCHBOARD_VAULT) {
+    process.stderr.write(noVaultMessage() + '\n');
+    logger.error('Refusing to start canvas server: no vault (ARCHBOARD_VAULT is unset).');
+    process.exit(1);
   }
 
   if (LOOPBACK_GUARD_HOSTS.has(HOST)) {

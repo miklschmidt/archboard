@@ -19,7 +19,8 @@ repo, and `archboard install-skill` does all three.
 1. The archboard build exists somewhere on this machine.
 2. An agent can find the CLI.
 3. A vault exists, and `ARCHBOARD_VAULT` points at it before the canvas server
-   starts.
+   starts. Without one the canvas refuses to start, because every board is a
+   note and there would be nowhere to put one.
 4. The agent has the skill that teaches it how to draw.
 5. The repo itself says where 2 and 3 are, because nothing else will.
 
@@ -131,12 +132,12 @@ An `ARCHBOARD_VAULT` already exported in your shell counts as having answered:
 it becomes the offer, in place of the local path.
 
 Either way, **the server does the vault I/O, so the variable has to be set
-before the canvas server starts.** Exporting it afterwards changes nothing, and
-board commands fail on the vault message rather than on whatever you were
-doing. A server that is already running keeps the vault it started with:
-`archboard board list` prints the vault in use, and `archboard stop` is how you
-switch. That is the one that bites when you move between two repos that each
-keep their own boards.
+before the canvas server starts.** With no vault the canvas will not start at
+all, and says so, pointing back at this command. Exporting it afterwards
+changes nothing, because a server that is already running keeps the vault it
+started with. `archboard board list` prints the vault in use, and
+`archboard stop` is how you switch. That is the one that bites when you move
+between two repos that each keep their own boards.
 
 ## Optional: MCP, for a client with no shell
 
