@@ -290,6 +290,19 @@ proposal". Two panes is what the shell lays out, so a third is refused. All of
 these need a browser tab and exit 4 without one — a pane exists only while
 something is rendering it, and nothing here invents one on a headless canvas.
 
+**`mermaid` converts in the pane holding the board it names, and takes no
+`--pane`** (TASK-046). Conversion runs in a canvas and the elements land on
+whatever board that canvas is holding, so the board the call already carries
+settles which pane; a `--pane` would be a second way to say the same thing, and
+a way to say two different things. It used to convert only in the primary pane,
+so drawing a proposal on the right meant taking the current architecture off the
+left first. Aimed at a board no pane is holding it converts nothing and says
+which panes are up, what each holds, and how to get that board onto one.
+
+`screenshot` and `viewport` keep `--pane` and take no board, because a picture
+is of a half of the screen and nothing names a board for it to be resolved
+from.
+
 Addressing: `current` is the privileged variant — the architecture that exists —
 so it owns the bare name and the bare filename. Every other variant is
 `name@variant`, stored as `name@variant.excalidraw.md`. Variant is an open set,
