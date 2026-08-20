@@ -38,7 +38,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // The rules, on their own
 // ---------------------------------------------------------------------------
 
-const { resolveBoard, openBoardKeys, SCRATCH_KEY } = await import(dist('core/board-store.js'));
+const {
+  resolveBoard, openBoardKeys, SCRATCH_KEY, boards: boardStore,
+  getOrCreateBoard, replaceBoardElements
+} = await import(dist('core/board-store.js'));
 const { BoardRequiredError } = await import(dist('core/board-target.js'));
 const { resolvePaneSpec, soloPane, panesInOrder } = await import(dist('core/panes.js'));
 const {
@@ -132,6 +135,59 @@ const {
   try { resolveBoard('nope'); } catch (error) { unopened = error; }
   check('a board that is not open is a different refusal', /is not open/.test(unopened?.message ?? ''));
   check('  which also lists what is', /Open right now/.test(unopened?.message ?? ''));
+}
+
+// A branch shares no element objects with the board it came from (TASK-042).
+//
+// `board save --as` used to put the source's own objects into the branch's
+// map, so two boards held one set of elements behind two names. Nothing ever
+// failed, because every path that changes an element replaces the object
+// rather than editing it — an invariant nobody wrote down and nothing
+// enforced. So this mutates in place, which is exactly what that invariant was
+// holding back, and it is the one way to tell a copy from a shared reference.
+//
+// In process, against the real store, because object identity is not something
+// HTTP can show. `replaceBoardElements` is the only way a branch's map is
+// filled: POST /api/boards/save calls it and nothing else writes across
+// boards.
+{
+  const source = getOrCreateBoard(makeIdentity({ board: 'branch-sharing', level: 'service' }), true).board;
+  const original = {
+    id: 'e1', type: 'rectangle', x: 0, y: 0, width: 160, height: 80,
+    customData: { archboard: { node: 'api', kind: 'gateway', variant: 'current' } },
+    boundElements: [{ id: 'lbl', type: 'text' }],
+    groupIds: ['g1']
+  };
+  source.elements.set(original.id, original);
+
+  const branch = getOrCreateBoard(
+    makeIdentity({ board: 'branch-sharing', variant: 'option-a', level: 'service' }), true
+  ).board;
+  replaceBoardElements(branch, Array.from(source.elements.values()));
+  const copy = branch.elements.get('e1');
+
+  check('a branch holds its own element objects', copy !== original);
+  check('  and its own nested ones, which is where the meaning is',
+    copy.customData !== original.customData &&
+    copy.customData.archboard !== original.customData.archboard &&
+    copy.boundElements !== original.boundElements &&
+    copy.groupIds !== original.groupIds);
+  check('  holding the same content, so nothing was lost in the copy',
+    JSON.stringify(copy) === JSON.stringify(original));
+
+  copy.x = 999;
+  copy.customData.archboard.kind = 'datastore';
+  copy.boundElements.push({ id: 'extra', type: 'arrow' });
+  copy.groupIds.push('g2');
+  check('mutating an element on the branch in place leaves the source alone',
+    original.x === 0 &&
+    original.customData.archboard.kind === 'gateway' &&
+    original.boundElements.length === 1 &&
+    original.groupIds.length === 1,
+    JSON.stringify(original));
+
+  boardStore.delete('branch-sharing');
+  boardStore.delete('branch-sharing@option-a');
 }
 
 // Pane addressing shares its reading order with the report, so "right" cannot
@@ -436,6 +492,13 @@ try {
   await sleep(80);
   await two.adopt('ledger@option-a');
 
+  // An unpromoted element too, so the branch carries something `restampVariant`
+  // returns untouched: those were the objects the two boards used to share
+  // (TASK-042).
+  await api('POST', '/api/elements?board=ledger', {
+    type: 'text', x: 0, y: 600, width: 200, height: 24, text: 'a note to self'
+  });
+
   const beforeBranch = one.since();
   const rebranch = await api('POST', '/api/boards/save?board=ledger', { variant: 'option-c' });
   await sleep(150);
@@ -452,7 +515,10 @@ try {
     JSON.stringify(rebranch.body?.panes));
   check('  and names the board it branched from', rebranch.body?.savedFrom === 'ledger');
   const offScreen = await api('GET', '/api/elements?board=ledger@option-c');
-  check('  and the branch is a real board, just not one on screen', offScreen.body?.count === 3);
+  check('  and the branch is a real board, just not one on screen', offScreen.body?.count === 4,
+    `count ${offScreen.body?.count}`);
+  check('  carrying the unpromoted element too, content and all',
+    (offScreen.body?.elements ?? []).some(el => el.type === 'text' && el.text === 'a note to self'));
 
   // The one save that does move a pane. Scratch is a placeholder, not a
   // subject: after it is named, the placeholder and the named board hold the
