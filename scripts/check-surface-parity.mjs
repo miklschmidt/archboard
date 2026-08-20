@@ -80,6 +80,9 @@ const PAIRS = [
 // not a decision — it should shrink.
 
 const CLI_ONLY = {
+  'repo list': 'the checkout registry is host state. It maps a repository identity to a directory on THIS machine (ADR 0011). MCP consumes it: `promote_selection` takes a repo identity and resolves through the registry. A client with no shell cannot see the filesystem those entries name, so it cannot maintain them.',
+  'repo add': 'as `repo list`: pointing at a directory is a filesystem act, for the agent that has one.',
+  'repo forget': 'as `repo list`.',
   start: 'process lifecycle on the host. MCP starts the canvas itself before any tool that needs it, and a shell-less client has no local process to manage.',
   stop: 'as `start`: stopping a local process is a shell act.',
   status: 'as `start`. A client that reaches the tools already has a live canvas behind them.',

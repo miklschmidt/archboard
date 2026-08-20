@@ -6,6 +6,7 @@ import * as elements from './commands/elements.js';
 import * as scene from './commands/scene.js';
 import { panes, selection } from './commands/selection.js';
 import { promote, demote } from './commands/promote.js';
+import { repo, SUBCOMMANDS as REPO_SUBCOMMANDS } from './commands/repo.js';
 import { snapshot, ACTIONS as SNAPSHOT_ACTIONS } from './commands/snapshot.js';
 import { board, SUBCOMMANDS as BOARD_SUBCOMMANDS } from './commands/board.js';
 import { compare } from './commands/compare.js';
@@ -52,14 +53,52 @@ const COMMANDS: Record<string, Command> = {
       '  No pane at all is normal: it means no browser is open, not that anything is wrong.'
     ].join('\n')
   },
-  promote: { handler: promote, summary: 'Declare the selected elements a node — kind, identity, binding', usage: 'promote --kind service|queue|datastore|gateway|external [--ids a,b,c] [--name "Payments"] [--node payments] [--path src/payments/service.ts] [--repo host/owner/name] [--branch main] [--commit sha] [--variant current] [--level system|service|module] [--each] [--text]  (default target is the live selection; --each makes one node per selected shape)' },
+  promote: {
+    handler: promote,
+    summary: 'Declare the selected elements a node: kind, identity, binding',
+    usage: [
+      'promote --kind service|queue|datastore|gateway|external [--ids a,b,c] [--name "Payments"] [--node payments]',
+      '        [--path src/payments/service.ts] [--repo host/owner/name] [--branch main] [--commit sha]',
+      '        [--variant current] [--level system|service|module] [--each] [--text]',
+      '',
+      '  The default target is the live selection; --each makes one node per selected shape.',
+      '',
+      '  A BINDING NAMES A REPOSITORY, not a directory (ADR 0011). --path takes an absolute path, or a',
+      '  repo-relative path with --repo naming a registered checkout (`repo add`), or a path relative to',
+      '  the directory you are standing in. That last one says which repository that turned out to be,',
+      '  because it is the one the caller did not name. Naming the repo is what lets one board bind',
+      '  nodes in five of them without a single `cd`.'
+    ].join('\n')
+  },
   demote: { handler: demote, summary: 'Turn nodes back into plain elements', usage: 'demote [--ids a,b,c] [--text]  (default target is the live selection; demotes every element of each node it touches)' },
+  repo: {
+    handler: repo,
+    subcommands: REPO_SUBCOMMANDS,
+    summary: 'The repository checkouts on this machine, so a binding can name a repo instead of a directory',
+    usage: [
+      'repo list [--text] | repo add [dir] | repo forget <identity>',
+      '',
+      '  A binding is a repository identity plus a path inside it, never a directory on one machine.',
+      '  Boards live in a vault that spans repositories and is meant to be readable from any of them',
+      '  (ADR 0004). This is where archboard writes down where each repository actually is HERE.',
+      '',
+      '  Register a checkout and it can be named from anywhere: `promote --repo github.com/acme/payments',
+      '  --path src/service.ts` resolves without standing in it, which is what makes a system board',
+      '  covering five repositories buildable in one session (ADR 0011). archboard also learns as it',
+      '  goes: every binding that resolves through an absolute path records where that repo was found.',
+      '',
+      '  `add` takes the identity from git (origin, else the directory name) and never from you, because',
+      '  two people naming one clone differently is what would make the addresses useless. With no',
+      '  argument it registers the directory you are standing in.'
+    ].join('\n')
+  },
   board: {
     handler: board,
     subcommands: BOARD_SUBCOMMANDS,
     summary: 'Load, save and list boards in the vault',
     usage: [
-      'board list | info | new <name> [--variant v] [--level system|service|module] [--pane <spec>]',
+      'board list [--repo <host/owner/name> | --here] [--text]',
+      '        | info | new <name> [--variant v] [--level system|service|module] [--pane <spec>]',
       '        | open <name[@variant]> [--variant v] [--reload] [--pane <spec>]',
       '        | save --board <key> [--as <name>] [--variant v] [--level l] [--force]',
       '',
@@ -69,6 +108,12 @@ const COMMANDS: Record<string, Command> = {
       '  one pane is open; with a single pane the board goes there, with none it is loaded unshown.',
       '  The variant "current" owns the bare name — the architecture that exists. Every other variant is',
       '  addressed and stored as name@variant, so three-way option comparison is just three names.',
+      '',
+      '  WHICH BOARDS DESCRIBE THIS CODE: `board list --here` from inside a repository, or',
+      '  `board list --repo host/owner/name` from anywhere, answers from the bindings on the boards',
+      '  rather than from their names, so a system board covering five repositories is found from any',
+      '  of the five. Each match lists the nodes bound to that repo. Boards open on the canvas are read',
+      '  from memory, so a binding made a minute ago and not yet saved still counts.',
       '',
       '  SAVES ARE CHECKED, NOT LOCKED. archboard hashes a note when it reads it and verifies that hash',
       '  before writing. If the note changed underneath — Obsidian, a sync client, another editor — the',

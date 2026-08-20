@@ -82,13 +82,17 @@ export async function promote(argv: string[]): Promise<void> {
   const board = await getElements();
   const targets = await targetElements(flags.ids, board, 'promote');
 
+  // The shell's own working directory, stated rather than assumed. A command
+  // line has one the caller chose and can see, so it is a legitimate way to
+  // name a repository — but only when the answer says which repository it
+  // turned out to be (ADR 0011), which `resolveBinding` puts in the note.
   const binding = typeof flags.path === 'string'
     ? resolveBinding({
         path: flags.path,
         ...(typeof flags.repo === 'string' ? { repo: flags.repo } : {}),
         ...(typeof flags.branch === 'string' ? { branch: flags.branch } : {}),
         ...(typeof flags.commit === 'string' ? { commit: flags.commit } : {})
-      })
+      }, { kind: 'cwd', dir: process.cwd() })
     : undefined;
   if (!binding && (flags.repo || flags.branch || flags.commit)) {
     throw new CliUsageError('--repo/--branch/--commit describe a binding; give --path too.');
@@ -118,6 +122,7 @@ export async function promote(argv: string[]): Promise<void> {
     summary,
     nodes: plan.nodes,
     elementsUpdated: plan.updates.length,
+    ...(binding ? { binding: { resolvedFrom: binding.resolvedFrom, resolved: binding.resolved } } : {}),
     ...(binding && !binding.resolved ? { bindingResolved: false } : {})
   });
 }
