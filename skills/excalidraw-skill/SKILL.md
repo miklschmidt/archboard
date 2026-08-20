@@ -29,40 +29,50 @@ expensive to fix afterwards. Read them before the first command.
 
 ## The main path: current beside a proposal
 
-Two panes on screen, the human having pressed **Split** in the shell. An agent
-cannot create a pane; it can only put a board into one that exists. With one
-pane the same sequence works, one board at a time.
+Putting the two side by side is one command: **`pane open --board <key>` makes
+a new pane and opens that board into it.** It cannot be aimed at an existing
+pane, so it can never overwrite the board somebody is reading — which is what
+makes it the safe way to say "show me the current one beside the proposal". Two
+panes is the most the canvas lays out, and a pane exists only while a browser
+tab renders it, so this exits 4 when nothing is open.
 
 ```bash
 archboard panes --text                            # which pane is which, and what each holds
 archboard board list                              # what the vault has, what is open
 
 # 1. the architecture that exists
-archboard board new payments --level service --pane left
+archboard board new payments --level service      # one pane on screen, so it goes there
 archboard library list --text                     # before drawing anything
 archboard add --board payments elements.json
 archboard promote --board payments --ids gw --kind gateway --name "API Gateway"
 archboard board save --board payments
 
 # 2. branch it: this is what makes the proposal comparable
-archboard board save --board payments --variant option-a   # writes payments@option-a
-archboard board open payments --pane left                  # put current back; see below
-archboard board open payments@option-a --pane right
+archboard board save --board payments --variant option-a   # writes payments@option-a; nothing moves
+archboard pane open --board payments@option-a              # the branch, in a NEW pane beside it
 
 # 3. change only what the proposal changes
 archboard add --board payments@option-a cache.json
 archboard promote --board payments@option-a --ids cache --kind datastore --variant option-a
 archboard board save --board payments@option-a
 
-# 4. read the difference
+# 4. look at what you drew, then read the difference
+archboard screenshot --pane right --out /tmp/proposal.png
 archboard compare payments payments@option-a
 ```
 
-**Step 2 moves the pane it branched from.** Saving under a new variant renames
-the board in the store, and every pane that was holding it follows to the new
-name. The left pane is now showing `payments@option-a`, not `payments`, so put
-current back explicitly before you draw. Skipping that line is how a proposal
-gets drawn on top of the architecture it was supposed to leave alone.
+**Step 2 moves nothing on screen** (ADR 0012). A save writes a file; `board
+open` and `pane open` are what choose what is showing. So the pane holding
+`payments` keeps holding it, the branch is not on screen anywhere until you put
+it there, and there is no repair step. The save says so: `saveKind` is
+`branch`, `panes.kept` names the panes left on the source, `panes.moved` is
+empty. The one save that does move a pane is giving the scratch board a name
+(`board save --board scratch --as payments`), where the placeholder and the
+named board hold the same drawing and there is nothing to stay behind for.
+
+`--pane` names a place that exists, so it is `left` and `right` only once there
+are two panes; with one pane its place is "the only pane" and every board
+command can leave `--pane` out.
 
 ## Boards, panes, and what a command targets
 
@@ -74,18 +84,28 @@ The two are addressed separately and only one of them is strict.
   with `--board`. None of them takes a pane, and none of them cares whether the
   board is on screen at all. Writing to a board no pane holds works, silently
   and correctly.
-- `board open` and `board new` are the only commands that choose a **pane**.
+- `board open` and `board new` put a board into a pane that already exists.
   `--pane` takes `left`, `right`, `top`, `bottom`, a position (`1`, `2`),
   `focused`, `primary`, or a pane id. One pane on screen and the board goes
   there; two and `--pane` is required; none and the board is loaded without
   being shown. Every answer names the pane it landed in.
-- `screenshot`, `mermaid` and viewport control are answered by the **primary
-  pane**, the first one on the left, whatever board it is holding.
+- `pane open [--board <key>]` makes a pane. It always makes a **new** one and
+  cannot be aimed at an existing pane, so it cannot overwrite what is on
+  screen. With no `--board` the new pane shows whatever was already there, the
+  same as a human pressing Split. A third pane is refused.
+- `pane close <spec>` unmakes one, and the spec is always required — which
+  board comes off the screen is not something to guess at. The board itself is
+  untouched and stays open on the canvas. The last pane cannot be closed.
+- `screenshot` and `viewport` take `--pane <spec>`, because a pane holds one
+  board and that settles which is meant. Leave it out and the pane that answers
+  for the browser is photographed or moved, which with two on screen is the one
+  you may not have drawn in. **Name the pane once two are open.**
+- `pane open`, `pane close`, `screenshot` and `viewport` all need a browser tab
+  and exit 4 without one. Nothing here invents a pane on a headless canvas.
 
-That last point has a sharp edge: **you cannot screenshot the right pane.** To
-check a proposal that is on the right, read it with `describe --board <key>`,
-or open it on the left for a moment. `mermaid` is stricter still and refuses
-outright unless the board you name is the board the primary pane holds.
+`mermaid` is the one that still cannot be pointed anywhere: it converts in the
+pane that answers for the browser, so it refuses unless the board you name is
+the board that pane is holding.
 
 Two panes disagreeing is the normal state, not a problem to resolve. Run
 `panes --text` at the start of a turn to see who is holding what.
@@ -103,7 +123,7 @@ Three interfaces drive the same live canvas. The CLI is the default; the other t
 2. **MCP tools** — the way in for a client with no shell. Same canvas, renamed: `batch_create_elements` for `add`, `describe_scene` for `describe`, and so on (full table in `references/cheatsheet.md`). Their display prefix depends on the key the MCP client's config gives this server, so match on the tool names, not the prefix. One thing they do that the CLI cannot: `get_canvas_screenshot` returns the image as content in your context, where `screenshot` writes a PNG you then read back.
 3. **REST API** (last resort, e.g. from application code): HTTP endpoints on `http://127.0.0.1:3000` — see `references/cheatsheet.md` for payloads. The server must already be running.
 
-The canvas URL comes from `EXPRESS_SERVER_URL` (default `http://127.0.0.1:3000`). Remind the user to open that URL in a browser — screenshots, image export, mermaid conversion, and viewport control need an open tab (CLI exits with code 4 when it's missing).
+The canvas URL comes from `EXPRESS_SERVER_URL` (default `http://127.0.0.1:3000`). Remind the user to open that URL in a browser — screenshots, image export, mermaid conversion, viewport control, and making or closing a pane all need an open tab (CLI exits with code 4 when it's missing).
 
 ### CLI Quick Reference
 
@@ -121,14 +141,17 @@ Results are JSON on stdout — except `describe` (plain text) and raw-content ou
 | Understand the scene | `describe` (plain-text summary: ids, positions, labels, connections) |
 | What the human has picked | `selection [--text]` — the elements they mean by "this" / "these" |
 | What the human is looking at | `panes [--text]` — pane by pane: where it sits, which board, what is in view, what is picked there |
+| Put a board beside the one on screen | `pane open [--board <key>]` — always a **new** pane, never an existing one, so it cannot overwrite what somebody is reading |
+| Take a board off the screen | `pane close <left\|right\|1\|2\|primary\|focused\|pane id>` — spec always required; the board is untouched |
+| Point a pane's camera | `viewport --fit \| --ids a,b,c \| --element <id> \| --zoom n [--offset-x n] [--offset-y n] [--zoom-factor f] [--pane <spec>]` — exactly one of the four |
 | Make the selection a node | `promote --kind service [--path src/x.ts] [--name "X"]` — kind, identity and binding in one act; `demote` undoes it |
-| See the scene | `screenshot [--out f.png]` (PNG without `--out` → temp file path in JSON; SVG without `--out` → raw SVG) |
+| See the scene | `screenshot [--out f.png] [--pane <spec>]` (PNG without `--out` → temp file path in JSON; SVG without `--out` → raw SVG) |
 | Layout operations | `arrange align\|distribute\|group\|ungroup\|lock\|unlock\|duplicate --ids a,b,c [--to left\|horizontal\|...]` |
 | Scene files | `export [--out scene.excalidraw]`, `import [scene.excalidraw|-] [--replace]` — a `.excalidraw.md` out path writes Obsidian's format (see File I/O) |
 | Mermaid → canvas | `mermaid [diagram.mmd|-]` (or stdin) |
 | Ready-made shapes | `library list [--text]`, `library insert <name> --x <x> --y <y> [--source <lib>]` — see Stencils |
 | Boards (named, persisted) | `board list\|info\|new <name>\|open <name[@variant]>\|save` — see Boards |
-| Branch a board into a variant | `board save --board <src> --variant <v>` — the copy the proposal is drawn on |
+| Branch a board into a variant | `board save --board <src> --variant <v>` — the copy the proposal is drawn on; it moves no pane, so put it up with `pane open --board <src>@<v>` |
 | Diff two variants | `compare <from> [to]` — semantic diff keyed on node identity; see Variants and comparison |
 | What changed since last turn | `changes [--since <cursor>] [--coalesce] [--text]` — the human's edits, named as architecture |
 | Snapshots | `snapshot save\|list\|restore <name>` |
@@ -259,7 +282,7 @@ If you find any issue: **stop, fix it, re-screenshot, then continue.** Say "I se
    ```
    (The `-` positional is optional — with no file argument, `add` reads stdin.)
 5. Set shape widths using `max(160, labelLength * 12)`.
-6. `screenshot` → view the file → run the Quality Checklist → fix issues before the next batch. A board in the right pane cannot be screenshotted; check it with `describe --board <key>` instead.
+6. `screenshot` → view the file → run the Quality Checklist → fix issues before the next batch. With two panes open, say which one you drew in: `screenshot --pane right`. With no browser open at all, `describe --board <key>` is the read.
 
 ---
 
@@ -348,16 +371,18 @@ archboard panes --text
 Per pane: its place in reading order, the board and variant it holds, how many
 elements are on it, the part of the board in view (scene coordinates, so it
 compares directly with element positions), and what is picked there. `focused`
-is the pane the human last touched; `answers screenshots` is the one `screenshot`
-captures. `get_panes` is the MCP equivalent.
+is the pane the human last touched; `answers screenshots` is the one a
+`screenshot` or `viewport` that names no `--pane` lands on, not the only one
+they can reach. `get_panes` is the MCP equivalent.
 
 **This is view state, never board contents** — that is what keeps it cheap
 enough to read on every turn. Use `describe` for what is on a board.
 
-A pane is reported only while its tab is open, so unsplitting or closing a tab
-removes it with no cleanup, and **no pane at all is normal**: it means nobody has
-a browser open, not that anything is wrong. Everything except `screenshot`,
-`mermaid`, image export and viewport control works headless.
+A pane is reported only while its tab is open, so `pane close`, unsplitting, or
+closing a tab removes it with no cleanup, and **no pane at all is normal**: it
+means nobody has a browser open, not that anything is wrong. Everything except
+`screenshot`, `mermaid`, image export, `viewport` and `pane open` / `pane close`
+works headless.
 
 ## Workflow: Promotion — Turn the Selection Into a Node
 
@@ -453,13 +478,16 @@ archboard board list                          # the vault, what is open, what is
 archboard board new payments --level service  # empty board, in memory until saved
 archboard board save --board payments         # write it to <vault>/payments.excalidraw.md
 archboard board open payments@option-a        # show it in the pane on screen
-archboard board open payments@option-a --pane right
+archboard board open payments@option-a --pane right   # once two panes are open
+archboard pane open --board payments@option-a # or make the second pane and show it there
 archboard board info --board payments         # identity and save state of one board
 ```
 
 `board new` refuses a name the vault already holds; open that board instead, or pick another variant. A board you create exists only in memory until `board save`, and `--level` (`system`, `service`, `module`) says which abstraction tier it sits at.
 
 Opening a board disturbs no other pane: the switch reaches that pane's socket alone, the other pane keeps its board, its scene and its selection, and each board is saved against its own baseline.
+
+**A save writes a file and does not choose what is on screen** (ADR 0012), and it says so: `saveKind` is `same-board`, `named` or `branch`, `savedFrom` names the board it was saved from, and `panes` splits into `moved` and `kept`. A branch keeps every pane on the source, so `moved` is empty. The one save that moves a pane is naming the scratch board, where the placeholder and the named board hold the same drawing.
 
 **Addressing.** `current` is the privileged variant — the architecture that exists — so it owns the bare name (`payments`). Every other variant is a proposal, addressed `name@variant` and stored as `name@variant.excalidraw.md`. Variant is an open set, so comparing three options is just three boards: `payments@option-a`, `payments@option-b`, `payments@option-c`. A name may contain `/` to nest the note in vault folders.
 
@@ -489,13 +517,13 @@ the proposal leaves alone must stay byte-for-byte what it was.
 ```bash
 archboard board save --board payments                      # the source, on disk
 archboard board save --board payments --variant option-a   # branch: writes payments@option-a
-archboard board open payments --pane left                  # the branch moved this pane; put current back
-archboard board open payments@option-a --pane right
+archboard pane open --board payments@option-a              # the proposal, in a new pane beside it
 ```
 
-`--variant` carries the source's `level` across. `--as payments@option-a` also
-branches, but it drops the level unless you pass `--level` too, so prefer
-`--variant`.
+Branching writes a second note and changes nothing on screen (ADR 0012), so the
+source is still where it was and `pane open` is the whole side-by-side move.
+`--variant option-a` and `--as payments@option-a` both branch, and both carry
+the source's `level` across.
 
 **Why this is not a style preference.** `compare` joins the two boards on
 **node identity**, `customData.archboard.node`, the id `promote` assigns,
@@ -572,8 +600,8 @@ A snapshot belongs to the board it was taken on, and `--force` is what restores 
 ## Error Recovery
 
 - **Exit code 3 (canvas unreachable)?** Auto-start is disabled (`EXCALIDRAW_NO_AUTOSTART=1`) or a non-loopback `EXPRESS_SERVER_URL` is set. Run `start` explicitly or fix the env.
-- **Exit code 4 (browser required)?** Open `http://127.0.0.1:3000` in a browser, then retry — screenshots, image export, viewport, and mermaid conversion render in the frontend.
-- **Elements not appearing?** Check `describe` — they may be off-screen. In MCP mode, use `set_viewport` with `scrollToContent: true`, or `scrollToElementIds` plus optional `viewportZoomFactor` to focus on a specific subgraph; in a browser, press the zoom-to-fit button.
+- **Exit code 4 (browser required)?** Open `http://127.0.0.1:3000` in a browser, then retry — screenshots, image export, viewport, mermaid conversion, and making or closing a pane all happen in the frontend.
+- **Elements not appearing?** Check `describe` — they may be off-screen. `viewport --fit --pane <spec>` frames everything on that pane's board, and `viewport --ids a,b,c` frames a subgraph (`set_viewport` with `scrollToContent` or `scrollToElementIds` in MCP).
 - **Arrow not connecting?** Verify element IDs with `get <id>`. Make sure `startElementId`/`endElementId` match existing element IDs.
 - **Canvas in a bad state?** `snapshot save` first, then `clear --yes` and rebuild. Or `snapshot restore` to go back.
 - **Element won't update?** It may be locked — `arrange unlock --ids <id>` first.
