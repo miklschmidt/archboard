@@ -4,7 +4,7 @@ title: 'Scratch gets a home in the vault, and a canvas with no vault says what i
 status: To Do
 assignee: []
 created_date: '2026-08-20 20:16'
-updated_date: '2026-08-20 20:28'
+updated_date: '2026-08-20 20:31'
 labels: []
 dependencies:
   - TASK-061
@@ -45,7 +45,7 @@ Pick one, write it into ADR 0015 or a new ADR, and say what a first-time user se
 - [ ] #2 Scratch is still addressed as --board scratch, and board save --board scratch --as <name> still gives it a name
 - [ ] #3 What a canvas with no ARCHBOARD_VAULT does is decided, implemented, and recorded in an ADR
 - [ ] #4 A first run with no vault set produces a message that says what to do, not a stack trace
-- [ ] #5 Starting a canvas with no vault refuses, and the refusal says what a vault is, how to point at one, and that it can be a directory in the current repository
+- [ ] #5 Starting a canvas with no vault refuses and points at the install step that chooses one, rather than explaining what a vault is
 <!-- AC:END -->
 
 ## Comments
@@ -69,5 +69,17 @@ created: 2026-08-20 20:28
 Correction. I checked AC #3 when recording the decision above. It asks for the behaviour to be decided, implemented and recorded in an ADR, and only two of the three are true: it is decided and it is in ADR 0015, and nothing has been implemented. Unchecked.
 
 Worth stating because this task is the gate on the store work, and a checked criterion is how somebody concludes a gate has been cleared without reading why.
+---
+
+author: @claude
+created: 2026-08-20 20:31
+---
+Correction to my earlier comment, from the user. I wrote that the refusal is the first thing a new person sees and therefore has to carry the whole explanation. That overstates it.
+
+Choosing a vault is already an explicit step of installing archboard into a repository: install-skill asks where the boards should live, creates the directory, and records the path in the repo's own agent doc. When stdin is not a terminal, which is whenever an agent runs it, it takes the offered vault and prints what it chose. So on the ordinary path a vault exists before any canvas starts.
+
+The refusal is a backstop for a canvas started without that step. It should point at the install step rather than teach the concept. AC #5 reworded accordingly.
+
+Note for whoever implements this: INSTALL.md currently says that without a vault the board commands fail on the vault message. Once this lands the canvas will not start at all, so that passage needs updating in the same change rather than before it.
 ---
 <!-- COMMENTS:END -->
