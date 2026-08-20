@@ -465,6 +465,31 @@ try {
     unaddressed.status === 400, `got ${unaddressed.status}`);
   check('  and the message names the panes', /--pane left \| right/.test(unaddressed.body?.error ?? ''));
 
+  // A refusal has to mean nothing happened, and it has to name the obstacle
+  // the caller cannot see for themselves (TASK-055). Starting a board with two
+  // panes up is refused on the pane, so the board must not exist afterwards;
+  // and a name that is already taken has to be reported as that, rather than
+  // sending the caller off to add a --pane and meet a second, different
+  // refusal with nothing having said the board was there all along.
+  const unaddressedNew = await api('POST', '/api/boards/new', { board: 'never-made', level: 'service' });
+  check('with two panes, starting a board without naming one is refused as well',
+    unaddressedNew.status === 400, `got ${unaddressedNew.status}`);
+  const afterRefusal = await api('GET', '/api/boards');
+  check('  and the board it refused to start does not exist',
+    !(afterRefusal.body?.open ?? []).some(entry => entry.key === 'never-made'),
+    (afterRefusal.body?.open ?? []).map(entry => entry.key).join(','));
+  check('  and no note was written for it either',
+    !fs.existsSync(path.join(vault, 'never-made.excalidraw.md')));
+
+  const takenName = await api('POST', '/api/boards/new', { board: 'payments' });
+  check('a name already taken is reported as taken, whatever the panes are doing',
+    takenName.status === 409 && /already open/.test(takenName.body?.error ?? ''),
+    takenName.body?.error);
+  const openMissing = await api('POST', '/api/boards/open', { board: 'never-made' });
+  check('and a board that is nowhere says so, rather than asking which pane to put it in',
+    openMissing.status === 404 && /No board "never-made"/.test(openMissing.body?.error ?? ''),
+    openMissing.body?.error);
+
   const leftBefore = left.since();
   const intoRight = await api('POST', '/api/boards/open', { board: 'payments@option-a', pane: 'right' });
   check('naming a pane opens the board there', intoRight.status === 200);
