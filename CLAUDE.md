@@ -316,6 +316,12 @@ too, on `--as` as well as `--variant`: a branch is the same subject at the same
 abstraction tier, and level is board identity from a vocabulary the project
 grew on purpose (TASK-039).
 
+`promote` says the same thing from the other side. A node promoted on
+`payments@option-a` records `option-a`, read from the board the call already
+names, so `--variant` is an override nobody has to remember. It used to stamp
+the literal `current` wherever it was called, which made every node on a
+proposal board a `variantAnomaly` (TASK-040).
+
 A branch shares no element objects with the board it came from. It used to
 share every one the restamp did not replace, so two boards held one set of
 objects behind two names, and the only thing keeping that from being a bug was
