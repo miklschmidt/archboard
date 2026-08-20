@@ -517,7 +517,7 @@ export function useCanvasSession({
     try {
       const { elements } = await fetchElements(boardKeyRef.current)
       applyServerScene(convertElementsPreservingImageProps(elements.map(cleanElementForExcalidraw)))
-      const { files } = await fetchFiles()
+      const { files } = await fetchFiles(boardKeyRef.current)
       if (files && Object.keys(files).length > 0) apiRef.current?.addFiles(Object.values(files) as any)
     } catch (error) {
       console.error('Could not load the board:', error)
@@ -687,6 +687,10 @@ export function useCanvasSession({
       case 'board_switched': {
         const elements = (data.elements ?? []).map(cleanElementForExcalidraw)
         applyServerScene(elements.length > 0 ? convertElementsPreservingImageProps(elements) : [])
+        // The board's images come with it. Without this a pane pointed at a
+        // board with pictures on it got the elements and no pictures, and only
+        // a reload put them back (TASK-060).
+        if (data.files) api.addFiles(Object.values(data.files))
         noteChange()
         break
       }

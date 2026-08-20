@@ -45,6 +45,18 @@ export function buildScene(
 ): ExportedScene {
   const exportElements = expandElementsForExport(sceneElements, { deterministic: true });
 
+  // Only the images these elements actually draw. A scene's `files` map is
+  // keyed by the `fileId` an image element carries, so the elements decide what
+  // belongs in it — nothing else in the format says which images are whose.
+  // This is the one place a scene is assembled, so filtering here covers the
+  // board note, `export --out` and anything else that writes a scene at once
+  // (TASK-060).
+  const used: Record<string, any> = {};
+  for (const element of exportElements as Array<{ fileId?: unknown }>) {
+    const id = element.fileId;
+    if (typeof id === 'string' && sceneFiles[id]) used[id] = sceneFiles[id];
+  }
+
   const excalidrawScene: Record<string, any> = {
     type: 'excalidraw',
     version: 2,
@@ -54,7 +66,7 @@ export function buildScene(
       viewBackgroundColor: '#ffffff',
       gridSize: null
     },
-    ...(Object.keys(sceneFiles).length > 0 ? { files: sceneFiles } : {})
+    ...(Object.keys(used).length > 0 ? { files: used } : {})
   };
 
   return { scene: excalidrawScene, elementCount: exportElements.length };
