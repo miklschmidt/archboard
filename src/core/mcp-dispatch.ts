@@ -655,11 +655,13 @@ export async function callExcalidrawTool(
         };
       }
       case 'list_boards': {
-        logger.info('Listing boards via MCP');
-        const result = await listBoardsOnCanvas();
+        const params = z.object({ repo: z.string().optional() }).parse(args || {});
+        logger.info('Listing boards via MCP', { repo: params.repo });
+        const result = await listBoardsOnCanvas(params.repo);
         return {
           content: [{ type: 'text', text: JSON.stringify({
             vault: result.vault,
+            ...(result.repo ? { repo: result.repo, scanned: result.scanned } : {}),
             boards: result.boards,
             open: result.open,
             onScreen: result.onScreen
@@ -870,13 +872,20 @@ export async function callExcalidrawTool(
         let payload: unknown;
         if (promoting) {
           if (!params.kind) throw new Error(`kind is required (one of: ${KINDS.join(', ')})`);
+          // No working directory is passed, and none is available to pass.
+          // This server was spawned by the client, so its cwd is whatever
+          // directory that client happened to be in, invisible to the user and
+          // unsettable by them. A relative path here is therefore refused
+          // rather than resolved by accident (ADR 0011); an absolute path, or a
+          // repo identity plus a path inside it, is how a shell-less client
+          // names code.
           const binding = params.path
             ? resolveBinding({
                 path: params.path,
                 ...(params.repo ? { repo: params.repo } : {}),
                 ...(params.branch ? { branch: params.branch } : {}),
                 ...(params.commit ? { commit: params.commit } : {})
-              })
+              }, { kind: 'none', surface: 'MCP' })
             : undefined;
           const plan = planPromotion({
             targets,

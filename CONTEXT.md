@@ -63,6 +63,20 @@ A machine-independent way of naming code: a repository identity, a path within
 it, and the branch and commit at which the binding was last confirmed.
 _Avoid_: path, file reference, location, URI
 
+**Repository identity**:
+What a repository is called in a way that is the same in every clone and on
+every machine: host, owner and name, taken from its `origin` remote.
+_Avoid_: repo URL, remote, origin, project, package
+
+**Checkout**:
+One copy of a repository sitting at a path on one machine.
+_Avoid_: clone, working copy, workspace, local repo
+
+**Checkout registry**:
+The machine-local record of which checkout holds which repository identity
+here. The only place a directory on one machine is written down.
+_Avoid_: index, cache, catalogue, repo config
+
 **Promotion**:
 Declaring a set of elements to be a node, giving it a kind and usually a
 binding in the same act.

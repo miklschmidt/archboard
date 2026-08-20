@@ -1,6 +1,7 @@
 import { parseArgs, CliUsageError } from '../args.js';
 import { printJson, note } from '../util.js';
 import { ensureCanvasRunning } from '../../core/spawn.js';
+import { repoIdentityAt, repoRootOf } from '../../core/git.js';
 import {
   listBoardsOnCanvas,
   getBoardInfo,
@@ -11,6 +12,47 @@ import {
 } from '../../core/canvas-client.js';
 
 export const SUBCOMMANDS = ['list', 'info', 'new', 'open', 'save'] as const;
+
+/**
+ * The repository the caller is standing in, as an identity.
+ *
+ * This is a read, not a write: asking which boards describe where you are is
+ * exactly a question about here. The identity is still resolved in this
+ * process, where the working directory belongs to the caller, and printed back,
+ * so nothing downstream has to guess (ADR 0011).
+ */
+function repoIdentityHere(): string {
+  const root = repoRootOf(process.cwd());
+  if (!root) {
+    throw new CliUsageError(
+      `${process.cwd()} is not inside a git repository, so there is no repository to look for. ` +
+      'Name one with --repo <host/owner/name>, or drop the filter to list every board.'
+    );
+  }
+  return repoIdentityAt(root);
+}
+
+/** The listing as prose: what an agent arriving in a repo reads. */
+function boardListText(result: Awaited<ReturnType<typeof listBoardsOnCanvas>>): string {
+  if (result.repo) {
+    if (result.boards.length === 0) {
+      return `No board in ${result.vault} has a node bound to ${result.repo} ` +
+        `(${result.scanned ?? 0} board(s) read).`;
+    }
+    const lines = [`Boards describing ${result.repo}:`];
+    for (const board of result.boards) {
+      const level = board.identity?.level ? `, ${board.identity.level}` : '';
+      lines.push(`  ${board.key} (${board.identity?.variant ?? 'current'}${level}, ${board.source ?? 'vault'})`);
+      for (const node of board.nodes ?? []) {
+        lines.push(`    ${node.name ?? node.node}${node.kind ? ` [${node.kind}]` : ''} -> ${node.path}`);
+      }
+    }
+    lines.push(`Open one with \`board open ${result.boards[0]!.key}\`.`);
+    return lines.join('\n');
+  }
+  if (result.boards.length === 0) return `No boards in ${result.vault} yet.`;
+  return [`Boards in ${result.vault}:`, ...result.boards.map(board => `  ${board.key}`)].join('\n');
+}
 
 // Boards are addressed as `name` or `name@variant` — `current` is the variant
 // that owns the bare name, because it is the architecture that exists.
@@ -34,8 +76,37 @@ export async function board(argv: string[]): Promise<void> {
   await ensureCanvasRunning();
 
   if (sub === 'list') {
-    parseArgs(rest, {});
-    const result = await listBoardsOnCanvas();
+    const { flags } = parseArgs(rest, {
+      repo: { takesValue: true },
+      here: { takesValue: false },
+      text: { takesValue: false }
+    });
+
+    // Which repository, if the question is "what describes this code" rather
+    // than "what boards are there". --here reads the working directory, which
+    // on a command line is the caller's own; the identity it found is echoed,
+    // and the server is only ever given an identity (ADR 0011).
+    let repo: string | undefined;
+    if (flags.here) {
+      if (typeof flags.repo === 'string') throw new CliUsageError('--here and --repo say the same thing twice; pick one.');
+      repo = repoIdentityHere();
+      note(`Standing in ${repo}.`);
+    } else if (typeof flags.repo === 'string') {
+      repo = flags.repo;
+    }
+
+    const result = await listBoardsOnCanvas(repo);
+    // A canvas server older than this CLI ignores ?repo= and answers with every
+    // board. Silently handing that back as "the boards describing your repo"
+    // would be a wrong answer wearing a right answer's clothes.
+    if (repo && !result.repo) {
+      throw new Error(
+        'The canvas server is older than this CLI and ignored the repository filter, so this would ' +
+        'have listed every board as though each described ' + repo + '. Restart it (`canvas stop` ' +
+        'then `canvas start`) and try again.'
+      );
+    }
+
     // Two notes at one address. Only one of them can be opened, so this is
     // said out loud rather than left in the JSON (ADR 0010).
     const collisions = (result.boards ?? []).filter(entry => entry.collidesWith?.length);
@@ -49,9 +120,16 @@ export async function board(argv: string[]): Promise<void> {
         `Board names are case-insensitive, so only ${entry.file} is reachable. Rename or delete the others.`
       );
     }
+
+    if (flags.text) {
+      process.stdout.write(boardListText(result) + '\n');
+      return;
+    }
     printJson({
       success: true,
       vault: result.vault,
+      ...(result.repo ? { repo: result.repo, scanned: result.scanned } : {}),
+      ...(result.unreadable ? { unreadable: result.unreadable } : {}),
       boards: result.boards,
       open: result.open,
       onScreen: result.onScreen

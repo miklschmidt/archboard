@@ -406,8 +406,13 @@ export const tools: Tool[] = [
   },
   {
     name: 'list_boards',
-    description: "Every board in the vault, plus which ones are open in this session and which one the canvas is currently holding. A board is a named, persisted diagram; the canvas shows exactly one at a time. Call this before opening a board to see what exists.",
-    inputSchema: { type: 'object', properties: {} }
+    description: "Every board in the vault, plus which ones are open in this session and which pane is showing what. A board is a named, persisted diagram; a pane shows exactly one at a time. Call this before opening a board to see what exists. Pass repo to ask the other question instead: WHICH BOARDS DESCRIBE A REPOSITORY. That answers from the bindings on the boards themselves, so it finds a system board covering five repositories that is named after none of them, and each matching board comes back with the nodes bound to that repo.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        repo: { type: 'string', description: 'Repository identity (host/owner/name). Narrows the listing to boards with at least one node bound to that repository. An identity, never a path: this server has no working directory it could resolve one against (ADR 0011).' }
+      }
+    }
   },
   {
     name: 'open_board',
@@ -544,8 +549,8 @@ export const tools: Tool[] = [
         },
         name: { type: 'string', description: "What to call the node. Defaults to the label on the largest selected shape." },
         node: { type: 'string', description: 'Explicit node id (slugified). Omit to derive one from the name; pass an existing id to re-promote or to join an identity used on another board.' },
-        path: { type: 'string', description: 'Bind the node to code: a path, absolute or relative to the working directory. Repo identity, branch and commit are resolved from git.' },
-        repo: { type: 'string', description: 'Repository identity (host/owner/name) when it cannot be resolved from git.' },
+        path: { type: 'string', description: 'Bind the node to code: an ABSOLUTE path, or a path relative to the repo named in `repo`. A bare relative path is refused here, because this server has no working directory you can set, so resolving one would land on whatever directory the client happened to start it in (ADR 0011). Branch and commit come from git.' },
+        repo: { type: 'string', description: 'Repository identity (host/owner/name). With a relative `path`, this is what the path is resolved against, through the registry of checkouts on the machine running archboard, which is how one board can bind nodes in several repositories. Also usable with an absolute path to record an identity git would not give.' },
         branch: { type: 'string', description: 'Branch at which the binding is confirmed. Defaults to the checked-out branch.' },
         commit: { type: 'string', description: 'Commit at which the binding is confirmed. Defaults to HEAD.' },
         variant: { type: 'string', description: "Which variant of the board this node belongs to. Defaults to 'current' — the architecture that exists." },

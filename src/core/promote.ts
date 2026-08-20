@@ -1,7 +1,8 @@
-import { execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { ServerElement } from '../types.js';
+import { git, repoIdentityAt, repoRootOf } from './git.js';
+import { checkoutFor, knownRepoNames, rememberRepo } from './repo-registry.js';
 import {
   DEFAULT_FILL_STYLE,
   DEFAULT_SHAPE_BACKGROUND,
@@ -145,83 +146,153 @@ export interface BindingRequest {
   commit?: string;
 }
 
+export type BindingSource =
+  | 'path'       // the caller gave an absolute path
+  | 'registry'   // the caller named a repository, and it is checked out here
+  | 'cwd'        // resolved against the caller's working directory
+  | 'declared';  // recorded as stated; nothing on this machine to resolve it against
+
+/**
+ * Where a *relative* path is allowed to resolve from.
+ *
+ * There is no default, and that is the whole decision (ADR 0011). A surface
+ * with a shell has a working directory the caller chose and can see, so it says
+ * so; MCP has none it can express, so it says that instead and a relative path
+ * is refused there rather than resolved against whatever directory the client
+ * happened to spawn the server in.
+ */
+export type BindingOrigin =
+  | { kind: 'cwd'; dir: string }
+  | { kind: 'none'; surface: string };
+
 export interface ResolvedBinding {
   address: LogicalAddress;
-  link?: string;      // file:// URL, only when the path resolves on this machine
-  resolved: boolean;  // did we find a real repo?
-  note?: string;      // why not, when we didn't
+  link?: string;          // file:// URL, only when the path resolves on this machine
+  resolved: boolean;      // did we find a real repo?
+  resolvedFrom: BindingSource;  // what the address was resolved against, always reported
+  note?: string;          // said out loud whenever the answer is not simply what the caller named
 }
 
-function git(cwd: string, args: string[]): string | undefined {
-  try {
-    return execFileSync('git', args, {
-      cwd,
-      encoding: 'utf-8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-      timeout: 5000
-    }).trim() || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-// Turn a git remote URL into a stable identity: host/owner/name, with the
-// scheme, credentials, and .git suffix stripped so ssh and https clones of the
-// same repo produce the same string.
-export function repoIdentityFromRemote(remote: string): string {
-  let url = remote.trim().replace(/\.git$/, '');
-  url = url.replace(/^[a-z+]+:\/\//i, '');
-  url = url.replace(/^[^@/]+@/, '');   // user@ / token@
-  url = url.replace(':', '/');          // scp-style git@host:owner/name
-  return url.replace(/\/+$/, '');
-}
-
-// Deepest existing directory at or above `p` — a binding may legitimately name
-// a file that does not exist yet (a proposal), and we still want the repo.
-function existingDir(p: string): string | undefined {
-  let dir = fs.existsSync(p) && fs.statSync(p).isDirectory() ? p : path.dirname(p);
-  for (let i = 0; i < 64; i++) {
-    if (fs.existsSync(dir)) return dir;
-    const parent = path.dirname(dir);
-    if (parent === dir) return undefined;
-    dir = parent;
-  }
-  return undefined;
-}
-
-// Resolve a binding request into a logical address. Never throws for an
-// unresolvable path: an unresolved binding is still worth recording — it is a
-// statement about intent — it just does not get a `link`.
-export function resolveBinding(request: BindingRequest, cwd = process.cwd()): ResolvedBinding {
+/**
+ * Resolve a binding request into a logical address.
+ *
+ * Four ways a path can find its repository, in order of how firmly the caller
+ * named it: an absolute path, a repository identity looked up in the checkout
+ * registry, the caller's own working directory, or nothing at all. In that last
+ * case the address is still recorded, because it is a statement about intent,
+ * it just gets no link.
+ *
+ * Never throws for a path that does not resolve. It throws for a path that
+ * *cannot* resolve by intent: a relative path on a surface with no working
+ * directory, where any answer would be an accident.
+ */
+export function resolveBinding(request: BindingRequest, origin: BindingOrigin): ResolvedBinding {
   const confirmedAt = new Date().toISOString();
   const raw = request.path.trim();
-  const absolute = path.resolve(cwd, raw);
-  const searchDir = existingDir(absolute);
-  const root = searchDir ? git(searchDir, ['rev-parse', '--show-toplevel']) : undefined;
+  const named = typeof request.repo === 'string' && request.repo.trim() ? request.repo.trim() : undefined;
 
-  // Caller-supplied fields always win; git only fills the gaps.
+  // The address exactly as the caller stated it: what gets recorded when this
+  // machine has nothing to check it against.
+  const asStated = (): LogicalAddress => ({
+    ...(named ? { repo: named } : {}),
+    path: raw.replace(/^\.\//, ''),
+    ...(request.branch ? { branch: request.branch } : {}),
+    ...(request.commit ? { commit: request.commit } : {}),
+    confirmedAt
+  });
+
+  let resolvedFrom: BindingSource;
+  let baseDir: string;
+
+  if (path.isAbsolute(raw)) {
+    resolvedFrom = 'path';
+    baseDir = path.parse(raw).root;
+  } else if (named) {
+    const checkout = checkoutFor(named);
+    if (!checkout) {
+      return {
+        address: asStated(),
+        resolved: false,
+        resolvedFrom: 'declared',
+        note:
+          `"${named}" is not a checkout archboard knows on this machine, so ${raw} was recorded as you ` +
+          `stated it, with no link. Register the checkout by running \`repo add <dir>\` inside it, or bind ` +
+          `with an absolute path. ${registeredHere()}`
+      };
+    }
+    resolvedFrom = 'registry';
+    baseDir = checkout;
+  } else if (origin.kind === 'cwd') {
+    resolvedFrom = 'cwd';
+    baseDir = origin.dir;
+  } else {
+    throw new PromotionError(
+      `"${raw}" is a relative path and ${origin.surface} has no working directory to resolve it against. ` +
+      'A client without a shell cannot set one, so the only directory available is whichever one this ' +
+      'process happened to be started in, which nobody chose (ADR 0011). Name what you mean instead: an ' +
+      'absolute path, or a repository plus a path inside it (repo "github.com/acme/payments", path ' +
+      `"src/service.ts"). ${registeredHere()}`
+    );
+  }
+
+  const absolute = path.resolve(baseDir, raw);
+  const root = repoRootOf(absolute);
+  const exists = fs.existsSync(absolute);
+
   if (!root) {
-    const address: LogicalAddress = {
-      ...(request.repo ? { repo: request.repo } : {}),
-      path: raw.replace(/^\.\//, ''),
-      ...(request.branch ? { branch: request.branch } : {}),
-      ...(request.commit ? { commit: request.commit } : {}),
-      confirmedAt
-    };
+    const where = resolvedFrom === 'cwd' ? ` (looked in the working directory ${baseDir})` : '';
     return {
-      address,
+      address: asStated(),
       resolved: false,
-      note: fs.existsSync(absolute)
-        ? `${raw} is not inside a git repository — recorded the logical address without a repo identity, and no link.`
-        : `${raw} does not resolve on this machine — recorded the logical address as given, and no link.`
+      resolvedFrom,
+      note: exists
+        ? `${raw} is not inside a git repository${where} — recorded the logical address without a repo identity, and no link.`
+        : `${raw} does not resolve on this machine${where} — recorded the logical address as given, and no link.`
     };
   }
 
-  const remote = git(root, ['remote', 'get-url', 'origin']);
-  const repo = request.repo ?? (remote ? repoIdentityFromRemote(remote) : path.basename(root));
+  const found = repoIdentityAt(root);
+
+  // A registry entry that now points at some other repository. The path just
+  // resolved into the wrong checkout, so nothing here is trustworthy: say so
+  // and record the address as stated rather than binding to the wrong file.
+  if (resolvedFrom === 'registry' && found !== named) {
+    return {
+      address: asStated(),
+      resolved: false,
+      resolvedFrom: 'declared',
+      note:
+        `The checkout registered for "${named}" (${root}) is now ${found}, so ${raw} was recorded as you ` +
+        `stated it, with no link. Re-register it with \`repo add <dir>\` from the right checkout.`
+    };
+  }
+
+  // What archboard just learned: this identity is checked out here. The
+  // registry fills itself from ordinary work, so the next promotion into this
+  // repo can name it from anywhere.
+  rememberRepo(found, root);
+
+  // The caller's own words still win over git's, because they may be recording
+  // a binding for a repo this checkout is a fork or a mirror of. A disagreement
+  // is still worth saying out loud.
+  const repo = named ?? found;
   const relative = path.relative(root, absolute) || '.';
   const branch = request.branch ?? git(root, ['rev-parse', '--abbrev-ref', 'HEAD']);
   const commit = request.commit ?? git(root, ['rev-parse', 'HEAD']);
+
+  const notes: string[] = [];
+  if (resolvedFrom === 'cwd') {
+    notes.push(
+      `Resolved "${raw}" against the working directory ${baseDir}, which is ${found}. ` +
+      'You named no repository, so check that is the one you meant. --repo or an absolute path says it outright.'
+    );
+  }
+  if (named && named !== found) {
+    notes.push(`You said --repo ${named}, but ${absolute} is in ${found}. Recorded ${named}, as asked.`);
+  }
+  if (!exists) {
+    notes.push(`${relative} does not exist in ${repo} yet — address recorded, no link.`);
+  }
 
   const address: LogicalAddress = {
     repo,
@@ -233,13 +304,20 @@ export function resolveBinding(request: BindingRequest, cwd = process.cwd()): Re
 
   // Only link to something that is actually here. A bogus file:// URL renders
   // as a tappable affordance on the board that opens nothing.
-  const exists = fs.existsSync(absolute);
   return {
     address,
     ...(exists ? { link: `file://${absolute}` } : {}),
     resolved: true,
-    ...(exists ? {} : { note: `${relative} does not exist in ${repo} yet — address recorded, no link.` })
+    resolvedFrom,
+    ...(notes.length ? { note: notes.join(' ') } : {})
   };
+}
+
+function registeredHere(): string {
+  const known = knownRepoNames();
+  return known.length
+    ? `Registered on this machine: ${known.join(', ')}.`
+    : 'No repository is registered on this machine yet.';
 }
 
 export function formatAddress(a: LogicalAddress): string {
