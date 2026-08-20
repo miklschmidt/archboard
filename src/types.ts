@@ -399,10 +399,8 @@ export function validateElement(element: Partial<ServerElement>): element is Ser
   return true;
 }
 
-// Helper function to generate unique IDs
-export function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).substring(2);
-}
+// Ids are minted in src/core/ids.ts and nowhere else. See the header there for
+// why the shape they come out in is not negotiable.
 
 // Normalize fontFamily from string names to numeric values that Excalidraw expects
 // Excalidraw uses: 1 = Virgil (handwritten), 2 = Helvetica (sans-serif), 3 = Cascadia (monospace)

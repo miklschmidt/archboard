@@ -37,8 +37,10 @@ const {
   boundTextPlacement,
   recentreBoundTexts,
   boundTextDrift,
-  rescueDriftedBoundTexts
+  rescueDriftedBoundTexts,
+  labelTextIdFor
 } = await import(join(__dirname, '..', 'src', 'core', 'labels.ts'));
+const { isBlockId } = await import(join(__dirname, '..', 'src', 'core', 'ids.ts'));
 
 let failures = 0;
 let checks = 0;
@@ -52,8 +54,13 @@ function assert(condition, message) {
 
 // ─── The three parties ───────────────────────────────────────
 
-let minted = 0;
-const freshId = () => `txt-${++minted}`;
+// The real converter names what it mints with a 21-character nanoid. The
+// length is modelled because it is load-bearing: an id that long cannot be an
+// Obsidian block reference, so the note writer used to rename it — which is
+// how a text element got renamed out from under an open editor (TASK-069).
+const NANOID_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-';
+const freshId = () =>
+  Array.from({ length: 21 }, () => NANOID_ALPHABET[Math.floor(Math.random() * NANOID_ALPHABET.length)]).join('');
 
 /**
  * Excalidraw's convertToExcalidrawElements, in the one respect that matters:
@@ -302,6 +309,77 @@ const CYCLES = 25;
   assert(
     texts.map((t) => t.text).sort().join('|') === 'AuthService|Gateway|HTTP',
     `label text was lost: ${texts.map((t) => t.text).join('|')}`
+  );
+}
+
+// --- a label is named here, not by the converter (TASK-069) -----------------
+//
+// The converter names what it mints, and what it mints is 21 characters, which
+// no Obsidian block reference can hold. Under ADR 0015 the note is the board,
+// so the note writer's rename of that id is what the browser gets back — and a
+// text element renamed under an open editor silently discards what is typed
+// into it. So the id is decided before the converter runs, in the shape every
+// id is minted in, and it does not move afterwards.
+
+{
+  const store = boardOf(drawn());
+  const baseline = new Map();
+  const seen = [];
+  for (let i = 0; i < CYCLES; i++) {
+    cycle(store, baseline, { contain: true });
+    seen.push(boundTextsByContainer([...store.values()]).get('svc')?.[0]);
+  }
+
+  const labels = boundTextsByContainer([...store.values()]);
+  const stray = ['svc', 'gw', 'wire']
+    .map((container) => labels.get(container)?.[0])
+    .filter((id) => !isBlockId(id));
+  assert(stray.length === 0, `a label kept an id the note writer would rename: ${stray.join(', ')}`);
+
+  assert(
+    labels.get('svc')?.[0] === labelTextIdFor('svc'),
+    `the shape's label is ${labels.get('svc')?.[0]}, not the id derived from its container`
+  );
+  assert(new Set(seen).size === 1, `the label's id moved across cycles: ${[...new Set(seen)].join(' -> ')}`);
+
+  // And the rename path keeps it: the label still answers to the same name
+  // after its text changes.
+  store.set('svc', { ...store.get('svc'), label: { text: 'IdentityService' } });
+  for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+  assert(
+    boundTextsByContainer([...store.values()]).get('svc')?.[0] === seen[0],
+    'renaming a label renamed the element carrying it'
+  );
+}
+
+{
+  // The id is derived from the container, so a label cleared and written again
+  // must not be handed the cleared element's name back — the deleted element is
+  // still in the document, and two elements cannot share a name.
+  const scene = [
+    { id: 'svc', type: 'rectangle', x: 0, y: 0, width: 200, height: 80, label: { text: 'AuthService' } },
+    { id: labelTextIdFor('svc'), type: 'text', containerId: 'svc', text: '', isDeleted: true }
+  ];
+  const planned = planLabelExpansion(scene);
+  const wanted = planned.reuse.get('svc') ?? { id: undefined };
+  assert(wanted.id !== undefined, 'a label with no live text element was not named');
+  assert(wanted.id !== labelTextIdFor('svc'), 'a re-expanded label took the cleared element’s name');
+  assert(isBlockId(wanted.id), `the salted name is not a block id (${wanted.id})`);
+
+  // A label that says nothing is not expanded, so there is nothing to name.
+  assert(
+    planLabelExpansion([{ id: 'bare', type: 'rectangle', x: 0, y: 0, width: 10, height: 10 }]).reuse.size === 0,
+    'an unlabelled shape was given a label id'
+  );
+
+  // And the cleared element keeps its own name through the adoption, so the
+  // scene does not end up with two elements answering to one.
+  const adopted = adoptReusedLabelIds(expand(planned.elements), planned.reuse);
+  const ids = adopted.map((element) => element.id);
+  assert(new Set(ids).size === ids.length, `adoption produced a duplicate id: ${ids.join(', ')}`);
+  assert(
+    adopted.some((element) => element.isDeleted && element.id === labelTextIdFor('svc')),
+    'the cleared label was renamed onto the new one'
   );
 }
 

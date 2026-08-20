@@ -1,5 +1,6 @@
 import { ServerElement, normalizeFontFamily } from '../types.js';
-import { LabelledElement, labelAnchorOf } from './labels.js';
+import { LabelledElement, labelAnchorOf, labelTextIdFor } from './labels.js';
+import { fnv1a } from './ids.js';
 
 // Expand the server's agent-friendly element format into real Excalidraw
 // elements: strip server metadata, add Excalidraw defaults, generate bound
@@ -37,16 +38,6 @@ export function canonicalizeKeys(v: any): any {
   return v;
 }
 
-// FNV-1a 32-bit hash — stable positive int from a string
-function fnv1a(str: string): number {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 0x01000193);
-  }
-  return h >>> 0;
-}
-
 export function expandElementsForExport(
   sourceElements: ServerElement[],
   options: ExpandOptions = {}
@@ -66,6 +57,10 @@ export function expandElementsForExport(
   const cleanedExportElements: Record<string, any>[] = [];
   const boundTextElements: Record<string, any>[] = [];
   let indexCounter = 0;
+
+  // Every name the scene already spends, so a label expanded here cannot be
+  // handed one of them.
+  const taken = new Set<string>(sourceElements.map((el) => el.id));
 
   function makeBaseElement(el: any, rest: any): Record<string, any> {
     return {
@@ -164,7 +159,12 @@ export function expandElementsForExport(
     const hasBoundText = Array.isArray(base.boundElements) &&
       base.boundElements.some((b: any) => b?.type === 'text');
     if (labelText && !hasBoundText) {
-      const textId = `${base.id}-label`;
+      // Named the same way the browser's expansion names it (labels.ts), so
+      // whichever of the two gets there first, the label keeps one name — and
+      // that name is short enough to be a block reference, so writing the note
+      // does not rename it (TASK-069).
+      const textId = labelTextIdFor(base.id, taken);
+      taken.add(textId);
       // Add binding reference to parent
       base.boundElements = [
         ...(Array.isArray(base.boundElements) ? base.boundElements : []),

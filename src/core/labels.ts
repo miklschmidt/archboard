@@ -45,6 +45,25 @@
 // with nothing on screen to show it (`boundTextPlacement`, TASK-034).
 
 import { measureLinear } from './geometry.js';
+import { derivedId, type IdsInUse } from './ids.js';
+
+/**
+ * The name the text element for a container's label answers to.
+ *
+ * Derived from the container rather than invented, so the two places that
+ * expand a label — the browser, through `convertToExcalidrawElements`, and the
+ * server, through `expandElementsForExport` — arrive at the same name without
+ * either telling the other. Derived in the shape every id is minted in, so the
+ * note writer has nothing to rename and an echo cannot rename a label out from
+ * under somebody typing into it (`ids.ts`, TASK-069).
+ *
+ * `inUse` is every id on the board, including deleted ones: a label expanded
+ * where an earlier one was cleared must not be handed the cleared element's
+ * name back.
+ */
+export function labelTextIdFor(containerId: string, inUse?: IdsInUse): string {
+  return derivedId(`${containerId}:label`, inUse);
+}
 
 /** A `boundElements` entry: a shape's forward reference to a text or arrow. */
 export interface BoundRef {
@@ -146,7 +165,7 @@ export function boundTextsByContainer(
 // Containment
 // ---------------------------------------------------------------------------
 
-/** The identity a re-expanded label must adopt: never a new one. */
+/** The identity an expanded label must adopt: never one the converter chose. */
 export interface ReusedLabel {
   /** The text element id the expansion has to answer to. */
   id: string;
@@ -171,7 +190,10 @@ export interface LabelExpansion<T> {
  *
  * Three cases, and the middle one is the whole bug:
  *
- *   no bound text yet     the label is expanded normally, and gets one
+ *   no bound text yet     the label is expanded normally, and the text element
+ *                         it becomes is named here rather than by the
+ *                         converter, which invents a 21-character nanoid the
+ *                         note writer would then have to rename (TASK-069)
  *   bound text, same text the label is spent: the seed is removed so the
  *                         converter has nothing to expand, and the text
  *                         element is passed through untouched — same id, same
@@ -194,7 +216,6 @@ export function planLabelExpansion<T extends LabelledElement>(
   elements: readonly T[]
 ): LabelExpansion<T> {
   const labelled = boundTextsByContainer(elements);
-  if (labelled.size === 0) return { elements: elements as T[], reuse: new Map() };
 
   const byId = new Map<string, T>();
   for (const element of elements) byId.set(element.id, element);
@@ -202,10 +223,25 @@ export function planLabelExpansion<T extends LabelledElement>(
   const reuse = new Map<string, ReusedLabel>();
   const withheld = new Set<string>();
 
+  // Every id the scene holds, deleted ones included: a name is taken until the
+  // element carrying it is gone from the document, not merely struck out.
+  const taken = new Set<string>(byId.keys());
+
   const planned = elements.map((element) => {
     if (isText(element)) return element;
     const textIds = labelled.get(element.id);
-    if (!textIds || textIds.length === 0) return element;
+    if (!textIds || textIds.length === 0) {
+      // A label with no text element yet. The converter is about to mint one
+      // and name it itself; name it here instead, so the id is in the shape
+      // every id is minted in and nothing downstream has cause to change it.
+      const fresh = labelSeedOf(element);
+      if (typeof fresh === 'string' && fresh !== '') {
+        const id = labelTextIdFor(element.id, taken);
+        taken.add(id);
+        reuse.set(element.id, { id });
+      }
+      return element;
+    }
 
     const keeper = byId.get(textIds[0] as string);
     if (!keeper) return element;
@@ -267,6 +303,10 @@ export function adoptReusedLabelIds<T extends LabelledElement>(
   const rename = new Map<string, ReusedLabel>();
   for (const element of converted) {
     if (!isText(element)) continue;
+    // A struck-out text element is the record of a label somebody cleared, not
+    // the label. Renaming it onto the identity a *new* expansion was promised
+    // would put two elements under one name.
+    if (!live(element)) continue;
     const container = element.containerId;
     if (typeof container !== 'string') continue;
     const wanted = reuse.get(container);

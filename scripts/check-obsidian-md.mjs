@@ -14,9 +14,13 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const src = (rel) => join(__dirname, '..', 'src', rel);
 const { wrapSceneAsObsidianMd, extractSceneJsonFromObsidianMd } = await import(
-  join(__dirname, '..', 'src', 'core', 'obsidian-md.ts')
+  src('core/obsidian-md.ts')
 );
+const { mintId, derivedId, isBlockId } = await import(src('core/ids.ts'));
+const { prepareElement } = await import(src('core/normalize.ts'));
+const { buildScene } = await import(src('core/scene-io.ts'));
 
 let failures = 0;
 let checks = 0;
@@ -219,6 +223,114 @@ const savedCustom = wrapSceneAsObsidianMd(scene([rectangle]), custom, {
 assert(savedCustom.includes('  - payments'), 'frontmatter: custom keys lost');
 assert(savedCustom.includes('archboard-board: payments'), 'frontmatter: identity key not written');
 checkStable('frontmatter round-trip', savedCustom, scene([rectangle]));
+
+// --- ids: the writer has nothing to rename (TASK-069) ------------------------
+//
+// A text element's block id is its element id, and a block reference cannot
+// hold more than eight characters, so a longer one has to be renamed on the
+// way into a note. Renaming is the most dangerous act in the system: with a
+// text editor open on a bound label, applying a document in which that element
+// had been renamed discarded five typed characters with no error and no
+// warning. So no id archboard mints is ever long enough to need it.
+
+const idsOf = (elements) => elements.map((el) => el.id);
+const idsInNote = (note) => idsOf(JSON.parse(extractSceneJsonFromObsidianMd(note)).elements);
+
+{
+  // A board the way the server builds one: a labelled shape, a labelled arrow
+  // and a standalone text, through the same two functions `board save` uses.
+  const drawn = [
+    prepareElement({ type: 'rectangle', x: 0, y: 0, width: 200, height: 100, label: { text: 'AuthService' } }),
+    prepareElement({ type: 'arrow', x: 0, y: 0, points: [[0, 0], [220, 0]], label: { text: 'HTTP' } }),
+    prepareElement({ type: 'text', x: 0, y: 200, text: 'a note somebody left' })
+  ];
+  const { scene: built } = buildScene(drawn);
+  const minted = idsOf(built.elements);
+  assert(minted.length === 5, `server board: expected 5 elements after expansion, got ${minted.length}`);
+  assert(
+    minted.every(isBlockId),
+    `server board: minted ids that cannot be block references — ${minted.filter((id) => !isBlockId(id)).join(', ')}`
+  );
+
+  const note = wrapSceneAsObsidianMd(built);
+  const written = idsInNote(note);
+  assert(
+    written.join(',') === minted.join(','),
+    `server board: saving renamed ids — ${minted.join(',')} became ${written.join(',')}`
+  );
+  // Renaming rewires references, so a stranded binding is the visible symptom.
+  for (const el of JSON.parse(extractSceneJsonFromObsidianMd(note)).elements) {
+    if (el.containerId) {
+      assert(
+        written.includes(el.containerId),
+        `server board: text ${el.id} points at a container that is not in the note`
+      );
+      assert(
+        note.includes(`^${el.id}`),
+        `server board: bound text ${el.id} has no block reference in the note`
+      );
+    }
+  }
+  checkStable('server board', note, built);
+}
+
+{
+  // The four ids measured in docs/design/server-is-the-truth.md §4, with the
+  // renames the note writer gave them. Boards already in the vault were
+  // written through that derivation, so it may not move: if it did, opening
+  // one and saving it would rename every text element it holds.
+  const measured = [
+    ['text-plain', 'Koh9JpWT'],
+    ['0fiCOql98KV5AVNsb7yti', 'QO4jtmur'],
+    ['M0uzDDmr3XAuPV1LLV0qO', 'vbJqUUt6'],
+    ['GOThTByyWuX7VIo4b-EbG', 'ct9GeNvu']
+  ];
+  for (const [before, after] of measured) {
+    assert(derivedId(before) === after, `vault compatibility: ${before} now derives ${derivedId(before)}, not ${after}`);
+  }
+
+  // And end to end: a note written before this change, reopened and saved,
+  // changes no id.
+  const foreign = scene([
+    { ...rectangle, id: 'M0uzDDmr3XAuPV1LLV0qO' },
+    { ...text, id: '0fiCOql98KV5AVNsb7yti' },
+    { ...impostorText, id: 'text-plain' }
+  ]);
+  const vaultNote = wrapSceneAsObsidianMd(foreign);
+  const settled = idsInNote(vaultNote);
+  assert(
+    settled.join(',') === 'M0uzDDmr3XAuPV1LLV0qO,QO4jtmur,Koh9JpWT',
+    `vault compatibility: unexpected ids in the note — ${settled.join(',')}`
+  );
+  const reopened = JSON.parse(extractSceneJsonFromObsidianMd(vaultNote));
+  const resaved = idsInNote(wrapSceneAsObsidianMd(reopened, vaultNote));
+  assert(
+    resaved.join(',') === settled.join(','),
+    `vault compatibility: opening and saving renamed something — ${settled.join(',')} became ${resaved.join(',')}`
+  );
+}
+
+{
+  // Collision handling is the mint's, not the note writer's: two ids that
+  // derive the same block id get different ones, and a mint never returns an
+  // id already spoken for.
+  const taken = new Set(['Koh9JpWT']);
+  const second = derivedId('text-plain', taken);
+  assert(second !== 'Koh9JpWT', 'collision: derivedId handed out a name already taken');
+  assert(isBlockId(second), `collision: the salted derivation is not a block id (${second})`);
+  assert(derivedId('text-plain', taken) === second, 'collision: the salted derivation is not deterministic');
+
+  // mintId is random, so the way to see the retry is to refuse the first few
+  // it offers and check none of them came back.
+  const refused = [];
+  const fussy = { has: (id) => (refused.length < 3 ? (refused.push(id), true) : false) };
+  const eventual = mintId(fussy);
+  assert(refused.length === 3, `collision: mintId offered ${refused.length} ids before settling, expected 3`);
+  assert(!refused.includes(eventual), 'collision: mintId returned an id it had been told was taken');
+
+  const notBlockIds = Array.from({ length: 200 }, () => mintId()).filter((id) => !isBlockId(id));
+  assert(notBlockIds.length === 0, `mintId produced ${notBlockIds.length} ids that are not block ids`);
+}
 
 if (failures > 0) {
   console.error(`\n${failures} of ${checks} obsidian-md checks failed`);
