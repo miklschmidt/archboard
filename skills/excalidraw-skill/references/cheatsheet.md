@@ -108,7 +108,7 @@ The MCP surface for clients that cannot run the CLI. `scripts/check-surface-pari
 | Tool | Description | Required params |
 |------|-------------|-----------------|
 | `describe_scene` | AI-readable scene description (types, positions, labels, connections, bounding box) | `board` |
-| `get_canvas_screenshot` | Returns PNG image of canvas for visual verification | (optional) `background` |
+| `get_canvas_screenshot` | Returns a PNG of one pane for visual verification; name the `pane` once two are open, or you photograph the first while your board sits in the second | (optional) `background`, `pane` |
 | `get_resource` | Get scene/library/theme/elements | `resource`, plus `board` for `scene` and `elements` |
 | `get_selection` | What the human has selected — the elements they mean by "this" / "these", with node kind and binding | (none) |
 | `get_panes` | What the human is looking at, pane by pane: position on screen, board + variant, how much is in view, what is picked there. View state only | (none) |
@@ -126,7 +126,7 @@ The MCP surface for clients that cannot run the CLI. `scripts/check-surface-pari
 |------|-------------|-----------------|
 | `export_scene` | Export to .excalidraw JSON (a `.md` filePath → Obsidian .excalidraw.md) | `board`, (optional) `filePath` |
 | `import_scene` | Import from .excalidraw JSON or Obsidian .excalidraw.md | `board`, `mode` ("replace"\|"merge"), `filePath` or `data` |
-| `export_to_image` | Export to PNG/SVG from the pane that answers for the browser, whatever board it holds | `format` ("png"\|"svg"), (optional) `filePath`, `background` |
+| `export_to_image` | Export one pane to PNG/SVG, whatever board that pane holds | `format` ("png"\|"svg"), (optional) `filePath`, `background`, `pane` |
 | `export_to_excalidraw_url` | Upload & get shareable excalidraw.com URL | `board` |
 
 ### State Management
@@ -149,6 +149,15 @@ Requires `ARCHBOARD_VAULT`. A pane holds exactly one board; two panes hold two. 
 | `save_board` | Write a board to the vault; **refused if the note changed on disk** (`force` overwrites anyway) | `board` |
 | `compare_boards` | Semantic diff between two variants, joined on node identity (`customData.archboard.node`). Complete and unsummarised — narrate it yourself. Reads a board from memory when it is open, else from its note; the canvas is untouched. Check `summary.comparable` and `layout.cannotExpress` before making claims | `from` (`to` optional) |
 
+### Panes
+
+A pane is a slot holding one board. Two panes are how the architecture that exists sits beside a proposal, and both of these need the canvas open in a browser.
+
+| Tool | Description | Required params |
+|------|-------------|-----------------|
+| `open_pane` | Split the canvas and open a board into the **new** pane, leaving the existing one alone. Cannot target an existing pane, so it cannot overwrite what is on screen. Two panes is the maximum | (optional) `board` |
+| `close_pane` | Close one pane; its board is untouched and stays open on the canvas. The last pane cannot be closed | `pane` (`left`, `right`, `1`…) |
+
 ### Stencil Library
 
 | Tool | Description | Required params |
@@ -160,7 +169,7 @@ Requires `ARCHBOARD_VAULT`. A pane holds exactly one board; two panes hold two. 
 
 | Tool | Description | Required params |
 |------|-------------|-----------------|
-| `set_viewport` | Control camera: zoom-to-fit all/selected elements, center one element without changing zoom, or manual zoom/scroll (needs browser); specify one mode per request | (optional) `scrollToContent`, `scrollToElementIds`, `viewportZoomFactor` (0, 1], `scrollToElementId`, `zoom`, `offsetX`, `offsetY` |
+| `set_viewport` | Control one pane's camera: zoom-to-fit all/selected elements, center one element without changing zoom, or manual zoom/scroll (needs browser); specify one mode per request. `pane` picks which half moves when two are open | (optional) `scrollToContent`, `scrollToElementIds`, `viewportZoomFactor` (0, 1], `scrollToElementId`, `zoom`, `offsetX`, `offsetY`, `pane` |
 
 ### Design Guide
 

@@ -8,7 +8,7 @@
 // then be broken on the one day someone opens archboard in Claude Desktop —
 // which is the whole reason for keeping it. This check is what notices.
 //
-// Parity is not one-to-one. 37 tools against 28 commands, because a command
+// Parity is not one-to-one. 39 tools against 30 commands, because a command
 // may take a subcommand: `arrange group` and `board save` are each one tool's
 // worth of surface. So the comparison is between MCP tool names and CLI
 // ENTRIES — a command, or a command plus subcommand — paired explicitly below.
@@ -46,6 +46,9 @@ const PAIRS = [
   ['describe', ['describe_scene']],
   ['selection', ['get_selection']],
   ['panes', ['get_panes']],
+  ['pane open', ['open_pane']],
+  ['pane close', ['close_pane']],
+  ['viewport', ['set_viewport']],
   ['promote', ['promote_selection']],
   ['demote', ['demote_selection']],
   ['compare', ['compare_boards']],
@@ -94,8 +97,7 @@ const CLI_ONLY = {
 
 const MCP_ONLY = {
   read_diagram_guide: 'deliberate. The design guide is skill content (references/cheatsheet.md); an agent with a shell reads the file, a shell-less client cannot, so MCP hands it over.',
-  get_resource: 'upstream aggregate accessor kept for clients written against mcp_excalidraw. `scene`, `elements` and `library` all reduce to elements plus theme, which `query`, `describe` and `export` cover.',
-  set_viewport: 'CLI lags. Camera control exists over MCP and REST only; there is no `viewport` command yet.'
+  get_resource: 'upstream aggregate accessor kept for clients written against mcp_excalidraw. `scene`, `elements` and `library` all reduce to elements plus theme, which `query`, `describe` and `export` cover.'
 };
 
 // The cheatsheet is where an MCP client learns the tool names, because it
