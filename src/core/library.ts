@@ -17,6 +17,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { VAULT_STATE_DIR } from './board.js';
+import { writeFileAtomic } from './atomic-write.js';
 import { ARCHBOARD_VAULT } from './config.js';
 import { kept } from './hot.js';
 import logger from '../utils/logger.js';
@@ -186,7 +187,9 @@ function persist(state: LibraryState): void {
     archboard: { seeded: state.seeded, origins: state.origins }
   };
   fs.mkdirSync(path.dirname(state.file), { recursive: true });
-  fs.writeFileSync(state.file, JSON.stringify(document, null, 2), 'utf8');
+  // Atomic, like every other write into the vault (TASK-061). The library is
+  // one file every pane reads, and a torn one loses every stencil in it.
+  writeFileAtomic(state.file, JSON.stringify(document, null, 2));
 }
 
 /**

@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-20 20:14'
-updated_date: '2026-08-20 21:46'
+updated_date: '2026-08-20 22:28'
 labels: []
 dependencies:
   - TASK-070
@@ -70,10 +70,20 @@ EXPECT TO REWRITE CHECKS. `check-labels.mjs` has 128 checks and most of them are
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The agent-friendly shape is converted once, on write, at the API boundary, and reads return native elements with no conversion
-- [ ] #2 convertToExcalidrawElements is gone from the delivery path, along with restoreBindings, planLabelExpansion, adoptReusedLabelIds, dropSpentLabelSeeds, recenterBoundShapeTextElements and rescueStrayBoundTextElements
-- [ ] #3 Each of the twelve constants in the table matches Excalidraw, shown per field by a check
-- [ ] #4 The TASK-071 browser check asserts zero changed elements and is part of bun run test
-- [ ] #5 Text width and height follow whichever of TASK-070 three outcomes holds, and if it is the fallback, the limitation is written into ADR 0015 rather than left implicit
-- [ ] #6 bun run test is green; check-labels and check-obsidian-md may be rewritten rather than preserved
+- [x] #1 The agent-friendly shape is converted once, on write, at the API boundary, and reads return native elements with no conversion
+- [x] #2 convertToExcalidrawElements is gone from the delivery path, along with restoreBindings, planLabelExpansion, adoptReusedLabelIds, dropSpentLabelSeeds, recenterBoundShapeTextElements and rescueStrayBoundTextElements
+- [x] #3 Each of the twelve constants in the table matches Excalidraw, shown per field by a check
+- [x] #4 The TASK-071 browser check asserts zero changed elements and is part of bun run test
+- [x] #5 Text width and height follow whichever of TASK-070 three outcomes holds, and if it is the fallback, the limitation is written into ADR 0015 rather than left implicit
+- [x] #6 bun run test is green; check-labels and check-obsidian-md may be rewritten rather than preserved
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Productionise stage 3's measurer into src/core (font-file, font-layout, fonts, measure-text), cache in kept(), pin it with check-text-metrics against Chrome's numbers.
+2. Fix check-fixed-point's font gate: document.fonts cannot tell a loaded family from an absent one, so gate on a known Chrome width instead.
+3. Correct src/core/expand-elements.ts and run it at the API write boundary, so the board holds native elements.
+4. frontend/src/canvas/elements.ts stops converting on read; delete the six correction passes and the two label helpers behind them.
+5. Flip BASELINE to {}, add test:browser to the chain, empty the skip list, fold the browser job into the suite job.
+<!-- SECTION:PLAN:END -->
