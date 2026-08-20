@@ -66,7 +66,7 @@ for the reload; saving a file does not cause one.**
 ```bash
 bun run dev:canvas    # the canvas, reloadable
 bun run dev           # that plus vite on :5173, for frontend work
-./bin/canvas reload   # and this is what reloads it
+bun run reload   # and this is what reloads it
 ```
 
 `bun --hot` re-evaluates modules inside the running process, which is a
@@ -78,7 +78,7 @@ The trigger is a command because `bun --hot` re-evaluates the **whole module
 graph** on any file change, not the file you edited, and it does that inside a
 process holding work that exists nowhere else. `bun run dev:canvas` runs
 `src/dev-canvas.ts`, a tiny entry that bun watches; it re-imports the canvas
-only when `./bin/canvas reload` moves a reload token. So an ordinary save runs
+only when `bun run reload` moves a reload token. So an ordinary save runs
 ten statements and stops. A canvas started any other way refuses a reload with
 a 409 and says how to get one; `/health` reports `reloadable`.
 

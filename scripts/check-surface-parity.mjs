@@ -89,7 +89,6 @@ const CLI_ONLY = {
   start: 'process lifecycle on the host. MCP starts the canvas itself before any tool that needs it, and a shell-less client has no local process to manage.',
   stop: 'as `start`: stopping a local process is a shell act.',
   status: 'as `start`. A client that reaches the tools already has a live canvas behind them.',
-  reload: 'a maintainer command for developing archboard itself. It re-evaluates the canvas source in a process started with `bun run dev:canvas` (ADR 0014), which is a thing only somebody with that terminal open has done. Every other canvas refuses it.',
   apply: 'one process spawn instead of three, which is a CLI cost. An MCP client reaches the same state with the create/update/delete tools in one turn.',
   changes: 'MCP lags. The change feed landed CLI-first for the voice loop; an MCP client can read the board with `describe_scene` but cannot ask what changed.',
   'install-skill': 'installs skill files into a skills root on this machine — a filesystem act for the agent that has one.',

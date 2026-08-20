@@ -11,7 +11,7 @@
 // one token file nobody edits, so:
 //
 //   · saving a source file changes nothing at all
-//   · `archboard reload` re-evaluates the graph, and only then
+//   · `bun run reload` re-evaluates the graph, and only then
 //
 // The second claim is what survives one: the port stays bound, the sockets
 // stay open and stay subscribed, the boards keep their unsaved elements, the
