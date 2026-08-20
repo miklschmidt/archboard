@@ -256,6 +256,7 @@ const { boundTextDrift } = await import(dist('core/labels.js'));
 
 process.env.ARCHBOARD_SETTLE_MS = '60000';    // long, so only explicit settles fire
 const { changeFeed } = await import(dist('core/change-feed.js'));
+const { copyElements } = await import(dist('core/board-store.js'));
 
 {
   let elements = scene();
@@ -286,6 +287,38 @@ const { changeFeed } = await import(dist('core/change-feed.js'));
   const next = changeFeed.settle('payments');
   check('the next real change still becomes an event', next !== null && next.cursor === cursorBefore + 1);
   check('  and knows the agent made it', next?.origin === 'agent');
+
+  // The baseline is a deep copy, so an element edited in place is still seen
+  // (TASK-052). No route writes this way: they all replace the object. That is
+  // the point. A baseline sharing `customData` or `boundElements` with the
+  // live board moves when the board moves, and the diff then compares the
+  // board against itself and reports nothing, which is silence rather than a
+  // wrong answer and so is the hardest kind to notice.
+  {
+    const live = scene();
+    const readLive = () => live;
+    changeFeed.reset('inplace', identity, readLive);
+
+    const node = live.find(el => el.id === 'a');
+    node.customData.archboard.kind = 'datastore';
+    changeFeed.record('inplace', identity, readLive, 'agent');
+    const kindEvent = changeFeed.settle('inplace');
+    check('customData edited in place is still a change, so the baseline is a copy',
+      kindEvent !== null,
+      kindEvent ? '' : 'the feed diffed the board against itself and found nothing');
+
+    // The other half is measured on the copy itself, because pushing to
+    // boundElements is bookkeeping rather than a semantic change, so it
+    // produces no event either way and behaviour cannot tell the two apart.
+    const original = scene();
+    original[0].boundElements = [{ id: 'al', type: 'text' }];
+    const copy = copyElements(original);
+    original[0].customData.archboard.kind = 'queue';
+    original[0].boundElements.push({ id: 'ghost', type: 'text' });
+    check('  and the copy shares neither customData nor boundElements',
+      copy[0].customData.archboard.kind === 'gateway' && copy[0].boundElements.length === 1,
+      `kind=${copy[0].customData.archboard.kind} bound=${copy[0].boundElements.length}`);
+  }
 
   const net = changeFeed.coalesce(cursorBefore - 1, 'payments');
   check('a caller can ask for one net diff since a cursor rather than a replay',
