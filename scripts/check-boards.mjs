@@ -26,6 +26,7 @@ import WebSocket from 'ws';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = p => path.join(repoRoot, 'src', p);
+const { labelTextIdFor } = await import(src('core/labels.ts'));
 
 let failures = 0;
 const check = (label, cond, extra = '') => {
@@ -1065,6 +1066,57 @@ try {
     openedLower.status === 200 && path.basename(openedLower.body?.file ?? '') === 'Handover.excalidraw.md');
   check('  and is not reported as declaring a different board',
     openedLower.body?.declaredKey === undefined);
+
+  // --- saving a board renames nothing (TASK-069) --------------------------
+  //
+  // A text element's block id is its element id, so a note cannot hold one
+  // longer than eight characters and the writer renames anything longer.
+  // Under ADR 0015 the note is the board, which makes that rename the thing
+  // the browser gets back — and a text element renamed under an open editor
+  // discards what is typed into it without a word. Every id the server mints
+  // is therefore already short enough that the writer has nothing to do.
+
+  await api('POST', '/api/boards/new', { board: 'idcheck' });
+  const drawn = await api('POST', '/api/elements/batch?board=idcheck', {
+    elements: [
+      { type: 'rectangle', x: 0, y: 0, width: 200, height: 100, label: { text: 'AuthService' } },
+      { type: 'rectangle', x: 400, y: 0, width: 200, height: 100, label: { text: 'Gateway' } },
+      { type: 'arrow', x: 200, y: 50, points: [[0, 0], [200, 0]], label: { text: 'HTTP' } },
+      { type: 'text', x: 0, y: 300, text: 'a note somebody left' }
+    ]
+  });
+  check('a board is drawn for the id check', drawn.status === 200 || drawn.status === 201,
+    JSON.stringify(drawn.body?.error ?? '').slice(0, 120));
+
+  const stored = (await api('GET', '/api/elements?board=idcheck')).body?.elements ?? [];
+  const blockShaped = id => /^[A-Za-z0-9-]{1,8}$/.test(id);
+  const longIds = stored.map(el => el.id).filter(id => !blockShaped(id));
+  check('every id the server minted is short enough to be a block reference',
+    stored.length === 4 && longIds.length === 0, longIds.join(', '));
+
+  const savedIds = await api('POST', '/api/boards/save?board=idcheck');
+  check('  and the board saves', savedIds.status === 200, savedIds.body?.error);
+  const idNote = fs.readFileSync(savedIds.body.file, 'utf-8');
+  const sceneJson = JSON.parse(idNote.match(/```json\n([\s\S]*?)\n```/)[1]);
+  const inNote = sceneJson.elements.map(el => el.id);
+  check('  expanding the labels adds three text elements, not more',
+    sceneJson.elements.length === 7, `${sceneJson.elements.length} elements in the note`);
+  const renamed = inNote.filter(id => !blockShaped(id));
+  check('  and writing the note renamed none of them', renamed.length === 0, renamed.join(', '));
+  const carried = stored.map(el => el.id).filter(id => inNote.includes(id));
+  check('  every element the board holds is in the note under the name it had',
+    carried.length === stored.length,
+    stored.map(el => el.id).filter(id => !inNote.includes(id)).join(', '));
+  for (const el of sceneJson.elements) {
+    if (!el.containerId) continue;
+    check(`  the label bound to ${el.containerId} has a block reference`,
+      idNote.includes(`^${el.id}`) && inNote.includes(el.containerId), el.id);
+    // Derived from the container, which is how the browser's expansion reaches
+    // the same name without being told it. Two names for one label is what
+    // TASK-024 was made of.
+    check(`  and is named after it, so the browser would agree`,
+      el.id === labelTextIdFor(el.containerId), `${el.id} vs ${labelTextIdFor(el.containerId)}`);
+  }
 } finally {
   server.kill('SIGTERM');
   await sleep(200);

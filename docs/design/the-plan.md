@@ -112,15 +112,35 @@ TASK-024 and the reason `adoptReusedLabelIds` exists.
 Today both are harmless, because the note holds one set of ids and the store
 holds another. Under stage 8 the note is the store, and the rename is what the
 browser gets back. So every id is minted once, at the write boundary, in a form
-the note writer never touches. `generateId` already produces eight-character
-ids; `stableId8`'s collision handling moves from the writing site to the minting
-site, which is where a property of the id space belongs.
+the note writer never touches. `stableId8`'s collision handling moves from the
+writing site to the minting site, which is where a property of the id space
+belongs.
 
 Boards already in the vault need no migration. The rename is deterministic, so
 they keep the ids they have.
 
 **Risks:** `obsidian` (108 checks, and the note writer is its subject), `labels`,
 `boards`, `branch`.
+
+**Done.** Two corrections to what is written above, found by doing it.
+`generateId` did *not* already produce eight-character ids: it was
+`Date.now().toString(36) + Math.random().toString(36).substring(2)`, which is
+18 or 19 characters. So every id the server minted was too long to be a block
+reference, and the note writer renamed every text element on an agent-drawn
+board rather than the odd stray one. A third site names ids too, unlisted here:
+`expandElementsForExport` names a bound text `${container}-label`, which is
+fourteen characters at best. Both now come from `src/core/ids.ts`, which is the
+only place an id is minted. The plan's compatibility claim held exactly as
+written: the four renames measured in `server-is-the-truth.md` §4 reproduce
+byte for byte and are pinned as golden values in `check-obsidian-md`.
+
+What stage 2 does **not** cover: a text element Excalidraw itself minted, which
+is a 21-character nanoid and is still renamed on the way into the note. Nothing
+here can rename it safely, because the browser has it on screen and may have an
+editor bound to it, which is the whole failure this stage exists to prevent. The
+note writer's rename therefore stays as a fallback for ids that came from
+elsewhere, and what the browser gets back for a hand-drawn text element is an
+open question for stage 8.
 
 ## Stage 3. Find out how text can be measured
 

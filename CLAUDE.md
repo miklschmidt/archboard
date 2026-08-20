@@ -320,6 +320,26 @@ two MCP clients disagreed, a group died with the client that made it, and
 ungrouping used a remembered member list that was wrong about anyone who had
 joined the group since. Grouping over the CLI never had any of that, because it
 only ever wrote to the elements (TASK-064).
+Every id archboard mints is minted once, in `src/core/ids.ts`, as one to eight
+characters of Obsidian's block-id alphabet — the one shape nothing downstream
+has a reason to rename (TASK-069). A text element's block id *is* its element
+id, and a block reference cannot hold more than eight characters, so a longer
+one had to be renamed on the way into a note. Renaming is the most dangerous
+thing in the system. Measured: with a text editor open on a bound label,
+applying a document in which that element had been renamed left the textarea on
+screen and focused while the scene no longer held the id it was bound to. Five
+characters were typed and Escape pressed, and the five went nowhere, with no
+error and nothing on screen to say so. Ids used to be 18 or 19 characters, and a
+bound text expanded from a `label` seed was named `${container}-label` on the
+server and a 21-character nanoid in the browser, so the note writer renamed
+nearly everything it wrote. Now it has nothing to rename on a board this server
+wrote, and the two expansions reach one name because both derive it from the
+container. The derivation itself has not changed, so a board already in the
+vault keeps the ids it has: the four renames measured in
+`docs/design/server-is-the-truth.md` are pinned as golden values in
+`check-obsidian-md`. What Excalidraw itself mints is still 21 characters and
+still renamed at the note boundary, and nothing can rename it safely while a
+browser holds it, so stage 8 of `docs/design/the-plan.md` owns that question.
 
 ## Names on the wire
 
