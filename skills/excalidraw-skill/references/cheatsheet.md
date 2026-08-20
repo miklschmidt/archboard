@@ -10,7 +10,9 @@
 ## CLI Reference
 
 `archboard <command>` (or `./bin/canvas <command>` inside the archboard checkout).
-JSON results on stdout — except `describe` (plain text) and raw-content output when `--out` is omitted (`export` scene JSON, `screenshot --format svg`). Diagnostics on stderr. Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required. Explicit `start` overrides `EXCALIDRAW_NO_AUTOSTART=1`.
+JSON results on stdout — except `describe` (plain text) and raw-content output when `--out` is omitted (`export` scene JSON, `screenshot --format svg`). Diagnostics on stderr. Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required, 5 board write refused. Explicit `start` overrides `EXCALIDRAW_NO_AUTOSTART=1`.
+
+**`--board <key>` is global and required on every command that touches a board** — `add`, `apply`, `get`, `query`, `update`, `delete`, `describe`, `export`, `import`, `mermaid`, `share`, `clear`, `snapshot`, `promote`, `demote`, `changes`, `arrange`, `library insert`, `board save`, `board info`. There is no default board and no fallback: a pane holds its own board, two panes hold two, so a call that names none is refused with the open boards listed (ADR 0009). Commands about the browser rather than a board — `panes`, `selection`, `screenshot`, `status`, `board list`, `library list`, `compare` — take no board.
 
 ### Server
 
@@ -43,11 +45,11 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 | `share` | Encrypted upload → shareable excalidraw.com URL |
 | `clear --yes` | Wipe the canvas |
 | `snapshot save\|list\|restore [name]` | Named canvas snapshots |
-| `board list` | Boards in the vault, boards open in this session, which is active |
-| `board current` | Identity of the board the canvas is holding |
-| `board new <name> [--variant v] [--level l]` | Empty board; in memory until saved |
-| `board open <name[@variant]> [--reload]` | Load a board onto the canvas (swaps the scene) |
-| `board save [--as <name>] [--variant v] [--level l] [--force]` | Write it to the vault; **refused (exit 5) if the note changed on disk** — `--force` overwrites anyway |
+| `board list` | Boards in the vault, boards open in this session, and which board each pane is showing |
+| `board info --board <key>` | Identity and save state of one board |
+| `board new <name> [--variant v] [--level l] [--pane <spec>]` | Empty board; in memory until saved |
+| `board open <name[@variant]> [--reload] [--pane <spec>]` | Show a board in a pane. `--pane` takes `left`, `right`, `top`, `bottom`, a 1-based position, `primary`, or a pane id — required when more than one pane is open, since which half of the screen is not something to guess |
+| `board save --board <key> [--as <name>] [--variant v] [--level l] [--force]` | Write it to the vault; **refused (exit 5) if the note changed on disk** — `--force` overwrites anyway |
 | `compare <from> [to]` | Semantic diff between two variants, joined on node identity; opens nothing and leaves the canvas alone. One address finds the other variant itself |
 
 ### Stencil Library
@@ -82,32 +84,32 @@ The MCP surface for clients that cannot run the CLI. `scripts/check-surface-pari
 
 | Tool | Description | Required params |
 |------|-------------|-----------------|
-| `create_element` | Create shape/text/arrow/line | `type`, `x`, `y` |
-| `get_element` | Get single element by ID | `id` |
-| `update_element` | Update element properties | `id` |
-| `delete_element` | Delete element | `id` |
-| `query_elements` | Query by type/filters | (optional) `type`, `filter`, `bbox` |
-| `batch_create_elements` | Create many at once | `elements[]` |
+| `create_element` | Create shape/text/arrow/line | `board`, `type`, `x`, `y` |
+| `get_element` | Get single element by ID | `board`, `id` |
+| `update_element` | Update element properties | `board`, `id` |
+| `delete_element` | Delete element | `board`, `id` |
+| `query_elements` | Query by type/filters | `board`, (optional) `type`, `filter`, `bbox` |
+| `batch_create_elements` | Create many at once | `board`, `elements[]` |
 | `duplicate_elements` | Clone with offset | `elementIds[]`, (optional) `offsetX`, `offsetY` |
 
 ### Layout & Organization
 
 | Tool | Description | Required params |
 |------|-------------|-----------------|
-| `align_elements` | Align to left/center/right/top/middle/bottom | `elementIds[]`, `alignment` |
-| `distribute_elements` | Even spacing horizontal/vertical | `elementIds[]`, `direction` |
-| `group_elements` | Group elements | `elementIds[]` |
-| `ungroup_elements` | Ungroup | `groupId` |
-| `lock_elements` | Lock elements | `elementIds[]` |
-| `unlock_elements` | Unlock elements | `elementIds[]` |
+| `align_elements` | Align to left/center/right/top/middle/bottom | `board`, `elementIds[]`, `alignment` |
+| `distribute_elements` | Even spacing horizontal/vertical | `board`, `elementIds[]`, `direction` |
+| `group_elements` | Group elements | `board`, `elementIds[]` |
+| `ungroup_elements` | Ungroup | `board`, `groupId` |
+| `lock_elements` | Lock elements | `board`, `elementIds[]` |
+| `unlock_elements` | Unlock elements | `board`, `elementIds[]` |
 
 ### Scene Awareness (Iterative Refinement)
 
 | Tool | Description | Required params |
 |------|-------------|-----------------|
-| `describe_scene` | AI-readable scene description (types, positions, labels, connections, bounding box) | (none) |
+| `describe_scene` | AI-readable scene description (types, positions, labels, connections, bounding box) | `board` |
 | `get_canvas_screenshot` | Returns PNG image of canvas for visual verification | (optional) `background` |
-| `get_resource` | Get scene/library/theme/elements | `resource` |
+| `get_resource` | Get scene/library/theme/elements | `resource`, plus `board` for `scene` and `elements` |
 | `get_selection` | What the human has selected — the elements they mean by "this" / "these", with node kind and binding | (none) |
 | `get_panes` | What the human is looking at, pane by pane: position on screen, board + variant, how much is in view, what is picked there. View state only | (none) |
 
@@ -115,36 +117,36 @@ The MCP surface for clients that cannot run the CLI. `scripts/check-surface-pari
 
 | Tool | Description | Required params |
 |------|-------------|-----------------|
-| `promote_selection` | Declare the selection an architecture node: kind, identity and binding in one act. `each: true` makes one node per selected shape | `kind` |
-| `demote_selection` | Strip archboard metadata back off; touching one element demotes the whole node | (none) |
+| `promote_selection` | Declare the selection an architecture node: kind, identity and binding in one act. `each: true` makes one node per selected shape | `board`, `kind` |
+| `demote_selection` | Strip archboard metadata back off; touching one element demotes the whole node | `board` |
 
 ### File I/O & Export
 
 | Tool | Description | Required params |
 |------|-------------|-----------------|
-| `export_scene` | Export to .excalidraw JSON (a `.md` filePath → Obsidian .excalidraw.md) | (optional) `filePath` |
-| `import_scene` | Import from .excalidraw JSON or Obsidian .excalidraw.md | `mode` ("replace"\|"merge"), `filePath` or `data` |
-| `export_to_image` | Export to PNG/SVG (needs browser) | `format` ("png"\|"svg"), (optional) `filePath`, `background` |
-| `export_to_excalidraw_url` | Upload & get shareable excalidraw.com URL | (none) |
+| `export_scene` | Export to .excalidraw JSON (a `.md` filePath → Obsidian .excalidraw.md) | `board`, (optional) `filePath` |
+| `import_scene` | Import from .excalidraw JSON or Obsidian .excalidraw.md | `board`, `mode` ("replace"\|"merge"), `filePath` or `data` |
+| `export_to_image` | Export to PNG/SVG from the pane that answers for the browser, whatever board it holds | `format` ("png"\|"svg"), (optional) `filePath`, `background` |
+| `export_to_excalidraw_url` | Upload & get shareable excalidraw.com URL | `board` |
 
 ### State Management
 
 | Tool | Description | Required params |
 |------|-------------|-----------------|
-| `clear_canvas` | Remove all elements | (none) |
-| `snapshot_scene` | Save named snapshot | `name` |
-| `restore_snapshot` | Restore from snapshot | `name` |
+| `clear_canvas` | Remove all elements from one board | `board` |
+| `snapshot_scene` | Save named snapshot | `board`, `name` |
+| `restore_snapshot` | Restore from snapshot onto a board | `board`, `name` |
 
 ### Boards
 
-Requires `ARCHBOARD_VAULT`. The canvas holds exactly one board at a time.
+Requires `ARCHBOARD_VAULT`. A pane holds exactly one board; two panes hold two. **`board` is a required parameter on every tool that touches one** — there is no default (ADR 0009).
 
 | Tool | Description | Required params |
 |------|-------------|-----------------|
-| `list_boards` | Vault boards + open boards + active | (none) |
-| `open_board` | Load a board onto the canvas | `board` (`name` or `name@variant`) |
-| `new_board` | Start an empty board | `board` |
-| `save_board` | Write the open board to the vault; **refused if the note changed on disk** (`force` overwrites anyway) | (none) |
+| `list_boards` | Vault boards, open boards, and what each pane is showing | (none) |
+| `open_board` | Show a board in a pane; `pane` (`left`, `right`, `1`…) is required when more than one is open | `board` (`name` or `name@variant`) |
+| `new_board` | Start an empty board and show it in a pane | `board` |
+| `save_board` | Write a board to the vault; **refused if the note changed on disk** (`force` overwrites anyway) | `board` |
 | `compare_boards` | Semantic diff between two variants, joined on node identity (`customData.archboard.node`). Complete and unsummarised — narrate it yourself. Reads a board from memory when it is open, else from its note; the canvas is untouched. Check `summary.comparable` and `layout.cannotExpress` before making claims | `from` (`to` optional) |
 
 ### Stencil Library
@@ -152,7 +154,7 @@ Requires `ARCHBOARD_VAULT`. The canvas holds exactly one board at a time.
 | Tool | Description | Required params |
 |------|-------------|-----------------|
 | `list_library_items` | The palette of ready-made shapes, one line each: name, source library, size, element count, and the words drawn inside — enough to pick one without rendering it | (none) |
-| `insert_library_item` | Copy a stencil onto the canvas with its top-left at `x`, `y`, as ordinary elements. A name several libraries use is refused with the candidates named — retry with `source` or `itemId` | `x`, `y`, and `name` or `itemId` |
+| `insert_library_item` | Copy a stencil onto a board with its top-left at `x`, `y`, as ordinary elements. A name several libraries use is refused with the candidates named — retry with `source` or `itemId` | `board`, `x`, `y`, and `name` or `itemId` |
 
 ### Viewport & Camera
 
@@ -170,7 +172,7 @@ Requires `ARCHBOARD_VAULT`. The canvas holds exactly one board at a time.
 
 | Tool | Description | Required params |
 |------|-------------|-----------------|
-| `create_from_mermaid` | Mermaid diagram to Excalidraw | `mermaidDiagram` |
+| `create_from_mermaid` | Mermaid diagram to Excalidraw. Converts in the pane that answers for the browser, so `board` has to be the board that pane holds — refused otherwise | `board`, `mermaidDiagram` |
 
 Notes:
 - **CLI + MCP**: Set `text` on shapes to label them (auto-converts to `label.text`). Use `startElementId`/`endElementId` on arrows.
@@ -214,15 +216,15 @@ Notes:
 
 ### Boards
 
-Every element endpoint also takes `?board=<key>`; without it they act on the active board.
+Every element endpoint **requires** `?board=<key>`; without it the answer is 400 with `code: "BOARD_REQUIRED"` and the open boards under `open`. There is no active board (ADR 0009).
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/boards` | Vault listing + open boards + active key |
-| `GET` | `/api/boards/current` | Identity of the active board |
-| `POST` | `/api/boards/open` | `{board, variant?, level?, reload?}` — swaps the canvas |
-| `POST` | `/api/boards/new` | `{board, variant?, level?}` — empty, unsaved |
-| `POST` | `/api/boards/save` | `{name?, variant?, level?, force?}` — writes the note; **409 + `conflict` if it changed on disk** |
+| `GET` | `/api/boards` | Vault listing + open boards + what each pane is showing |
+| `GET` | `/api/boards/info?board=` | Identity and save state of one board |
+| `POST` | `/api/boards/open` | `{board, variant?, level?, reload?, pane?}` — shows it in one pane, and answers with which |
+| `POST` | `/api/boards/new` | `{board, variant?, level?, pane?}` — empty, unsaved |
+| `POST` | `/api/boards/save` | `?board=` plus `{name?, variant?, level?, force?}` — writes the note; **409 + `conflict` if it changed on disk** |
 | `GET` | `/api/boards/compare?from=&to=` | Semantic diff between two boards; read-only, never opens or switches a board. `to` optional when the board has exactly one other variant |
 
 ### Snapshots

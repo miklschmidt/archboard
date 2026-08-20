@@ -71,17 +71,28 @@ and every delegation becomes a turn in that same thread.
 ./bin/canvas board new payments --level service
 ```
 
+**Every command that touches a board names it** — `--board payments` — and one
+that does not is refused, with the open boards listed in the refusal. There is
+no active board to fall back on, because a pane holds its own board and two
+panes hold two (ADR 0009). The canvas boots holding `scratch`, which is a board
+like any other and is named like one.
+
 Ask the agent to read a codebase and draw its architecture. Then, on the board:
 
 1. **Select a box by tapping its interior** and ask the agent what you have
    selected — this is `selection`, and it is how "map *this* to X" works.
 2. **Promote it**: `./bin/canvas promote --kind service --name "Payments" --path src/payments/index.ts`.
    The binding resolves through git to repo, path, branch and commit.
-3. **Save**: `./bin/canvas board save`.
-4. **Branch a variant**: `./bin/canvas board save --as payments@option-a`, then
-   rearrange it — move a box out of a cluster, cut an edge, add a node.
+3. **Save**: `./bin/canvas board save --board payments`.
+4. **Branch a variant**: `./bin/canvas board save --board payments --as payments@option-a`,
+   then rearrange it — move a box out of a cluster, cut an edge, add a node.
 5. **Compare**: ask the agent what changed between `payments` and
    `payments@option-a`.
+6. **Put them side by side**: press **Split**, then Open… and pick which pane
+   the second board goes in — or
+   `./bin/canvas board open payments@option-a --pane right`. Each pane holds
+   its own board, keeps its own selection, and is saved against its own
+   baseline; `./bin/canvas panes` says which is which.
 
 Step 5 is the one worth watching closely. The tool returns structure; the agent
 narrates it. If the narration is wrong or thin, the question is usually whether
@@ -178,6 +189,11 @@ Archboard never picks for you. See ADR 0006.
 
 **Prose in a board note survives.** Markdown you write above the
 `# Excalidraw Data` heading is yours and is preserved across saves.
+
+**A command without `--board` fails, and that is the design.** There is no
+active board and no default: two panes hold two boards, so "the board" would be
+a guess, and a guess that is right most of the time is the kind of mistake that
+takes longest to find. The refusal lists the boards that are open (ADR 0009).
 
 **Push is off by default, not absent.** The canvas can tell a live thread that
 the board changed, quietly, as it happens — see section 6. It stays off until

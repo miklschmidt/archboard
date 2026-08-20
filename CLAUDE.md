@@ -34,7 +34,8 @@ out to bun, so run them with `bun run`, never `npm run`:
 bun install
 bun run build       # -> dist/ and dist/frontend/
 bun run type-check
-bun run test        # MCP stdio wire checks + loopback-bind check
+bun run test        # stdio wire, loopback bind, obsidian, changes, labels,
+                    # library, boards + panes, CLI/MCP surface parity
 
 ./bin/canvas start  # canvas server on 127.0.0.1:3000
 ./bin/canvas status
@@ -88,9 +89,10 @@ agent reads code  ->  draws the architecture  ->  you rearrange it on the Flip
 The read-back is the point. Moving a box is a statement about the design.
 
 ```bash
-./bin/canvas describe                 # AI-readable scene text
-./bin/canvas query --type rectangle   # structured, includes customData + link
-./bin/canvas screenshot --out /tmp/c.png
+./bin/canvas panes                              # which pane holds which board
+./bin/canvas describe --board payments          # AI-readable scene text
+./bin/canvas query --board payments --type rectangle   # includes customData + link
+./bin/canvas screenshot --out /tmp/c.png        # the primary pane, whatever it holds
 ```
 
 ## Verified behaviour (v2.0.0)
@@ -102,6 +104,7 @@ Established by testing this build, not by reading docs.
 | Agent `add` / `batch_create` | yes, immediately |
 | Human drags / edits / hand-draws | yes, automatically |
 | `./bin/canvas mermaid` | **yes** — fixed in v2 |
+| A board opened into one pane | that pane only; the other keeps its board, its scene and its pick |
 
 The one-way mermaid behaviour was a **1.1.0 bug**, fixed upstream by reporting
 the converted elements after conversion. Do not design around it.
@@ -177,9 +180,6 @@ by default. The agent's own drawing is never injected back at it. See
 Tracked in Backlog.md; `backlog task list --plain` is authoritative.
 
 - `export --out` does not `mkdir -p`.
-- **The canvas holds one board for every pane.** The shell can mount a second
-  pane, and `panes` reports each pane's own board — but the server has a single
-  active board, so both panes show it. Per-pane boards are TASK-021.
 
 Closed: board writes are checked, not last-writer-wins — a note that changed on
 disk is refused, never overwritten (TASK-010).
@@ -194,7 +194,9 @@ binding (TASK-005). The CLI and MCP handshake identify as `archboard`
 (TASK-008). A shell hosts the canvas, the server is authoritative over element
 state, clearing asks first, and boards and variants are openable from the UI
 (TASK-016). Shapes are filled by default, so tapping the middle of a box —
-agent-drawn or hand-drawn — selects it (TASK-009).
+agent-drawn or hand-drawn — selects it (TASK-009). Each pane holds its own
+board, so current and proposed sit side by side, and every call names the board
+it means — there is no active board left to resolve against (TASK-021, ADR 0009).
 
 ## Names on the wire
 
@@ -215,8 +217,16 @@ orphan a running server's pidfile). Neither is printed by any command.
 ## Boards
 
 A **board** is a named diagram persisted as one `.excalidraw.md` note in an
-Obsidian vault (ADR 0004). The canvas holds exactly one at a time; `board open`
-is how that one gets swapped.
+Obsidian vault (ADR 0004). A pane holds exactly one at a time; `board open` is
+how a pane's board gets swapped.
+
+**Every call names its board, and one that does not is refused** (ADR 0009).
+There is no active board and no default — two panes hold two boards, so "the
+board" has no referent, and a write resolving against ambient state is the
+mistake this exists to prevent. Name it with `--board <key>` on the command
+line, `?board=` on the API, or the required `board` argument on an MCP tool.
+The refusal lists what is open, so the next step is on screen at the moment of
+the mistake.
 
 Set the vault before anything board-shaped works — it spans repositories, so
 there is deliberately no default:
@@ -226,12 +236,20 @@ export ARCHBOARD_VAULT=/path/to/vault    # or put it in .env
 ```
 
 ```bash
-./bin/canvas board list                       # what the vault has, what is open
+./bin/canvas board list                          # the vault, what is open, what is on screen
 ./bin/canvas board new payments --level service
-./bin/canvas board save                       # writes payments.excalidraw.md
-./bin/canvas board open payments@option-a     # swaps the canvas
-./bin/canvas board current                    # identity of the open board
+./bin/canvas board save --board payments         # writes payments.excalidraw.md
+./bin/canvas board open payments@option-a        # into the only pane
+./bin/canvas board open payments@option-a --pane right
+./bin/canvas board info --board payments         # identity and save state of one board
+./bin/canvas describe --board payments@option-a
 ```
+
+`board open` puts a board in a **pane**, and the pane is the one axis that
+still has a default — but only where it cannot be wrong. One pane on screen and
+it goes there; two and `--pane left|right|1|primary` is required; none and the
+board is loaded without being shown. Every answer names the pane it landed in.
+Display may follow the human's attention; authority never does.
 
 Addressing: `current` is the privileged variant — the architecture that exists —
 so it owns the bare name and the bare filename. Every other variant is
@@ -257,8 +275,8 @@ names the same three outcomes, and archboard picks none of them (ADR 0006):
 | Outcome | How | What it costs |
 |---|---|---|
 | Reload | `board open <name> --reload` | the canvas as it stands |
-| Overwrite | `board save --force` | whatever the note holds |
-| Save elsewhere | `board save --as <other>` | nothing; both copies kept |
+| Overwrite | `board save --board <name> --force` | whatever the note holds |
+| Save elsewhere | `board save --board <name> --as <other>` | nothing; both copies kept |
 
 The same refusal covers a destination archboard has never read — a `board new`
 whose file appeared underneath it, or a `--as` onto an existing note.
@@ -268,11 +286,16 @@ memory, so a board open in Obsidian can still write its unsaved copy back
 afterwards: **keep a board open in one editor at a time.**
 
 The board key reaches the store, the REST API (`?board=` on every element
-route) and the WebSocket protocol (every broadcast names its board; a
-`board_switched` message swaps the browser's scene). Callers that say nothing
-about boards get the active one, which is what everything written before boards
-existed means. Before any board is opened the canvas holds a `scratch` board
-that has no home in the vault until `board save --as <name>` gives it one.
+route) and the WebSocket protocol (every broadcast names its board, and
+`board_switched` goes to the one pane it was addressed to). A caller that says
+nothing about boards is refused.
+
+The canvas boots holding a `scratch` board, so a first run has something in
+front of it — a board like any other, named like any other
+(`--board scratch`), with no home in the vault until
+`board save --board scratch --as <name>` gives it one. A pane that is opened
+with nothing else on screen shows scratch; a second pane shows whatever the
+first is showing, until it is pointed somewhere else.
 
 ## Artifacts
 

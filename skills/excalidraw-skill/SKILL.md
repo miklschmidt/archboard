@@ -151,10 +151,10 @@ If you find any issue: **stop, fix it, re-screenshot, then continue.** Say "I se
 ### Steps (CLI shown; the MCP tool for each is in the cheatsheet)
 
 1. Plan your coordinate grid — map out tiers and x-positions before writing JSON. (MCP mode: call `read_diagram_guide` for colors/sizing; the same guidance lives in `references/cheatsheet.md`.)
-2. Optional fresh start: `archboard clear --yes`
+2. Optional fresh start: `archboard clear --board <key> --yes`
 3. Create shapes and arrows in one call. Custom `id` fields (e.g. `"id": "auth-svc"`) make later updates easy:
    ```bash
-   archboard add - <<'EOF'
+   archboard add --board payments - <<'EOF'
    [
      {"id": "lb", "type": "rectangle", "x": 300, "y": 50, "width": 180, "height": 60, "text": "Load Balancer"},
      {"id": "svc-a", "type": "rectangle", "x": 100, "y": 200, "width": 160, "height": 60, "text": "Web Server 1"},
@@ -249,10 +249,10 @@ there" need:
 
 ```bash
 archboard panes --text
-# 2 panes, side by side, showing payments (current, system).
-# Every pane shows the same board because this server holds one board at a time.
-#   1. left · payments (current, system) · 20 elements · view (0,0) 1568x1576 @1.00x · selected: 1 node — "API Gateway" · focused · answers screenshots
-#   2. right · payments (current, system) · 20 elements · view (71,72) 1426x1432 @1.10x · selected: 1 node — "Payments DB"
+# 2 panes, side by side, showing payments (current, system) and payments@option-a (option-a, system).
+# The panes disagree, so commands that name no board are refused until one is named — `--board payments`, or `--board payments@option-a`.
+#   1. left · payments (current, system) · 20 elements · view (0,0) 1568x1576 @1.00x · selected: 1 node — "API Gateway" · answers screenshots
+#   2. right · payments@option-a (option-a, system) · 30 elements · view (71,72) 1426x1432 @1.10x · selected: 1 node — "Ledger" · focused
 ```
 
 Per pane: its place in reading order, the board and variant it holds, how many
@@ -276,7 +276,7 @@ elements to be a node, giving it a kind and usually a binding in the same act.
 It works off the live selection, so no element ids are ever spoken.
 
 ```bash
-archboard promote --kind service --path src/payments/service.ts --text
+archboard promote --board payments --kind service --path src/payments/service.ts --text
 # Promoted 2 elements to the service "Payments API" (node payments-api),
 # bound to github.com/acme/api:src/payments/service.ts@main (62f0cef).
 ```
@@ -322,8 +322,8 @@ archboard promote --kind service --path src/payments/service.ts --text
 The library is a palette of ready-made shapes — cloud icons, servers, database drums, browsers, people — that a human drags onto a board. It lives on the canvas server, so you can place one by name with no browser open.
 
 ```bash
-archboard library list --text                                         # what exists
-archboard library insert "Load balancer" --x 200 --y 120 --source system-design
+archboard library list --text                                         # what exists (no board: the palette is one per server)
+archboard library insert "Load balancer" --board payments --x 200 --y 120 --source system-design
 ```
 
 The listing is built to be chosen from without rendering anything: name, **size**, element count, source library, id, and in quotes what the stencil says when that is not just its name. Size does real work here — one library's "Docker" is 73x95 and another's is 1224x509.
@@ -343,23 +343,36 @@ Reach for a stencil when the thing is recognisable furniture — a queue, a CDN,
 ```bash
 echo 'graph TD
   A[Client] --> B[API]
-  B --> C[(DB)]' | archboard mermaid
+  B --> C[(DB)]' | archboard mermaid --board payments
 ```
-Requires an open browser tab (conversion runs in the frontend; exit code 4 tells you to open the canvas URL). Afterwards `screenshot` to verify layout. If the auto-layout is poor (nodes crowded, edges crossing), find problem elements with `describe` and reposition them with `update`.
+Requires an open browser tab (conversion runs in the frontend; exit code 4 tells you to open the canvas URL). Conversion happens in the pane that answers for the browser, so the board you name has to be the board that pane is holding — if it is not, the call is refused rather than converting into the wrong board. Afterwards `screenshot` to verify layout. If the auto-layout is poor (nodes crowded, edges crossing), find problem elements with `describe` and reposition them with `update`.
 
 ## Workflow: Boards
 
-A **board** is a named diagram persisted as one `.excalidraw.md` note in an Obsidian vault. The canvas holds exactly one board at a time, so opening a board swaps what is on screen.
+A **board** is a named diagram persisted as one `.excalidraw.md` note in an Obsidian vault. A pane holds exactly one board at a time, and two panes hold two — current beside proposed, which is what panes are for.
+
+**Every command that touches a board names it, and one that does not is refused.** There is no active board and no default: with two boards on screen "the board" has no referent, so archboard refuses rather than guessing, and the refusal lists what is open. Pass `--board <key>` on the command line, `?board=` on the API, or the required `board` argument on an MCP tool. This is deliberate — see ADR 0009 — so do not go looking for the flag you forgot to need.
+
+```bash
+archboard describe --board payments
+archboard add --board payments@option-a shapes.json
+archboard clear --board scratch --yes
+```
 
 Boards need a vault: set `ARCHBOARD_VAULT` to its path. There is no default — the vault deliberately spans repositories — so board commands fail with that message until it is set.
 
 ```bash
-archboard board list                        # what the vault has; what is open; which is active
-archboard board new payments --level service # empty board, in memory until saved
-archboard board save                        # write it to <vault>/payments.excalidraw.md
-archboard board open payments@option-a      # swap the canvas to another board
-archboard board current                     # which board am I drawing on?
+archboard board list                          # the vault, what is open, what is on screen
+archboard board new payments --level service  # empty board, in memory until saved
+archboard board save --board payments         # write it to <vault>/payments.excalidraw.md
+archboard board open payments@option-a        # show it in the pane on screen
+archboard board open payments@option-a --pane right
+archboard board info --board payments         # identity and save state of one board
 ```
+
+**A board is opened INTO a pane**, and the pane is the one thing that still has a default — but only where it cannot be wrong. One pane on screen and the board goes there; two and `--pane left|right|top|bottom|1|2|primary` is required; none and the board is loaded without being shown. The answer always names the pane it landed in. Display may follow the human; authority never does.
+
+Opening a board disturbs no other pane: the switch reaches that pane's socket alone, the other pane keeps its board, its scene and its selection, and each board is saved against its own baseline.
 
 **Addressing.** `current` is the privileged variant — the architecture that exists — so it owns the bare name (`payments`). Every other variant is a proposal, addressed `name@variant` and stored as `name@variant.excalidraw.md`. Variant is an open set, so comparing three options is just three boards: `payments@option-a`, `payments@option-b`, `payments@option-c`. A name may contain `/` to nest the note in vault folders.
 
@@ -369,15 +382,15 @@ archboard board current                     # which board am I drawing on?
 
 | Outcome | Command | What it costs |
 |---|---|---|
-| Reload | `board open <name> --reload` | the canvas as it stands now |
-| Overwrite | `board save --force` | whatever the note on disk holds |
-| Save elsewhere | `board save --as <other>` | nothing — both copies are kept |
+| Reload | `board open <name> --reload` | the pane as it stands now |
+| Overwrite | `board save --board <name> --force` | whatever the note on disk holds |
+| Save elsewhere | `board save --board <name> --as <other>` | nothing — both copies are kept |
 
 Never pass `--force` / `force: true` unless the human has said to overwrite.
 
 Nothing is locked, and the check reads the file, not another app's memory: a board open in Obsidian can still write its unsaved copy back afterwards. Keep a board open in one editor at a time.
 
-Before any board is opened the canvas holds a `scratch` board with no home in the vault; `board save --as <name>` gives it one.
+A pane opened with nothing else on screen holds `scratch`: a board like any other, named like any other (`--board scratch`), with no home in the vault until `board save --board scratch --as <name>` gives it one.
 
 ## Workflow: Comparing Variants
 
@@ -410,8 +423,8 @@ This is how diagrams live in a repo: commit the `.excalidraw` file, and re-`impo
 Check the destination before writing: if any ancestor directory contains `.obsidian/`, it is an Obsidian vault. A raw `.excalidraw` file there opens in the Excalidraw plugin only in **compatibility mode** ("Convert to new format" warning), gets no block references or vault-wide search, and default Obsidian Sync skips non-`.md` files. Give the export a `.excalidraw.md` extension and the CLI writes the plugin's native format automatically:
 
 ```bash
-archboard export --out "$VAULT/diagrams/system-map.excalidraw.md"   # .md → Obsidian format (or force with --format obsidian)
-archboard import "$VAULT/diagrams/system-map.excalidraw.md" --replace  # reads both plain and compressed Drawing blocks
+archboard export --board payments --out "$VAULT/diagrams/system-map.excalidraw.md"   # .md → Obsidian format
+archboard import --board payments "$VAULT/diagrams/system-map.excalidraw.md" --replace  # reads plain and compressed Drawing blocks
 ```
 
 Round-trips are safe: text-element block references follow the plugin's own id rules, so re-importing, editing, and re-exporting the same file keeps links from other notes intact.

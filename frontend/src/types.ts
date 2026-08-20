@@ -75,7 +75,8 @@ export interface BoardListing {
   vault: string;
   boards: Array<{ key: string; identity: BoardIdentity; file?: string }>;
   open: Array<{ key: string; identity: BoardIdentity; elementCount?: number }>;
-  active: string;
+  /** What each pane is holding right now, in reading order. */
+  onScreen: Array<{ paneId: string; place: string; board: string }>;
 }
 
 export interface WebSocketMessage {
@@ -112,6 +113,8 @@ export interface WebSocketMessage {
 /** What one pane tells the shell about itself. */
 export interface PaneStatus {
   paneId: string;
+  /** The pane's identity to the server — how a board is addressed to it. */
+  clientId: string;
   connected: boolean;
   board: BoardIdentity | null;
   boardKey: string | null;

@@ -15,7 +15,7 @@ import { ConfirmDialog } from './ConfirmDialog'
 import { ConflictDialog } from './ConflictDialog'
 import { InstallLibraryDialog } from './InstallLibraryDialog'
 import { useLibrary } from './useLibrary'
-import { BoardConflictError, clearBoard, fetchCurrentBoard, newBoard, openBoard, saveBoard } from '../canvas/api'
+import { BoardConflictError, clearBoard, fetchBoardInfo, newBoard, openBoard, saveBoard } from '../canvas/api'
 import type { SaveRequest } from '../canvas/api'
 import type { BoardInfo, BoardWriteConflict, PaneStatus } from '../types'
 import './shell.css'
@@ -61,6 +61,7 @@ export function Shell(): JSX.Element {
       if (
         existing &&
         existing.connected === status.connected &&
+        existing.clientId === status.clientId &&
         existing.boardKey === status.boardKey &&
         existing.elementCount === status.elementCount &&
         existing.lastChangeAt === status.lastChangeAt &&
@@ -91,15 +92,19 @@ export function Shell(): JSX.Element {
     document.title = `${name}${level} · archboard`
   }, [identity])
 
-  const refreshBoardInfo = useCallback(async () => {
+  // About the board in the pane being worked in, named explicitly. The server
+  // has no "current board" to ask for, and asking for one would be asking it
+  // to guess which of two panes the chrome is describing (ADR 0009).
+  const refreshBoardInfo = useCallback(async (key: string | null) => {
+    if (!key) { setBoardInfo(null); return }
     try {
-      setBoardInfo(await fetchCurrentBoard())
+      setBoardInfo(await fetchBoardInfo(key))
     } catch (error) {
-      console.warn('Could not read the current board:', error)
+      console.warn('Could not read the board:', error)
     }
   }, [])
 
-  useEffect(() => { void refreshBoardInfo() }, [refreshBoardInfo, boardKey])
+  useEffect(() => { void refreshBoardInfo(boardKey) }, [refreshBoardInfo, boardKey])
 
   // "Written down" is a comparison, not a flag: the board is dirty when it has
   // changed since the last time it was written to the vault.
@@ -147,33 +152,41 @@ export function Shell(): JSX.Element {
       }
     }), [run])
 
-  const handleOpen = (address: { board: string; variant?: string; level?: string }) =>
+  // A board is opened INTO a pane. With one pane the server takes that one;
+  // with two it needs telling, which is what the dialog's pane picker is for.
+  const paneTarget = (address: { pane?: string }): { pane?: string } =>
+    address.pane ? { pane: address.pane } : (panes.length > 1 && status ? { pane: status.clientId } : {})
+
+  const handleOpen = (address: { board: string; variant?: string; level?: string; pane?: string }) =>
     run(async () => {
-      const opened = await openBoard(address)
+      const opened = await openBoard({ ...address, ...paneTarget(address) })
       setBoardInfo(opened)
       setDialog(null)
       setNotice({ kind: 'info', text: `Opened ${opened.board}.` })
     })
 
-  const handleNew = (address: { board: string; variant?: string; level?: string }) =>
+  const handleNew = (address: { board: string; variant?: string; level?: string; pane?: string }) =>
     run(async () => {
-      const created = await newBoard(address)
+      const created = await newBoard({ ...address, ...paneTarget(address) })
       setBoardInfo(created)
       setDialog(null)
       setNotice({ kind: 'info', text: `${created.board} started. It is not in the vault until you save it.` })
     })
 
-  const handleSaveAs = (address: { board: string; variant?: string; level?: string }) =>
-    attemptSave({ name: address.board, variant: address.variant, level: address.level })
+  const handleSaveAs = (address: { board: string; variant?: string; level?: string }) => {
+    if (!boardKey) return
+    void attemptSave({ board: boardKey, name: address.board, variant: address.variant, level: address.level })
+  }
 
   const handleSave = () => {
+    if (!boardKey) return
     // The scratch board has no home in the vault, so saving it is a naming
     // question rather than a write.
     if (boardInfo && !boardInfo.vaultBacked) {
       setDialog('save-as')
       return
     }
-    void attemptSave({})
+    void attemptSave({ board: boardKey })
   }
 
   // The three ways out of a conflict. Each is the human picking which copy
@@ -182,7 +195,11 @@ export function Shell(): JSX.Element {
     const key = conflict?.conflict.board
     if (!key) return
     void run(async () => {
-      const opened = await openBoard({ board: key, reload: true })
+      const opened = await openBoard({
+        board: key,
+        reload: true,
+        ...(panes.length > 1 && status ? { pane: status.clientId } : {})
+      })
       setBoardInfo(opened)
       setConflict(null)
       setNotice({ kind: 'info', text: `Reloaded ${opened.board} from the vault.` })
@@ -271,6 +288,12 @@ export function Shell(): JSX.Element {
         <BoardDialog
           mode={dialog}
           current={identity}
+          panes={panes.map((paneId, index) => ({
+            clientId: statuses[paneId]?.clientId ?? paneId,
+            label: `pane ${index + 1}`,
+            board: statuses[paneId]?.boardKey ?? null
+          }))}
+          defaultPane={status?.clientId ?? null}
           busy={busy}
           error={dialogError}
           onSubmit={dialog === 'open' ? handleOpen : dialog === 'new' ? handleNew : handleSaveAs}

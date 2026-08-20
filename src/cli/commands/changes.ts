@@ -18,7 +18,6 @@ import { getChanges } from '../../core/canvas-client.js';
 export async function changes(argv: string[]): Promise<void> {
   const { flags } = parseArgs(argv, {
     since: { takesValue: true },
-    board: { takesValue: true },
     coalesce: { takesValue: false },
     detail: { takesValue: false },
     text: { takesValue: false }
@@ -32,7 +31,6 @@ export async function changes(argv: string[]): Promise<void> {
   await ensureCanvasRunning();
   const report = await getChanges({
     since,
-    ...(flags.board ? { board: flags.board as string } : {}),
     coalesce: Boolean(flags.coalesce),
     detail: Boolean(flags.detail)
   });

@@ -44,8 +44,9 @@ it needs a tab open and gives you no ids back to work with.
 
 Guidance that holds up on a big screen:
 
-- **One concern per canvas.** Don't put the data model and the request path on
-  the same board. Use snapshots to switch between views.
+- **One concern per board.** Don't put the data model and the request path on
+  the same board — make it a second board and, when they need to be read
+  together, put it in the other pane (`board open <name> --pane right`).
 - **Layout carries meaning.** Left-to-right for flow, top-to-bottom for layers,
   containment for ownership. Be consistent — the human will read the geometry
   before the labels.

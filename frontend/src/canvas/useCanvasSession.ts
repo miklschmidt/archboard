@@ -25,7 +25,7 @@ import { convertMermaidToExcalidraw, DEFAULT_MERMAID_CONFIG } from '../utils/mer
 import type { BoardIdentity, PaneStatus, ServerElement, WebSocketMessage } from '../types'
 import { cleanElementForExcalidraw, convertElementsPreservingImageProps } from './elements'
 import { baselineFrom, diffAgainstBaseline, fingerprint, isEmpty, type Baseline } from './changes'
-import { fetchCurrentBoard, fetchElements, fetchFiles, reportChanges, reportPane } from './api'
+import { fetchElements, fetchFiles, reportChanges, reportPane } from './api'
 import type { PaneReport } from './api'
 
 // A human edit should be on the server before they finish saying what they
@@ -136,9 +136,10 @@ export function useCanvasSession({
   /**
    * What this pane has in front of the human, right now.
    *
-   * The board is the one *this pane* adopted, not whatever the server considers
-   * active — today they are always the same, and the day a pane can hold its
-   * own board they will not be, and nothing here has to change.
+   * The board is the one *this pane* was pointed at. Two panes hold two boards,
+   * so there is nothing else it could be — and reporting what the pane is
+   * actually rendering, rather than what the server believes it should be,
+   * is what makes this a description of the glass.
    */
   const paneReport = useCallback((): PaneReport | null => {
     const api = apiRef.current
@@ -227,6 +228,7 @@ export function useCanvasSession({
   const publishStatus = useCallback((): void => {
     statusRef.current({
       paneId,
+      clientId,
       connected: connectedRef.current,
       board: boardRef.current,
       boardKey: boardKeyRef.current,
@@ -234,7 +236,7 @@ export function useCanvasSession({
       lastChangeAt: lastChangeAtRef.current
     })
     schedulePaneReport()
-  }, [paneId, schedulePaneReport])
+  }, [clientId, paneId, schedulePaneReport])
 
   const setBoardIdentity = useCallback((identity: BoardIdentity | null): void => {
     boardRef.current = identity
@@ -327,8 +329,13 @@ export function useCanvasSession({
       retryTimerRef.current = null
     }
 
+    // Including the deleted: a report is built only from live elements, but
+    // *why* an element went missing can matter. Emptying a label deletes the
+    // bound text element rather than editing it, and the deleted element is
+    // the only thing that distinguishes a label somebody cleared from a label
+    // that was never expanded (src/core/labels.ts, TASK-029).
     const report = diffAgainstBaseline(
-      api.getSceneElements() as unknown as Record<string, any>[],
+      api.getSceneElementsIncludingDeleted() as unknown as Record<string, any>[],
       baselineRef.current
     )
     if (isEmpty(report)) {
@@ -363,7 +370,7 @@ export function useCanvasSession({
     const api = apiRef.current
     if (!api || !userInteractedRef.current) return false
     return !isEmpty(diffAgainstBaseline(
-      api.getSceneElements() as unknown as Record<string, any>[],
+      api.getSceneElementsIncludingDeleted() as unknown as Record<string, any>[],
       baselineRef.current
     ))
   }, [])
@@ -390,7 +397,7 @@ export function useCanvasSession({
     const api = apiRef.current
     if (!api || !userInteractedRef.current || typeof navigator.sendBeacon !== 'function') return
     const report = diffAgainstBaseline(
-      api.getSceneElements() as unknown as Record<string, any>[],
+      api.getSceneElementsIncludingDeleted() as unknown as Record<string, any>[],
       baselineRef.current
     )
     if (isEmpty(report)) return
@@ -468,16 +475,19 @@ export function useCanvasSession({
     boardKeyRef.current = key
     setBoardIdentity(identity ?? { board: key, variant: 'current' })
     publishStatus()
-  }, [publishStatus, setBoardIdentity])
+    // Immediately, not on the debounce: `panes` is read every turn and a pane
+    // that had just been pointed at another board would report the old one for
+    // a third of a second.
+    schedulePaneReport(true)
+  }, [publishStatus, schedulePaneReport, setBoardIdentity])
 
+  // Re-read THIS pane's board. Deliberately not "what board is the server on":
+  // there is no such thing, and a pane that asked would be at risk of adopting
+  // another pane's board (ADR 0009). A pane learns which board it holds from
+  // the server addressing it — initial_elements, board_switched — and nowhere
+  // else.
   const loadBoard = useCallback(async (): Promise<void> => {
-    if (!apiRef.current) return
-    try {
-      const current = await fetchCurrentBoard()
-      adoptBoard(current.board, current.identity)
-    } catch (error) {
-      console.warn('Could not read the current board:', error)
-    }
+    if (!apiRef.current || !boardKeyRef.current) return
     try {
       const { elements } = await fetchElements(boardKeyRef.current)
       applyServerScene(convertElementsPreservingImageProps(elements.map(cleanElementForExcalidraw)))
@@ -486,7 +496,7 @@ export function useCanvasSession({
     } catch (error) {
       console.error('Could not load the board:', error)
     }
-  }, [adoptBoard, applyServerScene])
+  }, [applyServerScene])
 
   // ─── Requests addressed to the browser ───────────────────────
 

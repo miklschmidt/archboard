@@ -44,10 +44,15 @@ bunx tsc && bunx vite build
 
 Then open <http://127.0.0.1:3000>.
 
+Every command that touches a board names it. There is no default: a pane holds
+its own board and two panes hold two, so "the board" would be a guess
+(ADR 0009). A fresh canvas holds `scratch`.
+
 ```bash
-./bin/canvas describe                  # what is on the board, as text
-./bin/canvas query --type rectangle    # structured, includes customData + link
-./bin/canvas export --out diagrams/arch.excalidraw
+./bin/canvas panes                                    # which pane holds which board
+./bin/canvas describe --board scratch                 # what is on it, as text
+./bin/canvas query --board scratch --type rectangle   # includes customData + link
+./bin/canvas export --board scratch --out diagrams/arch.excalidraw
 ```
 
 ## Provenance

@@ -3,14 +3,14 @@ import { printJson, note } from '../util.js';
 import { ensureCanvasRunning } from '../../core/spawn.js';
 import {
   listBoardsOnCanvas,
-  getCurrentBoard,
+  getBoardInfo,
   openBoard,
   newBoard,
   saveBoard,
   boardConflictOf
 } from '../../core/canvas-client.js';
 
-export const SUBCOMMANDS = ['list', 'current', 'new', 'open', 'save'] as const;
+export const SUBCOMMANDS = ['list', 'info', 'new', 'open', 'save'] as const;
 
 // Boards are addressed as `name` or `name@variant` — `current` is the variant
 // that owns the bare name, because it is the architecture that exists.
@@ -18,6 +18,11 @@ const ADDRESS_FLAGS = {
   variant: { takesValue: true },
   level: { takesValue: true }
 };
+
+// Which pane to show the board in. Required once more than one pane is open:
+// putting a board on the half of the screen nobody asked for is a guess, and
+// the canvas refuses rather than making it.
+const PANE_FLAG = { pane: { takesValue: true } };
 
 export async function board(argv: string[]): Promise<void> {
   const sub = argv[0];
@@ -34,44 +39,60 @@ export async function board(argv: string[]): Promise<void> {
     printJson({
       success: true,
       vault: result.vault,
-      active: result.active,
       boards: result.boards,
-      open: result.open
+      open: result.open,
+      onScreen: result.onScreen
     });
     return;
   }
 
-  if (sub === 'current') {
+  if (sub === 'info') {
     parseArgs(rest, {});
-    const result = await getCurrentBoard();
+    const result = await getBoardInfo();
     printJson(result);
     return;
   }
 
   if (sub === 'new') {
-    const { positionals, flags } = parseArgs(rest, ADDRESS_FLAGS);
+    const { positionals, flags } = parseArgs(rest, { ...ADDRESS_FLAGS, ...PANE_FLAG });
     const name = positionals[0];
     if (!name) throw new CliUsageError('board new needs a name');
     const result = await newBoard({
       board: name,
       ...(flags.variant ? { variant: flags.variant as string } : {}),
-      ...(flags.level ? { level: flags.level as string } : {})
+      ...(flags.level ? { level: flags.level as string } : {}),
+      ...(flags.pane ? { pane: flags.pane as string } : {})
     });
-    note(`Board "${result.board}" is empty and exists only in memory until you run \`board save\`.`);
+    note(
+      `Board "${result.board}" is empty and exists only in memory until you run ` +
+      `\`board save --board ${result.board}\`.` +
+      (result.pane ? ` It is on screen in the ${result.pane.place} pane.` : '')
+    );
     printJson(result);
     return;
   }
 
   if (sub === 'open') {
-    const { positionals, flags } = parseArgs(rest, { ...ADDRESS_FLAGS, reload: { takesValue: false } });
+    const { positionals, flags } = parseArgs(rest, {
+      ...ADDRESS_FLAGS, ...PANE_FLAG, reload: { takesValue: false }
+    });
     const name = positionals[0];
     if (!name) throw new CliUsageError('board open needs a board name');
     const result = await openBoard({
       board: name,
       ...(flags.variant ? { variant: flags.variant as string } : {}),
       ...(flags.level ? { level: flags.level as string } : {}),
-      ...(flags.reload ? { reload: true } : {})
+      ...(flags.reload ? { reload: true } : {}),
+      ...(flags.pane ? { pane: flags.pane as string } : {})
     });
+    // Where it landed, said out loud: opening a board shows it somewhere, and
+    // which pane that is is the one thing the caller cannot see from here.
+    note(
+      result.pane
+        ? `"${result.board}" is showing in the ${result.pane.place} pane. ` +
+          `Commands still name it: \`--board ${result.board}\`.`
+        : `"${result.board}" is loaded, but no pane is open, so nothing is showing it.`
+    );
     if (result.source === 'memory') {
       note(
         `"${result.board}" was already open, so the canvas switched to the copy in memory ` +

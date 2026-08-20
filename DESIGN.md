@@ -270,10 +270,20 @@ Ordered by dependency, not ambition. Backlog.md is authoritative —
   is load-bearing: it exists to resolve spatial deixis for a voice model that
   cannot see the screen, which means it has to be affordable on every turn, which
   it stops being the moment somebody inlines the elements to save a round trip.
-  `describe` and `compare` are where contents live. Reporting only — pointing
-  panes at different boards is TASK-021, and the shape does not change when it
-  lands, because each pane already reports the board it adopted rather than the
-  server's active one.
+  `describe` and `compare` are where contents live.
+- **A board per pane** (TASK-021) — current beside proposed, which is the whole
+  reason panes exist. Opening a board addresses one pane: `board_switched`
+  reaches that pane's socket alone, only that pane's selection is retired, and
+  each board is saved against its own baseline. `panes` needed no new shape —
+  it already reported the board each pane adopted rather than a server-wide
+  one — only the loss of the line explaining why the two were always the same.
+  The hard half was authority, not display: with two boards on screen, "the
+  board" has no referent, so **every call names its board and one that does not
+  is refused** (ADR 0009). The active pointer is deleted rather than defaulted,
+  because a default is the same ambient resolution in a costume. Panes keep one
+  default, on the display axis only: `board open` with a single pane on screen
+  goes into it, with two it needs `--pane`, and the answer always says where
+  the board landed.
 
 **Later**
 

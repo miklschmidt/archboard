@@ -31,10 +31,10 @@ export interface Rect {
 /**
  * What one pane tells the server about itself.
  *
- * The pane reports the board key it *adopted*, not the server's active board.
- * Today those are always the same — one active board, so every pane shows it —
- * but reading the pane's own answer is what makes this report survive panes
- * becoming independently addressable without being redesigned.
+ * The pane reports the board key it *adopted*, never the server's idea of what
+ * it should be holding. That is what makes this report a description of the
+ * glass rather than a restatement of server state: if a pane were somehow
+ * rendering a board the server did not think it had, this would say so.
  */
 export interface PaneRegistration {
   /** The pane's identity to the server: also its websocket and selection key. */
@@ -191,6 +191,97 @@ function placeOf(
   }
 }
 
+/**
+ * The panes in reading order, each with the phrase that names where it is.
+ *
+ * Shared on purpose: the report and pane addressing (`--pane right`) have to
+ * agree about which one "right" is, and they can only be guaranteed to agree
+ * by asking the same function.
+ */
+export function panesInOrder(
+  registrations: PaneRegistration[]
+): Array<{ pane: PaneRegistration; position: number; place: string }> {
+  const ordered = [...registrations].sort(readingOrder);
+  const arrangement = arrangementOf(ordered);
+  return ordered.map((pane, index) => ({
+    pane,
+    position: index + 1,
+    place: placeOf(pane, index, ordered, arrangement)
+  }));
+}
+
+/** Everything `--pane` accepts, for the message that lists them. */
+const PANE_SPECS = 'a place (left, right, top, bottom), a position (1, 2), `focused`, `primary`, or a pane id';
+
+/**
+ * Which pane a caller means by `left`, `2`, `focused`, `pane-1`…
+ *
+ * Deliberately refuses rather than picks when a spec matches nothing or more
+ * than one thing — putting a board on the wrong half of the screen is cheap to
+ * notice, but so is saying which half, and a canvas that quietly ignores the
+ * half you asked for teaches you to stop trusting the flag.
+ */
+export function resolvePaneSpec(
+  registrations: PaneRegistration[],
+  spec: string
+): PaneRegistration {
+  const ordered = panesInOrder(registrations);
+  if (ordered.length === 0) {
+    throw new Error(
+      `No pane is open, so there is nowhere to put a board — "${spec}" names nothing. ` +
+      'Open the canvas in a browser first, or omit --pane to load the board without showing it.'
+    );
+  }
+  const wanted = spec.trim().toLowerCase();
+  const list = (): string =>
+    ordered.map(entry => `${entry.position}. ${entry.place} (${entry.pane.board})`).join(', ');
+
+  const matches = ordered.filter(entry =>
+    entry.place.toLowerCase() === wanted ||
+    entry.pane.paneId.toLowerCase() === wanted ||
+    entry.pane.clientId === spec.trim() ||
+    String(entry.position) === wanted ||
+    (wanted === 'focused' && entry.pane.focused) ||
+    (wanted === 'primary' && entry.pane.primary) ||
+    (wanted === 'only' && ordered.length === 1)
+  );
+
+  if (matches.length === 1) return matches[0]!.pane;
+  if (matches.length > 1) {
+    throw new Error(
+      `"${spec}" matches ${matches.length} panes (${matches.map(m => m.place).join(', ')}), ` +
+      `so which one is not decided. Panes on screen: ${list()}.`
+    );
+  }
+  throw new Error(
+    `No pane called "${spec}". Panes on screen: ${list()}. ` +
+    `--pane takes ${PANE_SPECS}.`
+  );
+}
+
+/**
+ * The pane a caller who named none means — when there is only one, that one.
+ *
+ * With two panes on screen there is no such pane and this refuses, for the
+ * same reason a board has to be named: the answers on offer are "wherever you
+ * last clicked" and "whichever we listed first", and both put a board on a
+ * half of the screen nobody chose. Which half is cheaper to get wrong than
+ * which board, but it is still a guess, and refusing costs one flag.
+ *
+ * No pane at all is not a refusal: nothing is on screen, so a board can be
+ * loaded without being shown.
+ */
+export function soloPane(registrations: PaneRegistration[]): PaneRegistration | null {
+  const ordered = panesInOrder(registrations);
+  if (ordered.length === 0) return null;
+  if (ordered.length === 1) return ordered[0]!.pane;
+  throw new Error(
+    `${ordered.length} panes are open, so this needs a pane as well as a board — ` +
+    `--pane ${ordered.map(entry => entry.place).join(' | ')}. ` +
+    `They are showing ${ordered.map(entry => `${entry.pane.board} (${entry.place})`).join(', ')}.`
+  );
+}
+
 const round = (n: number): number => Math.round(n);
 
 function selectionOf(pane: PaneRegistration, context: PaneContext): PaneSelection {
@@ -254,7 +345,8 @@ export function buildPanesReport(
   registrations: PaneRegistration[],
   context: PaneContext
 ): PanesReport {
-  const ordered = [...registrations].sort(readingOrder);
+  const ordered = panesInOrder(registrations).map(entry => entry.pane);
+  const places = panesInOrder(registrations).map(entry => entry.place);
   const arrangement = arrangementOf(ordered);
 
   if (ordered.length === 0) {
@@ -273,7 +365,7 @@ export function buildPanesReport(
       paneId: pane.paneId,
       clientId: pane.clientId,
       position: index + 1,
-      place: placeOf(pane, index, ordered, arrangement),
+      place: places[index]!,
       focused: pane.focused,
       primary: pane.primary,
       board: boardKey(identity),
@@ -310,10 +402,22 @@ export function buildPanesReport(
     // offering "the left one" as a way to tell them apart.
     lines.push('These are separate tabs or windows on the same canvas, not a split — nothing is to the left of anything.');
   }
-  // Said once, not per pane: without it a thread reading two identical lines
-  // would reasonably wonder whether it had misread one of them.
+  // Said once, not per pane. Two identical lines used to need explaining
+  // because the server could not do anything else; now they are a choice, and
+  // what a reader needs is how to make the other one.
   if (panes.length > 1 && sameBoard) {
-    lines.push('Every pane shows the same board because this server holds one board at a time.');
+    lines.push(
+      'These panes are all on the same board. Point one somewhere else with ' +
+      '`board open <name> --pane <left|right|…>`.'
+    );
+  }
+  // The consequence of disagreement, said where the disagreement is visible: a
+  // caller that names no board is refused rather than guessed at (ADR 0009).
+  if (!sameBoard) {
+    lines.push(
+      'The panes disagree, so commands that name no board are refused until one is named — ' +
+      `\`--board ${panes[0]!.board}\`, or \`--board ${panes.find(p => p.board !== panes[0]!.board)!.board}\`.`
+    );
   }
   for (const pane of panes) lines.push(`  ${paneLine(pane)}`);
 

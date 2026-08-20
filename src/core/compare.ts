@@ -112,7 +112,9 @@ export interface CompareSideInput {
   // differ and the human needs to know which they are being told about.
   source: 'memory' | 'vault';
   file?: string;
-  active?: boolean;
+  // Is this board in front of somebody in a pane right now? A comparison
+  // never disturbs what is on screen, so this is only ever a remark.
+  onScreen?: boolean;
   savedAt?: string;
   loadedAt?: string;
 }
@@ -122,7 +124,7 @@ export interface SideSummary {
   identity: BoardIdentity;
   source: 'memory' | 'vault';
   file?: string;
-  active?: boolean;
+  onScreen?: boolean;
   savedAt?: string;
   loadedAt?: string;
   elementCount: number;
@@ -1181,7 +1183,7 @@ export function compareBoards(fromInput: CompareSideInput, toInput: CompareSideI
     identity: input.identity,
     source: input.source,
     ...(input.file ? { file: input.file } : {}),
-    ...(input.active !== undefined ? { active: input.active } : {}),
+    ...(input.onScreen !== undefined ? { onScreen: input.onScreen } : {}),
     ...(input.savedAt ? { savedAt: input.savedAt } : {}),
     ...(input.loadedAt ? { loadedAt: input.loadedAt } : {}),
     elementCount: input.elements.length,

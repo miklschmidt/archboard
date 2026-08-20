@@ -21,6 +21,31 @@ export interface SyncResponse {
   elements?: ServerElement[];
 }
 
+// ---- Which board this invocation is talking about ----
+//
+// Set once, from something the caller typed: `--board <key>` on the command
+// line, or a `board` argument on an MCP tool. It is deliberately NOT read from
+// the environment and NOT remembered between invocations — a board that comes
+// from somewhere the caller cannot see is the whole problem (ADR 0009). The
+// canvas refuses a request that carries no board, so leaving this unset does
+// not silently pick one; it produces a refusal that says what to pass.
+let requestedBoard: string | null = null;
+
+export function setRequestedBoard(key: string | null): void {
+  requestedBoard = key && key.trim() ? key.trim() : null;
+}
+
+export function currentRequestedBoard(): string | null {
+  return requestedBoard;
+}
+
+/** Attach the board to a request path, unless the caller already named one. */
+function withBoard(path: string): string {
+  if (!requestedBoard) return path;
+  if (/[?&]board=/.test(path)) return path;
+  return `${path}${path.includes('?') ? '&' : '?'}board=${encodeURIComponent(requestedBoard)}`;
+}
+
 // Helper functions to sync with Express server (canvas)
 export async function syncToCanvas(operation: string, data: any): Promise<SyncResponse | null> {
   if (!ENABLE_CANVAS_SYNC) {
@@ -34,7 +59,7 @@ export async function syncToCanvas(operation: string, data: any): Promise<SyncRe
 
     switch (operation) {
       case 'create':
-        url = `${EXPRESS_SERVER_URL}/api/elements`;
+        url = `${EXPRESS_SERVER_URL}${withBoard('/api/elements')}`;
         options = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -43,7 +68,7 @@ export async function syncToCanvas(operation: string, data: any): Promise<SyncRe
         break;
 
       case 'update':
-        url = `${EXPRESS_SERVER_URL}/api/elements/${data.id}`;
+        url = `${EXPRESS_SERVER_URL}${withBoard(`/api/elements/${data.id}`)}`;
         options = {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -52,12 +77,12 @@ export async function syncToCanvas(operation: string, data: any): Promise<SyncRe
         break;
 
       case 'delete':
-        url = `${EXPRESS_SERVER_URL}/api/elements/${data.id}`;
+        url = `${EXPRESS_SERVER_URL}${withBoard(`/api/elements/${data.id}`)}`;
         options = { method: 'DELETE' };
         break;
 
       case 'batch_create':
-        url = `${EXPRESS_SERVER_URL}/api/elements/batch`;
+        url = `${EXPRESS_SERVER_URL}${withBoard('/api/elements/batch')}`;
         options = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -132,7 +157,7 @@ export async function getElementFromCanvas(elementId: string): Promise<ServerEle
 
   try {
     await assertCanvasIdentity();
-    const response = await fetch(`${EXPRESS_SERVER_URL}/api/elements/${elementId}`);
+    const response = await fetch(`${EXPRESS_SERVER_URL}${withBoard(`/api/elements/${elementId}`)}`);
     if (!response.ok) {
       logger.warn(`Failed to fetch element ${elementId}: ${response.status}`);
       return null;
@@ -149,7 +174,9 @@ export async function getElementFromCanvas(elementId: string): Promise<ServerEle
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   await assertCanvasIdentity();
-  const response = await fetch(`${EXPRESS_SERVER_URL}${path}`, init);
+  // Every canvas request carries the board when one was named. Attached here
+  // rather than at 30 call sites, so a route can never be the one that forgot.
+  const response = await fetch(`${EXPRESS_SERVER_URL}${withBoard(path)}`, init);
   const data = await response.json().catch(() => null) as any;
   if (!response.ok) {
     const error = new Error(data?.error || `HTTP server error: ${response.status} ${response.statusText}`);
@@ -159,6 +186,11 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
     if (data?.conflict) {
       (error as any).code = 'BOARD_CONFLICT';
       (error as any).conflict = data.conflict as BoardWriteConflict;
+    } else if (typeof data?.code === 'string') {
+      // BOARD_REQUIRED and its kin: the canvas already said what to do about
+      // it, so the code rides along and picks the exit status.
+      (error as any).code = data.code;
+      if (Array.isArray(data.open)) (error as any).open = data.open;
     }
     throw error;
   }
@@ -273,6 +305,8 @@ export interface BoardResponse {
   overwrote?: boolean;
   forced?: boolean;
   declaredKey?: string;
+  /** Where the board landed, when the act was one that put it on screen. */
+  pane?: { paneId: string; clientId: string; place: string; position: number } | null;
 }
 
 export interface BoardListResponse {
@@ -285,18 +319,18 @@ export interface BoardListResponse {
     elementCount: number;
     vaultBacked: boolean;
     file?: string;
-    active: boolean;
     savedAt?: string;
     loadedAt?: string;
   }>;
-  active: string;
+  /** What each pane is holding right now, in reading order. */
+  onScreen: Array<{ paneId: string; place: string; board: string }>;
 }
 
 // One line naming the board a read is about. Best effort: an older canvas
 // server, or one that cannot reach its vault, still answers scene questions.
 export async function boardHeading(): Promise<string> {
   try {
-    const current = await getCurrentBoard();
+    const current = await getBoardInfo();
     const level = current.identity?.level ? `, level ${current.identity.level}` : '';
     return `Board: ${current.board}${level}`;
   } catch {
@@ -308,8 +342,10 @@ export async function listBoardsOnCanvas(): Promise<BoardListResponse> {
   return requestJson<BoardListResponse>('/api/boards');
 }
 
-export async function getCurrentBoard(): Promise<BoardResponse> {
-  return requestJson<BoardResponse>('/api/boards/current');
+// One board's identity and save state. There is no "the current board" to ask
+// about: the board is named, like everywhere else (ADR 0009).
+export async function getBoardInfo(): Promise<BoardResponse> {
+  return requestJson<BoardResponse>('/api/boards/info');
 }
 
 async function postBoard(path: string, body: Record<string, unknown>): Promise<BoardResponse> {
@@ -325,6 +361,8 @@ export async function openBoard(params: {
   variant?: string;
   level?: string;
   reload?: boolean;
+  /** Which pane to show it in: left, right, 1, focused, a pane id… */
+  pane?: string;
 }): Promise<BoardResponse> {
   return postBoard('/api/boards/open', params);
 }
@@ -333,6 +371,7 @@ export async function newBoard(params: {
   board: string;
   variant?: string;
   level?: string;
+  pane?: string;
 }): Promise<BoardResponse> {
   return postBoard('/api/boards/new', params);
 }

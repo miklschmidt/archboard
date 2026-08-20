@@ -1,4 +1,5 @@
 import { CliUsageError } from './args.js';
+import { setRequestedBoard } from '../core/canvas-client.js';
 import { packageVersion } from '../core/version.js';
 import * as server from './commands/server.js';
 import * as elements from './commands/elements.js';
@@ -58,18 +59,22 @@ const COMMANDS: Record<string, Command> = {
     subcommands: BOARD_SUBCOMMANDS,
     summary: 'Load, save and list boards in the vault',
     usage: [
-      'board list | current | new <name> [--variant v] [--level system|service|module]',
-      '        | open <name[@variant]> [--variant v] [--reload] | save [--as <name>] [--variant v] [--level l] [--force]',
+      'board list | info | new <name> [--variant v] [--level system|service|module] [--pane <spec>]',
+      '        | open <name[@variant]> [--variant v] [--reload] [--pane <spec>]',
+      '        | save --board <key> [--as <name>] [--variant v] [--level l] [--force]',
       '',
-      '  A board is one .excalidraw.md note in the vault at ARCHBOARD_VAULT; the canvas holds one at a time.',
+      '  A board is one .excalidraw.md note in the vault at ARCHBOARD_VAULT; a PANE holds one at a time,',
+      '  and two panes hold two — which is what side-by-side current-vs-proposed is. --pane takes left,',
+      '  right, top, bottom, a 1-based position, primary, or a pane id, and is required once more than',
+      '  one pane is open; with a single pane the board goes there, with none it is loaded unshown.',
       '  The variant "current" owns the bare name — the architecture that exists. Every other variant is',
       '  addressed and stored as name@variant, so three-way option comparison is just three names.',
       '',
       '  SAVES ARE CHECKED, NOT LOCKED. archboard hashes a note when it reads it and verifies that hash',
       '  before writing. If the note changed underneath — Obsidian, a sync client, another editor — the',
       '  save is refused, nothing is written, and it exits 5 naming three ways out: reload the note',
-      '  (`board open <name> --reload`), overwrite it (`board save --force`), or keep both',
-      '  (`board save --as <other>`). archboard never picks for you. Nothing is locked, so keep a board',
+      '  (`board open <name> --reload`), overwrite it (`--force`), or keep both',
+      '  (`--as <other>`). archboard never picks for you. Nothing is locked, so keep a board',
       '  open in one editor at a time: the check catches a changed file, not a copy in another app\'s memory.'
     ].join('\n')
   },
@@ -100,7 +105,7 @@ const COMMANDS: Record<string, Command> = {
     handler: changes,
     summary: 'Semantic changes on the board since a cursor — what it became, not which pixels moved',
     usage: [
-      'changes [--since <cursor>] [--board <key>] [--coalesce] [--detail] [--text]',
+      'changes --board <key> [--since <cursor>] [--coalesce] [--detail] [--text]',
       '',
       '  Nodes and edges added, removed, changed, promoted, rerouted; layout as relative structure',
       '  (who sits with whom, what contains what, whereabouts, which side of what) — the same',
@@ -182,6 +187,9 @@ function printHelp(): void {
     '  and raw-content output when --out is omitted (`export` scene JSON,',
     '  `screenshot --format svg`).',
     '  Diagnostics go to stderr.',
+  '  --board <key> is global and REQUIRED on every command that touches a board. There is no',
+  '    default: a pane holds its own board, so "the board" would be a guess (ADR 0009). A call',
+  '    without it is refused, and the refusal lists the boards that are open.',
     '  Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required,',
     '               5 board write refused (the note changed on disk).',
     '  Canvas-driving commands auto-start the server (disable with EXCALIDRAW_NO_AUTOSTART=1).',
@@ -198,7 +206,34 @@ function exitCodeFor(error: unknown): number {
   if (code === 'CANVAS_UNREACHABLE') return 3;
   if (code === 'BROWSER_REQUIRED') return 4;
   if (code === 'BOARD_CONFLICT') return 5;
+  // A missing board is a mistake at the keyboard, like any other usage error.
+  if (code === 'BOARD_REQUIRED') return 2;
   return 1;
+}
+
+/**
+ * Pull `--board <key>` out of the arguments before the command sees it.
+ *
+ * Global, like `--url`, because it applies to every canvas request a command
+ * makes rather than to one of them — and it is the only way to name a board,
+ * because there is no default (ADR 0009). Stripped here so no command has to
+ * declare it and none can forget to pass it on.
+ */
+function takeBoardFlag(argv: string[]): string | null {
+  for (let i = 0; i < argv.length; i++) {
+    const token = argv[i]!;
+    if (token === '--board') {
+      const value = argv[i + 1];
+      if (value === undefined) throw new CliUsageError('Flag --board requires a value');
+      argv.splice(i, 2);
+      return value;
+    }
+    if (token.startsWith('--board=')) {
+      argv.splice(i, 1);
+      return token.slice('--board='.length);
+    }
+  }
+  return null;
 }
 
 export async function runCli(argv: string[]): Promise<void> {
@@ -227,6 +262,7 @@ export async function runCli(argv: string[]): Promise<void> {
   }
 
   try {
+    setRequestedBoard(takeBoardFlag(rest));
     await command.handler(rest);
   } catch (error) {
     if (!(error as any)?.quiet) {
