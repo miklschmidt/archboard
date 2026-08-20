@@ -311,7 +311,28 @@ the copy with the variant it was saved as. Without that the copy would still
 record the variant each node was promoted under, and `compare` would report
 every node changed on the one workflow that is meant to leave them alone
 (TASK-035). A node that records a foreign variant on a board nobody branched
-really was copied in, and `compare` still says so.
+really was copied in, and `compare` still says so. The `level` comes across
+too, on `--as` as well as `--variant`: a branch is the same subject at the same
+abstraction tier, and level is board identity from a vocabulary the project
+grew on purpose (TASK-039).
+
+A branch shares no element objects with the board it came from. It used to
+share every one the restamp did not replace, so two boards held one set of
+objects behind two names, and the only thing keeping that from being a bug was
+that every write path replaces an element rather than editing one. That
+invariant was never written down and nothing enforced it, so the copy is deep
+now and a check mutates a branched element in place to prove it (TASK-042).
+
+**A branch moves nothing on screen** (ADR 0012). You branched in order to
+compare, so the panes holding the source keep holding it and the branch is put
+up with `board open` like any other board. `board open` and `board new` are the
+commands that choose what is showing; a save writes a file. The one exception
+is naming the scratch board — `board save --board scratch --as <name>` — where
+the placeholder and its new name hold the same drawing and there is nothing to
+stay behind for, so the pane comes with it. Either way the answer names the
+panes: `panes.moved` for the ones it repointed, `panes.kept` for the ones
+deliberately left on the source, and `saveKind` for which of the three acts it
+was.
 
 Identity lives in the note's frontmatter as plain `board`, `variant` and `level`
 properties, and round-trips. The path is the address; the frontmatter is the

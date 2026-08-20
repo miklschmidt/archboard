@@ -122,6 +122,31 @@ export function getOrCreateBoard(identity: BoardIdentity, vaultBacked: boolean):
   return { key, board };
 }
 
+/**
+ * Fill a board with copies of some elements, replacing whatever it held.
+ *
+ * Copies, and deeply. This is how a branch is filled, and `board save --as`
+ * used to put the source board's own element objects straight into the
+ * branch's map, so two boards held one set of objects behind two names.
+ * Nothing failed, because every path that changes an element replaces the
+ * object rather than editing it — an invariant nobody had written down and
+ * nothing enforced. A branch exists so the source can stay put, and that
+ * promise should not rest on every future writer remembering to build a new
+ * object (TASK-042).
+ *
+ * It is the same reasoning that removed the sync path in TASK-016: two things
+ * holding one scene is how one of them silently overwrites the other.
+ *
+ * Deep rather than a spread, because the fields that carry the meaning are the
+ * nested ones. `customData` is the semantic channel (ADR 0003) and
+ * `boundElements` is how a label belongs to its container, so a shallow copy
+ * would leave exactly the parts worth protecting shared.
+ */
+export function replaceBoardElements(board: BoardState, elements: ServerElement[]): void {
+  board.elements.clear();
+  for (const element of elements) board.elements.set(element.id, structuredClone(element));
+}
+
 // The most recent bytes archboard has seen at `file`, or null when it has never
 // seen any. Asked of every open board rather than of one, because a baseline
 // belongs to the path: `board save --as other` writes a file that a different
