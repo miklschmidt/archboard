@@ -1,21 +1,33 @@
 # Using archboard in another repository
 
-Archboard is not a dependency of the repositories you diagram. Nothing gets
-added to them, nothing gets committed to them, and they never build it. You
-install archboard once on a machine and point it at whatever repo you happen to
-be working in.
+Archboard is not a dependency of the repositories you diagram. They never build
+it and never import it. You install archboard once on a machine and point it at
+whatever repo you happen to be working in.
+
+Setting a repo up does put two things in it, and only two: a block in its
+`CLAUDE.md` or `AGENTS.md` saying where everything is, and, if you keep the
+boards with the code, a vault directory.
 
 If you are setting up the voice loop rather than the tool, read
 [`TESTING.md`](TESTING.md) instead. This is the shorter, per-machine story.
 
 ## What actually has to be true
 
-Four things, and only the first two involve installing anything.
+Five things. The first two are once per machine. The last three are once per
+repo, and `archboard install-skill` does all three.
 
 1. The archboard build exists somewhere on this machine.
 2. An agent can find the CLI.
-3. `ARCHBOARD_VAULT` points at a vault, before the canvas server starts.
-4. The agent knows a skill exists that teaches it how to draw.
+3. A vault exists, and `ARCHBOARD_VAULT` points at it before the canvas server
+   starts.
+4. The agent has the skill that teaches it how to draw.
+5. The repo itself says where 2 and 3 are, because nothing else will.
+
+Number 5 is the one that used to get skipped. An agent arriving in a repo can
+see the skill, so it knows archboard exists and knows the commands. It cannot
+see which vault this machine uses, and it cannot see that `archboard` is not on
+PATH here. Both of those live in the installing human's head unless the install
+writes them down.
 
 ## 1. Build it once
 
@@ -42,38 +54,86 @@ ln -s ~/Projects/archboard/bin/canvas ~/.local/bin/archboard
 directory and always runs the current build. Every example in the skill says
 `archboard`, so this is the name to use.
 
-## 3. Choose a vault
+Skipping this is survivable. `install-skill` checks whether an `archboard` on
+PATH really points at this build, and when it does not it writes the absolute
+path into the repo instead, so the next agent still has something that runs.
+The name is nicer, and the skill's examples match it.
 
-Boards live in an Obsidian vault, as `.excalidraw.md` notes. The vault spans
-every repository you work in, which is the point: a system diagram whose boxes
-belong to five repos has nowhere else to live.
+## 3. Set up the repo
 
-```bash
-export ARCHBOARD_VAULT=~/vaults/architecture
-```
-
-Put that in your shell profile. There is deliberately no default, because
-defaulting to the working directory would silently give you a different vault
-per checkout.
-
-The server does the vault I/O, so **set it before starting the canvas server**.
-Exporting it afterwards changes nothing, and board commands will fail on the
-vault message rather than on whatever you were doing.
-
-## 4. Install the skill
-
-The skill is what teaches an agent the commands. Without it an agent has a
-binary it does not know how to use.
+From inside the repository you want to diagram:
 
 ```bash
-archboard install-skill --target claude    # ~/.claude/skills
-archboard install-skill --target codex     # Codex skills root
+cd ~/Projects/payments-api
+archboard install-skill
 ```
 
-Install it once at the user level and it applies in every repo. On the machine
-this was developed on, `~/.claude/skills/excalidraw-skill` is a symlink into the
-checkout instead, so the skill tracks the build and cannot go stale. That is
-worth copying if you are also working on archboard itself.
+That does four things:
+
+- copies the skill into a skills root (`--target claude` for `~/.claude/skills`,
+  `--target codex` for `~/.codex/skills`, `--dir <path>` for anywhere else)
+- asks where this repo's boards should live, offering `<repo>/.archboard/vault`
+- creates that directory, so the first board command has somewhere to write
+- writes a block into the repo's `CLAUDE.md`, or its `AGENTS.md` when there is
+  no `CLAUDE.md`, recording the vault path, the exact command that runs the CLI
+  on this machine, and a section for the boards that cover this repo
+
+The block sits between `<!-- archboard:begin -->` and `<!-- archboard:end -->`.
+Re-running replaces it in place, so upgrading the skill later never leaves two
+of them. Prose outside the markers is untouched. Notes written inside them are
+not, so keep your own words outside.
+
+If the repo has neither file, one is created: `CLAUDE.md` for `--target claude`,
+which is the default, and `AGENTS.md` otherwise. Never both. A repo with two
+agent docs is a repo where one of them is out of date.
+
+Nothing prompts when stdin is not a terminal, which is the case whenever an
+agent runs the command. It takes the offered vault and prints what it chose.
+
+| Flag | For |
+|---|---|
+| `--vault <path>` | name the vault instead of being asked |
+| `--yes` | take the offered vault without being asked |
+| `--repo <dir>` | set up a repo other than the one you are standing in |
+| `--doc <file>` | write the block somewhere other than the repo root |
+| `--no-doc` | install the skill and touch nothing in the repo |
+
+**Then fill in "Boards for this repo".** The installer cannot know which board
+covers this code, what your levels mean, or the gotcha that will cost the next
+agent an hour. That section is where those go, and an agent that finds it empty
+has to stop and ask.
+
+On the machine archboard was developed on, `~/.claude/skills/excalidraw-skill`
+is a symlink into the checkout, so the skill tracks the build and cannot go
+stale. `install-skill` refuses to replace a symlink, which is what you want
+there. Running it inside the archboard checkout writes no block either, because
+that repo's `CLAUDE.md` is authored rather than generated.
+
+## 4. Where the vault goes
+
+Boards are `.excalidraw.md` notes in an Obsidian vault. The offered answer is a
+vault inside the repo, at `<repo>/.archboard/vault`: boards next to the code
+they describe, and reviewable in the same diff as the change they justify. It
+is not gitignored for you. Commit it or ignore it, deliberately.
+
+Take a shared vault instead when the diagrams span repositories, which is what
+an architecture diagram does as soon as there is more than one service in it.
+Point every repo at the same path:
+
+```bash
+archboard install-skill --vault ~/vaults/architecture
+```
+
+An `ARCHBOARD_VAULT` already exported in your shell counts as having answered:
+it becomes the offer, in place of the local path.
+
+Either way, **the server does the vault I/O, so the variable has to be set
+before the canvas server starts.** Exporting it afterwards changes nothing, and
+board commands fail on the vault message rather than on whatever you were
+doing. A server that is already running keeps the vault it started with:
+`archboard board list` prints the vault in use, and `archboard stop` is how you
+switch. That is the one that bites when you move between two repos that each
+keep their own boards.
 
 ## Optional: MCP, for a client with no shell
 
@@ -121,8 +181,8 @@ is fixing this. Until it lands, absolute paths are the only reliable form.
 `--repo`, `--branch` and `--commit` override the resolution when you need to
 name something git cannot tell you.
 
-Boards do not belong to the repo and are not committed to it. If you want a
-diagram in the repo as well, export one:
+With a shared vault the boards do not belong to the repo and are not committed
+to it. If you want a diagram in the repo as well, export one:
 
 ```bash
 archboard export --out docs/architecture.excalidraw
@@ -156,13 +216,18 @@ board names differ only in case.
 Nothing connects a repository to its board automatically. An agent in a fresh
 repo knows archboard exists, from the skill, but not which board to open.
 
-Until that is solved, say so in the repo's own `CLAUDE.md` or `AGENTS.md`:
+That is what the "Boards for this repo" section of the installed block is for.
+Fill it in once the repo has a board:
 
 ```markdown
-## Architecture
+### Boards for this repo
 
-Boards for this service live in the archboard vault as `payments` (current) and
-`payments@*` (proposals). Open with `archboard board open payments`.
+- Boards: `payments` is the architecture as it stands, `payments@*` are
+  proposals. Open with `archboard board open payments`.
+- Level vocabulary: `service` means one deployable here, not one class.
+- Conventions and gotchas: the worker boxes are drawn from the queue's side,
+  because that is how the on-call runbook reads.
 ```
 
-One line, and every agent that reads the file knows where to look.
+Every agent that reads the file then knows where to look, and what the drawing
+conventions are before it starts adding to them.
