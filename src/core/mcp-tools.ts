@@ -406,8 +406,13 @@ export const tools: Tool[] = [
   },
   {
     name: 'list_boards',
-    description: "Every board in the vault, plus which ones are open in this session and which one the canvas is currently holding. A board is a named, persisted diagram; the canvas shows exactly one at a time. Call this before opening a board to see what exists.",
-    inputSchema: { type: 'object', properties: {} }
+    description: "Every board in the vault, plus which ones are open in this session and which pane is showing what. A board is a named, persisted diagram; a pane shows exactly one at a time. Call this before opening a board to see what exists. Pass repo to ask the other question instead: WHICH BOARDS DESCRIBE A REPOSITORY. That answers from the bindings on the boards themselves, so it finds a system board covering five repositories that is named after none of them, and each matching board comes back with the nodes bound to that repo.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        repo: { type: 'string', description: 'Repository identity (host/owner/name). Narrows the listing to boards with at least one node bound to that repository. An identity, never a path: this server has no working directory it could resolve one against (ADR 0010).' }
+      }
+    }
   },
   {
     name: 'open_board',
