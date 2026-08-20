@@ -631,6 +631,47 @@ export async function getElementStrict(id: string): Promise<ServerElement> {
   return data.element;
 }
 
+/**
+ * One intent, one write.
+ *
+ * Everything an agent does to several elements at once — aligning them,
+ * distributing them, locking them, grouping them, applying a patch — arrives
+ * here as a single request. It used to arrive as one HTTP write per element,
+ * which is merely wasteful today and is lost updates once the note is the only
+ * copy of the board and every write is a read-modify-write cycle against it
+ * (ADR 0015), or nineteen gaps in a lock somebody else can write into
+ * (ADR 0016).
+ *
+ * `origin: agent` is stated here, in the one place agent writes go through, so
+ * no caller can forget it and have its own drawing narrated back at it.
+ */
+export async function applyElementChanges(changes: {
+  upserts?: (Partial<ServerElement> & { id?: string })[];
+  deletes?: string[];
+}): Promise<ElementChangesResult> {
+  return requestJson<ElementChangesResult>('/api/elements/changes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      upserts: changes.upserts ?? [],
+      deletes: changes.deletes ?? [],
+      origin: 'agent'
+    })
+  });
+}
+
+export interface ElementChangesResult {
+  success: boolean;
+  board: string;
+  created: number;
+  updated: number;
+  deleted: number;
+  count: number;
+  appliedAt: string;
+  /** What the write created, in the form the board now holds it. */
+  elements: ServerElement[];
+}
+
 export async function batchCreateElementsStrict(elements: ServerElement[]): Promise<ServerElement[]> {
   const data = await requestJson<ApiResponse>('/api/elements/batch', {
     method: 'POST',
