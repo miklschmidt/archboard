@@ -1,3 +1,5 @@
+import { kept } from './core/hot.js';
+
 export interface ExcalidrawElementBase {
   id: string;
   type: ExcalidrawElementType;
@@ -354,8 +356,10 @@ export interface Snapshot {
 // The element store lives in core/board-store.ts: it is keyed by board now,
 // not one global map (see that file for why).
 
-// In-memory storage for snapshots
-export const snapshots = new Map<string, Snapshot>();
+// In-memory storage for snapshots. Kept across a hot reload, along with every
+// other holder in this file: a snapshot is taken to protect work, so a file
+// save must not be what loses it (src/core/hot.ts).
+export const snapshots = kept('snapshots', () => new Map<string, Snapshot>());
 
 // The current selection, or null when nothing is selected. A mutable holder so
 // the server can swap the value while importers keep a single reference.
@@ -368,7 +372,7 @@ export const snapshots = new Map<string, Snapshot>();
 export const selectionState: {
   current: CanvasSelection | null;
   byClient: Map<string, CanvasSelection>;
-} = { current: null, byClient: new Map() };
+} = kept('selection', () => ({ current: null, byClient: new Map() }));
 
 // In-memory file storage for image elements (Excalidraw BinaryFiles)
 export interface ExcalidrawFile {
@@ -377,7 +381,7 @@ export interface ExcalidrawFile {
   mimeType: string;
   created: number;
 }
-export const files = new Map<string, ExcalidrawFile>();
+export const files = kept('files', () => new Map<string, ExcalidrawFile>());
 
 // Validation function for Excalidraw elements
 export function validateElement(element: Partial<ServerElement>): element is ServerElement {

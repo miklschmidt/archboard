@@ -17,6 +17,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { ARCHBOARD_VAULT } from './config.js';
+import { kept } from './hot.js';
 import logger from '../utils/logger.js';
 
 // The v2 library item, which is what both this store and Excalidraw speak.
@@ -140,7 +141,10 @@ export function curatedSets(): Array<{ name: string; items: LibraryItem[] }> {
 // long as the process does — the same deal boards get, minus the refusal, since
 // there is no wrong file to be written here.
 
-let cached: LibraryState | null = null;
+// Kept across a hot reload. With no vault configured this is not a cache at
+// all, it is the library, so rebuilding it on a file save would empty the
+// palette (src/core/hot.ts).
+const cache = kept('library', () => ({ state: null as LibraryState | null }));
 
 function emptyState(): LibraryState {
   const file = libraryFilePath();
@@ -191,7 +195,7 @@ function persist(state: LibraryState): void {
  * the palette where they put them.
  */
 export function readLibrary(): LibraryState {
-  if (cached) return cached;
+  if (cache.state) return cache.state;
 
   const state = emptyState();
   if (state.file) {
@@ -221,8 +225,8 @@ export function readLibrary(): LibraryState {
     persist(state);
   }
 
-  cached = state;
-  return cached;
+  cache.state = state;
+  return cache.state;
 }
 
 /** Replace the library with what a browser reports it to now be. */
@@ -241,5 +245,5 @@ export function writeLibrary(items: LibraryItem[]): LibraryState {
 
 /** Test seam: forget what has been read, so the next read hits the disk. */
 export function resetLibraryCache(): void {
-  cached = null;
+  cache.state = null;
 }

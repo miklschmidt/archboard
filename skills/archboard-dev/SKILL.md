@@ -24,9 +24,21 @@ A running process read its source at start, so a server route keeps its old
 behaviour until it is restarted while the CLI already has the new one. That
 split is what made TASK-056 confusing.
 
-**A restart drops every unsaved board**, so save first, or ask. `bun run
-dev:reload` restarts on every file save and costs the same thing, which is why
-`canvas start` never watches.
+**A restart drops every unsaved board**, so save first, or ask. When you are
+working on the server itself, reload instead of restarting:
+
+```bash
+bun run dev:canvas  # bun --hot: reloads on every save, keeps the boards
+```
+
+`--hot` re-evaluates modules inside the running process, so the port, the open
+tabs, the boards, the panes and the change feed's cursor all survive. It is not
+`--watch`, which restarts and takes them with it, and it is not what
+`canvas start` does — a reload has to be asked for.
+
+Anything long-lived you add to the server has to go through `kept()` in
+`src/core/hot.ts`, or a reload will quietly replace it while the tabs stay
+connected. `bun run test:hot` is what catches that.
 
 This box has node + bun but **no npm/npx**. The `package.json` scripts shell out
 to bun, so use `bun run <script>` — never `npm run`. `bun install` intermittently

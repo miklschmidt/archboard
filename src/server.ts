@@ -40,6 +40,7 @@ import { BoardRequiredError } from './core/board-target.js';
 import { z } from 'zod';
 import WebSocket from 'ws';
 import { isMainModule } from './core/entry.js';
+import { kept } from './core/hot.js';
 import { writePidFile, removePidFile } from './core/pidfile.js';
 import fs from 'fs';
 import {
@@ -92,8 +93,39 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const server = createServer(app);
-const wss = new WebSocketServer({ server });
+
+// The port and the sockets on it are made once per process and reused across a
+// hot reload; the routes and handlers on them are replaced every time this file
+// is re-evaluated (ADR 0014).
+//
+// That split is the whole trick. A tab's WebSocket belongs to `wss`, which
+// belongs to `server`, so rebuilding either would disconnect every pane on the
+// wall — and a pane that reconnects has to be told what it holds all over
+// again. Binding again would fail on EADDRINUSE against ourselves, which the
+// loopback guard would read as a second canvas and exit over.
+//
+// So `server` is created with a dispatcher that looks up the current express
+// app rather than being handed one, and each reload points `wiring.app` at the
+// app it just built.
+interface Wiring {
+  app: express.Express;
+  server: ReturnType<typeof createServer>;
+  wss: WebSocketServer;
+  /** Set once the port is bound, so a reload does not try to bind it again. */
+  listening: boolean;
+  /** Set once the signal and exit handlers are on `process`. */
+  signalsBound: boolean;
+}
+
+const wiring = kept<Wiring>('http', () => {
+  const state = { listening: false, signalsBound: false } as Wiring;
+  state.server = createServer((req, res) => state.app(req, res));
+  state.wss = new WebSocketServer({ server: state.server });
+  return state;
+});
+wiring.app = app;
+const server = wiring.server;
+const wss = wiring.wss;
 
 // Middleware
 app.use(cors());
@@ -110,18 +142,23 @@ app.use('/assets/fonts', express.static(
   path.join(__dirname, '../node_modules/@excalidraw/excalidraw/dist/prod/fonts')
 ));
 
-// WebSocket connections
-const clients = new Set<WebSocket>();
+// WebSocket connections.
+//
+// Everything from here to `paneBoards` is kept across a hot reload, because it
+// describes what is on screen right now: the sockets themselves, which pane is
+// which, and what each one holds. A reload that rebuilt these would leave the
+// tabs connected to a server that had forgotten them.
+const clients = kept('ws-clients', () => new Set<WebSocket>());
 // Browser client id per socket, taken from the ?clientId= connect param. The
 // same id is sent with every selection post, which is what lets a disconnect
 // retire that client's selection.
-const clientIds = new Map<WebSocket, string>();
+const clientIds = kept('ws-client-ids', () => new Map<WebSocket, string>());
 
 // What is on screen right now, one entry per pane, keyed by the same client id.
 // A pane is in here only while its socket is open: closing a tab or unsplitting
 // takes the registration with it, so `panes` can never report a pane that is no
 // longer in front of anybody. Empty is the normal headless state.
-const panes = new Map<string, PaneRegistration>();
+const panes = kept('panes', () => new Map<string, PaneRegistration>());
 
 // Which board each pane has been pointed at, keyed by client id.
 //
@@ -133,7 +170,7 @@ const panes = new Map<string, PaneRegistration>();
 // Entries outlive the socket on purpose. A dropped connection reconnects with
 // the same client id, and a pane that came back showing a different board than
 // it had a second ago would undo an arrangement the human made by hand.
-const paneBoards = new Map<string, string>();
+const paneBoards = kept('pane-boards', () => new Map<string, string>());
 
 /** What each pane holds, in reading order. */
 function boardsOnScreen(): Array<{ paneId: string; place: string; board: string }> {
@@ -288,7 +325,11 @@ function boardForNewPane(clientId: string): string {
   return key && boards.has(key) ? key : SCRATCH_KEY;
 }
 
-// WebSocket connection handling
+// WebSocket connection handling.
+//
+// The listener is replaced rather than added, because `wss` outlives a hot
+// reload and a second registration would answer every connection twice.
+wss.removeAllListeners('connection');
 wss.on('connection', (ws: WebSocket, req) => {
   clients.add(ws);
   const clientId = new URL(req.url ?? '/', 'http://localhost').searchParams.get('clientId');
@@ -1536,7 +1577,7 @@ interface PendingPaneOpen {
   /** The panes that already existed, so the new one can be told from them. */
   known: Set<string>;
 }
-const pendingPaneOpens = new Set<PendingPaneOpen>();
+const pendingPaneOpens = kept('pending-pane-opens', () => new Set<PendingPaneOpen>());
 
 interface PendingPaneClose {
   clientId: string;
@@ -1544,7 +1585,7 @@ interface PendingPaneClose {
   reject: (error: Error) => void;
   timeout: ReturnType<typeof setTimeout>;
 }
-const pendingPaneCloses = new Set<PendingPaneClose>();
+const pendingPaneCloses = kept('pending-pane-closes', () => new Set<PendingPaneClose>());
 
 function notePaneOpened(registration: PaneRegistration): void {
   for (const pending of [...pendingPaneOpens]) {
@@ -1773,7 +1814,7 @@ interface PendingExport {
   collectionTimeout: ReturnType<typeof setTimeout> | null;
   bestResult: { format: string; data: string } | null;
 }
-const pendingExports = new Map<string, PendingExport>();
+const pendingExports = kept('pending-exports', () => new Map<string, PendingExport>());
 
 app.post('/api/export/image', (req: Request, res: Response) => {
   try {
@@ -1932,7 +1973,7 @@ interface PendingViewport {
   reject: (error: Error) => void;
   timeout: ReturnType<typeof setTimeout>;
 }
-const pendingViewports = new Map<string, PendingViewport>();
+const pendingViewports = kept('pending-viewports', () => new Map<string, PendingViewport>());
 
 const viewportRequestSchema = z.object({
   scrollToContent: z.boolean().optional(),
@@ -3011,6 +3052,8 @@ async function findExistingLoopbackListener(port: number): Promise<string | null
   return null;
 }
 
+// Replaced, not added, for the same reason as the connection listener above.
+server.removeAllListeners('error');
 server.on('error', (error: NodeJS.ErrnoException) => {
   if (error.code === 'EADDRINUSE') {
     const address = (error as NodeJS.ErrnoException & { address?: string }).address || HOST;
@@ -3024,6 +3067,24 @@ server.on('error', (error: NodeJS.ErrnoException) => {
 });
 
 async function startServer(): Promise<void> {
+  // A hot reload re-runs this file, entry point and all, inside a process that
+  // is already serving. Everything that had to happen once has happened: the
+  // port is bound, the pidfile is written, injection is armed or refused, and
+  // the tabs are connected to sockets we have just re-pointed at the new
+  // handlers. Binding again would fail against ourselves, and the loopback
+  // guard below would read that as a second canvas and exit — taking the boards
+  // with it.
+  if (wiring.listening) {
+    // Straight to stderr, not through the logger: this is only ever printed
+    // under `bun --hot`, where somebody is watching a terminal and needs to
+    // know their edit is live. The logger's console transport carries warnings
+    // and errors only, and a reload is neither.
+    process.stderr.write(
+      `Canvas server reloaded in place: same port, same sockets, same boards (pid ${process.pid}).\n`
+    );
+    return;
+  }
+
   if (LOOPBACK_GUARD_HOSTS.has(HOST)) {
     const existingHost = await findExistingLoopbackListener(PORT);
     if (existingHost) {
@@ -3042,6 +3103,7 @@ async function startServer(): Promise<void> {
   let ownsPidFile = false;
 
   server.listen(PORT, HOST, () => {
+    wiring.listening = true;
     const hostForUrl = formatHostForUrl(HOST);
     logger.info(`POC server running on http://${hostForUrl}:${PORT}`);
     logger.info(`WebSocket server running on ws://${hostForUrl}:${PORT}`);
@@ -3064,11 +3126,16 @@ async function startServer(): Promise<void> {
     // Force-exit if open sockets keep the server from closing promptly
     setTimeout(() => process.exit(0), 2000).unref();
   };
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
-  process.on('SIGINT', () => shutdown('SIGINT'));
-  process.on('exit', () => {
-    if (ownsPidFile) removePidFile(PORT);
-  });
+  // Once per process. Handlers live on `process`, which no reload touches, so
+  // registering them again would only stack duplicates.
+  if (!wiring.signalsBound) {
+    wiring.signalsBound = true;
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
+    process.on('exit', () => {
+      if (ownsPidFile) removePidFile(PORT);
+    });
+  }
 }
 
 // Start the canvas server only when this file is the process entry point
