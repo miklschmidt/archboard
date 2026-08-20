@@ -555,6 +555,15 @@ route) and the WebSocket protocol (every broadcast names its board, and
 `board_switched` goes to the one pane it was addressed to). A caller that says
 nothing about boards is refused.
 
+**A picture on a board belongs to that board** (TASK-060). An image element
+carries a `fileId` and the scene's `files` map is keyed by it, which is the only
+thing in the format that says which images are whose — so a board's images are
+the ones its own elements draw, and they live on the board and go into its note.
+`/api/files` is board-scoped like every other content route. It used to be one
+map per process, keyed by file id and shared by every open board, so saving one
+board wrote every other open board's pictures into its note, and reopening a
+board dropped the picture data and kept the hole.
+
 The canvas boots holding a `scratch` board, so a first run has something in
 front of it — a board like any other, named like any other
 (`--board scratch`). A pane that is opened with nothing else on screen shows

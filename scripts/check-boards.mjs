@@ -1303,6 +1303,126 @@ try {
   } finally {
     fs.rmSync(witnessDir, { recursive: true, force: true });
   }
+
+  // --- a board's images are its own (TASK-060, ADR 0015) ------------------
+  //
+  // Nothing in archboard's data model used to say which board an image
+  // belonged to: one map per process, keyed by file id, shared by every open
+  // board. Excalidraw's format does say, and it is the only thing that does —
+  // an image element carries `fileId` and the scene's `files` map is keyed by
+  // it. So a board's images are the ones its own elements draw, which is a
+  // relation rather than a guess.
+
+  const pngA = 'data:image/png;base64,QUJPQVJEQUFBQQ==';
+  const pngB = 'data:image/png;base64,QUJPQVJEQkJCQg==';
+  const imageOn = (board, fileId, x) => api('POST', `/api/elements?board=${board}`, {
+    type: 'image', x, y: 0, width: 80, height: 80, fileId
+  });
+
+  await api('POST', '/api/boards/new', { board: 'picsa' });
+  await api('POST', '/api/boards/new', { board: 'picsb' });
+  const addedA = await api('POST', '/api/files?board=picsa', {
+    files: [{ id: 'img-a', dataURL: pngA, mimeType: 'image/png' }]
+  });
+  await api('POST', '/api/files?board=picsb', {
+    files: [{ id: 'img-b', dataURL: pngB, mimeType: 'image/png' }]
+  });
+  check('an image is added to the board that is drawing it', addedA.status === 200 && addedA.body?.board === 'picsa');
+  await imageOn('picsa', 'img-a', 0);
+  await imageOn('picsb', 'img-b', 0);
+
+  const onlyA = await api('GET', '/api/files?board=picsa');
+  check('  and asking one board for its images gets that board\'s',
+    Object.keys(onlyA.body?.files ?? {}).join(',') === 'img-a');
+  const noBoard = await api('GET', '/api/files');
+  check('  while asking without naming a board is refused, like every other route',
+    noBoard.status === 400, JSON.stringify(noBoard.body?.error ?? '').slice(0, 80));
+
+  const savedPicsA = await api('POST', '/api/boards/save?board=picsa');
+  const savedPicsB = await api('POST', '/api/boards/save?board=picsb');
+  check('both boards with images save', savedPicsA.status === 200 && savedPicsB.status === 200);
+  const noteA = fs.readFileSync(savedPicsA.body.file, 'utf-8');
+  const noteB = fs.readFileSync(savedPicsB.body.file, 'utf-8');
+  check('a saved note carries its own board\'s image', noteA.includes(pngA));
+  check('  and not the other board\'s, which was open at the same time', !noteA.includes(pngB));
+  check('  and the same the other way round', noteB.includes(pngB) && !noteB.includes(pngA));
+
+  // An image nothing draws is not an image the board uses. The filter is
+  // reachability from the elements, so a file left over from a deleted picture
+  // does not ride along into the note for ever.
+  await api('POST', '/api/files?board=picsa', {
+    files: [{ id: 'img-orphan', dataURL: 'data:image/png;base64,T1JQSEFO', mimeType: 'image/png' }]
+  });
+  const withOrphan = await api('POST', '/api/boards/save?board=picsa');
+  check('an image no element draws is left out of the note',
+    withOrphan.status === 200 &&
+    !fs.readFileSync(withOrphan.body.file, 'utf-8').includes('T1JQSEFO'));
+
+  // The read half, and the dangerous one. Under ADR 0015 the note is rewritten
+  // from what was read, so an image that does not come back off disk is
+  // deleted by the next write rather than merely failing to render.
+  //
+  // Opened cold, from a note this process has never held, because a board that
+  // is already open keeps the images it has in memory and would answer from
+  // those whether the read half works or not.
+  const coldFile = path.join(vault, 'picsc.excalidraw.md');
+  fs.writeFileSync(coldFile, noteA.replace(/^board: picsa$/m, 'board: picsc'));
+  const cold = await api('POST', '/api/boards/open', { board: 'picsc' });
+  check('a board opened from a note nothing here has held loads', cold.status === 200, cold.body?.error);
+  const coldFiles = await api('GET', '/api/files?board=picsc');
+  check('  and its images come off the disk with it',
+    coldFiles.body?.files?.['img-a']?.dataURL === pngA,
+    JSON.stringify(Object.keys(coldFiles.body?.files ?? {})));
+  const resaved = await api('POST', '/api/boards/save?board=picsc');
+  check('  so writing back what was just read keeps the image rather than dropping it',
+    resaved.status === 200 && fs.readFileSync(resaved.body.file, 'utf-8').includes(pngA),
+    resaved.body?.error);
+
+  // A pane gets the pictures with the board. `board_switched` used to carry
+  // elements and no files, so an image element arrived with nothing to draw.
+  const picPane = await openPane('p-pics', 0, { primary: true, focused: true });
+  await api('POST', '/api/boards/open', { board: 'picsb' });
+  await sleep(120);
+  const switched = [...picPane.seen].reverse().find(m => m.type === 'board_switched');
+  check('a pane pointed at a board with pictures is sent the pictures',
+    switched?.files?.['img-b']?.dataURL === pngB, JSON.stringify(Object.keys(switched?.files ?? {})));
+  picPane.socket.close();
+  await sleep(150);
+
+  // A branch of a board with images is a board with images. It gets copies,
+  // for the same reason it gets copies of the elements (TASK-042).
+  const branchedPics = await api('POST', '/api/boards/save?board=picsa', { variant: 'option-p' });
+  check('a branch of a board with images carries them', branchedPics.status === 200);
+  const branchFiles = await api('GET', '/api/files?board=picsa@option-p');
+  check('  as its own copy, not a reference to the source\'s',
+    branchFiles.body?.files?.['img-a']?.dataURL === pngA &&
+    branchFiles.body.files['img-a'] !== onlyA.body.files['img-a']);
+  check('  and its note has the image in it too',
+    fs.readFileSync(branchedPics.body.file, 'utf-8').includes(pngA));
+
+  // The property, on its own, at the place every scene is assembled. This is
+  // the one that still means something under ADR 0015, where a note is written
+  // by things other than `board save` — the filter is not on the save path, it
+  // is on the only path that builds a scene.
+  {
+    const { buildScene } = await import(src('core/scene-io.ts'));
+    const everyImage = {
+      'img-a': { id: 'img-a', dataURL: pngA, mimeType: 'image/png' },
+      'img-b': { id: 'img-b', dataURL: pngB, mimeType: 'image/png' }
+    };
+    const built = buildScene(
+      [{ id: 'e1', type: 'image', x: 0, y: 0, width: 10, height: 10, fileId: 'img-a' }],
+      everyImage
+    );
+    check('a scene built from one board\'s elements carries only the images they draw',
+      Object.keys(built.scene.files ?? {}).join(',') === 'img-a');
+    const noImages = buildScene(
+      [{ id: 'e2', type: 'rectangle', x: 0, y: 0, width: 10, height: 10 }],
+      everyImage
+    );
+    check('  and a board that draws none has no files key at all',
+      noImages.scene.files === undefined);
+  }
 } finally {
   server.kill('SIGTERM');
   await sleep(200);

@@ -3,11 +3,11 @@ id: TASK-072
 title: >-
   One converter: expand-elements becomes the only one, corrected to Excalidraw
   values
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-20 20:14'
-updated_date: '2026-08-20 22:28'
+updated_date: '2026-08-20 22:29'
 labels: []
 dependencies:
   - TASK-070
@@ -87,3 +87,23 @@ EXPECT TO REWRITE CHECKS. `check-labels.mjs` has 128 checks and most of them are
 4. frontend/src/canvas/elements.ts stops converting on read; delete the six correction passes and the two label helpers behind them.
 5. Flip BASELINE to {}, add test:browser to the chain, empty the skip list, fold the browser job into the suite job.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Landed in six commits on a worktree branch off main (1908548..32d5305).
+
+WHAT THE TWELVE CONSTANTS TURNED OUT TO BE. Section 1C compares our converter against convertToExcalidrawElements, and that converter is the one being deleted. The property that decides is the fixed point, so it was measured directly: with the frontend's conversion removed and nothing else changed, a rendered board came back with only `index` rewritten, on 5 of 12 elements. Adopted, because they are Excalidraw's own DEFAULT_ELEMENT_PROPS and AppState and so are what a hand-drawn element carries: fontFamily 5, fontSize 20 for a standalone text and for both kinds of label, strokeWidth 2 on a bound text, textAlign left and verticalAlign top on a standalone text, freedraw's lastCommittedPoint/pressures/simulatePressure, elbowed on arrows only. Rejected, each with a reason asserted in check-labels: roundness null (currentItemRoundness is round, so this would square-corner agent-drawn boxes only), freedraw strokeWidth 1 and absent strokeColor (that converter does not handle freedraw at all, and absent is not a value a stroke can have), and the half-stroke arrow inset (arrowhead clearance belonging to the deleted converter).
+
+TWO FINDINGS THAT BEAR ON LATER STAGES. Excalidraw does not re-measure a text element it is handed, so a wrong width is accepted silently and the widths in a note have to be right rather than close; the fixed-point check's 'plant something it must correct' probe moved from a width to a duplicated index. And `a${n}` indices stop increasing at ten, which is why every board past nine elements was handed indices Excalidraw had to repair.
+
+THE STAGE 2 PROPERTY SURVIVED by moving to where the name is chosen: expand-elements mints a label's id through labelTextIdFor at the point of conversion, against the ids the document and the board already hold, struck-out elements included. planLabelExpansion and adoptReusedLabelIds are deleted and check-labels asserts both properties directly (a label is named labelTextIdFor(container); a cleared label's name is not handed to its replacement).
+
+VERIFICATION. bun run test green, 19 of 19 suites, including test:browser reporting 0 of 12 elements changed. Revert-proofs: dropping GPOS kerning fails 5 text-metrics checks, the chained-context GSUB lookup 4, shaping across a space 2, the range-based face rule 1, ignorables 1, reading line heights from the bundle 9; reverting the font gate fails the new 'measured the scene in it' check with the fallback widths; taking test:browser out of the chain or leaving it in SKIPPED each fails check-ci-suites.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+src/core/expand-elements.ts is the only converter and it runs at the API write boundary, so a labelled box is a box and its text element from the moment it is written and nothing converts on the way out (ADR 0015). The frontend's convertToExcalidrawElements call and the six passes that corrected it are gone, along with planLabelExpansion and adoptReusedLabelIds. Text width is measured by src/core/measure-text.ts, a pure-JS measurer over the woff2 subsets Excalidraw ships, agreeing with Chrome to 0.0012 px; height is fontSize x lineHeight x lineCount. Verified by scripts/check-fixed-point.mjs, which renders the board in a real headless Chrome and now reports 0 of 12 elements changed against a baseline of 8, and which is in the bun run test chain with an empty skip list. Its font gate was rewritten first, because document.fonts cannot tell a loaded family from an absent one and the check had been measuring against Chrome's last-resort font. bun run test is green: 19 suites, check-labels rewritten to 169 checks around the one converter, check-text-metrics added at 70.
+<!-- SECTION:FINAL_SUMMARY:END -->

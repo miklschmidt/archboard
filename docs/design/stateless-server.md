@@ -56,7 +56,7 @@ is the complete list of things a hot reload deliberately preserves.
 | `snapshots` | `src/types.ts:362` | Named deep copies of a board, process-lifetime only. |
 | `selectionState.current` | `src/types.ts:375` | What the human last picked, canvas-wide. |
 | `selectionState.byClient` | `src/types.ts:375` | What each pane has picked. |
-| `files` | `src/types.ts:384` | Image blobs as data URLs. Process-global, not per board. See finding F2. |
+| `BoardState.files` | `board-store.ts` | Image blobs as data URLs, per board since TASK-060. It was one process-global map when this was measured, which was finding F2. |
 | library `cache.state` | `src/core/library.ts:147` | The stencil palette. Already write-through to `<vault>/.archboard/library.excalidrawlib`. |
 | `injector` | `src/core/injection.ts:489` | Config, control socket, observed Codex threads, pending events, debounce timer, counters (`injection.ts:130-141`). |
 | `clients` | `src/server.ts:151` | Open WebSockets. |
@@ -566,6 +566,11 @@ filter by board, so a save of board A writes board B's images into A's note.
 And `ingestSceneElements` (`server.ts:2392`) never restores `scene.files` on
 open, so images do not survive a reopen at all.
 
+*Fixed, TASK-060.* The process-global map is gone. `BoardState.files` holds a
+board's own images, `buildScene` narrows them to the ones the elements it is
+writing actually draw, and `ingestSceneElements` takes `scene.files` back off
+the note. `/api/files` is board-scoped like every other content route.
+
 **F3. The dirty indicator cannot see the case that prompted this.**
 `frontend/src/shell/Shell.tsx:202` compares `status.lastChangeAt` against
 `boardInfo.savedAt`. It reports "changed since save" and nothing else, so a note
@@ -573,6 +578,10 @@ that is *ahead* of the canvas shows as clean.
 
 **F4. The save is not atomic.** `server.ts:2690`. Low probability today at 9
 saves a day, and worth fixing regardless.
+
+*Fixed, TASK-061.* `src/core/atomic-write.ts`: temp file, fsync, rename, and a
+best-effort fsync of the directory. Every writer of a vault note uses it, and so
+does the checkout registry, whose own rename it replaced.
 
 **F5. MCP group membership is not persisted anywhere.** `sceneState.groups` at
 `canvas-state.ts:22` lives in the MCP process, is not behind `kept()`, and is
