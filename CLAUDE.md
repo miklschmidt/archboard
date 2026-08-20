@@ -246,6 +246,16 @@ documents differing on fourteen fields. That is gone, along with
 `dropSpentLabelSeeds`, `recenterBoundShapeTextElements` and
 `rescueStrayBoundTextElements`.
 
+**The seed is read once and not kept** (TASK-073). `label: {text}` is how an
+agent asks for a label and it is the only way; what the board holds afterwards
+is the text element it asked for. It used to hold both, which meant a rule for
+which spelling won, and TASK-024, TASK-028 and TASK-029 were each that rule
+being wrong in a new way. So a person retyping a label edits a text element and
+the text element **is** the label: there is no stored copy of the old words for
+a later write to put back, and `labelStatements` and `labelClearances`, which
+existed to keep the copy in step, are gone. Nothing an agent does changes —
+`describe` still folds a container and its bound text into one line.
+
 **A text element's width is measured, not estimated.** Excalidraw's width for a
 piece of text is exactly what the browser's `measureText` returns, so
 `src/core/measure-text.ts` reproduces it from the woff2 subsets already inside

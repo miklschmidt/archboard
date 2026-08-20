@@ -49,8 +49,9 @@ export interface ExpandOptions {
    *
    * The difference is bookkeeping, not conversion: the store keeps
    * `createdAt`, `updatedAt`, `source` and the server's `version`, and keeps
-   * the `label`, `start` and `end` an agent wrote, because the settle and
-   * re-route passes read them. The conversion either way is this one.
+   * the `start` and `end` an agent wrote, because `rerouteBoundArrows` reads
+   * them to know which arrows the server owns the path of. The conversion
+   * either way is this one, and neither way keeps a `label`.
    */
   forStore?: boolean;
   /** Ids already spoken for elsewhere, so an expanded label cannot take one. */
@@ -192,10 +193,16 @@ export function expandElementsForExport(
       if (keptSource !== undefined) element.source = keptSource;
       if (syncTimestamp !== undefined) element.syncTimestamp = syncTimestamp;
       if (serverVersion !== undefined) element.version = serverVersion;
-      // The seed and the arrow's refs stay on the element the store holds:
-      // `resolveArrowBindings` and the settle pass read them, and stage 6 of
-      // docs/design/the-plan.md is what removes the seed for good.
-      if (label !== undefined) element.label = label;
+      // `label` is not restored, and neither is `text` on anything that is not
+      // a text element. Both are the seed, and the seed is an input format: it
+      // has been read by now, and what it said is a text element on the board.
+      // Storing it too would be one fact spelled twice, which is what needed a
+      // rule for which spelling wins, which is what TASK-024, TASK-028 and
+      // TASK-029 each were (TASK-073).
+      //
+      // The arrow's refs do stay, because they are not a second spelling of
+      // `startBinding`: they are how `rerouteBoundArrows` tells an arrow whose
+      // path the server computes from one Excalidraw draws and binds itself.
       if (start !== undefined) element.start = start;
       if (end !== undefined) element.end = end;
       return element;
@@ -422,13 +429,19 @@ export function expandForBoard(
   // A container whose label the board already holds keeps it, whichever
   // direction the binding is recorded in.
   //
-  // The two are recorded separately and a write can carry one of them: a pane
-  // reports the text element the instant a human types into it, while the
-  // container it belongs to has nothing new to say and is never reported. A
-  // write that then restated the container without its `boundElements` would
-  // look to the converter like a label nobody had expanded, and it would
-  // expand a second one. So the reference is restored here, before anything
-  // decides whether there is a label to make.
+  // A binding is written down twice and either half can be the one that
+  // survives: the text names its container in `containerId`, the container
+  // names its text in `boundElements`. A pane reports the text the instant a
+  // person types into it while the container has nothing new to say; a note
+  // edited by hand or a scene imported from elsewhere can arrive with one end
+  // missing outright. The expansion below looks at the container's end only,
+  // so on such a board a write carrying a label would read as a label nobody
+  // had expanded, and it would expand a second one.
+  //
+  // Deleting the seed narrowed this without removing it. The write that trips
+  // it is now always one carrying a label of its own, which means a rename —
+  // the board's own copy of a container no longer carries anything to expand.
+  // Taking it out fails three checks in `check-labels` (TASK-073).
   const labelled = boundTextsByContainer([...board.values()]);
   const mended = written.map((element) => {
     const textIds = labelled.get(element.id) ?? [];
