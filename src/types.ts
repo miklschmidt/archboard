@@ -140,6 +140,10 @@ export interface ServerElement extends Omit<ExcalidrawElementBase, 'id'> {
     text: string;
   };
   points?: any;
+  // An image element names the picture it draws. It is the only thing in the
+  // format that says which board an image belongs to, which is why a board's
+  // images are read off its elements rather than out of a map (TASK-060).
+  fileId?: string;
   // Arrow element binding: connect arrows to shapes by element ID
   start?: { id: string };
   end?: { id: string };
@@ -374,14 +378,20 @@ export const selectionState: {
   byClient: Map<string, CanvasSelection>;
 } = kept('selection', () => ({ current: null, byClient: new Map() }));
 
-// In-memory file storage for image elements (Excalidraw BinaryFiles)
+// One image an element draws (Excalidraw BinaryFiles), keyed by the `fileId`
+// the element carries.
+//
+// There is deliberately no map of these here. There used to be — one per
+// process, keyed by file id and shared by every open board — and a file id
+// says nothing about which board it belongs to, so saving board A wrote board
+// B's images into A's note (TASK-060). The map lives on `BoardState` now,
+// because a board's images are the ones its own elements reference.
 export interface ExcalidrawFile {
   id: string;
   dataURL: string;
   mimeType: string;
   created: number;
 }
-export const files = kept('files', () => new Map<string, ExcalidrawFile>());
 
 // Validation function for Excalidraw elements
 export function validateElement(element: Partial<ServerElement>): element is ServerElement {

@@ -5,7 +5,6 @@ import {
   applyElementChanges,
   batchCreateElementsStrict,
   updateElementStrict,
-  deleteElementStrict,
   getElementStrict,
   getElements,
   searchElements
@@ -133,9 +132,16 @@ export async function del(argv: string[]): Promise<void> {
   if (positionals.length === 0) throw new CliUsageError('Usage: delete <id> [<id> ...]');
 
   await ensureCanvasRunning();
-  for (const id of positionals) {
-    await deleteElementStrict(id);
-  }
+
+  // One delete, however many ids: every id is resolved against one read of the
+  // board and then all of them go in a single write, the shape `apply` has.
+  // It used to be a DELETE per id, so an id the board did not hold was refused
+  // with the ones before it already gone (ADR 0015).
+  const onBoard = new Set((await getElements()).map(element => element.id));
+  const missing = positionals.filter(id => !onBoard.has(id));
+  if (missing.length > 0) throw new Error(`Element ${missing.join(', ')} not found`);
+  await applyElementChanges({ deletes: positionals });
+
   printJson({ success: true, deleted: positionals, count: positionals.length });
 }
 

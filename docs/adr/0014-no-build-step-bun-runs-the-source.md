@@ -109,8 +109,10 @@ enforcement.
 ## Consequences
 
 Anyone with a checkout from before this has a compiled copy of the program
-lying around that nothing reads. Clearing it is worth doing, because the canvas
-serves that directory to the browser.
+lying around that nothing reads. Clear it with `rm -rf dist && bun run build`.
+The canvas used to serve the whole of `dist` to the browser, so that copy was
+reachable over http by path; TASK-058 narrowed the mount to `dist/frontend`, and
+`bun run test:bind` plants a file in `dist/` and fails if it is served.
 
 Reloading is a maintainer's act, so it is not on the command line an agent or a
 user sees. It belongs with the other things that need the checkout.

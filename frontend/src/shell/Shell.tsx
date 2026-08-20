@@ -280,9 +280,10 @@ export function Shell(): JSX.Element {
 
   const handleSave = () => {
     if (!boardKey) return
-    // The scratch board has no home in the vault, so saving it is a naming
-    // question rather than a write.
-    if (boardInfo && !boardInfo.vaultBacked) {
+    // Scratch has a note of its own, so this is not about where the drawing
+    // goes. Save on the placeholder means "make this a board", which is a
+    // naming question — and this is the only place in the shell that asks it.
+    if (boardInfo?.placeholder) {
       setDialog('save-as')
       return
     }
@@ -342,7 +343,6 @@ export function Shell(): JSX.Element {
         boardKey={boardKey}
         elementCount={status?.elementCount ?? 0}
         connected={status?.connected ?? false}
-        vaultBacked={boardInfo?.vaultBacked ?? false}
         savedAt={boardInfo?.savedAt ?? null}
         dirty={dirty}
         paneCount={panes.length}
@@ -442,7 +442,7 @@ export function Shell(): JSX.Element {
                 {' '}will be removed from the canvas.
               </p>
               <p className="hint">
-                {boardInfo?.vaultBacked
+                {boardInfo?.savedAt || boardInfo?.loadedAt
                   ? 'The note in the vault keeps whatever was last saved to it, until you save the empty board over it.'
                   : 'This board has never been written to the vault, so there is nothing to recover it from.'}
               </p>

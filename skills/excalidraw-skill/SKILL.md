@@ -479,7 +479,7 @@ Requires an open browser tab (conversion runs in the frontend; exit code 4 tells
 
 A **board** is a named diagram persisted as one `.excalidraw.md` note in an Obsidian vault. It is the unit of saving, of comparison, and of the `--board` flag. The pane model is at the top of this file; this section is the operating detail.
 
-Boards need a vault: set `ARCHBOARD_VAULT` to its path. There is no default — the vault deliberately spans repositories — so board commands fail with that message until it is set.
+Boards need a vault: set `ARCHBOARD_VAULT` to its path. There is no default — the vault deliberately spans repositories — and the canvas refuses to start without one, since every board is a note and there would be nowhere to put one. The refusal says how to choose a vault.
 
 ```bash
 archboard board list                          # the vault, what is open, what is on screen
@@ -513,7 +513,7 @@ Never pass `--force` / `force: true` unless the human has said to overwrite.
 
 Nothing is locked, and the check reads the file, not another app's memory: a board open in Obsidian can still write its unsaved copy back afterwards. Keep a board open in one editor at a time.
 
-A pane opened with nothing else on screen holds `scratch`: a board like any other, named like any other (`--board scratch`), with no home in the vault until `board save --board scratch --as <name>` gives it one.
+A pane opened with nothing else on screen holds `scratch`: a board like any other, named like any other (`--board scratch`). Its note is `<vault>/.archboard/scratch.excalidraw.md`, out of the way of the vault's real boards and picked up again when the canvas restarts, so a sketch is not lost by accident. What it has not got is a name somebody chose, and `board save --board scratch --as <name>` gives it one — the one save that takes the pane with it.
 
 ## Workflow: Variants and comparison
 

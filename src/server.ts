@@ -8,7 +8,6 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import logger from './utils/logger.js';
 import {
-  files,
   snapshots,
   EXCALIDRAW_ELEMENT_TYPES,
   ServerElement,
@@ -43,6 +42,7 @@ import { isMainModule } from './core/entry.js';
 import { kept } from './core/hot.js';
 import { askForReload, reloadIsAskable } from './core/reload-token.js';
 import { writePidFile, removePidFile } from './core/pidfile.js';
+import { writeFileAtomic } from './core/atomic-write.js';
 import fs from 'fs';
 import {
   BoardState,
@@ -50,9 +50,11 @@ import {
   boardSummaries,
   boards,
   copyElements,
+  filesUsedBy,
   getOrCreateBoard,
   recordBaseline,
   replaceBoardElements,
+  replaceBoardFiles,
   resolveBoard,
   openBoardKeys,
   SCRATCH_KEY
@@ -64,7 +66,9 @@ import {
   describeWriteConflict,
   hashBoardBytes,
   listBoards,
+  LoadedBoard,
   makeIdentity,
+  SCRATCH_BOARD,
   panesFollowSave,
   parseBoardKey,
   readBoardFile,
@@ -74,6 +78,7 @@ import {
   validateVariant,
   vaultPathFor
 } from './core/board.js';
+import { ARCHBOARD_VAULT, noVaultMessage } from './core/config.js';
 import { buildScene } from './core/scene-io.js';
 import { CURRENT_VARIANT } from './core/board.js';
 import { restampVariant } from './core/promote.js';
@@ -87,6 +92,7 @@ import { LibraryItem, readLibrary, writeLibrary } from './core/library.js';
 import { recentreBoundTexts } from './core/labels.js';
 import { expandForBoard, relabelBoundTexts } from './core/expand-elements.js';
 import { overlapsRegion, remeasureLinear } from './core/geometry.js';
+import { frontendState, sourceState } from './core/staleness.js';
 
 // Load environment variables
 dotenv.config();
@@ -133,11 +139,15 @@ const wss = wiring.wss;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Serve static files from the frontend build. The server itself runs from
-// src/ under bun, so dist/ now holds nothing but what vite put there.
-const staticDir = path.join(__dirname, '../dist');
-app.use(express.static(staticDir));
-// Also serve frontend assets
+// Serve the frontend bundle, and only that.
+//
+// This used to mount `../dist` as well, which meant whatever a build tool had
+// left in that directory was reachable over http by path. Under ADR 0014 vite
+// writes nothing but `dist/frontend`, so today that mount adds nothing. But a
+// checkout from before ADR 0014 still has a compiled server, CLI and every core
+// module sitting in `dist/`, and the broad mount served all of it. What is
+// reachable is now this line's decision rather than a build tool's.
+// `scripts/check-local-bind.mjs` plants a file in `dist/` and checks it 404s.
 app.use(express.static(path.join(__dirname, '../dist/frontend')));
 // Serve Excalidraw fonts so the font subsetting worker can fetch them for export
 app.use('/assets/fonts', express.static(
@@ -327,6 +337,23 @@ function boardForNewPane(clientId: string): string {
   return key && boards.has(key) ? key : SCRATCH_KEY;
 }
 
+/**
+ * A board's images, in the shape a scene message carries them, or nothing when
+ * it has none.
+ *
+ * Every frame that hands a pane a whole board — the first one, and every board
+ * switch — has to bring the images with it, because an image element without
+ * its file renders as a hole. `board_switched` used to bring none at all, so a
+ * pane pointed at a board with pictures on it got the elements and no pictures
+ * (TASK-060).
+ */
+function boardFilesMessage(board: BoardState): { files?: Record<string, ExcalidrawFile> } {
+  if (board.files.size === 0) return {};
+  const filesObj: Record<string, ExcalidrawFile> = {};
+  board.files.forEach((file, id) => { filesObj[id] = file; });
+  return { files: filesObj };
+}
+
 // WebSocket connection handling.
 //
 // The listener is replaced rather than added, because `wss` outlives a hot
@@ -345,8 +372,6 @@ wss.on('connection', (ws: WebSocket, req) => {
   const startingKey = clientId ? boardForNewPane(clientId) : SCRATCH_KEY;
   if (clientId) paneBoards.set(clientId, startingKey);
   const board = boards.get(startingKey)!;
-  const filesObj: Record<string, ExcalidrawFile> = {};
-  files.forEach((f, id) => { filesObj[id] = f; });
   const initialMessage: InitialElementsMessage & {
     files?: Record<string, ExcalidrawFile>;
     identity: BoardIdentity;
@@ -355,7 +380,7 @@ wss.on('connection', (ws: WebSocket, req) => {
     board: startingKey,
     identity: board.identity,
     elements: Array.from(board.elements.values()),
-    ...(files.size > 0 ? { files: filesObj } : {})
+    ...boardFilesMessage(board)
   };
   ws.send(JSON.stringify(initialMessage));
 
@@ -1716,14 +1741,27 @@ const PaneSchema = z.object({
   focused: z.boolean(),
   elementCount: z.number().int().nonnegative(),
   rect: RectSchema,
-  viewport: RectSchema.extend({ zoom: z.number().positive() })
+  viewport: RectSchema.extend({ zoom: z.number().positive() }),
+  // Which bundle this tab is running. Optional: a tab from before this existed,
+  // and anything that is not a browser, simply says nothing and hears nothing.
+  build: z.string().optional()
 });
 
+// A pane says what it is showing, and hears back whether it is out of date.
+//
+// This is the pulse a browser already has. A pane posts here when it connects,
+// on every change, and on every scroll, resize and zoom, so a tab that was
+// opened before somebody rebuilt the frontend finds out at its next
+// interaction. The alternative on offer was for the tab to discover it by
+// having a command time out on it ten seconds later, which is what used to
+// happen and what TASK-056 is about.
 app.post('/api/panes', (req: Request, res: Response) => {
   const parsed = PaneSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ success: false, error: parsed.error.errors[0]?.message ?? 'Invalid pane' });
   }
+  const frontend = frontendState(parsed.data.build);
+  const staleFrontend = frontend.stale ? frontend : undefined;
   const registration: PaneRegistration = { ...parsed.data, at: new Date().toISOString() };
   // A pane exists exactly as long as its socket. A report arriving without one
   // is a pane on its way out — React tears the canvas down in its own order, so
@@ -1731,14 +1769,14 @@ app.post('/api/panes', (req: Request, res: Response) => {
   // resurrect the ghost the close just retired.
   const live = Array.from(clientIds.values()).includes(registration.clientId);
   if (!live) {
-    return res.json({ success: true, registered: false, paneCount: panes.size });
+    return res.json({ success: true, registered: false, paneCount: panes.size, staleFrontend });
   }
   const isNew = !panes.has(registration.clientId);
   panes.set(registration.clientId, registration);
   // A pane that was asked for has arrived. Registration is the acknowledgement
   // — see the pane layout section below for why it is that and not a reply.
   if (isNew) notePaneOpened(registration);
-  res.json({ success: true, registered: true, paneCount: panes.size });
+  res.json({ success: true, registered: true, paneCount: panes.size, staleFrontend });
 });
 
 app.get('/api/panes', (_req: Request, res: Response) => {
@@ -1983,36 +2021,61 @@ app.post('/api/panes/close', async (req: Request, res: Response) => {
 });
 
 // ─── Files API (for image elements) ───────────────────────────
-// GET all files
-app.get('/api/files', (_req: Request, res: Response) => {
-  const filesObj: Record<string, ExcalidrawFile> = {};
-  files.forEach((f, id) => { filesObj[id] = f; });
-  res.json({ files: filesObj });
-});
+//
+// Board-scoped, like every other route that touches board content. An image is
+// board content: it is drawn by an element on one board, and the note that
+// board is saved to is where it belongs. These used to be boardless, over one
+// map per process keyed by file id, which is what put board B's pictures in
+// board A's note (TASK-060, ADR 0009, ADR 0015).
 
-// POST add/update files (batch)
-app.post('/api/files', (req: Request, res: Response) => {
-  const body = req.body;
-  const fileList: ExcalidrawFile[] = Array.isArray(body) ? body : (body?.files || []);
-  for (const f of fileList) {
-    if (f.id && f.dataURL) {
-      files.set(f.id, { id: f.id, dataURL: f.dataURL, mimeType: f.mimeType || 'image/png', created: f.created || Date.now() });
-    }
+// GET the images one board holds
+app.get('/api/files', (req: Request, res: Response) => {
+  try {
+    const { key, board } = boardFromRequest(req, 'Listing images');
+    const filesObj: Record<string, ExcalidrawFile> = {};
+    board.files.forEach((f, id) => { filesObj[id] = f; });
+    res.json({ success: true, board: key, files: filesObj });
+  } catch (error) {
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
-  // Boardless, like the library: an image blob is addressed by file id from
-  // whichever board references it, so every pane takes it.
-  broadcastBoardless({ type: 'files_added', files: fileList });
-  res.json({ success: true, count: fileList.length });
 });
 
-// DELETE a file
+// POST add/update images on one board (batch)
+app.post('/api/files', (req: Request, res: Response) => {
+  try {
+    const { key, board } = boardFromRequest(req, 'Adding an image');
+    const body = req.body;
+    const fileList: ExcalidrawFile[] = Array.isArray(body) ? body : (body?.files || []);
+    for (const f of fileList) {
+      if (f.id && f.dataURL) {
+        board.files.set(f.id, {
+          id: f.id,
+          dataURL: f.dataURL,
+          mimeType: f.mimeType || 'image/png',
+          created: f.created || Date.now()
+        });
+      }
+    }
+    broadcast({ type: 'files_added', files: fileList }, key);
+    res.json({ success: true, board: key, count: fileList.length });
+  } catch (error) {
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+  }
+});
+
+// DELETE an image from one board
 app.delete('/api/files/:id', (req: Request, res: Response) => {
-  const id = req.params.id as string;
-  if (files.delete(id)) {
-    broadcastBoardless({ type: 'file_deleted', fileId: id });
-    res.json({ success: true });
-  } else {
-    res.status(404).json({ success: false, error: `File with ID ${id} not found` });
+  try {
+    const { key, board } = boardFromRequest(req, 'Deleting an image');
+    const id = req.params.id as string;
+    if (board.files.delete(id)) {
+      broadcast({ type: 'file_deleted', fileId: id }, key);
+      res.json({ success: true, board: key });
+    } else {
+      res.status(404).json({ success: false, error: `No image "${id}" on board "${key}".` });
+    }
+  } catch (error) {
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
 });
 
@@ -2074,8 +2137,6 @@ app.post('/api/export/image', (req: Request, res: Response) => {
     // to that pane alone and carrying that pane's own board: broadcasting it
     // would replace every other pane's scene with this one's board, which is
     // exactly the yank per-pane boards exist to prevent.
-    const filesObj: Record<string, ExcalidrawFile> = {};
-    files.forEach((f, id) => { filesObj[id] = f; });
     const exportKey = paneBoards.get(answering.clientId) ?? answering.board;
     const exportBoard = boards.get(exportKey);
     if (!exportBoard) {
@@ -2089,7 +2150,7 @@ app.post('/api/export/image', (req: Request, res: Response) => {
       board: exportKey,
       identity: exportBoard.identity,
       elements: Array.from(exportBoard.elements.values()),
-      ...(files.size > 0 ? { files: filesObj } : {})
+      ...boardFilesMessage(exportBoard)
     } as InitialElementsMessage & { files?: Record<string, ExcalidrawFile> }, exportKey);
 
     // Give the browser time to process the reload before requesting export
@@ -2461,7 +2522,9 @@ function identityResponse(key: string, board: BoardState) {
     board: key,
     identity: board.identity,
     elementCount: board.elements.size,
-    vaultBacked: board.vaultBacked,
+    // Scratch has a note like every other board; what it has not got is a name
+    // anybody chose. See boardSummaries().
+    placeholder: key === SCRATCH_KEY,
     ...(board.file ? { file: board.file } : {}),
     ...(board.savedAt ? { savedAt: board.savedAt } : {}),
     ...(board.loadedAt ? { loadedAt: board.loadedAt } : {})
@@ -2511,6 +2574,7 @@ function switchPaneTo(pane: PaneRegistration | null, key: string): BoardState {
     type: 'board_switched',
     identity: board.identity,
     elements: Array.from(board.elements.values()),
+    ...boardFilesMessage(board),
     timestamp: new Date().toISOString()
   }, key);
   return board;
@@ -2596,10 +2660,20 @@ function paneResponse(pane: PaneRegistration | null): Record<string, unknown> {
   return { pane: pane ? paneRef(pane) : null };
 }
 
-// Take a scene's elements into a board's store. Mirrors the batch-create path
-// (ids preserved, server metadata stamped) so a loaded board behaves exactly
-// like one that was drawn.
-function ingestSceneElements(board: BoardState, sceneElements: any[]): number {
+// Take a scene into a board's store: its elements, and the images those
+// elements draw. Mirrors the batch-create path (ids preserved, server metadata
+// stamped) so a loaded board behaves exactly like one that was drawn.
+//
+// The images used to be dropped here. An image element came back from a note
+// and its data did not, so the board reopened with a hole where the picture
+// was. That is a rendering failure today and a deletion under ADR 0015, where
+// the note is rewritten from what was read: anything not read back is gone on
+// the next write (TASK-060).
+function ingestSceneElements(
+  board: BoardState,
+  sceneElements: any[],
+  sceneFiles?: Record<string, any> | null
+): number {
   board.elements.clear();
   const loaded: ServerElement[] = [];
   // The board's own map is emptied above and filled below, so the names the
@@ -2620,6 +2694,7 @@ function ingestSceneElements(board: BoardState, sceneElements: any[]): number {
     loaded.push(element);
   }
   loaded.forEach(el => board.elements.set(el.id, el));
+  replaceBoardFiles(board, sceneFiles && typeof sceneFiles === 'object' ? sceneFiles : {});
   return loaded.length;
 }
 
@@ -2719,10 +2794,13 @@ app.post('/api/boards/open', (req: Request, res: Response) => {
     // The note's level wins unless the caller stated one — opening a board is
     // not usually a claim about what level it sits at.
     const { key: openedKey, board } = getOrCreateBoard(
-      { ...loaded.identity, ...(asked.level ? { level: asked.level } : {}) },
-      true
+      { ...loaded.identity, ...(asked.level ? { level: asked.level } : {}) }
     );
-    const count = ingestSceneElements(board, Array.isArray(scene) ? scene : (scene.elements ?? []));
+    const count = ingestSceneElements(
+      board,
+      Array.isArray(scene) ? scene : (scene.elements ?? []),
+      Array.isArray(scene) ? null : scene.files
+    );
     board.file = loaded.file;
     board.note = loaded.raw;
     // The bytes just read are the baseline the next save is checked against.
@@ -2785,7 +2863,7 @@ app.post('/api/boards/new', (req: Request, res: Response) => {
     // not started.
     const pane = paneFromRequest(params.pane);
 
-    const { key: newKey, board } = getOrCreateBoard(identity, true);
+    const { key: newKey, board } = getOrCreateBoard(identity);
     board.file = vaultPathFor(identity);
     switchPaneTo(pane, newKey);
     logger.info(`Board created: "${newKey}" (empty, unsaved)`);
@@ -2833,15 +2911,6 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
         ...(level ? { level: validateLevel(String(level)) } : {})
       };
 
-    if (!sourceBoard.vaultBacked && !body.name) {
-      return res.status(400).json({
-        success: false,
-        error:
-          'The canvas is holding the scratch board, which has no home in the vault. ' +
-          'Give it a name to save it: `board save --as <name>`.'
-      });
-    }
-
     const file = vaultPathFor(target);
 
     // Read the destination as it is NOW, for two jobs at once: its frontmatter
@@ -2883,7 +2952,7 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     // plain save is deliberately left alone: a node that records a foreign
     // variant on a board nobody branched really was copied in, and that is
     // what `variantAnomaly` is for.
-    const kind = classifyBoardSave({ key: source.key, vaultBacked: sourceBoard.vaultBacked }, targetKey);
+    const kind = classifyBoardSave(source.key, targetKey);
     // Both senses of "wrote somewhere else": naming scratch and branching a
     // board that has a home. They differ over panes, not over elements.
     const branched = kind !== 'same-board';
@@ -2891,11 +2960,13 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
       ? restampVariant(Array.from(sourceBoard.elements.values()), target.variant)
       : Array.from(sourceBoard.elements.values());
 
-    const filesObj: Record<string, ExcalidrawFile> = {};
-    files.forEach((f, id) => { filesObj[id] = f; });
+    // The images of the board being saved, and `buildScene` narrows them again
+    // to the ones its elements actually draw. This used to be every image in
+    // the process, so a save wrote the other open boards' pictures into this
+    // board's note (TASK-060).
     const { scene, elementCount } = buildScene(
       saved,
-      filesObj as unknown as Record<string, any>
+      filesUsedBy(saved, sourceBoard.files) as unknown as Record<string, any>
     );
     const note = renderBoardNote(scene, existingNote, target);
     const bytes = Buffer.from(note, 'utf-8');
@@ -2903,7 +2974,12 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     // check: a refused save has to leave the vault as it found it, empty
     // directories included.
     fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, bytes);
+    // By rename, so a reader sees the old note or the new one and never a
+    // partial (TASK-061). The note is on its way to being the only copy of the
+    // board (ADR 0015), and the destination is never opened for writing, so
+    // ADR 0006's check is unchanged: what lands at the path is exactly these
+    // bytes, and their hash is what the next save is checked against.
+    writeFileAtomic(file, bytes);
 
     // Who was looking at the board that was saved. Whether they move depends
     // on what the save was: giving the scratch board a name renames the thing
@@ -2912,13 +2988,19 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     const watching = Array.from(panes.values()).filter(
       pane => (paneBoards.get(pane.clientId) ?? pane.board) === source.key
     );
-    const { board: savedBoard } = getOrCreateBoard(target, true);
+    const { board: savedBoard } = getOrCreateBoard(target);
     // The restamped elements, so the canvas holds what the note holds — and
     // copies of them, so the branch and the board it came from share no
     // objects at all. Restamping already replaced the promoted ones; the plain
     // ones were still shared, and a branch that can edit its source is not a
     // branch (TASK-042).
-    if (branched) replaceBoardElements(savedBoard, saved);
+    if (branched) {
+      replaceBoardElements(savedBoard, saved);
+      // And the images those elements draw, for the same reason: a branch that
+      // held image elements and none of their data would render holes, and
+      // would write a note with the pictures missing (TASK-060).
+      replaceBoardFiles(savedBoard, filesUsedBy(saved, sourceBoard.files));
+    }
     savedBoard.file = file;
     savedBoard.note = note;
     // What archboard has now seen at this path is what it just wrote.
@@ -3207,7 +3289,12 @@ app.get('/health', (req: Request, res: Response) => {
     // Whether this canvas can be told to reload. True only under
     // `bun run dev:canvas`; a canvas started any other way watches nothing
     // (ADR 0014).
-    reloadable: reloadIsAskable()
+    reloadable: reloadIsAskable(),
+    // Whether this process is running the source that is on disk now, and
+    // which build the frontend has been rebuilt to. A long-lived process has no
+    // symptom of its own for either, so it has to be asked (TASK-056).
+    source: sourceState(),
+    frontendBuild: frontendState(null).current
   });
 });
 
@@ -3311,6 +3398,41 @@ server.on('error', (error: NodeJS.ErrnoException) => {
   process.exit(1);
 });
 
+/**
+ * Take the scratch board's note, if there is one.
+ *
+ * Scratch is where a first run draws, and it used to be the one board that
+ * lived in the process and nowhere else, so quitting the canvas threw it away
+ * without saying so. It has a note now like every other board (ADR 0015),
+ * `<vault>/.archboard/scratch.excalidraw.md`, and this is where the canvas
+ * picks it back up.
+ *
+ * Nothing is written here. A vault that has never held a scratch note gets one
+ * when the board is first saved, which is how `board new` behaves too.
+ */
+function adoptScratchBoard(): void {
+  const identity = makeIdentity({ board: SCRATCH_BOARD });
+  const { board } = getOrCreateBoard(identity);
+  let loaded: LoadedBoard | null = null;
+  try {
+    loaded = readBoardFile(identity);
+  } catch (error) {
+    // A scratch note we cannot read is not worth refusing to start over: it is
+    // a scratch pad, the vault holds the boards that matter, and the file is
+    // left alone rather than replaced.
+    logger.warn(`Scratch note ignored: ${(error as Error).message}`);
+  }
+  board.file = loaded?.file ?? vaultPathFor(identity);
+  if (!loaded) return;
+
+  const scene = JSON.parse(loaded.sceneJson);
+  const count = ingestSceneElements(board, Array.isArray(scene) ? scene : (scene.elements ?? []));
+  board.note = loaded.raw;
+  recordBaseline(board, loaded.file, loaded.hash);
+  board.loadedAt = new Date().toISOString();
+  logger.info(`Scratch board picked up where it was left: ${count} element(s) from ${loaded.file}`);
+}
+
 async function startServer(): Promise<void> {
   // A hot reload re-runs this file, entry point and all, inside a process that
   // is already serving. Everything that had to happen once has happened: the
@@ -3334,6 +3456,20 @@ async function startServer(): Promise<void> {
     return;
   }
 
+  // No vault, no canvas (ADR 0015). Every board is a note, so a canvas without
+  // a vault has nowhere to put anything, and the failure it used to produce
+  // came later and cost more: the canvas opened, somebody drew on it, and the
+  // drawing turned out to have been nowhere all along.
+  //
+  // Straight to stderr as well as the log, because a first run is exactly the
+  // run whose LOG_LEVEL nobody has set, and the whole value of this is that
+  // the person who started it reads it.
+  if (!ARCHBOARD_VAULT) {
+    process.stderr.write(noVaultMessage() + '\n');
+    logger.error('Refusing to start canvas server: no vault (ARCHBOARD_VAULT is unset).');
+    process.exit(1);
+  }
+
   if (LOOPBACK_GUARD_HOSTS.has(HOST)) {
     const existingHost = await findExistingLoopbackListener(PORT);
     if (existingHost) {
@@ -3345,6 +3481,10 @@ async function startServer(): Promise<void> {
       process.exit(1);
     }
   }
+
+  // Before the port opens, so the first request cannot arrive at a scratch
+  // board that is about to be filled in from a note.
+  adoptScratchBoard();
 
   // Only the process that actually wrote the pidfile may remove it —
   // a concurrent-start loser exiting on EADDRINUSE must not delete the
@@ -3396,3 +3536,4 @@ if (isMainModule(import.meta.url)) {
 
 export { startServer };
 export default app;
+

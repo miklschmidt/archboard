@@ -222,6 +222,31 @@ try {
   check('  and the probe route is still absent, because no new source has run',
     (await api('GET', '/__reload_probe')).status === 404);
 
+  // Which is exactly the state nothing used to have a name for: the files on
+  // disk are ahead of the process, every command still works, and every answer
+  // is right for the copy that produced it (TASK-056).
+  const afterSaving = await health();
+  check('  and the canvas says it is running older source than the files on disk',
+    afterSaving.source?.stale === true, `newest is ${afterSaving.source?.newestFile}`);
+
+  // And `status` offers the remedy this canvas has. This one can re-read its
+  // source without losing what is on screen, so it is never told to restart,
+  // which would cost every unsaved board on it.
+  const staleStatus = spawnSync(process.execPath, [src('bin.ts'), 'status'], {
+    env: {
+      ...process.env,
+      EXPRESS_SERVER_URL: base,
+      EXCALIDRAW_NO_AUTOSTART: '1',
+      ARCHBOARD_VAULT: vault,
+      XDG_STATE_HOME: state,
+      LOG_LEVEL: 'error'
+    },
+    encoding: 'utf8'
+  });
+  check('  and status offers this canvas the reload it can do, not a restart',
+    /bun run reload/.test(staleStatus.stderr) && !/archboard stop/.test(staleStatus.stderr),
+    JSON.stringify(staleStatus.stderr.trim().slice(0, 200)));
+
   // ── A reload that is asked for ─────────────────────────────
 
   edit(src('server.ts'), text => text + PROBE_ROUTE);
@@ -234,6 +259,13 @@ try {
   const probe = await api('GET', '/__reload_probe');
   check('the reload ran the new source', probe.status === 200 && probe.body?.probe === 'live',
     `status ${probe.status}`);
+
+  // And the warning clears itself, because the reload re-evaluated the module
+  // holding the timestamp it is measured from. A warning that had to be
+  // dismissed would be one more thing to remember.
+  check('  so the canvas stops saying it is behind the source',
+    after.source?.stale === false,
+    `read at ${after.source?.evaluatedAt}, newest ${after.source?.newestFile} at ${after.source?.newestAt}`);
 
   check('the canary says the reload cost nothing',
     reloadLog.includes('cost nothing'), JSON.stringify(reloadLog.trim().slice(-200)));
@@ -296,9 +328,9 @@ try {
   const brokenFrom = seen.length;
   edit(src('core/board-store.ts'), text => {
     const guarded = 'if (!boards.has(SCRATCH_KEY)) {\n' +
-      '  boards.set(SCRATCH_KEY, newBoardState(makeIdentity({ board: SCRATCH_BOARD }), false));\n' +
+      '  boards.set(SCRATCH_KEY, newBoardState(makeIdentity({ board: SCRATCH_BOARD })));\n' +
       '}';
-    const unguarded = 'boards.set(SCRATCH_KEY, newBoardState(makeIdentity({ board: SCRATCH_BOARD }), false));';
+    const unguarded = 'boards.set(SCRATCH_KEY, newBoardState(makeIdentity({ board: SCRATCH_BOARD })));';
     if (!text.includes(guarded)) throw new Error('board-store.ts no longer has the guard this check removes.');
     return text.replace(guarded, unguarded);
   });

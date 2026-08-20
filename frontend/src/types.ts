@@ -50,7 +50,8 @@ export interface BoardInfo {
   board: string;
   identity: BoardIdentity;
   elementCount: number;
-  vaultBacked: boolean;
+  /** Scratch: a board with a note, but not a name anybody chose. */
+  placeholder: boolean;
   file?: string;
   savedAt?: string;
   loadedAt?: string;

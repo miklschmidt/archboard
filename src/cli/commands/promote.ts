@@ -1,7 +1,7 @@
 import { parseArgs, CliUsageError } from '../args.js';
 import { printJson } from '../util.js';
 import { ensureCanvasRunning } from '../../core/spawn.js';
-import { getBoardInfo, getElements, getSelection, updateElementStrict } from '../../core/canvas-client.js';
+import { applyElementChanges, getBoardInfo, getElements, getSelection } from '../../core/canvas-client.js';
 import { ServerElement } from '../../types.js';
 import {
   KINDS,
@@ -47,13 +47,18 @@ async function targetElements(idsFlag: unknown, board: ServerElement[], verb: st
   return found;
 }
 
+// Promoting is one intent, so it is one write, whatever the element count of
+// the node. A node is not one element — the shipped PostgreSQL stencil is
+// seven lines, and TASK-053 made promotion outrank the element type precisely
+// so a node could be drawn from one — and this used to cost a PUT per element
+// (ADR 0015).
+//
 // customData has to be sent whole (the server merges top-level keys, so an
 // omitted customData would be left stale rather than cleared), and the plan
 // has already merged it.
 async function applyUpdates(updates: ElementUpdate[]): Promise<void> {
-  for (const update of updates) {
-    await updateElementStrict(update as Partial<ServerElement> & { id: string });
-  }
+  if (updates.length === 0) return;
+  await applyElementChanges({ upserts: updates as (Partial<ServerElement> & { id: string })[] });
 }
 
 export async function promote(argv: string[]): Promise<void> {
