@@ -151,7 +151,26 @@ const COMMANDS: Record<string, Command> = {
   arrange: { handler: arrange, subcommands: ARRANGE_OPERATIONS, summary: 'Align, distribute, group, lock, duplicate elements', usage: 'arrange align|distribute|group|ungroup|lock|unlock|duplicate --ids a,b,c [--to left|horizontal|...]' },
   share: { handler: scene.share, summary: 'Export to a shareable excalidraw.com URL', usage: 'share' },
   clear: { handler: scene.clear, summary: 'Clear the whole canvas', usage: 'clear --yes' },
-  'install-skill': { handler: installSkill, summary: 'Install the bundled agent skill', usage: 'install-skill [--dir <skills-root>] [--target claude|codex|<skills-root>] [--print-source]' }
+  'install-skill': {
+    handler: installSkill,
+    summary: 'Install the bundled agent skill and write the setup into this repo',
+    usage: [
+      'install-skill [--target claude|codex|<skills-root>] [--dir <skills-root>] [--print-source]',
+      '              [--repo <dir>] [--vault <path>] [--doc <file>] [--no-doc] [--yes]',
+      '',
+      '  Copies the skill into a skills root, then writes the setup into the repo\'s own CLAUDE.md',
+      '  or AGENTS.md — an existing CLAUDE.md first, else an existing AGENTS.md, else the one that',
+      '  matches --target. The other one is never created. The block is fenced by markers and is',
+      '  replaced in place on a re-run, so re-installing does not leave two of them.',
+      '',
+      '  The block records what the skill cannot know: the vault path, how to invoke this binary',
+      '  when it is not on PATH, and a section for which boards cover this repo, left for a human',
+      '  to fill in. The vault defaults to <repo>/.archboard/vault — boards local to the repo — or',
+      '  to ARCHBOARD_VAULT when it is already set; on a terminal you are asked, with that as the',
+      '  offered answer. --vault names one outright, --yes takes the offer without asking, and',
+      '  --no-doc installs the skill and touches nothing else.'
+    ].join('\n')
+  }
 };
 
 /**

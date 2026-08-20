@@ -35,7 +35,8 @@ bun install
 bun run build       # -> dist/ and dist/frontend/
 bun run type-check
 bun run test        # stdio wire, loopback bind, obsidian, changes, labels,
-                    # library, boards + panes, CLI/MCP surface parity
+                    # library, boards + panes, skill install, CLI/MCP surface
+                    # parity
 
 ./bin/canvas start  # canvas server on 127.0.0.1:3000
 ./bin/canvas status
@@ -200,6 +201,10 @@ it means — there is no active board left to resolve against (TASK-021, ADR 000
 A bound label goes where its container goes, so moving, resizing or re-routing
 through the API leaves no label stranded and no phantom region in the scene box
 (TASK-034).
+`install-skill` sets a repo up rather than only copying files: it chooses a
+vault (a repo-local one unless told otherwise), creates it, and writes the vault
+path, the command that runs the CLI there and a place for board conventions into
+that repo's own `CLAUDE.md` or `AGENTS.md` (TASK-036).
 
 ## Names on the wire
 
