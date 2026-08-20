@@ -99,6 +99,13 @@ Ask the agent to read a codebase and draw its architecture. Then, on the board:
    baseline; `./bin/canvas panes` says which is which,
    `./bin/canvas screenshot --pane right` pictures one of them, and
    `./bin/canvas pane close right` puts you back to one.
+7. **Draw into the half you mean**: pipe a Mermaid diagram at the variant,
+   `... | ./bin/canvas mermaid --board payments@option-a`, and watch it appear
+   on the right while the left keeps the current architecture. `mermaid` takes
+   no `--pane` and never will: it names a board, a board is in at most one
+   pane, so the pane is already decided (TASK-046). Aim it at a board no pane
+   is holding and it converts nothing, and says which panes are up and how to
+   put that board on one.
 
 Step 5 is the one worth watching closely. The tool returns structure; the agent
 narrates it. If the narration is wrong or thin, the question is usually whether

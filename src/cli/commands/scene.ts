@@ -158,8 +158,18 @@ export async function mermaid(argv: string[]): Promise<void> {
   await requireBrowserClient('mermaid conversion');
 
   const result = await sendMermaid(diagram);
-  note(`Conversion happens in the open canvas tab at ${EXPRESS_SERVER_URL}.`);
-  printJson({ success: result.success ?? true, message: result.message });
+  // Which half of the screen to watch. The pane came from the board, so this
+  // is a report rather than a choice the caller had to make (TASK-046).
+  const where = result.pane
+    ? (result.pane.place === 'the only pane' ? 'the only pane' : `the ${result.pane.place} pane`)
+    : 'the open canvas tab';
+  note(`Conversion happens in ${where}, at ${EXPRESS_SERVER_URL}.`);
+  printJson({
+    success: result.success ?? true,
+    board: result.board,
+    pane: result.pane ?? null,
+    message: result.message
+  });
 }
 
 export async function share(argv: string[]): Promise<void> {

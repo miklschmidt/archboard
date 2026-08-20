@@ -49,9 +49,12 @@ const PANE_DEBOUNCE_MS = 300
 export interface CanvasSessionOptions {
   paneId: string
   /**
-   * Request/response traffic — image export, viewport control, mermaid — is
-   * addressed to "the browser", not to a pane, and must be answered exactly
-   * once. The primary pane answers; the rest only render.
+   * Is this the pane the server picks when a request names no pane and no
+   * board? Reported, and used for the one message that really is about the
+   * browser rather than a pane: a library change, which every pane hears and
+   * only one should hand up. Export, viewport and mermaid are addressed to a
+   * single socket, so the pane that gets one answers it whether or not it is
+   * primary.
    */
   primary: boolean
   /** Is this the pane the human last touched? Reported, not enforced. */
@@ -729,11 +732,12 @@ export function useCanvasSession({
         }
         break
 
-      // Neither of these is gated on primary any more. Both are addressed to
-      // one pane's socket, so the pane that receives one is by definition the
-      // pane that was asked. Gating them on primary was what made the second
-      // pane impossible to photograph or to frame — an agent could draw a
-      // proposal beside the current architecture and never see it.
+      // None of these is gated on primary any more. All are addressed to one
+      // pane's socket, so the pane that receives one is by definition the pane
+      // that was asked. Gating them on primary was what made the second pane
+      // impossible to photograph, to frame, or to convert into — an agent could
+      // draw a proposal beside the current architecture and never see it, and
+      // could not put a mermaid diagram there at all.
       case 'export_image_request':
         await answerExport(data)
         break
@@ -752,7 +756,7 @@ export function useCanvasSession({
         break
 
       case 'mermaid_convert':
-        if (primaryRef.current) await answerMermaid(data)
+        await answerMermaid(data)
         break
 
       default:
