@@ -8,7 +8,6 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import logger from './utils/logger.js';
 import {
-  files,
   snapshots,
   EXCALIDRAW_ELEMENT_TYPES,
   ServerElement,
@@ -51,9 +50,11 @@ import {
   boardSummaries,
   boards,
   copyElements,
+  filesUsedBy,
   getOrCreateBoard,
   recordBaseline,
   replaceBoardElements,
+  replaceBoardFiles,
   resolveBoard,
   openBoardKeys,
   SCRATCH_KEY
@@ -335,6 +336,23 @@ function boardForNewPane(clientId: string): string {
   return key && boards.has(key) ? key : SCRATCH_KEY;
 }
 
+/**
+ * A board's images, in the shape a scene message carries them, or nothing when
+ * it has none.
+ *
+ * Every frame that hands a pane a whole board — the first one, and every board
+ * switch — has to bring the images with it, because an image element without
+ * its file renders as a hole. `board_switched` used to bring none at all, so a
+ * pane pointed at a board with pictures on it got the elements and no pictures
+ * (TASK-060).
+ */
+function boardFilesMessage(board: BoardState): { files?: Record<string, ExcalidrawFile> } {
+  if (board.files.size === 0) return {};
+  const filesObj: Record<string, ExcalidrawFile> = {};
+  board.files.forEach((file, id) => { filesObj[id] = file; });
+  return { files: filesObj };
+}
+
 // WebSocket connection handling.
 //
 // The listener is replaced rather than added, because `wss` outlives a hot
@@ -353,8 +371,6 @@ wss.on('connection', (ws: WebSocket, req) => {
   const startingKey = clientId ? boardForNewPane(clientId) : SCRATCH_KEY;
   if (clientId) paneBoards.set(clientId, startingKey);
   const board = boards.get(startingKey)!;
-  const filesObj: Record<string, ExcalidrawFile> = {};
-  files.forEach((f, id) => { filesObj[id] = f; });
   const initialMessage: InitialElementsMessage & {
     files?: Record<string, ExcalidrawFile>;
     identity: BoardIdentity;
@@ -363,7 +379,7 @@ wss.on('connection', (ws: WebSocket, req) => {
     board: startingKey,
     identity: board.identity,
     elements: Array.from(board.elements.values()),
-    ...(files.size > 0 ? { files: filesObj } : {})
+    ...boardFilesMessage(board)
   };
   ws.send(JSON.stringify(initialMessage));
 
@@ -1947,36 +1963,61 @@ app.post('/api/panes/close', async (req: Request, res: Response) => {
 });
 
 // ─── Files API (for image elements) ───────────────────────────
-// GET all files
-app.get('/api/files', (_req: Request, res: Response) => {
-  const filesObj: Record<string, ExcalidrawFile> = {};
-  files.forEach((f, id) => { filesObj[id] = f; });
-  res.json({ files: filesObj });
-});
+//
+// Board-scoped, like every other route that touches board content. An image is
+// board content: it is drawn by an element on one board, and the note that
+// board is saved to is where it belongs. These used to be boardless, over one
+// map per process keyed by file id, which is what put board B's pictures in
+// board A's note (TASK-060, ADR 0009, ADR 0015).
 
-// POST add/update files (batch)
-app.post('/api/files', (req: Request, res: Response) => {
-  const body = req.body;
-  const fileList: ExcalidrawFile[] = Array.isArray(body) ? body : (body?.files || []);
-  for (const f of fileList) {
-    if (f.id && f.dataURL) {
-      files.set(f.id, { id: f.id, dataURL: f.dataURL, mimeType: f.mimeType || 'image/png', created: f.created || Date.now() });
-    }
+// GET the images one board holds
+app.get('/api/files', (req: Request, res: Response) => {
+  try {
+    const { key, board } = boardFromRequest(req, 'Listing images');
+    const filesObj: Record<string, ExcalidrawFile> = {};
+    board.files.forEach((f, id) => { filesObj[id] = f; });
+    res.json({ success: true, board: key, files: filesObj });
+  } catch (error) {
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
-  // Boardless, like the library: an image blob is addressed by file id from
-  // whichever board references it, so every pane takes it.
-  broadcastBoardless({ type: 'files_added', files: fileList });
-  res.json({ success: true, count: fileList.length });
 });
 
-// DELETE a file
+// POST add/update images on one board (batch)
+app.post('/api/files', (req: Request, res: Response) => {
+  try {
+    const { key, board } = boardFromRequest(req, 'Adding an image');
+    const body = req.body;
+    const fileList: ExcalidrawFile[] = Array.isArray(body) ? body : (body?.files || []);
+    for (const f of fileList) {
+      if (f.id && f.dataURL) {
+        board.files.set(f.id, {
+          id: f.id,
+          dataURL: f.dataURL,
+          mimeType: f.mimeType || 'image/png',
+          created: f.created || Date.now()
+        });
+      }
+    }
+    broadcast({ type: 'files_added', files: fileList }, key);
+    res.json({ success: true, board: key, count: fileList.length });
+  } catch (error) {
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+  }
+});
+
+// DELETE an image from one board
 app.delete('/api/files/:id', (req: Request, res: Response) => {
-  const id = req.params.id as string;
-  if (files.delete(id)) {
-    broadcastBoardless({ type: 'file_deleted', fileId: id });
-    res.json({ success: true });
-  } else {
-    res.status(404).json({ success: false, error: `File with ID ${id} not found` });
+  try {
+    const { key, board } = boardFromRequest(req, 'Deleting an image');
+    const id = req.params.id as string;
+    if (board.files.delete(id)) {
+      broadcast({ type: 'file_deleted', fileId: id }, key);
+      res.json({ success: true, board: key });
+    } else {
+      res.status(404).json({ success: false, error: `No image "${id}" on board "${key}".` });
+    }
+  } catch (error) {
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
 });
 
@@ -2038,8 +2079,6 @@ app.post('/api/export/image', (req: Request, res: Response) => {
     // to that pane alone and carrying that pane's own board: broadcasting it
     // would replace every other pane's scene with this one's board, which is
     // exactly the yank per-pane boards exist to prevent.
-    const filesObj: Record<string, ExcalidrawFile> = {};
-    files.forEach((f, id) => { filesObj[id] = f; });
     const exportKey = paneBoards.get(answering.clientId) ?? answering.board;
     const exportBoard = boards.get(exportKey);
     if (!exportBoard) {
@@ -2053,7 +2092,7 @@ app.post('/api/export/image', (req: Request, res: Response) => {
       board: exportKey,
       identity: exportBoard.identity,
       elements: Array.from(exportBoard.elements.values()),
-      ...(files.size > 0 ? { files: filesObj } : {})
+      ...boardFilesMessage(exportBoard)
     } as InitialElementsMessage & { files?: Record<string, ExcalidrawFile> }, exportKey);
 
     // Give the browser time to process the reload before requesting export
@@ -2477,6 +2516,7 @@ function switchPaneTo(pane: PaneRegistration | null, key: string): BoardState {
     type: 'board_switched',
     identity: board.identity,
     elements: Array.from(board.elements.values()),
+    ...boardFilesMessage(board),
     timestamp: new Date().toISOString()
   }, key);
   return board;
@@ -2562,10 +2602,20 @@ function paneResponse(pane: PaneRegistration | null): Record<string, unknown> {
   return { pane: pane ? paneRef(pane) : null };
 }
 
-// Take a scene's elements into a board's store. Mirrors the batch-create path
-// (ids preserved, server metadata stamped) so a loaded board behaves exactly
-// like one that was drawn.
-function ingestSceneElements(board: BoardState, sceneElements: any[]): number {
+// Take a scene into a board's store: its elements, and the images those
+// elements draw. Mirrors the batch-create path (ids preserved, server metadata
+// stamped) so a loaded board behaves exactly like one that was drawn.
+//
+// The images used to be dropped here. An image element came back from a note
+// and its data did not, so the board reopened with a hole where the picture
+// was. That is a rendering failure today and a deletion under ADR 0015, where
+// the note is rewritten from what was read: anything not read back is gone on
+// the next write (TASK-060).
+function ingestSceneElements(
+  board: BoardState,
+  sceneElements: any[],
+  sceneFiles?: Record<string, any> | null
+): number {
   board.elements.clear();
   const loaded: ServerElement[] = [];
   // The board's own map is emptied above and filled below, so the names the
@@ -2586,6 +2636,7 @@ function ingestSceneElements(board: BoardState, sceneElements: any[]): number {
     loaded.push(element);
   }
   loaded.forEach(el => board.elements.set(el.id, el));
+  replaceBoardFiles(board, sceneFiles && typeof sceneFiles === 'object' ? sceneFiles : {});
   return loaded.length;
 }
 
@@ -2687,7 +2738,11 @@ app.post('/api/boards/open', (req: Request, res: Response) => {
     const { key: openedKey, board } = getOrCreateBoard(
       { ...loaded.identity, ...(asked.level ? { level: asked.level } : {}) }
     );
-    const count = ingestSceneElements(board, Array.isArray(scene) ? scene : (scene.elements ?? []));
+    const count = ingestSceneElements(
+      board,
+      Array.isArray(scene) ? scene : (scene.elements ?? []),
+      Array.isArray(scene) ? null : scene.files
+    );
     board.file = loaded.file;
     board.note = loaded.raw;
     // The bytes just read are the baseline the next save is checked against.
@@ -2847,11 +2902,13 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
       ? restampVariant(Array.from(sourceBoard.elements.values()), target.variant)
       : Array.from(sourceBoard.elements.values());
 
-    const filesObj: Record<string, ExcalidrawFile> = {};
-    files.forEach((f, id) => { filesObj[id] = f; });
+    // The images of the board being saved, and `buildScene` narrows them again
+    // to the ones its elements actually draw. This used to be every image in
+    // the process, so a save wrote the other open boards' pictures into this
+    // board's note (TASK-060).
     const { scene, elementCount } = buildScene(
       saved,
-      filesObj as unknown as Record<string, any>
+      filesUsedBy(saved, sourceBoard.files) as unknown as Record<string, any>
     );
     const note = renderBoardNote(scene, existingNote, target);
     const bytes = Buffer.from(note, 'utf-8');
@@ -2879,7 +2936,13 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     // objects at all. Restamping already replaced the promoted ones; the plain
     // ones were still shared, and a branch that can edit its source is not a
     // branch (TASK-042).
-    if (branched) replaceBoardElements(savedBoard, saved);
+    if (branched) {
+      replaceBoardElements(savedBoard, saved);
+      // And the images those elements draw, for the same reason: a branch that
+      // held image elements and none of their data would render holes, and
+      // would write a note with the pictures missing (TASK-060).
+      replaceBoardFiles(savedBoard, filesUsedBy(saved, sourceBoard.files));
+    }
     savedBoard.file = file;
     savedBoard.note = note;
     // What archboard has now seen at this path is what it just wrote.
@@ -3415,3 +3478,4 @@ if (isMainModule(import.meta.url)) {
 
 export { startServer };
 export default app;
+

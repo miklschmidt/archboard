@@ -46,8 +46,13 @@ export function fetchElements(board: string | null) {
   return json<{ elements: ServerElement[] }>(`/api/elements${boardQuery(board)}`)
 }
 
-export function fetchFiles() {
-  return json<{ files?: Record<string, unknown> }>('/api/files')
+/**
+ * The images one board draws. Board-scoped like the elements: an image belongs
+ * to the board whose elements reference it, and asking without saying which
+ * board used to get every image in the process (TASK-060).
+ */
+export function fetchFiles(board: string | null) {
+  return json<{ files?: Record<string, unknown> }>(`/api/files${boardQuery(board)}`)
 }
 
 /**
