@@ -127,7 +127,7 @@ is reviewable in the diff.
   wholesale redraws destroy their spatial memory of the board.
 - Reporting a node's `variantAnomaly` as an architectural change. It means the
   node's own `variant` stamp disagrees with the board it sits on, which is
-  bookkeeping left by a copy or by a promote that did not pass `--variant`.
+  bookkeeping left by a node copied in without being re-promoted.
 - Auto-tidying a layout the human arranged. Ask before running align or
   distribute on anything you did not place yourself.
 - Treating an empty `changes` as "nothing happened" when no browser is open.
