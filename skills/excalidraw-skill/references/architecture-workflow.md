@@ -82,7 +82,8 @@ Guidance that holds up on a big screen:
   a database drum reads from two metres away; a labelled rectangle does not.
 - **One concern per board.** Do not put the data model and the request path on
   the same board. Make it a second board and, when they need to be read
-  together, put it in the other pane (`board open <name> --pane right`).
+  together, put it beside the first with `pane open --board <name>`, which makes
+  a new pane rather than taking over the one somebody is reading.
 - **Layout carries meaning.** Left-to-right for flow, top-to-bottom for layers,
   containment for ownership. Be consistent — the human will read the geometry
   before the labels.
@@ -94,9 +95,10 @@ Guidance that holds up on a big screen:
   survives to the other variant, so `compare` can only call it
   "unlabelled-rectangle" and any statement about what moved in or out of it
   degrades with it.
-- **Check your own work.** `screenshot` for the primary pane, `describe --board
-  <key>` for any other. Overlaps and truncated labels are invisible in JSON and
-  obvious in a PNG.
+- **Check your own work.** `screenshot --pane <spec>` for the half you drew in,
+  and `viewport --fit --pane <spec>` first if the board has drifted out of
+  frame. `describe --board <key>` is the read when no browser is open. Overlaps
+  and truncated labels are invisible in JSON and obvious in a PNG.
 
 ## Refactor discussions
 
