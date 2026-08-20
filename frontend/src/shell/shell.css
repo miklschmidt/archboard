@@ -221,6 +221,13 @@
   cursor: default;
 }
 
+/* A notice that waits to be read rather than timing out, because it names a
+   command. It says so by looking like something to click. */
+.notice-hold {
+  cursor: pointer;
+  border-left: 3px solid var(--accent);
+}
+
 .notice-error {
   color: var(--danger);
   border-left: 3px solid var(--danger);
