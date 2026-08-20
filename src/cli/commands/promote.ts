@@ -1,7 +1,7 @@
 import { parseArgs, CliUsageError } from '../args.js';
 import { printJson } from '../util.js';
 import { ensureCanvasRunning } from '../../core/spawn.js';
-import { getElements, getSelection, updateElementStrict } from '../../core/canvas-client.js';
+import { getBoardInfo, getElements, getSelection, updateElementStrict } from '../../core/canvas-client.js';
 import { ServerElement } from '../../types.js';
 import {
   KINDS,
@@ -98,10 +98,16 @@ export async function promote(argv: string[]): Promise<void> {
     throw new CliUsageError('--repo/--branch/--commit describe a binding; give --path too.');
   }
 
+  // Which variant this board is, asked of the board rather than of the caller.
+  // `--board` already named it, so `--variant` is an override and not a thing
+  // anyone has to remember on a proposal board (TASK-040).
+  const identity = await getBoardInfo();
+
   const plan = planPromotion({
     targets,
     board,
     kind,
+    boardVariant: identity.identity.variant,
     ...(typeof flags.name === 'string' ? { name: flags.name } : {}),
     ...(nodeId ? { nodeId } : {}),
     ...(binding ? { binding } : {}),

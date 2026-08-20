@@ -647,6 +647,64 @@ try {
   check('  and still warns about it',
     (copied.body?.warnings ?? []).some(w => /different variant/.test(w)));
 
+  // --- promoting on a variant board (TASK-040) ----------------------------
+  //
+  // The other route to the same wrong stamp. `promote` wrote the literal
+  // 'current' whatever board it was called on, so a node promoted directly on
+  // a proposal claimed to belong to the board it proposes against, and every
+  // one of them came back from `compare` as a variantAnomaly. The skill taught
+  // `--variant` to work around it; a fact about the board should not have to
+  // be typed. Driven through the CLI, because the default lives at the surface
+  // that knows which board was named.
+
+  const boxOn = async (board, label, y) => {
+    const made = await api('POST', `/api/elements?board=${encodeURIComponent(board)}`, {
+      type: 'rectangle', x: 0, y, width: 200, height: 100, label: { text: label }
+    });
+    return made.body?.element?.id ?? made.body?.id;
+  };
+  const variantOf = async (board, id) => {
+    const got = await api('GET', `/api/elements/${id}?board=${encodeURIComponent(board)}`);
+    return got.body?.element?.customData?.archboard?.variant;
+  };
+
+  await api('POST', '/api/boards/new', { board: 'shipping', level: 'service' });
+  await api('POST', '/api/boards/new', { board: 'shipping@option-a', level: 'service' });
+
+  const onProposal = await boxOn('shipping@option-a', 'Rate Quoter', 800);
+  const promotedThere = await cli(['promote', '--board', 'shipping@option-a', '--ids', onProposal, '--kind', 'service']);
+  check('promoting on a variant board takes no --variant', promotedThere.code === 0, promotedThere.stderr.trim());
+  check('  and stamps the variant of the board it was promoted on',
+    await variantOf('shipping@option-a', onProposal) === 'option-a',
+    await variantOf('shipping@option-a', onProposal));
+
+  const onCurrent = await boxOn('shipping', 'Rate Quoter', 800);
+  const promotedHere = await cli(['promote', '--board', 'shipping', '--ids', onCurrent, '--kind', 'service']);
+  check('  and the same call on a current board still stamps current',
+    promotedHere.code === 0 && await variantOf('shipping', onCurrent) === 'current',
+    await variantOf('shipping', onCurrent));
+
+  await api('POST', '/api/boards/save?board=shipping');
+  await api('POST', '/api/boards/save?board=shipping@option-a');
+  const promotedDiff = await api('GET', '/api/boards/compare?from=shipping&to=shipping@option-a');
+  check('  so a node promoted on each board reports no variantAnomaly',
+    promotedDiff.body?.summary?.nodesChanged === 0 && promotedDiff.body?.summary?.nodesUnchanged === 1,
+    JSON.stringify(promotedDiff.body?.nodes?.changed?.map(c => c.changes) ?? []));
+  check('  and no stale-variant warning either',
+    !(promotedDiff.body?.warnings ?? []).some(w => /different variant/.test(w)),
+    JSON.stringify(promotedDiff.body?.warnings ?? []));
+
+  // The flag is still there for the promotion that really does mean another
+  // variant, and it still wins.
+  const overridden = await boxOn('shipping@option-a', 'Label Printer', 950);
+  const promotedAs = await cli([
+    'promote', '--board', 'shipping@option-a', '--ids', overridden,
+    '--kind', 'service', '--variant', 'option-z'
+  ]);
+  check('  while --variant still overrides the board it is called on',
+    promotedAs.code === 0 && await variantOf('shipping@option-a', overridden) === 'option-z',
+    await variantOf('shipping@option-a', overridden));
+
   // --- a branch does not move a pane (TASK-039, ADR 0012) -----------------
   //
   // Branching is how a proposal starts, and a proposal exists to sit beside
