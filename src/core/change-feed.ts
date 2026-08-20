@@ -30,6 +30,7 @@
 
 import { EventEmitter } from 'events';
 import { randomUUID } from 'crypto';
+import { kept } from './hot.js';
 import { ServerElement } from '../types.js';
 import { BoardIdentity } from './board.js';
 import { copyElements } from './board-store.js';
@@ -327,4 +328,12 @@ class ChangeFeed extends EventEmitter {
 
 // One feed per canvas process, like the board store: the canvas is a single
 // place, and a per-connection feed would give every reader a different history.
-export const changeFeed = new ChangeFeed();
+// One feed per canvas process, and the same one across a hot reload: cursors
+// and baselines are what a hook and the injector hold between turns, and a feed
+// that started over would report the whole board as new (src/core/hot.ts).
+//
+// Keeping the instance means keeping its methods too, so an edit to this file
+// takes effect only after a real restart. That is the trade this instance is on
+// the right side of: stale narration for a few seconds against a cursor a hook
+// cannot trust again.
+export const changeFeed = kept('change-feed', () => new ChangeFeed());

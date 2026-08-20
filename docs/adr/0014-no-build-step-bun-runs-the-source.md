@@ -32,9 +32,10 @@ the wrong diagnosis cost the user a server restart. TASK-056 is the same
 mechanism written up as a bug.
 
 Reading the source the process was told to read does not make staleness
-impossible. A long-running server still executes the source it read at start.
-But it removes one whole layer of it, and it removes the layer where the two
-copies had different names and neither was labelled.
+impossible. A long-running server still executes the source it read at start,
+until it is restarted or reloaded. But it removes one whole layer of it, and it
+removes the layer where the two copies had different names and neither was
+labelled.
 
 ## What it costs
 
@@ -55,17 +56,50 @@ to check, because it is what an MCP client and `canvas start` now spawn, and
 node cannot read a `.ts` entry point at all. If archboard ever needs to run
 under node, that is a build again and this ADR is the thing to reopen.
 
-## Hot reload stays out of `canvas start`
+## Hot reload is real, and it is still asked for
 
-`bun --watch` restarts the process on every file save, and boards live in
-memory, so a restart drops unsaved work. On this canvas that work is a human
-rearranging boxes on a wall display, which is the input the whole tool exists to
-collect and the one thing that cannot be recomputed.
+`bun --hot` and `bun --watch` are not the same thing, and the difference decides
+this. `--watch` restarts the process: boards live in memory, so a restart drops
+a human's unsaved rearrangement, which is the input this tool exists to collect
+and the one thing it cannot recompute. `--hot` re-evaluates the changed modules
+inside the running process, so anything reachable from `globalThis` outlives the
+reload.
 
-So watching is `bun run dev:reload`, an explicit choice with the cost written
-next to it, and never what `canvas start` does. The frontend gets real hot
-reload through `bun run dev`, because vite replaces modules in the browser
-without touching the server holding the boards.
+That makes reloading the canvas worth having rather than a hazard to fence off.
+`bun run dev:canvas` reloads the server in place: the port stays bound, the
+WebSockets stay open, the boards stay open with their unsaved elements on them,
+the panes stay registered holding the same boards, and the change feed keeps its
+id and its cursor so a hook's saved cursor still means what it meant. A reload
+emits no event of its own. `scripts/check-hot-reload.mjs` proves each of those
+by editing real source files under a real canvas.
+
+**What it costs is a rule.** Module scope is still rebuilt, so state that must
+survive has to live somewhere a module reload cannot reach. That is
+`src/core/hot.ts`: `kept(name, create)` returns one instance per process, keyed
+by name rather than by module binding, because after a reload some modules have
+been re-evaluated and some have not. Every long-lived holder goes through it —
+boards, panes, pane boards, sockets, selection, snapshots, files, the library,
+the change feed, the injector — and new ones have to. A module-level `new Map()`
+holding anything a browser tab can see is now a bug.
+
+Two smaller rules fall out. A module that *creates* something at evaluation time
+has to check first: `board-store.ts` re-running `boards.set(SCRATCH_KEY, …)`
+would blank the scratch board under an open pane. And a handler registered on a
+kept object has to be replaced rather than added, or the second reload answers
+every WebSocket connection twice.
+
+Keeping an instance keeps its methods too, so editing `change-feed.ts` or
+`injection.ts` leaves those two singletons running the old code until a real
+restart. That is the right side of the trade: a cursor a hook cannot trust again
+costs more than a few seconds of stale narration.
+
+**`canvas start` still watches nothing.** Reloading is cheap when a developer
+typed the command that caused it and expensive when a stray file save causes it
+under someone's hands, so the plain command a human or an agent runs spawns a
+plain process. The check reads the command line of the server the CLI actually
+started and fails if `--hot` or `--watch` is on it.
+
+The frontend's half is vite's, unchanged: `bun run dev` runs both.
 
 ## What is left in dist/
 

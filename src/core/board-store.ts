@@ -19,6 +19,7 @@
 // single place every board-blind caller funnelled through, which is why the
 // refusal only had to be written once.
 
+import { kept } from './hot.js';
 import { ServerElement } from '../types.js';
 import { BoardRequiredError } from './board-target.js';
 import {
@@ -55,7 +56,10 @@ export interface BoardState {
   savedAt?: string;
 }
 
-export const boards = new Map<string, BoardState>();
+// The boards this canvas has open, and the only copy of anything unsaved on
+// them. Kept across a hot reload, because a file save must never be what
+// throws a human's rearrangement away (src/core/hot.ts, ADR 0014).
+export const boards = kept('boards', () => new Map<string, BoardState>());
 
 function newBoardState(identity: BoardIdentity, vaultBacked: boolean): BoardState {
   return { identity, elements: new Map(), vaultBacked };
@@ -66,7 +70,11 @@ function newBoardState(identity: BoardIdentity, vaultBacked: boolean): BoardStat
 // be named like any other — `--board scratch` — but it exists from boot, so a
 // first-time user has something in front of them and something to name.
 export const SCRATCH_KEY = boardKey(makeIdentity({ board: SCRATCH_BOARD }));
-boards.set(SCRATCH_KEY, newBoardState(makeIdentity({ board: SCRATCH_BOARD }), false));
+// Only when it is missing. A hot reload re-runs this line with the scratch
+// board already open, and setting it again would blank whatever is on it.
+if (!boards.has(SCRATCH_KEY)) {
+  boards.set(SCRATCH_KEY, newBoardState(makeIdentity({ board: SCRATCH_BOARD }), false));
+}
 
 /** Every board this canvas has open, for the message that lists them. */
 export function openBoardKeys(): string[] {
