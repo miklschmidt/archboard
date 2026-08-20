@@ -214,6 +214,32 @@ export function panesInOrder(
 const PANE_SPECS = 'a place (left, right, top, bottom), a position (1, 2), `focused`, `primary`, or a pane id';
 
 /**
+ * How many panes the shell will lay out.
+ *
+ * A product fact, not a limit of this module: the shell's grid has a column
+ * rule for two panes and its own button stops offering another past that
+ * (frontend/src/shell/shell.css, BoardBar.tsx). It lives here because the
+ * server has to refuse a third pane before it asks the browser for one, and
+ * because the message that says "no such pane" has to know whether making one
+ * is still possible.
+ */
+export const MAX_PANES = 2;
+
+/**
+ * A pane's place, in a sentence.
+ *
+ * `place` is a phrase, not a word — "left", but also "the only pane" — so
+ * dropping it into "in the ... pane" produced "in the the only pane pane".
+ */
+export function paneWords(place: string): string {
+  return place.startsWith('the ') ? place : `the ${place} pane`;
+}
+
+/** The command that makes a pane, said the same way everywhere it is offered. */
+export const HOW_TO_OPEN_A_PANE =
+  'Open one with `archboard pane open [--board <key>]`, which splits the canvas and answers with the pane it made.';
+
+/**
  * Which pane a caller means by `left`, `2`, `focused`, `pane-1`…
  *
  * Deliberately refuses rather than picks when a spec matches nothing or more
@@ -253,9 +279,14 @@ export function resolvePaneSpec(
       `so which one is not decided. Panes on screen: ${list()}.`
     );
   }
+  // Nothing here can point a board at a pane that does not exist, and until
+  // TASK-033 nothing could make one either — the human had to click Split,
+  // which is not available to a voice thread. So the refusal carries the
+  // command that makes one, while there is still room on the glass for it.
+  const makeOne = ordered.length < MAX_PANES ? ` ${HOW_TO_OPEN_A_PANE}` : '';
   throw new Error(
     `No pane called "${spec}". Panes on screen: ${list()}. ` +
-    `--pane takes ${PANE_SPECS}.`
+    `--pane takes ${PANE_SPECS}.${makeOne}`
   );
 }
 
@@ -401,6 +432,15 @@ export function buildPanesReport(
     // Not a split: two browsers on the same canvas. Saying so stops a thread
     // offering "the left one" as a way to tell them apart.
     lines.push('These are separate tabs or windows on the same canvas, not a split — nothing is to the left of anything.');
+  }
+  // One pane is one board on screen, and a comparison needs two. Said here
+  // because this is the report an agent reads every turn, and an agent that
+  // does not know a second pane is obtainable reuses the first one — which
+  // means overwriting whatever the human was looking at.
+  if (panes.length === 1) {
+    lines.push(
+      `Only one board is on screen. To put another beside it, keeping this one: ${HOW_TO_OPEN_A_PANE}`
+    );
   }
   // Said once, not per pane. Two identical lines used to need explaining
   // because the server could not do anything else; now they are a choice, and

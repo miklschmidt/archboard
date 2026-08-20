@@ -196,7 +196,12 @@ export type WebSocketMessageType =
   | 'board_switched'
   // The stencil palette changed. Boardless on purpose: the library is not a
   // board's content, so every client applies it whatever it is showing.
-  | 'library_changed';
+  | 'library_changed'
+  // Layout, asked of the shell that owns it. Boardless for the same reason the
+  // library is: a pane appearing or going away says nothing about any board,
+  // and the pane that receives one keeps whatever it was holding.
+  | 'pane_open'
+  | 'pane_close';
 
 export interface InitialElementsMessage extends WebSocketMessage {
   type: 'initial_elements';

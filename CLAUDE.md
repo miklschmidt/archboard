@@ -92,7 +92,7 @@ The read-back is the point. Moving a box is a statement about the design.
 ./bin/canvas panes                              # which pane holds which board
 ./bin/canvas describe --board payments          # AI-readable scene text
 ./bin/canvas query --board payments --type rectangle   # includes customData + link
-./bin/canvas screenshot --out /tmp/c.png        # the primary pane, whatever it holds
+./bin/canvas screenshot --out /tmp/c.png --pane right   # one pane, whatever it holds
 ```
 
 ## Verified behaviour (v2.0.0)
@@ -197,6 +197,9 @@ state, clearing asks first, and boards and variants are openable from the UI
 agent-drawn or hand-drawn — selects it (TASK-009). Each pane holds its own
 board, so current and proposed sit side by side, and every call names the board
 it means — there is no active board left to resolve against (TASK-021, ADR 0009).
+Panes are made and unmade from the command line, and a picture or a camera move
+names the pane it means, so a thread that cannot click can put two boards side
+by side and see both (TASK-033).
 
 ## Names on the wire
 
@@ -250,6 +253,24 @@ still has a default — but only where it cannot be wrong. One pane on screen an
 it goes there; two and `--pane left|right|1|primary` is required; none and the
 board is loaded without being shown. Every answer names the pane it landed in.
 Display may follow the human's attention; authority never does.
+
+**Panes are made and unmade from the command line, not only from the chrome**
+(TASK-033). Layout used to live entirely in the browser, so an agent asked to
+put a proposal beside the current architecture had one pane and reused it —
+which meant overwriting the board the human was reading. Now:
+
+```bash
+./bin/canvas pane open --board payments@option-a   # split, and put it in the NEW pane
+./bin/canvas pane close right                      # one pane again; the board is untouched
+./bin/canvas screenshot --pane right               # picture the half you drew in
+./bin/canvas viewport --fit --pane right           # and frame it
+```
+
+`pane open` cannot be aimed at an existing pane, so it cannot overwrite one:
+that is what makes it the safe command for "show me the current one next to the
+proposal". Two panes is what the shell lays out, so a third is refused. All of
+these need a browser tab and exit 4 without one — a pane exists only while
+something is rendering it, and nothing here invents one on a headless canvas.
 
 Addressing: `current` is the privileged variant — the architecture that exists —
 so it owns the bare name and the bare filename. Every other variant is
