@@ -7,7 +7,7 @@
 // question — which is the seam TASK-006 (panes reporting what the human is
 // looking at) lands on.
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CanvasPane } from '../canvas/CanvasPane'
 import { BoardBar } from './BoardBar'
 import { BoardDialog, type BoardDialogMode } from './BoardDialog'
@@ -21,6 +21,12 @@ import type { BoardInfo, BoardWriteConflict, PaneStatus } from '../types'
 import './shell.css'
 
 const THEME_KEY = 'archboard-theme'
+
+// How many panes the shell lays out. The grid has a column rule for two
+// (shell.css) and the canvas server refuses to ask for a third, so this is the
+// same number said in the one place that renders it. It mirrors MAX_PANES in
+// src/core/panes.ts, which is where the server's copy lives.
+const MAX_PANES = 2
 
 function initialTheme(): 'light' | 'dark' {
   if (typeof window === 'undefined') return 'light'
@@ -39,6 +45,33 @@ export function Shell(): JSX.Element {
   const [panes, setPanes] = useState<string[]>(['pane-1'])
   const [focused, setFocused] = useState('pane-1')
   const [statuses, setStatuses] = useState<Record<string, PaneStatus>>({})
+  // Pane ids are never reused. Numbering by list length would hand a reopened
+  // pane the id of the one just closed, and the server keys a pane's selection
+  // and its board by that id.
+  const nextPaneNumber = useRef(2)
+
+  // Layout can now be changed from outside the browser (`archboard pane open`),
+  // so these are the shell's two moves, reachable from the buttons and from a
+  // request arriving on a pane's socket.
+  const addPane = useCallback(() => {
+    setPanes((previous) => (
+      previous.length >= MAX_PANES ? previous : [...previous, `pane-${nextPaneNumber.current++}`]
+    ))
+  }, [])
+
+  const closePane = useCallback((paneId: string) => {
+    // Never the last one: an empty shell shows nothing and offers no way back.
+    setPanes((previous) => (
+      previous.length < 2 ? previous : previous.filter((id) => id !== paneId)
+    ))
+  }, [])
+
+  // The canvas server owns the layout request; the shell owns the layout. A
+  // pane hands one up when the request arrives on its socket.
+  const handleLayoutRequest = useCallback((paneId: string, request: 'open' | 'close') => {
+    if (request === 'open') addPane()
+    else closePane(paneId)
+  }, [addPane, closePane])
 
   const [theme, setTheme] = useState<'light' | 'dark'>(initialTheme)
   const [boardInfo, setBoardInfo] = useState<BoardInfo | null>(null)
@@ -81,6 +114,12 @@ export function Shell(): JSX.Element {
   useEffect(() => {
     try { window.localStorage?.setItem(THEME_KEY, theme) } catch { /* private mode */ }
   }, [theme])
+
+  // Whoever closed a pane — the button, or a command from outside the browser
+  // — the focus has to land somewhere that still exists.
+  useEffect(() => {
+    if (!panes.includes(focused)) setFocused(panes[0] ?? 'pane-1')
+  }, [panes, focused])
 
   // The page title is the board, because a tab in a taskbar is one of the
   // places somebody looks to answer "which board am I on".
@@ -251,12 +290,11 @@ export function Shell(): JSX.Element {
         onNew={() => { setDialogError(null); setDialog('new') }}
         onSave={handleSave}
         onClear={() => setConfirmingClear(true)}
-        onAddPane={() => setPanes((previous) => [...previous, `pane-${previous.length + 1}`])}
-        onClosePane={() => setPanes((previous) => {
-          const kept = previous.slice(0, 1)
-          setFocused(kept[0] ?? 'pane-1')
-          return kept
-        })}
+        onAddPane={addPane}
+        // The button names no pane, so it drops the last one and keeps the
+        // one the human started in. `pane close <spec>` is how a caller says
+        // which half goes.
+        onClosePane={() => closePane(panes[panes.length - 1] ?? '')}
       />
 
       {notice && (
@@ -280,6 +318,7 @@ export function Shell(): JSX.Element {
             libraryItems={library.items}
             onLibraryChange={library.reportFromPane}
             onLibraryChangedElsewhere={library.applyFromServer}
+            onLayoutRequest={handleLayoutRequest}
           />
         ))}
       </main>

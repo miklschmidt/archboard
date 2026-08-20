@@ -5,7 +5,7 @@
 // around it — which is what makes a second pane a one-line change in the shell
 // rather than a second copy of the sync logic.
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Excalidraw, getLibraryItemsHash } from '@excalidraw/excalidraw'
 import type { ExcalidrawImperativeAPI, LibraryItems } from '@excalidraw/excalidraw/types'
 import { useCanvasSession } from './useCanvasSession'
@@ -39,14 +39,26 @@ interface CanvasPaneProps {
   libraryItems: LibraryItems
   onLibraryChange: (items: LibraryItems) => void
   onLibraryChangedElsewhere: (items: LibraryItems) => void
+  /**
+   * The server asked for another pane, or for this one to go. Passed up
+   * because how many panes there are is the shell's business; a canvas only
+   * happens to own the socket the request arrived on.
+   */
+  onLayoutRequest: (paneId: string, request: 'open' | 'close') => void
 }
 
 export function CanvasPane({
   paneId, primary, focused, theme, onStatus, onThemeChange, onFocus, label,
-  libraryItems, onLibraryChange, onLibraryChangedElsewhere
+  libraryItems, onLibraryChange, onLibraryChangedElsewhere, onLayoutRequest
 }: CanvasPaneProps): JSX.Element {
+  const layout = useCallback(
+    (request: 'open' | 'close') => onLayoutRequest(paneId, request),
+    [onLayoutRequest, paneId]
+  )
   const session = useCanvasSession({
-    paneId, primary, focused, onStatus, onLibraryChanged: onLibraryChangedElsewhere
+    paneId, primary, focused, onStatus,
+    onLibraryChanged: onLibraryChangedElsewhere,
+    onLayoutRequest: layout
   })
 
   // Excalidraw keeps its own copy of the library per instance, so the shell's

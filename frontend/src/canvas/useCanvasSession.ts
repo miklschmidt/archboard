@@ -63,6 +63,15 @@ export interface CanvasSessionOptions {
    * about it touches the element store, the baseline, or a change report.
    */
   onLibraryChanged?: (items: LibraryItems) => void
+  /**
+   * The server is asking for the layout to change: another pane, or this one
+   * gone. A canvas cannot do either — the shell owns how many panes there are
+   * — so this is handed straight up, the same way a library change is.
+   *
+   * It arrives on a socket because that is the only channel the server has
+   * into the browser, not because it is a canvas's business.
+   */
+  onLayoutRequest?: (request: 'open' | 'close') => void
 }
 
 export interface CanvasSession {
@@ -80,7 +89,7 @@ export interface CanvasSession {
 }
 
 export function useCanvasSession({
-  paneId, primary, focused, onStatus, onLibraryChanged
+  paneId, primary, focused, onStatus, onLibraryChanged, onLayoutRequest
 }: CanvasSessionOptions): CanvasSession {
   // A pane is a client in its own right: it holds a selection the server can
   // retire when this pane goes away, and it must be able to skip the echo of
@@ -720,12 +729,26 @@ export function useCanvasSession({
         }
         break
 
+      // Neither of these is gated on primary any more. Both are addressed to
+      // one pane's socket, so the pane that receives one is by definition the
+      // pane that was asked. Gating them on primary was what made the second
+      // pane impossible to photograph or to frame — an agent could draw a
+      // proposal beside the current architecture and never see it.
       case 'export_image_request':
-        if (primaryRef.current) await answerExport(data)
+        await answerExport(data)
         break
 
       case 'set_viewport':
-        if (primaryRef.current) await answerViewport(data)
+        await answerViewport(data)
+        break
+
+      // Layout: the shell's, not this canvas's. Handed up untouched.
+      case 'pane_open':
+        onLayoutRequest?.('open')
+        break
+
+      case 'pane_close':
+        onLayoutRequest?.('close')
         break
 
       case 'mermaid_convert':
@@ -737,8 +760,8 @@ export function useCanvasSession({
     }
   }, [
     adoptBoard, answerExport, answerMermaid, answerViewport, applyServerElements,
-    applyServerScene, clientId, hasPendingChanges, loadBoard, noteChange, onLibraryChanged,
-    removeElements, sendReport
+    applyServerScene, clientId, hasPendingChanges, loadBoard, noteChange, onLayoutRequest,
+    onLibraryChanged, removeElements, sendReport
   ])
 
   const connect = useCallback((): void => {
