@@ -1022,7 +1022,7 @@ const MAX_RELATION_PAIRS = 20000;
 // Edge matching
 // ---------------------------------------------------------------------------
 
-const edgeKey = (e: EdgeFacts) => `${e.from} ${e.to}`;
+const edgeKey = (e: EdgeFacts) => `${e.from}\0${e.to}`;
 
 function matchEdges(from: EdgeModel[], to: EdgeModel[]): {
   added: EdgeFacts[];
@@ -1278,7 +1278,7 @@ export function compareBoards(fromInput: CompareSideInput, toInput: CompareSideI
 
   // Relations, over the pairs that are actually related on either side.
   const relatedPairs = new Set<string>();
-  const pairKey = (x: string, y: string) => (x < y ? `${x} ${y}` : `${y} ${x}`);
+  const pairKey = (x: string, y: string) => (x < y ? `${x}\0${y}` : `${y}\0${x}`);
   const reason = new Map<string, Set<'edge' | 'cluster'>>();
   const mark = (x: string, y: string, why: 'edge' | 'cluster') => {
     if (x === y) return;
@@ -1307,7 +1307,7 @@ export function compareBoards(fromInput: CompareSideInput, toInput: CompareSideI
     );
   } else {
     for (const key of relatedPairs) {
-      const [x, y] = key.split(' ') as [string, string];
+      const [x, y] = key.split('\0') as [string, string];
       const before = relationOf(A.nodes.get(x)!.box, A.nodes.get(y)!.box);
       const after = relationOf(B.nodes.get(x)!.box, B.nodes.get(y)!.box);
       relationsCompared++;
