@@ -23,6 +23,14 @@ import { extentOf } from './geometry.js';
 // Metadata is written to `customData.archboard` (ADR 0003), merged rather than
 // replaced, so another tool's `customData` keys — and our own fields the caller
 // did not mention — survive.
+//
+// Any element can be promoted, arrows and lines included, and the readers take
+// what an element carries over what it is drawn from (TASK-053). A stencil is
+// an arbitrary set of primitives: the shipped PostgreSQL is seven lines, and
+// 22 of the 111 shipped stencils hold an arrow, so refusing a type here would
+// make promotion depend on which tool an artist reached for. `compare` says so out loud when
+// a promoted connector was joining two other nodes, which is the one case
+// where promoting it costs an edge.
 
 // ---------------------------------------------------------------------------
 // Kind — a controlled vocabulary that grows deliberately, not free text
