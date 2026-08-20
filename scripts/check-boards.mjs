@@ -44,6 +44,7 @@ const {
 } = await import(dist('core/board-store.js'));
 const { BoardRequiredError } = await import(dist('core/board-target.js'));
 const { resolvePaneSpec, soloPane, panesInOrder, MAX_PANES } = await import(dist('core/panes.js'));
+const { planPromotion } = await import(dist('core/promote.js'));
 const {
   boardKey, makeIdentity, parseBoardKey, boardDisplayName,
   normalizeBoardKey, vaultPathFor, listBoards, readBoardFile, identityFrontmatter
@@ -286,6 +287,58 @@ const {
   check('a pane that could exist but does not says how to make it (TASK-033)',
     /archboard pane open/.test(missing?.message ?? ''), missing?.message);
   check('two panes is what the shell lays out', MAX_PANES === 2);
+
+  // A node takes its board's variant and NOT its board's level (ADR 0013).
+  // The two look alike and are not: a node cannot belong to another variant,
+  // but it can sit at another tier, and `describe` shows a level only when a
+  // board's nodes carry more than one. Defaulting it would stamp every node
+  // the same and silence that.
+  {
+    const shape = { id: 's', type: 'rectangle', x: 0, y: 0, width: 200, height: 100, label: { text: 'Payments' } };
+    const plan = planPromotion({
+      targets: [shape], board: [shape], kind: 'service',
+      boardVariant: 'option-a'
+    });
+    const stamped = plan.nodes[0]?.customData?.archboard ?? plan.updates?.[0]?.customData?.archboard ?? {};
+    check('a promoted node takes its board\'s variant', stamped.variant === 'option-a', JSON.stringify(stamped));
+    check('  and no level, because none was asked for (ADR 0013)',
+      stamped.level === undefined, `level=${stamped.level}`);
+
+    const withLevel = planPromotion({
+      targets: [shape], board: [shape], kind: 'service',
+      boardVariant: 'option-a', level: 'service'
+    });
+    const explicit = withLevel.nodes[0]?.customData?.archboard ?? withLevel.updates?.[0]?.customData?.archboard ?? {};
+    check('  and records one when the caller says the node differs from its board',
+      explicit.level === 'service', `level=${explicit.level}`);
+  }
+
+
+  // One list of spellings, in four places: matchesSpec accepts them, PANE_SPECS
+  // names them in every refusal, run.ts teaches them, and the skill repeats
+  // them. They drifted once already, so this asserts they agree (TASK-050).
+  {
+    const panesSrc = fs.readFileSync(path.join(repoRoot, 'src/core/panes.ts'), 'utf8');
+    const specs = (panesSrc.match(/const PANE_SPECS = '([^']+)'/) ?? [])[1] ?? '';
+    const named = ['left', 'right', 'top', 'bottom', 'focused', 'primary'];
+    check('every documented pane spec is named in the refusal text',
+      named.every(word => specs.includes(word)), specs);
+
+    const runSrc = fs.readFileSync(path.join(repoRoot, 'src/cli/run.ts'), 'utf8');
+    check('  and the CLI help teaches the same ones',
+      named.every(word => runSrc.includes(word)));
+
+    // `only` was accepted and taught nowhere. It matched just when one pane was
+    // open, which is exactly when --pane can be left off, so it was never the
+    // only way to say anything.
+    let gone = null;
+    try { resolvePaneSpec([two[1]], 'only'); } catch (error) { gone = error; }
+    check('  and a spelling nobody documents is refused rather than quietly working',
+      /No pane called "only"/.test(gone?.message ?? ''), gone?.message ?? 'it resolved');
+    check('  with the refusal naming what does work',
+      named.some(word => (gone?.message ?? '').includes(word)));
+  }
+
 
   check('with one pane, no pane needs naming', soloPane([two[1]]).clientId === 'a');
   check('with no pane, a board can be loaded without being shown', soloPane([]) === null);

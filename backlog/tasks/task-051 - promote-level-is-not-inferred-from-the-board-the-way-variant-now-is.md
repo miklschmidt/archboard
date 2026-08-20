@@ -1,9 +1,11 @@
 ---
 id: TASK-051
 title: 'promote --level is not inferred from the board, the way --variant now is'
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@claude'
 created_date: '2026-08-20 04:21'
+updated_date: '2026-08-20 08:32'
 labels: []
 dependencies: []
 references:
@@ -35,3 +37,17 @@ The skill currently says `--level` records the abstraction tier and is not infer
 - [ ] #2 If the default comes from the board, --level still overrides it
 - [ ] #3 The skill matches whichever answer lands
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Decided not to default level from the board, which is the opposite of what TASK-040 did for variant, for a reason the code already carried.
+
+describe shows a node's level only when a board's nodes hold more than one distinct level (showLevel in src/core/describe.ts). The field exists to mark a node that sits at a different tier than its board, which is what a drill-down looks like. Defaulting from the board would stamp every node identically, showLevel would never fire again, and the only signal the field carries would be gone.
+
+A variant is different in kind: a node on payments@option-a cannot sensibly belong to current, so the board's value is the only correct one and a wrong stamp is always a bug. A node's level can legitimately differ.
+
+So an absent level means "same as the board". Nothing is stamped, nothing has to be kept in step, and no reader changes: they either print a level when present or compare it, and both stay correct.
+
+Recorded as ADR 0013, with the rule in CONTEXT.md next to Level, a comment at the promote site, and the skill bullet rewritten to say what the flag means rather than that it is not inferred. Three checks in scripts/check-boards.mjs assert a promoted node takes its board's variant and no level, and records a level when the caller asks for one.
+<!-- SECTION:NOTES:END -->

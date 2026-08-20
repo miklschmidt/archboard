@@ -417,8 +417,11 @@ archboard promote --board payments --kind service --path src/payments/service.ts
 - **`--ids a,b,c`** overrides the selection, for elements you just drew.
 - **`--variant <v>`** overrides the variant a node records. It defaults to
   the variant of the board named on the call, so promoting on
-  `payments@option-a` stamps `option-a` with nothing passed. `--level`
-  records the abstraction tier and is not inferred, so pass it or leave it.
+  `payments@option-a` stamps `option-a` with nothing passed.
+- **`--level <tier>`** is not inferred, and should usually be left off. A node
+  records a level only to say it sits at a different tier than its board, which
+  is what a drill-down board looks like. A node that says nothing is at its
+  board's level (ADR 0013).
 - **A node is repainted in its kind's colour** — service purple, queue orange,
   datastore cyan, gateway blue, external gray — so a node reads as one at a
   glance and a hollow shape someone drew before this becomes tappable in its
