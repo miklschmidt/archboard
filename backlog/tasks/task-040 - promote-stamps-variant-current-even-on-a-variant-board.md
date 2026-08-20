@@ -1,11 +1,11 @@
 ---
 id: TASK-040
 title: promote stamps variant current even on a variant board
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-20 03:29'
-updated_date: '2026-08-20 04:18'
+updated_date: '2026-08-20 08:32'
 labels: []
 dependencies: []
 references:
@@ -30,7 +30,7 @@ Sequence this after TASK-031 and TASK-035, both of which are in flight and touch
 <!-- AC:BEGIN -->
 - [x] #1 Promoting on a variant board stamps that board's variant, with nothing passed by the caller
 - [x] #2 compare reports no variantAnomaly for a node promoted directly on a variant board
-- [ ] #3 The skill's instruction to pass --variant when promoting is removed
+- [x] #3 The skill's instruction to pass --variant when promoting is removed
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -61,6 +61,10 @@ Negative control: patching dist/core/promote.js back to `request.variant ?? 'cur
 scripts/check-branch-compare.mjs is untouched and passes: it passes --variant explicitly, which is now an override rather than the only correct spelling. scripts/check-geometry.mjs got boardVariant on its one planPromotion call, because a .mjs caller gets no type check.
 
 bun run test exits 0.
+
+AC3 done by the coordinator after the merge, once skills/excalidraw-skill/ was free. Four passages: the worked example dropped --variant, the flag bullet now describes it as an override rather than an obligation, the paragraph headed "Promote with the board's own variant" is gone because TASK-035 and TASK-040 between them made both its halves false, and the variantAnomaly note in references/architecture-workflow.md now means only a node copied in without being re-promoted.
+
+Verified: no promote example passes --variant, the workaround paragraph is gone, and the old anomaly wording is gone.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
