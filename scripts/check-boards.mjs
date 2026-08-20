@@ -98,7 +98,9 @@ const { resolvePaneSpec, soloPane, panesInOrder } = await import(dist('core/pane
 // The canvas, with two panes on it
 // ---------------------------------------------------------------------------
 
-const PORT = 33337;
+// A free-ish port per run, so several checkouts can run this concurrently.
+// A fixed port made every agent working on this repo serialise on it.
+const PORT = Number(process.env.PORT || 33000 + Math.floor(Math.random() * 2000));
 const base = `http://127.0.0.1:${PORT}`;
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), 'archboard-boards-'));
 

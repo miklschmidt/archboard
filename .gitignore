@@ -32,3 +32,6 @@ public/dist/
 # agents/) is authored configuration and IS tracked.
 .agents/skills/
 .claude/skills/
+
+# Agent worktrees, created per subagent run and removed after.
+.claude/worktrees/
