@@ -86,6 +86,7 @@ import { boardsForRepo } from './core/repo-boards.js';
 import { CompareSideInput, compareBoards } from './core/compare.js';
 import { ChangeOrigin, changeFeed } from './core/change-feed.js';
 import type { ChangeEvent } from './core/change-feed.js';
+import { PANE_LAYOUT_TIMEOUT_MS, PANE_SETTLE_CAP_MS } from './core/timing.js';
 import { narrateChange } from './core/changes.js';
 import { injectTest, injectionStatus, startInjection } from './core/injection.js';
 import { LibraryItem, readLibrary, writeLibrary } from './core/library.js';
@@ -1972,18 +1973,10 @@ app.get('/api/panes', (_req: Request, res: Response) => {
 // its socket closing — never a promise from the shell — because a registration
 // is the only evidence anywhere in this file that a pane exists.
 
-const PANE_LAYOUT_TIMEOUT_MS = 10000;
-
-// How long to wait for the panes to say where they ended up.
-//
-// A pane that has just been mounted, or one that has just been squeezed into
-// half the width, reports its new rectangle a beat later (the browser
-// debounces it). Answering before that arrives means answering out of stale
-// geometry, which is how a plain left/right split came back described as "row
-// 2, column 2". Observed, not guessed: it happened on the first real browser
-// run. This is a cap, not a delay — the wait ends as soon as every pane has
-// re-reported.
-const PANE_SETTLE_CAP_MS = 1500;
+// How long these two routes wait is in core/timing.ts, because the settle cap
+// is waiting out PANE_DEBOUNCE_MS, which is a number on the other side of the
+// browser boundary. PANE_LAYOUT_TIMEOUT_MS and PANE_SETTLE_CAP_MS are there
+// with the reasoning that used to be here.
 
 interface PendingPaneOpen {
   resolve: (pane: PaneRegistration) => void;

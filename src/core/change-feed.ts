@@ -35,6 +35,7 @@ import { ServerElement } from '../types.js';
 import { BoardIdentity } from './board.js';
 import { copyElements } from './board-store.js';
 import { SemanticChange, diffBoardStates, narrateChange } from './changes.js';
+import { DEFAULT_SETTLE_MAX_MS, DEFAULT_SETTLE_MS } from './timing.js';
 import logger from '../utils/logger.js';
 
 /** Who moved. Determined by which surface reported the mutation, not by content. */
@@ -59,8 +60,11 @@ export interface ChangeEvent {
   elementCount: number;
 }
 
-const SETTLE_MS = Number(process.env.ARCHBOARD_SETTLE_MS || 1200);
-const MAX_PENDING_MS = Number(process.env.ARCHBOARD_SETTLE_MAX_MS || 6000);
+// The numbers, and what they pull against, are in ./timing.ts. The overrides
+// stay here because this is a process with an environment to read; that module
+// is imported by the browser too.
+const SETTLE_MS = Number(process.env.ARCHBOARD_SETTLE_MS || DEFAULT_SETTLE_MS);
+const MAX_PENDING_MS = Number(process.env.ARCHBOARD_SETTLE_MAX_MS || DEFAULT_SETTLE_MAX_MS);
 const MAX_EVENTS = 200;
 // Snapshots are the expensive part of the ring, so fewer are kept than events.
 // Past this depth a hook asking to coalesce is told the truth — that the
