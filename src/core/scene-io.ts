@@ -41,9 +41,16 @@ export async function buildSceneFile(): Promise<ExportedScene> {
 // file.
 export function buildScene(
   sceneElements: ServerElement[],
-  sceneFiles: Record<string, any> = {}
+  sceneFiles: Record<string, any> = {},
+  // A board's own note keeps archboard's bookkeeping, because the note is the
+  // board (ADR 0015) and two of those fields exist nowhere else: `source`, and
+  // an arrow's `start` and `end`. A file written for another tool does not.
+  options: { keepServerFields?: boolean } = {}
 ): ExportedScene {
-  const exportElements = expandElementsForExport(sceneElements, { deterministic: true });
+  const exportElements = expandElementsForExport(sceneElements, {
+    deterministic: true,
+    ...(options.keepServerFields ? { keepServerFields: true } : {})
+  });
 
   // Only the images these elements actually draw. A scene's `files` map is
   // keyed by the `fileId` an image element carries, so the elements decide what

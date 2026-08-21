@@ -208,8 +208,7 @@ export async function board(argv: string[]): Promise<void> {
       ...(flags.pane ? { pane: flags.pane as string } : {})
     });
     note(
-      `Board "${result.board}" is empty and exists only in memory until you run ` +
-      `\`board save --board ${result.board}\`.` +
+      `Board "${result.board}" is empty. Its note is written the moment something is drawn on it.` +
       (result.pane ? ` It is on screen in ${listPanes([result.pane])}.` : '')
     );
     printJson(result);
@@ -239,8 +238,9 @@ export async function board(argv: string[]): Promise<void> {
     );
     if (result.source === 'memory') {
       note(
-        `"${result.board}" was already open, so the canvas switched to the copy in memory ` +
-        '(unsaved changes kept). Pass --reload to take the vault\'s copy instead.'
+        `"${result.board}" was already open here, so this only pointed a pane at it. ` +
+        'Pass --reload to re-read its address off disk, which is also what un-sticks a board ' +
+        'after a write was refused.'
       );
     }
     if (result.declaredKey) {
