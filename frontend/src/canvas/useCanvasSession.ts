@@ -27,8 +27,7 @@ import { cleanElementForExcalidraw, elementsForScene } from './elements'
 import { baselineFrom, diffAgainstBaseline, fingerprint, isEmpty, type Baseline } from './changes'
 import {
   BoardConflictError, fetchElements, fetchFiles, holdBoard, loadedBundle, releaseBoard, reportChanges,
-  takeBoardBack,
-  reportPane
+  reportPane, takeBoardBack
 } from './api'
 import type { PaneReport } from './api'
 

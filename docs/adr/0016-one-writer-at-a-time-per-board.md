@@ -94,8 +94,10 @@ done. The skill teaches that alongside when to claim, because an agent that
 believes it has exclusive use until it says otherwise will eventually be wrong
 in the middle of a restructure.
 
-**What happens to the work already in flight, then** (TASK-080). Three answers
-were open and this is the one taken.
+**What happens to the work already in flight, then** (TASK-080). The paragraph
+above is clear about the agent and says nothing about the half-drawn board it
+leaves behind. Three things could have been done about that, and this is what
+is done about each.
 
 A write that has started finishes. Stopping it half way is the torn note that
 every write being one whole note exists to prevent, and it would be a strange
