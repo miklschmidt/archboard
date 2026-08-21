@@ -63,6 +63,30 @@ duplicated truth, it is the only place that history exists at all. The rule is
 about which copy answers the question "what is on this board", and that answer
 is always the note.
 
+The test, for the next thing that looks like a copy: ask which question it
+answers. Anything that answers "what is on this board" must be the note. A past
+state answers "what was on it then", which the vault has never been asked and
+cannot answer, so moving it to disk would not remove a second truth, it would
+invent a second file. Losing one of these loses history and no work: a diff
+starts over from now, a snapshot somebody meant to go back to is gone. That is
+a real cost and it is the cost of a restart, not a contradiction between two
+copies of the present.
+
+Two more things follow from that test rather than from an exception.
+
+**A past state must not be able to become the present one by accident.** A
+history that shares its element objects with the live board moves when the board
+moves, and then the diff finds nothing and reports nothing, which is the failure
+arriving as silence. So a record of the past is a copy in full, and that is a
+requirement of keeping one rather than a detail of how it is kept (TASK-042,
+TASK-048, TASK-052).
+
+**Which boards a canvas has open is not board content either.** It is the same
+kind of fact as which pane has focus: it dies with the process, it is about this
+canvas rather than about the board, and a note has nowhere to put it. So the
+process keeps a board's address and where its note is, and reads the note for
+everything else.
+
 ## A board with no home in the vault
 
 The canvas has always been able to open before anybody has chosen a vault, and

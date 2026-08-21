@@ -26,6 +26,13 @@ import WebSocket from 'ws';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = p => path.join(repoRoot, 'src', p);
+
+// The throwaway vault, made before anything is imported: a board is a note now
+// (ADR 0015), so even the in-process checks below need somewhere for one to be,
+// and `src/core/config.ts` reads ARCHBOARD_VAULT once, at import.
+const vault = fs.mkdtempSync(path.join(os.tmpdir(), 'archboard-boards-'));
+process.env.ARCHBOARD_VAULT = vault;
+
 const { labelTextIdFor } = await import(src('core/labels.ts'));
 
 let failures = 0;
@@ -40,8 +47,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // ---------------------------------------------------------------------------
 
 const {
-  resolveBoard, openBoardKeys, SCRATCH_KEY, boards: boardStore,
-  getOrCreateBoard, replaceBoardElements
+  resolveBoard, openBoardKeys, SCRATCH_KEY, boards: boardStore, getOrCreateBoard
 } = await import(src('core/board-store.ts'));
 const { BoardRequiredError } = await import(src('core/board-target.ts'));
 const { resolvePaneSpec, soloPane, panesInOrder, MAX_PANES } = await import(src('core/panes.ts'));
@@ -139,85 +145,55 @@ const {
   check('  which also lists what is', /Open right now/.test(unopened?.message ?? ''));
 }
 
-// A branch shares no element objects with the board it came from (TASK-042).
+// The registry holds no board content (ADR 0015, TASK-078).
 //
-// `board save --as` used to put the source's own objects into the branch's
-// map, so two boards held one set of elements behind two names. Nothing ever
-// failed, because every path that changes an element replaces the object
-// rather than editing it — an invariant nobody wrote down and nothing
-// enforced. So this mutates in place, which is exactly what that invariant was
-// holding back, and it is the one way to tell a copy from a shared reference.
-//
-// In process, against the real store, because object identity is not something
-// HTTP can show. `replaceBoardElements` is the only way a branch's map is
-// filled: POST /api/boards/save calls it and nothing else writes across
-// boards.
+// This is the shape of the whole decision, checked at the one place it can be
+// checked directly: the structure. A board this canvas has open is an identity,
+// a note path and the hash of the bytes last put on screen or written there.
+// Elements, images and the note's own text used to be here too, and that made
+// every open board a second copy that could drift from the note.
 {
-  const source = getOrCreateBoard(makeIdentity({ board: 'branch-sharing', level: 'service' }), true).board;
-  const original = {
-    id: 'e1', type: 'rectangle', x: 0, y: 0, width: 160, height: 80,
-    customData: { archboard: { node: 'api', kind: 'gateway', variant: 'current' } },
-    boundElements: [{ id: 'lbl', type: 'text' }],
-    groupIds: ['g1']
-  };
-  source.elements.set(original.id, original);
-
-  const branch = getOrCreateBoard(
-    makeIdentity({ board: 'branch-sharing', variant: 'option-a', level: 'service' }), true
-  ).board;
-  replaceBoardElements(branch, Array.from(source.elements.values()));
-  const copy = branch.elements.get('e1');
-
-  check('a branch holds its own element objects', copy !== original);
-  check('  and its own nested ones, which is where the meaning is',
-    copy.customData !== original.customData &&
-    copy.customData.archboard !== original.customData.archboard &&
-    copy.boundElements !== original.boundElements &&
-    copy.groupIds !== original.groupIds);
-  check('  holding the same content, so nothing was lost in the copy',
-    JSON.stringify(copy) === JSON.stringify(original));
-
-  copy.x = 999;
-  copy.customData.archboard.kind = 'datastore';
-  copy.boundElements.push({ id: 'extra', type: 'arrow' });
-  copy.groupIds.push('g2');
-  check('mutating an element on the branch in place leaves the source alone',
-    original.x === 0 &&
-    original.customData.archboard.kind === 'gateway' &&
-    original.boundElements.length === 1 &&
-    original.groupIds.length === 1,
-    JSON.stringify(original));
-
-  boardStore.delete('branch-sharing');
-  boardStore.delete('branch-sharing@option-a');
+  const { board } = getOrCreateBoard(makeIdentity({ board: 'registry-shape', level: 'service' }));
+  const fields = Object.keys(board).sort();
+  check('an open board is a registry entry, not a copy of a board',
+    !('elements' in board) && !('files' in board) && !('note' in board), fields.join(', '));
+  check('  and what it does hold is where the note is and what was last seen there',
+    fields.every(name => ['identity', 'file', 'baseline', 'loadedAt', 'savedAt'].includes(name)),
+    fields.join(', '));
+  boardStore.delete('registry-shape');
 }
 
 // A snapshot shares no element objects with the board it was taken from
-// (TASK-048). The same hazard as the branch above, one route along: POST
-// /api/snapshots built its Snapshot from `Array.from(board.elements.values())`,
-// so editing the board in place would have edited the snapshot taken to
-// protect against exactly that.
+// (TASK-048). POST /api/snapshots built its Snapshot from the board's own
+// element objects, so editing the board in place would have edited the snapshot
+// taken to protect against exactly that.
 //
-// The route, not just the helper. The express app is imported rather than
-// spawned so that it shares this process's board store, which is the only way
-// object identity is visible at all — over HTTP everything is serialised and a
-// shared reference looks exactly like a copy. It listens on an ephemeral port
-// of its own and is closed again, so it never meets the spawned server below.
+// Object identity is not something HTTP can show, so the express app is
+// imported rather than spawned and the snapshot is inspected in this process.
+// What it is a snapshot *of* comes off disk like everything else now, so the
+// board is a note this block writes and then rewrites. It listens on an
+// ephemeral port of its own and is closed again, so it never meets the spawned
+// server below.
 {
   const { default: app } = await import(src('server.ts'));
   const { snapshots } = await import(src('types.ts'));
+  const { readBoardContent, writeBoardContent } = await import(src('core/board-io.ts'));
   const listener = app.listen(0, '127.0.0.1');
   await new Promise(resolve => listener.once('listening', resolve));
   const at = `http://127.0.0.1:${listener.address().port}`;
 
-  const live = getOrCreateBoard(makeIdentity({ board: 'snapshot-sharing', level: 'service' }), true).board;
+  const identity = makeIdentity({ board: 'snapshot-sharing', level: 'service' });
+  const { board: live } = getOrCreateBoard(identity);
+  live.file = vaultPathFor(identity);
   const onTheBoard = {
     id: 's1', type: 'rectangle', x: 0, y: 0, width: 160, height: 80,
     customData: { archboard: { node: 'api', kind: 'gateway', variant: 'current' } },
     boundElements: [{ id: 'lbl', type: 'text' }],
     groupIds: ['g1']
   };
-  live.elements.set(onTheBoard.id, onTheBoard);
+  const seeded = readBoardContent(live);
+  seeded.elements.set(onTheBoard.id, { ...onTheBoard });
+  writeBoardContent(live, seeded);
 
   const taken = await fetch(`${at}/api/snapshots?board=snapshot-sharing`, {
     method: 'POST',
@@ -226,34 +202,30 @@ const {
   });
   check('a snapshot can be taken of a board', taken.status === 200, String(taken.status));
 
-  const kept = snapshots.get('before-the-split')?.elements?.[0];
-  check('  and it holds its own element object, not the board\'s',
-    Boolean(kept) && kept !== onTheBoard);
-  check('  and its own nested ones, which is where the meaning is',
-    kept.customData !== onTheBoard.customData &&
-    kept.customData.archboard !== onTheBoard.customData.archboard &&
-    kept.boundElements !== onTheBoard.boundElements &&
-    kept.boundElements[0] !== onTheBoard.boundElements[0] &&
-    kept.groupIds !== onTheBoard.groupIds);
-  check('  holding the same content, so nothing was lost in the copy',
-    JSON.stringify(kept) === JSON.stringify(onTheBoard));
+  const kept = snapshots.get('before-the-split')?.elements?.find(el => el.id === 's1');
+  check('  holding what the note held', Boolean(kept) && kept.x === 0 &&
+    kept.customData.archboard.kind === 'gateway');
 
-  // The edit a snapshot exists to survive, made the way nothing in the server
-  // makes it: in place. That is the invariant this replaces.
-  onTheBoard.x = 999;
-  onTheBoard.customData.archboard.kind = 'datastore';
-  onTheBoard.boundElements.push({ id: 'extra', type: 'arrow' });
-  onTheBoard.groupIds.push('g2');
+  // The board the snapshot was taken of, changed the way the server changes
+  // one: a write to the note. Nothing in this process can reach the snapshot's
+  // objects, and that is now a property of where a board lives rather than of
+  // anybody remembering to deep-copy.
+  const after = readBoardContent(live);
+  after.elements.set('s1', {
+    ...after.elements.get('s1'),
+    x: 999,
+    customData: { archboard: { node: 'api', kind: 'datastore', variant: 'current' } }
+  });
+  writeBoardContent(live, after);
 
-  check('mutating the board in place after snapshotting leaves the snapshot unchanged',
-    kept.x === 0 &&
-    kept.customData.archboard.kind === 'gateway' &&
-    kept.boundElements.length === 1 &&
-    kept.groupIds.length === 1,
-    JSON.stringify(kept));
+  check('changing the board after snapshotting leaves the snapshot unchanged',
+    kept.x === 0 && kept.customData.archboard.kind === 'gateway', JSON.stringify(kept));
+  check('  and the change really did land on the board',
+    readBoardContent(live).elements.get('s1').x === 999);
 
   snapshots.delete('before-the-split');
   boardStore.delete('snapshot-sharing');
+  fs.rmSync(live.file, { force: true });
   await new Promise(resolve => listener.close(resolve));
 }
 
@@ -357,7 +329,6 @@ const {
 // A fixed port made every agent working on this repo serialise on it.
 const PORT = Number(process.env.PORT || 33000 + Math.floor(Math.random() * 2000));
 const base = `http://127.0.0.1:${PORT}`;
-const vault = fs.mkdtempSync(path.join(os.tmpdir(), 'archboard-boards-'));
 
 const server = spawn(process.execPath, [src('server.ts')], {
   env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', ARCHBOARD_VAULT: vault, LOG_LEVEL: 'error' },
@@ -1215,10 +1186,139 @@ try {
     check('  read back from the note, not invented empty',
       reopened.body?.elementCount === 2 && typeof reopened.body?.loadedAt === 'string',
       JSON.stringify(reopened.body));
+
+    // --- nothing is unsaved, so nothing is lost (TASK-078, ADR 0015) -------
+    //
+    // The check above saved first, which is the old shape of the promise: work
+    // survives a restart if somebody remembered to write it. The promise now is
+    // that there is nothing to remember — a write is a write to the note, so
+    // killing the canvas mid-thought costs the process and nothing else.
+    //
+    // Both kinds of board, because they used to fail differently: scratch had
+    // no home at all, and a `board new` board had one it had never been written
+    // to. Killed rather than asked to stop, because a shutdown hook that saved
+    // on the way out would pass this and would not be the property.
+    await scratchApi('POST', '/api/boards/new', { board: 'unsaved' });
+    await scratchApi('POST', '/api/elements?board=unsaved', {
+      type: 'rectangle', x: 40, y: 40, width: 123, height: 45, label: { text: 'never saved' }
+    });
+    await scratchApi('POST', '/api/elements?board=scratch', {
+      type: 'ellipse', x: 300, y: 300, width: 77, height: 33
+    });
+    const beforeKill = await scratchApi('GET', '/api/elements?board=scratch');
+
+    scratchCanvas.kill('SIGKILL');
+    await sleep(300);
+    scratchCanvas = await startScratchCanvas();
+
+    const survivedScratch = await scratchApi('GET', '/api/elements?board=scratch');
+    check('a board drawn on and never saved survives the canvas being killed',
+      (survivedScratch.body?.elements ?? []).some(el => el.type === 'ellipse' && el.width === 77),
+      JSON.stringify((survivedScratch.body?.elements ?? []).map(el => el.type)));
+    check('  with everything else on it, not just the last thing drawn',
+      (survivedScratch.body?.elements ?? []).length === (beforeKill.body?.elements ?? []).length,
+      `${(beforeKill.body?.elements ?? []).length} before, ${(survivedScratch.body?.elements ?? []).length} after`);
+
+    // A board `board new` started and nobody saved has a note the moment
+    // something is drawn on it, so it is in the vault to be reopened.
+    const reopenedUnsaved = await scratchApi('POST', '/api/boards/open', { board: 'unsaved' });
+    check('  and so does one that `board new` started and nobody saved',
+      reopenedUnsaved.status === 200 && reopenedUnsaved.body?.source === 'vault',
+      reopenedUnsaved.body?.error ?? reopenedUnsaved.body?.source);
+    const unsavedElements = await scratchApi('GET', '/api/elements?board=unsaved');
+    check('  holding what was drawn on it, label and all',
+      (unsavedElements.body?.elements ?? []).some(el => el.width === 123) &&
+      (unsavedElements.body?.elements ?? []).some(el => el.text === 'never saved'),
+      JSON.stringify((unsavedElements.body?.elements ?? []).map(el => el.type)));
+
+    // And the other half of the same fact: the process is not holding the
+    // board, so a change made to the note behind its back is what a read
+    // answers with. This is what "no authoritative copy between requests"
+    // means, said as a behaviour rather than as a field that is missing.
+    const notePath = (await scratchApi('GET', '/api/boards/info?board=unsaved')).body?.file;
+    const noteText = fs.readFileSync(notePath, 'utf-8');
+    fs.writeFileSync(notePath, noteText.replace('"width": 123', '"width": 321'));
+    const afterEdit = await scratchApi('GET', '/api/elements?board=unsaved');
+    check('a board edited on disk reads back changed, with no restart and no reload',
+      (afterEdit.body?.elements ?? []).some(el => el.width === 321),
+      JSON.stringify((afterEdit.body?.elements ?? []).map(el => el.width)));
+
+    // ADR 0006 has not gone anywhere: that edit is somebody else's work, and
+    // the next write is refused rather than quietly built on top of it.
+    const refused = await scratchApi('POST', '/api/elements?board=unsaved', {
+      type: 'rectangle', x: 0, y: 0, width: 10, height: 10
+    });
+    check('  and the next write is refused, because the note changed underneath',
+      refused.status === 409 && /Refusing to save/.test(refused.body?.error ?? ''),
+      `${refused.status} ${String(refused.body?.error ?? '').slice(0, 60)}`);
+    check('  offering the three outcomes rather than picking one',
+      Boolean(refused.body?.conflict?.outcomes?.reload &&
+        refused.body?.conflict?.outcomes?.overwrite &&
+        refused.body?.conflict?.outcomes?.saveAs),
+      JSON.stringify(refused.body?.conflict?.outcomes));
+    check('  and nothing was written, so the disk still holds their version',
+      fs.readFileSync(notePath, 'utf-8').includes('"width": 321'));
+
+    // Outcome one, and the way back: take the note.
+    const reloaded = await scratchApi('POST', '/api/boards/open', { board: 'unsaved', reload: true });
+    check('  taking the note un-sticks it, which is ADR 0006\'s first outcome',
+      reloaded.status === 200, reloaded.body?.error);
+    const resumed = await scratchApi('POST', '/api/elements?board=unsaved', {
+      type: 'rectangle', x: 0, y: 0, width: 11, height: 11
+    });
+    check('  and writing works again', resumed.status === 200, resumed.body?.error);
   } finally {
     scratchCanvas.kill('SIGTERM');
     await sleep(200);
     fs.rmSync(scratchVault, { recursive: true, force: true });
+  }
+
+  // --- the answer names the id the board holds (TASK-069, TASK-078) -------
+  //
+  // A text element's block id is its element id, and a block reference cannot
+  // hold more than eight characters, so an id from elsewhere — Excalidraw mints
+  // 21, and a caller can send anything — gets a shorter one on the way into a
+  // note. Nothing archboard mints needs that.
+  //
+  // The rename used to happen after the write had already answered, which was
+  // survivable while the note and the board were two documents: the note said
+  // one name, the board said another, and nobody compared them. The note is the
+  // board now, so an agent was told an id the board did not hold, and the next
+  // read brought the element back renamed under whoever was drawing.
+  {
+    await api('POST', '/api/boards/new', { board: 'blockids' });
+    const long = 'a-caption-id-nobody-can-reference';
+    const made = await api('POST', '/api/elements?board=blockids', {
+      id: long, type: 'text', x: 0, y: 0, text: 'a caption'
+    });
+    const answered = made.body?.element?.id;
+    check('a text element whose id cannot be a block reference is renamed',
+      made.status === 200 && answered !== long, `${made.status} ${answered}`);
+    check('  to something a block reference can hold',
+      /^[A-Za-z0-9-]{1,8}$/.test(answered ?? ''), String(answered));
+    check('  and the write answers with the name the board actually holds',
+      Boolean(answered) &&
+      (await api('GET', `/api/elements/${answered}?board=blockids`)).status === 200,
+      String(answered));
+
+    // The point of moving it: reading the board back does not rename anything
+    // a second time, so nobody is holding an id that stops existing.
+    const held = await api('GET', '/api/elements?board=blockids');
+    check('  and reading the board back finds that same name, not another one',
+      (held.body?.elements ?? []).map(el => el.id).join(',') === answered,
+      JSON.stringify((held.body?.elements ?? []).map(el => el.id)));
+    const noteFile = (await api('GET', '/api/boards/info?board=blockids')).body?.file;
+    check('  which is also the block reference in the note',
+      fs.readFileSync(noteFile, 'utf-8').includes(`a caption ^${answered}`),
+      String(answered));
+
+    // An id that is already a block reference is left alone, because renaming
+    // is the dangerous act and nothing here needs doing.
+    const short = await api('POST', '/api/elements?board=blockids', {
+      id: 'cap2', type: 'text', x: 0, y: 60, text: 'another'
+    });
+    check('  while an id that can already be one is left exactly as it is',
+      short.body?.element?.id === 'cap2', String(short.body?.element?.id));
   }
 
   // --- a note is written by rename (TASK-061, ADR 0015) -------------------
@@ -1306,7 +1406,7 @@ try {
     // Every writer of a vault note, not only the board save. A second idiom is
     // how the first one goes stale, so the rule is that these modules do not
     // call writeFileSync on a path at all.
-    for (const module of ['server.ts', 'core/library.ts', 'core/repo-registry.ts']) {
+    for (const module of ['core/board-io.ts', 'core/library.ts', 'core/repo-registry.ts']) {
       const source = fs.readFileSync(src(module), 'utf-8');
       check(`  ${module} writes through the shared atomic write`,
         !/\bfs\.writeFileSync\(/.test(source) && /writeFileAtomic\(/.test(source));
@@ -1332,15 +1432,28 @@ try {
 
   await api('POST', '/api/boards/new', { board: 'picsa' });
   await api('POST', '/api/boards/new', { board: 'picsb' });
+  // The element first, then its data. A note holds the images its own elements
+  // draw, so the element is what gives the data somewhere to be (ADR 0015);
+  // `import` has always done it in this order.
+  await imageOn('picsa', 'img-a', 0);
+  await imageOn('picsb', 'img-b', 0);
   const addedA = await api('POST', '/api/files?board=picsa', {
     files: [{ id: 'img-a', dataURL: pngA, mimeType: 'image/png' }]
   });
   await api('POST', '/api/files?board=picsb', {
     files: [{ id: 'img-b', dataURL: pngB, mimeType: 'image/png' }]
   });
-  check('an image is added to the board that is drawing it', addedA.status === 200 && addedA.body?.board === 'picsa');
-  await imageOn('picsa', 'img-a', 0);
-  await imageOn('picsb', 'img-b', 0);
+  check('an image is added to the board that is drawing it',
+    addedA.status === 200 && addedA.body?.board === 'picsa' && addedA.body?.count === 1);
+
+  const beforeItsElement = await api('POST', '/api/files?board=picsb', {
+    files: [{ id: 'img-early', dataURL: 'data:image/png;base64,RUFSTFk=', mimeType: 'image/png' }]
+  });
+  check('  and one posted before anything draws it is not kept, and says so',
+    beforeItsElement.body?.count === 0 &&
+    (beforeItsElement.body?.orphaned ?? []).join(',') === 'img-early' &&
+    /Create the image element first/.test(beforeItsElement.body?.warning ?? ''),
+    JSON.stringify(beforeItsElement.body).slice(0, 120));
 
   const onlyA = await api('GET', '/api/files?board=picsa');
   check('  and asking one board for its images gets that board\'s',
@@ -1360,14 +1473,19 @@ try {
 
   // An image nothing draws is not an image the board uses. The filter is
   // reachability from the elements, so a file left over from a deleted picture
-  // does not ride along into the note for ever.
-  await api('POST', '/api/files?board=picsa', {
-    files: [{ id: 'img-orphan', dataURL: 'data:image/png;base64,T1JQSEFO', mimeType: 'image/png' }]
-  });
+  // does not ride along into the note for ever. Posted straight into the note's
+  // scene, because the route refuses to keep one.
+  const orphaned = noteA.replace(
+    '"img-a":',
+    '"img-orphan":{"id":"img-orphan","mimeType":"image/png","dataURL":"data:image/png;base64,T1JQSEFO"},"img-a":'
+  );
+  fs.writeFileSync(savedPicsA.body.file, orphaned);
+  await api('POST', '/api/boards/open', { board: 'picsa', reload: true });
   const withOrphan = await api('POST', '/api/boards/save?board=picsa');
   check('an image no element draws is left out of the note',
     withOrphan.status === 200 &&
-    !fs.readFileSync(withOrphan.body.file, 'utf-8').includes('T1JQSEFO'));
+    !fs.readFileSync(withOrphan.body.file, 'utf-8').includes('T1JQSEFO'),
+    withOrphan.body?.error);
 
   // The read half, and the dangerous one. Under ADR 0015 the note is rewritten
   // from what was read, so an image that does not come back off disk is

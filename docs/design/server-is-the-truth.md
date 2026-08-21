@@ -551,6 +551,31 @@ half of it and does not vary with size.
 Against the busiest measured second of 7 writes, 9.75 ms each is 68 ms, or 7% of
 that second, on a board four times larger than anything real.
 
+**What it cost when it landed** (2026-08-21, TASK-078, same machine, medians
+over 200 cycles against a note in a tmpfile vault):
+
+| | 56 elements | 300 elements |
+|---|---|---|
+| Note bytes | 40,406 | 216,346 |
+| Read and parse the note | 0.23 ms | 1.10 ms |
+| Render the note | 0.78 ms | 3.80 ms |
+| Re-read the destination for the ADR 0006 check | 0.02 ms | 0.13 ms |
+| Write with fsync and rename | 9.7 to 12.6 ms | 9.7 ms |
+| **Whole cycle** | **15.6 ms** | **18 to 23 ms** |
+
+The parse and the render came in where they were predicted, which is the part
+that depends on the board and on our code. The estimate was low on the one part
+that depends on neither: the fsync measured 9.7 to 12.6 ms rather than 5.15 to
+5.25, and it still does not vary with the size of the board, so the shape of the
+prediction held and its constant was about half of what this box gives now. The
+whole cycle is therefore two to two and a half times the estimate.
+
+Against the busiest measured second of 7 writes, that is 162 ms at 300 elements
+(16% of the second) and 110 ms at 56 (11%). Still comfortable, and the headroom
+is smaller than the estimate suggested. The fsync is now over 60% of a write, so
+it is the only thing worth attacking if this ever becomes a problem, and
+ADR 0015 is what would have to be reopened to attack it.
+
 What has to be true:
 
 - **Stage 0 is done.** Without batching, one `align` is 20 cycles and 195 ms,

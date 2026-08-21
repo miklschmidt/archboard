@@ -288,9 +288,8 @@ const snapshotOf = elements => [...elements]
 
 // What is compared is the ids and the fields, and nothing else in the entry:
 // `type` and `text` ride along only so a failure can name an element by what
-// it reads rather than by an id nobody recognises.
-const comparable = snapshot => JSON.stringify(snapshot.map(({ id, fields }) => [id, fields]));
-const sameSnapshot = (a, b) => comparable(a) === comparable(b);
+// it reads rather than by an id nobody recognises. `divergences` below is the
+// comparison; there is deliberately no second, stricter one beside it.
 
 /** The same, of what the pane is holding, computed in the pane. */
 const paneSnapshot = () => evalInPage(`(() => {
@@ -311,6 +310,31 @@ const paneSnapshot = () => evalInPage(`(() => {
  * the field, and both values. "documents differ" on a 55-element board costs
  * an hour before anybody knows what happened.
  */
+// The one place two measurers meet, and the only difference this check lets
+// through (TASK-078).
+//
+// A text element's width is measured, and there are two measurers: Chrome's
+// `measureText`, which is what a pane reports after a human types, and
+// `src/core/measure-text.ts`, which is what the server writes into the note.
+// They agree to within 0.0012 px across 130,000 measurements
+// (`docs/design/measuring-text-outside-a-browser.md`), and not to the bit. That
+// used to be invisible, because the server kept whatever width the pane sent
+// and only the note carried a re-measured one. The note is the board now
+// (ADR 0015), so every write restates it and the last few decimal places of a
+// human's typing come back different.
+//
+// So: a text element's width may differ by less than the measurers do, and
+// nothing else may differ at all. Anything larger is a real disagreement and is
+// still reported exactly.
+const MEASURER_EPSILON = 0.0012;
+const measurementNoise = (element, key, a, b) => {
+  if (element.type !== 'text' || key !== 'width') return false;
+  const ours = Number(a);
+  const theirs = Number(b);
+  return Number.isFinite(ours) && Number.isFinite(theirs) &&
+    Math.abs(ours - theirs) < MEASURER_EPSILON;
+};
+
 const divergences = (server, pane) => {
   const ours = new Map(server.map(element => [element.id, element]));
   const theirs = new Map(pane.map(element => [element.id, element]));
@@ -330,6 +354,7 @@ const divergences = (server, pane) => {
       const a = element.fields[key] ?? '<absent>';
       const b = other.fields[key] ?? '<absent>';
       if (a === b) continue;
+      if (measurementNoise(element, key, a, b)) continue;
       found.push(`${name(element)} .${key}: server ${a} / pane ${b}`);
     }
   }
@@ -430,8 +455,11 @@ const agree = async ({ tries = 60, gap = 100 } = {}) => {
     const server = snapshotOf(await held());
     const read = await paneSnapshot();
     if (read.error) throw new Error(`could not read the pane: ${read.error}`);
-    if (sameSnapshot(server, read.elements)) return { agreed: true };
+    // Agreement is what `divergences` finds nothing to say about, not string
+    // equality: the two sides measure a text's width with two measurers and
+    // the last decimal places are allowed to differ (see MEASURER_EPSILON).
     last = divergences(server, read.elements);
+    if (last.length === 0) return { agreed: true };
     await sleep(gap);
   }
   return { agreed: false, divergences: last ?? [] };

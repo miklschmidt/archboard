@@ -213,20 +213,21 @@ const COMMANDS: Record<string, Command> = {
       '  WHICH BOARDS DESCRIBE THIS CODE: `board list --here` from inside a repository, or',
       '  `board list --repo host/owner/name` from anywhere, answers from the bindings on the boards',
       '  rather than from their names, so a system board covering five repositories is found from any',
-      '  of the five. Each match lists the nodes bound to that repo. Boards open on the canvas are read',
-      '  from memory, so a binding made a minute ago and not yet saved still counts.',
+      '  of the five. Each match lists the nodes bound to that repo. A binding made a minute ago counts:',
+      '  a promotion is a write, and a write is in the note.',
       '  BRANCHING (`save --as name@variant` or `save --variant v`) writes a second board and moves',
       '  nothing on screen: you branched in order to compare, so the source stays where it is and the',
       '  branch is put up with `board open` (ADR 0012). The level comes across unless --level says',
       '  otherwise. The one save that does move a pane is naming the scratch board, and the answer says',
       '  which pane it moved either way.',
       '',
-      '  SAVES ARE CHECKED, NOT LOCKED. archboard hashes a note when it reads it and verifies that hash',
-      '  before writing. If the note changed underneath — Obsidian, a sync client, another editor — the',
-      '  save is refused, nothing is written, and it exits 5 naming three ways out: reload the note',
-      '  (`board open <name> --reload`), overwrite it (`--force`), or keep both',
-      '  (`--as <other>`). archboard never picks for you. Nothing is locked, so keep a board',
-      '  open in one editor at a time: the check catches a changed file, not a copy in another app\'s memory.'
+      '  WRITES ARE CHECKED, NOT LOCKED. Every write goes to the note, and archboard verifies that the',
+      '  destination still holds the bytes it last wrote there. If the note changed underneath —',
+      '  Obsidian, a sync client, another editor — the write is refused, nothing is written, and a save',
+      '  exits 5 naming three ways out: reload the note (`board open <name> --reload`), overwrite it',
+      '  (`--force`), or keep both (`--as <other>`). archboard never picks for you. Nothing is locked,',
+      '  so keep a board open in one editor at a time: the check catches a changed file, not a copy in',
+      '  another app\'s memory.'
     ].join('\n')
   },
   compare: {
@@ -247,9 +248,9 @@ const COMMANDS: Record<string, Command> = {
       '  across boards, so they are inventoried per side rather than diffed.',
       '',
       '  With one address the other side is found among that board\'s variants in the vault, and the',
-      '  "current" variant is always the from side. Neither board is opened: a board already open is',
-      '  read from memory (unsaved work included), any other straight from its note, and the board on',
-      '  the canvas is left exactly as it was.'
+      '  "current" variant is always the from side. Neither board is opened, and both are read from',
+      '  their notes; `source` says whether a side is a board this canvas has open, and so possibly on',
+      '  screen in front of somebody, or one that only exists in the vault.'
     ].join('\n')
   },
   changes: {

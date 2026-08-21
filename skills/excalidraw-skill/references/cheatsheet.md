@@ -48,7 +48,7 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 | `changes [--since <cursor>] [--coalesce] [--detail] [--text]` | What the board became since a cursor, in `compare`'s vocabulary. One drag is one event; a nudge or a recolour is none. `--coalesce` gives one net diff since the cursor, which is what a once-per-turn read wants. Cursors belong to a canvas process, so watch `feedId`. No MCP equivalent |
 | `board list` | Boards in the vault, boards open in this session, and which board each pane is showing |
 | `board info --board <key>` | Identity and save state of one board |
-| `board new <name> [--variant v] [--level l] [--pane <spec>]` | Empty board; in memory until saved |
+| `board new <name> [--variant v] [--level l] [--pane <spec>]` | Empty board; its note appears when you draw |
 | `board open <name[@variant]> [--reload] [--pane <spec>]` | Show a board in a pane. `--pane` takes `left`, `right`, `top`, `bottom`, a 1-based position, `primary`, or a pane id — required when more than one pane is open, since which half of the screen is not something to guess |
 | `board save --board <key> [--as <name>] [--variant v] [--level l] [--force]` | Write it to the vault; **refused (exit 5) if the note changed on disk** — `--force` overwrites anyway. `--variant v` is how a board is **branched** into a proposal: it writes `<key>@v` and carries the level across. `--as` branches the same way, level included. **A branch moves nothing on screen** (ADR 0012): the panes holding the source keep holding it, and the branch is not showing until `pane open --board <key>@v` or `board open`. The answer says which — `saveKind`, `savedFrom`, `panes.moved`, `panes.kept`. Naming the scratch board is the one save that does move a pane |
 | `compare <from> [to]` | Semantic diff between two variants, joined on node identity; opens nothing and leaves the canvas alone. One address finds the other variant itself |
@@ -159,7 +159,7 @@ Requires `ARCHBOARD_VAULT`. A pane holds exactly one board; two panes hold two. 
 | `open_board` | Show a board in a pane; `pane` (`left`, `right`, `1`…) is required when more than one is open | `board` (`name` or `name@variant`) |
 | `new_board` | Start an empty board and show it in a pane | `board` |
 | `save_board` | Write a board to the vault; **refused if the note changed on disk** (`force` overwrites anyway). `variant` branches the board into a proposal, which is what makes it comparable; a branch moves no pane, so `open_pane` it | `board` |
-| `compare_boards` | Semantic diff between two variants, joined on node identity (`customData.archboard.node`). Complete and unsummarised — narrate it yourself. Reads a board from memory when it is open, else from its note; the canvas is untouched. Check `summary.comparable` and `layout.cannotExpress` before making claims | `from` (`to` optional) |
+| `compare_boards` | Semantic diff between two variants, joined on node identity (`customData.archboard.node`). Complete and unsummarised — narrate it yourself. Reads both sides from their notes; `source` says which side is a board the canvas has open. The canvas is untouched. Check `summary.comparable` and `layout.cannotExpress` before making claims | `from` (`to` optional) |
 
 ### Panes
 

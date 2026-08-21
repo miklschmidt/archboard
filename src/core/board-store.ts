@@ -1,16 +1,26 @@
-// The element store, keyed by board.
+// Which boards this canvas has open, and where each one's note is.
 //
 // Before multi-document there was a single global `elements` map: every element
 // in the process implicitly belonged to one unnamed board, so "load board X"
-// had nowhere to put X. The store is a registry of boards, each holding its
-// own elements — and nothing else. There is no pointer to a current one.
+// had nowhere to put X. This became a registry of boards, each holding its own
+// elements. Now it holds no elements at all.
+//
+// THE NOTE IS THE BOARD (ADR 0015). This registry used to hold the elements,
+// the images and the note's own bytes, which made it a second copy of every
+// open board — one that could drift from the note for as long as a session ran,
+// and did, four times, each found by a person noticing something absurd. A
+// request reads the note it is about and writes it back (src/core/board-io.ts);
+// what survives between requests is the sentence "this canvas has payments open,
+// and its note is at <path>", which is a fact about this process rather than
+// about the board.
+//
+// So there is no cache to invalidate here and nothing here is unsaved. A board
+// with no note yet — a `board new` nobody has written, a scratch board in a
+// fresh vault — is empty rather than pending.
 //
 // A canvas holds exactly one board at a time (CONTEXT.md) and a pane is a slot
 // holding its own canvas, so the number of boards on screen is the number of
-// panes. The registry keeps every board opened this session, which is what
-// makes switching away and back instant and what lets two panes hold two
-// boards at once; it is not a cache of the vault, and nothing here is written
-// to disk until a save.
+// panes.
 //
 // The pointer that used to live here — `activeKey`, "the board" — is gone. It
 // answered for every caller that named no board, and with a board per pane
@@ -20,7 +30,7 @@
 // refusal only had to be written once.
 
 import { kept } from './hot.js';
-import { ExcalidrawFile, ServerElement } from '../types.js';
+import { ServerElement } from '../types.js';
 import { BoardRequiredError } from './board-target.js';
 import {
   BoardIdentity,
@@ -32,33 +42,24 @@ import {
 
 export interface BoardState {
   identity: BoardIdentity;
-  elements: Map<string, ServerElement>;
-  /**
-   * The images this board's elements draw, keyed by the `fileId` an image
-   * element carries. Excalidraw's own model: a scene has a `files` map and an
-   * image element names an entry in it, so a board's images are exactly the
-   * ones its elements reference (TASK-060).
-   *
-   * This used to be one map for the whole process, keyed by file id and shared
-   * by every open board, which is what made saving board A write board B's
-   * images into A's note. A file id says nothing about which board it belongs
-   * to; only an element does.
-   */
-  files: Map<string, ExcalidrawFile>;
-  // Where this board's note is, or would be. Every board has one, scratch
-  // included (ADR 0015): the vault is the only place board content may live,
-  // so a board the process held and the vault did not would be the exception
-  // that turns that rule into a preference. The file is not written until a
-  // save, so `file` set with no `savedAt` means "nothing there yet".
+  // Where this board's note is. Every board has one, scratch included
+  // (ADR 0015): the vault is the only place board content may live, so a board
+  // the process held and the vault did not would be the exception that turns
+  // that rule into a preference. Optional only because this module is loaded by
+  // processes with no vault, which have no path to put here.
   file?: string;
-  // The note exactly as it was read from (or last written to) disk. Carried so
-  // the next save can preserve its frontmatter and anything else the vault put
-  // there verbatim.
-  note?: string;
-  // What archboard last saw at `file`: the sha-256 of the bytes it read there,
-  // or of the bytes it wrote there. A save compares the destination against
-  // this and refuses when they differ, because the difference is somebody
-  // else's work (ADR 0006).
+  // What archboard last saw at `file`: the sha-256 of the bytes it read when it
+  // opened the board, or of the bytes it wrote at its last write. A write
+  // compares the destination against this and refuses when they differ, because
+  // the difference is somebody else's work (ADR 0006).
+  //
+  // This is not the bytes the current request read. That would make the check
+  // vacuous — a note Obsidian rewrote a moment ago reads back cleanly — and it
+  // is why a plain read does not touch this: only putting a board on screen and
+  // writing one do. Under ADR 0015 a write happens on every gesture, so the
+  // baseline is milliseconds old and the question it asks is "did somebody get
+  // in between our last two writes" rather than "has anything happened since
+  // this session began".
   //
   // Pinned to a path rather than to the board, so a save-as cannot carry a
   // baseline onto a file archboard has never read. A board archboard has not
@@ -71,13 +72,14 @@ export interface BoardState {
   savedAt?: string;
 }
 
-// The boards this canvas has open, and the only copy of anything unsaved on
-// them. Kept across a hot reload, because a file save must never be what
-// throws a human's rearrangement away (src/core/hot.ts, ADR 0014).
+// The boards this canvas has open. Kept across a hot reload, because which
+// board each pane is holding must not change under somebody at a wall display
+// (src/core/hot.ts, ADR 0014). What is on those boards is in the vault and is
+// re-read per request, so a reload cannot lose it.
 export const boards = kept('boards', () => new Map<string, BoardState>());
 
 function newBoardState(identity: BoardIdentity): BoardState {
-  return { identity, elements: new Map(), files: new Map() };
+  return { identity };
 }
 
 // The board a pane shows when nothing else is on screen: somewhere for work
@@ -91,7 +93,8 @@ function newBoardState(identity: BoardIdentity): BoardState {
 // that have no vault and no business demanding one.
 export const SCRATCH_KEY = boardKey(makeIdentity({ board: SCRATCH_BOARD }));
 // Only when it is missing. A hot reload re-runs this line with the scratch
-// board already open, and setting it again would blank whatever is on it.
+// board already open, and setting it again would throw away the note path the
+// server resolved for it at startup.
 if (!boards.has(SCRATCH_KEY)) {
   boards.set(SCRATCH_KEY, newBoardState(makeIdentity({ board: SCRATCH_BOARD })));
 }
@@ -174,55 +177,6 @@ export function copyElements(elements: Iterable<ServerElement>): ServerElement[]
   return Array.from(elements, element => structuredClone(element));
 }
 
-/** Fill a board with copies of some elements, replacing whatever it held. */
-export function replaceBoardElements(board: BoardState, elements: ServerElement[]): void {
-  board.elements.clear();
-  for (const element of copyElements(elements)) board.elements.set(element.id, element);
-}
-
-/**
- * The images a set of elements draws, out of everything a board holds.
- *
- * An image element names its data with `fileId`, so this is Excalidraw's own
- * answer to "which images does this board use" rather than a guess at one. A
- * file nothing points at is not written into a note (TASK-060).
- */
-export function filesUsedBy(
-  elements: Iterable<Pick<ServerElement, 'fileId'>>,
-  available: ReadonlyMap<string, ExcalidrawFile>
-): Record<string, ExcalidrawFile> {
-  const used: Record<string, ExcalidrawFile> = {};
-  for (const element of elements) {
-    const id = element.fileId;
-    if (typeof id !== 'string') continue;
-    const file = available.get(id);
-    if (file) used[id] = file;
-  }
-  return used;
-}
-
-/**
- * Give a board copies of some images, replacing whatever it held.
- *
- * Takes a scene's `files` object, which is keyed by file id. The key is the
- * authority on the id: an entry read out of a note may carry an `id` field or
- * may not, and the key is the thing an image element's `fileId` matches.
- */
-export function replaceBoardFiles(board: BoardState, files: Record<string, unknown>): void {
-  board.files.clear();
-  for (const [id, raw] of Object.entries(files)) {
-    if (!raw || typeof raw !== 'object') continue;
-    const file = raw as Partial<ExcalidrawFile>;
-    if (typeof file.dataURL !== 'string') continue;
-    board.files.set(id, {
-      id,
-      dataURL: file.dataURL,
-      mimeType: typeof file.mimeType === 'string' ? file.mimeType : 'image/png',
-      created: typeof file.created === 'number' ? file.created : Date.now()
-    });
-  }
-}
-
 // The most recent bytes archboard has seen at `file`, or null when it has never
 // seen any. Asked of every open board rather than of one, because a baseline
 // belongs to the path: `board save --as other` writes a file that a different
@@ -242,7 +196,12 @@ export function recordBaseline(board: BoardState, file: string, hash: string): v
   board.baseline = { file, hash, at: new Date().toISOString() };
 }
 
-export function boardSummaries(): Array<{
+// How many elements each open board has, which is the one thing about a board
+// this module can no longer answer on its own: it is in the note, and reading
+// notes is board-io's job. Injected rather than imported, because board-io
+// reads and writes through this registry and a cycle between them would be a
+// worse shape than one argument.
+export function boardSummaries(elementCount: (board: BoardState) => number): Array<{
   key: string;
   identity: BoardIdentity;
   elementCount: number;
@@ -254,7 +213,7 @@ export function boardSummaries(): Array<{
   return Array.from(boards.entries()).map(([key, board]) => ({
     key,
     identity: board.identity,
-    elementCount: board.elements.size,
+    elementCount: elementCount(board),
     // Scratch is a board with a note but not a name anybody chose, and that is
     // the only thing about it that is different. Said on the wire so a surface
     // can offer "give this a name" without knowing what scratch is called.

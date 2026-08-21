@@ -320,8 +320,11 @@ try {
   // The static check refuses this shape in source
   // (`scripts/check-module-scope.mjs`), and this is the other net: what
   // happens when something it cannot see gets through. The board store's
-  // presence guard is removed, so re-evaluating it replaces the open board
-  // with an empty one. That is the exact TASK-057 bug, under a live pane.
+  // presence guard is removed, so re-evaluating it replaces the open board with
+  // a fresh one that has no note behind it. That is the exact TASK-057 bug,
+  // under a live pane — and it is still a loss now that board content lives in
+  // the vault, because a board the canvas cannot find is a board the pane
+  // cannot be handed.
   //
   // Last, because it really does damage the canvas.
 
@@ -337,11 +340,11 @@ try {
   await sleep(600);
   const brokenLog = await askForReload();
 
-  check('a reload that empties an open board is reported, not accepted',
+  check('a reload that loses an open board is reported, not accepted',
     brokenLog.includes('THE RELOAD BROKE SOMETHING'),
     JSON.stringify(brokenLog.trim().slice(-300)));
   check('  naming the board and what it lost',
-    /board "scratch" went from 6 elements to 0/.test(brokenLog),
+    /board "scratch" had its note at .*scratch\.excalidraw\.md and now has it at nowhere/.test(brokenLog),
     JSON.stringify(brokenLog.match(/board "[^"]*"[^\n]*/)?.[0] ?? ''));
   check('  and the connected tab is told too, not just the terminal',
     seen.slice(brokenFrom).some(m => m.type === 'reload_broken'),
