@@ -13,6 +13,7 @@ import { snapshot, ACTIONS as SNAPSHOT_ACTIONS } from './commands/snapshot.js';
 import { board, SUBCOMMANDS as BOARD_SUBCOMMANDS } from './commands/board.js';
 import { compare } from './commands/compare.js';
 import { changes } from './commands/changes.js';
+import { claim, release } from './commands/claim.js';
 import { inject, SUBCOMMANDS as INJECT_SUBCOMMANDS } from './commands/inject.js';
 import { arrange, OPERATIONS as ARRANGE_OPERATIONS } from './commands/arrange.js';
 import { installSkill } from './commands/install-skill.js';
@@ -271,6 +272,41 @@ const COMMANDS: Record<string, Command> = {
       '  Cursor-based, for a caller that runs once per turn and remembers where it got to. Pass the',
       '  cursor from the last response as --since; --coalesce answers with one net diff from there',
       '  to now instead of a replay of every event in between.'
+    ].join('\n')
+  },
+  claim: {
+    handler: claim,
+    summary: 'Take a board for a stretch of work, so twenty writes are one uninterrupted act',
+    usage: [
+      'claim --board <key> --reason "redrawing the payment path" [--for 10m]',
+      '',
+      '  FOR WORK YOU KNOW IN ADVANCE IS SUBSTANTIAL, and for nothing smaller. An ordinary write',
+      '  already takes the board for as long as it takes to write, so there is nothing to claim for',
+      '  moving one box. What a claim buys is the twenty writes in between: taking and releasing the',
+      '  board twenty times leaves nineteen gaps for somebody else to write into, and a board that is',
+      '  never once in the state you meant it to be in.',
+      '',
+      '  NOTHING TO CARRY. Every write you make to this board while the claim stands goes under the',
+      '  claim, because the board is named on it. Claim again to extend, with the reason brought up to',
+      '  date; a write does not extend it. --for takes a unit (90s, 10m, 1h), and defaults to ten',
+      '  minutes.',
+      '',
+      '  THE PERSON AT THE CANVAS CAN TAKE IT BACK AT ANY MOMENT, from the pane, which shows your',
+      '  reason. Your next act is then refused once and says so, and NOTHING IS ROLLED BACK: every',
+      '  write you made is in the note. So leave the board sensible after each write, or do the work',
+      '  on a variant and swap when it is done. Stop when you are told; do not claim it again to',
+      '  finish.'
+    ].join('\n')
+  },
+  release: {
+    handler: release,
+    summary: 'Give back a board you claimed',
+    usage: [
+      'release --board <key>',
+      '',
+      '  Ends the claim. The board goes back to being taken one write at a time, and everything you',
+      '  wrote stays where it is. Releasing a claim that has expired, or that somebody took back, is',
+      '  not an error — it answers `released: false`.'
     ].join('\n')
   },
   inject: {

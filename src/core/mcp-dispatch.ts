@@ -21,6 +21,8 @@ import {
   getSelection,
   openPane,
   closePane,
+  claimBoard,
+  releaseBoardClaim,
   searchElements,
   clearCanvas,
   exportImage,
@@ -918,6 +920,50 @@ async function dispatchTool(
 
         return {
           content: [{ type: 'text', text: report.text }]
+        };
+      }
+      case 'claim_board': {
+        const params = z.object({
+          board: z.string().min(1),
+          reason: z.string().min(1),
+          forMs: z.number().positive().optional()
+        }).parse(args ?? {});
+        logger.info('Claiming a board via MCP', { board: params.board, reason: params.reason });
+
+        const result = await claimBoard({
+          reason: params.reason,
+          ...(params.forMs !== undefined ? { forMs: params.forMs } : {})
+        });
+        const until = new Date(result.claim.expires).toTimeString().slice(0, 5);
+        return {
+          content: [{
+            type: 'text',
+            text:
+              (result.created
+                ? `"${result.board}" is yours until ${until}, or until you release it.`
+                : `Your claim on "${result.board}" now runs to ${until}.`) +
+              ' Every write naming this board goes under the claim, and nobody else writes to it' +
+              ' meanwhile. The person at the canvas can take it back at any moment — you will be told,' +
+              ' and what you have already written stays, so leave the board sensible after each write.' +
+              ` Release it with release_board.\n\n${JSON.stringify(result, null, 2)}`
+          }]
+        };
+      }
+      case 'release_board': {
+        const params = z.object({ board: z.string().min(1) }).parse(args ?? {});
+        logger.info('Releasing a claim via MCP', { board: params.board });
+
+        const result = await releaseBoardClaim();
+        return {
+          content: [{
+            type: 'text',
+            text:
+              (result.released
+                ? `"${result.board}" is free. It goes back to being taken one write at a time.`
+                : `Nothing to release: "${result.board}" was not claimed. A claim that ran out, or that ` +
+                  'the person at the canvas took back, has already ended.') +
+              `\n\n${JSON.stringify(result, null, 2)}`
+          }]
         };
       }
       case 'open_pane': {
