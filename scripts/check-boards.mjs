@@ -58,7 +58,7 @@ const {
 } = await import(src('core/board.ts'));
 // `board open`'s reader lives with the per-request one now, on top of the same
 // `readNoteFile` (TASK-089).
-const { readBoardFile, readNote, readNoteFile } = await import(src('core/board-io.ts'));
+const { readBoardFile, readNote } = await import(src('core/board-io.ts'));
 
 // Board addresses are case-insensitive and unicode-normalised (ADR 0010).
 // Boards get named out loud, and a human cannot pronounce casing, so two
