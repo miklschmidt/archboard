@@ -3,7 +3,7 @@
 
 import type { LibraryItems } from '@excalidraw/excalidraw/types'
 import type {
-  BoardIdentity, BoardInfo, BoardListing, BoardSaveResult, BoardWriteConflict, ServerElement
+  BoardIdentity, BoardInfo, BoardListing, BoardSaveResult, BoardWriteConflict, LockHolder, ServerElement
 } from '../types'
 import type { ChangeReport } from './changes'
 
@@ -141,6 +141,47 @@ export interface PaneReport {
   viewport: { x: number; y: number; width: number; height: number; zoom: number }
   /** Which bundle this tab is running, so the canvas can say when it is old. */
   build?: string
+}
+
+// ─── The board's mutex ────────────────────────────────────────
+//
+// The message a change report cannot be (ADR 0016). Reporting is a trailing
+// debounce with no maximum wait, so a continuous drag says nothing to the
+// server until 400 ms after the finger lifts — long after the change is on
+// screen and far too late to refuse. This goes out on the first change instead,
+// and the write that follows joins the hold rather than taking a second one.
+//
+// Deliberately not `json()`: a refusal here is an answer, not a failure. It
+// means somebody else is writing the board, and the caller has to be able to
+// read who.
+
+export interface HoldReply {
+  held: boolean
+  /** Who has it: this pane on success, somebody else on a refusal. */
+  holder: LockHolder | null
+}
+
+export async function holdBoard(board: string | null, clientId: string): Promise<HoldReply> {
+  const response = await fetch(`/api/boards/hold${boardQuery(board)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ clientId })
+  })
+  const body = await response.json().catch(() => ({})) as { success?: boolean; holder?: LockHolder | null }
+  if (response.ok && body.success) return { held: true, holder: body.holder ?? null }
+  return { held: false, holder: body.holder ?? null }
+}
+
+/**
+ * Give the board back. Best effort on purpose: the hold is a lease, so a
+ * release that never arrives costs LOCK_LEASE_MS and not the board.
+ */
+export function releaseBoard(board: string | null, clientId: string): void {
+  void fetch(`/api/boards/hold/release${boardQuery(board)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ clientId })
+  }).catch(() => { })
 }
 
 /** The one call that empties a board. Confirmed in the shell, never here. */
