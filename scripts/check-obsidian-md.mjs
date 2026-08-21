@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = (rel) => join(__dirname, '..', 'src', rel);
-const { wrapSceneAsObsidianMd, extractSceneJsonFromObsidianMd } = await import(
+const { wrapSceneAsObsidianMd, extractSceneJsonFromObsidianMd, embeddedFilesIn } = await import(
   src('core/obsidian-md.ts')
 );
 const { mintId, derivedId, isBlockId } = await import(src('core/ids.ts'));
@@ -223,6 +223,193 @@ const savedCustom = wrapSceneAsObsidianMd(scene([rectangle]), custom, {
 assert(savedCustom.includes('  - payments'), 'frontmatter: custom keys lost');
 assert(savedCustom.includes('archboard-board: payments'), 'frontmatter: identity key not written');
 checkStable('frontmatter round-trip', savedCustom, scene([rectangle]));
+
+// --- a note in the shape the plugin actually writes (TASK-085) ---------------
+//
+// Every case above is a note archboard wrote. The plugin writes a different
+// one: it moves image bytes out of the drawing into real vault files and
+// records where each went under `## Embedded Files`, so that section is the
+// only mapping from a fileId to a picture. It sits inside the data region,
+// which a save regenerates, so a save used to delete it and leave the images
+// in the vault with nothing able to name them. See ADR 0017.
+
+const imageElement = {
+  id: 'img-one',
+  type: 'image',
+  x: 300,
+  y: 0,
+  width: 80,
+  height: 80,
+  fileId: 'abc12345'
+};
+
+// Verbatim in the plugin's own shape: `<fileId>: <target>\n\n` per entry, a
+// wikilink for a file it moved into the vault, a hyperlink for one it fetches,
+// and `$$latex$$` for an equation (ExcalidrawData.generateMDBase).
+const EMBEDDED = [
+  '## Embedded Files',
+  'abc12345: [[attachments/diagram.png]]',
+  '',
+  'def45678: https://example.com/logo.svg',
+  '',
+  'gh789012: $$\\int_0^1 x^2$$',
+  '',
+  ''
+].join('\n');
+// The plugin regenerates this one from the `link` field of the scene's own
+// elements every time it loads or saves, so it is not a sole record.
+const ELEMENT_LINKS = '## Element Links\nrect-one: [[Payments]]\n\n';
+
+const imaged = scene([rectangle, text, imageElement]);
+const archboardShape = wrapSceneAsObsidianMd(imaged);
+// Spliced rather than String.replace'd: a `$$` in an equation entry is an
+// escape in a replacement string, and the fixture would not be the note.
+const OPENS_DRAWING = '\n%%\n## Drawing\n';
+const withSections = (sections) => {
+  const at = archboardShape.indexOf(OPENS_DRAWING);
+  return `${archboardShape.slice(0, at)}\n${sections}${archboardShape.slice(at + 1)}`;
+};
+const pluginNote = withSections(`${ELEMENT_LINKS}${EMBEDDED}`);
+const savedPlugin = wrapSceneAsObsidianMd(imaged, pluginNote);
+
+assert(savedPlugin.includes('## Embedded Files'), 'plugin note: the Embedded Files heading was deleted by the save');
+assert(
+  savedPlugin.includes('abc12345: [[attachments/diagram.png]]'),
+  'plugin note: the wikilink saying where the image went was deleted by the save'
+);
+assert(
+  savedPlugin.includes('def45678: https://example.com/logo.svg'),
+  'plugin note: a hyperlink entry was deleted by the save'
+);
+assert(
+  savedPlugin.includes('gh789012: $$\\int_0^1 x^2$$'),
+  'plugin note: an equation entry was deleted by the save'
+);
+// Element Links goes, and that is the decision rather than an oversight: the
+// plugin applies what it reads there back onto the elements, so carrying a
+// stale line across would put back a link somebody deleted here.
+assert(
+  !savedPlugin.includes('## Element Links'),
+  'plugin note: Element Links was preserved — it is derived from the scene and must be regenerated'
+);
+assert(
+  savedPlugin === pluginNote.replace(ELEMENT_LINKS, ''),
+  'plugin note: the save changed something other than the Element Links section'
+);
+checkStable('plugin note', savedPlugin, imaged);
+
+// The note says where an image is once. archboard holding the bytes does not
+// make them a second record: the section already names that id, so nothing
+// about the picture is written into the Drawing block.
+{
+  const held = scene([rectangle, text, imageElement]);
+  held.files = {
+    abc12345: { id: 'abc12345', dataURL: 'data:image/png;base64,QUJPQVJEQUFBQQ==', mimeType: 'image/png' }
+  };
+  const savedHeld = wrapSceneAsObsidianMd(held, savedPlugin);
+  assert(
+    !savedHeld.includes('QUJPQVJEQUFBQQ=='),
+    'embedded files: base64 was written back into a note the plugin had migrated it out of'
+  );
+  assert(
+    savedHeld.includes('abc12345: [[attachments/diagram.png]]'),
+    'embedded files: the wikilink the bytes were dropped in favour of is gone too'
+  );
+  assert(savedHeld === savedPlugin, 'embedded files: dropping the covered image changed the note');
+
+  // An id the section says nothing about is archboard's to record, as before.
+  const other = scene([rectangle, text, { ...imageElement, id: 'img-two', fileId: 'zz999999' }]);
+  other.files = {
+    zz999999: { id: 'zz999999', dataURL: 'data:image/png;base64,QUJPQVJEQkJCQg==', mimeType: 'image/png' }
+  };
+  const savedOther = wrapSceneAsObsidianMd(other, savedPlugin);
+  assert(
+    savedOther.includes('QUJPQVJEQkJCQg=='),
+    'embedded files: an image the section does not name was dropped from the scene'
+  );
+  checkStable('image the section does not name', savedOther, other);
+}
+
+// The entries, read back. `other` is the forms that name no file — an
+// equation, the plugin's markdown-image token — which are carried but cannot
+// be resolved to a picture.
+{
+  const entries = embeddedFilesIn(savedPlugin);
+  assert(entries.length === 3, `embedded files: read ${entries.length} entries, expected 3`);
+  assert(
+    entries[0]?.kind === 'wikilink' && entries[0]?.target === 'attachments/diagram.png',
+    `embedded files: first entry read as ${JSON.stringify(entries[0])}`
+  );
+  assert(entries[1]?.kind === 'hyperlink', `embedded files: a hyperlink read as ${entries[1]?.kind}`);
+  assert(entries[2]?.kind === 'other', `embedded files: an equation read as ${entries[2]?.kind}`);
+  assert(
+    embeddedFilesIn(fresh).length === 0,
+    'embedded files: a note with no section reported entries'
+  );
+}
+
+// The legacy heading, which the plugin still reads.
+{
+  const legacy = withSections('# Embedded files\nabc12345: [[old/diagram.png]]\n\n');
+  const savedLegacy = wrapSceneAsObsidianMd(imaged, legacy);
+  assert(
+    savedLegacy.includes('abc12345: [[old/diagram.png]]'),
+    'legacy heading: the older Embedded files spelling was deleted by the save'
+  );
+  checkStable('legacy heading', savedLegacy, imaged);
+}
+
+// A heading with nothing under it records nothing, so there is nothing to
+// keep. This is also what stops an impostor growing the note: a text element
+// whose words are the heading has no entries below it either.
+{
+  const bare = withSections('## Embedded Files\n\n');
+  const savedBare = wrapSceneAsObsidianMd(imaged, bare);
+  assert(!savedBare.includes('## Embedded Files'), 'bare heading: an empty section was preserved');
+  checkStable('bare heading', savedBare, imaged);
+}
+
+// The section ends at the first line that is not an entry. Prose inside the
+// data region is the plugin's to ignore and archboard's to regenerate; only
+// the mapping is a record.
+{
+  const trailing = withSections(
+    '## Embedded Files\nabc12345: [[attachments/diagram.png]]\n\nsomething else entirely\n\n'
+  );
+  const savedTrailing = wrapSceneAsObsidianMd(imaged, trailing);
+  assert(
+    savedTrailing.includes('abc12345: [[attachments/diagram.png]]'),
+    'section end: the entry before the prose was dropped with it'
+  );
+  assert(!savedTrailing.includes('something else entirely'), 'section end: prose was preserved as an entry');
+  checkStable('section end', savedTrailing, imaged);
+}
+
+// A text element whose own words are the section, entries and all. The heading
+// is looked for only below the last block reference, and a text element always
+// ends in one, so this cannot start a section — and the note does not grow by a
+// copy of it on every save.
+{
+  const impostorEmbedded = {
+    id: 'text-thr',
+    type: 'text',
+    x: 0,
+    y: 400,
+    width: 200,
+    height: 50,
+    text: '## Embedded Files\nzz999999: [[stolen.png]]',
+    originalText: '## Embedded Files\nzz999999: [[stolen.png]]'
+  };
+  const impostorScene = scene([rectangle, impostorEmbedded]);
+  const note = wrapSceneAsObsidianMd(impostorScene);
+  assert(
+    embeddedFilesIn(note).length === 0,
+    'impostor embedded section: a text element was read as the plugin\'s section'
+  );
+  const twice = wrapSceneAsObsidianMd(impostorScene, wrapSceneAsObsidianMd(impostorScene, note));
+  assert(twice === note, 'impostor embedded section: the note grew across saves');
+  checkStable('impostor embedded section', note, impostorScene);
+}
 
 // --- ids: the writer has nothing to rename (TASK-069) ------------------------
 //
