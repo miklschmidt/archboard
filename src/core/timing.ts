@@ -301,3 +301,70 @@ export const LOCK_STEAL_GUARD_MS = 25
  * write to.
  */
 export const LOCK_FREE_LINGER_MS = LOCK_RENEW_MS
+
+// ── A claim: one writer for longer than one write (ADR 0016, TASK-080) ────
+
+/**
+ * How long a claim runs when the agent does not say.
+ *
+ * A claim is what an agent takes when it knows in advance that it is about to
+ * redraw a board rather than move one box. This is the only number here that
+ * bounds a *person's* wait rather than a machine's: for as long as it runs, the
+ * board on the wall is somebody else's, and the way out is the take-back on the
+ * banner rather than waiting it out.
+ *
+ * Ten minutes is a redraw and not a session. Long enough that an agent reading
+ * code between writes does not lose the board mid-restructure, short enough
+ * that a claim nobody released stops mattering before the person who wanted
+ * the board has given up on it.
+ */
+export const CLAIM_DEFAULT_MS = 10 * 60_000
+
+/**
+ * The longest claim anybody may ask for, however long they said.
+ *
+ * The expiry is what bounds a *working* agent — the lease and its renewal bound
+ * a dead one — so this is the cap on how long the wall can be somebody else's
+ * without a person doing anything. An hour is the outside of a plausible
+ * restructure. An agent that needs longer says so again, which is a claim it
+ * has to still be alive to make.
+ *
+ * A claim asking for more is shortened rather than refused: the request was
+ * about the work, not about the wall, and a refusal would leave the agent
+ * unclaimed and drawing anyway.
+ */
+export const CLAIM_MAX_MS = 60 * 60_000
+
+/**
+ * How long a claimed board's lease runs between renewals.
+ *
+ * Deliberately the same lease as any other hold: what makes a claim long is
+ * that the canvas keeps renewing it, not that it is written down for longer. A
+ * long lease with no renewal would mean a canvas that died mid-claim costs the
+ * vault the whole claim, which is the failure the lease exists to prevent
+ * arriving on a bigger scale.
+ *
+ * So it is a name rather than a number, kept separate because the reason for
+ * the value differs: LOCK_LEASE_MS has to clear a person's report debounce,
+ * and this has to clear a renewal interval. Both are satisfied by the same
+ * three seconds today, and the two would be tuned for different reasons.
+ */
+export const CLAIM_LEASE_MS = LOCK_LEASE_MS
+
+/**
+ * How often a canvas looks at the lock files of the boards on its screen.
+ *
+ * The lock is a broadcast as well as a guard, and the broadcast reaches one
+ * canvas: taking a board is news the canvas that did it can send, and a second
+ * canvas over the same vault has nothing to tell it because a file does not
+ * call anybody. Excluded correctly, told late. ADR 0016 left the poll undone
+ * for the per-write hold, where being wrong costs milliseconds, and named the
+ * long claim as what makes it worth paying for — a pane on the second canvas
+ * would otherwise let somebody draw into a board an agent has had for minutes.
+ *
+ * One renewal interval, so a pane learns about a claim about as fast as the
+ * claim's own lease moves. It costs one small file read per board on screen per
+ * second, and only while a browser is connected: with nothing rendering, there
+ * is no pane to be wrong.
+ */
+export const LOCK_WATCH_MS = LOCK_RENEW_MS
