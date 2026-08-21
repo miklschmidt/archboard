@@ -667,8 +667,19 @@ for (const [name, arrow] of Object.entries(arrows)) {
     assert(near(onOutline(settledEnd, { x: 1000, y: 1000, width: 200, height: 100 }), 1, 0.02),
       `the end sits at ${onOutline(settledEnd, { x: 1000, y: 1000, width: 200, height: 100 }).toFixed(2)} ` +
       "of the outline the binding's own gap of 15 draws, not on it");
-    assert(!near(settledEnd.y, 1050, 8),
-      `focus 0.9 was routed to y=${Math.round(settledEnd.y)}, the centre line, rather than low on the box`);
+    // Against where a centred binding would have put the same end, which is
+    // the only thing the old routing could say and is 30px away from where
+    // this person attached theirs.
+    const settledArrow = await wire('hand');
+    const centred = boundEndpoint(
+      { type: 'rectangle', x: 1000, y: 1000, width: 200, height: 100 },
+      { elementId: 'd', focus: 0, gap: 15, fixedPoint: null },
+      at(settledArrow, 0),
+      settledEnd
+    );
+    assert(Math.hypot(settledEnd.x - centred.x, settledEnd.y - centred.y) > 10,
+      `focus 0.9 was routed to ${Math.round(settledEnd.y)}, which is where focus 0 puts it ` +
+      '(a centred path), rather than low on the box where it was attached');
     assert(near(settledEnd.x, asDropped.x, 10),
       'the check is not exercising anything: routing moved the end right across the box');
 
