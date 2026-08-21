@@ -1,10 +1,11 @@
 ---
 id: TASK-067
 title: Build the board mutex as a deep module
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-20 20:02'
-updated_date: '2026-08-20 20:17'
+updated_date: '2026-08-21 13:56'
 labels: []
 dependencies:
   - TASK-066
@@ -52,6 +53,16 @@ Sequence after the batching work: while align and distribute still issue one wri
 - [ ] #8 Taking the lock at the start of a human gesture works, given that the change report is a trailing debounce that sends nothing until 400 ms after the finger lifts
 - [ ] #9 A pane that cannot hear the lock broadcast, because its socket has dropped, does not let a human draw on a board somebody else holds
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. src/core/board-lock.ts: one deep module. Interface is `withBoardLock(request, run)` — ask to write a board, either the write runs or BoardHeldError names the holder and how long it has been held. Behind it: a lease file in <vault>/.archboard/locks/<key>.lock, atomic wx-create, rename-with-token-readback to steal an expired one, expiry, renewal, reentrancy by holder id (join vs create; release only what you created), the wait up to LOCK_WAIT_CAP_MS, and the broadcast sink.
+2. A check that spawns two processes over one vault and shows them excluding each other, plus lease expiry, reentrancy and the steal race, all through the interface.
+3. Server: one Express middleware over the mutating routes, derived from the persistBoard/writeBoardContent call sites and deny-by-default for any non-GET naming a board. Routes that await a browser round trip stay out — their write arrives later as a change report and is locked then. New POST /api/boards/hold and /api/boards/hold/release for the human's gesture. Lock take/release broadcasts board_lock to every pane.
+4. Frontend: a cheap scene stamp (count plus version sum) inside scheduleReport gives the leading edge the trailing debounce cannot; the pane holds from the first real change, re-arms every LOCK_RENEW_MS, releases once the report has landed and nothing new arrived. viewModeEnabled = !connected || heldByAnother — a pane that cannot hear the broadcast assumes the board is held. A refused claim reloads the board rather than keeping an edit nobody will accept.
+5. Wire the check into package.json and check-ci-suites. Revert-proof each piece and count the failures.
+<!-- SECTION:PLAN:END -->
 
 ## Comments
 

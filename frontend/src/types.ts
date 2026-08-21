@@ -135,6 +135,24 @@ export interface WebSocketMessage {
   files?: any;
   /** Library items, on `library_changed`. Never elements. */
   items?: unknown[];
+  /** On `board_lock`: is anybody writing this board (ADR 0016). */
+  held?: boolean;
+  /** On `board_lock`: who, or null. `id` is their client id, so a pane can recognise itself. */
+  holder?: LockHolder | null;
+}
+
+/**
+ * Who holds a board's mutex. Mirrors `LockHolder` in `src/core/board-lock.ts`,
+ * which the pane cannot import: that module reads the vault off a filesystem a
+ * browser has not got.
+ */
+export interface LockHolder {
+  id: string;
+  kind: 'human' | 'agent';
+  since: string;
+  until: string;
+  process: string;
+  reason?: string;
 }
 
 /** What one pane tells the shell about itself. */

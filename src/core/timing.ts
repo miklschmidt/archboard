@@ -37,10 +37,14 @@
  * so a continuous drag posts nothing at all until 400 ms after the finger
  * lifts. That matters for the lock. ADR 0016 says an agent's wait is bounded
  * by this window, and the accurate version is narrower: this bounds how long a
- * human's hold lasts *once it has been taken*, and nothing takes it at the
- * start of a gesture today, because nothing reaches the server at the start of
- * a gesture. Taking it is a separate immediate message that TASK-067 has to
- * invent. Until it exists, an agent's wait is one gesture plus this, not this.
+ * human's hold lasts *after the last change of a gesture*, not how long the
+ * hold lasts. Nothing used to reach the server at the start of a gesture, so
+ * TASK-067 gave the pane a second message that does: `POST /api/boards/hold`
+ * goes out on the leading edge of the first change and again every
+ * LOCK_RENEW_MS while the hand keeps moving, and the release goes out once
+ * this debounce has fired and the report has landed. So an agent's wait is a
+ * gesture plus this plus a write, and it is the *renewal* rather than this
+ * number that carries a hold across a long drag.
  */
 export const REPORT_DEBOUNCE_MS = 400
 
@@ -184,10 +188,11 @@ export const DEFAULT_INJECT_MIN_INTERVAL_MS = 10_000
 
 // ── One writer at a time (ADR 0016) ───────────────────────────────────────
 //
-// Nothing reads the three constants below yet. They are here because TASK-067
-// builds the mutex, and defining them in the file that implements it is
-// exactly the scattering this module exists to stop. TASK-067 may move the
-// numbers; it should not move their home.
+// `src/core/board-lock.ts` is the only thing that reads these. It was built
+// against them rather than around them, and the three it added since — the
+// poll, the steal guard and the free linger — are here for the reason the
+// first three were: a number that governs the lock and lives next to the lock
+// is a number the next person tunes without seeing what it pulls against.
 
 /**
  * How long a lock is held without renewal before it lapses.
@@ -235,3 +240,57 @@ export const LOCK_RENEW_MS = 1000
  * long a crash costs.
  */
 export const LOCK_WAIT_CAP_MS = 5000
+
+/**
+ * How often a waiter re-asks for a board somebody else is holding.
+ *
+ * The lock is a file, so waiting is polling: there is nothing to wait *on*
+ * that a second process could signal. 50 ms against a lease of 3000 and a
+ * write that takes about 20 keeps the wait feeling immediate — a handover
+ * costs at most one poll — while a board held for the whole wait cap costs a
+ * hundred reads of a small file rather than a spin.
+ *
+ * It is the granularity of the wait, so it is also the floor on how quickly a
+ * released board is picked up. Raising it makes an agent look slow behind a
+ * human who has just finished; lowering it buys nothing once it is under the
+ * time a write takes.
+ */
+export const LOCK_POLL_MS = 50
+
+/**
+ * How long a process pauses after taking over a lapsed lease before it
+ * believes it got it.
+ *
+ * Creating a lock file that is not there is atomic and settles itself. Taking
+ * over one whose holder died is not: two processes can both decide the lease
+ * lapsed, both write, and the second write wins. So both pause and read back,
+ * and only the one whose own token is in the file goes on to write the board.
+ * This is how long that pause is, and it has to comfortably exceed the gap
+ * between two such writes for the read-back to be conclusive.
+ *
+ * It is paid only when a lease has actually lapsed, which means only after a
+ * holder died. Nothing on the ordinary path waits it out.
+ */
+export const LOCK_STEAL_GUARD_MS = 25
+
+/**
+ * How long the panes are left believing a board is still held after it was
+ * released.
+ *
+ * The lock itself is released immediately — this delays only the news, and
+ * only the half of the news that opens a board back up. A release that is
+ * followed by another hold inside this window is never broadcast at all.
+ *
+ * It exists because an agent's write is still a fan-out in places (TASK-083:
+ * promote, demote and a multi-id delete are one write per element), so a
+ * single agent action can take and release the lock a dozen times in as many
+ * milliseconds. Broadcast raw, that is a dozen round trips of every pane
+ * flicking in and out of read-only under somebody's hand.
+ *
+ * A linger errs toward saying a free board is held, which is the direction
+ * this whole mechanism errs in (ADR 0016: a pane that cannot be told must
+ * assume the board is held). One renewal interval is long enough to swallow a
+ * fan-out and short enough that a human never notices a board they can already
+ * write to.
+ */
+export const LOCK_FREE_LINGER_MS = LOCK_RENEW_MS
