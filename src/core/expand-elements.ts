@@ -54,6 +54,23 @@ export interface ExpandOptions {
    * either way is this one, and neither way keeps a `label`.
    */
   forStore?: boolean;
+  /**
+   * Keep that bookkeeping without the rest of `forStore`.
+   *
+   * A board's note is where the board lives (ADR 0015), so it has to hold
+   * everything the board is, and that includes two fields nothing else can
+   * recover. `source` is what says a human drew an element rather than an
+   * agent, which `describe` reports and `compare` reads. `start` and `end` are
+   * what say which shapes an arrow joins, and `rerouteBoundArrows` reads them
+   * every time one of those shapes moves — an arrow that loses them stops
+   * following the boxes it was drawn between.
+   *
+   * Not `forStore`, because a note is a whole document: its z-order is restated
+   * and its labels are expanded, neither of which a partial write wants. And
+   * not on by default, because `export --out` writes a file for another tool,
+   * where archboard's bookkeeping is noise.
+   */
+  keepServerFields?: boolean;
   /** Ids already spoken for elsewhere, so an expanded label cannot take one. */
   inUse?: IdsInUse;
 }
@@ -201,6 +218,42 @@ export function settleDeletions(
 }
 
 /**
+ * The index each element in a z-ordered run should carry, or null where the
+ * one it has is already right.
+ *
+ * REPAIR, NOT RESTATEMENT. Reissuing every index from its position would
+ * rewrite all 300 of them every time somebody deleted a shape near the front,
+ * and every one of those is an element a write has to report as changed. So an
+ * index that is already increasing is kept, and one is issued only where the
+ * run breaks: after a creation that is the new element and nothing else, and
+ * after a deletion it is nothing at all.
+ *
+ * One rule, used by the board and by the note. The exporter used to reissue
+ * every index while this repaired them, which was survivable while a note and
+ * a board were two documents: the note said `a0, a1, a2` and the board said
+ * `a0, a1, aB` and nobody compared them. The note is the board now (ADR 0015),
+ * so two rules is two answers, and the second one arrives on the next read
+ * having told nobody (`scripts/check-live-session.mjs` caught it on cycle 7).
+ */
+export function settledIndices(
+  ordered: ReadonlyArray<{ index?: string | null }>
+): Array<string | null> {
+  const wanted: Array<string | null> = [];
+  let last = -1;
+  for (const element of ordered) {
+    const position = typeof element.index === 'string' ? indexPosition(element.index) : null;
+    if (position !== null && position > last) {
+      last = position;
+      wanted.push(null);
+      continue;
+    }
+    last += 1;
+    wanted.push(fractionalIndex(last));
+  }
+  return wanted;
+}
+
+/**
  * Give every element on a board an `index`, and leave the valid ones alone.
  *
  * `index` is z-order, it is a field of the note like any other, and until this
@@ -210,15 +263,6 @@ export function settleDeletions(
  * (found by `scripts/check-live-session.mjs`). Under ADR 0015 that is a board
  * with two answers, and a write cannot return a document the renderer has to
  * repair.
- *
- * REPAIR, NOT RESTATEMENT. The exporter above reissues every index from its
- * position, which is right for a note — one document, written whole. Doing
- * that to a live board would rewrite all 300 indices every time somebody
- * deleted a shape near the front, and every one of those is an element the
- * write has to report as changed. So this keeps any index that is already
- * increasing and only issues one where the run breaks: after a creation that
- * is the new element and nothing else, and after a deletion it is nothing at
- * all.
  *
  * The board is left in z-order, because z-order is the order a document is
  * written in and the store is what a document is built from.
@@ -230,19 +274,17 @@ export function repairIndices(board: Map<string, ServerElement>): ServerElement[
   const ordered = inZOrder(held);
   const changed: ServerElement[] = [];
   const settled: ServerElement[] = [];
-  let last = -1;
-  for (const element of ordered) {
-    const position = typeof element.index === 'string' ? indexPosition(element.index) : null;
-    if (position !== null && position > last) {
-      last = position;
+  const wanted = settledIndices(ordered);
+  for (const [at, element] of ordered.entries()) {
+    const index = wanted[at];
+    if (index === null || index === undefined) {
       settled.push(element);
       continue;
     }
-    last += 1;
     // Replaced rather than edited: a snapshot or a branch may be holding a
     // deep copy taken from this one, and every write path here replaces
     // (TASK-042).
-    const repaired = { ...element, index: fractionalIndex(last) };
+    const repaired = { ...element, index };
     changed.push(repaired);
     settled.push(repaired);
   }
@@ -276,7 +318,7 @@ export function expandElementsForExport(
   sourceElements: ServerElement[],
   options: ExpandOptions = {}
 ): Record<string, any>[] {
-  const { deterministic = false, forStore = false } = options;
+  const { deterministic = false, forStore = false, keepServerFields = forStore } = options;
   const seedFor = (key: string): number =>
     deterministic ? (fnv1a(key) % 2147483646) + 1 : Math.floor(Math.random() * 2147483647);
   const updatedFor = (el: any): number => {
@@ -345,7 +387,7 @@ export function expandElementsForExport(
 
     const base = makeBaseElement(el, rest);
     const restoreServerFields = (element: Record<string, any>): Record<string, any> => {
-      if (!forStore) return element;
+      if (!keepServerFields) return element;
       if (createdAt !== undefined) element.createdAt = createdAt;
       if (updatedAt !== undefined) element.updatedAt = updatedAt;
       if (syncedAt !== undefined) element.syncedAt = syncedAt;
@@ -545,17 +587,24 @@ export function expandElementsForExport(
   //
   // z-order is what `index` means, so the existing order is kept: elements
   // sort by the index they arrived with, and anything without one keeps its
-  // place in the array. What changes is that the values are then reissued from
-  // `fractionalIndex`, which is monotonic past ten elements where `a${n}` was
-  // not. A board of twelve came back from a render with five indices repaired
-  // because `a10` sorts before `a2`.
+  // place in the array. What changes is that a run that does not increase is
+  // repaired — `fractionalIndex` is monotonic past ten elements where `a${n}`
+  // was not, and a board of twelve came back from a render with five indices
+  // repaired because `a10` sorts before `a2`.
+  //
+  // The same rule the board is held to (`settledIndices`), because a note is
+  // the board (ADR 0015) and a second rule here would be a second answer.
   //
   // Not done for the store, where a write names a few elements and the board
-  // holds the rest: restating a partial document's indices would renumber it
+  // holds the rest: settling a partial document's indices would renumber it
   // against elements it cannot see.
   if (!forStore) {
     const order = inZOrder(cleanedExportElements);
-    order.forEach((element, position) => { element.index = fractionalIndex(position); });
+    const wanted = settledIndices(order);
+    order.forEach((element, at) => {
+      const index = wanted[at];
+      if (index !== null && index !== undefined) element.index = index;
+    });
     cleanedExportElements.length = 0;
     cleanedExportElements.push(...order);
   }

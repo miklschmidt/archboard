@@ -35,7 +35,7 @@ export function isObsidianExcalidrawMd(content: string): boolean {
   return content.includes('# Excalidraw Data') || /^---[\s\S]*?excalidraw-plugin:/m.test(content);
 }
 
-function renameElementId(elements: any[], oldId: string, newId: string): void {
+export function renameElementId(elements: any[], oldId: string, newId: string): void {
   for (const el of elements) {
     if (el.id === oldId) el.id = newId;
     if (Array.isArray(el.boundElements)) {

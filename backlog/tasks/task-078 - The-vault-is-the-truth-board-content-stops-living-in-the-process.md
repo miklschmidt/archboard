@@ -1,9 +1,11 @@
 ---
 id: TASK-078
 title: 'The vault is the truth: board content stops living in the process'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-20 20:16'
+updated_date: '2026-08-21 09:33'
 labels: []
 dependencies:
   - TASK-068
@@ -75,3 +77,16 @@ DOCUMENTATION. CLAUDE.md describes the board store as "not a cache of the vault,
 - [ ] #6 CLAUDE.md and the board-store header no longer say nothing is written to disk until a save
 - [ ] #7 bun run test is green, with check-boards, check-obsidian-md, check-hot-reload and check-side-by-side specifically exercised
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. New src/core/board-io.ts: readBoardContent(board) reads board.file and returns {elements, files, note, hash}; writeBoardContent renders the note, checks ADR 0006 against the destination, writes atomically and re-records the baseline. ingestSceneElements moves here.
+2. BoardState loses elements, files and note (TASK-063). It keeps identity, file, baseline, loadedAt, savedAt: which boards this canvas has open and where each note is, which is registry state, not board content.
+3. boardFromRequest returns {key, board, content}. Every board.elements/board.files site in server.ts reads the per-request content instead.
+4. Every mutating route persists through one funnel next to noteChange, so a write is a read-modify-write against the note and nothing survives the request.
+5. ADR 0006 fires on the persist path: a note whose bytes are not the ones archboard last wrote or read is refused, 409, with the three outcomes. Stop at TASK-079's boundary (the refusal still interrupts).
+6. Answer the open question in ADR 0015: the change feed's baseline/checkpoints and snapshots stay in memory because they are the board at a past moment and the vault never held them.
+7. Fix CLAUDE.md and the board-store header.
+8. A check that kills and restarts the canvas and reads the board back (AC 3), plus revert-proofs and timings.
+<!-- SECTION:PLAN:END -->

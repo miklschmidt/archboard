@@ -26,6 +26,13 @@ import WebSocket from 'ws';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = p => path.join(repoRoot, 'src', p);
+
+// The throwaway vault, made before anything is imported: a board is a note now
+// (ADR 0015), so even the in-process checks below need somewhere for one to be,
+// and `src/core/config.ts` reads ARCHBOARD_VAULT once, at import.
+const vault = fs.mkdtempSync(path.join(os.tmpdir(), 'archboard-boards-'));
+process.env.ARCHBOARD_VAULT = vault;
+
 const { labelTextIdFor } = await import(src('core/labels.ts'));
 
 let failures = 0;
@@ -40,8 +47,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // ---------------------------------------------------------------------------
 
 const {
-  resolveBoard, openBoardKeys, SCRATCH_KEY, boards: boardStore,
-  getOrCreateBoard, replaceBoardElements
+  resolveBoard, openBoardKeys, SCRATCH_KEY, boards: boardStore, getOrCreateBoard
 } = await import(src('core/board-store.ts'));
 const { BoardRequiredError } = await import(src('core/board-target.ts'));
 const { resolvePaneSpec, soloPane, panesInOrder, MAX_PANES } = await import(src('core/panes.ts'));
@@ -139,85 +145,55 @@ const {
   check('  which also lists what is', /Open right now/.test(unopened?.message ?? ''));
 }
 
-// A branch shares no element objects with the board it came from (TASK-042).
+// The registry holds no board content (ADR 0015, TASK-078).
 //
-// `board save --as` used to put the source's own objects into the branch's
-// map, so two boards held one set of elements behind two names. Nothing ever
-// failed, because every path that changes an element replaces the object
-// rather than editing it — an invariant nobody wrote down and nothing
-// enforced. So this mutates in place, which is exactly what that invariant was
-// holding back, and it is the one way to tell a copy from a shared reference.
-//
-// In process, against the real store, because object identity is not something
-// HTTP can show. `replaceBoardElements` is the only way a branch's map is
-// filled: POST /api/boards/save calls it and nothing else writes across
-// boards.
+// This is the shape of the whole decision, checked at the one place it can be
+// checked directly: the structure. A board this canvas has open is an identity,
+// a note path and the hash of the bytes last put on screen or written there.
+// Elements, images and the note's own text used to be here too, and that made
+// every open board a second copy that could drift from the note.
 {
-  const source = getOrCreateBoard(makeIdentity({ board: 'branch-sharing', level: 'service' }), true).board;
-  const original = {
-    id: 'e1', type: 'rectangle', x: 0, y: 0, width: 160, height: 80,
-    customData: { archboard: { node: 'api', kind: 'gateway', variant: 'current' } },
-    boundElements: [{ id: 'lbl', type: 'text' }],
-    groupIds: ['g1']
-  };
-  source.elements.set(original.id, original);
-
-  const branch = getOrCreateBoard(
-    makeIdentity({ board: 'branch-sharing', variant: 'option-a', level: 'service' }), true
-  ).board;
-  replaceBoardElements(branch, Array.from(source.elements.values()));
-  const copy = branch.elements.get('e1');
-
-  check('a branch holds its own element objects', copy !== original);
-  check('  and its own nested ones, which is where the meaning is',
-    copy.customData !== original.customData &&
-    copy.customData.archboard !== original.customData.archboard &&
-    copy.boundElements !== original.boundElements &&
-    copy.groupIds !== original.groupIds);
-  check('  holding the same content, so nothing was lost in the copy',
-    JSON.stringify(copy) === JSON.stringify(original));
-
-  copy.x = 999;
-  copy.customData.archboard.kind = 'datastore';
-  copy.boundElements.push({ id: 'extra', type: 'arrow' });
-  copy.groupIds.push('g2');
-  check('mutating an element on the branch in place leaves the source alone',
-    original.x === 0 &&
-    original.customData.archboard.kind === 'gateway' &&
-    original.boundElements.length === 1 &&
-    original.groupIds.length === 1,
-    JSON.stringify(original));
-
-  boardStore.delete('branch-sharing');
-  boardStore.delete('branch-sharing@option-a');
+  const { board } = getOrCreateBoard(makeIdentity({ board: 'registry-shape', level: 'service' }));
+  const fields = Object.keys(board).sort();
+  check('an open board is a registry entry, not a copy of a board',
+    !('elements' in board) && !('files' in board) && !('note' in board), fields.join(', '));
+  check('  and what it does hold is where the note is and what was last seen there',
+    fields.every(name => ['identity', 'file', 'baseline', 'loadedAt', 'savedAt'].includes(name)),
+    fields.join(', '));
+  boardStore.delete('registry-shape');
 }
 
 // A snapshot shares no element objects with the board it was taken from
-// (TASK-048). The same hazard as the branch above, one route along: POST
-// /api/snapshots built its Snapshot from `Array.from(board.elements.values())`,
-// so editing the board in place would have edited the snapshot taken to
-// protect against exactly that.
+// (TASK-048). POST /api/snapshots built its Snapshot from the board's own
+// element objects, so editing the board in place would have edited the snapshot
+// taken to protect against exactly that.
 //
-// The route, not just the helper. The express app is imported rather than
-// spawned so that it shares this process's board store, which is the only way
-// object identity is visible at all — over HTTP everything is serialised and a
-// shared reference looks exactly like a copy. It listens on an ephemeral port
-// of its own and is closed again, so it never meets the spawned server below.
+// Object identity is not something HTTP can show, so the express app is
+// imported rather than spawned and the snapshot is inspected in this process.
+// What it is a snapshot *of* comes off disk like everything else now, so the
+// board is a note this block writes and then rewrites. It listens on an
+// ephemeral port of its own and is closed again, so it never meets the spawned
+// server below.
 {
   const { default: app } = await import(src('server.ts'));
   const { snapshots } = await import(src('types.ts'));
+  const { readBoardContent, writeBoardContent } = await import(src('core/board-io.ts'));
   const listener = app.listen(0, '127.0.0.1');
   await new Promise(resolve => listener.once('listening', resolve));
   const at = `http://127.0.0.1:${listener.address().port}`;
 
-  const live = getOrCreateBoard(makeIdentity({ board: 'snapshot-sharing', level: 'service' }), true).board;
+  const identity = makeIdentity({ board: 'snapshot-sharing', level: 'service' });
+  const { board: live } = getOrCreateBoard(identity);
+  live.file = vaultPathFor(identity);
   const onTheBoard = {
     id: 's1', type: 'rectangle', x: 0, y: 0, width: 160, height: 80,
     customData: { archboard: { node: 'api', kind: 'gateway', variant: 'current' } },
     boundElements: [{ id: 'lbl', type: 'text' }],
     groupIds: ['g1']
   };
-  live.elements.set(onTheBoard.id, onTheBoard);
+  const seeded = readBoardContent(live);
+  seeded.elements.set(onTheBoard.id, { ...onTheBoard });
+  writeBoardContent(live, seeded);
 
   const taken = await fetch(`${at}/api/snapshots?board=snapshot-sharing`, {
     method: 'POST',
@@ -226,34 +202,30 @@ const {
   });
   check('a snapshot can be taken of a board', taken.status === 200, String(taken.status));
 
-  const kept = snapshots.get('before-the-split')?.elements?.[0];
-  check('  and it holds its own element object, not the board\'s',
-    Boolean(kept) && kept !== onTheBoard);
-  check('  and its own nested ones, which is where the meaning is',
-    kept.customData !== onTheBoard.customData &&
-    kept.customData.archboard !== onTheBoard.customData.archboard &&
-    kept.boundElements !== onTheBoard.boundElements &&
-    kept.boundElements[0] !== onTheBoard.boundElements[0] &&
-    kept.groupIds !== onTheBoard.groupIds);
-  check('  holding the same content, so nothing was lost in the copy',
-    JSON.stringify(kept) === JSON.stringify(onTheBoard));
+  const kept = snapshots.get('before-the-split')?.elements?.find(el => el.id === 's1');
+  check('  holding what the note held', Boolean(kept) && kept.x === 0 &&
+    kept.customData.archboard.kind === 'gateway');
 
-  // The edit a snapshot exists to survive, made the way nothing in the server
-  // makes it: in place. That is the invariant this replaces.
-  onTheBoard.x = 999;
-  onTheBoard.customData.archboard.kind = 'datastore';
-  onTheBoard.boundElements.push({ id: 'extra', type: 'arrow' });
-  onTheBoard.groupIds.push('g2');
+  // The board the snapshot was taken of, changed the way the server changes
+  // one: a write to the note. Nothing in this process can reach the snapshot's
+  // objects, and that is now a property of where a board lives rather than of
+  // anybody remembering to deep-copy.
+  const after = readBoardContent(live);
+  after.elements.set('s1', {
+    ...after.elements.get('s1'),
+    x: 999,
+    customData: { archboard: { node: 'api', kind: 'datastore', variant: 'current' } }
+  });
+  writeBoardContent(live, after);
 
-  check('mutating the board in place after snapshotting leaves the snapshot unchanged',
-    kept.x === 0 &&
-    kept.customData.archboard.kind === 'gateway' &&
-    kept.boundElements.length === 1 &&
-    kept.groupIds.length === 1,
-    JSON.stringify(kept));
+  check('changing the board after snapshotting leaves the snapshot unchanged',
+    kept.x === 0 && kept.customData.archboard.kind === 'gateway', JSON.stringify(kept));
+  check('  and the change really did land on the board',
+    readBoardContent(live).elements.get('s1').x === 999);
 
   snapshots.delete('before-the-split');
   boardStore.delete('snapshot-sharing');
+  fs.rmSync(live.file, { force: true });
   await new Promise(resolve => listener.close(resolve));
 }
 
@@ -357,7 +329,6 @@ const {
 // A fixed port made every agent working on this repo serialise on it.
 const PORT = Number(process.env.PORT || 33000 + Math.floor(Math.random() * 2000));
 const base = `http://127.0.0.1:${PORT}`;
-const vault = fs.mkdtempSync(path.join(os.tmpdir(), 'archboard-boards-'));
 
 const server = spawn(process.execPath, [src('server.ts')], {
   env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', ARCHBOARD_VAULT: vault, LOG_LEVEL: 'error' },
@@ -1306,7 +1277,7 @@ try {
     // Every writer of a vault note, not only the board save. A second idiom is
     // how the first one goes stale, so the rule is that these modules do not
     // call writeFileSync on a path at all.
-    for (const module of ['server.ts', 'core/library.ts', 'core/repo-registry.ts']) {
+    for (const module of ['core/board-io.ts', 'core/library.ts', 'core/repo-registry.ts']) {
       const source = fs.readFileSync(src(module), 'utf-8');
       check(`  ${module} writes through the shared atomic write`,
         !/\bfs\.writeFileSync\(/.test(source) && /writeFileAtomic\(/.test(source));
@@ -1332,15 +1303,28 @@ try {
 
   await api('POST', '/api/boards/new', { board: 'picsa' });
   await api('POST', '/api/boards/new', { board: 'picsb' });
+  // The element first, then its data. A note holds the images its own elements
+  // draw, so the element is what gives the data somewhere to be (ADR 0015);
+  // `import` has always done it in this order.
+  await imageOn('picsa', 'img-a', 0);
+  await imageOn('picsb', 'img-b', 0);
   const addedA = await api('POST', '/api/files?board=picsa', {
     files: [{ id: 'img-a', dataURL: pngA, mimeType: 'image/png' }]
   });
   await api('POST', '/api/files?board=picsb', {
     files: [{ id: 'img-b', dataURL: pngB, mimeType: 'image/png' }]
   });
-  check('an image is added to the board that is drawing it', addedA.status === 200 && addedA.body?.board === 'picsa');
-  await imageOn('picsa', 'img-a', 0);
-  await imageOn('picsb', 'img-b', 0);
+  check('an image is added to the board that is drawing it',
+    addedA.status === 200 && addedA.body?.board === 'picsa' && addedA.body?.count === 1);
+
+  const beforeItsElement = await api('POST', '/api/files?board=picsb', {
+    files: [{ id: 'img-early', dataURL: 'data:image/png;base64,RUFSTFk=', mimeType: 'image/png' }]
+  });
+  check('  and one posted before anything draws it is not kept, and says so',
+    beforeItsElement.body?.count === 0 &&
+    (beforeItsElement.body?.orphaned ?? []).join(',') === 'img-early' &&
+    /Create the image element first/.test(beforeItsElement.body?.warning ?? ''),
+    JSON.stringify(beforeItsElement.body).slice(0, 120));
 
   const onlyA = await api('GET', '/api/files?board=picsa');
   check('  and asking one board for its images gets that board\'s',
@@ -1360,14 +1344,19 @@ try {
 
   // An image nothing draws is not an image the board uses. The filter is
   // reachability from the elements, so a file left over from a deleted picture
-  // does not ride along into the note for ever.
-  await api('POST', '/api/files?board=picsa', {
-    files: [{ id: 'img-orphan', dataURL: 'data:image/png;base64,T1JQSEFO', mimeType: 'image/png' }]
-  });
+  // does not ride along into the note for ever. Posted straight into the note's
+  // scene, because the route refuses to keep one.
+  const orphaned = noteA.replace(
+    '"img-a":',
+    '"img-orphan":{"id":"img-orphan","mimeType":"image/png","dataURL":"data:image/png;base64,T1JQSEFO"},"img-a":'
+  );
+  fs.writeFileSync(savedPicsA.body.file, orphaned);
+  await api('POST', '/api/boards/open', { board: 'picsa', reload: true });
   const withOrphan = await api('POST', '/api/boards/save?board=picsa');
   check('an image no element draws is left out of the note',
     withOrphan.status === 200 &&
-    !fs.readFileSync(withOrphan.body.file, 'utf-8').includes('T1JQSEFO'));
+    !fs.readFileSync(withOrphan.body.file, 'utf-8').includes('T1JQSEFO'),
+    withOrphan.body?.error);
 
   // The read half, and the dangerous one. Under ADR 0015 the note is rewritten
   // from what was read, so an image that does not come back off disk is
