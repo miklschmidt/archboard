@@ -367,9 +367,20 @@ export interface Snapshot {
 // The element store lives in core/board-store.ts: it is keyed by board now,
 // not one global map (see that file for why).
 
-// In-memory storage for snapshots. Kept across a hot reload, along with every
-// other holder in this file: a snapshot is taken to protect work, so a file
-// save must not be what loses it (src/core/hot.ts).
+// Snapshots, and one of the two copies of a board the process is still allowed
+// to hold (ADR 0015, under "Nor is a record of what a board used to be"; the
+// other is the change feed's baseline).
+//
+// The test the ADR sets is which question a copy answers. "What is on this
+// board" must be the note, and nothing here answers that. A snapshot answers
+// "what was on it when I asked to be able to come back", which the vault has
+// never been asked and has no file for, so keeping it in the process removes no
+// second truth and writing it to disk would invent a second one. Losing it
+// costs the ability to go back and costs no work.
+//
+// Kept across a hot reload, along with every other holder in this file: a
+// snapshot is taken to protect work, so a file save must not be what loses it
+// (src/core/hot.ts).
 export const snapshots = kept('snapshots', () => new Map<string, Snapshot>());
 
 // The current selection, or null when nothing is selected. A mutable holder so

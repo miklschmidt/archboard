@@ -159,6 +159,28 @@ app.use('/assets/fonts', express.static(
 
 // WebSocket connections.
 //
+// WHAT THIS PROCESS IS STILL ALLOWED TO HOLD, and why, because ADR 0015 says
+// the note is the board and the canvas holds no copy of one. Three kinds of
+// thing survive that, and the test is which question each answers.
+//
+// Session and display state answers "what is on this screen, now": the sockets
+// below, `clientIds`, `panes`, `paneBoards`, `selectionState`, the four
+// `pending*` maps and `wiring`. None of it can live in a note, all of it dies
+// with the tab, and a reading of ADR 0015 that forbade it would be
+// unimplementable — which is why the ADR names it.
+//
+// A record of what a board used to be answers "how did it stand then": the
+// change feed's baseline and checkpoints (`src/core/change-feed.ts`) and
+// `snapshots` (`src/types.ts`). Each carries its own reasoning; the short form
+// is that the vault has never held a board's past and so statelessness does not
+// move them anywhere.
+//
+// Where each board's note is answers "which boards does this canvas have open"
+// (`src/core/board-store.ts`). That is a fact about this process, like which
+// pane has focus, and the note has nowhere to put it.
+//
+// Nothing else. Anything that answers "what is on this board" is the note.
+//
 // Everything from here to `paneBoards` is kept across a hot reload, because it
 // describes what is on screen right now: the sockets themselves, which pane is
 // which, and what each one holds. A reload that rebuilt these would leave the
