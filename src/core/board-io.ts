@@ -38,7 +38,9 @@ import {
   boardKey,
   describeWriteConflict,
   hashBoardBytes,
-  renderBoardNote
+  renderBoardNote,
+  requireVaultRoot,
+  sceneJsonWithEmbeddedImages
 } from './board.js';
 import { derivedId, isBlockId, mintId } from './ids.js';
 import {
@@ -143,7 +145,12 @@ export function readNote(file: string): BoardContent | null {
       `${file} exists but is not an Obsidian .excalidraw.md note — refusing to read it as a board.`
     );
   }
-  const scene = JSON.parse(extractSceneJsonFromObsidianMd(raw));
+  // A picture the Obsidian plugin moved out into a vault file is followed
+  // here, not only when a board is opened (TASK-085, ADR 0017). Every request
+  // reads the note now (ADR 0015), so this is the path that decides whether a
+  // migrated board draws or renders holes. It costs nothing on a note with no
+  // `## Embedded Files` section, which is reassembled only when there is one.
+  const scene = JSON.parse(sceneJsonWithEmbeddedImages(raw, file, requireVaultRoot()));
   const { elements, files } = ingestScene(
     Array.isArray(scene) ? scene : (scene.elements ?? []),
     Array.isArray(scene) ? null : scene.files

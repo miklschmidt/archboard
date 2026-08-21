@@ -624,7 +624,7 @@ export function resolveEmbeddedImages(
 // A note's scene, with any image the plugin moved out of it put back. The
 // scene JSON is only reassembled when the note has a section to read, so an
 // ordinary note is not parsed and re-stringified for nothing.
-function sceneJsonWithEmbeddedImages(note: string, notePath: string, root: string): string {
+export function sceneJsonWithEmbeddedImages(note: string, notePath: string, root: string): string {
   const sceneJson = extractSceneJsonFromObsidianMd(note);
   const resolved = resolveEmbeddedImages(note, notePath, root);
   if (Object.keys(resolved).length === 0) return sceneJson;
