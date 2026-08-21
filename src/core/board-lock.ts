@@ -141,12 +141,14 @@ export interface LockRequest {
   board: string;
   holder: { id: string; kind: HolderKind; reason?: string };
   /**
-   * How long to wait for somebody else, in ms. Defaults to LOCK_WAIT_CAP_MS.
+   * How long to wait for somebody else, in ms. Defaults to LOCK_WAIT_CAP_MS,
+   * which is what an agent uses: a person's hold is a gesture, so the expected
+   * wait is short and waiting beats failing.
    *
-   * Zero means ask once. That is what a person's gesture uses: a pane that
-   * cannot have the board must go read-only now, and waiting five seconds
-   * before saying so would let a hand keep drawing into a write nobody will
-   * accept.
+   * A person's own hold passes REPORT_DEBOUNCE_MS instead. An agent's write is
+   * about twenty milliseconds and a hand that landed inside one has not lost
+   * the board, but a person cannot be made to wait five seconds to find out
+   * whether their pen works. Zero means ask once.
    */
   waitMs?: number;
   /** How long the lease runs, in ms. Defaults to LOCK_LEASE_MS. */
@@ -177,7 +179,7 @@ export async function withBoardLock<T>(request: LockRequest, write: () => T): Pr
   try {
     return write();
   } finally {
-    releaseHold(request.board, request.holder.id);
+    if (hold.created) releaseHold(request.board, request.holder.id);
   }
 }
 

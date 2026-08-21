@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-20 20:02'
-updated_date: '2026-08-21 13:56'
+updated_date: '2026-08-21 14:44'
 labels: []
 dependencies:
   - TASK-066
@@ -63,6 +63,22 @@ Sequence after the batching work: while align and distribute still issue one wri
 4. Frontend: a cheap scene stamp (count plus version sum) inside scheduleReport gives the leading edge the trailing debounce cannot; the pane holds from the first real change, re-arms every LOCK_RENEW_MS, releases once the report has landed and nothing new arrived. viewModeEnabled = !connected || heldByAnother — a pane that cannot hear the broadcast assumes the board is held. A refused claim reloads the board rather than keeping an edit nobody will accept.
 5. Wire the check into package.json and check-ci-suites. Revert-proof each piece and count the failures.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Built as one module, src/core/board-lock.ts. The interface is withBoardLock(request, write): it writes, or throws BoardHeldError naming the holder and how long they have had the board. holdBoard/releaseHold are the same lock asked the other question — a person's hold spans requests — and are called by the two routes that serve a gesture and by nothing else. Waiting, renewing, expiring a dead holder, the free-linger and the broadcast sink all sit behind those.
+
+The lease is a JSON file at <vault>/.archboard/locks/<key>.lock. Taking a lock that is not there is an exclusive create and settles itself; taking over one whose holder died is a rename plus a read-back after a guard, because two processes can both decide a lease lapsed. Reads never lock. A lock file that cannot be parsed reads as nobody holding the board, so a corrupt file cannot wedge one.
+
+One express middleware puts every board-changing request through it, deny by default, with an exemption table naming a reason per entry. from-mermaid is exempt because it waits on the pane whose change report IS the write — holding the board across that wait would deadlock until the lease lapsed.
+
+The leading edge the task's correction 1 asked for: POST /api/boards/hold, sent by the pane on the first change of a gesture, renewed every LOCK_RENEW_MS while the hand moves, released once the report has landed and nothing is queued. A fold over every field a hand can change decides what counts as a change. The hold waits REPORT_DEBOUNCE_MS rather than not at all: an agent's write is about 20 ms and a hand that landed inside one has not lost the board.
+
+Correction 2, fail closed: readOnly = !connected || heldByOther, and heldBy starts as an unknown holder until the server says otherwise. The server sends the lock state immediately behind every board it hands a pane, on connect and on switch.
+
+A real bug came out of this, and it was not a test artefact. scheduleReport counted every onChange as an edit by the human. Once the lock started toggling the pane in and out of read-only, an agent's write read as two human edits, handMoved was true during the round trip of the human's own report, and the resync that answers it was skipped — so the pane kept a document one write behind, missing the boundElements entry the agent's new arrow had added to the shapes it joins. A wall display with an agent drawing beside a person hits that. check-live-session named the element and the field.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 

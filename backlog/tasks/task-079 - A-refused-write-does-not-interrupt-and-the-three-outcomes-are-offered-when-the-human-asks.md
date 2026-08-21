@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-20 20:17'
+updated_date: '2026-08-21 14:50'
 labels: []
 dependencies:
   - TASK-078
@@ -48,3 +49,17 @@ THE HONEST LIMIT, WORTH WRITING DOWN WHERE A USER SEES IT. Reapplying held chang
 - [ ] #5 An agent write refused for the same reason still returns the conflict and still exits 5 from the CLI
 - [ ] #6 A check writes a note underneath a pane and asserts nothing was overwritten and nothing was lost
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @claude
+created: 2026-08-21 14:50
+---
+TASK-067 owns the mechanism for "this board is not accepting changes right now", and it is available to this task rather than needing a second one.
+
+A pane is read-only when `useCanvasSession` returns `readOnly` true, which is `!connected || heldBy !== null`; `heldBy` comes from the `board_lock` message and nothing else sets it. CanvasPane passes it to Excalidraw as `viewModeEnabled`. If this task needs a pane to stop accepting a touch after ADR 0006's refusal — a note that changed on disk underneath us — the honest way is another reason for `heldBy` rather than a second read-only path beside it, because two mechanisms for one state is how they drift.
+
+The two refusals stay separate, as ADR 0016 says: the mutex handles archboard's own concurrency and answers 409 with `code: BOARD_HELD` and a holder; the hash check catches Obsidian, a sync client and a text editor and answers 409 with `conflict` and the three outcomes. src/server.ts:boardErrorStatus and boardErrorBody handle both.
+---
+<!-- COMMENTS:END -->
