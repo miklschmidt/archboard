@@ -50,8 +50,23 @@ function keptValue<T>(name: string): T | null {
  * uses to mean "since last turn". Nothing here is derived or recomputable.
  */
 export interface ReloadFacts {
-  /** Board key to the number of elements on it. */
-  boards: Record<string, number>;
+  /**
+   * Board key to where that board's note is.
+   *
+   * It used to be the number of elements on the board, which was the right
+   * fact while the process was the only place they were: the TASK-057 bug this
+   * was built for re-ran `boards.set()` at module scope and replaced an open
+   * board with an empty one, and the count went to zero. Board content is in
+   * the vault now (ADR 0015), so a count would be a fact about the disk and a
+   * reload cannot touch it — the same bug would go unreported.
+   *
+   * What a reload can still lose is this: which boards this canvas has open and
+   * where each one's note is. Lose that and a pane is pointed at a board the
+   * canvas cannot find, which is the same loss arriving a moment later. The
+   * unguarded `boards.set()` blanks it, so the canary still catches exactly
+   * what it was built to catch.
+   */
+  boards: Record<string, string>;
   /** Client id to the board that pane has been pointed at. */
   paneBoards: Record<string, string>;
   /** Client id to the pane it registered as. */
@@ -66,10 +81,10 @@ export interface ReloadFacts {
 
 /** Read the facts out of the running canvas. */
 export function readFacts(): ReloadFacts {
-  const boards: Record<string, number> = {};
-  const boardMap = keptValue<Map<string, { elements: Map<string, unknown> }>>('boards');
+  const boards: Record<string, string> = {};
+  const boardMap = keptValue<Map<string, { file?: string }>>('boards');
   if (boardMap) {
-    for (const [key, board] of boardMap) boards[key] = board.elements?.size ?? 0;
+    for (const [key, board] of boardMap) boards[key] = board.file ?? 'nowhere';
   }
 
   const paneBoards: Record<string, string> = {};
@@ -112,12 +127,12 @@ export function readFacts(): ReloadFacts {
 export function compareFacts(before: ReloadFacts, after: ReloadFacts): string[] {
   const complaints: string[] = [];
 
-  for (const [key, count] of Object.entries(before.boards)) {
+  for (const [key, file] of Object.entries(before.boards)) {
     if (!(key in after.boards)) {
-      complaints.push(`board "${key}" is gone, and it held ${count} element${count === 1 ? '' : 's'}`);
-    } else if (after.boards[key] !== count) {
+      complaints.push(`board "${key}" is gone, and its note is at ${file}`);
+    } else if (after.boards[key] !== file) {
       complaints.push(
-        `board "${key}" went from ${count} element${count === 1 ? '' : 's'} to ${after.boards[key]}`
+        `board "${key}" had its note at ${file} and now has it at ${after.boards[key]}`
       );
     }
   }

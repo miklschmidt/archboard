@@ -349,16 +349,16 @@ try {
       // labelled one.
       { id: 'db', type: 'rectangle', x: 900, y: 8000, width: 200, height: 260 },
       { id: 'wire', type: 'arrow', x: 400, y: 8050, width: 10, height: 10, start: { id: 'svc' }, end: { id: 'db' } },
-      { id: 'svc-label', type: 'text', containerId: 'svc', text: 'AuthService', x: 250, y: 8038, width: 100, height: 25 }
+      { id: 'svclabel', type: 'text', containerId: 'svc', text: 'AuthService', x: 250, y: 8038, width: 100, height: 25 }
     ]
   });
   await api('PUT', `/api/elements/svc${board}`, {
-    boundElements: [{ id: 'svc-label', type: 'text' }]
+    boundElements: [{ id: 'svclabel', type: 'text' }]
   });
   const before = await byId();
   const wireBefore = JSON.stringify(before.get('wire').points);
   const placed = (elements) => {
-    const label = elements.get('svc-label');
+    const label = elements.get('svclabel');
     const wanted = boundTextPlacement(elements.get('svc'), label);
     return near(label.x, wanted.x, 0.5) && near(label.y, wanted.y, 0.5);
   };
@@ -370,7 +370,7 @@ try {
   assert(!near(scene.get('svc').y, before.get('svc').y),
     'the check is not exercising anything: the labelled box did not move');
   assert(placed(scene),
-    `a batched move stranded a bound label at ${Math.round(scene.get('svc-label').x)},${Math.round(scene.get('svc-label').y)}`);
+    `a batched move stranded a bound label at ${Math.round(scene.get('svclabel').x)},${Math.round(scene.get('svclabel').y)}`);
   assert(JSON.stringify(scene.get('wire').points) !== wireBefore,
     'a batched move left an arrow bound to it pointing at where the box used to be');
 

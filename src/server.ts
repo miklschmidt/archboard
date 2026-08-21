@@ -42,28 +42,31 @@ import { isMainModule } from './core/entry.js';
 import { kept } from './core/hot.js';
 import { askForReload, reloadIsAskable } from './core/reload-token.js';
 import { writePidFile, removePidFile } from './core/pidfile.js';
-import { writeFileAtomic } from './core/atomic-write.js';
 import fs from 'fs';
 import {
   BoardState,
-  baselineForFile,
   boardSummaries,
   boards,
   copyElements,
-  filesUsedBy,
   getOrCreateBoard,
   recordBaseline,
-  replaceBoardElements,
-  replaceBoardFiles,
   resolveBoard,
   openBoardKeys,
   SCRATCH_KEY
 } from './core/board-store.js';
 import {
+  BoardContent,
+  BoardWriteConflictError,
+  emptyContent,
+  ingestScene,
+  readBoardContent,
+  renderContent,
+  writeBoardContent
+} from './core/board-io.js';
+import {
   BoardIdentity,
   boardKey,
   classifyBoardSave,
-  describeWriteConflict,
   hashBoardBytes,
   listBoards,
   LoadedBoard,
@@ -72,14 +75,12 @@ import {
   panesFollowSave,
   parseBoardKey,
   readBoardFile,
-  renderBoardNote,
   requireVaultRoot,
   validateLevel,
   validateVariant,
   vaultPathFor
 } from './core/board.js';
 import { ARCHBOARD_VAULT, noVaultMessage } from './core/config.js';
-import { buildScene } from './core/scene-io.js';
 import { CURRENT_VARIANT } from './core/board.js';
 import { restampVariant } from './core/promote.js';
 import { boardsForRepo } from './core/repo-boards.js';
@@ -282,7 +283,53 @@ function broadcastBoardless(message: WebSocketMessage): void {
 // routes an agent or the CLI drives. That distinction is load-bearing
 // downstream — narrating the agent's own drawing back at it is noise.
 function noteChange(key: string, board: BoardState, origin: ChangeOrigin): void {
-  changeFeed.record(key, board.identity, () => Array.from(board.elements.values()), origin);
+  changeFeed.record(key, board.identity, () => boardElements(board), origin);
+}
+
+/**
+ * A board's elements, read out of its note.
+ *
+ * The one answer to "what is on this board", for everything that is not a
+ * request working against content it already read: the change feed at the end
+ * of a settle window, a pane being handed a board, the report of what each pane
+ * holds. Each is a fresh read, which is what makes them agree with the note
+ * rather than with a copy of it that stopped being right at some point nobody
+ * noticed (ADR 0015).
+ */
+function boardElements(board: BoardState): ServerElement[] {
+  return Array.from(readBoardContent(board).elements.values());
+}
+
+/** How many elements a board has, for a summary that does not need them all. */
+function boardElementCount(board: BoardState): number {
+  return readBoardContent(board).elements.size;
+}
+
+/**
+ * A board went somewhere: into the vault, and then into the feed.
+ *
+ * Every mutating route ends here, and the order is the point. The note is
+ * written first, so a broadcast or a response describing a board is describing
+ * one that exists; a refused write throws before either, leaving the panes
+ * holding what they had (ADR 0006). The feed is told afterwards because it
+ * measures settled boards rather than deltas, and the board has only settled
+ * once it is on disk.
+ *
+ * Synchronous, deliberately. Express runs a synchronous handler to completion
+ * before starting the next, so two writes to one board cannot interleave their
+ * read-modify-write cycles; an `await` between the read at the top of a request
+ * and this call would open exactly that window. Keeping a *second process* out
+ * is the board mutex's job (ADR 0016), not this one's.
+ */
+function persistBoard(
+  key: string,
+  board: BoardState,
+  content: BoardContent,
+  origin: ChangeOrigin
+): void {
+  writeBoardContent(board, content);
+  board.savedAt = new Date().toISOString();
+  noteChange(key, board, origin);
 }
 
 function normalizeLineBreakMarkup(text: string): string {
@@ -291,22 +338,35 @@ function normalizeLineBreakMarkup(text: string): string {
     .replace(/\n{3,}/g, '\n\n');
 }
 
-// Which board a request is about. `?board=` or a `board` field in the body —
-// and one of them has to be there. A request that names no board is refused
-// (ADR 0009); `what` is the name of the operation, so the refusal can say what
-// it was that needed a board.
-function boardFromRequest(req: Request, what?: string): { key: string; board: BoardState } {
+// Which board a request is about, and what is on it. `?board=` or a `board`
+// field in the body — and one of them has to be there. A request that names no
+// board is refused (ADR 0009); `what` is the name of the operation, so the
+// refusal can say what it was that needed a board.
+//
+// The note is read here, once, and the request works against what it read. That
+// read is what makes the vault the truth (ADR 0015): there is no map to consult
+// instead, so the answer cannot be a copy that stopped agreeing with the note.
+function boardFromRequest(
+  req: Request,
+  what?: string
+): { key: string; board: BoardState; content: BoardContent } {
   const fromQuery = typeof req.query.board === 'string' ? req.query.board : undefined;
   const fromBody = req.body && typeof req.body === 'object' && typeof req.body.board === 'string'
     ? req.body.board as string
     : undefined;
-  return resolveBoard(fromQuery ?? fromBody, what);
+  const { key, board } = resolveBoard(fromQuery ?? fromBody, what);
+  return { key, board, content: readBoardContent(board) };
 }
 
 // A board that was not named, or was named and is not open, is a client error
 // rather than a server fault.
 function boardErrorStatus(error: unknown): number {
   if (error instanceof BoardRequiredError) return error.status;
+  // A refused write is not a fault, it is the other outcome the write always
+  // had (ADR 0006). Every route that writes can now produce it, because every
+  // write goes to the note (ADR 0015), so it is answered here once rather than
+  // in each of them.
+  if (error instanceof BoardWriteConflictError) return 409;
   return /is not open|Invalid board name|Invalid variant|Invalid level|No vault configured|outside the vault|No pane called|matches \d+ panes|No pane is open|needs a pane/.test(
     (error as Error).message
   ) ? 400 : 500;
@@ -318,6 +378,11 @@ function boardErrorBody(error: unknown): Record<string, unknown> {
   const base = { success: false, error: (error as Error).message };
   if (error instanceof BoardRequiredError) {
     return { ...base, code: error.code, open: error.open };
+  }
+  // The three outcomes as data, so a surface offers them rather than rewording
+  // them. Which one the human picks is never archboard's to choose.
+  if (error instanceof BoardWriteConflictError) {
+    return { ...base, conflict: error.conflict };
   }
   return base;
 }
@@ -349,10 +414,10 @@ function boardForNewPane(clientId: string): string {
  * pane pointed at a board with pictures on it got the elements and no pictures
  * (TASK-060).
  */
-function boardFilesMessage(board: BoardState): { files?: Record<string, ExcalidrawFile> } {
-  if (board.files.size === 0) return {};
+function boardFilesMessage(content: BoardContent): { files?: Record<string, ExcalidrawFile> } {
+  if (content.files.size === 0) return {};
   const filesObj: Record<string, ExcalidrawFile> = {};
-  board.files.forEach((file, id) => { filesObj[id] = file; });
+  content.files.forEach((file, id) => { filesObj[id] = file; });
   return { files: filesObj };
 }
 
@@ -374,6 +439,8 @@ wss.on('connection', (ws: WebSocket, req) => {
   const startingKey = clientId ? boardForNewPane(clientId) : SCRATCH_KEY;
   if (clientId) paneBoards.set(clientId, startingKey);
   const board = boards.get(startingKey)!;
+  // Read out of the note, like everything else that hands a pane a whole board.
+  const content = readBoardContent(board);
   const initialMessage: InitialElementsMessage & {
     files?: Record<string, ExcalidrawFile>;
     identity: BoardIdentity;
@@ -381,8 +448,8 @@ wss.on('connection', (ws: WebSocket, req) => {
     type: 'initial_elements',
     board: startingKey,
     identity: board.identity,
-    elements: Array.from(board.elements.values()),
-    ...boardFilesMessage(board)
+    elements: Array.from(content.elements.values()),
+    ...boardFilesMessage(content)
   };
   ws.send(JSON.stringify(initialMessage));
 
@@ -553,8 +620,8 @@ const UpdateElementSchema = z.object({
 // Get all elements
 app.get('/api/elements', (req: Request, res: Response) => {
   try {
-    const { key, board } = boardFromRequest(req, 'Listing elements');
-    const elementsArray = Array.from(board.elements.values());
+    const { key, content } = boardFromRequest(req, 'Listing elements');
+    const elementsArray = Array.from(content.elements.values());
     res.json({
       success: true,
       board: key,
@@ -570,8 +637,8 @@ app.get('/api/elements', (req: Request, res: Response) => {
 // Create new element
 app.post('/api/elements', (req: Request, res: Response) => {
   try {
-    const { key: boardKeyForRequest, board } = boardFromRequest(req, 'Creating an element');
-    const elements = board.elements;
+    const { key: boardKeyForRequest, board, content } = boardFromRequest(req, 'Creating an element');
+    const elements = content.elements;
     // Prioritize passed ID (for MCP sync), otherwise generate new ID
     const element = buildCreatedElement(req.body, elements);
     const id = element.id;
@@ -593,6 +660,10 @@ app.post('/api/elements', (req: Request, res: Response) => {
     const repaired = repairIndices(elements).filter(el => !madeIds.has(el.id));
     const stored = elements.get(id) as ServerElement;
 
+    // Into the note before anybody is told about it, so nothing is broadcast
+    // that the vault does not hold (ADR 0015). A refused write throws here.
+    persistBoard(boardKeyForRequest, board, content, 'agent');
+
     // Broadcast to all connected clients
     for (const el of written) {
       broadcast({
@@ -603,7 +674,6 @@ app.post('/api/elements', (req: Request, res: Response) => {
     for (const el of repaired) {
       broadcast({ type: 'element_updated', element: el } as ElementUpdatedMessage, boardKeyForRequest);
     }
-    noteChange(boardKeyForRequest, board, 'agent');
 
     res.json({
       success: true,
@@ -613,6 +683,7 @@ app.post('/api/elements', (req: Request, res: Response) => {
       // became, label and z-order included (TASK-075).
       ...agentWriteAnswer(
         board,
+        content,
         [...written.map(el => elements.get(el.id) ?? el), ...repaired],
         wantsDocument(req)
       )
@@ -626,8 +697,8 @@ app.post('/api/elements', (req: Request, res: Response) => {
 // Update element
 app.put('/api/elements/:id', (req: Request, res: Response) => {
   try {
-    const { key: boardKeyForRequest, board } = boardFromRequest(req, 'Updating an element');
-    const elements = board.elements;
+    const { key: boardKeyForRequest, board, content } = boardFromRequest(req, 'Updating an element');
+    const elements = content.elements;
     const { id } = req.params;
     const body = req.body && typeof req.body === 'object' ? req.body : {};
 
@@ -667,6 +738,18 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
     const namedIds = new Set([id, ...restated.map(el => el.id), ...expanded.map(el => el.id)]);
     const repaired = repairIndices(elements).filter(el => !namedIds.has(el.id));
 
+    // Whatever moved, its label moves with it: the element itself, and — when a
+    // shape moved — every arrow the server dragged along behind it. A label
+    // that was just re-measured has moved too, by half the change in its width.
+    //
+    // Settled before the write rather than after the broadcasts, because these
+    // are part of what the board became and the note has to hold them.
+    const consequences = geometryChanged || reboundArrow || restated.length > 0
+      ? settleAfterWrite([id], elements)
+      : [];
+
+    persistBoard(boardKeyForRequest, board, content, 'agent');
+
     // Broadcast to all connected clients
     const message: ElementUpdatedMessage = {
       type: 'element_updated',
@@ -688,14 +771,6 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
     for (const el of repaired) {
       broadcast({ type: 'element_updated', element: el } as ElementUpdatedMessage, boardKeyForRequest);
     }
-    noteChange(boardKeyForRequest, board, 'agent');
-
-    // Whatever moved, its label moves with it: the element itself, and — when a
-    // shape moved — every arrow the server dragged along behind it. A label
-    // that was just re-measured has moved too, by half the change in its width.
-    const consequences = geometryChanged || reboundArrow || restated.length > 0
-      ? settleAfterWrite([id], elements)
-      : [];
     for (const element of consequences) {
       broadcast({ type: 'element_updated', element } as ElementUpdatedMessage, boardKeyForRequest);
     }
@@ -714,7 +789,7 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
       success: true,
       board: boardKeyForRequest,
       element: elements.get(id) as ServerElement,
-      ...agentWriteAnswer(board, Array.from(touched.values()), wantsDocument(req))
+      ...agentWriteAnswer(board, content, Array.from(touched.values()), wantsDocument(req))
     });
   } catch (error) {
     logger.error('Error updating element:', error);
@@ -725,9 +800,9 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
 // Clear all elements (must be before /:id route)
 app.delete('/api/elements/clear', (req: Request, res: Response) => {
   try {
-    const { key: boardKeyForRequest, board } = boardFromRequest(req, 'Clearing a board');
-    const count = board.elements.size;
-    board.elements.clear();
+    const { key: boardKeyForRequest, board, content } = boardFromRequest(req, 'Clearing a board');
+    const count = content.elements.size;
+    content.elements.clear();
 
     // Nothing is on this board, so nothing on it can be selected — in any pane
     // showing it. A pane on another board keeps its pick; its elements are
@@ -743,12 +818,12 @@ app.delete('/api/elements/clear', (req: Request, res: Response) => {
       broadcastSelection();
     }
 
+    persistBoard(boardKeyForRequest, board, content, 'agent');
+
     broadcast({
       type: 'canvas_cleared',
       timestamp: new Date().toISOString()
     }, boardKeyForRequest);
-
-    noteChange(boardKeyForRequest, board, 'agent');
 
     logger.info(`Canvas cleared: ${count} elements removed from board "${boardKeyForRequest}"`);
 
@@ -767,8 +842,8 @@ app.delete('/api/elements/clear', (req: Request, res: Response) => {
 // Delete element
 app.delete('/api/elements/:id', (req: Request, res: Response) => {
   try {
-    const { key: boardKeyForRequest, board } = boardFromRequest(req, 'Deleting an element');
-    const elements = board.elements;
+    const { key: boardKeyForRequest, board, content } = boardFromRequest(req, 'Deleting an element');
+    const elements = content.elements;
     const { id } = req.params;
 
     if (!id) {
@@ -790,6 +865,8 @@ app.delete('/api/elements/:id', (req: Request, res: Response) => {
     // what has gone (TASK-074).
     const { alsoDeleted, changed } = settleDeletions([id!], elements);
 
+    persistBoard(boardKeyForRequest, board, content, 'agent');
+
     // Broadcast to all connected clients
     for (const elementId of [id!, ...alsoDeleted]) {
       broadcast({ type: 'element_deleted', elementId } as ElementDeletedMessage, boardKeyForRequest);
@@ -797,14 +874,13 @@ app.delete('/api/elements/:id', (req: Request, res: Response) => {
     for (const el of changed) {
       broadcast({ type: 'element_updated', element: el } as ElementUpdatedMessage, boardKeyForRequest);
     }
-    noteChange(boardKeyForRequest, board, 'agent');
 
     res.json({
       success: true,
       board: boardKeyForRequest,
       message: `Element ${id} deleted successfully`,
       ...(alsoDeleted.length > 0 ? { alsoDeleted } : {}),
-      ...agentWriteAnswer(board, changed, wantsDocument(req))
+      ...agentWriteAnswer(board, content, changed, wantsDocument(req))
     });
   } catch (error) {
     logger.error('Error deleting element:', error);
@@ -815,9 +891,9 @@ app.delete('/api/elements/:id', (req: Request, res: Response) => {
 // Query elements with filters
 app.get('/api/elements/search', (req: Request, res: Response) => {
   try {
-    const { board } = boardFromRequest(req, 'Querying elements');
+    const { content } = boardFromRequest(req, 'Querying elements');
     const { type, x_min, x_max, y_min, y_max, board: _boardParam, ...filters } = req.query;
-    let results = Array.from(board.elements.values());
+    let results = Array.from(content.elements.values());
 
     // Filter by type if specified
     if (type && typeof type === 'string') {
@@ -860,8 +936,8 @@ app.get('/api/elements/search', (req: Request, res: Response) => {
 // Get element by ID
 app.get('/api/elements/:id', (req: Request, res: Response) => {
   try {
-    const { board } = boardFromRequest(req, 'Getting an element');
-    const elements = board.elements;
+    const { content } = boardFromRequest(req, 'Getting an element');
+    const elements = content.elements;
     const { id } = req.params;
 
     if (!id) {
@@ -1210,8 +1286,8 @@ function settleAfterWrite(movedIds: string[], elements: Map<string, ServerElemen
 // Batch create elements
 app.post('/api/elements/batch', (req: Request, res: Response) => {
   try {
-    const { key: boardKeyForRequest, board } = boardFromRequest(req, 'Creating elements');
-    const elements = board.elements;
+    const { key: boardKeyForRequest, board, content } = boardFromRequest(req, 'Creating elements');
+    const elements = content.elements;
     const { elements: elementsToCreate } = req.body;
 
     if (!Array.isArray(elementsToCreate)) {
@@ -1251,6 +1327,8 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
     const repaired = repairIndices(elements).filter(el => !madeIds.has(el.id));
     const stored = written.map(el => elements.get(el.id) ?? el);
 
+    persistBoard(boardKeyForRequest, board, content, 'agent');
+
     // Broadcast to all connected clients
     const message: BatchCreatedMessage = {
       type: 'elements_batch_created',
@@ -1260,7 +1338,6 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
     for (const el of repaired) {
       broadcast({ type: 'element_updated', element: el } as ElementUpdatedMessage, boardKeyForRequest);
     }
-    noteChange(boardKeyForRequest, board, 'agent');
 
     res.json({
       success: true,
@@ -1268,7 +1345,7 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
       count: stored.length,
       // `elements` here has always been what the write produced; the
       // fingerprint and the opt-in document are what TASK-075 adds.
-      ...agentWriteAnswer(board, [...stored, ...repaired], wantsDocument(req))
+      ...agentWriteAnswer(board, content, [...stored, ...repaired], wantsDocument(req))
     });
   } catch (error) {
     logger.error('Error batch creating elements:', error);
@@ -1424,22 +1501,27 @@ interface AppliedChanges {
  */
 function agentWriteAnswer(
   board: BoardState,
+  content: BoardContent,
   touched: ServerElement[],
   wantsDocument: boolean
 ): Record<string, unknown> {
   return {
     elements: touched,
-    fingerprint: boardFingerprint(board),
-    ...(wantsDocument ? { document: Array.from(board.elements.values()) } : {})
+    fingerprint: boardFingerprint(board, content),
+    ...(wantsDocument ? { document: Array.from(content.elements.values()) } : {})
   };
 }
 
-/** The note this board would write, identified by its bytes. */
-function boardFingerprint(board: BoardState): { elements: number; note: string } {
-  const elements = Array.from(board.elements.values());
-  const { scene } = buildScene(elements, filesUsedBy(elements, board.files) as unknown as Record<string, any>);
-  const note = renderBoardNote(scene, board.note, board.identity);
-  return { elements: elements.length, note: hashBoardBytes(Buffer.from(note, 'utf-8')) };
+/**
+ * The note this board holds, identified by its bytes.
+ *
+ * Rendered from what the request has, rather than read back off disk, because
+ * the write that has just happened wrote exactly these bytes: re-reading them
+ * would cost a read to learn something already known.
+ */
+function boardFingerprint(board: BoardState, content: BoardContent): { elements: number; note: string } {
+  const { bytes } = renderContent(board.identity, content);
+  return { elements: content.elements.size, note: hashBoardBytes(bytes) };
 }
 
 /** Did this caller ask for the whole board? Off unless said, on every surface. */
@@ -1625,8 +1707,8 @@ function applyAgentChanges(
 
 app.post('/api/elements/changes', (req: Request, res: Response) => {
   try {
-    const { key: boardKeyForRequest, board } = boardFromRequest(req, 'A change report');
-    const elements = board.elements;
+    const { key: boardKeyForRequest, board, content } = boardFromRequest(req, 'A change report');
+    const elements = content.elements;
     const { upserts, deletes, origin, clientId, timestamp } = ElementChangesSchema.parse(req.body ?? {});
 
     const now = new Date().toISOString();
@@ -1635,6 +1717,14 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
       : applyReportedChanges(elements, upserts, deletes, now, timestamp);
 
     if (created.length > 0 || updated.length > 0 || deleted.length > 0) {
+      // This is the write ADR 0006's refusal now arrives on. It used to fire
+      // when somebody chose to save; it fires here, 400 ms after a human lifts
+      // their finger, because that is when the note is written. Refusing loudly
+      // mid-gesture is worse than the problem it reports, and TASK-079 is where
+      // that stops interrupting — until then the report is refused with the
+      // three outcomes, which at least loses nothing on disk.
+      persistBoard(boardKeyForRequest, board, content, origin);
+
       // Carries the reporting client so that client can skip its own echo:
       // re-applying a change already on screen is at best a wasted render and
       // at worst a shape snapping back mid-drag.
@@ -1646,8 +1736,6 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
         origin: clientId ?? null,
         timestamp: now
       } as ElementsChangedMessage, boardKeyForRequest);
-
-      noteChange(boardKeyForRequest, board, origin);
 
       logger.info(
         `Change report from ${clientId ?? (origin === 'agent' ? 'an agent' : 'an unidentified client')} ` +
@@ -1676,7 +1764,7 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
       // tokens and `align` in a loop would pull twenty of them through a
       // context to move twenty boxes (TASK-075).
       ...(origin === 'agent'
-        ? agentWriteAnswer(board, [...created, ...updated], wantsDocument(req))
+        ? agentWriteAnswer(board, content, [...created, ...updated], wantsDocument(req))
         : { document: Array.from(elements.values()) })
     });
   } catch (error) {
@@ -1874,7 +1962,7 @@ app.get('/api/selection', (_req: Request, res: Response) => {
   const board = boards.get(key);
   const report = buildSelectionReport(
     selectionState.current,
-    board ? Array.from(board.elements.values()) : [],
+    board ? boardElements(board) : [],
     clients.size
   );
   res.json({ success: true, board: key, ...report });
@@ -1951,7 +2039,7 @@ app.get('/api/panes', (_req: Request, res: Response) => {
     identity: (key) => boards.get(key)?.identity ?? null,
     elements: (key) => {
       const board = boards.get(key);
-      return board ? Array.from(board.elements.values()) : [];
+      return board ? boardElements(board) : [];
     },
     selection: (clientId) => selectionState.byClient.get(clientId) ?? null,
     canvasUrl: `http://${formatHostForUrl(HOST)}:${PORT}`
@@ -2198,9 +2286,9 @@ app.post('/api/panes/close', async (req: Request, res: Response) => {
 // GET the images one board holds
 app.get('/api/files', (req: Request, res: Response) => {
   try {
-    const { key, board } = boardFromRequest(req, 'Listing images');
+    const { key, content } = boardFromRequest(req, 'Listing images');
     const filesObj: Record<string, ExcalidrawFile> = {};
-    board.files.forEach((f, id) => { filesObj[id] = f; });
+    content.files.forEach((f, id) => { filesObj[id] = f; });
     res.json({ success: true, board: key, files: filesObj });
   } catch (error) {
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
@@ -2210,12 +2298,12 @@ app.get('/api/files', (req: Request, res: Response) => {
 // POST add/update images on one board (batch)
 app.post('/api/files', (req: Request, res: Response) => {
   try {
-    const { key, board } = boardFromRequest(req, 'Adding an image');
+    const { key, board, content } = boardFromRequest(req, 'Adding an image');
     const body = req.body;
     const fileList: ExcalidrawFile[] = Array.isArray(body) ? body : (body?.files || []);
     for (const f of fileList) {
       if (f.id && f.dataURL) {
-        board.files.set(f.id, {
+        content.files.set(f.id, {
           id: f.id,
           dataURL: f.dataURL,
           mimeType: f.mimeType || 'image/png',
@@ -2223,8 +2311,34 @@ app.post('/api/files', (req: Request, res: Response) => {
         });
       }
     }
+    // An image is board content, so it goes in the note with everything else.
+    // A note holds the images its own elements draw and nothing else, so a
+    // picture posted before the element that draws it has nowhere to be —
+    // which is why `import` creates the elements first. Said out loud rather
+    // than dropped quietly: a caller that gets the order wrong should not have
+    // to discover it from a blank square (TASK-060).
+    const drawn = new Set(
+      Array.from(content.elements.values())
+        .map(element => element.fileId)
+        .filter((id): id is string => typeof id === 'string')
+    );
+    const orphaned = fileList.filter(f => f.id && f.dataURL && !drawn.has(f.id)).map(f => f.id);
+    persistBoard(key, board, content, 'agent');
     broadcast({ type: 'files_added', files: fileList }, key);
-    res.json({ success: true, board: key, count: fileList.length });
+    res.json({
+      success: true,
+      board: key,
+      count: fileList.length - orphaned.length,
+      ...(orphaned.length
+        ? {
+          orphaned,
+          warning:
+            `No element on "${key}" draws ${orphaned.join(', ')}, so ${orphaned.length === 1 ? 'it was' : 'they were'} ` +
+            'not kept: a note holds the images its own elements reference. ' +
+            'Create the image element first, then post its data.'
+        }
+        : {})
+    });
   } catch (error) {
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
@@ -2233,9 +2347,10 @@ app.post('/api/files', (req: Request, res: Response) => {
 // DELETE an image from one board
 app.delete('/api/files/:id', (req: Request, res: Response) => {
   try {
-    const { key, board } = boardFromRequest(req, 'Deleting an image');
+    const { key, board, content } = boardFromRequest(req, 'Deleting an image');
     const id = req.params.id as string;
-    if (board.files.delete(id)) {
+    if (content.files.delete(id)) {
+      persistBoard(key, board, content, 'agent');
       broadcast({ type: 'file_deleted', fileId: id }, key);
       res.json({ success: true, board: key });
     } else {
@@ -2312,12 +2427,13 @@ app.post('/api/export/image', (req: Request, res: Response) => {
         error: `The pane being pictured is showing "${exportKey}", which this canvas no longer holds.`
       });
     }
+    const exportContent = readBoardContent(exportBoard);
     sendToPane(answering.clientId, {
       type: 'initial_elements',
       board: exportKey,
       identity: exportBoard.identity,
-      elements: Array.from(exportBoard.elements.values()),
-      ...boardFilesMessage(exportBoard)
+      elements: Array.from(exportContent.elements.values()),
+      ...boardFilesMessage(exportContent)
     } as InitialElementsMessage & { files?: Record<string, ExcalidrawFile> }, exportKey);
 
     // Give the browser time to process the reload before requesting export
@@ -2575,13 +2691,13 @@ app.post('/api/snapshots', (req: Request, res: Response) => {
       });
     }
 
-    const { key: boardKeyForRequest, board } = boardFromRequest(req, 'Saving a snapshot');
+    const { key: boardKeyForRequest, content } = boardFromRequest(req, 'Saving a snapshot');
     // A copy, deeply. A snapshot is the thing you go back to, so it must not
     // be the same objects as the board it is protecting you from (TASK-048).
     const snapshot: Snapshot = {
       name,
       board: boardKeyForRequest,
-      elements: copyElements(board.elements.values()),
+      elements: copyElements(content.elements.values()),
       createdAt: new Date().toISOString()
     };
 
@@ -2684,11 +2800,14 @@ function identityFromParams(params: { board: string; variant?: string; level?: s
   return { ...base, ...(params.level ? { level: validateLevel(params.level) } : {}) };
 }
 
-function identityResponse(key: string, board: BoardState) {
+// `content` is passed by callers that have already read the note, which is
+// every route that answers about a board it just touched; the default is for
+// the ones that have not.
+function identityResponse(key: string, board: BoardState, content?: BoardContent) {
   return {
     board: key,
     identity: board.identity,
-    elementCount: board.elements.size,
+    elementCount: (content ?? readBoardContent(board)).elements.size,
     // Scratch has a note like every other board; what it has not got is a name
     // anybody chose. See boardSummaries().
     placeholder: key === SCRATCH_KEY,
@@ -2710,9 +2829,13 @@ function identityResponse(key: string, board: BoardState) {
  * server's active one, which is what a later pane will adopt and what an
  * unqualified caller means while there is no pane to disagree.
  */
-function switchPaneTo(pane: PaneRegistration | null, key: string): BoardState {
+function switchPaneTo(pane: PaneRegistration | null, key: string, known?: BoardContent): BoardState {
   const board = boards.get(key);
   if (!board) throw new Error(`Board "${key}" is not open`);
+  // One read, for the two things that need the board: the feed's new baseline
+  // and the scene the pane is handed. Callers that have just read the note pass
+  // it in rather than making this read it again.
+  const content = known ?? readBoardContent(board);
   // A board arriving wholesale is not a change anybody made, so the feed takes
   // the new state as its baseline rather than reporting several hundred
   // additions and burying the first real edit under them. Only when the board
@@ -2722,7 +2845,7 @@ function switchPaneTo(pane: PaneRegistration | null, key: string): BoardState {
     shown => shown.board === key && shown.paneId !== pane?.paneId
   );
   if (!alreadyShown) {
-    changeFeed.reset(key, board.identity, () => Array.from(board.elements.values()));
+    changeFeed.reset(key, board.identity, () => boardElements(board));
   }
 
   if (!pane) return board;
@@ -2740,8 +2863,8 @@ function switchPaneTo(pane: PaneRegistration | null, key: string): BoardState {
   sendToPane(pane.clientId, {
     type: 'board_switched',
     identity: board.identity,
-    elements: Array.from(board.elements.values()),
-    ...boardFilesMessage(board),
+    elements: Array.from(content.elements.values()),
+    ...boardFilesMessage(content),
     timestamp: new Date().toISOString()
   }, key);
   return board;
@@ -2827,44 +2950,6 @@ function paneResponse(pane: PaneRegistration | null): Record<string, unknown> {
   return { pane: pane ? paneRef(pane) : null };
 }
 
-// Take a scene into a board's store: its elements, and the images those
-// elements draw. Mirrors the batch-create path (ids preserved, server metadata
-// stamped) so a loaded board behaves exactly like one that was drawn.
-//
-// The images used to be dropped here. An image element came back from a note
-// and its data did not, so the board reopened with a hole where the picture
-// was. That is a rendering failure today and a deletion under ADR 0015, where
-// the note is rewritten from what was read: anything not read back is gone on
-// the next write (TASK-060).
-function ingestSceneElements(
-  board: BoardState,
-  sceneElements: any[],
-  sceneFiles?: Record<string, any> | null
-): number {
-  board.elements.clear();
-  const loaded: ServerElement[] = [];
-  // The board's own map is emptied above and filled below, so the names the
-  // scene brings with it are the only ones a mint here has to avoid.
-  const taken = new Set<string>(
-    sceneElements.filter((raw) => raw && typeof raw.id === 'string').map((raw) => raw.id as string)
-  );
-  for (const raw of sceneElements) {
-    if (!raw || typeof raw !== 'object') continue;
-    const element: ServerElement = {
-      ...raw,
-      id: raw.id || mintId(taken),
-      createdAt: raw.createdAt ?? new Date().toISOString(),
-      updatedAt: raw.updatedAt ?? new Date().toISOString(),
-      version: raw.version ?? 1
-    };
-    taken.add(element.id);
-    loaded.push(element);
-  }
-  loaded.forEach(el => board.elements.set(el.id, el));
-  replaceBoardFiles(board, sceneFiles && typeof sceneFiles === 'object' ? sceneFiles : {});
-  return loaded.length;
-}
-
 // What exists: every board in the vault, plus the ones open in this process.
 //
 // With ?repo=<identity>, the answer is narrowed to the boards that describe
@@ -2880,7 +2965,7 @@ app.get('/api/boards', (req: Request, res: Response) => {
       const open = Array.from(boards.entries()).map(([key, board]) => ({
         key,
         identity: board.identity,
-        elements: Array.from(board.elements.values()),
+        elements: boardElements(board),
         ...(board.file ? { file: board.file } : {})
       }));
       const found = boardsForRepo(repo, open, vault);
@@ -2891,7 +2976,7 @@ app.get('/api/boards', (req: Request, res: Response) => {
         boards: found.boards,
         scanned: found.scanned,
         ...(found.unreadable.length ? { unreadable: found.unreadable } : {}),
-        open: boardSummaries(),
+        open: boardSummaries(boardElementCount),
         onScreen: boardsOnScreen()
       });
     }
@@ -2899,7 +2984,7 @@ app.get('/api/boards', (req: Request, res: Response) => {
       success: true,
       vault,
       boards: listBoards(vault),
-      open: boardSummaries(),
+      open: boardSummaries(boardElementCount),
       onScreen: boardsOnScreen()
     });
   } catch (error) {
@@ -2913,8 +2998,8 @@ app.get('/api/boards', (req: Request, res: Response) => {
 // about its own, and `panes` says what each pane holds.
 app.get('/api/boards/info', (req: Request, res: Response) => {
   try {
-    const { key, board } = boardFromRequest(req, 'board info');
-    res.json({ success: true, ...identityResponse(key, board) });
+    const { key, board, content } = boardFromRequest(req, 'board info');
+    res.json({ success: true, ...identityResponse(key, board, content) });
   } catch (error) {
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
@@ -2930,10 +3015,12 @@ app.post('/api/boards/open', (req: Request, res: Response) => {
     const asked = identityFromParams(params);
     const key = boardKey(asked);
 
-    // A board already open keeps whatever unsaved work it has: switching away
-    // and back must not be a way to silently lose edits. reload is the explicit
-    // "throw mine away, take the file's". There is a board either way here, so
-    // the pane is the only thing left that can go wrong.
+    // A board this canvas already has open needs nothing read here: its note is
+    // read on every request that touches it, so pointing a pane at it is all
+    // this is. `--reload` still means something, and means more than it did:
+    // it is ADR 0006's first outcome, the one that takes the note and gives up
+    // the canvas. It re-reads the address off disk and moves the baseline to
+    // whatever is there now, which is what lets writes resume after a refusal.
     if (boards.has(key) && !params.reload) {
       const pane = paneFromRequest(params.pane);
       const board = switchPaneTo(pane, key);
@@ -2963,25 +3050,25 @@ app.post('/api/boards/open', (req: Request, res: Response) => {
     const { key: openedKey, board } = getOrCreateBoard(
       { ...loaded.identity, ...(asked.level ? { level: asked.level } : {}) }
     );
-    const count = ingestSceneElements(
-      board,
+    const { elements, files } = ingestScene(
       Array.isArray(scene) ? scene : (scene.elements ?? []),
       Array.isArray(scene) ? null : scene.files
     );
+    const content: BoardContent = { elements, files, note: loaded.raw, hash: loaded.hash };
     board.file = loaded.file;
-    board.note = loaded.raw;
-    // The bytes just read are the baseline the next save is checked against.
+    // The bytes just read are what the panes are about to be shown, so they are
+    // the baseline the next write is checked against.
     recordBaseline(board, loaded.file, loaded.hash);
     board.loadedAt = new Date().toISOString();
-    switchPaneTo(pane, openedKey);
+    switchPaneTo(pane, openedKey, content);
 
     logger.info(
-      `Board opened: "${openedKey}" (${count} elements) from ${loaded.file}` +
+      `Board opened: "${openedKey}" (${elements.size} elements) from ${loaded.file}` +
       (pane ? ` into pane ${pane.paneId}` : ' (no pane open)')
     );
     res.json({
       success: true,
-      ...identityResponse(openedKey, board),
+      ...identityResponse(openedKey, board, content),
       source: 'vault',
       ...paneResponse(pane),
       ...(loaded.declaredKey ? { declaredKey: loaded.declaredKey } : {})
@@ -2992,7 +3079,12 @@ app.post('/api/boards/open', (req: Request, res: Response) => {
   }
 });
 
-// Start a new, empty board. It exists in memory only until it is saved.
+// Start a new, empty board.
+//
+// Nothing is written. The address is claimed and the note it would have is
+// resolved, and the first thing drawn on it creates the file — an empty board
+// has nothing to persist, and a `board new` somebody typed wrongly should not
+// leave a note behind in a vault a human reads.
 app.post('/api/boards/new', (req: Request, res: Response) => {
   try {
     const params = BoardAddressSchema.extend({ pane: z.string().optional() }).parse(req.body ?? {});
@@ -3032,11 +3124,12 @@ app.post('/api/boards/new', (req: Request, res: Response) => {
 
     const { key: newKey, board } = getOrCreateBoard(identity);
     board.file = vaultPathFor(identity);
-    switchPaneTo(pane, newKey);
-    logger.info(`Board created: "${newKey}" (empty, unsaved)`);
+    const content = emptyContent();
+    switchPaneTo(pane, newKey, content);
+    logger.info(`Board created: "${newKey}" (empty, no note yet)`);
     res.json({
       success: true,
-      ...identityResponse(newKey, board),
+      ...identityResponse(newKey, board, content),
       created: true,
       saved: false,
       ...paneResponse(pane)
@@ -3079,38 +3172,6 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
       };
 
     const file = vaultPathFor(target);
-
-    // Read the destination as it is NOW, for two jobs at once: its frontmatter
-    // and prose are carried into the note being written, and its hash is what
-    // the baseline is checked against.
-    let destination: Buffer | undefined;
-    try {
-      destination = fs.readFileSync(file);
-    } catch { /* nothing there: nothing to conflict with */ }
-    const existingNote = destination?.toString('utf-8');
-    const overwrote = destination !== undefined;
-
-    // The check. A file at the destination has to be one archboard has already
-    // seen — the copy it read at open, or the copy it wrote at the last save.
-    // Anything else is somebody else's work, and there is no merge for it.
-    const expected = baselineForFile(file);
-    if (destination && !force) {
-      const actualHash = hashBoardBytes(destination);
-      if (!expected || expected.hash !== actualHash) {
-        const conflict = describeWriteConflict({
-          target,
-          file,
-          reason: expected ? 'changed' : 'unseen',
-          ...(expected ? { expectedHash: expected.hash, lastReadAt: expected.at } : {}),
-          actualHash,
-          fileModifiedAt: fs.statSync(file).mtime.toISOString(),
-          saveCommand: body.name ? `board save --as ${boardKey(target)}` : 'board save'
-        });
-        logger.warn(`Board save refused: "${boardKey(target)}" changed underneath archboard at ${file}`);
-        return res.status(409).json({ success: false, error: conflict.message, conflict });
-      }
-    }
-
     const targetKey = boardKey(target);
     // Saving under another address is branching, and the branch is a board of
     // its own variant, so every node on it is restamped to say so. Without
@@ -3124,29 +3185,8 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     // board that has a home. They differ over panes, not over elements.
     const branched = kind !== 'same-board';
     const saved = branched
-      ? restampVariant(Array.from(sourceBoard.elements.values()), target.variant)
-      : Array.from(sourceBoard.elements.values());
-
-    // The images of the board being saved, and `buildScene` narrows them again
-    // to the ones its elements actually draw. This used to be every image in
-    // the process, so a save wrote the other open boards' pictures into this
-    // board's note (TASK-060).
-    const { scene, elementCount } = buildScene(
-      saved,
-      filesUsedBy(saved, sourceBoard.files) as unknown as Record<string, any>
-    );
-    const note = renderBoardNote(scene, existingNote, target);
-    const bytes = Buffer.from(note, 'utf-8');
-    // The folder for a nested name, made here rather than before the conflict
-    // check: a refused save has to leave the vault as it found it, empty
-    // directories included.
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    // By rename, so a reader sees the old note or the new one and never a
-    // partial (TASK-061). The note is on its way to being the only copy of the
-    // board (ADR 0015), and the destination is never opened for writing, so
-    // ADR 0006's check is unchanged: what lands at the path is exactly these
-    // bytes, and their hash is what the next save is checked against.
-    writeFileAtomic(file, bytes);
+      ? restampVariant(Array.from(source.content.elements.values()), target.variant)
+      : Array.from(source.content.elements.values());
 
     // Who was looking at the board that was saved. Whether they move depends
     // on what the save was: giving the scratch board a name renames the thing
@@ -3156,25 +3196,31 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
       pane => (paneBoards.get(pane.clientId) ?? pane.board) === source.key
     );
     const { board: savedBoard } = getOrCreateBoard(target);
-    // The restamped elements, so the canvas holds what the note holds — and
-    // copies of them, so the branch and the board it came from share no
-    // objects at all. Restamping already replaced the promoted ones; the plain
-    // ones were still shared, and a branch that can edit its source is not a
-    // branch (TASK-042).
-    if (branched) {
-      replaceBoardElements(savedBoard, saved);
-      // And the images those elements draw, for the same reason: a branch that
-      // held image elements and none of their data would render holes, and
-      // would write a note with the pictures missing (TASK-060).
-      replaceBoardFiles(savedBoard, filesUsedBy(saved, sourceBoard.files));
-    }
     savedBoard.file = file;
-    savedBoard.note = note;
-    // What archboard has now seen at this path is what it just wrote.
-    recordBaseline(savedBoard, file, hashBoardBytes(bytes));
+    // The destination's own frontmatter is picked up by the write; the images
+    // are the source board's, and `buildScene` narrows them to the ones the
+    // elements being written actually draw. That narrowing is what stops a save
+    // carrying another board's pictures (TASK-060).
+    const written = writeBoardContent(savedBoard, source.content, {
+      file,
+      force,
+      identity: target,
+      elements: saved,
+      saveCommand: body.name ? `board save --as ${targetKey}` : 'board save'
+    });
+    const { elementCount } = written;
+    const overwrote = written.overwrote;
     savedBoard.savedAt = new Date().toISOString();
+    // What the board just written holds, so the answer and any pane that
+    // follows the save are built from it rather than from a second read.
+    const savedContent: BoardContent = {
+      elements: new Map(saved.map(element => [element.id, element])),
+      files: source.content.files,
+      note: written.note,
+      hash: written.hash
+    };
     const moved = panesFollowSave(kind) ? watching : [];
-    for (const pane of moved) switchPaneTo(pane, targetKey);
+    for (const pane of moved) switchPaneTo(pane, targetKey, savedContent);
 
     logger.info(
       `Board saved: "${targetKey}" (${elementCount} elements) -> ${file}` +
@@ -3183,7 +3229,7 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     );
     res.json({
       success: true,
-      ...identityResponse(targetKey, savedBoard),
+      ...identityResponse(targetKey, savedBoard, savedContent),
       file,
       elements: elementCount,
       overwrote,
@@ -3218,11 +3264,11 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
 // (src/core/compare.ts). Read-only in the strictest sense: comparing two boards
 // must never disturb the one on screen, so this neither opens a board, nor
 // registers one in the store, nor records a baseline, nor moves the active
-// pointer. A side that happens to be open is read out of memory — that copy is
-// the truth, unsaved work included — and a side that is not is read straight
-// off disk and thrown away. Which of the two happened is reported per side,
-// because they can disagree and the human needs to know which they were told
-// about.
+// pointer. Both sides are read off disk, because that is where a board is
+// (ADR 0015); what `source` still distinguishes is whether the side is a board
+// this canvas has open — and therefore possibly on a pane in front of somebody
+// — or one that only exists in the vault. Reported per side, because they can
+// differ and the human needs to know which they were told about.
 
 function loadSideForCompare(key: string): CompareSideInput | null {
   const live = boards.get(key);
@@ -3230,7 +3276,7 @@ function loadSideForCompare(key: string): CompareSideInput | null {
     return {
       key,
       identity: live.identity,
-      elements: Array.from(live.elements.values()).filter(el => !el.isDeleted),
+      elements: boardElements(live).filter(el => !el.isDeleted),
       source: 'memory',
       ...(live.file ? { file: live.file } : {}),
       onScreen: boardsOnScreen().some(shown => shown.board === key),
@@ -3446,7 +3492,7 @@ app.get('/health', (req: Request, res: Response) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     boards_open: boards.size,
-    elements_count: Array.from(boards.values()).reduce((total, b) => total + b.elements.size, 0),
+    elements_count: Array.from(boards.values()).reduce((total, b) => total + boardElementCount(b), 0),
     websocket_clients: clients.size,
     // Identity for `stop`: it must only ever signal a process that both
     // identifies as this service AND self-reports its pid — never a pid
@@ -3494,7 +3540,7 @@ app.post('/api/reload', (req: Request, res: Response) => {
 app.get('/api/sync/status', (req: Request, res: Response) => {
   res.json({
     success: true,
-    boards: boardSummaries().map(b => ({ board: b.key, elementCount: b.elementCount })),
+    boards: boardSummaries(boardElementCount).map(b => ({ board: b.key, elementCount: b.elementCount })),
     timestamp: new Date().toISOString(),
     memoryUsage: {
       heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024), // MB
@@ -3592,12 +3638,12 @@ function adoptScratchBoard(): void {
   board.file = loaded?.file ?? vaultPathFor(identity);
   if (!loaded) return;
 
-  const scene = JSON.parse(loaded.sceneJson);
-  const count = ingestSceneElements(board, Array.isArray(scene) ? scene : (scene.elements ?? []));
-  board.note = loaded.raw;
+  // The bytes just read are the baseline the first write is checked against.
+  // Nothing is ingested: the note is the board, and every request that touches
+  // scratch will read it for itself.
   recordBaseline(board, loaded.file, loaded.hash);
   board.loadedAt = new Date().toISOString();
-  logger.info(`Scratch board picked up where it was left: ${count} element(s) from ${loaded.file}`);
+  logger.info(`Scratch board picked up where it was left: ${boardElementCount(board)} element(s) from ${loaded.file}`);
 }
 
 async function startServer(): Promise<void> {
