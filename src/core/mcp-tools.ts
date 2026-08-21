@@ -11,6 +11,28 @@ import { KINDS } from './promote.js';
  * everywhere it appears — display defaults where it cannot be wrong (ADR
  * 0009), and with one pane on screen there is only one answer.
  */
+/**
+ * Ask a write for the whole board back, and the reason not to.
+ *
+ * Written once because the four writes have to say the same thing. A write
+ * already answers with every element it touched in its resulting form — the
+ * ids the server minted, the text element it expanded from a label, the arrows
+ * it re-routed — plus a fingerprint of the board, which is one comparison for
+ * "has anything else moved". This is for the caller that genuinely wants all
+ * 300 elements, and it is spelled out in the description because the cost is
+ * invisible until a loop is running.
+ */
+const DOCUMENT_PARAM = {
+  type: 'boolean',
+  description:
+    'Return the whole board alongside the result. OFF BY DEFAULT AND USUALLY WRONG: a ' +
+    '300-element board is about 60,000 tokens, so calling this in a loop pulls the board ' +
+    'through your context once per element. The default answer already carries every element ' +
+    'the write touched, in the form the board now holds it, plus a fingerprint (element count ' +
+    'and the sha-256 of the note) that tells you in one comparison whether anything you did ' +
+    'not do has changed. Use describe_scene for a summary, or query_elements for a part.'
+} as const;
+
 const PANE_PARAM = {
   type: 'string',
   description:
@@ -48,7 +70,8 @@ export const tools: Tool[] = [
         startElementId: { type: 'string', description: 'For arrows: ID of the element to bind the arrow start to. Arrow auto-routes to element edge.' },
         endElementId: { type: 'string', description: 'For arrows: ID of the element to bind the arrow end to. Arrow auto-routes to element edge.' },
         endArrowhead: { type: 'string', description: 'Arrowhead style at end: arrow, bar, dot, triangle, or null' },
-        startArrowhead: { type: 'string', description: 'Arrowhead style at start: arrow, bar, dot, triangle, or null' }
+        startArrowhead: { type: 'string', description: 'Arrowhead style at start: arrow, bar, dot, triangle, or null' },
+        document: DOCUMENT_PARAM
       },
       required: ['type', 'x', 'y']
     }
@@ -76,18 +99,20 @@ export const tools: Tool[] = [
         opacity: { type: 'number' },
         text: { type: 'string' },
         fontSize: { type: 'number' },
-        fontFamily: { type: ['string', 'number'], description: 'Font family: virgil/hand/handwritten (1), helvetica/sans/sans-serif (2), cascadia/mono/monospace (3), excalifont (5), nunito (6), lilita/lilita one (7), comic shanns/comic (8), or numeric ID' }
+        fontFamily: { type: ['string', 'number'], description: 'Font family: virgil/hand/handwritten (1), helvetica/sans/sans-serif (2), cascadia/mono/monospace (3), excalifont (5), nunito (6), lilita/lilita one (7), comic shanns/comic (8), or numeric ID' },
+        document: DOCUMENT_PARAM
       },
       required: ['id']
     }
   },
   {
     name: 'delete_element',
-    description: 'Delete an Excalidraw element',
+    description: "Delete an Excalidraw element. A label goes with the shape it names, and anything bound to what has gone is unbound, so the answer says what else the board lost and what else changed.",
     inputSchema: {
       type: 'object',
       properties: {
-        id: { type: 'string' }
+        id: { type: 'string' },
+        document: DOCUMENT_PARAM
       },
       required: ['id']
     }
@@ -297,7 +322,8 @@ export const tools: Tool[] = [
             },
             required: ['type', 'x', 'y']
           }
-        }
+        },
+        document: DOCUMENT_PARAM
       },
       required: ['elements']
     }

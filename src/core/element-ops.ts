@@ -251,5 +251,5 @@ export async function duplicateElements(
   if (!canvasElements) {
     throw new Error('Failed to duplicate elements: HTTP server unavailable');
   }
-  return { duplicates, canvasElements, offsetX, offsetY };
+  return { duplicates, canvasElements: canvasElements.elements ?? [], offsetX, offsetY };
 }

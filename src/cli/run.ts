@@ -28,14 +28,72 @@ interface Command {
   subcommands?: readonly string[];
 }
 
+/**
+ * What every write answers with, and the one flag that changes it (TASK-075).
+ *
+ * Written once, in the four places that write elements, because the four have
+ * to say the same thing — and because `--document` is the kind of flag that
+ * looks harmless until it is inside a loop.
+ */
+const WRITE_ANSWER = [
+  '  ANSWERS WITH WHAT THE BOARD BECAME: `elements` is every element the write touched in',
+  '  its resulting form, including what the server made and you never named — the ids it',
+  '  minted, the text element it expanded from a `label`, the arrows it re-routed behind a',
+  '  move. `fingerprint` is the board in one line: how many elements, and the sha-256 of',
+  '  the note it would write. Keep the last one and you can tell in a single comparison',
+  '  whether anything you did not do has changed, instead of re-reading the board.',
+  '',
+  '  --document adds the whole board. OFF BY DEFAULT AND USUALLY WRONG: 300 elements is',
+  '  about 60,000 tokens, so a loop that asks for it pulls the board through a context once',
+  '  per box. Use `describe` for a summary or `query` for a part.'
+].join('\n');
+
 const COMMANDS: Record<string, Command> = {
   start: { handler: server.start, summary: 'Start the canvas server (detached)', usage: 'start' },
   stop: { handler: server.stop, summary: 'Stop the canvas server', usage: 'stop' },
   status: { handler: server.status, summary: 'Canvas health, element count, browser clients', usage: 'status' },
-  apply: { handler: elements.apply, summary: 'Apply a {create,update,delete} patch as a single write', usage: 'apply [patch.json|-] (update entries accept direct fields or {id,set:{...}})' },
-  add: { handler: elements.add, summary: 'Create elements from a JSON array', usage: 'add [elements.json] (or stdin) | add --one \'{"type":"rectangle",...}\'' },
-  update: { handler: elements.update, summary: 'Update one element', usage: 'update <id> --set \'{"backgroundColor":"#ffc9c9"}\'' },
-  delete: { handler: elements.del, summary: 'Delete elements by id', usage: 'delete <id> [<id> ...]' },
+  apply: {
+    handler: elements.apply,
+    summary: 'Apply a {create,update,delete} patch as a single write',
+    usage: [
+      'apply [patch.json|-] [--document]',
+      '  (update entries accept direct fields or {id,set:{...}})',
+      '',
+      WRITE_ANSWER
+    ].join('\n')
+  },
+  add: {
+    handler: elements.add,
+    summary: 'Create elements from a JSON array',
+    usage: [
+      'add [elements.json] (or stdin) [--document]',
+      'add --one \'{"type":"rectangle",...}\'',
+      '',
+      WRITE_ANSWER
+    ].join('\n')
+  },
+  update: {
+    handler: elements.update,
+    summary: 'Update one element',
+    usage: [
+      'update <id> --set \'{"backgroundColor":"#ffc9c9"}\' [--document]',
+      '',
+      WRITE_ANSWER
+    ].join('\n')
+  },
+  delete: {
+    handler: elements.del,
+    summary: 'Delete elements by id',
+    usage: [
+      'delete <id> [<id> ...] [--document]',
+      '',
+      '  A label goes with the shape it names, so `deleted` can be longer than what you',
+      '  named, and anything bound to what has gone is unbound and comes back in',
+      '  `elements`.',
+      '',
+      WRITE_ANSWER
+    ].join('\n')
+  },
   get: { handler: elements.get, summary: 'Get one element by id', usage: 'get <id>' },
   query: { handler: elements.query, summary: 'Query elements (server + typed client-side filters)', usage: 'query [--type rectangle] [--bbox x0,y0,x1,y1] [--filter locked=true] [--filter-json \'{...}\']' },
   selection: { handler: selection, summary: 'What a human currently has selected on the board', usage: 'selection [--text]' },

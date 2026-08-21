@@ -24,6 +24,7 @@
 import fs from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
@@ -178,6 +179,96 @@ for (const tool of toolNames) {
   }
 }
 
+// --- the writes, and what they answer with ----------------------------------
+//
+// Parity is normally about whether a capability exists on both surfaces, and
+// tool names against command names is enough for that. `--document` is the
+// exception worth spelling out: it is not a command, it is a promise about
+// what every write hands back, and a promise only one surface keeps is one an
+// agent cannot rely on (TASK-075).
+//
+// So the four writes are named here, each with the CLI entry and the tool that
+// do the same job, and both halves have to offer it — the CLI in the usage
+// text `archboard help <command>` prints, MCP in the tool's input schema.
+//
+// `apply` is CLI-only and is deliberately not in this list: it has no tool,
+// which CLI_ONLY already records, and an MCP client reaches the same state
+// with the create/update/delete tools.
+
+const WRITES = [
+  ['add', 'batch_create_elements'],
+  ['add', 'create_element'],
+  ['update', 'update_element'],
+  ['delete', 'delete_element']
+];
+
+// The CLI half is asked, not read. `parseArgs` refuses a flag it does not
+// declare — "Unknown flag --x" — so running the command with `--document`
+// followed by a flag nothing declares says which of the two it rejected, and
+// that is the parser answering rather than the help text. Reading the usage
+// string was the first attempt and it was worthless: the shared paragraph
+// every write prints itself contains the word `--document`, so a command that
+// had lost the flag entirely still looked like it had it.
+const acceptsDocument = (entry) => {
+  const run = spawnSync(process.execPath,
+    [join(repoRoot, 'src', 'bin.ts'), ...entry.split(' '), '--document', '--not-a-real-flag'],
+    { encoding: 'utf8', env: { ...process.env, EXCALIDRAW_NO_AUTOSTART: '1' }, timeout: 20000 });
+  const said = `${run.stdout ?? ''}${run.stderr ?? ''}`;
+  if (said.includes('Unknown flag --document')) return false;
+  if (said.includes('Unknown flag --not-a-real-flag')) return true;
+  return { unreadable: said.trim().split('\n')[0] ?? '(said nothing)' };
+};
+
+// And the synopsis has to mention it, because `archboard help <command>` is
+// where a shell agent finds out a flag exists. Only the first paragraph counts,
+// for the reason above.
+const synopsisOf = (entry) => {
+  const run = spawnSync(process.execPath, [join(repoRoot, 'src', 'bin.ts'), 'help', ...entry.split(' ')],
+    { encoding: 'utf8', env: { ...process.env, EXCALIDRAW_NO_AUTOSTART: '1' }, timeout: 20000 });
+  return (run.stdout ?? '').split('\n\n')[0] ?? '';
+};
+
+const writeEntries = new Set(cliSurface().map(({ name }) => name));
+
+for (const [entry, tool] of WRITES) {
+  const declared = tools.find(candidate => candidate.name === tool);
+  if (!writeEntries.has(entry)) {
+    fail(`WRITES names the CLI entry "${entry}", which is not a CLI entry any more.`);
+    continue;
+  }
+  if (!declared) {
+    fail(`WRITES names the tool \`${tool}\`, which mcp-tools.ts no longer declares.`);
+    continue;
+  }
+  const cliHas = acceptsDocument(entry);
+  if (typeof cliHas !== 'boolean') {
+    fail(`\`archboard ${entry} --document\` answered something this check cannot read — ` +
+      `"${cliHas.unreadable}". It expects the parser to name whichever flag it rejected.`);
+    continue;
+  }
+  const mcpHas = Boolean(declared.inputSchema?.properties?.document);
+  if (cliHas && !mcpHas) {
+    fail(`\`archboard ${entry}\` takes --document and the tool \`${tool}\` does not. What a write ` +
+      'answers with is a promise to an agent, and one only the CLI keeps is one nothing can rely on.');
+  }
+  if (mcpHas && !cliHas) {
+    fail(`The tool \`${tool}\` takes \`document\` and \`archboard ${entry}\` does not.`);
+  }
+  if (!cliHas && !mcpHas) {
+    fail(`Neither \`archboard ${entry}\` nor \`${tool}\` offers the whole document. TASK-075 put ` +
+      'it on both; if it is being taken off, take it off both and drop the pair here.');
+  }
+  if (cliHas && !synopsisOf(entry).includes('--document')) {
+    fail(`\`archboard ${entry}\` takes --document and its usage synopsis does not mention it, so ` +
+      '`archboard help` — the only place a shell agent would find it — does not say it exists.');
+  }
+  // Off by default is the whole point, so the description has to say why.
+  const why = String(declared.inputSchema?.properties?.document?.description ?? '');
+  if (mcpHas && !/default/i.test(why)) {
+    fail(`The tool \`${tool}\` offers \`document\` without its description saying it is off by ` +
+      'default and why. A flag whose cost is invisible needs the cost written down.');
+  }
+}
 // The cheatsheet's MCP section, held against the real tool list.
 const cheatsheet = fs.readFileSync(CHEATSHEET, 'utf8');
 const section = cheatsheet.split('\n## MCP Tools')[1]?.split('\n## ')[0] ?? '';

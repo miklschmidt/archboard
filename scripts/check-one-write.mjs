@@ -230,12 +230,53 @@ try {
   });
   assert(applied.created === 2 && applied.updated === 2 && applied.deleted === 1,
     `apply reported ${JSON.stringify({ created: applied.created, updated: applied.updated, deleted: applied.deleted })}`);
-  assert(Array.isArray(applied.elements) && applied.elements.length === 2 &&
+  // What the write TOUCHED, not only what it created (TASK-075): the two new
+  // elements with the ids the server minted, and the two it changed, each in
+  // the form the board now holds it. The one an agent cannot work out for
+  // itself is the minted id, which is why that is asserted by name.
+  const touched = new Map((applied.elements ?? []).map((el) => [el.id, el]));
+  assert(Array.isArray(applied.elements) &&
     applied.elements.every((el) => typeof el.id === 'string' && el.id.length > 0),
-    'apply should still hand back the elements it created, ids and all — the server mints them');
+    'apply should hand back every element it touched, ids and all — the server mints them');
+  assert(touched.has('made-a') && touched.has('box-1') && touched.has('box-2'),
+    `apply's elements should cover both creates and both updates, and named ${[...touched.keys()].join(', ')}`);
+  assert([...touched.values()].some((el) => el.type === 'ellipse' && !patch.create.some((c) => c.id === el.id)),
+    'the ellipse was created without an id, so the answer is the only place its id exists');
+  assert(!touched.has('box-19'), 'a deleted element is gone, not touched');
+  // And the board in one line, so the next turn can tell whether anything it
+  // did not do has moved without reading the board back.
+  assert(applied.fingerprint && typeof applied.fingerprint.note === 'string' &&
+    applied.fingerprint.note.length === 64 && applied.fingerprint.elements > 0,
+    `apply should answer with a board fingerprint, and answered ${JSON.stringify(applied.fingerprint)}`);
+  assert(applied.document === undefined,
+    'the whole document must stay behind --document; it is 134x the answer at 300 elements');
+
   scene = await byId();
   assert(scene.get('box-1').backgroundColor === '#ffc9c9' && near(scene.get('box-2').x, 4000) && !scene.has('box-19'),
     'the patch did not land: the counts were right and the board is wrong');
+
+  // And the whole document is reachable when it is asked for, or "behind a
+  // flag" would be a polite way of saying "gone" (TASK-075).
+  const asked = await counting('a patch that asks for the whole document', async () => {
+    const child = spawn(process.execPath,
+      [src('bin.ts'), 'apply', '--board', 'scratch', '--document', '-'], {
+        cwd: repoRoot,
+        env: { ...process.env, EXPRESS_SERVER_URL: proxyBase, LOG_LEVEL: 'error' },
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+    child.stdin.write(JSON.stringify({ update: [{ id: 'box-1', set: { backgroundColor: '#b2f2bb' } }] }));
+    child.stdin.end();
+    let out = '';
+    child.stdout.on('data', (chunk) => { out += chunk; });
+    const code = await new Promise((resolve) => child.on('exit', resolve));
+    assert(code === 0, `apply --document exited ${code}`);
+    return JSON.parse(out);
+  });
+  assert(Array.isArray(asked.document) && asked.document.length === asked.fingerprint.elements,
+    `--document should answer with the whole board, and gave ${asked.document?.length} of ` +
+    `${asked.fingerprint?.elements}`);
+  assert(asked.elements.length < asked.document.length,
+    'the default answer should be smaller than the board, or there is nothing being saved here');
 
   // A patch naming an element that is not there is refused with nothing
   // written, rather than halfway through with the earlier half applied.
