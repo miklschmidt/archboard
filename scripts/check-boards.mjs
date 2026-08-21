@@ -1028,6 +1028,33 @@ try {
     (heldElsewhere.body?.panes?.kept ?? []).length === 0,
     JSON.stringify(heldElsewhere.body?.panes?.kept));
 
+  // What a script reads is the exit code, so the refusal is checked through the
+  // CLI rather than inferred from a status. An agent's write is refused exactly
+  // as it always was — the board stopping saving does not soften that — and the
+  // write after it is taken, with the hold said out loud either way.
+  await api('POST', '/api/boards/new', { board: 'cliheld' });
+  await api('POST', '/api/elements?board=cliheld', {
+    type: 'rectangle', x: 0, y: 0, width: 30, height: 30
+  });
+  const cliNote = (await api('GET', '/api/boards/info?board=cliheld')).body?.file;
+  fs.writeFileSync(cliNote, fs.readFileSync(cliNote, 'utf-8').replace(
+    '"type": "rectangle"', '"type": "rectangle", "angle": 0.5'
+  ));
+  const cliRefused = await cli(['add', '--board', 'cliheld', '--one',
+    '{"type":"ellipse","x":1,"y":1,"width":10,"height":10}']);
+  check('an agent write refused for the same reason still exits 5 from the CLI',
+    cliRefused.code === 5, `exit ${cliRefused.code}`);
+  check('  with the three outcomes, and what happens to everything drawn from here',
+    /Refusing to save/.test(cliRefused.stderr) &&
+    /has stopped saving/.test(cliRefused.stderr) &&
+    /board open cliheld --reload/.test(cliRefused.stderr),
+    cliRefused.stderr.trim().split('\n').slice(-2).join(' '));
+  const cliAfter = await cli(['add', '--board', 'cliheld', '--one',
+    '{"type":"ellipse","x":2,"y":2,"width":10,"height":10}']);
+  check('  and the write after it is taken, saying where it went',
+    cliAfter.code === 0 && /stopped saving/.test(cliAfter.stderr),
+    `exit ${cliAfter.code} ${cliAfter.stderr.trim().split('\n')[0]}`);
+
   one.socket.close();
   await sleep(200);
 
