@@ -301,7 +301,7 @@ export function boardLockState(board: string): LockHolder | null {
 // its writes are recognised because they are writes to a board this canvas
 // holds a claim on.
 //
-// WHICH LEAVES TWO BOUNDS, AND THEY ARE THE ONES THE ADR NAMES. The lease and
+// WHICH LEAVES THREE BOUNDS, AND THEY ARE THE ONES THE ADR NAMES. The lease and
 // its renewal bound a dead *canvas*: stop renewing and the board is free within
 // one lease, which is what keeps a crash from costing the vault a board for as
 // long as the claim was for. The claim's own expiry bounds a working agent, and
@@ -454,8 +454,9 @@ function liveClaim(board: string): ClaimEntry | null {
  * the board within one lease rather than for the length of the claim.
  *
  * It is also the discovery path for a claim taken back on another canvas: that
- * person's hold wrote over the lock file, so the next renewal is refused, and a
- * refusal is how this canvas learns something it could not be told.
+ * person's hold wrote over the lock file, so the next renewal finds the lock is
+ * somebody else's or gone, and that is how this canvas learns something nobody
+ * could tell it.
  */
 function startRenewing(board: string): ReturnType<typeof setInterval> {
   const timer = setInterval(() => { renewClaim(board); }, LOCK_RENEW_MS);
