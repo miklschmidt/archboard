@@ -147,7 +147,7 @@ const DistributeElementsSchema = z.object({
 
 const QuerySchema = z.object({
   type: z.enum(Object.values(EXCALIDRAW_ELEMENT_TYPES) as [ExcalidrawElementType, ...ExcalidrawElementType[]]).optional(),
-  filter: z.record(z.any()).optional(),
+  filter: z.record(z.string(), z.any()).optional(),
   bbox: z.object({
     x_min: z.number().optional(),
     x_max: z.number().optional(),
@@ -1075,7 +1075,7 @@ export async function callExcalidrawTool(
 
           if (modes !== 1) {
             ctx.addIssue({
-              code: z.ZodIssueCode.custom,
+              code: 'custom',
               message: 'Specify exactly one viewport mode: scrollToContent, scrollToElementIds, scrollToElementId, or manual zoom/offset'
             });
           }
@@ -1083,7 +1083,7 @@ export async function callExcalidrawTool(
               params.scrollToContent !== true &&
               params.scrollToElementIds === undefined) {
             ctx.addIssue({
-              code: z.ZodIssueCode.custom,
+              code: 'custom',
               path: ['viewportZoomFactor'],
               message: 'viewportZoomFactor requires scrollToContent or scrollToElementIds'
             });

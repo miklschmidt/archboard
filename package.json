@@ -56,7 +56,7 @@
     "react-dom": "18.3.1",
     "winston": "3.17.0",
     "ws": "8.18.3",
-    "zod": "3.25.76"
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@types/cors": "2.8.19",
