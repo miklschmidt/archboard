@@ -3,9 +3,11 @@ id: TASK-089
 title: >-
   Two implementations of one thing, three times over: consolidate before they
   diverge further
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-21 12:53'
+updated_date: '2026-08-21 13:03'
 labels: []
 dependencies: []
 references:
@@ -48,3 +50,15 @@ The precedent for how to do it is already here: TASK-061 deleted `repo-registry`
 - [ ] #3 Whether the two expansion functions are one job or two is established and written down, and if one, they are one function
 - [ ] #4 Each consolidation is proved by reverting it and counting which checks fail, not by the suite staying green
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Instance 2 (two ways to read a note), agent A:
+1. Separate the three layers. readNoteFile(file) in board-io.ts does the one act: read bytes, decode, refuse a non-note, hash the bytes, reassemble the scene with any image the plugin moved out. It returns { file, raw, hash, sceneJson } or null on ENOENT.
+2. Move readBoardFile and LoadedBoard from board.ts into board-io.ts on top of it, so resolving an identity to a path and reporting a frontmatter-versus-path disagreement is what it adds, not how it reads. Update the two importers (src/server.ts, scripts/check-boards.mjs). No compatibility re-export: a second import path is the thing being deleted.
+3. readNote keeps its job: readNoteFile plus ingestScene into BoardContent. readBoardContent is unchanged, and still records no baseline.
+4. Guard against a re-split with two checks. An agreement check in check-boards asserts that on one migrated note the open path and the per-request path both carry the image, the hash and the refusal. A structural check asserts sceneJsonWithEmbeddedImages has exactly one call site in src/.
+5. Prove it by reverting: (a) restore the two readers, count the failures; (b) drop the embedded-image call from the consolidated reader, count the failures on both surfaces.
+Out of scope, named deliberately: extractSceneElements in board.ts, used only by repo-boards to scan every note in the vault for bindings. Elements only, no hash, no images, never writes. Folding it in would make a vault scan base64 every migrated image in the vault for nothing.
+<!-- SECTION:PLAN:END -->

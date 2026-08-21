@@ -492,6 +492,14 @@ export function hashBoardBytes(bytes: Buffer): string {
 // The live elements of a board note, from its raw bytes. Deleted elements are
 // dropped, because a scene keeps its tombstones and nothing outside Excalidraw
 // wants them.
+//
+// Deliberately not `readNoteFile` (src/core/board-io.ts), which is the one way
+// a board is read. This is the vault scan behind `board list --repo`: it opens
+// every note in the vault looking for bindings, which live on elements, and it
+// never hashes, never writes and never draws. Reading a note the way a request
+// reads one would make that scan load and base64 every picture the Obsidian
+// plugin has moved into a vault file, for a scene whose `files` map it throws
+// away.
 export function extractSceneElements(note: string): ServerElement[] {
   if (!isObsidianExcalidrawMd(note)) {
     throw new Error('not an Obsidian .excalidraw.md note');
@@ -509,8 +517,9 @@ export function extractSceneElements(note: string): ServerElement[] {
 // Preserving that section keeps the record; following it is what keeps the
 // picture, so a board the plugin has touched still renders here.
 //
-// Reading it happens where a note is read, so every caller of `readBoardFile`
-// gets the images without knowing this section exists.
+// Following it happens in `readNoteFile` (src/core/board-io.ts) and nowhere
+// else, so every read of a board gets the pictures without knowing this
+// section exists — and there is no second reader for a fix here to miss.
 
 const IMAGE_MIME_TYPES: Readonly<Record<string, string>> = Object.freeze({
   '.png': 'image/png',
@@ -711,65 +720,4 @@ export function listBoards(root = requireVaultRoot()): VaultBoard[] {
     }
   }
   return found;
-}
-
-export interface LoadedBoard {
-  identity: BoardIdentity;
-  file: string;
-  raw: string;
-  // The hash of the bytes this was read from: the baseline a later save checks
-  // the file against before it overwrites it.
-  hash: string;
-  sceneJson: string;
-  // What the note's own frontmatter claims, when that is a different board
-  // than the one being opened. See VaultBoard.declaredKey.
-  declaredKey?: string;
-}
-
-// Read a board note off disk.
-//
-// The address being opened is the identity, because that is how the file was
-// found; the note's frontmatter supplies `level`, which no path can carry, and
-// is reported when it names a different board — a note the Obsidian plugin
-// created has no archboard keys at all until archboard first saves it.
-export function readBoardFile(identity: Pick<BoardIdentity, 'board' | 'variant' | 'displayName'>, root = requireVaultRoot()): LoadedBoard | null {
-  const file = vaultPathFor(identity, root);
-  let bytes: Buffer;
-  try {
-    // Read bytes, then decode. The baseline hash has to be of what is on disk,
-    // so decoding is a separate step that cannot get between the two.
-    bytes = fs.readFileSync(file);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
-    throw error;
-  }
-  const raw = bytes.toString('utf-8');
-  if (!isObsidianExcalidrawMd(raw)) {
-    throw new Error(
-      `${file} exists but is not an Obsidian .excalidraw.md note — refusing to read it as a board.`
-    );
-  }
-  const asked = makeIdentity({ board: identity.board, variant: identity.variant });
-  const declared = identityFromFrontmatter(raw);
-  // Casing comes from the note, not from whoever typed the address: the note
-  // is where a human chose it and the address is case-insensitive either way.
-  // Its own frontmatter first, then the filename, then the address.
-  const onDisk = identityFromVaultPath(file, root);
-  const displayName =
-    (declared && boardKey(declared) === boardKey(asked) ? declared.displayName : undefined)
-    ?? (onDisk && boardKey(onDisk) === boardKey(asked) ? onDisk.displayName : undefined)
-    ?? asked.displayName;
-  return {
-    identity: {
-      ...asked,
-      ...(declared?.level ? { level: declared.level } : {}),
-      ...(displayName ? { displayName } : {})
-    },
-    file,
-    // The whole note, so a later save can carry its frontmatter across verbatim.
-    raw,
-    hash: hashBoardBytes(bytes),
-    sceneJson: sceneJsonWithEmbeddedImages(raw, file, root),
-    ...(declared && boardKey(declared) !== boardKey(asked) ? { declaredKey: boardKey(declared) } : {})
-  };
 }
