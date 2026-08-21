@@ -1434,6 +1434,101 @@ try {
     check('  and a board that draws none has no files key at all',
       noImages.scene.files === undefined);
   }
+
+  // --- a note the Obsidian plugin has been through (TASK-085, ADR 0017) ----
+  //
+  // The plugin does not keep image bytes in the drawing. It writes each one
+  // out as a real vault file, records where it went under `## Embedded Files`
+  // as `<fileId>: [[path]]`, and empties `scene.files`. So a board that has
+  // been opened in Obsidian comes back with no pictures in it and a section
+  // that is the only record of where they are.
+  //
+  // Both halves are asserted here because either alone is useless: preserving
+  // the section without following it keeps the record and not the picture, and
+  // following it without preserving it loses the record on the first save.
+  {
+    const { wrapSceneAsObsidianMd } = await import(src('core/obsidian-md.ts'));
+    const PNG_BASE64 =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+    fs.mkdirSync(path.join(vault, 'attachments'), { recursive: true });
+    fs.writeFileSync(path.join(vault, 'attachments', 'logo.png'), Buffer.from(PNG_BASE64, 'base64'));
+
+    // A note in the plugin's own shape: an image element, an empty files map,
+    // and the section naming the vault file it moved the bytes to.
+    const pluginNote = (boardName, sectionLines) => {
+      const bare = wrapSceneAsObsidianMd(
+        {
+          type: 'excalidraw',
+          version: 2,
+          elements: [{ id: 'img-emb', type: 'image', x: 0, y: 0, width: 40, height: 40, fileId: 'emb12345' }],
+          appState: { viewBackgroundColor: '#ffffff' },
+          files: {}
+        },
+        null,
+        { frontmatter: [['board', boardName], ['variant', 'current']] }
+      );
+      const at = bare.indexOf('\n%%\n## Drawing\n');
+      return `${bare.slice(0, at)}\n## Embedded Files\n${sectionLines}\n${bare.slice(at + 1)}`;
+    };
+
+    fs.writeFileSync(
+      path.join(vault, 'picsd.excalidraw.md'),
+      pluginNote('picsd', 'emb12345: [[attachments/logo.png]]\n')
+    );
+    const migrated = await api('POST', '/api/boards/open', { board: 'picsd' });
+    check('a note the plugin has migrated the images out of opens', migrated.status === 200, migrated.body?.error);
+    const migratedFiles = await api('GET', '/api/files?board=picsd');
+    check('  and the image it moved into the vault is followed to its file',
+      migratedFiles.body?.files?.emb12345?.dataURL === `data:image/png;base64,${PNG_BASE64}`,
+      JSON.stringify(Object.keys(migratedFiles.body?.files ?? {})));
+
+    const savedMigrated = await api('POST', '/api/boards/save?board=picsd');
+    const migratedNote = fs.readFileSync(savedMigrated.body.file, 'utf-8');
+    check('  and the save keeps the section saying where it went',
+      migratedNote.includes('## Embedded Files') &&
+      migratedNote.includes('emb12345: [[attachments/logo.png]]'),
+      savedMigrated.body?.error);
+    check('  without writing the bytes back into a note the plugin migrated them out of',
+      !migratedNote.includes(PNG_BASE64));
+
+    // The plugin writes the shortest form that still picks the file out, so a
+    // bare filename is the common case rather than the exception.
+    fs.writeFileSync(
+      path.join(vault, 'picse.excalidraw.md'),
+      pluginNote('picse', 'emb12345: [[logo.png]]\n')
+    );
+    const byName = await api('POST', '/api/boards/open', { board: 'picse' });
+    const byNameFiles = await api('GET', '/api/files?board=picse');
+    check('a bare filename is resolved against the vault',
+      byName.status === 200 && byNameFiles.body?.files?.emb12345?.dataURL?.endsWith(PNG_BASE64),
+      JSON.stringify(Object.keys(byNameFiles.body?.files ?? {})));
+
+    // Two files of that name and there is no answer, so there is no picture
+    // either. Guessing would put a different image on the board than the one
+    // Obsidian shows, which is worse than the hole.
+    fs.mkdirSync(path.join(vault, 'elsewhere'), { recursive: true });
+    fs.writeFileSync(path.join(vault, 'elsewhere', 'logo.png'), Buffer.from(PNG_BASE64, 'base64'));
+    fs.writeFileSync(
+      path.join(vault, 'picsf.excalidraw.md'),
+      pluginNote('picsf', 'emb12345: [[logo.png]]\n')
+    );
+    const ambiguous = await api('POST', '/api/boards/open', { board: 'picsf' });
+    const ambiguousFiles = await api('GET', '/api/files?board=picsf');
+    check('  but a name two files answer to is left unresolved rather than guessed at',
+      ambiguous.status === 200 && ambiguousFiles.body?.files?.emb12345 === undefined,
+      JSON.stringify(Object.keys(ambiguousFiles.body?.files ?? {})));
+
+    // A link out of the vault is not a vault file, whoever wrote it there.
+    fs.writeFileSync(
+      path.join(vault, 'picsg.excalidraw.md'),
+      pluginNote('picsg', 'emb12345: [[../../etc/passwd.png]]\n')
+    );
+    const escaping = await api('POST', '/api/boards/open', { board: 'picsg' });
+    const escapingFiles = await api('GET', '/api/files?board=picsg');
+    check('a wikilink pointing outside the vault resolves to nothing',
+      escaping.status === 200 && escapingFiles.body?.files?.emb12345 === undefined,
+      JSON.stringify(Object.keys(escapingFiles.body?.files ?? {})));
+  }
 } finally {
   server.kill('SIGTERM');
   await sleep(200);

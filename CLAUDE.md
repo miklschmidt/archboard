@@ -625,6 +625,23 @@ map per process, keyed by file id and shared by every open board, so saving one
 board wrote every other open board's pictures into its note, and reopening a
 board dropped the picture data and kept the hole.
 
+**Obsidian records a picture somewhere else, and that record is kept**
+(TASK-085, ADR 0017). The Excalidraw plugin does not leave image bytes in a
+drawing: the first time it saves a note it writes each picture out as an
+ordinary vault file and records under `## Embedded Files` which file each
+`fileId` now lives in. A save regenerates everything between
+`# Excalidraw Data` and the end of the Drawing block, so that section used to
+be deleted along with the rest — leaving the images in the vault with nothing
+able to name them, on a board that then rendered holes. It is now a preserved
+region like the frontmatter and the human's prose, **and archboard follows it**:
+a wikilink is resolved against the vault when the board is read, so a board the
+plugin has migrated still draws. An id the section names is not written back
+into the Drawing block, because the note says where a picture is once. A link
+naming no file, or two, resolves to nothing rather than to a guess.
+`## Element Links`, its neighbour, is *not* preserved and that is deliberate —
+the plugin rebuilds it from the `link` field of the scene's own elements, so
+carrying a stale line across would put back a link somebody deleted here.
+
 The canvas boots holding a `scratch` board, so a first run has something in
 front of it — a board like any other, named like any other
 (`--board scratch`). A pane that is opened with nothing else on screen shows
