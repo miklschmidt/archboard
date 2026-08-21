@@ -468,6 +468,18 @@ try {
   await browser(['open', base]);
   check('a real browser opens the canvas', true, `session ${sessionId}`);
 
+  // Headless is not a preference here, it is a requirement of the machine this
+  // runs on. A window that maps takes focus under Hyprland, so a headed browser
+  // would yank the desktop away from whoever is working mid-suite — and this
+  // check is in `bun run test`, so that would be every run. Nothing pins it
+  // today except `open` happening to default headless and nobody passing
+  // --headed, which is the kind of invariant this repository has spent its time
+  // removing. Chrome states it in its own user agent, so ask the page rather
+  // than trusting the flag.
+  const ua = await evalInPage('navigator.userAgent');
+  check('  without mapping a window, because a window would steal focus',
+    /headless/i.test(ua), ua);
+
   let panes = null;
   for (let i = 0; i < 100; i++) {
     panes = (await api('GET', '/api/panes')).body;
