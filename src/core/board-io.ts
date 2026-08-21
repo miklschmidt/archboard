@@ -12,12 +12,13 @@
 // one's note is (src/core/board-store.ts); the content belongs to the request
 // that read it and is gone when the response goes out.
 //
-// The cost is a read-modify-write per mutating request, measured at 6.21 ms on
-// a 55-element board and 9.75 ms on a 300-element one, of which the fsync is
-// 5.15 to 5.25 ms and does not vary with size
-// (docs/design/server-is-the-truth.md §8). Against the busiest second of real
-// use anybody has measured — seven writes — that is 68 ms on a board four times
-// larger than any real one.
+// The cost is a read-modify-write per mutating request: 15.6 ms on a 56-element
+// board and 18 to 23 ms on a 300-element one, of which the fsync is over half
+// and does not vary with size (docs/design/server-is-the-truth.md §8). Against
+// the busiest second of real use anybody has measured — seven writes — that is
+// 110 to 162 ms, on a board four times larger than any real one. The estimate
+// this was accepted on was 6.21 and 9.75 ms; the parse and the render came in
+// where it said and the fsync is about twice what it said.
 //
 // EVERYTHING HERE IS SYNCHRONOUS, and that is load-bearing rather than
 // incidental. Express runs synchronous handlers to completion one at a time, so

@@ -1273,6 +1273,54 @@ try {
     fs.rmSync(scratchVault, { recursive: true, force: true });
   }
 
+  // --- the answer names the id the board holds (TASK-069, TASK-078) -------
+  //
+  // A text element's block id is its element id, and a block reference cannot
+  // hold more than eight characters, so an id from elsewhere — Excalidraw mints
+  // 21, and a caller can send anything — gets a shorter one on the way into a
+  // note. Nothing archboard mints needs that.
+  //
+  // The rename used to happen after the write had already answered, which was
+  // survivable while the note and the board were two documents: the note said
+  // one name, the board said another, and nobody compared them. The note is the
+  // board now, so an agent was told an id the board did not hold, and the next
+  // read brought the element back renamed under whoever was drawing.
+  {
+    await api('POST', '/api/boards/new', { board: 'blockids' });
+    const long = 'a-caption-id-nobody-can-reference';
+    const made = await api('POST', '/api/elements?board=blockids', {
+      id: long, type: 'text', x: 0, y: 0, text: 'a caption'
+    });
+    const answered = made.body?.element?.id;
+    check('a text element whose id cannot be a block reference is renamed',
+      made.status === 200 && answered !== long, `${made.status} ${answered}`);
+    check('  to something a block reference can hold',
+      /^[A-Za-z0-9-]{1,8}$/.test(answered ?? ''), String(answered));
+    check('  and the write answers with the name the board actually holds',
+      Boolean(answered) &&
+      (await api('GET', `/api/elements/${answered}?board=blockids`)).status === 200,
+      String(answered));
+
+    // The point of moving it: reading the board back does not rename anything
+    // a second time, so nobody is holding an id that stops existing.
+    const held = await api('GET', '/api/elements?board=blockids');
+    check('  and reading the board back finds that same name, not another one',
+      (held.body?.elements ?? []).map(el => el.id).join(',') === answered,
+      JSON.stringify((held.body?.elements ?? []).map(el => el.id)));
+    const noteFile = (await api('GET', '/api/boards/info?board=blockids')).body?.file;
+    check('  which is also the block reference in the note',
+      fs.readFileSync(noteFile, 'utf-8').includes(`a caption ^${answered}`),
+      String(answered));
+
+    // An id that is already a block reference is left alone, because renaming
+    // is the dangerous act and nothing here needs doing.
+    const short = await api('POST', '/api/elements?board=blockids', {
+      id: 'cap2', type: 'text', x: 0, y: 60, text: 'another'
+    });
+    check('  while an id that can already be one is left exactly as it is',
+      short.body?.element?.id === 'cap2', String(short.body?.element?.id));
+  }
+
   // --- a note is written by rename (TASK-061, ADR 0015) -------------------
   //
   // Not "the file has the right contents afterwards", which a bare
