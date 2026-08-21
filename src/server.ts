@@ -506,7 +506,7 @@ wss.on('connection', (ws: WebSocket, req) => {
 });
 
 // Schema validation
-const CreateElementSchema = z.object({
+const CreateElementSchema = z.looseObject({
   id: z.string().optional(), // Allow passing ID for MCP sync
   type: z.enum(Object.values(EXCALIDRAW_ELEMENT_TYPES) as [ExcalidrawElementType, ...ExcalidrawElementType[]]),
   x: z.number(),
@@ -571,9 +571,9 @@ const CreateElementSchema = z.object({
   fileId: z.string().optional(),
   status: z.string().optional(),
   scale: z.tuple([z.number(), z.number()]).optional(),
-}).passthrough();
+});
 
-const UpdateElementSchema = z.object({
+const UpdateElementSchema = z.looseObject({
   id: z.string(),
   type: z.enum(Object.values(EXCALIDRAW_ELEMENT_TYPES) as [ExcalidrawElementType, ...ExcalidrawElementType[]]).optional(),
   x: z.number().optional(),
@@ -641,7 +641,7 @@ const UpdateElementSchema = z.object({
   fileId: z.string().optional(),
   status: z.string().optional(),
   scale: z.tuple([z.number(), z.number()]).optional(),
-}).passthrough();
+});
 
 // API Routes
 
@@ -1472,7 +1472,7 @@ app.post('/api/elements/from-mermaid', (req: Request, res: Response) => {
 // rather than twenty (ADR 0015, TASK-068). Who is writing decides two things
 // and nothing else — see `origin`.
 const ElementChangesSchema = z.object({
-  upserts: z.array(z.record(z.any())).default([]),
+  upserts: z.array(z.record(z.string(), z.any())).default([]),
   deletes: z.array(z.string()).default([]),
   /**
    * Who is writing. Absent means the browser, which was this route's only
@@ -1954,7 +1954,7 @@ function broadcastSelection(): void {
 app.post('/api/selection', (req: Request, res: Response) => {
   const parsed = SelectionSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ success: false, error: parsed.error.errors[0]?.message ?? 'Invalid selection' });
+    return res.status(400).json({ success: false, error: parsed.error.issues[0]?.message ?? 'Invalid selection' });
   }
 
   const { elementIds, clientId } = parsed.data;
@@ -2038,7 +2038,7 @@ const PaneSchema = z.object({
 app.post('/api/panes', (req: Request, res: Response) => {
   const parsed = PaneSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ success: false, error: parsed.error.errors[0]?.message ?? 'Invalid pane' });
+    return res.status(400).json({ success: false, error: parsed.error.issues[0]?.message ?? 'Invalid pane' });
   }
   const frontend = frontendState(parsed.data.build);
   const staleFrontend = frontend.stale ? frontend : undefined;
@@ -2569,7 +2569,7 @@ const viewportRequestSchema = z.object({
 
   if (modes !== 1) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       message: 'Specify exactly one viewport mode: scrollToContent, scrollToElementIds, scrollToElementId, or manual zoom/offset'
     });
   }
@@ -2577,7 +2577,7 @@ const viewportRequestSchema = z.object({
       params.scrollToContent !== true &&
       params.scrollToElementIds === undefined) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       path: ['viewportZoomFactor'],
       message: 'viewportZoomFactor requires scrollToContent or scrollToElementIds'
     });
@@ -3459,13 +3459,13 @@ app.get('/api/library', (_req: Request, res: Response) => {
 app.put('/api/library', (req: Request, res: Response) => {
   try {
     const body = z.object({
-      items: z.array(z.object({
+      items: z.array(z.looseObject({
         id: z.string(),
         status: z.enum(['published', 'unpublished']).optional(),
         elements: z.array(z.any()),
         created: z.number().optional(),
         name: z.string().optional()
-      }).passthrough())
+      }))
     }).parse(req.body ?? {});
 
     const items: LibraryItem[] = body.items.map(item => ({
