@@ -773,11 +773,51 @@ whose socket has dropped could otherwise let a hand draw into a write nobody
 will accept. `check-live-session` kills the canvas under a live pane and asserts
 the pane stops accepting a touch.
 
-**What it does not do.** A second canvas over one vault is excluded correctly,
-because exclusion reads the file, but its panes learn a board is held when a
-write is refused rather than before the touch. Nothing polls the lock
-directory. TASK-080 is where that gap starts to cost something, because a claim
-held for minutes is one a person needs to see.
+**An agent may claim a board for longer than one write** (TASK-080). The
+per-write lock does not fit an agent that knows it is about to redraw a board:
+taking and releasing it twenty times leaves nineteen gaps for somebody else,
+and the board is never once in the state it was meant to be in.
+
+```bash
+./bin/canvas claim --board payments --reason "redrawing the payment path" [--for 10m]
+./bin/canvas release --board payments
+```
+
+`claim_board` and `release_board` are the same two over MCP. **An agent carries
+nothing between them**: the claim lives on the canvas against the board, so
+every write naming that board joins the claim's hold rather than taking its own.
+That is what makes claiming usable from a surface that is a fresh process per
+command — there is no session, and nothing to thread through. Claiming again
+extends and updates the reason; a write does not, or the expiry meant to bound a
+working agent would be pushed along by the work.
+
+**The canvas renews, because an agent between two commands does not exist.**
+Nothing could tell one reading code for two minutes from one that died. So the
+lease and its renewal bound a dead *canvas* (`CLAIM_LEASE_MS`, one lease and the
+board is free), the claim's own deadline bounds an agent that walked away
+(`CLAIM_DEFAULT_MS`, ten minutes, `CLAIM_MAX_MS` at most), and the person bounds
+it at any moment.
+
+**The pane says who has the board and why, and offers one tap to take it back.**
+Only for a claim: a per-write hold is twenty milliseconds and a banner for it
+would be a flicker under somebody's hand, which is why `claimed` is on the lock
+record rather than guessed from the reason. One deliberate tap and not any
+touch, because a held board still pans and zooms — watching an agent work must
+not end its work — and because nothing already written is put back.
+
+**Revoking is not undoing.** The write in flight finishes, everything written
+stays, and the agent's next act, write or fresh claim, is refused once with
+`CLAIM_REVOKED` and told the board is part way through whatever it was doing.
+Once: it cannot keep the board by asking again, and it is not locked out of a
+board it may be asked to work on next. So an agent holding a claim leaves the
+board sensible after each write, or works on a variant and swaps.
+
+**A second canvas over one vault now hears about a claim before the touch, not
+at the write.** Its panes were always excluded correctly, because exclusion
+reads the lock file, but nothing told them and nothing polled. A canvas with a
+browser attached now reads the lock files of the boards on its screen once per
+renewal interval; a canvas with no tab open reads nothing, because a pane exists
+only while something renders it and there is nobody to be wrong.
 
 This is a different refusal from ADR 0006's. The mutex handles archboard's own
 concurrency; the hash check catches Obsidian, a sync client and a text editor,

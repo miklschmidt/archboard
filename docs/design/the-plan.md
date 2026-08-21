@@ -605,8 +605,22 @@ The trailing debounce means the choice is between a new immediate message from
 the pane and a different definition of when a human's hold begins.
 
 **What happens to an agent's in-flight work when a human revokes a claim.**
-Owned by TASK-080. ADR 0016 says the agent is told and stops, which is clear
-about the agent and silent about the half-drawn board it leaves behind.
+Answered by TASK-080, and written into ADR 0016 beside "revoking is not
+undoing", which is where a reader of that sentence will look for it. Nothing is
+rolled back and nothing is stopped: the write already running finishes, because
+half a note is the corruption every write being one whole note exists to
+prevent; everything already written stays, because an undo would be a third
+writer arriving unasked at the moment somebody took the board in order to write
+it themselves; and the agent is told once, so that it can neither keep the
+board by asking again nor be locked out of a board it may be asked to work on
+next. What it owes after that is a sentence about the state it left the board
+in, which is TASK-081's to teach.
+
+The same task narrowed "a touch revokes the claim" to one deliberate act on the
+pane. A held board still pans and zooms, so watching an agent redraw it would
+otherwise end the redraw, and since nothing is put back, a hand resting on a
+75-inch display would leave a half-finished restructure with nobody having
+decided anything.
 
 ## Where the ten open tasks land
 
