@@ -99,6 +99,13 @@ export function CanvasPane({
       )}
       <div className="pane-canvas" ref={session.attachPaneElement}>
         <Excalidraw
+          // Somebody else is writing this board, or this pane has lost the
+          // socket the lock is broadcast over and cannot know (ADR 0016). A
+          // canvas applies a drag the instant a finger moves, so the touch has
+          // to be refused before it happens rather than the write after it.
+          // View mode is Excalidraw's own word for that: the scene still pans,
+          // zooms and renders, and nothing about it can be edited.
+          viewModeEnabled={session.readOnly}
           excalidrawAPI={(instance: ExcalidrawImperativeAPI) => {
             setApi(instance)
             session.attachExcalidraw(instance)

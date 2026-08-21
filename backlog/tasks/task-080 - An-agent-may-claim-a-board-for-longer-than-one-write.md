@@ -4,6 +4,7 @@ title: An agent may claim a board for longer than one write
 status: To Do
 assignee: []
 created_date: '2026-08-20 20:17'
+updated_date: '2026-08-21 14:50'
 labels: []
 dependencies:
   - TASK-067
@@ -44,3 +45,21 @@ SURFACES. Claiming and releasing are agent actions, so they need a CLI command a
 - [ ] #6 Claiming and releasing exist on both the CLI and MCP, proven by check-surface-parity
 - [ ] #7 A check shows a claim surviving twenty writes with no gap another writer could take
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @claude
+created: 2026-08-21 14:50
+---
+TASK-067 landed the per-write mutex (src/core/board-lock.ts). Three things it left shaped for this one.
+
+THE CLAIM IS holdBoard WITH A LONGER LEASE AND A REASON. The lock is already reentrant by holder id, so renewing is calling holdBoard again with the same id; `leaseMs` and `reason` are already arguments and the reason already travels to the panes on the board_lock message and into the refusal sentence ("held by an agent (redrawing payments)"). What is missing is a CLI command, an MCP tool, and a holder id an agent keeps across requests instead of the per-request one src/server.ts:holderFromRequest mints.
+
+A HUMAN TAKING IT BACK IS releaseHold PLUS ONE RULE. Today a person's hold is refused while an agent holds the board, and the pane goes read-only. Revocation is the opposite: a touch takes the board from the agent. The place for it is the /api/boards/hold route, which already knows the holder is a person; it needs to steal rather than be refused when the current holder is an agent with a claim, and the agent needs to be told, which is what board_lock's holder field already carries.
+
+THE PANE SHOWS WHO AND WHY. useCanvasSession returns `heldBy` next to `readOnly` and nothing renders it yet. That was left deliberately: for a 20 ms write there is nothing worth saying.
+
+AND ONE REAL GAP THIS TASK INHERITS. A second canvas over the same vault is excluded correctly, because exclusion reads the lock file, but its panes learn a board is held when a write is refused rather than before the touch — nothing polls the lock directory. ADR 0016 now records that. For a per-write hold it costs milliseconds; for a claim running minutes it is a pane that is wrong for minutes, so the poll belongs here.
+---
+<!-- COMMENTS:END -->

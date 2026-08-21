@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-20 20:17'
-updated_date: '2026-08-21 14:46'
+updated_date: '2026-08-21 14:50'
 labels: []
 dependencies:
   - TASK-078
@@ -107,6 +107,20 @@ VERIFICATION. bun run test, 22 steps, green, including both real-browser checks.
 
 ENVIRONMENT, not this task: the shared node_modules has zod 4.4.3 installed under it while bun.lock pins 3.25.76, which fails type-check in four places on a clean tree (mcp-dispatch.ts:150, server.ts x3). This worktree's node_modules was replaced with per-package symlinks to the shared tree plus a real zod 3.25.76, so the suite ran against the version the lockfile names. Nothing was written to the shared tree.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @claude
+created: 2026-08-21 14:50
+---
+TASK-067 owns the mechanism for "this board is not accepting changes right now", and it is available to this task rather than needing a second one.
+
+A pane is read-only when `useCanvasSession` returns `readOnly` true, which is `!connected || heldBy !== null`; `heldBy` comes from the `board_lock` message and nothing else sets it. CanvasPane passes it to Excalidraw as `viewModeEnabled`. If this task needs a pane to stop accepting a touch after ADR 0006's refusal — a note that changed on disk underneath us — the honest way is another reason for `heldBy` rather than a second read-only path beside it, because two mechanisms for one state is how they drift.
+
+The two refusals stay separate, as ADR 0016 says: the mutex handles archboard's own concurrency and answers 409 with `code: BOARD_HELD` and a holder; the hash check catches Obsidian, a sync client and a text editor and answers 409 with `conflict` and the three outcomes. src/server.ts:boardErrorStatus and boardErrorBody handle both.
+---
+<!-- COMMENTS:END -->
 
 ## Final Summary
 

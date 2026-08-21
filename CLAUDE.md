@@ -40,7 +40,8 @@ bun run build       # frontend only -> dist/frontend/
 bun run type-check
 bun run test        # type-check, CI coverage, module scope, then stdio wire,
                     # loopback bind, obsidian, changes, one write per intent,
-                    # geometry, text metrics, labels, library, boards + panes,
+                    # one writer at a time, geometry, text metrics, labels,
+                    # library, boards + panes,
                     # branch vs redraw, proposal beside source, skill install,
                     # repo bindings, CLI/MCP surface parity, staleness, hot
                     # reload, a board rendered in a real browser, and a long
@@ -143,7 +144,11 @@ window that maps steals focus under Hyprland and these run on every push.
   property rather than a claim: the bugs it exists to catch — a label
   multiplying, a rename coming back — need a session to build up in. About
   twenty seconds, and it skips the build when `dist/frontend` is already newer
-  than every source, so the two browser checks build once between them.
+  than every source, so the two browser checks build once between them. It also
+  owns the half of the board mutex only a renderer can answer (ADR 0016): the
+  pane accepts a touch on a free board, refuses one the moment somebody else
+  takes the board, and — with the canvas killed under it — assumes the board is
+  held rather than free.
 
 **A push runs the whole chain** (TASK-082). `.github/workflows/ci.yml` runs
 `bun run test` and nothing else, so a check added to `package.json` runs on
@@ -698,9 +703,85 @@ makes "overwrite" mean what you are looking at. A board no pane is holding has
 no screen to take, so its held copy stays their note plus whatever an agent has
 drawn on it since, and `held.fromScreen` says which of the two you have.
 
-Nothing is locked, and the check reads the file rather than another app's
-memory, so a board open in Obsidian can still write its own copy back
-afterwards: **keep a board open in one editor at a time.**
+Nothing about that check locks anything, and it reads the file rather than
+another app's memory, so a board open in Obsidian can still write its own copy
+back afterwards: **keep a board open in one editor at a time.**
+
+## One writer at a time
+
+**A board has a mutex** (TASK-067, ADR 0016). An agent takes it to write; a
+person takes it by touching the canvas; nobody else writes while it is held.
+Two writers to one note lose each other's work, and a tidy merge of an agent
+redrawing a subsystem with a person dragging a box is a blend neither asked
+for. Exclusion says the true thing: one of you is editing this board.
+
+`src/core/board-lock.ts` is the whole of it, and the interface is one call:
+
+```ts
+await withBoardLock({ board, holder }, () => persistBoard(...))
+```
+
+It writes, or it throws a `BoardHeldError` naming the holder and how long they
+have had the board. Waiting, renewing, expiring a holder that died and telling
+the panes all sit behind that, because a lock every caller assembles for itself
+is a lock whose callers drift apart.
+
+**The lock is a lease file in the vault**, at
+`<vault>/.archboard/locks/<board>.lock`, not a flag in a process. The note is
+the board (ADR 0015) and more than one canvas may serve one vault, so a lock
+held in memory does not exist to the other one. A lease rather than a flag
+because a holder that died mid-write would leave a flag set forever and a board
+nobody can write until somebody finds and deletes a file they have never heard
+of. The first crash costs one lease. `bun run test:lock` proves the exclusion
+with two processes over one vault, which is the one thing an in-process mutex
+could not do.
+
+**One express middleware takes it**, over every request that could change a
+board, deny by default: a non-GET naming a board is a write unless it is in the
+exemption table with the reason it is not. A route added later and not thought
+about locks a board it did not need to, which costs milliseconds; the other way
+round costs a lost update nobody would see. Routes that wait on the browser stay
+out, `from-mermaid` above all, because its write arrives afterwards as the
+converting pane's own change report and that report is locked. Holding the board
+across that wait would be holding it against the thing that ends the wait.
+
+**A person's hold is a gesture, not a session.** Holding it while a board is on
+screen would block every agent for as long as anybody is looking at the wall.
+Nothing used to reach the server at the start of a gesture, because reporting is
+a trailing debounce with no maximum wait, so the pane has a second message that
+does: `POST /api/boards/hold` on the leading edge of the first change, again
+every `LOCK_RENEW_MS` while the hand keeps moving, and a release once the report
+has landed and nothing new has arrived. A fold over every field a hand can
+change tells an edit from a scroll, a zoom, a selection, or this pane going in
+and out of read-only.
+
+**The wait runs both ways and the two numbers differ on purpose.** An agent
+waits `LOCK_WAIT_CAP_MS` for a person, because a gesture is short and the agent
+has nothing else to do; it then says who has the board and since when, so a
+voice session has something to say instead of going silent. A person waits
+`REPORT_DEBOUNCE_MS` for an agent, because an agent's write is about twenty
+milliseconds and a hand that landed inside one has not lost the board. Telling
+them they had would be an agent making a 75-inch display stop responding.
+
+**The lock is a broadcast, not only a guard.** A canvas applies a change the
+instant a finger moves, so refusing that change at write time would take the
+board away mid-gesture. `board_lock` goes to every pane holding the board
+instead, and a pane that is not the holder goes into Excalidraw's view mode, so
+the touch never happens. **That gate fails closed**: `!connected || heldByOther`.
+Lock news travels over the socket, change reports deliberately do not, so a pane
+whose socket has dropped could otherwise let a hand draw into a write nobody
+will accept. `check-live-session` kills the canvas under a live pane and asserts
+the pane stops accepting a touch.
+
+**What it does not do.** A second canvas over one vault is excluded correctly,
+because exclusion reads the file, but its panes learn a board is held when a
+write is refused rather than before the touch. Nothing polls the lock
+directory. TASK-080 is where that gap starts to cost something, because a claim
+held for minutes is one a person needs to see.
+
+This is a different refusal from ADR 0006's. The mutex handles archboard's own
+concurrency; the hash check catches Obsidian, a sync client and a text editor,
+which respect none of it.
 
 **A write that is allowed goes through a rename, so a reader sees the old note
 or the new one and never a partial** (TASK-061, `src/core/atomic-write.ts`).

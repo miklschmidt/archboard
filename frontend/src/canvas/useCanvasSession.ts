@@ -22,10 +22,13 @@ import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
 import type { LibraryItems } from '@excalidraw/excalidraw/types'
 import { convertMermaidToExcalidraw, DEFAULT_MERMAID_CONFIG } from '../utils/mermaidConverter'
-import type { BoardHold, BoardIdentity, PaneStatus, ServerElement, WebSocketMessage } from '../types'
+import type { BoardHold, BoardIdentity, LockHolder, PaneStatus, ServerElement, WebSocketMessage } from '../types'
 import { cleanElementForExcalidraw, elementsForScene } from './elements'
 import { baselineFrom, diffAgainstBaseline, fingerprint, isEmpty, type Baseline } from './changes'
-import { BoardConflictError, fetchElements, fetchFiles, loadedBundle, reportChanges, reportPane } from './api'
+import {
+  BoardConflictError, fetchElements, fetchFiles, holdBoard, loadedBundle, releaseBoard, reportChanges,
+  reportPane
+} from './api'
 import type { PaneReport } from './api'
 
 // Messages that say what is on a board, as opposed to messages about the board.
@@ -47,12 +50,99 @@ const CONTENT_MESSAGES = new Set([
 // tuned on its own is one tuned in ignorance of the rest (ADR 0016). The
 // reasons for the numbers are there too.
 import {
+  LOCK_RENEW_MS,
   PANE_DEBOUNCE_MS,
   REPORT_DEBOUNCE_MS,
   REPORT_RETRY_MS,
   SELECTION_DEBOUNCE_MS,
   SOCKET_RECONNECT_MS
 } from '../../../src/core/timing'
+
+/**
+ * The holder a pane assumes before it has been told who has the board.
+ *
+ * Not a real holder and never printed as one: it is how "I do not know" is
+ * spelled in the one field that decides whether a pane accepts a touch, and
+ * ADR 0016 says not knowing means held. It is replaced by the truth one message
+ * later, or by nothing if the board is free.
+ */
+const UNKNOWN_HOLDER: LockHolder = {
+  id: '', kind: 'agent', since: '', until: '', process: '', reason: 'not yet known'
+}
+
+/**
+ * Everything about an element that a hand can change.
+ *
+ * Not everything about an element: `boundElements`, `containerId`, `customData`
+ * and the server's own bookkeeping move when the server writes them and never
+ * under somebody's finger, and the whole point of the stamp below is to tell
+ * those two apart. A field wrongly left out here costs a leading-edge hold and
+ * a skipped resync on an edit nobody can make in a canvas; a field wrongly put
+ * in costs both on news that arrived from the server.
+ */
+const HUMAN_FIELDS = [
+  'x', 'y', 'width', 'height', 'angle', 'isDeleted', 'text', 'fontSize', 'fontFamily',
+  'textAlign', 'verticalAlign', 'backgroundColor', 'strokeColor', 'strokeStyle',
+  'strokeWidth', 'fillStyle', 'roughness', 'opacity', 'link', 'locked',
+  'startArrowhead', 'endArrowhead', 'index'
+] as const
+
+function fold(hash: number, value: unknown): number {
+  if (typeof value === 'number') return (hash * 31 + Math.round(value * 64)) | 0
+  if (typeof value === 'boolean') return (hash * 31 + (value ? 1 : 2)) | 0
+  if (typeof value === 'string') {
+    let folded = (hash * 31 + value.length) | 0
+    for (let at = 0; at < value.length; at += 1) folded = (folded * 31 + value.charCodeAt(at)) | 0
+    return folded
+  }
+  return (hash * 31) | 0
+}
+
+/**
+ * A cheap answer to "did the drawing change, or only the view of it".
+ *
+ * `onChange` fires for scrolling, zooming and selecting, and — since the lock —
+ * for this pane going in and out of read-only when a board changes hands. None
+ * of those is an edit. Acting on them costs two things that both showed up as
+ * bugs: an agent blocked for a second every time somebody pans the wall, and a
+ * resync skipped because a broadcast read as a hand moving (`check-live-session`
+ * caught the second, as a missing `boundElements` entry).
+ *
+ * `version` alone is not enough to tell them apart. Excalidraw bumps it on
+ * every element *it* mutates, so a real drag moves it — but a scene handed
+ * straight to `updateScene` keeps whatever version its elements carry, and that
+ * is how anything that is not a pointer writes to a canvas, including this
+ * project's own checks. So the fields go in too, and the two together see an
+ * edit whichever door it came through.
+ *
+ * Arithmetic and character codes over the scene on every frame: a few thousand
+ * operations on a board four times larger than any real one. Deliberately not
+ * `diffAgainstBaseline`, which sorts and stringifies every element and is the
+ * expensive thing the report debounce exists to do once per gesture.
+ */
+function sceneStamp(api: ExcalidrawImperativeAPI | null): string {
+  if (!api) return ''
+  const elements = api.getSceneElementsIncludingDeleted()
+  let hash = elements.length
+  for (const element of elements) {
+    const fields = element as unknown as Record<string, unknown>
+    hash = fold(hash, fields.id)
+    hash = fold(hash, fields.version)
+    for (const field of HUMAN_FIELDS) hash = fold(hash, fields[field])
+    // A path by its length and its far end, rather than every point of it: a
+    // freedraw stroke can carry hundreds and this runs on every frame. Bending
+    // an arrow moves its last point, and dragging one moves its x and y.
+    const points = fields.points
+    if (Array.isArray(points)) {
+      hash = fold(hash, points.length)
+      const last = points[points.length - 1] as number[] | { x: number; y: number } | undefined
+      if (Array.isArray(last)) hash = fold(fold(hash, last[0]), last[1])
+      else if (last) hash = fold(fold(hash, last.x), last.y)
+    }
+    hash = fold(hash, Array.isArray(fields.groupIds) ? fields.groupIds.length : 0)
+  }
+  return String(hash)
+}
 
 export interface CanvasSessionOptions {
   paneId: string
@@ -97,6 +187,17 @@ export interface CanvasSession {
   board: BoardIdentity | null
   handleChange: (appState: { selectedElementIds?: Record<string, boolean>; theme?: string } | null) => void
   markInteracted: () => void
+  /**
+   * Is somebody else writing this board, or can this pane not tell?
+   *
+   * The canvas goes into Excalidraw's view mode while it is true, which is what
+   * ADR 0016 means by stopping accepting changes *before* the touch: a canvas
+   * applies a drag the instant a finger moves, so refusing the write afterwards
+   * would take the board away mid-gesture.
+   */
+  readOnly: boolean
+  /** Who has it, when somebody does. For saying so on screen; TASK-080 is where that lands. */
+  heldBy: LockHolder | null
 }
 
 export function useCanvasSession({
@@ -149,6 +250,27 @@ export function useCanvasSession({
   const localEditsRef = useRef(0)
   const userInteractedRef = useRef(false)
   const lastChangeAtRef = useRef<string | null>(null)
+
+  // ── The board's mutex (ADR 0016) ──
+  // Does this pane hold the board's lock right now, and when did it last say
+  // so? Refs rather than state: nothing renders off them, and they are read
+  // inside callbacks that must see the current value rather than the one that
+  // was current when they were made.
+  const holdingRef = useRef(false)
+  const lastHoldAtRef = useRef(0)
+  // What the scene last hashed to, so a scroll can be told from an edit without
+  // diffing the board on every frame.
+  const sceneStampRef = useRef('')
+  /**
+   * Who is writing this board, if it is not us. Non-null means read-only.
+   *
+   * It starts held and stays held until the server says otherwise. A pane that
+   * does not know is a pane that has not been told, and ADR 0016 says a pane
+   * that cannot be told assumes the board is held rather than that it is free.
+   * The server sends the lock state immediately behind every board it hands a
+   * pane, so "does not know" lasts one message.
+   */
+  const [heldBy, setHeldBy] = useState<LockHolder | null>(UNKNOWN_HOLDER)
 
   const selectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const publishedSelectionRef = useRef('')
@@ -306,6 +428,11 @@ export function useCanvasSession({
     setTimeout(() => {
       suppressRef.current = Math.max(0, suppressRef.current - 1)
       after()
+      // The server's news moved the scene, so it moved the stamp. Taking the
+      // new one here is what stops the next thing a human does reading as a
+      // change *plus* whatever another writer had just done, and taking the
+      // board for a broadcast that had nothing to do with them.
+      sceneStampRef.current = sceneStamp(apiRef.current)
       publishStatus()
     }, 0)
   }, [publishStatus])
@@ -368,6 +495,104 @@ export function useCanvasSession({
       captureUpdate: CaptureUpdateAction.NEVER
     })
   }, [settle])
+
+  // Re-read THIS pane's board from the server. Deliberately not "what board is
+  // the server on": there is no such thing, and a pane that asked would be at
+  // risk of adopting another pane's board (ADR 0009). A pane learns which board
+  // it holds from the server addressing it — initial_elements, board_switched —
+  // and nowhere else.
+  const loadBoard = useCallback(async (): Promise<void> => {
+    if (!apiRef.current || !boardKeyRef.current) return
+    try {
+      const { elements } = await fetchElements(boardKeyRef.current)
+      applyServerScene(elementsForScene(elements.map(cleanElementForExcalidraw)))
+      const { files } = await fetchFiles(boardKeyRef.current)
+      if (files && Object.keys(files).length > 0) apiRef.current?.addFiles(Object.values(files) as any)
+    } catch (error) {
+      console.error('Could not load the board:', error)
+    }
+  }, [applyServerScene])
+
+  // ─── The board's mutex ───────────────────────────────────────
+  //
+  // One writer at a time (ADR 0016). Two halves, and they answer different
+  // questions.
+  //
+  // TAKING IT is the pane's job, on the leading edge of a gesture, because a
+  // change report is a trailing debounce with no maximum wait: a continuous
+  // drag says nothing until 400 ms after the finger lifts, by which point the
+  // change is already on screen and refusing it would take the board away
+  // mid-gesture. So the first change of a gesture sends a hold, and the write
+  // that follows joins it rather than taking a second one.
+  //
+  // NOT DRAWING AT ALL is the other half, and it is what the ADR means by "the
+  // lock is a broadcast, not only a guard". A pane whose board somebody else is
+  // writing goes into Excalidraw's view mode, so the touch never happens. That
+  // gate fails closed: `!connected` is read-only, because lock news arrives
+  // over the socket and a pane that cannot hear it must assume the board is
+  // held rather than that it is free.
+
+  /**
+   * The board is somebody else's, and this pane was in the middle of something.
+   *
+   * The board is re-read and whatever was in hand is dropped. Keeping it and
+   * reporting it once the lock frees would be merging two people's edits to one
+   * board, which is the thing exclusion exists instead of. The window this can
+   * happen in is one broadcast's latency — the pane goes read-only when the
+   * news arrives, so a hand cannot get far past it.
+   */
+  const loseBoard = useCallback((holder: LockHolder | null): void => {
+    holdingRef.current = false
+    setHeldBy(holder ?? UNKNOWN_HOLDER)
+    if (reportTimerRef.current) { clearTimeout(reportTimerRef.current); reportTimerRef.current = null }
+    if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); retryTimerRef.current = null }
+    void loadBoard()
+  }, [loadBoard])
+
+  /**
+   * Take the board, or say again that we still have it.
+   *
+   * Renewal is the same call: the lock is reentrant by holder, so asking again
+   * refreshes the lease and nothing else. Rate-limited to LOCK_RENEW_MS so a
+   * drag costs one request per second rather than one per frame, and that is
+   * also what keeps a long gesture's lease alive — the lease is deliberately
+   * too short to cover one on its own.
+   */
+  const takeHold = useCallback((): void => {
+    const target = boardKeyRef.current
+    if (!target) return
+    const now = Date.now()
+    if (holdingRef.current && now - lastHoldAtRef.current < LOCK_RENEW_MS) return
+    lastHoldAtRef.current = now
+    void holdBoard(target, clientId).then((reply) => {
+      // A board switch landed while this was in flight: the answer is about a
+      // board this pane is no longer holding.
+      if (boardKeyRef.current !== target) return
+      holdingRef.current = reply.held
+      if (!reply.held) loseBoard(reply.holder)
+    }).catch(() => {
+      // No answer. Not ours, then — and the write that follows will take the
+      // board on its own behalf or be refused, which is the same outcome
+      // arriving a beat later.
+      holdingRef.current = false
+    })
+  }, [clientId, loseBoard])
+
+  /**
+   * Give the board back, once the gesture is over and its write has landed.
+   *
+   * A person's hold is a gesture and not a session: holding it for as long as a
+   * board is on screen would block every agent for as long as anybody is
+   * looking at the wall. "Over" is a report on the wire with nothing queued
+   * behind it — a pending debounce or retry means the hand is still moving, and
+   * releasing there would hand the board over mid-gesture.
+   */
+  const releaseIfIdle = useCallback((): void => {
+    if (!holdingRef.current) return
+    if (reportTimerRef.current || retryTimerRef.current) return
+    holdingRef.current = false
+    releaseBoard(boardKeyRef.current, clientId)
+  }, [clientId])
 
   // ─── Reporting what the human did ────────────────────────────
 
@@ -447,6 +672,10 @@ export function useCanvasSession({
         baselineRef.current = report.nextBaseline
       }
       noteChange()
+      // The gesture's write has landed. If nothing is queued behind it the hand
+      // has stopped, and the board goes back so an agent waiting on it is not
+      // waiting on somebody who has finished (ADR 0016).
+      releaseIfIdle()
     } catch (error) {
       // Refused because the note changed underneath (ADR 0006). The board has
       // stopped saving from this moment; it is not a failure to retry into,
@@ -474,7 +703,10 @@ export function useCanvasSession({
     } finally {
       inFlightRef.current = false
     }
-  }, [applyServerScene, clientId, noteChange, publishStatus])
+    // `publishStatus` puts the hold in the pane's status when the write is
+    // refused (TASK-079); `releaseIfIdle` gives the board back when it lands
+    // (TASK-067). Both are called from the body, so both belong here.
+  }, [applyServerScene, clientId, noteChange, publishStatus, releaseIfIdle])
 
   /** Does this pane hold edits the server has not accepted? */
   const hasPendingChanges = useCallback((): boolean => {
@@ -494,16 +726,35 @@ export function useCanvasSession({
     // watching never writes, which is what makes a second pane safe.
     if (!userInteractedRef.current) return
     if (suppressRef.current > 0) return
-    // Past both gates, so this really is the human's own hand: the pane has
-    // been touched and nothing of the server's is being written into the scene.
+    // Past both gates, so this is the human's hand and not the server's news
+    // being written into the scene. It is still not necessarily an edit:
+    // `onChange` fires for a scroll, a zoom, a selection, and — since the lock
+    // — for this pane going in and out of read-only as a board changes hands.
+    // The stamp is what separates "the drawing moved" from "something else
+    // did", and everything below is for the first.
+    const stamp = sceneStamp(apiRef.current)
+    if (stamp === sceneStampRef.current) return
+    sceneStampRef.current = stamp
+
+    // Counted, because the reply to a report is only applied as a resync when
+    // nothing moved during its round trip (TASK-074). Counting anything else
+    // here is how that resync gets skipped for no reason, and it did: this used
+    // to count every `onChange`, so an agent's write — which broadcasts that
+    // the board is held, and again that it is free — read as two edits by the
+    // human, the resync was skipped, and the pane never learned about the
+    // `boundElements` entry that agent's new arrow had added to the shapes it
+    // joins. `check-live-session.mjs` names the element and the field.
     localEditsRef.current += 1
+    // And this is the leading edge the report itself cannot be: the board is
+    // taken now, rather than 400 ms after the finger lifts (ADR 0016).
+    takeHold()
     if (reportTimerRef.current) clearTimeout(reportTimerRef.current)
     reportTimerRef.current = setTimeout(() => {
       reportTimerRef.current = null
       if (suppressRef.current > 0) return
       void sendReport()
     }, REPORT_DEBOUNCE_MS)
-  }, [sendReport])
+  }, [sendReport, takeHold])
 
   // A tab being closed or hidden still owes the server its last few hundred
   // milliseconds of edits. sendBeacon survives the unload; fetch does not.
@@ -582,6 +833,17 @@ export function useCanvasSession({
       // we just arrived at.
       if (reportTimerRef.current) { clearTimeout(reportTimerRef.current); reportTimerRef.current = null }
       if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); retryTimerRef.current = null }
+      // A hold belongs to the board it was taken on, and this pane has stopped
+      // looking at that board.
+      if (holdingRef.current) {
+        holdingRef.current = false
+        releaseBoard(boardKeyRef.current, clientId)
+      }
+      // And the board we are arriving at is somebody else's until we are told
+      // it is not. The server sends that immediately behind the board itself,
+      // so this is the shortest possible "I have not been told" rather than a
+      // state a pane can be stuck in (ADR 0016).
+      setHeldBy(UNKNOWN_HOLDER)
       userInteractedRef.current = false
       publishedSelectionRef.current = ''
       baselineRef.current = new Map()
@@ -593,25 +855,13 @@ export function useCanvasSession({
     // that had just been pointed at another board would report the old one for
     // a third of a second.
     schedulePaneReport(true)
-  }, [publishStatus, schedulePaneReport, setBoardIdentity])
+  }, [clientId, publishStatus, schedulePaneReport, setBoardIdentity])
 
   // Re-read THIS pane's board. Deliberately not "what board is the server on":
   // there is no such thing, and a pane that asked would be at risk of adopting
   // another pane's board (ADR 0009). A pane learns which board it holds from
   // the server addressing it — initial_elements, board_switched — and nowhere
   // else.
-  const loadBoard = useCallback(async (): Promise<void> => {
-    if (!apiRef.current || !boardKeyRef.current) return
-    try {
-      const { elements } = await fetchElements(boardKeyRef.current)
-      applyServerScene(elementsForScene(elements.map(cleanElementForExcalidraw)))
-      const { files } = await fetchFiles(boardKeyRef.current)
-      if (files && Object.keys(files).length > 0) apiRef.current?.addFiles(Object.values(files) as any)
-    } catch (error) {
-      console.error('Could not load the board:', error)
-    }
-  }, [applyServerScene])
-
   // ─── Requests addressed to the browser ───────────────────────
 
   const answerExport = useCallback(async (data: WebSocketMessage): Promise<void> => {
@@ -828,6 +1078,20 @@ export function useCanvasSession({
         break
       }
 
+      // Who is writing this board (ADR 0016). The pane that holds the lock is
+      // told too, and has to recognise itself: the news that the board is held
+      // by *us* is the news that we may keep drawing.
+      //
+      // This is the only thing that opens a board back up. Everything else here
+      // errs the other way, which is the direction the ADR asks for.
+      case 'board_lock': {
+        const holder = data.holder ?? null
+        const mine = !!holder && holder.id === clientId
+        holdingRef.current = mine
+        setHeldBy(data.held && !mine ? holder : null)
+        break
+      }
+
       case 'canvas_cleared':
         applyServerScene([])
         noteChange()
@@ -955,12 +1219,19 @@ export function useCanvasSession({
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current)
       if (selectionTimerRef.current) clearTimeout(selectionTimerRef.current)
       if (paneTimerRef.current) clearTimeout(paneTimerRef.current)
+      // A pane going off the glass with the board in its hand. The lease would
+      // have covered it, and this is only so nobody waits out a lease for a
+      // pane that closed politely.
+      if (holdingRef.current) {
+        holdingRef.current = false
+        releaseBoard(boardKeyRef.current, clientId)
+      }
       paneObserverRef.current?.disconnect()
       // Closing the socket is also how this pane stops being reported: an
       // unsplit pane is off the glass, and the server drops it on the close.
       socketRef.current?.close(1000)
     }
-  }, [flushWithBeacon])
+  }, [clientId, flushWithBeacon])
 
   const handleChange = useCallback((appState: any): void => {
     handleSelectionChange(appState)
@@ -974,5 +1245,19 @@ export function useCanvasSession({
     userInteractedRef.current = true
   }, [])
 
-  return { attachExcalidraw, attachPaneElement, connected, board, handleChange, markInteracted }
+  return {
+    attachExcalidraw,
+    attachPaneElement,
+    connected,
+    board,
+    handleChange,
+    markInteracted,
+    // The gate, and it fails closed on both halves. Somebody else holds the
+    // board, or this pane has lost the socket the lock is broadcast over and
+    // cannot know (ADR 0016). Change reports are not gated on the socket and
+    // must not be, so edits already made still reach the server — what stops
+    // is the next one being made at all.
+    readOnly: !connected || heldBy !== null,
+    heldBy
+  }
 }
