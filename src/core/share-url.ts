@@ -1,7 +1,7 @@
 import { deflateSync } from 'zlib';
 import { webcrypto } from 'crypto';
 import { ServerElement } from '../types.js';
-import { expandElementsForExport } from './expand-elements.js';
+import { expandElements } from './expand-elements.js';
 
 // Excalidraw's concatBuffers: [4-byte version=1][4-byte len][chunk]...
 function concatBuffers(...bufs: Uint8Array[]): Uint8Array {
@@ -28,7 +28,7 @@ export async function exportToExcalidrawUrl(urlExportElements: ServerElement[]):
     throw new Error('Canvas is empty — nothing to export');
   }
 
-  const cleanedExportElements = expandElementsForExport(urlExportElements);
+  const cleanedExportElements = expandElements(urlExportElements);
 
   // Build .excalidraw scene JSON
   const excalidrawScene = {

@@ -313,7 +313,27 @@ export function canonicalizeKeys(v: any): any {
   return v;
 }
 
-export function expandElementsForExport(
+/**
+ * The conversion. There is one of it, and this is it (ADR 0015).
+ *
+ * It was called `expandElementsForExport` until TASK-089 went looking for two
+ * implementations of one thing and found the name instead: every board write
+ * goes through here as well, by way of `expandForBoard` below, so "for export"
+ * described half of what it does. `options.forStore` is the half it left out.
+ *
+ * Called two ways, and neither is a second implementation of anything:
+ *
+ *   · over a whole document, by `scene-io` on the way to a note and by
+ *     `share-url` on the way to a URL. Every element is in hand, so z-order is
+ *     restated across the lot.
+ *   · over one write, through `expandForBoard`, which is this call with
+ *     `forStore` and one thing done first.
+ *
+ * So the two cannot disagree about the same input, which is the property
+ * ADR 0015 asks for and the reason `readBoardFile` and `readNote` were a real
+ * problem while this pair was not.
+ */
+export function expandElements(
   sourceElements: ServerElement[],
   options: ExpandOptions = {}
 ): Record<string, any>[] {
@@ -601,13 +621,26 @@ export function expandElementsForExport(
 }
 
 /**
- * One agent write, converted: the elements to store.
+ * One agent write, converted against the board it lands on.
  *
  * This is the boundary ADR 0015 names, and the two callers that matter both go
  * through it — `src/server.ts` on every agent write, and `check-labels.mjs`,
  * which runs the label loop to exhaustion and would prove nothing about a copy
  * of this. What comes back is the elements handed in, now complete, followed
  * by any label the conversion had to expand.
+ *
+ * **It is not a second conversion and it does none of the converting.** All of
+ * that is `expandElements` above, which this calls. What is here is the one
+ * thing a partial write needs and a whole document does not: a write names a
+ * few elements and the board holds the rest, so a reference to a text element
+ * has to be squared against the board before anything can ask whether a
+ * container already has a label. Given the whole document that question
+ * answers itself, which is why the other entry point never asks it.
+ *
+ * TASK-089 went looking for two implementations meant to agree and this pair
+ * was on the list. They are not two: one calls the other, so no input can get
+ * two answers out of them, and `check-labels` asserts it rather than leaving
+ * this paragraph to hold the line on its own.
  */
 export function expandForBoard(
   written: ServerElement[],
@@ -651,7 +684,7 @@ export function expandForBoard(
     } as ServerElement;
   });
 
-  return expandElementsForExport(mended, {
+  return expandElements(mended, {
     forStore: true,
     inUse: { has: (id: string) => board.has(id) }
   }) as unknown as ServerElement[];
