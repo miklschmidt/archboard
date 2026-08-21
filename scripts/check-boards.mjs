@@ -1186,6 +1186,87 @@ try {
     check('  read back from the note, not invented empty',
       reopened.body?.elementCount === 2 && typeof reopened.body?.loadedAt === 'string',
       JSON.stringify(reopened.body));
+
+    // --- nothing is unsaved, so nothing is lost (TASK-078, ADR 0015) -------
+    //
+    // The check above saved first, which is the old shape of the promise: work
+    // survives a restart if somebody remembered to write it. The promise now is
+    // that there is nothing to remember — a write is a write to the note, so
+    // killing the canvas mid-thought costs the process and nothing else.
+    //
+    // Both kinds of board, because they used to fail differently: scratch had
+    // no home at all, and a `board new` board had one it had never been written
+    // to. Killed rather than asked to stop, because a shutdown hook that saved
+    // on the way out would pass this and would not be the property.
+    await scratchApi('POST', '/api/boards/new', { board: 'unsaved' });
+    await scratchApi('POST', '/api/elements?board=unsaved', {
+      type: 'rectangle', x: 40, y: 40, width: 123, height: 45, label: { text: 'never saved' }
+    });
+    await scratchApi('POST', '/api/elements?board=scratch', {
+      type: 'ellipse', x: 300, y: 300, width: 77, height: 33
+    });
+    const beforeKill = await scratchApi('GET', '/api/elements?board=scratch');
+
+    scratchCanvas.kill('SIGKILL');
+    await sleep(300);
+    scratchCanvas = await startScratchCanvas();
+
+    const survivedScratch = await scratchApi('GET', '/api/elements?board=scratch');
+    check('a board drawn on and never saved survives the canvas being killed',
+      (survivedScratch.body?.elements ?? []).some(el => el.type === 'ellipse' && el.width === 77),
+      JSON.stringify((survivedScratch.body?.elements ?? []).map(el => el.type)));
+    check('  with everything else on it, not just the last thing drawn',
+      (survivedScratch.body?.elements ?? []).length === (beforeKill.body?.elements ?? []).length,
+      `${(beforeKill.body?.elements ?? []).length} before, ${(survivedScratch.body?.elements ?? []).length} after`);
+
+    // A board `board new` started and nobody saved has a note the moment
+    // something is drawn on it, so it is in the vault to be reopened.
+    const reopenedUnsaved = await scratchApi('POST', '/api/boards/open', { board: 'unsaved' });
+    check('  and so does one that `board new` started and nobody saved',
+      reopenedUnsaved.status === 200 && reopenedUnsaved.body?.source === 'vault',
+      reopenedUnsaved.body?.error ?? reopenedUnsaved.body?.source);
+    const unsavedElements = await scratchApi('GET', '/api/elements?board=unsaved');
+    check('  holding what was drawn on it, label and all',
+      (unsavedElements.body?.elements ?? []).some(el => el.width === 123) &&
+      (unsavedElements.body?.elements ?? []).some(el => el.text === 'never saved'),
+      JSON.stringify((unsavedElements.body?.elements ?? []).map(el => el.type)));
+
+    // And the other half of the same fact: the process is not holding the
+    // board, so a change made to the note behind its back is what a read
+    // answers with. This is what "no authoritative copy between requests"
+    // means, said as a behaviour rather than as a field that is missing.
+    const notePath = (await scratchApi('GET', '/api/boards/info?board=unsaved')).body?.file;
+    const noteText = fs.readFileSync(notePath, 'utf-8');
+    fs.writeFileSync(notePath, noteText.replace('"width": 123', '"width": 321'));
+    const afterEdit = await scratchApi('GET', '/api/elements?board=unsaved');
+    check('a board edited on disk reads back changed, with no restart and no reload',
+      (afterEdit.body?.elements ?? []).some(el => el.width === 321),
+      JSON.stringify((afterEdit.body?.elements ?? []).map(el => el.width)));
+
+    // ADR 0006 has not gone anywhere: that edit is somebody else's work, and
+    // the next write is refused rather than quietly built on top of it.
+    const refused = await scratchApi('POST', '/api/elements?board=unsaved', {
+      type: 'rectangle', x: 0, y: 0, width: 10, height: 10
+    });
+    check('  and the next write is refused, because the note changed underneath',
+      refused.status === 409 && /Refusing to save/.test(refused.body?.error ?? ''),
+      `${refused.status} ${String(refused.body?.error ?? '').slice(0, 60)}`);
+    check('  offering the three outcomes rather than picking one',
+      Boolean(refused.body?.conflict?.outcomes?.reload &&
+        refused.body?.conflict?.outcomes?.overwrite &&
+        refused.body?.conflict?.outcomes?.saveAs),
+      JSON.stringify(refused.body?.conflict?.outcomes));
+    check('  and nothing was written, so the disk still holds their version',
+      fs.readFileSync(notePath, 'utf-8').includes('"width": 321'));
+
+    // Outcome one, and the way back: take the note.
+    const reloaded = await scratchApi('POST', '/api/boards/open', { board: 'unsaved', reload: true });
+    check('  taking the note un-sticks it, which is ADR 0006\'s first outcome',
+      reloaded.status === 200, reloaded.body?.error);
+    const resumed = await scratchApi('POST', '/api/elements?board=unsaved', {
+      type: 'rectangle', x: 0, y: 0, width: 11, height: 11
+    });
+    check('  and writing works again', resumed.status === 200, resumed.body?.error);
   } finally {
     scratchCanvas.kill('SIGTERM');
     await sleep(200);
