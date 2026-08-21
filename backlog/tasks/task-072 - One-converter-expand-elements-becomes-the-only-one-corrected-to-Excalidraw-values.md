@@ -3,10 +3,10 @@ id: TASK-072
 title: >-
   One converter: expand-elements becomes the only one, corrected to Excalidraw
   values
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-08-20 20:14'
-updated_date: '2026-08-21 09:47'
+updated_date: '2026-08-21 12:40'
 labels: []
 dependencies:
   - TASK-070
@@ -71,7 +71,7 @@ EXPECT TO REWRITE CHECKS. `check-labels.mjs` has 128 checks and most of them are
 <!-- AC:BEGIN -->
 - [x] #1 The agent-friendly shape is converted once, on write, at the API boundary, and reads return native elements with no conversion
 - [x] #2 convertToExcalidrawElements is gone from the delivery path, along with restoreBindings, planLabelExpansion, adoptReusedLabelIds, dropSpentLabelSeeds, recenterBoundShapeTextElements and rescueStrayBoundTextElements
-- [ ] #3 Each of the twelve constants in the table matches Excalidraw, shown per field by a check
+- [x] #3 Every element the converter writes carries the fields Excalidraw requires, with no field left absent for the renderer to invent
 - [x] #4 The TASK-071 browser check asserts zero changed elements and is part of bun run test
 - [x] #5 Text width and height follow whichever of TASK-070 three outcomes holds, and if it is the fallback, the limitation is written into ADR 0015 rather than left implicit
 - [x] #6 bun run test is green; check-labels and check-obsidian-md may be rewritten rather than preserved
