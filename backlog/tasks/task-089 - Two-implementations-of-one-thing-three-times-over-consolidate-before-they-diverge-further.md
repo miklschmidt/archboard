@@ -3,11 +3,11 @@ id: TASK-089
 title: >-
   Two implementations of one thing, three times over: consolidate before they
   diverge further
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-21 12:53'
-updated_date: '2026-08-21 13:30'
+updated_date: '2026-08-21 13:32'
 labels: []
 dependencies: []
 references:
