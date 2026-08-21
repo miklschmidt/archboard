@@ -67,6 +67,17 @@ export interface ReloadFacts {
    * what it was built to catch.
    */
   boards: Record<string, string>;
+  /**
+   * Board key to how many elements are on the copy of it this canvas is
+   * holding, for each board that has stopped saving (ADR 0006, TASK-079).
+   *
+   * The exception to the note above. Board content is in the vault and a
+   * reload cannot touch it — unless the board's note was taken over by another
+   * editor, in which case what is on that board is in this process and nowhere
+   * else, and a reload that dropped it would drop the only copy. So this one
+   * really is a count, and it is the only count left here.
+   */
+  held: Record<string, number>;
   /** Client id to the board that pane has been pointed at. */
   paneBoards: Record<string, string>;
   /** Client id to the pane it registered as. */
@@ -87,6 +98,12 @@ export function readFacts(): ReloadFacts {
     for (const [key, board] of boardMap) boards[key] = board.file ?? 'nowhere';
   }
 
+  const held: Record<string, number> = {};
+  const holdMap = keptValue<Map<string, { content: { elements: Map<string, unknown> } }>>('board-holds');
+  if (holdMap) {
+    for (const [key, hold] of holdMap) held[key] = hold.content?.elements?.size ?? 0;
+  }
+
   const paneBoards: Record<string, string> = {};
   const paneBoardMap = keptValue<Map<string, string>>('pane-boards');
   if (paneBoardMap) {
@@ -104,6 +121,7 @@ export function readFacts(): ReloadFacts {
 
   return {
     boards,
+    held,
     paneBoards,
     panes,
     sockets: socketSet ? socketSet.size : 0,
@@ -138,6 +156,21 @@ export function compareFacts(before: ReloadFacts, after: ReloadFacts): string[] 
   }
   for (const key of Object.keys(after.boards)) {
     if (!(key in before.boards)) complaints.push(`board "${key}" appeared out of nowhere`);
+  }
+
+  // A held board's elements are in this process and in no note, so this is the
+  // one loss a reload can still cause that costs somebody's drawing.
+  for (const [key, count] of Object.entries(before.held)) {
+    if (!(key in after.held)) {
+      complaints.push(
+        `board "${key}" had stopped saving and this canvas was holding its ${count} element(s); ` +
+        'that copy is gone, and it was the only one'
+      );
+    } else if ((after.held[key] ?? 0) < count) {
+      complaints.push(
+        `board "${key}" was holding ${count} element(s) it has not saved and now holds ${after.held[key] ?? 0}`
+      );
+    }
   }
 
   for (const [clientId, board] of Object.entries(before.paneBoards)) {
