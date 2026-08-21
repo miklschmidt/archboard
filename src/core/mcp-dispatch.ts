@@ -29,6 +29,8 @@ import {
   getSnapshot,
   sendMermaid,
   setRequestedBoard,
+  boardHoldSeen,
+  forgetBoardHold,
   ApiResponse,
   WriteAnswer
 } from './canvas-client.js';
@@ -185,12 +187,39 @@ async function writePlan(updates: PlanUpdate[], what: string): Promise<void> {
 }
 
 /**
+ * Every tool call, plus whether the board it touched is being saved.
+ *
+ * The canvas puts a hold on every answer about a board that has stopped saving
+ * (ADR 0006, TASK-079), and a client with no shell and no chrome has nowhere
+ * else to learn it: there is no bar to put a mark in, and the write it just
+ * made looked like it worked, because on the canvas it did. So it is appended
+ * here, to whatever the tool answered, in one place — a tool that had to
+ * remember would be the one that forgot.
+ */
+export async function callExcalidrawTool(
+  name: string,
+  args: Record<string, unknown> | undefined
+): Promise<CallToolResult> {
+  forgetBoardHold();
+  const result = await dispatchTool(name, args);
+  const held = boardHoldSeen();
+  if (!held) return result;
+  return {
+    ...result,
+    content: [
+      ...(Array.isArray(result.content) ? result.content : []),
+      { type: 'text', text: `\n${held.message}` }
+    ]
+  } as CallToolResult;
+}
+
+/**
  * Dispatches one `tools/call` invocation. Era-agnostic on purpose: the same
  * dispatcher backs a 2025-era connection opened with `initialize` and a
  * 2026-07-28 connection that starts with `server/discover` (or with a bare
  * `tools/call`), so tool behaviour can never drift between the two.
  */
-export async function callExcalidrawTool(
+async function dispatchTool(
   name: string,
   args: Record<string, unknown> | undefined
 ): Promise<CallToolResult> {

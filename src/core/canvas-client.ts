@@ -4,6 +4,7 @@ import type { PanesReport } from './panes.js';
 import { ServerElement } from '../types.js';
 import { EXPRESS_SERVER_URL, ENABLE_CANVAS_SYNC } from './config.js';
 import type { BoardWriteConflict } from './board.js';
+import type { HoldReport } from './board-hold.js';
 import type { CompareResult } from './compare.js';
 
 // API Response types
@@ -37,6 +38,29 @@ export function setRequestedBoard(key: string | null): void {
 
 export function currentRequestedBoard(): string | null {
   return requestedBoard;
+}
+
+// ---- Whether the board this invocation touched is being saved ----
+//
+// The canvas puts a `held` block on every answer about a board that has stopped
+// saving (ADR 0006, TASK-079), and it is worth saying whatever the command was:
+// an agent that draws on a held board is drawing into a copy that lives in the
+// canvas process and in no note. Kept here, next to the request that saw it, so
+// that the CLI and MCP each add it to their answer in one place rather than in
+// forty. One-shot process, so it lasts exactly one command.
+let heldBoard: HoldReport | null = null;
+
+export function boardHoldSeen(): HoldReport | null {
+  return heldBoard;
+}
+
+/**
+ * Forget what the last call saw. The CLI is one command and does not need it;
+ * an MCP server is a process that handles many calls, and a hold reported on
+ * the answer to a call that never asked about that board would be a lie.
+ */
+export function forgetBoardHold(): void {
+  heldBoard = null;
 }
 
 /** Attach the board to a request path, unless the caller already named one. */
@@ -212,6 +236,12 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   // rather than at 30 call sites, so a route can never be the one that forgot.
   const response = await fetch(`${EXPRESS_SERVER_URL}${withBoard(path)}`, init);
   const data = await response.json().catch(() => null) as any;
+  // Whether that board is saving. Read off every answer, refusals included,
+  // because the answer that most needs it is the one refusing the write that
+  // stopped it.
+  if (data && typeof data === 'object') {
+    heldBoard = data.held && typeof data.held === 'object' ? data.held as HoldReport : null;
+  }
   if (!response.ok) {
     const error = new Error(data?.error || `HTTP server error: ${response.status} ${response.statusText}`);
     // A refused board write is a result, not a fault: it carries the three
@@ -435,6 +465,19 @@ export interface BoardResponse {
   saveKind?: 'same-board' | 'named' | 'branch';
   /** The board the save read from, which is only interesting when it differs. */
   savedFrom?: string;
+  /**
+   * Set when this save was one of the two outcomes that end a hold: the board
+   * had stopped saving because its note changed underneath, and this write is
+   * what un-sticks it (ADR 0006, TASK-079). `overwrite` put the held copy over
+   * the note; `elsewhere` put it in a note of its own and left theirs alone.
+   */
+  resolvedHold?: {
+    board: string;
+    outcome: 'overwrite' | 'elsewhere';
+    /** How many changes were riding on the choice that was just made. */
+    writes: number;
+    since: string;
+  };
   /**
    * What the save did to the screen. `moved` is the panes it repointed at the
    * board just written, which only happens when scratch got a name; `kept` is

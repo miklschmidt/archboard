@@ -1,5 +1,5 @@
 import { CliUsageError } from './args.js';
-import { setRequestedBoard } from '../core/canvas-client.js';
+import { boardHoldSeen, setRequestedBoard } from '../core/canvas-client.js';
 import { packageVersion } from '../core/version.js';
 import * as server from './commands/server.js';
 import * as elements from './commands/elements.js';
@@ -448,6 +448,17 @@ export async function runCli(argv: string[]): Promise<void> {
   } catch (error) {
     if (!(error as any)?.quiet) {
       process.stderr.write(`Error: ${(error as Error).message}\n`);
+    }
+    // A refused write does not stop the board being drawn on, it stops the
+    // board being saved (ADR 0006, TASK-079). The refusal above has already
+    // listed the three outcomes, so this says only the part it does not: what
+    // happens to everything drawn between now and the choice.
+    const held = boardHoldSeen();
+    if (held) {
+      process.stderr.write(
+        `"${held.board}" has stopped saving. Changes from here are held on the canvas ` +
+        'and reach no note until one of those three is run.\n'
+      );
     }
     if (error instanceof CliUsageError) {
       process.stderr.write(`Usage: archboard ${command.usage}\n`);

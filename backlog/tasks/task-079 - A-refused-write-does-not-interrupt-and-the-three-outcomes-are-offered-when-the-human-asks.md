@@ -3,9 +3,11 @@ id: TASK-079
 title: >-
   A refused write does not interrupt, and the three outcomes are offered when
   the human asks
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-20 20:17'
+updated_date: '2026-08-21 14:00'
 labels: []
 dependencies:
   - TASK-078
@@ -48,3 +50,17 @@ THE HONEST LIMIT, WORTH WRITING DOWN WHERE A USER SEES IT. Reapplying held chang
 - [ ] #5 An agent write refused for the same reason still returns the conflict and still exits 5 from the CLI
 - [ ] #6 A check writes a note underneath a pane and asserts nothing was overwritten and nothing was lost
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. src/core/board-hold.ts: a per-board hold, in kept(). It carries the conflict that started it, when, how many writes it has taken since, and the board content itself. Beginning a hold is what a refused write does after refusing; clearing one is what an outcome does.
+2. readBoardContent() answers with the held copy while a board is held. One seam, so describe, query, compare, the change feed, the panes and every route read the same board without knowing about holds.
+3. persistBoard(): held boards take the write into the hold and do not touch the note or savedAt; unheld boards write as now, and a BoardWriteConflictError begins the hold and is still thrown. The write that trips it is refused clean — nothing captured — so an agent's retry is a retry and not a duplicate, and AC 1 and 5 stand.
+4. The pane learns from the 409 and immediately rebases: one report carrying its whole scene, accepted only into a held board, which makes the held copy what the human is looking at rather than their note plus one gesture. Until it lands the pane renders nothing the server sends, because the premise that a reply was computed from what this pane sent is broken.
+5. The mark: a chip in the board bar that says the board is not saving, and a button that summons the existing ConflictDialog. No modal fires on its own.
+6. The three outcomes, each clearing the hold: open --reload takes the note and discards the held copy; save --force writes the held copy over theirs; save --as writes the held copy to another note, releases the source to their version, and moves the panes with it - a deliberate exception to ADR 0012, because staying behind means watching your own work vanish.
+7. Agents: every write to a held board answers with the hold and the three commands; board list and board info carry it too. The CLI exits 5 on the refusal that starts a hold.
+8. Docs: ADR 0006 gains what ADR 0015 changed about when it fires, CLAUDE.md gains the hold, the skill and the parity note.
+9. check-boards gains the AC 6 block: write a note underneath, assert the refusal, assert the hold takes further writes without touching their note, then each of the three outcomes. Revert-proof and count.
+<!-- SECTION:PLAN:END -->

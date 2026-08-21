@@ -1000,6 +1000,34 @@ try {
   check('  while still saying the source stayed put',
     /the only pane still holds "ledger"/.test(branchedRoom.stderr), branchedRoom.stderr.trim());
 
+  // The second exception, and the last thing this pane is used for: saving a
+  // board that has STOPPED SAVING somewhere else does move the pane holding it
+  // (TASK-079). The rule is unchanged — you branch in order to compare, so the
+  // source stays where it is — but a held board is not a source anybody is
+  // comparing against. It is about to go back to the version another editor
+  // wrote, so a pane left on it would show the human their own work being
+  // replaced, one second after being told it was safe.
+  const ledgerNote = (await api('GET', '/api/boards/info?board=ledger')).body?.file;
+  fs.writeFileSync(ledgerNote, fs.readFileSync(ledgerNote, 'utf-8').replace(
+    '"type": "text"', '"id": "theirledger", "type": "text"'
+  ));
+  const ledgerRefused = await api('POST', '/api/elements?board=ledger', {
+    type: 'rectangle', x: 700, y: 700, width: 20, height: 20
+  });
+  check('a held board is the one branch that takes its pane with it: first it is held',
+    ledgerRefused.status === 409 && ledgerRefused.body?.held?.board === 'ledger',
+    `${ledgerRefused.status}`);
+  const heldElsewhere = await api('POST', '/api/boards/save?board=ledger', { name: 'ledger-mine' });
+  await sleep(150);
+  check('  and saving it elsewhere moves the pane onto the copy that has a home',
+    heldElsewhere.body?.resolvedHold?.outcome === 'elsewhere' &&
+    heldElsewhere.body?.panes?.moved?.map(p => p.place).join(',') === 'the only pane' &&
+    one.board() === 'ledger-mine',
+    `${JSON.stringify(heldElsewhere.body?.panes)} ${one.board()}`);
+  check('  rather than reporting it kept, which is what a branch of a saving board reports',
+    (heldElsewhere.body?.panes?.kept ?? []).length === 0,
+    JSON.stringify(heldElsewhere.body?.panes?.kept));
+
   one.socket.close();
   await sleep(200);
 
@@ -1270,6 +1298,165 @@ try {
       type: 'rectangle', x: 0, y: 0, width: 11, height: 11
     });
     check('  and writing works again', resumed.status === 200, resumed.body?.error);
+
+    // --- a refusal stops the board saving, and does not interrupt (TASK-079)
+    //
+    // ADR 0006 survives ADR 0015, but the moment it fires moved: from a save
+    // somebody ran to 400 ms after a human lifted their finger. So the refusal
+    // above is the LAST one — the board stops saving, holds what is drawn on it
+    // after that, and waits for one of the three outcomes to be asked for.
+    //
+    // Each of the three gets its own board, because each ends in a different
+    // place and running them in sequence on one board would test the order
+    // rather than the outcomes.
+
+    // One board, drawn on, then rewritten underneath by "another editor" and
+    // written to once, which is what stops it saving. Returns the refusal.
+    const stopSaving = async (key, theirs) => {
+      await scratchApi('POST', '/api/boards/new', { board: key });
+      await scratchApi('POST', `/api/elements?board=${key}`, {
+        id: 'ours1', type: 'rectangle', x: 10, y: 10, width: 50, height: 50
+      });
+      const file = (await scratchApi('GET', `/api/boards/info?board=${key}`)).body?.file;
+      // Their edit: the same note with a second element in it that this canvas
+      // has never seen, so "their version" is recognisable afterwards.
+      const note = fs.readFileSync(file, 'utf-8');
+      fs.writeFileSync(file, note.replace(
+        '"id": "ours1"',
+        `"id": "${theirs}", "width": 999}, {"id": "ours1"`
+      ));
+      const refused = await scratchApi('POST', `/api/elements?board=${key}`, {
+        id: 'lost1', type: 'ellipse', x: 5, y: 5, width: 20, height: 20
+      });
+      return { file, refused };
+    };
+
+    const overwriteCase = await stopSaving('holdover', 'theirs1');
+    check('a write refused by the hash check leaves the board not saving',
+      overwriteCase.refused.status === 409 &&
+      overwriteCase.refused.body?.held?.board === 'holdover',
+      `${overwriteCase.refused.status} ${JSON.stringify(overwriteCase.refused.body?.held?.board)}`);
+    check('  and says so with the three outcomes, since when, and how much is held',
+      Boolean(overwriteCase.refused.body?.held?.conflict?.outcomes?.reload) &&
+      overwriteCase.refused.body?.held?.writes === 0 &&
+      typeof overwriteCase.refused.body?.held?.since === 'string',
+      JSON.stringify(overwriteCase.refused.body?.held));
+    check('  and the refused write is a refusal: it is not on the board',
+      !(await scratchApi('GET', '/api/elements?board=holdover')).body?.elements
+        ?.some(el => el.id === 'lost1'));
+
+    // The point of the whole thing: drawing carries on, and stops being refused.
+    const held1 = await scratchApi('POST', '/api/elements?board=holdover', {
+      id: 'held1', type: 'rectangle', x: 100, y: 100, width: 30, height: 30
+    });
+    check('the next change is taken rather than refused again',
+      held1.status === 200, `${held1.status} ${held1.body?.error}`);
+    check('  and goes into the held copy, not into their note',
+      !fs.readFileSync(overwriteCase.file, 'utf-8').includes('held1'));
+    check('  which is what the board now reads as',
+      (await scratchApi('GET', '/api/elements?board=holdover')).body?.elements
+        ?.some(el => el.id === 'held1'));
+    check('  and every answer about it says it is not being saved, and counts what is held',
+      (await scratchApi('GET', '/api/elements?board=holdover')).body?.held?.writes === 1,
+      JSON.stringify((await scratchApi('GET', '/api/elements?board=holdover')).body?.held?.writes));
+    check('  including the listing, so an agent finds out without writing to it first',
+      (await scratchApi('GET', '/api/boards')).body?.open
+        ?.find(b => b.key === 'holdover')?.held?.board === 'holdover');
+    // The last time this board was written down is still the last time it was
+    // written down. A held change is not a save, and the chrome's "unsaved
+    // changes" reads off exactly this.
+    const savedAtWhenHeld = (await scratchApi('GET', '/api/boards/info?board=holdover')).body?.savedAt;
+    await scratchApi('POST', '/api/elements?board=holdover', {
+      id: 'held2a', type: 'rectangle', x: 140, y: 140, width: 30, height: 30
+    });
+    check('  and the last-saved time does not move, because nothing was saved',
+      (await scratchApi('GET', '/api/boards/info?board=holdover')).body?.savedAt === savedAtWhenHeld,
+      savedAtWhenHeld);
+
+    // A pane says what is on its screen. Only allowed on a held board: the
+    // server's copy of one starts as the note the other editor wrote, and this
+    // is what makes overwrite mean "what you are looking at" (TASK-079).
+    const rebased = await scratchApi('POST', '/api/elements/changes?board=holdover', {
+      upserts: [
+        { id: 'ours1', type: 'rectangle', x: 10, y: 10, width: 50, height: 50 },
+        { id: 'held1', type: 'rectangle', x: 100, y: 100, width: 30, height: 30 }
+      ],
+      deletes: [],
+      rebase: true,
+      clientId: 'a-pane'
+    });
+    check('a pane saying what is on its screen is taken on a held board',
+      rebased.status === 200, `${rebased.status} ${rebased.body?.error}`);
+    const afterRebase = (await scratchApi('GET', '/api/elements?board=holdover')).body?.elements ?? [];
+    check('  and the held copy becomes that screen, not their note with a gesture on top',
+      afterRebase.some(el => el.id === 'held1') && !afterRebase.some(el => el.id === 'theirs1'),
+      JSON.stringify(afterRebase.map(el => el.id)));
+    check('  and the board says a pane has spoken for it',
+      (await scratchApi('GET', '/api/elements?board=holdover')).body?.held?.fromScreen === true);
+
+    // Outcome two: overwrite. The held copy goes over their note.
+    const forced = await scratchApi('POST', '/api/boards/save', { board: 'holdover', force: true });
+    check('overwrite writes the held copy over the note',
+      forced.status === 200 && fs.readFileSync(overwriteCase.file, 'utf-8').includes('held1'),
+      `${forced.status} ${forced.body?.error}`);
+    check('  and their version is gone, which is what overwrite costs',
+      !fs.readFileSync(overwriteCase.file, 'utf-8').includes('theirs1'));
+    check('  and the board is saving again, saying which outcome ended it',
+      forced.body?.resolvedHold?.outcome === 'overwrite' &&
+      forced.body?.resolvedHold?.writes === 3 &&
+      forced.body?.held === undefined,
+      JSON.stringify(forced.body?.resolvedHold));
+    const afterForce = await scratchApi('POST', '/api/elements?board=holdover', {
+      id: 'after1', type: 'rectangle', x: 0, y: 0, width: 9, height: 9
+    });
+    check('  so the next change reaches the note like any other',
+      afterForce.status === 200 && fs.readFileSync(overwriteCase.file, 'utf-8').includes('after1'),
+      `${afterForce.status} ${afterForce.body?.error}`);
+    const noRebase = await scratchApi('POST', '/api/elements/changes?board=holdover', {
+      upserts: [{ id: 'ours1', type: 'rectangle', x: 1, y: 1, width: 5, height: 5 }],
+      deletes: [], rebase: true, clientId: 'a-pane'
+    });
+    check('  and a pane can no longer declare the whole board, because it is saving again',
+      noRebase.status === 400 && /rebase/.test(noRebase.body?.error ?? ''),
+      `${noRebase.status} ${noRebase.body?.error}`);
+
+    // Outcome one: reload. It takes the note and ends the held work, which is
+    // what it says it costs.
+    const reloadCase = await stopSaving('holdreload', 'theirs2');
+    await scratchApi('POST', '/api/elements?board=holdreload', {
+      id: 'held2', type: 'rectangle', x: 100, y: 100, width: 30, height: 30
+    });
+    const took = await scratchApi('POST', '/api/boards/open', { board: 'holdreload', reload: true });
+    check('reload takes the note and the board saves again',
+      took.status === 200 && took.body?.held === undefined, `${took.status} ${took.body?.error}`);
+    const afterReload = (await scratchApi('GET', '/api/elements?board=holdreload')).body?.elements ?? [];
+    check('  and what was held is gone, which is what reload costs',
+      !afterReload.some(el => el.id === 'held2') && afterReload.some(el => el.id === 'theirs2'),
+      JSON.stringify(afterReload.map(el => el.id)));
+
+    // Outcome three: elsewhere. Both copies kept, and the source goes back to
+    // being their note.
+    const elsewhereCase = await stopSaving('holdelse', 'theirs3');
+    await scratchApi('POST', '/api/elements?board=holdelse', {
+      id: 'held3', type: 'rectangle', x: 100, y: 100, width: 30, height: 30
+    });
+    const elsewhere = await scratchApi('POST', '/api/boards/save', { board: 'holdelse', name: 'holdmine' });
+    check('save elsewhere writes the held copy to a note of its own',
+      elsewhere.status === 200 &&
+      fs.readFileSync(elsewhere.body?.file, 'utf-8').includes('held3'),
+      `${elsewhere.status} ${elsewhere.body?.error}`);
+    check('  and says the hold is over and which outcome ended it',
+      elsewhere.body?.resolvedHold?.outcome === 'elsewhere' && elsewhere.body?.held === undefined,
+      JSON.stringify(elsewhere.body?.resolvedHold));
+    check('  and their note is untouched, which is what makes this the free one',
+      fs.readFileSync(elsewhereCase.file, 'utf-8').includes('theirs3') &&
+      !fs.readFileSync(elsewhereCase.file, 'utf-8').includes('held3'));
+    const sourceAfter = (await scratchApi('GET', '/api/elements?board=holdelse')).body ?? {};
+    check('  and the board that was held reads as their version now, saving again',
+      sourceAfter.held === undefined &&
+      (sourceAfter.elements ?? []).some(el => el.id === 'theirs3') &&
+      !(sourceAfter.elements ?? []).some(el => el.id === 'held3'),
+      JSON.stringify((sourceAfter.elements ?? []).map(el => el.id)));
   } finally {
     scratchCanvas.kill('SIGTERM');
     await sleep(200);

@@ -45,6 +45,7 @@ import path from 'path';
 
 import { ExcalidrawFile, ServerElement } from '../types.js';
 import { writeFileAtomic } from './atomic-write.js';
+import { holdOn } from './board-hold.js';
 import { BoardState, baselineForFile, recordBaseline } from './board-store.js';
 import {
   BoardIdentity,
@@ -290,8 +291,29 @@ export function readNote(file: string): BoardContent | null {
  * whose note is not there yet — one `board new` has just started, a scratch
  * board in a fresh vault — reads as empty rather than failing: it exists, it is
  * open, and there is nothing on it.
+ *
+ * A board on hold is the one case where the note is not the answer, and it is
+ * not an exception to ADR 0015 so much as the situation ADR 0015 assumes cannot
+ * be avoided: the note has been taken over by another editor, so it holds their
+ * board and not this one (src/core/board-hold.ts). There is still exactly one
+ * answer here, which is the whole property — every reader, every describe,
+ * every pane and the change feed come through this line and see the same board.
+ *
+ * The maps are copied so that a request which throws half way through leaves
+ * the held copy as it found it, the way a re-read from the note would. The
+ * elements inside them are shared, so a write path that edited one in place
+ * rather than replacing it would still reach through; that is TASK-084 and it
+ * is no worse here than on the note.
  */
 export function readBoardContent(board: BoardState): BoardContent {
+  const hold = holdOn(boardKey(board.identity));
+  if (hold) {
+    return {
+      ...hold.content,
+      elements: new Map(hold.content.elements),
+      files: new Map(hold.content.files)
+    };
+  }
   if (!board.file) return emptyContent();
   return readNote(board.file) ?? emptyContent();
 }
