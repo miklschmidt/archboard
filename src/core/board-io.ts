@@ -1,6 +1,19 @@
 // The note is the board. This module reads one and writes one, and it is the
 // only place either happens (ADR 0015).
 //
+// One read, `readNoteFile`, under both callers that want a board out of a
+// note: `readBoardFile` for `board open`, which wants the identity the note
+// declares as well, and `readNote` for the per-request read, which wants the
+// elements in the maps the routes work against. Resolving which file, reading
+// it, and interpreting what came back are three jobs and only the middle one
+// is shared — that middle one used to exist twice, and the second copy is what
+// let TASK-085's fix miss the path every request takes.
+//
+// `writeBoardContent` reads the destination too and deliberately does not go
+// through it: it hashes whatever bytes are there, including bytes that are not
+// a note at all, because a foreign file at a board's path is the conflict it
+// exists to report rather than an error it should throw.
+//
 // Before this, a board opened once and then lived in the process: the elements,
 // the images, the note's own bytes, and a hash taken at the moment it was read.
 // A save wrote that copy out. Everything in between — every agent write, every
@@ -34,13 +47,18 @@ import { ExcalidrawFile, ServerElement } from '../types.js';
 import { writeFileAtomic } from './atomic-write.js';
 import { BoardState, baselineForFile, recordBaseline } from './board-store.js';
 import {
+  BoardIdentity,
   BoardWriteConflict,
   boardKey,
   describeWriteConflict,
   hashBoardBytes,
+  identityFromFrontmatter,
+  identityFromVaultPath,
+  makeIdentity,
   renderBoardNote,
   requireVaultRoot,
-  sceneJsonWithEmbeddedImages
+  sceneJsonWithEmbeddedImages,
+  vaultPathFor
 } from './board.js';
 import { derivedId, isBlockId, mintId } from './ids.js';
 import {
@@ -67,6 +85,24 @@ export interface BoardContent {
   files: Map<string, ExcalidrawFile>;
   note?: string;
   hash?: string;
+}
+
+/**
+ * A note, plus the identity of the board it turned out to hold.
+ *
+ * What `board open` needs and a per-request read does not: a request already
+ * knows which board it is working on, and opening one is the act that finds
+ * out.
+ */
+export interface LoadedBoard extends NoteFile {
+  identity: BoardIdentity;
+  // What the note's own frontmatter claims, when that is a different board
+  // than the one being opened — a note renamed or moved in Obsidian since it
+  // was last saved. The path is the address, so that is what the caller gets;
+  // the next save rewrites the frontmatter and the disagreement goes away.
+  // Surfaced rather than silently reconciled, because it usually means a human
+  // moved something and may not have meant to.
+  declaredKey?: string;
 }
 
 /** A board with nothing in it, for a note that is not there yet. */
@@ -130,10 +166,46 @@ export function ingestScene(
   return { elements, files };
 }
 
-/** The elements and images a note holds, plus the bytes they came out of. */
-export function readNote(file: string): BoardContent | null {
+/**
+ * A note as it was found on disk.
+ *
+ * Whatever is true of reading a note is true here, because this is the only
+ * place it happens: the `.excalidraw.md` refusal, the hash the next write is
+ * checked against, and the pictures the Obsidian plugin moved out into vault
+ * files.
+ */
+export interface NoteFile {
+  file: string;
+  /** The whole note, so a write can put its frontmatter and prose back verbatim. */
+  raw: string;
+  /** sha-256 of the bytes it was decoded from: the baseline operand (ADR 0006). */
+  hash: string;
+  /** The drawing, with any image the plugin moved out of it put back. */
+  sceneJson: string;
+}
+
+/**
+ * Read one note. THE one read: everything else here and in `board.ts` is
+ * either working out which file, or working out what the result means.
+ *
+ * That is not tidiness, it is the bug this had. Two readers stood here — this
+ * one for the per-request read every route takes (ADR 0015), and
+ * `readBoardFile` for `board open` — and TASK-085 taught only one of them to
+ * follow a migrated picture. The two merged with no conflict, and a board the
+ * plugin had been through rendered holes on every read until `256369d`
+ * repaired it by hand. `scripts/check-boards.mjs` guards it from both sides: it
+ * reads one migrated note through both callers below and asserts they agree on
+ * the bytes, the hash, the picture and the refusal, and it asserts that exactly
+ * one line in `src/` calls `sceneJsonWithEmbeddedImages`.
+ *
+ * `null` for a note that is not there. A board somebody has just made has no
+ * file yet and that is not an error.
+ */
+export function readNoteFile(file: string, root = requireVaultRoot()): NoteFile | null {
   let bytes: Buffer;
   try {
+    // Read bytes, then decode. The baseline hash has to be of what is on disk,
+    // so decoding is a separate step that cannot get between the two.
     bytes = fs.readFileSync(file);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
@@ -145,17 +217,69 @@ export function readNote(file: string): BoardContent | null {
       `${file} exists but is not an Obsidian .excalidraw.md note — refusing to read it as a board.`
     );
   }
-  // A picture the Obsidian plugin moved out into a vault file is followed
-  // here, not only when a board is opened (TASK-085, ADR 0017). Every request
-  // reads the note now (ADR 0015), so this is the path that decides whether a
-  // migrated board draws or renders holes. It costs nothing on a note with no
-  // `## Embedded Files` section, which is reassembled only when there is one.
-  const scene = JSON.parse(sceneJsonWithEmbeddedImages(raw, file, requireVaultRoot()));
+  return {
+    file,
+    raw,
+    hash: hashBoardBytes(bytes),
+    // A picture the plugin moved out into a vault file is followed here
+    // (TASK-085, ADR 0017), which is what decides whether a migrated board
+    // draws or renders holes. It costs nothing on a note with no
+    // `## Embedded Files` section: the scene is reassembled only when one of
+    // its links resolved to a file.
+    sceneJson: sceneJsonWithEmbeddedImages(raw, file, root)
+  };
+}
+
+/**
+ * A board note, and who the note says it is.
+ *
+ * The address being opened is the identity, because that is how the file was
+ * found; the note's frontmatter supplies `level`, which no path can carry, and
+ * is reported when it names a different board — a note the Obsidian plugin
+ * created has no archboard keys at all until archboard first saves it.
+ *
+ * Two jobs on top of the read, and only these two: turn an identity into a
+ * path, and say what the note's own frontmatter claims. The bytes come back
+ * exactly as any other read gets them.
+ */
+export function readBoardFile(
+  identity: Pick<BoardIdentity, 'board' | 'variant' | 'displayName'>,
+  root = requireVaultRoot()
+): LoadedBoard | null {
+  const note = readNoteFile(vaultPathFor(identity, root), root);
+  if (!note) return null;
+
+  const asked = makeIdentity({ board: identity.board, variant: identity.variant });
+  const declared = identityFromFrontmatter(note.raw);
+  // Casing comes from the note, not from whoever typed the address: the note
+  // is where a human chose it and the address is case-insensitive either way.
+  // Its own frontmatter first, then the filename, then the address.
+  const onDisk = identityFromVaultPath(note.file, root);
+  const displayName =
+    (declared && boardKey(declared) === boardKey(asked) ? declared.displayName : undefined)
+    ?? (onDisk && boardKey(onDisk) === boardKey(asked) ? onDisk.displayName : undefined)
+    ?? asked.displayName;
+  return {
+    ...note,
+    identity: {
+      ...asked,
+      ...(declared?.level ? { level: declared.level } : {}),
+      ...(displayName ? { displayName } : {})
+    },
+    ...(declared && boardKey(declared) !== boardKey(asked) ? { declaredKey: boardKey(declared) } : {})
+  };
+}
+
+/** The elements and images a note holds, plus the bytes they came out of. */
+export function readNote(file: string): BoardContent | null {
+  const note = readNoteFile(file);
+  if (!note) return null;
+  const scene = JSON.parse(note.sceneJson);
   const { elements, files } = ingestScene(
     Array.isArray(scene) ? scene : (scene.elements ?? []),
     Array.isArray(scene) ? null : scene.files
   );
-  return { elements, files, note: raw, hash: hashBoardBytes(bytes) };
+  return { elements, files, note: note.raw, hash: note.hash };
 }
 
 /**
