@@ -47,11 +47,19 @@ function withBoard(path: string): string {
 }
 
 // Helper functions to sync with Express server (canvas)
-export async function syncToCanvas(operation: string, data: any): Promise<SyncResponse | null> {
+export async function syncToCanvas(
+  operation: string, data: any, write: { document?: boolean } = {}
+): Promise<SyncResponse | null> {
   if (!ENABLE_CANVAS_SYNC) {
     logger.debug('Canvas sync disabled, skipping');
     return null;
   }
+
+  // Only when the caller said so: a write answers with what it touched, and
+  // the board itself is 60,000 tokens at 300 elements (TASK-075).
+  const asked = (path: string) => write.document
+    ? `${path}${path.includes('?') ? '&' : '?'}document=1`
+    : path;
 
   try {
     let url: string;
@@ -59,7 +67,7 @@ export async function syncToCanvas(operation: string, data: any): Promise<SyncRe
 
     switch (operation) {
       case 'create':
-        url = `${EXPRESS_SERVER_URL}${withBoard('/api/elements')}`;
+        url = `${EXPRESS_SERVER_URL}${asked(withBoard('/api/elements'))}`;
         options = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -68,7 +76,7 @@ export async function syncToCanvas(operation: string, data: any): Promise<SyncRe
         break;
 
       case 'update':
-        url = `${EXPRESS_SERVER_URL}${withBoard(`/api/elements/${data.id}`)}`;
+        url = `${EXPRESS_SERVER_URL}${asked(withBoard(`/api/elements/${data.id}`))}`;
         options = {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -77,12 +85,12 @@ export async function syncToCanvas(operation: string, data: any): Promise<SyncRe
         break;
 
       case 'delete':
-        url = `${EXPRESS_SERVER_URL}${withBoard(`/api/elements/${data.id}`)}`;
+        url = `${EXPRESS_SERVER_URL}${asked(withBoard(`/api/elements/${data.id}`))}`;
         options = { method: 'DELETE' };
         break;
 
       case 'batch_create':
-        url = `${EXPRESS_SERVER_URL}${withBoard('/api/elements/batch')}`;
+        url = `${EXPRESS_SERVER_URL}${asked(withBoard('/api/elements/batch'))}`;
         options = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -118,34 +126,60 @@ export async function syncToCanvas(operation: string, data: any): Promise<SyncRe
   }
 }
 
+/**
+ * What a write says about itself, whichever route it went through
+ * (TASK-075). `element` is the one the caller named, where there was one;
+ * `elements` is everything the write touched in the form the board now holds
+ * it, side effects and all; `fingerprint` is the board in one line; `document`
+ * is the whole board and is present only when it was asked for.
+ */
+export interface WriteAnswer {
+  element?: ServerElement;
+  elements?: ServerElement[];
+  fingerprint?: BoardFingerprint;
+  document?: ServerElement[];
+  alsoDeleted?: string[];
+}
+
+/** Ask a write for the whole board back. Off by default, everywhere. */
+export interface WriteOptions {
+  document?: boolean;
+}
+
 // Helper to sync element creation to canvas.
 // Sync disabled = deliberate no-op (echo the input, legacy behavior);
 // sync enabled but failed = null, so callers report the failure instead of
 // claiming "synced to canvas" for an element that never landed.
-export async function createElementOnCanvas(elementData: ServerElement): Promise<ServerElement | null> {
-  if (!ENABLE_CANVAS_SYNC) return elementData;
-  const result = await syncToCanvas('create', elementData);
-  return result?.element ?? null;
+export async function createElementOnCanvas(
+  elementData: ServerElement, options: WriteOptions = {}
+): Promise<WriteAnswer | null> {
+  if (!ENABLE_CANVAS_SYNC) return { element: elementData };
+  const result = await syncToCanvas('create', elementData, options);
+  return result ? (result as unknown as WriteAnswer) : null;
 }
 
 // Helper to sync element update to canvas
-export async function updateElementOnCanvas(elementData: Partial<ServerElement> & { id: string }): Promise<ServerElement | null> {
-  const result = await syncToCanvas('update', elementData);
-  return result?.element || null;
+export async function updateElementOnCanvas(
+  elementData: Partial<ServerElement> & { id: string }, options: WriteOptions = {}
+): Promise<WriteAnswer | null> {
+  const result = await syncToCanvas('update', elementData, options);
+  return result?.element ? (result as unknown as WriteAnswer) : null;
 }
 
 // Helper to sync element deletion to canvas
-export async function deleteElementOnCanvas(elementId: string): Promise<any> {
-  const result = await syncToCanvas('delete', { id: elementId });
+export async function deleteElementOnCanvas(elementId: string, options: WriteOptions = {}): Promise<any> {
+  const result = await syncToCanvas('delete', { id: elementId }, options);
   return result;
 }
 
 // Helper to sync batch creation to canvas (same failure semantics as
 // createElementOnCanvas: disabled = echo, failed = null)
-export async function batchCreateElementsOnCanvas(elementsData: ServerElement[]): Promise<ServerElement[] | null> {
-  if (!ENABLE_CANVAS_SYNC) return elementsData;
-  const result = await syncToCanvas('batch_create', elementsData);
-  return result?.elements ?? null;
+export async function batchCreateElementsOnCanvas(
+  elementsData: ServerElement[], options: WriteOptions = {}
+): Promise<WriteAnswer | null> {
+  if (!ENABLE_CANVAS_SYNC) return { elements: elementsData };
+  const result = await syncToCanvas('batch_create', elementsData, options);
+  return result?.elements ? (result as unknown as WriteAnswer) : null;
 }
 
 // Helper to fetch element from canvas
@@ -610,13 +644,16 @@ export async function createElementStrict(element: ServerElement): Promise<Serve
   return data.element!;
 }
 
-export async function updateElementStrict(element: Partial<ServerElement> & { id: string }): Promise<ServerElement> {
-  const data = await requestJson<ApiResponse>(`/api/elements/${element.id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(element)
-  });
-  return data.element!;
+export async function updateElementStrict(
+  element: Partial<ServerElement> & { id: string }, options: WriteOptions = {}
+): Promise<WriteAnswer & { element: ServerElement }> {
+  const data = await requestJson<ApiResponse & WriteAnswer>(
+    `/api/elements/${element.id}${options.document ? '?document=1' : ''}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(element)
+    });
+  return data as WriteAnswer & { element: ServerElement };
 }
 
 export async function deleteElementStrict(id: string): Promise<ApiResponse> {
@@ -648,6 +685,8 @@ export async function getElementStrict(id: string): Promise<ServerElement> {
 export async function applyElementChanges(changes: {
   upserts?: (Partial<ServerElement> & { id?: string })[];
   deletes?: string[];
+  /** Ask for the whole board back. Off by default; see BoardFingerprint. */
+  document?: boolean;
 }): Promise<ElementChangesResult> {
   return requestJson<ElementChangesResult>('/api/elements/changes', {
     method: 'POST',
@@ -655,9 +694,20 @@ export async function applyElementChanges(changes: {
     body: JSON.stringify({
       upserts: changes.upserts ?? [],
       deletes: changes.deletes ?? [],
-      origin: 'agent'
+      origin: 'agent',
+      ...(changes.document ? { document: true } : {})
     })
   });
+}
+
+/**
+ * The board as one line: how many elements, and the sha-256 of the note it
+ * would write. Comparing two of these is how an agent finds out whether
+ * anything it did not do has happened, without reading the board (TASK-075).
+ */
+export interface BoardFingerprint {
+  elements: number;
+  note: string;
 }
 
 export interface ElementChangesResult {
@@ -668,17 +718,27 @@ export interface ElementChangesResult {
   deleted: number;
   count: number;
   appliedAt: string;
-  /** What the write created, in the form the board now holds it. */
+  /**
+   * Every element the write touched, in the form the board now holds it —
+   * including what the server made and the caller never named: minted ids,
+   * a text element expanded from a `label` seed, arrows it re-routed.
+   */
   elements: ServerElement[];
+  fingerprint: BoardFingerprint;
+  /** The whole board, and only when it was asked for. */
+  document?: ServerElement[];
 }
 
-export async function batchCreateElementsStrict(elements: ServerElement[]): Promise<ServerElement[]> {
-  const data = await requestJson<ApiResponse>('/api/elements/batch', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ elements })
-  });
-  return data.elements || [];
+export async function batchCreateElementsStrict(
+  elements: ServerElement[], options: WriteOptions = {}
+): Promise<WriteAnswer & { elements: ServerElement[] }> {
+  const data = await requestJson<ApiResponse & WriteAnswer>(
+    `/api/elements/batch${options.document ? '?document=1' : ''}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ elements })
+    });
+  return { ...data, elements: data.elements ?? [] };
 }
 
 // Identity marker the canvas server puts in /health (v1.1+)

@@ -29,7 +29,8 @@ import {
   getSnapshot,
   sendMermaid,
   setRequestedBoard,
-  ApiResponse
+  ApiResponse,
+  WriteAnswer
 } from './canvas-client.js';
 import { sanitizeFilePath, prepareElement, prepareElementUpdate } from './normalize.js';
 import {
@@ -78,6 +79,20 @@ import { sceneState, ensureCanvasReadyForMcpTool, toolNeedsCanvasBeforeDispatch 
 const PointObjectSchema = z.object({ x: z.number(), y: z.number() });
 const PointTupleSchema = z.tuple([z.number(), z.number()]);
 const PointSchema = z.union([PointObjectSchema, PointTupleSchema]);
+
+/**
+ * What a write hands back to an MCP client, which is what it hands back to a
+ * shell (TASK-075): the element it named, everything it touched in the form
+ * the board now holds it, and the board's fingerprint. The whole document only
+ * where it was asked for, because a 300-element board is 60,000 tokens and a
+ * client running this in a loop would pay that per element.
+ */
+const writeResult = (answer: WriteAnswer): Record<string, unknown> => ({
+  ...(answer.element ? { element: answer.element } : {}),
+  ...(answer.elements ? { elements: answer.elements } : {}),
+  ...(answer.fingerprint ? { fingerprint: answer.fingerprint } : {}),
+  ...(answer.document ? { document: answer.document } : {})
+});
 
 // Schema definitions using zod
 const ElementSchema = z.object({
@@ -194,34 +209,40 @@ export async function callExcalidrawTool(
 
     switch (name) {
       case 'create_element': {
-        const params = ElementSchema.parse(args);
+        const params = ElementSchema.extend({ document: z.boolean().optional() }).parse(args);
         logger.info('Creating element via MCP', { type: params.type });
 
-        const excalidrawElement = prepareElement(params);
+        // `document` is a question about the answer, not a field of the
+        // element, so it does not go on the board.
+        const { document, ...shape } = params;
+        const excalidrawElement = prepareElement(shape);
 
         // Create element directly on HTTP server (no local storage)
-        const canvasElement = await createElementOnCanvas(excalidrawElement);
+        const answer = await createElementOnCanvas(excalidrawElement, { document });
 
-        if (!canvasElement) {
+        if (!answer) {
           throw new Error('Failed to create element: HTTP server unavailable');
         }
 
         logger.info('Element created via MCP and synced to canvas', {
           id: excalidrawElement.id,
           type: excalidrawElement.type,
-          synced: !!canvasElement
+          synced: true
         });
 
         return {
           content: [{
             type: 'text',
-            text: `Element created successfully!\n\n${JSON.stringify(canvasElement, null, 2)}\n\n✅ Synced to canvas`
+            text: `Element created successfully!\n\n${JSON.stringify(writeResult(answer), null, 2)}\n\n✅ Synced to canvas`
           }]
         };
       }
       case 'update_element': {
-        const params = ElementIdSchema.merge(ElementSchema.partial()).parse(args);
-        const { id, ...updates } = params;
+        const params = ElementIdSchema
+          .merge(ElementSchema.partial())
+          .merge(z.object({ document: z.boolean().optional() }))
+          .parse(args);
+        const { id, document, ...updates } = params;
 
         if (!id) throw new Error('Element ID is required');
 
@@ -231,38 +252,47 @@ export async function callExcalidrawTool(
         const excalidrawElement = prepareElementUpdate(id, updates, existing?.type);
 
         // Update element directly on HTTP server (no local storage)
-        const canvasElement = await updateElementOnCanvas(excalidrawElement);
-        
-        if (!canvasElement) {
+        const answer = await updateElementOnCanvas(excalidrawElement, { document });
+
+        if (!answer) {
           throw new Error('Failed to update element: HTTP server unavailable or element not found');
         }
-        
-        logger.info('Element updated via MCP and synced to canvas', { 
-          id: excalidrawElement.id, 
-          synced: !!canvasElement 
+
+        logger.info('Element updated via MCP and synced to canvas', {
+          id: excalidrawElement.id,
+          synced: true
         });
-        
+
         return {
-          content: [{ 
-            type: 'text', 
-            text: `Element updated successfully!\n\n${JSON.stringify(canvasElement, null, 2)}\n\n✅ Synced to canvas` 
+          content: [{
+            type: 'text',
+            text: `Element updated successfully!\n\n${JSON.stringify(writeResult(answer), null, 2)}\n\n✅ Synced to canvas`
           }]
         };
       }
-      
+
       case 'delete_element': {
-        const params = ElementIdSchema.parse(args);
-        const { id } = params;
+        const params = ElementIdSchema.merge(z.object({ document: z.boolean().optional() })).parse(args);
+        const { id, document } = params;
 
         // Delete element directly on HTTP server (no local storage)
-        const canvasResult = await deleteElementOnCanvas(id);
+        const canvasResult = await deleteElementOnCanvas(id, { document });
 
         if (!canvasResult || !(canvasResult as ApiResponse).success) {
           throw new Error('Failed to delete element: HTTP server unavailable or element not found');
         }
 
-        const result = { id, deleted: true, syncedToCanvas: true };
-        logger.info('Element deleted via MCP and synced to canvas', result);
+        const answer = canvasResult as WriteAnswer;
+        const result = {
+          id,
+          deleted: true,
+          // A label goes with the box it names, so a delete can take more than
+          // it was given (TASK-074), and an arrow that was bound to it changes.
+          ...(answer.alsoDeleted ? { alsoDeleted: answer.alsoDeleted } : {}),
+          ...writeResult(answer),
+          syncedToCanvas: true
+        };
+        logger.info('Element deleted via MCP and synced to canvas', { id });
 
         return {
           content: [{
@@ -479,21 +509,26 @@ export async function callExcalidrawTool(
         }
       }
       case 'batch_create_elements': {
-        const params = z.object({ elements: z.array(ElementSchema) }).parse(args);
+        const params = z.object({
+          elements: z.array(ElementSchema), document: z.boolean().optional()
+        }).parse(args);
         logger.info('Batch creating elements via MCP', { count: params.elements.length });
 
         const createdElements: ServerElement[] = params.elements.map(elementData => prepareElement(elementData));
 
-        const canvasElements = await batchCreateElementsOnCanvas(createdElements);
+        const answer = await batchCreateElementsOnCanvas(createdElements, { document: params.document });
 
-        if (!canvasElements) {
+        if (!answer) {
           throw new Error('Failed to batch create elements: HTTP server unavailable');
         }
 
+        const canvasElements = answer.elements ?? [];
         const result = {
           success: true,
           elements: canvasElements,
           count: canvasElements.length,
+          fingerprint: answer.fingerprint,
+          ...(answer.document ? { document: answer.document } : {}),
           syncedToCanvas: true
         };
 

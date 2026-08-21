@@ -33,8 +33,21 @@ function normalizePatchUpdate(update: any): { id: string; updates: Record<string
   return { id, updates: set };
 }
 
+/**
+ * `--document` on a write, and the one reason to think before using it.
+ *
+ * A write already answers with everything it touched and a fingerprint of the
+ * board, which is what an agent needs: what the server made of what it sent,
+ * and one comparison that says whether anything else has moved. The whole
+ * board is 60,000 tokens at 300 elements, so a loop that asks for it pulls the
+ * board through a context once per box.
+ */
+const DOCUMENT_FLAG = { document: { takesValue: false } } as const;
+const documentAsked = (flags: Record<string, unknown>): { document?: boolean } =>
+  flags.document ? { document: true } : {};
+
 export async function apply(argv: string[]): Promise<void> {
-  const { positionals } = parseArgs(argv, {});
+  const { positionals, flags } = parseArgs(argv, DOCUMENT_FLAG);
   const input = await readJsonInput(positionals[0], 'patch');
 
   const patch: { create?: any[]; update?: any[]; delete?: string[] } =
@@ -68,7 +81,9 @@ export async function apply(argv: string[]): Promise<void> {
   // One patch, one write: creates, updates and deletes all land in the same
   // pass over the board, so nothing else can get in between them.
   const creates = (patch.create ?? []).map(el => prepareElement(el));
-  const result = await applyElementChanges({ upserts: [...creates, ...updates], deletes });
+  const result = await applyElementChanges({
+    upserts: [...creates, ...updates], deletes, ...documentAsked(flags)
+  });
 
   printJson({
     success: true,
@@ -78,14 +93,19 @@ export async function apply(argv: string[]): Promise<void> {
     // counting those here would answer a question nobody asked.
     updated: updates.length,
     deleted: result.deleted,
-    elements: result.elements
+    // `elements`, on the other hand, IS what the board owed it: the record as
+    // it now stands, including the label the server expanded and the arrows it
+    // re-routed, which is the half a caller cannot work out for itself.
+    elements: result.elements,
+    fingerprint: result.fingerprint,
+    ...(result.document ? { document: result.document } : {})
   });
 }
 
 // add: batch create (alias for apply with a bare array); --one '<json>' for a
 // single element without wrapping it in [].
 export async function add(argv: string[]): Promise<void> {
-  const { positionals, flags } = parseArgs(argv, { one: { takesValue: true } });
+  const { positionals, flags } = parseArgs(argv, { one: { takesValue: true }, ...DOCUMENT_FLAG });
 
   let elements: any[];
   if (typeof flags.one === 'string') {
@@ -100,12 +120,19 @@ export async function add(argv: string[]): Promise<void> {
   }
 
   await ensureCanvasRunning();
-  const created = await batchCreateElementsStrict(elements.map(el => prepareElement(el)));
-  printJson({ success: true, count: created.length, elements: created });
+  const result = await batchCreateElementsStrict(
+    elements.map(el => prepareElement(el)), documentAsked(flags));
+  printJson({
+    success: true,
+    count: result.elements.length,
+    elements: result.elements,
+    fingerprint: result.fingerprint,
+    ...(result.document ? { document: result.document } : {})
+  });
 }
 
 export async function update(argv: string[]): Promise<void> {
-  const { positionals, flags } = parseArgs(argv, { set: { takesValue: true } });
+  const { positionals, flags } = parseArgs(argv, { set: { takesValue: true }, ...DOCUMENT_FLAG });
   const id = positionals[0];
   if (!id) throw new CliUsageError('Usage: update <id> --set \'{"backgroundColor": "#ffc9c9"}\'');
 
@@ -123,12 +150,19 @@ export async function update(argv: string[]): Promise<void> {
   await ensureCanvasRunning();
   // Fetch the real type so text→label conversion skips text elements
   const existing = await getElementStrict(id);
-  const element = await updateElementStrict(prepareElementUpdate(id, updates, existing.type));
-  printJson({ success: true, element });
+  const result = await updateElementStrict(
+    prepareElementUpdate(id, updates, existing.type), documentAsked(flags));
+  printJson({
+    success: true,
+    element: result.element,
+    elements: result.elements,
+    fingerprint: result.fingerprint,
+    ...(result.document ? { document: result.document } : {})
+  });
 }
 
 export async function del(argv: string[]): Promise<void> {
-  const { positionals } = parseArgs(argv, {});
+  const { positionals, flags } = parseArgs(argv, DOCUMENT_FLAG);
   if (positionals.length === 0) throw new CliUsageError('Usage: delete <id> [<id> ...]');
 
   await ensureCanvasRunning();
@@ -140,9 +174,19 @@ export async function del(argv: string[]): Promise<void> {
   const onBoard = new Set((await getElements()).map(element => element.id));
   const missing = positionals.filter(id => !onBoard.has(id));
   if (missing.length > 0) throw new Error(`Element ${missing.join(', ')} not found`);
-  await applyElementChanges({ deletes: positionals });
+  const result = await applyElementChanges({ deletes: positionals, ...documentAsked(flags) });
 
-  printJson({ success: true, deleted: positionals, count: positionals.length });
+  printJson({
+    success: true,
+    // What the board actually lost, which is not always what was named: a
+    // label goes with the box it names (TASK-074).
+    deleted: result.deleted,
+    count: result.deleted,
+    // What is left over changed: arrows unbound from what has gone.
+    elements: result.elements,
+    fingerprint: result.fingerprint,
+    ...(result.document ? { document: result.document } : {})
+  });
 }
 
 export async function get(argv: string[]): Promise<void> {

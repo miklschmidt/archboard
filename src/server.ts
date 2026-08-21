@@ -608,7 +608,14 @@ app.post('/api/elements', (req: Request, res: Response) => {
     res.json({
       success: true,
       board: boardKeyForRequest,
-      element: stored
+      element: stored,
+      // `element` is what the caller asked for; `elements` is what the board
+      // became, label and z-order included (TASK-075).
+      ...agentWriteAnswer(
+        board,
+        [...written.map(el => elements.get(el.id) ?? el), ...repaired],
+        wantsDocument(req)
+      )
     });
   } catch (error) {
     logger.error('Error creating element:', error);
@@ -693,10 +700,21 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
       broadcast({ type: 'element_updated', element } as ElementUpdatedMessage, boardKeyForRequest);
     }
 
+    // Everything this one update turned into: the element, the label it
+    // renamed or expanded, the arrows it dragged along, the z-order it fixed —
+    // each in the form the board now holds it (TASK-075).
+    const touched = new Map<string, ServerElement>();
+    for (const el of [...restated, ...expanded, ...repaired, ...consequences]) {
+      const held = elements.get(el.id);
+      if (held) touched.set(el.id, held);
+    }
+    touched.set(id, elements.get(id) as ServerElement);
+
     res.json({
       success: true,
       board: boardKeyForRequest,
-      element: elements.get(id) as ServerElement
+      element: elements.get(id) as ServerElement,
+      ...agentWriteAnswer(board, Array.from(touched.values()), wantsDocument(req))
     });
   } catch (error) {
     logger.error('Error updating element:', error);
@@ -785,7 +803,8 @@ app.delete('/api/elements/:id', (req: Request, res: Response) => {
       success: true,
       board: boardKeyForRequest,
       message: `Element ${id} deleted successfully`,
-      ...(alsoDeleted.length > 0 ? { alsoDeleted } : {})
+      ...(alsoDeleted.length > 0 ? { alsoDeleted } : {}),
+      ...agentWriteAnswer(board, changed, wantsDocument(req))
     });
   } catch (error) {
     logger.error('Error deleting element:', error);
@@ -1246,8 +1265,10 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
     res.json({
       success: true,
       board: boardKeyForRequest,
-      elements: stored,
-      count: stored.length
+      count: stored.length,
+      // `elements` here has always been what the write produced; the
+      // fingerprint and the opt-in document are what TASK-075 adds.
+      ...agentWriteAnswer(board, [...stored, ...repaired], wantsDocument(req))
     });
   } catch (error) {
     logger.error('Error batch creating elements:', error);
@@ -1370,6 +1391,61 @@ interface AppliedChanges {
   created: ServerElement[];
   updated: ServerElement[];
   deleted: string[];
+}
+
+/**
+ * What an agent gets back from a write, and deliberately not what a pane gets.
+ *
+ * A pane gets the document, because a pane is long-lived and divergence is
+ * what it accumulates (TASK-074). An agent gets something it can afford. At
+ * 300 elements a board is 229,551 bytes of JSON, roughly 60,000 tokens, and
+ * `align` in a loop would pull 1.2 million tokens through a context to move
+ * twenty boxes. The failure a whole document prevents does not apply here
+ * either: every CLI invocation is a fresh process holding nothing between
+ * calls, so there is no long-lived copy to diverge.
+ *
+ * So, two things and an opt-in.
+ *
+ * `elements` is what the write touched, in the form the board now holds it —
+ * not the payload that was sent, the record as it now stands. That includes
+ * what the server made and the caller never named: the ids it minted, the text
+ * element it expanded from a `label` seed, the arrows it re-routed behind a
+ * move. Without it an agent that writes `{"label": {"text": "AuthService"}}`
+ * has no way to learn its label's id except by re-reading the board.
+ *
+ * `fingerprint` is the element count and the sha-256 of the note this board
+ * would write. An agent holding the previous one can tell in a single
+ * comparison whether anything it did not expect has changed, and call
+ * `describe` if so, instead of reading the whole board every turn. It is the
+ * note's bytes rather than the store's, because the note is the board
+ * (ADR 0015) and under stage 8 these are the bytes on disk.
+ *
+ * `document` is the whole board, and only when asked for.
+ */
+function agentWriteAnswer(
+  board: BoardState,
+  touched: ServerElement[],
+  wantsDocument: boolean
+): Record<string, unknown> {
+  return {
+    elements: touched,
+    fingerprint: boardFingerprint(board),
+    ...(wantsDocument ? { document: Array.from(board.elements.values()) } : {})
+  };
+}
+
+/** The note this board would write, identified by its bytes. */
+function boardFingerprint(board: BoardState): { elements: number; note: string } {
+  const elements = Array.from(board.elements.values());
+  const { scene } = buildScene(elements, filesUsedBy(elements, board.files) as unknown as Record<string, any>);
+  const note = renderBoardNote(scene, board.note, board.identity);
+  return { elements: elements.length, note: hashBoardBytes(Buffer.from(note, 'utf-8')) };
+}
+
+/** Did this caller ask for the whole board? Off unless said, on every surface. */
+function wantsDocument(req: Request): boolean {
+  const asked = req.query.document ?? (req.body && typeof req.body === 'object' ? req.body.document : undefined);
+  return asked === true || asked === '1' || asked === 'true';
 }
 
 /**
@@ -1598,12 +1674,9 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
       //
       // An agent gets something smaller, because a 300-element board is 60,000
       // tokens and `align` in a loop would pull twenty of them through a
-      // context to move twenty boxes (TASK-075). For now that is what the
-      // write created, in the form the board now holds it: the server mints
-      // ids, so this is the half of the result an agent cannot work out for
-      // itself.
+      // context to move twenty boxes (TASK-075).
       ...(origin === 'agent'
-        ? { elements: created }
+        ? agentWriteAnswer(board, [...created, ...updated], wantsDocument(req))
         : { document: Array.from(elements.values()) })
     });
   } catch (error) {
