@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-21 13:36'
+updated_date: '2026-08-21 13:46'
 labels: []
 dependencies:
   - TASK-088
@@ -25,37 +26,49 @@ ordinal: 90000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Raised by the user on seeing that TASK-088 ported Excalidraw's binding math rather than calling it.
+Raised by the user on seeing that TASK-088 ported Excalidraw's binding math rather than calling it. Investigated properly afterwards; the first answer given was too strong and is corrected here.
 
-**Importing is not available, and that is established rather than assumed.** `determineFocusPoint` and `updateBoundPoint` appear zero times in the package's public types, and the package cannot be loaded server-side at all — `import('@excalidraw/excalidraw')` in bun throws `ReferenceError: window is not defined` at import time. It is a browser package. The server has to answer questions about arrows and text without a browser, because pure JSON operations are meant to work headless. So porting was the only route that keeps that true. Wrapping is not an option you can reach from the server, and it is worth writing that down so nobody re-litigates it.
+## What is and is not reachable
 
-**What porting leaves behind is the problem.** Four modules now encode behaviour we do not own:
+**No sibling package.** `@excalidraw/excalidraw` 0.18.0 ships no `@excalidraw/element` or `@excalidraw/math` alongside it. Only `laser-pointer`, `markdown-to-text`, `mermaid-to-excalidraw` and `random-username`.
+
+**The package cannot be imported as published** — `import('@excalidraw/excalidraw')` throws `ReferenceError: window is not defined` at load. But that is a module-scope side effect computing platform flags from `navigator.platform`, not something the geometry needs: **with a fifteen-line globals shim the chunk does load under bun**, far enough to execute unrelated exports. So 'it is browser-only, end of story' was wrong.
+
+**The functions still are not reachable.** `determineFocusPoint` and `updateBoundPoint` are bundled internals — `var`s inside `chunk-3KPV5WBD.js`, absent from every chunk's `export {}` block. This is not a public-API quibble; there is no export to import, shim or not.
+
+## Vendoring is available, and is better than what we did
+
+**The package ships its full TypeScript source in source maps.** 443 of 444 sources are embedded verbatim across ten `.map` files in `dist/dev`, including `element/binding.ts` (67 KB) and `element/collision.ts` (8.5 KB). They can be extracted mechanically.
+
+The two functions are 256 lines of real source (121 + 135). `updateBoundPoint` reaches about twenty helpers, the ones that matter being `intersectElementWithLineSegment` from `collision.ts` and point and vector helpers from `@excalidraw/math`.
+
+**That intersection function is precisely what our port approximated.** `src/core/arrow-binding.ts` records the compromise in its header: Excalidraw expands a shape's outline corner by corner, pushing each rounded corner's bezier out along its diagonal; ours expands analytically and treats a rounded corner as square, differing within a corner radius by up to the gap. Vendoring the real `collision.ts` removes that approximation rather than documenting it.
+
+Vendoring also makes an upgrade diffable: re-extract from the new version's maps and read what changed, instead of re-deriving behaviour from a minified bundle.
+
+## What still has to happen either way
+
+Four modules, about 1800 lines, encode behaviour we do not own:
 
 | Module | Lines | Reimplements |
 |---|---|---|
 | `src/core/font-layout.ts` | 548 | GSUB/GPOS shaping, to reproduce what Chrome measures |
-| `src/core/measure-text.ts` | 203 | Excalidraw's text width and height |
+| `src/core/expand-elements.ts` | 746 | Element defaults and the shape of a converted element |
 | `src/core/arrow-binding.ts` | 306 | `determineFocusPoint` and `updateBoundPoint` |
-| `src/core/expand-elements.ts` | 746 | Element defaults, and the shape of a converted element |
+| `src/core/measure-text.ts` | 203 | Excalidraw's text width and height |
 
-And `package.json` depends on `^0.18.0`. A caret. A minor release can change any of the above and every check in the suite would still pass, because every check compares us against ourselves.
+`package.json` pinned `@excalidraw/excalidraw` exactly in 3341f3e, so a version no longer changes underneath us. What is still missing is anything that notices when we upgrade deliberately and the behaviour has moved — every check in the suite compares us against ourselves.
 
-**The fix has two halves.**
+**The detector already exists.** `check-fixed-point` drives real Excalidraw in a real browser. It can be asked where a bound arrow's endpoint actually lands and what a string actually measures, and compared against our modules. That is a differential test against the real thing rather than a fixture we wrote, and it is the only kind that can fail when Excalidraw moves.
 
-Pin the version exactly, so an upgrade is a decision somebody makes rather than something `bun install` does. Record which behaviours are ported and where each was read from — the source maps in `dist/dev` are readable, which is how TASK-088 did it, and that provenance is worth keeping.
-
-Then detect drift instead of hoping. **The tool for this already exists**: `check-fixed-point` drives a real browser running real Excalidraw. A check can ask actual Excalidraw where a bound arrow's endpoint lands, and compare it against `arrow-binding.ts`. Same for text: ask the page to measure a string and compare against `measure-text.ts`. That is a differential test against the real thing rather than against a fixture we wrote, and it is the only kind that can fail when Excalidraw moves.
-
-TASK-088 recorded one deliberate approximation in `arrow-binding.ts`'s header — Excalidraw expands a shape's outline corner by corner along bezier diagonals, ours expands analytically and treats a rounded corner as square, differing only within a corner radius and by at most the gap. A differential check needs to encode that tolerance rather than trip over it, which is a good forcing function for stating it precisely.
-
-Same shape as TASK-087, which is the Obsidian plugin version of this: behaviour read from somebody else's source, no version recorded, no check against the real thing.
+Same shape as TASK-087, which is the Obsidian plugin version of this.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The excalidraw dependency is pinned to an exact version, not a caret range
+- [ ] #1 Whether to vendor the extracted source for arrow-binding or keep the port is decided and recorded, with the 4px approximation named as what vendoring would remove
 - [ ] #2 Which Excalidraw behaviours archboard reimplements is listed, each saying which module and where it was read from
 - [ ] #3 A browser-driven check compares arrow-binding.ts against where real Excalidraw puts a bound arrow's endpoint, within a stated tolerance
 - [ ] #4 A browser-driven check compares measure-text.ts against what the real page measures
-- [ ] #5 Upgrading excalidraw names the checks to run, so drift is found at the upgrade rather than later
+- [ ] #5 Upgrading excalidraw names the checks to run and, if vendored source is used, how to re-extract it
 <!-- AC:END -->
