@@ -1,11 +1,12 @@
 ---
 id: TASK-088
 title: >-
-  An arrow's start ref goes stale when a human re-binds it, and the server drags
-  the arrow back
+  Arrow routing reads the agent input shape instead of the binding, so a human's
+  re-bind is undone
 status: To Do
 assignee: []
 created_date: '2026-08-21 12:42'
+updated_date: '2026-08-21 12:48'
 labels: []
 dependencies:
   - TASK-073
@@ -21,36 +22,47 @@ ordinal: 88000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Measured against a throwaway canvas, not reasoned about.
+Measured against a throwaway canvas, not reasoned about. `scripts/probe-arrow-refs.mjs` reproduces it.
 
-An agent draws an arrow from box A to box B, so it carries `start: {id: boxA}` and the server owns its path. A human drags the tail off A and onto box C. Excalidraw updates `startBinding` and has never heard of `start`, so the arrow comes back with the two disagreeing:
+An agent draws an arrow from box A to box B, writing the agent-friendly shape `start: {id: boxA}`. A human drags the tail off A and onto box C. Excalidraw updates `startBinding` and has never heard of `start`, so the two disagree:
 
 ```
 start        = {"id":"boxA"}    <- stale
 startBinding = "boxC"           <- what the human did
 ```
 
-Then an agent moves box A — a box the arrow no longer touches. `rerouteBoundArrows` selects arrows by `start.id` and `end.id`, so it still believes the arrow starts at A and recomputes its path:
+An agent then moves box A, which the arrow no longer touches, and the server drags the arrow anyway:
 
 ```
 points before = [[0,0],[300,-270]]
 points after  = [[0,0],[285.6891649440014,142.84458247200067]]
 ```
 
-The human's re-binding is silently undone by a later unrelated move.
+The human's edit is undone by a later, unrelated move.
 
-This is the family TASK-024, TASK-028 and TASK-029 belong to: one fact spelled twice, a rule deciding which spelling wins, and the rule being wrong. TASK-073 removed the label seed for exactly this reason and left the arrow refs in place, on the argument that they are not a second spelling of `startBinding`. That argument is half right. They do carry something `startBinding` does not — that the server computes this arrow's path rather than Excalidraw, which is what stops the server jerking a hand-drawn arrow onto its own simpler route. But they also carry which shape the end attaches to, and that half **is** a second spelling, and it is the half that goes stale.
+## The cause is the lever, not the staleness
 
-So the fix is not to delete them. It is to stop them carrying the target at all: keep the marker that says whose path this is, and read the target from `startBinding`, which is the one place Excalidraw and archboard both write. Then a human's re-bind cannot disagree with anything, because there is nothing left to disagree with.
+`resolveArrowBindings` routes an arrow by reading `start` and `end` — the agent input shape — and never consults `startBinding` or `endBinding` at all. So the refs are not extra information the binding lacks; they are the only thing the router looks at, and they are stale the moment a human moves an end.
 
-Worth checking whether `end` has the same problem — the probe only exercised the tail — and whether a human deleting a binding entirely (dragging an end into empty space) leaves a ref pointing at a shape the arrow has left.
+`expand-elements` already builds the binding correctly from the input (`{elementId, focus: 0, gap: 4, fixedPoint: null}`) and the router then ignores it. It also imposes its own `GAP = 8`, so the binding records one distance and the routing uses another for the same arrow.
+
+The router discards `focus` entirely, routing centre-to-centre. That is the whole reason an earlier attempt to drop the refs looked dangerous: routing by binding would then have widened to hand-drawn arrows and moved them onto a centre-to-centre path with the wrong gap. That is the router being wrong, not a reason to keep a duplicate field — an arrow a human drew carries the `focus` and `gap` they chose by where they attached it, and a router that honours those can re-route any bound arrow safely.
+
+There is no notion of an arrow belonging to the agent or to the human. This is a collaborative board and both draw on it; the only question is whether a path is recomputed correctly.
+
+## Why this is not just a bug
+
+ADR 0015 says the agent-friendly shape is an input format, converted once on the way in and never stored. TASK-073 removed the label seed on exactly that basis. The arrow refs kept a special case the ADR does not grant them, and this is what the special case cost.
+
+Note that `src/core/expand-elements.ts` and `scripts/check-labels.mjs` both carry comments justifying the refs in terms of which arrows the server may route. Those comments encode the wrong framing and should go with the fix.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Re-binding an arrow's end in the browser and then moving the old shape leaves the arrow where the human put it
-- [ ] #2 An arrow's stored refs no longer name a shape, so they cannot disagree with startBinding
-- [ ] #3 The server still routes only the arrows whose path it owns, and still leaves a hand-drawn arrow alone
-- [ ] #4 Dragging an arrow's end into empty space is covered, not only re-binding it to another shape
-- [ ] #5 A check reproduces the measured failure and fails without the fix
+- [ ] #1 resolveArrowBindings selects and routes arrows by startBinding and endBinding, and never reads start or end
+- [ ] #2 The router honours each binding's own focus and gap instead of imposing a hardcoded gap, so re-routing a hand-drawn arrow leaves it where its binding says
+- [ ] #3 start and end are input-only and are not stored, like label since TASK-073, which is what ADR 0015 already requires
+- [ ] #4 Re-binding an arrow's end in the browser and then moving the old shape leaves the arrow where the human put it
+- [ ] #5 Dragging an arrow's end into empty space is covered, not only re-binding it to another shape
+- [ ] #6 A check reproduces the measured failure and fails without the fix
 <!-- AC:END -->
