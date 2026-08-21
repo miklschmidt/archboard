@@ -1,0 +1,13 @@
+# Dependencies are pinned to exact versions, never ranges.
+#
+# A caret lets one machine install a version another machine never saw, so a
+# green suite here says nothing about a runner or a colleague's checkout — and
+# it lets a malicious minor release in without anybody choosing it. Every range
+# in package.json was already drifting when this was added: zod was declared
+# ^3.22.4 and installed at 3.25.76, express ^4.18.2 at 4.21.2, ws ^8.14.2 at
+# 8.18.3.
+#
+# With this set, `bun add` writes an exact version rather than a range, so the
+# rule holds for dependencies added later without anybody remembering it.
+[install]
+exact = true
