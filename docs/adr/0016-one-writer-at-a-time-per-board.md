@@ -90,6 +90,21 @@ For a claim that may run for minutes, a person needs to know that an agent has
 the board and roughly what it is doing, or the wall has simply stopped working
 for no reason they can see.
 
+**The broadcast reaches one canvas, and exclusion reaches all of them**
+(TASK-067). Taking or releasing a board is news the canvas that did it can
+send; a second canvas serving the same vault has nothing to tell it, because
+the lock is a file and a file does not call anybody. So a pane on that second
+canvas is excluded correctly and learns about it at the write rather than
+before the touch, which is the yank this section exists to prevent, surviving
+in the one configuration nobody has yet run.
+
+Closing it means polling the lock directory for the boards on screen, roughly
+once per renewal interval. That was left undone deliberately: it is a timer per
+canvas paid at all times against a case that costs milliseconds when it does
+happen. A long claim changes that arithmetic, because the pane would be wrong
+for minutes rather than for one write, so TASK-080 is where the poll earns
+itself.
+
 ## Consequences
 
 **The window that coalesces a person's changes now has a second job.** It also

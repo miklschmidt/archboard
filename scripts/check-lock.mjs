@@ -59,6 +59,18 @@ const { LOCK_FREE_LINGER_MS, LOCK_LEASE_MS, LOCK_RENEW_MS, LOCK_WAIT_CAP_MS } =
 const agent = (id) => ({ id, kind: 'agent' });
 const person = (id) => ({ id, kind: 'human' });
 
+/**
+ * A take that is meant to succeed.
+ *
+ * Caught rather than awaited plainly. A lock broken in any of the ways this
+ * file exists to notice makes these throw, and a check that dies at the first
+ * one reports nothing about the thirty after it — including the two-process
+ * section, which is the only thing here an in-process mutex could not pass.
+ * Reverting a line and counting what fails needs the count to be honest.
+ */
+const take = request => holdBoard(request).catch(error => ({ created: false, holder: null, error }));
+const why = result => (result.error ? result.error.message : JSON.stringify(result));
+
 // The refusal, caught as the thing it is rather than as a message.
 const refusal = async (promise) => {
   try {
@@ -81,8 +93,9 @@ const refusal = async (promise) => {
     JSON.stringify(boardLockState(board)));
 
   // Somebody standing on it, so the next caller gets the other answer.
-  const held = await holdBoard({ board, holder: person('the-wall'), waitMs: 0 });
-  check('a hold reports itself as the one that took it', held.created === true && held.holder.id === 'the-wall');
+  const held = await take({ board, holder: person('the-wall'), waitMs: 0 });
+  check('a hold reports itself as the one that took it',
+    held.created === true && held.holder?.id === 'the-wall', why(held));
 
   const denied = await refusal(withBoardLock({ board, holder: agent('second'), waitMs: 120 }, () => { ran += 1; }));
   check('a board somebody else holds is not written',
@@ -98,11 +111,12 @@ const refusal = async (promise) => {
 
   // The same holder is not somebody else. This is what makes one gesture's hold
   // cover the write that gesture produces.
-  const again = await holdBoard({ board, holder: person('the-wall'), waitMs: 0 });
-  check('the holder asking again renews rather than blocking', again.created === false);
+  const again = await take({ board, holder: person('the-wall'), waitMs: 0 });
+  check('the holder asking again renews rather than blocking', again.created === false, why(again));
   check('  and "since" stays when it was taken, not when it was last renewed',
-    again.holder.since === held.holder.since, `${held.holder.since} -> ${again.holder.since}`);
-  check('  and the lease moved forward', Date.parse(again.holder.until) > Date.parse(held.holder.until));
+    again.holder?.since === held.holder?.since, `${held.holder.since} -> ${again.holder.since}`);
+  check('  and the lease moved forward',
+    Date.parse(again.holder?.until) > Date.parse(held.holder?.until), why(again));
 
   await withBoardLock({ board, holder: person('the-wall') }, () => { ran += 1; });
   check('a write by the holder runs, and does not release the hold it joined',
@@ -119,15 +133,19 @@ const refusal = async (promise) => {
 {
   const board = 'a-lease-not-a-flag';
   // Held and never released: the shape a crash leaves behind.
-  await holdBoard({ board, holder: agent('the-departed'), leaseMs: 120, waitMs: 0 });
+  await take({ board, holder: agent('the-departed'), leaseMs: 120, waitMs: 0 });
   check('a lease is held while it runs', boardLockState(board)?.id === 'the-departed');
 
   const early = await refusal(holdBoard({ board, holder: agent('the-next'), waitMs: 0 }));
   check('  and nobody else gets in meanwhile', early instanceof BoardHeldError);
 
-  const took = await holdBoard({ board, holder: agent('the-next'), waitMs: 1000 });
+  // Caught rather than awaited plainly: a lease that never lapses throws here,
+  // and a check that dies at this line reports nothing about the twenty things
+  // after it. The failure has to be countable to be a failure.
+  const took = await take({ board, holder: agent('the-next'), waitMs: 1000 });
   check('a holder that never came back does not wedge the board',
-    took.created === true && took.holder.id === 'the-next', JSON.stringify(took));
+    took.created === true && took.holder?.id === 'the-next',
+    why(took));
   releaseHold(board, 'the-next');
 
   check('the lease clears the report debounce plus a write, with room',
@@ -142,14 +160,14 @@ const refusal = async (promise) => {
 
 {
   const board = 'waiting';
-  await holdBoard({ board, holder: person('a-hand'), leaseMs: 2000, waitMs: 0 });
+  await take({ board, holder: person('a-hand'), leaseMs: 2000, waitMs: 0 });
   setTimeout(() => releaseHold(board, 'a-hand'), 250);
 
   const started = Date.now();
-  const got = await holdBoard({ board, holder: agent('patient'), waitMs: 2000 });
+  const got = await take({ board, holder: agent('patient'), waitMs: 2000 });
   const waited = Date.now() - started;
   check('an agent waits for a hand rather than failing at it',
-    got.created === true && waited >= 200 && waited < 1200, `${waited} ms`);
+    got.created === true && waited >= 200 && waited < 1200, `${waited} ms, ${why(got)}`);
   releaseHold(board, 'patient');
 }
 
@@ -157,26 +175,32 @@ const refusal = async (promise) => {
 
 {
   const board = 'unreadable';
-  await holdBoard({ board, holder: agent('writer'), waitMs: 0 });
+  await take({ board, holder: agent('writer'), waitMs: 0 });
   const file = join(vault, '.archboard', 'locks', 'unreadable.lock');
   check('the lock is a file in the vault, where a second canvas can see it', fs.existsSync(file), file);
+  // The directory is made rather than assumed, so that a lock which has stopped
+  // living in the vault fails the line above and then lets the rest of the file
+  // run. It used to throw here and take the two-process section with it, which
+  // reported one failure for a change that breaks four things.
+  fs.mkdirSync(join(vault, '.archboard', 'locks'), { recursive: true });
   fs.writeFileSync(file, '{ half a rec');
 
-  const after = await holdBoard({ board, holder: agent('later'), waitMs: 0 });
-  check('a lock file nothing can read does not wedge the board forever', after.created === true);
+  const after = await take({ board, holder: agent('later'), waitMs: 0 });
+  check('a lock file nothing can read does not wedge the board forever',
+    after.created === true, why(after));
   releaseHold(board, 'later');
 }
 
 // ─── 5. One board is one lock, however it was spelled ──────────────────────
 
 {
-  await holdBoard({ board: 'Payments', holder: agent('upper'), waitMs: 0 });
+  await take({ board: 'Payments', holder: agent('upper'), waitMs: 0 });
   const clash = await refusal(holdBoard({ board: 'payments', holder: agent('lower'), waitMs: 0 }));
   check('two spellings of one board are one lock (ADR 0010)', clash instanceof BoardHeldError,
     `${clash?.name}`);
   releaseHold('payments', 'upper');
 
-  await holdBoard({ board: 'systems/payments', holder: agent('nested'), waitMs: 0 });
+  await take({ board: 'systems/payments', holder: agent('nested'), waitMs: 0 });
   check('a nested board name is one lock file rather than a directory to create',
     fs.existsSync(join(vault, '.archboard', 'locks', 'systems%2Fpayments.lock')));
   releaseHold('systems/payments', 'nested');
@@ -189,13 +213,13 @@ const refusal = async (promise) => {
   onBoardLockChanged((board, holder) => news.push({ board, held: holder !== null, id: holder?.id ?? null }));
   const board = 'broadcast';
 
-  await holdBoard({ board, holder: person('a-pane'), waitMs: 0 });
+  await take({ board, holder: person('a-pane'), waitMs: 0 });
   check('taking a board is news immediately',
     news.at(-1)?.board === board && news.at(-1)?.held === true && news.at(-1)?.id === 'a-pane',
     JSON.stringify(news.at(-1)));
 
   const beforeRenew = news.length;
-  await holdBoard({ board, holder: person('a-pane'), waitMs: 0 });
+  await take({ board, holder: person('a-pane'), waitMs: 0 });
   check('  and renewing is not, because nothing a pane acts on changed', news.length === beforeRenew);
 
   releaseHold(board, 'a-pane');
@@ -211,6 +235,11 @@ const refusal = async (promise) => {
   const before = news.length;
   for (let i = 0; i < 8; i += 1) {
     await withBoardLock({ board, holder: agent(`fan-${i}`) }, () => { });
+    // A real fan-out is eight HTTP requests, so eight trips through the event
+    // loop. Without this the eight run as microtasks and every timer in the
+    // module fires after the loop rather than between its turns, which would
+    // make a linger of nought look exactly like a linger of a second.
+    await sleep(5);
   }
   await sleep(LOCK_FREE_LINGER_MS + 150);
   const since = news.slice(before);
@@ -259,8 +288,8 @@ const refusal = async (promise) => {
   check('  and the refusal says so rather than reading as a bug in this one',
     /on another canvas \(/.test(shut?.message ?? ''), shut?.message);
 
-  const eventually = await holdBoard({ board, holder: agent('this-canvas'), waitMs: 3000 });
-  check('and gets the board when the other one is done', eventually.created === true);
+  const eventually = await take({ board, holder: agent('this-canvas'), waitMs: 3000 });
+  check('and gets the board when the other one is done', eventually.created === true, why(eventually));
   releaseHold(board, 'this-canvas');
   child.kill();
 }
