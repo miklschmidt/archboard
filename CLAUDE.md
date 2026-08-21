@@ -43,7 +43,8 @@ bun run test        # type-check, CI coverage, module scope, then stdio wire,
                     # geometry, text metrics, labels, library, boards + panes,
                     # branch vs redraw, proposal beside source, skill install,
                     # repo bindings, CLI/MCP surface parity, staleness, hot
-                    # reload, and a board rendered in a real browser
+                    # reload, a board rendered in a real browser, and a long
+                    # session of mixed agent and human writes against one
 
 ./bin/canvas start  # canvas server on 127.0.0.1:3000
 ./bin/canvas status
@@ -116,16 +117,27 @@ drops every unsaved board, so save first, or ask.
 `bun run type-check` is the only thing that type-checks now, and `bun run test`
 runs it first, so a type error still fails the suite.
 
-**One check drives a real browser, and running the suite needs one.**
-`bun run test:browser` (`scripts/check-fixed-point.mjs`, TASK-071) writes a
-board, renders it in headless Chrome through `agent-browser`, reads back what
-the pane is holding, and reports every element and field Excalidraw changed.
+**Two checks drive a real browser, and running the suite needs one.**
 Everything else in `scripts/` stands a WebSocket in for a pane, which cannot
-catch a renderer disagreeing with us. It rebuilds `dist/frontend` first,
-because that is half of what it measures, and it takes about eleven seconds.
-**It reports zero, and zero is asserted** (TASK-072): what archboard writes is
-a document Excalidraw does not change. Without `agent-browser` on PATH it exits
-2 — "I could not run" — rather than claiming a pass, so `bun run test` needs it.
+catch a renderer disagreeing with us: a socket holds whatever it was sent.
+Neither claims a pass without `agent-browser` on PATH — they exit 2, "I could
+not run" — and both assert `navigator.userAgent` says headless, because a
+window that maps steals focus under Hyprland and these run on every push.
+
+- `bun run test:browser` (`scripts/check-fixed-point.mjs`, TASK-071) writes a
+  board, renders it, reads back what the pane is holding, and reports every
+  element and field Excalidraw changed. **It reports zero, and zero is
+  asserted** (TASK-072): what archboard writes is a document Excalidraw does
+  not change. About eleven seconds plus the build.
+- `bun run test:live-session` (`scripts/check-live-session.mjs`, TASK-076)
+  drives 42 cycles of interleaved agent and human writes against one board and
+  asserts the pane's document and the server's stay identical **after every
+  cycle**, naming the element, the field, both values and the cycle a
+  divergence first appeared on. That is what makes "the server is the truth" a
+  property rather than a claim: the bugs it exists to catch — a label
+  multiplying, a rename coming back — need a session to build up in. About
+  twenty seconds, and it skips the build when `dist/frontend` is already newer
+  than every source, so the two browser checks build once between them.
 
 **A push runs the whole chain** (TASK-082). `.github/workflows/ci.yml` runs
 `bun run test` and nothing else, so a check added to `package.json` runs on
@@ -133,8 +145,9 @@ main without anybody touching the workflow. It used to name two scripts of its
 own while the suite grew to seventeen around it, which is why
 `bun run test:suites` fails when a `test:*` script is in neither the chain nor
 the skip list in `scripts/check-ci-suites.mjs`. **That list is empty.** The
-chain takes 58 seconds on a 13th-gen i7 plus the browser check, and `test:mcp`,
-`test:boards` and `test:side-by-side` are two thirds of the rest.
+whole chain takes 97 seconds on a 13th-gen i7, of which the two browser checks
+are about 35; of the rest, `test:mcp`, `test:boards` and `test:side-by-side`
+are two thirds.
 
 Open <http://127.0.0.1:3000>. A browser tab is required for `screenshot`,
 `mermaid`, image export, and viewport control; pure JSON ops work headless.
