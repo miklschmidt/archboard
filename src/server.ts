@@ -96,6 +96,7 @@ import {
   expandForBoard, relabelBoundTexts, repairIndices, settleDeletions
 } from './core/expand-elements.js';
 import { overlapsRegion, remeasureLinear } from './core/geometry.js';
+import { bindingFromRef, bindingOf, boundEndpoint, centreOf } from './core/arrow-binding.js';
 import { frontendState, sourceState } from './core/staleness.js';
 
 // Load environment variables
@@ -540,8 +541,10 @@ const CreateElementSchema = z.object({
   fillStyle: z.string().optional(),
   // Arrow-specific properties
   points: z.any().optional(),
-  start: z.object({ id: z.string() }).optional(),
-  end: z.object({ id: z.string() }).optional(),
+  // An arrow's refs are input only: converted to a binding on the way in and
+  // never stored (ADR 0015). `null` unbinds that end.
+  start: z.object({ id: z.string() }).nullable().optional(),
+  end: z.object({ id: z.string() }).nullable().optional(),
   startArrowhead: z.string().nullable().optional(),
   endArrowhead: z.string().nullable().optional(),
   elbowed: z.boolean().optional(),
@@ -608,8 +611,10 @@ const UpdateElementSchema = z.object({
     z.tuple([z.number(), z.number()]),
     z.object({ x: z.number(), y: z.number() })
   ])).optional(),
-  start: z.object({ id: z.string() }).optional(),
-  end: z.object({ id: z.string() }).optional(),
+  // An arrow's refs are input only: converted to a binding on the way in and
+  // never stored (ADR 0015). `null` unbinds that end.
+  start: z.object({ id: z.string() }).nullable().optional(),
+  end: z.object({ id: z.string() }).nullable().optional(),
   startArrowhead: z.string().nullable().optional(),
   endArrowhead: z.string().nullable().optional(),
   elbowed: z.boolean().optional(),
@@ -669,7 +674,7 @@ app.post('/api/elements', (req: Request, res: Response) => {
 
     // Resolve arrow bindings against existing elements
     if (element.type === 'arrow' || element.type === 'line') {
-      resolveArrowBindings([element], elements);
+      resolveArrowBindings([element], elements, true);
     }
     sizeFromPath(element);
 
@@ -989,58 +994,6 @@ app.get('/api/elements/:id', (req: Request, res: Response) => {
   }
 });
 
-// Helper: compute edge point for an element given a direction toward a target
-function computeEdgePoint(
-  el: ServerElement,
-  targetCenterX: number,
-  targetCenterY: number
-): { x: number; y: number } {
-  const cx = el.x + (el.width || 0) / 2;
-  const cy = el.y + (el.height || 0) / 2;
-  const dx = targetCenterX - cx;
-  const dy = targetCenterY - cy;
-
-  if (el.type === 'diamond') {
-    // Diamond edge: use diamond geometry (rotated square)
-    const hw = (el.width || 0) / 2;
-    const hh = (el.height || 0) / 2;
-    if (dx === 0 && dy === 0) return { x: cx, y: cy + hh };
-    const absDx = Math.abs(dx);
-    const absDy = Math.abs(dy);
-    // Scale factor to reach diamond edge
-    const scale = (absDx / hw + absDy / hh) > 0
-      ? 1 / (absDx / hw + absDy / hh)
-      : 1;
-    return { x: cx + dx * scale, y: cy + dy * scale };
-  }
-
-  if (el.type === 'ellipse') {
-    // Ellipse edge: parametric intersection
-    const a = (el.width || 0) / 2;
-    const b = (el.height || 0) / 2;
-    if (dx === 0 && dy === 0) return { x: cx, y: cy + b };
-    const angle = Math.atan2(dy, dx);
-    return { x: cx + a * Math.cos(angle), y: cy + b * Math.sin(angle) };
-  }
-
-  // Rectangle: find intersection with edges
-  const hw = (el.width || 0) / 2;
-  const hh = (el.height || 0) / 2;
-  if (dx === 0 && dy === 0) return { x: cx, y: cy + hh };
-  const angle = Math.atan2(dy, dx);
-  const tanA = Math.tan(angle);
-  // Check if ray intersects top/bottom edge or left/right edge
-  if (Math.abs(tanA * hw) <= hh) {
-    // Intersects left or right edge
-    const signX = dx >= 0 ? 1 : -1;
-    return { x: cx + signX * hw, y: cy + signX * hw * tanA };
-  } else {
-    // Intersects top or bottom edge
-    const signY = dy >= 0 ? 1 : -1;
-    return { x: cx + signY * hh / tanA, y: cy + signY * hh };
-  }
-}
-
 // Restate a path element's width and height from the path itself, and say
 // whether that changed anything.
 //
@@ -1057,8 +1010,47 @@ function sizeFromPath(element: ServerElement): boolean {
   return true;
 }
 
-// Helper: resolve arrow bindings in a batch
-function resolveArrowBindings(batchElements: ServerElement[], boardElements: Map<string, ServerElement>): void {
+/** A linear element's path in scene coordinates. */
+function pathOf(el: ServerElement): { x: number; y: number }[] {
+  const raw = Array.isArray(el.points) && el.points.length >= 2
+    ? el.points
+    : [[0, 0], [100, 0]];
+  return raw.map((point: any) => ({
+    x: el.x + (Array.isArray(point) ? Number(point[0]) : Number(point?.x)),
+    y: el.y + (Array.isArray(point) ? Number(point[1]) : Number(point?.y))
+  }));
+}
+
+/**
+ * Put every bound end of these arrows back where its binding says.
+ *
+ * `startBinding` and `endBinding` are the only lever. The agent's `start` and
+ * `end` refs are an input format, converted at the boundary and gone before
+ * anything is stored (ADR 0015), so there is nothing here for a human dragging
+ * an end to leave stale — which is what it was, and what silently undid their
+ * edit the next time some unrelated shape moved (TASK-088).
+ *
+ * Each end goes where its own binding puts it: at `focus` around the shape and
+ * `gap` short of its outline, both of them the binding's own numbers. That is
+ * what makes re-routing safe for an arrow a person drew, because where they
+ * attached it is exactly what those two numbers record. Nothing here asks who
+ * drew an arrow; a board is drawn on by both.
+ *
+ * Only the bound ends move. A hand-drawn arrow with a bend keeps it, where the
+ * old routing overwrote every path with a straight line between two shapes.
+ *
+ * `newlyDrawn` says where the aim is taken from. An arrow already on the board
+ * has a path, and Excalidraw aims each end from the arrow's own next point.
+ * One an agent has just written has whatever points came with it, usually a
+ * placeholder, so it aims from the bound shapes' centres instead — which at
+ * `focus: 0` lands on the centre-to-centre line and stays there when this runs
+ * again.
+ */
+function resolveArrowBindings(
+  batchElements: ServerElement[],
+  boardElements: Map<string, ServerElement>,
+  newlyDrawn = false
+): void {
   const elementMap = new Map<string, ServerElement>();
   batchElements.forEach(el => elementMap.set(el.id, el));
 
@@ -1069,59 +1061,41 @@ function resolveArrowBindings(batchElements: ServerElement[], boardElements: Map
 
   for (const el of batchElements) {
     if (el.type !== 'arrow' && el.type !== 'line') continue;
-    const startRef = (el as any).start as { id: string } | undefined;
-    const endRef = (el as any).end as { id: string } | undefined;
+    // An elbow arrow's path is an orthogonal route rather than a line between
+    // its ends, and Excalidraw recomputes the whole of it from both bindings.
+    // Moving one point of it here would leave a route that no longer turns
+    // square corners, so it is left to the thing that can draw it.
+    if ((el as any).elbowed === true) continue;
 
-    if (!startRef && !endRef) continue;
+    const startBinding = bindingOf((el as any).startBinding);
+    const endBinding = bindingOf((el as any).endBinding);
+    const startEl = startBinding ? elementMap.get(startBinding.elementId) : undefined;
+    const endEl = endBinding ? elementMap.get(endBinding.elementId) : undefined;
+    if (!startEl && !endEl) continue;
 
-    const startEl = startRef ? elementMap.get(startRef.id) : undefined;
-    const endEl = endRef ? elementMap.get(endRef.id) : undefined;
+    const points = pathOf(el);
+    const last = points.length - 1;
+    const straight = points.length === 2;
 
-    // Calculate arrow path from edge to edge
-    const startCenter = startEl
-      ? { x: startEl.x + (startEl.width || 0) / 2, y: startEl.y + (startEl.height || 0) / 2 }
-      : { x: el.x, y: el.y };
-    const endCenter = endEl
-      ? { x: endEl.x + (endEl.width || 0) / 2, y: endEl.y + (endEl.height || 0) / 2 }
-      : { x: el.x + 100, y: el.y };
+    // Both ends read the same state, the way Excalidraw computes them.
+    const startAim = newlyDrawn && straight && endEl ? centreOf(endEl) : points[1]!;
+    const endAim = newlyDrawn && straight && startEl ? centreOf(startEl) : points[last - 1]!;
 
-    const GAP = 8;
-    const startPt = startEl
-      ? computeEdgePoint(startEl, endCenter.x, endCenter.y)
-      : startCenter;
-    const endPt = endEl
-      ? computeEdgePoint(endEl, startCenter.x, startCenter.y)
-      : endCenter;
-
-    // Apply gap: move start point slightly away from source, end point slightly away from target
-    const startDx = endPt.x - startPt.x;
-    const startDy = endPt.y - startPt.y;
-    const startDist = Math.sqrt(startDx * startDx + startDy * startDy) || 1;
-    const endDx = startPt.x - endPt.x;
-    const endDy = startPt.y - endPt.y;
-    const endDist = Math.sqrt(endDx * endDx + endDy * endDy) || 1;
-
-    const finalStart = {
-      x: startPt.x + (startDx / startDist) * GAP,
-      y: startPt.y + (startDy / startDist) * GAP
-    };
-    const finalEnd = {
-      x: endPt.x + (endDx / endDist) * GAP,
-      y: endPt.y + (endDy / endDist) * GAP
-    };
+    if (startBinding && startEl) {
+      points[0] = boundEndpoint(startEl, startBinding, startAim, points[0]!);
+    }
+    if (endBinding && endEl) {
+      points[last] = boundEndpoint(endEl, endBinding, endAim, points[last]!);
+    }
 
     // Set arrow position and points, and say how big the arrow now is: writing
     // a path without re-measuring left every arrow the server had re-routed
     // recorded at the size it used to be (TASK-038).
-    el.x = finalStart.x;
-    el.y = finalStart.y;
-    el.points = [[0, 0], [finalEnd.x - finalStart.x, finalEnd.y - finalStart.y]];
+    const origin = points[0]!;
+    el.x = origin.x;
+    el.y = origin.y;
+    el.points = points.map(point => [point.x - origin.x, point.y - origin.y]);
     sizeFromPath(el);
-
-    // Do NOT delete `start` and `end` here. They are what says which shapes
-    // this arrow joins, so `rerouteBoundArrows` reads them every time one of
-    // those shapes moves, and the converter turns them into `startBinding`,
-    // `endBinding` and the `boundElements` entries on the shapes themselves.
   }
 }
 
@@ -1133,9 +1107,8 @@ function rerouteBoundArrows(movedId: string, boardElements: Map<string, ServerEl
   const rerouted: ServerElement[] = [];
   boardElements.forEach(el => {
     if (el.type !== 'arrow' && el.type !== 'line') return;
-    const startRef = (el as any).start as { id: string } | undefined;
-    const endRef = (el as any).end as { id: string } | undefined;
-    if (startRef?.id !== movedId && endRef?.id !== movedId) return;
+    const joins = (binding: unknown) => bindingOf(binding)?.elementId === movedId;
+    if (!joins((el as any).startBinding) && !joins((el as any).endBinding)) return;
     resolveArrowBindings([el], boardElements);
     el.updatedAt = new Date().toISOString();
     el.version = (el.version || 0) + 1;
@@ -1225,6 +1198,10 @@ function mergeElementUpdate(existing: ServerElement, body: Record<string, any>):
 
   const changed = (key: string) => Object.prototype.hasOwnProperty.call(body, key);
 
+  // Spent here, so what goes on the board is a binding and not two spellings
+  // of one fact (TASK-088).
+  spendArrowRefs(element as Record<string, any>, body);
+
   // New points, new size. Width and height are not a second opinion about a
   // linear element, they are the size of its path, so a caller that states
   // the path has stated them too and any it sent alongside is the old
@@ -1235,10 +1212,10 @@ function mergeElementUpdate(existing: ServerElement, body: Record<string, any>):
   return {
     element,
     geometryChanged: ['x', 'y', 'width', 'height', 'points', 'angle'].some(changed),
-    // Pointing an arrow at a different shape is a re-route, not an annotation.
-    // Creating one resolves the path from its refs; re-stating them has to do
-    // the same, or the arrow keeps its old path until some shape it is bound
-    // to happens to move and the server recomputes it as a side effect.
+    // Pointing an arrow at a different shape is a re-route, not an annotation,
+    // so the path is recomputed now rather than whenever some shape it is
+    // bound to next happens to move. `start` and `end` are here as input: they
+    // are the agent's spelling of a binding, spent above and gone by now.
     reboundArrow: isLinear && ['start', 'end', 'startBinding', 'endBinding'].some(changed)
   };
 }
@@ -1262,11 +1239,34 @@ function restateLabels(
   return restated;
 }
 
+/**
+ * An arrow's `start` and `end` refs, spent on the way in.
+ *
+ * They are the agent's spelling of a binding and the last thing left that was
+ * stored in two shapes at once. A ref names a shape and nothing else, so it
+ * becomes a centred binding; a caller who says nothing about an end leaves the
+ * binding that end already had, and one who says `start: null` unbinds it.
+ * After this the board holds one answer to what an arrow touches, which is
+ * what stopped a human's re-bind being undone (TASK-088, ADR 0015).
+ */
+function spendArrowRefs(element: Record<string, any>, stated: Record<string, any>): void {
+  if (element.type !== 'arrow' && element.type !== 'line') return;
+  for (const [ref, binding] of [['start', 'startBinding'], ['end', 'endBinding']] as const) {
+    // A ref this caller did not state is deleted and nothing more. An element
+    // read from a note somebody's board has carried since before this may
+    // still have one, and it is that copy going stale that the bug was.
+    const said = Object.prototype.hasOwnProperty.call(stated, ref);
+    const value = element[ref];
+    delete element[ref];
+    if (said) element[binding] = bindingFromRef(value);
+  }
+}
+
 /** Build one new element from what a caller stated. Not yet on the board. */
 function buildCreatedElement(raw: unknown, inUse: IdsInUse): ServerElement {
   const params = CreateElementSchema.parse(raw);
   const { board: _boardField, ...elementParams } = params as typeof params & { board?: string };
-  return {
+  const element = {
     id: params.id || mintId(inUse),
     ...elementParams,
     fontFamily: normalizeFontFamily(params.fontFamily),
@@ -1274,6 +1274,8 @@ function buildCreatedElement(raw: unknown, inUse: IdsInUse): ServerElement {
     updatedAt: new Date().toISOString(),
     version: 1
   } as ServerElement;
+  spendArrowRefs(element as Record<string, any>, elementParams as Record<string, any>);
+  return element;
 }
 
 /**
@@ -1334,7 +1336,7 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
     });
 
     // Resolve arrow bindings (computes positions, startBinding, endBinding, boundElements)
-    resolveArrowBindings(createdElements, elements);
+    resolveArrowBindings(createdElements, elements, true);
 
     // An arrow drawn as a bare path, bound to nothing, never went through the
     // re-router, so this is where its size gets stated (TASK-038).
@@ -1688,7 +1690,7 @@ function applyAgentChanges(
   // Bindings resolve once every element in the write is on the board, so an
   // arrow can be created in the same write as the shapes it joins.
   if (created.length > 0) {
-    resolveArrowBindings(created, elements);
+    resolveArrowBindings(created, elements, true);
     created.forEach(sizeFromPath);
   }
 

@@ -302,18 +302,18 @@ export function remapElements(
     if (Array.isArray(el.boundElements)) {
       el.boundElements = el.boundElements.map(b => ({ ...b, id: mapId(b.id) ?? b.id }));
     }
-    // Keep the raw Excalidraw binding fields remapped (the frontend and a
-    // full-scene sync read these), and also set the server's own simplified
-    // start/end shape (types.ServerElement) so the create path binds too.
+    // The binding is remapped and that is the whole of it. It used to be
+    // copied into `start`/`end` as well, so that the server's routing — which
+    // read only those — would see it; that routing reads the binding now, and
+    // the binding is the one that carries the `focus` and `gap` the stencil's
+    // artist drew with (TASK-088).
     if (el.startBinding && typeof el.startBinding === 'object') {
       const mapped = mapId(el.startBinding.elementId) ?? el.startBinding.elementId;
       el.startBinding = { ...el.startBinding, elementId: mapped };
-      (el as any).start = { id: mapped };
     }
     if (el.endBinding && typeof el.endBinding === 'object') {
       const mapped = mapId(el.endBinding.elementId) ?? el.endBinding.elementId;
       el.endBinding = { ...el.endBinding, elementId: mapped };
-      (el as any).end = { id: mapped };
     }
     if (typeof el.containerId === 'string') el.containerId = mapId(el.containerId) ?? el.containerId;
     if (typeof el.frameId === 'string') el.frameId = mapId(el.frameId) ?? el.frameId;

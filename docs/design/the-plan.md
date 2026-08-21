@@ -380,17 +380,25 @@ of 174 label checks fail and `obsidian`, `boards`, `branch`, `side-by-side` and
 the browser check all still pass. The risk list above was wrong about that, and
 it is worth knowing that this property lives in exactly one file.
 
-**`start` and `end` on an arrow are not the same doubling and stayed.**
+**`start` and `end` on an arrow stayed here and went in TASK-088.**
 TASK-073's first acceptance criterion pairs them with the label seed, on the
 grounds that `start: {id}` and `startBinding.elementId` are one fact spelled
-twice. They are not. `rerouteBoundArrows` reads `start` and `end` to decide
-which arrows the server may re-route when a shape moves, and the arrows that
-carry them are exactly the ones whose path the server computed. An arrow a
-person drew carries `startBinding` and no `start`, and `resolveArrowBindings`
-recomputes a path edge to edge with a fixed gap and no `focus`, so reading the
-binding instead would make an agent nudging a box move every hand-drawn arrow
-attached to it. Removing the refs needs the server to know Excalidraw's binding
-math first, which is its own piece of work.
+twice. That was judged wrong at the time, because `rerouteBoundArrows` read the
+refs to decide which arrows the server might re-route, and `resolveArrowBindings`
+recomputed a path centre to centre with a fixed gap and no `focus`, so reading
+the binding instead would have dragged every hand-drawn arrow onto a path
+nobody drew. The conclusion was that removing the refs needed the server to know
+Excalidraw's binding math first.
+
+The premise was right and the conclusion was backwards. Reading the refs is what
+made the router wrong, not what kept it safe: `start` says what an agent asked
+for and `startBinding` says what the arrow touches, and the moment a person
+drags an end the two disagree, with the router believing the stale one. Measured
+on a throwaway canvas, that undid a person's re-bind the next time any unrelated
+shape moved. So TASK-088 did the binding math — `src/core/arrow-binding.ts`,
+ported from Excalidraw's `element/binding.ts` — and once the router honours each
+binding's own `focus` and `gap`, re-routing a hand-drawn arrow puts its end back
+where the person attached it. The acceptance criterion was right all along.
 
 ## Stage 7. A write returns the document
 
