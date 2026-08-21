@@ -238,8 +238,28 @@ a document with two answers, so four conversions moved to the write boundary:
 the block id a text element gets when its own id is too long to be one, the
 `boundElements` entry a shape owes an arrow bound to it, the z-order repair, and
 `rawText`. The caller's answer, the panes' broadcast and the note now say the
-same thing. And the note keeps `source` and an arrow's `start` and `end`, which
-nothing else can recover.
+same thing. And the note keeps `source`, which nothing else can recover.
+
+An arrow's `start` and `end` used to be kept alongside it and are not any more
+(TASK-088). They are the agent's spelling of `startBinding` and `endBinding`,
+converted on the way in like `label` and spent there, so a board holds one
+answer to what an arrow touches. Keeping both cost a real edit: a person dragged
+an arrow's tail from one box to another, Excalidraw rewrote the binding and had
+never heard of the ref, and the next time anything moved the box they had
+dragged it *off*, the server pulled the arrow back onto it.
+
+`src/core/arrow-binding.ts` is the routing that replaced it, ported from
+Excalidraw's own `element/binding.ts`. It reads the binding and honours the
+`focus` and `gap` that binding records, so a re-route puts an end back exactly
+where whoever attached it attached it. That is what makes re-routing a
+hand-drawn arrow safe, and there is no notion here of an arrow belonging to the
+agent or to the human: both draw on one board, and the only question is whether
+a path is recomputed correctly. Only the bound ends move, so a bend somebody
+drew to route around something survives a box moving. An elbow arrow is left
+alone, because its path is an orthogonal route that Excalidraw recomputes whole.
+The one gap value lives in that file and both the conversion and the routing
+read it; there used to be two, `gap: 4` in the binding and `GAP = 8` in the
+routing, for one distance.
 
 **The server is authoritative over the board.** A browser never sends a scene:
 it reports a delta — `POST /api/elements/changes` with `upserts` and `deletes` —

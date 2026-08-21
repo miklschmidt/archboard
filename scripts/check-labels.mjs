@@ -384,9 +384,9 @@ const CYCLES = 25;
   assert(stroke.simulatePressure === true, 'a freedraw does not say its pressure is simulated');
 
   // 12. Arbitrary. The inset kept an arrowhead off a shape's border for a
-  // converter that no longer exists, and the server routes a bound arrow edge
-  // to edge with a gap of its own. The fixed-point check reports nothing on
-  // these points either way.
+  // converter that no longer exists; a bound arrow's path comes from its
+  // binding's own `focus` and `gap`, and the conversion is not what applies
+  // them. The fixed-point check reports nothing on these points either way.
   const arrow = only({
     id: 'a3', type: 'arrow', x: 0, y: 0, points: [[0, 0], [84, 0]],
     startBinding: { elementId: 'r1', focus: 0, gap: 4 }

@@ -2,6 +2,7 @@ import { ServerElement, normalizeFontFamily } from '../types.js';
 import {
   LabelledElement, boundTextPlacement, boundTextsByContainer, labelSeedOf, labelTextIdFor
 } from './labels.js';
+import { bindingFromRef } from './arrow-binding.js';
 import { fnv1a, type IdsInUse } from './ids.js';
 import { lineHeightOf } from './fonts.js';
 import { canMeasure, measureText } from './measure-text.js';
@@ -48,22 +49,20 @@ export interface ExpandOptions {
    * Elements bound for the board's own map rather than for a file.
    *
    * The difference is bookkeeping, not conversion: the store keeps
-   * `createdAt`, `updatedAt`, `source` and the server's `version`, and keeps
-   * the `start` and `end` an agent wrote, because `rerouteBoundArrows` reads
-   * them to know which arrows the server owns the path of. The conversion
-   * either way is this one, and neither way keeps a `label`.
+   * `createdAt`, `updatedAt`, `source` and the server's `version`. The
+   * conversion either way is this one, and neither way keeps a seed — not a
+   * `label`, and not an arrow's `start` and `end`.
    */
   forStore?: boolean;
   /**
    * Keep that bookkeeping without the rest of `forStore`.
    *
    * A board's note is where the board lives (ADR 0015), so it has to hold
-   * everything the board is, and that includes two fields nothing else can
-   * recover. `source` is what says a human drew an element rather than an
-   * agent, which `describe` reports and `compare` reads. `start` and `end` are
-   * what say which shapes an arrow joins, and `rerouteBoundArrows` reads them
-   * every time one of those shapes moves — an arrow that loses them stops
-   * following the boxes it was drawn between.
+   * everything the board is, and that includes one field nothing else can
+   * recover: `source`, which says a human drew an element rather than an
+   * agent, and which `describe` reports and `compare` reads. What an arrow
+   * joins is not in that class — it is in `startBinding` and `endBinding`,
+   * which are Excalidraw's own fields and go into the note as themselves.
    *
    * Not `forStore`, because a note is a whole document: its z-order is restated
    * and its labels are expanded, neither of which a partial write wants. And
@@ -394,18 +393,14 @@ export function expandElementsForExport(
       if (keptSource !== undefined) element.source = keptSource;
       if (syncTimestamp !== undefined) element.syncTimestamp = syncTimestamp;
       if (serverVersion !== undefined) element.version = serverVersion;
-      // `label` is not restored, and neither is `text` on anything that is not
-      // a text element. Both are the seed, and the seed is an input format: it
-      // has been read by now, and what it said is a text element on the board.
-      // Storing it too would be one fact spelled twice, which is what needed a
-      // rule for which spelling wins, which is what TASK-024, TASK-028 and
-      // TASK-029 each were (TASK-073).
-      //
-      // The arrow's refs do stay, because they are not a second spelling of
-      // `startBinding`: they are how `rerouteBoundArrows` tells an arrow whose
-      // path the server computes from one Excalidraw draws and binds itself.
-      if (start !== undefined) element.start = start;
-      if (end !== undefined) element.end = end;
+      // Nothing here restores `label`, `text` on anything that is not a text
+      // element, or an arrow's `start` and `end`. All of them are the seed, and
+      // the seed is an input format: it has been read by now, and what it said
+      // is a text element and a binding on the board. Storing it too would be
+      // one fact spelled twice, which is what needed a rule for which spelling
+      // wins, which is what TASK-024, TASK-028 and TASK-029 each were
+      // (TASK-073), and what TASK-088 was when a human re-bound an arrow and
+      // the ref went on naming the shape they had dragged it off.
       return element;
     };
 
@@ -425,27 +420,20 @@ export function expandElementsForExport(
       continue;
     }
 
-    // Arrows: preserve browser-synced bindings; for agent-created arrows the
-    // server keeps start/end refs with null bindings (points are kept correct
-    // by rerouteBoundArrows), so synthesize live bindings from the refs —
-    // otherwise arrows don't stick to shapes when moved in Excalidraw.
+    // An arrow ends where its bindings say. A scene from a browser or a note
+    // already carries them; an agent says `start: { id }`, which is the input
+    // spelling of the same thing and becomes a binding here, through the one
+    // conversion `arrow-binding.ts` holds. From here on the binding is all
+    // anything reads, including the server's own routing (TASK-088).
     if (el.type === 'arrow' || el.type === 'line') {
       base.points = rest.points ?? [[0, 0], [100, 0]];
       base.lastCommittedPoint = null;
-      if (rest.startBinding) {
-        base.startBinding = { ...rest.startBinding, fixedPoint: rest.startBinding.fixedPoint ?? null };
-      } else if (start?.id) {
-        base.startBinding = { elementId: start.id, focus: 0, gap: 4, fixedPoint: null };
-      } else {
-        base.startBinding = null;
-      }
-      if (rest.endBinding) {
-        base.endBinding = { ...rest.endBinding, fixedPoint: rest.endBinding.fixedPoint ?? null };
-      } else if (end?.id) {
-        base.endBinding = { elementId: end.id, focus: 0, gap: 4, fixedPoint: null };
-      } else {
-        base.endBinding = null;
-      }
+      base.startBinding = rest.startBinding
+        ? { ...rest.startBinding, fixedPoint: rest.startBinding.fixedPoint ?? null }
+        : bindingFromRef(start);
+      base.endBinding = rest.endBinding
+        ? { ...rest.endBinding, fixedPoint: rest.endBinding.fixedPoint ?? null }
+        : bindingFromRef(end);
       base.startArrowhead = rest.startArrowhead ?? null;
       base.endArrowhead = rest.endArrowhead ?? (el.type === 'arrow' ? 'arrow' : null);
       // Only an arrow can be elbowed. A line carrying `elbowed: false` is a

@@ -151,9 +151,21 @@ export interface ServerElement extends Omit<ExcalidrawElementBase, 'id'> {
   // format that says which board an image belongs to, which is why a board's
   // images are read off its elements rather than out of a map (TASK-060).
   fileId?: string;
-  // Arrow element binding: connect arrows to shapes by element ID
-  start?: { id: string };
-  end?: { id: string };
+  // What an arrow touches, and Excalidraw's own record of it: which shape, how
+  // far round it (`focus`), and how far short of its outline the path stops
+  // (`gap`). Everything that routes or reads a connection reads these.
+  startBinding?: ExcalidrawBinding | null;
+  endBinding?: ExcalidrawBinding | null;
+  /**
+   * The agent's spelling of the same thing, and an input format only: `start`
+   * and `end` are converted to bindings at the write boundary and never stored,
+   * exactly as `label` stopped being stored in TASK-073. Storing them made the
+   * board hold two answers to what an arrow touched, and a human who dragged
+   * an end onto a different shape had their edit undone by the stale one the
+   * next time anything moved (TASK-088, ADR 0015).
+   */
+  start?: { id: string } | null;
+  end?: { id: string } | null;
 }
 
 // API Response types

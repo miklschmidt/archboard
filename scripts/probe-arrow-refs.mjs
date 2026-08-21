@@ -9,8 +9,11 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const repo = '/home/msc/Projects/whiteboard';
+// The checkout this file is in, so the probe measures the code beside it
+// rather than whatever is in one particular clone.
+const repo = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = 39000 + Math.floor(Math.random() * 900);
 const base = `http://127.0.0.1:${PORT}`;
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), 'arrowprobe-'));
