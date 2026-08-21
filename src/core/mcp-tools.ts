@@ -585,6 +585,42 @@ export const tools: Tool[] = [
     }
   },
   {
+    name: 'claim_board',
+    description: "Take a board for a stretch of work, so that everything you are about to do to it is one uninterrupted act. FOR WORK YOU ALREADY KNOW IS SUBSTANTIAL — redrawing a board, restructuring a subsystem, working through twenty elements — AND FOR NOTHING SMALLER: an ordinary write already holds the board for as long as it takes to write, so there is nothing to claim for moving one box. What a claim buys is the gaps: taking the board twenty times leaves nineteen moments for somebody else to write into, and a board that is never once in the state you meant. Carry nothing between this and the writes that follow — every write naming this board goes under the claim automatically. Call it again to extend, with the reason brought up to date; a write does not extend it. THE PERSON AT THE CANVAS CAN TAKE IT BACK AT ANY MOMENT and their pane shows your reason while you hold it; your next call is then refused once and tells you so. NOTHING IS ROLLED BACK when that happens — every write you made is already saved — so leave the board sensible after each write, or work on a variant and swap when it is done, and stop when you are told rather than claiming it again.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        board: {
+          type: 'string',
+          description: "Which board to claim: 'payments', or 'payments@option-a' for a variant."
+        },
+        reason: {
+          type: 'string',
+          description: 'What you are about to do, in the words the person at the canvas would use — it is shown on their pane for as long as you hold the board, and it is the only reason they have for why the wall stopped responding. "Redrawing the payment path", not "batch write".'
+        },
+        forMs: {
+          type: 'number',
+          description: 'How long you expect to need it, in milliseconds. Ten minutes by default, an hour at most, and a claim that runs out simply ends — anything longer means claiming again, which you can only do if you are still alive.'
+        }
+      },
+      required: ['board', 'reason']
+    }
+  },
+  {
+    name: 'release_board',
+    description: 'Give back a board you claimed. The board goes back to being taken one write at a time and everything you wrote stays where it is. Call it as soon as the work is done: a claim you forget about is a board nobody else can write until it expires. Releasing a claim that has already expired, or that the person at the canvas took back, is not an error.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        board: {
+          type: 'string',
+          description: 'Which board to release. The same board you claimed.'
+        }
+      },
+      required: ['board']
+    }
+  },
+  {
     name: 'open_pane',
     description: "Split the canvas into a second pane and, when a board is named, open that board into the new pane. This is the whole side-by-side move: the architecture that exists stays where it is, and the proposal goes beside it. It cannot be aimed at an existing pane, so it can never overwrite what somebody is reading — use open_board with its `pane` argument to change what an existing pane holds. Two panes is the most the canvas lays out. Needs the canvas open in a browser: a pane exists only while a tab is rendering it.",
     inputSchema: {

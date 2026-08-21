@@ -73,7 +73,9 @@ const PAIRS = [
   ['library list', ['list_library_items']],
   ['library insert', ['insert_library_item']],
   ['snapshot save', ['snapshot_scene']],
-  ['snapshot restore', ['restore_snapshot']]
+  ['snapshot restore', ['restore_snapshot']],
+  ['claim', ['claim_board']],
+  ['release', ['release_board']]
 ];
 
 // --- the asymmetries ---------------------------------------------------------
