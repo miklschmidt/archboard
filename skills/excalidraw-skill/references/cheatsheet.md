@@ -161,6 +161,17 @@ Requires `ARCHBOARD_VAULT`. A pane holds exactly one board; two panes hold two. 
 | `save_board` | Write a board to the vault; **refused if the note changed on disk** (`force` overwrites anyway). `variant` branches the board into a proposal, which is what makes it comparable; a branch moves no pane, so `open_pane` it | `board` |
 | `compare_boards` | Semantic diff between two variants, joined on node identity (`customData.archboard.node`). Complete and unsummarised — narrate it yourself. Reads both sides from their notes; `source` says which side is a board the canvas has open. The canvas is untouched. Check `summary.comparable` and `layout.cannotExpress` before making claims | `from` (`to` optional) |
 
+### One writer at a time
+
+A board has a mutex: an agent takes it to write, a person takes it by touching the canvas, nobody else writes while it is held. That happens by itself around every write. These two are for the case it does not fit — work you already know is substantial, where taking the board twenty times would leave nineteen gaps for somebody else to write into.
+
+| Tool | Description | Required params |
+|------|-------------|-----------------|
+| `claim_board` | Hold a board across everything you are about to do to it. Not for one box — an ordinary write already holds the board while it writes. Carry nothing: every write naming this board goes under the claim. Call again to extend | `board`, `reason` (shown on the person's pane), (optional) `forMs` |
+| `release_board` | Give it back. Do it as soon as the work is done | `board` |
+
+The person at the canvas can take a claimed board back at any moment. Your next call is refused once and says so; **nothing is rolled back**, because every write you made is already saved. So leave the board sensible after each write, or work on a variant and swap when it is done — and when you are told you have lost it, stop and say what state you left the board in rather than claiming it again.
+
 ### Panes
 
 A pane is a slot holding one board. Two panes are how the architecture that exists sits beside a proposal, and both of these need the canvas open in a browser.

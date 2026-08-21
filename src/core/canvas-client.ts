@@ -5,6 +5,7 @@ import { ServerElement } from '../types.js';
 import { EXPRESS_SERVER_URL, ENABLE_CANVAS_SYNC } from './config.js';
 import type { BoardWriteConflict } from './board.js';
 import type { HoldReport } from './board-hold.js';
+import type { Claim } from './board-lock.js';
 import type { CompareResult } from './compare.js';
 
 // API Response types
@@ -370,6 +371,44 @@ export async function closePane(pane: string): Promise<PaneLayoutResponse> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ pane })
+  });
+}
+
+// ---- Claiming a board for longer than one write (ADR 0016) ----
+//
+// Nothing is carried between these two calls. The claim lives on the canvas
+// against the board, so every write in between is recognised as the claim's by
+// naming the same board it already had to name — which is what makes claiming
+// usable from a surface that is a fresh process every command.
+
+export interface ClaimReply {
+  success: boolean;
+  board: string;
+  claim: Claim;
+  /** False when this extended a claim that was already standing. */
+  created: boolean;
+}
+
+export interface ClaimReleaseReply {
+  success: boolean;
+  board: string;
+  released: boolean;
+  claim: Claim | null;
+}
+
+export async function claimBoard(params: { reason: string; forMs?: number }): Promise<ClaimReply> {
+  return requestJson<ClaimReply>('/api/boards/claim', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason: params.reason, ...(params.forMs !== undefined ? { forMs: params.forMs } : {}) })
+  });
+}
+
+export async function releaseBoardClaim(): Promise<ClaimReleaseReply> {
+  return requestJson<ClaimReleaseReply>('/api/boards/claim/release', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({})
   });
 }
 
