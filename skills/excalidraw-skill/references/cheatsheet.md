@@ -239,6 +239,8 @@ Notes:
 
 Every element endpoint **requires** `?board=<key>`; without it the answer is 400 with `code: "BOARD_REQUIRED"` and the open boards under `open`. There is no active board (ADR 0009).
 
+Any answer about a board whose note changed underneath carries `held`: the conflict, when the board stopped saving, how many changes are held on the canvas since, and the three commands that end it. Writes are taken while it is held; none of them reaches the vault.
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/api/boards` | Vault listing + open boards + what each pane is showing |

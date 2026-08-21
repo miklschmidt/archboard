@@ -81,6 +81,17 @@ export interface BoardSaveResult extends BoardInfo {
   savedFrom?: string;
   /** `moved` was repointed at what was written; `kept` was left on the source. */
   panes?: { moved: PaneRef[]; kept: PaneRef[] };
+  /**
+   * Set when this save was one of the two outcomes that end a hold: the board
+   * had stopped saving, and it is saving again now (ADR 0006, TASK-079).
+   */
+  resolvedHold?: {
+    board: string;
+    outcome: 'overwrite' | 'elsewhere';
+    /** How many changes were riding on the choice that was just made. */
+    writes: number;
+    since: string;
+  };
 }
 
 /**
@@ -95,6 +106,26 @@ export interface BoardWriteConflict {
   lastReadAt?: string;
   fileModifiedAt?: string;
   outcomes: { reload: string; overwrite: string; saveAs: string };
+  message: string;
+}
+
+/**
+ * A board that has stopped saving (ADR 0006, TASK-079).
+ *
+ * Its note changed underneath, so archboard refused to write it and has not
+ * written it since. What is drawn on it after that is held on the canvas and is
+ * in nothing else, which is why the mark stays up: it is not a message about
+ * something that happened, it is the state of the board until somebody picks
+ * one of the conflict's three outcomes.
+ */
+export interface BoardHold {
+  board: string;
+  since: string;
+  /** Changes that have gone into the held copy rather than into the note. */
+  writes: number;
+  /** Whether a pane has said what is on its screen since it stopped saving. */
+  fromScreen: boolean;
+  conflict: BoardWriteConflict;
   message: string;
 }
 
@@ -135,6 +166,10 @@ export interface WebSocketMessage {
   files?: any;
   /** Library items, on `library_changed`. Never elements. */
   items?: unknown[];
+  /** On `board_hold` and `board_released`: the board that stopped saving. */
+  hold?: BoardHold;
+  /** On `board_released`: which of the three outcomes ended it. */
+  outcome?: 'reload' | 'overwrite' | 'elsewhere';
 }
 
 /** What one pane tells the shell about itself. */
@@ -148,4 +183,11 @@ export interface PaneStatus {
   elementCount: number;
   /** When this pane last saw the board change, from either direction. */
   lastChangeAt: string | null;
+  /**
+   * Set while the board this pane is holding has stopped saving. The chrome
+   * shows it continuously rather than announcing it once, because it is a state
+   * and not an event: everything drawn from here is on this canvas and nowhere
+   * else until somebody chooses (ADR 0006).
+   */
+  hold: BoardHold | null;
 }

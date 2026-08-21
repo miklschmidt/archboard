@@ -17,7 +17,7 @@ import { InstallLibraryDialog } from './InstallLibraryDialog'
 import { useLibrary } from './useLibrary'
 import { BoardConflictError, clearBoard, fetchBoardInfo, newBoard, openBoard, saveBoard } from '../canvas/api'
 import type { SaveRequest } from '../canvas/api'
-import type { BoardInfo, BoardSaveResult, BoardWriteConflict, PaneRef, PaneStatus } from '../types'
+import type { BoardHold, BoardInfo, BoardSaveResult, BoardWriteConflict, PaneRef, PaneStatus } from '../types'
 import './shell.css'
 
 const THEME_KEY = 'archboard-theme'
@@ -60,6 +60,22 @@ function saveNotice(saved: BoardSaveResult, paneCount: number): Notice {
     : `Saved "${saved.board}" to ${saved.file}.`
   const moved = saved.panes?.moved ?? []
   const kept = saved.panes?.kept ?? []
+
+  // The board had stopped saving and this is one of the two outcomes that end
+  // that, so the news is not the file it wrote but that the drawing is written
+  // down again — and, for a save elsewhere, which board is now which.
+  const ended = saved.resolvedHold
+  if (ended) {
+    const held = `${ended.writes} change${ended.writes === 1 ? '' : 's'}`
+    return {
+      kind: 'info',
+      hold: true,
+      text: ended.outcome === 'overwrite'
+        ? `${wrote} "${ended.board}" is saving again, with the ${held} that were held on the canvas.`
+        : `${wrote} The ${held} that were held are in it, and the panes are showing it. ` +
+          `"${ended.board}" is saving again and holds the version the other editor wrote.`
+    }
+  }
 
   if (saved.saveKind === 'branch') {
     const source = `"${saved.savedFrom}"`
@@ -131,8 +147,14 @@ export function Shell(): JSX.Element {
   const [dialogError, setDialogError] = useState<string | null>(null)
   const [confirmingClear, setConfirmingClear] = useState(false)
   // A refused save, plus the request that was refused — so "overwrite" repeats
-  // exactly the save the human already asked for, rather than a rebuilt guess.
-  const [conflict, setConflict] = useState<{ conflict: BoardWriteConflict; request: SaveRequest } | null>(null)
+  // exactly the save the human already asked for, rather than a rebuilt guess —
+  // plus the hold, when this board has stopped saving altogether. The hold is
+  // what turns the dialog from a report of one refused save into a choice about
+  // a board, and it is set both when the human clicks the mark in the bar and
+  // when a save runs into the same wall.
+  const [conflict, setConflict] = useState<
+    { conflict: BoardWriteConflict; request: SaveRequest; hold?: BoardHold | null } | null
+  >(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<Notice | null>(null)
 
@@ -162,6 +184,10 @@ export function Shell(): JSX.Element {
   const status = statuses[focused] ?? statuses[panes[0] ?? ''] ?? null
   const boardKey = status?.boardKey ?? null
   const identity = status?.board ?? boardInfo?.identity ?? null
+  // Whether the board in front of the human is being written down. It comes
+  // from the pane rather than being asked for, because the pane is what finds
+  // out — the write it made was the one that was refused (TASK-079).
+  const hold = status?.hold ?? null
 
   useEffect(() => {
     try { window.localStorage?.setItem(THEME_KEY, theme) } catch { /* private mode */ }
@@ -248,9 +274,9 @@ export function Shell(): JSX.Element {
         if (!(error instanceof BoardConflictError)) throw error
         setDialog(null)
         setDialogError(null)
-        setConflict({ conflict: error.conflict, request })
+        setConflict({ conflict: error.conflict, request, hold: error.held ?? hold })
       }
-    }), [run, boardKey, status?.clientId, refreshBoardInfo, panes.length])
+    }), [run, boardKey, status?.clientId, refreshBoardInfo, panes.length, hold])
 
   // A board is opened INTO a pane. With one pane the server takes that one;
   // with two it needs telling, which is what the dialog's pane picker is for.
@@ -295,6 +321,10 @@ export function Shell(): JSX.Element {
   const handleReload = () => {
     const key = conflict?.conflict.board
     if (!key) return
+    // What it cost, said afterwards as well as before. This is the one outcome
+    // that ends work rather than writing it somewhere, so the notice holds
+    // until it is clicked away.
+    const discarded = conflict?.hold?.writes ?? 0
     void run(async () => {
       const opened = await openBoard({
         board: key,
@@ -303,7 +333,14 @@ export function Shell(): JSX.Element {
       })
       setBoardInfo(opened)
       setConflict(null)
-      setNotice({ kind: 'info', text: `Reloaded ${opened.board} from the vault.` })
+      setNotice(discarded > 0
+        ? {
+          kind: 'info',
+          hold: true,
+          text: `Reloaded ${opened.board} from the vault. It is saving again, and the ` +
+            `${discarded} change${discarded === 1 ? '' : 's'} held on the canvas ${discarded === 1 ? 'is' : 'are'} gone.`
+        }
+        : { kind: 'info', text: `Reloaded ${opened.board} from the vault.` })
     })
   }
 
@@ -345,6 +382,14 @@ export function Shell(): JSX.Element {
         connected={status?.connected ?? false}
         savedAt={boardInfo?.savedAt ?? null}
         dirty={dirty}
+        hold={hold}
+        // The one thing that opens the conflict dialog while somebody is
+        // drawing: them asking for it (TASK-079).
+        onHoldClick={() => {
+          if (!hold) return
+          setDialogError(null)
+          setConflict({ conflict: hold.conflict, request: { board: hold.board }, hold })
+        }}
         paneCount={panes.length}
         busy={busy}
         onOpen={() => { setDialogError(null); setDialog('open') }}
@@ -408,6 +453,7 @@ export function Shell(): JSX.Element {
       {conflict && (
         <ConflictDialog
           conflict={conflict.conflict}
+          hold={conflict.hold ?? null}
           busy={busy}
           onReload={handleReload}
           onOverwrite={handleOverwrite}

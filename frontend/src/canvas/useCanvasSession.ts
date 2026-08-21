@@ -22,11 +22,25 @@ import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
 import type { LibraryItems } from '@excalidraw/excalidraw/types'
 import { convertMermaidToExcalidraw, DEFAULT_MERMAID_CONFIG } from '../utils/mermaidConverter'
-import type { BoardIdentity, PaneStatus, ServerElement, WebSocketMessage } from '../types'
+import type { BoardHold, BoardIdentity, PaneStatus, ServerElement, WebSocketMessage } from '../types'
 import { cleanElementForExcalidraw, elementsForScene } from './elements'
 import { baselineFrom, diffAgainstBaseline, fingerprint, isEmpty, type Baseline } from './changes'
-import { fetchElements, fetchFiles, loadedBundle, reportChanges, reportPane } from './api'
+import { BoardConflictError, fetchElements, fetchFiles, loadedBundle, reportChanges, reportPane } from './api'
 import type { PaneReport } from './api'
+
+// Messages that say what is on a board, as opposed to messages about the board.
+// A pane that owes the server a rebase ignores the first kind and acts on the
+// second (see the socket handler).
+const CONTENT_MESSAGES = new Set([
+  'initial_elements',
+  'element_created',
+  'element_updated',
+  'element_deleted',
+  'elements_batch_created',
+  'elements_changed',
+  'canvas_cleared',
+  'files_added'
+])
 
 // Every duration this pane waits out. They are in src/core/timing.ts with the
 // server's and the change feed's, because they pull against each other and one
@@ -110,6 +124,17 @@ export function useCanvasSession({
   // Everything this pane believes the server holds. The only thing standing
   // between a stale tab and a truncated board.
   const baselineRef = useRef<Baseline>(new Map())
+
+  // Set while the board this pane holds has stopped saving (ADR 0006,
+  // TASK-079). Nothing about drawing changes — the human carries on and the
+  // canvas keeps taking it — but everything drawn from here is held on the
+  // server and is in no note, so the chrome says so until somebody chooses.
+  const holdRef = useRef<BoardHold | null>(null)
+  // The pane owes the server a statement of what is on its screen. A held
+  // board's copy starts as the note the other editor wrote, because that is all
+  // the server can read; this is what replaces it with what the human is
+  // actually looking at, one round trip after the refusal.
+  const rebaseNeededRef = useRef(false)
 
   const reportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -258,7 +283,8 @@ export function useCanvasSession({
       board: boardRef.current,
       boardKey: boardKeyRef.current,
       elementCount: apiRef.current?.getSceneElements().length ?? 0,
-      lastChangeAt: lastChangeAtRef.current
+      lastChangeAt: lastChangeAtRef.current,
+      hold: holdRef.current
     })
     schedulePaneReport()
   }, [clientId, paneId, schedulePaneReport])
@@ -354,6 +380,12 @@ export function useCanvasSession({
       retryTimerRef.current = null
     }
 
+    // A board that has just stopped saving is owed a statement of what is on
+    // this screen, and that is this report rather than a delta: the server's
+    // copy of a held board starts as the note somebody else wrote, and a delta
+    // on top of that is neither their board nor ours. Diffed against nothing,
+    // so every element on the glass is in it (TASK-079).
+    const rebase = rebaseNeededRef.current
     // Including the deleted: a report is built only from live elements, but
     // *why* an element went missing can matter. Emptying a label deletes the
     // bound text element rather than editing it, and the deleted element is
@@ -361,9 +393,9 @@ export function useCanvasSession({
     // that was never expanded (src/core/labels.ts, TASK-029).
     const report = diffAgainstBaseline(
       api.getSceneElementsIncludingDeleted() as unknown as Record<string, any>[],
-      baselineRef.current
+      rebase ? new Map() : baselineRef.current
     )
-    if (isEmpty(report)) {
+    if (!rebase && isEmpty(report)) {
       baselineRef.current = report.nextBaseline
       return
     }
@@ -376,7 +408,15 @@ export function useCanvasSession({
     const editsAtSend = localEditsRef.current
     inFlightRef.current = true
     try {
-      const reply = await reportChanges(target, report, clientId)
+      const reply = await reportChanges(target, report, clientId, rebase)
+      // The server took what is on this screen, so the held copy and the pane
+      // are the same board again and the ordinary flow resumes.
+      if (rebase) rebaseNeededRef.current = false
+      // Every reply says whether this board is saving. It is a state rather
+      // than an event — it outlives the message that first mentioned it — so
+      // it is taken from each reply rather than remembered from the refusal.
+      if (reply.held) holdRef.current = reply.held
+      else if (holdRef.current) holdRef.current = null
 
       // The board comes back whole, and this pane renders it (ADR 0015,
       // TASK-074). That is what stops a session accumulating divergence: the
@@ -408,6 +448,22 @@ export function useCanvasSession({
       }
       noteChange()
     } catch (error) {
+      // Refused because the note changed underneath (ADR 0006). The board has
+      // stopped saving from this moment; it is not a failure to retry into,
+      // because retrying the same delta would meet the same refusal every two
+      // seconds for as long as the human keeps drawing. What this pane owes the
+      // server instead is what is on its screen, and then drawing carries on
+      // into the held copy (TASK-079).
+      if (error instanceof BoardConflictError) {
+        holdRef.current = error.held ?? holdRef.current
+        rebaseNeededRef.current = true
+        publishStatus()
+        retryTimerRef.current = setTimeout(() => {
+          retryTimerRef.current = null
+          void sendReport()
+        }, 0)
+        return
+      }
       // The baseline is untouched, so the very same delta is recomputed next
       // time. Nothing is lost by a failed report except its promptness.
       console.warn('Change report failed; retrying:', error)
@@ -418,7 +474,7 @@ export function useCanvasSession({
     } finally {
       inFlightRef.current = false
     }
-  }, [applyServerScene, clientId, noteChange])
+  }, [applyServerScene, clientId, noteChange, publishStatus])
 
   /** Does this pane hold edits the server has not accepted? */
   const hasPendingChanges = useCallback((): boolean => {
@@ -696,6 +752,13 @@ export function useCanvasSession({
       return
     }
 
+    // Between a refused write and this pane saying what is on its screen, the
+    // server's copy of this board is the note another editor wrote. Rendering
+    // it would put their scene in front of the human in place of their own, a
+    // fraction of a second before the pane replaces it again. So board content
+    // waits for the rebase; news about the board itself does not (TASK-079).
+    if (rebaseNeededRef.current && CONTENT_MESSAGES.has(data.type)) return
+
     switch (data.type) {
       // The first frame, and every reconnection. If this pane is holding edits
       // the server never accepted — the socket dropped mid-drawing, say — get
@@ -771,6 +834,24 @@ export function useCanvasSession({
         break
 
       case 'selection_changed':
+        break
+
+      // This board stopped saving, or is saving again. It reaches every pane
+      // holding it, not only the one whose write was refused: a second pane
+      // showing the same board is drawing into the same held copy and has the
+      // same right to know (ADR 0006, TASK-079).
+      case 'board_hold':
+        holdRef.current = data.hold ?? holdRef.current
+        publishStatus()
+        break
+
+      case 'board_released':
+        holdRef.current = null
+        // A reload replaces this pane's scene with the note, and the
+        // board_switched that carries it is on its way. Anything owed about
+        // the copy that was just discarded is owed no longer.
+        rebaseNeededRef.current = false
+        publishStatus()
         break
 
       // Boardless on purpose: one palette sits behind every board, so this is

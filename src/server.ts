@@ -55,6 +55,16 @@ import {
   SCRATCH_KEY
 } from './core/board-store.js';
 import {
+  beginHold,
+  HoldReport,
+  holdMessage,
+  holdOn,
+  holdWrite,
+  isHeld,
+  releaseHold,
+  reportHold
+} from './core/board-hold.js';
+import {
   BoardContent,
   BoardWriteConflictError,
   emptyContent,
@@ -72,6 +82,7 @@ import {
   hashBoardBytes,
   listBoards,
   makeIdentity,
+  normalizeBoardKey,
   SCRATCH_BOARD,
   panesFollowSave,
   parseBoardKey,
@@ -143,6 +154,35 @@ const wss = wiring.wss;
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+
+// A board that has stopped saving says so in every answer about it.
+//
+// One line rather than a line in each of thirty routes, because the point of a
+// held board is that nobody working on it can fail to notice (TASK-079). An
+// agent that never sees the refusal — a different process, a different turn —
+// still gets the hold, the three outcomes and how much is riding on them
+// attached to the next thing it reads or draws. Refusals carry it too: a 409
+// is exactly when it is worth saying.
+//
+// It is put on the response rather than fetched by the caller so that adding a
+// route cannot forget it.
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const asked = typeof req.query.board === 'string'
+    ? req.query.board
+    : (req.body && typeof req.body === 'object' && typeof req.body.board === 'string' ? req.body.board : '');
+  if (!asked.trim()) return next();
+  const key = normalizeBoardKey(asked);
+  const send = res.json.bind(res);
+  res.json = (body: unknown) => {
+    const hold = holdOn(key);
+    return send(
+      hold && body && typeof body === 'object' && !Array.isArray(body)
+        ? { ...(body as Record<string, unknown>), held: reportHold(key, hold) }
+        : body
+    );
+  };
+  next();
+});
 
 // Serve the frontend bundle, and only that.
 //
@@ -349,11 +389,72 @@ function persistBoard(
   key: string,
   board: BoardState,
   content: BoardContent,
-  origin: ChangeOrigin
+  origin: ChangeOrigin,
+  fromScreen = false
 ): void {
-  writeBoardContent(board, content);
+  // A board that has stopped saving takes the write into the held copy and
+  // leaves the note alone (TASK-079). Not written down, so `savedAt` does not
+  // move: the chrome's "unsaved changes" and the mark saying why are two facts
+  // and both are true. The feed is told all the same, because the board did
+  // change and an agent watching should hear what a human drew, held or not.
+  if (holdWrite(key, content, fromScreen)) {
+    noteChange(key, board, origin);
+    return;
+  }
+  try {
+    writeBoardContent(board, content);
+  } catch (error) {
+    // ADR 0006 refused it. The refusal still goes to whoever asked for the
+    // write — it is news, and nothing happened — and the board stops saving
+    // from here rather than meeting the same refusal on every gesture that
+    // follows. The held copy starts as the note as this request found it, which
+    // is the other editor's board: this write is refused, so nothing of it is
+    // kept. What makes the held copy the human's board again is the pane
+    // rebasing onto it (`rebase` on the change route), a round trip later.
+    if (error instanceof BoardWriteConflictError && !isHeld(key)) {
+      const hold = beginHold(key, error.conflict, readBoardContent(board));
+      logger.warn(`Board "${key}" has stopped saving: ${holdMessage(key, hold)}`);
+      broadcast({ type: 'board_hold', hold: reportHold(key, hold) } as WebSocketMessage, key);
+    }
+    throw error;
+  }
   board.savedAt = new Date().toISOString();
   noteChange(key, board, origin);
+}
+
+/**
+ * A board is saving again, and every pane holding it should say so.
+ *
+ * One of the three outcomes has been chosen and carried out by the time this
+ * runs; which one, and what it cost, is the caller's to have decided (ADR
+ * 0006). All this does is take the mark down.
+ */
+function releaseBoardHold(key: string, outcome: 'reload' | 'overwrite' | 'elsewhere'): HoldReport | null {
+  const hold = releaseHold(key);
+  if (!hold) return null;
+  const report = reportHold(key, hold);
+  logger.info(`Board "${key}" is saving again (${outcome}), after ${hold.writes} held change(s).`);
+  broadcast({ type: 'board_released', hold: report, outcome } as WebSocketMessage, key);
+  return report;
+}
+
+/** The hold on a board, as a caller is told about it — or nothing to say. */
+function holdResponse(key: string): Record<string, unknown> {
+  const hold = holdOn(key);
+  return hold ? { held: reportHold(key, hold) } : {};
+}
+
+/**
+ * The boards this canvas has open, each saying whether it is still saving.
+ *
+ * `board list` is where an agent arriving mid-session finds out, without having
+ * to write to a board to discover that writing to it goes nowhere.
+ */
+function openBoards(): Array<Record<string, unknown>> {
+  return boardSummaries(boardElementCount).map(summary => ({
+    ...summary,
+    ...holdResponse(summary.key)
+  }));
 }
 
 function normalizeLineBreakMarkup(text: string): string {
@@ -1486,7 +1587,24 @@ const ElementChangesSchema = z.object({
    */
   origin: z.enum(['human', 'agent']).default('human'),
   clientId: z.string().optional(),
-  timestamp: z.string().optional()
+  timestamp: z.string().optional(),
+  /**
+   * "This is the whole board, as it stands on my screen."
+   *
+   * The one thing a pane is otherwise never allowed to say (TASK-016): a pane
+   * sends a delta against what it has been sent, so that a stale or half-loaded
+   * tab cannot name — and so cannot delete — an element it has never seen.
+   *
+   * It is allowed on a board that has stopped saving, and nowhere else. The
+   * note there belongs to another editor, so the board archboard would
+   * otherwise hold is their scene plus the last gesture of the human's, which
+   * is not what anybody is looking at and not what the three outcomes should
+   * act on. The pane says what is on the glass once, and from then on overwrite
+   * means what CLAUDE.md's table says it means. Nothing is written to the vault
+   * by it — a held board writes to nothing — so the worst a wrong one can do is
+   * change what a human sees they are about to choose between.
+   */
+  rebase: z.boolean().default(false)
 });
 
 interface AppliedChanges {
@@ -1734,21 +1852,47 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
   try {
     const { key: boardKeyForRequest, board, content } = boardFromRequest(req, 'A change report');
     const elements = content.elements;
-    const { upserts, deletes, origin, clientId, timestamp } = ElementChangesSchema.parse(req.body ?? {});
+    const { upserts, deletes, origin, clientId, timestamp, rebase } =
+      ElementChangesSchema.parse(req.body ?? {});
+
+    // A pane saying what is on its screen, which is only a thing to say about a
+    // board that has stopped saving (TASK-079). Refused anywhere else, because
+    // anywhere else it is the whole-scene write that cannot tell a full pane
+    // from a half-loaded one.
+    if (rebase) {
+      if (origin === 'agent') {
+        return res.status(400).json({
+          success: false,
+          error: 'A rebase is a pane saying what is on its screen. An agent has no screen; send a delta.'
+        });
+      }
+      if (!isHeld(boardKeyForRequest)) {
+        return res.status(400).json({
+          success: false,
+          error:
+            `"${boardKeyForRequest}" is saving normally, so a rebase would be a whole-scene write. ` +
+            'Report a delta against what this pane has been sent.'
+        });
+      }
+      // Everything in the report is therefore a creation, ids and all, and the
+      // held copy becomes the pane's scene rather than the other editor's note
+      // with one gesture on top of it. `deletes` says nothing here: an element
+      // absent from the screen is absent from the board.
+      elements.clear();
+    }
 
     const now = new Date().toISOString();
     const { created, updated, deleted } = origin === 'agent'
       ? applyAgentChanges(elements, upserts, deletes)
-      : applyReportedChanges(elements, upserts, deletes, now, timestamp);
+      : applyReportedChanges(elements, upserts, rebase ? [] : deletes, now, timestamp);
 
-    if (created.length > 0 || updated.length > 0 || deleted.length > 0) {
-      // This is the write ADR 0006's refusal now arrives on. It used to fire
-      // when somebody chose to save; it fires here, 400 ms after a human lifts
-      // their finger, because that is when the note is written. Refusing loudly
-      // mid-gesture is worse than the problem it reports, and TASK-079 is where
-      // that stops interrupting — until then the report is refused with the
-      // three outcomes, which at least loses nothing on disk.
-      persistBoard(boardKeyForRequest, board, content, origin);
+    if (rebase || created.length > 0 || updated.length > 0 || deleted.length > 0) {
+      // This is the write ADR 0006's refusal arrives on: not a save somebody
+      // chose, but 400 ms after a human lifted their finger. The first one is
+      // refused and stops the board saving; every gesture after it goes into
+      // the held copy and nothing more is refused, so the human draws on
+      // (TASK-079).
+      persistBoard(boardKeyForRequest, board, content, origin, rebase);
 
       // Carries the reporting client so that client can skip its own echo:
       // re-applying a change already on screen is at best a wasted render and
@@ -2993,7 +3137,7 @@ app.get('/api/boards', (req: Request, res: Response) => {
         boards: found.boards,
         scanned: found.scanned,
         ...(found.unreadable.length ? { unreadable: found.unreadable } : {}),
-        open: boardSummaries(boardElementCount),
+        open: openBoards(),
         onScreen: boardsOnScreen()
       });
     }
@@ -3001,7 +3145,7 @@ app.get('/api/boards', (req: Request, res: Response) => {
       success: true,
       vault,
       boards: listBoards(vault),
-      open: boardSummaries(boardElementCount),
+      open: openBoards(),
       onScreen: boardsOnScreen()
     });
   } catch (error) {
@@ -3077,11 +3221,28 @@ app.post('/api/boards/open', (req: Request, res: Response) => {
     // the baseline the next write is checked against.
     recordBaseline(board, loaded.file, loaded.hash);
     board.loadedAt = new Date().toISOString();
+    // ADR 0006's first outcome: take the note, discard the canvas. It is the
+    // one outcome that ends a hold by throwing the held copy away, so this is
+    // the moment everything drawn since the board stopped saving is gone
+    // (TASK-079). It costs what the human was told it costs.
+    const ended = params.reload ? releaseBoardHold(openedKey, 'reload') : null;
     switchPaneTo(pane, openedKey, content);
+    // On a reload, every pane holding it — not only the one this was addressed
+    // to. The others are showing the copy that was just discarded, and a pane
+    // left showing it would report the discarded work straight back as a fresh
+    // edit, which is the reload undone one gesture later.
+    if (params.reload) {
+      for (const other of panes.values()) {
+        if (other.clientId === pane?.clientId) continue;
+        if ((paneBoards.get(other.clientId) ?? other.board) !== openedKey) continue;
+        switchPaneTo(other, openedKey, content);
+      }
+    }
 
     logger.info(
       `Board opened: "${openedKey}" (${elements.size} elements) from ${loaded.file}` +
-      (pane ? ` into pane ${pane.paneId}` : ' (no pane open)')
+      (pane ? ` into pane ${pane.paneId}` : ' (no pane open)') +
+      (ended ? `, discarding ${ended.writes} change(s) held since it stopped saving` : '')
     );
     res.json({
       success: true,
@@ -3228,6 +3389,15 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     const { elementCount } = written;
     const overwrote = written.overwrote;
     savedBoard.savedAt = new Date().toISOString();
+
+    // Two of ADR 0006's three outcomes are this route, and both have just
+    // happened: the held copy went over the note it could not have gone over on
+    // its own (`--force`), or it went somewhere else and left the note alone
+    // (`--as`). Either way the board is saving again, and the human chose which
+    // (TASK-079). A plain save of a held board never reaches here — the hash
+    // check refuses it, which is how the Save button asks the question again.
+    const heldSource = holdOn(source.key);
+    if (heldSource) releaseBoardHold(source.key, branched ? 'elsewhere' : 'overwrite');
     // What the board just written holds, so the answer and any pane that
     // follows the save are built from it rather than from a second read.
     const savedContent: BoardContent = {
@@ -3236,7 +3406,16 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
       note: written.note,
       hash: written.hash
     };
-    const moved = panesFollowSave(kind) ? watching : [];
+    // A branch normally moves nothing: you branched in order to compare, and
+    // taking the source off screen is the opposite of what was asked for
+    // (ADR 0012). Saving a HELD board elsewhere is the one branch that does
+    // move, for the same reason naming the scratch board does — the two boards
+    // hold the same drawing and there is nothing to stay behind for. Staying
+    // behind here is worse than nothing to stay behind for: the source is
+    // saving again now, so its pane would be repainted with the other editor's
+    // note, and the human would watch their own work leave the screen a second
+    // after being told it was safe.
+    const moved = panesFollowSave(kind) || (heldSource && branched) ? watching : [];
     for (const pane of moved) switchPaneTo(pane, targetKey, savedContent);
 
     logger.info(
@@ -3259,9 +3438,21 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
       // risk of moving.
       saveKind: kind,
       savedFrom: source.key,
+      // What this save did about a board that had stopped saving, so the answer
+      // can say which of the three outcomes was just taken and what it cost.
+      ...(heldSource
+        ? {
+          resolvedHold: {
+            board: source.key,
+            outcome: branched ? 'elsewhere' : 'overwrite',
+            writes: heldSource.writes,
+            since: heldSource.since
+          }
+        }
+        : {}),
       panes: {
         moved: moved.map(paneRef),
-        kept: (kind === 'branch' ? watching : []).map(paneRef),
+        kept: (moved.length === 0 && kind === 'branch' ? watching : []).map(paneRef),
         // The rest of the glass, because the branch that moved nothing has to
         // be told how to get on screen, and the answer depends on whether
         // there is still room for a pane (TASK-054). The caller cannot see

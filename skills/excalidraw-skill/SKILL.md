@@ -513,6 +513,10 @@ Opening a board disturbs no other pane: the switch reaches that pane's socket al
 
 Never pass `--force` / `force: true` unless the human has said to overwrite.
 
+**After that refusal the board stops saving, and says so on every answer about it.** It is not refused again: the next write is taken into a copy the canvas keeps, so a human at the board can carry on drawing while they decide. Every answer about that board — a write, a read, `board list`, an MCP tool result — carries a `held` block with the conflict, when it stopped saving, how many changes are riding on it, and those same three commands. Say it out loud when you see it. The board is being drawn on and none of it is in the vault, and only the human can end that.
+
+What the three outcomes do with the held changes: reload discards them, overwrite writes them, save elsewhere writes them to the other note and moves the panes to it. Nothing merges the two versions, and archboard picks none of them.
+
 Nothing is locked, and the check reads the file, not another app's memory: a board open in Obsidian can still write its own copy back afterwards. Keep a board open in one editor at a time.
 
 A pane opened with nothing else on screen holds `scratch`: a board like any other, named like any other (`--board scratch`). Its note is `<vault>/.archboard/scratch.excalidraw.md`, out of the way of the vault's real boards and picked up again when the canvas restarts, so a sketch is not lost by accident. What it has not got is a name somebody chose, and `board save --board scratch --as <name>` gives it one — the one save that takes the pane with it.
