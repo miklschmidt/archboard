@@ -3,11 +3,11 @@ id: TASK-088
 title: >-
   Arrow routing reads the agent input shape instead of the binding, so a human's
   re-bind is undone
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-21 12:42'
-updated_date: '2026-08-21 13:05'
+updated_date: '2026-08-21 13:30'
 labels: []
 dependencies:
   - TASK-073
@@ -60,12 +60,12 @@ Note that `src/core/expand-elements.ts` and `scripts/check-labels.mjs` both carr
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 resolveArrowBindings selects and routes arrows by startBinding and endBinding, and never reads start or end
-- [ ] #2 The router honours each binding's own focus and gap instead of imposing a hardcoded gap, so re-routing a hand-drawn arrow leaves it where its binding says
-- [ ] #3 start and end are input-only and are not stored, like label since TASK-073, which is what ADR 0015 already requires
-- [ ] #4 Re-binding an arrow's end in the browser and then moving the old shape leaves the arrow where the human put it
-- [ ] #5 Dragging an arrow's end into empty space is covered, not only re-binding it to another shape
-- [ ] #6 A check reproduces the measured failure and fails without the fix
+- [x] #1 resolveArrowBindings selects and routes arrows by startBinding and endBinding, and never reads start or end
+- [x] #2 The router honours each binding's own focus and gap instead of imposing a hardcoded gap, so re-routing a hand-drawn arrow leaves it where its binding says
+- [x] #3 start and end are input-only and are not stored, like label since TASK-073, which is what ADR 0015 already requires
+- [x] #4 Re-binding an arrow's end in the browser and then moving the old shape leaves the arrow where the human put it
+- [x] #5 Dragging an arrow's end into empty space is covered, not only re-binding it to another shape
+- [x] #6 A check reproduces the measured failure and fails without the fix
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -79,3 +79,33 @@ Note that `src/core/expand-elements.ts` and `scripts/check-labels.mjs` both carr
 6. Delete the two comments that justify the refs by which arrows the server may route (expand-elements.ts, check-labels.mjs), the (el as any).start writes in library-catalogue.ts, and update check-library.mjs to assert the binding.
 7. Prove by reverting each change and counting which checks fail.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Ported Excalidraw's own binding geometry into src/core/arrow-binding.ts: determineFocusPoint and updateBoundPoint, read out of the source maps @excalidraw/excalidraw ships in dist/dev rather than guessed at. focus is honoured properly, not documented as a gap.
+
+One approximation, in the file's header comment. Excalidraw expands a shape's outline by gap corner by corner (each rounded corner's bezier pushed out along its own diagonal, the straight sides re-hung between the moved corners). Here the outline is expanded analytically: half-extents plus gap for a rectangle and a diamond, semi-axes plus gap for an ellipse, and a rounded corner treated as a square one. The two differ only within a corner radius of a corner and by at most gap, which is 4px. Doing it faithfully means cubic-bezier/segment intersection plus Excalidraw's corner-radius rules.
+
+Two decisions the task did not name, both from reading updateBoundPoint:
+- Only the bound ends move. The old router rewrote points to [[0,0],[dx,dy]], so once selection is by binding it would have caught hand-drawn multi-point arrows and flattened them. A three-point arrow keeping its bend is checked.
+- Elbow arrows are skipped. Their path is an orthogonal route Excalidraw recomputes whole; moving one endpoint would leave a route that no longer turns square corners. Today they are flattened, so this is strictly better.
+
+On creation the aim comes from the bound shapes' centres rather than from the placeholder points an agent supplied, which at focus 0 is the centre-to-centre line and is a fixed point of running the routing again. On a re-route it comes from the arrow's own next point, which is what Excalidraw uses.
+
+scripts/probe-arrow-refs.mjs hardcoded /home/msc/Projects/whiteboard, so it measured that clone whichever checkout it was run from. It resolves the repo from its own location now and reports 'the arrow was left alone'.
+
+Revert-proof, whole suite each time (0 failures with the fix in place):
+- refs stored and read again (the bug): 4 of 82 geometry checks fail, including the measured one, 'moving a shape the arrow no longer touches dragged it from [[0,0],[300,-270]] to [[0,0],[292,41.9]], undoing where a person put it'.
+- routing gap hardcoded to 8 again: 4 of 82 fail.
+- focus ignored, routing centre to centre: 4 of 82 fail.
+- path flattened to its two ends: 2 of 82 fail.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+resolveArrowBindings selects and routes by startBinding/endBinding and never reads start/end, honouring each binding's own focus and gap. src/core/arrow-binding.ts is the geometry, ported from Excalidraw's element/binding.ts (determineFocusPoint, updateBoundPoint) out of its dev source maps; the outline offset is analytic rather than corner-by-corner, which differs within a corner radius of a corner by at most gap and is documented in the file. start and end are spent in buildCreatedElement and mergeElementUpdate and are not stored, like label since TASK-073; start: null unbinds an end. One gap constant, BOUND_ARROW_GAP, read by the conversion and the routing (TASK-089 AC 1). Only bound ends move, so a hand-drawn bend survives; elbow arrows are skipped and the reason is written down.
+
+Verified: scripts/probe-arrow-refs.mjs reports the arrow left alone. check-geometry covers the arithmetic and the failure at 82 checks, up from 65: the re-bind then an unrelated move, an end dragged into empty space, a three-point arrow keeping its bend, and a person's own focus and gap surviving a box moving and moving back. bun run test green, 22 steps including both browser checks. Reverting the fix fails 4 of the 82; hardcoding the gap fails 4; ignoring focus fails 4; flattening the path fails 2.
+<!-- SECTION:FINAL_SUMMARY:END -->
