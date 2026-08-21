@@ -188,6 +188,16 @@ export interface LockHolder {
   until: string;
   process: string;
   reason?: string;
+  /**
+   * A claim rather than one write: an agent has this board across everything it
+   * is doing, not for the twenty milliseconds of a single write.
+   *
+   * The difference the pane cares about, because it is the difference between
+   * a surface that flickers and a wall that has stopped. A claim is what gets a
+   * banner naming the holder and their reason, and the one tap that takes it
+   * back.
+   */
+  claimed?: boolean;
 }
 
 /** What one pane tells the shell about itself. */

@@ -27,6 +27,7 @@ import { cleanElementForExcalidraw, elementsForScene } from './elements'
 import { baselineFrom, diffAgainstBaseline, fingerprint, isEmpty, type Baseline } from './changes'
 import {
   BoardConflictError, fetchElements, fetchFiles, holdBoard, loadedBundle, releaseBoard, reportChanges,
+  takeBoardBack,
   reportPane
 } from './api'
 import type { PaneReport } from './api'
@@ -196,8 +197,28 @@ export interface CanvasSession {
    * would take the board away mid-gesture.
    */
   readOnly: boolean
-  /** Who has it, when somebody does. For saying so on screen; TASK-080 is where that lands. */
+  /**
+   * Who has it, when somebody does, so the pane can say so rather than only
+   * stop responding.
+   *
+   * Worth saying for a claim and not for a write: an agent's write is twenty
+   * milliseconds, and a banner that appeared for it would be a flicker under
+   * somebody's hand. A claim may run for minutes, and a 75-inch display that
+   * stops for minutes with nothing on it to explain why has simply broken, as
+   * far as the person standing at it can tell (ADR 0016).
+   */
   heldBy: LockHolder | null
+  /**
+   * Take a claimed board back.
+   *
+   * The lock excludes writers from each other; it does not lock somebody out of
+   * their own wall. One deliberate tap rather than any touch, because view mode
+   * still pans and zooms — somebody watching an agent redraw a board is reading
+   * it, and reading it must not end it — and because nothing an agent has
+   * written is undone by taking the board, so a stray palm would leave a
+   * half-drawn board with nobody having decided anything.
+   */
+  takeBack: () => void
 }
 
 export function useCanvasSession({
@@ -577,6 +598,24 @@ export function useCanvasSession({
       holdingRef.current = false
     })
   }, [clientId, loseBoard])
+
+  /**
+   * The person takes their board back from an agent that claimed it.
+   *
+   * Nothing is undone: every write the agent made is in the note, so the board
+   * is left part way through whatever it was doing, and the agent is told at
+   * its next act rather than being stopped mid-write. The board goes to nobody,
+   * not to this pane — the next thing drawn takes it the way any gesture does.
+   */
+  const takeBack = useCallback((): void => {
+    const target = boardKeyRef.current
+    void takeBoardBack(target, clientId).then((reply) => {
+      if (boardKeyRef.current !== target) return
+      // Believed only on success. A refusal means somebody is mid-write and
+      // the board is still theirs, and the broadcast will say so anyway.
+      if (reply.held) setHeldBy(null)
+    }).catch(() => { /* the broadcast is the truth; a failed tap changes nothing */ })
+  }, [clientId])
 
   /**
    * Give the board back, once the gesture is over and its write has landed.
@@ -1258,6 +1297,7 @@ export function useCanvasSession({
     // must not be, so edits already made still reach the server — what stops
     // is the next one being made at all.
     readOnly: !connected || heldBy !== null,
-    heldBy
+    heldBy,
+    takeBack
   }
 }

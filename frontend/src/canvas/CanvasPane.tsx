@@ -97,6 +97,33 @@ export function CanvasPane({
           <span className={`dot ${session.connected ? 'dot-live' : 'dot-dead'}`} />
         </div>
       )}
+      {session.heldBy?.claimed && (
+        // Somebody has taken this board for a stretch of work, and the person
+        // in front of it is owed the reason (ADR 0016). A per-write hold gets
+        // nothing: it is twenty milliseconds, and a banner for it would be a
+        // flicker under somebody's hand. This is the other case — the wall has
+        // stopped, for minutes, and without this it has stopped for no reason
+        // anybody standing at it can see.
+        //
+        // Over the canvas rather than above it, because a band that took up
+        // layout would resize the pane, and a pane's size is what it reports as
+        // "what I am looking at".
+        <div className="pane-claim" role="status">
+          <span className="pane-claim-what">
+            An agent has this board{session.heldBy.reason ? `: ${session.heldBy.reason}` : ''}
+          </span>
+          <button
+            type="button"
+            className="pane-claim-take"
+            // Deliberate, and one tap. Any touch revoking would mean somebody
+            // leaning on a 75-inch display ends a restructure half way through,
+            // and nothing puts back what was already written.
+            onClick={session.takeBack}
+          >
+            Take it back
+          </button>
+        </div>
+      )}
       <div className="pane-canvas" ref={session.attachPaneElement}>
         <Excalidraw
           // Somebody else is writing this board, or this pane has lost the
