@@ -21,7 +21,7 @@
 // spelling back to show that each rule was covering for it.
 //
 // WHAT IS MODELLED AND WHY. The real write boundary is used — this file's
-// `boardOf` calls `expandElementsForExport`, the one converter, exactly as
+// `boardOf` calls `expandElements`, the one converter, exactly as
 // `src/server.ts` does. What is modelled is the *pane*: the baseline it
 // reports against, the human typing into a text element, and Excalidraw's
 // deletion of a bound text somebody emptied. Those need a DOM, and the loop
@@ -52,7 +52,7 @@ const {
   labelTextIdFor
 } = await import(join(__dirname, '..', 'src', 'core', 'labels.ts'));
 const { isBlockId } = await import(join(__dirname, '..', 'src', 'core', 'ids.ts'));
-const { expandElementsForExport, expandForBoard, relabelBoundTexts } =
+const { expandElements, expandForBoard, relabelBoundTexts } =
   await import(join(__dirname, '..', 'src', 'core', 'expand-elements.ts'));
 
 let failures = 0;
@@ -296,6 +296,35 @@ const drawn = () => [
 
 const CYCLES = 25;
 
+// --- one converter, two entry points ----------------------------------------
+//
+// `expandElements` and `expandForBoard` are both exported from
+// `expand-elements.ts`, and TASK-089 went through the codebase looking for two
+// implementations of one thing that were meant to agree. This pair is not that:
+// `expandForBoard` does none of the converting, it squares a partial write's
+// label references against the board and then calls the other one.
+//
+// Written down in both doc comments, and asserted here, because a comment
+// saying "these cannot diverge" is worth exactly as much as whatever stops
+// them. Given a board that adds nothing, the wrapper's answer is the
+// converter's answer, field for field.
+{
+  const written = [
+    { id: 'svc', type: 'rectangle', x: 0, y: 0, width: 200, height: 80, label: { text: 'AuthService' } },
+    { id: 'wire', type: 'arrow', x: 0, y: 0, points: [[0, 0], [300, 0]], label: { text: 'HTTP' } }
+  ];
+  const wrapped = expandForBoard(written.map((el) => ({ ...el })), new Map());
+  const converted = expandElements(written.map((el) => ({ ...el })), { forStore: true });
+  const shape = (elements) => JSON.stringify(
+    elements.map((el) => Object.fromEntries(
+      Object.entries(el).filter(([key]) => !['seed', 'versionNonce', 'updated'].includes(key))
+    ))
+  );
+  assert(shape(wrapped) === shape(converted),
+    'the two entry points into the one conversion gave different answers for the same elements, ' +
+    'which is the divergence ADR 0015 exists to prevent');
+}
+
 // --- the converter's constants, one at a time -------------------------------
 //
 // `docs/design/server-is-the-truth.md` §1C listed fourteen fields on which our
@@ -322,7 +351,7 @@ const CYCLES = 25;
 // renderer insists on.
 
 {
-  const one = (element) => expandElementsForExport([element], { deterministic: true });
+  const one = (element) => expandElements([element], { deterministic: true });
   const only = (element, type) => one(element).find((el) => el.type === type);
   const box = { id: 'r1', type: 'rectangle', x: 0, y: 0, width: 200, height: 100 };
 
@@ -411,7 +440,7 @@ const CYCLES = 25;
   // `index` is the one field a render did rewrite, because `a${n}` stops
   // increasing at ten: `a10` sorts before `a2`. A board of twelve came back
   // with five indices repaired.
-  const twelve = expandElementsForExport(
+  const twelve = expandElements(
     Array.from({ length: 12 }, (_, i) => ({ id: `e${i}`, type: 'rectangle', x: i * 10, y: 0, width: 10, height: 10 })),
     { deterministic: true });
   const indices = twelve.map((el) => el.index);
@@ -571,7 +600,7 @@ const CYCLES = 25;
   // survive its deletion. It did, by moving to where the name is chosen: the
   // converter asks `labelTextIdFor` for a name nothing in the document holds,
   // deleted elements included.
-  const written = expandElementsForExport([
+  const written = expandElements([
     { id: 'svc', type: 'rectangle', x: 0, y: 0, width: 200, height: 80, label: { text: 'AuthService' } },
     { id: labelTextIdFor('svc'), type: 'text', containerId: 'svc', text: '', isDeleted: true }
   ], { forStore: true });
@@ -589,7 +618,7 @@ const CYCLES = 25;
   );
 
   // A label that says nothing is not expanded, so there is nothing to name.
-  const bare = expandElementsForExport(
+  const bare = expandElements(
     [{ id: 'bare', type: 'rectangle', x: 0, y: 0, width: 10, height: 10 }], { forStore: true });
   assert(bare.length === 1, 'an unlabelled shape was given a label');
 }

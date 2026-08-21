@@ -10,7 +10,7 @@ import {
 } from './canvas-client.js';
 import { sanitizeFilePath } from './normalize.js';
 import { isObsidianExcalidrawMd, extractSceneJsonFromObsidianMd } from './obsidian-md.js';
-import { expandElementsForExport } from './expand-elements.js';
+import { expandElements } from './expand-elements.js';
 
 export interface ExportedScene {
   scene: Record<string, any>;
@@ -43,11 +43,12 @@ export function buildScene(
   sceneElements: ServerElement[],
   sceneFiles: Record<string, any> = {},
   // A board's own note keeps archboard's bookkeeping, because the note is the
-  // board (ADR 0015) and two of those fields exist nowhere else: `source`, and
-  // an arrow's `start` and `end`. A file written for another tool does not.
+  // board (ADR 0015) and one of those fields exists nowhere else: `source`,
+  // which says a human drew an element. A file written for another tool does
+  // not.
   options: { keepServerFields?: boolean } = {}
 ): ExportedScene {
-  const exportElements = expandElementsForExport(sceneElements, {
+  const exportElements = expandElements(sceneElements, {
     deterministic: true,
     ...(options.keepServerFields ? { keepServerFields: true } : {})
   });
