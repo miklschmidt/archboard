@@ -79,6 +79,17 @@ const person = (id) => ({ id, kind: 'human' });
  * Reverting a line and counting what fails needs the count to be honest.
  */
 const take = request => holdBoard(request).catch(error => ({ created: false, holder: null, error }));
+
+/**
+ * A claim that is meant to succeed, caught for the same reason `take` is.
+ *
+ * A claim broken in any of the ways this file exists to notice throws, and a
+ * check that dies on one reports nothing about the sixty after it — including
+ * everything through a canvas and the two-canvas section, which are the only
+ * parts of this file an in-process claim register could not pass.
+ */
+const claiming = request =>
+  claimBoard(request).catch(error => ({ created: false, claim: { holder: {} }, error }));
 const why = result => (result.error ? result.error.message : JSON.stringify(result));
 
 // The refusal, caught as the thing it is rather than as a message.
@@ -315,7 +326,7 @@ const refusal = async (promise) => {
 
 {
   const board = 'a-long-claim';
-  const first = await claimBoard({ board, reason: 'redrawing the payment path', forMs: 30_000 });
+  const first = await claiming({ board, reason: 'redrawing the payment path', forMs: 30_000 });
   check('an agent can claim a board and say what it is doing',
     first.created === true && first.claim.holder.reason === 'redrawing the payment path',
     JSON.stringify(first.claim));
@@ -332,14 +343,22 @@ const refusal = async (promise) => {
   // that is the section below rather than a gap in this one.
   let gaps = 0;
   let reacquired = 0;
+  let unwritten = 0;
   for (let i = 0; i < 20; i += 1) {
     const writer = claimWriterId(board);
     if (writer !== first.claim.holder.id) reacquired += 1;
-    await withBoardLock({ board, holder: { id: writer, kind: 'agent' } }, () => { });
+    // Caught, like every other write here: a write that cannot find the claim
+    // is refused, and twenty refusals thrown would end this file rather than
+    // report a number.
+    const wrote = await withBoardLock(
+      { board, holder: { id: writer ?? `orphan-${i}`, kind: 'agent' }, waitMs: 0 }, () => true
+    ).catch(() => false);
+    if (!wrote) unwritten += 1;
     const rival = await refusal(holdBoard({ board, holder: agent(`rival-${i}`), waitMs: 0 }));
     if (!(rival instanceof BoardHeldError)) gaps += 1;
   }
-  check('twenty writes under one claim leave no gap another writer could take',
+  check('twenty writes under one claim all go through', unwritten === 0, `${unwritten} of 20 refused`);
+  check('  and leave no gap another writer could take, in any of the nineteen between them',
     gaps === 0, `${gaps} of 20 gaps`);
   check('  because every one of them is the claim writing, not a new hold',
     reacquired === 0, `${reacquired} writes wrote as somebody else`);
@@ -347,7 +366,7 @@ const refusal = async (promise) => {
     boardLockState(board)?.since === first.claim.holder.since,
     `${first.claim.holder.since} -> ${boardLockState(board)?.since}`);
 
-  const again = await claimBoard({ board, reason: 'now the queues', forMs: 40_000 });
+  const again = await claiming({ board, reason: 'now the queues', forMs: 40_000 });
   check('claiming again extends rather than starting a second claim',
     again.created === false && again.claim.holder.id === first.claim.holder.id, JSON.stringify(again.claim));
   check('  with the deadline moved and the reason brought up to date',
@@ -391,9 +410,9 @@ const refusal = async (promise) => {
   // died; this bounds an agent that walked away, and it is the only bound that
   // does — nothing between two CLI commands is alive to stop renewing.
   const board = 'a-claim-that-ends';
-  const brief = await claimBoard({ board, reason: 'a moment', forMs: CLAIM_LEASE_MS });
+  const brief = await claiming({ board, reason: 'a moment', forMs: CLAIM_LEASE_MS });
   check('a claim is made with a deadline of its own',
-    Date.parse(brief.claim.expires) > Date.now(), brief.claim.expires);
+    Date.parse(brief.claim.expires) > Date.now(), why(brief));
 
   const freeAt = Date.now() + CLAIM_LEASE_MS + LOCK_RENEW_MS + 2000;
   while (boardLockState(board) !== null && Date.now() < freeAt) await sleep(100);
