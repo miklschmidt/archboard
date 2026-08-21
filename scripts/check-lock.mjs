@@ -422,6 +422,54 @@ try {
     mine.status === 409 && mine.body?.holder?.id === 'another-pane', `${mine.status}`);
   await api('POST', '/api/boards/hold/release?board=scratch', { clientId: 'another-pane' });
 
+  // ─── Two canvases, one vault ───────────────────────────────────────────
+  //
+  // Section 7 showed two processes using the module. This is the thing the
+  // decision actually names: two canvas *servers* over one vault, which is the
+  // arrangement in which a lock held in memory would not be a lock at all.
+  // Neither knows the other exists; the file is the only thing between them.
+
+  const OTHER_PORT = PORT + 1;
+  const otherServer = spawn(process.execPath, [src('server.ts')], {
+    env: { ...process.env, PORT: String(OTHER_PORT), HOST: '127.0.0.1', ARCHBOARD_VAULT: vault, LOG_LEVEL: 'error' },
+    stdio: ['ignore', 'ignore', 'inherit']
+  });
+  try {
+    let secondUp = false;
+    for (let i = 0; i < 120 && !secondUp; i += 1) {
+      try {
+        secondUp = (await fetch(`http://127.0.0.1:${OTHER_PORT}/health`)).ok;
+      } catch { /* not yet */ }
+      if (!secondUp) await sleep(100);
+    }
+    check('a second canvas serves the same vault', secondUp, `port ${OTHER_PORT}`);
+
+    await api('POST', '/api/boards/hold?board=scratch', { clientId: PANE });
+    const keepHolding = renewing(PANE);
+    const acrossServers = await fetch(`http://127.0.0.1:${OTHER_PORT}/api/elements?board=scratch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'rectangle', x: 700, y: 700, width: 40, height: 40 })
+    });
+    const refused = await acrossServers.json().catch(() => null);
+    keepHolding();
+    check('and a write to it is refused while the first canvas holds the board',
+      acrossServers.status === 409 && refused?.code === 'BOARD_HELD',
+      `${acrossServers.status} ${JSON.stringify(refused)?.slice(0, 140)}`);
+    check('  naming the holder on the other canvas, which it has never heard of',
+      refused?.holder?.id === PANE, JSON.stringify(refused?.holder));
+
+    await api('POST', '/api/boards/hold/release?board=scratch', { clientId: PANE });
+    const allowed = await fetch(`http://127.0.0.1:${OTHER_PORT}/api/elements?board=scratch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'rectangle', x: 700, y: 700, width: 40, height: 40 })
+    });
+    check('  and goes through once it is given back', allowed.status === 200, `${allowed.status}`);
+  } finally {
+    otherServer.kill();
+  }
+
   const unnamed = await api('POST', '/api/boards/hold', { clientId: PANE });
   check('a hold that names no board is refused like every other call (ADR 0009)',
     unnamed.status === 400, `${unnamed.status}`);
@@ -436,10 +484,54 @@ try {
   fs.rmSync(vault, { recursive: true, force: true });
 }
 
+// ─── Nothing outside the module touches the lock file or the broadcast ─────
+//
+// The same shape as `check-boards`' assertion that one line in `src/` calls
+// `sceneJsonWithEmbeddedImages`, and for the same reason: this repository has
+// spent long enough removing invariants that held only while somebody
+// remembered them. A second place that builds a lock path is two answers to
+// where a board's lock is, and a second sender of `board_lock` is a pane told
+// two different things about who has its board.
+
+{
+  const sources = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const at = join(dir, entry.name);
+      if (entry.isDirectory()) walk(at);
+      else if (entry.name.endsWith('.ts')) sources.push(at);
+    }
+  };
+  walk(join(repoRoot, 'src'));
+
+  const builders = sources.filter(file => /['"`]locks['"`]/.test(fs.readFileSync(file, 'utf-8')));
+  check('one file in src/ knows where a board\'s lock lives',
+    builders.length === 1 && builders[0].endsWith('core/board-lock.ts'),
+    builders.map(f => f.replace(repoRoot, '')).join(', ') || 'none');
+
+  // Building the message, not naming it: the message type lives in `types.ts`
+  // and the module's own header talks about it, and neither sends one.
+  const senders = sources.filter(file => /type:\s*['"`]board_lock['"`]/.test(fs.readFileSync(file, 'utf-8')));
+  check('and one file in src/ sends the lock broadcast',
+    senders.length === 1 && senders[0].endsWith('server.ts'),
+    senders.map(f => f.replace(repoRoot, '')).join(', ') || 'none');
+
+  const sinks = sources.filter(file => /onBoardLockChanged\(/.test(fs.readFileSync(file, 'utf-8'))
+    && !file.endsWith('core/board-lock.ts'));
+  check('  through the one sink the module hands out, registered in one place',
+    sinks.length === 1 && sinks[0].endsWith('server.ts'),
+    sinks.map(f => f.replace(repoRoot, '')).join(', ') || 'none');
+
+  const bypass = sources.filter(file => file !== join(repoRoot, 'src', 'core', 'board-lock.ts')
+    && /VAULT_STATE_DIR[^\n]*lock/i.test(fs.readFileSync(file, 'utf-8')));
+  check('  and nothing else reaches into the lock directory',
+    bypass.length === 0, bypass.map(f => f.replace(repoRoot, '')).join(', '));
+}
+
 // ─── Report ───────────────────────────────────────────────────────────────
 
 if (failures > 0) {
   console.error(`\nlock: ${failures} of ${checks} checks failed.`);
   process.exit(1);
 }
-console.log(`lock: ${checks} checks. One writer at a time, across two processes, and the panes are told.`);
+console.log(`lock: ${checks} checks. One writer at a time, across two canvases over one vault, and the panes are told.`);
