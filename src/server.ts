@@ -81,10 +81,15 @@ import {
 import {
   BoardHeldError,
   boardLockState,
+  claimBoard,
+  claimWriterId,
   holdBoard,
   LockHolder,
   onBoardLockChanged,
-  releaseHold
+  releaseClaim,
+  releaseHold,
+  takeClaimRevocation,
+  watchBoardLocks
 } from './core/board-lock.js';
 import {
   BoardIdentity,
@@ -359,6 +364,29 @@ onBoardLockChanged((board, holder) => {
 });
 
 /**
+ * Watch the lock files of the boards on screen, while there is a screen.
+ *
+ * The broadcast above reaches the panes of this canvas. A second canvas over
+ * the same vault cannot be told anything, because the lock is a file, so its
+ * panes would learn about a claim at the write rather than before the touch —
+ * for a claim that runs minutes, that is minutes of a pane letting somebody
+ * draw into a board an agent has (ADR 0016). Reading the files is how a pane
+ * hears news nobody sent it.
+ *
+ * Only while a tab is connected: a pane exists while something renders it, and
+ * with nothing rendering there is nobody to be wrong. Called on every
+ * connection and every close, so the cost is paid by a canvas somebody is
+ * looking at and by no other.
+ */
+// hot-safe: replaces the watcher's getter rather than adding a second one, and
+// the getter closes over this module graph's `paneBoards` — a reload has to
+// repoint it, as the sink above does.
+function syncLockWatch(): void {
+  watchBoardLocks(clients.size > 0 ? () => [...paneBoards.values()] : null);
+}
+syncLockWatch();
+
+/**
  * Tell one pane where a board stands, now.
  *
  * A broadcast only reaches a pane that was connected when it went out, and a
@@ -619,6 +647,9 @@ function boardFilesMessage(content: BoardContent): { files?: Record<string, Exca
 wss.removeAllListeners('connection');
 wss.on('connection', (ws: WebSocket, req) => {
   clients.add(ws);
+  // There is a screen again, so the lock files of what is on it are worth
+  // reading (ADR 0016).
+  syncLockWatch();
   const clientId = new URL(req.url ?? '/', 'http://localhost').searchParams.get('clientId');
   if (clientId) clientIds.set(ws, clientId);
   logger.info(`New WebSocket connection established${clientId ? ` (client ${clientId})` : ''}`);
@@ -673,6 +704,9 @@ wss.on('connection', (ws: WebSocket, req) => {
       broadcastSelection();
       logger.info(`Selection cleared: owning client ${closingId} disconnected`);
     }
+    // The last tab going costs the lock watch: nothing is rendering, so no
+    // pane can be wrong about who holds a board.
+    syncLockWatch();
     logger.info('WebSocket connection closed');
   });
 
@@ -839,6 +873,7 @@ const UpdateElementSchema = z.looseObject({
 // now the mutex does, which is the same guarantee extended to a second process.
 const NOT_A_BOARD_WRITE: Array<[RegExp, string]> = [
   [/^\/api\/boards\/hold/, 'is the lock'],
+  [/^\/api\/boards\/claim/, 'is the lock, held for longer'],
   // Waits for a browser to convert, and the elements arrive afterwards as that
   // pane\'s own change report, which is locked. Holding the board across that
   // wait would be holding it against the very report that ends the wait.
@@ -862,15 +897,58 @@ const NOT_A_BOARD_WRITE: Array<[RegExp, string]> = [
  * hold a gesture took covers the change report that gesture produces 400 ms
  * later. An agent sends none, so it gets a fresh identity per request and takes
  * and releases the board around that one write — which is the per-write mutex.
- * TASK-080's long claim is an agent that sends a stable id instead.
+ *
+ * Unless this canvas holds a claim on the board, in which case an agent's write
+ * *is* the claim's, and that is the whole of how a claim survives across
+ * requests (ADR 0016, TASK-080). Nothing is threaded through the caller: a CLI
+ * agent is a fresh process every command and has nowhere to keep an id, so the
+ * canvas keeps it, against the board every call already names. The write joins
+ * the claim's hold rather than taking one, so twenty writes leave no gap.
  */
-function holderFromRequest(req: Request): { id: string; kind: 'human' | 'agent' } {
+function holderFromRequest(req: Request, board: string): { id: string; kind: 'human' | 'agent' } {
   const body = (req.body ?? {}) as Record<string, unknown>;
   const kind = body.origin === 'agent' || typeof body.clientId !== 'string' ? 'agent' : 'human';
+  if (kind === 'agent') {
+    const claimed = claimWriterId(board);
+    if (claimed) return { id: claimed, kind };
+  }
   const id = typeof body.clientId === 'string' && body.clientId
     ? body.clientId
     : `agent-${Math.random().toString(36).slice(2, 10)}`;
   return { id, kind };
+}
+
+/**
+ * The board was claimed and a person took it back, and this is the agent
+ * finding out.
+ *
+ * The one place it is said, because the agent has to hear it whatever it does
+ * next: writing, or claiming again. Told once — `takeClaimRevocation` clears as
+ * it reads — so an agent that has understood can carry on, and the board is not
+ * left wedged against the agent that used to hold it.
+ *
+ * Nothing is rolled back. Every write made under the claim is in the note,
+ * because that is what it means for the note to be the board, so the answer
+ * says what state the board was left in rather than pretending it can be
+ * undone.
+ */
+function refuseRevokedClaim(res: Response, board: string): boolean {
+  const lost = takeClaimRevocation(board);
+  if (!lost) return false;
+  const who = lost.by?.kind === 'human' ? 'The person at the canvas' : 'Somebody';
+  res.status(409).json({
+    success: false,
+    code: 'CLAIM_REVOKED',
+    error:
+      `${who} took "${board}" back, so your claim${lost.claim.holder.reason ? ` (${lost.claim.holder.reason})` : ''}` +
+      ' has ended. Everything you had already written is in the note and nothing was undone, so the board is ' +
+      'part way through whatever you were doing — say what state you left it in rather than carrying on. ' +
+      'Writing again is an ordinary write, and takes the board only for as long as that write.',
+    board,
+    claim: lost.claim,
+    revokedBy: lost.by
+  });
+  return true;
 }
 
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -887,7 +965,13 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     return next();
   }
 
-  void holdBoard({ board: key, holder: holderFromRequest(req) })
+  // An agent whose claim was taken back hears about it here, before anything is
+  // written, because "you no longer have this board" is the answer to the write
+  // rather than a note attached to a write that went through.
+  const writer = holderFromRequest(req, key);
+  if (writer.kind === 'agent' && refuseRevokedClaim(res, key)) return;
+
+  void holdBoard({ board: key, holder: writer })
     .then((hold) => {
       if (hold.created) {
         let given = false;
@@ -947,7 +1031,12 @@ app.post('/api/boards/hold', (req: Request, res: Response) => {
       kind: 'human' as const,
       ...(typeof body.reason === 'string' && body.reason ? { reason: body.reason } : {})
     };
-    void holdBoard({ board: key, holder, waitMs: REPORT_DEBOUNCE_MS })
+    // And it takes a claimed board back. The lock excludes writers from each
+    // other; it does not lock somebody out of their own wall, and an agent that
+    // has claimed a board for ten minutes must not be able to make a 75-inch
+    // display stop responding to the person standing at it (ADR 0016). Only a
+    // claim: an unclaimed agent hold is one write and is waited out above.
+    void holdBoard({ board: key, holder, waitMs: REPORT_DEBOUNCE_MS, revokeClaim: true })
       .then(hold => res.json({ success: true, board: key, holder: hold.holder, created: hold.created }))
       .catch(error => res.status(boardErrorStatus(error)).json(boardErrorBody(error)));
   } catch (error) {
@@ -974,6 +1063,65 @@ app.post('/api/boards/hold/release', (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'A release needs the clientId that took the hold.' });
     }
     res.json({ success: true, board: key, released: releaseHold(key, body.clientId) });
+  } catch (error) {
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+  }
+});
+
+/**
+ * An agent is about to redraw this board and wants it until it says otherwise.
+ *
+ * The per-write lock fits most of what an agent does. It does not fit twenty
+ * writes that only make sense together: taking and releasing the board twenty
+ * times leaves nineteen gaps for somebody else to write into, and the board is
+ * never in one consistent state while it is being built (ADR 0016).
+ *
+ * Claiming again extends: the same claim, a later deadline, and a reason that
+ * can be brought up to date with what the agent is now doing. A write does not
+ * extend it, because the expiry exists to bound a working agent and would bound
+ * nothing if the work moved it.
+ *
+ * It waits for a person mid-gesture like any other writer, and it is refused if
+ * they are still there. A claim is not a way past the human at the canvas.
+ */
+app.post('/api/boards/claim', (req: Request, res: Response) => {
+  try {
+    const { key } = resolveBoard(boardOfRequest(req), 'Claiming a board');
+    const body = (req.body ?? {}) as { reason?: unknown; forMs?: unknown };
+    if (typeof body.reason !== 'string' || !body.reason.trim()) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'A claim needs a reason: it is what the pane shows the person whose board you have taken. ' +
+          'Without it a 75-inch display has simply stopped working for no reason they can see.'
+      });
+    }
+    // An agent that lost the board hears that before it is given another one,
+    // or it would claim its way straight back onto a board somebody just took.
+    if (refuseRevokedClaim(res, key)) return;
+
+    const forMs = typeof body.forMs === 'number' && Number.isFinite(body.forMs) ? body.forMs : undefined;
+    void claimBoard({ board: key, reason: body.reason.trim(), ...(forMs !== undefined ? { forMs } : {}) })
+      .then(({ claim, created }) => res.json({ success: true, board: key, claim, created }))
+      .catch(error => res.status(boardErrorStatus(error)).json(boardErrorBody(error)));
+  } catch (error) {
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+  }
+});
+
+/**
+ * The agent is done, and the board goes back to being taken one write at a
+ * time.
+ *
+ * Idempotent: releasing a claim that has expired, or that somebody took back,
+ * answers `released: false` rather than failing. An agent tidying up after
+ * losing the board is doing the right thing a moment late.
+ */
+app.post('/api/boards/claim/release', (req: Request, res: Response) => {
+  try {
+    const { key } = resolveBoard(boardOfRequest(req), 'Releasing a claim');
+    const claim = releaseClaim(key);
+    res.json({ success: true, board: key, released: claim !== null, claim });
   } catch (error) {
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
