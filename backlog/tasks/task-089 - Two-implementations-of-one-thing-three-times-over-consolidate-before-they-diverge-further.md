@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-21 12:53'
-updated_date: '2026-08-21 13:03'
+updated_date: '2026-08-21 13:14'
 labels: []
 dependencies: []
 references:
@@ -46,7 +46,7 @@ The precedent for how to do it is already here: TASK-061 deleted `repo-registry`
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 One arrow's gap is defined once and both the binding and the routing read it
-- [ ] #2 There is one path that reads a note, and the open path and the per-request path are the same code
+- [x] #2 There is one path that reads a note, and the open path and the per-request path are the same code
 - [ ] #3 Whether the two expansion functions are one job or two is established and written down, and if one, they are one function
 - [ ] #4 Each consolidation is proved by reverting it and counting which checks fail, not by the suite staying green
 <!-- AC:END -->
@@ -62,3 +62,36 @@ Instance 2 (two ways to read a note), agent A:
 5. Prove it by reverting: (a) restore the two readers, count the failures; (b) drop the embedded-image call from the consolidated reader, count the failures on both surfaces.
 Out of scope, named deliberately: extractSceneElements in board.ts, used only by repo-boards to scan every note in the vault for bindings. Elements only, no hash, no images, never writes. Folding it in would make a vault scan base64 every migrated image in the vault for nothing.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Instance 2 (two ways to read a note) is done. Commits d234645 and d624be1.
+
+**What each path genuinely did.** `readBoardFile` in board.ts turned an identity into a vault path, read the note, and said who the note claims to be: the level from the frontmatter (no path carries one), the casing a human chose, and a `declaredKey` when the frontmatter names a different board than the path does. `readNote` in board-io.ts took a path a BoardState already knew and turned the note into the element and file maps a route works against. Two different jobs.
+
+Underneath both sat the same five steps, written out twice: read the bytes, decode, refuse a file that is not an `.excalidraw.md` note, hash the bytes for ADR 0006's baseline, and reassemble the scene with any picture the Obsidian plugin had moved into a vault file. That last step is the one TASK-085 added to one copy and not the other.
+
+**The single read path.** `readNoteFile(file, root)` in board-io.ts, returning `{ file, raw, hash, sceneJson }` or null for a note that is not there. `readBoardFile` moved into board-io.ts on top of it, keeping only the path resolution and the identity interpretation; `readNote` keeps only `ingestScene`. Neither reads anything itself. `LoadedBoard` moved with it and is now `NoteFile` plus identity, which is exactly what it always was. No compatibility re-export from board.ts: a second import path is the thing being deleted.
+
+Cost is unchanged. The same calls in the same order, one object allocation, and the embedded-image pass still short-circuits on a note with no `## Embedded Files` section.
+
+The baseline is unchanged too. `readNoteFile` computes a hash; only `board open` and `writeBoardContent` record one. `writeBoardContent` still reads its destination with a bare `readFileSync` and deliberately does not go through `readNoteFile` — it has to hash bytes that are not a note at all, because a foreign file at a board's path is the conflict it reports rather than an error it throws. Said so in the comment.
+
+**Scoped out, deliberately.** `extractSceneElements` in board.ts is a third reader of note text, used only by repo-boards for the vault scan behind `board list --repo`. It wants elements and nothing else: no hash, no images, never writes. Reading every note in the vault the way a request reads one would base64 every migrated picture in the vault for a `files` map it discards. Left where it is, with the reason in the comment.
+
+**Revert-proof, three states, all `bun run test:boards`.**
+
+| State | Failures | Which |
+|---|---|---|
+| consolidated (shipped) | 0 | — |
+| src reverted to two readers, both correct | 1 | the structural check, naming both call sites |
+| two readers, 256369d's fix removed from the per-request one — the state git actually merged | 4 | the two API checks, the agreement check (`open true, per-request false`), the structural check |
+| consolidated, embedded-image call dropped from the one reader | 4 | the two API checks, the agreement check (`open false, per-request false`), the structural check |
+
+Row 2 is the one that matters for AC #4: a straight revert restores two paths that are both correct today, so every behavioural check passes and only the structural check fires. Row 3 is the historical bug reproduced, and the agreement check names which side lost the fix.
+
+**What stops it happening again.** Both, because they fail on different things. The agreement check reads one migrated note through `readBoardFile` and `readNote` and asserts they agree on the bytes, the hash, the picture and the refusal — it catches a second reader that is wrong. The structural check asserts exactly one line in src/ calls `sceneJsonWithEmbeddedImages` — it catches a second reader that is right today, which is the state the old one was in for as long as it took somebody to fix the other. The open path also gained its own image assertion, which the migrated-note block never had: it only checked that the open returned 200, and the picture was asserted through `GET /api/files`, the per-request path.
+
+Full suite green: `bun run test`, 22 steps including both headless browser checks.
+<!-- SECTION:NOTES:END -->
