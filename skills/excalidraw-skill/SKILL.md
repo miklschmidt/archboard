@@ -483,7 +483,7 @@ Boards need a vault: set `ARCHBOARD_VAULT` to its path. There is no default — 
 
 ```bash
 archboard board list                          # the vault, what is open, what is on screen
-archboard board new payments --level service  # empty board, in memory until saved
+archboard board new payments --level service  # empty board; its note appears when you draw
 archboard board save --board payments         # write it to <vault>/payments.excalidraw.md
 archboard board open payments@option-a        # show it in the pane on screen
 archboard board open payments@option-a --pane right   # once two panes are open
@@ -491,7 +491,9 @@ archboard pane open --board payments@option-a # or make the second pane and show
 archboard board info --board payments         # identity and save state of one board
 ```
 
-`board new` refuses a name the vault already holds; open that board instead, or pick another variant. A board you create exists only in memory until `board save`, and `--level` (`system`, `service`, `module`) says which abstraction tier it sits at.
+`board new` refuses a name the vault already holds; open that board instead, or pick another variant. `--level` (`system`, `service`, `module`) says which abstraction tier it sits at.
+
+**There is no unsaved board.** A board is a note in the vault, and every write goes to it, so `board save` is for writing a board *somewhere else* — branching with `--as name@variant`, or giving the scratch board a name. Nothing is lost if the canvas stops, and you never have to save before restarting it.
 
 Opening a board disturbs no other pane: the switch reaches that pane's socket alone, the other pane keeps its board, its scene and its selection, and each board is saved against its own baseline.
 
@@ -501,7 +503,7 @@ Opening a board disturbs no other pane: the switch reaches that pane's socket al
 
 **Identity** — `board`, `variant`, `level` — lives in the note's frontmatter and round-trips. Everything else in the frontmatter is preserved verbatim across a save, so a note's aliases, tags and prose properties survive.
 
-**A save can be refused.** archboard hashes a note when it reads it and verifies that hash before writing, so a note that changed underneath — Obsidian, a sync client, another editor — is never overwritten: nothing is written, `board save` exits 5, and `save_board` comes back as an error. Excalidraw scenes do not merge, so somebody has to choose which copy survives, and it is not you. Report the refusal and offer the three ways out:
+**A write can be refused.** archboard verifies that a note still holds the bytes it last wrote there, so a note that changed underneath — Obsidian, a sync client, another editor — is never overwritten: nothing is written, `board save` exits 5, `save_board` comes back as an error, and an ordinary write comes back 409 with the conflict attached. Excalidraw scenes do not merge, so somebody has to choose which copy survives, and it is not you. Report the refusal and offer the three ways out:
 
 | Outcome | Command | What it costs |
 |---|---|---|
@@ -511,7 +513,7 @@ Opening a board disturbs no other pane: the switch reaches that pane's socket al
 
 Never pass `--force` / `force: true` unless the human has said to overwrite.
 
-Nothing is locked, and the check reads the file, not another app's memory: a board open in Obsidian can still write its unsaved copy back afterwards. Keep a board open in one editor at a time.
+Nothing is locked, and the check reads the file, not another app's memory: a board open in Obsidian can still write its own copy back afterwards. Keep a board open in one editor at a time.
 
 A pane opened with nothing else on screen holds `scratch`: a board like any other, named like any other (`--board scratch`). Its note is `<vault>/.archboard/scratch.excalidraw.md`, out of the way of the vault's real boards and picked up again when the canvas restarts, so a sketch is not lost by accident. What it has not got is a name somebody chose, and `board save --board scratch --as <name>` gives it one — the one save that takes the pane with it.
 
@@ -558,7 +560,7 @@ archboard compare payments                     # finds the other variant itself
 
 Nodes that were never promoted have no id and therefore cannot be compared: they come back in a per-side inventory instead, and `summary.comparable` is false when the join found nothing at all. That is the fix to reach for when a diff looks empty but the boards obviously differ: promote both sides. Read `warnings` before narrating anything. It says when one side has no promoted nodes, when the two share no node ids, when node names match across boards whose ids do not, and when an unlabelled container makes a boundary uncomparable.
 
-Neither board is opened and the canvas is not disturbed. A board already open is read from memory, unsaved work included; any other is read straight from its note. Each side says which happened under `source`.
+Neither board is opened and the canvas is not disturbed. Both sides are read from their notes; `source` says whether a side is a board the canvas has open, and so possibly on screen, or one that only exists in the vault.
 
 **The output is deliberately complete and unsummarised.** Nodes and edges added, removed, changed (with the before and after of every field) and unchanged, plus the whole layout model. It is data for you to narrate — read it and compose the explanation yourself; do not ask for a shorter version.
 
