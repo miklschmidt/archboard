@@ -54,8 +54,11 @@ const { resolvePaneSpec, soloPane, panesInOrder, MAX_PANES } = await import(src(
 const { planPromotion } = await import(src('core/promote.ts'));
 const {
   boardKey, makeIdentity, parseBoardKey, boardDisplayName,
-  normalizeBoardKey, vaultPathFor, listBoards, readBoardFile, identityFrontmatter
+  normalizeBoardKey, vaultPathFor, listBoards, identityFrontmatter
 } = await import(src('core/board.ts'));
+// `board open`'s reader lives with the per-request one now, on top of the same
+// `readNoteFile` (TASK-089).
+const { readBoardFile, readNote, readNoteFile } = await import(src('core/board-io.ts'));
 
 // Board addresses are case-insensitive and unicode-normalised (ADR 0010).
 // Boards get named out loud, and a human cannot pronounce casing, so two
@@ -1646,6 +1649,72 @@ try {
     check('a wikilink pointing outside the vault resolves to nothing',
       escaping.status === 200 && escapingFiles.body?.files?.emb12345 === undefined,
       JSON.stringify(Object.keys(escapingFiles.body?.files ?? {})));
+
+    // --- one reader, and something that says so (TASK-089) -----------------
+    //
+    // `board open` reads a note through `readBoardFile`; every request that
+    // touches a board reads it through `readNote`. Those were two
+    // implementations of one act, and the wikilink resolution above went into
+    // only one of them. The two merged with no conflict, git reported nothing,
+    // and a migrated board rendered holes on every read until 256369d put it
+    // back by hand.
+    //
+    // They stand on one `readNoteFile` now. This asserts it from the outside,
+    // on the fixture that caught it: whatever is true of reading a note has to
+    // be true on both, and each of these is a property somebody has already
+    // got wrong on exactly one path.
+    {
+      const opened = readBoardFile(parseBoardKey('picsd'), vault);
+      const perRequest = readNote(path.join(vault, 'picsd.excalidraw.md'));
+      const wanted = `data:image/png;base64,${PNG_BASE64}`;
+      check('the open path and the per-request path read one note as the same bytes',
+        opened.raw === perRequest.note && opened.hash === perRequest.hash);
+      const openHasIt = JSON.parse(opened.sceneJson).files?.emb12345?.dataURL === wanted;
+      const requestHasIt = perRequest.files.get('emb12345')?.dataURL === wanted;
+      check('  and both follow the picture the plugin moved into the vault',
+        openHasIt && requestHasIt,
+        openHasIt && requestHasIt ? '' : `open ${openHasIt}, per-request ${requestHasIt}`);
+
+      // A file at a board's path that is not a note is refused, in the same
+      // words, whichever way it was asked for.
+      fs.writeFileSync(path.join(vault, 'notanote.excalidraw.md'), '# just a heading\n');
+      const refusal = read => { try { read(); return null; } catch (error) { return error.message; } };
+      const onOpen = refusal(() => readBoardFile(parseBoardKey('notanote'), vault));
+      const onRequest = refusal(() => readNote(path.join(vault, 'notanote.excalidraw.md')));
+      check('  and both refuse a file that is not an Obsidian note, saying the same thing',
+        onOpen !== null && onOpen === onRequest && /refusing to read it as a board/.test(onOpen),
+        onOpen === onRequest ? '' : `open: ${onOpen} / per-request: ${onRequest}`);
+
+      // And a note that is not there is null on both: a board `board new` has
+      // just started exists and has nothing in it.
+      check('  and a note that is not there is null on both rather than a throw',
+        readBoardFile(parseBoardKey('nosuchboard'), vault) === null &&
+        readNote(path.join(vault, 'nosuchboard.excalidraw.md')) === null);
+    }
+
+    // The structural half. The agreement checks above catch a second reader
+    // that is wrong; this catches a second reader that is right today, which
+    // is the state the last one was in for as long as it took somebody to fix
+    // the other. Exactly one place in src/ turns a note into a scene.
+    {
+      const callers = [];
+      const walk = dir => {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+          const full = path.join(dir, entry.name);
+          if (entry.isDirectory()) { walk(full); continue; }
+          if (!entry.name.endsWith('.ts')) continue;
+          for (const line of fs.readFileSync(full, 'utf-8').split('\n')) {
+            if (!/\bsceneJsonWithEmbeddedImages\s*\(/.test(line)) continue;
+            if (/^export function sceneJsonWithEmbeddedImages/.test(line.trim())) continue;
+            callers.push(`${path.relative(repoRoot, full)}:${line.trim()}`);
+          }
+        }
+      };
+      walk(path.join(repoRoot, 'src'));
+      check('one place in src/ reassembles a note\'s scene, and it is readNoteFile',
+        callers.length === 1 && callers[0].startsWith('src/core/board-io.ts:'),
+        callers.join(' | ') || 'nothing calls it at all');
+    }
   }
 } finally {
   server.kill('SIGTERM');

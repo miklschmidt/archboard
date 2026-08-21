@@ -59,7 +59,9 @@ import {
   BoardWriteConflictError,
   emptyContent,
   ingestScene,
+  LoadedBoard,
   readBoardContent,
+  readBoardFile,
   renderContent,
   writeBoardContent
 } from './core/board-io.js';
@@ -69,12 +71,10 @@ import {
   classifyBoardSave,
   hashBoardBytes,
   listBoards,
-  LoadedBoard,
   makeIdentity,
   SCRATCH_BOARD,
   panesFollowSave,
   parseBoardKey,
-  readBoardFile,
   requireVaultRoot,
   validateLevel,
   validateVariant,
