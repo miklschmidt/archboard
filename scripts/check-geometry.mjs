@@ -35,7 +35,7 @@ const { describeScene, buildSelectionReport } = await import(src('core/describe.
 const { labelAnchorOf } = await import(src('core/labels.ts'));
 const { compareBoards } = await import(src('core/compare.ts'));
 const { planPromotion } = await import(src('core/promote.ts'));
-const { expandElementsForExport } = await import(src('core/expand-elements.ts'));
+const { expandElements } = await import(src('core/expand-elements.ts'));
 const { BOUND_ARROW_GAP, boundEndpoint, focusPointOf } = await import(src('core/arrow-binding.ts'));
 
 let failures = 0;
@@ -217,7 +217,7 @@ for (const [name, arrow] of Object.entries(arrows)) {
     id: 'bent', type: 'arrow', x: 100, y: 100, width: 300, height: 200,
     points: [[0, 0], [300, 0], [300, 200]], label: { text: 'routes via' }
   };
-  const expanded = expandElementsForExport([bent], { deterministic: true });
+  const expanded = expandElements([bent], { deterministic: true });
   const text = expanded.find((el) => el.type === 'text');
   assert(text !== undefined, 'expanding a labelled arrow should have produced a bound text element');
   // Three points, so Excalidraw hangs the label on the middle vertex: the
@@ -236,7 +236,7 @@ for (const [name, arrow] of Object.entries(arrows)) {
     id: 'straight', type: 'arrow', x: 0, y: 0, width: 200, height: 100,
     points: [[0, 0], [200, 100]], label: { text: 'calls' }
   };
-  const straightText = expandElementsForExport([straight], { deterministic: true })
+  const straightText = expandElements([straight], { deterministic: true })
     .find((el) => el.type === 'text');
   assert(near(straightText.x + straightText.width / 2, 100, 1) &&
     near(straightText.y + straightText.height / 2, 50, 1),
