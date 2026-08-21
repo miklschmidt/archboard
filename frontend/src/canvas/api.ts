@@ -197,6 +197,26 @@ export function releaseBoard(board: string | null, clientId: string): void {
   }).catch(() => { })
 }
 
+/**
+ * Take a claimed board back from the agent that has it.
+ *
+ * The same message a gesture sends, which is the point: a person taking their
+ * board back is a person starting to use it, and the server treats it as one
+ * act. It steals from a claim and waits out an ordinary write, so a hand that
+ * lands inside somebody's twenty-millisecond write does not end up being told
+ * it lost the board.
+ *
+ * Given back immediately, because taking it back is not taking it: the board
+ * goes to nobody, and the next thing the person draws holds it the way any
+ * gesture does. Whoever had it is told at their next write, and nothing they
+ * already wrote is undone — a claim was never a transaction (ADR 0016).
+ */
+export async function takeBoardBack(board: string | null, clientId: string): Promise<HoldReply> {
+  const taken = await holdBoard(board, clientId)
+  if (taken.held) releaseBoard(board, clientId)
+  return taken
+}
+
 /** The one call that empties a board. Confirmed in the shell, never here. */
 export function clearBoard(board: string | null) {
   return json<{ count: number }>(`/api/elements/clear${boardQuery(board)}`, { method: 'DELETE' })

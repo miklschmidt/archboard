@@ -225,6 +225,52 @@
   box-shadow: inset 0 2px 0 var(--accent);
 }
 
+/* An agent has claimed this board (ADR 0016).
+
+   Floated over the canvas rather than laid out above it: a band that took up
+   layout would resize the pane, and the pane's rectangle is what it reports as
+   what somebody is looking at. Big enough to read from across a room, because
+   the display it is for is 75 inches and the person is standing at it. */
+.pane-claim {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: calc(100% - 32px);
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 18%);
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.pane-claim-what {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The way out, and it has to look like one: a wall that has stopped responding
+   with no visible way to get it back is a broken wall. */
+.pane-claim-take {
+  flex: none;
+  padding: 6px 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
 /* ── Notices ───────────────────────────────────────────────── */
 
 .notice {
