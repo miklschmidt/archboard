@@ -897,7 +897,14 @@ try {
   // somebody reading what the agent is drawing must not end it by reading it —
   // and nothing an agent wrote is put back by taking the board, so a stray palm
   // would leave a half-drawn board with nobody having decided anything.
-  await evalInPage(`(() => { document.querySelector('.pane-claim-take').click(); return true; })()`);
+  // Guarded, because a missing button is one of the things this section exists
+  // to catch, and clicking null would end the file instead of counting it.
+  const tap = await evalInPage(`(() => {
+    const button = document.querySelector('.pane-claim-take');
+    if (button) button.click();
+    return { tapped: button !== null };
+  })()`);
+  check('  and the tap lands on something', tap.tapped === true, JSON.stringify(tap));
   await sleep(LOCK_FREE_LINGER_MS + 1500);
   const returned = await banner();
   check('and one tap takes the board back',
