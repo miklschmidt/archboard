@@ -303,14 +303,19 @@ const CYCLES = 25;
 // documents, and stage 5 was to correct ours to theirs. Twelve constants, an
 // id scheme and two measured fields.
 //
-// Eight of the twelve turned out not to be about Excalidraw. That table
-// compares two converters, and the second one is now deleted; what matters is
-// whether a document is a fixed point, and `scripts/check-fixed-point.mjs`
-// measured that directly. Rendered in a real browser, the only field Excalidraw
-// rewrote was `index`. `roundness: null` and `strokeWidth: 1` on a freedraw and
-// an absent `strokeColor` were that converter declining to choose, not
-// Excalidraw's own defaults, and adopting them would have made every
-// agent-drawn shape differ from every hand-drawn one.
+// That table compares two converters, and the second one is now deleted, so
+// matching it was never the property worth having. The property is the round
+// trip: a document we persist, read back and render is the document we saved.
+// `scripts/check-fixed-point.mjs` asserts that against a real browser and
+// `scripts/check-live-session.mjs` asserts it holds across 42 cycles of
+// editing. Both report zero.
+//
+// Four of the twelve were not adopted, and only one of the four mattered: an
+// absent `strokeColor` is a missing field rather than a style, and an element
+// without one is malformed. The other three — a rectangle's corner radius, a
+// freedraw's stroke width, half a stroke width off an arrow's endpoints — are
+// arbitrary, and the round trip is indifferent to them. They are pinned below
+// so that changing one is deliberate, not because any value is the right one.
 //
 // So each row below says which of the two it is: a default read out of
 // Excalidraw's own `DEFAULT_ELEMENT_PROPS` and `AppState`, or a field the
@@ -348,18 +353,18 @@ const CYCLES = 25;
   assert(shapeLabel.textAlign === 'center' && shapeLabel.verticalAlign === 'middle',
     'a bound text is not centred in its container');
 
-  // 7. REJECTED. `currentItemRoundness` is `round`, so a rectangle a human
-  // draws is rounded. The `null` in the table is the other converter declining
-  // to choose, and taking it would have made agent-drawn boxes square-cornered
-  // on every board.
+  // 7. Arbitrary. The round trip does not care what a corner radius is. Pinned
+  // so that changing it is a decision rather than a drift nobody noticed.
   assert(JSON.stringify(only(box, 'rectangle').roundness) === '{"type":3}',
     'a rectangle is not rounded, so it will not match one a human drew');
 
-  // 8-9. REJECTED, both. `DEFAULT_ELEMENT_PROPS` is strokeWidth 2 and
-  // strokeColor #1e1e1e, for freedraw as for everything else. The 1 and the
-  // absent colour in the table are `convertToExcalidrawElements` not handling
-  // freedraw at all — the frontend used to route it around that converter for
-  // exactly that reason — and "absent" is not a value a stroke can have.
+  // 8. Arbitrary, like the corner radius, and pinned for the same reason.
+  //
+  // 9. Not arbitrary. "Absent" is not a value a stroke can have: every element
+  // Excalidraw renders carries a stroke colour, so writing one without it is
+  // writing a malformed element and leaving the renderer to invent the rest.
+  // That is the "one document, two answers" shape ADR 0015 exists to remove,
+  // so what matters here is that the field is there at all.
   const stroke = only({ id: 'f1', type: 'freedraw', x: 0, y: 0, points: [[0, 0], [10, 10]] }, 'freedraw');
   assert(stroke.strokeWidth === 2, `a freedraw is strokeWidth ${stroke.strokeWidth}, not the default 2`);
   assert(stroke.strokeColor === '#1e1e1e', `a freedraw is ${stroke.strokeColor}, not the default stroke colour`);
@@ -378,11 +383,10 @@ const CYCLES = 25;
   assert(Array.isArray(stroke.pressures), 'a freedraw has no pressures');
   assert(stroke.simulatePressure === true, 'a freedraw does not say its pressure is simulated');
 
-  // 12. REJECTED. The half-stroke inset on a bound arrow's points was
-  // `convertToExcalidrawElements` keeping an arrowhead off a shape's border,
-  // and it is gone with that converter. The server already routes a bound
-  // arrow edge to edge with a gap of its own, and the browser does not ask for
-  // the inset back: the fixed-point check reports nothing on these points.
+  // 12. Arbitrary. The inset kept an arrowhead off a shape's border for a
+  // converter that no longer exists, and the server routes a bound arrow edge
+  // to edge with a gap of its own. The fixed-point check reports nothing on
+  // these points either way.
   const arrow = only({
     id: 'a3', type: 'arrow', x: 0, y: 0, points: [[0, 0], [84, 0]],
     startBinding: { elementId: 'r1', focus: 0, gap: 4 }
