@@ -22,7 +22,9 @@
 //
 // A save regenerates the scene and nothing else: see "note regions" below.
 // Everything a human wrote in the note — frontmatter, prose above the data
-// section, prose below it — is carried across verbatim.
+// section, prose below it — is carried across verbatim, and so is the one
+// section inside the data region that the plugin owns outright: see
+// "embedded files".
 
 import { canonicalizeKeys } from './expand-elements.js';
 import { derivedId, isBlockId } from './ids.js';
@@ -224,12 +226,14 @@ function renderFrontmatter(lines: string[]): string {
 // markdown above `# Excalidraw Data` is *the note* — the human's space, which
 // is the whole reason a vault was chosen for persistence (ADR 0004) — and
 // everything from that heading down is the plugin's serialised scene. So a
-// note is four regions, of which archboard owns exactly one:
+// note is five regions, of which archboard owns exactly one:
 //
 //   frontmatter  `---` .. `---`, round-tripped verbatim (see above)
 //   body         up to `# Excalidraw Data`: the human's markdown, verbatim
 //   data         the heading .. the closing fence of the Drawing block:
 //                regenerated on every save — this is the scene
+//   embedded     the `## Embedded Files` section inside the data region:
+//                verbatim (see "embedded files" below)
 //   trailing     everything after that fence: verbatim. Normally just the
 //                `%%` closing the comment the plugin opened before
 //                `## Drawing`, but a human who writes below it keeps it too.
@@ -339,13 +343,123 @@ function bodyWithBanner(text: string): string {
   return body === '' ? DEFAULT_BODY : `${body}\n${DEFAULT_BODY}`;
 }
 
-interface PreservedRegions { body: string; trailing: string }
+// --- embedded files ----------------------------------------------------
+//
+// The plugin does not keep image bytes in the drawing. On its first save of a
+// note it walks `scene.files`, writes every base64 entry out as a real file in
+// the vault, records each one under a `## Embedded Files` heading as
+// `<fileId>: [[vault/path.png]]`, and then sets `scene.files = {}`
+// (ExcalidrawData.syncFiles / syncElements). Base64 in the Drawing block is an
+// input format it accepts and migrates away from; its own notes carry none.
+//
+// So that section is the *only* record of where a board's pictures went, and
+// archboard used to delete it: the data region is regenerated on every save
+// and the section is inside it. The image files stayed in the vault with
+// nothing left able to name them (TASK-085).
+//
+// archboard preserves the section rather than writing the plugin's shape
+// itself. See docs/adr/0017: the two formats stay independent, and this is the
+// same promise the frontmatter and the human's prose already get.
+//
+// `## Element Links` sits in the same region and is deliberately *not*
+// preserved, because it is not a sole record: the plugin rebuilds it from the
+// `link` field of the scene's own elements on load and on save
+// (findNewElementLinksInScene / updateElementLinksFromScene), and it applies
+// what it reads there back onto the element. Carrying a stale line across
+// would put back a link somebody had deleted, which is the class of bug
+// ADR 0015 exists to stop.
+
+const EMBEDDED_HEADING_RE = /^#{1,2} Embedded [Ff]iles[ \t]*$/;
+// `<fileId>: <target>` — the plugin's own `([\w\d]*):\s*` prefix, shared by
+// every form a line can take (wikilink, hyperlink, equation, markdown image).
+const EMBEDDED_ENTRY_RE = /^([\w\d]*):[ \t]+(.*)$/;
+// A text element is written as `<its raw text> ^<block id>`, so a block
+// reference is where one ends. Nothing below the last of them is text.
+const BLOCK_REF_RE = / \^\S+[ \t]*$/;
+
+export type EmbeddedFileEntry =
+  | { fileId: string; kind: 'wikilink'; target: string }
+  | { fileId: string; kind: 'hyperlink'; target: string }
+  | { fileId: string; kind: 'other'; target: string };
+
+// The entries of an `## Embedded Files` section, in document order. `other`
+// covers the forms that do not name a file — an equation's `$$latex$$`, the
+// plugin's markdown-image token — which archboard carries but cannot resolve.
+function readEmbeddedFiles(section: string): EmbeddedFileEntry[] {
+  const out: EmbeddedFileEntry[] = [];
+  for (const { text } of eachLine(section)) {
+    const entry = EMBEDDED_ENTRY_RE.exec(text);
+    if (!entry || entry[1] === '') continue;
+    const fileId = entry[1]!;
+    const target = entry[2]!.trim();
+    const wikilink = /^!?\[\[([^\]]*)\]\]/.exec(target);
+    if (wikilink) {
+      out.push({ fileId, kind: 'wikilink', target: wikilink[1]! });
+      continue;
+    }
+    if (/^(?:https?|file|ftps?):\/\/\S+$/.test(target)) {
+      out.push({ fileId, kind: 'hyperlink', target });
+      continue;
+    }
+    out.push({ fileId, kind: 'other', target });
+  }
+  return out;
+}
+
+// The section as it stands in the data region, or '' when there is none worth
+// keeping. Two rules keep a text element from being mistaken for one:
+//
+//   - the heading is looked for only *below the last block reference*, and a
+//     text element always ends in its own, so a heading a human typed into a
+//     label can never start the section;
+//   - the section stops at the first line that is not an entry, and a section
+//     with no entries at all is nothing — the plugin only writes the heading
+//     when it has something to list.
+//
+// Without them a note would grow by one copy of the impostor's text on every
+// save, which is what the region model exists to prevent.
+function embeddedFilesSection(text: string, from: number, to: number): string {
+  const lines = eachLine(text.slice(from, to));
+  let first = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (BLOCK_REF_RE.test(lines[i]!.text)) first = i + 1;
+  }
+  const at = lines.findIndex((line, i) => i >= first && EMBEDDED_HEADING_RE.test(line.text));
+  if (at === -1) return '';
+
+  let last = at;
+  let entries = 0;
+  let inEquation = false;
+  for (let i = at + 1; i < lines.length; i++) {
+    const line = lines[i]!.text;
+    if (inEquation) {
+      last = i;
+      if (line.includes('$$')) inEquation = false;
+      continue;
+    }
+    if (line.trim() === '') continue;
+    const entry = EMBEDDED_ENTRY_RE.exec(line);
+    if (!entry) break;
+    entries++;
+    last = i;
+    const dollars = (entry[2]!.match(/\$\$/g) ?? []).length;
+    if (dollars % 2 === 1) inEquation = true;
+  }
+  if (entries === 0) return '';
+
+  const end = lines[last]!.start + lines[last]!.text.length;
+  return text.slice(from + lines[at]!.start, from + end) + '\n';
+}
+
+interface PreservedRegions { body: string; embedded: string; trailing: string }
 
 // Split the destination into the regions a save must carry across untouched.
 function preservedRegions(existing: string | null | undefined): PreservedRegions {
-  if (existing === undefined || existing === null) return { body: DEFAULT_BODY, trailing: DEFAULT_TRAILING };
+  if (existing === undefined || existing === null) {
+    return { body: DEFAULT_BODY, embedded: '', trailing: DEFAULT_TRAILING };
+  }
   const text = contentAfterFrontmatter(existing);
-  if (text.trim() === '') return { body: DEFAULT_BODY, trailing: DEFAULT_TRAILING };
+  if (text.trim() === '') return { body: DEFAULT_BODY, embedded: '', trailing: DEFAULT_TRAILING };
 
   const block = locateDrawingBlock(text);
   const candidates = dataHeadingCandidates(text).filter((c) => block === null || c.offset < block.start);
@@ -356,8 +470,24 @@ function preservedRegions(existing: string | null | undefined): PreservedRegions
   const heading = candidates.find((c) => c.structural) ?? (block ? candidates[candidates.length - 1] : undefined);
 
   const start = heading ? heading.offset : block ? drawingRegionStart(text, block) : null;
-  if (start === null) return { body: bodyWithBanner(text), trailing: DEFAULT_TRAILING };
-  return { body: text.slice(0, start), trailing: block ? text.slice(block.end) : DEFAULT_TRAILING };
+  if (start === null) return { body: bodyWithBanner(text), embedded: '', trailing: DEFAULT_TRAILING };
+  // The data region's markdown runs from its heading to the `%%` (or the
+  // `## Drawing` line) that opens the scene, which is where the section the
+  // plugin owns has to be looked for and nowhere else.
+  const markdownEnd = block ? drawingRegionStart(text, block) : text.length;
+  return {
+    body: text.slice(0, start),
+    embedded: start < markdownEnd ? embeddedFilesSection(text, start, markdownEnd) : '',
+    trailing: block ? text.slice(block.end) : DEFAULT_TRAILING
+  };
+}
+
+// What a whole note says about where its images went. Runs through the same
+// region split the writer preserves, so reading the section and keeping it
+// across a save can never disagree about which bytes it is — the same reason
+// `locateDrawingBlock` is one locator for both directions.
+export function embeddedFilesIn(note: string): EmbeddedFileEntry[] {
+  return readEmbeddedFiles(preservedRegions(note).embedded);
 }
 
 // `existing` is the current content of the destination file, when there is
@@ -382,11 +512,17 @@ export function wrapSceneAsObsidianMd(
   const frontmatter = renderFrontmatter(
     upsertFrontmatterLines(frontmatterLinesFor(existing), options.frontmatter ?? [])
   );
-  const { body, trailing } = preservedRegions(existing);
+  const { body, embedded, trailing } = preservedRegions(existing);
   const wrapped = structuredClone(scene);
   wrapped.type = 'excalidraw';
   wrapped.version = 2;
   wrapped.files = wrapped.files ?? {};
+
+  // The note says where an image is once. An id the preserved section already
+  // names has its bytes in the vault, put there by the plugin, so writing
+  // base64 for it back into the Drawing block would make two records of one
+  // picture — the second of which nothing reads and nothing keeps in step.
+  for (const entry of readEmbeddedFiles(embedded)) delete wrapped.files[entry.fileId];
 
   const used = new Set<string>(wrapped.elements.map((el: any) => el.id));
   const entries: string[] = [];
@@ -404,10 +540,14 @@ export function wrapSceneAsObsidianMd(
   }
 
   const textSection = entries.length ? entries.join('\n\n') + '\n' : '';
+  // The blank line after the section is the plugin's own: it writes every
+  // entry as `<id>: <target>\n\n`, so a note archboard re-saves is byte-for-
+  // byte the note the plugin wrote.
+  const embeddedSection = embedded === '' ? '' : `${embedded}\n`;
   return `${frontmatter}${body}# Excalidraw Data
 ## Text Elements
 ${textSection}
-%%
+${embeddedSection}%%
 ## Drawing
 \`\`\`json
 ${JSON.stringify(canonicalizeKeys(wrapped), null, '\t')}

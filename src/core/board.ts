@@ -23,11 +23,12 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { ARCHBOARD_VAULT, noVaultMessage } from './config.js';
-import { ServerElement } from '../types.js';
+import { ExcalidrawFile, ServerElement } from '../types.js';
 import {
   readFrontmatterValue,
   isObsidianExcalidrawMd,
   extractSceneJsonFromObsidianMd,
+  embeddedFilesIn,
   wrapSceneAsObsidianMd
 } from './obsidian-md.js';
 
@@ -500,6 +501,139 @@ export function extractSceneElements(note: string): ServerElement[] {
   return raw.filter(el => el && typeof el === 'object' && !el.isDeleted) as ServerElement[];
 }
 
+// --- images the plugin moved into the vault --------------------------------
+//
+// A note the Obsidian Excalidraw plugin has saved carries no image bytes: it
+// writes each one out as a real vault file and records where it went in the
+// note's `## Embedded Files` section (see obsidian-md.ts, ADR 0017).
+// Preserving that section keeps the record; following it is what keeps the
+// picture, so a board the plugin has touched still renders here.
+//
+// Reading it happens where a note is read, so every caller of `readBoardFile`
+// gets the images without knowing this section exists.
+
+const IMAGE_MIME_TYPES: Readonly<Record<string, string>> = Object.freeze({
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
+  '.bmp': 'image/bmp',
+  '.avif': 'image/avif'
+});
+
+// Obsidian's wikilink target is a "linktext": the shortest form that still
+// picks the file out — usually a bare filename, a vault-relative path when the
+// name is ambiguous — optionally followed by `#heading` or `|alias`, which
+// name a place inside a note and never a different file. The plugin's own
+// PATHREG (`/(^[^#|]*)/`) cuts at exactly the same two characters.
+function linkTarget(link: string): string {
+  return link.split(/[#|]/)[0]!.trim();
+}
+
+// Every file in the vault, by lower-cased basename. Built only when a plain
+// path lookup has already failed, which is the uncommon case: the plugin
+// writes a bare filename when it is unique and a path when it is not.
+function vaultFilesByName(root: string): Map<string, string[]> {
+  const byName = new Map<string, string[]>();
+  const walk = (dir: string): void => {
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === '.git') continue;
+        walk(full);
+      } else if (entry.isFile()) {
+        const name = entry.name.toLowerCase();
+        const found = byName.get(name);
+        if (found) found.push(full);
+        else byName.set(name, [full]);
+      }
+    }
+  };
+  walk(root);
+  return byName;
+}
+
+// The vault file a wikilink names, or null. Tried in the order Obsidian
+// resolves them: vault-relative, then relative to the note, then by name.
+// A name that matches more than one file is refused rather than guessed at —
+// picking one would put a different picture on the board than the plugin
+// showed.
+function resolveVaultLink(
+  link: string,
+  notePath: string,
+  root: string,
+  byName: () => Map<string, string[]>
+): string | null {
+  const target = linkTarget(link);
+  if (target === '' || path.isAbsolute(target)) return null;
+  const vault = path.resolve(root);
+  const inside = (candidate: string): string | null => {
+    const resolved = path.resolve(candidate);
+    if (resolved !== vault && !resolved.startsWith(vault + path.sep)) return null;
+    return fs.existsSync(resolved) && fs.statSync(resolved).isFile() ? resolved : null;
+  };
+  const direct = inside(path.join(vault, target)) ?? inside(path.join(path.dirname(notePath), target));
+  if (direct) return direct;
+  const matches = byName().get(path.basename(target).toLowerCase()) ?? [];
+  return matches.length === 1 ? matches[0]! : null;
+}
+
+// The images a note's `## Embedded Files` section points at, in the shape a
+// scene's `files` map carries them. Anything that does not name a vault image
+// — a hyperlink, an equation, a link whose file is gone — is left out: the
+// record of it survives in the note either way, and inventing an entry for it
+// would put a hole on the board where the plugin puts a picture it fetches.
+export function resolveEmbeddedImages(
+  note: string,
+  notePath: string,
+  root: string
+): Record<string, ExcalidrawFile> {
+  const files: Record<string, ExcalidrawFile> = {};
+  let names: Map<string, string[]> | null = null;
+  const byName = () => (names ??= vaultFilesByName(path.resolve(root)));
+  for (const entry of embeddedFilesIn(note)) {
+    if (entry.kind !== 'wikilink') continue;
+    const mimeType = IMAGE_MIME_TYPES[path.extname(linkTarget(entry.target)).toLowerCase()];
+    if (!mimeType) continue;
+    const file = resolveVaultLink(entry.target, notePath, root, byName);
+    if (!file) continue;
+    let bytes: Buffer;
+    try {
+      bytes = fs.readFileSync(file);
+    } catch {
+      continue;
+    }
+    files[entry.fileId] = {
+      id: entry.fileId,
+      dataURL: `data:${mimeType};base64,${bytes.toString('base64')}`,
+      mimeType,
+      created: fs.statSync(file).mtimeMs
+    };
+  }
+  return files;
+}
+
+// A note's scene, with any image the plugin moved out of it put back. The
+// scene JSON is only reassembled when the note has a section to read, so an
+// ordinary note is not parsed and re-stringified for nothing.
+function sceneJsonWithEmbeddedImages(note: string, notePath: string, root: string): string {
+  const sceneJson = extractSceneJsonFromObsidianMd(note);
+  const resolved = resolveEmbeddedImages(note, notePath, root);
+  if (Object.keys(resolved).length === 0) return sceneJson;
+  const scene = JSON.parse(sceneJson);
+  if (Array.isArray(scene)) return sceneJson;
+  scene.files = { ...(scene.files ?? {}), ...resolved };
+  return JSON.stringify(scene);
+}
+
 export interface VaultBoard {
   key: string;
   identity: BoardIdentity;
@@ -635,7 +769,7 @@ export function readBoardFile(identity: Pick<BoardIdentity, 'board' | 'variant' 
     // The whole note, so a later save can carry its frontmatter across verbatim.
     raw,
     hash: hashBoardBytes(bytes),
-    sceneJson: extractSceneJsonFromObsidianMd(raw),
+    sceneJson: sceneJsonWithEmbeddedImages(raw, file, root),
     ...(declared && boardKey(declared) !== boardKey(asked) ? { declaredKey: boardKey(declared) } : {})
   };
 }
