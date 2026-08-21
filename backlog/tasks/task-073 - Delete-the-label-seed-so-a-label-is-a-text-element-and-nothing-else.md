@@ -1,11 +1,11 @@
 ---
 id: TASK-073
 title: 'Delete the label seed, so a label is a text element and nothing else'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-20 20:15'
-updated_date: '2026-08-20 22:58'
+updated_date: '2026-08-21 13:32'
 labels: []
 dependencies:
   - TASK-072
