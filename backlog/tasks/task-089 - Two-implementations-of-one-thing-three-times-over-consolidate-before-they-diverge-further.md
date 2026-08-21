@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-21 12:53'
-updated_date: '2026-08-21 13:14'
+updated_date: '2026-08-21 13:30'
 labels: []
 dependencies: []
 references:
@@ -45,10 +45,10 @@ The precedent for how to do it is already here: TASK-061 deleted `repo-registry`
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 One arrow's gap is defined once and both the binding and the routing read it
+- [x] #1 One arrow's gap is defined once and both the binding and the routing read it
 - [x] #2 There is one path that reads a note, and the open path and the per-request path are the same code
-- [ ] #3 Whether the two expansion functions are one job or two is established and written down, and if one, they are one function
-- [ ] #4 Each consolidation is proved by reverting it and counting which checks fail, not by the suite staying green
+- [x] #3 Whether the two expansion functions are one job or two is established and written down, and if one, they are one function
+- [x] #4 Each consolidation is proved by reverting it and counting which checks fail, not by the suite staying green
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -94,4 +94,16 @@ Row 2 is the one that matters for AC #4: a straight revert restores two paths th
 **What stops it happening again.** Both, because they fail on different things. The agreement check reads one migrated note through `readBoardFile` and `readNote` and asserts they agree on the bytes, the hash, the picture and the refusal — it catches a second reader that is wrong. The structural check asserts exactly one line in src/ calls `sceneJsonWithEmbeddedImages` — it catches a second reader that is right today, which is the state the old one was in for as long as it took somebody to fix the other. The open path also gained its own image assertion, which the migrated-note block never had: it only checked that the open returned 200, and the picture was asserted through `GET /api/files`, the per-request path.
 
 Full suite green: `bun run test`, 22 steps including both headless browser checks.
+
+Instances 1 and 3 landed with TASK-088. Instance 2, the two ways to read a note, is untouched and is the one that has already cost a bug.
+
+Instance 1, one arrow two gaps: gone. BOUND_ARROW_GAP lives in src/core/arrow-binding.ts and is read by the conversion that builds a binding from an agent's ref and by the routing that places the endpoint. There is no GAP = 8. Proved by hardcoding 8 back into the router: 4 of 82 geometry checks fail.
+
+Instance 3, the two expansion functions: established as one job with two entry points, not two implementations.
+
+The evidence. expandForBoard's whole body is a map over boundElements followed by a call to the other function; it converts nothing itself, so no input can get two answers. The same elements do pass through both, in sequence rather than in competition: an agent write goes expandForBoard -> store, and every note write goes scene-io buildScene -> the same converter over the whole document. Direct callers of the converter are scene-io.ts (notes and export --out) and share-url.ts (a shareable URL); callers of the wrapper are the four write paths in server.ts and relabelBoundTexts. The frontend has no expansion of its own left, only mermaid's own skeleton conversion, which is reported like a human's drawing.
+
+The second job, written where the next person looks: a write names a few elements and the board holds the rest, so a reference to a text element must be squared against the board before anything can ask whether a container already has a label. A whole document answers that by being whole.
+
+What was wrong was the name. expandElementsForExport is on the store path too, so it is expandElements now, renamed across 5 files. Both doc comments say which is which and why the pair is not the ADR 0015 problem, and check-labels asserts it: given a board that adds nothing the wrapper's answer is the converter's, field for field. Making the wrapper convert anything of its own fails that check, 1 of 175.
 <!-- SECTION:NOTES:END -->
