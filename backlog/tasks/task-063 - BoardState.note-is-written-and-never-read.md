@@ -1,10 +1,10 @@
 ---
 id: TASK-063
 title: BoardState.note is written and never read
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-08-20 19:04'
-updated_date: '2026-08-20 20:20'
+updated_date: '2026-08-21 10:43'
 labels: []
 dependencies:
   - TASK-078
@@ -34,7 +34,7 @@ The task originally offered two fixes. Only one is still available:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 BoardState.note is gone, deleted along with the rest of the in-memory board content
+- [x] #1 BoardState.note is gone, deleted along with the rest of the in-memory board content
 <!-- AC:END -->
 
 ## Comments
@@ -74,3 +74,9 @@ depending on that task, so it does not get picked up on its own.
 Description edited to say so.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Done as a line item on TASK-078, which is where the task said it belonged. BoardState.note is gone along with BoardState.elements and BoardState.files: the note is re-read per request and its bytes live on the per-request BoardContent, so there is nothing to cache and nothing that can drift. Verified by bun run test (22 steps green) and by the check in check-boards that asserts an open board carries only identity, file, baseline, loadedAt and savedAt.
+<!-- SECTION:FINAL_SUMMARY:END -->
