@@ -354,7 +354,7 @@ export async function insertStencil(query: StencilQuery & { x: number; y: number
     library: { item: entry.name, itemId: entry.id, source: entry.source }
   };
   const elements = remapElements(item.elements, query.x, query.y, attribution);
-  const created = await batchCreateElementsStrict(elements.map(el => prepareElement(el)));
+  const created = (await batchCreateElementsStrict(elements.map(el => prepareElement(el)))).elements;
 
   return {
     success: true,
