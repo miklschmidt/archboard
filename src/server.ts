@@ -61,7 +61,10 @@ import {
   holdOn,
   holdWrite,
   isHeld,
-  releaseHold,
+  // board-lock.ts also exports `releaseHold`, for the mutex. The lock owns that
+  // name — its check and ADR 0016 both use it — so ADR 0006's hold takes the
+  // verb its own plan uses for the three outcomes: each one clears the hold.
+  releaseHold as clearHold,
   reportHold
 } from './core/board-hold.js';
 import {
@@ -75,6 +78,14 @@ import {
   renderContent,
   writeBoardContent
 } from './core/board-io.js';
+import {
+  BoardHeldError,
+  boardLockState,
+  holdBoard,
+  LockHolder,
+  onBoardLockChanged,
+  releaseHold
+} from './core/board-lock.js';
 import {
   BoardIdentity,
   boardKey,
@@ -98,7 +109,7 @@ import { boardsForRepo } from './core/repo-boards.js';
 import { CompareSideInput, compareBoards } from './core/compare.js';
 import { ChangeOrigin, changeFeed } from './core/change-feed.js';
 import type { ChangeEvent } from './core/change-feed.js';
-import { PANE_LAYOUT_TIMEOUT_MS, PANE_SETTLE_CAP_MS } from './core/timing.js';
+import { PANE_LAYOUT_TIMEOUT_MS, PANE_SETTLE_CAP_MS, REPORT_DEBOUNCE_MS } from './core/timing.js';
 import { narrateChange } from './core/changes.js';
 import { injectTest, injectionStatus, startInjection } from './core/injection.js';
 import { LibraryItem, readLibrary, writeLibrary } from './core/library.js';
@@ -321,6 +332,44 @@ function deliverToPane(clientId: string, data: string): boolean {
   return delivered;
 }
 
+/**
+ * A board changed hands, so every pane holding it is told (ADR 0016).
+ *
+ * The lock is a broadcast and not only a guard. A canvas applies a change the
+ * instant a finger moves, so refusing that change when it is finally written
+ * would take the board away mid-gesture — which is the divergence between what
+ * is drawn and what is true that ADR 0015 exists to end, arriving from the
+ * other direction. A pane is told *before* the touch instead, and stops
+ * accepting one.
+ *
+ * `holder` rides along so the pane holding the lock knows the news is about
+ * itself and keeps drawing. Everyone else goes read-only.
+ *
+ * The board key is stamped on by `broadcast`, so a pane showing the other board
+ * drops it the same way it drops any other board's news.
+ */
+function lockMessage(board: string, holder: LockHolder | null): WebSocketMessage {
+  return { type: 'board_lock', board, held: holder !== null, holder };
+}
+
+// hot-safe: replaces the sink rather than adding one, and the sink is what the
+// current module graph's `broadcast` closes over — a reload has to repoint it.
+onBoardLockChanged((board, holder) => {
+  broadcast(lockMessage(board, holder), board);
+});
+
+/**
+ * Tell one pane where a board stands, now.
+ *
+ * A broadcast only reaches a pane that was connected when it went out, and a
+ * pane arrives — a new tab, a reconnection, a board switch — into a board that
+ * may already be held. Without this it would believe a held board is free until
+ * the next thing happens to it, which is the fail-open the ADR forbids.
+ */
+function tellPaneAboutLock(clientId: string, board: string): void {
+  sendToPane(clientId, lockMessage(board, boardLockState(board)), board);
+}
+
 // Broadcast something that is not about a board.
 //
 // Only the library qualifies today: it is one palette behind every board, so a
@@ -430,7 +479,7 @@ function persistBoard(
  * 0006). All this does is take the mark down.
  */
 function releaseBoardHold(key: string, outcome: 'reload' | 'overwrite' | 'elsewhere'): HoldReport | null {
-  const hold = releaseHold(key);
+  const hold = clearHold(key);
   if (!hold) return null;
   const report = reportHold(key, hold);
   logger.info(`Board "${key}" is saving again (${outcome}), after ${hold.writes} held change(s).`);
@@ -475,12 +524,20 @@ function boardFromRequest(
   req: Request,
   what?: string
 ): { key: string; board: BoardState; content: BoardContent } {
+  const { key, board } = resolveBoard(boardOfRequest(req), what);
+  return { key, board, content: readBoardContent(board) };
+}
+
+// Which board a request says it is about, before anything decides whether that
+// board exists. The mutex asks this and nothing else: it needs the address to
+// find the lock, and a request naming no board or a board nobody has open is
+// the handler's refusal to word, not the lock's.
+function boardOfRequest(req: Request): string | undefined {
   const fromQuery = typeof req.query.board === 'string' ? req.query.board : undefined;
   const fromBody = req.body && typeof req.body === 'object' && typeof req.body.board === 'string'
     ? req.body.board as string
     : undefined;
-  const { key, board } = resolveBoard(fromQuery ?? fromBody, what);
-  return { key, board, content: readBoardContent(board) };
+  return fromQuery ?? fromBody;
 }
 
 // A board that was not named, or was named and is not open, is a client error
@@ -492,6 +549,10 @@ function boardErrorStatus(error: unknown): number {
   // write goes to the note (ADR 0015), so it is answered here once rather than
   // in each of them.
   if (error instanceof BoardWriteConflictError) return 409;
+  // Somebody else is writing this board and did not finish inside the wait
+  // (ADR 0016). The same 409 as a conflict, because it is the same shape of
+  // answer: the write did not happen and here is what stood in its way.
+  if (error instanceof BoardHeldError) return 409;
   return /is not open|Invalid board name|Invalid variant|Invalid level|No vault configured|outside the vault|No pane called|matches \d+ panes|No pane is open|needs a pane/.test(
     (error as Error).message
   ) ? 400 : 500;
@@ -508,6 +569,11 @@ function boardErrorBody(error: unknown): Record<string, unknown> {
   // them. Which one the human picks is never archboard's to choose.
   if (error instanceof BoardWriteConflictError) {
     return { ...base, conflict: error.conflict };
+  }
+  // Who has the board and since when, as data as well as a sentence, so a voice
+  // session has something to say and a client has something to act on.
+  if (error instanceof BoardHeldError) {
+    return { ...base, code: error.code, board: error.board, holder: error.holder, waitedMs: error.waitedMs };
   }
   return base;
 }
@@ -577,6 +643,10 @@ wss.on('connection', (ws: WebSocket, req) => {
     ...boardFilesMessage(content)
   };
   ws.send(JSON.stringify(initialMessage));
+  // And where its lock stands. A broadcast only reaches panes that were already
+  // connected, so a tab that has just arrived — or come back from a dropped
+  // socket — is told outright rather than left assuming the board is free.
+  if (clientId) tellPaneAboutLock(clientId, startingKey);
 
   ws.on('close', () => {
     clients.delete(ws);
@@ -586,6 +656,12 @@ wss.on('connection', (ws: WebSocket, req) => {
     // had picked is no longer on anyone's screen.
     if (closingId) {
       selectionState.byClient.delete(closingId);
+      // A hold this pane had goes with it. The lease would have lapsed on its
+      // own within LOCK_LEASE_MS, which is what makes a killed tab survivable;
+      // this is only so a tab closed politely does not leave an agent waiting
+      // three seconds for a hand that has gone home (ADR 0016).
+      const held = paneBoards.get(closingId);
+      if (held) releaseHold(held, closingId);
       // The pane itself is gone for the same reason — a closed tab, or a pane
       // taken out of the shell. Reporting it would be reporting a ghost.
       panes.delete(closingId);
@@ -742,6 +818,165 @@ const UpdateElementSchema = z.looseObject({
   fileId: z.string().optional(),
   status: z.string().optional(),
   scale: z.tuple([z.number(), z.number()]).optional(),
+});
+
+// ─── One writer at a time ─────────────────────────────────────
+//
+// Every request that could change a board takes the board's mutex before the
+// handler runs and gives it back when the response goes out (ADR 0016,
+// `src/core/board-lock.ts`). One place, so no route assembles the steps itself
+// and no route can forget to.
+//
+// **Deny by default.** Anything that is not a GET and names a board is a write
+// unless it is listed below with the reason it is not. A route added later and
+// not thought about therefore locks a board it did not need to, which costs a
+// few milliseconds; the other way round costs a lost update, and would be
+// invisible.
+//
+// Nothing between the lock and the handler awaits, so the read-modify-write
+// cycle inside the handler is still one synchronous run (`board-io.ts`). What
+// changes is what keeps two of them apart: express ran them one at a time, and
+// now the mutex does, which is the same guarantee extended to a second process.
+const NOT_A_BOARD_WRITE: Array<[RegExp, string]> = [
+  [/^\/api\/boards\/hold/, 'is the lock'],
+  // Waits for a browser to convert, and the elements arrive afterwards as that
+  // pane\'s own change report, which is locked. Holding the board across that
+  // wait would be holding it against the very report that ends the wait.
+  [/^\/api\/elements\/from-mermaid$/, 'waits on the pane whose report is the write'],
+  [/^\/api\/panes/, 'layout, not board content, and open/close wait on the browser'],
+  [/^\/api\/viewport/, 'a camera move, and it waits on the browser'],
+  [/^\/api\/export/, 'a picture of a board, which only reads it'],
+  [/^\/api\/selection/, 'a selection is not board content'],
+  [/^\/api\/library/, 'one palette behind every board, and not board content'],
+  [/^\/api\/snapshots/, 'reads a board into a snapshot and writes no note'],
+  [/^\/api\/boards\/open$/, 'reads a note and points a pane at it'],
+  [/^\/api\/boards\/new$/, 'creates no note'],
+  [/^\/api\/injection/, 'not about a board'],
+  [/^\/api\/reload$/, 'not about a board']
+];
+
+/**
+ * Who this request writes as.
+ *
+ * A pane sends its client id, and that id is what makes the lock reentrant: the
+ * hold a gesture took covers the change report that gesture produces 400 ms
+ * later. An agent sends none, so it gets a fresh identity per request and takes
+ * and releases the board around that one write — which is the per-write mutex.
+ * TASK-080's long claim is an agent that sends a stable id instead.
+ */
+function holderFromRequest(req: Request): { id: string; kind: 'human' | 'agent' } {
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const kind = body.origin === 'agent' || typeof body.clientId !== 'string' ? 'agent' : 'human';
+  const id = typeof body.clientId === 'string' && body.clientId
+    ? body.clientId
+    : `agent-${Math.random().toString(36).slice(2, 10)}`;
+  return { id, kind };
+}
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.method === 'GET' || req.method === 'HEAD') return next();
+  if (!req.path.startsWith('/api/')) return next();
+  if (NOT_A_BOARD_WRITE.some(([pattern]) => pattern.test(req.path))) return next();
+
+  let key: string;
+  try {
+    key = resolveBoard(boardOfRequest(req), 'A write').key;
+  } catch {
+    // No board named, or one that is not open. The handler refuses better than
+    // this can — it knows what the operation was called (ADR 0009).
+    return next();
+  }
+
+  void holdBoard({ board: key, holder: holderFromRequest(req) })
+    .then((hold) => {
+      if (hold.created) {
+        let given = false;
+        const give = (): void => {
+          if (given) return;
+          given = true;
+          releaseHold(key, hold.holder.id);
+        };
+        // Both, because a client that hangs up mid-write never finishes the
+        // response, and a board held by a request nobody is listening to is a
+        // board held until the lease lapses.
+        res.on('finish', give);
+        res.on('close', give);
+      }
+      next();
+    })
+    .catch((error) => {
+      res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    });
+});
+
+/**
+ * A person has started changing this board, and wants it.
+ *
+ * The message the pane had no way to send. `POST /api/elements/changes` is a
+ * trailing debounce with no maximum wait, so a continuous drag reaches the
+ * server for the first time 400 ms after the finger lifts — by which point the
+ * change is on screen, in Excalidraw's own scene, and refusing it would take
+ * the board away from somebody mid-gesture. This goes out on the *leading*
+ * edge of the first change instead, and again every LOCK_RENEW_MS while the
+ * hand keeps moving, which is what renews the lease.
+ *
+ * It waits, but only for as long as the pane was going to sit on the change
+ * anyway. An agent's per-write hold is about twenty milliseconds, and a hand
+ * that landed inside one is not somebody who has lost the board — telling them
+ * so and throwing their gesture away would be an agent making a 75-inch display
+ * stop responding, which is the thing ADR 0016 forbids in as many words. So the
+ * wait is the report debounce: a person is going to be 400 ms from having their
+ * change written whatever this answers, and anything still holding the board at
+ * the end of that is a real holder rather than a write in flight.
+ *
+ * Not the agent's five seconds, for the other half of the same reason. A person
+ * cannot be made to wait that long to find out whether their pen works.
+ */
+app.post('/api/boards/hold', (req: Request, res: Response) => {
+  try {
+    const { key } = resolveBoard(boardOfRequest(req), 'Holding a board');
+    const body = (req.body ?? {}) as { clientId?: unknown; reason?: unknown };
+    if (typeof body.clientId !== 'string' || !body.clientId) {
+      return res.status(400).json({
+        success: false,
+        error: 'A hold needs a clientId: the lock is reentrant by holder, and an unnamed holder cannot be renewed or released.'
+      });
+    }
+    const holder = {
+      id: body.clientId,
+      kind: 'human' as const,
+      ...(typeof body.reason === 'string' && body.reason ? { reason: body.reason } : {})
+    };
+    void holdBoard({ board: key, holder, waitMs: REPORT_DEBOUNCE_MS })
+      .then(hold => res.json({ success: true, board: key, holder: hold.holder, created: hold.created }))
+      .catch(error => res.status(boardErrorStatus(error)).json(boardErrorBody(error)));
+  } catch (error) {
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+  }
+});
+
+/**
+ * They have stopped, the change has been written, and the board can go.
+ *
+ * A person's hold is a gesture and not a session (ADR 0016): holding it for as
+ * long as a board is on screen would block every agent for as long as anybody
+ * is looking at the wall. The pane sends this once its report has landed and
+ * nothing new has arrived since.
+ *
+ * Idempotent, and it releases nothing that is not this holder's. A pane that
+ * dies without sending it costs one lease.
+ */
+app.post('/api/boards/hold/release', (req: Request, res: Response) => {
+  try {
+    const { key } = resolveBoard(boardOfRequest(req), 'Releasing a board');
+    const body = (req.body ?? {}) as { clientId?: unknown };
+    if (typeof body.clientId !== 'string' || !body.clientId) {
+      return res.status(400).json({ success: false, error: 'A release needs the clientId that took the hold.' });
+    }
+    res.json({ success: true, board: key, released: releaseHold(key, body.clientId) });
+  } catch (error) {
+    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+  }
 });
 
 // API Routes
@@ -3028,6 +3263,10 @@ function switchPaneTo(pane: PaneRegistration | null, key: string, known?: BoardC
     ...boardFilesMessage(content),
     timestamp: new Date().toISOString()
   }, key);
+  // Where the new board's lock stands, straight after the board itself. A pane
+  // arriving on a board somebody else is writing has to know before the next
+  // touch, not after the write it is about to make has been refused (ADR 0016).
+  tellPaneAboutLock(pane.clientId, key);
   return board;
 }
 
