@@ -1,0 +1,237 @@
+// Every duration that decides when a change is flushed, when a board is
+// considered still, and how long anybody waits for either.
+//
+// They used to sit next to the code that consumed them, five in the pane's
+// session hook, two in the change feed, two in the server's pane routes and
+// two in the injection config. Read one at a time they all look independent,
+// and they are not. ADR 0016 is where that stopped being tolerable:
+//
+//     The window that coalesces a person's changes now has a second job. It
+//     also decides how long an agent waits for them. Shortening it releases
+//     the board sooner and writes to the vault more often; lengthening it does
+//     the reverse.
+//
+// So they live here, with what pulls against what written beside them. Nothing
+// in this file has behaviour. It is numbers and the reasons for them, and the
+// reasons are the point: the next person to halve one of these should not have
+// to discover by accident what else they halved.
+//
+// This module is imported by the pane, the server, the CLI and the checks, so
+// it stays free of `process`, `node:` imports and anything a browser does not
+// have. Where a value can be overridden from the environment, the default is
+// here and the override stays at the point of use, in the process that has an
+// environment to read. `src/core/labels`, `src/core/appearance` and
+// `src/core/expand-elements` cross the same boundary the same way.
+
+// ── A human's edits reaching the server ───────────────────────────────────
+
+/**
+ * How long the pane waits after a human's last change before posting the
+ * delta (`useCanvasSession.scheduleReport`).
+ *
+ * A human edit should be on the server before they finish saying what they
+ * did. The report is a delta, not the scene, so this can be short without
+ * being expensive.
+ *
+ * It is a trailing debounce with no maximum wait, restarted on every change,
+ * so a continuous drag posts nothing at all until 400 ms after the finger
+ * lifts. That matters for the lock. ADR 0016 says an agent's wait is bounded
+ * by this window, and the accurate version is narrower: this bounds how long a
+ * human's hold lasts *once it has been taken*, and nothing takes it at the
+ * start of a gesture today, because nothing reaches the server at the start of
+ * a gesture. Taking it is a separate immediate message that TASK-067 has to
+ * invent. Until it exists, an agent's wait is one gesture plus this, not this.
+ */
+export const REPORT_DEBOUNCE_MS = 400
+
+/**
+ * How long the pane waits before retrying a report the server refused or never
+ * answered.
+ *
+ * The baseline is untouched by a failure, so the retry recomputes the very
+ * same delta and nothing is lost except promptness. It is longer than a settle
+ * window, which means a report that only lands on the retry is a second event
+ * in the feed rather than part of the first. That is the right way round: the
+ * agent hearing about one drag twice costs it a sentence, and a retry inside
+ * the settle window would mean hammering a server that is already failing.
+ */
+export const REPORT_RETRY_MS = 2000
+
+/**
+ * How long the pane waits before publishing a changed selection.
+ *
+ * Selection is high-frequency and cheap, ids only, so it gets its own and much
+ * shorter debounce. 150 ms coalesces a lasso drag into one POST while still
+ * feeling immediate to somebody talking to an agent about "these boxes".
+ *
+ * Selection and changes travel by different routes, so these two numbers are
+ * what orders them, and 150 against 400 orders them the useful way round: an
+ * agent hears which boxes were picked up before it hears what happened to
+ * them. Raising this past REPORT_DEBOUNCE_MS reverses that, and the symptom
+ * would be an agent describing a move against the previous selection.
+ */
+export const SELECTION_DEBOUNCE_MS = 150
+
+/**
+ * How long a pane waits before dialling the socket again after it drops.
+ *
+ * Gathered here rather than left inline because ADR 0016 gives it a second
+ * job it does not have yet. Lock state is broadcast over this socket, and a
+ * pane that cannot hear the broadcast has to assume the board is held rather
+ * than that it is free. So this is also the longest a pane can sit refusing a
+ * human's touch after a blip, and shortening it is how that gets less
+ * annoying. It is deliberately unrelated to REPORT_DEBOUNCE_MS: change
+ * reports go by HTTP and are not gated on the socket, so a dropped socket must
+ * not also stop a human's edits reaching the server.
+ */
+export const SOCKET_RECONNECT_MS = 3000
+
+// ── What a pane looks like from outside ───────────────────────────────────
+
+/**
+ * How long the pane waits before reporting where it sits and what of its board
+ * is on screen.
+ *
+ * It changes on every scroll and zoom, and it is only sent when it has
+ * actually changed. An agent must be able to read it every turn, which it can
+ * only afford if the browser is not posting it continuously.
+ */
+export const PANE_DEBOUNCE_MS = 300
+
+/**
+ * How long the server waits for the panes to say where they ended up, after
+ * asking the browser to split or close one.
+ *
+ * This is a cap, not a delay. The wait ends as soon as every pane has
+ * re-reported. It exists because a pane that has just been mounted, or just
+ * been squeezed into half the width, reports its new rectangle a beat later,
+ * and answering before that arrives means answering out of stale geometry.
+ * That is how a plain left/right split once came back described as "row 2,
+ * column 2". Observed on the first real browser run, not guessed.
+ *
+ * The beat it is waiting out is PANE_DEBOUNCE_MS, which is the coupling worth
+ * knowing about: this must stay comfortably above it, or the cap expires while
+ * the browser is still sitting on the report that would have ended the wait.
+ * 300 against 1500 leaves room for the round trip and a slow frame.
+ */
+export const PANE_SETTLE_CAP_MS = 1500
+
+/**
+ * How long the server waits for the browser to change its layout at all.
+ *
+ * The acknowledgement is the pane appearing in the registry or its socket
+ * closing, never a promise from the shell, because a registration is the only
+ * evidence anywhere that a pane exists. This is the outer bound on that, and
+ * it is generous because failing it means telling a human their split did not
+ * happen when it may only have been slow.
+ */
+export const PANE_LAYOUT_TIMEOUT_MS = 10000
+
+// ── When a board is considered still ──────────────────────────────────────
+
+/**
+ * How long the change feed waits for a board to stop moving before diffing it
+ * against the last state anybody was told about.
+ *
+ * Overridable with ARCHBOARD_SETTLE_MS. Three checks set it, two down to a few
+ * hundred milliseconds so they are not mostly sleep, and one up to a minute so
+ * that only the settles it asks for explicitly ever fire.
+ *
+ * This is the number the ADR 0016 tension is about, seen from the far end. It
+ * has to be longer than REPORT_DEBOUNCE_MS, because that debounce sets the
+ * closest together two flushes from one stretch of work can arrive. A settle
+ * window shorter than the debounce would make every flush its own event and
+ * the coalescing would do nothing. 400 against 1200 leaves room for a flush,
+ * its round trip and the next flush inside one window, which is what turns
+ * "they rearranged that corner" into one thing the agent is told rather than
+ * three.
+ */
+export const DEFAULT_SETTLE_MS = 1200
+
+/**
+ * The longest the feed will hold an unsettled board before emitting anyway.
+ *
+ * Overridable with ARCHBOARD_SETTLE_MAX_MS. Without it, somebody drawing
+ * continuously for a minute would keep restarting the settle timer and the
+ * agent would hear nothing for that minute. This caps that at five settle
+ * windows, so a long stretch of continuous work still reports every few
+ * seconds.
+ */
+export const DEFAULT_SETTLE_MAX_MS = 6000
+
+// ── Pushing change events into a live thread ──────────────────────────────
+
+/**
+ * How long injection waits after a change event before pushing it into the
+ * thread. Overridable with ARCHBOARD_INJECT_DEBOUNCE_MS.
+ *
+ * Stacked on top of the settle window rather than replacing it: the feed has
+ * already coalesced the movement, and this coalesces the events. A person
+ * rearranging three boxes in a row produces three settled events and should
+ * cost the agent one interruption.
+ */
+export const DEFAULT_INJECT_DEBOUNCE_MS = 4000
+
+/**
+ * The floor on how often the thread may be interrupted, whatever the board is
+ * doing. Overridable with ARCHBOARD_INJECT_MIN_INTERVAL_MS.
+ *
+ * The debounce coalesces a burst; this bounds a steady stream. Somebody
+ * working continuously at the wall generates events forever, and an agent
+ * being told about them every four seconds cannot get anything else done.
+ */
+export const DEFAULT_INJECT_MIN_INTERVAL_MS = 10_000
+
+// ── One writer at a time (ADR 0016) ───────────────────────────────────────
+//
+// Nothing reads the three constants below yet. They are here because TASK-067
+// builds the mutex, and defining them in the file that implements it is
+// exactly the scattering this module exists to stop. TASK-067 may move the
+// numbers; it should not move their home.
+
+/**
+ * How long a lock is held without renewal before it lapses.
+ *
+ * The lock is a lease and not a flag, because a holder that dies mid-write
+ * would leave a flag set forever and a board nobody can write until somebody
+ * finds and deletes a file they have never heard of. The first crash costs one
+ * lease, not the board, and this is what that crash costs.
+ *
+ * It has to clear REPORT_DEBOUNCE_MS plus a write with room to spare, or a
+ * human's own lock expires under their finger in the gap between two reports.
+ * 400 against 3000 is that room. What actually covers a long drag is renewal,
+ * not this number, so raising it to survive a slow gesture is the wrong fix,
+ * and it is paid for in how long a crashed holder keeps the board.
+ */
+export const LOCK_LEASE_MS = 3000
+
+/**
+ * How often a live holder renews.
+ *
+ * A third of the lease, so two renewals can go missing before anybody loses a
+ * board. The two numbers say different things and the ADR keeps them apart:
+ * the lease bounds how long a *dead* holder keeps the board, and the renewal
+ * interval is what lets a working one keep it without the lease having to be
+ * long. Pushing this closer to the lease trades the second property for
+ * nothing.
+ */
+export const LOCK_RENEW_MS = 1000
+
+/**
+ * How long an agent waits for a board somebody else holds before giving up and
+ * naming the holder.
+ *
+ * An agent waits rather than failing, because a human's hold is a gesture and
+ * not a session, so the expected wait is one gesture plus REPORT_DEBOUNCE_MS.
+ * When it does give up it says who holds the board and since when, so a voice
+ * session has something to say instead of going silent.
+ *
+ * Keep it above LOCK_LEASE_MS. An agent waiting on a holder that crashed
+ * should outlast the lease and get the board, rather than time out first and
+ * report a holder that no longer exists. 3000 against 5000 leaves two seconds
+ * for the wait to notice the lapse. This is the relationship most likely to be
+ * broken by tuning, because the two numbers get tuned for opposite reasons:
+ * this one for how long a person is willing to hear nothing, that one for how
+ * long a crash costs.
+ */
+export const LOCK_WAIT_CAP_MS = 5000

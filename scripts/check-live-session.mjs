@@ -89,6 +89,14 @@ const check = (label, cond, extra = '') => {
 };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+// The one place this check has to know a number the pane is using: it plants a
+// broadcast while a drag is still sitting in the pane's report debounce. Read
+// from src/core/timing.ts rather than copied, because a copy here would keep
+// passing after somebody shortened the debounce and would stop testing the
+// thing it names.
+const { REPORT_DEBOUNCE_MS } = await import(src('core/timing.ts'));
+const MID_DEBOUNCE_MS = Math.round(REPORT_DEBOUNCE_MS * 0.3);
+
 const IGNORED = new Set([
   'version', 'versionNonce', 'updated',
   'createdAt', 'updatedAt', 'syncedAt', 'source', 'syncTimestamp'
@@ -645,12 +653,12 @@ try {
   const boardNow = await held();
   const victim = boardNow.find(e => e.id === 'auth');
   await humanEdit({ kind: 'move', id: 'auth', dx: 40, dy: 40 });
-  // Inside the pane's 400 ms debounce, so the drag is still undelivered.
+  // Inside the pane's report debounce, so the drag is still undelivered.
   await api('POST', `/api/elements/changes?board=${BOARD}`, {
     origin: 'agent',
     upserts: [{ id: 'queue', backgroundColor: '#ff8787' }]
   });
-  await sleep(120);
+  await sleep(MID_DEBOUNCE_MS);
   const midFlight = await readScene();
   const draggedNow = midFlight.elements.find(e => e.id === 'auth');
   check('a broadcast arriving mid-drag leaves the undelivered drag on the glass',

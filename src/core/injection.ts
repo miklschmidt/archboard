@@ -43,6 +43,7 @@
 import { ChangeEvent, changeFeed } from './change-feed.js';
 import { AppServerControl, SocketCheck, checkSocket, codexHome, controlSocketPath } from './app-server-control.js';
 import { kept } from './hot.js';
+import { DEFAULT_INJECT_DEBOUNCE_MS, DEFAULT_INJECT_MIN_INTERVAL_MS } from './timing.js';
 import logger from '../utils/logger.js';
 
 const truthy = (value: string | undefined) => value === '1' || value === 'true' || value === 'yes';
@@ -67,8 +68,11 @@ export function injectionConfig(): InjectionConfig {
     // `server` on its tool calls, and it is the user's choice, so it is
     // configurable here rather than assumed.
     mcpServerName: (process.env.ARCHBOARD_MCP_SERVER_NAME || 'archboard').trim(),
-    debounceMs: Number(process.env.ARCHBOARD_INJECT_DEBOUNCE_MS || 4000),
-    minIntervalMs: Number(process.env.ARCHBOARD_INJECT_MIN_INTERVAL_MS || 10_000),
+    // The two numbers, and how they sit on top of the change feed's settle
+    // window, are in ./timing.ts. Read here rather than at module scope so a
+    // caller can set the environment and then import this.
+    debounceMs: Number(process.env.ARCHBOARD_INJECT_DEBOUNCE_MS || DEFAULT_INJECT_DEBOUNCE_MS),
+    minIntervalMs: Number(process.env.ARCHBOARD_INJECT_MIN_INTERVAL_MS || DEFAULT_INJECT_MIN_INTERVAL_MS),
     codexHome: codexHome(),
     socketPath: controlSocketPath()
   };

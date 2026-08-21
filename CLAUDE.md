@@ -330,6 +330,16 @@ something. Read it with `changes [--since <cursor>] [--coalesce] [--text]`;
 `--coalesce` gives one net diff since a cursor, which is the shape a
 per-turn hook wants. Cursors are per canvas process — watch `feedId`.
 
+**That window and the pane's report debounce are two ends of one thing, and
+every duration like them is in `src/core/timing.ts`** (TASK-066, ADR 0016).
+The pane's flush and retry, the selection and pane-geometry debounces, the
+settle window and its cap, the server's wait for a split to be acknowledged,
+the injection defaults, and the lock's lease, renewal and wait cap all live
+there with what each pulls against written beside it. Shortening the report
+debounce releases a held board sooner and writes to the vault more often;
+lengthening it does the reverse. Tune one and read the file first. Across four
+files, which is where they were, each of them looked independent.
+
 **The canvas can push those events into a live Codex thread, but only when
 asked.** `ARCHBOARD_INJECT=1` at server start arms it; a non-loopback bind
 refuses regardless (ADR 0005 — anything that can reach the canvas could

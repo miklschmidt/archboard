@@ -28,23 +28,17 @@ import { baselineFrom, diffAgainstBaseline, fingerprint, isEmpty, type Baseline 
 import { fetchElements, fetchFiles, loadedBundle, reportChanges, reportPane } from './api'
 import type { PaneReport } from './api'
 
-// A human edit should be on the server before they finish saying what they
-// did. The report is a delta now, not the scene, so this can be short without
-// being expensive.
-const REPORT_DEBOUNCE_MS = 400
-const REPORT_RETRY_MS = 2000
-
-// Selection is high-frequency and cheap (ids only), so it gets its own, much
-// shorter debounce: 150ms coalesces a lasso drag into one POST while still
-// feeling immediate to someone talking to an agent about "these boxes".
-const SELECTION_DEBOUNCE_MS = 150
-
-// What the pane looks like from outside: where it sits, which board it holds,
-// what of that board is on screen. It changes on every scroll and zoom, so it
-// gets its own debounce and is only sent when it has actually changed — an
-// agent must be able to read it every turn, which it can only afford if the
-// browser is not posting it continuously.
-const PANE_DEBOUNCE_MS = 300
+// Every duration this pane waits out. They are in src/core/timing.ts with the
+// server's and the change feed's, because they pull against each other and one
+// tuned on its own is one tuned in ignorance of the rest (ADR 0016). The
+// reasons for the numbers are there too.
+import {
+  PANE_DEBOUNCE_MS,
+  REPORT_DEBOUNCE_MS,
+  REPORT_RETRY_MS,
+  SELECTION_DEBOUNCE_MS,
+  SOCKET_RECONNECT_MS
+} from '../../../src/core/timing'
 
 export interface CanvasSessionOptions {
   paneId: string
@@ -856,7 +850,7 @@ export function useCanvasSession({
       connectedRef.current = false
       setConnected(false)
       publishStatus()
-      if (event.code !== 1000 && !closedRef.current) setTimeout(connect, 3000)
+      if (event.code !== 1000 && !closedRef.current) setTimeout(connect, SOCKET_RECONNECT_MS)
     }
     socket.onerror = () => {
       connectedRef.current = false
