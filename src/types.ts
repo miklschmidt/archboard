@@ -224,6 +224,12 @@ export type WebSocketMessageType =
   // pane holding something else is not.
   | 'board_hold'
   | 'board_released'
+  // Who is writing this board, if anybody (ADR 0016). Board-scoped like every
+  // other content message, because a pane holding the other board is not
+  // affected by this one changing hands. Carries the holder rather than a bare
+  // flag: the pane that holds the lock has to know the news is about itself and
+  // keep drawing, and a pane that does not needs to be able to say who does.
+  | 'board_lock'
   // The stencil palette changed. Boardless on purpose: the library is not a
   // board's content, so every client applies it whatever it is showing.
   | 'library_changed'
