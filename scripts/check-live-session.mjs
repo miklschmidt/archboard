@@ -94,7 +94,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // from src/core/timing.ts rather than copied, because a copy here would keep
 // passing after somebody shortened the debounce and would stop testing the
 // thing it names.
-const { REPORT_DEBOUNCE_MS } = await import(src('core/timing.ts'));
+const { LOCK_FREE_LINGER_MS, LOCK_RENEW_MS, REPORT_DEBOUNCE_MS } = await import(src('core/timing.ts'));
 const MID_DEBOUNCE_MS = Math.round(REPORT_DEBOUNCE_MS * 0.3);
 
 const IGNORED = new Set([
@@ -681,6 +681,24 @@ try {
   const boardNow = await held();
   const victim = boardNow.find(e => e.id === 'auth');
   await humanEdit({ kind: 'move', id: 'auth', dx: 40, dy: 40 });
+
+  // The pane's hold, taken out from under it, which is the one arrangement in
+  // which this can still happen (ADR 0016). A drag takes the board on its first
+  // change and gives it back once the report has landed, so an agent writing in
+  // between now waits rather than interleaving — that is what the mutex is for,
+  // and it means the race below is no longer reachable by writing faster.
+  //
+  // It is still reachable, which is why the merge stays: a hold is a lease, and
+  // a pane whose lease lapsed — the hold request never arrived, the process it
+  // was taken in went away, a network blip — is exactly a pane holding
+  // undelivered work with the board free. Releasing it here is that state,
+  // arranged rather than waited for. Change reports are deliberately not gated
+  // on any of it, so the drag is still coming.
+  const owner = (await api('GET', '/api/panes')).body?.panes?.[0]?.clientId;
+  check('  the pane can be named, so its hold can be taken out from under it',
+    typeof owner === 'string' && owner.length > 0, String(owner));
+  await api('POST', `/api/boards/hold/release?board=${BOARD}`, { clientId: owner });
+
   // Inside the pane's report debounce, so the drag is still undelivered.
   await api('POST', `/api/elements/changes?board=${BOARD}`, {
     origin: 'agent',
@@ -717,6 +735,52 @@ try {
   check('  with both writers\' work on the board',
     landed && Math.abs(landed.x - (victim.x + 40)) < 0.001 && recoloured?.backgroundColor === '#ff8787',
     `auth.x ${landed?.x} (wanted ${victim.x + 40}), queue.backgroundColor ${recoloured?.backgroundColor}`);
+
+  // --- the pane refuses the touch, not the write --------------------------
+  //
+  // ADR 0016's other half, and this is the only check with a renderer to ask.
+  // A canvas applies a drag the instant a finger moves, so a board somebody
+  // else is writing has to stop accepting a touch *before* it happens; view
+  // mode is Excalidraw's own word for that, and reading it off the live app is
+  // the only way to know the pane really is refusing rather than intending to.
+
+  const viewMode = () => evalInPage(`(() => {
+    const app = ${APP};
+    return app ? { view: app.state.viewModeEnabled === true } : { error: 'no Excalidraw app instance' };
+  })()`);
+
+  const free = await viewMode();
+  check('a pane on a board nobody is writing accepts a touch', free.view === false, JSON.stringify(free));
+
+  // Somebody else takes it, and keeps taking it. The lease is deliberately
+  // shorter than a long gesture, so renewing is what a real hold looks like;
+  // without this the board would simply come free underneath the assertion.
+  await api('POST', `/api/boards/hold?board=${BOARD}`, { clientId: 'another-writer' });
+  const renewing = setInterval(() => {
+    void api('POST', `/api/boards/hold?board=${BOARD}`, { clientId: 'another-writer' });
+  }, LOCK_RENEW_MS);
+  await sleep(500);
+  const taken = await viewMode();
+  check('  and stops accepting one as soon as somebody else takes the board',
+    taken.view === true, JSON.stringify(taken));
+
+  clearInterval(renewing);
+  await api('POST', `/api/boards/hold/release?board=${BOARD}`, { clientId: 'another-writer' });
+  await sleep(LOCK_FREE_LINGER_MS + 600);
+  const back = await viewMode();
+  check('  and takes it back when they are done', back.view === false, JSON.stringify(back));
+
+  // The half that has to fail closed, and the reason it is last. Lock state is
+  // broadcast over the socket, and change reports deliberately are not gated on
+  // the socket — so a pane that has lost contact hears nothing about the lock
+  // while remaining perfectly able to post a write nobody will accept. ADR 0016
+  // says a pane that cannot be told must assume the board is held. Killing the
+  // canvas is how a dropped socket is arranged here.
+  server.kill('SIGTERM');
+  await sleep(1500);
+  const orphaned = await viewMode();
+  check('a pane that has lost the socket assumes the board is held, not free',
+    orphaned.view === true, JSON.stringify(orphaned));
 } catch (error) {
   failures += 1;
   console.log(`FAIL - ${error.message}`);
