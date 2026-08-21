@@ -578,15 +578,24 @@ try {
   // under test and would prove nothing about exclusion.
   let gaps = 0;
   let unwritten = 0;
+  let slowest = 0;
   for (let i = 0; i < 20; i += 1) {
+    const at = Date.now();
     const wrote = await api('POST', '/api/elements?board=scratch', {
       id: `claim-${i}`, type: 'rectangle', x: i * 12, y: 800, width: 10, height: 10
     });
+    slowest = Math.max(slowest, Date.now() - at);
     if (wrote.status !== 200) unwritten += 1;
     const rival = await refusal(holdBoard({ board: 'scratch', holder: agent(`rival-${i}`), waitMs: 0 }));
     if (!(rival instanceof BoardHeldError)) gaps += 1;
   }
   check('twenty writes go through under one claim', unwritten === 0, `${unwritten} of 20 refused`);
+  // Joining a hold is instant; asking for one somebody else has is the whole
+  // wait cap. So this is the difference between a write that recognised the
+  // claim as its own and one that queued behind it, which nothing else here
+  // can see from outside the canvas.
+  check('  and none of them waited for the claim, because each of them was the claim',
+    slowest < LOCK_WAIT_CAP_MS / 2, `slowest ${slowest} ms against a ${LOCK_WAIT_CAP_MS} ms wait cap`);
   check('  with no gap another writer could take, in any of the nineteen between them',
     gaps === 0, `${gaps} gaps`);
   check('  and the board was held once throughout, not taken and given back twenty times',
@@ -693,7 +702,12 @@ try {
       if (message.type === 'board_lock') overThere.push(message);
     });
     await new Promise((resolve) => otherSocket.on('open', resolve));
-    await sleep(400);
+    // Long enough for that canvas to go quiet, and this is load-bearing. It
+    // has just written the board itself, which leaves a pending announcement
+    // that re-reads the lock file when it fires — and a check that had not
+    // waited that out would be handed its news by that timer landing after the
+    // claim rather than by the poll. Reverting the poll then failed nothing.
+    await sleep(LOCK_FREE_LINGER_MS + 1200);
     check('a pane on the second canvas starts out believing its board is free',
       overThere.at(-1)?.held === false, JSON.stringify(overThere.at(-1)));
 
@@ -726,6 +740,8 @@ try {
     // The claiming canvas finds out at its next renewal — the lock is no longer
     // its own, and a renewal may not take a free one back.
     await sleep(LOCK_RENEW_MS + 1500);
+    check('  and the claim does not come back, now that the board is free again',
+      overThere.at(-1)?.held === false, JSON.stringify(overThere.at(-1)));
     const toldElsewhere = await api('POST', '/api/elements?board=scratch', {
       type: 'rectangle', x: 30, y: 950, width: 10, height: 10
     });
