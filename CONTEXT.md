@@ -103,8 +103,16 @@ _Avoid_: version, revision, branch, mode, state
 **Note**:
 The file in the vault holding one board. Obsidian's word for a document, kept
 because the file is meant to be opened and edited there as well. The note is
-the board on disk; what the canvas holds is a copy of it.
+the board: the canvas reads it and writes it and keeps no copy of one.
 _Avoid_: file, document, markdown, page, record
+
+**Hold**:
+The state of a board the canvas has stopped saving, because its note changed
+underneath and writing would delete somebody else's work. Drawing carries on
+into a copy the canvas keeps until a person picks reload, overwrite or save
+elsewhere. It is about another application writing the note, never about
+another archboard writer, which is a lock and has a holder.
+_Avoid_: lock, conflict, freeze, pause, dirty, detached
 
 **Vault**:
 The cross-repository collection in which every board is persisted.

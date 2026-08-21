@@ -3,7 +3,7 @@
 
 import type { LibraryItems } from '@excalidraw/excalidraw/types'
 import type {
-  BoardIdentity, BoardInfo, BoardListing, BoardSaveResult, BoardWriteConflict, ServerElement
+  BoardHold, BoardIdentity, BoardInfo, BoardListing, BoardSaveResult, BoardWriteConflict, ServerElement
 } from '../types'
 import type { ChangeReport } from './changes'
 
@@ -13,7 +13,11 @@ import type { ChangeReport } from './changes'
  * saving, not a fault.
  */
 export class BoardConflictError extends Error {
-  constructor(public readonly conflict: BoardWriteConflict) {
+  constructor(
+    public readonly conflict: BoardWriteConflict,
+    /** The hold this refusal started or ran into, when the board has one. */
+    public readonly held?: BoardHold
+  ) {
     super(conflict.message)
     this.name = 'BoardConflictError'
   }
@@ -23,7 +27,9 @@ async function json<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init)
   const body = await response.json().catch(() => ({}))
   if (!response.ok || body?.success === false) {
-    if (body?.conflict) throw new BoardConflictError(body.conflict as BoardWriteConflict)
+    if (body?.conflict) {
+      throw new BoardConflictError(body.conflict as BoardWriteConflict, body.held as BoardHold | undefined)
+    }
     throw new Error(body?.error ?? `${init?.method ?? 'GET'} ${url} failed (${response.status})`)
   }
   return body as T
@@ -70,13 +76,18 @@ export function fetchFiles(board: string | null) {
 export function reportChanges(
   board: string | null,
   report: ChangeReport,
-  clientId: string
+  clientId: string,
+  rebase = false
 ): Promise<ChangeReportReply> {
   return post(`/api/elements/changes${boardQuery(board)}`, {
     upserts: report.upserts,
     deletes: report.deletes,
     clientId,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    // Only ever on a board that has stopped saving, and the server refuses it
+    // anywhere else: it says "this is the whole board", which is the one thing
+    // a pane is otherwise never allowed to say (TASK-016, TASK-079).
+    ...(rebase ? { rebase: true } : {})
   })
 }
 
@@ -87,6 +98,8 @@ export interface ChangeReportReply {
   count: number
   /** The board, whole, as the server holds it now. */
   document?: ServerElement[]
+  /** Set when this board has stopped saving: what is held, and the way out. */
+  held?: BoardHold
 }
 
 /**

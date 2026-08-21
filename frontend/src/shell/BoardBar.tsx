@@ -7,7 +7,7 @@
 // variant, which level, whether it is written down.
 
 import React from 'react'
-import type { BoardIdentity } from '../types'
+import type { BoardHold, BoardIdentity } from '../types'
 
 interface BoardBarProps {
   identity: BoardIdentity | null
@@ -16,6 +16,9 @@ interface BoardBarProps {
   connected: boolean
   savedAt: string | null
   dirty: boolean
+  /** Set while this board has stopped saving (ADR 0006, TASK-079). */
+  hold: BoardHold | null
+  onHoldClick: () => void
   paneCount: number
   onOpen: () => void
   onNew: () => void
@@ -35,8 +38,22 @@ function saveState(savedAt: string | null, dirty: boolean): string {
   return 'no changes'
 }
 
+/**
+ * What the mark on a held board says, in the bar, where there is room for one
+ * line.
+ *
+ * It is a button rather than a banner because the three outcomes are behind it,
+ * and it never opens itself: the refusal that produced it arrived 400 ms after
+ * somebody lifted their finger, and a modal at that moment is the thing
+ * TASK-079 exists to stop.
+ */
+function holdLabel(hold: BoardHold): string {
+  if (hold.writes === 0) return 'not saving'
+  return `not saving · ${hold.writes} change${hold.writes === 1 ? '' : 's'} held`
+}
+
 export function BoardBar({
-  identity, boardKey, elementCount, connected, savedAt, dirty,
+  identity, boardKey, elementCount, connected, savedAt, dirty, hold, onHoldClick,
   paneCount, onOpen, onNew, onSave, onClear, onAddPane, onClosePane, busy
 }: BoardBarProps): JSX.Element {
   return (
@@ -51,9 +68,21 @@ export function BoardBar({
         )}
         {identity?.level && <span className="chip chip-quiet">{identity.level}</span>}
         <span className="meta">{elementCount} element{elementCount === 1 ? '' : 's'}</span>
-        <span className={`meta ${dirty ? 'meta-dirty' : ''}`}>
-          {saveState(savedAt, dirty)}
-        </span>
+        {hold
+          ? (
+            <button
+              className="chip chip-held"
+              onClick={onHoldClick}
+              title={`${hold.message}\n\nClick for the three ways out.`}
+            >
+              {holdLabel(hold)}
+            </button>
+          )
+          : (
+            <span className={`meta ${dirty ? 'meta-dirty' : ''}`}>
+              {saveState(savedAt, dirty)}
+            </span>
+          )}
       </div>
 
       <div className="bar-actions">

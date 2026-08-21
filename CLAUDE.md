@@ -652,9 +652,50 @@ agent's `add`, and a human's drag 400 ms after their finger lifts. The baseline
 it compares against is the bytes of the previous write rather than a hash taken
 when the board was opened, so the question is "did somebody get in between our
 last two writes" rather than "has anything happened since this session began".
-`board open <name> --reload` is what un-sticks a board after a refusal: it takes
-the note and moves the baseline to it. A refusal still interrupts, which is
-TASK-079.
+
+**So the board stops saving rather than the human being interrupted**
+(TASK-079, `src/core/board-hold.ts`). The refused write is refused and nothing
+is written. From that moment the board is *held*: what is drawn on it goes into
+a copy the canvas keeps, the note is left holding the other editor's version,
+and no second refusal ever arrives. Nothing opens a dialog. The board bar shows
+`not saving · N changes held`, and clicking that is what offers the three
+outcomes, at a moment somebody chose. A modal arriving mid-gesture whose best
+offer is "discard what you just drew" is worse than the problem it reports.
+
+What each outcome does with the held changes, which is the question the table
+above does not answer:
+
+| Outcome | The held changes |
+|---|---|
+| Reload | gone, by definition: this is the one that takes the note |
+| Overwrite | written, all of them, over the note |
+| Save elsewhere | written to the other note, and the panes follow them there |
+
+Save-elsewhere moving the panes is the second exception to ADR 0012, for the
+same reason naming scratch is the first: both notes hold one drawing, and the
+board left behind is about to be repainted with the other editor's version.
+
+**A held copy lives in the canvas process and in no note.** A crash or a restart
+loses whatever was drawn since the board stopped saving, which is why the mark
+stays up rather than being announced once.
+
+**An agent finds out without having to be the one that was refused.** Every
+answer about a held board carries a `held` block: the conflict, since when, how
+many changes are riding on it and the three commands. It is on the API
+responses, on the CLI's JSON and on its stderr, appended to every MCP tool
+result, and in `board list`, so an agent that has just arrived can see it
+without writing to the board first. The write that trips the refusal still
+exits 5 from the CLI and still returns the conflict; the writes after it
+succeed, into the held copy, and say what they went into.
+
+**A pane says what is on its screen once, and only on a held board.** The held
+copy starts as the note the other editor wrote, because that is all the canvas
+can read, so the pane sends its whole scene as a `rebase` on the change route.
+That is the one place a browser may declare a whole board (TASK-016 removed the
+other), and the server refuses it on any board that is still saving. It is what
+makes "overwrite" mean what you are looking at. A board no pane is holding has
+no screen to take, so its held copy stays their note plus whatever an agent has
+drawn on it since, and `held.fromScreen` says which of the two you have.
 
 Nothing is locked, and the check reads the file rather than another app's
 memory, so a board open in Obsidian can still write its own copy back

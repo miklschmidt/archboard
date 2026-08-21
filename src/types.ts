@@ -219,6 +219,11 @@ export type WebSocketMessageType =
   | 'file_deleted'
   | 'selection_changed'
   | 'board_switched'
+  // This board has stopped saving, or is saving again (ADR 0006, TASK-079).
+  // Board news rather than pane news: every pane holding it is affected, and a
+  // pane holding something else is not.
+  | 'board_hold'
+  | 'board_released'
   // The stencil palette changed. Boardless on purpose: the library is not a
   // board's content, so every client applies it whatever it is showing.
   | 'library_changed'

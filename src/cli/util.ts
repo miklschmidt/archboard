@@ -1,11 +1,23 @@
 import fs from 'fs';
 import { CliUsageError, readStdin } from './args.js';
-import { getHealth } from '../core/canvas-client.js';
+import { boardHoldSeen, getHealth } from '../core/canvas-client.js';
 import { EXPRESS_SERVER_URL } from '../core/config.js';
 
 // Results go to stdout as JSON; diagnostics belong on stderr.
+//
+// A board that has stopped saving is added to every answer here rather than by
+// each command, for the reason the canvas attaches it to every response: the
+// point of it is that nobody working on that board can fail to notice, and a
+// command that had to remember would be the one that forgot (ADR 0006,
+// TASK-079). It goes to both places on purpose — into the JSON, where an agent
+// reads, and as a sentence on stderr, where a person does.
 export function printJson(value: unknown): void {
-  process.stdout.write(JSON.stringify(value, null, 2) + '\n');
+  const held = boardHoldSeen();
+  const body = held && value && typeof value === 'object' && !Array.isArray(value)
+    ? { ...(value as Record<string, unknown>), held }
+    : value;
+  process.stdout.write(JSON.stringify(body, null, 2) + '\n');
+  if (held) note(held.message);
 }
 
 export function note(message: string): void {

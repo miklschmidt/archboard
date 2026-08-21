@@ -302,6 +302,20 @@ export async function board(argv: string[]): Promise<void> {
     );
   }
 
+  // One of the two outcomes that end a hold has just been taken, so what this
+  // save did is bigger than the file it wrote: the board is being written down
+  // again, and the changes that were riding on the choice went somewhere
+  // (ADR 0006, TASK-079).
+  const ended = result.resolvedHold;
+  if (ended) {
+    const held = `${ended.writes} change${ended.writes === 1 ? '' : 's'}`;
+    note(ended.outcome === 'overwrite'
+      ? `"${ended.board}" is saving again, with the ${held} that were held on the canvas. ` +
+        `Whatever ${result.file} held before is gone.`
+      : `The ${held} that were held are in ${result.file}, and it is what the panes now show. ` +
+        `"${ended.board}" is saving again and holds the version the other editor wrote.`);
+  }
+
   if (result.forced) {
     note(`Overwrote ${result.file} on your say-so; whatever that note held is gone.`);
   } else if (result.overwrote) {
