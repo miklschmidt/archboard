@@ -84,8 +84,9 @@ bun run reload   # and this is what reloads it
 
 `bun --hot` re-evaluates modules inside the running process, which is a
 different thing from `bun --watch` restarting it. The port stays bound, the
-browser tabs keep their WebSockets, the boards keep their unsaved elements, the
-panes keep their registrations, and the change feed keeps its id and cursor.
+browser tabs keep their WebSockets, the panes keep their registrations, and the
+change feed keeps its id and cursor. The boards are in the vault and were never
+at risk.
 
 The trigger is a command because `bun --hot` re-evaluates the **whole module
 graph** on any file change, not the file you edited, and it does that inside a
@@ -106,13 +107,17 @@ asking you to remember it (TASK-059, ADR 0014):
   positive with `// hot-safe: <reason>`. Both TASK-057 bugs are fixtures under
   `scripts/fixtures/module-scope/`, so the check proves itself on every run.
 - Every reload in dev mode runs a canary (`src/core/reload-canary.ts`) that
-  compares board element counts, pane registrations, the socket count and the
-  feed's id and cursor across the reload, and shouts to the terminal **and**
-  every open tab if anything moved. `bun run test:hot` breaks a reload on
-  purpose to prove it fires.
+  compares which boards are open and where each one's note is, the pane
+  registrations, the socket count and the feed's id and cursor across the
+  reload, and shouts to the terminal **and** every open tab if anything moved.
+  `bun run test:hot` breaks a reload on purpose to prove it fires. It counted
+  elements until TASK-078; a count is a fact about the vault now and a reload
+  cannot touch it, while losing a board's note path still costs the pane
+  holding it.
 
 **`canvas start` watches nothing and cannot reload**, deliberately. Restarting
-drops every unsaved board, so save first, or ask.
+costs the process and nothing on any board: a write is a write to the note
+(ADR 0015), so there is nothing unsaved to lose.
 
 `bun run type-check` is the only thing that type-checks now, and `bun run test`
 runs it first, so a type error still fails the suite.
@@ -209,6 +214,32 @@ Established by testing this build, not by reading docs.
 
 The one-way mermaid behaviour was a **1.1.0 bug**, fixed upstream by reporting
 the converted elements after conversion. Do not design around it.
+
+**The note is the board, and the canvas holds no copy of one** (ADR 0015,
+TASK-078). Every request that reads or writes a board reads its note; a write
+writes it back and returns the resulting document. The board store is a registry
+of which boards this canvas has open and where each one's note is, nothing more:
+there is no cache to invalidate, nothing unsaved, and killing the canvas
+mid-thought costs the process and no board content. `src/core/board-io.ts` is
+the one place a note is read or written, and it is synchronous on purpose —
+express runs a synchronous handler to completion before starting the next, so
+two writes to one board cannot interleave their read-modify-write cycles. An
+`await` between the read and the write would open exactly that window; keeping a
+*second process* out is the board mutex (ADR 0016).
+
+A write costs 15.6 ms on a 56-element board and 18 to 23 ms on a 300-element one
+(`docs/design/server-is-the-truth.md`), of which the fsync is over half and does
+not vary with size. Against the busiest second anybody has measured, 7 writes,
+that is 11% to 16% of that second on a board four times larger than any real
+one.
+
+Anything the note says that the board did not say used to be harmless and is now
+a document with two answers, so four conversions moved to the write boundary:
+the block id a text element gets when its own id is too long to be one, the
+`boundElements` entry a shape owes an arrow bound to it, the z-order repair, and
+`rawText`. The caller's answer, the panes' broadcast and the note now say the
+same thing. And the note keeps `source` and an arrow's `start` and `end`, which
+nothing else can recover.
 
 **The server is authoritative over the board.** A browser never sends a scene:
 it reports a delta — `POST /api/elements/changes` with `upserts` and `deletes` —
@@ -578,12 +609,13 @@ frontmatter — aliases, cssclasses, comments, whatever Obsidian put there — i
 carried across a save verbatim, so export stays idempotent (two saves are
 byte-identical) and lossless (open then save is byte-identical).
 
-**A save can be refused.** archboard records the sha-256 of a note's bytes when
-it reads it and verifies that hash against the destination before writing, so a
-note that changed underneath — Obsidian, a sync client, another editor — is
-never overwritten. The save is refused with nothing written: `board save` exits
-5, `save_board` returns an error, and the shell's Save puts up a dialog. Each
-names the same three outcomes, and archboard picks none of them (ADR 0006):
+**A write can be refused.** archboard records the sha-256 of the bytes it last
+wrote at a note's path and verifies that hash against the destination before
+writing again, so a note that changed underneath — Obsidian, a sync client,
+another editor — is never overwritten. The write is refused with nothing
+written: `board save` exits 5, `save_board` returns an error, an element route
+answers 409 with the conflict as data, and the shell's Save puts up a dialog.
+Each names the same three outcomes, and archboard picks none of them (ADR 0006):
 
 | Outcome | How | What it costs |
 |---|---|---|
@@ -594,8 +626,18 @@ names the same three outcomes, and archboard picks none of them (ADR 0006):
 The same refusal covers a destination archboard has never read — a `board new`
 whose file appeared underneath it, or a `--as` onto an existing note.
 
+**It fires far more often than it used to, and it no longer waits for a save.**
+Every write goes to the note (ADR 0015), so the check runs on every one: an
+agent's `add`, and a human's drag 400 ms after their finger lifts. The baseline
+it compares against is the bytes of the previous write rather than a hash taken
+when the board was opened, so the question is "did somebody get in between our
+last two writes" rather than "has anything happened since this session began".
+`board open <name> --reload` is what un-sticks a board after a refusal: it takes
+the note and moves the baseline to it. A refusal still interrupts, which is
+TASK-079.
+
 Nothing is locked, and the check reads the file rather than another app's
-memory, so a board open in Obsidian can still write its unsaved copy back
+memory, so a board open in Obsidian can still write its own copy back
 afterwards: **keep a board open in one editor at a time.**
 
 **A write that is allowed goes through a rename, so a reader sees the old note
@@ -624,6 +666,12 @@ the ones its own elements draw, and they live on the board and go into its note.
 map per process, keyed by file id and shared by every open board, so saving one
 board wrote every other open board's pictures into its note, and reopening a
 board dropped the picture data and kept the hole.
+
+So **the image element goes first and its data second**, which is the order
+`import` has always used. A note holds the images its own elements draw, so
+data posted before anything draws it has nowhere to be; `POST /api/files`
+answers with `orphaned` and says to create the element first, rather than
+accepting it and losing it quietly.
 
 **Obsidian records a picture somewhere else, and that record is kept**
 (TASK-085, ADR 0017). The Excalidraw plugin does not leave image bytes in a
@@ -718,9 +766,9 @@ Open one with `board open systems`.
 ```
 
 It reads the bindings, not the names, so the five-repo system board is found
-from any of the five even though it is named after none of them. A board open
-on the canvas is read from memory, so a binding made a minute ago and not yet
-saved still counts. `--here` resolves the working directory in the CLI process
+from any of the five even though it is named after none of them. A binding made
+a minute ago counts, because a promotion is a write and a write is in the note.
+`--here` resolves the working directory in the CLI process
 and prints the identity it found. The server is only ever given an identity,
 never a path. Over MCP, `list_boards` takes the same `repo` argument.
 

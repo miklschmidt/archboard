@@ -27,6 +27,20 @@
 // no event is emitted and the baseline stays where it was. That is what makes
 // a series of individually meaningless nudges eventually add up to a real
 // change instead of each being separately discarded.
+//
+// THE BASELINE AND THE CHECKPOINTS ARE A COPY OF A BOARD, AND THEY STAY HERE.
+// The note is the board and the process holds no copy of one (ADR 0015), and
+// this looks like the exception. It is not, by the test the ADR sets: ask which
+// question the copy answers. "What is on this board" must be the note, and
+// neither of these answers it. They answer "how did it stand when anybody was
+// last told", which is a question the vault has never been asked and has no
+// file for, so keeping them here removes no second truth and writing them to
+// disk would invent one. Losing them loses history and no work: a diff starts
+// again from now.
+//
+// What that does require is that they are copies in full. A baseline sharing
+// element objects with the board moves when the board moves, and then the diff
+// finds nothing, reports nothing, and the failure arrives as silence (TASK-052).
 
 import { EventEmitter } from 'events';
 import { randomUUID } from 'crypto';

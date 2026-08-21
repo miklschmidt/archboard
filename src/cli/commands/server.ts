@@ -29,9 +29,10 @@ export async function stop(argv: string[]): Promise<void> {
 
 // Reload the canvas in place, rather than restarting it.
 //
-// A restart drops every unsaved board, which is the one thing this tool
-// collects and cannot recompute. A reload keeps the port, the sockets, the
-// boards, the panes and the change feed's cursor, and re-runs the source.
+// A restart drops the panes on screen and the change feed's cursor, and takes
+// the wall down while it happens. A reload keeps the port, the sockets, the
+// panes and the cursor, and re-runs the source. The boards themselves are in
+// the vault either way (ADR 0015).
 //
 // It is a command rather than a file-save trigger on purpose (ADR 0014): a
 // reload re-evaluates every module in the graph inside a live process, so the
@@ -108,7 +109,7 @@ function staleSource(health: { source?: { stale: boolean; newestFile: string | n
   const remedy = health.reloadable
     ? 'Pick it up with `bun run reload`, which keeps every board and pane on screen.'
     : 'Restart it to pick that up: `archboard stop && archboard start`. ' +
-      'That drops every unsaved board, so save first.';
+      'The boards are in the vault, so what a restart costs is the panes on screen.';
   // Clock time, not the ISO stamps the JSON carries: the sentence is read by
   // somebody who is looking at their own terminal wondering why their edit did
   // nothing, and "14:02:11" is the thing they can place.

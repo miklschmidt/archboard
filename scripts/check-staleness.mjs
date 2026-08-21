@@ -232,8 +232,13 @@ try {
   check('  and names the remedy this canvas actually has: it cannot reload, so restart',
     /archboard stop && archboard start/.test(loud.stderr) && !/bun run reload/.test(loud.stderr),
     JSON.stringify(loud.stderr.trim().slice(-120)));
-  check('  and says what the restart costs, because it costs every unsaved board',
-    /drops every unsaved board/.test(loud.stderr));
+  // What a restart costs changed with TASK-078: the boards are in the vault, so
+  // it is the panes on screen rather than anybody's work. The sentence still has
+  // to say what it costs, because "restart it" with no price on it is what
+  // somebody standing at a wall display cannot afford to act on blind.
+  check('  and says what the restart costs, because it takes the panes down with it',
+    /the panes on screen/.test(loud.stderr) && /in the vault/.test(loud.stderr),
+    JSON.stringify(loud.stderr.trim().slice(-160)));
 
   untouch(touched, originalTimes);
 

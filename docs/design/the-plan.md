@@ -579,15 +579,18 @@ Choosing one is already an explicit part of installing archboard into a
 repository, so the ordinary path is unaffected. Recorded in ADR 0015 with
 both rejected alternatives. Owned by TASK-077.
 
-**What is allowed to stay in memory.** Gates stage 8, owned by TASK-078. ADR
-0015's carve-out names sockets, pane registrations, focus and selection. It does
-not name the change feed's `baseline` and `checkpoints` at
-`src/core/change-feed.ts:89,119`, or `snapshots` at `src/types.ts:362`, and all
-three hold copies of a board. The argument for keeping them is that they hold
-the board as it stood at a past moment and the disk holds it as it stands now,
-so the vault never held them and statelessness does not move them anywhere.
-That argument is good and it is not written in the ADR, which is where somebody
-will look for it.
+**What is allowed to stay in memory.** Answered by TASK-078 and written into
+ADR 0015, under "Nor is a record of what a board used to be". The carve-out
+named sockets, pane registrations, focus and selection, and said nothing about
+the change feed's baseline and checkpoints or about snapshots, all three of
+which hold a copy of a board. The ADR now carries the test rather than a list:
+ask which question the copy answers. "What is on this board" must be the note.
+"What was on it then" is a question the vault has never been asked, so keeping
+it in the process removes no second truth and moving it to disk would invent a
+second file. Two consequences came with it — a past state must be a full copy,
+or it moves when the board moves and the diff goes silent; and which boards a
+canvas has open is session state like focus, so the process keeps a board's
+address and where its note is and reads the note for the rest.
 
 **How a human's gesture takes the lock.** Gates stage 9, recorded on TASK-067.
 The trailing debounce means the choice is between a new immediate message from
