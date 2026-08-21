@@ -697,7 +697,14 @@ try {
   const owner = (await api('GET', '/api/panes')).body?.panes?.[0]?.clientId;
   check('  the pane can be named, so its hold can be taken out from under it',
     typeof owner === 'string' && owner.length > 0, String(owner));
-  await api('POST', `/api/boards/hold/release?board=${BOARD}`, { clientId: owner });
+  const given = await api('POST', `/api/boards/hold/release?board=${BOARD}`, { clientId: owner });
+  // `released: true` is only possible if the pane's hold was standing at this
+  // moment, and nothing but the human's edit above could have taken it — the
+  // release names the pane, and a release names nobody else's hold. So this is
+  // the leading edge proved end to end in a real browser: the gesture took the
+  // board, and it took it before the report the debounce is still sitting on.
+  check('  and it was holding the board, taken at the first change of the gesture',
+    given.body?.released === true, JSON.stringify(given.body));
 
   // Inside the pane's report debounce, so the drag is still undelivered.
   await api('POST', `/api/elements/changes?board=${BOARD}`, {
