@@ -406,6 +406,30 @@ const refusal = async (promise) => {
 }
 
 {
+  // A claim with nothing happening on it, which is most of a claim: an agent
+  // that has just taken a board goes off and reads code before it draws
+  // anything. The lease is three seconds and the claim is minutes, so this is
+  // the renewal doing the one job the agent cannot do for itself — between two
+  // of its commands there is nothing of it left to send a heartbeat.
+  const board = 'an-idle-claim';
+  const idle = await claiming({ board, reason: 'reading the code first', forMs: 60_000 });
+  check('a claim is taken and then nothing at all happens on it', idle.created === true, why(idle));
+
+  await sleep(LOCK_LEASE_MS + 500);
+  check('and the board is still held after the lease it was written with ran out',
+    boardLockState(board)?.id === idle.claim.holder.id, JSON.stringify(boardLockState(board)));
+  check('  by the same hold, renewed rather than taken again',
+    boardLockState(board)?.since === idle.claim.holder.since,
+    `${idle.claim.holder.since} -> ${boardLockState(board)?.since}`);
+  const opportunist = await refusal(holdBoard({ board, holder: agent('opportunist'), waitMs: 0 }));
+  check('  so nobody was let in while it was quiet', opportunist instanceof BoardHeldError);
+
+  check('and giving it back frees the board',
+    releaseClaim(board) !== null && boardLockState(board) === null,
+    JSON.stringify(boardLockState(board)));
+}
+
+{
   // A claim ends on its own. The lease and its renewal bound a canvas that
   // died; this bounds an agent that walked away, and it is the only bound that
   // does — nothing between two CLI commands is alive to stop renewing.
