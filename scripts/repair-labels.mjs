@@ -174,31 +174,27 @@ if (plan.removeIds.length > 0) {
 }
 
 // Arrow geometry. A collapsed arrow's points are unrecoverable from the arrow
-// itself, but they are entirely recoverable from what it connects: the server
-// recomputes them from `start`/`end` whenever a bound shape's geometry is
-// touched. So give every arrow those refs — browser-synced arrows carry the
-// same fact as startBinding/endBinding — and then re-state each anchor shape's
-// own x, which is a no-op for the shape and a reroute for its arrows.
+// itself and entirely recoverable from what it connects, because the server
+// recomputes them from the arrow's bindings whenever a bound shape's geometry
+// is touched. So re-state each anchor shape's own x, which is a no-op for the
+// shape and a reroute for every arrow bound to it.
 //
-// Only where labels actually bred, though. Re-routing redraws every arrow on
-// the board from the server's own straight-line rule, which is the right thing
-// to do to a hairline nobody can grab and quite the wrong thing to do to a
-// board whose arrows are exactly where somebody put them.
+// This used to copy each binding into a `start`/`end` ref first, because the
+// routing read only those. It reads the binding now, and the binding carries
+// the `focus` and `gap` whoever drew the arrow chose, so copying it into a ref
+// would have thrown both away (TASK-088).
+//
+// Only where labels actually bred, though. A reroute moves every arrow on the
+// board, which is the right thing to do to a hairline nobody can grab and quite
+// the wrong thing to do to a board whose arrows are exactly where somebody put
+// them.
 const byId = new Map(elements.map((el) => [el.id, el]));
 const anchors = new Set();
-let refsAdded = 0;
 
 for (const el of plan.removeIds.length > 0 ? elements : []) {
   if (el.type !== 'arrow' && el.type !== 'line') continue;
-  const start = el.start?.id ?? el.startBinding?.elementId;
-  const end = el.end?.id ?? el.endBinding?.elementId;
-  const patch = {};
-  if (start && byId.has(start) && !el.start?.id) patch.start = { id: start };
-  if (end && byId.has(end) && !el.end?.id) patch.end = { id: end };
-  if (Object.keys(patch).length > 0) {
-    await put(el.id, patch);
-    refsAdded += 1;
-  }
+  const start = el.startBinding?.elementId;
+  const end = el.endBinding?.elementId;
   if (start && byId.has(start)) anchors.add(start);
   if (end && byId.has(end)) anchors.add(end);
 }
@@ -211,8 +207,7 @@ for (const id of anchors) {
 
 if (anchors.size > 0) {
   console.log(
-    `Restored ${refsAdded} arrow binding ref(s) and rerouted every arrow anchored to ` +
-    `${anchors.size} shape(s).`
+    `Rerouted every arrow anchored to ${anchors.size} shape(s).`
   );
 }
 

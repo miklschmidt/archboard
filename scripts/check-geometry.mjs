@@ -36,6 +36,7 @@ const { labelAnchorOf } = await import(src('core/labels.ts'));
 const { compareBoards } = await import(src('core/compare.ts'));
 const { planPromotion } = await import(src('core/promote.ts'));
 const { expandElementsForExport } = await import(src('core/expand-elements.ts'));
+const { BOUND_ARROW_GAP, boundEndpoint, focusPointOf } = await import(src('core/arrow-binding.ts'));
 
 let failures = 0;
 let checks = 0;
@@ -131,6 +132,78 @@ for (const [name, arrow] of Object.entries(arrows)) {
   const settled = { ...stale, width: 300.2, height: 199.9 };
   assert(remeasureLinear(settled) === undefined,
     'a fifth of a pixel is not a resize, and saying it is wakes the change feed for nothing');
+}
+
+// ─── The binding, which is where a bound arrow ends ──────────
+//
+// An arrow that touches a shape records which shape, how far round it
+// (`focus`) and how far short of its outline it stops (`gap`). The server
+// re-routes such an arrow whenever an agent moves either shape, and until
+// TASK-088 it read none of that: it read the agent's own `start`/`end` refs,
+// went centre to centre and stopped 8px short of a shape whose binding said 4.
+// Below is the arithmetic those three numbers stand for, ported from
+// Excalidraw's `determineFocusPoint` and `updateBoundPoint`.
+{
+  const box = { type: 'rectangle', x: 0, y: 0, width: 100, height: 60 };
+  const fromTheRight = { x: 500, y: 30 };
+  const binding = (over = {}) => ({ elementId: 'box', focus: 0, gap: BOUND_ARROW_GAP, fixedPoint: null, ...over });
+
+  // `focus: 0` is the centre, which is why a centred arrow runs centre to
+  // centre. That is the only case the old routing could ever have got right.
+  const centred = focusPointOf(box, 0, fromTheRight);
+  assert(centred.x === 50 && centred.y === 30,
+    `focus 0 aims at ${centred.x},${centred.y} rather than the shape's centre`);
+
+  // At the extremes the aim is a corner, and the sign says which. Seen from
+  // the right, +1 is the near bottom corner and -1 the near top one, so the
+  // two together are what an arrow leaving a box low and one leaving it high
+  // are actually recording.
+  const low = focusPointOf(box, 1, fromTheRight);
+  const high = focusPointOf(box, -1, fromTheRight);
+  assert(low.x === 100 && low.y === 60, `focus 1 aims at ${low.x},${low.y}, not the bottom-right corner`);
+  assert(high.x === 100 && high.y === 0, `focus -1 aims at ${high.x},${high.y}, not the top-right corner`);
+
+  // And the gap is the binding's own number rather than one this repo picked.
+  const near4 = boundEndpoint(box, binding(), fromTheRight, { x: 0, y: 0 });
+  assert(near(near4.x, 104) && near(near4.y, 30),
+    `a gap of ${BOUND_ARROW_GAP} put the end at ${near4.x},${near4.y}, not 4px off the right edge`);
+  const near12 = boundEndpoint(box, binding({ gap: 12 }), fromTheRight, { x: 0, y: 0 });
+  assert(near(near12.x, 112),
+    `a binding recording gap 12 was routed to ${near12.x}, which is not 12px off the edge at x=100`);
+  assert(near12.x !== near4.x,
+    'two bindings recording different gaps were routed to the same point, so the gap is being ignored');
+
+  // A focused end is somewhere else entirely — near the corner it names, not
+  // on the line between the two centres. This is the difference that undid a
+  // person's arrow: routed centred, an end they had attached at a corner was
+  // dragged into the middle of the side.
+  const focused = boundEndpoint(box, binding({ focus: 1 }), fromTheRight, { x: 0, y: 0 });
+  assert(near(focused.x, 104), `a focused end left the outline, at x=${focused.x}`);
+  assert(focused.y > 50,
+    `focus 1 was routed to y=${focused.y}, which is the centre line rather than the corner it aims at`);
+
+  // Rotation is the shape's, so the ray is turned rather than the shape. A box
+  // on its side is 60 wide, so its outline is 34px from its centre.
+  const onItsSide = { ...box, angle: Math.PI / 2 };
+  const rotated = boundEndpoint(onItsSide, binding(), fromTheRight, { x: 0, y: 0 });
+  assert(near(rotated.x, 84) && near(rotated.y, 30),
+    `a box rotated a quarter turn was routed to ${rotated.x},${rotated.y} rather than 84,30`);
+
+  // An ellipse and a diamond are narrower than their bounding box on any
+  // diagonal, so an arrow arriving at 45 degrees meets each of them somewhere
+  // different — and neither of them where a rectangle would be met.
+  const corner = { x: 500, y: 480 };
+  const meets = (type) => boundEndpoint({ ...box, type }, binding(), corner, { x: 0, y: 0 });
+  const [square, round, diamond] = ['rectangle', 'ellipse', 'diamond'].map(meets);
+  assert(square.x > round.x && round.x > diamond.x,
+    `arriving on a diagonal, the outlines should nest rectangle > ellipse > diamond, not ` +
+    `${Math.round(square.x)} / ${Math.round(round.x)} / ${Math.round(diamond.x)}`);
+
+  // Nothing is routed away from an end that starts inside the shape: there is
+  // no outline between the two, so it lands on the aim.
+  const fromInside = boundEndpoint(box, binding(), { x: 50, y: 30 }, { x: 7, y: 7 });
+  assert(fromInside.x === 50 && fromInside.y === 30,
+    `an end aimed from inside the shape went to ${fromInside.x},${fromInside.y} rather than the aim`);
 }
 
 // ─── The exported label ──────────────────────────────────────
@@ -470,6 +543,151 @@ for (const [name, arrow] of Object.entries(arrows)) {
       'a box overlapping the region is in it, even though its top-left corner is not');
     assert(!hits.has('elsewhere'),
       'a box 6000px away is not in the region, and a filter that says it is filters nothing');
+
+    // --- what an arrow touches, and who gets to say so ----------------------
+    //
+    // The failure this reproduces was measured, not reasoned about
+    // (`scripts/probe-arrow-refs.mjs`). An agent draws an arrow A -> B. A
+    // person drags the tail off A and onto C, which is a statement about the
+    // design and the whole reason the board is shared. An agent then moves A,
+    // which the arrow no longer touches, and the server dragged the arrow back
+    // — because it routed by the agent's `start` ref, which still said A and
+    // which nothing in the browser has ever heard of.
+    //
+    // Its own board, so the scene above keeps the assertions written against
+    // it.
+    await api('POST', '/api/boards/new', { board: 'wires' });
+    const wires = '?board=wires';
+    const wiresOn = async () => (await api('GET', `/api/elements${wires}`))?.elements ?? [];
+    const wire = async (id) => (await wiresOn()).find((el) => el.id === id);
+    const path = (el) => JSON.stringify(el.points);
+    const at = (el, index) => ({ x: el.x + el.points[index][0], y: el.y + el.points[index][1] });
+
+    await api('POST', `/api/elements/batch${wires}`, {
+      elements: [
+        { id: 'a', type: 'rectangle', x: 0, y: 0, width: 100, height: 60, label: { text: 'A' } },
+        { id: 'b', type: 'rectangle', x: 400, y: 0, width: 100, height: 60, label: { text: 'B' } },
+        { id: 'c', type: 'rectangle', x: 0, y: 300, width: 100, height: 60, label: { text: 'C' } },
+        { id: 'arr', type: 'arrow', x: 100, y: 30, points: [[0, 0], [300, 0]], start: { id: 'a' }, end: { id: 'b' } },
+        // Drawn with a bend in it, which is what the skill recommends for
+        // routing round something.
+        { id: 'bent', type: 'arrow', x: 100, y: 30, points: [[0, 0], [250, -220], [300, 0]], start: { id: 'a' }, end: { id: 'b' } }
+      ]
+    });
+
+    // The refs are an input format and the board does not keep them, exactly as
+    // it stopped keeping `label` in TASK-073. What it keeps is the binding.
+    const drawnArr = await wire('arr');
+    assert(drawnArr.start === undefined && drawnArr.end === undefined,
+      "an arrow's `start`/`end` refs were stored, so the board holds two answers to what it touches");
+    assert(drawnArr.startBinding?.elementId === 'a' && drawnArr.endBinding?.elementId === 'b',
+      'the refs were not converted into the binding that replaces them');
+    assert(near(drawnArr.x, 100 + BOUND_ARROW_GAP),
+      `a bound arrow starts ${Math.round(drawnArr.x - 100)}px off box A, not the ` +
+      `${BOUND_ARROW_GAP} its own binding records`);
+
+    // A bend is a decision. Moving a shape the arrow is bound to moves the end
+    // that touches it and nothing else; the old routing overwrote every path
+    // with a straight line between two boxes.
+    const bentBefore = await wire('bent');
+    const bendBefore = at(bentBefore, 1);
+    await api('PUT', `/api/elements/b${wires}`, { x: 400, y: -200 });
+    const bentAfter = await wire('bent');
+    assert(bentAfter.points.length === 3,
+      `moving a box flattened a three-point arrow to ${bentAfter.points.length} points`);
+    const bendAfter = at(bentAfter, 1);
+    assert(near(bendAfter.x, bendBefore.x, 1) && near(bendAfter.y, bendBefore.y, 1),
+      `the bend moved from ${Math.round(bendBefore.x)},${Math.round(bendBefore.y)} to ` +
+      `${Math.round(bendAfter.x)},${Math.round(bendAfter.y)}`);
+    assert(!near(at(bentAfter, 2).y, at(bentBefore, 2).y, 1),
+      'the check is not exercising anything: the end bound to the box that moved should have followed it');
+
+    // Now the failure. A person drags the tail onto C: Excalidraw rewrites
+    // `startBinding` and the points, and reports them.
+    const rebound = {
+      ...(await wire('arr')),
+      startBinding: { elementId: 'c', focus: 0, gap: BOUND_ARROW_GAP, fixedPoint: null },
+      points: [[0, 0], [300, -270]]
+    };
+    await api('POST', `/api/elements/changes${wires}`, { upserts: [rebound], deletes: [], clientId: 'a-person' });
+    const asLeft = await wire('arr');
+    assert(asLeft.startBinding?.elementId === 'c', "the person's re-bind did not reach the board");
+
+    // An agent moves A, which the arrow has not touched since.
+    await api('PUT', `/api/elements/a${wires}`, { x: 0, y: -200 });
+    const afterUnrelatedMove = await wire('arr');
+    assert(path(afterUnrelatedMove) === path(asLeft),
+      `moving a shape the arrow no longer touches dragged it from ${path(asLeft)} to ` +
+      `${path(afterUnrelatedMove)}, undoing where a person put it`);
+
+    // The same thing said the other way: an end dragged into empty space is
+    // bound to nothing, and nothing is what should move it.
+    const loosened = {
+      ...(await wire('arr')),
+      endBinding: null,
+      points: [[0, 0], [900, 900]]
+    };
+    await api('POST', `/api/elements/changes${wires}`, { upserts: [loosened], deletes: [], clientId: 'a-person' });
+    const loose = await wire('arr');
+    assert(loose.endBinding === null, 'unbinding an arrow end did not reach the board');
+    await api('PUT', `/api/elements/b${wires}`, { x: 900, y: 400 });
+    assert(path(await wire('arr')) === path(loose),
+      'moving the box an arrow end was dragged off pulled the loose end back to it');
+
+    // And the numbers a person's own arrow carries are honoured, which is what
+    // makes re-routing one safe at all. This one attaches low on box D and
+    // further out than archboard's own arrows do.
+    await api('POST', `/api/elements/batch${wires}`, {
+      elements: [{ id: 'd', type: 'rectangle', x: 1000, y: 1000, width: 200, height: 100 }]
+    });
+    await api('POST', `/api/elements/changes${wires}`, {
+      upserts: [{
+        id: 'hand', type: 'arrow', x: 1400, y: 1120, points: [[0, 0], [-179, -50]],
+        startBinding: null,
+        endBinding: { elementId: 'd', focus: 0.9, gap: 15, fixedPoint: null }
+      }],
+      deletes: [],
+      clientId: 'a-person'
+    });
+    const handDrawn = await wire('hand');
+    assert(handDrawn.endBinding?.gap === 15 && handDrawn.endBinding?.focus === 0.9,
+      "the person's own focus and gap did not survive the report");
+
+    // Where a binding says an end belongs, on an outline `gap` out from the
+    // shape. A person dragging this end in a browser would have been given
+    // this point by Excalidraw; the report above is a fixture, so one write
+    // settles it there first and everything after compares against that.
+    const onOutline = (end, box) => Math.max(
+      Math.abs(end.x - (box.x + box.width / 2)) / (box.width / 2 + 15),
+      Math.abs(end.y - (box.y + box.height / 2)) / (box.height / 2 + 15)
+    );
+    const asDropped = at(handDrawn, 1);
+    await api('PUT', `/api/elements/d${wires}`, { x: 1000, y: 1000 });
+    const settledEnd = at(await wire('hand'), 1);
+    assert(near(onOutline(settledEnd, { x: 1000, y: 1000, width: 200, height: 100 }), 1, 0.02),
+      `the end sits at ${onOutline(settledEnd, { x: 1000, y: 1000, width: 200, height: 100 }).toFixed(2)} ` +
+      "of the outline the binding's own gap of 15 draws, not on it");
+    assert(!near(settledEnd.y, 1050, 8),
+      `focus 0.9 was routed to y=${Math.round(settledEnd.y)}, the centre line, rather than low on the box`);
+    assert(near(settledEnd.x, asDropped.x, 10),
+      'the check is not exercising anything: routing moved the end right across the box');
+
+    // Nudge D and put it back. The arrow's other end never moved, so an end
+    // routed from its binding lands exactly where it was — which is the whole
+    // claim, that re-routing an arrow a person drew leaves it where they drew
+    // it.
+    await api('PUT', `/api/elements/d${wires}`, { x: 1040, y: 1030 });
+    const nudged = at(await wire('hand'), 1);
+    assert(!near(nudged.x, settledEnd.x, 1) || !near(nudged.y, settledEnd.y, 1),
+      'moving the box did not re-route the arrow bound to it');
+    assert(near(onOutline(nudged, { x: 1040, y: 1030, width: 200, height: 100 }), 1, 0.02),
+      'the re-routed end left the outline the binding describes');
+
+    await api('PUT', `/api/elements/d${wires}`, { x: 1000, y: 1000 });
+    const restored = at(await wire('hand'), 1);
+    assert(near(restored.x, settledEnd.x, 0.5) && near(restored.y, settledEnd.y, 0.5),
+      `putting the box back left the arrow at ${Math.round(restored.x)},${Math.round(restored.y)} ` +
+      `rather than the ${Math.round(settledEnd.x)},${Math.round(settledEnd.y)} its binding puts it at`);
   } finally {
     server.kill('SIGTERM');
     await sleep(200);

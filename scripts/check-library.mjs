@@ -205,7 +205,10 @@ assert(placed[0].x === 0 && placed[0].y === 0, 'insert: the top-left corner did 
 assert(placed[1].x === 20 && placed[1].y === 60, 'insert: the stencil was distorted rather than translated');
 assert(placed[1].type === 'arrow', 'insert: the v1 "draw" type was not translated to "arrow"');
 assert(placed[1].startBinding.elementId === placed[0].id, 'insert: an arrow binding still points at the original id');
-assert(placed[1].start.id === placed[0].id, "insert: the server's own start/end binding was not set");
+assert(placed[1].endBinding.elementId === placed[0].id, 'insert: the far end of a stencil arrow still points at the original id');
+assert(placed[1].endBinding.focus === 1, "insert: the stencil's own focus was replaced by a centred one");
+assert(placed[1].start === undefined && placed[1].end === undefined,
+  "insert: a stencil arrow was given `start`/`end` refs, which are input only and would be routed centre to centre");
 assert(placed[2].containerId === placed[0].id, 'insert: a bound label still points at the original container');
 assert(placed[0].groupIds[0] === placed[1].groupIds[0], 'insert: grouped elements were split into different groups');
 assert(placed[0].groupIds[0] !== 'g', 'insert: the group id was reused, so two inserts would be one group');

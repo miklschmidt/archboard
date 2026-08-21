@@ -3,10 +3,11 @@ id: TASK-088
 title: >-
   Arrow routing reads the agent input shape instead of the binding, so a human's
   re-bind is undone
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-21 12:42'
-updated_date: '2026-08-21 12:48'
+updated_date: '2026-08-21 13:05'
 labels: []
 dependencies:
   - TASK-073
@@ -66,3 +67,15 @@ Note that `src/core/expand-elements.ts` and `scripts/check-labels.mjs` both carr
 - [ ] #5 Dragging an arrow's end into empty space is covered, not only re-binding it to another shape
 - [ ] #6 A check reproduces the measured failure and fails without the fix
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Convert the agent refs at the input boundary. One shared helper in expand-elements.ts turns start/end into an Excalidraw binding with one gap constant (BOUND_ARROW_GAP), called from buildCreatedElement and mergeElementUpdate as well as from expandElementsForExport, so there is one definition of the conversion. start and end never reach the store, exactly as label stopped in TASK-073.
+2. New pure module src/core/arrow-binding.ts, ported from Excalidraw's own element/binding.ts (determineFocusPoint and updateBoundPoint, read from the dev source maps in node_modules). It honours each binding's focus and gap. The outline offset is analytic (rect half-extents, ellipse semi-axes, diamond vertices, each plus gap, in the element's unrotated frame) rather than Excalidraw's per-corner bezier offset; the difference is bounded by gap near a rounded corner and is documented.
+3. resolveArrowBindings selects by startBinding/endBinding and never reads start/end. It moves only the bound edge point and preserves interior points, so a hand-drawn multi-point arrow is no longer flattened. Elbowed arrows are skipped: routing one is a whole orthogonal router we do not have, and today they are flattened.
+4. On creation the adjacent point is seeded at the bound element's centre, so a bound arrow still lands on the centre-to-centre line, which is the fixed point of one pass at focus 0. On a re-route it is the arrow's own other endpoint, which is what Excalidraw uses.
+5. Fold the probe's scenario into scripts/check-geometry.mjs: re-bind then move the old shape, and drag an end into empty space. Both fail without the fix.
+6. Delete the two comments that justify the refs by which arrows the server may route (expand-elements.ts, check-labels.mjs), the (el as any).start writes in library-catalogue.ts, and update check-library.mjs to assert the binding.
+7. Prove by reverting each change and counting which checks fail.
+<!-- SECTION:PLAN:END -->
