@@ -717,6 +717,93 @@ try {
   check('  with both writers\' work on the board',
     landed && Math.abs(landed.x - (victim.x + 40)) < 0.001 && recoloured?.backgroundColor === '#ff8787',
     `auth.x ${landed?.x} (wanted ${victim.x + 40}), queue.backgroundColor ${recoloured?.backgroundColor}`);
+
+  // --- somebody else writes the note, mid-session (TASK-079, ADR 0006) -----
+  //
+  // The one thing this session has not had in it: another application. Under
+  // ADR 0015 every gesture is a write, so a note rewritten by Obsidian is
+  // discovered 400 ms after a finger lifts rather than at a save somebody ran.
+  // What must NOT happen then is a modal in front of a person mid-thought
+  // whose best offer is "discard what you just drew".
+  //
+  // This is the only check that can see that, because "a dialog did not open"
+  // is a fact about a rendered page. Everything else about a hold is asserted
+  // headlessly in check-boards.
+
+  const noteFile = (await api('GET', `/api/boards/info?board=${BOARD}`)).body?.file;
+  // Their edit: an element this canvas has never seen, so their version is
+  // recognisable, and a different byte count, so the hash moves.
+  fs.writeFileSync(noteFile, fs.readFileSync(noteFile, 'utf-8').replace(
+    '"id": "auth"', '"id": "theirs", "width": 40}, {"id": "auth"'
+  ));
+
+  await humanEdit({ kind: 'move', id: 'queue', dx: 9, dy: 9 });
+  // The report debounce, the refusal, and the pane saying what is on its
+  // screen, which is one round trip after it.
+  await sleep(2000);
+
+  const stopped = (await api('GET', `/api/elements?board=${BOARD}`)).body?.held;
+  check('a note rewritten underneath stops the board saving, mid-session',
+    stopped?.board === BOARD && stopped?.fromScreen === true,
+    JSON.stringify({ board: stopped?.board, fromScreen: stopped?.fromScreen }));
+
+  const chrome = await evalInPage(`(() => ({
+    dialog: document.querySelector('.modal-title')?.textContent ?? null,
+    mark: document.querySelector('.chip-held')?.textContent ?? null
+  }))()`);
+  check('  and nothing opened in front of the human, who was drawing',
+    chrome.dialog === null, chrome.dialog);
+  check('  while the bar says the board is not being saved, and how much is held',
+    /not saving/.test(chrome.mark ?? ''), chrome.mark);
+
+  // The human's gesture is not lost, and neither is the rest of the board:
+  // the pane said what was on its screen, so the held copy is that screen
+  // rather than their note with one drag on top of it.
+  const heldAgreed = await agree();
+  check('  and the pane and the server still hold the same document',
+    heldAgreed.agreed, (heldAgreed.divergences ?? []).slice(0, 4).join(' | '));
+  check('  which is this pane\'s board, not the one the other editor wrote',
+    !(await held()).some(e => e.id === 'theirs'));
+
+  // Asked for, not pushed. This is the click the whole task is about.
+  const markClick = await evalInPage(`(() => {
+    const mark = document.querySelector('.chip-held');
+    if (!mark) return { error: 'no mark to click' };
+    mark.click();
+    return { clicked: true };
+  })()`);
+  if (markClick.error) check('  the mark can be clicked', false, markClick.error);
+  await sleep(300);
+  const offered = await evalInPage(`(() => ({
+    title: document.querySelector('.modal-title')?.textContent ?? null,
+    choices: [...document.querySelectorAll('.choices .btn')].map(b => b.textContent)
+  }))()`);
+  check('  and clicking the mark is what offers the three outcomes',
+    /not being saved/.test(offered.title ?? '') && offered.choices.length === 3,
+    `${offered.title} ${JSON.stringify(offered.choices)}`);
+  check('  each one of them, in the order that puts the free one nearest',
+    offered.choices.join(' | ') === 'Save as… | Reload the note | Overwrite the note',
+    JSON.stringify(offered.choices));
+
+  // And one of them, carried out: overwrite writes what is on this screen.
+  await evalInPage(`(() => {
+    const button = [...document.querySelectorAll('.choices .btn')]
+      .find(b => b.textContent === 'Overwrite the note');
+    if (button) button.click();
+    return { clicked: Boolean(button) };
+  })()`);
+  await sleep(1200);
+  const noteAfter = fs.readFileSync(noteFile, 'utf-8');
+  check('  and overwriting writes the held board over their note',
+    !noteAfter.includes('"theirs"') && noteAfter.includes('"queue"'),
+    noteAfter.includes('"theirs"')
+      ? 'their element is still in the note'
+      : (noteAfter.includes('"queue"') ? '' : 'queue is missing from the note'));
+  const backToNormal = await evalInPage(
+    `(() => ({ mark: document.querySelector('.chip-held')?.textContent ?? null }))()`
+  );
+  check('  and the mark comes down, because the board is saving again',
+    backToNormal.mark === null, backToNormal.mark);
 } catch (error) {
   failures += 1;
   console.log(`FAIL - ${error.message}`);

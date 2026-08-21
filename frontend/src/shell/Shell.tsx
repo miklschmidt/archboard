@@ -172,6 +172,13 @@ export function Shell(): JSX.Element {
         existing.boardKey === status.boardKey &&
         existing.elementCount === status.elementCount &&
         existing.lastChangeAt === status.lastChangeAt &&
+        // The hold by value, because it is a different object every time and
+        // because the mark in the bar counts what is held. Left out of this
+        // comparison, a board that started saving again kept its mark up: the
+        // release changes nothing else about the pane, so the whole status
+        // update was discarded as identical.
+        existing.hold?.since === status.hold?.since &&
+        existing.hold?.writes === status.hold?.writes &&
         existing.board?.variant === status.board?.variant &&
         existing.board?.level === status.board?.level
       ) {
