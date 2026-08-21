@@ -45,6 +45,13 @@
  * this debounce has fired and the report has landed. So an agent's wait is a
  * gesture plus this plus a write, and it is the *renewal* rather than this
  * number that carries a hold across a long drag.
+ *
+ * It bounds the wait at the other end too. A person's hold waits this long for
+ * a board somebody else has, because a hand that landed inside an agent's
+ * twenty-millisecond write has not lost the board and must not be told it has —
+ * and this is exactly how long that person was going to wait for their change
+ * to be written anyway. Shortening it therefore makes a pane readier to
+ * conclude it has lost the board.
  */
 export const REPORT_DEBOUNCE_MS = 400
 
