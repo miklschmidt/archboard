@@ -56,11 +56,33 @@ long a working agent may keep a board; the renewal bounds how long a dead one
 does. A long expiry with no renewal would mean one crash costs the board for as
 long as the claim was for.
 
+**Which leaves who renews, and the obvious answer does not work** (TASK-080).
+An agent driving this by voice is not something that sits there between two
+commands. It exists for the length of each one, and nothing of it survives in
+between, so there is nothing to send a heartbeat and no way to tell an agent
+reading code for two minutes from one that died after the first. An agent asked
+to renew would lose the board whenever it stopped to think, which is the moment
+it is most obviously still working.
+
+So the canvas renews on the agent's behalf, and a claim is bounded by the three
+things that can actually be observed: the length the agent asked for, capped,
+which is the only bound on an agent that walked away; the lease, which frees the
+board within seconds of the *canvas* dying, that being the process a lock file
+can be orphaned by; and the person, at any moment.
+
 **A person can always take it back.** The lock excludes writers from each other.
 It does not lock somebody out of their own wall, and no agent may make a
-75-inch display stop responding to the person standing at it. A touch revokes
-the claim, the agent is told it has lost it, and it stops rather than fighting
-for it.
+75-inch display stop responding to the person standing at it. The agent is told
+it has lost the board, and it stops rather than fighting for it.
+
+**Taking it back is one deliberate act, and not any touch at all** (TASK-080).
+Two things argue against the first version of this decision. A board held by
+somebody else can still be panned and zoomed, so a person watching an agent
+restructure a board is reading it, and reading it must not end it. And nothing
+the agent has already written is put back by taking the board, so a hand resting
+on a wall display would leave a board half way through a restructure with nobody
+having decided anything. The board says who has it and what they said they were
+doing, and beside that, the way to take it.
 
 **Revoking is not undoing.** Every write an agent has already made is already
 in the note, because that is what ADR 0015 means. So a revoked claim leaves a
@@ -71,6 +93,29 @@ sensible after each write, or do the work on a variant and swap when it is
 done. The skill teaches that alongside when to claim, because an agent that
 believes it has exclusive use until it says otherwise will eventually be wrong
 in the middle of a restructure.
+
+**What happens to the work already in flight, then** (TASK-080). Three answers
+were open and this is the one taken.
+
+A write that has started finishes. Stopping it half way is the torn note that
+every write being one whole note exists to prevent, and it would be a strange
+way to answer "somebody wants their board back" — the write takes about as long
+as the tap did.
+
+Nothing already written is put back. An undo would have to be an inverse of
+whatever the agent was doing, expressed as a further write, at the moment
+somebody has taken the board in order to write it themselves. It would be a
+third writer, arriving unasked, and it would throw away work that may well be
+what the person wanted to keep. What actually gets somebody back to where they
+were is the vault's own history, which is a note in a directory and is what
+version control is for.
+
+And the agent is told once. Once, because it must not be able to keep the
+board by asking again, and must not be locked out of a board it may perfectly
+well be asked to work on next. So the next thing it does — a write, or a fresh
+claim — is refused, and says that the board is part way through whatever it was
+doing and that nothing was undone. What it does after that is ordinary. Saying
+what state it left the board in is the agent's job, and the skill's to teach.
 
 ## The lock is a broadcast, not only a guard
 
@@ -98,12 +143,18 @@ canvas is excluded correctly and learns about it at the write rather than
 before the touch, which is the yank this section exists to prevent, surviving
 in the one configuration nobody has yet run.
 
-Closing it means polling the lock directory for the boards on screen, roughly
-once per renewal interval. That was left undone deliberately: it is a timer per
+Closing it means polling the lock files of the boards on screen, roughly once
+per renewal interval. That was left undone deliberately: it is a timer per
 canvas paid at all times against a case that costs milliseconds when it does
 happen. A long claim changes that arithmetic, because the pane would be wrong
 for minutes rather than for one write, so TASK-080 is where the poll earns
-itself.
+itself, and where it was built.
+
+**And it is paid for by a canvas somebody is looking at, and by no other**
+(TASK-080). A pane exists while something renders it, so a canvas with no
+browser attached has nobody to be wrong and reads nothing. That is what settles
+the objection rather than the claim alone: the cost is not a timer per canvas at
+all times, it is a few file reads a second for as long as a screen is up.
 
 ## Consequences
 
