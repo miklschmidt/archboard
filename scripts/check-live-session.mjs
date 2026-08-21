@@ -864,6 +864,52 @@ try {
   const back = await viewMode();
   check('  and takes it back when they are done', back.view === false, JSON.stringify(back));
 
+  // --- a claim says whose board it is, and hands it back ------------------
+  //
+  // For a twenty-millisecond write, a disabled surface is enough and a banner
+  // would be a flicker under somebody's hand. For a claim that may run for
+  // minutes it is not: a 75-inch display that stops responding with nothing on
+  // it to say why has simply broken, as far as the person standing at it can
+  // tell (ADR 0016). So the pane says who has the board and what they said they
+  // were doing, and offers the one thing a person may always do.
+
+  const claimWhy = 'redrawing the payment path';
+  await api('POST', `/api/boards/claim?board=${BOARD}`, { reason: claimWhy });
+  await sleep(800);
+  const banner = () => evalInPage(`(() => {
+    const app = ${APP};
+    return {
+      what: document.querySelector('.pane-claim-what')?.textContent ?? null,
+      take: document.querySelector('.pane-claim-take')?.textContent ?? null,
+      view: app ? app.state.viewModeEnabled === true : null
+    };
+  })()`);
+
+  const claimed = await banner();
+  check('a pane whose board an agent claimed says who has it and why',
+    typeof claimed.what === 'string' && claimed.what.includes(claimWhy), JSON.stringify(claimed));
+  check('  and stops accepting a touch, as for any other holder',
+    claimed.view === true, JSON.stringify(claimed));
+  check('  and offers the person the one thing they may always do',
+    claimed.take === 'Take it back', JSON.stringify(claimed));
+
+  // One deliberate tap, not any touch. View mode still pans and zooms, so
+  // somebody reading what the agent is drawing must not end it by reading it —
+  // and nothing an agent wrote is put back by taking the board, so a stray palm
+  // would leave a half-drawn board with nobody having decided anything.
+  await evalInPage(`(() => { document.querySelector('.pane-claim-take').click(); return true; })()`);
+  await sleep(LOCK_FREE_LINGER_MS + 1500);
+  const returned = await banner();
+  check('and one tap takes the board back',
+    returned.what === null && returned.view === false, JSON.stringify(returned));
+
+  const lost = await api('POST', `/api/elements?board=${BOARD}`, {
+    type: 'rectangle', x: 900, y: 900, width: 20, height: 20
+  });
+  check('  and the agent is told at its next write, rather than finding the board changed',
+    lost.status === 409 && lost.body?.code === 'CLAIM_REVOKED',
+    `${lost.status} ${JSON.stringify(lost.body)?.slice(0, 160)}`);
+
   // The half that has to fail closed, and the reason it is last. Lock state is
   // broadcast over the socket, and change reports deliberately are not gated on
   // the socket — so a pane that has lost contact hears nothing about the lock

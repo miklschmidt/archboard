@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
-// One writer at a time, per board (ADR 0016, TASK-067).
+// One writer at a time, per board (ADR 0016, TASK-067, TASK-080).
 //
-// Four things have to be true and only one of them is about a single process.
+// Five things have to be true and only one of them is about a single process.
 //
 // A board has a mutex, and asking for it either gets you the board or tells you
 // who has it. That is the whole interface, so it is the whole test surface:
@@ -20,10 +20,18 @@
 //
 // And it is a broadcast as well as a guard, so a pane learns a board is held
 // before somebody touches it rather than after their write is refused. Proved
-// on a real socket against a real canvas. The half of that which lives in the
-// browser — a pane going read-only, and a pane that has lost its socket
-// assuming the board is held — is in `check-live-session.mjs`, where there is
-// a renderer to ask.
+// on a real socket against a real canvas, and on a socket to a *second* canvas
+// which nothing sends anything to. The half of that which lives in the
+// browser — a pane going read-only, a pane that has lost its socket assuming
+// the board is held, and the banner a claim puts up — is in
+// `check-live-session.mjs`, where there is a renderer to ask.
+//
+// And an agent may hold it for longer than one write, without that becoming a
+// board nobody else can ever have. Proved by writing twenty times under one
+// claim with a rival asking in every gap between them, by letting a claim run
+// out, and by taking one back from the canvas the way a person does — which
+// leaves every element the agent wrote exactly where it wrote it, because
+// revoking is not undoing.
 
 import fs from 'node:fs';
 import os from 'node:os';
@@ -51,10 +59,12 @@ const vault = fs.mkdtempSync(join(os.tmpdir(), 'archboard-lock-'));
 process.env.ARCHBOARD_VAULT = vault;
 
 const {
-  BoardHeldError, boardLockState, holdBoard, onBoardLockChanged, releaseHold, withBoardLock
+  BoardHeldError, boardLockState, claimBoard, claimOn, claimWriterId, holdBoard,
+  onBoardLockChanged, releaseClaim, releaseHold, takeClaimRevocation, withBoardLock
 } = await import(src('core/board-lock.ts'));
-const { LOCK_FREE_LINGER_MS, LOCK_LEASE_MS, LOCK_RENEW_MS, LOCK_WAIT_CAP_MS } =
-  await import(src('core/timing.ts'));
+const {
+  CLAIM_LEASE_MS, LOCK_FREE_LINGER_MS, LOCK_LEASE_MS, LOCK_RENEW_MS, LOCK_WAIT_CAP_MS, LOCK_WATCH_MS
+} = await import(src('core/timing.ts'));
 
 const agent = (id) => ({ id, kind: 'agent' });
 const person = (id) => ({ id, kind: 'human' });
@@ -294,7 +304,107 @@ const refusal = async (promise) => {
   child.kill();
 }
 
-// ─── 8. Through a canvas: the routes, the refusal and the broadcast ────────
+// ─── 8. A claim: one writer for longer than one write ──────────────────────
+//
+// The per-write lock fits most of what an agent does and does not fit an agent
+// that knows it is about to redraw a board. What has to be true: the claim is
+// one hold across every write, it can be extended but not by working, it ends
+// on its own, and a person can take it back — but only a claim, because taking
+// a board from a write in progress is the two-writers problem arriving through
+// the door built to prevent it.
+
+{
+  const board = 'a-long-claim';
+  const first = await claimBoard({ board, reason: 'redrawing the payment path', forMs: 30_000 });
+  check('an agent can claim a board and say what it is doing',
+    first.created === true && first.claim.holder.reason === 'redrawing the payment path',
+    JSON.stringify(first.claim));
+  check('  and the claim is on the lock itself, not only in this process',
+    boardLockState(board)?.claimed === true, JSON.stringify(boardLockState(board)));
+
+  const refused = await refusal(holdBoard({ board, holder: agent('somebody-else'), waitMs: 0 }));
+  check('  so a refusal says it is claimed rather than that somebody is mid-write',
+    /held by an agent that has claimed it \(redrawing the payment path\)/.test(refused?.message ?? ''),
+    refused?.message);
+
+  // The whole point of a claim, and the one thing a per-write lock cannot do.
+  // The rival is an agent: a person is *entitled* to take a claimed board, and
+  // that is the section below rather than a gap in this one.
+  let gaps = 0;
+  let reacquired = 0;
+  for (let i = 0; i < 20; i += 1) {
+    const writer = claimWriterId(board);
+    if (writer !== first.claim.holder.id) reacquired += 1;
+    await withBoardLock({ board, holder: { id: writer, kind: 'agent' } }, () => { });
+    const rival = await refusal(holdBoard({ board, holder: agent(`rival-${i}`), waitMs: 0 }));
+    if (!(rival instanceof BoardHeldError)) gaps += 1;
+  }
+  check('twenty writes under one claim leave no gap another writer could take',
+    gaps === 0, `${gaps} of 20 gaps`);
+  check('  because every one of them is the claim writing, not a new hold',
+    reacquired === 0, `${reacquired} writes wrote as somebody else`);
+  check('  and the board was never let go and re-taken: one hold, since one moment',
+    boardLockState(board)?.since === first.claim.holder.since,
+    `${first.claim.holder.since} -> ${boardLockState(board)?.since}`);
+
+  const again = await claimBoard({ board, reason: 'now the queues', forMs: 40_000 });
+  check('claiming again extends rather than starting a second claim',
+    again.created === false && again.claim.holder.id === first.claim.holder.id, JSON.stringify(again.claim));
+  check('  with the deadline moved and the reason brought up to date',
+    Date.parse(again.claim.expires) > Date.parse(first.claim.expires) &&
+    boardLockState(board)?.reason === 'now the queues',
+    `${first.claim.expires} -> ${again.claim.expires} / ${boardLockState(board)?.reason}`);
+
+  // A person takes it back. Not a refusal to them, and not an undo to the
+  // agent: everything it wrote is written, and it finds out at its next act.
+  const back = await take({ board, holder: person('a-hand'), waitMs: 0, revokeClaim: true });
+  check('a person takes a claimed board back rather than being refused',
+    back.created === true && back.holder?.kind === 'human', why(back));
+  check('  and the claim is over on this canvas', claimOn(board) === null, JSON.stringify(claimOn(board)));
+
+  const told = takeClaimRevocation(board);
+  check('  and the agent is told it lost the board, and by whom',
+    told?.by?.id === 'a-hand' && told?.claim?.holder?.reason === 'now the queues', JSON.stringify(told));
+  check('  once, because a permanent refusal would wedge the board against it',
+    takeClaimRevocation(board) === null);
+  releaseHold(board, 'a-hand');
+}
+
+{
+  // The half that must NOT happen. A person waits out an agent's write — it is
+  // twenty milliseconds, and taking the board from a write already running is
+  // two writers to one note, which is what the mutex exists instead of.
+  const board = 'mid-write';
+  const writing = await take({ board, holder: agent('one-write'), waitMs: 0 });
+  check('an agent takes the board for one write, unclaimed',
+    writing.created === true && !writing.holder?.claimed, why(writing));
+  const waited = await refusal(holdBoard({ board, holder: person('a-hand'), waitMs: 120, revokeClaim: true }));
+  check('and a person waits that out rather than taking it',
+    waited instanceof BoardHeldError && waited.holder?.id === 'one-write', waited?.message);
+  check('  and nothing is reported as a lost claim, because there was none',
+    takeClaimRevocation(board) === null);
+  releaseHold(board, 'one-write');
+}
+
+{
+  // A claim ends on its own. The lease and its renewal bound a canvas that
+  // died; this bounds an agent that walked away, and it is the only bound that
+  // does — nothing between two CLI commands is alive to stop renewing.
+  const board = 'a-claim-that-ends';
+  const brief = await claimBoard({ board, reason: 'a moment', forMs: CLAIM_LEASE_MS });
+  check('a claim is made with a deadline of its own',
+    Date.parse(brief.claim.expires) > Date.now(), brief.claim.expires);
+
+  const freeAt = Date.now() + CLAIM_LEASE_MS + LOCK_RENEW_MS + 2000;
+  while (boardLockState(board) !== null && Date.now() < freeAt) await sleep(100);
+  check('and when it runs out the board is free, with nobody having released it',
+    boardLockState(board) === null, JSON.stringify(boardLockState(board)));
+  check('  and the canvas knows it is no longer holding one', claimOn(board) === null);
+  check('  and releasing an expired claim is not an error, it is tidying up late',
+    releaseClaim(board) === null);
+}
+
+// ─── 9. Through a canvas: the routes, the refusal and the broadcast ────────
 
 const PORT = 39400 + Math.floor(Math.random() * 400);
 const base = `http://127.0.0.1:${PORT}`;
@@ -422,6 +532,86 @@ try {
     mine.status === 409 && mine.body?.holder?.id === 'another-pane', `${mine.status}`);
   await api('POST', '/api/boards/hold/release?board=scratch', { clientId: 'another-pane' });
 
+  // ─── The claim, through a canvas ───────────────────────────────────────
+  //
+  // Section 8 proved the claim against the module. This is the thing an agent
+  // actually does: it names a board on an HTTP call, and everything it writes
+  // afterwards names the same board and nothing else. Nothing is threaded
+  // through, because a CLI agent is a fresh process every command and has
+  // nowhere to keep an id.
+
+  const WHY = 'redrawing the payment path';
+  const claimed = await api('POST', '/api/boards/claim?board=scratch', { reason: WHY });
+  check('an agent claims a board over the API, saying what it is doing',
+    claimed.status === 200 && claimed.body?.claim?.holder?.claimed === true &&
+    claimed.body?.claim?.holder?.reason === WHY,
+    `${claimed.status} ${JSON.stringify(claimed.body)?.slice(0, 160)}`);
+  await sleep(200);
+  check('  and every pane holding it is told who has it and why, before anybody touches it',
+    heard.at(-1)?.held === true && heard.at(-1)?.holder?.claimed === true &&
+    heard.at(-1)?.holder?.reason === WHY, JSON.stringify(heard.at(-1)));
+
+  const claimedSince = claimed.body?.claim?.holder?.since;
+  // Twenty writes and a rival between every pair of them. The rival is this
+  // process, which is a third writer over the same vault and knows nothing
+  // about the canvas's claim except what the lock file says — an agent write
+  // aimed at the canvas would have *joined* the claim, which is the behaviour
+  // under test and would prove nothing about exclusion.
+  let gaps = 0;
+  let unwritten = 0;
+  for (let i = 0; i < 20; i += 1) {
+    const wrote = await api('POST', '/api/elements?board=scratch', {
+      id: `claim-${i}`, type: 'rectangle', x: i * 12, y: 800, width: 10, height: 10
+    });
+    if (wrote.status !== 200) unwritten += 1;
+    const rival = await refusal(holdBoard({ board: 'scratch', holder: agent(`rival-${i}`), waitMs: 0 }));
+    if (!(rival instanceof BoardHeldError)) gaps += 1;
+  }
+  check('twenty writes go through under one claim', unwritten === 0, `${unwritten} of 20 refused`);
+  check('  with no gap another writer could take, in any of the nineteen between them',
+    gaps === 0, `${gaps} gaps`);
+  check('  and the board was held once throughout, not taken and given back twenty times',
+    boardLockState('scratch')?.since === claimedSince,
+    `${claimedSince} -> ${boardLockState('scratch')?.since}`);
+
+  // And the person at the canvas takes it back. Their pane sends the same
+  // message a gesture sends: taking your board back is starting to use it.
+  const tookBack = await api('POST', '/api/boards/hold?board=scratch', { clientId: PANE });
+  check('the person at the canvas takes a claimed board back, rather than being refused',
+    tookBack.status === 200 && tookBack.body?.holder?.id === PANE,
+    `${tookBack.status} ${JSON.stringify(tookBack.body)?.slice(0, 160)}`);
+  await api('POST', '/api/boards/hold/release?board=scratch', { clientId: PANE });
+
+  const denied = await api('POST', '/api/boards/claim?board=scratch', { reason: 'carrying on regardless' });
+  check('  and the agent cannot claim its way back onto it',
+    denied.status === 409 && denied.body?.code === 'CLAIM_REVOKED',
+    `${denied.status} ${JSON.stringify(denied.body)?.slice(0, 160)}`);
+  check('  and is told nothing was rolled back, because a claim is not a transaction',
+    /nothing was undone/.test(denied.body?.error ?? ''), denied.body?.error);
+
+  const ordinary = await api('POST', '/api/elements?board=scratch', {
+    id: 'after-the-claim', type: 'rectangle', x: 10, y: 900, width: 10, height: 10
+  });
+  check('  told once: what it does after that is an ordinary write on an ordinary board',
+    ordinary.status === 200, `${ordinary.status} ${JSON.stringify(ordinary.body)?.slice(0, 120)}`);
+
+  const survived = await api('GET', '/api/elements?board=scratch');
+  const written = (survived.body?.elements ?? []).filter(e => /^claim-\d+$/.test(e.id)).length;
+  check('  and every element written under the claim is still on the board',
+    written === 20, `${written} of 20`);
+
+  const nothingLeft = await api('POST', '/api/boards/claim/release?board=scratch', {});
+  check('releasing a claim somebody took back is tidying up late, not an error',
+    nothingLeft.status === 200 && nothingLeft.body?.released === false,
+    `${nothingLeft.status} ${JSON.stringify(nothingLeft.body)}`);
+
+  const unexplained = await api('POST', '/api/boards/claim?board=scratch', {});
+  check('a claim with no reason is refused: it is what the person is shown',
+    unexplained.status === 400, `${unexplained.status}`);
+  const homeless = await api('POST', '/api/boards/claim', { reason: 'anything' });
+  check('and one that names no board like every other call (ADR 0009)',
+    homeless.status === 400, `${homeless.status}`);
+
   // ─── Two canvases, one vault ───────────────────────────────────────────
   //
   // Section 7 showed two processes using the module. This is the thing the
@@ -466,6 +656,66 @@ try {
       body: JSON.stringify({ type: 'rectangle', x: 700, y: 700, width: 40, height: 40 })
     });
     check('  and goes through once it is given back', allowed.status === 200, `${allowed.status}`);
+
+    // ─── And the second canvas's panes hear about a claim ───────────────
+    //
+    // The gap ADR 0016 left open and named this task as the place to close.
+    // Exclusion reaches both canvases because it reads the file; the broadcast
+    // reaches one, because a file does not call anybody. So a pane over there
+    // was excluded correctly and found out when a write was refused — which
+    // for a claim running minutes is minutes of somebody drawing into a board
+    // they cannot have. Nothing below sends that canvas anything: it reads.
+
+    const OTHER_PANE = 'pane-other-canvas';
+    const overThere = [];
+    const otherSocket = new WebSocket(`ws://127.0.0.1:${OTHER_PORT}/?clientId=${OTHER_PANE}`);
+    otherSocket.on('message', (raw) => {
+      const message = JSON.parse(raw.toString());
+      if (message.type === 'board_lock') overThere.push(message);
+    });
+    await new Promise((resolve) => otherSocket.on('open', resolve));
+    await sleep(400);
+    check('a pane on the second canvas starts out believing its board is free',
+      overThere.at(-1)?.held === false, JSON.stringify(overThere.at(-1)));
+
+    const heardBefore = overThere.length;
+    const elsewhere = await api('POST', '/api/boards/claim?board=scratch', { reason: 'restructuring the queues' });
+    check('the first canvas claims the board', elsewhere.status === 200, `${elsewhere.status}`);
+    await sleep(LOCK_WATCH_MS + 1500);
+    const news = overThere.slice(heardBefore).at(-1);
+    check('  and the pane on the other canvas is told, with nobody having told it',
+      news?.held === true && news?.holder?.claimed === true &&
+      news?.holder?.reason === 'restructuring the queues', JSON.stringify(news));
+    check('  before the touch rather than at the write: no write was made to find that out',
+      news !== undefined && (await api('GET', '/api/elements?board=scratch')).status === 200);
+
+    // And the person standing at *that* canvas takes it back. They are nowhere
+    // near the canvas holding the claim, and the agent still has to be told.
+    const reclaimed = await fetch(`http://127.0.0.1:${OTHER_PORT}/api/boards/hold?board=scratch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientId: OTHER_PANE })
+    });
+    check('  and the person at that canvas can take it back',
+      reclaimed.status === 200, `${reclaimed.status}`);
+    await fetch(`http://127.0.0.1:${OTHER_PORT}/api/boards/hold/release?board=scratch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientId: OTHER_PANE })
+    });
+
+    // The claiming canvas finds out at its next renewal — the lock is no longer
+    // its own, and a renewal may not take a free one back.
+    await sleep(LOCK_RENEW_MS + 1500);
+    const toldElsewhere = await api('POST', '/api/elements?board=scratch', {
+      type: 'rectangle', x: 30, y: 950, width: 10, height: 10
+    });
+    check('  and the agent on the first canvas is told it lost the board',
+      toldElsewhere.status === 409 && toldElsewhere.body?.code === 'CLAIM_REVOKED',
+      `${toldElsewhere.status} ${JSON.stringify(toldElsewhere.body)?.slice(0, 200)}`);
+
+    otherSocket.close();
+    await api('POST', '/api/boards/claim/release?board=scratch', {});
   } finally {
     otherServer.kill();
   }
