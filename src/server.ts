@@ -95,7 +95,7 @@ import { boardsForRepo } from './core/repo-boards.js';
 import { CompareSideInput, compareBoards } from './core/compare.js';
 import { ChangeOrigin, changeFeed } from './core/change-feed.js';
 import type { ChangeEvent } from './core/change-feed.js';
-import { PANE_LAYOUT_TIMEOUT_MS, PANE_SETTLE_CAP_MS } from './core/timing.js';
+import { PANE_LAYOUT_TIMEOUT_MS, PANE_SETTLE_CAP_MS, REPORT_DEBOUNCE_MS } from './core/timing.js';
 import { narrateChange } from './core/changes.js';
 import { injectTest, injectionStatus, startInjection } from './core/injection.js';
 import { LibraryItem, readLibrary, writeLibrary } from './core/library.js';
@@ -816,12 +816,17 @@ app.use((req: Request, res: Response, next: NextFunction) => {
  * edge of the first change instead, and again every LOCK_RENEW_MS while the
  * hand keeps moving, which is what renews the lease.
  *
- * It never waits. An agent waits for a person because the wait is short and the
- * agent has nothing else to do; a person at a 75-inch display cannot be made to
- * wait five seconds to find out whether their pen works. So the answer is
- * immediate: yours, or here is who has it — and the pane goes read-only on the
- * second and drops the change rather than reporting it into a write that would
- * be refused.
+ * It waits, but only for as long as the pane was going to sit on the change
+ * anyway. An agent's per-write hold is about twenty milliseconds, and a hand
+ * that landed inside one is not somebody who has lost the board — telling them
+ * so and throwing their gesture away would be an agent making a 75-inch display
+ * stop responding, which is the thing ADR 0016 forbids in as many words. So the
+ * wait is the report debounce: a person is going to be 400 ms from having their
+ * change written whatever this answers, and anything still holding the board at
+ * the end of that is a real holder rather than a write in flight.
+ *
+ * Not the agent's five seconds, for the other half of the same reason. A person
+ * cannot be made to wait that long to find out whether their pen works.
  */
 app.post('/api/boards/hold', (req: Request, res: Response) => {
   try {
@@ -838,7 +843,7 @@ app.post('/api/boards/hold', (req: Request, res: Response) => {
       kind: 'human' as const,
       ...(typeof body.reason === 'string' && body.reason ? { reason: body.reason } : {})
     };
-    void holdBoard({ board: key, holder, waitMs: 0 })
+    void holdBoard({ board: key, holder, waitMs: REPORT_DEBOUNCE_MS })
       .then(hold => res.json({ success: true, board: key, holder: hold.holder, created: hold.created }))
       .catch(error => res.status(boardErrorStatus(error)).json(boardErrorBody(error)));
   } catch (error) {

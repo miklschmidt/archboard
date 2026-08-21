@@ -56,25 +56,77 @@ const UNKNOWN_HOLDER: LockHolder = {
 }
 
 /**
- * A cheap answer to "did an element actually change".
+ * Everything about an element that a hand can change.
  *
- * `onChange` fires for scrolling, zooming and selecting as well as for edits,
- * and taking the board every time somebody pans the wall would block an agent
- * for a second at a time for no reason. Excalidraw bumps `version` on every
- * element it mutates, so a count and a sum of versions moves when the drawing
- * moves and stands still when only the camera does.
+ * Not everything about an element: `boundElements`, `containerId`, `customData`
+ * and the server's own bookkeeping move when the server writes them and never
+ * under somebody's finger, and the whole point of the stamp below is to tell
+ * those two apart. A field wrongly left out here costs a leading-edge hold and
+ * a skipped resync on an edit nobody can make in a canvas; a field wrongly put
+ * in costs both on news that arrived from the server.
+ */
+const HUMAN_FIELDS = [
+  'x', 'y', 'width', 'height', 'angle', 'isDeleted', 'text', 'fontSize', 'fontFamily',
+  'textAlign', 'verticalAlign', 'backgroundColor', 'strokeColor', 'strokeStyle',
+  'strokeWidth', 'fillStyle', 'roughness', 'opacity', 'link', 'locked',
+  'startArrowhead', 'endArrowhead', 'index'
+] as const
+
+function fold(hash: number, value: unknown): number {
+  if (typeof value === 'number') return (hash * 31 + Math.round(value * 64)) | 0
+  if (typeof value === 'boolean') return (hash * 31 + (value ? 1 : 2)) | 0
+  if (typeof value === 'string') {
+    let folded = (hash * 31 + value.length) | 0
+    for (let at = 0; at < value.length; at += 1) folded = (folded * 31 + value.charCodeAt(at)) | 0
+    return folded
+  }
+  return (hash * 31) | 0
+}
+
+/**
+ * A cheap answer to "did the drawing change, or only the view of it".
  *
- * Arithmetic over the scene on every frame, which is microseconds on a board
- * four times larger than any real one — deliberately not a diff against the
- * baseline, which is the expensive thing the report debounce exists to do once
- * per gesture rather than once per frame.
+ * `onChange` fires for scrolling, zooming and selecting, and — since the lock —
+ * for this pane going in and out of read-only when a board changes hands. None
+ * of those is an edit. Acting on them costs two things that both showed up as
+ * bugs: an agent blocked for a second every time somebody pans the wall, and a
+ * resync skipped because a broadcast read as a hand moving (`check-live-session`
+ * caught the second, as a missing `boundElements` entry).
+ *
+ * `version` alone is not enough to tell them apart. Excalidraw bumps it on
+ * every element *it* mutates, so a real drag moves it — but a scene handed
+ * straight to `updateScene` keeps whatever version its elements carry, and that
+ * is how anything that is not a pointer writes to a canvas, including this
+ * project's own checks. So the fields go in too, and the two together see an
+ * edit whichever door it came through.
+ *
+ * Arithmetic and character codes over the scene on every frame: a few thousand
+ * operations on a board four times larger than any real one. Deliberately not
+ * `diffAgainstBaseline`, which sorts and stringifies every element and is the
+ * expensive thing the report debounce exists to do once per gesture.
  */
 function sceneStamp(api: ExcalidrawImperativeAPI | null): string {
   if (!api) return ''
   const elements = api.getSceneElementsIncludingDeleted()
-  let versions = 0
-  for (const element of elements) versions += element.version ?? 0
-  return `${elements.length}:${versions}`
+  let hash = elements.length
+  for (const element of elements) {
+    const fields = element as unknown as Record<string, unknown>
+    hash = fold(hash, fields.id)
+    hash = fold(hash, fields.version)
+    for (const field of HUMAN_FIELDS) hash = fold(hash, fields[field])
+    // A path by its length and its far end, rather than every point of it: a
+    // freedraw stroke can carry hundreds and this runs on every frame. Bending
+    // an arrow moves its last point, and dragging one moves its x and y.
+    const points = fields.points
+    if (Array.isArray(points)) {
+      hash = fold(hash, points.length)
+      const last = points[points.length - 1] as number[] | { x: number; y: number } | undefined
+      if (Array.isArray(last)) hash = fold(fold(hash, last[0]), last[1])
+      else if (last) hash = fold(fold(hash, last.x), last.y)
+    }
+    hash = fold(hash, Array.isArray(fields.groupIds) ? fields.groupIds.length : 0)
+  }
+  return String(hash)
 }
 
 export interface CanvasSessionOptions {
@@ -614,18 +666,28 @@ export function useCanvasSession({
     // watching never writes, which is what makes a second pane safe.
     if (!userInteractedRef.current) return
     if (suppressRef.current > 0) return
-    // Past both gates, so this really is the human's own hand: the pane has
-    // been touched and nothing of the server's is being written into the scene.
-    localEditsRef.current += 1
-    // And this is the leading edge the report itself cannot be. The stamp keeps
-    // a scroll or a selection from taking the board; anything that moved an
-    // element takes it, and takes it now rather than 400 ms after the finger
-    // lifts (ADR 0016).
+    // Past both gates, so this is the human's hand and not the server's news
+    // being written into the scene. It is still not necessarily an edit:
+    // `onChange` fires for a scroll, a zoom, a selection, and — since the lock
+    // — for this pane going in and out of read-only as a board changes hands.
+    // The stamp is what separates "the drawing moved" from "something else
+    // did", and everything below is for the first.
     const stamp = sceneStamp(apiRef.current)
-    if (stamp !== sceneStampRef.current) {
-      sceneStampRef.current = stamp
-      takeHold()
-    }
+    if (stamp === sceneStampRef.current) return
+    sceneStampRef.current = stamp
+
+    // Counted, because the reply to a report is only applied as a resync when
+    // nothing moved during its round trip (TASK-074). Counting anything else
+    // here is how that resync gets skipped for no reason, and it did: this used
+    // to count every `onChange`, so an agent's write — which broadcasts that
+    // the board is held, and again that it is free — read as two edits by the
+    // human, the resync was skipped, and the pane never learned about the
+    // `boundElements` entry that agent's new arrow had added to the shapes it
+    // joins. `check-live-session.mjs` names the element and the field.
+    localEditsRef.current += 1
+    // And this is the leading edge the report itself cannot be: the board is
+    // taken now, rather than 400 ms after the finger lifts (ADR 0016).
+    takeHold()
     if (reportTimerRef.current) clearTimeout(reportTimerRef.current)
     reportTimerRef.current = setTimeout(() => {
       reportTimerRef.current = null
