@@ -177,7 +177,7 @@ export async function withBoardLock<T>(request: LockRequest, write: () => T): Pr
   try {
     return write();
   } finally {
-    if (hold.created) releaseHold(request.board, request.holder.id);
+    releaseHold(request.board, request.holder.id);
   }
 }
 
