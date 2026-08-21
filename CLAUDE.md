@@ -113,7 +113,8 @@ asking you to remember it (TASK-059, ADR 0014):
   `bun run test:hot` breaks a reload on purpose to prove it fires. It counted
   elements until TASK-078; a count is a fact about the vault now and a reload
   cannot touch it, while losing a board's note path still costs the pane
-  holding it.
+  holding it. One count came back with TASK-079: a board that has stopped
+  saving is the one board whose elements are in this process and in no note.
 
 **`canvas start` watches nothing and cannot reload**, deliberately. Restarting
 costs the process and nothing on any board: a write is a write to the note
