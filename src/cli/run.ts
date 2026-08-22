@@ -1,5 +1,5 @@
 import { CliUsageError } from './args.js';
-import { boardHoldSeen, setRequestedBoard } from '../core/canvas-client.js';
+import { boardHoldSeen, setRequestedBoard, setWriteDoing } from '../core/canvas-client.js';
 import { packageVersion } from '../core/version.js';
 import * as server from './commands/server.js';
 import * as elements from './commands/elements.js';
@@ -407,6 +407,11 @@ function printHelp(): void {
   '  --board <key> is global and REQUIRED on every command that touches a board. There is no',
   '    default: a pane holds its own board, so "the board" would be a guess (ADR 0009). A call',
   '    without it is refused, and the refusal lists the boards that are open.',
+  '  --doing "..." is global and REQUIRED on every command that CHANGES a board. One short line',
+  '    in the present tense — "adding the payment queue" — which goes up on the canvas as the',
+  '    write lands, so the person at the board can see what you are up to. A write without it is',
+  '    refused. It is never written to the note. A claim\'s --reason is the campaign; this is the',
+  '    step, and neither stands in for the other.',
     '  Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required,',
     '               5 board write refused (the note changed on disk).',
     '  Canvas-driving commands auto-start the server (disable with EXCALIDRAW_NO_AUTOSTART=1).',
@@ -437,17 +442,38 @@ function exitCodeFor(error: unknown): number {
  * declare it and none can forget to pass it on.
  */
 function takeBoardFlag(argv: string[]): string | null {
+  return takeGlobalFlag(argv, 'board');
+}
+
+/**
+ * And `--doing "..."`, for the same reason (TASK-095).
+ *
+ * Global because a command may make several requests and each of them is the
+ * same act: `import` clears the board and then batches the scene in, and both
+ * are "restoring the payment path from the export". Stripped before the
+ * command's own parser sees it, so no command declares it and none can be the
+ * one that dropped it.
+ *
+ * Not refused here. The canvas knows which routes are board writes and it is
+ * the only side that should; a second list on this side would be a second
+ * answer to the same question, and the two would drift.
+ */
+function takeDoingFlag(argv: string[]): string | null {
+  return takeGlobalFlag(argv, 'doing');
+}
+
+function takeGlobalFlag(argv: string[], name: string): string | null {
   for (let i = 0; i < argv.length; i++) {
     const token = argv[i]!;
-    if (token === '--board') {
+    if (token === `--${name}`) {
       const value = argv[i + 1];
-      if (value === undefined) throw new CliUsageError('Flag --board requires a value');
+      if (value === undefined) throw new CliUsageError(`Flag --${name} requires a value`);
       argv.splice(i, 2);
       return value;
     }
-    if (token.startsWith('--board=')) {
+    if (token.startsWith(`--${name}=`)) {
       argv.splice(i, 1);
-      return token.slice('--board='.length);
+      return token.slice(name.length + 3);
     }
   }
   return null;
@@ -480,6 +506,7 @@ export async function runCli(argv: string[]): Promise<void> {
 
   try {
     setRequestedBoard(takeBoardFlag(rest));
+    setWriteDoing(takeDoingFlag(rest));
     await command.handler(rest);
   } catch (error) {
     if (!(error as any)?.quiet) {

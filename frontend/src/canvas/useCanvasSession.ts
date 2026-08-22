@@ -23,7 +23,8 @@ import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
 import type { LibraryItems } from '@excalidraw/excalidraw/types'
 import { convertMermaidToExcalidraw, DEFAULT_MERMAID_CONFIG } from '../utils/mermaidConverter'
 import type {
-  BoardHold, BoardIdentity, LockHolder, NoteWrittenElsewhere, PaneStatus, ServerElement, WebSocketMessage
+  BoardHold, BoardIdentity, DoingEntry, LockHolder, NoteWrittenElsewhere, PaneStatus, ServerElement,
+  WebSocketMessage
 } from '../types'
 import { cleanElementForExcalidraw, elementsForScene } from './elements'
 import { baselineFrom, diffAgainstBaseline, fingerprint, isEmpty, type Baseline } from './changes'
@@ -220,6 +221,16 @@ export interface CanvasSession {
    * half-drawn board with nobody having decided anything.
    */
   takeBack: () => void
+  /**
+   * The last few things an agent said it was doing here, oldest first
+   * (TASK-095).
+   *
+   * The step, where `heldBy.reason` on a claim is the campaign: the banner says
+   * what is being attempted and this says how far it has got. Shown whether or
+   * not anybody holds the board — most writes are one act and take no claim,
+   * and a person watching boxes move is owed the reason either way.
+   */
+  doing: DoingEntry[]
 }
 
 export function useCanvasSession({
@@ -259,6 +270,11 @@ export function useCanvasSession({
   // written since, and the person drawing would otherwise find out at their
   // next gesture.
   const writtenElsewhereRef = useRef<NoteWrittenElsewhere | null>(null)
+  // What an agent has said it is doing to this board, most recent last
+  // (TASK-095). Server-kept and sent whole, so this is assigned rather than
+  // accumulated: two panes on one board tell the same story, and a pane that
+  // has just been handed the board is not blank until the next write.
+  const doingRef = useRef<DoingEntry[]>([])
   // The pane owes the server a statement of what is on its screen. A held
   // board's copy starts as the note the other editor wrote, because that is all
   // the server can read; this is what replaces it with what the human is
@@ -299,6 +315,10 @@ export function useCanvasSession({
    * pane, so "does not know" lasts one message.
    */
   const [heldBy, setHeldBy] = useState<LockHolder | null>(UNKNOWN_HOLDER)
+  // The same list as `doingRef`, for rendering. The ref is what the pane's
+  // status carries and the state is what puts it on screen; both are assigned
+  // from the server's list together, so they cannot disagree.
+  const [doing, setDoing] = useState<DoingEntry[]>([])
 
   const selectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const publishedSelectionRef = useRef('')
@@ -435,7 +455,8 @@ export function useCanvasSession({
       elementCount: apiRef.current?.getSceneElements().length ?? 0,
       lastChangeAt: lastChangeAtRef.current,
       hold: holdRef.current,
-      writtenElsewhere: writtenElsewhereRef.current
+      writtenElsewhere: writtenElsewhereRef.current,
+      doing: doingRef.current
     })
     schedulePaneReport()
   }, [clientId, paneId, schedulePaneReport])
@@ -1090,6 +1111,10 @@ export function useCanvasSession({
         // than one message later, which on a wall display is a person reading a
         // warning about a board that is already gone.
         writtenElsewhereRef.current = null
+        // Nor is what an agent said about the last board news about this one.
+        // The server sends this board's own list straight behind the scene.
+        doingRef.current = []
+        setDoing(doingRef.current)
         noteChange()
         break
       }
@@ -1156,6 +1181,18 @@ export function useCanvasSession({
       // reload.
       case 'board_note':
         writtenElsewhereRef.current = data.writtenElsewhere ?? null
+        publishStatus()
+        break
+
+      // An agent has changed this board and said what it was doing (TASK-095).
+      // Not a lock and not a refusal: nothing is stopping anybody, and this
+      // pane keeps drawing. It is the other half of seeing a change as it
+      // happens — the boxes move, and this says what the move was for.
+      case 'board_doing':
+        if (Array.isArray(data.recent)) {
+          doingRef.current = data.recent as DoingEntry[]
+          setDoing(doingRef.current)
+        }
         publishStatus()
         break
 
@@ -1326,6 +1363,7 @@ export function useCanvasSession({
     // is the next one being made at all.
     readOnly: !connected || heldBy !== null,
     heldBy,
-    takeBack
+    takeBack,
+    doing
   }
 }

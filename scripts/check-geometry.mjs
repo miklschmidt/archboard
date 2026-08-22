@@ -25,6 +25,7 @@ import os from 'node:os';
 import { spawn } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { withDoing } from './lib/doing.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = (p) => join(__dirname, '..', 'src', p);
@@ -339,6 +340,9 @@ for (const [name, arrow] of Object.entries(arrows)) {
     stdio: ['ignore', 'ignore', 'ignore']
   });
   const api = async (method, url, body) => {
+    // Every write says what it is doing, once for the whole check (TASK-095,
+    // scripts/lib/doing.mjs). The refusal itself is proved in check-doing.mjs.
+    url = withDoing(url, method, 'checking where an arrow goes');
     const response = await fetch(`${base}${url}`, {
       method,
       ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })

@@ -7,7 +7,7 @@
 // variant, which level, whether it is written down.
 
 import React from 'react'
-import type { BoardHold, BoardIdentity, NoteWrittenElsewhere } from '../types'
+import type { BoardHold, BoardIdentity, DoingEntry, NoteWrittenElsewhere } from '../types'
 
 interface BoardBarProps {
   identity: BoardIdentity | null
@@ -24,6 +24,12 @@ interface BoardBarProps {
    */
   writtenElsewhere: NoteWrittenElsewhere | null
   onNoteClick: () => void
+  /**
+   * The last few things an agent said it was doing to this board (TASK-095).
+   * The bar shows the most recent one — one line is what there is room for, and
+   * the pane itself carries the list.
+   */
+  doing: DoingEntry[]
   paneCount: number
   onOpen: () => void
   onNew: () => void
@@ -71,9 +77,10 @@ function noteLabel(written: NoteWrittenElsewhere): string {
 
 export function BoardBar({
   identity, boardKey, elementCount, connected, hold, onHoldClick,
-  writtenElsewhere, onNoteClick,
+  writtenElsewhere, onNoteClick, doing,
   paneCount, onOpen, onNew, onSave, onClear, onAddPane, onClosePane, busy
 }: BoardBarProps): JSX.Element {
+  const latest = doing.length > 0 ? doing[doing.length - 1] : null
   return (
     <header className="bar">
       <div className="bar-identity">
@@ -114,6 +121,18 @@ export function BoardBar({
               </button>
             )
             : <span className="meta">in the vault</span>}
+        {/*
+          And the last thing an agent said it was doing here (TASK-095). Not one
+          of the three marks above: nothing is wrong, nothing is refused, and
+          this is not a state the board is in — it is what somebody just did to
+          it. One line, because that is what the bar has room for; the pane
+          carries the last few.
+        */}
+        {latest && (
+          <span className="doing-now" title={`${latest.doing}\n\n${clock(latest.at)}`}>
+            {latest.doing}
+          </span>
+        )}
       </div>
 
       <div className="bar-actions">

@@ -33,6 +33,7 @@ import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
+import { withDoing } from './lib/doing.mjs';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = p => path.join(repoRoot, 'src', p);
@@ -92,6 +93,9 @@ server.stdout.on('data', chunk => { output += chunk.toString(); });
 server.stderr.on('data', chunk => { output += chunk.toString(); });
 
 const api = async (method, url, body) => {
+  // Every write says what it is doing, once for the whole check (TASK-095,
+  // scripts/lib/doing.mjs). The refusal itself is proved in check-doing.mjs.
+  url = withDoing(url, method, 'checking that a reload keeps what is on screen');
   const response = await fetch(`${base}${url}`, {
     method,
     ...(body === undefined ? {} : {

@@ -1,10 +1,11 @@
 ---
 id: TASK-095
 title: 'An agent says what it is doing on every write, and the wall shows it'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-22 16:04'
-updated_date: '2026-08-22 16:40'
+updated_date: '2026-08-22 16:49'
 labels: []
 dependencies:
   - TASK-080
@@ -64,3 +65,17 @@ Bound the length. A list of one-liners is glanceable; a list of paragraphs is a 
 - [ ] #7 The field's name is chosen once and is the same on both surfaces
 - [ ] #8 Every caller that writes a board is moved in this task — CLI commands, MCP tools and any script — with none left behind
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Name the field `doing`: --doing on the CLI, `doing` on every MCP write tool, ?doing= on the REST API. The claim already owns `reason` (why an agent has the board, the campaign); `doing` is the step, and the participle it forces is the sentence a wall wants.
+2. src/core/board-doing.ts: normalise + cap one line, and keep a short per-board ring in kept() so a pane that reloads is not blank and injection can quote it.
+3. src/server.ts: require it in the deny-by-default write-boundary middleware, where the lock is already taken and holderFromRequest already tells an agent from a person. Query param only, so it cannot be spread into an element and reach the note. Record and broadcast board_doing on finish, 2xx only. /api/elements/from-mermaid is outside that middleware and is required and broadcast on its own.
+4. canvas-client.ts: setWriteDoing + withDoing on every write path, the way setRequestedBoard/withBoard already work, so no CLI caller can be left behind.
+5. CLI: global --doing pulled out in run.ts beside --board. MCP: WRITES_BOARD list + DOING_PARAM applied in the loop that already injects BOARD_PARAM into required.
+6. Frontend: the shell's Clear and Save carry the pane's clientId, so a person's own act is a person's write rather than an unnamed agent. Pane keeps the last few lines from board_doing; the bar shows the latest and the pane lists them under the claim banner.
+7. Injection: leave consider()'s agent drop alone and carry the recent lines as context on the human's event, so self-narration is structurally impossible.
+8. Every script that writes a board passes one through its own api() helper. New scripts/check-doing.mjs in the chain proves the refusal, the note, the broadcast and the human exemption.
+9. Docs: CLAUDE.md, CONTEXT.md, ADR 0016, SKILL.md and the cheatsheet.
+<!-- SECTION:PLAN:END -->
