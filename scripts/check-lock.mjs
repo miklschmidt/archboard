@@ -415,12 +415,26 @@ const refusal = async (promise) => {
   const idle = await claiming({ board, reason: 'reading the code first', forMs: 60_000 });
   check('a claim is taken and then nothing at all happens on it', idle.created === true, why(idle));
 
-  await sleep(LOCK_LEASE_MS + 500);
-  check('and the board is still held after the lease it was written with ran out',
-    boardLockState(board)?.id === idle.claim.holder.id, JSON.stringify(boardLockState(board)));
-  check('  by the same hold, renewed rather than taken again',
-    boardLockState(board)?.since === idle.claim.holder.since,
-    `${idle.claim.holder.since} -> ${boardLockState(board)?.since}`);
+  // Watched rather than sampled once at the far end. The question is whether
+  // the board is held for the whole stretch, and a single look afterwards
+  // cannot tell "held throughout" from "lapsed and taken again by something".
+  // It also says when it went, which a sample cannot.
+  const firstLease = Date.parse(idle.claim.holder.until);
+  let lostAt = null;
+  let renewals = 0;
+  let seenUntil = firstLease;
+  while (Date.now() < firstLease + 500) {
+    const now = boardLockState(board);
+    if (!now || now.id !== idle.claim.holder.id) { lostAt = Date.now(); break; }
+    if (Date.parse(now.until) > seenUntil) { renewals += 1; seenUntil = Date.parse(now.until); }
+    await sleep(100);
+  }
+  check('and the board is held for every moment of the lease it was written with',
+    lostAt === null,
+    lostAt ? `free ${lostAt - Date.parse(idle.claim.holder.since)} ms in, on a ${LOCK_LEASE_MS} ms lease` : '');
+  check('  because the canvas kept moving the lease, the agent having done nothing',
+    renewals > 0 && boardLockState(board)?.since === idle.claim.holder.since,
+    `${renewals} renewals, since ${idle.claim.holder.since} -> ${boardLockState(board)?.since}`);
   const opportunist = await refusal(holdBoard({ board, holder: agent('opportunist'), waitMs: 0 }));
   check('  so nobody was let in while it was quiet', opportunist instanceof BoardHeldError);
 
