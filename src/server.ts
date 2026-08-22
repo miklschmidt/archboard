@@ -82,6 +82,8 @@ import {
   BoardHeldError,
   boardLockState,
   claimBoard,
+  claimSaw,
+  claimSeen,
   claimWriterId,
   holdBoard,
   LockHolder,
@@ -97,6 +99,7 @@ import {
   BoardIdentity,
   boardKey,
   classifyBoardSave,
+  describeVersionConflict,
   hashBoardBytes,
   listBoards,
   makeIdentity,
@@ -107,7 +110,8 @@ import {
   requireVaultRoot,
   validateLevel,
   validateVariant,
-  vaultPathFor
+  vaultPathFor,
+  versionOfNoteAt
 } from './core/board.js';
 import {
   NoteWrittenElsewhere,
@@ -554,7 +558,7 @@ function persistBoard(
   content: BoardContent,
   origin: ChangeOrigin,
   fromScreen = false
-): void {
+): WrittenNote | null {
   // A board that has stopped saving takes the write into the held copy and
   // leaves the note alone (TASK-079). Not written down, so `savedAt` does not
   // move, which is the honest answer to an agent asking when this board was
@@ -562,10 +566,11 @@ function persistBoard(
   // change and an agent watching should hear what a human drew, held or not.
   if (holdWrite(key, content, fromScreen)) {
     noteChange(key, board, origin);
-    return;
+    return null;
   }
+  let written: WrittenNote;
   try {
-    writeBoardContent(board, content);
+    written = writeBoardContent(board, content);
   } catch (error) {
     // ADR 0006 refused it. The refusal still goes to whoever asked for the
     // write — it is news, and nothing happened — and the board stops saving
@@ -583,6 +588,7 @@ function persistBoard(
   }
   board.savedAt = new Date().toISOString();
   noteChange(key, board, origin);
+  return written;
 }
 
 /**
@@ -1045,9 +1051,145 @@ function refuseRevokedClaim(res: Response, board: string): boolean {
   return true;
 }
 
+/**
+ * What version this writer was editing, and NOT SOMETHING IT HAD TO REMEMBER TO
+ * SAY (TASK-091).
+ *
+ * An agent is a fresh process per command, so a number it has to thread from
+ * one command's answer into the next is a number it drops, and a precondition
+ * a caller may leave out is one that protects nobody. The canvas fills it in
+ * instead, from what it last told this writer, which is the shape TASK-080
+ * settled for the claim: the agent carries nothing and the canvas keeps the
+ * fact against the board every call already names.
+ *
+ * Three sources, in order, and the order is the point.
+ *
+ *   stated    `?expectVersion=` on the request. A writer that says what it was
+ *             editing means it, and it wins over anything remembered for it
+ *   remembered what the canvas last told the claim holding this board
+ *             (`claimSeen`). This is the automatic half
+ *   nothing   an agent with no claim, whose id is minted for this one request.
+ *             There is nothing this canvas can honestly check against
+ *
+ * WHAT IS DELIBERATELY NOT A SOURCE: the note's own current version. It always
+ * matches, so it would refuse nothing while looking exactly like a check, and a
+ * check that cannot fail is worse than none.
+ *
+ * `0` on the wire means "no version", which is what a note archboard has never
+ * written carries.
+ */
+function statedVersionOf(
+  req: Request,
+  writer: { id: string; kind: 'human' | 'agent' }
+): { ok: true; expected?: number | null } | { ok: false; problem: string } {
+  // A person is never checked, whatever the request carries. Their gesture took
+  // the board at its leading edge and their report is a delta applied to a note
+  // read a moment ago, so there is no stale reading of the board to protect
+  // them from — and a refusal here would be a wall display that stopped
+  // responding to the person standing at it, which is the one thing ADR 0016
+  // forbids outright. Checked before the parse rather than after, so that no
+  // shape of request can put a person on this path at all. `doing` draws the
+  // same line for the same reason: nobody narrates their own drawing either.
+  if (writer.kind !== 'agent') return { ok: true };
+
+  const raw = req.query.expectVersion;
+  if (raw !== undefined && raw !== '') {
+    if (typeof raw !== 'string' || !/^\d+$/.test(raw.trim())) {
+      return {
+        ok: false,
+        problem:
+          '`expectVersion` must be a whole number: the version you were editing, as the last write\'s ' +
+          `fingerprint reported it or as \`board info\` says. Got ${JSON.stringify(raw)}.`
+      };
+    }
+    const stated = Number(raw.trim());
+    return { ok: true, expected: stated === 0 ? null : stated };
+  }
+  return { ok: true };
+}
+
+/**
+ * And what the canvas remembers telling this writer, read under the lock.
+ *
+ * Under it, and not with the parse above, because this half is the one that has
+ * to be current: an agent's two writes to one claimed board can both be waiting
+ * on the lock at once, and a record read before the wait is a record the write
+ * in front may already have moved. That would refuse the second write for
+ * something it had in fact been told. It fails closed and tells once, so it
+ * would self-heal, but a spurious refusal is still a refusal.
+ */
+function rememberedVersionFor(
+  board: string,
+  writer: { id: string; kind: 'human' | 'agent' }
+): number | null | undefined {
+  if (writer.kind !== 'agent') return undefined;
+  if (claimWriterId(board) !== writer.id) return undefined;
+  return claimSeen(board);
+}
+
+/**
+ * The board has moved on since the version this writer was editing, so nothing
+ * is written (TASK-091).
+ *
+ * CHECKED HERE BECAUSE HERE IS WHERE IT IS TRUE. The board's lock is held by
+ * the time this runs and the handler runs synchronously from `next()`, so no
+ * other archboard writer can land between reading the version and writing the
+ * note. Checking it in a route would be a check per route, and a route added
+ * later would be the one that let a precondition through unexamined — the same
+ * argument that put the lock and `doing` at this boundary.
+ *
+ * It does not replace ADR 0006's hash check and cannot: Obsidian may still
+ * write the note between this and the write, and it would leave the version
+ * exactly where it was. That write is refused by the hash, downstream of this,
+ * which is the split ADR 0016 already draws — the version orders archboard's
+ * own writers, the hash catches everybody else's.
+ */
+function refuseStaleVersion(res: Response, board: string, expected: number | null): boolean {
+  const state = boards.get(board);
+  const held = holdOn(board);
+  // A board that has stopped saving is not writing to its note at all: the
+  // write goes into the copy this canvas is holding and the note is left as the
+  // other editor wrote it (TASK-079). So there is nothing here for a
+  // precondition to be about, and this steps aside rather than refusing.
+  // Refusing would stop a held board accepting work, which is the one thing
+  // TASK-079 exists to keep happening — and the writer is told regardless,
+  // because every answer about a held board carries the hold.
+  if (held) return false;
+  const actual = state?.file ? versionOfNoteAt(state.file) : null;
+  if (actual === expected) return false;
+  const conflict = describeVersionConflict({
+    board,
+    ...(state?.file ? { file: state.file } : {}),
+    expected,
+    actual
+  });
+  // TOLD ONCE, like a revoked claim, and for the same reason. The refusal names
+  // the version the board is at, so saying it is telling this writer what the
+  // board is now: leaving the record where it was would refuse every write it
+  // ever made again, which is a wedged agent rather than a protected board. Its
+  // next write is against what it has just been told, and if that is wrong
+  // again then somebody else really is writing at the same time.
+  claimSaw(board, actual);
+  // `versionConflict` and not `conflict`: that name means ADR 0006's refusal
+  // everywhere it appears, it carries the three outcomes a person picks
+  // between, and this has none of them. Nothing has been written over, nothing
+  // is held, and what to do about it is to read the board.
+  res.status(409).json({
+    success: false,
+    code: 'BOARD_VERSION_CONFLICT',
+    error: conflict.message,
+    versionConflict: conflict
+  });
+  return true;
+}
+
 app.use((req: Request, res: Response, next: NextFunction) => {
   if (req.method === 'GET' || req.method === 'HEAD') return next();
   if (!req.path.startsWith('/api/')) return next();
+  // A route that is not a board write writes no note, so there is no version
+  // for a precondition to be about either. `from-mermaid` is the one to keep in
+  // mind: its elements arrive afterwards as the converting pane's own change
+  // report, and that report is a board write and is checked like any other.
   if (NOT_A_BOARD_WRITE.some(([pattern]) => pattern.test(req.path))) return next();
 
   let key: string;
@@ -1064,6 +1206,29 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // rather than a note attached to a write that went through.
   const writer = holderFromRequest(req, key);
   if (writer.kind === 'agent' && refuseRevokedClaim(res, key)) return;
+
+  // Which version this write says it is against (TASK-091). One that is not a
+  // number is refused before the board is taken: it is a malformed request
+  // rather than a conflict, and nothing should wait on a lock to be told so.
+  // What the canvas remembers telling this writer is read later, under the
+  // lock, because that half can move while a write waits for the board.
+  const stated = statedVersionOf(req, writer);
+  if (!stated.ok) {
+    res.status(400).json({ success: false, code: 'BAD_EXPECTED_VERSION', error: stated.problem, board: key });
+    return;
+  }
+
+  // And what the board turned out to be is what this writer has now been told,
+  // which is what its next write will be checked against. On `finish` and only
+  // on success, beside the `doing` announcement and for the same reason: a
+  // refusal tells a writer nothing about a board it did not change. The refusal
+  // that *is* about the version does its own telling, above.
+  res.on('finish', () => {
+    if (res.statusCode >= 400) return;
+    if (writer.kind !== 'agent' || claimWriterId(key) !== writer.id) return;
+    const file = boards.get(key)?.file;
+    claimSaw(key, file ? versionOfNoteAt(file) : null);
+  });
 
   // And an agent says what it is doing, on this write, before it takes the
   // board. Same boundary as the lock and for the same reason: this is the one
@@ -1094,6 +1259,19 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
   void holdBoard({ board: key, holder: writer })
     .then((hold) => {
+      // Under the lock, so no other archboard writer can land between the
+      // version being read and the note being written; before `next()`, so a
+      // refusal writes nothing (TASK-091). The board is given straight back:
+      // the handlers that would do that on `finish` are registered below this,
+      // and a request that never reaches the handler never took the board for
+      // any longer than this line.
+      const expected = stated.expected !== undefined
+        ? stated.expected
+        : rememberedVersionFor(key, writer);
+      if (expected !== undefined && refuseStaleVersion(res, key, expected)) {
+        if (hold.created) releaseHold(key, hold.holder.id);
+        return;
+      }
       if (hold.created) {
         let given = false;
         const give = (): void => {
@@ -1223,7 +1401,17 @@ app.post('/api/boards/claim', (req: Request, res: Response) => {
 
     const forMs = typeof body.forMs === 'number' && Number.isFinite(body.forMs) ? body.forMs : undefined;
     void claimBoard({ board: key, reason: body.reason.trim(), ...(forMs !== undefined ? { forMs } : {}) })
-      .then(({ claim, created }) => res.json({ success: true, board: key, claim, created }))
+      .then(({ claim, created }) => {
+        // Taking the board is the first thing the canvas tells this agent about
+        // it, so it is where the record of what the agent has seen starts
+        // (TASK-091). Without the seed the first write under a claim would be
+        // the one write nothing checked, which is the write a campaign is most
+        // likely to build everything else on.
+        const file = boards.get(key)?.file;
+        const version = file ? versionOfNoteAt(file) : null;
+        if (created) claimSaw(key, version);
+        res.json({ success: true, board: key, claim, created, version });
+      })
       .catch(error => res.status(boardErrorStatus(error)).json(boardErrorBody(error)));
   } catch (error) {
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
@@ -1295,7 +1483,7 @@ app.post('/api/elements', (req: Request, res: Response) => {
 
     // Into the note before anybody is told about it, so nothing is broadcast
     // that the vault does not hold (ADR 0015). A refused write throws here.
-    persistBoard(boardKeyForRequest, board, content, 'agent');
+    const intoNote = persistBoard(boardKeyForRequest, board, content, 'agent');
 
     // Broadcast to all connected clients
     for (const el of written) {
@@ -1318,7 +1506,8 @@ app.post('/api/elements', (req: Request, res: Response) => {
         board,
         content,
         [...written.map(el => elements.get(el.id) ?? el), ...repaired],
-        wantsDocument(req)
+        wantsDocument(req),
+        intoNote
       )
     });
   } catch (error) {
@@ -1381,7 +1570,7 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
       ? settleAfterWrite([id], elements)
       : [];
 
-    persistBoard(boardKeyForRequest, board, content, 'agent');
+    const intoNote = persistBoard(boardKeyForRequest, board, content, 'agent');
 
     // Broadcast to all connected clients
     const message: ElementUpdatedMessage = {
@@ -1422,7 +1611,7 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
       success: true,
       board: boardKeyForRequest,
       element: elements.get(id) as ServerElement,
-      ...agentWriteAnswer(board, content, Array.from(touched.values()), wantsDocument(req))
+      ...agentWriteAnswer(board, content, Array.from(touched.values()), wantsDocument(req), intoNote)
     });
   } catch (error) {
     logger.error('Error updating element:', error);
@@ -1498,7 +1687,7 @@ app.delete('/api/elements/:id', (req: Request, res: Response) => {
     // what has gone (TASK-074).
     const { alsoDeleted, changed } = settleDeletions([id!], elements);
 
-    persistBoard(boardKeyForRequest, board, content, 'agent');
+    const intoNote = persistBoard(boardKeyForRequest, board, content, 'agent');
 
     // Broadcast to all connected clients
     for (const elementId of [id!, ...alsoDeleted]) {
@@ -1513,7 +1702,7 @@ app.delete('/api/elements/:id', (req: Request, res: Response) => {
       board: boardKeyForRequest,
       message: `Element ${id} deleted successfully`,
       ...(alsoDeleted.length > 0 ? { alsoDeleted } : {}),
-      ...agentWriteAnswer(board, content, changed, wantsDocument(req))
+      ...agentWriteAnswer(board, content, changed, wantsDocument(req), intoNote)
     });
   } catch (error) {
     logger.error('Error deleting element:', error);
@@ -1957,7 +2146,7 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
     const repaired = repairIndices(elements).filter(el => !madeIds.has(el.id));
     const stored = written.map(el => elements.get(el.id) ?? el);
 
-    persistBoard(boardKeyForRequest, board, content, 'agent');
+    const intoNote = persistBoard(boardKeyForRequest, board, content, 'agent');
 
     // Broadcast to all connected clients
     const message: BatchCreatedMessage = {
@@ -1975,7 +2164,7 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
       count: stored.length,
       // `elements` here has always been what the write produced; the
       // fingerprint and the opt-in document are what TASK-075 adds.
-      ...agentWriteAnswer(board, content, [...stored, ...repaired], wantsDocument(req))
+      ...agentWriteAnswer(board, content, [...stored, ...repaired], wantsDocument(req), intoNote)
     });
   } catch (error) {
     logger.error('Error batch creating elements:', error);
@@ -2170,25 +2359,52 @@ function agentWriteAnswer(
   board: BoardState,
   content: BoardContent,
   touched: ServerElement[],
-  wantsDocument: boolean
+  wantsDocument: boolean,
+  written?: WrittenNote | null
 ): Record<string, unknown> {
   return {
     elements: touched,
-    fingerprint: boardFingerprint(board, content),
+    fingerprint: boardFingerprint(board, content, written),
     ...(wantsDocument ? { document: Array.from(content.elements.values()) } : {})
   };
 }
 
+/** What one write left in the vault, as the writer is told about it. */
+type WrittenNote = ReturnType<typeof writeBoardContent>;
+
 /**
- * The note this board holds, identified by its bytes.
+ * The note this board holds, identified by its bytes and by which edit of it
+ * this is.
  *
- * Rendered from what the request has, rather than read back off disk, because
- * the write that has just happened wrote exactly these bytes: re-reading them
- * would cost a read to learn something already known.
+ * THE WRITE'S OWN ANSWER WHEN THERE WAS ONE. This used to render the board a
+ * second time and hash that, on the reasoning that the render is deterministic
+ * so the bytes must be the ones just written. A version broke that reasoning:
+ * the counter moves inside the write, from the destination's own frontmatter,
+ * so a re-render outside the write would produce the previous version's bytes
+ * and report a hash the vault does not hold — a fingerprint that lies, silently,
+ * on every write. So the write says what it wrote and this passes it on
+ * (TASK-091), which also spends one render per write rather than two.
+ *
+ * A board that has stopped saving wrote no note, so there is nothing to pass
+ * on and this falls back to rendering the held copy: the note this board *would*
+ * write, which is what a fingerprint over a held board can honestly be. Its
+ * version is the one the held copy came from — nothing has moved it, because
+ * nothing has been written (TASK-079).
  */
-function boardFingerprint(board: BoardState, content: BoardContent): { elements: number; note: string } {
+function boardFingerprint(
+  board: BoardState,
+  content: BoardContent,
+  written?: WrittenNote | null
+): { elements: number; note: string; version: number | null } {
+  if (written) {
+    return { elements: content.elements.size, note: written.hash, version: written.version };
+  }
   const { bytes } = renderContent(board.identity, content);
-  return { elements: content.elements.size, note: hashBoardBytes(bytes) };
+  return {
+    elements: content.elements.size,
+    note: hashBoardBytes(bytes),
+    version: content.version ?? null
+  };
 }
 
 /** Did this caller ask for the whole board? Off unless said, on every surface. */
@@ -2410,13 +2626,14 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
       ? applyAgentChanges(elements, upserts, deletes)
       : applyReportedChanges(elements, upserts, rebase ? [] : deletes, now, timestamp);
 
+    let intoNote: WrittenNote | null = null;
     if (rebase || created.length > 0 || updated.length > 0 || deleted.length > 0) {
       // This is the write ADR 0006's refusal arrives on: not a save somebody
       // chose, but 400 ms after a human lifted their finger. The first one is
       // refused and stops the board saving; every gesture after it goes into
       // the held copy and nothing more is refused, so the human draws on
       // (TASK-079).
-      persistBoard(boardKeyForRequest, board, content, origin, rebase);
+      intoNote = persistBoard(boardKeyForRequest, board, content, origin, rebase);
 
       // Carries the reporting client so that client can skip its own echo:
       // re-applying a change already on screen is at best a wasted render and
@@ -2457,7 +2674,7 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
       // tokens and `align` in a loop would pull twenty of them through a
       // context to move twenty boxes (TASK-075).
       ...(origin === 'agent'
-        ? agentWriteAnswer(board, content, [...created, ...updated], wantsDocument(req))
+        ? agentWriteAnswer(board, content, [...created, ...updated], wantsDocument(req), intoNote)
         : { document: Array.from(elements.values()) })
     });
   } catch (error) {
@@ -3489,10 +3706,16 @@ function identityFromParams(params: { board: string; variant?: string; level?: s
 // every route that answers about a board it just touched; the default is for
 // the ones that have not.
 function identityResponse(key: string, board: BoardState, content?: BoardContent) {
+  const read = content ?? readBoardContent(board);
   return {
     board: key,
     identity: board.identity,
-    elementCount: (content ?? readBoardContent(board)).elements.size,
+    elementCount: read.elements.size,
+    // Which edit of the board this is, so a writer can state a precondition on
+    // its first write rather than having to make one to find out (TASK-091).
+    // Null for a note archboard has not written yet, and for one whose own
+    // `version` key holds something that is not a count.
+    version: read.version ?? null,
     // Scratch has a note like every other board; what it has not got is a name
     // anybody chose. See boardSummaries().
     placeholder: key === SCRATCH_KEY,
@@ -3743,11 +3966,13 @@ app.post('/api/boards/open', (req: Request, res: Response) => {
       Array.isArray(scene) ? scene : (scene.elements ?? []),
       Array.isArray(scene) ? null : scene.files
     );
-    const content: BoardContent = { elements, files, note: loaded.raw, hash: loaded.hash };
+    const content: BoardContent = {
+      elements, files, note: loaded.raw, hash: loaded.hash, version: loaded.version
+    };
     board.file = loaded.file;
     // The bytes just read are what the panes are about to be shown, so they are
     // the baseline the next write is checked against.
-    recordBaseline(board, loaded.file, loaded.hash);
+    recordBaseline(board, loaded.file, loaded.hash, loaded.version);
     board.loadedAt = new Date().toISOString();
     // ADR 0006's first outcome: take the note, discard the canvas. It is the
     // one outcome that ends a hold by throwing the held copy away, so this is
@@ -3932,7 +4157,8 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
       elements: new Map(saved.map(element => [element.id, element])),
       files: source.content.files,
       note: written.note,
-      hash: written.hash
+      hash: written.hash,
+      version: written.version
     };
     // A branch normally moves nothing: you branched in order to compare, and
     // taking the source off screen is the opposite of what was asked for
@@ -4377,7 +4603,7 @@ function adoptScratchBoard(): void {
   // The bytes just read are the baseline the first write is checked against.
   // Nothing is ingested: the note is the board, and every request that touches
   // scratch will read it for itself.
-  recordBaseline(board, loaded.file, loaded.hash);
+  recordBaseline(board, loaded.file, loaded.hash, loaded.version);
   board.loadedAt = new Date().toISOString();
   logger.info(`Scratch board picked up where it was left: ${boardElementCount(board)} element(s) from ${loaded.file}`);
 }
