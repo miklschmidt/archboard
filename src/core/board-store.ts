@@ -67,7 +67,13 @@ export interface BoardState {
   // note does not exist yet — has no baseline at all, and that is the same
   // situation as a changed file: there are bytes at the destination that this
   // process has not seen.
-  baseline?: { file: string; hash: string; at: string };
+  //
+  // The version goes with the hash because the two answer different halves of
+  // one question (TASK-091). The hash says the note is not the one archboard
+  // left; the version, compared against the one the note carries now, says
+  // which way it moved and therefore who moved it. Null for a note carrying no
+  // version archboard can read, which is every note written before this existed.
+  baseline?: { file: string; hash: string; at: string; version: number | null };
   loadedAt?: string;
   savedAt?: string;
 }
@@ -182,18 +188,22 @@ export function copyElements(elements: Iterable<ServerElement>): ServerElement[]
 // belongs to the path: `board save --as other` writes a file that a different
 // open board may be the one that read it. Where more than one board has a
 // claim, the newest wins — that is the last moment archboard actually looked.
-export function baselineForFile(file: string): { hash: string; at: string } | null {
-  let best: { hash: string; at: string } | null = null;
+export function baselineForFile(file: string): { hash: string; at: string; version: number | null } | null {
+  let best: { hash: string; at: string; version: number | null } | null = null;
   for (const board of boards.values()) {
     const baseline = board.baseline;
     if (!baseline || baseline.file !== file) continue;
-    if (!best || baseline.at > best.at) best = { hash: baseline.hash, at: baseline.at };
+    if (!best || baseline.at > best.at) {
+      best = { hash: baseline.hash, at: baseline.at, version: baseline.version };
+    }
   }
   return best;
 }
 
-export function recordBaseline(board: BoardState, file: string, hash: string): void {
-  board.baseline = { file, hash, at: new Date().toISOString() };
+export function recordBaseline(
+  board: BoardState, file: string, hash: string, version: number | null
+): void {
+  board.baseline = { file, hash, at: new Date().toISOString(), version };
 }
 
 // How many elements each open board has, which is the one thing about a board

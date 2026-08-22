@@ -41,6 +41,7 @@ bun run type-check
 bun run test        # type-check, CI coverage, module scope, then stdio wire,
                     # loopback bind, obsidian, changes, one write per intent,
                     # one writer at a time, saying what a write is doing,
+                    # which edit of a board a note is,
                     # geometry, text metrics, labels,
                     # library, boards + panes,
                     # branch vs redraw, proposal beside source, skill install,
@@ -671,6 +672,75 @@ frontmatter — aliases, cssclasses, comments, whatever Obsidian put there — i
 carried across a save verbatim, so export stays idempotent (two saves are
 byte-identical) and lossless (open then save is byte-identical).
 
+**And a fourth key says which edit of the board the note is** (TASK-091).
+`version` is a count archboard moves whenever it writes a note that differs from
+the one that was there, and it round-trips like the other three. It does the two
+things the hash below structurally cannot. It **orders**: two documents that
+disagree are just two documents, and nothing in a sha-256 says which is newer,
+so archboard could refuse a write and never say whether the note was ahead of
+the canvas or behind it. And it is a **precondition**: a write goes against the
+version its writer was last told, and is refused if the board has moved past it,
+naming both — instead of two archboard clients that both read before either
+wrote. Every write answers with the version it produced, in
+`fingerprint.version`; `board info` and a claim's answer say it too.
+
+**Nobody has to remember to state it, which is the whole of whether this works.**
+An agent is a fresh process per command, so a number it must thread from one
+answer into the next request is a number it drops, and a precondition a caller
+may leave out protects nobody. So the canvas fills it in from what it last told
+that writer, the way TASK-080 keeps a claim against the board so an agent
+carries nothing. Four writers, four answers:
+
+| Writer | What is checked | Where the record lives |
+|---|---|---|
+| A person at a pane | nothing, ever | — |
+| An agent holding a claim | every write under it | the claim (`claimSeen`) |
+| An MCP client | every write in the session | the client process |
+| An unclaimed CLI agent | only what it states | nowhere; see below |
+
+**A person is never version-refused**, whatever the request carries. Their
+gesture took the board at its leading edge and their report is a delta on a note
+read a moment ago, so there is nothing stale to protect them from, and a refusal
+would be a wall display that stopped responding to the person standing at it.
+`doing` draws the same line for the same reason.
+
+**And an unclaimed CLI agent is the writer this canvas cannot remember.** Its id
+is minted for one request, so nothing here can tell its second command from
+another agent's first. Every stand-in for that identity — the board, the kind of
+writer, the machine — is one that always matches, and a check that cannot fail
+is worse than no check. So `--expect-version` stays as the explicit statement,
+and `claim` is how an agent buys the automatic one. That is not a consolation:
+claiming is already what an agent does before substantial work (ADR 0016), and
+the writers the canvas can remember turn out to be exactly the writers the lock
+can identify.
+
+**A refusal is told once.** The refusal names the version the board is really
+at, which is itself a telling, so the writer's next write goes against that
+number rather than being wedged for ever on one stale read. Same shape as
+`CLAIM_REVOKED`.
+
+**A write after somebody else's therefore costs one refusal and a re-read.** An
+agent writes, a person drags a box, the agent's next write is refused with
+`BOARD_VERSION_CONFLICT` and told to read the board back. That is the read-back
+loop being insisted on rather than suggested, and it is the price of the check:
+nothing is lost, and an agent that retries without reading is doing something it
+was told not to.
+
+The pair is diagnostic, and this is what it is for. Comparing what archboard
+last wrote against what the note carries now: **unchanged with different bytes**
+is a writer that does not keep the count, which is the Obsidian case named
+rather than inferred; **moved backwards** is a revert or a `git pull`, which no
+equality check can tell from an ordinary edit; **ahead** is another archboard,
+and by how many writes. One comparison answers all three, in `foreignWriteTo`,
+so the refusal and the board bar's mark say the same thing.
+
+Two rules keep it honest, and both are load-bearing rather than tidy. A write
+that produces the note that is already there does **not** bump, so two saves of
+an unchanged board stay byte-identical and "the count stood still and the bytes
+moved" keeps meaning somebody else. And a `version` key holding something that
+is not a count is left alone, key and value: that is a person's own property in
+their own frontmatter, and the board is simply unversioned.
+
 **A write can be refused.** archboard records the sha-256 of the bytes it last
 wrote at a note's path and verifies that hash against the destination before
 writing again, so a note that changed underneath — Obsidian, a sync client,
@@ -750,6 +820,14 @@ refusal makes, in one function so the mark cannot claim one thing and the write
 do another. Clicking it offers the reload and nothing else, because nothing has
 been refused, so there is no held copy to overwrite the note with and none to
 save elsewhere.
+
+**And it says which side is newer, which is the question it exists to answer**
+(TASK-091). It could tell you the note was not this board and nothing more. Now
+it reads `note is 2 writes ahead` for another archboard, `note was rolled back`
+for a revert arriving from the vault, and `note changed on disk` for what is
+left, an editor that keeps no count. Those three want different things done
+about them and used to be one sentence. It came off the one comparison, which
+is why improving the refusal improved this without a second mechanism.
 
 Three marks, three different facts, and the order they happen in. Somebody else
 wrote the note. Then archboard tried to write, was refused, and the board is

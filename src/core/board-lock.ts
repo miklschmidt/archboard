@@ -357,7 +357,10 @@ export async function claimBoard(request: {
   const entry: ClaimEntry = {
     holder: hold.holder,
     expires: Date.now() + forMs,
-    timer: existing?.timer ?? null
+    timer: existing?.timer ?? null,
+    // Claiming again extends the claim rather than starting one, so what the
+    // holder has been told about the board comes with it (TASK-091).
+    ...(existing && 'seen' in existing ? { seen: existing.seen } : {})
   };
   claims().set(board, entry);
   if (!entry.timer) entry.timer = startRenewing(board);
@@ -428,6 +431,41 @@ interface ClaimEntry {
   /** ms since the epoch, because everything that compares it is a clock read. */
   expires: number;
   timer: ReturnType<typeof setInterval> | null;
+  /**
+   * Which version of this board the claim's holder was last told (TASK-091).
+   *
+   * `undefined` until something has told it. A number, or null for a note that
+   * carries no version archboard can read.
+   */
+  seen?: number | null;
+}
+
+/**
+ * What version of this board the writer holding it was last told, so the canvas
+ * can check a write against what its writer actually saw rather than asking the
+ * writer to carry a number (TASK-091).
+ *
+ * IT LIVES WITH THE CLAIM BECAUSE THE CLAIM IS THE IDENTITY. An agent is a
+ * fresh process per command and has nothing to keep between two of them, which
+ * is the same problem TASK-080 solved by keeping the claim here against the
+ * board every call already names. The record is the same shape of fact and it
+ * has the same lifetime: while a claim is live there is somebody whose reading
+ * of the board this describes, and when it lapses there is not.
+ *
+ * That is also the whole of what the canvas can remember. An agent writing
+ * without a claim mints an id for the one request, so this canvas cannot tell
+ * its second command from a different agent's first, and any stand-in for that
+ * identity — the board, the kind of writer, the machine — is one that always
+ * matches and so never refuses, which is worse than not checking at all.
+ */
+export function claimSeen(board: string): number | null | undefined {
+  return liveClaim(normalizeBoardKey(board))?.seen;
+}
+
+/** Record what the claim's holder has just been told. */
+export function claimSaw(board: string, version: number | null): void {
+  const entry = liveClaim(normalizeBoardKey(board));
+  if (entry) entry.seen = version;
 }
 
 function claimOf(board: string, entry: ClaimEntry): Claim {
@@ -658,6 +696,28 @@ async function attempt(
   // enough for waiting it out to mean standing at a dead wall.
   const revoking = Boolean(live && revoke && who.kind === 'human' && live.claimed && live.id !== who.id);
 
+  // WHETHER THE CLAIM ENDS IS A QUESTION ABOUT THE CLAIM, NOT ABOUT THE LEASE
+  // UNDER IT. The line above answers a different one — may this person take a
+  // board somebody is holding — and that is rightly about the lock record,
+  // because it is the record that says the board is taken. Ending the claim was
+  // riding on the same flag, and a claim outlives its lease by design: it runs
+  // for ten minutes over a three-second lease the canvas re-takes every second
+  // (ADR 0016). Let that renewal be late — a blocked event loop, a busy
+  // machine — and the tap lands on a lock that is momentarily nobody's. The
+  // person got the board either way, and the agent was never told it had lost
+  // it: its next write went through as if nothing had happened.
+  //
+  // So the claim this canvas holds is what is asked, and a lapsed lease under a
+  // live claim revokes exactly as a live one does. A claim held on another
+  // canvas is not here to end; that one finds out when its own renewal is
+  // refused, which is the same discovery a renewal interval later.
+  const endsClaimHere = (taker: LockRecord): void => {
+    if (!revoke || who.kind !== 'human') return;
+    const claimHere = claims().get(board);
+    if (!claimHere || claimHere.holder.id === who.id) return;
+    noteClaimRevoked(board, claimHere.holder, holderOf(taker));
+  };
+
   if (live && live.id === who.id) {
     // Reentrant, which is also what renewal is. `since` is kept: a refusal
     // saying how long a board has been held must mean since it was taken, not
@@ -670,6 +730,10 @@ async function attempt(
       ...(who.claimed ? { claimed: true } : {})
     };
     writeRecord(file, renewed);
+    // A person who already holds the lock and taps to take a claimed board back
+    // arrives here rather than below: their previous hold outlived the claim's
+    // lapsed lease. The claim still ends.
+    endsClaimHere(renewed);
     announceHeld(board, holderOf(renewed));
     return { ok: true, holder: holderOf(renewed), created: false };
   }
@@ -701,6 +765,10 @@ async function attempt(
       } finally {
         fs.closeSync(handle);
       }
+      // Nothing was holding the board, and a claim on this canvas may still
+      // have believed it was: a lease that lapsed and was tidied away leaves no
+      // record to read, and the claim above it runs for minutes longer.
+      endsClaimHere(record);
       announceHeld(board, holderOf(record));
       return { ok: true, holder: holderOf(record), created: true };
     } catch (error) {
@@ -730,7 +798,7 @@ async function attempt(
   // A claim held here stops being renewed at this moment; one held on another
   // canvas finds out when its own renewal is refused, which is the same
   // discovery arriving one renewal interval later.
-  if (revoking && live) noteClaimRevoked(board, holderOf(live), holderOf(record));
+  endsClaimHere(record);
   announceHeld(board, holderOf(record));
   return { ok: true, holder: holderOf(record), created: true };
 }

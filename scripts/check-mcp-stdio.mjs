@@ -373,6 +373,22 @@ async function checkGroupsLiveOnTheBoard() {
       clientId: 'pane'
     });
 
+    // Which the client hears about, because it is writing against a board that
+    // has moved since anybody told it anything (TASK-091). One refusal, and it
+    // names the version the board is really at; the write after it is ordinary.
+    // This is the two decisions composing rather than one getting in the other's
+    // way: the client is made to notice the human's drag, and then the ungroup
+    // still catches the box it knew nothing about, because the group is on the
+    // board and not in the client.
+    let refused = null;
+    try {
+      await first.call('ungroup_elements', { board: 'scratch', doing: 'ungrouping them again', groupId });
+    } catch (error) {
+      refused = error;
+    }
+    assert(refused !== null && /you were working from version/.test(refused.message),
+      `a write against a board a human has moved should be refused once: ${refused?.message}`);
+
     await first.call('ungroup_elements', { board: 'scratch', doing: 'ungrouping them again', groupId });
     for (const id of ['a', 'b', 'c']) {
       assert(!(await groupsOf(id)).includes(groupId),
