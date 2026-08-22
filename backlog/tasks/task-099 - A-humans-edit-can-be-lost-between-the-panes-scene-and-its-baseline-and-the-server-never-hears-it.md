@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-22 22:26'
-updated_date: '2026-08-22 22:26'
+updated_date: '2026-08-22 22:34'
 labels: []
 dependencies:
   - TASK-098
@@ -33,16 +33,23 @@ first diverged on cycle 33 (agent recolour, human resize):
 
 The pane holds the human's resize and the server does not, and it never catches up — `agree()` re-reads both sides for six seconds before giving up. The edit is not in flight, it is gone. On the wall that is a person's drag disappearing into the vault with nothing said.
 
-A second shape of it, same run family, is worse because the element ends up incoherent rather than merely behind:
+Three kinds of human edit have been seen lost, all permanent, all pane-ahead:
 
 ```
-cycle 14 (agent relabel, human retype):
+cycle 33 (agent recolour, human resize)
+  auth (rectangle) .width: server 232 / pane 238
+
+cycle 14 (agent relabel, human retype)
   BDgCjPv2 .text:         server 'store v14'  / pane 'typed at 14'
   BDgCjPv2 .rawText:      server 'typed at 2' / pane 'typed at 14'
   BDgCjPv2 .originalText: server 'store v14'  / pane 'typed at 14'
+
+cycle 31 (agent create-arrow, human delete)
+  svc30 (rectangle): the server holds it, the pane does not
+  queue (rectangle) .boundElements: the server carries one arrow more than the pane
 ```
 
-The server's copy carries `text` from the agent's relabel and `rawText` from a human retype twelve cycles earlier. Three values, none of them the current document.
+The retype is the worst of the three, because the element ends up incoherent rather than merely behind: the server's copy carries `text` from the agent's relabel and `rawText` from a human retype twelve cycles earlier. Three values, none of them the current document.
 
 ## Candidate mechanism, read rather than proved
 
@@ -54,16 +61,29 @@ Unverified: nobody has instrumented the window and caught it. It matches every o
 
 ## Rates
 
-Standalone, one at a time, nothing else on the machine:
+Every run standalone, one at a time, nothing else on the machine.
+
+**Interleaved, which is the comparison worth trusting** — the two trees alternating rather than each in a block, because two blocks are minutes apart on a shared machine and this check is sensitive enough to notice:
 
 | Tree | Failures |
 |---|---|
-| `ca8f399` (before TASK-091) | 1 of 10 |
-| `6db912d` (TASK-098 + TASK-091) | 0 of 10 |
-| TASK-091 alone, without TASK-098 | 0 of 10 |
-| both plus TASK-091's follow-ups | 1 of 10 |
+| `ca8f399`, before TASK-091 | 1 of 10 |
+| `ca8f399` + TASK-091 + its follow-ups | 1 of 10 |
 
-The last two rows are the interleaved comparison — alternating trees rather than running each in a block, because a block of ten and the next block are minutes apart on a shared machine and this check is sensitive enough to notice. Both arms failed on the same round, which says the machine and not the tree.
+Both arms failed on the same round, which says the machine rather than the tree.
+
+**In blocks, which is how the earlier numbers were taken and why they disagree:**
+
+| Tree | Failures |
+|---|---|
+| `ca8f399` | 1 of 10 |
+| `6db912d` (TASK-098 + TASK-091) | 0 of 10 |
+| TASK-091 without TASK-098 | 0 of 10 |
+| `ca8f399` + TASK-091 + follow-ups | 2 of 4 |
+
+That last row is the highest rate measured and the measurement was abandoned at four runs — not because it looked bad, but because a block of runs against one tree cannot be compared with a block against another taken twenty minutes earlier. The interleaved table replaced it and put the same tree at 1 of 10.
+
+A chain run rather than a standalone one will also print an ADR 0006 conflict below the divergence, with `versionMove: unchanged`. That is check-live-session's own held-board section rewriting the note on purpose to test the hold. It is not a second symptom.
 
 ## Its relationship to TASK-097
 
