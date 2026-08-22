@@ -756,11 +756,44 @@ try {
   // headlessly in check-boards.
 
   const noteFile = (await api('GET', `/api/boards/info?board=${BOARD}`)).body?.file;
+
+  // Before their edit: what a board that is saving says about itself. This slot
+  // held "unsaved changes" until TASK-062, and by then it was false in every
+  // session — the comparison behind it read a save time that only refreshed on
+  // a board switch, while every gesture was going straight to the note.
+  const sayingNow = await evalInPage(`(() => ({
+    metas: [...document.querySelectorAll('.bar-identity .meta')].map(n => n.textContent),
+    elsewhere: document.querySelector('.chip-elsewhere')?.textContent ?? null
+  }))()`);
+  check('a board that is saving says it is in the vault, and claims nothing is unsaved',
+    sayingNow.elsewhere === null &&
+    (sayingNow.metas ?? []).includes('in the vault') &&
+    !(sayingNow.metas ?? []).some(text => /unsaved/.test(text ?? '')),
+    JSON.stringify(sayingNow));
+
   // Their edit: an element this canvas has never seen, so their version is
   // recognisable, and a different byte count, so the hash moves.
   fs.writeFileSync(noteFile, fs.readFileSync(noteFile, 'utf-8').replace(
     '"id": "auth"', '"id": "theirs", "width": 40}, {"id": "auth"'
   ));
+
+  // --- and the person is told before their next gesture (TASK-062) ---------
+  //
+  // The gap the refusal cannot cover, because the refusal needs somebody to
+  // write first. Nothing below writes to the board and nothing runs a command:
+  // the sweep that watches the lock files of the boards on screen looks at
+  // their notes on the same beat, and the bar says what it found.
+  await sleep(2500);
+  const noticed = await evalInPage(`(() => ({
+    dialog: document.querySelector('.modal-title')?.textContent ?? null,
+    elsewhere: document.querySelector('.chip-elsewhere')?.textContent ?? null
+  }))()`);
+  check('  a note written underneath is on screen before anybody writes to the board',
+    /note changed on disk/.test(noticed.elsewhere ?? ''), noticed.elsewhere);
+  check('  with no dialog, because nothing has been refused and nothing is held',
+    noticed.dialog === null &&
+    (await api('GET', `/api/elements?board=${BOARD}`)).body?.held === undefined,
+    JSON.stringify(noticed.dialog));
 
   await humanEdit({ kind: 'move', id: 'queue', dx: 9, dy: 9 });
   // The report debounce, the refusal, and the pane saying what is on its

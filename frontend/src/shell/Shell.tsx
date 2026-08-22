@@ -183,6 +183,13 @@ export function Shell(): JSX.Element {
         // update was discarded as identical.
         existing.hold?.since === status.hold?.since &&
         existing.hold?.writes === status.hold?.writes &&
+        // And the same for a note somebody else wrote, for the same reason: it
+        // is the only thing that changed about the pane, so leaving it out of
+        // this comparison throws the whole update away and the mark never
+        // appears (TASK-062). This comparison is the thing that has now eaten
+        // two marks; anything new in the bar belongs in it.
+        existing.writtenElsewhere?.writtenAt === status.writtenElsewhere?.writtenAt &&
+        existing.writtenElsewhere?.reason === status.writtenElsewhere?.reason &&
         existing.board?.variant === status.board?.variant &&
         existing.board?.level === status.board?.level
       ) {
