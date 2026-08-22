@@ -3,11 +3,11 @@ id: TASK-062
 title: >-
   The dirty indicator compares timestamps, so it cannot see a note that is ahead
   of the canvas
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-20 19:04'
-updated_date: '2026-08-22 15:25'
+updated_date: '2026-08-22 16:31'
 labels: []
 dependencies:
   - TASK-078
@@ -38,9 +38,9 @@ Note that a decision on the stateless server question may remove the concept of 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A note changed on disk while a pane holds an older copy is visible without running a command
-- [ ] #2 The indicator says what is actually true under ADR 0015: not "there are unsaved changes", which cannot happen once every write goes to the note, but "the note this pane is showing has been written by somebody else"
-- [ ] #3 The state clears by itself once the pane is showing the note as it now stands
+- [x] #1 A note changed on disk while a pane holds an older copy is visible without running a command
+- [x] #2 The indicator says what is actually true under ADR 0015: not "there are unsaved changes", which cannot happen once every write goes to the note, but "the note this pane is showing has been written by somebody else"
+- [x] #3 The state clears by itself once the pane is showing the note as it now stands
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -56,6 +56,42 @@ Note that a decision on the stateless server question may remove the concept of 
 8. Docs: CONTEXT.md gains the term, ADR 0006 gains the mark before the refusal, CLAUDE.md gains the paragraph.
 9. scripts/check-boards.mjs: assertions beside TASK-079's block - a note written underneath shows up without a write, a pane arriving is told, reload clears it, and a held board says hold rather than this. Then revert each mechanism and count.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+IMPLEMENTED, and the task's own title stopped being the problem.
+
+WHAT WAS ACTUALLY TRUE AFTER STAGE 8, established by reading rather than assuming. The dirty indicator did not merely say too little. It lied. `boardInfo` is refreshed on a board switch and after an explicit save and at no other moment (Shell.tsx), while under ADR 0015 every gesture is written to the note, so `lastChangeAt > savedAt` was permanently true after the first gesture of a session. The bar read `unsaved changes` for the rest of that session about a board that was entirely in the vault. So it is deleted, not repaired, and a board that is saving now says `in the vault`.
+
+WHAT REPLACED IT. `note changed on disk · HH:MM`, while somebody outside archboard has written the note this pane's board came from. Clicking it opens a dialog with two answers, not three: taking the note, and carrying on. Nothing has been refused, so there is no held copy to overwrite the note with and none to save elsewhere, and those two outcomes become reachable through the hold the moment the person's next gesture is refused. Cancel is what focus lands on, because the pane's scene is at that moment the only copy left of the board archboard last wrote, and a chip that reloaded on tap would end it with one stray touch on a 75-inch panel.
+
+ONE COMPARISON, NOT TWO. `foreignWriteTo(file, destination)` is ADR 0006's check lifted out of `writeBoardContent`, and both callers use it: the write, which already holds the bytes, and the sweep, which reads them. The mark's whole claim is that it shows the state in which the next write would be refused, and a second implementation of that question is one that drifts. check-boards asserts the two agree rather than trusting the refactor.
+
+IT IS NOT A SECOND POLL. It rides on `watchBoardLocks`'s sweep through a new `onBoardSweep` passenger, so it inherits the list of boards on screen and the gating on a browser being connected (TASK-080). A note is read and hashed only when its size or its modification time has moved, or when archboard's own baseline for it has - the third because taking the note changes what the comparison is against without touching the file. A stat difference means the note is worth looking at and never that it changed; only the hash decides, because a false positive puts a mark on somebody's board saying their work is behind when it is not.
+
+A VERSION COUNTER WAS CONSIDERED AND IS WRONG, recorded in ADR 0006. Obsidian and archboard both carry unknown frontmatter across a save verbatim, so a foreign edit leaves the number where it was and archboard overwrites. `git pull` can also move a note to a lower number, or to different content at the same one. The hash needs nobody's cooperation.
+
+THE BUG THE BROWSER CHECK FOUND, which no socket could have. The message arrived, the pane's ref was set, and the bar never changed: the shell's status dedup skips an update when nothing it compares has moved, and this was the only thing that moves about a pane when it happens. The hold's own comment already recorded that this had eaten one mark; it has now eaten two, and the comparison says so.
+
+REVERT PROOFS. Each mechanism undone on its own, then the checks counted. Every run reached its report line.
+
+  check-boards.mjs
+    the mark never goes up                                   7
+    the mark's reason detached from the refusal's            4
+    the sweep passenger unregistered                         2
+    an arriving pane not told                                2
+    a hold no longer outranks it                             1
+    the stat and baseline gate defeated                      1
+    the announcement dedup removed                           1
+
+  check-live-session.mjs (a real headless browser)
+    the shell's status dedup fix removed                     1
+    the chip not rendered                                    1
+    the old 'unsaved changes' text put back                  1
+
+VALIDATION. `bun run test` green, 23 steps. Six full-suite runs on this branch; two of them failed check-live-session at cycle 12 with an agent-move/human-move divergence on one element. Chased rather than waved through: the announcement log shows the sweep sends no message at all during the 42 cycles, standalone runs pass 7 of 7 on this branch and 4 of 4 on the baseline commit, and the last three full-suite runs are clean. No mechanism connects a once-a-second stat to a 400 ms convergence window. Reported as an existing flake in that check under load rather than as a cost of this change.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
@@ -115,3 +151,17 @@ created: 2026-08-20 20:18
 Correction to the comment above: the stage that makes the note the truth is stage 8 of docs/design/the-plan.md, not stage 7, and this task is in stage 9. The sequencing it describes is unchanged: after TASK-078 and after TASK-067, both now recorded as dependencies.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The board bar says a note somebody else wrote, before the write that would be refused.
+
+Half of what this task asked for stopped existing at stage 8, and the half that remained was being answered with something false: the dirty indicator compared a change time against a save time that only refreshed on a board switch, so it read 'unsaved changes' from the first gesture of a session onwards about a board every gesture had already written to the vault. That is gone. A board that is saving says 'in the vault'.
+
+What is on screen now is the state no lock covers: Obsidian, a sync client or a git pull has written the note, and the pane is showing the board archboard last wrote. The chip says 'note changed on disk' with the time, and clicking it offers taking the note or carrying on, which are the only two answers before anything has been refused. It comes off foreignWriteTo, ADR 0006's own comparison factored out of writeBoardContent, so the mark is the state the next write would be refused in rather than a second guess at it. A hold outranks it, being the same story one write later; a lock is a different fact and is still said by the pane going read-only.
+
+Noticing rides on the lock watcher's sweep rather than a timer of its own, so it inherits TASK-080's gate on a browser being connected, and a note is read and hashed only when its size, its time or archboard's baseline for it has moved.
+
+Verified in a real headless browser (check-live-session): the bar reads 'in the vault' and claims nothing unsaved, then 'note changed on disk' after a note is rewritten underneath with nothing written and no command run, with no dialog and nothing held. The rules, the gate, the hold precedence and the clearing are asserted in process and on the wire in check-boards. Ten separate reverts counted, 7/4/2/2/1/1/1 failing checks in check-boards and 1/1/1 in check-live-session, every run reaching its report line. bun run test green.
+<!-- SECTION:FINAL_SUMMARY:END -->
