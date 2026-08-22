@@ -3,10 +3,10 @@ id: TASK-065
 title: >-
   The server should be the source of truth: one representation, and a write
   returns the resulting document
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-08-20 19:38'
-updated_date: '2026-08-22 20:00'
+updated_date: '2026-08-22 20:44'
 labels: []
 dependencies: []
 references:
@@ -53,7 +53,7 @@ THE HARD CONSTRAINT IS IDS, NOT PERFORMANCE. Applying a document in which an ope
 - [x] #2 What the server stores is a fixed point, shown by rendering a converted board in a real browser and asserting the browser reports nothing back
 - [x] #3 A write returns the resulting board and the pane renders that, rather than its own patched copy
 - [x] #4 The browser still sends a delta, so a stale tab still cannot claim a deletion for an element it never received (TASK-016)
-- [ ] #5 Every element id is minted once by the server, in a form the note writer never renames, so an echo cannot rename an element out from under a cursor
+- [x] #5 Every element id is minted once by the server, in a form the note writer never renames, so an echo cannot rename an element out from under a cursor
 - [x] #6 A check drives a long session of mixed agent and human writes and asserts the pane document and the server document stay byte-identical
 - [x] #7 An agent write returns the elements it touched plus a board fingerprint, not the whole board, because the whole board is about 60k tokens at 300 elements
 <!-- AC:END -->
@@ -117,4 +117,24 @@ per update and one DELETE per delete, and only creates are batched. The batched
 route is `POST /api/elements/changes`. `src/cli/run.ts:35` still describes
 `apply` as applying a patch "in one call" and needs the same correction.
 ---
+
+author: @claude
+created: 2026-08-22 20:43
+---
+AC 5 checked on TASK-098's evidence, with one correction to its wording.
+
+'Minted once by the server' is not literally what happens, and cannot be: Excalidraw names what a person draws, in the browser, and no server can be the one to do it. There are two minters, and what makes that safe is that they share a derivation. The pane calls the same derivedId in src/core/ids.ts that the server would have called on the same id, before the element is ever reported, so the two reach one name without a round trip.
+
+The property the criterion is actually about holds and is now measured: an echo cannot rename an element out from under a cursor. Reverting either half of that makes scripts/check-typed-text.mjs fail, 9 checks or 2.
+---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The server is the source of truth, and its seven criteria are met by the stages under docs/design/the-plan.md rather than by anything written against this task.
+
+There is one representation and one converter, running on the way in (TASK-072, TASK-073). What the server stores is a fixed point: a board rendered in a real browser comes back with 0 of 12 elements changed, asserted every push by scripts/check-fixed-point.mjs. A write returns the resulting document and the pane renders that (TASK-074), while still sending a delta, so a stale tab cannot claim a deletion for an element it never received. An agent's write gets the elements it touched and a fingerprint, not 60k tokens of board. scripts/check-live-session.mjs drives 42 cycles of interleaved agent and human writes and asserts the two documents agree after every one.
+
+The last criterion is ids, and it took two tasks. TASK-069 made every id archboard mints eight characters of Obsidian's block alphabet, so the note writer has nothing to rename. TASK-098 closed the half that left: Excalidraw names what a person draws with a 21-character nanoid, and renaming that was still losing typed characters, six from a hand-drawn text and all ten from a hand-added label, measured in a real browser. The pane now withholds the element under a text editor from its report and settles the id itself once the editor closes, through the same derivation the server uses. scripts/check-typed-text.mjs draws with Excalidraw's own tools so Excalidraw mints the id, and is the only check in which a rename can happen at all.
+<!-- SECTION:FINAL_SUMMARY:END -->
