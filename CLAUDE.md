@@ -40,7 +40,8 @@ bun run build       # frontend only -> dist/frontend/
 bun run type-check
 bun run test        # type-check, CI coverage, module scope, then stdio wire,
                     # loopback bind, obsidian, changes, one write per intent,
-                    # one writer at a time, geometry, text metrics, labels,
+                    # one writer at a time, saying what a write is doing,
+                    # geometry, text metrics, labels,
                     # library, boards + panes,
                     # branch vs redraw, proposal beside source, skill install,
                     # repo bindings, CLI/MCP surface parity, staleness, hot
@@ -933,6 +934,60 @@ so a sketch outlives the process that drew it. What scratch has not got is a
 name anybody chose, and `board save --board scratch --as <name>` is what gives
 it one: still the one save that takes the pane with it, because the placeholder
 and its new name hold the same drawing.
+
+## An agent says what it is doing, and the wall shows it
+
+**Every agent write carries one line saying what it is doing, and a write
+without one is refused** (TASK-095). `--doing "adding the payment queue"` on the
+command line, a required `doing` argument on every MCP tool that changes a
+board, `?doing=` on the API. The line goes up on the canvas as the write lands.
+
+This is the other half of the principle beside the loop. Seeing *what* changed
+is built: the server is the truth, a write returns the document, the board
+reports what it became. What the person at the wall had no way to know is what
+the agent thinks it is doing while it does it, and boxes moving does not tell
+them. Required rather than optional, because being made to write the sentence is
+the mechanism; a field an agent may leave out is one it leaves out.
+
+**The claim's reason is the campaign and this is the step.** The pane's banner
+says `An agent has this board: redrawing the payment path`, and the list beneath
+it says `adding the payment queue`, `rerouting orders through it`. One story at
+two scales, which is why the field is not called `why`: the claim already owns
+why an agent has the board, and two synonyms would read as two accounts of one
+thing.
+
+**It is never written to the note.** It is what somebody said while changing
+something, not board content, so it lives on the canvas and dies with it — the
+carve-out ADR 0015 draws for panes and selections. It rides as a query parameter
+partly because DELETE has no body and mostly because a field inside an element's
+JSON is one careless spread away from being persisted. `check-doing` saves a
+board and greps the file.
+
+**Not the change feed.** The feed reports what the board *became*, by diffing.
+This is what an agent *said*, which no diff can recover: a move that changes
+nothing nameable still has an intent, and a line that turns out to be wrong is
+still what was said. Neither is routed through the other.
+
+**A person says nothing.** A change report carries the pane's client id, which
+is what makes it a person's write, and nothing asks them to narrate their own
+drawing. The shell's Save and Clear now carry that id too — an unnamed writer is
+the server's definition of an agent, so without it a button press was being
+asked for a sentence.
+
+The requirement lives in the write-boundary middleware, beside the lock and
+deny-by-default like it: one place knows a request is a board write, so a route
+added later cannot be the one that says nothing. The canvas keeps the last five
+lines per board in `src/core/board-doing.ts`, broadcasts `board_doing`
+board-scoped, and hands the list to a pane that has just been given the board,
+so a screen joining mid-campaign is not blank.
+
+**Where injection is armed, the lines reach the model on the human's event and
+never on their own** (ADR 0005). A description is by definition an agent's, and
+nothing joins an HTTP write to a thread on the app-server socket, so injecting
+them directly would narrate an agent to itself in every single-agent session.
+Carried as context on a person's change instead — "the human changed the board
+while an agent was at X" — self-narration is structurally impossible rather than
+filtered out.
 
 ## Bindings name a repository, not a directory
 

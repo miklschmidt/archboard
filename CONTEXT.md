@@ -134,6 +134,12 @@ The agent re-reading a board after a human has changed it, so that the change
 can be interpreted as a statement about the design.
 _Avoid_: sync, refresh, reload, poll, re-scan
 
+**Doing**:
+The one line an agent says about a board as it writes to it, shown on the
+canvas while the write lands. A claim's reason is the campaign an agent has the
+board for; a doing is one step of it, and a write that says none is refused.
+_Avoid_: description, why, message, comment, log, reason (that is the claim's)
+
 **Proposal**:
 A set of boards, one per affected subject, describing a refactor that has not
 been carried out.

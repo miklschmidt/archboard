@@ -170,6 +170,38 @@ browser attached has nobody to be wrong and reads nothing. That is what settles
 the objection rather than the claim alone: the cost is not a timer per canvas at
 all times, it is a few file reads a second for as long as a screen is up.
 
+## The claim says why an agent has the board. Each write says what it is doing
+
+The banner a claim puts up answers "why has the wall stopped", and only a claim
+puts one up. It says nothing about the twenty writes underneath it, and most
+writes are not under a claim at all: an agent moving one box takes the board for
+twenty milliseconds, says nothing, and leaves a person watching a box move for
+no stated reason. That is the connection between a creator and what they are
+creating broken for the one of the two creators who is standing there.
+
+So an agent says what it is doing on every write, in one line, and the canvas
+shows it as the write lands (TASK-095). Required, because being made to write
+the sentence is the mechanism: a field an agent may leave out is a field it
+leaves out. Refused rather than defaulted, because a canvas that invented
+"an agent wrote something" would be worse than silence.
+
+**The two are one story at two scales.** The claim's reason is the campaign,
+each line is a step, and neither stands in for the other. Reading the reason
+back on every write would be an agent repeating itself; leaving a claim without
+steps would say what is being attempted and never how far it has got.
+
+**It is not board content.** It is what somebody said while changing something,
+not a fact about the board, so it never reaches the note and dies with the
+canvas — the carve-out ADR 0015 already draws for panes, sockets and what a
+person has selected. The board reports what it *became* separately, by diffing.
+That is a different question with a different answer: a move that changes
+nothing nameable still had an intent, and a line that turns out to be wrong is
+still what was said.
+
+**A person says nothing.** Their change report is their own act, and the write
+boundary can tell one from the other because a pane names itself. Being made to
+narrate your own drawing on your own wall would be absurd.
+
 ## Consequences
 
 **The window that coalesces a person's changes now has a second job.** It also

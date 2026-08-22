@@ -366,6 +366,21 @@ if (!section) {
       fail(`The cheatsheet's MCP table documents \`${name}\`, which is not a tool.`);
     }
   }
+
+  // And the required params it lists, for the writes. The table's last column
+  // is what an MCP client reads instead of `archboard help`, so a required
+  // argument missing from it is an argument that reader does not know about —
+  // and the name check above cannot see a column (TASK-093, TASK-095).
+  for (const name of DOING_TOOLS) {
+    const row = section.split('\n').find(line => line.startsWith(`| \`${name}\` |`));
+    if (!row) {
+      fail(`The cheatsheet's MCP table has no row for \`${name}\`.`);
+    } else if (!/`doing`/.test(row.split('|').at(-2) ?? '')) {
+      fail(`The cheatsheet lists \`${name}\`'s required params without \`doing\`, which the tool ` +
+        'requires. That column is where a shell-less client finds out, and it is the one place ' +
+        'the tool-name check cannot look.');
+    }
+  }
 }
 
 // --- report ------------------------------------------------------------------

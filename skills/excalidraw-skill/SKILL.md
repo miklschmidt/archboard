@@ -11,18 +11,24 @@ The two sit side by side in two panes on one screen, a human rearranges either
 of them by hand, and `compare` diffs them. Drawing is the means. The comparison
 is the point.
 
-Three things decide whether the work comes out usable, and each of them is
+Four things decide whether the work comes out usable, and each of them is
 expensive to fix afterwards. Read them before the first command.
 
 1. **Name the board on every call.** `--board <key>` is required on everything
    that touches board content. There is no default and no active board, because
    two panes hold two boards and "the board" would be a guess (ADR 0009). A
    call that names none is refused, and the refusal lists what is open.
-2. **A variant starts as a copy of its source.** Branch the source board, then
+2. **Say what you are doing on every write.** `--doing "adding the payment
+   queue"` is required on everything that *changes* board content, and the
+   write is refused without it. Somebody is standing at the board watching
+   boxes move, and this is the only thing that tells them why. One short line,
+   present tense, in their words. It goes up on the canvas as the write lands
+   and is never written into the board.
+3. **A variant starts as a copy of its source.** Branch the source board, then
    change only what the proposal changes. A proposal redrawn from a blank
    canvas cannot be diffed against anything, for reasons under
    [Variants and comparison](#workflow-variants-and-comparison).
-3. **Look in the library before drawing a rectangle.** 111 curated stencils sit
+4. **Look in the library before drawing a rectangle.** 111 curated stencils sit
    on the canvas server. `library list --text` costs one call and is the
    difference between a diagram of grey boxes and one somebody can read across
    a room.
@@ -43,18 +49,19 @@ archboard board list                              # what the vault has, what is 
 # 1. the architecture that exists
 archboard board new payments --level service      # one pane on screen, so it goes there
 archboard library list --text                     # before drawing anything
-archboard add --board payments elements.json
-archboard promote --board payments --ids gw --kind gateway --name "API Gateway"
-archboard board save --board payments
+archboard add --board payments --doing "drawing the payment path from src/payments" elements.json
+archboard promote --board payments --doing "calling the front door a gateway" --ids gw --kind gateway --name "API Gateway"
+archboard board save --board payments --doing "writing the current path down"
 
 # 2. branch it: this is what makes the proposal comparable
-archboard board save --board payments --variant option-a   # writes payments@option-a; nothing moves
+archboard board save --board payments --variant option-a \
+  --doing "branching a proposal off the current path"   # writes payments@option-a; nothing moves
 archboard pane open --board payments@option-a              # the branch, in a NEW pane beside it
 
 # 3. change only what the proposal changes
-archboard add --board payments@option-a cache.json
-archboard promote --board payments@option-a --ids cache --kind datastore
-archboard board save --board payments@option-a
+archboard add --board payments@option-a --doing "adding the orders cache" cache.json
+archboard promote --board payments@option-a --doing "calling the cache a datastore" --ids cache --kind datastore
+archboard board save --board payments@option-a --doing "writing the proposal down"
 
 # 4. look at what you drew, then read the difference
 archboard screenshot --pane right --out /tmp/proposal.png
@@ -131,7 +138,7 @@ The canvas URL comes from `EXPRESS_SERVER_URL` (default `http://127.0.0.1:3000`)
 
 Results are JSON on stdout — except `describe` (plain text) and raw-content output when `--out` is omitted (`export` scene JSON, `screenshot --format svg`). Diagnostics on stderr. Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required, 5 board write refused.
 
-`--board <key>` is left out of the table for width and is still required on every row that touches board content.
+`--board <key>` is left out of the table for width and is still required on every row that touches board content. So is `--doing "..."`, on every row that changes it.
 
 | Task | Command |
 |------|---------|
@@ -156,6 +163,7 @@ Results are JSON on stdout — except `describe` (plain text) and raw-content ou
 | Branch a board into a variant | `board save --board <src> --variant <v>` — the copy the proposal is drawn on; it moves no pane, so put it up with `pane open --board <src>@<v>` |
 | Diff two variants | `compare <from> [to]` — semantic diff keyed on node identity; see Variants and comparison |
 | What changed since last turn | `changes [--since <cursor>] [--coalesce] [--text]` — the human's edits, named as architecture |
+| Say what a write is doing | `--doing "adding the payment queue"` — global, required on every write, shown on the canvas as it lands; see [One writer at a time](#workflow-one-writer-at-a-time) |
 | Take a board for a stretch of work | `claim --reason "..." [--for 10m]`, `release` — for a redraw or a restructure, never for one box; see [One writer at a time](#workflow-one-writer-at-a-time) |
 | Snapshots | `snapshot save\|list\|restore <name>` |
 | Share link | `share` (encrypted upload → excalidraw.com URL) |
@@ -450,7 +458,8 @@ The library is a palette of ready-made shapes — cloud icons, servers, database
 
 ```bash
 archboard library list --text                                         # what exists (no board: the palette is one per server)
-archboard library insert "Load balancer" --board payments --x 200 --y 120 --source system-design
+archboard library insert "Load balancer" --board payments --x 200 --y 120 --source system-design \
+  --doing "putting the load balancer in front of the services"
 ```
 
 The listing is built to be chosen from without rendering anything: name, **size**, element count, source library, id, and in quotes what the stencil says when that is not just its name. Size does real work here — one library's "Docker" is 73x95 and another's is 1224x509.
@@ -485,7 +494,7 @@ Boards need a vault: set `ARCHBOARD_VAULT` to its path. There is no default — 
 ```bash
 archboard board list                          # the vault, what is open, what is on screen
 archboard board new payments --level service  # empty board; its note appears when you draw
-archboard board save --board payments         # write it to <vault>/payments.excalidraw.md
+archboard board save --board payments --doing "writing it down"   # to <vault>/payments.excalidraw.md
 archboard board open payments@option-a        # show it in the pane on screen
 archboard board open payments@option-a --pane right   # once two panes are open
 archboard pane open --board payments@option-a # or make the second pane and show it there
@@ -530,8 +539,9 @@ architecture as it is, then change only what the proposal changes. Everything
 the proposal leaves alone must stay byte-for-byte what it was.
 
 ```bash
-archboard board save --board payments                      # the source, on disk
-archboard board save --board payments --variant option-a   # branch: writes payments@option-a
+archboard board save --board payments --doing "writing it down"   # the source, on disk
+archboard board save --board payments --variant option-a \
+  --doing "branching the proposal"                         # writes payments@option-a
 archboard pane open --board payments@option-a              # the proposal, in a new pane beside it
 ```
 
@@ -615,6 +625,45 @@ carries anyway. Release the moment the work is done, and do not hold a claim
 across a pause while you wait for somebody to answer a question: ask first,
 then claim.
 
+### Say what each write is doing
+
+`--doing "..."` is required on every write, and the write is refused without
+it. The line goes up on the canvas as the write lands, so the person at the
+board sees what you are up to while you do it rather than working it out from
+boxes moving.
+
+```bash
+archboard add --board payments --doing "adding the payment queue" queue.json
+archboard promote --board payments --doing "calling the new queue a queue" --ids q1 --kind queue
+archboard board save --board payments --doing "writing the new path down"
+```
+
+**The claim's reason is the campaign. This is the step.** One line each, and
+they read as one story on the wall:
+
+```
+An agent has this board: redrawing the payment path
+  · adding the payment queue
+  · rerouting orders through it
+  · removing the direct write
+```
+
+So do not repeat the reason on every write, and do not narrate the mechanics.
+"Adding the payment queue" is the sentence. "Creating rectangle at 300,200",
+"batch_create_elements", and "working" are not: the first two say what the API
+did, which they can see, and the third says the wall is broken.
+
+Present tense, under 140 characters, and refused if it is empty or longer. Say
+it in the words the person would use about their own architecture.
+
+Two things it is not. It is never written into the board, so it is not a
+comment or a label: it lives as long as the canvas is up and no longer. And it
+is what you *said*, not what changed. A move that changes nothing visible still
+has an intent, and the board reports what it became separately (`changes`).
+
+Only an agent says it. A person dragging a box says nothing, and nothing asks
+them to.
+
 ### Work where they can see it
 
 **Every change you make is visible as you make it.** Somebody is standing at the
@@ -665,7 +714,8 @@ Check the destination before writing: if any ancestor directory contains `.obsid
 
 ```bash
 archboard export --board payments --out "$VAULT/diagrams/system-map.excalidraw.md"   # .md → Obsidian format
-archboard import --board payments "$VAULT/diagrams/system-map.excalidraw.md" --replace  # reads plain and compressed Drawing blocks
+archboard import --board payments --doing "restoring the system map from the export" \
+  "$VAULT/diagrams/system-map.excalidraw.md" --replace   # reads plain and compressed Drawing blocks
 ```
 
 Round-trips are safe: text-element block references follow the plugin's own id rules, so re-importing, editing, and re-exporting the same file keeps links from other notes intact.
@@ -687,6 +737,7 @@ A snapshot belongs to the board it was taken on, and `--force` is what restores 
 - **Exit code 3 (canvas unreachable)?** Auto-start is disabled (`EXCALIDRAW_NO_AUTOSTART=1`) or a non-loopback `EXPRESS_SERVER_URL` is set. Run `start` explicitly or fix the env.
 - **Exit code 4 (browser required)?** Open `http://127.0.0.1:3000` in a browser, then retry — screenshots, image export, viewport, mermaid conversion, and making or closing a pane all happen in the frontend.
 - **`BOARD_HELD`?** Somebody else has the board and the wait for them ran out. The answer names the holder and how long they have had it, so say that rather than going quiet, and try once more in a moment: a person's hold is a gesture and clears on its own. Retrying in a loop does not make the board come free any sooner.
+- **`DOING_REQUIRED`?** The write said nothing about what it was doing and nothing was written. Add `--doing "..."` (the `doing` argument over MCP) and run it again. Do not reach for the last claim reason: that is the campaign, and this is the step. See [One writer at a time](#workflow-one-writer-at-a-time).
 - **`CLAIM_REVOKED`?** The person at the canvas took a board you had claimed. You are told once, and nothing you wrote was undone, so the board sits part way through whatever you were doing. Stop, say what you finished and what state that leaves it in, and leave the board alone rather than claiming it again. Your next write is an ordinary write and takes the board only for as long as it writes. See [One writer at a time](#workflow-one-writer-at-a-time).
 - **Elements not appearing?** Check `describe` — they may be off-screen. `viewport --fit --pane <spec>` frames everything on that pane's board, and `viewport --ids a,b,c` frames a subgraph (`set_viewport` with `scrollToContent` or `scrollToElementIds` in MCP).
 - **Arrow not connecting?** Verify element IDs with `get <id>`. Make sure `startElementId`/`endElementId` match existing element IDs.
