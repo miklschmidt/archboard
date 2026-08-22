@@ -271,6 +271,82 @@ for (const [entry, tool] of WRITES) {
       'default and why. A flag whose cost is invisible needs the cost written down.');
   }
 }
+// --- saying what a write is doing, on both surfaces --------------------------
+//
+// `--doing` is the second promise that is not a command (TASK-095): an agent
+// must say what it is doing on every board write, and a requirement only one
+// surface makes is a requirement an agent learns to ignore. The two halves are
+// shaped differently and both are read from the code — MCP declares it per tool
+// in the schema, the CLI takes it globally in `run.ts` because one command can
+// make several requests and they are all the same act.
+
+const DOING_TOOLS = [
+  'create_element', 'update_element', 'delete_element', 'batch_create_elements',
+  'clear_canvas', 'import_scene', 'create_from_mermaid', 'insert_library_item',
+  'group_elements', 'ungroup_elements', 'align_elements', 'distribute_elements',
+  'lock_elements', 'unlock_elements', 'duplicate_elements',
+  'restore_snapshot', 'save_board', 'promote_selection', 'demote_selection'
+];
+
+for (const name of DOING_TOOLS) {
+  const declared = tools.find(tool => tool.name === name);
+  if (!declared) {
+    fail(`DOING_TOOLS names \`${name}\`, which mcp-tools.ts no longer declares.`);
+    continue;
+  }
+  const schema = declared.inputSchema ?? {};
+  if (!schema.properties?.doing) {
+    fail(`The tool \`${name}\` writes a board and does not take \`doing\`. An agent that can change ` +
+      'somebody\'s board without saying what it is doing is the thing TASK-095 exists to stop.');
+    continue;
+  }
+  if (!(schema.required ?? []).includes('doing')) {
+    fail(`The tool \`${name}\` takes \`doing\` and does not require it. Optional means half the ` +
+      'callers will not pass it, and the canvas refuses those writes anyway — the schema should say so first.');
+  }
+  const why = String(schema.properties.doing.description ?? '');
+  if (!/one short line|present tense/i.test(why) || !/never/i.test(why)) {
+    fail(`The tool \`${name}\` requires \`doing\` without its description saying what shape the line ` +
+      'takes or that it never reaches the board. A required field needs to say what it wants.');
+  }
+}
+
+// A write tool that nobody listed. The list above is the same one mcp-tools.ts
+// applies, restated here so that adding a write tool fails this check until
+// somebody decides whether it says what it is doing.
+for (const tool of tools) {
+  const required = tool.inputSchema?.required ?? [];
+  if (required.includes('doing') && !DOING_TOOLS.includes(tool.name)) {
+    fail(`The tool \`${tool.name}\` requires \`doing\` and is not in DOING_TOOLS here — add it, so ` +
+      'the two lists cannot drift.');
+  }
+}
+
+// The CLI half is asked, not read, for the same reason `--document` is: the
+// parser is the only witness that cannot be fooled by a paragraph mentioning
+// the flag. `--doing` is stripped by run.ts before any command's parser sees
+// it, so a command that gets as far as rejecting the nonsense flag has it.
+{
+  const run = spawnSync(process.execPath,
+    [join(repoRoot, 'src', 'bin.ts'), 'add', '--doing', 'checking the flag exists', '--not-a-real-flag'],
+    { encoding: 'utf8', env: { ...process.env, EXCALIDRAW_NO_AUTOSTART: '1' }, timeout: 20000 });
+  const said = `${run.stdout ?? ''}${run.stderr ?? ''}`;
+  if (said.includes('Unknown flag --doing')) {
+    fail('`archboard --doing` is rejected by the command parser, so it is not global any more. ' +
+      'It is stripped in run.ts alongside --board, because one command can make several requests.');
+  } else if (!said.includes('Unknown flag --not-a-real-flag')) {
+    fail(`\`archboard add --doing … --not-a-real-flag\` answered something this check cannot read — ` +
+      `"${said.trim().split('\n')[0] ?? '(said nothing)'}".`);
+  }
+  const help = spawnSync(process.execPath, [join(repoRoot, 'src', 'bin.ts'), 'help'],
+    { encoding: 'utf8', env: { ...process.env, EXCALIDRAW_NO_AUTOSTART: '1' }, timeout: 20000 });
+  if (!(help.stdout ?? '').includes('--doing')) {
+    fail('`archboard help` does not mention --doing, and it is where a shell agent finds out a ' +
+      'global flag exists. --board is written down there; a required flag it will be refused ' +
+      'without has at least as much claim to the space.');
+  }
+}
+
 // The cheatsheet's MCP section, held against the real tool list.
 const cheatsheet = fs.readFileSync(CHEATSHEET, 'utf8');
 const section = cheatsheet.split('\n## MCP Tools')[1]?.split('\n## ')[0] ?? '';

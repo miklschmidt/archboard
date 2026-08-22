@@ -31,6 +31,7 @@ import {
   getSnapshot,
   sendMermaid,
   setRequestedBoard,
+  setWriteDoing,
   boardHoldSeen,
   forgetBoardHold,
   ApiResponse,
@@ -231,6 +232,12 @@ async function dispatchTool(
   // so nothing leaks into the next call. A tool that names no board reaches a
   // canvas that refuses it, which is the point (ADR 0009).
   setRequestedBoard(typeof args?.board === 'string' ? args.board : null);
+  // And what this call is doing to it, applied to every request the same way
+  // and for the same reason (TASK-095). Not validated here: the canvas is the
+  // one side that knows which routes are board writes, so it owns the refusal
+  // and the schema owns the prompt. A tool that names none reaches a canvas
+  // that says so.
+  setWriteDoing(typeof args?.doing === 'string' ? args.doing : null);
   try {
     logger.info(`Handling tool call: ${name}`);
 

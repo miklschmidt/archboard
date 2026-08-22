@@ -92,6 +92,7 @@ import {
   takeClaimRevocation,
   watchBoardLocks
 } from './core/board-lock.js';
+import { checkDoing, DoingEntry, recentDoing, recordDoing } from './core/board-doing.js';
 import {
   BoardIdentity,
   boardKey,
@@ -371,6 +372,47 @@ onBoardLockChanged((board, holder) => {
 });
 
 /**
+ * An agent has just changed this board, and said what it was doing (TASK-095).
+ *
+ * Board-scoped like the lock, and beside it on purpose: the lock says who has
+ * the board and the claim's reason says what campaign they are on, and this is
+ * the step. One story at two scales, not two accounts of the same thing.
+ *
+ * The whole list rides with each line, so a pane that has just opened, or has
+ * just been handed this board, is not blank until the next write. It costs a
+ * few hundred bytes and it is what makes two panes on one board tell the same
+ * story.
+ */
+function announceDoing(board: string, entry: DoingEntry): void {
+  const recent = recordDoing(board, entry);
+  broadcast({ type: 'board_doing', doing: entry, recent } as WebSocketMessage, board);
+}
+
+/**
+ * A write that did not say what it was doing.
+ *
+ * The refusal teaches, because being made to write the sentence is the point:
+ * a person at a 75-inch display watching boxes move has no other way to know
+ * what is being attempted, and an intent no diff can recover is one only the
+ * writer can state (CLAUDE.md's principle, ADR 0016's claim from the other
+ * end).
+ */
+function refuseUndescribedWrite(res: Response, board: string, path: string, problem: string): void {
+  res.status(400).json({
+    success: false,
+    code: 'DOING_REQUIRED',
+    error:
+      `This write to "${board}" says nothing about what it is doing (${problem}). Say it in one short ` +
+      'line, in the present tense — "adding the payment queue", "rerouting orders through it" — and it ' +
+      'goes up on the canvas as the write lands, so the person at the board can see what you are up to. ' +
+      `On the command line that is \`--doing "..."\`, on an MCP tool the \`doing\` argument, and on the ` +
+      `API \`?doing=\` (${path}). A claim's \`reason\` is the campaign and does not stand in for this: ` +
+      'this is the step. Nothing was written.',
+    board
+  });
+}
+
+/**
  * Somebody outside archboard wrote this board's note, and the panes holding it
  * are showing a board the vault no longer has (TASK-062).
  *
@@ -432,6 +474,14 @@ function tellPaneAboutLock(clientId: string, board: string): void {
   // otherwise hear nothing until the next sweep found a change, and the change
   // it is waiting for already happened.
   sendToPane(clientId, noteMessage(board, noteWrittenElsewhere(board)), board);
+  // And the last few things an agent said it was doing here (TASK-095). A pane
+  // that has just been handed a board an agent is part way through would
+  // otherwise show the banner saying somebody has it and nothing at all about
+  // what has happened so far.
+  const said = recentDoing(board);
+  if (said.length > 0) {
+    sendToPane(clientId, { type: 'board_doing', recent: said } as WebSocketMessage, board);
+  }
 }
 
 // Broadcast something that is not about a board.
@@ -942,7 +992,15 @@ const NOT_A_BOARD_WRITE: Array<[RegExp, string]> = [
  * the claim's hold rather than taking one, so twenty writes leave no gap.
  */
 function holderFromRequest(req: Request, board: string): { id: string; kind: 'human' | 'agent' } {
-  const body = (req.body ?? {}) as Record<string, unknown>;
+  const raw = (req.body ?? {}) as Record<string, unknown>;
+  // A pane's id may arrive in the query as well as the body, because two of the
+  // shell's own writes have no body to put it in: Clear is a DELETE, and both
+  // it and Save are a person pressing a button. A write with a pane behind it
+  // is that person's, and a person is not made to narrate their own act
+  // (TASK-095).
+  const body = typeof raw.clientId === 'string' || typeof req.query.clientId !== 'string'
+    ? raw
+    : { ...raw, clientId: req.query.clientId };
   const kind = body.origin === 'agent' || typeof body.clientId !== 'string' ? 'agent' : 'human';
   if (kind === 'agent') {
     const claimed = claimWriterId(board);
@@ -1006,6 +1064,33 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // rather than a note attached to a write that went through.
   const writer = holderFromRequest(req, key);
   if (writer.kind === 'agent' && refuseRevokedClaim(res, key)) return;
+
+  // And an agent says what it is doing, on this write, before it takes the
+  // board. Same boundary as the lock and for the same reason: this is the one
+  // place that knows a request is a board write, so a route added later cannot
+  // be the one that got away with saying nothing.
+  let said: string | null = null;
+  if (writer.kind === 'agent') {
+    const check = checkDoing(req.query.doing);
+    if (!check.ok) return refuseUndescribedWrite(res, key, req.path, check.problem);
+    said = check.doing;
+  }
+
+  // Said as the write lands, not before it: a refusal narrates nothing, and a
+  // wall that showed intentions rather than acts would be a wall that lies.
+  if (said !== null) {
+    const doing = said;
+    res.on('finish', () => {
+      if (res.statusCode >= 400) return;
+      announceDoing(key, {
+        doing,
+        at: new Date().toISOString(),
+        by: writer.id,
+        kind: writer.kind,
+        claimed: claimWriterId(key) === writer.id
+      });
+    });
+  }
 
   void holdBoard({ board: key, holder: writer })
     .then((hold) => {
@@ -1910,6 +1995,16 @@ app.post('/api/elements/from-mermaid', (req: Request, res: Response) => {
       });
     }
 
+    // This route is exempt from the lock, not from saying what it is doing.
+    // Only an agent ever calls it — a pane converts nothing on its own — so
+    // there is no person here to exempt.
+    const said = checkDoing(req.query.doing);
+    if (!said.ok) {
+      return refuseUndescribedWrite(
+        res, String(req.query.board ?? req.body?.board ?? 'this board'), req.path, said.problem
+      );
+    }
+
     logger.info('Received Mermaid conversion request', {
       diagramLength: mermaidDiagram.length,
       hasConfig: !!config
@@ -1952,6 +2047,18 @@ app.post('/api/elements/from-mermaid', (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     }, wanted);
     changeFeed.expectAgentEcho(wanted);
+    // Said here rather than by the middleware, because this route is outside
+    // it: the write arrives afterwards as the converting pane's own change
+    // report, which is a person's shape and carries nothing. The agent still
+    // asked for it, so the agent still says what it is doing (TASK-095).
+    const writer = holderFromRequest(req, wanted);
+    announceDoing(wanted, {
+      doing: said.doing,
+      at: new Date().toISOString(),
+      by: writer.id,
+      kind: writer.kind,
+      claimed: claimWriterId(wanted) === writer.id
+    });
 
     // Return the diagram for frontend processing, and name the pane it went
     // to, the way `board open` names the pane a board landed in.

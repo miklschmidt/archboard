@@ -217,9 +217,17 @@ export async function takeBoardBack(board: string | null, clientId: string): Pro
   return taken
 }
 
-/** The one call that empties a board. Confirmed in the shell, never here. */
-export function clearBoard(board: string | null) {
-  return json<{ count: number }>(`/api/elements/clear${boardQuery(board)}`, { method: 'DELETE' })
+/**
+ * The one call that empties a board. Confirmed in the shell, never here.
+ *
+ * `clientId` is the pane the person is working in, and it is what says this
+ * write is theirs. Without it the server sees an unnamed writer, which is its
+ * definition of an agent — and an agent is refused unless it says what it is
+ * doing (TASK-095). Nobody is going to narrate their own button press.
+ */
+export function clearBoard(board: string | null, clientId: string) {
+  const query = `${boardQuery(board)}${boardQuery(board) ? '&' : '?'}clientId=${encodeURIComponent(clientId)}`
+  return json<{ count: number }>(`/api/elements/clear${query}`, { method: 'DELETE' })
 }
 
 // ─── The library ──────────────────────────────────────────────
@@ -274,6 +282,12 @@ export function saveBoard(as: SaveRequest) {
 export interface SaveRequest {
   /** Which board to write. Required: the server has no default (ADR 0009). */
   board: string
+  /**
+   * The pane the person pressed Save in. As on `clearBoard`: it is what makes
+   * this a person's write rather than an unnamed one, and an unnamed writer is
+   * an agent, which must say what it is doing (TASK-095).
+   */
+  clientId?: string
   name?: string
   variant?: string
   level?: string

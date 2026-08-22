@@ -71,6 +71,44 @@ function withBoard(path: string): string {
   return `${path}${path.includes('?') ? '&' : '?'}board=${encodeURIComponent(requestedBoard)}`;
 }
 
+// ---- What this invocation is doing to the board ----
+//
+// Set once, from `--doing` on the command line or the `doing` argument on an
+// MCP write tool, and attached to every request that could change a board — the
+// same shape as the board above, and for the same reason. An agent must say
+// what it is doing on every write (TASK-095), and a requirement threaded
+// through forty call sites is a requirement one of them will get away with
+// not meeting.
+//
+// A query parameter rather than a field in the body: DELETE has no body, and a
+// line that rode inside an element's JSON would be one careless spread away
+// from being written into the note, which is the one thing this must never be.
+let writeDoing: string | null = null;
+
+export function setWriteDoing(doing: string | null): void {
+  writeDoing = doing && doing.trim() ? doing.trim() : null;
+}
+
+export function currentWriteDoing(): string | null {
+  return writeDoing;
+}
+
+/**
+ * Attach it to anything that is not a read.
+ *
+ * Deny by default, like the boundary on the server that demands it: a request
+ * with a method carries it unless it is a GET, so a route added later is
+ * covered without anybody remembering. Nothing is refused here — the canvas
+ * owns the refusal, because it is the only side that knows which routes are
+ * board writes, and two lists that must agree are how they stop agreeing.
+ */
+function withDoing(path: string, method?: string): string {
+  if (!writeDoing) return path;
+  if ((method ?? 'GET').toUpperCase() === 'GET') return path;
+  if (/[?&]doing=/.test(path)) return path;
+  return `${path}${path.includes('?') ? '&' : '?'}doing=${encodeURIComponent(writeDoing)}`;
+}
+
 // Helper functions to sync with Express server (canvas)
 export async function syncToCanvas(
   operation: string, data: any, write: { document?: boolean } = {}
@@ -92,7 +130,7 @@ export async function syncToCanvas(
 
     switch (operation) {
       case 'create':
-        url = `${EXPRESS_SERVER_URL}${asked(withBoard('/api/elements'))}`;
+        url = `${EXPRESS_SERVER_URL}${withDoing(asked(withBoard('/api/elements')), 'POST')}`;
         options = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -101,7 +139,7 @@ export async function syncToCanvas(
         break;
 
       case 'update':
-        url = `${EXPRESS_SERVER_URL}${asked(withBoard(`/api/elements/${data.id}`))}`;
+        url = `${EXPRESS_SERVER_URL}${withDoing(asked(withBoard(`/api/elements/${data.id}`)), 'PUT')}`;
         options = {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -110,12 +148,12 @@ export async function syncToCanvas(
         break;
 
       case 'delete':
-        url = `${EXPRESS_SERVER_URL}${asked(withBoard(`/api/elements/${data.id}`))}`;
+        url = `${EXPRESS_SERVER_URL}${withDoing(asked(withBoard(`/api/elements/${data.id}`)), 'DELETE')}`;
         options = { method: 'DELETE' };
         break;
 
       case 'batch_create':
-        url = `${EXPRESS_SERVER_URL}${asked(withBoard('/api/elements/batch'))}`;
+        url = `${EXPRESS_SERVER_URL}${withDoing(asked(withBoard('/api/elements/batch')), 'POST')}`;
         options = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -235,7 +273,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   await assertCanvasIdentity();
   // Every canvas request carries the board when one was named. Attached here
   // rather than at 30 call sites, so a route can never be the one that forgot.
-  const response = await fetch(`${EXPRESS_SERVER_URL}${withBoard(path)}`, init);
+  const response = await fetch(`${EXPRESS_SERVER_URL}${withDoing(withBoard(path), init?.method)}`, init);
   const data = await response.json().catch(() => null) as any;
   // Whether that board is saving. Read off every answer, refusals included,
   // because the answer that most needs it is the one refusing the write that

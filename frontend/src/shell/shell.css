@@ -284,6 +284,64 @@
   cursor: pointer;
 }
 
+/* What an agent has been doing to this board (TASK-095).
+   Top right, out of the way of the claim banner, which is centred: the two are
+   one story and sit near each other, but the banner is the campaign and must
+   not be pushed off the middle by the steps. Read from two metres, so it is the
+   pane's font size and not a caption. */
+.pane-doing {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 5;
+  max-width: min(38ch, calc(100% - 32px));
+  margin: 0;
+  padding: 8px 12px;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 12%);
+  font-size: 14px;
+  color: var(--ink);
+}
+
+/* Below the banner when there is one, so neither covers the other. */
+.pane-doing-under-claim {
+  top: 62px;
+}
+
+/* Newest first and fading back, so a glance lands on what is happening now. */
+.pane-doing-line {
+  display: flex;
+  gap: 8px;
+  padding: 2px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pane-doing-line + .pane-doing-line {
+  opacity: 65%;
+}
+
+.pane-doing-when {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  opacity: 60%;
+}
+
+/* The same thing in the bar, where there is room for the latest line only. */
+.doing-now {
+  overflow: hidden;
+  max-width: 42ch;
+  font-size: 13px;
+  color: var(--ink-quiet);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 80%;
+}
+
 /* ── Notices ───────────────────────────────────────────────── */
 
 .notice {

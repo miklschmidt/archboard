@@ -785,6 +785,39 @@ const BOARD_SCOPED = [
 // `library` or `theme`, so naming one is allowed rather than demanded.
 const BOARD_OPTIONAL = ['get_resource'];
 
+// ─── Every tool that CHANGES a board says what it is doing ────
+//
+// A person at a 75-inch display sees boxes move and has no way to know what is
+// being attempted (TASK-095). So an agent says it, on every write, and the line
+// goes up on the canvas as the write lands. Required for the same reason the
+// board is: a client should be told by its own schema rather than by a round
+// trip, and an argument that is optional in the schema is an argument half the
+// callers will not pass.
+//
+// A subset of BOARD_SCOPED, not the same list: describing a board, querying it
+// or exporting it changes nothing and narrating a read would be noise on the
+// wall. `create_from_mermaid` is in here and is not a lock-taking route — the
+// conversion runs in the pane and its elements arrive afterwards as that pane's
+// own report — but the agent asked for it, so the agent says so.
+const WRITES_BOARD = [
+  'create_element', 'update_element', 'delete_element', 'batch_create_elements',
+  'clear_canvas', 'import_scene', 'create_from_mermaid', 'insert_library_item',
+  'group_elements', 'ungroup_elements', 'align_elements', 'distribute_elements',
+  'lock_elements', 'unlock_elements', 'duplicate_elements',
+  'restore_snapshot', 'save_board', 'promote_selection', 'demote_selection'
+];
+
+const DOING_PARAM = {
+  type: 'string',
+  description:
+    'What you are doing to this board, in one short line, present tense: "adding the payment queue", ' +
+    '"rerouting orders through it". It goes up on the canvas as the write lands, so the person at the ' +
+    'board can see what you are up to rather than watching boxes move and inferring it afterwards. ' +
+    'REQUIRED on every write and refused if it is empty or over 140 characters — this is read from two ' +
+    'metres away, not logged. It is never written into the board. If you have claimed the board, the ' +
+    "claim's `reason` is the campaign and this is the step: say the step here."
+} as const;
+
 const BOARD_PARAM = {
   type: 'string',
   description:
@@ -800,5 +833,9 @@ for (const tool of tools) {
     schema.required = [...new Set([...(schema.required ?? []), 'board'])];
   } else if (BOARD_OPTIONAL.includes(tool.name)) {
     schema.properties = { board: { ...BOARD_PARAM }, ...(schema.properties ?? {}) };
+  }
+  if (WRITES_BOARD.includes(tool.name)) {
+    schema.properties = { doing: { ...DOING_PARAM }, ...(schema.properties ?? {}) };
+    schema.required = [...new Set([...(schema.required ?? []), 'doing'])];
   }
 }

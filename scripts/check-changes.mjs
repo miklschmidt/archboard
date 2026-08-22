@@ -447,6 +447,21 @@ const injection = await import(src('core/injection.ts'));
   check('loud can be forced for one probe, and steers the running turn',
     loud.channel === 'loud' && steered?.params?.expectedTurnId === 'turn-1');
 
+  // What an agent said it was doing, which reaches a live model here and
+  // nowhere else (TASK-095, ADR 0005). A description is by definition an
+  // agent's, so injecting one as an event of its own would be narrating an
+  // agent to itself in every single-agent session — and nothing joins an HTTP
+  // write to a thread on this socket, so the canvas could not tell whose was
+  // whose even if it wanted to. It rides on the HUMAN's event instead, as
+  // context for the person's act.
+  const { recordDoing } = await import(src('core/board-doing.ts'));
+  recordDoing('inject-board', {
+    doing: 'rerouting orders through the queue',
+    at: new Date().toISOString(),
+    by: 'agent-1',
+    kind: 'agent'
+  });
+
   // A change the agent made is not news to the agent.
   const before = injection.injectionStatus().injected.quiet;
   let elements = scene();
@@ -456,6 +471,8 @@ const injection = await import(src('core/injection.ts'));
   changeFeed.settle('inject-board');
   await sleep(400);
   check('the agent\'s own changes are never injected back at it',
+    injection.injectionStatus().injected.quiet === before);
+  check('  and saying what it was doing does not become a way round that',
     injection.injectionStatus().injected.quiet === before);
 
   // A human's change is.
@@ -468,6 +485,9 @@ const injection = await import(src('core/injection.ts'));
     `${before} -> ${after.injected.quiet}`);
   check('  and what the thread receives names the board and says nothing is being asked of it',
     /\[archboard\]/.test(after.lastInjection.text) && /Nobody is waiting on you/.test(after.lastInjection.text));
+  check('  carrying what an agent said it was doing, as context for the person\'s act',
+    /An agent was at: rerouting orders through the queue/.test(after.lastInjection.text),
+    after.lastInjection.text.split('\n').find(line => /An agent was at/.test(line)) ?? '(not there)');
 
   injection.stopInjection();
 }
