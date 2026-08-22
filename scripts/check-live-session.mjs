@@ -916,6 +916,9 @@ try {
     return {
       what: document.querySelector('.pane-claim-what')?.textContent ?? null,
       take: document.querySelector('.pane-claim-take')?.textContent ?? null,
+      // The steps, where the banner above is the campaign (TASK-095).
+      steps: [...document.querySelectorAll('.pane-doing-line')].map(line => line.textContent),
+      bar: document.querySelector('.doing-now')?.textContent ?? null,
       view: app ? app.state.viewModeEnabled === true : null
     };
   })()`);
@@ -943,6 +946,23 @@ try {
     claimed.view === true, JSON.stringify(claimed));
   check('  and offers the person the one thing they may always do',
     claimed.take === 'Take it back', JSON.stringify(claimed));
+
+  // And the step, under the campaign, as the write lands (TASK-095). This is
+  // the half a socket cannot answer: whether a person standing at the wall can
+  // actually see what an agent is up to, or only that boxes moved.
+  const step = 'moving the queue out of the payment path';
+  await api('POST', `/api/elements?board=${BOARD}&doing=${encodeURIComponent(step)}`, {
+    type: 'rectangle', x: 820, y: 60, width: 60, height: 40
+  });
+  const narrated = await bannerWhen(seen => seen.steps.some(line => line.includes(step)));
+  check('  and the pane shows what the agent is doing right now, not only what it claimed the board for',
+    narrated.steps.some(line => line.includes(step)), JSON.stringify(narrated.steps));
+  check('  which reads as one story with the banner rather than two accounts of it',
+    typeof narrated.what === 'string' && narrated.what.includes(claimWhy) &&
+    narrated.steps.some(line => line.includes(step)),
+    `${narrated.what} / ${narrated.steps.join(' | ')}`);
+  check('  and the bar carries the latest line too, for the pane nobody is standing in front of',
+    typeof narrated.bar === 'string' && narrated.bar.includes(step), String(narrated.bar));
 
   // One deliberate tap, not any touch. View mode still pans and zooms, so
   // somebody reading what the agent is drawing must not end it by reading it —
