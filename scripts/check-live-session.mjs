@@ -799,9 +799,15 @@ try {
   // and the pane took a fresh scene stamp on the way out, so nothing is left
   // that will ever say it.
 
-  const inTheWindow = async (label, agentUpserts, edit, reads) => {
+  // `reads` is the one field the hand changes and `wants` is what it should
+  // read afterwards, computed from what it read before. Stated rather than
+  // "it differs from what it was": the agent writes to the same element in
+  // three of these four, so "it moved" is satisfied by the agent's own write
+  // and would pass with the human's edit thrown away.
+  const inTheWindow = async (label, agentUpserts, edit, reads, wants) => {
     const before = (await held()).find(e => e.id === edit.id);
     const was = reads(before);
+    const wanted = wants(was);
     await evalInPage(`(() => {
       window.__abPending = ${JSON.stringify(edit)};
       return { armed: true };
@@ -824,9 +830,13 @@ try {
       settled.agreed, (settled.divergences ?? []).slice(0, 4).join(' | '));
 
     const after = (await held()).find(e => e.id === edit.id);
+    const got = reads(after);
     check(`  and the server holds what the hand did, not what it was sent`,
-      reads(after) !== was,
-      `${edit.id} read ${JSON.stringify(was)} before and ${JSON.stringify(reads(after))} after`);
+      typeof wanted === 'number' && typeof got === 'number'
+        ? Math.abs(got - wanted) < 0.001
+        : got === wanted,
+      `${edit.id} read ${JSON.stringify(was)} before, ${JSON.stringify(got)} after, ` +
+      `and the hand made it ${JSON.stringify(wanted)}`);
 
     const seen = await lossCanary();
     const aimed = seen.events.filter(e => e.what.some(said => said.includes(edit.id)));
@@ -845,7 +855,7 @@ try {
   await inTheWindow('an agent recolours the box a hand is resizing',
     [{ id: 'store', backgroundColor: '#e9ecef' }],
     { kind: 'resize', id: 'store', dw: 13, dh: 0 },
-    element => element?.width);
+    element => element?.width, was => was + 13);
 
   const storeLabel = (await held()).find(e => e.type === 'text' && e.containerId === 'store');
   check('  and the board still carries a label to be retyped into',
@@ -853,7 +863,7 @@ try {
   await inTheWindow('an agent relabels the box a hand is typing in',
     [{ id: 'store', label: { text: 'written by the agent' } }],
     { kind: 'retype', id: storeLabel.id, text: 'typed by the person' },
-    element => element?.text);
+    element => element?.text, () => 'typed by the person');
 
   // The one that ends with the server holding an element the pane does not.
   await api('POST', `/api/elements/changes?board=${BOARD}`, {
@@ -864,7 +874,7 @@ try {
   await inTheWindow('an agent recolours the box a hand is deleting',
     [{ id: 'spare', backgroundColor: '#ffe3e3' }],
     { kind: 'delete', id: 'spare' },
-    element => element ? 'on the board' : 'gone');
+    element => element ? 'on the board' : 'gone', () => 'gone');
 
   // And the same hand against a delivery that names something else. The record
   // does not cover it, so nothing is absorbed — what goes missing is anything
@@ -872,7 +882,7 @@ try {
   await inTheWindow('an agent writes elsewhere while a hand moves a box',
     [{ id: 'queue', backgroundColor: '#e3fafc' }],
     { kind: 'move', id: 'store', dx: 17, dy: -9 },
-    element => element?.x);
+    element => element?.x, was => was + 17);
 
   // --- what a broadcast may not do ----------------------------------------
   //
