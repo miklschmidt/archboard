@@ -91,10 +91,15 @@ Ask the agent to read a codebase and draw its architecture. Then, on the board:
 
 1. **Select a box by tapping its interior** and ask the agent what you have
    selected — this is `selection`, and it is how "map *this* to X" works.
-2. **Promote it**: `./bin/canvas promote --kind service --name "Payments" --path src/payments/index.ts`.
-   The binding resolves through git to repo, path, branch and commit.
-3. **Save**: `./bin/canvas board save --board payments`.
-4. **Branch a variant**: `./bin/canvas board save --board payments --as payments@option-a`,
+2. **Promote it**: `./bin/canvas promote --kind service --name "Payments"
+   --path src/payments/index.ts --doing "calling this the payments service"`.
+   The binding resolves through git to repo, path, branch and commit. Every
+   write says what it is doing and is refused without it, and the line shows up
+   on the board as the write lands (TASK-095) — watch the top right of the pane
+   while the agent works, which is the point of the whole thing.
+3. **Save**: `./bin/canvas board save --board payments --doing "writing it down"`.
+4. **Branch a variant**: `./bin/canvas board save --board payments --as payments@option-a
+   --doing "branching a proposal"`,
    then rearrange it — move a box out of a cluster, cut an edge, add a node.
    The branch is written but not put on screen: whatever pane held `payments`
    still holds it, because branching is how you get something to compare
@@ -110,7 +115,8 @@ Ask the agent to read a codebase and draw its architecture. Then, on the board:
    `./bin/canvas screenshot --pane right` pictures one of them, and
    `./bin/canvas pane close right` puts you back to one.
 7. **Draw into the half you mean**: pipe a Mermaid diagram at the variant,
-   `... | ./bin/canvas mermaid --board payments@option-a`, and watch it appear
+   `... | ./bin/canvas mermaid --board payments@option-a --doing "sketching the
+   proposal from mermaid"`, and watch it appear
    on the right while the left keeps the current architecture. `mermaid` takes
    no `--pane` and never will: it names a board, a board is in at most one
    pane, so the pane is already decided (TASK-046). Aim it at a board no pane

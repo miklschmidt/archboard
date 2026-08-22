@@ -14,6 +14,8 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 
 **`--board <key>` is global and required on every command that touches a board** — `add`, `apply`, `get`, `query`, `update`, `delete`, `describe`, `export`, `import`, `mermaid`, `share`, `clear`, `snapshot`, `promote`, `demote`, `changes`, `arrange`, `library insert`, `board save`, `board info`, `claim`, `release`. There is no default board and no fallback: a pane holds its own board, two panes hold two, so a call that names none is refused with the open boards listed (ADR 0009). Commands about the browser rather than a board — `panes`, `pane close`, `selection`, `screenshot`, `viewport`, `status`, `board list`, `library list`, `compare` — take no board. `pane open` takes an optional `--board`: the board to put in the new pane.
 
+**`--doing "..."` is global and required on every command that changes a board** — `add`, `apply`, `update`, `delete`, `clear`, `import`, `mermaid`, `promote`, `demote`, `arrange`, `library insert`, `snapshot restore`, `board save`. One short line, present tense: "adding the payment queue". It goes up on the canvas as the write lands, so the person at the board can see what is happening; a write without it is refused with `DOING_REQUIRED` and nothing is written. Over 140 characters is refused too. It is never written into the board. Reading commands take none, and neither does a person dragging a box. A claim's `--reason` is the campaign; this is the step.
+
 ### Server
 
 | Command | Description |
@@ -101,28 +103,30 @@ A pane is a slot holding one board, and two panes are how the architecture that 
 
 The MCP surface for clients that cannot run the CLI. `scripts/check-surface-parity.mjs` in the archboard repo fails if a tool is missing from this table.
 
+`doing` is `--doing` on this surface, and it is required on every tool that changes a board, for the same reason and in the same words: one short line, present tense, shown on the canvas as the write lands, never written into the board.
+
 ### Element CRUD
 
 | Tool | Description | Required params |
 |------|-------------|-----------------|
-| `create_element` | Create shape/text/arrow/line | `board`, `type`, `x`, `y` |
+| `create_element` | Create shape/text/arrow/line | `doing`, `board`, `type`, `x`, `y` |
 | `get_element` | Get single element by ID | `board`, `id` |
-| `update_element` | Update element properties | `board`, `id` |
-| `delete_element` | Delete element | `board`, `id` |
+| `update_element` | Update element properties | `doing`, `board`, `id` |
+| `delete_element` | Delete element | `doing`, `board`, `id` |
 | `query_elements` | Query by type/filters | `board`, (optional) `type`, `filter`, `bbox` |
-| `batch_create_elements` | Create many at once | `board`, `elements[]` |
-| `duplicate_elements` | Clone with offset | `elementIds[]`, (optional) `offsetX`, `offsetY` |
+| `batch_create_elements` | Create many at once | `doing`, `board`, `elements[]` |
+| `duplicate_elements` | Clone with offset | `doing`, `elementIds[]`, (optional) `offsetX`, `offsetY` |
 
 ### Layout & Organization
 
 | Tool | Description | Required params |
 |------|-------------|-----------------|
-| `align_elements` | Align to left/center/right/top/middle/bottom | `board`, `elementIds[]`, `alignment` |
-| `distribute_elements` | Even spacing horizontal/vertical | `board`, `elementIds[]`, `direction` |
-| `group_elements` | Group elements | `board`, `elementIds[]` |
-| `ungroup_elements` | Ungroup | `board`, `groupId` |
-| `lock_elements` | Lock elements | `board`, `elementIds[]` |
-| `unlock_elements` | Unlock elements | `board`, `elementIds[]` |
+| `align_elements` | Align to left/center/right/top/middle/bottom | `doing`, `board`, `elementIds[]`, `alignment` |
+| `distribute_elements` | Even spacing horizontal/vertical | `doing`, `board`, `elementIds[]`, `direction` |
+| `group_elements` | Group elements | `doing`, `board`, `elementIds[]` |
+| `ungroup_elements` | Ungroup | `doing`, `board`, `groupId` |
+| `lock_elements` | Lock elements | `doing`, `board`, `elementIds[]` |
+| `unlock_elements` | Unlock elements | `doing`, `board`, `elementIds[]` |
 
 ### Scene Awareness (Iterative Refinement)
 
@@ -138,15 +142,15 @@ The MCP surface for clients that cannot run the CLI. `scripts/check-surface-pari
 
 | Tool | Description | Required params |
 |------|-------------|-----------------|
-| `promote_selection` | Declare the selection an architecture node: kind, identity and binding in one act. `each: true` makes one node per selected shape | `board`, `kind` |
-| `demote_selection` | Strip archboard metadata back off; touching one element demotes the whole node | `board` |
+| `promote_selection` | Declare the selection an architecture node: kind, identity and binding in one act. `each: true` makes one node per selected shape | `doing`, `board`, `kind` |
+| `demote_selection` | Strip archboard metadata back off; touching one element demotes the whole node | `doing`, `board` |
 
 ### File I/O & Export
 
 | Tool | Description | Required params |
 |------|-------------|-----------------|
 | `export_scene` | Export to .excalidraw JSON (a `.md` filePath → Obsidian .excalidraw.md) | `board`, (optional) `filePath` |
-| `import_scene` | Import from .excalidraw JSON or Obsidian .excalidraw.md | `board`, `mode` ("replace"\|"merge"), `filePath` or `data` |
+| `import_scene` | Import from .excalidraw JSON or Obsidian .excalidraw.md | `board`, `mode` ("replace"\| `doing`,"merge"), `filePath` or `data` |
 | `export_to_image` | Export one pane to PNG/SVG, whatever board that pane holds | `format` ("png"\|"svg"), (optional) `filePath`, `background`, `pane` |
 | `export_to_excalidraw_url` | Upload & get shareable excalidraw.com URL | `board` |
 
@@ -154,9 +158,9 @@ The MCP surface for clients that cannot run the CLI. `scripts/check-surface-pari
 
 | Tool | Description | Required params |
 |------|-------------|-----------------|
-| `clear_canvas` | Remove all elements from one board | `board` |
+| `clear_canvas` | Remove all elements from one board | `doing`, `board` |
 | `snapshot_scene` | Save named snapshot | `board`, `name` |
-| `restore_snapshot` | Restore from snapshot onto a board | `board`, `name` |
+| `restore_snapshot` | Restore from snapshot onto a board | `doing`, `board`, `name` |
 
 ### Boards
 
@@ -167,7 +171,7 @@ Requires `ARCHBOARD_VAULT`. A pane holds exactly one board; two panes hold two. 
 | `list_boards` | Vault boards, open boards, and what each pane is showing | (none) |
 | `open_board` | Show a board in a pane; `pane` (`left`, `right`, `1`…) is required when more than one is open | `board` (`name` or `name@variant`) |
 | `new_board` | Start an empty board and show it in a pane | `board` |
-| `save_board` | Write a board to the vault; **refused if the note changed on disk** (`force` overwrites anyway). `variant` branches the board into a proposal, which is what makes it comparable; a branch moves no pane, so `open_pane` it | `board` |
+| `save_board` | Write a board to the vault; **refused if the note changed on disk** (`force` overwrites anyway). `variant` branches the board into a proposal, which is what makes it comparable; a branch moves no pane, so `open_pane` it | `doing`, `board` |
 | `compare_boards` | Semantic diff between two variants, joined on node identity (`customData.archboard.node`). Complete and unsummarised — narrate it yourself. Reads both sides from their notes; `source` says which side is a board the canvas has open. The canvas is untouched. Check `summary.comparable` and `layout.cannotExpress` before making claims | `from` (`to` optional) |
 
 ### One writer at a time
@@ -195,7 +199,7 @@ A pane is a slot holding one board. Two panes are how the architecture that exis
 | Tool | Description | Required params |
 |------|-------------|-----------------|
 | `list_library_items` | The palette of ready-made shapes, one line each: name, source library, size, element count, and the words drawn inside — enough to pick one without rendering it | (none) |
-| `insert_library_item` | Copy a stencil onto a board with its top-left at `x`, `y`, as ordinary elements. A name several libraries use is refused with the candidates named — retry with `source` or `itemId` | `board`, `x`, `y`, and `name` or `itemId` |
+| `insert_library_item` | Copy a stencil onto a board with its top-left at `x`, `y`, as ordinary elements. A name several libraries use is refused with the candidates named — retry with `source` or `itemId` | `doing`, `board`, `x`, `y`, and `name` or `itemId` |
 
 ### Viewport & Camera
 
@@ -213,7 +217,7 @@ A pane is a slot holding one board. Two panes are how the architecture that exis
 
 | Tool | Description | Required params |
 |------|-------------|-----------------|
-| `create_from_mermaid` | Mermaid diagram to Excalidraw. Converts in the pane holding `board`, so there is no pane argument; refused, converting nothing, when no pane is holding it | `board`, `mermaidDiagram` |
+| `create_from_mermaid` | Mermaid diagram to Excalidraw. Converts in the pane holding `board`, so there is no pane argument; refused, converting nothing, when no pane is holding it | `doing`, `board`, `mermaidDiagram` |
 
 Notes:
 - **CLI + MCP**: Set `text` on shapes to label them (auto-converts to `label.text`). Use `startElementId`/`endElementId` on arrows.
