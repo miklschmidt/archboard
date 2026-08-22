@@ -132,6 +132,45 @@ export function readFrontmatterValue(content: string, key: string): string | und
   return undefined;
 }
 
+// Set one top-level key on a note that already exists, leaving every other
+// byte of it alone.
+//
+// The write path renders a whole note and only then knows what its version
+// should be (src/core/board-io.ts): the counter moves when the rendered
+// document differs from the destination, so it cannot be an input to the
+// render. Rendering twice to settle one line would mean serialising a scene
+// that can be megabytes for a second time, so the line is set on the rendered
+// text instead.
+//
+// The frontmatter block is rebuilt through the same upsert the render uses, so
+// a key that is already right is left untouched and a new one lands where every
+// other new key lands. Everything from the closing `---` down is carried
+// through as the bytes it already was.
+export function setFrontmatterValue(note: string, key: string, value: string): string {
+  const scan = scanFrontmatter(note);
+  if (scan.kind !== 'ok') return note;
+  // Where the block ends in the original text, so everything below it is
+  // spliced across as the bytes it already was rather than being split into
+  // lines and joined back up.
+  const close = closingDelimiterEnd(note);
+  if (close === null) return note;
+  return renderFrontmatter(upsertFrontmatterLines(scan.lines, [[key, value]])) + note.slice(close);
+}
+
+// The offset just past the newline that ends the frontmatter's closing `---`.
+function closingDelimiterEnd(note: string): number | null {
+  let at = note.indexOf('\n');
+  if (at === -1) return null;
+  while (at !== -1) {
+    const start = at + 1;
+    const next = note.indexOf('\n', start);
+    const line = note.slice(start, next === -1 ? undefined : next);
+    if (/^(---|\.\.\.)[ \t]*\r?$/.test(line)) return next === -1 ? note.length : next + 1;
+    at = next;
+  }
+  return null;
+}
+
 // Set frontmatter keys in place. Idempotent by construction: a key already
 // holding the wanted value leaves its line byte-for-byte untouched, so
 // re-exporting an unchanged board produces an identical file. A changed value
