@@ -103,7 +103,8 @@ await new Promise((resolve) => proxy.listen(PROXY_PORT, '127.0.0.1', resolve));
 // The client reads its canvas URL at import time, so the proxy has to be the
 // canvas before anything under src/ is loaded.
 process.env.EXPRESS_SERVER_URL = proxyBase;
-const { setRequestedBoard, setWriteDoing } = await import(src('core/canvas-client.ts'));
+const client = await import(src('core/canvas-client.ts'));
+const { setRequestedBoard, setWriteDoing } = client;
 // The element ops below are driven through the client rather than over the
 // wire, so this stands in for the CLI's --doing (TASK-095). The MCP calls later
 // pass `doing` as an argument, the way a client would.
@@ -119,6 +120,13 @@ const api = async (method, url, body) => {
     method,
     ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
   });
+  // This harness writes with two hands — raw, here, and through the client
+  // below — and they are one actor pretending to be two. A write goes against
+  // the version its writer last saw (TASK-091), and the client is not told
+  // about anything sent from here, so without this its next write is refused
+  // for a board this same check moved. Two writers that genuinely do not know
+  // about each other is check-version.mjs's subject, not this one's.
+  if ((method ?? 'GET').toUpperCase() !== 'GET') client.forgetVersionsSeen();
   return response.json().catch(() => null);
 };
 const board = '?board=scratch';
