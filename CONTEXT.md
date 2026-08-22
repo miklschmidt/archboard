@@ -98,13 +98,22 @@ _Avoid_: zoom in, expand, descend, navigate, open
 **Variant**:
 One of an open set of alternative states of the same board. `current` is
 privileged as the architecture that exists; every other variant is a proposal.
-_Avoid_: version, revision, branch, mode, state
+_Avoid_: version (that is which edit a note is, and each variant has its own),
+revision, branch, mode, state
 
 **Note**:
 The file in the vault holding one board. Obsidian's word for a document, kept
 because the file is meant to be opened and edited there as well. The note is
 the board: the canvas reads it and writes it and keeps no copy of one.
 _Avoid_: file, document, markdown, page, record
+
+**Version**:
+Which edit of a note it is: a count archboard moves whenever it writes a note
+that differs from the one that was there. It orders two copies of one note,
+which a hash cannot, and a writer may say which version it was editing and have
+the write refused if the board has moved past it.
+_Avoid_: revision, generation, sequence, edition, variant (that is a different
+take on the board, not a later state of one)
 
 **Hold**:
 The state of a board the canvas has stopped saving, because its note changed
