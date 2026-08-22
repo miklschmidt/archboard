@@ -352,8 +352,11 @@ export function renderContent(
  * A text element's block id is its element id, and a block reference cannot
  * hold more than eight characters (`src/core/ids.ts`), so `wrapSceneAsObsidianMd`
  * renames a longer one on the way into a note. Nothing archboard mints needs
- * that (TASK-069); what does is what Excalidraw mints in a browser, and what a
- * caller supplies.
+ * that (TASK-069), and a pane settles what Excalidraw minted before it reports
+ * it, because renaming a text element somebody has an editor open on is how
+ * typed characters disappear (TASK-098). So what still arrives here needing a
+ * name is what a caller supplied and what came out of a note archboard did not
+ * write.
  *
  * While the process held the board, the two spellings could sit side by side:
  * the store said one thing, the note said another, and nobody compared them.
