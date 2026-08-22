@@ -22,7 +22,9 @@ import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
 import type { LibraryItems } from '@excalidraw/excalidraw/types'
 import { convertMermaidToExcalidraw, DEFAULT_MERMAID_CONFIG } from '../utils/mermaidConverter'
-import type { BoardHold, BoardIdentity, LockHolder, PaneStatus, ServerElement, WebSocketMessage } from '../types'
+import type {
+  BoardHold, BoardIdentity, LockHolder, NoteWrittenElsewhere, PaneStatus, ServerElement, WebSocketMessage
+} from '../types'
 import { cleanElementForExcalidraw, elementsForScene } from './elements'
 import { baselineFrom, diffAgainstBaseline, fingerprint, isEmpty, type Baseline } from './changes'
 import {
@@ -251,6 +253,12 @@ export function useCanvasSession({
   // canvas keeps taking it — but everything drawn from here is held on the
   // server and is in no note, so the chrome says so until somebody chooses.
   const holdRef = useRef<BoardHold | null>(null)
+  // Set while somebody outside archboard has written the note this board came
+  // from, so what is on this screen is not what the vault holds (TASK-062). The
+  // step before a hold: nothing has been refused, because nothing has been
+  // written since, and the person drawing would otherwise find out at their
+  // next gesture.
+  const writtenElsewhereRef = useRef<NoteWrittenElsewhere | null>(null)
   // The pane owes the server a statement of what is on its screen. A held
   // board's copy starts as the note the other editor wrote, because that is all
   // the server can read; this is what replaces it with what the human is
@@ -426,7 +434,8 @@ export function useCanvasSession({
       boardKey: boardKeyRef.current,
       elementCount: apiRef.current?.getSceneElements().length ?? 0,
       lastChangeAt: lastChangeAtRef.current,
-      hold: holdRef.current
+      hold: holdRef.current,
+      writtenElsewhere: writtenElsewhereRef.current
     })
     schedulePaneReport()
   }, [clientId, paneId, schedulePaneReport])
@@ -1074,6 +1083,13 @@ export function useCanvasSession({
         // board with pictures on it got the elements and no pictures, and only
         // a reload put them back (TASK-060).
         if (data.files) api.addFiles(Object.values(data.files))
+        // Whatever was true about the last board's note is not news about this
+        // one, and taking the note (`board open --reload`) arrives as this
+        // message. The server sends the new board's answer immediately behind
+        // it; clearing here is so the mark comes down with the scene rather
+        // than one message later, which on a wall display is a person reading a
+        // warning about a board that is already gone.
+        writtenElsewhereRef.current = null
         noteChange()
         break
       }
@@ -1129,6 +1145,19 @@ export function useCanvasSession({
         setHeldBy(data.held && !mine ? holder : null)
         break
       }
+
+      // The note behind this board has been written by somebody who is not
+      // archboard, or it has stopped being (TASK-062). Nothing about drawing
+      // changes: this is not a lock, nobody is excluded, and no write has been
+      // refused. What changes is that the person can see it.
+      //
+      // Always assigned, never merged. Null is the news that the pane and the
+      // note agree again, which is how the mark comes down by itself after a
+      // reload.
+      case 'board_note':
+        writtenElsewhereRef.current = data.writtenElsewhere ?? null
+        publishStatus()
+        break
 
       case 'canvas_cleared':
         applyServerScene([])

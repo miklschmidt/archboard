@@ -1158,6 +1158,103 @@ try {
       el.id === labelTextIdFor(el.containerId), `${el.id} vs ${labelTextIdFor(el.containerId)}`);
   }
 
+  // --- a note somebody else wrote, before anybody writes (TASK-062) ------
+  //
+  // The state between ADR 0016's lock and ADR 0006's refusal, and it used to
+  // have nothing to say it. The lock excludes archboard's own writers and does
+  // not exclude Obsidian, a sync client or a `git pull`; the refusal fires on
+  // the next write, which may be an hour of drawing away. In between, a pane
+  // shows a board the vault no longer holds and says nothing.
+  //
+  // In process, so that none of this waits on the sweep's timer. The wire — the
+  // beat, the message and the pane that hears it — is checked further down
+  // against a real canvas.
+  {
+    const { noteWrittenElsewhere, forgetNoteWatch } = await import(src('core/note-watch.ts'));
+    const { writeBoardContent, emptyContent } = await import(src('core/board-io.ts'));
+    const { beginHold, releaseHold } = await import(src('core/board-hold.ts'));
+    const { recordBaseline } = await import(src('core/board-store.ts'));
+    const { hashBoardBytes } = await import(src('core/board.ts'));
+
+    const identity = makeIdentity({ board: 'notewatch' });
+    const { key: watched, board: watchedBoard } = getOrCreateBoard(identity);
+    watchedBoard.file = vaultPathFor(identity);
+    forgetNoteWatch();
+
+    check('a board with no note yet has nobody else\'s writing on it',
+      noteWrittenElsewhere(watched) === null);
+    writeBoardContent(watchedBoard, emptyContent());
+    check('  and neither has one archboard has just written itself',
+      noteWrittenElsewhere(watched) === null);
+
+    // The gate, which is what keeps this off the critical path: a note is read
+    // and hashed only when its size or its time has moved, or when archboard's
+    // own baseline for it has. Proved by changing the bytes and putting both
+    // back — the answer stays what it was, because nothing looked.
+    // A whole second, so that putting the time back puts it back exactly:
+    // `utimes` takes a Date and loses the sub-millisecond part a write leaves.
+    const pinned = new Date(Math.floor(Date.now() / 1000) * 1000);
+    fs.utimesSync(watchedBoard.file, pinned, pinned);
+    noteWrittenElsewhere(watched);
+    const original = fs.readFileSync(watchedBoard.file);
+    const tweaked = Buffer.from(original);
+    tweaked[tweaked.length - 1] = 0x20;
+    fs.writeFileSync(watchedBoard.file, tweaked);
+    fs.utimesSync(watchedBoard.file, pinned, pinned);
+    const restored = fs.statSync(watchedBoard.file);
+    check('a note whose size and time have not moved is not read again',
+      restored.size === original.length && restored.mtimeMs === pinned.getTime() &&
+      noteWrittenElsewhere(watched) === null,
+      `${original.length}/${pinned.getTime()} then ${restored.size}/${restored.mtimeMs}`);
+    fs.writeFileSync(watchedBoard.file, original);
+
+    // Somebody else. There is no protocol to join and no version key to bump:
+    // a foreign write is a change in the bytes and nothing else, which is why
+    // this is the same sha-256 comparison the refusal makes.
+    fs.writeFileSync(watchedBoard.file, `${original.toString('utf-8')}\n<!-- somebody else was here -->\n`);
+    const written = noteWrittenElsewhere(watched);
+    check('a note written by something that is not archboard is seen with no write and no command',
+      written?.board === watched && written?.reason === 'changed', JSON.stringify(written));
+    check('  saying when it was written and when archboard last saw it, not only that they differ',
+      typeof written?.writtenAt === 'string' && typeof written?.lastReadAt === 'string',
+      JSON.stringify({ writtenAt: written?.writtenAt, lastReadAt: written?.lastReadAt }));
+    check('  and offering the reload alone, because nothing has been refused and nothing is held',
+      /board open notewatch --reload/.test(written?.message ?? '') &&
+      !/--force/.test(written?.message ?? ''),
+      written?.message);
+
+    // The mark's whole claim: it is the state in which the next write would be
+    // refused, because both come off the one comparison.
+    let refusal = null;
+    try {
+      writeBoardContent(watchedBoard, emptyContent());
+    } catch (error) {
+      refusal = error.conflict ?? null;
+    }
+    check('  which is exactly the state the next write is refused in',
+      refusal?.reason === written?.reason && refusal?.board === watched,
+      JSON.stringify(refusal?.reason));
+
+    // And from the refusal on it is the hold's story, not this one. Two marks
+    // about one thing is a person reading twice to find out there is one
+    // problem.
+    beginHold(watched, refusal, emptyContent());
+    check('once that refusal has happened the hold says it and this stops',
+      noteWrittenElsewhere(watched) === null);
+    releaseHold(watched);
+    check('  and it is back the moment the hold ends without the note being taken',
+      noteWrittenElsewhere(watched)?.reason === 'changed');
+
+    // It clears itself, and the thing that clears it is taking the note —
+    // which is what `board open --reload` does, and all it does here.
+    recordBaseline(watchedBoard, watchedBoard.file, hashBoardBytes(fs.readFileSync(watchedBoard.file)));
+    check('taking the note clears it, with no write, no restart and no timer',
+      noteWrittenElsewhere(watched) === null);
+
+    forgetNoteWatch();
+    boardStore.delete(watched);
+  }
+
   // --- scratch has a home, and goes back to it (TASK-077) ----------------
   //
   // The board a first run draws on used to live in the process and nowhere
@@ -1390,8 +1487,9 @@ try {
       (await scratchApi('GET', '/api/boards')).body?.open
         ?.find(b => b.key === 'holdover')?.held?.board === 'holdover');
     // The last time this board was written down is still the last time it was
-    // written down. A held change is not a save, and the chrome's "unsaved
-    // changes" reads off exactly this.
+    // written down: a held change is not a save. Nothing in the chrome reads
+    // this any more (TASK-062), but an agent asking when a held board was last
+    // in the vault is asking a real question and must not be told "just now".
     const savedAtWhenHeld = (await scratchApi('GET', '/api/boards/info?board=holdover')).body?.savedAt;
     await scratchApi('POST', '/api/elements?board=holdover', {
       id: 'held2a', type: 'rectangle', x: 140, y: 140, width: 30, height: 30
@@ -1484,6 +1582,69 @@ try {
       (sourceAfter.elements ?? []).some(el => el.id === 'theirs3') &&
       !(sourceAfter.elements ?? []).some(el => el.id === 'held3'),
       JSON.stringify((sourceAfter.elements ?? []).map(el => el.id)));
+    // --- and the pane is told, on the beat the lock watch already keeps
+    // (TASK-062)
+    //
+    // The rules are checked in process above. This is the wire: that the news
+    // reaches a pane at all, that a pane arriving on a board somebody else has
+    // already rewritten is told outright rather than left to a sweep, and that
+    // taking the note takes the mark down.
+    const paneSocket = new WebSocket(`ws://127.0.0.1:${scratchPort}/?clientId=note-pane`);
+    const heard = [];
+    paneSocket.on('message', data => heard.push(JSON.parse(data.toString())));
+    await new Promise((resolve, reject) => {
+      paneSocket.once('open', resolve);
+      paneSocket.once('error', reject);
+    });
+    const notes = () => heard.filter(m => m.type === 'board_note' && m.board === 'watched');
+    const lastNote = () => notes()[notes().length - 1]?.writtenElsewhere ?? null;
+    try {
+      await scratchApi('POST', '/api/boards/new', { board: 'watched' });
+      await scratchApi('POST', '/api/elements?board=watched', {
+        id: 'seen1', type: 'rectangle', x: 1, y: 1, width: 40, height: 40
+      });
+      await scratchApi('POST', '/api/panes', {
+        clientId: 'note-pane', paneId: 'note-pane', primary: true, focused: true, elementCount: 1,
+        board: 'watched',
+        rect: { x: 0, y: 0, width: 640, height: 800 },
+        viewport: { x: 0, y: 0, width: 640, height: 800, zoom: 1 }
+      });
+      await scratchApi('POST', '/api/boards/open', { board: 'watched', pane: 'note-pane' });
+      await sleep(200);
+      check('a pane is told where the note stands as it arrives on a board',
+        notes().length > 0 && lastNote() === null,
+        JSON.stringify(notes().map(m => m.writtenElsewhere)));
+
+      const watchedFile = (await scratchApi('GET', '/api/boards/info?board=watched')).body?.file;
+      fs.writeFileSync(watchedFile, `${fs.readFileSync(watchedFile, 'utf-8')}\n<!-- theirs -->\n`);
+      await sleep(2400);
+      check('  and hears about a note written underneath it without anybody writing to the board',
+        lastNote()?.reason === 'changed' && lastNote()?.board === 'watched',
+        JSON.stringify(lastNote()));
+      // Its own message, saying its own thing. Not a hold, because nothing has
+      // been refused, so there is nothing held and no three outcomes to offer.
+      // Not a lock, because nobody is excluded from anything: the board is free
+      // and the pane keeps drawing.
+      const locks = heard.filter(m => m.type === 'board_lock' && m.board === 'watched');
+      check('  which is not a hold and not a lock: nothing was refused and nobody is excluded',
+        !heard.some(m => m.type === 'board_hold') &&
+        lastNote()?.outcomes === undefined && lastNote()?.writes === undefined &&
+        locks[locks.length - 1]?.held === false,
+        JSON.stringify({ holds: heard.filter(m => m.type === 'board_hold').length, lock: locks[locks.length - 1]?.held }));
+      // Once, not once a second: it is the state of the board, and a socket
+      // carrying it on every beat is the same sentence a thousand times an hour.
+      check('  said once rather than repeated on every sweep',
+        notes().filter(m => m.writtenElsewhere !== null).length === 1,
+        `${notes().filter(m => m.writtenElsewhere !== null).length} times`);
+
+      await scratchApi('POST', '/api/boards/open', { board: 'watched', pane: 'note-pane', reload: true });
+      await sleep(200);
+      check('  and taking the note takes the mark down by itself',
+        lastNote() === null, JSON.stringify(lastNote()));
+    } finally {
+      paneSocket.close();
+      await sleep(100);
+    }
   } finally {
     scratchCanvas.kill('SIGTERM');
     await sleep(200);

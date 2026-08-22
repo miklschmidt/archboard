@@ -557,12 +557,36 @@ function sweepBoardLocks(): void {
   const watch = watcher();
   const boards = watch.boards?.() ?? [];
   for (const board of new Set(boards.map(normalizeBoardKey))) {
+    // Whatever else rides on this beat goes first, because the lock's linger
+    // below is about the lock and has nothing to say about anybody else's
+    // question.
+    try {
+      sweepHolder().also?.(board);
+    } catch (error) {
+      // A passenger that throws must not stop the lock from being watched.
+      console.warn('A board sweep passenger failed:', error);
+    }
     // A board whose release is still lingering is one this canvas is in the
     // middle of telling the panes about. Saying "free" here would undo the
     // linger and put every pane back to flickering through an agent's fan-out.
     if (lingers().has(board)) continue;
     announce(board, boardLockState(board));
   }
+}
+
+/**
+ * One more thing to do with the boards on screen, on the beat above.
+ *
+ * The watcher is a timer over the boards a browser is looking at, gated on
+ * there being a browser to tell. Noticing that somebody outside archboard has
+ * written a note wants exactly that list and exactly that gate (TASK-062), and
+ * a second timer over the same boards would be the same poll running twice.
+ *
+ * So the sweep hands each board to one passenger and stays ignorant of what it
+ * does with it: this module knows about locks, and a note is not a lock.
+ */
+export function onBoardSweep(sink: ((board: string) => void) | null): void {
+  sweepHolder().also = sink;
 }
 
 /**
@@ -868,6 +892,10 @@ function lingers(): Map<string, ReturnType<typeof setTimeout>> {
 
 function sinkHolder(): { notify: LockSink | null } {
   return kept('board-lock-sink', () => ({ notify: null as LockSink | null }));
+}
+
+function sweepHolder(): { also: ((board: string) => void) | null } {
+  return kept('board-lock-sweep', () => ({ also: null as ((board: string) => void) | null }));
 }
 
 // A claim outlives a reload by definition: it is minutes long, and a reload is

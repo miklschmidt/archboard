@@ -3,10 +3,11 @@ id: TASK-062
 title: >-
   The dirty indicator compares timestamps, so it cannot see a note that is ahead
   of the canvas
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-20 19:04'
-updated_date: '2026-08-20 20:18'
+updated_date: '2026-08-22 15:25'
 labels: []
 dependencies:
   - TASK-078
@@ -41,6 +42,20 @@ Note that a decision on the stateless server question may remove the concept of 
 - [ ] #2 The indicator says what is actually true under ADR 0015: not "there are unsaved changes", which cannot happen once every write goes to the note, but "the note this pane is showing has been written by somebody else"
 - [ ] #3 The state clears by itself once the pane is showing the note as it now stands
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Establish what is still true after stage 8 before changing anything. Confirmed by reading the code: boardInfo is refreshed only on a board switch and on an explicit save, while under ADR 0015 every gesture writes the note, so Shell.tsx's dirty memo says 'unsaved changes' permanently after the first gesture on a board that is fully written down. It does not say less than it should, it says something false. Delete it rather than repair it.
+2. src/core/board-io.ts: factor ADR 0006's comparison out of writeBoardContent into one predicate, foreignWriteTo(file, destination) - bytes are there and either archboard has never read them or they hash to something other than the baseline. The write path and the new mark call the same function, so the mark shows exactly the state in which the next write would be refused and the two cannot drift.
+3. src/core/note-watch.ts: which boards on screen have had their note written by somebody else. Per-board state in kept(); a stat and baseline gate so a note is only hashed when something could have moved; announcements on transitions, not once per sweep.
+4. src/core/board-lock.ts: onBoardSweep(sink), one more thing done on the beat watchBoardLocks already keeps. Same list of boards, same gating on a browser being connected. A second timer over the same list would be the same poll twice (TASK-080).
+5. src/server.ts: register the sweep and the sink beside the lock ones, broadcast board_note_changed to the panes holding that board, and tell an arriving pane on the line below tellPaneAboutLock so a tab that opens onto a note already written elsewhere is not told nothing.
+6. Frontend: ForeignWrite on PaneStatus, handled in useCanvasSession beside board_lock and cleared when a board_switched lands.
+7. BoardBar: the dirty text and the frozen 'saved HH:MM' go. In their place a chip that says the note changed on disk, opening a dialog offering reload or carry on - two choices and not three, because nothing has been refused and there is nothing held to overwrite with. A hold still wins the slot.
+8. Docs: CONTEXT.md gains the term, ADR 0006 gains the mark before the refusal, CLAUDE.md gains the paragraph.
+9. scripts/check-boards.mjs: assertions beside TASK-079's block - a note written underneath shows up without a write, a pane arriving is told, reload clears it, and a held board says hold rather than this. Then revert each mechanism and count.
+<!-- SECTION:PLAN:END -->
 
 ## Comments
 
