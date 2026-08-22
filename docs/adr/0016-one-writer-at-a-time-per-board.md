@@ -89,8 +89,20 @@ in the note, because that is what ADR 0015 means. So a revoked claim leaves a
 board part way through whatever the agent was doing, and nothing rolls that
 back. A claim is therefore not a transaction, and an agent holding one cannot
 treat the board as private until it is finished: it has to leave the board
-sensible after each write, or do the work on a variant and swap when it is
-done. The skill teaches that alongside when to claim, because an agent that
+sensible after each write.
+
+Working on a variant and swapping it in at the end was written here as a second
+option and should not have been. Exclusion is about who may write; it was never
+licence to work out of sight. A creator needs an immediate connection to what
+they are making, and on this canvas the creator is both of you — an agent that
+hides a restructure until it is finished has broken that connection for the
+person watching, and the swap discards whatever they drew meanwhile.
+
+Nor was there a problem needing that remedy. The claim above is what stops an
+agent being caught half-way through by an interruption nobody saw coming: the
+person is told a board is held and why, so taking it back is something they
+choose with the work in front of them. Leaving a board sensible between writes
+is owed to somebody watching it, not insurance against being surprised. The skill teaches that alongside when to claim, because an agent that
 believes it has exclusive use until it says otherwise will eventually be wrong
 in the middle of a restructure.
 
