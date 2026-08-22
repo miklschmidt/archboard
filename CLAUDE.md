@@ -666,7 +666,7 @@ An agent is a fresh process per command, so a number it must thread from one
 answer into the next request is a number it drops, and a precondition a caller
 may leave out protects nobody. So the canvas fills it in from what it last told
 that writer, the way TASK-080 keeps a claim against the board so an agent
-carries nothing. Three writers, three answers:
+carries nothing. Four writers, four answers:
 
 | Writer | What is checked | Where the record lives |
 |---|---|---|
