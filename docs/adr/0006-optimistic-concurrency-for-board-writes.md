@@ -63,6 +63,21 @@ with autosave repeatedly implicated.
   value: that is somebody's own property in their own frontmatter, and the board
   is simply unversioned.
 
+  **The precondition is not a flag a writer must remember.** A number an agent
+  threads from one command's answer into the next request is a number it drops,
+  and this repository has spent long enough removing invariants that held only
+  while somebody remembered them. So the canvas fills it in from what it last
+  told that writer, checked at the write boundary where the lock is already
+  held. Who it can do that for is decided by who it can identify, and that turns
+  out to be exactly the writers the lock can identify: a claim, whose record
+  lives with the claim, and a client process that lives long enough to have been
+  told, which is what an MCP server is. A person is never checked at all — their
+  gesture took the board at its leading edge and refusing it would stop a wall
+  display responding to the person standing at it. An unclaimed agent's process
+  is anonymous by construction, and every stand-in for that identity is one that
+  always matches; a check that cannot fail is worse than no check, so that
+  writer states the version or claims the board.
+
 ## When it fires, after ADR 0015
 
 The decision above is unchanged and the check still catches every writer the
