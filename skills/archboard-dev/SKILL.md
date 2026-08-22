@@ -62,8 +62,8 @@ Do not trust a green build. The round-trip is the thing that breaks, and it
 only breaks with a browser attached.
 
 ```bash
-./bin/canvas clear --board scratch --yes
-cat <<'EOF' | ./bin/canvas add --board scratch
+./bin/canvas clear --board scratch --yes --doing "emptying scratch for a probe"
+cat <<'EOF' | ./bin/canvas add --board scratch --doing "drawing a probe box"
 [{"type":"rectangle","x":100,"y":100,"width":300,"height":120,
   "backgroundColor":"#e3f2fd",
   "label":{"text":"Probe"},
@@ -75,7 +75,9 @@ EOF
 
 Every command that touches a board names it, and one that does not is refused
 (ADR 0009). `scratch` is what a lone pane holds, so it is the board a probe
-usually wants.
+usually wants. Every command that *changes* a board also says what it is doing,
+and is refused without it (TASK-095) — including a throwaway probe, because the
+person at the wall is watching a box appear on their canvas either way.
 
 Metadata goes under `customData.archboard` (ADR 0003) — namespaced, never flat,
 because the Obsidian plugin writes its own top-level keys. The explicit
@@ -95,7 +97,8 @@ To exercise the full interaction, click the box in the browser and then:
 
 ```bash
 ./bin/canvas selection --text          # what the human has picked
-./bin/canvas promote --board scratch --kind service --name "Probe" --path src/core/promote.ts
+./bin/canvas promote --board scratch --kind service --name "Probe" \
+  --path src/core/promote.ts --doing "calling the probe box a service"
 ```
 
 ## Taking something from upstream

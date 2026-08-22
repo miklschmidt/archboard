@@ -28,7 +28,8 @@ export async function claim(argv: string[]): Promise<void> {
     throw new CliUsageError(
       'claim needs --reason: it is what the pane shows the person whose board you have taken. ' +
       'Without it the wall has stopped working for no reason they can see. ' +
-      'Say what you are doing, in their words: --reason "redrawing the payment path".'
+      'Say what you are taking it for, in their words: --reason "redrawing the payment path". ' +
+      'That is the campaign; --doing on each write is the step.'
     );
   }
   const forMs = typeof flags.for === 'string' ? durationMs(flags.for) : undefined;
