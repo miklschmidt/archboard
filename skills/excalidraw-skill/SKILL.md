@@ -156,6 +156,7 @@ Results are JSON on stdout — except `describe` (plain text) and raw-content ou
 | Branch a board into a variant | `board save --board <src> --variant <v>` — the copy the proposal is drawn on; it moves no pane, so put it up with `pane open --board <src>@<v>` |
 | Diff two variants | `compare <from> [to]` — semantic diff keyed on node identity; see Variants and comparison |
 | What changed since last turn | `changes [--since <cursor>] [--coalesce] [--text]` — the human's edits, named as architecture |
+| Take a board for a stretch of work | `claim --reason "..." [--for 10m]`, `release` — for a redraw or a restructure, never for one box; see [One writer at a time](#workflow-one-writer-at-a-time) |
 | Snapshots | `snapshot save\|list\|restore <name>` |
 | Share link | `share` (encrypted upload → excalidraw.com URL) |
 | Wipe canvas | `clear --yes` |
@@ -572,6 +573,91 @@ Neither board is opened and the canvas is not disturbed. Both sides are read fro
 
 Read `layout.cannotExpress` in the result before saying anything about layout. It lists what this model is blind to by design — absolute position, tidiness, edge routing, movement below the thresholds — and those are claims you must not make on its behalf.
 
+## Workflow: One writer at a time
+
+A board has one writer at a time. An ordinary write takes the board, writes,
+and gives it back inside about twenty milliseconds; a person takes it by
+touching the canvas. That happens around every write you make and asks nothing
+of you.
+
+**Waiting is normal.** A write that lands inside somebody's gesture waits for
+them rather than failing, because a gesture is short. If the wait runs out, the
+answer names who has the board and since when. Say that out loud instead of
+going quiet. "The board is yours at the moment, I'll add the queue when you put
+it down" is the thing to say; then try once more. Do not loop on it.
+
+### Claim before substantial work you already know is coming
+
+| | |
+|---|---|
+| **Claim** | redrawing a board from code, restructuring a subsystem, working down a list of elements. Anything whose half-finished state would be wrong to look at |
+| **Do not claim** | one box, a colour, a label, a promotion, a mermaid conversion, anything you only read |
+
+An ordinary write already holds the board for as long as it writes, so there is
+nothing to claim for moving one box. What a claim buys is the gaps between
+twenty writes: taking the board and giving it back twenty times leaves nineteen
+moments for somebody else to write into, and a board that is never once in the
+state you meant it to be in.
+
+```bash
+archboard claim --board payments --reason "redrawing the payment path from src/payments" --for 10m
+# ... every write naming payments now goes under the claim ...
+archboard release --board payments
+```
+
+**The reason is shown to whoever is standing at the board**, on the pane that
+has just stopped responding to them. "Redrawing the payments board from
+src/payments" says what is happening and roughly how long. "Working" says the
+wall is broken. Write it in their words.
+
+Nothing travels between the two commands but the board name, which every call
+carries anyway. Release the moment the work is done, and do not hold a claim
+across a pause while you wait for somebody to answer a question: ask first,
+then claim.
+
+### A claim is not a transaction
+
+This is the part to get right. **Revoking is not undoing.** Every write you
+have already made is in the note, so a claim taken back leaves the board part
+way through whatever you were doing, and nothing puts it back. You do not have
+the board until you say otherwise. You have it until the person standing at it
+wants it.
+
+So there are two ways to restructure a board, and either is fine:
+
+**Leave the board sensible after every write.** Draw the new path before
+deleting the old one, and move a subsystem in one `apply` patch rather than a
+box at a time. Whoever takes the board halfway through then gets a board that
+still reads.
+
+**Or do the work on a variant and swap it in when it is done.** The person
+keeps the board they are looking at, none of your work in progress is ever on
+their screen, and there is no claim to lose:
+
+```bash
+archboard board save --board payments --variant wip        # branch; nothing moves on screen
+archboard add --board payments@wip elements.json           # the restructure, out of their way
+archboard board save --board payments@wip --as payments    # the swap: all of it in one write
+archboard board open payments [--pane <spec>]              # and this is what repaints their pane
+```
+
+The swap is the whole restructure arriving at once, and the last of those four
+commands is load-bearing: a save writes a note, and the pane holding `payments`
+goes on showing what it was showing until a `board open` hands it the new
+scene. The swap also **replaces** `payments`, so anything drawn on it while you
+worked is gone. Say what you are about to do before you do it.
+
+### Losing the board is normal
+
+The person at the canvas can take a claimed board back with one deliberate tap,
+and it is not an error when they do. You are told once, on your next write or
+claim, and the board is ordinary again after that.
+
+Stop there. Say what you finished, what you did not, and what state that leaves
+the board in, because you are the only one who knows what the half you drew was
+going to become. Do not claim it again to finish: they took it because they
+wanted it.
+
 ## Workflow: File I/O
 
 - Export scene: `export --out diagram.excalidraw` (no `--out` → JSON to stdout)
@@ -608,6 +694,8 @@ A snapshot belongs to the board it was taken on, and `--force` is what restores 
 
 - **Exit code 3 (canvas unreachable)?** Auto-start is disabled (`EXCALIDRAW_NO_AUTOSTART=1`) or a non-loopback `EXPRESS_SERVER_URL` is set. Run `start` explicitly or fix the env.
 - **Exit code 4 (browser required)?** Open `http://127.0.0.1:3000` in a browser, then retry — screenshots, image export, viewport, mermaid conversion, and making or closing a pane all happen in the frontend.
+- **`BOARD_HELD`?** Somebody else has the board and the wait for them ran out. The answer names the holder and how long they have had it, so say that rather than going quiet, and try once more in a moment: a person's hold is a gesture and clears on its own. Retrying in a loop does not make the board come free any sooner.
+- **`CLAIM_REVOKED`?** The person at the canvas took a board you had claimed. You are told once, and nothing you wrote was undone, so the board sits part way through whatever you were doing. Stop, say what you finished and what state that leaves it in, and leave the board alone rather than claiming it again. Your next write is an ordinary write and takes the board only for as long as it writes. See [One writer at a time](#workflow-one-writer-at-a-time).
 - **Elements not appearing?** Check `describe` — they may be off-screen. `viewport --fit --pane <spec>` frames everything on that pane's board, and `viewport --ids a,b,c` frames a subgraph (`set_viewport` with `scrollToContent` or `scrollToElementIds` in MCP).
 - **Arrow not connecting?** Verify element IDs with `get <id>`. Make sure `startElementId`/`endElementId` match existing element IDs.
 - **Canvas in a bad state?** `snapshot save` first, then `clear --yes` and rebuild. Or `snapshot restore` to go back.
