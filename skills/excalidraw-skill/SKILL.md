@@ -615,37 +615,29 @@ carries anyway. Release the moment the work is done, and do not hold a claim
 across a pause while you wait for somebody to answer a question: ask first,
 then claim.
 
-### A claim is not a transaction
+### Work where they can see it
 
-This is the part to get right. **Revoking is not undoing.** Every write you
-have already made is in the note, so a claim taken back leaves the board part
-way through whatever you were doing, and nothing puts it back. You do not have
-the board until you say otherwise. You have it until the person standing at it
-wants it.
+**Every change you make is visible as you make it.** Somebody is standing at the
+canvas watching the architecture take shape, and that immediacy is the whole
+point of drawing here rather than handing over a file. Keeping them from editing
+while you write is fine — that is what the claim is for. Keeping them from
+*seeing* is not.
 
-So there are two ways to restructure a board, and either is fine:
-
-**Leave the board sensible after every write.** Draw the new path before
+So **leave the board sensible after every write.** Draw the new path before
 deleting the old one, and move a subsystem in one `apply` patch rather than a
-box at a time. Whoever takes the board halfway through then gets a board that
-still reads.
+box at a time. Not because you might be interrupted — the claim handles that —
+but because each write is something they are looking at.
 
-**Or do the work on a variant and swap it in when it is done.** The person
-keeps the board they are looking at, none of your work in progress is ever on
-their screen, and there is no claim to lose:
+**Do not do the work on a variant and swap it in when it is done.** It hides the
+change until there is nothing left to react to, and the swap replaces the board,
+so anything they drew while you worked is gone. Variants are for putting a
+proposal *beside* the current architecture, both on screen, so the two can be
+compared (see Variants and comparison) — the opposite of a private workspace.
 
-```bash
-archboard board save --board payments --variant wip        # branch; nothing moves on screen
-archboard add --board payments@wip elements.json           # the restructure, out of their way
-archboard board save --board payments@wip --as payments    # the swap: all of it in one write
-archboard board open payments [--pane <spec>]              # and this is what repaints their pane
-```
-
-The swap is the whole restructure arriving at once, and the last of those four
-commands is load-bearing: a save writes a note, and the pane holding `payments`
-goes on showing what it was showing until a `board open` hands it the new
-scene. The swap also **replaces** `payments`, so anything drawn on it while you
-worked is gone. Say what you are about to do before you do it.
+**Revoking is not undoing**, so a claim taken back leaves the board part way
+through and nothing puts it back. That is not a hazard to design around: they
+watched you get there and the banner said why you had it, so taking it back is a
+decision made with the board in front of them. Stop when told.
 
 ### Losing the board is normal
 
