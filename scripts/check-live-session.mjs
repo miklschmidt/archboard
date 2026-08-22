@@ -870,9 +870,27 @@ try {
   // while remaining perfectly able to post a write nobody will accept. ADR 0016
   // says a pane that cannot be told must assume the board is held. Killing the
   // canvas is how a dropped socket is arranged here.
+  // Wait for the canvas to actually be gone rather than for a fixed interval.
+  // A sleep here measures how fast a runner tears a process down, not whether
+  // the pane fails closed: CI killed the server, slept 1.5 s, found the socket
+  // still open and the pane still — correctly — connected, and reported a
+  // fail-open that had not happened. `onclose` sets `connected` false the
+  // moment it fires, so the only thing worth waiting on is the close itself.
+  const died = new Promise(resolve => server.once('exit', resolve));
   server.kill('SIGTERM');
-  await sleep(1500);
-  const orphaned = await viewMode();
+  await Promise.race([died, sleep(5000).then(() => server.kill('SIGKILL'))]);
+  await died;
+
+  // Then give the pane a bounded moment to notice. Polling rather than sleeping
+  // for the same reason, and the bound matters: a pane that takes a long time to
+  // fail closed is a pane a person can keep drawing into after archboard has
+  // stopped being able to accept it.
+  let orphaned = await viewMode();
+  const noticedBy = Date.now() + 5000;
+  while (orphaned.view !== true && Date.now() < noticedBy) {
+    await sleep(100);
+    orphaned = await viewMode();
+  }
   check('a pane that has lost the socket assumes the board is held, not free',
     orphaned.view === true, JSON.stringify(orphaned));
 } catch (error) {
