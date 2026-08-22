@@ -28,6 +28,7 @@ import type {
 } from '../types'
 import { cleanElementForExcalidraw, elementsForScene } from './elements'
 import { baselineFrom, diffAgainstBaseline, fingerprint, isEmpty, type Baseline } from './changes'
+import { derivedId, isBlockId } from '../../../src/core/ids'
 import {
   BoardConflictError, fetchElements, fetchFiles, holdBoard, loadedBundle, releaseBoard, reportChanges,
   reportPane, takeBoardBack
@@ -145,6 +146,57 @@ function sceneStamp(api: ExcalidrawImperativeAPI | null): string {
     hash = fold(hash, Array.isArray(fields.groupIds) ? fields.groupIds.length : 0)
   }
   return String(hash)
+}
+
+const EMPTY_WITHHELD: ReadonlySet<string> = new Set()
+
+/**
+ * The text element a person has an editor open on, if any.
+ *
+ * Excalidraw keeps the element it opened the editor for in `editingTextElement`
+ * and keeps it there under the id it had at the time, which is what makes this
+ * worth asking. Rename that element in the scene and the appState still names
+ * the old one: the textarea stays on screen, stays focused, keeps every
+ * character, and submits into an element the scene no longer holds. Measured on
+ * a hand-drawn text (six characters discarded) and on a hand-added label (all
+ * ten).
+ */
+function idUnderEditor(api: ExcalidrawImperativeAPI | null): string | null {
+  const editing = api?.getAppState().editingTextElement
+  return editing ? editing.id : null
+}
+
+/**
+ * The scene, with every named text element answering to its new name.
+ *
+ * The same rewiring `renameElementId` does on the server side
+ * (`src/core/obsidian-md.ts`): the element itself, the container that lists it
+ * in `boundElements`, the label that points back through `containerId`, and
+ * either end of an arrow bound to it.
+ */
+function withTextIdsRenamed(
+  scene: readonly Record<string, any>[],
+  renames: ReadonlyMap<string, string>
+): Record<string, any>[] {
+  const renamed = (id: unknown): string | undefined =>
+    typeof id === 'string' ? renames.get(id) : undefined
+  return scene.map((element) => {
+    const next: Record<string, any> = { ...element }
+    next.id = renamed(next.id) ?? next.id
+    if (Array.isArray(next.boundElements)) {
+      next.boundElements = next.boundElements.map((bound: any) =>
+        bound && renamed(bound.id) ? { ...bound, id: renames.get(bound.id) } : bound
+      )
+    }
+    if (renamed(next.containerId)) next.containerId = renames.get(next.containerId)
+    if (next.startBinding && renamed(next.startBinding.elementId)) {
+      next.startBinding = { ...next.startBinding, elementId: renames.get(next.startBinding.elementId) }
+    }
+    if (next.endBinding && renamed(next.endBinding.elementId)) {
+      next.endBinding = { ...next.endBinding, elementId: renames.get(next.endBinding.elementId) }
+    }
+    return next
+  })
 }
 
 export interface CanvasSessionOptions {
@@ -487,14 +539,38 @@ export function useCanvasSession({
     }, 0)
   }, [publishStatus])
 
-  /** Replace the scene outright; the board is now exactly what the server said. */
-  const applyServerScene = useCallback((elements: Partial<ExcalidrawElement>[]): void => {
+  /**
+   * Replace the scene outright; the board is now exactly what the server said.
+   *
+   * Except for what this pane deliberately did not tell the server about. A
+   * text element under an open editor is withheld from the report that provoked
+   * this answer (see `diffAgainstBaseline`), so the answer cannot contain it,
+   * and replacing the scene with the answer alone would take a half-typed
+   * label off the glass. Those elements are carried over from the scene and
+   * stay out of the baseline, so the first report after the editor closes still
+   * owes them.
+   */
+  const applyServerScene = useCallback((
+    elements: Partial<ExcalidrawElement>[],
+    withheld: ReadonlySet<string> = EMPTY_WITHHELD
+  ): void => {
     const api = apiRef.current
     if (!api) return
+    const answered = new Set(elements.map((element) => element.id))
+    // Before `elementsForScene`, which drops a `boundElements` entry or a
+    // `containerId` pointing at an element the delivery does not carry. The
+    // container of a label being typed into is exactly that, and unbinding it
+    // would strand the label.
+    const kept = withheld.size === 0 ? [] : (api.getSceneElementsIncludingDeleted() as any[])
+      .filter((element) => withheld.has(element.id) && !answered.has(element.id))
     settle(() => {
-      baselineRef.current = baselineFrom(api.getSceneElements() as unknown as Record<string, any>[])
+      const scene = api.getSceneElements() as unknown as Record<string, any>[]
+      baselineRef.current = baselineFrom(scene.filter((element) => !withheld.has(element.id)))
     })
-    api.updateScene({ elements: elements as any, captureUpdate: CaptureUpdateAction.NEVER })
+    api.updateScene({
+      elements: elementsForScene([...elements, ...kept]) as any,
+      captureUpdate: CaptureUpdateAction.NEVER
+    })
   }, [settle])
 
   /**
@@ -555,7 +631,7 @@ export function useCanvasSession({
     if (!apiRef.current || !boardKeyRef.current) return
     try {
       const { elements } = await fetchElements(boardKeyRef.current)
-      applyServerScene(elementsForScene(elements.map(cleanElementForExcalidraw)))
+      applyServerScene(elements.map(cleanElementForExcalidraw))
       const { files } = await fetchFiles(boardKeyRef.current)
       if (files && Object.keys(files).length > 0) apiRef.current?.addFiles(Object.values(files) as any)
     } catch (error) {
@@ -664,6 +740,65 @@ export function useCanvasSession({
 
   // ─── Reporting what the human did ────────────────────────────
 
+  /**
+   * What this pane is deliberately not telling the server about right now.
+   *
+   * One element at most: the one a person has a text editor open on. Reporting
+   * it is what would get it renamed, and a rename under an open editor is how
+   * typing disappears (TASK-098, `settleForeignTextIds` below).
+   */
+  const withheldIds = useCallback((): ReadonlySet<string> => {
+    const editing = idUnderEditor(apiRef.current)
+    return editing === null ? EMPTY_WITHHELD : new Set([editing])
+  }, [])
+
+  /**
+   * Give every text element Excalidraw minted a name a note can hold, here,
+   * before anybody else has to (TASK-098).
+   *
+   * Excalidraw names what a person draws with a 21-character nanoid. A text
+   * element's block id is its element id and the Obsidian plugin's parser reads
+   * exactly eight characters (`/\s\^(.{8})[\n]+/`), so a longer one is renamed
+   * on the way into a note — and under ADR 0015 the note is the board, so that
+   * rename is what comes back to this pane. Measured before this existed: a
+   * hand-drawn text lost six characters and a hand-added label lost all ten,
+   * with the textarea still on screen, still focused, and holding every one of
+   * them.
+   *
+   * The defence is that no id ever changes under an editor, and it takes both
+   * halves of this. The element under the editor is withheld from the report,
+   * so the server never sees a name it would want to change; and the moment the
+   * editor is gone, the pane renames it itself rather than letting the note
+   * writer do it at the far end of a round trip.
+   *
+   * `derivedId` is the same function the server would have called on the same
+   * id, so the two agree on the new name without saying anything to each other,
+   * and a rename this pane somehow misses is still the rename the server makes.
+   */
+  const settleForeignTextIds = useCallback((withheld: ReadonlySet<string>): void => {
+    const api = apiRef.current
+    if (!api) return
+    const scene = api.getSceneElementsIncludingDeleted() as unknown as Record<string, any>[]
+    const foreign = scene.filter((element) => element.type === 'text' && !element.isDeleted
+      && !withheld.has(element.id) && !isBlockId(element.id))
+    if (foreign.length === 0) return
+
+    const taken = new Set(scene.map((element) => element.id as string))
+    const renames = new Map<string, string>()
+    for (const element of foreign) {
+      const name = derivedId(element.id, taken)
+      taken.add(name)
+      renames.set(element.id, name)
+    }
+    // Suppressed, because this is the pane putting its own house in order and
+    // not a hand moving. The report it is part of is already on its way out.
+    settle(() => { })
+    api.updateScene({
+      elements: withTextIdsRenamed(scene, renames) as any,
+      captureUpdate: CaptureUpdateAction.NEVER
+    })
+  }, [settle])
+
   const sendReport = useCallback(async (): Promise<void> => {
     const api = apiRef.current
     if (!api) return
@@ -679,6 +814,11 @@ export function useCanvasSession({
     // on top of that is neither their board nor ours. Diffed against nothing,
     // so every element on the glass is in it (TASK-079).
     const rebase = rebaseNeededRef.current
+    // What this pane is keeping to itself, asked once and used three times: the
+    // rename skips it, the report leaves it out, and the document that comes
+    // back must not be allowed to take it off the glass.
+    const withheld = withheldIds()
+    settleForeignTextIds(withheld)
     // Including the deleted: a report is built only from live elements, but
     // *why* an element went missing can matter. Emptying a label deletes the
     // bound text element rather than editing it, and the deleted element is
@@ -686,7 +826,8 @@ export function useCanvasSession({
     // that was never expanded (src/core/labels.ts, TASK-029).
     const report = diffAgainstBaseline(
       api.getSceneElementsIncludingDeleted() as unknown as Record<string, any>[],
-      rebase ? new Map() : baselineRef.current
+      rebase ? new Map() : baselineRef.current,
+      withheld
     )
     if (!rebase && isEmpty(report)) {
       baselineRef.current = report.nextBaseline
@@ -734,7 +875,7 @@ export function useCanvasSession({
       // in it.
       const handMoved = localEditsRef.current !== editsAtSend
       if (reply.document && !handMoved) {
-        applyServerScene(elementsForScene(reply.document.map(cleanElementForExcalidraw)))
+        applyServerScene(reply.document.map(cleanElementForExcalidraw), withheld)
       } else {
         // Only now is this what the server holds.
         baselineRef.current = report.nextBaseline
@@ -774,7 +915,7 @@ export function useCanvasSession({
     // `publishStatus` puts the hold in the pane's status when the write is
     // refused (TASK-079); `releaseIfIdle` gives the board back when it lands
     // (TASK-067). Both are called from the body, so both belong here.
-  }, [applyServerScene, clientId, noteChange, publishStatus, releaseIfIdle])
+  }, [applyServerScene, clientId, noteChange, publishStatus, releaseIfIdle, settleForeignTextIds])
 
   /** Does this pane hold edits the server has not accepted? */
   const hasPendingChanges = useCallback((): boolean => {
@@ -782,9 +923,10 @@ export function useCanvasSession({
     if (!api || !userInteractedRef.current) return false
     return !isEmpty(diffAgainstBaseline(
       api.getSceneElementsIncludingDeleted() as unknown as Record<string, any>[],
-      baselineRef.current
+      baselineRef.current,
+      withheldIds()
     ))
-  }, [])
+  }, [withheldIds])
 
   const scheduleReport = useCallback((): void => {
     // Deliberately not gated on the socket: reporting is an HTTP call, so a
@@ -1089,7 +1231,10 @@ export function useCanvasSession({
           break
         }
         const elements = (data.elements ?? []).map(cleanElementForExcalidraw)
-        applyServerScene(elements.length > 0 ? elementsForScene(elements) : [])
+        // Still this pane's board, so a half-typed label is still this pane's
+        // to keep: a reconnection in the middle of somebody typing must not
+        // take it off the glass.
+        applyServerScene(elements, withheldIds())
         if (data.files) api.addFiles(Object.values(data.files))
         break
       }
@@ -1099,7 +1244,7 @@ export function useCanvasSession({
       // exists to prevent — and take an empty board as genuinely empty.
       case 'board_switched': {
         const elements = (data.elements ?? []).map(cleanElementForExcalidraw)
-        applyServerScene(elements.length > 0 ? elementsForScene(elements) : [])
+        applyServerScene(elements)
         // The board's images come with it. Without this a pane pointed at a
         // board with pictures on it got the elements and no pictures, and only
         // a reload put them back (TASK-060).
@@ -1264,7 +1409,7 @@ export function useCanvasSession({
   }, [
     adoptBoard, answerExport, answerMermaid, answerViewport, applyServerElements,
     applyServerScene, clientId, hasPendingChanges, loadBoard, noteChange, onLayoutRequest,
-    onLibraryChanged, removeElements, sendReport
+    onLibraryChanged, removeElements, sendReport, withheldIds
   ])
 
   const connect = useCallback((): void => {

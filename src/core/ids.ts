@@ -19,6 +19,13 @@
 // to mint them in the final shape. So minting lives here, and nothing
 // downstream — least of all the note writer — is left with a reason to rename.
 //
+// Excalidraw is the one minter this file cannot reach: it names what a person
+// draws with a 21-character nanoid, in the browser. So the pane calls
+// `derivedId` below the moment a text editor closes, before the element is
+// reported (TASK-098, `frontend/src/canvas/useCanvasSession.ts`). Same
+// function, same answer, and the rename therefore happens where no editor is
+// bound rather than at the far end of a round trip.
+//
 // Collision handling lives here too, for the same reason it does not belong at
 // the writing site: a collision is a property of the id space, not of a file
 // format. Both mints take the ids already spoken for and will not return one

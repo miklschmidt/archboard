@@ -141,13 +141,21 @@ only place an id is minted. The plan's compatibility claim held exactly as
 written: the four renames measured in `server-is-the-truth.md` §4 reproduce
 byte for byte and are pinned as golden values in `check-obsidian-md`.
 
-What stage 2 does **not** cover: a text element Excalidraw itself minted, which
-is a 21-character nanoid and is still renamed on the way into the note. Nothing
-here can rename it safely, because the browser has it on screen and may have an
-editor bound to it, which is the whole failure this stage exists to prevent. The
-note writer's rename therefore stays as a fallback for ids that came from
-elsewhere, and what the browser gets back for a hand-drawn text element is an
-open question for stage 8.
+What stage 2 did **not** cover: a text element Excalidraw itself minted, which
+is a 21-character nanoid and had to be renamed on the way into the note. Nothing
+on the server can rename it safely, because the browser has it on screen and may
+have an editor bound to it, which is the whole failure this stage exists to
+prevent.
+
+**Closed by TASK-098**, in the pane rather than the server, and measured first:
+a hand-drawn text lost six typed characters and a hand-added label lost all ten.
+The element under a text editor is withheld from the change report, so the
+server is never told a name it would want to change; and the moment the editor
+closes the pane renames it itself, through the same `derivedId` the server would
+have called, so the two agree without a round trip and no answer a pane gets
+back carries a rename. The note writer's rename stays as the fallback for ids
+that came from elsewhere. `scripts/check-typed-text.mjs` draws the element with
+Excalidraw's own tools so Excalidraw mints the id, which no other check does.
 
 ## Stage 3. Find out how text can be measured
 

@@ -46,7 +46,8 @@ bun run test        # type-check, CI coverage, module scope, then stdio wire,
                     # library, boards + panes,
                     # branch vs redraw, proposal beside source, skill install,
                     # repo bindings, CLI/MCP surface parity, staleness, hot
-                    # reload, a board rendered in a real browser, and a long
+                    # reload, a board rendered in a real browser, somebody
+                    # typing into a text element that browser named, and a long
                     # session of mixed agent and human writes against one
 
 ./bin/canvas start  # canvas server on 127.0.0.1:3000
@@ -126,12 +127,14 @@ costs the process and nothing on any board: a write is a write to the note
 `bun run type-check` is the only thing that type-checks now, and `bun run test`
 runs it first, so a type error still fails the suite.
 
-**Two checks drive a real browser, and running the suite needs one.**
+**Three checks drive a real browser, and running the suite needs one.**
 Everything else in `scripts/` stands a WebSocket in for a pane, which cannot
 catch a renderer disagreeing with us: a socket holds whatever it was sent.
-Neither claims a pass without `agent-browser` on PATH — they exit 2, "I could
-not run" — and both assert `navigator.userAgent` says headless, because a
-window that maps steals focus under Hyprland and these run on every push.
+None of them claims a pass without `agent-browser` on PATH — they exit 2, "I
+could not run" — and all three assert `navigator.userAgent` says headless,
+because a window that maps steals focus under Hyprland and these run on every
+push. They run one after another, never at once: TASK-097 records that two of
+them sharing the machine is how one of them fails for no reason.
 
 - `bun run test:browser` (`scripts/check-fixed-point.mjs`, TASK-071) writes a
   board, renders it, reads back what the pane is holding, and reports every
@@ -146,11 +149,18 @@ window that maps steals focus under Hyprland and these run on every push.
   property rather than a claim: the bugs it exists to catch — a label
   multiplying, a rename coming back — need a session to build up in. About
   twenty seconds, and it skips the build when `dist/frontend` is already newer
-  than every source, so the two browser checks build once between them. It also
+  than every source, so the three browser checks build once between them. It also
   owns the half of the board mutex only a renderer can answer (ADR 0016): the
   pane accepts a touch on a free board, refuses one the moment somebody else
   takes the board, and — with the canvas killed under it — assumes the board is
   held rather than free.
+- `bun run test:typing` (`scripts/check-typed-text.mjs`, TASK-098) draws a text
+  element with the text tool and adds a label to a box with a double-click, so
+  **Excalidraw mints the ids**, types into both across a write each with the
+  editor still open, and asserts every character is on the board and in the
+  note. It is the only check in which a rename can happen at all: live-session
+  retypes the bound text of an agent-created container, which already answers
+  to eight characters. About fifteen seconds.
 
 **A push runs the whole chain** (TASK-082). `.github/workflows/ci.yml` runs
 `bun run test` and nothing else, so a check added to `package.json` runs on
@@ -158,9 +168,9 @@ main without anybody touching the workflow. It used to name two scripts of its
 own while the suite grew to seventeen around it, which is why
 `bun run test:suites` fails when a `test:*` script is in neither the chain nor
 the skip list in `scripts/check-ci-suites.mjs`. **That list is empty.** The
-whole chain takes 97 seconds on a 13th-gen i7, of which the two browser checks
-are about 35; of the rest, `test:mcp`, `test:boards` and `test:side-by-side`
-are two thirds.
+whole chain takes 171 seconds on a 13th-gen i7, of which the three browser
+checks are 60 (11 fixed-point, 13 typed-text, 35 live-session); of the rest,
+`test:mcp`, `test:boards` and `test:side-by-side` are two thirds.
 
 Open <http://127.0.0.1:3000>. A browser tab is required for `screenshot`,
 `mermaid`, image export, and viewport control; pure JSON ops work headless.
@@ -496,9 +506,22 @@ wrote, and the two expansions reach one name because both derive it from the
 container. The derivation itself has not changed, so a board already in the
 vault keeps the ids it has: the four renames measured in
 `docs/design/server-is-the-truth.md` are pinned as golden values in
-`check-obsidian-md`. What Excalidraw itself mints is still 21 characters and
-still renamed at the note boundary, and nothing can rename it safely while a
-browser holds it, so stage 8 of `docs/design/the-plan.md` owns that question.
+`check-obsidian-md`.
+
+What Excalidraw mints is 21 characters, and **the pane settles those itself now,
+so nothing renames a text element while a person is typing into it** (TASK-098).
+That gap was measured before it was closed, in a real browser: a hand-drawn text
+lost six typed characters and a hand-added label lost all ten, with the textarea
+still on screen, still focused, and holding every one of them. Two halves close
+it. The element under a text editor is withheld from the change report, so the
+server is never told a name it would want to change; and the moment the editor
+is gone the pane renames it, through the same `derivedId` the server would have
+called. The two therefore reach one name without saying anything to each other,
+and no answer a pane gets back carries a rename at all.
+`settleBlockIds` and the note writer's own rename stay, as the backstop for a
+note archboard did not write. `scripts/check-typed-text.mjs` is the proof, and
+it is the only check in which a rename can happen: reverting the withhold fails
+9 of its checks and reverting the pane's rename fails 2.
 
 ## Names on the wire
 
