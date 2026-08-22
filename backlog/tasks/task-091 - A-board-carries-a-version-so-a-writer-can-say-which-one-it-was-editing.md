@@ -1,9 +1,11 @@
 ---
 id: TASK-091
 title: 'A board carries a version, so a writer can say which one it was editing'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-22 15:32'
+updated_date: '2026-08-22 20:10'
 labels: []
 dependencies:
   - TASK-075
@@ -58,3 +60,17 @@ Two canvases over one vault, which the mutex already supports and `check-lock` a
 - [ ] #4 ADR 0006's hash check stays and still refuses a write when a writer that does not maintain the version has changed the note
 - [ ] #5 A refusal says which side is ahead, and distinguishes a foreign writer (version unchanged, bytes different) from a revert (version moved backwards)
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Frontmatter: a `version` key beside board/variant/level, read from the note's head, round-tripped verbatim like the rest.
+2. Bump in `writeBoardContent`, on change rather than blindly: render once with the destination's frontmatter carried across, compare to the destination's bytes, and patch the version line only when the document actually moved. Two writes of an unchanged board stay byte-identical, and 'archboard never writes different bytes at the same version' is what makes the foreign-writer diagnosis sound.
+3. The write returns the version it produced. `persistBoard` hands that to `agentWriteAnswer`, so `fingerprint` carries `{elements, note, version}` and stops re-rendering the note to hash it.
+4. The baseline records the version alongside the hash, at every place it records the hash: a board opened, reloaded or written.
+5. `foreignWriteTo` compares the baseline's version against the note's and says which way it moved — unchanged (a foreign writer), behind (a revert or a pull), ahead (another archboard client). One comparison, so the refusal and TASK-062's mark both say it.
+6. A writer states an expectation: `?expectVersion=`, `--expect-version`, MCP `expectVersion`. Checked in the write-boundary middleware after the lock and before the handler, which is where it is atomic against another archboard client.
+7. `board info` reports the note's version, so a writer can learn one without writing first.
+8. `scripts/check-version.mjs`, wired into the chain: round-trip, bump-on-change, the stale precondition, and the three diagnoses — including a foreign write with a matching expectVersion, which the hash still refuses.
+9. ADR 0006 gets a paragraph saying what TASK-091 built, so its rejected option does not read as rejecting this.
+<!-- SECTION:PLAN:END -->

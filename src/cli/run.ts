@@ -1,5 +1,7 @@
 import { CliUsageError } from './args.js';
-import { boardHoldSeen, setRequestedBoard, setWriteDoing } from '../core/canvas-client.js';
+import {
+  boardHoldSeen, setExpectedVersion, setRequestedBoard, setWriteDoing
+} from '../core/canvas-client.js';
 import { packageVersion } from '../core/version.js';
 import * as server from './commands/server.js';
 import * as elements from './commands/elements.js';
@@ -40,9 +42,11 @@ const WRITE_ANSWER = [
   '  ANSWERS WITH WHAT THE BOARD BECAME: `elements` is every element the write touched in',
   '  its resulting form, including what the server made and you never named — the ids it',
   '  minted, the text element it expanded from a `label`, the arrows it re-routed behind a',
-  '  move. `fingerprint` is the board in one line: how many elements, and the sha-256 of',
-  '  the note it would write. Keep the last one and you can tell in a single comparison',
-  '  whether anything you did not do has changed, instead of re-reading the board.',
+  '  move. `fingerprint` is the board in one line: how many elements, the sha-256 of its',
+  '  note, and which edit of that note this write produced. Keep the last one and you can',
+  '  tell in a single comparison whether anything you did not do has changed, instead of',
+  '  re-reading the board — and hand `fingerprint.version` back as --expect-version on your',
+  '  next write to have it refused if somebody got there first.',
   '',
   '  --document adds the whole board. OFF BY DEFAULT AND USUALLY WRONG: 300 elements is',
   '  about 60,000 tokens, so a loop that asks for it pulls the board through a context once',
@@ -412,8 +416,13 @@ function printHelp(): void {
   '    write lands, so the person at the board can see what you are up to. A write without it is',
   '    refused. It is never written to the note. A claim\'s --reason is the campaign; this is the',
   '    step, and neither stands in for the other.',
+  '  --expect-version <n> is global and OPTIONAL: the version of the board you were editing,',
+  '    from the fingerprint on your last write or from `board info`. The write is refused if the',
+  '    board has moved on, naming both versions, so two archboard writers cannot silently',
+  '    overwrite each other. Say nothing and the write goes against whatever is there.',
     '  Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required,',
-    '               5 board write refused (the note changed on disk).',
+    '               5 board write refused (the note changed on disk, or it moved past',
+    '               --expect-version).',
     '  Canvas-driving commands auto-start the server (disable with EXCALIDRAW_NO_AUTOSTART=1).',
     '  Canvas URL comes from EXPRESS_SERVER_URL (default http://127.0.0.1:3000) or --url.',
     '',
@@ -462,6 +471,28 @@ function takeDoingFlag(argv: string[]): string | null {
   return takeGlobalFlag(argv, 'doing');
 }
 
+/**
+ * And `--expect-version <n>`, which says what the writer was editing (TASK-091).
+ *
+ * Global for the same reason: a command that makes several requests is making
+ * them about one board, so the expectation belongs to the invocation rather
+ * than to whichever request happens to be the write.
+ *
+ * A number here and refused if it is not, because a mistyped precondition that
+ * was quietly dropped would leave the writer believing it had one.
+ */
+function takeExpectVersionFlag(argv: string[]): number | null {
+  const raw = takeGlobalFlag(argv, 'expect-version');
+  if (raw === null) return null;
+  if (!/^\d+$/.test(raw.trim())) {
+    throw new CliUsageError(
+      `--expect-version takes a whole number — the version your last write reported, or the one ` +
+      `\`board info\` says. Got ${JSON.stringify(raw)}.`
+    );
+  }
+  return Number(raw.trim());
+}
+
 function takeGlobalFlag(argv: string[], name: string): string | null {
   for (let i = 0; i < argv.length; i++) {
     const token = argv[i]!;
@@ -507,6 +538,7 @@ export async function runCli(argv: string[]): Promise<void> {
   try {
     setRequestedBoard(takeBoardFlag(rest));
     setWriteDoing(takeDoingFlag(rest));
+    setExpectedVersion(takeExpectVersionFlag(rest));
     await command.handler(rest);
   } catch (error) {
     if (!(error as any)?.quiet) {

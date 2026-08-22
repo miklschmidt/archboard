@@ -190,6 +190,9 @@ export function Shell(): JSX.Element {
         // two marks; anything new in the bar belongs in it.
         existing.writtenElsewhere?.writtenAt === status.writtenElsewhere?.writtenAt &&
         existing.writtenElsewhere?.reason === status.writtenElsewhere?.reason &&
+        // The mark now says which side is ahead, so the version is part of what
+        // it shows and part of what makes an update worth applying (TASK-091).
+        existing.writtenElsewhere?.version === status.writtenElsewhere?.version &&
         // And the third thing this has eaten, exactly as advertised: an agent
         // saying what it is doing changes nothing else about the pane, so
         // without this the bar keeps showing the line before last (TASK-095).

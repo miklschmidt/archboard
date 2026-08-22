@@ -30,6 +30,7 @@ import {
   saveSnapshot,
   getSnapshot,
   sendMermaid,
+  setExpectedVersion,
   setRequestedBoard,
   setWriteDoing,
   boardHoldSeen,
@@ -238,6 +239,11 @@ async function dispatchTool(
   // and the schema owns the prompt. A tool that names none reaches a canvas
   // that says so.
   setWriteDoing(typeof args?.doing === 'string' ? args.doing : null);
+  // And which version of it this call believes it is editing, if it says
+  // (TASK-091). Passed through unexamined for the same reason: the canvas is
+  // the side that knows what the note is at, so it owns both the comparison and
+  // the refusal for a value that is not a version at all.
+  setExpectedVersion(typeof args?.expectVersion === 'number' ? args.expectVersion : null);
   try {
     logger.info(`Handling tool call: ${name}`);
 
