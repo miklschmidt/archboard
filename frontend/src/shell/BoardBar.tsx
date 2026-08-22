@@ -69,10 +69,22 @@ function holdLabel(hold: BoardHold): string {
  * What is worth an alarm is the reverse, which nothing said at all: the note
  * this pane's board came from is not the note in the vault any more.
  */
+/*
+ * And which side is newer, now that a note carries a version (TASK-091). The
+ * mark could say only that the note is not this board; "which of the two is
+ * ahead" is the question a person actually has, and the answer changes what
+ * they would do about it. Another archboard being three writes ahead is a
+ * board somebody else is working on; a rollback is somebody's undo arriving
+ * from the vault. Only the first two lines below could be said before.
+ */
 function noteLabel(written: NoteWrittenElsewhere): string {
-  return written.reason === 'changed'
-    ? `note changed on disk · ${clock(written.writtenAt)}`
-    : 'a note here archboard has not read'
+  if (written.reason !== 'changed') return 'a note here archboard has not read'
+  if (written.versionMove === 'ahead') {
+    const by = (written.version ?? 0) - (written.ourVersion ?? 0)
+    return `note is ${by} write${by === 1 ? '' : 's'} ahead · ${clock(written.writtenAt)}`
+  }
+  if (written.versionMove === 'behind') return `note was rolled back · ${clock(written.writtenAt)}`
+  return `note changed on disk · ${clock(written.writtenAt)}`
 }
 
 export function BoardBar({
