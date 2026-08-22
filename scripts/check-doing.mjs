@@ -275,6 +275,21 @@ try {
     list[0]?.doing === 'step 2' && list.at(-1)?.doing === 'step 6',
     list.map(entry => entry.doing).join(' | '));
 
+  // One intent can be several writes — `import` clears the board, batches the
+  // scene in and posts its images — and it says the one thing the caller wrote
+  // each time. Three lines of it would be three of the five spent on one act.
+  for (let i = 0; i < 3; i += 1) {
+    await api('POST', `/api/elements?board=payments&${said('restoring the payment path from the export')}`,
+      box(`r${i}`, 600 + i * 20));
+  }
+  await sleep(250);
+  const repeated = heard.left.at(-1)?.recent ?? [];
+  check('one thing said three times running is one line, not three',
+    repeated.filter(entry => entry.doing === 'restoring the payment path from the export').length === 1,
+    repeated.map(entry => entry.doing).join(' | '));
+  check('  and it is the newest line, so the list still reads in order',
+    repeated.at(-1)?.doing === 'restoring the payment path from the export');
+
   // A pane arriving on a board an agent is part way through is not blank.
   const late = [];
   const arriving = new WebSocket(`ws://127.0.0.1:${PORT}/?clientId=pane-late`);

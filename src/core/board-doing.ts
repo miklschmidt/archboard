@@ -97,11 +97,29 @@ export function checkDoing(raw: unknown): DoingCheck {
   return { ok: true, doing };
 }
 
-/** Remember what was said, newest last, oldest dropped. */
+/**
+ * Remember what was said, newest last, oldest dropped.
+ *
+ * One thing said twice running is one line, not two. A single intent can be
+ * several writes — `import` clears the board, batches the scene in and posts
+ * its images, all under the one sentence the caller wrote — and a list showing
+ * that sentence three times has spent three of its five lines saying one thing.
+ * The newest timestamp wins, so the line stays current while it repeats.
+ *
+ * On the words alone, and not on the writer, because an unclaimed agent gets a
+ * fresh id per request — that id is what makes the lock reentrant, not who
+ * anybody is, so keying on it would mean never coalescing. Two agents saying
+ * the same sentence about one board inside five writes therefore read as one
+ * line. That is the cheaper of the two mistakes: the other one is a list that
+ * is the same sentence five times, which is what this is for.
+ */
 export function recordDoing(board: string, entry: DoingEntry): DoingEntry[] {
   const key = normalizeBoardKey(board);
   const { byBoard } = store();
-  const list = [...(byBoard.get(key) ?? []), entry].slice(-DOING_KEPT);
+  const kept = byBoard.get(key) ?? [];
+  const last = kept[kept.length - 1];
+  const repeat = last !== undefined && last.doing === entry.doing;
+  const list = [...(repeat ? kept.slice(0, -1) : kept), entry].slice(-DOING_KEPT);
   byBoard.set(key, list);
   return list;
 }

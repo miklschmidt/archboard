@@ -596,7 +596,7 @@ export const tools: Tool[] = [
         },
         reason: {
           type: 'string',
-          description: 'What you are about to do, in the words the person at the canvas would use — it is shown on their pane for as long as you hold the board, and it is the only reason they have for why the wall stopped responding. "Redrawing the payment path", not "batch write".'
+          description: 'What you are taking the board for, in the words the person at the canvas would use — it is shown on their pane for as long as you hold it, and it is the only reason they have for why the wall stopped responding. "Redrawing the payment path", not "batch write". This is the campaign; `doing` on each write is the step, and neither stands in for the other.'
         },
         forMs: {
           type: 'number',

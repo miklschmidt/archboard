@@ -979,7 +979,9 @@ deny-by-default like it: one place knows a request is a board write, so a route
 added later cannot be the one that says nothing. The canvas keeps the last five
 lines per board in `src/core/board-doing.ts`, broadcasts `board_doing`
 board-scoped, and hands the list to a pane that has just been given the board,
-so a screen joining mid-campaign is not blank.
+so a screen joining mid-campaign is not blank. One sentence said twice running
+is one line: `import` is a clear, a batch and a file post under one intent, and
+three copies of it would spend three of the five lines saying one thing.
 
 **Where injection is armed, the lines reach the model on the human's event and
 never on their own** (ADR 0005). A description is by definition an agent's, and
