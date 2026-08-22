@@ -4,6 +4,7 @@ title: check-live-session does not survive being run alongside other suites
 status: To Do
 assignee: []
 created_date: '2026-08-22 17:47'
+updated_date: '2026-08-22 22:26'
 labels: []
 dependencies:
   - TASK-086
@@ -39,3 +40,9 @@ The fix is probably to stop waiting a fixed window: wait on the condition, the w
 - [ ] #2 Its waits are on conditions rather than fixed windows, or the fixed ones are justified
 - [ ] #3 The contention case is reproduced deliberately before the fix, so the fix is shown to address it
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+TASK-099 measures this family standalone and the diagnosis above needs qualifying. It reproduces one run in ten with nothing else on the machine, and the wait it blames is already a condition with a six-second budget rather than a fixed window — the check runs that budget out and the two documents never converge. Contention raises the rate; it is not what makes it possible. The divergence is a real lost edit, which is TASK-099.
+<!-- SECTION:NOTES:END -->
