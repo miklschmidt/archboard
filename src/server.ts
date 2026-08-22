@@ -1995,16 +1995,6 @@ app.post('/api/elements/from-mermaid', (req: Request, res: Response) => {
       });
     }
 
-    // This route is exempt from the lock, not from saying what it is doing.
-    // Only an agent ever calls it — a pane converts nothing on its own — so
-    // there is no person here to exempt.
-    const said = checkDoing(req.query.doing);
-    if (!said.ok) {
-      return refuseUndescribedWrite(
-        res, String(req.query.board ?? req.body?.board ?? 'this board'), req.path, said.problem
-      );
-    }
-
     logger.info('Received Mermaid conversion request', {
       diagramLength: mermaidDiagram.length,
       hasConfig: !!config
@@ -2016,6 +2006,14 @@ app.post('/api/elements/from-mermaid', (req: Request, res: Response) => {
     // first: a proposal drawn on the right must not need the current
     // architecture taken off the left to make room for it (TASK-046).
     const { key: wanted } = boardFromRequest(req, 'Mermaid conversion');
+
+    // This route is exempt from the lock, not from saying what it is doing.
+    // Only an agent ever calls it — a pane converts nothing on its own — so
+    // there is nobody here to exempt. Asked before the pane, because a caller
+    // that has said nothing has not got as far as needing one.
+    const said = checkDoing(req.query.doing);
+    if (!said.ok) return refuseUndescribedWrite(res, wanted, req.path, said.problem);
+
     if (panes.size === 0) {
       return res.status(503).json({
         success: false,
