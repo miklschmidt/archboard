@@ -296,6 +296,23 @@ note. `expandElementsForExport` was a third renaming site the section missed,
 naming a bound text `${container}-label`. Everything else here stands, including
 the four measured renames, which `check-obsidian-md` now pins as golden values.
 
+**The other half, from TASK-098.** The measurement above was made by applying a
+renamed document by hand. It happens on its own for anything a person draws,
+because Excalidraw names a text element with a 21-character nanoid and the note
+writer cannot keep one. Measured in a real browser, on the build that had
+TASK-069 in it: a hand-drawn text typed "hello", left across one write, then
+" world" came back as `"hello"`; a hand-added label typed "ABCDE", left across
+one write, then "FGHIJ" came back as `""`. Six characters and then all ten,
+with `appState.editingTextElement` still naming the id Excalidraw minted while
+the scene held the settled one.
+
+Nothing on the server can fix that, so the pane does. The element under a text
+editor is withheld from the change report, and the pane renames it itself once
+the editor closes, through the same `derivedId`. Reverting the withhold fails 9
+of `check-typed-text`'s checks and leaves the board holding three copies of one
+text element; reverting the pane's rename fails 2, which are the two that read
+the ids off the wire.
+
 ---
 
 ## 5. What the echo costs
