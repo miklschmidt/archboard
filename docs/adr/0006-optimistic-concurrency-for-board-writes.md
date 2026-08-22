@@ -26,14 +26,42 @@ with autosave repeatedly implicated.
   discards whatever the canvas held; it swaps which side loses work silently
   rather than fixing anything.
 - **A version number in the frontmatter**, bumped on every write and compared
-  instead of the hash. Rejected, and it fails in the direction that costs work.
-  Both Obsidian and archboard carry unknown frontmatter keys across a save
+  **instead of** the hash. Rejected, and it fails in the direction that costs
+  work. Both Obsidian and archboard carry unknown frontmatter keys across a save
   verbatim, so a foreign edit leaves the number exactly where it was: archboard
   reads the same value, concludes nothing happened, and overwrites. A counter is
   a protocol, and it only works if every writer joins it. `git pull`, which is a
   real writer here, can also move a note backwards to a lower number, or produce
   different content at the same one. The hash needs nobody's cooperation because
   it is a property of the bytes.
+
+  **A note does now carry a version, and this rejection is why the hash is still
+  what decides** (TASK-091). The counter was built for the two things it can do
+  that the paragraph above never claimed it could not: it orders, so archboard
+  can say whether the note is ahead of the canvas or behind it rather than only
+  that the two differ, and it lets a writer state what it was editing so two
+  archboard clients cannot both read before either writes. Neither is a reason
+  to stop hashing. The version orders archboard's own writers and the hash
+  catches everybody else's, which is the split ADR 0016 already draws for the
+  lock, applied to document state instead of to exclusion.
+
+  What the pair says is more than either half. Given the version archboard last
+  wrote and the one the note carries now: unchanged with different bytes is a
+  writer that does not keep the count, which is the foreign writer of the
+  paragraph above named rather than inferred; a number that moved backwards is
+  the revert or the `git pull` that same paragraph raises, and no equality check
+  can tell one from an ordinary edit; a number that moved forwards is another
+  archboard, and the difference says by how many writes. The comparison lives in
+  `foreignWriteTo` beside the hash, so the refusal and the pane's mark say one
+  thing rather than two.
+
+  Two rules keep it honest. archboard never writes different bytes without
+  moving the count, which is what makes "unchanged and different" mean somebody
+  else, so a write that produces the note that is already there does not bump
+  and two saves of an unchanged board stay byte-identical. And a `version` key
+  holding something archboard cannot read as a count is left alone, key and
+  value: that is somebody's own property in their own frontmatter, and the board
+  is simply unversioned.
 
 ## When it fires, after ADR 0015
 
@@ -75,6 +103,14 @@ writes, and the board bar says `note changed on disk` when it comes back
 positive (TASK-062). It is the same comparison, in one function, on purpose: the
 mark's claim is that it shows the state in which the next write would be
 refused, and a second implementation of the question is one that drifts.
+
+It says which side is newer, which was the one thing it could not say and the
+question it exists to answer (TASK-091). `note is 2 writes ahead` is another
+archboard working on this board; `note was rolled back` is somebody's revert
+arriving from the vault; `note changed on disk` is what is left, an editor that
+keeps no count, and it is the sentence the mark used to have for all three.
+That improvement is not a second mechanism. It comes off the one comparison,
+which is the whole of why it arrived here for free.
 
 It offers the reload and not the three outcomes, because the other two are not
 reachable yet. Nothing has been refused, so there is no held copy to write over

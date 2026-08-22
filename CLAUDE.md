@@ -41,6 +41,7 @@ bun run type-check
 bun run test        # type-check, CI coverage, module scope, then stdio wire,
                     # loopback bind, obsidian, changes, one write per intent,
                     # one writer at a time, saying what a write is doing,
+                    # which edit of a board a note is,
                     # geometry, text metrics, labels,
                     # library, boards + panes,
                     # branch vs redraw, proposal beside source, skill install,
@@ -648,6 +649,35 @@ frontmatter — aliases, cssclasses, comments, whatever Obsidian put there — i
 carried across a save verbatim, so export stays idempotent (two saves are
 byte-identical) and lossless (open then save is byte-identical).
 
+**And a fourth key says which edit of the board the note is** (TASK-091).
+`version` is a count archboard moves whenever it writes a note that differs from
+the one that was there, and it round-trips like the other three. It does the two
+things the hash below structurally cannot. It **orders**: two documents that
+disagree are just two documents, and nothing in a sha-256 says which is newer,
+so archboard could refuse a write and never say whether the note was ahead of
+the canvas or behind it. And it is a **claim a writer can make**:
+`--expect-version 7` says what you were editing and has the write refused if the
+board has moved past it, naming both versions, instead of two archboard clients
+that both read before either wrote. Every write answers with the version it
+produced, in `fingerprint.version`, so a writer never has to ask; `board info`
+says it for a writer that has not written yet; `?expectVersion=` and the
+`expectVersion` MCP argument are the same thing on the other two surfaces.
+
+The pair is diagnostic, and this is what it is for. Comparing what archboard
+last wrote against what the note carries now: **unchanged with different bytes**
+is a writer that does not keep the count, which is the Obsidian case named
+rather than inferred; **moved backwards** is a revert or a `git pull`, which no
+equality check can tell from an ordinary edit; **ahead** is another archboard,
+and by how many writes. One comparison answers all three, in `foreignWriteTo`,
+so the refusal and the board bar's mark say the same thing.
+
+Two rules keep it honest, and both are load-bearing rather than tidy. A write
+that produces the note that is already there does **not** bump, so two saves of
+an unchanged board stay byte-identical and "the count stood still and the bytes
+moved" keeps meaning somebody else. And a `version` key holding something that
+is not a count is left alone, key and value: that is a person's own property in
+their own frontmatter, and the board is simply unversioned.
+
 **A write can be refused.** archboard records the sha-256 of the bytes it last
 wrote at a note's path and verifies that hash against the destination before
 writing again, so a note that changed underneath — Obsidian, a sync client,
@@ -727,6 +757,14 @@ refusal makes, in one function so the mark cannot claim one thing and the write
 do another. Clicking it offers the reload and nothing else, because nothing has
 been refused, so there is no held copy to overwrite the note with and none to
 save elsewhere.
+
+**And it says which side is newer, which is the question it exists to answer**
+(TASK-091). It could tell you the note was not this board and nothing more. Now
+it reads `note is 2 writes ahead` for another archboard, `note was rolled back`
+for a revert arriving from the vault, and `note changed on disk` for what is
+left, an editor that keeps no count. Those three want different things done
+about them and used to be one sentence. It came off the one comparison, which
+is why improving the refusal improved this without a second mechanism.
 
 Three marks, three different facts, and the order they happen in. Somebody else
 wrote the note. Then archboard tried to write, was refused, and the board is
