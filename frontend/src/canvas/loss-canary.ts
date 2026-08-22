@@ -52,8 +52,16 @@ interface Armed {
   kind: string
   /** The scene as the delivery left it, by id. */
   delivered: Map<string, Record<string, any>>
-  /** Whether the record this delivery is about to write will cover that id. */
-  records: (id: string) => boolean
+  /**
+   * What the pane's record of the board says about that id right now, or
+   * `undefined` for an id it does not hold.
+   *
+   * Read at the end of the window rather than reasoned about at the start of
+   * it. Whether an edit was absorbed is not a fact about which elements a
+   * delivery covers — it is whether the record ended up agreeing with a scene
+   * the hand had already moved, and only the record can say.
+   */
+  recorded: (id: string) => string | undefined
 }
 
 function canary(): LossCanary | null {
@@ -84,14 +92,14 @@ function saw(loss: LossEvent['loss'], kind: string, what: string[]): void {
 export function armDelivery(
   kind: string,
   scene: readonly Record<string, any>[],
-  records: (id: string) => boolean
+  recorded: (id: string) => string | undefined
 ): Armed | null {
   if (!canary()) return null
   const delivered = new Map<string, Record<string, any>>()
   for (const element of scene) {
     if (element && typeof element.id === 'string') delivered.set(element.id, { ...element })
   }
-  return { kind, delivered, records }
+  return { kind, delivered, recorded }
 }
 
 const describe = (value: unknown): string => {
@@ -112,16 +120,22 @@ export function readDelivery(armed: Armed | null, scene: readonly Record<string,
 
   const what: string[] = []
   let absorbed = false
-  const note = (id: string, said: string): void => {
-    const covered = armed.records(id)
-    what.push(`${covered ? 'absorbed' : 'survives'} ${id}: ${said}`)
-    if (covered) absorbed = true
+  // Still owed while the record disagrees with the scene as it now stands: a
+  // different print for an element that is there, an entry at all for one the
+  // hand removed. Agreement is the loss — it is the pane saying it has already
+  // reported something nobody has been told.
+  const owed = (id: string, now: Record<string, any> | undefined): boolean =>
+    now ? armed.recorded(id) !== fingerprint(now) : armed.recorded(id) !== undefined
+  const note = (id: string, now: Record<string, any> | undefined, said: string): void => {
+    const swallowed = !owed(id, now)
+    what.push(`${swallowed ? 'absorbed' : 'survives'} ${id}: ${said}`)
+    if (swallowed) absorbed = true
   }
 
   for (const [id, was] of armed.delivered) {
     const now = live.get(id)
     if (!now) {
-      note(id, 'gone from the scene')
+      note(id, undefined, 'gone from the scene')
       continue
     }
     if (fingerprint(was) === fingerprint(now)) continue
@@ -129,10 +143,10 @@ export function readDelivery(armed: Armed | null, scene: readonly Record<string,
       .filter((key) => !['version', 'versionNonce', 'updated'].includes(key))
       .filter((key) => describe(was[key]) !== describe(now[key]))
       .map((key) => `.${key} ${describe(was[key])} -> ${describe(now[key])}`)
-    if (fields.length > 0) note(id, fields.join(', '))
+    if (fields.length > 0) note(id, now, fields.join(', '))
   }
-  for (const id of live.keys()) {
-    if (!armed.delivered.has(id)) note(id, 'new in the scene')
+  for (const [id, now] of live) {
+    if (!armed.delivered.has(id)) note(id, now, 'new in the scene')
   }
 
   if (what.length === 0) return

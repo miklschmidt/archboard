@@ -825,7 +825,7 @@ try {
 
     const after = (await held()).find(e => e.id === edit.id);
     check(`  and the server holds what the hand did, not what it was sent`,
-      after && reads(after) !== was,
+      reads(after) !== was,
       `${edit.id} read ${JSON.stringify(was)} before and ${JSON.stringify(reads(after))} after`);
 
     const seen = await lossCanary();
@@ -839,14 +839,36 @@ try {
         .map(e => `${e.loss}: ${e.kind} — ${e.what.join(' | ')}`).join(' || '));
   };
 
-  // The delivery names the element the hand moves: the record covers it.
+  // The three human moves TASK-099 was filed with, each against a delivery
+  // that names the element the hand is on — which is the arrangement in which
+  // the record covers it.
   await inTheWindow('an agent recolours the box a hand is resizing',
     [{ id: 'store', backgroundColor: '#e9ecef' }],
     { kind: 'resize', id: 'store', dw: 13, dh: 0 },
     element => element?.width);
 
-  // The delivery names a different element: the record does not cover it, and
-  // what goes missing is anything armed to say it.
+  const storeLabel = (await held()).find(e => e.type === 'text' && e.containerId === 'store');
+  check('  and the board still carries a label to be retyped into',
+    typeof storeLabel?.id === 'string', JSON.stringify(storeLabel?.id));
+  await inTheWindow('an agent relabels the box a hand is typing in',
+    [{ id: 'store', label: { text: 'written by the agent' } }],
+    { kind: 'retype', id: storeLabel.id, text: 'typed by the person' },
+    element => element?.text);
+
+  // The one that ends with the server holding an element the pane does not.
+  await api('POST', `/api/elements/changes?board=${BOARD}`, {
+    origin: 'agent',
+    upserts: [{ id: 'spare', type: 'rectangle', x: 900, y: 620, width: 160, height: 70 }]
+  });
+  await agree();
+  await inTheWindow('an agent recolours the box a hand is deleting',
+    [{ id: 'spare', backgroundColor: '#ffe3e3' }],
+    { kind: 'delete', id: 'spare' },
+    element => element ? 'on the board' : 'gone');
+
+  // And the same hand against a delivery that names something else. The record
+  // does not cover it, so nothing is absorbed — what goes missing is anything
+  // armed to say it.
   await inTheWindow('an agent writes elsewhere while a hand moves a box',
     [{ id: 'queue', backgroundColor: '#e3fafc' }],
     { kind: 'move', id: 'store', dx: 17, dy: -9 },
