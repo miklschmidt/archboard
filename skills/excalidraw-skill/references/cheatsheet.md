@@ -16,6 +16,15 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 
 **`--doing "..."` is global and required on every command that changes a board** — `add`, `apply`, `update`, `delete`, `clear`, `import`, `mermaid`, `promote`, `demote`, `arrange`, `library insert`, `snapshot restore`, `board save`. One short line, present tense: "adding the payment queue". It goes up on the canvas as the write lands, so the person at the board can see what is happening; a write without it is refused with `DOING_REQUIRED` and nothing is written. Over 140 characters is refused too. It is never written into the board. Reading commands take none, and neither does a person dragging a box. A claim's `--reason` is the campaign; this is the step.
 
+**`--expect-version <n>` is global and optional on the same commands.** It says
+which edit of the board you were working from: the `fingerprint.version` your
+last write returned, or the `version` from `board info`. The write is refused
+with `BOARD_VERSION_CONFLICT`, naming both versions and nothing written, if the
+board has moved past it. Say nothing and the write goes against whatever is
+there, which is usually right. This orders archboard's own writers and no
+others: the note's sha-256 is what refuses a write over Obsidian's edit, and it
+runs whether or not you name a version.
+
 ### Server
 
 | Command | Description |
@@ -103,7 +112,7 @@ A pane is a slot holding one board, and two panes are how the architecture that 
 
 The MCP surface for clients that cannot run the CLI. `scripts/check-surface-parity.mjs` in the archboard repo fails if a tool is missing from this table.
 
-`doing` is `--doing` on this surface, and it is required on every tool that changes a board, for the same reason and in the same words: one short line, present tense, shown on the canvas as the write lands, never written into the board.
+`doing` is `--doing` on this surface, and it is required on every tool that changes a board, for the same reason and in the same words: one short line, present tense, shown on the canvas as the write lands, never written into the board. `expectVersion` is `--expect-version`, optional on the same tools: an integer, the version you were editing, and the write is refused if the board has moved past it.
 
 ### Element CRUD
 

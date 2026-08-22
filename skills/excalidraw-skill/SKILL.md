@@ -164,6 +164,7 @@ Results are JSON on stdout — except `describe` (plain text) and raw-content ou
 | Diff two variants | `compare <from> [to]` — semantic diff keyed on node identity; see Variants and comparison |
 | What changed since last turn | `changes [--since <cursor>] [--coalesce] [--text]` — the human's edits, named as architecture |
 | Say what a write is doing | `--doing "adding the payment queue"` — global, required on every write, shown on the canvas as it lands; see [One writer at a time](#workflow-one-writer-at-a-time) |
+| Say which version you were editing | `--expect-version 7` — global, optional, from the last write's `fingerprint.version` or from `board info`; the write is refused if the board moved past it; see [One writer at a time](#workflow-one-writer-at-a-time) |
 | Take a board for a stretch of work | `claim --reason "..." [--for 10m]`, `release` — for a redraw or a restructure, never for one box; see [One writer at a time](#workflow-one-writer-at-a-time) |
 | Snapshots | `snapshot save\|list\|restore <name>` |
 | Share link | `share` (encrypted upload → excalidraw.com URL) |
@@ -664,6 +665,33 @@ has an intent, and the board reports what it became separately (`changes`).
 Only an agent says it. A person dragging a box says nothing, and nothing asks
 them to.
 
+### Say which version you were editing, when it matters
+
+Every write answers with `fingerprint.version`, which is the edit of the board
+your write produced. Hand it back as `--expect-version <n>` on the next write
+and that write is refused if the board has moved past it, naming both versions.
+Without it a write goes against whatever is on the board now, which is usually
+what you want.
+
+```bash
+archboard add --board payments --doing "adding the queue" queue.json
+# -> fingerprint: { elements: 12, note: "9f3c...", version: 7 }
+archboard update q1 --board payments --doing "widening the queue" \
+  --expect-version 7 --set '{"width": 240}'
+```
+
+Reach for it when you read a board, went away to think, and are coming back to
+write against what you read. Two canvases over one vault is where it earns
+itself, and so is a long claim you have just been handed back. `board info`
+says the version of a board you have not written to yet.
+
+**This is not what protects you from Obsidian.** That is the sha-256 of the
+note's bytes, it runs whether or not you say anything, and it refuses a write
+over a note somebody else changed. A version only orders writers who keep it,
+which is archboard and nobody else. `BOARD_VERSION_CONFLICT` means another
+archboard got there first; a conflict with `reason: "changed"` means an editor
+that has never heard of any of this did.
+
 ### Work where they can see it
 
 **Every change you make is visible as you make it.** Somebody is standing at the
@@ -738,6 +766,7 @@ A snapshot belongs to the board it was taken on, and `--force` is what restores 
 - **Exit code 4 (browser required)?** Open `http://127.0.0.1:3000` in a browser, then retry — screenshots, image export, viewport, mermaid conversion, and making or closing a pane all happen in the frontend.
 - **`BOARD_HELD`?** Somebody else has the board and the wait for them ran out. The answer names the holder and how long they have had it, so say that rather than going quiet, and try once more in a moment: a person's hold is a gesture and clears on its own. Retrying in a loop does not make the board come free any sooner.
 - **`DOING_REQUIRED`?** The write said nothing about what it was doing and nothing was written. Add `--doing "..."` (the `doing` argument over MCP) and run it again. Do not reach for the last claim reason: that is the campaign, and this is the step. See [One writer at a time](#workflow-one-writer-at-a-time).
+- **`BOARD_VERSION_CONFLICT`?** You said which version you were editing and the board has moved past it. Nothing was written. Another archboard writer got there first, and the refusal says by how many writes. Read the board again before writing over what they did; do not simply drop `--expect-version` and repeat the write. See [One writer at a time](#workflow-one-writer-at-a-time).
 - **`CLAIM_REVOKED`?** The person at the canvas took a board you had claimed. You are told once, and nothing you wrote was undone, so the board sits part way through whatever you were doing. Stop, say what you finished and what state that leaves it in, and leave the board alone rather than claiming it again. Your next write is an ordinary write and takes the board only for as long as it writes. See [One writer at a time](#workflow-one-writer-at-a-time).
 - **Elements not appearing?** Check `describe` — they may be off-screen. `viewport --fit --pane <spec>` frames everything on that pane's board, and `viewport --ids a,b,c` frames a subgraph (`set_viewport` with `scrollToContent` or `scrollToElementIds` in MCP).
 - **Arrow not connecting?** Verify element IDs with `get <id>`. Make sure `startElementId`/`endElementId` match existing element IDs.
