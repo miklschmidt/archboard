@@ -28,6 +28,7 @@ import type {
 } from '../types'
 import { cleanElementForExcalidraw, elementsForScene } from './elements'
 import { baselineFrom, diffAgainstBaseline, fingerprint, isEmpty, type Baseline } from './changes'
+import { armDelivery, readDebt, readDelivery, watchingForLoss } from './loss-canary'
 import { derivedId, isBlockId } from '../../../src/core/ids'
 import {
   BoardConflictError, fetchElements, fetchFiles, holdBoard, loadedBundle, releaseBoard, reportChanges,
@@ -339,6 +340,10 @@ export function useCanvasSession({
   // Raised while we are writing the server's own news into the scene, so that
   // updateScene() does not read back as a human edit and bounce straight home.
   const suppressRef = useRef(0)
+  // The scene as the last delivery left it, when somebody is watching for the
+  // pane writing down a delivery the scene has already moved on from
+  // (./loss-canary). Null on every page that has not asked.
+  const armedRef = useRef<ReturnType<typeof armDelivery>>(null)
   // How many times this pane has changed under a human's hand. Counted, not
   // diffed, because the question it answers is "did the human touch anything
   // while that write was in flight" and a diff cannot tell a human's edit from
@@ -523,12 +528,41 @@ export function useCanvasSession({
     publishStatus()
   }, [publishStatus])
 
+  /**
+   * Does this pane owe the server something with nothing about to say it?
+   *
+   * Asked wherever the pane decides it is done talking — see ./loss-canary,
+   * and nothing asks unless somebody is watching. An edit is safe while the
+   * debt stands *and* something is going to pay it, and every place below is a
+   * place where the second half can stop being true without the first.
+   */
+  const watchDebt = useCallback((kind: string): void => {
+    if (!watchingForLoss()) return
+    const api = apiRef.current
+    if (!api || !userInteractedRef.current) return
+    if (inFlightRef.current || reportTimerRef.current || retryTimerRef.current) return
+    // A delivery is on the glass whose record has not been written yet, so the
+    // debt this would find is the one that settle is a moment away from
+    // clearing. The question is only meaningful once the pane is quiet.
+    if (suppressRef.current > 0) return
+    const editing = idUnderEditor(api)
+    readDebt(kind, diffAgainstBaseline(
+      api.getSceneElementsIncludingDeleted() as unknown as Record<string, any>[],
+      baselineRef.current,
+      editing === null ? EMPTY_WITHHELD : new Set([editing])
+    ))
+  }, [])
+
   // ─── Writing the server's news into the scene ────────────────
 
   const settle = useCallback((after: () => void): void => {
     suppressRef.current += 1
     setTimeout(() => {
       suppressRef.current = Math.max(0, suppressRef.current - 1)
+      // Off unless somebody has created `window.__abLoss`; see
+      // ./loss-canary. This is the moment it is asking about.
+      readDelivery(armedRef.current, apiRef.current?.getSceneElements() as any ?? [])
+      armedRef.current = null
       after()
       // The server's news moved the scene, so it moved the stamp. Taking the
       // new one here is what stops the next thing a human does reading as a
@@ -536,8 +570,9 @@ export function useCanvasSession({
       // board for a broadcast that had nothing to do with them.
       sceneStampRef.current = sceneStamp(apiRef.current)
       publishStatus()
+      watchDebt('a delivery had just been written down')
     }, 0)
-  }, [publishStatus])
+  }, [publishStatus, watchDebt])
 
   /**
    * Replace the scene outright; the board is now exactly what the server said.
@@ -571,6 +606,8 @@ export function useCanvasSession({
       elements: elementsForScene([...elements, ...kept]) as any,
       captureUpdate: CaptureUpdateAction.NEVER
     })
+    armedRef.current = armDelivery('a whole board from the server',
+      api.getSceneElements() as any, (id) => !withheld.has(id))
   }, [settle])
 
   /**
@@ -609,6 +646,9 @@ export function useCanvasSession({
       elements: elementsForScene(merged) as any,
       captureUpdate: CaptureUpdateAction.NEVER
     })
+    const covered = new Set(touched)
+    armedRef.current = armDelivery("another writer's elements",
+      api.getSceneElements() as any, (id) => covered.has(id))
   }, [settle])
 
   const removeElements = useCallback((ids: string[]): void => {
@@ -620,6 +660,8 @@ export function useCanvasSession({
       elements: api.getSceneElements().filter((el) => !gone.has(el.id)),
       captureUpdate: CaptureUpdateAction.NEVER
     })
+    armedRef.current = armDelivery("another writer's deletion",
+      api.getSceneElements() as any, (id) => gone.has(id))
   }, [settle])
 
   // Re-read THIS pane's board from the server. Deliberately not "what board is
@@ -797,11 +839,18 @@ export function useCanvasSession({
       elements: withTextIdsRenamed(scene, renames) as any,
       captureUpdate: CaptureUpdateAction.NEVER
     })
+    // Records nothing in the baseline, so nothing here can be absorbed.
+    armedRef.current = armDelivery('the pane renaming its own text elements',
+      api.getSceneElements() as any, () => false)
   }, [settle])
 
   const sendReport = useCallback(async (): Promise<void> => {
     const api = apiRef.current
     if (!api) return
+    // Dropped rather than queued, and deliberately: the baseline is untouched,
+    // so the very same delta is recomputed by the next report. What must not
+    // happen is there never being a next one, and `watchDebt` below asks that
+    // as this report lands.
     if (inFlightRef.current) return
     if (retryTimerRef.current) {
       clearTimeout(retryTimerRef.current)
@@ -912,10 +961,12 @@ export function useCanvasSession({
     } finally {
       inFlightRef.current = false
     }
+    watchDebt('a report had just landed')
     // `publishStatus` puts the hold in the pane's status when the write is
     // refused (TASK-079); `releaseIfIdle` gives the board back when it lands
     // (TASK-067). Both are called from the body, so both belong here.
-  }, [applyServerScene, clientId, noteChange, publishStatus, releaseIfIdle, settleForeignTextIds])
+  }, [applyServerScene, clientId, noteChange, publishStatus, releaseIfIdle, settleForeignTextIds,
+    watchDebt])
 
   /** Does this pane hold edits the server has not accepted? */
   const hasPendingChanges = useCallback((): boolean => {
@@ -961,6 +1012,9 @@ export function useCanvasSession({
     if (reportTimerRef.current) clearTimeout(reportTimerRef.current)
     reportTimerRef.current = setTimeout(() => {
       reportTimerRef.current = null
+      // Same as the in-flight case above: dropped, not queued, and what has to
+      // be true is that the settle now running asks whether anything is still
+      // owed once it has written its record.
       if (suppressRef.current > 0) return
       void sendReport()
     }, REPORT_DEBOUNCE_MS)
