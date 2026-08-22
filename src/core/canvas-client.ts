@@ -112,6 +112,7 @@ export function currentWriteDoing(): string | null {
 //
 // `--expect-version` and the `expectVersion` argument are the override, for a
 // writer that knows something this map does not. Explicit beats remembered.
+//
 // The canvas imports this file and reads none of it. The processes that do read
 // it are the CLI, which is one command long, and the MCP server, which nothing
 // hot-reloads.
