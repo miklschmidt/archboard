@@ -1078,9 +1078,8 @@ function refuseRevokedClaim(res: Response, board: string): boolean {
  * `0` on the wire means "no version", which is what a note archboard has never
  * written carries.
  */
-function expectedVersionOf(
+function statedVersionOf(
   req: Request,
-  board: string,
   writer: { id: string; kind: 'human' | 'agent' }
 ): { ok: true; expected?: number | null } | { ok: false; problem: string } {
   // A person is never checked, whatever the request carries. Their gesture took
@@ -1106,8 +1105,26 @@ function expectedVersionOf(
     const stated = Number(raw.trim());
     return { ok: true, expected: stated === 0 ? null : stated };
   }
-  if (claimWriterId(board) !== writer.id) return { ok: true };
-  return { ok: true, expected: claimSeen(board) };
+  return { ok: true };
+}
+
+/**
+ * And what the canvas remembers telling this writer, read under the lock.
+ *
+ * Under it, and not with the parse above, because this half is the one that has
+ * to be current: an agent's two writes to one claimed board can both be waiting
+ * on the lock at once, and a record read before the wait is a record the write
+ * in front may already have moved. That would refuse the second write for
+ * something it had in fact been told. It fails closed and tells once, so it
+ * would self-heal, but a spurious refusal is still a refusal.
+ */
+function rememberedVersionFor(
+  board: string,
+  writer: { id: string; kind: 'human' | 'agent' }
+): number | null | undefined {
+  if (writer.kind !== 'agent') return undefined;
+  if (claimWriterId(board) !== writer.id) return undefined;
+  return claimSeen(board);
 }
 
 /**
@@ -1190,13 +1207,14 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const writer = holderFromRequest(req, key);
   if (writer.kind === 'agent' && refuseRevokedClaim(res, key)) return;
 
-  // Which version this write is against, stated or remembered (TASK-091). A
-  // stated one that is not a number is refused before the board is taken: it is
-  // a malformed request rather than a conflict, and nothing should wait on a
-  // lock to be told so.
-  const expectation = expectedVersionOf(req, key, writer);
-  if (!expectation.ok) {
-    res.status(400).json({ success: false, code: 'BAD_EXPECTED_VERSION', error: expectation.problem, board: key });
+  // Which version this write says it is against (TASK-091). One that is not a
+  // number is refused before the board is taken: it is a malformed request
+  // rather than a conflict, and nothing should wait on a lock to be told so.
+  // What the canvas remembers telling this writer is read later, under the
+  // lock, because that half can move while a write waits for the board.
+  const stated = statedVersionOf(req, writer);
+  if (!stated.ok) {
+    res.status(400).json({ success: false, code: 'BAD_EXPECTED_VERSION', error: stated.problem, board: key });
     return;
   }
 
@@ -1247,7 +1265,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       // the handlers that would do that on `finish` are registered below this,
       // and a request that never reaches the handler never took the board for
       // any longer than this line.
-      if (expectation.expected !== undefined && refuseStaleVersion(res, key, expectation.expected)) {
+      const expected = stated.expected !== undefined
+        ? stated.expected
+        : rememberedVersionFor(key, writer);
+      if (expected !== undefined && refuseStaleVersion(res, key, expected)) {
         if (hold.created) releaseHold(key, hold.holder.id);
         return;
       }
