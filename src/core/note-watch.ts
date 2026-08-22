@@ -44,7 +44,7 @@ import fs from 'node:fs';
 import { holdOn } from './board-hold.js';
 import { ForeignWrite, foreignWriteTo } from './board-io.js';
 import { boards } from './board-store.js';
-import { normalizeBoardKey } from './board.js';
+import { VersionMove, describeVersionMove, normalizeBoardKey } from './board.js';
 import { kept } from './hot.js';
 
 /**
@@ -67,6 +67,18 @@ export interface NoteWrittenElsewhere {
   writtenAt: string;
   /** When archboard last read it. Absent when it never has. */
   lastReadAt?: string;
+  /**
+   * Which side is newer, which is the question this mark exists to answer and
+   * could not (TASK-091). The mark used to be able to say only that the note is
+   * not the one on screen. `ahead` is another archboard and this pane is behind
+   * it; `unchanged` is an editor that keeps no version, so the note is newer but
+   * by an unknown amount; `behind` is the note having been reverted under a
+   * pane holding the later work.
+   */
+  versionMove: VersionMove;
+  /** What archboard last wrote there, and what the note carries now. */
+  version: number | null;
+  ourVersion: number | null;
   message: string;
 }
 
@@ -152,7 +164,7 @@ export function refreshNoteWatch(board: string): void {
   const written = noteWrittenElsewhere(key);
   // The stamp rather than the object, so that a note written twice by another
   // editor is two pieces of news and the same note looked at twice is one.
-  const stamp = written === null ? null : `${written.reason}:${written.writtenAt}`;
+  const stamp = written === null ? null : `${written.reason}:${written.writtenAt}:${written.version ?? '-'}`;
   const before = announced();
   if (before.has(key) && before.get(key) === stamp) return;
   before.set(key, stamp);
@@ -207,8 +219,14 @@ function describe(board: string, foreign: ForeignWrite | null): NoteWrittenElsew
     reason: foreign.reason,
     writtenAt: foreign.fileModifiedAt,
     ...(foreign.lastReadAt ? { lastReadAt: foreign.lastReadAt } : {}),
+    versionMove: foreign.versionMove,
+    version: foreign.actualVersion,
+    ourVersion: foreign.expectedVersion,
     message: [
       lead,
+      // Which side is newer, from the same comparison the refusal makes, so the
+      // mark and the refusal say one thing (TASK-091).
+      describeVersionMove(foreign.versionMove, foreign.expectedVersion, foreign.actualVersion),
       'Nothing has been written and nothing is lost: the next change to this board will be refused ' +
       'rather than saved over theirs.',
       `Take the note with \`board open ${board} --reload\`, which discards what is on this canvas, ` +

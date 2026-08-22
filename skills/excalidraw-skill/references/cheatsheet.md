@@ -16,6 +16,17 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 
 **`--doing "..."` is global and required on every command that changes a board** — `add`, `apply`, `update`, `delete`, `clear`, `import`, `mermaid`, `promote`, `demote`, `arrange`, `library insert`, `snapshot restore`, `board save`. One short line, present tense: "adding the payment queue". It goes up on the canvas as the write lands, so the person at the board can see what is happening; a write without it is refused with `DOING_REQUIRED` and nothing is written. Over 140 characters is refused too. It is never written into the board. Reading commands take none, and neither does a person dragging a box. A claim's `--reason` is the campaign; this is the step.
 
+**Every write goes against the version of the board its writer last saw, and is
+refused with `BOARD_VERSION_CONFLICT` if the board moved in between** — nothing
+written, both versions named. You carry no number: the canvas remembers what it
+last told you, automatically for a claim and for an MCP session, because those
+are the two writers it can recognise across requests. A CLI process with no
+claim is anonymous, so there `--expect-version <n>` is how you state it (global,
+same commands as `--doing`); claiming the board is how you stop having to. A
+person at a pane is never checked. This orders archboard's own writers and no
+others: the note's sha-256 is what refuses a write over Obsidian's edit, and it
+runs whatever else is true.
+
 ### Server
 
 | Command | Description |
@@ -103,7 +114,7 @@ A pane is a slot holding one board, and two panes are how the architecture that 
 
 The MCP surface for clients that cannot run the CLI. `scripts/check-surface-parity.mjs` in the archboard repo fails if a tool is missing from this table.
 
-`doing` is `--doing` on this surface, and it is required on every tool that changes a board, for the same reason and in the same words: one short line, present tense, shown on the canvas as the write lands, never written into the board.
+`doing` is `--doing` on this surface, and it is required on every tool that changes a board, for the same reason and in the same words: one short line, present tense, shown on the canvas as the write lands, never written into the board. `expectVersion` is `--expect-version` and you will rarely pass it: an MCP server is one process for a whole session, so it remembers what the canvas last told it about each board and states the version for you. Pass one only to override that.
 
 ### Element CRUD
 
