@@ -93,24 +93,84 @@ export function currentWriteDoing(): string | null {
   return writeDoing;
 }
 
-// ---- And which version of the board it thinks it is editing ----
+// ---- And which version of each board this process was last told ----
 //
-// The same shape again, from `--expect-version` or the `expectVersion` argument
-// (TASK-091). Optional where `doing` is required: a writer that has not read the
-// board has no version to name, and it only ever costs that writer the
-// precondition. Stated once per invocation because it is a claim about the
-// board, and a command that makes several requests is making them against one
-// board — the first of them moves the version on, so the canvas checks the
-// claim against the note at the moment of each write rather than against a
-// number this side is holding.
-let expectVersion: number | null = null;
+// A write is checked against the version its writer was working from
+// (TASK-091), and the writer must not have to remember it: a number an agent
+// threads from one command's output into the next is a number it drops. So the
+// number comes from the last thing the canvas said about that board, and this
+// is where a client that lives long enough to have heard it keeps it.
+//
+// THAT IS THE MCP SERVER, above all. It is one process serving one agent
+// session, so what it was told an hour ago is what this agent last saw, exactly
+// the way a pane's `clientId` makes a browser's reading of a board followable.
+// The CLI gets the same thing inside one invocation, which is worth having
+// where a command makes several writes — `import` clears a board and then
+// batches a scene into it — and gets nothing across two, because a fresh
+// process has heard nothing. On the canvas's side a claim is the identity that
+// covers that gap; see `claimSeen` in board-lock.ts.
+//
+// `--expect-version` and the `expectVersion` argument are the override, for a
+// writer that knows something this map does not. Explicit beats remembered.
+// The canvas imports this file and reads none of it. The processes that do read
+// it are the CLI, which is one command long, and the MCP server, which nothing
+// hot-reloads.
+// hot-safe: client state a reload rebuilds for a process that never asks for it
+const versionsSeen = new Map<string, number | null>();
+let statedVersion: number | null | undefined;
 
 export function setExpectedVersion(version: number | null): void {
-  expectVersion = version === null || Number.isNaN(version) ? null : version;
+  statedVersion = version === null || Number.isNaN(version) ? undefined : version;
 }
 
-export function currentExpectedVersion(): number | null {
-  return expectVersion;
+/** What this process would send: what it was told, unless the caller overrode it. */
+export function currentExpectedVersion(): number | null | undefined {
+  if (statedVersion !== undefined) return statedVersion;
+  return requestedBoard ? versionsSeen.get(requestedBoard) : undefined;
+}
+
+/**
+ * Read the version out of anything the canvas says about a board, refusals
+ * included.
+ *
+ * A refusal is a telling too, and the important one: a write turned away for
+ * being against an old version is told which version the board is really at, so
+ * the next write goes against that rather than against the number that was just
+ * refused. Without this an agent would be refused for ever on one stale read.
+ */
+function rememberVersion(data: unknown): void {
+  if (!requestedBoard || !data || typeof data !== 'object') return;
+  const body = data as Record<string, any>;
+  // A fingerprint and a conflict are always about the board the request named.
+  // A bare `version` is not: `board save --as other` answers about the note it
+  // wrote, which is a different board from the one the call was addressed to,
+  // and recording that under this board's name would invent an expectation
+  // nobody was ever given. So it is taken only when the answer names the board
+  // that was asked for, and a name that does not compare equal is skipped
+  // rather than guessed at.
+  const found = readVersion(body.fingerprint)
+    ?? readVersion(body.versionConflict, 'actual')
+    ?? (sameBoard(body.board) ? readVersion(body) : undefined);
+  if (found !== undefined) versionsSeen.set(requestedBoard, found);
+}
+
+function sameBoard(answered: unknown): boolean {
+  return typeof answered === 'string'
+    && !!requestedBoard
+    && answered.toLowerCase() === requestedBoard.toLowerCase();
+}
+
+function readVersion(from: unknown, key = 'version'): number | null | undefined {
+  if (!from || typeof from !== 'object') return undefined;
+  const value = (from as Record<string, unknown>)[key];
+  if (typeof value === 'number' && Number.isInteger(value)) return value;
+  return value === null ? null : undefined;
+}
+
+/** Forget what this process has been told. For a check that wants a fresh caller. */
+export function forgetVersionsSeen(): void {
+  versionsSeen.clear();
+  statedVersion = undefined;
 }
 
 /**
@@ -129,8 +189,11 @@ function withWriteClaims(path: string, method?: string): string {
   if (writeDoing && !/[?&]doing=/.test(out)) {
     out = `${out}${out.includes('?') ? '&' : '?'}doing=${encodeURIComponent(writeDoing)}`;
   }
-  if (expectVersion !== null && !/[?&]expectVersion=/.test(out)) {
-    out = `${out}${out.includes('?') ? '&' : '?'}expectVersion=${expectVersion}`;
+  const expected = currentExpectedVersion();
+  // `0` is the wire spelling for a board with no note yet, so that "I saw no
+  // version" is a statement rather than a silence.
+  if (expected !== undefined && !/[?&]expectVersion=/.test(out)) {
+    out = `${out}${out.includes('?') ? '&' : '?'}expectVersion=${expected ?? 0}`;
   }
   return out;
 }
@@ -199,6 +262,7 @@ export async function syncToCanvas(
 
     // Parse JSON response regardless of HTTP status
     const result = await response.json() as ApiResponse;
+    rememberVersion(result);
 
     if (!response.ok) {
       logger.warn(`Canvas sync returned error status: ${response.status}`, result);
@@ -307,6 +371,9 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   if (data && typeof data === 'object') {
     heldBoard = data.held && typeof data.held === 'object' ? data.held as HoldReport : null;
   }
+  // And which version of it this process has now been told about, for the same
+  // reason: read off every answer including the refusals (TASK-091).
+  rememberVersion(data);
   if (!response.ok) {
     const error = new Error(data?.error || `HTTP server error: ${response.status} ${response.statusText}`);
     // A refused board write is a result, not a fault: it carries the three

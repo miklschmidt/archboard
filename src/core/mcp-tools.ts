@@ -830,11 +830,11 @@ const EXPECT_VERSION_PARAM = {
   type: 'integer',
   minimum: 0,
   description:
-    'Optional. The version of this board you were working from — the `fingerprint.version` your last ' +
-    'write returned, or the `version` from list_boards or the board info. The write is refused if the ' +
-    'board has moved past it, naming both versions, so another writer cannot land between your read and ' +
-    'your write without you hearing about it. Leave it out to write against whatever is on the board now. ' +
-    'This is not the check that catches Obsidian: that one is on the bytes and runs whatever you say here.'
+    'You will rarely pass this. Every write is already checked against the version of the board this ' +
+    'session was last told about, so another writer cannot land between your read and your write without ' +
+    'you hearing about it — this server is one process for your whole session, so it remembers the number ' +
+    'and you do not. Pass one only to override that with a version you know better. It is not the check ' +
+    'that catches Obsidian: that one is on the note\'s bytes and runs whatever you say here.'
 } as const;
 
 const BOARD_PARAM = {

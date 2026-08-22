@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-22 15:32'
-updated_date: '2026-08-22 20:10'
+updated_date: '2026-08-22 20:51'
 labels: []
 dependencies:
   - TASK-075
@@ -64,13 +64,18 @@ Two canvases over one vault, which the mutex already supports and `check-lock` a
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Frontmatter: a `version` key beside board/variant/level, read from the note's head, round-tripped verbatim like the rest.
-2. Bump in `writeBoardContent`, on change rather than blindly: render once with the destination's frontmatter carried across, compare to the destination's bytes, and patch the version line only when the document actually moved. Two writes of an unchanged board stay byte-identical, and 'archboard never writes different bytes at the same version' is what makes the foreign-writer diagnosis sound.
-3. The write returns the version it produced. `persistBoard` hands that to `agentWriteAnswer`, so `fingerprint` carries `{elements, note, version}` and stops re-rendering the note to hash it.
-4. The baseline records the version alongside the hash, at every place it records the hash: a board opened, reloaded or written.
-5. `foreignWriteTo` compares the baseline's version against the note's and says which way it moved — unchanged (a foreign writer), behind (a revert or a pull), ahead (another archboard client). One comparison, so the refusal and TASK-062's mark both say it.
-6. A writer states an expectation: `?expectVersion=`, `--expect-version`, MCP `expectVersion`. Checked in the write-boundary middleware after the lock and before the handler, which is where it is atomic against another archboard client.
-7. `board info` reports the note's version, so a writer can learn one without writing first.
-8. `scripts/check-version.mjs`, wired into the chain: round-trip, bump-on-change, the stale precondition, and the three diagnoses — including a foreign write with a matching expectVersion, which the hash still refuses.
-9. ADR 0006 gets a paragraph saying what TASK-091 built, so its rejected option does not read as rejecting this.
+1. Frontmatter: a `version` key beside board/variant/level, read from the note's head, round-tripped verbatim like the rest. [done]
+2. Bump in `writeBoardContent`, on change rather than blindly, so two saves of an unchanged board stay byte-identical and 'archboard never writes different bytes at the same version' holds. [done]
+3. The write returns the version it produced; `fingerprint` carries it and stops re-rendering the note to hash it. [done]
+4. The baseline records the version alongside the hash, everywhere it records the hash. [done]
+5. `foreignWriteTo` says which way the note's version moved — unchanged, behind, ahead — once, so the refusal and TASK-062's mark both say it. [done]
+6. REVISED after the user's correction. The precondition is not an optional flag an agent must remember. The canvas fills it from what it last told this writer, the way TASK-080 keeps a claim against the board so an agent carries nothing:
+   a. A person is exempt. Their gesture already took the mutex at its leading edge and their report is a delta on a fresh read, so a version refusal could only take a wall display away from the person standing at it, which ADR 0016 forbids. TASK-095 draws the same line.
+   b. A claim is an identity the canvas keeps, so it keeps the version that claim's holder was last told. Seeded when the claim is made, moved on every write under it, and moved by a refusal too — the refusal is itself a telling, so an agent is refused once and not wedged.
+   c. An MCP server is one process serving one agent session, so `canvas-client` remembers what it was last told per board and attaches it. The agent carries nothing there either.
+   d. `--expect-version` stays as the explicit override and wins over both.
+   e. The gap, stated rather than papered over: a fresh CLI process per command is anonymous, and every surrogate identity collapses to one that always matches, which is worse than none. An unclaimed CLI agent is the one writer the canvas cannot remember, and claiming is how it buys the check.
+7. `board info` and the claim's answer report the version, so a writer can learn one without writing. [done]
+8. `scripts/check-version.mjs`, wired into the chain: round-trip, bump-on-change, the three diagnoses, the automatic check under a claim with no flag, the client-side fill, the override, a person never refused, and the hash still deciding.
+9. ADR 0006, CONTEXT.md, CLAUDE.md and the skill say what was built and who supplies the number.
 <!-- SECTION:PLAN:END -->
