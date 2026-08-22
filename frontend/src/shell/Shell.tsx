@@ -190,6 +190,13 @@ export function Shell(): JSX.Element {
         // two marks; anything new in the bar belongs in it.
         existing.writtenElsewhere?.writtenAt === status.writtenElsewhere?.writtenAt &&
         existing.writtenElsewhere?.reason === status.writtenElsewhere?.reason &&
+        // And the third thing this has eaten, exactly as advertised: an agent
+        // saying what it is doing changes nothing else about the pane, so
+        // without this the bar keeps showing the line before last (TASK-095).
+        // The newest line is enough, because the list only ever grows at that
+        // end and the bar shows that one.
+        existing.doing.at(-1)?.at === status.doing.at(-1)?.at &&
+        existing.doing.length === status.doing.length &&
         existing.board?.variant === status.board?.variant &&
         existing.board?.level === status.board?.level
       ) {
