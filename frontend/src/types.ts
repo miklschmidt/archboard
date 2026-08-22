@@ -146,6 +146,16 @@ export interface NoteWrittenElsewhere {
   writtenAt: string;
   /** When archboard last read it. Absent when it never has. */
   lastReadAt?: string;
+  /**
+   * Which side is newer (TASK-091). `ahead` is another archboard, and the two
+   * versions say by how many writes; `unchanged` is an editor that keeps no
+   * version, so the note is newer by an unknown amount; `behind` is the note
+   * having been rolled back under a pane holding the later work.
+   */
+  versionMove: 'unchanged' | 'behind' | 'ahead' | 'unknown';
+  /** What the note carries now, and what archboard last wrote there. */
+  version: number | null;
+  ourVersion: number | null;
   message: string;
 }
 

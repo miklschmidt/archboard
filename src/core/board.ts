@@ -83,6 +83,11 @@ export function isScratchKey(key: string): boolean {
 export const FRONTMATTER_BOARD = 'board';
 export const FRONTMATTER_VARIANT = 'variant';
 export const FRONTMATTER_LEVEL = 'level';
+// And what edit of the board this note is. Not identity — the three keys above
+// say which board it is and this says which of its states — but it lives beside
+// them because it is written the same way, read the same way and carried across
+// a save the same way (TASK-091).
+export const FRONTMATTER_VERSION = 'version';
 
 export const BOARD_FILE_SUFFIX = '.excalidraw.md';
 
@@ -320,6 +325,114 @@ export function identityFromFrontmatter(content: string): BoardIdentity | null {
   }
 }
 
+// ─── Which edit of a board a note is ──────────────────────────
+//
+// A counter archboard moves every time it writes a note that differs from the
+// one that was there (TASK-091). It does two things the sha-256 of ADR 0006
+// cannot, and it replaces none of what that hash does.
+//
+//   it orders     two documents that disagree are just two documents; nothing
+//                 in a hash says which is newer. A number does, so archboard
+//                 can say whether the note is ahead of the canvas or behind it
+//   it is a claim a writer may state the version it was editing and have the
+//                 write refused if the board has moved on, instead of two
+//                 archboard clients that both read before either wrote
+//
+// It binds only writers who join it, which is exactly why the hash stays. An
+// editor that has never heard of archboard carries this key across a save
+// verbatim — Obsidian does, and so does archboard — so a foreign edit leaves
+// the number exactly where it was. Read on its own it would conclude nothing
+// had happened and overwrite. The hash is a property of the bytes and needs
+// nobody's cooperation.
+//
+// Which is what makes the pair diagnostic rather than either half being enough.
+// Given the version archboard last wrote and the version the note carries now:
+//
+//   unchanged, different bytes  somebody who does not maintain the counter has
+//                               written this note. The foreign writer named
+//                               rather than inferred
+//   moved backwards             a revert, or a `git pull` that brought an older
+//                               note back. No equality check can tell that from
+//                               an ordinary edit
+//   ahead                       another archboard client got here first, and the
+//                               difference says by how many writes
+
+export type NoteVersion =
+  // No `version` key. Either archboard has never written this note or it does
+  // not exist yet; the first write archboard makes starts the count at 1.
+  | { kind: 'none' }
+  | { kind: 'at'; value: number }
+  // Somebody's own `version` key, holding something that is not a count. Left
+  // exactly where it is and never written to: misreading somebody else's
+  // frontmatter is worse than not reading it, and clobbering it is worse again.
+  // Such a note is simply unversioned, and the hash still guards every write.
+  | { kind: 'foreign'; raw: string };
+
+export function noteVersion(content: string): NoteVersion {
+  const raw = readFrontmatterValue(content, FRONTMATTER_VERSION);
+  if (raw === undefined) return { kind: 'none' };
+  if (!/^\d+$/.test(raw.trim())) return { kind: 'foreign', raw };
+  return { kind: 'at', value: Number(raw.trim()) };
+}
+
+/** The count a note carries, or null for one that carries none archboard can read. */
+export function versionNumber(content: string): number | null {
+  const version = noteVersion(content);
+  return version.kind === 'at' ? version.value : null;
+}
+
+/**
+ * What version the note at a path is at, right now.
+ *
+ * From the head of the file rather than a whole read: the version is in the
+ * frontmatter and a board's scene can be megabytes, and this is asked on the
+ * way into every write that states an expectation. A file that is not there
+ * carries no version, which is the same answer as one that carries none —
+ * neither is a version a writer can have been editing.
+ */
+export function versionOfNoteAt(file: string): number | null {
+  try {
+    return versionNumber(readHead(file));
+  } catch {
+    return null;
+  }
+}
+
+/** Which way a note's version has moved since archboard last wrote one there. */
+export type VersionMove =
+  // Same number, and the bytes differ: a writer that does not maintain it.
+  | 'unchanged'
+  // Lower than archboard last wrote: a revert, or a pull of an older note.
+  | 'behind'
+  // Higher: another archboard client wrote this note between our two writes.
+  | 'ahead'
+  // One side or the other has no number, so there is nothing to order by.
+  | 'unknown';
+
+export function versionMove(baseline: number | null | undefined, now: number | null): VersionMove {
+  if (baseline === null || baseline === undefined || now === null) return 'unknown';
+  if (now === baseline) return 'unchanged';
+  return now > baseline ? 'ahead' : 'behind';
+}
+
+/** What the move means, in the words the refusal and the pane's mark both use. */
+export function describeVersionMove(move: VersionMove, baseline?: number | null, now?: number | null): string {
+  switch (move) {
+    case 'unchanged':
+      return `The note is still marked version ${now}, which archboard also wrote, so whatever wrote it ` +
+        'does not keep that mark — Obsidian, a sync client or a text editor.';
+    case 'behind':
+      return `The note has gone back to version ${now} from ${baseline}, so it was reverted or an older ` +
+        'copy of it was restored rather than edited.';
+    case 'ahead':
+      return `The note is at version ${now} and archboard last wrote ${baseline}, so another archboard ` +
+        `wrote it ${(now ?? 0) - (baseline ?? 0)} time(s) since.`;
+    case 'unknown':
+      return 'Neither side carries a version archboard can order by, so which of the two is newer cannot ' +
+        'be said from the note alone.';
+  }
+}
+
 // ─── What a save did to the address, and who follows it ───────
 //
 // `board save` writes to one of three places, and they are three different
@@ -389,6 +502,12 @@ export interface BoardWriteConflict {
   actualHash: string;
   lastReadAt?: string;
   fileModifiedAt?: string;
+  // Which way the note's version moved, which is the half of this the hash
+  // cannot answer: the hash says the bytes differ and this says who by
+  // (TASK-091). `expectedVersion` is what archboard last wrote there.
+  versionMove: VersionMove;
+  expectedVersion?: number;
+  actualVersion?: number;
   // The three ways out, as commands that can be run verbatim. Every surface
   // renders these; none of them invents a fourth.
   outcomes: { reload: string; overwrite: string; saveAs: string };
@@ -414,6 +533,8 @@ export function describeWriteConflict(input: {
   actualHash: string;
   lastReadAt?: string;
   fileModifiedAt?: string;
+  expectedVersion?: number | null;
+  actualVersion?: number | null;
   // How the save that was refused was addressed, so "run it again with --force"
   // is a command that actually does what it says.
   saveCommand: string;
@@ -433,8 +554,13 @@ export function describeWriteConflict(input: {
       'so it cannot tell what saving would delete. Nothing was written.\n' +
       `That file was last modified ${clock(input.fileModifiedAt)}.`;
 
+  // Which side is ahead, which the hash cannot say and the version can
+  // (TASK-091). It is said after the lead and before the outcomes, because it
+  // names who wrote the note and the outcomes are what to do about it.
+  const move = versionMove(input.expectedVersion, input.actualVersion ?? null);
   const message = [
     lead,
+    describeVersionMove(move, input.expectedVersion, input.actualVersion),
     'Excalidraw scenes do not merge, so one of the two copies has to lose. Choose which:',
     `  reload     take the note, discard the canvas   ->  ${outcomes.reload}`,
     `  overwrite  keep the canvas, discard the note   ->  ${outcomes.overwrite}`,
@@ -449,8 +575,65 @@ export function describeWriteConflict(input: {
     actualHash: input.actualHash,
     ...(input.lastReadAt ? { lastReadAt: input.lastReadAt } : {}),
     ...(input.fileModifiedAt ? { fileModifiedAt: input.fileModifiedAt } : {}),
+    versionMove: move,
+    ...(typeof input.expectedVersion === 'number' ? { expectedVersion: input.expectedVersion } : {}),
+    ...(typeof input.actualVersion === 'number' ? { actualVersion: input.actualVersion } : {}),
     outcomes,
     message
+  };
+}
+
+// ─── A writer that says what it was editing ───────────────────
+//
+// The other half of TASK-091, and the one the hash structurally cannot do: a
+// write may carry the version it believes the board is at, and is refused when
+// the board has moved past it. Optimistic concurrency between two archboard
+// clients, checked at the write boundary, in place of the last of the two reads
+// winning.
+//
+// Refused rather than merged, for the same reason ADR 0006 refuses: two scenes
+// do not merge, so somebody has to choose which one survives, and it is not
+// archboard.
+
+export interface BoardVersionConflict {
+  board: string;
+  file?: string;
+  expected: number;
+  actual: number | null;
+  behindBy: number;
+  message: string;
+}
+
+export function describeVersionConflict(input: {
+  board: string;
+  file?: string;
+  expected: number;
+  actual: number | null;
+}): BoardVersionConflict {
+  const { board, expected, actual } = input;
+  const lead = actual === null
+    ? `Refusing to write "${board}": you said you were editing version ${expected}, and the note carries no ` +
+      'version archboard can read. Nothing was written.'
+    : `Refusing to write "${board}": you said you were editing version ${expected}, and the board is at ` +
+      `${actual}. Nothing was written.`;
+  const since = actual !== null && actual > expected
+    ? `Another writer has been here ${actual - expected} time(s) since the version you named.`
+    : actual !== null && actual < expected
+      ? 'The note is behind the version you named, so it was reverted or an older copy was restored.'
+      : 'A note archboard has not written carries no version, so there is nothing to check yours against.';
+  return {
+    board,
+    ...(input.file ? { file: input.file } : {}),
+    expected,
+    actual,
+    behindBy: actual === null ? 0 : actual - expected,
+    message: [
+      lead,
+      since,
+      `Read the board first — \`board info --board ${board}\` says which version it is at, and every write ` +
+      'answers with the version it produced — then write again against that one, or drop the expectation ' +
+      'to write against whatever is there.'
+    ].join('\n')
   };
 }
 

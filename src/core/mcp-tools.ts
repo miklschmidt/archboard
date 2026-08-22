@@ -28,9 +28,10 @@ const DOCUMENT_PARAM = {
     'Return the whole board alongside the result. OFF BY DEFAULT AND USUALLY WRONG: a ' +
     '300-element board is about 60,000 tokens, so calling this in a loop pulls the board ' +
     'through your context once per element. The default answer already carries every element ' +
-    'the write touched, in the form the board now holds it, plus a fingerprint (element count ' +
-    'and the sha-256 of the note) that tells you in one comparison whether anything you did ' +
-    'not do has changed. Use describe_scene for a summary, or query_elements for a part.'
+    'the write touched, in the form the board now holds it, plus a fingerprint (element count, ' +
+    'the sha-256 of the note and the version this write produced) that tells you in one ' +
+    'comparison whether anything you did not do has changed. Use describe_scene for a summary, ' +
+    'or query_elements for a part.'
 } as const;
 
 const PANE_PARAM = {
@@ -818,6 +819,24 @@ const DOING_PARAM = {
     "claim's `reason` is the campaign and this is the step: say the step here."
 } as const;
 
+// And it may say which version of the board it was editing (TASK-091).
+//
+// Optional where `doing` is required, and the asymmetry is the point: a writer
+// that has not read the board has no version to name, and demanding one would
+// make a first write a round trip for nothing. What it buys the writer that
+// does name one is that two archboard clients editing one board cannot
+// overwrite each other silently.
+const EXPECT_VERSION_PARAM = {
+  type: 'integer',
+  minimum: 0,
+  description:
+    'Optional. The version of this board you were working from — the `fingerprint.version` your last ' +
+    'write returned, or the `version` from list_boards or the board info. The write is refused if the ' +
+    'board has moved past it, naming both versions, so another writer cannot land between your read and ' +
+    'your write without you hearing about it. Leave it out to write against whatever is on the board now. ' +
+    'This is not the check that catches Obsidian: that one is on the bytes and runs whatever you say here.'
+} as const;
+
 const BOARD_PARAM = {
   type: 'string',
   description:
@@ -835,7 +854,11 @@ for (const tool of tools) {
     schema.properties = { board: { ...BOARD_PARAM }, ...(schema.properties ?? {}) };
   }
   if (WRITES_BOARD.includes(tool.name)) {
-    schema.properties = { doing: { ...DOING_PARAM }, ...(schema.properties ?? {}) };
+    schema.properties = {
+      doing: { ...DOING_PARAM },
+      ...(schema.properties ?? {}),
+      expectVersion: { ...EXPECT_VERSION_PARAM }
+    };
     schema.required = [...new Set([...(schema.required ?? []), 'doing'])];
   }
 }
