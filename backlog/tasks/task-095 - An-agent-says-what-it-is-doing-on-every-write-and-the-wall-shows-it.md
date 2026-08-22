@@ -1,11 +1,11 @@
 ---
 id: TASK-095
 title: 'An agent says what it is doing on every write, and the wall shows it'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-22 16:04'
-updated_date: '2026-08-22 16:49'
+updated_date: '2026-08-22 17:42'
 labels: []
 dependencies:
   - TASK-080
@@ -56,14 +56,14 @@ Bound the length. A list of one-liners is glanceable; a list of paragraphs is a 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every agent-originated board mutation carries a short description, on the CLI and over MCP, and a write without one is refused
-- [ ] #2 The description never reaches the note, proved by saving and reading a board back
-- [ ] #3 It is broadcast board-scoped over the WebSocket and the pane shows a short list of recent actions
-- [ ] #4 A human's own change report is not required to carry one
-- [ ] #5 The claim's reason and the per-write descriptions read as one story rather than two
-- [ ] #6 Where injection is armed, descriptions can reach the live model without an agent narrating its own drawing back to itself (ADR 0005)
-- [ ] #7 The field's name is chosen once and is the same on both surfaces
-- [ ] #8 Every caller that writes a board is moved in this task — CLI commands, MCP tools and any script — with none left behind
+- [x] #1 Every agent-originated board mutation carries a short description, on the CLI and over MCP, and a write without one is refused
+- [x] #2 The description never reaches the note, proved by saving and reading a board back
+- [x] #3 It is broadcast board-scoped over the WebSocket and the pane shows a short list of recent actions
+- [x] #4 A human's own change report is not required to carry one
+- [x] #5 The claim's reason and the per-write descriptions read as one story rather than two
+- [x] #6 Where injection is armed, descriptions can reach the live model without an agent narrating its own drawing back to itself (ADR 0005)
+- [x] #7 The field's name is chosen once and is the same on both surfaces
+- [x] #8 Every caller that writes a board is moved in this task — CLI commands, MCP tools and any script — with none left behind
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -79,3 +79,33 @@ Bound the length. A list of one-liners is glanceable; a list of paragraphs is a 
 8. Every script that writes a board passes one through its own api() helper. New scripts/check-doing.mjs in the chain proves the refusal, the note, the broadcast and the human exemption.
 9. Docs: CLAUDE.md, CONTEXT.md, ADR 0016, SKILL.md and the cheatsheet.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented as `doing`: `--doing "..."` on the CLI (global, stripped in run.ts beside --board), a required `doing` argument on 19 MCP write tools, `?doing=` on the API. Not `why`: TASK-080's claim already owns why an agent has the board, so a second synonym at a smaller scale would be the two-accounts-of-one-thing the task warns about. The claim's reason is the campaign, a doing is the step, and the pane shows them stacked.
+
+Required at the deny-by-default write boundary in src/server.ts, where the lock is already taken — one place knows a request is a board write, so no route added later can be the one that says nothing. holderFromRequest already separated a person (a pane, named by clientId) from an agent (unnamed), so AC4 falls out structurally rather than as a listed exception. /api/elements/from-mermaid is outside that middleware and asks on its own.
+
+Carried as a query parameter: DELETE has no body, and a field inside an element's JSON is one careless spread from being persisted, which makes AC2 structural rather than a promise.
+
+src/core/board-doing.ts keeps the last five per board in kept(), coalescing a line repeated straight after itself (import is three writes under one intent). Broadcast as board_doing, board-scoped beside board_lock; the list rides on each message and is sent to a pane that has just been handed the board.
+
+Injection: consider()'s agent drop is untouched and the lines ride on the human's event in compose(). A description is by definition an agent's, and nothing joins an HTTP write to a thread on the app-server socket, so injecting them as events of their own would narrate an agent to itself in every single-agent session.
+
+Callers moved: the CLI's global flag (every command), 19 MCP tools via a WRITES_BOARD list applied where BOARD_PARAM already is, 14 scripts through scripts/lib/doing.mjs plus their cli() wrappers, and the shell's Save and Clear, which now send the pane's clientId because an unnamed writer is the server's definition of an agent.
+
+Revert-proof, every run reaching its report line: the middleware requirement 21 of 42 in check-doing; the broadcast alone 7 of 42 and 3 in live-session; seeding a late pane 1; the human exemption 2; the injection lines 1 in check-changes; the MCP schema 19 in parity and 2 in check-doing; the shell's status comparison 1 in live-session; the cheatsheet column 1 in parity; leaking the line into an element's customData 2 in check-doing.
+
+`bun run test` green end to end on the committed tree, 23 suites. One earlier chain run failed in check-live-session because I ran other suites alongside it; that check drives a real headless browser and does not survive the contention. The clean run passes.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+An agent must say what it is doing on every board write, in one line, and the canvas shows it as the write lands. The field is `doing` — `--doing "adding the payment queue"` on the CLI, a required `doing` argument on 19 MCP write tools, `?doing=` on the API — chosen over `why` because the claim's `reason` already owns why an agent has the board: that is the campaign and this is the step, and the pane shows them as one story.
+
+Demanded at the write boundary where the lock is taken, so a route added later cannot be the one that says nothing; refused with DOING_REQUIRED and nothing written, on all three surfaces. A person's change report carries a pane id and is exempt, and the shell's Save and Clear now send that id so a button press is not asked for a sentence. It never reaches the note: it rides as a query parameter, and check-doing saves a board and greps the file. The last five lines per board live on the canvas, broadcast board-scoped as board_doing beside board_lock; the bar shows the newest and the pane lists them under the claim banner. Where injection is armed the lines reach the model on the human's event only, which is how ADR 0005's rule survives descriptions that are always an agent's.
+
+Verified by scripts/check-doing.mjs (42 checks, new suite in the chain), three new assertions in check-live-session that read the pane and the bar out of a real headless browser, one in check-changes for the injection half, and a new section of check-surface-parity holding both surfaces and the cheatsheet's required-params column to the same requirement. `bun run test` is green, 23 suites. Nine reverts were run and each was caught: 21, 7+3, 1, 2, 1, 19+2, 1, 1 and 2 failing checks.
+<!-- SECTION:FINAL_SUMMARY:END -->
