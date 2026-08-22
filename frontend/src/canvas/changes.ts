@@ -62,15 +62,37 @@ export function isEmpty(report: ChangeReport): boolean {
   return report.upserts.length === 0 && report.deletes.length === 0
 }
 
+const NOTHING_WITHHELD: ReadonlySet<string> = new Set()
+
 export function diffAgainstBaseline(
   scene: readonly Record<string, any>[],
-  baseline: Baseline
+  baseline: Baseline,
+  /**
+   * Elements this pane is deliberately not telling the server about yet, by id.
+   *
+   * One thing goes in here: the text element a person has an editor open on
+   * (TASK-098). Reporting it is what gets it renamed, because its id is the
+   * 21-character nanoid Excalidraw minted and a note can only hold eight
+   * characters, and a rename lands on the glass as five typed characters
+   * vanishing with no error (`src/core/ids.ts`).
+   *
+   * Withheld is not the same as agreed. An element already in the baseline
+   * keeps the print it had, so the edit is still owed and goes out on the first
+   * report after the editor closes; one the server has never seen stays out of
+   * the baseline entirely and is reported as new then.
+   */
+  withheld: ReadonlySet<string> = NOTHING_WITHHELD
 ): ChangeReport {
   const upserts: Record<string, any>[] = []
   const nextBaseline: Baseline = new Map()
 
   for (const element of scene) {
     if (!element || typeof element.id !== 'string' || element.isDeleted) continue
+    if (withheld.has(element.id)) {
+      const agreed = baseline.get(element.id)
+      if (agreed !== undefined) nextBaseline.set(element.id, agreed)
+      continue
+    }
     const print = fingerprint(element)
     nextBaseline.set(element.id, print)
     if (baseline.get(element.id) !== print) {
