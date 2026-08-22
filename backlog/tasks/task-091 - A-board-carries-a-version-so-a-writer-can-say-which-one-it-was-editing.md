@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-22 15:32'
-updated_date: '2026-08-22 21:16'
+updated_date: '2026-08-22 22:26'
 labels: []
 dependencies:
   - TASK-075
@@ -131,6 +131,22 @@ Each mechanism broken on purpose, and what noticed. `bun run test` is 24 steps a
 ## Verification
 
 `bun run test` green, 24 of 24, zero FAIL lines, exit 0. `scripts/check-version.mjs` is 57 checks and covers: the frontmatter round-trip, bump-on-change with byte-identical saves, a human's `version` key untouched, the three diagnoses through `foreignWriteTo`, TASK-062's mark saying which side is ahead, the fingerprint carrying the version and its hash matching the bytes on disk, the automatic check under a claim with the caller saying nothing, the client-side fill across three calls, the explicit override, a person never refused, and last a foreign edit with a matching expectation still refused by the hash.
+
+## After the merge: two intermittent failures, escalated by the coordinator
+
+**Symptom 2, the one attributed to this task.** `check-live-session`'s 'the agent is told at its next write' returned 200 once in six runs. Reproduced deterministically outside the browser and it is not intermittent once the condition is arranged: **0 of 20 told**, at this branch and at `ca8f399` alike, so it predates TASK-091.
+
+Ending a claim rode on the same flag that decides whether a person may take a board somebody is holding. That flag is rightly about the lock record. Whether the claim ends is about the claim, and a claim outlives its lease by design — ten minutes over a three-second lease re-taken every second. One late renewal and the tap lands on a lock that is momentarily nobody's: the person gets the board, no revocation is recorded, and the agent's next write goes through as if nothing happened. Fixed in `src/core/board-lock.ts`: the claim this canvas holds is what is asked, from one place all three taking paths call. Reverting fails 11 of check-lock's 115 checks and puts the reproduction back to 0 of 10.
+
+This is *a* path to the observed outcome, proved and closed. It is not proof that the coordinator's single 200 came through it; one sample cannot say. check-lock now guards both shapes of a lapsed lease.
+
+**Symptom 1, the 42-cycle divergence.** Not this task's. Reproduced at `ca8f399` with the identical signature. Filed as TASK-099 with a candidate mechanism in the pane's rebaseline window, and TASK-097's 'this is contention' diagnosis annotated: it reproduces standalone.
+
+Rates, standalone: `ca8f399` 1 of 10, `6db912d` 0 of 10, this branch without TASK-098 0 of 10, and interleaved against `ca8f399` 1 of 10 each — both arms failing on the same round, which says the machine rather than the tree. The coordinator's 3-in-6 does not survive standalone measurement; P(0 of 10 | p=0.5) is about one in a thousand, so their merged runs were most likely sharing the machine, which TASK-097 records as exactly how this check fails.
+
+**And a cost this task had added.** `scanFrontmatter` reached one key by trimming and splitting the whole note: 127 KB and 6,927 lines allocated on a 300-element board to read a value in the first ten. TASK-091 started paying that on every read; `frontmatterLinesFor` had been paying it on every write since long before. Now 0.1253 ms to 0.0023 ms per call, 54x, measured on that note.
+
+Main is merged into the branch, so the re-merge is trivial, and the full 25-step chain is green with zero failures.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
