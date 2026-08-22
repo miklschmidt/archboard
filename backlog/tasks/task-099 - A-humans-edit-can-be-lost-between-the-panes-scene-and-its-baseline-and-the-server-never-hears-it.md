@@ -3,10 +3,11 @@ id: TASK-099
 title: >-
   A human's edit can be lost between the pane's scene and its baseline, and the
   server never hears it
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-22 22:26'
-updated_date: '2026-08-22 22:34'
+updated_date: '2026-08-22 23:27'
 labels: []
 dependencies:
   - TASK-098
@@ -97,3 +98,14 @@ TASK-097 reads this family as contention, and that is not the whole of it. This 
 - [ ] #3 check-live-session passes 20 standalone runs at the rate this task was filed against
 - [ ] #4 A text element cannot end up holding text, rawText and originalText from three different writes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Instrument the window before changing anything. A delivery canary in the pane (frontend/src/canvas/delivery-canary.ts), off unless the page has been given window.__abDelivery, armed synchronously after every updateScene and read at the settle that writes the baseline down. It names the element, the field and both values, and says whether the baseline was about to cover it.
+2. Add a debt watchdog beside it: at every point where the pane decides it has nothing more to say — the settle timeout, the debounce firing under suppression, sendReport returning because one is in flight, and sendReport finishing — ask whether the pane still owes the server anything with nothing armed and nothing in flight. That classifies a loss into absorbed-into-the-baseline against owed-but-unarmed.
+3. Reproduce deterministically rather than sampling. The check owns the page, so wrap window.setTimeout: a 0 ms timeout scheduled while an edit is pending runs the edit first, which puts a human's hand exactly inside [updateScene, settle]. Assert the whole loss: the canary names it, the server never hears it, the pane keeps it.
+4. Fix. The baseline is taken from the delivery at the moment of delivery, synchronously after updateScene, so there is no window to fold anything into; and when suppression lifts the pane asks whether anything moved while it was not listening, so an edit made in the window is still armed. TASK-098's withholding semantics move in time and not in meaning.
+5. Revert-proof each half against the deterministic reproduction and count.
+6. Twenty standalone runs of check-live-session, and ten a side interleaved against the tree before the fix.
+<!-- SECTION:PLAN:END -->
