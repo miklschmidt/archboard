@@ -50,22 +50,28 @@ import { BoardState, baselineForFile, recordBaseline } from './board-store.js';
 import {
   BoardIdentity,
   BoardWriteConflict,
+  FRONTMATTER_VERSION,
+  VersionMove,
   boardKey,
   describeWriteConflict,
   hashBoardBytes,
   identityFromFrontmatter,
   identityFromVaultPath,
   makeIdentity,
+  noteVersion,
   renderBoardNote,
   requireVaultRoot,
   sceneJsonWithEmbeddedImages,
-  vaultPathFor
+  vaultPathFor,
+  versionMove,
+  versionNumber
 } from './board.js';
 import { derivedId, isBlockId, mintId } from './ids.js';
 import {
   isObsidianExcalidrawMd,
   extractSceneJsonFromObsidianMd,
-  renameElementId
+  renameElementId,
+  setFrontmatterValue
 } from './obsidian-md.js';
 import { buildScene } from './scene-io.js';
 
@@ -86,6 +92,12 @@ export interface BoardContent {
   files: Map<string, ExcalidrawFile>;
   note?: string;
   hash?: string;
+  /**
+   * Which edit of the board the note was, when it was read (TASK-091). Null for
+   * a note that carries no version archboard can read, absent for a board with
+   * no note behind it yet.
+   */
+  version?: number | null;
 }
 
 /**
@@ -181,6 +193,8 @@ export interface NoteFile {
   raw: string;
   /** sha-256 of the bytes it was decoded from: the baseline operand (ADR 0006). */
   hash: string;
+  /** Which edit of the board it was, or null when it carries no count (TASK-091). */
+  version: number | null;
   /** The drawing, with any image the plugin moved out of it put back. */
   sceneJson: string;
 }
@@ -222,6 +236,7 @@ export function readNoteFile(file: string, root = requireVaultRoot()): NoteFile 
     file,
     raw,
     hash: hashBoardBytes(bytes),
+    version: versionNumber(raw),
     // A picture the plugin moved out into a vault file is followed here
     // (TASK-085, ADR 0017), which is what decides whether a migrated board
     // draws or renders holes. It costs nothing on a note with no
@@ -280,7 +295,7 @@ export function readNote(file: string): BoardContent | null {
     Array.isArray(scene) ? scene : (scene.elements ?? []),
     Array.isArray(scene) ? null : scene.files
   );
-  return { elements, files, note: note.raw, hash: note.hash };
+  return { elements, files, note: note.raw, hash: note.hash, version: note.version };
 }
 
 /**
@@ -478,6 +493,17 @@ export interface ForeignWrite {
   actualHash: string;
   lastReadAt?: string;
   fileModifiedAt: string;
+  /**
+   * Which way the note's version moved between archboard's last write here and
+   * now (TASK-091). The hash establishes that these are not archboard's bytes;
+   * this says who wrote them. `unchanged` is the foreign writer named — a
+   * version key is carried across a save verbatim by everything that does not
+   * maintain it — `behind` is a revert or a pull, `ahead` is another archboard.
+   */
+  versionMove: VersionMove;
+  /** What archboard last wrote there, and what the note says now. */
+  expectedVersion: number | null;
+  actualVersion: number | null;
 }
 
 /**
@@ -509,12 +535,19 @@ export function foreignWriteTo(file: string, destination: Buffer | undefined): F
   // board is the one that read.
   const expected = baselineForFile(file);
   if (expected && expected.hash === actualHash) return null;
+  // Read only once the bytes are already known to differ: the version answers
+  // "who wrote this", which is a question that only arises after the hash has
+  // said somebody did. The hash still decides, and this only ever describes.
+  const actualVersion = versionNumber(destination.toString('utf-8'));
   return {
     file,
     reason: expected ? 'changed' : 'unseen',
     ...(expected ? { expectedHash: expected.hash, lastReadAt: expected.at } : {}),
     actualHash,
-    fileModifiedAt: fs.statSync(file).mtime.toISOString()
+    fileModifiedAt: fs.statSync(file).mtime.toISOString(),
+    versionMove: versionMove(expected?.version ?? null, actualVersion),
+    expectedVersion: expected?.version ?? null,
+    actualVersion
   };
 }
 
@@ -558,7 +591,14 @@ export function writeBoardContent(
   board: BoardState,
   content: BoardContent,
   options: WriteOptions = {}
-): { file: string; hash: string; note: string; elementCount: number; overwrote: boolean } {
+): {
+  file: string;
+  hash: string;
+  note: string;
+  elementCount: number;
+  overwrote: boolean;
+  version: number | null;
+} {
   const file = options.file ?? board.file;
   if (!file) {
     throw new Error(`Board "${boardKey(board.identity)}" has no note to write to.`);
@@ -586,7 +626,7 @@ export function writeBoardContent(
     }));
   }
 
-  const { note, bytes, elementCount } = renderContent(
+  const rendered = renderContent(
     identity,
     content,
     options.elements,
@@ -594,6 +634,8 @@ export function writeBoardContent(
     // onto an existing note keeps what that note's author put there.
     destination?.toString('utf-8')
   );
+  const { note, bytes, version } = stampVersion(rendered, destination);
+  const { elementCount } = rendered;
   // The folder for a nested name, made after the check rather than before it,
   // so a refused write leaves no directory behind.
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -604,7 +646,49 @@ export function writeBoardContent(
 
   const hash = hashBoardBytes(bytes);
   // What archboard has now seen at this path is what it just wrote — the
-  // operand the *next* write's check compares against.
-  recordBaseline(board, file, hash);
-  return { file, hash, note, elementCount, overwrote };
+  // operand the *next* write's check compares against, both halves of it.
+  recordBaseline(board, file, hash, version);
+  return { file, hash, note, elementCount, overwrote, version };
+}
+
+/**
+ * Move the note's version on, if this write is a new edit of it (TASK-091).
+ *
+ * A WRITE THAT PRODUCES THE NOTE THAT IS ALREADY THERE IS NOT A NEW VERSION OF
+ * IT, and that is the rule rather than an optimisation. Two saves of an
+ * unchanged board are byte-identical and have to stay so, and the diagnostic
+ * this counter exists for rests on the same fact from the other side: "the
+ * version did not move and the bytes did" only names a foreign writer while
+ * archboard never writes different bytes without moving it. Comparing what was
+ * rendered against what is on disk is that rule, stated once.
+ *
+ * The count starts at 1 on the first write archboard makes to a note, whatever
+ * that note's history. It describes one file rather than a board's whole life,
+ * so a branch's first write is version 1 even though the board it came from is
+ * at forty — the two are separate notes and nothing orders one against the
+ * other.
+ *
+ * A note whose `version` key holds something archboard cannot read as a count
+ * is left exactly as it is, key and all. That is somebody's own property in
+ * their own frontmatter, and overwriting it to gain a counter would be
+ * archboard deleting a person's data to make its own bookkeeping work. Such a
+ * note is unversioned, the diagnosis over it reads `unknown`, and the hash
+ * guards it exactly as it always did.
+ *
+ * The line is set on the rendered text rather than fed into the render, because
+ * the render is what decides whether the version moves. Rendering twice to
+ * settle one line would serialise the whole scene twice.
+ */
+function stampVersion(
+  rendered: { note: string; bytes: Buffer },
+  destination: Buffer | undefined
+): { note: string; bytes: Buffer; version: number | null } {
+  const current = destination ? noteVersion(destination.toString('utf-8')) : { kind: 'none' as const };
+  if (current.kind === 'foreign') return { ...rendered, version: null };
+  if (destination && rendered.bytes.equals(destination)) {
+    return { ...rendered, version: current.kind === 'at' ? current.value : null };
+  }
+  const next = (current.kind === 'at' ? current.value : 0) + 1;
+  const note = setFrontmatterValue(rendered.note, FRONTMATTER_VERSION, String(next));
+  return { note, bytes: Buffer.from(note, 'utf-8'), version: next };
 }

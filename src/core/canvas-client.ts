@@ -93,20 +93,46 @@ export function currentWriteDoing(): string | null {
   return writeDoing;
 }
 
+// ---- And which version of the board it thinks it is editing ----
+//
+// The same shape again, from `--expect-version` or the `expectVersion` argument
+// (TASK-091). Optional where `doing` is required: a writer that has not read the
+// board has no version to name, and it only ever costs that writer the
+// precondition. Stated once per invocation because it is a claim about the
+// board, and a command that makes several requests is making them against one
+// board — the first of them moves the version on, so the canvas checks the
+// claim against the note at the moment of each write rather than against a
+// number this side is holding.
+let expectVersion: number | null = null;
+
+export function setExpectedVersion(version: number | null): void {
+  expectVersion = version === null || Number.isNaN(version) ? null : version;
+}
+
+export function currentExpectedVersion(): number | null {
+  return expectVersion;
+}
+
 /**
- * Attach it to anything that is not a read.
+ * Attach what this invocation says about its write to anything that is not a
+ * read: what it is doing, and which version it believes it is editing.
  *
  * Deny by default, like the boundary on the server that demands it: a request
- * with a method carries it unless it is a GET, so a route added later is
+ * with a method carries them unless it is a GET, so a route added later is
  * covered without anybody remembering. Nothing is refused here — the canvas
- * owns the refusal, because it is the only side that knows which routes are
+ * owns both refusals, because it is the only side that knows which routes are
  * board writes, and two lists that must agree are how they stop agreeing.
  */
-function withDoing(path: string, method?: string): string {
-  if (!writeDoing) return path;
+function withWriteClaims(path: string, method?: string): string {
   if ((method ?? 'GET').toUpperCase() === 'GET') return path;
-  if (/[?&]doing=/.test(path)) return path;
-  return `${path}${path.includes('?') ? '&' : '?'}doing=${encodeURIComponent(writeDoing)}`;
+  let out = path;
+  if (writeDoing && !/[?&]doing=/.test(out)) {
+    out = `${out}${out.includes('?') ? '&' : '?'}doing=${encodeURIComponent(writeDoing)}`;
+  }
+  if (expectVersion !== null && !/[?&]expectVersion=/.test(out)) {
+    out = `${out}${out.includes('?') ? '&' : '?'}expectVersion=${expectVersion}`;
+  }
+  return out;
 }
 
 // Helper functions to sync with Express server (canvas)
@@ -130,7 +156,7 @@ export async function syncToCanvas(
 
     switch (operation) {
       case 'create':
-        url = `${EXPRESS_SERVER_URL}${withDoing(asked(withBoard('/api/elements')), 'POST')}`;
+        url = `${EXPRESS_SERVER_URL}${withWriteClaims(asked(withBoard('/api/elements')), 'POST')}`;
         options = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -139,7 +165,7 @@ export async function syncToCanvas(
         break;
 
       case 'update':
-        url = `${EXPRESS_SERVER_URL}${withDoing(asked(withBoard(`/api/elements/${data.id}`)), 'PUT')}`;
+        url = `${EXPRESS_SERVER_URL}${withWriteClaims(asked(withBoard(`/api/elements/${data.id}`)), 'PUT')}`;
         options = {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -148,12 +174,12 @@ export async function syncToCanvas(
         break;
 
       case 'delete':
-        url = `${EXPRESS_SERVER_URL}${withDoing(asked(withBoard(`/api/elements/${data.id}`)), 'DELETE')}`;
+        url = `${EXPRESS_SERVER_URL}${withWriteClaims(asked(withBoard(`/api/elements/${data.id}`)), 'DELETE')}`;
         options = { method: 'DELETE' };
         break;
 
       case 'batch_create':
-        url = `${EXPRESS_SERVER_URL}${withDoing(asked(withBoard('/api/elements/batch')), 'POST')}`;
+        url = `${EXPRESS_SERVER_URL}${withWriteClaims(asked(withBoard('/api/elements/batch')), 'POST')}`;
         options = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -273,7 +299,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   await assertCanvasIdentity();
   // Every canvas request carries the board when one was named. Attached here
   // rather than at 30 call sites, so a route can never be the one that forgot.
-  const response = await fetch(`${EXPRESS_SERVER_URL}${withDoing(withBoard(path), init?.method)}`, init);
+  const response = await fetch(`${EXPRESS_SERVER_URL}${withWriteClaims(withBoard(path), init?.method)}`, init);
   const data = await response.json().catch(() => null) as any;
   // Whether that board is saving. Read off every answer, refusals included,
   // because the answer that most needs it is the one refusing the write that
@@ -821,13 +847,21 @@ export async function applyElementChanges(changes: {
 }
 
 /**
- * The board as one line: how many elements, and the sha-256 of the note it
- * would write. Comparing two of these is how an agent finds out whether
- * anything it did not do has happened, without reading the board (TASK-075).
+ * The board as one line: how many elements, the sha-256 of its note, and which
+ * edit of that note this is. Comparing two of these is how an agent finds out
+ * whether anything it did not do has happened, without reading the board
+ * (TASK-075).
+ *
+ * The hash says whether the note is the same document; the version says which
+ * of two documents is newer, and is what a writer sends back as
+ * `--expect-version` to have its next write refused if the board has moved on
+ * (TASK-091). Null on a board whose note carries no version archboard can read,
+ * and on a board that has stopped saving, which wrote no note at all.
  */
 export interface BoardFingerprint {
   elements: number;
   note: string;
+  version: number | null;
 }
 
 export interface ElementChangesResult {
