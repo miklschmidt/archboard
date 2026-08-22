@@ -86,6 +86,7 @@ import {
   holdBoard,
   LockHolder,
   onBoardLockChanged,
+  onBoardSweep,
   releaseClaim,
   releaseHold,
   takeClaimRevocation,
@@ -107,6 +108,12 @@ import {
   validateVariant,
   vaultPathFor
 } from './core/board.js';
+import {
+  NoteWrittenElsewhere,
+  noteWrittenElsewhere,
+  onNoteWrittenElsewhere,
+  refreshNoteWatch
+} from './core/note-watch.js';
 import { ARCHBOARD_VAULT, noVaultMessage } from './core/config.js';
 import { CURRENT_VARIANT } from './core/board.js';
 import { restampVariant } from './core/promote.js';
@@ -364,6 +371,30 @@ onBoardLockChanged((board, holder) => {
 });
 
 /**
+ * Somebody outside archboard wrote this board's note, and the panes holding it
+ * are showing a board the vault no longer has (TASK-062).
+ *
+ * A separate message from `board_lock` because it is a separate fact. A lock
+ * says another archboard writer has the board right now and the pane must stop
+ * accepting a touch. This says nothing is stopping anybody: the pane keeps
+ * drawing, and what it is drawing on is a copy. Telling one story with the
+ * other's message would mean a board going read-only because Obsidian saved.
+ */
+function noteMessage(board: string, written: NoteWrittenElsewhere | null): WebSocketMessage {
+  return { type: 'board_note', board, writtenElsewhere: written };
+}
+
+// hot-safe: replaces the sink rather than adding one, for the reason above.
+onNoteWrittenElsewhere((board, written) => {
+  broadcast(noteMessage(board, written), board);
+});
+
+// hot-safe: replaces the sweep's passenger rather than adding a second one.
+// Registered here rather than by the module itself so that the one place the
+// lock watcher is wired is the one place anything rides on it.
+onBoardSweep(board => { refreshNoteWatch(board); });
+
+/**
  * Watch the lock files of the boards on screen, while there is a screen.
  *
  * The broadcast above reaches the panes of this canvas. A second canvas over
@@ -396,6 +427,11 @@ syncLockWatch();
  */
 function tellPaneAboutLock(clientId: string, board: string): void {
   sendToPane(clientId, lockMessage(board, boardLockState(board)), board);
+  // And whether the note is the one this board came from. Same reasoning, same
+  // moment: a tab that opens onto a board Obsidian rewrote an hour ago would
+  // otherwise hear nothing until the next sweep found a change, and the change
+  // it is waiting for already happened.
+  sendToPane(clientId, noteMessage(board, noteWrittenElsewhere(board)), board);
 }
 
 // Broadcast something that is not about a board.
@@ -471,8 +507,8 @@ function persistBoard(
 ): void {
   // A board that has stopped saving takes the write into the held copy and
   // leaves the note alone (TASK-079). Not written down, so `savedAt` does not
-  // move: the chrome's "unsaved changes" and the mark saying why are two facts
-  // and both are true. The feed is told all the same, because the board did
+  // move, which is the honest answer to an agent asking when this board was
+  // last in the vault. The feed is told all the same, because the board did
   // change and an agent watching should hear what a human drew, held or not.
   if (holdWrite(key, content, fromScreen)) {
     noteChange(key, board, origin);

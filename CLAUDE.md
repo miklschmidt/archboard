@@ -715,6 +715,38 @@ makes "overwrite" mean what you are looking at. A board no pane is holding has
 no screen to take, so its held copy stays their note plus whatever an agent has
 drawn on it since, and `held.fromScreen` says which of the two you have.
 
+**And the pane says so before the refusal, not only after it** (TASK-062). The
+refusal is still the last moment and it should not be the first anybody hears
+of it: between somebody else writing the note and the next gesture, a person is
+drawing on a board the vault no longer holds with nothing on screen saying so.
+That gap used to be a session long. It is now however long they think before
+touching something, which on a wall display is minutes. So the board bar shows
+`note changed on disk` while that is true, from the same sha-256 comparison the
+refusal makes, in one function so the mark cannot claim one thing and the write
+do another. Clicking it offers the reload and nothing else, because nothing has
+been refused, so there is no held copy to overwrite the note with and none to
+save elsewhere.
+
+Three marks, three different facts, and the order they happen in. Somebody else
+wrote the note. Then archboard tried to write, was refused, and the board is
+*held*. A lock is none of that: it is another archboard writer holding the board
+right now, and the pane says it by going read-only rather than by a chip.
+
+What that slot used to hold was `unsaved changes`, and it had stopped being true
+(ADR 0015). Every gesture is a write to the note, so there is no unsaved board
+left to warn about; the indicator compared a change time against a save time
+that only refreshed on a board switch, so it lit up on the first gesture of a
+session and stayed lit over a board that was fully written down. A board that is
+saving now says `in the vault` and nothing else.
+
+Noticing costs one `stat` per board on screen per second, and no more than that
+until something moves. It rides on the lock watcher's sweep (TASK-080) rather
+than a timer of its own, so it inherits that gate: a canvas with no tab open
+reads nothing, because there is nobody to tell. A note is read and hashed only
+when its size or its time has moved, or when archboard's own baseline for it
+has. The stat says a note is worth looking at, never that it changed. Only the
+hash decides.
+
 Nothing about that check locks anything, and it reads the file rather than
 another app's memory, so a board open in Obsidian can still write its own copy
 back afterwards: **keep a board open in one editor at a time.**

@@ -230,6 +230,11 @@ export type WebSocketMessageType =
   // flag: the pane that holds the lock has to know the news is about itself and
   // keep drawing, and a pane that does not needs to be able to say who does.
   | 'board_lock'
+  // Somebody outside archboard wrote this board's note, so the panes holding it
+  // are showing a copy the vault does not have (TASK-062). Deliberately not
+  // `board_lock`: a lock stops a pane accepting a touch, and this stops
+  // nothing. Deliberately not `board_hold`: nothing has been refused yet.
+  | 'board_note'
   // The stencil palette changed. Boardless on purpose: the library is not a
   // board's content, so every client applies it whatever it is showing.
   | 'library_changed'

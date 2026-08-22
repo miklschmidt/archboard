@@ -25,6 +25,15 @@ with autosave repeatedly implicated.
   change. Rejected. Excalidraw scenes do not merge meaningfully, so this
   discards whatever the canvas held; it swaps which side loses work silently
   rather than fixing anything.
+- **A version number in the frontmatter**, bumped on every write and compared
+  instead of the hash. Rejected, and it fails in the direction that costs work.
+  Both Obsidian and archboard carry unknown frontmatter keys across a save
+  verbatim, so a foreign edit leaves the number exactly where it was: archboard
+  reads the same value, concludes nothing happened, and overwrites. A counter is
+  a protocol, and it only works if every writer joins it. `git pull`, which is a
+  real writer here, can also move a note backwards to a lower number, or produce
+  different content at the same one. The hash needs nobody's cooperation because
+  it is a property of the bytes.
 
 ## When it fires, after ADR 0015
 
@@ -51,6 +60,40 @@ what "take the note" has always meant. Overwrite writes it. Save elsewhere
 writes it to the other note and moves the panes with it, because the board left
 behind is about to be repainted with the other editor's version and watching
 that happen is not "nothing is lost".
+
+## And said before it is refused
+
+The refusal is still the last moment, and it should not be the first anybody
+hears of it. Between somebody else writing the note and the next gesture, a
+person is drawing on a board the vault no longer holds, with nothing on screen
+saying so. That gap used to be a session long; under ADR 0015 it is however long
+the person spends thinking before they touch something, which on a wall display
+is minutes and can be an hour.
+
+So the comparison above runs on the boards that are on screen as well as on the
+writes, and the board bar says `note changed on disk` when it comes back
+positive (TASK-062). It is the same comparison, in one function, on purpose: the
+mark's claim is that it shows the state in which the next write would be
+refused, and a second implementation of the question is one that drifts.
+
+It offers the reload and not the three outcomes, because the other two are not
+reachable yet. Nothing has been refused, so there is no held copy to write over
+the note and none to write elsewhere. What it says instead is what has not
+happened: nothing is written, nothing is lost, and the next change is refused
+rather than saved over theirs.
+
+Two things this is not, both of which say something adjacent and neither of
+which says this. A hold is this state one write later, after the refusal
+happened. A lock (ADR 0016) is another archboard writer holding the board right
+now, which excludes a pane from drawing; this excludes nobody from anything.
+
+Riding on the lock watcher's timer rather than a second one keeps the cost
+honest. That sweep already runs once per renewal interval and only while a
+browser is connected, because a canvas with no tab has nobody to tell. A note is
+read and hashed only when its size or its modification time has moved, or when
+archboard's own baseline for it has. The stat says a note is worth looking at
+and never that it changed; only the hash decides, because a false positive here
+puts a mark on somebody's board saying their work is behind when it is not.
 
 ## Consequences
 
