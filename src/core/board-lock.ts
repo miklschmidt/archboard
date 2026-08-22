@@ -696,6 +696,28 @@ async function attempt(
   // enough for waiting it out to mean standing at a dead wall.
   const revoking = Boolean(live && revoke && who.kind === 'human' && live.claimed && live.id !== who.id);
 
+  // WHETHER THE CLAIM ENDS IS A QUESTION ABOUT THE CLAIM, NOT ABOUT THE LEASE
+  // UNDER IT. The line above answers a different one — may this person take a
+  // board somebody is holding — and that is rightly about the lock record,
+  // because it is the record that says the board is taken. Ending the claim was
+  // riding on the same flag, and a claim outlives its lease by design: it runs
+  // for ten minutes over a three-second lease the canvas re-takes every second
+  // (ADR 0016). Let that renewal be late — a blocked event loop, a busy
+  // machine — and the tap lands on a lock that is momentarily nobody's. The
+  // person got the board either way, and the agent was never told it had lost
+  // it: its next write went through as if nothing had happened.
+  //
+  // So the claim this canvas holds is what is asked, and a lapsed lease under a
+  // live claim revokes exactly as a live one does. A claim held on another
+  // canvas is not here to end; that one finds out when its own renewal is
+  // refused, which is the same discovery a renewal interval later.
+  const endsClaimHere = (taker: LockRecord): void => {
+    if (!revoke || who.kind !== 'human') return;
+    const claimHere = claims().get(board);
+    if (!claimHere || claimHere.holder.id === who.id) return;
+    noteClaimRevoked(board, claimHere.holder, holderOf(taker));
+  };
+
   if (live && live.id === who.id) {
     // Reentrant, which is also what renewal is. `since` is kept: a refusal
     // saying how long a board has been held must mean since it was taken, not
@@ -708,6 +730,10 @@ async function attempt(
       ...(who.claimed ? { claimed: true } : {})
     };
     writeRecord(file, renewed);
+    // A person who already holds the lock and taps to take a claimed board back
+    // arrives here rather than below: their previous hold outlived the claim's
+    // lapsed lease. The claim still ends.
+    endsClaimHere(renewed);
     announceHeld(board, holderOf(renewed));
     return { ok: true, holder: holderOf(renewed), created: false };
   }
@@ -739,6 +765,10 @@ async function attempt(
       } finally {
         fs.closeSync(handle);
       }
+      // Nothing was holding the board, and a claim on this canvas may still
+      // have believed it was: a lease that lapsed and was tidied away leaves no
+      // record to read, and the claim above it runs for minutes longer.
+      endsClaimHere(record);
       announceHeld(board, holderOf(record));
       return { ok: true, holder: holderOf(record), created: true };
     } catch (error) {
@@ -768,7 +798,7 @@ async function attempt(
   // A claim held here stops being renewed at this moment; one held on another
   // canvas finds out when its own renewal is refused, which is the same
   // discovery arriving one renewal interval later.
-  if (revoking && live) noteClaimRevoked(board, holderOf(live), holderOf(record));
+  endsClaimHere(record);
   announceHeld(board, holderOf(record));
   return { ok: true, holder: holderOf(record), created: true };
 }
