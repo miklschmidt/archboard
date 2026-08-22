@@ -1,11 +1,11 @@
 ---
 id: TASK-082
 title: CI runs two of the fifteen checks
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-20 20:39'
-updated_date: '2026-08-20 21:35'
+updated_date: '2026-08-22 15:02'
 labels: []
 dependencies: []
 references:
@@ -35,9 +35,9 @@ Two things to work out rather than assume. How long the full suite takes on a ru
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 A push runs the whole suite, or the checks it deliberately skips are listed with a reason
-- [ ] #2 The suite passes on a clean runner, not only on a machine that has been developing archboard
-- [ ] #3 A browser-driven check has its browser installed in CI, and is proved to run headless there
-- [ ] #4 The wall-clock cost of the suite on a runner is measured and recorded
+- [x] #2 The suite passes on a clean runner, not only on a machine that has been developing archboard
+- [x] #3 A browser-driven check has its browser installed in CI, and is proved to run headless there
+- [x] #4 The wall-clock cost of the suite on a runner is measured and recorded
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -54,43 +54,31 @@ Two things to work out rather than assume. How long the full suite takes on a ru
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-## What changed
+Closed on runner evidence, not on argument. Two runs on miklschmidt/archboard.
 
-.github/workflows/ci.yml runs `bun run test` and nothing else, so the list of checks lives in package.json where it is already maintained and the workflow cannot fall behind it again. The two steps it used to name are inside the chain.
+**Run 32502079882** (first push, red) proved three of the four on its own. All 23 suites executed. `agent-browser` installed on a fresh ubuntu-24.04 runner and both browser checks ran headless there — `fixed-point` passed at 30.4 s. One check failed, and it was worth having.
 
-scripts/check-ci-suites.mjs (`bun run test:suites`, seventeenth in the chain) enforces that: a `test:*` script in neither the chain nor its SKIPPED map fails the suite, a script in both fails, and a workflow that runs a suite by name fails unless that suite is one the chain skips. Both failure modes were exercised by hand: dropping test:hot from the chain, and pointing a workflow step at test:boards.
+**Run 32580267261** (after the fix, green) is AC 2: the whole suite passes on a clean runner, not only on a machine that has been developing archboard.
 
-test:browser is the one entry in SKIPPED, with the reason written next to it. CI runs it in a second job that installs agent-browser 0.34.0 from npm and downloads Chrome with `agent-browser install --with-deps`. That job carries continue-on-error because the check asserts the 2026-08-20 baseline of 8 of 12 elements changed rather than the zero we want; TASK-072 turns it into a guard and takes the flag off.
+## AC 4, measured rather than projected
 
-## Measured on this box, 13th-gen i7, scrubbed environment (empty HOME, no ARCHBOARD_*, minimal PATH)
+Suite step, first check to last: **120 s** plus live-session; whole job 3m45s including checkout, `bun install --frozen-lockfile` and the vite build. Per suite, seconds:
 
-Whole chain 58.6s, all seventeen green. vite build 8.5s. test:browser 2.4s with --skip-build.
+    fixed-point 30.4 · mcp-stdio 22.0 · lock 21.2 · boards 13.7 · side-by-side 10.3
+    hot-reload 7.8 · one-write 3.9 · repos 2.5 · module-scope 1.3 · changes 1.3
+    install-doc 1.0 · local-bind 0.9 · branch-compare 0.9 · staleness 0.8
+    surface-parity 0.7 · geometry 0.6 · labels 0.6 · obsidian-md 0.1
+    text-metrics 0.1 · library 0.1 · ci-suites 0.0
 
-Per suite: mcp 20.9, boards 10.5, side-by-side 9.4, hot 7.5, one-write 2.9, type-check 2.0, repos 1.4, changes 1.2, module-scope 0.5, install 0.5, branch 0.4, bind 0.3, geometry 0.3, labels 0.3, obsidian 0.02, library 0.08, parity 0.03. Three suites are two thirds of the time, and all three spawn a canvas.
+The projection recorded when this task was written was 2 to 5 minutes against ~105 s locally, reasoned from the runner being 3 to 5 times slower on CPU-bound steps while much of the chain is settle windows that do not scale with CPU. That reasoning held: socket-bound checks barely moved (mcp 20.9 local to 22.0, side-by-side 9.4 to 10.3, hot 7.5 to 7.8) and the build-bound one moved a lot (fixed-point 2.4 s with `--skip-build` locally against 30.4 s building on the runner).
 
-## The only real runner numbers, and they are for the old workflow
+## What CI caught that no local run could
 
-Run 32414737857 on main (0369c30, 2026-08-20 20:33, ubuntu-latest) ran the two-check workflow in 49s wall: setup 4s, install 2s, type check 10s against 2.0s here, vite build 28s against 8.5s here. So a runner is 3 to 5 times slower on the CPU-bound steps. Much of the chain is settle windows and sleeps, which do not scale with CPU, so the new job should land between 2 and 5 minutes. That is a projection from a local measurement, not a runner measurement, which is why AC 4 is unchecked.
+`check-live-session`'s fail-closed assertion killed the canvas, slept 1.5 s and read the pane. On a runner the process had not finished dying, the socket was still open, the pane was still correctly connected, and the check reported a fail-open that had not happened. It was measuring how fast a runner tears down a process.
 
-## A bug the scrubbed run found
+Fixed in 379aeca: wait for the process to actually exit, then poll the pane for a bounded five seconds. The bound is the point — a pane slow to fail closed is one a person can keep drawing into. Revert-proofed: breaking `readOnly`'s socket half fails this check and nothing else.
 
-scripts/check-fixed-point.mjs failed with "session name is too long. Socket path would be 158 bytes (max 103)" under a deep HOME, because agent-browser derives its socket directory from HOME and the daemon socket is <dir>/<session>.sock. A GitHub runner's /home/runner is short enough to have got away with it, but nothing was holding it there. The check now makes a short socket dir under TMPDIR and passes AGENT_BROWSER_SOCKET_DIR, and the environment that failed before now passes.
-
-Also seen: with a completely empty HOME and no browser downloaded, agent-browser fell back to a system chromium and the check still passed with the same 8 of 12 and the same field lists. With agent-browser off PATH entirely it exits 2 and says so, which is what keeps a missing browser from reading as a pass.
-
-## Which criteria are verified, and which are argued
-
-Verified. AC 1: the workflow runs the whole chain, the one skip carries a written reason, and check-ci-suites.mjs fails when either drifts. Both drift cases were made to fail on purpose.
-
-Argued, not proved, because nobody may push from here. AC 2, AC 3 and AC 4 all need a run on a runner.
-
-AC 2 rests on a full scrubbed run: empty HOME, no ARCHBOARD_* of any kind, no .env, a minimal PATH, and the state directory and repo registry landing in the throwaway HOME. Every suite that starts a canvas makes its own temp vault and its own random port, and check-repos and check-hot-reload also override ARCHBOARD_REPOS and XDG_STATE_HOME. Nothing read the user's vault, the real registry, or the canvas on :3000. What a push would still confirm: that bun install --frozen-lockfile resolves on the runner, and that no suite depends on a tool the ubuntu image lacks.
-
-AC 3 rests on the check passing here against a browser it found rather than one it downloaded, and on it exiting 2 when there is none. What a push would confirm: that `agent-browser install --with-deps` works on the image, that the socket path and headless Chrome behave under HOME=/home/runner, and above all whether the 8-of-12 field table reproduces there. Text width and height come from Excalidraw's own measureText against a bundled font, so it should, but a different Chrome could move a field and the table is what will name which one.
-
-AC 4 rests on a local measurement and a scaling factor taken from the old workflow's runner timings. Nobody has timed this chain on a runner.
-
-The honest summary: two of the four criteria (2 and 3) cannot be closed until somebody pushes and watches the run, and the fourth (4) closes when that run's step timings are copied back onto this task.
+Worth noting for TASK-079's record: its author reported this window as uncovered, needing 'a second writer inside a ~200 ms window that nothing here can schedule'. A slower runner scheduled it.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
