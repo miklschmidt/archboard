@@ -391,6 +391,49 @@ const refusal = async (promise) => {
 }
 
 {
+  // AND IT IS TOLD WHETHER OR NOT THE LEASE HAPPENED TO BE LIVE.
+  //
+  // A claim runs for ten minutes over a three-second lease the canvas re-takes
+  // every second, so the lease not being live for a moment is an ordinary thing
+  // under a perfectly live claim: one late renewal on a busy machine does it.
+  // Ending the claim used to ride on the same flag that decides whether a
+  // person may take a held board, which is rightly a question about the lock
+  // record — and with no record to read, the person got the board and the agent
+  // was never told. Its next write went through as if nothing had happened,
+  // which is the one thing "the agent is told at its next act" may not do
+  // sometimes.
+  //
+  // Both shapes of a lease that is not live, because they reach the taking
+  // through different branches: a record whose time has passed, and no record
+  // at all where one was tidied away.
+  const lockFileFor = (name) => join(vault, '.archboard', 'locks', `${encodeURIComponent(name)}.lock`);
+
+  for (const [how, lapse] of [
+    ['a lease whose time has passed', (file) => {
+      const stale = JSON.parse(fs.readFileSync(file, 'utf-8'));
+      stale.until = new Date(Date.now() - 1000).toISOString();
+      fs.writeFileSync(file, JSON.stringify(stale));
+    }],
+    ['a lease tidied away', (file) => fs.rmSync(file, { force: true })]
+  ]) {
+    const board = `lapsed-${how.includes('passed') ? 'expired' : 'gone'}`;
+    const claim = await claiming({ board, reason: 'redrawing the payment path', forMs: 600_000 });
+    check(`a claim over ${how}: the claim is live`, claim.created === true, JSON.stringify(claim.claim));
+    lapse(lockFileFor(board));
+
+    const taken = await take({ board, holder: person('a-hand'), waitMs: 0, revokeClaim: true });
+    check('  and the person takes the board', taken.created === true && taken.holder?.kind === 'human', why(taken));
+    check('  and the claim is over on this canvas', claimOn(board) === null, JSON.stringify(claimOn(board)));
+    const told = takeClaimRevocation(board);
+    check('  and the agent is still told it lost the board, and by whom',
+      told?.by?.id === 'a-hand' && told?.claim?.holder?.reason === 'redrawing the payment path',
+      JSON.stringify(told));
+    releaseHold(board, 'a-hand');
+    releaseClaim(board);
+  }
+}
+
+{
   // The half that must NOT happen. A person waits out an agent's write — it is
   // twenty milliseconds, and taking the board from a write already running is
   // two writers to one note, which is what the mutex exists instead of.

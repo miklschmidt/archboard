@@ -1183,7 +1183,7 @@ try {
     const { writeBoardContent, emptyContent } = await import(src('core/board-io.ts'));
     const { beginHold, releaseHold } = await import(src('core/board-hold.ts'));
     const { recordBaseline } = await import(src('core/board-store.ts'));
-    const { hashBoardBytes } = await import(src('core/board.ts'));
+    const { hashBoardBytes, versionNumber } = await import(src('core/board.ts'));
 
     const identity = makeIdentity({ board: 'notewatch' });
     const { key: watched, board: watchedBoard } = getOrCreateBoard(identity);
@@ -1217,9 +1217,11 @@ try {
       `${original.length}/${pinned.getTime()} then ${restored.size}/${restored.mtimeMs}`);
     fs.writeFileSync(watchedBoard.file, original);
 
-    // Somebody else. There is no protocol to join and no version key to bump:
-    // a foreign write is a change in the bytes and nothing else, which is why
-    // this is the same sha-256 comparison the refusal makes.
+    // Somebody else. A foreign writer joins no protocol — it carries the
+    // version key across verbatim like any other frontmatter — so what catches
+    // it is the change in the bytes and nothing else, which is why this is the
+    // same sha-256 comparison the refusal makes. What the version adds on top
+    // is which side is ahead, and that is `check-version.mjs`.
     fs.writeFileSync(watchedBoard.file, `${original.toString('utf-8')}\n<!-- somebody else was here -->\n`);
     const written = noteWrittenElsewhere(watched);
     check('a note written by something that is not archboard is seen with no write and no command',
@@ -1256,7 +1258,10 @@ try {
 
     // It clears itself, and the thing that clears it is taking the note —
     // which is what `board open --reload` does, and all it does here.
-    recordBaseline(watchedBoard, watchedBoard.file, hashBoardBytes(fs.readFileSync(watchedBoard.file)));
+    recordBaseline(
+      watchedBoard, watchedBoard.file, hashBoardBytes(fs.readFileSync(watchedBoard.file)),
+      versionNumber(fs.readFileSync(watchedBoard.file, 'utf-8'))
+    );
     check('taking the note clears it, with no write, no restart and no timer',
       noteWrittenElsewhere(watched) === null);
 

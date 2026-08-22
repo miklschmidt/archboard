@@ -132,6 +132,45 @@ export function readFrontmatterValue(content: string, key: string): string | und
   return undefined;
 }
 
+// Set one top-level key on a note that already exists, leaving every other
+// byte of it alone.
+//
+// The write path renders a whole note and only then knows what its version
+// should be (src/core/board-io.ts): the counter moves when the rendered
+// document differs from the destination, so it cannot be an input to the
+// render. Rendering twice to settle one line would mean serialising a scene
+// that can be megabytes for a second time, so the line is set on the rendered
+// text instead.
+//
+// The frontmatter block is rebuilt through the same upsert the render uses, so
+// a key that is already right is left untouched and a new one lands where every
+// other new key lands. Everything from the closing `---` down is carried
+// through as the bytes it already was.
+export function setFrontmatterValue(note: string, key: string, value: string): string {
+  const scan = scanFrontmatter(note);
+  if (scan.kind !== 'ok') return note;
+  // Where the block ends in the original text, so everything below it is
+  // spliced across as the bytes it already was rather than being split into
+  // lines and joined back up.
+  const close = closingDelimiterEnd(note);
+  if (close === null) return note;
+  return renderFrontmatter(upsertFrontmatterLines(scan.lines, [[key, value]])) + note.slice(close);
+}
+
+// The offset just past the newline that ends the frontmatter's closing `---`.
+function closingDelimiterEnd(note: string): number | null {
+  let at = note.indexOf('\n');
+  if (at === -1) return null;
+  while (at !== -1) {
+    const start = at + 1;
+    const next = note.indexOf('\n', start);
+    const line = note.slice(start, next === -1 ? undefined : next);
+    if (/^(---|\.\.\.)[ \t]*\r?$/.test(line)) return next === -1 ? note.length : next + 1;
+    at = next;
+  }
+  return null;
+}
+
 // Set frontmatter keys in place. Idempotent by construction: a key already
 // holding the wanted value leaves its line byte-for-byte untouched, so
 // re-exporting an unchanged board produces an identical file. A changed value
@@ -159,25 +198,43 @@ function upsertFrontmatterLines(lines: string[], entries: ReadonlyArray<[string,
 // anything it cannot account for is reported as malformed rather than guessed
 // at, because the caller's fallback for "malformed" is to refuse to write
 // (never destroy content) while its fallback for "none" is to overwrite.
+// A NOTE IS MOSTLY SCENE, AND NONE OF IT IS READ HERE. This used to `trim()`
+// and then `split()` the whole document to reach a block that is always in its
+// first few hundred bytes, so asking a 300-element board for one frontmatter
+// key allocated a copy of the note and an array of every line in it. That was
+// paid on every write through `frontmatterLinesFor`, and TASK-091 started
+// paying it on every read as well. It walks to the closing delimiter now and
+// allocates only the lines it hands back.
+//
+// The empty-document test went with it rather than being made cheaper: a
+// document with nothing in it does not start with `---` either, so the check
+// below already answered it.
 export function scanFrontmatter(content: string): FrontmatterScan {
-  const text = content.replace(/^﻿/, '');
-  if (text.trim() === '') return { kind: 'none' };
+  const text = content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
   // Obsidian only honours frontmatter that starts on the very first line.
   if (!/^---[ \t]*(\r?\n|$)/.test(text)) return { kind: 'none' };
 
-  const lines = text.split(/\r?\n/);
-  let end = -1;
-  for (let i = 1; i < lines.length; i++) {
-    if (/^(---|\.\.\.)[ \t]*$/.test(lines[i]!)) {
-      end = i;
+  const body: string[] = [];
+  let at = text.indexOf('\n');
+  let closed = false;
+  while (at !== -1) {
+    const start = at + 1;
+    const next = text.indexOf('\n', start);
+    const raw = text.slice(start, next === -1 ? undefined : next);
+    // `\r` belongs to the line ending rather than to the line, which is what
+    // the split by `/\r?\n/` this replaced was saying.
+    const line = raw.endsWith('\r') ? raw.slice(0, -1) : raw;
+    if (/^(---|\.\.\.)[ \t]*$/.test(line)) {
+      closed = true;
       break;
     }
+    body.push(line);
+    at = next;
   }
-  if (end === -1) {
+  if (!closed) {
     return { kind: 'malformed', reason: 'frontmatter block is never closed by a "---" line' };
   }
 
-  const body = lines.slice(1, end);
   for (const line of body) {
     if (line.trim() === '') continue;
     if (/^\s/.test(line)) continue; // continuation / nested block / list item
