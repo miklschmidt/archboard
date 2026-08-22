@@ -874,8 +874,6 @@ try {
   // were doing, and offers the one thing a person may always do.
 
   const claimWhy = 'redrawing the payment path';
-  await api('POST', `/api/boards/claim?board=${BOARD}`, { reason: claimWhy });
-  await sleep(800);
   const banner = () => evalInPage(`(() => {
     const app = ${APP};
     return {
@@ -885,7 +883,23 @@ try {
     };
   })()`);
 
-  const claimed = await banner();
+  // Polled rather than slept for, the same way the fail-closed check below is.
+  // What is being asked is whether the pane ever puts the banner up, and a
+  // fixed wait asks instead whether a runner got there in that many
+  // milliseconds — which is how this file has already had one check report a
+  // failure that had not happened.
+  const bannerWhen = async (ready, within = 8000) => {
+    const by = Date.now() + within;
+    let seen = await banner();
+    while (!ready(seen) && Date.now() < by) {
+      await sleep(100);
+      seen = await banner();
+    }
+    return seen;
+  };
+
+  await api('POST', `/api/boards/claim?board=${BOARD}`, { reason: claimWhy });
+  const claimed = await bannerWhen(seen => seen.what !== null);
   check('a pane whose board an agent claimed says who has it and why',
     typeof claimed.what === 'string' && claimed.what.includes(claimWhy), JSON.stringify(claimed));
   check('  and stops accepting a touch, as for any other holder',
@@ -905,8 +919,9 @@ try {
     return { tapped: button !== null };
   })()`);
   check('  and the tap lands on something', tap.tapped === true, JSON.stringify(tap));
-  await sleep(LOCK_FREE_LINGER_MS + 1500);
-  const returned = await banner();
+  // The board is free the moment the tap lands; the panes are told a linger
+  // later, so this waits for the news rather than for the linger.
+  const returned = await bannerWhen(seen => seen.what === null && seen.view === false);
   check('and one tap takes the board back',
     returned.what === null && returned.view === false, JSON.stringify(returned));
 
