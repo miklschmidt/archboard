@@ -76,6 +76,9 @@ Author with `add` / `batch_create` rather than `mermaid`. Mermaid is converted
 in the browser and reaches the board as a change report from that tab, so it
 needs a tab open and hands you no ids to work with.
 
+A whole pass is the shape of work a claim is for, and the human standing at the
+board is who it takes the board from: `SKILL.md`, "One writer at a time".
+
 Guidance that holds up on a big screen:
 
 - **Look in the library first.** `library list --text`. A stencil of a queue or

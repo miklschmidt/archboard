@@ -12,7 +12,7 @@
 `archboard <command>` (or `./bin/canvas <command>` inside the archboard checkout).
 JSON results on stdout — except `describe` (plain text) and raw-content output when `--out` is omitted (`export` scene JSON, `screenshot --format svg`). Diagnostics on stderr. Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required, 5 board write refused. Explicit `start` overrides `EXCALIDRAW_NO_AUTOSTART=1`.
 
-**`--board <key>` is global and required on every command that touches a board** — `add`, `apply`, `get`, `query`, `update`, `delete`, `describe`, `export`, `import`, `mermaid`, `share`, `clear`, `snapshot`, `promote`, `demote`, `changes`, `arrange`, `library insert`, `board save`, `board info`. There is no default board and no fallback: a pane holds its own board, two panes hold two, so a call that names none is refused with the open boards listed (ADR 0009). Commands about the browser rather than a board — `panes`, `pane close`, `selection`, `screenshot`, `viewport`, `status`, `board list`, `library list`, `compare` — take no board. `pane open` takes an optional `--board`: the board to put in the new pane.
+**`--board <key>` is global and required on every command that touches a board** — `add`, `apply`, `get`, `query`, `update`, `delete`, `describe`, `export`, `import`, `mermaid`, `share`, `clear`, `snapshot`, `promote`, `demote`, `changes`, `arrange`, `library insert`, `board save`, `board info`, `claim`, `release`. There is no default board and no fallback: a pane holds its own board, two panes hold two, so a call that names none is refused with the open boards listed (ADR 0009). Commands about the browser rather than a board — `panes`, `pane close`, `selection`, `screenshot`, `viewport`, `status`, `board list`, `library list`, `compare` — take no board. `pane open` takes an optional `--board`: the board to put in the new pane.
 
 ### Server
 
@@ -52,6 +52,15 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 | `board open <name[@variant]> [--reload] [--pane <spec>]` | Show a board in a pane. `--pane` takes `left`, `right`, `top`, `bottom`, a 1-based position, `primary`, or a pane id — required when more than one pane is open, since which half of the screen is not something to guess |
 | `board save --board <key> [--as <name>] [--variant v] [--level l] [--force]` | Write it to the vault; **refused (exit 5) if the note changed on disk** — `--force` overwrites anyway. `--variant v` is how a board is **branched** into a proposal: it writes `<key>@v` and carries the level across. `--as` branches the same way, level included. **A branch moves nothing on screen** (ADR 0012): the panes holding the source keep holding it, and the branch is not showing until `pane open --board <key>@v` or `board open`. The answer says which — `saveKind`, `savedFrom`, `panes.moved`, `panes.kept`. Naming the scratch board is the one save that does move a pane |
 | `compare <from> [to]` | Semantic diff between two variants, joined on node identity; opens nothing and leaves the canvas alone. One address finds the other variant itself |
+
+### One writer at a time
+
+Every write takes the board and gives it back, and a write that lands inside somebody's gesture waits for them. These two are for work that does not fit one write. **When to reach for them is judgement, and SKILL.md's "One writer at a time" is where it lives.**
+
+| Command | Description |
+|---------|-------------|
+| `claim --board <key> --reason "..." [--for 90s\|10m\|1h]` | Hold a board across everything you are about to do to it. `--reason` is required and is what the person's pane shows them; `--for` needs a unit, and a bare number is refused. Carry nothing: every write naming this board goes under the claim. Claiming again extends it and updates the reason; a write does not |
+| `release --board <key>` | Give it back. A claim that expired, or that somebody took back, has already ended, so releasing it is not an error — it answers `released: false` |
 
 ### Panes and camera
 
@@ -163,14 +172,14 @@ Requires `ARCHBOARD_VAULT`. A pane holds exactly one board; two panes hold two. 
 
 ### One writer at a time
 
-A board has a mutex: an agent takes it to write, a person takes it by touching the canvas, nobody else writes while it is held. That happens by itself around every write. These two are for the case it does not fit — work you already know is substantial, where taking the board twenty times would leave nineteen gaps for somebody else to write into.
+A board has a mutex: an agent takes it to write, a person takes it by touching the canvas, nobody else writes while it is held. That happens by itself around every write. These two are for the case it does not fit. **When to reach for them is judgement, and SKILL.md's "One writer at a time" is where it lives.**
 
 | Tool | Description | Required params |
 |------|-------------|-----------------|
 | `claim_board` | Hold a board across everything you are about to do to it. Not for one box — an ordinary write already holds the board while it writes. Carry nothing: every write naming this board goes under the claim. Call again to extend | `board`, `reason` (shown on the person's pane), (optional) `forMs` |
 | `release_board` | Give it back. Do it as soon as the work is done | `board` |
 
-The person at the canvas can take a claimed board back at any moment. Your next call is refused once and says so; **nothing is rolled back**, because every write you made is already saved. So leave the board sensible after each write, or work on a variant and swap when it is done — and when you are told you have lost it, stop and say what state you left the board in rather than claiming it again.
+The person at the canvas can take a claimed board back at any moment. Your next call is refused once with `CLAIM_REVOKED` and says so; **nothing is rolled back**, because every write you made is already in the note. What to do about that is in SKILL.md.
 
 ### Panes
 
