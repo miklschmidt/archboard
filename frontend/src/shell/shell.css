@@ -10,6 +10,10 @@
   --accent: #4a47b1;
   --accent-ink: #ffffff;
   --danger: #b3261e;
+  /* Somebody else wrote the note. Not danger: nothing has failed and nothing is
+     lost, and a red mark for a state with no casualty makes the red one that
+     has one mean less. */
+  --warn: #9a6100;
   --live: #2e9e4f;
   --dead: #c0392b;
 
@@ -30,6 +34,7 @@
   --accent: #9d9aff;
   --accent-ink: #16161a;
   --danger: #ff8a80;
+  --warn: #f2b544;
   --live: #4ade80;
   --dead: #f87171;
 }
@@ -74,11 +79,6 @@
   font-size: 12px;
 }
 
-.meta-dirty {
-  color: var(--ink);
-  font-weight: 600;
-}
-
 .chip {
   font-size: 11px;
   font-weight: 600;
@@ -101,8 +101,9 @@
   color: var(--ink);
 }
 
-/* A board that has stopped saving. It replaces the save state rather than
-   sitting next to it, because "unsaved changes" is not the news (TASK-079). */
+/* A board that has stopped saving (TASK-079), and a board whose note somebody
+   else wrote (TASK-062). One slot, and the first outranks the second: they are
+   two moments of one story and a board in the later one is in both. */
 .chip-held {
   background: color-mix(in srgb, var(--danger) 16%, transparent);
   border-color: color-mix(in srgb, var(--danger) 50%, transparent);
@@ -113,6 +114,18 @@
 
 .chip-held:hover {
   background: color-mix(in srgb, var(--danger) 26%, transparent);
+}
+
+.chip-elsewhere {
+  background: color-mix(in srgb, var(--warn) 18%, transparent);
+  border-color: color-mix(in srgb, var(--warn) 50%, transparent);
+  color: var(--warn);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.chip-elsewhere:hover {
+  background: color-mix(in srgb, var(--warn) 28%, transparent);
 }
 
 .status {

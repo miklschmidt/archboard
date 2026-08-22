@@ -464,6 +464,60 @@ export class BoardWriteConflictError extends Error {
   }
 }
 
+/**
+ * What archboard found at a path that it did not put there.
+ *
+ * Shaped so that `describeWriteConflict` can be spread straight onto it, which
+ * is the point: one set of facts, and the refusal and the mark are two ways of
+ * saying it.
+ */
+export interface ForeignWrite {
+  file: string;
+  reason: 'changed' | 'unseen';
+  expectedHash?: string;
+  actualHash: string;
+  lastReadAt?: string;
+  fileModifiedAt: string;
+}
+
+/**
+ * Has something that is not archboard written this note?
+ *
+ * ADR 0006's comparison, on its own, because two things ask it. A write asks in
+ * order to refuse, and it asks about the bytes it has already read. The mark in
+ * the board bar asks about a board nobody is writing, so that a person drawing
+ * on a copy the vault no longer holds finds out before their next gesture is
+ * refused rather than after (TASK-062).
+ *
+ * They must not be two comparisons. The mark's whole claim is that it shows the
+ * state in which the next write *would* be refused, and a second implementation
+ * of the same question is a second implementation that drifts — showing a mark
+ * over a write that would go through, or staying quiet over one that would not.
+ * So the bytes come in from whoever read them and only the comparison lives
+ * here.
+ *
+ * Nothing at the path is not somebody else's work: an empty destination is what
+ * a `board new` writes into, and the write goes ahead. Bytes archboard has
+ * never read are, because it cannot tell what writing over them would delete —
+ * that is the `unseen` half of the same refusal.
+ */
+export function foreignWriteTo(file: string, destination: Buffer | undefined): ForeignWrite | null {
+  if (!destination) return null;
+  const actualHash = hashBoardBytes(destination);
+  // Asked of the whole registry rather than of one board, because a baseline
+  // belongs to a path: `board save --as other` writes a file some other open
+  // board is the one that read.
+  const expected = baselineForFile(file);
+  if (expected && expected.hash === actualHash) return null;
+  return {
+    file,
+    reason: expected ? 'changed' : 'unseen',
+    ...(expected ? { expectedHash: expected.hash, lastReadAt: expected.at } : {}),
+    actualHash,
+    fileModifiedAt: fs.statSync(file).mtime.toISOString()
+  };
+}
+
 export interface WriteOptions {
   /** Where the note goes. Defaults to the board's own note. */
   file?: string;
@@ -523,23 +577,13 @@ export function writeBoardContent(
   } catch { /* nothing there: nothing to conflict with */ }
   const overwrote = destination !== undefined;
 
-  if (destination && !options.force) {
-    const actualHash = hashBoardBytes(destination);
-    // Asked of the whole registry rather than of this board, because a
-    // baseline belongs to a path: `board save --as other` writes a file some
-    // other open board is the one that read.
-    const expected = baselineForFile(file);
-    if (!expected || expected.hash !== actualHash) {
-      throw new BoardWriteConflictError(describeWriteConflict({
-        target: identity,
-        file,
-        reason: expected ? 'changed' : 'unseen',
-        ...(expected ? { expectedHash: expected.hash, lastReadAt: expected.at } : {}),
-        actualHash,
-        fileModifiedAt: fs.statSync(file).mtime.toISOString(),
-        saveCommand: options.saveCommand ?? `board save --board ${boardKey(identity)}`
-      }));
-    }
+  const foreign = options.force ? null : foreignWriteTo(file, destination);
+  if (foreign) {
+    throw new BoardWriteConflictError(describeWriteConflict({
+      target: identity,
+      ...foreign,
+      saveCommand: options.saveCommand ?? `board save --board ${boardKey(identity)}`
+    }));
   }
 
   const { note, bytes, elementCount } = renderContent(

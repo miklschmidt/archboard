@@ -129,6 +129,26 @@ export interface BoardHold {
   message: string;
 }
 
+/**
+ * The note this pane's board came from has been written by something that is
+ * not archboard — Obsidian, a sync client, an editor (TASK-062).
+ *
+ * The state before a hold and not a smaller version of one. Nothing has been
+ * refused, because nobody has written since; what is on screen is simply no
+ * longer what the vault holds, and the person drawing on it has not been told.
+ * Mirrors `NoteWrittenElsewhere` in `src/core/note-watch.ts`.
+ */
+export interface NoteWrittenElsewhere {
+  board: string;
+  file: string;
+  reason: 'changed' | 'unseen';
+  /** When the note was last written, from the filesystem. */
+  writtenAt: string;
+  /** When archboard last read it. Absent when it never has. */
+  lastReadAt?: string;
+  message: string;
+}
+
 export interface BoardListing {
   vault: string;
   boards: Array<{ key: string; identity: BoardIdentity; file?: string }>;
@@ -174,6 +194,8 @@ export interface WebSocketMessage {
   held?: boolean;
   /** On `board_lock`: who, or null. `id` is their client id, so a pane can recognise itself. */
   holder?: LockHolder | null;
+  /** On `board_note`: who wrote the note last, if it was not archboard, or null. */
+  writtenElsewhere?: NoteWrittenElsewhere | null;
 }
 
 /**
@@ -218,4 +240,11 @@ export interface PaneStatus {
    * else until somebody chooses (ADR 0006).
    */
   hold: BoardHold | null;
+  /**
+   * Set while the note behind this pane's board has been written by somebody
+   * else and this pane is still showing the older one (TASK-062). Distinct from
+   * `hold`, which is what this becomes once archboard has tried to write and
+   * been refused, and from a lock, which is another archboard writer.
+   */
+  writtenElsewhere: NoteWrittenElsewhere | null;
 }

@@ -7,7 +7,7 @@
 // question — which is the seam TASK-006 (panes reporting what the human is
 // looking at) lands on.
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { CanvasPane } from '../canvas/CanvasPane'
 import { BoardBar } from './BoardBar'
 import { BoardDialog, type BoardDialogMode } from './BoardDialog'
@@ -146,6 +146,10 @@ export function Shell(): JSX.Element {
   const [dialog, setDialog] = useState<BoardDialogMode | null>(null)
   const [dialogError, setDialogError] = useState<string | null>(null)
   const [confirmingClear, setConfirmingClear] = useState(false)
+  // The human has clicked the mark saying somebody else wrote this board's note
+  // (TASK-062). Not the mark going up: that is a state of the board and it puts
+  // nothing in front of anybody.
+  const [askingAboutNote, setAskingAboutNote] = useState(false)
   // A refused save, plus the request that was refused — so "overwrite" repeats
   // exactly the save the human already asked for, rather than a rebuilt guess —
   // plus the hold, when this board has stopped saving altogether. The hold is
@@ -195,6 +199,11 @@ export function Shell(): JSX.Element {
   // from the pane rather than being asked for, because the pane is what finds
   // out — the write it made was the one that was refused (TASK-079).
   const hold = status?.hold ?? null
+  // Whether the note behind that board is still the one this pane came from.
+  // From the pane for the same reason, and it says a different thing: a hold is
+  // a write that was refused, this is a write that has not happened yet
+  // (TASK-062).
+  const writtenElsewhere = status?.writtenElsewhere ?? null
 
   useEffect(() => {
     try { window.localStorage?.setItem(THEME_KEY, theme) } catch { /* private mode */ }
@@ -230,15 +239,6 @@ export function Shell(): JSX.Element {
 
   useEffect(() => { void refreshBoardInfo(boardKey) }, [refreshBoardInfo, boardKey])
 
-  // "Written down" is a comparison, not a flag: the board is dirty when it has
-  // changed since the last time it was written to the vault.
-  const dirty = useMemo(() => {
-    const changed = status?.lastChangeAt
-    if (!changed) return false
-    if (!boardInfo?.savedAt) return (status?.elementCount ?? 0) > 0
-    return new Date(changed).getTime() > new Date(boardInfo.savedAt).getTime()
-  }, [status?.lastChangeAt, status?.elementCount, boardInfo?.savedAt])
-
   const run = useCallback(async (work: () => Promise<void>) => {
     setBusy(true)
     setDialogError(null)
@@ -264,8 +264,8 @@ export function Shell(): JSX.Element {
         // panes on the board it wrote, so adopting the answer was always
         // right; a branch writes a second board and moves nothing (ADR 0012),
         // and adopting it there dates this pane's board by another board's
-        // save. `boardInfo` is the baseline behind the dirty indicator, so
-        // that is the indicator pointing at a board nobody is looking at.
+        // save. `boardInfo` is what the chrome says this pane is showing, so
+        // that is the chrome describing a board nobody is looking at.
         const kind = saved.saveKind ?? 'same-board'
         const holdingIt = kind === 'branch'
           ? false
@@ -351,6 +351,29 @@ export function Shell(): JSX.Element {
     })
   }
 
+  // Asked for from the mark, before anything has been refused. One of ADR
+  // 0006's three and not all three: nothing is held, so there is no held copy
+  // to overwrite the note with and none to save elsewhere. Carrying on drawing
+  // is the other answer and it is the Cancel.
+  const handleTakeTheNote = () => {
+    const key = writtenElsewhere?.board ?? boardKey
+    if (!key) return
+    void run(async () => {
+      const opened = await openBoard({
+        board: key,
+        reload: true,
+        ...(panes.length > 1 && status ? { pane: status.clientId } : {})
+      })
+      setBoardInfo(opened)
+      setAskingAboutNote(false)
+      setNotice({
+        kind: 'info',
+        hold: true,
+        text: `${opened.board} is now the note in the vault. What was on this canvas is gone.`
+      })
+    })
+  }
+
   const handleOverwrite = () => {
     if (!conflict) return
     void attemptSave({ ...conflict.request, force: true })
@@ -387,8 +410,6 @@ export function Shell(): JSX.Element {
         boardKey={boardKey}
         elementCount={status?.elementCount ?? 0}
         connected={status?.connected ?? false}
-        savedAt={boardInfo?.savedAt ?? null}
-        dirty={dirty}
         hold={hold}
         // The one thing that opens the conflict dialog while somebody is
         // drawing: them asking for it (TASK-079).
@@ -397,6 +418,13 @@ export function Shell(): JSX.Element {
           setDialogError(null)
           setConflict({ conflict: hold.conflict, request: { board: hold.board }, hold })
         }}
+        writtenElsewhere={writtenElsewhere}
+        // The mark is a button and the button is not the action. Taking the
+        // note replaces this canvas with theirs, and nothing has been refused
+        // yet, so this pane's scene is the only copy left of the board archboard
+        // last wrote. One stray touch on a 75-inch panel must not be what ends
+        // it.
+        onNoteClick={() => setAskingAboutNote(true)}
         paneCount={panes.length}
         busy={busy}
         onOpen={() => { setDialogError(null); setDialog('open') }}
@@ -475,6 +503,48 @@ export function Shell(): JSX.Element {
           busy={library.busy}
           onConfirm={library.acceptInstall}
           onCancel={library.declineInstall}
+        />
+      )}
+
+      {/*
+        Two choices, because two is all there is before a write has been
+        refused. Cancel is the default and the one focus lands on: carrying on
+        drawing costs nothing and loses nothing, and the next change is refused
+        rather than written over theirs — which is when the three outcomes
+        become reachable and the hold offers them.
+
+        It closes itself if the mark comes down while it is up, which is what
+        happens when somebody takes the note from a command line instead.
+      */}
+      {askingAboutNote && writtenElsewhere && (
+        <ConfirmDialog
+          title="Somebody else wrote this note"
+          confirmLabel="Show me the note"
+          busy={busy}
+          onCancel={() => setAskingAboutNote(false)}
+          onConfirm={handleTakeTheNote}
+          detail={
+            <>
+              <p>
+                <strong>{writtenElsewhere.file}</strong>{' '}
+                {writtenElsewhere.reason === 'changed'
+                  ? <>was written at {new Date(writtenElsewhere.writtenAt).toLocaleTimeString()} by
+                    something that is not archboard — Obsidian, a sync client, an editor, a{' '}
+                    <code>git pull</code>. This pane is showing the board as archboard last wrote it.</>
+                  : <>is a note archboard has never read, so it cannot say what this board would
+                    replace.</>}
+              </p>
+              <p>
+                Nothing has been lost. Nothing has been written either: the next change to this
+                board will be refused rather than saved over theirs, and you will be offered the
+                full choice then.
+              </p>
+              <p className="hint">
+                Showing you the note replaces what is on this canvas with what is in the vault.
+                Keep a board open in one editor at a time.
+              </p>
+            </>
+          }
         />
       )}
 

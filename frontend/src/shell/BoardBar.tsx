@@ -7,18 +7,23 @@
 // variant, which level, whether it is written down.
 
 import React from 'react'
-import type { BoardHold, BoardIdentity } from '../types'
+import type { BoardHold, BoardIdentity, NoteWrittenElsewhere } from '../types'
 
 interface BoardBarProps {
   identity: BoardIdentity | null
   boardKey: string | null
   elementCount: number
   connected: boolean
-  savedAt: string | null
-  dirty: boolean
   /** Set while this board has stopped saving (ADR 0006, TASK-079). */
   hold: BoardHold | null
   onHoldClick: () => void
+  /**
+   * Set while somebody outside archboard has written this board's note and this
+   * pane is still showing the older one (TASK-062). Shown only when there is no
+   * hold: a hold is this, one write later, and says more about it.
+   */
+  writtenElsewhere: NoteWrittenElsewhere | null
+  onNoteClick: () => void
   paneCount: number
   onOpen: () => void
   onNew: () => void
@@ -31,12 +36,6 @@ interface BoardBarProps {
 
 const clock = (iso: string): string =>
   new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-
-function saveState(savedAt: string | null, dirty: boolean): string {
-  if (dirty) return 'unsaved changes'
-  if (savedAt) return `saved ${clock(savedAt)}`
-  return 'no changes'
-}
 
 /**
  * What the mark on a held board says, in the bar, where there is room for one
@@ -52,8 +51,27 @@ function holdLabel(hold: BoardHold): string {
   return `not saving · ${hold.writes} change${hold.writes === 1 ? '' : 's'} held`
 }
 
+/**
+ * The one line for a board whose note somebody else has written (TASK-062).
+ *
+ * The slot the "saved 14:32" text used to occupy, and it is not a smaller
+ * version of that. Under ADR 0015 every gesture is written to the note, so
+ * there is no unsaved board to report and no last-save moment worth printing —
+ * the text that stood here said "unsaved changes" for the rest of a session
+ * about a board that was fully written down.
+ *
+ * What is worth an alarm is the reverse, which nothing said at all: the note
+ * this pane's board came from is not the note in the vault any more.
+ */
+function noteLabel(written: NoteWrittenElsewhere): string {
+  return written.reason === 'changed'
+    ? `note changed on disk · ${clock(written.writtenAt)}`
+    : 'a note here archboard has not read'
+}
+
 export function BoardBar({
-  identity, boardKey, elementCount, connected, savedAt, dirty, hold, onHoldClick,
+  identity, boardKey, elementCount, connected, hold, onHoldClick,
+  writtenElsewhere, onNoteClick,
   paneCount, onOpen, onNew, onSave, onClear, onAddPane, onClosePane, busy
 }: BoardBarProps): JSX.Element {
   return (
@@ -68,6 +86,13 @@ export function BoardBar({
         )}
         {identity?.level && <span className="chip chip-quiet">{identity.level}</span>}
         <span className="meta">{elementCount} element{elementCount === 1 ? '' : 's'}</span>
+        {/*
+          Three states, in the order they happen to a board. A hold outranks a
+          note somebody else wrote, because a hold IS that one write later and
+          says more about it — the mark would otherwise be two marks about one
+          thing. Neither is about a lock: another archboard writer holding the
+          board is said on the canvas, by the pane going read-only.
+        */}
         {hold
           ? (
             <button
@@ -78,11 +103,17 @@ export function BoardBar({
               {holdLabel(hold)}
             </button>
           )
-          : (
-            <span className={`meta ${dirty ? 'meta-dirty' : ''}`}>
-              {saveState(savedAt, dirty)}
-            </span>
-          )}
+          : writtenElsewhere
+            ? (
+              <button
+                className="chip chip-elsewhere"
+                onClick={onNoteClick}
+                title={`${writtenElsewhere.message}\n\nClick to see what you can do about it.`}
+              >
+                {noteLabel(writtenElsewhere)}
+              </button>
+            )
+            : <span className="meta">in the vault</span>}
       </div>
 
       <div className="bar-actions">
