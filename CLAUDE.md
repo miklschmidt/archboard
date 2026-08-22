@@ -655,13 +655,53 @@ the one that was there, and it round-trips like the other three. It does the two
 things the hash below structurally cannot. It **orders**: two documents that
 disagree are just two documents, and nothing in a sha-256 says which is newer,
 so archboard could refuse a write and never say whether the note was ahead of
-the canvas or behind it. And it is a **claim a writer can make**:
-`--expect-version 7` says what you were editing and has the write refused if the
-board has moved past it, naming both versions, instead of two archboard clients
-that both read before either wrote. Every write answers with the version it
-produced, in `fingerprint.version`, so a writer never has to ask; `board info`
-says it for a writer that has not written yet; `?expectVersion=` and the
-`expectVersion` MCP argument are the same thing on the other two surfaces.
+the canvas or behind it. And it is a **precondition**: a write goes against the
+version its writer was last told, and is refused if the board has moved past it,
+naming both — instead of two archboard clients that both read before either
+wrote. Every write answers with the version it produced, in
+`fingerprint.version`; `board info` and a claim's answer say it too.
+
+**Nobody has to remember to state it, which is the whole of whether this works.**
+An agent is a fresh process per command, so a number it must thread from one
+answer into the next request is a number it drops, and a precondition a caller
+may leave out protects nobody. So the canvas fills it in from what it last told
+that writer, the way TASK-080 keeps a claim against the board so an agent
+carries nothing. Three writers, three answers:
+
+| Writer | What is checked | Where the record lives |
+|---|---|---|
+| A person at a pane | nothing, ever | — |
+| An agent holding a claim | every write under it | the claim (`claimSeen`) |
+| An MCP client | every write in the session | the client process |
+| An unclaimed CLI agent | only what it states | nowhere; see below |
+
+**A person is never version-refused**, whatever the request carries. Their
+gesture took the board at its leading edge and their report is a delta on a note
+read a moment ago, so there is nothing stale to protect them from, and a refusal
+would be a wall display that stopped responding to the person standing at it.
+`doing` draws the same line for the same reason.
+
+**And an unclaimed CLI agent is the writer this canvas cannot remember.** Its id
+is minted for one request, so nothing here can tell its second command from
+another agent's first. Every stand-in for that identity — the board, the kind of
+writer, the machine — is one that always matches, and a check that cannot fail
+is worse than no check. So `--expect-version` stays as the explicit statement,
+and `claim` is how an agent buys the automatic one. That is not a consolation:
+claiming is already what an agent does before substantial work (ADR 0016), and
+the writers the canvas can remember turn out to be exactly the writers the lock
+can identify.
+
+**A refusal is told once.** The refusal names the version the board is really
+at, which is itself a telling, so the writer's next write goes against that
+number rather than being wedged for ever on one stale read. Same shape as
+`CLAIM_REVOKED`.
+
+**A write after somebody else's therefore costs one refusal and a re-read.** An
+agent writes, a person drags a box, the agent's next write is refused with
+`BOARD_VERSION_CONFLICT` and told to read the board back. That is the read-back
+loop being insisted on rather than suggested, and it is the price of the check:
+nothing is lost, and an agent that retries without reading is doing something it
+was told not to.
 
 The pair is diagnostic, and this is what it is for. Comparing what archboard
 last wrote against what the note carries now: **unchanged with different bytes**

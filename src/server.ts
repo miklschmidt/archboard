@@ -82,6 +82,8 @@ import {
   BoardHeldError,
   boardLockState,
   claimBoard,
+  claimSaw,
+  claimSeen,
   claimWriterId,
   holdBoard,
   LockHolder,
@@ -1050,26 +1052,62 @@ function refuseRevokedClaim(res: Response, board: string): boolean {
 }
 
 /**
- * What version this writer says it was editing, or nothing (TASK-091).
+ * What version this writer was editing, and NOT SOMETHING IT HAD TO REMEMBER TO
+ * SAY (TASK-091).
  *
- * Optional, unlike the board and unlike `doing`: a writer that has not read the
- * board has no version to name, and demanding one would make every first write
- * a round trip. What is not optional is that a stated one is a number — a
- * writer that meant to state a precondition and mistyped it must not be told
- * the write went through unchecked.
+ * An agent is a fresh process per command, so a number it has to thread from
+ * one command's answer into the next is a number it drops, and a precondition
+ * a caller may leave out is one that protects nobody. The canvas fills it in
+ * instead, from what it last told this writer, which is the shape TASK-080
+ * settled for the claim: the agent carries nothing and the canvas keeps the
+ * fact against the board every call already names.
+ *
+ * Three sources, in order, and the order is the point.
+ *
+ *   stated    `?expectVersion=` on the request. A writer that says what it was
+ *             editing means it, and it wins over anything remembered for it
+ *   remembered what the canvas last told the claim holding this board
+ *             (`claimSeen`). This is the automatic half
+ *   nothing   an agent with no claim, whose id is minted for this one request.
+ *             There is nothing this canvas can honestly check against
+ *
+ * WHAT IS DELIBERATELY NOT A SOURCE: the note's own current version. It always
+ * matches, so it would refuse nothing while looking exactly like a check, and a
+ * check that cannot fail is worse than none.
+ *
+ * `0` on the wire means "no version", which is what a note archboard has never
+ * written carries.
  */
-function expectedVersionOf(req: Request): { ok: true; expected: number | null } | { ok: false; problem: string } {
+function expectedVersionOf(
+  req: Request,
+  board: string,
+  writer: { id: string; kind: 'human' | 'agent' }
+): { ok: true; expected?: number | null } | { ok: false; problem: string } {
+  // A person is never checked, whatever the request carries. Their gesture took
+  // the board at its leading edge and their report is a delta applied to a note
+  // read a moment ago, so there is no stale reading of the board to protect
+  // them from — and a refusal here would be a wall display that stopped
+  // responding to the person standing at it, which is the one thing ADR 0016
+  // forbids outright. Checked before the parse rather than after, so that no
+  // shape of request can put a person on this path at all. `doing` draws the
+  // same line for the same reason: nobody narrates their own drawing either.
+  if (writer.kind !== 'agent') return { ok: true };
+
   const raw = req.query.expectVersion;
-  if (raw === undefined || raw === '') return { ok: true, expected: null };
-  if (typeof raw !== 'string' || !/^\d+$/.test(raw.trim())) {
-    return {
-      ok: false,
-      problem:
-        '`expectVersion` must be a whole number: the version you were editing, as the last write\'s ' +
-        `fingerprint reported it or as \`board info\` says. Got ${JSON.stringify(raw)}.`
-    };
+  if (raw !== undefined && raw !== '') {
+    if (typeof raw !== 'string' || !/^\d+$/.test(raw.trim())) {
+      return {
+        ok: false,
+        problem:
+          '`expectVersion` must be a whole number: the version you were editing, as the last write\'s ' +
+          `fingerprint reported it or as \`board info\` says. Got ${JSON.stringify(raw)}.`
+      };
+    }
+    const stated = Number(raw.trim());
+    return { ok: true, expected: stated === 0 ? null : stated };
   }
-  return { ok: true, expected: Number(raw.trim()) };
+  if (claimWriterId(board) !== writer.id) return { ok: true };
+  return { ok: true, expected: claimSeen(board) };
 }
 
 /**
@@ -1089,38 +1127,42 @@ function expectedVersionOf(req: Request): { ok: true; expected: number | null } 
  * which is the split ADR 0016 already draws — the version orders archboard's
  * own writers, the hash catches everybody else's.
  */
-function refuseStaleVersion(res: Response, board: string, expected: number): boolean {
+function refuseStaleVersion(res: Response, board: string, expected: number | null): boolean {
   const state = boards.get(board);
   const held = holdOn(board);
-  // A board that has stopped saving is not writing to its note at all: the note
-  // is the other editor's and the write goes into the held copy (TASK-079).
-  // There is nothing here a precondition can be about, so it is refused rather
-  // than checked against a document this write will not touch.
-  if (held) {
-    res.status(409).json({
-      success: false,
-      code: 'BOARD_HELD_VERSION',
-      error:
-        `"${board}" has stopped saving, so a write to it goes into the copy this canvas is holding and not ` +
-        'into the note. There is no note version for your expectation to be about. Resolve the hold first — ' +
-        'reload, overwrite or save elsewhere — or write without `expectVersion`.',
-      board,
-      ...holdResponse(board)
-    });
-    return true;
-  }
+  // A board that has stopped saving is not writing to its note at all: the
+  // write goes into the copy this canvas is holding and the note is left as the
+  // other editor wrote it (TASK-079). So there is nothing here for a
+  // precondition to be about, and this steps aside rather than refusing.
+  // Refusing would stop a held board accepting work, which is the one thing
+  // TASK-079 exists to keep happening — and the writer is told regardless,
+  // because every answer about a held board carries the hold.
+  if (held) return false;
   const actual = state?.file ? versionOfNoteAt(state.file) : null;
   if (actual === expected) return false;
-  // A board whose note is not written yet is at no version, and a writer that
-  // says so is right rather than stale.
-  if (actual === null && expected === 0) return false;
   const conflict = describeVersionConflict({
     board,
     ...(state?.file ? { file: state.file } : {}),
     expected,
     actual
   });
-  res.status(409).json({ success: false, code: 'BOARD_VERSION_CONFLICT', error: conflict.message, conflict });
+  // TOLD ONCE, like a revoked claim, and for the same reason. The refusal names
+  // the version the board is at, so saying it is telling this writer what the
+  // board is now: leaving the record where it was would refuse every write it
+  // ever made again, which is a wedged agent rather than a protected board. Its
+  // next write is against what it has just been told, and if that is wrong
+  // again then somebody else really is writing at the same time.
+  claimSaw(board, actual);
+  // `versionConflict` and not `conflict`: that name means ADR 0006's refusal
+  // everywhere it appears, it carries the three outcomes a person picks
+  // between, and this has none of them. Nothing has been written over, nothing
+  // is held, and what to do about it is to read the board.
+  res.status(409).json({
+    success: false,
+    code: 'BOARD_VERSION_CONFLICT',
+    error: conflict.message,
+    versionConflict: conflict
+  });
   return true;
 }
 
@@ -1148,14 +1190,27 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const writer = holderFromRequest(req, key);
   if (writer.kind === 'agent' && refuseRevokedClaim(res, key)) return;
 
-  // A precondition that is not a number is refused before the board is taken:
-  // it is a malformed request rather than a conflict, and nothing should wait
-  // on a lock to be told so (TASK-091).
-  const expectation = expectedVersionOf(req);
+  // Which version this write is against, stated or remembered (TASK-091). A
+  // stated one that is not a number is refused before the board is taken: it is
+  // a malformed request rather than a conflict, and nothing should wait on a
+  // lock to be told so.
+  const expectation = expectedVersionOf(req, key, writer);
   if (!expectation.ok) {
     res.status(400).json({ success: false, code: 'BAD_EXPECTED_VERSION', error: expectation.problem, board: key });
     return;
   }
+
+  // And what the board turned out to be is what this writer has now been told,
+  // which is what its next write will be checked against. On `finish` and only
+  // on success, beside the `doing` announcement and for the same reason: a
+  // refusal tells a writer nothing about a board it did not change. The refusal
+  // that *is* about the version does its own telling, above.
+  res.on('finish', () => {
+    if (res.statusCode >= 400) return;
+    if (writer.kind !== 'agent' || claimWriterId(key) !== writer.id) return;
+    const file = boards.get(key)?.file;
+    claimSaw(key, file ? versionOfNoteAt(file) : null);
+  });
 
   // And an agent says what it is doing, on this write, before it takes the
   // board. Same boundary as the lock and for the same reason: this is the one
@@ -1192,7 +1247,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       // the handlers that would do that on `finish` are registered below this,
       // and a request that never reaches the handler never took the board for
       // any longer than this line.
-      if (expectation.expected !== null && refuseStaleVersion(res, key, expectation.expected)) {
+      if (expectation.expected !== undefined && refuseStaleVersion(res, key, expectation.expected)) {
         if (hold.created) releaseHold(key, hold.holder.id);
         return;
       }
@@ -1325,7 +1380,17 @@ app.post('/api/boards/claim', (req: Request, res: Response) => {
 
     const forMs = typeof body.forMs === 'number' && Number.isFinite(body.forMs) ? body.forMs : undefined;
     void claimBoard({ board: key, reason: body.reason.trim(), ...(forMs !== undefined ? { forMs } : {}) })
-      .then(({ claim, created }) => res.json({ success: true, board: key, claim, created }))
+      .then(({ claim, created }) => {
+        // Taking the board is the first thing the canvas tells this agent about
+        // it, so it is where the record of what the agent has seen starts
+        // (TASK-091). Without the seed the first write under a claim would be
+        // the one write nothing checked, which is the write a campaign is most
+        // likely to build everything else on.
+        const file = boards.get(key)?.file;
+        const version = file ? versionOfNoteAt(file) : null;
+        if (created) claimSaw(key, version);
+        res.json({ success: true, board: key, claim, created, version });
+      })
       .catch(error => res.status(boardErrorStatus(error)).json(boardErrorBody(error)));
   } catch (error) {
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));

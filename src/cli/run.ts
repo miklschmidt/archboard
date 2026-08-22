@@ -416,10 +416,10 @@ function printHelp(): void {
   '    write lands, so the person at the board can see what you are up to. A write without it is',
   '    refused. It is never written to the note. A claim\'s --reason is the campaign; this is the',
   '    step, and neither stands in for the other.',
-  '  --expect-version <n> is global and OPTIONAL: the version of the board you were editing,',
-  '    from the fingerprint on your last write or from `board info`. The write is refused if the',
-  '    board has moved on, naming both versions, so two archboard writers cannot silently',
-  '    overwrite each other. Say nothing and the write goes against whatever is there.',
+  '  --expect-version <n> is global: the version of the board you were working from, from the',
+  '    fingerprint on your last write or from `board info`. The write is refused if the board has',
+  '    moved past it, naming both versions. You need it only where the canvas cannot know who you',
+  '    are — a CLI process with no claim. Under a claim it fills the version in for you.',
     '  Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required,',
     '               5 board write refused (the note changed on disk, or it moved past',
     '               --expect-version).',
@@ -436,7 +436,11 @@ function exitCodeFor(error: unknown): number {
   const code = (error as any)?.code;
   if (code === 'CANVAS_UNREACHABLE') return 3;
   if (code === 'BROWSER_REQUIRED') return 4;
-  if (code === 'BOARD_CONFLICT') return 5;
+  // Both refusals leave the board unwritten and both are the writer's to
+  // resolve, so they share the exit status a script already watches for: the
+  // note changed underneath, or another archboard writer got there first
+  // (ADR 0006, TASK-091).
+  if (code === 'BOARD_CONFLICT' || code === 'BOARD_VERSION_CONFLICT') return 5;
   // A missing board is a mistake at the keyboard, like any other usage error.
   if (code === 'BOARD_REQUIRED') return 2;
   return 1;

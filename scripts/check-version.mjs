@@ -29,6 +29,16 @@
 // All three are exercised below, and each is a state no equality check can tell
 // from either of the others.
 //
+// AND NOBODY HAS TO REMEMBER TO SAY IT. An agent is a fresh process per
+// command, so a number it has to thread from one answer into the next request
+// is a number it drops, and a precondition a caller may leave out protects
+// nobody. So the canvas fills it in from what it last told this writer, and the
+// two places that can be told are exercised here: a claim, which is the
+// identity the canvas keeps against a board (TASK-080), and a client process
+// that lives long enough to remember, which is what an MCP server is. The gap
+// between them is exercised too, because it is real: an unclaimed CLI process
+// is anonymous and nothing can honestly be checked for it.
+//
 // Two halves. The first runs in this process against the modules, because the
 // diagnoses are about the note on disk and reading one is the whole of it. The
 // second stands a real canvas up, because the precondition is checked at the
@@ -46,7 +56,14 @@ import { withDoing } from './lib/doing.mjs';
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const src = (p) => join(repoRoot, 'src', p);
 
-// Before any import: `src/core/config.ts` reads the vault once, at load.
+// Before any import: `src/core/config.ts` reads the vault and the canvas URL
+// once, at load. The URL above all — its default is 127.0.0.1:3000, which is
+// where somebody's real canvas is, and a check that imported the client before
+// setting this would drive their boards.
+const PORT = 39300 + Math.floor(Math.random() * 400);
+const base = `http://127.0.0.1:${PORT}`;
+process.env.EXPRESS_SERVER_URL = base;
+process.env.EXCALIDRAW_NO_AUTOSTART = '1';
 const vault = fs.mkdtempSync(join(os.tmpdir(), 'archboard-version-'));
 process.env.ARCHBOARD_VAULT = vault;
 
@@ -243,8 +260,6 @@ forgetNoteWatch();
 // 6. Over a real canvas: the fingerprint, and the precondition
 // ---------------------------------------------------------------------------
 
-const PORT = 39300 + Math.floor(Math.random() * 400);
-const base = `http://127.0.0.1:${PORT}`;
 const serverVault = fs.mkdtempSync(join(os.tmpdir(), 'archboard-version-live-'));
 
 const server = spawn(process.execPath, [src('server.ts')], {
@@ -320,8 +335,8 @@ try {
     stale.status === 409 && stale.body?.code === 'BOARD_VERSION_CONFLICT',
     `${stale.status} ${stale.body?.code}`);
   check('  naming both versions, so the writer knows what it was and what it is',
-    stale.body?.conflict?.expected === 2 && stale.body?.conflict?.actual === 3,
-    JSON.stringify({ expected: stale.body?.conflict?.expected, actual: stale.body?.conflict?.actual }));
+    stale.body?.versionConflict?.expected === 2 && stale.body?.versionConflict?.actual === 3,
+    JSON.stringify({ expected: stale.body?.versionConflict?.expected, actual: stale.body?.versionConflict?.actual }));
   check('  and saying by how many writes somebody else got there first',
     /1 time\(s\)/.test(stale.body?.error ?? ''), stale.body?.error?.split('\n')[1]);
   check('  with nothing written', fs.readFileSync(noteFile).equals(before));
@@ -363,6 +378,108 @@ try {
   check('  and a mistyped one is a usage error rather than a write with no precondition',
     mistyped.status === 2 && /--expect-version takes a whole number/.test(mistyped.stderr ?? ''),
     `${mistyped.status} ${mistyped.stderr?.trim()?.split('\n')[0]}`);
+
+  // --- the canvas fills it in, and the caller carries nothing -------------
+  //
+  // The half that makes this a mechanism rather than a note in a document. Not
+  // one of these writes says a version; the canvas checks them because it
+  // remembers what it told the writer, and the writer is the claim.
+
+  await api('POST', '/api/boards/new', { board: 'claimed' });
+  const claimedFile = join(serverVault, 'claimed.excalidraw.md');
+  await api('POST', '/api/elements?board=claimed', box('ten', 10));
+  const claim = await api('POST', '/api/boards/claim',
+    { board: 'claimed', reason: 'redrawing the claimed board' });
+  check('taking a board tells the agent what version it is at, so the count starts somewhere',
+    claim.body?.version === 1, JSON.stringify(claim.body?.version));
+
+  const underClaim = await api('POST', '/api/elements?board=claimed', box('eleven', 200));
+  check('a write under the claim is checked against that, and it matches',
+    underClaim.status === 200 && underClaim.body?.fingerprint?.version === 2,
+    `${underClaim.status} ${JSON.stringify(underClaim.body?.fingerprint)}`);
+
+  // Another archboard over the same vault: it keeps the count, so the note goes
+  // forward under us. Nothing tells this canvas.
+  const mine = fs.readFileSync(claimedFile, 'utf-8');
+  fs.writeFileSync(claimedFile, mine.replace(/^version: 2$/m, 'version: 4').replace('"x": 200', '"x": 260'));
+
+  const carriedNothing = await api('POST', '/api/elements?board=claimed', box('twelve', 400));
+  check('and a write after somebody else got there is refused, with the caller saying nothing at all',
+    carriedNothing.status === 409 && carriedNothing.body?.code === 'BOARD_VERSION_CONFLICT',
+    `${carriedNothing.status} ${carriedNothing.body?.code}`);
+  check('  naming what this writer was working from and what the board is at',
+    carriedNothing.body?.versionConflict?.expected === 2 && carriedNothing.body?.versionConflict?.actual === 4,
+    JSON.stringify({ was: carriedNothing.body?.versionConflict?.expected, is: carriedNothing.body?.versionConflict?.actual }));
+  check('  and telling it once: the refusal is itself a telling, so it is not wedged on one stale read',
+    /only one you get/.test(carriedNothing.body?.error ?? ''));
+
+  const after = await api('POST', '/api/elements?board=claimed&expectVersion=4', box('thirteen', 500));
+  check('  its next write goes against what it was just told', after.status === 409 || after.status === 200,
+    `${after.status}`);
+  check('  and by then it is the hash refusing, because those really were somebody else\'s bytes',
+    after.body?.conflict?.reason === 'changed', String(after.body?.conflict?.reason));
+  await api('POST', '/api/boards/claim/release', { board: 'claimed' });
+
+  // --- a client that lives long enough remembers for itself ---------------
+  //
+  // The other identity. An MCP server is one process serving one agent session,
+  // so what it was told an hour ago is what this agent last saw. Driven here
+  // through the same module that server drives.
+
+  const client = await import(src('core/canvas-client.ts'));
+  const { setRequestedBoard, setWriteDoing, setExpectedVersion, applyElementChanges, forgetVersionsSeen } = client;
+  forgetVersionsSeen();
+  setExpectedVersion(null);
+  setWriteDoing('driving the client the way an MCP server does');
+  setRequestedBoard('remembered');
+  await api('POST', '/api/boards/new', { board: 'remembered' });
+  const rememberedFile = join(serverVault, 'remembered.excalidraw.md');
+
+  const firstCall = await applyElementChanges({ upserts: [box('r1', 10)] });
+  check('a long-lived client is told the version by the write it just made',
+    firstCall.fingerprint?.version === 1, JSON.stringify(firstCall.fingerprint));
+
+  const secondCall = await applyElementChanges({ upserts: [box('r2', 200)] });
+  check('  and its next write is checked against it without the agent naming one',
+    secondCall.fingerprint?.version === 2, JSON.stringify(secondCall.fingerprint));
+
+  const theirs = fs.readFileSync(rememberedFile, 'utf-8');
+  fs.writeFileSync(rememberedFile, theirs.replace(/^version: 2$/m, 'version: 6').replace('"x": 200', '"x": 280'));
+  let refusedClient = null;
+  try {
+    await applyElementChanges({ upserts: [box('r3', 400)] });
+  } catch (error) {
+    refusedClient = error;
+  }
+  check('  so a write built on what it saw two calls ago is refused, with nothing threaded through the agent',
+    refusedClient?.code === 'BOARD_VERSION_CONFLICT', String(refusedClient?.code ?? 'not refused'));
+  check('  and it learns the real version from the refusal, so it is not stuck repeating it',
+    client.currentExpectedVersion() === 6, String(client.currentExpectedVersion()));
+
+  setExpectedVersion(2);
+  check('a version the caller states beats the one the client remembers',
+    client.currentExpectedVersion() === 2, String(client.currentExpectedVersion()));
+  setExpectedVersion(null);
+  forgetVersionsSeen();
+  setRequestedBoard(null);
+  setWriteDoing(null);
+
+  // --- a person is never refused ------------------------------------------
+  //
+  // ADR 0016 in as many words: no agent may make a 75-inch display stop
+  // responding to the person standing at it. Their gesture took the board at
+  // its leading edge and their report is a delta on a note read a moment ago,
+  // so there is nothing here to protect them from and everything to lose.
+
+  const person = await fetch(`${base}/api/elements/changes?board=payments&expectVersion=1`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ upserts: [box('theirs', 700)], deletes: [], clientId: 'pane-1-somebody' })
+  });
+  check('a person\'s change report is never version-refused, even carrying a stale one',
+    person.status === 200, String(person.status));
+  check('  and is not made to say what it is doing either, which is the same line drawn twice',
+    (await person.json())?.success === true);
 
   // --- 7. the hash still decides ------------------------------------------
   //

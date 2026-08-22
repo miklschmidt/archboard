@@ -598,41 +598,43 @@ export function describeWriteConflict(input: {
 export interface BoardVersionConflict {
   board: string;
   file?: string;
-  expected: number;
+  /** What the writer was working from. Null for a board it last saw with no note. */
+  expected: number | null;
   actual: number | null;
-  behindBy: number;
+  /** How many writes the board has moved since. Negative for a note that went back. */
+  movedBy: number;
   message: string;
 }
 
 export function describeVersionConflict(input: {
   board: string;
   file?: string;
-  expected: number;
+  expected: number | null;
   actual: number | null;
 }): BoardVersionConflict {
   const { board, expected, actual } = input;
-  const lead = actual === null
-    ? `Refusing to write "${board}": you said you were editing version ${expected}, and the note carries no ` +
-      'version archboard can read. Nothing was written.'
-    : `Refusing to write "${board}": you said you were editing version ${expected}, and the board is at ` +
-      `${actual}. Nothing was written.`;
-  const since = actual !== null && actual > expected
-    ? `Another writer has been here ${actual - expected} time(s) since the version you named.`
-    : actual !== null && actual < expected
-      ? 'The note is behind the version you named, so it was reverted or an older copy was restored.'
-      : 'A note archboard has not written carries no version, so there is nothing to check yours against.';
+  const from = expected === null ? 'a board with no note yet' : `version ${expected}`;
+  const now = actual === null ? 'the note carries no version archboard can read' : `the board is at ${actual}`;
+  const moved = (actual ?? 0) - (expected ?? 0);
+  const since = actual !== null && expected !== null && actual > expected
+    ? `Another writer has been here ${actual - expected} time(s) since the version you were working from.`
+    : actual !== null && expected !== null
+      ? 'The note is behind the version you were working from, so it was reverted or an older copy was restored.'
+      : actual === null
+        ? 'A note archboard has never written carries no version, so this board is not the one you read.'
+        : 'This board had no note when you last saw it and has one now, so somebody has written it since.';
   return {
     board,
     ...(input.file ? { file: input.file } : {}),
     expected,
     actual,
-    behindBy: actual === null ? 0 : actual - expected,
+    movedBy: moved,
     message: [
-      lead,
+      `Refusing to write "${board}": you were working from ${from}, and ${now}. Nothing was written.`,
       since,
-      `Read the board first — \`board info --board ${board}\` says which version it is at, and every write ` +
-      'answers with the version it produced — then write again against that one, or drop the expectation ' +
-      'to write against whatever is there.'
+      `Read the board before writing over what they did — \`describe --board ${board}\` — rather than ` +
+      'repeating this write against whatever is there now. This refusal is the only one you get: your next ' +
+      'write goes against the version named above.'
     ].join('\n')
   };
 }
