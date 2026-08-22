@@ -47,6 +47,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
+import { withDoing } from './lib/doing.mjs';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = p => path.join(repoRoot, 'src', p);
@@ -76,6 +77,9 @@ let serverStderr = '';
 server.stderr.on('data', chunk => { serverStderr += chunk.toString(); });
 
 const api = async (method, url, body) => {
+  // Every write says what it is doing, once for the whole check (TASK-095,
+  // scripts/lib/doing.mjs). The refusal itself is proved in check-doing.mjs.
+  url = withDoing(url, method, 'checking a proposal beside its source');
   const response = await fetch(`${base}${url}`, {
     method,
     ...(body === undefined ? {} : {
@@ -95,7 +99,11 @@ const api = async (method, url, body) => {
  * So this drives src/bin.ts rather than the routes underneath it.
  */
 const cli = (args, stdin) => new Promise(resolve => {
-  const child = spawn(process.execPath, [src('bin.ts'), ...args], {
+  // The global `--doing`, on every invocation (TASK-095).
+  const said = args.includes('--doing')
+    ? args
+    : [...args, '--doing', 'checking a proposal beside its source'];
+  const child = spawn(process.execPath, [src('bin.ts'), ...said], {
     env: {
       ...process.env,
       EXPRESS_SERVER_URL: base,

@@ -235,6 +235,12 @@ export type WebSocketMessageType =
   // `board_lock`: a lock stops a pane accepting a touch, and this stops
   // nothing. Deliberately not `board_hold`: nothing has been refused yet.
   | 'board_note'
+  // An agent changed this board and said what it was doing (TASK-095). Beside
+  // the lock and not part of it: the lock says who has the board, the claim's
+  // reason says what campaign they are on, and this is the step. Carries the
+  // last few lines as well as the new one, so a pane that has just arrived on
+  // the board is not blank until the next write.
+  | 'board_doing'
   // The stencil palette changed. Boardless on purpose: the library is not a
   // board's content, so every client applies it whatever it is showing.
   | 'library_changed'

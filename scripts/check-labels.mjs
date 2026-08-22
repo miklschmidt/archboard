@@ -39,6 +39,7 @@ import os from 'node:os';
 import { spawn } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { withDoing } from './lib/doing.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const {
@@ -1228,6 +1229,9 @@ const sceneBox = (elements) => ({
   });
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const api = async (method, url, body) => {
+    // Every write says what it is doing, once for the whole check (TASK-095,
+    // scripts/lib/doing.mjs). The refusal itself is proved in check-doing.mjs.
+    url = withDoing(url, method, 'checking that a label goes where its shape goes');
     const response = await fetch(`${base}${url}`, {
       method,
       ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })

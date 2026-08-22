@@ -20,6 +20,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { withDoing } from './lib/doing.mjs';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = p => path.join(repoRoot, 'src', p);
@@ -213,6 +214,9 @@ let serverStderr = '';
 server.stderr.on('data', chunk => { serverStderr += chunk.toString(); });
 
 const api = async (method, url, body) => {
+  // Every write says what it is doing, once for the whole check (TASK-095,
+  // scripts/lib/doing.mjs). The refusal itself is proved in check-doing.mjs.
+  url = withDoing(url, method, 'checking which boards describe a repository');
   const response = await fetch(`${base}${url}`, {
     method,
     ...(body === undefined ? {} : {
@@ -229,7 +233,12 @@ const cli = (args, cwd = nowhere) => {
   // Both streams, always: the CLI puts results on stdout and everything it
   // wants a human to notice on stderr, and several checks here are about what
   // it says rather than what it returns.
-  const run = spawnSync(process.execPath, [src('bin.ts'), ...args], {
+  // And `--doing`, which is global and required on any command that changes a
+  // board, on every invocation rather than at each call site (TASK-095).
+  const said = args.includes('--doing')
+    ? args
+    : [...args, '--doing', 'checking which boards describe a repository'];
+  const run = spawnSync(process.execPath, [src('bin.ts'), ...said], {
     cwd,
     encoding: 'utf-8',
     env: {
@@ -336,7 +345,7 @@ try {
 
   const ambientMcp = await mcp(
     'promote_selection',
-    { board, elementIds: [alphaId], kind: 'service', path: 'src/service.ts' },
+    { board, doing: 'promoting the alpha service', elementIds: [alphaId], kind: 'service', path: 'src/service.ts' },
     alphaRoot
   );
   const ambientText = JSON.stringify(ambientMcp.result?.content ?? ambientMcp.error ?? {});
@@ -345,7 +354,7 @@ try {
 
   const namedMcp = await mcp(
     'promote_selection',
-    { board, elementIds: [betaId], kind: 'service', path: 'src/service.ts', repo: BETA },
+    { board, doing: 'promoting the beta service', elementIds: [betaId], kind: 'service', path: 'src/service.ts', repo: BETA },
     alphaRoot
   );
   const namedText = JSON.stringify(namedMcp.result?.content ?? namedMcp.error ?? {});

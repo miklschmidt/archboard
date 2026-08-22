@@ -43,6 +43,7 @@
 import { ChangeEvent, changeFeed } from './change-feed.js';
 import { AppServerControl, SocketCheck, checkSocket, codexHome, controlSocketPath } from './app-server-control.js';
 import { kept } from './hot.js';
+import { recentDoing } from './board-doing.js';
 import { DEFAULT_INJECT_DEBOUNCE_MS, DEFAULT_INJECT_MIN_INTERVAL_MS } from './timing.js';
 import logger from '../utils/logger.js';
 
@@ -351,7 +352,10 @@ class Injector {
     this.timer.unref?.();
   }
 
-  /** The message a thread receives. Facts only; every line came from the feed. */
+  /**
+   * The message a thread receives. Facts only; every line came from the feed —
+   * or, for the last of them, from an agent saying what it was doing.
+   */
   private compose(events: ChangeEvent[]): string {
     const board = events[events.length - 1]!.board;
     const cursorBefore = events[0]!.cursor - 1;
@@ -369,9 +373,33 @@ class Injector {
       if (budget <= 0) break;
     }
 
+    // ── What an agent was doing while they did it ──────────────
+    //
+    // Descriptions reach a live model here and nowhere else, and that is the
+    // whole of how "an agent's own drawing is never injected back at it"
+    // (ADR 0005) survives them. A description is by definition an agent's, so
+    // injecting one as an event in its own right would be narrating an agent to
+    // itself in every single-agent session — and the canvas cannot tell whose
+    // is whose, because the writer is an HTTP request and the target is a
+    // thread on the app-server socket, with nothing joining the two.
+    //
+    // Carried on the HUMAN's event instead, where the payload is the person's
+    // act and this is the context for it: what was going on when they reached
+    // in. It cannot be self-narration, because no agent event is ever injected.
+    // The reading agent may see its own last line quoted, which is the useful
+    // case rather than the bad one — it is being told the person changed the
+    // board mid-step, and which step.
+    const said = recentDoing(board).slice(-3);
+    const doing = said.length === 0 ? [] : [
+      said.length === 1
+        ? `An agent was at: ${said[0]!.doing}.`
+        : `An agent was at: ${said.map(entry => entry.doing).join('; then ')}.`
+    ];
+
     return [
       header,
       ...body,
+      ...doing,
       `(Nobody is waiting on you for this — it is the board, not a request. ` +
       `\`archboard changes --since ${cursorBefore}\` has the full diff, \`describe\` has the board as it stands.)`
     ].join('\n');

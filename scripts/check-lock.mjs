@@ -39,6 +39,7 @@ import { spawn } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
+import { withDoing } from './lib/doing.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
@@ -472,6 +473,9 @@ const server = spawn(process.execPath, [src('server.ts')], {
 });
 
 const api = async (method, url, body) => {
+  // Every write says what it is doing, once for the whole check (TASK-095,
+  // scripts/lib/doing.mjs). The refusal itself is proved in check-doing.mjs.
+  url = withDoing(url, method, 'checking one writer at a time');
   const response = await fetch(`${base}${url}`, {
     method,
     ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -702,7 +706,7 @@ try {
 
     await api('POST', '/api/boards/hold?board=scratch', { clientId: PANE });
     const keepHolding = renewing(PANE);
-    const acrossServers = await fetch(`http://127.0.0.1:${OTHER_PORT}/api/elements?board=scratch`, {
+    const acrossServers = await fetch(`http://127.0.0.1:${OTHER_PORT}/api/elements?board=scratch&doing=writing+from+the+other+canvas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'rectangle', x: 700, y: 700, width: 40, height: 40 })
@@ -716,7 +720,7 @@ try {
       refused?.holder?.id === PANE, JSON.stringify(refused?.holder));
 
     await api('POST', '/api/boards/hold/release?board=scratch', { clientId: PANE });
-    const allowed = await fetch(`http://127.0.0.1:${OTHER_PORT}/api/elements?board=scratch`, {
+    const allowed = await fetch(`http://127.0.0.1:${OTHER_PORT}/api/elements?board=scratch&doing=writing+from+the+other+canvas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'rectangle', x: 700, y: 700, width: 40, height: 40 })

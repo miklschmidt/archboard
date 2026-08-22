@@ -15,6 +15,10 @@ import type { PaneStatus } from '../types'
 // draws by hand and a box the agent draws stop matching.
 import { DEFAULT_FILL_STYLE, DEFAULT_SHAPE_BACKGROUND } from '../../../src/core/appearance'
 
+/** Just the time, because these are minutes old at most and a date would be noise. */
+const clock = (iso: string): string =>
+  new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
 interface CanvasPaneProps {
   paneId: string
   /** The pane that answers export / viewport / mermaid requests. */
@@ -96,6 +100,26 @@ export function CanvasPane({
           )}
           <span className={`dot ${session.connected ? 'dot-live' : 'dot-dead'}`} />
         </div>
+      )}
+      {session.doing.length > 0 && (
+        // What has been happening here, most recent first (TASK-095). One
+        // story with the banner above rather than two accounts of it: that
+        // says what an agent has this board for, and these are the steps it
+        // has taken towards it. Without a claim there is no banner and these
+        // stand on their own, which is the common case — most writes are one
+        // act and take no claim.
+        //
+        // Over the canvas, like the banner, because a band that took up layout
+        // would resize the pane, and a pane's size is what it reports as "what
+        // I am looking at".
+        <ol className={`pane-doing${session.heldBy?.claimed ? ' pane-doing-under-claim' : ''}`} role="status">
+          {[...session.doing].reverse().map((said) => (
+            <li key={`${said.at}-${said.by}`} className="pane-doing-line">
+              <span className="pane-doing-when">{clock(said.at)}</span>
+              {said.doing}
+            </li>
+          ))}
+        </ol>
       )}
       {session.heldBy?.claimed && (
         // Somebody has taken this board for a stretch of work, and the person

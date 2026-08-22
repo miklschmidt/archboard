@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { withDoing } from './lib/doing.mjs';
 
 // The checkout this file is in, so the probe measures the code beside it
 // rather than whatever is in one particular clone.
@@ -26,6 +27,9 @@ const server = spawn('bun', [path.join(repo, 'src/server.ts')], {
 let err = ''; server.stderr.on('data', d => err += d);
 
 const api = async (method, url, body) => {
+  // Every write says what it is doing, once for the whole check (TASK-095,
+  // scripts/lib/doing.mjs). The refusal itself is proved in check-doing.mjs.
+  url = withDoing(url, method, 'probing what an arrow refers to');
   const r = await fetch(`${base}${url}`, {
     method,
     ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })

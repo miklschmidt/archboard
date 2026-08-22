@@ -41,6 +41,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { withDoing } from './lib/doing.mjs';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = p => path.join(repoRoot, 'src', p);
@@ -64,7 +65,10 @@ process.env.EXPRESS_SERVER_URL = base;
 const { planPromotion } = await import(src('core/promote.ts'));
 const { describeScene } = await import(src('core/describe.ts'));
 const { insertStencil } = await import(src('core/library-catalogue.ts'));
-const { setRequestedBoard } = await import(src('core/canvas-client.ts'));
+const { setRequestedBoard, setWriteDoing } = await import(src('core/canvas-client.ts'));
+// Driving the client directly means setting what the CLI's --doing and MCP's
+// `doing` argument set, or the canvas refuses the write (TASK-095).
+setWriteDoing('checking a branch against the board it came from');
 
 // ---------------------------------------------------------------------------
 // What a branched proposal looks like, in compare's own vocabulary
@@ -105,6 +109,9 @@ let serverStderr = '';
 server.stderr.on('data', chunk => { serverStderr += chunk.toString(); });
 
 const api = async (method, url, body) => {
+  // Every write says what it is doing, once for the whole check (TASK-095,
+  // scripts/lib/doing.mjs). The refusal itself is proved in check-doing.mjs.
+  url = withDoing(url, method, 'checking a branch against the board it came from');
   const response = await fetch(`${base}${url}`, {
     method,
     ...(body === undefined ? {} : {

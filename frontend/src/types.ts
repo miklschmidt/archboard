@@ -196,6 +196,27 @@ export interface WebSocketMessage {
   holder?: LockHolder | null;
   /** On `board_note`: who wrote the note last, if it was not archboard, or null. */
   writtenElsewhere?: NoteWrittenElsewhere | null;
+  /** On `board_doing`: the line that has just arrived, when this is a new one. */
+  doing?: DoingEntry;
+  /** On `board_doing`: the last few, oldest first, so a pane that has just arrived is not blank. */
+  recent?: DoingEntry[];
+}
+
+/**
+ * One thing an agent said it was doing to this board (TASK-095).
+ *
+ * Mirrors `DoingEntry` in `src/core/board-doing.ts`. It is never board content
+ * and it is nowhere in the note: it is what somebody said while changing
+ * something, and it dies with the canvas.
+ */
+export interface DoingEntry {
+  doing: string;
+  at: string;
+  /** The writer's lock-holder id, so two agents on one board do not read as one. */
+  by: string;
+  kind: 'human' | 'agent';
+  /** Part of a claim — a step of a campaign, rather than a lone act. */
+  claimed?: boolean;
 }
 
 /**
@@ -247,4 +268,10 @@ export interface PaneStatus {
    * been refused, and from a lock, which is another archboard writer.
    */
   writtenElsewhere: NoteWrittenElsewhere | null;
+  /**
+   * The last few things an agent said it was doing to this pane's board, oldest
+   * first (TASK-095). Short on purpose: a list of one-liners is glanceable from
+   * two metres away, and a transcript is a log nobody reads.
+   */
+  doing: DoingEntry[];
 }

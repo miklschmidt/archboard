@@ -265,7 +265,10 @@ export function Shell(): JSX.Element {
   const attemptSave = useCallback((request: SaveRequest) =>
     run(async () => {
       try {
-        const saved = await saveBoard(request)
+        // The pane rides along, in the one place every save goes through: it
+        // is what tells the server a person pressed this rather than an agent
+        // that has not said what it is doing (TASK-095).
+        const saved = await saveBoard({ clientId: status?.clientId, ...request })
         // Whether this pane is now holding what was written is the server's
         // answer to give, not the shell's to assume. A save used to move the
         // panes on the board it wrote, so adopting the answer was always
@@ -390,7 +393,7 @@ export function Shell(): JSX.Element {
     run(async () => {
       // One call, not one DELETE per element: the server empties the board and
       // tells every pane, so nothing depends on this tab finishing the job.
-      const result = await clearBoard(boardKey)
+      const result = await clearBoard(boardKey, status?.clientId ?? '')
       setConfirmingClear(false)
       setNotice({ kind: 'info', text: `Cleared ${result.count} element${result.count === 1 ? '' : 's'}.` })
     })
@@ -432,6 +435,9 @@ export function Shell(): JSX.Element {
         // last wrote. One stray touch on a 75-inch panel must not be what ends
         // it.
         onNoteClick={() => setAskingAboutNote(true)}
+        // The pane the person is working in, so the bar says what is happening
+        // to the board in front of them rather than to the other one.
+        doing={status?.doing ?? []}
         paneCount={panes.length}
         busy={busy}
         onOpen={() => { setDialogError(null); setDialog('open') }}

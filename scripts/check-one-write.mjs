@@ -28,6 +28,7 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { withDoing } from './lib/doing.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
@@ -102,11 +103,18 @@ await new Promise((resolve) => proxy.listen(PROXY_PORT, '127.0.0.1', resolve));
 // The client reads its canvas URL at import time, so the proxy has to be the
 // canvas before anything under src/ is loaded.
 process.env.EXPRESS_SERVER_URL = proxyBase;
-const { setRequestedBoard } = await import(src('core/canvas-client.ts'));
+const { setRequestedBoard, setWriteDoing } = await import(src('core/canvas-client.ts'));
+// The element ops below are driven through the client rather than over the
+// wire, so this stands in for the CLI's --doing (TASK-095). The MCP calls later
+// pass `doing` as an argument, the way a client would.
+setWriteDoing('checking that one intent is one write');
 const ops = await import(src('core/element-ops.ts'));
 const { boundTextPlacement } = await import(src('core/labels.ts'));
 
 const api = async (method, url, body) => {
+  // Every write says what it is doing, once for the whole check (TASK-095,
+  // scripts/lib/doing.mjs). The refusal itself is proved in check-doing.mjs.
+  url = withDoing(url, method, 'checking that one intent is one write');
   const response = await fetch(`${base}${url}`, {
     method,
     ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -131,7 +139,12 @@ const counting = (what, run) => spending(what, 1, run);
 
 // The CLI a person actually types, pointed at the proxy.
 const cli = async (args, stdin) => {
-  const child = spawn(process.execPath, [src('bin.ts'), ...args], {
+  // `--doing` is global and required on any command that changes a board, so
+  // it goes on every invocation here rather than at each call site (TASK-095).
+  const said = args.includes('--doing')
+    ? args
+    : [...args, '--doing', 'checking that one intent is one write'];
+  const child = spawn(process.execPath, [src('bin.ts'), ...said], {
     cwd: repoRoot,
     env: { ...process.env, EXPRESS_SERVER_URL: proxyBase, LOG_LEVEL: 'error' },
     stdio: ['pipe', 'pipe', 'pipe']
@@ -213,7 +226,7 @@ try {
     delete: ['box-19']
   };
   const applied = await counting('a patch of two creates, two updates and a delete', async () => {
-    const child = spawn(process.execPath, [src('bin.ts'), 'apply', '--board', 'scratch', '-'], {
+    const child = spawn(process.execPath, [src('bin.ts'), 'apply', '--board', 'scratch', '--doing', 'applying a patch', '-'], {
       cwd: repoRoot,
       env: { ...process.env, EXPRESS_SERVER_URL: proxyBase, LOG_LEVEL: 'error' },
       stdio: ['pipe', 'pipe', 'pipe']
@@ -259,7 +272,7 @@ try {
   // flag" would be a polite way of saying "gone" (TASK-075).
   const asked = await counting('a patch that asks for the whole document', async () => {
     const child = spawn(process.execPath,
-      [src('bin.ts'), 'apply', '--board', 'scratch', '--document', '-'], {
+      [src('bin.ts'), 'apply', '--board', 'scratch', '--doing', 'applying a patch', '--document', '-'], {
         cwd: repoRoot,
         env: { ...process.env, EXPRESS_SERVER_URL: proxyBase, LOG_LEVEL: 'error' },
         stdio: ['pipe', 'pipe', 'pipe']
@@ -281,7 +294,7 @@ try {
   // A patch naming an element that is not there is refused with nothing
   // written, rather than halfway through with the earlier half applied.
   {
-    const child = spawn(process.execPath, [src('bin.ts'), 'apply', '--board', 'scratch', '-'], {
+    const child = spawn(process.execPath, [src('bin.ts'), 'apply', '--board', 'scratch', '--doing', 'applying a patch', '-'], {
       cwd: repoRoot,
       env: { ...process.env, EXPRESS_SERVER_URL: proxyBase, LOG_LEVEL: 'error' },
       stdio: ['pipe', 'pipe', 'pipe']
@@ -422,7 +435,7 @@ try {
   const { callExcalidrawTool } = await import(src('core/mcp-dispatch.ts'));
   await counting('promoting a seven-element stencil over MCP', () =>
     callExcalidrawTool('promote_selection', {
-      board: 'scratch', elementIds: pgIds, kind: 'datastore', name: 'PostgreSQL'
+      board: 'scratch', doing: 'promoting the PostgreSQL stencil', elementIds: pgIds, kind: 'datastore', name: 'PostgreSQL'
     }));
   setRequestedBoard('scratch');
   nodes = await promoted();
@@ -430,7 +443,7 @@ try {
     `promoting over MCP should carry one node id onto all seven, not ${JSON.stringify(nodes)}`);
 
   await counting('demoting a seven-element node over MCP', () =>
-    callExcalidrawTool('demote_selection', { board: 'scratch', elementIds: pgIds }));
+    callExcalidrawTool('demote_selection', { board: 'scratch', doing: 'demoting the PostgreSQL node', elementIds: pgIds }));
   setRequestedBoard('scratch');
   assert((await promoted()).every((node) => node === undefined),
     'demoting over MCP should have stripped the metadata from every element');

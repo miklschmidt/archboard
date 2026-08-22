@@ -23,6 +23,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
+import { withDoing } from './lib/doing.mjs';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = p => path.join(repoRoot, 'src', p);
@@ -341,6 +342,9 @@ let serverStderr = '';
 server.stderr.on('data', chunk => { serverStderr += chunk.toString(); });
 
 const api = async (method, url, body) => {
+  // Every write says what it is doing, once for the whole check (TASK-095,
+  // scripts/lib/doing.mjs). The refusal itself is proved in check-doing.mjs.
+  url = withDoing(url, method, 'checking that every call names its board');
   const response = await fetch(`${base}${url}`, {
     method,
     ...(body === undefined ? {} : {
@@ -736,7 +740,12 @@ try {
   // The exit code is the part a script reads, so it is checked through the CLI
   // rather than inferred from the status.
   const cli = (args) => new Promise(resolve => {
-    const child = spawn(process.execPath, [src('bin.ts'), ...args], {
+    // As with `api` above: the global `--doing` goes on every invocation, so
+    // the checks below stay about what they are about (TASK-095).
+    const said = args.includes('--doing')
+      ? args
+      : [...args, '--doing', 'checking that every call names its board'];
+    const child = spawn(process.execPath, [src('bin.ts'), ...said], {
       env: {
         ...process.env,
         EXPRESS_SERVER_URL: base,
@@ -1293,6 +1302,7 @@ try {
     throw new Error(`no canvas of ours came up for the scratch checks (last port ${scratchPort - 1})`);
   };
   const scratchApi = async (method, url, body) => {
+    url = withDoing(url, method, 'checking what happens to the board nobody named');
     const response = await fetch(`${scratchBase}${url}`, {
       method,
       ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })

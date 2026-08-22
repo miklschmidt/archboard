@@ -47,6 +47,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { boundTextDrift, planLabelRepair, recentreBoundTexts } from '../src/core/labels.ts';
 import { remeasureLinear } from '../src/core/geometry.ts';
+import { withDoing } from './lib/doing.mjs';
 
 const args = process.argv.slice(2);
 const flag = (name) => {
@@ -107,8 +108,12 @@ function reportDrift(elements) {
   return moves;
 }
 
+// This one is not a check but a repair somebody runs against a live board, so
+// what it says is what it is: putting labels back (TASK-095).
+const REPAIRING = 'putting stranded labels back on the shapes they name';
+
 async function json(path, init) {
-  const response = await fetch(path, init);
+  const response = await fetch(withDoing(path, init?.method, REPAIRING), init);
   const body = await response.json().catch(() => ({}));
   if (!response.ok || body.success === false) {
     throw new Error(`${init?.method ?? 'GET'} ${path} failed: ${body.error ?? response.status}`);

@@ -13,6 +13,7 @@ import os from 'node:os';
 import { spawn } from 'node:child_process';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { withDoing } from './lib/doing.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
@@ -327,6 +328,9 @@ async function checkGroupsLiveOnTheBoard() {
   });
   const env = { EXPRESS_SERVER_URL: base };
   const api = async (method, url, body) => {
+    // Every write says what it is doing, once for the whole check (TASK-095,
+    // scripts/lib/doing.mjs). The refusal itself is proved in check-doing.mjs.
+    url = withDoing(url, method, 'checking the MCP wire');
     const response = await fetch(`${base}${url}`, {
       method,
       ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -350,7 +354,7 @@ async function checkGroupsLiveOnTheBoard() {
       ]
     });
 
-    const { groupId } = await first.call('group_elements', { board: 'scratch', elementIds: ['a', 'b'] });
+    const { groupId } = await first.call('group_elements', { board: 'scratch', doing: 'grouping two boxes', elementIds: ['a', 'b'] });
     assert(typeof groupId === 'string' && groupId.length > 0, 'group_elements: no groupId came back');
 
     // Another client, and the CLI's own view of the board: the group is on the
@@ -369,14 +373,14 @@ async function checkGroupsLiveOnTheBoard() {
       clientId: 'pane'
     });
 
-    await first.call('ungroup_elements', { board: 'scratch', groupId });
+    await first.call('ungroup_elements', { board: 'scratch', doing: 'ungrouping them again', groupId });
     for (const id of ['a', 'b', 'c']) {
       assert(!(await groupsOf(id)).includes(groupId),
         `ungrouping left ${id} carrying a group that no longer exists: ${JSON.stringify(await groupsOf(id))}`);
     }
 
     // And a group outlives whatever made it.
-    const { groupId: lasting } = await first.call('group_elements', { board: 'scratch', elementIds: ['a', 'b'] });
+    const { groupId: lasting } = await first.call('group_elements', { board: 'scratch', doing: 'grouping two boxes', elementIds: ['a', 'b'] });
     first.close();
     await new Promise((r) => setTimeout(r, 200));
     assert((await groupsOf('a')).includes(lasting), 'the group died with the client that made it');
