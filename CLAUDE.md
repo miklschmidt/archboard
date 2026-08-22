@@ -200,6 +200,18 @@ agent reads code  ->  draws the architecture  ->  you rearrange it on the Flip
 
 The read-back is the point. Moving a box is a statement about the design.
 
+**Creators need an immediate connection to what they are creating** (Bret
+Victor, *Inventing on Principle*). On this canvas the creator is both of you, so
+every change either of you makes is visible as it is made. That is the principle
+the rest of this document keeps arriving at from different directions: the
+server is authoritative so two people never diverge, a write returns the
+document so a pane renders what was persisted, the board reports what it became
+so the agent sees the human's rearrangement.
+
+Keeping somebody from *editing* while another writer holds the board is fine —
+that is what the lock is for (ADR 0016). Keeping them from *seeing* is not. An
+agent never works out of sight and reveals the result.
+
 ```bash
 ./bin/canvas panes                              # which pane holds which board
 ./bin/canvas describe --board payments          # AI-readable scene text
@@ -810,7 +822,9 @@ stays, and the agent's next act, write or fresh claim, is refused once with
 `CLAIM_REVOKED` and told the board is part way through whatever it was doing.
 Once: it cannot keep the board by asking again, and it is not locked out of a
 board it may be asked to work on next. So an agent holding a claim leaves the
-board sensible after each write, or works on a variant and swaps.
+board sensible after each write, and restructures in the open: hiding the work
+on a variant and swapping it in at the end takes the person out of the loop the
+canvas exists for, and discards whatever they drew meanwhile.
 
 **A second canvas over one vault now hears about a claim before the touch, not
 at the write.** Its panes were always excluded correctly, because exclusion
