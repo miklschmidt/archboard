@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-08-20 19:38'
-updated_date: '2026-08-20 20:11'
+updated_date: '2026-08-22 20:00'
 labels: []
 dependencies: []
 references:
@@ -49,13 +49,13 @@ THE HARD CONSTRAINT IS IDS, NOT PERFORMANCE. Applying a document in which an ope
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 There is one representation: the agent-friendly shape is converted once on write and never on read, and no conversion runs in the browser
-- [ ] #2 What the server stores is a fixed point, shown by rendering a converted board in a real browser and asserting the browser reports nothing back
-- [ ] #3 A write returns the resulting board and the pane renders that, rather than its own patched copy
-- [ ] #4 The browser still sends a delta, so a stale tab still cannot claim a deletion for an element it never received (TASK-016)
+- [x] #1 There is one representation: the agent-friendly shape is converted once on write and never on read, and no conversion runs in the browser
+- [x] #2 What the server stores is a fixed point, shown by rendering a converted board in a real browser and asserting the browser reports nothing back
+- [x] #3 A write returns the resulting board and the pane renders that, rather than its own patched copy
+- [x] #4 The browser still sends a delta, so a stale tab still cannot claim a deletion for an element it never received (TASK-016)
 - [ ] #5 Every element id is minted once by the server, in a form the note writer never renames, so an echo cannot rename an element out from under a cursor
-- [ ] #6 A check drives a long session of mixed agent and human writes and asserts the pane document and the server document stay byte-identical
-- [ ] #7 An agent write returns the elements it touched plus a board fingerprint, not the whole board, because the whole board is about 60k tokens at 300 elements
+- [x] #6 A check drives a long session of mixed agent and human writes and asserts the pane document and the server document stay byte-identical
+- [x] #7 An agent write returns the elements it touched plus a board fingerprint, not the whole board, because the whole board is about 60k tokens at 300 elements
 <!-- AC:END -->
 
 ## Comments
