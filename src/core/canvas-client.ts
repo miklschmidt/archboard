@@ -61,6 +61,10 @@ export function currentRequestedBoard(): string | null {
   return requestedBoard;
 }
 
+function addQuery(path: string, key: string, value: string | number): string {
+  return `${path}${path.includes('?') ? '&' : '?'}${key}=${encodeURIComponent(value)}`;
+}
+
 // ---- Whether the board this invocation touched is being saved ----
 //
 // The canvas puts a `held` block on every answer about a board that has stopped
@@ -88,7 +92,7 @@ export function forgetBoardHold(): void {
 function withBoard(path: string): string {
   if (!requestedBoard) return path;
   if (/[?&]board=/.test(path)) return path;
-  return `${path}${path.includes('?') ? '&' : '?'}board=${encodeURIComponent(requestedBoard)}`;
+  return addQuery(path, 'board', requestedBoard);
 }
 
 // ---- What this invocation is doing to the board ----
@@ -211,13 +215,13 @@ function withWriteClaims(path: string, method?: string): string {
   if ((method ?? 'GET').toUpperCase() === 'GET') return path;
   let out = path;
   if (writeDoing && !/[?&]doing=/.test(out)) {
-    out = `${out}${out.includes('?') ? '&' : '?'}doing=${encodeURIComponent(writeDoing)}`;
+    out = addQuery(out, 'doing', writeDoing);
   }
   const expected = currentExpectedVersion();
   // `0` is the wire spelling for a board with no note yet, so that "I saw no
   // version" is a statement rather than a silence.
   if (expected !== undefined && !/[?&]expectVersion=/.test(out)) {
-    out = `${out}${out.includes('?') ? '&' : '?'}expectVersion=${expected ?? 0}`;
+    out = addQuery(out, 'expectVersion', expected ?? 0);
   }
   return out;
 }
@@ -234,7 +238,7 @@ export async function syncToCanvas(
   // Only when the caller said so: a write answers with what it touched, and
   // the board itself is 60,000 tokens at 300 elements (TASK-075).
   const asked = (path: string) => write.document
-    ? `${path}${path.includes('?') ? '&' : '?'}document=1`
+    ? addQuery(path, 'document', 1)
     : path;
 
   try {

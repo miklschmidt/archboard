@@ -197,7 +197,7 @@ const { readBoardFile, readNote } = await import(src('core/board-io.ts'));
   };
   const seeded = readBoardContent(live);
   seeded.elements.set(onTheBoard.id, { ...onTheBoard });
-  writeBoardContent(live, seeded);
+  writeBoardContent(live, seeded, { saveCommand: 'board save' });
 
   const taken = await fetch(`${at}/api/snapshots?board=snapshot-sharing`, {
     method: 'POST',
@@ -220,7 +220,7 @@ const { readBoardFile, readNote } = await import(src('core/board-io.ts'));
     x: 999,
     customData: { archboard: { node: 'api', kind: 'datastore', variant: 'current' } }
   });
-  writeBoardContent(live, after);
+  writeBoardContent(live, after, { saveCommand: 'board save' });
 
   check('changing the board after snapshotting leaves the snapshot unchanged',
     kept.x === 0 && kept.customData.archboard.kind === 'gateway', JSON.stringify(kept));
@@ -1204,7 +1204,7 @@ try {
 
     check('a board with no note yet has nobody else\'s writing on it',
       noteWrittenElsewhere(watched) === null);
-    writeBoardContent(watchedBoard, emptyContent());
+    writeBoardContent(watchedBoard, emptyContent(), { saveCommand: 'board save' });
     check('  and neither has one archboard has just written itself',
       noteWrittenElsewhere(watched) === null);
 
@@ -1250,7 +1250,7 @@ try {
     // refused, because both come off the one comparison.
     let refusal = null;
     try {
-      writeBoardContent(watchedBoard, emptyContent());
+      writeBoardContent(watchedBoard, emptyContent(), { saveCommand: 'board save' });
     } catch (error) {
       refusal = error.conflict ?? null;
     }

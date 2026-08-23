@@ -170,7 +170,7 @@ export function describeWriteConflict(input: {
   };
 }
 
-export function describeVersionConflict(input: {
+function describeVersionConflict(input: {
   board: string;
   file?: string;
   expected: number | null;

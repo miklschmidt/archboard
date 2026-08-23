@@ -376,9 +376,7 @@ export function releaseClaim(board: string): Claim | null {
   const key = normalizeBoardKey(board);
   const entry = claims().get(key);
   if (!entry) return null;
-  stopRenewing(entry);
-  forgetRememberedVersion(entry.holder.id);
-  claims().delete(key);
+  dropClaim(key, entry);
   releaseHold(key, entry.holder.id);
   return claimOf(key, entry);
 }
@@ -442,9 +440,7 @@ function liveClaim(board: string): ClaimEntry | null {
   if (Date.now() < entry.expires) return entry;
   // Ran its course. Dropped here rather than only on the renewal tick, so the
   // answer to "is this board claimed" never depends on when a timer last fired.
-  stopRenewing(entry);
-  forgetRememberedVersion(entry.holder.id);
-  claims().delete(board);
+  dropClaim(board, entry);
   releaseHold(board, entry.holder.id);
   return null;
 }
@@ -470,6 +466,12 @@ function startRenewing(board: string): ReturnType<typeof setInterval> {
 function stopRenewing(entry: ClaimEntry): void {
   if (entry.timer) clearInterval(entry.timer);
   entry.timer = null;
+}
+
+function dropClaim(board: string, entry: ClaimEntry): void {
+  stopRenewing(entry);
+  forgetRememberedVersion(entry.holder.id);
+  claims().delete(board);
 }
 
 function renewClaim(board: string): void {
@@ -515,9 +517,7 @@ function renewRecord(board: string, id: string, leaseMs: number): LockHolder | n
 function noteClaimRevoked(board: string, lost: LockHolder, by: LockHolder | null): void {
   const entry = claims().get(board);
   if (!entry || entry.holder.id !== lost.id) return;
-  stopRenewing(entry);
-  forgetRememberedVersion(entry.holder.id);
-  claims().delete(board);
+  dropClaim(board, entry);
   revocations().set(board, { claim: claimOf(board, entry), by });
 }
 
@@ -615,11 +615,7 @@ export function forgetLockAnnouncements(): void {
   for (const timer of lingers().values()) clearTimeout(timer);
   lingers().clear();
   announced().clear();
-  for (const entry of claims().values()) {
-    stopRenewing(entry);
-    forgetRememberedVersion(entry.holder.id);
-  }
-  claims().clear();
+  for (const [board, entry] of claims()) dropClaim(board, entry);
   revocations().clear();
   watchBoardLocks(null);
 }
@@ -955,7 +951,7 @@ function watcher(): { boards: (() => string[]) | null; timer: ReturnType<typeof 
 
 // ── Small things ──────────────────────────────────────────────────────────
 
-function sleep(ms: number): Promise<void> {
+export function sleep(ms: number): Promise<void> {
   return new Promise(resolve => { setTimeout(resolve, ms); });
 }
 
