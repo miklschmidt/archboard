@@ -57,13 +57,49 @@ const scene = () => [
   box('c', 600, 0, 'pg', 'datastore'), label('cl', 'c', 'Postgres', 600, 0),
   arrow('e1', 'a', 'b'), arrow('e2', 'b', 'c')
 ];
+const flatMetadataBox = () => ({
+  id: 'flat', type: 'rectangle', x: 0, y: 0, width: 200, height: 100,
+  label: { text: 'Flat metadata' },
+  customData: {
+    kind: 'service',
+    binding: { path: 'src/flat.ts' },
+    path: 'src/flat.ts',
+    variant: 'current',
+    level: 'service'
+  }
+});
 
 // ---------------------------------------------------------------------------
 // Engine
 // ---------------------------------------------------------------------------
 
 const { diffBoardStates, narrateChange } = await import(src('core/changes.ts'));
+const { compareBoards } = await import(src('core/compare.ts'));
+const { describeScene } = await import(src('core/describe.ts'));
 const diff = (before, after) => diffBoardStates(before, after, identity, 'payments');
+
+{
+  const flat = flatMetadataBox();
+  const description = describeScene([flat]);
+  check('flat top-level metadata stays a plain element in describe',
+    /0 nodes/.test(description) && /1 plain/.test(description) &&
+    /customData: kind=service/.test(description), description.replace(/\n/g, ' | '));
+
+  const comparison = compareBoards(
+    { key: 'payments', identity, elements: [], source: 'memory' },
+    { key: 'payments', identity, elements: [flat], source: 'memory' }
+  );
+  check('  and compare classifies the same element as plain foreign customData',
+    comparison.to.nodeCount === 0 && comparison.to.plainCount === 1 &&
+    comparison.plain.to.unidentified.length === 0 &&
+    comparison.plain.to.labelled[0]?.foreignCustomData?.kind === 'service',
+    JSON.stringify(comparison.plain.to));
+
+  const change = diff([], [flat]);
+  check('  and the changes engine treats it as an anonymous drawing, not a promoted service',
+    change.nodes.added[0]?.anonymous === true && change.nodes.added[0]?.kind === undefined,
+    JSON.stringify(change.nodes.added));
+}
 
 {
   const base = scene();
@@ -257,6 +293,19 @@ const { boundTextDrift } = await import(src('core/labels.ts'));
 process.env.ARCHBOARD_SETTLE_MS = '60000';    // long, so only explicit settles fire
 const { changeFeed } = await import(src('core/change-feed.ts'));
 const { copyElements } = await import(src('core/board-store.ts'));
+
+{
+  let elements = [];
+  const read = () => elements;
+  changeFeed.reset('flat-metadata', identity, read);
+  elements = [flatMetadataBox()];
+  changeFeed.record('flat-metadata', identity, read, 'human');
+  const event = changeFeed.settle('flat-metadata');
+  check('flat top-level metadata reaches the feed as an anonymous drawing, not a promoted service',
+    event?.change.nodes.added[0]?.anonymous === true &&
+    event?.change.nodes.added[0]?.kind === undefined,
+    JSON.stringify(event?.change.nodes.added ?? []));
+}
 
 {
   let elements = scene();

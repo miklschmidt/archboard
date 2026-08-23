@@ -11,6 +11,15 @@ import {
   isTransparentBackground
 } from './appearance.js';
 import { extentOf } from './geometry.js';
+import {
+  nodeIdOf,
+  nodeIdsOnBoard,
+  readElementMetadata
+} from './metadata.js';
+import type { ArchboardBlock, LogicalAddress } from './metadata.js';
+
+export { archboardBlock, nodeIdOf, nodeIdsOnBoard } from './metadata.js';
+export type { ArchboardBlock, LogicalAddress } from './metadata.js';
 
 // Promotion — declaring a set of elements to be a node, giving it a kind and
 // usually a binding in the same act (CONTEXT.md).
@@ -95,42 +104,6 @@ export function uniqueNodeId(base: string, taken: Set<string>): string {
 }
 
 // ---------------------------------------------------------------------------
-// Metadata access
-// ---------------------------------------------------------------------------
-
-export interface ArchboardBlock {
-  node?: string;
-  kind?: string;
-  name?: string;
-  binding?: LogicalAddress;
-  variant?: string;
-  level?: string;
-  [key: string]: unknown;
-}
-
-export function archboardBlock(el: ServerElement): ArchboardBlock | undefined {
-  const custom = el.customData;
-  if (!custom || typeof custom !== 'object') return undefined;
-  const block = (custom as Record<string, unknown>).archboard;
-  if (!block || typeof block !== 'object' || Array.isArray(block)) return undefined;
-  return block as ArchboardBlock;
-}
-
-export function nodeIdOf(el: ServerElement): string | undefined {
-  const node = archboardBlock(el)?.node;
-  return typeof node === 'string' && node ? node : undefined;
-}
-
-export function nodeIdsOnBoard(elements: ServerElement[]): Set<string> {
-  const ids = new Set<string>();
-  for (const el of elements) {
-    const id = nodeIdOf(el);
-    if (id) ids.add(id);
-  }
-  return ids;
-}
-
-// ---------------------------------------------------------------------------
 // Binding — a logical address, not a machine path
 // ---------------------------------------------------------------------------
 //
@@ -139,14 +112,6 @@ export function nodeIdsOnBoard(elements: ServerElement[]): Set<string> {
 // commit at which it was last confirmed — that pair is what lets git history
 // trace a file that later moves. `link` is a convenience for this machine and
 // is only written when the path actually resolves here.
-
-export interface LogicalAddress {
-  repo?: string;      // e.g. github.com/miklschmidt/archboard, or a repo dir name
-  path: string;       // relative to the repo root
-  branch?: string;
-  commit?: string;
-  confirmedAt?: string;
-}
 
 export interface BindingRequest {
   path: string;
@@ -446,7 +411,7 @@ function fillFor(el: ServerElement, kind: Kind): Pick<ElementUpdate, 'background
 
 function mergedCustomData(el: ServerElement, block: ArchboardBlock): Record<string, unknown> {
   const existing = (el.customData && typeof el.customData === 'object' ? el.customData : {}) as Record<string, unknown>;
-  const previous = archboardBlock(el) ?? {};
+  const previous = readElementMetadata(el).archboard ?? {};
   return { ...existing, archboard: { ...previous, ...block } };
 }
 
@@ -465,7 +430,7 @@ function mergedCustomData(el: ServerElement, block: ArchboardBlock): Record<stri
 // returned as they are, and so is every other `customData` key.
 export function restampVariant(elements: ServerElement[], variant: string): ServerElement[] {
   return elements.map(el => {
-    const block = archboardBlock(el);
+    const block = readElementMetadata(el).archboard;
     if (!block) return el;
     // A node, or something that has been stamped with a variant before.
     // Anything else is a plain element and has no variant to be wrong about.
@@ -541,7 +506,7 @@ export function planPromotion(request: PromotionRequest): PromotionPlan {
       .sort((a, b) => b.area - a.area);
     const fromBinding = binding ? path.basename(binding.address.path).replace(/\.[^.]+$/, '') : undefined;
     const declaredAlready = shapes
-      .map(el => archboardBlock(el)?.name)
+      .map(el => readElementMetadata(el).archboard?.name)
       .find(n => typeof n === 'string' && n) as string | undefined;
     const name = request.name
       ?? declaredAlready          // a name already declared outranks any guess
@@ -632,7 +597,7 @@ export function planDemotion(targets: ServerElement[], board: ServerElement[]): 
   const nodeIds = new Set(targets.map(nodeIdOf).filter(Boolean) as string[]);
   const byId = new Map<string, ServerElement>();
   for (const el of targets) {
-    if (archboardBlock(el)) byId.set(el.id, el);
+    if (readElementMetadata(el).archboard) byId.set(el.id, el);
   }
   // Pull in the rest of every touched node, wherever those elements sit.
   for (const el of board) {
@@ -655,7 +620,7 @@ export function planDemotion(targets: ServerElement[], board: ServerElement[]): 
   const updates: ElementUpdate[] = [];
   const nodes: DemotionPlan['nodes'] = [];
   for (const [key, elements] of groups) {
-    const block = archboardBlock(elements[0]!);
+    const block = readElementMetadata(elements[0]!).archboard;
     // What to call it out loud: the declared name if there is one, else the
     // label the board shows.
     const spoken = typeof block?.name === 'string'
@@ -669,7 +634,7 @@ export function planDemotion(targets: ServerElement[], board: ServerElement[]): 
     for (const el of elements) {
       const custom = (el.customData && typeof el.customData === 'object' ? el.customData : {}) as Record<string, unknown>;
       const { archboard, ...rest } = custom;
-      const ourBinding = archboardBlock(el)?.binding;
+      const ourBinding = readElementMetadata(el).archboard?.binding;
       const linkWasOurs = !!el.link && !!ourBinding && el.link.endsWith(ourBinding.path);
       updates.push({
         id: el.id,

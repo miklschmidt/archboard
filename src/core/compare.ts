@@ -88,7 +88,9 @@
 
 import { ServerElement } from '../types.js';
 import { BoardIdentity } from './board.js';
-import { ArchboardBlock, LogicalAddress, archboardBlock, labelOf, nodeIdOf } from './promote.js';
+import { labelOf } from './promote.js';
+import { nodeIdOf, readElementMetadata } from './metadata.js';
+import type { ArchboardBlock, LogicalAddress } from './metadata.js';
 import {
   Box,
   BoundingBox,
@@ -487,7 +489,7 @@ function buildBoard(input: CompareSideInput): BoardModel {
     // may only carry it on one.
     const block: ArchboardBlock = {};
     for (const el of [primary, ...elements]) {
-      const b = archboardBlock(el);
+      const b = readElementMetadata(el).archboard;
       if (!b) continue;
       for (const [k, v] of Object.entries(b)) {
         if (block[k] === undefined && v !== undefined) block[k] = v;
@@ -572,7 +574,7 @@ function buildBoard(input: CompareSideInput): BoardModel {
     }
     const fromNode = startId ? nodeOfElement.get(startId) : undefined;
     const toNode = endId ? nodeOfElement.get(endId) : undefined;
-    const block = archboardBlock(el) ?? {};
+    const block = readElementMetadata(el).archboard ?? {};
     const extra: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(block)) {
       if (!ARCHBOARD_KNOWN.has(k)) extra[k] = v;
@@ -764,14 +766,12 @@ function buildBoard(input: CompareSideInput): BoardModel {
   for (const el of plainElements) {
     byType[el.type] = (byType[el.type] || 0) + 1;
     const label = labelOfAll(el, all);
-    const block = archboardBlock(el);
+    const metadata = readElementMetadata(el);
+    const block = metadata.archboard;
     if (block) {
       unidentified.push({ id: el.id, type: el.type, ...(label ? { label } : {}), archboard: block });
     }
-    const foreign: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries((el.customData ?? {}) as Record<string, unknown>)) {
-      if (k !== 'archboard') foreign[k] = v;
-    }
+    const foreign = metadata.foreign;
     if (label) {
       const b = boxOf(el);
       labelled.push({

@@ -1,6 +1,8 @@
 import { ServerElement } from '../types.js';
 import { DEFAULT_SHAPE_BACKGROUND } from './appearance.js';
 import { CLUSTER_GAP, boxOf, clusterBoxes, regionName } from './layout.js';
+import { readElementMetadata } from './metadata.js';
+import type { ArchboardBlock } from './metadata.js';
 
 // Build an AI-readable description of the current canvas.
 //
@@ -19,12 +21,6 @@ import { CLUSTER_GAP, boxOf, clusterBoxes, regionName } from './layout.js';
 // Metadata
 // ---------------------------------------------------------------------------
 
-// Our metadata lives under customData.archboard. A flat customData carrying
-// these keys directly is the older shape (see DESIGN.md) and still reads as a
-// node; anything else in customData is some other tool's and is passed through
-// verbatim rather than interpreted.
-const FLAT_KEYS = ['kind', 'binding', 'path', 'variant', 'level'] as const;
-
 // Kinds in pipeline order — how someone would say them aloud, not alphabetical.
 const KIND_ORDER = ['gateway', 'service', 'queue', 'datastore', 'external'];
 
@@ -32,7 +28,6 @@ const UNTYPED = 'untyped';
 
 interface Meta {
   isNode: boolean;
-  namespaced: boolean;
   node?: string;   // stable node identity, distinct from the element id
   bindingPath?: string;  // the raw path inside the binding, for link de-duping
   kind?: string;
@@ -81,29 +76,11 @@ function bindingPathOf(v: unknown): string | undefined {
   return undefined;
 }
 
-function readMeta(el: ServerElement): Meta {
-  const meta: Meta = { isNode: false, namespaced: false, extra: {}, foreign: {} };
-  const custom = el.customData;
-  if (!custom || typeof custom !== 'object') return meta;
+function formatMeta(block: ArchboardBlock | undefined, foreign: Record<string, unknown>): Meta {
+  const meta: Meta = { isNode: block !== undefined, extra: {}, foreign };
+  if (!block) return meta;
 
-  const block = (custom as Record<string, any>).archboard;
-  const namespaced = !!block && typeof block === 'object' && !Array.isArray(block);
-  meta.namespaced = namespaced;
-
-  for (const [k, v] of Object.entries(custom as Record<string, unknown>)) {
-    if (k === 'archboard') continue;
-    // Flat archboard keys only count as ours when there is no namespaced block
-    // to contradict them; otherwise they belong to whoever else wrote them.
-    if (!namespaced && (FLAT_KEYS as readonly string[]).includes(k)) continue;
-    meta.foreign[k] = v;
-  }
-
-  const source: Record<string, unknown> = namespaced
-    ? (block as Record<string, unknown>)
-    : (custom as Record<string, unknown>);
-
-  for (const [k, v] of Object.entries(source)) {
-    if (!namespaced && !(FLAT_KEYS as readonly string[]).includes(k)) continue;
+  for (const [k, v] of Object.entries(block)) {
     switch (k) {
       case 'node': meta.node = scalarText(v) || undefined; break;
       case 'kind': meta.kind = scalarText(v) || undefined; break;
@@ -124,9 +101,6 @@ function readMeta(el: ServerElement): Meta {
     }
   }
 
-  meta.isNode = namespaced
-    ? true
-    : !!(meta.kind || meta.binding || meta.variant || meta.level);
   return meta;
 }
 
@@ -186,7 +160,8 @@ function foldBoundText(all: ServerElement[], byId: Map<string, ServerElement>): 
 }
 
 function toItem(el: ServerElement, folded: Folded): Item {
-  const meta = readMeta(el);
+  const metadata = readElementMetadata(el);
+  const meta = formatMeta(metadata.archboard, metadata.foreign);
   const labelText = el.label?.text ?? el.text ?? folded.labelOf.get(el.id);
   return {
     el, meta, labelText,
@@ -575,7 +550,6 @@ function nodeExtras(n: Item): string {
     (!!n.meta.bindingPath && link.endsWith(n.meta.bindingPath))
   );
   if (link && !echoesBinding) parts.push(`link ${link}`);
-  if (!n.meta.namespaced && n.meta.isNode) parts.push('(flat customData, not namespaced)');
   if (Object.keys(n.meta.extra).length > 0) parts.push(pairs(n.meta.extra));
   if (Object.keys(n.meta.foreign).length > 0) parts.push(`other customData: ${pairs(n.meta.foreign)}`);
   if (n.el.groupIds && n.el.groupIds.length > 0) parts.push(`groups: [${n.el.groupIds.join(', ')}]`);
