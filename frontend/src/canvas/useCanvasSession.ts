@@ -605,13 +605,13 @@ export function useCanvasSession({
       // Off unless somebody has created `window.__abLoss`; see ./loss-canary.
       // This is the moment it is asking about.
       readDelivery(delivered?.canary ?? null, apiRef.current?.getSceneElements() as any ?? [])
+      if (!delivered) readOrphanedWindow()
       // The server's news moved the scene, so it moved the stamp, and the next
       // thing a human does must not read as a change *plus* whatever another
       // writer had just done — that took the board for a broadcast nobody had
       // touched. So the stamp becomes the delivery's own. The difference
       // between it and the scene as it now stands is exactly what a hand did
-      // while this window was open, and the line below is what says so.
-      if (!delivered) readOrphanedWindow()
+      // while this window was open, and the line after it is what says so.
       sceneStampRef.current = delivered ? delivered.stamp : sceneStamp(apiRef.current)
       publishStatus()
       scheduleReportRef.current()
