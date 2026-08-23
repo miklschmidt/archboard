@@ -83,8 +83,8 @@ const PAIRS = [
 //
 // Every entry carries its reason, and both lists are printed on every run, so
 // an asymmetry stays something the project keeps saying out loud rather than a
-// place drift can hide. A reason that reads "MCP lags" or "CLI lags" is a debt,
-// not a decision — it should shrink.
+// place drift can hide. A reason that reads "MCP lags" or "CLI lags" records
+// missing parity, not a decision — it should shrink.
 
 const CLI_ONLY = {
   'repo list': 'the checkout registry is host state. It maps a repository identity to a directory on THIS machine (ADR 0011). MCP consumes it: `promote_selection` takes a repo identity and resolves through the registry. A client with no shell cannot see the filesystem those entries name, so it cannot maintain them.',
@@ -103,7 +103,7 @@ const CLI_ONLY = {
 };
 
 const MCP_ONLY = {
-  read_diagram_guide: 'deliberate. The design guide is skill content (references/cheatsheet.md); an agent with a shell reads the file, a shell-less client cannot, so MCP hands it over.',
+  read_diagram_guide: 'deliberate. The design guide is skill content (references/cheatsheet.md); an agent with a shell reads the file, a shell-less client cannot, so MCP returns it.',
   get_resource: 'upstream aggregate accessor kept for clients written against mcp_excalidraw. `scene`, `elements` and `library` all reduce to elements plus theme, which `query`, `describe` and `export` cover.'
 };
 
@@ -219,7 +219,7 @@ for (const tool of toolNames) {
 // Parity is normally about whether a capability exists on both surfaces, and
 // tool names against command names is enough for that. `--document` is the
 // exception worth spelling out: it is not a command, it is a promise about
-// what every write hands back, and a promise only one surface keeps is one an
+// what every write returns, and a promise only one surface keeps is one an
 // agent cannot rely on (TASK-075).
 //
 // So the four writes are named here, each with the CLI entry and the tool that

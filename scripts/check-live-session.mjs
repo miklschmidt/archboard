@@ -47,7 +47,7 @@
 // instance's own `updateScene` through the fiber. That is the same door the
 // pane's own code goes through and it fires the same `onChange`, so everything
 // downstream — the debounce, the delta against the baseline, the label
-// statements, the echo — is exercised exactly as it is in use. What it does
+// statements, the server update — is exercised exactly as it is in use. What it does
 // not exercise is Excalidraw's pointer handling, and this check does not claim
 // to.
 //
@@ -177,10 +177,9 @@ const readScene = () => evalInPage(`(() => {
 
 // Counting what the pane posts, from inside the pane.
 //
-// Two questions need this and nothing else can answer either. Did applying an
-// echo bounce — that is, did writing the server's own answer into the scene
-// read back as a human edit and start another report (TASK-074)? And did one
-// human gesture cost one write? The server sees requests without knowing
+// Two questions need this and nothing else can answer either. Did applying the
+// server's own update to the scene read back as a user edit and start another
+// report (TASK-074)? And did one user edit produce one write? The server sees requests without knowing
 // which were provoked by which.
 const INSTALL_COUNTER = `(() => {
   if (window.__abReports) return { already: true };
@@ -193,8 +192,8 @@ const INSTALL_COUNTER = `(() => {
     if (counted) window.__abReports.sent += 1;
     const answer = original.apply(this, arguments);
     if (!counted) return answer;
-    // Holding one report's answer back is how a second one is made to come
-    // due while the first is still in flight. No amount of writing faster
+    // Holding one report's answer back is how a second report's debounce
+    // expires while the first is still in flight. No amount of writing faster
     // reproduces that ordering (TASK-099).
     const holdFor = window.__abDelayReport || 0;
     window.__abDelayReport = 0;
@@ -294,7 +293,7 @@ const humanEdit = edit =>
 // server-update code has finished and before the timeout that writes the baseline.
 // This produces the required ordering every time.
 //
-// A microtask is not how a finger arrives, and it does not need to be. What
+// A microtask is not how user input arrives, and it does not need to be. What
 // this reproduces is the *ordering*, which is the whole of the bug: the edit is
 // in the scene, and the pane is about to conclude it has already been reported.
 const INSTALL_INJECTOR = `(() => {
@@ -715,11 +714,11 @@ try {
       break;
     }
 
-    // ---- the human writes, without waiting for the agent's echo to land ----
+    // ---- the user writes, without waiting for the server update to land ----
     //
     // Closely interleaved on purpose: the agent's broadcast is still in flight
     // to the pane when the pane starts computing its own delta, which is the
-    // arrangement in which an echo can overwrite local work.
+    // arrangement in which a server update can overwrite local work.
     const humanMove = HUMAN_MOVES[cycle % HUMAN_MOVES.length];
     let target = subject;
     let edit = null;
@@ -760,7 +759,7 @@ try {
       firstDivergence = { cycle, agentMove, humanMove, divergences: settled.divergences };
     }
 
-    // One gesture, one report — and applying the echo must not have started
+    // One user edit, one report — and applying the server update must not have started
     // another. The agent's write produces no report at all: it reaches the
     // pane as a broadcast, and a broadcast the pane applies is not news the
     // pane has to tell anybody.
@@ -787,8 +786,8 @@ try {
     `${created} elements the agent created and the pane never named, ` +
     `${bothSides} cycles where both sides wrote the same element`);
 
-  check('  and applying an echo never started another change report',
-    bounced === 0, `${bounced} cycles reported more than the human's own gesture`);
+  check('  and applying a server update never started another change report',
+    bounced === 0, `${bounced} cycles reported more than the user's own edit`);
 
   // --- a user edit while a server update is being recorded -----------------
   //
@@ -881,7 +880,7 @@ try {
     { kind: 'move', id: 'store', dx: 17, dy: -9 },
     element => element?.x, was => was + 17);
 
-  // --- a report coming due while one is in flight -------------------------
+  // --- a report whose debounce expires while one is in flight -------------
   //
   // The third way, and the one contention reaches: it needs a round trip
   // longer than the report debounce, which is what a loaded machine produces
@@ -917,13 +916,13 @@ try {
   // first report was answered, which is the collision this exists for.
   const flight = await evalInPage(
     '(() => ({ answeredAt: window.__abAnsweredAt, editedAt: window.__abSecondEditAt }))()');
-  check('a second drag comes due while the first report is still in flight',
+  check('a second drag finishes its debounce while the first report is still in flight',
     flight.answeredAt - flight.editedAt > REPORT_DEBOUNCE_MS,
     `the answer was ${Math.round(flight.answeredAt - flight.editedAt)} ms behind the drag, ` +
-    `and the drag was due ${REPORT_DEBOUNCE_MS} ms after it`);
+    `and the drag's debounce expired ${REPORT_DEBOUNCE_MS} ms after it`);
 
   const bothDrags = await agree();
-  check('  and the report that came due while it was in flight is not dropped',
+  check('  and the report whose debounce expired while it was in flight is not dropped',
     bothDrags.agreed, (bothDrags.divergences ?? []).slice(0, 4).join(' | '));
   const dragged = (await held()).find(e => e.id === 'store');
   check('  so both user moves are on the board',
@@ -959,9 +958,9 @@ try {
   // `released: true` is only possible if the pane's hold was standing at this
   // moment, and nothing but the human's edit above could have taken it — the
   // release names the pane, and a release names nobody else's hold. So this is
-  // the leading edge proved end to end in a real browser: the gesture took the
+  // the start of the edit proved end to end in a real browser: the edit took the
   // board, and it took it before the report the debounce is still sitting on.
-  check('  and it was holding the board, taken at the first change of the gesture',
+  check('  and it was holding the board, taken at the first change of the edit',
     given.body?.released === true, JSON.stringify(given.body));
 
   // Inside the pane's report debounce, so the drag is still undelivered.
@@ -1004,8 +1003,8 @@ try {
   // --- somebody else writes the note, mid-session (TASK-079, ADR 0006) -----
   //
   // The one thing this session has not had in it: another application. Under
-  // ADR 0015 every gesture is a write, so a note rewritten by Obsidian is
-  // discovered 400 ms after a finger lifts rather than at a save somebody ran.
+  // ADR 0015 every user edit is a write, so a note rewritten by Obsidian is
+  // discovered 400 ms after the pointer stops rather than at a save somebody ran.
   // What must NOT happen then is a modal in front of a person mid-thought
   // whose best offer is "discard what you just drew".
   //
@@ -1018,7 +1017,7 @@ try {
   // Before their edit: what a board that is saving says about itself. This slot
   // held "unsaved changes" until TASK-062, and by then it was false in every
   // session — the comparison behind it read a save time that only refreshed on
-  // a board switch, while every gesture was going straight to the note.
+  // a board switch, while every user edit was going straight to the note.
   const sayingNow = await evalInPage(`(() => ({
     metas: [...document.querySelectorAll('.bar-identity .meta')].map(n => n.textContent),
     elsewhere: document.querySelector('.chip-elsewhere')?.textContent ?? null
@@ -1035,7 +1034,7 @@ try {
     '"id": "auth"', '"id": "theirs", "width": 40}, {"id": "auth"'
   ));
 
-  // --- and the person is told before their next gesture (TASK-062) ---------
+  // --- and the person is told before their next edit (TASK-062) ------------
   //
   // The gap the refusal cannot cover, because the refusal needs somebody to
   // write first. Nothing below writes to the board and nothing runs a command:
@@ -1072,7 +1071,7 @@ try {
   check('  while the bar says the board is not being saved, and how much is held',
     /not saving/.test(chrome.mark ?? ''), chrome.mark);
 
-  // The human's gesture is not lost, and neither is the rest of the board:
+  // The user's edit is not lost, and neither is the rest of the board:
   // the pane said what was on its screen, so the held copy is that screen
   // rather than their note with one drag on top of it.
   const heldAgreed = await agree();
@@ -1121,11 +1120,11 @@ try {
   check('  and the mark comes down, because the board is saving again',
     backToNormal.mark === null, backToNormal.mark);
 
-  // --- the pane refuses the touch, not the write --------------------------
+  // --- the pane refuses the edit before it begins -------------------------
   //
   // ADR 0016's other half, and this is the only check with a renderer to ask.
-  // A canvas applies a drag the instant a finger moves, so a board somebody
-  // else is writing has to stop accepting a touch *before* it happens; view
+  // A canvas applies a drag as soon as the pointer moves, so a board somebody
+  // else is writing has to stop accepting edits *before* one begins; view
   // mode is Excalidraw's own word for that, and reading it off the live app is
   // the only way to know the pane really is refusing rather than intending to.
 
@@ -1135,10 +1134,10 @@ try {
   })()`);
 
   const free = await viewMode();
-  check('a pane on a board nobody is writing accepts a touch', free.view === false, JSON.stringify(free));
+  check('a pane on a board nobody is writing accepts edits', free.view === false, JSON.stringify(free));
 
   // Somebody else takes it, and keeps taking it. The lease is deliberately
-  // shorter than a long gesture, so renewing is what a real hold looks like;
+  // shorter than a long edit, so renewing is what a real hold looks like;
   // without this the board would simply come free underneath the assertion.
   await api('POST', `/api/boards/hold?board=${BOARD}`, { clientId: 'another-writer' });
   const renewing = setInterval(() => {
@@ -1159,9 +1158,8 @@ try {
   //
   // For a twenty-millisecond write, a disabled surface is enough and a banner
   // would flicker during a user edit. For a claim that may run for
-  // minutes it is not: a 75-inch display that stops responding with nothing on
-  // it to say why has simply broken, as far as the person standing at it can
-  // tell (ADR 0016). So the pane says who has the board and what they said they
+  // minutes it is not: a pane that stops accepting edits with no explanation
+  // appears broken to its user (ADR 0016). So the pane says who has the board and what they said they
   // were doing, and offers the one thing a person may always do.
 
   const claimWhy = 'redrawing the payment path';
@@ -1170,7 +1168,7 @@ try {
     return {
       what: document.querySelector('.pane-claim-what')?.textContent ?? null,
       take: document.querySelector('.pane-claim-take')?.textContent ?? null,
-      // The steps, where the banner above is the campaign (TASK-095).
+      // The steps, where the banner above gives the overall reason (TASK-095).
       steps: [...document.querySelectorAll('.pane-doing-line')].map(line => line.textContent),
       bar: document.querySelector('.doing-now')?.textContent ?? null,
       view: app ? app.state.viewModeEnabled === true : null
@@ -1196,13 +1194,13 @@ try {
   const claimed = await bannerWhen(seen => seen.what !== null);
   check('a pane whose board an agent claimed says who has it and why',
     typeof claimed.what === 'string' && claimed.what.includes(claimWhy), JSON.stringify(claimed));
-  check('  and stops accepting a touch, as for any other holder',
+  check('  and stops accepting edits, as for any other holder',
     claimed.view === true, JSON.stringify(claimed));
   check('  and offers the person the one thing they may always do',
     claimed.take === 'Take it back', JSON.stringify(claimed));
 
-  // And the step, under the campaign, as the write lands (TASK-095). This is
-  // the half a socket cannot answer: whether a person standing at the wall can
+  // And the step, under the overall reason, as the write lands (TASK-095). This is
+  // the half a socket cannot answer: whether the user can
   // actually see what an agent is up to, or only that boxes moved.
   const step = 'moving the queue out of the payment path';
   await api('POST', `/api/elements?board=${BOARD}&doing=${encodeURIComponent(step)}`, {
@@ -1211,29 +1209,30 @@ try {
   const narrated = await bannerWhen(seen => seen.steps.some(line => line.includes(step)));
   check('  and the pane shows what the agent is doing right now, not only what it claimed the board for',
     narrated.steps.some(line => line.includes(step)), JSON.stringify(narrated.steps));
-  check('  which reads as one story with the banner rather than two accounts of it',
+  check('  which reads as one explanation with the banner rather than two accounts of it',
     typeof narrated.what === 'string' && narrated.what.includes(claimWhy) &&
     narrated.steps.some(line => line.includes(step)),
     `${narrated.what} / ${narrated.steps.join(' | ')}`);
-  check('  and the bar carries the latest line too, for the pane nobody is standing in front of',
+  check('  and the bar carries the latest line too, for a pane the user is not viewing',
     typeof narrated.bar === 'string' && narrated.bar.includes(step), String(narrated.bar));
 
-  // One deliberate tap, not any touch. View mode still pans and zooms, so
+  // One deliberate activation, not any pointer event. View mode still pans and
+  // zooms, so
   // somebody reading what the agent is drawing must not end it by reading it —
-  // and nothing an agent wrote is put back by taking the board, so a stray palm
-  // would leave a half-drawn board with nobody having decided anything.
+  // and nothing an agent wrote is put back by taking the board, so an accidental
+  // activation would leave a half-drawn board with nobody having decided anything.
   // Guarded, because a missing button is one of the things this section exists
   // to catch, and clicking null would end the file instead of counting it.
-  const tap = await evalInPage(`(() => {
+  const activation = await evalInPage(`(() => {
     const button = document.querySelector('.pane-claim-take');
     if (button) button.click();
-    return { tapped: button !== null };
+    return { activated: button !== null };
   })()`);
-  check('  and the tap lands on something', tap.tapped === true, JSON.stringify(tap));
-  // The board is free the moment the tap lands; the panes are told a linger
+  check('  and the activation reaches the button', activation.activated === true, JSON.stringify(activation));
+  // The board is free the moment the button activates; the panes are told a linger
   // later, so this waits for the news rather than for the linger.
   const returned = await bannerWhen(seen => seen.what === null && seen.view === false);
-  check('and one tap takes the board back',
+  check('and one activation takes the board back',
     returned.what === null && returned.view === false, JSON.stringify(returned));
 
   const lost = await api('POST', `/api/elements?board=${BOARD}`, {

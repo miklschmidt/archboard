@@ -3,7 +3,7 @@
 // There is one representation of a label, and this is the proof.
 //
 // A label is a text element bound to a shape. It used to be that and a `label`
-// seed on the shape and a conversion between them running on every delivery,
+// seed on the shape and a conversion between them running on every server update,
 // and the count grew by one on every trip through the browser, forever: a board
 // of 41 drawn elements reached 284 and five arrow labels were duplicated 42
 // times each (TASK-024). Renaming brought the old name back (TASK-028) and
@@ -30,7 +30,7 @@
 // The model stays hostile on purpose. `expand()` below is Excalidraw's
 // `convertToExcalidrawElements` in the one respect that mattered — it mints a
 // fresh text element every time it sees a seed, whether or not one exists —
-// and the first check runs it on the delivery path to show the count still
+// and the first check runs it on the server-update path to show the count still
 // explodes there. That is what "a conversion on read is a second converter"
 // costs, kept in front of anyone who reads this file.
 
@@ -194,9 +194,10 @@ function applyUpserts(store, upserts) {
  * human may type into it, and it reports back anything it had not seen.
  *
  * `contain` is the arrangement under test. True is ADR 0015: the board already
- * holds the text elements, so a delivery is handed over as it stands and there
- * is nothing to convert. False is what this replaced — a second converter, run
- * on every delivery, minting a text element for every seed it sees.
+ * holds the text elements, so the server update passes them through as they
+ * stand and there is nothing to convert. False is what this replaced — a
+ * second converter, run on every server update, minting a text element for
+ * every seed it sees.
  */
 function cycle(store, baseline, { contain, types, empties }) {
   const broadcast = [...store.values()];
@@ -446,8 +447,8 @@ const CYCLES = 25;
     'an arrow was not told whether it is elbowed');
 
   // 11. A freedraw carries a stroke's own record of how it was drawn. A
-  // hand-drawn one always has these three; one an agent wrote had none, and
-  // the browser filled them in on delivery so the note never learned.
+  // user-drawn one always has these three; one an agent wrote had none, and
+  // the browser filled them in on a server update so the note never learned.
   assert(stroke.lastCommittedPoint === null, 'a freedraw has no lastCommittedPoint');
   assert(Array.isArray(stroke.pressures), 'a freedraw has no pressures');
   assert(stroke.simulatePressure === true, 'a freedraw does not say its pressure is simulated');
@@ -565,7 +566,7 @@ const CYCLES = 25;
 // arrow carrying 42 copies of its own name and a stored height of
 // 0.9999999999999716, which is why it looked like arrows deleting themselves.
 // A three-cycle check would have watched that happen and called it fine, so
-// this one alternates an agent write with a delivery fifty times and watches
+// this one alternates an agent write with a server update fifty times and watches
 // the count on every pass rather than at the end.
 
 {
@@ -951,7 +952,7 @@ const CYCLES = 25;
 //
 // A binding is recorded in two places and either can be the one that survives:
 // the text element names its container in `containerId`, the container names
-// its text in `boundElements`. A note edited by hand, a scene imported from
+// its text in `boundElements`. A user-edited note, a scene imported from
 // elsewhere, a pane that reported one and not the other — any of them can
 // leave a board where only the text end of it is written down.
 //
@@ -1191,9 +1192,9 @@ const sceneBox = (elements) => ({
 // The browser has to be more careful than the server. Excalidraw is the
 // authority on where it draws a label, and it does not always agree with this
 // module to the pixel — a curved multi-point arrow hangs its label from the
-// bezier. Correcting a pixel would start the argument all over again: the pane
+// bezier. Correcting a pixel would restart the feedback loop: the pane
 // moves it, Excalidraw moves it back, the report carries that, the next
-// delivery moves it again. So the pane acts only where the record is plainly
+// server update moves it again. So the pane acts only where the record is plainly
 // wrong, which is what `frontend/src/canvas/elements.ts` calls on every
 // conversion.
 
@@ -1305,7 +1306,7 @@ const sceneBox = (elements) => ({
     //
     // This is what stage 5 changed. A label used to reach a text element only
     // when a browser rendered it: the write left `label: {text}` on the shape,
-    // Excalidraw's converter expanded it on delivery, and the pane reported
+    // Excalidraw's converter expanded it on a server update, and the pane reported
     // back what it had made. So a headless board had labels nothing could read
     // and this check had to manufacture that report itself. Now the one
     // converter runs at the write boundary and four labelled elements are

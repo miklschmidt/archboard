@@ -120,8 +120,8 @@ const api = async (method, url, body) => {
     method,
     ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
   });
-  // This harness writes with two hands — raw, here, and through the client
-  // below — and they are one actor pretending to be two. A write goes against
+  // This harness writes through two routes — raw, here, and through the client
+  // below — while acting as one writer. A write goes against
   // the version its writer last saw (TASK-091), and the client is not told
   // about anything sent from here, so without this its next write is refused
   // for a board this same check moved. Two writers that genuinely do not know
@@ -258,7 +258,7 @@ try {
   const touched = new Map((applied.elements ?? []).map((el) => [el.id, el]));
   assert(Array.isArray(applied.elements) &&
     applied.elements.every((el) => typeof el.id === 'string' && el.id.length > 0),
-    'apply should hand back every element it touched, ids and all — the server mints them');
+    'apply should return every element it touched, ids and all — the server mints them');
   assert(touched.has('made-a') && touched.has('box-1') && touched.has('box-2'),
     `apply's elements should cover both creates and both updates, and named ${[...touched.keys()].join(', ')}`);
   assert([...touched.values()].some((el) => el.type === 'ellipse' && !patch.create.some((c) => c.id === el.id)),
@@ -355,23 +355,23 @@ try {
   // What the browser sends is unchanged: no origin, so `frontend_sync` and a
   // human at the feed.
   await api('POST', `/api/elements/changes${board}`, {
-    upserts: [{ id: 'drawn-by-hand', type: 'rectangle', x: 6000, y: 6000, width: 200, height: 100 }],
+    upserts: [{ id: 'user-drawn', type: 'rectangle', x: 6000, y: 6000, width: 200, height: 100 }],
     deletes: [],
     clientId: 'pane'
   });
   scene = await byId();
-  assert(scene.get('drawn-by-hand').source === 'frontend_sync',
+  assert(scene.get('user-drawn').source === 'frontend_sync',
     'a report with no origin should be stamped frontend_sync, exactly as before');
   await sleep(SETTLE_MS * 4);
   let feed = await api('GET', `/api/changes?board=scratch&since=${beforeHuman}`);
   let events = feed?.events ?? [];
   assert(events.length > 0 && events.every((event) => event.origin === 'human'),
-    `a report with no origin is the human's hands: ${JSON.stringify(events.map((e) => e.origin))}`);
+    `a report with no origin is a user edit: ${JSON.stringify(events.map((e) => e.origin))}`);
 
   const cursor = feed.cursor;
-  await ops.alignElements(['drawn-by-hand', 'box-1'], 'top');
+  await ops.alignElements(['user-drawn', 'box-1'], 'top');
   scene = await byId();
-  assert(scene.get('drawn-by-hand').source === 'frontend_sync',
+  assert(scene.get('user-drawn').source === 'frontend_sync',
     'an agent moving a human\'s box should not take the authorship of it');
   assert(scene.get('box-1').source === undefined,
     `an agent's write must not be stamped as the browser's (source: ${scene.get('box-1').source})`);
@@ -382,11 +382,11 @@ try {
     `an agent's batched write is the agent's, or it gets narrated back at it (ADR 0005): ` +
     JSON.stringify(events.map((e) => e.origin)));
 
-  // ─── What a batched move still owes the board ─────────────────
+  // ─── What a batched move must still update on the board ───────
   //
   // A single-element PUT drags a bound label along and re-routes every arrow
   // bound to what moved (TASK-034, TASK-038). A batched write is the same
-  // write, so it owes the same.
+  // write, so it must make the same related updates.
 
   await api('POST', `/api/elements/batch${board}`, {
     elements: [
@@ -519,7 +519,7 @@ try {
   const serverSource = fs.readFileSync(src('server.ts'), 'utf-8');
   const doorSource = fs.readFileSync(src('core/board-write.ts'), 'utf-8');
   assert((serverSource.match(/writeBoard\(\{/g) ?? []).length === 9,
-    'server.ts should hand all nine board-writing routes to writeBoard');
+    'server.ts should route all nine board-writing routes through writeBoard');
   assert(!serverSource.includes('writeBoardContent('),
     'server.ts still writes a note directly instead of using the board write entry');
   assert(!serverSource.includes('applyElementInput('),

@@ -36,8 +36,8 @@
 // IT IS IN `bun run test`, which means running the suite needs `agent-browser`
 // and a browser on the machine. That is deliberate: this is the only check
 // that can tell whether a board we write is one Excalidraw agrees with, and a
-// converter that has quietly started disagreeing is not something to find out
-// about on somebody's wall. Without a browser it exits 2 — "I could not run" —
+// converter that has quietly started disagreeing is not something to discover
+// in a user's scene. Without a browser it exits 2 — "I could not run" —
 // rather than claiming a pass.
 //
 // It rebuilds the frontend itself unless given --skip-build, because the
@@ -127,7 +127,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 //   points on an arrow         inset by half a stroke width by the frontend's
 //                              converter, and gone with it.
 //   +lastCommittedPoint,       freedraw fields our converter never wrote and
-//   +pressures,                the frontend filled in on delivery, so the note
+//   +pressures,                the frontend filled in on a server update, so the note
 //   +simulatePressure          never learned them. Now written.
 //
 // Of the eight elements this check used to report, seven were the frontend
