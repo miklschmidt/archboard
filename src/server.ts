@@ -9,9 +9,7 @@ import dotenv from 'dotenv';
 import logger from './utils/logger.js';
 import {
   snapshots,
-  EXCALIDRAW_ELEMENT_TYPES,
   ServerElement,
-  ExcalidrawElementType,
   ExcalidrawFile,
   WebSocketMessage,
   ElementCreatedMessage,
@@ -21,10 +19,9 @@ import {
   ElementsChangedMessage,
   InitialElementsMessage,
   Snapshot,
-  selectionState,
-  normalizeFontFamily
+  selectionState
 } from './types.js';
-import { IdsInUse, mintId } from './core/ids.js';
+import { mintId } from './core/ids.js';
 import { buildSelectionReport } from './core/describe.js';
 import {
   buildPanesReport,
@@ -132,12 +129,8 @@ import { PANE_LAYOUT_TIMEOUT_MS, PANE_SETTLE_CAP_MS, REPORT_DEBOUNCE_MS } from '
 import { narrateChange } from './core/changes.js';
 import { injectTest, injectionStatus, startInjection } from './core/injection.js';
 import { LibraryItem, readLibrary, writeLibrary } from './core/library.js';
-import { recentreBoundTexts } from './core/labels.js';
-import {
-  expandForBoard, relabelBoundTexts, repairIndices, settleDeletions
-} from './core/expand-elements.js';
-import { overlapsRegion, remeasureLinear } from './core/geometry.js';
-import { bindingFromRef, bindingOf, boundEndpoint, centreOf } from './core/arrow-binding.js';
+import { overlapsRegion } from './core/geometry.js';
+import { applyElementInput } from './core/apply-element-input.js';
 import { frontendState, sourceState } from './core/staleness.js';
 
 // Load environment variables
@@ -630,12 +623,6 @@ function openBoards(): Array<Record<string, unknown>> {
   }));
 }
 
-function normalizeLineBreakMarkup(text: string): string {
-  return text
-    .replace(/<\s*b\s*r\s*\/?\s*>/gi, '\n')
-    .replace(/\n{3,}/g, '\n\n');
-}
-
 // Which board a request is about, and what is on it. `?board=` or a `board`
 // field in the body — and one of them has to be there. A request that names no
 // board is refused (ADR 0009); `what` is the name of the operation, so the
@@ -810,144 +797,6 @@ wss.on('connection', (ws: WebSocket, req) => {
     logger.error('WebSocket error:', error);
     clients.delete(ws);
   });
-});
-
-// Schema validation
-const CreateElementSchema = z.looseObject({
-  id: z.string().optional(), // Allow passing ID for MCP sync
-  type: z.enum(Object.values(EXCALIDRAW_ELEMENT_TYPES) as [ExcalidrawElementType, ...ExcalidrawElementType[]]),
-  x: z.number(),
-  y: z.number(),
-  width: z.number().optional(),
-  height: z.number().optional(),
-  backgroundColor: z.string().optional(),
-  strokeColor: z.string().optional(),
-  strokeWidth: z.number().optional(),
-  strokeStyle: z.string().optional(),
-  roughness: z.number().optional(),
-  opacity: z.number().optional(),
-  text: z.string().optional(),
-  label: z.object({
-    text: z.string()
-  }).optional(),
-  fontSize: z.number().optional(),
-  fontFamily: z.union([z.string(), z.number()]).optional(),
-  // Bound-text back-pointer — without it, zod strips containerId on import
-  // and re-imported bound labels detach from their containers
-  containerId: z.string().nullable().optional(),
-  // Excalidraw identity fields — preserve through import so re-exported
-  // scenes keep their stacking order, roughness seeds, and timestamps, and
-  // no-op import→export cycles stay byte-stable
-  index: z.string().nullable().optional(),
-  seed: z.number().optional(),
-  versionNonce: z.number().optional(),
-  updated: z.number().optional(),
-  groupIds: z.array(z.string()).optional(),
-  locked: z.boolean().optional(),
-  roundness: z.object({ type: z.number(), value: z.number().optional() }).nullable().optional(),
-  fillStyle: z.string().optional(),
-  // Arrow-specific properties
-  points: z.any().optional(),
-  // An arrow's refs are input only: converted to a binding on the way in and
-  // never stored (ADR 0015). `null` unbinds that end.
-  start: z.object({ id: z.string() }).nullable().optional(),
-  end: z.object({ id: z.string() }).nullable().optional(),
-  startArrowhead: z.string().nullable().optional(),
-  endArrowhead: z.string().nullable().optional(),
-  elbowed: z.boolean().optional(),
-  // Arrow binding properties (preserved for Excalidraw frontend)
-  startBinding: z.object({
-    elementId: z.string(),
-    focus: z.number().optional(),
-    gap: z.number().optional(),
-    fixedPoint: z.tuple([z.number(), z.number()]).nullable().optional(),
-    mode: z.string().optional(),
-  }).nullable().optional(),
-  endBinding: z.object({
-    elementId: z.string(),
-    focus: z.number().optional(),
-    gap: z.number().optional(),
-    fixedPoint: z.tuple([z.number(), z.number()]).nullable().optional(),
-    mode: z.string().optional(),
-  }).nullable().optional(),
-  boundElements: z.array(z.object({
-    id: z.string(),
-    type: z.enum(['arrow', 'text']),
-  })).nullable().optional(),
-  // Image-specific properties
-  fileId: z.string().optional(),
-  status: z.string().optional(),
-  scale: z.tuple([z.number(), z.number()]).optional(),
-});
-
-const UpdateElementSchema = z.looseObject({
-  id: z.string(),
-  type: z.enum(Object.values(EXCALIDRAW_ELEMENT_TYPES) as [ExcalidrawElementType, ...ExcalidrawElementType[]]).optional(),
-  x: z.number().optional(),
-  y: z.number().optional(),
-  width: z.number().optional(),
-  height: z.number().optional(),
-  backgroundColor: z.string().optional(),
-  strokeColor: z.string().optional(),
-  strokeWidth: z.number().optional(),
-  strokeStyle: z.string().optional(),
-  roughness: z.number().optional(),
-  opacity: z.number().optional(),
-  text: z.string().optional(),
-  originalText: z.string().optional(),
-  label: z.object({
-    text: z.string()
-  }).optional(),
-  fontSize: z.number().optional(),
-  fontFamily: z.union([z.string(), z.number()]).optional(),
-  // Bound-text back-pointer — without it, zod strips containerId on import
-  // and re-imported bound labels detach from their containers
-  containerId: z.string().nullable().optional(),
-  // Excalidraw identity fields — preserve through import so re-exported
-  // scenes keep their stacking order, roughness seeds, and timestamps, and
-  // no-op import→export cycles stay byte-stable
-  index: z.string().nullable().optional(),
-  seed: z.number().optional(),
-  versionNonce: z.number().optional(),
-  updated: z.number().optional(),
-  groupIds: z.array(z.string()).optional(),
-  locked: z.boolean().optional(),
-  roundness: z.object({ type: z.number(), value: z.number().optional() }).nullable().optional(),
-  fillStyle: z.string().optional(),
-  points: z.array(z.union([
-    z.tuple([z.number(), z.number()]),
-    z.object({ x: z.number(), y: z.number() })
-  ])).optional(),
-  // An arrow's refs are input only: converted to a binding on the way in and
-  // never stored (ADR 0015). `null` unbinds that end.
-  start: z.object({ id: z.string() }).nullable().optional(),
-  end: z.object({ id: z.string() }).nullable().optional(),
-  startArrowhead: z.string().nullable().optional(),
-  endArrowhead: z.string().nullable().optional(),
-  elbowed: z.boolean().optional(),
-  // Arrow binding properties (preserved for Excalidraw frontend)
-  startBinding: z.object({
-    elementId: z.string(),
-    focus: z.number().optional(),
-    gap: z.number().optional(),
-    fixedPoint: z.tuple([z.number(), z.number()]).nullable().optional(),
-    mode: z.string().optional(),
-  }).nullable().optional(),
-  endBinding: z.object({
-    elementId: z.string(),
-    focus: z.number().optional(),
-    gap: z.number().optional(),
-    fixedPoint: z.tuple([z.number(), z.number()]).nullable().optional(),
-    mode: z.string().optional(),
-  }).nullable().optional(),
-  boundElements: z.array(z.object({
-    id: z.string(),
-    type: z.enum(['arrow', 'text']),
-  })).nullable().optional(),
-  // Image-specific properties
-  fileId: z.string().optional(),
-  status: z.string().optional(),
-  scale: z.tuple([z.number(), z.number()]).optional(),
 });
 
 // ─── One writer at a time ─────────────────────────────────────
@@ -1345,40 +1194,26 @@ app.post('/api/elements', (req: Request, res: Response) => {
   try {
     const { key: boardKeyForRequest, board, content } = boardFromRequest(req, 'Creating an element');
     const elements = content.elements;
-    // Prioritize passed ID (for MCP sync), otherwise generate new ID
-    const element = buildCreatedElement(req.body, elements);
-    const id = element.id;
-    logger.info('Creating element via API', { type: element.type, board: boardKeyForRequest });
-
-    // Resolve arrow bindings against existing elements
-    if (element.type === 'arrow' || element.type === 'line') {
-      resolveArrowBindings([element], elements, true);
-    }
-    sizeFromPath(element);
-
-    // Converted here, because here is the boundary: a label becomes its text
-    // element before the board holds either of them.
-    const written = expandForBoard([element], elements);
-    for (const el of written) elements.set(el.id, el);
-    // z-order for whatever was just made, so the board holds a document the
-    // renderer does not have to repair (TASK-074).
-    const madeIds = new Set(written.map(el => el.id));
-    const repaired = repairIndices(elements).filter(el => !madeIds.has(el.id));
-    const stored = elements.get(id) as ServerElement;
+    const applied = applyElementInput(elements, {
+      upserts: [req.body],
+      origin: 'agent'
+    });
+    const stored = applied.named[0] as ServerElement;
+    logger.info('Creating element via API', { type: stored.type, board: boardKeyForRequest });
 
     // Into the note before anybody is told about it, so nothing is broadcast
     // that the vault does not hold (ADR 0015). A refused write throws here.
     const intoNote = persistBoard(boardKeyForRequest, board, content, 'agent');
 
     // Broadcast to all connected clients
-    for (const el of written) {
+    for (const element of applied.created) {
       broadcast({
         type: 'element_created',
-        element: elements.get(el.id) ?? el
+        element
       } as ElementCreatedMessage, boardKeyForRequest);
     }
-    for (const el of repaired) {
-      broadcast({ type: 'element_updated', element: el } as ElementUpdatedMessage, boardKeyForRequest);
+    for (const element of applied.updated) {
+      broadcast({ type: 'element_updated', element } as ElementUpdatedMessage, boardKeyForRequest);
     }
 
     res.json({
@@ -1390,7 +1225,7 @@ app.post('/api/elements', (req: Request, res: Response) => {
       ...agentWriteAnswer(
         board,
         content,
-        [...written.map(el => elements.get(el.id) ?? el), ...repaired],
+        [...applied.created, ...applied.updated],
         wantsDocument(req),
         intoNote
       )
@@ -1424,73 +1259,31 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
       });
     }
 
-    // One element's worth of the same write a batched report performs, so the
-    // two sizes of write cannot drift apart (see mergeElementUpdate).
-    const { element: updatedElement, geometryChanged, reboundArrow } =
-      mergeElementUpdate(existingElement, body);
-
-    elements.set(id, updatedElement);
-    if (reboundArrow) resolveArrowBindings([updatedElement], elements);
-
-    // A label this write states is either a rename of the text element that
-    // already carries it, or one that has to be expanded. Either way the
-    // element the board keeps is the converted one, seed consumed and gone —
-    // this route used to keep the merge and store only what the conversion
-    // added, which left the seed on the board for the next write to read
-    // (TASK-073).
-    const restated = restateLabels([updatedElement], elements);
-    const written = expandForBoard([updatedElement], elements);
-    for (const el of written) elements.set(el.id, el);
-    const expanded = written.filter(el => el.id !== id);
-    const namedIds = new Set([id, ...restated.map(el => el.id), ...expanded.map(el => el.id)]);
-    const repaired = repairIndices(elements).filter(el => !namedIds.has(el.id));
-
-    // Whatever moved, its label moves with it: the element itself, and — when a
-    // shape moved — every arrow the server dragged along behind it. A label
-    // that was just re-measured has moved too, by half the change in its width.
-    //
-    // Settled before the write rather than after the broadcasts, because these
-    // are part of what the board became and the note has to hold them.
-    const consequences = geometryChanged || reboundArrow || restated.length > 0
-      ? settleAfterWrite([id], elements)
-      : [];
+    const applied = applyElementInput(elements, {
+      upserts: [{ ...body, id }],
+      origin: 'agent'
+    });
 
     const intoNote = persistBoard(boardKeyForRequest, board, content, 'agent');
 
     // Broadcast to all connected clients
-    const message: ElementUpdatedMessage = {
-      type: 'element_updated',
-      element: elements.get(id) as ServerElement
-    };
-    broadcast(message, boardKeyForRequest);
-    for (const el of restated) {
-      broadcast({
-        type: 'element_updated',
-        element: elements.get(el.id) ?? el
-      } as ElementUpdatedMessage, boardKeyForRequest);
-    }
-    for (const el of expanded) {
+    for (const element of applied.created) {
       broadcast({
         type: 'element_created',
-        element: elements.get(el.id) ?? el
+        element
       } as ElementCreatedMessage, boardKeyForRequest);
     }
-    for (const el of repaired) {
-      broadcast({ type: 'element_updated', element: el } as ElementUpdatedMessage, boardKeyForRequest);
-    }
-    for (const element of consequences) {
+    for (const element of applied.updated) {
       broadcast({ type: 'element_updated', element } as ElementUpdatedMessage, boardKeyForRequest);
     }
 
     // Everything this one update turned into: the element, the label it
     // renamed or expanded, the arrows it dragged along, the z-order it fixed —
     // each in the form the board now holds it (TASK-075).
-    const touched = new Map<string, ServerElement>();
-    for (const el of [...restated, ...expanded, ...repaired, ...consequences]) {
-      const held = elements.get(el.id);
-      if (held) touched.set(el.id, held);
-    }
-    touched.set(id, elements.get(id) as ServerElement);
+    const touched = new Map(
+      [...applied.created, ...applied.updated].map(element => [element.id, element])
+    );
+    touched.set(id, applied.named[0] as ServerElement);
 
     res.json({
       success: true,
@@ -1567,27 +1360,27 @@ app.delete('/api/elements/:id', (req: Request, res: Response) => {
       });
     }
 
-    elements.delete(id);
-    // A label goes with the box it names, and nothing is left pointing at
-    // what has gone (TASK-074).
-    const { alsoDeleted, changed } = settleDeletions([id!], elements);
+    const applied = applyElementInput(elements, {
+      deletes: [id],
+      origin: 'agent'
+    });
 
     const intoNote = persistBoard(boardKeyForRequest, board, content, 'agent');
 
     // Broadcast to all connected clients
-    for (const elementId of [id!, ...alsoDeleted]) {
+    for (const elementId of applied.deleted) {
       broadcast({ type: 'element_deleted', elementId } as ElementDeletedMessage, boardKeyForRequest);
     }
-    for (const el of changed) {
-      broadcast({ type: 'element_updated', element: el } as ElementUpdatedMessage, boardKeyForRequest);
+    for (const element of applied.updated) {
+      broadcast({ type: 'element_updated', element } as ElementUpdatedMessage, boardKeyForRequest);
     }
 
     res.json({
       success: true,
       board: boardKeyForRequest,
       message: `Element ${id} deleted successfully`,
-      ...(alsoDeleted.length > 0 ? { alsoDeleted } : {}),
-      ...agentWriteAnswer(board, content, changed, wantsDocument(req), intoNote)
+      ...(applied.deleted.length > 1 ? { alsoDeleted: applied.deleted.slice(1) } : {}),
+      ...agentWriteAnswer(board, content, applied.updated, wantsDocument(req), intoNote)
     });
   } catch (error) {
     logger.error('Error deleting element:', error);
@@ -1673,320 +1466,6 @@ app.get('/api/elements/:id', (req: Request, res: Response) => {
   }
 });
 
-// Restate a path element's width and height from the path itself, and say
-// whether that changed anything.
-//
-// A linear element keeps its size in its points, and its `x, y` is the first
-// of them rather than a top-left corner (geometry.ts). Every reader that
-// places an arrow reads these numbers, so the server owes them the truth
-// wherever it writes a path: on creation, on a re-route, and on a caller
-// manually re-pointing an arrow.
-function sizeFromPath(element: ServerElement): boolean {
-  const measured = remeasureLinear(element);
-  if (!measured) return false;
-  element.width = measured.width;
-  element.height = measured.height;
-  return true;
-}
-
-/** A linear element's path in scene coordinates. */
-function pathOf(el: ServerElement): { x: number; y: number }[] {
-  const raw = Array.isArray(el.points) && el.points.length >= 2
-    ? el.points
-    : [[0, 0], [100, 0]];
-  return raw.map((point: any) => ({
-    x: el.x + (Array.isArray(point) ? Number(point[0]) : Number(point?.x)),
-    y: el.y + (Array.isArray(point) ? Number(point[1]) : Number(point?.y))
-  }));
-}
-
-/**
- * Put every bound end of these arrows back where its binding says.
- *
- * `startBinding` and `endBinding` are the only lever. The agent's `start` and
- * `end` refs are an input format, converted at the boundary and gone before
- * anything is stored (ADR 0015), so there is nothing here for a human dragging
- * an end to leave stale — which is what it was, and what silently undid their
- * edit the next time some unrelated shape moved (TASK-088).
- *
- * Each end goes where its own binding puts it: at `focus` around the shape and
- * `gap` short of its outline, both of them the binding's own numbers. That is
- * what makes re-routing safe for an arrow a person drew, because where they
- * attached it is exactly what those two numbers record. Nothing here asks who
- * drew an arrow; a board is drawn on by both.
- *
- * Only the bound ends move. A user-drawn arrow with a bend keeps it, where the
- * old routing overwrote every path with a straight line between two shapes.
- *
- * `newlyDrawn` says where the aim is taken from. An arrow already on the board
- * has a path, and Excalidraw aims each end from the arrow's own next point.
- * One an agent has just written has whatever points came with it, usually a
- * placeholder, so it aims from the bound shapes' centres instead — which at
- * `focus: 0` lands on the centre-to-centre line and stays there when this runs
- * again.
- */
-function resolveArrowBindings(
-  batchElements: ServerElement[],
-  boardElements: Map<string, ServerElement>,
-  newlyDrawn = false
-): void {
-  const elementMap = new Map<string, ServerElement>();
-  batchElements.forEach(el => elementMap.set(el.id, el));
-
-  // Also check existing elements on the same board for cross-batch references
-  boardElements.forEach((el, id) => {
-    if (!elementMap.has(id)) elementMap.set(id, el);
-  });
-
-  for (const el of batchElements) {
-    if (el.type !== 'arrow' && el.type !== 'line') continue;
-    // An elbow arrow's path is an orthogonal route rather than a line between
-    // its ends, and Excalidraw recomputes the whole of it from both bindings.
-    // Moving one point of it here would leave a route that no longer turns
-    // square corners, so it is left to the thing that can draw it.
-    if ((el as any).elbowed === true) continue;
-
-    const startBinding = bindingOf((el as any).startBinding);
-    const endBinding = bindingOf((el as any).endBinding);
-    const startEl = startBinding ? elementMap.get(startBinding.elementId) : undefined;
-    const endEl = endBinding ? elementMap.get(endBinding.elementId) : undefined;
-    if (!startEl && !endEl) continue;
-
-    const points = pathOf(el);
-    const last = points.length - 1;
-    const straight = points.length === 2;
-
-    // Both ends read the same state, the way Excalidraw computes them.
-    const startAim = newlyDrawn && straight && endEl ? centreOf(endEl) : points[1]!;
-    const endAim = newlyDrawn && straight && startEl ? centreOf(startEl) : points[last - 1]!;
-
-    if (startBinding && startEl) {
-      points[0] = boundEndpoint(startEl, startBinding, startAim, points[0]!);
-    }
-    if (endBinding && endEl) {
-      points[last] = boundEndpoint(endEl, endBinding, endAim, points[last]!);
-    }
-
-    // Set arrow position and points, and say how big the arrow now is: writing
-    // a path without re-measuring left every arrow the server had re-routed
-    // recorded at the size it used to be (TASK-038).
-    const origin = points[0]!;
-    el.x = origin.x;
-    el.y = origin.y;
-    el.points = points.map(point => [point.x - origin.x, point.y - origin.y]);
-    sizeFromPath(el);
-  }
-}
-
-// After a shape's geometry changes, recompute every arrow bound to it so the
-// visual connection follows the shape — bindings are otherwise only resolved
-// at creation time, which left arrows floating at stale coordinates when
-// update/align/distribute moved their endpoints. Returns the re-routed arrows.
-function rerouteBoundArrows(movedId: string, boardElements: Map<string, ServerElement>): ServerElement[] {
-  const rerouted: ServerElement[] = [];
-  boardElements.forEach(el => {
-    if (el.type !== 'arrow' && el.type !== 'line') return;
-    const joins = (binding: unknown) => bindingOf(binding)?.elementId === movedId;
-    if (!joins((el as any).startBinding) && !joins((el as any).endBinding)) return;
-    resolveArrowBindings([el], boardElements);
-    el.updatedAt = new Date().toISOString();
-    el.version = (el.version || 0) + 1;
-    rerouted.push(el);
-  });
-  return rerouted;
-}
-
-// A label belongs to the thing it names, so moving that thing has to move the
-// label with it. Excalidraw recomputes a bound text's position from its
-// container on every draw, which is why nothing on screen ever complained
-// about this — but the stored coordinates are what the scene bounding box,
-// zoom-to-fit, the crop of an image export and layout.ts's relative-position
-// signals all read, and those had been reading a label the board left behind
-// (TASK-034). Returns the text elements that moved, for broadcasting.
-function settleBoundTexts(
-  containerIds: string[],
-  boardElements: Map<string, ServerElement>
-): ServerElement[] {
-  if (containerIds.length === 0) return [];
-  const moved: ServerElement[] = [];
-  for (const move of recentreBoundTexts([...boardElements.values()], containerIds)) {
-    const text = boardElements.get(move.id);
-    if (!text) continue;
-    text.x = move.x;
-    text.y = move.y;
-    text.updatedAt = new Date().toISOString();
-    text.version = (text.version || 0) + 1;
-    moved.push(text);
-  }
-  return moved;
-}
-
-// ─── One write, at either size ────────────────────────────────
-//
-// A single-element route and a batched change report are the same write in
-// different quantities: one element's merge, one element's creation, and the
-// settling the board owes whatever moved. Three functions, called by both, and
-// not three pairs of functions that have to agree — a batched write quietly
-// doing less than a PUT would be a second update path nobody had written down.
-// One intent is one write (ADR 0015), and it has to be the same write.
-
-interface ElementMerge {
-  element: ServerElement;
-  /** It moved, grew or was re-pathed, so whatever hangs off it has to follow. */
-  geometryChanged: boolean;
-  /** An arrow was pointed at something else, which is a re-route, not an annotation. */
-  reboundArrow: boolean;
-}
-
-/** Merge one caller's statement into the element the board is holding. */
-function mergeElementUpdate(existing: ServerElement, body: Record<string, any>): ElementMerge {
-  const { board: _boardField, ...updates } =
-    UpdateElementSchema.parse({ ...body, id: existing.id }) as Record<string, any>;
-
-  const element: ServerElement = {
-    ...existing,
-    ...updates,
-    fontFamily: updates.fontFamily !== undefined ? normalizeFontFamily(updates.fontFamily) : existing.fontFamily,
-    updatedAt: new Date().toISOString(),
-    version: (existing.version || 0) + 1
-  };
-
-  // Keep Excalidraw text source in sync when clients update text via REST.
-  // If originalText lags behind text, rendered wrapping/position can drift.
-  const hasTextUpdate = Object.prototype.hasOwnProperty.call(body, 'text');
-  const hasOriginalTextUpdate = Object.prototype.hasOwnProperty.call(body, 'originalText');
-  if (element.type === EXCALIDRAW_ELEMENT_TYPES.TEXT && hasTextUpdate && !hasOriginalTextUpdate) {
-    const incomingText = updates.text ?? '';
-    const existingText = typeof existing.text === 'string' ? existing.text : '';
-    const existingOriginalText = typeof existing.originalText === 'string'
-      ? existing.originalText
-      : '';
-    const existingOriginalHasBr = /<\s*b\s*r\s*\/?\s*>/i.test(existingOriginalText);
-    const normalizedExistingText = normalizeLineBreakMarkup(existingText);
-    const normalizedExistingOriginalText = normalizeLineBreakMarkup(existingOriginalText);
-
-    // Handle common cleanup flow: caller normalizes the rendered text value.
-    // In this case, prefer normalized originalText so words aren't split by stale wraps.
-    if (existingOriginalHasBr && incomingText === normalizedExistingText && normalizedExistingOriginalText) {
-      element.text = normalizedExistingOriginalText;
-      element.originalText = normalizedExistingOriginalText;
-    } else {
-      element.originalText = incomingText;
-    }
-  }
-
-  const changed = (key: string) => Object.prototype.hasOwnProperty.call(body, key);
-
-  // Spent here, so what goes on the board is a binding and not two spellings
-  // of one fact (TASK-088).
-  spendArrowRefs(element as Record<string, any>, body);
-
-  // New points, new size. Width and height are not a second opinion about a
-  // linear element, they are the size of its path, so a caller that states
-  // the path has stated them too and any it sent alongside is the old
-  // arrow's (TASK-038).
-  if (changed('points')) sizeFromPath(element);
-
-  const isLinear = element.type === 'arrow' || element.type === 'line';
-  return {
-    element,
-    geometryChanged: ['x', 'y', 'width', 'height', 'points', 'angle'].some(changed),
-    // Pointing an arrow at a different shape is a re-route, not an annotation,
-    // so the path is recomputed now rather than whenever some shape it is
-    // bound to next happens to move. `start` and `end` are here as input: they
-    // are the agent's spelling of a binding, spent above and gone by now.
-    reboundArrow: isLinear && ['start', 'end', 'startBinding', 'endBinding'].some(changed)
-  };
-}
-
-/**
- * A label this write renamed, written into the text element that carries it
- * and put back on the board. `relabelBoundTexts` decides; this is the
- * bookkeeping the board owes on top, and `settleAfterWrite` moves the label
- * afterwards because it is now a different width.
- */
-function restateLabels(
-  written: ServerElement[],
-  boardElements: Map<string, ServerElement>
-): ServerElement[] {
-  const restated = relabelBoundTexts(written, boardElements);
-  for (const element of restated) {
-    element.updatedAt = new Date().toISOString();
-    element.version = (boardElements.get(element.id)?.version || 0) + 1;
-    boardElements.set(element.id, element);
-  }
-  return restated;
-}
-
-/**
- * An arrow's `start` and `end` refs, spent on the way in.
- *
- * They are the agent's spelling of a binding and the last thing left that was
- * stored in two shapes at once. A ref names a shape and nothing else, so it
- * becomes a centred binding; a caller who says nothing about an end leaves the
- * binding that end already had, and one who says `start: null` unbinds it.
- * After this the board holds one answer to what an arrow touches, which is
- * what stopped a human's re-bind being undone (TASK-088, ADR 0015).
- */
-function spendArrowRefs(element: Record<string, any>, stated: Record<string, any>): void {
-  if (element.type !== 'arrow' && element.type !== 'line') return;
-  for (const [ref, binding] of [['start', 'startBinding'], ['end', 'endBinding']] as const) {
-    // A ref this caller did not state is deleted and nothing more. An element
-    // read from a note somebody's board has carried since before this may
-    // still have one, and it is that copy going stale that the bug was.
-    const said = Object.prototype.hasOwnProperty.call(stated, ref);
-    const value = element[ref];
-    delete element[ref];
-    if (said) element[binding] = bindingFromRef(value);
-  }
-}
-
-/** Build one new element from what a caller stated. Not yet on the board. */
-function buildCreatedElement(raw: unknown, inUse: IdsInUse): ServerElement {
-  const params = CreateElementSchema.parse(raw);
-  const { board: _boardField, ...elementParams } = params as typeof params & { board?: string };
-  const element = {
-    id: params.id || mintId(inUse),
-    ...elementParams,
-    fontFamily: normalizeFontFamily(params.fontFamily),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    version: 1
-  } as ServerElement;
-  spendArrowRefs(element as Record<string, any>, elementParams as Record<string, any>);
-  return element;
-}
-
-/**
- * What the board owes whatever just moved: every arrow bound to it re-routed,
- * and every bound label put back where the thing it names now is. Returns what
- * it moved, once each, for whoever is broadcasting.
- *
- * A label that was itself re-measured is re-placed by its container, because it
- * is half a size bigger and therefore half a size off centre.
- */
-function settleAfterWrite(movedIds: string[], elements: Map<string, ServerElement>): ServerElement[] {
-  if (movedIds.length === 0) return [];
-  const settled: string[] = [];
-  const moved = new Map<string, ServerElement>();
-  for (const id of movedIds) {
-    const element = elements.get(id);
-    if (!element) continue;
-    settled.push(id);
-    if (typeof element.containerId === 'string' && element.containerId) {
-      settled.push(element.containerId);
-    }
-    if (element.type !== 'arrow' && element.type !== 'line') {
-      for (const arrow of rerouteBoundArrows(id, elements)) {
-        moved.set(arrow.id, arrow);
-        settled.push(arrow.id);
-      }
-    }
-  }
-  for (const text of settleBoundTexts(settled, elements)) moved.set(text.id, text);
-  return Array.from(moved.values());
-}
-
 // Batch create elements
 app.post('/api/elements/batch', (req: Request, res: Response) => {
   try {
@@ -2001,46 +1480,24 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
       });
     }
 
-    // The batch reaches the board's map only after bindings are resolved, so
-    // an id minted here has to avoid what the batch has already named as well
-    // as what the board holds.
-    const mintedInBatch = new Set<string>();
-    const taken = { has: (id: string) => elements.has(id) || mintedInBatch.has(id) };
-
-    // Prioritize passed ID (for MCP sync), otherwise generate new ID
-    const createdElements: ServerElement[] = elementsToCreate.map(elementData => {
-      const element = buildCreatedElement(elementData, taken);
-      mintedInBatch.add(element.id);
-      return element;
+    const applied = applyElementInput(elements, {
+      upserts: elementsToCreate,
+      origin: 'agent'
     });
-
-    // Resolve arrow bindings (computes positions, startBinding, endBinding, boundElements)
-    resolveArrowBindings(createdElements, elements, true);
-
-    // An arrow drawn as a bare path, bound to nothing, never went through the
-    // re-router, so this is where its size gets stated (TASK-038).
-    createdElements.forEach(sizeFromPath);
-
-    // Converted once, on the way in (ADR 0015), so the count that comes back
-    // is the count the board holds: a labelled box is a box and its label.
-    const written = expandForBoard(createdElements, elements);
-    written.forEach(el => elements.set(el.id, el));
-    // z-order, so the board holds a document the renderer does not have to
-    // repair (TASK-074).
-    const madeIds = new Set(written.map(el => el.id));
-    const repaired = repairIndices(elements).filter(el => !madeIds.has(el.id));
-    const stored = written.map(el => elements.get(el.id) ?? el);
+    const stored = applied.created;
 
     const intoNote = persistBoard(boardKeyForRequest, board, content, 'agent');
 
     // Broadcast to all connected clients
-    const message: BatchCreatedMessage = {
-      type: 'elements_batch_created',
-      elements: stored
-    };
-    broadcast(message, boardKeyForRequest);
-    for (const el of repaired) {
-      broadcast({ type: 'element_updated', element: el } as ElementUpdatedMessage, boardKeyForRequest);
+    if (applied.created.length > 0) {
+      const message: BatchCreatedMessage = {
+        type: 'elements_batch_created',
+        elements: applied.created
+      };
+      broadcast(message, boardKeyForRequest);
+    }
+    for (const element of applied.updated) {
+      broadcast({ type: 'element_updated', element } as ElementUpdatedMessage, boardKeyForRequest);
     }
 
     res.json({
@@ -2049,7 +1506,13 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
       count: stored.length,
       // `elements` here has always been what the write produced; the
       // fingerprint and the opt-in document are what TASK-075 adds.
-      ...agentWriteAnswer(board, content, [...stored, ...repaired], wantsDocument(req), intoNote)
+      ...agentWriteAnswer(
+        board,
+        content,
+        [...applied.created, ...applied.updated],
+        wantsDocument(req),
+        intoNote
+      )
     });
   } catch (error) {
     logger.error('Error batch creating elements:', error);
@@ -2205,12 +1668,6 @@ const ElementChangesSchema = z.object({
   fullReport: z.boolean().default(false)
 });
 
-interface AppliedChanges {
-  created: ServerElement[];
-  updated: ServerElement[];
-  deleted: string[];
-}
-
 /**
  * What an agent gets back from a write, and deliberately not what a pane gets.
  *
@@ -2298,182 +1755,6 @@ function wantsDocument(req: Request): boolean {
   return asked === true || asked === '1' || asked === 'true';
 }
 
-/**
- * What the board owes the write, once the write itself has been applied: a
- * label that goes with the box it named, references that point at something,
- * and a z-order.
- *
- * Every write ends here, because the answer to a write is the resulting
- * document (ADR 0015) and a document is not a result if the renderer has to
- * repair it first. Two repairs the pane was quietly making on a server update
- * are now
- * made once, here, where they are part of what the board became and everybody
- * is told: `elementsForScene` nulls a `containerId` pointing at a deleted
- * container, and Excalidraw assigns an `index` to an element that has none.
- * `scripts/check-live-session.mjs` caught both as the pane and the server
- * disagreeing about a document.
- */
-function settleDocument(
-  applied: AppliedChanges,
-  elements: Map<string, ServerElement>
-): AppliedChanges {
-  const { alsoDeleted, changed } = settleDeletions(applied.deleted, elements);
-  const repaired = repairIndices(elements);
-  if (alsoDeleted.length === 0 && changed.length === 0 && repaired.length === 0) return applied;
-
-  const created = new Map(applied.created.map(element => [element.id, element]));
-  const updated = new Map(applied.updated.map(element => [element.id, element]));
-  for (const element of [...changed, ...repaired]) {
-    if (created.has(element.id)) created.set(element.id, element);
-    else updated.set(element.id, element);
-  }
-  // An element the write made and this then took away is gone, not created.
-  for (const id of alsoDeleted) {
-    created.delete(id);
-    updated.delete(id);
-  }
-  return {
-    created: Array.from(created.values()).filter(element => elements.has(element.id)),
-    updated: Array.from(updated.values()).filter(element => elements.has(element.id)),
-    deleted: [...applied.deleted, ...alsoDeleted]
-  };
-}
-
-/**
- * A browser's report of what a person did. The browser holds the elements, so
- * this is a merge and nothing more: no re-routing, no re-placing of labels,
- * because Excalidraw has already done all of that on screen and reported it.
- */
-function applyReportedChanges(
-  elements: Map<string, ServerElement>,
-  upserts: Record<string, any>[],
-  deletes: string[],
-  now: string,
-  timestamp?: string
-): AppliedChanges {
-  const created: ServerElement[] = [];
-  const updated: ServerElement[] = [];
-
-  for (const raw of upserts) {
-    const {
-      board: _board,
-      id: rawId,
-      createdAt: _createdAt,
-      updatedAt: _updatedAt,
-      version: _version,
-      syncedAt: _syncedAt,
-      source: _source,
-      syncTimestamp: _syncTimestamp,
-      ...incoming
-    } = raw as Record<string, any>;
-    const id = typeof rawId === 'string' && rawId.length > 0 ? rawId : mintId(elements);
-    const existing = elements.get(id);
-    const element = {
-      ...(existing ?? {}),
-      ...incoming,
-      id,
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
-      version: (existing?.version ?? 0) + 1,
-      source: 'frontend_sync',
-      syncedAt: now,
-      ...(timestamp ? { syncTimestamp: timestamp } : {})
-    } as ServerElement;
-    elements.set(id, element);
-    (existing ? updated : created).push(element);
-  }
-
-  // Only ids the board actually holds. A client naming something already
-  // gone is telling the server news it already has, not making an error.
-  const deleted: string[] = [];
-  for (const id of deletes) {
-    if (elements.delete(id)) deleted.push(id);
-  }
-
-  return settleDocument({ created, updated, deleted }, elements);
-}
-
-/**
- * An agent's write, however many elements it names. Every element gets what the
- * single-element routes give it — the same merge, the same creation, the same
- * bindings — and the board settles once at the end rather than once per
- * element, so an arrow between two boxes that both moved is re-routed after
- * both moves instead of after each.
- *
- * An upsert whose id the board does not hold is a creation, which is what makes
- * a patch of creates, updates and deletes one write.
- */
-function applyAgentChanges(
-  elements: Map<string, ServerElement>,
-  upserts: Record<string, any>[],
-  deletes: string[]
-): AppliedChanges {
-  const created: ServerElement[] = [];
-  const updated = new Map<string, ServerElement>();
-  const moved: string[] = [];
-
-  const written: ServerElement[] = [];
-  for (const raw of upserts) {
-    const rawId = typeof raw.id === 'string' && raw.id.length > 0 ? raw.id : undefined;
-    const existing = rawId ? elements.get(rawId) : undefined;
-    if (existing) {
-      const merge = mergeElementUpdate(existing, raw);
-      elements.set(existing.id, merge.element);
-      if (merge.reboundArrow) resolveArrowBindings([merge.element], elements);
-      if (merge.geometryChanged || merge.reboundArrow) moved.push(existing.id);
-      updated.set(existing.id, merge.element);
-      written.push(merge.element);
-    } else {
-      const element = buildCreatedElement(raw, elements);
-      elements.set(element.id, element);
-      created.push(element);
-      written.push(element);
-    }
-  }
-
-  // Bindings resolve once every element in the write is on the board, so an
-  // arrow can be created in the same write as the shapes it joins.
-  if (created.length > 0) {
-    resolveArrowBindings(created, elements, true);
-    created.forEach(sizeFromPath);
-  }
-
-  // And then the one conversion, over everything this write named, once the
-  // geometry it depends on has settled (ADR 0015).
-  for (const label of restateLabels(written, elements)) {
-    updated.set(label.id, label);
-    moved.push(label.id);
-  }
-  const namedIds = new Set(written.map(el => el.id));
-  for (const el of expandForBoard(written, elements)) {
-    elements.set(el.id, el);
-    if (namedIds.has(el.id)) {
-      if (updated.has(el.id)) updated.set(el.id, el);
-      const at = created.findIndex(c => c.id === el.id);
-      if (at !== -1) created[at] = el;
-    } else {
-      created.push(el);
-    }
-  }
-
-  const deleted: string[] = [];
-  for (const id of deletes) {
-    if (elements.delete(id)) deleted.push(id);
-  }
-
-  for (const element of settleAfterWrite(moved, elements)) {
-    if (!elements.has(element.id)) continue;
-    updated.set(element.id, element);
-  }
-
-  // An element written and then deleted in the same intent is gone, not changed.
-  return settleDocument({
-    created,
-    updated: Array.from(updated.values()).filter(element => elements.has(element.id)),
-    deleted
-  }, elements);
-}
-
 app.post('/api/elements/changes', (req: Request, res: Response) => {
   try {
     const { key: boardKeyForRequest, board, content } = boardFromRequest(req, 'A change report');
@@ -2508,9 +1789,12 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
     }
 
     const now = new Date().toISOString();
-    const { created, updated, deleted } = origin === 'agent'
-      ? applyAgentChanges(elements, upserts, deletes)
-      : applyReportedChanges(elements, upserts, fullReport ? [] : deletes, now, timestamp);
+    const { created, updated, deleted } = applyElementInput(elements, {
+      upserts,
+      deletes: fullReport ? [] : deletes,
+      origin,
+      timestamp
+    });
 
     let intoNote: WrittenNote | null = null;
     if (fullReport || created.length > 0 || updated.length > 0 || deleted.length > 0) {
