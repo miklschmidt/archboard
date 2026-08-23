@@ -346,13 +346,12 @@ export function readBoardContent(board: BoardState): BoardContent {
 export function renderContent(
   identity: BoardState['identity'],
   content: BoardContent,
-  elements: ServerElement[] = Array.from(content.elements.values()),
   existingNote: string | null | undefined = content.note
 ): { note: string; bytes: Buffer; elementCount: number } {
   const files: Record<string, ExcalidrawFile> = {};
   content.files.forEach((file, id) => { files[id] = file; });
   const { scene, elementCount } = buildScene(
-    elements,
+    Array.from(content.elements.values()),
     files as unknown as Record<string, any>,
     { keepServerFields: true }
   );
@@ -626,7 +625,6 @@ export function writeBoardContent(
   const rendered = renderContent(
     identity,
     content,
-    Array.from(content.elements.values()),
     // The destination's own frontmatter and prose, not the source's: a save-as
     // onto an existing note keeps what that note's author put there.
     destination?.toString('utf-8')

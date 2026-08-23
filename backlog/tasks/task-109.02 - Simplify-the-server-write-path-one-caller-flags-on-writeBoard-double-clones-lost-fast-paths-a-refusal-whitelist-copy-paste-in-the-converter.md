@@ -3,9 +3,11 @@ id: TASK-109.02
 title: >-
   Simplify the server write path: one-caller flags on writeBoard, double clones,
   lost fast paths, a refusal whitelist, copy-paste in the converter
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-23 19:35'
+updated_date: '2026-08-23 19:44'
 labels: []
 dependencies: []
 references:
@@ -64,3 +66,15 @@ SIMPLIFICATION
 - [ ] #3 A board-carrying refusal is recognised by its shape on the client; the MCP element schema is the server's or a pass-through, and `test:parity` checks field parity
 - [ ] #4 `bun run type-check`, `test:one-write`, `test:lock`, `test:version`, `test:doing`, `test:changes`, `test:boards`, `test:labels`, `test:geometry`, `test:mcp`, `test:parity`, `test:module-scope` pass
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Simplify the board write entry first: replace the explicit-save flag combination with one save request that skips held writes and releases the hold after persistence; derive whole-scene mutation behavior inside elementMutation; remove the double clone, make destination state lazy/read-only, restore no-op defaults, and reuse held-write and file helpers.\n2. Simplify element conversion: restore settleDocument's early return, share point/default-path/version/property helpers, merge the agent/human common tail, and take only small binding-index improvements that preserve the current converter order.\n3. Consolidate client and MCP refusal handling: recognize board-carrying refusals by shape, export one refusal-code set for exit status, rethrow non-connection sync failures, preserve context and structured error fields, and replace the dispatcher element schema copy with the converter's schema.\n4. Remove the remaining repeated and dead code: one server board-error responder, shared claim cleanup, shared scene import/export ownership, concurrent scene reads, derivable version remembering, unused imports/exports, and redundant render arguments.\n5. Extend surface parity to compare advertised MCP element fields with the converter schema, then run the allowed focused checks. Record a one-line skip reason for any finding not changed.\n6. Commit each coherent finding group with explicit paths, append evidence to TASK-109.02 after each slice, read task-finalization, check acceptance criteria against the allowed validation list, add the final summary, and move the task to Done.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Slice 1 complete (A1, A5, A8, E1, E4, E8, S4, S6, S9, S11): writeBoard now owns the explicit-save ritual through save: { target, force }; elementMutation derives full-scene clearing/deletion/no-op behavior from wholeScene; board writes clone elements once and copy the files Map without cloning image payloads; held writes carry their rendered hash; version remembering uses the write result when available; held-note decisions use writesBoardNote; redundant imports, empty deltas, and render arguments are gone. Evidence: bun run type-check passed; test:one-write passed 70 checks; test:lock passed 119 checks; test:version passed 65 checks.
+<!-- SECTION:NOTES:END -->
