@@ -63,8 +63,7 @@ import {
   ingestScene,
   LoadedBoard,
   readBoardContent,
-  readBoardFile,
-  writeBoardContent
+  readBoardFile
 } from './core/board-io.js';
 import {
   BoardHeldError,
@@ -3031,7 +3030,7 @@ app.post('/api/boards/new', (req: Request, res: Response) => {
 app.post('/api/boards/save', (req: Request, res: Response) => {
   try {
     const body = req.body ?? {};
-    const source = boardFromRequest(req, 'Saving a board');
+    const source = boardTargetFromRequest(req, 'Saving a board');
     const sourceBoard = source.board;
     // The human's "overwrite it anyway" — one of the three outcomes a conflict
     // offers. Never set by archboard on its own behalf.
@@ -3048,7 +3047,7 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     // always did this, by keeping the source's identity; `--as` built a fresh
     // one and dropped it.
     const level = body.level ?? sourceBoard.identity.level;
-    const target: BoardIdentity = body.name
+    const targetIdentity: BoardIdentity = body.name
       ? identityFromParams({ board: String(body.name), variant: body.variant, level })
       : {
         ...sourceBoard.identity,
@@ -3056,8 +3055,8 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
         ...(level ? { level: validateLevel(String(level)) } : {})
       };
 
-    const file = vaultPathFor(target);
-    const targetKey = boardKey(target);
+    const file = vaultPathFor(targetIdentity);
+    const targetKey = boardKey(targetIdentity);
     // Saving under another address is branching, and the branch is a board of
     // its own variant, so every node on it is restamped to say so. Without
     // that, `save --as payments@option-a` leaves twelve nodes claiming
@@ -3069,10 +3068,6 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     // Both senses of "wrote somewhere else": naming scratch and branching a
     // board that has a home. They differ over panes, not over elements.
     const branched = kind !== 'same-board';
-    const saved = branched
-      ? restampVariant(Array.from(source.content.elements.values()), target.variant)
-      : Array.from(source.content.elements.values());
-
     // Who was looking at the board that was saved. Whether they move depends
     // on what the save was: giving the scratch board a name renames the thing
     // in front of them, branching writes a second board and leaves the first
@@ -3080,94 +3075,76 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     const watching = Array.from(panes.values()).filter(
       pane => (paneBoards.get(pane.clientId) ?? pane.board) === source.key
     );
-    const { board: savedBoard } = getOrCreateBoard(target);
+    const { board: savedBoard } = getOrCreateBoard(targetIdentity);
     savedBoard.file = file;
-    // The destination's own frontmatter is picked up by the write; the images
-    // are the source board's, and `buildScene` narrows them to the ones the
-    // elements being written actually draw. That narrowing is what stops a save
-    // carrying another board's pictures (TASK-060).
-    const written = writeBoardContent(savedBoard, source.content, {
-      file,
-      force,
-      identity: target,
-      elements: saved,
-      saveCommand: body.name ? `board save --as ${targetKey}` : 'board save'
-    });
-    const { elementCount } = written;
-    const overwrote = written.overwrote;
-    savedBoard.savedAt = new Date().toISOString();
-
-    // Two of ADR 0006's three outcomes are this route, and both have just
-    // happened: the held copy went over the note it could not have gone over on
-    // its own (`--force`), or it went somewhere else and left the note alone
-    // (`--as`). Either way the board is saving again, and the human chose which
-    // (TASK-079). A plain save of a held board never reaches here — the hash
-    // check refuses it, which is how the Save button asks the question again.
+    const target: BoardWriteTarget = { key: targetKey, board: savedBoard };
     const heldSource = holdOn(source.key);
-    if (heldSource) releaseBoardHold(source.key, branched ? 'elsewhere' : 'overwrite');
-    // What the board just written holds, so the answer and any pane that
-    // follows the save are built from it rather than from a second read.
-    const savedContent: BoardContent = {
-      elements: new Map(saved.map(element => [element.id, element])),
-      files: source.content.files,
-      note: written.note,
-      hash: written.hash,
-      version: written.version
-    };
-    // A branch normally moves nothing: you branched in order to compare, and
-    // taking the source off screen is the opposite of what was asked for
-    // (ADR 0012). Saving a HELD board elsewhere is the one branch that does
-    // move, for the same reason naming the scratch board does — the two boards
-    // hold the same drawing and there is nothing to stay behind for. Staying
-    // behind here is worse than nothing to stay behind for: the source is
-    // saving again now, so its pane would be repainted with the other editor's
-    // note, and the human would watch their own work leave the screen a second
-    // after being told it was safe.
     const moved = panesFollowSave(kind) || (heldSource && branched) ? watching : [];
-    for (const pane of moved) switchPaneTo(pane, targetKey, savedContent);
 
-    logger.info(
-      `Board saved: "${targetKey}" (${elementCount} elements) -> ${file}` +
-      (kind === 'same-board' ? '' : ` [${kind}]`) +
-      (moved.length ? `, panes moved: ${moved.map(pane => pane.paneId).join(', ')}` : '')
-    );
-    res.json({
-      success: true,
-      ...identityResponse(targetKey, savedBoard, savedContent),
-      file,
-      elements: elementCount,
-      overwrote,
-      ...(force && overwrote ? { forced: true } : {}),
-      // What the save did to the screen, named the way `board open` names it.
-      // A branch moves nothing, so `kept` is how the answer says the source is
-      // still where it was and the board just written is not on show anywhere.
-      // A save back to the board's own note had no screen decision to make, so
-      // both lists are empty rather than reporting panes that were never at
-      // risk of moving.
-      saveKind: kind,
-      savedFrom: source.key,
-      // What this save did about a board that had stopped saving, so the answer
-      // can say which of the three outcomes was just taken and what it cost.
-      ...(heldSource
-        ? {
-          resolvedHold: {
-            board: source.key,
-            outcome: branched ? 'elsewhere' : 'overwrite',
-            writes: heldSource.writes,
-            since: heldSource.since
+    res.json(writeBoard({
+      source,
+      target,
+      origin: 'agent',
+      // Save is the explicit resolution for a held board. It writes the note
+      // chosen by the person instead of adding another change to the held copy.
+      persistHeld: true,
+      force,
+      saveCommand: body.name ? `board save --as ${targetKey}` : 'board save',
+      mutation: (content, destinationBefore) => {
+        const saved = branched
+          ? restampVariant(Array.from(content.elements.values()), targetIdentity.variant)
+          : Array.from(content.elements.values());
+        content.elements = new Map(saved.map(element => [element.id, element]));
+        const savedIds = new Set(saved.map(element => element.id));
+        return {
+          value: null,
+          delta: kind === 'same-board'
+            ? { created: [], updated: [], deleted: [] }
+            : {
+              created: saved.filter(element => !destinationBefore.elements.has(element.id)),
+              updated: saved.filter(element => destinationBefore.elements.has(element.id)),
+              deleted: Array.from(destinationBefore.elements.keys()).filter(id => !savedIds.has(id))
+            }
+        };
+      },
+      afterPersist: ({ content, written }) => {
+        if (heldSource) releaseBoardHold(source.key, branched ? 'elsewhere' : 'overwrite');
+        for (const pane of moved) switchPaneTo(pane, targetKey, content);
+        logger.info(
+          `Board saved: "${targetKey}" (${written?.elementCount ?? content.elements.size} elements) -> ${file}` +
+          (kind === 'same-board' ? '' : ` [${kind}]`) +
+          (moved.length ? `, panes moved: ${moved.map(pane => pane.paneId).join(', ')}` : '')
+        );
+      },
+      answer: ({ content, written }) => {
+        if (!written) throw new Error(`Saving "${targetKey}" did not write its note.`);
+        return {
+          success: true,
+          ...identityResponse(targetKey, savedBoard, content),
+          file,
+          elements: written.elementCount,
+          overwrote: written.overwrote,
+          ...(force && written.overwrote ? { forced: true } : {}),
+          saveKind: kind,
+          savedFrom: source.key,
+          ...(heldSource
+            ? {
+              resolvedHold: {
+                board: source.key,
+                outcome: branched ? 'elsewhere' : 'overwrite',
+                writes: heldSource.writes,
+                since: heldSource.since
+              }
+            }
+            : {}),
+          panes: {
+            moved: moved.map(paneRef),
+            kept: (moved.length === 0 && kind === 'branch' ? watching : []).map(paneRef),
+            onScreen: boardsOnScreen()
           }
-        }
-        : {}),
-      panes: {
-        moved: moved.map(paneRef),
-        kept: (moved.length === 0 && kind === 'branch' ? watching : []).map(paneRef),
-        // The rest of the display, because the branch that moved nothing has to
-        // be told how to get on screen, and the answer depends on whether
-        // there is still room for a pane (TASK-054). The caller cannot see
-        // that from where it stands, so the save says it.
-        onScreen: boardsOnScreen()
+        };
       }
-    });
+    }, broadcast));
   } catch (error) {
     logger.error('Error saving board:', error);
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));

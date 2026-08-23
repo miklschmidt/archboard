@@ -791,6 +791,11 @@ try {
 
   const branched = await api('POST', '/api/boards/save?board=ledger', { name: 'ledger', variant: 'option-a' });
   check('save --as branches the board', branched.status === 200 && branched.body?.board === 'ledger@option-a');
+  const saveChanges = await api('GET', '/api/changes?board=ledger@option-a&since=0');
+  check('  and the change feed reports the write to the named destination',
+    saveChanges.status === 200 &&
+    (saveChanges.body?.events ?? []).some(event => event.board === 'ledger@option-a'),
+    JSON.stringify(saveChanges.body?.events ?? []));
 
   // Nodes only. A labelled shape is two elements on the board — itself and its
   // bound text — and only the one somebody promoted carries a node record.
@@ -988,11 +993,17 @@ try {
     JSON.stringify(namedScratch.body?.panes));
   check('  while the pane on another board stays on it', one.board() === 'ledger');
 
+  const beforeInPlaceSave = one.since();
   const inPlace = await api('POST', '/api/boards/save?board=ledger');
+  await sleep(80);
   check('a save back to a board\'s own note had no screen decision to report',
     inPlace.body?.saveKind === 'same-board' &&
     inPlace.body?.panes?.moved?.length === 0 && inPlace.body?.panes?.kept?.length === 0,
     JSON.stringify(inPlace.body?.panes));
+  check('  and tells panes through the same write message as every element route',
+    one.seen.slice(beforeInPlaceSave).some(message =>
+      message.type === 'elements_changed' && message.board === 'ledger'),
+    JSON.stringify(one.seen.slice(beforeInPlaceSave).map(message => message.type)));
 
   // One pane again, so there is room beside it. Now the offer has to be the
   // command that adds a pane: with one pane on screen, `board open <branch>`

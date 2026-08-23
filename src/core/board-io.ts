@@ -555,16 +555,10 @@ export function foreignWriteTo(file: string, destination: Buffer | undefined): F
 }
 
 export interface WriteOptions {
-  /** Where the note goes. Defaults to the board's own note. */
-  file?: string;
   /** The human's "overwrite it anyway". Never set by archboard on its own behalf. */
   force?: boolean;
   /** What a refusal should tell the caller to type. */
   saveCommand?: string;
-  /** Written in place of the content's own elements: a branch's restamped copy. */
-  elements?: ServerElement[];
-  /** The identity to stamp into the frontmatter. Defaults to the board's own. */
-  identity?: BoardState['identity'];
 }
 
 /**
@@ -602,11 +596,11 @@ export function writeBoardContent(
   overwrote: boolean;
   version: number | null;
 } {
-  const file = options.file ?? board.file;
+  const file = board.file;
   if (!file) {
     throw new Error(`Board "${boardKey(board.identity)}" has no note to write to.`);
   }
-  const identity = options.identity ?? board.identity;
+  const identity = board.identity;
   // Before anything is rendered or checked, so what the caller is holding and
   // what the note will say are the same document.
   settleBlockIds(content);
@@ -632,7 +626,7 @@ export function writeBoardContent(
   const rendered = renderContent(
     identity,
     content,
-    options.elements,
+    Array.from(content.elements.values()),
     // The destination's own frontmatter and prose, not the source's: a save-as
     // onto an existing note keeps what that note's author put there.
     destination?.toString('utf-8')
