@@ -196,7 +196,19 @@ const INSTALL_COUNTER = `(() => {
     const counted = method === 'POST' && url.includes('/api/elements/changes');
     if (counted) window.__abReports.sent += 1;
     const answer = original.apply(this, arguments);
-    return counted ? answer.then(r => { window.__abReports.done += 1; return r; }) : answer;
+    if (!counted) return answer;
+    // Holding one report's answer back is how a second one is made to come
+    // due while the first is still in flight, which is a window of its own
+    // and one no amount of writing faster reaches (TASK-099).
+    const holdFor = window.__abDelayReport || 0;
+    window.__abDelayReport = 0;
+    return answer
+      .then(r => holdFor ? new Promise(go => setTimeout(() => go(r), holdFor)) : r)
+      .then(r => {
+        window.__abReports.done += 1;
+        if (holdFor) window.__abAnsweredAt = performance.now();
+        return r;
+      });
   };
   return { installed: true };
 })()`;
@@ -883,6 +895,60 @@ try {
     [{ id: 'queue', backgroundColor: '#e3fafc' }],
     { kind: 'move', id: 'store', dx: 17, dy: -9 },
     element => element?.x, was => was + 17);
+
+  // --- a report coming due while one is in flight -------------------------
+  //
+  // The third way, and the one contention reaches: it needs a round trip
+  // longer than the report debounce, which is what a loaded machine produces
+  // and what TASK-097 was reading as a check that cannot share a box.
+  //
+  // A drag, its report held back mid-flight, and a second drag whose own
+  // debounce therefore expires while the first is still out. That report is
+  // not sent, and the answer coming back names a hand that has moved, so no
+  // document is applied and no settle runs to notice — the second drag is
+  // owed to the server with nothing left in the pane that will say it.
+  //
+  // Both halves are timed in the page. An `eval` round trip is tens of
+  // milliseconds of jitter against a 400 ms debounce, which is enough to miss.
+  // The delay holds the *answer* back, not the write: the server has the first
+  // drag as soon as it is posted. So this waits the whole sequence out rather
+  // than watching for the two documents to converge — for a moment in the
+  // middle they genuinely do, before the second drag is even applied, and
+  // `agree` would return on that and call it a pass.
+  const drifted = (await held()).find(e => e.id === 'store');
+  await evalInPage(`(() => {
+    window.__abDelayReport = ${Math.round(REPORT_DEBOUNCE_MS * 1.5)};
+    window.__abAnsweredAt = 0;
+    window.__abApplyEdit({ kind: 'move', id: 'store', dx: 5, dy: 0 });
+    setTimeout(() => {
+      window.__abSecondEditAt = performance.now();
+      window.__abApplyEdit({ kind: 'move', id: 'store', dx: 7, dy: 0 });
+    }, ${Math.round(REPORT_DEBOUNCE_MS * 1.15)});
+    return { armed: true };
+  })()`);
+  await sleep(REPORT_DEBOUNCE_MS * 8);
+
+  // Not vacuous: the second drag's own debounce really did expire before the
+  // first report was answered, which is the collision this exists for.
+  const flight = await evalInPage(
+    '(() => ({ answeredAt: window.__abAnsweredAt, editedAt: window.__abSecondEditAt }))()');
+  check('a second drag comes due while the first report is still in flight',
+    flight.answeredAt - flight.editedAt > REPORT_DEBOUNCE_MS,
+    `the answer was ${Math.round(flight.answeredAt - flight.editedAt)} ms behind the drag, ` +
+    `and the drag was due ${REPORT_DEBOUNCE_MS} ms after it`);
+
+  const bothDrags = await agree();
+  check('  and the report that came due while it was in flight is not dropped',
+    bothDrags.agreed, (bothDrags.divergences ?? []).slice(0, 4).join(' | '));
+  const dragged = (await held()).find(e => e.id === 'store');
+  check('  so both of the hand\'s moves are on the board',
+    dragged && Math.abs(dragged.x - (drifted.x + 12)) < 0.001,
+    `store.x was ${drifted?.x}, the two drags made it ${drifted?.x + 12}, the server holds ${dragged?.x}`);
+  const afterFlight = await lossCanary();
+  check('  and the pane was never left owing an edit with nothing to say it',
+    afterFlight.events.every(e => e.loss === 'moved'),
+    afterFlight.events.filter(e => e.loss !== 'moved')
+      .map(e => `${e.loss}: ${e.kind} — ${e.what.join(' | ')}`).join(' || '));
 
   // --- what a broadcast may not do ----------------------------------------
   //

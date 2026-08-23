@@ -901,10 +901,9 @@ export function useCanvasSession({
   const sendReport = useCallback(async (): Promise<void> => {
     const api = apiRef.current
     if (!api) return
-    // Dropped rather than queued, and deliberately: the baseline is untouched,
-    // so the very same delta is recomputed by the next report. What must not
-    // happen is there never being a next one, and `watchDebt` below asks that
-    // as this report lands.
+    // Nothing is lost by returning here: the baseline is untouched, so the
+    // very same delta is recomputed by the next report, and the debounce that
+    // called this has re-armed itself rather than given up (`scheduleReport`).
     if (inFlightRef.current) return
     if (retryTimerRef.current) {
       clearTimeout(retryTimerRef.current)
@@ -1064,14 +1063,32 @@ export function useCanvasSession({
     // taken now, rather than 400 ms after the finger lifts (ADR 0016).
     takeHold()
     if (reportTimerRef.current) clearTimeout(reportTimerRef.current)
-    reportTimerRef.current = setTimeout(() => {
+    // Re-armed rather than dropped when it cannot go out yet, and that is the
+    // whole of why this is a named function (TASK-099).
+    //
+    // Two things stop a report at the moment it comes due. One is already in
+    // flight, or a delivery is being written into the scene and this pane is
+    // not reading it as a hand. Both used to `return`, on the reasoning that
+    // the baseline is untouched so the same delta is recomputed next time —
+    // which is true, and says nothing about there being a next time. There is
+    // one only if something else arms it, and in both cases there is a
+    // sequence in which nothing does: a reply that comes back after a hand has
+    // moved applies no document, so no settle runs to notice; and an edit made
+    // *before* a delivery is already in the stamp that settle restores, so the
+    // drain passes it over.
+    //
+    // Re-arming is not a retry making a loss less likely. The timer is never
+    // dropped, so "owed" implies "armed" by construction, which is the
+    // property this file has to hold.
+    const due = (): void => {
       reportTimerRef.current = null
-      // Same as the in-flight case above: dropped, not queued, and what has to
-      // be true is that the settle now running asks whether anything is still
-      // owed once it has written its record.
-      if (suppressRef.current > 0) return
+      if (inFlightRef.current || suppressRef.current > 0) {
+        reportTimerRef.current = setTimeout(due, REPORT_DEBOUNCE_MS)
+        return
+      }
       void sendReport()
-    }, REPORT_DEBOUNCE_MS)
+    }
+    reportTimerRef.current = setTimeout(due, REPORT_DEBOUNCE_MS)
   }, [sendReport, takeHold])
   useEffect(() => { scheduleReportRef.current = scheduleReport }, [scheduleReport])
 
