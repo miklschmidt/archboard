@@ -112,7 +112,7 @@ const { key: ledgerKey, board: ledger } = getOrCreateBoard(ledgerIdentity);
 ledger.file = vaultPathFor(ledgerIdentity);
 
 {
-  const first = writeBoardContent(ledger, contentOf(box('aaa', 10)));
+  const first = writeBoardContent(ledger, contentOf(box('aaa', 10)), { saveCommand: 'board save' });
   const note = fs.readFileSync(ledger.file, 'utf-8');
   check('the first write archboard makes to a note starts the count at 1', first.version === 1,
     String(first.version));
@@ -121,7 +121,7 @@ ledger.file = vaultPathFor(ledgerIdentity);
     note.slice(0, note.indexOf('---', 4)).replace(/\n/g, ' | '));
   check('  and read back off the note as the number it is', readNote(ledger.file).version === 1);
 
-  const second = writeBoardContent(ledger, contentOf(box('aaa', 10), box('bbb', 200)));
+  const second = writeBoardContent(ledger, contentOf(box('aaa', 10), box('bbb', 200)), { saveCommand: 'board save' });
   check('a write that changes the board moves it on', second.version === 2, String(second.version));
   check('  and the note says so', versionNumber(fs.readFileSync(ledger.file, 'utf-8')) === 2);
   check('  and only that line moved: the version is not stamped anywhere else',
@@ -147,7 +147,7 @@ ledger.file = vaultPathFor(ledgerIdentity);
 
 {
   const before = fs.readFileSync(ledger.file);
-  const again = writeBoardContent(ledger, contentOf(box('aaa', 10), box('bbb', 200)));
+  const again = writeBoardContent(ledger, contentOf(box('aaa', 10), box('bbb', 200)), { saveCommand: 'board save' });
   const after = fs.readFileSync(ledger.file);
   check('writing the same board again leaves the note byte-identical', before.equals(after),
     `${before.length} then ${after.length}`);
@@ -196,13 +196,13 @@ ledger.file = vaultPathFor(ledgerIdentity);
   const identity = makeIdentity({ board: 'theirs' });
   const { board } = getOrCreateBoard(identity);
   board.file = vaultPathFor(identity);
-  writeBoardContent(board, contentOf(box('ccc', 10)));
+  writeBoardContent(board, contentOf(box('ccc', 10)), { saveCommand: 'board save' });
   // Their key, in their frontmatter, holding something that is not a count.
   const theirs = fs.readFileSync(board.file, 'utf-8').replace(/^version: 1$/m, 'version: second draft');
   fs.writeFileSync(board.file, theirs);
   recordBaseline(board, board.file, hashBoardBytes(fs.readFileSync(board.file)), null);
 
-  const written = writeBoardContent(board, contentOf(box('ccc', 10), box('ddd', 200)));
+  const written = writeBoardContent(board, contentOf(box('ccc', 10), box('ddd', 200)), { saveCommand: 'board save' });
   const note = fs.readFileSync(board.file, 'utf-8');
   check('a `version` key holding something that is not a count is left exactly as it is',
     /^version: second draft$/m.test(note), note.split('\n').find((l) => l.startsWith('version')));
@@ -234,7 +234,7 @@ const clean = fs.readFileSync(ledger.file, 'utf-8');     // version 2, as archbo
 
   let refusal = null;
   try {
-    writeBoardContent(ledger, contentOf(box('aaa', 10)));
+    writeBoardContent(ledger, contentOf(box('aaa', 10)), { saveCommand: 'board save' });
   } catch (error) {
     refusal = error.conflict ?? null;
   }

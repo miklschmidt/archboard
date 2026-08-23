@@ -1,5 +1,9 @@
+import fs from 'fs';
+
 import { ServerElement } from '../types.js';
 import { expandElements } from './expand-elements.js';
+import { sanitizeFilePath } from './normalize.js';
+import { extractSceneJsonFromObsidianMd, isObsidianExcalidrawMd } from './obsidian-md.js';
 
 export interface ExportedScene {
   scene: Record<string, any>;
@@ -41,4 +45,58 @@ export function buildScene(
   };
 
   return { scene, elementCount: exportElements.length };
+}
+
+/** Build a file document from the board returned by the canvas server. */
+export async function buildSceneFile(): Promise<ExportedScene> {
+  const { getElements, getFiles } = await import('./canvas-client.js');
+  const [elementsResult, filesResult] = await Promise.allSettled([getElements(), getFiles()]);
+  if (elementsResult.status === 'rejected') throw elementsResult.reason;
+  const files = filesResult.status === 'fulfilled' ? filesResult.value : {};
+  return buildScene(elementsResult.value, files);
+}
+
+export interface ImportResult {
+  count: number;
+  fileCount: number;
+  mode: 'replace' | 'merge';
+}
+
+/** Import a JSON or Obsidian scene through the server's element-input entry. */
+export async function importScene(options: {
+  filePath?: string;
+  data?: string;
+  mode: 'replace' | 'merge';
+}): Promise<ImportResult> {
+  const { batchCreateElementsOnCanvas, clearCanvas, postFiles } = await import('./canvas-client.js');
+  let raw: string;
+  if (options.filePath) {
+    raw = fs.readFileSync(sanitizeFilePath(options.filePath), 'utf-8');
+  } else if (options.data) {
+    raw = options.data;
+  } else {
+    throw new Error('Either filePath or data must be provided');
+  }
+  if (isObsidianExcalidrawMd(raw)) raw = extractSceneJsonFromObsidianMd(raw);
+
+  const sceneData: any = JSON.parse(raw);
+  const elements: ServerElement[] = Array.isArray(sceneData) ? sceneData : (sceneData.elements || []);
+  if (elements.length === 0) throw new Error('No elements found in the import data');
+
+  if (options.mode === 'replace') await clearCanvas();
+  const created = await batchCreateElementsOnCanvas(elements);
+  if (!created) throw new Error('Import failed: canvas rejected the batch create (elements were not restored)');
+
+  let fileCount = 0;
+  const importFiles = sceneData.files;
+  if (importFiles && typeof importFiles === 'object') {
+    const files = Object.values(importFiles);
+    if (files.length > 0) {
+      try {
+        await postFiles(files);
+        fileCount = files.length;
+      } catch { /* best effort */ }
+    }
+  }
+  return { count: elements.length, fileCount, mode: options.mode };
 }

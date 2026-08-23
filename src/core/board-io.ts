@@ -70,7 +70,6 @@ import {
 import { derivedId, isBlockId, mintId } from './ids.js';
 import {
   isObsidianExcalidrawMd,
-  extractSceneJsonFromObsidianMd,
   renameElementId
 } from './obsidian-md.js';
 import { buildScene } from './scene-document.js';
@@ -98,6 +97,16 @@ export interface BoardContent {
    * no note behind it yet.
    */
   version?: number | null;
+}
+
+/**
+ * A board's images in the shape carried by scene messages, or nothing when it
+ * has none. Every whole-board frame needs these records or image elements
+ * render as holes (TASK-060).
+ */
+export function boardFilesMessage(content: BoardContent): { files?: Record<string, ExcalidrawFile> } {
+  if (content.files.size === 0) return {};
+  return { files: Object.fromEntries(content.files) };
 }
 
 /**
@@ -348,8 +357,7 @@ export function renderContent(
   content: BoardContent,
   existingNote: string | null | undefined = content.note
 ): { note: string; bytes: Buffer; elementCount: number } {
-  const files: Record<string, ExcalidrawFile> = {};
-  content.files.forEach((file, id) => { files[id] = file; });
+  const files = boardFilesMessage(content).files ?? {};
   const { scene, elementCount } = buildScene(
     Array.from(content.elements.values()),
     files as unknown as Record<string, any>,
@@ -557,7 +565,7 @@ export interface WriteOptions {
   /** The human's "overwrite it anyway". Never set by archboard on its own behalf. */
   force?: boolean;
   /** What a refusal should tell the caller to type. */
-  saveCommand?: string;
+  saveCommand: string;
 }
 
 /**
@@ -586,7 +594,7 @@ export interface WriteOptions {
 export function writeBoardContent(
   board: BoardState,
   content: BoardContent,
-  options: WriteOptions = {}
+  options: WriteOptions
 ): {
   file: string;
   hash: string;
@@ -618,7 +626,7 @@ export function writeBoardContent(
     throw new BoardWriteConflictError(describeWriteConflict({
       target: identity,
       ...foreign,
-      saveCommand: options.saveCommand ?? `board save --board ${boardKey(identity)}`
+      saveCommand: options.saveCommand
     }));
   }
 

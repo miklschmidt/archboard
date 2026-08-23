@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-23 19:35'
-updated_date: '2026-08-23 19:53'
+updated_date: '2026-08-23 20:00'
 labels: []
 dependencies: []
 references:
@@ -81,4 +81,6 @@ Slice 1 complete (A1, A5, A8, E1, E4, E8, S4, S6, S9, S11): writeBoard now owns 
 Slice 2 complete (E3, R3, R4, S17, S18, S19): settleDocument regains its unchanged fast return; geometry owns point normalization and the default linear path; converter version/timestamp bumps and own-property checks each have one helper; agent and human conversion now return prepared writes and applyElementInput runs the shared delete/settle/name tail once. Skipped E5/E6: indexing arrow bindings and bound texts would change the converter's ordering-sensitive repair data flow beyond a small quality-pass edit, while current checks assert only final behavior. Evidence: bun run type-check passed; test:labels passed 182 checks; test:geometry passed 82 checks; test:one-write passed 70 checks.
 
 Slice 3 complete (A2, A3, A4, R1/R1b, S25): board-carrying refusals are recognized by their structured body, while the exported refusal-code set is used only for CLI exit status; syncToCanvas swallows connection failures only; MCP error context now prefixes every error and preserves code/conflict/open/refusal data; create/update/batch MCP validation and advertised JSON schemas derive from apply-element-input; parity checks exact element-field agreement and an unlisted shaped refusal; ElementInput is Record<string, unknown>. Evidence: bun run type-check passed; test:parity passed (41 MCP tools, 50 CLI entries); test:mcp passed 6 checks; test:doing passed 42 checks; test:version passed 65 checks.
+
+Slice 4 complete (E10, R-minor, S3, S5, S20, S23): scene export reads elements/files concurrently with Promise.allSettled; shared scene import/export lives in core/scene-document and the CLI-only module is removed; canvas query construction, board file records, and sleep are shared; describeVersionConflict is internal and dead imports are removed; claim cleanup has one dropClaim; all 27 standard board-error tails use answerBoardError with logging explicit per call. Evidence: bun run type-check passed; test:boards passed; test:lock passed 119 checks; test:mcp passed 6 checks; test:parity passed; test:module-scope passed (52 modules, no unwaived state); test:branch, test:side-by-side, test:hot, and test:changes all passed.
 <!-- SECTION:NOTES:END -->
