@@ -28,7 +28,7 @@ import type {
 } from '../types'
 import { cleanElementForExcalidraw, elementsForScene } from './elements'
 import {
-  hasPendingEdits, initialState, reduce,
+  carryWithheld, EMPTY_WITHHELD, hasPendingEdits, initialState, mergeIncoming, reduce,
   type ChangeReportingEffect, type ChangeReportingEvent,
   type ChangeReportingState, type SceneElement, type SceneUpdate
 } from './change-reporting'
@@ -74,8 +74,6 @@ import {
 const UNKNOWN_HOLDER: LockHolder = {
   id: '', kind: 'agent', since: '', until: '', process: '', reason: 'not yet known'
 }
-
-const EMPTY_WITHHELD: readonly string[] = []
 
 /**
  * The text element a person has an editor open on, if any.
@@ -572,14 +570,12 @@ export function useCanvasSession({
     withheldIds: readonly string[] = EMPTY_WITHHELD
   ): void => {
     if (!apiRef.current) return
-    const answered = new Set(elements.map((element) => element.id))
+    const answered = new Set(elements.map((element) => element.id).filter((id): id is string => !!id))
     // `elementsForScene` drops a `boundElements` entry or a `containerId`
     // pointing at an element the server update does not carry. The
     // container of a label being typed into is exactly that, and unbinding it
     // would strand the label.
-    const withheld = new Set(withheldIds)
-    const kept = withheld.size === 0 ? [] : currentScene()
-      .filter((element) => withheld.has(element.id) && !answered.has(element.id))
+    const kept = carryWithheld(currentScene(), answered, withheldIds)
     dispatchReporting({
       type: 'server_update_requested',
       update: { elements: [...elements, ...kept] as SceneElement[], captureUpdate: 'never' },
@@ -596,23 +592,15 @@ export function useCanvasSession({
     const api = apiRef.current
     if (!api || incoming.length === 0) return
 
-    const current = api.getSceneElements()
-    const byId = new Map<string, Partial<ExcalidrawElement>>()
-    incoming.forEach((element) => { if (element.id) byId.set(element.id, element) })
-    const touched = [...byId.keys()]
-
-    const merged: Partial<ExcalidrawElement>[] = current.map((element) => {
-      const update = byId.get(element.id)
-      if (!update) return element
-      byId.delete(element.id)
-      return { ...element, ...update }
-    })
-    merged.push(...byId.values())
+    const { elements, touchedIds } = mergeIncoming(
+      api.getSceneElements() as unknown as SceneElement[],
+      incoming as SceneElement[]
+    )
 
     dispatchReporting({
       type: 'server_update_requested',
-      update: { elements: merged as SceneElement[], captureUpdate: 'never' },
-      baselineUpdate: { type: 'touch', ids: touched }
+      update: { elements, captureUpdate: 'never' },
+      baselineUpdate: { type: 'touch', ids: touchedIds }
     })
   }, [])
 
