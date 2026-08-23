@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url'
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..')
 const reporting = await import(join(repoRoot, 'frontend', 'src', 'canvas', 'change-reporting.ts'))
 const {
-  hasPendingEdits, initialState, reduce
+  hasPendingEdits, initialState, mergeIncoming, reduce
 } = reporting
 
 let failures = 0
@@ -164,8 +164,8 @@ class Harness {
     const pending = hasPendingEdits(this.state, this.scene, this.withheldIds)
     const scheduled = this.state.reportTimerScheduled || this.state.retryTimerScheduled
     check(`${step}: pending edits have a report in flight or scheduled`,
-      !pending || this.state.reportInFlight || scheduled,
-      `pending=${pending} inFlight=${this.state.reportInFlight} scheduled=${scheduled}`)
+      !pending || this.state.inFlightReport !== null || scheduled,
+      `pending=${pending} inFlight=${this.state.inFlightReport !== null} scheduled=${scheduled}`)
   }
 
   step(label, action) {
@@ -199,19 +199,11 @@ class Harness {
   }
 
   applyServerElements(incoming) {
-    const byId = new Map(incoming.map(element => [element.id, element]))
-    const ids = [...byId.keys()]
-    const merged = this.scene.map(element => {
-      const update = byId.get(element.id)
-      if (!update) return element
-      byId.delete(element.id)
-      return { ...element, ...update }
-    })
-    merged.push(...byId.values())
+    const { elements, touchedIds } = mergeIncoming(this.scene, incoming)
     this.dispatch({
       type: 'server_update_requested',
-      update: { elements: merged, captureUpdate: 'never' },
-      baselineUpdate: { type: 'touch', ids }
+      update: { elements, captureUpdate: 'never' },
+      baselineUpdate: { type: 'touch', ids: touchedIds }
     })
   }
 }
@@ -264,11 +256,11 @@ class Harness {
     h.applyServerElements([{ ...h.scene.find(element => element.id === 'a'), x: 5 }])
     h.applyServerElements([{ ...h.scene.find(element => element.id === 'b'), y: 5 }])
     check('both server updates are being applied', h.state.applyingServerUpdateCount === 2)
-    check('both server update records are queued', h.state.serverUpdateRecords.length === 2)
+    check('both server update stamps are queued', h.state.serverUpdateStamps.length === 2)
     h.clock.advance(0)
   })
   check('the applying count returns to zero', h.state.applyingServerUpdateCount === 0)
-  check('the server update record queue is empty', h.state.serverUpdateRecords.length === 0)
+  check('the server update stamp queue is empty', h.state.serverUpdateStamps.length === 0)
 }
 
 // A refused delta is followed by a full report using the existing wire flag.

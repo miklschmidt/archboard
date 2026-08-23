@@ -24,16 +24,11 @@ interface ReportContext {
   editsAtSend: number
   withheldIds: readonly string[]
   fullReport: boolean
-  generation: number
 }
 
 interface ReportAfterServerUpdate {
   withheldIds: readonly string[]
   fullReport: boolean
-}
-
-interface ServerUpdateRecord {
-  stamp: string
 }
 
 export interface ChangeReportingState {
@@ -43,9 +38,8 @@ export interface ChangeReportingState {
   userInteracted: boolean
   reportTimerScheduled: boolean
   retryTimerScheduled: boolean
-  reportInFlight: boolean
   applyingServerUpdateCount: number
-  serverUpdateRecords: readonly ServerUpdateRecord[]
+  serverUpdateStamps: readonly string[]
   fullReportNeeded: boolean
   generation: number
   inFlightReport: ReportContext | null
@@ -108,7 +102,7 @@ export interface ReduceResult {
   effects: ChangeReportingEffect[]
 }
 
-const EMPTY_WITHHELD: readonly string[] = []
+export const EMPTY_WITHHELD: readonly string[] = []
 
 export function initialState(): ChangeReportingState {
   return {
@@ -118,9 +112,8 @@ export function initialState(): ChangeReportingState {
     userInteracted: false,
     reportTimerScheduled: false,
     retryTimerScheduled: false,
-    reportInFlight: false,
     applyingServerUpdateCount: 0,
-    serverUpdateRecords: [],
+    serverUpdateStamps: [],
     fullReportNeeded: false,
     generation: 0,
     inFlightReport: null
@@ -200,7 +193,7 @@ function renameTextIds(scene: readonly SceneElement[], withheldIds: readonly str
 }
 
 function withheldSet(ids: readonly string[]): ReadonlySet<string> {
-  return ids.length === 0 ? new Set() : new Set(ids)
+  return new Set(ids)
 }
 
 export function hasPendingEdits(
@@ -210,7 +203,47 @@ export function hasPendingEdits(
 ): boolean {
   if (!state.userInteracted) return false
   if (state.fullReportNeeded) return true
-  return !isEmpty(diffAgainstBaseline(scene, state.baseline, withheldSet(withheldIds)))
+  const withheld = withheldSet(withheldIds)
+  const present = new Set<string>()
+  for (const element of scene) {
+    if (!element || typeof element.id !== 'string' || element.isDeleted) continue
+    if (withheld.has(element.id)) {
+      if (state.baseline.has(element.id)) present.add(element.id)
+      continue
+    }
+    if (state.baseline.get(element.id) !== fingerprint(element)) return true
+    present.add(element.id)
+  }
+  return present.size !== state.baseline.size
+}
+
+export function carryWithheld(
+  scene: readonly SceneElement[],
+  answered: ReadonlySet<string>,
+  withheldIds: readonly string[]
+): SceneElement[] {
+  if (withheldIds.length === 0) return []
+  const withheld = new Set(withheldIds)
+  return scene.filter((element) => withheld.has(element.id) && !answered.has(element.id))
+}
+
+export function mergeIncoming(
+  scene: readonly SceneElement[],
+  incoming: readonly SceneElement[]
+): { elements: SceneElement[]; touchedIds: string[] } {
+  const byId = new Map<string, SceneElement>()
+  for (const element of incoming) {
+    if (typeof element.id === 'string' && element.id.length > 0) byId.set(element.id, element)
+  }
+  const touchedIds = [...byId.keys()]
+  const elements = scene.map((element) => {
+    const update = byId.get(element.id)
+    if (!update) return element
+    byId.delete(element.id)
+    return { ...element, ...update }
+  })
+  elements.push(...byId.values())
+  return { elements, touchedIds }
 }
 
 function scheduleReport(state: ChangeReportingState, effects: ChangeReportingEffect[]): ChangeReportingState {
@@ -226,7 +259,7 @@ function beginReport(
   effects: ChangeReportingEffect[],
   allowWhileApplyingServerUpdate = false
 ): ChangeReportingState {
-  if (state.reportInFlight || (state.applyingServerUpdateCount > 0 && !allowWhileApplyingServerUpdate)) {
+  if (state.inFlightReport !== null || (state.applyingServerUpdateCount > 0 && !allowWhileApplyingServerUpdate)) {
     return scheduleReport(state, effects)
   }
   if (state.retryTimerScheduled) effects.push({ type: 'cancel_retry_timer' })
@@ -262,13 +295,11 @@ function beginReport(
   return {
     ...state,
     retryTimerScheduled: false,
-    reportInFlight: true,
     inFlightReport: {
       report,
       editsAtSend: state.localEditCount,
       withheldIds,
-      fullReport,
-      generation: state.generation
+      fullReport
     }
   }
 }
@@ -302,8 +333,9 @@ function userEdit(
   scene: readonly SceneElement[],
   effects: ChangeReportingEffect[]
 ): ChangeReportingState {
+  if (!state.userInteracted) return state
   const stamp = stampScene(scene)
-  if (!state.userInteracted || stamp === state.sceneStamp) return state
+  if (stamp === state.sceneStamp) return state
   effects.push({ type: 'take_hold' })
   return scheduleReport({
     ...state,
@@ -355,9 +387,7 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
       let next: ChangeReportingState = {
         ...state,
         baseline: applyBaselineUpdate(state.baseline, event.baselineUpdate, event.scene),
-        serverUpdateRecords: [...state.serverUpdateRecords, {
-          stamp: stampScene(event.scene)
-        }]
+        serverUpdateStamps: [...state.serverUpdateStamps, stampScene(event.scene)]
       }
       effects.push({ type: 'finish_server_update', generation: state.generation })
       if (event.reportAfterUpdate) {
@@ -368,13 +398,13 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
 
     case 'server_update_finished': {
       if (event.generation !== state.generation) return { state, effects }
-      const [record, ...records] = state.serverUpdateRecords
+      const [stamp, ...stamps] = state.serverUpdateStamps
       const applying = Math.max(0, state.applyingServerUpdateCount - 1)
       let next: ChangeReportingState = {
         ...state,
         applyingServerUpdateCount: applying,
-        serverUpdateRecords: records,
-        sceneStamp: record?.stamp ?? stampScene(event.scene)
+        serverUpdateStamps: stamps,
+        sceneStamp: stamp ?? stampScene(event.scene)
       }
       if (applying === 0) next = userEdit(next, event.scene, effects)
       return { state: next, effects }
@@ -382,19 +412,17 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
 
     case 'report_succeeded': {
       const sent = state.inFlightReport
-      if (event.generation !== state.generation || !sent || sent.generation !== event.generation) {
+      if (event.generation !== state.generation || !sent) {
         return { state, effects }
       }
       let next: ChangeReportingState = {
         ...state,
-        reportInFlight: false,
         inFlightReport: null,
         fullReportNeeded: sent.fullReport ? false : state.fullReportNeeded
       }
       if (event.document && state.localEditCount === sent.editsAtSend) {
         const answered = new Set(event.document.map((element) => element.id))
-        const withheld = new Set(sent.withheldIds)
-        const kept = event.currentScene.filter((element) => withheld.has(element.id) && !answered.has(element.id))
+        const kept = carryWithheld(event.currentScene, answered, sent.withheldIds)
         const baselineUpdate: BaselineUpdate = { type: 'replace', withheldIds: sent.withheldIds }
         effects.push({
           type: 'apply_server_update',
@@ -417,7 +445,6 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
       return {
         state: {
           ...state,
-          reportInFlight: false,
           inFlightReport: null,
           fullReportNeeded: true,
           retryTimerScheduled: true
@@ -431,7 +458,6 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
       return {
         state: {
           ...state,
-          reportInFlight: false,
           inFlightReport: null,
           retryTimerScheduled: true
         },
