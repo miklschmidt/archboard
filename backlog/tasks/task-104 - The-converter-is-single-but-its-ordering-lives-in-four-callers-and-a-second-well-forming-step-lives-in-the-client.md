@@ -3,9 +3,11 @@ id: TASK-104
 title: >-
   The converter is single, but its ordering lives in four callers and a second
   well-forming step lives in the client
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-23 15:01'
+updated_date: '2026-08-23 16:06'
 labels: []
 dependencies: []
 references:
@@ -36,3 +38,19 @@ Architecture review 2026-08-23, candidate 4. Deepened shape: one entry takes nam
 - [ ] #4 No module under `src/core/` imports `canvas-client`; `scene-io` lives with the CLI
 - [ ] #5 `test:browser` still asserts a zero diff after a render; `test:labels`, `test:geometry`, `test:one-write` pass
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Add one core applyElementInput entry whose request carries input-spelling upserts, deletes, and origin, and whose result names the resulting elements plus the created/updated/deleted board-shape delta. Move creation and update well-forming, id minting, arrow-ref spending and routing, text and label conversion, version stamping, map write-back, consequences, and document settling behind it.
+2. Replace the create, update, batch, delete, and change-report element surgery in src/server.ts with calls to that entry while leaving board reads, persistBoard, broadcasts, and agentWriteAnswer in their routes. Extend the label/geometry checks at the new interface and run the focused verification loop.
+3. Remove client-side prepareElement and prepareElementUpdate calls so CLI, MCP, library, and import surfaces send the same input spelling to the server entry. Preserve only non-element helpers in normalize.ts, update checks, and run the focused verification loop.
+4. Split pure scene assembly into core, move the HTTP-backed scene I/O module to src/cli/, update callers and checks, then audit every remaining src/core canvas-client import and document the client-by-nature exceptions. Run the focused verification loop.
+5. Update stale design references, run bun run test in full with the browser suites headless and sequential through the existing chain, record evidence, finalize every acceptance criterion, and commit each buildable slice with a TASK-104-prefixed sentence.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Slice 1: Added src/core/apply-element-input.ts with applyElementInput(board, { upserts, deletes, origin, timestamp }). It owns well-forming, ids, input spelling consumption, arrow routing, measured conversion, label restating, version and updatedAt stamping, board-map write-back, consequences and document settling. POST/PUT/batch/delete/change-report routes now call that entry and retain only read/persist/broadcast/answer orchestration. scripts/check-labels.mjs now drives the real entry and proves minted block ids, spent label spelling, measured standalone and bound text, routed arrow refs, and version/updatedAt bumps. Verification: type-check green; labels 182 checks; geometry 82 checks; one-write 58 checks; changes all checks; module-scope 51 modules, 1 waived, no unwaived state.
+<!-- SECTION:NOTES:END -->

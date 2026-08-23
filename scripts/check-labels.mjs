@@ -53,8 +53,10 @@ const {
   labelTextIdFor
 } = await import(join(__dirname, '..', 'src', 'core', 'labels.ts'));
 const { isBlockId } = await import(join(__dirname, '..', 'src', 'core', 'ids.ts'));
-const { expandElements, expandForBoard, relabelBoundTexts } =
+const { expandElements, expandForBoard } =
   await import(join(__dirname, '..', 'src', 'core', 'expand-elements.ts'));
+const { applyElementInput } =
+  await import(join(__dirname, '..', 'src', 'core', 'apply-element-input.ts'));
 
 let failures = 0;
 let checks = 0;
@@ -228,10 +230,10 @@ function cycle(store, baseline, { contain, types, empties }) {
 /**
  * An agent's write, through the code that performs one.
  *
- * `expandForBoard` and `relabelBoundTexts` are the write boundary itself, the
- * same two calls `src/server.ts` makes; only the merge and the storing are
- * modelled, because those are HTTP and a Map. So the text elements are on the
- * board before any pane has seen it, which is the change everything below
+ * `applyElementInput` is the write conversion entry `src/server.ts` calls.
+ * The HTTP read, persistence and broadcast stay outside it, so a Map is all
+ * this check needs to exercise the real stage order. The text elements are on
+ * the board before any pane has seen it, which is the change everything below
  * turns on — a headless board used to carry labels that existed only as seeds
  * and only became elements when a browser happened to render one.
  *
@@ -243,14 +245,13 @@ function cycle(store, baseline, { contain, types, empties }) {
  * to revert to.
  */
 function write(store, statements, { keepSeed = false } = {}) {
-  const merged = statements.map((statement) => ({ ...(store.get(statement.id) ?? {}), ...statement }));
-  for (const element of merged) store.set(element.id, element);
-  for (const element of relabelBoundTexts(merged, store)) store.set(element.id, element);
-  for (const element of expandForBoard(merged, store)) store.set(element.id, element);
+  applyElementInput(store, { upserts: statements, origin: 'agent' });
   if (keepSeed) {
-    for (const element of merged) {
-      const seed = seedOf(element);
-      if (seed !== undefined) store.set(element.id, { ...store.get(element.id), label: { text: seed } });
+    for (const statement of statements) {
+      const seed = seedOf(statement);
+      if (seed !== undefined) {
+        store.set(statement.id, { ...store.get(statement.id), label: { text: seed } });
+      }
     }
   }
   return store;
@@ -296,6 +297,44 @@ const drawn = () => [
 ];
 
 const CYCLES = 25;
+
+// --- one input entry owns the whole order ---------------------------------
+
+{
+  const board = new Map();
+  const applied = applyElementInput(board, {
+    origin: 'agent',
+    upserts: [
+      { type: 'rectangle', x: 0, y: 0, width: 200, height: 80, text: 'Orders' },
+      { type: 'text', x: 0, y: 120, text: 'unsized note' }
+    ]
+  });
+  const box = applied.named[0];
+  const note = applied.named[1];
+  const label = [...board.values()].find((element) => element.containerId === box.id);
+
+  assert(applied.named.length === 2, 'the entry did not return one board-shape element per input');
+  assert(isBlockId(box.id) && isBlockId(note.id) && isBlockId(label?.id),
+    'the entry let an unminted input reach the board without block-safe ids');
+  assert(!('text' in box) && !('label' in box),
+    'the entry left a shape name in an input spelling after conversion');
+  assert(label?.text === 'Orders' && typeof label.width === 'number' && label.width > 0,
+    'the entry did not spend and measure the shape label');
+  assert(typeof note.width === 'number' && note.width > 0 && typeof note.height === 'number',
+    'the entry did not measure an unsized standalone text element');
+
+  const beforeVersion = box.version;
+  const renamed = applyElementInput(board, {
+    origin: 'agent',
+    upserts: [{ id: box.id, text: 'Ledger' }]
+  });
+  const heldBox = board.get(box.id);
+  const heldLabel = [...board.values()].find((element) => element.containerId === box.id);
+  assert(heldBox.version === beforeVersion + 1 && typeof heldBox.updatedAt === 'string',
+    'the entry did not bump the updated element version and updatedAt');
+  assert(heldLabel.text === 'Ledger' && renamed.updated.some((element) => element.id === heldLabel.id),
+    'the entry did not restate the measured label in its settled delta');
+}
 
 // --- one converter, two entry points ----------------------------------------
 //
@@ -497,8 +536,10 @@ const CYCLES = 25;
   assert(reports === 0, `a settled board kept reporting changes on ${reports} of ${CYCLES} cycles`);
 
   const arrow = store.get('wire');
-  assert(JSON.stringify(arrow.points) === '[[0,0],[200,0]]', 'arrow points were rewritten');
-  assert(arrow.height === 0 && arrow.width === 200, `arrow geometry collapsed to ${arrow.width}x${arrow.height}`);
+  assert(JSON.stringify(arrow.points) === '[[0,0],[192,0]]',
+    `the input refs did not route the arrow to the two shapes: ${JSON.stringify(arrow.points)}`);
+  assert(arrow.x === 204 && arrow.height === 0 && arrow.width === 192,
+    `the routed arrow geometry is ${arrow.x}, ${arrow.width}x${arrow.height}, not 204, 192x0`);
   assert(
     arrow.boundElements.filter((ref) => ref.type === 'text').length === 1,
     'arrow accumulated more than one bound-text reference'
