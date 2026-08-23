@@ -155,6 +155,20 @@ export function readDelivery(armed: Armed | null, scene: readonly Record<string,
 }
 
 /**
+ * A suppression window closed with nothing recorded for it.
+ *
+ * Should be unreachable: every window is opened one statement before the
+ * delivery it is for. If it happens, the pane has fallen back to stamping the
+ * scene as it now stands, which is where an edit made during the window
+ * disappears — the very thing the recording exists to prevent, so it is a loss
+ * rather than a curiosity.
+ */
+export function readOrphanedWindow(): void {
+  saw('unarmed', 'a suppression window with no delivery behind it',
+    ['the pane stamped the scene as it stands, so anything done in the window reads as nothing'])
+}
+
+/**
  * The pane owes the server this, and nothing is going to say it.
  *
  * Called from every place the pane decides it is done talking. `owed` is the

@@ -147,8 +147,10 @@ them sharing the machine is how one of them fails for no reason.
   cycle**, naming the element, the field, both values and the cycle a
   divergence first appeared on. That is what makes "the server is the truth" a
   property rather than a claim: the bugs it exists to catch — a label
-  multiplying, a rename coming back — need a session to build up in. About
-  twenty seconds, and it skips the build when `dist/frontend` is already newer
+  multiplying, a rename coming back — need a session to build up in. It then
+  puts a hand inside the window between a delivery and the pane's record of it,
+  five times, deliberately (TASK-099). About fifty seconds, and it skips the
+  build when `dist/frontend` is already newer
   than every source, so the three browser checks build once between them. It also
   owns the half of the board mutex only a renderer can answer (ADR 0016): the
   pane accepts a touch on a free board, refuses one the moment somebody else
@@ -297,6 +299,42 @@ computed against a baseline of the elements that tab has actually received, and
 the server applies it. A tab therefore cannot name, and so cannot destroy, an
 element it has never seen. The upstream `POST /api/elements/sync`, which cleared
 the board's element map and refilled it from one tab, is gone (TASK-016).
+
+**An edit somebody made is either on the wire or still in the pane's diff, and
+never neither** (TASK-099). That baseline is also how a person's drag used to go
+missing. A delivery — this pane's own write coming back, or another writer's
+broadcast — goes into the scene, and the pane then records what it now believes
+the server holds. The record used to be written a macrotask later, read off the
+live scene, so anything a hand did in between went into it as already agreed and
+was never mentioned again. Three shapes of that were captured before it was
+fixed: a box the pane resized while an agent recoloured it, a label whose `text`,
+`rawText` and `originalText` ended up holding three different writes, and an
+element the server kept after the pane deleted it. All permanent, all silent,
+all with the pane ahead.
+
+Two changes and the pane cannot reach that state. The record is taken at the
+moment of delivery, in the same statement sequence as `updateScene`, where
+nothing can have happened yet. And the suppression window drains itself: when it
+closes the pane restores the scene stamp the delivery left rather than the one
+the scene now holds, so a hand that moved while nobody was listening still reads
+as a change and goes out through the ordinary debounce. A report that comes due
+while one is in flight, or inside that window, is re-armed rather than dropped.
+Dropping it is the same loss by a third route, and it is the one contention
+reaches: it needs a round trip longer than `REPORT_DEBOUNCE_MS`, which is what a
+loaded machine produces, and it is what TASK-097 was reading as a check that
+cannot share a box.
+
+`check-live-session` reproduces the window on demand rather than about one run
+in ten. It patches `Scene.replaceAllElements`, which is where a delivery lands
+whoever called it, so the next delivery schedules a human's edit in a microtask
+that runs after the pane's delivery code and before the record. Four cases land
+in it every run: a resize, a retype, a delete, and a move against a delivery
+naming something else. The pane also carries a loss canary
+(`frontend/src/canvas/loss-canary.ts`) that names the element, the field and both
+values whenever the scene moves inside that window, and says whether the record
+swallowed it or the edit is still owed. It costs a walk of the scene per
+delivery, so it is off unless the page has been given `window.__abLoss`, which
+nothing in the frontend does.
 
 **One thing somebody asked for is one write.** Aligning twenty boxes, or
 distributing, locking, grouping or ungrouping them, or applying a patch of
