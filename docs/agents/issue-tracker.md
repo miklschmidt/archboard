@@ -5,7 +5,7 @@ stored as markdown under `backlog/` and driven entirely through the `backlog` CL
 
 **Always use the CLI.** Never edit files under `backlog/` by hand — task
 metadata, relationships, and history are maintained by the tool and hand edits
-desynchronise them. This is also asserted in `CLAUDE.md`.
+desynchronise them. This is also asserted in `AGENTS.md`.
 
 The binary is a dev dependency: `./node_modules/.bin/backlog`, or just `backlog`
 if the global install is on PATH (both are 1.50.1). Add `--plain` for
