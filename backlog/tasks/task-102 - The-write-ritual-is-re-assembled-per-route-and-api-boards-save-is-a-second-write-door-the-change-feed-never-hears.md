@@ -3,11 +3,11 @@ id: TASK-102
 title: >-
   The write ritual is re-assembled per route, and /api/boards/save is a second
   write door the change feed never hears
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-23 15:01'
-updated_date: '2026-08-23 16:44'
+updated_date: '2026-08-23 16:50'
 labels: []
 dependencies: []
 references:
@@ -29,11 +29,11 @@ Architecture review 2026-08-23, candidate 2 (runner-up). Deepened shape: one mod
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 One module owns read -> mutate -> persist -> broadcast -> answer for a board write, and every board-writing route in `src/server.ts` goes through it
-- [ ] #2 `POST /api/boards/save` goes through the same door: `noteChange` fires for a save, and the change feed reports it
-- [ ] #3 Panes are told about a write in one message shape regardless of which route made it
-- [ ] #4 No `await` sits between the read and the write of one board (ADR 0015); `test:one-write` still counts one write per intent
-- [ ] #5 TASK-084 is closed through this module or explicitly re-scoped against it
+- [x] #1 One module owns read -> mutate -> persist -> broadcast -> answer for a board write, and every board-writing route in `src/server.ts` goes through it
+- [x] #2 `POST /api/boards/save` goes through the same door: `noteChange` fires for a save, and the change feed reports it
+- [x] #3 Panes are told about a write in one message shape regardless of which route made it
+- [x] #4 No `await` sits between the read and the write of one board (ADR 0015); `test:one-write` still counts one write per intent
+- [x] #5 TASK-084 is closed through this module or explicitly re-scoped against it
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -54,4 +54,12 @@ Slice 2 complete. Moved eight ordinary board-writing routes onto writeBoard: cre
 Slice 3 complete. POST /api/boards/save now supplies source and named destination to writeBoard; the route has no readBoardContent or writeBoardContent call. Save records the destination in the change feed and broadcasts elements_changed. check-boards proves a save-as event for ledger@option-a and an in-place save message. board-io WriteOptions shrank from file/identity/elements/force/saveCommand to force/saveCommand. Validation: type-check; one-write 58; changes all; boards all including both save checks; doing 42; lock 115; version 61; module-scope 50 modules plus self-test, all green.
 
 Slice 4 complete. Closed TASK-084 through the write module. check-one-write now refuses an unbuildable agent batch with the bad upsert first, middle, and second/last, and proves valid elements around it remain byte-for-byte unchanged. The suite also pins nine server writeBoard calls, no direct server writeBoardContent or applyElementInput call, one persistence call in the module, and elements_changed as its pane message. Validation: type-check; one-write 69; changes all; boards all; doing 42; lock 115; version 61; module-scope 50 modules plus self-test, all green.
+
+Final validation complete after updating the hot-reload check to assert the unified write message. bun run test exited 0. Focused results: type-check passed; one-write 69 checks; changes all checks; boards all checks including save feed and pane message; doing 42; lock 115; version 61; module-scope 50 modules with no unwaived state plus self-test. Browser proofs passed sequentially and headless: fixed-point, typed-text, live-session (42 mixed-write cycles), and side-by-side. Hot reload also proved one elements_changed message per write after reload.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented one synchronous board-write entry for the complete read, isolated mutation, TASK-104 conversion, board-io persistence, change-feed record, pane notification, and response-shaping sequence. All nine board-writing routes use it. Board save now writes to a named destination through the same entry, reports in the change feed, and notifies panes with elements_changed. Complete mutation validation closes TASK-084: an invalid batch cannot partially mutate, persist, feed, or broadcast. Focused gates and the full browser-backed bun run test suite pass.
+<!-- SECTION:FINAL_SUMMARY:END -->

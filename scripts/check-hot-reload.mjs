@@ -305,14 +305,17 @@ try {
   const beforeBroadcast = seen.length;
   await api('POST', `/api/elements?board=${boardKey}`, box('Ledger', 800));
   await sleep(400);
-  const created = seen.slice(beforeBroadcast).filter(m => m.type === 'element_created');
-  check('a pane connected before the reload still hears broadcasts', created.length >= 1,
+  const writes = seen.slice(beforeBroadcast).filter(m => m.type === 'elements_changed');
+  check('a pane connected before the reload still hears broadcasts', writes.length >= 1,
     JSON.stringify(seen.slice(beforeBroadcast).map(m => m.type)));
-  // Counted by element rather than by message: one labelled box is a box and
-  // its label, so one write is two creations and each of them must arrive once.
-  const createdOnce = new Set(created.map(m => m.element?.id)).size === created.length;
-  check('  and hears each one exactly once, not once per reload', createdOnce,
-    `${created.length} copies`);
+  // One labelled box is a box and its label. The write entry sends both in one
+  // elements_changed message, and a reloaded handler must send that message
+  // once rather than once per module evaluation.
+  const created = writes.flatMap(message => message.created ?? []);
+  const createdOnce = writes.length === 1 && created.length >= 2 &&
+    new Set(created.map(element => element.id)).size === created.length;
+  check('  and hears the one write exactly once, not once per reload', createdOnce,
+    `${writes.length} write message(s), ${created.length} created element(s)`);
 
   await sleep(SETTLE_MS + 400);
   const feedLater = (await api('GET', `/api/changes?board=${boardKey}&since=${feedBefore.cursor}`)).body;
