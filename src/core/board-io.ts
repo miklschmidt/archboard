@@ -49,29 +49,29 @@ import { holdOn } from './board-hold.js';
 import { BoardState, baselineForFile, recordBaseline } from './board-store.js';
 import {
   BoardIdentity,
-  BoardWriteConflict,
-  FRONTMATTER_VERSION,
-  VersionMove,
   boardKey,
-  describeWriteConflict,
   hashBoardBytes,
   identityFromFrontmatter,
   identityFromVaultPath,
   makeIdentity,
-  noteVersion,
   renderBoardNote,
   requireVaultRoot,
   sceneJsonWithEmbeddedImages,
-  vaultPathFor,
+  vaultPathFor
+} from './board.js';
+import {
+  BoardWriteConflict,
+  VersionMove,
+  describeWriteConflict,
+  stampBoardVersion,
   versionMove,
   versionNumber
-} from './board.js';
+} from './board-version.js';
 import { derivedId, isBlockId, mintId } from './ids.js';
 import {
   isObsidianExcalidrawMd,
   extractSceneJsonFromObsidianMd,
-  renameElementId,
-  setFrontmatterValue
+  renameElementId
 } from './obsidian-md.js';
 import { buildScene } from './scene-io.js';
 
@@ -637,7 +637,7 @@ export function writeBoardContent(
     // onto an existing note keeps what that note's author put there.
     destination?.toString('utf-8')
   );
-  const { note, bytes, version } = stampVersion(rendered, destination);
+  const { note, bytes, version } = stampBoardVersion(rendered, destination);
   const { elementCount } = rendered;
   // The folder for a nested name, made after the check rather than before it,
   // so a refused write leaves no directory behind.
@@ -652,46 +652,4 @@ export function writeBoardContent(
   // operand the *next* write's check compares against, both halves of it.
   recordBaseline(board, file, hash, version);
   return { file, hash, note, elementCount, overwrote, version };
-}
-
-/**
- * Move the note's version on, if this write is a new edit of it (TASK-091).
- *
- * A WRITE THAT PRODUCES THE NOTE THAT IS ALREADY THERE IS NOT A NEW VERSION OF
- * IT, and that is the rule rather than an optimisation. Two saves of an
- * unchanged board are byte-identical and have to stay so, and the diagnostic
- * this counter exists for rests on the same fact from the other side: "the
- * version did not move and the bytes did" only names a foreign writer while
- * archboard never writes different bytes without moving it. Comparing what was
- * rendered against what is on disk is that rule, stated once.
- *
- * The count starts at 1 on the first write archboard makes to a note, whatever
- * that note's history. It describes one file rather than a board's whole life,
- * so a branch's first write is version 1 even though the board it came from is
- * at forty — the two are separate notes and nothing orders one against the
- * other.
- *
- * A note whose `version` key holds something archboard cannot read as a count
- * is left exactly as it is, key and all. That is somebody's own property in
- * their own frontmatter, and overwriting it to gain a counter would be
- * archboard deleting a person's data to make its own bookkeeping work. Such a
- * note is unversioned, the diagnosis over it reads `unknown`, and the hash
- * guards it exactly as it always did.
- *
- * The line is set on the rendered text rather than fed into the render, because
- * the render is what decides whether the version moves. Rendering twice to
- * settle one line would serialise the whole scene twice.
- */
-function stampVersion(
-  rendered: { note: string; bytes: Buffer },
-  destination: Buffer | undefined
-): { note: string; bytes: Buffer; version: number | null } {
-  const current = destination ? noteVersion(destination.toString('utf-8')) : { kind: 'none' as const };
-  if (current.kind === 'foreign') return { ...rendered, version: null };
-  if (destination && rendered.bytes.equals(destination)) {
-    return { ...rendered, version: current.kind === 'at' ? current.value : null };
-  }
-  const next = (current.kind === 'at' ? current.value : 0) + 1;
-  const note = setFrontmatterValue(rendered.note, FRONTMATTER_VERSION, String(next));
-  return { note, bytes: Buffer.from(note, 'utf-8'), version: next };
 }

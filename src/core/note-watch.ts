@@ -44,7 +44,8 @@ import fs from 'node:fs';
 import { holdOn } from './board-hold.js';
 import { ForeignWrite, foreignWriteTo } from './board-io.js';
 import { boards } from './board-store.js';
-import { VersionMove, describeVersionMove, normalizeBoardKey } from './board.js';
+import { normalizeBoardKey } from './board.js';
+import { VersionMove, describeVersionMove } from './board-version.js';
 import { kept } from './hot.js';
 
 /**

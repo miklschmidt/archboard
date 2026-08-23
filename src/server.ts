@@ -99,7 +99,6 @@ import {
   BoardIdentity,
   boardKey,
   classifyBoardSave,
-  describeVersionConflict,
   hashBoardBytes,
   listBoards,
   makeIdentity,
@@ -110,9 +109,9 @@ import {
   requireVaultRoot,
   validateLevel,
   validateVariant,
-  vaultPathFor,
-  versionOfNoteAt
+  vaultPathFor
 } from './core/board.js';
+import { describeVersionConflict, versionOfNoteAt } from './core/board-version.js';
 import {
   NoteWrittenElsewhere,
   noteWrittenElsewhere,
@@ -4711,4 +4710,3 @@ if (isMainModule(import.meta.url)) {
 
 export { startServer };
 export default app;
-

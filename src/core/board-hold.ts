@@ -33,7 +33,7 @@
 
 import { kept } from './hot.js';
 import type { BoardContent } from './board-io.js';
-import type { BoardWriteConflict } from './board.js';
+import type { BoardWriteConflict } from './board-version.js';
 
 export interface BoardHold {
   /** The refusal that started it, three outcomes and all (ADR 0006). */

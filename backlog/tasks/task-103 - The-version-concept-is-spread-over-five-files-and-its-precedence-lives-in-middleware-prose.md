@@ -3,9 +3,11 @@ id: TASK-103
 title: >-
   The version concept is spread over five files, and its precedence lives in
   middleware prose
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-23 15:01'
+updated_date: '2026-08-23 15:24'
 labels: []
 dependencies: []
 references:
@@ -34,3 +36,15 @@ Architecture review 2026-08-23, candidate 3. Worth exploring rather than Strong:
 - [ ] #2 `src/core/board.ts` no longer exports version functions, and `src/core/version.ts` is renamed so "version" does not resolve to the package version first
 - [ ] #3 `test:version` still proves the diagnoses in-process and the refusal over HTTP, against the new seam
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Add src/core/board-version.ts as the single version module, moving note parsing, lookup, move diagnosis, conflict prose, byte-identical-aware stamping, stated-over-remembered checking, and kept remembered state. 2. Route board-io through it, remove board.ts version functions, rename version.ts to package-version.ts, and update import-only callers. 3. Put claim and client remembered versions behind the new module names, with server.ts calling one check under the lock. 4. Extend check-version.mjs at the new seam for precedence, remembered conflict refresh, and no note-derived expectation. 5. Run the allowed focused checks after each slice, then final greps, explicit-path commits, task notes, acceptance evidence, and Backlog finalization.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Slice 1: added src/core/board-version.ts for note counts, move diagnosis, conflict prose, stamping, source parsing, precedence, and kept remembered state; board-io and existing diagnostics now use the new module; board.ts exports no version functions; renamed src/core/version.ts to src/core/package-version.ts. Import-only ripples: src/core/note-watch.ts, src/core/board-hold.ts, src/core/canvas-client.ts, src/core/mcp-server.ts, src/cli/run.ts, scripts/check-boards.mjs, scripts/check-version.mjs, and the version import region in src/server.ts. Evidence: backend tsc passed before expected TASK-101 frontend errors; test:version passed 57 checks; test:lock passed 115 checks.
+<!-- SECTION:NOTES:END -->
