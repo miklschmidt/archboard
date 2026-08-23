@@ -79,7 +79,13 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const { makeIdentity, vaultPathFor } = await import(src('core/board.ts'));
 const {
-  versionNumber, versionMove, versionOfNoteAt
+  checkBoardVersion,
+  forgetRememberedVersion,
+  rememberVersion,
+  rememberedVersion,
+  versionNumber,
+  versionMove,
+  versionOfNoteAt
 } = await import(src('core/board-version.ts'));
 const { getOrCreateBoard, boards: boardStore, recordBaseline } = await import(src('core/board-store.ts'));
 const {
@@ -150,7 +156,40 @@ ledger.file = vaultPathFor(ledgerIdentity);
 }
 
 // ---------------------------------------------------------------------------
-// 3. Somebody's own `version` key is not archboard's to take
+// 3. The write seam owns the sources and their precedence
+// ---------------------------------------------------------------------------
+
+{
+  const writer = 'check-version-writer';
+  rememberVersion(writer, 1);
+  check('a version stated for this write beats the older one the canvas remembers',
+    checkBoardVersion({
+      board: ledgerKey,
+      file: ledger.file,
+      writesNote: true,
+      stated: 2,
+      rememberedBy: writer
+    }) === null);
+
+  const conflict = checkBoardVersion({
+    board: ledgerKey,
+    file: ledger.file,
+    writesNote: true,
+    rememberedBy: writer
+  });
+  check('without a stated version, the remembered one is the write precondition',
+    conflict?.expected === 1 && conflict.actual === 2,
+    JSON.stringify({ expected: conflict?.expected, actual: conflict?.actual }));
+  check('a refusal remembers the version it just told that writer',
+    rememberedVersion(writer) === 2, String(rememberedVersion(writer)));
+
+  forgetRememberedVersion(writer);
+  check('the note\'s own current version is deliberately not an expectation source',
+    checkBoardVersion({ board: ledgerKey, file: ledger.file, writesNote: true }) === null);
+}
+
+// ---------------------------------------------------------------------------
+// 4. Somebody's own `version` key is not archboard's to take
 // ---------------------------------------------------------------------------
 
 {
@@ -174,7 +213,7 @@ ledger.file = vaultPathFor(ledgerIdentity);
 }
 
 // ---------------------------------------------------------------------------
-// 4. The three diagnoses
+// 5. The three diagnoses
 // ---------------------------------------------------------------------------
 //
 // One comparison answers all of them, in `foreignWriteTo`, which is the same
@@ -229,7 +268,7 @@ const clean = fs.readFileSync(ledger.file, 'utf-8');     // version 2, as archbo
 }
 
 // ---------------------------------------------------------------------------
-// 5. TASK-062's mark says which side is newer, from the same comparison
+// 6. TASK-062's mark says which side is newer, from the same comparison
 // ---------------------------------------------------------------------------
 //
 // The mark's whole subject is a note being ahead of what a pane holds, and
@@ -258,7 +297,7 @@ boardStore.delete(ledgerKey);
 forgetNoteWatch();
 
 // ---------------------------------------------------------------------------
-// 6. Over a real canvas: the fingerprint, and the precondition
+// 7. Over a real canvas: the fingerprint, and the precondition
 // ---------------------------------------------------------------------------
 
 const serverVault = fs.mkdtempSync(join(os.tmpdir(), 'archboard-version-live-'));
@@ -482,7 +521,7 @@ try {
   check('  and is not made to say what it is doing either, which is the same line drawn twice',
     (await person.json())?.success === true);
 
-  // --- 7. the hash still decides ------------------------------------------
+  // --- 8. the hash still decides ------------------------------------------
   //
   // The one that matters most, because it is the thing this feature could
   // quietly break. A foreign editor carries frontmatter across verbatim, so it

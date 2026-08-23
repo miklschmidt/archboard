@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-23 15:01'
-updated_date: '2026-08-23 15:24'
+updated_date: '2026-08-23 15:30'
 labels: []
 dependencies: []
 references:
@@ -47,4 +47,6 @@ Architecture review 2026-08-23, candidate 3. Worth exploring rather than Strong:
 
 <!-- SECTION:NOTES:BEGIN -->
 Slice 1: added src/core/board-version.ts for note counts, move diagnosis, conflict prose, stamping, source parsing, precedence, and kept remembered state; board-io and existing diagnostics now use the new module; board.ts exports no version functions; renamed src/core/version.ts to src/core/package-version.ts. Import-only ripples: src/core/note-watch.ts, src/core/board-hold.ts, src/core/canvas-client.ts, src/core/mcp-server.ts, src/cli/run.ts, scripts/check-boards.mjs, scripts/check-version.mjs, and the version import region in src/server.ts. Evidence: backend tsc passed before expected TASK-101 frontend errors; test:version passed 57 checks; test:lock passed 115 checks.
+
+Slice 2: moved claim and client remembered versions behind board-version rememberedVersion/rememberVersion names, with kept() preserving them through hot reload; board-lock now only ends remembered state when a claim ends. The write middleware now parses statedVersion once and calls checkBoardVersion once under the held lock; checkBoardVersion owns stated-over-remembered precedence, current-note comparison, and conflict refresh. check-version gained four in-process seam checks. Evidence: full type-check passed; test:version passed 61 checks after its new HTTP coverage caught and verified the holdOn undefined integration correction; test:lock passed 115 checks; test:module-scope passed 50 modules and its self-test.
 <!-- SECTION:NOTES:END -->

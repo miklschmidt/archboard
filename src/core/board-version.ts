@@ -8,7 +8,7 @@
 import fs from 'node:fs';
 
 import type { BoardIdentity } from './board.js';
-import { boardKey } from './board.js';
+import { CURRENT_VARIANT, boardDisplayName, boardKey } from './board.js';
 import { kept } from './hot.js';
 import { readFrontmatterValue, setFrontmatterValue } from './obsidian-md.js';
 
@@ -116,8 +116,8 @@ const clock = (iso: string | undefined): string =>
   iso ? new Date(iso).toISOString().replace('T', ' ').slice(0, 19) + ' UTC' : 'unknown';
 
 function suggestSaveAsName(identity: Pick<BoardIdentity, 'board' | 'variant' | 'displayName'>): string {
-  const suffix = identity.variant === 'current' ? 'from-canvas' : `${identity.variant}-from-canvas`;
-  return `${identity.displayName ?? identity.board}@${suffix}`;
+  const suffix = identity.variant === CURRENT_VARIANT ? 'from-canvas' : `${identity.variant}-from-canvas`;
+  return `${boardDisplayName(identity)}@${suffix}`;
 }
 
 export function describeWriteConflict(input: {

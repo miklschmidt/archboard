@@ -82,8 +82,6 @@ import {
   BoardHeldError,
   boardLockState,
   claimBoard,
-  claimSaw,
-  claimSeen,
   claimWriterId,
   holdBoard,
   LockHolder,
@@ -111,7 +109,12 @@ import {
   validateVariant,
   vaultPathFor
 } from './core/board.js';
-import { describeVersionConflict, versionOfNoteAt } from './core/board-version.js';
+import {
+  checkBoardVersion,
+  rememberVersionAt,
+  statedVersion,
+  versionOfNoteAt
+} from './core/board-version.js';
 import {
   NoteWrittenElsewhere,
   noteWrittenElsewhere,
@@ -1050,138 +1053,6 @@ function refuseRevokedClaim(res: Response, board: string): boolean {
   return true;
 }
 
-/**
- * What version this writer was editing, and NOT SOMETHING IT HAD TO REMEMBER TO
- * SAY (TASK-091).
- *
- * An agent is a fresh process per command, so a number it has to thread from
- * one command's answer into the next is a number it drops, and a precondition
- * a caller may leave out is one that protects nobody. The canvas fills it in
- * instead, from what it last told this writer, which is the shape TASK-080
- * settled for the claim: the agent carries nothing and the canvas keeps the
- * fact against the board every call already names.
- *
- * Three sources, in order, and the order is the point.
- *
- *   stated    `?expectVersion=` on the request. A writer that says what it was
- *             editing means it, and it wins over anything remembered for it
- *   remembered what the canvas last told the claim holding this board
- *             (`claimSeen`). This is the automatic half
- *   nothing   an agent with no claim, whose id is minted for this one request.
- *             There is nothing this canvas can honestly check against
- *
- * WHAT IS DELIBERATELY NOT A SOURCE: the note's own current version. It always
- * matches, so it would refuse nothing while looking exactly like a check, and a
- * check that cannot fail is worse than none.
- *
- * `0` on the wire means "no version", which is what a note archboard has never
- * written carries.
- */
-function statedVersionOf(
-  req: Request,
-  writer: { id: string; kind: 'human' | 'agent' }
-): { ok: true; expected?: number | null } | { ok: false; problem: string } {
-  // A person is never checked, whatever the request carries. Their gesture took
-  // the board at its leading edge and their report is a delta applied to a note
-  // read a moment ago, so there is no stale reading of the board to protect
-  // them from — and a refusal here would be a wall display that stopped
-  // responding to the person standing at it, which is the one thing ADR 0016
-  // forbids outright. Checked before the parse rather than after, so that no
-  // shape of request can put a person on this path at all. `doing` draws the
-  // same line for the same reason: nobody narrates their own drawing either.
-  if (writer.kind !== 'agent') return { ok: true };
-
-  const raw = req.query.expectVersion;
-  if (raw !== undefined && raw !== '') {
-    if (typeof raw !== 'string' || !/^\d+$/.test(raw.trim())) {
-      return {
-        ok: false,
-        problem:
-          '`expectVersion` must be a whole number: the version you were editing, as the last write\'s ' +
-          `fingerprint reported it or as \`board info\` says. Got ${JSON.stringify(raw)}.`
-      };
-    }
-    const stated = Number(raw.trim());
-    return { ok: true, expected: stated === 0 ? null : stated };
-  }
-  return { ok: true };
-}
-
-/**
- * And what the canvas remembers telling this writer, read under the lock.
- *
- * Under it, and not with the parse above, because this half is the one that has
- * to be current: an agent's two writes to one claimed board can both be waiting
- * on the lock at once, and a record read before the wait is a record the write
- * in front may already have moved. That would refuse the second write for
- * something it had in fact been told. It fails closed and tells once, so it
- * would self-heal, but a spurious refusal is still a refusal.
- */
-function rememberedVersionFor(
-  board: string,
-  writer: { id: string; kind: 'human' | 'agent' }
-): number | null | undefined {
-  if (writer.kind !== 'agent') return undefined;
-  if (claimWriterId(board) !== writer.id) return undefined;
-  return claimSeen(board);
-}
-
-/**
- * The board has moved on since the version this writer was editing, so nothing
- * is written (TASK-091).
- *
- * CHECKED HERE BECAUSE HERE IS WHERE IT IS TRUE. The board's lock is held by
- * the time this runs and the handler runs synchronously from `next()`, so no
- * other archboard writer can land between reading the version and writing the
- * note. Checking it in a route would be a check per route, and a route added
- * later would be the one that let a precondition through unexamined — the same
- * argument that put the lock and `doing` at this boundary.
- *
- * It does not replace ADR 0006's hash check and cannot: Obsidian may still
- * write the note between this and the write, and it would leave the version
- * exactly where it was. That write is refused by the hash, downstream of this,
- * which is the split ADR 0016 already draws — the version orders archboard's
- * own writers, the hash catches everybody else's.
- */
-function refuseStaleVersion(res: Response, board: string, expected: number | null): boolean {
-  const state = boards.get(board);
-  const held = holdOn(board);
-  // A board that has stopped saving is not writing to its note at all: the
-  // write goes into the copy this canvas is holding and the note is left as the
-  // other editor wrote it (TASK-079). So there is nothing here for a
-  // precondition to be about, and this steps aside rather than refusing.
-  // Refusing would stop a held board accepting work, which is the one thing
-  // TASK-079 exists to keep happening — and the writer is told regardless,
-  // because every answer about a held board carries the hold.
-  if (held) return false;
-  const actual = state?.file ? versionOfNoteAt(state.file) : null;
-  if (actual === expected) return false;
-  const conflict = describeVersionConflict({
-    board,
-    ...(state?.file ? { file: state.file } : {}),
-    expected,
-    actual
-  });
-  // TOLD ONCE, like a revoked claim, and for the same reason. The refusal names
-  // the version the board is at, so saying it is telling this writer what the
-  // board is now: leaving the record where it was would refuse every write it
-  // ever made again, which is a wedged agent rather than a protected board. Its
-  // next write is against what it has just been told, and if that is wrong
-  // again then somebody else really is writing at the same time.
-  claimSaw(board, actual);
-  // `versionConflict` and not `conflict`: that name means ADR 0006's refusal
-  // everywhere it appears, it carries the three outcomes a person picks
-  // between, and this has none of them. Nothing has been written over, nothing
-  // is held, and what to do about it is to read the board.
-  res.status(409).json({
-    success: false,
-    code: 'BOARD_VERSION_CONFLICT',
-    error: conflict.message,
-    versionConflict: conflict
-  });
-  return true;
-}
-
 app.use((req: Request, res: Response, next: NextFunction) => {
   if (req.method === 'GET' || req.method === 'HEAD') return next();
   if (!req.path.startsWith('/api/')) return next();
@@ -1211,7 +1082,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // rather than a conflict, and nothing should wait on a lock to be told so.
   // What the canvas remembers telling this writer is read later, under the
   // lock, because that half can move while a write waits for the board.
-  const stated = statedVersionOf(req, writer);
+  const stated = statedVersion(req.query.expectVersion, writer.kind);
   if (!stated.ok) {
     res.status(400).json({ success: false, code: 'BAD_EXPECTED_VERSION', error: stated.problem, board: key });
     return;
@@ -1225,8 +1096,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   res.on('finish', () => {
     if (res.statusCode >= 400) return;
     if (writer.kind !== 'agent' || claimWriterId(key) !== writer.id) return;
-    const file = boards.get(key)?.file;
-    claimSaw(key, file ? versionOfNoteAt(file) : null);
+    rememberVersionAt(writer.id, boards.get(key)?.file);
   });
 
   // And an agent says what it is doing, on this write, before it takes the
@@ -1264,10 +1134,23 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       // the handlers that would do that on `finish` are registered below this,
       // and a request that never reaches the handler never took the board for
       // any longer than this line.
-      const expected = stated.expected !== undefined
-        ? stated.expected
-        : rememberedVersionFor(key, writer);
-      if (expected !== undefined && refuseStaleVersion(res, key, expected)) {
+      const rememberedBy = writer.kind === 'agent' && claimWriterId(key) === writer.id
+        ? writer.id
+        : undefined;
+      const conflict = checkBoardVersion({
+        board: key,
+        file: boards.get(key)?.file,
+        writesNote: holdOn(key) === undefined,
+        ...(stated.expected !== undefined ? { stated: stated.expected } : {}),
+        ...(rememberedBy ? { rememberedBy } : {})
+      });
+      if (conflict) {
+        res.status(409).json({
+          success: false,
+          code: 'BOARD_VERSION_CONFLICT',
+          error: conflict.message,
+          versionConflict: conflict
+        });
         if (hold.created) releaseHold(key, hold.holder.id);
         return;
       }
@@ -1407,8 +1290,9 @@ app.post('/api/boards/claim', (req: Request, res: Response) => {
         // the one write nothing checked, which is the write a campaign is most
         // likely to build everything else on.
         const file = boards.get(key)?.file;
-        const version = file ? versionOfNoteAt(file) : null;
-        if (created) claimSaw(key, version);
+        const version = created
+          ? rememberVersionAt(claim.holder.id, file)
+          : (file ? versionOfNoteAt(file) : null);
         res.json({ success: true, board: key, claim, created, version });
       })
       .catch(error => res.status(boardErrorStatus(error)).json(boardErrorBody(error)));
