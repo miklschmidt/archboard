@@ -78,6 +78,11 @@ export function isHeld(key: string): boolean {
   return holds.has(key);
 }
 
+/** Whether an ordinary write reaches the note rather than the held copy. */
+export function writesBoardNote(key: string): boolean {
+  return !isHeld(key);
+}
+
 /**
  * Stop saving this board, and keep drawing.
  *

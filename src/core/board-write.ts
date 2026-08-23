@@ -18,7 +18,9 @@ import {
   holdMessage,
   holdWrite,
   isHeld,
-  reportHold
+  releaseHold,
+  reportHold,
+  writesBoardNote
 } from './board-hold.js';
 import {
   BoardContent,
@@ -27,7 +29,7 @@ import {
   renderContent,
   writeBoardContent
 } from './board-io.js';
-import { BoardState } from './board-store.js';
+import { BoardState, copyElements } from './board-store.js';
 import { hashBoardBytes } from './board.js';
 import { ChangeOrigin, changeFeed } from './change-feed.js';
 import logger from '../utils/logger.js';
@@ -49,9 +51,11 @@ export interface BoardWriteDelta {
 
 export interface BoardMutationResult<T> {
   value: T;
-  delta: BoardWriteDelta;
+  delta?: Partial<BoardWriteDelta>;
   /** A valid no-op does not write, notify panes, or advance the feed. */
   write?: boolean;
+  /** A pane supplied its whole scene rather than a delta. */
+  wholeScene?: boolean;
 }
 
 export type BoardMutation<T> = (
@@ -61,9 +65,9 @@ export type BoardMutation<T> = (
 
 export interface ElementMutationPlan<T> {
   input: ElementInputRequest;
-  before?: (content: BoardContent) => void;
+  /** Present for a pane change report; true means its input is the whole scene. */
+  wholeScene?: boolean;
   value: (applied: AppliedElementInput, content: BoardContent) => T;
-  write?: (applied: AppliedElementInput) => boolean;
 }
 
 export interface BoardWriteAnswerContext<T> {
@@ -78,17 +82,15 @@ export interface BoardWriteAnswerContext<T> {
 
 export interface BoardWriteRequest<T> {
   source: BoardWriteTarget;
-  target?: BoardWriteTarget;
   origin: ChangeOrigin;
   mutation: BoardMutation<T>;
   /** The pane that already has a human change on screen and must skip its echo. */
   clientId?: string | null;
-  /** A held board's full-screen report replaces its held copy. */
-  fromScreen?: boolean;
-  /** Explicit saves act on a hold rather than adding another held write. */
-  persistHeld?: boolean;
-  force?: boolean;
-  saveCommand?: string;
+  /** An explicit save writes this target and resolves any hold after persistence. */
+  save?: {
+    target: BoardWriteTarget;
+    force?: boolean;
+  };
   afterPersist?: (context: BoardWriteAnswerContext<T>) => void;
   answer: (context: BoardWriteAnswerContext<T>) => Record<string, unknown>;
 }
@@ -102,17 +104,21 @@ export class BoardMutationError extends Error {
   }
 }
 
-const emptyDelta = (): BoardWriteDelta => ({ created: [], updated: [], deleted: [] });
+const completeDelta = (delta?: Partial<BoardWriteDelta>): BoardWriteDelta => ({
+  created: delta?.created ?? [],
+  updated: delta?.updated ?? [],
+  deleted: delta?.deleted ?? [],
+  ...(delta?.filesAdded ? { filesAdded: delta.filesAdded } : {}),
+  ...(delta?.filesDeleted ? { filesDeleted: delta.filesDeleted } : {})
+});
 
 function copyContent(content: BoardContent): BoardContent {
   return {
     ...content,
-    elements: new Map(
-      Array.from(content.elements, ([id, element]) => [id, structuredClone(element)])
-    ),
-    files: new Map(
-      Array.from(content.files, ([id, file]) => [id, structuredClone(file)])
-    )
+    elements: new Map(copyElements(content.elements.values()).map(element => [element.id, element])),
+    // File records are never mutated during a board write. Copy the map so
+    // membership can change without cloning base64 image payloads.
+    files: new Map(content.files)
   };
 }
 
@@ -125,8 +131,12 @@ export function elementMutation<T>(
 ): BoardMutation<T> {
   return (content) => {
     const plan = prepare(content);
-    plan.before?.(content);
-    const applied = applyElementInput(content.elements, plan.input);
+    if (plan.wholeScene) content.elements.clear();
+    const applied = applyElementInput(content.elements, {
+      ...plan.input,
+      deletes: plan.wholeScene ? [] : plan.input.deletes
+    });
+    const changed = applied.created.length > 0 || applied.updated.length > 0 || applied.deleted.length > 0;
     return {
       value: plan.value(applied, content),
       delta: {
@@ -134,7 +144,10 @@ export function elementMutation<T>(
         updated: applied.updated,
         deleted: applied.deleted
       },
-      write: plan.write?.(applied)
+      // When wholeScene is present this is a pane report. Empty deltas do not
+      // write, while a full report must replace the held copy even when empty.
+      write: plan.wholeScene === undefined ? undefined : plan.wholeScene || changed,
+      wholeScene: plan.wholeScene
     };
   };
 }
@@ -152,9 +165,13 @@ function persist<T>(
   request: BoardWriteRequest<T>,
   target: BoardWriteTarget,
   content: BoardContent,
+  wholeScene: boolean,
   tellPanes: TellPanes
 ): WrittenNote | null {
-  if (request.persistHeld !== true && holdWrite(target.key, content, request.fromScreen === true)) {
+  if (!request.save && !writesBoardNote(target.key)) {
+    const { bytes } = renderContent(target.board.identity, content);
+    content.hash = hashBoardBytes(bytes);
+    holdWrite(target.key, content, wholeScene);
     recordChange(target, request.origin);
     return null;
   }
@@ -162,11 +179,13 @@ function persist<T>(
   let written: WrittenNote;
   try {
     written = writeBoardContent(target.board, content, {
-      force: request.force,
-      saveCommand: request.saveCommand
+      force: request.save?.force,
+      saveCommand: target.key === request.source.key
+        ? 'board save'
+        : `board save --as ${target.key}`
     });
   } catch (error) {
-    if (error instanceof BoardWriteConflictError && !isHeld(target.key) && request.persistHeld !== true) {
+    if (error instanceof BoardWriteConflictError && !isHeld(target.key) && !request.save) {
       const hold = beginHold(target.key, error.conflict, readBoardContent(target.board));
       logger.warn(`Board "${target.key}" has stopped saving: ${holdMessage(target.key, hold)}`);
       tellPanes({ type: 'board_hold', hold: reportHold(target.key, hold) }, target.key);
@@ -180,6 +199,22 @@ function persist<T>(
   content.version = written.version;
   recordChange(target, request.origin);
   return written;
+}
+
+function releaseSavedHold<T>(
+  request: BoardWriteRequest<T>,
+  target: BoardWriteTarget,
+  tellPanes: TellPanes
+): void {
+  if (!request.save) return;
+  const hold = releaseHold(request.source.key);
+  if (!hold) return;
+  const outcome = target.key === request.source.key ? 'overwrite' : 'elsewhere';
+  const report = reportHold(request.source.key, hold);
+  logger.info(
+    `Board "${request.source.key}" is saving again (${outcome}), after ${hold.writes} held change(s).`
+  );
+  tellPanes({ type: 'board_released', hold: report, outcome } as WebSocketMessage, request.source.key);
 }
 
 function tellPanesAboutWrite(
@@ -212,20 +247,20 @@ function tellPanesAboutWrite(
  * copy, so a mutation that throws cannot leave an earlier upsert applied.
  */
 export function writeBoard<T>(request: BoardWriteRequest<T>, tellPanes: TellPanes): Record<string, unknown> {
-  const target = request.target ?? request.source;
+  const target = request.save?.target ?? request.source;
   const sourceContent = readBoardContent(request.source.board);
   const destinationBefore = target.key === request.source.key
-    ? copyContent(sourceContent)
-    : copyContent(readBoardContent(target.board));
+    ? sourceContent
+    : readBoardContent(target.board);
   const content = copyContent(sourceContent);
   const mutation = request.mutation(content, destinationBefore);
-  const delta = mutation.delta ?? emptyDelta();
+  const delta = completeDelta(mutation.delta);
   const shouldWrite = mutation.write ?? true;
   const appliedAt = new Date().toISOString();
 
   let written: WrittenNote | null = null;
   if (shouldWrite) {
-    written = persist(request, target, content, tellPanes);
+    written = persist(request, target, content, mutation.wholeScene === true, tellPanes);
   }
 
   const context: BoardWriteAnswerContext<T> = {
@@ -239,6 +274,7 @@ export function writeBoard<T>(request: BoardWriteRequest<T>, tellPanes: TellPane
   };
 
   if (shouldWrite) {
+    if (written) releaseSavedHold(request, target, tellPanes);
     request.afterPersist?.(context);
     tellPanesAboutWrite(tellPanes, target, delta, request.clientId ?? null, appliedAt);
   }
@@ -268,6 +304,9 @@ function boardFingerprint(
 ): { elements: number; note: string; version: number | null } {
   if (written) {
     return { elements: content.elements.size, note: written.hash, version: written.version };
+  }
+  if (content.hash) {
+    return { elements: content.elements.size, note: content.hash, version: content.version ?? null };
   }
   const { bytes } = renderContent(board.identity, content);
   return {

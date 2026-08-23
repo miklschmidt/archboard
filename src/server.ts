@@ -43,7 +43,6 @@ import {
   getOrCreateBoard,
   recordBaseline,
   resolveBoard,
-  openBoardKeys,
   SCRATCH_KEY
 } from './core/board-store.js';
 import {
@@ -54,7 +53,8 @@ import {
   // name — its check and ADR 0016 both use it — so ADR 0006's hold takes the
   // verb its own plan uses for the three outcomes: each one clears the hold.
   releaseHold as clearHold,
-  reportHold
+  reportHold,
+  writesBoardNote
 } from './core/board-hold.js';
 import {
   BoardContent,
@@ -82,6 +82,7 @@ import {
 import { checkDoing, DoingEntry, recentDoing, recordDoing } from './core/board-doing.js';
 import {
   BoardIdentity,
+  CURRENT_VARIANT,
   boardKey,
   classifyBoardSave,
   listBoards,
@@ -97,6 +98,7 @@ import {
 } from './core/board.js';
 import {
   checkBoardVersion,
+  rememberVersion,
   rememberVersionAt,
   statedVersion,
   versionOfNoteAt
@@ -108,7 +110,6 @@ import {
   refreshNoteWatch
 } from './core/note-watch.js';
 import { ARCHBOARD_VAULT, noVaultMessage } from './core/config.js';
-import { CURRENT_VARIANT } from './core/board.js';
 import { restampVariant } from './core/promote.js';
 import { boardsForRepo } from './core/repo-boards.js';
 import { CompareSideInput, compareBoards } from './core/compare.js';
@@ -122,6 +123,7 @@ import { overlapsRegion } from './core/geometry.js';
 import {
   agentWriteAnswer,
   BoardMutationError,
+  BoardWriteRequest,
   BoardWriteTarget,
   elementMutation,
   writeBoard
@@ -640,6 +642,18 @@ function boardErrorBody(error: unknown): Record<string, unknown> {
   return base;
 }
 
+/** Send one board-write answer and retain the version it already produced. */
+function answerBoardWrite<T>(res: Response, request: BoardWriteRequest<T>): void {
+  const afterPersist = request.afterPersist;
+  res.json(writeBoard({
+    ...request,
+    afterPersist: context => {
+      if (context.written) res.locals.writtenBoardVersion = context.written.version;
+      afterPersist?.(context);
+    }
+  }, broadcast));
+}
+
 /**
  * What a pane opening for the first time should show.
  *
@@ -898,7 +912,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   res.on('finish', () => {
     if (res.statusCode >= 400) return;
     if (writer.kind !== 'agent' || claimWriterId(key) !== writer.id) return;
-    rememberVersionAt(writer.id, boards.get(key)?.file);
+    if ('writtenBoardVersion' in res.locals) {
+      rememberVersion(writer.id, res.locals.writtenBoardVersion as number | null);
+    } else {
+      rememberVersionAt(writer.id, boards.get(key)?.file);
+    }
   });
 
   // And an agent says what it is doing, on this write, before it takes the
@@ -942,7 +960,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       const conflict = checkBoardVersion({
         board: key,
         file: boards.get(key)?.file,
-        writesNote: holdOn(key) === undefined,
+        writesNote: writesBoardNote(key),
         ...(stated.expected !== undefined ? { stated: stated.expected } : {}),
         ...(rememberedBy ? { rememberedBy } : {})
       });
@@ -1145,7 +1163,7 @@ app.get('/api/elements', (req: Request, res: Response) => {
 app.post('/api/elements', (req: Request, res: Response) => {
   try {
     const source = boardTargetFromRequest(req, 'Creating an element');
-    res.json(writeBoard({
+    answerBoardWrite(res, {
       source,
       origin: 'agent',
       mutation: elementMutation<{ stored: ServerElement }>(() => ({
@@ -1169,7 +1187,7 @@ app.post('/api/elements', (req: Request, res: Response) => {
           written
         )
       })
-    }, broadcast));
+    });
   } catch (error) {
     logger.error('Error creating element:', error);
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
@@ -1190,7 +1208,7 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
       });
     }
 
-    res.json(writeBoard({
+    answerBoardWrite(res, {
       source,
       origin: 'agent',
       mutation: elementMutation<{ touched: ServerElement[] }>(content => {
@@ -1214,7 +1232,7 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
         element: content.elements.get(id) as ServerElement,
         ...agentWriteAnswer(source.board, content, value.touched, wantsDocument(req), written)
       })
-    }, broadcast));
+    });
   } catch (error) {
     logger.error('Error updating element:', error);
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
@@ -1225,7 +1243,7 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
 app.delete('/api/elements/clear', (req: Request, res: Response) => {
   try {
     const source = boardTargetFromRequest(req, 'Clearing a board');
-    res.json(writeBoard({
+    answerBoardWrite(res, {
       source,
       origin: 'agent',
       mutation: content => {
@@ -1233,7 +1251,7 @@ app.delete('/api/elements/clear', (req: Request, res: Response) => {
         content.elements.clear();
         return {
           value: { count: deleted.length },
-          delta: { created: [], updated: [], deleted }
+          delta: { deleted }
         };
       },
       afterPersist: ({ value }) => {
@@ -1255,7 +1273,7 @@ app.delete('/api/elements/clear', (req: Request, res: Response) => {
         message: `Cleared ${value.count} elements`,
         count: value.count
       })
-    }, broadcast));
+    });
   } catch (error) {
     logger.error('Error clearing canvas:', error);
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
@@ -1275,7 +1293,7 @@ app.delete('/api/elements/:id', (req: Request, res: Response) => {
       });
     }
 
-    res.json(writeBoard({
+    answerBoardWrite(res, {
       source,
       origin: 'agent',
       mutation: elementMutation<{ deleted: string[] }>(content => {
@@ -1294,7 +1312,7 @@ app.delete('/api/elements/:id', (req: Request, res: Response) => {
         ...(value.deleted.length > 1 ? { alsoDeleted: value.deleted.slice(1) } : {}),
         ...agentWriteAnswer(source.board, content, delta.updated, wantsDocument(req), written)
       })
-    }, broadcast));
+    });
   } catch (error) {
     logger.error('Error deleting element:', error);
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
@@ -1392,7 +1410,7 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
       });
     }
 
-    res.json(writeBoard({
+    answerBoardWrite(res, {
       source,
       origin: 'agent',
       mutation: elementMutation<{ count: number }>(() => ({
@@ -1413,7 +1431,7 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
           written
         )
       })
-    }, broadcast));
+    });
   } catch (error) {
     logger.error('Error batch creating elements:', error);
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
@@ -1579,11 +1597,10 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
     const source = boardTargetFromRequest(req, 'A change report');
     const { upserts, deletes, origin, clientId, timestamp, fullReport } =
       ElementChangesSchema.parse(req.body ?? {});
-    res.json(writeBoard({
+    answerBoardWrite(res, {
       source,
       origin,
       clientId,
-      fromScreen: fullReport,
       mutation: elementMutation<null>(content => {
         // A pane may send its whole screen only while this board is held. The
         // check and the clear both happen inside the isolated mutation, before
@@ -1599,11 +1616,9 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
           );
         }
         return {
-          input: { upserts, deletes: fullReport ? [] : deletes, origin, timestamp },
-          before: fullReport ? current => current.elements.clear() : undefined,
+          input: { upserts, deletes, origin, timestamp },
+          wholeScene: fullReport,
           value: () => null,
-          write: applied => fullReport ||
-            applied.created.length > 0 || applied.updated.length > 0 || applied.deleted.length > 0
         };
       }),
       afterPersist: ({ content, delta }) => {
@@ -1634,7 +1649,7 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
           )
           : { document: Array.from(content.elements.values()) })
       })
-    }, broadcast));
+    });
   } catch (error) {
     logger.error('Error applying a change report:', error);
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
@@ -2162,7 +2177,7 @@ app.post('/api/files', (req: Request, res: Response) => {
     const source = boardTargetFromRequest(req, 'Adding an image');
     const body = req.body;
     const fileList: ExcalidrawFile[] = Array.isArray(body) ? body : (body?.files || []);
-    res.json(writeBoard({
+    answerBoardWrite(res, {
       source,
       origin: 'agent',
       mutation: content => {
@@ -2187,7 +2202,7 @@ app.post('/api/files', (req: Request, res: Response) => {
           .map(file => file.id);
         return {
           value: { orphaned },
-          delta: { created: [], updated: [], deleted: [], filesAdded: fileList }
+          delta: { filesAdded: fileList }
         };
       },
       answer: ({ value }) => ({
@@ -2204,7 +2219,7 @@ app.post('/api/files', (req: Request, res: Response) => {
           }
           : {})
       })
-    }, broadcast));
+    });
   } catch (error) {
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
@@ -2215,7 +2230,7 @@ app.delete('/api/files/:id', (req: Request, res: Response) => {
   try {
     const source = boardTargetFromRequest(req, 'Deleting an image');
     const id = req.params.id as string;
-    res.json(writeBoard({
+    answerBoardWrite(res, {
       source,
       origin: 'agent',
       mutation: content => {
@@ -2224,11 +2239,11 @@ app.delete('/api/files/:id', (req: Request, res: Response) => {
         }
         return {
           value: null,
-          delta: { created: [], updated: [], deleted: [], filesDeleted: [id] }
+          delta: { filesDeleted: [id] }
         };
       },
       answer: () => ({ success: true, board: source.key })
-    }, broadcast));
+    });
   } catch (error) {
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
@@ -3099,15 +3114,12 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
     const heldSource = holdOn(source.key);
     const moved = panesFollowSave(kind) || (heldSource && branched) ? watching : [];
 
-    res.json(writeBoard({
+    answerBoardWrite(res, {
       source,
-      target,
       origin: 'agent',
       // Save is the explicit resolution for a held board. It writes the note
       // chosen by the person instead of adding another change to the held copy.
-      persistHeld: true,
-      force,
-      saveCommand: body.name ? `board save --as ${targetKey}` : 'board save',
+      save: { target, force },
       mutation: (content, destinationBefore) => {
         const saved = branched
           ? restampVariant(Array.from(content.elements.values()), targetIdentity.variant)
@@ -3116,17 +3128,16 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
         const savedIds = new Set(saved.map(element => element.id));
         return {
           value: null,
-          delta: kind === 'same-board'
-            ? { created: [], updated: [], deleted: [] }
-            : {
+          ...(kind === 'same-board'
+            ? {}
+            : { delta: {
               created: saved.filter(element => !destinationBefore.elements.has(element.id)),
               updated: saved.filter(element => destinationBefore.elements.has(element.id)),
               deleted: Array.from(destinationBefore.elements.keys()).filter(id => !savedIds.has(id))
-            }
+            } })
         };
       },
       afterPersist: ({ content, written }) => {
-        if (heldSource) releaseBoardHold(source.key, branched ? 'elsewhere' : 'overwrite');
         for (const pane of moved) switchPaneTo(pane, targetKey, content);
         logger.info(
           `Board saved: "${targetKey}" (${written?.elementCount ?? content.elements.size} elements) -> ${file}` +
@@ -3162,7 +3173,7 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
           }
         };
       }
-    }, broadcast));
+    });
   } catch (error) {
     logger.error('Error saving board:', error);
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
