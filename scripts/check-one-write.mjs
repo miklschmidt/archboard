@@ -518,8 +518,10 @@ try {
 
   const serverSource = fs.readFileSync(src('server.ts'), 'utf-8');
   const doorSource = fs.readFileSync(src('core/board-write.ts'), 'utf-8');
-  assert((serverSource.match(/writeBoard\(\{/g) ?? []).length === 9,
-    'server.ts should route all nine board-writing routes through writeBoard');
+  assert((serverSource.match(/answerBoardWrite\(res, \{/g) ?? []).length === 9,
+    'server.ts should route all nine board-writing routes through the response wrapper');
+  assert((serverSource.match(/writeBoard\(\{/g) ?? []).length === 1,
+    'the response wrapper should enter writeBoard once');
   assert(!serverSource.includes('writeBoardContent('),
     'server.ts still writes a note directly instead of using the board write entry');
   assert(!serverSource.includes('applyElementInput('),
