@@ -42,7 +42,7 @@
 // gestures cannot be aimed: the canvas is one DOM node, so there is no
 // selector for "the box at 400,200", and synthetic pointer events do not reach
 // Excalidraw's handlers (scripts/check-fixed-point.mjs measured that). So the
-// human's hands are one real trusted click, which is what arms the pane to
+// user's edits include one real trusted click, which is what arms the pane to
 // report at all, and then edits made by calling the live Excalidraw
 // instance's own `updateScene` through the fiber. That is the same door the
 // pane's own code goes through and it fires the same `onChange`, so everything
@@ -187,10 +187,10 @@ const INSTALL_COUNTER = `(() => {
   window.__abReports = { sent: 0, done: 0 };
   // Arms the pane's loss canary (frontend/src/canvas/loss-canary.ts). Nothing
   // in the frontend creates this, so an ordinary page never pays for it. It
-  // counts the two ways an edit somebody made can stop being owed to the
-  // server: the pane writing a delivery down as agreed after the scene has
-  // moved on from it, and the pane holding a debt with nothing about to pay
-  // it (TASK-099).
+  // counts the two ways a user edit can disappear before reaching the server:
+  // the pane recording a server update as its baseline after the scene has
+  // moved on from it, and the pane retaining pending edits with no report
+  // scheduled or in flight (TASK-099).
   window.__abLoss = { deliveries: 0, moved: 0, absorbed: 0, unarmed: 0, events: [] };
   const original = window.fetch;
   window.fetch = function (input, init) {
@@ -201,8 +201,8 @@ const INSTALL_COUNTER = `(() => {
     const answer = original.apply(this, arguments);
     if (!counted) return answer;
     // Holding one report's answer back is how a second one is made to come
-    // due while the first is still in flight, which is a window of its own
-    // and one no amount of writing faster reaches (TASK-099).
+    // due while the first is still in flight. No amount of writing faster
+    // reproduces that ordering (TASK-099).
     const holdFor = window.__abDelayReport || 0;
     window.__abDelayReport = 0;
     return answer
@@ -228,23 +228,24 @@ const lossCanary = () => evalInPage(`(() => {
 })()`);
 
 // ---------------------------------------------------------------------------
-// The human's hands
+// User edits
 // ---------------------------------------------------------------------------
 //
 // One edit, applied to the live scene through Excalidraw's own updateScene, so
 // the pane's onChange fires and everything downstream runs unchanged.
 //
 // A retyped label measures itself in the page, with the same font the element
-// carries, because Excalidraw does not re-measure a text element it is handed
+// carries, because Excalidraw does not re-measure a text element it receives
 // (a finding of stage 5) — so a width invented here would be a width the note
 // keeps, and this check would be asserting its own arithmetic rather than the
 // round trip.
 //
-// Installed in the page rather than evaluated each time, because the hand has
-// to be usable from inside the page too: the deterministic window below fires
-// one from a microtask the pane's own delivery scheduled, and an `eval` round
+// Installed in the page rather than evaluated each time, because the edit has
+// to be usable from inside the page too. The deterministic ordering below fires
+// one from a microtask scheduled by the pane's own server update, and an
+// `eval` round
 // trip cannot be timed that finely.
-const INSTALL_HANDS = `(() => {
+const INSTALL_USER_EDITS = `(() => {
   if (window.__abApplyEdit) return { already: true };
   window.__abApplyEdit = edit => {
     const app = ${APP};
@@ -292,22 +293,22 @@ const INSTALL_HANDS = `(() => {
 const humanEdit = edit =>
   evalInPage(`window.__abApplyEdit(${JSON.stringify(edit)})`);
 
-// A hand that lands inside the window, rather than one that might.
+// A user edit applied while a server update is being recorded.
 //
-// The window is between a delivery reaching the scene and the pane writing
-// that delivery down as what the server holds. It is one macrotask wide, and
+// This ordering is between a server update reaching the scene and the pane
+// recording that update as what the server holds. It is one macrotask wide, and
 // the sampled version of this — 42 cycles of writes timed to collide — enters
 // it about once in four hundred cycles, which is why TASK-099 took ten runs an
 // arm to measure and could not be reproduced on demand.
 //
-// So it is arranged instead. `Scene.replaceAllElements` is where a delivery
+// So it is arranged instead. `Scene.replaceAllElements` is where a server update
 // lands, whoever called it, and patching it there rather than patching
 // `updateScene` matters: the imperative API the pane holds captured
 // `this.updateScene` when it was made, so replacing the method on the instance
-// would leave the pane calling the original. Armed, the next delivery
+// would leave the pane calling the original. Armed, the next server update
 // schedules the human's edit in a microtask, which runs after the pane's
-// delivery code has finished and before the timeout that writes the baseline —
-// exactly the window, every time.
+// server-update code has finished and before the timeout that writes the baseline.
+// This produces the required ordering every time.
 //
 // A microtask is not how a finger arrives, and it does not need to be. What
 // this reproduces is the *ordering*, which is the whole of the bug: the edit is
@@ -347,7 +348,7 @@ const INSTALL_INJECTOR = `(() => {
 
 // NO NUMBER LEAVES THE PAGE.
 //
-// `agent-browser eval` hands a value back as JSON and a double does not always
+// `agent-browser eval` returns a value as JSON and a double does not always
 // survive: a text width the page holds as 107.81990051269531 arrives here as
 // 107.81990051269533, two units in the last place away. That is a difference
 // this check would report, and it would be reporting its own transport. So the
@@ -569,7 +570,7 @@ const agree = async ({ tries = 60, gap = 100 } = {}) => {
 // The agent's half of a cycle. Rotating on purpose: a check that only ever
 // creates never finds out what a move does to a bound arrow.
 const AGENT_MOVES = ['create-labelled', 'create-arrow', 'move', 'recolour', 'relabel'];
-// The human's half.
+// The user's half.
 const HUMAN_MOVES = ['move', 'resize', 'retype', 'delete'];
 
 const PALETTE = ['#ffec99', '#b2f2bb', '#a5d8ff', '#ffc9c9', '#d0bfff', '#ffd8a8'];
@@ -631,12 +632,12 @@ try {
     `${opened.body?.source} / ${opened.body?.elementCount} elements`);
 
   await evalInPage(INSTALL_COUNTER);
-  await evalInPage(INSTALL_HANDS);
+  await evalInPage(INSTALL_USER_EDITS);
   await evalInPage(INSTALL_INJECTOR);
 
   // A pane nobody has touched never reports, deliberately (useCanvasSession),
-  // so the human's half of this check does not exist until somebody's hand
-  // lands on the glass. This is that hand, and it is the one piece of real
+  // so the user's half of this check does not exist until a user edit changes
+  // the scene. This is that edit, and it is the one piece of real
   // trusted input here: a click on empty canvas, which selects nothing and
   // draws nothing.
   await browser(['click', '.excalidraw']);
@@ -830,34 +831,34 @@ try {
   // looks like six seconds later; this is what it looks like at the moment it
   // happens, and it is the one thing that says which of the forty-two cycles
   // did it (TASK-099).
-  check('  and no edit stopped being owed to the server without being sent',
+  check('  and no pending edit disappeared before being sent to the server',
     lostEdits === 0,
     firstLoss
       ? `${lostEdits} lost, first ${firstLoss.event.loss} at ${firstLoss.where}: ` +
         `${firstLoss.event.kind} — ${firstLoss.event.what.join(' | ')}`
-      : `${deliveries} deliveries watched, ${survived} of them moved under the pane's hands`);
+      : `${deliveries} server updates watched, ${survived} of them overlapped a user edit`);
 
-  // --- a hand inside the window, arranged rather than waited for ----------
+  // --- a user edit while a server update is being recorded -----------------
   //
-  // The 42 cycles above enter this window by luck. Ten standalone runs of them
-  // watched 810 deliveries and nothing entered it once, which is why TASK-099
+  // The 42 cycles above produce this ordering by luck. Ten standalone runs of them
+  // watched 810 server updates and did not produce it once, which is why TASK-099
   // took ten runs an arm to measure and could not be reproduced on demand.
   // These four land in it every time (see INSTALL_INJECTOR).
   //
   // Four rather than one, because the pane can lose the edit by either of two
-  // routes and one fix does not cover both. When the delivery names the element
-  // the hand moved, the record the pane writes covers it, and the edit goes in
-  // as already agreed. When it does not, the record is untouched and the debt
-  // stands — but the `onChange` the edit fired was suppressed, and the pane
+  // routes and one fix does not cover both. When the server update names the element
+  // the user edited, the record the pane writes covers it, and the edit goes in
+  // as already agreed. When it does not, the record is untouched and the edit
+  // remains pending, but the `onChange` the edit fired was suppressed and the pane
   // took a fresh scene stamp on the way out, so nothing is left that will ever
   // say it.
 
-  // `reads` is the one field the hand changes and `wants` is what it should
+  // `reads` is the one field the user edit changes and `wants` is what it should
   // read afterwards, computed from what it read before. Stated rather than
   // "it differs from what it was": the agent writes to the same element in
   // three of these four, so "it moved" is satisfied by the agent's own write
   // and would pass with the human's edit thrown away.
-  const inTheWindow = async (label, agentUpserts, edit, reads, wants) => {
+  const duringServerUpdate = async (label, agentUpserts, edit, reads, wants) => {
     const before = (await held()).find(e => e.id === edit.id);
     const was = reads(before);
     const wanted = wants(was);
@@ -875,7 +876,7 @@ try {
       if (!fired.armed) break;
       await sleep(50);
     }
-    check(`${label}: the hand lands between the delivery and the record`,
+    check(`${label}: the user edit lands between the server update and its record`,
       fired && !fired.armed, JSON.stringify(fired));
 
     const settled = await agree();
@@ -884,16 +885,16 @@ try {
 
     const after = (await held()).find(e => e.id === edit.id);
     const got = reads(after);
-    check(`  and the server holds what the hand did, not what it was sent`,
+    check(`  and the server holds the user edit, not the earlier server update`,
       typeof wanted === 'number' && typeof got === 'number'
         ? Math.abs(got - wanted) < 0.001
         : got === wanted,
       `${edit.id} read ${JSON.stringify(was)} before, ${JSON.stringify(got)} after, ` +
-      `and the hand made it ${JSON.stringify(wanted)}`);
+      `and the user edit made it ${JSON.stringify(wanted)}`);
 
     const seen = await lossCanary();
     const aimed = seen.events.filter(e => e.what.some(said => said.includes(edit.id)));
-    check(`  and the pane's canary saw the window it was aimed at`,
+    check(`  and the pane's canary saw the intended server-update ordering`,
       aimed.length > 0,
       aimed.map(e => `${e.loss}: ${e.what.join(' | ')}`).join(' || ') || 'nothing');
     check(`  and did not call it a loss`,
@@ -902,10 +903,10 @@ try {
         .map(e => `${e.loss}: ${e.kind} — ${e.what.join(' | ')}`).join(' || '));
   };
 
-  // The three human moves TASK-099 was filed with, each against a delivery
-  // that names the element the hand is on — which is the arrangement in which
+  // The three user edits TASK-099 was filed with, each against a server update
+  // that names the edited element, which is the arrangement in which
   // the record covers it.
-  await inTheWindow('an agent recolours the box a hand is resizing',
+  await duringServerUpdate('an agent recolours the box a user is resizing',
     [{ id: 'store', backgroundColor: '#e9ecef' }],
     { kind: 'resize', id: 'store', dw: 13, dh: 0 },
     element => element?.width, was => was + 13);
@@ -913,7 +914,7 @@ try {
   const storeLabel = (await held()).find(e => e.type === 'text' && e.containerId === 'store');
   check('  and the board still carries a label to be retyped into',
     typeof storeLabel?.id === 'string', JSON.stringify(storeLabel?.id));
-  await inTheWindow('an agent relabels the box a hand is typing in',
+  await duringServerUpdate('an agent relabels the box a user is typing in',
     [{ id: 'store', label: { text: 'written by the agent' } }],
     { kind: 'retype', id: storeLabel.id, text: 'typed by the person' },
     element => element?.text, () => 'typed by the person');
@@ -924,15 +925,15 @@ try {
     upserts: [{ id: 'spare', type: 'rectangle', x: 900, y: 620, width: 160, height: 70 }]
   });
   await agree();
-  await inTheWindow('an agent recolours the box a hand is deleting',
+  await duringServerUpdate('an agent recolours the box a user is deleting',
     [{ id: 'spare', backgroundColor: '#ffe3e3' }],
     { kind: 'delete', id: 'spare' },
     element => element ? 'on the board' : 'gone', () => 'gone');
 
-  // And the same hand against a delivery that names something else. The record
+  // And the same user edit against a server update that names something else. The record
   // does not cover it, so nothing is absorbed — what goes missing is anything
   // armed to say it.
-  await inTheWindow('an agent writes elsewhere while a hand moves a box',
+  await duringServerUpdate('an agent writes elsewhere while a user moves a box',
     [{ id: 'queue', backgroundColor: '#e3fafc' }],
     { kind: 'move', id: 'store', dx: 17, dy: -9 },
     element => element?.x, was => was + 17);
@@ -945,9 +946,9 @@ try {
   //
   // A drag, its report held back mid-flight, and a second drag whose own
   // debounce therefore expires while the first is still out. That report is
-  // not sent, and the answer coming back names a hand that has moved, so no
+  // not sent, and the answer coming back names an element the user has moved, so no
   // document is applied and no settle runs to notice — the second drag is
-  // owed to the server with nothing left in the pane that will say it.
+  // pending for the server with no report left in the pane that will send it.
   //
   // Both halves are timed in the page. An `eval` round trip is tens of
   // milliseconds of jitter against a 400 ms debounce, which is enough to miss.
@@ -982,7 +983,7 @@ try {
   check('  and the report that came due while it was in flight is not dropped',
     bothDrags.agreed, (bothDrags.divergences ?? []).slice(0, 4).join(' | '));
   const dragged = (await held()).find(e => e.id === 'store');
-  check('  so both of the hand\'s moves are on the board',
+  check('  so both user moves are on the board',
     dragged && Math.abs(dragged.x - (drifted.x + 12)) < 0.001,
     `store.x was ${drifted?.x}, the two drags made it ${drifted?.x + 12}, the server holds ${dragged?.x}`);
   const afterFlight = await lossCanary();
@@ -1034,7 +1035,7 @@ try {
   await sleep(MID_DEBOUNCE_MS);
   const midFlight = await readScene();
   const draggedNow = midFlight.elements.find(e => e.id === 'auth');
-  check('a broadcast arriving mid-drag leaves the undelivered drag on the glass',
+  check('a broadcast arriving mid-drag leaves the unreported drag in the scene',
     // Within a thousandth of a pixel rather than exactly, because this one
     // number does cross as a number and the transport rounds the last bits.
     // Nothing about "did the drag survive" turns on an ulp.
@@ -1217,10 +1218,10 @@ try {
   const back = await viewMode();
   check('  and takes it back when they are done', back.view === false, JSON.stringify(back));
 
-  // --- a claim says whose board it is, and hands it back ------------------
+  // --- a claim says whose board it is, then releases it -------------------
   //
   // For a twenty-millisecond write, a disabled surface is enough and a banner
-  // would be a flicker under somebody's hand. For a claim that may run for
+  // would flicker during a user edit. For a claim that may run for
   // minutes it is not: a 75-inch display that stops responding with nothing on
   // it to say why has simply broken, as far as the person standing at it can
   // tell (ADR 0016). So the pane says who has the board and what they said they

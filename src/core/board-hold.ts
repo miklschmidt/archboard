@@ -50,7 +50,7 @@ export interface BoardHold {
    * It starts as the board as the refused request found it — which is the
    * other editor's note, because that is all the canvas can read — and is
    * replaced wholesale the moment a pane showing the board says what is on its
-   * screen (`rebase` in the change route). That rebase is what makes overwrite
+   * screen (`fullReport` in the change route). That full report makes overwrite
    * mean "what you are looking at" rather than "their note plus your last
    * gesture". A board no pane is showing has no screen to take, so its held
    * copy stays their note plus whatever an agent has drawn since, and the
@@ -66,7 +66,7 @@ export interface BoardHold {
 }
 
 // Keyed by board address. In kept() because a hot reload rebuilds module scope
-// and this is the only copy of work a person can see on the glass — exactly
+// and this is the only copy of work a person can see in the scene — exactly
 // what kept() is for (ADR 0014).
 const holds = kept('board-holds', () => new Map<string, BoardHold>());
 

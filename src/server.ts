@@ -159,7 +159,7 @@ const app = express();
 // loopback guard would read as a second canvas and exit over.
 //
 // So `server` is created with a dispatcher that looks up the current express
-// app rather than being handed one, and each reload points `wiring.app` at the
+// app rather than receiving one, and each reload points `wiring.app` at the
 // app it just built.
 interface Wiring {
   app: express.Express;
@@ -274,11 +274,12 @@ const panes = kept('panes', () => new Map<string, PaneRegistration>());
 // This is the *authority*: what the server has decided a pane holds. The
 // registration above carries what the pane says it is rendering, which is the
 // same thing a beat later, and reporting the pane's own answer is what keeps
-// `panes` a description of the glass rather than a restatement of this map.
+// `panes` a description of the displayed scenes rather than a restatement of
+// this map.
 //
 // Entries outlive the socket on purpose. A dropped connection reconnects with
 // the same client id, and a pane that came back showing a different board than
-// it had a second ago would undo an arrangement the human made by hand.
+// it had a second ago would undo a user's scene arrangement.
 const paneBoards = kept('pane-boards', () => new Map<string, string>());
 
 /** What each pane holds, in reading order. */
@@ -352,7 +353,7 @@ function deliverToPane(clientId: string, data: string): boolean {
 }
 
 /**
- * A board changed hands, so every pane holding it is told (ADR 0016).
+ * A board's writer changed, so every pane holding it is told (ADR 0016).
  *
  * The lock is a broadcast and not only a guard. A canvas applies a change the
  * instant a finger moves, so refusing that change when it is finally written
@@ -385,7 +386,7 @@ onBoardLockChanged((board, holder) => {
  * the step. One story at two scales, not two accounts of the same thing.
  *
  * The whole list rides with each line, so a pane that has just opened, or has
- * just been handed this board, is not blank until the next write. It costs a
+ * just received this board, is not blank until the next write. It costs a
  * few hundred bytes and it is what makes two panes on one board tell the same
  * story.
  */
@@ -481,7 +482,7 @@ function tellPaneAboutLock(clientId: string, board: string): void {
   // it is waiting for already happened.
   sendToPane(clientId, noteMessage(board, noteWrittenElsewhere(board)), board);
   // And the last few things an agent said it was doing here (TASK-095). A pane
-  // that has just been handed a board an agent is part way through would
+  // that has just received a board an agent is part way through would
   // otherwise show the banner saying somebody has it and nothing at all about
   // what has happened so far.
   const said = recentDoing(board);
@@ -524,7 +525,7 @@ function noteChange(key: string, board: BoardState, origin: ChangeOrigin): void 
  *
  * The one answer to "what is on this board", for everything that is not a
  * request working against content it already read: the change feed at the end
- * of a settle window, a pane being handed a board, the report of what each pane
+ * of a settle delay, a pane receiving a board, the report of what each pane
  * holds. Each is a fresh read, which is what makes them agree with the note
  * rather than with a copy of it that stopped being right at some point nobody
  * noticed (ADR 0015).
@@ -580,7 +581,8 @@ function persistBoard(
     // follows. The held copy starts as the note as this request found it, which
     // is the other editor's board: this write is refused, so nothing of it is
     // kept. What makes the held copy the human's board again is the pane
-    // rebasing onto it (`rebase` on the change route), a round trip later.
+    // sending a full report (`fullReport` on the change route), a round trip
+    // later.
     if (error instanceof BoardWriteConflictError && !isHeld(key)) {
       const hold = beginHold(key, error.conflict, readBoardContent(board));
       logger.warn(`Board "${key}" has stopped saving: ${holdMessage(key, hold)}`);
@@ -721,7 +723,7 @@ function boardForNewPane(clientId: string): string {
  * A board's images, in the shape a scene message carries them, or nothing when
  * it has none.
  *
- * Every frame that hands a pane a whole board — the first one, and every board
+ * Every frame that sends a pane a whole board — the first one, and every board
  * switch — has to bring the images with it, because an image element without
  * its file renders as a hole. `board_switched` used to bring none at all, so a
  * pane pointed at a board with pictures on it got the elements and no pictures
@@ -751,11 +753,11 @@ wss.on('connection', (ws: WebSocket, req) => {
   // Which board this pane gets, and it is a board *for this pane* — not "the"
   // board, which no longer exists as a single thing. A pane that has been here
   // before (a dropped socket, not a new tab) resumes what it was holding,
-  // because a reconnect must not undo an arrangement the human made by hand.
+  // because a reconnect must not undo a user's scene arrangement.
   const startingKey = clientId ? boardForNewPane(clientId) : SCRATCH_KEY;
   if (clientId) paneBoards.set(clientId, startingKey);
   const board = boards.get(startingKey)!;
-  // Read out of the note, like everything else that hands a pane a whole board.
+  // Read out of the note, like everything else that sends a pane a whole board.
   const content = readBoardContent(board);
   const initialMessage: InitialElementsMessage & {
     files?: Record<string, ExcalidrawFile>;
@@ -784,7 +786,7 @@ wss.on('connection', (ws: WebSocket, req) => {
       // A hold this pane had goes with it. The lease would have lapsed on its
       // own within LOCK_LEASE_MS, which is what makes a killed tab survivable;
       // this is only so a tab closed politely does not leave an agent waiting
-      // three seconds for a hand that has gone home (ADR 0016).
+      // three seconds for a user who has left (ADR 0016).
       const held = paneBoards.get(closingId);
       if (held) releaseHold(held, closingId);
       // The pane itself is gone for the same reason — a closed tab, or a pane
@@ -1183,11 +1185,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
  * change is on screen, in Excalidraw's own scene, and refusing it would take
  * the board away from somebody mid-gesture. This goes out on the *leading*
  * edge of the first change instead, and again every LOCK_RENEW_MS while the
- * hand keeps moving, which is what renews the lease.
+ * user edit continues, which is what renews the lease.
  *
  * It waits, but only for as long as the pane was going to sit on the change
- * anyway. An agent's per-write hold is about twenty milliseconds, and a hand
- * that landed inside one is not somebody who has lost the board — telling them
+ * anyway. An agent's per-write hold is about twenty milliseconds, and a user
+ * edit that landed inside one is not somebody who has lost the board — telling them
  * so and throwing their gesture away would be an agent making a 75-inch display
  * stop responding, which is the thing ADR 0016 forbids in as many words. So the
  * wait is the report debounce: a person is going to be 400 ms from having their
@@ -1678,7 +1680,7 @@ app.get('/api/elements/:id', (req: Request, res: Response) => {
 // of them rather than a top-left corner (geometry.ts). Every reader that
 // places an arrow reads these numbers, so the server owes them the truth
 // wherever it writes a path: on creation, on a re-route, and on a caller
-// re-pointing an arrow by hand.
+// manually re-pointing an arrow.
 function sizeFromPath(element: ServerElement): boolean {
   const measured = remeasureLinear(element);
   if (!measured) return false;
@@ -1713,7 +1715,7 @@ function pathOf(el: ServerElement): { x: number; y: number }[] {
  * attached it is exactly what those two numbers record. Nothing here asks who
  * drew an arrow; a board is drawn on by both.
  *
- * Only the bound ends move. A hand-drawn arrow with a bend keeps it, where the
+ * Only the bound ends move. A user-drawn arrow with a bend keeps it, where the
  * old routing overwrote every path with a straight line between two shapes.
  *
  * `newlyDrawn` says where the aim is taken from. An arrow already on the board
@@ -2097,7 +2099,7 @@ app.post('/api/elements/from-mermaid', (req: Request, res: Response) => {
     if (!pane) {
       // The board exists, it is just not on screen, and conversion needs a
       // canvas to run in. Two ways to give it one, and which is available
-      // depends on whether there is still room on the glass.
+      // depends on whether there is still room on the display.
       const room = panes.size < MAX_PANES
         ? `Put it beside ${panes.size === 1 ? 'that one' : 'those'} with \`archboard pane open --board ${wanted}\`, `
         : `Put it on screen with \`board open ${wanted} --pane <left|right>\`, `;
@@ -2177,7 +2179,7 @@ const ElementChangesSchema = z.object({
    * the feed is told a human moved them.
    *
    * An agent says so and gets neither. Stamping its own drawing `frontend_sync`
-   * would make it indistinguishable from a human's hands, and calling it human
+   * would make it indistinguishable from a user edit, and calling it human
    * to the feed would make it eligible to be narrated back into the agent's own
    * thread (ADR 0005).
    */
@@ -2195,12 +2197,12 @@ const ElementChangesSchema = z.object({
    * note there belongs to another editor, so the board archboard would
    * otherwise hold is their scene plus the last gesture of the human's, which
    * is not what anybody is looking at and not what the three outcomes should
-   * act on. The pane says what is on the glass once, and from then on overwrite
+   * act on. The pane sends its full scene once, and from then on overwrite
    * means what CLAUDE.md's table says it means. Nothing is written to the vault
    * by it — a held board writes to nothing — so the worst a wrong one can do is
    * change what a human sees they are about to choose between.
    */
-  rebase: z.boolean().default(false)
+  fullReport: z.boolean().default(false)
 });
 
 interface AppliedChanges {
@@ -2303,7 +2305,8 @@ function wantsDocument(req: Request): boolean {
  *
  * Every write ends here, because the answer to a write is the resulting
  * document (ADR 0015) and a document is not a result if the renderer has to
- * repair it first. Two repairs the pane was quietly making on delivery are now
+ * repair it first. Two repairs the pane was quietly making on a server update
+ * are now
  * made once, here, where they are part of what the board became and everybody
  * is told: `elementsForScene` nulls a `containerId` pointing at a deleted
  * container, and Excalidraw assigns an `index` to an element that has none.
@@ -2475,25 +2478,25 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
   try {
     const { key: boardKeyForRequest, board, content } = boardFromRequest(req, 'A change report');
     const elements = content.elements;
-    const { upserts, deletes, origin, clientId, timestamp, rebase } =
+    const { upserts, deletes, origin, clientId, timestamp, fullReport } =
       ElementChangesSchema.parse(req.body ?? {});
 
     // A pane saying what is on its screen, which is only a thing to say about a
     // board that has stopped saving (TASK-079). Refused anywhere else, because
     // anywhere else it is the whole-scene write that cannot tell a full pane
     // from a half-loaded one.
-    if (rebase) {
+    if (fullReport) {
       if (origin === 'agent') {
         return res.status(400).json({
           success: false,
-          error: 'A rebase is a pane saying what is on its screen. An agent has no screen; send a delta.'
+          error: 'A full report is a pane sending its whole scene. An agent must send a delta.'
         });
       }
       if (!isHeld(boardKeyForRequest)) {
         return res.status(400).json({
           success: false,
           error:
-            `"${boardKeyForRequest}" is saving normally, so a rebase would be a whole-scene write. ` +
+            `"${boardKeyForRequest}" is saving normally, so a full report would be a whole-scene write. ` +
             'Report a delta against what this pane has been sent.'
         });
       }
@@ -2507,16 +2510,16 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
     const now = new Date().toISOString();
     const { created, updated, deleted } = origin === 'agent'
       ? applyAgentChanges(elements, upserts, deletes)
-      : applyReportedChanges(elements, upserts, rebase ? [] : deletes, now, timestamp);
+      : applyReportedChanges(elements, upserts, fullReport ? [] : deletes, now, timestamp);
 
     let intoNote: WrittenNote | null = null;
-    if (rebase || created.length > 0 || updated.length > 0 || deleted.length > 0) {
+    if (fullReport || created.length > 0 || updated.length > 0 || deleted.length > 0) {
       // This is the write ADR 0006's refusal arrives on: not a save somebody
       // chose, but 400 ms after a human lifted their finger. The first one is
       // refused and stops the board saving; every gesture after it goes into
       // the held copy and nothing more is refused, so the human draws on
       // (TASK-079).
-      intoNote = persistBoard(boardKeyForRequest, board, content, origin, rebase);
+      intoNote = persistBoard(boardKeyForRequest, board, content, origin, fullReport);
 
       // Carries the reporting client so that client can skip its own echo:
       // re-applying a change already on screen is at best a wasted render and
@@ -2548,7 +2551,7 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
       // A pane gets the board back, whole (TASK-074). It is what stops a
       // session accumulating divergence: every write is a resync, and the pane
       // renders the document rather than its own running total of deltas
-      // (ADR 0015). Safe to hand back unconditionally because this response
+      // (ADR 0015). Safe to return unconditionally because this response
       // was computed from what that pane just sent, so it cannot be missing
       // it — which is exactly what another writer's broadcast can be, and why
       // that one is still merged by id.
@@ -2589,7 +2592,7 @@ app.get('/api/changes', (req: Request, res: Response) => {
     const wantDetail = req.query.detail === '1' || req.query.detail === 'true';
     const coalesce = req.query.coalesce === '1' || req.query.coalesce === 'true';
     // A caller reading the feed wants the board as it is, not as it was 1.2s
-    // ago, so an open settle window is closed before answering.
+    // ago, so pending settle work is completed before answering.
     if (req.query.settle !== '0') changeFeed.settle(board);
 
     // A cursor ahead of the feed's own is not "nothing has happened": it came
@@ -2764,7 +2767,7 @@ app.get('/api/selection', (_req: Request, res: Response) => {
 // ─── Panes ────────────────────────────────────────────────────
 //
 // What the human is currently looking at: which pane holds which board, where
-// it sits on the glass, how much of the board is on screen, and what is picked
+// it sits on the display, how much of the board is on screen, and what is picked
 // in it. View state, never contents — see core/panes.ts for why that line is
 // worth holding.
 //
@@ -2782,7 +2785,8 @@ const PaneSchema = z.object({
   clientId: z.string().min(1),
   paneId: z.string().min(1),
   // The board this pane adopted — what it is actually rendering, which is what
-  // makes the report a description of the glass rather than an echo of what
+  // makes the report a description of the displayed scene rather than an echo
+  // of what
   // the server thinks it sent.
   board: z.string().min(1),
   primary: z.boolean(),
@@ -2844,7 +2848,7 @@ app.get('/api/panes', (_req: Request, res: Response) => {
 //
 // Layout lives in the shell, in the browser, and the server used to learn a
 // pane existed only when its socket registered. That made splitting something
-// only a hand could do: an agent told to put a proposal beside the current
+// only a user could do: an agent told to put a proposal beside the current
 // architecture had no second pane and no way to ask for one, so it reused the
 // pane in front of the human and overwrote what was there (TASK-033).
 //
@@ -3624,7 +3628,7 @@ function switchPaneTo(pane: PaneRegistration | null, key: string, known?: BoardC
   const board = boards.get(key);
   if (!board) throw new Error(`Board "${key}" is not open`);
   // One read, for the two things that need the board: the feed's new baseline
-  // and the scene the pane is handed. Callers that have just read the note pass
+  // and the scene the pane receives. Callers that have just read the note pass
   // it in rather than making this read it again.
   const content = known ?? readBoardContent(board);
   // A board arriving wholesale is not a change anybody made, so the feed takes
@@ -4090,7 +4094,7 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
       panes: {
         moved: moved.map(paneRef),
         kept: (moved.length === 0 && kind === 'branch' ? watching : []).map(paneRef),
-        // The rest of the glass, because the branch that moved nothing has to
+        // The rest of the display, because the branch that moved nothing has to
         // be told how to get on screen, and the answer depends on whether
         // there is still room for a pane (TASK-054). The caller cannot see
         // that from where it stands, so the save says it.
@@ -4281,7 +4285,7 @@ app.get('/api/library', (_req: Request, res: Response) => {
 });
 
 // Replace the library. The browser sends the whole set because that is what
-// Excalidraw hands it — there is no library delta to be had — and last write
+// Excalidraw provides it — there is no library delta to be had — and last write
 // wins, which is honest for a palette two tabs are unlikely to edit at once.
 // The result is broadcast so the other tabs stop being the stale one.
 app.put('/api/library', (req: Request, res: Response) => {
