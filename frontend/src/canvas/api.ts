@@ -77,7 +77,7 @@ export function reportChanges(
   board: string | null,
   report: ChangeReport,
   clientId: string,
-  rebase = false
+  fullReport = false
 ): Promise<ChangeReportReply> {
   return post(`/api/elements/changes${boardQuery(board)}`, {
     upserts: report.upserts,
@@ -87,7 +87,7 @@ export function reportChanges(
     // Only ever on a board that has stopped saving, and the server refuses it
     // anywhere else: it says "this is the whole board", which is the one thing
     // a pane is otherwise never allowed to say (TASK-016, TASK-079).
-    ...(rebase ? { rebase: true } : {})
+    ...(fullReport ? { fullReport: true } : {})
   })
 }
 
@@ -104,7 +104,7 @@ export interface ChangeReportReply {
 
 /**
  * Tell the server what this pane currently has in front of the human: which
- * board, where the pane sits on the glass, and what of the board is in view.
+ * board, where the pane sits on the display, and what of the board is in view.
  *
  * Pushed rather than polled, for the same reason selection is: an agent asking
  * "what am I looking at" must get an answer off server state, not by waking a
@@ -202,7 +202,7 @@ export function releaseBoard(board: string | null, clientId: string): void {
  *
  * The same message a gesture sends, which is the point: a person taking their
  * board back is a person starting to use it, and the server treats it as one
- * act. It steals from a claim and waits out an ordinary write, so a hand that
+ * act. It steals from a claim and waits out an ordinary write, so a user edit that
  * lands inside somebody's twenty-millisecond write does not end up being told
  * it lost the board.
  *

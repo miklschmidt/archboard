@@ -88,7 +88,7 @@ const EMPTY_WITHHELD: readonly string[] = []
  * worth asking. Rename that element in the scene and the appState still names
  * the old one: the textarea stays on screen, stays focused, keeps every
  * character, and submits into an element the scene no longer holds. Measured on
- * a hand-drawn text (six characters discarded) and on a hand-added label (all
+ * a user-drawn text (six characters discarded) and on a user-added label (all
  * ten).
  */
 function idUnderEditor(api: ExcalidrawImperativeAPI | null): string | null {
@@ -113,7 +113,8 @@ export interface CanvasSessionOptions {
    * Is this the pane the server picks when a request names no pane and no
    * board? Reported, and used for the one message that really is about the
    * browser rather than a pane: a library change, which every pane hears and
-   * only one should hand up. Export, viewport and mermaid are addressed to a
+   * only one should send to the shell. Export, viewport and mermaid are
+   * addressed to a
    * single socket, so the pane that gets one answers it whether or not it is
    * primary.
    */
@@ -122,7 +123,7 @@ export interface CanvasSessionOptions {
   focused: boolean
   onStatus: (status: PaneStatus) => void
   /**
-   * Another tab changed the stencil palette. Handed straight up to the shell,
+   * Another tab changed the stencil palette. Sent straight to the shell,
    * which owns the library — a library item is not board content, so nothing
    * about it touches the element store, the baseline, or a change report.
    */
@@ -130,7 +131,7 @@ export interface CanvasSessionOptions {
   /**
    * The server is asking for the layout to change: another pane, or this one
    * gone. A canvas cannot do either — the shell owns how many panes there are
-   * — so this is handed straight up, the same way a library change is.
+   * — so this is sent straight up, the same way a library change is.
    *
    * It arrives on a socket because that is the only channel the server has
    * into the browser, not because it is a canvas's business.
@@ -165,7 +166,7 @@ export interface CanvasSession {
    *
    * Worth saying for a claim and not for a write: an agent's write is twenty
    * milliseconds, and a banner that appeared for it would be a flicker under
-   * somebody's hand. A claim may run for minutes, and a 75-inch display that
+   * a user edit. A claim may run for minutes, and a 75-inch display that
    * stops for minutes with nothing on it to explain why has simply broken, as
    * far as the person standing at it can tell (ADR 0016).
    */
@@ -188,7 +189,7 @@ export interface CanvasSession {
    * The step, where `heldBy.reason` on a claim is the campaign: the banner says
    * what is being attempted and this says how far it has got. Shown whether or
    * not anybody holds the board — most writes are one act and take no claim,
-   * and a person watching boxes move is owed the reason either way.
+   * and a person watching boxes move should see the reason either way.
    */
   doing: DoingEntry[]
 }
@@ -236,7 +237,7 @@ export function useCanvasSession({
   // What an agent has said it is doing to this board, most recent last
   // (TASK-095). Server-kept and sent whole, so this is assigned rather than
   // accumulated: two panes on one board tell the same story, and a pane that
-  // has just been handed the board is not blank until the next write.
+  // has just received the board is not blank until the next write.
   const doingRef = useRef<DoingEntry[]>([])
   const lastChangeAtRef = useRef<string | null>(null)
 
@@ -253,7 +254,7 @@ export function useCanvasSession({
    * It starts held and stays held until the server says otherwise. A pane that
    * does not know is a pane that has not been told, and ADR 0016 says a pane
    * that cannot be told assumes the board is held rather than that it is free.
-   * The server sends the lock state immediately behind every board it hands a
+   * The server sends the lock state immediately behind every board it sends a
    * pane, so "does not know" lasts one message.
    */
   const [heldBy, setHeldBy] = useState<LockHolder | null>(UNKNOWN_HOLDER)
@@ -290,7 +291,7 @@ export function useCanvasSession({
    * The board is the one *this pane* was pointed at. Two panes hold two boards,
    * so there is nothing else it could be — and reporting what the pane is
    * actually rendering, rather than what the server believes it should be,
-   * is what makes this a description of the glass.
+   * is what makes this a description of the displayed scene.
    */
   const paneReport = useCallback((): PaneReport | null => {
     const api = apiRef.current
@@ -330,7 +331,7 @@ export function useCanvasSession({
   }, [clientId, paneId])
 
   const schedulePaneReport = useCallback((immediate = false): void => {
-    // A pane on its way off the glass has nothing to say about what is on it.
+    // A pane being removed has nothing to say about its displayed scene.
     // Excalidraw can fire a last onChange after our teardown, and reporting
     // that would put the pane back in front of an agent after it was gone.
     if (closedRef.current) return
@@ -414,12 +415,12 @@ export function useCanvasSession({
   }, [publishStatus])
 
   /**
-   * Does this pane owe the server something with nothing about to say it?
+   * Does this pane have pending edits with no report scheduled or in flight?
    *
    * Asked wherever the pane decides it is done talking — see ./loss-canary,
-   * and nothing asks unless somebody is watching. An edit is safe while the
-   * debt stands *and* something is going to pay it, and every place below is a
-   * place where the second half can stop being true without the first.
+   * and nothing asks unless somebody is watching. An edit is safe while it is
+   * pending and a report is scheduled or in flight. Every place below can end
+   * that reporting work while an edit remains pending.
    */
   const watchPendingEdits = useCallback((kind: string): void => {
     if (!watchingForLoss()) return
@@ -604,9 +605,9 @@ export function useCanvasSession({
    * text element under an open editor is withheld from the report that provoked
    * this answer (see `diffAgainstBaseline`), so the answer cannot contain it,
    * and replacing the scene with the answer alone would take a half-typed
-   * label off the glass. Those elements are carried over from the scene and
+   * label out of the scene. Those elements are carried over from the scene and
    * stay out of the baseline, so the first report after the editor closes still
-   * owes them.
+   * includes them as pending edits.
    */
   const applyServerScene = useCallback((
     elements: Partial<ExcalidrawElement>[],
@@ -714,11 +715,12 @@ export function useCanvasSession({
   /**
    * The board is somebody else's, and this pane was in the middle of something.
    *
-   * The board is re-read and whatever was in hand is dropped. Keeping it and
+   * The board is re-read and the interrupted user edit is dropped. Keeping it
+   * and
    * reporting it once the lock frees would be merging two people's edits to one
-   * board, which is the thing exclusion exists instead of. The window this can
-   * happen in is one broadcast's latency — the pane goes read-only when the
-   * news arrives, so a hand cannot get far past it.
+   * board, which is the thing exclusion exists instead of. This can happen
+   * during one broadcast's latency. The pane goes read-only when the server
+   * update arrives, so a user edit cannot progress far past it.
    */
   const loseBoard = useCallback((holder: LockHolder | null): void => {
     holdingRef.current = false
@@ -1058,7 +1060,7 @@ export function useCanvasSession({
         const elements = (data.elements ?? []).map(cleanElementForExcalidraw)
         // Still this pane's board, so a half-typed label is still this pane's
         // to keep: a reconnection in the middle of somebody typing must not
-        // take it off the glass.
+        // remove it from the scene.
         applyServerScene(elements, withheldIds())
         if (data.files) api.addFiles(Object.values(data.files))
         break
@@ -1186,15 +1188,15 @@ export function useCanvasSession({
       case 'board_released':
         holdRef.current = null
         // A reload replaces this pane's scene with the note, and the
-        // board_switched that carries it is on its way. Anything owed about
-        // the copy that was just discarded is owed no longer.
+        // board_switched that carries it is on its way. The discarded copy has
+        // no pending edits after that replacement.
         dispatchReporting({ type: 'full_report_cleared' })
         publishStatus()
         break
 
       // Boardless on purpose: one palette sits behind every board, so this is
       // applied whatever this pane is showing. Only the primary pane forwards
-      // it, or two panes would hand the shell the same news twice.
+      // it, or two panes would send the shell the same news twice.
       case 'library_changed':
         if (primaryRef.current && Array.isArray(data.items)) {
           onLibraryChanged?.(data.items as LibraryItems)
@@ -1215,7 +1217,7 @@ export function useCanvasSession({
         await answerViewport(data)
         break
 
-      // Layout: the shell's, not this canvas's. Handed up untouched.
+      // Layout: the shell's, not this canvas's. Sent up untouched.
       case 'pane_open':
         onLayoutRequest?.('open')
         break
@@ -1292,7 +1294,7 @@ export function useCanvasSession({
       dispatchReporting({ type: 'reports_cancelled' })
       if (selectionTimerRef.current) clearTimeout(selectionTimerRef.current)
       if (paneTimerRef.current) clearTimeout(paneTimerRef.current)
-      // A pane going off the glass with the board in its hand. The lease would
+      // A pane closing while it holds the board. The lease would
       // have covered it, and this is only so nobody waits out a lease for a
       // pane that closed politely.
       if (holdingRef.current) {
@@ -1301,7 +1303,8 @@ export function useCanvasSession({
       }
       paneObserverRef.current?.disconnect()
       // Closing the socket is also how this pane stops being reported: an
-      // unsplit pane is off the glass, and the server drops it on the close.
+      // unsplit pane is no longer displayed, and the server drops it on the
+      // close.
       socketRef.current?.close(1000)
     }
   }, [clientId, flushWithBeacon])
