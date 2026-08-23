@@ -799,17 +799,18 @@ try {
 
   // --- a hand inside the window, arranged rather than waited for ----------
   //
-  // The 42 cycles above enter this window by luck, about once in four hundred
-  // cycles. These two land in it every time (see INSTALL_INJECTOR), which is
-  // what turns TASK-099 from a one-in-ten sample into a check.
+  // The 42 cycles above enter this window by luck. Ten standalone runs of them
+  // watched 810 deliveries and nothing entered it once, which is why TASK-099
+  // took ten runs an arm to measure and could not be reproduced on demand.
+  // These four land in it every time (see INSTALL_INJECTOR).
   //
-  // Two cases, because the pane can lose the edit by either of two routes and
-  // one fix does not cover both. When the delivery names the element the hand
-  // moved, the baseline the pane writes down covers it, and the edit goes into
-  // the record as already agreed. When it does not, the baseline is untouched
-  // and the debt stands — but the `onChange` the edit fired was suppressed,
-  // and the pane took a fresh scene stamp on the way out, so nothing is left
-  // that will ever say it.
+  // Four rather than one, because the pane can lose the edit by either of two
+  // routes and one fix does not cover both. When the delivery names the element
+  // the hand moved, the record the pane writes covers it, and the edit goes in
+  // as already agreed. When it does not, the record is untouched and the debt
+  // stands — but the `onChange` the edit fired was suppressed, and the pane
+  // took a fresh scene stamp on the way out, so nothing is left that will ever
+  // say it.
 
   // `reads` is the one field the hand changes and `wants` is what it should
   // read afterwards, computed from what it read before. Stated rather than
