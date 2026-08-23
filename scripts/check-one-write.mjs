@@ -318,6 +318,31 @@ try {
       'the refused patch applied its first update anyway, which is the half-applied write this exists to stop');
   }
 
+  // TASK-084 lives below every batched caller. The route sees a valid update
+  // first and an unbuildable create second; the write entry applies both to an
+  // isolated copy and persists only after the complete mutation succeeds.
+  const validFirst = { id: 'box-4', customData: { archboard: { node: 'partly-applied' } } };
+  const validLast = { id: 'box-5', customData: { archboard: { node: 'also-partly-applied' } } };
+  const invalid = { id: 'never-existed-either', customData: { archboard: { node: 'invalid-create' } } };
+  for (const [position, upserts] of [
+    ['first', [invalid, validLast]],
+    ['middle', [validFirst, invalid, validLast]],
+    ['second', [validFirst, invalid]]
+  ]) {
+    scene = await byId();
+    const beforeRefusedBatch = JSON.stringify([scene.get('box-4'), scene.get('box-5')]);
+    const refusedBatch = await api('POST', `/api/elements/changes${board}`, {
+      origin: 'agent',
+      upserts,
+      deletes: []
+    });
+    assert(refusedBatch?.success === false,
+      `an unbuildable ${position} upsert should refuse the whole mutation: ${JSON.stringify(refusedBatch)}`);
+    scene = await byId();
+    assert(JSON.stringify([scene.get('box-4'), scene.get('box-5')]) === beforeRefusedBatch,
+      `the refused batched write changed the board with its bad upsert ${position}`);
+  }
+
   // ─── Who wrote it ─────────────────────────────────────────────
   //
   // The two things `origin` decides, and nothing else.
@@ -488,6 +513,21 @@ try {
   });
   assert((await byId()).has('stays'),
     'the refused delete removed the first id anyway, which is the half-applied write this exists to stop');
+
+  // ─── One route-level door ────────────────────────────────────
+
+  const serverSource = fs.readFileSync(src('server.ts'), 'utf-8');
+  const doorSource = fs.readFileSync(src('core/board-write.ts'), 'utf-8');
+  assert((serverSource.match(/writeBoard\(\{/g) ?? []).length === 9,
+    'server.ts should hand all nine board-writing routes to writeBoard');
+  assert(!serverSource.includes('writeBoardContent('),
+    'server.ts still writes a note directly instead of using the board write entry');
+  assert(!serverSource.includes('applyElementInput('),
+    'a route still calls TASK-104 conversion instead of giving it to the board write entry');
+  assert((doorSource.match(/writeBoardContent\(/g) ?? []).length === 1,
+    'the board write entry should have one persistence call');
+  assert(doorSource.includes("type: 'elements_changed'"),
+    'the board write entry should tell panes through the one write message');
 } finally {
   server.kill('SIGTERM');
   await new Promise((resolve) => proxy.close(resolve));
