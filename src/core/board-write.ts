@@ -54,7 +54,10 @@ export interface BoardMutationResult<T> {
   write?: boolean;
 }
 
-export type BoardMutation<T> = (content: BoardContent) => BoardMutationResult<T>;
+export type BoardMutation<T> = (
+  content: BoardContent,
+  destinationBefore: BoardContent
+) => BoardMutationResult<T>;
 
 export interface ElementMutationPlan<T> {
   input: ElementInputRequest;
@@ -210,8 +213,12 @@ function tellPanesAboutWrite(
  */
 export function writeBoard<T>(request: BoardWriteRequest<T>, tellPanes: TellPanes): Record<string, unknown> {
   const target = request.target ?? request.source;
-  const content = copyContent(readBoardContent(request.source.board));
-  const mutation = request.mutation(content);
+  const sourceContent = readBoardContent(request.source.board);
+  const destinationBefore = target.key === request.source.key
+    ? copyContent(sourceContent)
+    : copyContent(readBoardContent(target.board));
+  const content = copyContent(sourceContent);
+  const mutation = request.mutation(content, destinationBefore);
   const delta = mutation.delta ?? emptyDelta();
   const shouldWrite = mutation.write ?? true;
   const appliedAt = new Date().toISOString();
