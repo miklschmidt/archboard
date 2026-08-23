@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-22 22:26'
-updated_date: '2026-08-22 23:27'
+updated_date: '2026-08-23 00:10'
 labels: []
 dependencies:
   - TASK-098
@@ -109,3 +109,72 @@ TASK-097 reads this family as contention, and that is not the whole of it. This 
 5. Revert-proof each half against the deterministic reproduction and count.
 6. Twenty standalone runs of check-live-session, and ten a side interleaved against the tree before the fix.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+MECHANISM, ESTABLISHED BEFORE ANYTHING WAS CHANGED, AND THE CANDIDATE WAS RIGHT — but it is two routes, not one, and only the first was in the report.
+
+Sampling did not find it: a loss canary in the pane, armed synchronously after every updateScene and read at the settle that writes the baseline, watched 810 deliveries across 10 standalone runs and saw nothing enter the window. All 10 passed, so the bug did not visit; that says nothing about the window.
+
+So it was arranged instead. Scene.replaceAllElements is where a delivery lands whoever called it — and patching it there rather than updateScene is what makes it work, because the imperative API the pane holds captured this.updateScene when it was made. Armed, the next delivery schedules the human's edit in a microtask, which runs after the pane's delivery code and before the timeout that writes the baseline. Every time.
+
+On the unfixed tree, with the check's own store/queue board:
+
+  agent recolours the box a hand resizes
+    ABSORBED store: .width 224 -> 237. Server keeps 224 for good. That is the
+    cycle-33 signature.
+  agent relabels the box a hand types in
+    ABSORBED. Server: text 'written by the agent', rawText 'typed at 38',
+    originalText 'written by the agent'; pane 'typed by the person'. Three
+    values from three writes, which is the cycle-14 signature verbatim.
+  agent recolours the box a hand deletes
+    ABSORBED spare: gone from the scene, and the baseline entry with it, so the
+    deletion can never be claimed. The server holds an element the pane does
+    not — the cycle-31 signature.
+  agent writes elsewhere while a hand moves a box
+    NOT absorbed, and lost anyway. The baseline does not cover it so the debt
+    stands, but the onChange the edit fired was suppressed and settle then took
+    a fresh scene stamp, so nothing was left that would ever say it. This route
+    is not in the report and one fix does not cover both.
+
+THE FIX, both halves in the pane.
+
+- The record is written at the moment of delivery, in the same statement
+  sequence as updateScene, where nothing can have happened yet. It still reads
+  the scene back rather than fingerprinting what was sent, because Excalidraw
+  repairs a document as it takes it (syncInvalidIndices); the canary measured
+  that read-back against the settle-time one over 810 deliveries and found no
+  drift, which is what made this viable.
+- settle restores the stamp the delivery left rather than the one the scene now
+  holds, and then asks scheduleReport. The difference between the two is
+  exactly what a hand did while nobody was listening, and the ordinary path
+  takes it from there: it counts as a local edit, so a reply cannot overwrite
+  it either, it takes the board, and it arms the debounce.
+
+Nothing is written into the baseline inside settle any more, so settle takes no
+callback at all.
+
+REVERT-PROOF, against the four arranged cases:
+
+  the record back in the settle timeout      9 fail, three named ABSORBED
+  the fresh stamp and nothing asked         12 fail, all four named UNARMED
+  both                                      12 fail, three ABSORBED, one UNARMED
+
+TWO MORE OF THE SAME FAMILY, found by reasoning about the fixed tree rather
+than measured, and closed rather than left as a rare flake:
+
+- A report due while one is in flight is dropped with nothing rescheduled. If
+  the reply then comes back with handMoved true there is no applyServerScene,
+  so no settle, so no drain: the edit is owed and unarmed. Reachable whenever a
+  round trip outlasts REPORT_DEBOUNCE_MS, which is what contention does — so
+  this is TASK-097's load-dependent failure, and the same bug rather than a
+  second one.
+- A report due inside a suppression window is dropped the same way, and when
+  the edit predates the delivery the drain cannot rescue it: delivered.stamp
+  already contains it, so the stamp gate passes.
+
+Both are one line: a due report is re-armed rather than dropped. That is not a
+retry making a loss rarer — it makes 'owed implies armed' true by construction,
+because the timer is never dropped.
+<!-- SECTION:NOTES:END -->
