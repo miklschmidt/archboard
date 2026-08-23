@@ -38,7 +38,7 @@ import {
   ApiResponse,
   WriteAnswer
 } from './canvas-client.js';
-import { sanitizeFilePath, prepareElement, prepareElementUpdate } from './normalize.js';
+import { sanitizeFilePath } from './normalize.js';
 import {
   alignElements,
   distributeElements,
@@ -259,18 +259,16 @@ async function dispatchTool(
         // `document` is a question about the answer, not a field of the
         // element, so it does not go on the board.
         const { document, ...shape } = params;
-        const excalidrawElement = prepareElement(shape);
-
         // Create element directly on HTTP server (no local storage)
-        const answer = await createElementOnCanvas(excalidrawElement, { document });
+        const answer = await createElementOnCanvas(shape, { document });
 
         if (!answer) {
           throw new Error('Failed to create element: HTTP server unavailable');
         }
 
         logger.info('Element created via MCP and synced to canvas', {
-          id: excalidrawElement.id,
-          type: excalidrawElement.type,
+          id: answer.element?.id,
+          type: answer.element?.type ?? shape.type,
           synced: true
         });
 
@@ -290,20 +288,15 @@ async function dispatchTool(
 
         if (!id) throw new Error('Element ID is required');
 
-        // Fetch the element's actual type so text→label conversion only
-        // applies to non-text shapes (update payloads rarely carry `type`)
-        const existing = await getElementFromCanvas(id);
-        const excalidrawElement = prepareElementUpdate(id, updates, existing?.type);
-
         // Update element directly on HTTP server (no local storage)
-        const answer = await updateElementOnCanvas(excalidrawElement, { document });
+        const answer = await updateElementOnCanvas({ ...updates, id }, { document });
 
         if (!answer) {
           throw new Error('Failed to update element: HTTP server unavailable or element not found');
         }
 
         logger.info('Element updated via MCP and synced to canvas', {
-          id: excalidrawElement.id,
+          id,
           synced: true
         });
 
@@ -558,9 +551,7 @@ async function dispatchTool(
         }).parse(args);
         logger.info('Batch creating elements via MCP', { count: params.elements.length });
 
-        const createdElements: ServerElement[] = params.elements.map(elementData => prepareElement(elementData));
-
-        const answer = await batchCreateElementsOnCanvas(createdElements, { document: params.document });
+        const answer = await batchCreateElementsOnCanvas(params.elements, { document: params.document });
 
         if (!answer) {
           throw new Error('Failed to batch create elements: HTTP server unavailable');
