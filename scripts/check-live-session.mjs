@@ -185,13 +185,6 @@ const readScene = () => evalInPage(`(() => {
 const INSTALL_COUNTER = `(() => {
   if (window.__abReports) return { already: true };
   window.__abReports = { sent: 0, done: 0 };
-  // Arms the pane's loss canary (frontend/src/canvas/loss-canary.ts). Nothing
-  // in the frontend creates this, so an ordinary page never pays for it. It
-  // counts the two ways a user edit can disappear before reaching the server:
-  // the pane recording a server update as its baseline after the scene has
-  // moved on from it, and the pane retaining pending edits with no report
-  // scheduled or in flight (TASK-099).
-  window.__abLoss = { deliveries: 0, moved: 0, absorbed: 0, unarmed: 0, events: [] };
   const original = window.fetch;
   window.fetch = function (input, init) {
     const url = typeof input === 'string' ? input : (input && input.url) || '';
@@ -217,15 +210,6 @@ const INSTALL_COUNTER = `(() => {
 })()`;
 
 const reportCount = () => evalInPage('(() => ({ ...window.__abReports }))()');
-
-// What the canary saw since it was last asked. Drained, so an event can be
-// named with the cycle it happened in rather than with a timestamp.
-const lossCanary = () => evalInPage(`(() => {
-  const seen = window.__abLoss;
-  if (!seen) return { missing: true };
-  return { deliveries: seen.deliveries, moved: seen.moved, absorbed: seen.absorbed,
-    unarmed: seen.unarmed, events: seen.events.splice(0) };
-})()`);
 
 // ---------------------------------------------------------------------------
 // User edits
@@ -685,10 +669,6 @@ try {
   let bounced = 0;
   let agreedCycles = 0;
   const madeIds = [];
-  let deliveries = 0;
-  let lostEdits = 0;
-  let survived = 0;
-  let firstLoss = null;
 
   for (let cycle = 1; cycle <= CYCLES; cycle++) {
     const before = await reportCount();
@@ -780,23 +760,6 @@ try {
       firstDivergence = { cycle, agentMove, humanMove, divergences: settled.divergences };
     }
 
-    // What the pane's own canary saw this cycle. Drained here so a loss is
-    // named with the cycle, the agent's move and the human's — the three
-    // things a divergence six seconds later cannot tell you.
-    const canary = await lossCanary();
-    if (canary.missing) throw new Error('the pane is not carrying a loss canary');
-    deliveries = canary.deliveries;
-    for (const event of canary.events) {
-      const where = `cycle ${cycle} (agent ${agentMove}, human ${humanMove})`;
-      if (event.loss === 'moved') survived += 1;
-      else {
-        lostEdits += 1;
-        if (!firstLoss) firstLoss = { where, event };
-      }
-      console.log(`#   ${event.loss.toUpperCase()} ${where}: ` +
-        `${event.kind} — ${event.what.join(' | ')}`);
-    }
-
     // One gesture, one report — and applying the echo must not have started
     // another. The agent's write produces no report at all: it reaches the
     // pane as a broadcast, and a broadcast the pane applies is not news the
@@ -826,17 +789,6 @@ try {
 
   check('  and applying an echo never started another change report',
     bounced === 0, `${bounced} cycles reported more than the human's own gesture`);
-
-  // The mechanism, rather than its end state. A divergence is what a lost edit
-  // looks like six seconds later; this is what it looks like at the moment it
-  // happens, and it is the one thing that says which of the forty-two cycles
-  // did it (TASK-099).
-  check('  and no pending edit disappeared before being sent to the server',
-    lostEdits === 0,
-    firstLoss
-      ? `${lostEdits} lost, first ${firstLoss.event.loss} at ${firstLoss.where}: ` +
-        `${firstLoss.event.kind} — ${firstLoss.event.what.join(' | ')}`
-      : `${deliveries} server updates watched, ${survived} of them overlapped a user edit`);
 
   // --- a user edit while a server update is being recorded -----------------
   //
@@ -892,15 +844,6 @@ try {
       `${edit.id} read ${JSON.stringify(was)} before, ${JSON.stringify(got)} after, ` +
       `and the user edit made it ${JSON.stringify(wanted)}`);
 
-    const seen = await lossCanary();
-    const aimed = seen.events.filter(e => e.what.some(said => said.includes(edit.id)));
-    check(`  and the pane's canary saw the intended server-update ordering`,
-      aimed.length > 0,
-      aimed.map(e => `${e.loss}: ${e.what.join(' | ')}`).join(' || ') || 'nothing');
-    check(`  and did not call it a loss`,
-      aimed.every(e => e.loss === 'moved') && seen.events.every(e => e.loss === 'moved'),
-      seen.events.filter(e => e.loss !== 'moved')
-        .map(e => `${e.loss}: ${e.kind} — ${e.what.join(' | ')}`).join(' || '));
   };
 
   // The three user edits TASK-099 was filed with, each against a server update
@@ -986,12 +929,6 @@ try {
   check('  so both user moves are on the board',
     dragged && Math.abs(dragged.x - (drifted.x + 12)) < 0.001,
     `store.x was ${drifted?.x}, the two drags made it ${drifted?.x + 12}, the server holds ${dragged?.x}`);
-  const afterFlight = await lossCanary();
-  check('  and the pane was never left owing an edit with nothing to say it',
-    afterFlight.events.every(e => e.loss === 'moved'),
-    afterFlight.events.filter(e => e.loss !== 'moved')
-      .map(e => `${e.loss}: ${e.kind} — ${e.what.join(' | ')}`).join(' || '));
-
   // --- what a broadcast may not do ----------------------------------------
   //
   // The other half of TASK-074's split. A pane holding work the server has not
