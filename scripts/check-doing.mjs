@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-// An agent says what it is doing, and the wall shows it (TASK-095).
+// An agent says what it is doing, and the activity feed shows it (TASK-095).
 //
 // The other half of the principle the rest of this repository keeps arriving
 // at: a creator needs an immediate connection to what they are creating, and on
@@ -19,16 +19,16 @@
 //   3. it is broadcast board-scoped, so a pane holding the other board does not
 //      hear it, and a pane that arrives late is told the last few
 //   4. a person's own change report carries none and is not made to invent one
-//   5. the list is short and the line is bounded, so a wall shows one-liners
-//      and not a log
+//   5. the list is short and the line is bounded, so the activity feed shows
+//      one-line descriptions and not a log
 //
 // The sixth — that a description reaches a live model without an agent
 // narrating its own drawing back at itself (ADR 0005) — is in
 // `check-changes.mjs`, beside the stub daemon that owns injection.
 //
-// The refusal is proved here and nowhere else: every other check hands its
-// writes a line through `scripts/lib/doing.mjs`, so this is the one place that
-// asks without saying anything.
+// The refusal is proved here and nowhere else: every other check supplies its
+// writes with a line through `scripts/lib/doing.mjs`, so this is the one place
+// that asks without saying anything.
 
 import fs from 'node:fs';
 import os from 'node:os';
@@ -106,8 +106,8 @@ try {
   check('  naming all three surfaces, because the caller could be on any of them',
     /--doing/.test(silent.body?.error ?? '') && /`doing`/.test(silent.body?.error ?? '') &&
     /\?doing=/.test(silent.body?.error ?? ''));
-  check('  and saying a claim\'s reason does not stand in for it',
-    /campaign/.test(silent.body?.error ?? '') && /step/.test(silent.body?.error ?? ''));
+  check('  and saying a claim\'s overall reason does not satisfy the per-write requirement',
+    /overall reason/.test(silent.body?.error ?? '') && /step/.test(silent.body?.error ?? ''));
   check('  with nothing written',
     (await api('GET', '/api/elements?board=payments')).body?.count === 0);
 
@@ -115,7 +115,7 @@ try {
   check('a line of whitespace is not a line', empty.status === 400, `${empty.status}`);
 
   const long = await api('POST', `/api/elements?board=payments&${said('x'.repeat(141))}`, box('a'));
-  check('and neither is a paragraph — this is read from two metres, not logged',
+  check('and neither is a paragraph — the activity feed accepts bounded descriptions, not log entries',
     long.status === 400 && /140/.test(long.body?.error ?? ''), `${long.status}`);
 
   // Every route the write boundary calls a board write, not just the obvious
@@ -156,7 +156,7 @@ try {
     ['create_element', 'batch_create_elements', 'clear_canvas', 'save_board', 'promote_selection',
       'create_from_mermaid', 'import_scene', 'restore_snapshot', 'insert_library_item']
       .every(name => writeTools.some(tool => tool.name === name)));
-  check('  and no tool that only reads one, because narrating a read is noise on a wall',
+  check('  and no tool that only reads one, because a read does not change the board',
     !['describe_scene', 'query_elements', 'export_scene', 'get_element', 'snapshot_scene']
       .some(name => writeTools.some(tool => tool.name === name)));
 
@@ -181,7 +181,7 @@ try {
     /"type": ?"rectangle"/.test(bytes));
 
   const element = (await api('GET', '/api/elements?board=payments')).body?.elements?.[0] ?? {};
-  check('and the board hands the element back with no trace of it either',
+  check('and the board returns the element with no trace of it either',
     element.doing === undefined && !JSON.stringify(element).includes('adding the payment queue'),
     JSON.stringify(element).slice(0, 100));
 
@@ -234,11 +234,11 @@ try {
     heard.right.every(message => message.board === 'payments'),
     JSON.stringify(heard.right.map(message => message.board)));
 
-  // A refused write narrates nothing: a wall that showed intentions rather than
-  // acts would be a wall that lies.
+  // A refused write emits no activity description: the activity feed reports
+  // completed writes, not intentions.
   await api('POST', `/api/elements/xxx-not-here?board=payments&${said('updating a box that is gone')}`, { x: 1 });
   await sleep(200);
-  check('a write that was refused says nothing on the wall',
+  check('a write that was refused emits no activity description',
     !heard.left.some(m => m.doing?.doing === 'updating a box that is gone'),
     JSON.stringify(heard.left.map(m => m.doing?.doing)));
 
@@ -301,7 +301,7 @@ try {
   await registerPane('pane-late', 0, false);
   await api('POST', '/api/boards/open', { board: 'payments', pane: 'pane-late' });
   await sleep(300);
-  check('a pane handed a board mid-campaign is told what has been happening on it',
+  check('a pane opened partway through ongoing agent work receives the recent activity',
     (late.at(-1)?.recent ?? []).length === 5,
     JSON.stringify((late.at(-1)?.recent ?? []).map(entry => entry.doing)));
 
