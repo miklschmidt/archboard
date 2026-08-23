@@ -3,7 +3,12 @@ import type { SelectionReport } from './describe.js';
 import type { PanesReport } from './panes.js';
 import { ServerElement } from '../types.js';
 import { EXPRESS_SERVER_URL, ENABLE_CANVAS_SYNC } from './config.js';
-import type { BoardWriteConflict } from './board-version.js';
+import {
+  type BoardWriteConflict,
+  expectedVersion,
+  forgetRememberedVersions,
+  rememberVersion as rememberBoardVersion
+} from './board-version.js';
 import type { HoldReport } from './board-hold.js';
 import type { Claim } from './board-lock.js';
 import type { CompareResult } from './compare.js';
@@ -108,7 +113,7 @@ export function currentWriteDoing(): string | null {
 // where a command makes several writes — `import` clears a board and then
 // batches a scene into it — and gets nothing across two, because a fresh
 // process has heard nothing. On the canvas's side a claim is the identity that
-// covers that gap; see `claimSeen` in board-lock.ts.
+// covers that gap; its remembered version lives in board-version.ts too.
 //
 // `--expect-version` and the `expectVersion` argument are the override, for a
 // writer that knows something this map does not. Explicit beats remembered.
@@ -116,8 +121,6 @@ export function currentWriteDoing(): string | null {
 // The canvas imports this file and reads none of it. The processes that do read
 // it are the CLI, which is one command long, and the MCP server, which nothing
 // hot-reloads.
-// hot-safe: client state a reload rebuilds for a process that never asks for it
-const versionsSeen = new Map<string, number | null>();
 let statedVersion: number | null | undefined;
 
 export function setExpectedVersion(version: number | null): void {
@@ -126,8 +129,10 @@ export function setExpectedVersion(version: number | null): void {
 
 /** What this process would send: what it was told, unless the caller overrode it. */
 export function currentExpectedVersion(): number | null | undefined {
-  if (statedVersion !== undefined) return statedVersion;
-  return requestedBoard ? versionsSeen.get(requestedBoard) : undefined;
+  return expectedVersion({
+    stated: statedVersion,
+    ...(requestedBoard ? { rememberedBy: clientVersionWriter(requestedBoard) } : {})
+  });
 }
 
 /**
@@ -152,7 +157,11 @@ function rememberVersion(data: unknown): void {
   const found = readVersion(body.fingerprint)
     ?? readVersion(body.versionConflict, 'actual')
     ?? (sameBoard(body.board) ? readVersion(body) : undefined);
-  if (found !== undefined) versionsSeen.set(requestedBoard, found);
+  if (found !== undefined) rememberBoardVersion(clientVersionWriter(requestedBoard), found);
+}
+
+function clientVersionWriter(board: string): string {
+  return `client:${board.toLowerCase()}`;
 }
 
 function sameBoard(answered: unknown): boolean {
@@ -170,7 +179,7 @@ function readVersion(from: unknown, key = 'version'): number | null | undefined 
 
 /** Forget what this process has been told. For a check that wants a fresh caller. */
 export function forgetVersionsSeen(): void {
-  versionsSeen.clear();
+  forgetRememberedVersions('client:');
   statedVersion = undefined;
 }
 
