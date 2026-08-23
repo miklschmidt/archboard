@@ -49,24 +49,16 @@ first appeared on. That is what makes "the server is the truth" a property
 rather than a claim: the bugs it exists to catch — a label multiplying, a
 rename coming back — need a session to build up in. About forty seconds.
 
-It also probes the delivery window on demand (TASK-099). The invariant under
-test: an edit somebody made is either on the wire or still in the pane's diff,
-and never neither. A delivery goes into the scene and the pane records what it
-now believes the server holds — the record is taken at the moment of delivery,
-in the same statement sequence as `updateScene`, where nothing can have
-happened yet, and the suppression window drains itself: a report that comes
-due while one is in flight, or inside that window, is re-armed rather than
-dropped. The check patches `Scene.replaceAllElements` so the next delivery
-schedules a human's edit in a microtask that runs after the pane's delivery
-code and before the record. Four cases land in it every run: a resize, a
-retype, a delete, and a move against a delivery naming something else.
-
-The pane carries a loss canary (`frontend/src/canvas/loss-canary.ts`) that
-names the element, the field and both values whenever the scene moves inside
-that window, and says whether the record swallowed it or the edit is still
-owed. It costs a walk of the scene per delivery, so it is off unless the page
-has been given `window.__abLoss` — nothing in the frontend does; this check
-sets it.
+It also probes the server-update ordering from TASK-099. A user edit must be in
+a report in flight or a report that is scheduled. The pane records a server
+update in the same statement sequence as `updateScene`. A report that becomes
+due while another report is in flight is scheduled again rather than dropped.
+The check patches `Scene.replaceAllElements` so the next server update schedules
+a user edit in a microtask after the pane applies the update but before it
+records the new baseline. Four cases produce that ordering in every run: a
+resize, a retype, a delete, and a move while the server updates another
+element. Each case asserts that the pane and server documents agree and that
+the server contains the user's exact edit.
 
 It also owns the half of the board mutex only a renderer can answer
 (ADR 0016): the pane accepts a touch on a free board, refuses one the moment

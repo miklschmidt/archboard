@@ -33,9 +33,7 @@ interface ReportAfterServerUpdate {
 }
 
 export interface ServerUpdateRecord {
-  kind: string
   stamp: string
-  canary: unknown
 }
 
 export interface ChangeReportingState {
@@ -72,7 +70,6 @@ export type ChangeReportingEvent =
       kind: string
       scene: readonly SceneElement[]
       baselineUpdate: BaselineUpdate
-      canary: unknown
       reportAfterUpdate?: ReportAfterServerUpdate
     }
   | { type: 'server_update_finished'; generation: number; scene: readonly SceneElement[] }
@@ -109,9 +106,6 @@ export type ChangeReportingEffect =
   | { type: 'note_change' }
   | { type: 'release_if_idle' }
   | { type: 'publish_status' }
-  | { type: 'read_server_update'; kind: string; canary: unknown }
-  | { type: 'read_orphaned_server_update' }
-  | { type: 'read_pending_edits'; kind: string }
 
 export interface ReduceResult {
   state: ChangeReportingState
@@ -377,9 +371,7 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
         ...state,
         baseline: applyBaselineUpdate(state.baseline, event.baselineUpdate, event.scene),
         serverUpdateRecords: [...state.serverUpdateRecords, {
-          kind: event.kind,
-          stamp: stampScene(event.scene),
-          canary: event.canary
+          stamp: stampScene(event.scene)
         }]
       }
       effects.push({ type: 'finish_server_update', delayMs: 0, generation: state.generation })
@@ -393,8 +385,6 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
       if (event.generation !== state.generation) return { state, effects }
       const [record, ...records] = state.serverUpdateRecords
       const applying = Math.max(0, state.applyingServerUpdateCount - 1)
-      if (record) effects.push({ type: 'read_server_update', kind: record.kind, canary: record.canary })
-      else effects.push({ type: 'read_orphaned_server_update' })
       let next: ChangeReportingState = {
         ...state,
         applyingServerUpdateCount: applying,
@@ -402,7 +392,6 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
         sceneStamp: record?.stamp ?? stampScene(event.scene)
       }
       if (applying === 0) next = userEdit(next, event.scene, effects)
-      effects.push({ type: 'read_pending_edits', kind: 'a server update had just been applied' })
       return { state: next, effects }
     }
 
@@ -434,7 +423,6 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
         next = { ...next, baseline: sent.report.nextBaseline }
       }
       effects.push({ type: 'note_change' }, { type: 'release_if_idle' })
-      effects.push({ type: 'read_pending_edits', kind: 'a report had just landed' })
       return { state: next, effects }
     }
 

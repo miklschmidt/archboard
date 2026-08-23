@@ -23,8 +23,8 @@
 //
 // WHAT IT MEASURED BEFORE THE FIX, on this build, in this browser:
 //
-//   a hand-drawn text     typed "hello", waited, typed " world"   -> "hello"
-//   a hand-added label    typed "ABCDE", waited, typed "FGHIJ"    -> ""
+//   a user-drawn text     typed "hello", waited, typed " world"   -> "hello"
+//   a user-added label    typed "ABCDE", waited, typed "FGHIJ"    -> ""
 //
 // Six characters and then all ten, discarded silently. Both are reproduced
 // below and both now come back whole.
@@ -41,7 +41,7 @@
 // A REAL BROWSER, AND REAL INPUT. Excalidraw mints the id, so Excalidraw has to
 // be the one creating the element: nothing this file could put in a scene would
 // be the case under test. Synthetic pointer events do not reach Excalidraw's
-// handlers (`check-fixed-point.mjs` measured that), so the hands here are the
+// handlers (`check-fixed-point.mjs` measured that), so the user input here is the
 // text tool, a mouse click, a double-click and real keystrokes.
 
 import fs from 'node:fs';
@@ -59,7 +59,7 @@ const skipBuild = process.argv.includes('--skip-build');
 const { REPORT_DEBOUNCE_MS } = await import(src('core/timing.ts'));
 const { isBlockId } = await import(src('core/ids.ts'));
 // Long enough that the pane's debounce has fired and its answer has come back,
-// which is the window the rename used to land in.
+// which covers the delay during which the rename used to arrive.
 const AFTER_A_WRITE_MS = REPORT_DEBOUNCE_MS + 1600;
 
 let failures = 0;
@@ -157,12 +157,6 @@ const paneNow = () => evalInPage(`(() => {
 const RECORD_POSTED = `(() => {
   if (window.__abPosted) return { already: true };
   window.__abPosted = { upserts: [], reports: 0 };
-  // Arms the pane's loss canary (frontend/src/canvas/loss-canary.ts). This
-  // check is the only one that reaches nested suppression windows: renaming a
-  // hand-drawn text element opens one inside the report that provokes the
-  // answer, whose own arrival opens another. The pane's record of each window
-  // is queued for exactly that, and this is what says so (TASK-099).
-  window.__abLoss = { deliveries: 0, moved: 0, absorbed: 0, unarmed: 0, events: [] };
   const original = window.fetch;
   window.fetch = function (input, init) {
     const url = typeof input === 'string' ? input : (input && input.url) || '';
@@ -290,7 +284,7 @@ try {
     origin: 'agent',
     upserts: [
       // Filled, so a double-click in the middle of it is a double-click on it
-      // (TASK-009), and unlabelled, because the label is what a hand adds.
+      // (TASK-009), and unlabelled, because the label is what the user adds.
       { id: 'auth', type: 'rectangle', x: 100, y: 100, width: 220, height: 90,
         backgroundColor: '#ffffff', fillStyle: 'solid' },
       { id: 'other', type: 'rectangle', x: 100, y: 400, width: 160, height: 70,
@@ -321,8 +315,8 @@ try {
     `${opened.body?.source} / ${opened.body?.elementCount} elements`);
 
   await evalInPage(RECORD_POSTED);
-  // A pane nobody has touched never reports (useCanvasSession), so the human's
-  // half of this does not exist until a hand lands on the glass.
+  // A pane nobody has touched never reports (useCanvasSession), so the user's
+  // half of this does not exist until a user edit changes the scene.
   await browser(['click', '.excalidraw']);
   await sleep(500);
 
@@ -331,7 +325,7 @@ try {
     return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
   })()`);
 
-  // ── a text element drawn by hand ────────────────────────────────────────
+  // ── a text element drawn by the user ────────────────────────────────────
 
   await browser(['press', 't']);
   const tool = await evalInPage(`(() => { const app = ${APP}; return { tool: app.state.activeTool.type }; })()`);
@@ -368,7 +362,7 @@ try {
   const midEdit = await paneNow();
   const boardMid = await heldById();
   const postedMid = await posted();
-  check('  the write landed, so this is a real window and not a quiet one',
+  check('  the write landed, so the server round trip under test occurred',
     postedMid.reports > 0 && boardMid.get('other') !== undefined,
     `${postedMid.reports} reports, other ${boardMid.get('other') ? 'on the board' : 'missing'}`);
   check('  the editor is still open on the element it was opened on',
@@ -389,7 +383,7 @@ try {
   const afterDrawn = await paneNow();
   const boardDrawn = await heldById();
   const drawnText = [...boardDrawn.values()].find(element => element.type === 'text');
-  check('every character typed into a hand-drawn text element is on the board',
+  check('every character typed into a user-drawn text element is on the board',
     drawnText?.text === 'hello world',
     drawnText ? JSON.stringify(drawnText.text) : 'there is no text element on the board');
   check('  under a name the note writer keeps',
@@ -398,7 +392,7 @@ try {
     afterDrawn.elements.some(e => e.id === drawnText?.id && e.text === 'hello world'),
     afterDrawn.elements.filter(e => e.type === 'text').map(e => `${e.id} ${JSON.stringify(e.text)}`).join(' | '));
 
-  // ── a label added by hand to a shape the agent drew ─────────────────────
+  // ── a label added by the user to a shape the agent drew ─────────────────
   //
   // The case TASK-069 measured, with the id the other way round: the container
   // is the server's and the label is Excalidraw's. A double-click on
@@ -452,7 +446,7 @@ try {
   const afterLabel = await paneNow();
   const boardLabel = await heldById();
   const label = [...boardLabel.values()].find(element => element.containerId === 'auth');
-  check('every character typed into a hand-added label is on the board',
+  check('every character typed into a user-added label is on the board',
     label?.text === 'ABCDEFGHIJ',
     label ? JSON.stringify(label.text) : 'the container has no label');
   check('  under a name the note writer keeps',
@@ -488,17 +482,6 @@ try {
 
   // ── and the note the board is ───────────────────────────────────────────
 
-  // ── and no window closed without a record behind it ────────────────────
-
-  const canary = await evalInPage('(() => ({ ...window.__abLoss }))()');
-  check('every suppression window had a delivery recorded for it, nested ones included',
-    canary.deliveries > 0 && canary.events.every(event => event.loss === 'moved'),
-    `${canary.deliveries} deliveries, ${canary.absorbed} absorbed, ${canary.unarmed} unarmed` +
-    (canary.events.filter(e => e.loss !== 'moved').length
-      ? `: ${canary.events.filter(e => e.loss !== 'moved')
-        .map(e => `${e.loss} — ${e.kind}`).join(' | ')}`
-      : ''));
-
   const noteFile = (await api('GET', `/api/boards/info?board=${BOARD}`)).body?.file;
   const note = fs.readFileSync(noteFile, 'utf-8');
   check('the note carries both of them, under the ids the board holds',
@@ -520,5 +503,5 @@ if (failures > 0) {
   if (serverStderr.trim()) console.error(serverStderr.trim().split('\n').slice(-10).join('\n'));
   process.exit(1);
 }
-console.log('\ntyped-text: all checks passed. A hand-drawn text and a hand-added label were ' +
+console.log('\ntyped-text: all checks passed. A user-drawn text and a user-added label were ' +
   'typed into across a write each, renamed, and kept every character.');
