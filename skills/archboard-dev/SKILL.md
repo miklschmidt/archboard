@@ -24,16 +24,21 @@ A running process read its source at start, so a server route keeps its old
 behaviour until it is restarted while the CLI already has the new one. That
 split is what made TASK-056 confusing.
 
-**A restart drops every unsaved board**, so save first, or ask. When you are
-working on the server itself, reload instead of restarting:
+**A restart costs the process and nothing on a saving board** — every write
+already went to its note (ADR 0015). The one exception is a *held* board
+(TASK-079), one whose write was refused because the note changed underneath:
+its changes since live in the canvas process and in no note, and `board list`
+shows a `held` block for it. Check for one before restarting. What a restart
+does drop is the tabs' sockets, the panes and the change feed's cursor, so
+when you are working on the server itself, reload instead:
 
 ```bash
-bun run dev:canvas     # the canvas, reloadable, keeping the boards
+bun run dev:canvas     # the canvas, reloadable
 bun run reload    # and this is what reloads it
 ```
 
 A reload re-evaluates modules inside the running process, so the port, the open
-tabs, the boards, the panes and the change feed's cursor all survive. It is not
+tabs, the panes and the change feed's cursor all survive. It is not
 `--watch`, which restarts and takes them with it.
 
 **Saving a file does not reload anything.** `bun --hot` re-evaluates the whole
@@ -157,21 +162,24 @@ sync updates it automatically.
 - **`describe` degrades above 120 nodes** to a per-kind rollup rather than
   dumping every node. That is deliberate (narratability); use `query` when you
   need the exhaustive set.
-- **The canvas is in-memory** and clears on server restart. A board survives
-  only what `board save --board <key>` wrote to the vault, `scratch` included —
-  it has a note of its own now (`<vault>/.archboard/scratch.excalidraw.md`) and
-  the canvas picks that note up at start, but only a save puts anything in it.
-  Export or save deliberately.
+- **The note is the board, and the canvas holds no copy of one** (ADR 0015).
+  Every write — an agent's `add`, a human's drag — goes to the note, so there
+  is nothing unsaved and a restart loses nothing on a saving board. `scratch`
+  included: its note is `<vault>/.archboard/scratch.excalidraw.md` and the
+  canvas picks it up at start. The exception is a held board (TASK-079), whose
+  changes since the refusal live only in the canvas process.
 - **Everything needs `ARCHBOARD_VAULT`**, and there is no default. Without it
   the canvas refuses to start, so a shell missing it fails before whatever you
   were testing runs. Set it before `./bin/canvas start` — the canvas server
   does the vault I/O, so exporting it after the server is up changes nothing.
-- **A board save can be refused, and that is the design** (ADR 0006). archboard
-  records the sha-256 of a note's bytes when it reads it and verifies it before
-  writing; a file that changed underneath is reported, never overwritten. Do not
-  "fix" this by reloading or merging — both were considered and rejected,
-  because an Excalidraw scene has no merge and reloading just swaps which side
-  loses silently. `--force` exists for the human, not for you.
+- **Any write can be refused, and that is the design** (ADR 0006). archboard
+  verifies the sha-256 of the bytes it last wrote at the note's path before
+  writing again; a note that changed underneath is reported, never overwritten.
+  Every gesture is a write, so the check runs on every one, and a refusal stops
+  the board saving — it is *held* (TASK-079) — rather than opening a dialog.
+  Do not "fix" this by reloading or merging — both were considered and
+  rejected, because an Excalidraw scene has no merge and reloading just swaps
+  which side loses silently. `--force` exists for the human, not for you.
 - **`export --out` does not `mkdir -p`** — create the directory first.
 - **The library is server state, not browser state** (ADR 0007). It is in
   `<vault>/.archboard/library.excalidrawlib`, seeded from `libraries/` on first
