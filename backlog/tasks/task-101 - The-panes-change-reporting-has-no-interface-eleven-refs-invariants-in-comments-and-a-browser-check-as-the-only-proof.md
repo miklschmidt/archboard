@@ -3,11 +3,11 @@ id: TASK-101
 title: >-
   The pane's change reporting has no interface: eleven refs, invariants in
   comments, and a browser check as the only proof
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-23 15:00'
-updated_date: '2026-08-23 15:29'
+updated_date: '2026-08-23 15:51'
 labels: []
 dependencies: []
 references:
@@ -42,10 +42,10 @@ Decided in the grilling session with Mikkel, 2026-08-23:
 - [x] #1 `frontend/src/canvas/change-reporting.ts` exports a pure reducer with no React or Excalidraw imports, and `useCanvasSession.ts` holds its state in one ref and executes effects in one exhaustive switch
 - [x] #2 Every programmatic `updateScene` in `useCanvasSession.ts`, including the `set_viewport` appState write, goes through one apply function; no second path sets the applying count by hand
 - [x] #3 `scripts/check-change-reporting.mjs` (`test:reporting`, in the `test` chain) drives the reducer headlessly through: own reply landing after a further user edit; a server update applied while a report is in flight; a user edit during a server update; two overlapping server updates; a refused write followed by a full report; board adoption mid-timer — asserting after every step that pending edits imply a report in flight or scheduled
-- [ ] #4 `test:browser`, `test:typing` and `test:live-session` pass, unchanged in what they assert
-- [ ] #5 The wire flag `rebase` on `/api/elements/changes` is renamed to the full-report flag in schema, route, client and checks; "delivery" reads *server update*; no "hand", "glass", "debt", "owed" or suppression-"window" remains in the files this work touches
+- [x] #4 `test:browser`, `test:typing` and `test:live-session` pass, unchanged in what they assert
+- [x] #5 The wire flag `rebase` on `/api/elements/changes` is renamed to the full-report flag in schema, route, client and checks; "delivery" reads *server update*; no "hand", "glass", "debt", "owed" or suppression-"window" remains in the files this work touches
 - [x] #6 CONTEXT.md defines Pending edits, Baseline and Change report under Working
-- [ ] #7 `loss-canary.ts` and `window.__abLoss` are removed, and `check-live-session.mjs` no longer creates or reads it, after `test:live-session` has passed clean without them
+- [x] #7 `loss-canary.ts` and `window.__abLoss` are removed, and `check-live-session.mjs` no longer creates or reads it, after `test:live-session` has passed clean without them
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -69,10 +69,12 @@ Phase 1 slice 2: rewired useCanvasSession to one reporting runtime ref, one prog
 Phase 1 slice 3: added Pending edits, Baseline, and Change report under Working in CONTEXT.md. Final allowed verification is green: 38 reducer checks, frontend TypeScript, and the frontend build.
 
 Phase 1 finalization: checked ACs 1, 2, 3, and 6 from the reducer check, frontend type-check, frontend build, and final source audit. AC 4 browser checks, AC 5 wire rename, and AC 7 loss-detector removal remain unchecked for the phase-2 follow-up. No browser check was run. TASK-101 remains In Progress and assigned to @claude.
+
+Phase 2 renamed the /api/elements/changes wire field to fullReport in the schema, route, frontend client, held-board check, and explanatory text. Evidence: bun run type-check passed; bun run test:reporting passed 38 checks; grep -rn rebase src frontend scripts returned no matches. The browser checks ran headless and sequentially: bun run test:browser reported all checks passed and 0 of 12 elements changed; bun run test:typing reported all checks passed and preserved both typed elements; the first bun run test:live-session reported all checks passed, 42 of 42 cycles agreed, and all forced server-update cases reported no loss. After that pass, removed loss-canary.ts, all detector effects and calls, and all window.__abLoss creation and reads. Exact searches for __abLoss and loss-canary returned no matches. A second bun run test:live-session without the detector reported all checks passed and 42 of 42 cycles agreed. Final evidence: bun run test exited 0 after all 26 configured suites, including the three browser checks in sequence.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Phase 1 added the pure change-reporting reducer, its 38-check in-memory test, the single hook update path and exhaustive effect executor, package test wiring, and the three Working terms. Verified with bun run test:reporting, the frontend TypeScript check, bun run build, and the final source audit. Git commits remain blocked because this runtime cannot write the checkout's .git directory.
+Change reporting is now one pure reducer with a single hook adapter and one programmatic scene-update path. The change route and frontend use the literal fullReport wire field, the task vocabulary is literal, and the temporary loss detector has been removed. Verified with the 38-check reducer test, TypeScript, frontend build, both required live-session runs, the headless browser and typing checks, and the full bun run test chain.
 <!-- SECTION:FINAL_SUMMARY:END -->
