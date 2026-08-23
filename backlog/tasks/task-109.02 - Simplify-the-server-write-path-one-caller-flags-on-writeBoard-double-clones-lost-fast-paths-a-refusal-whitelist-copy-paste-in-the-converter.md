@@ -3,11 +3,11 @@ id: TASK-109.02
 title: >-
   Simplify the server write path: one-caller flags on writeBoard, double clones,
   lost fast paths, a refusal whitelist, copy-paste in the converter
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-23 19:35'
-updated_date: '2026-08-23 20:00'
+updated_date: '2026-08-23 20:01'
 labels: []
 dependencies: []
 references:
@@ -61,10 +61,10 @@ SIMPLIFICATION
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every finding above is fixed or listed in the notes as skipped with a one-line reason; no behaviour changes; no route hand-rolls part of the write ritual beside `writeBoard`
-- [ ] #2 `writeBoard` carries no option whose only legal combination is "the explicit save"; the save ritual (skip holdWrite, release the hold) lives in one place
-- [ ] #3 A board-carrying refusal is recognised by its shape on the client; the MCP element schema is the server's or a pass-through, and `test:parity` checks field parity
-- [ ] #4 `bun run type-check`, `test:one-write`, `test:lock`, `test:version`, `test:doing`, `test:changes`, `test:boards`, `test:labels`, `test:geometry`, `test:mcp`, `test:parity`, `test:module-scope` pass
+- [x] #1 Every finding above is fixed or listed in the notes as skipped with a one-line reason; no behaviour changes; no route hand-rolls part of the write ritual beside `writeBoard`
+- [x] #2 `writeBoard` carries no option whose only legal combination is "the explicit save"; the save ritual (skip holdWrite, release the hold) lives in one place
+- [x] #3 A board-carrying refusal is recognised by its shape on the client; the MCP element schema is the server's or a pass-through, and `test:parity` checks field parity
+- [x] #4 `bun run type-check`, `test:one-write`, `test:lock`, `test:version`, `test:doing`, `test:changes`, `test:boards`, `test:labels`, `test:geometry`, `test:mcp`, `test:parity`, `test:module-scope` pass
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -83,4 +83,12 @@ Slice 2 complete (E3, R3, R4, S17, S18, S19): settleDocument regains its unchang
 Slice 3 complete (A2, A3, A4, R1/R1b, S25): board-carrying refusals are recognized by their structured body, while the exported refusal-code set is used only for CLI exit status; syncToCanvas swallows connection failures only; MCP error context now prefixes every error and preserves code/conflict/open/refusal data; create/update/batch MCP validation and advertised JSON schemas derive from apply-element-input; parity checks exact element-field agreement and an unlisted shaped refusal; ElementInput is Record<string, unknown>. Evidence: bun run type-check passed; test:parity passed (41 MCP tools, 50 CLI entries); test:mcp passed 6 checks; test:doing passed 42 checks; test:version passed 65 checks.
 
 Slice 4 complete (E10, R-minor, S3, S5, S20, S23): scene export reads elements/files concurrently with Promise.allSettled; shared scene import/export lives in core/scene-document and the CLI-only module is removed; canvas query construction, board file records, and sleep are shared; describeVersionConflict is internal and dead imports are removed; claim cleanup has one dropClaim; all 27 standard board-error tails use answerBoardError with logging explicit per call. Evidence: bun run type-check passed; test:boards passed; test:lock passed 119 checks; test:mcp passed 6 checks; test:parity passed; test:module-scope passed (52 modules, no unwaived state); test:branch, test:side-by-side, test:hot, and test:changes all passed.
+
+Final acceptance validation: bun run type-check PASS; test:one-write PASS (70); test:lock PASS (119); test:version PASS (65); test:doing PASS (42); test:changes PASS; test:boards PASS; test:labels PASS (182); test:geometry PASS (82); test:mcp PASS (6); test:parity PASS (41 MCP tools / 50 CLI entries, including element-field parity); test:module-scope PASS (52 modules, no unwaived state). Additional allowed checks test:branch, test:side-by-side, and test:hot also PASS. Per task scope, the full bun run test chain and browser checks were not run; the maintainer runs those after TASK-109.01 and TASK-109.02 land together.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Simplified the server/core write path finding by finding. writeBoard now owns explicit-save and whole-scene behavior, clones board data once, keeps held fingerprints and written versions without repeat work, and shares error, refusal, schema, geometry, scene, file, query, and claim-cleanup mechanisms. All findings were fixed except optional E5/E6, skipped because threading new binding indexes would exceed a small behavior-preserving quality pass. Every allowed acceptance check passed; the maintainer retains the full test chain and browser checks after both TASK-109 halves land.
+<!-- SECTION:FINAL_SUMMARY:END -->
