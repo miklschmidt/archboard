@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-23 15:00'
-updated_date: '2026-08-23 15:02'
+updated_date: '2026-08-23 15:29'
 labels: []
 dependencies: []
 references:
@@ -39,12 +39,12 @@ Decided in the grilling session with Mikkel, 2026-08-23:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `frontend/src/canvas/change-reporting.ts` exports a pure reducer with no React or Excalidraw imports, and `useCanvasSession.ts` holds its state in one ref and executes effects in one exhaustive switch
-- [ ] #2 Every programmatic `updateScene` in `useCanvasSession.ts`, including the `set_viewport` appState write, goes through one apply function; no second path sets the applying count by hand
-- [ ] #3 `scripts/check-change-reporting.mjs` (`test:reporting`, in the `test` chain) drives the reducer headlessly through: own reply landing after a further user edit; a server update applied while a report is in flight; a user edit during a server update; two overlapping server updates; a refused write followed by a full report; board adoption mid-timer — asserting after every step that pending edits imply a report in flight or scheduled
+- [x] #1 `frontend/src/canvas/change-reporting.ts` exports a pure reducer with no React or Excalidraw imports, and `useCanvasSession.ts` holds its state in one ref and executes effects in one exhaustive switch
+- [x] #2 Every programmatic `updateScene` in `useCanvasSession.ts`, including the `set_viewport` appState write, goes through one apply function; no second path sets the applying count by hand
+- [x] #3 `scripts/check-change-reporting.mjs` (`test:reporting`, in the `test` chain) drives the reducer headlessly through: own reply landing after a further user edit; a server update applied while a report is in flight; a user edit during a server update; two overlapping server updates; a refused write followed by a full report; board adoption mid-timer — asserting after every step that pending edits imply a report in flight or scheduled
 - [ ] #4 `test:browser`, `test:typing` and `test:live-session` pass, unchanged in what they assert
 - [ ] #5 The wire flag `rebase` on `/api/elements/changes` is renamed to the full-report flag in schema, route, client and checks; "delivery" reads *server update*; no "hand", "glass", "debt", "owed" or suppression-"window" remains in the files this work touches
-- [ ] #6 CONTEXT.md defines Pending edits, Baseline and Change report under Working
+- [x] #6 CONTEXT.md defines Pending edits, Baseline and Change report under Working
 - [ ] #7 `loss-canary.ts` and `window.__abLoss` are removed, and `check-live-session.mjs` no longer creates or reads it, after `test:live-session` has passed clean without them
 <!-- AC:END -->
 
@@ -58,3 +58,21 @@ Decided in the grilling session with Mikkel, 2026-08-23:
 5. Run `test:browser`, `test:typing`, `test:live-session` (one after another, headless).
 6. Remove `loss-canary.ts`, `window.__abLoss` and `check-live-session`'s use of it once it passes clean. Add the three CONTEXT.md terms.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Phase 1 slice 1: added the pure change-reporting reducer and the in-memory reducer check, wired test:reporting into the package test chain, and verified 38 checks, the frontend type-check, and the frontend build.
+
+Phase 1 slice 2: rewired useCanvasSession to one reporting runtime ref, one programmatic updateScene adapter, and one exhaustive effect switch. Removed the old baseline, timer, in-flight, applying-count, record-queue, local-edit, scene-stamp, full-report, and late-bound schedule refs. Verified test:reporting and the frontend build. Commit creation is blocked because this runtime mounts the checkout's .git directory read-only; git cannot create .git/index.lock.
+
+Phase 1 slice 3: added Pending edits, Baseline, and Change report under Working in CONTEXT.md. Final allowed verification is green: 38 reducer checks, frontend TypeScript, and the frontend build.
+
+Phase 1 finalization: checked ACs 1, 2, 3, and 6 from the reducer check, frontend type-check, frontend build, and final source audit. AC 4 browser checks, AC 5 wire rename, and AC 7 loss-detector removal remain unchecked for the phase-2 follow-up. No browser check was run. TASK-101 remains In Progress and assigned to @claude.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Phase 1 added the pure change-reporting reducer, its 38-check in-memory test, the single hook update path and exhaustive effect executor, package test wiring, and the three Working terms. Verified with bun run test:reporting, the frontend TypeScript check, bun run build, and the final source audit. Git commits remain blocked because this runtime cannot write the checkout's .git directory.
+<!-- SECTION:FINAL_SUMMARY:END -->
