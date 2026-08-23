@@ -3,9 +3,11 @@ id: TASK-109.01
 title: >-
   Simplify the pane's change reporting: dead reducer surface, derivable state, a
   mermaid bypass, server calls outside api.ts
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@claude'
 created_date: '2026-08-23 19:34'
+updated_date: '2026-08-23 19:46'
 labels: []
 dependencies: []
 references:
@@ -52,7 +54,40 @@ REUSE
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every finding above is fixed or listed in the notes as skipped with a one-line reason; no behaviour changes
-- [ ] #2 `bun run test:reporting` passes with the same or more cases; `bun run build` and the frontend type-check pass
-- [ ] #3 `change-reporting.ts` exports only what the hook or the check imports
+- [x] #1 Every finding above is fixed or listed in the notes as skipped with a one-line reason; no behaviour changes
+- [x] #2 `bun run test:reporting` passes with the same or more cases; `bun run build` and the frontend type-check pass
+- [x] #3 `change-reporting.ts` exports only what the hook or the check imports
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Remove dead reducer and check fields, internalize module-only declarations, and simplify event/effect payloads without changing reporting behavior.
+2. Replace duplicated reporting state with derivable values, share withheld and incoming-element helpers, and use a first-mismatch pending-edit scan.
+3. Route Mermaid programmatic edits through the reducer, add semantic reporting predicates, and share timer and failed-report transitions while extending the headless check.
+4. Move beacon, selection, export-result, and viewport-result calls into api.ts through shared request builders.
+5. Run bun run test:reporting after each slice, then bun run build and bunx tsc --noEmit -p tsconfig.frontend.json; record evidence and finalize TASK-109.01.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Progress 2026-08-23:
+- Fixed E2 and E7: untouched panes return before stamping, and pending-edit detection stops at the first mismatch while preserving withheld and deletion rules.
+- Fixed A6 and A7: the hook uses reducer predicates for settled, interacted, and full-report state; Mermaid programmatic edits now pass through local reducer events.
+- Fixed A-minor, S1, S2, S7, S8, and S10: removed unused event/effect fields, exports, check state, the withheld callback, and the unused api local.
+- Fixed S12, S13, S14, S15, and S16: derived in-flight state, removed the report generation copy, stored update stamps directly, simplified withheld set creation, and shared EMPTY_WITHHELD.
+- Fixed S21 and S22: shared timer helpers and the failed-report transition while retaining distinct report and retry reducer cases.
+- Fixed R2 and R-minor: shared carryWithheld and mergeIncoming between production code and the check.
+- Fixed R7: api.ts now owns beacon, selection, export-result, and viewport-result calls; change-report payload construction is shared.
+- Skipped findings: none.
+- Evidence: bun run test:reporting passes 53 checks; bunx tsc --noEmit -p tsconfig.frontend.json passes; bun run build passes with only the existing Vite chunk-size warning. The maintainer retains the full test chain after TASK-109.01 and TASK-109.02 land.
+
+Final verification supersedes the earlier count: test:reporting passes 54 checks, including the runtime export audit; frontend type-check and build pass.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Simplified pane change reporting without changing intended behavior: removed dead and duplicated state, derived pending and settled conditions, routed Mermaid local edits through the reducer, shared reporting helpers, and moved pane server calls into api.ts. Verified with 54 reporting checks, the frontend type-check, and the production build; the maintainer will run the full chain after both TASK-109 subtasks land.
+<!-- SECTION:FINAL_SUMMARY:END -->

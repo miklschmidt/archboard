@@ -7,7 +7,7 @@ import {
 
 export type SceneElement = Record<string, any>
 
-export type BaselineUpdate =
+type BaselineUpdate =
   | { type: 'replace'; withheldIds: readonly string[] }
   | { type: 'touch'; ids: readonly string[] }
   | { type: 'delete'; ids: readonly string[] }
@@ -100,7 +100,7 @@ export type ChangeReportingEffect =
   | { type: 'release_if_idle' }
   | { type: 'publish_status' }
 
-export interface ReduceResult {
+interface ReduceResult {
   state: ChangeReportingState
   effects: ChangeReportingEffect[]
 }
