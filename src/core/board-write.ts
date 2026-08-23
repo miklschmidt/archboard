@@ -58,6 +58,7 @@ export type BoardMutation<T> = (content: BoardContent) => BoardMutationResult<T>
 
 export interface ElementMutationPlan<T> {
   input: ElementInputRequest;
+  before?: (content: BoardContent) => void;
   value: (applied: AppliedElementInput, content: BoardContent) => T;
   write?: (applied: AppliedElementInput) => boolean;
 }
@@ -121,6 +122,7 @@ export function elementMutation<T>(
 ): BoardMutation<T> {
   return (content) => {
     const plan = prepare(content);
+    plan.before?.(content);
     const applied = applyElementInput(content.elements, plan.input);
     return {
       value: plan.value(applied, content),
