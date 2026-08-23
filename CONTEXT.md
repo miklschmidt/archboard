@@ -143,6 +143,22 @@ The agent re-reading a board after a human has changed it, so that the change
 can be interpreted as a statement about the design.
 _Avoid_: sync, refresh, reload, poll, re-scan
 
+**Pending edits**:
+User edits that differ from the pane's baseline and that the server has not
+accepted. A pane with pending edits has a change report in flight or scheduled.
+_Avoid_: unsaved changes, dirty state, unreported changes
+
+**Baseline**:
+The fingerprint of each element the pane has received from the server or had
+accepted in a change report. A pane reports a deletion only for an element in
+its baseline.
+_Avoid_: scene, board copy, snapshot, cache
+
+**Change report**:
+The element upserts and deletions a pane computes by comparing its scene with
+its baseline. The server applies the report and returns the resulting board.
+_Avoid_: sync, save, scene replacement, patch
+
 **Doing**:
 The one line an agent says about a board as it writes to it, shown on the
 canvas while the write lands. A claim's reason is the campaign an agent has the
