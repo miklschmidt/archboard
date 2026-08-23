@@ -12,11 +12,6 @@ import {
   ServerElement,
   ExcalidrawFile,
   WebSocketMessage,
-  ElementCreatedMessage,
-  ElementUpdatedMessage,
-  ElementDeletedMessage,
-  BatchCreatedMessage,
-  ElementsChangedMessage,
   InitialElementsMessage,
   Snapshot,
   selectionState
@@ -52,11 +47,8 @@ import {
   SCRATCH_KEY
 } from './core/board-store.js';
 import {
-  beginHold,
   HoldReport,
-  holdMessage,
   holdOn,
-  holdWrite,
   isHeld,
   // board-lock.ts also exports `releaseHold`, for the mutex. The lock owns that
   // name — its check and ADR 0016 both use it — so ADR 0006's hold takes the
@@ -72,7 +64,6 @@ import {
   LoadedBoard,
   readBoardContent,
   readBoardFile,
-  renderContent,
   writeBoardContent
 } from './core/board-io.js';
 import {
@@ -94,7 +85,6 @@ import {
   BoardIdentity,
   boardKey,
   classifyBoardSave,
-  hashBoardBytes,
   listBoards,
   makeIdentity,
   normalizeBoardKey,
@@ -123,14 +113,20 @@ import { CURRENT_VARIANT } from './core/board.js';
 import { restampVariant } from './core/promote.js';
 import { boardsForRepo } from './core/repo-boards.js';
 import { CompareSideInput, compareBoards } from './core/compare.js';
-import { ChangeOrigin, changeFeed } from './core/change-feed.js';
+import { changeFeed } from './core/change-feed.js';
 import type { ChangeEvent } from './core/change-feed.js';
 import { PANE_LAYOUT_TIMEOUT_MS, PANE_SETTLE_CAP_MS, REPORT_DEBOUNCE_MS } from './core/timing.js';
 import { narrateChange } from './core/changes.js';
 import { injectTest, injectionStatus, startInjection } from './core/injection.js';
 import { LibraryItem, readLibrary, writeLibrary } from './core/library.js';
 import { overlapsRegion } from './core/geometry.js';
-import { applyElementInput } from './core/apply-element-input.js';
+import {
+  agentWriteAnswer,
+  BoardMutationError,
+  BoardWriteTarget,
+  elementMutation,
+  writeBoard
+} from './core/board-write.js';
 import { frontendState, sourceState } from './core/staleness.js';
 
 // Load environment variables
@@ -502,17 +498,6 @@ function broadcastBoardless(message: WebSocketMessage): void {
   });
 }
 
-// Tell the change feed a board moved, without telling it what moved.
-//
-// Every mutating route calls this after it has succeeded. The feed looks at
-// settled board states, never at the delta, so all it needs is which board and
-// who did it: `human` for the browser's change reports, `agent` for the API
-// routes an agent or the CLI drives. That distinction is load-bearing
-// downstream — narrating the agent's own drawing back at it is noise.
-function noteChange(key: string, board: BoardState, origin: ChangeOrigin): void {
-  changeFeed.record(key, board.identity, () => boardElements(board), origin);
-}
-
 /**
  * A board's elements, read out of its note.
  *
@@ -530,62 +515,6 @@ function boardElements(board: BoardState): ServerElement[] {
 /** How many elements a board has, for a summary that does not need them all. */
 function boardElementCount(board: BoardState): number {
   return readBoardContent(board).elements.size;
-}
-
-/**
- * A board went somewhere: into the vault, and then into the feed.
- *
- * Every mutating route ends here, and the order is the point. The note is
- * written first, so a broadcast or a response describing a board is describing
- * one that exists; a refused write throws before either, leaving the panes
- * holding what they had (ADR 0006). The feed is told afterwards because it
- * measures settled boards rather than deltas, and the board has only settled
- * once it is on disk.
- *
- * Synchronous, deliberately. Express runs a synchronous handler to completion
- * before starting the next, so two writes to one board cannot interleave their
- * read-modify-write cycles; an `await` between the read at the top of a request
- * and this call would open exactly that window. Keeping a *second process* out
- * is the board mutex's job (ADR 0016), not this one's.
- */
-function persistBoard(
-  key: string,
-  board: BoardState,
-  content: BoardContent,
-  origin: ChangeOrigin,
-  fromScreen = false
-): WrittenNote | null {
-  // A board that has stopped saving takes the write into the held copy and
-  // leaves the note alone (TASK-079). Not written down, so `savedAt` does not
-  // move, which is the honest answer to an agent asking when this board was
-  // last in the vault. The feed is told all the same, because the board did
-  // change and an agent watching should hear what a human drew, held or not.
-  if (holdWrite(key, content, fromScreen)) {
-    noteChange(key, board, origin);
-    return null;
-  }
-  let written: WrittenNote;
-  try {
-    written = writeBoardContent(board, content);
-  } catch (error) {
-    // ADR 0006 refused it. The refusal still goes to whoever asked for the
-    // write — it is news, and nothing happened — and the board stops saving
-    // from here rather than meeting the same refusal on every gesture that
-    // follows. The held copy starts as the note as this request found it, which
-    // is the other editor's board: this write is refused, so nothing of it is
-    // kept. What makes the held copy the human's board again is the pane
-    // sending a full report (`fullReport` on the change route), a round trip
-    // later.
-    if (error instanceof BoardWriteConflictError && !isHeld(key)) {
-      const hold = beginHold(key, error.conflict, readBoardContent(board));
-      logger.warn(`Board "${key}" has stopped saving: ${holdMessage(key, hold)}`);
-      broadcast({ type: 'board_hold', hold: reportHold(key, hold) } as WebSocketMessage, key);
-    }
-    throw error;
-  }
-  board.savedAt = new Date().toISOString();
-  noteChange(key, board, origin);
-  return written;
 }
 
 /**
@@ -635,8 +564,13 @@ function boardFromRequest(
   req: Request,
   what?: string
 ): { key: string; board: BoardState; content: BoardContent } {
-  const { key, board } = resolveBoard(boardOfRequest(req), what);
+  const { key, board } = boardTargetFromRequest(req, what);
   return { key, board, content: readBoardContent(board) };
+}
+
+/** Resolve a write's board without reading its note ahead of the write entry. */
+function boardTargetFromRequest(req: Request, what?: string): BoardWriteTarget {
+  return resolveBoard(boardOfRequest(req), what);
 }
 
 // Which board a request says it is about, before anything decides whether that
@@ -655,6 +589,7 @@ function boardOfRequest(req: Request): string | undefined {
 // rather than a server fault.
 function boardErrorStatus(error: unknown): number {
   if (error instanceof BoardRequiredError) return error.status;
+  if (error instanceof BoardMutationError) return error.status;
   // A refused write is not a fault, it is the other outcome the write always
   // had (ADR 0006). Every route that writes can now produce it, because every
   // write goes to the note (ADR 0015), so it is answered here once rather than
@@ -1192,44 +1127,32 @@ app.get('/api/elements', (req: Request, res: Response) => {
 // Create new element
 app.post('/api/elements', (req: Request, res: Response) => {
   try {
-    const { key: boardKeyForRequest, board, content } = boardFromRequest(req, 'Creating an element');
-    const elements = content.elements;
-    const applied = applyElementInput(elements, {
-      upserts: [req.body],
-      origin: 'agent'
-    });
-    const stored = applied.named[0] as ServerElement;
-    logger.info('Creating element via API', { type: stored.type, board: boardKeyForRequest });
-
-    // Into the note before anybody is told about it, so nothing is broadcast
-    // that the vault does not hold (ADR 0015). A refused write throws here.
-    const intoNote = persistBoard(boardKeyForRequest, board, content, 'agent');
-
-    // Broadcast to all connected clients
-    for (const element of applied.created) {
-      broadcast({
-        type: 'element_created',
-        element
-      } as ElementCreatedMessage, boardKeyForRequest);
-    }
-    for (const element of applied.updated) {
-      broadcast({ type: 'element_updated', element } as ElementUpdatedMessage, boardKeyForRequest);
-    }
-
-    res.json({
-      success: true,
-      board: boardKeyForRequest,
-      element: stored,
-      // `element` is what the caller asked for; `elements` is what the board
-      // became, label and z-order included (TASK-075).
-      ...agentWriteAnswer(
-        board,
-        content,
-        [...applied.created, ...applied.updated],
-        wantsDocument(req),
-        intoNote
-      )
-    });
+    const source = boardTargetFromRequest(req, 'Creating an element');
+    res.json(writeBoard({
+      source,
+      origin: 'agent',
+      mutation: elementMutation<{ stored: ServerElement }>(() => ({
+        input: { upserts: [req.body], origin: 'agent' },
+        value: applied => ({ stored: applied.named[0] as ServerElement })
+      })),
+      afterPersist: ({ value }) => {
+        logger.info('Creating element via API', { type: value.stored.type, board: source.key });
+      },
+      answer: ({ content, value, delta, written }) => ({
+        success: true,
+        board: source.key,
+        element: value.stored,
+        // `element` is what the caller asked for; `elements` is what the board
+        // became, label and z-order included (TASK-075).
+        ...agentWriteAnswer(
+          source.board,
+          content,
+          [...delta.created, ...delta.updated],
+          wantsDocument(req),
+          written
+        )
+      })
+    }, broadcast));
   } catch (error) {
     logger.error('Error creating element:', error);
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
@@ -1239,8 +1162,7 @@ app.post('/api/elements', (req: Request, res: Response) => {
 // Update element
 app.put('/api/elements/:id', (req: Request, res: Response) => {
   try {
-    const { key: boardKeyForRequest, board, content } = boardFromRequest(req, 'Updating an element');
-    const elements = content.elements;
+    const source = boardTargetFromRequest(req, 'Updating an element');
     const { id } = req.params;
     const body = req.body && typeof req.body === 'object' ? req.body : {};
 
@@ -1251,46 +1173,31 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
       });
     }
 
-    const existingElement = elements.get(id);
-    if (!existingElement) {
-      return res.status(404).json({
-        success: false,
-        error: `Element with ID ${id} not found`
-      });
-    }
-
-    const applied = applyElementInput(elements, {
-      upserts: [{ ...body, id }],
-      origin: 'agent'
-    });
-
-    const intoNote = persistBoard(boardKeyForRequest, board, content, 'agent');
-
-    // Broadcast to all connected clients
-    for (const element of applied.created) {
-      broadcast({
-        type: 'element_created',
-        element
-      } as ElementCreatedMessage, boardKeyForRequest);
-    }
-    for (const element of applied.updated) {
-      broadcast({ type: 'element_updated', element } as ElementUpdatedMessage, boardKeyForRequest);
-    }
-
-    // Everything this one update turned into: the element, the label it
-    // renamed or expanded, the arrows it dragged along, the z-order it fixed —
-    // each in the form the board now holds it (TASK-075).
-    const touched = new Map(
-      [...applied.created, ...applied.updated].map(element => [element.id, element])
-    );
-    touched.set(id, applied.named[0] as ServerElement);
-
-    res.json({
-      success: true,
-      board: boardKeyForRequest,
-      element: elements.get(id) as ServerElement,
-      ...agentWriteAnswer(board, content, Array.from(touched.values()), wantsDocument(req), intoNote)
-    });
+    res.json(writeBoard({
+      source,
+      origin: 'agent',
+      mutation: elementMutation<{ touched: ServerElement[] }>(content => {
+        if (!content.elements.has(id)) {
+          throw new BoardMutationError(404, `Element with ID ${id} not found`);
+        }
+        return {
+          input: { upserts: [{ ...body, id }], origin: 'agent' },
+          value: applied => {
+            const touched = new Map(
+              [...applied.created, ...applied.updated].map(element => [element.id, element])
+            );
+            touched.set(id, applied.named[0] as ServerElement);
+            return { touched: Array.from(touched.values()) };
+          }
+        };
+      }),
+      answer: ({ content, value, written }) => ({
+        success: true,
+        board: source.key,
+        element: content.elements.get(id) as ServerElement,
+        ...agentWriteAnswer(source.board, content, value.touched, wantsDocument(req), written)
+      })
+    }, broadcast));
   } catch (error) {
     logger.error('Error updating element:', error);
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
@@ -1300,39 +1207,38 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
 // Clear all elements (must be before /:id route)
 app.delete('/api/elements/clear', (req: Request, res: Response) => {
   try {
-    const { key: boardKeyForRequest, board, content } = boardFromRequest(req, 'Clearing a board');
-    const count = content.elements.size;
-    content.elements.clear();
-
-    // Nothing is on this board, so nothing on it can be selected — in any pane
-    // showing it. A pane on another board keeps its pick; its elements are
-    // still there.
-    for (const [clientId] of selectionState.byClient) {
-      if (paneBoards.get(clientId) === boardKeyForRequest) {
-        selectionState.byClient.delete(clientId);
-      }
-    }
-    const owner = selectionState.current?.clientId;
-    if (owner && paneBoards.get(owner) === boardKeyForRequest) {
-      selectionState.current = null;
-      broadcastSelection();
-    }
-
-    persistBoard(boardKeyForRequest, board, content, 'agent');
-
-    broadcast({
-      type: 'canvas_cleared',
-      timestamp: new Date().toISOString()
-    }, boardKeyForRequest);
-
-    logger.info(`Canvas cleared: ${count} elements removed from board "${boardKeyForRequest}"`);
-
-    res.json({
-      success: true,
-      board: boardKeyForRequest,
-      message: `Cleared ${count} elements`,
-      count
-    });
+    const source = boardTargetFromRequest(req, 'Clearing a board');
+    res.json(writeBoard({
+      source,
+      origin: 'agent',
+      mutation: content => {
+        const deleted = Array.from(content.elements.keys());
+        content.elements.clear();
+        return {
+          value: { count: deleted.length },
+          delta: { created: [], updated: [], deleted }
+        };
+      },
+      afterPersist: ({ value }) => {
+        // Nothing is on this board, so nothing on it can be selected in any
+        // pane showing it. A pane on another board keeps its pick.
+        for (const [clientId] of selectionState.byClient) {
+          if (paneBoards.get(clientId) === source.key) selectionState.byClient.delete(clientId);
+        }
+        const owner = selectionState.current?.clientId;
+        if (owner && paneBoards.get(owner) === source.key) {
+          selectionState.current = null;
+          broadcastSelection();
+        }
+        logger.info(`Canvas cleared: ${value.count} elements removed from board "${source.key}"`);
+      },
+      answer: ({ value }) => ({
+        success: true,
+        board: source.key,
+        message: `Cleared ${value.count} elements`,
+        count: value.count
+      })
+    }, broadcast));
   } catch (error) {
     logger.error('Error clearing canvas:', error);
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
@@ -1342,8 +1248,7 @@ app.delete('/api/elements/clear', (req: Request, res: Response) => {
 // Delete element
 app.delete('/api/elements/:id', (req: Request, res: Response) => {
   try {
-    const { key: boardKeyForRequest, board, content } = boardFromRequest(req, 'Deleting an element');
-    const elements = content.elements;
+    const source = boardTargetFromRequest(req, 'Deleting an element');
     const { id } = req.params;
 
     if (!id) {
@@ -1353,35 +1258,26 @@ app.delete('/api/elements/:id', (req: Request, res: Response) => {
       });
     }
 
-    if (!elements.has(id)) {
-      return res.status(404).json({
-        success: false,
-        error: `Element with ID ${id} not found`
-      });
-    }
-
-    const applied = applyElementInput(elements, {
-      deletes: [id],
-      origin: 'agent'
-    });
-
-    const intoNote = persistBoard(boardKeyForRequest, board, content, 'agent');
-
-    // Broadcast to all connected clients
-    for (const elementId of applied.deleted) {
-      broadcast({ type: 'element_deleted', elementId } as ElementDeletedMessage, boardKeyForRequest);
-    }
-    for (const element of applied.updated) {
-      broadcast({ type: 'element_updated', element } as ElementUpdatedMessage, boardKeyForRequest);
-    }
-
-    res.json({
-      success: true,
-      board: boardKeyForRequest,
-      message: `Element ${id} deleted successfully`,
-      ...(applied.deleted.length > 1 ? { alsoDeleted: applied.deleted.slice(1) } : {}),
-      ...agentWriteAnswer(board, content, applied.updated, wantsDocument(req), intoNote)
-    });
+    res.json(writeBoard({
+      source,
+      origin: 'agent',
+      mutation: elementMutation<{ deleted: string[] }>(content => {
+        if (!content.elements.has(id)) {
+          throw new BoardMutationError(404, `Element with ID ${id} not found`);
+        }
+        return {
+          input: { deletes: [id], origin: 'agent' },
+          value: applied => ({ deleted: applied.deleted })
+        };
+      }),
+      answer: ({ content, value, delta, written }) => ({
+        success: true,
+        board: source.key,
+        message: `Element ${id} deleted successfully`,
+        ...(value.deleted.length > 1 ? { alsoDeleted: value.deleted.slice(1) } : {}),
+        ...agentWriteAnswer(source.board, content, delta.updated, wantsDocument(req), written)
+      })
+    }, broadcast));
   } catch (error) {
     logger.error('Error deleting element:', error);
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
@@ -1469,8 +1365,7 @@ app.get('/api/elements/:id', (req: Request, res: Response) => {
 // Batch create elements
 app.post('/api/elements/batch', (req: Request, res: Response) => {
   try {
-    const { key: boardKeyForRequest, board, content } = boardFromRequest(req, 'Creating elements');
-    const elements = content.elements;
+    const source = boardTargetFromRequest(req, 'Creating elements');
     const { elements: elementsToCreate } = req.body;
 
     if (!Array.isArray(elementsToCreate)) {
@@ -1480,40 +1375,28 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
       });
     }
 
-    const applied = applyElementInput(elements, {
-      upserts: elementsToCreate,
-      origin: 'agent'
-    });
-    const stored = applied.created;
-
-    const intoNote = persistBoard(boardKeyForRequest, board, content, 'agent');
-
-    // Broadcast to all connected clients
-    if (applied.created.length > 0) {
-      const message: BatchCreatedMessage = {
-        type: 'elements_batch_created',
-        elements: applied.created
-      };
-      broadcast(message, boardKeyForRequest);
-    }
-    for (const element of applied.updated) {
-      broadcast({ type: 'element_updated', element } as ElementUpdatedMessage, boardKeyForRequest);
-    }
-
-    res.json({
-      success: true,
-      board: boardKeyForRequest,
-      count: stored.length,
-      // `elements` here has always been what the write produced; the
-      // fingerprint and the opt-in document are what TASK-075 adds.
-      ...agentWriteAnswer(
-        board,
-        content,
-        [...applied.created, ...applied.updated],
-        wantsDocument(req),
-        intoNote
-      )
-    });
+    res.json(writeBoard({
+      source,
+      origin: 'agent',
+      mutation: elementMutation<{ count: number }>(() => ({
+        input: { upserts: elementsToCreate, origin: 'agent' },
+        value: applied => ({ count: applied.created.length })
+      })),
+      answer: ({ content, value, delta, written }) => ({
+        success: true,
+        board: source.key,
+        count: value.count,
+        // `elements` here has always been what the write produced; the
+        // fingerprint and the opt-in document are what TASK-075 adds.
+        ...agentWriteAnswer(
+          source.board,
+          content,
+          [...delta.created, ...delta.updated],
+          wantsDocument(req),
+          written
+        )
+      })
+    }, broadcast));
   } catch (error) {
     logger.error('Error batch creating elements:', error);
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
@@ -1668,87 +1551,6 @@ const ElementChangesSchema = z.object({
   fullReport: z.boolean().default(false)
 });
 
-/**
- * What an agent gets back from a write, and deliberately not what a pane gets.
- *
- * A pane gets the document, because a pane is long-lived and divergence is
- * what it accumulates (TASK-074). An agent gets something it can afford. At
- * 300 elements a board is 229,551 bytes of JSON, roughly 60,000 tokens, and
- * `align` in a loop would pull 1.2 million tokens through a context to move
- * twenty boxes. The failure a whole document prevents does not apply here
- * either: every CLI invocation is a fresh process holding nothing between
- * calls, so there is no long-lived copy to diverge.
- *
- * So, two things and an opt-in.
- *
- * `elements` is what the write touched, in the form the board now holds it —
- * not the payload that was sent, the record as it now stands. That includes
- * what the server made and the caller never named: the ids it minted, the text
- * element it expanded from a `label` seed, the arrows it re-routed behind a
- * move. Without it an agent that writes `{"label": {"text": "AuthService"}}`
- * has no way to learn its label's id except by re-reading the board.
- *
- * `fingerprint` is the element count and the sha-256 of the note this board
- * would write. An agent holding the previous one can tell in a single
- * comparison whether anything it did not expect has changed, and call
- * `describe` if so, instead of reading the whole board every turn. It is the
- * note's bytes rather than the store's, because the note is the board
- * (ADR 0015) and under stage 8 these are the bytes on disk.
- *
- * `document` is the whole board, and only when asked for.
- */
-function agentWriteAnswer(
-  board: BoardState,
-  content: BoardContent,
-  touched: ServerElement[],
-  wantsDocument: boolean,
-  written?: WrittenNote | null
-): Record<string, unknown> {
-  return {
-    elements: touched,
-    fingerprint: boardFingerprint(board, content, written),
-    ...(wantsDocument ? { document: Array.from(content.elements.values()) } : {})
-  };
-}
-
-/** What one write left in the vault, as the writer is told about it. */
-type WrittenNote = ReturnType<typeof writeBoardContent>;
-
-/**
- * The note this board holds, identified by its bytes and by which edit of it
- * this is.
- *
- * THE WRITE'S OWN ANSWER WHEN THERE WAS ONE. This used to render the board a
- * second time and hash that, on the reasoning that the render is deterministic
- * so the bytes must be the ones just written. A version broke that reasoning:
- * the counter moves inside the write, from the destination's own frontmatter,
- * so a re-render outside the write would produce the previous version's bytes
- * and report a hash the vault does not hold — a fingerprint that lies, silently,
- * on every write. So the write says what it wrote and this passes it on
- * (TASK-091), which also spends one render per write rather than two.
- *
- * A board that has stopped saving wrote no note, so there is nothing to pass
- * on and this falls back to rendering the held copy: the note this board *would*
- * write, which is what a fingerprint over a held board can honestly be. Its
- * version is the one the held copy came from — nothing has moved it, because
- * nothing has been written (TASK-079).
- */
-function boardFingerprint(
-  board: BoardState,
-  content: BoardContent,
-  written?: WrittenNote | null
-): { elements: number; note: string; version: number | null } {
-  if (written) {
-    return { elements: content.elements.size, note: written.hash, version: written.version };
-  }
-  const { bytes } = renderContent(board.identity, content);
-  return {
-    elements: content.elements.size,
-    note: hashBoardBytes(bytes),
-    version: content.version ?? null
-  };
-}
-
 /** Did this caller ask for the whole board? Off unless said, on every surface. */
 function wantsDocument(req: Request): boolean {
   const asked = req.query.document ?? (req.body && typeof req.body === 'object' ? req.body.document : undefined);
@@ -1757,96 +1559,65 @@ function wantsDocument(req: Request): boolean {
 
 app.post('/api/elements/changes', (req: Request, res: Response) => {
   try {
-    const { key: boardKeyForRequest, board, content } = boardFromRequest(req, 'A change report');
-    const elements = content.elements;
+    const source = boardTargetFromRequest(req, 'A change report');
     const { upserts, deletes, origin, clientId, timestamp, fullReport } =
       ElementChangesSchema.parse(req.body ?? {});
-
-    // A pane saying what is on its screen, which is only a thing to say about a
-    // board that has stopped saving (TASK-079). Refused anywhere else, because
-    // anywhere else it is the whole-scene write that cannot tell a full pane
-    // from a half-loaded one.
-    if (fullReport) {
-      if (origin === 'agent') {
-        return res.status(400).json({
-          success: false,
-          error: 'A full report is a pane sending its whole scene. An agent must send a delta.'
-        });
-      }
-      if (!isHeld(boardKeyForRequest)) {
-        return res.status(400).json({
-          success: false,
-          error:
-            `"${boardKeyForRequest}" is saving normally, so a full report would be a whole-scene write. ` +
-            'Report a delta against what this pane has been sent.'
-        });
-      }
-      // Everything in the report is therefore a creation, ids and all, and the
-      // held copy becomes the pane's scene rather than the other editor's note
-      // with one gesture on top of it. `deletes` says nothing here: an element
-      // absent from the screen is absent from the board.
-      elements.clear();
-    }
-
-    const now = new Date().toISOString();
-    const { created, updated, deleted } = applyElementInput(elements, {
-      upserts,
-      deletes: fullReport ? [] : deletes,
+    res.json(writeBoard({
+      source,
       origin,
-      timestamp
-    });
-
-    let intoNote: WrittenNote | null = null;
-    if (fullReport || created.length > 0 || updated.length > 0 || deleted.length > 0) {
-      // This is the write ADR 0006's refusal arrives on: not a save somebody
-      // chose, but 400 ms after a human lifted their finger. The first one is
-      // refused and stops the board saving; every gesture after it goes into
-      // the held copy and nothing more is refused, so the human draws on
-      // (TASK-079).
-      intoNote = persistBoard(boardKeyForRequest, board, content, origin, fullReport);
-
-      // Carries the reporting client so that client can skip its own echo:
-      // re-applying a change already on screen is at best a wasted render and
-      // at worst a shape snapping back mid-drag.
-      broadcast({
-        type: 'elements_changed',
-        created,
-        updated,
-        deleted,
-        origin: clientId ?? null,
-        timestamp: now
-      } as ElementsChangedMessage, boardKeyForRequest);
-
-      logger.info(
-        `Change report from ${clientId ?? (origin === 'agent' ? 'an agent' : 'an unidentified client')} ` +
-        `on "${boardKeyForRequest}": ` +
-        `+${created.length} ~${updated.length} -${deleted.length} (${elements.size} on the board)`
-      );
-    }
-
-    res.json({
-      success: true,
-      board: boardKeyForRequest,
-      created: created.length,
-      updated: updated.length,
-      deleted: deleted.length,
-      count: elements.size,
-      appliedAt: now,
-      // A pane gets the board back, whole (TASK-074). It is what stops a
-      // session accumulating divergence: every write is a resync, and the pane
-      // renders the document rather than its own running total of deltas
-      // (ADR 0015). Safe to return unconditionally because this response
-      // was computed from what that pane just sent, so it cannot be missing
-      // it — which is exactly what another writer's broadcast can be, and why
-      // that one is still merged by id.
-      //
-      // An agent gets something smaller, because a 300-element board is 60,000
-      // tokens and `align` in a loop would pull twenty of them through a
-      // context to move twenty boxes (TASK-075).
-      ...(origin === 'agent'
-        ? agentWriteAnswer(board, content, [...created, ...updated], wantsDocument(req), intoNote)
-        : { document: Array.from(elements.values()) })
-    });
+      clientId,
+      fromScreen: fullReport,
+      mutation: elementMutation<null>(content => {
+        // A pane may send its whole screen only while this board is held. The
+        // check and the clear both happen inside the isolated mutation, before
+        // any note can be written.
+        if (fullReport && origin === 'agent') {
+          throw new BoardMutationError(400, 'A full report is a pane sending its whole scene. An agent must send a delta.');
+        }
+        if (fullReport && !isHeld(source.key)) {
+          throw new BoardMutationError(
+            400,
+            `"${source.key}" is saving normally, so a full report would be a whole-scene write. ` +
+            'Report a delta against what this pane has been sent.'
+          );
+        }
+        return {
+          input: { upserts, deletes: fullReport ? [] : deletes, origin, timestamp },
+          before: fullReport ? current => current.elements.clear() : undefined,
+          value: () => null,
+          write: applied => fullReport ||
+            applied.created.length > 0 || applied.updated.length > 0 || applied.deleted.length > 0
+        };
+      }),
+      afterPersist: ({ content, delta }) => {
+        logger.info(
+          `Change report from ${clientId ?? (origin === 'agent' ? 'an agent' : 'an unidentified client')} ` +
+          `on "${source.key}": ` +
+          `+${delta.created.length} ~${delta.updated.length} -${delta.deleted.length} ` +
+          `(${content.elements.size} on the board)`
+        );
+      },
+      answer: ({ content, delta, written, appliedAt }) => ({
+        success: true,
+        board: source.key,
+        created: delta.created.length,
+        updated: delta.updated.length,
+        deleted: delta.deleted.length,
+        count: content.elements.size,
+        appliedAt,
+        // A pane gets the whole document back; an agent gets the smaller write
+        // answer unless it explicitly asks for the document (TASK-074/075).
+        ...(origin === 'agent'
+          ? agentWriteAnswer(
+            source.board,
+            content,
+            [...delta.created, ...delta.updated],
+            wantsDocument(req),
+            written
+          )
+          : { document: Array.from(content.elements.values()) })
+      })
+    }, broadcast));
   } catch (error) {
     logger.error('Error applying a change report:', error);
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
@@ -2371,47 +2142,52 @@ app.get('/api/files', (req: Request, res: Response) => {
 // POST add/update images on one board (batch)
 app.post('/api/files', (req: Request, res: Response) => {
   try {
-    const { key, board, content } = boardFromRequest(req, 'Adding an image');
+    const source = boardTargetFromRequest(req, 'Adding an image');
     const body = req.body;
     const fileList: ExcalidrawFile[] = Array.isArray(body) ? body : (body?.files || []);
-    for (const f of fileList) {
-      if (f.id && f.dataURL) {
-        content.files.set(f.id, {
-          id: f.id,
-          dataURL: f.dataURL,
-          mimeType: f.mimeType || 'image/png',
-          created: f.created || Date.now()
-        });
-      }
-    }
-    // An image is board content, so it goes in the note with everything else.
-    // A note holds the images its own elements draw and nothing else, so a
-    // picture posted before the element that draws it has nowhere to be —
-    // which is why `import` creates the elements first. Said out loud rather
-    // than dropped quietly: a caller that gets the order wrong should not have
-    // to discover it from a blank square (TASK-060).
-    const drawn = new Set(
-      Array.from(content.elements.values())
-        .map(element => element.fileId)
-        .filter((id): id is string => typeof id === 'string')
-    );
-    const orphaned = fileList.filter(f => f.id && f.dataURL && !drawn.has(f.id)).map(f => f.id);
-    persistBoard(key, board, content, 'agent');
-    broadcast({ type: 'files_added', files: fileList }, key);
-    res.json({
-      success: true,
-      board: key,
-      count: fileList.length - orphaned.length,
-      ...(orphaned.length
-        ? {
-          orphaned,
-          warning:
-            `No element on "${key}" draws ${orphaned.join(', ')}, so ${orphaned.length === 1 ? 'it was' : 'they were'} ` +
-            'not kept: a note holds the images its own elements reference. ' +
-            'Create the image element first, then post its data.'
+    res.json(writeBoard({
+      source,
+      origin: 'agent',
+      mutation: content => {
+        for (const file of fileList) {
+          if (file.id && file.dataURL) {
+            content.files.set(file.id, {
+              id: file.id,
+              dataURL: file.dataURL,
+              mimeType: file.mimeType || 'image/png',
+              created: file.created || Date.now()
+            });
+          }
         }
-        : {})
-    });
+        // A note keeps only images an element on this board draws (TASK-060).
+        const drawn = new Set(
+          Array.from(content.elements.values())
+            .map(element => element.fileId)
+            .filter((id): id is string => typeof id === 'string')
+        );
+        const orphaned = fileList
+          .filter(file => file.id && file.dataURL && !drawn.has(file.id))
+          .map(file => file.id);
+        return {
+          value: { orphaned },
+          delta: { created: [], updated: [], deleted: [], filesAdded: fileList }
+        };
+      },
+      answer: ({ value }) => ({
+        success: true,
+        board: source.key,
+        count: fileList.length - value.orphaned.length,
+        ...(value.orphaned.length
+          ? {
+            orphaned: value.orphaned,
+            warning:
+              `No element on "${source.key}" draws ${value.orphaned.join(', ')}, so ` +
+              `${value.orphaned.length === 1 ? 'it was' : 'they were'} not kept: a note holds the images ` +
+              'its own elements reference. Create the image element first, then post its data.'
+          }
+          : {})
+      })
+    }, broadcast));
   } catch (error) {
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }
@@ -2420,15 +2196,22 @@ app.post('/api/files', (req: Request, res: Response) => {
 // DELETE an image from one board
 app.delete('/api/files/:id', (req: Request, res: Response) => {
   try {
-    const { key, board, content } = boardFromRequest(req, 'Deleting an image');
+    const source = boardTargetFromRequest(req, 'Deleting an image');
     const id = req.params.id as string;
-    if (content.files.delete(id)) {
-      persistBoard(key, board, content, 'agent');
-      broadcast({ type: 'file_deleted', fileId: id }, key);
-      res.json({ success: true, board: key });
-    } else {
-      res.status(404).json({ success: false, error: `No image "${id}" on board "${key}".` });
-    }
+    res.json(writeBoard({
+      source,
+      origin: 'agent',
+      mutation: content => {
+        if (!content.files.delete(id)) {
+          throw new BoardMutationError(404, `No image "${id}" on board "${source.key}".`);
+        }
+        return {
+          value: null,
+          delta: { created: [], updated: [], deleted: [], filesDeleted: [id] }
+        };
+      },
+      answer: () => ({ success: true, board: source.key })
+    }, broadcast));
   } catch (error) {
     res.status(boardErrorStatus(error)).json(boardErrorBody(error));
   }

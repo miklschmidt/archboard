@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-23 15:01'
-updated_date: '2026-08-23 16:30'
+updated_date: '2026-08-23 16:37'
 labels: []
 dependencies: []
 references:
@@ -48,4 +48,6 @@ Architecture review 2026-08-23, candidate 2 (runner-up). Deepened shape: one mod
 Research against current main: TASK-101, TASK-103 and TASK-104 are present. There are nine note-writing routes: five single or batch element routes, the change-report route, two file routes, and board save. The write-boundary middleware already owns the lease and version check, so the new module stays synchronous inside next() and does not acquire locks.
 
 Slice 1 complete. Added the synchronous board-write entry with isolated content, TASK-104 conversion as an internal stage, board-io persistence, change-feed recording, one elements_changed write notification, file payload delivery, and response shaping. Validation: type-check; one-write 58; changes all; boards all; doing 42; lock 115; version 61; module-scope 49 modules plus self-test, all green.
+
+Slice 2 complete. Moved eight ordinary board-writing routes onto writeBoard: create, update, clear, delete, batch create, change report, file add, and file delete. All element routes now broadcast one elements_changed shape; file data keeps its existing payload messages. Validation: type-check; one-write 58; changes all; boards all; doing 42; lock 115; version 61; module-scope 50 modules plus self-test, all green.
 <!-- SECTION:NOTES:END -->
