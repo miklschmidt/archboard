@@ -609,6 +609,14 @@ try {
 
   // Reading is never locked, and neither is putting a board on a pane.
   const read = await api('GET', '/api/elements?board=scratch');
+  const heldInfo = await api('GET', '/api/boards/info?board=scratch');
+  check('  and the refusal carries the document a read returns after the wait',
+    Array.isArray(shut.body?.document) &&
+    JSON.stringify(shut.body.document) === JSON.stringify(read.body?.elements),
+    `${shut.body?.document?.length ?? 'no'} refusal / ${read.body?.elements?.length ?? 'no'} read`);
+  check('  with the board version current at that same refusal',
+    shut.body?.version === heldInfo.body?.version,
+    `${String(shut.body?.version)} / ${String(heldInfo.body?.version)}`);
   check('reading a held board is not blocked', read.status === 200, `${read.status}`);
   const opened = await api('POST', '/api/boards/open', { board: 'scratch', reload: true });
   check('and neither is opening one, which writes no note', opened.status === 200, `${opened.status}`);
@@ -701,6 +709,15 @@ try {
     `${denied.status} ${JSON.stringify(denied.body)?.slice(0, 160)}`);
   check('  and is told nothing was rolled back, because a claim is not a transaction',
     /nothing was undone/.test(denied.body?.error ?? ''), denied.body?.error);
+  const revokedRead = await api('GET', '/api/elements?board=scratch');
+  const revokedInfo = await api('GET', '/api/boards/info?board=scratch');
+  check('  with the current partial document in that told-once refusal',
+    Array.isArray(denied.body?.document) &&
+    JSON.stringify(denied.body.document) === JSON.stringify(revokedRead.body?.elements),
+    `${denied.body?.document?.length ?? 'no'} refusal / ${revokedRead.body?.elements?.length ?? 'no'} read`);
+  check('  and the current version beside it',
+    denied.body?.version === revokedInfo.body?.version,
+    `${String(denied.body?.version)} / ${String(revokedInfo.body?.version)}`);
 
   const ordinary = await api('POST', '/api/elements?board=scratch', {
     id: 'after-the-claim', type: 'rectangle', x: 10, y: 900, width: 10, height: 10
