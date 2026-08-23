@@ -79,7 +79,11 @@ export function reportChanges(
   clientId: string,
   fullReport = false
 ): Promise<ChangeReportReply> {
-  return post(`/api/elements/changes${boardQuery(board)}`, {
+  return post(`/api/elements/changes${boardQuery(board)}`, changeReportPayload(report, clientId, fullReport))
+}
+
+function changeReportPayload(report: ChangeReport, clientId: string, fullReport = false) {
+  return {
     upserts: report.upserts,
     deletes: report.deletes,
     clientId,
@@ -88,7 +92,16 @@ export function reportChanges(
     // anywhere else: it says "this is the whole board", which is the one thing
     // a pane is otherwise never allowed to say (TASK-016, TASK-079).
     ...(fullReport ? { fullReport: true } : {})
-  })
+  }
+}
+
+export function beaconChanges(board: string | null, report: ChangeReport, clientId: string): boolean {
+  if (typeof navigator.sendBeacon !== 'function') return false
+  const body = new Blob(
+    [JSON.stringify(changeReportPayload(report, clientId))],
+    { type: 'application/json' }
+  )
+  return navigator.sendBeacon(`/api/elements/changes${boardQuery(board)}`, body)
 }
 
 export interface ChangeReportReply {
@@ -154,6 +167,18 @@ export interface PaneReport {
   viewport: { x: number; y: number; width: number; height: number; zoom: number }
   /** Which bundle this tab is running, so the canvas can say when it is old. */
   build?: string
+}
+
+export function publishSelection(elementIds: readonly string[], clientId: string) {
+  return post<{ success: true }>('/api/selection', { elementIds, clientId })
+}
+
+export function postExportResult(requestId: string, payload: Record<string, unknown>) {
+  return post<{ success: true }>('/api/export/image/result', { requestId, ...payload })
+}
+
+export function postViewportResult(requestId: string, payload: Record<string, unknown>) {
+  return post<{ success: true }>('/api/viewport/result', { requestId, ...payload })
 }
 
 // ─── The board's mutex ────────────────────────────────────────

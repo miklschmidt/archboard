@@ -34,8 +34,8 @@ import {
   type ChangeReportingState, type SceneElement, type SceneUpdate
 } from './change-reporting'
 import {
-  BoardConflictError, fetchElements, fetchFiles, holdBoard, loadedBundle, releaseBoard, reportChanges,
-  reportPane, takeBoardBack
+  beaconChanges, BoardConflictError, fetchElements, fetchFiles, holdBoard, loadedBundle, postExportResult,
+  postViewportResult, publishSelection, releaseBoard, reportChanges, reportPane, takeBoardBack
 } from './api'
 import type { PaneReport } from './api'
 
@@ -544,19 +544,7 @@ export function useCanvasSession({
         return
       }
       case 'send_beacon': {
-        if (typeof navigator.sendBeacon !== 'function') return
-        const target = boardKeyRef.current
-        const url = `/api/elements/changes${target ? `?board=${encodeURIComponent(target)}` : ''}`
-        const body = new Blob(
-          [JSON.stringify({
-            upserts: effect.report.upserts,
-            deletes: effect.report.deletes,
-            clientId,
-            timestamp: new Date().toISOString()
-          })],
-          { type: 'application/json' }
-        )
-        navigator.sendBeacon(url, body)
+        beaconChanges(boardKeyRef.current, effect.report, clientId)
         return
       }
       case 'take_hold':
@@ -789,14 +777,9 @@ export function useCanvasSession({
 
   // ─── Selection ───────────────────────────────────────────────
 
-  const publishSelection = useCallback(async (elementIds: string[]): Promise<void> => {
+  const sendSelection = useCallback(async (elementIds: string[]): Promise<void> => {
     try {
-      const response = await fetch('/api/selection', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ elementIds, clientId })
-      })
-      if (!response.ok) publishedSelectionRef.current = ''
+      await publishSelection(elementIds, clientId)
     } catch (error) {
       console.warn('Selection publish failed:', error)
       publishedSelectionRef.current = ''
@@ -827,9 +810,9 @@ export function useCanvasSession({
       const pendingKey = pending.join(',')
       if (pendingKey === publishedSelectionRef.current) return
       publishedSelectionRef.current = pendingKey
-      void publishSelection(pending)
+      void sendSelection(pending)
     }, SELECTION_DEBOUNCE_MS)
-  }, [publishSelection])
+  }, [sendSelection])
 
   // ─── Board adoption ──────────────────────────────────────────
 
@@ -871,11 +854,7 @@ export function useCanvasSession({
     const api = apiRef.current
     if (!api || !data.requestId) return
     const respond = (payload: Record<string, unknown>) =>
-      fetch('/api/export/image/result', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestId: data.requestId, ...payload })
-      }).catch(() => { })
+      postExportResult(data.requestId!, payload).catch(() => { })
 
     try {
       const elements = api.getSceneElements()
@@ -910,11 +889,7 @@ export function useCanvasSession({
     const api = apiRef.current
     if (!api || !data.requestId) return
     const respond = (payload: Record<string, unknown>) =>
-      fetch('/api/viewport/result', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestId: data.requestId, ...payload })
-      }).catch(() => { })
+      postViewportResult(data.requestId!, payload).catch(() => { })
 
     try {
       const all = api.getSceneElements()
