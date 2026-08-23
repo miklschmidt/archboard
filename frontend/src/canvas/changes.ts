@@ -73,13 +73,13 @@ export function diffAgainstBaseline(
    * One thing goes in here: the text element a person has an editor open on
    * (TASK-098). Reporting it is what gets it renamed, because its id is the
    * 21-character nanoid Excalidraw minted and a note can only hold eight
-   * characters, and a rename lands on the glass as five typed characters
+   * characters, and a rename appears in the scene as five typed characters
    * vanishing with no error (`src/core/ids.ts`).
    *
    * Withheld is not the same as agreed. An element already in the baseline
-   * keeps the print it had, so the edit is still owed and goes out on the first
-   * report after the editor closes; one the server has never seen stays out of
-   * the baseline entirely and is reported as new then.
+   * keeps the print it had, so the edit remains pending and goes out on the
+   * first report after the editor closes; one the server has never seen stays
+   * out of the baseline entirely and is reported as new then.
    */
   withheld: ReadonlySet<string> = NOTHING_WITHHELD
 ): ChangeReport {

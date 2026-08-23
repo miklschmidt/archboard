@@ -11,8 +11,8 @@ import type { ExcalidrawImperativeAPI, LibraryItems } from '@excalidraw/excalidr
 import { useCanvasSession } from './useCanvasSession'
 import type { PaneStatus } from '../types'
 // The one thing the browser half shares with the server half by import rather
-// than by copy: the two defaults have to be the same colour, or a box someone
-// draws by hand and a box the agent draws stop matching.
+// than by copy: the two defaults have to be the same colour, or a box the user
+// draws and a box the agent draws stop matching.
 import { DEFAULT_FILL_STYLE, DEFAULT_SHAPE_BACKGROUND } from '../../../src/core/appearance'
 
 /** Just the time, because these are minutes old at most and a date would be noise. */
@@ -24,7 +24,7 @@ interface CanvasPaneProps {
   /** The pane that answers export / viewport / mermaid requests. */
   primary: boolean
   /**
-   * Is this the pane the human last touched? Reported to the server as part of
+   * Is this the pane the user last interacted with? Reported to the server as part of
    * "what am I looking at", and only drawn as a highlight when there is more
    * than one pane to distinguish — a lone pane is trivially the focused one.
    */
@@ -67,8 +67,8 @@ export function CanvasPane({
 
   // Excalidraw keeps its own copy of the library per instance, so the shell's
   // copy has to be pushed in. Guarded by content hash: pushing fires
-  // onLibraryChange, and an ungated push would hand the shell back what it
-  // just sent and write it to the server again, forever.
+  // onLibraryChange, and an ungated push would return what the shell just sent
+  // and write it to the server again, forever.
   const [api, setApi] = useState<ExcalidrawImperativeAPI | null>(null)
   const appliedHashRef = useRef(0)
 
@@ -122,12 +122,11 @@ export function CanvasPane({
         </ol>
       )}
       {session.heldBy?.claimed && (
-        // Somebody has taken this board for a stretch of work, and the person
-        // in front of it is owed the reason (ADR 0016). A per-write hold gets
-        // nothing: it is twenty milliseconds, and a banner for it would be a
-        // flicker under somebody's hand. This is the other case — the wall has
-        // stopped, for minutes, and without this it has stopped for no reason
-        // anybody standing at it can see.
+        // Somebody has taken this board for a stretch of work, and the user
+        // is owed the reason (ADR 0016). A per-write hold gets nothing: it is
+        // twenty milliseconds, and its banner would flicker while the user is
+        // editing. A claim lasts for minutes, and without this banner editing
+        // stops for no reason the user can see.
         //
         // Over the canvas rather than above it, because a band that took up
         // layout would resize the pane, and a pane's size is what it reports as
@@ -139,9 +138,9 @@ export function CanvasPane({
           <button
             type="button"
             className="pane-claim-take"
-            // Deliberate, and one tap. Any touch revoking would mean somebody
-            // leaning on a 75-inch display ends a restructure half way through,
-            // and nothing puts back what was already written.
+            // Deliberate, and one activation. Revoking on any pointer event
+            // could end a restructure accidentally, and nothing puts back what
+            // was already written.
             onClick={session.takeBack}
           >
             Take it back
@@ -152,8 +151,8 @@ export function CanvasPane({
         <Excalidraw
           // Somebody else is writing this board, or this pane has lost the
           // socket the lock is broadcast over and cannot know (ADR 0016). A
-          // canvas applies a drag the instant a finger moves, so the touch has
-          // to be refused before it happens rather than the write after it.
+          // canvas applies a drag the instant the pointer moves, so the edit
+          // has to be refused before it happens rather than the write after it.
           // View mode is Excalidraw's own word for that: the scene still pans,
           // zooms and renders, and nothing about it can be edited.
           viewModeEnabled={session.readOnly}
@@ -171,8 +170,8 @@ export function CanvasPane({
           }}
           // Excalidraw defaults new shapes to a transparent background, and a
           // transparent shape is only hit-testable on its stroke — so a box
-          // drawn by hand could not be tapped in the middle to select it, which
-          // is the first half of every promotion. Seeding the item defaults
+          // drawn by the user could not be selected in the middle, which is the
+          // first step of every promotion. Seeding the item defaults
           // fixes it at the moment of drawing; the picker still overrides.
           initialData={{
             elements: [],
