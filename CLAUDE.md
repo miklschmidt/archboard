@@ -149,7 +149,7 @@ them sharing the machine is how one of them fails for no reason.
   property rather than a claim: the bugs it exists to catch — a label
   multiplying, a rename coming back — need a session to build up in. It then
   puts a hand inside the window between a delivery and the pane's record of it,
-  five times, deliberately (TASK-099). About fifty seconds, and it skips the
+  five times, deliberately (TASK-099). About forty seconds, and it skips the
   build when `dist/frontend` is already newer
   than every source, so the three browser checks build once between them. It also
   owns the half of the board mutex only a renderer can answer (ADR 0016): the
@@ -171,7 +171,7 @@ own while the suite grew to seventeen around it, which is why
 `bun run test:suites` fails when a `test:*` script is in neither the chain nor
 the skip list in `scripts/check-ci-suites.mjs`. **That list is empty.** The
 whole chain takes 171 seconds on a 13th-gen i7, of which the three browser
-checks are 60 (11 fixed-point, 13 typed-text, 35 live-session); of the rest,
+checks are 62 (11 fixed-point, 13 typed-text, 38 live-session); of the rest,
 `test:mcp`, `test:boards` and `test:side-by-side` are two thirds.
 
 Open <http://127.0.0.1:3000>. A browser tab is required for `screenshot`,
