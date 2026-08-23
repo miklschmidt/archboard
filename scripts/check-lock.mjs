@@ -115,15 +115,15 @@ const refusal = async (promise) => {
     JSON.stringify(boardLockState(board)));
 
   // Somebody standing on it, so the next caller gets the other answer.
-  const held = await take({ board, holder: person('the-wall'), waitMs: 0 });
+  const held = await take({ board, holder: person('the-user'), waitMs: 0 });
   check('a hold reports itself as the one that took it',
-    held.created === true && held.holder?.id === 'the-wall', why(held));
+    held.created === true && held.holder?.id === 'the-user', why(held));
 
   const denied = await refusal(withBoardLock({ board, holder: agent('second'), waitMs: 120 }, () => { ran += 1; }));
   check('a board somebody else holds is not written',
     denied instanceof BoardHeldError && ran === 1, `${denied?.name} / ran ${ran}`);
   check('  and the refusal says who has it, as data',
-    denied?.holder?.id === 'the-wall' && denied?.holder?.kind === 'human',
+    denied?.holder?.id === 'the-user' && denied?.holder?.kind === 'human',
     JSON.stringify(denied?.holder));
   check('  and since when, in a sentence somebody can say out loud',
     /held by the person at the canvas, since \d\d:\d\d:\d\d \(\d+\.\d s\)/.test(denied?.message ?? ''),
@@ -131,22 +131,22 @@ const refusal = async (promise) => {
   check('  and it waited rather than failing straight away',
     denied.waitedMs >= 100, `${denied?.waitedMs} ms`);
 
-  // The same holder is not somebody else. This is what makes one gesture's hold
-  // cover the write that gesture produces.
-  const again = await take({ board, holder: person('the-wall'), waitMs: 0 });
+  // The same holder is not somebody else. This is what makes one user edit's
+  // hold cover the write that edit produces.
+  const again = await take({ board, holder: person('the-user'), waitMs: 0 });
   check('the holder asking again renews rather than blocking', again.created === false, why(again));
   check('  and "since" stays when it was taken, not when it was last renewed',
     again.holder?.since === held.holder?.since, `${held.holder.since} -> ${again.holder.since}`);
   check('  and the lease moved forward',
     Date.parse(again.holder?.until) > Date.parse(held.holder?.until), why(again));
 
-  await withBoardLock({ board, holder: person('the-wall') }, () => { ran += 1; });
+  await withBoardLock({ board, holder: person('the-user') }, () => { ran += 1; });
   check('a write by the holder runs, and does not release the hold it joined',
-    ran === 2 && boardLockState(board)?.id === 'the-wall', `ran ${ran} / ${boardLockState(board)?.id}`);
+    ran === 2 && boardLockState(board)?.id === 'the-user', `ran ${ran} / ${boardLockState(board)?.id}`);
 
   check('releasing is only for the holder', releaseHold(board, 'somebody-else') === false);
-  check('  and the board is still theirs', boardLockState(board)?.id === 'the-wall');
-  check('the holder can give it back', releaseHold(board, 'the-wall') === true);
+  check('  and the board is still theirs', boardLockState(board)?.id === 'the-user');
+  check('the holder can give it back', releaseHold(board, 'the-user') === true);
   check('  and then it is free', boardLockState(board) === null);
 }
 
@@ -182,13 +182,13 @@ const refusal = async (promise) => {
 
 {
   const board = 'waiting';
-  await take({ board, holder: person('a-hand'), leaseMs: 2000, waitMs: 0 });
-  setTimeout(() => releaseHold(board, 'a-hand'), 250);
+  await take({ board, holder: person('a-user'), leaseMs: 2000, waitMs: 0 });
+  setTimeout(() => releaseHold(board, 'a-user'), 250);
 
   const started = Date.now();
   const got = await take({ board, holder: agent('patient'), waitMs: 2000 });
   const waited = Date.now() - started;
-  check('an agent waits for a hand rather than failing at it',
+  check('an agent waits for a user hold rather than failing at it',
     got.created === true && waited >= 200 && waited < 1200, `${waited} ms, ${why(got)}`);
   releaseHold(board, 'patient');
 }
@@ -377,17 +377,17 @@ const refusal = async (promise) => {
 
   // A person takes it back. Not a refusal to them, and not an undo to the
   // agent: everything it wrote is written, and it finds out at its next act.
-  const back = await take({ board, holder: person('a-hand'), waitMs: 0, revokeClaim: true });
+  const back = await take({ board, holder: person('a-user'), waitMs: 0, revokeClaim: true });
   check('a person takes a claimed board back rather than being refused',
     back.created === true && back.holder?.kind === 'human', why(back));
   check('  and the claim is over on this canvas', claimOn(board) === null, JSON.stringify(claimOn(board)));
 
   const told = takeClaimRevocation(board);
   check('  and the agent is told it lost the board, and by whom',
-    told?.by?.id === 'a-hand' && told?.claim?.holder?.reason === 'now the queues', JSON.stringify(told));
+    told?.by?.id === 'a-user' && told?.claim?.holder?.reason === 'now the queues', JSON.stringify(told));
   check('  once, because a permanent refusal would wedge the board against it',
     takeClaimRevocation(board) === null);
-  releaseHold(board, 'a-hand');
+  releaseHold(board, 'a-user');
 }
 
 {
@@ -421,14 +421,14 @@ const refusal = async (promise) => {
     check(`a claim over ${how}: the claim is live`, claim.created === true, JSON.stringify(claim.claim));
     lapse(lockFileFor(board));
 
-    const taken = await take({ board, holder: person('a-hand'), waitMs: 0, revokeClaim: true });
+    const taken = await take({ board, holder: person('a-user'), waitMs: 0, revokeClaim: true });
     check('  and the person takes the board', taken.created === true && taken.holder?.kind === 'human', why(taken));
     check('  and the claim is over on this canvas', claimOn(board) === null, JSON.stringify(claimOn(board)));
     const told = takeClaimRevocation(board);
     check('  and the agent is still told it lost the board, and by whom',
-      told?.by?.id === 'a-hand' && told?.claim?.holder?.reason === 'redrawing the payment path',
+      told?.by?.id === 'a-user' && told?.claim?.holder?.reason === 'redrawing the payment path',
       JSON.stringify(told));
-    releaseHold(board, 'a-hand');
+    releaseHold(board, 'a-user');
     releaseClaim(board);
   }
 }
@@ -441,7 +441,7 @@ const refusal = async (promise) => {
   const writing = await take({ board, holder: agent('one-write'), waitMs: 0 });
   check('an agent takes the board for one write, unclaimed',
     writing.created === true && !writing.holder?.claimed, why(writing));
-  const waited = await refusal(holdBoard({ board, holder: person('a-hand'), waitMs: 120, revokeClaim: true }));
+  const waited = await refusal(holdBoard({ board, holder: person('a-user'), waitMs: 120, revokeClaim: true }));
   check('and a person waits that out rather than taking it',
     waited instanceof BoardHeldError && waited.holder?.id === 'one-write', waited?.message);
   check('  and nothing is reported as a lost claim, because there was none',
@@ -527,9 +527,9 @@ const api = async (method, url, body) => {
 };
 
 /**
- * A hand that has not stopped moving.
+ * A user edit that has not stopped.
  *
- * A pane renews while a gesture runs, which is what carries a hold across a
+ * A pane renews while an edit continues, which is what carries a hold across a
  * drag longer than the lease. Without it every hold below would simply lapse
  * after LOCK_LEASE_MS and an agent would get the board without anybody having
  * been excluded from anything — a check that renewed nothing would have looked
@@ -569,28 +569,28 @@ try {
     heard.length === 1 && heard[0].board === 'scratch' && heard[0].held === false,
     JSON.stringify(heard));
 
-  // The message a change report cannot be: the leading edge of a gesture.
+  // The message a change report cannot be: the start of a user edit.
   const took = await api('POST', '/api/boards/hold?board=scratch', { clientId: PANE });
-  check('a pane can take the board at the first change of a gesture',
+  check('a pane can take the board at the first change of a user edit',
     took.status === 200 && took.body?.holder?.kind === 'human', JSON.stringify(took.body));
   await sleep(150);
   check('  and every pane on that board is told, before anybody touches it',
     heard.at(-1)?.held === true && heard.at(-1)?.holder?.id === PANE, JSON.stringify(heard.at(-1)));
 
-  // The write that gesture produces joins the hold rather than fighting it.
+  // The write that edit produces joins the hold rather than fighting it.
   const own = await api('POST', '/api/elements/changes?board=scratch', {
     clientId: PANE,
     upserts: [{ id: 'lk1', type: 'rectangle', x: 10, y: 10, width: 40, height: 40 }],
     deletes: []
   });
-  check('the report that gesture produces is not blocked by the gesture\'s own hold',
+  check('the report that edit produces is not blocked by the edit\'s own hold',
     own.status === 200, `${own.status} ${JSON.stringify(own.body)?.slice(0, 120)}`);
-  check('  and the hold survives it, because the hand may not have stopped',
+  check('  and the hold survives it, because the user edit may not have stopped',
     (await api('POST', '/api/boards/hold?board=scratch', { clientId: PANE })).body?.created === false);
 
-  // And an agent is kept out for as long as it is willing to wait. The hand
-  // keeps moving throughout, because a lease this pane stopped renewing would
-  // lapse inside the agent's wait and hand it the board — which is the right
+  // And an agent is kept out for as long as it is willing to wait. The user
+  // edit continues throughout, because a lease this pane stopped renewing would
+  // lapse inside the agent's wait and give it the board — which is the right
   // behaviour and not the one under test here.
   const stopRenewing = renewing(PANE);
   const started = Date.now();
@@ -696,7 +696,7 @@ try {
     `${claimedSince} -> ${boardLockState('scratch')?.since}`);
 
   // And the person at the canvas takes it back. Their pane sends the same
-  // message a gesture sends: taking your board back is starting to use it.
+  // message a user edit sends: taking your board back is starting to use it.
   const tookBack = await api('POST', '/api/boards/hold?board=scratch', { clientId: PANE });
   check('the person at the canvas takes a claimed board back, rather than being refused',
     tookBack.status === 200 && tookBack.body?.holder?.id === PANE,
@@ -905,7 +905,7 @@ try {
 
   const sinks = sources.filter(file => /onBoardLockChanged\(/.test(fs.readFileSync(file, 'utf-8'))
     && !file.endsWith('core/board-lock.ts'));
-  check('  through the one sink the module hands out, registered in one place',
+  check('  through the one sink the module exposes, registered in one place',
     sinks.length === 1 && sinks[0].endsWith('server.ts'),
     sinks.map(f => f.replace(repoRoot, '')).join(', ') || 'none');
 

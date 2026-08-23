@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 // Wire-level checks for the stdio MCP entry point. Every case drives a real
-// `src/index.ts` process over stdin/stdout with hand-written JSON-RPC frames,
+// `src/index.ts` process over stdin/stdout with explicitly constructed JSON-RPC frames,
 // so what is asserted is exactly what a client sees on the wire.
 //
 // The child is spawned with process.execPath, the bun running this file. An

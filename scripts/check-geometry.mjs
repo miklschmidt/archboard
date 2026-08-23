@@ -252,7 +252,7 @@ for (const [name, arrow] of Object.entries(arrows)) {
 // element sits, and which shape the node is named after.
 
 // A connector never joins a node group, so the element that carries a path
-// into one is a freedraw: a shape somebody drew by hand and then promoted.
+// into one is a freedraw: a shape a user drew and then promoted.
 // Both strokes below run up and to the left, so each stores an origin that is
 // the far corner of the board it covers.
 {
@@ -314,7 +314,7 @@ for (const [name, arrow] of Object.entries(arrows)) {
 // Naming a node: the biggest labelled shape is the one a human would read, so
 // "biggest" has to be measured. A stale size is exactly what an arrow carries
 // on any board written before the server started re-measuring, and it is
-// enough to hand the node's name to the connector.
+// enough to make the connector supply the node's name.
 {
   const box = { id: 'box', type: 'rectangle', x: 0, y: 0, width: 300, height: 120, label: { text: 'Payments' } };
   const arrow = { id: 'arrow', type: 'arrow', x: 400, y: 300, width: 5000, height: 5000,
@@ -413,7 +413,7 @@ for (const [name, arrow] of Object.entries(arrows)) {
       `re-routing left ${badlySized(rerouted).length} arrow(s) at a stale size: ` +
       badlySized(rerouted).map((el) => `${el.id} ${el.width}x${el.height} vs ${JSON.stringify(remeasureLinear(el))}`).join(', '));
 
-    // And a caller re-pointing an arrow by hand: the path is the statement,
+    // And a caller explicitly re-pointing an arrow: the path is the statement,
     // the size follows it.
     await api('PUT', `/api/elements/to-west${board}`, { points: [[0, 0], [-900, -400]] });
     const repointed = (await linearsOn()).find((el) => el.id === 'to-west');
@@ -504,8 +504,8 @@ for (const [name, arrow] of Object.entries(arrows)) {
     assert(stale.length === 2,
       'the check is not exercising the bug: measured the old way the arrow should miss North entirely');
 
-    // The selection report is the other reader a human meets directly: tap an
-    // arrow on the Flip and this is what the agent is told it selected.
+    // The selection report is the other reader a user meets directly: select
+    // an arrow in the scene and this is what the agent is told is selected.
     const report = buildSelectionReport(
       { elementIds: ['to-northwest'], clientId: 'pane', at: new Date().toISOString() },
       scene,
@@ -646,15 +646,15 @@ for (const [name, arrow] of Object.entries(arrows)) {
     });
     await api('POST', `/api/elements/changes${wires}`, {
       upserts: [{
-        id: 'hand', type: 'arrow', x: 1400, y: 1120, points: [[0, 0], [-179, -50]],
+        id: 'user-arrow', type: 'arrow', x: 1400, y: 1120, points: [[0, 0], [-179, -50]],
         startBinding: null,
         endBinding: { elementId: 'd', focus: 0.9, gap: 15, fixedPoint: null }
       }],
       deletes: [],
       clientId: 'a-person'
     });
-    const handDrawn = await wire('hand');
-    assert(handDrawn.endBinding?.gap === 15 && handDrawn.endBinding?.focus === 0.9,
+    const userDrawn = await wire('user-arrow');
+    assert(userDrawn.endBinding?.gap === 15 && userDrawn.endBinding?.focus === 0.9,
       "the person's own focus and gap did not survive the report");
 
     // Where a binding says an end belongs, on an outline `gap` out from the
@@ -665,16 +665,16 @@ for (const [name, arrow] of Object.entries(arrows)) {
       Math.abs(end.x - (box.x + box.width / 2)) / (box.width / 2 + 15),
       Math.abs(end.y - (box.y + box.height / 2)) / (box.height / 2 + 15)
     );
-    const asDropped = at(handDrawn, 1);
+    const asDropped = at(userDrawn, 1);
     await api('PUT', `/api/elements/d${wires}`, { x: 1000, y: 1000 });
-    const settledEnd = at(await wire('hand'), 1);
+    const settledEnd = at(await wire('user-arrow'), 1);
     assert(near(onOutline(settledEnd, { x: 1000, y: 1000, width: 200, height: 100 }), 1, 0.02),
       `the end sits at ${onOutline(settledEnd, { x: 1000, y: 1000, width: 200, height: 100 }).toFixed(2)} ` +
       "of the outline the binding's own gap of 15 draws, not on it");
     // Against where a centred binding would have put the same end, which is
     // the only thing the old routing could say and is 30px away from where
     // this person attached theirs.
-    const settledArrow = await wire('hand');
+    const settledArrow = await wire('user-arrow');
     const centred = boundEndpoint(
       { type: 'rectangle', x: 1000, y: 1000, width: 200, height: 100 },
       { elementId: 'd', focus: 0, gap: 15, fixedPoint: null },
@@ -692,14 +692,14 @@ for (const [name, arrow] of Object.entries(arrows)) {
     // claim, that re-routing an arrow a person drew leaves it where they drew
     // it.
     await api('PUT', `/api/elements/d${wires}`, { x: 1040, y: 1030 });
-    const nudged = at(await wire('hand'), 1);
+    const nudged = at(await wire('user-arrow'), 1);
     assert(!near(nudged.x, settledEnd.x, 1) || !near(nudged.y, settledEnd.y, 1),
       'moving the box did not re-route the arrow bound to it');
     assert(near(onOutline(nudged, { x: 1040, y: 1030, width: 200, height: 100 }), 1, 0.02),
       'the re-routed end left the outline the binding describes');
 
     await api('PUT', `/api/elements/d${wires}`, { x: 1000, y: 1000 });
-    const restored = at(await wire('hand'), 1);
+    const restored = at(await wire('user-arrow'), 1);
     assert(near(restored.x, settledEnd.x, 0.5) && near(restored.y, settledEnd.y, 0.5),
       `putting the box back left the arrow at ${Math.round(restored.x)},${Math.round(restored.y)} ` +
       `rather than the ${Math.round(settledEnd.x)},${Math.round(settledEnd.y)} its binding puts it at`);

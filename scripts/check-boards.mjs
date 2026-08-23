@@ -1453,7 +1453,7 @@ try {
     // --- a refusal stops the board saving, and does not interrupt (TASK-079)
     //
     // ADR 0006 survives ADR 0015, but the moment it fires moved: from a save
-    // somebody ran to 400 ms after a human lifted their finger. So the refusal
+    // somebody ran to 400 ms after a user edit stopped. So the refusal
     // above is the LAST one — the board stops saving, holds what is drawn on it
     // after that, and waits for one of the three outcomes to be asked for.
     //
@@ -1540,7 +1540,7 @@ try {
     check('a pane saying what is on its screen is taken on a held board',
       fullReport.status === 200, `${fullReport.status} ${fullReport.body?.error}`);
     const afterFullReport = (await scratchApi('GET', '/api/elements?board=holdover')).body?.elements ?? [];
-    check('  and the held copy becomes that screen, not their note with a gesture on top',
+    check('  and the held copy becomes that screen, not their note plus one pending user edit',
       afterFullReport.some(el => el.id === 'held1') && !afterFullReport.some(el => el.id === 'theirs1'),
       JSON.stringify(afterFullReport.map(el => el.id)));
     check('  and the board says a pane has spoken for it',

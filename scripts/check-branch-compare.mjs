@@ -124,7 +124,7 @@ const api = async (method, url, body) => {
 
 const elementsOn = async board => (await api('GET', `/api/elements?board=${encodeURIComponent(board)}`)).body?.elements ?? [];
 
-/** Draw a labelled box and hand back the id the server gave it. */
+/** Draw a labelled box and return the id the server gave it. */
 async function addBox(board, label, x, y) {
   const made = await api('POST', `/api/elements?board=${encodeURIComponent(board)}`, {
     type: 'rectangle', x, y, width: 200, height: 100, label: { text: label }
@@ -364,8 +364,8 @@ try {
   await api('POST', '/api/boards/save?board=wiring');
   await api('POST', '/api/boards/save?board=wiring', { name: 'wiring', variant: 'option-a' });
 
-  // The selection a human makes with a finger: the box, and the arrow that
-  // happened to be under it.
+  // The lasso selection a user makes: the box, and the arrow that happened to
+  // be under it.
   const onWiring = await elementsOn('wiring@option-a');
   const arrow = onWiring.find(el => el.type === 'arrow');
   const sweptIn = await promoteTogether(
