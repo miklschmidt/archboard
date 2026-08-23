@@ -28,7 +28,9 @@ import type {
 } from '../types'
 import { cleanElementForExcalidraw, elementsForScene } from './elements'
 import { baselineFrom, diffAgainstBaseline, fingerprint, isEmpty, type Baseline } from './changes'
-import { armDelivery, readDebt, readDelivery, watchingForLoss } from './loss-canary'
+import {
+  armDelivery, readDebt, readDelivery, readOrphanedWindow, watchingForLoss
+} from './loss-canary'
 import { derivedId, isBlockId } from '../../../src/core/ids'
 import {
   BoardConflictError, fetchElements, fetchFiles, holdBoard, loadedBundle, releaseBoard, reportChanges,
@@ -352,12 +354,21 @@ export function useCanvasSession({
   // Raised while we are writing the server's own news into the scene, so that
   // updateScene() does not read back as a human edit and bounce straight home.
   const suppressRef = useRef(0)
-  // The last thing this pane put on the glass that came from somewhere other
-  // than a hand, and what the scene hashed to the instant it landed. Read at
-  // the end of the suppression window, where a stamp that has moved since is
-  // the only evidence left that somebody edited while the pane was not
-  // listening (TASK-099).
-  const deliveredRef = useRef<Delivered | null>(null)
+  // What this pane has put on the glass that did not come from a hand, and
+  // what the scene hashed to the instant each one landed. Read at the end of
+  // the suppression window, where a stamp that has moved since is the only
+  // evidence left that somebody edited while the pane was not listening
+  // (TASK-099).
+  //
+  // A queue rather than one slot, because two windows can be open at once: a
+  // second delivery arriving before the first window closes would overwrite
+  // the first's record, and the first window would then close against a stamp
+  // taken after the hand had already moved — which is the bug this exists to
+  // prevent, wearing the fix as a disguise. Timeouts fire in the order they
+  // were set and `settle` always runs one statement before the delivery it is
+  // for, so first in is first out. Nothing in `scripts/` reaches this today,
+  // and `readOrphanedWindow` is what would say so if the pairing ever broke.
+  const deliveredRef = useRef<Delivered[]>([])
   // How many times this pane has changed under a human's hand. Counted, not
   // diffed, because the question it answers is "did the human touch anything
   // while that write was in flight" and a diff cannot tell a human's edit from
@@ -590,8 +601,7 @@ export function useCanvasSession({
     suppressRef.current += 1
     setTimeout(() => {
       suppressRef.current = Math.max(0, suppressRef.current - 1)
-      const delivered = deliveredRef.current
-      deliveredRef.current = null
+      const delivered = deliveredRef.current.shift()
       // Off unless somebody has created `window.__abLoss`; see ./loss-canary.
       // This is the moment it is asking about.
       readDelivery(delivered?.canary ?? null, apiRef.current?.getSceneElements() as any ?? [])
@@ -601,6 +611,7 @@ export function useCanvasSession({
       // touched. So the stamp becomes the delivery's own. The difference
       // between it and the scene as it now stands is exactly what a hand did
       // while this window was open, and the line below is what says so.
+      if (!delivered) readOrphanedWindow()
       sceneStampRef.current = delivered ? delivered.stamp : sceneStamp(apiRef.current)
       publishStatus()
       scheduleReportRef.current()
@@ -627,10 +638,10 @@ export function useCanvasSession({
     if (!api) return
     const scene = api.getSceneElements() as unknown as Record<string, any>[]
     record(scene)
-    deliveredRef.current = {
+    deliveredRef.current.push({
       stamp: sceneStamp(api),
       canary: armDelivery(kind, scene, (id) => baselineRef.current.get(id))
-    }
+    })
   }, [])
 
   /**

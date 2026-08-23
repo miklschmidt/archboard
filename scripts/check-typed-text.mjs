@@ -157,6 +157,12 @@ const paneNow = () => evalInPage(`(() => {
 const RECORD_POSTED = `(() => {
   if (window.__abPosted) return { already: true };
   window.__abPosted = { upserts: [], reports: 0 };
+  // Arms the pane's loss canary (frontend/src/canvas/loss-canary.ts). This
+  // check is the only one that reaches nested suppression windows: renaming a
+  // hand-drawn text element opens one inside the report that provokes the
+  // answer, whose own arrival opens another. The pane's record of each window
+  // is queued for exactly that, and this is what says so (TASK-099).
+  window.__abLoss = { deliveries: 0, moved: 0, absorbed: 0, unarmed: 0, events: [] };
   const original = window.fetch;
   window.fetch = function (input, init) {
     const url = typeof input === 'string' ? input : (input && input.url) || '';
@@ -481,6 +487,17 @@ try {
     `text ids on the wire: ${[...names].join(', ') || 'none'}`);
 
   // ── and the note the board is ───────────────────────────────────────────
+
+  // ── and no window closed without a record behind it ────────────────────
+
+  const canary = await evalInPage('(() => ({ ...window.__abLoss }))()');
+  check('every suppression window had a delivery recorded for it, nested ones included',
+    canary.deliveries > 0 && canary.events.every(event => event.loss === 'moved'),
+    `${canary.deliveries} deliveries, ${canary.absorbed} absorbed, ${canary.unarmed} unarmed` +
+    (canary.events.filter(e => e.loss !== 'moved').length
+      ? `: ${canary.events.filter(e => e.loss !== 'moved')
+        .map(e => `${e.loss} — ${e.kind}`).join(' | ')}`
+      : ''));
 
   const noteFile = (await api('GET', `/api/boards/info?board=${BOARD}`)).body?.file;
   const note = fs.readFileSync(noteFile, 'utf-8');
