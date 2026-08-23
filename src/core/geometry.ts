@@ -45,19 +45,27 @@ export interface Extent {
 const finite = (v: unknown): number | undefined =>
   typeof v === 'number' && Number.isFinite(v) ? v : undefined;
 
+/** The default local path for a new straight linear element. */
+export const DEFAULT_LINEAR_POINTS = [[0, 0], [100, 0]] as const;
+
+/** Valid point tuples or objects, in one normalized shape. */
+export function pointsOf(points: unknown): { x: number; y: number }[] | undefined {
+  if (!Array.isArray(points) || points.length === 0) return undefined;
+  const normalized: { x: number; y: number }[] = [];
+  for (const point of points) {
+    const x = finite(Array.isArray(point) ? point[0] : (point as any)?.x);
+    const y = finite(Array.isArray(point) ? point[1] : (point as any)?.y);
+    if (x !== undefined && y !== undefined) normalized.push({ x, y });
+  }
+  return normalized.length === 0 ? undefined : normalized;
+}
+
 /** The offsets of a path, dropping anything that is not a pair of numbers. */
 function pathOffsets(points: unknown): { xs: number[]; ys: number[] } | undefined {
-  if (!Array.isArray(points) || points.length === 0) return undefined;
-  const xs: number[] = [];
-  const ys: number[] = [];
-  for (const point of points) {
-    const px = finite(Array.isArray(point) ? point[0] : (point as any)?.x);
-    const py = finite(Array.isArray(point) ? point[1] : (point as any)?.y);
-    if (px === undefined || py === undefined) continue;
-    xs.push(px);
-    ys.push(py);
-  }
-  return xs.length === 0 ? undefined : { xs, ys };
+  const normalized = pointsOf(points);
+  return normalized
+    ? { xs: normalized.map(point => point.x), ys: normalized.map(point => point.y) }
+    : undefined;
 }
 
 /**

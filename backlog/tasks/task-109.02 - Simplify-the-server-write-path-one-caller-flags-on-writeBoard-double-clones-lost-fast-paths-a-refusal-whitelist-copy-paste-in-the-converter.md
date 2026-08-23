@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-23 19:35'
-updated_date: '2026-08-23 19:44'
+updated_date: '2026-08-23 19:47'
 labels: []
 dependencies: []
 references:
@@ -77,4 +77,6 @@ SIMPLIFICATION
 
 <!-- SECTION:NOTES:BEGIN -->
 Slice 1 complete (A1, A5, A8, E1, E4, E8, S4, S6, S9, S11): writeBoard now owns the explicit-save ritual through save: { target, force }; elementMutation derives full-scene clearing/deletion/no-op behavior from wholeScene; board writes clone elements once and copy the files Map without cloning image payloads; held writes carry their rendered hash; version remembering uses the write result when available; held-note decisions use writesBoardNote; redundant imports, empty deltas, and render arguments are gone. Evidence: bun run type-check passed; test:one-write passed 70 checks; test:lock passed 119 checks; test:version passed 65 checks.
+
+Slice 2 complete (E3, R3, R4, S17, S18, S19): settleDocument regains its unchanged fast return; geometry owns point normalization and the default linear path; converter version/timestamp bumps and own-property checks each have one helper; agent and human conversion now return prepared writes and applyElementInput runs the shared delete/settle/name tail once. Skipped E5/E6: indexing arrow bindings and bound texts would change the converter's ordering-sensitive repair data flow beyond a small quality-pass edit, while current checks assert only final behavior. Evidence: bun run type-check passed; test:labels passed 182 checks; test:geometry passed 82 checks; test:one-write passed 70 checks.
 <!-- SECTION:NOTES:END -->
