@@ -28,7 +28,8 @@ import type {
 } from '../types'
 import { cleanElementForExcalidraw, elementsForScene } from './elements'
 import {
-  carryWithheld, EMPTY_WITHHELD, hasPendingEdits, initialState, mergeIncoming, reduce,
+  carryWithheld, EMPTY_WITHHELD, hasPendingEdits, initialState, mergeIncoming, needsFullReport, reduce,
+  reportsSettled, userHasInteracted,
   type ChangeReportingEffect, type ChangeReportingEvent,
   type ChangeReportingState, type SceneElement, type SceneUpdate
 } from './change-reporting'
@@ -100,6 +101,39 @@ interface ReportingRuntime {
   reportTimer: ReturnType<typeof setTimeout> | null
   retryTimer: ReturnType<typeof setTimeout> | null
   reportPromise: Promise<void> | null
+}
+
+type ReportingTimer = 'report' | 'retry'
+
+function timerKey(which: ReportingTimer): 'reportTimer' | 'retryTimer' {
+  return which === 'report' ? 'reportTimer' : 'retryTimer'
+}
+
+function cancelReportingTimer(runtime: ReportingRuntime, which: ReportingTimer): void {
+  const key = timerKey(which)
+  if (runtime[key]) clearTimeout(runtime[key])
+  runtime[key] = null
+}
+
+function startReportingTimer(
+  runtime: ReportingRuntime,
+  which: ReportingTimer,
+  delayMs: number,
+  fired: () => void
+): void {
+  cancelReportingTimer(runtime, which)
+  runtime[timerKey(which)] = setTimeout(fired, delayMs)
+}
+
+function timerFiredEvent(
+  which: ReportingTimer,
+  generation: number,
+  scene: readonly SceneElement[],
+  withheldIds: readonly string[]
+): ChangeReportingEvent {
+  return which === 'report'
+    ? { type: 'report_timer_fired', generation, scene, withheldIds }
+    : { type: 'retry_timer_fired', generation, scene, withheldIds }
 }
 
 export interface CanvasSessionOptions {
@@ -422,7 +456,7 @@ export function useCanvasSession({
   /** The only function that calls Excalidraw's programmatic scene update. */
   const applySceneUpdate = (
     update: SceneUpdate,
-    serverUpdate?: Extract<ChangeReportingEffect, { type: 'apply_server_update' }>
+    reportingEffect: Extract<ChangeReportingEffect, { type: 'apply_server_update' | 'apply_local_update' }>
   ): void => {
     const api = apiRef.current
     if (!api) return
@@ -435,14 +469,19 @@ export function useCanvasSession({
         ? CaptureUpdateAction.IMMEDIATELY
         : CaptureUpdateAction.NEVER
     })
-    if (!serverUpdate) return
     const scene = currentScene()
+    if (reportingEffect.type === 'apply_local_update') {
+      dispatchReporting({
+        type: 'local_update_applied', generation: reportingEffect.generation, scene
+      })
+      return
+    }
     dispatchReporting({
       type: 'server_update_applied',
-      generation: serverUpdate.generation,
+      generation: reportingEffect.generation,
       scene,
-      baselineUpdate: serverUpdate.baselineUpdate,
-      reportAfterUpdate: serverUpdate.reportAfterUpdate
+      baselineUpdate: reportingEffect.baselineUpdate,
+      reportAfterUpdate: reportingEffect.reportAfterUpdate
     })
   }
 
@@ -450,33 +489,22 @@ export function useCanvasSession({
     const runtime = reportingRef.current
     switch (effect.type) {
       case 'cancel_report_timer':
-        if (runtime.reportTimer) clearTimeout(runtime.reportTimer)
-        runtime.reportTimer = null
+      case 'cancel_retry_timer':
+        cancelReportingTimer(runtime, effect.type === 'cancel_report_timer' ? 'report' : 'retry')
         return
       case 'start_report_timer':
-        if (runtime.reportTimer) clearTimeout(runtime.reportTimer)
-        runtime.reportTimer = setTimeout(() => {
-          runtime.reportTimer = null
-          dispatchReporting({
-            type: 'report_timer_fired', generation: effect.generation,
-            scene: currentScene(), withheldIds: currentWithheldIds()
-          })
-        }, effect.delayMs)
-        return
-      case 'cancel_retry_timer':
-        if (runtime.retryTimer) clearTimeout(runtime.retryTimer)
-        runtime.retryTimer = null
-        return
       case 'start_retry_timer':
-        if (runtime.retryTimer) clearTimeout(runtime.retryTimer)
-        runtime.retryTimer = setTimeout(() => {
-          runtime.retryTimer = null
-          dispatchReporting({
-            type: 'retry_timer_fired', generation: effect.generation,
-            scene: currentScene(), withheldIds: currentWithheldIds()
+        {
+          const which = effect.type === 'start_report_timer' ? 'report' : 'retry'
+          startReportingTimer(runtime, which, effect.delayMs, () => {
+            runtime[timerKey(which)] = null
+            dispatchReporting(timerFiredEvent(
+              which, effect.generation, currentScene(), currentWithheldIds()
+            ))
           })
-        }, effect.delayMs)
+        }
         return
+      case 'apply_local_update':
       case 'apply_server_update':
         applySceneUpdate(effect.update, effect)
         return
@@ -730,7 +758,7 @@ export function useCanvasSession({
   const releaseIfIdle = useCallback((): void => {
     if (!holdingRef.current) return
     const state = reportingRef.current.state
-    if (state.reportTimerScheduled || state.retryTimerScheduled) return
+    if (!reportsSettled(state)) return
     holdingRef.current = false
     releaseBoard(boardKeyRef.current, clientId)
   }, [clientId])
@@ -781,7 +809,7 @@ export function useCanvasSession({
     // A pane nobody has touched does not get to speak for the human. Without
     // this a freshly mounted second pane would publish its empty selection and
     // wipe whatever the first pane had picked.
-    if (!reportingRef.current.state.userInteracted) return
+    if (!userHasInteracted(reportingRef.current.state)) return
 
     const ids = Object.entries(appState?.selectedElementIds ?? {})
       .filter(([, selected]) => selected)
@@ -951,11 +979,13 @@ export function useCanvasSession({
       // Regenerate ids: mermaid emits stable ones like "A", which would collide
       // with a previous conversion already on the board.
       const converted = convertToExcalidrawElements([...result.elements] as any, { regenerateIds: true })
-      // The conversion is a user edit and is reported immediately.
-      dispatchReporting({ type: 'user_interacted' })
-      applySceneUpdate({
-        elements: [...api.getSceneElements(), ...converted] as unknown as SceneElement[],
-        captureUpdate: 'immediately'
+      // The conversion is a local edit and is reported immediately.
+      dispatchReporting({
+        type: 'local_update_requested',
+        update: {
+          elements: [...api.getSceneElements(), ...converted] as unknown as SceneElement[],
+          captureUpdate: 'immediately'
+        }
       })
       if (result.files) api.addFiles(Object.values(result.files))
       await sendReport()
@@ -983,7 +1013,7 @@ export function useCanvasSession({
     // it would put their scene in front of the human in place of their own, a
     // fraction of a second before the pane replaces it again. So board content
     // waits for the full report; status from the server does not (TASK-079).
-    if (reportingRef.current.state.fullReportNeeded && CONTENT_MESSAGES.has(data.type)) return
+    if (needsFullReport(reportingRef.current.state) && CONTENT_MESSAGES.has(data.type)) return
 
     switch (data.type) {
       // The first frame, and every reconnection. If this pane is holding edits
