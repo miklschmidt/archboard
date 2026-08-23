@@ -23,7 +23,6 @@
 
 import { getLibrary, batchCreateElementsStrict } from './canvas-client.js';
 import type { ServerElement } from '../types.js';
-import { prepareElement } from './normalize.js';
 import { LIBRARY_NAME_OVERLAY } from './library-names.js';
 import { extentOf } from './geometry.js';
 
@@ -354,7 +353,7 @@ export async function insertStencil(query: StencilQuery & { x: number; y: number
     library: { item: entry.name, itemId: entry.id, source: entry.source }
   };
   const elements = remapElements(item.elements, query.x, query.y, attribution);
-  const created = (await batchCreateElementsStrict(elements.map(el => prepareElement(el)))).elements;
+  const created = (await batchCreateElementsStrict(elements)).elements;
 
   return {
     success: true,

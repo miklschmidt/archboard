@@ -1,6 +1,5 @@
 import { parseArgs, CliUsageError } from '../args.js';
 import { printJson, readJsonInput } from '../util.js';
-import { prepareElement, prepareElementUpdate } from '../../core/normalize.js';
 import {
   applyElementChanges,
   batchCreateElementsStrict,
@@ -66,21 +65,20 @@ export async function apply(argv: string[]): Promise<void> {
   const updates: (Partial<ServerElement> & { id: string })[] = [];
   const deletes = patch.delete ?? [];
   if (patch.update?.length || deletes.length) {
-    const typeById = new Map((await getElements()).map(element => [element.id, element.type]));
+    const onBoard = new Set((await getElements()).map(element => element.id));
     for (const update of patch.update ?? []) {
       const { id, updates: fields } = normalizePatchUpdate(update);
-      const existingType = typeById.get(id);
-      if (!existingType) throw new Error(`Element ${id} not found`);
-      updates.push(prepareElementUpdate(id, fields, existingType));
+      if (!onBoard.has(id)) throw new Error(`Element ${id} not found`);
+      updates.push({ ...fields, id });
     }
     for (const id of deletes) {
-      if (!typeById.has(id)) throw new Error(`Element ${id} not found`);
+      if (!onBoard.has(id)) throw new Error(`Element ${id} not found`);
     }
   }
 
   // One patch, one write: creates, updates and deletes all land in the same
   // pass over the board, so nothing else can get in between them.
-  const creates = (patch.create ?? []).map(el => prepareElement(el));
+  const creates = patch.create ?? [];
   const result = await applyElementChanges({
     upserts: [...creates, ...updates], deletes, ...documentAsked(flags)
   });
@@ -120,8 +118,7 @@ export async function add(argv: string[]): Promise<void> {
   }
 
   await ensureCanvasRunning();
-  const result = await batchCreateElementsStrict(
-    elements.map(el => prepareElement(el)), documentAsked(flags));
+  const result = await batchCreateElementsStrict(elements, documentAsked(flags));
   printJson({
     success: true,
     count: result.elements.length,
@@ -148,10 +145,7 @@ export async function update(argv: string[]): Promise<void> {
   }
 
   await ensureCanvasRunning();
-  // Fetch the real type so text→label conversion skips text elements
-  const existing = await getElementStrict(id);
-  const result = await updateElementStrict(
-    prepareElementUpdate(id, updates, existing.type), documentAsked(flags));
+  const result = await updateElementStrict({ ...updates, id }, documentAsked(flags));
   printJson({
     success: true,
     element: result.element,

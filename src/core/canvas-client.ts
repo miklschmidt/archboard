@@ -309,21 +309,24 @@ export interface WriteOptions {
   document?: boolean;
 }
 
+/** The agent spelling accepted by the server's element-input entry. */
+export type ElementInput = object;
+
 // Helper to sync element creation to canvas.
 // Sync disabled = deliberate no-op (echo the input, legacy behavior);
 // sync enabled but failed = null, so callers report the failure instead of
 // claiming "synced to canvas" for an element that never landed.
 export async function createElementOnCanvas(
-  elementData: ServerElement, options: WriteOptions = {}
+  elementData: ElementInput, options: WriteOptions = {}
 ): Promise<WriteAnswer | null> {
-  if (!ENABLE_CANVAS_SYNC) return { element: elementData };
+  if (!ENABLE_CANVAS_SYNC) return { element: elementData as unknown as ServerElement };
   const result = await syncToCanvas('create', elementData, options);
   return result ? (result as unknown as WriteAnswer) : null;
 }
 
 // Helper to sync element update to canvas
 export async function updateElementOnCanvas(
-  elementData: Partial<ServerElement> & { id: string }, options: WriteOptions = {}
+  elementData: ElementInput & { id: string }, options: WriteOptions = {}
 ): Promise<WriteAnswer | null> {
   const result = await syncToCanvas('update', elementData, options);
   return result?.element ? (result as unknown as WriteAnswer) : null;
@@ -338,9 +341,9 @@ export async function deleteElementOnCanvas(elementId: string, options: WriteOpt
 // Helper to sync batch creation to canvas (same failure semantics as
 // createElementOnCanvas: disabled = echo, failed = null)
 export async function batchCreateElementsOnCanvas(
-  elementsData: ServerElement[], options: WriteOptions = {}
+  elementsData: ElementInput[], options: WriteOptions = {}
 ): Promise<WriteAnswer | null> {
-  if (!ENABLE_CANVAS_SYNC) return { elements: elementsData };
+  if (!ENABLE_CANVAS_SYNC) return { elements: elementsData as unknown as ServerElement[] };
   const result = await syncToCanvas('batch_create', elementsData, options);
   return result?.elements ? (result as unknown as WriteAnswer) : null;
 }
@@ -858,7 +861,7 @@ export async function postInjectionTest(params: { text?: string; loud?: boolean 
 // syncToCanvas deliberately swallows errors so MCP tools degrade gracefully;
 // the CLI wants hard failures with real error messages instead.
 
-export async function createElementStrict(element: ServerElement): Promise<ServerElement> {
+export async function createElementStrict(element: ElementInput): Promise<ServerElement> {
   const data = await requestJson<ApiResponse>('/api/elements', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -868,7 +871,7 @@ export async function createElementStrict(element: ServerElement): Promise<Serve
 }
 
 export async function updateElementStrict(
-  element: Partial<ServerElement> & { id: string }, options: WriteOptions = {}
+  element: ElementInput & { id: string }, options: WriteOptions = {}
 ): Promise<WriteAnswer & { element: ServerElement }> {
   const data = await requestJson<ApiResponse & WriteAnswer>(
     `/api/elements/${element.id}${options.document ? '?document=1' : ''}`, {
@@ -906,7 +909,7 @@ export async function getElementStrict(id: string): Promise<ServerElement> {
  * no caller can forget it and have its own drawing narrated back at it.
  */
 export async function applyElementChanges(changes: {
-  upserts?: (Partial<ServerElement> & { id?: string })[];
+  upserts?: ElementInput[];
   deletes?: string[];
   /** Ask for the whole board back. Off by default; see BoardFingerprint. */
   document?: boolean;
@@ -961,7 +964,7 @@ export interface ElementChangesResult {
 }
 
 export async function batchCreateElementsStrict(
-  elements: ServerElement[], options: WriteOptions = {}
+  elements: ElementInput[], options: WriteOptions = {}
 ): Promise<WriteAnswer & { elements: ServerElement[] }> {
   const data = await requestJson<ApiResponse & WriteAnswer>(
     `/api/elements/batch${options.document ? '?document=1' : ''}`, {

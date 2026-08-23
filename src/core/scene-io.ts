@@ -1,6 +1,5 @@
 import fs from 'fs';
 import { ServerElement } from '../types.js';
-import { mintId } from './ids.js';
 import {
   getElements,
   getFiles,
@@ -121,16 +120,8 @@ export async function importScene(options: {
     await clearCanvas();
   }
 
-  // Batch create the imported elements
-  const elementsToCreate = importElements.map(el => ({
-    ...el,
-    id: el.id || mintId(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    version: 1
-  }));
-
-  const created = await batchCreateElementsOnCanvas(elementsToCreate);
+  // The server's element-input entry owns ids, timestamps and all conversion.
+  const created = await batchCreateElementsOnCanvas(importElements);
   if (!created) {
     // Especially important in replace mode: the canvas was already cleared,
     // so a silently swallowed failure here would report success on data loss
@@ -150,5 +141,5 @@ export async function importScene(options: {
     }
   }
 
-  return { count: elementsToCreate.length, fileCount: importedFileCount, mode: options.mode };
+  return { count: importElements.length, fileCount: importedFileCount, mode: options.mode };
 }

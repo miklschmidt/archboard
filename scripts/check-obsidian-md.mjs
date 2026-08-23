@@ -19,7 +19,7 @@ const { wrapSceneAsObsidianMd, extractSceneJsonFromObsidianMd, embeddedFilesIn }
   src('core/obsidian-md.ts')
 );
 const { mintId, derivedId, isBlockId } = await import(src('core/ids.ts'));
-const { prepareElement } = await import(src('core/normalize.ts'));
+const { applyElementInput } = await import(src('core/apply-element-input.ts'));
 const { buildScene } = await import(src('core/scene-io.ts'));
 
 let failures = 0;
@@ -425,12 +425,17 @@ const idsInNote = (note) => idsOf(JSON.parse(extractSceneJsonFromObsidianMd(note
 
 {
   // A board the way the server builds one: a labelled shape, a labelled arrow
-  // and a standalone text, through the same two functions `board save` uses.
-  const drawn = [
-    prepareElement({ type: 'rectangle', x: 0, y: 0, width: 200, height: 100, label: { text: 'AuthService' } }),
-    prepareElement({ type: 'arrow', x: 0, y: 0, points: [[0, 0], [220, 0]], label: { text: 'HTTP' } }),
-    prepareElement({ type: 'text', x: 0, y: 200, text: 'a note somebody left' })
-  ];
+  // and a standalone text, through the same input entry `board save` follows.
+  const board = new Map();
+  applyElementInput(board, {
+    origin: 'agent',
+    upserts: [
+      { type: 'rectangle', x: 0, y: 0, width: 200, height: 100, label: { text: 'AuthService' } },
+      { type: 'arrow', x: 0, y: 0, points: [[0, 0], [220, 0]], label: { text: 'HTTP' } },
+      { type: 'text', x: 0, y: 200, text: 'a note somebody left' }
+    ]
+  });
+  const drawn = [...board.values()];
   const { scene: built } = buildScene(drawn);
   const minted = idsOf(built.elements);
   assert(minted.length === 5, `server board: expected 5 elements after expansion, got ${minted.length}`);
