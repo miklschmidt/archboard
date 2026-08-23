@@ -17,7 +17,7 @@
 // Before this, a board opened once and then lived in the process: the elements,
 // the images, the note's own bytes, and a hash taken at the moment it was read.
 // A save wrote that copy out. Everything in between — every agent write, every
-// drag a human made — moved the copy and left the note where it was, so the two
+// edit a user made — moved the copy and left the note where it was, so the two
 // diverged for as long as a session ran and four bugs came out of the gap.
 //
 // Now a request reads the note, works on what it read, and writes it back. What
@@ -208,8 +208,8 @@ export interface NoteFile {
  * `readBoardFile` for `board open` — and TASK-085 taught only one of them to
  * follow a migrated picture. The two merged with no conflict, and a board the
  * plugin had been through rendered holes on every read until `256369d`
- * repaired it by hand. `scripts/check-boards.mjs` guards it from both sides: it
- * reads one migrated note through both callers below and asserts they agree on
+ * repaired it with a targeted change. `scripts/check-boards.mjs` guards both
+ * callers: it reads one migrated note through each caller below and asserts they agree on
  * the bytes, the hash, the picture and the refusal, and it asserts that exactly
  * one line in `src/` calls `sceneJsonWithEmbeddedImages`.
  *
@@ -515,7 +515,7 @@ export interface ForeignWrite {
  * ADR 0006's comparison, on its own, because two things ask it. A write asks in
  * order to refuse, and it asks about the bytes it has already read. The mark in
  * the board bar asks about a board nobody is writing, so that a person drawing
- * on a copy the vault no longer holds finds out before their next gesture is
+ * on a copy the vault no longer holds finds out before their next edit is
  * refused rather than after (TASK-062).
  *
  * They must not be two comparisons. The mark's whole claim is that it shows the
@@ -577,7 +577,7 @@ export interface WriteOptions {
  * point during the session". Every write goes through here now, so the baseline
  * is the one the previous write left milliseconds ago and the question is "did
  * somebody else get in between our last two writes". The refusal therefore
- * arrives on the gesture that follows a foreign edit rather than at the end of
+ * arrives on the user edit that follows a foreign edit rather than at the end of
  * an afternoon — and arrives without anybody having asked for a save, which is
  * TASK-079's problem, not this function's.
  *

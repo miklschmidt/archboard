@@ -106,7 +106,7 @@ const sinkHolder = () => kept('note-watch:sink', () => ({ notify: null as NoteSi
 /**
  * Who wrote this note last, if it was not archboard.
  *
- * The answer to hand a pane, and the whole of what this module knows. Null for
+ * The answer to send a pane, and the whole of what this module knows. Null for
  * a board whose note is the one archboard last wrote, for a board with no note
  * yet, and for a board that has stopped saving — that last one because the hold
  * is this state one step further on and says more about it.

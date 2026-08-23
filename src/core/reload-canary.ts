@@ -44,9 +44,9 @@ function keptValue<T>(name: string): T | null {
 /**
  * What the canvas is holding right now.
  *
- * Every field is something a human can lose: a board is unsaved work, a pane
- * registration is where they put it on the wall, a socket is a tab that thinks
- * it is still connected, and the feed's identity and cursor are what a hook
+ * Every field is something a user can lose: a board is unsaved work, a pane
+ * registration records where they put it in the browser layout, a socket is a
+ * tab that thinks it is still connected, and the feed's identity and cursor are what a hook
  * uses to mean "since last turn". Nothing here is derived or recomputable.
  */
 export interface ReloadFacts {
@@ -58,7 +58,7 @@ export interface ReloadFacts {
    * was built for re-ran `boards.set()` at module scope and replaced an open
    * board with an empty one, and the count went to zero. Board content is in
    * the vault now (ADR 0015), so a count would be a fact about the disk and a
-   * reload cannot touch it — the same bug would go unreported.
+   * reload cannot modify it — the same bug would go unreported.
    *
    * What a reload can still lose is this: which boards this canvas has open and
    * where each one's note is. Lose that and a pane is pointed at a board the
@@ -72,7 +72,7 @@ export interface ReloadFacts {
    * holding, for each board that has stopped saving (ADR 0006, TASK-079).
    *
    * The exception to the note above. Board content is in the vault and a
-   * reload cannot touch it — unless the board's note was taken over by another
+   * reload cannot modify it — unless the board's note was taken over by another
    * editor, in which case what is on that board is in this process and nowhere
    * else, and a reload that dropped it would drop the only copy. So this one
    * really is a count, and it is the only count left here.
@@ -210,9 +210,9 @@ export function compareFacts(before: ReloadFacts, after: ReloadFacts): string[] 
  * Tell the terminal and every open tab that the reload cost something.
  *
  * Both, because they are two different people. The terminal has the developer
- * who caused it and can undo it; the tab has whoever is standing at the board
- * with work that may no longer be there, and they have no terminal. A message
- * on the wall is the only way they find out before they notice by hand.
+ * who caused it and can undo it; the tab has the user viewing the board
+ * with work that may no longer be there, and they have no terminal. An in-app
+ * message tells them before they discover the loss through later edits.
  *
  * Sending is best-effort by design. This runs because something is already
  * wrong, so a socket that will not take the message must not turn a report

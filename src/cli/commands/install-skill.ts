@@ -81,7 +81,7 @@ function realpathOrNull(candidate: string): string | null {
  *
  * The skill's every example says `archboard`, which is a lie in any repo where
  * nobody linked it onto PATH. So check: an `archboard` on PATH counts only
- * when it actually resolves to this build. Otherwise hand back the absolute
+ * when it actually resolves to this build. Otherwise return the absolute
  * path of the entry point that is running right now, which always works.
  */
 export function resolveInvocation(): { command: string; onPath: boolean } {

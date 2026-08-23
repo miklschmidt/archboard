@@ -267,7 +267,7 @@ function alongSegment(origin: Point, direction: Point, from: Point, to: Point): 
  *
  * `adjacent` is the arrow's own next point — its other end on a two-point
  * arrow — because that is what Excalidraw aims from, and it is what makes a
- * bend in a hand-drawn arrow decide where the arrow meets the shape.
+ * bend in a user-drawn arrow decide where the arrow meets the shape.
  * `current` is where the end is now, returned unchanged when the ray misses,
  * which happens when the adjacent point is on the far side of the shape from
  * the aim.

@@ -86,14 +86,14 @@ export async function apply(argv: string[]): Promise<void> {
   printJson({
     success: true,
     created: result.created,
-    // What the patch asked for, not what the board owed it afterwards: the
-    // server also re-routes arrows and re-places labels behind a move, and
-    // counting those here would answer a question nobody asked.
+    // What the patch asked for, not every element the board changed as a
+    // result: the server also re-routes arrows and re-places labels behind a
+    // move, and counting those here would answer a question nobody asked.
     updated: updates.length,
     deleted: result.deleted,
-    // `elements`, on the other hand, IS what the board owed it: the record as
-    // it now stands, including the label the server expanded and the arrows it
-    // re-routed, which is the half a caller cannot work out for itself.
+    // `elements`, on the other hand, IS that resulting record, including the
+    // label the server expanded and the arrows it re-routed, which is the half
+    // a caller cannot work out for itself.
     elements: result.elements,
     fingerprint: result.fingerprint,
     ...(result.document ? { document: result.document } : {})

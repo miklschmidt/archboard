@@ -6,7 +6,7 @@ export interface ExportedScene {
   elementCount: number;
 }
 
-/** Build one Excalidraw document from board-shape elements already in hand. */
+/** Build one Excalidraw document from the supplied board-shape elements. */
 export function buildScene(
   sceneElements: ServerElement[],
   sceneFiles: Record<string, any> = {},

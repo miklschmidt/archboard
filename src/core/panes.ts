@@ -1,8 +1,8 @@
-// What the human is currently looking at.
+// What the user is currently looking at.
 //
 // This exists for one reason. The voice model cannot see the screen, so "move
 // that box over there" is uninterpretable unless the thread can ask what is on
-// screen and what is under the person's finger. That is spatial deixis, and it
+// screen and what the user has selected. That is spatial deixis, and it
 // is the whole justification for this module.
 //
 // So this reports VIEW STATE, never board contents. It is meant to be called on
@@ -33,7 +33,7 @@ export interface Rect {
  *
  * The pane reports the board key it *adopted*, never the server's idea of what
  * it should be holding. That is what makes this report a description of the
- * glass rather than a restatement of server state: if a pane were somehow
+ * scene rather than a restatement of server state: if a pane were somehow
  * rendering a board the server did not think it had, this would say so.
  */
 export interface PaneRegistration {
@@ -45,7 +45,7 @@ export interface PaneRegistration {
   board: string;
   /** Does this pane answer export / viewport / mermaid requests? */
   primary: boolean;
-  /** Is this the pane the human last touched? */
+  /** Is this the pane the user last interacted with? */
   focused: boolean;
   elementCount: number;
   /** Where the pane sits in the page, in CSS pixels. */
@@ -108,7 +108,7 @@ export type Arrangement =
 export interface PanesReport {
   paneCount: number;
   arrangement: Arrangement;
-  /** paneId of the pane the human last touched. */
+  /** paneId of the pane the user last interacted with. */
   focused: string | null;
   /** Are all panes showing the same board? */
   sameBoard: boolean;
@@ -292,7 +292,7 @@ export function resolvePaneSpec(
   // Nothing here can point a board at a pane that does not exist, and until
   // TASK-033 nothing could make one either — the human had to click Split,
   // which is not available to a voice thread. So the refusal carries the
-  // command that makes one, while there is still room on the glass for it.
+  // command that makes one, while there is still room in the browser layout.
   const makeOne = ordered.length < MAX_PANES ? ` ${HOW_TO_OPEN_A_PANE}` : '';
   throw new Error(
     `No pane called "${spec}". Panes on screen: ${list()}. ` +

@@ -30,7 +30,7 @@ export async function selection(argv: string[]): Promise<void> {
 // The companion to `selection`: that one answers "what do they mean by *this*",
 // this one answers "what is on screen, and where" — which is what makes "the
 // left one" and "move that box over there" resolvable for a model that cannot
-// see the glass. View state only; `describe` is where contents live.
+// see the scene. View state only; `describe` is where contents live.
 export async function panes(argv: string[]): Promise<void> {
   const { flags } = parseArgs(argv, {
     text: { takesValue: false }
