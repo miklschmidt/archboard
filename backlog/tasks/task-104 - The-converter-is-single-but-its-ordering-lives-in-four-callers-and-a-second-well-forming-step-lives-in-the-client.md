@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-23 15:01'
-updated_date: '2026-08-23 16:14'
+updated_date: '2026-08-23 16:16'
 labels: []
 dependencies: []
 references:
@@ -57,4 +57,6 @@ Slice 1: Added src/core/apply-element-input.ts with applyElementInput(board, { u
 Slice 2: Deleted normalize.prepareElement and prepareElementUpdate. CLI add/apply/update, MCP create/update/batch, library insertion, and scene import now send input-spelling objects unchanged; canvas-client accepts serializable element input instead of requiring a pre-built ServerElement. The server entry is now the only well-forming implementation and scripts/check-obsidian-md exercises it directly. Verification: type-check green; MCP 6 checks; obsidian-md 197 checks; surface parity green; library 49 checks; labels 182; geometry 82; one-write 58; changes green; module-scope green.
 
 Slice 3: Deleted src/core/scene-io.ts. Pure buildScene now lives in src/core/scene-document.ts; HTTP-backed buildSceneFile/importScene live in src/cli/scene-io.ts, and board-io imports only the pure document builder. Updated checks and stale design references. Replaced library-catalogue's Date.now/Math.random id generator with ids.ts mintId, so element and group remapping use the one id implementation. Verification: type-check green; obsidian-md 197 checks; boards all checks; labels 182; geometry 82; one-write 58; changes green; module-scope 49 modules, 1 waived. Grep decision: core canvas-client imports remain only in active client modules: mcp-dispatch and element-ops as named by TASK-104, plus spawn for process health/lifecycle and library-catalogue for the live server palette. I kept those direct clients; the mixed scene document/client module is gone, and board-io no longer reaches back over HTTP.
+
+Docs slice: ADR 0015 now names applyElementInput and its exact responsibility relative to TASK-102. The canvas skill now documents one element format across CLI, MCP and REST, including canonical label/start/end spellings, accepted aliases, and server-side id minting. Ran bun scripts/sync-skills.mjs as required by archboard-dev; test:install passed 33 checks.
 <!-- SECTION:NOTES:END -->

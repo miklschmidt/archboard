@@ -171,17 +171,16 @@ Results are JSON on stdout — except `describe` (plain text) and raw-content ou
 | Wipe canvas | `clear --yes` |
 | Install / upgrade this skill | `install-skill --dir <skills-root>` (agent chooses project/global root) |
 
-### Element Format (CLI and MCP)
+### Element format
 
-The CLI and MCP tools accept the same agent-friendly format and normalize it automatically:
+CLI, MCP and raw REST writes reach the same server entry and accept the same input format:
 
-- **Labels**: put `"text": "My Label"` on any shape — converted to Excalidraw's bound-label format for you.
-- **Arrow binding**: `"startElementId": "a"` / `"endElementId": "b"` — arrows auto-route to element edges.
+- **Labels**: use `"label": {"text": "My Label"}`. The older `"text": "My Label"` shape spelling remains accepted; standalone text elements keep `text` as their content.
+- **Arrow binding**: use `"start": {"id": "a"}` and `"end": {"id": "b"}`. The CLI/MCP aliases `startElementId` and `endElementId` remain accepted. The server spends either spelling and routes the arrow to the element edges.
+- **Ids**: omit `id` on a new element unless another element in the same write must refer to it. The server mints an Obsidian-safe id before the board holds the element.
 - **fontFamily**: pass a string name (`"helvetica"`, `"cascadia"`, `"excalifont"`, ...) or string number `"1"`–`"8"`.
 - **points**: both `[[x,y], ...]` tuples and `[{"x":..,"y":..}]` objects are accepted.
 - **Patch updates**: in `apply`, update entries can use either direct fields (`{"id":"a","x":120}`) or a `set` object (`{"id":"a","set":{"x":120}}`). Do not mix both forms in one update entry.
-
-**Raw REST is stricter**: labels must be `"label": {"text": "..."}`, bindings must be `"start": {"id": "..."}` / `"end": {"id": "..."}`. Only worry about this when POSTing to the API directly.
 
 ---
 

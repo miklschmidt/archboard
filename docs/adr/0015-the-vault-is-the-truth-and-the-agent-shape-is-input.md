@@ -49,6 +49,14 @@ of the board, which is a summary rather than a second shape.
 There is one implementation of that conversion, shared by everything that needs
 it, rather than one per side that are meant to agree.
 
+The write entry is `applyElementInput`. Every server route gives it the input
+statements and deletions, and receives the named elements plus the settled
+created, updated and deleted board-shape delta. It owns well-forming, id
+minting, label and arrow-ref consumption, binding and routing, text measuring,
+version stamps and document repair. Routes still own reading the note,
+persisting, broadcasting and answering. TASK-102 can therefore make this entry
+one stage of the write door without teaching that door the conversion order.
+
 **Session state is not board content and is not in question.** Which panes are
 open, which has focus, what a person has selected, which browsers are
 connected: none of it can live in a note, all of it dies with the tab, and a
