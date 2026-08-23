@@ -645,7 +645,7 @@ try {
   // Unlike the camera, mermaid takes no pane, and must not. It already names a
   // board and a board is in at most one pane, so a --pane would be a second
   // way to say the same thing and a way to say two different things. What is
-  // being proved is that a proposal can be drawn into the right-hand pane
+  // being proved is that a proposal can be drawn into the right pane
   // without the current architecture being taken off the left to make room.
 
   const diagram = { mermaidDiagram: 'graph TD; A[Client] --> B[API];' };
@@ -713,7 +713,7 @@ try {
   const roomForOne = await api('POST', '/api/elements/from-mermaid?board=payments@option-a', diagram);
   check('the board just taken off screen can no longer be converted into',
     roomForOne.status === 409, JSON.stringify(roomForOne.body));
-  check('  and with room on the glass it offers a new pane, not a repointed one',
+  check('  and with display room it offers a new pane, not a repointed one',
     /archboard pane open --board payments@option-a/.test(roomForOne.body?.error ?? '') &&
     !/board open/.test(roomForOne.body?.error ?? ''),
     roomForOne.body?.error);
@@ -1517,21 +1517,21 @@ try {
     // A pane says what is on its screen. Only allowed on a held board: the
     // server's copy of one starts as the note the other editor wrote, and this
     // is what makes overwrite mean "what you are looking at" (TASK-079).
-    const rebased = await scratchApi('POST', '/api/elements/changes?board=holdover', {
+    const fullReport = await scratchApi('POST', '/api/elements/changes?board=holdover', {
       upserts: [
         { id: 'ours1', type: 'rectangle', x: 10, y: 10, width: 50, height: 50 },
         { id: 'held1', type: 'rectangle', x: 100, y: 100, width: 30, height: 30 }
       ],
       deletes: [],
-      rebase: true,
+      fullReport: true,
       clientId: 'a-pane'
     });
     check('a pane saying what is on its screen is taken on a held board',
-      rebased.status === 200, `${rebased.status} ${rebased.body?.error}`);
-    const afterRebase = (await scratchApi('GET', '/api/elements?board=holdover')).body?.elements ?? [];
+      fullReport.status === 200, `${fullReport.status} ${fullReport.body?.error}`);
+    const afterFullReport = (await scratchApi('GET', '/api/elements?board=holdover')).body?.elements ?? [];
     check('  and the held copy becomes that screen, not their note with a gesture on top',
-      afterRebase.some(el => el.id === 'held1') && !afterRebase.some(el => el.id === 'theirs1'),
-      JSON.stringify(afterRebase.map(el => el.id)));
+      afterFullReport.some(el => el.id === 'held1') && !afterFullReport.some(el => el.id === 'theirs1'),
+      JSON.stringify(afterFullReport.map(el => el.id)));
     check('  and the board says a pane has spoken for it',
       (await scratchApi('GET', '/api/elements?board=holdover')).body?.held?.fromScreen === true);
 
@@ -1553,13 +1553,13 @@ try {
     check('  so the next change reaches the note like any other',
       afterForce.status === 200 && fs.readFileSync(overwriteCase.file, 'utf-8').includes('after1'),
       `${afterForce.status} ${afterForce.body?.error}`);
-    const noRebase = await scratchApi('POST', '/api/elements/changes?board=holdover', {
+    const refusedFullReport = await scratchApi('POST', '/api/elements/changes?board=holdover', {
       upserts: [{ id: 'ours1', type: 'rectangle', x: 1, y: 1, width: 5, height: 5 }],
-      deletes: [], rebase: true, clientId: 'a-pane'
+      deletes: [], fullReport: true, clientId: 'a-pane'
     });
     check('  and a pane can no longer declare the whole board, because it is saving again',
-      noRebase.status === 400 && /rebase/.test(noRebase.body?.error ?? ''),
-      `${noRebase.status} ${noRebase.body?.error}`);
+      refusedFullReport.status === 400 && /full report/.test(refusedFullReport.body?.error ?? ''),
+      `${refusedFullReport.status} ${refusedFullReport.body?.error}`);
 
     // Outcome one: reload. It takes the note and ends the held work, which is
     // what it says it costs.
@@ -2048,7 +2048,7 @@ try {
     // implementations of one act, and the wikilink resolution above went into
     // only one of them. The two merged with no conflict, git reported nothing,
     // and a migrated board rendered holes on every read until 256369d put it
-    // back by hand.
+    // back manually.
     //
     // They stand on one `readNoteFile` now. This asserts it from the outside,
     // on the fixture that caught it: whatever is true of reading a note has to
