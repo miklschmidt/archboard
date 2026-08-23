@@ -13,13 +13,13 @@
 // Five characters were typed and Escape pressed, and the five characters were
 // discarded — no error, no warning, nothing on screen to say it had happened.
 //
-// No amount of timing fixes that: holding an echo until a gesture ends does
-// not help, because the next keystroke still goes to an element that is gone.
+// No amount of timing fixes that: holding a server update until a text edit
+// ends does not help, because the next keystroke still goes to an element that is gone.
 // The only defence is that ids do not change, and the only way to get that is
 // to mint them in the final shape. So minting lives here, and nothing
 // downstream — least of all the note writer — is left with a reason to rename.
 //
-// Excalidraw is the one minter this file cannot reach: it names what a person
+// Excalidraw is the one minter this file cannot reach: it names what a user
 // draws with a 21-character nanoid, in the browser. So the pane calls
 // `derivedId` below the moment a text editor closes, before the element is
 // reported (TASK-098, `frontend/src/canvas/useCanvasSession.ts`). Same
@@ -39,7 +39,7 @@ const ID_LENGTH = 8;
 // Obsidian block ids are alphanumeric-and-dash only — an id containing "_"
 // would be written as an unresolvable block reference. Dashes are accepted
 // here even though nothing mints them, because ids arriving from elsewhere
-// (Excalidraw's own, a hand-edited note) may carry one and are none the worse
+// (Excalidraw's own, a user-edited note) may carry one and are none the worse
 // for it.
 const BLOCK_ID_RE = /^[A-Za-z0-9-]{1,8}$/;
 
@@ -50,8 +50,8 @@ export function isBlockId(id: unknown): boolean {
 
 /**
  * The ids already spoken for. A `Set` and a `Map` both satisfy it, so a caller
- * with the board's element map in hand passes it directly rather than building
- * a copy of the keys.
+ * with the board's element map available passes it directly rather than
+ * building a copy of the keys.
  */
 export interface IdsInUse {
   has(id: string): boolean;

@@ -832,7 +832,7 @@ export async function compareBoardsOnCanvas(params: { from: string; to?: string 
 }
 
 /**
- * Hand a Mermaid diagram to the pane holding this call's board.
+ * Send a Mermaid diagram to the pane holding this call's board.
  *
  * No pane argument, on purpose. Conversion runs in a pane and the elements
  * land on the board that pane holds, so the board already decides which pane

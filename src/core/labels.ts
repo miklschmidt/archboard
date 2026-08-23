@@ -3,7 +3,7 @@
 // An agent writes a label the way it reads — `label: {text}` on the shape —
 // and Excalidraw has no such field: a label there is a separate text element
 // bound to the shape. Something has to turn one into the other, and for a long
-// while two somethings did. The browser handed every delivery to
+// while two somethings did. The browser passed every server update to
 // `convertToExcalidrawElements`, which mints a text element with a brand-new
 // random id every single time it sees a `label`, and the seed that produced
 // the first one stayed on the stored element.
@@ -325,8 +325,8 @@ export function recentreBoundTexts(
  * The moves that rescue only the labels the board has lost track of.
  *
  * The browser needs a narrower rule than the server does. On an incoming
- * delivery the pane can put a label back on the thing it names, but it must not
- * fine-tune one: Excalidraw is the authority on where a label is drawn, and it
+ * server update the pane can put a label back on the thing it names, but it
+ * must not fine-tune one: Excalidraw is the authority on where a label is drawn, and it
  * has opinions this module does not share — a curved multi-point arrow hangs
  * its label from the bezier, not from the midpoint of a straight segment. Move
  * a label to disagree with Excalidraw by a pixel and Excalidraw moves it back,

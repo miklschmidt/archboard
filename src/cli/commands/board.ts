@@ -90,8 +90,8 @@ function listPanes(refs: Array<{ place: string }>): string {
  * pane and cannot target an existing one, so it can never take a board off the
  * screen; `board open` replaces whatever the pane it names is holding, and
  * with one pane on screen that is the source itself. So this offered
- * `board open` for years and told the caller to undo the save's whole point by
- * hand (TASK-054).
+ * `board open` for years and told the caller to undo the save's whole point
+ * with a separate command (TASK-054).
  *
  * `board open` is right once the screen is full, because then there is no
  * other way up. It says which board each pane would lose, so the choice is

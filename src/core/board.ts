@@ -218,7 +218,7 @@ export function requireVaultRoot(): string {
 
 // The entry in `dir` whose name is the same as `wanted` once normalised, or
 // null. One readdir per path segment, which is what a case-insensitive
-// filesystem does in the kernel and what archboard has to do by hand on a
+// filesystem does in the kernel and what archboard has to emulate on a
 // case-sensitive one (ADR 0010). Sorted, so a vault that somehow holds two
 // spellings of the same name resolves to the same one every time; `listBoards`
 // reports that as a collision rather than leaving it to be discovered.
@@ -581,8 +581,8 @@ export interface VaultBoard {
   // paths differ only in case, or only in unicode normalisation, are one
   // address (ADR 0010) and only one of them can be reached — but a
   // case-sensitive filesystem will hold both, so a vault authored on Linux
-  // before this rule, or by hand, can arrive in this state. Reported rather
-  // than reconciled: which of two notes to keep is not archboard's to decide.
+  // before this rule, or edited manually, can arrive in this state. Reported
+  // rather than reconciled: which of two notes to keep is not archboard's to decide.
   collidesWith?: string[];
 }
 

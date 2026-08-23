@@ -7,7 +7,7 @@ import { KINDS } from './promote.js';
  *
  * Written once because the whole point is that the three of them agree: a
  * picture, a camera move and a pane closing all name a pane the same way, and
- * `left` had better mean the same half of the wall in each. Optional
+ * `left` had better mean the same pane position in each. Optional
  * everywhere it appears — display defaults where it cannot be wrong (ADR
  * 0009), and with one pane on screen there is only one answer.
  */
@@ -597,7 +597,7 @@ export const tools: Tool[] = [
         },
         reason: {
           type: 'string',
-          description: 'What you are taking the board for, in the words the person at the canvas would use — it is shown on their pane for as long as you hold it, and it is the only reason they have for why the wall stopped responding. "Redrawing the payment path", not "batch write". This is the campaign; `doing` on each write is the step, and neither stands in for the other.'
+          description: 'What you are taking the board for, in the words the person at the canvas would use — it is shown on their pane for as long as you hold it, and it explains why the pane stopped accepting edits. "Redrawing the payment path", not "batch write". This is the overall reason; `doing` on each write is the step, and neither stands in for the other.'
         },
         forMs: {
           type: 'number',
@@ -678,7 +678,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'demote_selection',
-    description: 'Reverse a promotion: strip archboard metadata from the selected nodes so they become plain elements again. A node may be several elements, so touching any one of them demotes the whole node. Other tools\' customData is left alone.',
+    description: 'Reverse a promotion: strip archboard metadata from the selected nodes so they become plain elements again. A node may be several elements, so selecting any one of them demotes the whole node. Other tools\' customData is left alone.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -768,7 +768,7 @@ export const tools: Tool[] = [
 // optional — a client that leaves it out should be told by its own schema
 // validation rather than by a round trip.
 //
-// Applied here rather than typed into thirty schemas by hand, so the list of
+// Applied here rather than repeated in thirty schemas, so the list of
 // board-scoped tools is legible in one place and a tool cannot be the one that
 // forgot.
 const BOARD_SCOPED = [
@@ -788,16 +788,16 @@ const BOARD_OPTIONAL = ['get_resource'];
 
 // ─── Every tool that CHANGES a board says what it is doing ────
 //
-// A person at a 75-inch display sees boxes move and has no way to know what is
-// being attempted (TASK-095). So an agent says it, on every write, and the line
+// A person sees boxes move and has no way to know what is being attempted
+// (TASK-095). So an agent says it on every write, and the line
 // goes up on the canvas as the write lands. Required for the same reason the
 // board is: a client should be told by its own schema rather than by a round
 // trip, and an argument that is optional in the schema is an argument half the
 // callers will not pass.
 //
 // A subset of BOARD_SCOPED, not the same list: describing a board, querying it
-// or exporting it changes nothing and narrating a read would be noise on the
-// wall. `create_from_mermaid` is in here and is not a lock-taking route — the
+// or exporting it changes nothing and narrating a read would be noise in the
+// pane. `create_from_mermaid` is in here and is not a lock-taking route — the
 // conversion runs in the pane and its elements arrive afterwards as that pane's
 // own report — but the agent asked for it, so the agent says so.
 const WRITES_BOARD = [
@@ -814,9 +814,9 @@ const DOING_PARAM = {
     'What you are doing to this board, in one short line, present tense: "adding the payment queue", ' +
     '"rerouting orders through it". It goes up on the canvas as the write lands, so the person at the ' +
     'board can see what you are up to rather than watching boxes move and inferring it afterwards. ' +
-    'REQUIRED on every write and refused if it is empty or over 140 characters — this is read from two ' +
-    'metres away, not logged. It is never written into the board. If you have claimed the board, the ' +
-    "claim's `reason` is the campaign and this is the step: say the step here."
+    'REQUIRED on every write and refused if it is empty or over 140 characters — this is shown in the ' +
+    'pane, not logged. It is never written into the board. If you have claimed the board, the ' +
+    "claim's `reason` is the overall reason and this is the step: say the step here."
 } as const;
 
 // And it may say which version of the board it was editing (TASK-091).
