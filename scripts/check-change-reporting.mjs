@@ -20,6 +20,15 @@ const check = (label, condition, detail = '') => {
   console.log(`${condition ? 'ok  ' : 'FAIL'} - ${label}${detail ? ` (${detail})` : ''}`)
 }
 
+const expectedRuntimeExports = new Set([
+  'EMPTY_WITHHELD', 'carryWithheld', 'hasPendingEdits', 'initialState', 'mergeIncoming',
+  'needsFullReport', 'reduce', 'reportsSettled', 'userHasInteracted'
+])
+const unexpectedRuntimeExports = Object.keys(reporting)
+  .filter(name => !expectedRuntimeExports.has(name))
+check('the reporting module has no unused runtime exports', unexpectedRuntimeExports.length === 0,
+  unexpectedRuntimeExports.join(', '))
+
 const copy = value => structuredClone(value)
 const box = (id, x = 0, y = 0) => ({
   id, type: 'rectangle', x, y, width: 120, height: 80, version: 1
@@ -243,6 +252,17 @@ class Harness {
   check('an in-flight report is not settled', !reportsSettled(h.state))
   h.accept()
   check('an accepted report with no queued retry is settled', reportsSettled(h.state))
+}
+
+// Pending-edit detection stops at a mismatch without changing withheld or deletion rules.
+{
+  const h = new Harness()
+  check('an unchanged scene has no pending edits', !hasPendingEdits(h.state, h.scene))
+  const moved = h.scene.map(element => element.id === 'a' ? { ...element, x: 12 } : element)
+  check('a changed element is pending', hasPendingEdits(h.state, moved))
+  check('a withheld changed element is not pending yet', !hasPendingEdits(h.state, moved, ['a']))
+  const deleted = h.scene.filter(element => element.id !== 'a')
+  check('a missing baseline element is pending as a deletion', hasPendingEdits(h.state, deleted))
 }
 
 // The reply to the first report must not replace a later user edit.
