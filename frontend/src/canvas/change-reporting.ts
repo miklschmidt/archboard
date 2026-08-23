@@ -32,7 +32,7 @@ interface ReportAfterServerUpdate {
   fullReport: boolean
 }
 
-export interface ServerUpdateRecord {
+interface ServerUpdateRecord {
   stamp: string
 }
 
@@ -59,15 +59,12 @@ export type ChangeReportingEvent =
   | { type: 'immediate_report_requested'; scene: readonly SceneElement[]; withheldIds: readonly string[] }
   | {
       type: 'server_update_requested'
-      kind: string
       update: SceneUpdate
       baselineUpdate: BaselineUpdate
-      reportAfterUpdate?: ReportAfterServerUpdate
     }
   | {
       type: 'server_update_applied'
       generation: number
-      kind: string
       scene: readonly SceneElement[]
       baselineUpdate: BaselineUpdate
       reportAfterUpdate?: ReportAfterServerUpdate
@@ -94,12 +91,11 @@ export type ChangeReportingEffect =
   | {
       type: 'apply_server_update'
       generation: number
-      kind: string
       update: SceneUpdate
       baselineUpdate: BaselineUpdate
       reportAfterUpdate?: ReportAfterServerUpdate
     }
-  | { type: 'finish_server_update'; delayMs: 0; generation: number }
+  | { type: 'finish_server_update'; generation: number }
   | { type: 'send_report'; report: ChangeReport; fullReport: boolean; generation: number }
   | { type: 'send_beacon'; report: ChangeReport }
   | { type: 'take_hold' }
@@ -150,7 +146,7 @@ function fold(hash: number, value: unknown): number {
 }
 
 /** A cheap fingerprint of fields a user edit can change. */
-export function stampScene(scene: readonly SceneElement[]): string {
+function stampScene(scene: readonly SceneElement[]): string {
   let hash = scene.length
   for (const element of scene) {
     hash = fold(hash, element.id)
@@ -217,14 +213,6 @@ export function hasPendingEdits(
   return !isEmpty(diffAgainstBaseline(scene, state.baseline, withheldSet(withheldIds)))
 }
 
-export function pendingChangeReport(
-  state: ChangeReportingState,
-  scene: readonly SceneElement[],
-  withheldIds: readonly string[] = EMPTY_WITHHELD
-): ChangeReport {
-  return diffAgainstBaseline(scene, state.baseline, withheldSet(withheldIds))
-}
-
 function scheduleReport(state: ChangeReportingState, effects: ChangeReportingEffect[]): ChangeReportingState {
   if (state.reportTimerScheduled) effects.push({ type: 'cancel_report_timer' })
   effects.push({ type: 'start_report_timer', delayMs: REPORT_DEBOUNCE_MS, generation: state.generation })
@@ -250,7 +238,6 @@ function beginReport(
     effects.push({
       type: 'apply_server_update',
       generation: state.generation,
-      kind: 'the pane renaming its own text elements',
       update: { elements: renamedScene, captureUpdate: 'never' },
       baselineUpdate,
       reportAfterUpdate: { withheldIds, fullReport }
@@ -355,10 +342,8 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
       effects.push({
         type: 'apply_server_update',
         generation: state.generation,
-        kind: event.kind,
         update: event.update,
-        baselineUpdate: event.baselineUpdate,
-        reportAfterUpdate: event.reportAfterUpdate
+        baselineUpdate: event.baselineUpdate
       })
       return {
         state: { ...state, applyingServerUpdateCount: state.applyingServerUpdateCount + 1 },
@@ -374,7 +359,7 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
           stamp: stampScene(event.scene)
         }]
       }
-      effects.push({ type: 'finish_server_update', delayMs: 0, generation: state.generation })
+      effects.push({ type: 'finish_server_update', generation: state.generation })
       if (event.reportAfterUpdate) {
         next = beginReport(next, event.scene, event.reportAfterUpdate.withheldIds, effects, true)
       }
@@ -414,7 +399,6 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
         effects.push({
           type: 'apply_server_update',
           generation: state.generation,
-          kind: 'a whole board from the server',
           update: { elements: [...event.document, ...kept], captureUpdate: 'never' },
           baselineUpdate
         })

@@ -93,14 +93,12 @@ class Harness {
   clock = new ManualClock()
   server
   withheldIds = []
-  assertion = 0
 
   constructor(scene = initialScene()) {
     this.scene = copy(scene)
     this.server = new ScriptedServer(scene)
     this.dispatch({
       type: 'server_update_requested',
-      kind: 'the initial board from the server',
       update: { elements: copy(scene), captureUpdate: 'never' },
       baselineUpdate: { type: 'replace', withheldIds: [] }
     })
@@ -139,12 +137,12 @@ class Harness {
         if (effect.update.elements) this.scene = copy(effect.update.elements)
         this.dispatch({
           type: 'server_update_applied', generation: effect.generation,
-          kind: effect.kind, scene: copy(this.scene), baselineUpdate: effect.baselineUpdate,
+          scene: copy(this.scene), baselineUpdate: effect.baselineUpdate,
           reportAfterUpdate: effect.reportAfterUpdate
         })
         break
       case 'finish_server_update':
-        this.clock.start('finish', effect.delayMs, () => this.dispatch({
+        this.clock.start('finish', 0, () => this.dispatch({
           type: 'server_update_finished', generation: effect.generation, scene: copy(this.scene)
         }))
         break
@@ -163,7 +161,6 @@ class Harness {
   }
 
   assertSafe(step) {
-    this.assertion += 1
     const pending = hasPendingEdits(this.state, this.scene, this.withheldIds)
     const scheduled = this.state.reportTimerScheduled || this.state.retryTimerScheduled
     check(`${step}: pending edits have a report in flight or scheduled`,
@@ -212,7 +209,7 @@ class Harness {
     })
     merged.push(...byId.values())
     this.dispatch({
-      type: 'server_update_requested', kind: 'elements from the server',
+      type: 'server_update_requested',
       update: { elements: merged, captureUpdate: 'never' },
       baselineUpdate: { type: 'touch', ids }
     })
@@ -295,7 +292,7 @@ class Harness {
     h.scene = copy(next)
     h.server = new ScriptedServer(next)
     h.dispatch({
-      type: 'server_update_requested', kind: 'the adopted board from the server',
+      type: 'server_update_requested',
       update: { elements: next, captureUpdate: 'never' },
       baselineUpdate: { type: 'replace', withheldIds: [] }
     })
