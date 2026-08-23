@@ -31,6 +31,7 @@ const repoRoot = join(__dirname, '..');
 
 const { tools } = await import(join(repoRoot, 'src', 'core', 'mcp-tools.ts'));
 const { cliSurface } = await import(join(repoRoot, 'src', 'cli', 'run.ts'));
+const { formatBoardRefusal } = await import(join(repoRoot, 'src', 'core', 'canvas-client.ts'));
 
 // --- the mapping -------------------------------------------------------------
 //
@@ -178,6 +179,38 @@ const dispatchSource = fs.readFileSync(join(repoRoot, 'src', 'core', 'mcp-dispat
 for (const tool of toolNames) {
   if (!dispatchSource.includes(`case '${tool}'`)) {
     fail(`Tool \`${tool}\` is declared in mcp-tools.ts with no \`case\` arm in mcp-dispatch.ts — the client gets "Unknown tool".`);
+  }
+}
+
+// A refused write carries the board on the same response. Both agent-facing
+// outputs use one formatter so neither can print only the reason and drop the
+// document. The formatter itself keeps the reason ahead of the larger payload.
+{
+  const cliSource = fs.readFileSync(join(repoRoot, 'src', 'cli', 'run.ts'), 'utf8');
+  if (!cliSource.includes('formatBoardRefusal(error)')) {
+    fail('The CLI error path does not print a structured board refusal, so the attached document is hidden.');
+  }
+  if (!dispatchSource.includes('formatBoardRefusal(error)')) {
+    fail('The MCP error path does not print a structured board refusal, so the attached document is hidden.');
+  }
+  const reason = 'Refusing to write "payments": somebody else has it.';
+  const error = new Error(reason);
+  error.refusal = {
+    success: false,
+    code: 'BOARD_HELD',
+    error: reason,
+    holder: { id: 'pane-1', kind: 'human' },
+    waitedMs: 3000,
+    document: [{ id: 'queue', type: 'rectangle' }],
+    version: 7
+  };
+  const printed = formatBoardRefusal(error) ?? '';
+  if (!printed.startsWith(reason)) {
+    fail('The shared refusal formatter does not put the unchanged reason first.');
+  }
+  if (!printed.includes('"holder"') || !printed.includes('"waitedMs"') ||
+      !printed.includes('"document"') || !printed.includes('"version": 7')) {
+    fail('The shared refusal formatter drops reason data or the attached board.');
   }
 }
 

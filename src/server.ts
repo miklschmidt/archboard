@@ -603,6 +603,17 @@ function boardErrorStatus(error: unknown): number {
   ) ? 400 : 500;
 }
 
+/** The note state an agent receives with a write-boundary refusal. */
+function refusalDocument(board: string): { document: ServerElement[]; version: number | null } {
+  const state = boards.get(board);
+  if (!state) throw new Error(`Board "${board}" is not open`);
+  const content = readBoardContent(state);
+  return {
+    document: Array.from(content.elements.values()),
+    version: content.version ?? null
+  };
+}
+
 // The refusal, as a body. Carries the open boards as data so a caller can act
 // on it without parsing the sentence.
 function boardErrorBody(error: unknown): Record<string, unknown> {
@@ -618,7 +629,14 @@ function boardErrorBody(error: unknown): Record<string, unknown> {
   // Who has the board and since when, as data as well as a sentence, so a voice
   // session has something to say and a client has something to act on.
   if (error instanceof BoardHeldError) {
-    return { ...base, code: error.code, board: error.board, holder: error.holder, waitedMs: error.waitedMs };
+    return {
+      ...base,
+      code: error.code,
+      board: error.board,
+      holder: error.holder,
+      waitedMs: error.waitedMs,
+      ...refusalDocument(error.board)
+    };
   }
   return base;
 }
@@ -833,7 +851,8 @@ function refuseRevokedClaim(res: Response, board: string): boolean {
       'Writing again is an ordinary write, and takes the board only for as long as that write.',
     board,
     claim: lost.claim,
-    revokedBy: lost.by
+    revokedBy: lost.by,
+    ...refusalDocument(board)
   });
   return true;
 }
@@ -875,9 +894,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
   // And what the board turned out to be is what this writer has now been told,
   // which is what its next write will be checked against. On `finish` and only
-  // on success, beside the `doing` announcement and for the same reason: a
-  // refusal tells a writer nothing about a board it did not change. The refusal
-  // that *is* about the version does its own telling, above.
+  // on success, beside the `doing` announcement and for the same reason. The
+  // three write-boundary refusals carry their own current document and version.
   res.on('finish', () => {
     if (res.statusCode >= 400) return;
     if (writer.kind !== 'agent' || claimWriterId(key) !== writer.id) return;
@@ -934,7 +952,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           success: false,
           code: 'BOARD_VERSION_CONFLICT',
           error: conflict.message,
-          versionConflict: conflict
+          versionConflict: conflict,
+          ...refusalDocument(key)
         });
         if (hold.created) releaseHold(key, hold.holder.id);
         return;

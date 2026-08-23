@@ -18,7 +18,8 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 
 **Every write goes against the version of the board its writer last saw, and is
 refused with `BOARD_VERSION_CONFLICT` if the board moved in between** — nothing
-written, both versions named. You carry no number: the canvas remembers what it
+written, both versions named, with the current `document` and `version` attached.
+Use those instead of reading the board again. You carry no number: the canvas remembers what it
 last told you, automatically for a claim and for an MCP session, because those
 are the two writers it can recognise across requests. A CLI process with no
 claim is anonymous, so there `--expect-version <n>` is how you state it (global,
@@ -194,7 +195,7 @@ A board has a mutex: an agent takes it to write, a person takes it by touching t
 | `claim_board` | Hold a board across everything you are about to do to it. Not for one box — an ordinary write already holds the board while it writes. Carry nothing: every write naming this board goes under the claim. Call again to extend | `board`, `reason` (shown on the person's pane), (optional) `forMs` |
 | `release_board` | Give it back. Do it as soon as the work is done | `board` |
 
-The person at the canvas can take a claimed board back at any moment. Your next call is refused once with `CLAIM_REVOKED` and says so; **nothing is rolled back**, because every write you made is already in the note. What to do about that is in SKILL.md.
+The person at the canvas can take a claimed board back at any moment. Your next call is refused once with `CLAIM_REVOKED` and says so; **nothing is rolled back**, because every write you made is already in the note. The refusal carries that partial board as `document` and `version`. What to do about it is in SKILL.md.
 
 ### Panes
 

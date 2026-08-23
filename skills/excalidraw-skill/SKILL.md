@@ -699,11 +699,12 @@ Refusing to write "payments": you were working from version 8, and the board is 
 Another writer has been here 1 time(s) since the version you were working from.
 ```
 
-**Read the board before writing again.** You are told once — your next write
-goes against the version the refusal named — so repeating the same write will
-land, and landing is not the same as being right. Somebody moved something you
-were reasoning about. `describe --board payments`, or `changes --coalesce`, and
-then decide again.
+**Use the `document` and `version` in the refusal before writing again.** That
+is the current board, already read after the refusal was decided. Do not spend
+another call on `describe` or `changes`. You are told once, so your next write
+goes against the version the refusal named. Repeating the same write will land,
+and landing is not the same as being right. Inspect the attached document and
+decide again because somebody moved something you were reasoning about.
 
 **This is not what protects you from Obsidian.** That is the sha-256 of the
 note's bytes, it runs on every write whatever else is true, and it refuses a
@@ -785,10 +786,10 @@ A snapshot belongs to the board it was taken on, and `--force` is what restores 
 
 - **Exit code 3 (canvas unreachable)?** Auto-start is disabled (`EXCALIDRAW_NO_AUTOSTART=1`) or a non-loopback `EXPRESS_SERVER_URL` is set. Run `start` explicitly or fix the env.
 - **Exit code 4 (browser required)?** Open `http://127.0.0.1:3000` in a browser, then retry — screenshots, image export, viewport, mermaid conversion, and making or closing a pane all happen in the frontend.
-- **`BOARD_HELD`?** Somebody else has the board and the wait for them ran out. The answer names the holder and how long they have had it, so say that rather than going quiet, and try once more in a moment: a person's hold is a gesture and clears on its own. Retrying in a loop does not make the board come free any sooner.
+- **`BOARD_HELD`?** Somebody else has the board and the wait for them ran out. The answer names the holder and how long they have had it, then carries the current board as `document` and `version`. Use that document if you need to reconsider the write; do not read the board again. Say who holds it rather than going quiet, and try once more in a moment: a person's hold is a gesture and clears on its own. Retrying in a loop does not make the board come free any sooner.
 - **`DOING_REQUIRED`?** The write said nothing about what it was doing and nothing was written. Add `--doing "..."` (the `doing` argument over MCP) and run it again. Do not reach for the last claim reason: that is the campaign, and this is the step. See [One writer at a time](#workflow-one-writer-at-a-time).
-- **`BOARD_VERSION_CONFLICT`?** The board moved between the last time you were told what it was and this write, so nothing was written. Another archboard writer — an agent, or the person at the canvas — got there first, and the refusal says by how many writes. You are told once and your next write will land, so landing proves nothing: read the board first (`describe`, or `changes --coalesce`) and decide again, because somebody moved something you were reasoning about. See [One writer at a time](#workflow-one-writer-at-a-time).
-- **`CLAIM_REVOKED`?** The person at the canvas took a board you had claimed. You are told once, and nothing you wrote was undone, so the board sits part way through whatever you were doing. Stop, say what you finished and what state that leaves it in, and leave the board alone rather than claiming it again. Your next write is an ordinary write and takes the board only for as long as it writes. See [One writer at a time](#workflow-one-writer-at-a-time).
+- **`BOARD_VERSION_CONFLICT`?** The board moved between the last time you were told what it was and this write, so nothing was written. Another archboard writer — an agent, or the person at the canvas — got there first, and the refusal says by how many writes. It also carries the current `document` and `version`; inspect those instead of calling `describe` or `changes`. You are told once and your next write will land, so landing proves nothing: decide again from the attached document because somebody moved something you were reasoning about. See [One writer at a time](#workflow-one-writer-at-a-time).
+- **`CLAIM_REVOKED`?** The person at the canvas took a board you had claimed. You are told once, and nothing you wrote was undone, so the board sits part way through whatever you were doing. The refusal's `document` and `version` are that partial board; use them rather than reading it again. Stop, say what you finished and what state that leaves it in, and leave the board alone rather than claiming it again. Your next write is an ordinary write and takes the board only for as long as it writes. See [One writer at a time](#workflow-one-writer-at-a-time).
 - **Elements not appearing?** Check `describe` — they may be off-screen. `viewport --fit --pane <spec>` frames everything on that pane's board, and `viewport --ids a,b,c` frames a subgraph (`set_viewport` with `scrollToContent` or `scrollToElementIds` in MCP).
 - **Arrow not connecting?** Verify element IDs with `get <id>`. Make sure `startElementId`/`endElementId` match existing element IDs.
 - **Canvas in a bad state?** `snapshot save` first, then `clear --yes` and rebuild. Or `snapshot restore` to go back.

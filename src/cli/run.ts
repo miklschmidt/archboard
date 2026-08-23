@@ -1,6 +1,6 @@
 import { CliUsageError } from './args.js';
 import {
-  boardHoldSeen, setExpectedVersion, setRequestedBoard, setWriteDoing
+  boardHoldSeen, formatBoardRefusal, setExpectedVersion, setRequestedBoard, setWriteDoing
 } from '../core/canvas-client.js';
 import { packageVersion } from '../core/package-version.js';
 import * as server from './commands/server.js';
@@ -421,8 +421,8 @@ function printHelp(): void {
   '    moved past it, naming both versions. You need it only where the canvas cannot know who you',
   '    are — a CLI process with no claim. Under a claim it fills the version in for you.',
     '  Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required,',
-    '               5 board write refused (the note changed on disk, or it moved past',
-    '               --expect-version).',
+    '               5 board write refused (held, claim revoked, version moved, or the',
+    '               note changed on disk).',
     '  Canvas-driving commands auto-start the server (disable with EXCALIDRAW_NO_AUTOSTART=1).',
     '  Canvas URL comes from EXPRESS_SERVER_URL (default http://127.0.0.1:3000) or --url.',
     '',
@@ -436,11 +436,15 @@ function exitCodeFor(error: unknown): number {
   const code = (error as any)?.code;
   if (code === 'CANVAS_UNREACHABLE') return 3;
   if (code === 'BROWSER_REQUIRED') return 4;
-  // Both refusals leave the board unwritten and both are the writer's to
-  // resolve, so they share the exit status a script already watches for: the
-  // note changed underneath, or another archboard writer got there first
-  // (ADR 0006, TASK-091).
-  if (code === 'BOARD_CONFLICT' || code === 'BOARD_VERSION_CONFLICT') return 5;
+  // Every refusal leaves the board unwritten, so they share the exit status a
+  // script already watches for. The attached body says whether another holder,
+  // a revoked claim, a moved version or a changed note stopped it.
+  if (
+    code === 'BOARD_CONFLICT' ||
+    code === 'BOARD_HELD' ||
+    code === 'BOARD_VERSION_CONFLICT' ||
+    code === 'CLAIM_REVOKED'
+  ) return 5;
   // A missing board is a mistake at the keyboard, like any other usage error.
   if (code === 'BOARD_REQUIRED') return 2;
   return 1;
@@ -546,7 +550,7 @@ export async function runCli(argv: string[]): Promise<void> {
     await command.handler(rest);
   } catch (error) {
     if (!(error as any)?.quiet) {
-      process.stderr.write(`Error: ${(error as Error).message}\n`);
+      process.stderr.write(`Error: ${formatBoardRefusal(error) ?? (error as Error).message}\n`);
     }
     // A refused write does not stop the board being drawn on, it stops the
     // board being saved (ADR 0006, TASK-079). The refusal above has already
