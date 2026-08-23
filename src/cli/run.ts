@@ -2,7 +2,7 @@ import { CliUsageError } from './args.js';
 import {
   boardHoldSeen, setExpectedVersion, setRequestedBoard, setWriteDoing
 } from '../core/canvas-client.js';
-import { packageVersion } from '../core/version.js';
+import { packageVersion } from '../core/package-version.js';
 import * as server from './commands/server.js';
 import * as elements from './commands/elements.js';
 import * as scene from './commands/scene.js';

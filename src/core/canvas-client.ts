@@ -3,7 +3,7 @@ import type { SelectionReport } from './describe.js';
 import type { PanesReport } from './panes.js';
 import { ServerElement } from '../types.js';
 import { EXPRESS_SERVER_URL, ENABLE_CANVAS_SYNC } from './config.js';
-import type { BoardWriteConflict } from './board.js';
+import type { BoardWriteConflict } from './board-version.js';
 import type { HoldReport } from './board-hold.js';
 import type { Claim } from './board-lock.js';
 import type { CompareResult } from './compare.js';
