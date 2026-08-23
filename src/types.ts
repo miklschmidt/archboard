@@ -237,7 +237,7 @@ export type WebSocketMessageType =
   | 'board_note'
   // An agent changed this board and said what it was doing (TASK-095). Beside
   // the lock and not part of it: the lock says who has the board, the claim's
-  // reason says what campaign they are on, and this is the step. Carries the
+  // reason says what the claim is for, and this is the step. Carries the
   // last few lines as well as the new one, so a pane that has just arrived on
   // the board is not blank until the next write.
   | 'board_doing'

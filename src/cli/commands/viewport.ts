@@ -37,7 +37,7 @@ export async function viewport(argv: string[]): Promise<void> {
     throw new CliUsageError(
       'Say exactly one thing to do with the camera: --fit (everything on the board), ' +
       '--ids a,b,c (fit those elements), --element <id> (centre on one), ' +
-      'or --zoom / --offset-x / --offset-y (set it by hand).'
+      'or --zoom / --offset-x / --offset-y (set explicit values).'
     );
   }
   if (flags['zoom-factor'] !== undefined && flags.fit !== true && flags.ids === undefined) {

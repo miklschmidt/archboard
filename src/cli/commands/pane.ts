@@ -2,7 +2,7 @@
 //
 // The report of what is on screen is `panes`, plural, and it is read-only.
 // This is the singular: one pane, made or taken away. They are deliberately
-// different commands — reading the glass every turn is cheap and safe, and
+// different commands — reading the scene every turn is cheap and safe, and
 // changing what is on it is neither.
 
 import { parseArgs, CliUsageError } from '../args.js';

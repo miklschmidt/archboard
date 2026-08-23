@@ -16,7 +16,8 @@ import { canMeasure, measureText } from './measure-text.js';
 //
 // There used to be two somethings. This one, on the way into a note, and
 // Excalidraw's own `convertToExcalidrawElements` in the browser on the way
-// into a pane — a converter we did not control, which we then patched by hand.
+// into a pane — a converter we did not control, which we then corrected
+// locally.
 // Given one board of nine elements the two produced documents differing on
 // fourteen fields. Divergence between two copies of one thing is invisible
 // until it is expensive, and it was: a label that multiplied every time the
@@ -36,7 +37,7 @@ import { canMeasure, measureText } from './measure-text.js';
 // Measured with that check, against this version of Excalidraw, the only
 // thing a render rewrites is `index` — so the defaults below come from
 // Excalidraw's own `DEFAULT_ELEMENT_PROPS` and `AppState` rather than from a
-// second converter's output, and they are the values a shape a human drew
+// second converter's output, and they are the values a shape a user drew
 // would carry.
 
 export interface ExpandOptions {
@@ -154,15 +155,15 @@ function inZOrder<T extends { index?: string | null }>(elements: T[]): T[] {
 }
 
 /**
- * What a board owes an element that has just been deleted.
+ * References the board must settle after an element is deleted.
  *
  * Three things point at an element by id, and every one of them is a hole once
  * the element is gone. A bound text names its container in `containerId`, a
  * container names its label and its arrows in `boundElements`, and an arrow
  * names both ends in `startBinding` and `endBinding`.
  *
- * The pane repairs the first two on delivery, in `elementsForScene` — it has
- * to, because Excalidraw dereferences them as it renders and a pointer at
+ * The pane repairs the first two on a server update, in `elementsForScene` —
+ * it has to, because Excalidraw dereferences them as it renders and a pointer at
  * nothing is the one shape it will not survive. So a store that leaves them is
  * a store holding a document the renderer rewrites, which under ADR 0015 is a
  * board with two answers, and `scripts/check-live-session.mjs` catches it as
@@ -172,7 +173,7 @@ function inZOrder<T extends { index?: string | null }>(elements: T[]): T[] {
  * A label goes with its container rather than being cut loose, because a label
  * is part of the thing it names. Deleting a box and leaving its word floating
  * is not what anybody means by deleting the box, and it is not what Excalidraw
- * does when a human presses delete on one.
+ * does when a user deletes one.
  *
  * Returns the ids that went with them and the elements it had to rewrite.
  */
@@ -324,8 +325,8 @@ export function canonicalizeKeys(v: any): any {
  * Called two ways, and neither is a second implementation of anything:
  *
  *   · over a whole document, by `scene-document` on the way to a note and by
- *     `share-url` on the way to a URL. Every element is in hand, so z-order is
- *     restated across the lot.
+ *     `share-url` on the way to a URL. The whole element list is available, so
+ *     z-order is restated across the lot.
  *   · over one write, through `expandForBoard`, which is this call with
  *     `forStore` and one thing done first.
  *
@@ -377,7 +378,7 @@ export function expandElements(
       // draws is rounded. `convertToExcalidrawElements` produced `null` here,
       // which is that converter declining to choose rather than Excalidraw
       // wanting square corners, and adopting it would have made every
-      // agent-drawn box differ from every hand-drawn one.
+      // agent-drawn box differ from every user-drawn one.
       roundness: rest.roundness ?? (
         el.type === 'rectangle' || el.type === 'diamond' || el.type === 'ellipse'
           ? { type: 3 } : null
@@ -461,9 +462,9 @@ export function expandElements(
       if (el.type === 'arrow') base.elbowed = rest.elbowed ?? false;
     }
 
-    // Freedraw carries a stroke's own record of how it was drawn. A hand-drawn
+    // Freedraw carries a stroke's own record of how it was drawn. A user-drawn
     // one always has these; one an agent wrote had none, so the browser filled
-    // them in on delivery and the note never learned.
+    // them in on a server update and the note never learned.
     if (el.type === 'freedraw') {
       base.points = rest.points ?? [];
       base.pressures = rest.pressures ?? [];
@@ -476,7 +477,7 @@ export function expandElements(
     // synced from a browser tab, or a re-imported expanded export).
     // A reference to a text element that is not here is not a label. An
     // element left holding one — a pane that reported a deletion, a scene
-    // edited by hand — must still be able to grow a real one.
+    // edited by a user — must still be able to grow a real one.
     //
     // Judged against the whole document when there is one. A write names a few
     // elements and the board holds the rest, so `expandForBoard` is where the
@@ -655,7 +656,7 @@ export function expandForBoard(
   // survives: the text names its container in `containerId`, the container
   // names its text in `boundElements`. A pane reports the text the instant a
   // person types into it while the container has nothing new to say; a note
-  // edited by hand or a scene imported from elsewhere can arrive with one end
+  // edited by a user or a scene imported from elsewhere can arrive with one end
   // missing outright. The expansion below looks at the container's end only,
   // so on such a board a write carrying a label would read as a label nobody
   // had expanded, and it would expand a second one.

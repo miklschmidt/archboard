@@ -1,6 +1,6 @@
 // Layout primitives shared by the read-back paths.
 //
-// On the Flip, moving a box is a statement about the design (AGENTS.md), so
+// A user moving a box is a statement about the design (AGENTS.md), so
 // every surface that reads a board back has to be able to say something about
 // where things sit. The two things worth saying are the same everywhere:
 // **what is near what** (proximity clustering) and **whereabouts on the board**
@@ -24,9 +24,9 @@ export interface Box {
 // for arrows: an arrow's stored `x, y` is its first point, not its top-left,
 // and an arrow that runs leftwards or upwards is nowhere inside
 // `x .. x + width`. Everything in this file is fed boxes, so a reader that
-// builds one by hand puts arrows in the wrong cluster, the wrong region and
-// outside the frame — and those signals are what an agent narrates back when a
-// human rearranges the board (TASK-038). `geometry.ts` does the measuring;
+// builds one directly from those fields puts arrows in the wrong cluster, the
+// wrong region and outside the frame — and those signals are what an agent narrates back when a
+// user rearranges the board (TASK-038). `geometry.ts` does the measuring;
 // this is the adapter into Box's vocabulary.
 export function boxOf(element: Measurable | null | undefined): Box {
   const extent = extentOf(element);
@@ -82,7 +82,7 @@ export function boundingBoxOf(boxes: Box[]): BoundingBox | null {
 
 // Did this shape's centre stay put? `regionName` reads the centre and nothing
 // else, so an unchanged centre is a proof: whatever new region name the shape
-// has been handed, it came from the frame moving and not from the shape.
+// has been assigned, it came from the frame moving and not from the shape.
 // Absolute, and therefore only ever true when the two sides share a coordinate
 // system — which is the case it is for.
 export function sameCentre(a: Box, b: Box, tolerance = 1): boolean {

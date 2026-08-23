@@ -23,33 +23,33 @@
 // environment to read. `src/core/labels`, `src/core/appearance` and
 // `src/core/expand-elements` cross the same boundary the same way.
 
-// ── A human's edits reaching the server ───────────────────────────────────
+// ── A user's edits reaching the server ────────────────────────────────────
 
 /**
- * How long the pane waits after a human's last change before posting the
+ * How long the pane waits after a user's last change before posting the
  * delta (`useCanvasSession.scheduleReport`).
  *
- * A human edit should be on the server before they finish saying what they
+ * A user edit should be on the server before they finish saying what they
  * did. The report is a delta, not the scene, so this can be short without
  * being expensive.
  *
  * It is a trailing debounce with no maximum wait, restarted on every change,
- * so a continuous drag posts nothing at all until 400 ms after the finger
+ * so a continuous drag posts nothing at all until 400 ms after the pointer
  * lifts. That matters for the lock. ADR 0016 says an agent's wait is bounded
  * by this window, and the accurate version is narrower: this bounds how long a
- * human's hold lasts *after the last change of a gesture*, not how long the
- * hold lasts. Nothing used to reach the server at the start of a gesture, so
+ * user's hold lasts *after the last change of an edit*, not how long the
+ * hold lasts. Nothing used to reach the server at the start of an edit, so
  * TASK-067 gave the pane a second message that does: `POST /api/boards/hold`
  * goes out on the leading edge of the first change and again every
- * LOCK_RENEW_MS while the hand keeps moving, and the release goes out once
+ * LOCK_RENEW_MS while the edit continues, and the release goes out once
  * this debounce has fired and the report has landed. So an agent's wait is a
- * gesture plus this plus a write, and it is the *renewal* rather than this
+ * edit plus this plus a write, and it is the *renewal* rather than this
  * number that carries a hold across a long drag.
  *
  * It bounds the wait at the other end too. A person's hold waits this long for
- * a board somebody else has, because a hand that landed inside an agent's
+ * a board somebody else has, because an edit that starts during an agent's
  * twenty-millisecond write has not lost the board and must not be told it has —
- * and this is exactly how long that person was going to wait for their change
+ * and this is exactly how long that user was going to wait for their change
  * to be written anyway. Shortening it therefore makes a pane readier to
  * conclude it has lost the board.
  */
@@ -89,11 +89,11 @@ export const SELECTION_DEBOUNCE_MS = 150
  * Gathered here rather than left inline because ADR 0016 gives it a second
  * job it does not have yet. Lock state is broadcast over this socket, and a
  * pane that cannot hear the broadcast has to assume the board is held rather
- * than that it is free. So this is also the longest a pane can sit refusing a
- * human's touch after a blip, and shortening it is how that gets less
- * annoying. It is deliberately unrelated to REPORT_DEBOUNCE_MS: change
+ * than that it is free. So this is also the longest a pane can refuse a user's
+ * edit after a brief disconnect. It is deliberately unrelated to
+ * REPORT_DEBOUNCE_MS: change
  * reports go by HTTP and are not gated on the socket, so a dropped socket must
- * not also stop a human's edits reaching the server.
+ * not also stop a user's edits reaching the server.
  */
 export const SOCKET_RECONNECT_MS = 3000
 
@@ -133,7 +133,7 @@ export const PANE_SETTLE_CAP_MS = 1500
  * The acknowledgement is the pane appearing in the registry or its socket
  * closing, never a promise from the shell, because a registration is the only
  * evidence anywhere that a pane exists. This is the outer bound on that, and
- * it is generous because failing it means telling a human their split did not
+ * it is generous because failing it means telling a user their split did not
  * happen when it may only have been slow.
  */
 export const PANE_LAYOUT_TIMEOUT_MS = 10000
@@ -188,7 +188,7 @@ export const DEFAULT_INJECT_DEBOUNCE_MS = 4000
  * doing. Overridable with ARCHBOARD_INJECT_MIN_INTERVAL_MS.
  *
  * The debounce coalesces a burst; this bounds a steady stream. Somebody
- * working continuously at the wall generates events forever, and an agent
+ * working continuously on the board generates events forever, and an agent
  * being told about them every four seconds cannot get anything else done.
  */
 export const DEFAULT_INJECT_MIN_INTERVAL_MS = 10_000
@@ -210,9 +210,9 @@ export const DEFAULT_INJECT_MIN_INTERVAL_MS = 10_000
  * lease, not the board, and this is what that crash costs.
  *
  * It has to clear REPORT_DEBOUNCE_MS plus a write with room to spare, or a
- * human's own lock expires under their finger in the gap between two reports.
+ * user's own lock expires during the gap between two reports.
  * 400 against 3000 is that room. What actually covers a long drag is renewal,
- * not this number, so raising it to survive a slow gesture is the wrong fix,
+ * not this number, so raising it to survive a long edit is the wrong fix,
  * and it is paid for in how long a crashed holder keeps the board.
  */
 export const LOCK_LEASE_MS = 3000
@@ -233,8 +233,8 @@ export const LOCK_RENEW_MS = 1000
  * How long an agent waits for a board somebody else holds before giving up and
  * naming the holder.
  *
- * An agent waits rather than failing, because a human's hold is a gesture and
- * not a session, so the expected wait is one gesture plus REPORT_DEBOUNCE_MS.
+ * An agent waits rather than failing, because a user's hold covers one edit
+ * rather than a session, so the expected wait is one edit plus REPORT_DEBOUNCE_MS.
  * When it does give up it says who holds the board and since when, so a voice
  * session has something to say instead of going silent.
  *
@@ -259,7 +259,7 @@ export const LOCK_WAIT_CAP_MS = 5000
  *
  * It is the granularity of the wait, so it is also the floor on how quickly a
  * released board is picked up. Raising it makes an agent look slow behind a
- * human who has just finished; lowering it buys nothing once it is under the
+ * user who has just finished; lowering it buys nothing once it is under the
  * time a write takes.
  */
 export const LOCK_POLL_MS = 50
@@ -292,12 +292,12 @@ export const LOCK_STEAL_GUARD_MS = 25
  * promote, demote and a multi-id delete are one write per element), so a
  * single agent action can take and release the lock a dozen times in as many
  * milliseconds. Broadcast raw, that is a dozen round trips of every pane
- * flicking in and out of read-only under somebody's hand.
+ * flicking in and out of read-only while the user edits.
  *
  * A linger errs toward saying a free board is held, which is the direction
  * this whole mechanism errs in (ADR 0016: a pane that cannot be told must
  * assume the board is held). One renewal interval is long enough to swallow a
- * fan-out and short enough that a human never notices a board they can already
+ * fan-out and short enough that a user never notices a board they can already
  * write to.
  */
 export const LOCK_FREE_LINGER_MS = LOCK_RENEW_MS
@@ -310,7 +310,7 @@ export const LOCK_FREE_LINGER_MS = LOCK_RENEW_MS
  * A claim is what an agent takes when it knows in advance that it is about to
  * redraw a board rather than move one box. This is the only number here that
  * bounds a *person's* wait rather than a machine's: for as long as it runs, the
- * board on the wall is somebody else's, and the way out is the take-back on the
+ * board is claimed by somebody else, and the way out is the take-back on the
  * banner rather than waiting it out.
  *
  * Ten minutes is a redraw and not a session. Long enough that an agent reading
@@ -324,13 +324,13 @@ export const CLAIM_DEFAULT_MS = 10 * 60_000
  * The longest claim anybody may ask for, however long they said.
  *
  * The expiry is what bounds a *working* agent — the lease and its renewal bound
- * a dead one — so this is the cap on how long the wall can be somebody else's
+ * a dead one — so this is the cap on how long the board can remain claimed
  * without a person doing anything. An hour is the outside of a plausible
  * restructure. An agent that needs longer says so again, which is a claim it
  * has to still be alive to make.
  *
  * A claim asking for more is shortened rather than refused: the request was
- * about the work, not about the wall, and a refusal would leave the agent
+ * about the work, not about the display, and a refusal would leave the agent
  * unclaimed and drawing anyway.
  */
 export const CLAIM_MAX_MS = 60 * 60_000

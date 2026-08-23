@@ -15,9 +15,9 @@ import { extentOf } from './geometry.js';
 // Promotion — declaring a set of elements to be a node, giving it a kind and
 // usually a binding in the same act (CONTEXT.md).
 //
-// The interaction this exists for: a human picks boxes by hand on a large
-// touchscreen and says "map this to the payments service". No element ids are
-// spoken, so the default target is the live selection and everything else is
+// The interaction this exists for: a user selects boxes and says "map this to
+// the payments service". No element ids are spoken, so the default target is
+// the live selection and everything else is
 // an override.
 //
 // Metadata is written to `customData.archboard` (ADR 0003), merged rather than
@@ -312,7 +312,7 @@ export function resolveBinding(request: BindingRequest, origin: BindingOrigin): 
   };
 
   // Only link to something that is actually here. A bogus file:// URL renders
-  // as a tappable affordance on the board that opens nothing.
+  // as a link on the board that opens nothing.
   return {
     address,
     ...(exists ? { link: `file://${absolute}` } : {}),
@@ -427,8 +427,8 @@ function partition(targets: ServerElement[], board: ServerElement[]): {
 // to show that. Two jobs at once:
 //
 //  - hit-testing, for anything still transparent: a shape drawn before this
-//    existed, or imported, is only tappable on its stroke (appearance.ts), and
-//    a node nobody can tap is a node nobody can re-select and talk about.
+//    existed, or imported, is selectable only on its stroke (appearance.ts),
+//    and a node with no selectable interior is hard to re-select and discuss.
 //  - meaning: the kind's pastel makes a node look unlike a scratch box, which
 //    is the one thing every node has and the thing a human reads at a glance.
 //
@@ -532,8 +532,8 @@ export function planPromotion(request: PromotionRequest): PromotionPlan {
     //
     // Biggest is measured, not read off `width` and `height`: a selection can
     // hold an arrow, whose stored size is the box round its path and whose
-    // stored origin is its first point, so the untouched numbers can hand the
-    // node's name to the connector instead of the box (TASK-038).
+    // stored origin is its first point, so the untouched numbers can assign the
+    // connector's label to the node instead of the box's label (TASK-038).
     const areaOf = (el: ServerElement) => { const e = extentOf(el); return e.width * e.height; };
     const labelled = shapes
       .map(el => ({ el, label: labelOf(el, board), area: areaOf(el) }))
@@ -589,7 +589,7 @@ export function planPromotion(request: PromotionRequest): PromotionPlan {
         id: el.id,
         customData: mergedCustomData(el, block),
         // Rebinding has to clear a link the previous binding left behind —
-        // otherwise the shape stays tappable to the file it used to mean.
+        // otherwise the shape keeps linking to the file it used to mean.
         ...(binding ? { link: binding.link ?? null } : {}),
         ...fillFor(el, kind)
       });
@@ -614,7 +614,7 @@ export function planPromotion(request: PromotionRequest): PromotionPlan {
 // Demotion — promotion has to be reversible
 // ---------------------------------------------------------------------------
 //
-// A node is a set of elements, so demotion works on whole nodes: touch any
+// A node is a set of elements, so demotion works on whole nodes: select any
 // member and the whole node comes back down. Only the `archboard` block is
 // removed — another tool's `customData` is not ours to delete — and `link` is
 // cleared only when it is the one our binding put there.

@@ -333,8 +333,8 @@ class Injector {
 
   private consider(event: ChangeEvent): void {
     if (!this.armed) return;
-    // The agent's own drawing is not news to the agent. Only a change with a
-    // human's hand in it is worth spending its context on.
+    // The agent's own drawing is not news to the agent. Only a change that
+    // includes a user edit is worth spending its context on.
     if (event.origin === 'agent') return;
 
     this.pending.push(event);

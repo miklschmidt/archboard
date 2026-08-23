@@ -27,7 +27,7 @@
 //    text — "Decision diamond (yes upper-left, no lower-left)" and so on.
 //  - A handful of multi-text items do not resolve to one obvious candidate
 //    after filtering (e.g. cloud's AWS/GCP logos each carry two text
-//    fragments) and are named by an explicit, hand-picked override.
+//    fragments) and are named by an explicit override.
 //  - The 41 with no text at all (cloud, drwnio, software-architecture,
 //    system-design) were identified visually: rendered in a labelled grid on
 //    a scratch canvas, screenshotted in batches of ~8, and named from what

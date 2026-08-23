@@ -17,7 +17,7 @@
 // already a block id (`ids.ts`), so on a board this server wrote there is
 // nothing here to rename; what is left for it are ids that came from
 // somewhere else — Excalidraw's own 21-character nanoids, an imported scene,
-// a hand-edited note. The rename is deterministic and the derivation has not
+// a user-edited note. The rename is deterministic and the derivation has not
 // changed, so a note written by an older archboard keeps the ids it has.
 //
 // A save regenerates the scene and nothing else: see "note regions" below.

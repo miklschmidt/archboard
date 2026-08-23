@@ -483,7 +483,7 @@ function buildBoard(input: CompareSideInput): BoardModel {
     const primary = ranked[0]!;
 
     // Merge the archboard block across the node's elements, primary first:
-    // promotion writes the same block to every member, but a hand-edited board
+    // promotion writes the same block to every member, but a user-edited board
     // may only carry it on one.
     const block: ArchboardBlock = {};
     for (const el of [primary, ...elements]) {
@@ -1057,7 +1057,7 @@ function relationOf(a: Box, b: Box): string {
 }
 
 // The pairwise pass is the only place with a budget, and it is declared rather
-// than applied silently. Boards are drawn by hand on a screen, so this is
+// than applied silently. Users create boards interactively, so this is
 // generous by two orders of magnitude for anything real.
 const MAX_RELATION_PAIRS = 20000;
 

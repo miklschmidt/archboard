@@ -16,9 +16,9 @@
 // behind that one call. The ADR is explicit about why: "a lock where every
 // caller assembles the same steps itself is a lock whose callers drift apart".
 //
-// The gesture path is the same lock asked a different question. A person's hold
-// spans requests — taken by the first change of a drag, released after the
-// report of that drag has landed — so `holdBoard` and `releaseHold` are the two
+// The user-edit path is the same lock asked a different question. A user's hold
+// spans requests — taken by the first change of an edit, released after the
+// report of that edit has landed — so `holdBoard` and `releaseHold` are the two
 // halves of `withBoardLock` exposed for the two routes that serve it. Nothing
 // else should call them; a write that wants the board wants `withBoardLock`.
 //
@@ -36,18 +36,18 @@
 //
 // A LOCK FILE THAT CANNOT BE READ IS NOT A HELD BOARD. Missing, truncated, not
 // JSON, or JSON without an expiry: all of it reads as nothing holding the
-// board. The alternative is a wedged board recoverable only by hand, which is
-// the failure the lease exists to prevent, arriving through a corrupt file
-// instead of a dead process.
+// board. The alternative is a wedged board recoverable only by manually
+// deleting the lock file, which is the failure the lease exists to prevent,
+// arriving through a corrupt file instead of a dead process.
 //
 // READS NEVER LOCK, and nothing here should be made to guard one. A write goes
 // through a rename (`atomic-write.ts`), so a reader sees the whole old note or
 // the whole new one. Locking a read would buy nothing and would put every
 // `describe` behind whoever is drawing.
 //
-// IT IS A BROADCAST AS WELL AS A GUARD. A canvas applies a change the instant a
-// finger moves, so refusing that change when it is finally written would take
-// the board away mid-gesture. Panes are told before the touch instead:
+// IT IS A BROADCAST AS WELL AS A GUARD. A canvas applies a change as soon as
+// the pointer moves, so refusing it when it is finally written would interrupt
+// the edit. Panes are told before the edit instead:
 // `onBoardLockChanged` is where that news goes, and the server turns it into a
 // `board_lock` message. Whether a pane can hear it is the pane's problem and it
 // fails closed — see `frontend/src/canvas/useCanvasSession.ts`.
@@ -58,7 +58,7 @@
 // take it back at any moment. Cross-process *news* is what makes the claim
 // visible on a second canvas over one vault — that canvas is excluded correctly
 // because exclusion reads the file, and `watchBoardLocks` is what stops its
-// panes finding out at the write rather than before the touch (TASK-080).
+// panes finding out at the write rather than before the edit (TASK-080).
 
 import fs from 'node:fs';
 import os from 'node:os';
@@ -89,7 +89,7 @@ export type HolderKind = 'human' | 'agent';
  * `id` is a pane's client id for a person, a per-write id for an agent, and the
  * claim's own id for every write made under a claim. It is what makes the lock
  * reentrant: a holder asking again renews rather than blocks, which is how one
- * gesture's hold covers the write that follows it, and how twenty writes fit
+ * user edit's hold covers the write that follows it, and how twenty writes fit
  * inside one claim with no gap between them.
  */
 export interface LockHolder {
@@ -126,7 +126,7 @@ interface LockRecord extends LockHolder {
  * The board is held by somebody else, and here is who.
  *
  * Thrown only after the wait has run out, because an agent waits rather than
- * failing (ADR 0016): the expected wait is a gesture and a write, so failing
+ * failing (ADR 0016): the expected wait is an edit and a write, so failing
  * immediately would report a queue that was about to clear. Carries the holder
  * as data so a surface can act on it rather than parse the sentence, and a
  * sentence so a voice session has something to say instead of going silent.
@@ -153,7 +153,7 @@ export interface LockHold {
    * Did this call take the lock, or join one the same holder already had?
    *
    * The only reason a caller cares: releasing what you did not take is how a
-   * person's gesture loses the board to the write in the middle of it.
+   * user's edit loses the board to the write in the middle of it.
    */
   created: boolean;
 }
@@ -164,13 +164,13 @@ export interface LockRequest {
   holder: { id: string; kind: HolderKind; reason?: string; claimed?: boolean };
   /**
    * How long to wait for somebody else, in ms. Defaults to LOCK_WAIT_CAP_MS,
-   * which is what an agent uses: a person's hold is a gesture, so the expected
-   * wait is short and waiting beats failing.
+   * which is what an agent uses: a person's hold tracks one edit interaction,
+   * so the expected wait is short and waiting beats failing.
    *
    * A person's own hold passes REPORT_DEBOUNCE_MS instead. An agent's write is
-   * about twenty milliseconds and a hand that landed inside one has not lost
+   * about twenty milliseconds and an edit that starts during one has not lost
    * the board, but a person cannot be made to wait five seconds to find out
-   * whether their pen works. Zero means ask once.
+   * whether their edit was accepted. Zero means ask once.
    */
   waitMs?: number;
   /** How long the lease runs, in ms. Defaults to LOCK_LEASE_MS. */
@@ -222,7 +222,7 @@ export async function withBoardLock<T>(request: LockRequest, write: () => T): Pr
 /**
  * Take the board, or renew a hold this holder already has, or wait, or refuse.
  *
- * The gesture half of the lock, and the renewal too: renewing is asking again,
+ * The user-edit half of the lock, and the renewal too: renewing is asking again,
  * so a live holder keeps the board without anything having to remember to
  * refresh it, and a holder that stops asking lapses on its own. TASK-080's
  * A claim is this call too, with a reason and a deadline the canvas keeps
@@ -237,7 +237,7 @@ export async function holdBoard(request: LockRequest): Promise<LockHold> {
   const deadline = startedAt + waitMs;
 
   let blocker: LockHolder | null = null;
-  // Bounded so that a lock being handed round faster than we can read it ends
+  // Bounded so that a lock moving between holders faster than we can read it ends
   // in a refusal naming somebody rather than in a loop.
   let attemptsPastDeadline = 0;
 
@@ -263,8 +263,8 @@ export async function holdBoard(request: LockRequest): Promise<LockHold> {
  * Give the board back.
  *
  * Only if it is still ours: a lease that lapsed and was taken over belongs to
- * whoever took it, and deleting the file then would hand a third writer a board
- * somebody is in the middle of. Returns whether anything was released, which is
+ * whoever took it, and deleting the file then would let a third writer use a
+ * board somebody is editing. Returns whether anything was released, which is
  * how a pane's release tells "I gave it back" from "it had already lapsed".
  */
 export function releaseHold(board: string, holderId: string): boolean {
@@ -306,8 +306,8 @@ export function boardLockState(board: string): LockHolder | null {
 // its renewal bound a dead *canvas*: stop renewing and the board is free within
 // one lease, which is what keeps a crash from costing the vault a board for as
 // long as the claim was for. The claim's own expiry bounds a working agent, and
-// with it an agent that walked away — capped, so the wall is never somebody
-// else's for longer than an hour without a person doing anything. And the
+// with it an agent that walked away — capped, so the board is never unavailable
+// for longer than an hour without a person doing anything. And the
 // person is the third bound, at any moment, from the pane.
 
 /** An agent's claim on a board: who holds it, why, and when it runs out. */
@@ -333,7 +333,7 @@ export interface ClaimRevocation {
  * write renews the *lease* and not the claim, or the expiry that is supposed to
  * bound a working agent would be pushed forward by the very work it bounds.
  *
- * Waits like any other holder if somebody is mid-gesture, and refuses with a
+ * Waits like any other holder if somebody is mid-edit, and refuses with a
  * `BoardHeldError` if they are still there. Claiming is not a way past the
  * person at the canvas.
  */
@@ -399,8 +399,8 @@ export function claimOn(board: string): Claim | null {
  *
  * Only the id, deliberately. A write that finds the lock file no longer holding
  * the claim — a person took it back a moment ago on another canvas — takes an
- * ordinary per-write hold and gives it back, rather than writing the claim
- * back into existence under the hand of the person who just ended it.
+ * ordinary per-write hold and gives it back, rather than restoring the claim
+ * while the person who revoked it is still editing.
  */
 export function claimWriterId(board: string): string | null {
   return liveClaim(normalizeBoardKey(board))?.holder.id ?? null;
@@ -483,8 +483,8 @@ function renewClaim(board: string): void {
   // The lock is not ours any more, and a renewal may not take it back. That
   // distinction is the whole of cross-canvas revocation: a person at another
   // canvas takes the board and lets go of it a second later, and a renewal that
-  // took a free lock would put the claim back under the hand of the person who
-  // just ended it, with nobody ever told.
+  // took a free lock would restore the claim while the person who revoked it
+  // is still editing, with nobody ever told.
   noteClaimRevoked(board, entry.holder, boardLockState(board));
 }
 
@@ -530,7 +530,7 @@ function noteClaimRevoked(board: string, lost: LockHolder, by: LockHolder | null
  * Taking or releasing a board is news the canvas that did it can send, and a
  * second canvas over the same vault has nothing to tell it, because the lock is
  * a file and a file does not call anybody. Its panes are excluded correctly and
- * find out at the write rather than before the touch, which is the yank the
+ * find out at the write rather than before the edit, which is the interruption the
  * broadcast exists to prevent, surviving in the one configuration nobody has
  * yet run.
  *
@@ -538,7 +538,7 @@ function noteClaimRevoked(board: string, lost: LockHolder, by: LockHolder | null
  * claim it is a pane that is wrong for minutes, and ADR 0016 named the claim as
  * what makes this earn itself.
  *
- * `boards` is asked, rather than a list being handed over, because which boards
+ * `boards` is asked, rather than a list being passed in, because which boards
  * are on screen changes with every pane and every board switch, and a stale
  * copy of it is a board watched after it left the screen. Pass null to stop:
  * with nothing rendering there is no pane to be wrong.
@@ -605,7 +605,7 @@ export function onBoardLockChanged(sink: LockSink | null): void {
 }
 
 /**
- * Forget every hold and every pending announcement, without touching the vault.
+ * Forget every hold and every pending announcement, without modifying the vault.
  *
  * For a check that wants a clean process, and for nothing else. Releasing a
  * board is `releaseHold`; this only drops what *this process* remembers having
@@ -662,7 +662,7 @@ async function attempt(
   const live = liveRecord(current);
   // A person taking a board an agent claimed. Not "an agent holds it": a write
   // is twenty milliseconds and is waited out, and a claim is the only hold long
-  // enough for waiting it out to mean standing at a dead wall.
+  // enough for waiting it out to mean an unresponsive board.
   const revoking = Boolean(live && revoke && who.kind === 'human' && live.claimed && live.id !== who.id);
 
   // WHETHER THE CLAIM ENDS IS A QUESTION ABOUT THE CLAIM, NOT ABOUT THE LEASE
@@ -672,7 +672,7 @@ async function attempt(
   // riding on the same flag, and a claim outlives its lease by design: it runs
   // for ten minutes over a three-second lease the canvas re-takes every second
   // (ADR 0016). Let that renewal be late — a blocked event loop, a busy
-  // machine — and the tap lands on a lock that is momentarily nobody's. The
+  // machine — and the take-back request reaches a lock that is momentarily nobody's. The
   // person got the board either way, and the agent was never told it had lost
   // it: its next write went through as if nothing had happened.
   //
@@ -755,7 +755,7 @@ async function attempt(
 
   // Taking over a lease whose holder is gone, or a claim a person is taking
   // back. The first is only ever reached after a crash, so the guard below is
-  // paid by nobody on the ordinary path; the second is paid by one tap.
+  // paid by nobody on the ordinary path; the second is paid by one take-back action.
   writeRecord(file, record);
   await sleep(LOCK_STEAL_GUARD_MS);
   const settled = readRecord(file);
@@ -819,7 +819,7 @@ function readRecord(file: string): LockRecord | null {
  * Write the lease without an fsync, and by rename.
  *
  * By rename because a reader must see one whole record or the previous one; a
- * torn lock file reads as no lock at all, which would hand the board to a
+ * torn lock file reads as no lock at all, which would let the board reach a
  * second writer while the first is mid-write. Without the fsync because a lock
  * that does not survive a power cut is a lock nobody needs — the process
  * holding it did not survive either, and the lease would have lapsed.
@@ -877,8 +877,8 @@ function announceHeld(board: string, holder: LockHolder): void {
  * The lock itself is already released; this delays only the news. An agent's
  * write is still a fan-out in places (TASK-083), so one action can take and
  * release the board a dozen times in as many milliseconds, and broadcasting
- * each release raw is every pane flicking in and out of read-only under
- * somebody's hand. A hold taken inside the window cancels the announcement
+ * each release raw is every pane flicking in and out of read-only while the
+ * user edits. A hold taken inside the window cancels the announcement
  * outright.
  *
  * The state is re-read when the timer fires rather than assumed, so a board
