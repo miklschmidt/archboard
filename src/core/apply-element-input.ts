@@ -14,7 +14,7 @@ import {
   repairIndices,
   settleDeletions
 } from './expand-elements.js';
-import { remeasureLinear } from './geometry.js';
+import { DEFAULT_LINEAR_POINTS, pointsOf, remeasureLinear } from './geometry.js';
 import { mintId } from './ids.js';
 import { recentreBoundTexts } from './labels.js';
 
@@ -108,7 +108,18 @@ export interface AppliedElementInput {
 
 function normalizePoints(points: unknown): unknown {
   if (!Array.isArray(points)) return points;
-  return points.map(point => Array.isArray(point) ? point : [point?.x, point?.y]);
+  const normalized = pointsOf(points);
+  return normalized && normalized.length === points.length
+    ? normalized.map(point => [point.x, point.y])
+    : points;
+}
+
+const hasOwn = (value: object, key: PropertyKey): boolean =>
+  Object.prototype.hasOwnProperty.call(value, key);
+
+function bumpVersion(element: ServerElement, previous?: ServerElement, at = new Date().toISOString()): void {
+  element.updatedAt = at;
+  element.version = ((previous ?? element).version || 0) + 1;
 }
 
 /**
@@ -121,7 +132,7 @@ function wellFormStatement(
   existingType?: string
 ): Record<string, unknown> {
   const statement = { ...raw };
-  if (Object.prototype.hasOwnProperty.call(statement, 'points')) {
+  if (hasOwn(statement, 'points')) {
     statement.points = normalizePoints(statement.points);
   }
 
@@ -129,7 +140,7 @@ function wellFormStatement(
     ['startElementId', 'start'],
     ['endElementId', 'end']
   ] as const) {
-    if (Object.prototype.hasOwnProperty.call(statement, alias)) {
+    if (hasOwn(statement, alias)) {
       const id = statement[alias];
       statement[ref] = typeof id === 'string' && id ? { id } : null;
     }
@@ -138,7 +149,7 @@ function wellFormStatement(
 
   const type = typeof statement.type === 'string' ? statement.type : existingType;
   if (type !== EXCALIDRAW_ELEMENT_TYPES.TEXT &&
-      Object.prototype.hasOwnProperty.call(statement, 'text')) {
+      hasOwn(statement, 'text')) {
     const text = statement.text;
     delete statement.text;
     if (typeof text === 'string') statement.label = { text };
@@ -155,7 +166,7 @@ function applyDefaultFill(element: ServerElement): void {
 function spendArrowRefs(element: Record<string, any>, stated: Record<string, any>): void {
   if (element.type !== 'arrow' && element.type !== 'line') return;
   for (const [ref, binding] of [['start', 'startBinding'], ['end', 'endBinding']] as const) {
-    const said = Object.prototype.hasOwnProperty.call(stated, ref);
+    const said = hasOwn(stated, ref);
     const value = element[ref];
     delete element[ref];
     if (said) element[binding] = bindingFromRef(value);
@@ -182,7 +193,7 @@ function wellFormNewElement(
   if ((element.type === 'arrow' || element.type === 'line') &&
       ((element as any).start !== undefined || (element as any).end !== undefined) &&
       !Array.isArray(element.points)) {
-    (element as any).points = [[0, 0], [100, 0]];
+    (element as any).points = DEFAULT_LINEAR_POINTS.map(point => [...point]);
   }
   applyDefaultFill(element);
   spendArrowRefs(element as Record<string, any>, elementParams as Record<string, any>);
@@ -213,13 +224,12 @@ function mergeElementUpdate(
     ...updates,
     fontFamily: updates.fontFamily !== undefined
       ? normalizeFontFamily(updates.fontFamily)
-      : existing.fontFamily,
-    updatedAt: new Date().toISOString(),
-    version: (existing.version || 0) + 1
+      : existing.fontFamily
   };
+  bumpVersion(element, existing);
 
-  const hasTextUpdate = Object.prototype.hasOwnProperty.call(statement, 'text');
-  const hasOriginalTextUpdate = Object.prototype.hasOwnProperty.call(statement, 'originalText');
+  const hasTextUpdate = hasOwn(statement, 'text');
+  const hasOriginalTextUpdate = hasOwn(statement, 'originalText');
   if (element.type === EXCALIDRAW_ELEMENT_TYPES.TEXT && hasTextUpdate && !hasOriginalTextUpdate) {
     const incomingText = updates.text ?? '';
     const existingText = typeof existing.text === 'string' ? existing.text : '';
@@ -236,7 +246,7 @@ function mergeElementUpdate(
   }
 
   spendArrowRefs(element as Record<string, any>, statement as Record<string, any>);
-  const changed = (key: string) => Object.prototype.hasOwnProperty.call(statement, key);
+  const changed = (key: string) => hasOwn(statement, key);
   if (changed('points')) sizeFromPath(element);
   const isLinear = element.type === 'arrow' || element.type === 'line';
   return {
@@ -255,13 +265,11 @@ function sizeFromPath(element: ServerElement): boolean {
 }
 
 function pathOf(element: ServerElement): { x: number; y: number }[] {
-  const raw = Array.isArray(element.points) && element.points.length >= 2
-    ? element.points
-    : [[0, 0], [100, 0]];
-  return raw.map((point: any) => ({
-    x: element.x + (Array.isArray(point) ? Number(point[0]) : Number(point?.x)),
-    y: element.y + (Array.isArray(point) ? Number(point[1]) : Number(point?.y))
-  }));
+  const measured = pointsOf(element.points);
+  const points = measured && measured.length >= 2
+    ? measured
+    : DEFAULT_LINEAR_POINTS.map(([x, y]) => ({ x, y }));
+  return points.map(point => ({ x: element.x + point.x, y: element.y + point.y }));
 }
 
 function resolveArrowBindings(
@@ -310,8 +318,7 @@ function rerouteBoundArrows(
     const joins = (binding: unknown) => bindingOf(binding)?.elementId === movedId;
     if (!joins((element as any).startBinding) && !joins((element as any).endBinding)) continue;
     resolveArrowBindings([element], board);
-    element.updatedAt = new Date().toISOString();
-    element.version = (element.version || 0) + 1;
+    bumpVersion(element);
     rerouted.push(element);
   }
   return rerouted;
@@ -324,8 +331,7 @@ function settleBoundTexts(containerIds: string[], board: Map<string, ServerEleme
     if (!text) continue;
     text.x = move.x;
     text.y = move.y;
-    text.updatedAt = new Date().toISOString();
-    text.version = (text.version || 0) + 1;
+    bumpVersion(text);
     moved.push(text);
   }
   return moved;
@@ -334,8 +340,7 @@ function settleBoundTexts(containerIds: string[], board: Map<string, ServerEleme
 function restateLabels(written: ServerElement[], board: Map<string, ServerElement>): ServerElement[] {
   const restated = relabelBoundTexts(written, board);
   for (const element of restated) {
-    element.updatedAt = new Date().toISOString();
-    element.version = (board.get(element.id)?.version || 0) + 1;
+    bumpVersion(element, board.get(element.id) ?? element);
     board.set(element.id, element);
   }
   return restated;
@@ -368,6 +373,7 @@ function settleDocument(
 ): Omit<AppliedElementInput, 'named'> {
   const { alsoDeleted, changed } = settleDeletions(applied.deleted, board);
   const repaired = repairIndices(board);
+  if (alsoDeleted.length === 0 && changed.length === 0 && repaired.length === 0) return applied;
   const created = new Map(applied.created.map(element => [element.id, element]));
   const updated = new Map(applied.updated.map(element => [element.id, element]));
   for (const element of [...changed, ...repaired]) {
@@ -385,11 +391,17 @@ function settleDocument(
   };
 }
 
+interface PreparedElementInput {
+  created: ServerElement[];
+  updated: Map<string, ServerElement>;
+  namedIds: string[];
+  moved?: string[];
+}
+
 function applyAgentInput(
   board: Map<string, ServerElement>,
-  upserts: Record<string, unknown>[],
-  deletes: string[]
-): AppliedElementInput {
+  upserts: Record<string, unknown>[]
+): PreparedElementInput {
   const created: ServerElement[] = [];
   const updated = new Map<string, ServerElement>();
   const moved: string[] = [];
@@ -444,36 +456,16 @@ function applyAgentInput(
     }
   }
 
-  const deleted: string[] = [];
-  for (const id of deletes) {
-    if (board.delete(id)) deleted.push(id);
-  }
-  for (const element of settleAfterWrite(moved, board)) {
-    if (board.has(element.id)) updated.set(element.id, element);
-  }
-
-  const settled = settleDocument({
-    created,
-    updated: [...updated.values()].filter(element => board.has(element.id)),
-    deleted
-  }, board);
-  return {
-    named: namedIds.flatMap(id => {
-      const element = board.get(id);
-      return element ? [element] : [];
-    }),
-    ...settled
-  };
+  return { created, updated, namedIds, moved };
 }
 
 function applyHumanInput(
   board: Map<string, ServerElement>,
   upserts: Record<string, unknown>[],
-  deletes: string[],
   timestamp?: string
-): AppliedElementInput {
+): PreparedElementInput {
   const created: ServerElement[] = [];
-  const updated: ServerElement[] = [];
+  const updated = new Map<string, ServerElement>();
   const namedIds: string[] = [];
   const now = new Date().toISOString();
   for (const raw of upserts) {
@@ -495,29 +487,17 @@ function applyHumanInput(
       ...incoming,
       id,
       createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
-      version: (existing?.version ?? 0) + 1,
       source: 'frontend_sync',
       syncedAt: now,
       ...(timestamp ? { syncTimestamp: timestamp } : {})
     } as ServerElement;
+    bumpVersion(element, existing, now);
     board.set(id, element);
     namedIds.push(id);
-    (existing ? updated : created).push(element);
+    if (existing) updated.set(id, element);
+    else created.push(element);
   }
-
-  const deleted: string[] = [];
-  for (const id of deletes) {
-    if (board.delete(id)) deleted.push(id);
-  }
-  const settled = settleDocument({ created, updated, deleted }, board);
-  return {
-    named: namedIds.flatMap(id => {
-      const element = board.get(id);
-      return element ? [element] : [];
-    }),
-    ...settled
-  };
+  return { created, updated, namedIds };
 }
 
 /**
@@ -531,7 +511,26 @@ export function applyElementInput(
 ): AppliedElementInput {
   const upserts = request.upserts ?? [];
   const deletes = request.deletes ?? [];
-  return request.origin === 'agent'
-    ? applyAgentInput(board, upserts, deletes)
-    : applyHumanInput(board, upserts, deletes, request.timestamp);
+  const prepared = request.origin === 'agent'
+    ? applyAgentInput(board, upserts)
+    : applyHumanInput(board, upserts, request.timestamp);
+  const deleted: string[] = [];
+  for (const id of deletes) {
+    if (board.delete(id)) deleted.push(id);
+  }
+  for (const element of settleAfterWrite(prepared.moved ?? [], board)) {
+    if (board.has(element.id)) prepared.updated.set(element.id, element);
+  }
+  const settled = settleDocument({
+    created: prepared.created,
+    updated: [...prepared.updated.values()].filter(element => board.has(element.id)),
+    deleted
+  }, board);
+  return {
+    named: prepared.namedIds.flatMap(id => {
+      const element = board.get(id);
+      return element ? [element] : [];
+    }),
+    ...settled
+  };
 }

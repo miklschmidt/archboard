@@ -6,6 +6,7 @@ import { bindingFromRef } from './arrow-binding.js';
 import { fnv1a, type IdsInUse } from './ids.js';
 import { lineHeightOf } from './fonts.js';
 import { canMeasure, measureText } from './measure-text.js';
+import { DEFAULT_LINEAR_POINTS } from './geometry.js';
 
 // The one conversion, in one direction, at one boundary (ADR 0015).
 //
@@ -447,7 +448,7 @@ export function expandElements(
     // conversion `arrow-binding.ts` holds. From here on the binding is all
     // anything reads, including the server's own routing (TASK-088).
     if (el.type === 'arrow' || el.type === 'line') {
-      base.points = rest.points ?? [[0, 0], [100, 0]];
+      base.points = rest.points ?? DEFAULT_LINEAR_POINTS.map(point => [...point]);
       base.lastCommittedPoint = null;
       base.startBinding = rest.startBinding
         ? { ...rest.startBinding, fixedPoint: rest.startBinding.fixedPoint ?? null }
