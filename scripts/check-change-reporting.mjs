@@ -140,7 +140,7 @@ class Harness {
         this.dispatch({
           type: 'server_update_applied', generation: effect.generation,
           kind: effect.kind, scene: copy(this.scene), baselineUpdate: effect.baselineUpdate,
-          canary: null, reportAfterUpdate: effect.reportAfterUpdate
+          reportAfterUpdate: effect.reportAfterUpdate
         })
         break
       case 'finish_server_update':
@@ -156,9 +156,6 @@ class Harness {
       case 'note_change':
       case 'release_if_idle':
       case 'publish_status':
-      case 'read_server_update':
-      case 'read_orphaned_server_update':
-      case 'read_pending_edits':
         break
       default:
         throw new Error(`Unhandled effect ${effect.type}`)

@@ -28,10 +28,7 @@ import type {
 } from '../types'
 import { cleanElementForExcalidraw, elementsForScene } from './elements'
 import {
-  armDelivery, readDebt, readDelivery, readOrphanedWindow, watchingForLoss
-} from './loss-canary'
-import {
-  hasPendingEdits, initialState, pendingChangeReport, reduce,
+  hasPendingEdits, initialState, reduce,
   type ChangeReportingEffect, type ChangeReportingEvent,
   type ChangeReportingState, type SceneElement, type SceneUpdate
 } from './change-reporting'
@@ -414,29 +411,6 @@ export function useCanvasSession({
     publishStatus()
   }, [publishStatus])
 
-  /**
-   * Does this pane have pending edits with no report scheduled or in flight?
-   *
-   * Asked wherever the pane decides it is done talking — see ./loss-canary,
-   * and nothing asks unless somebody is watching. An edit is safe while it is
-   * pending and a report is scheduled or in flight. Every place below can end
-   * that reporting work while an edit remains pending.
-   */
-  const watchPendingEdits = useCallback((kind: string): void => {
-    if (!watchingForLoss()) return
-    const api = apiRef.current
-    const state = reportingRef.current.state
-    if (!api || !state.userInteracted) return
-    if (state.reportInFlight || state.reportTimerScheduled || state.retryTimerScheduled) return
-    if (state.applyingServerUpdateCount > 0) return
-    const editing = idUnderEditor(api)
-    readDebt(kind, pendingChangeReport(
-      state,
-      api.getSceneElementsIncludingDeleted() as unknown as Record<string, any>[],
-      editing === null ? EMPTY_WITHHELD : [editing]
-    ))
-  }, [])
-
   // ─── Writing the server's news into the scene ────────────────
 
   const currentScene = (): SceneElement[] =>
@@ -465,18 +439,12 @@ export function useCanvasSession({
     })
     if (!serverUpdate) return
     const scene = currentScene()
-    const canary = armDelivery(
-      serverUpdate.kind,
-      scene,
-      (id) => reportingRef.current.state.baseline.get(id)
-    )
     dispatchReporting({
       type: 'server_update_applied',
       generation: serverUpdate.generation,
       kind: serverUpdate.kind,
       scene,
       baselineUpdate: serverUpdate.baselineUpdate,
-      canary,
       reportAfterUpdate: serverUpdate.reportAfterUpdate
     })
   }
@@ -577,15 +545,6 @@ export function useCanvasSession({
         return
       case 'publish_status':
         publishStatus()
-        return
-      case 'read_server_update':
-        readDelivery(effect.canary as ReturnType<typeof armDelivery>, currentScene())
-        return
-      case 'read_orphaned_server_update':
-        readOrphanedWindow()
-        return
-      case 'read_pending_edits':
-        watchPendingEdits(effect.kind)
         return
       default:
         assertNever(effect)
