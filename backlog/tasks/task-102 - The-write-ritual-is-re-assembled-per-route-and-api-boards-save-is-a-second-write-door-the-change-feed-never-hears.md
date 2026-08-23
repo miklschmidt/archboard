@@ -3,9 +3,11 @@ id: TASK-102
 title: >-
   The write ritual is re-assembled per route, and /api/boards/save is a second
   write door the change feed never hears
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-08-23 15:01'
+updated_date: '2026-08-23 16:30'
 labels: []
 dependencies: []
 references:
@@ -33,3 +35,17 @@ Architecture review 2026-08-23, candidate 2 (runner-up). Deepened shape: one mod
 - [ ] #4 No `await` sits between the read and the write of one board (ADR 0015); `test:one-write` still counts one write per intent
 - [ ] #5 TASK-084 is closed through this module or explicitly re-scoped against it
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Add a synchronous src/core/board-write.ts entry that reads one board, applies an isolated mutation, invokes applyElementInput for element input, persists through board-io, records the change feed, broadcasts one elements_changed write message, and shapes the response.\n2. Move the eight ordinary board-writing routes in src/server.ts onto that entry, including clear and file mutations, while preserving their response fields and file delivery messages.\n3. Move POST /api/boards/save onto the same entry with an explicit named destination, shrink board-io WriteOptions to destination-independent options, and prove save reaches the change feed.\n4. Add the TASK-084 regression to check-one-write, close TASK-084 with evidence that a failed complete mutation writes and broadcasts nothing, then run all focused gates and the full browser-backed suite.\n5. Finalize TASK-102 with acceptance evidence, a concise summary, and Done status.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Research against current main: TASK-101, TASK-103 and TASK-104 are present. There are nine note-writing routes: five single or batch element routes, the change-report route, two file routes, and board save. The write-boundary middleware already owns the lease and version check, so the new module stays synchronous inside next() and does not acquire locks.
+
+Slice 1 complete. Added the synchronous board-write entry with isolated content, TASK-104 conversion as an internal stage, board-io persistence, change-feed recording, one elements_changed write notification, file payload delivery, and response shaping. Validation: type-check; one-write 58; changes all; boards all; doing 42; lock 115; version 61; module-scope 49 modules plus self-test, all green.
+<!-- SECTION:NOTES:END -->
