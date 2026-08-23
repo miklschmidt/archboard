@@ -57,6 +57,8 @@ const { expandElements, expandForBoard } =
   await import(join(__dirname, '..', 'src', 'core', 'expand-elements.ts'));
 const { applyElementInput } =
   await import(join(__dirname, '..', 'src', 'core', 'apply-element-input.ts'));
+const { diffAgainstBaseline, fingerprint } =
+  await import(join(__dirname, '..', 'frontend', 'src', 'canvas', 'changes.ts'));
 
 let failures = 0;
 let checks = 0;
@@ -130,11 +132,6 @@ function dropSpentSeeds(scene) {
   });
 }
 
-/** frontend/src/canvas/changes.ts: a pane reports only what its baseline lacks. */
-function fingerprint(element) {
-  return JSON.stringify(Object.keys(element).sort().map((key) => [key, element[key]]));
-}
-
 /**
  * Somebody clears a label. Excalidraw does not leave an empty text element
  * behind: a bound text submitted blank is marked `isDeleted` and unbound from
@@ -154,32 +151,6 @@ function blank(scene, empties) {
     if (!element.boundElements.some((ref) => doomed.has(ref.id))) return element;
     return { ...element, boundElements: element.boundElements.filter((ref) => !doomed.has(ref.id)) };
   });
-}
-
-/**
- * frontend/src/canvas/changes.ts: what a pane says, which is a delta and
- * nothing else.
- *
- * It used to say more. A reported bound text carried a statement of what its
- * container's seed now read, and a deleted one carried the striking out of
- * that seed, because the seed was stored and was what the next write expanded
- * (`labelStatements`, `labelClearances`). Both are gone with the seed
- * (TASK-073), and this function is the shape of that: a rename is a text
- * upsert, an emptying is a delete, and neither needs a second sentence.
- *
- * A report is built from the live board — deleted elements are never upserted
- * and never enter the baseline — but it is computed against the scene
- * *including* them, because that is the only place the fact of a deletion is
- * recorded.
- */
-function reportOf(scene, baseline) {
-  const alive = scene.filter((element) => !element.isDeleted);
-  const upserts = alive
-    .filter((element) => baseline.get(element.id) !== fingerprint(element))
-    .map((element) => ({ ...element }));
-  const kept = new Set(alive.map((element) => element.id));
-  const deletes = [...baseline.keys()].filter((id) => !kept.has(id));
-  return { upserts, deletes };
 }
 
 /** POST /api/elements/changes: upserts are *merged*, so stored fields survive. */
@@ -216,7 +187,7 @@ function cycle(store, baseline, { contain, types, empties }) {
   // Or clears one, which is a deletion rather than an edit.
   const edited = empties ? blank(typed, empties) : typed;
 
-  const { upserts, deletes } = reportOf(edited, baseline);
+  const { upserts, deletes } = diffAgainstBaseline(edited, baseline);
   baseline.clear();
   // A pane agrees only what is on the board; a deleted element is news it has
   // already delivered, so the next diff must not keep claiming it.
