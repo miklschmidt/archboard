@@ -442,7 +442,6 @@ export function useCanvasSession({
     dispatchReporting({
       type: 'server_update_applied',
       generation: serverUpdate.generation,
-      kind: serverUpdate.kind,
       scene,
       baselineUpdate: serverUpdate.baselineUpdate,
       reportAfterUpdate: serverUpdate.reportAfterUpdate
@@ -489,7 +488,7 @@ export function useCanvasSession({
             type: 'server_update_finished', generation: effect.generation, scene: currentScene()
           })
           publishStatus()
-        }, effect.delayMs)
+        }, 0)
         return
       case 'send_report': {
         const target = boardKeyRef.current
@@ -572,8 +571,7 @@ export function useCanvasSession({
     elements: Partial<ExcalidrawElement>[],
     withheldIds: readonly string[] = EMPTY_WITHHELD
   ): void => {
-    const api = apiRef.current
-    if (!api) return
+    if (!apiRef.current) return
     const answered = new Set(elements.map((element) => element.id))
     // `elementsForScene` drops a `boundElements` entry or a `containerId`
     // pointing at an element the server update does not carry. The
@@ -584,7 +582,6 @@ export function useCanvasSession({
       .filter((element) => withheld.has(element.id) && !answered.has(element.id))
     dispatchReporting({
       type: 'server_update_requested',
-      kind: 'a whole board from the server',
       update: { elements: [...elements, ...kept] as SceneElement[], captureUpdate: 'never' },
       baselineUpdate: { type: 'replace', withheldIds }
     })
@@ -614,7 +611,6 @@ export function useCanvasSession({
 
     dispatchReporting({
       type: 'server_update_requested',
-      kind: 'elements from the server',
       update: { elements: merged as SceneElement[], captureUpdate: 'never' },
       baselineUpdate: { type: 'touch', ids: touched }
     })
@@ -626,7 +622,6 @@ export function useCanvasSession({
     const gone = new Set(ids)
     dispatchReporting({
       type: 'server_update_requested',
-      kind: 'a deletion from the server',
       update: {
         elements: api.getSceneElements().filter((element) => !gone.has(element.id)) as unknown as SceneElement[],
         captureUpdate: 'never'
@@ -753,8 +748,6 @@ export function useCanvasSession({
   }, [clientId])
 
   // ─── Reporting user edits ───────────────────────────────────
-
-  const withheldIds = useCallback((): readonly string[] => currentWithheldIds(), [])
 
   const sendReport = useCallback(async (): Promise<void> => {
     if (!apiRef.current) return
@@ -944,7 +937,6 @@ export function useCanvasSession({
         if (Object.keys(appState).length > 0) {
           dispatchReporting({
             type: 'server_update_requested',
-            kind: 'viewport app state from the server',
             update: { appState, captureUpdate: 'never' },
             baselineUpdate: { type: 'none' }
           })
@@ -1020,7 +1012,7 @@ export function useCanvasSession({
         // Still this pane's board, so a half-typed label is still this pane's
         // to keep: a reconnection in the middle of somebody typing must not
         // remove it from the scene.
-        applyServerScene(elements, withheldIds())
+        applyServerScene(elements, currentWithheldIds())
         if (data.files) api.addFiles(Object.values(data.files))
         break
       }
@@ -1195,7 +1187,7 @@ export function useCanvasSession({
   }, [
     adoptBoard, answerExport, answerMermaid, answerViewport, applyServerElements,
     applyServerScene, clientId, hasPendingChanges, loadBoard, noteChange, onLayoutRequest,
-    onLibraryChanged, removeElements, sendReport, withheldIds
+    onLibraryChanged, removeElements, sendReport
   ])
 
   const connect = useCallback((): void => {
