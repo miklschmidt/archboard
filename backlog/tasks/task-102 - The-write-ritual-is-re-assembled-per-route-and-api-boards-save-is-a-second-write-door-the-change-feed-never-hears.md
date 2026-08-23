@@ -1,0 +1,35 @@
+---
+id: TASK-102
+title: >-
+  The write ritual is re-assembled per route, and /api/boards/save is a second
+  write door the change feed never hears
+status: To Do
+assignee: []
+created_date: '2026-08-23 15:01'
+labels: []
+dependencies: []
+references:
+  - src/server.ts
+  - src/core/board-io.ts
+  - docs/adr/0015-the-vault-is-the-truth-and-the-agent-shape-is-input.md
+priority: high
+type: enhancement
+ordinal: 102000
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+In `src/server.ts` (4,714 lines) only the ends of a board write are behind interfaces: `boardFromRequest` (:643) and `persistBoard` (:555). The middle — mutate, settle, broadcast, shape the answer — is re-assembled per route. Evidence at commit 2a4d9cc: 17 inline `boardFromRequest()` sites; 8 `persistBoard()` sites plus one direct `writeBoardContent()` at :4135 inside `POST /api/boards/save`, which then hand-rolls `savedAt` (:4144), the hold release (:4153) and a `BoardContent` (:4156) and never calls `noteChange` — so a save is the one board write the change feed is not told about. The broadcast fan-out is written four different ways (`element_created`/`element_updated` loops at :1489, :1581, :2153; one `elements_changed` at :2641), and "what this write touched" is built three ways (:1480, :1603, :2144). `agentWriteAnswer` (:2358), the one piece that was extracted, has six consistent callers — the shape works when it happens.
+
+Architecture review 2026-08-23, candidate 2 (runner-up). Deepened shape: one module owns "a write happened to this board" — a route hands it the mutation, it reads the note, runs the converter (TASK-104), persists, tells every pane, answers. `save` becomes a write to a named destination rather than a parallel door. ADR 0015 constraint: `board-io` stays synchronous between read and write; the door must not put an `await` there. Absorbs TASK-084 (a batched write half-applies); borders TASK-092 and TASK-096 (pane status news dropped).
+<!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [ ] #1 One module owns read -> mutate -> persist -> broadcast -> answer for a board write, and every board-writing route in `src/server.ts` goes through it
+- [ ] #2 `POST /api/boards/save` goes through the same door: `noteChange` fires for a save, and the change feed reports it
+- [ ] #3 Panes are told about a write in one message shape regardless of which route made it
+- [ ] #4 No `await` sits between the read and the write of one board (ADR 0015); `test:one-write` still counts one write per intent
+- [ ] #5 TASK-084 is closed through this module or explicitly re-scoped against it
+<!-- AC:END -->
