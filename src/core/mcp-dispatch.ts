@@ -49,7 +49,7 @@ import {
   ungroupElements,
   duplicateElements
 } from './element-ops.js';
-import { buildSceneFile, importScene } from '../cli/scene-io.js';
+import { buildSceneFile, importScene } from './scene-document.js';
 import {
   listBoardsOnCanvas,
   boardHeading,

@@ -59,6 +59,7 @@ import {
 import {
   BoardContent,
   BoardWriteConflictError,
+  boardFilesMessage,
   emptyContent,
   ingestScene,
   LoadedBoard,
@@ -76,6 +77,7 @@ import {
   onBoardSweep,
   releaseClaim,
   releaseHold,
+  sleep,
   takeClaimRevocation,
   watchBoardLocks
 } from './core/board-lock.js';
@@ -642,6 +644,11 @@ function boardErrorBody(error: unknown): Record<string, unknown> {
   return base;
 }
 
+function answerBoardError(res: Response, error: unknown, what?: string): void {
+  if (what) logger.error(what, error);
+  res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+}
+
 /** Send one board-write answer and retain the version it already produced. */
 function answerBoardWrite<T>(res: Response, request: BoardWriteRequest<T>): void {
   const afterPersist = request.afterPersist;
@@ -669,23 +676,6 @@ function boardForNewPane(clientId: string): string {
   const reference = existing.find(pane => pane.primary) ?? existing.find(pane => pane.focused) ?? existing[0];
   const key = reference ? paneBoards.get(reference.clientId) ?? reference.board : null;
   return key && boards.has(key) ? key : SCRATCH_KEY;
-}
-
-/**
- * A board's images, in the shape a scene message carries them, or nothing when
- * it has none.
- *
- * Every frame that sends a pane a whole board — the first one, and every board
- * switch — has to bring the images with it, because an image element without
- * its file renders as a hole. `board_switched` used to bring none at all, so a
- * pane pointed at a board with pictures on it got the elements and no pictures
- * (TASK-060).
- */
-function boardFilesMessage(content: BoardContent): { files?: Record<string, ExcalidrawFile> } {
-  if (content.files.size === 0) return {};
-  const filesObj: Record<string, ExcalidrawFile> = {};
-  content.files.forEach((file, id) => { filesObj[id] = file; });
-  return { files: filesObj };
 }
 
 // WebSocket connection handling.
@@ -991,7 +981,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       next();
     })
     .catch((error) => {
-      res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+      answerBoardError(res, error);
     });
 });
 
@@ -1040,9 +1030,9 @@ app.post('/api/boards/hold', (req: Request, res: Response) => {
     // claim: an unclaimed agent hold is one write and is waited out above.
     void holdBoard({ board: key, holder, waitMs: REPORT_DEBOUNCE_MS, revokeClaim: true })
       .then(hold => res.json({ success: true, board: key, holder: hold.holder, created: hold.created }))
-      .catch(error => res.status(boardErrorStatus(error)).json(boardErrorBody(error)));
+      .catch(error => answerBoardError(res, error));
   } catch (error) {
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error);
   }
 });
 
@@ -1066,7 +1056,7 @@ app.post('/api/boards/hold/release', (req: Request, res: Response) => {
     }
     res.json({ success: true, board: key, released: releaseHold(key, body.clientId) });
   } catch (error) {
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error);
   }
 });
 
@@ -1116,9 +1106,9 @@ app.post('/api/boards/claim', (req: Request, res: Response) => {
           : (file ? versionOfNoteAt(file) : null);
         res.json({ success: true, board: key, claim, created, version });
       })
-      .catch(error => res.status(boardErrorStatus(error)).json(boardErrorBody(error)));
+      .catch(error => answerBoardError(res, error));
   } catch (error) {
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error);
   }
 });
 
@@ -1136,7 +1126,7 @@ app.post('/api/boards/claim/release', (req: Request, res: Response) => {
     const claim = releaseClaim(key);
     res.json({ success: true, board: key, released: claim !== null, claim });
   } catch (error) {
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error);
   }
 });
 
@@ -1154,8 +1144,7 @@ app.get('/api/elements', (req: Request, res: Response) => {
       count: elementsArray.length
     });
   } catch (error) {
-    logger.error('Error fetching elements:', error);
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error, 'Error fetching elements:');
   }
 });
 
@@ -1189,8 +1178,7 @@ app.post('/api/elements', (req: Request, res: Response) => {
       })
     });
   } catch (error) {
-    logger.error('Error creating element:', error);
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error, 'Error creating element:');
   }
 });
 
@@ -1234,8 +1222,7 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
       })
     });
   } catch (error) {
-    logger.error('Error updating element:', error);
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error, 'Error updating element:');
   }
 });
 
@@ -1275,8 +1262,7 @@ app.delete('/api/elements/clear', (req: Request, res: Response) => {
       })
     });
   } catch (error) {
-    logger.error('Error clearing canvas:', error);
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error, 'Error clearing canvas:');
   }
 });
 
@@ -1314,8 +1300,7 @@ app.delete('/api/elements/:id', (req: Request, res: Response) => {
       })
     });
   } catch (error) {
-    logger.error('Error deleting element:', error);
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error, 'Error deleting element:');
   }
 });
 
@@ -1359,8 +1344,7 @@ app.get('/api/elements/search', (req: Request, res: Response) => {
       count: results.length
     });
   } catch (error) {
-    logger.error('Error querying elements:', error);
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error, 'Error querying elements:');
   }
 });
 
@@ -1392,8 +1376,7 @@ app.get('/api/elements/:id', (req: Request, res: Response) => {
       element: element
     });
   } catch (error) {
-    logger.error('Error fetching element:', error);
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error, 'Error fetching element:');
   }
 });
 
@@ -1433,8 +1416,7 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
       })
     });
   } catch (error) {
-    logger.error('Error batch creating elements:', error);
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error, 'Error batch creating elements:');
   }
 });
 
@@ -1526,8 +1508,7 @@ app.post('/api/elements/from-mermaid', (req: Request, res: Response) => {
       message: `Mermaid diagram sent to ${paneWords(place)}, which is holding "${wanted}", for conversion.`
     });
   } catch (error) {
-    logger.error('Error processing Mermaid diagram:', error);
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error, 'Error processing Mermaid diagram:');
   }
 });
 
@@ -1651,8 +1632,7 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
       })
     });
   } catch (error) {
-    logger.error('Error applying a change report:', error);
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error, 'Error applying a change report:');
   }
 });
 
@@ -1995,8 +1975,6 @@ function noBrowserBody(what: string): Record<string, unknown> {
   };
 }
 
-const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
-
 /**
  * Wait until every pane has reported itself since the layout was asked for.
  *
@@ -2163,11 +2141,9 @@ app.post('/api/panes/close', async (req: Request, res: Response) => {
 app.get('/api/files', (req: Request, res: Response) => {
   try {
     const { key, content } = boardFromRequest(req, 'Listing images');
-    const filesObj: Record<string, ExcalidrawFile> = {};
-    content.files.forEach((f, id) => { filesObj[id] = f; });
-    res.json({ success: true, board: key, files: filesObj });
+    res.json({ success: true, board: key, files: boardFilesMessage(content).files ?? {} });
   } catch (error) {
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error);
   }
 });
 
@@ -2221,7 +2197,7 @@ app.post('/api/files', (req: Request, res: Response) => {
       })
     });
   } catch (error) {
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error);
   }
 });
 
@@ -2245,7 +2221,7 @@ app.delete('/api/files/:id', (req: Request, res: Response) => {
       answer: () => ({ success: true, board: source.key })
     });
   } catch (error) {
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error);
   }
 });
 
@@ -2600,8 +2576,7 @@ app.post('/api/snapshots', (req: Request, res: Response) => {
       createdAt: snapshot.createdAt
     });
   } catch (error) {
-    logger.error('Error saving snapshot:', error);
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error, 'Error saving snapshot:');
   }
 });
 
@@ -2886,8 +2861,7 @@ app.get('/api/boards', (req: Request, res: Response) => {
       onScreen: boardsOnScreen()
     });
   } catch (error) {
-    logger.error('Error listing boards:', error);
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error, 'Error listing boards:');
   }
 });
 
@@ -2899,7 +2873,7 @@ app.get('/api/boards/info', (req: Request, res: Response) => {
     const { key, board, content } = boardFromRequest(req, 'board info');
     res.json({ success: true, ...identityResponse(key, board, content) });
   } catch (error) {
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error);
   }
 });
 
@@ -2991,8 +2965,7 @@ app.post('/api/boards/open', (req: Request, res: Response) => {
       ...(loaded.declaredKey ? { declaredKey: loaded.declaredKey } : {})
     });
   } catch (error) {
-    logger.error('Error opening board:', error);
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error, 'Error opening board:');
   }
 });
 
@@ -3052,8 +3025,7 @@ app.post('/api/boards/new', (req: Request, res: Response) => {
       ...paneResponse(pane)
     });
   } catch (error) {
-    logger.error('Error creating board:', error);
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error, 'Error creating board:');
   }
 });
 
@@ -3175,8 +3147,7 @@ app.post('/api/boards/save', (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    logger.error('Error saving board:', error);
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error, 'Error saving board:');
   }
 });
 
@@ -3326,8 +3297,7 @@ app.get('/api/boards/compare', (req: Request, res: Response) => {
     );
     res.json(result);
   } catch (error) {
-    logger.error('Error comparing boards:', error);
-    res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+    answerBoardError(res, error, 'Error comparing boards:');
   }
 });
 
