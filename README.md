@@ -28,7 +28,7 @@ To use archboard in another repository, see [`INSTALL.md`](INSTALL.md).
 
 To run it end to end with Codex and voice, see [`TESTING.md`](TESTING.md).
 
-See [`DESIGN.md`](DESIGN.md) for the design and roadmap, [`CLAUDE.md`](CLAUDE.md)
+See [`DESIGN.md`](DESIGN.md) for the design and roadmap, [`AGENTS.md`](AGENTS.md)
 for how to build and run it, and [`FLIP_WHITEBOARD.md`](FLIP_WHITEBOARD.md) for
 the touchscreen setup.
 
