@@ -18,7 +18,7 @@ import { DEFAULT_LINEAR_POINTS, pointsOf, remeasureLinear } from './geometry.js'
 import { mintId } from './ids.js';
 import { recentreBoundTexts } from './labels.js';
 
-const PointSchema = z.union([
+export const PointSchema = z.union([
   z.tuple([z.number(), z.number()]),
   z.object({ x: z.number(), y: z.number() })
 ]);
@@ -79,17 +79,20 @@ const ElementFields = {
   scale: z.tuple([z.number(), z.number()]).optional()
 };
 
-const CreateElementSchema = z.looseObject({
+export const CreateElementSchema = z.looseObject({
   id: z.string().optional(),
   ...ElementFields
 });
 
-const UpdateElementSchema = z.looseObject({
+export const UpdateElementSchema = z.looseObject({
   id: z.string(),
   ...Object.fromEntries(
     Object.entries(ElementFields).map(([name, schema]) => [name, schema.optional()])
   )
 });
+
+export const CREATE_ELEMENT_JSON_SCHEMA = z.toJSONSchema(CreateElementSchema);
+export const UPDATE_ELEMENT_JSON_SCHEMA = z.toJSONSchema(UpdateElementSchema);
 
 export interface ElementInputRequest {
   upserts?: Record<string, unknown>[];

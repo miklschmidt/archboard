@@ -4,8 +4,8 @@ import fs from 'fs';
 import logger from '../utils/logger.js';
 import {
   EXCALIDRAW_ELEMENT_TYPES,
-  ServerElement,
-  ExcalidrawElementType
+  ExcalidrawElementType,
+  ServerElement
 } from '../types.js';
 import { EXPRESS_SERVER_URL } from './config.js';
 import {
@@ -82,11 +82,7 @@ import {
 import { exportToExcalidrawUrl } from './share-url.js';
 import { DIAGRAM_DESIGN_GUIDE } from './design-guide.js';
 import { sceneState, ensureCanvasReadyForMcpTool, toolNeedsCanvasBeforeDispatch } from './canvas-state.js';
-
-// Points schema: accept both {x, y} objects and [x, y] tuples
-const PointObjectSchema = z.object({ x: z.number(), y: z.number() });
-const PointTupleSchema = z.tuple([z.number(), z.number()]);
-const PointSchema = z.union([PointObjectSchema, PointTupleSchema]);
+import { CreateElementSchema, UpdateElementSchema } from './apply-element-input.js';
 
 /**
  * What a write hands back to an MCP client, which is what it hands back to a
@@ -102,42 +98,20 @@ const writeResult = (answer: WriteAnswer): Record<string, unknown> => ({
   ...(answer.document ? { document: answer.document } : {})
 });
 
-function contextualError(error: unknown, message: string): Error {
-  return boardRefusalOf(error) ? error as Error : new Error(message);
+function withContext(error: unknown, what: string): Error {
+  const cause = error instanceof Error ? error : new Error(String(error));
+  const contextual = new Error(`${what}: ${cause.message}`, { cause });
+  for (const field of ['code', 'conflict', 'open', 'refusal'] as const) {
+    if (!(field in cause)) continue;
+    const value = (cause as any)[field];
+    (contextual as any)[field] = field === 'refusal' && value && typeof value === 'object'
+      ? { ...value, error: contextual.message }
+      : value;
+  }
+  return contextual;
 }
 
 // Schema definitions using zod
-const ElementSchema = z.object({
-  id: z.string().optional(),
-  type: z.enum(Object.values(EXCALIDRAW_ELEMENT_TYPES) as [ExcalidrawElementType, ...ExcalidrawElementType[]]),
-  x: z.number(),
-  y: z.number(),
-  width: z.number().optional(),
-  height: z.number().optional(),
-  points: z.array(PointSchema).optional(),
-  backgroundColor: z.string().optional(),
-  strokeColor: z.string().optional(),
-  strokeWidth: z.number().optional(),
-  roughness: z.number().optional(),
-  opacity: z.number().optional(),
-  text: z.string().optional(),
-  label: z.object({ text: z.string() }).optional(),
-  fontSize: z.number().optional(),
-  fontFamily: z.union([z.string(), z.number()]).optional(),
-  groupIds: z.array(z.string()).optional(),
-  locked: z.boolean().optional(),
-  strokeStyle: z.string().optional(),
-  roundness: z.object({ type: z.number(), value: z.number().optional() }).nullable().optional(),
-  fillStyle: z.string().optional(),
-  elbowed: z.boolean().optional(),
-  start: z.object({ id: z.string() }).nullable().optional(),
-  end: z.object({ id: z.string() }).nullable().optional(),
-  startElementId: z.string().optional(),
-  endElementId: z.string().optional(),
-  endArrowhead: z.string().optional(),
-  startArrowhead: z.string().optional(),
-});
-
 const ElementIdSchema = z.object({
   id: z.string()
 });
@@ -192,9 +166,9 @@ async function writePlan(updates: PlanUpdate[], what: string): Promise<void> {
   try {
     await applyElementChanges({ upserts: updates as (Partial<ServerElement> & { id: string })[] });
   } catch (error) {
-    throw contextualError(error,
+    throw withContext(error,
       `Failed to ${what} ${updates.length === 1 ? 'element' : 'elements'} ` +
-      `${updates.map(update => update.id).join(', ')}: ${(error as Error).message}`
+      updates.map(update => update.id).join(', ')
     );
   }
 }
@@ -262,7 +236,7 @@ async function dispatchTool(
 
     switch (name) {
       case 'create_element': {
-        const params = ElementSchema.extend({ document: z.boolean().optional() }).parse(args);
+        const params = CreateElementSchema.extend({ document: z.boolean().optional() }).parse(args);
         logger.info('Creating element via MCP', { type: params.type });
 
         // `document` is a question about the answer, not a field of the
@@ -289,10 +263,7 @@ async function dispatchTool(
         };
       }
       case 'update_element': {
-        const params = ElementIdSchema
-          .merge(ElementSchema.partial())
-          .merge(z.object({ document: z.boolean().optional() }))
-          .parse(args);
+        const params = UpdateElementSchema.extend({ document: z.boolean().optional() }).parse(args);
         const { id, document, ...updates } = params;
 
         if (!id) throw new Error('Element ID is required');
@@ -375,7 +346,7 @@ async function dispatchTool(
             content: [{ type: 'text', text: JSON.stringify(results, null, 2) }]
           };
         } catch (error) {
-          throw contextualError(error, `Failed to query elements: ${(error as Error).message}`);
+          throw withContext(error, 'Failed to query elements');
         }
       }
       case 'get_resource': {
@@ -409,7 +380,7 @@ async function dispatchTool(
                 elements: await getElements()
               };
             } catch (error) {
-              throw contextualError(error, `Failed to get elements: ${(error as Error).message}`);
+              throw withContext(error, 'Failed to get elements');
             }
             break;
           case 'theme':
@@ -440,7 +411,7 @@ async function dispatchTool(
             content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
           };
         } catch (error) {
-          throw contextualError(error, `Failed to group elements: ${(error as Error).message}`);
+          throw withContext(error, 'Failed to group elements');
         }
       }
       case 'ungroup_elements': {
@@ -459,7 +430,7 @@ async function dispatchTool(
             content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
           };
         } catch (error) {
-          throw contextualError(error, `Failed to ungroup elements: ${(error as Error).message}`);
+          throw withContext(error, 'Failed to ungroup elements');
         }
       }
       case 'align_elements': {
@@ -496,7 +467,7 @@ async function dispatchTool(
             content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
           };
         } catch (error) {
-          throw contextualError(error, `Failed to lock elements: ${(error as Error).message}`);
+          throw withContext(error, 'Failed to lock elements');
         }
       }
       case 'unlock_elements': {
@@ -511,7 +482,7 @@ async function dispatchTool(
             content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
           };
         } catch (error) {
-          throw contextualError(error, `Failed to unlock elements: ${(error as Error).message}`);
+          throw withContext(error, 'Failed to unlock elements');
         }
       }
       case 'create_from_mermaid': {
@@ -551,12 +522,12 @@ async function dispatchTool(
             }]
           };
         } catch (error) {
-          throw contextualError(error, `Failed to process Mermaid diagram: ${(error as Error).message}`);
+          throw withContext(error, 'Failed to process Mermaid diagram');
         }
       }
       case 'batch_create_elements': {
         const params = z.object({
-          elements: z.array(ElementSchema), document: z.boolean().optional()
+          elements: z.array(CreateElementSchema), document: z.boolean().optional()
         }).parse(args);
         logger.info('Batch creating elements via MCP', { count: params.elements.length });
 
