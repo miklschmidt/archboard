@@ -3,9 +3,11 @@ id: TASK-109
 title: >-
   Simplification pass over the architecture refactor (TASK-101 to TASK-108):
   reuse, simplification, efficiency, altitude
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@claude'
 created_date: '2026-08-23 19:34'
+updated_date: '2026-08-23 20:05'
 labels: []
 dependencies: []
 priority: medium
@@ -21,5 +23,17 @@ A four-angle review (reuse, simplification, efficiency, altitude) of `git diff b
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Both subtasks are Done and `bun run test` passes on the combined tree
+- [x] #1 Both subtasks are Done and `bun run test` passes on the combined tree
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Both halves Done: TASK-109.01 fixed every frontend finding (test:reporting grew 38 -> 54); TASK-109.02 fixed all but E5/E6, skipped with reason (binding indexes would need an ordering-sensitive converter refactor beyond a behaviour-preserving pass). Combined tree verified by the maintainer: bun run test exit 0, all 26 suites including test:browser (zero diff), test:typing and test:live-session (42/42 cycles agreed).
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The simplification review's findings across the TASK-101..108 refactor are remediated in both halves: dead and derivable reducer surface removed, the mermaid path routed through the reducer, pane server calls centralised in api.ts, writeBoard's request reduced to source/save?/mutation/answer, the double clone and lost fast paths restored, refusals recognised by shape, one element-input schema, 27 catch tails collapsed. Verified with the full bun run test chain (exit 0) on the combined tree.
+<!-- SECTION:FINAL_SUMMARY:END -->
