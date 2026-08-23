@@ -63,7 +63,7 @@ import {
   RelationChange,
   compareBoards
 } from './compare.js';
-import { archboardBlock, nodeIdOf } from './promote.js';
+import { nodeIdOf, readElementMetadata } from './metadata.js';
 
 // Synthetic node ids are namespaced so that nothing downstream can mistake one
 // for something a human promoted. Nothing outside this module should ever
@@ -92,7 +92,7 @@ export function withSyntheticNodeIds(elements: ServerElement[]): ServerElement[]
     // giving it its own node would double-count the shape it labels.
     if ((el as any).containerId) return el;
     const custom = (el.customData ?? {}) as Record<string, unknown>;
-    const block = { ...(archboardBlock(el) ?? {}), node: `${ANON_NODE_PREFIX}${el.id}` };
+    const block = { ...(readElementMetadata(el).archboard ?? {}), node: `${ANON_NODE_PREFIX}${el.id}` };
     return { ...el, customData: { ...custom, archboard: block } } as ServerElement;
   });
 }
@@ -294,7 +294,7 @@ function applyIdentityPairs(before: ServerElement[], pairs: IdentityPair[]): Ser
     const custom = (el.customData ?? {}) as Record<string, unknown>;
     return {
       ...el,
-      customData: { ...custom, archboard: { ...(archboardBlock(el) ?? {}), node: renamed } }
+      customData: { ...custom, archboard: { ...(readElementMetadata(el).archboard ?? {}), node: renamed } }
     } as ServerElement;
   });
 }
