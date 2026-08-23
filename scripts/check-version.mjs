@@ -379,6 +379,15 @@ try {
     JSON.stringify({ expected: stale.body?.versionConflict?.expected, actual: stale.body?.versionConflict?.actual }));
   check('  and saying by how many writes somebody else got there first',
     /1 time\(s\)/.test(stale.body?.error ?? ''), stale.body?.error?.split('\n')[1]);
+  const staleRead = await api('GET', '/api/elements?board=payments');
+  const staleInfo = await api('GET', '/api/boards/info?board=payments');
+  check('  with the current document in the refusal, not a second read left to make',
+    Array.isArray(stale.body?.document) &&
+    JSON.stringify(stale.body.document) === JSON.stringify(staleRead.body?.elements),
+    `${stale.body?.document?.length ?? 'no'} refusal / ${staleRead.body?.elements?.length ?? 'no'} read`);
+  check('  and the current version beside that document',
+    stale.body?.version === 3 && stale.body.version === staleInfo.body?.version,
+    `${String(stale.body?.version)} / ${String(staleInfo.body?.version)}`);
   check('  with nothing written', fs.readFileSync(noteFile).equals(before));
   check('  and the board left saving, because a precondition is not a conflict on the note',
     (await api('GET', '/api/boards/info?board=payments')).body?.held === undefined);
@@ -414,6 +423,11 @@ try {
   check('  and is refused on the next one, having moved the board on itself',
     refused.status !== 0 && /version/.test(refused.stderr ?? ''),
     `${refused.status} ${refused.stderr?.trim()?.split('\n')[0]}`);
+  check('  printing the unchanged reason before the attached board on the CLI',
+    (refused.stderr ?? '').indexOf('Refusing to write') >= 0 &&
+    (refused.stderr ?? '').indexOf('Refusing to write') < (refused.stderr ?? '').indexOf('"document"') &&
+    (refused.stderr ?? '').includes(`"version": ${at + 1}`),
+    refused.stderr?.trim()?.split('\n')[0]);
   const mistyped = cli([...shape(10), '--expect-version', 'latest', ...said]);
   check('  and a mistyped one is a usage error rather than a write with no precondition',
     mistyped.status === 2 && /--expect-version takes a whole number/.test(mistyped.stderr ?? ''),
@@ -493,6 +507,10 @@ try {
   }
   check('  so a write built on what it saw two calls ago is refused, with nothing threaded through the agent',
     refusedClient?.code === 'BOARD_VERSION_CONFLICT', String(refusedClient?.code ?? 'not refused'));
+  check('  and the client error keeps that response document and version for either surface to print',
+    refusedClient?.refusal?.version === 6 &&
+    refusedClient?.refusal?.document?.some(element => element.id === 'r2' && element.x === 280),
+    JSON.stringify({ version: refusedClient?.refusal?.version, count: refusedClient?.refusal?.document?.length }));
   check('  and it learns the real version from the refusal, so it is not stuck repeating it',
     client.currentExpectedVersion() === 6, String(client.currentExpectedVersion()));
 

@@ -28,6 +28,21 @@ export interface SyncResponse {
   elements?: ServerElement[];
 }
 
+export interface BoardRefusal {
+  success: false;
+  code: 'BOARD_HELD' | 'BOARD_VERSION_CONFLICT' | 'CLAIM_REVOKED';
+  error: string;
+  document: ServerElement[];
+  version: number | null;
+  [key: string]: unknown;
+}
+
+const BOARD_REFUSAL_CODES = new Set([
+  'BOARD_HELD',
+  'BOARD_VERSION_CONFLICT',
+  'CLAIM_REVOKED'
+]);
+
 // ---- Which board this invocation is talking about ----
 //
 // Set once, from something the caller typed: `--board <key>` on the command
@@ -147,14 +162,13 @@ export function currentExpectedVersion(): number | null | undefined {
 function rememberVersion(data: unknown): void {
   if (!requestedBoard || !data || typeof data !== 'object') return;
   const body = data as Record<string, any>;
-  // A fingerprint and a conflict are always about the board the request named.
-  // A bare `version` is not: `board save --as other` answers about the note it
-  // wrote, which is a different board from the one the call was addressed to,
-  // and recording that under this board's name would invent an expectation
-  // nobody was ever given. So it is taken only when the answer names the board
-  // that was asked for, and a name that does not compare equal is skipped
-  // rather than guessed at.
+  // A fingerprint, a version conflict and a write-boundary refusal are always
+  // about the board the request named. Another bare `version` is not: `board
+  // save --as other` answers about the note it wrote, which is a different
+  // board from the one the call was addressed to. So an ordinary answer's
+  // version is taken only when it names the board that was asked for.
   const found = readVersion(body.fingerprint)
+    ?? (BOARD_REFUSAL_CODES.has(body.code) ? readVersion(body) : undefined)
     ?? readVersion(body.versionConflict, 'actual')
     ?? (sameBoard(body.board) ? readVersion(body) : undefined);
   if (found !== undefined) rememberBoardVersion(clientVersionWriter(requestedBoard), found);
@@ -276,7 +290,7 @@ export async function syncToCanvas(
 
     if (!response.ok) {
       logger.warn(`Canvas sync returned error status: ${response.status}`, result);
-      throw new Error(result.error || `Canvas sync failed: ${response.status} ${response.statusText}`);
+      throw responseError(result, response);
     }
 
     logger.debug(`Canvas sync successful: ${operation}`, result);
@@ -284,6 +298,7 @@ export async function syncToCanvas(
 
   } catch (error) {
     logger.warn(`Canvas sync failed for ${operation}:`, (error as Error).message);
+    if (boardRefusalOf(error)) throw error;
     // Don't throw - we want MCP operations to work even if canvas is unavailable
     return null;
   }
@@ -388,22 +403,49 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   // reason: read off every answer including the refusals (TASK-091).
   rememberVersion(data);
   if (!response.ok) {
-    const error = new Error(data?.error || `HTTP server error: ${response.status} ${response.statusText}`);
-    // A refused board write is a result, not a fault: it carries the three
-    // outcomes the caller has to choose between, so the body has to survive
-    // being turned into an Error. See ADR 0006.
-    if (data?.conflict) {
-      (error as any).code = 'BOARD_CONFLICT';
-      (error as any).conflict = data.conflict as BoardWriteConflict;
-    } else if (typeof data?.code === 'string') {
-      // BOARD_REQUIRED and its kin: the canvas already said what to do about
-      // it, so the code rides along and picks the exit status.
-      (error as any).code = data.code;
-      if (Array.isArray(data.open)) (error as any).open = data.open;
-    }
-    throw error;
+    throw responseError(data, response);
   }
   return data as T;
+}
+
+function responseError(data: any, response: Response): Error {
+  const error = new Error(data?.error || `HTTP server error: ${response.status} ${response.statusText}`);
+  // Refused board writes are results, not faults. Keep their structured body
+  // on the error so neither the CLI nor MCP has to reconstruct what the canvas
+  // said, or read the board after the refusal.
+  if (data?.conflict) {
+    (error as any).code = 'BOARD_CONFLICT';
+    (error as any).conflict = data.conflict as BoardWriteConflict;
+  } else if (typeof data?.code === 'string') {
+    (error as any).code = data.code;
+    if (Array.isArray(data.open)) (error as any).open = data.open;
+  }
+  if (isBoardRefusal(data)) (error as any).refusal = data;
+  return error;
+}
+
+function isBoardRefusal(data: unknown): data is BoardRefusal {
+  if (!data || typeof data !== 'object') return false;
+  const body = data as Record<string, unknown>;
+  return body.success === false
+    && typeof body.code === 'string'
+    && BOARD_REFUSAL_CODES.has(body.code)
+    && typeof body.error === 'string'
+    && Array.isArray(body.document)
+    && (typeof body.version === 'number' || body.version === null);
+}
+
+export function boardRefusalOf(error: unknown): BoardRefusal | null {
+  const refusal = (error as any)?.refusal;
+  return isBoardRefusal(refusal) ? refusal : null;
+}
+
+/** The unchanged reason first, then every structured fact from the same body. */
+export function formatBoardRefusal(error: unknown): string | null {
+  const refusal = boardRefusalOf(error);
+  if (!refusal) return null;
+  const { success: _success, error: reason, ...details } = refusal;
+  return `${reason}\n\n${JSON.stringify(details, null, 2)}`;
 }
 
 // A save the server refused because the destination changed underneath it.

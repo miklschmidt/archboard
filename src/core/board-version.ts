@@ -196,9 +196,9 @@ export function describeVersionConflict(input: {
     message: [
       `Refusing to write "${board}": you were working from ${from}, and ${now}. Nothing was written.`,
       since,
-      `Read the board before writing over what they did — \`describe --board ${board}\` — rather than ` +
-      'repeating this write against whatever is there now. This refusal is the only one you get: your next ' +
-      'write goes against the version named above.'
+      'Use the document in this refusal before writing over what they did rather than repeating this write ' +
+      'against whatever is there now. This refusal is the only one you get: your next write goes against ' +
+      'the version named above.'
     ].join('\n')
   };
 }

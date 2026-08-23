@@ -36,7 +36,9 @@ import {
   boardHoldSeen,
   forgetBoardHold,
   ApiResponse,
-  WriteAnswer
+  WriteAnswer,
+  boardRefusalOf,
+  formatBoardRefusal
 } from './canvas-client.js';
 import { sanitizeFilePath } from './normalize.js';
 import {
@@ -99,6 +101,10 @@ const writeResult = (answer: WriteAnswer): Record<string, unknown> => ({
   ...(answer.fingerprint ? { fingerprint: answer.fingerprint } : {}),
   ...(answer.document ? { document: answer.document } : {})
 });
+
+function contextualError(error: unknown, message: string): Error {
+  return boardRefusalOf(error) ? error as Error : new Error(message);
+}
 
 // Schema definitions using zod
 const ElementSchema = z.object({
@@ -186,7 +192,7 @@ async function writePlan(updates: PlanUpdate[], what: string): Promise<void> {
   try {
     await applyElementChanges({ upserts: updates as (Partial<ServerElement> & { id: string })[] });
   } catch (error) {
-    throw new Error(
+    throw contextualError(error,
       `Failed to ${what} ${updates.length === 1 ? 'element' : 'elements'} ` +
       `${updates.map(update => update.id).join(', ')}: ${(error as Error).message}`
     );
@@ -369,7 +375,7 @@ async function dispatchTool(
             content: [{ type: 'text', text: JSON.stringify(results, null, 2) }]
           };
         } catch (error) {
-          throw new Error(`Failed to query elements: ${(error as Error).message}`);
+          throw contextualError(error, `Failed to query elements: ${(error as Error).message}`);
         }
       }
       case 'get_resource': {
@@ -403,7 +409,7 @@ async function dispatchTool(
                 elements: await getElements()
               };
             } catch (error) {
-              throw new Error(`Failed to get elements: ${(error as Error).message}`);
+              throw contextualError(error, `Failed to get elements: ${(error as Error).message}`);
             }
             break;
           case 'theme':
@@ -434,7 +440,7 @@ async function dispatchTool(
             content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
           };
         } catch (error) {
-          throw new Error(`Failed to group elements: ${(error as Error).message}`);
+          throw contextualError(error, `Failed to group elements: ${(error as Error).message}`);
         }
       }
       case 'ungroup_elements': {
@@ -453,7 +459,7 @@ async function dispatchTool(
             content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
           };
         } catch (error) {
-          throw new Error(`Failed to ungroup elements: ${(error as Error).message}`);
+          throw contextualError(error, `Failed to ungroup elements: ${(error as Error).message}`);
         }
       }
       case 'align_elements': {
@@ -490,7 +496,7 @@ async function dispatchTool(
             content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
           };
         } catch (error) {
-          throw new Error(`Failed to lock elements: ${(error as Error).message}`);
+          throw contextualError(error, `Failed to lock elements: ${(error as Error).message}`);
         }
       }
       case 'unlock_elements': {
@@ -505,7 +511,7 @@ async function dispatchTool(
             content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
           };
         } catch (error) {
-          throw new Error(`Failed to unlock elements: ${(error as Error).message}`);
+          throw contextualError(error, `Failed to unlock elements: ${(error as Error).message}`);
         }
       }
       case 'create_from_mermaid': {
@@ -545,7 +551,7 @@ async function dispatchTool(
             }]
           };
         } catch (error) {
-          throw new Error(`Failed to process Mermaid diagram: ${(error as Error).message}`);
+          throw contextualError(error, `Failed to process Mermaid diagram: ${(error as Error).message}`);
         }
       }
       case 'batch_create_elements': {
@@ -1193,7 +1199,7 @@ async function dispatchTool(
   } catch (error) {
     logger.error(`Error handling tool call: ${(error as Error).message}`, { error });
     return {
-      content: [{ type: 'text', text: `Error: ${(error as Error).message}` }],
+      content: [{ type: 'text', text: `Error: ${formatBoardRefusal(error) ?? (error as Error).message}` }],
       isError: true
     };
   } finally {
