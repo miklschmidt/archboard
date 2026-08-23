@@ -1,6 +1,6 @@
-// Handing the server's elements to Excalidraw, which is now nearly nothing.
+// Preparing the server's elements for Excalidraw, which is now nearly nothing.
 //
-// This file used to hold a conversion. Every delivery went through
+// This file used to hold a conversion. Every server update went through
 // `convertToExcalidrawElements`, Excalidraw's own converter, which expanded a
 // `label` into a text element with an id it invented; and then through six
 // passes of ours that put right what it had done — restoring the bindings it
@@ -20,7 +20,7 @@
 // Excalidraw.
 //
 // What is left is a guard rather than a conversion: a reference to an element
-// that is not in this delivery would make Excalidraw throw, and a pane can
+// that is not in this server update would make Excalidraw throw, and a pane can
 // legitimately receive a partial board.
 
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
@@ -42,10 +42,10 @@ export const cleanElementForExcalidraw = (element: ServerElement): Partial<Excal
 }
 
 /**
- * Drop references to elements this delivery does not carry.
+ * Drop references to elements this server update does not carry.
  *
  * A pane may hold part of a board — a merge that has not caught up, a
- * delivery that names only what changed — and Excalidraw dereferences a
+ * server update that names only what changed — and Excalidraw dereferences a
  * `containerId` and every `boundElements` entry as it renders. Pointing at
  * something that is not there is the one shape it will not survive, so the
  * pointer goes rather than the render.
