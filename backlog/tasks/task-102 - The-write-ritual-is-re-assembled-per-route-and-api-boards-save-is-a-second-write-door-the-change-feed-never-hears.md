@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-23 15:01'
-updated_date: '2026-08-23 16:41'
+updated_date: '2026-08-23 16:44'
 labels: []
 dependencies: []
 references:
@@ -52,4 +52,6 @@ Slice 1 complete. Added the synchronous board-write entry with isolated content,
 Slice 2 complete. Moved eight ordinary board-writing routes onto writeBoard: create, update, clear, delete, batch create, change report, file add, and file delete. All element routes now broadcast one elements_changed shape; file data keeps its existing payload messages. Validation: type-check; one-write 58; changes all; boards all; doing 42; lock 115; version 61; module-scope 50 modules plus self-test, all green.
 
 Slice 3 complete. POST /api/boards/save now supplies source and named destination to writeBoard; the route has no readBoardContent or writeBoardContent call. Save records the destination in the change feed and broadcasts elements_changed. check-boards proves a save-as event for ledger@option-a and an in-place save message. board-io WriteOptions shrank from file/identity/elements/force/saveCommand to force/saveCommand. Validation: type-check; one-write 58; changes all; boards all including both save checks; doing 42; lock 115; version 61; module-scope 50 modules plus self-test, all green.
+
+Slice 4 complete. Closed TASK-084 through the write module. check-one-write now refuses an unbuildable agent batch with the bad upsert first, middle, and second/last, and proves valid elements around it remain byte-for-byte unchanged. The suite also pins nine server writeBoard calls, no direct server writeBoardContent or applyElementInput call, one persistence call in the module, and elements_changed as its pane message. Validation: type-check; one-write 69; changes all; boards all; doing 42; lock 115; version 61; module-scope 50 modules plus self-test, all green.
 <!-- SECTION:NOTES:END -->

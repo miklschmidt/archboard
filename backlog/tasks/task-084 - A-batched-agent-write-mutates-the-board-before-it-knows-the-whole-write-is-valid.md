@@ -3,9 +3,11 @@ id: TASK-084
 title: >-
   A batched agent write mutates the board before it knows the whole write is
   valid
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@claude'
 created_date: '2026-08-20 21:47'
+updated_date: '2026-08-23 16:44'
 labels:
   - backend
 dependencies:
@@ -31,6 +33,26 @@ Left out of TASK-083 deliberately: that task named three callers, and this is th
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A batched agent write that is refused leaves the board exactly as it was, whatever position in the upsert list the bad element is in
-- [ ] #2 check-one-write proves it by sending a change report whose second upsert is unbuildable and asserting the first one did not land
+- [x] #1 A batched agent write that is refused leaves the board exactly as it was, whatever position in the upsert list the bad element is in
+- [x] #2 check-one-write proves it by sending a change report whose second upsert is unbuildable and asserting the first one did not land
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Route the batched change through TASK-102's isolated board mutation so all upserts validate and apply before persistence or broadcast. 2. Extend check-one-write with a valid first upsert and unbuildable second upsert, then assert the first element is unchanged. 3. Run the focused gates and close the task with the regression evidence.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented through TASK-102's board-write module. writeBoard copies the source content before invoking the complete mutation; applyElementInput may reject any upsert, but persistence, change-feed recording, pane broadcast and answer shaping happen only after the mutation returns. check-one-write sends a valid update followed by an unbuildable create and proves the valid update did not land.
+
+Final validation: bun run type-check passed; test:one-write 69, changes all, boards all, doing 42, lock 115, version 61, module-scope 50 modules plus self-test.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Batched agent changes now run against an isolated request-local board copy inside TASK-102's write entry. Persistence, feed recording and pane broadcast start only after the whole mutation succeeds. check-one-write sends invalid creates in the first, middle and second/last positions, with valid updates around them, and proves every refusal leaves both existing elements unchanged; 69 checks pass.
+<!-- SECTION:FINAL_SUMMARY:END -->
