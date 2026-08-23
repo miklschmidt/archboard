@@ -113,7 +113,7 @@ export function Shell(): JSX.Element {
   const [panes, setPanes] = useState<string[]>(['pane-1'])
   const [focused, setFocused] = useState('pane-1')
   const [statuses, setStatuses] = useState<Record<string, PaneStatus>>({})
-  // Pane ids are never reused. Numbering by list length would hand a reopened
+  // Pane ids are never reused. Numbering by list length would assign a reopened
   // pane the id of the one just closed, and the server keys a pane's selection
   // and its board by that id.
   const nextPaneNumber = useRef(2)

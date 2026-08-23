@@ -184,8 +184,8 @@
   font-weight: 600;
 }
 
-/* Confirmation targets are deliberately large: this frame is used on a
-   wall-mounted panel where a hand brushes the glass. */
+/* Confirmation touch points are deliberately large because this frame may be
+   used on a wall-mounted touch display. */
 .btn-big {
   min-height: 48px;
   min-width: 140px;
