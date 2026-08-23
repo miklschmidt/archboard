@@ -1,5 +1,9 @@
 import type { Tool } from '@modelcontextprotocol/server';
 import { EXCALIDRAW_ELEMENT_TYPES } from '../types.js';
+import {
+  CREATE_ELEMENT_JSON_SCHEMA,
+  UPDATE_ELEMENT_JSON_SCHEMA
+} from './apply-element-input.js';
 import { KINDS } from './promote.js';
 
 /**
@@ -42,68 +46,54 @@ const PANE_PARAM = {
     'browser is used, which with a single pane is that pane.'
 } as const;
 
+const createElementSchema = CREATE_ELEMENT_JSON_SCHEMA as any;
+const updateElementSchema = UPDATE_ELEMENT_JSON_SCHEMA as any;
+const elementProperties = {
+  ...createElementSchema.properties,
+  id: {
+    ...createElementSchema.properties.id,
+    description: 'Custom element ID. Arrows in the same batch can reference it.'
+  },
+  strokeStyle: {
+    ...createElementSchema.properties.strokeStyle,
+    description: 'Stroke style: solid, dashed, or dotted'
+  },
+  fontFamily: {
+    ...createElementSchema.properties.fontFamily,
+    description: 'Font family name or Excalidraw numeric ID'
+  },
+  startElementId: {
+    ...createElementSchema.properties.startElementId,
+    description: 'For arrows: ID of the element to bind the arrow start to'
+  },
+  endElementId: {
+    ...createElementSchema.properties.endElementId,
+    description: 'For arrows: ID of the element to bind the arrow end to'
+  }
+};
+
 // Tool definitions
 export const tools: Tool[] = [
   {
     name: 'create_element',
     description: 'Create a new Excalidraw element. For arrows, use startElementId/endElementId to bind to shapes (auto-routes to edges).',
     inputSchema: {
-      type: 'object',
+      ...createElementSchema,
       properties: {
-        id: { type: 'string', description: 'Custom element ID (optional, auto-generated if omitted). Use with startElementId/endElementId in batch_create_elements.' },
-        type: {
-          type: 'string',
-          enum: Object.values(EXCALIDRAW_ELEMENT_TYPES)
-        },
-        x: { type: 'number' },
-        y: { type: 'number' },
-        width: { type: 'number' },
-        height: { type: 'number' },
-        backgroundColor: { type: 'string' },
-        strokeColor: { type: 'string' },
-        strokeWidth: { type: 'number' },
-        strokeStyle: { type: 'string', description: 'Stroke style: solid, dashed, dotted' },
-        roughness: { type: 'number' },
-        opacity: { type: 'number' },
-        text: { type: 'string' },
-        fontSize: { type: 'number' },
-        fontFamily: { type: ['string', 'number'], description: 'Font family: virgil/hand/handwritten (1), helvetica/sans/sans-serif (2), cascadia/mono/monospace (3), excalifont (5), nunito (6), lilita/lilita one (7), comic shanns/comic (8), or numeric ID' },
-        startElementId: { type: 'string', description: 'For arrows: ID of the element to bind the arrow start to. Arrow auto-routes to element edge.' },
-        endElementId: { type: 'string', description: 'For arrows: ID of the element to bind the arrow end to. Arrow auto-routes to element edge.' },
-        endArrowhead: { type: 'string', description: 'Arrowhead style at end: arrow, bar, dot, triangle, or null' },
-        startArrowhead: { type: 'string', description: 'Arrowhead style at start: arrow, bar, dot, triangle, or null' },
+        ...elementProperties,
         document: DOCUMENT_PARAM
-      },
-      required: ['type', 'x', 'y']
+      }
     }
   },
   {
     name: 'update_element',
     description: 'Update an existing Excalidraw element',
     inputSchema: {
-      type: 'object',
+      ...updateElementSchema,
       properties: {
-        id: { type: 'string' },
-        type: {
-          type: 'string',
-          enum: Object.values(EXCALIDRAW_ELEMENT_TYPES)
-        },
-        x: { type: 'number' },
-        y: { type: 'number' },
-        width: { type: 'number' },
-        height: { type: 'number' },
-        backgroundColor: { type: 'string' },
-        strokeColor: { type: 'string' },
-        strokeWidth: { type: 'number' },
-        strokeStyle: { type: 'string' },
-        roughness: { type: 'number' },
-        opacity: { type: 'number' },
-        text: { type: 'string' },
-        fontSize: { type: 'number' },
-        fontFamily: { type: ['string', 'number'], description: 'Font family: virgil/hand/handwritten (1), helvetica/sans/sans-serif (2), cascadia/mono/monospace (3), excalifont (5), nunito (6), lilita/lilita one (7), comic shanns/comic (8), or numeric ID' },
+        ...elementProperties,
         document: DOCUMENT_PARAM
-      },
-      required: ['id']
+      }
     }
   },
   {
@@ -296,32 +286,10 @@ export const tools: Tool[] = [
         elements: {
           type: 'array',
           items: {
-            type: 'object',
+            ...createElementSchema,
             properties: {
-              id: { type: 'string', description: 'Custom element ID. Arrows can reference this via startElementId/endElementId.' },
-              type: {
-                type: 'string',
-                enum: Object.values(EXCALIDRAW_ELEMENT_TYPES)
-              },
-              x: { type: 'number' },
-              y: { type: 'number' },
-              width: { type: 'number' },
-              height: { type: 'number' },
-              backgroundColor: { type: 'string' },
-              strokeColor: { type: 'string' },
-              strokeWidth: { type: 'number' },
-              strokeStyle: { type: 'string', description: 'Stroke style: solid, dashed, dotted' },
-              roughness: { type: 'number' },
-              opacity: { type: 'number' },
-              text: { type: 'string' },
-              fontSize: { type: 'number' },
-              fontFamily: { type: ['string', 'number'], description: 'Font family: virgil/hand/handwritten (1), helvetica/sans/sans-serif (2), cascadia/mono/monospace (3), excalifont (5), nunito (6), lilita/lilita one (7), comic shanns/comic (8), or numeric ID' },
-              startElementId: { type: 'string', description: 'For arrows: ID of element to bind arrow start to' },
-              endElementId: { type: 'string', description: 'For arrows: ID of element to bind arrow end to' },
-              endArrowhead: { type: 'string', description: 'Arrowhead style at end: arrow, bar, dot, triangle, or null' },
-              startArrowhead: { type: 'string', description: 'Arrowhead style at start: arrow, bar, dot, triangle, or null' }
-            },
-            required: ['type', 'x', 'y']
+              ...elementProperties
+            }
           }
         },
         document: DOCUMENT_PARAM

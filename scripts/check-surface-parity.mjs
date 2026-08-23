@@ -32,6 +32,10 @@ const repoRoot = join(__dirname, '..');
 const { tools } = await import(join(repoRoot, 'src', 'core', 'mcp-tools.ts'));
 const { cliSurface } = await import(join(repoRoot, 'src', 'cli', 'run.ts'));
 const { formatBoardRefusal } = await import(join(repoRoot, 'src', 'core', 'canvas-client.ts'));
+const {
+  CREATE_ELEMENT_JSON_SCHEMA,
+  UPDATE_ELEMENT_JSON_SCHEMA
+} = await import(join(repoRoot, 'src', 'core', 'apply-element-input.ts'));
 
 // --- the mapping -------------------------------------------------------------
 //
@@ -121,6 +125,43 @@ function fail(message) {
 
 const toolNames = new Set(tools.map(tool => tool.name));
 
+const sameFields = (toolName, actual, expected) => {
+  const missing = [...expected].filter(field => !actual.has(field));
+  const extra = [...actual].filter(field => !expected.has(field));
+  if (missing.length > 0 || extra.length > 0) {
+    fail(
+      `Tool \`${toolName}\` element fields differ from applyElementInput: ` +
+      `missing [${missing.join(', ')}], extra [${extra.join(', ')}].`
+    );
+  }
+};
+
+// The converter owns the accepted element statement. MCP may describe those
+// fields, but it must not maintain another validator that can strip one.
+{
+  const requestFields = new Set(['document', 'doing', 'board', 'expectVersion']);
+  const createFields = new Set(Object.keys(CREATE_ELEMENT_JSON_SCHEMA.properties ?? {}));
+  const updateFields = new Set(Object.keys(UPDATE_ELEMENT_JSON_SCHEMA.properties ?? {}));
+  const createTool = tools.find(tool => tool.name === 'create_element');
+  const updateTool = tools.find(tool => tool.name === 'update_element');
+  const batchTool = tools.find(tool => tool.name === 'batch_create_elements');
+  sameFields(
+    'create_element',
+    new Set(Object.keys(createTool?.inputSchema?.properties ?? {}).filter(field => !requestFields.has(field))),
+    createFields
+  );
+  sameFields(
+    'update_element',
+    new Set(Object.keys(updateTool?.inputSchema?.properties ?? {}).filter(field => !requestFields.has(field))),
+    updateFields
+  );
+  sameFields(
+    'batch_create_elements',
+    new Set(Object.keys(batchTool?.inputSchema?.properties?.elements?.items?.properties ?? {})),
+    createFields
+  );
+}
+
 const cliEntries = new Set();
 for (const { name, subcommands } of cliSurface()) {
   if (subcommands.length === 0) cliEntries.add(name);
@@ -197,7 +238,9 @@ for (const tool of toolNames) {
   const error = new Error(reason);
   error.refusal = {
     success: false,
-    code: 'BOARD_HELD',
+    // Deliberately not in the CLI exit-code set: board-carrying refusals are
+    // recognized by this body shape, so a new server refusal still prints it.
+    code: 'BOARD_WRITE_REFUSED',
     error: reason,
     holder: { id: 'pane-1', kind: 'human' },
     waitedMs: 3000,

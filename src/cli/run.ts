@@ -1,6 +1,11 @@
 import { CliUsageError } from './args.js';
 import {
-  boardHoldSeen, formatBoardRefusal, setExpectedVersion, setRequestedBoard, setWriteDoing
+  BOARD_REFUSAL_CODES,
+  boardHoldSeen,
+  formatBoardRefusal,
+  setExpectedVersion,
+  setRequestedBoard,
+  setWriteDoing
 } from '../core/canvas-client.js';
 import { packageVersion } from '../core/package-version.js';
 import * as server from './commands/server.js';
@@ -439,12 +444,7 @@ function exitCodeFor(error: unknown): number {
   // Every refusal leaves the board unwritten, so they share the exit status a
   // script already watches for. The attached body says whether another holder,
   // a revoked claim, a moved version or a changed note stopped it.
-  if (
-    code === 'BOARD_CONFLICT' ||
-    code === 'BOARD_HELD' ||
-    code === 'BOARD_VERSION_CONFLICT' ||
-    code === 'CLAIM_REVOKED'
-  ) return 5;
+  if (code === 'BOARD_CONFLICT' || BOARD_REFUSAL_CODES.has(code)) return 5;
   // A missing board is a mistake at the keyboard, like any other usage error.
   if (code === 'BOARD_REQUIRED') return 2;
   return 1;

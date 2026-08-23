@@ -30,14 +30,14 @@ export interface SyncResponse {
 
 export interface BoardRefusal {
   success: false;
-  code: 'BOARD_HELD' | 'BOARD_VERSION_CONFLICT' | 'CLAIM_REVOKED';
+  code: string;
   error: string;
   document: ServerElement[];
   version: number | null;
   [key: string]: unknown;
 }
 
-const BOARD_REFUSAL_CODES = new Set([
+export const BOARD_REFUSAL_CODES = new Set([
   'BOARD_HELD',
   'BOARD_VERSION_CONFLICT',
   'CLAIM_REVOKED'
@@ -168,7 +168,7 @@ function rememberVersion(data: unknown): void {
   // board from the one the call was addressed to. So an ordinary answer's
   // version is taken only when it names the board that was asked for.
   const found = readVersion(body.fingerprint)
-    ?? (BOARD_REFUSAL_CODES.has(body.code) ? readVersion(body) : undefined)
+    ?? (isBoardRefusal(body) ? readVersion(body) : undefined)
     ?? readVersion(body.versionConflict, 'actual')
     ?? (sameBoard(body.board) ? readVersion(body) : undefined);
   if (found !== undefined) rememberBoardVersion(clientVersionWriter(requestedBoard), found);
@@ -298,10 +298,18 @@ export async function syncToCanvas(
 
   } catch (error) {
     logger.warn(`Canvas sync failed for ${operation}:`, (error as Error).message);
-    if (boardRefusalOf(error)) throw error;
-    // Don't throw - we want MCP operations to work even if canvas is unavailable
-    return null;
+    if (isConnectionFailure(error)) return null;
+    throw error;
   }
+}
+
+function isConnectionFailure(error: unknown): boolean {
+  const value = error as { name?: string; message?: string; code?: string; cause?: { code?: string } };
+  return value.name === 'ConnectionRefused'
+    || value.message?.startsWith('Unable to connect.') === true
+    || ['ECONNREFUSED', 'ECONNRESET', 'ENOTFOUND', 'EAI_AGAIN', 'ETIMEDOUT'].includes(
+      value.cause?.code ?? value.code ?? ''
+    );
 }
 
 /**
@@ -325,7 +333,7 @@ export interface WriteOptions {
 }
 
 /** The agent spelling accepted by the server's element-input entry. */
-export type ElementInput = object;
+export type ElementInput = Record<string, unknown>;
 
 // Helper to sync element creation to canvas.
 // Sync disabled = deliberate no-op (echo the input, legacy behavior);
@@ -334,7 +342,7 @@ export type ElementInput = object;
 export async function createElementOnCanvas(
   elementData: ElementInput, options: WriteOptions = {}
 ): Promise<WriteAnswer | null> {
-  if (!ENABLE_CANVAS_SYNC) return { element: elementData as unknown as ServerElement };
+  if (!ENABLE_CANVAS_SYNC) return { element: Object.assign({} as ServerElement, elementData) };
   const result = await syncToCanvas('create', elementData, options);
   return result ? (result as unknown as WriteAnswer) : null;
 }
@@ -356,9 +364,11 @@ export async function deleteElementOnCanvas(elementId: string, options: WriteOpt
 // Helper to sync batch creation to canvas (same failure semantics as
 // createElementOnCanvas: disabled = echo, failed = null)
 export async function batchCreateElementsOnCanvas(
-  elementsData: ElementInput[], options: WriteOptions = {}
+  elementsData: Array<ElementInput | ServerElement>, options: WriteOptions = {}
 ): Promise<WriteAnswer | null> {
-  if (!ENABLE_CANVAS_SYNC) return { elements: elementsData as unknown as ServerElement[] };
+  if (!ENABLE_CANVAS_SYNC) {
+    return { elements: elementsData.map(element => Object.assign({} as ServerElement, element)) };
+  }
   const result = await syncToCanvas('batch_create', elementsData, options);
   return result?.elements ? (result as unknown as WriteAnswer) : null;
 }
@@ -429,7 +439,6 @@ function isBoardRefusal(data: unknown): data is BoardRefusal {
   const body = data as Record<string, unknown>;
   return body.success === false
     && typeof body.code === 'string'
-    && BOARD_REFUSAL_CODES.has(body.code)
     && typeof body.error === 'string'
     && Array.isArray(body.document)
     && (typeof body.version === 'number' || body.version === null);
@@ -1006,7 +1015,7 @@ export interface ElementChangesResult {
 }
 
 export async function batchCreateElementsStrict(
-  elements: ElementInput[], options: WriteOptions = {}
+  elements: Array<ElementInput | ServerElement>, options: WriteOptions = {}
 ): Promise<WriteAnswer & { elements: ServerElement[] }> {
   const data = await requestJson<ApiResponse & WriteAnswer>(
     `/api/elements/batch${options.document ? '?document=1' : ''}`, {
