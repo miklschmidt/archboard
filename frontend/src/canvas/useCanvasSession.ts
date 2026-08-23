@@ -28,6 +28,9 @@ import type {
 } from '../types'
 import { cleanElementForExcalidraw, elementsForScene } from './elements'
 import { baselineFrom, diffAgainstBaseline, fingerprint, isEmpty, type Baseline } from './changes'
+import {
+  armDelivery, readDebt, readDelivery, readOrphanedWindow, watchingForLoss
+} from './loss-canary'
 import { derivedId, isBlockId } from '../../../src/core/ids'
 import {
   BoardConflictError, fetchElements, fetchFiles, holdBoard, loadedBundle, releaseBoard, reportChanges,
@@ -149,6 +152,12 @@ function sceneStamp(api: ExcalidrawImperativeAPI | null): string {
 }
 
 const EMPTY_WITHHELD: ReadonlySet<string> = new Set()
+
+/** A document the pane has just been given, and what it hashed to on arrival. */
+interface Delivered {
+  stamp: string
+  canary: ReturnType<typeof armDelivery>
+}
 
 /**
  * The text element a person has an editor open on, if any.
@@ -334,11 +343,32 @@ export function useCanvasSession({
   const rebaseNeededRef = useRef(false)
 
   const reportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // `settle` closes the suppression window by asking whether a hand moved
+  // while it was open, and the thing that answers that is `scheduleReport`,
+  // which is built out of `settle`. A ref rather than a rearrangement: the
+  // cycle is real — applying a delivery can owe a report, and sending a report
+  // applies a delivery — so one of the two directions has to be late-bound.
+  const scheduleReportRef = useRef<() => void>(() => { })
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inFlightRef = useRef(false)
   // Raised while we are writing the server's own news into the scene, so that
   // updateScene() does not read back as a human edit and bounce straight home.
   const suppressRef = useRef(0)
+  // What this pane has put on the glass that did not come from a hand, and
+  // what the scene hashed to the instant each one landed. Read at the end of
+  // the suppression window, where a stamp that has moved since is the only
+  // evidence left that somebody edited while the pane was not listening
+  // (TASK-099).
+  //
+  // A queue rather than one slot, because two windows can be open at once: a
+  // second delivery arriving before the first window closes would overwrite
+  // the first's record, and the first window would then close against a stamp
+  // taken after the hand had already moved — which is the bug this exists to
+  // prevent, wearing the fix as a disguise. Timeouts fire in the order they
+  // were set and `settle` always runs one statement before the delivery it is
+  // for, so first in is first out. Nothing in `scripts/` reaches this today,
+  // and `readOrphanedWindow` is what would say so if the pairing ever broke.
+  const deliveredRef = useRef<Delivered[]>([])
   // How many times this pane has changed under a human's hand. Counted, not
   // diffed, because the question it answers is "did the human touch anything
   // while that write was in flight" and a diff cannot tell a human's edit from
@@ -523,21 +553,96 @@ export function useCanvasSession({
     publishStatus()
   }, [publishStatus])
 
+  /**
+   * Does this pane owe the server something with nothing about to say it?
+   *
+   * Asked wherever the pane decides it is done talking — see ./loss-canary,
+   * and nothing asks unless somebody is watching. An edit is safe while the
+   * debt stands *and* something is going to pay it, and every place below is a
+   * place where the second half can stop being true without the first.
+   */
+  const watchDebt = useCallback((kind: string): void => {
+    if (!watchingForLoss()) return
+    const api = apiRef.current
+    if (!api || !userInteractedRef.current) return
+    if (inFlightRef.current || reportTimerRef.current || retryTimerRef.current) return
+    // A delivery is on the glass whose record has not been written yet, so the
+    // debt this would find is the one that settle is a moment away from
+    // clearing. The question is only meaningful once the pane is quiet.
+    if (suppressRef.current > 0) return
+    const editing = idUnderEditor(api)
+    readDebt(kind, diffAgainstBaseline(
+      api.getSceneElementsIncludingDeleted() as unknown as Record<string, any>[],
+      baselineRef.current,
+      editing === null ? EMPTY_WITHHELD : new Set([editing])
+    ))
+  }, [])
+
   // ─── Writing the server's news into the scene ────────────────
 
-  const settle = useCallback((after: () => void): void => {
+  /**
+   * Stop reading the scene as a hand until the delivery about to be written
+   * into it has been rendered.
+   *
+   * The suppression has to span a macrotask, because `updateScene` reaches
+   * `onChange` through a React render and there is no synchronous moment at
+   * which the delivery is finished arriving. **Nothing about the pane's record
+   * of the board is written in here**, and that is the whole of TASK-099: the
+   * record used to be, from the live scene, so an edit made in this window went
+   * into it as already agreed and was never mentioned again.
+   *
+   * What is left in here is the two things that genuinely cannot be done until
+   * the window closes. The scene stamp is restored to what the delivery left —
+   * *not* to what the scene now holds — so a hand that moved while nobody was
+   * listening still reads as a change. And then the pane asks, through the
+   * ordinary path, whether anything did.
+   */
+  const settle = useCallback((): void => {
     suppressRef.current += 1
     setTimeout(() => {
       suppressRef.current = Math.max(0, suppressRef.current - 1)
-      after()
-      // The server's news moved the scene, so it moved the stamp. Taking the
-      // new one here is what stops the next thing a human does reading as a
-      // change *plus* whatever another writer had just done, and taking the
-      // board for a broadcast that had nothing to do with them.
-      sceneStampRef.current = sceneStamp(apiRef.current)
+      const delivered = deliveredRef.current.shift()
+      // Off unless somebody has created `window.__abLoss`; see ./loss-canary.
+      // This is the moment it is asking about.
+      readDelivery(delivered?.canary ?? null, apiRef.current?.getSceneElements() as any ?? [])
+      if (!delivered) readOrphanedWindow()
+      // The server's news moved the scene, so it moved the stamp, and the next
+      // thing a human does must not read as a change *plus* whatever another
+      // writer had just done — that took the board for a broadcast nobody had
+      // touched. So the stamp becomes the delivery's own. The difference
+      // between it and the scene as it now stands is exactly what a hand did
+      // while this window was open, and the line after it is what says so.
+      sceneStampRef.current = delivered ? delivered.stamp : sceneStamp(apiRef.current)
       publishStatus()
+      scheduleReportRef.current()
+      watchDebt('a delivery had just been written down')
     }, 0)
-  }, [publishStatus])
+  }, [publishStatus, watchDebt])
+
+  /**
+   * The pane has just been handed a document, and this is its record of it.
+   *
+   * Taken in the same statement sequence as `updateScene`, which is what makes
+   * it a record of the delivery rather than of the scene: nothing can have
+   * happened in between, so nothing a hand did can be folded into it. The
+   * scene is read back rather than the delivery being fingerprinted directly,
+   * because Excalidraw repairs a document as it takes it — `syncInvalidIndices`
+   * above all — and a record of what was sent rather than of what landed would
+   * make every element differ from it and be reported straight back.
+   */
+  const recordDelivery = useCallback((
+    kind: string,
+    record: (scene: readonly Record<string, any>[]) => void
+  ): void => {
+    const api = apiRef.current
+    if (!api) return
+    const scene = api.getSceneElements() as unknown as Record<string, any>[]
+    record(scene)
+    deliveredRef.current.push({
+      stamp: sceneStamp(api),
+      canary: armDelivery(kind, scene, (id) => baselineRef.current.get(id))
+    })
+  }, [])
 
   /**
    * Replace the scene outright; the board is now exactly what the server said.
@@ -563,15 +668,16 @@ export function useCanvasSession({
     // would strand the label.
     const kept = withheld.size === 0 ? [] : (api.getSceneElementsIncludingDeleted() as any[])
       .filter((element) => withheld.has(element.id) && !answered.has(element.id))
-    settle(() => {
-      const scene = api.getSceneElements() as unknown as Record<string, any>[]
-      baselineRef.current = baselineFrom(scene.filter((element) => !withheld.has(element.id)))
-    })
+    settle()
     api.updateScene({
       elements: elementsForScene([...elements, ...kept]) as any,
       captureUpdate: CaptureUpdateAction.NEVER
     })
-  }, [settle])
+    recordDelivery('a whole board from the server',
+      (scene) => {
+        baselineRef.current = baselineFrom(scene.filter((element) => !withheld.has(element.id)))
+      })
+  }, [recordDelivery, settle])
 
   /**
    * Fold specific server elements into whatever is on screen, and re-agree the
@@ -595,32 +701,33 @@ export function useCanvasSession({
     })
     merged.push(...byId.values())
 
-    settle(() => {
-      const scene = new Map(
-        (api.getSceneElements() as unknown as Record<string, any>[]).map((el) => [el.id as string, el])
-      )
-      for (const id of touched) {
-        const element = scene.get(id)
-        if (element) baselineRef.current.set(id, fingerprint(element))
-        else baselineRef.current.delete(id)
-      }
-    })
+    settle()
     api.updateScene({
       elements: elementsForScene(merged) as any,
       captureUpdate: CaptureUpdateAction.NEVER
     })
-  }, [settle])
+    recordDelivery("another writer's elements", (scene) => {
+      const landed = new Map(scene.map((element) => [element.id as string, element]))
+      for (const id of touched) {
+        const element = landed.get(id)
+        if (element) baselineRef.current.set(id, fingerprint(element))
+        else baselineRef.current.delete(id)
+      }
+    })
+  }, [recordDelivery, settle])
 
   const removeElements = useCallback((ids: string[]): void => {
     const api = apiRef.current
     if (!api || ids.length === 0) return
     const gone = new Set(ids)
-    settle(() => { ids.forEach((id) => baselineRef.current.delete(id)) })
+    settle()
     api.updateScene({
       elements: api.getSceneElements().filter((el) => !gone.has(el.id)),
       captureUpdate: CaptureUpdateAction.NEVER
     })
-  }, [settle])
+    recordDelivery("another writer's deletion",
+      () => { ids.forEach((id) => baselineRef.current.delete(id)) })
+  }, [recordDelivery, settle])
 
   // Re-read THIS pane's board from the server. Deliberately not "what board is
   // the server on": there is no such thing, and a pane that asked would be at
@@ -792,16 +899,22 @@ export function useCanvasSession({
     }
     // Suppressed, because this is the pane putting its own house in order and
     // not a hand moving. The report it is part of is already on its way out.
-    settle(() => { })
+    settle()
     api.updateScene({
       elements: withTextIdsRenamed(scene, renames) as any,
       captureUpdate: CaptureUpdateAction.NEVER
     })
-  }, [settle])
+    // Writes nothing into the baseline — the report this is part of is what
+    // does that — so there is nothing here for an edit to be absorbed into.
+    recordDelivery('the pane renaming its own text elements', () => { })
+  }, [recordDelivery, settle])
 
   const sendReport = useCallback(async (): Promise<void> => {
     const api = apiRef.current
     if (!api) return
+    // Nothing is lost by returning here: the baseline is untouched, so the
+    // very same delta is recomputed by the next report, and the debounce that
+    // called this has re-armed itself rather than given up (`scheduleReport`).
     if (inFlightRef.current) return
     if (retryTimerRef.current) {
       clearTimeout(retryTimerRef.current)
@@ -912,10 +1025,12 @@ export function useCanvasSession({
     } finally {
       inFlightRef.current = false
     }
+    watchDebt('a report had just landed')
     // `publishStatus` puts the hold in the pane's status when the write is
     // refused (TASK-079); `releaseIfIdle` gives the board back when it lands
     // (TASK-067). Both are called from the body, so both belong here.
-  }, [applyServerScene, clientId, noteChange, publishStatus, releaseIfIdle, settleForeignTextIds])
+  }, [applyServerScene, clientId, noteChange, publishStatus, releaseIfIdle, settleForeignTextIds,
+    watchDebt])
 
   /** Does this pane hold edits the server has not accepted? */
   const hasPendingChanges = useCallback((): boolean => {
@@ -959,12 +1074,34 @@ export function useCanvasSession({
     // taken now, rather than 400 ms after the finger lifts (ADR 0016).
     takeHold()
     if (reportTimerRef.current) clearTimeout(reportTimerRef.current)
-    reportTimerRef.current = setTimeout(() => {
+    // Re-armed rather than dropped when it cannot go out yet, and that is the
+    // whole of why this is a named function (TASK-099).
+    //
+    // Two things stop a report at the moment it comes due. One is already in
+    // flight, or a delivery is being written into the scene and this pane is
+    // not reading it as a hand. Both used to `return`, on the reasoning that
+    // the baseline is untouched so the same delta is recomputed next time —
+    // which is true, and says nothing about there being a next time. There is
+    // one only if something else arms it, and in both cases there is a
+    // sequence in which nothing does: a reply that comes back after a hand has
+    // moved applies no document, so no settle runs to notice; and an edit made
+    // *before* a delivery is already in the stamp that settle restores, so the
+    // drain passes it over.
+    //
+    // Re-arming is not a retry making a loss less likely. The timer is never
+    // dropped, so "owed" implies "armed" by construction, which is the
+    // property this file has to hold.
+    const due = (): void => {
       reportTimerRef.current = null
-      if (suppressRef.current > 0) return
+      if (inFlightRef.current || suppressRef.current > 0) {
+        reportTimerRef.current = setTimeout(due, REPORT_DEBOUNCE_MS)
+        return
+      }
       void sendReport()
-    }, REPORT_DEBOUNCE_MS)
+    }
+    reportTimerRef.current = setTimeout(due, REPORT_DEBOUNCE_MS)
   }, [sendReport, takeHold])
+  useEffect(() => { scheduleReportRef.current = scheduleReport }, [scheduleReport])
 
   // A tab being closed or hidden still owes the server its last few hundred
   // milliseconds of edits. sendBeacon survives the unload; fetch does not.

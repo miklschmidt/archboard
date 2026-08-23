@@ -4,7 +4,7 @@ title: check-live-session does not survive being run alongside other suites
 status: To Do
 assignee: []
 created_date: '2026-08-22 17:47'
-updated_date: '2026-08-22 22:26'
+updated_date: '2026-08-23 00:31'
 labels: []
 dependencies:
   - TASK-086
@@ -45,4 +45,12 @@ The fix is probably to stop waiting a fixed window: wait on the condition, the w
 
 <!-- SECTION:NOTES:BEGIN -->
 TASK-099 measures this family standalone and the diagnosis above needs qualifying. It reproduces one run in ten with nothing else on the machine, and the wait it blames is already a condition with a six-second budget rather than a fixed window — the check runs that budget out and the two documents never converge. Contention raises the rate; it is not what makes it possible. The divergence is a real lost edit, which is TASK-099.
+
+TASK-099 found the mechanism behind the load dependence, and it is in the pane rather than in the check.
+
+A report that came due while one was in flight was dropped with nothing rescheduled. If the answer then came back naming a hand that had moved, no document was applied, so nothing else armed a report either, and the edit was owed to the server with nothing left that would ever say it. Reaching it needs a round trip longer than REPORT_DEBOUNCE_MS, which is what a loaded machine produces — so the load dependence this task recorded is real, and the cause is a lost edit rather than a convergence window being missed.
+
+It is fixed and it is now a check rather than a rate: check-live-session holds one report's answer back for a debounce and a half, lands a second drag in between, asserts the collision happened and then asserts both drags are on the board. Reverting the fix fails three of its checks.
+
+What is left of this task is its own acceptance criteria: whether the check survives running beside the rest of the suite on a loaded machine, and whether its waits are conditions or justified fixed windows. The diagnosis above needs the correction rather than the retraction.
 <!-- SECTION:NOTES:END -->

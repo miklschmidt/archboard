@@ -96,6 +96,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // passing after somebody shortened the debounce and would stop testing the
 // thing it names.
 const { LOCK_FREE_LINGER_MS, LOCK_RENEW_MS, REPORT_DEBOUNCE_MS } = await import(src('core/timing.ts'));
+// What the server measures a text element to, so the check can wait until the
+// page agrees rather than until a font has probably loaded.
+const { measureLineWidth } = await import(src('core/measure-text.ts'));
 const MID_DEBOUNCE_MS = Math.round(REPORT_DEBOUNCE_MS * 0.3);
 
 const IGNORED = new Set([
@@ -182,6 +185,13 @@ const readScene = () => evalInPage(`(() => {
 const INSTALL_COUNTER = `(() => {
   if (window.__abReports) return { already: true };
   window.__abReports = { sent: 0, done: 0 };
+  // Arms the pane's loss canary (frontend/src/canvas/loss-canary.ts). Nothing
+  // in the frontend creates this, so an ordinary page never pays for it. It
+  // counts the two ways an edit somebody made can stop being owed to the
+  // server: the pane writing a delivery down as agreed after the scene has
+  // moved on from it, and the pane holding a debt with nothing about to pay
+  // it (TASK-099).
+  window.__abLoss = { deliveries: 0, moved: 0, absorbed: 0, unarmed: 0, events: [] };
   const original = window.fetch;
   window.fetch = function (input, init) {
     const url = typeof input === 'string' ? input : (input && input.url) || '';
@@ -189,12 +199,33 @@ const INSTALL_COUNTER = `(() => {
     const counted = method === 'POST' && url.includes('/api/elements/changes');
     if (counted) window.__abReports.sent += 1;
     const answer = original.apply(this, arguments);
-    return counted ? answer.then(r => { window.__abReports.done += 1; return r; }) : answer;
+    if (!counted) return answer;
+    // Holding one report's answer back is how a second one is made to come
+    // due while the first is still in flight, which is a window of its own
+    // and one no amount of writing faster reaches (TASK-099).
+    const holdFor = window.__abDelayReport || 0;
+    window.__abDelayReport = 0;
+    return answer
+      .then(r => holdFor ? new Promise(go => setTimeout(() => go(r), holdFor)) : r)
+      .then(r => {
+        window.__abReports.done += 1;
+        if (holdFor) window.__abAnsweredAt = performance.now();
+        return r;
+      });
   };
   return { installed: true };
 })()`;
 
 const reportCount = () => evalInPage('(() => ({ ...window.__abReports }))()');
+
+// What the canary saw since it was last asked. Drained, so an event can be
+// named with the cycle it happened in rather than with a timestamp.
+const lossCanary = () => evalInPage(`(() => {
+  const seen = window.__abLoss;
+  if (!seen) return { missing: true };
+  return { deliveries: seen.deliveries, moved: seen.moved, absorbed: seen.absorbed,
+    unarmed: seen.unarmed, events: seen.events.splice(0) };
+})()`);
 
 // ---------------------------------------------------------------------------
 // The human's hands
@@ -208,41 +239,107 @@ const reportCount = () => evalInPage('(() => ({ ...window.__abReports }))()');
 // (a finding of stage 5) — so a width invented here would be a width the note
 // keeps, and this check would be asserting its own arithmetic rather than the
 // round trip.
-const humanEdit = edit => evalInPage(`(() => {
+//
+// Installed in the page rather than evaluated each time, because the hand has
+// to be usable from inside the page too: the deterministic window below fires
+// one from a microtask the pane's own delivery scheduled, and an `eval` round
+// trip cannot be timed that finely.
+const INSTALL_HANDS = `(() => {
+  if (window.__abApplyEdit) return { already: true };
+  window.__abApplyEdit = edit => {
+    const app = ${APP};
+    if (!app) return { error: 'no Excalidraw app instance' };
+    const all = app.scene.getElementsIncludingDeleted().map(e => ({ ...e }));
+    const at = all.findIndex(e => e.id === edit.id);
+    if (at === -1) return { error: 'the pane is not holding ' + edit.id };
+
+    let next = all;
+    if (edit.kind === 'delete') {
+      next = all.filter(e => e.id !== edit.id);
+    } else if (edit.kind === 'move') {
+      next = all.map(e => e.id === edit.id ? { ...e, x: e.x + edit.dx, y: e.y + edit.dy } : e);
+    } else if (edit.kind === 'resize') {
+      next = all.map(e => e.id === edit.id
+        ? { ...e, width: Math.max(20, e.width + edit.dw), height: Math.max(20, e.height + edit.dh) }
+        : e);
+    } else if (edit.kind === 'retype') {
+      const text = all[at];
+      if (text.type !== 'text') return { error: edit.id + ' is not a text element' };
+      const ctx = document.createElement('canvas').getContext('2d');
+      const family = { 1: 'Virgil', 2: 'Helvetica', 3: 'Cascadia', 5: 'Excalifont',
+        6: 'Nunito', 7: 'Lilita One', 8: 'Comic Shanns' }[text.fontFamily] || 'Excalifont';
+      const font = text.fontSize + 'px ' + family;
+      // Refused rather than measured in whatever Chrome falls back to. A width
+      // from the wrong font is a number the server will re-measure and the pane
+      // will keep reporting, and the two never reconcile — which reads exactly
+      // like the lost edit this check is for.
+      if (!document.fonts.check(font)) return { error: font + ' has not been loaded' };
+      ctx.font = font;
+      const width = ctx.measureText(edit.text).width;
+      next = all.map(e => e.id === edit.id
+        ? { ...e, text: edit.text, originalText: edit.text, rawText: edit.text, width }
+        : e);
+    } else {
+      return { error: 'unknown edit ' + edit.kind };
+    }
+
+    app.updateScene({ elements: next, captureUpdate: 'IMMEDIATELY' });
+    return { ok: true, count: next.length };
+  };
+  return { installed: true };
+})()`;
+
+const humanEdit = edit =>
+  evalInPage(`window.__abApplyEdit(${JSON.stringify(edit)})`);
+
+// A hand that lands inside the window, rather than one that might.
+//
+// The window is between a delivery reaching the scene and the pane writing
+// that delivery down as what the server holds. It is one macrotask wide, and
+// the sampled version of this — 42 cycles of writes timed to collide — enters
+// it about once in four hundred cycles, which is why TASK-099 took ten runs an
+// arm to measure and could not be reproduced on demand.
+//
+// So it is arranged instead. `Scene.replaceAllElements` is where a delivery
+// lands, whoever called it, and patching it there rather than patching
+// `updateScene` matters: the imperative API the pane holds captured
+// `this.updateScene` when it was made, so replacing the method on the instance
+// would leave the pane calling the original. Armed, the next delivery
+// schedules the human's edit in a microtask, which runs after the pane's
+// delivery code has finished and before the timeout that writes the baseline —
+// exactly the window, every time.
+//
+// A microtask is not how a finger arrives, and it does not need to be. What
+// this reproduces is the *ordering*, which is the whole of the bug: the edit is
+// in the scene, and the pane is about to conclude it has already been reported.
+const INSTALL_INJECTOR = `(() => {
   const app = ${APP};
   if (!app) return { error: 'no Excalidraw app instance' };
-  const edit = ${JSON.stringify(edit)};
-  const all = app.scene.getElementsIncludingDeleted().map(e => ({ ...e }));
-  const at = all.findIndex(e => e.id === edit.id);
-  if (at === -1) return { error: 'the pane is not holding ' + edit.id };
-
-  let next = all;
-  if (edit.kind === 'delete') {
-    next = all.filter(e => e.id !== edit.id);
-  } else if (edit.kind === 'move') {
-    next = all.map(e => e.id === edit.id ? { ...e, x: e.x + edit.dx, y: e.y + edit.dy } : e);
-  } else if (edit.kind === 'resize') {
-    next = all.map(e => e.id === edit.id
-      ? { ...e, width: Math.max(20, e.width + edit.dw), height: Math.max(20, e.height + edit.dh) }
-      : e);
-  } else if (edit.kind === 'retype') {
-    const text = all[at];
-    if (text.type !== 'text') return { error: edit.id + ' is not a text element' };
-    const ctx = document.createElement('canvas').getContext('2d');
-    const family = { 1: 'Virgil', 2: 'Helvetica', 3: 'Cascadia', 5: 'Excalifont',
-      6: 'Nunito', 7: 'Lilita One', 8: 'Comic Shanns' }[text.fontFamily] || 'Excalifont';
-    ctx.font = text.fontSize + 'px ' + family;
-    const width = ctx.measureText(edit.text).width;
-    next = all.map(e => e.id === edit.id
-      ? { ...e, text: edit.text, originalText: edit.text, rawText: edit.text, width }
-      : e);
-  } else {
-    return { error: 'unknown edit ' + edit.kind };
-  }
-
-  app.updateScene({ elements: next, captureUpdate: 'IMMEDIATELY' });
-  return { ok: true, count: next.length };
-})()`);
+  if (window.__abInjector) return { already: true };
+  window.__abInjector = true;
+  window.__abPending = null;
+  window.__abInjected = 0;
+  let ours = false;
+  const real = app.scene.replaceAllElements.bind(app.scene);
+  app.scene.replaceAllElements = function (elements) {
+    const result = real(elements);
+    const pending = window.__abPending;
+    if (pending && !ours) {
+      window.__abPending = null;
+      queueMicrotask(() => {
+        ours = true;
+        try {
+          window.__abInjected += 1;
+          window.__abApplyEdit(pending);
+        } finally {
+          ours = false;
+        }
+      });
+    }
+    return result;
+  };
+  return { installed: true };
+})()`;
 
 // ---------------------------------------------------------------------------
 // The comparison
@@ -534,6 +631,8 @@ try {
     `${opened.body?.source} / ${opened.body?.elementCount} elements`);
 
   await evalInPage(INSTALL_COUNTER);
+  await evalInPage(INSTALL_HANDS);
+  await evalInPage(INSTALL_INJECTOR);
 
   // A pane nobody has touched never reports, deliberately (useCanvasSession),
   // so the human's half of this check does not exist until somebody's hand
@@ -541,6 +640,37 @@ try {
   // trusted input here: a click on empty canvas, which selects nothing and
   // draws nothing.
   await browser(['click', '.excalidraw']);
+
+  // The human's retype measures its own width in the page, and a width
+  // measured before Excalidraw's font has arrived is a different font's.
+  //
+  // This was one standalone run in ten, and it looks exactly like the lost
+  // edit this check is otherwise about: `typed at 2` came back
+  // `server 107.82 / pane 78.87` on cycle 2 and the two never reconciled,
+  // because the server re-measures every write and the pane keeps reporting
+  // its own number. 107.82 is Excalifont at 20 px and 78.87 is Chrome's
+  // fallback. Nothing was lost; the check had invented a width.
+  //
+  // So it waits, and it says what it is waiting for rather than sleeping: the
+  // page measures a known string and it has to come out where
+  // src/core/measure-text.ts puts it, within the one difference this check
+  // allows between two measurers.
+  const probe = 'typed at 2';
+  const asWritten = measureLineWidth(probe, 20, 5);
+  let inPage = null;
+  for (let i = 0; i < 100; i++) {
+    inPage = await evalInPage(`(() => {
+      const ctx = document.createElement('canvas').getContext('2d');
+      ctx.font = '20px Excalifont';
+      return { loaded: document.fonts.check('20px Excalifont'),
+        width: String(ctx.measureText(${JSON.stringify(probe)}).width) };
+    })()`);
+    if (inPage.loaded && Math.abs(Number(inPage.width) - asWritten) < MEASURER_EPSILON) break;
+    await sleep(100);
+  }
+  check('  and Excalifont has arrived, so a width measured in the page is that font\'s',
+    inPage?.loaded === true && Math.abs(Number(inPage.width) - asWritten) < MEASURER_EPSILON,
+    `the page measured ${inPage?.width} and src/core/measure-text.ts ${asWritten}`);
 
   const start = await agree();
   check('the pane and the server agree before anybody writes',
@@ -554,6 +684,10 @@ try {
   let bounced = 0;
   let agreedCycles = 0;
   const madeIds = [];
+  let deliveries = 0;
+  let lostEdits = 0;
+  let survived = 0;
+  let firstLoss = null;
 
   for (let cycle = 1; cycle <= CYCLES; cycle++) {
     const before = await reportCount();
@@ -645,6 +779,23 @@ try {
       firstDivergence = { cycle, agentMove, humanMove, divergences: settled.divergences };
     }
 
+    // What the pane's own canary saw this cycle. Drained here so a loss is
+    // named with the cycle, the agent's move and the human's — the three
+    // things a divergence six seconds later cannot tell you.
+    const canary = await lossCanary();
+    if (canary.missing) throw new Error('the pane is not carrying a loss canary');
+    deliveries = canary.deliveries;
+    for (const event of canary.events) {
+      const where = `cycle ${cycle} (agent ${agentMove}, human ${humanMove})`;
+      if (event.loss === 'moved') survived += 1;
+      else {
+        lostEdits += 1;
+        if (!firstLoss) firstLoss = { where, event };
+      }
+      console.log(`#   ${event.loss.toUpperCase()} ${where}: ` +
+        `${event.kind} — ${event.what.join(' | ')}`);
+    }
+
     // One gesture, one report — and applying the echo must not have started
     // another. The agent's write produces no report at all: it reaches the
     // pane as a broadcast, and a broadcast the pane applies is not news the
@@ -674,6 +825,171 @@ try {
 
   check('  and applying an echo never started another change report',
     bounced === 0, `${bounced} cycles reported more than the human's own gesture`);
+
+  // The mechanism, rather than its end state. A divergence is what a lost edit
+  // looks like six seconds later; this is what it looks like at the moment it
+  // happens, and it is the one thing that says which of the forty-two cycles
+  // did it (TASK-099).
+  check('  and no edit stopped being owed to the server without being sent',
+    lostEdits === 0,
+    firstLoss
+      ? `${lostEdits} lost, first ${firstLoss.event.loss} at ${firstLoss.where}: ` +
+        `${firstLoss.event.kind} — ${firstLoss.event.what.join(' | ')}`
+      : `${deliveries} deliveries watched, ${survived} of them moved under the pane's hands`);
+
+  // --- a hand inside the window, arranged rather than waited for ----------
+  //
+  // The 42 cycles above enter this window by luck. Ten standalone runs of them
+  // watched 810 deliveries and nothing entered it once, which is why TASK-099
+  // took ten runs an arm to measure and could not be reproduced on demand.
+  // These four land in it every time (see INSTALL_INJECTOR).
+  //
+  // Four rather than one, because the pane can lose the edit by either of two
+  // routes and one fix does not cover both. When the delivery names the element
+  // the hand moved, the record the pane writes covers it, and the edit goes in
+  // as already agreed. When it does not, the record is untouched and the debt
+  // stands — but the `onChange` the edit fired was suppressed, and the pane
+  // took a fresh scene stamp on the way out, so nothing is left that will ever
+  // say it.
+
+  // `reads` is the one field the hand changes and `wants` is what it should
+  // read afterwards, computed from what it read before. Stated rather than
+  // "it differs from what it was": the agent writes to the same element in
+  // three of these four, so "it moved" is satisfied by the agent's own write
+  // and would pass with the human's edit thrown away.
+  const inTheWindow = async (label, agentUpserts, edit, reads, wants) => {
+    const before = (await held()).find(e => e.id === edit.id);
+    const was = reads(before);
+    const wanted = wants(was);
+    await evalInPage(`(() => {
+      window.__abPending = ${JSON.stringify(edit)};
+      return { armed: true };
+    })()`);
+    await api('POST', `/api/elements/changes?board=${BOARD}`, {
+      origin: 'agent', upserts: agentUpserts
+    });
+
+    let fired = null;
+    for (let i = 0; i < 100; i++) {
+      fired = await evalInPage('(() => ({ injected: window.__abInjected, armed: !!window.__abPending }))()');
+      if (!fired.armed) break;
+      await sleep(50);
+    }
+    check(`${label}: the hand lands between the delivery and the record`,
+      fired && !fired.armed, JSON.stringify(fired));
+
+    const settled = await agree();
+    check(`  and the two documents agree afterwards`,
+      settled.agreed, (settled.divergences ?? []).slice(0, 4).join(' | '));
+
+    const after = (await held()).find(e => e.id === edit.id);
+    const got = reads(after);
+    check(`  and the server holds what the hand did, not what it was sent`,
+      typeof wanted === 'number' && typeof got === 'number'
+        ? Math.abs(got - wanted) < 0.001
+        : got === wanted,
+      `${edit.id} read ${JSON.stringify(was)} before, ${JSON.stringify(got)} after, ` +
+      `and the hand made it ${JSON.stringify(wanted)}`);
+
+    const seen = await lossCanary();
+    const aimed = seen.events.filter(e => e.what.some(said => said.includes(edit.id)));
+    check(`  and the pane's canary saw the window it was aimed at`,
+      aimed.length > 0,
+      aimed.map(e => `${e.loss}: ${e.what.join(' | ')}`).join(' || ') || 'nothing');
+    check(`  and did not call it a loss`,
+      aimed.every(e => e.loss === 'moved') && seen.events.every(e => e.loss === 'moved'),
+      seen.events.filter(e => e.loss !== 'moved')
+        .map(e => `${e.loss}: ${e.kind} — ${e.what.join(' | ')}`).join(' || '));
+  };
+
+  // The three human moves TASK-099 was filed with, each against a delivery
+  // that names the element the hand is on — which is the arrangement in which
+  // the record covers it.
+  await inTheWindow('an agent recolours the box a hand is resizing',
+    [{ id: 'store', backgroundColor: '#e9ecef' }],
+    { kind: 'resize', id: 'store', dw: 13, dh: 0 },
+    element => element?.width, was => was + 13);
+
+  const storeLabel = (await held()).find(e => e.type === 'text' && e.containerId === 'store');
+  check('  and the board still carries a label to be retyped into',
+    typeof storeLabel?.id === 'string', JSON.stringify(storeLabel?.id));
+  await inTheWindow('an agent relabels the box a hand is typing in',
+    [{ id: 'store', label: { text: 'written by the agent' } }],
+    { kind: 'retype', id: storeLabel.id, text: 'typed by the person' },
+    element => element?.text, () => 'typed by the person');
+
+  // The one that ends with the server holding an element the pane does not.
+  await api('POST', `/api/elements/changes?board=${BOARD}`, {
+    origin: 'agent',
+    upserts: [{ id: 'spare', type: 'rectangle', x: 900, y: 620, width: 160, height: 70 }]
+  });
+  await agree();
+  await inTheWindow('an agent recolours the box a hand is deleting',
+    [{ id: 'spare', backgroundColor: '#ffe3e3' }],
+    { kind: 'delete', id: 'spare' },
+    element => element ? 'on the board' : 'gone', () => 'gone');
+
+  // And the same hand against a delivery that names something else. The record
+  // does not cover it, so nothing is absorbed — what goes missing is anything
+  // armed to say it.
+  await inTheWindow('an agent writes elsewhere while a hand moves a box',
+    [{ id: 'queue', backgroundColor: '#e3fafc' }],
+    { kind: 'move', id: 'store', dx: 17, dy: -9 },
+    element => element?.x, was => was + 17);
+
+  // --- a report coming due while one is in flight -------------------------
+  //
+  // The third way, and the one contention reaches: it needs a round trip
+  // longer than the report debounce, which is what a loaded machine produces
+  // and what TASK-097 was reading as a check that cannot share a box.
+  //
+  // A drag, its report held back mid-flight, and a second drag whose own
+  // debounce therefore expires while the first is still out. That report is
+  // not sent, and the answer coming back names a hand that has moved, so no
+  // document is applied and no settle runs to notice — the second drag is
+  // owed to the server with nothing left in the pane that will say it.
+  //
+  // Both halves are timed in the page. An `eval` round trip is tens of
+  // milliseconds of jitter against a 400 ms debounce, which is enough to miss.
+  // The delay holds the *answer* back, not the write: the server has the first
+  // drag as soon as it is posted. So this waits the whole sequence out rather
+  // than watching for the two documents to converge — for a moment in the
+  // middle they genuinely do, before the second drag is even applied, and
+  // `agree` would return on that and call it a pass.
+  const drifted = (await held()).find(e => e.id === 'store');
+  await evalInPage(`(() => {
+    window.__abDelayReport = ${Math.round(REPORT_DEBOUNCE_MS * 1.5)};
+    window.__abAnsweredAt = 0;
+    window.__abApplyEdit({ kind: 'move', id: 'store', dx: 5, dy: 0 });
+    setTimeout(() => {
+      window.__abSecondEditAt = performance.now();
+      window.__abApplyEdit({ kind: 'move', id: 'store', dx: 7, dy: 0 });
+    }, ${Math.round(REPORT_DEBOUNCE_MS * 1.15)});
+    return { armed: true };
+  })()`);
+  await sleep(REPORT_DEBOUNCE_MS * 8);
+
+  // Not vacuous: the second drag's own debounce really did expire before the
+  // first report was answered, which is the collision this exists for.
+  const flight = await evalInPage(
+    '(() => ({ answeredAt: window.__abAnsweredAt, editedAt: window.__abSecondEditAt }))()');
+  check('a second drag comes due while the first report is still in flight',
+    flight.answeredAt - flight.editedAt > REPORT_DEBOUNCE_MS,
+    `the answer was ${Math.round(flight.answeredAt - flight.editedAt)} ms behind the drag, ` +
+    `and the drag was due ${REPORT_DEBOUNCE_MS} ms after it`);
+
+  const bothDrags = await agree();
+  check('  and the report that came due while it was in flight is not dropped',
+    bothDrags.agreed, (bothDrags.divergences ?? []).slice(0, 4).join(' | '));
+  const dragged = (await held()).find(e => e.id === 'store');
+  check('  so both of the hand\'s moves are on the board',
+    dragged && Math.abs(dragged.x - (drifted.x + 12)) < 0.001,
+    `store.x was ${drifted?.x}, the two drags made it ${drifted?.x + 12}, the server holds ${dragged?.x}`);
+  const afterFlight = await lossCanary();
+  check('  and the pane was never left owing an edit with nothing to say it',
+    afterFlight.events.every(e => e.loss === 'moved'),
+    afterFlight.events.filter(e => e.loss !== 'moved')
+      .map(e => `${e.loss}: ${e.kind} — ${e.what.join(' | ')}`).join(' || '));
 
   // --- what a broadcast may not do ----------------------------------------
   //
