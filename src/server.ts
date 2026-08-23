@@ -141,8 +141,8 @@ const app = express();
 // is re-evaluated (ADR 0014).
 //
 // That split is the whole trick. A tab's WebSocket belongs to `wss`, which
-// belongs to `server`, so rebuilding either would disconnect every pane on the
-// wall — and a pane that reconnects has to be told what it holds all over
+// belongs to `server`, so rebuilding either would disconnect every browser
+// pane — and a pane that reconnects has to be told what it holds all over
 // again. Binding again would fail on EADDRINUSE against ourselves, which the
 // loopback guard would read as a second canvas and exit over.
 //
@@ -343,12 +343,11 @@ function deliverToPane(clientId: string, data: string): boolean {
 /**
  * A board's writer changed, so every pane holding it is told (ADR 0016).
  *
- * The lock is a broadcast and not only a guard. A canvas applies a change the
- * instant a finger moves, so refusing that change when it is finally written
- * would take the board away mid-gesture — which is the divergence between what
- * is drawn and what is true that ADR 0015 exists to end, arriving from the
- * other direction. A pane is told *before* the touch instead, and stops
- * accepting one.
+ * The lock is a broadcast and not only a guard. A canvas applies a change as
+ * soon as the pointer moves, so refusing that change when it is finally written
+ * would interrupt the user edit — which is the divergence between what is drawn
+ * and what is true that ADR 0015 exists to end, arriving from the other
+ * direction. A pane is told *before* the edit instead, and stops accepting one.
  *
  * `holder` rides along so the pane holding the lock knows the news is about
  * itself and keeps drawing. Everyone else goes read-only.
@@ -370,8 +369,8 @@ onBoardLockChanged((board, holder) => {
  * An agent has just changed this board, and said what it was doing (TASK-095).
  *
  * Board-scoped like the lock, and beside it on purpose: the lock says who has
- * the board and the claim's reason says what campaign they are on, and this is
- * the step. One story at two scales, not two accounts of the same thing.
+ * the board, the claim's reason says what the claim is for, and this is the
+ * current step. One account at two scales, not two accounts of the same thing.
  *
  * The whole list rides with each line, so a pane that has just opened, or has
  * just received this board, is not blank until the next write. It costs a
@@ -387,7 +386,7 @@ function announceDoing(board: string, entry: DoingEntry): void {
  * A write that did not say what it was doing.
  *
  * The refusal teaches, because being made to write the sentence is the point:
- * a person at a 75-inch display watching boxes move has no other way to know
+ * a person watching boxes move in the pane has no other way to know
  * what is being attempted, and an intent no diff can recover is one only the
  * writer can state (CLAUDE.md's principle, ADR 0016's claim from the other
  * end).
@@ -401,7 +400,7 @@ function refuseUndescribedWrite(res: Response, board: string, path: string, prob
       'line, in the present tense — "adding the payment queue", "rerouting orders through it" — and it ' +
       'goes up on the canvas as the write lands, so the person at the board can see what you are up to. ' +
       `On the command line that is \`--doing "..."\`, on an MCP tool the \`doing\` argument, and on the ` +
-      `API \`?doing=\` (${path}). A claim's \`reason\` is the campaign and does not stand in for this: ` +
+      `API \`?doing=\` (${path}). A claim's \`reason\` is the overall reason and does not stand in for this: ` +
       'this is the step. Nothing was written.',
     board
   });
@@ -413,7 +412,7 @@ function refuseUndescribedWrite(res: Response, board: string, path: string, prob
  *
  * A separate message from `board_lock` because it is a separate fact. A lock
  * says another archboard writer has the board right now and the pane must stop
- * accepting a touch. This says nothing is stopping anybody: the pane keeps
+ * accepting edits. This says nothing is stopping anybody: the pane keeps
  * drawing, and what it is drawing on is a copy. Telling one story with the
  * other's message would mean a board going read-only because Obsidian saved.
  */
@@ -791,7 +790,7 @@ const NOT_A_BOARD_WRITE: Array<[RegExp, string]> = [
  * Who this request writes as.
  *
  * A pane sends its client id, and that id is what makes the lock reentrant: the
- * hold a gesture took covers the change report that gesture produces 400 ms
+ * hold taken for a user edit covers the change report that edit produces 400 ms
  * later. An agent sends none, so it gets a fresh identity per request and takes
  * and releases the board around that one write — which is the per-write mutex.
  *
@@ -914,7 +913,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
 
   // Said as the write lands, not before it: a refusal narrates nothing, and a
-  // wall that showed intentions rather than acts would be a wall that lies.
+  // pane that showed intended writes as completed writes would be inaccurate.
   if (said !== null) {
     const doing = said;
     res.on('finish', () => {
@@ -983,23 +982,23 @@ app.use((req: Request, res: Response, next: NextFunction) => {
  *
  * The message the pane had no way to send. `POST /api/elements/changes` is a
  * trailing debounce with no maximum wait, so a continuous drag reaches the
- * server for the first time 400 ms after the finger lifts — by which point the
+ * server for the first time 400 ms after the pointer stops — by which point the
  * change is on screen, in Excalidraw's own scene, and refusing it would take
- * the board away from somebody mid-gesture. This goes out on the *leading*
+ * the board away from somebody mid-edit. This goes out on the *leading*
  * edge of the first change instead, and again every LOCK_RENEW_MS while the
  * user edit continues, which is what renews the lease.
  *
  * It waits, but only for as long as the pane was going to sit on the change
  * anyway. An agent's per-write hold is about twenty milliseconds, and a user
- * edit that landed inside one is not somebody who has lost the board — telling them
- * so and throwing their gesture away would be an agent making a 75-inch display
- * stop responding, which is the thing ADR 0016 forbids in as many words. So the
+ * edit that starts during one is not somebody who has lost the board — telling
+ * them so and discarding their edit would make the pane reject a user edit,
+ * which is the thing ADR 0016 forbids in as many words. So the
  * wait is the report debounce: a person is going to be 400 ms from having their
  * change written whatever this answers, and anything still holding the board at
  * the end of that is a real holder rather than a write in flight.
  *
  * Not the agent's five seconds, for the other half of the same reason. A person
- * cannot be made to wait that long to find out whether their pen works.
+ * cannot be made to wait that long to find out whether their edit was accepted.
  */
 app.post('/api/boards/hold', (req: Request, res: Response) => {
   try {
@@ -1017,9 +1016,9 @@ app.post('/api/boards/hold', (req: Request, res: Response) => {
       ...(typeof body.reason === 'string' && body.reason ? { reason: body.reason } : {})
     };
     // And it takes a claimed board back. The lock excludes writers from each
-    // other; it does not lock somebody out of their own wall, and an agent that
-    // has claimed a board for ten minutes must not be able to make a 75-inch
-    // display stop responding to the person standing at it (ADR 0016). Only a
+    // other; it does not lock somebody out of their own board, and an agent
+    // that has claimed a board for ten minutes must not be able to make the
+    // pane reject that user's edits (ADR 0016). Only a
     // claim: an unclaimed agent hold is one write and is waited out above.
     void holdBoard({ board: key, holder, waitMs: REPORT_DEBOUNCE_MS, revokeClaim: true })
       .then(hold => res.json({ success: true, board: key, holder: hold.holder, created: hold.created }))
@@ -1032,9 +1031,9 @@ app.post('/api/boards/hold', (req: Request, res: Response) => {
 /**
  * They have stopped, the change has been written, and the board can go.
  *
- * A person's hold is a gesture and not a session (ADR 0016): holding it for as
+ * A person's hold covers one edit and not a session (ADR 0016): holding it for as
  * long as a board is on screen would block every agent for as long as anybody
- * is looking at the wall. The pane sends this once its report has landed and
+ * has the board open. The pane sends this once its report has landed and
  * nothing new has arrived since.
  *
  * Idempotent, and it releases nothing that is not this holder's. A pane that
@@ -1066,7 +1065,7 @@ app.post('/api/boards/hold/release', (req: Request, res: Response) => {
  * extend it, because the expiry exists to bound a working agent and would bound
  * nothing if the work moved it.
  *
- * It waits for a person mid-gesture like any other writer, and it is refused if
+ * It waits for a person mid-edit like any other writer, and it is refused if
  * they are still there. A claim is not a way past the human at the canvas.
  */
 app.post('/api/boards/claim', (req: Request, res: Response) => {
@@ -1078,7 +1077,7 @@ app.post('/api/boards/claim', (req: Request, res: Response) => {
         success: false,
         error:
           'A claim needs a reason: it is what the pane shows the person whose board you have taken. ' +
-          'Without it a 75-inch display has simply stopped working for no reason they can see.'
+          'Without it the pane has stopped accepting edits for no reason they can see.'
       });
     }
     // An agent that lost the board hears that before it is given another one,
@@ -1091,8 +1090,8 @@ app.post('/api/boards/claim', (req: Request, res: Response) => {
         // Taking the board is the first thing the canvas tells this agent about
         // it, so it is where the record of what the agent has seen starts
         // (TASK-091). Without the seed the first write under a claim would be
-        // the one write nothing checked, which is the write a campaign is most
-        // likely to build everything else on.
+        // the one write nothing checked, and the rest of the claimed work may
+        // depend on it.
         const file = boards.get(key)?.file;
         const version = created
           ? rememberVersionAt(claim.holder.id, file)
@@ -1559,7 +1558,7 @@ const ElementChangesSchema = z.object({
    *
    * It is allowed on a board that has stopped saving, and nowhere else. The
    * note there belongs to another editor, so the board archboard would
-   * otherwise hold is their scene plus the last gesture of the human's, which
+   * otherwise hold is their scene plus the last pending user edit, which
    * is not what anybody is looking at and not what the three outcomes should
    * act on. The pane sends its full scene once, and from then on overwrite
    * means what CLAUDE.md's table says it means. Nothing is written to the vault
@@ -2413,7 +2412,7 @@ const viewportRequestSchema = z.object({
   offsetY: z.number().optional(),
   // Which pane's camera. Display, so it defaults where it cannot be wrong: one
   // pane and it is that one. With two, framing the pane nobody asked for moves
-  // the half of the wall the human was reading, so naming it is how an agent
+  // the browser pane the user was viewing, so naming it is how an agent
   // says which board it means to look at (TASK-033).
   pane: z.string().min(1).optional()
 }).superRefine((params, ctx) => {
@@ -2955,7 +2954,7 @@ app.post('/api/boards/open', (req: Request, res: Response) => {
     // On a reload, every pane holding it — not only the one this was addressed
     // to. The others are showing the copy that was just discarded, and a pane
     // left showing it would report the discarded work straight back as a fresh
-    // edit, which is the reload undone one gesture later.
+    // edit, which is the reload undone by the next user edit.
     if (params.reload) {
       for (const other of panes.values()) {
         if (other.clientId === pane?.clientId) continue;
