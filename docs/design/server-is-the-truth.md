@@ -82,8 +82,8 @@ None of these is contentious. They are defaults and the converter fills them in.
 - `start: {id}` and `end: {id}` on an arrow, **and** `startBinding` and
   `endBinding` carrying `elementId`, `focus` and `gap`. Both survive. The first
   is what `resolveArrowBindings` reads, the second is what Excalidraw reads.
-- `text` on a non-text element, turned into `label` by `normalize.ts:134` on the
-  update path, and read back from either by `labelSeedOf`.
+- `text` on a non-text element, an older client alias for `label`, now spent by
+  `applyElementInput` before the element reaches the board map.
 
 Under ADR 0015 all three disappear, because the seed is consumed at the write
 boundary and never stored.

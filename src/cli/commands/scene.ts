@@ -11,7 +11,7 @@ import {
   sendMermaid,
   boardHeading
 } from '../../core/canvas-client.js';
-import { buildSceneFile, importScene } from '../../core/scene-io.js';
+import { buildSceneFile, importScene } from '../scene-io.js';
 import { wrapSceneAsObsidianMd, isObsidianExcalidrawMd } from '../../core/obsidian-md.js';
 import { describeScene } from '../../core/describe.js';
 import { exportToExcalidrawUrl } from '../../core/share-url.js';

@@ -73,7 +73,7 @@ import {
   extractSceneJsonFromObsidianMd,
   renameElementId
 } from './obsidian-md.js';
-import { buildScene } from './scene-io.js';
+import { buildScene } from './scene-document.js';
 
 /**
  * One board, as one request found it.
