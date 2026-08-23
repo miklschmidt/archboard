@@ -20,7 +20,7 @@ const { wrapSceneAsObsidianMd, extractSceneJsonFromObsidianMd, embeddedFilesIn }
 );
 const { mintId, derivedId, isBlockId } = await import(src('core/ids.ts'));
 const { applyElementInput } = await import(src('core/apply-element-input.ts'));
-const { buildScene } = await import(src('core/scene-io.ts'));
+const { buildScene } = await import(src('core/scene-document.ts'));
 
 let failures = 0;
 let checks = 0;

@@ -1928,7 +1928,7 @@ try {
   // by things other than `board save` — the filter is not on the save path, it
   // is on the only path that builds a scene.
   {
-    const { buildScene } = await import(src('core/scene-io.ts'));
+    const { buildScene } = await import(src('core/scene-document.ts'));
     const everyImage = {
       'img-a': { id: 'img-a', dataURL: pngA, mimeType: 'image/png' },
       'img-b': { id: 'img-b', dataURL: pngB, mimeType: 'image/png' }

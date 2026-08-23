@@ -25,6 +25,7 @@ import { getLibrary, batchCreateElementsStrict } from './canvas-client.js';
 import type { ServerElement } from '../types.js';
 import { LIBRARY_NAME_OVERLAY } from './library-names.js';
 import { extentOf } from './geometry.js';
+import { mintId } from './ids.js';
 
 /** One stencil, described well enough to be picked without being drawn. */
 export interface CatalogueEntry {
@@ -249,10 +250,6 @@ export function chooseStencil(items: CatalogueEntry[], query: StencilQuery): Cat
 // element by the same offset so the group's own geometry survives untouched
 // while its top-left corner lands where the caller asked.
 
-function freshId(): string {
-  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
-}
-
 // The library site still serves items in Excalidraw's pre-split format,
 // where what is now "arrow" (a connector, with bindings and arrowheads) was
 // still called "draw". Nothing downstream understands that type name.
@@ -266,6 +263,12 @@ export function remapElements(
   targetY: number,
   attribution: Record<string, unknown>
 ): any[] {
+  const taken = new Set<string>();
+  const freshId = () => {
+    const id = mintId(taken);
+    taken.add(id);
+    return id;
+  };
   const idMap = new Map<string, string>();
   for (const el of elements) {
     if (typeof el.id === 'string') idMap.set(el.id, freshId());

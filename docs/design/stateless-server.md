@@ -602,7 +602,7 @@ with `customData` and `link`, 60 arrows, saved through
 
 Timings are medians over 100 to 300 iterations after 10 to 20 warm-up runs,
 using the real modules (`src/core/board.ts`, `src/core/obsidian-md.ts`,
-`src/core/scene-io.ts`, `src/core/changes.ts`) rather than reimplementations.
+`src/core/scene-document.ts`, `src/core/changes.ts`) rather than reimplementations.
 The write-frequency figures come from 370 real log entries spanning
 2026-08-19T19:14Z to 2026-08-20T20:35Z. The window simulation replays the
 algorithm in `change-feed.ts:170-197` over those timestamps, varying the quiet

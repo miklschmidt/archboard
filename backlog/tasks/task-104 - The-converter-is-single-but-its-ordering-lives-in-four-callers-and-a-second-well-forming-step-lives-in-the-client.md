@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-08-23 15:01'
-updated_date: '2026-08-23 16:10'
+updated_date: '2026-08-23 16:14'
 labels: []
 dependencies: []
 references:
@@ -55,4 +55,6 @@ Architecture review 2026-08-23, candidate 4. Deepened shape: one entry takes nam
 Slice 1: Added src/core/apply-element-input.ts with applyElementInput(board, { upserts, deletes, origin, timestamp }). It owns well-forming, ids, input spelling consumption, arrow routing, measured conversion, label restating, version and updatedAt stamping, board-map write-back, consequences and document settling. POST/PUT/batch/delete/change-report routes now call that entry and retain only read/persist/broadcast/answer orchestration. scripts/check-labels.mjs now drives the real entry and proves minted block ids, spent label spelling, measured standalone and bound text, routed arrow refs, and version/updatedAt bumps. Verification: type-check green; labels 182 checks; geometry 82 checks; one-write 58 checks; changes all checks; module-scope 51 modules, 1 waived, no unwaived state.
 
 Slice 2: Deleted normalize.prepareElement and prepareElementUpdate. CLI add/apply/update, MCP create/update/batch, library insertion, and scene import now send input-spelling objects unchanged; canvas-client accepts serializable element input instead of requiring a pre-built ServerElement. The server entry is now the only well-forming implementation and scripts/check-obsidian-md exercises it directly. Verification: type-check green; MCP 6 checks; obsidian-md 197 checks; surface parity green; library 49 checks; labels 182; geometry 82; one-write 58; changes green; module-scope green.
+
+Slice 3: Deleted src/core/scene-io.ts. Pure buildScene now lives in src/core/scene-document.ts; HTTP-backed buildSceneFile/importScene live in src/cli/scene-io.ts, and board-io imports only the pure document builder. Updated checks and stale design references. Replaced library-catalogue's Date.now/Math.random id generator with ids.ts mintId, so element and group remapping use the one id implementation. Verification: type-check green; obsidian-md 197 checks; boards all checks; labels 182; geometry 82; one-write 58; changes green; module-scope 49 modules, 1 waived. Grep decision: core canvas-client imports remain only in active client modules: mcp-dispatch and element-ops as named by TASK-104, plus spawn for process health/lifecycle and library-catalogue for the live server palette. I kept those direct clients; the mixed scene document/client module is gone, and board-io no longer reaches back over HTTP.
 <!-- SECTION:NOTES:END -->
