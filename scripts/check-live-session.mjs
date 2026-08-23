@@ -96,6 +96,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // passing after somebody shortened the debounce and would stop testing the
 // thing it names.
 const { LOCK_FREE_LINGER_MS, LOCK_RENEW_MS, REPORT_DEBOUNCE_MS } = await import(src('core/timing.ts'));
+// What the server measures a text element to, so the check can wait until the
+// page agrees rather than until a font has probably loaded.
+const { measureLineWidth } = await import(src('core/measure-text.ts'));
 const MID_DEBOUNCE_MS = Math.round(REPORT_DEBOUNCE_MS * 0.3);
 
 const IGNORED = new Set([
@@ -265,7 +268,13 @@ const INSTALL_HANDS = `(() => {
       const ctx = document.createElement('canvas').getContext('2d');
       const family = { 1: 'Virgil', 2: 'Helvetica', 3: 'Cascadia', 5: 'Excalifont',
         6: 'Nunito', 7: 'Lilita One', 8: 'Comic Shanns' }[text.fontFamily] || 'Excalifont';
-      ctx.font = text.fontSize + 'px ' + family;
+      const font = text.fontSize + 'px ' + family;
+      // Refused rather than measured in whatever Chrome falls back to. A width
+      // from the wrong font is a number the server will re-measure and the pane
+      // will keep reporting, and the two never reconcile — which reads exactly
+      // like the lost edit this check is for.
+      if (!document.fonts.check(font)) return { error: font + ' has not been loaded' };
+      ctx.font = font;
       const width = ctx.measureText(edit.text).width;
       next = all.map(e => e.id === edit.id
         ? { ...e, text: edit.text, originalText: edit.text, rawText: edit.text, width }
@@ -631,6 +640,37 @@ try {
   // trusted input here: a click on empty canvas, which selects nothing and
   // draws nothing.
   await browser(['click', '.excalidraw']);
+
+  // The human's retype measures its own width in the page, and a width
+  // measured before Excalidraw's font has arrived is a different font's.
+  //
+  // This was one standalone run in ten, and it looks exactly like the lost
+  // edit this check is otherwise about: `typed at 2` came back
+  // `server 107.82 / pane 78.87` on cycle 2 and the two never reconciled,
+  // because the server re-measures every write and the pane keeps reporting
+  // its own number. 107.82 is Excalifont at 20 px and 78.87 is Chrome's
+  // fallback. Nothing was lost; the check had invented a width.
+  //
+  // So it waits, and it says what it is waiting for rather than sleeping: the
+  // page measures a known string and it has to come out where
+  // src/core/measure-text.ts puts it, within the one difference this check
+  // allows between two measurers.
+  const probe = 'typed at 2';
+  const asWritten = measureLineWidth(probe, 20, 5);
+  let inPage = null;
+  for (let i = 0; i < 100; i++) {
+    inPage = await evalInPage(`(() => {
+      const ctx = document.createElement('canvas').getContext('2d');
+      ctx.font = '20px Excalifont';
+      return { loaded: document.fonts.check('20px Excalifont'),
+        width: String(ctx.measureText(${JSON.stringify(probe)}).width) };
+    })()`);
+    if (inPage.loaded && Math.abs(Number(inPage.width) - asWritten) < MEASURER_EPSILON) break;
+    await sleep(100);
+  }
+  check('  and Excalifont has arrived, so a width measured in the page is that font\'s',
+    inPage?.loaded === true && Math.abs(Number(inPage.width) - asWritten) < MEASURER_EPSILON,
+    `the page measured ${inPage?.width} and src/core/measure-text.ts ${asWritten}`);
 
   const start = await agree();
   check('the pane and the server agree before anybody writes',
