@@ -323,7 +323,7 @@ export function canonicalizeKeys(v: any): any {
  *
  * Called two ways, and neither is a second implementation of anything:
  *
- *   · over a whole document, by `scene-io` on the way to a note and by
+ *   · over a whole document, by `scene-document` on the way to a note and by
  *     `share-url` on the way to a URL. Every element is in hand, so z-order is
  *     restated across the lot.
  *   · over one write, through `expandForBoard`, which is this call with

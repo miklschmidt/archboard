@@ -162,7 +162,7 @@ function spendArrowRefs(element: Record<string, any>, stated: Record<string, any
   }
 }
 
-function buildCreatedElement(
+function wellFormNewElement(
   raw: Record<string, unknown>,
   inUse: { has(id: string): boolean }
 ): ServerElement {
@@ -415,7 +415,7 @@ function applyAgentInput(
       continue;
     }
 
-    const element = buildCreatedElement(raw, taken);
+    const element = wellFormNewElement(raw, taken);
     minted.add(element.id);
     board.set(element.id, element);
     created.push(element);
