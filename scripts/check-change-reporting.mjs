@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url'
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..')
 const reporting = await import(join(repoRoot, 'frontend', 'src', 'canvas', 'change-reporting.ts'))
 const {
-  hasPendingEdits, initialState, mergeIncoming, reduce
+  hasPendingEdits, initialState, mergeIncoming, reduce, reportsSettled, userHasInteracted
 } = reporting
 
 let failures = 0
@@ -141,6 +141,12 @@ class Harness {
           reportAfterUpdate: effect.reportAfterUpdate
         })
         break
+      case 'apply_local_update':
+        if (effect.update.elements) this.scene = copy(effect.update.elements)
+        this.dispatch({
+          type: 'local_update_applied', generation: effect.generation, scene: copy(this.scene)
+        })
+        break
       case 'finish_server_update':
         this.clock.start('finish', 0, () => this.dispatch({
           type: 'server_update_finished', generation: effect.generation, scene: copy(this.scene)
@@ -162,10 +168,9 @@ class Harness {
 
   assertSafe(step) {
     const pending = hasPendingEdits(this.state, this.scene, this.withheldIds)
-    const scheduled = this.state.reportTimerScheduled || this.state.retryTimerScheduled
     check(`${step}: pending edits have a report in flight or scheduled`,
-      !pending || this.state.inFlightReport !== null || scheduled,
-      `pending=${pending} inFlight=${this.state.inFlightReport !== null} scheduled=${scheduled}`)
+      !pending || !reportsSettled(this.state),
+      `pending=${pending} settled=${reportsSettled(this.state)}`)
   }
 
   step(label, action) {
@@ -206,6 +211,38 @@ class Harness {
       baselineUpdate: { type: 'touch', ids: touchedIds }
     })
   }
+}
+
+// A local Mermaid conversion enters through the reducer before its immediate report.
+{
+  const h = new Harness()
+  h.state = { ...h.state, userInteracted: false }
+  const converted = box('mermaid', 400)
+  h.dispatch({
+    type: 'local_update_requested',
+    update: { elements: [...h.scene, converted], captureUpdate: 'immediately' }
+  })
+  check('a Mermaid local edit marks the pane as interacted', userHasInteracted(h.state))
+  check('a Mermaid local edit updates the scene through a reducer effect',
+    h.scene.some(element => element.id === converted.id))
+  check('a Mermaid local edit is counted once', h.state.localEditCount === 1)
+  h.dispatch({
+    type: 'immediate_report_requested', scene: copy(h.scene), withheldIds: h.withheldIds
+  })
+  check('a Mermaid local edit enters the immediate change report',
+    h.server.requests[0]?.report.upserts.some(element => element.id === converted.id))
+}
+
+// The reducer's settled predicate covers queued and in-flight reports.
+{
+  const h = new Harness()
+  check('reporting starts settled', reportsSettled(h.state))
+  h.edit('a', { x: 30 })
+  check('a scheduled report is not settled', !reportsSettled(h.state))
+  h.due()
+  check('an in-flight report is not settled', !reportsSettled(h.state))
+  h.accept()
+  check('an accepted report with no queued retry is settled', reportsSettled(h.state))
 }
 
 // The reply to the first report must not replace a later user edit.

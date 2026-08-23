@@ -48,6 +48,8 @@ export interface ChangeReportingState {
 export type ChangeReportingEvent =
   | { type: 'user_interacted' }
   | { type: 'scene_changed'; scene: readonly SceneElement[] }
+  | { type: 'local_update_requested'; update: SceneUpdate }
+  | { type: 'local_update_applied'; generation: number; scene: readonly SceneElement[] }
   | { type: 'report_timer_fired'; generation: number; scene: readonly SceneElement[]; withheldIds: readonly string[] }
   | { type: 'retry_timer_fired'; generation: number; scene: readonly SceneElement[]; withheldIds: readonly string[] }
   | { type: 'immediate_report_requested'; scene: readonly SceneElement[]; withheldIds: readonly string[] }
@@ -82,6 +84,7 @@ export type ChangeReportingEffect =
   | { type: 'start_report_timer'; delayMs: number; generation: number }
   | { type: 'cancel_retry_timer' }
   | { type: 'start_retry_timer'; delayMs: number; generation: number }
+  | { type: 'apply_local_update'; generation: number; update: SceneUpdate }
   | {
       type: 'apply_server_update'
       generation: number
@@ -217,6 +220,18 @@ export function hasPendingEdits(
   return present.size !== state.baseline.size
 }
 
+export function reportsSettled(state: ChangeReportingState): boolean {
+  return state.inFlightReport === null && !state.reportTimerScheduled && !state.retryTimerScheduled
+}
+
+export function userHasInteracted(state: ChangeReportingState): boolean {
+  return state.userInteracted
+}
+
+export function needsFullReport(state: ChangeReportingState): boolean {
+  return state.fullReportNeeded
+}
+
 export function carryWithheld(
   scene: readonly SceneElement[],
   answered: ReadonlySet<string>,
@@ -344,6 +359,35 @@ function userEdit(
   }, effects)
 }
 
+type ReportingTimer = 'report' | 'retry'
+
+function timerFired(
+  state: ChangeReportingState,
+  event: { scene: readonly SceneElement[]; withheldIds: readonly string[] },
+  which: ReportingTimer,
+  effects: ChangeReportingEffect[]
+): ChangeReportingState {
+  const ready = which === 'report'
+    ? { ...state, reportTimerScheduled: false }
+    : { ...state, retryTimerScheduled: false }
+  return beginReport(ready, event.scene, event.withheldIds, effects)
+}
+
+function afterFailedReport(
+  state: ChangeReportingState,
+  effects: ChangeReportingEffect[],
+  options: { delayMs: number; fullReport: boolean; publish: boolean }
+): ChangeReportingState {
+  if (options.publish) effects.push({ type: 'publish_status' })
+  effects.push({ type: 'start_retry_timer', delayMs: options.delayMs, generation: state.generation })
+  return {
+    ...state,
+    inFlightReport: null,
+    fullReportNeeded: options.fullReport || state.fullReportNeeded,
+    retryTimerScheduled: true
+  }
+}
+
 export function reduce(state: ChangeReportingState, event: ChangeReportingEvent): ReduceResult {
   const effects: ChangeReportingEffect[] = []
 
@@ -355,16 +399,22 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
       if (state.applyingServerUpdateCount > 0) return { state, effects }
       return { state: userEdit(state, event.scene, effects), effects }
 
+    case 'local_update_requested':
+      effects.push({ type: 'apply_local_update', generation: state.generation, update: event.update })
+      return { state: { ...state, userInteracted: true }, effects }
+
+    case 'local_update_applied':
+      if (event.generation !== state.generation) return { state, effects }
+      return { state: userEdit(state, event.scene, effects), effects }
+
     case 'report_timer_fired': {
       if (event.generation !== state.generation) return { state, effects }
-      const ready = { ...state, reportTimerScheduled: false }
-      return { state: beginReport(ready, event.scene, event.withheldIds, effects), effects }
+      return { state: timerFired(state, event, 'report', effects), effects }
     }
 
     case 'retry_timer_fired': {
       if (event.generation !== state.generation) return { state, effects }
-      const ready = { ...state, retryTimerScheduled: false }
-      return { state: beginReport(ready, event.scene, event.withheldIds, effects), effects }
+      return { state: timerFired(state, event, 'retry', effects), effects }
     }
 
     case 'immediate_report_requested':
@@ -440,27 +490,19 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
 
     case 'report_refused':
       if (event.generation !== state.generation) return { state, effects }
-      effects.push({ type: 'publish_status' })
-      effects.push({ type: 'start_retry_timer', delayMs: 0, generation: state.generation })
       return {
-        state: {
-          ...state,
-          inFlightReport: null,
-          fullReportNeeded: true,
-          retryTimerScheduled: true
-        },
+        state: afterFailedReport(state, effects, { delayMs: 0, fullReport: true, publish: true }),
         effects
       }
 
     case 'report_failed':
       if (event.generation !== state.generation) return { state, effects }
-      effects.push({ type: 'start_retry_timer', delayMs: REPORT_RETRY_MS, generation: state.generation })
       return {
-        state: {
-          ...state,
-          inFlightReport: null,
-          retryTimerScheduled: true
-        },
+        state: afterFailedReport(
+          state,
+          effects,
+          { delayMs: REPORT_RETRY_MS, fullReport: false, publish: false }
+        ),
         effects
       }
 
