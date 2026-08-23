@@ -77,9 +77,10 @@ const check = (label, condition, extra = '') => {
 };
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const { makeIdentity, vaultPathFor } = await import(src('core/board.ts'));
 const {
-  makeIdentity, vaultPathFor, noteVersion, versionNumber, versionMove, versionOfNoteAt
-} = await import(src('core/board.ts'));
+  versionNumber, versionMove, versionOfNoteAt
+} = await import(src('core/board-version.ts'));
 const { getOrCreateBoard, boards: boardStore, recordBaseline } = await import(src('core/board-store.ts'));
 const {
   emptyContent, foreignWriteTo, readNote, writeBoardContent
@@ -167,7 +168,7 @@ ledger.file = vaultPathFor(ledgerIdentity);
   check('a `version` key holding something that is not a count is left exactly as it is',
     /^version: second draft$/m.test(note), note.split('\n').find((l) => l.startsWith('version')));
   check('  so the board is simply unversioned rather than having its frontmatter overwritten',
-    written.version === null && noteVersion(note).kind === 'foreign', String(written.version));
+    written.version === null && versionNumber(note) === null, String(written.version));
   check('  and the write went through, because the hash is what guards a note and still did',
     note.includes('"id": "ddd"'));
 }

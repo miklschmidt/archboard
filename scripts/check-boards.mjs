@@ -1183,7 +1183,8 @@ try {
     const { writeBoardContent, emptyContent } = await import(src('core/board-io.ts'));
     const { beginHold, releaseHold } = await import(src('core/board-hold.ts'));
     const { recordBaseline } = await import(src('core/board-store.ts'));
-    const { hashBoardBytes, versionNumber } = await import(src('core/board.ts'));
+    const { hashBoardBytes } = await import(src('core/board.ts'));
+    const { versionNumber } = await import(src('core/board-version.ts'));
 
     const identity = makeIdentity({ board: 'notewatch' });
     const { key: watched, board: watchedBoard } = getOrCreateBoard(identity);
