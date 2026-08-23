@@ -12,7 +12,7 @@
 // still picks none of them.
 //
 // WHY THE COPY IS HERE AND NOT IN THE PANE. The three outcomes only mean what
-// CLAUDE.md's table says they mean if the thing they act on is one board that
+// ADR 0006 says they mean if the thing they act on is one board that
 // every surface can see. Overwrite has to write what the human is looking at,
 // not the delta of one gesture; save-elsewhere has to carry the same thing to
 // another note; and `board save --board x --force` typed into a terminal has

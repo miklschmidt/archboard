@@ -1,6 +1,6 @@
 // Layout primitives shared by the read-back paths.
 //
-// On the Flip, moving a box is a statement about the design (CLAUDE.md), so
+// On the Flip, moving a box is a statement about the design (AGENTS.md), so
 // every surface that reads a board back has to be able to say something about
 // where things sit. The two things worth saying are the same everywhere:
 // **what is near what** (proximity clustering) and **whereabouts on the board**

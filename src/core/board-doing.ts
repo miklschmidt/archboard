@@ -3,7 +3,7 @@
 // A person at the wall sees boxes move. Without this they infer the intent
 // afterwards, if they can — which is the connection between a creator and what
 // they are creating being broken for one of the two creators on this canvas
-// (CLAUDE.md, ADR 0016). So an agent says what it is doing on every write, in
+// (ADR 0016). So an agent says what it is doing on every write, in
 // one line, and the line goes on screen as the write lands.
 //
 // ── This is not the change feed ───────────────────────────────────

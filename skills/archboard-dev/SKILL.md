@@ -5,7 +5,7 @@ description: Procedures for working on archboard itself — rebuilding with bun,
 
 # Working on archboard
 
-Always-on context lives in `CLAUDE.md`; fork rationale and roadmap in
+Always-on context lives in `AGENTS.md`; fork rationale and roadmap in
 `DESIGN.md`. This skill is the procedural half: how to actually do the recurring
 jobs.
 

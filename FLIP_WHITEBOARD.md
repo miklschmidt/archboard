@@ -1,6 +1,6 @@
 # Samsung Flip WM75FX as the whiteboard surface
 
-Physical setup notes. The canvas/agent side is in `CLAUDE.md`.
+Physical setup notes. The canvas/agent side is in `AGENTS.md`.
 
 ## Decision
 
