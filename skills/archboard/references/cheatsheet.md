@@ -108,7 +108,7 @@ A pane is a slot holding one board, and two panes are how the architecture that 
 
 | Command | Description |
 |---------|-------------|
-| `install-skill --dir <skills-root>` | Install this skill into an agent-chosen project/global skills root (replaces any existing copy) |
+| `install-skill` | Install this skill into `~/.agents/skills` (replaces any existing copy); `--agent claude-code` or `--target claude` uses `~/.claude/skills`, and `--dir <skills-root>` names another root |
 | `help [command]`, `--version` | Usage and version |
 
 ## MCP Tools

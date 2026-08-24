@@ -11,7 +11,7 @@
 
 import fs from 'node:fs';
 import os from 'node:os';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -31,6 +31,8 @@ function assert(condition, message) {
 
 const scratch = fs.mkdtempSync(join(os.tmpdir(), 'archboard-install-'));
 const skillsRoot = join(scratch, 'skills');
+const home = join(scratch, 'home');
+fs.mkdirSync(home, { recursive: true });
 
 // Every run installs into a throwaway skills root, never the machine's own.
 function install(repo, extra = []) {
@@ -42,6 +44,23 @@ function install(repo, extra = []) {
     env: { ...process.env, ARCHBOARD_VAULT: '' }
   });
   return JSON.parse(stdout);
+}
+
+function installWithHome(repo, extra = []) {
+  const stdout = execFileSync(process.execPath, [bin, 'install-skill', '--repo', repo, ...extra], {
+    encoding: 'utf-8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, HOME: home, ARCHBOARD_VAULT: '' }
+  });
+  return JSON.parse(stdout);
+}
+
+function runWithHome(repo, extra = []) {
+  return spawnSync(process.execPath, [bin, 'install-skill', '--repo', repo, ...extra], {
+    encoding: 'utf-8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, HOME: home, ARCHBOARD_VAULT: '' }
+  });
 }
 
 function makeRepo(name, files = {}) {
@@ -57,17 +76,102 @@ const BEGIN = '<!-- archboard:begin -->';
 
 // ─── Which doc a repo with neither gets ──────────────────────
 //
-// Through the CLI these cases all pass --dir, so as not to write into the
-// machine's own ~/.claude/skills; that makes the target agent-neutral and the
-// created doc AGENTS.md. The `--target claude` branch is checked directly,
-// since exercising it end to end would mean installing for real.
+// The end-to-end target cases set HOME to the throwaway directory above, so
+// none of them can write into this machine's real ~/.agents or ~/.claude.
 
 {
   const { chooseDoc } = await import(join(repoRoot, 'src', 'cli', 'commands', 'install-skill.ts'));
   const empty = makeRepo('choose');
   assert(chooseDoc(empty, 'claude').file === join(empty, 'CLAUDE.md'), 'installing for claude should create CLAUDE.md');
-  assert(chooseDoc(empty, 'codex').file === join(empty, 'AGENTS.md'), 'installing for codex should create AGENTS.md');
+  assert(chooseDoc(empty, 'agents').file === join(empty, 'AGENTS.md'), 'default install should create AGENTS.md');
+  assert(chooseDoc(empty, 'dir').file === join(empty, 'AGENTS.md'), 'custom --dir install should create AGENTS.md');
   assert(chooseDoc(empty, 'claude').existed === false, 'chooseDoc claimed a file that is not there');
+}
+
+// ─── The default target is the shared agent skill root ───────
+
+{
+  const repo = makeRepo('default-home');
+  const result = installWithHome(repo, ['--yes']);
+  const doc = join(repo, 'AGENTS.md');
+
+  assert(result.mode === 'target:agents', `default install should report target:agents, got ${result.mode}`);
+  assert(result.root === join(home, '.agents', 'skills'), `default root should be ~/.agents/skills, got ${result.root}`);
+  assert(result.target === join(home, '.agents', 'skills', 'archboard'), `default target should be under ~/.agents/skills, got ${result.target}`);
+  assert(fs.existsSync(join(home, '.agents', 'skills', 'archboard', 'SKILL.md')), 'default install did not copy the skill under ~/.agents/skills');
+  assert(result.setup.doc === doc, `default install should write AGENTS.md, wrote ${result.setup.doc}`);
+  assert(result.setup.docCreated === true, 'default install did not create AGENTS.md');
+  assert(!fs.existsSync(join(repo, 'CLAUDE.md')), 'default install created CLAUDE.md');
+}
+
+// ─── Claude remains an explicit target ───────────────────────
+
+{
+  const repo = makeRepo('claude-home');
+  const result = installWithHome(repo, ['--target', 'claude', '--yes']);
+  const doc = join(repo, 'CLAUDE.md');
+
+  assert(result.mode === 'target:claude', `claude install should report target:claude, got ${result.mode}`);
+  assert(result.root === join(home, '.claude', 'skills'), `claude root should be ~/.claude/skills, got ${result.root}`);
+  assert(result.target === join(home, '.claude', 'skills', 'archboard'), `claude target should be under ~/.claude/skills, got ${result.target}`);
+  assert(fs.existsSync(join(home, '.claude', 'skills', 'archboard', 'SKILL.md')), 'claude install did not copy the skill under ~/.claude/skills');
+  assert(result.setup.doc === doc, `claude install should write CLAUDE.md, wrote ${result.setup.doc}`);
+  assert(result.setup.docCreated === true, 'claude install did not create CLAUDE.md');
+  assert(!fs.existsSync(join(repo, 'AGENTS.md')), 'claude install created AGENTS.md');
+}
+
+// ─── skills.sh-compatible agent selectors ────────────────────
+
+{
+  const repo = makeRepo('agent-codex');
+  const result = installWithHome(repo, ['--agent', 'codex', '--yes']);
+
+  assert(result.mode === 'agent:codex', `--agent codex should report agent:codex, got ${result.mode}`);
+  assert(result.root === join(home, '.agents', 'skills'), `--agent codex should use ~/.agents/skills, got ${result.root}`);
+  assert(result.setup.doc === join(repo, 'AGENTS.md'), '--agent codex should create AGENTS.md');
+}
+
+{
+  const repo = makeRepo('agent-claude-code');
+  const result = installWithHome(repo, ['--agent', 'claude-code', '--yes']);
+
+  assert(result.mode === 'agent:claude-code', `--agent claude-code should report agent:claude-code, got ${result.mode}`);
+  assert(result.root === join(home, '.claude', 'skills'), `--agent claude-code should use ~/.claude/skills, got ${result.root}`);
+  assert(result.setup.doc === join(repo, 'CLAUDE.md'), '--agent claude-code should create CLAUDE.md');
+}
+
+// ─── Obsolete and arbitrary targets are refused ──────────────
+
+{
+  const repo = makeRepo('obsolete-codex');
+  const result = runWithHome(repo, ['--target', 'codex']);
+  assert(result.status === 2, `--target codex should exit 2, got ${result.status}`);
+  assert(result.stderr.includes('obsolete'), '--target codex refusal did not say it is obsolete');
+  assert(result.stderr.includes('~/.agents/skills'), '--target codex refusal did not point at the default root');
+  assert(!fs.existsSync(join(home, '.codex', 'skills', 'archboard')), '--target codex installed into ~/.codex/skills');
+}
+
+{
+  const repo = makeRepo('unknown-target');
+  const result = runWithHome(repo, ['--target', 'somewhere']);
+  assert(result.status === 2, `unknown --target should exit 2, got ${result.status}`);
+  assert(result.stderr.includes('Unknown --target somewhere'), 'unknown --target refusal did not name the value');
+  assert(result.stderr.includes('--dir <skills-root>'), 'unknown --target refusal did not point at --dir');
+}
+
+{
+  const repo = makeRepo('unknown-agent');
+  const result = runWithHome(repo, ['--agent', 'claude']);
+  assert(result.status === 2, `unknown --agent should exit 2, got ${result.status}`);
+  assert(result.stderr.includes('Unknown --agent claude'), 'unknown --agent refusal did not name the value');
+  assert(result.stderr.includes('claude-code'), 'unknown --agent refusal did not name the skills.sh Claude identifier');
+}
+
+{
+  const repo = makeRepo('conflicting-destinations');
+  const result = runWithHome(repo, ['--agent', 'codex', '--target', 'claude']);
+  assert(result.status === 2, `conflicting destination flags should exit 2, got ${result.status}`);
+  assert(result.stderr.includes('Use only one of'), 'conflicting destination refusal did not explain exclusivity');
 }
 
 // ─── A repo with no agent doc at all ─────────────────────────
@@ -93,6 +197,42 @@ const BEGIN = '<!-- archboard:begin -->';
   // The vault has to exist, or the first board command fails on a path.
   assert(result.setup.vault === join(repo, '.archboard', 'vault'), `assumed vault should be repo-local, got ${result.setup.vault}`);
   assert(result.setup.vaultCreated === true && fs.existsSync(result.setup.vault), 'the vault directory was not created');
+}
+
+// ─── Custom paths stay available through --dir ───────────────
+
+{
+  const repo = makeRepo('custom-dir');
+  const custom = join(scratch, 'custom-root');
+  const stdout = execFileSync(process.execPath, [bin, 'install-skill', '--dir', custom, '--repo', repo], {
+    encoding: 'utf-8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, HOME: home, ARCHBOARD_VAULT: '' }
+  });
+  const result = JSON.parse(stdout);
+  assert(result.mode === 'dir', `--dir should report mode dir, got ${result.mode}`);
+  assert(result.root === custom, `--dir root was not honoured, got ${result.root}`);
+  assert(result.target === join(custom, 'archboard'), `--dir target was not honoured, got ${result.target}`);
+  assert(result.setup.doc === join(repo, 'AGENTS.md'), '--dir should create agent-neutral docs when neither exists');
+  assert(fs.existsSync(join(custom, 'archboard', 'SKILL.md')), '--dir did not install the skill');
+}
+
+// ─── Existing symlink installs are refused, not overwritten ──
+
+{
+  const repo = makeRepo('symlink-refusal');
+  const linkedRoot = join(scratch, 'linked-root');
+  const linkedTarget = join(linkedRoot, 'archboard');
+  fs.mkdirSync(linkedRoot, { recursive: true });
+  fs.symlinkSync(join(repoRoot, 'skills', 'archboard'), linkedTarget, 'dir');
+  const result = spawnSync(process.execPath, [bin, 'install-skill', '--dir', linkedRoot, '--repo', repo], {
+    encoding: 'utf-8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, HOME: home, ARCHBOARD_VAULT: '' }
+  });
+  assert(result.status !== 0, `install over symlink should fail, got ${result.status}`);
+  assert(result.stderr.includes('is a symlink; refusing to replace it'), 'symlink refusal did not explain why it failed');
+  assert(fs.lstatSync(linkedTarget).isSymbolicLink(), 'install over symlink replaced the symlink');
 }
 
 // ─── The same repo, installed into twice ─────────────────────

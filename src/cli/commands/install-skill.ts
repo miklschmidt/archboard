@@ -50,14 +50,30 @@ function expandHome(input: string): string {
 }
 
 function resolveSkillsRoot(target: string): string {
+  if (target === 'agents') return path.join(os.homedir(), '.agents', 'skills');
   if (target === 'claude') return path.join(os.homedir(), '.claude', 'skills');
-  if (target === 'codex') return path.join(os.homedir(), '.codex', 'skills');
-  return path.resolve(expandHome(target));
+  if (target === 'codex') {
+    throw new CliUsageError('--target codex is obsolete. The default install root is ~/.agents/skills; use --dir <skills-root> for a custom location.');
+  }
+  throw new CliUsageError(`Unknown --target ${target}. Supported targets: claude. Omit --target for ~/.agents/skills, or use --dir <skills-root> for a custom location.`);
 }
 
 function resolveTarget(target: string): { root: string; target: string; mode: string } {
   const root = resolveSkillsRoot(target);
   return { root, target: path.join(root, SKILL_NAME), mode: `target:${target}` };
+}
+
+function resolveAgent(agent: string): { root: string; target: string; mode: string; targetSpec: string } {
+  const targetSpec = agent === 'codex'
+    ? 'agents'
+    : agent === 'claude-code'
+      ? 'claude'
+      : undefined;
+  if (!targetSpec) {
+    throw new CliUsageError(`Unknown --agent ${agent}. Supported agents: codex, claude-code.`);
+  }
+  const resolved = resolveTarget(targetSpec);
+  return { ...resolved, mode: `agent:${agent}`, targetSpec };
 }
 
 function countFiles(dir: string): number {
@@ -243,6 +259,7 @@ export async function installSkill(argv: string[]): Promise<void> {
   const { flags } = parseArgs(argv, {
     dir: { takesValue: true },
     target: { takesValue: true },
+    agent: { takesValue: true },
     'print-source': { takesValue: false },
     repo: { takesValue: true },
     vault: { takesValue: true },
@@ -262,19 +279,22 @@ export async function installSkill(argv: string[]): Promise<void> {
     return;
   }
 
-  if (flags.dir !== undefined && flags.target !== undefined) {
-    throw new CliUsageError('Use either --dir <skills-root> or --target <alias|skills-root>, not both');
+  const destinations = [flags.dir, flags.target, flags.agent].filter((value) => value !== undefined);
+  if (destinations.length > 1) {
+    throw new CliUsageError('Use only one of --dir <skills-root>, --agent <agent>, or --target claude');
   }
   if (flags['no-doc'] === true && flags.doc !== undefined) {
     throw new CliUsageError('Use either --doc <file> or --no-doc, not both');
   }
 
   const explicitDir = flags.dir as string | undefined;
-  const targetSpec = (flags.target as string | undefined) ?? 'claude';
+  const agentSpec = flags.agent as string | undefined;
+  const targetSpec = (flags.target as string | undefined) ?? 'agents';
   const explicitRoot = explicitDir ? path.resolve(expandHome(explicitDir)) : undefined;
+  const agentTarget = agentSpec ? resolveAgent(agentSpec) : undefined;
   const resolved = explicitRoot
     ? { root: explicitRoot, target: path.join(explicitRoot, SKILL_NAME), mode: 'dir' }
-    : resolveTarget(targetSpec);
+    : agentTarget ?? resolveTarget(targetSpec);
   const { root, target, mode } = resolved;
 
   // Replace, never overlay: stale files from older skill versions (e.g. the
@@ -327,7 +347,7 @@ export async function installSkill(argv: string[]): Promise<void> {
       repoSpec: flags.repo as string | undefined,
       vaultSpec: flags.vault as string | undefined,
       docSpec: flags.doc as string | undefined,
-      targetSpec: explicitRoot ? 'dir' : targetSpec,
+      targetSpec: explicitRoot ? 'dir' : agentTarget?.targetSpec ?? targetSpec,
       skill: target,
       assumeYes: flags.yes === true
     });
