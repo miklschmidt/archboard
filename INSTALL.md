@@ -74,8 +74,10 @@ archboard install-skill
 
 That does four things:
 
-- copies the skill into a skills root (`--target claude` for `~/.claude/skills`,
-  `--target codex` for `~/.codex/skills`, `--dir <path>` for anywhere else)
+- copies the skill into `~/.agents/skills`, the user-level skill root shared by
+  Codex across repositories (`--agent claude-code` or its `--target claude`
+  shortcut uses `~/.claude/skills` instead; `--dir <path>` names any other
+  skills root)
 - asks where this repo's boards should live, offering `<repo>/.archboard/vault`
 - creates that directory, so the first board command has somewhere to write
 - writes a block into the repo's `CLAUDE.md`, or its `AGENTS.md` when there is
@@ -87,15 +89,19 @@ Re-running replaces it in place, so upgrading the skill later never leaves two
 of them. Prose outside the markers is untouched. Notes written inside them are
 not, so keep your own words outside.
 
-If the repo has neither file, one is created: `CLAUDE.md` for `--target claude`,
-which is the default, and `AGENTS.md` otherwise. Never both. A repo with two
-agent docs is a repo where one of them is out of date.
+If the repo has neither file, one is created: `AGENTS.md` for the default or a
+custom `--dir`, and `CLAUDE.md` for `--target claude`. Never both. A repo with
+two agent docs is a repo where one of them is out of date.
 
 Nothing prompts when stdin is not a terminal, which is the case whenever an
 agent runs the command. It takes the offered vault and prints what it chose.
 
 | Flag | For |
 |---|---|
+| `--agent codex` | explicitly select Codex using the skills.sh agent name; installs in the shared default |
+| `--agent claude-code` | select Claude Code using the skills.sh agent name; installs in `~/.claude/skills` |
+| `--target claude` | shortcut for `--agent claude-code` |
+| `--dir <skills-root>` | install into another explicit project or user skills root |
 | `--vault <path>` | name the vault instead of being asked |
 | `--yes` | take the offered vault without being asked |
 | `--repo <dir>` | set up a repo other than the one you are standing in |
@@ -107,7 +113,7 @@ covers this code, what your levels mean, or the gotcha that will cost the next
 agent an hour. That section is where those go, and an agent that finds it empty
 has to stop and ask.
 
-On the machine archboard was developed on, `~/.claude/skills/archboard`
+On the machine archboard was developed on, `~/.agents/skills/archboard`
 is a symlink into the checkout, so the skill tracks the build and cannot go
 stale. `install-skill` refuses to replace a symlink, which is what you want
 there. Running it inside the archboard checkout writes no block either, because

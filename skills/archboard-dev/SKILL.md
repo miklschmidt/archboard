@@ -143,7 +143,7 @@ for use outside the repo) and `./bin/canvas` (inside it), so it works in both
 places without local patching.
 Maintainer-facing skills like this one may reference repo paths freely.
 
-`~/.claude/skills/archboard` is a symlink to this repo's synced copy, so
+`~/.agents/skills/archboard` is a symlink to this repo's synced copy, so
 the canvas skill is available in other repos and cannot drift. Re-running the
 sync updates it automatically.
 

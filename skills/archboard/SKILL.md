@@ -169,7 +169,7 @@ Results are JSON on stdout — except `describe` (plain text) and raw-content ou
 | Snapshots | `snapshot save\|list\|restore <name>` |
 | Share link | `share` (encrypted upload → excalidraw.com URL) |
 | Wipe canvas | `clear --yes` |
-| Install / upgrade this skill | `install-skill --dir <skills-root>` (agent chooses project/global root) |
+| Install / upgrade this skill | `install-skill` (defaults to `~/.agents/skills`); `--agent claude-code` or `--target claude` uses `~/.claude/skills`, `--dir <skills-root>` names another root |
 
 ### Element format
 
