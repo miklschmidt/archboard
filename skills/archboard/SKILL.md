@@ -1,5 +1,5 @@
 ---
-name: excalidraw-skill
+name: archboard
 description: Architecture canvas for comparing a system as it is against a proposed change, drawn as Excalidraw boards a human and an agent edit together on a live canvas. Use when an agent needs to (1) draw a system's current architecture on a named board, (2) branch it into a proposal variant and diff the two, (3) read back what a human rearranged and treat the rearrangement as design intent, (4) place stencils from the shared shape library, (5) promote shapes into architecture nodes bound to code, or (6) draw and refine any diagram: element CRUD, alignment, grouping, Mermaid conversion, PNG/SVG and .excalidraw export, snapshots. Primary interface is the bundled CLI (archboard <command>), which auto-starts the canvas server; MCP tools cover the same canvas for clients with no shell, and a REST API for application code.
 ---
 

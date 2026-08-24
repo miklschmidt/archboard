@@ -114,7 +114,7 @@ const MCP_ONLY = {
 // The cheatsheet is where an MCP client learns the tool names, because it
 // cannot run `archboard help`. A tool missing from it is invisible to exactly
 // the reader MCP exists for.
-const CHEATSHEET = join(repoRoot, 'skills', 'excalidraw-skill', 'references', 'cheatsheet.md');
+const CHEATSHEET = join(repoRoot, 'skills', 'archboard', 'references', 'cheatsheet.md');
 
 // --- checks ------------------------------------------------------------------
 
@@ -434,7 +434,7 @@ if (!section) {
   );
   for (const tool of toolNames) {
     if (!documented.has(tool)) {
-      fail(`Tool \`${tool}\` is missing from the MCP table in skills/excalidraw-skill/references/cheatsheet.md — the one place a shell-less client learns the tool names.`);
+      fail(`Tool \`${tool}\` is missing from the MCP table in skills/archboard/references/cheatsheet.md — the one place a shell-less client learns the tool names.`);
     }
   }
   for (const name of documented) {

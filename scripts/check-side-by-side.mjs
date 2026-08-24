@@ -34,7 +34,7 @@
 //
 // What this cannot check is whether an agent reading the skill *reaches* for
 // `pane open`. That needs a model, so it stays eval 7 in
-// skills/excalidraw-skill/evals/evals.json. This file checks the consequence;
+// skills/archboard/evals/evals.json. This file checks the consequence;
 // the eval checks the choice.
 //
 // A pane is a socket plus a registration, so the panes here are WebSockets
@@ -404,7 +404,7 @@ try {
   // eval, and the eval file has to say that this script is the objective half
   // of it. Otherwise the split is a thing somebody remembered once.
 
-  const evalsPath = path.join(repoRoot, 'skills/excalidraw-skill/evals/evals.json');
+  const evalsPath = path.join(repoRoot, 'skills/archboard/evals/evals.json');
   const evals = JSON.parse(fs.readFileSync(evalsPath, 'utf-8')).evals ?? [];
   const mine = evals.find(e => e.graded_by === SELF);
   check('an eval names this check as its grader', Boolean(mine),

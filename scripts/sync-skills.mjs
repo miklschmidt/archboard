@@ -36,6 +36,16 @@ fs.mkdirSync(claudeSkills, { recursive: true });
 
 const names = discover(source);
 
+// Retired authored names must be removed explicitly: discovery cannot see a
+// directory after it has been renamed, and leaving the old copy behind would
+// make agents discover both names for the same skill.
+const retiredNames = ['excalidraw-skill'];
+for (const name of retiredNames) {
+  if (names.includes(name)) continue;
+  fs.rmSync(path.join(agentSkills, name), { recursive: true, force: true });
+  fs.rmSync(path.join(claudeSkills, name), { recursive: true, force: true });
+}
+
 for (const name of names) {
   const from = path.join(source, name);
   const to = path.join(agentSkills, name);
