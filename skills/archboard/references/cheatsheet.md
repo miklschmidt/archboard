@@ -1,4 +1,4 @@
-# Excalidraw Skill Cheatsheet
+# Archboard Skill Cheatsheet
 
 ## Defaults
 

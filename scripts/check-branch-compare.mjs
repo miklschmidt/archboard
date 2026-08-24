@@ -23,7 +23,7 @@
 //
 // What this cannot check is whether an agent reading the skill *chooses* to
 // branch. That needs a model, so it stays eval 5 in
-// skills/excalidraw-skill/evals/evals.json. This file checks the consequence;
+// skills/archboard/evals/evals.json. This file checks the consequence;
 // the eval checks the choice. The last section here holds the two halves
 // together by making the eval file declare which of its entries is which.
 //
@@ -395,7 +395,7 @@ try {
   // which of its entries is checked here and which needs a human reading a
   // transcript. Otherwise the split is a thing somebody remembered once.
 
-  const evalsPath = path.join(repoRoot, 'skills/excalidraw-skill/evals/evals.json');
+  const evalsPath = path.join(repoRoot, 'skills/archboard/evals/evals.json');
   const evals = JSON.parse(fs.readFileSync(evalsPath, 'utf-8')).evals ?? [];
   check('every eval says how it is graded', evals.length > 0 && evals.every(e => typeof e.graded_by === 'string' && e.graded_by),
     evals.filter(e => !e.graded_by).map(e => `#${e.id}`).join(','));

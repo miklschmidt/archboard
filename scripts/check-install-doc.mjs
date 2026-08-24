@@ -78,6 +78,8 @@ const BEGIN = '<!-- archboard:begin -->';
   const doc = join(repo, 'AGENTS.md');
 
   assert(result.setup.doc === doc, `an agent-neutral install should write AGENTS.md, wrote ${result.setup.doc}`);
+  assert(result.skill === 'archboard', `the installed skill is named ${result.skill}`);
+  assert(result.target === join(skillsRoot, 'archboard'), `the skill was installed at ${result.target}`);
   assert(result.setup.docCreated === true, 'a repo with no agent doc should get one');
   assert(!fs.existsSync(join(repo, 'CLAUDE.md')), 'CLAUDE.md was created alongside AGENTS.md');
 
@@ -86,6 +88,7 @@ const BEGIN = '<!-- archboard:begin -->';
   assert(text.includes(result.setup.vault), 'the doc does not carry the vault path');
   assert(text.includes(result.setup.command), 'the doc does not say how to invoke the CLI');
   assert(/Boards for this repo/.test(text), 'the doc has no place for project conventions');
+  assert(text.includes('the `archboard` skill'), 'the doc names the retired skill instead of archboard');
 
   // The vault has to exist, or the first board command fails on a path.
   assert(result.setup.vault === join(repo, '.archboard', 'vault'), `assumed vault should be repo-local, got ${result.setup.vault}`);
@@ -97,6 +100,9 @@ const BEGIN = '<!-- archboard:begin -->';
 {
   const repo = makeRepo('twice');
   install(repo);
+  const retired = join(skillsRoot, 'excalidraw-skill');
+  fs.mkdirSync(retired, { recursive: true });
+  fs.writeFileSync(join(retired, 'SKILL.md'), 'name: excalidraw-skill\n', 'utf-8');
   const first = fs.readFileSync(join(repo, 'AGENTS.md'), 'utf-8');
   const second = install(repo);
   const text = fs.readFileSync(join(repo, 'AGENTS.md'), 'utf-8');
@@ -105,6 +111,7 @@ const BEGIN = '<!-- archboard:begin -->';
   assert(second.setup.docCreated === false, 'a re-install claimed to create a doc that existed');
   assert(text.split(BEGIN).length - 1 === 1, 're-installing appended a second block');
   assert(text === first, 're-installing changed the block it rewrote');
+  assert(!fs.existsSync(retired), 're-installing left the retired excalidraw-skill beside archboard');
 }
 
 // ─── Prose around the block survives ─────────────────────────
@@ -161,7 +168,7 @@ const BEGIN = '<!-- archboard:begin -->';
   const result = install(repo, ['--no-doc']);
   assert(result.setup === undefined, '--no-doc still reported a setup');
   assert(fs.readdirSync(repo).length === 0, '--no-doc wrote into the repo anyway');
-  assert(fs.existsSync(join(skillsRoot, 'excalidraw-skill', 'SKILL.md')), '--no-doc skipped the skill install too');
+  assert(fs.existsSync(join(skillsRoot, 'archboard', 'SKILL.md')), '--no-doc skipped the skill install too');
 }
 
 // ─── An environment that has already answered ────────────────

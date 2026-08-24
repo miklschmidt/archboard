@@ -137,13 +137,13 @@ synced, so adding a skill is just adding a directory. The sync replaces rather
 than overlays, so deleted files don't linger, and it leaves the third-party
 skills in `.agents/skills/` alone.
 
-`excalidraw-skill` is used outside this repo too, so keep it portable — **no
+`archboard` is used outside this repo too, so keep it portable — **no
 machine-specific paths**. It names both `archboard` (the package's single bin,
 for use outside the repo) and `./bin/canvas` (inside it), so it works in both
 places without local patching.
 Maintainer-facing skills like this one may reference repo paths freely.
 
-`~/.claude/skills/excalidraw-skill` is a symlink to this repo's synced copy, so
+`~/.claude/skills/archboard` is a symlink to this repo's synced copy, so
 the canvas skill is available in other repos and cannot drift. Re-running the
 sync updates it automatically.
 
