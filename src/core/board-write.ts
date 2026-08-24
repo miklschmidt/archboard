@@ -32,6 +32,7 @@ import {
 import { BoardState, copyElements } from './board-store.js';
 import { hashBoardBytes } from './board.js';
 import { ChangeOrigin, changeFeed } from './change-feed.js';
+import { presentElements, stripBindingPresentationLinks } from './presentation.js';
 import logger from '../utils/logger.js';
 
 export type WrittenNote = ReturnType<typeof writeBoardContent>;
@@ -168,6 +169,12 @@ function persist<T>(
   wholeScene: boolean,
   tellPanes: TellPanes
 ): WrittenNote | null {
+  // The write boundary owns the canonical document, including held writes
+  // that cannot reach their note yet. A browser may have returned the derived
+  // link it was shown; keep only the portable binding in live state.
+  const portable = stripBindingPresentationLinks(content.elements.values());
+  content.elements = new Map(portable.map(element => [element.id, element]));
+
   if (!request.save && !writesBoardNote(target.key)) {
     const { bytes } = renderContent(target.board.identity, content);
     content.hash = hashBoardBytes(bytes);
@@ -226,8 +233,8 @@ function tellPanesAboutWrite(
 ): void {
   const message: ElementsChangedMessage = {
     type: 'elements_changed',
-    created: delta.created,
-    updated: delta.updated,
+    created: presentElements(delta.created),
+    updated: presentElements(delta.updated),
     deleted: delta.deleted,
     origin: clientId,
     timestamp
@@ -291,9 +298,9 @@ export function agentWriteAnswer(
   written?: WrittenNote | null
 ): Record<string, unknown> {
   return {
-    elements: touched,
+    elements: presentElements(touched),
     fingerprint: boardFingerprint(board, content, written),
-    ...(wantsDocument ? { document: Array.from(content.elements.values()) } : {})
+    ...(wantsDocument ? { document: presentElements(content.elements.values()) } : {})
   };
 }
 

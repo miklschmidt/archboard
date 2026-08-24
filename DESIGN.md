@@ -239,7 +239,7 @@ Ordered by dependency, not ambition. Backlog.md is authoritative —
 **Done**
 
 - **`describe` surfaces the semantic model** (TASK-001). Nodes separated from
-  plain elements, grouped by kind, bindings and links resolved, bound labels
+  plain elements, grouped by kind, portable bindings described, bound labels
   folded back into their containers, and a speakable summary line leading. It
   degrades to a per-kind rollup on large scenes rather than dumping, which
   absorbed most of what was originally a separate "compressed description mode"
@@ -299,15 +299,23 @@ Ordered by dependency, not ambition. Backlog.md is authoritative —
 
 ## Verified element metadata
 
-`customData` and `link` survive the full round-trip in v2, including the
-frontend sync after a human drags an element. This is the semantic channel.
+`customData` and human-authored `link` values survive the full round-trip in v2,
+including the frontend sync after a human drags an element. Archboard's semantic
+channel is `customData.archboard`; code bindings live there as portable
+metadata, not as stored local links.
 
 ```json
 {"type":"rectangle","label":{"text":"AuthService"},
- "link":"file:///abs/path/src/auth/service.ts",
- "customData":{"kind":"service","path":"src/auth/service.ts","variant":"current"}}
+ "customData":{"archboard":{"kind":"service","node":"auth-service",
+   "binding":{"repo":"github.com/acme/api","path":"src/auth/service.ts",
+     "branch":"main","commit":"62f0cef","confirmedAt":"2026-08-24T10:30:00Z"},
+   "variant":"current"}}}
 ```
 
-`link` renders as a tappable affordance — tap the box on the Flip, open the file.
+When an element is presented to a browser or API caller, archboard may add a
+derived tappable target such as a local `file://` URL by resolving the binding
+through this machine's checkout registry. That overlay is added to a copy and
+stripped before the note is written, so the same persisted board can later
+present GitHub links or another target without a schema change.
 Elements synced from the browser are tagged `"source": "frontend_sync"`,
 distinguishing human edits from agent-authored elements.

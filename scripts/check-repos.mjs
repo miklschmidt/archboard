@@ -52,8 +52,8 @@ function makeRepo(name, origin) {
   git(['init', '-q', '-b', 'main']);
   git(['remote', 'add', 'origin', origin]);
   git(['-c', 'user.email=t@t', '-c', 'user.name=t', 'add', '.']);
-  git(['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'init']);
-  return root;
+  git(['-c', 'user.email=t@t', '-c', 'user.name=t', '-c', 'commit.gpgsign=false', 'commit', '-qm', 'init']);
+  return fs.realpathSync.native(root);
 }
 
 const alphaRoot = makeRepo('alpha', 'git@github.com:acme/alpha.git');
@@ -262,9 +262,12 @@ try {
     { type: 'rectangle', x: 0, y: 0, width: 200, height: 80, label: { text: 'Alpha' } });
   const betaBox = await api('POST', `/api/elements?board=${board}`,
     { type: 'rectangle', x: 300, y: 0, width: 200, height: 80, label: { text: 'Beta' } });
+  const docsBox = await api('POST', `/api/elements?board=${board}`,
+    { type: 'rectangle', x: 600, y: 0, width: 200, height: 80, label: { text: 'Docs' }, link: 'https://example.com/docs' });
   const alphaId = alphaBox.body?.element?.id ?? alphaBox.body?.id;
   const betaId = betaBox.body?.element?.id ?? betaBox.body?.id;
-  check('two boxes on one board', Boolean(alphaId && betaId));
+  const docsId = docsBox.body?.element?.id ?? docsBox.body?.id;
+  check('three boxes on one board', Boolean(alphaId && betaId && docsId));
 
   const first = cli(['promote', '--board', board, '--ids', alphaId, '--kind', 'service',
     '--repo', ALPHA, '--path', 'src/service.ts']);
@@ -272,6 +275,8 @@ try {
     '--repo', BETA, '--path', 'src/service.ts']);
   check('a node in one repo is promoted from outside it', first.ok, first.err);
   check('and a node in another repo, from the same directory, with no cd', second.ok, second.err);
+  const leakedLink = await api('PUT', `/api/elements/${alphaId}?board=${board}`, { link: 'https://example.com/wrong-local-link' });
+  check('a manually supplied link on a bound element is accepted as input', leakedLink.status === 200);
 
   const elements = (await api('GET', `/api/elements?board=${board}`)).body?.elements ?? [];
   const bindingOf = id => elements.find(el => el.id === id)?.customData?.archboard?.binding;
@@ -283,6 +288,8 @@ try {
   check('  and each links to its own checkout, so the box is tappable on the Flip',
     elements.find(el => el.id === alphaId)?.link === `file://${alphaRoot}/src/service.ts` &&
     elements.find(el => el.id === betaId)?.link === `file://${betaRoot}/src/service.ts`);
+  check('  while an unbound human-authored web link is still presented unchanged',
+    elements.find(el => el.id === docsId)?.link === 'https://example.com/docs');
   check('  neither of which is where the promotions were run from',
     !first.out.includes(nowhere) && !second.out.includes(nowhere));
 
@@ -374,6 +381,23 @@ try {
 
   const saved = await api('POST', `/api/boards/save?board=${board}`);
   check('the cross-repo board saves to the vault', saved.status === 200, JSON.stringify(saved.body).slice(0, 120));
+  const rawNote = fs.readFileSync(path.join(vault, 'systems.excalidraw.md'), 'utf-8');
+  const noteScene = JSON.parse((await import(src('core/obsidian-md.ts'))).extractSceneJsonFromObsidianMd(rawNote));
+  const persisted = noteScene.elements ?? [];
+  const persistedAlpha = persisted.find(el => el.id === alphaId);
+  const persistedBeta = persisted.find(el => el.id === betaId);
+  const persistedDocs = persisted.find(el => el.id === docsId);
+  check('the raw note keeps the portable binding for a promoted node',
+    persistedAlpha?.customData?.archboard?.binding?.repo === ALPHA &&
+    persistedAlpha?.customData?.archboard?.binding?.path === 'src/service.ts');
+  check('  and stores no derived or manually supplied link on bound elements',
+    !Object.hasOwn(persistedAlpha ?? {}, 'link') &&
+    !Object.hasOwn(persistedBeta ?? {}, 'link') &&
+    !rawNote.includes(`file://${alphaRoot}/src/service.ts`) &&
+    !rawNote.includes(`file://${betaRoot}/src/service.ts`) &&
+    !rawNote.includes('https://example.com/wrong-local-link'));
+  check('  while an unbound human-authored web link is still persisted',
+    persistedDocs?.link === 'https://example.com/docs');
 
   const fromAlpha = cli(['board', 'list', '--repo', ALPHA, '--text']);
   const fromBeta = cli(['board', 'list', '--repo', BETA, '--text']);

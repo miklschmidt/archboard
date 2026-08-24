@@ -132,8 +132,11 @@ memory, and every accepted human or agent change is written atomically to its
 Writes are coordinated per board. Agents claim a board for substantial work,
 state what each write is doing, and re-read after a version conflict instead of
 retrying blindly. Human interaction remains responsive and is never blocked by
-an agent's lease. Metadata lives in Excalidraw's `customData` and `link` fields,
-so bindings survive a browser edit and an Obsidian round trip.
+an agent's lease. Archboard metadata lives under `customData.archboard`, so code
+bindings survive a browser edit and an Obsidian round trip without storing
+machine-local `file://` URLs. Human-authored Excalidraw links are preserved;
+tappable code targets are derived for presentation from the portable binding
+and this machine's checkout registry.
 
 ## Security
 
