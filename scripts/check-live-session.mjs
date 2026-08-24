@@ -1197,7 +1197,7 @@ try {
   check('  and stops accepting edits, as for any other holder',
     claimed.view === true, JSON.stringify(claimed));
   check('  and offers the person the one thing they may always do',
-    claimed.take === 'Take it back', JSON.stringify(claimed));
+    claimed.take === 'Take back control', JSON.stringify(claimed));
 
   // And the step, under the overall reason, as the write lands (TASK-095). This is
   // the half a socket cannot answer: whether the user can

@@ -10,14 +10,17 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { CanvasPane } from '../canvas/CanvasPane'
 import { BoardBar } from './BoardBar'
+import { BoardNavigator } from './BoardNavigator'
+import { AgentRail } from './AgentRail'
 import { BoardDialog, type BoardDialogMode } from './BoardDialog'
 import { ConfirmDialog } from './ConfirmDialog'
 import { ConflictDialog } from './ConflictDialog'
 import { InstallLibraryDialog } from './InstallLibraryDialog'
+import { Icon } from './Icons'
 import { useLibrary } from './useLibrary'
-import { BoardConflictError, clearBoard, fetchBoardInfo, newBoard, openBoard, saveBoard } from '../canvas/api'
+import { BoardConflictError, clearBoard, fetchBoardInfo, fetchBoards, newBoard, openBoard, saveBoard } from '../canvas/api'
 import type { SaveRequest } from '../canvas/api'
-import type { BoardHold, BoardInfo, BoardSaveResult, BoardWriteConflict, PaneRef, PaneStatus } from '../types'
+import type { BoardHold, BoardInfo, BoardListing, BoardSaveResult, BoardWriteConflict, LockHolder, PaneRef, PaneStatus } from '../types'
 import './shell.css'
 
 const THEME_KEY = 'archboard-theme'
@@ -40,6 +43,7 @@ function initialTheme(): 'light' | 'dark' {
 // `hold` keeps a notice up until it is clicked away. A message that tells you
 // what to type is no use if it leaves before you have typed it.
 interface Notice { kind: 'info' | 'error'; text: string; hold?: boolean }
+interface AgentState { heldBy: LockHolder | null; takeBack: () => void }
 
 /** "the only pane", "the left pane", "the left and right panes". */
 function listPanes(refs: PaneRef[]): string {
@@ -113,6 +117,7 @@ export function Shell(): JSX.Element {
   const [panes, setPanes] = useState<string[]>(['pane-1'])
   const [focused, setFocused] = useState('pane-1')
   const [statuses, setStatuses] = useState<Record<string, PaneStatus>>({})
+  const [agentStates, setAgentStates] = useState<Record<string, AgentState>>({})
   // Pane ids are never reused. Numbering by list length would assign a reopened
   // pane the id of the one just closed, and the server keys a pane's selection
   // and its board by that id.
@@ -165,6 +170,17 @@ export function Shell(): JSX.Element {
   // One palette behind however many panes are on screen, held on the server so
   // that a second tab, a second machine and the agent all see the same one.
   const library = useLibrary()
+  const [boardListing, setBoardListing] = useState<BoardListing | null>(null)
+  const [boardListingError, setBoardListingError] = useState<string | null>(null)
+
+  const refreshBoardListing = useCallback(async () => {
+    try {
+      setBoardListing(await fetchBoards())
+      setBoardListingError(null)
+    } catch (error) {
+      setBoardListingError((error as Error).message)
+    }
+  }, [])
 
   const onStatus = useCallback((status: PaneStatus) => {
     setStatuses((previous) => {
@@ -209,7 +225,16 @@ export function Shell(): JSX.Element {
     })
   }, [])
 
+  const onAgentState = useCallback((paneId: string, heldBy: LockHolder | null, takeBack: () => void) => {
+    setAgentStates((previous) => {
+      const existing = previous[paneId]
+      if (existing?.heldBy === heldBy && existing.takeBack === takeBack) return previous
+      return { ...previous, [paneId]: { heldBy, takeBack } }
+    })
+  }, [])
+
   const status = statuses[focused] ?? statuses[panes[0] ?? ''] ?? null
+  const agentState = agentStates[focused] ?? agentStates[panes[0] ?? ''] ?? null
   const boardKey = status?.boardKey ?? null
   const identity = status?.board ?? boardInfo?.identity ?? null
   // Whether the board in front of the human is being written down. It comes
@@ -221,6 +246,9 @@ export function Shell(): JSX.Element {
   // a write that was refused, this is a write that has not happened yet
   // (TASK-062).
   const writtenElsewhere = status?.writtenElsewhere ?? null
+  const onScreenKeys = panes.map((paneId) => statuses[paneId]?.boardKey ?? '').join('|')
+
+  useEffect(() => { void refreshBoardListing() }, [refreshBoardListing, onScreenKeys])
 
   useEffect(() => {
     try { window.localStorage?.setItem(THEME_KEY, theme) } catch { /* private mode */ }
@@ -297,18 +325,21 @@ export function Shell(): JSX.Element {
         setDialog(null)
         setConflict(null)
         setNotice(saveNotice(saved, panes.length))
+        void refreshBoardListing()
       } catch (error) {
         if (!(error instanceof BoardConflictError)) throw error
         setDialog(null)
         setDialogError(null)
         setConflict({ conflict: error.conflict, request, hold: error.held ?? hold })
       }
-    }), [run, boardKey, status?.clientId, refreshBoardInfo, panes.length, hold])
+    }), [run, boardKey, status?.clientId, refreshBoardInfo, refreshBoardListing, panes.length, hold])
 
-  // A board is opened INTO a pane. With one pane the server takes that one;
-  // with two it needs telling, which is what the dialog's pane picker is for.
+  // A board is opened INTO a pane. Always name the focused pane when the shell
+  // knows it: another browser tab may have registered a pane even when this
+  // particular shell is not split, and the server must never guess between
+  // them. An explicit picker choice still wins.
   const paneTarget = (address: { pane?: string }): { pane?: string } =>
-    address.pane ? { pane: address.pane } : (panes.length > 1 && status ? { pane: status.clientId } : {})
+    address.pane ? { pane: address.pane } : (status ? { pane: status.clientId } : {})
 
   const handleOpen = (address: { board: string; variant?: string; level?: string; pane?: string }) =>
     run(async () => {
@@ -316,6 +347,7 @@ export function Shell(): JSX.Element {
       setBoardInfo(opened)
       setDialog(null)
       setNotice({ kind: 'info', text: `Opened ${opened.board}.` })
+      void refreshBoardListing()
     })
 
   const handleNew = (address: { board: string; variant?: string; level?: string; pane?: string }) =>
@@ -324,23 +356,29 @@ export function Shell(): JSX.Element {
       setBoardInfo(created)
       setDialog(null)
       setNotice({ kind: 'info', text: `${created.board} started. It is not in the vault until you save it.` })
+      void refreshBoardListing()
     })
+
+  const handleNavigate = (key: string): void => {
+    const showing = panes.find((paneId) => statuses[paneId]?.boardKey === key)
+    if (showing) {
+      setFocused(showing)
+      return
+    }
+    void handleOpen({ board: key })
+  }
 
   const handleSaveAs = (address: { board: string; variant?: string; level?: string }) => {
     if (!boardKey) return
     void attemptSave({ board: boardKey, name: address.board, variant: address.variant, level: address.level })
   }
 
-  const handleSave = () => {
-    if (!boardKey) return
-    // Scratch has a note of its own, so this is not about where the drawing
-    // goes. Save on the placeholder means "make this a board", which is a
-    // naming question — and this is the only place in the shell that asks it.
-    if (boardInfo?.placeholder) {
-      setDialog('save-as')
-      return
-    }
-    void attemptSave({ board: boardKey })
+  // Every gesture on a named board is already written through to its note.
+  // Scratch is the one exception that needs an explicit action: not to save
+  // the drawing, but to give it a durable address in the vault.
+  const handleNameBoard = () => {
+    if (!boardKey || !boardInfo?.placeholder) return
+    setDialog('save-as')
   }
 
   // The three ways out of a conflict. Each is the human picking which copy
@@ -428,6 +466,7 @@ export function Shell(): JSX.Element {
       <BoardBar
         identity={identity}
         boardKey={boardKey}
+        vault={boardListing?.vault ?? null}
         elementCount={status?.elementCount ?? 0}
         connected={status?.connected ?? false}
         hold={hold}
@@ -445,14 +484,12 @@ export function Shell(): JSX.Element {
         // last wrote. One stray touch on a 75-inch panel must not be what ends
         // it.
         onNoteClick={() => setAskingAboutNote(true)}
-        // The pane the person is working in, so the bar says what is happening
-        // to the board in front of them rather than to the other one.
-        doing={status?.doing ?? []}
         paneCount={panes.length}
+        theme={theme}
+        onThemeChange={setTheme}
         busy={busy}
         onOpen={() => { setDialogError(null); setDialog('open') }}
         onNew={() => { setDialogError(null); setDialog('new') }}
-        onSave={handleSave}
         onClear={() => setConfirmingClear(true)}
         onAddPane={addPane}
         // The button names no pane, so it drops the last one and keeps the
@@ -461,35 +498,95 @@ export function Shell(): JSX.Element {
         onClosePane={() => closePane(panes[panes.length - 1] ?? '')}
       />
 
-      {notice && (
-        <div
-          className={`notice notice-${notice.kind}${notice.hold ? ' notice-hold' : ''}`}
-          title="Click to dismiss"
-          onClick={() => setNotice(null)}
-        >
-          {notice.text}
-        </div>
-      )}
+      <div className="workspace">
+        <BoardNavigator
+          listing={boardListing}
+          error={boardListingError}
+          currentKey={boardKey}
+          busy={busy}
+          onSelect={handleNavigate}
+          onRefresh={() => { void refreshBoardListing() }}
+          onNew={() => { setDialogError(null); setDialog('new') }}
+          needsName={boardInfo?.placeholder ?? false}
+          onName={handleNameBoard}
+        />
 
-      <main className={`panes panes-${panes.length}`}>
-        {panes.map((paneId, index) => (
-          <CanvasPane
-            key={paneId}
-            paneId={paneId}
-            primary={index === 0}
-            focused={paneId === focused}
-            theme={theme}
-            onStatus={onStatus}
-            onThemeChange={setTheme}
-            onFocus={setFocused}
-            label={panes.length > 1 ? `pane ${index + 1}` : undefined}
-            libraryItems={library.items}
-            onLibraryChange={library.reportFromPane}
-            onLibraryChangedElsewhere={library.applyFromServer}
-            onLayoutRequest={handleLayoutRequest}
-          />
-        ))}
-      </main>
+        <main className="canvas-zone">
+          <div className="pane-bar">
+            <div className="pane-tabs">
+              {panes.map((paneId, index) => {
+                const paneStatus = statuses[paneId]
+                const paneIdentity = paneStatus?.board
+                const paneTitle = paneIdentity
+                  ? `${paneIdentity.board}${paneIdentity.variant === 'current' ? '' : ` / ${paneIdentity.variant}`}`
+                  : '…'
+                return (
+                  <button
+                    type="button"
+                    key={paneId}
+                    className={`pane-tab${paneId === focused ? ' focused' : ''}`}
+                    onClick={() => setFocused(paneId)}
+                  >
+                    <span className="focus-dot" />
+                    <span>Pane {String.fromCharCode(65 + index)} · {paneTitle}</span>
+                  </button>
+                )
+              })}
+            </div>
+            <span className="pane-tip">Select a variant to replace the focused pane</span>
+          </div>
+
+          <div className={`panes panes-${panes.length}`}>
+            {panes.map((paneId, index) => (
+              <CanvasPane
+                key={paneId}
+                paneId={paneId}
+                primary={index === 0}
+                focused={paneId === focused}
+                theme={theme}
+                onStatus={onStatus}
+                onAgentState={onAgentState}
+                onThemeChange={setTheme}
+                onFocus={setFocused}
+                label={`Pane ${String.fromCharCode(65 + index)}`}
+                libraryItems={library.items}
+                onLibraryChange={library.reportFromPane}
+                onLibraryChangedElsewhere={library.applyFromServer}
+                onLayoutRequest={handleLayoutRequest}
+              />
+            ))}
+          </div>
+
+          {notice && (
+            <div
+              className={`notice notice-shell notice-${notice.kind}${notice.hold ? ' notice-hold' : ''}`}
+              role={notice.kind === 'error' ? 'alert' : 'status'}
+            >
+              <span className="notice-icon"><Icon name={notice.kind === 'error' ? 'close' : 'check'} size={16} /></span>
+              <span className="notice-text">{notice.text}</span>
+              <button className="notice-dismiss" type="button" onClick={() => setNotice(null)} aria-label="Dismiss notice">
+                <Icon name="close" size={17} />
+              </button>
+            </div>
+          )}
+        </main>
+
+        <AgentRail
+          connected={status?.connected ?? false}
+          heldBy={agentState?.heldBy ?? null}
+          doing={status?.doing ?? []}
+          takeBack={agentState?.takeBack}
+        />
+      </div>
+
+      <footer className="statusbar">
+        <div className="status-cluster">
+          <span className={`status-item ${status?.connected ? 'status-good' : 'status-bad'}`}><span className="live-dot" />{status?.connected ? 'Connected' : 'Offline'}</span>
+          <span className="status-item"><Icon name="check" size={14} />{hold ? 'Changes held' : writtenElsewhere ? 'Note changed' : 'In the vault'}</span>
+          <span className="status-item">{status?.elementCount ?? 0} elements</span>
+        </div>
+        <div className="status-cluster status-muted"><span>{boardKey ?? boardListing?.vault ?? 'Waiting for board'}</span></div>
+      </footer>
 
       {dialog && (
         <BoardDialog
