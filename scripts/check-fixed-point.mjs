@@ -576,6 +576,156 @@ try {
     (planted.moved['text1'] ?? []).includes('index'),
     `text1 moved: ${(planted.moved['text1'] ?? ['nothing']).join(', ')}`);
 
+  // --- the shell is a workspace, not a strip of controls ------------------
+
+  const desktopShell = await evalInPage(`(() => {
+    const nav = document.querySelector('.board-nav');
+    const pane = document.querySelector('.pane');
+    const canvas = document.querySelector('.canvas-zone');
+    const rail = document.querySelector('.agent-rail');
+    const workspace = document.querySelector('.workspace');
+    const actions = [...document.querySelectorAll('.bar-actions .btn')];
+    const current = document.querySelector('.board-nav-row[aria-current="page"]');
+    if (!nav || !pane || !canvas || !rail || !workspace || !current) return null;
+    const navRect = nav.getBoundingClientRect();
+    const paneRect = pane.getBoundingClientRect();
+    const canvasRect = canvas.getBoundingClientRect();
+    const railRect = rail.getBoundingClientRect();
+    return {
+      navLeftOfCanvas: navRect.right <= canvasRect.left + 0.5,
+      railRightOfCanvas: railRect.left >= canvasRect.right - 0.5,
+      columnsAlign: Math.abs(navRect.top - canvasRect.top) < 1 &&
+        Math.abs(navRect.bottom - canvasRect.bottom) < 1 &&
+        Math.abs(railRect.top - canvasRect.top) < 1,
+      actionHeights: actions.map(button => button.getBoundingClientRect().height),
+      currentBoard: current.textContent.trim(),
+      workspaceWidth: workspace.getBoundingClientRect().width
+    };
+  })()`);
+  check('the desktop shell aligns the board atlas, canvas and activity rail',
+    desktopShell?.navLeftOfCanvas === true && desktopShell?.railRightOfCanvas === true &&
+      desktopShell?.columnsAlign === true,
+    JSON.stringify(desktopShell));
+  check('  and its primary actions have touch-sized targets',
+    desktopShell?.actionHeights?.length >= 5 && desktopShell.actionHeights.every(height => height >= 43.5),
+    JSON.stringify(desktopShell));
+  check('  and identifies the board currently on screen',
+    desktopShell?.currentBoard?.includes('Current') === true,
+    JSON.stringify(desktopShell));
+
+  // --- the doing presentation fits a narrow pane --------------------------
+
+  await browser(['set', 'viewport', '420', '700']);
+  const activity = [
+    'marking the unverified regional database boundary',
+    'shortening labels and removing arrow crossings',
+    'fitting dense labels inside their boxes',
+    'replacing the four stale bound labels with current names',
+    'recentering the shortened bound labels'
+  ];
+  for (const [index, doing] of activity.entries()) {
+    const wrote = await api('POST', `/api/elements?board=fixedpoint&doing=${encodeURIComponent(doing)}`, {
+      id: `activity-${index}`,
+      type: 'rectangle',
+      x: 900 + index * 20,
+      y: 500,
+      width: 10,
+      height: 10
+    });
+    check(`activity line ${index + 1} lands`, wrote.status === 200 || wrote.status === 201,
+      `status ${wrote.status}`);
+  }
+
+  let doingLayout = null;
+  for (let i = 0; i < 40; i += 1) {
+    doingLayout = await evalInPage(`(() => {
+      const rail = document.querySelector('.agent-rail');
+      const panel = document.querySelector('.pane-doing');
+      const lines = [...document.querySelectorAll('.pane-doing-line')];
+      const canvas = document.querySelector('.canvas-zone');
+      if (!rail || !panel || !canvas || lines.length !== 5) return null;
+      const railRect = rail.getBoundingClientRect();
+      const panelRect = panel.getBoundingClientRect();
+      const timestamps = [...document.querySelectorAll('.pane-doing-when')]
+        .map(node => node.getBoundingClientRect().left);
+      return {
+        lineCount: lines.length,
+        linesFit: lines.every(line => line.scrollWidth <= line.clientWidth),
+        panelFits: panelRect.left >= railRect.left && panelRect.right <= railRect.right &&
+          panelRect.bottom <= railRect.bottom,
+        canvasClear: railRect.top >= canvas.getBoundingClientRect().bottom - 0.5,
+        timestampsAlign: timestamps.every(left => Math.abs(left - timestamps[0]) < 0.5),
+        widths: lines.map(line => [line.clientWidth, line.scrollWidth])
+      };
+    })()`);
+    if (doingLayout) break;
+    await sleep(100);
+  }
+  check('the five latest activity lines render in the pane', doingLayout?.lineCount === 5,
+    JSON.stringify(doingLayout));
+  check('  with every line fully readable instead of clipped at the right edge',
+    doingLayout?.linesFit === true && doingLayout?.panelFits === true &&
+      doingLayout?.canvasClear === true,
+    JSON.stringify(doingLayout));
+  check('  and their timestamps stay in one column', doingLayout?.timestampsAlign === true,
+    JSON.stringify(doingLayout));
+
+  const narrowShell = await evalInPage(`(() => {
+    const nav = document.querySelector('.board-nav');
+    const pane = document.querySelector('.pane');
+    const bar = document.querySelector('.bar');
+    const canvas = document.querySelector('.canvas-zone');
+    const rail = document.querySelector('.agent-rail');
+    const actions = [...document.querySelectorAll('.bar-actions .btn')];
+    if (!nav || !pane || !bar || !canvas || !rail) return null;
+    const navRect = nav.getBoundingClientRect();
+    const paneRect = pane.getBoundingClientRect();
+    const barRect = bar.getBoundingClientRect();
+    return {
+      navAboveCanvas: navRect.bottom < paneRect.top,
+      railBelowCanvas: rail.getBoundingClientRect().top >= canvas.getBoundingClientRect().bottom - 0.5,
+      fitsViewport: [navRect, paneRect, barRect, rail.getBoundingClientRect()].every(rect =>
+        rect.left >= -0.5 && rect.right <= innerWidth + 0.5),
+      pageWidth: document.documentElement.scrollWidth,
+      viewportWidth: innerWidth,
+      actionHeights: actions.map(button => button.getBoundingClientRect().height)
+    };
+  })()`);
+  check('at 420px the board navigator becomes a strip above the canvas',
+    narrowShell?.navAboveCanvas === true && narrowShell?.railBelowCanvas === true,
+    JSON.stringify(narrowShell));
+  check('  without horizontal page overflow or undersized actions',
+    narrowShell?.fitsViewport === true &&
+      narrowShell?.pageWidth === narrowShell?.viewportWidth &&
+      narrowShell?.actionHeights?.every(height => height >= 43.5),
+    JSON.stringify(narrowShell));
+
+  const switchStarted = await evalInPage(`(() => {
+    const scratch = document.querySelector('.board-group[aria-label="scratch"]');
+    const row = scratch?.querySelector('.board-nav-row');
+    if (!row) return false;
+    row.click();
+    return true;
+  })()`);
+  let switchedToScratch = false;
+  for (let i = 0; i < 40; i += 1) {
+    switchedToScratch = await evalInPage(
+      `document.querySelector('.board-name')?.textContent.trim() === 'scratch'`);
+    if (switchedToScratch) break;
+    await sleep(100);
+  }
+  check('a board in the navigator opens directly into the focused pane',
+    switchStarted && switchedToScratch);
+
+  const switchedBack = await evalInPage(`(() => {
+    const fixedpoint = document.querySelector('.board-group[aria-label="fixedpoint"]');
+    const row = fixedpoint?.querySelector('.board-nav-row');
+    if (!row) return false;
+    row.click();
+    return true;
+  })()`);
+  check('  and the original board remains one click away', switchedBack === true);
+
   // --- what is ignored is stated, and is what the pane actually drops ------
 
   check('what the diff ignores is the server bookkeeping the pane strips, and nothing else',

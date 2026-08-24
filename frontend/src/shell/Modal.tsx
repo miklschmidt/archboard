@@ -5,6 +5,7 @@
 // browser feels like — unreadable on a 75in panel.
 
 import React, { useEffect, useRef } from 'react'
+import { Icon } from './Icons'
 
 interface ModalProps {
   title: string
@@ -41,7 +42,15 @@ export function Modal({ title, onCancel, children, footer, wide }: ModalProps): 
         ref={panelRef}
         onPointerDown={(event) => event.stopPropagation()}
       >
-        <h2 className="modal-title">{title}</h2>
+        <div className="modal-header">
+          <div>
+            <span className="modal-eyebrow">archboard</span>
+            <h2 className="modal-title">{title}</h2>
+          </div>
+          <button className="modal-close" type="button" onClick={onCancel} aria-label="Close dialog">
+            <Icon name="close" size={20} />
+          </button>
+        </div>
         <div className="modal-body">{children}</div>
         <div className="modal-footer">{footer}</div>
       </div>
