@@ -3,9 +3,9 @@
 What archboard is building on top of its Excalidraw base, and how it plugs into
 Codex + GPT-Live voice.
 
-Everything below marked "verified" was established by reading the code at
-`/home/msc/Projects/codex` (@ `f5a3dc5540`) or by testing this build. Nothing
-here is inferred from documentation.
+Everything below marked "verified" was established by reading the Codex source
+at commit `f5a3dc5540` or by testing this build. Nothing here is inferred from
+documentation.
 
 ## What the base gives us, and what it doesn't
 
@@ -94,8 +94,8 @@ Config at `~/.codex/hooks.json` (or `[hooks.*]` in `config.toml`):
 ```json
 {"hooks":{"UserPromptSubmit":[{"hooks":[{
   "type":"command",
-  "command":"/home/msc/Projects/whiteboard/bin/canvas-hook",
-  "statusMessage":"reading whiteboard state"}]}]}}
+  "command":"/path/to/archboard/bin/canvas-hook",
+  "statusMessage":"reading archboard state"}]}]}}
 ```
 
 The hook writes `hookSpecificOutput.additionalContext` to stdout; Codex converts
