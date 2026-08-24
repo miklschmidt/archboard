@@ -130,6 +130,11 @@ import {
   elementMutation,
   writeBoard
 } from './core/board-write.js';
+import {
+  presentElement,
+  presentElements,
+  stripBindingPresentationLinks
+} from './core/presentation.js';
 import { frontendState, sourceState } from './core/staleness.js';
 
 // Load environment variables
@@ -612,7 +617,7 @@ function refusalDocument(board: string): { document: ServerElement[]; version: n
   if (!state) throw new Error(`Board "${board}" is not open`);
   const content = readBoardContent(state);
   return {
-    document: Array.from(content.elements.values()),
+    document: presentElements(content.elements.values()),
     version: content.version ?? null
   };
 }
@@ -708,7 +713,7 @@ wss.on('connection', (ws: WebSocket, req) => {
     type: 'initial_elements',
     board: startingKey,
     identity: board.identity,
-    elements: Array.from(content.elements.values()),
+    elements: presentElements(content.elements.values()),
     ...boardFilesMessage(content)
   };
   ws.send(JSON.stringify(initialMessage));
@@ -1136,7 +1141,7 @@ app.post('/api/boards/claim/release', (req: Request, res: Response) => {
 app.get('/api/elements', (req: Request, res: Response) => {
   try {
     const { key, content } = boardFromRequest(req, 'Listing elements');
-    const elementsArray = Array.from(content.elements.values());
+    const elementsArray = presentElements(content.elements.values());
     res.json({
       success: true,
       board: key,
@@ -1165,7 +1170,7 @@ app.post('/api/elements', (req: Request, res: Response) => {
       answer: ({ content, value, delta, written }) => ({
         success: true,
         board: source.key,
-        element: value.stored,
+        element: presentElement(value.stored),
         // `element` is what the caller asked for; `elements` is what the board
         // became, label and z-order included (TASK-075).
         ...agentWriteAnswer(
@@ -1217,7 +1222,7 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
       answer: ({ content, value, written }) => ({
         success: true,
         board: source.key,
-        element: content.elements.get(id) as ServerElement,
+        element: presentElement(content.elements.get(id) as ServerElement),
         ...agentWriteAnswer(source.board, content, value.touched, wantsDocument(req), written)
       })
     });
@@ -1340,7 +1345,7 @@ app.get('/api/elements/search', (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      elements: results,
+      elements: presentElements(results),
       count: results.length
     });
   } catch (error) {
@@ -1373,7 +1378,7 @@ app.get('/api/elements/:id', (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      element: element
+      element: presentElement(element)
     });
   } catch (error) {
     answerBoardError(res, error, 'Error fetching element:');
@@ -1628,7 +1633,7 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
             wantsDocument(req),
             written
           )
-          : { document: Array.from(content.elements.values()) })
+          : { document: presentElements(content.elements.values()) })
       })
     });
   } catch (error) {
@@ -1825,7 +1830,7 @@ app.get('/api/selection', (_req: Request, res: Response) => {
   const board = boards.get(key);
   const report = buildSelectionReport(
     selectionState.current,
-    board ? boardElements(board) : [],
+    board ? presentElements(boardElements(board)) : [],
     clients.size
   );
   res.json({ success: true, board: key, ...report });
@@ -1903,7 +1908,7 @@ app.get('/api/panes', (_req: Request, res: Response) => {
     identity: (key) => boards.get(key)?.identity ?? null,
     elements: (key) => {
       const board = boards.get(key);
-      return board ? boardElements(board) : [];
+      return board ? presentElements(boardElements(board)) : [];
     },
     selection: (clientId) => selectionState.byClient.get(clientId) ?? null,
     canvasUrl: `http://${formatHostForUrl(HOST)}:${PORT}`
@@ -2296,7 +2301,7 @@ app.post('/api/export/image', (req: Request, res: Response) => {
       type: 'initial_elements',
       board: exportKey,
       identity: exportBoard.identity,
-      elements: Array.from(exportContent.elements.values()),
+      elements: presentElements(exportContent.elements.values()),
       ...boardFilesMessage(exportContent)
     } as InitialElementsMessage & { files?: Record<string, ExcalidrawFile> }, exportKey);
 
@@ -2561,7 +2566,7 @@ app.post('/api/snapshots', (req: Request, res: Response) => {
     const snapshot: Snapshot = {
       name,
       board: boardKeyForRequest,
-      elements: copyElements(content.elements.values()),
+      elements: copyElements(stripBindingPresentationLinks(content.elements.values())),
       createdAt: new Date().toISOString()
     };
 
@@ -2619,7 +2624,7 @@ app.get('/api/snapshots/:name', (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      snapshot
+      snapshot: { ...snapshot, elements: presentElements(snapshot.elements) }
     });
   } catch (error) {
     logger.error('Error fetching snapshot:', error);
@@ -2732,7 +2737,7 @@ function switchPaneTo(pane: PaneRegistration | null, key: string, known?: BoardC
   sendToPane(pane.clientId, {
     type: 'board_switched',
     identity: board.identity,
-    elements: Array.from(content.elements.values()),
+    elements: presentElements(content.elements.values()),
     ...boardFilesMessage(content),
     timestamp: new Date().toISOString()
   }, key);

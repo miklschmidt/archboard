@@ -75,7 +75,7 @@ cat <<'EOF' | ./bin/canvas add --board scratch --doing "drawing a probe box"
   "customData":{"archboard":{"node":"probe","kind":"service"}}}]
 EOF
 ./bin/canvas describe --board scratch                # reads as 1 node, not 1 rectangle
-./bin/canvas query --board scratch --type rectangle  # customData + link visible here
+./bin/canvas query --board scratch --type rectangle  # customData + presented links visible here
 ```
 
 Every command that touches a board names it, and one that does not is refused
@@ -91,9 +91,11 @@ TASK-009 a shape gets a fill on its own (`src/core/appearance.ts`), which is
 what makes its interior tappable.
 
 Then open <http://127.0.0.1:3000>, **drag the box**, and re-run `query`. The
-position must change and `customData` / `link` must survive. That frontend
-round-trip is where metadata gets silently dropped; a headless test will not
-catch it.
+position, `customData`, and any human-authored link must survive. A bound code
+link is different: `query` may present one derived from the portable binding
+and this machine's checkout registry, but the note must never store it. That
+frontend round-trip is where metadata gets silently dropped or presentation
+data leaks into persistence; a headless test will not catch it.
 
 Elements that came back through the browser are tagged
 `"source": "frontend_sync"`.

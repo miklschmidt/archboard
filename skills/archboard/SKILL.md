@@ -415,9 +415,13 @@ archboard promote --board payments --kind service --path src/payments/service.ts
   all queues" — one node per selected shape, named from its own label, kind
   only. A shape and its bound label are one thing either way.
 - **`--path`** binds the node to code. Repo identity, branch and commit come
-  from git so history can trace a file that later moves; `link` is only set
-  when the path really resolves here, so a tap on the board never opens
-  nothing. `--repo/--branch/--commit` override the resolution.
+  from git so history can trace a file that later moves. The note persists only
+  `customData.archboard.binding` with the repository identity and repo-relative
+  path plus branch/commit/confirmed-at details when available. Do not supply a
+  `file://` link for a code binding: tappable code targets are derived on
+  outbound presentation from the binding and this machine's checkout registry,
+  then stripped before any note write. `--repo/--branch/--commit` override the
+  resolution.
 - **Node identity** is a slug of the name (`payments-api`), unique on the
   board, stored as `customData.archboard.node`. It survives redraws, drags and
   export/import, and is the join key when two variants are compared — quote it

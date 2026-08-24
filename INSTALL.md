@@ -177,23 +177,30 @@ archboard board new payments --level service
 archboard board open payments
 ```
 
-**Use absolute paths when you promote.** Binding walks up from the resolved
-path to find the enclosing git repository, so an absolute path is correct
-wherever you happen to be standing:
+**Name the repository and use a repo-relative path.** Register each checkout
+once, then the same portable address works wherever the command is run:
 
 ```bash
-archboard promote --kind service --path ~/Projects/payments-api/src/index.ts
+archboard repo add /path/to/payments-api
+archboard promote --board payments --kind service \
+  --repo github.com/acme/payments-api --path src/index.ts
 ```
 
-A relative path is resolved against an ambient working directory, and that is
-currently a trap. From the wrong directory, if a file of that name happens to
-exist there, you get a confident binding to the wrong repository. Over MCP it
-is worse, because a client with no shell cannot set a working directory at all,
-so a relative path there resolves by accident rather than by intent. TASK-031
-is fixing this. Until it lands, absolute paths are the only reliable form.
+An absolute `--path` also works as an input when that is more convenient:
+archboard walks up from it to identify the repository, then normalizes it to
+portable `customData.archboard.binding` metadata. The board note stores the
+repository identity, repo-relative path, and branch/commit details when
+available — never the absolute path or a `file://` URL. Tappable targets are
+derived later from the binding and this machine's checkout registry.
 
-`--repo`, `--branch` and `--commit` override the resolution when you need to
-name something git cannot tell you.
+A bare relative path is resolved against an explicit working-directory origin
+on surfaces that have one, and the result says which repository that produced.
+Over MCP, where a shell-less client cannot express a working directory, use a
+registered repository identity plus repo-relative path instead of relying on a
+relative path.
+
+`--branch` and `--commit` override the revision metadata when you need to name
+something git cannot tell you.
 
 With a shared vault the boards do not belong to the repo and are not committed
 to it. If you want a diagram in the repo as well, export one:

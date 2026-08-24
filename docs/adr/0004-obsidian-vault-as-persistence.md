@@ -21,8 +21,10 @@ The vault is not co-located with any repo, so **code references must be logical,
 not absolute**: a repository identity plus a path, plus the branch and commit at
 which the binding was last confirmed so git history can trace a file that later
 moves. Absolute `file://` paths break on any other machine. Each repo keeps its
-own `CONTEXT.md` and ADRs where they already are; board-to-code links resolve
-through a machine-local registry rather than living in the vault.
+own `CONTEXT.md` and ADRs where they already are; board-to-code targets resolve
+through a machine-local registry when the board is presented rather than living
+in the vault. Human-authored board and web links remain ordinary Excalidraw
+links and are preserved.
 
 ## Status note
 Originally recorded as provisional pending two blockers, both now closed:

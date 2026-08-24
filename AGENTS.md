@@ -138,6 +138,10 @@ that changed on disk under another editor is refused, never overwritten
   labelled box is two elements from the moment it is written — and Excalidraw
   does not change it (`test:browser` asserts a zero diff). A second converter,
   or a conversion on the read path, is how one board becomes two documents.
+  The exception-looking thing is not an exception: binding-derived code links
+  are a noncanonical presentation overlay, added to copies returned to a
+  browser or caller and stripped at the write boundary. They are never a second
+  board document and never persist in the note.
 - **One thing somebody asked for is one write** (TASK-068). Align, patch,
   promote, import: each reaches the note as one read-modify-write under one
   lock acquisition, and `test:one-write` counts writes on the wire.
@@ -154,10 +158,15 @@ that changed on disk under another editor is refused, never overwritten
   it (TASK-042, TASK-048).
 - **Every duration is in `src/core/timing.ts`** with what it pulls against
   written beside it. Read the file before tuning one (TASK-066).
-- **`customData` and `link` are the metadata channel** (ADR 0003) and survive
-  the human round-trip; archboard's own keys sit under `customData.archboard`,
-  never flat. Elements that came back through the browser are tagged
-  `"source": "frontend_sync"`.
+- **`customData.archboard` is archboard's metadata channel** (ADR 0003) and
+  survives the human round-trip; archboard's own keys sit under
+  `customData.archboard`, never flat. A code-bound element persists
+  `customData.archboard.binding` only: repository, repo-relative path, and
+  branch/commit/confirmed-at details when available. `link` is still valid for
+  human-authored board and web links, but a code binding's tappable local target
+  is derived on outbound presentation from the binding plus the machine-local
+  checkout registry, and is stripped before any note write. Elements that came
+  back through the browser are tagged `"source": "frontend_sync"`.
 - **Keep a board open in one editor at a time.** The conflict check reads the
   file, not another app's memory, so two editors can still cross-write.
 - **Injection is opt-in and loopback-only** (`ARCHBOARD_INJECT=1`, ADR 0005),

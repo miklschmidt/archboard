@@ -72,6 +72,7 @@ import {
   isObsidianExcalidrawMd,
   renameElementId
 } from './obsidian-md.js';
+import { stripBindingPresentationLinks } from './presentation.js';
 import { buildScene } from './scene-document.js';
 
 /**
@@ -359,10 +360,13 @@ export function renderContent(
 ): { note: string; bytes: Buffer; elementCount: number } {
   const files = boardFilesMessage(content).files ?? {};
   const { scene, elementCount } = buildScene(
-    Array.from(content.elements.values()),
+    stripBindingPresentationLinks(content.elements.values()),
     files as unknown as Record<string, any>,
     { keepServerFields: true }
   );
+  // expandElements normalizes a missing link to null, so apply the same
+  // portability rule once more to the normalized copies.
+  scene.elements = stripBindingPresentationLinks(scene.elements as ServerElement[]);
   const note = renderBoardNote(scene, existingNote, identity);
   return { note, bytes: Buffer.from(note, 'utf-8'), elementCount };
 }

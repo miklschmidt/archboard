@@ -111,7 +111,7 @@ export function uniqueNodeId(base: string, taken: Set<string>): string {
 // 0004), so a binding names code as repo identity + path, plus the branch and
 // commit at which it was last confirmed — that pair is what lets git history
 // trace a file that later moves. `link` is a convenience for this machine and
-// is only written when the path actually resolves here.
+// is reported in answers, not stored in the note.
 
 export interface BindingRequest {
   path: string;
@@ -553,9 +553,10 @@ export function planPromotion(request: PromotionRequest): PromotionPlan {
       updates.push({
         id: el.id,
         customData: mergedCustomData(el, block),
-        // Rebinding has to clear a link the previous binding left behind —
-        // otherwise the shape keeps linking to the file it used to mean.
-        ...(binding ? { link: binding.link ?? null } : {}),
+        // A bound element's link is a read-time presentation of its binding.
+        // Clear anything the element carried before; the note writer also
+        // strips it as the final portability boundary.
+        ...(binding ? { link: null } : {}),
         ...fillFor(el, kind)
       });
     }
@@ -635,7 +636,9 @@ export function planDemotion(targets: ServerElement[], board: ServerElement[]): 
       const custom = (el.customData && typeof el.customData === 'object' ? el.customData : {}) as Record<string, unknown>;
       const { archboard, ...rest } = custom;
       const ourBinding = readElementMetadata(el).archboard?.binding;
-      const linkWasOurs = !!el.link && !!ourBinding && el.link.endsWith(ourBinding.path);
+      // Older notes may still contain the file presentation promotion used to
+      // store. Do not mistake an unrelated human-authored web link for ours.
+      const linkWasOurs = typeof el.link === 'string' && el.link.startsWith('file://') && !!ourBinding;
       updates.push({
         id: el.id,
         customData: rest,
