@@ -62,13 +62,19 @@ archboard promote --board payments --kind service --path src/payments/service.ts
 The identity is what `compare` joins on and what survives redraws, drags and
 export/import. The binding resolves through git, so it records a repository, a
 branch and a commit rather than a path relative to somebody's working
-directory, and it sets `link` only when the path really resolves, so a tap on
-the board opens the file.
+directory. The persisted note stores only `customData.archboard.binding`:
+repository identity, repo-relative path, and branch/commit/confirmed-at details
+when available. Do not add a `file://` link for a code binding. If this machine
+can resolve the binding through its checkout registry, archboard derives a
+tappable target for the browser or caller and strips that overlay before the
+next note write.
 
-`customData` and `link` both survive the full round-trip, including the change
-report a human's drag produces, and `describe` prints both. Elements the human
-drew come back tagged `"source": "frontend_sync"` with no `customData`: that is
-your cue to ask what the new box maps to, or to propose a binding.
+`customData` and human-authored `link` values both survive the full round-trip,
+including the change report a human's drag produces. `describe` prints the
+portable binding; element reads and the browser receive any target this machine
+can derive for presentation. Elements the human drew come back tagged
+`"source": "frontend_sync"` with no `customData`: that is your cue to ask what
+the new box maps to, or to propose a binding.
 
 ## Drawing an architecture pass
 

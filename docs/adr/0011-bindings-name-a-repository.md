@@ -10,6 +10,13 @@ because boards persist in a vault that spans repositories and is not
 co-located with any of them (ADR 0004). An absolute path in a note is wrong on
 every other machine, and often on this one a week later.
 
+The note stores that logical address under `customData.archboard.binding`.
+Clickable code targets are presentation: archboard may add a local `file://`
+target, a GitHub URL, or another affordance to an outbound copy after resolving
+the binding against the machine-local checkout registry, but that derived
+target is stripped before the note is written. Unrelated human-authored
+Excalidraw links are not binding-derived and are preserved.
+
 Until this decision, resolving a path into that address went through the
 process's working directory. `resolveBinding(request, cwd = process.cwd())`.
 An absolute path was fine; a relative one was resolved against wherever the
@@ -44,17 +51,17 @@ caller named the repository, and the answer always reports which one it used:
 
 | `resolvedFrom` | The caller gave | What happens |
 |---|---|---|
-| `path` | an absolute path | resolved, and the identity read from git |
-| `registry` | a repo identity plus a path inside it | resolved through the checkout registered here |
-| `cwd` | a relative path, on a surface that has a working directory | resolved, **and the note says which directory it used and which repository that turned out to be** |
-| `declared` | a repo nothing here can resolve | recorded as stated, no link, and told how to register it |
+| `path` | an absolute path | resolved, the identity read from git, and persisted as portable repo metadata |
+| `registry` | a repo identity plus a path inside it | resolved through the checkout registered here, then persisted as portable repo metadata |
+| `cwd` | a relative path, on a surface that has a working directory | resolved, **and the answer says which directory it used and which repository that turned out to be** |
+| `declared` | a repo nothing here can resolve | recorded as stated, no derived code link, and told how to register it |
 
 On a surface with no working directory, a bare relative path is refused, and
 the refusal names both ways out plus the repositories registered on this
 machine.
 
 **And where each repository actually is on this machine is written down.** ADR
-0004 promised that registry, "board-to-code links resolve through a
+0004 promised that registry, "board-to-code targets resolve through a
 machine-local registry rather than living in the vault", and never built it.
 It is one JSON file in the state directory, one entry per repository identity,
 holding the checkout path, and it fills from two sides: `repo add <dir>` for
@@ -69,12 +76,14 @@ A client that cannot see the filesystem cannot sensibly name directories in it.
 
 ## Why not one of the easier answers
 
-**Require absolute paths everywhere.** Correct, and it is still the shortest
-path to a right answer. But it makes the common in-repo case wordier than it
-was, and it does not survive the read side: a board opened on another machine
-still needs to turn `github.com/acme/payments` into a directory before it can
-offer a tappable link. Something has to hold that map, and once it exists,
-naming the repo is the better ergonomics anyway.
+**Require absolute paths everywhere.** Correct as an input resolution mode, and
+it is still the shortest path to a right answer. But it makes the common
+in-repo case wordier than it was, and it does not survive persistence: an
+absolute path is normalized into portable repository metadata before the note is
+written. A board opened on another machine still needs to turn
+`github.com/acme/payments` into a directory before it can offer a tappable local
+target. Something has to hold that map, and once it exists, naming the repo is
+the better ergonomics anyway.
 
 **Declare a repository per board, in the note's frontmatter.** Attractive
 because it needs no new state and rides the identity mechanism boards already
@@ -106,6 +115,9 @@ keeping the convenience.
   a wrong binding visible at the moment it is made.
 - A relative path over MCP that used to "work" now fails. It was resolving
   against a directory nobody chose, so the ones that worked did so by luck.
-- The registry is machine-local, so a vault carried to another machine resolves
-  its links there or not at all. That is the same trade ADR 0004 made when it
-  put boards outside the repositories they describe.
+- The registry is machine-local, so a vault carried to another machine derives
+  local code targets there or not at all. That is the same trade ADR 0004 made
+  when it put boards outside the repositories they describe.
+- The persisted schema is independent of the presentation target. Today the
+  derived target may be a local file URL; later it can be GitHub or another
+  affordance without rewriting board notes.
