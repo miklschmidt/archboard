@@ -6,9 +6,9 @@ be followed, not skimmed.
 ## 1. Install
 
 ```bash
-cd /home/msc/Projects/whiteboard
+cd /path/to/archboard
 bun install                 # retry if it fails extracting a tarball
-bunx vite build             # the frontend, the only thing that is built
+bun run build               # the frontend, the only thing that is built
 ```
 
 bun runs the server and the CLI straight from `src/`, so there is no compile
@@ -46,7 +46,7 @@ Archboard runs as an MCP stdio server when invoked with no arguments. In
 ```toml
 [mcp_servers.archboard]
 command = "bun"
-args = ["/home/msc/Projects/whiteboard/src/bin.ts"]
+args = ["/path/to/archboard/src/bin.ts"]
 env = { ARCHBOARD_VAULT = "/path/to/vault" }
 startup_timeout_sec = 20
 ```

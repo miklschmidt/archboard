@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-20 02:39'
-updated_date: '2026-08-20 03:21'
+updated_date: '2026-08-24 11:06'
 labels: []
 dependencies: []
 references:
@@ -91,7 +91,7 @@ VERIFICATION, criterion by criterion.
 
 #4 the check. boundTextDrift is the invariant — a label may sit as far from its anchor as half its container's own diagonal, which is every alignment Excalidraw offers, and beyond that the board has lost it. It runs in check-labels over the fixture boards that file builds, over a real board driven through move, resize, re-point and re-bind, and over that board again after it is saved to a vault note and reopened; and in check-changes over the boards that file builds. Both fail when the fix is removed: stubbing settleBoundTexts fails 8 checks in check-labels naming exact distances, and check-changes has the same run with the label left behind as a positive assertion that the read-back goes wrong.
 
-#5 the vault. The two boards that were drifted — archboard/dataflow (5 labels, worst 151px) and archboard/dataflow@no-mcp (1 at 150px, 3 off centre) — were repaired through the canvas with the documented sequence and saved; both now read zero adrift, and so does every other board in that vault. The vault the canvas is currently holding, /home/msc/Work/Platform-Architecture/architecture-vault, was checked and was already clean. The repair itself is in scripts/repair-labels.mjs with the sequence in its header, so a board that drifts in future has a documented way back.
+#5 the vault. The two boards that were drifted — archboard/dataflow (5 labels, worst 151px) and archboard/dataflow@no-mcp (1 at 150px, 3 off centre) — were repaired through the canvas with the documented sequence and saved; both now read zero adrift, and so does every other board in that vault. The configured architecture vault was checked and was already clean. The repair itself is in scripts/repair-labels.mjs with the sequence in its header, so a board that drifts in future has a documented way back.
 
 bun run type-check clean, both projects. bun run test green: 5 stdio wire, local bind, 108 obsidian, changes and injection, 128 labels, 47 library, boards, surface parity.
 
