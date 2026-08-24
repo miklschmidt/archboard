@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-08-21 12:42'
-updated_date: '2026-08-21 13:30'
+updated_date: '2026-08-24 11:06'
 labels: []
 dependencies:
   - TASK-073
@@ -93,7 +93,7 @@ Two decisions the task did not name, both from reading updateBoundPoint:
 
 On creation the aim comes from the bound shapes' centres rather than from the placeholder points an agent supplied, which at focus 0 is the centre-to-centre line and is a fixed point of running the routing again. On a re-route it comes from the arrow's own next point, which is what Excalidraw uses.
 
-scripts/probe-arrow-refs.mjs hardcoded /home/msc/Projects/whiteboard, so it measured that clone whichever checkout it was run from. It resolves the repo from its own location now and reports 'the arrow was left alone'.
+scripts/probe-arrow-refs.mjs hardcoded one developer checkout path, so it measured that clone whichever checkout it was run from. It resolves the repo from its own location now and reports 'the arrow was left alone'.
 
 Revert-proof, whole suite each time (0 failures with the fix in place):
 - refs stored and read again (the bug): 4 of 82 geometry checks fail, including the measured one, 'moving a shape the arrow no longer touches dragged it from [[0,0],[300,-270]] to [[0,0],[292,41.9]], undoing where a person put it'.
