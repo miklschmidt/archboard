@@ -14,7 +14,7 @@ Where things are written down:
 - Decisions: `docs/adr/` — read the ADR before touching what it decides
 - Measured investigations (write costs, text metrics, hot reload,
   statelessness): `docs/design/`
-- Using the canvas: the `excalidraw-skill` skill. Working on this repo's own
+- Using the canvas: the `archboard` skill. Working on this repo's own
   source: the `archboard-dev` skill — procedures, and a list of things that
   will mislead you
 - Work, open and closed: Backlog.md via the `backlog` CLI; never hand-edit

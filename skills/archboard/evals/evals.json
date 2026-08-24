@@ -1,5 +1,5 @@
 {
-  "skill_name": "excalidraw-skill",
+  "skill_name": "archboard",
   "grading": "Each eval says how it is graded. \"human\" means somebody reads the transcript and judges it; these are about drawing quality and layout, which no script can score. A path names a check script that runs in `bun run test` and asserts the objective part of the eval outright, leaving the transcript to answer only whether the agent chose the right path.",
   "evals": [
     {

@@ -7,7 +7,8 @@ import { fileURLToPath } from 'url';
 import { parseArgs, CliUsageError } from '../args.js';
 import { printJson, note } from '../util.js';
 
-const SKILL_NAME = 'excalidraw-skill';
+const SKILL_NAME = 'archboard';
+const RETIRED_SKILL_NAMES = ['excalidraw-skill'];
 
 // Installing the skill is only half of setting a repo up. The other half is
 // writing down what the next agent in that repo cannot discover: where the
@@ -149,7 +150,7 @@ function renderBlock(options: {
     '',
     'Architecture diagrams for this repo live on an archboard canvas: a live',
     'Excalidraw board an agent draws on and a human rearranges. The commands are in',
-    `the \`excalidraw-skill\` skill at \`${skill}\`. Below is the part of the setup that`,
+    `the \`archboard\` skill at \`${skill}\`. Below is the part of the setup that`,
     'only this machine knows.',
     '',
     '### Environment',
@@ -300,6 +301,21 @@ export async function installSkill(argv: string[]): Promise<void> {
       note(`Replaced existing install at ${target}`);
     }
     fs.renameSync(staging, target);
+
+    // A rename must not leave two discoverable names for the same skill.
+    // Remove these only after the new copy is in place, so a failed install
+    // never takes away the working legacy copy first.
+    for (const retiredName of RETIRED_SKILL_NAMES) {
+      const retired = path.join(root, retiredName);
+      let retiredExists = false;
+      try {
+        fs.lstatSync(retired);
+        retiredExists = true;
+      } catch { /* retired install does not exist */ }
+      if (retired === target || !retiredExists) continue;
+      fs.rmSync(retired, { recursive: true, force: true });
+      note(`Removed retired install at ${retired}`);
+    }
   } catch (error) {
     fs.rmSync(staging, { recursive: true, force: true });
     throw error;

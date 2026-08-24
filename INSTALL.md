@@ -107,7 +107,7 @@ covers this code, what your levels mean, or the gotcha that will cost the next
 agent an hour. That section is where those go, and an agent that finds it empty
 has to stop and ask.
 
-On the machine archboard was developed on, `~/.claude/skills/excalidraw-skill`
+On the machine archboard was developed on, `~/.claude/skills/archboard`
 is a symlink into the checkout, so the skill tracks the build and cannot go
 stale. `install-skill` refuses to replace a symlink, which is what you want
 there. Running it inside the archboard checkout writes no block either, because
