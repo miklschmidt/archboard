@@ -90,8 +90,8 @@ of them. Prose outside the markers is untouched. Notes written inside them are
 not, so keep your own words outside.
 
 If the repo has neither file, one is created: `AGENTS.md` for the default or a
-custom `--dir`, and `CLAUDE.md` for `--target claude`. Never both. A repo with
-two agent docs is a repo where one of them is out of date.
+custom `--dir`, and `CLAUDE.md` for the Claude destination. Never both. A repo
+with two agent docs is a repo where one of them is out of date.
 
 Nothing prompts when stdin is not a terminal, which is the case whenever an
 agent runs the command. It takes the offered vault and prints what it chose.
