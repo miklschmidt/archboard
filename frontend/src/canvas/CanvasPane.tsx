@@ -9,15 +9,11 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Excalidraw, getLibraryItemsHash } from '@excalidraw/excalidraw'
 import type { ExcalidrawImperativeAPI, LibraryItems } from '@excalidraw/excalidraw/types'
 import { useCanvasSession } from './useCanvasSession'
-import type { PaneStatus } from '../types'
+import type { LockHolder, PaneStatus } from '../types'
 // The one thing the browser half shares with the server half by import rather
 // than by copy: the two defaults have to be the same colour, or a box the user
 // draws and a box the agent draws stop matching.
 import { DEFAULT_FILL_STYLE, DEFAULT_SHAPE_BACKGROUND } from '../../../src/core/appearance'
-
-/** Just the time, because these are minutes old at most and a date would be noise. */
-const clock = (iso: string): string =>
-  new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
 interface CanvasPaneProps {
   paneId: string
@@ -31,6 +27,8 @@ interface CanvasPaneProps {
   focused: boolean
   theme: 'light' | 'dark'
   onStatus: (status: PaneStatus) => void
+  /** Agent state is shell chrome, so the pane reports it to the dedicated rail. */
+  onAgentState: (paneId: string, heldBy: LockHolder | null, takeBack: () => void) => void
   onThemeChange: (theme: 'light' | 'dark') => void
   onFocus: (paneId: string) => void
   /** Shown only when more than one pane is mounted. */
@@ -52,7 +50,7 @@ interface CanvasPaneProps {
 }
 
 export function CanvasPane({
-  paneId, primary, focused, theme, onStatus, onThemeChange, onFocus, label,
+  paneId, primary, focused, theme, onStatus, onAgentState, onThemeChange, onFocus, label,
   libraryItems, onLibraryChange, onLibraryChangedElsewhere, onLayoutRequest
 }: CanvasPaneProps): JSX.Element {
   const layout = useCallback(
@@ -64,6 +62,10 @@ export function CanvasPane({
     onLibraryChanged: onLibraryChangedElsewhere,
     onLayoutRequest: layout
   })
+
+  useEffect(() => {
+    onAgentState(paneId, session.heldBy, session.takeBack)
+  }, [onAgentState, paneId, session.heldBy, session.takeBack])
 
   // Excalidraw keeps its own copy of the library per instance, so the shell's
   // copy has to be pushed in. Guarded by content hash: pushing fires
@@ -80,6 +82,15 @@ export function CanvasPane({
     void api.updateLibrary({ libraryItems, merge: false })
   }, [api, libraryItems])
 
+  // The shell owns the shared theme control. Excalidraw only reads
+  // `initialData` while it mounts, so a theme picked in the header must also
+  // be applied to every mounted canvas. Its onChange then reports the same
+  // value back to the shell, keeping the built-in menu and our control in sync.
+  useEffect(() => {
+    if (!api || api.getAppState().theme === theme) return
+    api.updateScene({ appState: { theme } })
+  }, [api, theme])
+
   const interacted = (): void => {
     session.markInteracted()
     onFocus(paneId)
@@ -92,61 +103,6 @@ export function CanvasPane({
       onKeyDownCapture={interacted}
       aria-label={label ?? 'canvas'}
     >
-      {label && (
-        <div className="pane-tab">
-          <span className="pane-tab-name">{session.board?.board ?? '…'}</span>
-          {session.board && session.board.variant !== 'current' && (
-            <span className="pane-tab-variant">@{session.board.variant}</span>
-          )}
-          <span className={`dot ${session.connected ? 'dot-live' : 'dot-dead'}`} />
-        </div>
-      )}
-      {session.doing.length > 0 && (
-        // What has been happening here, most recent first (TASK-095). One
-        // story with the banner above rather than two accounts of it: that
-        // says what an agent has this board for, and these are the steps it
-        // has taken towards it. Without a claim there is no banner and these
-        // stand on their own, which is the common case — most writes are one
-        // act and take no claim.
-        //
-        // Over the canvas, like the banner, because a band that took up layout
-        // would resize the pane, and a pane's size is what it reports as "what
-        // I am looking at".
-        <ol className={`pane-doing${session.heldBy?.claimed ? ' pane-doing-under-claim' : ''}`} role="status">
-          {[...session.doing].reverse().map((said) => (
-            <li key={`${said.at}-${said.by}`} className="pane-doing-line">
-              <span className="pane-doing-when">{clock(said.at)}</span>
-              {said.doing}
-            </li>
-          ))}
-        </ol>
-      )}
-      {session.heldBy?.claimed && (
-        // Somebody has taken this board for a stretch of work, and the user
-        // is owed the reason (ADR 0016). A per-write hold gets nothing: it is
-        // twenty milliseconds, and its banner would flicker while the user is
-        // editing. A claim lasts for minutes, and without this banner editing
-        // stops for no reason the user can see.
-        //
-        // Over the canvas rather than above it, because a band that took up
-        // layout would resize the pane, and a pane's size is what it reports as
-        // "what I am looking at".
-        <div className="pane-claim" role="status">
-          <span className="pane-claim-what">
-            An agent has this board{session.heldBy.reason ? `: ${session.heldBy.reason}` : ''}
-          </span>
-          <button
-            type="button"
-            className="pane-claim-take"
-            // Deliberate, and one activation. Revoking on any pointer event
-            // could end a restructure accidentally, and nothing puts back what
-            // was already written.
-            onClick={session.takeBack}
-          >
-            Take it back
-          </button>
-        </div>
-      )}
       <div className="pane-canvas" ref={session.attachPaneElement}>
         <Excalidraw
           // Somebody else is writing this board, or this pane has lost the

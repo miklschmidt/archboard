@@ -7,11 +7,13 @@
 // variant, which level, whether it is written down.
 
 import React from 'react'
-import type { BoardHold, BoardIdentity, DoingEntry, NoteWrittenElsewhere } from '../types'
+import type { BoardHold, BoardIdentity, NoteWrittenElsewhere } from '../types'
+import { Icon } from './Icons'
 
 interface BoardBarProps {
   identity: BoardIdentity | null
   boardKey: string | null
+  vault: string | null
   elementCount: number
   connected: boolean
   /** Set while this board has stopped saving (ADR 0006, TASK-079). */
@@ -24,19 +26,14 @@ interface BoardBarProps {
    */
   writtenElsewhere: NoteWrittenElsewhere | null
   onNoteClick: () => void
-  /**
-   * The last few things an agent said it was doing to this board (TASK-095).
-   * The bar shows the most recent one — one line is what there is room for, and
-   * the pane itself carries the list.
-   */
-  doing: DoingEntry[]
   paneCount: number
   onOpen: () => void
   onNew: () => void
-  onSave: () => void
   onClear: () => void
   onAddPane: () => void
   onClosePane: () => void
+  theme: 'light' | 'dark'
+  onThemeChange: (theme: 'light' | 'dark') => void
   busy: boolean
 }
 
@@ -88,78 +85,83 @@ function noteLabel(written: NoteWrittenElsewhere): string {
 }
 
 export function BoardBar({
-  identity, boardKey, elementCount, connected, hold, onHoldClick,
-  writtenElsewhere, onNoteClick, doing,
-  paneCount, onOpen, onNew, onSave, onClear, onAddPane, onClosePane, busy
+  identity, boardKey, vault, elementCount, connected, hold, onHoldClick,
+  writtenElsewhere, onNoteClick,
+  paneCount, onOpen, onNew, onClear, onAddPane, onClosePane,
+  theme, onThemeChange, busy
 }: BoardBarProps): JSX.Element {
-  const latest = doing.length > 0 ? doing[doing.length - 1] : null
+  const boardTitle = identity
+    ? `${identity.board}${identity.variant === 'current' ? '' : ` / ${identity.variant}`}`
+    : boardKey ?? 'No board'
   return (
     <header className="bar">
-      <div className="bar-identity">
-        <span className="wordmark">archboard</span>
-        <span className="board-name">{identity?.board ?? boardKey ?? 'no board'}</span>
-        {identity && (
-          <span className={`chip ${identity.variant === 'current' ? 'chip-current' : 'chip-variant'}`}>
-            {identity.variant}
-          </span>
-        )}
-        {identity?.level && <span className="chip chip-quiet">{identity.level}</span>}
-        <span className="meta">{elementCount} element{elementCount === 1 ? '' : 's'}</span>
-        {/*
-          Three states, in the order they happen to a board. A hold outranks a
-          note somebody else wrote, because a hold IS that one write later and
-          says more about it — the mark would otherwise be two marks about one
-          thing. Neither is about a lock: another archboard writer holding the
-          board is said on the canvas, by the pane going read-only.
-        */}
-        {hold
-          ? (
-            <button
-              className="chip chip-held"
-              onClick={onHoldClick}
-              title={`${hold.message}\n\nClick for the three ways out.`}
-            >
-              {holdLabel(hold)}
-            </button>
-          )
-          : writtenElsewhere
-            ? (
-              <button
-                className="chip chip-elsewhere"
-                onClick={onNoteClick}
-                title={`${writtenElsewhere.message}\n\nClick to see what you can do about it.`}
-              >
-                {noteLabel(writtenElsewhere)}
-              </button>
-            )
-            : <span className="meta">in the vault</span>}
-        {/*
-          And the last thing an agent said it was doing here (TASK-095). Not one
-          of the three marks above: nothing is wrong, nothing is refused, and
-          this is not a state the board is in — it is what somebody just did to
-          it. One line, because that is what the bar has room for; the pane
-          carries the last few.
-        */}
-        {latest && (
-          <span className="doing-now" title={`${latest.doing}\n\n${clock(latest.at)}`}>
-            {latest.doing}
-          </span>
-        )}
+      <div className="bar-brand" aria-label="archboard">
+        <span className="brand-mark"><Icon name="boards" size={19} /></span>
+        <span className="brand-copy">
+          <span className="wordmark">Archboard</span>
+          <span className="vault-name" title={vault ?? undefined}>{vault ? `${vault} / autowrite` : 'Connecting to vault'}</span>
+        </span>
       </div>
 
-      <div className="bar-actions">
-        <span className="status" title={connected ? 'Live' : 'The canvas server is not answering'}>
-          <span className={`dot ${connected ? 'dot-live' : 'dot-dead'}`} />
-          {connected ? 'live' : 'offline'}
-        </span>
-        <button className="btn btn-quiet" onClick={onOpen} disabled={busy}>Open…</button>
-        <button className="btn btn-quiet" onClick={onNew} disabled={busy}>New…</button>
-        <button className="btn btn-primary" onClick={onSave} disabled={busy}>Save</button>
-        {paneCount < 2
-          ? <button className="btn btn-quiet" onClick={onAddPane} title="Open a second pane">Split</button>
-          : <button className="btn btn-quiet" onClick={onClosePane} title="Back to one pane">Unsplit</button>}
-        <button className="btn btn-danger-quiet" onClick={onClear} disabled={busy}>Clear…</button>
+      <div className="bar-board bar-identity">
+        <div className="bar-board-title">
+          <span className="board-name">{boardTitle}</span>
+          {identity?.level && <span className="level-tag">{identity.level}</span>}
+        </div>
+        <div className="bar-board-meta">
+          <span className={`status ${connected ? 'status-live' : 'status-offline'}`} title={connected ? 'Canvas server connected' : 'The canvas server is not answering'}>
+            <span className={`dot ${connected ? 'dot-live' : 'dot-dead'}`} />
+            {connected ? 'Live board' : 'Offline'}
+          </span>
+          <span className="meta">&bull;</span>
+          <span className="meta">{elementCount} element{elementCount === 1 ? '' : 's'}</span>
+          {/* A hold outranks the earlier note-changed state. */}
+          {hold
+            ? (
+              <button
+                className="chip chip-held"
+                onClick={onHoldClick}
+                title={`${hold.message}\n\nClick for the three ways out.`}
+              >
+                {holdLabel(hold)}
+              </button>
+            )
+            : writtenElsewhere
+              ? (
+                <button
+                  className="chip chip-elsewhere"
+                  onClick={onNoteClick}
+                  title={`${writtenElsewhere.message}\n\nClick to see what you can do about it.`}
+                >
+                  {noteLabel(writtenElsewhere)}
+                </button>
+              )
+              : <span className="meta meta-vault"><Icon name="check" size={13} /><span>in the vault</span></span>}
+        </div>
       </div>
+
+      <nav className="bar-actions" aria-label="Board actions">
+        <button className="btn btn-secondary btn-compact" onClick={onOpen} disabled={busy} aria-label="Open board">
+          <Icon name="folder" /><span className="optional-label">Open</span>
+        </button>
+        {paneCount < 2
+          ? <button className="btn btn-secondary btn-compact" onClick={onAddPane} title="Open a second pane" aria-label="Split"><Icon name="split" /><span className="optional-label">Split</span></button>
+          : <button className="btn btn-secondary btn-compact" onClick={onClosePane} title="Back to one pane" aria-label="Unsplit"><Icon name="split" /><span className="optional-label">Unsplit</span></button>}
+        <button className="btn btn-icon btn-danger-quiet" onClick={onClear} disabled={busy} title="Clear board" aria-label="Clear board">
+          <Icon name="trash" />
+        </button>
+        <button
+          className="btn btn-icon"
+          onClick={() => onThemeChange(theme === 'dark' ? 'light' : 'dark')}
+          title={theme === 'dark' ? 'Use light theme' : 'Use dark theme'}
+          aria-label={theme === 'dark' ? 'Use light theme' : 'Use dark theme'}
+        >
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
+        </button>
+        <button className="btn btn-primary" onClick={onNew} disabled={busy}>
+          <Icon name="plus" /><span>New board</span>
+        </button>
+      </nav>
     </header>
   )
 }
