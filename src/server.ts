@@ -913,6 +913,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // written, because "you no longer have this board" is the answer to the write
   // rather than a note attached to a write that went through.
   const writer = holderFromRequest(req, key);
+  res.locals.boardWriterKind = writer.kind;
   if (writer.kind === 'agent' && refuseRevokedClaim(res, key)) return;
 
   // Which version this write says it is against (TASK-091). One that is not a
@@ -1606,6 +1607,7 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
     const source = boardTargetFromRequest(req, 'A change report');
     const { upserts, deletes, origin, clientId, timestamp, fullReport } =
       ElementChangesSchema.parse(req.body ?? {});
+    const writerKind = res.locals.boardWriterKind as 'human' | 'agent';
     answerBoardWrite(res, {
       source,
       origin,
@@ -1614,7 +1616,7 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
         // A pane may send its whole screen only while this board is held. The
         // check and the clear both happen inside the isolated mutation, before
         // any note can be written.
-        if (fullReport && origin === 'agent') {
+        if (fullReport && writerKind === 'agent') {
           throw new BoardMutationError(400, 'A full report is a pane sending its whole scene. An agent must send a delta.');
         }
         if (fullReport && !isHeld(source.key)) {
@@ -1632,7 +1634,7 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
       }),
       afterPersist: ({ content, delta }) => {
         logger.info(
-          `Change report from ${clientId ?? (origin === 'agent' ? 'an agent' : 'an unidentified client')} ` +
+          `Change report from ${clientId ?? (writerKind === 'agent' ? 'an agent' : 'an unidentified client')} ` +
           `on "${source.key}": ` +
           `+${delta.created.length} ~${delta.updated.length} -${delta.deleted.length} ` +
           `(${content.elements.size} on the board)`
@@ -1651,7 +1653,7 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
         // An agent keeps the established pessimistic answer. A pane gets a
         // compact post-persistence acknowledgement, except for the explicit
         // held-board full-report recovery path (TASK-074/075/118).
-        ...(origin === 'agent'
+        ...(writerKind === 'agent'
           ? agentWriteAnswer(
             source.board,
             content,

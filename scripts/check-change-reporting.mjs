@@ -8,6 +8,9 @@ import { fileURLToPath } from 'node:url'
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..')
 const reporting = await import(join(repoRoot, 'frontend', 'src', 'canvas', 'change-reporting.ts'))
+const { ownsHoldAttempt } = await import(
+  join(repoRoot, 'frontend', 'src', 'canvas', 'hold-attempt.ts')
+)
 const {
   hasPendingEdits, initialState, mergeIncoming, mergeIncomingDeletes, reduce, reportsSettled,
   userHasInteracted
@@ -29,6 +32,24 @@ const unexpectedRuntimeExports = Object.keys(reporting)
   .filter(name => !expectedRuntimeExports.has(name))
 check('the reporting module has no unused runtime exports', unexpectedRuntimeExports.length === 0,
   unexpectedRuntimeExports.join(', '))
+
+// A board name can repeat after an away-and-back cycle. Completion ownership
+// therefore belongs to the exact attempt and generation, not that name.
+{
+  let generation = 0
+  const firstPromise = Promise.resolve()
+  const first = { board: 'a', generation, promise: firstPromise }
+  let current = first
+  generation += 1
+  current = null
+  generation += 1
+  const secondPromise = Promise.resolve()
+  const second = { board: 'a', generation, promise: secondPromise }
+  current = second
+  if (ownsHoldAttempt(current, first, firstPromise, generation)) current = null
+  check('a late hold from an earlier away-and-back generation cannot clear the newer attempt',
+    current === second && ownsHoldAttempt(current, second, secondPromise, generation))
+}
 
 const copy = value => structuredClone(value)
 const box = (id, x = 0, y = 0) => ({
@@ -107,6 +128,8 @@ class Harness {
   withheldIds = []
   sceneUpdates = 0
   holdRequests = 0
+  releaseChecks = 0
+  settledReleaseChecks = 0
 
   constructor(scene = initialScene()) {
     this.scene = copy(scene)
@@ -173,7 +196,8 @@ class Harness {
         break
       case 'finish_server_update':
         this.clock.start('finish', 0, () => this.dispatch({
-          type: 'server_update_finished', generation: effect.generation, scene: copy(this.scene)
+          type: 'server_update_finished', generation: effect.generation,
+          scene: copy(this.scene), withheldIds: this.withheldIds
         }))
         break
       case 'send_report':
@@ -181,8 +205,11 @@ class Harness {
         break
       case 'send_beacon':
       case 'note_change':
-      case 'release_if_idle':
       case 'publish_status':
+        break
+      case 'release_if_idle':
+        this.releaseChecks += 1
+        if (reportsSettled(this.state)) this.settledReleaseChecks += 1
         break
       case 'take_hold':
         this.holdRequests += 1
@@ -379,6 +406,29 @@ class Harness {
 
 // One request may be in flight and only one latest delivery may queue behind it.
 {
+  const idle = new Harness()
+  idle.edit('a', { x: 10 })
+  idle.clock.advance(200)
+  idle.edit('a', { x: 20 })
+  idle.clock.advance(200)
+  check('continued editing reaches the server at the non-restarting progress deadline',
+    idle.server.requests[0]?.report.upserts.find(element => element.id === 'a')?.x === 20)
+  idle.accept()
+
+  idle.clock.advance(100)
+  idle.edit('a', { x: 30 })
+  idle.clock.advance(400)
+  check('a lone final edit remains dirty after the progress deadline',
+    idle.server.requests.length === 0 && hasPendingEdits(idle.state, idle.scene))
+  idle.clock.advance(399)
+  check('the final dirty state waits for the longer idle deadline', idle.server.requests.length === 0)
+  idle.clock.advance(1)
+  check('the 800 ms idle deadline sends the accepted final dirty report',
+    idle.server.requests[0]?.report.upserts.find(element => element.id === 'a')?.x === 30)
+  idle.accept()
+  idle.clock.advance(2000)
+  check('an accepted idle report manufactures no no-op tail', idle.server.requests.length === 0)
+
   const h = new Harness()
   h.edit('a', { x: 10 })
   h.clock.advance(200)
@@ -388,8 +438,9 @@ class Harness {
     h.server.requests.length === 1 && h.server.requests[0].report.upserts.find(element => element.id === 'a')?.x === 20)
   h.clock.advance(100)
   h.edit('a', { x: 30 })
-  h.clock.advance(400)
+  h.clock.advance(200)
   h.edit('a', { x: 40 })
+  h.clock.advance(200)
   check('a due delivery queues behind the one in flight without request fan-out',
     h.server.requests.length === 1 && h.state.deliveryQueued)
   h.accept()
@@ -398,6 +449,59 @@ class Harness {
   h.accept()
   h.clock.advance(2000)
   check('the trailing idle deadline sends no no-op report', h.server.requests.length === 0)
+}
+
+// A delivery that becomes due during a server scene application must remain
+// reachable after the final application completion event.
+{
+  const h = new Harness()
+  h.edit('a', { x: 10 })
+  h.applyServerElements([{ ...h.server.document.find(element => element.id === 'b'), y: 30 }])
+  h.clock.cancel('progress')
+  h.clock.cancel('idle')
+  h.dispatch({
+    type: 'progress_timer_fired', generation: h.state.generation,
+    scene: copy(h.scene), withheldIds: h.withheldIds
+  })
+  h.dispatch({
+    type: 'idle_timer_fired', generation: h.state.generation,
+    scene: copy(h.scene), withheldIds: h.withheldIds
+  })
+  check('a due delivery is queued while a server scene update is applying',
+    h.state.applyingServerUpdateCount === 1 && h.state.deliveryQueued
+      && !h.state.progressTimerScheduled && !h.state.idleTimerScheduled
+      && h.server.requests.length === 0)
+  h.clock.advance(0)
+  check('the final server update completion drains the already-due delivery',
+    h.server.requests.length === 1
+      && h.server.requests[0].report.upserts.some(element => element.id === 'a'))
+}
+
+// An empty deadline is still the event that settles reporting, so it must
+// trigger the same hold-release check as a successful non-empty report.
+{
+  const corrected = new Harness()
+  corrected.edit('a', { x: 10 })
+  corrected.clock.advance(200)
+  corrected.edit('a', { x: 20 })
+  corrected.clock.advance(200)
+  corrected.accept({
+    upserts: [{ ...corrected.server.document.find(element => element.id === 'a'), x: 21 }],
+    deletes: []
+  })
+  const releasesBeforeIdle = corrected.settledReleaseChecks
+  corrected.clock.advance(600)
+  check('an empty idle deadline after a canonical correction checks hold release when settled',
+    corrected.settledReleaseChecks === releasesBeforeIdle + 1)
+
+  const undone = new Harness()
+  undone.edit('a', { x: 10 })
+  undone.edit('a', { x: 0 })
+  const releasesBeforeUndoDeadline = undone.settledReleaseChecks
+  undone.clock.advance(800)
+  check('an edit undone before delivery checks hold release without sending a no-op report',
+    undone.server.requests.length === 0
+      && undone.settledReleaseChecks === releasesBeforeUndoDeadline + 1)
 }
 
 // Camera and selection onChange calls carry the same content stamp.
@@ -461,6 +565,24 @@ class Harness {
   })
   check('the reducer counted the user edit during the server update', h.state.localEditCount === 1)
   h.step('the user edit during the server update starts a report', () => h.due())
+}
+
+// Excalidraw can expose a local edit before its onChange callback reaches the
+// reducer, then an incoming server update records that already-edited scene.
+// The identical completion stamp must not make the dirty delta unreachable.
+{
+  const h = new Harness()
+  h.scene = h.scene.map(element => element.id === 'a'
+    ? { ...element, x: 19, version: 2 }
+    : element)
+  h.applyServerElements([{ ...h.server.document.find(element => element.id === 'b'), y: 31 }])
+  h.dispatch({ type: 'scene_changed', scene: copy(h.scene) })
+  h.clock.advance(0)
+  check('a pre-callback local edit captured in the server-update stamp remains scheduled',
+    hasPendingEdits(h.state, h.scene) && !reportsSettled(h.state))
+  h.due()
+  check('  and reaches the next report without another human edit',
+    h.server.requests[0]?.report.upserts.some(element => element.id === 'a' && element.x === 19))
 }
 
 // Completion records remain ordered when server updates overlap.

@@ -38,6 +38,7 @@ export interface ChangeReportingState {
   localEditCount: number
   userInteracted: boolean
   progressTimerScheduled: boolean
+  progressHasContinuation: boolean
   idleTimerScheduled: boolean
   retryTimerScheduled: boolean
   deliveryQueued: boolean
@@ -69,7 +70,12 @@ export type ChangeReportingEvent =
       baselineUpdate: BaselineUpdate
       reportAfterUpdate?: ReportAfterServerUpdate
     }
-  | { type: 'server_update_finished'; generation: number; scene: readonly SceneElement[] }
+  | {
+      type: 'server_update_finished'
+      generation: number
+      scene: readonly SceneElement[]
+      withheldIds: readonly string[]
+    }
   | {
       type: 'report_succeeded'
       generation: number
@@ -120,6 +126,7 @@ export function initialState(): ChangeReportingState {
     localEditCount: 0,
     userInteracted: false,
     progressTimerScheduled: false,
+    progressHasContinuation: false,
     idleTimerScheduled: false,
     retryTimerScheduled: false,
     deliveryQueued: false,
@@ -294,13 +301,21 @@ export function mergeIncomingDeletes(
   })
 }
 
-function scheduleDelivery(state: ChangeReportingState, effects: ChangeReportingEffect[]): ChangeReportingState {
+function scheduleDelivery(
+  state: ChangeReportingState,
+  effects: ChangeReportingEffect[],
+  contentEdit = false
+): ChangeReportingState {
   let next = state
   if (!state.progressTimerScheduled && !state.deliveryQueued) {
     effects.push({
       type: 'start_progress_timer', delayMs: REPORT_PROGRESS_MS, generation: state.generation
     })
-    next = { ...next, progressTimerScheduled: true }
+    next = { ...next, progressTimerScheduled: true, progressHasContinuation: false }
+  } else if (state.progressTimerScheduled && contentEdit) {
+    // The progress deadline is deliberately non-restarting. It only delivers
+    // while work is continuing; a lone final edit belongs to the idle deadline.
+    next = { ...next, progressHasContinuation: true }
   }
   if (state.idleTimerScheduled) effects.push({ type: 'cancel_idle_timer' })
   effects.push({
@@ -315,7 +330,12 @@ function cancelDeliveryTimers(
 ): ChangeReportingState {
   if (state.progressTimerScheduled) effects.push({ type: 'cancel_progress_timer' })
   if (state.idleTimerScheduled) effects.push({ type: 'cancel_idle_timer' })
-  return { ...state, progressTimerScheduled: false, idleTimerScheduled: false }
+  return {
+    ...state,
+    progressTimerScheduled: false,
+    progressHasContinuation: false,
+    idleTimerScheduled: false
+  }
 }
 
 function beginReport(
@@ -354,12 +374,14 @@ function beginReport(
     withheldSet(withheldIds)
   )
   if (!fullReport && isEmpty(report)) {
-    return cancelDeliveryTimers({
+    const settled = cancelDeliveryTimers({
       ...state,
       baseline: report.nextBaseline,
       retryTimerScheduled: false,
       deliveryQueued: false
     }, effects)
+    if (reportsSettled(settled)) effects.push({ type: 'release_if_idle' })
+    return settled
   }
 
   effects.push({ type: 'send_report', report, fullReport, generation: state.generation })
@@ -459,7 +481,7 @@ function userEdit(
     ...state,
     sceneStamp: stamp,
     localEditCount: state.localEditCount + 1
-  }, effects)
+  }, effects, true)
 }
 
 type ReportingTimer = 'progress' | 'idle' | 'retry'
@@ -471,10 +493,11 @@ function timerFired(
   effects: ChangeReportingEffect[]
 ): ChangeReportingState {
   const ready = which === 'progress'
-    ? { ...state, progressTimerScheduled: false }
+    ? { ...state, progressTimerScheduled: false, progressHasContinuation: false }
     : which === 'idle'
       ? { ...state, idleTimerScheduled: false }
       : { ...state, retryTimerScheduled: false }
+  if (which === 'progress' && !state.progressHasContinuation) return ready
   return beginReport(ready, event.scene, event.withheldIds, effects)
 }
 
@@ -568,7 +591,24 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
         serverUpdateStamps: stamps,
         sceneStamp: stamp ?? stampScene(event.scene)
       }
-      if (applying === 0) next = userEdit(next, event.scene, effects)
+      if (applying === 0 && next.deliveryQueued) {
+        next = beginReport(next, event.scene, event.withheldIds, effects)
+      } else if (applying === 0) {
+        next = userEdit(next, event.scene, effects)
+        // Excalidraw may expose a local edit before its onChange callback runs.
+        // If an incoming update records that already-edited scene, the stamp
+        // above matches and userEdit cannot see the transition. The baseline
+        // still can: keep that dirty delta reachable without waiting for a
+        // second human edit to wake reporting.
+        if (hasPendingEdits(next, event.scene, event.withheldIds) && reportsSettled(next)) {
+          effects.push({ type: 'take_hold' })
+          next = scheduleDelivery({
+            ...next,
+            sceneStamp: stampScene(event.scene),
+            localEditCount: next.localEditCount + 1
+          }, effects, true)
+        }
+      }
       return { state: next, effects }
     }
 

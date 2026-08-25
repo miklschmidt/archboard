@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-25 11:34'
-updated_date: '2026-08-25 13:38'
+updated_date: '2026-08-25 14:42'
 labels: []
 dependencies: []
 references:
@@ -14,24 +14,28 @@ references:
   - frontend/src/canvas/useCanvasSession.ts
   - src/core/timing.ts
 modified_files:
-  - src/core/apply-element-input.ts
-  - src/core/board-write.ts
-  - src/core/timing.ts
-  - src/core/board-lock.ts
-  - src/server.ts
-  - frontend/src/canvas/api.ts
-  - frontend/src/canvas/change-reporting.ts
-  - frontend/src/canvas/useCanvasSession.ts
-  - frontend/src/canvas/CanvasPane.tsx
-  - scripts/check-human-edit-performance.mjs
-  - scripts/check-change-reporting.mjs
-  - scripts/check-one-write.mjs
-  - scripts/check-live-session.mjs
-  - scripts/check-fixed-point.mjs
-  - scripts/check-typed-text.mjs
+  - AGENTS.md
   - docs/adr/0016-one-writer-at-a-time-per-board.md
   - docs/agents/test-suite.md
+  - frontend/src/canvas/CanvasPane.tsx
+  - frontend/src/canvas/api.ts
+  - frontend/src/canvas/change-reporting.ts
+  - frontend/src/canvas/hold-attempt.ts
+  - frontend/src/canvas/useCanvasSession.ts
   - package.json
+  - scripts/check-change-reporting.mjs
+  - scripts/check-fixed-point.mjs
+  - scripts/check-human-edit-performance.mjs
+  - scripts/check-labels.mjs
+  - scripts/check-live-session.mjs
+  - scripts/check-one-write.mjs
+  - scripts/check-typed-text.mjs
+  - src/core/apply-element-input.ts
+  - src/core/board-lock.ts
+  - src/core/board-write.ts
+  - src/core/expand-elements.ts
+  - src/core/timing.ts
+  - src/server.ts
 priority: high
 type: bug
 ordinal: 120000
@@ -108,6 +112,19 @@ Do not choose a different cause unless the retained check contradicts this attri
 - A 400 ms progress cadence increases write frequency during long gestures compared with today's unbounded trailing debounce. The 800 ms tail and single-flight queue limit it, but the implementation should record actual request and fsync counts in the browser check before accepting the constants.
 - The current ADR says a pane held elsewhere enters view mode and that claim takeover needs an explicit button. TASK-118 intentionally changes those two human-interface consequences, not the mutex itself. Review the ADR diff as a contract change before application code proceeds.
 - Keep disconnected behavior fail-closed unless a separate task changes offline editing. TASK-118 concerns persistence in flight, not an unreachable canvas.
+
+## Spec review remediation
+
+- Add red manual-clock and browser/request/fsync regressions proving a final dirty human state is accepted under the 800 ms idle deadline, while continuous edits still receive non-restarting progress and no no-op tail is manufactured. Preserve one in-flight plus one queued latest delivery.
+- Add red route regressions proving a default-origin request with no clientId uses the established agent response shape, and that no agent response is observable until persistence returns. Select the compact human acknowledgement with the same writer classification used by lock/doing middleware.
+- Retain every prior exact-convergence case, especially the pane-intended pre-repair correction boundary and locally deleted baseline ids, then rerun focused acceptance checks and the full sequential suite.
+
+- Add red reducer regressions for a progress/idle delivery that becomes due during server scene application and for empty final delivery release after canonical correction and edit-then-undo. Drain or re-arm the queued delivery when the last server update finishes, and emit release_if_idle whenever an empty branch becomes settled.
+- Refresh stale four-browser and bounded-cadence agent-facing documentation; read the writing-for-agents instructions first if present in the repository.
+
+## Final remediation refinements
+
+The final reducer drains due work after the last server update, releases the hold when an empty deadline settles, and preserves a local edit that Excalidraw exposed before its onChange callback. Hold completion is guarded by exact attempt identity and generation across rapid board away/back cycles. Writer response shaping now uses the middleware writer classification. Canonical settlement preserves valid Excalidraw between-indices through fractional-indexing so a single human insert cannot cascade into whole-document corrections.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -118,10 +135,22 @@ Implemented TASK-118 on the TASK-117 main baseline. Human reports now return com
 Human content remains locally editable while the unchanged vault mutex orders persistence. Hold acquisition is single-flight with pending-content retry/renewal; agent writes remain pessimistic. Reporting uses one in-flight plus one latest queued delivery, a non-restarting 400 ms progress deadline and an 800 ms trailing idle deadline. Camera and selection changes do not take the board; content does; explicit takeover and disconnected fail-closed behavior remain.
 
 Acceptance evidence: test:human-performance passed on a 10,000-element human-only board with six 524-554 B requests, six 288 B document-free acknowledgements against a 5,744,795 B full document, zero no-correction scene replacements, no agent write, 9 hold / 6 report / 3 release requests, 12 fsyncs, and a 16.7 ms median / 16.8 ms worst report-correlated frame. Reducer reporting passed 88 checks; one-write passed 77; lock passed 119; version passed 65; trusted typing passed; fixed-point returned zero document changes; live-session passed all checks and converged after all 42 mixed-write cycles. Full sequential `bun run test` passed all 27 push suites, including all four browser checks.
+
+Spec review blockers received after initial completion: AC3 reopened because the current progress acknowledgement can cancel the idle timer before it controls a distinct dirty final write. AC7 reopened because answer shaping uses origin instead of the established writer classification, allowing a no-clientId/default-origin agent-classified request to receive the human acknowledgement shape. Remediation will be test-first on the same branch.
+
+Standards review added blockers: a fired delivery can be stranded as queued with pending edits and no reachable timer/in-flight report while a server update applies; empty final delivery can settle without release_if_idle after correction or edit-then-undo; AGENTS.md and the frontend API cadence comment are stale.
+
+Remediation completed test-first. The 800 ms idle deadline now owns a lone final dirty edit; the 400 ms non-restarting progress deadline sends only when later edits prove continuous work. Reducer regressions also prove queued delivery drains after server scene application, empty correction and edit-undo deadlines release an idle hold, a pre-callback local edit remains reachable, locally deleted baseline ids remain deleted, and input-conversion repairs are returned as canonical corrections.
+
+Writer response shaping now follows the lock middleware classification. A no-clientId/default-origin request receives the established agent document answer and remains unanswered behind a real human hold until persistence completes. Hold attempts use exact object, promise, and generation identity so stale away/back completion cannot clear or fan out a newer attempt.
+
+The retained 10,000-element browser check observed the first report before isolating the final edit. It measured zero new reports at the progress deadline and exactly one accepted report starting 840 ms after the edit at idle, with no no-op tail. Five reports produced ten fsyncs; counts were seven holds, five reports, and two releases. All five responses were document-free and at most 1,071 B against a 5,744,795 B document; isolated no-correction acknowledgements caused zero scene replacements, no agent write occurred, trusted drag, resize, and typing stayed local while persistence was in flight, and the loose relative frame gate passed at 16.7 ms median and 49.9 ms worst report-correlated gap.
+
+Final verification: change-reporting 105 checks; one-write 80; labels 183; lock 119; version 65; type-check passed; fixed-point returned zero changes; trusted typing passed; live-session converged after all 42 mixed agent/human cycles. The final sequential bun run test completed all 27 push suites with exit 0, including all four browser checks.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Kept human editing responsive by making only the local pane optimistic while preserving the authoritative vault mutex and pessimistic agent writes. Normal human reports now acknowledge compact canonical corrections instead of returning/reconciling the whole document; the client keeps newer local edits, reports at bounded 400/800 ms deadlines, and acquires the human hold single-flight. Added large-board browser attribution/performance coverage, exact canonical-convergence regressions, claimed-board interaction coverage, timing documentation, and the narrow ADR 0016 consequence amendment. Verified with the full sequential test suite and all acceptance-mapped browser/reducer/lock/version/write/typing/live-session checks.
+Kept human editing locally responsive while preserving the vault-backed mutex and pessimistic agent writes. Human reports now use compact post-persistence canonical corrections, exact request-local convergence, bounded continuous-progress and final-idle delivery, single-flight generation-safe holds, and dirty-edit preservation across incoming agent updates. Fixed cascading canonical corrections for valid Excalidraw fractional indices and refreshed concurrency documentation. Verified with the full sequential 27-suite run plus acceptance-mapped reducer, browser performance, lock, version, one-write, typing, fixed-point, and 42-cycle live-session checks.
 <!-- SECTION:FINAL_SUMMARY:END -->

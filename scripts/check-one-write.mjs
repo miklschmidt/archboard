@@ -382,6 +382,38 @@ try {
   assert(events.length > 0 && events.every((event) => event.origin === 'human'),
     `a report with no origin is a user edit: ${JSON.stringify(events.map((e) => e.origin))}`);
 
+  // Writer classification belongs to the write boundary, not to the route's
+  // conversion default. With no client id this is an agent-classified write
+  // even though `origin` defaults to the historical human input spelling.
+  // Keep it behind a real human hold long enough to prove no optimistic agent
+  // response exists before the authoritative persistence path can run.
+  await api('POST', '/api/boards/hold?board=scratch', { clientId: 'blocking-pane' });
+  const beforeBlocked = await byId();
+  let agentAnswered = false;
+  const blockedAgentResponse = fetch(`${base}${withDoing(
+    '/api/elements/changes?board=scratch', 'POST', 'waiting for persistence before answering'
+  )}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      upserts: [{ id: 'agent-classified-default', type: 'rectangle', x: 6400, y: 6400, width: 80, height: 50 }],
+      deletes: []
+    })
+  }).then(async response => {
+    agentAnswered = true;
+    return response.json();
+  });
+  await sleep(150);
+  assert(!agentAnswered && !beforeBlocked.has('agent-classified-default'),
+    'an agent-classified response became observable before the held persistence boundary returned');
+  await api('POST', '/api/boards/hold/release?board=scratch', { clientId: 'blocking-pane' });
+  const agentClassified = await blockedAgentResponse;
+  scene = await byId();
+  assert(Array.isArray(agentClassified.elements) && agentClassified.corrections === undefined,
+    `a default-origin request with no clientId should use the agent answer: ${JSON.stringify(agentClassified)}`);
+  assert(scene.has('agent-classified-default'),
+    'the agent response arrived without the element being available from persisted board state');
+
   // Settlement can change more than the submitted delta. The backstop id
   // rename also fills rawText, and the compact answer must describe the exact
   // canonical document without returning the whole board.
