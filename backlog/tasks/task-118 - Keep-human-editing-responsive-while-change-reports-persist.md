@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-25 11:34'
-updated_date: '2026-08-25 15:19'
+updated_date: '2026-08-25 15:26'
 labels: []
 dependencies: []
 references:
@@ -16,6 +16,7 @@ references:
 modified_files:
   - AGENTS.md
   - CONTEXT.md
+  - TESTING.md
   - bun.lock
   - docs/adr/0016-one-writer-at-a-time-per-board.md
   - docs/agents/test-suite.md
@@ -140,6 +141,9 @@ Exercise the delayed A1, rapid A to scratch to A switch, and delayed A2 through 
 ## Final standards timing and documentation pass
 
 Bind the lock lease guard to REPORT_IDLE_SETTLE_MS instead of a copied 400 ms expression, remove obsolete report-debounce terminology from AGENTS.md and timing comments, and refresh live-session and test-suite documentation for compact canonical acknowledgements, fixed progress plus idle delivery, and the delayed session to scratch to session hold-generation proof. Run focused lock and suite documentation checks, then the complete sequential suite.
+
+## Final operational wording cleanup
+Replace TESTING.md's stale report-debounce description with the fixed progress and trailing idle deadlines, confirm no current human-report debounce contract remains outside intentional history, and retain the already-green broad suite evidence.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -180,6 +184,8 @@ Final standards review is spec-clean and requests only the live idle-to-lease te
 Final standards remediation completed. The lock timing guard now imports REPORT_IDLE_SETTLE_MS and proves LOCK_LEASE_MS retains two idle-settle windows, so a future idle increase cannot silently exceed the lease contract. Obsolete report-debounce wording was removed from AGENTS.md and timing comments. Live-session documentation now names compact canonical corrections, fixed progress plus trailing idle delivery, and the absence of ordinary whole-document reconciliation; test-suite documentation records the delayed session-to-scratch-to-session A1/A2 generation race and its stale-completion guarantees.
 
 Final focused evidence: git diff --check passed; test:suites reported 27 of 27 push suites; test:lock passed all 119 checks. The complete sequential bun run test passed all 27 push suites with exit 0. The retained 10,000-element browser performance gate observed the isolated final report start at 830 ms, five reports, ten fsyncs, seven holds, two releases, no agent writes, no ordinary full-document response or reconciliation, a largest compact response of 1,072 B versus a 5,744,795 B document, and a loose relative frame gate of 16.7 ms median / 66.7 ms worst. The live-session browser check proved delayed A1, rapid session-to-scratch-to-session adoption, delayed A2, safe A1 completion with A2 still pending and no stale retry, A2 edit persistence, and 42 of 42 mixed cycles converged.
+
+Final documentation-only cleanup: TESTING.md now names the pane's fixed progress deadline and trailing idle deadline beside the change-feed settle window. git diff --check passed. A focused tracked-file search for report-debounce wording tied to a human, person, or pane returned no matches outside intentionally excluded historical design and Backlog text. TESTING.md was added to the modified-file list. The already-green full sequential 27-suite run remains the behavioral evidence; per review direction it was not rerun solely for this sentence.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
