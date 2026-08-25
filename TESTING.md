@@ -204,9 +204,9 @@ nothing to interrupt it falls back to quiet.
 | `CODEX_HOME` | `~/.codex` | Where the control socket is found. |
 
 Those three defaults are set in `src/core/timing.ts`, alongside the pane's
-report debounce and the change feed's settle window, because changing one of
-them moves the others. The reasoning is in that file; the numbers here are a
-copy for reading.
+fixed progress deadline, trailing idle deadline, and the change feed's settle
+window, because changing one of them moves the others. The reasoning is in
+that file; the numbers here are a copy for reading.
 
 ## What to expect, and what not to
 
