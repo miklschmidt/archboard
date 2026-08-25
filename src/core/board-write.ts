@@ -32,6 +32,7 @@ import {
 import { BoardState, copyElements } from './board-store.js';
 import { hashBoardBytes } from './board.js';
 import { ChangeOrigin, changeFeed } from './change-feed.js';
+import { validateRenderGeometry } from './geometry.js';
 import { presentElements, stripBindingPresentationLinks } from './presentation.js';
 import logger from '../utils/logger.js';
 
@@ -264,6 +265,11 @@ export function writeBoard<T>(request: BoardWriteRequest<T>, tellPanes: TellPane
   const delta = completeDelta(mutation.delta);
   const shouldWrite = mutation.write ?? true;
   const appliedAt = new Date().toISOString();
+
+  // Validate the resulting document, not only the statements this request
+  // supplied. A valid element beside an invalid one is still one invalid board,
+  // and none of it may reach a hold, a note, a pane, or a success response.
+  validateRenderGeometry(content.elements.values());
 
   let written: WrittenNote | null = null;
   if (shouldWrite) {

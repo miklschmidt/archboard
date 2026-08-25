@@ -30,7 +30,13 @@ import { withDoing } from './lib/doing.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = (p) => join(__dirname, '..', 'src', p);
 
-const { extentOf, measureLinear, remeasureLinear, isPathElement } = await import(src('core/geometry.ts'));
+const {
+  extentOf,
+  measureLinear,
+  remeasureLinear,
+  isPathElement,
+  validateRenderGeometry
+} = await import(src('core/geometry.ts'));
 const { boxOf, boundingBoxOf, clusterBoxes, regionName } = await import(src('core/layout.ts'));
 const { describeScene, buildSelectionReport } = await import(src('core/describe.ts'));
 const { labelAnchorOf } = await import(src('core/labels.ts'));
@@ -49,6 +55,44 @@ const assert = (condition, message) => {
 };
 const near = (a, b, slack = 0.5) => Math.abs(a - b) <= slack;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Render geometry is a document invariant, separate from the forgiving
+// measurements below. A missing coordinate may be useful as zero to a layout
+// reader, but it is not a document Excalidraw can safely render.
+{
+  let error = null;
+  try {
+    validateRenderGeometry([
+      { id: 'helvetica', type: 'text', fontFamily: 2, x: 10, y: 20, text: 'unmeasurable' },
+      { id: 'bad-box', type: 'rectangle', x: Number.POSITIVE_INFINITY, y: Number.NaN, width: 80, height: undefined },
+      // Tombstones are not rendered and must not make an otherwise valid
+      // document impossible to save.
+      { id: 'old', type: 'text', isDeleted: true, x: Number.NaN }
+    ]);
+  } catch (caught) {
+    error = caught;
+  }
+  assert(error instanceof Error, 'missing and non-finite render geometry should be refused');
+  assert(
+    error?.message.includes('helvetica (text): width, height'),
+    `the Helvetica refusal should name its id, type and both fields: ${error?.message}`
+  );
+  assert(
+    error?.message.includes('bad-box (rectangle): x, y, height'),
+    `the refusal should report every bad field on every live element: ${error?.message}`
+  );
+  assert(!error?.message.includes('old'), `a deleted element was treated as renderable: ${error?.message}`);
+
+  let valid = true;
+  try {
+    validateRenderGeometry([
+      { id: 'point', type: 'rectangle', x: -10, y: 0, width: 0, height: 0 }
+    ]);
+  } catch {
+    valid = false;
+  }
+  assert(valid, 'finite zero and negative geometry should remain valid');
+}
 
 // ─── The arithmetic ──────────────────────────────────────────
 
@@ -646,7 +690,8 @@ for (const [name, arrow] of Object.entries(arrows)) {
     });
     await api('POST', `/api/elements/changes${wires}`, {
       upserts: [{
-        id: 'user-arrow', type: 'arrow', x: 1400, y: 1120, points: [[0, 0], [-179, -50]],
+        id: 'user-arrow', type: 'arrow', x: 1400, y: 1120, width: 179, height: 50,
+        points: [[0, 0], [-179, -50]],
         startBinding: null,
         endBinding: { elementId: 'd', focus: 0.9, gap: 15, fixedPoint: null }
       }],

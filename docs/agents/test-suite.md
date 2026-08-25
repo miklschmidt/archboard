@@ -40,6 +40,16 @@ every element and field Excalidraw changed. **It reports zero, and zero is
 asserted** (TASK-072): what archboard writes is a document Excalidraw does not
 change. About eleven seconds plus the build.
 
+It also owns the renderer half of malformed-geometry recovery (TASK-117). The
+check opens a legacy note containing auto-resizing Helvetica text with no
+width or height through the shipped board atlas, asserts the visible board
+error and finite zoom, restores valid note bytes, and proves the board renders
+and registers finite pane telemetry. Separately, it forces the pane's measured
+rectangle non-finite, proves the browser sends no pane POST, restores the
+rectangle, and proves a later report contains only finite values. The server's
+pathful 400 for invalid telemetry stays in `test:boards`; this browser check
+does not send malformed telemetry just to test the server again.
+
 ### `bun run test:live-session` (`scripts/check-live-session.mjs`, TASK-076)
 
 Drives 42 cycles of interleaved agent and human writes against one board and

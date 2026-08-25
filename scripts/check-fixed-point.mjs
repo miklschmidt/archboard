@@ -327,6 +327,32 @@ const PORT = Number(process.env.PORT) || await freePort();
 const base = `http://127.0.0.1:${PORT}`;
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), 'archboard-fixedpoint-'));
 
+// A note from before TASK-117, with the exact shape that blanked the board:
+// auto-resizing Helvetica text and no finite width or height. Build the valid
+// form through the same converter as a normal write, then remove only those
+// two fields. The correction later restores these original bytes.
+const { renderBoardNote } = await import(src('core/board.ts'));
+const { expandElements } = await import(src('core/expand-elements.ts'));
+const legacyIdentity = { board: 'legacy-geometry', variant: 'current' };
+const validLegacyScene = {
+  type: 'excalidraw',
+  version: 2,
+  source: 'archboard',
+  elements: expandElements([{
+    id: 'helv', type: 'text', x: 120, y: 140, width: 180, height: 25,
+    text: 'legacy Helvetica', fontFamily: 2, autoResize: true
+  }], { deterministic: true }),
+  appState: { gridSize: 20, viewBackgroundColor: '#ffffff' },
+  files: {}
+};
+const validLegacyNote = renderBoardNote(validLegacyScene, null, legacyIdentity);
+const malformedLegacyScene = structuredClone(validLegacyScene);
+delete malformedLegacyScene.elements[0].width;
+delete malformedLegacyScene.elements[0].height;
+const malformedLegacyNote = renderBoardNote(malformedLegacyScene, null, legacyIdentity);
+const legacyFile = path.join(vault, 'legacy-geometry.excalidraw.md');
+fs.writeFileSync(legacyFile, malformedLegacyNote);
+
 const server = spawn(process.execPath, [src('server.ts')], {
   env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', ARCHBOARD_VAULT: vault, LOG_LEVEL: 'error' },
   stdio: ['ignore', 'ignore', 'pipe']
@@ -493,6 +519,109 @@ try {
   check('  and registers a pane, so there is something rendering',
     panes?.paneCount === 1, `paneCount ${panes?.paneCount ?? 'none'}`);
 
+  // --- malformed legacy note and visible recovery ------------------------
+
+  let legacyRowReady = false;
+  for (let i = 0; i < 40; i++) {
+    legacyRowReady = await evalInPage(
+      `Boolean(document.querySelector('.board-group[aria-label="legacy-geometry"] .board-nav-row'))`);
+    if (legacyRowReady) break;
+    await sleep(100);
+  }
+  const legacyOpenStarted = await evalInPage(`(() => {
+    const row = document.querySelector('.board-group[aria-label="legacy-geometry"] .board-nav-row');
+    if (!row) return false;
+    row.click();
+    return true;
+  })()`);
+  let legacyFailure = null;
+  for (let i = 0; i < 40; i++) {
+    legacyFailure = await evalInPage(`(() => {
+      const alert = document.querySelector('[role="alert"]');
+      if (!alert) return null;
+      const node = document.querySelector('.excalidraw');
+      const key = node && Object.keys(node).find(k => k.startsWith('__reactFiber$'));
+      let fiber = key ? node[key] : null;
+      let zoom = null;
+      for (let n = 0; fiber && n < 60; n++) {
+        const app = fiber.stateNode;
+        if (app && typeof app === 'object' && app.scene && app.state) {
+          zoom = app.state.zoom?.value;
+          break;
+        }
+        fiber = fiber.return;
+      }
+      return {
+        text: alert.textContent,
+        zoom,
+        finiteZoom: Number.isFinite(zoom),
+        hasNaNZoom: document.body.innerText.includes('%NaN%')
+      };
+    })()`);
+    if (legacyFailure?.text?.includes('helv (text): width, height')) break;
+    await sleep(100);
+  }
+  check('opening malformed legacy geometry through the board atlas shows the board error',
+    legacyRowReady && legacyOpenStarted &&
+      legacyFailure?.text?.includes('helv (text): width, height'),
+    JSON.stringify(legacyFailure));
+  check('  while the existing canvas keeps a finite zoom and never shows %NaN%',
+    legacyFailure?.finiteZoom === true && legacyFailure?.hasNaNZoom === false,
+    JSON.stringify(legacyFailure));
+  check('  and opening it did not rewrite the legacy note',
+    fs.readFileSync(legacyFile, 'utf8') === malformedLegacyNote);
+
+  fs.writeFileSync(legacyFile, validLegacyNote);
+  const correctedOpenStarted = await evalInPage(`(() => {
+    const row = document.querySelector('.board-group[aria-label="legacy-geometry"] .board-nav-row');
+    if (!row) return false;
+    row.click();
+    return true;
+  })()`);
+  let correctedLegacy = null;
+  for (let i = 0; i < 60; i++) {
+    correctedLegacy = await evalInPage(`(() => {
+      const board = document.querySelector('.board-name')?.textContent.trim();
+      const node = document.querySelector('.excalidraw');
+      const key = node && Object.keys(node).find(k => k.startsWith('__reactFiber$'));
+      let fiber = key ? node[key] : null;
+      for (let n = 0; fiber && n < 60; n++) {
+        const app = fiber.stateNode;
+        if (app && typeof app === 'object' && app.scene && app.state) {
+          const elements = app.scene.getElementsIncludingDeleted();
+          return {
+            board,
+            rendered: elements.some(element => element.id === 'helv' && !element.isDeleted),
+            zoom: app.state.zoom?.value,
+            hasNaNZoom: document.body.innerText.includes('%NaN%')
+          };
+        }
+        fiber = fiber.return;
+      }
+      return { board, rendered: false, zoom: null, hasNaNZoom: true };
+    })()`);
+    if (correctedLegacy?.board === 'legacy-geometry' && correctedLegacy?.rendered) break;
+    await sleep(100);
+  }
+  let correctedPanes = null;
+  for (let i = 0; i < 40; i++) {
+    correctedPanes = (await api('GET', '/api/panes')).body;
+    if (correctedPanes?.panes?.[0]?.board === 'legacy-geometry' &&
+        correctedPanes?.panes?.[0]?.elementCount === 1) break;
+    await sleep(100);
+  }
+  const finiteTelemetry = (value) => typeof value === 'number' && Number.isFinite(value);
+  const correctedPane = correctedPanes?.panes?.[0];
+  check('after the note is corrected, the same board opens and renders',
+    correctedOpenStarted && correctedLegacy?.board === 'legacy-geometry' && correctedLegacy?.rendered === true,
+    JSON.stringify(correctedLegacy));
+  check('  with finite zoom and a finite registered viewport',
+    finiteTelemetry(correctedLegacy?.zoom) && correctedLegacy?.hasNaNZoom === false &&
+      correctedPane?.board === 'legacy-geometry' &&
+      correctedPane?.elementCount === 1 &&
+      Object.values(correctedPane.viewport ?? {}).every(finiteTelemetry),
+    JSON.stringify({ correctedLegacy, pane: correctedPane }));
+
   // The fonts have to be there before the board is, and this is the step that
   // makes sure of it.
   //
@@ -513,6 +642,55 @@ try {
   check('  and the note is re-read into it, with the fonts already there',
     opened.status === 200 && opened.body?.source === 'vault' && opened.body?.elementCount === 12,
     `${opened.body?.source} / ${opened.body?.elementCount} elements`);
+
+  // Pane telemetry has its own recovery path. Force this pane's measured DOM
+  // rectangle non-finite, trigger a report, and observe the browser's own POST
+  // stream. Nothing should leave the page until the geometry is finite again.
+  const telemetryProbeInstalled = await evalInPage(`(() => {
+    const pane = document.querySelector('.pane-canvas');
+    if (!pane) return false;
+    const nativeFetch = window.fetch.bind(window);
+    window.__task117PanePosts = [];
+    window.fetch = (...args) => {
+      const [input, init] = args;
+      const url = typeof input === 'string' ? input : input?.url ?? '';
+      if (url.includes('/api/panes') && init?.method === 'POST') {
+        window.__task117PanePosts.push(init.body);
+      }
+      return nativeFetch(...args);
+    };
+    window.__task117PaneRect = pane.getBoundingClientRect.bind(pane);
+    pane.getBoundingClientRect = () => ({ ...window.__task117PaneRect(), width: Infinity });
+    return true;
+  })()`);
+  await browser(['set', 'viewport', '1180', '760']);
+  await sleep(800);
+  const suppressedTelemetry = await evalInPage(`window.__task117PanePosts ?? []`);
+  check('the pane suppresses its own non-finite telemetry before JSON can turn it into null',
+    telemetryProbeInstalled && suppressedTelemetry.length === 0,
+    JSON.stringify(suppressedTelemetry));
+
+  const telemetryRestored = await evalInPage(`(() => {
+    const pane = document.querySelector('.pane-canvas');
+    if (!pane || !window.__task117PaneRect) return false;
+    pane.getBoundingClientRect = window.__task117PaneRect;
+    window.__task117PanePosts = [];
+    return true;
+  })()`);
+  await browser(['set', 'viewport', '1200', '780']);
+  await sleep(800);
+  const recoveredTelemetry = await evalInPage(`(() => {
+    const bodies = (window.__task117PanePosts ?? []).map(body => JSON.parse(body));
+    return {
+      count: bodies.length,
+      finite: bodies.length > 0 && bodies.every(report =>
+        [...Object.values(report.rect), ...Object.values(report.viewport)]
+          .every(value => typeof value === 'number' && Number.isFinite(value)))
+    };
+  })()`);
+  check('  and publishes finite state after the pane geometry is corrected',
+    telemetryRestored && recoveredTelemetry?.count > 0 && recoveredTelemetry?.finite === true,
+    JSON.stringify(recoveredTelemetry));
 
   const rendered = await sceneWhenStill();
   const held = (await api('GET', '/api/elements?board=fixedpoint')).body?.elements ?? [];

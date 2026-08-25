@@ -1031,7 +1031,9 @@ try {
   // Their edit: an element this canvas has never seen, so their version is
   // recognisable, and a different byte count, so the hash moves.
   fs.writeFileSync(noteFile, fs.readFileSync(noteFile, 'utf-8').replace(
-    '"id": "auth"', '"id": "theirs", "width": 40}, {"id": "auth"'
+    '"id": "auth"',
+    '"id": "theirs", "type": "rectangle", "x": 20, "y": 20, ' +
+      '"width": 40, "height": 40}, {"id": "auth"'
   ));
 
   // --- and the person is told before their next edit (TASK-062) ------------

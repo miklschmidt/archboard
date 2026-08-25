@@ -28,6 +28,7 @@ import {
   soloPane
 } from './core/panes.js';
 import { BoardRequiredError } from './core/board-target.js';
+import { RenderGeometryError } from './core/geometry.js';
 import { z } from 'zod';
 import WebSocket from 'ws';
 import { isMainModule } from './core/entry.js';
@@ -597,6 +598,7 @@ function boardOfRequest(req: Request): string | undefined {
 function boardErrorStatus(error: unknown): number {
   if (error instanceof BoardRequiredError) return error.status;
   if (error instanceof BoardMutationError) return error.status;
+  if (error instanceof RenderGeometryError) return 400;
   // A refused write is not a fault, it is the other outcome the write always
   // had (ADR 0006). Every route that writes can now produce it, because every
   // write goes to the note (ADR 0015), so it is answered here once rather than
@@ -1882,7 +1884,12 @@ const PaneSchema = z.object({
 app.post('/api/panes', (req: Request, res: Response) => {
   const parsed = PaneSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ success: false, error: parsed.error.issues[0]?.message ?? 'Invalid pane' });
+    const issue = parsed.error.issues[0];
+    const field = issue?.path.length ? issue.path.join('.') : 'request';
+    return res.status(400).json({
+      success: false,
+      error: `Invalid pane telemetry at ${field}: ${issue?.message ?? 'invalid value'}`
+    });
   }
   const frontend = frontendState(parsed.data.build);
   const staleFrontend = frontend.stale ? frontend : undefined;
@@ -2922,14 +2929,16 @@ app.post('/api/boards/open', (req: Request, res: Response) => {
     const pane = paneFromRequest(params.pane);
 
     const scene = JSON.parse(loaded.sceneJson);
-    // The note's level wins unless the caller stated one — opening a board is
-    // not usually a claim about what level it sits at.
-    const { key: openedKey, board } = getOrCreateBoard(
-      { ...loaded.identity, ...(asked.level ? { level: asked.level } : {}) }
-    );
     const { elements, files } = ingestScene(
       Array.isArray(scene) ? scene : (scene.elements ?? []),
       Array.isArray(scene) ? null : scene.files
+    );
+    // The note's level wins unless the caller stated one — opening a board is
+    // not usually a claim about what level it sits at. Register it only after
+    // ingestion succeeds, so a malformed legacy note cannot leave an empty
+    // in-memory board that a second open mistakes for success.
+    const { key: openedKey, board } = getOrCreateBoard(
+      { ...loaded.identity, ...(asked.level ? { level: asked.level } : {}) }
     );
     const content: BoardContent = {
       elements, files, note: loaded.raw, hash: loaded.hash, version: loaded.version
