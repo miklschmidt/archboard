@@ -4,6 +4,7 @@ title: Keep human editing responsive while change reports persist
 status: To Do
 assignee: []
 created_date: '2026-08-25 11:34'
+updated_date: '2026-08-25 11:50'
 labels: []
 dependencies: []
 references:
@@ -33,3 +34,58 @@ Manual Excalidraw edits periodically stall even when no agent is interacting wit
 - [ ] #7 Agent writes remain mutex-serialized and non-optimistic, and existing multi-process lock, lease, renewal, claim, and version-conflict tests still pass
 - [ ] #8 Panning and zooming do not count as content edits and do not revoke an agent claim
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+## Measured baseline and attribution
+
+Keep the diagnostic as a disposable headless browser check and make it the first implementation step. The current probe builds a throwaway vault, seeds it only through human-origin change reports, drives trusted pointer input, instruments request counts and response stages in the page, and traces server durability calls. No agent write runs in the measured window.
+
+The 800-element control stayed at 16.8 ms per frame. Its hold response took 2.4 ms, its report round trip took 38 ms, response JSON took 2.2 ms, pre-reconciliation conversion took 1.4 ms, Excalidraw scene replacement took 0.5 ms, and the server's two durability fsyncs totaled 12.8 ms.
+
+The amplified 10,000-element run reproduced the periodic pause. Across five completed human drag reports in one session, each request body was 506 to 509 bytes but each response carried a 5,745,282 to 5,745,285 byte whole document. Response JSON took 22.7 to 28.8 ms, cleanup and conversion before scene replacement took 7.1 to 10.0 ms, and Excalidraw replacement took 2.2 to 4.3 ms. Four of five report responses coincided with a 33.2 to 33.4 ms animation-frame gap while trusted drag frames stayed at 16.7 ms. The synchronous note fsync pairs ran in the server process and did not line up with input-handler delay. This attributes the browser pause to processing and reconciling the full response document on the main thread, not to waiting for the note write. The same run also produced duplicate hold requests when a second `onChange` arrived before the first hold response set `holdingRef`.
+
+Do not choose a different cause unless the retained check contradicts this attribution on the implementation branch.
+
+## Preserved concurrency contract
+
+- Excalidraw applies a person's content edit locally before any hold or report promise settles. A remote agent hold or claim no longer turns a connected pane into view mode. A disconnected pane still fails closed.
+- The existing vault-backed mutex remains the only persisted-write boundary. Leases, claims, renewal, version checks, foreign-note conflict detection, and cross-process serialization remain in place for every note write.
+- A human report stays optimistic only in the pane. Its persistence still waits for the mutex. An agent write remains pessimistic from request through persisted response and never adopts the human acknowledgement path.
+- An agent write that has already started finishes. A content edit then takes or renews the human hold through the existing `/api/boards/hold` path, which waits out an ordinary write and revokes a claim under the current claim rules. Nothing rolls an agent write back.
+- Panning, zooming, selection, focus, and pointer contact without a content delta do not take a hold, revoke a claim, or start a change report.
+
+## Implementation plan
+
+1. Add `scripts/check-human-edit-performance.mjs` from the disposable probe and wire it into `package.json` as a fourth sequential headless browser check. Update `docs/agents/test-suite.md` with its scope, headless requirement, isolation, timing, and diagnostic output. Use a throwaway vault and human-origin setup and measured writes. Record trusted drag, resize, and typing event latency; animation-frame gaps; hold, renewal, release, and report counts; report body and response sizes; response JSON time; canonical-correction application time; and server fsync time. Keep the large fixed fixture because it turns the intermittent response pause into a repeatable report-correlated missed frame. Assert that the measured window contains no agent-origin board write.
+
+2. Replace the normal human change-report response document with a compact canonical acknowledgement. In `src/core/board-write.ts` and `src/server.ts`, snapshot the human mutation result before note settlement, persist it through the existing synchronous write boundary, then diff that submitted result against the final canonical content. Return only canonical corrections, including renamed ids as delete plus upsert, together with the written board version or fingerprint. The usual drag should return an empty correction set instead of the whole board. Keep the current agent answer shape and its optional explicitly requested document unchanged. Keep held-board full-report recovery explicit and covered rather than letting it become a second ordinary whole-scene write.
+
+3. Change `frontend/src/canvas/api.ts`, `frontend/src/canvas/changes.ts`, and the reporting reducer to consume that acknowledgement. On success, advance the baseline to the sent report's `nextBaseline`, then patch it with any canonical corrections from the server. Track the fingerprints sent for each id. If an acknowledged id has not changed locally since send, apply a real canonical correction only when it differs from the visible element. If the id has a newer local edit, leave the visible element untouched, update only the server baseline, and keep the newer edit scheduled. A common successful drag must not call `api.updateScene` at all. Any uncommon correction still goes through the existing single `applySceneUpdate` seam with `captureUpdate: never`.
+
+4. Preserve local edits when server news arrives during takeover. Update `mergeIncoming` and reducer events so a completed agent write advances the server baseline but does not overwrite a locally dirty version of the same id. The pending human delta is then written after the mutex grants the human hold. Remove the current `loseBoard` behavior that cancels reports, reloads the board, and drops the local edit when a human hold request loses or times out. Network or lock delay leaves the edit visible and pending; retry and conflict handling still decide whether it can persist.
+
+5. Make hold acquisition single-flight in `useCanvasSession`. Track the in-flight request and last attempt independently of `holdingRef`, so later `onChange` calls join the first request rather than fan out while its response is pending. Renew at `LOCK_RENEW_MS` only while content remains pending or a report is in flight. Release only after the reducer is settled. Keep the current server hold, lease, claim revocation, and release implementations unchanged.
+
+6. Split reporting into a fixed progress deadline and a trailing idle deadline in `frontend/src/canvas/change-reporting.ts`. Start a non-restarting `REPORT_PROGRESS_MS` timer at the first unsent content edit and restart a `REPORT_IDLE_SETTLE_MS` timer on later content edits. Start with 400 ms progress and 800 ms idle values in `src/core/timing.ts`, keeping the idle deadline below the 1,200 ms change-feed settle and the hold lease well above both. Allow one report in flight. If either deadline fires while one is in flight, record one queued delivery and recompute one latest delta after the acknowledgement. Continuous edits therefore make progress at most once per 400 ms, and stopping produces one final dirty trailing report after 800 ms. A trailing timer that finds no pending delta sends no no-op request.
+
+7. Pass the Excalidraw elements supplied to `CanvasPane.onChange` into the session and classify content change before any hold or report effect. Keep selection and pane viewport reporting on their existing routes. Camera-only changes may update the pane report, but they must leave the content stamp, local edit count, hold state, and reporting timers unchanged. Keep the claim banner and explicit take-back control visible, but do not use `viewModeEnabled` for a known agent holder. A first actual content delta is the deliberate takeover act.
+
+8. Amend ADR 0016 and its timing commentary to match the approved contract. Exclusion continues to govern persisted writers, while the person's local canvas is optimistic and an agent remains pessimistic. Replace the old statements that a remote hold must prevent the touch and that only the explicit button can revoke a claim. Document that content change revokes a claim, camera movement does not, and an already-started write finishes before the human report persists.
+
+## Regression plan mapped to acceptance criteria
+
+- AC1 and AC2: the new browser performance check first proves the current 5.7 MB response and report-correlated missed frame, then stays as the post-fix gate. It drives trusted drag, resize-handle movement, and real keyboard typing while delaying human report responses long enough to overlap more input. It asserts the visible geometry or text changes before the response, no report-correlated frame gap above the calibrated relative budget, a compact response, and no whole-scene replacement on an acknowledgement with no canonical correction.
+- AC3 and AC4: extend `scripts/check-change-reporting.mjs` with a manual-clock sequence of content changes spaced below the idle deadline for several progress intervals. Assert periodic deltas, one final dirty trailing delta, no no-op tail, one in-flight report, and one queued delivery. The browser check counts exactly one initial hold while it is unresolved, renewal no faster than `LOCK_RENEW_MS`, and no duplicate change request for one deadline.
+- AC5: reducer checks cover an acknowledgement after a newer move, resize, deletion, and typed edit. They assert that the visible newer edit survives, the baseline represents the canonical server acknowledgement, and the next delta converges it. Add a live-session case where the server returns a real canonical correction and another where no correction causes no `updateScene` call. End both by comparing pane, API document, and note.
+- AC6 and AC8: add a focused live-browser lock case. Hold the mutex with an ordinary agent write and with a claim, begin a trusted human edit before persistence is available, and assert its local pixels remain. The ordinary write finishes first; a content edit then acquires the human hold, revokes the claim, and the next agent act receives `CLAIM_REVOKED`. In a separate claimed-board sequence, trusted pan and zoom produce pane reports only, leave the claim owner unchanged, and send neither hold nor change-report requests.
+- AC7: keep and run `test:lock` for leases, renewal, claim lifecycle, takeover rules, release linger, and two-process exclusion; `test:version` for write preconditions and conflicts; `test:one-write` for one persisted write per accepted report; `test:reporting`; `test:browser`; `test:typing`; and `test:live-session`. Add assertions that an agent response is not exposed before `writeBoard` returns from persistence and that the compact acknowledgement branch is selected only for a human `clientId`. Finish with `bun run test` sequentially, never parallelizing the browser checks.
+
+## Risks and review points
+
+- The compact acknowledgement is safe only if it reports every server-side canonical correction, especially text-id renames, raw text settlement, bound-arrow back references, and stripped presentation links. Compute corrections after settlement and keep fixed-point, typing, and long-session document comparisons as the deletion test for omissions.
+- A 400 ms progress cadence increases write frequency during long gestures compared with today's unbounded trailing debounce. The 800 ms tail and single-flight queue limit it, but the implementation should record actual request and fsync counts in the browser check before accepting the constants.
+- The current ADR says a pane held elsewhere enters view mode and that claim takeover needs an explicit button. TASK-118 intentionally changes those two human-interface consequences, not the mutex itself. Review the ADR diff as a contract change before application code proceeds.
+- Keep disconnected behavior fail-closed unless a separate task changes offline editing. TASK-118 concerns persistence in flight, not an unreachable canvas.
+<!-- SECTION:PLAN:END -->
