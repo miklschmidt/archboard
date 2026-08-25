@@ -110,6 +110,8 @@ export interface ElementInputRequest {
 export interface AppliedElementInput {
   /** The board-shape elements corresponding to `upserts`, in input order. */
   named: ServerElement[];
+  /** The request-local document before well-forming repairs and settlement. */
+  requested: ServerElement[];
   created: ServerElement[];
   updated: ServerElement[];
   deleted: string[];
@@ -377,9 +379,9 @@ function settleAfterWrite(movedIds: string[], board: Map<string, ServerElement>)
 }
 
 function settleDocument(
-  applied: Omit<AppliedElementInput, 'named'>,
+  applied: Pick<AppliedElementInput, 'created' | 'updated' | 'deleted'>,
   board: Map<string, ServerElement>
-): Omit<AppliedElementInput, 'named'> {
+): Pick<AppliedElementInput, 'created' | 'updated' | 'deleted'> {
   const { alsoDeleted, changed } = settleDeletions(applied.deleted, board);
   const repaired = repairIndices(board);
   if (alsoDeleted.length === 0 && changed.length === 0 && repaired.length === 0) return applied;
@@ -533,6 +535,11 @@ export function applyElementInput(
   for (const id of deletes) {
     if (working.delete(id)) deleted.push(id);
   }
+  // Capture what the caller intended before the sole input converter repairs
+  // bindings, dependent elements, ids, and ordering. A pane acknowledgement
+  // compares this request-local document with the canonical document that was
+  // persisted; otherwise a repair performed below is invisible to that pane.
+  const requested = copyElements(working.values());
   for (const element of settleAfterWrite(prepared.moved ?? [], working)) {
     if (working.has(element.id)) prepared.updated.set(element.id, element);
   }
@@ -547,6 +554,7 @@ export function applyElementInput(
       const element = working.get(id);
       return element ? [element] : [];
     }),
+    requested,
     ...settled
   };
   board.clear();

@@ -167,7 +167,7 @@ export interface LockRequest {
    * which is what an agent uses: a person's hold tracks one edit interaction,
    * so the expected wait is short and waiting beats failing.
    *
-   * A person's own hold passes REPORT_DEBOUNCE_MS instead. An agent's write is
+   * A person's own hold passes REPORT_PROGRESS_MS instead. An agent's write is
    * about twenty milliseconds and an edit that starts during one has not lost
    * the board, but a person cannot be made to wait five seconds to find out
    * whether their edit was accepted. Zero means ask once.

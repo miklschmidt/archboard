@@ -1,5 +1,7 @@
 import { derivedId, isBlockId } from '../../../src/core/ids'
-import { REPORT_DEBOUNCE_MS, REPORT_RETRY_MS } from '../../../src/core/timing'
+import {
+  REPORT_IDLE_SETTLE_MS, REPORT_PROGRESS_MS, REPORT_RETRY_MS
+} from '../../../src/core/timing'
 import {
   baselineFrom, diffAgainstBaseline, fingerprint, isEmpty,
   type Baseline, type ChangeReport
@@ -9,7 +11,7 @@ export type SceneElement = Record<string, any>
 
 type BaselineUpdate =
   | { type: 'replace'; withheldIds: readonly string[] }
-  | { type: 'touch'; ids: readonly string[] }
+  | { type: 'touch'; elements: readonly SceneElement[] }
   | { type: 'delete'; ids: readonly string[] }
   | { type: 'none' }
 
@@ -21,7 +23,6 @@ export interface SceneUpdate {
 
 interface ReportContext {
   report: ChangeReport
-  editsAtSend: number
   withheldIds: readonly string[]
   fullReport: boolean
 }
@@ -36,8 +37,10 @@ export interface ChangeReportingState {
   sceneStamp: string
   localEditCount: number
   userInteracted: boolean
-  reportTimerScheduled: boolean
+  progressTimerScheduled: boolean
+  idleTimerScheduled: boolean
   retryTimerScheduled: boolean
+  deliveryQueued: boolean
   applyingServerUpdateCount: number
   serverUpdateStamps: readonly string[]
   fullReportNeeded: boolean
@@ -50,7 +53,8 @@ export type ChangeReportingEvent =
   | { type: 'scene_changed'; scene: readonly SceneElement[] }
   | { type: 'local_update_requested'; update: SceneUpdate }
   | { type: 'local_update_applied'; generation: number; scene: readonly SceneElement[] }
-  | { type: 'report_timer_fired'; generation: number; scene: readonly SceneElement[]; withheldIds: readonly string[] }
+  | { type: 'progress_timer_fired'; generation: number; scene: readonly SceneElement[]; withheldIds: readonly string[] }
+  | { type: 'idle_timer_fired'; generation: number; scene: readonly SceneElement[]; withheldIds: readonly string[] }
   | { type: 'retry_timer_fired'; generation: number; scene: readonly SceneElement[]; withheldIds: readonly string[] }
   | { type: 'immediate_report_requested'; scene: readonly SceneElement[]; withheldIds: readonly string[] }
   | {
@@ -69,7 +73,7 @@ export type ChangeReportingEvent =
   | {
       type: 'report_succeeded'
       generation: number
-      document?: readonly SceneElement[]
+      corrections: { upserts: readonly SceneElement[]; deletes: readonly string[] }
       currentScene: readonly SceneElement[]
     }
   | { type: 'report_refused'; generation: number }
@@ -80,8 +84,10 @@ export type ChangeReportingEvent =
   | { type: 'flush_requested'; scene: readonly SceneElement[] }
 
 export type ChangeReportingEffect =
-  | { type: 'cancel_report_timer' }
-  | { type: 'start_report_timer'; delayMs: number; generation: number }
+  | { type: 'cancel_progress_timer' }
+  | { type: 'start_progress_timer'; delayMs: number; generation: number }
+  | { type: 'cancel_idle_timer' }
+  | { type: 'start_idle_timer'; delayMs: number; generation: number }
   | { type: 'cancel_retry_timer' }
   | { type: 'start_retry_timer'; delayMs: number; generation: number }
   | { type: 'apply_local_update'; generation: number; update: SceneUpdate }
@@ -113,8 +119,10 @@ export function initialState(): ChangeReportingState {
     sceneStamp: '',
     localEditCount: 0,
     userInteracted: false,
-    reportTimerScheduled: false,
+    progressTimerScheduled: false,
+    idleTimerScheduled: false,
     retryTimerScheduled: false,
+    deliveryQueued: false,
     applyingServerUpdateCount: 0,
     serverUpdateStamps: [],
     fullReportNeeded: false,
@@ -221,7 +229,11 @@ export function hasPendingEdits(
 }
 
 export function reportsSettled(state: ChangeReportingState): boolean {
-  return state.inFlightReport === null && !state.reportTimerScheduled && !state.retryTimerScheduled
+  return state.inFlightReport === null
+    && !state.progressTimerScheduled
+    && !state.idleTimerScheduled
+    && !state.retryTimerScheduled
+    && !state.deliveryQueued
 }
 
 export function userHasInteracted(state: ChangeReportingState): boolean {
@@ -244,7 +256,8 @@ export function carryWithheld(
 
 export function mergeIncoming(
   scene: readonly SceneElement[],
-  incoming: readonly SceneElement[]
+  incoming: readonly SceneElement[],
+  baseline?: Baseline
 ): { elements: SceneElement[]; touchedIds: string[] } {
   const byId = new Map<string, SceneElement>()
   for (const element of incoming) {
@@ -255,16 +268,54 @@ export function mergeIncoming(
     const update = byId.get(element.id)
     if (!update) return element
     byId.delete(element.id)
+    const agreed = baseline?.get(element.id)
+    if (baseline && (agreed === undefined || fingerprint(element) !== agreed)) return element
     return { ...element, ...update }
   })
-  elements.push(...byId.values())
+  for (const [id, element] of byId) {
+    // Missing from the visible scene but present in the agreed baseline means
+    // the person deleted it locally after that baseline. Keep it absent and
+    // pending. An id the baseline never held is a true remote addition.
+    if (!baseline || !baseline.has(id)) elements.push(element)
+  }
   return { elements, touchedIds }
 }
 
-function scheduleReport(state: ChangeReportingState, effects: ChangeReportingEffect[]): ChangeReportingState {
-  if (state.reportTimerScheduled) effects.push({ type: 'cancel_report_timer' })
-  effects.push({ type: 'start_report_timer', delayMs: REPORT_DEBOUNCE_MS, generation: state.generation })
-  return { ...state, reportTimerScheduled: true }
+export function mergeIncomingDeletes(
+  scene: readonly SceneElement[],
+  deletedIds: readonly string[],
+  baseline: Baseline
+): SceneElement[] {
+  const deleted = new Set(deletedIds)
+  return scene.filter(element => {
+    if (!deleted.has(element.id)) return true
+    const agreed = baseline.get(element.id)
+    return agreed !== undefined && fingerprint(element) !== agreed
+  })
+}
+
+function scheduleDelivery(state: ChangeReportingState, effects: ChangeReportingEffect[]): ChangeReportingState {
+  let next = state
+  if (!state.progressTimerScheduled && !state.deliveryQueued) {
+    effects.push({
+      type: 'start_progress_timer', delayMs: REPORT_PROGRESS_MS, generation: state.generation
+    })
+    next = { ...next, progressTimerScheduled: true }
+  }
+  if (state.idleTimerScheduled) effects.push({ type: 'cancel_idle_timer' })
+  effects.push({
+    type: 'start_idle_timer', delayMs: REPORT_IDLE_SETTLE_MS, generation: state.generation
+  })
+  return { ...next, idleTimerScheduled: true }
+}
+
+function cancelDeliveryTimers(
+  state: ChangeReportingState,
+  effects: ChangeReportingEffect[]
+): ChangeReportingState {
+  if (state.progressTimerScheduled) effects.push({ type: 'cancel_progress_timer' })
+  if (state.idleTimerScheduled) effects.push({ type: 'cancel_idle_timer' })
+  return { ...state, progressTimerScheduled: false, idleTimerScheduled: false }
 }
 
 function beginReport(
@@ -275,7 +326,7 @@ function beginReport(
   allowWhileApplyingServerUpdate = false
 ): ChangeReportingState {
   if (state.inFlightReport !== null || (state.applyingServerUpdateCount > 0 && !allowWhileApplyingServerUpdate)) {
-    return scheduleReport(state, effects)
+    return { ...state, deliveryQueued: true }
   }
   if (state.retryTimerScheduled) effects.push({ type: 'cancel_retry_timer' })
 
@@ -303,7 +354,12 @@ function beginReport(
     withheldSet(withheldIds)
   )
   if (!fullReport && isEmpty(report)) {
-    return { ...state, baseline: report.nextBaseline, retryTimerScheduled: false }
+    return cancelDeliveryTimers({
+      ...state,
+      baseline: report.nextBaseline,
+      retryTimerScheduled: false,
+      deliveryQueued: false
+    }, effects)
   }
 
   effects.push({ type: 'send_report', report, fullReport, generation: state.generation })
@@ -312,10 +368,10 @@ function beginReport(
     retryTimerScheduled: false,
     inFlightReport: {
       report,
-      editsAtSend: state.localEditCount,
       withheldIds,
       fullReport
-    }
+    },
+    deliveryQueued: false
   }
 }
 
@@ -334,13 +390,60 @@ function applyBaselineUpdate(
     for (const id of update.ids) next.delete(id)
     return next
   }
-  const landed = new Map(scene.map((element) => [element.id as string, element]))
-  for (const id of update.ids) {
+  const landed = new Map(update.elements.map((element) => [element.id as string, element]))
+  for (const id of landed.keys()) {
     const element = landed.get(id)
     if (element) next.set(id, fingerprint(element))
     else next.delete(id)
   }
   return next
+}
+
+function baselineAfterCorrections(
+  submitted: Baseline,
+  corrections: { upserts: readonly SceneElement[]; deletes: readonly string[] }
+): Baseline {
+  const next = new Map(submitted)
+  for (const id of corrections.deletes) next.delete(id)
+  for (const element of corrections.upserts) {
+    if (element && typeof element.id === 'string' && !element.isDeleted) {
+      next.set(element.id, fingerprint(element))
+    }
+  }
+  return next
+}
+
+function applyVisibleCorrections(
+  scene: readonly SceneElement[],
+  submitted: Baseline,
+  corrections: { upserts: readonly SceneElement[]; deletes: readonly string[] }
+): SceneElement[] | null {
+  const byId = new Map(scene.map(element => [element.id as string, element]))
+  let changed = false
+
+  for (const id of corrections.deletes) {
+    const visible = byId.get(id)
+    if (!visible) continue
+    const sent = submitted.get(id)
+    if (sent === undefined || fingerprint(visible) !== sent) continue
+    byId.delete(id)
+    changed = true
+  }
+
+  for (const canonical of corrections.upserts) {
+    if (!canonical || typeof canonical.id !== 'string') continue
+    const visible = byId.get(canonical.id)
+    const sent = submitted.get(canonical.id)
+    const unchangedSinceSend = sent === undefined
+      ? visible === undefined
+      : visible !== undefined && fingerprint(visible) === sent
+    if (!unchangedSinceSend) continue
+    if (visible && fingerprint(visible) === fingerprint(canonical)) continue
+    byId.set(canonical.id, canonical)
+    changed = true
+  }
+
+  return changed ? [...byId.values()] : null
 }
 
 function userEdit(
@@ -352,14 +455,14 @@ function userEdit(
   const stamp = stampScene(scene)
   if (stamp === state.sceneStamp) return state
   effects.push({ type: 'take_hold' })
-  return scheduleReport({
+  return scheduleDelivery({
     ...state,
     sceneStamp: stamp,
     localEditCount: state.localEditCount + 1
   }, effects)
 }
 
-type ReportingTimer = 'report' | 'retry'
+type ReportingTimer = 'progress' | 'idle' | 'retry'
 
 function timerFired(
   state: ChangeReportingState,
@@ -367,9 +470,11 @@ function timerFired(
   which: ReportingTimer,
   effects: ChangeReportingEffect[]
 ): ChangeReportingState {
-  const ready = which === 'report'
-    ? { ...state, reportTimerScheduled: false }
-    : { ...state, retryTimerScheduled: false }
+  const ready = which === 'progress'
+    ? { ...state, progressTimerScheduled: false }
+    : which === 'idle'
+      ? { ...state, idleTimerScheduled: false }
+      : { ...state, retryTimerScheduled: false }
   return beginReport(ready, event.scene, event.withheldIds, effects)
 }
 
@@ -379,12 +484,14 @@ function afterFailedReport(
   options: { delayMs: number; fullReport: boolean; publish: boolean }
 ): ChangeReportingState {
   if (options.publish) effects.push({ type: 'publish_status' })
+  const withoutDeliveryTimers = cancelDeliveryTimers(state, effects)
   effects.push({ type: 'start_retry_timer', delayMs: options.delayMs, generation: state.generation })
   return {
-    ...state,
+    ...withoutDeliveryTimers,
     inFlightReport: null,
     fullReportNeeded: options.fullReport || state.fullReportNeeded,
-    retryTimerScheduled: true
+    retryTimerScheduled: true,
+    deliveryQueued: false
   }
 }
 
@@ -407,9 +514,14 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
       if (event.generation !== state.generation) return { state, effects }
       return { state: userEdit(state, event.scene, effects), effects }
 
-    case 'report_timer_fired': {
+    case 'progress_timer_fired': {
       if (event.generation !== state.generation) return { state, effects }
-      return { state: timerFired(state, event, 'report', effects), effects }
+      return { state: timerFired(state, event, 'progress', effects), effects }
+    }
+
+    case 'idle_timer_fired': {
+      if (event.generation !== state.generation) return { state, effects }
+      return { state: timerFired(state, event, 'idle', effects), effects }
     }
 
     case 'retry_timer_fired': {
@@ -465,24 +577,37 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
       if (event.generation !== state.generation || !sent) {
         return { state, effects }
       }
+      const baseline = baselineAfterCorrections(sent.report.nextBaseline, event.corrections)
+      const correctedScene = applyVisibleCorrections(
+        event.currentScene, sent.report.nextBaseline, event.corrections
+      )
       let next: ChangeReportingState = {
         ...state,
         inFlightReport: null,
-        fullReportNeeded: sent.fullReport ? false : state.fullReportNeeded
+        baseline,
+        fullReportNeeded: sent.fullReport ? false : state.fullReportNeeded,
+        deliveryQueued: false
       }
-      if (event.document && state.localEditCount === sent.editsAtSend) {
-        const answered = new Set(event.document.map((element) => element.id))
-        const kept = carryWithheld(event.currentScene, answered, sent.withheldIds)
-        const baselineUpdate: BaselineUpdate = { type: 'replace', withheldIds: sent.withheldIds }
+      if (correctedScene) {
         effects.push({
           type: 'apply_server_update',
           generation: state.generation,
-          update: { elements: [...event.document, ...kept], captureUpdate: 'never' },
-          baselineUpdate
+          update: { elements: correctedScene, captureUpdate: 'never' },
+          baselineUpdate: { type: 'none' },
+          ...(state.deliveryQueued
+            ? { reportAfterUpdate: { withheldIds: sent.withheldIds, fullReport: false } }
+            : {})
         })
         next = { ...next, applyingServerUpdateCount: next.applyingServerUpdateCount + 1 }
-      } else {
-        next = { ...next, baseline: sent.report.nextBaseline }
+      } else if (state.deliveryQueued) {
+        next = beginReport(next, event.currentScene, sent.withheldIds, effects)
+      } else if (!hasPendingEdits(next, event.currentScene, sent.withheldIds)) {
+        next = cancelDeliveryTimers(next, effects)
+      } else if (!next.progressTimerScheduled && !next.idleTimerScheduled) {
+        // Excalidraw may have normalized an id after send without a separate
+        // content onChange. If that makes a canonical correction stale, keep
+        // the visible element and schedule its converging delta explicitly.
+        next = scheduleDelivery(next, effects)
       }
       effects.push({ type: 'note_change' }, { type: 'release_if_idle' })
       return { state: next, effects }
@@ -507,7 +632,8 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
       }
 
     case 'board_adopted':
-      if (state.reportTimerScheduled) effects.push({ type: 'cancel_report_timer' })
+      if (state.progressTimerScheduled) effects.push({ type: 'cancel_progress_timer' })
+      if (state.idleTimerScheduled) effects.push({ type: 'cancel_idle_timer' })
       if (state.retryTimerScheduled) effects.push({ type: 'cancel_retry_timer' })
       return {
         state: { ...initialState(), generation: state.generation + 1 },
@@ -515,10 +641,17 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
       }
 
     case 'reports_cancelled':
-      if (state.reportTimerScheduled) effects.push({ type: 'cancel_report_timer' })
+      if (state.progressTimerScheduled) effects.push({ type: 'cancel_progress_timer' })
+      if (state.idleTimerScheduled) effects.push({ type: 'cancel_idle_timer' })
       if (state.retryTimerScheduled) effects.push({ type: 'cancel_retry_timer' })
       return {
-        state: { ...state, reportTimerScheduled: false, retryTimerScheduled: false },
+        state: {
+          ...state,
+          progressTimerScheduled: false,
+          idleTimerScheduled: false,
+          retryTimerScheduled: false,
+          deliveryQueued: false
+        },
         effects
       }
 

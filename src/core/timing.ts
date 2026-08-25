@@ -6,10 +6,11 @@
 // two in the injection config. Read one at a time they all look independent,
 // and they are not. ADR 0016 is where that stopped being tolerable:
 //
-//     The window that coalesces a person's changes now has a second job. It
-//     also decides how long an agent waits for them. Shortening it releases
-//     the board sooner and writes to the vault more often; lengthening it does
-//     the reverse.
+//     A person's edit has two flush deadlines and a leading-edge hold. The
+//     fixed progress deadline bounds how long continuous work stays only in
+//     the pane; the longer idle deadline produces the final settled write.
+//     Shortening either writes to the vault more often. Lengthening either
+//     extends how long the human hold delays an agent.
 //
 // So they live here, with what pulls against what written beside them. Nothing
 // in this file has behaviour. It is numbers and the reasons for them, and the
@@ -26,34 +27,29 @@
 // ── A user's edits reaching the server ────────────────────────────────────
 
 /**
- * How long the pane waits after a user's last change before posting the
- * delta (`useCanvasSession.scheduleReport`).
+ * The fixed deadline from the first unsent content change to a progress
+ * report. Later changes do not restart it.
  *
  * A user edit should be on the server before they finish saying what they
  * did. The report is a delta, not the scene, so this can be short without
  * being expensive.
  *
- * It is a trailing debounce with no maximum wait, restarted on every change,
- * so a continuous drag posts nothing at all until 400 ms after the pointer
- * lifts. That matters for the lock. ADR 0016 says an agent's wait is bounded
- * by this window, and the accurate version is narrower: this bounds how long a
- * user's hold lasts *after the last change of an edit*, not how long the
- * hold lasts. Nothing used to reach the server at the start of an edit, so
- * TASK-067 gave the pane a second message that does: `POST /api/boards/hold`
- * goes out on the leading edge of the first change and again every
- * LOCK_RENEW_MS while the edit continues, and the release goes out once
- * this debounce has fired and the report has landed. So an agent's wait is a
- * edit plus this plus a write, and it is the *renewal* rather than this
- * number that carries a hold across a long drag.
- *
- * It bounds the wait at the other end too. A person's hold waits this long for
- * a board somebody else has, because an edit that starts during an agent's
- * twenty-millisecond write has not lost the board and must not be told it has —
- * and this is exactly how long that user was going to wait for their change
- * to be written anyway. Shortening it therefore makes a pane readier to
- * conclude it has lost the board.
+ * `POST /api/boards/hold` goes out on the leading edge and renews every
+ * LOCK_RENEW_MS while content is pending. This deadline both gives a long drag
+ * periodic durability and caps how long hold acquisition waits out an
+ * already-started agent write. At most one report is in flight; another due
+ * deadline records one queued latest delivery rather than fanning out.
  */
-export const REPORT_DEBOUNCE_MS = 400
+export const REPORT_PROGRESS_MS = 400
+
+/**
+ * The trailing idle deadline from the last content edit to the final report.
+ * It restarts on every content edit and stays below DEFAULT_SETTLE_MS so the
+ * change feed can fold the final write into the same observed human act. It is
+ * deliberately twice REPORT_PROGRESS_MS: continuous work makes progress at
+ * 400 ms, while a brief pause does not immediately manufacture another tail.
+ */
+export const REPORT_IDLE_SETTLE_MS = 800
 
 /**
  * How long the pane waits before retrying a report the server refused or never
@@ -78,7 +74,7 @@ export const REPORT_RETRY_MS = 2000
  * Selection and changes travel by different routes, so these two numbers are
  * what orders them, and 150 against 400 orders them the useful way round: an
  * agent hears which boxes were picked up before it hears what happened to
- * them. Raising this past REPORT_DEBOUNCE_MS reverses that, and the symptom
+ * them. Raising this past REPORT_PROGRESS_MS reverses that, and the symptom
  * would be an agent describing a move against the previous selection.
  */
 export const SELECTION_DEBOUNCE_MS = 150
@@ -91,7 +87,7 @@ export const SELECTION_DEBOUNCE_MS = 150
  * pane that cannot hear the broadcast has to assume the board is held rather
  * than that it is free. So this is also the longest a pane can refuse a user's
  * edit after a brief disconnect. It is deliberately unrelated to
- * REPORT_DEBOUNCE_MS: change
+ * REPORT_PROGRESS_MS: change
  * reports go by HTTP and are not gated on the socket, so a dropped socket must
  * not also stop a user's edits reaching the server.
  */
@@ -149,10 +145,10 @@ export const PANE_LAYOUT_TIMEOUT_MS = 10000
  * that only the settles it asks for explicitly ever fire.
  *
  * This is the number the ADR 0016 tension is about, seen from the far end. It
- * has to be longer than REPORT_DEBOUNCE_MS, because that debounce sets the
- * closest together two flushes from one stretch of work can arrive. A settle
+ * has to be longer than REPORT_IDLE_SETTLE_MS, because that deadline sets the
+ * closest together two trailing flushes from separate stretches can arrive. A settle
  * window shorter than the debounce would make every flush its own event and
- * the coalescing would do nothing. 400 against 1200 leaves room for a flush,
+ * the coalescing would do nothing. 800 against 1200 leaves room for a flush,
  * its round trip and the next flush inside one window, which is what turns
  * "they rearranged that corner" into one thing the agent is told rather than
  * three.
@@ -209,9 +205,9 @@ export const DEFAULT_INJECT_MIN_INTERVAL_MS = 10_000
  * finds and deletes a file they have never heard of. The first crash costs one
  * lease, not the board, and this is what that crash costs.
  *
- * It has to clear REPORT_DEBOUNCE_MS plus a write with room to spare, or a
+ * It has to clear REPORT_IDLE_SETTLE_MS plus a write with room to spare, or a
  * user's own lock expires during the gap between two reports.
- * 400 against 3000 is that room. What actually covers a long drag is renewal,
+ * 800 against 3000 is that room. What actually covers a long drag is renewal,
  * not this number, so raising it to survive a long edit is the wrong fix,
  * and it is paid for in how long a crashed holder keeps the board.
  */
@@ -234,7 +230,7 @@ export const LOCK_RENEW_MS = 1000
  * naming the holder.
  *
  * An agent waits rather than failing, because a user's hold covers one edit
- * rather than a session, so the expected wait is one edit plus REPORT_DEBOUNCE_MS.
+ * rather than a session, so the expected wait is one edit plus REPORT_IDLE_SETTLE_MS.
  * When it does give up it says who holds the board and since when, so a voice
  * session has something to say instead of going silent.
  *
