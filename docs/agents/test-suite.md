@@ -100,6 +100,12 @@ holds or claims the board, one single-flight hold retry eventually persists the
 edit, content revokes a claim, camera movement does not, and a disconnected
 pane still assumes the board is held rather than free.
 
+Its hold-generation scenario delays hold A1, switches the pane from board A to
+board B and back to A, then starts delayed hold A2. Releasing A1 first must
+leave A2 owned, schedule no stale retry, and persist A2's edit. This is the
+browser-level guard that board adoption advances the hold generation and that
+late promise completion cannot clear a newer same-board attempt.
+
 ### `bun run test:typing` (`scripts/check-typed-text.mjs`, TASK-098)
 
 Draws a text element with the text tool and adds a label to a box with a

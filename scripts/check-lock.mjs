@@ -64,7 +64,8 @@ const {
   onBoardLockChanged, releaseClaim, releaseHold, takeClaimRevocation, withBoardLock
 } = await import(src('core/board-lock.ts'));
 const {
-  CLAIM_LEASE_MS, LOCK_FREE_LINGER_MS, LOCK_LEASE_MS, LOCK_RENEW_MS, LOCK_WAIT_CAP_MS, LOCK_WATCH_MS
+  CLAIM_LEASE_MS, LOCK_FREE_LINGER_MS, LOCK_LEASE_MS, LOCK_RENEW_MS, LOCK_WAIT_CAP_MS,
+  LOCK_WATCH_MS, REPORT_IDLE_SETTLE_MS
 } = await import(src('core/timing.ts'));
 
 const agent = (id) => ({ id, kind: 'agent' });
@@ -170,9 +171,9 @@ const refusal = async (promise) => {
     why(took));
   releaseHold(board, 'the-next');
 
-  check('the lease clears the report debounce plus a write, with room',
-    LOCK_LEASE_MS >= 400 * 2,
-    `LOCK_LEASE_MS ${LOCK_LEASE_MS}`);
+  check('the lease clears the trailing idle deadline plus a write, with room',
+    LOCK_LEASE_MS >= REPORT_IDLE_SETTLE_MS * 2,
+    `idle ${REPORT_IDLE_SETTLE_MS} vs lease ${LOCK_LEASE_MS}`);
   check('an agent waiting on a crashed holder outlasts the lease rather than timing out first',
     LOCK_WAIT_CAP_MS > LOCK_LEASE_MS,
     `wait ${LOCK_WAIT_CAP_MS} vs lease ${LOCK_LEASE_MS}`);
