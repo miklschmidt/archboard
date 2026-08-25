@@ -189,15 +189,36 @@ const INSTALL_COUNTER = `(() => {
     sent: 0, done: 0, holds: 0, releases: 0,
     acknowledgements: 0, correctionUpserts: 0, correctionDeletes: 0, lastCorrections: null
   };
+  window.__abHoldRace = { remaining: 0, pending: [], started: [] };
+  window.__abDelayHolds = count => { window.__abHoldRace.remaining = count; };
+  window.__abReleaseDelayedHold = index => {
+    const [entry] = window.__abHoldRace.pending.splice(index, 1);
+    if (!entry) return { error: 'no delayed hold at ' + index };
+    entry.release();
+    return { board: entry.board, pending: window.__abHoldRace.pending.length };
+  };
   const original = window.fetch;
   window.fetch = function (input, init) {
     const url = typeof input === 'string' ? input : (input && input.url) || '';
     const method = (init && init.method) || (input && input.method) || 'GET';
     const counted = method === 'POST' && url.includes('/api/elements/changes');
+    const hold = method === 'POST' && url.includes('/api/boards/hold')
+      && !url.includes('/api/boards/hold/release');
     if (method === 'POST' && url.includes('/api/boards/hold/release')) window.__abReports.releases += 1;
-    else if (method === 'POST' && url.includes('/api/boards/hold')) window.__abReports.holds += 1;
+    else if (hold) window.__abReports.holds += 1;
     if (counted) window.__abReports.sent += 1;
     const answer = original.apply(this, arguments);
+    if (hold && window.__abHoldRace.remaining > 0) {
+      window.__abHoldRace.remaining -= 1;
+      const board = new URL(url, location.href).searchParams.get('board');
+      window.__abHoldRace.started.push(board);
+      return new Promise((resolve, reject) => {
+        window.__abHoldRace.pending.push({
+          board,
+          release: () => answer.then(resolve, reject)
+        });
+      });
+    }
     if (!counted) return answer;
     // Holding one report's answer back is how a second report's debounce
     // expires while the first is still in flight. No amount of writing faster
@@ -674,6 +695,91 @@ try {
   const start = await agree();
   check('the pane and the server agree before anybody writes',
     start.agreed, (start.divergences ?? []).slice(0, 4).join(' | '));
+
+  // --- a delayed hold across a rapid away/back cycle ----------------------
+  //
+  // Board names repeat, so request ownership cannot be keyed by board alone.
+  // Keep A1 unresolved in the pane, switch A -> scratch -> A, start A2, then
+  // let A1 finish first. The old completion must neither clear A2 nor schedule
+  // its retry. A2's report answer is also delayed so pending work remains live
+  // long enough for a stale LOCK_RENEW_MS retry to become observable.
+  const paneClient = panes?.panes?.[0]?.clientId;
+  const holdRaceBefore = await reportCount();
+  await evalInPage('window.__abDelayHolds(2)');
+  await humanEdit({ kind: 'move', id: 'auth', dx: 3, dy: 0 });
+  let delayedHolds = null;
+  for (let attempt = 0; attempt < 40; attempt++) {
+    delayedHolds = await evalInPage(`(() => ({
+      pending: window.__abHoldRace.pending.map(entry => entry.board),
+      started: [...window.__abHoldRace.started]
+    }))()`);
+    if (delayedHolds.pending.length === 1) break;
+    await sleep(25);
+  }
+  check('the first A hold is delayed before the pane switches away',
+    delayedHolds?.pending?.length === 1 && delayedHolds.pending[0] === BOARD,
+    JSON.stringify(delayedHolds));
+
+  await api('POST', '/api/boards/open', { board: 'scratch', pane: paneClient });
+  await api('POST', '/api/boards/open', { board: BOARD, pane: paneClient });
+  let returnedToA = false;
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const listed = (await api('GET', '/api/panes')).body?.panes?.[0];
+    const scene = await readScene();
+    returnedToA = listed?.board === BOARD && scene.elements?.some(element => element.id === 'auth');
+    if (returnedToA) break;
+    await sleep(25);
+  }
+  check('the pane completes the rapid A to scratch to A switch', returnedToA);
+  await browser(['click', '.excalidraw']);
+
+  const beforeSecondHold = (await held()).find(element => element.id === 'auth');
+  await evalInPage(`window.__abDelayReport = ${LOCK_RENEW_MS * 3}`);
+  await humanEdit({ kind: 'move', id: 'auth', dx: 13, dy: 0 });
+  for (let attempt = 0; attempt < 40; attempt++) {
+    delayedHolds = await evalInPage(`(() => ({
+      pending: window.__abHoldRace.pending.map(entry => entry.board),
+      started: [...window.__abHoldRace.started]
+    }))()`);
+    if (delayedHolds.pending.length === 2) break;
+    await sleep(25);
+  }
+  check('returning to A starts a distinct second delayed hold',
+    delayedHolds?.pending?.length === 2
+      && delayedHolds.pending.every(board => board === BOARD),
+    JSON.stringify(delayedHolds));
+
+  const releasedA1 = await evalInPage('window.__abReleaseDelayedHold(0)');
+  const holdsWithA2Pending = (await reportCount()).holds;
+  await sleep(LOCK_RENEW_MS + 200);
+  const afterOldFinally = await reportCount();
+  const pendingAfterOldFinally = await evalInPage(
+    'window.__abHoldRace.pending.map(entry => entry.board)');
+  check('A1 finishing cannot clear A2 or schedule an old retry',
+    releasedA1?.board === BOARD
+      && pendingAfterOldFinally.length === 1
+      && pendingAfterOldFinally[0] === BOARD
+      && afterOldFinally.holds === holdsWithA2Pending
+      && holdsWithA2Pending - holdRaceBefore.holds === 2,
+    JSON.stringify({ releasedA1, pendingAfterOldFinally,
+      holds: [holdRaceBefore.holds, holdsWithA2Pending, afterOldFinally.holds] }));
+
+  const releasedA2 = await evalInPage('window.__abReleaseDelayedHold(0)');
+  const holdRaceAgreement = await agree({ tries: 100, gap: 100 });
+  let holdRaceReports = await reportCount();
+  for (let attempt = 0; attempt < 50 && holdRaceReports.done !== holdRaceReports.sent; attempt++) {
+    await sleep(100);
+    holdRaceReports = await reportCount();
+  }
+  const afterHoldRace = (await held()).find(element => element.id === 'auth');
+  check('the second A hold remains owned and its edit persists',
+    releasedA2?.board === BOARD && holdRaceAgreement.agreed
+      && holdRaceReports.done === holdRaceReports.sent
+      && beforeSecondHold && afterHoldRace
+      && Math.abs(afterHoldRace.x - (beforeSecondHold.x + 13)) < 0.001,
+    JSON.stringify({ releasedA2, before: beforeSecondHold?.x, after: afterHoldRace?.x,
+      reports: [holdRaceReports.done, holdRaceReports.sent],
+      divergences: (holdRaceAgreement.divergences ?? []).slice(0, 3) }));
 
   // --- the session ---------------------------------------------------------
 

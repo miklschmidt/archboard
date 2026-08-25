@@ -156,7 +156,11 @@ _Avoid_: scene, board copy, snapshot, cache
 
 **Change report**:
 The element upserts and deletions a pane computes by comparing its scene with
-its baseline. The server applies the report and returns the resulting board.
+its baseline. The server persists the report before answering. An ordinary
+human report receives compact canonical corrections plus the written board's
+fingerprint and version; an agent report receives its touched elements and
+fingerprint, and receives the resulting board only when it explicitly asks for
+the document.
 _Avoid_: sync, save, scene replacement, patch
 
 **Doing**:

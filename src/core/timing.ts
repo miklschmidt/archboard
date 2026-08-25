@@ -29,7 +29,9 @@
 /**
  * The fixed deadline from the first unsent content change to a progress
  * report when later changes show work is continuing. Later changes do not
- * restart it; without one, the final dirty state waits for the idle deadline.
+ * restart it. If the next change arrives after this deadline but before idle,
+ * the elapsed deadline makes that progress immediately due; without a next
+ * change, the final dirty state waits for the idle deadline.
  *
  * A user edit should be on the server before they finish saying what they
  * did. The report is a delta, not the scene, so this can be short without

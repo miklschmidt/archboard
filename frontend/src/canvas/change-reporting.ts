@@ -39,6 +39,7 @@ export interface ChangeReportingState {
   userInteracted: boolean
   progressTimerScheduled: boolean
   progressHasContinuation: boolean
+  progressDeadlineElapsed: boolean
   idleTimerScheduled: boolean
   retryTimerScheduled: boolean
   deliveryQueued: boolean
@@ -127,6 +128,7 @@ export function initialState(): ChangeReportingState {
     userInteracted: false,
     progressTimerScheduled: false,
     progressHasContinuation: false,
+    progressDeadlineElapsed: false,
     idleTimerScheduled: false,
     retryTimerScheduled: false,
     deliveryQueued: false,
@@ -308,10 +310,18 @@ function scheduleDelivery(
 ): ChangeReportingState {
   let next = state
   if (!state.progressTimerScheduled && !state.deliveryQueued) {
+    const overdue = contentEdit && state.progressDeadlineElapsed
     effects.push({
-      type: 'start_progress_timer', delayMs: REPORT_PROGRESS_MS, generation: state.generation
+      type: 'start_progress_timer',
+      delayMs: overdue ? 0 : REPORT_PROGRESS_MS,
+      generation: state.generation
     })
-    next = { ...next, progressTimerScheduled: true, progressHasContinuation: false }
+    next = {
+      ...next,
+      progressTimerScheduled: true,
+      progressHasContinuation: overdue,
+      progressDeadlineElapsed: false
+    }
   } else if (state.progressTimerScheduled && contentEdit) {
     // The progress deadline is deliberately non-restarting. It only delivers
     // while work is continuing; a lone final edit belongs to the idle deadline.
@@ -334,6 +344,7 @@ function cancelDeliveryTimers(
     ...state,
     progressTimerScheduled: false,
     progressHasContinuation: false,
+    progressDeadlineElapsed: false,
     idleTimerScheduled: false
   }
 }
@@ -393,6 +404,7 @@ function beginReport(
       withheldIds,
       fullReport
     },
+    progressDeadlineElapsed: false,
     deliveryQueued: false
   }
 }
@@ -493,9 +505,14 @@ function timerFired(
   effects: ChangeReportingEffect[]
 ): ChangeReportingState {
   const ready = which === 'progress'
-    ? { ...state, progressTimerScheduled: false, progressHasContinuation: false }
+    ? {
+        ...state,
+        progressTimerScheduled: false,
+        progressHasContinuation: false,
+        progressDeadlineElapsed: !state.progressHasContinuation
+      }
     : which === 'idle'
-      ? { ...state, idleTimerScheduled: false }
+      ? { ...state, idleTimerScheduled: false, progressDeadlineElapsed: false }
       : { ...state, retryTimerScheduled: false }
   if (which === 'progress' && !state.progressHasContinuation) return ready
   return beginReport(ready, event.scene, event.withheldIds, effects)
@@ -688,6 +705,8 @@ export function reduce(state: ChangeReportingState, event: ChangeReportingEvent)
         state: {
           ...state,
           progressTimerScheduled: false,
+          progressHasContinuation: false,
+          progressDeadlineElapsed: false,
           idleTimerScheduled: false,
           retryTimerScheduled: false,
           deliveryQueued: false

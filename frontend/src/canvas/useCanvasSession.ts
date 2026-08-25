@@ -889,8 +889,10 @@ export function useCanvasSession({
       dispatchReporting({ type: 'board_adopted' })
       if (holdTimerRef.current) clearTimeout(holdTimerRef.current)
       holdTimerRef.current = null
+      // Invalidate the attempt by generation rather than erasing its identity.
+      // If this board name returns before the old promise settles, the older
+      // attempt must remain distinguishable from the new one.
       holdAttemptGenerationRef.current += 1
-      holdAttemptRef.current = null
       // A hold belongs to the board it was taken on, and this pane has stopped
       // looking at that board.
       if (holdingRef.current) {
