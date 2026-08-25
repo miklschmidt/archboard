@@ -55,7 +55,7 @@ const { resolvePaneSpec, soloPane, panesInOrder, MAX_PANES } = await import(src(
 const { planPromotion } = await import(src('core/promote.ts'));
 const {
   boardKey, makeIdentity, parseBoardKey, boardDisplayName,
-  normalizeBoardKey, vaultPathFor, listBoards, identityFrontmatter
+  normalizeBoardKey, vaultPathFor, listBoards, identityFrontmatter, renderBoardNote
 } = await import(src('core/board.ts'));
 // `board open`'s reader lives with the per-request one now, on top of the same
 // `readNoteFile` (TASK-089).
@@ -416,12 +416,87 @@ try {
     try { await fetch(`${base}/health`); break; } catch { await sleep(100); }
   }
 
+  // Zod receives null here because that is exactly what JSON.stringify does
+  // to a non-finite number. The server must name the field, not merely say the
+  // number was invalid.
+  const invalidPane = await api('POST', '/api/panes', {
+    clientId: 'invalid-pane', paneId: 'invalid-pane', board: 'scratch',
+    primary: true, focused: true, elementCount: 0,
+    rect: { x: 0, y: 0, width: 640, height: 800 },
+    viewport: { x: null, y: 0, width: 640, height: 800, zoom: 1 }
+  });
+  check('invalid pane telemetry is a client error', invalidPane.status === 400);
+  check('  and names the exact field path that failed',
+    /viewport\.x/.test(invalidPane.body?.error ?? ''), invalidPane.body?.error);
+
+  // A note can predate this invariant. Opening it must use the same visible
+  // error path as any other board-open failure and must not repair its bytes.
+  const legacyIdentity = makeIdentity({ board: 'legacy-geometry' });
+  const legacyFile = vaultPathFor(legacyIdentity);
+  const legacyNote = renderBoardNote({
+    type: 'excalidraw', version: 2,
+    elements: [{
+      id: 'helv', type: 'text', x: 40, y: 60, text: 'legacy',
+      fontFamily: 2, autoResize: true, isDeleted: false
+    }],
+    appState: {}, files: {}
+  }, null, legacyIdentity);
+  fs.writeFileSync(legacyFile, legacyNote);
+  const legacyOpen = await api('POST', '/api/boards/open', { board: 'legacy-geometry' });
+  check('a malformed legacy note is refused through board open', legacyOpen.status === 400,
+    legacyOpen.body?.error);
+  check('  with the element, type and every invalid field named',
+    /helv \(text\): width, height/.test(legacyOpen.body?.error ?? ''), legacyOpen.body?.error);
+  check('  without rewriting the malformed note', fs.readFileSync(legacyFile, 'utf8') === legacyNote);
+  const afterLegacyRefusal = await api('GET', '/api/boards');
+  check('  and without registering an empty stand-in board',
+    !(afterLegacyRefusal.body?.open ?? []).some(board => board.key === 'legacy-geometry'));
+
   // Two boards to compare, made before anything is on screen — which is
   // allowed, and reported as such.
   const madeCurrent = await api('POST', '/api/boards/new', { board: 'payments', level: 'system' });
   check('a board can be started with no pane open', madeCurrent.status === 200);
   check('  and it says nothing is showing it', madeCurrent.body?.pane === null);
   await api('POST', '/api/boards/new', { board: 'payments@option-a', level: 'system' });
+
+  // The write boundary judges the complete request-local document once. One
+  // good statement beside one malformed Helvetica text is no write at all.
+  await api('POST', '/api/boards/new', { board: 'geometry-write', level: 'service' });
+  const seededGeometry = await api('POST', '/api/elements?board=geometry-write', {
+    id: 'seed', type: 'rectangle', x: 0, y: 0, width: 120, height: 60
+  });
+  check('a valid geometry fixture is persisted', seededGeometry.status === 200,
+    seededGeometry.body?.error);
+  const geometryInfo = await api('GET', '/api/boards/info?board=geometry-write');
+  const geometryFile = geometryInfo.body?.file;
+  const geometryBefore = fs.readFileSync(geometryFile);
+  const mixedGeometry = await api('POST', '/api/elements/batch?board=geometry-write', {
+    elements: [
+      { id: 'would-have-landed', type: 'rectangle', x: 200, y: 0, width: 120, height: 60 },
+      { id: 'helvetica', type: 'text', x: 20, y: 120, text: 'unmeasurable', fontFamily: 2 }
+    ]
+  });
+  check('a mixed valid and malformed agent batch is refused', mixedGeometry.status === 400,
+    mixedGeometry.body?.error);
+  check('  and identifies the malformed element and both fields',
+    /helvetica \(text\): width, height/.test(mixedGeometry.body?.error ?? ''), mixedGeometry.body?.error);
+  check('  without changing one byte of the note',
+    fs.readFileSync(geometryFile).equals(geometryBefore));
+  const afterMixedGeometry = await api('GET', '/api/elements?board=geometry-write');
+  check('  or applying the valid half in memory',
+    afterMixedGeometry.body?.count === 1 && afterMixedGeometry.body?.elements?.[0]?.id === 'seed');
+
+  const humanGeometry = await api('POST', '/api/elements/changes?board=geometry-write', {
+    upserts: [{
+      id: 'browser-text', type: 'text', x: 40, y: 160, text: 'browser',
+      fontFamily: 2, autoResize: true
+    }],
+    deletes: [], clientId: 'a-browser'
+  });
+  check('the human change path refuses the same malformed geometry', humanGeometry.status === 400,
+    humanGeometry.body?.error);
+  check('  and leaves the note byte-identical too',
+    fs.readFileSync(geometryFile).equals(geometryBefore));
 
   const left = await openPane('p-left', 0, { primary: true, focused: true });
   check('a fresh pane holds the scratch board, so there is something to name',
@@ -1474,7 +1549,8 @@ try {
       const note = fs.readFileSync(file, 'utf-8');
       fs.writeFileSync(file, note.replace(
         '"id": "ours1"',
-        `"id": "${theirs}", "width": 999}, {"id": "ours1"`
+        `"id": "${theirs}", "type": "rectangle", "x": 800, "y": 800, ` +
+        `"width": 999, "height": 40}, {"id": "ours1"`
       ));
       const refused = await scratchApi('POST', `/api/elements?board=${key}`, {
         id: 'lost1', type: 'ellipse', x: 5, y: 5, width: 20, height: 20

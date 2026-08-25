@@ -67,6 +67,7 @@ import {
   versionMove,
   versionNumber
 } from './board-version.js';
+import { validateRenderGeometry } from './geometry.js';
 import { derivedId, isBlockId, mintId } from './ids.js';
 import {
   isObsidianExcalidrawMd,
@@ -171,6 +172,11 @@ export function ingestScene(
     taken.add(element.id);
     elements.set(element.id, element);
   }
+
+  // A note already in the vault gets no silent repair. Refuse the whole scene
+  // here, before any caller can register it or send it to a pane, and let the
+  // existing board-open error path put the actionable geometry error on screen.
+  validateRenderGeometry(elements.values());
 
   const files = new Map<string, ExcalidrawFile>();
   if (sceneFiles && typeof sceneFiles === 'object') {

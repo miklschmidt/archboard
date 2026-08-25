@@ -34,6 +34,32 @@ export interface Measurable {
   points?: unknown;
 }
 
+export interface RenderGeometryElement extends Measurable {
+  id?: unknown;
+  type?: unknown;
+  isDeleted?: unknown;
+}
+
+export interface InvalidRenderGeometry {
+  id: string;
+  type: string;
+  fields: Array<'x' | 'y' | 'width' | 'height'>;
+}
+
+/** A complete document cannot be handed to Excalidraw safely. */
+export class RenderGeometryError extends Error {
+  constructor(readonly invalid: InvalidRenderGeometry[]) {
+    const details = invalid
+      .map(element => `${element.id} (${element.type}): ${element.fields.join(', ')}`)
+      .join('; ');
+    super(
+      `Invalid render geometry: ${details}. ` +
+      'Every live element needs finite x, y, width and height. Correct the element geometry and try again.'
+    );
+    this.name = 'RenderGeometryError';
+  }
+}
+
 /** An axis-aligned box in scene coordinates, in the element's own vocabulary. */
 export interface Extent {
   x: number;
@@ -44,6 +70,30 @@ export interface Extent {
 
 const finite = (v: unknown): number | undefined =>
   typeof v === 'number' && Number.isFinite(v) ? v : undefined;
+
+/**
+ * Refuse a document Excalidraw cannot render without producing a non-finite
+ * camera. Report the whole document in one pass so a caller can repair every
+ * offending element rather than discovering one field per write.
+ *
+ * Tombstones are intentionally ignored. Excalidraw does not render them, and
+ * malformed history must not prevent a valid live document from being saved.
+ */
+export function validateRenderGeometry(elements: Iterable<RenderGeometryElement>): void {
+  const invalid: InvalidRenderGeometry[] = [];
+  for (const element of elements) {
+    if (element.isDeleted === true) continue;
+    const fields = (['x', 'y', 'width', 'height'] as const)
+      .filter(field => finite(element[field]) === undefined);
+    if (fields.length === 0) continue;
+    invalid.push({
+      id: typeof element.id === 'string' && element.id ? element.id : '<unnamed>',
+      type: typeof element.type === 'string' && element.type ? element.type : '<unknown>',
+      fields
+    });
+  }
+  if (invalid.length > 0) throw new RenderGeometryError(invalid);
+}
 
 /** The default local path for a new straight linear element. */
 export const DEFAULT_LINEAR_POINTS = [[0, 0], [100, 0]] as const;
