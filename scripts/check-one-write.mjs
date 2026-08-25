@@ -28,6 +28,7 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isDeepStrictEqual } from 'node:util';
 import { withDoing } from './lib/doing.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -354,11 +355,24 @@ try {
 
   // What the browser sends is unchanged: no origin, so `frontend_sync` and a
   // human at the feed.
-  await api('POST', `/api/elements/changes${board}`, {
+  const humanCreation = await api('POST', `/api/elements/changes${board}`, {
     upserts: [{ id: 'user-drawn', type: 'rectangle', x: 6000, y: 6000, width: 200, height: 100 }],
     deletes: [],
     clientId: 'pane'
   });
+  assert(humanCreation.document === undefined,
+    `a human creation should return corrections, not the whole board: ${JSON.stringify(humanCreation)}`);
+  const humanAck = await api('POST', `/api/elements/changes${board}`, {
+    upserts: [{ id: 'user-drawn', x: 6001 }],
+    deletes: [],
+    clientId: 'pane'
+  });
+  assert(humanAck.document === undefined &&
+    humanAck.corrections?.upserts?.length === 0 && humanAck.corrections?.deletes?.length === 0,
+    `an ordinary human report should return a compact no-correction acknowledgement: ${JSON.stringify(humanAck)}`);
+  assert(typeof humanAck.fingerprint?.note === 'string' &&
+    typeof humanAck.fingerprint?.version === 'number',
+    `a human acknowledgement should preserve fingerprint/version semantics: ${JSON.stringify(humanAck.fingerprint)}`);
   scene = await byId();
   assert(scene.get('user-drawn').source === 'frontend_sync',
     'a report with no origin should be stamped frontend_sync, exactly as before');
@@ -368,7 +382,58 @@ try {
   assert(events.length > 0 && events.every((event) => event.origin === 'human'),
     `a report with no origin is a user edit: ${JSON.stringify(events.map((e) => e.origin))}`);
 
-  const cursor = feed.cursor;
+  // Settlement can change more than the submitted delta. The backstop id
+  // rename also fills rawText, and the compact answer must describe the exact
+  // canonical document without returning the whole board.
+  const foreignTextId = 'text-element-minted-by-a-browser';
+  const correctionAck = await api('POST', `/api/elements/changes${board}`, {
+    upserts: [{
+      id: foreignTextId, type: 'text', text: 'Canonical', x: 6200, y: 6200,
+      width: 120, height: 24, fontSize: 20, fontFamily: 1
+    }],
+    deletes: [],
+    clientId: 'pane'
+  });
+  const correctedText = correctionAck.corrections?.upserts?.find((element) => element.type === 'text');
+  assert(correctionAck.document === undefined &&
+    correctionAck.corrections?.deletes?.includes(foreignTextId) &&
+    correctedText?.id?.length <= 8 && correctedText?.rawText === 'Canonical',
+    `canonical settlement should answer as delete plus upsert: ${JSON.stringify(correctionAck.corrections)}`);
+  scene = await byId();
+  const persistedText = scene.get(correctedText?.id);
+  assert(persistedText?.text === correctedText?.text && persistedText?.rawText === correctedText?.rawText,
+    'the canonical correction should be the exact text document persisted and read back');
+
+  await api('POST', '/api/boards/new', { board: 'ack-corrections' });
+  await api('POST', '/api/elements/changes?board=ack-corrections', {
+    origin: 'agent',
+    upserts: [
+      { id: 'ack-box', type: 'rectangle', x: 0, y: 0, width: 100, height: 60 },
+      {
+        id: 'ack-arrow', type: 'arrow', x: 100, y: 30, width: 100, height: 0,
+        points: [[0, 0], [100, 0]], start: { id: 'ack-box' }
+      }
+    ]
+  });
+  const outsideDeltaAck = await api('POST', '/api/elements/changes?board=ack-corrections', {
+    clientId: 'pane',
+    upserts: [{ id: 'ack-box', x: 20, boundElements: [] }],
+    deletes: []
+  });
+  const correctedBox = outsideDeltaAck.corrections?.upserts?.find(element => element.id === 'ack-box');
+  assert(correctedBox?.boundElements?.some(bound => bound.id === 'ack-arrow'),
+    `a human acknowledgement should expose an input-conversion repair outside the submitted delta: ` +
+    JSON.stringify(outsideDeltaAck.corrections));
+  const ackScene = new Map((await api('GET', '/api/elements?board=ack-corrections')).elements
+    .map(element => [element.id, element]));
+  assert(isDeepStrictEqual(correctedBox, ackScene.get('ack-box')),
+    'the route correction for an input-conversion repair should exactly equal the persisted element');
+
+  // Return the agent client to scratch for the rest of this file.
+  setRequestedBoard('scratch');
+
+  await sleep(SETTLE_MS * 4);
+  const cursor = (await api('GET', `/api/changes?board=scratch&since=${feed.cursor}`))?.cursor ?? feed.cursor;
   await ops.alignElements(['user-drawn', 'box-1'], 'top');
   scene = await byId();
   assert(scene.get('user-drawn').source === 'frontend_sync',

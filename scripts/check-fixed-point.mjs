@@ -99,13 +99,13 @@ const {
   PANE_DEBOUNCE_MS,
   PANE_LAYOUT_TIMEOUT_MS,
   PANE_SETTLE_CAP_MS,
-  REPORT_DEBOUNCE_MS
+  REPORT_PROGRESS_MS
 } = await import(src('core/timing.ts'));
 
 // Browser waits are observations with a deadline, not guessed pauses. The poll
 // cadence follows the two browser debounces, and the outer cap is the same one
 // the server uses while waiting for a pane to exist.
-const BROWSER_POLL_MS = Math.floor(Math.min(PANE_DEBOUNCE_MS, REPORT_DEBOUNCE_MS) / 3);
+const BROWSER_POLL_MS = Math.floor(Math.min(PANE_DEBOUNCE_MS, REPORT_PROGRESS_MS) / 3);
 const PANE_SUPPRESSION_MARGIN_MS = Math.ceil(PANE_DEBOUNCE_MS / 3);
 const PANE_SUPPRESSION_WAIT_MS = PANE_DEBOUNCE_MS + PANE_SUPPRESSION_MARGIN_MS;
 

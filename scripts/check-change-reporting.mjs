@@ -9,7 +9,8 @@ import { fileURLToPath } from 'node:url'
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..')
 const reporting = await import(join(repoRoot, 'frontend', 'src', 'canvas', 'change-reporting.ts'))
 const {
-  hasPendingEdits, initialState, mergeIncoming, reduce, reportsSettled, userHasInteracted
+  hasPendingEdits, initialState, mergeIncoming, mergeIncomingDeletes, reduce, reportsSettled,
+  userHasInteracted
 } = reporting
 
 let failures = 0
@@ -22,7 +23,7 @@ const check = (label, condition, detail = '') => {
 
 const expectedRuntimeExports = new Set([
   'EMPTY_WITHHELD', 'carryWithheld', 'hasPendingEdits', 'initialState', 'mergeIncoming',
-  'needsFullReport', 'reduce', 'reportsSettled', 'userHasInteracted'
+  'mergeIncomingDeletes', 'needsFullReport', 'reduce', 'reportsSettled', 'userHasInteracted'
 ])
 const unexpectedRuntimeExports = Object.keys(reporting)
   .filter(name => !expectedRuntimeExports.has(name))
@@ -79,14 +80,16 @@ class ScriptedServer {
     this.requests.push(effect)
   }
 
-  accept() {
+  accept(corrections = { upserts: [], deletes: [] }) {
     const request = this.requests.shift()
     if (!request) throw new Error('No change report is waiting for a server reply')
     const byId = new Map(this.document.map(element => [element.id, element]))
     for (const id of request.report.deletes) byId.delete(id)
     for (const element of request.report.upserts) byId.set(element.id, copy(element))
+    for (const id of corrections.deletes) byId.delete(id)
+    for (const element of corrections.upserts) byId.set(element.id, copy(element))
     this.document = [...byId.values()]
-    return { request, document: copy(this.document) }
+    return { request, corrections }
   }
 
   refuse() {
@@ -102,6 +105,8 @@ class Harness {
   clock = new ManualClock()
   server
   withheldIds = []
+  sceneUpdates = 0
+  holdRequests = 0
 
   constructor(scene = initialScene()) {
     this.scene = copy(scene)
@@ -124,12 +129,21 @@ class Harness {
 
   execute(effect) {
     switch (effect.type) {
-      case 'cancel_report_timer':
-        this.clock.cancel('report')
+      case 'cancel_progress_timer':
+        this.clock.cancel('progress')
         break
-      case 'start_report_timer':
-        this.clock.start('report', effect.delayMs, () => this.dispatch({
-          type: 'report_timer_fired', generation: effect.generation,
+      case 'start_progress_timer':
+        this.clock.start('progress', effect.delayMs, () => this.dispatch({
+          type: 'progress_timer_fired', generation: effect.generation,
+          scene: copy(this.scene), withheldIds: this.withheldIds
+        }))
+        break
+      case 'cancel_idle_timer':
+        this.clock.cancel('idle')
+        break
+      case 'start_idle_timer':
+        this.clock.start('idle', effect.delayMs, () => this.dispatch({
+          type: 'idle_timer_fired', generation: effect.generation,
           scene: copy(this.scene), withheldIds: this.withheldIds
         }))
         break
@@ -143,6 +157,7 @@ class Harness {
         }))
         break
       case 'apply_server_update':
+        this.sceneUpdates += 1
         if (effect.update.elements) this.scene = copy(effect.update.elements)
         this.dispatch({
           type: 'server_update_applied', generation: effect.generation,
@@ -165,10 +180,12 @@ class Harness {
         this.server.receive(effect)
         break
       case 'send_beacon':
-      case 'take_hold':
       case 'note_change':
       case 'release_if_idle':
       case 'publish_status':
+        break
+      case 'take_hold':
+        this.holdRequests += 1
         break
       default:
         throw new Error(`Unhandled effect ${effect.type}`)
@@ -194,15 +211,20 @@ class Harness {
     this.dispatch({ type: 'scene_changed', scene: copy(this.scene) })
   }
 
+  remove(id) {
+    this.scene = this.scene.filter(element => element.id !== id)
+    this.dispatch({ type: 'scene_changed', scene: copy(this.scene) })
+  }
+
   due() {
     this.clock.advance(10_000)
   }
 
-  accept() {
-    const { request, document } = this.server.accept()
+  accept(corrections = { upserts: [], deletes: [] }) {
+    const { request } = this.server.accept(corrections)
     this.dispatch({
       type: 'report_succeeded', generation: request.generation,
-      document, currentScene: copy(this.scene)
+      corrections, currentScene: copy(this.scene)
     })
     this.clock.advance(0)
   }
@@ -213,11 +235,11 @@ class Harness {
   }
 
   applyServerElements(incoming) {
-    const { elements, touchedIds } = mergeIncoming(this.scene, incoming)
+    const { elements } = mergeIncoming(this.scene, incoming, this.state.baseline)
     this.dispatch({
       type: 'server_update_requested',
       update: { elements, captureUpdate: 'never' },
-      baselineUpdate: { type: 'touch', ids: touchedIds }
+      baselineUpdate: { type: 'touch', elements: incoming }
     })
   }
 }
@@ -276,6 +298,141 @@ class Harness {
   h.step('the later user edit starts its report', () => h.due())
   h.step('the later user edit is accepted', () => h.accept())
   check('the server holds the later user edit', h.server.document.find(element => element.id === 'a').x === 20)
+}
+
+// An ordinary acknowledgement advances the baseline without touching the scene.
+{
+  const h = new Harness()
+  const updatesBefore = h.sceneUpdates
+  h.edit('a', { x: 10 })
+  h.due()
+  h.accept()
+  check('an acknowledgement with no correction does not replace the scene',
+    h.sceneUpdates === updatesBefore,
+    `${updatesBefore} -> ${h.sceneUpdates}`)
+  check('  and the accepted scene and server baseline agree exactly',
+    !hasPendingEdits(h.state, h.scene) && h.scene.find(element => element.id === 'a').x === 10)
+}
+
+// Canonical settlement can correct any element in the request-local document.
+{
+  const h = new Harness()
+  h.edit('a', { x: 10 })
+  h.due()
+  const correctedA = { ...h.scene.find(element => element.id === 'a'), x: 11, rawText: 'canonical' }
+  const correctedB = { ...h.scene.find(element => element.id === 'b'), y: 9 }
+  h.accept({ upserts: [correctedA, correctedB], deletes: [] })
+  check('canonical corrections include and apply an element outside the submitted delta',
+    h.scene.find(element => element.id === 'b').y === 9)
+  check('  and the pane converges exactly on the canonical server document',
+    JSON.stringify(h.scene) === JSON.stringify(h.server.document),
+    JSON.stringify(h.scene))
+  check('  with no correction left pending as a new human edit', !hasPendingEdits(h.state, h.scene))
+
+  const normalized = new Harness()
+  normalized.edit('a', { x: 10 })
+  normalized.due()
+  normalized.scene = normalized.scene.map(element =>
+    element.id === 'b' ? { ...element, boundElements: [] } : element)
+  normalized.accept({
+    upserts: [{ ...normalized.server.document.find(element => element.id === 'b'), boundElements: [{ id: 'edge', type: 'arrow' }] }],
+    deletes: []
+  })
+  check('a stale correction caused by post-send normalization stays pending and scheduled',
+    hasPendingEdits(normalized.state, normalized.scene) && !reportsSettled(normalized.state))
+}
+
+// Per-id freshness, rather than one document-wide edit counter, decides what is visible.
+{
+  const cases = [
+    ['move', initialScene(), 'a', { x: 10 }, { x: 20 }, { x: 11 }, element => element?.x === 20],
+    ['resize', initialScene(), 'a', { width: 130 }, { width: 150 }, { width: 140 }, element => element?.width === 150],
+    ['typing', [...initialScene(), { id: 'txt', type: 'text', text: 'A', x: 0, y: 120, version: 1 }],
+      'txt', { text: 'B' }, { text: 'C' }, { text: 'B', rawText: 'B' }, element => element?.text === 'C']
+  ]
+  for (const [name, scene, id, sentEdit, newerEdit, correction, kept] of cases) {
+    const h = new Harness(scene)
+    h.edit(id, sentEdit)
+    h.due()
+    h.edit(id, newerEdit)
+    h.accept({ upserts: [{ ...h.server.document.find(element => element.id === id), ...correction }], deletes: [] })
+    check(`a canonical correction does not disrupt a newer local ${name}`, kept(h.scene.find(element => element.id === id)))
+    h.due()
+    check(`  and the next ${name} delta converges from the canonical baseline`,
+      h.server.requests[0]?.report.upserts.some(element => element.id === id))
+    h.accept()
+  }
+
+  const h = new Harness()
+  h.edit('a', { x: 10 })
+  h.due()
+  h.remove('a')
+  const canonical = { ...h.server.document.find(element => element.id === 'a'), x: 11 }
+  h.accept({ upserts: [canonical], deletes: [] })
+  check('a canonical correction does not restore an element deleted after send',
+    !h.scene.some(element => element.id === 'a'))
+  h.due()
+  check('  and the newer deletion is the next converging delta',
+    h.server.requests[0]?.report.deletes.includes('a'))
+  h.accept()
+}
+
+// One request may be in flight and only one latest delivery may queue behind it.
+{
+  const h = new Harness()
+  h.edit('a', { x: 10 })
+  h.clock.advance(200)
+  h.edit('a', { x: 20 })
+  h.clock.advance(200)
+  check('the fixed progress deadline does not restart on continuous edits',
+    h.server.requests.length === 1 && h.server.requests[0].report.upserts.find(element => element.id === 'a')?.x === 20)
+  h.clock.advance(100)
+  h.edit('a', { x: 30 })
+  h.clock.advance(400)
+  h.edit('a', { x: 40 })
+  check('a due delivery queues behind the one in flight without request fan-out',
+    h.server.requests.length === 1 && h.state.deliveryQueued)
+  h.accept()
+  check('the queued delivery recomputes one latest delta after acknowledgement',
+    h.server.requests.length === 1 && h.server.requests[0].report.upserts.find(element => element.id === 'a')?.x === 40)
+  h.accept()
+  h.clock.advance(2000)
+  check('the trailing idle deadline sends no no-op report', h.server.requests.length === 0)
+}
+
+// Camera and selection onChange calls carry the same content stamp.
+{
+  const h = new Harness()
+  const holds = h.holdRequests
+  h.dispatch({ type: 'scene_changed', scene: copy(h.scene) })
+  h.dispatch({ type: 'scene_changed', scene: copy(h.scene) })
+  check('camera-only changes start neither a hold nor a content report',
+    h.holdRequests === holds && reportsSettled(h.state))
+}
+
+// Incoming agent news advances the baseline but never overwrites a dirty id.
+{
+  const h = new Harness()
+  h.edit('a', { x: 70 })
+  h.applyServerElements([{ ...h.server.document.find(element => element.id === 'a'), x: 25 }])
+  h.clock.advance(0)
+  check('an incoming agent update preserves the local dirty move',
+    h.scene.find(element => element.id === 'a').x === 70)
+  const afterDelete = mergeIncomingDeletes(h.scene, ['a'], h.state.baseline)
+  check('an incoming agent deletion preserves the local dirty element',
+    afterDelete.some(element => element.id === 'a'))
+
+  const deletedLocally = new Harness()
+  deletedLocally.remove('a')
+  deletedLocally.applyServerElements([
+    { ...deletedLocally.server.document.find(element => element.id === 'a'), x: 25 }
+  ])
+  deletedLocally.clock.advance(0)
+  check('an incoming agent update does not restore an id deleted locally after the baseline',
+    !deletedLocally.scene.some(element => element.id === 'a'))
+  deletedLocally.due()
+  check('  and the local deletion remains pending against the advanced server baseline',
+    deletedLocally.server.requests[0]?.report.deletes.includes('a'))
 }
 
 // A server update can be applied while a user report is waiting for its reply.

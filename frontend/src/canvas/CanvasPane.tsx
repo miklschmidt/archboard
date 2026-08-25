@@ -107,12 +107,9 @@ export function CanvasPane({
     >
       <div className="pane-canvas" ref={session.attachPaneElement}>
         <Excalidraw
-          // Somebody else is writing this board, or this pane has lost the
-          // socket the lock is broadcast over and cannot know (ADR 0016). A
-          // canvas applies a drag the instant the pointer moves, so the edit
-          // has to be refused before it happens rather than the write after it.
-          // View mode is Excalidraw's own word for that: the scene still pans,
-          // zooms and renders, and nothing about it can be edited.
+          // A disconnected pane fails closed because it cannot hear lock or
+          // board news. A connected pane stays locally editable while the
+          // vault mutex orders persistence, even when an agent holds the board.
           viewModeEnabled={session.readOnly}
           excalidrawAPI={(instance: ExcalidrawImperativeAPI) => {
             setApi(instance)
@@ -122,9 +119,9 @@ export function CanvasPane({
             appliedHashRef.current = getLibraryItemsHash(next)
             onLibraryChange(next)
           }}
-          onChange={(_elements, appState) => {
+          onChange={(elements, appState) => {
             if (appState?.theme && appState.theme !== theme) onThemeChange(appState.theme)
-            session.handleChange(appState)
+            session.handleChange(elements, appState)
           }}
           // Excalidraw defaults new shapes to a transparent background, and a
           // transparent shape is only hit-testable on its stroke — so a box

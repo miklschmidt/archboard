@@ -95,11 +95,13 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // from src/core/timing.ts rather than copied, because a copy here would keep
 // passing after somebody shortened the debounce and would stop testing the
 // thing it names.
-const { LOCK_FREE_LINGER_MS, LOCK_RENEW_MS, REPORT_DEBOUNCE_MS } = await import(src('core/timing.ts'));
+const {
+  LOCK_FREE_LINGER_MS, LOCK_RENEW_MS, PANE_DEBOUNCE_MS, REPORT_PROGRESS_MS
+} = await import(src('core/timing.ts'));
 // What the server measures a text element to, so the check can wait until the
 // page agrees rather than until a font has probably loaded.
 const { measureLineWidth } = await import(src('core/measure-text.ts'));
-const MID_DEBOUNCE_MS = Math.round(REPORT_DEBOUNCE_MS * 0.3);
+const MID_DEBOUNCE_MS = Math.round(REPORT_PROGRESS_MS * 0.3);
 
 const IGNORED = new Set([
   'version', 'versionNonce', 'updated',
@@ -183,12 +185,17 @@ const readScene = () => evalInPage(`(() => {
 // which were provoked by which.
 const INSTALL_COUNTER = `(() => {
   if (window.__abReports) return { already: true };
-  window.__abReports = { sent: 0, done: 0 };
+  window.__abReports = {
+    sent: 0, done: 0, holds: 0, releases: 0,
+    acknowledgements: 0, correctionUpserts: 0, correctionDeletes: 0, lastCorrections: null
+  };
   const original = window.fetch;
   window.fetch = function (input, init) {
     const url = typeof input === 'string' ? input : (input && input.url) || '';
     const method = (init && init.method) || (input && input.method) || 'GET';
     const counted = method === 'POST' && url.includes('/api/elements/changes');
+    if (method === 'POST' && url.includes('/api/boards/hold/release')) window.__abReports.releases += 1;
+    else if (method === 'POST' && url.includes('/api/boards/hold')) window.__abReports.holds += 1;
     if (counted) window.__abReports.sent += 1;
     const answer = original.apply(this, arguments);
     if (!counted) return answer;
@@ -202,6 +209,14 @@ const INSTALL_COUNTER = `(() => {
       .then(r => {
         window.__abReports.done += 1;
         if (holdFor) window.__abAnsweredAt = performance.now();
+        r.clone().json().then(body => {
+          const corrections = body && body.corrections;
+          if (!corrections) return;
+          window.__abReports.acknowledgements += 1;
+          window.__abReports.correctionUpserts += corrections.upserts?.length || 0;
+          window.__abReports.correctionDeletes += corrections.deletes?.length || 0;
+          window.__abReports.lastCorrections = corrections;
+        }).catch(() => {});
         return r;
       });
   };
@@ -768,12 +783,14 @@ try {
     if (reports > (edit ? 1 : 0)) bounced += 1;
   }
 
+  const cycleReportStats = await reportCount();
   check(`${CYCLES} cycles of interleaved agent and human writes, and the two documents ` +
         'agreed after every one',
   agreedCycles === CYCLES,
   firstDivergence
     ? `first diverged on cycle ${firstDivergence.cycle} (agent ${firstDivergence.agentMove}, ` +
-        `human ${firstDivergence.humanMove}): ${firstDivergence.divergences.slice(0, 6).join(' | ')}`
+        `human ${firstDivergence.humanMove}): ${firstDivergence.divergences.slice(0, 6).join(' | ')}; ` +
+        `ack ${JSON.stringify(cycleReportStats.lastCorrections)}`
     : `${agreedCycles} of ${CYCLES} agreed`);
 
   if (firstDivergence && firstDivergence.divergences.length > 6) {
@@ -901,25 +918,25 @@ try {
   // `agree` would return on that and call it a pass.
   const drifted = (await held()).find(e => e.id === 'store');
   await evalInPage(`(() => {
-    window.__abDelayReport = ${Math.round(REPORT_DEBOUNCE_MS * 1.5)};
+    window.__abDelayReport = ${Math.round(REPORT_PROGRESS_MS * 1.5)};
     window.__abAnsweredAt = 0;
     window.__abApplyEdit({ kind: 'move', id: 'store', dx: 5, dy: 0 });
     setTimeout(() => {
       window.__abSecondEditAt = performance.now();
       window.__abApplyEdit({ kind: 'move', id: 'store', dx: 7, dy: 0 });
-    }, ${Math.round(REPORT_DEBOUNCE_MS * 1.15)});
+    }, ${Math.round(REPORT_PROGRESS_MS * 1.15)});
     return { armed: true };
   })()`);
-  await sleep(REPORT_DEBOUNCE_MS * 8);
+  await sleep(REPORT_PROGRESS_MS * 8);
 
   // Not vacuous: the second drag's own debounce really did expire before the
   // first report was answered, which is the collision this exists for.
   const flight = await evalInPage(
     '(() => ({ answeredAt: window.__abAnsweredAt, editedAt: window.__abSecondEditAt }))()');
   check('a second drag finishes its debounce while the first report is still in flight',
-    flight.answeredAt - flight.editedAt > REPORT_DEBOUNCE_MS,
+    flight.answeredAt - flight.editedAt > REPORT_PROGRESS_MS,
     `the answer was ${Math.round(flight.answeredAt - flight.editedAt)} ms behind the drag, ` +
-    `and the drag's debounce expired ${REPORT_DEBOUNCE_MS} ms after it`);
+    `and the drag's progress deadline expired ${REPORT_PROGRESS_MS} ms after it`);
 
   const bothDrags = await agree();
   check('  and the report whose debounce expired while it was in flight is not dropped',
@@ -1122,13 +1139,11 @@ try {
   check('  and the mark comes down, because the board is saving again',
     backToNormal.mark === null, backToNormal.mark);
 
-  // --- the pane refuses the edit before it begins -------------------------
+  // --- local editing stays live while the mutex orders persistence --------
   //
-  // ADR 0016's other half, and this is the only check with a renderer to ask.
-  // A canvas applies a drag as soon as the pointer moves, so a board somebody
-  // else is writing has to stop accepting edits *before* one begins; view
-  // mode is Excalidraw's own word for that, and reading it off the live app is
-  // the only way to know the pane really is refusing rather than intending to.
+  // The pane is optimistic only in its local Excalidraw scene. Persistence
+  // still waits for the same vault-backed mutex, and a failed hold remains
+  // pending rather than reloading away the person's edit.
 
   const viewMode = () => evalInPage(`(() => {
     const app = ${APP};
@@ -1147,14 +1162,30 @@ try {
   }, LOCK_RENEW_MS);
   await sleep(500);
   const taken = await viewMode();
-  check('  and stops accepting one as soon as somebody else takes the board',
-    taken.view === true, JSON.stringify(taken));
+  check('  and stays locally editable while somebody else has the mutex',
+    taken.view === false, JSON.stringify(taken));
+
+  const beforeDelayed = (await held()).find(element => element.id === 'auth');
+  const delayedEdit = await humanEdit({ kind: 'move', id: 'auth', dx: 23, dy: 0 });
+  const localDelayed = (await readScene()).elements.find(element => element.id === 'auth');
+  await sleep(REPORT_PROGRESS_MS + 250);
+  const serverDelayed = (await held()).find(element => element.id === 'auth');
+  check('a human edit remains visible after its first hold attempt loses',
+    delayedEdit.ok === true && localDelayed && beforeDelayed &&
+      Math.abs(localDelayed.x - (beforeDelayed.x + 23)) < 0.001,
+    JSON.stringify({ delayedEdit, local: localDelayed?.x, before: beforeDelayed?.x }));
+  check('  while persistence still waits for the authoritative mutex',
+    serverDelayed && beforeDelayed && Math.abs(serverDelayed.x - beforeDelayed.x) < 0.001,
+    `server x ${serverDelayed?.x}, local x ${localDelayed?.x}`);
 
   clearInterval(renewing);
   await api('POST', `/api/boards/hold/release?board=${BOARD}`, { clientId: 'another-writer' });
-  await sleep(LOCK_FREE_LINGER_MS + 600);
+  const delayedConvergence = await agree({ tries: 80, gap: 100 });
+  check('  and a later single-flight hold retry persists the still-visible edit',
+    delayedConvergence.agreed, (delayedConvergence.divergences ?? []).slice(0, 4).join(' | '));
+  await sleep(LOCK_FREE_LINGER_MS + 200);
   const back = await viewMode();
-  check('  and takes it back when they are done', back.view === false, JSON.stringify(back));
+  check('  and remains editable when the other writer is done', back.view === false, JSON.stringify(back));
 
   // --- a claim says whose board it is, then releases it -------------------
   //
@@ -1196,18 +1227,40 @@ try {
   const claimed = await bannerWhen(seen => seen.what !== null);
   check('a pane whose board an agent claimed says who has it and why',
     typeof claimed.what === 'string' && claimed.what.includes(claimWhy), JSON.stringify(claimed));
-  check('  and stops accepting edits, as for any other holder',
-    claimed.view === true, JSON.stringify(claimed));
+  check('  while keeping the local canvas editable',
+    claimed.view === false, JSON.stringify(claimed));
   check('  and offers the person the one thing they may always do',
     claimed.take === 'Take back control', JSON.stringify(claimed));
+
+  const beforeCamera = await reportCount();
+  await evalInPage(`(() => {
+    const app = ${APP};
+    const zoom = app.state.zoom?.value ?? 1;
+    app.updateScene({
+      appState: {
+        scrollX: app.state.scrollX + 35,
+        scrollY: app.state.scrollY - 20,
+        zoom: { value: zoom * 1.04 }
+      },
+      captureUpdate: 'NEVER'
+    });
+    return { moved: true };
+  })()`);
+  await sleep(PANE_DEBOUNCE_MS + 250);
+  const afterCamera = await reportCount();
+  check('panning and zooming a claimed board sends no hold or content report',
+    afterCamera.holds === beforeCamera.holds && afterCamera.sent === beforeCamera.sent,
+    JSON.stringify({ before: beforeCamera, after: afterCamera }));
 
   // And the step, under the overall reason, as the write lands (TASK-095). This is
   // the half a socket cannot answer: whether the user can
   // actually see what an agent is up to, or only that boxes moved.
   const step = 'moving the queue out of the payment path';
-  await api('POST', `/api/elements?board=${BOARD}&doing=${encodeURIComponent(step)}`, {
+  const claimedWrite = await api('POST', `/api/elements?board=${BOARD}&doing=${encodeURIComponent(step)}`, {
     type: 'rectangle', x: 820, y: 60, width: 60, height: 40
   });
+  check('  and the agent can still write under the claim after those camera changes',
+    claimedWrite.status === 200, `${claimedWrite.status} ${claimedWrite.body?.error ?? ''}`);
   const narrated = await bannerWhen(seen => seen.steps.some(line => line.includes(step)));
   check('  and the pane shows what the agent is doing right now, not only what it claimed the board for',
     narrated.steps.some(line => line.includes(step)), JSON.stringify(narrated.steps));
@@ -1218,11 +1271,68 @@ try {
   check('  and the bar carries the latest line too, for a pane the user is not viewing',
     typeof narrated.bar === 'string' && narrated.bar.includes(step), String(narrated.bar));
 
-  // One deliberate activation, not any pointer event. View mode still pans and
-  // zooms, so
-  // somebody reading what the agent is drawing must not end it by reading it —
-  // and nothing an agent wrote is put back by taking the board, so an accidental
-  // activation would leave a half-drawn board with nobody having decided anything.
+  // A real content drag is itself a deliberate takeover. It applies in the
+  // local scene first, then the existing hold route revokes the claim and the
+  // report waits for the same persisted-write mutex as every other writer.
+  const takeoverId = claimedWrite.body?.elements?.[0]?.id ?? claimedWrite.body?.element?.id;
+  const framedTakeover = await api('POST', '/api/viewport', { scrollToElementId: takeoverId });
+  check('  and the claimed element can be framed without taking the board',
+    framedTakeover.status === 200, `${framedTakeover.status} ${framedTakeover.body?.error ?? ''}`);
+  await sleep(700);
+  const queueBeforeTakeover = (await held()).find(element => element.id === takeoverId);
+  const dragPoint = await evalInPage(`(() => {
+    const app = ${APP};
+    const element = app.scene.getElementsIncludingDeleted()
+      .find(candidate => candidate.id === ${JSON.stringify(takeoverId)});
+    if (!element) return { error: 'takeover target is missing' };
+    const zoom = app.state.zoom?.value ?? 1;
+    return {
+      x: Math.round((element.x + 24 + app.state.scrollX) * zoom + app.state.offsetLeft),
+      y: Math.round((element.y + 24 + app.state.scrollY) * zoom + app.state.offsetTop)
+    };
+  })()`);
+  const countsBeforeTakeover = await reportCount();
+  if (!dragPoint.error) {
+    await browser(['mouse', 'move', String(dragPoint.x), String(dragPoint.y)]);
+    await browser(['mouse', 'down']);
+    for (let step = 1; step <= 4; step++) {
+      await browser(['mouse', 'move', String(dragPoint.x + step * 9), String(dragPoint.y)]);
+    }
+    await browser(['mouse', 'up']);
+  }
+  const queueLocalTakeover = (await readScene()).elements.find(element => element.id === takeoverId);
+  const queueServerBeforeReport = (await held()).find(element => element.id === takeoverId);
+  const countsAfterTakeover = await reportCount();
+  check('trusted pointer input remains locally responsive while a claim orders persistence',
+    queueBeforeTakeover && queueLocalTakeover &&
+      queueLocalTakeover.x > queueBeforeTakeover.x + 20,
+    JSON.stringify({ dragPoint, before: queueBeforeTakeover?.x, local: queueLocalTakeover?.x }));
+  check('  and the local drag is visible before its progress report persists',
+    queueServerBeforeReport && queueBeforeTakeover &&
+      Math.abs(queueServerBeforeReport.x - queueBeforeTakeover.x) < 0.001,
+    `server x ${queueServerBeforeReport?.x}, local x ${queueLocalTakeover?.x}`);
+  check('  with one single-flight hold request for the gesture',
+    countsAfterTakeover.holds - countsBeforeTakeover.holds === 1,
+    JSON.stringify({ before: countsBeforeTakeover, after: countsAfterTakeover }));
+  const takeoverAgreed = await agree({ tries: 80, gap: 100 });
+  check('  and the persisted board converges on that local drag',
+    takeoverAgreed.agreed, (takeoverAgreed.divergences ?? []).slice(0, 4).join(' | '));
+
+  const contentRevoked = await api('POST', `/api/elements?board=${BOARD}`, {
+    type: 'rectangle', x: 880, y: 880, width: 20, height: 20
+  });
+  check('a content edit revokes the claim and tells the agent at its next write',
+    contentRevoked.status === 409 && contentRevoked.body?.code === 'CLAIM_REVOKED',
+    `${contentRevoked.status} ${JSON.stringify(contentRevoked.body)?.slice(0, 160)}`);
+
+  const explicitWhy = 'checking the explicit take-back control';
+  await api('POST', `/api/boards/claim?board=${BOARD}`, { reason: explicitWhy });
+  const explicitClaim = await bannerWhen(seen => typeof seen.what === 'string' && seen.what.includes(explicitWhy));
+  check('the explicit take-back control remains available after content takeover was added',
+    explicitClaim.take === 'Take back control', JSON.stringify(explicitClaim));
+
+  // One deliberate activation remains available. Nothing an agent wrote is
+  // put back by taking the board, so accidental camera movement stays separate.
   // Guarded, because a missing button is one of the things this section exists
   // to catch, and clicking null would end the file instead of counting it.
   const activation = await evalInPage(`(() => {

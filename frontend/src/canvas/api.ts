@@ -62,16 +62,16 @@ export function fetchFiles(board: string | null) {
 }
 
 /**
- * Tell the server what changed, and get the board back.
+ * Tell the server what changed, and get a compact canonical acknowledgement.
  *
  * The board rides in the query string so that a switch landing mid-flight
  * files the change under the board it came from rather than the one now on
  * screen.
  *
- * `document` is the whole board as the server now holds it, and it is what
- * makes a write a resync rather than one more delta on a running total
- * (ADR 0015, TASK-074). It is safe to render outright because it was computed
- * from what this pane just sent.
+ * Ordinary human reports never return the whole board. The server compares the
+ * request-local post-conversion document with the exact document it persisted
+ * and returns only canonical corrections. A held-board full report keeps its
+ * explicit whole-document recovery answer.
  */
 export function reportChanges(
   board: string | null,
@@ -109,7 +109,11 @@ export interface ChangeReportReply {
   updated: number
   deleted: number
   count: number
-  /** The board, whole, as the server holds it now. */
+  /** Canonical changes made after input conversion and before persistence. */
+  corrections: { upserts: ServerElement[]; deletes: string[] }
+  /** The authoritative board fingerprint after persistence. */
+  fingerprint: { elements: number; note: string; version: number | null }
+  /** Only present for explicit held-board full-report recovery. */
   document?: ServerElement[]
   /** Set when this board has stopped saving: what is held, and the way out. */
   held?: BoardHold
