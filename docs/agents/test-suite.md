@@ -11,16 +11,16 @@ without anybody touching the workflow. `bun run test:suites`
 (`scripts/check-ci-suites.mjs`) fails when a `test:*` script is in neither the
 chain nor its skip list. Keep that list empty.
 
-The whole chain takes 171 seconds on a 13th-gen i7, of which the three browser
-checks are 62 (11 fixed-point, 13 typed-text, 38 live-session); of the rest,
+The whole chain's duration is machine-dependent. The four browser checks run
+sequentially; re-measure their contribution rather than trusting an old total. Of the rest,
 `test:mcp`, `test:boards` and `test:side-by-side` are two thirds. Re-measure
 rather than trust these.
 
-## The three browser checks
+## The four browser checks
 
 Everything else in `scripts/` stands a WebSocket in for a pane, which cannot
 catch a renderer disagreeing with us: a socket holds whatever it was sent.
-Three checks drive a real browser instead, and all three:
+Four checks drive a real browser instead, and all four:
 
 - refuse to claim a pass without `agent-browser` on PATH — they exit 2,
   "I could not run";
@@ -28,10 +28,26 @@ Three checks drive a real browser instead, and all three:
   steals focus under Hyprland and these run on every push;
 - run one after another, never at once. TASK-097 records that two of them
   sharing the machine is how one of them fails for no reason: contention
-  stretches a round trip past `REPORT_DEBOUNCE_MS`, which is exactly the
-  window live-session probes on purpose;
+  stretches request and frame observations that the checks probe on purpose;
 - skip the frontend build when `dist/frontend` is already newer than every
-  source, so the three build once between them.
+  source, so the four build once between them.
+
+### `bun run test:human-performance` (`scripts/check-human-edit-performance.mjs`, TASK-118)
+
+Keeps the measured 10,000-element human-only reproduction that attributed the
+stall to a multi-megabyte normal response and its whole-document browser
+reconciliation. It seeds a throwaway vault through the human report route,
+uses no agent-origin write in the measured window, delays report delivery so
+trusted drag, resize and typing overlap persistence, and records request body
+and response sizes, JSON work, frame gaps, hold/report/release counts and
+server fsync counts. A normal acknowledgement must be compact and
+document-free; a no-correction acknowledgement must perform no scene
+replacement.
+
+Its frame assertion is relative to the same run's median and deliberately
+loose. Do not replace it with a fixed millisecond gate: browser and runner speed
+are not the contract. The structural response/reconciliation assertions and
+the locally visible edits are the gate; timings remain diagnostic evidence.
 
 ### `bun run test:browser` (`scripts/check-fixed-point.mjs`, TASK-071)
 
@@ -79,10 +95,10 @@ element. Each case asserts that the pane and server documents agree and that
 the server contains the user's exact edit.
 
 It also owns the half of the board mutex only a renderer can answer
-(ADR 0016): the pane accepts a touch on a free board, refuses one the moment
-somebody else takes the board, and — with the canvas killed under it —
-assumes the board is held rather than free. That gate fails closed:
-`!connected || heldByOther`.
+(ADR 0016): a connected pane remains locally editable while another writer
+holds or claims the board, one single-flight hold retry eventually persists the
+edit, content revokes a claim, camera movement does not, and a disconnected
+pane still assumes the board is held rather than free.
 
 ### `bun run test:typing` (`scripts/check-typed-text.mjs`, TASK-098)
 

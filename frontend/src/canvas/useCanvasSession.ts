@@ -28,7 +28,8 @@ import type {
 } from '../types'
 import { cleanElementForExcalidraw, elementsForScene } from './elements'
 import {
-  carryWithheld, EMPTY_WITHHELD, hasPendingEdits, initialState, mergeIncoming, needsFullReport, reduce,
+  carryWithheld, EMPTY_WITHHELD, hasPendingEdits, initialState, mergeIncoming, mergeIncomingDeletes,
+  needsFullReport, reduce,
   reportsSettled, userHasInteracted,
   type ChangeReportingEffect, type ChangeReportingEvent,
   type ChangeReportingState, type SceneElement, type SceneUpdate
@@ -98,15 +99,16 @@ function assertNever(value: never): never {
 
 interface ReportingRuntime {
   state: ChangeReportingState
-  reportTimer: ReturnType<typeof setTimeout> | null
+  progressTimer: ReturnType<typeof setTimeout> | null
+  idleTimer: ReturnType<typeof setTimeout> | null
   retryTimer: ReturnType<typeof setTimeout> | null
   reportPromise: Promise<void> | null
 }
 
-type ReportingTimer = 'report' | 'retry'
+type ReportingTimer = 'progress' | 'idle' | 'retry'
 
-function timerKey(which: ReportingTimer): 'reportTimer' | 'retryTimer' {
-  return which === 'report' ? 'reportTimer' : 'retryTimer'
+function timerKey(which: ReportingTimer): 'progressTimer' | 'idleTimer' | 'retryTimer' {
+  return which === 'progress' ? 'progressTimer' : which === 'idle' ? 'idleTimer' : 'retryTimer'
 }
 
 function cancelReportingTimer(runtime: ReportingRuntime, which: ReportingTimer): void {
@@ -131,9 +133,11 @@ function timerFiredEvent(
   scene: readonly SceneElement[],
   withheldIds: readonly string[]
 ): ChangeReportingEvent {
-  return which === 'report'
-    ? { type: 'report_timer_fired', generation, scene, withheldIds }
-    : { type: 'retry_timer_fired', generation, scene, withheldIds }
+  return which === 'progress'
+    ? { type: 'progress_timer_fired', generation, scene, withheldIds }
+    : which === 'idle'
+      ? { type: 'idle_timer_fired', generation, scene, withheldIds }
+      : { type: 'retry_timer_fired', generation, scene, withheldIds }
 }
 
 export interface CanvasSessionOptions {
@@ -180,15 +184,17 @@ export interface CanvasSession {
   attachPaneElement: (element: HTMLElement | null) => void
   connected: boolean
   board: BoardIdentity | null
-  handleChange: (appState: { selectedElementIds?: Record<string, boolean>; theme?: string } | null) => void
+  handleChange: (
+    elements: readonly Partial<ExcalidrawElement>[],
+    appState: { selectedElementIds?: Record<string, boolean>; theme?: string } | null
+  ) => void
   markInteracted: () => void
   /**
-   * Is somebody else writing this board, or can this pane not tell?
+   * Can this pane no longer establish authoritative lock state?
    *
-   * The canvas goes into Excalidraw's view mode while it is true, which is what
-   * ADR 0016 means by stopping accepting changes *before* the touch: a canvas
-   * applies a drag the instant a finger moves, so refusing the write afterwards
-   * would take the board away mid-gesture.
+   * A connected pane stays locally editable while persistence waits for the
+   * mutex. A disconnected pane fails closed because it cannot learn claim or
+   * lock state.
    */
   readOnly: boolean
   /**
@@ -206,11 +212,9 @@ export interface CanvasSession {
    * Take a claimed board back.
    *
    * The lock excludes writers from each other; it does not lock somebody out of
-   * their own wall. One deliberate tap rather than any touch, because view mode
-   * still pans and zooms — somebody watching an agent redraw a board is reading
-   * it, and reading it must not end it — and because nothing an agent has
-   * written is undone by taking the board, so a stray palm would leave a
-   * half-drawn board with nobody having decided anything.
+   * their own wall. The explicit control remains available; an actual content
+   * edit is also deliberate takeover. Panning, zooming, selection and pointer
+   * contact with no content delta do not revoke a claim.
    */
   takeBack: () => void
   /**
@@ -249,7 +253,8 @@ export function useCanvasSession({
 
   const reportingRef = useRef<ReportingRuntime>({
     state: initialState(),
-    reportTimer: null,
+    progressTimer: null,
+    idleTimer: null,
     retryTimer: null,
     reportPromise: null
   })
@@ -279,6 +284,8 @@ export function useCanvasSession({
   // was current when they were made.
   const holdingRef = useRef(false)
   const lastHoldAtRef = useRef(0)
+  const holdAttemptRef = useRef<{ board: string; promise: Promise<void> } | null>(null)
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   /**
    * Who is writing this board, if it is not us. Non-null means read-only.
    *
@@ -501,14 +508,27 @@ export function useCanvasSession({
   const executeReportingEffect = (effect: ChangeReportingEffect): void => {
     const runtime = reportingRef.current
     switch (effect.type) {
-      case 'cancel_report_timer':
+      case 'cancel_progress_timer':
+      case 'cancel_idle_timer':
       case 'cancel_retry_timer':
-        cancelReportingTimer(runtime, effect.type === 'cancel_report_timer' ? 'report' : 'retry')
+        cancelReportingTimer(
+          runtime,
+          effect.type === 'cancel_progress_timer'
+            ? 'progress'
+            : effect.type === 'cancel_idle_timer'
+              ? 'idle'
+              : 'retry'
+        )
         return
-      case 'start_report_timer':
+      case 'start_progress_timer':
+      case 'start_idle_timer':
       case 'start_retry_timer':
         {
-          const which = effect.type === 'start_report_timer' ? 'report' : 'retry'
+          const which = effect.type === 'start_progress_timer'
+            ? 'progress'
+            : effect.type === 'start_idle_timer'
+              ? 'idle'
+              : 'retry'
           startReportingTimer(runtime, which, effect.delayMs, () => {
             runtime[timerKey(which)] = null
             dispatchReporting(timerFiredEvent(
@@ -537,7 +557,10 @@ export function useCanvasSession({
             else if (holdRef.current) holdRef.current = null
             dispatchReporting({
               type: 'report_succeeded', generation: effect.generation,
-              document: reply.document?.map(cleanElementForExcalidraw) as SceneElement[] | undefined,
+              corrections: {
+                upserts: reply.corrections.upserts.map(cleanElementForExcalidraw) as SceneElement[],
+                deletes: reply.corrections.deletes
+              },
               currentScene: currentScene()
             })
           })
@@ -621,26 +644,31 @@ export function useCanvasSession({
     const api = apiRef.current
     if (!api || incoming.length === 0) return
 
-    const { elements, touchedIds } = mergeIncoming(
+    const { elements } = mergeIncoming(
       api.getSceneElements() as unknown as SceneElement[],
-      incoming as SceneElement[]
+      incoming as SceneElement[],
+      reportingRef.current.state.baseline
     )
 
     dispatchReporting({
       type: 'server_update_requested',
       update: { elements, captureUpdate: 'never' },
-      baselineUpdate: { type: 'touch', ids: touchedIds }
+      baselineUpdate: { type: 'touch', elements: incoming as SceneElement[] }
     })
   }, [])
 
   const removeElements = useCallback((ids: string[]): void => {
     const api = apiRef.current
     if (!api || ids.length === 0) return
-    const gone = new Set(ids)
+    const elements = mergeIncomingDeletes(
+      api.getSceneElements() as unknown as SceneElement[],
+      ids,
+      reportingRef.current.state.baseline
+    )
     dispatchReporting({
       type: 'server_update_requested',
       update: {
-        elements: api.getSceneElements().filter((element) => !gone.has(element.id)) as unknown as SceneElement[],
+        elements,
         captureUpdate: 'never'
       },
       baselineUpdate: { type: 'delete', ids }
@@ -669,36 +697,15 @@ export function useCanvasSession({
   // One writer at a time (ADR 0016). Two halves, and they answer different
   // questions.
   //
-  // TAKING IT is the pane's job, on the leading edge of a gesture, because a
-  // change report is a trailing debounce with no maximum wait: a continuous
-  // drag says nothing until 400 ms after the finger lifts, by which point the
-  // change is already on screen and refusing it would take the board away
-  // mid-gesture. So the first change of a gesture sends a hold, and the write
-  // that follows joins it rather than taking a second one.
+  // TAKING IT is the pane's job, on the leading edge of a content edit. The
+  // change is already local; a fixed progress report follows after 400 ms and
+  // an 800 ms trailing report writes the final dirty state. Hold acquisition
+  // is single-flight and retries while content remains pending.
   //
-  // NOT DRAWING AT ALL is the other half, and it is what the ADR means by "the
-  // lock is a broadcast, not only a guard". A pane whose board somebody else is
-  // writing goes into Excalidraw's view mode, so the touch never happens. That
-  // gate fails closed: `!connected` is read-only, because lock news arrives
-  // over the socket and a pane that cannot hear it must assume the board is
-  // held rather than that it is free.
-
-  /**
-   * The board is somebody else's, and this pane was in the middle of something.
-   *
-   * The board is re-read and the interrupted user edit is dropped. Keeping it
-   * and
-   * reporting it once the lock frees would be merging two people's edits to one
-   * board, which is the thing exclusion exists instead of. This can happen
-   * during one broadcast's latency. The pane goes read-only when the server
-   * update arrives, so a user edit cannot progress far past it.
-   */
-  const loseBoard = useCallback((holder: LockHolder | null): void => {
-    holdingRef.current = false
-    setHeldBy(holder ?? UNKNOWN_HOLDER)
-    dispatchReporting({ type: 'reports_cancelled' })
-    void loadBoard()
-  }, [loadBoard])
+  // LOCAL DRAWING does not bypass the lock. A connected pane keeps the edit
+  // visible while the vault-backed mutex orders persistence after any write
+  // already in progress. Only `!connected` is read-only: without the socket a
+  // pane cannot know claim state and therefore still fails closed.
 
   /**
    * Take the board, or say again that we still have it.
@@ -712,22 +719,47 @@ export function useCanvasSession({
   const takeHold = useCallback((): void => {
     const target = boardKeyRef.current
     if (!target) return
+    if (holdAttemptRef.current?.board === target) return
+
+    const pending = (): boolean => {
+      const state = reportingRef.current.state
+      return state.inFlightReport !== null
+        || hasPendingEdits(state, currentScene(), currentWithheldIds())
+    }
+    const retryOrRenew = (delayMs: number): void => {
+      if (holdTimerRef.current || !pending() || boardKeyRef.current !== target) return
+      holdTimerRef.current = setTimeout(() => {
+        holdTimerRef.current = null
+        takeHold()
+      }, delayMs)
+    }
+
     const now = Date.now()
-    if (holdingRef.current && now - lastHoldAtRef.current < LOCK_RENEW_MS) return
+    if (holdingRef.current && now - lastHoldAtRef.current < LOCK_RENEW_MS) {
+      retryOrRenew(LOCK_RENEW_MS - (now - lastHoldAtRef.current))
+      return
+    }
     lastHoldAtRef.current = now
-    void holdBoard(target, clientId).then((reply) => {
-      // A board switch landed while this was in flight: the answer is about a
-      // board this pane is no longer holding.
-      if (boardKeyRef.current !== target) return
-      holdingRef.current = reply.held
-      if (!reply.held) loseBoard(reply.holder)
-    }).catch(() => {
-      // No answer. Not ours, then — and the write that follows will take the
-      // board on its own behalf or be refused, which is the same outcome
-      // arriving a beat later.
-      holdingRef.current = false
-    })
-  }, [clientId, loseBoard])
+    const promise = holdBoard(target, clientId)
+      .then((reply) => {
+        // A board switch landed while this was in flight: the answer is about a
+        // board this pane is no longer holding.
+        if (boardKeyRef.current !== target) return
+        holdingRef.current = reply.held
+        setHeldBy(reply.held ? null : reply.holder ?? UNKNOWN_HOLDER)
+      })
+      .catch(() => {
+        // Persistence has not succeeded, and the local edit remains pending.
+        // Retry while there is content to save; do not reload the board and
+        // erase the only visible copy of the person's work.
+        if (boardKeyRef.current === target) holdingRef.current = false
+      })
+      .finally(() => {
+        if (holdAttemptRef.current?.board === target) holdAttemptRef.current = null
+        retryOrRenew(LOCK_RENEW_MS)
+      })
+    holdAttemptRef.current = { board: target, promise }
+  }, [clientId])
 
   /**
    * The person takes their board back from an agent that claimed it.
@@ -760,6 +792,8 @@ export function useCanvasSession({
     if (!holdingRef.current) return
     const state = reportingRef.current.state
     if (!reportsSettled(state)) return
+    if (holdTimerRef.current) clearTimeout(holdTimerRef.current)
+    holdTimerRef.current = null
     holdingRef.current = false
     releaseBoard(boardKeyRef.current, clientId)
   }, [clientId])
@@ -778,9 +812,9 @@ export function useCanvasSession({
     return hasPendingEdits(reportingRef.current.state, currentScene(), currentWithheldIds())
   }, [])
 
-  const scheduleReport = useCallback((): void => {
+  const scheduleReport = useCallback((scene?: readonly SceneElement[]): void => {
     if (!apiRef.current) return
-    dispatchReporting({ type: 'scene_changed', scene: currentScene() })
+    dispatchReporting({ type: 'scene_changed', scene: scene ?? currentScene() })
   }, [])
 
   const flushWithBeacon = useCallback((): void => {
@@ -834,6 +868,9 @@ export function useCanvasSession({
     if (boardKeyRef.current !== key) {
       // Reports scheduled for the previous board cannot run on the next board.
       dispatchReporting({ type: 'board_adopted' })
+      if (holdTimerRef.current) clearTimeout(holdTimerRef.current)
+      holdTimerRef.current = null
+      holdAttemptRef.current = null
       // A hold belongs to the board it was taken on, and this pane has stopped
       // looking at that board.
       if (holdingRef.current) {
@@ -1255,6 +1292,8 @@ export function useCanvasSession({
       dispatchReporting({ type: 'reports_cancelled' })
       if (selectionTimerRef.current) clearTimeout(selectionTimerRef.current)
       if (paneTimerRef.current) clearTimeout(paneTimerRef.current)
+      if (holdTimerRef.current) clearTimeout(holdTimerRef.current)
+      holdTimerRef.current = null
       // A pane closing while it holds the board. The lease would
       // have covered it, and this is only so nobody waits out a lease for a
       // pane that closed politely.
@@ -1270,9 +1309,12 @@ export function useCanvasSession({
     }
   }, [clientId, flushWithBeacon])
 
-  const handleChange = useCallback((appState: any): void => {
+  const handleChange = useCallback((elements: readonly Partial<ExcalidrawElement>[], appState: any): void => {
     handleSelectionChange(appState)
-    scheduleReport()
+    // Excalidraw calls onChange for camera and selection state too. Classify
+    // content from the element array it supplied before any hold or report
+    // effect; a pan or zoom must never take a claimed board.
+    scheduleReport(elements as SceneElement[])
     // Scrolling and zooming reach the server nowhere else, and they are half of
     // what "what am I looking at" means.
     schedulePaneReport()
@@ -1289,12 +1331,10 @@ export function useCanvasSession({
     board,
     handleChange,
     markInteracted,
-    // The gate, and it fails closed on both halves. Somebody else holds the
-    // board, or this pane has lost the socket the lock is broadcast over and
-    // cannot know (ADR 0016). Change reports are not gated on the socket and
-    // must not be, so edits already made still reach the server — what stops
-    // is the next one being made at all.
-    readOnly: !connected || heldBy !== null,
+    // Disconnected stays fail-closed because lock and board news cannot reach
+    // the pane. A connected pane remains locally editable while persistence
+    // waits for the authoritative mutex, even when an agent currently holds it.
+    readOnly: !connected,
     heldBy,
     takeBack,
     doing

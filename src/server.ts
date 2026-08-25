@@ -118,13 +118,14 @@ import { boardsForRepo } from './core/repo-boards.js';
 import { CompareSideInput, compareBoards } from './core/compare.js';
 import { changeFeed } from './core/change-feed.js';
 import type { ChangeEvent } from './core/change-feed.js';
-import { PANE_LAYOUT_TIMEOUT_MS, PANE_SETTLE_CAP_MS, REPORT_DEBOUNCE_MS } from './core/timing.js';
+import { PANE_LAYOUT_TIMEOUT_MS, PANE_SETTLE_CAP_MS, REPORT_PROGRESS_MS } from './core/timing.js';
 import { narrateChange } from './core/changes.js';
 import { injectTest, injectionStatus, startInjection } from './core/injection.js';
 import { LibraryItem, readLibrary, writeLibrary } from './core/library.js';
 import { overlapsRegion } from './core/geometry.js';
 import {
   agentWriteAnswer,
+  humanWriteAnswer,
   BoardMutationError,
   BoardWriteRequest,
   BoardWriteTarget,
@@ -353,14 +354,10 @@ function deliverToPane(clientId: string, data: string): boolean {
 /**
  * A board's writer changed, so every pane holding it is told (ADR 0016).
  *
- * The lock is a broadcast and not only a guard. A canvas applies a change as
- * soon as the pointer moves, so refusing that change when it is finally written
- * would interrupt the user edit — which is the divergence between what is drawn
- * and what is true that ADR 0015 exists to end, arriving from the other
- * direction. A pane is told *before* the edit instead, and stops accepting one.
- *
- * `holder` rides along so the pane holding the lock knows the news is about
- * itself and keeps drawing. Everyone else goes read-only.
+ * The lock is a broadcast and not only a guard. `holder` lets panes explain a
+ * claim and decide whether a content edit is takeover. A connected pane keeps
+ * local content responsive; the authoritative vault-backed mutex still orders
+ * when that content may persist.
  *
  * The board key is stamped on by `broadcast`, so a pane showing the other board
  * drops it the same way it drops any other board's news.
@@ -1022,20 +1019,17 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 /**
  * A person has started changing this board, and wants it.
  *
- * The message the pane had no way to send. `POST /api/elements/changes` is a
- * trailing debounce with no maximum wait, so a continuous drag reaches the
- * server for the first time 400 ms after the pointer stops — by which point the
- * change is on screen, in Excalidraw's own scene, and refusing it would take
- * the board away from somebody mid-edit. This goes out on the *leading*
- * edge of the first change instead, and again every LOCK_RENEW_MS while the
- * user edit continues, which is what renews the lease.
+ * The message the pane sends on the leading edge of a content edit. The first
+ * progress report is due after REPORT_PROGRESS_MS even during a continuous
+ * gesture, and renewal every LOCK_RENEW_MS keeps the lease alive while content
+ * remains pending.
  *
  * It waits, but only for as long as the pane was going to sit on the change
  * anyway. An agent's per-write hold is about twenty milliseconds, and a user
  * edit that starts during one is not somebody who has lost the board — telling
  * them so and discarding their edit would make the pane reject a user edit,
  * which is the thing ADR 0016 forbids in as many words. So the
- * wait is the report debounce: a person is going to be 400 ms from having their
+ * wait is the progress deadline: a person is going to be 400 ms from having their
  * change written whatever this answers, and anything still holding the board at
  * the end of that is a real holder rather than a write in flight.
  *
@@ -1062,7 +1056,7 @@ app.post('/api/boards/hold', (req: Request, res: Response) => {
     // that has claimed a board for ten minutes must not be able to make the
     // pane reject that user's edits (ADR 0016). Only a
     // claim: an unclaimed agent hold is one write and is waited out above.
-    void holdBoard({ board: key, holder, waitMs: REPORT_DEBOUNCE_MS, revokeClaim: true })
+    void holdBoard({ board: key, holder, waitMs: REPORT_PROGRESS_MS, revokeClaim: true })
       .then(hold => res.json({ success: true, board: key, holder: hold.holder, created: hold.created }))
       .catch(error => answerBoardError(res, error));
   } catch (error) {
@@ -1644,7 +1638,9 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
           `(${content.elements.size} on the board)`
         );
       },
-      answer: ({ content, delta, written, appliedAt }) => ({
+      answer: (context) => {
+        const { content, delta, written, appliedAt } = context;
+        return {
         success: true,
         board: source.key,
         created: delta.created.length,
@@ -1652,8 +1648,9 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
         deleted: delta.deleted.length,
         count: content.elements.size,
         appliedAt,
-        // A pane gets the whole document back; an agent gets the smaller write
-        // answer unless it explicitly asks for the document (TASK-074/075).
+        // An agent keeps the established pessimistic answer. A pane gets a
+        // compact post-persistence acknowledgement, except for the explicit
+        // held-board full-report recovery path (TASK-074/075/118).
         ...(origin === 'agent'
           ? agentWriteAnswer(
             source.board,
@@ -1662,8 +1659,9 @@ app.post('/api/elements/changes', (req: Request, res: Response) => {
             wantsDocument(req),
             written
           )
-          : { document: presentElements(content.elements.values()) })
-      })
+          : humanWriteAnswer(context, fullReport))
+        };
+      }
     });
   } catch (error) {
     answerBoardError(res, error, 'Error applying a change report:');

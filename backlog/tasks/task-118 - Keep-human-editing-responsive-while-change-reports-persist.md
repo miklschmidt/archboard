@@ -1,10 +1,11 @@
 ---
 id: TASK-118
 title: Keep human editing responsive while change reports persist
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@codex'
 created_date: '2026-08-25 11:34'
-updated_date: '2026-08-25 11:50'
+updated_date: '2026-08-25 13:38'
 labels: []
 dependencies: []
 references:
@@ -12,6 +13,25 @@ references:
   - frontend/src/canvas/change-reporting.ts
   - frontend/src/canvas/useCanvasSession.ts
   - src/core/timing.ts
+modified_files:
+  - src/core/apply-element-input.ts
+  - src/core/board-write.ts
+  - src/core/timing.ts
+  - src/core/board-lock.ts
+  - src/server.ts
+  - frontend/src/canvas/api.ts
+  - frontend/src/canvas/change-reporting.ts
+  - frontend/src/canvas/useCanvasSession.ts
+  - frontend/src/canvas/CanvasPane.tsx
+  - scripts/check-human-edit-performance.mjs
+  - scripts/check-change-reporting.mjs
+  - scripts/check-one-write.mjs
+  - scripts/check-live-session.mjs
+  - scripts/check-fixed-point.mjs
+  - scripts/check-typed-text.mjs
+  - docs/adr/0016-one-writer-at-a-time-per-board.md
+  - docs/agents/test-suite.md
+  - package.json
 priority: high
 type: bug
 ordinal: 120000
@@ -25,14 +45,14 @@ Manual Excalidraw edits periodically stall even when no agent is interacting wit
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A repeatable browser performance check reproduces the human-only stall with no agent writes and records which stage causes the main-thread pause before a fix is chosen
-- [ ] #2 Dragging, resizing, and typing remain locally responsive while human change reports and note writes are in flight
-- [ ] #3 Continuous human edits use a bounded reporting cadence with periodic progress and one final trailing report after a longer idle settle; the cadence does not create visible report-time stalls
-- [ ] #4 The browser does not fan out duplicate board-hold or change-report requests during one continuous human gesture
-- [ ] #5 A successful human report converges the canvas and canonical note without replacing or disrupting a newer local edit
-- [ ] #6 A human can begin editing while an agent holds or claims the board; the local edit remains visible while the existing mutex orders persistence, and a content edit takes the board back under the existing claim rules
-- [ ] #7 Agent writes remain mutex-serialized and non-optimistic, and existing multi-process lock, lease, renewal, claim, and version-conflict tests still pass
-- [ ] #8 Panning and zooming do not count as content edits and do not revoke an agent claim
+- [x] #1 A repeatable browser performance check reproduces the human-only stall with no agent writes and records which stage causes the main-thread pause before a fix is chosen
+- [x] #2 Dragging, resizing, and typing remain locally responsive while human change reports and note writes are in flight
+- [x] #3 Continuous human edits use a bounded reporting cadence with periodic progress and one final trailing report after a longer idle settle; the cadence does not create visible report-time stalls
+- [x] #4 The browser does not fan out duplicate board-hold or change-report requests during one continuous human gesture
+- [x] #5 A successful human report converges the canvas and canonical note without replacing or disrupting a newer local edit
+- [x] #6 A human can begin editing while an agent holds or claims the board; the local edit remains visible while the existing mutex orders persistence, and a content edit takes the board back under the existing claim rules
+- [x] #7 Agent writes remain mutex-serialized and non-optimistic, and existing multi-process lock, lease, renewal, claim, and version-conflict tests still pass
+- [x] #8 Panning and zooming do not count as content edits and do not revoke an agent claim
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -89,3 +109,19 @@ Do not choose a different cause unless the retained check contradicts this attri
 - The current ADR says a pane held elsewhere enters view mode and that claim takeover needs an explicit button. TASK-118 intentionally changes those two human-interface consequences, not the mutex itself. Review the ADR diff as a contract change before application code proceeds.
 - Keep disconnected behavior fail-closed unless a separate task changes offline editing. TASK-118 concerns persistence in flight, not an unreachable canvas.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented TASK-118 on the TASK-117 main baseline. Human reports now return compact post-persistence canonical corrections plus fingerprint/version; the pane advances from its sent baseline, skips ordinary no-correction scene replacement, and preserves newer per-id moves, resizes, typing and deletions. Input-conversion repairs and full canonical broadcast side effects are included, including bound-arrow back-references outside the submitted delta.
+
+Human content remains locally editable while the unchanged vault mutex orders persistence. Hold acquisition is single-flight with pending-content retry/renewal; agent writes remain pessimistic. Reporting uses one in-flight plus one latest queued delivery, a non-restarting 400 ms progress deadline and an 800 ms trailing idle deadline. Camera and selection changes do not take the board; content does; explicit takeover and disconnected fail-closed behavior remain.
+
+Acceptance evidence: test:human-performance passed on a 10,000-element human-only board with six 524-554 B requests, six 288 B document-free acknowledgements against a 5,744,795 B full document, zero no-correction scene replacements, no agent write, 9 hold / 6 report / 3 release requests, 12 fsyncs, and a 16.7 ms median / 16.8 ms worst report-correlated frame. Reducer reporting passed 88 checks; one-write passed 77; lock passed 119; version passed 65; trusted typing passed; fixed-point returned zero document changes; live-session passed all checks and converged after all 42 mixed-write cycles. Full sequential `bun run test` passed all 27 push suites, including all four browser checks.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Kept human editing responsive by making only the local pane optimistic while preserving the authoritative vault mutex and pessimistic agent writes. Normal human reports now acknowledge compact canonical corrections instead of returning/reconciling the whole document; the client keeps newer local edits, reports at bounded 400/800 ms deadlines, and acquires the human hold single-flight. Added large-board browser attribution/performance coverage, exact canonical-convergence regressions, claimed-board interaction coverage, timing documentation, and the narrow ADR 0016 consequence amendment. Verified with the full sequential test suite and all acceptance-mapped browser/reducer/lock/version/write/typing/live-session checks.
+<!-- SECTION:FINAL_SUMMARY:END -->

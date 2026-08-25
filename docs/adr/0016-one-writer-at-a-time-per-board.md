@@ -75,14 +75,17 @@ It does not lock somebody out of their own wall, and no agent may make a
 75-inch display stop responding to the person standing at it. The agent is told
 it has lost the board, and it stops rather than fighting for it.
 
-**Taking it back is one deliberate act, and not any touch at all** (TASK-080).
+**Taking it back is one deliberate content act, and not any touch at all** (TASK-080, TASK-118).
 Two things argue against the first version of this decision. A board held by
 somebody else can still be panned and zoomed, so a person watching an agent
 restructure a board is reading it, and reading it must not end it. And nothing
 the agent has already written is put back by taking the board, so a hand resting
 on a wall display would leave a board half way through a restructure with nobody
 having decided anything. The board says who has it and what they said they were
-doing, and beside that, the way to take it.
+doing, and beside that, the explicit way to take it. TASK-118 also makes a real
+content change a takeover act: dragging, resizing, typing, creating or deleting
+content revokes the claim through the same hold route. Pan, zoom, selection,
+focus and pointer contact without a content delta do not.
 
 **Revoking is not undoing.** Every write an agent has already made is already
 in the note, because that is what ADR 0015 means. So a revoked claim leaves a
@@ -138,11 +141,18 @@ it is finally written would take the board away from somebody mid-gesture,
 which is the divergence between what is drawn and what is true that ADR 0015
 exists to end, arriving from the other direction.
 
-So a pane whose board is held elsewhere stops accepting changes **before** the
-touch, not after the write. That makes lock state something every pane holding
-the board is told about, rather than only a gate at the point of writing. A
-pane that has lost contact and cannot be told must assume the board is held
-rather than that it is free.
+So exclusion governs persistence, not whether a connected person's local
+canvas responds. Excalidraw applies a content change immediately, the pane
+takes the human hold single-flight, and the existing vault-backed mutex waits
+out any write that already started before persisting the human report. The
+local edit remains visible and pending throughout; nothing reloads it away
+because acquisition was delayed or failed. Agent writes remain pessimistic and
+do not answer before persistence.
+
+Lock state is still broadcast so a pane can explain who has the board and why,
+and so content can deliberately revoke a claim while camera and selection do
+not. A pane that has lost contact and cannot receive that state still fails
+closed and enters view mode.
 
 For a write that takes a moment, showing the board as unavailable is enough.
 For a claim that may run for minutes, a person needs to know that an agent has
@@ -204,12 +214,13 @@ narrate your own drawing on your own wall would be absurd.
 
 ## Consequences
 
-**The window that coalesces a person's changes now has a second job.** It also
-decides how long an agent waits for them. Shortening it releases the board
-sooner and writes to the vault more often; lengthening it does the reverse.
-Those pull against each other, so the values that govern flushing, settling,
-leases and waiting belong together in one place with the tension written beside
-them, rather than scattered where each can be tuned in ignorance of the other.
+**The two reporting deadlines have different jobs.** A non-restarting progress
+deadline periodically persists continuous work; a longer trailing idle deadline
+writes the final dirty state after the gesture settles. One report may be in
+flight and one latest delivery queued. The leading hold and its renewal span
+both. Shortening either deadline writes the vault more often; lengthening either
+extends how long an agent may wait. The values governing progress, idle,
+settling, leases and waiting therefore live together in `src/core/timing.ts`.
 
 **The mutex is one concept with a small interface**: ask to write a board, and
 either write it or learn who holds it. Acquiring, renewing, expiring a dead

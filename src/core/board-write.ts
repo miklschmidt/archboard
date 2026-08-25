@@ -7,6 +7,8 @@
 // and shapes the HTTP answer. There is deliberately no await between the read
 // and the write (ADR 0015).
 
+import { isDeepStrictEqual } from 'node:util';
+
 import { ExcalidrawFile, ElementsChangedMessage, ServerElement, WebSocketMessage } from '../types.js';
 import {
   AppliedElementInput,
@@ -54,6 +56,8 @@ export interface BoardWriteDelta {
 export interface BoardMutationResult<T> {
   value: T;
   delta?: Partial<BoardWriteDelta>;
+  /** A pane-intended document captured before input repair/settlement. */
+  requestedElements?: ServerElement[];
   /** A valid no-op does not write, notify panes, or advance the feed. */
   write?: boolean;
   /** A pane supplied its whole scene rather than a delta. */
@@ -76,6 +80,8 @@ export interface BoardWriteAnswerContext<T> {
   source: BoardWriteTarget;
   target: BoardWriteTarget;
   content: BoardContent;
+  /** The request-local document after input conversion and before canonical settlement. */
+  submittedElements: ServerElement[];
   value: T;
   delta: BoardWriteDelta;
   written: WrittenNote | null;
@@ -146,6 +152,7 @@ export function elementMutation<T>(
         updated: applied.updated,
         deleted: applied.deleted
       },
+      requestedElements: applied.requested,
       // When wholeScene is present this is a pane report. Empty deltas do not
       // write, while a full report must replace the held copy even when empty.
       write: plan.wholeScene === undefined ? undefined : plan.wholeScene || changed,
@@ -251,6 +258,27 @@ function tellPanesAboutWrite(
   }
 }
 
+function notificationDelta(
+  before: ReadonlyMap<string, ServerElement>,
+  after: ReadonlyMap<string, ServerElement>,
+  files: BoardWriteDelta
+): BoardWriteDelta {
+  const created: ServerElement[] = [];
+  const updated: ServerElement[] = [];
+  for (const [id, element] of after) {
+    const existing = before.get(id);
+    if (!existing) created.push(element);
+    else if (!isDeepStrictEqual(existing, element)) updated.push(element);
+  }
+  return {
+    created,
+    updated,
+    deleted: [...before.keys()].filter(id => !after.has(id)),
+    ...(files.filesAdded ? { filesAdded: files.filesAdded } : {}),
+    ...(files.filesDeleted ? { filesDeleted: files.filesDeleted } : {})
+  };
+}
+
 /**
  * Run one complete board write. Everything before persist works on a fresh
  * copy, so a mutation that throws cannot leave an earlier upsert applied.
@@ -267,6 +295,11 @@ export function writeBoard<T>(request: BoardWriteRequest<T>, tellPanes: TellPane
   const shouldWrite = mutation.write ?? true;
   const appliedAt = new Date().toISOString();
 
+  // Element input owns its conversion stage and exposes the pane-intended
+  // document from immediately before repair. Other mutation kinds retain the
+  // already-converted request-local snapshot used by their answer shapers.
+  const submittedElements = mutation.requestedElements ?? copyElements(content.elements.values());
+
   // Final settlement belongs to board-io. Run it for every request, including
   // a valid no-op, before this document can enter a hold or success answer.
   settleBoardContent(content);
@@ -280,6 +313,7 @@ export function writeBoard<T>(request: BoardWriteRequest<T>, tellPanes: TellPane
     source: request.source,
     target,
     content,
+    submittedElements,
     value: mutation.value,
     delta,
     written,
@@ -289,10 +323,55 @@ export function writeBoard<T>(request: BoardWriteRequest<T>, tellPanes: TellPane
   if (shouldWrite) {
     if (written) releaseSavedHold(request, target, tellPanes);
     request.afterPersist?.(context);
-    tellPanesAboutWrite(tellPanes, target, delta, request.clientId ?? null, appliedAt);
+    // The mutation delta describes what the caller named. Panes need every
+    // canonical side effect of the persisted document as well: repaired arrow
+    // back-references, dependent labels, and deletions outside that input.
+    const broadcast = notificationDelta(destinationBefore.elements, content.elements, delta);
+    tellPanesAboutWrite(tellPanes, target, broadcast, request.clientId ?? null, appliedAt);
   }
 
   return request.answer(context);
+}
+
+export interface CanonicalCorrections {
+  upserts: ServerElement[];
+  deletes: string[];
+}
+
+/**
+ * What canonical settlement changed after the pane's input had been applied.
+ *
+ * Compare the two complete documents in their outbound presentation form. The
+ * persisted board remains portable, while a derived machine-local code link is
+ * an intentional browser overlay and must not appear as a correction on every
+ * drag. A renamed id naturally becomes one delete and one upsert.
+ */
+export function canonicalCorrections(
+  submitted: Iterable<ServerElement>,
+  canonical: Iterable<ServerElement>
+): CanonicalCorrections {
+  const before = new Map(presentElements(submitted).map(element => [element.id, element]));
+  const after = new Map(presentElements(canonical).map(element => [element.id, element]));
+  const deletes = [...before.keys()].filter(id => !after.has(id));
+  const upserts: ServerElement[] = [];
+  for (const [id, element] of after) {
+    const prior = before.get(id);
+    if (!prior || !isDeepStrictEqual(prior, element)) upserts.push(element);
+  }
+  return { upserts, deletes };
+}
+
+/** A persisted human report gets a compact canonical acknowledgement. */
+export function humanWriteAnswer(
+  context: BoardWriteAnswerContext<unknown>,
+  wantsFullDocument: boolean
+): Record<string, unknown> {
+  const { source, content, submittedElements, written } = context;
+  return {
+    corrections: canonicalCorrections(submittedElements, content.elements.values()),
+    fingerprint: boardFingerprint(source.board, content, written),
+    ...(wantsFullDocument ? { document: presentElements(content.elements.values()) } : {})
+  };
 }
 
 /** What an agent gets after a write, small unless it asked for the document. */
