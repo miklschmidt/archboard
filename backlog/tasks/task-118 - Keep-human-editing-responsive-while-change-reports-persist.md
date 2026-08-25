@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-25 11:34'
-updated_date: '2026-08-25 14:42'
+updated_date: '2026-08-25 15:04'
 labels: []
 dependencies: []
 references:
@@ -15,6 +15,8 @@ references:
   - src/core/timing.ts
 modified_files:
   - AGENTS.md
+  - CONTEXT.md
+  - bun.lock
   - docs/adr/0016-one-writer-at-a-time-per-board.md
   - docs/agents/test-suite.md
   - frontend/src/canvas/CanvasPane.tsx
@@ -125,6 +127,14 @@ Do not choose a different cause unless the retained check contradicts this attri
 ## Final remediation refinements
 
 The final reducer drains due work after the last server update, releases the hold when an empty deadline settles, and preserves a local edit that Excalidraw exposed before its onChange callback. Hold completion is guarded by exact attempt identity and generation across rapid board away/back cycles. Writer response shaping now uses the middleware writer classification. Canonical settlement preserves valid Excalidraw between-indices through fractional-indexing so a single human insert cannot cascade into whole-document corrections.
+
+## Re-review cadence remediation
+
+Add a manual-clock sequence with edits every 500 ms, between the 400 ms progress and 800 ms idle deadlines. Preserve the first edit as idle-owned, but remember when its progress deadline has elapsed; the next content edit before idle must make the overdue progress delivery immediately reachable instead of starting a fresh 400 ms window. Prove multiple progress reports, one in-flight plus one queued latest delivery, one final idle report, and no no-op tail before rerunning browser and full sequential verification.
+
+## Standards re-review additions
+
+Exercise the delayed A1, rapid A to scratch to A switch, and delayed A2 through the real browser session. Keep A1 identity alive across adoption and invalidate it by advancing the generation, then prove A1 completion neither clears A2 nor schedules a stale retry and A2 persists. Declare fractional-indexing 3.2.0 as an exact direct runtime dependency with the Bun lockfile, verify frozen resolution, and update the Change report domain definition for compact human acknowledgements versus agent answers.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -147,10 +157,22 @@ Writer response shaping now follows the lock middleware classification. A no-cli
 The retained 10,000-element browser check observed the first report before isolating the final edit. It measured zero new reports at the progress deadline and exactly one accepted report starting 840 ms after the edit at idle, with no no-op tail. Five reports produced ten fsyncs; counts were seven holds, five reports, and two releases. All five responses were document-free and at most 1,071 B against a 5,744,795 B document; isolated no-correction acknowledgements caused zero scene replacements, no agent write occurred, trusted drag, resize, and typing stayed local while persistence was in flight, and the loose relative frame gate passed at 16.7 ms median and 49.9 ms worst report-correlated gap.
 
 Final verification: change-reporting 105 checks; one-write 80; labels 183; lock 119; version 65; type-check passed; fixed-point returned zero changes; trusted typing passed; live-session converged after all 42 mixed agent/human cycles. The final sequential bun run test completed all 27 push suites with exit 0, including all four browser checks.
+
+Re-review reopened AC3: edits spaced 401–799 ms apart can repeatedly outlive an uncontinued progress timer while restarting idle, starving persistence until editing stops. Remediation will begin with that exact manual-clock regression.
+
+Standards re-review added a real useCanvasSession away/back hold regression, direct dependency declaration, and CONTEXT.md response-shape correction to this remediation round.
+
+Final re-review remediation completed. An elapsed uncontinued progress deadline is now carried forward: the next edit before idle schedules immediate overdue progress instead of opening another 400 ms window. The manual-clock 500 ms sequence passed with two progress deliveries, one queued latest delivery behind one in-flight request, one final idle delivery, and no no-op tail. change-reporting now passes 114 checks.
+
+The real live-session regression delays A1, switches session to scratch to session, starts delayed A2, completes A1 first, and keeps A2 pending through the stale-retry window. Hold counts remain 0 to 2 to 2, A2 remains owned, and its edit persists from x 100 to 113. The test then waits for all delayed responses before the ordinary session and all 42 mixed cycles converge with zero server-update bounce reports.
+
+fractional-indexing 3.2.0 is now an exact direct runtime dependency in package.json and bun.lock. bun install --frozen-lockfile checked 534 installs across 554 packages with no changes, and a direct runtime import generated a2V between a2 and a3. CONTEXT.md now documents compact human corrections plus fingerprint/version and the retained agent touched-elements/fingerprint response.
+
+Final verification: bun run test passed all 27 push suites sequentially with exit 0. Human performance observed zero send at progress and exactly one final report starting 837 ms after the isolated edit, five reports, ten fsyncs, seven holds, two releases, five document-free responses no larger than 1,071 B against a 5,744,795 B document, no agent write, no isolated no-correction scene replacement, and the loose relative frame gate passed. Lock 119, one-write 80, labels 183, version 65, fixed-point zero changes, typed-text, type-check, and live-session all passed.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Kept human editing locally responsive while preserving the vault-backed mutex and pessimistic agent writes. Human reports now use compact post-persistence canonical corrections, exact request-local convergence, bounded continuous-progress and final-idle delivery, single-flight generation-safe holds, and dirty-edit preservation across incoming agent updates. Fixed cascading canonical corrections for valid Excalidraw fractional indices and refreshed concurrency documentation. Verified with the full sequential 27-suite run plus acceptance-mapped reducer, browser performance, lock, version, one-write, typing, fixed-point, and 42-cycle live-session checks.
+Kept human editing locally responsive without weakening the vault mutex or pessimistic agent writes. Human reports use compact canonical acknowledgements; continuous edits cannot starve periodic progress even at 401–799 ms spacing; isolated final edits remain idle-owned; holds are exact, generation-safe, and proven through a delayed rapid away/back browser race; and valid fractional indices resolve through a declared direct dependency. Verified by the full sequential 27-suite run, 114 reducer checks, the 10,000-element performance gate, lock/version/one-write checks, fixed-point and typing checks, and 42 convergent live-session cycles.
 <!-- SECTION:FINAL_SUMMARY:END -->

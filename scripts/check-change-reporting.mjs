@@ -451,6 +451,51 @@ class Harness {
   check('the trailing idle deadline sends no no-op report', h.server.requests.length === 0)
 }
 
+// Edits slower than the progress deadline but faster than idle are still one
+// continuous dirty gesture. Each elapsed progress deadline must carry forward
+// so the next edit cannot start a fresh window and starve persistence forever.
+{
+  const h = new Harness()
+  h.edit('a', { x: 10 })
+  h.clock.advance(500)
+  check('a first isolated edit still sends nothing when progress elapses',
+    h.server.requests.length === 0)
+
+  h.edit('a', { x: 20 })
+  h.clock.advance(0)
+  check('a second edit after the elapsed progress deadline sends current progress',
+    h.server.requests[0]?.report.upserts.find(element => element.id === 'a')?.x === 20)
+
+  h.clock.advance(500)
+  h.edit('a', { x: 30 })
+  h.clock.advance(500)
+  h.edit('a', { x: 40 })
+  h.clock.advance(0)
+  check('continued 500 ms edits queue one latest delivery behind the in-flight report',
+    h.server.requests.length === 1 && h.state.deliveryQueued)
+  h.accept()
+  check('the queued progress delivery recomputes the latest 500 ms edit',
+    h.server.requests.length === 1
+      && h.server.requests[0].report.upserts.find(element => element.id === 'a')?.x === 40)
+  h.accept()
+
+  h.clock.advance(500)
+  h.edit('a', { x: 50 })
+  h.clock.advance(400)
+  check('the final isolated edit remains unsent at its progress deadline',
+    h.server.requests.length === 0)
+  h.clock.advance(399)
+  check('the final 500 ms sequence remains dirty until idle',
+    h.server.requests.length === 0 && hasPendingEdits(h.state, h.scene))
+  h.clock.advance(1)
+  check('the final idle deadline sends exactly one final dirty report',
+    h.server.requests.length === 1
+      && h.server.requests[0].report.upserts.find(element => element.id === 'a')?.x === 50)
+  h.accept()
+  h.clock.advance(2000)
+  check('the accepted 500 ms cadence produces no no-op tail', h.server.requests.length === 0)
+}
+
 // A delivery that becomes due during a server scene application must remain
 // reachable after the final application completion event.
 {
