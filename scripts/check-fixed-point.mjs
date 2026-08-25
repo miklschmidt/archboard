@@ -95,6 +95,30 @@ const check = (label, cond, extra = '') => {
   console.log(`${cond ? 'ok  ' : 'FAIL'} - ${label}${extra ? ` (${extra})` : ''}`);
 };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const {
+  PANE_DEBOUNCE_MS,
+  PANE_LAYOUT_TIMEOUT_MS,
+  PANE_SETTLE_CAP_MS,
+  REPORT_DEBOUNCE_MS
+} = await import(src('core/timing.ts'));
+
+// Browser waits are observations with a deadline, not guessed pauses. The poll
+// cadence follows the two browser debounces, and the outer cap is the same one
+// the server uses while waiting for a pane to exist.
+const BROWSER_POLL_MS = Math.floor(Math.min(PANE_DEBOUNCE_MS, REPORT_DEBOUNCE_MS) / 3);
+const PANE_SUPPRESSION_MARGIN_MS = Math.ceil(PANE_DEBOUNCE_MS / 3);
+const PANE_SUPPRESSION_WAIT_MS = PANE_DEBOUNCE_MS + PANE_SUPPRESSION_MARGIN_MS;
+
+async function waitFor(observe, ready, timeoutMs = PANE_LAYOUT_TIMEOUT_MS) {
+  const deadline = Date.now() + timeoutMs;
+  let value = null;
+  while (Date.now() < deadline) {
+    value = await observe();
+    if (ready(value)) return value;
+    await sleep(BROWSER_POLL_MS);
+  }
+  return value;
+}
 
 // ---------------------------------------------------------------------------
 // The measured baseline
@@ -353,6 +377,19 @@ const malformedLegacyNote = renderBoardNote(malformedLegacyScene, null, legacyId
 const legacyFile = path.join(vault, 'legacy-geometry.excalidraw.md');
 fs.writeFileSync(legacyFile, malformedLegacyNote);
 
+// Startup has a separate seam from board open. Scratch is adopted before the
+// listener binds, so plant the same malformed scene at its persisted address
+// before the server process exists.
+const scratchIdentity = { board: 'scratch', variant: 'current' };
+const scratchFile = path.join(vault, '.archboard', 'scratch.excalidraw.md');
+const malformedScratchNote = renderBoardNote(malformedLegacyScene, null, scratchIdentity);
+const validScratchNote = renderBoardNote({
+  type: 'excalidraw', version: 2, source: 'archboard',
+  elements: [], appState: {}, files: {}
+}, null, scratchIdentity);
+fs.mkdirSync(path.dirname(scratchFile), { recursive: true });
+fs.writeFileSync(scratchFile, malformedScratchNote);
+
 const server = spawn(process.execPath, [src('server.ts')], {
   env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', ARCHBOARD_VAULT: vault, LOG_LEVEL: 'error' },
   stdio: ['ignore', 'ignore', 'pipe']
@@ -456,10 +493,12 @@ const against = (moved, baseline) => {
 // ---------------------------------------------------------------------------
 
 try {
-  for (let i = 0; i < 100; i++) {
-    try { const r = await fetch(`${base}/health`); if (r.ok) break; } catch { /* not up yet */ }
-    await sleep(100);
-  }
+  const healthy = await waitFor(async () => {
+    try { return (await fetch(`${base}/health`)).ok; } catch { return false; }
+  }, Boolean);
+  check('a malformed persisted scratch note does not stop the canvas server',
+    healthy === true, serverStderr.trim());
+  if (!healthy) throw new Error(`canvas did not start: ${serverStderr.trim()}`);
 
   // --- the board -----------------------------------------------------------
   //
@@ -510,33 +549,74 @@ try {
   check('  without mapping a window, because a window would steal focus',
     /headless/i.test(ua), ua);
 
-  let panes = null;
-  for (let i = 0; i < 100; i++) {
-    panes = (await api('GET', '/api/panes')).body;
-    if (panes?.paneCount >= 1) break;
-    await sleep(100);
-  }
+  let panes = await waitFor(
+    async () => (await api('GET', '/api/panes')).body,
+    report => report?.paneCount >= 1
+  );
   check('  and registers a pane, so there is something rendering',
     panes?.paneCount === 1, `paneCount ${panes?.paneCount ?? 'none'}`);
 
+  const scratchFailure = await waitFor(
+    () => evalInPage(`(() => {
+      const alert = document.querySelector('[role="alert"]');
+      const read = ${READ_SCENE};
+      const zoomNode = document.querySelector('.excalidraw');
+      const key = zoomNode && Object.keys(zoomNode).find(k => k.startsWith('__reactFiber$'));
+      let fiber = key ? zoomNode[key] : null;
+      let zoom = null;
+      for (let n = 0; fiber && n < 60; n++) {
+        const app = fiber.stateNode;
+        if (app && typeof app === 'object' && app.scene && app.state) {
+          zoom = app.state.zoom?.value;
+          break;
+        }
+        fiber = fiber.return;
+      }
+      return {
+        text: alert?.textContent ?? null,
+        elementIds: read.elements?.map(element => element.id) ?? [],
+        finiteZoom: Number.isFinite(zoom),
+        hasNaNZoom: document.body.innerText.includes('%NaN%')
+      };
+    })()`),
+    state => state?.text?.includes('helv (text): width, height')
+  );
+  check('malformed scratch startup shows an actionable visible board error',
+    scratchFailure?.text?.includes('helv (text): width, height'),
+    JSON.stringify(scratchFailure));
+  check('  without sending malformed scratch geometry to Excalidraw',
+    scratchFailure?.elementIds?.includes('helv') === false &&
+      scratchFailure?.finiteZoom === true && scratchFailure?.hasNaNZoom === false,
+    JSON.stringify(scratchFailure));
+  check('  or changing the malformed scratch note',
+    fs.readFileSync(scratchFile, 'utf8') === malformedScratchNote);
+
+  // The check repairs its own fixture after proving the application did not.
+  // Reloading the now-valid note also proves the canvas remains usable after
+  // the startup refusal.
+  fs.writeFileSync(scratchFile, validScratchNote);
+  const scratchPane = panes?.panes?.[0];
+  const recoveredScratch = await api('POST', '/api/boards/open', {
+    board: 'scratch', reload: true, pane: scratchPane?.clientId
+  });
+  check('  and the usable canvas can reload corrected scratch bytes',
+    recoveredScratch.status === 200, recoveredScratch.body?.error);
+  await evalInPage(`document.querySelector('.notice-dismiss')?.click()`);
+
   // --- malformed legacy note and visible recovery ------------------------
 
-  let legacyRowReady = false;
-  for (let i = 0; i < 40; i++) {
-    legacyRowReady = await evalInPage(
-      `Boolean(document.querySelector('.board-group[aria-label="legacy-geometry"] .board-nav-row'))`);
-    if (legacyRowReady) break;
-    await sleep(100);
-  }
+  const legacyRowReady = await waitFor(
+    () => evalInPage(
+      `Boolean(document.querySelector('.board-group[aria-label="legacy-geometry"] .board-nav-row'))`),
+    Boolean
+  );
   const legacyOpenStarted = await evalInPage(`(() => {
     const row = document.querySelector('.board-group[aria-label="legacy-geometry"] .board-nav-row');
     if (!row) return false;
     row.click();
     return true;
   })()`);
-  let legacyFailure = null;
-  for (let i = 0; i < 40; i++) {
-    legacyFailure = await evalInPage(`(() => {
+  const legacyFailure = await waitFor(() => evalInPage(`(() => {
       const alert = document.querySelector('[role="alert"]');
       if (!alert) return null;
       const node = document.querySelector('.excalidraw');
@@ -557,10 +637,7 @@ try {
         finiteZoom: Number.isFinite(zoom),
         hasNaNZoom: document.body.innerText.includes('%NaN%')
       };
-    })()`);
-    if (legacyFailure?.text?.includes('helv (text): width, height')) break;
-    await sleep(100);
-  }
+    })()`), state => state?.text?.includes('helv (text): width, height'));
   check('opening malformed legacy geometry through the board atlas shows the board error',
     legacyRowReady && legacyOpenStarted &&
       legacyFailure?.text?.includes('helv (text): width, height'),
@@ -578,9 +655,7 @@ try {
     row.click();
     return true;
   })()`);
-  let correctedLegacy = null;
-  for (let i = 0; i < 60; i++) {
-    correctedLegacy = await evalInPage(`(() => {
+  const correctedLegacy = await waitFor(() => evalInPage(`(() => {
       const board = document.querySelector('.board-name')?.textContent.trim();
       const node = document.querySelector('.excalidraw');
       const key = node && Object.keys(node).find(k => k.startsWith('__reactFiber$'));
@@ -599,17 +674,13 @@ try {
         fiber = fiber.return;
       }
       return { board, rendered: false, zoom: null, hasNaNZoom: true };
-    })()`);
-    if (correctedLegacy?.board === 'legacy-geometry' && correctedLegacy?.rendered) break;
-    await sleep(100);
-  }
-  let correctedPanes = null;
-  for (let i = 0; i < 40; i++) {
-    correctedPanes = (await api('GET', '/api/panes')).body;
-    if (correctedPanes?.panes?.[0]?.board === 'legacy-geometry' &&
-        correctedPanes?.panes?.[0]?.elementCount === 1) break;
-    await sleep(100);
-  }
+    })()`), state => state?.board === 'legacy-geometry' && state?.rendered);
+  const correctedPanes = await waitFor(
+    async () => (await api('GET', '/api/panes')).body,
+    report => report?.panes?.[0]?.board === 'legacy-geometry' &&
+      report?.panes?.[0]?.elementCount === 1,
+    PANE_SETTLE_CAP_MS
+  );
   const finiteTelemetry = (value) => typeof value === 'number' && Number.isFinite(value);
   const correctedPane = correctedPanes?.panes?.[0];
   check('after the note is corrected, the same board opens and renders',
@@ -643,12 +714,45 @@ try {
     opened.status === 200 && opened.body?.source === 'vault' && opened.body?.elementCount === 12,
     `${opened.body?.source} / ${opened.body?.elementCount} elements`);
 
-  // Pane telemetry has its own recovery path. Force this pane's measured DOM
-  // rectangle non-finite, trigger a report, and observe the browser's own POST
-  // stream. Nothing should leave the page until the geometry is finite again.
+  // Pane telemetry has its own recovery path. Return to the exact rounded
+  // rect and viewport that were already published. The retry can only leave
+  // the page if the invalid branch forgot that key.
+  const publishedPane = (await waitFor(
+    async () => (await api('GET', '/api/panes')).body?.panes?.[0] ?? null,
+    pane => pane?.board === 'fixedpoint' && pane?.elementCount === 12,
+    PANE_SETTLE_CAP_MS
+  ));
+  const roundedGeometry = report => ({
+    rect: {
+      x: Math.round(report?.rect?.x),
+      y: Math.round(report?.rect?.y),
+      width: Math.round(report?.rect?.width),
+      height: Math.round(report?.rect?.height)
+    },
+    viewport: {
+      x: Math.round(report?.viewport?.x),
+      y: Math.round(report?.viewport?.y),
+      width: Math.round(report?.viewport?.width),
+      height: Math.round(report?.viewport?.height),
+      zoom: Math.round(report?.viewport?.zoom)
+    }
+  });
+  const expectedPublishedGeometry = roundedGeometry(publishedPane);
   const telemetryProbeInstalled = await evalInPage(`(() => {
     const pane = document.querySelector('.pane-canvas');
-    if (!pane) return false;
+    const expected = ${JSON.stringify(publishedPane)};
+    const node = document.querySelector('.excalidraw');
+    const key = node && Object.keys(node).find(k => k.startsWith('__reactFiber$'));
+    let fiber = key ? node[key] : null;
+    let app = null;
+    for (let n = 0; fiber && n < 60; n++) {
+      if (fiber.stateNode && typeof fiber.stateNode === 'object' && fiber.stateNode.scene && fiber.stateNode.state) {
+        app = fiber.stateNode;
+        break;
+      }
+      fiber = fiber.return;
+    }
+    if (!pane || !app || !expected?.rect || !expected?.viewport) return false;
     const nativeFetch = window.fetch.bind(window);
     window.__task117PanePosts = [];
     window.fetch = (...args) => {
@@ -660,11 +764,25 @@ try {
       return nativeFetch(...args);
     };
     window.__task117PaneRect = pane.getBoundingClientRect.bind(pane);
-    pane.getBoundingClientRect = () => ({ ...window.__task117PaneRect(), width: Infinity });
+    window.__task117PaneExpected = expected;
+    window.__task117Excalidraw = app;
+    pane.getBoundingClientRect = () => ({
+      ...window.__task117PaneRect(),
+      left: expected.rect.x,
+      top: expected.rect.y,
+      width: Infinity,
+      height: expected.rect.height
+    });
+    app.updateScene({ appState: {
+      scrollX: -expected.viewport.x + 1,
+      scrollY: -expected.viewport.y,
+      zoom: { value: expected.viewport.zoom }
+    }});
     return true;
   })()`);
-  await browser(['set', 'viewport', '1180', '760']);
-  await sleep(800);
+  // The invalid report is due after PANE_DEBOUNCE_MS. One third of the
+  // debounce is the documented scheduling margin for a slow frame.
+  await sleep(PANE_SUPPRESSION_WAIT_MS);
   const suppressedTelemetry = await evalInPage(`window.__task117PanePosts ?? []`);
   check('the pane suppresses its own non-finite telemetry before JSON can turn it into null',
     telemetryProbeInstalled && suppressedTelemetry.length === 0,
@@ -672,25 +790,43 @@ try {
 
   const telemetryRestored = await evalInPage(`(() => {
     const pane = document.querySelector('.pane-canvas');
-    if (!pane || !window.__task117PaneRect) return false;
-    pane.getBoundingClientRect = window.__task117PaneRect;
+    const expected = window.__task117PaneExpected;
+    const app = window.__task117Excalidraw;
+    if (!pane || !app || !expected) return false;
+    pane.getBoundingClientRect = () => ({
+      ...window.__task117PaneRect(),
+      left: expected.rect.x,
+      top: expected.rect.y,
+      width: expected.rect.width,
+      height: expected.rect.height
+    });
     window.__task117PanePosts = [];
+    app.updateScene({ appState: {
+      scrollX: -expected.viewport.x,
+      scrollY: -expected.viewport.y,
+      zoom: { value: expected.viewport.zoom }
+    }});
     return true;
   })()`);
-  await browser(['set', 'viewport', '1200', '780']);
-  await sleep(800);
-  const recoveredTelemetry = await evalInPage(`(() => {
+  const recoveredTelemetry = await waitFor(() => evalInPage(`(() => {
     const bodies = (window.__task117PanePosts ?? []).map(body => JSON.parse(body));
-    return {
-      count: bodies.length,
-      finite: bodies.length > 0 && bodies.every(report =>
-        [...Object.values(report.rect), ...Object.values(report.viewport)]
-          .every(value => typeof value === 'number' && Number.isFinite(value)))
-    };
-  })()`);
-  check('  and publishes finite state after the pane geometry is corrected',
-    telemetryRestored && recoveredTelemetry?.count > 0 && recoveredTelemetry?.finite === true,
-    JSON.stringify(recoveredTelemetry));
+    return bodies.at(-1) ?? null;
+  })()`), report => report !== null, PANE_SETTLE_CAP_MS);
+  const recoveredOnServer = await waitFor(
+    async () => (await api('GET', '/api/panes')).body?.panes?.[0] ?? null,
+    pane => pane?.at !== publishedPane?.at &&
+      JSON.stringify(roundedGeometry(pane)) === JSON.stringify(expectedPublishedGeometry),
+    PANE_SETTLE_CAP_MS
+  );
+  const recoveredGeometry = roundedGeometry(recoveredTelemetry);
+  const recoveredFinite = recoveredTelemetry &&
+    [...Object.values(recoveredTelemetry.rect), ...Object.values(recoveredTelemetry.viewport)]
+      .every(value => typeof value === 'number' && Number.isFinite(value));
+  check('  and republishes the exact previous finite rect and viewport after correction',
+    telemetryRestored && recoveredFinite === true &&
+      JSON.stringify(recoveredGeometry) === JSON.stringify(expectedPublishedGeometry) &&
+      recoveredOnServer?.at !== publishedPane?.at,
+    JSON.stringify({ expectedPublishedGeometry, recoveredTelemetry, recoveredOnServer }));
 
   const rendered = await sceneWhenStill();
   const held = (await api('GET', '/api/elements?board=fixedpoint')).body?.elements ?? [];
@@ -814,9 +950,7 @@ try {
       `status ${wrote.status}`);
   }
 
-  let doingLayout = null;
-  for (let i = 0; i < 40; i += 1) {
-    doingLayout = await evalInPage(`(() => {
+  const doingLayout = await waitFor(() => evalInPage(`(() => {
       const rail = document.querySelector('.agent-rail');
       const panel = document.querySelector('.pane-doing');
       const lines = [...document.querySelectorAll('.pane-doing-line')];
@@ -835,10 +969,7 @@ try {
         timestampsAlign: timestamps.every(left => Math.abs(left - timestamps[0]) < 0.5),
         widths: lines.map(line => [line.clientWidth, line.scrollWidth])
       };
-    })()`);
-    if (doingLayout) break;
-    await sleep(100);
-  }
+    })()`), Boolean);
   check('the five latest activity lines render in the pane', doingLayout?.lineCount === 5,
     JSON.stringify(doingLayout));
   check('  with every line fully readable instead of clipped at the right edge',
@@ -885,13 +1016,11 @@ try {
     row.click();
     return true;
   })()`);
-  let switchedToScratch = false;
-  for (let i = 0; i < 40; i += 1) {
-    switchedToScratch = await evalInPage(
-      `document.querySelector('.board-name')?.textContent.trim() === 'scratch'`);
-    if (switchedToScratch) break;
-    await sleep(100);
-  }
+  const switchedToScratch = await waitFor(
+    () => evalInPage(
+      `document.querySelector('.board-name')?.textContent.trim() === 'scratch'`),
+    Boolean
+  );
   check('a board in the navigator opens directly into the focused pane',
     switchStarted && switchedToScratch);
 

@@ -47,11 +47,12 @@ interface CanvasPaneProps {
    * happens to own the socket the request arrived on.
    */
   onLayoutRequest: (paneId: string, request: 'open' | 'close') => void
+  onBoardError: (error: string) => void
 }
 
 export function CanvasPane({
   paneId, primary, focused, theme, onStatus, onAgentState, onThemeChange, onFocus, label,
-  libraryItems, onLibraryChange, onLibraryChangedElsewhere, onLayoutRequest
+  libraryItems, onLibraryChange, onLibraryChangedElsewhere, onLayoutRequest, onBoardError
 }: CanvasPaneProps): JSX.Element {
   const layout = useCallback(
     (request: 'open' | 'close') => onLayoutRequest(paneId, request),
@@ -60,7 +61,8 @@ export function CanvasPane({
   const session = useCanvasSession({
     paneId, primary, focused, onStatus,
     onLibraryChanged: onLibraryChangedElsewhere,
-    onLayoutRequest: layout
+    onLayoutRequest: layout,
+    onBoardError
   })
 
   useEffect(() => {

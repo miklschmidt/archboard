@@ -522,7 +522,14 @@ function boardElements(board: BoardState): ServerElement[] {
 
 /** How many elements a board has, for a summary that does not need them all. */
 function boardElementCount(board: BoardState): number {
-  return readBoardContent(board).elements.size;
+  try {
+    return readBoardContent(board).elements.size;
+  } catch (error) {
+    // A malformed persisted scratch note is still an open board address. Keep
+    // board listings and health usable while its pane carries the actual error.
+    if (error instanceof RenderGeometryError) return 0;
+    throw error;
+  }
 }
 
 /**
@@ -707,7 +714,18 @@ wss.on('connection', (ws: WebSocket, req) => {
   if (clientId) paneBoards.set(clientId, startingKey);
   const board = boards.get(startingKey)!;
   // Read out of the note, like everything else that sends a pane a whole board.
-  const content = readBoardContent(board);
+  // Scratch is registered before the listener binds. If its legacy note is
+  // malformed, start with no scene rather than sending any of those elements
+  // to Excalidraw, then put the refusal on screen. The note stays untouched.
+  let content: BoardContent;
+  let renderError: RenderGeometryError | null = null;
+  try {
+    content = readBoardContent(board);
+  } catch (error) {
+    if (!(error instanceof RenderGeometryError)) throw error;
+    content = emptyContent();
+    renderError = error;
+  }
   const initialMessage: InitialElementsMessage & {
     files?: Record<string, ExcalidrawFile>;
     identity: BoardIdentity;
@@ -719,6 +737,15 @@ wss.on('connection', (ws: WebSocket, req) => {
     ...boardFilesMessage(content)
   };
   ws.send(JSON.stringify(initialMessage));
+  if (renderError) {
+    ws.send(JSON.stringify({
+      type: 'board_error',
+      board: startingKey,
+      error:
+        `Could not open "${startingKey}" from ${board.file}. ${renderError.message} ` +
+        `The note was left unchanged. Correct it, then run \`board open ${startingKey} --reload\`.`
+    } satisfies WebSocketMessage));
+  }
   // And where its lock stands. A broadcast only reaches panes that were already
   // connected, so a tab that has just arrived — or come back from a dropped
   // socket — is told outright rather than left assuming the board is free.
@@ -3549,7 +3576,16 @@ function adoptScratchBoard(): void {
   // scratch will read it for itself.
   recordBaseline(board, loaded.file, loaded.hash, loaded.version);
   board.loadedAt = new Date().toISOString();
-  logger.info(`Scratch board picked up where it was left: ${boardElementCount(board)} element(s) from ${loaded.file}`);
+  try {
+    const count = readBoardContent(board).elements.size;
+    logger.info(`Scratch board picked up where it was left: ${count} element(s) from ${loaded.file}`);
+  } catch (error) {
+    if (!(error instanceof RenderGeometryError)) throw error;
+    logger.warn(
+      `Scratch note cannot be rendered and was left unchanged: ${error.message} ` +
+      'The canvas will start so the pane can show this error.'
+    );
+  }
 }
 
 async function startServer(): Promise<void> {
