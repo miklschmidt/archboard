@@ -1,16 +1,30 @@
 ---
 id: TASK-117
 title: Prevent malformed text geometry from blanking a board
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@codex'
 created_date: '2026-08-25 11:34'
-updated_date: '2026-08-25 11:41'
+updated_date: '2026-08-25 12:12'
 labels: []
 dependencies: []
 references:
   - docs/adr/0015-the-vault-is-the-truth-and-the-agent-shape-is-input.md
   - src/core/expand-elements.ts
   - frontend/src/canvas/useCanvasSession.ts
+documentation:
+  - docs/agents/test-suite.md
+modified_files:
+  - src/core/geometry.ts
+  - src/core/board-write.ts
+  - src/core/board-io.ts
+  - src/server.ts
+  - frontend/src/canvas/useCanvasSession.ts
+  - scripts/check-geometry.mjs
+  - scripts/check-boards.mjs
+  - scripts/check-fixed-point.mjs
+  - scripts/check-live-session.mjs
+  - docs/agents/test-suite.md
 priority: high
 type: bug
 ordinal: 119000
@@ -24,12 +38,12 @@ A board can persist an auto-resizing Helvetica text element without finite width
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An auto-resizing text element in an unmeasurable font with no finite width or height is refused atomically with an error that identifies the element and invalid fields
-- [ ] #2 No successful write can persist an element whose required render geometry is missing or non-finite
-- [ ] #3 Opening a legacy note with malformed geometry shows an actionable board error instead of a blank canvas or %NaN% zoom
-- [ ] #4 Pane reports never send non-finite viewport values as null, and a failed pane report can recover after the underlying scene is corrected
-- [ ] #5 The 400 response for invalid pane telemetry identifies the failing field path
-- [ ] #6 Regression coverage reproduces the Helvetica missing-dimensions case and proves finite zoom, a rendered board or explicit board error, and successful pane registration
+- [x] #1 An auto-resizing text element in an unmeasurable font with no finite width or height is refused atomically with an error that identifies the element and invalid fields
+- [x] #2 No successful write can persist an element whose required render geometry is missing or non-finite
+- [x] #3 Opening a legacy note with malformed geometry shows an actionable board error instead of a blank canvas or %NaN% zoom
+- [x] #4 Pane reports never send non-finite viewport values as null, and a failed pane report can recover after the underlying scene is corrected
+- [x] #5 The 400 response for invalid pane telemetry identifies the failing field path
+- [x] #6 Regression coverage reproduces the Helvetica missing-dimensions case and proves finite zoom, a rendered board or explicit board error, and successful pane registration
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -42,3 +56,15 @@ A board can persist an auto-resizing Helvetica text element without finite width
 5. Extend `scripts/check-fixed-point.mjs` with the shipped frontend and real headless Excalidraw: plant the malformed legacy note, verify board opening shows the explicit error while zoom stays finite and no `%NaN%` appears, correct the note, reopen it, then prove the board renders and `/api/panes` registers a finite viewport. Exercise one rejected non-finite pane report followed by a corrected camera report to prove recovery. Update `docs/agents/test-suite.md` to record this added fixed-point responsibility.
 6. Validate with the focused geometry and board checks, `bun run type-check`, `bun run test:browser` headlessly, then the full `bun run test` chain with the three browser checks kept sequential.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented the approved plan at the canonical ingest and write boundaries. The complete request-local live document is validated before held state, persistence, broadcast, or success; malformed legacy notes retain their bytes and use the board-open error path. Browser telemetry now suppresses non-finite local reports and remains able to publish corrected finite state. Validation: test:geometry 87 checks; test:boards passed; type-check passed; test:browser passed with visible legacy-note error, finite zoom, telemetry suppression and recovery, successful corrected registration, and zero Excalidraw diff; test:live-session passed 42 mixed-write cycles; full sequential bun run test passed.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Rejected missing or non-finite live render geometry atomically at board ingest and write boundaries, kept malformed legacy notes visible through the existing board-open error path, and hardened pane telemetry suppression and recovery. Verified with focused geometry, board, type, browser, and live-session checks plus the complete sequential bun run test suite.
+<!-- SECTION:FINAL_SUMMARY:END -->

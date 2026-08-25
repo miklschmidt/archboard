@@ -327,7 +327,7 @@ export function useCanvasSession({
     const board = boardKeyRef.current
     if (!api || !board) return null
     const appState = api.getAppState()
-    const zoom = appState.zoom?.value || 1
+    const zoom = appState.zoom?.value ?? 1
     // Measured off the DOM rather than taken from appState: Excalidraw catches
     // up with a resize on its own schedule, and a pane that reported a stale
     // width would place itself wrong — which is the one thing this must not do.
@@ -337,6 +337,23 @@ export function useCanvasSession({
       y: box?.top ?? appState.offsetTop ?? 0,
       width: box?.width ?? appState.width ?? 0,
       height: box?.height ?? appState.height ?? 0
+    }
+    const viewport = {
+      x: -(appState.scrollX ?? 0),
+      y: -(appState.scrollY ?? 0),
+      width: rect.width / zoom,
+      height: rect.height / zoom,
+      zoom
+    }
+    const finiteRect = Object.values(rect).every(Number.isFinite)
+    const finiteViewport = Object.values(viewport).every(Number.isFinite) && zoom > 0
+    if (!finiteRect || !finiteViewport) {
+      // JSON.stringify turns NaN and infinities into null. Do not publish a
+      // different payload from the one inspected here, and forget the last
+      // finite report so a corrected camera can register even if it returns to
+      // the same coordinates.
+      publishedPaneRef.current = ''
+      return null
     }
     return {
       clientId,
@@ -349,13 +366,7 @@ export function useCanvasSession({
       rect,
       // Scene coordinates, so it can be compared with element positions
       // directly — "the box at 400,200 is on screen in the left pane".
-      viewport: {
-        x: -(appState.scrollX ?? 0),
-        y: -(appState.scrollY ?? 0),
-        width: rect.width / zoom,
-        height: rect.height / zoom,
-        zoom
-      }
+      viewport
     }
   }, [clientId, paneId])
 
