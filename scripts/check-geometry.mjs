@@ -37,6 +37,7 @@ const {
   isPathElement,
   validateRenderGeometry
 } = await import(src('core/geometry.ts'));
+const { applyElementInput } = await import(src('core/apply-element-input.ts'));
 const { boxOf, boundingBoxOf, clusterBoxes, regionName } = await import(src('core/layout.ts'));
 const { describeScene, buildSelectionReport } = await import(src('core/describe.ts'));
 const { labelAnchorOf } = await import(src('core/labels.ts'));
@@ -92,6 +93,31 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     valid = false;
   }
   assert(valid, 'finite zero and negative geometry should remain valid');
+
+  const publicBoard = new Map([[
+    'seed',
+    { id: 'seed', type: 'rectangle', x: 0, y: 0, width: 80, height: 40 }
+  ]]);
+  let publicError = null;
+  try {
+    applyElementInput(publicBoard, {
+      origin: 'human',
+      upserts: [{
+        id: 'public-helvetica', type: 'text', x: 10, y: 20,
+        text: 'unmeasurable', fontFamily: 2, autoResize: true
+      }]
+    });
+  } catch (caught) {
+    publicError = caught;
+  }
+  assert(
+    publicError?.message.includes('public-helvetica (text): width, height'),
+    `applyElementInput returned malformed public output: ${publicError?.message ?? 'no refusal'}`
+  );
+  assert(
+    publicBoard.size === 1 && publicBoard.has('seed'),
+    `applyElementInput left malformed state in its caller's board: ${[...publicBoard.keys()].join(', ')}`
+  );
 }
 
 // ─── The arithmetic ──────────────────────────────────────────

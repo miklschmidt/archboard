@@ -241,6 +241,9 @@ export type WebSocketMessageType =
   // last few lines as well as the new one, so a pane that has just arrived on
   // the board is not blank until the next write.
   | 'board_doing'
+  // A board note could not be rendered. The pane receives no part of its
+  // malformed scene and shows this through the shell's board-error notice.
+  | 'board_error'
   // The stencil palette changed. Boardless on purpose: the library is not a
   // board's content, so every client applies it whatever it is showing.
   | 'library_changed'

@@ -233,6 +233,45 @@ const { readBoardFile, readNote } = await import(src('core/board-io.ts'));
   await new Promise(resolve => listener.close(resolve));
 }
 
+// writeBoardContent owns the final document settlement immediately before
+// persistence. A malformed text with a long foreign id proves the refusal is
+// after that settlement: the error must name the settled block id, and the
+// note must remain byte-identical.
+{
+  const { readBoardContent, writeBoardContent } = await import(src('core/board-io.ts'));
+  const identity = makeIdentity({ board: 'final-geometry-guard', level: 'service' });
+  const { board } = getOrCreateBoard(identity);
+  board.file = vaultPathFor(identity);
+  const valid = readBoardContent(board);
+  valid.elements.set('seed', {
+    id: 'seed', type: 'rectangle', x: 0, y: 0, width: 100, height: 50
+  });
+  writeBoardContent(board, valid, { saveCommand: 'board save' });
+  const before = fs.readFileSync(board.file);
+  const malformed = readBoardContent(board);
+  const foreignId = 'foreign-text-id-needing-settlement';
+  malformed.elements.set(foreignId, {
+    id: foreignId, type: 'text', x: 20, y: 80,
+    text: 'legacy Helvetica', fontFamily: 2, autoResize: true
+  });
+  let refused = null;
+  try {
+    writeBoardContent(board, malformed, { saveCommand: 'board save' });
+  } catch (error) {
+    refused = error;
+  }
+  check('the exact final document is geometry-checked after write settlement',
+    refused instanceof Error &&
+      /Invalid render geometry: [A-Za-z0-9_-]{1,8} \(text\): width, height/.test(refused.message) &&
+      !refused.message.includes(foreignId),
+    refused?.message ?? 'write succeeded');
+  check('  before the persistence boundary changes one byte',
+    fs.readFileSync(board.file).equals(before));
+  if (!fs.readFileSync(board.file).equals(before)) fs.writeFileSync(board.file, before);
+  boardStore.delete(boardKey(identity));
+  fs.rmSync(board.file, { force: true });
+}
+
 // Pane addressing shares its reading order with the report, so "right" cannot
 // mean one pane to `--pane` and another to `panes`.
 {
@@ -1402,7 +1441,29 @@ try {
     return { status: response.status, body: await response.json().catch(() => null) };
   };
 
+  fs.mkdirSync(path.dirname(scratchNote), { recursive: true });
+  const malformedScratch = renderBoardNote({
+    type: 'excalidraw', version: 2,
+    elements: [{
+      id: 'shlv', type: 'text', x: 20, y: 30,
+      text: 'malformed scratch', fontFamily: 2, autoResize: true
+    }],
+    appState: {}, files: {}
+  }, null, makeIdentity({ board: 'scratch' }));
+  fs.writeFileSync(scratchNote, malformedScratch);
   let scratchCanvas = await startScratchCanvas();
+  const malformedScratchRead = await scratchApi('GET', '/api/elements?board=scratch');
+  check('a malformed persisted scratch note does not prevent server startup',
+    malformedScratchRead.status === 400, malformedScratchRead.body?.error);
+  check('  and the refusal names the malformed scratch element and fields',
+    /shlv \(text\): width, height/.test(malformedScratchRead.body?.error ?? ''),
+    malformedScratchRead.body?.error);
+  check('  without replacing or repairing the scratch note',
+    fs.readFileSync(scratchNote, 'utf8') === malformedScratch);
+  scratchCanvas.kill('SIGTERM');
+  await new Promise(resolve => scratchCanvas.once('exit', resolve));
+  fs.rmSync(scratchNote);
+  scratchCanvas = await startScratchCanvas();
   try {
     const firstInfo = await scratchApi('GET', '/api/boards/info?board=scratch');
     check('scratch keeps its own name and says where its note goes',

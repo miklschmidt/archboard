@@ -169,6 +169,8 @@ export interface BoardListing {
 
 export interface WebSocketMessage {
   type: string;
+  /** On `board_error`: the actionable refusal the shell must keep visible. */
+  error?: string;
   board?: string;
   identity?: BoardIdentity;
   element?: ServerElement;

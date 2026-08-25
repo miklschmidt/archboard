@@ -485,6 +485,18 @@ function settleBoundArrows(content: BoardContent): void {
 }
 
 /**
+ * Finish the one board document that can enter a hold, a note or an answer.
+ * Keep this order beside the settlement functions it owns. Validation after
+ * them proves the document a caller receives is the document persistence sees.
+ */
+export function settleBoardContent(content: BoardContent): void {
+  settleBlockIds(content);
+  settleBoundArrows(content);
+  settleRawText(content);
+  validateRenderGeometry(content.elements.values());
+}
+
+/**
  * A write archboard would not make, because somebody else has been here.
  *
  * Carries the conflict as data — the three outcomes and which one costs what —
@@ -620,9 +632,7 @@ export function writeBoardContent(
   const identity = board.identity;
   // Before anything is rendered or checked, so what the caller is holding and
   // what the note will say are the same document.
-  settleBlockIds(content);
-  settleBoundArrows(content);
-  settleRawText(content);
+  settleBoardContent(content);
 
   // The destination as it stands right now, not as this request found it.
   let destination: Buffer | undefined;

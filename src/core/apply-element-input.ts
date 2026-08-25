@@ -14,7 +14,13 @@ import {
   repairIndices,
   settleDeletions
 } from './expand-elements.js';
-import { DEFAULT_LINEAR_POINTS, pointsOf, remeasureLinear } from './geometry.js';
+import {
+  DEFAULT_LINEAR_POINTS,
+  pointsOf,
+  remeasureLinear,
+  validateRenderGeometry
+} from './geometry.js';
+import { copyElements } from './board-store.js';
 import { mintId } from './ids.js';
 import { recentreBoundTexts } from './labels.js';
 
@@ -512,28 +518,38 @@ export function applyElementInput(
   board: Map<string, ServerElement>,
   request: ElementInputRequest
 ): AppliedElementInput {
+  // This function is public as well as the write door's conversion stage. Do
+  // the whole conversion against an isolated document, then replace the
+  // caller's map only after well-forming and validation both succeed.
+  const working = new Map(
+    copyElements(board.values()).map(element => [element.id, element])
+  );
   const upserts = request.upserts ?? [];
   const deletes = request.deletes ?? [];
   const prepared = request.origin === 'agent'
-    ? applyAgentInput(board, upserts)
-    : applyHumanInput(board, upserts, request.timestamp);
+    ? applyAgentInput(working, upserts)
+    : applyHumanInput(working, upserts, request.timestamp);
   const deleted: string[] = [];
   for (const id of deletes) {
-    if (board.delete(id)) deleted.push(id);
+    if (working.delete(id)) deleted.push(id);
   }
-  for (const element of settleAfterWrite(prepared.moved ?? [], board)) {
-    if (board.has(element.id)) prepared.updated.set(element.id, element);
+  for (const element of settleAfterWrite(prepared.moved ?? [], working)) {
+    if (working.has(element.id)) prepared.updated.set(element.id, element);
   }
   const settled = settleDocument({
     created: prepared.created,
-    updated: [...prepared.updated.values()].filter(element => board.has(element.id)),
+    updated: [...prepared.updated.values()].filter(element => working.has(element.id)),
     deleted
-  }, board);
-  return {
+  }, working);
+  validateRenderGeometry(working.values());
+  const applied = {
     named: prepared.namedIds.flatMap(id => {
-      const element = board.get(id);
+      const element = working.get(id);
       return element ? [element] : [];
     }),
     ...settled
   };
+  board.clear();
+  for (const [id, element] of working) board.set(id, element);
+  return applied;
 }

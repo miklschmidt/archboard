@@ -553,6 +553,7 @@ export function Shell(): JSX.Element {
                 onLibraryChange={library.reportFromPane}
                 onLibraryChangedElsewhere={library.applyFromServer}
                 onLayoutRequest={handleLayoutRequest}
+                onBoardError={(error) => setNotice({ kind: 'error', text: error, hold: true })}
               />
             ))}
           </div>
