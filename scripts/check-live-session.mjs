@@ -4,9 +4,11 @@
 // document and the server's held against each other after every cycle
 // (TASK-076).
 //
-// WHY THIS EXISTS. Stage 7 made a write return the resulting document and the
-// pane render it (TASK-074). Without this check, "the server is the truth" is
-// a claim: every other check in scripts/ writes once and reads once, and every
+// WHY THIS EXISTS. Stage 7 first made a write return the resulting document
+// (TASK-074). Ordinary human reports now advance their sent baseline from a
+// compact acknowledgement and apply only canonical corrections (TASK-118),
+// never a whole document. Without this check, "the server is the truth" is a
+// claim: every other check in scripts/ writes once and reads once, and every
 // bug this stage exists to prevent needed a session to build up in. A label
 // multiplied every time a board went round the loop until one edge carried 42
 // copies of its own name (TASK-024). A rename came back (TASK-028). An emptied
@@ -46,10 +48,11 @@
 // report at all, and then edits made by calling the live Excalidraw
 // instance's own `updateScene` through the fiber. That is the same door the
 // pane's own code goes through and it fires the same `onChange`, so everything
-// downstream — the debounce, the delta against the baseline, the label
-// statements, the server update — is exercised exactly as it is in use. What it does
-// not exercise is Excalidraw's pointer handling, and this check does not claim
-// to.
+// downstream — the fixed progress and trailing-idle deadlines, the delta
+// against the baseline, the compact canonical acknowledgement, the label
+// statements and the server update — is exercised exactly as it is in use.
+// What it does not exercise is Excalidraw's pointer handling, and this check
+// does not claim to.
 //
 // WHAT IS IGNORED, and why. Nine fields, and they divide in two:
 //
@@ -91,9 +94,9 @@ const check = (label, cond, extra = '') => {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // The one place this check has to know a number the pane is using: it plants a
-// broadcast while a drag is still sitting in the pane's report debounce. Read
+// broadcast while a drag is still waiting for its progress delivery. Read
 // from src/core/timing.ts rather than copied, because a copy here would keep
-// passing after somebody shortened the debounce and would stop testing the
+// passing after somebody shortened the deadline and would stop testing the
 // thing it names.
 const {
   LOCK_FREE_LINGER_MS, LOCK_RENEW_MS, PANE_DEBOUNCE_MS, REPORT_PROGRESS_MS
@@ -220,9 +223,9 @@ const INSTALL_COUNTER = `(() => {
       });
     }
     if (!counted) return answer;
-    // Holding one report's answer back is how a second report's debounce
-    // expires while the first is still in flight. No amount of writing faster
-    // reproduces that ordering (TASK-099).
+    // Holding one compact acknowledgement back is how another progress
+    // deadline can expire while the first report is still in flight. No amount
+    // of writing faster reproduces that ordering (TASK-099).
     const holdFor = window.__abDelayReport || 0;
     window.__abDelayReport = 0;
     return answer
@@ -1003,20 +1006,22 @@ try {
     { kind: 'move', id: 'store', dx: 17, dy: -9 },
     element => element?.x, was => was + 17);
 
-  // --- a report whose debounce expires while one is in flight -------------
+  // --- sparse progress while one compact acknowledgement is in flight ------
   //
-  // The third way, and the one contention reaches: it needs a round trip
-  // longer than the report debounce, which is what a loaded machine produces
-  // and what TASK-097 was reading as a check that cannot share a box.
+  // The contention case needs a round trip longer than the fixed progress
+  // deadline, which is what a loaded machine produces and what TASK-097 was
+  // reading as a check that cannot share a box.
   //
-  // A drag, its report held back mid-flight, and a second drag whose own
-  // debounce therefore expires while the first is still out. That report is
-  // not sent, and the answer coming back names an element the user has moved, so no
-  // document is applied and no settle runs to notice — the second drag is
-  // pending for the server with no report left in the pane that will send it.
+  // A first drag waits past its progress deadline because it is still an
+  // isolated final edit. A second drag arrives before the trailing idle
+  // deadline, so continued work makes the overdue progress report immediately
+  // due. Its compact acknowledgement is held back beyond another progress
+  // interval. The accepted report must contain the latest state of both drags;
+  // no ordinary human response applies a whole document.
   //
   // Both halves are timed in the page. An `eval` round trip is tens of
-  // milliseconds of jitter against a 400 ms debounce, which is enough to miss.
+  // milliseconds of jitter against a 400 ms progress deadline, which is
+  // enough to miss.
   // The delay holds the *answer* back, not the write: the server has the first
   // drag as soon as it is posted. So this waits the whole sequence out rather
   // than watching for the two documents to converge — for a moment in the
@@ -1035,17 +1040,17 @@ try {
   })()`);
   await sleep(REPORT_PROGRESS_MS * 8);
 
-  // Not vacuous: the second drag's own debounce really did expire before the
-  // first report was answered, which is the collision this exists for.
+  // Not vacuous: the compact acknowledgement remained outstanding for another
+  // complete progress interval after the second drag made the report due.
   const flight = await evalInPage(
     '(() => ({ answeredAt: window.__abAnsweredAt, editedAt: window.__abSecondEditAt }))()');
-  check('a second drag finishes its debounce while the first report is still in flight',
+  check('the sparse-drag acknowledgement stays in flight through another progress deadline',
     flight.answeredAt - flight.editedAt > REPORT_PROGRESS_MS,
     `the answer was ${Math.round(flight.answeredAt - flight.editedAt)} ms behind the drag, ` +
     `and the drag's progress deadline expired ${REPORT_PROGRESS_MS} ms after it`);
 
   const bothDrags = await agree();
-  check('  and the report whose debounce expired while it was in flight is not dropped',
+  check('  and the overdue progress report carrying both drags is not dropped',
     bothDrags.agreed, (bothDrags.divergences ?? []).slice(0, 4).join(' | '));
   const dragged = (await held()).find(e => e.id === 'store');
   check('  so both user moves are on the board',
@@ -1056,7 +1061,8 @@ try {
   // The other half of TASK-074's split. A pane holding work the server has not
   // heard about yet must not lose it when somebody else's write arrives, which
   // is why another writer's broadcast is merged by id and only this pane's own
-  // response is applied whole.
+  // compact response advances the sent baseline and applies only canonical
+  // corrections, never an ordinary whole-document replacement.
 
   const boardNow = await held();
   const victim = boardNow.find(e => e.id === 'auth');
@@ -1082,11 +1088,11 @@ try {
   // moment, and nothing but the human's edit above could have taken it — the
   // release names the pane, and a release names nobody else's hold. So this is
   // the start of the edit proved end to end in a real browser: the edit took the
-  // board, and it took it before the report the debounce is still sitting on.
+  // board, and it took it before the pending progress/idle delivery lands.
   check('  and it was holding the board, taken at the first change of the edit',
     given.body?.released === true, JSON.stringify(given.body));
 
-  // Inside the pane's report debounce, so the drag is still undelivered.
+  // Before the pane's progress/idle delivery, so the drag is still undelivered.
   await api('POST', `/api/elements/changes?board=${BOARD}`, {
     origin: 'agent',
     upserts: [{ id: 'queue', backgroundColor: '#ff8787' }]
@@ -1178,7 +1184,7 @@ try {
     JSON.stringify(noticed.dialog));
 
   await humanEdit({ kind: 'move', id: 'queue', dx: 9, dy: 9 });
-  // The report debounce, the refusal, and the pane saying what is on its
+  // The trailing idle delivery, the refusal, and the pane saying what is on its
   // screen, which is one round trip after it.
   await sleep(2000);
 

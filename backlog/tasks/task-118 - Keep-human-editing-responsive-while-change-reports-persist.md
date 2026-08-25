@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-25 11:34'
-updated_date: '2026-08-25 15:04'
+updated_date: '2026-08-25 15:19'
 labels: []
 dependencies: []
 references:
@@ -30,6 +30,7 @@ modified_files:
   - scripts/check-human-edit-performance.mjs
   - scripts/check-labels.mjs
   - scripts/check-live-session.mjs
+  - scripts/check-lock.mjs
   - scripts/check-one-write.mjs
   - scripts/check-typed-text.mjs
   - src/core/apply-element-input.ts
@@ -135,6 +136,10 @@ Add a manual-clock sequence with edits every 500 ms, between the 400 ms progress
 ## Standards re-review additions
 
 Exercise the delayed A1, rapid A to scratch to A switch, and delayed A2 through the real browser session. Keep A1 identity alive across adoption and invalidate it by advancing the generation, then prove A1 completion neither clears A2 nor schedules a stale retry and A2 persists. Declare fractional-indexing 3.2.0 as an exact direct runtime dependency with the Bun lockfile, verify frozen resolution, and update the Change report domain definition for compact human acknowledgements versus agent answers.
+
+## Final standards timing and documentation pass
+
+Bind the lock lease guard to REPORT_IDLE_SETTLE_MS instead of a copied 400 ms expression, remove obsolete report-debounce terminology from AGENTS.md and timing comments, and refresh live-session and test-suite documentation for compact canonical acknowledgements, fixed progress plus idle delivery, and the delayed session to scratch to session hold-generation proof. Run focused lock and suite documentation checks, then the complete sequential suite.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -169,10 +174,16 @@ The real live-session regression delays A1, switches session to scratch to sessi
 fractional-indexing 3.2.0 is now an exact direct runtime dependency in package.json and bun.lock. bun install --frozen-lockfile checked 534 installs across 554 packages with no changes, and a direct runtime import generated a2V between a2 and a3. CONTEXT.md now documents compact human corrections plus fingerprint/version and the retained agent touched-elements/fingerprint response.
 
 Final verification: bun run test passed all 27 push suites sequentially with exit 0. Human performance observed zero send at progress and exactly one final report starting 837 ms after the isolated edit, five reports, ten fsyncs, seven holds, two releases, five document-free responses no larger than 1,071 B against a 5,744,795 B document, no agent write, no isolated no-correction scene replacement, and the loose relative frame gate passed. Lock 119, one-write 80, labels 183, version 65, fixed-point zero changes, typed-text, type-check, and live-session all passed.
+
+Final standards review is spec-clean and requests only the live idle-to-lease test relationship plus browser-gate terminology and scenario documentation. The requested writing-for-agents skill is absent from the restored repository skills and session catalog, so the AGENTS.md fallback is a narrow factual terminology edit.
+
+Final standards remediation completed. The lock timing guard now imports REPORT_IDLE_SETTLE_MS and proves LOCK_LEASE_MS retains two idle-settle windows, so a future idle increase cannot silently exceed the lease contract. Obsolete report-debounce wording was removed from AGENTS.md and timing comments. Live-session documentation now names compact canonical corrections, fixed progress plus trailing idle delivery, and the absence of ordinary whole-document reconciliation; test-suite documentation records the delayed session-to-scratch-to-session A1/A2 generation race and its stale-completion guarantees.
+
+Final focused evidence: git diff --check passed; test:suites reported 27 of 27 push suites; test:lock passed all 119 checks. The complete sequential bun run test passed all 27 push suites with exit 0. The retained 10,000-element browser performance gate observed the isolated final report start at 830 ms, five reports, ten fsyncs, seven holds, two releases, no agent writes, no ordinary full-document response or reconciliation, a largest compact response of 1,072 B versus a 5,744,795 B document, and a loose relative frame gate of 16.7 ms median / 66.7 ms worst. The live-session browser check proved delayed A1, rapid session-to-scratch-to-session adoption, delayed A2, safe A1 completion with A2 still pending and no stale retry, A2 edit persistence, and 42 of 42 mixed cycles converged.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Kept human editing locally responsive without weakening the vault mutex or pessimistic agent writes. Human reports use compact canonical acknowledgements; continuous edits cannot starve periodic progress even at 401–799 ms spacing; isolated final edits remain idle-owned; holds are exact, generation-safe, and proven through a delayed rapid away/back browser race; and valid fractional indices resolve through a declared direct dependency. Verified by the full sequential 27-suite run, 114 reducer checks, the 10,000-element performance gate, lock/version/one-write checks, fixed-point and typing checks, and 42 convergent live-session cycles.
+Kept human editing locally responsive without weakening the vault mutex or pessimistic agent writes. Human reports use compact canonical acknowledgements; progress and trailing idle deadlines are bounded by the live lease contract; sparse continuous edits cannot starve persistence; holds are exact and generation-safe across delayed rapid board switches; and ordinary acknowledgements never reconcile a whole document. Verified by the full sequential 27-suite run, 114 reducer checks, 119 lock checks, the 10,000-element performance gate, fixed-point and typing checks, and 42 convergent live-session cycles.
 <!-- SECTION:FINAL_SUMMARY:END -->

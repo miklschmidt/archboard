@@ -129,8 +129,9 @@ that changed on disk under another editor is refused, never overwritten
   The same middleware requires `doing`. Claim before substantial work
   (`claim` / `release`) — nothing refuses you for skipping it; you just leave
   a gap for another writer between every pair of writes.
-- **A person is never refused** — not by the lock beyond `REPORT_DEBOUNCE_MS`,
-  not by the version check, and never asked to narrate. An agent must not make
+- **A person is never refused** — their local edit is visible before either
+  `REPORT_PROGRESS_MS` or `REPORT_IDLE_SETTLE_MS`, never version-refused, and
+  never asked to narrate. An agent must not make
   a 75-inch display stop responding to the person standing at it.
 - **There is one converter, it runs on the way in, and nothing converts on the
   way out** (ADR 0015). `label: {text}` and arrow `start`/`end` are input

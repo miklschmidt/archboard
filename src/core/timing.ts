@@ -149,10 +149,11 @@ export const PANE_LAYOUT_TIMEOUT_MS = 10000
  *
  * This is the number the ADR 0016 tension is about, seen from the far end. It
  * has to be longer than REPORT_IDLE_SETTLE_MS, because that deadline sets the
- * closest together two trailing flushes from separate stretches can arrive. A settle
- * window shorter than the debounce would make every flush its own event and
- * the coalescing would do nothing. 800 against 1200 leaves room for a flush,
- * its round trip and the next flush inside one window, which is what turns
+ * closest together two trailing flushes from separate stretches can arrive. A
+ * settle window shorter than the trailing idle deadline would make every
+ * flush its own event and the coalescing would do nothing. 800 against 1200
+ * leaves room for a flush, its round trip and the next flush inside one window,
+ * which is what turns
  * "they rearranged that corner" into one thing the agent is told rather than
  * three.
  */
@@ -344,9 +345,10 @@ export const CLAIM_MAX_MS = 60 * 60_000
  * arriving on a bigger scale.
  *
  * So it is a name rather than a number, kept separate because the reason for
- * the value differs: LOCK_LEASE_MS has to clear a person's report debounce,
- * and this has to clear a renewal interval. Both are satisfied by the same
- * three seconds today, and the two would be tuned for different reasons.
+ * the value differs: LOCK_LEASE_MS has to clear a person's trailing idle
+ * report plus its write, and this has to clear a renewal interval. Both are
+ * satisfied by the same three seconds today, and the two would be tuned for
+ * different reasons.
  */
 export const CLAIM_LEASE_MS = LOCK_LEASE_MS
 
