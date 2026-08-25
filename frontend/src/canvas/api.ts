@@ -187,11 +187,11 @@ export function postViewportResult(requestId: string, payload: Record<string, un
 
 // ─── The board's mutex ────────────────────────────────────────
 //
-// The message a change report cannot be (ADR 0016). Reporting is a trailing
-// debounce with no maximum wait, so a continuous drag says nothing to the
-// server until 400 ms after the finger lifts — long after the change is on
-// screen and far too late to refuse. This goes out on the first change instead,
-// and the write that follows joins the hold rather than taking a second one.
+// The message a change report cannot be (ADR 0016). Reporting has a fixed
+// progress deadline during continuous work and a longer trailing-idle deadline
+// for the final dirty state, but either is too late to refuse an edit already
+// visible under the pointer. This goes out on the first change instead, and the
+// write that follows joins the hold rather than taking a second one.
 //
 // Deliberately not `json()`: a refusal here is an answer, not a failure. It
 // means somebody else is writing the board, and the caller has to be able to

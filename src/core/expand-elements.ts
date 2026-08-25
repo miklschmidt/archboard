@@ -1,4 +1,5 @@
 import { ServerElement, normalizeFontFamily } from '../types.js';
+import { generateKeyBetween } from 'fractional-indexing';
 import {
   LabelledElement, boundTextPlacement, boundTextsByContainer, labelSeedOf, labelTextIdFor
 } from './labels.js';
@@ -118,8 +119,8 @@ export function fractionalIndex(position: number): string {
  *
  * Excalidraw's scheme is wider than ours: it puts a key *between* two others
  * when a human sends one shape behind another, and those have no position in
- * our integer run. Saying null for those is the honest answer, and the repair
- * below treats it as "needs one of ours".
+ * our integer run. Saying null for those is the honest answer; validity and
+ * repair use the shared fractional-indexing implementation below.
  */
 export function indexPosition(key: string): number | null {
   const width = INDEX_DIGITS.indexOf(key[0] as string) - 36 + 1;   // 36 is 'a'
@@ -240,16 +241,34 @@ export function settledIndices(
   ordered: ReadonlyArray<{ index?: string | null }>
 ): Array<string | null> {
   const wanted: Array<string | null> = [];
-  let last = -1;
-  for (const element of ordered) {
-    const position = typeof element.index === 'string' ? indexPosition(element.index) : null;
-    if (position !== null && position > last) {
-      last = position;
+  let last: string | null = null;
+  const valid = (key: unknown): key is string => {
+    if (typeof key !== 'string') return false;
+    try {
+      generateKeyBetween(key, null);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  for (const [at, element] of ordered.entries()) {
+    const key = element.index;
+    if (valid(key) && (last === null || key > last)) {
+      last = key;
       wanted.push(null);
       continue;
     }
-    last += 1;
-    wanted.push(fractionalIndex(last));
+    let next: string | null = null;
+    for (let ahead = at + 1; ahead < ordered.length; ahead += 1) {
+      const candidate = ordered[ahead]?.index;
+      if (valid(candidate) && (last === null || candidate > last)) {
+        next = candidate;
+        break;
+      }
+    }
+    const repaired = generateKeyBetween(last, next);
+    wanted.push(repaired);
+    last = repaired;
   }
   return wanted;
 }

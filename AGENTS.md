@@ -64,7 +64,7 @@ rebuilds — `bun run test:module-scope` enforces it; waive a false positive
 with `// hot-safe: <reason>`. Mechanics and costs:
 `docs/design/hot-reload-under-bun.md` and the archboard-dev skill.
 
-**Running the suite needs `agent-browser` on PATH**: three checks drive a real
+**Running the suite needs `agent-browser` on PATH**: four checks drive a real
 browser and exit 2 without one. They must stay headless — a window that maps
 steals focus under Hyprland — and run one after another, never at once. A push
 runs `bun run test` and nothing else, and `test:suites` fails when a `test:*`

@@ -53,7 +53,7 @@ const {
   labelTextIdFor
 } = await import(join(__dirname, '..', 'src', 'core', 'labels.ts'));
 const { isBlockId } = await import(join(__dirname, '..', 'src', 'core', 'ids.ts'));
-const { expandElements, expandForBoard } =
+const { expandElements, expandForBoard, repairIndices } =
   await import(join(__dirname, '..', 'src', 'core', 'expand-elements.ts'));
 const { applyElementInput } =
   await import(join(__dirname, '..', 'src', 'core', 'apply-element-input.ts'));
@@ -309,6 +309,23 @@ const CYCLES = 25;
 }
 
 // --- one converter, two entry points ----------------------------------------
+//
+// Excalidraw inserts a fractional index between two existing elements. That
+// index is already canonical and must not be replaced with a duplicate that
+// forces every following element to be renumbered and corrected to the pane.
+{
+  const ordered = new Map([
+    ['zero', { id: 'zero', index: 'a0' }],
+    ['one', { id: 'one', index: 'a1' }],
+    ['two', { id: 'two', index: 'a2' }],
+    ['inserted', { id: 'inserted', index: 'a2V' }],
+    ['three', { id: 'three', index: 'a3' }]
+  ]);
+  const repaired = repairIndices(ordered);
+  assert(repaired.length === 0 && [...ordered.values()].map(element => element.index).join(',') ===
+    'a0,a1,a2,a2V,a3',
+    'a valid Excalidraw between-index was expanded into cascading canonical corrections');
+}
 //
 // `expandElements` and `expandForBoard` are both exported from
 // `expand-elements.ts`, and TASK-089 went through the codebase looking for two

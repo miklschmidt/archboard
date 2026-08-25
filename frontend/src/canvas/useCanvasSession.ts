@@ -34,6 +34,7 @@ import {
   type ChangeReportingEffect, type ChangeReportingEvent,
   type ChangeReportingState, type SceneElement, type SceneUpdate
 } from './change-reporting'
+import { ownsHoldAttempt, type HoldAttempt } from './hold-attempt'
 import {
   beaconChanges, BoardConflictError, fetchElements, fetchFiles, holdBoard, loadedBundle, postExportResult,
   postViewportResult, publishSelection, releaseBoard, reportChanges, reportPane, takeBoardBack
@@ -284,7 +285,8 @@ export function useCanvasSession({
   // was current when they were made.
   const holdingRef = useRef(false)
   const lastHoldAtRef = useRef(0)
-  const holdAttemptRef = useRef<{ board: string; promise: Promise<void> } | null>(null)
+  const holdAttemptRef = useRef<HoldAttempt | null>(null)
+  const holdAttemptGenerationRef = useRef(0)
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   /**
    * Who is writing this board, if it is not us. Non-null means read-only.
@@ -544,7 +546,8 @@ export function useCanvasSession({
       case 'finish_server_update':
         setTimeout(() => {
           dispatchReporting({
-            type: 'server_update_finished', generation: effect.generation, scene: currentScene()
+            type: 'server_update_finished', generation: effect.generation,
+            scene: currentScene(), withheldIds: currentWithheldIds()
           })
           publishStatus()
         }, 0)
@@ -719,7 +722,10 @@ export function useCanvasSession({
   const takeHold = useCallback((): void => {
     const target = boardKeyRef.current
     if (!target) return
-    if (holdAttemptRef.current?.board === target) return
+    const activeAttempt = holdAttemptRef.current
+    if (activeAttempt?.board === target
+        && activeAttempt.generation === holdAttemptGenerationRef.current
+        && activeAttempt.promise) return
 
     const pending = (): boolean => {
       const state = reportingRef.current.state
@@ -740,11 +746,18 @@ export function useCanvasSession({
       return
     }
     lastHoldAtRef.current = now
+    const attempt: HoldAttempt = {
+      board: target,
+      generation: holdAttemptGenerationRef.current,
+      promise: null
+    }
     const promise = holdBoard(target, clientId)
       .then((reply) => {
         // A board switch landed while this was in flight: the answer is about a
         // board this pane is no longer holding.
-        if (boardKeyRef.current !== target) return
+        if (!ownsHoldAttempt(
+          holdAttemptRef.current, attempt, promise, holdAttemptGenerationRef.current
+        ) || boardKeyRef.current !== target) return
         holdingRef.current = reply.held
         setHeldBy(reply.held ? null : reply.holder ?? UNKNOWN_HOLDER)
       })
@@ -752,13 +765,19 @@ export function useCanvasSession({
         // Persistence has not succeeded, and the local edit remains pending.
         // Retry while there is content to save; do not reload the board and
         // erase the only visible copy of the person's work.
-        if (boardKeyRef.current === target) holdingRef.current = false
+        if (ownsHoldAttempt(
+          holdAttemptRef.current, attempt, promise, holdAttemptGenerationRef.current
+        ) && boardKeyRef.current === target) holdingRef.current = false
       })
       .finally(() => {
-        if (holdAttemptRef.current?.board === target) holdAttemptRef.current = null
+        if (!ownsHoldAttempt(
+          holdAttemptRef.current, attempt, promise, holdAttemptGenerationRef.current
+        )) return
+        holdAttemptRef.current = null
         retryOrRenew(LOCK_RENEW_MS)
       })
-    holdAttemptRef.current = { board: target, promise }
+    attempt.promise = promise
+    holdAttemptRef.current = attempt
   }, [clientId])
 
   /**
@@ -870,6 +889,7 @@ export function useCanvasSession({
       dispatchReporting({ type: 'board_adopted' })
       if (holdTimerRef.current) clearTimeout(holdTimerRef.current)
       holdTimerRef.current = null
+      holdAttemptGenerationRef.current += 1
       holdAttemptRef.current = null
       // A hold belongs to the board it was taken on, and this pane has stopped
       // looking at that board.
@@ -1294,6 +1314,8 @@ export function useCanvasSession({
       if (paneTimerRef.current) clearTimeout(paneTimerRef.current)
       if (holdTimerRef.current) clearTimeout(holdTimerRef.current)
       holdTimerRef.current = null
+      holdAttemptGenerationRef.current += 1
+      holdAttemptRef.current = null
       // A pane closing while it holds the board. The lease would
       // have covered it, and this is only so nobody waits out a lease for a
       // pane that closed politely.

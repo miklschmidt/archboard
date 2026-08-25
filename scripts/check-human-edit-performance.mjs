@@ -123,7 +123,8 @@ const installProbe = `(() => {
   if (!app) return { error: 'no Excalidraw app instance' };
   const perf = window.__abHumanPerf = {
     holds: 0, releases: 0, reports: 0, agentWrites: 0, inflight: 0,
-    bodyBytes: [], responses: [], frames: [], replacements: 0
+    bodyBytes: [], reportStarts: [], responses: [], frames: [], replacements: 0,
+    nextResponseDelay: null
   };
   let lastFrame = performance.now();
   const frame = now => {
@@ -149,9 +150,18 @@ const installProbe = `(() => {
     }
     perf.reports += 1;
     perf.inflight += 1;
+    const startedAt = performance.now();
+    perf.reportStarts.push(startedAt);
+    const responseDelay = perf.nextResponseDelay ?? ${RESPONSE_DELAY_MS};
+    perf.nextResponseDelay = null;
     const body = String((init && init.body) || '');
     perf.bodyBytes.push(body.length);
-    try { if (JSON.parse(body).origin === 'agent') perf.agentWrites += 1; } catch { }
+    let requestFullReport = false;
+    try {
+      const parsed = JSON.parse(body);
+      if (parsed.origin === 'agent') perf.agentWrites += 1;
+      requestFullReport = parsed.fullReport === true;
+    } catch { }
     const response = await original.apply(this, arguments);
     const text = await response.clone().text();
     const parseStarted = performance.now();
@@ -159,17 +169,32 @@ const installProbe = `(() => {
     const parseMs = performance.now() - parseStarted;
     const corrections = (answer.corrections?.upserts?.length || 0) +
       (answer.corrections?.deletes?.length || 0);
+    const correctionSample = (answer.corrections?.upserts || []).find(element => /^f/.test(element.id));
+    const visibleSample = correctionSample
+      ? app.scene.getElementsIncludingDeleted().find(element => element.id === correctionSample.id)
+      : null;
+    const correctionDiff = correctionSample && visibleSample
+      ? [...new Set([...Object.keys(correctionSample), ...Object.keys(visibleSample)])]
+        .filter(key => JSON.stringify(correctionSample[key]) !== JSON.stringify(visibleSample[key]))
+        .slice(0, 12).map(key => [key, visibleSample[key], correctionSample[key]])
+      : [];
     const record = {
+      startedAt,
+      requestFullReport,
       bytes: text.length,
       parseMs,
       hasDocument: Object.prototype.hasOwnProperty.call(answer, 'document'),
       corrections,
+      correctionUpserts: answer.corrections?.upserts?.length || 0,
+      correctionDeletes: answer.corrections?.deletes?.length || 0,
+      correctionIds: (answer.corrections?.upserts || []).slice(0, 4).map(element => element.id),
+      correctionDiff,
       returnedAt: 0,
       replacementsAtReturn: 0,
       replacementsAfter: null
     };
     perf.responses.push(record);
-    await new Promise(resolve => setTimeout(resolve, ${RESPONSE_DELAY_MS}));
+    await new Promise(resolve => setTimeout(resolve, responseDelay));
     record.returnedAt = performance.now();
     record.replacementsAtReturn = perf.replacements;
     setTimeout(() => { record.replacementsAfter = perf.replacements - record.replacementsAtReturn; }, 120);
@@ -302,16 +327,52 @@ try {
   // Drag once to start a report, then again while its response is deliberately
   // withheld from the client. Both movements are trusted pointer input.
   await frameElement('drag');
-  const dragBefore = (await pageState()).elements.find(element => element.id === 'drag');
+  const beforeDragState = await pageState();
+  const dragBefore = beforeDragState.elements.find(element => element.id === 'drag');
+  await evalInPage(`(() => { window.__abHumanPerf.nextResponseDelay = ${REPORT_PROGRESS_MS}; return true; })()`);
   await dragFrom(await pointOf('drag'), 20, 0);
-  await sleep(REPORT_PROGRESS_MS + 120);
-  await dragFrom(await pointOf('drag'), 20, 0);
+  let afterDragProgress = null;
+  for (let attempt = 0; attempt < 50; attempt++) {
+    afterDragProgress = await pageState();
+    if (afterDragProgress.perf.reports === beforeDragState.perf.reports + 1
+        && afterDragProgress.perf.inflight === 1) break;
+    await sleep(50);
+  }
+  check('the first trusted drag has observably started its progress report',
+    afterDragProgress?.perf.reports === beforeDragState.perf.reports + 1
+      && afterDragProgress?.perf.inflight === 1,
+    `${afterDragProgress?.perf.reports - beforeDragState.perf.reports} report(s), ` +
+      `inflight ${afterDragProgress?.perf.inflight}`);
+  const afterFirstDrag = afterDragProgress.elements.find(element => element.id === 'drag');
+  const reportsBeforeIdle = afterDragProgress.perf.reports;
+  const finalEditAt = await evalInPage('performance.now()');
+  await browser(['press', 'ArrowRight']);
   const dragDuring = await pageState();
   const dragged = dragDuring.elements.find(element => element.id === 'drag');
   check('trusted dragging remains local while a human report is in flight',
-    dragDuring.perf.inflight === 1 && dragged.x > dragBefore.x + 15,
+    dragDuring.perf.inflight === 1 && dragged.x > dragBefore.x + 10
+      && dragged.x > afterFirstDrag.x,
     `inflight ${dragDuring.perf.inflight}, x ${dragBefore.x} -> ${dragged?.x}`);
-  await sleep(REPORT_IDLE_SETTLE_MS + RESPONSE_DELAY_MS * 2 + 500);
+  await sleep(REPORT_PROGRESS_MS + 100);
+  const afterFinalProgress = (await pageState()).perf;
+  check('an isolated final dirty edit is not sent by the progress deadline',
+    afterFinalProgress.reports === reportsBeforeIdle,
+    `${afterFinalProgress.reports - reportsBeforeIdle} report(s)`);
+  await sleep(REPORT_IDLE_SETTLE_MS - REPORT_PROGRESS_MS + 150);
+  const afterFinalIdle = (await pageState()).perf;
+  const idleStart = afterFinalIdle.reportStarts.find(startedAt => startedAt >= finalEditAt);
+  const idleStartFloor = REPORT_IDLE_SETTLE_MS - REPORT_PROGRESS_MS / 4;
+  check('the trailing idle deadline starts one accepted final report',
+    afterFinalIdle.reports === reportsBeforeIdle + 1 && idleStart
+      && idleStart - finalEditAt >= idleStartFloor,
+    `${afterFinalIdle.reports - reportsBeforeIdle} report(s), start ` +
+      `${idleStart ? (idleStart - finalEditAt).toFixed(0) : 'missing'} ms after edit`);
+  await sleep(RESPONSE_DELAY_MS + 300);
+  const settledAfterIdle = (await pageState()).perf;
+  check('the accepted final idle report manufactures no no-op tail',
+    settledAfterIdle.reports === afterFinalIdle.reports
+      && settledAfterIdle.responses.length === settledAfterIdle.reports
+      && settledAfterIdle.inflight === 0);
 
   // Select and move the south-east resize handle twice, with the second move
   // occurring under the delayed acknowledgement from the first.
@@ -354,21 +415,27 @@ try {
   await sleep(180);
   const finalProbe = (await pageState()).perf;
   const fsyncs = fsyncCount() - fsyncBefore;
-  const noCorrection = finalProbe.responses.filter(response => response.corrections === 0);
-  const completeReplacementSamples = noCorrection.filter(response => response.replacementsAfter !== null);
+  // Responses are deliberately overlapped. A correction next to an ordinary
+  // acknowledgement can land inside that acknowledgement's 120 ms sample;
+  // isolated ordinary responses have no legitimate replacement to observe.
+  const isolatedNoCorrectionResponses = finalProbe.responses.filter((response, index, responses) =>
+    response.corrections === 0 && response.replacementsAfter !== null
+      && !(responses[index - 1]?.corrections > 0)
+      && !(responses[index + 1]?.corrections > 0));
   check('ordinary human acknowledgements are compact and never carry the full document',
     finalProbe.responses.length >= 3 && finalProbe.responses.every(response => !response.hasDocument) &&
       Math.max(...finalProbe.responses.map(response => response.bytes)) * 20 < fullDocumentBytes,
     `${finalProbe.responses.length} responses, max ${Math.max(...finalProbe.responses.map(r => r.bytes))} B ` +
       `against ${fullDocumentBytes} B document`);
   check('a no-correction acknowledgement performs no full-scene reconciliation',
-    completeReplacementSamples.length > 0 && completeReplacementSamples.every(response => response.replacementsAfter === 0),
-    JSON.stringify(completeReplacementSamples.map(response => response.replacementsAfter)));
+    isolatedNoCorrectionResponses.length > 0
+      && isolatedNoCorrectionResponses.every(response => response.replacementsAfter === 0),
+    JSON.stringify(isolatedNoCorrectionResponses.map(response => response.replacementsAfter)));
   check('the measured window contains human reports and no agent-origin write',
     finalProbe.reports >= 3 && finalProbe.agentWrites === 0,
     `${finalProbe.reports} reports / ${finalProbe.agentWrites} agent writes`);
   check('one in-flight plus one latest queued report keeps request counts bounded',
-    finalProbe.reports <= 7 && finalProbe.holds <= finalProbe.reports + 3 &&
+    finalProbe.reports <= 8 && finalProbe.holds <= finalProbe.reports + 3 &&
       finalProbe.releases <= finalProbe.holds,
     `${finalProbe.holds} holds, ${finalProbe.reports} reports, ${finalProbe.releases} releases`);
   check('the durability evidence stays proportional to accepted human reports',
@@ -386,6 +453,11 @@ try {
 
   console.log(`# measured: bodies ${finalProbe.bodyBytes.join('/')} B; responses ` +
     `${finalProbe.responses.map(response => response.bytes).join('/')} B; ` +
+    `shapes ${finalProbe.responses.map(response => response.hasDocument
+      ? `document(full:${response.requestFullReport})`
+      : `corrections:${response.correctionUpserts}+/${response.correctionDeletes}-` +
+        `[${response.correctionIds.join(',')}](full:${response.requestFullReport})`).join('/')}; ` +
+    `sample ${JSON.stringify(finalProbe.responses.find(response => response.correctionDiff.length)?.correctionDiff ?? [])}; ` +
     `JSON ${finalProbe.responses.map(response => response.parseMs.toFixed(2)).join('/')} ms; ` +
     `${fsyncs} fsyncs; frame median ${median.toFixed(1)} ms`);
 } catch (error) {
