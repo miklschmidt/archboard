@@ -27,12 +27,12 @@ import {
   BoardWriteConflictError,
   readBoardContent,
   renderContent,
+  settleBoardContent,
   writeBoardContent
 } from './board-io.js';
 import { BoardState, copyElements } from './board-store.js';
 import { hashBoardBytes } from './board.js';
 import { ChangeOrigin, changeFeed } from './change-feed.js';
-import { validateRenderGeometry } from './geometry.js';
 import { presentElements, stripBindingPresentationLinks } from './presentation.js';
 import logger from '../utils/logger.js';
 
@@ -175,6 +175,7 @@ function persist<T>(
   // link it was shown; keep only the portable binding in live state.
   const portable = stripBindingPresentationLinks(content.elements.values());
   content.elements = new Map(portable.map(element => [element.id, element]));
+  settleBoardContent(content);
 
   if (!request.save && !writesBoardNote(target.key)) {
     const { bytes } = renderContent(target.board.identity, content);
@@ -266,10 +267,9 @@ export function writeBoard<T>(request: BoardWriteRequest<T>, tellPanes: TellPane
   const shouldWrite = mutation.write ?? true;
   const appliedAt = new Date().toISOString();
 
-  // Validate the resulting document, not only the statements this request
-  // supplied. A valid element beside an invalid one is still one invalid board,
-  // and none of it may reach a hold, a note, a pane, or a success response.
-  validateRenderGeometry(content.elements.values());
+  // Final settlement belongs to board-io. Run it for every request, including
+  // a valid no-op, before this document can enter a hold or success answer.
+  settleBoardContent(content);
 
   let written: WrittenNote | null = null;
   if (shouldWrite) {

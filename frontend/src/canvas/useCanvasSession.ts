@@ -166,6 +166,8 @@ export interface CanvasSessionOptions {
    * into the browser, not because it is a canvas's business.
    */
   onLayoutRequest?: (request: 'open' | 'close') => void
+  /** A board note could not be rendered and none of it entered Excalidraw. */
+  onBoardError?: (error: string) => void
 }
 
 export interface CanvasSession {
@@ -224,7 +226,7 @@ export interface CanvasSession {
 }
 
 export function useCanvasSession({
-  paneId, primary, focused, onStatus, onLibraryChanged, onLayoutRequest
+  paneId, primary, focused, onStatus, onLibraryChanged, onLayoutRequest, onBoardError
 }: CanvasSessionOptions): CanvasSession {
   // A pane is a client in its own right: it holds a selection the server can
   // retire when this pane goes away, and it must be able to skip the echo of
@@ -1123,6 +1125,10 @@ export function useCanvasSession({
         publishStatus()
         break
 
+      case 'board_error':
+        if (typeof data.error === 'string') onBoardError?.(data.error)
+        break
+
       case 'canvas_cleared':
         applyServerScene([])
         noteChange()
@@ -1191,7 +1197,7 @@ export function useCanvasSession({
   }, [
     adoptBoard, answerExport, answerMermaid, answerViewport, applyServerElements,
     applyServerScene, clientId, hasPendingChanges, loadBoard, noteChange, onLayoutRequest,
-    onLibraryChanged, removeElements, sendReport
+    onBoardError, onLibraryChanged, removeElements, sendReport
   ])
 
   const connect = useCallback((): void => {
