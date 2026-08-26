@@ -6,8 +6,6 @@ import {
 	groupElements,
 	setElementsLocked,
 	ungroupElements,
-	type Alignment,
-	type Direction,
 } from "../../runtime/engine/element-ops.js";
 import {
 	CliUsageError,
@@ -15,10 +13,11 @@ import {
 	type OptionParameter,
 } from "../command-contract/contract.js";
 import { HoldReportSchema } from "../command-contract/schemas.js";
+import { boardWriteRefusals } from "../command-contract/common.js";
 import type { FlagSpecs } from "../command-contract/route-options.js";
 
-const ALIGNMENTS = new Set(["left", "center", "right", "top", "middle", "bottom"]);
-const DIRECTIONS = new Set(["horizontal", "vertical"]);
+const AlignmentInputSchema = z.enum(["left", "center", "right", "top", "middle", "bottom"]);
+const DirectionInputSchema = z.enum(["horizontal", "vertical"]);
 export const ARRANGE_FLAG_SPEC = {
 	ids: { takesValue: true },
 	to: { takesValue: true },
@@ -48,26 +47,6 @@ const ArrangeInputShape = {
 	offset: z.string().optional(),
 	tail: z.array(z.string()).default([]),
 };
-const refusals = [
-	{
-		code: "BOARD_REQUIRED",
-		exit: 2,
-		stream: "stderr" as const,
-		description: "No board was named.",
-	},
-	{
-		code: "CANVAS_UNREACHABLE",
-		exit: 3,
-		stream: "stderr" as const,
-		description: "The canvas could not be reached.",
-	},
-	{
-		code: "BOARD_CONFLICT",
-		exit: 5,
-		stream: "stderr" as const,
-		description: "The board write was refused.",
-	},
-];
 const output = {
 	cases: [
 		{
@@ -96,13 +75,102 @@ const relationships = [
 	},
 ];
 
-function parseIds(value: string | undefined, usage: string): string[] {
-	if (!value?.trim()) throw new CliUsageError(usage);
+function parsedIds(value: string | undefined, usage: string, context: z.RefinementCtx) {
+	if (!value?.trim()) {
+		context.addIssue({ code: "custom", message: usage });
+		return z.NEVER;
+	}
 	return value
 		.split(",")
 		.map((item) => item.trim())
 		.filter(Boolean);
 }
+
+export const ArrangeAlignStageSchema = z
+	.object({ ids: z.string().optional(), to: z.string().optional() })
+	.transform((input, context) => {
+		const ids = parsedIds(
+			input.ids,
+			"Usage: arrange align --ids a,b,c --to left|center|right|top|middle|bottom",
+			context,
+		);
+		if (ids === z.NEVER) return z.NEVER;
+		const alignment = AlignmentInputSchema.safeParse(input.to);
+		if (!alignment.success) {
+			context.addIssue({
+				code: "custom",
+				message: "arrange align requires --to left|center|right|top|middle|bottom",
+			});
+			return z.NEVER;
+		}
+		return { ids, alignment: alignment.data };
+	});
+export type ArrangeAlignStage = z.infer<typeof ArrangeAlignStageSchema>;
+
+export const ArrangeDistributeStageSchema = z
+	.object({ ids: z.string().optional(), to: z.string().optional() })
+	.transform((input, context) => {
+		const ids = parsedIds(
+			input.ids,
+			"Usage: arrange distribute --ids a,b,c --to horizontal|vertical",
+			context,
+		);
+		if (ids === z.NEVER) return z.NEVER;
+		const direction = DirectionInputSchema.safeParse(input.to);
+		if (!direction.success) {
+			context.addIssue({
+				code: "custom",
+				message: "arrange distribute requires --to horizontal|vertical",
+			});
+			return z.NEVER;
+		}
+		return { ids, direction: direction.data };
+	});
+export type ArrangeDistributeStage = z.infer<typeof ArrangeDistributeStageSchema>;
+
+const idsStage = (usage: string) =>
+	z.object({ ids: z.string().optional() }).transform((input, context) => {
+		const ids = parsedIds(input.ids, usage, context);
+		return ids === z.NEVER ? z.NEVER : { ids };
+	});
+export const ArrangeGroupStageSchema = idsStage("Usage: arrange group --ids a,b,c");
+export type ArrangeGroupStage = z.infer<typeof ArrangeGroupStageSchema>;
+export const ArrangeLockStageSchema = idsStage("Usage: arrange lock --ids a,b,c");
+export type ArrangeLockStage = z.infer<typeof ArrangeLockStageSchema>;
+export const ArrangeUnlockStageSchema = idsStage("Usage: arrange unlock --ids a,b,c");
+export type ArrangeUnlockStage = z.infer<typeof ArrangeUnlockStageSchema>;
+
+export const ArrangeUngroupStageSchema = z.object({
+	group: z.string({ error: "Usage: arrange ungroup --group <groupId>" }).min(1),
+});
+export type ArrangeUngroupStage = z.infer<typeof ArrangeUngroupStageSchema>;
+
+export const ArrangeDuplicateStageSchema = z
+	.object({ ids: z.string().optional(), offset: z.string().optional() })
+	.transform((input, context) => {
+		const ids = parsedIds(
+			input.ids,
+			"Usage: arrange duplicate --ids a,b,c [--offset 20,20]",
+			context,
+		);
+		if (ids === z.NEVER) return z.NEVER;
+		if (input.offset === undefined) return { ids, offsetX: 20, offsetY: 20 };
+		const parts = input.offset.split(",").map((part) => Number(part.trim()));
+		if (parts.length !== 2 || parts.some(Number.isNaN)) {
+			context.addIssue({ code: "custom", message: '--offset expects "x,y"' });
+			return z.NEVER;
+		}
+		return { ids, offsetX: parts[0]!, offsetY: parts[1]! };
+	});
+export type ArrangeDuplicateStage = z.infer<typeof ArrangeDuplicateStageSchema>;
+
+const arrangementStage = (name: string, schema: z.ZodType) => ({
+	name,
+	when: "after-server" as const,
+	description: "Validated arrangement arguments",
+	rules: ["Parse comma-separated element ids and validate action-specific options"],
+	schema,
+});
 
 export const ArrangeNamespaceInputSchema = z.object({
 	...ArrangeInputShape,
@@ -161,22 +229,20 @@ export const arrangeAlignContract = defineCommand({
 	description: "Aligns selected elements in one write.",
 	examples: ["archboard arrange align --ids a,b --to left"],
 	parameters: [...optionParameters(), tailParameter],
-	input: { ingress: ArrangeAlignInputSchema },
+	input: {
+		ingress: ArrangeAlignInputSchema,
+		stages: [arrangementStage("align-request", ArrangeAlignStageSchema)],
+	},
 	result: ArrangeAlignResultSchema,
 	output,
 	prerequisites: ["server", "board", "doing"],
 	effects: ["read", "write"],
-	refusals,
+	refusals: boardWriteRefusals,
 	relationships,
 	async handler(input, context) {
 		await context.require("server", "arrange align");
-		const ids = parseIds(
-			input.ids,
-			"Usage: arrange align --ids a,b,c --to left|center|right|top|middle|bottom",
-		);
-		if (!input.to || !ALIGNMENTS.has(input.to))
-			throw new CliUsageError("arrange align requires --to left|center|right|top|middle|bottom");
-		return { result: await alignElements(ids, input.to as Alignment) };
+		const request = context.parse(ArrangeAlignStageSchema, input);
+		return { result: await alignElements(request.ids, request.alignment) };
 	},
 });
 
@@ -197,22 +263,20 @@ export const arrangeDistributeContract = defineCommand({
 	description: "Distributes selected elements in one write.",
 	examples: ["archboard arrange distribute --ids a,b,c --to horizontal"],
 	parameters: [...optionParameters(), tailParameter],
-	input: { ingress: ArrangeDistributeInputSchema },
+	input: {
+		ingress: ArrangeDistributeInputSchema,
+		stages: [arrangementStage("distribute-request", ArrangeDistributeStageSchema)],
+	},
 	result: ArrangeDistributeResultSchema,
 	output,
 	prerequisites: ["server", "board", "doing"],
 	effects: ["read", "write"],
-	refusals,
+	refusals: boardWriteRefusals,
 	relationships,
 	async handler(input, context) {
 		await context.require("server", "arrange distribute");
-		const ids = parseIds(
-			input.ids,
-			"Usage: arrange distribute --ids a,b,c --to horizontal|vertical",
-		);
-		if (!input.to || !DIRECTIONS.has(input.to))
-			throw new CliUsageError("arrange distribute requires --to horizontal|vertical");
-		return { result: await distributeElements(ids, input.to as Direction) };
+		const request = context.parse(ArrangeDistributeStageSchema, input);
+		return { result: await distributeElements(request.ids, request.direction) };
 	},
 });
 
@@ -232,16 +296,20 @@ export const arrangeGroupContract = defineCommand({
 	description: "Groups selected elements in one write.",
 	examples: ["archboard arrange group --ids a,b"],
 	parameters: [...optionParameters(), tailParameter],
-	input: { ingress: ArrangeGroupInputSchema },
+	input: {
+		ingress: ArrangeGroupInputSchema,
+		stages: [arrangementStage("group-request", ArrangeGroupStageSchema)],
+	},
 	result: ArrangeGroupResultSchema,
 	output,
 	prerequisites: ["server", "board", "doing"],
 	effects: ["read", "write"],
-	refusals,
+	refusals: boardWriteRefusals,
 	relationships,
 	async handler(input, context) {
 		await context.require("server", "arrange group");
-		return { result: await groupElements(parseIds(input.ids, "Usage: arrange group --ids a,b,c")) };
+		const request = context.parse(ArrangeGroupStageSchema, input);
+		return { result: await groupElements(request.ids) };
 	},
 });
 
@@ -262,17 +330,20 @@ export const arrangeUngroupContract = defineCommand({
 	description: "Removes one group in one write.",
 	examples: ["archboard arrange ungroup --group abc"],
 	parameters: [...optionParameters(), tailParameter],
-	input: { ingress: ArrangeUngroupInputSchema },
+	input: {
+		ingress: ArrangeUngroupInputSchema,
+		stages: [arrangementStage("ungroup-request", ArrangeUngroupStageSchema)],
+	},
 	result: ArrangeUngroupResultSchema,
 	output,
 	prerequisites: ["server", "board", "doing"],
 	effects: ["read", "write"],
-	refusals,
+	refusals: boardWriteRefusals,
 	relationships,
 	async handler(input, context) {
 		await context.require("server", "arrange ungroup");
-		if (!input.group) throw new CliUsageError("Usage: arrange ungroup --group <groupId>");
-		return { result: await ungroupElements(input.group) };
+		const request = context.parse(ArrangeUngroupStageSchema, input);
+		return { result: await ungroupElements(request.group) };
 	},
 });
 
@@ -294,19 +365,23 @@ export const arrangeLockContract = defineCommand({
 	description: "Locks selected elements in one write.",
 	examples: ["archboard arrange lock --ids a,b"],
 	parameters: [...optionParameters(), tailParameter],
-	input: { ingress: ArrangeLockInputSchema },
+	input: {
+		ingress: ArrangeLockInputSchema,
+		stages: [arrangementStage("lock-request", ArrangeLockStageSchema)],
+	},
 	result: ArrangeLockResultSchema,
 	output,
 	prerequisites: ["server", "board", "doing"],
 	effects: ["read", "write"],
-	refusals,
+	refusals: boardWriteRefusals,
 	relationships,
 	async handler(input, context) {
 		await context.require("server", "arrange lock");
+		const request = context.parse(ArrangeLockStageSchema, input);
 		return {
 			result: {
 				locked: true as const,
-				...(await setElementsLocked(parseIds(input.ids, "Usage: arrange lock --ids a,b,c"), true)),
+				...(await setElementsLocked(request.ids, true)),
 			},
 		};
 	},
@@ -323,22 +398,23 @@ export const arrangeUnlockContract = defineCommand({
 	description: "Unlocks selected elements in one write.",
 	examples: ["archboard arrange unlock --ids a,b"],
 	parameters: [...optionParameters(), tailParameter],
-	input: { ingress: ArrangeUnlockInputSchema },
+	input: {
+		ingress: ArrangeUnlockInputSchema,
+		stages: [arrangementStage("unlock-request", ArrangeUnlockStageSchema)],
+	},
 	result: ArrangeUnlockResultSchema,
 	output,
 	prerequisites: ["server", "board", "doing"],
 	effects: ["read", "write"],
-	refusals,
+	refusals: boardWriteRefusals,
 	relationships,
 	async handler(input, context) {
 		await context.require("server", "arrange unlock");
+		const request = context.parse(ArrangeUnlockStageSchema, input);
 		return {
 			result: {
 				unlocked: true as const,
-				...(await setElementsLocked(
-					parseIds(input.ids, "Usage: arrange unlock --ids a,b,c"),
-					false,
-				)),
+				...(await setElementsLocked(request.ids, false)),
 			},
 		};
 	},
@@ -362,25 +438,20 @@ export const arrangeDuplicateContract = defineCommand({
 	description: "Duplicates selected elements in one write.",
 	examples: ["archboard arrange duplicate --ids a,b --offset 40,20"],
 	parameters: [...optionParameters(), tailParameter],
-	input: { ingress: ArrangeDuplicateInputSchema },
+	input: {
+		ingress: ArrangeDuplicateInputSchema,
+		stages: [arrangementStage("duplicate-request", ArrangeDuplicateStageSchema)],
+	},
 	result: ArrangeDuplicateResultSchema,
 	output,
 	prerequisites: ["server", "board", "doing"],
 	effects: ["read", "write"],
-	refusals,
+	refusals: boardWriteRefusals,
 	relationships,
 	async handler(input, context) {
 		await context.require("server", "arrange duplicate");
-		const ids = parseIds(input.ids, "Usage: arrange duplicate --ids a,b,c [--offset 20,20]");
-		let offsetX = 20,
-			offsetY = 20;
-		if (input.offset !== undefined) {
-			const parts = input.offset.split(",").map((part) => Number(part.trim()));
-			if (parts.length !== 2 || parts.some(Number.isNaN))
-				throw new CliUsageError('--offset expects "x,y"');
-			[offsetX, offsetY] = parts as [number, number];
-		}
-		const result = await duplicateElements(ids, offsetX, offsetY);
+		const request = context.parse(ArrangeDuplicateStageSchema, input);
+		const result = await duplicateElements(request.ids, request.offsetX, request.offsetY);
 		return {
 			result: ArrangeDuplicateResultSchema.parse({
 				success: true as const,

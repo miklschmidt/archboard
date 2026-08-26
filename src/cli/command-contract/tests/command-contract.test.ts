@@ -7,6 +7,25 @@ import { defineCommand, type AnyCommandContract } from "../contract.js";
 import { introspectContracts } from "../introspection.js";
 import { runCommand } from "../runner.js";
 import { PendingArtifactSchema } from "../schemas.js";
+import { commandContractTestHost } from "../testing.js";
+import { cliContractRegistry } from "../../commands/run.js";
+
+const heldCompatibility = JSON.parse(
+	readFileSync(join(import.meta.dir, "held-output-compatibility.json"), "utf8"),
+) as {
+	fixedBase: string;
+	held: { board: string; message: string; writes: number };
+	cases: Array<{
+		name: string;
+		path: string;
+		outputCase: string;
+		result: unknown;
+		artifact?: unknown;
+		stdout: string;
+		stderr: string;
+		events: string[];
+	}>;
+};
 
 const temporaryDirectories: string[] = [];
 
@@ -104,6 +123,78 @@ function temporaryPath(name: string) {
 }
 
 describe("command-contract public interface", () => {
+	test("fixed-base held policies keep exact bytes and write order for every affected mode", async () => {
+		expect(heldCompatibility.fixedBase).toBe("6c42fca6c0d5b9ecaa5ad40fde14ede684722d5a");
+		const registry = new Map(cliContractRegistry().map((entry) => [entry.name, entry.contract]));
+		for (const record of heldCompatibility.cases) {
+			const source = registry.get(record.path);
+			expect(source, record.name).toBeDefined();
+			const outputCase = source!.output.cases.find(
+				(candidate) => candidate.id === record.outputCase,
+			);
+			expect(outputCase, record.name).toBeDefined();
+			const artifactPath = temporaryPath(`${record.name}.artifact`);
+			const expand = (value: unknown): unknown =>
+				JSON.parse(JSON.stringify(value).replaceAll("{{ARTIFACT}}", artifactPath));
+			const expectedStdout = record.stdout.replaceAll("{{ARTIFACT}}", artifactPath);
+			const expectedEvents = record.events.map((event) =>
+				event.replaceAll("{{ARTIFACT}}", artifactPath).replaceAll("{{STDOUT}}", expectedStdout),
+			);
+			let stdout = "";
+			let stderr = "";
+			const events: string[] = [];
+			const heldSpy = spyOn(commandContractTestHost, "held").mockReturnValue(
+				heldCompatibility.held,
+			);
+			const stdoutSpy = spyOn(commandContractTestHost, "writeStdout").mockImplementation(
+				(value) => {
+					const text = String(value);
+					stdout += text;
+					events.push(`stdout:${text}`);
+				},
+			);
+			const stderrSpy = spyOn(commandContractTestHost, "writeStderr").mockImplementation(
+				(value) => {
+					stderr += value;
+					events.push(`stderr:${value}`);
+				},
+			);
+			const artifactSpy = spyOn(commandContractTestHost, "writeArtifact").mockImplementation(
+				(artifact) => {
+					events.push(`artifact:${artifact.encoding}:${String(artifact.content)}`);
+				},
+			);
+			try {
+				await runCommand(
+					{
+						...source!,
+						path: ["held-proof"],
+						parameters: [],
+						input: { ingress: z.object({}) },
+						output: { cases: [outputCase!], select: () => outputCase!.id },
+						async handler() {
+							return {
+								result: expand(record.result),
+								...(record.artifact === undefined
+									? {}
+									: { pendingArtifact: expand(record.artifact) }),
+							};
+						},
+					} as AnyCommandContract,
+					[],
+				);
+			} finally {
+				heldSpy.mockRestore();
+				stdoutSpy.mockRestore();
+				stderrSpy.mockRestore();
+				artifactSpy.mockRestore();
+			}
+			expect(stdout, record.name).toBe(expectedStdout);
+			expect(stderr, record.name).toBe(record.stderr);
+			expect(events, record.name).toEqual(expectedEvents);
+		}
+	});
+
 	test("the concrete Commander parser owns aliases and optional token arity", async () => {
 		const contract = defineCommand({
 			...proofContract({ result: null, resultSchema: z.object({ name: z.unknown().optional() }) }),
@@ -394,6 +485,51 @@ describe("command-contract public interface", () => {
 		expect(viewportIds?.rules.join(" ")).toContain("Split on commas");
 		expect(exportFormat?.when).toBe("before-server");
 		expect(exportFormat?.rules.join(" ")).toContain("obsidian for an --out path ending in .md");
+	});
+
+	test("named Zod schemas own migrated defaults, coercions, enums, and cross-field rules", async () => {
+		const { ScreenshotInputSchema } = await import("../../commands/scene.js");
+		const { ChangesInputSchema } = await import("../../commands/changes.js");
+		const { ClaimInputSchema } = await import("../../commands/claim.js");
+		const { LibraryInsertStageSchema } = await import("../../commands/library.js");
+		const { ArrangeAlignStageSchema, ArrangeDistributeStageSchema, ArrangeDuplicateStageSchema } =
+			await import("../../commands/arrange.js");
+
+		expect(ScreenshotInputSchema.parse({}).format).toBe("png");
+		expect(ScreenshotInputSchema.safeParse({ format: "pdf" }).success).toBeFalse();
+		expect(ChangesInputSchema.parse({ since: "4" }).since).toBe(4);
+		expect(ChangesInputSchema.parse({}).since).toBe(0);
+		expect(ChangesInputSchema.safeParse({ since: "before" }).success).toBeFalse();
+		expect(ClaimInputSchema.parse({ reason: "  redraw  ", for: "1.5m" })).toMatchObject({
+			reason: "redraw",
+			for: 90_000,
+		});
+		expect(ClaimInputSchema.safeParse({ reason: "", for: "5" }).success).toBeFalse();
+		expect(LibraryInsertStageSchema.parse({ name: "Queue", x: "10.5", y: "-2" })).toMatchObject({
+			name: "Queue",
+			x: 10.5,
+			y: -2,
+		});
+		expect(
+			LibraryInsertStageSchema.safeParse({ name: "Queue", x: "x", y: "2" }).success,
+		).toBeFalse();
+		expect(ArrangeAlignStageSchema.parse({ ids: "a, b", to: "left" })).toEqual({
+			ids: ["a", "b"],
+			alignment: "left",
+		});
+		expect(
+			ArrangeDistributeStageSchema.safeParse({ ids: "a,b", to: "diagonal" }).success,
+		).toBeFalse();
+		expect(ArrangeDuplicateStageSchema.parse({ ids: "a" })).toEqual({
+			ids: ["a"],
+			offsetX: 20,
+			offsetY: 20,
+		});
+		expect(ArrangeDuplicateStageSchema.parse({ ids: "a", offset: "4,-3" })).toEqual({
+			ids: ["a"],
+			offsetX: 4,
+			offsetY: -3,
+		});
 	});
 
 	test("construction rejects token keys absent from the Zod ingress", () => {

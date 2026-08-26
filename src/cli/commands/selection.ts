@@ -2,6 +2,7 @@ import { z } from "zod";
 import { getPanes, getSelection } from "../../runtime/engine/canvas-client.js";
 import { defineCommand } from "../command-contract/contract.js";
 import { HoldReportSchema } from "../command-contract/schemas.js";
+import { commonRefusals, serverRefusal } from "../command-contract/common.js";
 
 const inputSchema = z.object({
 	text: z.boolean().default(false),
@@ -38,27 +39,13 @@ const outputs = {
 			id: "text",
 			when: { key: "text", present: true },
 			mode: "text" as const,
-			held: "stderr-note" as const,
+			held: "none" as const,
 			description: "Human-readable view state",
-			presentation: ["result", "held-note"] as const,
+			presentation: ["result"] as const,
 		},
 	] as const,
 	select: (input: { text: boolean }) => (input.text ? "text" : "json"),
 };
-const refusals = [
-	{
-		code: "BOARD_REQUIRED",
-		exit: 2,
-		stream: "stderr" as const,
-		description: "No board was named.",
-	},
-	{
-		code: "CANVAS_UNREACHABLE",
-		exit: 3,
-		stream: "stderr" as const,
-		description: "The canvas could not be reached.",
-	},
-];
 
 export const SelectionInputSchema = inputSchema;
 export type SelectionInput = z.infer<typeof SelectionInputSchema>;
@@ -90,7 +77,7 @@ export const selectionContract = defineCommand({
 	output: outputs,
 	prerequisites: ["server", "board"],
 	effects: ["read"],
-	refusals,
+	refusals: commonRefusals,
 	relationships: [
 		{
 			method: "GET",
@@ -167,7 +154,7 @@ export const panesContract = defineCommand({
 	output: outputs,
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: refusals.slice(1),
+	refusals: [serverRefusal],
 	relationships: [
 		{ method: "GET", path: "/api/panes", cardinality: "one", description: "Read pane view state" },
 	],

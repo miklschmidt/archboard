@@ -6,9 +6,9 @@ export interface RegistryContractEntry {
 	contract: AnyCommandContract;
 }
 
-function jsonSchema(schema: z.ZodType): unknown {
+function jsonSchema(schema: z.ZodType, io: "input" | "output" = "output"): unknown {
 	try {
-		return z.toJSONSchema(schema, { unrepresentable: "any" });
+		return z.toJSONSchema(schema, { io, unrepresentable: "any" });
 	} catch {
 		return { type: "unknown", description: "Schema cannot be represented as JSON Schema" };
 	}
@@ -28,13 +28,13 @@ export function introspectContracts(entries: readonly RegistryContractEntry[]) {
 			examples: contract.examples,
 			parameters: contract.parameters,
 			input: {
-				schema: jsonSchema(contract.input.ingress),
+				schema: jsonSchema(contract.input.ingress, "input"),
 				stages: (contract.input.stages ?? []).map((stage) => ({
 					name: stage.name,
 					when: stage.when,
 					description: stage.description,
 					rules: stage.rules ?? [],
-					schema: jsonSchema(stage.schema),
+					schema: jsonSchema(stage.schema, "input"),
 				})),
 			},
 			result: jsonSchema(contract.result),

@@ -42,7 +42,13 @@ export interface CommandInput<Shape extends z.ZodRawShape> {
 
 export type Prerequisite = "server" | "browser" | "board" | "doing" | "claim";
 export type RuntimePrerequisite = Extract<Prerequisite, "server" | "browser">;
-export type CommandEffect = "read" | "write" | "browser" | "local-read" | "local-write";
+export type CommandEffect =
+	| "read"
+	| "write"
+	| "server-state-write"
+	| "browser"
+	| "local-read"
+	| "local-write";
 
 export interface RefusalContract {
 	code: string;

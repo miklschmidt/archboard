@@ -1,37 +1,41 @@
 import { z } from "zod";
 import { claimBoard, releaseBoardClaim } from "../../runtime/engine/canvas-client.js";
-import { CliUsageError, defineCommand } from "../command-contract/contract.js";
+import { defineCommand } from "../command-contract/contract.js";
 import { HoldReportSchema } from "../command-contract/schemas.js";
+import { claimRefusals, commonRefusals } from "../command-contract/common.js";
 
-function durationMs(said: string): number {
-	const match = /^(\d+(?:\.\d+)?)\s*(s|m|h)$/i.exec(said.trim());
-	if (!match)
-		throw new CliUsageError(
-			`--for takes a duration with a unit: 90s, 10m, 1h. "${said}" has none, and a bare number is as easily minutes as seconds.`,
-		);
-	const amount = Number(match[1]);
-	const unit = match[2]!.toLowerCase();
-	return amount * (unit === "h" ? 3_600_000 : unit === "m" ? 60_000 : 1000);
-}
+export const ClaimReasonInputSchema = z
+	.string({
+		error:
+			'claim needs --reason: it is what the pane shows the person whose board you have taken. Without it the wall has stopped working for no reason they can see. Say what you are taking it for, in their words: --reason "redrawing the payment path". That is the campaign; --doing on each write is the step.',
+	})
+	.trim()
+	.min(
+		1,
+		'claim needs --reason: it is what the pane shows the person whose board you have taken. Without it the wall has stopped working for no reason they can see. Say what you are taking it for, in their words: --reason "redrawing the payment path". That is the campaign; --doing on each write is the step.',
+	);
+export const ClaimDurationInputSchema = z
+	.string()
+	.optional()
+	.transform((said, context) => {
+		if (said === undefined) return undefined;
+		const match = /^(\d+(?:\.\d+)?)\s*(s|m|h)$/i.exec(said.trim());
+		if (!match) {
+			context.addIssue({
+				code: "custom",
+				message: `--for takes a duration with a unit: 90s, 10m, 1h. "${said}" has none, and a bare number is as easily minutes as seconds.`,
+			});
+			return z.NEVER;
+		}
+		const amount = Number(match[1]);
+		const unit = match[2]!.toLowerCase();
+		return amount * (unit === "h" ? 3_600_000 : unit === "m" ? 60_000 : 1000);
+	});
 const tail = z.array(z.string()).default([]);
-const refusals = [
-	{
-		code: "BOARD_REQUIRED",
-		exit: 2,
-		stream: "stderr" as const,
-		description: "No board was named.",
-	},
-	{
-		code: "CANVAS_UNREACHABLE",
-		exit: 3,
-		stream: "stderr" as const,
-		description: "The canvas could not be reached.",
-	},
-];
 
 export const ClaimInputSchema = z.object({
-	reason: z.string().optional(),
-	for: z.string().optional(),
+	reason: ClaimReasonInputSchema,
+	for: ClaimDurationInputSchema,
 	tail,
 });
 export type ClaimInput = z.infer<typeof ClaimInputSchema>;
@@ -102,8 +106,8 @@ export const claimContract = defineCommand({
 		select: () => "json",
 	},
 	prerequisites: ["server", "board"],
-	effects: ["write"],
-	refusals,
+	effects: ["server-state-write"],
+	refusals: claimRefusals,
 	relationships: [
 		{
 			method: "POST",
@@ -113,16 +117,10 @@ export const claimContract = defineCommand({
 		},
 	],
 	async handler(input, context) {
-		const reason = input.reason?.trim() ?? "";
-		if (!reason)
-			throw new CliUsageError(
-				'claim needs --reason: it is what the pane shows the person whose board you have taken. Without it the wall has stopped working for no reason they can see. Say what you are taking it for, in their words: --reason "redrawing the payment path". That is the campaign; --doing on each write is the step.',
-			);
-		const forMs = input.for ? durationMs(input.for) : undefined;
 		await context.require("server", "claim");
 		const result = await claimBoard({
-			reason,
-			...(forMs !== undefined ? { forMs } : {}),
+			reason: input.reason,
+			...(input.for !== undefined ? { forMs: input.for } : {}),
 		});
 		const until = new Date(result.claim.expires).toTimeString().slice(0, 5);
 		const diagnostic =
@@ -176,8 +174,8 @@ export const releaseContract = defineCommand({
 		select: () => "json",
 	},
 	prerequisites: ["server", "board"],
-	effects: ["write"],
-	refusals,
+	effects: ["server-state-write"],
+	refusals: commonRefusals,
 	relationships: [
 		{
 			method: "POST",

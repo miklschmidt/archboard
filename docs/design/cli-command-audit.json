@@ -1,7 +1,11 @@
 {
 	"schemaVersion": 1,
-	"reviewedBase": "43d0b982ac39346ae3057edf3c9fdffe400b2853",
-	"surface": { "commands": 33, "subcommands": 24, "paths": 57 },
+	"reviewedBase": "6c42fca6c0d5b9ecaa5ad40fde14ede684722d5a",
+	"surface": {
+		"commands": 33,
+		"subcommands": 24,
+		"paths": 57
+	},
 	"globalContract": {
 		"bootstrap": "src/bin.ts removes one --url before importing runtime configuration",
 		"tailGlobals": ["--board", "--doing", "--expect-version"],
@@ -28,7 +32,14 @@
 			"semantics": "server lifecycle, boardless",
 			"ordering": "identity probe before spawn",
 			"nextFields": ["url", "pid"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["local-write"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			]
 		},
 		{
 			"path": "stop",
@@ -43,7 +54,9 @@
 			"semantics": "server lifecycle, boardless",
 			"ordering": "identity check before signal",
 			"nextFields": ["stopped", "pid"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["local-write"],
+			"refusals": []
 		},
 		{
 			"path": "status",
@@ -58,7 +71,9 @@
 			"semantics": "read only, boardless",
 			"ordering": "health before staleness",
 			"nextFields": ["running", "health.websocket_clients"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read"],
+			"refusals": []
 		},
 		{
 			"path": "apply",
@@ -73,7 +88,38 @@
 			"semantics": "one requested act is one versioned write",
 			"ordering": "validate every id before the write",
 			"nextFields": ["elements", "fingerprint.version"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "add",
@@ -88,7 +134,38 @@
 			"semantics": "one batch write, converter runs inbound",
 			"ordering": "local JSON before server",
 			"nextFields": ["elements[].id", "fingerprint.version"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "update",
@@ -103,7 +180,38 @@
 			"semantics": "one versioned write; public result separate from execution record",
 			"ordering": "local JSON before server; result validation before stdout",
 			"nextFields": ["element.id", "elements", "fingerprint.version"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["local-read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "delete",
@@ -118,7 +226,38 @@
 			"semantics": "all ids deleted in one write",
 			"ordering": "resolve every id before write",
 			"nextFields": ["deleted", "elements", "fingerprint.version"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "get",
@@ -133,7 +272,18 @@
 			"semantics": "read only",
 			"ordering": "server before read",
 			"nextFields": ["id", "customData.archboard", "geometry"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			]
 		},
 		{
 			"path": "query",
@@ -148,7 +298,18 @@
 			"semantics": "read only; client typed predicates",
 			"ordering": "server before bbox; read before filter validation",
 			"nextFields": ["[].id", "[].customData.archboard", "[].geometry"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			]
 		},
 		{
 			"path": "selection",
@@ -163,7 +324,18 @@
 			"semantics": "read-only browser selection state",
 			"ordering": "server before read",
 			"nextFields": ["ids", "nodes", "elements"],
-			"workflow": "missing handle"
+			"workflow": "missing handle",
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			]
 		},
 		{
 			"path": "panes",
@@ -178,7 +350,14 @@
 			"semantics": "view state, no elements",
 			"ordering": "server before read",
 			"nextFields": ["panes[].id", "panes[].board", "panes[].selection"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			]
 		},
 		{
 			"path": "promote",
@@ -193,7 +372,38 @@
 			"semantics": "replace elements once with namespaced binding metadata",
 			"ordering": "resolve repository before write",
 			"nextFields": ["nodes[].node", "elements", "fingerprint.version"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["local-read", "read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "pane",
@@ -208,7 +418,9 @@
 			"semantics": "namespace only",
 			"ordering": "subcommand first",
 			"nextFields": [],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": [],
+			"refusals": []
 		},
 		{
 			"path": "pane open",
@@ -223,7 +435,18 @@
 			"semantics": "browser layout, no board write",
 			"ordering": "browser before effect",
 			"nextFields": ["pane.id", "pane.place", "board"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["browser"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "BROWSER_REQUIRED",
+					"exit": 4
+				}
+			]
 		},
 		{
 			"path": "pane close",
@@ -238,7 +461,18 @@
 			"semantics": "browser layout, no board write",
 			"ordering": "browser before effect",
 			"nextFields": ["closed", "panes"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["browser"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "BROWSER_REQUIRED",
+					"exit": 4
+				}
+			]
 		},
 		{
 			"path": "viewport",
@@ -253,7 +487,18 @@
 			"semantics": "browser camera state, no board write",
 			"ordering": "mode rules before server; numerics after browser",
 			"nextFields": ["success", "message"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["browser"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "BROWSER_REQUIRED",
+					"exit": 4
+				}
+			]
 		},
 		{
 			"path": "demote",
@@ -268,7 +513,38 @@
 			"semantics": "one metadata-removal write",
 			"ordering": "resolve whole nodes before write",
 			"nextFields": ["elements", "fingerprint.version"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "repo",
@@ -283,7 +559,9 @@
 			"semantics": "namespace only",
 			"ordering": "subcommand first",
 			"nextFields": [],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": [],
+			"refusals": []
 		},
 		{
 			"path": "repo list",
@@ -298,7 +576,9 @@
 			"semantics": "local read",
 			"ordering": "registry read only",
 			"nextFields": ["repos[].identity", "repos[].directory"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["local-read"],
+			"refusals": []
 		},
 		{
 			"path": "repo add",
@@ -313,7 +593,9 @@
 			"semantics": "local configuration write",
 			"ordering": "derive identity before registry write",
 			"nextFields": ["repo", "directory", "registry"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["local-read", "local-write"],
+			"refusals": []
 		},
 		{
 			"path": "repo forget",
@@ -328,7 +610,9 @@
 			"semantics": "local configuration write",
 			"ordering": "validate identity before write",
 			"nextFields": ["forgotten", "repo"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["local-read", "local-write"],
+			"refusals": []
 		},
 		{
 			"path": "board",
@@ -343,7 +627,9 @@
 			"semantics": "namespace only",
 			"ordering": "subcommand first",
 			"nextFields": [],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": [],
+			"refusals": []
 		},
 		{
 			"path": "board list",
@@ -358,7 +644,14 @@
 			"semantics": "vault/server read",
 			"ordering": "filters before request",
 			"nextFields": ["open[].key", "vault[].key", "bindings"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["local-read", "read"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			]
 		},
 		{
 			"path": "board info",
@@ -373,7 +666,18 @@
 			"semantics": "board metadata read",
 			"ordering": "board global before request",
 			"nextFields": ["board", "file", "version"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			]
 		},
 		{
 			"path": "board new",
@@ -382,13 +686,24 @@
 			"stdout": "json object",
 			"result": "new board and pane placement",
 			"diagnostics": "pane notes",
-			"exits": [0, 1, 2, 3, 4, 5],
+			"exits": [0, 1, 2, 3, 4],
 			"prerequisites": ["server"],
 			"relationships": ["POST /api/boards/new"],
-			"semantics": "one new-note write",
+			"semantics": "creates in-memory board state and optionally points a pane; performs no note write",
 			"ordering": "address validation before write",
 			"nextFields": ["board", "file", "version", "panes"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["server-state-write", "browser"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "BROWSER_REQUIRED",
+					"exit": 4
+				}
+			]
 		},
 		{
 			"path": "board open",
@@ -403,7 +718,18 @@
 			"semantics": "loads note; optional browser placement",
 			"ordering": "address before load, pane after load",
 			"nextFields": ["board", "source", "panes"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read", "browser"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "BROWSER_REQUIRED",
+					"exit": 4
+				}
+			]
 		},
 		{
 			"path": "board save",
@@ -413,12 +739,43 @@
 			"result": "save result or success:false conflict",
 			"diagnostics": "save/conflict/pane notes",
 			"exits": [0, 1, 2, 3, 5],
-			"prerequisites": ["server", "board"],
+			"prerequisites": ["server", "board", "doing"],
 			"relationships": ["POST /api/boards/save"],
 			"semantics": "atomic note write; conflict never overwrites",
 			"ordering": "conflict body reaches stdout before exit 5",
 			"nextFields": ["board", "file", "version", "conflict.outcomes"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["local-read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "compare",
@@ -433,7 +790,14 @@
 			"semantics": "read only across board notes",
 			"ordering": "resolve variants before diff",
 			"nextFields": ["nodes", "edges", "layout", "sources"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			]
 		},
 		{
 			"path": "changes",
@@ -448,7 +812,18 @@
 			"semantics": "read-only change feed",
 			"ordering": "cursor/coalesce before request",
 			"nextFields": ["cursor", "events"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			]
 		},
 		{
 			"path": "claim",
@@ -463,7 +838,26 @@
 			"semantics": "lease across several writes, no content write",
 			"ordering": "duration/reason before request",
 			"nextFields": ["holder", "until", "version"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["server-state-write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "release",
@@ -478,11 +872,22 @@
 			"semantics": "idempotent lease release",
 			"ordering": "board before request",
 			"nextFields": ["released", "board"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["server-state-write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			]
 		},
 		{
 			"path": "inject",
-			"parserOwner": "CommandContract concrete Commander parser",
+			"parserOwner": "CommandContract staged token parser",
 			"handlerOwner": "src/cli/commands/inject.ts",
 			"stdout": "none by itself",
 			"result": "usage refusal",
@@ -493,7 +898,9 @@
 			"semantics": "namespace only",
 			"ordering": "subcommand first",
 			"nextFields": [],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": [],
+			"refusals": []
 		},
 		{
 			"path": "inject status",
@@ -508,7 +915,14 @@
 			"semantics": "CLI-only diagnostic, no alternate agent command surface",
 			"ordering": "server before read",
 			"nextFields": ["enabled", "target", "counts"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			]
 		},
 		{
 			"path": "inject test",
@@ -523,7 +937,14 @@
 			"semantics": "explicit diagnostic injection only",
 			"ordering": "loud/quiet cross-field before request",
 			"nextFields": ["channel", "threadId"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["server-state-write"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			]
 		},
 		{
 			"path": "describe",
@@ -538,7 +959,18 @@
 			"semantics": "read only, text mode",
 			"ordering": "elements then description",
 			"nextFields": ["human-readable identities"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			]
 		},
 		{
 			"path": "screenshot",
@@ -553,7 +985,18 @@
 			"semantics": "browser render, no board write",
 			"ordering": "format before server/browser, file after response",
 			"nextFields": ["file", "format"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["browser", "local-write"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "BROWSER_REQUIRED",
+					"exit": 4
+				}
+			]
 		},
 		{
 			"path": "export",
@@ -570,7 +1013,18 @@
 			"semantics": "public result separate from private pending artifact",
 			"ordering": "format/frontmatter/overwrite before server; validate result and artifact before write",
 			"nextFields": ["raw scene", "file", "elements", "format"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["local-read", "read", "local-write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			]
 		},
 		{
 			"path": "import",
@@ -587,7 +1041,38 @@
 			"semantics": "merge is one content write; replace currently spans two content writes",
 			"ordering": "server currently precedes local file read",
 			"nextFields": ["imported", "files", "mode"],
-			"workflow": "candidate single act"
+			"workflow": "candidate single act",
+			"effects": ["write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "mermaid",
@@ -596,13 +1081,32 @@
 			"stdout": "json object",
 			"result": "success,board,pane,message",
 			"diagnostics": "pane location note",
-			"exits": [0, 1, 2, 3, 4, 5],
+			"exits": [0, 1, 2, 3, 4],
 			"prerequisites": ["server", "browser", "board", "doing"],
 			"relationships": ["POST /api/elements/from-mermaid"],
 			"semantics": "browser conversion followed by board write",
 			"ordering": "local diagram before server/browser",
 			"nextFields": ["board", "pane", "message"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["local-read", "browser", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "BROWSER_REQUIRED",
+					"exit": 4
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				}
+			]
 		},
 		{
 			"path": "snapshot",
@@ -617,7 +1121,9 @@
 			"semantics": "namespace only",
 			"ordering": "subcommand first",
 			"nextFields": [],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": [],
+			"refusals": []
 		},
 		{
 			"path": "snapshot save",
@@ -626,13 +1132,24 @@
 			"stdout": "json object",
 			"result": "success,name,elementCount,createdAt",
 			"diagnostics": "usage/refusal",
-			"exits": [0, 1, 2, 3, 5],
-			"prerequisites": ["server", "board", "doing"],
+			"exits": [0, 1, 2, 3],
+			"prerequisites": ["server", "board"],
 			"relationships": ["POST /api/snapshots"],
 			"semantics": "server snapshot write, not board-note content",
 			"ordering": "name before request",
 			"nextFields": ["name", "createdAt"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["server-state-write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			]
 		},
 		{
 			"path": "snapshot list",
@@ -647,7 +1164,18 @@
 			"semantics": "read only",
 			"ordering": "server before read",
 			"nextFields": ["[].name", "[].createdAt"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			]
 		},
 		{
 			"path": "snapshot restore",
@@ -662,7 +1190,38 @@
 			"semantics": "currently two board content writes",
 			"ordering": "fetch and board check before clear",
 			"nextFields": ["name", "board", "restored"],
-			"workflow": "candidate single act"
+			"workflow": "candidate single act",
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "library",
@@ -677,7 +1236,9 @@
 			"semantics": "namespace only",
 			"ordering": "subcommand first",
 			"nextFields": [],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": [],
+			"refusals": []
 		},
 		{
 			"path": "library list",
@@ -692,7 +1253,14 @@
 			"semantics": "server library read, boardless",
 			"ordering": "filters after catalogue read",
 			"nextFields": ["items[].name", "items[].id", "items[].source"],
-			"workflow": "missing handle"
+			"workflow": "missing handle",
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			]
 		},
 		{
 			"path": "library insert",
@@ -707,7 +1275,38 @@
 			"semantics": "one board write",
 			"ordering": "resolve stencil and coordinates before write",
 			"nextFields": ["elements[].id", "fingerprint.version"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "arrange",
@@ -722,7 +1321,9 @@
 			"semantics": "namespace only",
 			"ordering": "subcommand first",
 			"nextFields": [],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": [],
+			"refusals": []
 		},
 		{
 			"path": "arrange align",
@@ -737,7 +1338,38 @@
 			"semantics": "one geometry write",
 			"ordering": "ids/direction before write",
 			"nextFields": ["elements", "fingerprint.version"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "arrange distribute",
@@ -752,7 +1384,38 @@
 			"semantics": "one geometry write",
 			"ordering": "ids/direction before write",
 			"nextFields": ["elements", "fingerprint.version"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "arrange group",
@@ -767,7 +1430,38 @@
 			"semantics": "one group write",
 			"ordering": "ids before write",
 			"nextFields": ["groupId", "elements", "fingerprint.version"],
-			"workflow": "missing handle"
+			"workflow": "missing handle",
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "arrange ungroup",
@@ -782,7 +1476,38 @@
 			"semantics": "one group write",
 			"ordering": "group id before write",
 			"nextFields": ["elements", "fingerprint.version"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "arrange lock",
@@ -797,7 +1522,38 @@
 			"semantics": "one lock write",
 			"ordering": "ids before write",
 			"nextFields": ["elements", "fingerprint.version"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "arrange unlock",
@@ -812,7 +1568,38 @@
 			"semantics": "one unlock write",
 			"ordering": "ids before write",
 			"nextFields": ["elements", "fingerprint.version"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "arrange duplicate",
@@ -827,7 +1614,38 @@
 			"semantics": "server mints every copied id in one write",
 			"ordering": "ids/offset before write",
 			"nextFields": ["duplicates[].id", "elements", "fingerprint.version"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "share",
@@ -842,7 +1660,18 @@
 			"semantics": "read only board, returns external URL",
 			"ordering": "scene build before URL encoding",
 			"nextFields": ["url"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			]
 		},
 		{
 			"path": "clear",
@@ -857,7 +1686,38 @@
 			"semantics": "one destructive board write",
 			"ordering": "--yes before server/write",
 			"nextFields": ["cleared"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			]
 		},
 		{
 			"path": "install-skill",
@@ -872,7 +1732,9 @@
 			"semantics": "CLI-only local installation",
 			"ordering": "resolve destination and consent before writes",
 			"nextFields": ["skill", "doc", "repo", "vault"],
-			"workflow": "necessary composition"
+			"workflow": "necessary composition",
+			"effects": ["local-read", "local-write"],
+			"refusals": []
 		}
 	],
 	"workflows": [

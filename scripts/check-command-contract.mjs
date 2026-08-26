@@ -75,6 +75,7 @@ const requiredCompatibilityCases = [
 	"snapshot-restore-missing-name",
 	"snapshot-option-leading-restore",
 	"arrange-option-leading-align",
+	"inject-unknown-option-shaped-subcommand",
 ];
 check(
 	"fixed-base compatibility records every approved focused scenario",
@@ -211,6 +212,7 @@ const unconstrainedBranch = (schema) => {
 		schema.type === "object" &&
 		Object.keys(schema.properties ?? {}).length === 0 &&
 		(schema.required ?? []).length === 0 &&
+		schema.propertyNames === undefined &&
 		schema.additionalProperties !== false
 	);
 };
@@ -231,6 +233,17 @@ for (const contract of publicContracts) {
 		check(
 			`${contract.name} explicitly declares a text, raw, or namespace-only result`,
 			!structured || namespaceRefusal,
+		);
+	}
+	check(
+		`${contract.name} stage names are unique`,
+		new Set(contract.input.stages.map((stage) => stage.name)).size === contract.input.stages.length,
+	);
+	for (const stage of contract.input.stages) {
+		check(
+			`${contract.name} ${stage.name} has a meaningful stage schema`,
+			stage.description.length > 0 && !unconstrainedBranch(stage.schema),
+			JSON.stringify(stage.schema),
 		);
 	}
 }
@@ -257,11 +270,34 @@ for (const entry of registry) {
 	);
 }
 for (const entry of contracts) {
-	const expected = auditByPath.get(entry.name)?.prerequisites ?? [];
-	const actual = entry.contract?.prerequisites ?? [];
+	const audited = auditByPath.get(entry.name);
+	const contract = entry.contract;
 	check(
 		`${entry.name} declares its canonical prerequisites`,
-		actual.join(",") === expected.join(","),
+		JSON.stringify(contract.prerequisites) === JSON.stringify(audited?.prerequisites ?? []),
+	);
+	check(
+		`${entry.name} declares its canonical effects`,
+		JSON.stringify(contract.effects) === JSON.stringify(audited?.effects ?? []),
+	);
+	const actualRefusals = contract.refusals.map(({ code, exit }) => ({ code, exit }));
+	check(
+		`${entry.name} declares its canonical refusal codes and exits`,
+		JSON.stringify(actualRefusals) === JSON.stringify(audited?.refusals ?? []),
+		JSON.stringify(actualRefusals),
+	);
+	const namespaceOnly = contract.output.cases.every((output) =>
+		output.description.toLowerCase().includes("namespace refusal"),
+	);
+	const declaredExits = new Set([
+		...(namespaceOnly ? [] : [0]),
+		...contract.refusals.map(({ exit }) => exit),
+		...(contract.outcomes ?? []).map(({ exit }) => exit),
+	]);
+	check(
+		`${entry.name} canonical exits cover every declared public exit`,
+		[...declaredExits].every((exit) => audited?.exits.includes(exit)),
+		JSON.stringify({ declared: [...declaredExits], audited: audited?.exits }),
 	);
 }
 const updateRefusals = new Map(
@@ -420,7 +456,6 @@ check(
 	JSON.stringify(generatedProof.contracts.map((entry) => entry.name)) ===
 		JSON.stringify(contracts.map((entry) => entry.name)),
 );
-check("generated proof omits legacy paths", !("legacyPaths" in generatedProof));
 check(
 	"generated routes cover every contract owner and parent",
 	JSON.stringify(generatedProof.routes) === JSON.stringify(expectedGeneratedRoutes),

@@ -3,6 +3,7 @@ import { closePane, currentRequestedBoard, openPane } from "../../runtime/engine
 import { paneWords } from "../../runtime/engine/panes.js";
 import { CliUsageError, defineCommand } from "../command-contract/contract.js";
 import { HoldReportSchema, PaneRefSchema } from "../command-contract/schemas.js";
+import { serverBrowserRefusals } from "../command-contract/common.js";
 
 const usage =
 	"pane needs a subcommand: open, close. For what is on screen right now, without changing it, run `archboard panes`.";
@@ -118,20 +119,7 @@ export const paneOpenContract = defineCommand({
 	},
 	prerequisites: ["server", "browser"],
 	effects: ["browser"],
-	refusals: [
-		{
-			code: "CANVAS_UNREACHABLE",
-			exit: 3,
-			stream: "stderr",
-			description: "The canvas could not be reached.",
-		},
-		{
-			code: "BROWSER_REQUIRED",
-			exit: 4,
-			stream: "stderr",
-			description: "No browser pane can be split.",
-		},
-	],
+	refusals: serverBrowserRefusals,
 	relationships: [
 		{ method: "POST", path: "/api/panes/open", cardinality: "one", description: "Open the pane" },
 		{
@@ -158,7 +146,18 @@ export const paneOpenContract = defineCommand({
 
 export const PaneCloseInputSchema = z.object({ tokens });
 export type PaneCloseInput = z.infer<typeof PaneCloseInputSchema>;
-export const PaneCloseStageSchema = stagedNoFlags;
+export const PaneCloseStageSchema = stagedNoFlags.transform((values, context) => {
+	const spec = values[0];
+	if (!spec) {
+		context.addIssue({
+			code: "custom",
+			message:
+				"pane close needs to be told which pane: `pane close right`. Run `archboard panes` for what is on screen.",
+		});
+		return z.NEVER;
+	}
+	return { spec };
+});
 export type PaneCloseStage = z.infer<typeof PaneCloseStageSchema>;
 export const PaneCloseResultSchema = PaneCommandResultSchema;
 export type PaneCloseResult = z.infer<typeof PaneCloseResultSchema>;
@@ -205,20 +204,7 @@ export const paneCloseContract = defineCommand({
 	},
 	prerequisites: ["server", "browser"],
 	effects: ["browser"],
-	refusals: [
-		{
-			code: "CANVAS_UNREACHABLE",
-			exit: 3,
-			stream: "stderr",
-			description: "The canvas could not be reached.",
-		},
-		{
-			code: "BROWSER_REQUIRED",
-			exit: 4,
-			stream: "stderr",
-			description: "No browser pane can be closed.",
-		},
-	],
+	refusals: serverBrowserRefusals,
 	relationships: [
 		{
 			method: "POST",
@@ -229,18 +215,13 @@ export const paneCloseContract = defineCommand({
 	],
 	async handler(input, context) {
 		await context.require("server", "Closing a pane");
-		const parsed = context.parse(PaneCloseStageSchema, input.tokens);
-		const spec = parsed[0];
-		if (!spec)
-			throw new CliUsageError(
-				"pane close needs to be told which pane: `pane close right`. Run `archboard panes` for what is on screen.",
-			);
+		const request = context.parse(PaneCloseStageSchema, input.tokens);
 		await context.require("browser", "Closing a pane");
-		const result = await closePane(spec);
+		const result = await closePane(request.spec);
 		return {
 			result: PaneCloseResultSchema.parse(result),
 			diagnostics: [
-				`Closed ${paneWords(result.closed?.place ?? spec)}. "${result.closed?.board}" is off the screen, not gone — it is still open on the canvas, with whatever was drawn on it.`,
+				`Closed ${paneWords(result.closed?.place ?? request.spec)}. "${result.closed?.board}" is off the screen, not gone — it is still open on the canvas, with whatever was drawn on it.`,
 			],
 		};
 	},
