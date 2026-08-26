@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 19:10'
+updated_date: '2026-08-26 19:20'
 labels:
   - ready-for-agent
 dependencies:
@@ -480,6 +480,10 @@ Commit d09f6d7 replaces active-bucket scans with exact-string canonical compatib
 One exact UTF-16 code-unit comparator now owns identity sorting and tie breaks across sweep events, hierarchy selection, node and obstacle refs, obstacle components, and final finding arrays. Caller-controlled identity arrays are compared structurally; obstacle string identities use an injective escaped encoding. No board-inspection semantic path retains localeCompare or NUL-delimited composite keys.
 
 The public inspection matrix has 607 checks. New direct and real persisted/package cases cover NUL, other controls, shared prefixes, and lone surrogates across connector-node, label-node, node, connector same-set, label same-set, equal-area hierarchy selection, leaf status, ancestor exclusion, and finding order. Exclusion-heavy 1k/2k/4k/8k label and connector cases pin zero semantic comparisons/compatible visits, bounded bucket scans and index operations, and canonical profile reuse; sparse isolated hierarchy cases pin zero candidate visits. Exact 1,516,200 and 2,000,001 public comparison fixtures remain green. Focused lint, type-check, boundaries, module-scope, contracts, geometry, labels, branch, CLI, inspection/package, two byte-stable fix passes at diff hash c300c7d66cc447297af165046255ca8f8f19e5105c24441c3cf377e0ad3a77b0, and git diff --check pass. Complete bun run check and the separate bun run test remain before rereview.
+
+### Compatible-bucket remediation validation closure
+
+The complete `bun run check` passed, followed by a separate complete `bun run test`. Each chain ran all four browser suites sequentially and headless: the 10,000-element human-performance board remained responsive, fixed-point returned 0 of 13 changed elements, both typed-text interactions round-tripped, and all 42 mixed-write live-session cycles converged. The on-demand command-contract check generated all three ignored views into two absent temporary directories, proved repeated byte identity, and left the checkout unchanged; the canonical authored audit JSON remains tracked. `git diff --check` passes. TASK-119 remains In Progress with every acceptance criterion unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
