@@ -7,10 +7,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const reporting = await import(join(repoRoot, "frontend", "src", "canvas", "change-reporting.ts"));
-const { ownsHoldAttempt } = await import(
-	join(repoRoot, "frontend", "src", "canvas", "hold-attempt.ts")
-);
+const reporting = await import(join(repoRoot, "src", "ui", "canvas", "change-reporting.ts"));
+const { ownsHoldAttempt } = await import(join(repoRoot, "src", "ui", "canvas", "hold-attempt.ts"));
 const {
 	hasPendingEdits,
 	initialState,
