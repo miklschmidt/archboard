@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 18:46'
+updated_date: '2026-08-26 19:10'
 labels:
   - ready-for-agent
 dependencies:
@@ -472,6 +472,14 @@ Partition-identity remediation validation (2026-08-26):
 - Inspection passes 602 checks while preserving the exact 1,516,200 and 2,000,001 comparison fixtures. Public report bytes and schemas still omit every preprocessing counter.
 - Two independent on-demand generations were byte-identical: cli-command-audit.md c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, command-contract-proof.json ca5e28eeee97dcbea9d58b31e912679ad069c89f0f7fc2ba318afe6c9d0e4e1f, and command-contract-proof.md 63449ca7440f77b714248e3e8bf9c87c3b0e520e8b070b41fc2a740aca41f7e5. Generated views remained outside the checkout; the canonical audit JSON remains tracked.
 - TASK-119 remains In Progress with every acceptance criterion unchecked for independent rereview.
+
+### Compatible-bucket and exact-identity remediation
+
+Commit d09f6d7 replaces active-bucket scans with exact-string canonical compatibility profiles and incrementally maintained compatible bucket indexes. Identical label ownership exclusions share one transitive set and one sweep profile, so deep own-plus-ancestor label cases no longer copy or traverse the same hierarchy per label. Empty compatibility groups are removed on expiry. Every compatibility-group and returned-bucket iteration remains visible in the module-root diagnostics, which now also reports canonical profile counts. Hierarchy child/owner self-pairs carry reciprocal exclusions and never reach candidate visitation.
+
+One exact UTF-16 code-unit comparator now owns identity sorting and tie breaks across sweep events, hierarchy selection, node and obstacle refs, obstacle components, and final finding arrays. Caller-controlled identity arrays are compared structurally; obstacle string identities use an injective escaped encoding. No board-inspection semantic path retains localeCompare or NUL-delimited composite keys.
+
+The public inspection matrix has 607 checks. New direct and real persisted/package cases cover NUL, other controls, shared prefixes, and lone surrogates across connector-node, label-node, node, connector same-set, label same-set, equal-area hierarchy selection, leaf status, ancestor exclusion, and finding order. Exclusion-heavy 1k/2k/4k/8k label and connector cases pin zero semantic comparisons/compatible visits, bounded bucket scans and index operations, and canonical profile reuse; sparse isolated hierarchy cases pin zero candidate visits. Exact 1,516,200 and 2,000,001 public comparison fixtures remain green. Focused lint, type-check, boundaries, module-scope, contracts, geometry, labels, branch, CLI, inspection/package, two byte-stable fix passes at diff hash c300c7d66cc447297af165046255ca8f8f19e5105c24441c3cf377e0ad3a77b0, and git diff --check pass. Complete bun run check and the separate bun run test remain before rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
