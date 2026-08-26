@@ -40,6 +40,7 @@ export function introspectContracts(entries: readonly RegistryContractEntry[]) {
 			},
 			result: jsonSchema(contract.result),
 			output: contract.output.cases.map(({ artifact: _artifact, ...outputCase }) => outputCase),
+			outcomes: contract.outcomes ?? [],
 			prerequisites: contract.prerequisites,
 			effects: contract.effects,
 			refusals: contract.refusals,
