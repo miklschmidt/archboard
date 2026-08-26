@@ -415,7 +415,7 @@ function analyze(files) {
 			if (ts.isNewExpression(node)) {
 				const constructed = node.expression.getText(source);
 				const root = constructed.split(".")[0];
-				if (HARMLESS_CONSTRUCTORS.has(root) || /Error$/.test(constructed)) return;
+				if (HARMLESS_CONSTRUCTORS.has(root) || constructed.endsWith('Error')) return;
 				const name = declaredNameFor(node);
 				// A container bound to a name nobody writes to is a lookup table.
 				if (name && CONTAINERS.has(constructed) && !mutatedNames.has(name)) return;

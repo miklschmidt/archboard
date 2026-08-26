@@ -474,7 +474,7 @@ export async function openPane(params: { board?: string } = {}): Promise<PaneLay
 		const where = created.pane ? `the ${created.pane.place} pane` : "a new pane";
 		const failure = new Error(
 			`The canvas was split, but "${params.board}" did not open into ${where}: ` +
-				`${(error as Error).message}` +
+				(error as Error).message +
 				(created.pane
 					? ` The pane is on screen showing what it inherited. Point it somewhere with ` +
 						`\`board open <name> --pane ${created.pane.place}\`, or close it with \`pane close ${created.pane.place}\`.`

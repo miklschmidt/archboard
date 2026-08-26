@@ -3304,7 +3304,7 @@ try {
 					if (!entry.name.endsWith(".ts")) continue;
 					for (const line of fs.readFileSync(full, "utf-8").split("\n")) {
 						if (!/\bsceneJsonWithEmbeddedImages\s*\(/.test(line)) continue;
-						if (/^export function sceneJsonWithEmbeddedImages/.test(line.trim())) continue;
+						if (line.trim().startsWith('export function sceneJsonWithEmbeddedImages')) continue;
 						callers.push(`${path.relative(repoRoot, full)}:${line.trim()}`);
 					}
 				}

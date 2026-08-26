@@ -512,7 +512,7 @@ function applyHumanInput(
 		const id = typeof rawId === "string" && rawId.length > 0 ? rawId : mintId(board);
 		const existing = board.get(id);
 		const element = {
-			...(existing ?? {}),
+			...existing,
 			...incoming,
 			id,
 			createdAt: existing?.createdAt ?? now,

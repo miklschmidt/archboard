@@ -87,9 +87,7 @@ const proxy = http.createServer((req, res) => {
 		try {
 			const upstream = await fetch(`${base}${req.url}`, {
 				method: req.method,
-				headers: {
-					...(req.headers["content-type"] ? { "Content-Type": req.headers["content-type"] } : {}),
-				},
+				headers: (req.headers["content-type"] ? { "Content-Type": req.headers["content-type"] } : {}),
 				...(body.length > 0 ? { body } : {}),
 			});
 			const text = await upstream.text();

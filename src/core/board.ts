@@ -575,7 +575,7 @@ export function sceneJsonWithEmbeddedImages(note: string, notePath: string, root
 	if (Object.keys(resolved).length === 0) return sceneJson;
 	const scene = JSON.parse(sceneJson);
 	if (Array.isArray(scene)) return sceneJson;
-	scene.files = { ...(scene.files ?? {}), ...resolved };
+	scene.files = { ...scene.files, ...resolved };
 	return JSON.stringify(scene);
 }
 

@@ -165,7 +165,7 @@ function blank(scene, empties) {
 /** POST /api/elements/changes: upserts are *merged*, so stored fields survive. */
 function applyUpserts(store, upserts) {
 	for (const upsert of upserts) {
-		store.set(upsert.id, { ...(store.get(upsert.id) ?? {}), ...upsert });
+		store.set(upsert.id, { ...store.get(upsert.id), ...upsert });
 	}
 }
 

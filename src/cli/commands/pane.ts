@@ -35,7 +35,7 @@ export async function pane(argv: string[]): Promise<void> {
 		// Optional here: a pane with no board named inherits what the other pane
 		// is showing, which is what a human clicking Split gets.
 		const wanted = currentRequestedBoard();
-		const result = await openPane({ ...(wanted ? { board: wanted } : {}) });
+		const result = await openPane((wanted ? { board: wanted } : {}));
 
 		const place = result.pane?.place;
 		const where = place ? paneWords(place) : "a new pane";

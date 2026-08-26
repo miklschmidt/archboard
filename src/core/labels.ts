@@ -140,7 +140,7 @@ export function boundTextsByContainer(elements: readonly LabelledElement[]): Map
 	for (const element of elements) {
 		if (!live(element) || !Array.isArray(element.boundElements)) continue;
 		for (const ref of element.boundElements) {
-			if (!ref || ref.type !== "text" || typeof ref.id !== "string") continue;
+			if (ref?.type !== "text" || typeof ref.id !== "string") continue;
 			if (!isText(byId.get(ref.id))) continue;
 			record(element.id, ref.id);
 		}

@@ -69,7 +69,7 @@ async function healthOrNull(timeoutMs = 500) {
 // True only for a /health payload from OUR canvas server (v1.1+ identity
 // marker). Anything else answering the port is a foreign service.
 export function isCanvasHealth(health: { service?: string } | null): boolean {
-	return health !== null && health.service === CANVAS_SERVICE_NAME;
+	return health?.service === CANVAS_SERVICE_NAME;
 }
 
 export interface EnsureResult {
@@ -196,7 +196,7 @@ export async function stopCanvas(): Promise<StopResult> {
 	try {
 		process.kill(pid, "SIGTERM");
 	} catch (error) {
-		throw new Error(`Failed to signal canvas server (pid ${pid}): ${(error as Error).message}`);
+		throw new Error(`Failed to signal canvas server (pid ${pid}): ${(error as Error).message}`, { cause: error });
 	}
 
 	const deadline = Date.now() + 5000;
