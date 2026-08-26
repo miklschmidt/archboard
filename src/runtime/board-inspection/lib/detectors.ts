@@ -66,7 +66,9 @@ interface DetectionResult {
 		broadPhaseProfileCreations: number;
 		broadPhaseProfileTrieSteps: number;
 		broadPhaseCompatibilityQueries: number;
+		broadPhaseCompatibilityQuerySteps: number;
 		broadPhaseCompatibilityTests: number;
+		broadPhaseHierarchyMembershipTests: number;
 		broadPhaseHierarchyPathQueries: number;
 		broadPhaseHierarchyPathSteps: number;
 		broadPhaseHierarchySubtreeQueries: number;
@@ -78,6 +80,8 @@ interface DetectionResult {
 		broadPhasePeakRetainedHierarchyIndexCells: number;
 		broadPhasePeakRetainedExclusionRefs: number;
 		broadPhasePeakRetainedIndexRefs: number;
+		broadPhasePeakRetainedQueryRefs: number;
+		broadPhasePeakRetainedTotalStateRefs: number;
 		hierarchyEvents: number;
 		hierarchyCandidateVisits: number;
 		hierarchyExpiryPops: number;
@@ -118,7 +122,9 @@ const emptySweepWork = (): SweepWork => ({
 	profileCreations: 0,
 	profileTrieSteps: 0,
 	compatibilityQueries: 0,
+	compatibilityQuerySteps: 0,
 	compatibilityTests: 0,
+	hierarchyMembershipTests: 0,
 	hierarchyPathQueries: 0,
 	hierarchyPathSteps: 0,
 	hierarchySubtreeQueries: 0,
@@ -130,6 +136,8 @@ const emptySweepWork = (): SweepWork => ({
 	peakRetainedHierarchyIndexCells: 0,
 	peakRetainedExclusionRefs: 0,
 	peakRetainedIndexRefs: 0,
+	peakRetainedQueryRefs: 0,
+	peakRetainedTotalStateRefs: 0,
 	peakRetainedSelections: 0,
 });
 type FindingInput = InspectionFinding extends infer Finding
@@ -1669,7 +1677,9 @@ function pairSweep<A, B>(
 	work.profileCreations += measured.profileCreations;
 	work.profileTrieSteps += measured.profileTrieSteps;
 	work.compatibilityQueries += measured.compatibilityQueries;
+	work.compatibilityQuerySteps += measured.compatibilityQuerySteps;
 	work.compatibilityTests += measured.compatibilityTests;
+	work.hierarchyMembershipTests += measured.hierarchyMembershipTests;
 	work.hierarchyPathQueries += measured.hierarchyPathQueries;
 	work.hierarchyPathSteps += measured.hierarchyPathSteps;
 	work.hierarchySubtreeQueries += measured.hierarchySubtreeQueries;
@@ -1690,6 +1700,11 @@ function pairSweep<A, B>(
 		measured.peakRetainedExclusionRefs,
 	);
 	work.peakRetainedIndexRefs = Math.max(work.peakRetainedIndexRefs, measured.peakRetainedIndexRefs);
+	work.peakRetainedQueryRefs = Math.max(work.peakRetainedQueryRefs, measured.peakRetainedQueryRefs);
+	work.peakRetainedTotalStateRefs = Math.max(
+		work.peakRetainedTotalStateRefs,
+		measured.peakRetainedTotalStateRefs,
+	);
 	work.peakRetainedSelections = Math.max(
 		work.peakRetainedSelections,
 		measured.peakRetainedSelections,
@@ -2170,7 +2185,9 @@ export function detectBoard(
 			broadPhaseProfileCreations: collisions.preprocessingWork.profileCreations,
 			broadPhaseProfileTrieSteps: collisions.preprocessingWork.profileTrieSteps,
 			broadPhaseCompatibilityQueries: collisions.preprocessingWork.compatibilityQueries,
+			broadPhaseCompatibilityQuerySteps: collisions.preprocessingWork.compatibilityQuerySteps,
 			broadPhaseCompatibilityTests: collisions.preprocessingWork.compatibilityTests,
+			broadPhaseHierarchyMembershipTests: collisions.preprocessingWork.hierarchyMembershipTests,
 			broadPhaseHierarchyPathQueries: collisions.preprocessingWork.hierarchyPathQueries,
 			broadPhaseHierarchyPathSteps: collisions.preprocessingWork.hierarchyPathSteps,
 			broadPhaseHierarchySubtreeQueries: collisions.preprocessingWork.hierarchySubtreeQueries,
@@ -2184,6 +2201,8 @@ export function detectBoard(
 				collisions.preprocessingWork.peakRetainedHierarchyIndexCells,
 			broadPhasePeakRetainedExclusionRefs: collisions.preprocessingWork.peakRetainedExclusionRefs,
 			broadPhasePeakRetainedIndexRefs: collisions.preprocessingWork.peakRetainedIndexRefs,
+			broadPhasePeakRetainedQueryRefs: collisions.preprocessingWork.peakRetainedQueryRefs,
+			broadPhasePeakRetainedTotalStateRefs: collisions.preprocessingWork.peakRetainedTotalStateRefs,
 			pathSegmentChecks: structural.pathSegmentChecks,
 		},
 	};

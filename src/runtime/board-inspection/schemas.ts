@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { obstacleIdentity } from "./lib/ordering.js";
+import { compareIdentity, obstacleIdentity } from "./lib/ordering.js";
 
 const finite = z.number().finite();
 const nonnegative = finite.nonnegative();
@@ -27,6 +27,9 @@ export const LibraryAttributionSchema = z.strictObject({
 	item: z.string().min(1),
 	source: z.string().optional(),
 });
+
+const canonicalIdentities = (values: readonly string[]): boolean =>
+	values.every((value, index) => index === 0 || compareIdentity(values[index - 1]!, value) < 0);
 export const ObstacleRefSchema = z
 	.strictObject({
 		id: z.string().startsWith("obstacle:"),
@@ -36,12 +39,30 @@ export const ObstacleRefSchema = z
 		library: z.array(LibraryAttributionSchema),
 	})
 	.superRefine((obstacle, context) => {
-		if (obstacle.id === obstacleIdentity(obstacle.elementIds)) return;
-		context.addIssue({
-			code: "custom",
-			path: ["id"],
-			message: "Obstacle id must be the deterministic encoding of elementIds.",
-		});
+		if (!canonicalIdentities(obstacle.elementIds))
+			context.addIssue({
+				code: "custom",
+				path: ["elementIds"],
+				message: "Obstacle elementIds must be unique and in exact UTF-16 order.",
+			});
+		if (!canonicalIdentities(obstacle.groupIds))
+			context.addIssue({
+				code: "custom",
+				path: ["groupIds"],
+				message: "Obstacle groupIds must be unique and in exact UTF-16 order.",
+			});
+		if (!canonicalIdentities(obstacle.library.map(({ elementId }) => elementId)))
+			context.addIssue({
+				code: "custom",
+				path: ["library"],
+				message: "Obstacle library entries must have unique elementIds in exact UTF-16 order.",
+			});
+		if (obstacle.id !== obstacleIdentity(obstacle.elementIds))
+			context.addIssue({
+				code: "custom",
+				path: ["id"],
+				message: "Obstacle id must be the deterministic encoding of elementIds.",
+			});
 	});
 
 const common = {
