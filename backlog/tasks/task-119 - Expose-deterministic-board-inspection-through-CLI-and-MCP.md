@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 18:37'
+updated_date: '2026-08-26 18:46'
 labels:
   - ready-for-agent
 dependencies:
@@ -465,6 +465,13 @@ Partition-identity remediation checkpoint (2026-08-26):
 - Development diagnostics now expose bucket scans and exact index operations for broad-phase and hierarchy work. These counters remain absent from InspectionReport, CheckResult, JSON, and text output.
 - The public matrix has 602 checks. Direct and real persisted/package cases cover eligible and excluded connector-node, label-node, node hierarchy, connector same-set, and label same-set behavior with control-character IDs, plus the reported connector-node collision and a renamed control. Sparse distinct-partition runs at 1k/2k/4k/8k report zero broad-phase bucket scans and linearly bounded exact index operations.
 - Focused lint, both TypeScript projects, boundaries, module-scope, contracts, inspection/package, CLI, geometry, labels, branch, and git diff checks pass. Two bun run fix passes were byte-stable at diff SHA-256 6923f4cffe44ec6ee5ba2ba3bc5ead92f28f26819d67aeaa81ab45dd5e30b6da. Full check and separate full test remain.
+
+Partition-identity remediation validation (2026-08-26):
+- Commit 9fd5036 closes the control-character bucket alias and historical empty-bucket scan defects without narrowing persisted IDs or changing semantic pair eligibility.
+- Complete bun run check passed lint, skill validation, formatting, both TypeScript projects, all 29 push suites, and the four browser suites sequentially/headless. A separate complete bun run test passed the same suite and browser chain. Fixed-point returned 0 of 13 changed elements and both live-session runs converged through 42 of 42 cycles.
+- Inspection passes 602 checks while preserving the exact 1,516,200 and 2,000,001 comparison fixtures. Public report bytes and schemas still omit every preprocessing counter.
+- Two independent on-demand generations were byte-identical: cli-command-audit.md c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, command-contract-proof.json ca5e28eeee97dcbea9d58b31e912679ad069c89f0f7fc2ba318afe6c9d0e4e1f, and command-contract-proof.md 63449ca7440f77b714248e3e8bf9c87c3b0e520e8b070b41fc2a740aca41f7e5. Generated views remained outside the checkout; the canonical audit JSON remains tracked.
+- TASK-119 remains In Progress with every acceptance criterion unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
