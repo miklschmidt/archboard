@@ -1352,7 +1352,60 @@ Public result JSON Schema:
 				},
 				"nodes": {
 					"type": "array",
-					"items": {}
+					"items": {
+						"type": "object",
+						"properties": {
+							"node": {
+								"type": "string"
+							},
+							"kind": {
+								"type": "string",
+								"enum": ["service", "queue", "datastore", "gateway", "external"]
+							},
+							"name": {
+								"type": "string"
+							},
+							"elementIds": {
+								"type": "array",
+								"items": {
+									"type": "string"
+								}
+							},
+							"binding": {
+								"type": "object",
+								"properties": {
+									"repo": {
+										"type": "string"
+									},
+									"path": {
+										"type": "string"
+									},
+									"branch": {
+										"type": "string"
+									},
+									"commit": {
+										"type": "string"
+									},
+									"confirmedAt": {
+										"type": "string"
+									}
+								},
+								"required": ["path"],
+								"additionalProperties": {}
+							},
+							"link": {
+								"type": "string"
+							},
+							"variant": {
+								"type": "string"
+							},
+							"level": {
+								"type": "string"
+							}
+						},
+						"required": ["node", "kind", "name", "elementIds", "variant"],
+						"additionalProperties": false
+					}
 				},
 				"elementsUpdated": {
 					"type": "integer",
@@ -1822,7 +1875,25 @@ Public result JSON Schema:
 				},
 				"nodes": {
 					"type": "array",
-					"items": {}
+					"items": {
+						"type": "object",
+						"properties": {
+							"node": {
+								"type": "string"
+							},
+							"name": {
+								"type": "string"
+							},
+							"elementIds": {
+								"type": "array",
+								"items": {
+									"type": "string"
+								}
+							}
+						},
+						"required": ["elementIds"],
+						"additionalProperties": false
+					}
 				},
 				"elementsUpdated": {
 					"type": "integer",
