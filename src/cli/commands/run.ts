@@ -55,7 +55,9 @@ interface CommandRoute {
 	summary?: string;
 	usage?: string;
 	children?: Readonly<Record<string, CommandRoute>>;
-	bare?: { kind: "default"; child: string } | { kind: "namespace-refusal"; message: string };
+	bare?:
+		| { kind: "default"; child: string; withLeadingOptions: boolean }
+		| { kind: "namespace-refusal"; message: string };
 }
 
 const commandSummary = (route: CommandRoute) =>
@@ -228,7 +230,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 			add: child(legacy(repo, "src/cli/commands/repo.ts")),
 			forget: child(legacy(repo, "src/cli/commands/repo.ts")),
 		},
-		bare: { kind: "default", child: "list" },
+		bare: { kind: "default", child: "list", withLeadingOptions: true },
 		summary:
 			"The repository checkouts on this machine, so a binding can name a repo instead of a directory",
 		usage: [
@@ -380,7 +382,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 			status: child(legacy(inject, "src/cli/commands/inject.ts")),
 			test: child(legacy(inject, "src/cli/commands/inject.ts")),
 		},
-		bare: { kind: "default", child: "status" },
+		bare: { kind: "default", child: "status", withLeadingOptions: false },
 		summary:
 			"Whether the canvas can push board changes into a live Codex thread, and a probe to prove it",
 		usage: [
@@ -450,7 +452,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 			list: child(legacy(library, "src/cli/commands/library.ts")),
 			insert: child(legacy(library, "src/cli/commands/library.ts")),
 		},
-		bare: { kind: "default", child: "list" },
+		bare: { kind: "default", child: "list", withLeadingOptions: true },
 		summary: "What stencils are in the library, and dropping one onto the board",
 		usage:
 			"library list [--text] | library insert <name> --x <x> --y <y> [--source <file>] [--id <libraryItemId>]  (the palette lives on the canvas server, not in a browser profile, which is why an agent can read and place from it without a browser)",
@@ -593,7 +595,11 @@ function dispatchedCommand(
 	if (consumed === 0 && root.bare?.kind === "namespace-refusal") {
 		throw new CliUsageError(root.bare.message);
 	}
-	if (consumed === 0 && rest.length === 0 && root.bare?.kind === "default") {
+	if (
+		consumed === 0 &&
+		root.bare?.kind === "default" &&
+		(rest.length === 0 || (root.bare.withLeadingOptions && rest[0]?.startsWith("--")))
+	) {
 		selectedRoute = root.children?.[root.bare.child] ?? root;
 	}
 	const selected = selectedRoute.owner;
