@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 13:02'
+updated_date: '2026-08-26 13:05'
 labels:
   - ready-for-agent
 dependencies:
@@ -317,6 +317,12 @@ RISKS_AND_ROLLBACK
 - The inspection reader could become a permissive general reader. Keep it raw, narrowly named, and unexported outside board I/O and check. Prove normal ingest/write strictness from the same malformed bytes.
 - Every checkpoint is independently revertible. No note schema or persisted bytes change, so rollback requires no data migration.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Checkpoint 1: extracted the shared architecture-facts entrypoint and adapted compare without changing its semantic model. bun run type-check, bun run test:branch, and git diff --check passed; branch coverage retained promoted stencil nodes, promoted connectors, warnings, node order, and edge facts.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
