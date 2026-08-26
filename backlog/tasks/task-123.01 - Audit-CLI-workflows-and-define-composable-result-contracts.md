@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:53'
-updated_date: '2026-08-26 06:47'
+updated_date: '2026-08-26 07:04'
 labels: []
 dependencies:
   - TASK-124
@@ -69,6 +69,12 @@ In parallel, trace real workflows from tests, task history, and architecture-boa
 13. Commit in focused checkpoints for audit/design, the command-contract module and compatibility golden, and the four proof migrations plus generated artifacts. Stage explicit files and preserve parent-owned work.
 14. Run the command-contract and CLI suites, generation freshness, import boundaries, one-write/doing/version/boards/browser checks, two stable fix passes, bun run check, and the complete sequential test chain. Use independent Standards and Spec review over fixed base 43d0b982ac39346ae3057edf3c9fdffe400b2853 and remediate until both are clean.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Checkpoint ac2b34b records the canonical 57-path CLI audit, generated Markdown view, approved command-contract design, Commander 15.0.0 Bun smoke evidence, and zod-commander evaluation. Workflow deletion-test candidates were sent to the parent for approval; no follow-up tasks were created.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
