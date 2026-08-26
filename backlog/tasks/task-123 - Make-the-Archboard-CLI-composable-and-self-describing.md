@@ -1,10 +1,11 @@
 ---
 id: TASK-123
 title: Replace the Archboard CLI with schema-defined command contracts
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-25 23:52'
-updated_date: '2026-08-26 01:26'
+updated_date: '2026-08-26 06:47'
 labels: []
 dependencies:
   - TASK-124
@@ -47,6 +48,16 @@ The rewrite also includes a source-backed workflow audit. Where a requested act 
 - [ ] #7 TASK-119 through TASK-121 declare their new commands and results through the schema system, and TASK-122 teaches only generated, released command contracts with tested jq examples.
 - [ ] #8 Automated tests cover input validation, cross-field constraints, output-schema rejection, clean stdout and stderr separation, exit mapping, generated help and reference coverage, intentional REST asymmetries, Bun execution, and representative read, write, browser-dependent, and file-output commands.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Complete TASK-123.01 as an approved four-command proof of the CommandContract module.
+2. Complete TASK-123.02 by migrating the remaining CLI commands and deleting the legacy parser, dispatch, and handler-owned output path only after the final migration.
+3. Complete TASK-119, TASK-120, and TASK-121 against the released contract interface.
+4. Complete TASK-123.03 after TASK-123.02 and TASK-119 through TASK-121, generating the full result and chaining reference.
+5. Run independent Standards and Spec review for each subtask, preserve green fix/check/full-suite gates, and finalize TASK-123 only after all three subtasks meet their acceptance criteria.
+<!-- SECTION:PLAN:END -->
 
 ## Comments
 

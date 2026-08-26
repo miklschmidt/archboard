@@ -1,10 +1,11 @@
 ---
 id: TASK-123.01
 title: Design and prove the schema-driven CLI contract
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-25 23:53'
-updated_date: '2026-08-26 00:01'
+updated_date: '2026-08-26 06:47'
 labels: []
 dependencies:
   - TASK-124
@@ -50,6 +51,25 @@ In parallel, trace real workflows from tests, task history, and architecture-boa
 - [ ] #8 The design preserves public CLI spellings, one requested act per write, claims, board-version refusal, browser and server boundaries, and explicitly documented CLI-to-REST relationships without recreating a second agent command surface.
 <!-- AC:END -->
 
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Freeze the reviewed base, dirty-file ownership, 33-command and 24-subcommand surface, and 271-check CLI baseline. Before dependency changes, smoke-test an exact Commander 15.0.0 install under the repository Bun for import, parseAsync, output/exit capture, required-value greediness, aliases, repeats, and help suppression. Stop before package or lock changes if the smoke fails.
+2. Add canonical docs/design/cli-command-audit.json for every public command and subcommand, including current parsing, public result, diagnostics, exits/refusals, ordered prerequisites/effects, board/write/version/claim semantics, REST/local/browser relationships, ordering, and downstream fields. Generate the Markdown view and fail on drift. Apply the deletion test to real workflows; record follow-up candidates without implementing them.
+3. Add the deep src/cli/command-contract module. Its Archboard-owned interface declares CommandContract, runCommand, and introspection. Private implementation owns token adaptation, staged Zod execution, ordered prerequisites, result validation, held presentation, artifact validation/writes, help, diagnostics, and exit mapping.
+4. Keep semantic ownership single. Parameter descriptors declare token grammar only: spellings, aliases, token arity, occurrences, positionals, stdin/file routing, and intentional pass-through. Zod alone owns types, coercion, defaults, enums, optionality, and cross-field rules. Construction checks only grammar coherence and ingress-key mapping.
+5. Keep public result schemas separate from output execution. CommandContract.result describes the command-specific public value/content. OutputPolicy selects JSON, text, raw, or file-receipt behavior. A non-introspected execution record may carry a public result plus a pending artifact. Validate the held-adjusted public result and pending artifact independently before any file write or stdout.
+6. Use real internal seams only: Commander plus a non-parsing recording ArgvParser fake; process/filesystem plus recording CommandHost; production server/browser plus ordered fake PrerequisiteResolver. Commander types remain confined to the private adapter.
+7. Keep src/cli/commands/run.ts as the sole registry and mixed contract/legacy router. Preserve the pre-import --url bootstrap and existing help/version handling. TASK-123.02 owns deletion of the legacy branch, raw parser helpers, and handler-owned output after the last migration.
+8. Prove exactly query, update, viewport, and export. Preserve their spellings, result shapes, REST cardinality, one-write/version behavior, browser requirement, raw/file behavior, held behavior, and refusal precedence. Protect runtime persistence, lock, version, client, server, UI, shared invariant, and skill modules.
+9. Add an independent legacy-binary argv golden exercised through the real Commander adapter. Pin globals and duplication, equals forms, option-looking values, bare --, excess positionals, repeat semantics, stdin and literal dash behavior, help/version oddities, aliases, exact exits 0 through 5, stdout/stderr bytes, and held placement.
+10. Encode and test exact phases. Query keeps server-before-bbox and read-before-filter validation. Update keeps local JSON/file/stdin validation before server and performs one PUT. Viewport keeps mode rules before server/browser and numeric refusal after them. Export keeps format/frontmatter/overwrite refusal before server; raw bypasses held presentation; file validates receipt and artifact before UTF-8 write.
+11. Generate proof metadata, help, and reference fragments from the one registry and public contracts. Introspection exposes public schemas, modes, prerequisites, effects, refusals/exits, examples, and REST relationships, never private execution or adapter data. Do not add a public introspection command or edit the Archboard skill in this subtask.
+12. For audit collapse candidates, obtain parent approval, read task-creation instructions, search duplicates, create focused linked or child tasks through Backlog, and record IDs. Do not implement collapses, TASK-123.02, or TASK-119 here.
+13. Commit in focused checkpoints for audit/design, the command-contract module and compatibility golden, and the four proof migrations plus generated artifacts. Stage explicit files and preserve parent-owned work.
+14. Run the command-contract and CLI suites, generation freshness, import boundaries, one-write/doing/version/boards/browser checks, two stable fix passes, bun run check, and the complete sequential test chain. Use independent Standards and Spec review over fixed base 43d0b982ac39346ae3057edf3c9fdffe400b2853 and remediate until both are clean.
+<!-- SECTION:PLAN:END -->
+
 ## Comments
 
 <!-- COMMENTS:BEGIN -->
@@ -57,5 +77,11 @@ author: @codex
 created: 2026-08-26 00:01
 ---
 Sequenced after TASK-124 so the audit and proof cover only the surviving CLI, REST, and canvas boundaries.
+---
+
+author: @codex
+created: 2026-08-26 06:47
+---
+Plan approved after independent high-stakes review. Approval requires the isolated Commander 15.0.0 Bun smoke to pass before package.json or bun.lock changes.
 ---
 <!-- COMMENTS:END -->
