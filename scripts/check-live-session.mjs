@@ -95,7 +95,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // The one place this check has to know a number the pane is using: it plants a
 // broadcast while a drag is still waiting for its progress delivery. Read
-// from src/core/timing.ts rather than copied, because a copy here would keep
+// from src/runtime/engine/timing.ts rather than copied, because a copy here would keep
 // passing after somebody shortened the deadline and would stop testing the
 // thing it names.
 const { LOCK_FREE_LINGER_MS, LOCK_RENEW_MS, PANE_DEBOUNCE_MS, REPORT_PROGRESS_MS } = await import(
@@ -409,13 +409,13 @@ function elementFields(element, ignored) {
 		if (Array.isArray(value)) return value.map(canonicalise);
 		if (value && typeof value === "object") {
 			const sorted = {};
-			for (const key of Object.keys(value).sort()) sorted[key] = canonicalise(value[key]);
+			for (const key of Object.keys(value).toSorted()) sorted[key] = canonicalise(value[key]);
 			return sorted;
 		}
 		return value;
 	};
 	const fields = {};
-	for (const key of Object.keys(element).sort()) {
+	for (const key of Object.keys(element).toSorted()) {
 		if (ignored.indexOf(key) !== -1) continue;
 		fields[key] = JSON.stringify(canonicalise(element[key]));
 	}
@@ -426,7 +426,7 @@ function elementFields(element, ignored) {
 const snapshotOf = (elements) =>
 	[...elements]
 		.filter((element) => !element.isDeleted)
-		.sort((a, b) => (a.id < b.id ? -1 : 1))
+		.toSorted((a, b) => (a.id < b.id ? -1 : 1))
 		.map((element) => elementFields(element, [...IGNORED]));
 
 // What is compared is the ids and the fields, and nothing else in the entry:
@@ -444,7 +444,7 @@ const paneSnapshot = () =>
   return {
     elements: app.scene.getElementsIncludingDeleted()
       .filter(element => !element.isDeleted)
-      .sort((a, b) => (a.id < b.id ? -1 : 1))
+      .toSorted((a, b) => (a.id < b.id ? -1 : 1))
       .map(element => elementFields(element, ignored))
   };
 })()`);
@@ -459,7 +459,7 @@ const paneSnapshot = () =>
 //
 // A text element's width is measured, and there are two measurers: Chrome's
 // `measureText`, which is what a pane reports after a human types, and
-// `src/core/measure-text.ts`, which is what the server writes into the note.
+// `src/runtime/engine/measure-text.ts`, which is what the server writes into the note.
 // They agree to within 0.0012 px across 130,000 measurements
 // (`docs/design/measuring-text-outside-a-browser.md`), and not to the bit. That
 // used to be invisible, because the server kept whatever width the pane sent
@@ -497,7 +497,7 @@ const divergences = (server, pane) => {
 		}
 		const keys = [
 			...new Set([...Object.keys(element.fields), ...Object.keys(other.fields)]),
-		].sort();
+		].toSorted();
 		for (const key of keys) {
 			const a = element.fields[key] ?? "<absent>";
 			const b = other.fields[key] ?? "<absent>";
@@ -765,7 +765,7 @@ try {
 	//
 	// So it waits, and it says what it is waiting for rather than sleeping: the
 	// page measures a known string and it has to come out where
-	// src/core/measure-text.ts puts it, within the one difference this check
+	// src/runtime/engine/measure-text.ts puts it, within the one difference this check
 	// allows between two measurers.
 	const probe = "typed at 2";
 	const asWritten = measureLineWidth(probe, 20, 5);
@@ -783,7 +783,7 @@ try {
 	check(
 		"  and Excalifont has arrived, so a width measured in the page is that font's",
 		inPage?.loaded === true && Math.abs(Number(inPage.width) - asWritten) < MEASURER_EPSILON,
-		`the page measured ${inPage?.width} and src/core/measure-text.ts ${asWritten}`,
+		`the page measured ${inPage?.width} and src/runtime/engine/measure-text.ts ${asWritten}`,
 	);
 
 	const start = await agree();

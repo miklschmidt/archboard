@@ -56,7 +56,7 @@ import { withDoing } from "./lib/doing.mjs";
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = (p) => join(repoRoot, "src", p);
 
-// Before any import: `src/core/config.ts` reads the vault and the canvas URL
+// Before any import: `src/runtime/engine/config.ts` reads the vault and the canvas URL
 // once, at load. The URL above all — its default is 127.0.0.1:3000, which is
 // where somebody's real canvas is, and a check that imported the client before
 // setting this would drive their boards.

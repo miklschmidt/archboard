@@ -1,7 +1,7 @@
-import { parseArgs, CliUsageError } from "../args.js";
-import { printJson } from "../util.js";
-import { ensureCanvasRunning } from "../../core/spawn.js";
-import { getChanges } from "../../core/canvas-client.js";
+import { parseArgs, CliUsageError } from "./args.js";
+import { printJson } from "./util.js";
+import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
+import { getChanges } from "../../runtime/engine/canvas-client.js";
 
 // `changes` — what the board became, since a cursor.
 //

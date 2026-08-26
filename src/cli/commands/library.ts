@@ -1,13 +1,13 @@
-import { parseArgs, CliUsageError } from "../args.js";
-import { printJson } from "../util.js";
-import { ensureCanvasRunning } from "../../core/spawn.js";
+import { parseArgs, CliUsageError } from "./args.js";
+import { printJson } from "./util.js";
+import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
 import {
 	readCatalogue,
 	catalogueText,
 	insertStencil,
 	AmbiguousStencilError,
 	UnknownStencilError,
-} from "../../core/library-catalogue.js";
+} from "../../runtime/engine/library-catalogue.js";
 
 // What is in the stencil palette, and — since TASK-025 — a way to drop one
 // onto the board.

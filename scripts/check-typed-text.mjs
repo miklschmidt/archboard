@@ -4,7 +4,7 @@
 // they type is still there afterwards (TASK-098).
 //
 // WHAT THIS EXISTS FOR. Renaming an element is the most dangerous act in the
-// system, and `src/core/ids.ts` says why: a text element's block id is its
+// system, and `src/runtime/engine/ids.ts` says why: a text element's block id is its
 // element id, the Obsidian plugin's parser reads exactly eight characters
 // (`/\s\^(.{8})[\n]+/`), so a longer id has to be renamed on the way into a
 // note — and under ADR 0015 the note is the board, so that rename is what comes

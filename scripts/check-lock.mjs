@@ -1270,7 +1270,7 @@ try {
 
 	const bypass = sources.filter(
 		(file) =>
-			file !== join(repoRoot, "src", "core", "board-lock.ts") &&
+			file !== join(repoRoot, "src", "runtime", "engine", "board-lock.ts") &&
 			/VAULT_STATE_DIR[^\n]*lock/i.test(fs.readFileSync(file, "utf-8")),
 	);
 	check(

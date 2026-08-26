@@ -12,10 +12,10 @@
 // move one box. What this file can do is make the cheap thing free — an
 // unclaimed write needs none of this — and the expensive thing deliberate.
 
-import { parseArgs, CliUsageError } from "../args.js";
-import { printJson, note } from "../util.js";
-import { ensureCanvasRunning } from "../../core/spawn.js";
-import { claimBoard, releaseBoardClaim } from "../../core/canvas-client.js";
+import { parseArgs, CliUsageError } from "./args.js";
+import { printJson, note } from "./util.js";
+import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
+import { claimBoard, releaseBoardClaim } from "../../runtime/engine/canvas-client.js";
 
 export async function claim(argv: string[]): Promise<void> {
 	const { flags } = parseArgs(argv, {

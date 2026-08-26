@@ -7,17 +7,17 @@ import net from "net";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import logger from "./utils/logger.js";
-import { snapshots, selectionState } from "./types.js";
+import logger from "./runtime/engine/logger.js";
+import { snapshots, selectionState } from "./runtime/engine/types.js";
 import type {
 	ServerElement,
 	ExcalidrawFile,
 	WebSocketMessage,
 	InitialElementsMessage,
 	Snapshot,
-} from "./types.js";
-import { mintId } from "./core/ids.js";
-import { buildSelectionReport } from "./core/describe.js";
+} from "./runtime/engine/types.js";
+import { mintId } from "./shared/ids/ids.js";
+import { buildSelectionReport } from "./runtime/engine/describe.js";
 import {
 	buildPanesReport,
 	MAX_PANES,
@@ -25,16 +25,16 @@ import {
 	paneWords,
 	resolvePaneSpec,
 	soloPane,
-} from "./core/panes.js";
-import type { PaneRegistration } from "./core/panes.js";
-import { BoardRequiredError } from "./core/board-target.js";
-import { RenderGeometryError } from "./core/geometry.js";
+} from "./runtime/engine/panes.js";
+import type { PaneRegistration } from "./runtime/engine/panes.js";
+import { BoardRequiredError } from "./runtime/engine/board-target.js";
+import { RenderGeometryError } from "./runtime/engine/geometry.js";
 import { z } from "zod";
 import WebSocket from "ws";
-import { isMainModule } from "./core/entry.js";
-import { kept } from "./core/hot.js";
-import { askForReload, reloadIsAskable } from "./core/reload-token.js";
-import { writePidFile, removePidFile } from "./core/pidfile.js";
+import { isMainModule } from "./runtime/engine/entry.js";
+import { kept } from "./runtime/engine/hot.js";
+import { askForReload, reloadIsAskable } from "./runtime/engine/reload-token.js";
+import { writePidFile, removePidFile } from "./runtime/engine/pidfile.js";
 import fs from "fs";
 import {
 	boardSummaries,
@@ -44,8 +44,8 @@ import {
 	recordBaseline,
 	resolveBoard,
 	SCRATCH_KEY,
-} from "./core/board-store.js";
-import type { BoardState } from "./core/board-store.js";
+} from "./runtime/engine/board-store.js";
+import type { BoardState } from "./runtime/engine/board-store.js";
 import {
 	holdOn,
 	isHeld,
@@ -55,8 +55,8 @@ import {
 	releaseHold as clearHold,
 	reportHold,
 	writesBoardNote,
-} from "./core/board-hold.js";
-import type { HoldReport } from "./core/board-hold.js";
+} from "./runtime/engine/board-hold.js";
+import type { HoldReport } from "./runtime/engine/board-hold.js";
 import {
 	BoardWriteConflictError,
 	boardFilesMessage,
@@ -64,8 +64,8 @@ import {
 	ingestScene,
 	readBoardContent,
 	readBoardFile,
-} from "./core/board-io.js";
-import type { BoardContent, LoadedBoard } from "./core/board-io.js";
+} from "./runtime/engine/board-io.js";
+import type { BoardContent, LoadedBoard } from "./runtime/engine/board-io.js";
 import {
 	BoardHeldError,
 	boardLockState,
@@ -79,10 +79,10 @@ import {
 	sleep,
 	takeClaimRevocation,
 	watchBoardLocks,
-} from "./core/board-lock.js";
-import type { LockHolder } from "./core/board-lock.js";
-import { checkDoing, recentDoing, recordDoing } from "./core/board-doing.js";
-import type { DoingEntry } from "./core/board-doing.js";
+} from "./runtime/engine/board-lock.js";
+import type { LockHolder } from "./runtime/engine/board-lock.js";
+import { checkDoing, recentDoing, recordDoing } from "./runtime/engine/board-doing.js";
+import type { DoingEntry } from "./runtime/engine/board-doing.js";
 import {
 	CURRENT_VARIANT,
 	boardKey,
@@ -97,48 +97,48 @@ import {
 	validateLevel,
 	validateVariant,
 	vaultPathFor,
-} from "./core/board.js";
-import type { BoardIdentity } from "./core/board.js";
+} from "./runtime/engine/board.js";
+import type { BoardIdentity } from "./runtime/engine/board.js";
 import {
 	checkBoardVersion,
 	rememberVersion,
 	rememberVersionAt,
 	statedVersion,
 	versionOfNoteAt,
-} from "./core/board-version.js";
+} from "./runtime/engine/board-version.js";
 import {
 	noteWrittenElsewhere,
 	onNoteWrittenElsewhere,
 	refreshNoteWatch,
-} from "./core/note-watch.js";
-import type { NoteWrittenElsewhere } from "./core/note-watch.js";
-import { ARCHBOARD_VAULT, noVaultMessage } from "./core/config.js";
-import { restampVariant } from "./core/promote.js";
-import { boardsForRepo } from "./core/repo-boards.js";
-import { compareBoards } from "./core/compare.js";
-import type { CompareSideInput } from "./core/compare.js";
-import { changeFeed } from "./core/change-feed.js";
-import type { ChangeEvent } from "./core/change-feed.js";
-import { PANE_LAYOUT_TIMEOUT_MS, PANE_SETTLE_CAP_MS, REPORT_PROGRESS_MS } from "./core/timing.js";
-import { narrateChange } from "./core/changes.js";
-import { injectTest, injectionStatus, startInjection } from "./core/injection.js";
-import { readLibrary, writeLibrary } from "./core/library.js";
-import type { LibraryItem } from "./core/library.js";
-import { overlapsRegion } from "./core/geometry.js";
+} from "./runtime/engine/note-watch.js";
+import type { NoteWrittenElsewhere } from "./runtime/engine/note-watch.js";
+import { ARCHBOARD_VAULT, noVaultMessage } from "./runtime/engine/config.js";
+import { restampVariant } from "./runtime/engine/promote.js";
+import { boardsForRepo } from "./runtime/engine/repo-boards.js";
+import { compareBoards } from "./runtime/engine/compare.js";
+import type { CompareSideInput } from "./runtime/engine/compare.js";
+import { changeFeed } from "./runtime/engine/change-feed.js";
+import type { ChangeEvent } from "./runtime/engine/change-feed.js";
+import { PANE_LAYOUT_TIMEOUT_MS, PANE_SETTLE_CAP_MS, REPORT_PROGRESS_MS } from "./shared/timing/timing.js";
+import { narrateChange } from "./runtime/engine/changes.js";
+import { injectTest, injectionStatus, startInjection } from "./runtime/engine/injection.js";
+import { readLibrary, writeLibrary } from "./runtime/engine/library.js";
+import type { LibraryItem } from "./runtime/engine/library.js";
+import { overlapsRegion } from "./runtime/engine/geometry.js";
 import {
 	agentWriteAnswer,
 	humanWriteAnswer,
 	BoardMutationError,
 	elementMutation,
 	writeBoard,
-} from "./core/board-write.js";
-import type { BoardWriteRequest, BoardWriteTarget } from "./core/board-write.js";
+} from "./runtime/engine/board-write.js";
+import type { BoardWriteRequest, BoardWriteTarget } from "./runtime/engine/board-write.js";
 import {
 	presentElement,
 	presentElements,
 	stripBindingPresentationLinks,
-} from "./core/presentation.js";
-import { frontendState, sourceState } from "./core/staleness.js";
+} from "./runtime/engine/presentation.js";
+import { frontendState, sourceState } from "./runtime/engine/staleness.js";
 
 // Load environment variables
 dotenv.config({ quiet: true });
@@ -246,13 +246,13 @@ app.use(
 // unimplementable — which is why the ADR names it.
 //
 // A record of what a board used to be answers "how did it stand then": the
-// change feed's baseline and checkpoints (`src/core/change-feed.ts`) and
+// change feed's baseline and checkpoints (`src/runtime/engine/change-feed.ts`) and
 // `snapshots` (`src/types.ts`). Each carries its own reasoning; the short form
 // is that the vault has never held a board's past and so statelessness does not
 // move them anywhere.
 //
 // Where each board's note is answers "which boards does this canvas have open"
-// (`src/core/board-store.ts`). That is a fact about this process, like which
+// (`src/runtime/engine/board-store.ts`). That is a fact about this process, like which
 // pane has focus, and the note has nowhere to put it.
 //
 // Nothing else. Anything that answers "what is on this board" is the note.
@@ -810,7 +810,7 @@ wss.on("connection", (ws: WebSocket, req) => {
 //
 // Every request that could change a board takes the board's mutex before the
 // handler runs and gives it back when the response goes out (ADR 0016,
-// `src/core/board-lock.ts`). One place, so no route assembles the steps itself
+// `src/runtime/engine/board-lock.ts`). One place, so no route assembles the steps itself
 // and no route can forget to.
 //
 // **Deny by default.** Anything that is not a GET and names a board is a write
@@ -2889,7 +2889,7 @@ function switchPaneTo(
  * A named pane is taken literally. An unnamed one is only allowed where it
  * cannot be wrong: one pane on screen means that pane, no pane on screen means
  * the board is loaded without being shown, and two panes means say which
- * (src/core/panes.ts). The response always names where the board landed.
+ * (src/runtime/engine/panes.ts). The response always names where the board landed.
  */
 function paneFromRequest(spec: unknown): PaneRegistration | null {
 	const registrations = Array.from(panes.values());
@@ -3312,7 +3312,7 @@ app.post("/api/boards/save", (req: Request, res: Response) => {
 // ─── Compare ──────────────────────────────────────────────────
 //
 // A structured semantic diff between two variants, joined on node identity
-// (src/core/compare.ts). Read-only in the strictest sense: comparing two boards
+// (src/runtime/engine/compare.ts). Read-only in the strictest sense: comparing two boards
 // must never disturb the one on screen, so this neither opens a board, nor
 // registers one in the store, nor records a baseline, nor moves the active
 // pointer. Both sides are read off disk, because that is where a board is
@@ -3365,7 +3365,7 @@ function addressesFor(boardName: string): string[] {
 	for (const [key, state] of boards) {
 		if (state.identity.board === boardName) keys.add(key);
 	}
-	return [...keys].sort();
+	return [...keys].toSorted();
 }
 
 app.get("/api/boards/compare", (req: Request, res: Response) => {
@@ -3405,7 +3405,7 @@ app.get("/api/boards/compare", (req: Request, res: Response) => {
 					error:
 						`"${fromIdentity.board}" has ${siblings.length} variants — ${siblings.join(", ")} — so which ` +
 						"two to compare is not obvious. Name both sides: `compare <from> <to>`.",
-					variants: [fromKey, ...siblings].sort(),
+					variants: [fromKey, ...siblings].toSorted(),
 				});
 			}
 			const other = siblings[0]!;

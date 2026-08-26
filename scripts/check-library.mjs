@@ -33,7 +33,7 @@ const {
 	writeLibrary,
 	resetLibraryCache,
 	libraryFilePath,
-} = await import(join(__dirname, "..", "src", "core", "library.ts"));
+} = await import(join(__dirname, "..", "src", "runtime", "engine", "library.ts"));
 
 let failures = 0;
 let checks = 0;
@@ -167,7 +167,7 @@ assert(
 // and what a placed copy is. Both are pure — no canvas server involved.
 
 const { chooseStencil, remapElements, AmbiguousStencilError, UnknownStencilError } = await import(
-	join(__dirname, "..", "src", "core", "library-catalogue.ts")
+	join(__dirname, "..", "src", "runtime", "engine", "library-catalogue.ts")
 );
 
 const entries = [

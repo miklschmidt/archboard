@@ -45,8 +45,8 @@
 //   ./bin/canvas board save --board <name>
 
 import { readFileSync, writeFileSync } from "node:fs";
-import { boundTextDrift, planLabelRepair, recentreBoundTexts } from "../src/core/labels.ts";
-import { remeasureLinear } from "../src/core/geometry.ts";
+import { boundTextDrift, planLabelRepair, recentreBoundTexts } from "../src/runtime/engine/labels.ts";
+import { remeasureLinear } from "../src/runtime/engine/geometry.ts";
 import { withDoing } from "./lib/doing.mjs";
 
 const args = process.argv.slice(2);

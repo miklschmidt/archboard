@@ -7,10 +7,10 @@
 // It names a pane rather than a board, for the reason ADR 0009 gives: the pane
 // settles which board this concerns, because a pane holds exactly one.
 
-import { parseArgs, CliUsageError } from "../args.js";
-import { printJson, requireBrowserClient } from "../util.js";
-import { ensureCanvasRunning } from "../../core/spawn.js";
-import { setViewport } from "../../core/canvas-client.js";
+import { parseArgs, CliUsageError } from "./args.js";
+import { printJson, requireBrowserClient } from "./util.js";
+import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
+import { setViewport } from "../../runtime/engine/canvas-client.js";
 
 const number = (value: string, flag: string): number => {
 	const parsed = Number(value);

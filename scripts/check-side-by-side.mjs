@@ -194,7 +194,7 @@ async function openPane(clientId, x, { primary = false, focused = false } = {}) 
 	};
 	const adopt = (key) => api("POST", "/api/panes", { ...registration, board: key });
 	const board = () =>
-		[...seen].reverse().find((m) => m.type === "initial_elements" || m.type === "board_switched")
+		[...seen].toReversed().find((m) => m.type === "initial_elements" || m.type === "board_switched")
 			?.board;
 	await adopt(board());
 	pane = { clientId, socket, seen, adopt, board, registration, since: () => seen.length };

@@ -3,7 +3,7 @@
 // this is the half that proves the rules discriminate.
 
 import { EventEmitter } from "node:events";
-import { kept } from "../../../src/core/hot.js";
+import { kept } from "../../../src/runtime/engine/hot.js";
 
 // A lookup table built from literals. Rebuilt identical on every reload, and
 // nothing writes to it, so nothing is lost.

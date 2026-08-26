@@ -6,7 +6,7 @@
 // it made the second reload answer every message twice. The fix was the
 // `wss.removeAllListeners('connection')` that is deliberately missing here.
 
-import { kept } from "../../../src/core/hot.js";
+import { kept } from "../../../src/runtime/engine/hot.js";
 import { EventEmitter } from "node:events";
 
 const wss = kept("fixture-wss", () => new EventEmitter());

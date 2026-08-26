@@ -30,7 +30,6 @@ for (let i = 0; i < argv.length; i++) {
 	}
 }
 
-const { runCli } = await import("./cli/run.js");
+const { runCli } = await import("./cli/commands/run.js");
 await runCli(argv);
-
 

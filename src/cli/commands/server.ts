@@ -1,15 +1,15 @@
-import { parseArgs } from "../args.js";
-import { printJson, note } from "../util.js";
+import { parseArgs } from "./args.js";
+import { printJson, note } from "./util.js";
 import {
 	ensureCanvasRunning,
 	stopCanvas,
 	canvasPort,
 	isCanvasHealth,
 	foreignServiceError,
-} from "../../core/spawn.js";
-import { getHealth, getSyncStatus } from "../../core/canvas-client.js";
-import { EXPRESS_SERVER_URL } from "../../core/config.js";
-import { readPidFile } from "../../core/pidfile.js";
+} from "../../runtime/engine/spawn.js";
+import { getHealth, getSyncStatus } from "../../runtime/engine/canvas-client.js";
+import { EXPRESS_SERVER_URL } from "../../runtime/engine/config.js";
+import { readPidFile } from "../../runtime/engine/pidfile.js";
 
 export async function start(argv: string[]): Promise<void> {
 	parseArgs(argv, {});

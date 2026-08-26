@@ -4,8 +4,8 @@
 	// resolved to `any`. This config exists so `bun run type-check` covers the
 	// browser half too. It emits nothing; the build is still vite's job.
 	"compilerOptions": {
-		"target": "ES2022",
-		"lib": ["ES2022", "DOM", "DOM.Iterable"],
+		"target": "ES2023",
+		"lib": ["ES2023", "DOM", "DOM.Iterable"],
 		"module": "ESNext",
 		"moduleDetection": "force",
 		"moduleResolution": "bundler",
@@ -28,5 +28,5 @@
 		"forceConsistentCasingInFileNames": true,
 		"types": ["node", "vite/client"]
 	},
-	"include": ["frontend/src/**/*.ts", "frontend/src/**/*.tsx"]
+	"include": ["frontend/main.tsx", "src/ui/**/*.ts", "src/ui/**/*.tsx"]
 }

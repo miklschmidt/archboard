@@ -139,7 +139,7 @@ async function waitFor(observe, ready, timeoutMs = PANE_LAYOUT_TIMEOUT_MS) {
 //
 //   width/height/x/y on text   our estimator, 76.7 px wrong on `AuthService`,
 //                              against Excalidraw's measureText. Now measured,
-//                              in `src/core/measure-text.ts`.
+//                              in `src/runtime/engine/measure-text.ts`.
 //   -rawText                   dropped by the frontend's converter, not by
 //                              Excalidraw, which keeps it.
 //   index                      `a${n}` stops increasing at ten, because `a10`
@@ -493,7 +493,7 @@ const whatMoved = (held, rendered) => {
 		const shown = [];
 		const keys = [...new Set([...Object.keys(ours), ...Object.keys(theirs)])]
 			.filter((k) => !ignored.has(k))
-			.sort();
+			.toSorted();
 		for (const key of keys) {
 			if (!(key in ours)) {
 				fields.push(`+${key}`);
@@ -507,7 +507,7 @@ const whatMoved = (held, rendered) => {
 			}
 		}
 		if (fields.length > 0) {
-			moved[name] = fields.sort();
+			moved[name] = fields.toSorted();
 			values[name] = shown;
 		}
 	}
@@ -522,7 +522,7 @@ const whatMoved = (held, rendered) => {
 };
 
 const report = ({ moved, values, serverCount, pageCount }) => {
-	const names = Object.keys(moved).sort();
+	const names = Object.keys(moved).toSorted();
 	console.log(
 		`\n# ${names.length} of ${serverCount} elements came back changed` +
 			(pageCount === serverCount ? "" : ` (the browser holds ${pageCount})`),
@@ -544,7 +544,7 @@ const against = (moved, baseline) => {
 		for (const field of now) if (!then.has(field)) news.push(`${name}.${field}`);
 		for (const field of then) if (!now.has(field)) gone.push(`${name}.${field}`);
 	}
-	return { news: news.sort(), gone: gone.sort() };
+	return { news: news.toSorted(), gone: gone.toSorted() };
 };
 
 // ---------------------------------------------------------------------------
@@ -1299,7 +1299,7 @@ try {
 	);
 	const stripped =
 		fs
-			.readFileSync(path.join(repoRoot, "frontend/src/canvas/elements.ts"), "utf-8")
+			.readFileSync(path.join(repoRoot, "src/ui/canvas/elements.ts"), "utf-8")
 			.match(/cleanElementForExcalidraw[\s\S]*?const\s*\{([^}]*)\}\s*=\s*element/)?.[1] ?? "";
 	const declared = stripped
 		.split(",")

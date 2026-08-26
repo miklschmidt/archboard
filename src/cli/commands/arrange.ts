@@ -1,6 +1,6 @@
-import { parseArgs, CliUsageError } from "../args.js";
-import { printJson } from "../util.js";
-import { ensureCanvasRunning } from "../../core/spawn.js";
+import { parseArgs, CliUsageError } from "./args.js";
+import { printJson } from "./util.js";
+import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
 import {
 	alignElements,
 	distributeElements,
@@ -8,8 +8,8 @@ import {
 	groupElements,
 	ungroupElements,
 	duplicateElements,
-} from "../../core/element-ops.js";
-import type { Alignment, Direction } from "../../core/element-ops.js";
+} from "../../runtime/engine/element-ops.js";
+import type { Alignment, Direction } from "../../runtime/engine/element-ops.js";
 
 // The operations live in one list and are validated before dispatch, so a `case`
 // added to the switch without a line here is unreachable.

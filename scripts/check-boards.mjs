@@ -30,7 +30,7 @@ const src = (p) => path.join(repoRoot, "src", p);
 
 // The throwaway vault, made before anything is imported: a board is a note now
 // (ADR 0015), so even the in-process checks below need somewhere for one to be,
-// and `src/core/config.ts` reads ARCHBOARD_VAULT once, at import.
+// and `src/runtime/engine/config.ts` reads ARCHBOARD_VAULT once, at import.
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-boards-"));
 process.env.ARCHBOARD_VAULT = vault;
 
@@ -224,7 +224,7 @@ const { readBoardFile, readNote } = await import(src("core/board-io.ts"));
 // every open board a second copy that could drift from the note.
 {
 	const { board } = getOrCreateBoard(makeIdentity({ board: "registry-shape", level: "service" }));
-	const fields = Object.keys(board).sort();
+	const fields = Object.keys(board).toSorted();
 	check(
 		"an open board is a registry entry, not a copy of a board",
 		!("elements" in board) && !("files" in board) && !("note" in board),
@@ -485,7 +485,7 @@ const { readBoardFile, readNote } = await import(src("core/board-io.ts"));
 	// names them in every refusal, run.ts teaches them, and the skill repeats
 	// them. They drifted once already, so this asserts they agree (TASK-050).
 	{
-		const panesSrc = fs.readFileSync(path.join(repoRoot, "src/core/panes.ts"), "utf8");
+		const panesSrc = fs.readFileSync(path.join(repoRoot, "src/runtime/engine/panes.ts"), "utf8");
 		const specs = (panesSrc.match(/const PANE_SPECS\s*=\s*["']([^"']+)["']/) ?? [])[1] ?? "";
 		const named = ["left", "right", "top", "bottom", "focused", "primary"];
 		check(
@@ -617,7 +617,7 @@ async function openPane(clientId, x, { primary = false, focused = false } = {}) 
 	// browser does after it adopts a board_switched.
 	const adopt = (key) => api("POST", "/api/panes", { ...registration, board: key });
 	const board = () =>
-		[...seen].reverse().find((m) => m.type === "initial_elements" || m.type === "board_switched")
+		[...seen].toReversed().find((m) => m.type === "initial_elements" || m.type === "board_switched")
 			?.board;
 	await adopt(board());
 	pane = { clientId, socket, seen, adopt, board, registration, since: () => seen.length };
@@ -3059,7 +3059,7 @@ try {
 	const picPane = await openPane("p-pics", 0, { primary: true, focused: true });
 	await api("POST", "/api/boards/open", { board: "picsb" });
 	await sleep(120);
-	const switched = [...picPane.seen].reverse().find((m) => m.type === "board_switched");
+	const switched = [...picPane.seen].toReversed().find((m) => m.type === "board_switched");
 	check(
 		"a pane pointed at a board with pictures is sent the pictures",
 		switched?.files?.["img-b"]?.dataURL === pngB,
@@ -3312,7 +3312,7 @@ try {
 			walk(path.join(repoRoot, "src"));
 			check(
 				"one place in src/ reassembles a note's scene, and it is readNoteFile",
-				callers.length === 1 && callers[0].startsWith("src/core/board-io.ts:"),
+				callers.length === 1 && callers[0].startsWith("src/runtime/engine/board-io.ts:"),
 				callers.join(" | ") || "nothing calls it at all",
 			);
 		}

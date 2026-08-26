@@ -1,7 +1,7 @@
-import { parseArgs, CliUsageError } from "../args.js";
-import { printJson } from "../util.js";
-import { ensureCanvasRunning } from "../../core/spawn.js";
-import { getInjection, postInjectionTest } from "../../core/canvas-client.js";
+import { parseArgs, CliUsageError } from "./args.js";
+import { printJson } from "./util.js";
+import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
+import { getInjection, postInjectionTest } from "../../runtime/engine/canvas-client.js";
 
 // `inject status` / `inject test` — is the canvas able to reach the thread?
 //
