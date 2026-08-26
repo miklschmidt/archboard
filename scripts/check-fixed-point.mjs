@@ -924,7 +924,7 @@ try {
 	const opened = await api("POST", "/api/boards/open", { board: "fixedpoint", reload: true });
 	check(
 		"  and the note is re-read into it, with the fonts already there",
-		opened.status === 200 && opened.body?.source === "vault" && opened.body?.elementCount === 12,
+		opened.status === 200 && opened.body?.source === "vault" && opened.body?.elementCount === 13,
 		`${opened.body?.source} / ${opened.body?.elementCount} elements`,
 	);
 
@@ -933,7 +933,7 @@ try {
 	// the page if the invalid branch forgot that key.
 	const publishedPane = await waitFor(
 		async () => (await api("GET", "/api/panes")).body?.panes?.[0] ?? null,
-		(pane) => pane?.board === "fixedpoint" && pane?.elementCount === 12,
+		(pane) => pane?.board === "fixedpoint" && pane?.elementCount === 13,
 		PANE_SETTLE_CAP_MS,
 	);
 	const expectedPublishedGeometry = roundedGeometry(publishedPane);
