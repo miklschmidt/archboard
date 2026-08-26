@@ -1,6 +1,17 @@
 ---
 name: archboard
-description: Architecture canvas for comparing a system as it is against a proposed change, drawn as Excalidraw boards a human and an agent edit together on a live canvas. Use when an agent needs to (1) draw a system's current architecture on a named board, (2) branch it into a proposal variant and diff the two, (3) read back what a human rearranged and treat the rearrangement as design intent, (4) place stencils from the shared shape library, (5) promote shapes into architecture nodes bound to code, or (6) draw and refine any diagram: element CRUD, alignment, grouping, Mermaid conversion, PNG/SVG and .excalidraw export, snapshots. The bundled CLI (archboard <command>) is the agent interface and auto-starts the canvas server; a REST API remains for application code.
+description: >-
+  Architecture canvas for comparing a system as it is against a proposed
+  change, drawn as Excalidraw boards a human and an agent edit together on a
+  live canvas. Use when an agent needs to (1) draw a system's current
+  architecture on a named board, (2) branch it into a proposal variant and
+  diff the two, (3) read back what a human rearranged and treat the
+  rearrangement as design intent, (4) place stencils from the shared shape
+  library, (5) promote shapes into architecture nodes bound to code, or (6)
+  draw and refine any diagram: element CRUD, alignment, grouping, Mermaid
+  conversion, PNG/SVG and .excalidraw export, snapshots. The bundled CLI
+  (archboard <command>) is the agent interface and auto-starts the canvas
+  server; a REST API remains for application code.
 ---
 
 # archboard
@@ -155,8 +166,8 @@ Results are JSON on stdout — except `describe` (plain text) and raw-content ou
 | Make the selection a node            | `promote --kind service [--path src/x.ts] [--name "X"]` — kind, identity and binding in one act; `demote` undoes it                                                 |
 | See the scene                        | `screenshot [--out f.png] [--pane <spec>]` (PNG without `--out` → temp file path in JSON; SVG without `--out` → raw SVG)                                            |
 | Layout operations                    | `arrange align\|distribute\|group\|ungroup\|lock\|unlock\|duplicate --ids a,b,c [--to left\|horizontal\|...]`                                                       |
-| Scene files                          | `export [--out scene.excalidraw]`, `import [scene.excalidraw                                                                                                        | -] [--replace]`— a`.excalidraw.md` out path writes Obsidian's format (see File I/O) |
-| Mermaid → canvas                     | `mermaid [diagram.mmd                                                                                                                                               | -]` (or stdin)                                                                      |
+| Scene files                          | `export [--out scene.excalidraw]`, `import [scene.excalidraw\|-] [--replace]` — an `.excalidraw.md` output path writes Obsidian's format (see File I/O)             |
+| Mermaid → canvas                     | `mermaid [diagram.mmd\|-]` (or stdin)                                                                                                                               |
 | Ready-made shapes                    | `library list [--text]`, `library insert <name> --x <x> --y <y> [--source <lib>]` — see Stencils                                                                    |
 | Boards (named, persisted)            | `board list\|info\|new <name>\|open <name[@variant]>\|save` — see Boards                                                                                            |
 | Branch a board into a variant        | `board save --board <src> --variant <v>` — the copy the proposal is drawn on; it moves no pane, so put it up with `pane open --board <src>@<v>`                     |

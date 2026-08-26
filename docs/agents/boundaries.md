@@ -64,7 +64,6 @@ still goes through a root entrypoint.
 
 ## Validation
 
-Run `bun run lint` for lint and module checks. Run `bun run check` for lint, formatting, type
-checking, and the existing test suite. `bun run fix` applies safe oxlint fixes, then formats the
-repository. The first lint baseline is expected to fail until the old layout has moved into these
-modules.
+Run `bun run lint` to validate distributable skill frontmatter and Markdown tables before the code
+lint. Run `bun run check` for lint, formatting, type checking, and the existing test suite. `bun run
+fix` applies safe oxlint fixes, formats the repository, then validates the distributable skills.
