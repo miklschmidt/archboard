@@ -5,7 +5,6 @@ import {
 	newBoard,
 	openBoard,
 	type BoardListResponse,
-	type BoardResponse,
 } from "../../runtime/engine/canvas-client.js";
 import { repoIdentityAt, repoRootOf } from "../../runtime/engine/git.js";
 import { CliUsageError, defineCommand } from "../command-contract/contract.js";
@@ -57,18 +56,24 @@ function parseStage(
 	}
 	return { positionals, flags };
 }
-const BoardResponseValidator = z.looseObject({
+export const BoardCommandResultSchema = z.looseObject({
 	success: z.boolean(),
 	board: z.string(),
-	identity: z.looseObject({ board: z.string(), variant: z.string() }).optional(),
-	elementCount: z.number().int().nonnegative().optional(),
-	vaultBacked: z.boolean().optional(),
+	identity: z.looseObject({ board: z.string(), variant: z.string() }),
+	elementCount: z.number().int().nonnegative(),
+	vaultBacked: z.boolean(),
+	pane: z
+		.looseObject({
+			paneId: z.string(),
+			clientId: z.string(),
+			place: z.string(),
+			position: z.number().int(),
+		})
+		.nullable()
+		.optional(),
 	held: HoldReportSchema.optional(),
 });
-export type BoardCommandResult = BoardResponse & { held?: z.infer<typeof HoldReportSchema> };
-export const BoardCommandResultSchema = z.custom<BoardCommandResult>(
-	(value) => BoardResponseValidator.safeParse(value).success,
-);
+export type BoardCommandResult = z.infer<typeof BoardCommandResultSchema>;
 
 export const BoardNamespaceInputSchema = z.object({ tokens });
 export type BoardNamespaceInput = z.infer<typeof BoardNamespaceInputSchema>;
@@ -329,7 +334,7 @@ export const boardInfoContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "board info");
 		context.parse(BoardInfoStageSchema, input.tokens);
-		return { result: await getBoardInfo() };
+		return { result: BoardInfoResultSchema.parse(await getBoardInfo()) };
 	},
 });
 
@@ -413,7 +418,7 @@ export const boardNewContract = defineCommand({
 			...(typeof stage.flags.pane === "string" ? { pane: stage.flags.pane } : {}),
 		});
 		return {
-			result,
+			result: BoardNewResultSchema.parse(result),
 			diagnostics: [
 				`Board "${result.board}" is empty. Its note is written the moment something is drawn on it.${result.pane ? ` It is on screen in ${result.pane.place === "the only pane" ? "the only pane" : `the ${result.pane.place} pane`}.` : ""}`,
 			],
@@ -508,6 +513,6 @@ export const boardOpenContract = defineCommand({
 			diagnostics.push(
 				`Note: this file's frontmatter says it is board "${result.declaredKey}", not "${result.board}". The path is the address, so it opened as the path says; saving rewrites the frontmatter to match.`,
 			);
-		return { result, diagnostics };
+		return { result: BoardOpenResultSchema.parse(result), diagnostics };
 	},
 });

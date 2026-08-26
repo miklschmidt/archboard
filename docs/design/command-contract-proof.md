@@ -962,7 +962,99 @@ Public result JSON Schema:
 {
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"anyOf": [
-		{},
+		{
+			"type": "object",
+			"properties": {
+				"elementIds": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"count": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"nodeCount": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"elements": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"id": {
+								"type": "string"
+							}
+						},
+						"required": ["id"],
+						"additionalProperties": {}
+					}
+				},
+				"missingIds": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"clientId": {
+					"anyOf": [
+						{
+							"type": "string"
+						},
+						{
+							"type": "null"
+						}
+					]
+				},
+				"at": {
+					"anyOf": [
+						{
+							"type": "string"
+						},
+						{
+							"type": "null"
+						}
+					]
+				},
+				"browserClients": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"summary": {
+					"type": "string"
+				},
+				"held": {
+					"type": "object",
+					"properties": {
+						"board": {
+							"type": "string"
+						},
+						"message": {
+							"type": "string"
+						}
+					},
+					"required": ["board", "message"],
+					"additionalProperties": {}
+				}
+			},
+			"required": [
+				"elementIds",
+				"count",
+				"nodeCount",
+				"elements",
+				"missingIds",
+				"clientId",
+				"at",
+				"browserClients",
+				"summary"
+			],
+			"additionalProperties": {}
+		},
 		{
 			"type": "string"
 		}
@@ -994,7 +1086,226 @@ Public result JSON Schema:
 {
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"anyOf": [
-		{},
+		{
+			"type": "object",
+			"properties": {
+				"paneCount": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"arrangement": {
+					"type": "string",
+					"enum": ["none", "single", "side-by-side", "stacked", "grid", "overlapping"]
+				},
+				"focused": {
+					"anyOf": [
+						{
+							"type": "string"
+						},
+						{
+							"type": "null"
+						}
+					]
+				},
+				"sameBoard": {
+					"type": "boolean"
+				},
+				"panes": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"paneId": {
+								"type": "string"
+							},
+							"clientId": {
+								"type": "string"
+							},
+							"position": {
+								"type": "integer",
+								"exclusiveMinimum": 0,
+								"maximum": 9007199254740991
+							},
+							"place": {
+								"type": "string"
+							},
+							"focused": {
+								"type": "boolean"
+							},
+							"primary": {
+								"type": "boolean"
+							},
+							"board": {
+								"type": "string"
+							},
+							"identity": {
+								"type": "object",
+								"properties": {
+									"board": {
+										"type": "string"
+									},
+									"variant": {
+										"type": "string"
+									}
+								},
+								"required": ["board", "variant"],
+								"additionalProperties": {}
+							},
+							"elementCount": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 9007199254740991
+							},
+							"viewport": {
+								"type": "object",
+								"properties": {
+									"x": {
+										"type": "number"
+									},
+									"y": {
+										"type": "number"
+									},
+									"width": {
+										"type": "number"
+									},
+									"height": {
+										"type": "number"
+									},
+									"zoom": {
+										"type": "number"
+									}
+								},
+								"required": ["x", "y", "width", "height", "zoom"],
+								"additionalProperties": false
+							},
+							"rect": {
+								"type": "object",
+								"properties": {
+									"x": {
+										"type": "number"
+									},
+									"y": {
+										"type": "number"
+									},
+									"width": {
+										"type": "number"
+									},
+									"height": {
+										"type": "number"
+									}
+								},
+								"required": ["x", "y", "width", "height"],
+								"additionalProperties": false
+							},
+							"selection": {
+								"type": "object",
+								"properties": {
+									"count": {
+										"type": "integer",
+										"minimum": 0,
+										"maximum": 9007199254740991
+									},
+									"elementIds": {
+										"type": "array",
+										"items": {
+											"type": "string"
+										}
+									},
+									"moreIds": {
+										"type": "integer",
+										"minimum": 0,
+										"maximum": 9007199254740991
+									},
+									"nodeCount": {
+										"type": "integer",
+										"minimum": 0,
+										"maximum": 9007199254740991
+									},
+									"names": {
+										"type": "array",
+										"items": {
+											"type": "string"
+										}
+									},
+									"summary": {
+										"type": "string"
+									},
+									"at": {
+										"anyOf": [
+											{
+												"type": "string"
+											},
+											{
+												"type": "null"
+											}
+										]
+									}
+								},
+								"required": [
+									"count",
+									"elementIds",
+									"moreIds",
+									"nodeCount",
+									"names",
+									"summary",
+									"at"
+								],
+								"additionalProperties": false
+							},
+							"at": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"paneId",
+							"clientId",
+							"position",
+							"place",
+							"focused",
+							"primary",
+							"board",
+							"identity",
+							"elementCount",
+							"viewport",
+							"rect",
+							"selection",
+							"at"
+						],
+						"additionalProperties": {}
+					}
+				},
+				"summary": {
+					"type": "string"
+				},
+				"activeBoard": {
+					"type": "string"
+				},
+				"held": {
+					"type": "object",
+					"properties": {
+						"board": {
+							"type": "string"
+						},
+						"message": {
+							"type": "string"
+						}
+					},
+					"required": ["board", "message"],
+					"additionalProperties": {}
+				}
+			},
+			"required": [
+				"paneCount",
+				"arrangement",
+				"focused",
+				"sameBoard",
+				"panes",
+				"summary",
+				"activeBoard"
+			],
+			"additionalProperties": {}
+		},
 		{
 			"type": "string"
 		}
@@ -1120,7 +1431,138 @@ Public result JSON Schema:
 
 ```json
 {
-	"$schema": "https://json-schema.org/draft/2020-12/schema"
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean"
+		},
+		"pane": {
+			"anyOf": [
+				{
+					"type": "object",
+					"properties": {
+						"paneId": {
+							"type": "string"
+						},
+						"clientId": {
+							"type": "string"
+						},
+						"place": {
+							"type": "string"
+						},
+						"position": {
+							"type": "integer",
+							"minimum": -9007199254740991,
+							"maximum": 9007199254740991
+						}
+					},
+					"required": ["paneId", "clientId", "place", "position"],
+					"additionalProperties": {}
+				},
+				{
+					"type": "null"
+				}
+			]
+		},
+		"closed": {
+			"type": "object",
+			"properties": {
+				"paneId": {
+					"type": "string"
+				},
+				"clientId": {
+					"type": "string"
+				},
+				"place": {
+					"type": "string"
+				},
+				"position": {
+					"type": "integer",
+					"minimum": -9007199254740991,
+					"maximum": 9007199254740991
+				},
+				"board": {
+					"type": "string"
+				}
+			},
+			"required": ["paneId", "clientId", "place", "position", "board"],
+			"additionalProperties": {}
+		},
+		"paneCount": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"onScreen": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"paneId": {
+						"type": "string"
+					},
+					"place": {
+						"type": "string"
+					},
+					"board": {
+						"type": "string"
+					}
+				},
+				"required": ["paneId", "place", "board"],
+				"additionalProperties": {}
+			}
+		},
+		"board": {
+			"type": "object",
+			"properties": {
+				"success": {
+					"type": "boolean"
+				},
+				"board": {
+					"type": "string"
+				},
+				"identity": {
+					"type": "object",
+					"properties": {
+						"board": {
+							"type": "string"
+						},
+						"variant": {
+							"type": "string"
+						}
+					},
+					"required": ["board", "variant"],
+					"additionalProperties": {}
+				},
+				"elementCount": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"vaultBacked": {
+					"type": "boolean"
+				}
+			},
+			"required": ["success", "board", "identity", "elementCount", "vaultBacked"],
+			"additionalProperties": {}
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["success", "paneCount", "onScreen"],
+	"additionalProperties": {}
 }
 ```
 
@@ -1146,7 +1588,138 @@ Public result JSON Schema:
 
 ```json
 {
-	"$schema": "https://json-schema.org/draft/2020-12/schema"
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean"
+		},
+		"pane": {
+			"anyOf": [
+				{
+					"type": "object",
+					"properties": {
+						"paneId": {
+							"type": "string"
+						},
+						"clientId": {
+							"type": "string"
+						},
+						"place": {
+							"type": "string"
+						},
+						"position": {
+							"type": "integer",
+							"minimum": -9007199254740991,
+							"maximum": 9007199254740991
+						}
+					},
+					"required": ["paneId", "clientId", "place", "position"],
+					"additionalProperties": {}
+				},
+				{
+					"type": "null"
+				}
+			]
+		},
+		"closed": {
+			"type": "object",
+			"properties": {
+				"paneId": {
+					"type": "string"
+				},
+				"clientId": {
+					"type": "string"
+				},
+				"place": {
+					"type": "string"
+				},
+				"position": {
+					"type": "integer",
+					"minimum": -9007199254740991,
+					"maximum": 9007199254740991
+				},
+				"board": {
+					"type": "string"
+				}
+			},
+			"required": ["paneId", "clientId", "place", "position", "board"],
+			"additionalProperties": {}
+		},
+		"paneCount": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"onScreen": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"paneId": {
+						"type": "string"
+					},
+					"place": {
+						"type": "string"
+					},
+					"board": {
+						"type": "string"
+					}
+				},
+				"required": ["paneId", "place", "board"],
+				"additionalProperties": {}
+			}
+		},
+		"board": {
+			"type": "object",
+			"properties": {
+				"success": {
+					"type": "boolean"
+				},
+				"board": {
+					"type": "string"
+				},
+				"identity": {
+					"type": "object",
+					"properties": {
+						"board": {
+							"type": "string"
+						},
+						"variant": {
+							"type": "string"
+						}
+					},
+					"required": ["board", "variant"],
+					"additionalProperties": {}
+				},
+				"elementCount": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"vaultBacked": {
+					"type": "boolean"
+				}
+			},
+			"required": ["success", "board", "identity", "elementCount", "vaultBacked"],
+			"additionalProperties": {}
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["success", "paneCount", "onScreen"],
+	"additionalProperties": {}
 }
 ```
 
@@ -1615,7 +2188,80 @@ Public result JSON Schema:
 
 ```json
 {
-	"$schema": "https://json-schema.org/draft/2020-12/schema"
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean"
+		},
+		"board": {
+			"type": "string"
+		},
+		"identity": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"variant": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "variant"],
+			"additionalProperties": {}
+		},
+		"elementCount": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"vaultBacked": {
+			"type": "boolean"
+		},
+		"pane": {
+			"anyOf": [
+				{
+					"type": "object",
+					"properties": {
+						"paneId": {
+							"type": "string"
+						},
+						"clientId": {
+							"type": "string"
+						},
+						"place": {
+							"type": "string"
+						},
+						"position": {
+							"type": "integer",
+							"minimum": -9007199254740991,
+							"maximum": 9007199254740991
+						}
+					},
+					"required": ["paneId", "clientId", "place", "position"],
+					"additionalProperties": {}
+				},
+				{
+					"type": "null"
+				}
+			]
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["success", "board", "identity", "elementCount", "vaultBacked"],
+	"additionalProperties": {}
 }
 ```
 
@@ -1641,7 +2287,80 @@ Public result JSON Schema:
 
 ```json
 {
-	"$schema": "https://json-schema.org/draft/2020-12/schema"
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean"
+		},
+		"board": {
+			"type": "string"
+		},
+		"identity": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"variant": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "variant"],
+			"additionalProperties": {}
+		},
+		"elementCount": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"vaultBacked": {
+			"type": "boolean"
+		},
+		"pane": {
+			"anyOf": [
+				{
+					"type": "object",
+					"properties": {
+						"paneId": {
+							"type": "string"
+						},
+						"clientId": {
+							"type": "string"
+						},
+						"place": {
+							"type": "string"
+						},
+						"position": {
+							"type": "integer",
+							"minimum": -9007199254740991,
+							"maximum": 9007199254740991
+						}
+					},
+					"required": ["paneId", "clientId", "place", "position"],
+					"additionalProperties": {}
+				},
+				{
+					"type": "null"
+				}
+			]
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["success", "board", "identity", "elementCount", "vaultBacked"],
+	"additionalProperties": {}
 }
 ```
 
@@ -1667,7 +2386,80 @@ Public result JSON Schema:
 
 ```json
 {
-	"$schema": "https://json-schema.org/draft/2020-12/schema"
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean"
+		},
+		"board": {
+			"type": "string"
+		},
+		"identity": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"variant": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "variant"],
+			"additionalProperties": {}
+		},
+		"elementCount": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"vaultBacked": {
+			"type": "boolean"
+		},
+		"pane": {
+			"anyOf": [
+				{
+					"type": "object",
+					"properties": {
+						"paneId": {
+							"type": "string"
+						},
+						"clientId": {
+							"type": "string"
+						},
+						"place": {
+							"type": "string"
+						},
+						"position": {
+							"type": "integer",
+							"minimum": -9007199254740991,
+							"maximum": 9007199254740991
+						}
+					},
+					"required": ["paneId", "clientId", "place", "position"],
+					"additionalProperties": {}
+				},
+				{
+					"type": "null"
+				}
+			]
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["success", "board", "identity", "elementCount", "vaultBacked"],
+	"additionalProperties": {}
 }
 ```
 
@@ -1926,7 +2718,403 @@ Public result JSON Schema:
 
 ```json
 {
-	"$schema": "https://json-schema.org/draft/2020-12/schema"
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean",
+			"const": true
+		},
+		"from": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"identity": {
+					"type": "object",
+					"properties": {
+						"board": {
+							"type": "string"
+						},
+						"variant": {
+							"type": "string"
+						},
+						"level": {
+							"type": "string"
+						},
+						"displayName": {
+							"type": "string"
+						}
+					},
+					"required": ["board", "variant"],
+					"additionalProperties": false
+				},
+				"source": {
+					"type": "string",
+					"enum": ["memory", "vault"]
+				},
+				"elementCount": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"nodeCount": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"edgeCount": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"plainCount": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				}
+			},
+			"required": [
+				"board",
+				"identity",
+				"source",
+				"elementCount",
+				"nodeCount",
+				"edgeCount",
+				"plainCount"
+			],
+			"additionalProperties": {}
+		},
+		"to": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"identity": {
+					"type": "object",
+					"properties": {
+						"board": {
+							"type": "string"
+						},
+						"variant": {
+							"type": "string"
+						},
+						"level": {
+							"type": "string"
+						},
+						"displayName": {
+							"type": "string"
+						}
+					},
+					"required": ["board", "variant"],
+					"additionalProperties": false
+				},
+				"source": {
+					"type": "string",
+					"enum": ["memory", "vault"]
+				},
+				"elementCount": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"nodeCount": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"edgeCount": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"plainCount": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				}
+			},
+			"required": [
+				"board",
+				"identity",
+				"source",
+				"elementCount",
+				"nodeCount",
+				"edgeCount",
+				"plainCount"
+			],
+			"additionalProperties": {}
+		},
+		"summary": {
+			"type": "object",
+			"properties": {
+				"comparable": {
+					"type": "boolean"
+				},
+				"identical": {
+					"type": "boolean"
+				},
+				"sharedNodes": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"nodesAdded": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"nodesRemoved": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"nodesChanged": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"nodesUnchanged": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"nodesMovedOnly": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"edgesAdded": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"edgesRemoved": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"edgesChanged": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"edgesUnchanged": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"layoutSignalsChanged": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				}
+			},
+			"required": [
+				"comparable",
+				"identical",
+				"sharedNodes",
+				"nodesAdded",
+				"nodesRemoved",
+				"nodesChanged",
+				"nodesUnchanged",
+				"nodesMovedOnly",
+				"edgesAdded",
+				"edgesRemoved",
+				"edgesChanged",
+				"edgesUnchanged",
+				"layoutSignalsChanged"
+			],
+			"additionalProperties": false
+		},
+		"nodes": {
+			"type": "object",
+			"properties": {
+				"added": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"node": {
+								"type": "string"
+							},
+							"name": {
+								"type": "string"
+							}
+						},
+						"required": ["node", "name"],
+						"additionalProperties": {}
+					}
+				},
+				"removed": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"node": {
+								"type": "string"
+							},
+							"name": {
+								"type": "string"
+							}
+						},
+						"required": ["node", "name"],
+						"additionalProperties": {}
+					}
+				},
+				"changed": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"node": {
+								"type": "string"
+							},
+							"name": {
+								"type": "string"
+							}
+						},
+						"required": ["node", "name"],
+						"additionalProperties": {}
+					}
+				},
+				"unchanged": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"node": {
+								"type": "string"
+							},
+							"name": {
+								"type": "string"
+							}
+						},
+						"required": ["node", "name"],
+						"additionalProperties": {}
+					}
+				}
+			},
+			"required": ["added", "removed", "changed", "unchanged"],
+			"additionalProperties": false
+		},
+		"edges": {
+			"type": "object",
+			"properties": {
+				"added": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"from": {
+								"type": "string"
+							},
+							"to": {
+								"type": "string"
+							}
+						},
+						"required": ["from", "to"],
+						"additionalProperties": {}
+					}
+				},
+				"removed": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"from": {
+								"type": "string"
+							},
+							"to": {
+								"type": "string"
+							}
+						},
+						"required": ["from", "to"],
+						"additionalProperties": {}
+					}
+				},
+				"changed": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"from": {
+								"type": "string"
+							},
+							"to": {
+								"type": "string"
+							}
+						},
+						"required": ["from", "to"],
+						"additionalProperties": {}
+					}
+				},
+				"unchanged": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"from": {
+								"type": "string"
+							},
+							"to": {
+								"type": "string"
+							}
+						},
+						"required": ["from", "to"],
+						"additionalProperties": {}
+					}
+				}
+			},
+			"required": ["added", "removed", "changed", "unchanged"],
+			"additionalProperties": {}
+		},
+		"layout": {
+			"type": "object",
+			"properties": {
+				"method": {
+					"type": "object",
+					"propertyNames": {
+						"type": "string"
+					},
+					"additionalProperties": {
+						"type": "string"
+					}
+				},
+				"cannotExpress": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				}
+			},
+			"required": ["method", "cannotExpress"],
+			"additionalProperties": {}
+		},
+		"warnings": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["success", "from", "to", "summary", "nodes", "edges", "layout", "warnings"],
+	"additionalProperties": {}
 }
 ```
 
@@ -2027,7 +3215,72 @@ Public result JSON Schema:
 
 ```json
 {
-	"$schema": "https://json-schema.org/draft/2020-12/schema"
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean"
+		},
+		"board": {
+			"type": "string"
+		},
+		"created": {
+			"type": "boolean"
+		},
+		"claim": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"holder": {
+					"type": "object",
+					"properties": {
+						"id": {
+							"type": "string"
+						},
+						"kind": {
+							"type": "string"
+						},
+						"since": {
+							"type": "string"
+						},
+						"until": {
+							"type": "string"
+						},
+						"process": {
+							"type": "string"
+						},
+						"reason": {
+							"type": "string"
+						}
+					},
+					"required": ["id", "kind", "since", "until", "process"],
+					"additionalProperties": {}
+				},
+				"expires": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "holder", "expires"],
+			"additionalProperties": {}
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["success", "board", "created", "claim"],
+	"additionalProperties": {}
 }
 ```
 
@@ -2053,7 +3306,79 @@ Public result JSON Schema:
 
 ```json
 {
-	"$schema": "https://json-schema.org/draft/2020-12/schema"
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean"
+		},
+		"board": {
+			"type": "string"
+		},
+		"released": {
+			"type": "boolean"
+		},
+		"claim": {
+			"anyOf": [
+				{
+					"type": "object",
+					"properties": {
+						"board": {
+							"type": "string"
+						},
+						"holder": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string"
+								},
+								"kind": {
+									"type": "string"
+								},
+								"since": {
+									"type": "string"
+								},
+								"until": {
+									"type": "string"
+								},
+								"process": {
+									"type": "string"
+								},
+								"reason": {
+									"type": "string"
+								}
+							},
+							"required": ["id", "kind", "since", "until", "process"],
+							"additionalProperties": {}
+						},
+						"expires": {
+							"type": "string"
+						}
+					},
+					"required": ["board", "holder", "expires"],
+					"additionalProperties": {}
+				},
+				{
+					"type": "null"
+				}
+			]
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["success", "board", "released", "claim"],
+	"additionalProperties": {}
 }
 ```
 
@@ -2398,7 +3723,62 @@ Public result JSON Schema:
 
 ```json
 {
-	"$schema": "https://json-schema.org/draft/2020-12/schema"
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean"
+		},
+		"board": {
+			"type": "string"
+		},
+		"pane": {
+			"anyOf": [
+				{
+					"type": "object",
+					"properties": {
+						"paneId": {
+							"type": "string"
+						},
+						"clientId": {
+							"type": "string"
+						},
+						"place": {
+							"type": "string"
+						},
+						"position": {
+							"type": "integer",
+							"minimum": -9007199254740991,
+							"maximum": 9007199254740991
+						}
+					},
+					"required": ["paneId", "clientId", "place", "position"],
+					"additionalProperties": {}
+				},
+				{
+					"type": "null"
+				}
+			]
+		},
+		"message": {
+			"type": "string"
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["success", "pane"],
+	"additionalProperties": {}
 }
 ```
 
@@ -2642,7 +4022,106 @@ Public result JSON Schema:
 {
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"anyOf": [
-		{},
+		{
+			"type": "object",
+			"properties": {
+				"count": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"seeded": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"file": {
+					"anyOf": [
+						{
+							"type": "string"
+						},
+						{
+							"type": "null"
+						}
+					]
+				},
+				"vaultBacked": {
+					"type": "boolean"
+				},
+				"items": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"id": {
+								"type": "string"
+							},
+							"name": {
+								"anyOf": [
+									{
+										"type": "string"
+									},
+									{
+										"type": "null"
+									}
+								]
+							},
+							"source": {
+								"anyOf": [
+									{
+										"type": "string"
+									},
+									{
+										"type": "null"
+									}
+								]
+							},
+							"elements": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 9007199254740991
+							},
+							"width": {
+								"type": "number",
+								"minimum": 0
+							},
+							"height": {
+								"type": "number",
+								"minimum": 0
+							},
+							"text": {
+								"anyOf": [
+									{
+										"type": "string"
+									},
+									{
+										"type": "null"
+									}
+								]
+							}
+						},
+						"required": ["id", "name", "source", "elements", "width", "height", "text"],
+						"additionalProperties": false
+					}
+				},
+				"held": {
+					"type": "object",
+					"properties": {
+						"board": {
+							"type": "string"
+						},
+						"message": {
+							"type": "string"
+						}
+					},
+					"required": ["board", "message"],
+					"additionalProperties": {}
+				}
+			},
+			"required": ["count", "seeded", "file", "vaultBacked", "items"],
+			"additionalProperties": {}
+		},
 		{
 			"type": "string"
 		}
@@ -2673,7 +4152,102 @@ Public result JSON Schema:
 
 ```json
 {
-	"$schema": "https://json-schema.org/draft/2020-12/schema"
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean",
+			"const": true
+		},
+		"name": {
+			"anyOf": [
+				{
+					"type": "string"
+				},
+				{
+					"type": "null"
+				}
+			]
+		},
+		"source": {
+			"anyOf": [
+				{
+					"type": "string"
+				},
+				{
+					"type": "null"
+				}
+			]
+		},
+		"id": {
+			"type": "string"
+		},
+		"at": {
+			"type": "object",
+			"properties": {
+				"x": {
+					"type": "number"
+				},
+				"y": {
+					"type": "number"
+				}
+			},
+			"required": ["x", "y"],
+			"additionalProperties": false
+		},
+		"count": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"elements": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"rectangle",
+							"ellipse",
+							"diamond",
+							"arrow",
+							"text",
+							"line",
+							"freedraw",
+							"image"
+						]
+					},
+					"x": {
+						"type": "number"
+					},
+					"y": {
+						"type": "number"
+					}
+				},
+				"required": ["id", "type", "x", "y"],
+				"additionalProperties": {}
+			}
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["success", "name", "source", "id", "at", "count", "elements"],
+	"additionalProperties": {}
 }
 ```
 
@@ -3092,7 +4666,60 @@ Public result JSON Schema:
 
 ```json
 {
-	"$schema": "https://json-schema.org/draft/2020-12/schema"
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean",
+			"const": true
+		},
+		"count": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"offsetX": {
+			"type": "number"
+		},
+		"offsetY": {
+			"type": "number"
+		},
+		"elements": {
+			"anyOf": [
+				{
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"id": {
+								"type": "string"
+							}
+						},
+						"required": ["id"],
+						"additionalProperties": {}
+					}
+				},
+				{
+					"type": "null"
+				}
+			]
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["success", "count", "offsetX", "offsetY", "elements"],
+	"additionalProperties": {}
 }
 ```
 

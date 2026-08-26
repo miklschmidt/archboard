@@ -19,8 +19,8 @@ const { introspectContracts } = await import(
 const registry = cliContractRegistry();
 const proof = introspectContracts(registry);
 const generatedRoutes = registry.map(
-	({ name, parent, kind, handlerOwner, parserOwner, bare, childDiscovery }) => {
-		const route = { name, parent, kind, handlerOwner, parserOwner };
+	({ name, parent, handlerOwner, parserOwner, bare, childDiscovery }) => {
+		const route = { name, parent, handlerOwner, parserOwner };
 		if (bare) route.bare = bare;
 		if (childDiscovery) route.childDiscovery = childDiscovery;
 		return route;

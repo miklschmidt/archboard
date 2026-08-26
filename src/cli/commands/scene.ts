@@ -8,7 +8,6 @@ import {
 	exportImage,
 	sendMermaid,
 	boardHeading,
-	type PaneRef,
 } from "../../runtime/engine/canvas-client.js";
 import { importScene } from "../../runtime/engine/scene-document.js";
 import { describeScene } from "../../runtime/engine/describe.js";
@@ -206,11 +205,10 @@ export const screenshotContract = defineCommand({
 		const resolved = context.resolvePath(
 			input.out ?? path.join(os.tmpdir(), `excalidraw-screenshot-${Date.now()}.png`),
 		);
-		const artifact: PendingArtifact = {
-			path: resolved,
-			content: format === "svg" ? image.data : Buffer.from(image.data, "base64"),
-			encoding: format === "svg" ? "utf8" : "binary",
-		};
+		const artifact: PendingArtifact =
+			format === "svg"
+				? { path: resolved, content: image.data, encoding: "utf8" }
+				: { path: resolved, content: Buffer.from(image.data, "base64"), encoding: "binary" };
 		return {
 			result: { success: true as const, file: resolved, format },
 			pendingArtifact: artifact,
@@ -334,23 +332,14 @@ export const MermaidInputSchema = z.object({
 	tail: z.array(z.string()).default([]),
 });
 export type MermaidInput = z.infer<typeof MermaidInputSchema>;
-const MermaidResultValidator = z.looseObject({
+export const MermaidResultSchema = z.looseObject({
 	success: z.boolean(),
 	board: z.string().optional(),
 	pane: PaneRefSchema.nullable(),
 	message: z.string().optional(),
 	held: HoldReportSchema.optional(),
 });
-export type MermaidResult = {
-	success: boolean;
-	board?: string;
-	pane: PaneRef | null;
-	message?: string;
-	held?: z.infer<typeof HoldReportSchema>;
-};
-export const MermaidResultSchema = z.custom<MermaidResult>(
-	(value) => MermaidResultValidator.safeParse(value).success,
-);
+export type MermaidResult = z.infer<typeof MermaidResultSchema>;
 export const mermaidContract = defineCommand({
 	path: ["mermaid"],
 	summary: "Render a Mermaid diagram onto the canvas (needs a browser tab)",
@@ -432,12 +421,12 @@ export const mermaidContract = defineCommand({
 				: `the ${result.pane.place} pane`
 			: "the open canvas tab";
 		return {
-			result: {
+			result: MermaidResultSchema.parse({
 				success: result.success ?? true,
 				board: result.board,
 				pane: result.pane ?? null,
 				message: result.message,
-			},
+			}),
 			diagnostics: [`Conversion happens in ${where}, at ${EXPRESS_SERVER_URL}.`],
 		};
 	},

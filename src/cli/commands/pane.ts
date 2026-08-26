@@ -1,10 +1,5 @@
 import { z } from "zod";
-import {
-	closePane,
-	currentRequestedBoard,
-	openPane,
-	type PaneLayoutResponse,
-} from "../../runtime/engine/canvas-client.js";
+import { closePane, currentRequestedBoard, openPane } from "../../runtime/engine/canvas-client.js";
 import { paneWords } from "../../runtime/engine/panes.js";
 import { CliUsageError, defineCommand } from "../command-contract/contract.js";
 import { HoldReportSchema, PaneRefSchema } from "../command-contract/schemas.js";
@@ -20,20 +15,24 @@ const stagedNoFlags = z.array(z.string()).transform((values, context) => {
 		}
 	return values;
 });
-const resultValidator = z.looseObject({
+export const PaneCommandResultSchema = z.looseObject({
 	success: z.boolean(),
 	pane: PaneRefSchema.nullish(),
 	closed: PaneRefSchema.extend({ board: z.string() }).optional(),
 	paneCount: z.number().int().nonnegative(),
 	onScreen: z.array(z.looseObject({ paneId: z.string(), place: z.string(), board: z.string() })),
+	board: z
+		.looseObject({
+			success: z.boolean(),
+			board: z.string(),
+			identity: z.looseObject({ board: z.string(), variant: z.string() }),
+			elementCount: z.number().int().nonnegative(),
+			vaultBacked: z.boolean(),
+		})
+		.optional(),
 	held: HoldReportSchema.optional(),
 });
-export type PaneCommandResult = PaneLayoutResponse & {
-	held?: z.infer<typeof HoldReportSchema>;
-};
-export const PaneCommandResultSchema = z.custom<PaneCommandResult>(
-	(value) => resultValidator.safeParse(value).success,
-);
+export type PaneCommandResult = z.infer<typeof PaneCommandResultSchema>;
 
 export const PaneNamespaceInputSchema = z.object({ tokens });
 export type PaneNamespaceInput = z.infer<typeof PaneNamespaceInputSchema>;
@@ -153,7 +152,7 @@ export const paneOpenContract = defineCommand({
 		const diagnostic = result.board
 			? `"${result.board.board}" is showing in ${where}. The other pane was not touched. Commands still name the board: \`--board ${result.board.board}\`.`
 			: `Opened ${where}. It is showing what was already on screen — point it somewhere else with \`board open <name> --pane ${place ?? "<spec>"}\`.`;
-		return { result, diagnostics: [diagnostic] };
+		return { result: PaneOpenResultSchema.parse(result), diagnostics: [diagnostic] };
 	},
 });
 
@@ -239,7 +238,7 @@ export const paneCloseContract = defineCommand({
 		await context.require("browser", "Closing a pane");
 		const result = await closePane(spec);
 		return {
-			result,
+			result: PaneCloseResultSchema.parse(result),
 			diagnostics: [
 				`Closed ${paneWords(result.closed?.place ?? spec)}. "${result.closed?.board}" is off the screen, not gone — it is still open on the canvas, with whatever was drawn on it.`,
 			],

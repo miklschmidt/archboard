@@ -131,9 +131,16 @@ export const WriteReceiptSchema = z.looseObject({
 });
 export type WriteReceipt = z.infer<typeof WriteReceiptSchema>;
 
-export const PendingArtifactSchema = z.object({
-	path: z.string(),
-	content: z.union([z.string(), z.instanceof(Uint8Array)]),
-	encoding: z.enum(["utf8", "binary"]),
-});
+export const PendingArtifactSchema = z.discriminatedUnion("encoding", [
+	z.object({
+		path: z.string(),
+		content: z.string(),
+		encoding: z.literal("utf8"),
+	}),
+	z.object({
+		path: z.string(),
+		content: z.instanceof(Uint8Array),
+		encoding: z.literal("binary"),
+	}),
+]);
 export type PendingArtifactValue = z.infer<typeof PendingArtifactSchema>;

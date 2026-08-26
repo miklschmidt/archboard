@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { compareBoardsOnCanvas } from "../../runtime/engine/canvas-client.js";
-import type { CompareResult as RuntimeCompareResult } from "../../runtime/engine/compare.js";
 import { CliUsageError, defineCommand } from "../command-contract/contract.js";
-import { HoldReportSchema, type HoldReport } from "../command-contract/schemas.js";
+import { BoardAddressSchema, HoldReportSchema } from "../command-contract/schemas.js";
 
 export const CompareInputSchema = z.object({
 	fromOption: z.string().optional(),
@@ -12,17 +11,54 @@ export const CompareInputSchema = z.object({
 	tail: z.array(z.string()).default([]),
 });
 export type CompareInput = z.infer<typeof CompareInputSchema>;
-const CompareResultValidator = z.looseObject({
+const CompareSideSchema = z.looseObject({
+	board: z.string(),
+	identity: BoardAddressSchema,
+	source: z.enum(["memory", "vault"]),
+	elementCount: z.number().int().nonnegative(),
+	nodeCount: z.number().int().nonnegative(),
+	edgeCount: z.number().int().nonnegative(),
+	plainCount: z.number().int().nonnegative(),
+});
+export const CompareResultSchema = z.looseObject({
 	success: z.literal(true),
-	from: z.looseObject({}),
-	to: z.looseObject({}),
-	summary: z.looseObject({}),
+	from: CompareSideSchema,
+	to: CompareSideSchema,
+	summary: z.object({
+		comparable: z.boolean(),
+		identical: z.boolean(),
+		sharedNodes: z.number().int().nonnegative(),
+		nodesAdded: z.number().int().nonnegative(),
+		nodesRemoved: z.number().int().nonnegative(),
+		nodesChanged: z.number().int().nonnegative(),
+		nodesUnchanged: z.number().int().nonnegative(),
+		nodesMovedOnly: z.number().int().nonnegative(),
+		edgesAdded: z.number().int().nonnegative(),
+		edgesRemoved: z.number().int().nonnegative(),
+		edgesChanged: z.number().int().nonnegative(),
+		edgesUnchanged: z.number().int().nonnegative(),
+		layoutSignalsChanged: z.number().int().nonnegative(),
+	}),
+	nodes: z.object({
+		added: z.array(z.looseObject({ node: z.string(), name: z.string() })),
+		removed: z.array(z.looseObject({ node: z.string(), name: z.string() })),
+		changed: z.array(z.looseObject({ node: z.string(), name: z.string() })),
+		unchanged: z.array(z.looseObject({ node: z.string(), name: z.string() })),
+	}),
+	edges: z.looseObject({
+		added: z.array(z.looseObject({ from: z.string(), to: z.string() })),
+		removed: z.array(z.looseObject({ from: z.string(), to: z.string() })),
+		changed: z.array(z.looseObject({ from: z.string(), to: z.string() })),
+		unchanged: z.array(z.looseObject({ from: z.string(), to: z.string() })),
+	}),
+	layout: z.looseObject({
+		method: z.record(z.string(), z.string()),
+		cannotExpress: z.array(z.string()),
+	}),
+	warnings: z.array(z.string()),
 	held: HoldReportSchema.optional(),
 });
-export type CompareResult = RuntimeCompareResult & { held?: HoldReport };
-export const CompareResultSchema = z.custom<CompareResult>(
-	(value) => CompareResultValidator.safeParse(value).success,
-);
+export type CompareResult = z.infer<typeof CompareResultSchema>;
 
 export const compareContract = defineCommand({
 	path: ["compare"],
@@ -97,7 +133,9 @@ export const compareContract = defineCommand({
 			throw new CliUsageError("compare takes two boards; pass them one at a time");
 		await context.require("server", "compare");
 		return {
-			result: await compareBoardsOnCanvas({ from, ...(to ? { to } : {}) }),
+			result: CompareResultSchema.parse(
+				await compareBoardsOnCanvas({ from, ...(to ? { to } : {}) }),
+			),
 		};
 	},
 });

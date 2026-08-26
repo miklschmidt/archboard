@@ -6,6 +6,7 @@ import { z } from "zod";
 import { defineCommand, type AnyCommandContract } from "../contract.js";
 import { introspectContracts } from "../introspection.js";
 import { runCommand } from "../runner.js";
+import { PendingArtifactSchema } from "../schemas.js";
 
 const temporaryDirectories: string[] = [];
 
@@ -14,12 +15,6 @@ afterEach(() => {
 	for (const directory of temporaryDirectories.splice(0)) {
 		rmSync(directory, { recursive: true, force: true });
 	}
-});
-
-const artifactSchema = z.object({
-	path: z.string(),
-	content: z.string(),
-	encoding: z.literal("utf8"),
 });
 
 function proofContract(options: {
@@ -54,7 +49,7 @@ function proofContract(options: {
 							mode: "file-receipt",
 							held: "none",
 							description: "file",
-							artifact: artifactSchema,
+							artifact: PendingArtifactSchema,
 						}
 					: {
 							id: "json",
@@ -214,6 +209,25 @@ describe("command-contract public interface", () => {
 		expect(execution.stdout).toBe("");
 	});
 
+	test.each([
+		{ encoding: "utf8", content: new Uint8Array([1, 2, 3]) },
+		{ encoding: "binary", content: "not binary" },
+	] as const)("artifact encoding and content must agree: %o", async ({ encoding, content }) => {
+		const path = temporaryPath(`mismatch-${encoding}`);
+		const execution = await executePublic(
+			proofContract({
+				result: { ok: true },
+				resultSchema: z.object({ ok: z.boolean() }),
+				file: true,
+				artifact: { path, content, encoding },
+			}),
+		);
+		expect(execution.error).toBeInstanceOf(z.ZodError);
+		expect(execution.stdout).toBe("");
+		expect(execution.stderr).toBe("");
+		expect(existsSync(path)).toBeFalse();
+	});
+
 	test("an undeclared outcome reaches no structured output", async () => {
 		const contract = defineCommand({
 			...proofContract({ result: { ok: true }, resultSchema: z.object({ ok: z.boolean() }) }),
@@ -359,6 +373,12 @@ describe("command-contract public interface", () => {
 		expect(json).not.toContain("encoding");
 		expect(json).not.toContain("commander");
 		expect(json).not.toContain("diagnostics");
+	});
+
+	test("introspection rejects a registry entry without an executable contract", () => {
+		expect(() => introspectContracts([{ name: "broken", contract: undefined }] as never)).toThrow(
+			"broken: registry entry has no executable command contract",
+		);
 	});
 
 	test("staged metadata owns viewport id coercion and export format inference", async () => {

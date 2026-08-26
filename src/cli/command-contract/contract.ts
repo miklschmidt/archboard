@@ -94,11 +94,9 @@ export interface CommandOutcomeDeclaration {
 	presentation: readonly [OutcomePresentationStep, ...OutcomePresentationStep[]];
 }
 
-export interface PendingArtifact {
-	path: string;
-	content: string | Uint8Array;
-	encoding: "utf8" | "binary";
-}
+export type PendingArtifact =
+	| { path: string; content: string; encoding: "utf8" }
+	| { path: string; content: Uint8Array; encoding: "binary" };
 
 export interface CommandExecution<Result> {
 	result: Result;

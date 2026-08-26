@@ -1,10 +1,5 @@
 import { z } from "zod";
-import {
-	claimBoard,
-	releaseBoardClaim,
-	type ClaimReleaseReply,
-	type ClaimReply,
-} from "../../runtime/engine/canvas-client.js";
+import { claimBoard, releaseBoardClaim } from "../../runtime/engine/canvas-client.js";
 import { CliUsageError, defineCommand } from "../command-contract/contract.js";
 import { HoldReportSchema } from "../command-contract/schemas.js";
 
@@ -40,17 +35,27 @@ export const ClaimInputSchema = z.object({
 	tail,
 });
 export type ClaimInput = z.infer<typeof ClaimInputSchema>;
-const ClaimResultValidator = z.looseObject({
+const LockHolderSchema = z.looseObject({
+	id: z.string(),
+	kind: z.string(),
+	since: z.string(),
+	until: z.string(),
+	process: z.string(),
+	reason: z.string().optional(),
+});
+const BoardClaimSchema = z.looseObject({
+	board: z.string(),
+	holder: LockHolderSchema,
+	expires: z.string(),
+});
+export const ClaimResultSchema = z.looseObject({
 	success: z.boolean(),
 	board: z.string(),
 	created: z.boolean(),
-	claim: z.looseObject({ expires: z.string() }),
+	claim: BoardClaimSchema,
 	held: HoldReportSchema.optional(),
 });
-export type ClaimResult = ClaimReply & { held?: z.infer<typeof HoldReportSchema> };
-export const ClaimResultSchema = z.custom<ClaimResult>(
-	(value) => ClaimResultValidator.safeParse(value).success,
-);
+export type ClaimResult = z.infer<typeof ClaimResultSchema>;
 export const claimContract = defineCommand({
 	path: ["claim"],
 	summary: "Take a board for a stretch of work, so twenty writes are one uninterrupted act",
@@ -125,22 +130,20 @@ export const claimContract = defineCommand({
 				? `"${result.board}" is yours until ${until}, or until you release it.`
 				: `Your claim on "${result.board}" now runs to ${until}.`) +
 			` Every write you make to it goes under the claim, and nobody else writes to it meanwhile. The person at the canvas can take it back at any moment — you will be told, and what you have already written stays. Leave the board sensible after each write, or work on a variant and swap. Release it with \`archboard release --board ${result.board}\`.`;
-		return { result, diagnostics: [diagnostic] };
+		return { result: ClaimResultSchema.parse(result), diagnostics: [diagnostic] };
 	},
 });
 
 export const ReleaseInputSchema = z.object({ tail });
 export type ReleaseInput = z.infer<typeof ReleaseInputSchema>;
-const ReleaseResultValidator = z.looseObject({
+export const ReleaseResultSchema = z.looseObject({
 	success: z.boolean(),
 	board: z.string(),
 	released: z.boolean(),
+	claim: BoardClaimSchema.nullable(),
 	held: HoldReportSchema.optional(),
 });
-export type ReleaseResult = ClaimReleaseReply & { held?: z.infer<typeof HoldReportSchema> };
-export const ReleaseResultSchema = z.custom<ReleaseResult>(
-	(value) => ReleaseResultValidator.safeParse(value).success,
-);
+export type ReleaseResult = z.infer<typeof ReleaseResultSchema>;
 export const releaseContract = defineCommand({
 	path: ["release"],
 	summary: "Give back a board you claimed",
@@ -189,6 +192,6 @@ export const releaseContract = defineCommand({
 		const diagnostic = result.released
 			? `"${result.board}" is free. It goes back to being taken one write at a time.`
 			: `Nothing to release: "${result.board}" was not claimed here. A claim that ran out, or that somebody took back, has already ended.`;
-		return { result, diagnostics: [diagnostic] };
+		return { result: ReleaseResultSchema.parse(result), diagnostics: [diagnostic] };
 	},
 });

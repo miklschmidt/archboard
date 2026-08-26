@@ -56,7 +56,6 @@ import { libraryContract, libraryInsertContract, libraryListContract } from "./l
 import { childDiscoveryOptions } from "../command-contract/route-options.js";
 
 interface ContractCommand {
-	kind: "contract";
 	contract: AnyCommandContract;
 	handlerOwner: string;
 }
@@ -81,7 +80,6 @@ const commandSummary = (route: CommandRoute) => route.summary ?? route.owner.con
 const commandUsage = (route: CommandRoute) => route.usage ?? route.owner.contract.usage;
 
 const contract = (value: AnyCommandContract, handlerOwner: string): ContractCommand => ({
-	kind: "contract",
 	contract: value,
 	handlerOwner,
 });
@@ -535,7 +533,6 @@ export function cliSurface(): { name: string; subcommands: readonly string[] }[]
 export interface CliRegistryEntry {
 	name: string;
 	parent: string | null;
-	kind: "contract";
 	handlerOwner: string;
 	parserOwner: string;
 	bare?: CommandRoute["bare"];
@@ -557,7 +554,6 @@ function flattenRoute(
 	const current: CliRegistryEntry = {
 		name,
 		parent,
-		kind: route.owner.kind,
 		handlerOwner: route.owner.handlerOwner,
 		parserOwner: parserOwner(route.owner),
 		...(route.bare ? { bare: route.bare } : {}),

@@ -19,6 +19,9 @@ const compatibility = JSON.parse(
 const { cliSurface, cliContractRegistry } = await import(
 	join(root, "src", "cli", "commands", "run.ts")
 );
+const { introspectContracts } = await import(
+	join(root, "src", "cli", "command-contract", "introspection.ts")
+);
 const { runCommand } = await import(join(root, "src", "cli", "command-contract", "runner.ts"));
 const { childDiscoveryOptions } = await import(
 	join(root, "src", "cli", "command-contract", "route-options.ts")
@@ -139,7 +142,7 @@ for (const entry of audit.entries) {
 }
 
 const registry = cliContractRegistry();
-const contracts = registry.filter((entry) => entry.kind === "contract" && entry.contract);
+const contracts = registry;
 check(
 	"all-contract registry has exactly 57 entries",
 	registry.length === 57,
@@ -155,16 +158,10 @@ check(
 );
 check("all 57 routes are contracts", contracts.length === 57, String(contracts.length));
 check(
-	"no legacy routes remain",
-	registry.every((entry) => entry.kind === "contract"),
-);
-check(
 	"every route has one executable contract owner",
 	registry.every(
 		(entry) =>
-			typeof entry.handlerOwner === "string" &&
-			entry.kind === "contract" &&
-			entry.contract?.path.join(" ") === entry.name,
+			typeof entry.handlerOwner === "string" && entry.contract.path.join(" ") === entry.name,
 	),
 );
 check(
@@ -202,6 +199,41 @@ for (const entry of registry.filter((candidate) => candidate.bare?.kind === "def
 
 const byName = new Map(contracts.map((entry) => [entry.name, entry.contract]));
 const auditByPath = new Map(audit.entries.map((entry) => [entry.path, entry]));
+const publicContracts = introspectContracts(registry);
+const unconstrainedBranch = (schema) => {
+	if (!schema || typeof schema !== "object" || Array.isArray(schema)) return false;
+	const keys = Object.keys(schema).filter((key) => key !== "$schema");
+	if (keys.length === 0) return true;
+	for (const keyword of ["anyOf", "oneOf", "allOf"]) {
+		if (Array.isArray(schema[keyword]) && schema[keyword].some(unconstrainedBranch)) return true;
+	}
+	return (
+		schema.type === "object" &&
+		Object.keys(schema.properties ?? {}).length === 0 &&
+		(schema.required ?? []).length === 0 &&
+		schema.additionalProperties !== false
+	);
+};
+for (const contract of publicContracts) {
+	const structured = contract.output.some((output) =>
+		["json", "file-receipt"].includes(output.mode),
+	);
+	const namespaceRefusal = contract.output.every((output) =>
+		output.description.toLowerCase().includes("namespace refusal"),
+	);
+	if (structured && !namespaceRefusal) {
+		check(
+			`${contract.name} has no unconstrained structured result branch`,
+			!unconstrainedBranch(contract.result),
+			JSON.stringify(contract.result),
+		);
+	} else {
+		check(
+			`${contract.name} explicitly declares a text, raw, or namespace-only result`,
+			!structured || namespaceRefusal,
+		);
+	}
+}
 for (const entry of registry) {
 	const audited = auditByPath.get(entry.name);
 	const auditedPath = audited?.path ?? "";
@@ -222,10 +254,6 @@ for (const entry of registry) {
 		`${entry.name} parser owner matches the canonical audit`,
 		entry.parserOwner === audited?.parserOwner,
 		`${entry.parserOwner} / ${audited?.parserOwner ?? "missing"}`,
-	);
-	check(
-		`${entry.name} kind matches the canonical audit`,
-		entry.kind === (audited?.parserOwner.startsWith("CommandContract") ? "contract" : "legacy"),
 	);
 }
 for (const entry of contracts) {
@@ -370,7 +398,7 @@ for (const schema of [
 for (const publicHandlerType of ["CommandContext", "CommandExecution", "PendingArtifact"]) {
 	check(
 		`handler interface retains ${publicHandlerType}`,
-		new RegExp(`export interface ${publicHandlerType}\\b`).test(contractSource),
+		new RegExp(`export (?:interface|type) ${publicHandlerType}\\b`).test(contractSource),
 	);
 }
 
@@ -380,8 +408,8 @@ const proofJson = fs.readFileSync(
 );
 const generatedProof = JSON.parse(proofJson);
 const expectedGeneratedRoutes = registry.map(
-	({ name, parent, kind, handlerOwner, parserOwner, bare, childDiscovery }) => {
-		const route = { name, parent, kind, handlerOwner, parserOwner };
+	({ name, parent, handlerOwner, parserOwner, bare, childDiscovery }) => {
+		const route = { name, parent, handlerOwner, parserOwner };
 		if (bare) route.bare = bare;
 		if (childDiscovery) route.childDiscovery = childDiscovery;
 		return route;
@@ -394,14 +422,12 @@ check(
 );
 check("generated proof omits legacy paths", !("legacyPaths" in generatedProof));
 check(
-	"generated routes cover every owner and parent in the mixed tree",
+	"generated routes cover every contract owner and parent",
 	JSON.stringify(generatedProof.routes) === JSON.stringify(expectedGeneratedRoutes),
 );
 check(
 	"generated contract routes omit synthetic handler names",
-	generatedProof.routes
-		.filter((entry) => entry.kind === "contract")
-		.every((entry) => !("handlerName" in entry)),
+	generatedProof.routes.every((entry) => !("handlerName" in entry)),
 );
 for (const privateName of ["pendingArtifact", "artifactSchema", "CommanderArgvParser"]) {
 	check(`proof omits ${privateName}`, !proofJson.includes(privateName));
