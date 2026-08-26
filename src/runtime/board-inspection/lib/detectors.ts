@@ -67,6 +67,10 @@ interface DetectionResult {
 		broadPhaseProfileTrieSteps: number;
 		broadPhaseCompatibilityQueries: number;
 		broadPhaseCompatibilityQuerySteps: number;
+		broadPhaseExactIndexUpdates: number;
+		broadPhaseExactQuerySteps: number;
+		broadPhaseExactMembershipTests: number;
+		broadPhaseHierarchySummarySteps: number;
 		broadPhaseCompatibilityTests: number;
 		broadPhaseHierarchyMembershipTests: number;
 		broadPhaseHierarchyPathQueries: number;
@@ -81,6 +85,8 @@ interface DetectionResult {
 		broadPhasePeakRetainedExclusionRefs: number;
 		broadPhasePeakRetainedIndexRefs: number;
 		broadPhasePeakRetainedQueryRefs: number;
+		broadPhasePeakRetainedExactIndexNodes: number;
+		broadPhasePeakRetainedExactSummaryRefs: number;
 		broadPhasePeakRetainedTotalStateRefs: number;
 		hierarchyEvents: number;
 		hierarchyCandidateVisits: number;
@@ -123,6 +129,10 @@ const emptySweepWork = (): SweepWork => ({
 	profileTrieSteps: 0,
 	compatibilityQueries: 0,
 	compatibilityQuerySteps: 0,
+	exactIndexUpdates: 0,
+	exactQuerySteps: 0,
+	exactMembershipTests: 0,
+	hierarchySummarySteps: 0,
 	compatibilityTests: 0,
 	hierarchyMembershipTests: 0,
 	hierarchyPathQueries: 0,
@@ -137,6 +147,8 @@ const emptySweepWork = (): SweepWork => ({
 	peakRetainedExclusionRefs: 0,
 	peakRetainedIndexRefs: 0,
 	peakRetainedQueryRefs: 0,
+	peakRetainedExactIndexNodes: 0,
+	peakRetainedExactSummaryRefs: 0,
 	peakRetainedTotalStateRefs: 0,
 	peakRetainedSelections: 0,
 });
@@ -1678,6 +1690,10 @@ function pairSweep<A, B>(
 	work.profileTrieSteps += measured.profileTrieSteps;
 	work.compatibilityQueries += measured.compatibilityQueries;
 	work.compatibilityQuerySteps += measured.compatibilityQuerySteps;
+	work.exactIndexUpdates += measured.exactIndexUpdates;
+	work.exactQuerySteps += measured.exactQuerySteps;
+	work.exactMembershipTests += measured.exactMembershipTests;
+	work.hierarchySummarySteps += measured.hierarchySummarySteps;
 	work.compatibilityTests += measured.compatibilityTests;
 	work.hierarchyMembershipTests += measured.hierarchyMembershipTests;
 	work.hierarchyPathQueries += measured.hierarchyPathQueries;
@@ -1701,6 +1717,14 @@ function pairSweep<A, B>(
 	);
 	work.peakRetainedIndexRefs = Math.max(work.peakRetainedIndexRefs, measured.peakRetainedIndexRefs);
 	work.peakRetainedQueryRefs = Math.max(work.peakRetainedQueryRefs, measured.peakRetainedQueryRefs);
+	work.peakRetainedExactIndexNodes = Math.max(
+		work.peakRetainedExactIndexNodes,
+		measured.peakRetainedExactIndexNodes,
+	);
+	work.peakRetainedExactSummaryRefs = Math.max(
+		work.peakRetainedExactSummaryRefs,
+		measured.peakRetainedExactSummaryRefs,
+	);
 	work.peakRetainedTotalStateRefs = Math.max(
 		work.peakRetainedTotalStateRefs,
 		measured.peakRetainedTotalStateRefs,
@@ -2186,6 +2210,10 @@ export function detectBoard(
 			broadPhaseProfileTrieSteps: collisions.preprocessingWork.profileTrieSteps,
 			broadPhaseCompatibilityQueries: collisions.preprocessingWork.compatibilityQueries,
 			broadPhaseCompatibilityQuerySteps: collisions.preprocessingWork.compatibilityQuerySteps,
+			broadPhaseExactIndexUpdates: collisions.preprocessingWork.exactIndexUpdates,
+			broadPhaseExactQuerySteps: collisions.preprocessingWork.exactQuerySteps,
+			broadPhaseExactMembershipTests: collisions.preprocessingWork.exactMembershipTests,
+			broadPhaseHierarchySummarySteps: collisions.preprocessingWork.hierarchySummarySteps,
 			broadPhaseCompatibilityTests: collisions.preprocessingWork.compatibilityTests,
 			broadPhaseHierarchyMembershipTests: collisions.preprocessingWork.hierarchyMembershipTests,
 			broadPhaseHierarchyPathQueries: collisions.preprocessingWork.hierarchyPathQueries,
@@ -2202,6 +2230,10 @@ export function detectBoard(
 			broadPhasePeakRetainedExclusionRefs: collisions.preprocessingWork.peakRetainedExclusionRefs,
 			broadPhasePeakRetainedIndexRefs: collisions.preprocessingWork.peakRetainedIndexRefs,
 			broadPhasePeakRetainedQueryRefs: collisions.preprocessingWork.peakRetainedQueryRefs,
+			broadPhasePeakRetainedExactIndexNodes:
+				collisions.preprocessingWork.peakRetainedExactIndexNodes,
+			broadPhasePeakRetainedExactSummaryRefs:
+				collisions.preprocessingWork.peakRetainedExactSummaryRefs,
 			broadPhasePeakRetainedTotalStateRefs: collisions.preprocessingWork.peakRetainedTotalStateRefs,
 			pathSegmentChecks: structural.pathSegmentChecks,
 		},

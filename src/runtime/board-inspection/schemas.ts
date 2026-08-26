@@ -39,6 +39,7 @@ export const ObstacleRefSchema = z
 		library: z.array(LibraryAttributionSchema),
 	})
 	.superRefine((obstacle, context) => {
+		const elementIds = new Set(obstacle.elementIds);
 		if (!canonicalIdentities(obstacle.elementIds))
 			context.addIssue({
 				code: "custom",
@@ -56,6 +57,34 @@ export const ObstacleRefSchema = z
 				code: "custom",
 				path: ["library"],
 				message: "Obstacle library entries must have unique elementIds in exact UTF-16 order.",
+			});
+		for (const [index, attribution] of obstacle.library.entries())
+			if (!elementIds.has(attribution.elementId))
+				context.addIssue({
+					code: "custom",
+					path: ["library", index, "elementId"],
+					message: "Obstacle library attribution must name a constituent elementId.",
+				});
+		if (obstacle.kind === "library-component" && obstacle.library.length === 0)
+			context.addIssue({
+				code: "custom",
+				path: ["library"],
+				message: "Library-component obstacles require library attribution.",
+			});
+		if (obstacle.kind === "grouped-component" && obstacle.library.length > 0)
+			context.addIssue({
+				code: "custom",
+				path: ["library"],
+				message: "Grouped-component obstacles cannot carry library attribution.",
+			});
+		if (
+			obstacle.kind === "grouped-component" &&
+			(obstacle.elementIds.length < 2 || obstacle.groupIds.length === 0)
+		)
+			context.addIssue({
+				code: "custom",
+				path: ["kind"],
+				message: "Grouped-component obstacles require multiple elements and group evidence.",
 			});
 		if (obstacle.id !== obstacleIdentity(obstacle.elementIds))
 			context.addIssue({

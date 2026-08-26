@@ -25,10 +25,12 @@ regardless of whether the folder is named `lib`, `tests`, or something else.
 
 `src/runtime/board-inspection/diagnostics.ts` is a pure development entrypoint. It runs the same
 inspection pipeline as `index.ts` and reports deterministic preprocessing work for performance
-regressions. The interface counts profile snapshot entries and trie steps; compatibility queries,
-each candidate/set-membership query step, bucket tests, and each remaining hierarchy membership predicate; bucket lookups, updates, and
-deletions; hierarchy path, subtree, and index steps; eligible visits; and peak retained buckets,
-profiles, exclusions, index references, selected hierarchy parents, and total sweep-owned state.
+regressions. The interface counts profile snapshot entries and trie steps; exact-index updates,
+tree-query steps, excluded-partition probes, bucket tests, and every remaining hierarchy membership
+predicate; bucket lookups, updates, and deletions; hierarchy path, subtree, summary, and index steps;
+eligible visits; and peak retained buckets, profiles, exclusions, exact-index nodes and summaries,
+query references, selected hierarchy parents, and total sweep-owned state. The total is sampled
+during a query and again after insertion, so it never combines references from different lifetimes.
 Cross-set peaks total both live indexes. `diagnoseSweepCompatibility` exercises the production
 enumerator with exact semantic inputs, while `diagnoseMutableProfileSnapshots` proves that a runtime-mutable `ReadonlySet`
 is read by exact current content rather than object identity. Tests do not infer this work from the

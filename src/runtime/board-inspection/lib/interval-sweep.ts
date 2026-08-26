@@ -35,6 +35,10 @@ export interface SweepWork {
 	profileTrieSteps: number;
 	compatibilityQueries: number;
 	compatibilityQuerySteps: number;
+	exactIndexUpdates: number;
+	exactQuerySteps: number;
+	exactMembershipTests: number;
+	hierarchySummarySteps: number;
 	compatibilityTests: number;
 	hierarchyMembershipTests: number;
 	hierarchyPathQueries: number;
@@ -50,6 +54,8 @@ export interface SweepWork {
 	peakRetainedIndexRefs: number;
 	/** Candidate references held only for the current compatibility query. */
 	peakRetainedQueryRefs: number;
+	peakRetainedExactIndexNodes: number;
+	peakRetainedExactSummaryRefs: number;
 	/** All sweep-owned event, profile, trie, active-node, bucket, index, and hierarchy references. */
 	peakRetainedTotalStateRefs: number;
 	peakRetainedSelections: number;
@@ -72,6 +78,7 @@ export interface SweepHierarchy {
 	subtree(id: string): readonly [number, number] | null;
 	pathToRoot(id: string): readonly (readonly [number, number])[];
 	isAncestor(ancestor: string, descendant: string): boolean;
+	lca(left: string, right: string): string | null;
 }
 
 /** Build deterministic heavy-light coordinates without retaining per-profile ancestor copies. */
@@ -168,6 +175,23 @@ export function buildSweepHierarchy(
 				dd.position < aa.position + aa.size
 			);
 		},
+		lca: (left, right) => {
+			let aa = nodes.get(left),
+				bb = nodes.get(right);
+			if (!aa || !bb) return null;
+			while (aa.head !== bb.head) {
+				const aHead: HierarchyNode = nodes.get(aa.head)!,
+					bHead: HierarchyNode = nodes.get(bb.head)!;
+				if (aHead.position > bHead.position) {
+					if (!aHead.parent) return null;
+					aa = nodes.get(aHead.parent)!;
+				} else {
+					if (!bHead.parent) return null;
+					bb = nodes.get(bHead.parent)!;
+				}
+			}
+			return aa.position <= bb.position ? aa.id : bb.id;
+		},
 	};
 }
 
@@ -199,6 +223,7 @@ interface ActiveList<T> {
 	head: ActiveNode<T> | null;
 	tail: ActiveNode<T> | null;
 	index: BucketIndex<T>;
+	exactRank: number;
 }
 
 interface BucketIndex<T> {
@@ -214,10 +239,202 @@ interface BucketIndex<T> {
 	targetLists: Map<number, Set<ActiveList<T>>>;
 	unpositionedLists: Set<ActiveList<T>>;
 	untargetedLists: Set<ActiveList<T>>;
+	exact: ExactCompatibilityIndex<T>;
 	totalBuckets: number;
 	retainedExclusionRefs: number;
 	retainedIndexRefs: number;
 	activeNodes: number;
+}
+
+const EMPTY_IDENTITIES: readonly string[] = Object.freeze([]);
+
+function identityIntersection(
+	left: readonly string[],
+	right: readonly string[],
+): readonly string[] {
+	if (left === right) return left;
+	const intersection: string[] = [];
+	let aa = 0,
+		bb = 0;
+	while (aa < left.length && bb < right.length) {
+		const compared = compareIdentity(left[aa]!, right[bb]!);
+		if (compared === 0) {
+			intersection.push(left[aa]!);
+			aa += 1;
+			bb += 1;
+		} else if (compared < 0) aa += 1;
+		else bb += 1;
+	}
+	if (intersection.length === left.length) return left;
+	if (intersection.length === right.length) return right;
+	return intersection.length === 0 ? EMPTY_IDENTITIES : intersection;
+}
+
+function includesIdentity(values: readonly string[], wanted: string, work: SweepWork): boolean {
+	let min = 0,
+		max = values.length - 1;
+	while (min <= max) {
+		work.exactMembershipTests += 1;
+		const middle = Math.floor((min + max) / 2);
+		const compared = compareIdentity(values[middle]!, wanted);
+		if (compared === 0) return true;
+		if (compared < 0) min = middle + 1;
+		else max = middle - 1;
+	}
+	return false;
+}
+
+class ExactCompatibilityIndex<T> {
+	readonly size: number;
+	readonly counts: number[];
+	readonly lists: Array<ActiveList<T> | null>;
+	readonly partitions: Array<string | null>;
+	readonly commonExclusions: Array<readonly string[] | null>;
+	readonly commonTargetCoverage: Array<readonly string[] | null>;
+	readonly hierarchy: SweepHierarchy | undefined;
+	retainedSummaryRefs = 0;
+
+	constructor(length: number, hierarchy: SweepHierarchy | undefined) {
+		let size = 1;
+		while (size < Math.max(1, length)) size *= 2;
+		this.size = size;
+		this.counts = Array.from({ length: size * 2 }, () => 0);
+		this.lists = Array.from({ length: size * 2 }, () => null);
+		this.partitions = Array.from({ length: size * 2 }, () => null);
+		this.commonExclusions = Array.from({ length: size * 2 }, () => null);
+		this.commonTargetCoverage = Array.from({ length: size * 2 }, () => null);
+		this.hierarchy = hierarchy;
+	}
+
+	private summaryRefs(node: number): number {
+		if (this.counts[node] === 0) return 0;
+		return (
+			(this.lists[node] ? 1 : 0) +
+			(this.partitions[node] === null ? 0 : 1) +
+			(this.commonExclusions[node]?.length ?? 0) +
+			(this.commonTargetCoverage[node]?.length ?? 0)
+		);
+	}
+
+	private reducedCoverage(values: readonly string[], work: SweepWork): readonly string[] {
+		if (!this.hierarchy || values.length < 2) return values;
+		const kept: string[] = [];
+		for (const value of values) {
+			let redundant = false;
+			for (const candidate of kept) {
+				work.hierarchyMembershipTests += 1;
+				if (this.hierarchy.isAncestor(value, candidate)) {
+					redundant = true;
+					break;
+				}
+			}
+			if (redundant) continue;
+			for (let index = kept.length - 1; index >= 0; index -= 1) {
+				work.hierarchyMembershipTests += 1;
+				if (this.hierarchy.isAncestor(kept[index]!, value)) kept.splice(index, 1);
+			}
+			kept.push(value);
+		}
+		return kept.toSorted(compareIdentity);
+	}
+
+	private intersectCoverage(
+		left: readonly string[],
+		right: readonly string[],
+		work: SweepWork,
+	): readonly string[] {
+		if (left === right) return left;
+		if (!this.hierarchy || left.length === 0 || right.length === 0) return EMPTY_IDENTITIES;
+		const lcas = new Set<string>();
+		for (const aa of left)
+			for (const bb of right) {
+				work.hierarchySummarySteps += 1;
+				const lca = this.hierarchy.lca(aa, bb);
+				if (lca) lcas.add(lca);
+			}
+		return this.reducedCoverage([...lcas], work);
+	}
+
+	set(rank: number, list: ActiveList<T> | null, work: SweepWork): void {
+		let node = this.size + rank;
+		this.retainedSummaryRefs -= this.summaryRefs(node);
+		this.lists[node] = list;
+		this.counts[node] = list ? 1 : 0;
+		this.partitions[node] = list?.partition ?? null;
+		this.commonExclusions[node] = list?.profile.exclusions ?? null;
+		this.commonTargetCoverage[node] = list
+			? this.reducedCoverage(list.profile.ancestorTargets, work)
+			: null;
+		this.retainedSummaryRefs += this.summaryRefs(node);
+		work.exactIndexUpdates += 1;
+		while (node > 1) {
+			node = Math.floor(node / 2);
+			this.retainedSummaryRefs -= this.summaryRefs(node);
+			const left = node * 2,
+				right = left + 1,
+				leftCount = this.counts[left]!,
+				rightCount = this.counts[right]!;
+			this.counts[node] = leftCount + rightCount;
+			this.lists[node] = null;
+			if (leftCount === 0) {
+				this.partitions[node] = this.partitions[right] ?? null;
+				this.commonExclusions[node] = this.commonExclusions[right] ?? null;
+				this.commonTargetCoverage[node] = this.commonTargetCoverage[right] ?? null;
+			} else if (rightCount === 0) {
+				this.partitions[node] = this.partitions[left] ?? null;
+				this.commonExclusions[node] = this.commonExclusions[left] ?? null;
+				this.commonTargetCoverage[node] = this.commonTargetCoverage[left] ?? null;
+			} else {
+				this.partitions[node] =
+					this.partitions[left] !== null && this.partitions[left] === this.partitions[right]
+						? (this.partitions[left] ?? null)
+						: null;
+				this.commonExclusions[node] = identityIntersection(
+					this.commonExclusions[left] ?? EMPTY_IDENTITIES,
+					this.commonExclusions[right] ?? EMPTY_IDENTITIES,
+				);
+				this.commonTargetCoverage[node] = this.intersectCoverage(
+					this.commonTargetCoverage[left] ?? EMPTY_IDENTITIES,
+					this.commonTargetCoverage[right] ?? EMPTY_IDENTITIES,
+					work,
+				);
+			}
+			this.retainedSummaryRefs += this.summaryRefs(node);
+			work.exactIndexUpdates += 1;
+		}
+	}
+
+	query(
+		eventProfile: CompatibilityProfile,
+		eventPartition: string,
+		work: SweepWork,
+	): Set<ActiveList<T>> {
+		const candidates = new Set<ActiveList<T>>();
+		const walk = (node: number): void => {
+			work.exactQuerySteps += 1;
+			if (this.counts[node] === 0) return;
+			const partition = this.partitions[node];
+			if (partition != null && partitionExcluded(eventProfile, partition, work)) return;
+			const common = this.commonExclusions[node];
+			if (common && includesIdentity(common, eventPartition, work)) return;
+			const commonTargets = this.commonTargetCoverage[node];
+			if (this.hierarchy && commonTargets)
+				for (const target of commonTargets) {
+					work.hierarchyMembershipTests += 1;
+					if (this.hierarchy.isAncestor(eventPartition, target)) return;
+				}
+			if (node >= this.size) {
+				const list = this.lists[node]!;
+				work.compatibilityQuerySteps += 1;
+				candidates.add(list);
+				return;
+			}
+			walk(node * 2);
+			walk(node * 2 + 1);
+		};
+		walk(1);
+		return candidates;
+	}
 }
 
 function mergedRanges(ranges: readonly (readonly [number, number])[]): Array<[number, number]> {
@@ -338,6 +555,10 @@ function emptyWork(): SweepWork {
 		profileTrieSteps: 0,
 		compatibilityQueries: 0,
 		compatibilityQuerySteps: 0,
+		exactIndexUpdates: 0,
+		exactQuerySteps: 0,
+		exactMembershipTests: 0,
+		hierarchySummarySteps: 0,
 		compatibilityTests: 0,
 		hierarchyMembershipTests: 0,
 		hierarchyPathQueries: 0,
@@ -352,6 +573,8 @@ function emptyWork(): SweepWork {
 		peakRetainedExclusionRefs: 0,
 		peakRetainedIndexRefs: 0,
 		peakRetainedQueryRefs: 0,
+		peakRetainedExactIndexNodes: 0,
+		peakRetainedExactSummaryRefs: 0,
 		peakRetainedTotalStateRefs: 0,
 		peakRetainedSelections: 0,
 	};
@@ -510,6 +733,7 @@ function activateList<T>(list: ActiveList<T>, work: SweepWork): void {
 	list.index.profileCounts.set(list.profile, (list.index.profileCounts.get(list.profile) ?? 0) + 1);
 	update(work);
 	indexRefDelta(list, 1, work);
+	list.index.exact.set(list.exactRank, list, work);
 }
 
 function retireEmptyList<T>(list: ActiveList<T>, work: SweepWork): void {
@@ -535,6 +759,7 @@ function retireEmptyList<T>(list: ActiveList<T>, work: SweepWork): void {
 		update(work);
 	}
 	indexRefDelta(list, -1, work);
+	list.index.exact.set(list.exactRank, null, work);
 }
 
 function remove<T>(node: ActiveNode<T>, work: SweepWork): void {
@@ -553,6 +778,7 @@ function bucketFor<T>(
 	index: BucketIndex<T>,
 	partition: string,
 	profile: CompatibilityProfile,
+	exactRank: number,
 	work: SweepWork,
 ): ActiveList<T> {
 	lookup(work);
@@ -565,7 +791,14 @@ function bucketFor<T>(
 	lookup(work);
 	const existing = profiles.get(profile);
 	if (existing) return existing;
-	const list: ActiveList<T> = { partition, profile, head: null, tail: null, index };
+	const list: ActiveList<T> = {
+		partition,
+		profile,
+		head: null,
+		tail: null,
+		index,
+		exactRank,
+	};
 	profiles.set(profile, list);
 	update(work);
 	return list;
@@ -631,6 +864,7 @@ function partitionExcluded(
 	partition: string,
 	work?: SweepWork,
 ): boolean {
+	if (work) work.exactMembershipTests += 1;
 	if (profile.excluded.has(partition)) return true;
 	if (!profile.hierarchy) return false;
 	for (const target of profile.ancestorTargets) {
@@ -640,17 +874,11 @@ function partitionExcluded(
 	return false;
 }
 
-function eventExcludesAll<T>(
+function hierarchyEventExcludesAll<T>(
 	index: BucketIndex<T>,
 	profile: CompatibilityProfile,
 	work: SweepWork,
 ): boolean {
-	let excluded = 0;
-	for (const partition of profile.exclusions) {
-		lookup(work);
-		excluded += index.buckets.get(partition)?.size ?? 0;
-		if (excluded >= index.totalBuckets) return true;
-	}
 	if (!index.hierarchy || profile.hierarchy !== index.hierarchy) return false;
 	for (const target of profile.ancestorTargets) {
 		work.hierarchyPathQueries += 1;
@@ -660,25 +888,11 @@ function eventExcludesAll<T>(
 			count += measured.value;
 			work.hierarchyPathSteps += measured.steps + 1;
 		}
+		// This is deliberately per target: summing different target paths can count
+		// one bucket twice and incorrectly suppress an eligible pair.
 		if (count >= index.totalBuckets) return true;
 	}
 	return false;
-}
-
-function activeExcludesEvent<T>(
-	index: BucketIndex<T>,
-	partition: string,
-	work: SweepWork,
-): boolean {
-	lookup(work);
-	if ((index.excludedByPartition.get(partition)?.size ?? 0) >= index.totalBuckets) return true;
-	if (!index.hierarchy) return false;
-	const range = index.hierarchy.subtree(partition);
-	if (!range) return false;
-	work.hierarchySubtreeQueries += 1;
-	const measured = index.targetCounts.max(range[0], range[1]);
-	work.hierarchySubtreeSteps += measured.steps;
-	return measured.value >= index.totalBuckets;
 }
 
 function pairAllowed(
@@ -740,36 +954,6 @@ function hierarchyCandidates<T>(
 	return candidates;
 }
 
-function reciprocalHierarchyCandidates<T>(
-	index: BucketIndex<T>,
-	partition: string,
-	work: SweepWork,
-): Set<ActiveList<T>> | null {
-	const hierarchy = index.hierarchy;
-	if (!hierarchy) return null;
-	const range = hierarchy.subtree(partition);
-	if (!range) return null;
-	const candidates = new Set<ActiveList<T>>();
-	for (const list of index.untargetedLists) {
-		work.compatibilityQuerySteps += 1;
-		candidates.add(list);
-	}
-	const collect = (min: number, max: number) => {
-		if (min > max) return;
-		work.hierarchySubtreeQueries += 1;
-		work.hierarchySubtreeSteps += index.targetPositionCounts.positive(min, max, (position) => {
-			lookup(work);
-			for (const list of index.targetLists.get(position)!) {
-				work.compatibilityQuerySteps += 1;
-				candidates.add(list);
-			}
-		});
-	};
-	collect(0, range[0] - 1);
-	collect(range[1] + 1, hierarchy.size - 1);
-	return candidates;
-}
-
 /** Enumerate every semantically permitted closed x-overlap once in stable start-event order. */
 export function sweepIntervalPairs<A, B>(
 	left: readonly SweepInterval<A>[],
@@ -815,6 +999,32 @@ export function sweepIntervalPairs<A, B>(
 			a.ordinal - b.ordinal,
 	);
 	const hierarchy = events.find((event) => event.profile.hierarchy)?.profile.hierarchy;
+	const rankSpecs: Array<{ partition: string; profile: CompatibilityProfile }> = [];
+	const seenRanks = new Map<string, Set<CompatibilityProfile>>();
+	for (const event of events) {
+		const partition = event.interval.semantics.partition;
+		let profiles = seenRanks.get(partition);
+		if (!profiles) {
+			profiles = new Set();
+			seenRanks.set(partition, profiles);
+		}
+		if (!profiles.has(event.profile)) {
+			profiles.add(event.profile);
+			rankSpecs.push({ partition, profile: event.profile });
+		}
+	}
+	// Events are already in the public stable enumeration order. Ranking buckets by
+	// first occurrence lets an in-order index query preserve that order without a
+	// per-query sort.
+	const ranks = new Map<string, Map<CompatibilityProfile, number>>();
+	for (const [rank, spec] of rankSpecs.entries()) {
+		let profiles = ranks.get(spec.partition);
+		if (!profiles) {
+			profiles = new Map();
+			ranks.set(spec.partition, profiles);
+		}
+		profiles.set(spec.profile, rank);
+	}
 	const makeIndex = (): BucketIndex<Value> => ({
 		buckets: new Map(),
 		activeLists: new Set(),
@@ -828,6 +1038,7 @@ export function sweepIntervalPairs<A, B>(
 		targetLists: new Map(),
 		unpositionedLists: new Set(),
 		untargetedLists: new Set(),
+		exact: new ExactCompatibilityIndex(rankSpecs.length, hierarchy),
 		totalBuckets: 0,
 		retainedExclusionRefs: 0,
 		retainedIndexRefs: 0,
@@ -843,9 +1054,57 @@ export function sweepIntervalPairs<A, B>(
 		0,
 	);
 	const heap: ActiveNode<Value>[] = [];
+	const sampleRetainedState = (queryRefs: number): void => {
+		const buckets = indexes[0].totalBuckets + indexes[1].totalBuckets;
+		const exclusionRefs = indexes[0].retainedExclusionRefs + indexes[1].retainedExclusionRefs;
+		const indexRefs = indexes[0].retainedIndexRefs + indexes[1].retainedIndexRefs;
+		const profiles = indexes[0].profileCounts.size + indexes[1].profileCounts.size;
+		const hierarchyCells = indexes.reduce(
+			(total, index) =>
+				total +
+				index.partitionCounts.values.length +
+				index.targetCounts.values.length +
+				index.targetPositionCounts.values.length,
+			0,
+		);
+		const exactNodes = indexes.reduce((total, index) => total + index.exact.counts.length, 0);
+		const exactSummaryRefs = indexes.reduce(
+			(total, index) => total + index.exact.retainedSummaryRefs,
+			0,
+		);
+		const activeState = indexes.reduce(
+			(total, index) =>
+				total +
+				index.activeNodes +
+				index.totalBuckets +
+				index.profileCounts.size +
+				index.retainedIndexRefs,
+			0,
+		);
+		work.peakRetainedBuckets = Math.max(work.peakRetainedBuckets, buckets);
+		work.peakRetainedExclusionRefs = Math.max(work.peakRetainedExclusionRefs, exclusionRefs);
+		work.peakRetainedIndexRefs = Math.max(work.peakRetainedIndexRefs, indexRefs);
+		work.peakRetainedProfiles = Math.max(work.peakRetainedProfiles, profiles);
+		work.peakRetainedQueryRefs = Math.max(work.peakRetainedQueryRefs, queryRefs);
+		work.peakRetainedExactIndexNodes = Math.max(work.peakRetainedExactIndexNodes, exactNodes);
+		work.peakRetainedExactSummaryRefs = Math.max(
+			work.peakRetainedExactSummaryRefs,
+			exactSummaryRefs,
+		);
+		work.peakRetainedTotalStateRefs = Math.max(
+			work.peakRetainedTotalStateRefs,
+			events.length * 2 +
+				work.peakRetainedProfileTrieNodes +
+				retainedCanonicalProfileRefs +
+				hierarchyCells +
+				exactNodes * 4 +
+				exactSummaryRefs +
+				activeState +
+				queryRefs,
+		);
+	};
 	for (let order = 0; order < events.length; order += 1) {
 		const event = events[order]!;
-		let currentQueryRefs = 0;
 		work.events += 1;
 		while (heap[0] && heap[0].interval.max < event.interval.min) {
 			remove(heapPop(heap)!, work);
@@ -853,17 +1112,24 @@ export function sweepIntervalPairs<A, B>(
 		}
 		const opposite = sameSet ? indexes[0] : indexes[event.set === 0 ? 1 : 0];
 		work.compatibilityQueries += 1;
-		const allExcluded =
-			opposite.totalBuckets > 0 &&
-			(eventExcludesAll(opposite, event.profile, work) ||
-				activeExcludesEvent(opposite, event.interval.semantics.partition, work));
-		if (!allExcluded) {
+		if (opposite.totalBuckets > 0 && !hierarchyEventExcludesAll(opposite, event.profile, work)) {
 			const eventCandidates = hierarchyCandidates(opposite, event.profile, work);
-			const activeCandidates = reciprocalHierarchyCandidates(
-				opposite,
-				event.interval.semantics.partition,
-				work,
-			);
+			let activeHierarchyExclusions = false;
+			const subtree = opposite.hierarchy?.subtree(event.interval.semantics.partition);
+			if (subtree) {
+				work.hierarchySubtreeQueries += 1;
+				const measured = opposite.targetPositionCounts.range(subtree[0], subtree[1]);
+				work.hierarchySubtreeSteps += measured.steps;
+				activeHierarchyExclusions = measured.value > 0;
+			}
+			lookup(work);
+			const needsExactQuery =
+				event.profile.exclusions.length > 0 ||
+				(opposite.excludedByPartition.get(event.interval.semantics.partition)?.size ?? 0) > 0 ||
+				activeHierarchyExclusions;
+			const activeCandidates = needsExactQuery
+				? opposite.exact.query(event.profile, event.interval.semantics.partition, work)
+				: null;
 			let intersection: Set<ActiveList<Value>> | null = null;
 			if (eventCandidates && activeCandidates) {
 				intersection = new Set();
@@ -876,23 +1142,27 @@ export function sweepIntervalPairs<A, B>(
 					if (larger.has(candidate)) intersection.add(candidate);
 				}
 			}
-			currentQueryRefs =
+			const currentQueryRefs =
 				(eventCandidates?.size ?? 0) + (activeCandidates?.size ?? 0) + (intersection?.size ?? 0);
-			work.peakRetainedQueryRefs = Math.max(work.peakRetainedQueryRefs, currentQueryRefs);
+			sampleRetainedState(currentQueryRefs);
 			const candidates =
 				intersection ?? eventCandidates ?? activeCandidates ?? opposite.activeLists;
 			for (const list of candidates) {
 				work.bucketScans += 1;
 				work.partitionChecks += 1;
 				work.compatibilityTests += 1;
-				if (!pairAllowed(event.profile, event.interval.semantics.partition, list, work)) continue;
+				if (!pairAllowed(event.profile, event.interval.semantics.partition, list, work))
+					throw new Error("compatibility index admitted an excluded interval bucket");
 				for (let active: ActiveNode<Value> | null = list.head; active; active = active.next) {
 					work.activeVisits += 1;
 					const shouldContinue =
 						event.set === 0
 							? visit(event.interval as SweepInterval<A>, active.interval as SweepInterval<B>)
 							: visit(active.interval as SweepInterval<A>, event.interval as SweepInterval<B>);
-					if (shouldContinue === false) return work;
+					if (shouldContinue === false) {
+						sampleRetainedState(currentQueryRefs);
+						return work;
+					}
 				}
 			}
 		}
@@ -900,6 +1170,7 @@ export function sweepIntervalPairs<A, B>(
 			indexes[event.set],
 			event.interval.semantics.partition,
 			event.profile,
+			ranks.get(event.interval.semantics.partition)!.get(event.profile)!,
 			work,
 		);
 		const node: ActiveNode<Value> = {
@@ -912,48 +1183,7 @@ export function sweepIntervalPairs<A, B>(
 		};
 		append(list, node, work);
 		heapPush(heap, node);
-		work.peakRetainedBuckets = Math.max(
-			work.peakRetainedBuckets,
-			indexes[0].totalBuckets + indexes[1].totalBuckets,
-		);
-		work.peakRetainedExclusionRefs = Math.max(
-			work.peakRetainedExclusionRefs,
-			indexes[0].retainedExclusionRefs + indexes[1].retainedExclusionRefs,
-		);
-		work.peakRetainedIndexRefs = Math.max(
-			work.peakRetainedIndexRefs,
-			indexes[0].retainedIndexRefs + indexes[1].retainedIndexRefs,
-		);
-		work.peakRetainedProfiles = Math.max(
-			work.peakRetainedProfiles,
-			indexes[0].profileCounts.size + indexes[1].profileCounts.size,
-		);
-		const hierarchyCells = indexes.reduce(
-			(total, index) =>
-				total +
-				index.partitionCounts.values.length +
-				index.targetCounts.values.length +
-				index.targetPositionCounts.values.length,
-			0,
-		);
-		const activeState = indexes.reduce(
-			(total, index) =>
-				total +
-				index.activeNodes +
-				index.totalBuckets +
-				index.profileCounts.size +
-				index.retainedIndexRefs,
-			0,
-		);
-		work.peakRetainedTotalStateRefs = Math.max(
-			work.peakRetainedTotalStateRefs,
-			events.length * 2 +
-				work.peakRetainedProfileTrieNodes +
-				retainedCanonicalProfileRefs +
-				hierarchyCells +
-				activeState +
-				currentQueryRefs,
-		);
+		sampleRetainedState(0);
 	}
 	return work;
 }
