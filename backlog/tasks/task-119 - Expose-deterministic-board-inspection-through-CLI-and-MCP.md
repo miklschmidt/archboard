@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 20:28'
+updated_date: '2026-08-26 20:59'
 labels:
   - ready-for-agent
 dependencies:
@@ -498,6 +498,8 @@ Focused evidence after two byte-stable fix passes (tracked diff SHA-256 8b5df300
 Remaining before rereview: complete bun run check, separate complete bun run test, sequential headless browser evidence within each chain, final on-demand generation/determinism, git diff --check, task-state and clean-tree confirmation. TASK-119 remains In Progress with all acceptance criteria unchecked.
 
 Final validation completed at 12309e5. Two consecutive real bun run fix passes produced the same tracked-diff SHA-256 (8b5df30021cb08e67d07792e44f079e05e49fccac58ac1d943e3ebb014deee23). Focused lint, formatting, both TypeScript projects, boundaries, module-scope, contracts (58 paths, 978 checks), inspection (634 checks), CLI (579 checks), geometry (89 checks), labels (183 checks), branch compare, and persisted/package cases passed. The first complete bun run check exposed one scheduling-sensitive human-performance sample; isolated diagnosis followed docs/agents/test-suite.md, and the required complete chain was rerun successfully. Final bun run check and the separate bun run test both passed, including all four browser suites sequentially and headlessly. On-demand contract generation into two independent temporary directories was byte-identical: cli-command-audit.md c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, command-contract-proof.json e6be922438f3d8dc9ce2a9bac33cfb68f5a5527492d9b7fbb7cd32d9441442c1, command-contract-proof.md def3540846fa0854944805a959f2671ba943ffeb0d55c8a47aaa3ab538d949c2. git diff --check passed; generated views remain absent and precisely ignored; only canonical docs/design/cli-command-audit.json is tracked. TASK-119 remains In Progress with all nine acceptance criteria unchecked for independent rereview.
+
+Union-query remediation checkpoint f95f488 replaces the partial-complement full-bucket fallback for hierarchy semantics with counted range indexes in both event and reciprocal orientations, intersects two-sided candidate results before bucket visitation, and counts candidate/set-membership work plus every remaining hierarchy predicate. Cross-set retained peaks now total both live indexes, and the diagnostics report includes query references and one total sweep-owned state count. Public and diagnostics matrices cover the reported nested-owner labels plus one unrelated node at 1k/2k/4k/8k in both orientations, exact arbitrary exclusions with control characters, same/cross sweeps, deterministic randomized brute-force pair and order differentials, and linear retained state. Obstacle refs now reject unsorted or duplicate elementIds/groupIds/library element IDs while preserving the accepted escaped identity bytes. Two bun run fix passes were byte-stable at 432a0ed0342b916a13d67e1f06f3aca6d27645ddd95e982e38967b97eb4200b6. Focused lint, types, boundaries, module-scope, contracts, inspection (646 checks), geometry, labels, branch, and CLI gates pass. Full bun run check, separate bun run test, final on-demand generation, diff, and clean-tree checks remain.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
