@@ -236,7 +236,7 @@ export const boardSaveContract = defineCommand({
 				...(options.level ? { level: options.level } : {}),
 				...(options.force ? { force: true } : {}),
 			});
-			if (result.success !== true) {
+			if (!result.success) {
 				// Keep an invalid server reply intact so the command boundary rejects it.
 				return { result: result as never };
 			}

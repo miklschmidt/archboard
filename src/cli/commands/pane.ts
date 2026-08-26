@@ -11,13 +11,11 @@ import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
 import { closePane, currentRequestedBoard, openPane } from "../../runtime/engine/canvas-client.js";
 import { paneWords } from "../../runtime/engine/panes.js";
 
-export const SUBCOMMANDS = ["open", "close"] as const;
-
 export async function pane(argv: string[]): Promise<void> {
 	const sub = argv[0];
-	if (!sub || !(SUBCOMMANDS as readonly string[]).includes(sub)) {
+	if (!sub) {
 		throw new CliUsageError(
-			`pane needs a subcommand: ${SUBCOMMANDS.join(", ")}. ` +
+			"pane needs a subcommand: open, close. " +
 				"For what is on screen right now, without changing it, run `archboard panes`.",
 		);
 	}
@@ -48,6 +46,13 @@ export async function pane(argv: string[]): Promise<void> {
 		);
 		printJson(result);
 		return;
+	}
+
+	if (sub !== "close") {
+		throw new CliUsageError(
+			"pane needs a subcommand: open, close. " +
+				"For what is on screen right now, without changing it, run `archboard panes`.",
+		);
 	}
 
 	// close

@@ -23,8 +23,6 @@ import {
 const USAGE =
 	"Usage: library list [--text] | library insert <name> --x <x> --y <y> [--source <file>] [--id <libraryItemId>]";
 
-export const ACTIONS = ["list", "insert"] as const;
-
 export async function library(argv: string[]): Promise<void> {
 	// The action is always the first bare token; parsing flags happens inside
 	// each subcommand so each gets its own spec and unknown flags are caught

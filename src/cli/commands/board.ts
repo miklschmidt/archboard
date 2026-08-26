@@ -12,8 +12,6 @@ import {
 } from "../../runtime/engine/canvas-client.js";
 import { MAX_PANES } from "../../runtime/engine/panes.js";
 
-export const SUBCOMMANDS = ["list", "info", "new", "open", "save"] as const;
-
 /**
  * The repository the caller is standing in, as an identity.
  *
@@ -137,8 +135,8 @@ function howToShowBranch(
 
 export async function board(argv: string[]): Promise<void> {
 	const sub = argv[0];
-	if (!sub || !(SUBCOMMANDS as readonly string[]).includes(sub)) {
-		throw new CliUsageError(`board needs a subcommand: ${SUBCOMMANDS.join(", ")}`);
+	if (!sub) {
+		throw new CliUsageError("board needs a subcommand: list, info, new, open, save");
 	}
 	const rest = argv.slice(1);
 
@@ -272,6 +270,10 @@ export async function board(argv: string[]): Promise<void> {
 		}
 		printJson(result);
 		return;
+	}
+
+	if (sub !== "save") {
+		throw new CliUsageError("board needs a subcommand: list, info, new, open, save");
 	}
 
 	// save

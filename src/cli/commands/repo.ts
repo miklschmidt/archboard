@@ -25,8 +25,6 @@ import {
 // Nothing here talks to the canvas. The registry is a machine-local file, so
 // these run whether or not a server is up.
 
-export const SUBCOMMANDS = ["list", "add", "forget"] as const;
-
 const USAGE = "Usage: repo list [--text] | repo add [dir] | repo forget <identity>";
 
 export async function repo(argv: string[]): Promise<void> {

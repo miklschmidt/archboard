@@ -1,6 +1,486 @@
 {
-	"schemaVersion": 2,
+	"schemaVersion": 3,
 	"generatedFrom": "src/cli/commands/run.ts",
+	"routes": [
+		{
+			"name": "start",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/server.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "stop",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/server.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "status",
+			"parent": null,
+			"kind": "contract",
+			"handlerOwner": "src/cli/command-contract/status.ts",
+			"parserOwner": "CommandContract concrete Commander parser"
+		},
+		{
+			"name": "apply",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/elements.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "add",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/elements.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "update",
+			"parent": null,
+			"kind": "contract",
+			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
+			"parserOwner": "CommandContract concrete Commander parser"
+		},
+		{
+			"name": "delete",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/elements.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "get",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/elements.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "query",
+			"parent": null,
+			"kind": "contract",
+			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
+			"parserOwner": "CommandContract concrete Commander parser"
+		},
+		{
+			"name": "selection",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/selection.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "panes",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/selection.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "promote",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/promote.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "pane",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/pane.ts",
+			"parserOwner": "legacy subcommand dispatch",
+			"bare": {
+				"kind": "namespace-refusal",
+				"message": "pane needs a subcommand: open, close. For what is on screen right now, without changing it, run `archboard panes`."
+			},
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "pane open",
+			"parent": "pane",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/pane.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "pane close",
+			"parent": "pane",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/pane.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "viewport",
+			"parent": null,
+			"kind": "contract",
+			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
+			"parserOwner": "CommandContract concrete Commander parser"
+		},
+		{
+			"name": "demote",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/promote.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "repo",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/repo.ts",
+			"parserOwner": "legacy subcommand dispatch",
+			"bare": {
+				"kind": "default",
+				"child": "list"
+			},
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "repo list",
+			"parent": "repo",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/repo.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "repo add",
+			"parent": "repo",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/repo.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "repo forget",
+			"parent": "repo",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/repo.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "board",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/board.ts",
+			"parserOwner": "legacy subcommand dispatch",
+			"bare": {
+				"kind": "namespace-refusal",
+				"message": "board needs a subcommand: list, info, new, open, save"
+			},
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "board list",
+			"parent": "board",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/board.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "board info",
+			"parent": "board",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/board.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "board new",
+			"parent": "board",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/board.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "board open",
+			"parent": "board",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/board.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "board save",
+			"parent": "board",
+			"kind": "contract",
+			"handlerOwner": "src/cli/command-contract/board-save.ts",
+			"parserOwner": "CommandContract staged token parser"
+		},
+		{
+			"name": "compare",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/compare.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "changes",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/changes.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "claim",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/claim.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "release",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/claim.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "inject",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/inject.ts",
+			"parserOwner": "legacy subcommand dispatch",
+			"bare": {
+				"kind": "default",
+				"child": "status"
+			},
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "inject status",
+			"parent": "inject",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/inject.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "inject test",
+			"parent": "inject",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/inject.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "describe",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/scene.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "screenshot",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/scene.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "export",
+			"parent": null,
+			"kind": "contract",
+			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
+			"parserOwner": "CommandContract concrete Commander parser"
+		},
+		{
+			"name": "import",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/scene.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "mermaid",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/scene.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "snapshot",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/snapshot.ts",
+			"parserOwner": "legacy subcommand dispatch",
+			"bare": {
+				"kind": "namespace-refusal",
+				"message": "Usage: snapshot save|list|restore [name]"
+			},
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "snapshot save",
+			"parent": "snapshot",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/snapshot.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "snapshot list",
+			"parent": "snapshot",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/snapshot.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "snapshot restore",
+			"parent": "snapshot",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/snapshot.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "library",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/library.ts",
+			"parserOwner": "legacy subcommand dispatch",
+			"bare": {
+				"kind": "default",
+				"child": "list"
+			},
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "library list",
+			"parent": "library",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/library.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "library insert",
+			"parent": "library",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/library.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "arrange",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/arrange.ts",
+			"parserOwner": "legacy subcommand dispatch",
+			"bare": {
+				"kind": "namespace-refusal",
+				"message": "Usage: arrange align|distribute|group|ungroup|lock|unlock|duplicate ..."
+			},
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "arrange align",
+			"parent": "arrange",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/arrange.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "arrange distribute",
+			"parent": "arrange",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/arrange.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "arrange group",
+			"parent": "arrange",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/arrange.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "arrange ungroup",
+			"parent": "arrange",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/arrange.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "arrange lock",
+			"parent": "arrange",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/arrange.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "arrange unlock",
+			"parent": "arrange",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/arrange.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "arrange duplicate",
+			"parent": "arrange",
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/arrange.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "share",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/scene.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "clear",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/scene.ts",
+			"parserOwner": "legacy args.ts",
+			"legacyArgv": "root-tail"
+		},
+		{
+			"name": "install-skill",
+			"parent": null,
+			"kind": "legacy",
+			"handlerOwner": "src/cli/commands/install-skill.ts",
+			"parserOwner": "legacy custom parser",
+			"legacyArgv": "root-tail"
+		}
+	],
 	"contracts": [
 		{
 			"name": "status",
@@ -894,7 +1374,8 @@
 						"type": "object",
 						"properties": {
 							"success": {
-								"type": "boolean"
+								"type": "boolean",
+								"const": true
 							},
 							"board": {
 								"type": "string"

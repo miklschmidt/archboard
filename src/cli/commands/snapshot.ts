@@ -10,21 +10,13 @@ import {
 	batchCreateElementsStrict,
 } from "../../runtime/engine/canvas-client.js";
 
-// Validated up front so a `case` added below without a line here is unreachable.
-export const ACTIONS = ["save", "list", "restore"] as const;
-
 export async function snapshot(argv: string[]): Promise<void> {
 	const { positionals, flags } = parseArgs(argv, { force: { takesValue: false } });
 	const [action, name] = positionals;
 
-	if (!action || !(ACTIONS as readonly string[]).includes(action)) {
-		throw new CliUsageError(`Usage: snapshot ${ACTIONS.join("|")} [name]`);
-	}
-
-	await ensureCanvasRunning();
-
 	switch (action) {
 		case "save": {
+			await ensureCanvasRunning();
 			if (!name) throw new CliUsageError("Usage: snapshot save <name>");
 			const result = await saveSnapshot(name);
 			printJson({
@@ -36,11 +28,13 @@ export async function snapshot(argv: string[]): Promise<void> {
 			return;
 		}
 		case "list": {
+			await ensureCanvasRunning();
 			const result = await listSnapshots();
 			printJson(result.snapshots ?? []);
 			return;
 		}
 		case "restore": {
+			await ensureCanvasRunning();
 			if (!name) throw new CliUsageError("Usage: snapshot restore <name>");
 			let snap;
 			try {

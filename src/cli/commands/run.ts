@@ -32,42 +32,75 @@ import { arrange } from "./arrange.js";
 import { installSkill } from "./install-skill.js";
 import { library } from "./library.js";
 
-interface LegacySubcommand {
-	kind: "legacy";
-}
+type LegacyParserOwner = "legacy args.ts" | "legacy custom parser" | "legacy subcommand dispatch";
 
 interface LegacyCommand {
-	kind?: "legacy";
+	kind: "legacy";
 	handler: (argv: string[]) => Promise<void>;
-	summary: string;
-	usage: string;
-	// Present when the command takes a subcommand, from the list the command's
-	// own dispatcher validates against. `cliSurface()` exposes this as data for
-	// contract and documentation checks.
-	subcommands?: Readonly<Record<string, LegacySubcommand | ContractCommand>>;
+	handlerOwner: string;
+	parserOwner: LegacyParserOwner;
+	legacyArgv: "root-tail" | "route-tail";
 }
 
 interface ContractCommand {
 	kind: "contract";
 	contract: AnyCommandContract;
+	handlerOwner: string;
 }
 
-type Command = LegacyCommand | ContractCommand;
+type RouteOwner = LegacyCommand | ContractCommand;
 
-const commandSummary = (command: Command) =>
-	command.kind === "contract" ? command.contract.summary : command.summary;
-const commandUsage = (command: Command) =>
-	command.kind === "contract" ? command.contract.usage : command.usage;
+interface CommandRoute {
+	owner: RouteOwner;
+	summary?: string;
+	usage?: string;
+	children?: Readonly<Record<string, CommandRoute>>;
+	bare?: { kind: "default"; child: string } | { kind: "namespace-refusal"; message: string };
+}
 
-const COMMANDS: Record<string, Command> = {
-	start: { handler: server.start, summary: "Start the canvas server (detached)", usage: "start" },
-	stop: { handler: server.stop, summary: "Stop the canvas server", usage: "stop" },
+const commandSummary = (route: CommandRoute) =>
+	route.summary ??
+	(route.owner.kind === "contract" ? route.owner.contract.summary : "Legacy command");
+const commandUsage = (route: CommandRoute) =>
+	route.usage ?? (route.owner.kind === "contract" ? route.owner.contract.usage : "");
+
+const legacy = (
+	handler: (argv: string[]) => Promise<void>,
+	handlerOwner: string,
+	legacyParserOwner: LegacyParserOwner = "legacy args.ts",
+	legacyArgv: LegacyCommand["legacyArgv"] = "root-tail",
+): LegacyCommand => ({
+	kind: "legacy",
+	handler,
+	handlerOwner,
+	parserOwner: legacyParserOwner,
+	legacyArgv,
+});
+
+const contract = (value: AnyCommandContract, handlerOwner: string): ContractCommand => ({
+	kind: "contract",
+	contract: value,
+	handlerOwner,
+});
+
+const child = (owner: RouteOwner): CommandRoute => ({ owner });
+
+const COMMANDS: Record<string, CommandRoute> = {
+	start: {
+		owner: legacy(server.start, "src/cli/commands/server.ts"),
+		summary: "Start the canvas server (detached)",
+		usage: "start",
+	},
+	stop: {
+		owner: legacy(server.stop, "src/cli/commands/server.ts"),
+		summary: "Stop the canvas server",
+		usage: "stop",
+	},
 	status: {
-		kind: "contract",
-		contract: statusContract,
+		owner: contract(statusContract, "src/cli/command-contract/status.ts"),
 	},
 	apply: {
-		handler: elements.apply,
+		owner: legacy(elements.apply, "src/cli/commands/elements.ts"),
 		summary: "Apply a {create,update,delete} patch as a single write",
 		usage: [
 			"apply [patch.json|-] [--document]",
@@ -77,7 +110,7 @@ const COMMANDS: Record<string, Command> = {
 		].join("\n"),
 	},
 	add: {
-		handler: elements.add,
+		owner: legacy(elements.add, "src/cli/commands/elements.ts"),
 		summary: "Create elements from a JSON array",
 		usage: [
 			"add [elements.json] (or stdin) [--document]",
@@ -87,11 +120,10 @@ const COMMANDS: Record<string, Command> = {
 		].join("\n"),
 	},
 	update: {
-		kind: "contract",
-		contract: updateContract,
+		owner: contract(updateContract, "src/cli/command-contract/lib/command-definitions.ts"),
 	},
 	delete: {
-		handler: elements.del,
+		owner: legacy(elements.del, "src/cli/commands/elements.ts"),
 		summary: "Delete elements by id",
 		usage: [
 			"delete <id> [<id> ...] [--document]",
@@ -103,18 +135,21 @@ const COMMANDS: Record<string, Command> = {
 			WRITE_ANSWER,
 		].join("\n"),
 	},
-	get: { handler: elements.get, summary: "Get one element by id", usage: "get <id>" },
+	get: {
+		owner: legacy(elements.get, "src/cli/commands/elements.ts"),
+		summary: "Get one element by id",
+		usage: "get <id>",
+	},
 	query: {
-		kind: "contract",
-		contract: queryContract,
+		owner: contract(queryContract, "src/cli/command-contract/lib/command-definitions.ts"),
 	},
 	selection: {
-		handler: selection,
+		owner: legacy(selection, "src/cli/commands/selection.ts"),
 		summary: "What a human currently has selected on the board",
 		usage: "selection [--text]",
 	},
 	panes: {
-		handler: panes,
+		owner: legacy(panes, "src/cli/commands/selection.ts"),
 		summary: "What the human is currently looking at — pane by pane",
 		usage: [
 			"panes [--text]",
@@ -130,7 +165,7 @@ const COMMANDS: Record<string, Command> = {
 		].join("\n"),
 	},
 	promote: {
-		handler: promote,
+		owner: legacy(promote, "src/cli/commands/promote.ts"),
 		summary: "Declare the selected elements a node: kind, identity, binding",
 		usage: [
 			'promote --kind service|queue|datastore|gateway|external [--ids a,b,c] [--name "Payments"] [--node payments]',
@@ -147,8 +182,16 @@ const COMMANDS: Record<string, Command> = {
 		].join("\n"),
 	},
 	pane: {
-		handler: pane,
-		subcommands: { open: { kind: "legacy" }, close: { kind: "legacy" } },
+		owner: legacy(pane, "src/cli/commands/pane.ts", "legacy subcommand dispatch"),
+		children: {
+			open: child(legacy(pane, "src/cli/commands/pane.ts")),
+			close: child(legacy(pane, "src/cli/commands/pane.ts")),
+		},
+		bare: {
+			kind: "namespace-refusal",
+			message:
+				"pane needs a subcommand: open, close. For what is on screen right now, without changing it, run `archboard panes`.",
+		},
 		summary: "Split the canvas into another pane, or close one",
 		usage: [
 			"pane open [--board <key>] | pane close <left|right|1|2|primary|focused|pane id>",
@@ -170,22 +213,22 @@ const COMMANDS: Record<string, Command> = {
 		].join("\n"),
 	},
 	viewport: {
-		kind: "contract",
-		contract: viewportContract,
+		owner: contract(viewportContract, "src/cli/command-contract/lib/command-definitions.ts"),
 	},
 	demote: {
-		handler: demote,
+		owner: legacy(demote, "src/cli/commands/promote.ts"),
 		summary: "Turn nodes back into plain elements",
 		usage:
 			"demote [--ids a,b,c] [--text]  (default target is the live selection; demotes every element of each node it touches)",
 	},
 	repo: {
-		handler: repo,
-		subcommands: {
-			list: { kind: "legacy" },
-			add: { kind: "legacy" },
-			forget: { kind: "legacy" },
+		owner: legacy(repo, "src/cli/commands/repo.ts", "legacy subcommand dispatch"),
+		children: {
+			list: child(legacy(repo, "src/cli/commands/repo.ts")),
+			add: child(legacy(repo, "src/cli/commands/repo.ts")),
+			forget: child(legacy(repo, "src/cli/commands/repo.ts")),
 		},
+		bare: { kind: "default", child: "list" },
 		summary:
 			"The repository checkouts on this machine, so a binding can name a repo instead of a directory",
 		usage: [
@@ -206,13 +249,17 @@ const COMMANDS: Record<string, Command> = {
 		].join("\n"),
 	},
 	board: {
-		handler: board,
-		subcommands: {
-			list: { kind: "legacy" },
-			info: { kind: "legacy" },
-			new: { kind: "legacy" },
-			open: { kind: "legacy" },
-			save: { kind: "contract", contract: boardSaveContract },
+		owner: legacy(board, "src/cli/commands/board.ts", "legacy subcommand dispatch"),
+		children: {
+			list: child(legacy(board, "src/cli/commands/board.ts")),
+			info: child(legacy(board, "src/cli/commands/board.ts")),
+			new: child(legacy(board, "src/cli/commands/board.ts")),
+			open: child(legacy(board, "src/cli/commands/board.ts")),
+			save: child(contract(boardSaveContract, "src/cli/command-contract/board-save.ts")),
+		},
+		bare: {
+			kind: "namespace-refusal",
+			message: "board needs a subcommand: list, info, new, open, save",
 		},
 		summary: "Load, save and list boards in the vault",
 		usage: [
@@ -249,7 +296,7 @@ const COMMANDS: Record<string, Command> = {
 		].join("\n"),
 	},
 	compare: {
-		handler: compare,
+		owner: legacy(compare, "src/cli/commands/compare.ts"),
 		summary: "Structured semantic diff between two variants of a board",
 		usage: [
 			"compare <from> [to]        e.g. compare payments payments@option-a",
@@ -272,7 +319,7 @@ const COMMANDS: Record<string, Command> = {
 		].join("\n"),
 	},
 	changes: {
-		handler: changes,
+		owner: legacy(changes, "src/cli/commands/changes.ts"),
 		summary:
 			"Semantic changes on the board since a cursor — what it became, not which pixels moved",
 		usage: [
@@ -293,7 +340,7 @@ const COMMANDS: Record<string, Command> = {
 		].join("\n"),
 	},
 	claim: {
-		handler: claim,
+		owner: legacy(claim, "src/cli/commands/claim.ts"),
 		summary: "Take a board for a stretch of work, so twenty writes are one uninterrupted act",
 		usage: [
 			'claim --board <key> --reason "redrawing the payment path" [--for 10m]',
@@ -317,7 +364,7 @@ const COMMANDS: Record<string, Command> = {
 		].join("\n"),
 	},
 	release: {
-		handler: release,
+		owner: legacy(release, "src/cli/commands/claim.ts"),
 		summary: "Give back a board you claimed",
 		usage: [
 			"release --board <key>",
@@ -328,8 +375,12 @@ const COMMANDS: Record<string, Command> = {
 		].join("\n"),
 	},
 	inject: {
-		handler: inject,
-		subcommands: { status: { kind: "legacy" }, test: { kind: "legacy" } },
+		owner: legacy(inject, "src/cli/commands/inject.ts", "legacy subcommand dispatch"),
+		children: {
+			status: child(legacy(inject, "src/cli/commands/inject.ts")),
+			test: child(legacy(inject, "src/cli/commands/inject.ts")),
+		},
+		bare: { kind: "default", child: "status" },
 		summary:
 			"Whether the canvas can push board changes into a live Codex thread, and a probe to prove it",
 		usage: [
@@ -349,12 +400,12 @@ const COMMANDS: Record<string, Command> = {
 		].join("\n"),
 	},
 	describe: {
-		handler: scene.describe,
+		owner: legacy(scene.describe, "src/cli/commands/scene.ts"),
 		summary: "AI-readable scene description (plain text)",
 		usage: "describe",
 	},
 	screenshot: {
-		handler: scene.screenshot,
+		owner: legacy(scene.screenshot, "src/cli/commands/scene.ts"),
 		summary: "Capture one pane (needs an open browser tab)",
 		usage: [
 			"screenshot [--out file.png] [--format png|svg] [--no-background] [--pane <spec>]",
@@ -365,61 +416,76 @@ const COMMANDS: Record<string, Command> = {
 		].join("\n"),
 	},
 	export: {
-		kind: "contract",
-		contract: exportContract,
+		owner: contract(exportContract, "src/cli/command-contract/lib/command-definitions.ts"),
 	},
 	import: {
-		handler: scene.importCmd,
+		owner: legacy(scene.importCmd, "src/cli/commands/scene.ts"),
 		summary: "Import a .excalidraw or Obsidian .excalidraw.md file (merge by default)",
 		usage: "import [scene.excalidraw|note.excalidraw.md|-] [--replace] (or stdin)",
 	},
 	mermaid: {
-		handler: scene.mermaid,
+		owner: legacy(scene.mermaid, "src/cli/commands/scene.ts"),
 		summary: "Render a Mermaid diagram onto the canvas (needs a browser tab)",
 		usage:
 			"mermaid [diagram.mmd|-] (or stdin)  (converts in the pane holding --board, so there is no --pane to pass; refused, converting nothing, when no pane is holding it)",
 	},
 	snapshot: {
-		handler: snapshot,
-		subcommands: {
-			save: { kind: "legacy" },
-			list: { kind: "legacy" },
-			restore: { kind: "legacy" },
+		owner: legacy(snapshot, "src/cli/commands/snapshot.ts", "legacy subcommand dispatch"),
+		children: {
+			save: child(legacy(snapshot, "src/cli/commands/snapshot.ts")),
+			list: child(legacy(snapshot, "src/cli/commands/snapshot.ts")),
+			restore: child(legacy(snapshot, "src/cli/commands/snapshot.ts")),
+		},
+		bare: {
+			kind: "namespace-refusal",
+			message: "Usage: snapshot save|list|restore [name]",
 		},
 		summary: "Save / list / restore named canvas snapshots",
 		usage:
 			"snapshot save|list|restore [name] [--force]  (a snapshot belongs to the board it was taken on; --force restores it onto a different one)",
 	},
 	library: {
-		handler: library,
-		subcommands: { list: { kind: "legacy" }, insert: { kind: "legacy" } },
+		owner: legacy(library, "src/cli/commands/library.ts", "legacy subcommand dispatch"),
+		children: {
+			list: child(legacy(library, "src/cli/commands/library.ts")),
+			insert: child(legacy(library, "src/cli/commands/library.ts")),
+		},
+		bare: { kind: "default", child: "list" },
 		summary: "What stencils are in the library, and dropping one onto the board",
 		usage:
 			"library list [--text] | library insert <name> --x <x> --y <y> [--source <file>] [--id <libraryItemId>]  (the palette lives on the canvas server, not in a browser profile, which is why an agent can read and place from it without a browser)",
 	},
 	arrange: {
-		handler: arrange,
-		subcommands: {
-			align: { kind: "legacy" },
-			distribute: { kind: "legacy" },
-			group: { kind: "legacy" },
-			ungroup: { kind: "legacy" },
-			lock: { kind: "legacy" },
-			unlock: { kind: "legacy" },
-			duplicate: { kind: "legacy" },
+		owner: legacy(arrange, "src/cli/commands/arrange.ts", "legacy subcommand dispatch"),
+		children: {
+			align: child(legacy(arrange, "src/cli/commands/arrange.ts")),
+			distribute: child(legacy(arrange, "src/cli/commands/arrange.ts")),
+			group: child(legacy(arrange, "src/cli/commands/arrange.ts")),
+			ungroup: child(legacy(arrange, "src/cli/commands/arrange.ts")),
+			lock: child(legacy(arrange, "src/cli/commands/arrange.ts")),
+			unlock: child(legacy(arrange, "src/cli/commands/arrange.ts")),
+			duplicate: child(legacy(arrange, "src/cli/commands/arrange.ts")),
+		},
+		bare: {
+			kind: "namespace-refusal",
+			message: "Usage: arrange align|distribute|group|ungroup|lock|unlock|duplicate ...",
 		},
 		summary: "Align, distribute, group, lock, duplicate elements",
 		usage:
 			"arrange align|distribute|group|ungroup|lock|unlock|duplicate --ids a,b,c [--to left|horizontal|...]",
 	},
 	share: {
-		handler: scene.share,
+		owner: legacy(scene.share, "src/cli/commands/scene.ts"),
 		summary: "Export to a shareable excalidraw.com URL",
 		usage: "share",
 	},
-	clear: { handler: scene.clear, summary: "Clear the whole canvas", usage: "clear --yes" },
+	clear: {
+		owner: legacy(scene.clear, "src/cli/commands/scene.ts"),
+		summary: "Clear the whole canvas",
+		usage: "clear --yes",
+	},
 	"install-skill": {
-		handler: installSkill,
+		owner: legacy(installSkill, "src/cli/commands/install-skill.ts", "legacy custom parser"),
 		summary: "Install the bundled agent skill and write the setup into this repo",
 		usage: [
 			"install-skill [--agent codex|claude-code] [--target claude] [--dir <skills-root>]",
@@ -452,56 +518,90 @@ const COMMANDS: Record<string, Command> = {
  * table read as data for contract and documentation checks.
  */
 export function cliSurface(): { name: string; subcommands: readonly string[] }[] {
-	return Object.entries(COMMANDS).map(([name, command]) => ({
+	return Object.entries(COMMANDS).map(([name, route]) => ({
 		name,
-		subcommands: Object.keys(command.kind === "contract" ? {} : (command.subcommands ?? {})),
+		subcommands: Object.keys(route.children ?? {}),
 	}));
 }
 
 /** The one registry projected as all 57 canonical paths during mixed migration. */
-export function cliContractRegistry(): Array<{
+export interface CliRegistryEntry {
 	name: string;
+	parent: string | null;
 	kind: "contract" | "legacy";
+	handlerOwner: string;
+	parserOwner: string;
+	bare?: CommandRoute["bare"];
+	legacyArgv?: LegacyCommand["legacyArgv"];
+	handler?: LegacyCommand["handler"];
 	contract?: AnyCommandContract;
-}> {
-	return Object.entries(COMMANDS).flatMap(([name, command]) => {
-		const root =
-			command.kind === "contract"
-				? { name, kind: "contract" as const, contract: command.contract }
-				: { name, kind: "legacy" as const };
-		const subcommands = command.kind === "contract" ? {} : (command.subcommands ?? {});
-		return [root].concat(
-			Object.entries(subcommands).map(([subcommand, route]) =>
-				route.kind === "contract"
-					? {
-							name: `${name} ${subcommand}`,
-							kind: "contract" as const,
-							contract: route.contract,
-						}
-					: { name: `${name} ${subcommand}`, kind: "legacy" as const },
-			),
-		);
-	});
+}
+
+function parserOwner(owner: RouteOwner): string {
+	if (owner.kind === "legacy") return owner.parserOwner;
+	return owner.contract.parameters.some((parameter) => parameter.route === "staged-tokens")
+		? "CommandContract staged token parser"
+		: "CommandContract concrete Commander parser";
+}
+
+function flattenRoute(
+	name: string,
+	route: CommandRoute,
+	parent: string | null,
+): CliRegistryEntry[] {
+	const current: CliRegistryEntry = {
+		name,
+		parent,
+		kind: route.owner.kind,
+		handlerOwner: route.owner.handlerOwner,
+		parserOwner: parserOwner(route.owner),
+		...(route.bare ? { bare: route.bare } : {}),
+		...(route.owner.kind === "contract"
+			? { contract: route.owner.contract }
+			: { handler: route.owner.handler, legacyArgv: route.owner.legacyArgv }),
+	};
+	return [
+		current,
+		...Object.entries(route.children ?? {}).flatMap(([segment, nested]) =>
+			flattenRoute(`${name} ${segment}`, nested, name),
+		),
+	];
+}
+
+export function cliContractRegistry(): CliRegistryEntry[] {
+	return Object.entries(COMMANDS).flatMap(([name, route]) => flattenRoute(name, route, null));
 }
 
 function dispatchedCommand(
 	name: string,
 	rest: readonly string[],
 ): {
-	root: Command;
-	selected: Command | LegacySubcommand;
+	root: CommandRoute;
+	selected: RouteOwner;
 	argv: string[];
 } | null {
 	const root = COMMANDS[name];
 	if (!root) return null;
-	if (root.kind === "contract") return { root, selected: root, argv: [...rest] };
-	const subcommand = rest[0];
-	const selected = subcommand ? root.subcommands?.[subcommand] : undefined;
-	if (selected?.kind === "contract") {
-		return { root, selected, argv: rest.slice(1) };
+	let selectedRoute = root;
+	let consumed = 0;
+	while (rest[consumed]) {
+		const nested = selectedRoute.children?.[rest[consumed]!];
+		if (!nested) break;
+		selectedRoute = nested;
+		consumed += 1;
 	}
-	// A legacy family still owns its subcommand token and its namespace refusal.
-	return { root, selected: selected ?? root, argv: [...rest] };
+	if (consumed === 0 && root.bare?.kind === "namespace-refusal") {
+		throw new CliUsageError(root.bare.message);
+	}
+	if (consumed === 0 && rest.length === 0 && root.bare?.kind === "default") {
+		selectedRoute = root.children?.[root.bare.child] ?? root;
+	}
+	const selected = selectedRoute.owner;
+	const argv =
+		selected.kind === "contract" || selected.legacyArgv === "route-tail"
+			? rest.slice(consumed)
+			: [...rest];
+	return { root, selected, argv };
 }
 
 function printHelp(): void {
@@ -549,7 +649,7 @@ function printHelp(): void {
 	process.stdout.write(lines.join("\n") + "\n");
 }
 
-function exitCodeFor(error: unknown, command?: Command): number {
+function exitCodeFor(error: unknown, command?: RouteOwner): number {
 	if (error instanceof CliUsageError) return 2;
 	const code = (error as Error & { code?: string }).code;
 	if (command?.kind === "contract" && code !== undefined) {
@@ -662,7 +762,7 @@ export async function runCli(argv: string[]): Promise<void> {
 		process.exitCode = 2;
 		return;
 	}
-	let selected: Command | LegacySubcommand = command;
+	let selected: RouteOwner = command.owner;
 
 	try {
 		setRequestedBoard(takeBoardFlag(rest));
@@ -672,8 +772,7 @@ export async function runCli(argv: string[]): Promise<void> {
 		selected = dispatched.selected;
 		const commandArgv = dispatched.argv;
 		if (selected.kind === "contract") await runCommand(selected.contract, commandArgv);
-		else if (command.kind !== "contract") await command.handler(rest);
-		else throw new Error(`${name}: invalid legacy dispatch`);
+		else await selected.handler(commandArgv);
 	} catch (error) {
 		if (!(error as Error & { quiet?: boolean }).quiet) {
 			process.stderr.write(`Error: ${formatBoardRefusal(error) ?? (error as Error).message}\n`);
@@ -696,6 +795,6 @@ export async function runCli(argv: string[]): Promise<void> {
 		if (error instanceof CliUsageError) {
 			process.stderr.write(`Usage: archboard ${commandUsage(command)}\n`);
 		}
-		process.exitCode = exitCodeFor(error, selected.kind === "contract" ? selected : command);
+		process.exitCode = exitCodeFor(error, selected);
 	}
 }

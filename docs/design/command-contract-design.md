@@ -11,11 +11,13 @@ argv)`, bootstrap handling, and contract introspection.
 `CommandContext`, `CommandExecution`, and `PendingArtifact` are Archboard-owned
 parts of the typed handler interface and remain Commander-free, but they are
 not emitted by introspection. `src/cli/commands/run.ts` is the production adapter at that seam and
-remains the sole registry. During TASK-123.02 all 57 canonical paths are marked
-as contract or legacy, including default aliases and namespace refusals.
-Dispatch selects the longest registered path. Query, update, viewport, export,
-status, and board save use contracts at the foundation checkpoint. The other
-legacy paths stay usable until their family moves.
+remains the sole registry. Its route tree gives every root and child its own
+contract or legacy owner, parser owner, handler owner, parent, and legacy argv
+rule. A root may therefore migrate without hiding a child. The same tree
+derives the 57-path surface, flattened generated registry, longest-path
+dispatch, default aliases, and namespace refusals. Query, update, viewport,
+export, status, and board save use contracts at the foundation checkpoint. The
+other legacy paths stay usable until their family moves.
 
 The private implementation uses one concrete Commander parser, the process and
 filesystem host, and the production server/browser prerequisite checks. These
@@ -120,7 +122,10 @@ held note, and continuation in that order.
 
 `src/bin.ts` removes one `--url` before importing runtime configuration.
 `run.ts` retains existing help, version, globals, error mapping, and the mixed
-registry. Introspection is an in-process generation interface and checked-in
+route tree. The checker compares every flattened route's parent, parser owner,
+handler owner, and kind to the canonical audit. Contract identities and counts
+come from the tree, so registering the next contract changes no second migrated
+path list. Introspection is an in-process generation interface and checked-in
 JSON. It is not a public command, REST route, MCP replacement, or second agent
 command surface.
 

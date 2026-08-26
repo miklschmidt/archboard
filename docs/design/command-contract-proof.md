@@ -419,7 +419,8 @@ Public result JSON Schema:
 			"type": "object",
 			"properties": {
 				"success": {
-					"type": "boolean"
+					"type": "boolean",
+					"const": true
 				},
 				"board": {
 					"type": "string"
