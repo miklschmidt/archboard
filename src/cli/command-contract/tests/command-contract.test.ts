@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import { z } from "zod";
 import {
 	defineCommand,
@@ -8,7 +8,6 @@ import {
 } from "../contract.js";
 import { introspectContracts } from "../introspection.js";
 import {
-	productionArgvParser,
 	runCommand,
 	type ArgvParser,
 	type CommandHost,
@@ -140,7 +139,7 @@ async function execute(contract: AnyCommandContract, host = new RecordingHost())
 describe("command-contract interface", () => {
 	test("the real adapter owns aliases and optional token arity, not semantic defaults", async () => {
 		const contract = defineCommand({
-			...proofContract({ result: null }),
+			...proofContract({ result: null, resultSchema: z.object({ name: z.unknown().optional() }) }),
 			parameters: [
 				{
 					kind: "option",
@@ -151,12 +150,23 @@ describe("command-contract interface", () => {
 				},
 			],
 			input: { ingress: z.object({ name: z.union([z.string(), z.boolean()]).optional() }) },
+			async handler(input) {
+				return { result: input };
+			},
 		});
-		expect(await productionArgvParser.parse(contract, ["-n", "alice"])).toEqual({
-			name: "alice",
-		});
-		expect(await productionArgvParser.parse(contract, ["--name"])).toEqual({ name: true });
-		expect(await productionArgvParser.parse(contract, [])).toEqual({ name: undefined });
+		const stdout = spyOn(process.stdout, "write").mockImplementation(() => true);
+		try {
+			await runCommand(contract, ["-n", "alice"]);
+			await runCommand(contract, ["--name"]);
+			await runCommand(contract, []);
+			expect(stdout.mock.calls.map(([value]) => JSON.parse(String(value)))).toEqual([
+				{ name: "alice" },
+				{ name: true },
+				{},
+			]);
+		} finally {
+			stdout.mockRestore();
+		}
 	});
 
 	test("the recording parser returns a prepared invocation without parsing argv", async () => {

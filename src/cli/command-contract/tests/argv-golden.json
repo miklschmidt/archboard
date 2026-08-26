@@ -114,6 +114,99 @@
 			"status": 2,
 			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 			"stderrSha256": "dc372d8d2659c14a2fe8856b4f7ea0f75645f471edab10ec328d6be68b201e07"
+		},
+		{
+			"name": "exit 1 doing refusal",
+			"argv": ["update", "shape1", "--set", "{}", "--board", "contract"],
+			"server": "mock",
+			"status": 1,
+			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"stderrSha256": "dd4d3b2d3a4b5d4e4dc806a319be68fc60fef6bb4055e38cd4c95b237c6fcb4d"
+		},
+		{
+			"name": "exit 3 server unavailable",
+			"argv": ["query"],
+			"server": "closed",
+			"status": 3,
+			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"stderrSha256": "f36f538c10509cb9224c5a0effdc256e09a6ac0e223db766dc95b33ce1d38759"
+		},
+		{
+			"name": "exit 4 browser required",
+			"argv": ["viewport", "--fit"],
+			"server": "no-browser",
+			"status": 4,
+			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"stderrSha256": "fc2696eec36dabeab105afd0d86e8f1a40d12b4ded940836438f7b776f04fe14"
+		},
+		{
+			"name": "exit 5 board version refusal",
+			"argv": [
+				"update",
+				"refuse",
+				"--set",
+				"{\"x\":10}",
+				"--board",
+				"contract",
+				"--doing",
+				"golden"
+			],
+			"server": "mock",
+			"status": 5,
+			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"stderrSha256": "0fe80583a09075291bf0fa78ad716ccb59f440238aefbaa4ee138f1e81a0507f"
+		},
+		{
+			"name": "repeatable filters append and nonrepeatable type is last wins",
+			"argv": [
+				"query",
+				"--type",
+				"ellipse",
+				"--type",
+				"rectangle",
+				"--filter",
+				"id=missing",
+				"--filter",
+				"id=shape1",
+				"--board",
+				"contract"
+			],
+			"server": "mock",
+			"status": 0,
+			"stdoutSha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+			"stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+		},
+		{
+			"name": "held query keeps array stdout and note stderr",
+			"argv": ["query", "--board", "held"],
+			"server": "mock",
+			"status": 0,
+			"stdoutSha256": "8f381f5d84a79ad62bd47108dd25896ef99a904883face2dd83504652354815b",
+			"stderrSha256": "aa2dc9862f1055555bd4fe6618b539f0b84b132708a37e7edc0e5ff2924d889d"
+		},
+		{
+			"name": "held update keeps object stdout and note stderr",
+			"argv": ["update", "shape1", "--set", "{\"x\":3}", "--board", "held", "--doing", "golden"],
+			"server": "mock",
+			"status": 0,
+			"stdoutSha256": "1d89a6c5de278ca082464e5e47b7a9c43c13a1b77df0dfde67cfb534f1274743",
+			"stderrSha256": "aa2dc9862f1055555bd4fe6618b539f0b84b132708a37e7edc0e5ff2924d889d"
+		},
+		{
+			"name": "held raw export bypasses held presentation",
+			"argv": ["export", "--board", "held"],
+			"server": "mock",
+			"status": 0,
+			"stdoutSha256": "11e74b9e45be4726b81c15df3f1bc3d895533b7d4d5a7f351b706fc6b5a13b81",
+			"stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+		},
+		{
+			"name": "held file export keeps receipt stdout and note stderr",
+			"argv": ["export", "--out", "held.excalidraw", "--board", "held"],
+			"server": "mock",
+			"status": 0,
+			"stdoutSha256": "b28bc9e48f3183550d36d9ff19b0cbf35a078ac2b435dca44f68ddc221d94210",
+			"stderrSha256": "aa2dc9862f1055555bd4fe6618b539f0b84b132708a37e7edc0e5ff2924d889d"
 		}
 	]
 }
