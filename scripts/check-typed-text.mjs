@@ -56,8 +56,8 @@ const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const src = (p) => path.join(repoRoot, "src", p);
 const skipBuild = process.argv.includes("--skip-build");
 
-const { REPORT_IDLE_SETTLE_MS } = await import(src("core/timing.ts"));
-const { isBlockId } = await import(src("core/ids.ts"));
+const { REPORT_IDLE_SETTLE_MS } = await import(src("shared/timing/timing.ts"));
+const { isBlockId } = await import(src("shared/ids/ids.ts"));
 // Long enough that the pane's debounce has fired and its answer has come back,
 // which covers the delay during which the rename used to arrive.
 const AFTER_A_WRITE_MS = REPORT_IDLE_SETTLE_MS + 1600;

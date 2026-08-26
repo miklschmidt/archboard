@@ -101,9 +101,9 @@ const flatMetadataBox = () => ({
 // Engine
 // ---------------------------------------------------------------------------
 
-const { diffBoardStates, narrateChange } = await import(src("core/changes.ts"));
-const { compareBoards } = await import(src("core/compare.ts"));
-const { describeScene } = await import(src("core/describe.ts"));
+const { diffBoardStates, narrateChange } = await import(src("runtime/engine/changes.ts"));
+const { compareBoards } = await import(src("runtime/engine/compare.ts"));
+const { describeScene } = await import(src("runtime/engine/describe.ts"));
 const diff = (before, after) => diffBoardStates(before, after, identity, "payments");
 
 {
@@ -273,7 +273,7 @@ const diff = (before, after) => diffBoardStates(before, after, identity, "paymen
 // Nothing on screen shows it, because Excalidraw recomputes a bound label's
 // position from its container at draw time.
 
-const { boundTextDrift } = await import(src("core/labels.ts"));
+const { boundTextDrift } = await import(src("runtime/engine/labels.ts"));
 
 {
 	const base = scene();
@@ -423,8 +423,8 @@ const { boundTextDrift } = await import(src("core/labels.ts"));
 // ---------------------------------------------------------------------------
 
 process.env.ARCHBOARD_SETTLE_MS = "60000"; // long, so only explicit settles fire
-const { changeFeed } = await import(src("core/change-feed.ts"));
-const { copyElements } = await import(src("core/board-store.ts"));
+const { changeFeed } = await import(src("runtime/engine/change-feed.ts"));
+const { copyElements } = await import(src("runtime/engine/board-store.ts"));
 
 {
 	let elements = [];
@@ -600,7 +600,7 @@ fs.chmodSync(socketPath, 0o600);
 process.env.CODEX_HOME = home;
 process.env.ARCHBOARD_INJECT_DEBOUNCE_MS = "150";
 process.env.ARCHBOARD_INJECT_MIN_INTERVAL_MS = "150";
-const injection = await import(src("core/injection.ts"));
+const injection = await import(src("runtime/engine/injection.ts"));
 
 {
 	process.env.ARCHBOARD_INJECT = "1";
@@ -687,7 +687,7 @@ const injection = await import(src("core/injection.ts"));
 	// write to a thread on this socket, so the canvas could not tell whose was
 	// whose even if it wanted to. It rides on the HUMAN's event instead, as
 	// context for the person's act.
-	const { recordDoing } = await import(src("core/board-doing.ts"));
+	const { recordDoing } = await import(src("runtime/engine/board-doing.ts"));
 	recordDoing("inject-board", {
 		doing: "rerouting orders through the queue",
 		at: new Date().toISOString(),
