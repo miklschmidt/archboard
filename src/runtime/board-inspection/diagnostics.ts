@@ -32,6 +32,14 @@ export interface InspectionWorkDiagnostics {
 	broadPhaseCompatibilityQueries: number;
 	/** Candidate additions and set membership probes performed by compatibility queries. */
 	broadPhaseCompatibilityQuerySteps: number;
+	/** Segment-tree nodes rewritten while exact compatibility buckets change. */
+	broadPhaseExactIndexUpdates: number;
+	/** Exact compatibility tree nodes examined by output-sensitive queries. */
+	broadPhaseExactQuerySteps: number;
+	/** Exact excluded-partition membership probes, including binary summary probes. */
+	broadPhaseExactMembershipTests: number;
+	/** Hierarchy-summary intersections performed while maintaining the exact index. */
+	broadPhaseHierarchySummarySteps: number;
 	broadPhaseCompatibilityTests: number;
 	/** Exact hierarchy ancestor predicates evaluated after indexed pruning. */
 	broadPhaseHierarchyMembershipTests: number;
@@ -51,6 +59,8 @@ export interface InspectionWorkDiagnostics {
 	broadPhasePeakRetainedExclusionRefs: number;
 	broadPhasePeakRetainedIndexRefs: number;
 	broadPhasePeakRetainedQueryRefs: number;
+	broadPhasePeakRetainedExactIndexNodes: number;
+	broadPhasePeakRetainedExactSummaryRefs: number;
 	/** Peak count of every reference retained by the sweep implementation. */
 	broadPhasePeakRetainedTotalStateRefs: number;
 	hierarchyEvents: number;
@@ -101,6 +111,8 @@ export function diagnoseSweepCompatibility(input: {
 	right: readonly SweepDiagnosticInterval[];
 	sameSet: boolean;
 	hierarchyParents?: ReadonlyMap<string, string | null | undefined>;
+	/** Stop after this many emitted pairs to exercise production early-return accounting. */
+	stopAfterPairs?: number;
 }): SweepCompatibilityDiagnostics {
 	const hierarchy = input.hierarchyParents
 		? buildSweepHierarchy(input.hierarchyParents)
@@ -125,6 +137,7 @@ export function diagnoseSweepCompatibility(input: {
 		input.sameSet,
 		(left, right) => {
 			pairs.push([left.value, right.value]);
+			return input.stopAfterPairs === undefined || pairs.length < input.stopAfterPairs;
 		},
 	);
 	return { pairs, work };
@@ -207,6 +220,10 @@ export function inspectBoardDiagnostics(
 			broadPhaseProfileTrieSteps: work.broadPhaseProfileTrieSteps,
 			broadPhaseCompatibilityQueries: work.broadPhaseCompatibilityQueries,
 			broadPhaseCompatibilityQuerySteps: work.broadPhaseCompatibilityQuerySteps,
+			broadPhaseExactIndexUpdates: work.broadPhaseExactIndexUpdates,
+			broadPhaseExactQuerySteps: work.broadPhaseExactQuerySteps,
+			broadPhaseExactMembershipTests: work.broadPhaseExactMembershipTests,
+			broadPhaseHierarchySummarySteps: work.broadPhaseHierarchySummarySteps,
 			broadPhaseCompatibilityTests: work.broadPhaseCompatibilityTests,
 			broadPhaseHierarchyMembershipTests: work.broadPhaseHierarchyMembershipTests,
 			broadPhaseHierarchyPathQueries: work.broadPhaseHierarchyPathQueries,
@@ -221,6 +238,8 @@ export function inspectBoardDiagnostics(
 			broadPhasePeakRetainedExclusionRefs: work.broadPhasePeakRetainedExclusionRefs,
 			broadPhasePeakRetainedIndexRefs: work.broadPhasePeakRetainedIndexRefs,
 			broadPhasePeakRetainedQueryRefs: work.broadPhasePeakRetainedQueryRefs,
+			broadPhasePeakRetainedExactIndexNodes: work.broadPhasePeakRetainedExactIndexNodes,
+			broadPhasePeakRetainedExactSummaryRefs: work.broadPhasePeakRetainedExactSummaryRefs,
 			broadPhasePeakRetainedTotalStateRefs: work.broadPhasePeakRetainedTotalStateRefs,
 			hierarchyEvents: work.hierarchyEvents,
 			hierarchyCandidateVisits: work.hierarchyCandidateVisits,
