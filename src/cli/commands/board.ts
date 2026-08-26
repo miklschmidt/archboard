@@ -9,6 +9,7 @@ import {
 import { repoIdentityAt, repoRootOf } from "../../runtime/engine/git.js";
 import { CliUsageError, defineCommand } from "../command-contract/contract.js";
 import { HoldReportSchema } from "../command-contract/schemas.js";
+import { browserRefusal, commonRefusals, serverRefusal } from "../command-contract/common.js";
 
 const usage = "board needs a subcommand: list, info, new, open, save";
 const tokens = z.array(z.string()).default([]);
@@ -148,7 +149,15 @@ export const BoardListStageSchema = z
 	.array(z.string())
 	.transform((value, context) =>
 		parseStage(value, { repo: "value", here: "flag", text: "flag" }, context),
-	);
+	)
+	.superRefine((stage, context) => {
+		if (stage.flags.here && typeof stage.flags.repo === "string") {
+			context.addIssue({
+				code: "custom",
+				message: "--here and --repo say the same thing twice; pick one.",
+			});
+		}
+	});
 export type BoardListStage = z.infer<typeof BoardListStageSchema>;
 export const BoardListJsonResultSchema = z.looseObject({
 	success: z.literal(true),
@@ -203,23 +212,16 @@ export const boardListContract = defineCommand({
 				id: "text",
 				when: {},
 				mode: "text",
-				held: "stderr-note",
+				held: "none",
 				description: "Human-readable board listing",
-				presentation: ["diagnostics", "result", "held-note"],
+				presentation: ["diagnostics", "result"],
 			},
 		],
 		select: (input) => (input.tokens.includes("--text") ? "text" : "json"),
 	},
 	prerequisites: ["server"],
 	effects: ["local-read", "read"],
-	refusals: [
-		{
-			code: "CANVAS_UNREACHABLE",
-			exit: 3,
-			stream: "stderr",
-			description: "The canvas could not be reached.",
-		},
-	],
+	refusals: [serverRefusal],
 	relationships: [
 		{ method: "GET", path: "/api/boards", cardinality: "one", description: "List boards" },
 	],
@@ -228,8 +230,6 @@ export const boardListContract = defineCommand({
 		const stage = context.parse(BoardListStageSchema, input.tokens);
 		let repo: string | undefined;
 		if (stage.flags.here) {
-			if (typeof stage.flags.repo === "string")
-				throw new CliUsageError("--here and --repo say the same thing twice; pick one.");
 			repo = repoIdentityHere();
 			context.diagnostic(`Standing in ${repo}.`);
 		} else if (typeof stage.flags.repo === "string") repo = stage.flags.repo;
@@ -249,7 +249,7 @@ export const boardListContract = defineCommand({
 		}
 		if (stage.flags.text) return { result: boardListText(result), diagnostics };
 		return {
-			result: {
+			result: BoardListJsonResultSchema.parse({
 				success: true as const,
 				vault: result.vault,
 				...(result.repo ? { repo: result.repo, scanned: result.scanned } : {}),
@@ -257,7 +257,7 @@ export const boardListContract = defineCommand({
 				boards: result.boards,
 				open: result.open,
 				onScreen: result.onScreen,
-			} as BoardListJsonResult,
+			}),
 			diagnostics,
 		};
 	},
@@ -314,15 +314,7 @@ export const boardInfoContract = defineCommand({
 	},
 	prerequisites: ["server", "board"],
 	effects: ["read"],
-	refusals: [
-		{ code: "BOARD_REQUIRED", exit: 2, stream: "stderr", description: "No board was named." },
-		{
-			code: "CANVAS_UNREACHABLE",
-			exit: 3,
-			stream: "stderr",
-			description: "The canvas could not be reached.",
-		},
-	],
+	refusals: commonRefusals,
 	relationships: [
 		{
 			method: "GET",
@@ -343,7 +335,15 @@ export const BoardNewInputSchema = z.object({ tokens });
 export type BoardNewInput = z.infer<typeof BoardNewInputSchema>;
 export const BoardNewStageSchema = z
 	.array(z.string())
-	.transform((value, context) => parseStage(value, addressSpecs, context));
+	.transform((value, context) => parseStage(value, addressSpecs, context))
+	.transform((stage, context) => {
+		const name = stage.positionals[0];
+		if (!name) {
+			context.addIssue({ code: "custom", message: "board new needs a name" });
+			return z.NEVER;
+		}
+		return { name, flags: stage.flags };
+	});
 export type BoardNewStage = z.infer<typeof BoardNewStageSchema>;
 export const BoardNewResultSchema = BoardCommandResultSchema;
 export type BoardNewResult = z.infer<typeof BoardNewResultSchema>;
@@ -389,15 +389,8 @@ export const boardNewContract = defineCommand({
 		select: () => "json",
 	},
 	prerequisites: ["server"],
-	effects: ["write"],
-	refusals: [
-		{
-			code: "CANVAS_UNREACHABLE",
-			exit: 3,
-			stream: "stderr",
-			description: "The canvas could not be reached.",
-		},
-	],
+	effects: ["server-state-write", "browser"],
+	refusals: [serverRefusal, browserRefusal],
 	relationships: [
 		{
 			method: "POST",
@@ -409,10 +402,8 @@ export const boardNewContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "board new");
 		const stage = context.parse(BoardNewStageSchema, input.tokens);
-		const name = stage.positionals[0];
-		if (!name) throw new CliUsageError("board new needs a name");
 		const result = await newBoard({
-			board: name,
+			board: stage.name,
 			...(typeof stage.flags.variant === "string" ? { variant: stage.flags.variant } : {}),
 			...(typeof stage.flags.level === "string" ? { level: stage.flags.level } : {}),
 			...(typeof stage.flags.pane === "string" ? { pane: stage.flags.pane } : {}),
@@ -430,7 +421,15 @@ export const BoardOpenInputSchema = z.object({ tokens });
 export type BoardOpenInput = z.infer<typeof BoardOpenInputSchema>;
 export const BoardOpenStageSchema = z
 	.array(z.string())
-	.transform((value, context) => parseStage(value, { ...addressSpecs, reload: "flag" }, context));
+	.transform((value, context) => parseStage(value, { ...addressSpecs, reload: "flag" }, context))
+	.transform((stage, context) => {
+		const name = stage.positionals[0];
+		if (!name) {
+			context.addIssue({ code: "custom", message: "board open needs a board name" });
+			return z.NEVER;
+		}
+		return { name, flags: stage.flags };
+	});
 export type BoardOpenStage = z.infer<typeof BoardOpenStageSchema>;
 export const BoardOpenResultSchema = BoardCommandResultSchema;
 export type BoardOpenResult = z.infer<typeof BoardOpenResultSchema>;
@@ -477,24 +476,15 @@ export const boardOpenContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read", "browser"],
-	refusals: [
-		{
-			code: "CANVAS_UNREACHABLE",
-			exit: 3,
-			stream: "stderr",
-			description: "The canvas could not be reached.",
-		},
-	],
+	refusals: [serverRefusal, browserRefusal],
 	relationships: [
 		{ method: "POST", path: "/api/boards/open", cardinality: "one", description: "Open the board" },
 	],
 	async handler(input, context) {
 		await context.require("server", "board open");
 		const stage = context.parse(BoardOpenStageSchema, input.tokens);
-		const name = stage.positionals[0];
-		if (!name) throw new CliUsageError("board open needs a board name");
 		const result = await openBoard({
-			board: name,
+			board: stage.name,
 			...(typeof stage.flags.variant === "string" ? { variant: stage.flags.variant } : {}),
 			...(typeof stage.flags.level === "string" ? { level: stage.flags.level } : {}),
 			...(stage.flags.reload ? { reload: true } : {}),

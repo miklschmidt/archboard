@@ -1,0 +1,107 @@
+{
+	"schemaVersion": 1,
+	"fixedBase": "6c42fca6c0d5b9ecaa5ad40fde14ede684722d5a",
+	"held": { "board": "held", "message": "held board diagnostic", "writes": 1 },
+	"cases": [
+		{
+			"name": "selection-text",
+			"path": "selection",
+			"outputCase": "text",
+			"result": "fixed text",
+			"stdout": "fixed text\n",
+			"stderr": "",
+			"events": ["stdout:fixed text\n"]
+		},
+		{
+			"name": "panes-text",
+			"path": "panes",
+			"outputCase": "text",
+			"result": "fixed text",
+			"stdout": "fixed text\n",
+			"stderr": "",
+			"events": ["stdout:fixed text\n"]
+		},
+		{
+			"name": "promote-text",
+			"path": "promote",
+			"outputCase": "text",
+			"result": "fixed text",
+			"stdout": "fixed text\n",
+			"stderr": "",
+			"events": ["stdout:fixed text\n"]
+		},
+		{
+			"name": "demote-text",
+			"path": "demote",
+			"outputCase": "text",
+			"result": "fixed text",
+			"stdout": "fixed text\n",
+			"stderr": "",
+			"events": ["stdout:fixed text\n"]
+		},
+		{
+			"name": "board-list-text",
+			"path": "board list",
+			"outputCase": "text",
+			"result": "fixed text",
+			"stdout": "fixed text\n",
+			"stderr": "",
+			"events": ["stdout:fixed text\n"]
+		},
+		{
+			"name": "changes-text",
+			"path": "changes",
+			"outputCase": "text",
+			"result": "fixed text",
+			"stdout": "fixed text\n",
+			"stderr": "",
+			"events": ["stdout:fixed text\n"]
+		},
+		{
+			"name": "describe-text",
+			"path": "describe",
+			"outputCase": "text",
+			"result": "fixed text",
+			"stdout": "fixed text\n",
+			"stderr": "",
+			"events": ["stdout:fixed text\n"]
+		},
+		{
+			"name": "library-list-text",
+			"path": "library list",
+			"outputCase": "text",
+			"result": "fixed text",
+			"stdout": "fixed text\n",
+			"stderr": "",
+			"events": ["stdout:fixed text\n"]
+		},
+		{
+			"name": "screenshot-raw-svg",
+			"path": "screenshot",
+			"outputCase": "raw-svg",
+			"result": "<svg/>",
+			"stdout": "<svg/>\n",
+			"stderr": "",
+			"events": ["stdout:<svg/>\n"]
+		},
+		{
+			"name": "screenshot-file",
+			"path": "screenshot",
+			"outputCase": "file",
+			"result": { "success": true, "file": "{{ARTIFACT}}", "format": "svg" },
+			"artifact": { "path": "{{ARTIFACT}}", "content": "<svg/>", "encoding": "utf8" },
+			"stdout": "{\n  \"success\": true,\n  \"file\": \"{{ARTIFACT}}\",\n  \"format\": \"svg\",\n  \"held\": {\n    \"board\": \"held\",\n    \"message\": \"held board diagnostic\",\n    \"writes\": 1\n  }\n}\n",
+			"stderr": "held board diagnostic\n",
+			"events": ["artifact:utf8:<svg/>", "stdout:{{STDOUT}}", "stderr:held board diagnostic\n"]
+		},
+		{
+			"name": "share-json",
+			"path": "share",
+			"outputCase": "json",
+			"result": { "success": true, "url": "https://example.invalid/#json=fixture" },
+			"stdout": "{\n  \"success\": true,\n  \"url\": \"https://example.invalid/#json=fixture\",\n  \"held\": {\n    \"board\": \"held\",\n    \"message\": \"held board diagnostic\",\n    \"writes\": 1\n  }\n}\n",
+			"stderr": "held board diagnostic\n",
+			"events": ["stdout:{{STDOUT}}", "stderr:held board diagnostic\n"]
+		}
+	]
+}

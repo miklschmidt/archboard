@@ -1,12 +1,7 @@
 import { z } from "zod";
 import { updateElementStrict } from "../../runtime/engine/canvas-client.js";
 import { defineCommand, type CommandContext } from "./contract.js";
-import {
-	BoardFingerprintSchema,
-	HoldReportSchema,
-	ServerElementSchema,
-	type ServerElementResult as PublicElement,
-} from "./schemas.js";
+import { BoardFingerprintSchema, HoldReportSchema, ServerElementSchema } from "./schemas.js";
 import { commonRefusals, tail, WRITE_ANSWER } from "./lib/common.js";
 
 export const UpdateInputSchema = z.object({
@@ -191,13 +186,13 @@ export const updateContract = defineCommand({
 			input.document ? { document: true } : {},
 		);
 		return {
-			result: {
+			result: UpdateResultSchema.parse({
 				success: true as const,
-				element: response.element as unknown as PublicElement,
-				elements: (response.elements ?? []) as unknown as PublicElement[],
-				fingerprint: response.fingerprint!,
-				...(response.document ? { document: response.document as unknown as PublicElement[] } : {}),
-			},
+				element: response.element,
+				elements: response.elements ?? [],
+				fingerprint: response.fingerprint,
+				...(response.document ? { document: response.document } : {}),
+			}),
 		};
 	},
 });

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { compareBoardsOnCanvas } from "../../runtime/engine/canvas-client.js";
-import { CliUsageError, defineCommand } from "../command-contract/contract.js";
+import { defineCommand } from "../command-contract/contract.js";
 import { BoardAddressSchema, HoldReportSchema } from "../command-contract/schemas.js";
 
 export const CompareInputSchema = z.object({
@@ -11,6 +11,33 @@ export const CompareInputSchema = z.object({
 	tail: z.array(z.string()).default([]),
 });
 export type CompareInput = z.infer<typeof CompareInputSchema>;
+export const CompareRequestStageSchema = z
+	.object({
+		fromOption: z.string().optional(),
+		toOption: z.string().optional(),
+		from: z.string().optional(),
+		to: z.string().optional(),
+		tail: z.array(z.string()),
+	})
+	.transform((input, context) => {
+		const from = input.fromOption ?? input.from;
+		if (!from) {
+			context.addIssue({
+				code: "custom",
+				message: "compare needs a board: `compare payments payments@option-a`",
+			});
+			return z.NEVER;
+		}
+		if (input.tail.length) {
+			context.addIssue({
+				code: "custom",
+				message: "compare takes two boards; pass them one at a time",
+			});
+			return z.NEVER;
+		}
+		return { from, to: input.toOption ?? input.to };
+	});
+export type CompareRequestStage = z.infer<typeof CompareRequestStageSchema>;
 const CompareSideSchema = z.looseObject({
 	board: z.string(),
 	identity: BoardAddressSchema,
@@ -91,7 +118,18 @@ export const compareContract = defineCommand({
 			description: "Unexpected extra board arguments",
 		},
 	],
-	input: { ingress: CompareInputSchema },
+	input: {
+		ingress: CompareInputSchema,
+		stages: [
+			{
+				name: "board-pair",
+				when: "before-server",
+				description: "Required source board and optional comparison target",
+				rules: ["Options override positionals", "Reject more than two positional boards"],
+				schema: CompareRequestStageSchema,
+			},
+		],
+	},
 	result: CompareResultSchema,
 	output: {
 		cases: [
@@ -125,16 +163,14 @@ export const compareContract = defineCommand({
 		},
 	],
 	async handler(input, context) {
-		const from = input.fromOption ?? input.from;
-		const to = input.toOption ?? input.to;
-		if (!from)
-			throw new CliUsageError("compare needs a board: `compare payments payments@option-a`");
-		if (input.tail.length)
-			throw new CliUsageError("compare takes two boards; pass them one at a time");
+		const request = context.parse(CompareRequestStageSchema, input);
 		await context.require("server", "compare");
 		return {
 			result: CompareResultSchema.parse(
-				await compareBoardsOnCanvas({ from, ...(to ? { to } : {}) }),
+				await compareBoardsOnCanvas({
+					from: request.from,
+					...(request.to ? { to: request.to } : {}),
+				}),
 			),
 		};
 	},

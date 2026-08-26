@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { getElements, searchElements } from "../../runtime/engine/canvas-client.js";
 import { defineCommand } from "./contract.js";
-import { ServerElementSchema, type ServerElementResult as PublicElement } from "./schemas.js";
+import { ServerElementSchema } from "./schemas.js";
 import { commonRefusals, tail } from "./lib/common.js";
 
 export const QueryInputSchema = z.object({
@@ -177,7 +177,8 @@ export const queryContract = defineCommand({
 			const { key, raw, coerced } = context.parse(filterPairSchema, value);
 			predicates.push((element) => {
 				const actual = lookupPath(element, key);
-				if (Array.isArray(actual)) return actual.includes(raw) || actual.includes(coerced as never);
+				if (Array.isArray(actual))
+					return actual.some((candidate) => candidate === raw || candidate === coerced);
 				return actual === raw || actual === coerced;
 			});
 		}
@@ -187,12 +188,14 @@ export const queryContract = defineCommand({
 			)) {
 				predicates.push((element) => {
 					const actual = lookupPath(element, key);
-					return Array.isArray(actual) ? actual.includes(expected as never) : actual === expected;
+					return Array.isArray(actual)
+						? actual.some((candidate) => candidate === expected)
+						: actual === expected;
 				});
 			}
 		}
 		if (predicates.length > 0)
 			results = results.filter((element) => predicates.every((test) => test(element)));
-		return { result: results as unknown as PublicElement[] };
+		return { result: QueryResultSchema.parse(results) };
 	},
 });

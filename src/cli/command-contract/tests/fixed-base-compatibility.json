@@ -366,6 +366,31 @@
 			"restEffects": ["GET /api/elements"],
 			"localEffects": [],
 			"artifactCommits": []
+		},
+		{
+			"name": "inject-unknown-option-shaped-subcommand",
+			"fixture": "mock-server",
+			"argv": ["inject", "--wat"],
+			"normalizations": [],
+			"stdout": "",
+			"stderr": "Error: unknown inject subcommand \"--wat\" — try `inject status` or `inject test`\nUsage: archboard inject status | inject test [--note \"...\"] [--loud]\n\n  Board changes reach a running Codex thread through the app-server control socket, quietly:\n  `thread/inject_items` appends to the thread's history without starting a turn, so the agent\n  sees the change next time it speaks and nothing is interrupted.\n\n  OFF unless the canvas server was started with ARCHBOARD_INJECT=1, and off regardless when the\n  canvas is bound to anything but loopback — anything that can reach the canvas could otherwise\n  drive the coding agent (ADR 0005). Both are decided at server start; there is nothing to turn\n  on from here. `status` says which of those applies, and which thread would be told.\n\n  `test` injects a message that says it is a test, for checking the wiring without touching a\n  board. --loud sends it through `turn/steer` instead, for that one probe.\n",
+			"mergedEvents": [
+				{
+					"kind": "stderr-bytes",
+					"value": "Error: unknown inject subcommand \"--wat\" — try `inject status` or `inject test`\n"
+				},
+				{
+					"kind": "stderr-bytes",
+					"value": "Usage: archboard inject status | inject test [--note \"...\"] [--loud]\n\n  Board changes reach a running Codex thread through the app-server control socket, quietly:\n  `thread/inject_items` appends to the thread's history without starting a turn, so the agent\n  sees the change next time it speaks and nothing is interrupted.\n\n  OFF unless the canvas server was started with ARCHBOARD_INJECT=1, and off regardless when the\n  canvas is bound to anything but loopback — anything that can reach the canvas could otherwise\n  drive the coding agent (ADR 0005). Both are decided at server start; there is nothing to turn\n  on from here. `status` says which of those applies, and which thread would be told.\n\n  `test` injects a message that says it is a test, for checking the wiring without touching a\n  board. --loud sends it through `turn/steer` instead, for that one probe.\n"
+				},
+				{ "kind": "exit", "value": 2 }
+			],
+			"exit": 2,
+			"heldState": null,
+			"prerequisiteContacts": [],
+			"restEffects": [],
+			"localEffects": [],
+			"artifactCommits": []
 		}
 	]
 }

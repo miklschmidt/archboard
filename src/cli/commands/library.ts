@@ -7,28 +7,9 @@ import {
 } from "../../runtime/engine/library-catalogue.js";
 import { CliUsageError, defineCommand } from "../command-contract/contract.js";
 import { HoldReportSchema, ServerElementSchema } from "../command-contract/schemas.js";
+import { boardWriteRefusals, serverRefusal } from "../command-contract/common.js";
 
 const tail = z.array(z.string()).default([]);
-const refusals = [
-	{
-		code: "BOARD_REQUIRED",
-		exit: 2,
-		stream: "stderr" as const,
-		description: "No board was named.",
-	},
-	{
-		code: "CANVAS_UNREACHABLE",
-		exit: 3,
-		stream: "stderr" as const,
-		description: "The canvas could not be reached.",
-	},
-	{
-		code: "BOARD_CONFLICT",
-		exit: 5,
-		stream: "stderr" as const,
-		description: "The board write was refused.",
-	},
-];
 
 export const LibraryNamespaceInputSchema = z.object({ tail });
 export type LibraryNamespaceInput = z.infer<typeof LibraryNamespaceInputSchema>;
@@ -130,16 +111,16 @@ export const libraryListContract = defineCommand({
 				id: "text",
 				when: { key: "text", present: true },
 				mode: "text",
-				held: "stderr-note",
+				held: "none",
 				description: "Human-readable catalogue",
-				presentation: ["result", "held-note"],
+				presentation: ["result"],
 			},
 		],
 		select: (input) => (input.text ? "text" : "json"),
 	},
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: refusals.slice(0, 2),
+	refusals: [serverRefusal],
 	relationships: [
 		{ method: "GET", path: "/api/library", cardinality: "one", description: "Read the catalogue" },
 	],
@@ -159,6 +140,39 @@ export const LibraryInsertInputSchema = z.object({
 	tail,
 });
 export type LibraryInsertInput = z.infer<typeof LibraryInsertInputSchema>;
+export const LibraryInsertStageSchema = z
+	.object({
+		name: z.string().optional(),
+		x: z.string().optional(),
+		y: z.string().optional(),
+		source: z.string().optional(),
+		id: z.string().optional(),
+	})
+	.transform((input, context) => {
+		if (!input.name && !input.id) {
+			context.addIssue({
+				code: "custom",
+				message:
+					"Usage: library insert <name> --x <x> --y <y> [--source <file>] (or --id <libraryItemId> instead of a name)",
+			});
+			return z.NEVER;
+		}
+		if (input.x === undefined || input.y === undefined) {
+			context.addIssue({
+				code: "custom",
+				message: "library insert requires --x <number> --y <number>",
+			});
+			return z.NEVER;
+		}
+		const x = Number(input.x);
+		const y = Number(input.y);
+		if (!Number.isFinite(x) || !Number.isFinite(y)) {
+			context.addIssue({ code: "custom", message: "--x and --y must be numbers" });
+			return z.NEVER;
+		}
+		return { name: input.name, source: input.source, itemId: input.id, x, y };
+	});
+export type LibraryInsertStage = z.infer<typeof LibraryInsertStageSchema>;
 export const LibraryInsertResultSchema = z.looseObject({
 	success: z.literal(true),
 	name: z.string().nullable(),
@@ -217,7 +231,21 @@ export const libraryInsertContract = defineCommand({
 			description: "Legacy ignored positional content",
 		},
 	],
-	input: { ingress: LibraryInsertInputSchema },
+	input: {
+		ingress: LibraryInsertInputSchema,
+		stages: [
+			{
+				name: "insert-request",
+				when: "before-server",
+				description: "Stencil selector and finite insertion coordinates",
+				rules: [
+					"Require either a stencil name or item id",
+					"Require x and y and coerce both to finite numbers",
+				],
+				schema: LibraryInsertStageSchema,
+			},
+		],
+	},
 	result: LibraryInsertResultSchema,
 	output: {
 		cases: [
@@ -234,7 +262,7 @@ export const libraryInsertContract = defineCommand({
 	},
 	prerequisites: ["server", "board", "doing"],
 	effects: ["read", "write"],
-	refusals,
+	refusals: boardWriteRefusals,
 	relationships: [
 		{ method: "GET", path: "/api/library", cardinality: "one", description: "Read the catalogue" },
 		{
@@ -245,26 +273,13 @@ export const libraryInsertContract = defineCommand({
 		},
 	],
 	async handler(input, context) {
-		if (!input.name && !input.id)
-			throw new CliUsageError(
-				"Usage: library insert <name> --x <x> --y <y> [--source <file>] (or --id <libraryItemId> instead of a name)",
-			);
-		if (input.x === undefined || input.y === undefined)
-			throw new CliUsageError("library insert requires --x <number> --y <number>");
-		const x = Number(input.x),
-			y = Number(input.y);
-		if (!Number.isFinite(x) || !Number.isFinite(y))
-			throw new CliUsageError("--x and --y must be numbers");
+		const request = context.parse(LibraryInsertStageSchema, input);
 		await context.require("server", "library insert");
 		try {
 			return {
 				result: LibraryInsertResultSchema.parse(
 					await insertStencil({
-						name: input.name,
-						source: input.source,
-						itemId: input.id,
-						x,
-						y,
+						...request,
 					}),
 				),
 			};

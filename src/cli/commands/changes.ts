@@ -1,10 +1,25 @@
 import { z } from "zod";
 import { getChanges, type ChangeFeedResponse } from "../../runtime/engine/canvas-client.js";
-import { CliUsageError, defineCommand } from "../command-contract/contract.js";
+import { defineCommand } from "../command-contract/contract.js";
 import { HoldReportSchema } from "../command-contract/schemas.js";
+import { commonRefusals } from "../command-contract/common.js";
 
+export const ChangesCursorInputSchema = z
+	.string()
+	.optional()
+	.transform((value, context) => {
+		const cursor = value === undefined ? 0 : Number(value);
+		if (!Number.isFinite(cursor) || cursor < 0) {
+			context.addIssue({
+				code: "custom",
+				message: "--since takes a cursor from a previous `changes` response",
+			});
+			return z.NEVER;
+		}
+		return cursor;
+	});
 export const ChangesInputSchema = z.object({
-	since: z.string().optional(),
+	since: ChangesCursorInputSchema,
 	coalesce: z.boolean().default(false),
 	detail: z.boolean().default(false),
 	text: z.boolean().default(false),
@@ -107,24 +122,16 @@ export const changesContract = defineCommand({
 				id: "text",
 				when: { key: "text", present: true },
 				mode: "text",
-				held: "stderr-note",
+				held: "none",
 				description: "Human-readable change feed",
-				presentation: ["result", "held-note"],
+				presentation: ["result"],
 			},
 		],
 		select: (input) => (input.text ? "text" : "json"),
 	},
 	prerequisites: ["server", "board"],
 	effects: ["read"],
-	refusals: [
-		{ code: "BOARD_REQUIRED", exit: 2, stream: "stderr", description: "No board was named." },
-		{
-			code: "CANVAS_UNREACHABLE",
-			exit: 3,
-			stream: "stderr",
-			description: "The canvas could not be reached.",
-		},
-	],
+	refusals: commonRefusals,
 	relationships: [
 		{
 			method: "GET",
@@ -134,13 +141,16 @@ export const changesContract = defineCommand({
 		},
 	],
 	async handler(input, context) {
-		const since = input.since === undefined ? 0 : Number(input.since);
-		if (!Number.isFinite(since) || since < 0)
-			throw new CliUsageError("--since takes a cursor from a previous `changes` response");
 		await context.require("server", "changes");
-		const report = await getChanges({ since, coalesce: input.coalesce, detail: input.detail });
+		const report = await getChanges({
+			since: input.since,
+			coalesce: input.coalesce,
+			detail: input.detail,
+		});
 		return {
-			result: input.text ? textReport(report, input.coalesce) : (report as ChangesJsonResult),
+			result: input.text
+				? textReport(report, input.coalesce)
+				: ChangesJsonResultSchema.parse(report),
 		};
 	},
 });

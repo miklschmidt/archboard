@@ -13,6 +13,7 @@ import {
 	type OptionParameter,
 } from "../command-contract/contract.js";
 import { HoldReportSchema, ServerElementSchema } from "../command-contract/schemas.js";
+import { boardWriteRefusals, commonRefusals } from "../command-contract/common.js";
 import type { FlagSpecs } from "../command-contract/route-options.js";
 
 export const SNAPSHOT_FLAG_SPEC = { force: { takesValue: false } } as const satisfies FlagSpecs;
@@ -25,26 +26,6 @@ const snapshotFlagParameters = (): OptionParameter[] =>
 		description: `${name} option`,
 	}));
 const tail = z.array(z.string()).default([]);
-const refusals = [
-	{
-		code: "BOARD_REQUIRED",
-		exit: 2,
-		stream: "stderr" as const,
-		description: "No board was named.",
-	},
-	{
-		code: "CANVAS_UNREACHABLE",
-		exit: 3,
-		stream: "stderr" as const,
-		description: "The canvas could not be reached.",
-	},
-	{
-		code: "BOARD_CONFLICT",
-		exit: 5,
-		stream: "stderr" as const,
-		description: "The board write was refused.",
-	},
-];
 
 export const SnapshotNamespaceInputSchema = z.object({
 	force: z.boolean().default(false),
@@ -95,6 +76,10 @@ export const SnapshotSaveInputSchema = z.object({
 	tail,
 });
 export type SnapshotSaveInput = z.infer<typeof SnapshotSaveInputSchema>;
+export const SnapshotSaveStageSchema = z.object({
+	name: z.string({ error: "Usage: snapshot save <name>" }).min(1),
+});
+export type SnapshotSaveStage = z.infer<typeof SnapshotSaveStageSchema>;
 export const SnapshotSaveResultSchema = z.object({
 	success: z.literal(true),
 	name: z.string(),
@@ -121,7 +106,18 @@ export const snapshotSaveContract = defineCommand({
 			description: "Legacy ignored positional content",
 		},
 	],
-	input: { ingress: SnapshotSaveInputSchema },
+	input: {
+		ingress: SnapshotSaveInputSchema,
+		stages: [
+			{
+				name: "snapshot-name",
+				when: "after-server",
+				description: "Required snapshot name after the canvas contact",
+				rules: ["Require one non-empty snapshot name"],
+				schema: SnapshotSaveStageSchema,
+			},
+		],
+	},
 	result: SnapshotSaveResultSchema,
 	output: {
 		cases: [
@@ -136,9 +132,9 @@ export const snapshotSaveContract = defineCommand({
 		],
 		select: () => "json",
 	},
-	prerequisites: ["server", "board", "doing"],
-	effects: ["write"],
-	refusals,
+	prerequisites: ["server", "board"],
+	effects: ["server-state-write"],
+	refusals: commonRefusals,
 	relationships: [
 		{
 			method: "POST",
@@ -149,12 +145,12 @@ export const snapshotSaveContract = defineCommand({
 	],
 	async handler(input, context) {
 		await context.require("server", "snapshot save");
-		if (!input.name) throw new CliUsageError("Usage: snapshot save <name>");
-		const result = await saveSnapshot(input.name);
+		const request = context.parse(SnapshotSaveStageSchema, input);
+		const result = await saveSnapshot(request.name);
 		return {
 			result: {
 				success: true as const,
-				name: input.name,
+				name: request.name,
 				elements: result.elementCount,
 				createdAt: result.createdAt,
 			},
@@ -206,14 +202,14 @@ export const snapshotListContract = defineCommand({
 	},
 	prerequisites: ["server", "board"],
 	effects: ["read"],
-	refusals: refusals.slice(0, 2),
+	refusals: commonRefusals,
 	relationships: [
 		{ method: "GET", path: "/api/snapshots", cardinality: "one", description: "List snapshots" },
 	],
 	async handler(_input, context) {
 		await context.require("server", "snapshot list");
 		const result = await listSnapshots();
-		return { result: (result.snapshots ?? []) as SnapshotListResult };
+		return { result: SnapshotListResultSchema.parse(result.snapshots ?? []) };
 	},
 });
 
@@ -223,6 +219,11 @@ export const SnapshotRestoreInputSchema = z.object({
 	tail,
 });
 export type SnapshotRestoreInput = z.infer<typeof SnapshotRestoreInputSchema>;
+export const SnapshotRestoreRequestStageSchema = z.object({
+	name: z.string({ error: "Usage: snapshot restore <name>" }).min(1),
+	force: z.boolean(),
+});
+export type SnapshotRestoreRequestStage = z.infer<typeof SnapshotRestoreRequestStageSchema>;
 export const SnapshotRestoreResultSchema = z.object({
 	success: z.literal(true),
 	name: z.string(),
@@ -255,6 +256,13 @@ export const snapshotRestoreContract = defineCommand({
 		ingress: SnapshotRestoreInputSchema,
 		stages: [
 			{
+				name: "snapshot-request",
+				when: "after-server",
+				description: "Required snapshot name and force decision after the canvas contact",
+				rules: ["Require one non-empty snapshot name", "Preserve explicit force"],
+				schema: SnapshotRestoreRequestStageSchema,
+			},
+			{
 				name: "snapshot-document",
 				when: "after-read",
 				description: "Server snapshot elements restored as one batch after clear",
@@ -278,7 +286,7 @@ export const snapshotRestoreContract = defineCommand({
 	},
 	prerequisites: ["server", "board", "doing"],
 	effects: ["read", "write"],
-	refusals,
+	refusals: boardWriteRefusals,
 	relationships: [
 		{
 			method: "GET",
@@ -307,24 +315,24 @@ export const snapshotRestoreContract = defineCommand({
 	],
 	async handler(input, context) {
 		await context.require("server", "snapshot restore");
-		if (!input.name) throw new CliUsageError("Usage: snapshot restore <name>");
+		const request = context.parse(SnapshotRestoreRequestStageSchema, input);
 		let snap;
 		try {
-			snap = await getSnapshot(input.name);
+			snap = await getSnapshot(request.name);
 		} catch {
-			throw new Error(`Snapshot "${input.name}" not found`);
+			throw new Error(`Snapshot "${request.name}" not found`);
 		}
 		const current = await getBoardInfo();
-		if (snap.board && snap.board !== current.board && !input.force)
+		if (snap.board && snap.board !== current.board && !request.force)
 			throw new Error(
-				`Snapshot "${input.name}" was taken on board "${snap.board}", but you named "${current.board}". Restoring would replace "${current.board}" with it. Pass --board ${snap.board} to put it back where it came from, or --force to overwrite this one.`,
+				`Snapshot "${request.name}" was taken on board "${snap.board}", but you named "${current.board}". Restoring would replace "${current.board}" with it. Pass --board ${snap.board} to put it back where it came from, or --force to overwrite this one.`,
 			);
 		await clearCanvas();
 		await batchCreateElementsStrict(snap.elements);
 		return {
 			result: {
 				success: true as const,
-				name: input.name,
+				name: request.name,
 				board: current.board,
 				restored: snap.elements.length,
 			},

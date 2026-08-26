@@ -18,21 +18,17 @@ import {
 	resolveBinding,
 	validateNodeId,
 } from "../../runtime/engine/promote.js";
-import { CliUsageError, defineCommand } from "../command-contract/contract.js";
+import { defineCommand } from "../command-contract/contract.js";
 import { HoldReportSchema } from "../command-contract/schemas.js";
+import { boardWriteRefusals } from "../command-contract/common.js";
 
 async function targetElements(
-	idsFlag: string | undefined,
+	ids: string[] | undefined,
 	board: ServerElement[],
 	verb: string,
 ): Promise<ServerElement[]> {
 	const byId = new Map(board.map((element) => [element.id, element]));
-	if (idsFlag !== undefined) {
-		const ids = idsFlag
-			.split(",")
-			.map((id) => id.trim())
-			.filter(Boolean);
-		if (!ids.length) throw new CliUsageError("--ids was empty");
+	if (ids !== undefined) {
 		const missing = ids.filter((id) => !byId.has(id));
 		if (missing.length) throw new Error(`No element on the canvas with id ${missing.join(", ")}`);
 		return ids.map((id) => byId.get(id)!);
@@ -78,26 +74,6 @@ const commonParameters = [
 		description: "Legacy ignored positional content",
 	},
 ];
-const refusals = [
-	{
-		code: "BOARD_REQUIRED",
-		exit: 2,
-		stream: "stderr" as const,
-		description: "No board was named.",
-	},
-	{
-		code: "CANVAS_UNREACHABLE",
-		exit: 3,
-		stream: "stderr" as const,
-		description: "The canvas could not be reached.",
-	},
-	{
-		code: "BOARD_CONFLICT",
-		exit: 5,
-		stream: "stderr" as const,
-		description: "The write was refused.",
-	},
-];
 const output = {
 	cases: [
 		{
@@ -112,9 +88,9 @@ const output = {
 			id: "text",
 			when: { key: "text", present: true },
 			mode: "text" as const,
-			held: "stderr-note" as const,
+			held: "none" as const,
 			description: "Promotion summary",
-			presentation: ["result", "held-note"] as const,
+			presentation: ["result"] as const,
 		},
 	] as const,
 	select: (input: { text: boolean }) => (input.text ? "text" : "json"),
@@ -136,10 +112,81 @@ export const PromoteInputSchema = z.object({
 	tail,
 });
 export type PromoteInput = z.infer<typeof PromoteInputSchema>;
+export const PromotionDeclarationStageSchema = PromoteInputSchema.transform((input, context) => {
+	if (!input.kind) {
+		context.addIssue({
+			code: "custom",
+			message: `--kind is required (one of: ${KINDS.join(", ")})`,
+		});
+		return z.NEVER;
+	}
+	try {
+		return {
+			...input,
+			kind: normalizeKind(input.kind),
+			nodeId: input.node ? validateNodeId(input.node) : undefined,
+		};
+	} catch (error) {
+		context.addIssue({ code: "custom", message: (error as Error).message });
+		return z.NEVER;
+	}
+});
+export type PromotionDeclarationStage = z.infer<typeof PromotionDeclarationStageSchema>;
+export const PromotionIdsStageSchema = z.string().transform((value, context) => {
+	const ids = value
+		.split(",")
+		.map((id) => id.trim())
+		.filter(Boolean);
+	if (!ids.length) {
+		context.addIssue({ code: "custom", message: "--ids was empty" });
+		return z.NEVER;
+	}
+	return ids;
+});
+export type PromotionIdsStage = z.infer<typeof PromotionIdsStageSchema>;
+export const PromotionBindingStageSchema = z
+	.object({
+		path: z.string().optional(),
+		repo: z.string().optional(),
+		branch: z.string().optional(),
+		commit: z.string().optional(),
+	})
+	.superRefine((input, context) => {
+		if (!input.path && (input.repo || input.branch || input.commit)) {
+			context.addIssue({
+				code: "custom",
+				message: "--repo/--branch/--commit describe a binding; give --path too.",
+			});
+		}
+	});
+export type PromotionBindingStage = z.infer<typeof PromotionBindingStageSchema>;
+const PromotionNodeSchema = z.object({
+	node: z.string(),
+	kind: z.enum(KINDS),
+	name: z.string(),
+	elementIds: z.array(z.string()),
+	binding: z
+		.looseObject({
+			repo: z.string().optional(),
+			path: z.string(),
+			branch: z.string().optional(),
+			commit: z.string().optional(),
+			confirmedAt: z.string().optional(),
+		})
+		.optional(),
+	link: z.string().optional(),
+	variant: z.string(),
+	level: z.string().optional(),
+});
+const DemotionNodeSchema = z.object({
+	node: z.string().optional(),
+	name: z.string().optional(),
+	elementIds: z.array(z.string()),
+});
 export const PromoteJsonResultSchema = z.looseObject({
 	success: z.literal(true),
 	summary: z.string(),
-	nodes: z.array(z.unknown()),
+	nodes: z.array(PromotionNodeSchema),
 	elementsUpdated: z.number().int().nonnegative(),
 	held: HoldReportSchema.optional(),
 });
@@ -225,12 +272,34 @@ export const promoteContract = defineCommand({
 		},
 		...commonParameters,
 	],
-	input: { ingress: PromoteInputSchema },
+	input: {
+		ingress: PromoteInputSchema,
+		stages: [
+			{
+				name: "node-declaration",
+				when: "before-server",
+				description: "Required normalized architecture kind and validated node id",
+				schema: PromotionDeclarationStageSchema,
+			},
+			{
+				name: "target-ids",
+				when: "after-read",
+				description: "Non-empty comma-separated target ids",
+				schema: PromotionIdsStageSchema,
+			},
+			{
+				name: "binding-options",
+				when: "after-read",
+				description: "Repository binding options require a path",
+				schema: PromotionBindingStageSchema,
+			},
+		],
+	},
 	result: PromoteResultSchema,
 	output,
 	prerequisites: ["server", "board", "doing"],
 	effects: ["local-read", "read", "write"],
-	refusals,
+	refusals: boardWriteRefusals,
 	relationships: [
 		{ method: "GET", path: "/api/elements", cardinality: "one", description: "Read the board" },
 		{
@@ -253,12 +322,12 @@ export const promoteContract = defineCommand({
 		},
 	],
 	async handler(input, context) {
-		if (!input.kind) throw new CliUsageError(`--kind is required (one of: ${KINDS.join(", ")})`);
-		const kind = normalizeKind(input.kind);
-		const nodeId = input.node ? validateNodeId(input.node) : undefined;
+		const declaration = context.parse(PromotionDeclarationStageSchema, input);
 		await context.require("server", "promote");
 		const board = await getElements();
-		const targets = await targetElements(input.ids, board, "promote");
+		const ids = input.ids ? context.parse(PromotionIdsStageSchema, input.ids) : undefined;
+		const targets = await targetElements(ids, board, "promote");
+		context.parse(PromotionBindingStageSchema, input);
 		const binding = input.path
 			? resolveBinding(
 					{
@@ -270,16 +339,14 @@ export const promoteContract = defineCommand({
 					{ kind: "cwd", dir: process.cwd() },
 				)
 			: undefined;
-		if (!binding && (input.repo || input.branch || input.commit))
-			throw new CliUsageError("--repo/--branch/--commit describe a binding; give --path too.");
 		const identity = await getBoardInfo();
 		const plan = planPromotion({
 			targets,
 			board,
-			kind,
+			kind: declaration.kind,
 			boardVariant: identity.identity.variant,
 			...(input.name ? { name: input.name } : {}),
-			...(nodeId ? { nodeId } : {}),
+			...(declaration.nodeId ? { nodeId: declaration.nodeId } : {}),
 			...(binding ? { binding } : {}),
 			...(input.variant ? { variant: input.variant } : {}),
 			...(input.level ? { level: input.level } : {}),
@@ -289,7 +356,7 @@ export const promoteContract = defineCommand({
 		const summary = promotionSummary(plan, binding?.note);
 		if (input.text) return { result: summary };
 		return {
-			result: {
+			result: PromoteJsonResultSchema.parse({
 				success: true as const,
 				summary,
 				nodes: plan.nodes,
@@ -298,7 +365,7 @@ export const promoteContract = defineCommand({
 					? { binding: { resolvedFrom: binding.resolvedFrom, resolved: binding.resolved } }
 					: {}),
 				...(binding && !binding.resolved ? { bindingResolved: false } : {}),
-			} as PromoteJsonResult,
+			}),
 		};
 	},
 });
@@ -312,7 +379,7 @@ export type DemoteInput = z.infer<typeof DemoteInputSchema>;
 export const DemoteJsonResultSchema = z.looseObject({
 	success: z.literal(true),
 	summary: z.string(),
-	nodes: z.array(z.unknown()),
+	nodes: z.array(DemotionNodeSchema),
 	elementsUpdated: z.number().int().nonnegative(),
 	held: HoldReportSchema.optional(),
 });
@@ -326,12 +393,22 @@ export const demoteContract = defineCommand({
 	description: "Demotes every element belonging to the selected nodes in one write.",
 	examples: ['archboard demote --ids api --board payments --doing "demoting API"'],
 	parameters: commonParameters,
-	input: { ingress: DemoteInputSchema },
+	input: {
+		ingress: DemoteInputSchema,
+		stages: [
+			{
+				name: "target-ids",
+				when: "after-read",
+				description: "Non-empty comma-separated target ids",
+				schema: PromotionIdsStageSchema,
+			},
+		],
+	},
 	result: DemoteResultSchema,
 	output,
 	prerequisites: ["server", "board", "doing"],
 	effects: ["read", "write"],
-	refusals,
+	refusals: boardWriteRefusals,
 	relationships: [
 		{ method: "GET", path: "/api/elements", cardinality: "one", description: "Read the board" },
 		{
@@ -350,19 +427,20 @@ export const demoteContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "demote");
 		const board = await getElements();
-		const targets = await targetElements(input.ids, board, "demote");
+		const ids = input.ids ? context.parse(PromotionIdsStageSchema, input.ids) : undefined;
+		const targets = await targetElements(ids, board, "demote");
 		const plan = planDemotion(targets, board);
 		await applyUpdates(plan.updates);
 		const summary = demotionSummary(plan);
 		return {
 			result: input.text
 				? summary
-				: ({
+				: DemoteJsonResultSchema.parse({
 						success: true as const,
 						summary,
 						nodes: plan.nodes,
 						elementsUpdated: plan.updates.length,
-					} as DemoteJsonResult),
+					}),
 		};
 	},
 });
