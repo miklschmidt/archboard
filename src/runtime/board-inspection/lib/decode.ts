@@ -1,6 +1,8 @@
 import type { ElementRef } from "../schemas.js";
 import { finite, type ExactBox, type ExactPoint } from "./geometry.js";
 
+const MAX_ANALYZABLE_SEGMENT_COMPONENT = Math.sqrt(Number.MAX_VALUE) / 2;
+
 export interface DecodedRecord {
 	readonly raw: Readonly<Record<string, unknown>> | null;
 	readonly sourceIndex: number;
@@ -51,6 +53,15 @@ export function decodeRecords(records: readonly unknown[]): DecodedRecord[] {
 		const y = raw && finite(raw.y) ? raw.y : undefined;
 		const width = raw && finite(raw.width) ? raw.width : undefined;
 		const height = raw && finite(raw.height) ? raw.height : undefined;
+		const normalizedWidth = width === undefined ? undefined : Math.max(0, width);
+		const normalizedHeight = height === undefined ? undefined : Math.max(0, height);
+		const finiteExtent =
+			x !== undefined &&
+			y !== undefined &&
+			normalizedWidth !== undefined &&
+			normalizedHeight !== undefined &&
+			finite(x + normalizedWidth) &&
+			finite(y + normalizedHeight);
 		return {
 			raw,
 			sourceIndex,
@@ -58,10 +69,7 @@ export function decodeRecords(records: readonly unknown[]): DecodedRecord[] {
 			id,
 			type,
 			ref: { id, type, sourceIndex },
-			box:
-				x !== undefined && y !== undefined && width !== undefined && height !== undefined
-					? { x, y, width: Math.max(0, width), height: Math.max(0, height) }
-					: null,
+			box: finiteExtent ? { x, y, width: normalizedWidth, height: normalizedHeight } : null,
 		};
 	});
 }
@@ -91,6 +99,13 @@ export type PathDecode =
 			pointIndex: number;
 			relativePoints: ExactPoint[];
 			scenePoints: ExactPoint[] | null;
+	  }
+	| {
+			ok: false;
+			issue: "absolute-point-overflow";
+			pointIndex: number;
+			relativePoints: ExactPoint[];
+			scenePoints: ExactPoint[];
 	  };
 
 export function decodePath(record: DecodedRecord): PathDecode {
@@ -101,6 +116,7 @@ export function decodePath(record: DecodedRecord): PathDecode {
 	if (raw.points.length === 0) return { ok: false, issue: "empty" };
 	const origin = finite(raw.x) && finite(raw.y) ? { x: raw.x, y: raw.y } : null;
 	const relativePoints: ExactPoint[] = [];
+	const scenePoints: ExactPoint[] | null = origin ? [] : null;
 	for (let index = 0; index < raw.points.length; index += 1) {
 		const candidate = raw.points[index];
 		const object =
@@ -115,15 +131,35 @@ export function decodePath(record: DecodedRecord): PathDecode {
 				issue: "malformed-point",
 				pointIndex: index,
 				relativePoints,
-				scenePoints: origin
-					? relativePoints.map((point) => ({ x: origin.x + point.x, y: origin.y + point.y }))
-					: null,
+				scenePoints,
 			};
 		relativePoints.push({ x, y });
+		if (origin && scenePoints) {
+			const absolute = { x: origin.x + x, y: origin.y + y };
+			if (!finite(absolute.x) || !finite(absolute.y))
+				return {
+					ok: false,
+					issue: "absolute-point-overflow",
+					pointIndex: index,
+					relativePoints,
+					scenePoints,
+				};
+			scenePoints.push(absolute);
+			const previous = scenePoints.at(-2);
+			if (
+				previous &&
+				(Math.abs(absolute.x - previous.x) > MAX_ANALYZABLE_SEGMENT_COMPONENT ||
+					Math.abs(absolute.y - previous.y) > MAX_ANALYZABLE_SEGMENT_COMPONENT)
+			)
+				return {
+					ok: false,
+					issue: "absolute-point-overflow",
+					pointIndex: index,
+					relativePoints,
+					scenePoints,
+				};
+		}
 	}
-	const scenePoints = origin
-		? relativePoints.map((point) => ({ x: origin.x + point.x, y: origin.y + point.y }))
-		: null;
 	if (relativePoints.length === 1)
 		return { ok: false, issue: "one-point", relativePoints, scenePoints };
 	const zeroSegments: number[] = [];

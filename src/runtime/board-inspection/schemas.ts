@@ -249,6 +249,12 @@ const brokenReference = [
 			targetId: z.string().min(1),
 		}),
 	),
+	variant("BROKEN_REFERENCE", "bound-element-target-type-mismatch", true, {
+		ownerId: z.string().min(1),
+		targetId: z.string().min(1),
+		declaredType: z.enum(["text", "arrow"]),
+		actualType: z.string().min(1),
+	}),
 	variant("BROKEN_REFERENCE", "conflicting-bound-label-owner", true, {
 		textId: z.string().min(1),
 		forwardContainerId: z.string().min(1),
@@ -375,6 +381,12 @@ const ambiguous = [
 		issue: z.literal("insufficient-cardinality"),
 	}),
 	variant("AMBIGUOUS_GEOMETRY", "malformed-point", true, {
+		connectorId: z.string().min(1).nullable(),
+		sourceIndex: z.number().int().nonnegative(),
+		pointIndex: z.number().int().nonnegative(),
+		issue: z.string(),
+	}),
+	variant("AMBIGUOUS_GEOMETRY", "absolute-point-overflow", true, {
 		connectorId: z.string().min(1).nullable(),
 		sourceIndex: z.number().int().nonnegative(),
 		pointIndex: z.number().int().nonnegative(),
