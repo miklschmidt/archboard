@@ -82,11 +82,9 @@
 		{
 			"name": "promote",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/promote.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "promote",
-			"legacyArgv": "root-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "pane",
@@ -123,11 +121,9 @@
 		{
 			"name": "demote",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/promote.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "demote",
-			"legacyArgv": "root-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "repo",
@@ -225,20 +221,16 @@
 		{
 			"name": "claim",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/claim.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "claim",
-			"legacyArgv": "root-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "release",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/claim.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "release",
-			"legacyArgv": "root-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "inject",
@@ -346,42 +338,35 @@
 		{
 			"name": "library",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/library.ts",
-			"parserOwner": "legacy subcommand dispatch",
-			"handlerName": "library",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"bare": {
 				"kind": "default",
 				"child": "list",
 				"withLeadingOptions": true
-			},
-			"legacyArgv": "root-tail"
+			}
 		},
 		{
 			"name": "library list",
 			"parent": "library",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/library.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "libraryList",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "library insert",
 			"parent": "library",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/library.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "libraryInsert",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "arrange",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/arrange.ts",
-			"parserOwner": "legacy subcommand dispatch",
-			"handlerName": "arrange",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"bare": {
 				"kind": "namespace-refusal",
 				"message": "Usage: arrange align|distribute|group|ungroup|lock|unlock|duplicate ..."
@@ -394,71 +379,56 @@
 					"group": "value",
 					"offset": "value"
 				}
-			},
-			"legacyArgv": "root-tail"
+			}
 		},
 		{
 			"name": "arrange align",
 			"parent": "arrange",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/arrange.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "arrangeAlign",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "arrange distribute",
 			"parent": "arrange",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/arrange.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "arrangeDistribute",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "arrange group",
 			"parent": "arrange",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/arrange.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "arrangeGroup",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "arrange ungroup",
 			"parent": "arrange",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/arrange.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "arrangeUngroup",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "arrange lock",
 			"parent": "arrange",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/arrange.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "arrangeLock",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "arrange unlock",
 			"parent": "arrange",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/arrange.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "arrangeUnlock",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "arrange duplicate",
 			"parent": "arrange",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/arrange.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "arrangeDuplicate",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "share",
@@ -2317,6 +2287,283 @@
 			]
 		},
 		{
+			"name": "promote",
+			"path": ["promote"],
+			"summary": "Declare the selected elements a node: kind, identity, binding",
+			"usage": "promote --kind <kind> [--ids a,b,c] [--path file] [--text]",
+			"description": "Promotes selected or named elements as one architecture node write.",
+			"examples": [
+				"archboard promote --kind service --ids api --board payments --doing \"promoting API\""
+			],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "kind",
+					"spellings": ["--kind"],
+					"value": "required",
+					"description": "Architecture kind"
+				},
+				{
+					"kind": "option",
+					"key": "name",
+					"spellings": ["--name"],
+					"value": "required",
+					"description": "Display name"
+				},
+				{
+					"kind": "option",
+					"key": "node",
+					"spellings": ["--node"],
+					"value": "required",
+					"description": "Stable node id"
+				},
+				{
+					"kind": "option",
+					"key": "path",
+					"spellings": ["--path"],
+					"value": "required",
+					"description": "Binding path"
+				},
+				{
+					"kind": "option",
+					"key": "repo",
+					"spellings": ["--repo"],
+					"value": "required",
+					"description": "Binding repository"
+				},
+				{
+					"kind": "option",
+					"key": "branch",
+					"spellings": ["--branch"],
+					"value": "required",
+					"description": "Binding branch"
+				},
+				{
+					"kind": "option",
+					"key": "commit",
+					"spellings": ["--commit"],
+					"value": "required",
+					"description": "Binding commit"
+				},
+				{
+					"kind": "option",
+					"key": "variant",
+					"spellings": ["--variant"],
+					"value": "required",
+					"description": "Node variant override"
+				},
+				{
+					"kind": "option",
+					"key": "level",
+					"spellings": ["--level"],
+					"value": "required",
+					"description": "Node level override"
+				},
+				{
+					"kind": "option",
+					"key": "each",
+					"spellings": ["--each"],
+					"value": "none",
+					"description": "Promote each target separately"
+				},
+				{
+					"kind": "option",
+					"key": "ids",
+					"spellings": ["--ids"],
+					"value": "required",
+					"description": "Comma-separated element ids"
+				},
+				{
+					"kind": "option",
+					"key": "text",
+					"spellings": ["--text"],
+					"value": "none",
+					"description": "Print a text summary"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"ids": {
+							"type": "string"
+						},
+						"kind": {
+							"type": "string"
+						},
+						"name": {
+							"type": "string"
+						},
+						"node": {
+							"type": "string"
+						},
+						"path": {
+							"type": "string"
+						},
+						"repo": {
+							"type": "string"
+						},
+						"branch": {
+							"type": "string"
+						},
+						"commit": {
+							"type": "string"
+						},
+						"variant": {
+							"type": "string"
+						},
+						"level": {
+							"type": "string"
+						},
+						"each": {
+							"default": false,
+							"type": "boolean"
+						},
+						"text": {
+							"default": false,
+							"type": "boolean"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["each", "text", "tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"anyOf": [
+					{
+						"type": "object",
+						"properties": {
+							"success": {
+								"type": "boolean",
+								"const": true
+							},
+							"summary": {
+								"type": "string"
+							},
+							"nodes": {
+								"type": "array",
+								"items": {}
+							},
+							"elementsUpdated": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 9007199254740991
+							},
+							"held": {
+								"type": "object",
+								"properties": {
+									"board": {
+										"type": "string"
+									},
+									"message": {
+										"type": "string"
+									}
+								},
+								"required": ["board", "message"],
+								"additionalProperties": {}
+							}
+						},
+						"required": ["success", "summary", "nodes", "elementsUpdated"],
+						"additionalProperties": {}
+					},
+					{
+						"type": "string"
+					}
+				]
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {
+						"key": "text",
+						"present": false
+					},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Structured promotion result",
+					"presentation": ["result", "held-note"]
+				},
+				{
+					"id": "text",
+					"when": {
+						"key": "text",
+						"present": true
+					},
+					"mode": "text",
+					"held": "stderr-note",
+					"description": "Promotion summary",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board", "doing"],
+			"effects": ["local-read", "read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The write was refused."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/elements",
+					"cardinality": "one",
+					"description": "Read the board"
+				},
+				{
+					"method": "GET",
+					"path": "/api/selection",
+					"cardinality": "conditional",
+					"description": "Resolve default targets"
+				},
+				{
+					"method": "GET",
+					"path": "/api/boards/info",
+					"cardinality": "one",
+					"description": "Read board variant"
+				},
+				{
+					"method": "POST",
+					"path": "/api/elements/changes",
+					"cardinality": "conditional",
+					"description": "Apply promotion"
+				}
+			]
+		},
+		{
 			"name": "pane",
 			"path": ["pane"],
 			"summary": "Split the canvas into another pane, or close one",
@@ -2739,6 +2986,174 @@
 					"path": "/api/viewport",
 					"cardinality": "one",
 					"description": "One browser camera request"
+				}
+			]
+		},
+		{
+			"name": "demote",
+			"path": ["demote"],
+			"summary": "Turn nodes back into plain elements",
+			"usage": "demote [--ids a,b,c] [--text]",
+			"description": "Demotes every element belonging to the selected nodes in one write.",
+			"examples": ["archboard demote --ids api --board payments --doing \"demoting API\""],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "ids",
+					"spellings": ["--ids"],
+					"value": "required",
+					"description": "Comma-separated element ids"
+				},
+				{
+					"kind": "option",
+					"key": "text",
+					"spellings": ["--text"],
+					"value": "none",
+					"description": "Print a text summary"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"ids": {
+							"type": "string"
+						},
+						"text": {
+							"default": false,
+							"type": "boolean"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["text", "tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"anyOf": [
+					{
+						"type": "object",
+						"properties": {
+							"success": {
+								"type": "boolean",
+								"const": true
+							},
+							"summary": {
+								"type": "string"
+							},
+							"nodes": {
+								"type": "array",
+								"items": {}
+							},
+							"elementsUpdated": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 9007199254740991
+							},
+							"held": {
+								"type": "object",
+								"properties": {
+									"board": {
+										"type": "string"
+									},
+									"message": {
+										"type": "string"
+									}
+								},
+								"required": ["board", "message"],
+								"additionalProperties": {}
+							}
+						},
+						"required": ["success", "summary", "nodes", "elementsUpdated"],
+						"additionalProperties": {}
+					},
+					{
+						"type": "string"
+					}
+				]
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {
+						"key": "text",
+						"present": false
+					},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Structured promotion result",
+					"presentation": ["result", "held-note"]
+				},
+				{
+					"id": "text",
+					"when": {
+						"key": "text",
+						"present": true
+					},
+					"mode": "text",
+					"held": "stderr-note",
+					"description": "Promotion summary",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board", "doing"],
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The write was refused."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/elements",
+					"cardinality": "one",
+					"description": "Read the board"
+				},
+				{
+					"method": "GET",
+					"path": "/api/selection",
+					"cardinality": "conditional",
+					"description": "Resolve default targets"
+				},
+				{
+					"method": "POST",
+					"path": "/api/elements/changes",
+					"cardinality": "conditional",
+					"description": "Apply demotion"
 				}
 			]
 		},
@@ -4140,6 +4555,174 @@
 			]
 		},
 		{
+			"name": "claim",
+			"path": ["claim"],
+			"summary": "Take a board for a stretch of work, so twenty writes are one uninterrupted act",
+			"usage": "claim --board <key> --reason <reason> [--for 10m]",
+			"description": "Takes or extends a board lease for substantial work.",
+			"examples": ["archboard claim --board payments --reason \"redrawing payment path\""],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "reason",
+					"spellings": ["--reason"],
+					"value": "required",
+					"description": "Campaign shown on the pane"
+				},
+				{
+					"kind": "option",
+					"key": "for",
+					"spellings": ["--for"],
+					"value": "required",
+					"description": "Lease duration"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"reason": {
+							"type": "string"
+						},
+						"for": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema"
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Claim state",
+					"presentation": ["diagnostics", "result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board"],
+			"effects": ["write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				}
+			],
+			"relationships": [
+				{
+					"method": "POST",
+					"path": "/api/boards/claim",
+					"cardinality": "one",
+					"description": "Take or extend the claim"
+				}
+			]
+		},
+		{
+			"name": "release",
+			"path": ["release"],
+			"summary": "Give back a board you claimed",
+			"usage": "release --board <key>",
+			"description": "Ends this caller's board claim if one remains.",
+			"examples": ["archboard release --board payments"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema"
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Release state",
+					"presentation": ["diagnostics", "result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board"],
+			"effects": ["write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				}
+			],
+			"relationships": [
+				{
+					"method": "POST",
+					"path": "/api/boards/release",
+					"cardinality": "one",
+					"description": "Release the claim"
+				}
+			]
+		},
+		{
 			"name": "inject",
 			"path": ["inject"],
 			"summary": "Whether the canvas can push board changes into a live Codex thread, and a probe to prove it",
@@ -5325,6 +5908,1492 @@
 			]
 		},
 		{
+			"name": "library",
+			"path": ["library"],
+			"summary": "What stencils are in the library, and dropping one onto the board",
+			"usage": "library list [--text] | library insert <name> --x <x> --y <y> [--source <file>] [--id <libraryItemId>]",
+			"description": "Routes stencil catalogue commands.",
+			"examples": ["archboard library list"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "arguments",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Namespace arguments"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"not": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "none",
+					"description": "Namespace refusal"
+				}
+			],
+			"outcomes": [],
+			"prerequisites": [],
+			"effects": [],
+			"refusals": [],
+			"relationships": []
+		},
+		{
+			"name": "library list",
+			"path": ["library", "list"],
+			"summary": "List the stencil palette",
+			"usage": "library list [--text]",
+			"description": "Reads the server-backed stencil catalogue.",
+			"examples": ["archboard library list --text"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "text",
+					"spellings": ["--text"],
+					"value": "none",
+					"description": "Print a human-readable catalogue"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"text": {
+							"default": false,
+							"type": "boolean"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["text", "tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"anyOf": [
+					{},
+					{
+						"type": "string"
+					}
+				]
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {
+						"key": "text",
+						"present": false
+					},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Structured catalogue",
+					"presentation": ["result", "held-note"]
+				},
+				{
+					"id": "text",
+					"when": {
+						"key": "text",
+						"present": true
+					},
+					"mode": "text",
+					"held": "stderr-note",
+					"description": "Human-readable catalogue",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server"],
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/library",
+					"cardinality": "one",
+					"description": "Read the catalogue"
+				}
+			]
+		},
+		{
+			"name": "library insert",
+			"path": ["library", "insert"],
+			"summary": "Drop a stencil onto the board",
+			"usage": "library insert <name> --x <x> --y <y> [--source <file>] [--id <libraryItemId>]",
+			"description": "Copies one catalogue stencil to a board in one write.",
+			"examples": [
+				"archboard library insert \"API Gateway\" --x 100 --y 200 --board system --doing \"adding gateway\""
+			],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "x",
+					"spellings": ["--x"],
+					"value": "required",
+					"description": "Left coordinate"
+				},
+				{
+					"kind": "option",
+					"key": "y",
+					"spellings": ["--y"],
+					"value": "required",
+					"description": "Top coordinate"
+				},
+				{
+					"kind": "option",
+					"key": "source",
+					"spellings": ["--source"],
+					"value": "required",
+					"description": "Source library"
+				},
+				{
+					"kind": "option",
+					"key": "id",
+					"spellings": ["--id"],
+					"value": "required",
+					"description": "Library item id"
+				},
+				{
+					"kind": "positional",
+					"key": "name",
+					"name": "name",
+					"description": "Stencil name"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"name": {
+							"type": "string"
+						},
+						"x": {
+							"type": "string"
+						},
+						"y": {
+							"type": "string"
+						},
+						"source": {
+							"type": "string"
+						},
+						"id": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema"
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Inserted stencil",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board", "doing"],
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board write was refused."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/library",
+					"cardinality": "one",
+					"description": "Read the catalogue"
+				},
+				{
+					"method": "POST",
+					"path": "/api/elements/batch",
+					"cardinality": "one",
+					"description": "Insert the stencil"
+				}
+			]
+		},
+		{
+			"name": "arrange",
+			"path": ["arrange"],
+			"summary": "Align, distribute, group, lock, duplicate elements",
+			"usage": "arrange align|distribute|group|ungroup|lock|unlock|duplicate ...",
+			"description": "Routes element arrangement commands.",
+			"examples": ["archboard arrange align --ids a,b --to left"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "ids",
+					"spellings": ["--ids"],
+					"value": "required",
+					"description": "ids option"
+				},
+				{
+					"kind": "option",
+					"key": "to",
+					"spellings": ["--to"],
+					"value": "required",
+					"description": "to option"
+				},
+				{
+					"kind": "option",
+					"key": "group",
+					"spellings": ["--group"],
+					"value": "required",
+					"description": "group option"
+				},
+				{
+					"kind": "option",
+					"key": "offset",
+					"spellings": ["--offset"],
+					"value": "required",
+					"description": "offset option"
+				},
+				{
+					"kind": "positional",
+					"key": "action",
+					"name": "subcommand",
+					"description": "Arrangement subcommand"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"ids": {
+							"type": "string"
+						},
+						"to": {
+							"type": "string"
+						},
+						"group": {
+							"type": "string"
+						},
+						"offset": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						},
+						"action": {
+							"type": "string"
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"not": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "none",
+					"description": "Namespace refusal"
+				}
+			],
+			"outcomes": [],
+			"prerequisites": [],
+			"effects": [],
+			"refusals": [],
+			"relationships": []
+		},
+		{
+			"name": "arrange align",
+			"path": ["arrange", "align"],
+			"summary": "Align elements",
+			"usage": "arrange align --ids a,b,c --to left|center|right|top|middle|bottom",
+			"description": "Aligns selected elements in one write.",
+			"examples": ["archboard arrange align --ids a,b --to left"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "ids",
+					"spellings": ["--ids"],
+					"value": "required",
+					"description": "ids option"
+				},
+				{
+					"kind": "option",
+					"key": "to",
+					"spellings": ["--to"],
+					"value": "required",
+					"description": "to option"
+				},
+				{
+					"kind": "option",
+					"key": "group",
+					"spellings": ["--group"],
+					"value": "required",
+					"description": "group option"
+				},
+				{
+					"kind": "option",
+					"key": "offset",
+					"spellings": ["--offset"],
+					"value": "required",
+					"description": "offset option"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"ids": {
+							"type": "string"
+						},
+						"to": {
+							"type": "string"
+						},
+						"group": {
+							"type": "string"
+						},
+						"offset": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"aligned": {
+						"type": "boolean"
+					},
+					"elementIds": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					},
+					"alignment": {
+						"type": "string",
+						"enum": ["left", "center", "right", "top", "middle", "bottom"]
+					},
+					"successCount": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"held": {
+						"type": "object",
+						"properties": {
+							"board": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": ["board", "message"],
+						"additionalProperties": {}
+					}
+				},
+				"required": ["aligned", "elementIds", "alignment", "successCount"],
+				"additionalProperties": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Arrangement result",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board", "doing"],
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board write was refused."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/elements",
+					"cardinality": "one",
+					"description": "Read arrangement targets"
+				},
+				{
+					"method": "POST",
+					"path": "/api/elements/changes",
+					"cardinality": "one",
+					"description": "Apply the arrangement in one write"
+				}
+			]
+		},
+		{
+			"name": "arrange distribute",
+			"path": ["arrange", "distribute"],
+			"summary": "Distribute elements",
+			"usage": "arrange distribute --ids a,b,c --to horizontal|vertical",
+			"description": "Distributes selected elements in one write.",
+			"examples": ["archboard arrange distribute --ids a,b,c --to horizontal"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "ids",
+					"spellings": ["--ids"],
+					"value": "required",
+					"description": "ids option"
+				},
+				{
+					"kind": "option",
+					"key": "to",
+					"spellings": ["--to"],
+					"value": "required",
+					"description": "to option"
+				},
+				{
+					"kind": "option",
+					"key": "group",
+					"spellings": ["--group"],
+					"value": "required",
+					"description": "group option"
+				},
+				{
+					"kind": "option",
+					"key": "offset",
+					"spellings": ["--offset"],
+					"value": "required",
+					"description": "offset option"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"ids": {
+							"type": "string"
+						},
+						"to": {
+							"type": "string"
+						},
+						"group": {
+							"type": "string"
+						},
+						"offset": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"distributed": {
+						"type": "boolean"
+					},
+					"elementIds": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					},
+					"direction": {
+						"type": "string",
+						"enum": ["horizontal", "vertical"]
+					},
+					"count": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"held": {
+						"type": "object",
+						"properties": {
+							"board": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": ["board", "message"],
+						"additionalProperties": {}
+					}
+				},
+				"required": ["distributed", "elementIds", "direction", "count"],
+				"additionalProperties": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Arrangement result",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board", "doing"],
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board write was refused."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/elements",
+					"cardinality": "one",
+					"description": "Read arrangement targets"
+				},
+				{
+					"method": "POST",
+					"path": "/api/elements/changes",
+					"cardinality": "one",
+					"description": "Apply the arrangement in one write"
+				}
+			]
+		},
+		{
+			"name": "arrange group",
+			"path": ["arrange", "group"],
+			"summary": "Group elements",
+			"usage": "arrange group --ids a,b,c",
+			"description": "Groups selected elements in one write.",
+			"examples": ["archboard arrange group --ids a,b"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "ids",
+					"spellings": ["--ids"],
+					"value": "required",
+					"description": "ids option"
+				},
+				{
+					"kind": "option",
+					"key": "to",
+					"spellings": ["--to"],
+					"value": "required",
+					"description": "to option"
+				},
+				{
+					"kind": "option",
+					"key": "group",
+					"spellings": ["--group"],
+					"value": "required",
+					"description": "group option"
+				},
+				{
+					"kind": "option",
+					"key": "offset",
+					"spellings": ["--offset"],
+					"value": "required",
+					"description": "offset option"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"ids": {
+							"type": "string"
+						},
+						"to": {
+							"type": "string"
+						},
+						"group": {
+							"type": "string"
+						},
+						"offset": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"groupId": {
+						"type": "string"
+					},
+					"elementIds": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					},
+					"successCount": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"held": {
+						"type": "object",
+						"properties": {
+							"board": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": ["board", "message"],
+						"additionalProperties": {}
+					}
+				},
+				"required": ["groupId", "elementIds", "successCount"],
+				"additionalProperties": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Arrangement result",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board", "doing"],
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board write was refused."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/elements",
+					"cardinality": "one",
+					"description": "Read arrangement targets"
+				},
+				{
+					"method": "POST",
+					"path": "/api/elements/changes",
+					"cardinality": "one",
+					"description": "Apply the arrangement in one write"
+				}
+			]
+		},
+		{
+			"name": "arrange ungroup",
+			"path": ["arrange", "ungroup"],
+			"summary": "Ungroup elements",
+			"usage": "arrange ungroup --group <groupId>",
+			"description": "Removes one group in one write.",
+			"examples": ["archboard arrange ungroup --group abc"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "ids",
+					"spellings": ["--ids"],
+					"value": "required",
+					"description": "ids option"
+				},
+				{
+					"kind": "option",
+					"key": "to",
+					"spellings": ["--to"],
+					"value": "required",
+					"description": "to option"
+				},
+				{
+					"kind": "option",
+					"key": "group",
+					"spellings": ["--group"],
+					"value": "required",
+					"description": "group option"
+				},
+				{
+					"kind": "option",
+					"key": "offset",
+					"spellings": ["--offset"],
+					"value": "required",
+					"description": "offset option"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"ids": {
+							"type": "string"
+						},
+						"to": {
+							"type": "string"
+						},
+						"group": {
+							"type": "string"
+						},
+						"offset": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"groupId": {
+						"type": "string"
+					},
+					"ungrouped": {
+						"type": "boolean"
+					},
+					"elementIds": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					},
+					"successCount": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"held": {
+						"type": "object",
+						"properties": {
+							"board": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": ["board", "message"],
+						"additionalProperties": {}
+					}
+				},
+				"required": ["groupId", "ungrouped", "elementIds", "successCount"],
+				"additionalProperties": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Arrangement result",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board", "doing"],
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board write was refused."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/elements",
+					"cardinality": "one",
+					"description": "Read arrangement targets"
+				},
+				{
+					"method": "POST",
+					"path": "/api/elements/changes",
+					"cardinality": "one",
+					"description": "Apply the arrangement in one write"
+				}
+			]
+		},
+		{
+			"name": "arrange lock",
+			"path": ["arrange", "lock"],
+			"summary": "Lock elements",
+			"usage": "arrange lock --ids a,b,c",
+			"description": "Locks selected elements in one write.",
+			"examples": ["archboard arrange lock --ids a,b"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "ids",
+					"spellings": ["--ids"],
+					"value": "required",
+					"description": "ids option"
+				},
+				{
+					"kind": "option",
+					"key": "to",
+					"spellings": ["--to"],
+					"value": "required",
+					"description": "to option"
+				},
+				{
+					"kind": "option",
+					"key": "group",
+					"spellings": ["--group"],
+					"value": "required",
+					"description": "group option"
+				},
+				{
+					"kind": "option",
+					"key": "offset",
+					"spellings": ["--offset"],
+					"value": "required",
+					"description": "offset option"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"ids": {
+							"type": "string"
+						},
+						"to": {
+							"type": "string"
+						},
+						"group": {
+							"type": "string"
+						},
+						"offset": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"locked": {
+						"type": "boolean",
+						"const": true
+					},
+					"elementIds": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					},
+					"successCount": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"held": {
+						"type": "object",
+						"properties": {
+							"board": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": ["board", "message"],
+						"additionalProperties": {}
+					}
+				},
+				"required": ["locked", "elementIds", "successCount"],
+				"additionalProperties": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Arrangement result",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board", "doing"],
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board write was refused."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/elements",
+					"cardinality": "one",
+					"description": "Read arrangement targets"
+				},
+				{
+					"method": "POST",
+					"path": "/api/elements/changes",
+					"cardinality": "one",
+					"description": "Apply the arrangement in one write"
+				}
+			]
+		},
+		{
+			"name": "arrange unlock",
+			"path": ["arrange", "unlock"],
+			"summary": "Unlock elements",
+			"usage": "arrange unlock --ids a,b,c",
+			"description": "Unlocks selected elements in one write.",
+			"examples": ["archboard arrange unlock --ids a,b"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "ids",
+					"spellings": ["--ids"],
+					"value": "required",
+					"description": "ids option"
+				},
+				{
+					"kind": "option",
+					"key": "to",
+					"spellings": ["--to"],
+					"value": "required",
+					"description": "to option"
+				},
+				{
+					"kind": "option",
+					"key": "group",
+					"spellings": ["--group"],
+					"value": "required",
+					"description": "group option"
+				},
+				{
+					"kind": "option",
+					"key": "offset",
+					"spellings": ["--offset"],
+					"value": "required",
+					"description": "offset option"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"ids": {
+							"type": "string"
+						},
+						"to": {
+							"type": "string"
+						},
+						"group": {
+							"type": "string"
+						},
+						"offset": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"unlocked": {
+						"type": "boolean",
+						"const": true
+					},
+					"elementIds": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					},
+					"successCount": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"held": {
+						"type": "object",
+						"properties": {
+							"board": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": ["board", "message"],
+						"additionalProperties": {}
+					}
+				},
+				"required": ["unlocked", "elementIds", "successCount"],
+				"additionalProperties": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Arrangement result",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board", "doing"],
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board write was refused."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/elements",
+					"cardinality": "one",
+					"description": "Read arrangement targets"
+				},
+				{
+					"method": "POST",
+					"path": "/api/elements/changes",
+					"cardinality": "one",
+					"description": "Apply the arrangement in one write"
+				}
+			]
+		},
+		{
+			"name": "arrange duplicate",
+			"path": ["arrange", "duplicate"],
+			"summary": "Duplicate elements",
+			"usage": "arrange duplicate --ids a,b,c [--offset 20,20]",
+			"description": "Duplicates selected elements in one write.",
+			"examples": ["archboard arrange duplicate --ids a,b --offset 40,20"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "ids",
+					"spellings": ["--ids"],
+					"value": "required",
+					"description": "ids option"
+				},
+				{
+					"kind": "option",
+					"key": "to",
+					"spellings": ["--to"],
+					"value": "required",
+					"description": "to option"
+				},
+				{
+					"kind": "option",
+					"key": "group",
+					"spellings": ["--group"],
+					"value": "required",
+					"description": "group option"
+				},
+				{
+					"kind": "option",
+					"key": "offset",
+					"spellings": ["--offset"],
+					"value": "required",
+					"description": "offset option"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"ids": {
+							"type": "string"
+						},
+						"to": {
+							"type": "string"
+						},
+						"group": {
+							"type": "string"
+						},
+						"offset": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema"
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Arrangement result",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board", "doing"],
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board write was refused."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/elements",
+					"cardinality": "one",
+					"description": "Read arrangement targets"
+				},
+				{
+					"method": "POST",
+					"path": "/api/elements/changes",
+					"cardinality": "one",
+					"description": "Apply the arrangement in one write"
+				}
+			]
+		},
+		{
 			"name": "clear",
 			"path": ["clear"],
 			"summary": "Clear the whole canvas",
@@ -5687,24 +7756,5 @@
 			"relationships": []
 		}
 	],
-	"legacyPaths": [
-		"promote",
-		"demote",
-		"claim",
-		"release",
-		"screenshot",
-		"mermaid",
-		"library",
-		"library list",
-		"library insert",
-		"arrange",
-		"arrange align",
-		"arrange distribute",
-		"arrange group",
-		"arrange ungroup",
-		"arrange lock",
-		"arrange unlock",
-		"arrange duplicate",
-		"share"
-	]
+	"legacyPaths": ["screenshot", "mermaid", "share"]
 }
