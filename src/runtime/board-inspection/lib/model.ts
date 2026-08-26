@@ -2,7 +2,7 @@ import type { NodeRef, ObstacleRef } from "../schemas.js";
 import type { DecodedRecord } from "./decode.js";
 import { aggregateBoxes, contains, type ExactBox } from "./geometry.js";
 import { sweepIntervalPairs, type SweepWork } from "./interval-sweep.js";
-import { compareIdentity, encodeIdentityList } from "./ordering.js";
+import { compareIdentity, obstacleIdentity } from "./ordering.js";
 
 export interface InspectionNode {
 	id: string;
@@ -85,6 +85,7 @@ export interface InspectionModel {
 	obstacles: InspectionObstacle[];
 	aggregateFailures: AggregateCoordinateFailure[];
 	hierarchyWork: SweepWork;
+	containerBoundaryWork: SweepWork;
 }
 
 const CLOSED = new Set(["rectangle", "ellipse", "diamond", "frame"]);
@@ -383,7 +384,14 @@ function assignNodeHierarchy(nodes: Map<string, InspectionNode>): SweepWork {
 	const boundaryAreas = new Map(
 		boundaries.map(({ boundary }) => [boundary, areaFactor(boundary.box!)]),
 	);
-	const candidates = new Map<string, Array<{ owner: InspectionNode; boundary: DecodedRecord }>>();
+	const selectedByChild = new Map<string, { owner: InspectionNode; boundary: DecodedRecord }>();
+	const candidateOrder = (
+		a: { owner: InspectionNode; boundary: DecodedRecord },
+		b: { owner: InspectionNode; boundary: DecodedRecord },
+	) =>
+		compareAreaFactors(boundaryAreas.get(a.boundary)!, boundaryAreas.get(b.boundary)!) ||
+		compareIdentity(a.boundary.id!, b.boundary.id!) ||
+		compareIdentity(a.owner.id, b.owner.id);
 	const work = sweepIntervalPairs(
 		children.map((child) => ({
 			id: child.id,
@@ -410,20 +418,17 @@ function assignNodeHierarchy(nodes: Map<string, InspectionNode>): SweepWork {
 				!contains(boundary.box!, child.body)
 			)
 				return;
-			const found = candidates.get(child.id) ?? [];
-			found.push({ owner, boundary });
-			candidates.set(child.id, found);
+			const candidate = { owner, boundary };
+			const selected = selectedByChild.get(child.id);
+			if (!selected || candidateOrder(candidate, selected) < 0)
+				selectedByChild.set(child.id, candidate);
 		},
 	);
 	for (const child of children) {
-		const selected = (candidates.get(child.id) ?? []).toSorted(
-			(a, b) =>
-				compareAreaFactors(boundaryAreas.get(a.boundary)!, boundaryAreas.get(b.boundary)!) ||
-				compareIdentity(a.boundary.id!, b.boundary.id!) ||
-				compareIdentity(a.owner.id, b.owner.id),
-		)[0];
+		const selected = selectedByChild.get(child.id);
 		if (selected) child.parentId = selected.owner.id;
 	}
+	work.peakRetainedSelections = selectedByChild.size;
 	for (const node of nodes.values())
 		if (node.parentId) nodes.get(node.parentId)?.children.push(node.id);
 	for (const node of nodes.values()) node.children.sort(compareIdentity);
@@ -465,14 +470,32 @@ function findContainerOnlyIds(
 	live: readonly DecodedRecord[],
 	nodes: ReadonlyMap<string, InspectionNode>,
 	nodeOfElement: ReadonlyMap<string, string>,
-): Set<string> {
+): { ids: Set<string>; work: SweepWork } {
 	const containerOnlyIds = new Set<string>();
-	for (const record of live) {
-		if (nodeOfElement.has(record.id ?? "") || !validBoundary(record)) continue;
-		if ([...nodes.values()].some((node) => contains(record.box!, node.body)))
-			containerOnlyIds.add(record.id!);
-	}
-	return containerOnlyIds;
+	const boundaries = live.filter(
+		(record) => !nodeOfElement.has(record.id ?? "") && validBoundary(record),
+	);
+	const work = sweepIntervalPairs(
+		boundaries.map((record) => ({
+			id: record.id!,
+			min: record.box!.x,
+			max: record.box!.x + record.box!.width,
+			value: record,
+			semantics: { partition: record.id!, excludedPartitions: new Set<string>() },
+		})),
+		[...nodes.values()].map((node) => ({
+			id: node.id,
+			min: node.body.x,
+			max: node.body.x + node.body.width,
+			value: node,
+			semantics: { partition: node.id, excludedPartitions: new Set<string>() },
+		})),
+		false,
+		(boundary, node) => {
+			if (contains(boundary.value.box!, node.value.body)) containerOnlyIds.add(boundary.value.id!);
+		},
+	);
+	return { ids: containerOnlyIds, work };
 }
 
 function buildObstacles(
@@ -560,7 +583,7 @@ function buildObstacles(
 		const obstacleResult = aggregateBoxes(members.map((record) => record.box!));
 		const kind =
 			validLibrary.length > 0 ? ("library-component" as const) : ("grouped-component" as const);
-		const id = `obstacle:${encodeIdentityList(elementIds)}`;
+		const id = obstacleIdentity(elementIds);
 		if (obstacleResult.kind !== "representable") {
 			aggregateFailures.push({ scope: "obstacle-component", subjectId: id, members });
 			continue;
@@ -591,7 +614,8 @@ export function buildInspectionModel(records: readonly DecodedRecord[]): Inspect
 	} = buildNodes(live, byId, confirmedLabels);
 	const hierarchyWork = assignNodeHierarchy(nodes);
 	const connectorEndpoints = buildConnectorEndpoints(live, nodeOfElement, duplicateIds);
-	const containerOnlyIds = findContainerOnlyIds(live, nodes, nodeOfElement);
+	const containerOnly = findContainerOnlyIds(live, nodes, nodeOfElement);
+	const containerOnlyIds = containerOnly.ids;
 	const {
 		obstacles,
 		qualifyingGroupedObstacleElementIds,
@@ -610,6 +634,7 @@ export function buildInspectionModel(records: readonly DecodedRecord[]): Inspect
 		obstacles,
 		aggregateFailures: [...nodeAggregateFailures, ...obstacleAggregateFailures],
 		hierarchyWork,
+		containerBoundaryWork: containerOnly.work,
 	};
 }
 
