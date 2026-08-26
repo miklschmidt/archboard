@@ -68,6 +68,51 @@ for (const finding of malformedReport.findings)
 				finding.focusBBox.height === finding.affectedBBox.height + 32,
 		);
 
+for (const [label, x, y, width, failedDelta] of [
+	["positive extreme", Number.MAX_VALUE, 0, 0, "x-minus-16"],
+	["negative extreme", -Number.MAX_VALUE, 0, 0, "x-minus-16"],
+	["huge width", 0, 0, Number.MAX_VALUE, "width-plus-32"],
+]) {
+	const report = inspectBoard([
+		{
+			id: `focus-${String(label)}`,
+			type: "text",
+			x,
+			y,
+			width,
+			height: 0,
+			fontFamily: 1,
+			text: "focus",
+		},
+	]);
+	const font = report.findings.find((finding) => finding.code === "FONT_POLICY_VIOLATION");
+	const padding = report.findings.find(
+		(finding) =>
+			finding.code === "AMBIGUOUS_GEOMETRY" && finding.reason === "unrepresentable-focus-padding",
+	);
+	check(
+		`${String(label)} keeps affected evidence and closes unrepresentable focus padding`,
+		font?.affectedBBox !== null &&
+			font?.focusBBox === null &&
+			padding?.affectedBBox !== null &&
+			padding?.focusBBox === null &&
+			padding?.details.failedDeltas.includes(failedDelta) &&
+			report.coverage === "indeterminate" &&
+			InspectionReportSchema.safeParse(report).success,
+	);
+}
+const ordinaryFocus = inspectBoard([
+	{ id: "focus-normal", type: "text", x: 10, y: 20, width: 30, height: 40, fontFamily: 1 },
+]).findings.find((finding) => finding.code === "FONT_POLICY_VIOLATION");
+check(
+	"ordinary focus padding retains exact 16px deltas",
+	ordinaryFocus?.affectedBBox?.x === 10 &&
+		ordinaryFocus.focusBBox?.x === -6 &&
+		ordinaryFocus.focusBBox?.y === 4 &&
+		ordinaryFocus.focusBBox?.width === 62 &&
+		ordinaryFocus.focusBBox?.height === 72,
+);
+
 const renderPrerequisiteCases = [
 	["finite", { x: 1, y: 2, width: 3, height: 4 }],
 	["missing", {}],
@@ -425,6 +470,17 @@ const findingCases = [
 			subjectId: "node",
 			sourceIndexes: [0, 1],
 			issue: "finite-constituents-have-no-finite-union",
+		},
+	],
+	[
+		"AMBIGUOUS_GEOMETRY",
+		"unrepresentable-focus-padding",
+		"warning",
+		true,
+		{
+			padding: 16,
+			failedDeltas: ["x-minus-16"],
+			issue: "exact-16px-padding-is-not-finite-and-representable",
 		},
 	],
 	[
@@ -989,6 +1045,20 @@ check(
 				),
 		),
 );
+check(
+	"extreme point evidence keeps its box and closes focus padding",
+	overflowPath.findings.some(
+		(finding) =>
+			finding.reason === "absolute-point-overflow" &&
+			finding.affectedBBox?.x === Number.MAX_VALUE &&
+			finding.focusBBox === null,
+	) &&
+		overflowPath.findings.some(
+			(finding) =>
+				finding.reason === "unrepresentable-focus-padding" &&
+				finding.elements.some((element) => element.id === "overflow-path"),
+		),
+);
 
 const unrepresentableSemanticNode = inspectBoard([
 	semanticNode("aggregate-node", {
@@ -1015,6 +1085,18 @@ check(
 				finding.reason === "unrepresentable-coordinate-span" &&
 				finding.details.scope === "semantic-node-body" &&
 				finding.affectedBBox !== null,
+		),
+);
+check(
+	"an aggregate representative keeps affected evidence when its focus padding is unrepresentable",
+	unrepresentableSemanticNode.findings.some(
+		(finding) =>
+			finding.reason === "unrepresentable-coordinate-span" &&
+			finding.affectedBBox !== null &&
+			finding.focusBBox === null,
+	) &&
+		unrepresentableSemanticNode.findings.some(
+			(finding) => finding.reason === "unrepresentable-focus-padding",
 		),
 );
 
@@ -1077,6 +1159,126 @@ check(
 		),
 );
 
+const overflowAdjacentFindings = inspectBoard([
+	{
+		id: "overflow-adjacent",
+		type: "text",
+		x: Number.MAX_VALUE,
+		y: 25,
+		width: Number.MAX_VALUE,
+		height: 10,
+		fontFamily: 1,
+		containerId: false,
+		customData: {
+			archboard: { node: false, binding: { path: "/absolute" } },
+			library: {},
+		},
+		boundElements: false,
+	},
+]);
+for (const reason of [
+	"disallowed-font-family",
+	"malformed-container-id",
+	"malformed-bound-elements",
+	"invalid-node-metadata",
+	"invalid-code-binding",
+	"invalid-library-attribution",
+])
+	check(
+		`derived extent overflow retains local evidence for ${reason}`,
+		overflowAdjacentFindings.findings.some(
+			(finding) =>
+				finding.reason === reason &&
+				finding.affectedBBox?.x === Number.MAX_VALUE &&
+				finding.affectedBBox.y === 25,
+		),
+	);
+const overflowEvidenceRoles = [
+	{
+		label: "invalid identity",
+		reason: "invalid-element-identity",
+		records: [
+			{
+				type: "text",
+				x: Number.MAX_VALUE,
+				y: 40,
+				width: Number.MAX_VALUE,
+				height: 10,
+				fontFamily: 5,
+			},
+		],
+	},
+	{
+		label: "duplicate identity",
+		reason: "duplicate-element-id",
+		records: [
+			semanticNode("dup-overflow", {
+				id: "dup-overflow",
+				x: Number.MAX_VALUE,
+				y: 50,
+				width: Number.MAX_VALUE,
+			}),
+			semanticNode("dup-local", { id: "dup-overflow", x: 0, y: 50 }),
+		],
+	},
+	{
+		label: "connector binding",
+		reason: "malformed-start-binding",
+		records: [
+			connector({
+				id: "bind-overflow",
+				x: Number.MAX_VALUE,
+				y: 60,
+				width: Number.MAX_VALUE,
+				startBinding: false,
+			}),
+		],
+	},
+	{
+		label: "unsupported geometry",
+		reason: "rotation",
+		records: [
+			{
+				id: "unsupported-overflow",
+				type: "rectangle",
+				x: Number.MAX_VALUE,
+				y: 70,
+				width: Number.MAX_VALUE,
+				height: 10,
+				angle: 1,
+				customData: { archboard: { node: "unsupported-overflow" } },
+			},
+		],
+	},
+	{
+		label: "persisted label seed",
+		reason: "persisted-seed",
+		records: [
+			{
+				id: "seed-overflow",
+				type: "rectangle",
+				x: Number.MAX_VALUE,
+				y: 80,
+				width: Number.MAX_VALUE,
+				height: 10,
+				label: { text: "seed" },
+			},
+		],
+	},
+];
+for (const { label, reason, records } of overflowEvidenceRoles) {
+	const report = inspectBoard(records);
+	check(
+		`derived extent overflow retains local evidence for ${label}`,
+		report.findings.some(
+			(finding) =>
+				finding.reason === reason &&
+				finding.affectedBBox !== null &&
+				(label === "duplicate identity" || finding.affectedBBox.x === Number.MAX_VALUE),
+		),
+	);
+}
+
 const aggregatePairSuppression = inspectBoard([
 	semanticNode("unrepresentable-pair-node", {
 		id: "pair-positive",
@@ -1119,6 +1321,129 @@ check(
 			finding.code === "NODE_OVERLAP" &&
 			[finding.details.firstNodeId, finding.details.secondNodeId].includes("max-zone"),
 	),
+);
+
+const maxMantissaHierarchy = inspectBoard([
+	semanticNode("wide-owner", {
+		id: "z-wide-owner",
+		x: -1,
+		y: 0.1,
+		width: Number.MAX_VALUE,
+		height: 1.5,
+	}),
+	semanticNode("narrow-owner", {
+		id: "a-narrow-owner",
+		x: 0,
+		y: 0,
+		width: Number.MAX_VALUE,
+		height: 1.25,
+	}),
+	semanticNode("max-mantissa-child", {
+		id: "max-mantissa-child-body",
+		x: 10,
+		y: 0.2,
+		width: 10,
+		height: 0.75,
+		boundElements: [{ id: "max-mantissa-label", type: "text" }],
+	}),
+	{
+		id: "max-mantissa-label",
+		type: "text",
+		x: 10,
+		y: 0.2,
+		width: 10,
+		height: 0.75,
+		angle: 0,
+		fontFamily: 5,
+		text: "child",
+		containerId: "max-mantissa-child-body",
+	},
+]);
+check(
+	"MAX_VALUE mantissas choose the smallest strictly larger containing owner",
+	!maxMantissaHierarchy.findings.some(
+		(finding) => finding.code === "LABEL_OVERLAP" && finding.details.nodeId === "narrow-owner",
+	) &&
+		maxMantissaHierarchy.findings.some(
+			(finding) => finding.code === "LABEL_OVERLAP" && finding.details.nodeId === "wide-owner",
+		),
+	JSON.stringify(
+		maxMantissaHierarchy.findings.map((finding) => [finding.code, finding.reason, finding.details]),
+	),
+);
+
+const equalExtremeHierarchyElements = [
+	semanticNode("equal-extreme-a", {
+		id: "a-equal",
+		x: 0,
+		y: 0,
+		width: Number.MAX_VALUE / 2,
+		height: 2,
+	}),
+	semanticNode("equal-extreme-z", {
+		id: "z-equal",
+		x: -1,
+		y: 0.5,
+		width: Number.MAX_VALUE,
+		height: 1,
+	}),
+	semanticNode("equal-extreme-child", {
+		id: "eq-child",
+		x: 10,
+		y: 0.6,
+		width: 10,
+		height: 0.6,
+		boundElements: [{ id: "eq-label", type: "text" }],
+	}),
+	{
+		id: "eq-label",
+		type: "text",
+		x: 10,
+		y: 0.6,
+		width: 10,
+		height: 0.6,
+		angle: 0,
+		fontFamily: 5,
+		text: "equal",
+		containerId: "eq-child",
+	},
+];
+for (const [order, elements] of [
+	["forward", equalExtremeHierarchyElements],
+	["reverse", equalExtremeHierarchyElements.toReversed()],
+]) {
+	const report = inspectBoard(elements);
+	check(
+		`equal extreme products use the stable boundary id in ${order} input order`,
+		!report.findings.some(
+			(finding) => finding.code === "LABEL_OVERLAP" && finding.details.nodeId === "equal-extreme-a",
+		) &&
+			report.findings.some(
+				(finding) =>
+					finding.code === "LABEL_OVERLAP" && finding.details.nodeId === "equal-extreme-z",
+			),
+	);
+}
+
+const subnormalHierarchy = inspectBoard([
+	semanticNode("subnormal-owner", {
+		id: "sub-owner",
+		x: 0,
+		y: 0,
+		width: Number.MIN_VALUE * 4,
+		height: Number.MAX_VALUE,
+	}),
+	semanticNode("subnormal-child", {
+		id: "sub-child",
+		x: 0,
+		y: 0,
+		width: Number.MIN_VALUE * 2,
+		height: Number.MAX_VALUE / 2,
+	}),
+]);
+check(
+	"subnormal hierarchy factors remain schema-total",
+	InspectionReportSchema.safeParse(subnormalHierarchy).success,
 );
 
 const equalAreaHierarchy = inspectBoard([
@@ -2637,6 +2962,30 @@ check(
 		groupedObstacle[0].obstacles[0]?.id === "obstacle:a,b" &&
 		JSON.stringify(groupedObstacle[0].obstacles[0]?.elementIds) === JSON.stringify(["a", "b"]),
 );
+const transitiveGroupedObstacle = obstaclePenetrations([
+	{ ...validLibraryBody("transitive-a"), customData: undefined, groupIds: ["group-a"] },
+	{
+		...validLibraryBody("transitive-b"),
+		customData: undefined,
+		x: 20,
+		groupIds: ["group-a", "group-b"],
+	},
+	{
+		...validLibraryBody("transitive-c"),
+		customData: undefined,
+		x: 40,
+		groupIds: ["group-b"],
+	},
+	connector({ id: "transitive-edge", x: -10, y: 5, width: 80, height: 0 }),
+]);
+check(
+	"multi-group transitivity produces one deterministic obstacle component",
+	transitiveGroupedObstacle.some(
+		(finding) =>
+			finding.obstacles[0]?.id === "obstacle:transitive-a,transitive-b,transitive-c" &&
+			JSON.stringify(finding.obstacles[0].groupIds) === JSON.stringify(["group-a", "group-b"]),
+	),
+);
 for (const [label, elements] of [
 	["plain shape", [{ ...validLibraryBody("plain"), customData: undefined, groupIds: [] }]],
 	["group singleton", [{ ...validLibraryBody("single"), customData: undefined, groupIds: ["g"] }]],
@@ -3235,6 +3584,83 @@ check(
 	limited.findings.some((finding) => finding.code === "INSPECTION_LIMIT_EXCEEDED") &&
 		limited.coverage === "indeterminate",
 );
+const limitWithExtremeSpan = performanceBoard(500, 1500, 500);
+limitWithExtremeSpan[0].x = -Number.MAX_VALUE;
+limitWithExtremeSpan[0].width = 0;
+limitWithExtremeSpan[1].x = Number.MAX_VALUE;
+limitWithExtremeSpan[1].width = 0;
+const limitedExtreme = inspectBoard(limitWithExtremeSpan);
+check(
+	"the 2,000,001 limit retains refs and reports its unrepresentable input span",
+	limitedExtreme.broadPhaseComparisons === 2_000_001 &&
+		limitedExtreme.findings.some(
+			(finding) =>
+				finding.code === "INSPECTION_LIMIT_EXCEEDED" &&
+				finding.elements.length === limitWithExtremeSpan.length &&
+				finding.affectedBBox !== null &&
+				finding.focusBBox === null,
+		) &&
+		limitedExtreme.findings.some(
+			(finding) =>
+				finding.reason === "unrepresentable-coordinate-span" &&
+				finding.details.scope === "finding-affected-union",
+		) &&
+		limitedExtreme.findings.some(
+			(finding) =>
+				finding.reason === "unrepresentable-focus-padding" &&
+				finding.elements.length === limitWithExtremeSpan.length,
+		),
+);
+
+const manyPathPoints = Array.from({ length: 750_000 }, (_, index) => [index, index % 2]);
+let largeCardinalityReport;
+let largeCardinalityFailure;
+try {
+	largeCardinalityReport = inspectBoard([
+		connector({
+			id: "large-cardinality-path",
+			angle: 1,
+			width: 749_999,
+			height: 1,
+			points: manyPathPoints,
+		}),
+	]);
+} catch (error) {
+	largeCardinalityFailure = error;
+}
+check(
+	"large-cardinality public path extrema never use the call argument limit",
+	!largeCardinalityFailure && InspectionReportSchema.safeParse(largeCardinalityReport).success,
+	largeCardinalityFailure instanceof Error ? largeCardinalityFailure.message : "",
+);
+
+let ungroupedGroupReads = 0;
+const largeUngrouped = Array.from({ length: 2_000 }, (_, index) => {
+	const record = {
+		id: `ungrouped-${index}`,
+		type: "rectangle",
+		x: index * 3,
+		y: 50_000,
+		width: 2,
+		height: 2,
+		angle: 0,
+		customData: { library: { itemId: `library-${index}` } },
+	};
+	Object.defineProperty(record, "groupIds", {
+		enumerable: true,
+		get() {
+			ungroupedGroupReads += 1;
+			return [];
+		},
+	});
+	return record;
+});
+const largeUngroupedReport = inspectBoard(largeUngrouped);
+check(
+	"large ungrouped obstacle preprocessing reads group membership linearly",
+	largeUngroupedReport.clean && ungroupedGroupReads === largeUngrouped.length * 2,
+	`${ungroupedGroupReads} reads for ${largeUngrouped.length} records`,
+);
 
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-inspection-"));
 const noteFor = (board, elements) =>
@@ -3249,6 +3675,18 @@ const noteFor = (board, elements) =>
 noteFor("clean", []);
 noteFor("warning", [
 	{ id: "txt", type: "text", x: 0, y: 0, width: 30, height: 10, fontFamily: 1, text: "legacy" },
+]);
+noteFor("focus-extreme", [
+	{
+		id: "fextreme",
+		type: "text",
+		x: Number.MAX_VALUE,
+		y: 0,
+		width: 0,
+		height: 0,
+		fontFamily: 1,
+		text: "focus",
+	},
 ]);
 noteFor("error", [
 	{
@@ -3270,6 +3708,7 @@ noteFor("error", [
 		customData: { archboard: { node: "b" } },
 	},
 ]);
+noteFor("limit-extreme", limitWithExtremeSpan);
 noteFor("unknown", [{ id: "edge", type: "arrow", x: 0, y: 0, width: 10, height: 0 }]);
 noteFor("malformed", [
 	{ type: "arrow", x: 0, y: 0, width: null, height: 0, points: null, startBinding: "bad" },
@@ -3582,6 +4021,51 @@ const prerequisiteTotalityElements = [
 		width: Number.MAX_VALUE / 2,
 		height: 1,
 	}),
+	{
+		id: "pfocus",
+		type: "text",
+		x: Number.MAX_VALUE,
+		y: 700,
+		width: 0,
+		height: 0,
+		fontFamily: 1,
+		text: "focus",
+	},
+	{
+		id: "pevid",
+		type: "text",
+		x: Number.MAX_VALUE,
+		y: 720,
+		width: Number.MAX_VALUE,
+		height: 10,
+		fontFamily: 1,
+		containerId: false,
+		boundElements: false,
+		customData: { archboard: { node: false, binding: { path: "/absolute" } } },
+	},
+	{
+		id: "pgeom",
+		type: "rectangle",
+		x: Number.MAX_VALUE,
+		y: 740,
+		width: Number.MAX_VALUE,
+		height: 10,
+		angle: 1,
+		label: { text: "seed" },
+		customData: {
+			archboard: { node: "pgeom" },
+			library: {},
+		},
+	},
+	connector({
+		id: "pbind",
+		x: Number.MAX_VALUE,
+		y: 760,
+		width: Number.MAX_VALUE,
+		height: 0,
+		angle: 1,
+		startBinding: false,
+	}),
 ];
 const prerequisiteTotalityNote = renderBoardNote(
 	{
@@ -3666,6 +4150,26 @@ for (const [board, exit] of [
 		result.status === exit && result.stdout !== "" && result.stderr === "",
 	);
 }
+const focusExtremeRun = run("focus-extreme", ["--strict"]);
+const focusExtremeResult = focusExtremeRun.stdout ? JSON.parse(focusExtremeRun.stdout) : null;
+check(
+	"strict package check exits 8 when exact focus padding is unrepresentable",
+	focusExtremeRun.status === 8 &&
+		focusExtremeRun.stderr === "" &&
+		CheckResultSchema.safeParse(focusExtremeResult).success &&
+		focusExtremeResult.findings.some(
+			(finding) =>
+				finding.reason === "disallowed-font-family" &&
+				finding.affectedBBox?.x === Number.MAX_VALUE &&
+				finding.focusBBox === null,
+		) &&
+		focusExtremeResult.findings.some(
+			(finding) =>
+				finding.reason === "unrepresentable-focus-padding" &&
+				finding.details.failedDeltas.includes("x-minus-16"),
+		),
+	focusExtremeRun.stderr,
+);
 const usage = spawnSync(path.join(root, "bin/canvas"), ["check"], {
 	cwd: root,
 	env: { ...process.env, ARCHBOARD_VAULT: vault },
@@ -3808,6 +4312,41 @@ check(
 				finding.details.labelId === "rlbl" &&
 				finding.details.nodeId === "reverse-unrelated",
 		) &&
+		prerequisiteTotalityResult.findings.some(
+			(finding) =>
+				finding.reason === "unrepresentable-focus-padding" &&
+				finding.elements.some((element) => element.id === "pfocus"),
+		) &&
+		[
+			"disallowed-font-family",
+			"malformed-container-id",
+			"malformed-bound-elements",
+			"invalid-node-metadata",
+			"invalid-code-binding",
+		].every((reason) =>
+			prerequisiteTotalityResult.findings.some(
+				(finding) =>
+					finding.reason === reason &&
+					finding.elements.some((element) => element.id === "pevid") &&
+					finding.affectedBBox?.x === Number.MAX_VALUE,
+			),
+		) &&
+		["rotation", "persisted-seed", "invalid-library-attribution"].every((reason) =>
+			prerequisiteTotalityResult.findings.some(
+				(finding) =>
+					finding.reason === reason &&
+					finding.elements.some((element) => element.id === "pgeom") &&
+					finding.affectedBBox?.x === Number.MAX_VALUE,
+			),
+		) &&
+		["rotation", "malformed-start-binding"].every((reason) =>
+			prerequisiteTotalityResult.findings.some(
+				(finding) =>
+					finding.reason === reason &&
+					finding.elements.some((element) => element.id === "pbind") &&
+					finding.affectedBBox?.x === Number.MAX_VALUE,
+			),
+		) &&
 		!prerequisiteTotalityResult.findings.some(
 			(finding) =>
 				(finding.code === "CONNECTOR_PENETRATES_NODE" && finding.details.connectorId === "bedge") ||
@@ -3819,6 +4358,26 @@ check(
 		?.map(
 			(finding) => `${finding.reason}:${finding.elements.map((element) => element.id).join("+")}`,
 		)
+		.join(",")}`,
+);
+const limitExtremeRun = run("limit-extreme", ["--strict"]);
+const limitExtremeResult = limitExtremeRun.stdout ? JSON.parse(limitExtremeRun.stdout) : null;
+check(
+	"persisted 2,000,001 limit input closes its opposite-extreme span through the package",
+	limitExtremeRun.status === 8 &&
+		limitExtremeRun.stderr === "" &&
+		CheckResultSchema.safeParse(limitExtremeResult).success &&
+		limitExtremeResult.broadPhaseComparisons === 2_000_001 &&
+		limitExtremeResult.findings.some(
+			(finding) => finding.code === "INSPECTION_LIMIT_EXCEEDED" && finding.elements.length > 0,
+		) &&
+		limitExtremeResult.findings.some(
+			(finding) =>
+				finding.reason === "unrepresentable-coordinate-span" &&
+				finding.details.scope === "finding-affected-union",
+		),
+	`status=${limitExtremeRun.status} stderr=${limitExtremeRun.stderr} comparisons=${limitExtremeResult?.broadPhaseComparisons} findings=${limitExtremeResult?.findings
+		?.map((finding) => `${finding.reason}:${finding.elements.length}`)
 		.join(",")}`,
 );
 const impossibleVault = path.join(vault, "not-a-directory");

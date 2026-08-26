@@ -37,10 +37,30 @@ export const box = (value: ExactBox): SceneBBox => ({
 	width: normalizeNumber(Math.max(0, value.width)),
 	height: normalizeNumber(Math.max(0, value.height)),
 });
-export const focus = (value: SceneBBox | null): SceneBBox | null =>
-	value === null
-		? null
-		: box({ x: value.x - 16, y: value.y - 16, width: value.width + 32, height: value.height + 32 });
+
+export type FocusBoxResult =
+	| { kind: "absent" }
+	| { kind: "representable"; box: SceneBBox }
+	| {
+			kind: "unrepresentable";
+			failedDeltas: Array<"x-minus-16" | "y-minus-16" | "width-plus-32" | "height-plus-32">;
+	  };
+
+/** Exact schema-v1 focus padding, including the representability of each required delta. */
+export function focusBox(value: SceneBBox | null): FocusBoxResult {
+	if (value === null) return { kind: "absent" };
+	const x = value.x - 16;
+	const y = value.y - 16;
+	const width = value.width + 32;
+	const height = value.height + 32;
+	const failedDeltas: Extract<FocusBoxResult, { kind: "unrepresentable" }>["failedDeltas"] = [];
+	if (!finite(x) || value.x - x !== 16) failedDeltas.push("x-minus-16");
+	if (!finite(y) || value.y - y !== 16) failedDeltas.push("y-minus-16");
+	if (!finite(width) || width - value.width !== 32) failedDeltas.push("width-plus-32");
+	if (!finite(height) || height - value.height !== 32) failedDeltas.push("height-plus-32");
+	if (failedDeltas.length > 0) return { kind: "unrepresentable", failedDeltas };
+	return { kind: "representable", box: box({ x, y, width, height }) };
+}
 
 export type AggregateBoxResult =
 	| { kind: "empty" }
@@ -58,10 +78,17 @@ const boxOrder = (a: ExactBox, b: ExactBox): number => {
 /** Classify an exact union without conflating no input with an unrepresentable finite span. */
 export function aggregateBoxes(values: readonly ExactBox[]): AggregateBoxResult {
 	if (values.length === 0) return { kind: "empty" };
-	const minX = Math.min(...values.map((value) => value.x));
-	const minY = Math.min(...values.map((value) => value.y));
-	const maxX = Math.max(...values.map((value) => value.x + value.width));
-	const maxY = Math.max(...values.map((value) => value.y + value.height));
+	let minX = values[0]!.x;
+	let minY = values[0]!.y;
+	let maxX = values[0]!.x + values[0]!.width;
+	let maxY = values[0]!.y + values[0]!.height;
+	for (let index = 1; index < values.length; index += 1) {
+		const value = values[index]!;
+		minX = Math.min(minX, value.x);
+		minY = Math.min(minY, value.y);
+		maxX = Math.max(maxX, value.x + value.width);
+		maxY = Math.max(maxY, value.y + value.height);
+	}
 	const width = maxX - minX;
 	const height = maxY - minY;
 	return finite(minX) && finite(minY) && finite(width) && finite(height)
@@ -71,10 +98,17 @@ export function aggregateBoxes(values: readonly ExactBox[]): AggregateBoxResult 
 
 export function pointBox(points: readonly ExactPoint[]): ExactBox | null {
 	if (points.length === 0) return null;
-	const minX = Math.min(...points.map((value) => value.x));
-	const minY = Math.min(...points.map((value) => value.y));
-	const maxX = Math.max(...points.map((value) => value.x));
-	const maxY = Math.max(...points.map((value) => value.y));
+	let minX = points[0]!.x;
+	let minY = points[0]!.y;
+	let maxX = minX;
+	let maxY = minY;
+	for (let index = 1; index < points.length; index += 1) {
+		const value = points[index]!;
+		minX = Math.min(minX, value.x);
+		minY = Math.min(minY, value.y);
+		maxX = Math.max(maxX, value.x);
+		maxY = Math.max(maxY, value.y);
+	}
 	const width = maxX - minX;
 	const height = maxY - minY;
 	return finite(minX) && finite(minY) && finite(width) && finite(height)

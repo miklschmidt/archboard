@@ -404,6 +404,13 @@ const ambiguous = [
 		sourceIndexes: z.array(z.number().int().nonnegative()).min(1),
 		issue: z.literal("finite-constituents-have-no-finite-union"),
 	}),
+	variant("AMBIGUOUS_GEOMETRY", "unrepresentable-focus-padding", true, {
+		padding: z.literal(16),
+		failedDeltas: z
+			.array(z.enum(["x-minus-16", "y-minus-16", "width-plus-32", "height-plus-32"]))
+			.min(1),
+		issue: z.literal("exact-16px-padding-is-not-finite-and-representable"),
+	}),
 	variant("AMBIGUOUS_GEOMETRY", "zero-length", true, {
 		connectorId: z.string().min(1).nullable(),
 		sourceIndex: z.number().int().nonnegative(),

@@ -109,6 +109,7 @@ function verifyAmbiguousGeometry(finding: FindingFor<"AMBIGUOUS_GEOMETRY">): voi
 		case "malformed-point":
 		case "absolute-point-overflow":
 		case "unrepresentable-coordinate-span":
+		case "unrepresentable-focus-padding":
 		case "zero-length":
 		case "collinear-overlap":
 			return;

@@ -324,34 +324,51 @@ function buildNodes(
 	return { nodes, nodeOfElement, aggregateFailures };
 }
 
-interface AreaKey {
+interface BinaryFactor {
+	significand: bigint;
 	exponent: number;
-	mantissa: number;
 }
 
-function areaFactor(value: number): AreaKey {
-	const exponent = Math.floor(Math.log2(value));
-	return { exponent, mantissa: value / 2 ** exponent };
+function binaryFactor(value: number): BinaryFactor {
+	if (value === 0) return { significand: 0n, exponent: 0 };
+	const view = new DataView(new ArrayBuffer(8));
+	view.setFloat64(0, value, false);
+	const bits = view.getBigUint64(0, false);
+	const storedExponent = Number((bits >> 52n) & 0x7ffn);
+	const fraction = bits & 0x000f_ffff_ffff_ffffn;
+	return storedExponent === 0
+		? { significand: fraction, exponent: -1074 }
+		: {
+				significand: (1n << 52n) | fraction,
+				exponent: storedExponent - 1023 - 52,
+			};
 }
 
-function areaKey(box: ExactBox): AreaKey {
-	if (box.width === 0 || box.height === 0)
-		return { exponent: Number.NEGATIVE_INFINITY, mantissa: 0 };
-	const width = areaFactor(box.width);
-	const height = areaFactor(box.height);
-	let exponent = width.exponent + height.exponent;
-	let mantissa = width.mantissa * height.mantissa;
-	if (mantissa >= 2) {
-		mantissa /= 2;
-		exponent += 1;
-	}
-	return { exponent, mantissa };
+function areaFactor(box: ExactBox): BinaryFactor {
+	const width = binaryFactor(box.width);
+	const height = binaryFactor(box.height);
+	return {
+		significand: width.significand * height.significand,
+		exponent: width.exponent + height.exponent,
+	};
+}
+
+function bitLength(value: bigint): number {
+	return value === 0n ? 0 : value.toString(2).length;
 }
 
 function compareArea(a: ExactBox, b: ExactBox): number {
-	const aa = areaKey(a);
-	const bb = areaKey(b);
-	return aa.exponent - bb.exponent || aa.mantissa - bb.mantissa;
+	const aa = areaFactor(a);
+	const bb = areaFactor(b);
+	if (aa.significand === 0n || bb.significand === 0n)
+		return aa.significand === bb.significand ? 0 : aa.significand === 0n ? -1 : 1;
+	const aMagnitude = bitLength(aa.significand) + aa.exponent;
+	const bMagnitude = bitLength(bb.significand) + bb.exponent;
+	if (aMagnitude !== bMagnitude) return aMagnitude < bMagnitude ? -1 : 1;
+	const commonExponent = Math.min(aa.exponent, bb.exponent);
+	const alignedA = aa.significand << BigInt(aa.exponent - commonExponent);
+	const alignedB = bb.significand << BigInt(bb.exponent - commonExponent);
+	return alignedA === alignedB ? 0 : alignedA < alignedB ? -1 : 1;
 }
 
 function assignNodeHierarchy(nodes: Map<string, InspectionNode>): void {
@@ -449,9 +466,16 @@ function buildObstacles(
 		);
 	});
 	const parent = new Map(eligible.map((record) => [record.id!, record.id!]));
+	const groupsById = new Map(eligible.map((record) => [record.id!, groupIds(record)]));
 	const find = (id: string): string => {
 		let current = id;
 		while (parent.get(current) !== current) current = parent.get(current)!;
+		let next = id;
+		while (parent.get(next) !== current) {
+			const previous = parent.get(next)!;
+			parent.set(next, current);
+			next = previous;
+		}
 		return current;
 	};
 	const join = (a: string, b: string) => {
@@ -461,11 +485,12 @@ function buildObstacles(
 		if (aa < bb) parent.set(bb, aa);
 		else parent.set(aa, bb);
 	};
-	for (let i = 0; i < eligible.length; i += 1)
-		for (let j = i + 1; j < eligible.length; j += 1) {
-			const a = eligible[i]!,
-				b = eligible[j]!;
-			if (groupIds(a).some((group) => groupIds(b).includes(group))) join(a.id!, b.id!);
+	const firstByGroup = new Map<string, string>();
+	for (const record of eligible)
+		for (const group of groupsById.get(record.id!) ?? []) {
+			const first = firstByGroup.get(group);
+			if (first) join(first, record.id!);
+			else firstByGroup.set(group, record.id!);
 		}
 	const components = new Map<string, DecodedRecord[]>();
 	for (const record of eligible) {
@@ -484,7 +509,9 @@ function buildObstacles(
 		if (sharedGroup)
 			for (const member of members) qualifyingGroupedObstacleElementIds.add(member.id!);
 		const elementIds = members.map((record) => record.id!).toSorted();
-		const groups = [...new Set(members.flatMap(groupIds))].toSorted();
+		const groups = [
+			...new Set(members.flatMap((record) => groupsById.get(record.id!) ?? [])),
+		].toSorted();
 		const library = validLibrary
 			.map((record) => {
 				const attr = libraryAttribution(record)!;

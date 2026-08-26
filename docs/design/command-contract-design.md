@@ -122,6 +122,15 @@ also contains errors. Non-strict reports always exit 0 after successful
 inspection. Usage and policy failures still exit 2 with empty stdout;
 vault, note, Drawing, schema, and I/O failures exit 1 with empty stdout.
 
+Inspection findings use scene-coordinate boxes. `affectedBBox` preserves finite
+local evidence even when an element's stored extent or a multi-element span is
+not representable. A normal `focusBBox` expands that box by exactly 16 px on
+each side. If IEEE-754 arithmetic cannot represent all four exact deltas,
+`affectedBBox` remains present, `focusBBox` is null, and the report includes
+`AMBIGUOUS_GEOMETRY/unrepresentable-focus-padding`. That warning affects
+coverage, so strict mode exits 8. A null `affectedBBox` still means the record
+has no finite x/y location.
+
 ## CLI-only compatibility
 
 `src/bin.ts` removes one `--url` before importing runtime configuration.
