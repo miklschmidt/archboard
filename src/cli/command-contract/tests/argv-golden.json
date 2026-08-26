@@ -157,20 +157,32 @@
 			"stderrSha256": "0fe80583a09075291bf0fa78ad716ccb59f440238aefbaa4ee138f1e81a0507f"
 		},
 		{
-			"name": "repeatable filters append and nonrepeatable type is last wins",
-			"argv": [
-				"query",
-				"--type",
-				"ellipse",
-				"--type",
-				"rectangle",
-				"--filter",
-				"id=missing",
-				"--filter",
-				"id=shape1",
-				"--board",
-				"contract"
-			],
+			"name": "repeatable filters append when the last value alone would match",
+			"argv": ["query", "--filter", "id=missing", "--filter", "id=shape1", "--board", "contract"],
+			"server": "mock",
+			"status": 0,
+			"stdoutSha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+			"stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+		},
+		{
+			"name": "repeatable filters append when the first value alone would match",
+			"argv": ["query", "--filter", "id=shape1", "--filter", "id=missing", "--board", "contract"],
+			"server": "mock",
+			"status": 0,
+			"stdoutSha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+			"stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+		},
+		{
+			"name": "nonrepeatable type keeps the last matching value",
+			"argv": ["query", "--type", "ellipse", "--type", "rectangle", "--board", "contract"],
+			"server": "mock",
+			"status": 0,
+			"stdoutSha256": "8f381f5d84a79ad62bd47108dd25896ef99a904883face2dd83504652354815b",
+			"stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+		},
+		{
+			"name": "nonrepeatable type keeps the last nonmatching value",
+			"argv": ["query", "--type", "rectangle", "--type", "ellipse", "--board", "contract"],
 			"server": "mock",
 			"status": 0,
 			"stdoutSha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
