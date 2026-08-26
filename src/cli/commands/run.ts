@@ -53,17 +53,7 @@ import {
 } from "./arrange.js";
 import { installSkillContract } from "./install-skill.js";
 import { libraryContract, libraryInsertContract, libraryListContract } from "./library.js";
-import { childDiscoveryOptions } from "./args.js";
-
-type LegacyParserOwner = "legacy args.ts" | "legacy custom parser" | "legacy subcommand dispatch";
-
-interface LegacyCommand {
-	kind: "legacy";
-	handler: (argv: string[]) => Promise<void>;
-	handlerOwner: string;
-	parserOwner: LegacyParserOwner;
-	legacyArgv: "root-tail" | "route-tail";
-}
+import { childDiscoveryOptions } from "../command-contract/route-options.js";
 
 interface ContractCommand {
 	kind: "contract";
@@ -71,7 +61,7 @@ interface ContractCommand {
 	handlerOwner: string;
 }
 
-type RouteOwner = LegacyCommand | ContractCommand;
+type RouteOwner = ContractCommand;
 
 interface CommandRoute {
 	owner: RouteOwner;
@@ -87,27 +77,8 @@ interface CommandRoute {
 	};
 }
 
-const commandSummary = (route: CommandRoute) =>
-	route.summary ??
-	(route.owner.kind === "contract" ? route.owner.contract.summary : "Legacy command");
-const commandUsage = (route: CommandRoute) =>
-	route.usage ?? (route.owner.kind === "contract" ? route.owner.contract.usage : "");
-
-const legacy = (
-	handler: (argv: string[]) => Promise<void>,
-	handlerOwner: string,
-	legacyParserOwner: LegacyParserOwner = "legacy args.ts",
-	legacyArgv: LegacyCommand["legacyArgv"] = "root-tail",
-): LegacyCommand => ({
-	kind: "legacy",
-	handler,
-	handlerOwner,
-	parserOwner: legacyParserOwner,
-	legacyArgv,
-});
-// Kept until the zero-legacy proof gate is tightened and passes; the next
-// rollback-safe checkpoint deletes the fallback types and dispatch branch.
-void legacy;
+const commandSummary = (route: CommandRoute) => route.summary ?? route.owner.contract.summary;
+const commandUsage = (route: CommandRoute) => route.usage ?? route.owner.contract.usage;
 
 const contract = (value: AnyCommandContract, handlerOwner: string): ContractCommand => ({
 	kind: "contract",
@@ -148,7 +119,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		].join("\n"),
 	},
 	update: {
-		owner: contract(updateContract, "src/cli/command-contract/lib/command-definitions.ts"),
+		owner: contract(updateContract, "src/cli/command-contract/update.ts"),
 	},
 	delete: {
 		owner: contract(deleteContract, "src/cli/commands/elements.ts"),
@@ -169,7 +140,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		usage: "get <id>",
 	},
 	query: {
-		owner: contract(queryContract, "src/cli/command-contract/lib/command-definitions.ts"),
+		owner: contract(queryContract, "src/cli/command-contract/query.ts"),
 	},
 	selection: {
 		owner: contract(selectionContract, "src/cli/commands/selection.ts"),
@@ -241,7 +212,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		].join("\n"),
 	},
 	viewport: {
-		owner: contract(viewportContract, "src/cli/command-contract/lib/command-definitions.ts"),
+		owner: contract(viewportContract, "src/cli/command-contract/viewport.ts"),
 	},
 	demote: {
 		owner: contract(demoteContract, "src/cli/commands/promote.ts"),
@@ -444,7 +415,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		].join("\n"),
 	},
 	export: {
-		owner: contract(exportContract, "src/cli/command-contract/lib/command-definitions.ts"),
+		owner: contract(exportContract, "src/cli/command-contract/export.ts"),
 	},
 	import: {
 		owner: contract(scene.importContract, "src/cli/commands/scene.ts"),
@@ -560,23 +531,19 @@ export function cliSurface(): { name: string; subcommands: readonly string[] }[]
 	}));
 }
 
-/** The one registry projected as all 57 canonical paths during mixed migration. */
+/** The one registry projected as all 57 canonical contract paths. */
 export interface CliRegistryEntry {
 	name: string;
 	parent: string | null;
-	kind: "contract" | "legacy";
+	kind: "contract";
 	handlerOwner: string;
 	parserOwner: string;
-	handlerName?: string;
 	bare?: CommandRoute["bare"];
 	childDiscovery?: CommandRoute["childDiscovery"];
-	legacyArgv?: LegacyCommand["legacyArgv"];
-	handler?: LegacyCommand["handler"];
-	contract?: AnyCommandContract;
+	contract: AnyCommandContract;
 }
 
 function parserOwner(owner: RouteOwner): string {
-	if (owner.kind === "legacy") return owner.parserOwner;
 	return owner.contract.parameters.some((parameter) => parameter.route === "staged-tokens")
 		? "CommandContract staged token parser"
 		: "CommandContract concrete Commander parser";
@@ -593,12 +560,9 @@ function flattenRoute(
 		kind: route.owner.kind,
 		handlerOwner: route.owner.handlerOwner,
 		parserOwner: parserOwner(route.owner),
-		...(route.owner.kind === "legacy" ? { handlerName: route.owner.handler.name } : {}),
 		...(route.bare ? { bare: route.bare } : {}),
 		...(route.childDiscovery ? { childDiscovery: route.childDiscovery } : {}),
-		...(route.owner.kind === "contract"
-			? { contract: route.owner.contract }
-			: { handler: route.owner.handler, legacyArgv: route.owner.legacyArgv }),
+		contract: route.owner.contract,
 	};
 	return [
 		current,
@@ -656,10 +620,7 @@ function dispatchedCommand(
 		selectedRoute = root.children?.[root.bare.child] ?? root;
 	}
 	const selected = selectedRoute.owner;
-	const argv =
-		selected.kind === "contract" || selected.legacyArgv === "route-tail"
-			? rest.filter((_, index) => index !== childIndex)
-			: [...rest];
+	const argv = rest.filter((_, index) => index !== childIndex);
 	return { root, selected, argv };
 }
 
@@ -711,7 +672,7 @@ function printHelp(): void {
 function exitCodeFor(error: unknown, command?: RouteOwner): number {
 	if (error instanceof CliUsageError) return 2;
 	const code = (error as Error & { code?: string }).code;
-	if (command?.kind === "contract" && code !== undefined) {
+	if (command && code !== undefined) {
 		const declared = command.contract.refusals.find((refusal) => refusal.code === code);
 		if (declared) return declared.exit;
 	}
@@ -830,8 +791,7 @@ export async function runCli(argv: string[]): Promise<void> {
 		const dispatched = dispatchedCommand(name, rest)!;
 		selected = dispatched.selected;
 		const commandArgv = dispatched.argv;
-		if (selected.kind === "contract") await runCommand(selected.contract, commandArgv);
-		else await selected.handler(commandArgv);
+		await runCommand(selected.contract, commandArgv);
 	} catch (error) {
 		if (!(error as Error & { quiet?: boolean }).quiet) {
 			process.stderr.write(`Error: ${formatBoardRefusal(error) ?? (error as Error).message}\n`);
@@ -845,7 +805,7 @@ export async function runCli(argv: string[]): Promise<void> {
 		const contractRefusal =
 			errorCode === "BOARD_CONFLICT" ||
 			(errorCode !== undefined && BOARD_REFUSAL_CODES.has(errorCode));
-		if (held && (selected.kind !== "contract" || contractRefusal)) {
+		if (held && contractRefusal) {
 			process.stderr.write(
 				`"${held.board}" has stopped saving. Changes from here are held on the canvas ` +
 					"and reach no note until one of those three is run.\n",

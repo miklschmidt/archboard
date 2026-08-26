@@ -1,5 +1,5 @@
 {
-	"schemaVersion": 5,
+	"schemaVersion": 6,
 	"generatedFrom": "src/cli/commands/run.ts",
 	"routes": [
 		{
@@ -41,7 +41,7 @@
 			"name": "update",
 			"parent": null,
 			"kind": "contract",
-			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
+			"handlerOwner": "src/cli/command-contract/update.ts",
 			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
@@ -62,7 +62,7 @@
 			"name": "query",
 			"parent": null,
 			"kind": "contract",
-			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
+			"handlerOwner": "src/cli/command-contract/query.ts",
 			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
@@ -115,7 +115,7 @@
 			"name": "viewport",
 			"parent": null,
 			"kind": "contract",
-			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
+			"handlerOwner": "src/cli/command-contract/viewport.ts",
 			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
@@ -276,7 +276,7 @@
 			"name": "export",
 			"parent": null,
 			"kind": "contract",
-			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
+			"handlerOwner": "src/cli/command-contract/export.ts",
 			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
@@ -8081,6 +8081,5 @@
 			"refusals": [],
 			"relationships": []
 		}
-	],
-	"legacyPaths": []
+	]
 }
