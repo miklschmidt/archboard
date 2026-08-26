@@ -1,7 +1,7 @@
 import { boundTextDrift, labelAnchorOf, planLabelRepair } from "../../engine/labels.js";
 import { measureLinear } from "../../engine/geometry.js";
 import type {
-	ElementRef, InspectionFinding, InspectionPolicy, NodeRef, ObstacleRef, SceneBBox, ScenePoint,
+	ElementRef, InspectionFinding, InspectionPolicy, NodeRef, ObstacleRef, ScenePoint,
 } from "../schemas.js";
 import { InspectionFindingSchema } from "../schemas.js";
 import { decodePath, kindOf, stableDescription, type DecodedRecord } from "./decode.js";
@@ -10,8 +10,8 @@ import {
 	type ExactBox, type ExactPoint, type Segment,
 } from "./geometry.js";
 import {
-	archboardMetadata, buildInspectionModel, groupIds, libraryAttribution, nodeId, semanticParents,
-	type InspectionModel, type InspectionNode, type InspectionObstacle,
+	archboardMetadata, buildInspectionModel, groupIds, libraryAttribution, semanticParents,
+	type InspectionModel,
 } from "./model.js";
 
 export const BROAD_PHASE_COMPARISON_LIMIT = 2_000_000 as const;
@@ -67,7 +67,7 @@ function identityRoles(record: DecodedRecord): string[] {
 	if (type === "text" && record.raw?.containerId !== undefined) roles.add("bound-label");
 	if (record.raw?.boundElements !== undefined) roles.add("label-container");
 	if (["rectangle", "ellipse", "diamond", "frame"].includes(type ?? "")) roles.add("closed-boundary");
-	return [...roles].sort();
+	return [...roles].toSorted();
 }
 
 function identityFindings(records: readonly DecodedRecord[]): InspectionFinding[] {
@@ -95,7 +95,7 @@ function identityFindings(records: readonly DecodedRecord[]): InspectionFinding[
 	}
 	for (const [id, matches] of duplicate) if (matches.length > 1) findings.push(make({
 		code: "BROKEN_REFERENCE", reason: "duplicate-element-id", severity: "error", affectsCoverage: true,
-		details: { duplicateId: id, sourceIndexes: matches.map((r) => r.sourceIndex).sort((a, b) => a - b) },
+		details: { duplicateId: id, sourceIndexes: matches.map((r) => r.sourceIndex).toSorted((a, b) => a - b) },
 		message: `Element id ${id} occurs ${matches.length} times.`, elements: uniqueRefs(matches), affected: affectedOf(matches),
 	}));
 	return findings;
@@ -356,7 +356,7 @@ function labelFindings(records: readonly DecodedRecord[], model: InspectionModel
 	}
 	for (const [textId, owners] of reverseOwners) {
 		const text = byId.get(textId);
-		if (!text || text.type !== "text") continue;
+		if (text?.type !== "text") continue;
 		const forward = typeof text.raw?.containerId === "string" && text.raw.containerId ? text.raw.containerId : null;
 		if (!forward) {
 			for (const ownerId of owners) {
@@ -385,8 +385,8 @@ function pairSweep<A, B>(
 	visit: (a: A, b: B) => void,
 	counter: { value: number; limited: boolean; pass: string }, pass: string,
 ): void {
-	const aSorted = [...left].sort((a, b) => a.box.x - b.box.x || a.box.x + a.box.width - (b.box.x + b.box.width) || a.id.localeCompare(b.id));
-	const bSorted = sameSet ? aSorted as unknown as PairItem<B>[] : [...right].sort((a, b) => a.box.x - b.box.x || a.box.x + a.box.width - (b.box.x + b.box.width) || a.id.localeCompare(b.id));
+	const aSorted = left.toSorted((a, b) => a.box.x - b.box.x || a.box.x + a.box.width - (b.box.x + b.box.width) || a.id.localeCompare(b.id));
+	const bSorted = sameSet ? aSorted as unknown as PairItem<B>[] : right.toSorted((a, b) => a.box.x - b.box.x || a.box.x + a.box.width - (b.box.x + b.box.width) || a.id.localeCompare(b.id));
 	for (let i = 0; i < aSorted.length && !counter.limited; i += 1) {
 		const a = aSorted[i]!;
 		for (let j = sameSet ? i + 1 : 0; j < bSorted.length; j += 1) {
@@ -473,7 +473,7 @@ function collisionFindings(
 }
 
 function sortFindings(findings: readonly InspectionFinding[]): InspectionFinding[] {
-	return [...findings].sort((a, b) => {
+	return findings.toSorted((a, b) => {
 		const severity = (a.severity === "error" ? 0 : 1) - (b.severity === "error" ? 0 : 1);
 		if (severity) return severity;
 		const code = CODE_ORDER.indexOf(a.code) - CODE_ORDER.indexOf(b.code); if (code) return code;

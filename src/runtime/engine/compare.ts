@@ -89,10 +89,6 @@
 import { type ServerElement } from "./types.js";
 import { type BoardIdentity } from "./board.js";
 
-const areaOfBox = (el: ServerElement): number => {
-	const box = boxOf(el);
-	return box.w * box.h;
-};
 const canonical = (v: unknown): string => {
 	if (v === null || typeof v !== "object") return JSON.stringify(v) ?? "null";
 	if (Array.isArray(v)) return `[${v.map(canonical).join(",")}]`;
