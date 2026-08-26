@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 22:52'
+updated_date: '2026-08-26 23:05'
 labels:
   - ready-for-agent
 dependencies:
@@ -525,6 +525,12 @@ Two fresh on-demand contract generations were byte-identical: `cli-command-audit
 - Added alternating exact-exclusion evidence with the exact query/membership formulas, I+E+H many-exclusion and many-ancestor retained-state cases, 2,048 completion and 3,072 ceiling cases, package strict/non-strict/text/no-side-effect evidence, and preserved 1,516,200/2,000,001 comparison fixtures.
 - Closed adjacent correctness: rotated plain decorations do not affect coverage; applicable rotated participants still do; obstacle refs require nonempty library source and group evidence for every multi-element component.
 - Focused validation green before commit `81c9324`: type/lint; 671 inspection checks; boundaries/module-scope; 58 contract proofs and 978 contract checks; 579 CLI checks; geometry 89; labels 183; branch suite. Two `bun run fix` passes were byte-stable at diff SHA-256 `d015bade5a40fc4ec42846b9422666b0916532c752459eca89224f675c133686`. Full check/test chains remain to run after this checkpoint.
+
+### 2026-08-27 preprocessing-limit final validation
+
+Complete validation passed after source commit `81c9324` and evidence commit `c70e8a7`. The first `bun run check` observed the documented scheduling-sensitive human-performance reconciliation sample `[0,0,2]`; isolated diagnosis immediately passed at `[0,0]`, and the required full `bun run check` rerun passed. A separate complete `bun run test` then passed. Each successful full chain ran human-performance, fixed-point, typed-text, and live-session sequentially/headlessly: `[0,0]`, 0 of 13 changed elements, both text rename interactions preserved, and 42 of 42 mixed-write cycles converged.
+
+On-demand contract generation was repeated with identical bytes, then all three ignored views were removed: audit Markdown `c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55`, proof JSON `4757efc048d711c45093a249a2b5c819e30ed043cf84eaa2e642f6a2c40ac5fa`, proof Markdown `70bcf2892140a4916b3ff51a5d51ec71a8b5b2e62dc884358bac70d2ace99bb7`. Canonical `docs/design/cli-command-audit.json` remains tracked. `git diff --check` passes. TASK-119 remains In Progress with all nine acceptance criteria unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
