@@ -95,7 +95,7 @@ plantIndexIfMissing();
 // untouched throughout, which matters in a tree that usually has the change
 // being tested in it.
 
-const touched = src(path.join("core", "compare.ts"));
+const touched = src(path.join("runtime", "engine", "compare.ts"));
 const originalTimes = fs.statSync(touched);
 
 function touch(file) {
