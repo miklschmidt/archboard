@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 14:40'
+updated_date: '2026-08-26 14:54'
 labels:
   - ready-for-agent
 dependencies:
@@ -348,6 +348,8 @@ Final implementation validation: the full focused matrix passed, including type-
 Review remediation checkpoint: fixed all independently verified findings without changing protected scope. Penetration tolerance is now applied once with exact/inside/outside public cases; malformed angles and applicable type discriminators produce coverage-affecting unsupported findings; invalid library rescue uses the model's qualifying multi-member grouped-body classification; every finding schema fixes severity and coverage literals, including closed data-dependent subvariants; producer inputs are a discriminated union; check validates policy before vault access; finding order uses the approved declared reason and ref/point/box sequence; unsupported connectors expose decoded absolute path points and extents; and text formatting is compile-time exhaustive by code and reason. The matrix grew from 27 checks at rejected review to 357 checks and covers all closed schema branches with impossible-pair rejection, all intended invalid-id roles, path/binding/reference closures, malformed applicable geometry, exact tolerances, persisted fonts, bound-label semantics, obstacle and actual-boundary zone cases, deterministic ordering/counts/limit, dense reroute, deep mutation traps, real-package malformed notes, zero HTTP, strict exits, and unchanged vault paths/bytes/mtimes. The expansion also found and fixed an order-dependent grouped-obstacle union root and prevented unlocatable paths from inventing coordinates. At commit f5971c4, bun run lint, both TypeScript projects, test:inspection (357 checks), and git diff --check pass. TASK-119 remains In Progress with acceptance criteria unchecked. Remaining validation: approved focused matrix, two byte-stable fix passes, generator check, bun run check, separate bun run test, and final clean-state evidence.
 
 Review-remediation scope amended by direct user instruction: generated CLI audit/proof views are now on-demand ignored outputs, while cli-command-audit.json remains the canonical authored input. Implementation is proceeding under the appended plan amendment without reopening TASK-128 or changing protected runtime behavior.
+
+Review-remediation closure after the generated-ownership amendment: commit 9683eb7 keeps docs/design/cli-command-audit.json as the canonical authored input, removes the three reproducible views from tracking, renders them on demand under ignored docs/design/generated/, and validates their live projection plus two absent-directory byte-identical generations without touching the checkout. Final gates on the committed tree: two bun run fix passes both produced the empty SHA-256 diff e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855; bun run check passed; a separate bun run test passed; both full chains ran all four browser suites sequentially/headless, with fixed-point 0 of 13 changed and live-session 42 of 42 cycles converged. The earlier separate-test human-performance failure was isolated per docs/agents/test-suite.md, its browser-created text correction was diagnosed without retaining instrumentation, the isolated rerun passed, and both required complete chains then passed. TASK-119 remains In Progress with every acceptance criterion unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
