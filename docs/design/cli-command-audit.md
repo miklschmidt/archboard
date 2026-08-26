@@ -18,7 +18,7 @@ The canonical JSON records 33 commands, 24 subcommands, and 57 public paths.
 | `query` | CommandContract real Commander adapter | validated bare json array. ServerElement[] | server; board. GET /api/elements or /api/elements/search | read only; client typed predicates. server before bbox; read before filter validation | [].id; [].customData.archboard; [].geometry | necessary composition |
 | `selection` | legacy args.ts | json object or text. selection report or rendered text | server; board. GET /api/selection | read-only browser selection state. server before read | ids; nodes; elements | missing handle |
 | `panes` | legacy args.ts | json object or text. ordered pane report | server. GET /api/panes | view state, no elements. server before read | panes[].id; panes[].board; panes[].selection | necessary composition |
-| `promote` | legacy args.ts | json object or text. promoted nodes,elements,fingerprint | server; board; doing. selection read then one POST /api/elements/changes | replace elements once with namespaced binding metadata. resolve repository before write | nodes[].node; elements; fingerprint.version | candidate single act |
+| `promote` | legacy args.ts | json object or text. promoted nodes,elements,fingerprint | server; board; doing. selection read then one POST /api/elements/changes | replace elements once with namespaced binding metadata. resolve repository before write | nodes[].node; elements; fingerprint.version | necessary composition |
 | `pane` | legacy subcommand dispatch | none by itself. usage refusal | .  | namespace only. subcommand first |  | necessary composition |
 | `pane open` | legacy args.ts | json object. pane layout/open result | server; browser. POST /api/panes/open | browser layout, no board write. browser before effect | pane.id; pane.place; board | necessary composition |
 | `pane close` | legacy args.ts | json object. pane layout/close result | server; browser. POST /api/panes/close | browser layout, no board write. browser before effect | closed; panes | necessary composition |
@@ -52,7 +52,7 @@ The canonical JSON records 33 commands, 24 subcommands, and 57 public paths.
 | `snapshot restore` | legacy args.ts | json object. success,name,board,restored | server; board; doing. GET snapshot, DELETE clear, POST batch | currently two board content writes. fetch and board check before clear | name; board; restored | candidate single act |
 | `library` | legacy subcommand dispatch | none by itself. usage refusal | .  | namespace only. subcommand first |  | necessary composition |
 | `library list` | legacy args.ts | json catalogue or text. sets/items/source metadata | server. GET /api/library | server library read, boardless. filters after catalogue read | items[].name; items[].id; items[].source | missing handle |
-| `library insert` | legacy args.ts | json write result. inserted elements,fingerprint | server; board; doing. library read then one POST /api/elements/changes | one board write. resolve stencil and coordinates before write | elements[].id; fingerprint.version | candidate single act |
+| `library insert` | legacy args.ts | json write result. inserted elements,fingerprint | server; board; doing. library read then one POST /api/elements/changes | one board write. resolve stencil and coordinates before write | elements[].id; fingerprint.version | necessary composition |
 | `arrange` | legacy subcommand dispatch | none by itself. usage refusal | .  | namespace only. subcommand first |  | necessary composition |
 | `arrange align` | legacy args.ts | json write result. aligned elements,fingerprint | server; board; doing. one POST /api/elements/changes | one geometry write. ids/direction before write | elements; fingerprint.version | necessary composition |
 | `arrange distribute` | legacy args.ts | json write result. distributed elements,fingerprint | server; board; doing. one POST /api/elements/changes | one geometry write. ids/direction before write | elements; fingerprint.version | necessary composition |
@@ -69,9 +69,9 @@ The canonical JSON records 33 commands, 24 subcommands, and 57 public paths.
 
 ### device-trust stencil to bound node
 
-Classification: candidate single act. Decision: approval required.
+Classification: rejected collapse. Decision: Do not create a task. Reconsider only after TASK-119 through TASK-122 provide production-backed completion or evaluation evidence of repeated caller-side identity reconstruction..
 
-The caller repeats stencil lookup, inserted ids, promotion identity, grouping, and decoration that Archboard already knows.
+These operations can express separate human intent, and the current evidence is one device-trust workflow rather than a repeated released workflow.
 
 Commands: `library list`, `library insert`, `promote`, `arrange group`, `update`. Follow-up: none approved.
 
@@ -125,19 +125,19 @@ Commands: `viewport`, `screenshot`, `export`. Follow-up: none approved.
 
 ### replace import
 
-Classification: candidate single act. Decision: approval required.
+Classification: approved follow-up. Decision: Track independently; do not implement in TASK-123.01..
 
 One requested replacement currently clears and batches as two board writes.
 
-Commands: `import --replace`. Follow-up: none approved.
+Commands: `import --replace`. Follow-up: TASK-126.
 
 ### snapshot restore
 
-Classification: candidate single act. Decision: approval required.
+Classification: approved follow-up. Decision: Track independently; do not implement in TASK-123.01..
 
 One requested restore currently clears and batches as two board writes.
 
-Commands: `snapshot restore`. Follow-up: none approved.
+Commands: `snapshot restore`. Follow-up: TASK-127.
 
 ### TASK-119 through TASK-121 proposed commands
 
