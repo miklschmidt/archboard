@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 13:21'
+updated_date: '2026-08-26 13:30'
 labels:
   - ready-for-agent
 dependencies:
@@ -332,6 +332,10 @@ Checkpoint 4: added dense before/after and pinned compare fixtures, pure and pac
 Checkpoint 5: extended current contract metadata to 34 commands and 58 paths while preserving the immutable 57-path compatibility subset. Added check-specific schema/effect/outcome assertions, exact general-help normalization, generated audit/proof files, and check outcome documentation. generator --check, test:contracts (58 proofs/969 checks), test:cli (579 checks), and diff checks passed.
 
 Paused for urgent skill-lint regression after all five approved implementation checkpoints were committed. Completed validation: type-check; test:inspection (27 checks); test:geometry; test:labels; test:branch; test:boundaries; test:module-scope; test:suites; generator --check; test:contracts (58 proofs/969 checks); test:cli (579 checks); and git diff --check at the recorded checkpoints. The first required bun run fix stopped before formatting because inspection lint found several issues. The cleanup checkpoint resolves every reported issue except structuralFindings complexity 150 versus the repository limit 60; focused type-check and diff checks pass, while focused bunx oxlint reports only that remaining complexity error. Remaining on resume: split structuralFindings without disabling lint, complete two stable fix passes, focused matrix, sequential fixed-point browser evidence, bun run check, separate bun run test, clean committed worktree, and independent fixed-range review. Work paused at a clean checkpoint for the urgent distributable-skill lint regression.
+
+Resume checkpoint: decomposed structuralFindings into private geometry, binding, reference, metadata, font, and unsupported-geometry helpers while preserving the pure inspection interface and detector order. test:inspection still reports 27 checks, both TypeScript projects pass, and bun run lint passes without a complexity waiver. The lint command ran the TASK-128 distributable-skill validator successfully before oxlint. bun run fix passed twice; both passes ran the skill validator before and after formatting, and pass 2 preserved the exact binary worktree diff hash d640f622c318bfbc68fe68a83f91f263ee79dc62bf5a1f33a7f613ce351896d6 and identical porcelain status. The first fixer pass applied canonical formatting to existing TASK-119 source, test, fixture, and contract paths. No TASK-128-owned path changed. Remaining work is the approved focused matrix, sequential browser evidence, bun run check, separate bun run test, final clean commit state, and independent fixed-range review.
+
+Formatter-fixture correction: the dense compare fixture pins the two-space JSON bytes emitted by command presentation, while oxfmt uses repository tabs for JSON. Added a one-path formatter ignore and restored the fixture's canonical bytes. test:inspection passes all 27 checks after a real fix pass. A second real fix pass preserved the exact binary diff and porcelain status at hash 8c8126a61dd4a563efb79968c935467a23ce32025102e8c4879bc1a0dbb69a1e; type-check, lint including the skill validator, and git diff --check also pass.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

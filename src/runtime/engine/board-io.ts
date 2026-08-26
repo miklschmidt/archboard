@@ -334,7 +334,11 @@ export function readRawBoardElementsForInspection(key: string): readonly unknown
 	if (!note) throw new Error(`Board note not found: ${file}`);
 	const scene: unknown = JSON.parse(note.sceneJson);
 	if (Array.isArray(scene)) return scene;
-	if (!scene || typeof scene !== "object" || !Array.isArray((scene as Record<string, unknown>).elements)) {
+	if (
+		!scene ||
+		typeof scene !== "object" ||
+		!Array.isArray((scene as Record<string, unknown>).elements)
+	) {
 		throw new Error(`${file} has no elements array in its Drawing payload.`);
 	}
 	return (scene as { elements: unknown[] }).elements;

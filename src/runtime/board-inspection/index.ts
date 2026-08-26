@@ -1,6 +1,11 @@
 import {
-	FindingCodeSchema, InspectionPolicyInputSchema, InspectionPolicySchema, InspectionReportSchema,
-	type InspectionPolicy, type InspectionPolicyInput, type InspectionReport,
+	FindingCodeSchema,
+	InspectionPolicyInputSchema,
+	InspectionPolicySchema,
+	InspectionReportSchema,
+	type InspectionPolicy,
+	type InspectionPolicyInput,
+	type InspectionReport,
 } from "./schemas.js";
 import { decodeRecords } from "./lib/decode.js";
 import { BROAD_PHASE_COMPARISON_LIMIT, detectBoard } from "./lib/detectors.js";
@@ -46,13 +51,15 @@ export const DEFAULT_INSPECTION_POLICY: InspectionPolicy = Object.freeze({
 function normalizedPolicy(input?: InspectionPolicyInput): InspectionPolicy {
 	const parsed = InspectionPolicyInputSchema.parse(input ?? {});
 	const configured = parsed.allowedFontFamilies;
-	const allowedFontFamilies = configured === "any"
-		? "any" as const
-		: [...new Set(configured ?? [5] as const)].toSorted((a, b) => a - b);
+	const allowedFontFamilies =
+		configured === "any"
+			? ("any" as const)
+			: [...new Set(configured ?? ([5] as const))].toSorted((a, b) => a - b);
 	return InspectionPolicySchema.parse({
 		allowedFontFamilies,
 		dimensionTolerance: parsed.dimensionTolerance ?? DEFAULT_INSPECTION_POLICY.dimensionTolerance,
-		intersectionTolerance: parsed.intersectionTolerance ?? DEFAULT_INSPECTION_POLICY.intersectionTolerance,
+		intersectionTolerance:
+			parsed.intersectionTolerance ?? DEFAULT_INSPECTION_POLICY.intersectionTolerance,
 		overlapTolerance: parsed.overlapTolerance ?? DEFAULT_INSPECTION_POLICY.overlapTolerance,
 	});
 }
@@ -65,25 +72,39 @@ export function inspectBoard(
 	const policy = normalizedPolicy(policyInput);
 	const decoded = decodeRecords(records);
 	const detection = detectBoard(decoded, policy);
-	const byCode = Object.fromEntries(FindingCodeSchema.options.map((code) => [code, 0])) as Record<string, number>;
-	let errors = 0, warnings = 0;
+	const byCode = Object.fromEntries(FindingCodeSchema.options.map((code) => [code, 0])) as Record<
+		string,
+		number
+	>;
+	let errors = 0,
+		warnings = 0;
 	for (const finding of detection.findings) {
 		byCode[finding.code] = (byCode[finding.code] ?? 0) + 1;
-		if (finding.severity === "error") errors += 1; else warnings += 1;
+		if (finding.severity === "error") errors += 1;
+		else warnings += 1;
 	}
-	const coverageReasons = [...new Set(detection.findings.filter((finding) => finding.affectsCoverage)
-		.map((finding) => `${finding.code}/${finding.reason}`))].toSorted();
-	const coverage = coverageReasons.length > 0 ? "indeterminate" as const : "complete" as const;
+	const coverageReasons = [
+		...new Set(
+			detection.findings
+				.filter((finding) => finding.affectsCoverage)
+				.map((finding) => `${finding.code}/${finding.reason}`),
+		),
+	].toSorted();
+	const coverage = coverageReasons.length > 0 ? ("indeterminate" as const) : ("complete" as const);
 	return InspectionReportSchema.parse({
-		schemaVersion: 1, success: true, policy,
+		schemaVersion: 1,
+		success: true,
+		policy,
 		limits: { broadPhaseComparisons: BROAD_PHASE_COMPARISON_LIMIT },
 		totalElementCount: records.length,
 		liveElementCount: decoded.filter((record) => record.live).length,
 		locatableElementCount: decoded.filter((record) => record.live && record.box).length,
 		broadPhaseComparisons: detection.broadPhaseComparisons,
-		coverage, clean: coverage === "complete" && detection.findings.length === 0,
+		coverage,
+		clean: coverage === "complete" && detection.findings.length === 0,
 		maxSeverity: errors > 0 ? "error" : warnings > 0 ? "warning" : "none",
 		counts: { bySeverity: { error: errors, warning: warnings }, byCode },
-		coverageReasons, findings: detection.findings,
+		coverageReasons,
+		findings: detection.findings,
 	});
 }

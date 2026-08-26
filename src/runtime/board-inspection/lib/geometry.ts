@@ -1,8 +1,22 @@
 import type { SceneBBox, ScenePoint } from "../schemas.js";
 
-export interface ExactPoint { x: number; y: number }
-export interface ExactBox { x: number; y: number; width: number; height: number }
-export interface Segment { connectorId: string; sourceIndex: number; index: number; a: ExactPoint; b: ExactPoint }
+export interface ExactPoint {
+	x: number;
+	y: number;
+}
+export interface ExactBox {
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+}
+export interface Segment {
+	connectorId: string;
+	sourceIndex: number;
+	index: number;
+	a: ExactPoint;
+	b: ExactPoint;
+}
 
 export const finite = (value: unknown): value is number =>
 	typeof value === "number" && Number.isFinite(value);
@@ -13,15 +27,19 @@ export function normalizeNumber(value: number): number {
 }
 
 export const point = (value: ExactPoint): ScenePoint => ({
-	x: normalizeNumber(value.x), y: normalizeNumber(value.y),
+	x: normalizeNumber(value.x),
+	y: normalizeNumber(value.y),
 });
 export const box = (value: ExactBox): SceneBBox => ({
-	x: normalizeNumber(value.x), y: normalizeNumber(value.y),
+	x: normalizeNumber(value.x),
+	y: normalizeNumber(value.y),
 	width: normalizeNumber(Math.max(0, value.width)),
 	height: normalizeNumber(Math.max(0, value.height)),
 });
 export const focus = (value: SceneBBox | null): SceneBBox | null =>
-	value === null ? null : box({ x: value.x - 16, y: value.y - 16, width: value.width + 32, height: value.height + 32 });
+	value === null
+		? null
+		: box({ x: value.x - 16, y: value.y - 16, width: value.width + 32, height: value.height + 32 });
 
 export function unionBoxes(values: readonly ExactBox[]): ExactBox | null {
 	if (values.length === 0) return null;
@@ -50,14 +68,20 @@ export function overlap(a: ExactBox, b: ExactBox): ExactBox | null {
 }
 
 export function contains(outer: ExactBox, inner: ExactBox): boolean {
-	return outer.x <= inner.x && outer.y <= inner.y &&
+	return (
+		outer.x <= inner.x &&
+		outer.y <= inner.y &&
 		outer.x + outer.width >= inner.x + inner.width &&
-		outer.y + outer.height >= inner.y + inner.height;
+		outer.y + outer.height >= inner.y + inner.height
+	);
 }
 
 /** Liang-Barsky clipping. Null means no interior span beyond tolerance. */
 export function segmentInsideBox(
-	a: ExactPoint, b: ExactPoint, target: ExactBox, tolerance: number,
+	a: ExactPoint,
+	b: ExactPoint,
+	target: ExactBox,
+	tolerance: number,
 ): { entry: ExactPoint; exit: ExactPoint } | null {
 	const left = target.x + tolerance;
 	const top = target.y + tolerance;
@@ -68,10 +92,19 @@ export function segmentInsideBox(
 	const dy = b.y - a.y;
 	let low = 0;
 	let high = 1;
-	for (const [p, q] of [[-dx, a.x - left], [dx, right - a.x], [-dy, a.y - top], [dy, bottom - a.y]] as const) {
-		if (p === 0) { if (q < 0) return null; continue; }
+	for (const [p, q] of [
+		[-dx, a.x - left],
+		[dx, right - a.x],
+		[-dy, a.y - top],
+		[dy, bottom - a.y],
+	] as const) {
+		if (p === 0) {
+			if (q < 0) return null;
+			continue;
+		}
 		const ratio = q / p;
-		if (p < 0) low = Math.max(low, ratio); else high = Math.min(high, ratio);
+		if (p < 0) low = Math.max(low, ratio);
+		else high = Math.min(high, ratio);
 		if (low >= high) return null;
 	}
 	if (high <= 0 || low >= 1) return null;
@@ -89,7 +122,11 @@ export type SegmentIntersection =
 const cross = (u: ExactPoint, v: ExactPoint) => u.x * v.y - u.y * v.x;
 
 export function intersectSegments(
-	a: ExactPoint, b: ExactPoint, c: ExactPoint, d: ExactPoint, tolerance: number,
+	a: ExactPoint,
+	b: ExactPoint,
+	c: ExactPoint,
+	d: ExactPoint,
+	tolerance: number,
 ): SegmentIntersection {
 	const r = { x: b.x - a.x, y: b.y - a.y };
 	const s = { x: d.x - c.x, y: d.y - c.y };
@@ -114,8 +151,10 @@ export function intersectSegments(
 	if (t < 0 || t > 1 || u < 0 || u > 1) return { kind: "none" };
 	const hit = { x: a.x + t * r.x, y: a.y + t * r.y };
 	const endpointDistance = Math.min(
-		Math.hypot(hit.x - a.x, hit.y - a.y), Math.hypot(hit.x - b.x, hit.y - b.y),
-		Math.hypot(hit.x - c.x, hit.y - c.y), Math.hypot(hit.x - d.x, hit.y - d.y),
+		Math.hypot(hit.x - a.x, hit.y - a.y),
+		Math.hypot(hit.x - b.x, hit.y - b.y),
+		Math.hypot(hit.x - c.x, hit.y - c.y),
+		Math.hypot(hit.x - d.x, hit.y - d.y),
 	);
 	return endpointDistance <= tolerance ? { kind: "contact" } : { kind: "proper", point: hit };
 }
