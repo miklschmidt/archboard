@@ -1,10 +1,11 @@
 ---
 id: TASK-123.02
 title: Rewrite every CLI command around CommandContract
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-26 00:02'
+updated_date: '2026-08-26 08:20'
 labels: []
 dependencies:
   - TASK-123.01
@@ -42,3 +43,13 @@ Migrate in vertical slices while keeping the complete CLI usable and tests green
 - [ ] #7 Tests exercise every command contract plus representative end-to-end invocations, including invalid and cross-field input, invalid handler output, one-write enforcement, optimistic concurrency, absent browser or server, stdin, files, text mode, and jq consumption.
 - [ ] #8 The CLI continues to run from source under the repository Bun version requirements, and Commander remains confined to the adapter boundary.
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @codex
+created: 2026-08-26 08:20
+---
+Planning started after TASK-123.01 completed and was pushed at 91ddd3d7acba1518a2726d7cd7aebb08e6b885ba. Implementation requires parent approval of the recorded plan.
+---
+<!-- COMMENTS:END -->
