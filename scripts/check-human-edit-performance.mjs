@@ -600,7 +600,7 @@ try {
 } finally {
 	await browser(["close"]).catch(() => {});
 	try {
-		process.kill(-tracedServer.pid, "SIGTERM");
+		if (tracedServer.pid !== undefined) process.kill(-tracedServer.pid, "SIGTERM");
 	} catch {}
 	await sleep(250);
 	fs.rmSync(vault, { recursive: true, force: true });

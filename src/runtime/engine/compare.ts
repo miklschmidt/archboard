@@ -88,6 +88,46 @@
 
 import { type ServerElement } from "./types.js";
 import { type BoardIdentity } from "./board.js";
+
+const areaOfBox = (el: ServerElement): number => {
+	const box = boxOf(el);
+	return box.w * box.h;
+};
+const canonical = (v: unknown): string => {
+	if (v === null || typeof v !== "object") return JSON.stringify(v) ?? "null";
+	if (Array.isArray(v)) return `[${v.map(canonical).join(",")}]`;
+	const entries = Object.entries(v as Record<string, unknown>)
+		.filter(([, val]) => val !== undefined)
+		.toSorted(([x], [y]) => (x < y ? -1 : 1));
+	return `{${entries.map(([k, val]) => `${JSON.stringify(k)}:${canonical(val)}`).join(",")}}`;
+};
+const edgeFields = (e: EdgeModel): Record<string, unknown> => ({
+	label: e.label,
+	kind: e.kind,
+	connector: e.type,
+	strokeStyle: e.strokeStyle,
+	startArrowhead: e.startArrowhead,
+	endArrowhead: e.endArrowhead,
+	...(e.extra ? { extra: e.extra } : {}),
+});
+const pairKey = (x: string, y: string): string => (x < y ? `${x}\0${y}` : `${y}\0${x}`);
+const aspect = (box: BoundingBox | null): number | null =>
+	box && box.maxY - box.minY > 1 ? (box.maxX - box.minX) / (box.maxY - box.minY) : null;
+const sideSummaryOf = (input: CompareSideInput, model: BoardModel): SideSummary => ({
+	board: input.key,
+	identity: input.identity,
+	source: input.source,
+	...(input.file ? { file: input.file } : {}),
+	...(input.onScreen !== undefined ? { onScreen: input.onScreen } : {}),
+	...(input.savedAt ? { savedAt: input.savedAt } : {}),
+	...(input.loadedAt ? { loadedAt: input.loadedAt } : {}),
+	elementCount: input.elements.length,
+	nodeCount: model.nodes.size,
+	edgeCount: model.edges.length,
+	plainCount: model.plain.count,
+	nodeBox: model.nodeBox,
+	regionFrame: model.regionFrame,
+});
 import { labelOf } from "./promote.js";
 import { nodeIdOf, readElementMetadata } from "./metadata.js";
 import type { ArchboardBlock, LogicalAddress } from "./metadata.js";
@@ -366,11 +406,13 @@ const CONTAINER_TYPES = new Set(["rectangle", "ellipse", "diamond", "frame"]);
 const isConnector = (type: string) => CONNECTOR_TYPES.has(type);
 
 function bindingEnd(el: unknown, end: "start" | "end"): string | undefined {
-	const record = el && typeof el === "object" ? el as Record<string, unknown> : {};
+	const record = el && typeof el === "object" ? (el as Record<string, unknown>) : {};
 	const binding = end === "start" ? record.startBinding : record.endBinding;
-	const bindingRecord = binding && typeof binding === "object" ? binding as Record<string, unknown> : {};
+	const bindingRecord =
+		binding && typeof binding === "object" ? (binding as Record<string, unknown>) : {};
 	const fallback = end === "start" ? record.start : record.end;
-	const fallbackRecord = fallback && typeof fallback === "object" ? fallback as Record<string, unknown> : {};
+	const fallbackRecord =
+		fallback && typeof fallback === "object" ? (fallback as Record<string, unknown>) : {};
 	const id = bindingRecord.elementId ?? fallbackRecord.id;
 	return typeof id === "string" ? id : undefined;
 }
@@ -454,27 +496,13 @@ function labelOfAll(el: ServerElement, all: ServerElement[]): string | undefined
 	return text ? String(text).replace(/\s+/g, " ").trim() || undefined : undefined;
 }
 
-function buildBoard(input: CompareSideInput): BoardModel {
-	const all = input.elements;
-	const byId = new Map(all.map((el) => [el.id, el]));
-	const warnings: string[] = [];
+interface NodeBuildResult {
+	nodeOfElement: Map<string, string>;
+	models: NodeModel[];
+	nodes: Map<string, NodeModel>;
+}
 
-	// Bound labels belong to their container, exactly as `describe` folds them,
-	// so a labelled shape is one thing and not two.
-	const boundLabelOf = new Set<string>();
-	for (const el of all) {
-		const container = el.containerId;
-		if (el.type === "text" && container && container !== el.id && byId.has(container)) {
-			boundLabelOf.add(el.id);
-		}
-	}
-
-	// --- nodes: elements grouped by node id -----------------------------------
-	//
-	// Every element carrying a node id, whatever it is drawn from. A stencil is
-	// an arbitrary set of primitives, and the shipped PostgreSQL one is seven
-	// lines, so a type test here made promoting it report success and produce a
-	// node no reader could see (TASK-053).
+function buildNodes(all: ServerElement[], boundLabelOf: Set<string>): NodeBuildResult {
 	const groupsByNode = new Map<string, ServerElement[]>();
 	const nodeOfElement = new Map<string, string>();
 	for (const el of all) {
@@ -485,8 +513,6 @@ function buildBoard(input: CompareSideInput): BoardModel {
 		groupsByNode.set(id, list);
 		nodeOfElement.set(el.id, id);
 	}
-	// A bound label whose container is a node is part of that node whether or not
-	// promotion got round to stamping it.
 	for (const el of all) {
 		const container = el.containerId;
 		if (!boundLabelOf.has(el.id) || !container) continue;
@@ -499,37 +525,28 @@ function buildBoard(input: CompareSideInput): BoardModel {
 	const models: NodeModel[] = [];
 	for (const [id, elements] of groupsByNode) {
 		const shapes = elements.filter((el) => !boundLabelOf.has(el.id));
-		const area = (el: ServerElement) => {
-			const b = boxOf(el);
-			return b.w * b.h;
-		};
-		const ranked = [...(shapes.length ? shapes : elements)].toSorted((a, b) => area(b) - area(a));
+		const ranked = [...(shapes.length ? shapes : elements)].toSorted(
+			(a, b) => areaOfBox(b) - areaOfBox(a),
+		);
 		const primary = ranked[0]!;
-
-		// Merge the archboard block across the node's elements, primary first:
-		// promotion writes the same block to every member, but a user-edited board
-		// may only carry it on one.
 		const block: ArchboardBlock = {};
 		for (const el of [primary, ...elements]) {
-			const b = readElementMetadata(el).archboard;
-			if (!b) continue;
-			for (const [k, v] of Object.entries(b)) {
-				if (block[k] === undefined && v !== undefined) block[k] = v;
+			const metadata = readElementMetadata(el).archboard;
+			if (!metadata) continue;
+			for (const [key, value] of Object.entries(metadata)) {
+				if (block[key] === undefined && value !== undefined) block[key] = value;
 			}
 		}
-
 		const extra: Record<string, unknown> = {};
-		for (const [k, v] of Object.entries(block)) {
-			if (!ARCHBOARD_KNOWN.has(k)) extra[k] = v;
+		for (const [key, value] of Object.entries(block)) {
+			if (!ARCHBOARD_KNOWN.has(key)) extra[key] = value;
 		}
-
 		const label =
 			labelOfAll(primary, all) ?? elements.map((el) => labelOfAll(el, all)).find(Boolean);
 		const declaredName = typeof block.name === "string" && block.name ? block.name : undefined;
-		const link = elements.map((el) => el.link).find((l) => typeof l === "string" && l) as
-			| string
-			| undefined;
-
+		const link = elements
+			.map((el) => el.link)
+			.find((value) => typeof value === "string" && value) as string | undefined;
 		models.push({
 			node: id,
 			elements,
@@ -553,8 +570,112 @@ function buildBoard(input: CompareSideInput): BoardModel {
 			in: [],
 		});
 	}
+	const nodes = new Map(models.map((model) => [model.node, model]));
+	return { nodeOfElement, models, nodes };
+}
 
-	const nodes = new Map(models.map((m) => [m.node, m]));
+interface EdgeBuildResult {
+	edges: EdgeModel[];
+	unresolved: UnresolvedConnector[];
+	promotedConnectors: Array<{ node: string; from: string; to: string }>;
+}
+
+function buildEdges(
+	all: ServerElement[],
+	byId: Map<string, ServerElement>,
+	nodes: Map<string, NodeModel>,
+	nodeOfElement: Map<string, string>,
+): EdgeBuildResult {
+	const edges: EdgeModel[] = [];
+	const unresolved: UnresolvedConnector[] = [];
+	const promotedConnectors: Array<{ node: string; from: string; to: string }> = [];
+	for (const el of all) {
+		if (!isConnector(el.type)) continue;
+		const startId = bindingEnd(el as unknown, "start");
+		const endId = bindingEnd(el as unknown, "end");
+		const ownNode = nodeOfElement.get(el.id);
+		if (ownNode) {
+			const from = startId ? nodeOfElement.get(startId) : undefined;
+			const to = endId ? nodeOfElement.get(endId) : undefined;
+			if (from && to && from !== to) promotedConnectors.push({ node: ownNode, from, to });
+			continue;
+		}
+		const fromNode = startId ? nodeOfElement.get(startId) : undefined;
+		const toNode = endId ? nodeOfElement.get(endId) : undefined;
+		const block = readElementMetadata(el).archboard ?? {};
+		const extra: Record<string, unknown> = {};
+		for (const [key, value] of Object.entries(block)) {
+			if (!ARCHBOARD_KNOWN.has(key)) extra[key] = value;
+		}
+		const label = labelOfAll(el, all);
+		if (fromNode && toNode) {
+			const raw = el as unknown as Record<string, unknown>;
+			edges.push({
+				from: fromNode,
+				to: toNode,
+				...(label ? { label } : {}),
+				...(typeof block.kind === "string" ? { kind: block.kind } : {}),
+				elementId: el.id,
+				type: el.type,
+				...(el.strokeStyle ? { strokeStyle: el.strokeStyle } : {}),
+				...(raw.startArrowhead !== undefined
+					? { startArrowhead: typeof raw.startArrowhead === "string" ? raw.startArrowhead : null }
+					: {}),
+				...(raw.endArrowhead !== undefined
+					? { endArrowhead: typeof raw.endArrowhead === "string" ? raw.endArrowhead : null }
+					: {}),
+				...(Object.keys(extra).length ? { extra } : {}),
+				fromName: nodes.get(fromNode)?.name ?? fromNode,
+				toName: nodes.get(toNode)?.name ?? toNode,
+			});
+			continue;
+		}
+		const endLabel = (id: string | undefined) =>
+			id && byId.get(id) ? labelOfAll(byId.get(id)!, all) : undefined;
+		const fromLabel = endLabel(startId);
+		const toLabel = endLabel(endId);
+		unresolved.push({
+			elementId: el.id,
+			type: el.type,
+			...(label ? { label } : {}),
+			...(fromNode ? { fromNode } : {}),
+			...(toNode ? { toNode } : {}),
+			...(fromLabel ? { fromLabel } : {}),
+			...(toLabel ? { toLabel } : {}),
+			reason:
+				!startId && !endId
+					? "drawn but bound to nothing at either end"
+					: !fromNode && !toNode
+						? "both ends land on elements that are not nodes"
+						: `the ${fromNode ? "target" : "source"} end lands on an element that is not a node`,
+		});
+	}
+	return { edges, unresolved, promotedConnectors };
+}
+
+function buildBoard(input: CompareSideInput): BoardModel {
+	const all = input.elements;
+	const byId = new Map(all.map((el) => [el.id, el]));
+	const warnings: string[] = [];
+
+	// Bound labels belong to their container, exactly as `describe` folds them,
+	// so a labelled shape is one thing and not two.
+	const boundLabelOf = new Set<string>();
+	for (const el of all) {
+		const container = el.containerId;
+		if (el.type === "text" && container && container !== el.id && byId.has(container)) {
+			boundLabelOf.add(el.id);
+		}
+	}
+
+	// --- nodes: elements grouped by node id -----------------------------------
+	//
+	// Every element carrying a node id, whatever it is drawn from. A stencil is
+	// an arbitrary set of primitives, and the shipped PostgreSQL one is seven
+	// lines, so a type test here made promoting it report success and produce a
+	// node no reader could see (TASK-053).
+	const nodeBuild = buildNodes(all, boundLabelOf);
+	const { nodeOfElement, models, nodes } = nodeBuild;
 
 	// A node whose recorded variant is not the board's own was copied from
 	// another variant and never re-promoted. Not harmless: `variantAnomaly` is a
@@ -580,72 +701,8 @@ function buildBoard(input: CompareSideInput): BoardModel {
 	// `promotedConnectors` collects the ones that would have been edges, so the
 	// human hears what the promotion cost instead of watching a dependency
 	// disappear.
-	const edges: EdgeModel[] = [];
-	const unresolved: UnresolvedConnector[] = [];
-	const promotedConnectors: Array<{ node: string; from: string; to: string }> = [];
-	for (const el of all) {
-		if (!isConnector(el.type)) continue;
-		const startId = bindingEnd(el as unknown, "start");
-		const endId = bindingEnd(el as unknown, "end");
-		const ownNode = nodeOfElement.get(el.id);
-		if (ownNode) {
-			const from = startId ? nodeOfElement.get(startId) : undefined;
-			const to = endId ? nodeOfElement.get(endId) : undefined;
-			// Two different nodes at its ends is what made it an edge. A connector
-			// inside a stencil binds elements of the one node it belongs to, and
-			// that was never a dependency, so it goes quietly.
-			if (from && to && from !== to) promotedConnectors.push({ node: ownNode, from, to });
-			continue;
-		}
-		const fromNode = startId ? nodeOfElement.get(startId) : undefined;
-		const toNode = endId ? nodeOfElement.get(endId) : undefined;
-		const block = readElementMetadata(el).archboard ?? {};
-		const extra: Record<string, unknown> = {};
-		for (const [k, v] of Object.entries(block)) {
-			if (!ARCHBOARD_KNOWN.has(k)) extra[k] = v;
-		}
-		const label = labelOfAll(el, all);
-
-		if (fromNode && toNode) {
-			edges.push({
-				from: fromNode,
-				to: toNode,
-				...(label ? { label } : {}),
-				...(typeof block.kind === "string" ? { kind: block.kind } : {}),
-				elementId: el.id,
-				type: el.type,
-				...(el.strokeStyle ? { strokeStyle: el.strokeStyle } : {}),
-				...(((el as unknown as Record<string, unknown>).startArrowhead !== undefined)
-					? { startArrowhead: typeof (el as unknown as Record<string, unknown>).startArrowhead === "string" ? (el as unknown as Record<string, unknown>).startArrowhead as string : null }
-					: {}),
-				...(((el as unknown as Record<string, unknown>).endArrowhead !== undefined)
-					? { endArrowhead: typeof (el as unknown as Record<string, unknown>).endArrowhead === "string" ? (el as unknown as Record<string, unknown>).endArrowhead as string : null }
-					: {}),
-				...(Object.keys(extra).length ? { extra } : {}),
-				fromName: nodes.get(fromNode)?.name ?? fromNode,
-				toName: nodes.get(toNode)?.name ?? toNode,
-			});
-			continue;
-		}
-
-		const endLabel = (id: string | undefined) =>
-			id && byId.get(id) ? labelOfAll(byId.get(id)!, all) : undefined;
-		unresolved.push({
-			elementId: el.id,
-			type: el.type,
-			...(label ? { label } : {}),
-			...(fromNode ? { fromNode } : {}),
-			...(toNode ? { toNode } : {}),
-			...(endLabel(startId) ? { fromLabel: endLabel(startId)! } : {}),
-			...(endLabel(endId) ? { toLabel: endLabel(endId)! } : {}),
-			reason:
-				!startId && !endId
-					? "drawn but bound to nothing at either end"
-					: !fromNode && !toNode
-						? "both ends land on elements that are not nodes"
-						: `the ${fromNode ? "target" : "source"} end lands on an element that is not a node`,
-		});
-	}
+	const edgeBuild = buildEdges(all, byId, nodes, nodeOfElement);
+	const { edges, unresolved, promotedConnectors } = edgeBuild;
 
 	// A connector that was promoted and also joins two other nodes is the one
 	// case where reading it as a node loses something: it used to be a
@@ -702,7 +759,9 @@ function buildBoard(input: CompareSideInput): BoardModel {
 	const groups: ClusterFacts[] = [];
 	const groupOf = new Map<string, string>();
 	let groupIndex = 0;
-	for (const [, members] of [...byGroupId.entries()].toSorted((a, b) => b[1].length - a[1].length)) {
+	for (const [, members] of [...byGroupId.entries()].toSorted(
+		(a, b) => b[1].length - a[1].length,
+	)) {
 		if (members.length < 2) continue; // a group of one says nothing
 		const id = `g${++groupIndex}`;
 		for (const node of members) groupOf.set(node, id);
@@ -907,14 +966,6 @@ function reframeRegions(model: BoardModel, shared: Set<string>): void {
 function sameJson(a: unknown, b: unknown): boolean {
 	if (a === b) return true;
 	if (a === undefined || b === undefined) return false;
-	const canonical = (v: unknown): string => {
-		if (v === null || typeof v !== "object") return JSON.stringify(v) ?? "null";
-		if (Array.isArray(v)) return `[${v.map(canonical).join(",")}]`;
-		const entries = Object.entries(v as Record<string, unknown>)
-			.filter(([, val]) => val !== undefined)
-			.toSorted(([x], [y]) => (x < y ? -1 : 1));
-		return `{${entries.map(([k, val]) => `${JSON.stringify(k)}:${canonical(val)}`).join(",")}}`;
-	};
 	return canonical(a) === canonical(b);
 }
 
@@ -1171,16 +1222,6 @@ function matchEdges(
 	const changed: ChangedEdge[] = [];
 	const unchanged: EdgeFacts[] = [];
 
-	const edgeFields = (e: EdgeModel): Record<string, unknown> => ({
-		label: e.label,
-		kind: e.kind,
-		connector: e.type,
-		strokeStyle: e.strokeStyle,
-		startArrowhead: e.startArrowhead,
-		endArrowhead: e.endArrowhead,
-		...(e.extra ? { extra: e.extra } : {}),
-	});
-
 	for (const key of new Set([...fromMap.keys(), ...toMap.keys()])) {
 		const lefts = [...(fromMap.get(key) ?? [])];
 		const rights = [...(toMap.get(key) ?? [])];
@@ -1314,22 +1355,6 @@ export function compareBoards(
 	reframeRegions(A, sharedIds);
 	reframeRegions(B, sharedIds);
 
-	const side = (input: CompareSideInput, model: BoardModel): SideSummary => ({
-		board: input.key,
-		identity: input.identity,
-		source: input.source,
-		...(input.file ? { file: input.file } : {}),
-		...(input.onScreen !== undefined ? { onScreen: input.onScreen } : {}),
-		...(input.savedAt ? { savedAt: input.savedAt } : {}),
-		...(input.loadedAt ? { loadedAt: input.loadedAt } : {}),
-		elementCount: input.elements.length,
-		nodeCount: model.nodes.size,
-		edgeCount: model.edges.length,
-		plainCount: model.plain.count,
-		nodeBox: model.nodeBox,
-		regionFrame: model.regionFrame,
-	});
-
 	// --- nodes ----------------------------------------------------------------
 	const allNodeIds = new Set([...A.nodes.keys(), ...B.nodes.keys()]);
 	const added: NodeFacts[] = [];
@@ -1417,7 +1442,6 @@ export function compareBoards(
 
 	// Relations, over the pairs that are actually related on either side.
 	const relatedPairs = new Set<string>();
-	const pairKey = (x: string, y: string) => (x < y ? `${x}\0${y}` : `${y}\0${x}`);
 	const reason = new Map<string, Set<"edge" | "cluster">>();
 	const mark = (x: string, y: string, why: "edge" | "cluster") => {
 		if (x === y) return;
@@ -1468,8 +1492,6 @@ export function compareBoards(
 		layoutSignalsChanged += relationChanges.length;
 	}
 
-	const aspect = (box: BoundingBox | null) =>
-		box && box.maxY - box.minY > 1 ? (box.maxX - box.minX) / (box.maxY - box.minY) : null;
 	// Measured on the region frames, since those are what the region names are
 	// thirds of. Both are drawn round the same set of nodes, so a divergence
 	// here is a real difference in how the two boards lay those nodes out.
@@ -1544,8 +1566,8 @@ export function compareBoards(
 
 	return {
 		success: true,
-		from: side(fromInput, A),
-		to: side(toInput, B),
+		from: sideSummaryOf(fromInput, A),
+		to: sideSummaryOf(toInput, B),
 		summary: {
 			comparable,
 			identical,

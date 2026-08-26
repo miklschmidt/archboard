@@ -44,6 +44,7 @@ const assert = (condition, message) => {
 	console.error(`FAIL: ${message}`);
 };
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const nodeIdOf = (element) => element?.customData?.archboard?.node;
 const near = (a, b, slack = 0.5) => Math.abs(a - b) <= slack;
 
 // A different port each run, so two checkouts running the suite at once do not
@@ -87,7 +88,7 @@ const proxy = http.createServer((req, res) => {
 		try {
 			const upstream = await fetch(`${base}${req.url}`, {
 				method: req.method,
-				headers: (req.headers["content-type"] ? { "Content-Type": req.headers["content-type"] } : {}),
+				headers: req.headers["content-type"] ? { "Content-Type": req.headers["content-type"] } : {},
 				...(body.length > 0 ? { body } : {}),
 			});
 			const text = await upstream.text();
@@ -429,12 +430,12 @@ try {
 		});
 		assert(
 			refusedBatch?.success === false,
-				`an unbuildable ${String(position)} upsert should refuse the whole mutation: ${JSON.stringify(refusedBatch)}`,
+			`an unbuildable ${String(position)} upsert should refuse the whole mutation: ${JSON.stringify(refusedBatch)}`,
 		);
 		scene = await byId();
 		assert(
 			JSON.stringify([scene.get("box-4"), scene.get("box-5")]) === beforeRefusedBatch,
-				`the refused batched write changed the board with its bad upsert ${String(position)}`,
+			`the refused batched write changed the board with its bad upsert ${String(position)}`,
 		);
 	}
 
@@ -494,7 +495,7 @@ try {
 	// response exists before the authoritative persistence path can run.
 	await api("POST", "/api/boards/hold?board=scratch", { clientId: "blocking-pane" });
 	const beforeBlocked = await byId();
-	let agentAnswered = false;
+	const responseState = { answered: false };
 	const blockedAgentResponse = fetch(
 		`${base}${withDoing(
 			"/api/elements/changes?board=scratch",
@@ -519,12 +520,12 @@ try {
 			}),
 		},
 	).then(async (response) => {
-		agentAnswered = true;
+		responseState.answered = true;
 		return response.json();
 	});
 	await sleep(150);
 	assert(
-		!agentAnswered && !beforeBlocked.has("agent-classified-default"),
+		!responseState.answered && !beforeBlocked.has("agent-classified-default"),
 		"an agent-classified response became observable before the held persistence boundary returned",
 	);
 	await api("POST", "/api/boards/hold/release?board=scratch", { clientId: "blocking-pane" });
@@ -743,7 +744,6 @@ try {
 	const pgIds = stencil.map((line) => line.id);
 	await api("POST", `/api/elements/batch${board}`, { elements: stencil });
 
-	const nodeIdOf = (element) => element?.customData?.archboard?.node;
 	const promoted = async () => {
 		const now = await byId();
 		return pgIds.map((id) => nodeIdOf(now.get(id)));

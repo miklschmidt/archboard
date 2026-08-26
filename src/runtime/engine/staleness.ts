@@ -151,9 +151,9 @@ export function frontendBuild(): string | null {
  * a canvas with no `dist/frontend` has nothing to compare against; in both
  * cases the honest answer is nothing at all rather than a guess.
  */
-export function frontendState(loaded: string | null | undefined): FrontendState {
+export function frontendState(loadedBuild: string | null | undefined): FrontendState {
 	const current = frontendBuild();
-	const reported = loaded ?? null;
+	const reported = loadedBuild ?? null;
 	const comparable =
 		current !== null &&
 		reported !== null &&

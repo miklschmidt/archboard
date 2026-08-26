@@ -102,7 +102,7 @@ function checkStable(name, note, expectScene, expectedHeadings = 1) {
 		note.includes("\n# Excalidraw Data\n## Text Elements\n"),
 		`${name}: data section shape is broken`,
 	);
-	assert(note.startsWith('---\n'), `${name}: note does not start with frontmatter`);
+	assert(note.startsWith("---\n"), `${name}: note does not start with frontmatter`);
 	// Only the data section's own heading is a *region* boundary; other
 	// occurrences — quoted in prose, or the raw text of a text element — are
 	// content, and content is exactly what must survive.
@@ -464,8 +464,8 @@ const idsInNote = (note) => idsOf(JSON.parse(extractSceneJsonFromObsidianMd(note
 {
 	// A board the way the server builds one: a labelled shape, a labelled arrow
 	// and a standalone text, through the same input entry `board save` follows.
-	const board = new Map();
-	applyElementInput(board, {
+	const inputBoard = new Map();
+	applyElementInput(inputBoard, {
 		origin: "agent",
 		upserts: [
 			{ type: "rectangle", x: 0, y: 0, width: 200, height: 100, label: { text: "AuthService" } },
@@ -482,7 +482,7 @@ const idsInNote = (note) => idsOf(JSON.parse(extractSceneJsonFromObsidianMd(note
 			{ type: "text", x: 0, y: 200, text: "a note somebody left" },
 		],
 	});
-	const drawn = [...board.values()];
+	const drawn = [...inputBoard.values()];
 	const { scene: built } = buildScene(drawn);
 	const minted = idsOf(built.elements);
 	assert(

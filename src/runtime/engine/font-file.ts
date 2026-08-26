@@ -232,7 +232,7 @@ export function parseFont(path: string): ParsedFont {
 	const hm = new Reader(hmtx.buf);
 	const transformed = hmtx.transformVersion !== 0;
 	if (transformed) hm.u8();
-	const advances = new Array<number>(numGlyphs);
+	const advances = Array.from<number>({ length: numGlyphs });
 	let last = 0;
 	for (let i = 0; i < numberOfHMetrics && i < numGlyphs; i++) {
 		last = hm.u16();

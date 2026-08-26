@@ -365,8 +365,14 @@ export async function insertStencil(
 	const attribution = {
 		library: { item: entry.name, itemId: entry.id, source: entry.source },
 	};
-	const elements = remapElements(item.elements as Array<Record<string, unknown>>, query.x, query.y, attribution);
-	const created = (await batchCreateElementsStrict(elements as Array<Record<string, unknown>>)).elements;
+	const elements = remapElements(
+		item.elements as Array<Record<string, unknown>>,
+		query.x,
+		query.y,
+		attribution,
+	);
+	const created = (await batchCreateElementsStrict(elements as Array<Record<string, unknown>>))
+		.elements;
 
 	return {
 		success: true,

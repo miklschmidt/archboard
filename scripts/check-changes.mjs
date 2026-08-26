@@ -30,6 +30,7 @@ const check = (label, cond, extra = "") => {
 	console.log(`${cond ? "ok  " : "FAIL"} - ${label}${extra ? ` (${extra})` : ""}`);
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const regionMoves = (change) => change.nodes.moved.filter((m) => "region" in m.changes);
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -278,7 +279,7 @@ const { boundTextDrift } = await import(src("core/labels.ts"));
 	const base = scene();
 	const moved = base.map((el) => (el.id === "b" ? { ...el, y: 900 } : el));
 	const stranded = moved;
-	const carried = moved.map((el) => (el.id === "bl" ? { ...el, y: 940 } : el));
+	const carried = moved.map((el) => (el.id === "bl" ? Object.assign({}, el, { y: 940 }) : el));
 
 	check(
 		"a label left behind is drift, and the invariant says so",
@@ -343,7 +344,6 @@ const { boundTextDrift } = await import(src("core/labels.ts"));
 		box("d", 0, 600, "delta"),
 		box("e", 1400, 600, "echo"),
 	];
-	const regionMoves = (change) => change.nodes.moved.filter((m) => "region" in m.changes);
 
 	const added = diff(spread, [...spread, box("z", 2600, 0, "zulu")]);
 	check(
@@ -409,7 +409,7 @@ const { boundTextDrift } = await import(src("core/labels.ts"));
 
 	const rearranged = diff(
 		spread,
-		spread.map((el, i) => ({ ...el, x: 0, y: i * 700 })),
+		spread.map((el, i) => Object.assign({}, el, { x: 0, y: i * 700 })),
 	);
 	check(
 		"a board rearranged wholesale still reports the boxes that were moved",

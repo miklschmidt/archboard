@@ -94,7 +94,9 @@ export function readRegistry(): RegisteredRepo[] {
 
 /** Every entry plus whether its checkout is still there. */
 export function listRepos(): RegisteredRepoStatus[] {
-	return readRegistry().map((entry) => ({ ...entry, exists: isCheckout(entry.root) }));
+	return readRegistry().map((entry) =>
+		Object.assign({}, entry, { exists: isCheckout(entry.root) }),
+	);
 }
 
 function isCheckout(root: string): boolean {

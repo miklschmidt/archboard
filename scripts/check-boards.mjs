@@ -22,11 +22,46 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import WebSocket from "ws";
+import { WebSocket } from "ws";
 import { withDoing } from "./lib/doing.mjs";
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const src = (p) => path.join(repoRoot, "src", p);
+
+const pane = (clientId, x, board, extra = {}) => ({
+	clientId,
+	paneId: clientId,
+	board,
+	primary: x === 0,
+	focused: false,
+	elementCount: 0,
+	rect: { x, y: 0, width: 640, height: 800 },
+	viewport: { x: 0, y: 0, width: 640, height: 800, zoom: 1 },
+	at: new Date().toISOString(),
+	...extra,
+});
+const promoted = (node, label, x, kind) => ({
+	type: "rectangle",
+	x,
+	y: 400,
+	width: 160,
+	height: 80,
+	label: { text: label },
+	customData: { archboard: { node, kind, variant: "current" } },
+});
+const variantsOf = (body) =>
+	(body?.elements ?? [])
+		.filter((el) => el.customData?.archboard?.node)
+		.map((el) => el.customData.archboard.variant);
+const blockShaped = (id) => /^[A-Za-z0-9-]{1,8}$/.test(id);
+const refusal = (read) => {
+	try {
+		read();
+		return null;
+	} catch (error) {
+		return error.message;
+	}
+};
 
 // The throwaway vault, made before anything is imported: a board is a note now
 // (ADR 0015), so even the in-process checks below need somewhere for one to be,
@@ -372,18 +407,6 @@ const { readBoardFile, readNote } = await import(src("core/board-io.ts"));
 // Pane addressing shares its reading order with the report, so "right" cannot
 // mean one pane to `--pane` and another to `panes`.
 {
-	const pane = (clientId, x, board, extra = {}) => ({
-		clientId,
-		paneId: clientId,
-		board,
-		primary: x === 0,
-		focused: false,
-		elementCount: 0,
-		rect: { x, y: 0, width: 640, height: 800 },
-		viewport: { x: 0, y: 0, width: 640, height: 800, zoom: 1 },
-		at: new Date().toISOString(),
-		...extra,
-	});
 	const two = [pane("b", 640, "payments@option-a"), pane("a", 0, "payments")];
 
 	check(
@@ -486,7 +509,8 @@ const { readBoardFile, readNote } = await import(src("core/board-io.ts"));
 	// them. They drifted once already, so this asserts they agree (TASK-050).
 	{
 		const panesSrc = fs.readFileSync(path.join(repoRoot, "src/runtime/engine/panes.ts"), "utf8");
-		const specs = (panesSrc.match(/const PANE_SPECS\s*=\s*["']([^"']+)["']/) ?? [])[1] ?? "";
+		const paneMatch = panesSrc.match(/const PANE_SPECS\s*=\s*["']([^"']+)["']/);
+		const specs = paneMatch ? paneMatch[1] : "";
 		const named = ["left", "right", "top", "bottom", "focused", "primary"];
 		check(
 			"every documented pane spec is named in the refusal text",
@@ -588,13 +612,13 @@ let paneSerial = 0;
 async function openPane(clientId, x, { primary = false, focused = false } = {}) {
 	const socket = new WebSocket(`ws://127.0.0.1:${PORT}/?clientId=${clientId}`);
 	const seen = [];
-	let pane;
+	let paneState;
 	socket.on("message", (data) => {
 		const message = JSON.parse(data.toString());
 		seen.push(message);
 		// What a browser does with each of these, in one line apiece.
 		if (message.type === "pane_open") void shellOpen();
-		else if (message.type === "pane_close") void shellClose(pane);
+		else if (message.type === "pane_close") void shellClose(paneState);
 		else if (message.type === "set_viewport") {
 			void api("POST", "/api/viewport/result", { requestId: message.requestId, success: true });
 		}
@@ -620,9 +644,9 @@ async function openPane(clientId, x, { primary = false, focused = false } = {}) 
 		[...seen].toReversed().find((m) => m.type === "initial_elements" || m.type === "board_switched")
 			?.board;
 	await adopt(board());
-	pane = { clientId, socket, seen, adopt, board, registration, since: () => seen.length };
-	shell.panes.push(pane);
-	return pane;
+	paneState = { clientId, socket, seen, adopt, board, registration, since: () => seen.length };
+	shell.panes.push(paneState);
+	return paneState;
 }
 
 /** Another pane, to the right of what is already there. */
@@ -631,9 +655,9 @@ async function shellOpen() {
 }
 
 /** One pane gone: the socket closes, and the server retires it on the close. */
-async function shellClose(pane) {
-	shell.panes = shell.panes.filter((entry) => entry !== pane);
-	pane.socket.close();
+async function shellClose(paneToClose) {
+	shell.panes = shell.panes.filter((entry) => entry !== paneToClose);
+	paneToClose.socket.close();
 }
 
 try {
@@ -1312,16 +1336,6 @@ try {
 	// It used to read as "every node changed", because the copy still recorded
 	// the variant each node was promoted under.
 
-	const promoted = (node, label, x, kind) => ({
-		type: "rectangle",
-		x,
-		y: 400,
-		width: 160,
-		height: 80,
-		label: { text: label },
-		customData: { archboard: { node, kind, variant: "current" } },
-	});
-
 	await api("POST", "/api/boards/new", { board: "ledger", level: "service" });
 	const ledgerIds = [];
 	for (const spec of [
@@ -1352,11 +1366,6 @@ try {
 
 	// Nodes only. A labelled shape is two elements on the board — itself and its
 	// bound text — and only the one somebody promoted carries a node record.
-	const variantsOf = (body) =>
-		(body?.elements ?? [])
-			.filter((el) => el.customData?.archboard?.node)
-			.map((el) => el.customData.archboard.variant);
-
 	const onBranch = await api("GET", "/api/elements?board=ledger@option-a");
 	const branchVariants = variantsOf(onBranch.body);
 	check(
@@ -1910,7 +1919,6 @@ try {
 	);
 
 	const stored = (await api("GET", "/api/elements?board=idcheck")).body?.elements ?? [];
-	const blockShaped = (id) => /^[A-Za-z0-9-]{1,8}$/.test(id);
 	const longIds = stored.map((el) => el.id).filter((id) => !blockShaped(id));
 	// Seven, not four: the three labels are text elements on the board from the
 	// moment they are written, because the one converter runs at the write
@@ -2046,22 +2054,22 @@ try {
 
 		// The mark's whole claim: it is the state in which the next write would be
 		// refused, because both come off the one comparison.
-		let refusal = null;
+		let conflictRefusal = null;
 		try {
 			writeBoardContent(watchedBoard, emptyContent(), { saveCommand: "board save" });
 		} catch (error) {
-			refusal = error.conflict ?? null;
+			conflictRefusal = error.conflict ?? null;
 		}
 		check(
 			"  which is exactly the state the next write is refused in",
-			refusal?.reason === written?.reason && refusal?.board === watched,
-			JSON.stringify(refusal?.reason),
+			conflictRefusal?.reason === written?.reason && conflictRefusal?.board === watched,
+			JSON.stringify(conflictRefusal?.reason),
 		);
 
 		// And from the refusal on it is the hold's story, not this one. Two marks
 		// about one thing is a person reading twice to find out there is one
 		// problem.
-		beginHold(watched, refusal, emptyContent());
+		beginHold(watched, conflictRefusal, emptyContent());
 		check(
 			"once that refusal has happened the hold says it and this stops",
 			noteWrittenElsewhere(watched) === null,
@@ -2238,12 +2246,14 @@ try {
 		await sleep(300);
 		scratchCanvas = await startScratchCanvas();
 
-		const after = await scratchApi("GET", "/api/elements?board=scratch");
-		const drawn = (after.body?.elements ?? []).find((el) => el.type === "rectangle");
+		const restartedContent = await scratchApi("GET", "/api/elements?board=scratch");
+		const restartedDrawing = (restartedContent.body?.elements ?? []).find(
+			(el) => el.type === "rectangle",
+		);
 		check(
 			"and the drawing is still there after the canvas is restarted",
-			drawn?.width === 60 && drawn?.height === 30,
-			JSON.stringify(after.body?.elements?.length),
+			restartedDrawing?.width === 60 && restartedDrawing?.height === 30,
+			JSON.stringify(restartedContent.body?.elements?.length),
 		);
 		const reopened = await scratchApi("GET", "/api/boards/info?board=scratch");
 		check(
@@ -2409,7 +2419,7 @@ try {
 						`"width": 999, "height": 40}, {"id": "ours1"`,
 				),
 			);
-			const refused = await scratchApi("POST", `/api/elements?board=${key}`, {
+			const refusalResponse = await scratchApi("POST", `/api/elements?board=${key}`, {
 				id: "lost1",
 				type: "ellipse",
 				x: 5,
@@ -2417,7 +2427,7 @@ try {
 				width: 20,
 				height: 20,
 			});
-			return { file, refused };
+			return { file, refused: refusalResponse };
 		};
 
 		const overwriteCase = await stopSaving("holdover", "theirs1");
@@ -2832,7 +2842,7 @@ try {
 		);
 		const note = firstSave.body.file;
 
-		const before = fs.readFileSync(note, "utf-8");
+		const beforeNote = fs.readFileSync(note, "utf-8");
 		const beforeInode = fs.statSync(note).ino;
 		// The reader who opened the note a moment before the second save.
 		const heldOpen = fs.openSync(note, "r");
@@ -2850,22 +2860,22 @@ try {
 		});
 		const secondSave = await api("POST", "/api/boards/save?board=atomic");
 		check("  and saved again over itself", secondSave.status === 200, secondSave.body?.error);
-		const after = fs.readFileSync(note, "utf-8");
+		const afterNote = fs.readFileSync(note, "utf-8");
 		check(
 			"  the note really changed, so there is a write to be atomic about",
-			after !== before && after.includes("after"),
+			afterNote !== beforeNote && afterNote.includes("after"),
 		);
 
 		const throughHeldFd = fs.readFileSync(heldOpen, "utf-8");
 		fs.closeSync(heldOpen);
 		check(
 			"a reader holding the note open across the write still has the whole old note",
-			throughHeldFd === before,
-			`${throughHeldFd.length} bytes through the fd vs ${before.length} before the save`,
+			throughHeldFd === beforeNote,
+			`${throughHeldFd.length} bytes through the fd vs ${beforeNote.length} before the save`,
 		);
 		check(
 			"  and so does a second link to it, so the old bytes were never truncated",
-			fs.readFileSync(witness, "utf-8") === before,
+			fs.readFileSync(witness, "utf-8") === beforeNote,
 		);
 		check(
 			"  because the path got a new inode rather than the old one being refilled",
@@ -3245,14 +3255,14 @@ try {
 		// be true on both, and each of these is a property somebody has already
 		// got wrong on exactly one path.
 		{
-			const opened = readBoardFile(parseBoardKey("picsd"), vault);
+			const openedBoard = readBoardFile(parseBoardKey("picsd"), vault);
 			const perRequest = readNote(path.join(vault, "picsd.excalidraw.md"));
 			const wanted = `data:image/png;base64,${PNG_BASE64}`;
 			check(
 				"the open path and the per-request path read one note as the same bytes",
-				opened.raw === perRequest.note && opened.hash === perRequest.hash,
+				openedBoard.raw === perRequest.note && openedBoard.hash === perRequest.hash,
 			);
-			const openHasIt = JSON.parse(opened.sceneJson).files?.emb12345?.dataURL === wanted;
+			const openHasIt = JSON.parse(openedBoard.sceneJson).files?.emb12345?.dataURL === wanted;
 			const requestHasIt = perRequest.files.get("emb12345")?.dataURL === wanted;
 			check(
 				"  and both follow the picture the plugin moved into the vault",
@@ -3263,14 +3273,6 @@ try {
 			// A file at a board's path that is not a note is refused, in the same
 			// words, whichever way it was asked for.
 			fs.writeFileSync(path.join(vault, "notanote.excalidraw.md"), "# just a heading\n");
-			const refusal = (read) => {
-				try {
-					read();
-					return null;
-				} catch (error) {
-					return error.message;
-				}
-			};
 			const onOpen = refusal(() => readBoardFile(parseBoardKey("notanote"), vault));
 			const onRequest = refusal(() => readNote(path.join(vault, "notanote.excalidraw.md")));
 			check(
@@ -3296,16 +3298,16 @@ try {
 			const callers = [];
 			const walk = (dir) => {
 				for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-					const full = path.join(dir, entry.name);
+					const fullPath = path.join(dir, entry.name);
 					if (entry.isDirectory()) {
-						walk(full);
+						walk(fullPath);
 						continue;
 					}
 					if (!entry.name.endsWith(".ts")) continue;
-					for (const line of fs.readFileSync(full, "utf-8").split("\n")) {
+					for (const line of fs.readFileSync(fullPath, "utf-8").split("\n")) {
 						if (!/\bsceneJsonWithEmbeddedImages\s*\(/.test(line)) continue;
-						if (line.trim().startsWith('export function sceneJsonWithEmbeddedImages')) continue;
-						callers.push(`${path.relative(repoRoot, full)}:${line.trim()}`);
+						if (line.trim().startsWith("export function sceneJsonWithEmbeddedImages")) continue;
+						callers.push(`${path.relative(repoRoot, fullPath)}:${line.trim()}`);
 					}
 				}
 			};

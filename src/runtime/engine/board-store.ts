@@ -228,16 +228,20 @@ export function boardSummaries(elementCount: (board: BoardState) => number): Arr
 	savedAt?: string;
 	loadedAt?: string;
 }> {
-	return Array.from(boards.entries()).map(([key, board]) => ({
-		key,
-		identity: board.identity,
-		elementCount: elementCount(board),
-		// Scratch is a board with a note but not a name anybody chose, and that is
-		// the only thing about it that is different. Said on the wire so a surface
-		// can offer "give this a name" without knowing what scratch is called.
-		placeholder: key === SCRATCH_KEY,
-		...(board.file ? { file: board.file } : {}),
-		...(board.savedAt ? { savedAt: board.savedAt } : {}),
-		...(board.loadedAt ? { loadedAt: board.loadedAt } : {}),
-	}));
+	return Array.from(boards.entries()).map(([key, board]) =>
+		Object.assign(
+			{
+				key,
+				identity: board.identity,
+				elementCount: elementCount(board),
+				// Scratch is a board with a note but not a name anybody chose, and that is
+				// the only thing about it that is different. Said on the wire so a surface
+				// can offer "give this a name" without knowing what scratch is called.
+				placeholder: key === SCRATCH_KEY,
+			},
+			board.file ? { file: board.file } : {},
+			board.savedAt ? { savedAt: board.savedAt } : {},
+			board.loadedAt ? { loadedAt: board.loadedAt } : {},
+		),
+	);
 }

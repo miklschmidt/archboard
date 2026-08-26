@@ -337,9 +337,11 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 function responseError(data: unknown, response: Response): Error {
-	const body = data && typeof data === "object" ? data as Record<string, unknown> : {};
+	const body = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
 	const error = new Error(
-		typeof body.error === "string" ? body.error : `HTTP server error: ${response.status} ${response.statusText}`,
+		typeof body.error === "string"
+			? body.error
+			: `HTTP server error: ${response.status} ${response.statusText}`,
 	) as Error & { code?: unknown; conflict?: unknown; open?: unknown; refusal?: unknown };
 	// Refused board writes are results, not faults. Keep their structured body
 	// on the error so the CLI does not have to reconstruct what the canvas
@@ -368,7 +370,8 @@ function isBoardRefusal(data: unknown): data is BoardRefusal {
 }
 
 export function boardRefusalOf(error: unknown): BoardRefusal | null {
-	const refusal = error && typeof error === "object" ? (error as { refusal?: unknown }).refusal : undefined;
+	const refusal =
+		error && typeof error === "object" ? (error as { refusal?: unknown }).refusal : undefined;
 	return isBoardRefusal(refusal) ? refusal : null;
 }
 
@@ -382,7 +385,8 @@ export function formatBoardRefusal(error: unknown): string | null {
 
 // A save the server refused because the destination changed underneath it.
 export function boardConflictOf(error: unknown): BoardWriteConflict | null {
-	const conflict = error && typeof error === "object" ? (error as { conflict?: unknown }).conflict : undefined;
+	const conflict =
+		error && typeof error === "object" ? (error as { conflict?: unknown }).conflict : undefined;
 	return conflict && typeof conflict === "object" ? (conflict as BoardWriteConflict) : null;
 }
 
@@ -482,7 +486,8 @@ export async function openPane(params: { board?: string } = {}): Promise<PaneLay
 						`\`board open <name> --pane ${created.pane.place}\`, or close it with \`pane close ${created.pane.place}\`.`
 					: ""),
 		);
-		(failure as Error & { code?: unknown }).code = error && typeof error === "object" ? (error as { code?: unknown }).code : undefined;
+		(failure as Error & { code?: unknown }).code =
+			error && typeof error === "object" ? (error as { code?: unknown }).code : undefined;
 		throw failure;
 	}
 }
@@ -574,7 +579,9 @@ export async function setViewport(
 	});
 }
 
-export async function saveSnapshot(name: string): Promise<{ elementCount: number; createdAt: string }> {
+export async function saveSnapshot(
+	name: string,
+): Promise<{ elementCount: number; createdAt: string }> {
 	return requestJson("/api/snapshots", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -1034,7 +1041,7 @@ async function assertCanvasIdentity(): Promise<void> {
 							`The service at ${EXPRESS_SERVER_URL} did not answer the /health identity probe within 1500ms — ` +
 								`refusing to send it requests.`,
 						);
-		(timeoutError as Error & { code?: string }).code = "CANVAS_UNREACHABLE";
+						(timeoutError as Error & { code?: string }).code = "CANVAS_UNREACHABLE";
 						throw timeoutError;
 					}
 					// Connection-level unreachable (refused/reset/DNS): canvas is down
