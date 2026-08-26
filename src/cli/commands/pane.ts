@@ -28,7 +28,7 @@ export const PaneCommandResultSchema = z.looseObject({
 			board: z.string(),
 			identity: z.looseObject({ board: z.string(), variant: z.string() }),
 			elementCount: z.number().int().nonnegative(),
-			vaultBacked: z.boolean(),
+			vaultBacked: z.boolean().optional(),
 		})
 		.optional(),
 	held: HoldReportSchema.optional(),
