@@ -128,9 +128,14 @@ const sideSummaryOf = (input: CompareSideInput, model: BoardModel): SideSummary 
 	nodeBox: model.nodeBox,
 	regionFrame: model.regionFrame,
 });
-import { labelOf } from "./promote.js";
-import { nodeIdOf, readElementMetadata } from "./metadata.js";
+import { readElementMetadata } from "./metadata.js";
 import type { ArchboardBlock, LogicalAddress } from "./metadata.js";
+import {
+	architectureFacts,
+	architectureLabel,
+	isArchitectureConnectorType,
+	type ArchitectureFacts,
+} from "../board-inspection/architecture.js";
 import {
 	type Box,
 	type BoundingBox,
@@ -397,35 +402,12 @@ export interface CompareResult {
 // Reading a board into the node/edge model
 // ---------------------------------------------------------------------------
 
-const CONNECTOR_TYPES = new Set(["arrow", "line"]);
 const CONTAINER_TYPES = new Set(["rectangle", "ellipse", "diamond", "frame"]);
 
 // An arrow or a line is a connector until somebody promotes it. Promotion is
 // an explicit act, so what an element carries outranks what it is drawn from,
 // and only an element with no node id is read as a connector here (TASK-053).
-const isConnector = (type: string) => CONNECTOR_TYPES.has(type);
-
-function bindingEnd(el: unknown, end: "start" | "end"): string | undefined {
-	const record = el && typeof el === "object" ? (el as Record<string, unknown>) : {};
-	const binding = end === "start" ? record.startBinding : record.endBinding;
-	const bindingRecord =
-		binding && typeof binding === "object" ? (binding as Record<string, unknown>) : {};
-	const fallback = end === "start" ? record.start : record.end;
-	const fallbackRecord =
-		fallback && typeof fallback === "object" ? (fallback as Record<string, unknown>) : {};
-	const id = bindingRecord.elementId ?? fallbackRecord.id;
-	return typeof id === "string" ? id : undefined;
-}
-
-// A node is whatever carries its id, and an arrow can carry one, so this is
-// measured through `boxOf` rather than read off `x, y, width, height`: an
-// arrow's origin is its first point (TASK-038).
-function unionBox(elements: ServerElement[]): Box {
-	const boxes = elements.map((el) => boxOf(el));
-	const frame = boundingBoxOf(boxes);
-	if (!frame) return { x: 0, y: 0, w: 0, h: 0 };
-	return { x: frame.minX, y: frame.minY, w: frame.maxX - frame.minX, h: frame.maxY - frame.minY };
-}
+const isConnector = isArchitectureConnectorType;
 
 function formatBinding(binding: LogicalAddress | string | undefined): string | undefined {
 	if (binding === undefined) return undefined;
@@ -492,8 +474,7 @@ interface BoardModel {
 }
 
 function labelOfAll(el: ServerElement, all: ServerElement[]): string | undefined {
-	const text = labelOf(el, all);
-	return text ? String(text).replace(/\s+/g, " ").trim() || undefined : undefined;
+	return architectureLabel(el, all);
 }
 
 interface NodeBuildResult {
@@ -502,41 +483,13 @@ interface NodeBuildResult {
 	nodes: Map<string, NodeModel>;
 }
 
-function buildNodes(all: ServerElement[], boundLabelOf: Set<string>): NodeBuildResult {
-	const groupsByNode = new Map<string, ServerElement[]>();
-	const nodeOfElement = new Map<string, string>();
-	for (const el of all) {
-		const id = nodeIdOf(el);
-		if (!id) continue;
-		const list = groupsByNode.get(id) ?? [];
-		list.push(el);
-		groupsByNode.set(id, list);
-		nodeOfElement.set(el.id, id);
-	}
-	for (const el of all) {
-		const container = el.containerId;
-		if (!boundLabelOf.has(el.id) || !container) continue;
-		const id = nodeOfElement.get(container);
-		if (!id || nodeOfElement.has(el.id)) continue;
-		groupsByNode.get(id)!.push(el);
-		nodeOfElement.set(el.id, id);
-	}
-
+function buildNodes(facts: ArchitectureFacts): NodeBuildResult {
+	const all = facts.elements as ServerElement[];
 	const models: NodeModel[] = [];
-	for (const [id, elements] of groupsByNode) {
-		const shapes = elements.filter((el) => !boundLabelOf.has(el.id));
-		const ranked = [...(shapes.length ? shapes : elements)].toSorted(
-			(a, b) => areaOfBox(b) - areaOfBox(a),
-		);
-		const primary = ranked[0]!;
-		const block: ArchboardBlock = {};
-		for (const el of [primary, ...elements]) {
-			const metadata = readElementMetadata(el).archboard;
-			if (!metadata) continue;
-			for (const [key, value] of Object.entries(metadata)) {
-				if (block[key] === undefined && value !== undefined) block[key] = value;
-			}
-		}
+	for (const [id, fact] of facts.nodes) {
+		const elements = fact.elements as ServerElement[];
+		const primary = fact.primary;
+		const block = fact.metadata;
 		const extra: Record<string, unknown> = {};
 		for (const [key, value] of Object.entries(block)) {
 			if (!ARCHBOARD_KNOWN.has(key)) extra[key] = value;
@@ -560,7 +513,7 @@ function buildNodes(all: ServerElement[], boundLabelOf: Set<string>): NodeBuildR
 			...(block.binding !== undefined ? { binding: block.binding as LogicalAddress | string } : {}),
 			...(link ? { link } : {}),
 			extra,
-			box: unionBox(elements),
+			box: fact.aggregateNodeFootprint,
 			clusterId: null,
 			container: null,
 			group: null,
@@ -571,7 +524,7 @@ function buildNodes(all: ServerElement[], boundLabelOf: Set<string>): NodeBuildR
 		});
 	}
 	const nodes = new Map(models.map((model) => [model.node, model]));
-	return { nodeOfElement, models, nodes };
+	return { nodeOfElement: new Map(facts.nodeOfElement), models, nodes };
 }
 
 interface EdgeBuildResult {
@@ -581,19 +534,20 @@ interface EdgeBuildResult {
 }
 
 function buildEdges(
-	all: ServerElement[],
-	byId: Map<string, ServerElement>,
+	facts: ArchitectureFacts,
 	nodes: Map<string, NodeModel>,
 	nodeOfElement: Map<string, string>,
 ): EdgeBuildResult {
+	const all = facts.elements as ServerElement[];
+	const byId = facts.byId;
 	const edges: EdgeModel[] = [];
 	const unresolved: UnresolvedConnector[] = [];
 	const promotedConnectors: Array<{ node: string; from: string; to: string }> = [];
-	for (const el of all) {
-		if (!isConnector(el.type)) continue;
-		const startId = bindingEnd(el as unknown, "start");
-		const endId = bindingEnd(el as unknown, "end");
-		const ownNode = nodeOfElement.get(el.id);
+	for (const connector of facts.connectors) {
+		const el = connector.element;
+		const startId = connector.startTargetId;
+		const endId = connector.endTargetId;
+		const ownNode = connector.ownerNodeId;
 		if (ownNode) {
 			const from = startId ? nodeOfElement.get(startId) : undefined;
 			const to = endId ? nodeOfElement.get(endId) : undefined;
@@ -655,18 +609,9 @@ function buildEdges(
 
 function buildBoard(input: CompareSideInput): BoardModel {
 	const all = input.elements;
-	const byId = new Map(all.map((el) => [el.id, el]));
+	const facts = architectureFacts(all);
 	const warnings: string[] = [];
-
-	// Bound labels belong to their container, exactly as `describe` folds them,
-	// so a labelled shape is one thing and not two.
-	const boundLabelOf = new Set<string>();
-	for (const el of all) {
-		const container = el.containerId;
-		if (el.type === "text" && container && container !== el.id && byId.has(container)) {
-			boundLabelOf.add(el.id);
-		}
-	}
+	const boundLabelOf = facts.confirmedBoundLabelIds;
 
 	// --- nodes: elements grouped by node id -----------------------------------
 	//
@@ -674,7 +619,7 @@ function buildBoard(input: CompareSideInput): BoardModel {
 	// an arbitrary set of primitives, and the shipped PostgreSQL one is seven
 	// lines, so a type test here made promoting it report success and produce a
 	// node no reader could see (TASK-053).
-	const nodeBuild = buildNodes(all, boundLabelOf);
+	const nodeBuild = buildNodes(facts);
 	const { nodeOfElement, models, nodes } = nodeBuild;
 
 	// A node whose recorded variant is not the board's own was copied from
@@ -701,7 +646,7 @@ function buildBoard(input: CompareSideInput): BoardModel {
 	// `promotedConnectors` collects the ones that would have been edges, so the
 	// human hears what the promotion cost instead of watching a dependency
 	// disappear.
-	const edgeBuild = buildEdges(all, byId, nodes, nodeOfElement);
+	const edgeBuild = buildEdges(facts, nodes, nodeOfElement);
 	const { edges, unresolved, promotedConnectors } = edgeBuild;
 
 	// A connector that was promoted and also joins two other nodes is the one
