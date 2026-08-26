@@ -44,7 +44,7 @@ async function libraryList(argv: string[]): Promise<void> {
 	await ensureCanvasRunning();
 	const catalogue = await readCatalogue();
 
-	if (flags.text) console.log(catalogueText(catalogue));
+	if (flags.text) process.stdout.write(catalogueText(catalogue) + "\n");
 	else printJson(catalogue);
 }
 

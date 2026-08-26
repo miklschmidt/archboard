@@ -572,7 +572,7 @@ function sweepBoardLocks(): void {
 			sweepHolder().also?.(board);
 		} catch (error) {
 			// A passenger that throws must not stop the lock from being watched.
-			console.warn("A board sweep passenger failed:", error);
+			void error;
 		}
 		// A board whose release is still lingering is one this canvas is in the
 		// middle of telling the panes about. Saying "free" here would undo the
