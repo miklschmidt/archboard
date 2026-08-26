@@ -16,7 +16,7 @@ export async function inject(argv: string[]): Promise<void> {
 	if (!sub || sub === "status") {
 		await ensureCanvasRunning();
 		const report = await getInjection();
-		const { success, ...body } = report;
+		const { success: _success, ...body } = report;
 		printJson(body);
 		return;
 	}
@@ -37,7 +37,7 @@ export async function inject(argv: string[]): Promise<void> {
 			...(flags.loud ? { loud: true } : {}),
 			...(flags.quiet ? { loud: false } : {}),
 		});
-		const { success, ...body } = result;
+		const { success: _success, ...body } = result;
 		printJson(body);
 		return;
 	}

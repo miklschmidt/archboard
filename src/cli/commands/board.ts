@@ -10,7 +10,7 @@ import {
 	saveBoard,
 	boardConflictOf,
 } from "../../runtime/engine/canvas-client.js";
-import { paneWords, MAX_PANES } from "../../runtime/engine/panes.js";
+import { MAX_PANES } from "../../runtime/engine/panes.js";
 
 export const SUBCOMMANDS = ["list", "info", "new", "open", "save"] as const;
 

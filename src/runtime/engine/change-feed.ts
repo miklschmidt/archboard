@@ -291,7 +291,7 @@ class ChangeFeed extends EventEmitter {
 	/** Flush every board with a pending window. */
 	settleAll(): ChangeEvent[] {
 		const out: ChangeEvent[] = [];
-		for (const key of [...this.watches.keys()]) {
+		for (const key of this.watches.keys()) {
 			const event = this.settle(key);
 			if (event) out.push(event);
 		}

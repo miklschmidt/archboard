@@ -29,11 +29,11 @@ import { kept } from "./hot.js";
 import { parseFont, type ParsedFont } from "./font-file.js";
 import { buildGpos, buildGsub, type Kerning, type Substitutions } from "./font-layout.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
 /** Where `@excalidraw/excalidraw` puts its production bundle and its fonts. */
 export const EXCALIDRAW_DIST = path.join(
-	__dirname,
+	moduleDir,
 	"../../../node_modules/@excalidraw/excalidraw/dist/prod",
 );
 
