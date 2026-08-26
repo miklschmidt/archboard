@@ -1,10 +1,10 @@
 import { getHealth } from "../../../runtime/engine/canvas-client.js";
 import { EXPRESS_SERVER_URL } from "../../../runtime/engine/config.js";
 import { ensureCanvasRunning } from "../../../runtime/engine/spawn.js";
-import type { Prerequisite } from "../contract.js";
+import type { RuntimePrerequisite } from "../contract.js";
 
 export interface PrerequisiteResolver {
-	require(prerequisite: Prerequisite, description: string): Promise<void>;
+	require(prerequisite: RuntimePrerequisite, description: string): Promise<void>;
 }
 
 export const productionPrerequisites: PrerequisiteResolver = {

@@ -1,11 +1,8 @@
 import { CliUsageError, type AnyCommandContract } from "../command-contract/contract.js";
-import {
-	exportContract,
-	queryContract,
-	updateContract,
-	viewportContract,
-	WRITE_ANSWER,
-} from "../command-contract/proofs.js";
+import { exportContract } from "../command-contract/export.js";
+import { queryContract } from "../command-contract/query.js";
+import { updateContract, WRITE_ANSWER } from "../command-contract/update.js";
+import { viewportContract } from "../command-contract/viewport.js";
 import { runCommand } from "../command-contract/runner.js";
 import {
 	BOARD_REFUSAL_CODES,
@@ -487,9 +484,13 @@ function printHelp(): void {
 	process.stdout.write(lines.join("\n") + "\n");
 }
 
-function exitCodeFor(error: unknown): number {
+function exitCodeFor(error: unknown, command?: Command): number {
 	if (error instanceof CliUsageError) return 2;
 	const code = (error as Error & { code?: string }).code;
+	if (command?.kind === "contract" && code !== undefined) {
+		const declared = command.contract.refusals.find((refusal) => refusal.code === code);
+		if (declared) return declared.exit;
+	}
 	if (code === "CANVAS_UNREACHABLE") return 3;
 	if (code === "BROWSER_REQUIRED") return 4;
 	// Every refusal leaves the board unwritten, so they share the exit status a
@@ -621,6 +622,6 @@ export async function runCli(argv: string[]): Promise<void> {
 		if (error instanceof CliUsageError) {
 			process.stderr.write(`Usage: archboard ${commandUsage(command)}\n`);
 		}
-		process.exitCode = exitCodeFor(error);
+		process.exitCode = exitCodeFor(error, command);
 	}
 }

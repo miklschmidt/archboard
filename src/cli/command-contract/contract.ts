@@ -39,7 +39,8 @@ export interface CommandInput<Shape extends z.ZodRawShape> {
 	stages?: readonly InputStage[];
 }
 
-export type Prerequisite = "server" | "browser";
+export type Prerequisite = "server" | "browser" | "board" | "doing" | "claim";
+export type RuntimePrerequisite = Extract<Prerequisite, "server" | "browser">;
 export type CommandEffect = "read" | "write" | "browser" | "local-read" | "local-write";
 
 export interface RefusalContract {
@@ -90,7 +91,7 @@ export interface CommandExecution<Result> {
 }
 
 export interface CommandContext {
-	require(prerequisite: Prerequisite, description: string): Promise<void>;
+	require(prerequisite: RuntimePrerequisite, description: string): Promise<void>;
 	readStdin(): Promise<string>;
 	readTextFile(path: string): string;
 	readOptionalTextFile(path: string): string | undefined;
