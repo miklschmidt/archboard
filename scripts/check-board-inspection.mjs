@@ -18,8 +18,13 @@ const {
 	ObstacleRefSchema,
 	formatInspectionText,
 } = await import(src("runtime/board-inspection/index.ts"));
-const { inspectBoardDiagnostics, diagnoseMutableProfileSnapshots, diagnoseSweepCompatibility } =
-	await import(src("runtime/board-inspection/diagnostics.ts"));
+const {
+	inspectBoardDiagnostics,
+	diagnoseMutableProfileSnapshots,
+	diagnoseObstacleIdentityEncoding,
+	diagnoseStablePreprocessingSort,
+	diagnoseSweepCompatibility,
+} = await import(src("runtime/board-inspection/diagnostics.ts"));
 const { compareBoards } = await import(src("runtime/engine/compare.ts"));
 const { renderBoardNote } = await import(src("runtime/engine/board.ts"));
 const { ingestScene } = await import(src("runtime/engine/board-io.ts"));
@@ -56,6 +61,41 @@ check(
 	"development diagnostics run the exact production report pipeline",
 	JSON.stringify(inspectBoardDiagnostics(frozen).report) === JSON.stringify(clean),
 );
+for (const [label, input, ordered, preprocessingSteps] of [
+	["empty", [], [], 1],
+	["singleton", ["a"], ["a"], 3],
+	["even tail", ["b", "a"], ["a", "b"], 15],
+	["odd uneven tails", ["c", "a", "b"], ["a", "b", "c"], 32],
+	["even merge levels", ["d", "b", "a", "c"], ["a", "b", "c", "d"], 45],
+	["control prefixes", ["a\\,", "a,", "a\\", "a\0"], ["a\0", "a,", "a\\", "a\\,"], 55],
+]) {
+	const diagnosed = diagnoseStablePreprocessingSort(input);
+	check(
+		`counted stable ordering owns ${String(label)} storage and comparison work`,
+		JSON.stringify(diagnosed.ordered) === JSON.stringify(ordered) &&
+			diagnosed.preprocessingSteps === preprocessingSteps,
+		JSON.stringify(diagnosed),
+	);
+}
+for (const [label, input, id, preprocessingSteps] of [
+	["empty", [], "obstacle:", 9],
+	["single", ["a"], "obstacle:a", 12],
+	["join", ["a", "b"], "obstacle:a,b", 16],
+	["comma and slash", ["a,b", "c\\d"], "obstacle:a\\,b,c\\\\d", 26],
+	[
+		"controls",
+		["\0", ",", "\\", "x\\,y"],
+		["obstacle:\0,", "\\,,", "\\".repeat(2), ",x", "\\".repeat(3), ",y"].join(""),
+		34,
+	],
+]) {
+	const diagnosed = diagnoseObstacleIdentityEncoding(input);
+	check(
+		`counted obstacle identity owns ${String(label)} reads and emitted code units`,
+		diagnosed.id === id && diagnosed.preprocessingSteps === preprocessingSteps,
+		JSON.stringify(diagnosed),
+	);
+}
 const mutableProfileSnapshots = diagnoseMutableProfileSnapshots();
 check(
 	"mutable ReadonlySet reuse snapshots exact content without stale eligibility",
@@ -3882,6 +3922,106 @@ check(
 		!("preprocessingWork" in preprocessingLimited),
 );
 
+const lateCollisionLimitBoard = (count) => [
+	semanticNode("late-limit-node", {
+		id: "late-limit-node-body",
+		x: 0,
+		y: 0,
+		width: 10,
+		height: 10,
+	}),
+	...Array.from({ length: count }, (_, index) =>
+		connector({
+			id: `late-limit-${String(index).padStart(5, "0")}`,
+			x: index === 0 ? -5 : 100 + index * 21,
+			y: 5,
+			width: 20,
+			height: 0,
+			angle: 0,
+			points: [
+				[0, 0],
+				[20, 0],
+			],
+		}),
+	),
+];
+const assertLateCollisionLimit = (label, count, phase) => {
+	const board = lateCollisionLimitBoard(count);
+	const report = inspectBoard(board);
+	const diagnostics = inspectBoardDiagnostics(board);
+	const penetration = report.findings.find(
+		(finding) => finding.reason === "leaf-footprint-interior",
+	);
+	const limit = report.findings.find(
+		(finding) => finding.reason === "broad-phase-preprocessing-ceiling",
+	);
+	check(
+		`${label} preserves completed collision findings, comparisons, and diagnostics`,
+		InspectionReportSchema.safeParse(report).success &&
+			report.coverage === "indeterminate" &&
+			report.broadPhaseComparisons === 1 &&
+			penetration?.details.connectorId === "late-limit-00000" &&
+			limit?.details.pass === "connector-intersection" &&
+			limit?.details.phase === phase &&
+			limit?.details.completedBroadPhaseComparisons === 1 &&
+			limit.elements.length === count + 1 &&
+			limit.elements.some((element) => element.id === "late-limit-node-body") &&
+			limit.elements.some(
+				(element) => element.id === `late-limit-${String(count - 1).padStart(5, "0")}`,
+			) &&
+			JSON.stringify(report.findings.map((finding) => finding.reason)) ===
+				JSON.stringify(["leaf-footprint-interior", "broad-phase-preprocessing-ceiling"]) &&
+			diagnostics.work.preprocessingSteps === 25_000_000 &&
+			diagnostics.work.broadPhaseEvents > 0 &&
+			diagnostics.work.broadPhaseCompatibleVisits === 1 &&
+			JSON.stringify(diagnostics.report) === JSON.stringify(report),
+		JSON.stringify({
+			comparisons: report.broadPhaseComparisons,
+			reasons: report.findings.map((finding) => finding.reason),
+			limit: limit?.details,
+			work: diagnostics.work,
+		}),
+	);
+	return { board, report };
+};
+const lateCollisionActivation = assertLateCollisionLimit(
+	"late activate-or-expire ceiling",
+	30_000,
+	"activate-or-expire",
+);
+const lateCollisionPrepare = assertLateCollisionLimit(
+	"late prepare-events ceiling",
+	35_000,
+	"prepare-events",
+);
+
+const longLibraryIdentity = "library-" + "x".repeat(6_300_000);
+const longLibraryBoard = [
+	{
+		id: longLibraryIdentity,
+		type: "rectangle",
+		x: 0,
+		y: 0,
+		width: 10,
+		height: 10,
+		angle: 0,
+		customData: { library: { itemId: "long-identity" } },
+	},
+];
+const longLibraryReport = inspectBoard(longLibraryBoard);
+const longLibraryLimit = longLibraryReport.findings.find(
+	(finding) => finding.reason === "broad-phase-preprocessing-ceiling",
+);
+check(
+	"long library identity stops before unbudgeted encoding work could execute",
+	InspectionReportSchema.safeParse(longLibraryReport).success &&
+		longLibraryReport.coverage === "indeterminate" &&
+		longLibraryLimit?.details.attempted === 25_000_001 &&
+		longLibraryLimit?.details.pass === "container-boundary" &&
+		longLibraryLimit?.details.phase === "prepare-events" &&
+		longLibraryLimit.elements[0]?.id === longLibraryIdentity,
+);
+
 const manyPathPoints = Array.from({ length: 750_000 }, (_, index) => [index, index % 2]);
 let largeCardinalityReport;
 let largeCardinalityFailure;
@@ -4356,33 +4496,43 @@ const distinctConflictingDiagnostics = [
 }));
 check(
 	"distinct conflicting label profiles keep shared-ancestor A=0 work and state linear",
-	distinctConflictingDiagnostics.every(
-		({ height, labelCount, diagnostics }) =>
-			diagnostics.report.broadPhaseComparisons === 0 &&
-			diagnostics.work.broadPhaseCompatibleVisits === 0 &&
-			diagnostics.work.broadPhaseBucketScans === 0 &&
-			diagnostics.work.broadPhaseCompatibilityTests === 0 &&
-			diagnostics.work.broadPhaseProfileSnapshotEntries === labelCount * 2 + 1 &&
-			diagnostics.work.broadPhaseProfileTrieSteps === labelCount * 2 + 1 &&
-			diagnostics.work.broadPhaseProfileSortComparisons === labelCount &&
-			diagnostics.work.broadPhaseProfileTerminalLookups === diagnostics.work.broadPhaseEvents &&
-			diagnostics.work.broadPhaseProfileCreations ===
-				diagnostics.work.broadPhaseCompatibilityProfiles &&
-			diagnostics.work.broadPhaseHierarchyPathQueries === labelCount &&
-			diagnostics.work.broadPhaseHierarchyPathSteps <=
-				labelCount * (Math.ceil(Math.log2(height + labelCount)) + 1) &&
-			diagnostics.work.broadPhaseHierarchySubtreeQueries === 0 &&
-			diagnostics.work.broadPhaseHierarchySubtreeSteps === 0 &&
-			diagnostics.work.broadPhasePeakRetainedBuckets === labelCount + height &&
-			diagnostics.work.broadPhasePeakRetainedProfiles === labelCount + 1 &&
-			diagnostics.work.broadPhasePeakRetainedProfileTrieNodes <= labelCount * 3 + height * 4 &&
-			diagnostics.work.broadPhasePeakRetainedHierarchyIndexCells <=
-				(labelCount + height) * 25 + 2 &&
-			diagnostics.work.broadPhasePeakRetainedExclusionRefs === labelCount * 2 &&
-			diagnostics.work.broadPhasePeakRetainedIndexRefs === labelCount * 5 + height * 4 &&
-			diagnostics.work.broadPhasePeakRetainedTotalStateRefs <= (labelCount + height) * 82 &&
-			!diagnostics.report.findings.some((finding) => finding.code === "LABEL_OVERLAP"),
-	),
+	distinctConflictingDiagnostics
+		.slice(0, 3)
+		.every(
+			({ height, labelCount, diagnostics }) =>
+				diagnostics.report.broadPhaseComparisons === 0 &&
+				diagnostics.work.broadPhaseCompatibleVisits === 0 &&
+				diagnostics.work.broadPhaseBucketScans === 0 &&
+				diagnostics.work.broadPhaseCompatibilityTests === 0 &&
+				diagnostics.work.broadPhaseProfileSnapshotEntries === labelCount * 2 + 1 &&
+				diagnostics.work.broadPhaseProfileTrieSteps === labelCount * 2 + 1 &&
+				diagnostics.work.broadPhaseProfileSortComparisons === labelCount &&
+				diagnostics.work.broadPhaseProfileTerminalLookups === diagnostics.work.broadPhaseEvents &&
+				diagnostics.work.broadPhaseProfileCreations ===
+					diagnostics.work.broadPhaseCompatibilityProfiles &&
+				diagnostics.work.broadPhaseHierarchyPathQueries === labelCount &&
+				diagnostics.work.broadPhaseHierarchyPathSteps <=
+					labelCount * (Math.ceil(Math.log2(height + labelCount)) + 1) &&
+				diagnostics.work.broadPhaseHierarchySubtreeQueries === 0 &&
+				diagnostics.work.broadPhaseHierarchySubtreeSteps === 0 &&
+				diagnostics.work.broadPhasePeakRetainedBuckets === labelCount + height &&
+				diagnostics.work.broadPhasePeakRetainedProfiles === labelCount + 1 &&
+				diagnostics.work.broadPhasePeakRetainedProfileTrieNodes <= labelCount * 3 + height * 4 &&
+				diagnostics.work.broadPhasePeakRetainedHierarchyIndexCells <=
+					(labelCount + height) * 25 + 2 &&
+				diagnostics.work.broadPhasePeakRetainedExclusionRefs === labelCount * 2 &&
+				diagnostics.work.broadPhasePeakRetainedIndexRefs === labelCount * 5 + height * 4 &&
+				diagnostics.work.broadPhasePeakRetainedTotalStateRefs <= (labelCount + height) * 82 &&
+				!diagnostics.report.findings.some((finding) => finding.code === "LABEL_OVERLAP"),
+		) &&
+		distinctConflictingDiagnostics[3].diagnostics.report.findings.some(
+			(finding) => finding.reason === "broad-phase-preprocessing-ceiling",
+		) &&
+		distinctConflictingDiagnostics[3].diagnostics.work.preprocessingSteps === 25_000_000 &&
+		distinctConflictingDiagnostics[3].diagnostics.work.broadPhaseCompatibleVisits === 0 &&
+		distinctConflictingDiagnostics[3].diagnostics.work.broadPhaseBucketScans === 0 &&
+		distinctConflictingDiagnostics[3].diagnostics.work.broadPhasePeakRetainedTotalStateRefs <=
+			(8_000 + 64) * 82,
 	JSON.stringify(
 		distinctConflictingDiagnostics.map(({ height, labelCount, diagnostics }) => [
 			height,
@@ -5398,6 +5548,9 @@ for (const [label, ids] of obstacleIdentityCases) {
 	);
 }
 noteFor("clean", []);
+noteFor("late-collision-activation", lateCollisionActivation.board);
+noteFor("late-collision-prepare", lateCollisionPrepare.board);
+noteFor("long-library-identity", longLibraryBoard);
 noteFor(
 	"rotated-decoration",
 	["rectangle", "ellipse", "diamond"].map((type, index) => ({
@@ -5885,6 +6038,65 @@ check(
 	"package JSON parses through exported schema",
 	CheckResultSchema.safeParse(cleanPackageResult).success &&
 		!("preprocessingWork" in cleanPackageResult),
+);
+for (const [board, expectedPhase, expectedElements] of [
+	["late-collision-activation", "activate-or-expire", 30_001],
+	["late-collision-prepare", "prepare-events", 35_001],
+]) {
+	const normal = run(board);
+	const strict = run(board, ["--strict"]);
+	const result = normal.stdout ? JSON.parse(normal.stdout) : null;
+	const limit = result?.findings.find(
+		(finding) => finding.reason === "broad-phase-preprocessing-ceiling",
+	);
+	check(
+		`${board} package output preserves the completed collision checkpoint`,
+		normal.status === 0 &&
+			strict.status === 8 &&
+			normal.stderr === "" &&
+			strict.stderr === "" &&
+			normal.stdout === strict.stdout &&
+			CheckResultSchema.safeParse(result).success &&
+			result.broadPhaseComparisons === 1 &&
+			result.coverage === "indeterminate" &&
+			JSON.stringify(result.findings.map((finding) => finding.reason)) ===
+				JSON.stringify(["leaf-footprint-interior", "broad-phase-preprocessing-ceiling"]) &&
+			limit?.details.pass === "connector-intersection" &&
+			limit?.details.phase === expectedPhase &&
+			limit?.details.completedBroadPhaseComparisons === 1 &&
+			limit?.elements.length === expectedElements,
+		`statuses=${normal.status}/${strict.status} reasons=${result?.findings
+			?.map((finding) => finding.reason)
+			.join(",")} limit=${JSON.stringify(limit?.details)}`,
+	);
+}
+const lateCollisionText = run("late-collision-activation", ["--text"]);
+const lateCollisionJson = run("late-collision-activation");
+check(
+	"late collision checkpoint text is the exhaustive rendering of preserved JSON",
+	lateCollisionText.status === 0 &&
+		lateCollisionText.stderr === "" &&
+		lateCollisionText.stdout === formatInspectionText(JSON.parse(lateCollisionJson.stdout)) + "\n",
+);
+const longLibraryNormal = run("long-library-identity");
+const longLibraryStrict = run("long-library-identity", ["--strict"]);
+const longLibraryPackage = longLibraryNormal.stdout ? JSON.parse(longLibraryNormal.stdout) : null;
+check(
+	"persisted long library identity reaches the exact preprocessing ceiling",
+	longLibraryNormal.status === 0 &&
+		longLibraryStrict.status === 8 &&
+		longLibraryNormal.stderr === "" &&
+		longLibraryStrict.stderr === "" &&
+		longLibraryNormal.stdout === longLibraryStrict.stdout &&
+		CheckResultSchema.safeParse(longLibraryPackage).success &&
+		longLibraryPackage.coverage === "indeterminate" &&
+		longLibraryPackage.findings.some(
+			(finding) =>
+				finding.reason === "broad-phase-preprocessing-ceiling" &&
+				finding.details.attempted === 25_000_001 &&
+				finding.details.pass === "container-boundary" &&
+				finding.details.phase === "prepare-events",
+		),
 );
 const rotatedDecorationRun = run("rotated-decoration", ["--strict"]);
 const rotatedDecorationResult = rotatedDecorationRun.stdout

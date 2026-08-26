@@ -38,12 +38,17 @@ is read by exact current content rather than object identity. Tests do not infer
 public comparison count. Product callers and the `check` command use `index.ts`; diagnostic
 counters never enter schema-v1 report bytes.
 
+The diagnostics root also exposes the production stable-order and obstacle-identity encoders for
+exact storage and UTF-16 accounting checks. A stopped collision pass retains its completed work and
+findings in the same accumulator that a normal return uses. Diagnostics therefore report partial
+events and visits instead of resetting them when preprocessing reaches the ceiling.
+
 The production inspector owns one 25,000,000-unit preprocessing budget across
 model and pair sweeps. Its semantic input size is `I + E + H`: interval count,
 total exact-exclusion entries across profiles, and total ancestor-target
 entries. Retained sweep memory is `O(I + E + H)` references plus emitted
-findings. Arbitrary identity UTF-16 code units count as logical work when read
-or compared. Diagnostics expose the detailed mechanics and retained-state
+findings. Arbitrary identity UTF-16 code units count as logical work when read,
+emitted during canonical encoding, compared, copied, or merged. Diagnostics expose the detailed mechanics and retained-state
 peaks; product reports expose only the fixed limit and a closed limit finding
 when the next logical unit is refused.
 

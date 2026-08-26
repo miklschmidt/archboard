@@ -98,10 +98,16 @@ function comparedIdentity(left: string, right: string, charge: (units: number) =
 	return left.length < right.length ? -1 : left.length > right.length ? 1 : 0;
 }
 
-function stableSorted<T>(values: readonly T[], compare: (left: T, right: T) => number): T[] {
-	if (values.length < 2) return [...values];
-	let source = [...values],
-		target = Array.from<T>({ length: values.length });
+function stableSorted<T>(
+	values: readonly T[],
+	compare: (left: T, right: T) => number,
+	charge: (units: number) => void,
+): T[] {
+	charge(1 + values.length * 2);
+	let source = [...values];
+	if (values.length < 2) return source;
+	charge(1 + values.length);
+	let target = Array.from<T>({ length: values.length });
 	for (let width = 1; width < values.length; width *= 2) {
 		for (let start = 0; start < values.length; start += width * 2) {
 			const middle = Math.min(start + width, values.length),
@@ -109,11 +115,24 @@ function stableSorted<T>(values: readonly T[], compare: (left: T, right: T) => n
 			let left = start,
 				right = middle,
 				output = start;
-			while (left < middle && right < end)
-				target[output++] =
-					compare(source[left]!, source[right]!) <= 0 ? source[left++]! : source[right++]!;
-			while (left < middle) target[output++] = source[left++]!;
-			while (right < end) target[output++] = source[right++]!;
+			while (left < middle && right < end) {
+				charge(2);
+				const leftValue = source[left]!,
+					rightValue = source[right]!;
+				const takeLeft = compare(leftValue, rightValue) <= 0;
+				charge(1);
+				target[output++] = takeLeft ? leftValue : rightValue;
+				if (takeLeft) left += 1;
+				else right += 1;
+			}
+			while (left < middle) {
+				charge(2);
+				target[output++] = source[left++]!;
+			}
+			while (right < end) {
+				charge(2);
+				target[output++] = source[right++]!;
+			}
 		}
 		[source, target] = [target, source];
 	}
@@ -165,19 +184,39 @@ export function buildSweepHierarchy(
 		nodes.get(parent)!.children.push(id);
 	}
 	for (const node of nodes.values())
-		node.children = stableSorted(node.children, (left, right) => {
-			spendOptions(options, "order-events");
-			return comparedIdentity(left, right, (units) => spendOptions(options, "order-events", units));
-		});
+		node.children = stableSorted(
+			node.children,
+			(left, right) => {
+				spendOptions(options, "order-events");
+				return comparedIdentity(left, right, (units) =>
+					spendOptions(options, "order-events", units),
+				);
+			},
+			(units) => spendOptions(options, "order-events", units),
+		);
+	spendOptions(options, "prepare-events");
+	const rootIds: string[] = [];
+	for (const node of nodes.values()) {
+		spendOptions(options, "prepare-events");
+		if (node.parent !== null) continue;
+		spendOptions(options, "prepare-events");
+		rootIds.push(node.id);
+	}
 	const roots = stableSorted(
-		[...nodes.values()].filter((node) => node.parent === null).map((node) => node.id),
+		rootIds,
 		(left, right) => {
 			spendOptions(options, "order-events");
 			return comparedIdentity(left, right, (units) => spendOptions(options, "order-events", units));
 		},
+		(units) => spendOptions(options, "order-events", units),
 	);
 	const order: string[] = [];
-	const stack = roots.toReversed();
+	spendOptions(options, "hierarchy-query");
+	const stack: string[] = [];
+	for (let index = roots.length - 1; index >= 0; index -= 1) {
+		spendOptions(options, "hierarchy-query", 2);
+		stack.push(roots[index]!);
+	}
 	while (stack.length > 0) {
 		spendOptions(options, "hierarchy-query");
 		const id = stack.pop()!;
@@ -205,9 +244,13 @@ export function buildSweepHierarchy(
 		node.heavy = heavy?.id ?? null;
 	}
 	let nextPosition = 0;
-	const chains: Array<{ id: string; head: string }> = roots
-		.toReversed()
-		.map((id) => ({ id, head: id }));
+	spendOptions(options, "hierarchy-query");
+	const chains: Array<{ id: string; head: string }> = [];
+	for (let index = roots.length - 1; index >= 0; index -= 1) {
+		spendOptions(options, "hierarchy-query", 2);
+		const id = roots[index]!;
+		chains.push({ id, head: id });
+	}
 	while (chains.length > 0) {
 		spendOptions(options, "hierarchy-query");
 		let { id, head } = chains.pop()!;
@@ -428,10 +471,14 @@ class ExactCompatibilityIndex<T> {
 			}
 			kept.push(value);
 		}
-		return stableSorted(kept, (left, right) => {
-			spend(work, "order-events");
-			return comparedIdentity(left, right, (units) => spend(work, "order-events", units));
-		});
+		return stableSorted(
+			kept,
+			(left, right) => {
+				spend(work, "order-events");
+				return comparedIdentity(left, right, (units) => spend(work, "order-events", units));
+			},
+			(units) => spend(work, "order-events", units),
+		);
 	}
 
 	private intersectCoverage(
@@ -547,12 +594,19 @@ function mergedRanges(
 	ranges: readonly (readonly [number, number])[],
 	work: SweepWork,
 ): Array<[number, number]> {
+	spend(work, "prepare-events");
+	const copied: Array<[number, number]> = [];
+	for (const [min, max] of ranges) {
+		spend(work, "prepare-events", 2);
+		copied.push([min, max]);
+	}
 	const ordered = stableSorted(
-		ranges.map(([min, max]) => [min, max] as [number, number]),
+		copied,
 		(a, b) => {
 			spend(work, "order-events");
 			return a[0] - b[0] || a[1] - b[1];
 		},
+		(units) => spend(work, "order-events", units),
 	);
 	const merged: Array<[number, number]> = [];
 	for (const range of ordered) {
@@ -962,16 +1016,27 @@ function canonicalProfile(
 		work.profileSortComparisons += 1;
 		return comparedIdentity(a, b, (units) => spend(work, "order-events", units));
 	};
-	const exclusions = stableSorted([...semantics.excludedPartitions], profileOrder);
-	const ancestorTargets = stableSorted([...new Set(semantics.ancestorTargets ?? [])], profileOrder);
-	spend(
-		work,
-		"prepare-events",
-		1 +
-			exclusions.length +
-			ancestorTargets.length +
-			exclusions.reduce((total, value) => total + value.length, 0) +
-			ancestorTargets.reduce((total, value) => total + value.length, 0),
+	spend(work, "prepare-events");
+	const exclusionInput: string[] = [];
+	for (const exclusion of semantics.excludedPartitions) {
+		spend(work, "prepare-events", 2 + exclusion.length);
+		exclusionInput.push(exclusion);
+	}
+	const exclusions = stableSorted(exclusionInput, profileOrder, (units) =>
+		spend(work, "order-events", units),
+	);
+	spend(work, "prepare-events", 2);
+	const ancestorInput: string[] = [];
+	const seenAncestors = new Set<string>();
+	for (const target of semantics.ancestorTargets ?? []) {
+		spend(work, "prepare-events", 1 + target.length);
+		if (seenAncestors.has(target)) continue;
+		spend(work, "prepare-events", 2);
+		seenAncestors.add(target);
+		ancestorInput.push(target);
+	}
+	const ancestorTargets = stableSorted(ancestorInput, profileOrder, (units) =>
+		spend(work, "order-events", units),
 	);
 	work.profileSnapshotEntries += exclusions.length + ancestorTargets.length;
 	let node = root;
@@ -1151,6 +1216,7 @@ export function sweepIntervalPairs<A, B>(
 	type Value = A | B;
 	const work = emptyWork(options);
 	options?.budget?.attachDiagnosticState(work);
+	spend(work, "prepare-events", 6);
 	const profileRoot: ProfileNode = { children: new Map(), profiles: new Map(), profile: null };
 	const profileBySemantics = new Map<SweepPartition, CompatibilityProfile>();
 	let events: Array<{
@@ -1161,14 +1227,14 @@ export function sweepIntervalPairs<A, B>(
 	}> = [];
 	let retainedCanonicalProfileRefs = 0;
 	const addEvent = (interval: SweepInterval<Value>, set: 0 | 1, ordinal: number) => {
-		spend(work, "prepare-events");
-		spend(work, "prepare-events");
+		spend(work, "prepare-events", 2);
 		let profile = profileBySemantics.get(interval.semantics);
 		if (!profile) {
 			profile = canonicalProfile(profileRoot, interval.semantics, work);
 			spend(work, "prepare-events");
 			profileBySemantics.set(interval.semantics, profile);
 		}
+		spend(work, "prepare-events");
 		events.push({
 			interval,
 			set,
@@ -1176,8 +1242,16 @@ export function sweepIntervalPairs<A, B>(
 			profile,
 		});
 	};
-	left.forEach((interval, ordinal) => addEvent(interval, 0, ordinal));
-	if (!sameSet) right.forEach((interval, ordinal) => addEvent(interval, 1, ordinal));
+	for (let ordinal = 0; ordinal < left.length; ordinal += 1) {
+		spend(work, "prepare-events");
+		addEvent(left[ordinal]!, 0, ordinal);
+	}
+	if (!sameSet)
+		for (let ordinal = 0; ordinal < right.length; ordinal += 1) {
+			spend(work, "prepare-events");
+			addEvent(right[ordinal]!, 1, ordinal);
+		}
+	spend(work, "prepare-events");
 	const retainedProfiles = new Set<CompatibilityProfile>();
 	for (const event of events) {
 		spend(work, "prepare-events");
@@ -1188,32 +1262,43 @@ export function sweepIntervalPairs<A, B>(
 		retainedCanonicalProfileRefs +=
 			1 + event.profile.exclusions.length * 2 + event.profile.ancestorTargets.length;
 	}
-	const orderedEvents = stableSorted(events, (a, b) => {
-		spend(work, "order-events");
-		const numeric =
-			a.interval.min - b.interval.min || a.interval.max - b.interval.max || a.set - b.set;
-		if (numeric) return numeric;
-		const identity = comparedIdentity(a.interval.id, b.interval.id, (units) =>
-			spend(work, "order-events", units),
-		);
-		if (identity) return identity;
-		const compareLists = (first: readonly string[], second: readonly string[]) => {
-			for (let index = 0; index < Math.min(first.length, second.length); index += 1) {
-				const compared = comparedIdentity(first[index]!, second[index]!, (units) =>
-					spend(work, "order-events", units),
-				);
-				if (compared) return compared;
-			}
-			return first.length - second.length;
-		};
-		return (
-			compareLists(a.profile.exclusions, b.profile.exclusions) ||
-			compareLists(a.profile.ancestorTargets, b.profile.ancestorTargets) ||
-			a.ordinal - b.ordinal
-		);
-	});
+	const orderedEvents = stableSorted(
+		events,
+		(a, b) => {
+			spend(work, "order-events");
+			const numeric =
+				a.interval.min - b.interval.min || a.interval.max - b.interval.max || a.set - b.set;
+			if (numeric) return numeric;
+			const identity = comparedIdentity(a.interval.id, b.interval.id, (units) =>
+				spend(work, "order-events", units),
+			);
+			if (identity) return identity;
+			const compareLists = (first: readonly string[], second: readonly string[]) => {
+				for (let index = 0; index < Math.min(first.length, second.length); index += 1) {
+					const compared = comparedIdentity(first[index]!, second[index]!, (units) =>
+						spend(work, "order-events", units),
+					);
+					if (compared) return compared;
+				}
+				return first.length - second.length;
+			};
+			return (
+				compareLists(a.profile.exclusions, b.profile.exclusions) ||
+				compareLists(a.profile.ancestorTargets, b.profile.ancestorTargets) ||
+				a.ordinal - b.ordinal
+			);
+		},
+		(units) => spend(work, "order-events", units),
+	);
 	events = orderedEvents;
-	const hierarchy = events.find((event) => event.profile.hierarchy)?.profile.hierarchy;
+	let hierarchy: SweepHierarchy | undefined;
+	for (const event of events) {
+		spend(work, "prepare-events");
+		if (!event.profile.hierarchy) continue;
+		hierarchy = event.profile.hierarchy;
+		break;
+	}
+	spend(work, "prepare-events", 3);
 	const rankSpecs: Array<{ partition: string; profile: CompatibilityProfile }> = [];
 	const seenRanks = new Map<string, Set<CompatibilityProfile>>();
 	for (const event of events) {
@@ -1247,14 +1332,24 @@ export function sweepIntervalPairs<A, B>(
 		spend(work, "prepare-events");
 		profiles.set(spec.profile, rank);
 	}
+	let seenRankProfiles = 0;
+	for (const profiles of seenRanks.values()) {
+		spend(work, "prepare-events");
+		seenRankProfiles += profiles.size;
+	}
+	let retainedRanks = 0;
+	for (const profiles of ranks.values()) {
+		spend(work, "prepare-events");
+		retainedRanks += profiles.size;
+	}
 	const retainedRankAndProfileIndexRefs =
 		profileBySemantics.size * 2 +
 		retainedProfiles.size +
 		seenRanks.size +
-		[...seenRanks.values()].reduce((total, profiles) => total + profiles.size, 0) +
+		seenRankProfiles +
 		rankSpecs.length +
 		ranks.size +
-		[...ranks.values()].reduce((total, profiles) => total + profiles.size, 0);
+		retainedRanks;
 	const makeIndex = (): BucketIndex<Value> => ({
 		buckets: new Map(),
 		activeLists: new Set(),
