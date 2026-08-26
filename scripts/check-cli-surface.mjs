@@ -63,6 +63,11 @@ function parseJson(label, value) {
 	}
 }
 
+const fixedBaseGeneralHelp = (value) =>
+	value
+		.replace(/^  check\s+Inspect a persisted board for deterministic quality findings\n/m, "")
+		.replace(/^               check only: 6 warnings, 7 errors, 8 indeterminate coverage\.\n/m, "");
+
 let activeEvents = null;
 let activeCompatibilityRecord = null;
 
@@ -718,7 +723,7 @@ try {
 	}
 	for (const alias of [["-h"], ["--help"], ["help", "unknown-topic"]]) {
 		const result = await cli(alias);
-		const digest = createHash("sha256").update(result.stdout).digest("hex");
+		const digest = createHash("sha256").update(fixedBaseGeneralHelp(result.stdout)).digest("hex");
 		check(`${alias.join(" ")} exits normally`, result.status === 0, String(result.status));
 		check(`${alias.join(" ")} owns stdout`, result.stderr === "", result.stderr);
 		check(
@@ -729,6 +734,8 @@ try {
 	}
 
 	const surface = cliSurface();
+	check("current general help adds the check command once", (bare.stdout.match(/^  check\s/mg) ?? []).length === 1);
+	check("current general help adds the exact check-only exit line", bare.stdout.includes("               check only: 6 warnings, 7 errors, 8 indeterminate coverage.\n"));
 	check("the CLI declares commands", surface.length > 0, `${surface.length} commands`);
 	let subcommandCount = 0;
 	for (const { name, subcommands } of surface) {
