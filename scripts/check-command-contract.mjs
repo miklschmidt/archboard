@@ -65,6 +65,8 @@ const requiredCompatibilityCases = [
 	"promote-binding-resolution-failure",
 	"snapshot-save-missing-name",
 	"snapshot-restore-missing-name",
+	"snapshot-option-leading-restore",
+	"arrange-option-leading-align",
 ];
 check(
 	"fixed-base compatibility records every approved focused scenario",
@@ -155,6 +157,15 @@ check(
 				: entry.contract?.path.join(" ") === entry.name),
 	),
 );
+for (const entry of legacy.filter((candidate) => candidate.parent !== null)) {
+	const parent = registry.find((candidate) => candidate.name === entry.parent);
+	check(`${entry.name} consumes route-tail argv`, entry.legacyArgv === "route-tail");
+	check(
+		`${entry.name} executes independently of its family root`,
+		typeof entry.handler === "function" && entry.handler !== parent?.handler,
+		entry.handlerName,
+	);
+}
 for (const entry of registry.filter((candidate) => candidate.bare?.kind === "default")) {
 	check(
 		`${entry.name} default alias names a child route`,
@@ -299,9 +310,20 @@ const proofJson = fs.readFileSync(
 );
 const generatedProof = JSON.parse(proofJson);
 const expectedGeneratedRoutes = registry.map(
-	({ name, parent, kind, handlerOwner, parserOwner, bare, legacyArgv }) => {
-		const route = { name, parent, kind, handlerOwner, parserOwner };
+	({
+		name,
+		parent,
+		kind,
+		handlerOwner,
+		parserOwner,
+		handlerName,
+		bare,
+		childDiscovery,
+		legacyArgv,
+	}) => {
+		const route = { name, parent, kind, handlerOwner, parserOwner, handlerName };
 		if (bare) route.bare = bare;
+		if (childDiscovery) route.childDiscovery = childDiscovery;
 		if (legacyArgv) route.legacyArgv = legacyArgv;
 		return route;
 	},
