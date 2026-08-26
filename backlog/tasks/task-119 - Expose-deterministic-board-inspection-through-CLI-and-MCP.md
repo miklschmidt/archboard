@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 20:12'
+updated_date: '2026-08-26 20:28'
 labels:
   - ready-for-agent
 dependencies:
@@ -496,6 +496,8 @@ Parent-approved schema-v1 amendment recorded in 5980cdf is implemented by one ob
 Focused evidence after two byte-stable fix passes (tracked diff SHA-256 8b5df30021cb08e67d07792e44f079e05e49fccac58ac1d943e3ebb014deee23): lint and formatting green; both TypeScript projects green; boundaries and module-scope green; 58 command proofs / 58 audited paths / 978 contract checks; 634 inspection checks; 579 CLI checks; geometry 89; labels 183; branch comparison green. Inspection matrices cover sparse insert-after-expiry at 1k/2k/4k/8k, shared-ancestor distinct conflicting profiles at 1k/2k/4k/8k with zero bucket scans/tests and exact linear profile/reference counts, dense same-set distinct profiles with complete unique enumeration, mutable Set reuse, sparse boundary-node preprocessing, and dense hierarchy one-best retained state. Public 1,516,200 and 2,000,001 comparison fixtures remain green.
 
 Remaining before rereview: complete bun run check, separate complete bun run test, sequential headless browser evidence within each chain, final on-demand generation/determinism, git diff --check, task-state and clean-tree confirmation. TASK-119 remains In Progress with all acceptance criteria unchecked.
+
+Final validation completed at 12309e5. Two consecutive real bun run fix passes produced the same tracked-diff SHA-256 (8b5df30021cb08e67d07792e44f079e05e49fccac58ac1d943e3ebb014deee23). Focused lint, formatting, both TypeScript projects, boundaries, module-scope, contracts (58 paths, 978 checks), inspection (634 checks), CLI (579 checks), geometry (89 checks), labels (183 checks), branch compare, and persisted/package cases passed. The first complete bun run check exposed one scheduling-sensitive human-performance sample; isolated diagnosis followed docs/agents/test-suite.md, and the required complete chain was rerun successfully. Final bun run check and the separate bun run test both passed, including all four browser suites sequentially and headlessly. On-demand contract generation into two independent temporary directories was byte-identical: cli-command-audit.md c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, command-contract-proof.json e6be922438f3d8dc9ce2a9bac33cfb68f5a5527492d9b7fbb7cd32d9441442c1, command-contract-proof.md def3540846fa0854944805a959f2671ba943ffeb0d55c8a47aaa3ab538d949c2. git diff --check passed; generated views remain absent and precisely ignored; only canonical docs/design/cli-command-audit.json is tracked. TASK-119 remains In Progress with all nine acceptance criteria unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
