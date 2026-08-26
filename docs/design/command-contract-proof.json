@@ -1,5 +1,5 @@
 {
-	"schemaVersion": 4,
+	"schemaVersion": 5,
 	"generatedFrom": "src/cli/commands/run.ts",
 	"routes": [
 		{
@@ -25,8 +25,7 @@
 			"parent": null,
 			"kind": "contract",
 			"handlerOwner": "src/cli/command-contract/status.ts",
-			"parserOwner": "CommandContract concrete Commander parser",
-			"handlerName": "status"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "apply",
@@ -51,8 +50,7 @@
 			"parent": null,
 			"kind": "contract",
 			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
-			"parserOwner": "CommandContract concrete Commander parser",
-			"handlerName": "update"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "delete",
@@ -77,8 +75,7 @@
 			"parent": null,
 			"kind": "contract",
 			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
-			"parserOwner": "CommandContract concrete Commander parser",
-			"handlerName": "query"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "selection",
@@ -143,8 +140,7 @@
 			"parent": null,
 			"kind": "contract",
 			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
-			"parserOwner": "CommandContract concrete Commander parser",
-			"handlerName": "viewport"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "demote",
@@ -250,8 +246,7 @@
 			"parent": "board",
 			"kind": "contract",
 			"handlerOwner": "src/cli/command-contract/board-save.ts",
-			"parserOwner": "CommandContract staged token parser",
-			"handlerName": "board save"
+			"parserOwner": "CommandContract staged token parser"
 		},
 		{
 			"name": "compare",
@@ -344,8 +339,7 @@
 			"parent": null,
 			"kind": "contract",
 			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
-			"parserOwner": "CommandContract concrete Commander parser",
-			"handlerName": "export"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "import",

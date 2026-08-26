@@ -31,7 +31,8 @@ const generatedRoutes = registry.map(
 		childDiscovery,
 		legacyArgv,
 	}) => {
-		const route = { name, parent, kind, handlerOwner, parserOwner, handlerName };
+		const route = { name, parent, kind, handlerOwner, parserOwner };
+		if (handlerName) route.handlerName = handlerName;
 		if (bare) route.bare = bare;
 		if (childDiscovery) route.childDiscovery = childDiscovery;
 		if (legacyArgv) route.legacyArgv = legacyArgv;
@@ -76,7 +77,7 @@ const auditMarkdown = [
 const proofJson =
 	JSON.stringify(
 		{
-			schemaVersion: 4,
+			schemaVersion: 5,
 			generatedFrom: "src/cli/commands/run.ts",
 			routes: generatedRoutes,
 			contracts: proof,

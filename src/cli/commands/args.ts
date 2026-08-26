@@ -13,12 +13,27 @@ export interface FlagSpec {
 	repeatable?: boolean;
 }
 
+export type FlagSpecs = Readonly<Record<string, FlagSpec>>;
+
+export type ChildDiscoveryOptions<Spec extends FlagSpecs> = {
+	readonly [Name in keyof Spec]: Spec[Name]["takesValue"] extends true ? "value" : "flag";
+};
+
+/** Derive option-token arity for first-positional route discovery from the parser grammar. */
+export function childDiscoveryOptions<const Spec extends FlagSpecs>(
+	spec: Spec,
+): ChildDiscoveryOptions<Spec> {
+	return Object.fromEntries(
+		Object.entries(spec).map(([name, option]) => [name, option.takesValue ? "value" : "flag"]),
+	) as ChildDiscoveryOptions<Spec>;
+}
+
 export interface ParsedArgs {
 	positionals: string[];
 	flags: Record<string, string | boolean | string[]>;
 }
 
-export function parseArgs(argv: string[], spec: Record<string, FlagSpec>): ParsedArgs {
+export function parseArgs(argv: string[], spec: FlagSpecs): ParsedArgs {
 	const positionals: string[] = [];
 	const flags: Record<string, string | boolean | string[]> = {};
 
