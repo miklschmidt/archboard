@@ -552,12 +552,12 @@ try {
 	];
 	const at = versionOfNoteAt(noteFile);
 	const ok = cli([...shape(900), "--expect-version", String(at), ...said]);
-	check("the command line can state it too", ok.status === 0, ok.stderr?.trim()?.split("\n")[0]);
+	check("the command line can state it too", ok.status === 0, ok.stderr.trim().split("\n")[0]);
 	const refused = cli([...shape(950), "--expect-version", String(at), ...said]);
 	check(
 		"  and is refused on the next one, having moved the board on itself",
 		refused.status !== 0 && /version/.test(refused.stderr ?? ""),
-		`${refused.status} ${refused.stderr?.trim()?.split("\n")[0]}`,
+		`${refused.status} ${refused.stderr.trim().split("\n")[0]}`,
 	);
 	check(
 		"  printing the unchanged reason before the attached board on the CLI",
@@ -565,13 +565,13 @@ try {
 			(refused.stderr ?? "").indexOf("Refusing to write") <
 				(refused.stderr ?? "").indexOf('"document"') &&
 			(refused.stderr ?? "").includes(`"version": ${at + 1}`),
-		refused.stderr?.trim()?.split("\n")[0],
+		refused.stderr.trim().split("\n")[0],
 	);
 	const mistyped = cli([...shape(10), "--expect-version", "latest", ...said]);
 	check(
 		"  and a mistyped one is a usage error rather than a write with no precondition",
 		mistyped.status === 2 && /--expect-version takes a whole number/.test(mistyped.stderr ?? ""),
-		`${mistyped.status} ${mistyped.stderr?.trim()?.split("\n")[0]}`,
+		`${mistyped.status} ${mistyped.stderr.trim().split("\n")[0]}`,
 	);
 
 	// --- the canvas fills it in, and the caller carries nothing -------------
@@ -698,7 +698,7 @@ try {
 	check(
 		"  and the client error keeps that response document and version for either surface to print",
 		refusedClient?.refusal?.version === 6 &&
-			refusedClient?.refusal?.document?.some((element) => element.id === "r2" && element.x === 280),
+		refusedClient?.refusal?.document.some((element) => element.id === "r2" && element.x === 280),
 		JSON.stringify({
 			version: refusedClient?.refusal?.version,
 			count: refusedClient?.refusal?.document?.length,

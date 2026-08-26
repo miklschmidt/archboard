@@ -288,7 +288,7 @@ export class AppServerControl extends EventEmitter {
 			// own client declines methods it does not implement. Silence would be
 			// worse: a turn waiting on a reply that never comes is a hung session.
 			logger.info(
-				`app-server asked archboard to handle "${message.method}"; declining — archboard is a listener on this socket`,
+					`app-server asked archboard to handle "${String(message.method)}"; declining — archboard is a listener on this socket`,
 			);
 			this.ws?.send(
 				JSON.stringify({

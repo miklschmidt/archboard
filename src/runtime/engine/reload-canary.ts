@@ -35,10 +35,10 @@ function registry(): Registry | null {
 	return host[REGISTRY] ?? null;
 }
 
-function keptValue<T>(name: string): T | null {
+function keptValue(name: string): unknown {
 	const store = registry();
 	if (!store || !store.has(name)) return null;
-	return store.get(name) as T;
+	return store.get(name);
 }
 
 /**
@@ -93,32 +93,32 @@ export interface ReloadFacts {
 /** Read the facts out of the running canvas. */
 export function readFacts(): ReloadFacts {
 	const boards: Record<string, string> = {};
-	const boardMap = keptValue<Map<string, { file?: string }>>("boards");
+	const boardMap = keptValue("boards") as Map<string, { file?: string }> | null;
 	if (boardMap) {
 		for (const [key, board] of boardMap) boards[key] = board.file ?? "nowhere";
 	}
 
 	const held: Record<string, number> = {};
 	const holdMap =
-		keptValue<Map<string, { content: { elements: Map<string, unknown> } }>>("board-holds");
+		keptValue("board-holds") as Map<string, { content: { elements: Map<string, unknown> } }> | null;
 	if (holdMap) {
 		for (const [key, hold] of holdMap) held[key] = hold.content?.elements?.size ?? 0;
 	}
 
 	const paneBoards: Record<string, string> = {};
-	const paneBoardMap = keptValue<Map<string, string>>("pane-boards");
+	const paneBoardMap = keptValue("pane-boards") as Map<string, string> | null;
 	if (paneBoardMap) {
 		for (const [clientId, board] of paneBoardMap) paneBoards[clientId] = board;
 	}
 
 	const panes: Record<string, string> = {};
-	const paneMap = keptValue<Map<string, { paneId: string }>>("panes");
+	const paneMap = keptValue("panes") as Map<string, { paneId: string }> | null;
 	if (paneMap) {
 		for (const [clientId, pane] of paneMap) panes[clientId] = pane.paneId;
 	}
 
-	const socketSet = keptValue<Set<unknown>>("ws-clients");
-	const feed = keptValue<{ id: string; cursor: number }>("change-feed");
+	const socketSet = keptValue("ws-clients") as Set<unknown> | null;
+	const feed = keptValue("change-feed") as { id: string; cursor: number } | null;
 
 	return {
 		boards,
@@ -234,7 +234,7 @@ export function reportBrokenReload(complaints: string[]): void {
 	process.stderr.write(`${banner}\n`);
 
 	const sockets =
-		keptValue<Set<{ readyState: number; send: (data: string) => void }>>("ws-clients");
+		keptValue("ws-clients") as Set<{ readyState: number; send: (data: string) => void }> | null;
 	if (!sockets) return;
 	const message = JSON.stringify({ type: "reload_broken", complaints });
 	for (const socket of sockets) {

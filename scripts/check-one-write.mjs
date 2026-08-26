@@ -429,12 +429,12 @@ try {
 		});
 		assert(
 			refusedBatch?.success === false,
-			`an unbuildable ${position} upsert should refuse the whole mutation: ${JSON.stringify(refusedBatch)}`,
+				`an unbuildable ${String(position)} upsert should refuse the whole mutation: ${JSON.stringify(refusedBatch)}`,
 		);
 		scene = await byId();
 		assert(
 			JSON.stringify([scene.get("box-4"), scene.get("box-5")]) === beforeRefusedBatch,
-			`the refused batched write changed the board with its bad upsert ${position}`,
+				`the refused batched write changed the board with its bad upsert ${String(position)}`,
 		);
 	}
 

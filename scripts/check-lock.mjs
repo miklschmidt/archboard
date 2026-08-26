@@ -152,12 +152,12 @@ const refusal = async (promise) => {
 	check(
 		"a board somebody else holds is not written",
 		denied instanceof BoardHeldError && ran === 1,
-		`${denied?.name} / ran ${ran}`,
+		`${denied.name} / ran ${ran}`,
 	);
 	check(
 		"  and the refusal says who has it, as data",
-		denied?.holder?.id === "the-user" && denied?.holder?.kind === "human",
-		JSON.stringify(denied?.holder),
+		denied.holder?.id === "the-user" && denied.holder?.kind === "human",
+		JSON.stringify(denied.holder),
 	);
 	check(
 		"  and since when, in a sentence somebody can say out loud",
@@ -561,9 +561,9 @@ const refusal = async (promise) => {
 		const board = `lapsed-${how.includes("passed") ? "expired" : "gone"}`;
 		const claim = await claiming({ board, reason: "redrawing the payment path", forMs: 600_000 });
 		check(
-			`a claim over ${how}: the claim is live`,
+			`a claim over ${String(how)}: the claim is live`,
 			claim.created === true,
-			JSON.stringify(claim.claim),
+				JSON.stringify(claim.claim),
 		);
 		lapse(lockFileFor(board));
 
@@ -792,7 +792,7 @@ try {
 	check(
 		"the report that edit produces is not blocked by the edit's own hold",
 		own.status === 200,
-		`${own.status} ${JSON.stringify(own.body)?.slice(0, 120)}`,
+		`${own.status} ${JSON.stringify(own.body).slice(0, 120)}`,
 	);
 	check(
 		"  and the hold survives it, because the user edit may not have stopped",
@@ -818,7 +818,7 @@ try {
 	check(
 		"an agent writing a board a person is holding is refused, not merged",
 		shut.status === 409 && shut.body?.code === "BOARD_HELD",
-		`${shut.status} ${JSON.stringify(shut.body)?.slice(0, 160)}`,
+		`${shut.status} ${JSON.stringify(shut.body).slice(0, 160)}`,
 	);
 	check(
 		"  after waiting rather than failing at it",
@@ -905,7 +905,7 @@ try {
 		claimed.status === 200 &&
 			claimed.body?.claim?.holder?.claimed === true &&
 			claimed.body?.claim?.holder?.reason === WHY,
-		`${claimed.status} ${JSON.stringify(claimed.body)?.slice(0, 160)}`,
+		`${claimed.status} ${JSON.stringify(claimed.body).slice(0, 160)}`,
 	);
 	await sleep(200);
 	check(
@@ -969,7 +969,7 @@ try {
 	check(
 		"the person at the canvas takes a claimed board back, rather than being refused",
 		tookBack.status === 200 && tookBack.body?.holder?.id === PANE,
-		`${tookBack.status} ${JSON.stringify(tookBack.body)?.slice(0, 160)}`,
+		`${tookBack.status} ${JSON.stringify(tookBack.body).slice(0, 160)}`,
 	);
 	await api("POST", "/api/boards/hold/release?board=scratch", { clientId: PANE });
 
@@ -979,7 +979,7 @@ try {
 	check(
 		"  and the agent cannot claim its way back onto it",
 		denied.status === 409 && denied.body?.code === "CLAIM_REVOKED",
-		`${denied.status} ${JSON.stringify(denied.body)?.slice(0, 160)}`,
+		`${denied.status} ${JSON.stringify(denied.body).slice(0, 160)}`,
 	);
 	check(
 		"  and is told nothing was rolled back, because a claim is not a transaction",
@@ -1011,7 +1011,7 @@ try {
 	check(
 		"  told once: what it does after that is an ordinary write on an ordinary board",
 		ordinary.status === 200,
-		`${ordinary.status} ${JSON.stringify(ordinary.body)?.slice(0, 120)}`,
+		`${ordinary.status} ${JSON.stringify(ordinary.body).slice(0, 120)}`,
 	);
 
 	const survived = await api("GET", "/api/elements?board=scratch");
@@ -1087,7 +1087,7 @@ try {
 		check(
 			"and a write to it is refused while the first canvas holds the board",
 			acrossServers.status === 409 && refused?.code === "BOARD_HELD",
-			`${acrossServers.status} ${JSON.stringify(refused)?.slice(0, 140)}`,
+		`${acrossServers.status} ${JSON.stringify(refused).slice(0, 140)}`,
 		);
 		check(
 			"  naming the holder on the other canvas, which it has never heard of",
@@ -1190,7 +1190,7 @@ try {
 		check(
 			"  and the agent on the first canvas is told it lost the board",
 			toldElsewhere.status === 409 && toldElsewhere.body?.code === "CLAIM_REVOKED",
-			`${toldElsewhere.status} ${JSON.stringify(toldElsewhere.body)?.slice(0, 200)}`,
+		`${toldElsewhere.status} ${JSON.stringify(toldElsewhere.body).slice(0, 200)}`,
 		);
 
 		otherSocket.close();

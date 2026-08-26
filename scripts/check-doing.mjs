@@ -160,7 +160,7 @@ try {
 		check(
 			`  ${method} ${path.split("?")[0]} is refused the same way`,
 			refused.status === 400 && refused.body?.code === "DOING_REQUIRED",
-			`${refused.status} ${refused.body?.code ?? ""}`,
+			`${String(refused.status)} ${String(refused.body?.code ?? "")}`,
 		);
 	}
 
@@ -284,12 +284,12 @@ try {
 	);
 	check(
 		"  named as the board it is about, like every other content message",
-		news?.board === "payments",
+		news.board === "payments",
 	);
 	check(
 		"  by an agent, and by which one, so two agents do not read as one",
-		news?.doing?.kind === "agent" &&
-			typeof news?.doing?.by === "string" &&
+		news.doing?.kind === "agent" &&
+			typeof news.doing?.by === "string" &&
 			news.doing.by.length > 0,
 		JSON.stringify(news?.doing?.by),
 	);

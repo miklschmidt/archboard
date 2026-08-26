@@ -7,6 +7,8 @@
 import React, { useEffect, useRef } from "react";
 import { Icon } from "./Icons";
 
+const stopPointerDown = (event: React.PointerEvent<HTMLDivElement>): void => event.stopPropagation();
+
 interface ModalProps {
 	title: string;
 	onCancel: () => void;
@@ -40,7 +42,7 @@ export function Modal({ title, onCancel, children, footer, wide }: ModalProps): 
 				aria-modal="true"
 				aria-label={title}
 				ref={panelRef}
-				onPointerDown={(event) => event.stopPropagation()}
+				onPointerDown={stopPointerDown}
 			>
 				<div className="modal-header">
 					<div>

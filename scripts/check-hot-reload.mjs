@@ -177,6 +177,7 @@ try {
 
 	const socket = new WebSocket(`ws://127.0.0.1:${PORT}/?clientId=p-hot-1`);
 	const seen = [];
+	/** @type {number | null} */
 	let closed = null;
 	socket.on("message", (data) => seen.push(JSON.parse(data.toString())));
 	socket.on("close", (code) => {
