@@ -11,18 +11,6 @@ import {
 } from "../../runtime/engine/element-ops.js";
 import type { Alignment, Direction } from "../../runtime/engine/element-ops.js";
 
-// The operations live in one list and are validated before dispatch, so a `case`
-// added to the switch without a line here is unreachable.
-export const OPERATIONS = [
-	"align",
-	"distribute",
-	"group",
-	"ungroup",
-	"lock",
-	"unlock",
-	"duplicate",
-] as const;
-
 const ALIGNMENTS = new Set(["left", "center", "right", "top", "middle", "bottom"]);
 const DIRECTIONS = new Set(["horizontal", "vertical"]);
 
@@ -45,13 +33,9 @@ export async function arrange(argv: string[]): Promise<void> {
 	});
 
 	const op = positionals[0];
-	if (!op || !(OPERATIONS as readonly string[]).includes(op)) {
-		throw new CliUsageError(`Usage: arrange ${OPERATIONS.join("|")} ...`);
-	}
-	await ensureCanvasRunning();
-
 	switch (op) {
 		case "align": {
+			await ensureCanvasRunning();
 			const ids = parseIds(
 				flags.ids,
 				"Usage: arrange align --ids a,b,c --to left|center|right|top|middle|bottom",
@@ -64,6 +48,7 @@ export async function arrange(argv: string[]): Promise<void> {
 			return;
 		}
 		case "distribute": {
+			await ensureCanvasRunning();
 			const ids = parseIds(
 				flags.ids,
 				"Usage: arrange distribute --ids a,b,c --to horizontal|vertical",
@@ -76,11 +61,13 @@ export async function arrange(argv: string[]): Promise<void> {
 			return;
 		}
 		case "group": {
+			await ensureCanvasRunning();
 			const ids = parseIds(flags.ids, "Usage: arrange group --ids a,b,c");
 			printJson(await groupElements(ids));
 			return;
 		}
 		case "ungroup": {
+			await ensureCanvasRunning();
 			const groupId = flags.group as string | undefined;
 			if (!groupId) throw new CliUsageError("Usage: arrange ungroup --group <groupId>");
 			printJson(await ungroupElements(groupId));
@@ -88,6 +75,7 @@ export async function arrange(argv: string[]): Promise<void> {
 		}
 		case "lock":
 		case "unlock": {
+			await ensureCanvasRunning();
 			const locked = op === "lock";
 			const ids = parseIds(flags.ids, `Usage: arrange ${op} --ids a,b,c`);
 			const result = await setElementsLocked(ids, locked);
@@ -95,6 +83,7 @@ export async function arrange(argv: string[]): Promise<void> {
 			return;
 		}
 		case "duplicate": {
+			await ensureCanvasRunning();
 			const ids = parseIds(flags.ids, "Usage: arrange duplicate --ids a,b,c [--offset 20,20]");
 			let offsetX = 20,
 				offsetY = 20;

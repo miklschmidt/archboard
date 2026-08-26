@@ -92,39 +92,59 @@ check(
 	`${contracts.length} + ${legacy.length}`,
 );
 check(
-	"the foundation registers exactly six contracts",
-	contracts.map((entry) => entry.name).join(",") ===
-		"status,update,query,viewport,board save,export",
-	contracts.map((entry) => entry.name).join(","),
+	"every mixed route has one executable owner",
+	registry.every(
+		(entry) =>
+			typeof entry.handlerOwner === "string" &&
+			(entry.kind === "legacy"
+				? typeof entry.handler === "function" && typeof entry.legacyArgv === "string"
+				: entry.contract?.path.join(" ") === entry.name),
+	),
 );
+for (const entry of registry.filter((candidate) => candidate.bare?.kind === "default")) {
+	check(
+		`${entry.name} default alias names a child route`,
+		registry.some(
+			(candidate) =>
+				candidate.parent === entry.name && candidate.name === `${entry.name} ${entry.bare.child}`,
+		),
+	);
+}
 
 const byName = new Map(contracts.map((entry) => [entry.name, entry.contract]));
 const auditByPath = new Map(audit.entries.map((entry) => [entry.path, entry]));
-for (const entry of contracts) {
+for (const entry of registry) {
 	const audited = auditByPath.get(entry.name);
-	const owner = audited?.handlerOwner;
-	const definition =
-		owner && fs.existsSync(join(root, owner)) ? fs.readFileSync(join(root, owner), "utf8") : "";
+	const expectedParent = entry.name.includes(" ")
+		? entry.name.slice(0, entry.name.lastIndexOf(" "))
+		: null;
 	check(
-		`${entry.name} owner defines the registered contract`,
-		entry.contract?.path.join(" ") === entry.name &&
-			definition.includes(
-				`export const ${{ "board save": "boardSave" }[entry.name] ?? entry.name}Contract = defineCommand`,
-			),
-		owner ?? "missing audit entry",
+		`${entry.name} parent matches its canonical path`,
+		entry.parent === expectedParent,
+		String(entry.parent),
+	);
+	check(
+		`${entry.name} handler owner matches the canonical audit`,
+		entry.handlerOwner === audited?.handlerOwner,
+		`${entry.handlerOwner} / ${audited?.handlerOwner ?? "missing"}`,
+	);
+	check(
+		`${entry.name} parser owner matches the canonical audit`,
+		entry.parserOwner === audited?.parserOwner,
+		`${entry.parserOwner} / ${audited?.parserOwner ?? "missing"}`,
+	);
+	check(
+		`${entry.name} kind matches the canonical audit`,
+		entry.kind === (audited?.parserOwner.startsWith("CommandContract") ? "contract" : "legacy"),
 	);
 }
-const expectedPrerequisites = {
-	status: [],
-	query: ["server", "board"],
-	update: ["server", "board", "doing"],
-	viewport: ["server", "browser"],
-	export: ["server", "board"],
-	"board save": ["server", "board"],
-};
-for (const [name, expected] of Object.entries(expectedPrerequisites)) {
-	const actual = byName.get(name)?.prerequisites ?? [];
-	check(`${name} declares its complete prerequisites`, actual.join(",") === expected.join(","));
+for (const entry of contracts) {
+	const expected = auditByPath.get(entry.name)?.prerequisites ?? [];
+	const actual = entry.contract?.prerequisites ?? [];
+	check(
+		`${entry.name} declares its canonical prerequisites`,
+		actual.join(",") === expected.join(","),
+	);
 }
 const updateRefusals = new Map(
 	(byName.get("update")?.refusals ?? []).map((refusal) => [refusal.code, refusal.exit]),
@@ -223,6 +243,14 @@ const proofJson = fs.readFileSync(
 	"utf8",
 );
 const generatedProof = JSON.parse(proofJson);
+const expectedGeneratedRoutes = registry.map(
+	({ name, parent, kind, handlerOwner, parserOwner, bare, legacyArgv }) => {
+		const route = { name, parent, kind, handlerOwner, parserOwner };
+		if (bare) route.bare = bare;
+		if (legacyArgv) route.legacyArgv = legacyArgv;
+		return route;
+	},
+);
 check(
 	"generated contracts cover every registered contract",
 	JSON.stringify(generatedProof.contracts.map((entry) => entry.name)) ===
@@ -231,6 +259,10 @@ check(
 check(
 	"generated legacy paths cover every registered legacy path",
 	JSON.stringify(generatedProof.legacyPaths) === JSON.stringify(legacy.map((entry) => entry.name)),
+);
+check(
+	"generated routes cover every owner and parent in the mixed tree",
+	JSON.stringify(generatedProof.routes) === JSON.stringify(expectedGeneratedRoutes),
 );
 for (const privateName of ["pendingArtifact", "artifactSchema", "CommanderArgvParser"]) {
 	check(`proof omits ${privateName}`, !proofJson.includes(privateName));

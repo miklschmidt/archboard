@@ -157,7 +157,9 @@ const server = Bun.serve({
 		const held =
 			url.searchParams.get("board") === "held"
 				? { board: "held", message: "held board diagnostic", writes: 1 }
-				: undefined;
+				: url.searchParams.get("board") === "invalid-held-read"
+					? { board: 7, message: false }
+					: undefined;
 		if (request.method === "POST" && url.pathname === "/api/viewport") {
 			return Response.json({ success: true, message: "Viewport updated" });
 		}
@@ -430,6 +432,29 @@ try {
 	);
 	check("board save rejects success:false without a conflict", falseSuccess.status === 1);
 	check("board save false success reaches no structured stdout", falseSuccess.stdout === "");
+
+	const malformedReadHeld = await cli(["query", "--board", "invalid-held-read"], {
+		url: canvasUrl,
+	});
+	check("stderr-note rejects malformed held state", malformedReadHeld.status === 1);
+	check("stderr-note malformed held reaches no structured stdout", malformedReadHeld.stdout === "");
+	check(
+		"stderr-note malformed held emits no held diagnostic",
+		!malformedReadHeld.stderr.includes("held board diagnostic"),
+		malformedReadHeld.stderr,
+	);
+
+	const malformedFilePath = join(outside, "malformed-held-export.excalidraw");
+	const malformedFileHeld = await cli(
+		["export", "--board", "invalid-held-read", "--out", malformedFilePath],
+		{ url: canvasUrl },
+	);
+	check("file output rejects malformed held state", malformedFileHeld.status === 1);
+	check(
+		"file output malformed held reaches no structured receipt",
+		malformedFileHeld.stdout === "",
+	);
+	check("file output malformed held commits no artifact", !existsSync(malformedFilePath));
 
 	const lateSaveClosed = await cli(["board", "save", "--unknown", "--board", "contract"], {
 		url: closedUrl,
