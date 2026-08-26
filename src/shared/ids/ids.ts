@@ -22,7 +22,7 @@
 // Excalidraw is the one minter this file cannot reach: it names what a user
 // draws with a 21-character nanoid, in the browser. So the pane calls
 // `derivedId` below the moment a text editor closes, before the element is
-// reported (TASK-098, `frontend/src/canvas/useCanvasSession.ts`). Same
+// reported (TASK-098, `src/ui/canvas/useCanvasSession.ts`). Same
 // function, same answer, and the rename therefore happens where no editor is
 // bound rather than at the far end of a round trip.
 //

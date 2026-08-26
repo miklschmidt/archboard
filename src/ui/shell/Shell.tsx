@@ -44,7 +44,7 @@ const THEME_KEY = "archboard-theme";
 // How many panes the shell lays out. The grid has a column rule for two
 // (shell.css) and the canvas server refuses to ask for a third, so this is the
 // same number said in the one place that renders it. It mirrors MAX_PANES in
-// src/core/panes.ts, which is where the server's copy lives.
+// src/runtime/engine/panes.ts, which is where the server's copy lives.
 const MAX_PANES = 2;
 
 function initialTheme(): "light" | "dark" {

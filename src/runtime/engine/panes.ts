@@ -232,7 +232,7 @@ const PANE_SPECS =
  *
  * A product fact, not a limit of this module: the shell's grid has a column
  * rule for two panes and its own button stops offering another past that
- * (frontend/src/shell/shell.css, BoardBar.tsx). It lives here because the
+ * (src/ui/shell/shell.css, BoardBar.tsx). It lives here because the
  * server has to refuse a third pane before it asks the browser for one, and
  * because the message that says "no such pane" has to know whether making one
  * is still possible.

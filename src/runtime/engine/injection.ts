@@ -479,7 +479,7 @@ class Injector {
 // Kept across a hot reload, like the feed it subscribes to. Injection is armed
 // once, from the address the server actually bound (ADR 0005), and a second
 // Injector would subscribe a second time and push every event into the thread
-// twice (src/core/hot.ts).
+// twice (src/runtime/engine/hot.ts).
 const injector = kept("injector", () => new Injector());
 
 export function startInjection(host: string): void {

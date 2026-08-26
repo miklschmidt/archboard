@@ -9,7 +9,7 @@
 // the images and the note's own bytes, which made it a second copy of every
 // open board — one that could drift from the note for as long as a session ran,
 // and did, four times, each found by a person noticing something absurd. A
-// request reads the note it is about and writes it back (src/core/board-io.ts);
+// request reads the note it is about and writes it back (src/runtime/engine/board-io.ts);
 // what survives between requests is the sentence "this canvas has payments open,
 // and its note is at <path>", which is a fact about this process rather than
 // about the board.
@@ -80,7 +80,7 @@ export interface BoardState {
 
 // The boards this canvas has open. Kept across a hot reload, because which
 // board each pane is holding must not change under somebody at a wall display
-// (src/core/hot.ts, ADR 0014). What is on those boards is in the vault and is
+// (src/runtime/engine/hot.ts, ADR 0014). What is on those boards is in the vault and is
 // re-read per request, so a reload cannot lose it.
 export const boards = kept("boards", () => new Map<string, BoardState>());
 

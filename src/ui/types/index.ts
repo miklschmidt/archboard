@@ -219,7 +219,7 @@ export interface WebSocketMessage {
 /**
  * One thing an agent said it was doing to this board (TASK-095).
  *
- * Mirrors `DoingEntry` in `src/core/board-doing.ts`. It is never board content
+ * Mirrors `DoingEntry` in `src/runtime/engine/board-doing.ts`. It is never board content
  * and it is nowhere in the note: it is what somebody said while changing
  * something, and it dies with the canvas.
  */

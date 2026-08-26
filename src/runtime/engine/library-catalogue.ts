@@ -1,6 +1,6 @@
 // The stencil palette, as something an agent can choose from and place.
 //
-// `src/core/library.ts` is the store: what a browser posts, what a vault holds.
+// `src/runtime/engine/library.ts` is the store: what a browser posts, what a vault holds.
 // This is the layer above it — the two questions an agent actually asks, "what
 // can I draw with" and "put that one there". The public CLI commands `library
 // list` and `library insert` share these helpers and reach the canvas through
