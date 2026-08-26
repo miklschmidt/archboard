@@ -49,6 +49,14 @@ function restoreToken(value: unknown, restored: ReadonlyMap<string, string>): un
 export class CommanderArgvParser implements ArgvParser {
 	async parse(contract: AnyCommandContract, argv: readonly string[]): Promise<TokenRecord> {
 		if (argv.includes("--")) throw new CliUsageError("Unknown flag --");
+		for (const token of argv) {
+			const spelling = contract.parameters
+				.flatMap((parameter) =>
+					parameter.kind === "option" && parameter.value === "none" ? parameter.spellings : [],
+				)
+				.find((candidate) => token.startsWith(`${candidate}=`));
+			if (spelling) throw new CliUsageError(`Flag ${spelling} does not take a value`);
+		}
 		const command = new Command();
 		command
 			.name(contract.path.join(" "))
@@ -58,6 +66,7 @@ export class CommanderArgvParser implements ArgvParser {
 			.addHelpCommand(false)
 			.allowExcessArguments(true);
 
+		const options = new Map<string, Option>();
 		for (const parameter of contract.parameters) {
 			if (parameter.kind === "positional") {
 				command.argument(parameter.repeatable ? `[${parameter.name}...]` : `[${parameter.name}]`);
@@ -69,6 +78,7 @@ export class CommanderArgvParser implements ArgvParser {
 			);
 			if (parameter.occurrences === "append") option.argParser(collect);
 			command.addOption(option);
+			options.set(parameter.key, option);
 		}
 
 		const declared = new Set(
@@ -87,7 +97,9 @@ export class CommanderArgvParser implements ArgvParser {
 		const args = [...command.args];
 		for (const parameter of contract.parameters) {
 			if (parameter.kind === "option") {
-				const value = command.getOptionValue(parameter.key);
+				const option = options.get(parameter.key);
+				if (!option) throw new Error(`Missing Commander option for ${parameter.key}`);
+				const value = command.getOptionValue(option.attributeName());
 				record[parameter.key] = restoreToken(value, restored) as TokenRecord[string];
 				continue;
 			}

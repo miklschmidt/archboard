@@ -93,7 +93,7 @@
 		{
 			"path": "update",
 			"parserOwner": "CommandContract real Commander adapter",
-			"handlerOwner": "src/cli/command-contract/proofs.ts",
+			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
 			"stdout": "validated json object",
 			"result": "success,element,elements,fingerprint,document?,held?",
 			"diagnostics": "usage/refusal/held on stderr",
@@ -138,7 +138,7 @@
 		{
 			"path": "query",
 			"parserOwner": "CommandContract real Commander adapter",
-			"handlerOwner": "src/cli/command-contract/proofs.ts",
+			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
 			"stdout": "validated bare json array",
 			"result": "ServerElement[]",
 			"diagnostics": "usage or held note on stderr",
@@ -243,7 +243,7 @@
 		{
 			"path": "viewport",
 			"parserOwner": "CommandContract real Commander adapter",
-			"handlerOwner": "src/cli/command-contract/proofs.ts",
+			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
 			"stdout": "validated json object",
 			"result": "success,message?,held?",
 			"diagnostics": "usage/browser/held on stderr",
@@ -558,7 +558,7 @@
 		{
 			"path": "export",
 			"parserOwner": "CommandContract real Commander adapter",
-			"handlerOwner": "src/cli/command-contract/proofs.ts",
+			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
 			"stdout": "validated raw content or json receipt",
 			"result": "string or success,file,elements,format,held?",
 			"diagnostics": "usage/server/held on stderr except raw bypass",

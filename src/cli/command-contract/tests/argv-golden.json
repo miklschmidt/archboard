@@ -67,6 +67,13 @@
 			"stderrSha256": "a3db163139c48cbc6f7c5b931540bddb3d97631c76b7605356e8c1eb3ee226d9"
 		},
 		{
+			"name": "document boolean rejects an attached value",
+			"argv": ["update", "shape1", "--document=false"],
+			"status": 2,
+			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"stderrSha256": "3d2dba759190b976d5d6cfe0bda5f70b0cfe89e46bdac3b2f15f955c7400f1c7"
+		},
+		{
 			"name": "literal dash routes update stdin",
 			"argv": ["update", "shape1", "-"],
 			"status": 2,
@@ -88,11 +95,25 @@
 			"stderrSha256": "25e74d8bd39e709e266eab88ef422512f8d43f9ddb820d5705a61c965f87c057"
 		},
 		{
+			"name": "fit boolean rejects an attached value",
+			"argv": ["viewport", "--fit=true"],
+			"status": 2,
+			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"stderrSha256": "cf5c370938be23984d4a2b02a25ff751c39819ff11ad120b6727c4c566d4edae"
+		},
+		{
 			"name": "export inline format refusal bytes",
 			"argv": ["export", "--format=invalid"],
 			"status": 2,
 			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 			"stderrSha256": "f42621750325f598ab64121a09cb2f7ce941b4e0b063ccbe9e220b4ce0ab0041"
+		},
+		{
+			"name": "force boolean rejects an attached value",
+			"argv": ["export", "--force=false"],
+			"status": 2,
+			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"stderrSha256": "800b61a182d167eeb0d5ac6970899459c265dcb3cde991fe70b85a5bb5a3e2bf"
 		},
 		{
 			"name": "duplicate doing leaves the second global for the adapter",

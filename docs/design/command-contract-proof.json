@@ -83,6 +83,7 @@
 						"name": "updates",
 						"when": "before-server",
 						"description": "JSON object from --set, file, or stdin",
+						"rules": [],
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
 							"type": "object",
@@ -386,6 +387,7 @@
 						"name": "bbox",
 						"when": "after-server",
 						"description": "Four finite comma-separated numbers",
+						"rules": [],
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema"
 						}
@@ -394,6 +396,7 @@
 						"name": "filters",
 						"when": "after-read",
 						"description": "Typed key=value and JSON predicates",
+						"rules": [],
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
 							"anyOf": [{}, {}]
@@ -590,9 +593,20 @@
 				},
 				"stages": [
 					{
+						"name": "ids",
+						"when": "after-browser",
+						"description": "Comma-separated ids become the viewport element-id array",
+						"rules": ["Split on commas, trim each id, and discard empty ids."],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "Split comma-separated ids, trim whitespace, and discard empty ids."
+						}
+					},
+					{
 						"name": "numbers",
 						"when": "after-browser",
 						"description": "Finite zoom and offset values",
+						"rules": [],
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema"
 						}
@@ -733,8 +747,13 @@
 						"name": "format",
 						"when": "before-server",
 						"description": "Explicit format or .md inference",
+						"rules": [
+							"Use an explicit --format when present.",
+							"Otherwise use obsidian for an --out path ending in .md, and json for every other destination or stdout."
+						],
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "Use the explicit format, otherwise infer obsidian for .md output and json elsewhere.",
 							"type": "string",
 							"enum": ["json", "obsidian"]
 						}

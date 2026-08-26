@@ -420,6 +420,18 @@ try {
 		viewportRequest?.body?.zoom === 1.5,
 	);
 	check("viewport preserves ignored excess positionals", viewportRequest?.body?.offsetX === 2);
+	const idsBefore = requests.length;
+	const idsViewport = await cli(["viewport", "--ids", "shape1, shape2,,"], {
+		url: canvasUrl,
+	});
+	check("viewport ids exit normally", idsViewport.status === 0, String(idsViewport.status));
+	const idsRequest = requests
+		.slice(idsBefore)
+		.find((request) => request.url.pathname === "/api/viewport");
+	check(
+		"viewport staged Zod coercion supplies the handler's id array",
+		JSON.stringify(idsRequest?.body?.scrollToElementIds) === JSON.stringify(["shape1", "shape2"]),
+	);
 	const numericBeforeServer = await cli(["viewport", "--zoom", "not-a-number"], { url: closedUrl });
 	check(
 		"viewport keeps server before numeric refusal",
@@ -461,6 +473,21 @@ try {
 		"export file receipt follows JSON stream ownership",
 		fileExport.stderr === "",
 		fileExport.stderr,
+	);
+	const inferredPath = join(outside, "inferred.excalidraw.md");
+	const inferredExport = await cli(["export", "--out", inferredPath, "--board", "contract"], {
+		url: canvasUrl,
+	});
+	const inferredReceipt = parseJson("inferred export receipt", inferredExport.stdout);
+	check(
+		"export .md inference exits normally",
+		inferredExport.status === 0,
+		String(inferredExport.status),
+	);
+	check("export staged Zod inference selects obsidian", inferredReceipt?.format === "obsidian");
+	check(
+		"export staged Zod inference writes Obsidian content",
+		/^---\n.*excalidraw-plugin:/s.test(readFileSync(inferredPath, "utf8")),
 	);
 	const localFormat = await cli(["export", "--format", "invalid"], { url: closedUrl });
 	check(
