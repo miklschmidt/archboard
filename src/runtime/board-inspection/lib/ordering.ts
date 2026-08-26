@@ -12,7 +12,11 @@ export function compareIdentityLists(a: readonly string[], b: readonly string[])
 	return a.length - b.length;
 }
 
-/** Injective escaped-comma encoding for nonempty identity lists; preserves ordinary legacy IDs. */
-export function encodeIdentityList(values: readonly string[]): string {
-	return values.map((value) => value.replaceAll("\\", "\\\\").replaceAll(",", "\\,")).join(",");
+/** Schema-v1 obstacle identity: exact-sort, escape backslash/comma only, then comma-join. */
+export function obstacleIdentity(values: readonly string[]): string {
+	const encoded = values
+		.toSorted(compareIdentity)
+		.map((value) => value.replaceAll("\\", "\\\\").replaceAll(",", "\\,"))
+		.join(",");
+	return `obstacle:${encoded}`;
 }

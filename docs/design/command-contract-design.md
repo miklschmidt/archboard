@@ -131,11 +131,18 @@ each side. If IEEE-754 arithmetic cannot represent all four exact deltas,
 coverage, so strict mode exits 8. A null `affectedBBox` still means the record
 has no finite x/y location.
 
+Schema-v1 obstacle references derive `id` from `elementIds`; callers cannot choose it. Sort the
+constituent IDs by exact ECMAScript UTF-16 code-unit order, replace each backslash with `\\` and
+each comma with `\,`, join the encoded IDs with a literal comma, then prefix the result with
+`obstacle:`. No other character is escaped. This keeps commas injective while preserving NUL,
+other controls, lone surrogates, and ordinary IDs byte for byte. The report schema rejects an
+obstacle reference whose `id` is not that exact derivation.
+
 The schema-v1 report exposes `broadPhaseComparisons`, whose public meaning is
 the number of semantically eligible x-overlapping pairs tested before the
-y-axis and exact predicates. Heap, event, expiry, semantic-bucket, and
-path-filter work are private implementation mechanics. They do not enter the
-check contract or its JSON and text results.
+y-axis and exact predicates. Heap, event, expiry, compatibility-index, hierarchy-index, and
+path-filter work are private implementation mechanics. They do not enter the check contract or its
+JSON and text results.
 
 ## CLI-only compatibility
 

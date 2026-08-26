@@ -14,9 +14,12 @@ const {
 	InspectionFindingSchema,
 	InspectionReportSchema,
 	CheckResultSchema,
+	ObstacleRefSchema,
 	formatInspectionText,
 } = await import(src("runtime/board-inspection/index.ts"));
-const { inspectBoardDiagnostics } = await import(src("runtime/board-inspection/diagnostics.ts"));
+const { inspectBoardDiagnostics, diagnoseMutableProfileSnapshots } = await import(
+	src("runtime/board-inspection/diagnostics.ts")
+);
 const { compareBoards } = await import(src("runtime/engine/compare.ts"));
 const { renderBoardNote } = await import(src("runtime/engine/board.ts"));
 const { ingestScene } = await import(src("runtime/engine/board-io.ts"));
@@ -47,6 +50,15 @@ check(
 check(
 	"development diagnostics run the exact production report pipeline",
 	JSON.stringify(inspectBoardDiagnostics(frozen).report) === JSON.stringify(clean),
+);
+const mutableProfileSnapshots = diagnoseMutableProfileSnapshots();
+check(
+	"mutable ReadonlySet reuse snapshots exact content without stale eligibility",
+	mutableProfileSnapshots.excludedPairCount === 0 &&
+		mutableProfileSnapshots.includedPairCount === 1 &&
+		mutableProfileSnapshots.restoredPairCount === 0 &&
+		JSON.stringify(mutableProfileSnapshots.profileSnapshotEntries) === JSON.stringify([1, 0, 1]),
+	JSON.stringify(mutableProfileSnapshots),
 );
 const malformed = Object.freeze([
 	Object.freeze({ type: "arrow", x: 0, y: 0, width: null, height: 0, points: null }),
@@ -2972,6 +2984,58 @@ check(
 		groupedObstacle[0].obstacles[0]?.id === "obstacle:a,b" &&
 		JSON.stringify(groupedObstacle[0].obstacles[0]?.elementIds) === JSON.stringify(["a", "b"]),
 );
+/** @type {Array<[string, string[], string]>} */
+const obstacleIdentityCases = [
+	["comma", ["id,part", "plain"], "obstacle:id\\,part,plain"],
+	["backslash", ["id\\part", "plain"], "obstacle:id\\\\part,plain"],
+	["combined", ["id\\,part", "plain"], "obstacle:id\\\\\\,part,plain"],
+	["control", ["id\0part", "plain"], "obstacle:id\0part,plain"],
+	["other-control", ["id\u001fpart", "plain"], "obstacle:id\u001fpart,plain"],
+	["lone-surrogate", ["\ud800", "plain"], "obstacle:plain,\ud800"],
+	["empty-looking-prefix", [",", "\\"], "obstacle:\\,,\\\\"],
+];
+for (const [label, ids, expected] of obstacleIdentityCases) {
+	const forward = obstaclePenetrations(
+		ids.map((id, index) =>
+			Object.assign(validLibraryBody(id, index * 20, ["identity-group"]), {
+				customData: undefined,
+			}),
+		),
+	)[0]?.obstacles[0];
+	const reversed = obstaclePenetrations(
+		ids.toReversed().map((id, index) =>
+			Object.assign(validLibraryBody(id, index * 20, ["identity-group"]), {
+				customData: undefined,
+			}),
+		),
+	)[0]?.obstacles[0];
+	check(
+		`obstacle identity ${label} obeys the schema-v1 escaping grammar`,
+		forward?.id === expected &&
+			reversed?.id === expected &&
+			ObstacleRefSchema.safeParse(forward).success,
+		`${forward?.id} versus ${expected}`,
+	);
+}
+const formerlyCollidingObstacleA = obstaclePenetrations([
+	{ ...validLibraryBody("a,b", 0, ["collision-a"]), customData: undefined },
+	{ ...validLibraryBody("c", 20, ["collision-a"]), customData: undefined },
+])[0]?.obstacles[0];
+const formerlyCollidingObstacleB = obstaclePenetrations([
+	{ ...validLibraryBody("a", 0, ["collision-b"]), customData: undefined },
+	{ ...validLibraryBody("b,c", 20, ["collision-b"]), customData: undefined },
+])[0]?.obstacles[0];
+check(
+	"escaped obstacle identity distinguishes formerly colliding comma joins",
+	formerlyCollidingObstacleA?.id === "obstacle:a\\,b,c" &&
+		formerlyCollidingObstacleB?.id === "obstacle:a,b\\,c" &&
+		formerlyCollidingObstacleA.id !== formerlyCollidingObstacleB.id,
+);
+check(
+	"obstacle schema rejects a prefix-only or mismatched identity",
+	!ObstacleRefSchema.safeParse({ ...groupedObstacle[0].obstacles[0], id: "obstacle:a,b,c" })
+		.success,
+);
 const transitiveGroupedObstacle = obstaclePenetrations([
 	{ ...validLibraryBody("transitive-a"), customData: undefined, groupIds: ["group-a"] },
 	{
@@ -3747,13 +3811,27 @@ check(
 		({ count, diagnostics }) =>
 			diagnostics.work.broadPhaseCompatibleVisits === 0 &&
 			diagnostics.work.broadPhaseBucketScans === 0 &&
-			diagnostics.work.broadPhaseBucketIndexOperations <= diagnostics.work.broadPhaseEvents * 6 &&
+			diagnostics.work.broadPhaseBucketLookups === count * 32 - 11 &&
+			diagnostics.work.broadPhaseBucketUpdates === count * 25 &&
+			diagnostics.work.broadPhaseBucketDeletes === count * 25 - 21 &&
+			diagnostics.work.broadPhaseCompatibilityIndexUpdates === count * 2 - 1 &&
+			diagnostics.work.broadPhaseBucketIndexOperations === count * 82 - 32 &&
+			diagnostics.work.broadPhaseCompatibilityTests === 0 &&
+			diagnostics.work.broadPhaseProfileTerminalLookups === diagnostics.work.broadPhaseEvents &&
+			diagnostics.work.broadPhaseProfileCreations ===
+				diagnostics.work.broadPhaseCompatibilityProfiles &&
+			diagnostics.work.broadPhasePeakRetainedBuckets <= 1 &&
+			diagnostics.work.broadPhasePeakRetainedProfiles <= 1 &&
+			diagnostics.work.broadPhasePeakRetainedIndexRefs <= 2 &&
 			diagnostics.work.broadPhaseEvents === count * 6 &&
 			diagnostics.work.hierarchyEvents === count * 2 &&
 			diagnostics.work.hierarchyCandidateVisits === 0 &&
-			diagnostics.work.hierarchyBucketScans === count &&
-			diagnostics.work.hierarchyBucketIndexOperations <= diagnostics.work.hierarchyEvents * 5 &&
-			diagnostics.work.hierarchyExpiryPops <= count * 2,
+			diagnostics.work.hierarchyBucketScans === 0 &&
+			diagnostics.work.hierarchyBucketIndexOperations === count * 35 - 16 &&
+			diagnostics.work.hierarchyExpiryPops <= count * 2 &&
+			diagnostics.work.containerBoundaryCandidateVisits === 0 &&
+			diagnostics.work.containerBoundaryBucketScans === 0 &&
+			diagnostics.work.containerBoundaryPeakRetainedBuckets <= 1,
 	),
 	JSON.stringify(sparseSweepResults.map(({ count, diagnostics }) => [count, diagnostics.work])),
 );
@@ -3786,6 +3864,34 @@ check(
 				(finding) => finding.code === "CONNECTOR_INTERSECTION_UNMARKED",
 			),
 	),
+);
+const denseDistinctConnectorCount = 1_000;
+const denseDistinctConnectors = Array.from({ length: denseDistinctConnectorCount }, (_, index) =>
+	connector({
+		id: `dense-distinct-${index}`,
+		x: 0,
+		y: index * 2,
+		width: 100,
+		height: 0,
+		points: [
+			[0, 0],
+			[100, 0],
+		],
+	}),
+);
+const denseDistinctDiagnostics = inspectBoardDiagnostics(denseDistinctConnectors);
+check(
+	"dense same-set distinct profiles enumerate each eligible pair once with linear retained state",
+	denseDistinctDiagnostics.report.broadPhaseComparisons ===
+		(denseDistinctConnectorCount * (denseDistinctConnectorCount - 1)) / 2 &&
+		denseDistinctDiagnostics.work.broadPhaseCompatibleVisits ===
+			(denseDistinctConnectorCount * (denseDistinctConnectorCount - 1)) / 2 &&
+		denseDistinctDiagnostics.work.broadPhasePeakRetainedExclusionRefs <=
+			denseDistinctConnectorCount &&
+		denseDistinctDiagnostics.work.broadPhasePeakRetainedIndexRefs <=
+			denseDistinctConnectorCount * 2 &&
+		denseDistinctDiagnostics.report.clean,
+	JSON.stringify(denseDistinctDiagnostics.work),
 );
 
 const endpointOnlyDiagnostics = inspectBoardDiagnostics([
@@ -3919,6 +4025,149 @@ check(
 			diagnostics.work,
 		]),
 	),
+);
+
+function distinctConflictingLabelBoard(height, labelCount) {
+	const labels = Array.from({ length: labelCount }, (_, index) => ({
+		id: `profile-label-${height}-${index}`,
+		type: "text",
+		x: height * 2 + 1,
+		y: height * 2 + 1,
+		width: 2,
+		height: 1,
+		angle: 0,
+		fontFamily: 5,
+		text: `${index}`,
+		containerId: `a-common-owner-${height - 1}`,
+	}));
+	return [
+		...Array.from({ length: height }, (_, index) =>
+			semanticNode(`a-common-node-${index}`, {
+				id: `a-common-owner-${index}`,
+				x: index * 2,
+				y: index * 2,
+				width: (height - index) * 10,
+				height: (height - index) * 10,
+				...(index === height - 1
+					? { boundElements: labels.map((label) => ({ id: label.id, type: "text" })) }
+					: {}),
+			}),
+		),
+		...labels.map((label, index) =>
+			semanticNode(`z-reverse-node-${index}`, {
+				id: `z-reverse-owner-${index}`,
+				x: 1_000_000 + index * 4,
+				y: 0,
+				width: 1,
+				height: 1,
+				boundElements: [{ id: label.id, type: "text" }],
+			}),
+		),
+		...labels,
+	];
+}
+const distinctConflictingDiagnostics = [
+	[8, 1_000],
+	[16, 2_000],
+	[32, 4_000],
+	[64, 8_000],
+].map(([height, labelCount]) => ({
+	height,
+	labelCount,
+	diagnostics: inspectBoardDiagnostics(distinctConflictingLabelBoard(height, labelCount)),
+}));
+check(
+	"distinct conflicting label profiles keep shared-ancestor A=0 work and state linear",
+	distinctConflictingDiagnostics.every(
+		({ height, labelCount, diagnostics }) =>
+			diagnostics.report.broadPhaseComparisons === 0 &&
+			diagnostics.work.broadPhaseCompatibleVisits === 0 &&
+			diagnostics.work.broadPhaseBucketScans === 0 &&
+			diagnostics.work.broadPhaseCompatibilityTests === 0 &&
+			diagnostics.work.broadPhaseProfileSnapshotEntries === labelCount * 2 + 1 &&
+			diagnostics.work.broadPhaseProfileTrieSteps === labelCount * 2 + 1 &&
+			diagnostics.work.broadPhaseProfileSortComparisons === labelCount &&
+			diagnostics.work.broadPhaseProfileTerminalLookups === diagnostics.work.broadPhaseEvents &&
+			diagnostics.work.broadPhaseProfileCreations ===
+				diagnostics.work.broadPhaseCompatibilityProfiles &&
+			diagnostics.work.broadPhaseHierarchyPathQueries === labelCount &&
+			diagnostics.work.broadPhaseHierarchyPathSteps === labelCount * 2 &&
+			diagnostics.work.broadPhaseHierarchySubtreeQueries === 0 &&
+			diagnostics.work.broadPhaseHierarchySubtreeSteps === 0 &&
+			diagnostics.work.broadPhasePeakRetainedBuckets === labelCount &&
+			diagnostics.work.broadPhasePeakRetainedProfiles === labelCount + 1 &&
+			diagnostics.work.broadPhasePeakRetainedProfileTrieNodes <= labelCount * 3 + height * 4 &&
+			diagnostics.work.broadPhasePeakRetainedHierarchyIndexCells <=
+				(labelCount + height) * 10 + 2 &&
+			diagnostics.work.broadPhasePeakRetainedExclusionRefs === labelCount * 2 &&
+			diagnostics.work.broadPhasePeakRetainedIndexRefs === labelCount * 3 &&
+			!diagnostics.report.findings.some((finding) => finding.code === "LABEL_OVERLAP"),
+	),
+	JSON.stringify(
+		distinctConflictingDiagnostics.map(({ height, labelCount, diagnostics }) => [
+			height,
+			labelCount,
+			diagnostics.work,
+		]),
+	),
+);
+
+function sparseContainerBoundaryBoard(count) {
+	return [
+		...Array.from({ length: count }, (_, index) =>
+			semanticNode(`sparse-container-node-${index}`, {
+				x: index * 4,
+				y: 20_000,
+				width: 1,
+				height: 1,
+			}),
+		),
+		...Array.from({ length: count }, (_, index) => ({
+			id: `sparse-container-boundary-${index}`,
+			type: "rectangle",
+			x: 1_000_000 + index * 4,
+			y: 20_000,
+			width: 1,
+			height: 1,
+			angle: 0,
+		})),
+	];
+}
+const sparseContainerDiagnostics = [1_000, 2_000, 4_000].map((count) => ({
+	count,
+	diagnostics: inspectBoardDiagnostics(sparseContainerBoundaryBoard(count)),
+}));
+check(
+	"unpromoted boundary classification uses a bounded spatial sweep",
+	sparseContainerDiagnostics.every(
+		({ count, diagnostics }) =>
+			diagnostics.work.containerBoundaryEvents === count * 2 &&
+			diagnostics.work.containerBoundaryCandidateVisits === 0 &&
+			diagnostics.work.containerBoundaryBucketScans === 0 &&
+			diagnostics.work.containerBoundaryPeakRetainedBuckets <= 1 &&
+			diagnostics.work.containerBoundaryPeakRetainedIndexRefs <= 1,
+	),
+	JSON.stringify(
+		sparseContainerDiagnostics.map(({ count, diagnostics }) => [count, diagnostics.work]),
+	),
+);
+const denseHierarchyCount = 256;
+const denseHierarchyBoard = Array.from({ length: denseHierarchyCount }, (_, index) =>
+	semanticNode(`dense-hierarchy-${index}`, {
+		x: index,
+		y: index,
+		width: (denseHierarchyCount - index) * 4,
+		height: (denseHierarchyCount - index) * 4,
+	}),
+);
+const denseHierarchyDiagnostics = inspectBoardDiagnostics(denseHierarchyBoard);
+check(
+	"dense hierarchy retains only one exact best parent per child",
+	denseHierarchyDiagnostics.work.hierarchyCandidateVisits ===
+		denseHierarchyCount * (denseHierarchyCount - 1) &&
+		denseHierarchyDiagnostics.work.hierarchyPeakRetainedSelections === denseHierarchyCount - 1 &&
+		denseHierarchyDiagnostics.work.hierarchyPeakRetainedSelections <= denseHierarchyCount,
+	JSON.stringify(denseHierarchyDiagnostics.work),
 );
 
 const controlPartitionElements = [
@@ -4383,9 +4632,57 @@ const noteForEscapedControls = (board, elements) => {
 	);
 	for (const [control, placeholder] of placeholders)
 		note = note.replaceAll(JSON.stringify(placeholder), JSON.stringify(control));
-	check(`${board} persists control ids as escaped JSON`, note.includes("\\u0000"));
+	check(
+		`${board} persists control ids as escaped JSON`,
+		[...controls].every((control) => note.includes(JSON.stringify(control).slice(1, -1))),
+	);
 	fs.writeFileSync(path.join(vault, `${board}.excalidraw.md`), note);
 };
+for (const [label, ids] of obstacleIdentityCases) {
+	const writeObstacleNote =
+		label === "control" || label === "other-control" || label === "lone-surrogate"
+			? noteForEscapedControls
+			: noteFor;
+	/** @param {string[]} orderedIds */
+	const bodies = (orderedIds) =>
+		orderedIds.map((id, index) =>
+			Object.assign(validLibraryBody(id, index * 20, [`persisted-${label}`]), {
+				customData: undefined,
+			}),
+		);
+	writeObstacleNote(
+		`obstacle-identity-${label}`,
+		[
+			connector({
+				id: `persisted-through-${label}`,
+				x: -10,
+				y: 5,
+				width: 60,
+				height: 0,
+				points: [
+					[0, 0],
+					[60, 0],
+				],
+			}),
+		].concat(bodies(ids)),
+	);
+	writeObstacleNote(
+		`obstacle-identity-${label}-reversed`,
+		[
+			connector({
+				id: `persisted-through-${label}-reversed`,
+				x: -10,
+				y: 5,
+				width: 60,
+				height: 0,
+				points: [
+					[0, 0],
+					[60, 0],
+				],
+			}),
+		].concat(bodies(ids.toReversed())),
+	);
+}
 noteFor("clean", []);
 noteFor("warning", [
 	{ id: "txt", type: "text", x: 0, y: 0, width: 30, height: 10, fontFamily: 1, text: "legacy" },
@@ -4878,6 +5175,27 @@ check(
 		)
 		.join("|")}`,
 );
+for (const [label, , expected] of obstacleIdentityCases) {
+	const runs = [run(`obstacle-identity-${label}`), run(`obstacle-identity-${label}-reversed`)];
+	const results = runs.map((result) => (result.stdout ? JSON.parse(result.stdout) : null));
+	const persistedObstacleIds = results.map(
+		(result) =>
+			new Set(
+				result?.findings.flatMap((finding) => finding.obstacles.map((obstacle) => obstacle.id)) ??
+					[],
+			),
+	);
+	check(
+		`persisted package output preserves ${label} obstacle identity escaping under reversal`,
+		runs.every((result) => result.status === 0 && result.stderr === "") &&
+			results.every((result) => CheckResultSchema.safeParse(result).success) &&
+			persistedObstacleIds.every((ids) => ids.has(expected)),
+		JSON.stringify({
+			statuses: runs.map((result) => result.status),
+			ids: persistedObstacleIds.map((ids) => Array.from(ids)),
+		}),
+	);
+}
 const exactOrderRun = run("exact-order-controls");
 const exactOrderResult = exactOrderRun.stdout ? JSON.parse(exactOrderRun.stdout) : null;
 check(
