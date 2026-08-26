@@ -231,7 +231,7 @@ export function reportBrokenReload(complaints: string[]): void {
 	].join("\n");
 	// console, not the logger: this has to be on screen at its own size, and it
 	// must work even if the logger is one of the things the reload broke.
-	console.error(banner);
+	process.stderr.write(`${banner}\n`);
 
 	const sockets =
 		keptValue<Set<{ readyState: number; send: (data: string) => void }>>("ws-clients");
