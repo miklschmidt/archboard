@@ -3133,7 +3133,7 @@ try {
 	// the section without following it keeps the record and not the picture, and
 	// following it without preserving it loses the record on the first save.
 	{
-		const { wrapSceneAsObsidianMd } = await import(src("core/obsidian-md.ts"));
+		const { wrapSceneAsObsidianMd } = await import(src("runtime/engine/obsidian-md.ts"));
 		const PNG_BASE64 =
 			"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 		fs.mkdirSync(path.join(vault, "attachments"), { recursive: true });
