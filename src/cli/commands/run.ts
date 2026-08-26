@@ -3,6 +3,8 @@ import { exportContract } from "../command-contract/export.js";
 import { queryContract } from "../command-contract/query.js";
 import { updateContract, WRITE_ANSWER } from "../command-contract/update.js";
 import { viewportContract } from "../command-contract/viewport.js";
+import { statusContract } from "../command-contract/status.js";
+import { boardSaveContract } from "../command-contract/board-save.js";
 import { runCommand } from "../command-contract/runner.js";
 import {
 	BOARD_REFUSAL_CODES,
@@ -61,9 +63,8 @@ const COMMANDS: Record<string, Command> = {
 	start: { handler: server.start, summary: "Start the canvas server (detached)", usage: "start" },
 	stop: { handler: server.stop, summary: "Stop the canvas server", usage: "stop" },
 	status: {
-		handler: server.status,
-		summary: "Canvas health, element count, browser clients",
-		usage: "status",
+		kind: "contract",
+		contract: statusContract,
 	},
 	apply: {
 		handler: elements.apply,
@@ -211,7 +212,7 @@ const COMMANDS: Record<string, Command> = {
 			info: { kind: "legacy" },
 			new: { kind: "legacy" },
 			open: { kind: "legacy" },
-			save: { kind: "legacy" },
+			save: { kind: "contract", contract: boardSaveContract },
 		},
 		summary: "Load, save and list boards in the vault",
 		usage: [
@@ -682,7 +683,11 @@ export async function runCli(argv: string[]): Promise<void> {
 		// listed the three outcomes, so this says only the part it does not: what
 		// happens to everything drawn between now and the choice.
 		const held = boardHoldSeen();
-		if (held) {
+		const errorCode = (error as Error & { code?: string }).code;
+		const contractRefusal =
+			errorCode === "BOARD_CONFLICT" ||
+			(errorCode !== undefined && BOARD_REFUSAL_CODES.has(errorCode));
+		if (held && (selected.kind !== "contract" || contractRefusal)) {
 			process.stderr.write(
 				`"${held.board}" has stopped saving. Changes from here are held on the canvas ` +
 					"and reach no note until one of those three is run.\n",

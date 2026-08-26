@@ -59,6 +59,7 @@ export function presentResult(input: {
 }): void {
 	const steps: readonly OutcomePresentationStep[] =
 		input.outcome?.presentation ??
+		input.outputCase.presentation ??
 		(input.outputCase.held === "none" ? ["result"] : ["result", "held-note"]);
 	for (const step of steps) {
 		switch (step) {

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-26 08:51'
+updated_date: '2026-08-26 09:06'
 labels: []
 dependencies:
   - TASK-123.01
@@ -98,6 +98,8 @@ Approved decisions and compatibility policy:
 
 <!-- SECTION:NOTES:BEGIN -->
 Foundation implementation started at 7948dbe against fixed compatibility base 6c42fca. Read the approved plan, parent/proof tasks, module and test boundaries, command-contract/deepening design, and ADRs governing CLI, board naming, save conflicts, bindings, source execution, vault truth, and locking. Checkout was clean before edits; scope is limited to approved steps 1-7.
+
+Foundation steps 1-7 implemented through six registered contracts. Added fixed-base coverage for all 57 help paths and focused byte/event cases; declared nonzero outcomes with held-before-validation, artifact-before-presentation, and exit-last ordering; introduced shared named schemas; generated mixed registry artifacts with 6 contracts + 51 legacy paths; switched dispatch to explicit longest-path subroutes with cached prerequisites and staged post-server token validation; migrated status and board save only as the outcome proofs.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

@@ -262,6 +262,20 @@ describe("command-contract public interface", () => {
 		expect(execution.stderr).toBe("");
 	});
 
+	test("immediate diagnostics are the only prevalidation stream lane", async () => {
+		const contract = defineCommand({
+			...proofContract({ result: null, resultSchema: z.object({ ok: z.boolean() }) }),
+			async handler(_input, context) {
+				context.diagnostic("contacted local boundary");
+				return { result: { ok: "no" }, diagnostics: ["deferred stays hidden"] };
+			},
+		});
+		const execution = await executePublic(contract);
+		expect(execution.error).toBeInstanceOf(z.ZodError);
+		expect(execution.stdout).toBe("");
+		expect(execution.stderr).toBe("contacted local boundary\n");
+	});
+
 	test("file output validates, writes, then emits its public receipt", async () => {
 		const path = temporaryPath("result.txt");
 		const execution = await executePublic(
