@@ -17,18 +17,22 @@ import * as server from "./server.js";
 import * as elements from "./elements.js";
 import * as scene from "./scene.js";
 import { panes, selection } from "./selection.js";
-import { pane, SUBCOMMANDS as PANE_SUBCOMMANDS } from "./pane.js";
+import { pane } from "./pane.js";
 import { promote, demote } from "./promote.js";
-import { repo, SUBCOMMANDS as REPO_SUBCOMMANDS } from "./repo.js";
-import { snapshot, ACTIONS as SNAPSHOT_ACTIONS } from "./snapshot.js";
-import { board, SUBCOMMANDS as BOARD_SUBCOMMANDS } from "./board.js";
+import { repo } from "./repo.js";
+import { snapshot } from "./snapshot.js";
+import { board } from "./board.js";
 import { compare } from "./compare.js";
 import { changes } from "./changes.js";
 import { claim, release } from "./claim.js";
-import { inject, SUBCOMMANDS as INJECT_SUBCOMMANDS } from "./inject.js";
-import { arrange, OPERATIONS as ARRANGE_OPERATIONS } from "./arrange.js";
+import { inject } from "./inject.js";
+import { arrange } from "./arrange.js";
 import { installSkill } from "./install-skill.js";
-import { library, ACTIONS as LIBRARY_ACTIONS } from "./library.js";
+import { library } from "./library.js";
+
+interface LegacySubcommand {
+	kind: "legacy";
+}
 
 interface LegacyCommand {
 	kind?: "legacy";
@@ -38,13 +42,12 @@ interface LegacyCommand {
 	// Present when the command takes a subcommand, from the list the command's
 	// own dispatcher validates against. `cliSurface()` exposes this as data for
 	// contract and documentation checks.
-	subcommands?: readonly string[];
+	subcommands?: Readonly<Record<string, LegacySubcommand | ContractCommand>>;
 }
 
 interface ContractCommand {
 	kind: "contract";
 	contract: AnyCommandContract;
-	subcommands?: readonly string[];
 }
 
 type Command = LegacyCommand | ContractCommand;
@@ -144,7 +147,7 @@ const COMMANDS: Record<string, Command> = {
 	},
 	pane: {
 		handler: pane,
-		subcommands: PANE_SUBCOMMANDS,
+		subcommands: { open: { kind: "legacy" }, close: { kind: "legacy" } },
 		summary: "Split the canvas into another pane, or close one",
 		usage: [
 			"pane open [--board <key>] | pane close <left|right|1|2|primary|focused|pane id>",
@@ -177,7 +180,11 @@ const COMMANDS: Record<string, Command> = {
 	},
 	repo: {
 		handler: repo,
-		subcommands: REPO_SUBCOMMANDS,
+		subcommands: {
+			list: { kind: "legacy" },
+			add: { kind: "legacy" },
+			forget: { kind: "legacy" },
+		},
 		summary:
 			"The repository checkouts on this machine, so a binding can name a repo instead of a directory",
 		usage: [
@@ -199,7 +206,13 @@ const COMMANDS: Record<string, Command> = {
 	},
 	board: {
 		handler: board,
-		subcommands: BOARD_SUBCOMMANDS,
+		subcommands: {
+			list: { kind: "legacy" },
+			info: { kind: "legacy" },
+			new: { kind: "legacy" },
+			open: { kind: "legacy" },
+			save: { kind: "legacy" },
+		},
 		summary: "Load, save and list boards in the vault",
 		usage: [
 			"board list [--repo <host/owner/name> | --here] [--text]",
@@ -315,7 +328,7 @@ const COMMANDS: Record<string, Command> = {
 	},
 	inject: {
 		handler: inject,
-		subcommands: INJECT_SUBCOMMANDS,
+		subcommands: { status: { kind: "legacy" }, test: { kind: "legacy" } },
 		summary:
 			"Whether the canvas can push board changes into a live Codex thread, and a probe to prove it",
 		usage: [
@@ -367,21 +380,33 @@ const COMMANDS: Record<string, Command> = {
 	},
 	snapshot: {
 		handler: snapshot,
-		subcommands: SNAPSHOT_ACTIONS,
+		subcommands: {
+			save: { kind: "legacy" },
+			list: { kind: "legacy" },
+			restore: { kind: "legacy" },
+		},
 		summary: "Save / list / restore named canvas snapshots",
 		usage:
 			"snapshot save|list|restore [name] [--force]  (a snapshot belongs to the board it was taken on; --force restores it onto a different one)",
 	},
 	library: {
 		handler: library,
-		subcommands: LIBRARY_ACTIONS,
+		subcommands: { list: { kind: "legacy" }, insert: { kind: "legacy" } },
 		summary: "What stencils are in the library, and dropping one onto the board",
 		usage:
 			"library list [--text] | library insert <name> --x <x> --y <y> [--source <file>] [--id <libraryItemId>]  (the palette lives on the canvas server, not in a browser profile, which is why an agent can read and place from it without a browser)",
 	},
 	arrange: {
 		handler: arrange,
-		subcommands: ARRANGE_OPERATIONS,
+		subcommands: {
+			align: { kind: "legacy" },
+			distribute: { kind: "legacy" },
+			group: { kind: "legacy" },
+			ungroup: { kind: "legacy" },
+			lock: { kind: "legacy" },
+			unlock: { kind: "legacy" },
+			duplicate: { kind: "legacy" },
+		},
 		summary: "Align, distribute, group, lock, duplicate elements",
 		usage:
 			"arrange align|distribute|group|ungroup|lock|unlock|duplicate --ids a,b,c [--to left|horizontal|...]",
@@ -428,7 +453,7 @@ const COMMANDS: Record<string, Command> = {
 export function cliSurface(): { name: string; subcommands: readonly string[] }[] {
 	return Object.entries(COMMANDS).map(([name, command]) => ({
 		name,
-		subcommands: command.subcommands ?? [],
+		subcommands: Object.keys(command.kind === "contract" ? {} : (command.subcommands ?? {})),
 	}));
 }
 
@@ -443,13 +468,39 @@ export function cliContractRegistry(): Array<{
 			command.kind === "contract"
 				? { name, kind: "contract" as const, contract: command.contract }
 				: { name, kind: "legacy" as const };
+		const subcommands = command.kind === "contract" ? {} : (command.subcommands ?? {});
 		return [root].concat(
-			(command.subcommands ?? []).map((subcommand) => ({
-				name: `${name} ${subcommand}`,
-				kind: "legacy" as const,
-			})),
+			Object.entries(subcommands).map(([subcommand, route]) =>
+				route.kind === "contract"
+					? {
+							name: `${name} ${subcommand}`,
+							kind: "contract" as const,
+							contract: route.contract,
+						}
+					: { name: `${name} ${subcommand}`, kind: "legacy" as const },
+			),
 		);
 	});
+}
+
+function dispatchedCommand(
+	name: string,
+	rest: readonly string[],
+): {
+	root: Command;
+	selected: Command | LegacySubcommand;
+	argv: string[];
+} | null {
+	const root = COMMANDS[name];
+	if (!root) return null;
+	if (root.kind === "contract") return { root, selected: root, argv: [...rest] };
+	const subcommand = rest[0];
+	const selected = subcommand ? root.subcommands?.[subcommand] : undefined;
+	if (selected?.kind === "contract") {
+		return { root, selected, argv: rest.slice(1) };
+	}
+	// A legacy family still owns its subcommand token and its namespace refusal.
+	return { root, selected: selected ?? root, argv: [...rest] };
 }
 
 function printHelp(): void {
@@ -610,13 +661,18 @@ export async function runCli(argv: string[]): Promise<void> {
 		process.exitCode = 2;
 		return;
 	}
+	let selected: Command | LegacySubcommand = command;
 
 	try {
 		setRequestedBoard(takeBoardFlag(rest));
 		setWriteDoing(takeDoingFlag(rest));
 		setExpectedVersion(takeExpectVersionFlag(rest));
-		if (command.kind === "contract") await runCommand(command.contract, rest);
-		else await command.handler(rest);
+		const dispatched = dispatchedCommand(name, rest)!;
+		selected = dispatched.selected;
+		const commandArgv = dispatched.argv;
+		if (selected.kind === "contract") await runCommand(selected.contract, commandArgv);
+		else if (command.kind !== "contract") await command.handler(rest);
+		else throw new Error(`${name}: invalid legacy dispatch`);
 	} catch (error) {
 		if (!(error as Error & { quiet?: boolean }).quiet) {
 			process.stderr.write(`Error: ${formatBoardRefusal(error) ?? (error as Error).message}\n`);
@@ -635,6 +691,6 @@ export async function runCli(argv: string[]): Promise<void> {
 		if (error instanceof CliUsageError) {
 			process.stderr.write(`Usage: archboard ${commandUsage(command)}\n`);
 		}
-		process.exitCode = exitCodeFor(error, command);
+		process.exitCode = exitCodeFor(error, selected.kind === "contract" ? selected : command);
 	}
 }

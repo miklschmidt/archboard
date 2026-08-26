@@ -43,8 +43,15 @@ export async function executeCommand(
 ): Promise<void> {
 	const tokens = await commanderParser.parse(contract, argv);
 	const input = parseInput(contract.input.ingress, tokens);
+	const prerequisiteCache = new Map<string, Promise<void>>();
 	const context: CommandContext = {
-		require: requirePrerequisite,
+		require(prerequisite, description) {
+			const existing = prerequisiteCache.get(prerequisite);
+			if (existing) return existing;
+			const pending = requirePrerequisite(prerequisite, description);
+			prerequisiteCache.set(prerequisite, pending);
+			return pending;
+		},
 		readStdin: () => processCommandHost.readStdin(),
 		readTextFile: (file) => processCommandHost.readTextFile(file),
 		readOptionalTextFile: (file) => processCommandHost.readOptionalTextFile(file),
