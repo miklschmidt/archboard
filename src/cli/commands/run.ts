@@ -105,6 +105,9 @@ const legacy = (
 	parserOwner: legacyParserOwner,
 	legacyArgv,
 });
+// Kept until the zero-legacy proof gate is tightened and passes; the next
+// rollback-safe checkpoint deletes the fallback types and dispatch branch.
+void legacy;
 
 const contract = (value: AnyCommandContract, handlerOwner: string): ContractCommand => ({
 	kind: "contract",
@@ -430,7 +433,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		usage: "describe",
 	},
 	screenshot: {
-		owner: legacy(scene.screenshot, "src/cli/commands/scene.ts"),
+		owner: contract(scene.screenshotContract, "src/cli/commands/scene.ts"),
 		summary: "Capture one pane (needs an open browser tab)",
 		usage: [
 			"screenshot [--out file.png] [--format png|svg] [--no-background] [--pane <spec>]",
@@ -449,7 +452,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		usage: "import [scene.excalidraw|note.excalidraw.md|-] [--replace] (or stdin)",
 	},
 	mermaid: {
-		owner: legacy(scene.mermaid, "src/cli/commands/scene.ts"),
+		owner: contract(scene.mermaidContract, "src/cli/commands/scene.ts"),
 		summary: "Render a Mermaid diagram onto the canvas (needs a browser tab)",
 		usage:
 			"mermaid [diagram.mmd|-] (or stdin)  (converts in the pane holding --board, so there is no --pane to pass; refused, converting nothing, when no pane is holding it)",
@@ -508,7 +511,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 			"arrange align|distribute|group|ungroup|lock|unlock|duplicate --ids a,b,c [--to left|horizontal|...]",
 	},
 	share: {
-		owner: legacy(scene.share, "src/cli/commands/scene.ts"),
+		owner: contract(scene.shareContract, "src/cli/commands/scene.ts"),
 		summary: "Export to a shareable excalidraw.com URL",
 		usage: "share",
 	},

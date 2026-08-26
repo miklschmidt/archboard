@@ -268,11 +268,9 @@
 		{
 			"name": "screenshot",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/scene.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "screenshot",
-			"legacyArgv": "root-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "export",
@@ -291,11 +289,9 @@
 		{
 			"name": "mermaid",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/scene.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "mermaid",
-			"legacyArgv": "root-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "snapshot",
@@ -433,11 +429,9 @@
 		{
 			"name": "share",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/scene.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "share",
-			"legacyArgv": "root-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "clear",
@@ -5068,6 +5062,157 @@
 			]
 		},
 		{
+			"name": "screenshot",
+			"path": ["screenshot"],
+			"summary": "Capture one pane (needs an open browser tab)",
+			"usage": "screenshot [--out file.png] [--format png|svg] [--no-background] [--pane <spec>]",
+			"description": "Renders one pane in the browser and returns raw SVG or a validated file receipt.",
+			"examples": ["archboard screenshot --board system --out system.png"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "out",
+					"spellings": ["--out"],
+					"value": "required",
+					"route": "stdin-or-file",
+					"description": "Destination file"
+				},
+				{
+					"kind": "option",
+					"key": "format",
+					"spellings": ["--format"],
+					"value": "required",
+					"description": "png or svg"
+				},
+				{
+					"kind": "option",
+					"key": "noBackground",
+					"spellings": ["--no-background"],
+					"value": "none",
+					"description": "Render without the canvas background"
+				},
+				{
+					"kind": "option",
+					"key": "pane",
+					"spellings": ["--pane"],
+					"value": "required",
+					"description": "Pane selector"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"out": {
+							"type": "string"
+						},
+						"format": {
+							"type": "string"
+						},
+						"noBackground": {
+							"default": false,
+							"type": "boolean"
+						},
+						"pane": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["noBackground", "tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "object",
+						"properties": {
+							"success": {
+								"type": "boolean",
+								"const": true
+							},
+							"file": {
+								"type": "string"
+							},
+							"format": {
+								"type": "string",
+								"enum": ["png", "svg"]
+							}
+						},
+						"required": ["success", "file", "format"],
+						"additionalProperties": false
+					}
+				]
+			},
+			"output": [
+				{
+					"id": "raw-svg",
+					"when": {},
+					"mode": "raw",
+					"held": "none",
+					"description": "Raw SVG image"
+				},
+				{
+					"id": "file",
+					"when": {},
+					"mode": "file-receipt",
+					"held": "none",
+					"description": "Written image receipt"
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "browser"],
+			"effects": ["browser", "local-write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BROWSER_REQUIRED",
+					"exit": 4,
+					"stream": "stderr",
+					"description": "No browser tab was connected."
+				}
+			],
+			"relationships": [
+				{
+					"method": "POST",
+					"path": "/api/export/image",
+					"cardinality": "one",
+					"description": "Render the selected pane"
+				}
+			]
+		},
+		{
 			"name": "export",
 			"path": ["export"],
 			"summary": "Export the scene as .excalidraw JSON or Obsidian .excalidraw.md",
@@ -5391,6 +5536,102 @@
 					"path": "/api/elements/clear",
 					"cardinality": "conditional",
 					"description": "Clear before replace import"
+				}
+			]
+		},
+		{
+			"name": "mermaid",
+			"path": ["mermaid"],
+			"summary": "Render a Mermaid diagram onto the canvas (needs a browser tab)",
+			"usage": "mermaid [diagram.mmd|-] (or stdin)",
+			"description": "Reads Mermaid text locally before contacting the canvas, then converts it in the board's pane.",
+			"examples": ["archboard mermaid diagram.mmd --board system --doing \"drawing diagram\""],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "file",
+					"name": "file",
+					"route": "stdin-or-file",
+					"description": "Mermaid file, or -/omitted for stdin"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"file": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema"
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Mermaid conversion receipt",
+					"presentation": ["diagnostics", "result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "browser", "board", "doing"],
+			"effects": ["local-read", "browser", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BROWSER_REQUIRED",
+					"exit": 4,
+					"stream": "stderr",
+					"description": "No browser tab was connected."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The write was refused."
+				}
+			],
+			"relationships": [
+				{
+					"method": "POST",
+					"path": "/api/elements/from-mermaid",
+					"cardinality": "one",
+					"description": "Convert and write the diagram"
 				}
 			]
 		},
@@ -7394,6 +7635,91 @@
 			]
 		},
 		{
+			"name": "share",
+			"path": ["share"],
+			"summary": "Export to a shareable excalidraw.com URL",
+			"usage": "share",
+			"description": "Reads only the board elements and uploads an encrypted share payload.",
+			"examples": ["archboard share --board system"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"const": true
+					},
+					"url": {
+						"type": "string"
+					}
+				},
+				"required": ["success", "url"],
+				"additionalProperties": false
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "none",
+					"description": "Share URL"
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board"],
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/elements",
+					"cardinality": "one",
+					"description": "Read elements for the share payload"
+				}
+			]
+		},
+		{
 			"name": "clear",
 			"path": ["clear"],
 			"summary": "Clear the whole canvas",
@@ -7756,5 +8082,5 @@
 			"relationships": []
 		}
 	],
-	"legacyPaths": ["screenshot", "mermaid", "share"]
+	"legacyPaths": []
 }

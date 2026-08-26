@@ -542,7 +542,7 @@
 		},
 		{
 			"path": "screenshot",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/scene.ts",
 			"stdout": "raw SVG or json file receipt",
 			"result": "SVG content or success,file,format",
@@ -591,7 +591,7 @@
 		},
 		{
 			"path": "mermaid",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/scene.ts",
 			"stdout": "json object",
 			"result": "success,board,pane,message",
@@ -831,7 +831,7 @@
 		},
 		{
 			"path": "share",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/scene.ts",
 			"stdout": "json object",
 			"result": "success,url",
