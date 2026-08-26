@@ -71,9 +71,9 @@ const betaRoot = makeRepo("beta", "https://github.com/acme/beta.git");
 const ALPHA = "github.com/acme/alpha";
 const BETA = "github.com/acme/beta";
 
-const { resolveBinding, PromotionError } = await import(src("core/promote.ts"));
+const { resolveBinding, PromotionError } = await import(src("runtime/engine/promote.ts"));
 const { declareRepo, checkoutFor, listRepos, forgetRepo, registryPath } = await import(
-	src("core/repo-registry.ts")
+	src("runtime/engine/repo-registry.ts")
 );
 
 // ---------------------------------------------------------------------------
@@ -592,7 +592,7 @@ try {
 
 	// The vault half on its own, with nothing open, which is what another
 	// machine's canvas would see.
-	const { boardsForRepo } = await import(src("core/repo-boards.ts"));
+	const { boardsForRepo } = await import(src("runtime/engine/repo-boards.ts"));
 	const fromVault = boardsForRepo(ALPHA, [], vault);
 	check(
 		"the same board is found by reading the vault alone",

@@ -245,7 +245,7 @@ try {
 	edit(src("server.ts"), (text) => `${text}\n// reload check: a save that must change nothing.\n`);
 	await sleep(900);
 	edit(
-		src("core/board-store.ts"),
+		src("runtime/engine/board-store.ts"),
 		(text) => `${text}\n// reload check: a save that must change nothing.\n`,
 	);
 	await sleep(1400);
@@ -427,7 +427,7 @@ try {
 	// Last, because it really does damage the canvas.
 
 	const brokenFrom = seen.length;
-	edit(src("core/board-store.ts"), (text) => {
+	edit(src("runtime/engine/board-store.ts"), (text) => {
 		const scratchInitialization =
 			/if\s*\(\s*!boards\.has\s*\(\s*SCRATCH_KEY\s*\)\s*\)\s*\{\s*(boards\.set\s*\(\s*SCRATCH_KEY\s*,\s*newBoardState\s*\(\s*makeIdentity\s*\(\s*\{\s*board\s*:\s*SCRATCH_BOARD\s*\}\s*\)\s*\)\s*\)\s*;)\s*\}/g;
 		const matches = [...text.matchAll(scratchInitialization)];

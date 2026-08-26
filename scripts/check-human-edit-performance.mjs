@@ -23,7 +23,7 @@ import { withDoing } from "./lib/doing.mjs";
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const src = (file) => path.join(repoRoot, "src", file);
 const skipBuild = process.argv.includes("--skip-build");
-const { REPORT_PROGRESS_MS, REPORT_IDLE_SETTLE_MS } = await import(src("core/timing.ts"));
+const { REPORT_PROGRESS_MS, REPORT_IDLE_SETTLE_MS } = await import(src("shared/timing/timing.ts"));
 const FIXTURE_SIZE = 10_000;
 const RESPONSE_DELAY_MS = REPORT_PROGRESS_MS + 300;
 

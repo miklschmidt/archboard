@@ -99,11 +99,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // passing after somebody shortened the deadline and would stop testing the
 // thing it names.
 const { LOCK_FREE_LINGER_MS, LOCK_RENEW_MS, PANE_DEBOUNCE_MS, REPORT_PROGRESS_MS } = await import(
-	src("core/timing.ts")
+	src("shared/timing/timing.ts")
 );
 // What the server measures a text element to, so the check can wait until the
 // page agrees rather than until a font has probably loaded.
-const { measureLineWidth } = await import(src("core/measure-text.ts"));
+const { measureLineWidth } = await import(src("runtime/engine/measure-text.ts"));
 const MID_DEBOUNCE_MS = Math.round(REPORT_PROGRESS_MS * 0.3);
 
 const IGNORED = new Set([

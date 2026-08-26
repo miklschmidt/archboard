@@ -34,10 +34,10 @@ const moduleDir = dirname(fileURLToPath(import.meta.url));
 const src = (p) => join(moduleDir, "..", "src", p);
 
 const { measureText, measureLineWidth, canMeasure, faceFileFor } = await import(
-	src("core/measure-text.ts")
+	src("runtime/engine/measure-text.ts")
 );
 const { fontRegistry, familyOf, faceStack, lineHeightOf, loadFace } = await import(
-	src("core/fonts.ts")
+	src("runtime/engine/fonts.ts")
 );
 
 let failures = 0;

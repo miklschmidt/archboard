@@ -71,7 +71,7 @@ const {
 	releaseHold,
 	takeClaimRevocation,
 	withBoardLock,
-} = await import(src("core/board-lock.ts"));
+} = await import(src("runtime/engine/board-lock.ts"));
 const {
 	CLAIM_LEASE_MS,
 	LOCK_FREE_LINGER_MS,
@@ -80,7 +80,7 @@ const {
 	LOCK_WAIT_CAP_MS,
 	LOCK_WATCH_MS,
 	REPORT_IDLE_SETTLE_MS,
-} = await import(src("core/timing.ts"));
+} = await import(src("shared/timing/timing.ts"));
 
 const agent = (id) => ({ id, kind: "agent" });
 const person = (id) => ({ id, kind: "human" });
@@ -372,7 +372,7 @@ const refusal = async (promise) => {
 		script,
 		`
     process.env.ARCHBOARD_VAULT = ${JSON.stringify(vault)};
-    const { holdBoard, releaseHold } = await import(${JSON.stringify(src("core/board-lock.ts"))});
+    const { holdBoard, releaseHold } = await import(${JSON.stringify(src("runtime/engine/board-lock.ts"))});
     const hold = await holdBoard({ board: ${JSON.stringify(board)}, holder: { id: 'other-canvas', kind: 'agent' }, waitMs: 0 });
     console.log(JSON.stringify({ took: hold.created, process: hold.holder.process }));
     setTimeout(() => { releaseHold(${JSON.stringify(board)}, 'other-canvas'); process.exit(0); }, 700);

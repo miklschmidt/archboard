@@ -49,15 +49,19 @@ const onOutline = (end, box) =>
 	);
 
 const { extentOf, measureLinear, remeasureLinear, isPathElement, validateRenderGeometry } =
-	await import(src("core/geometry.ts"));
-const { applyElementInput } = await import(src("core/apply-element-input.ts"));
-const { boxOf, boundingBoxOf, clusterBoxes, regionName } = await import(src("core/layout.ts"));
-const { describeScene, buildSelectionReport } = await import(src("core/describe.ts"));
-const { labelAnchorOf } = await import(src("core/labels.ts"));
-const { compareBoards } = await import(src("core/compare.ts"));
-const { planPromotion } = await import(src("core/promote.ts"));
-const { expandElements } = await import(src("core/expand-elements.ts"));
-const { BOUND_ARROW_GAP, boundEndpoint, focusPointOf } = await import(src("core/arrow-binding.ts"));
+	await import(src("runtime/engine/geometry.ts"));
+const { applyElementInput } = await import(src("runtime/engine/apply-element-input.ts"));
+const { boxOf, boundingBoxOf, clusterBoxes, regionName } = await import(
+	src("runtime/engine/layout.ts")
+);
+const { describeScene, buildSelectionReport } = await import(src("runtime/engine/describe.ts"));
+const { labelAnchorOf } = await import(src("runtime/engine/labels.ts"));
+const { compareBoards } = await import(src("runtime/engine/compare.ts"));
+const { planPromotion } = await import(src("runtime/engine/promote.ts"));
+const { expandElements } = await import(src("runtime/engine/expand-elements.ts"));
+const { BOUND_ARROW_GAP, boundEndpoint, focusPointOf } = await import(
+	src("runtime/engine/arrow-binding.ts")
+);
 
 let failures = 0;
 let checks = 0;
