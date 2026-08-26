@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 18:18'
+updated_date: '2026-08-26 18:37'
 labels:
   - ready-for-agent
 dependencies:
@@ -458,6 +458,13 @@ Semantic-sweep closure validation (2026-08-26):
 - Complete bun run check and a separate complete bun run test are green. Both ran human-performance, fixed-point, typed-text, and live-session sequentially/headless; fixed-point returned 0/13 changed elements and live-session converged through 42/42 cycles.
 - Two independent on-demand generations produced identical cli-command-audit.md, command-contract-proof.json, and command-contract-proof.md bytes. SHA-256 values were c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, ca5e28eeee97dcbea9d58b31e912679ad069c89f0f7fc2ba318afe6c9d0e4e1f, and 63449ca7440f77b714248e3e8bf9c87c3b0e520e8b070b41fc2a740aca41f7e5 respectively. Generated files remained outside the checkout.
 - TASK-119 remains In Progress with all acceptance criteria unchecked for independent rereview.
+
+Partition-identity remediation checkpoint (2026-08-26):
+- Replaced NUL-delimited semantic bucket keys with a nested exact-string index over the partition and sorted exclusion strings. Legal persisted IDs, including escaped control characters, cannot alias structural buckets.
+- Expiry now removes an empty active list, prunes its exact index path, and deletes an empty partition root. Pair enumeration visits only active buckets.
+- Development diagnostics now expose bucket scans and exact index operations for broad-phase and hierarchy work. These counters remain absent from InspectionReport, CheckResult, JSON, and text output.
+- The public matrix has 602 checks. Direct and real persisted/package cases cover eligible and excluded connector-node, label-node, node hierarchy, connector same-set, and label same-set behavior with control-character IDs, plus the reported connector-node collision and a renamed control. Sparse distinct-partition runs at 1k/2k/4k/8k report zero broad-phase bucket scans and linearly bounded exact index operations.
+- Focused lint, both TypeScript projects, boundaries, module-scope, contracts, inspection/package, CLI, geometry, labels, branch, and git diff checks pass. Two bun run fix passes were byte-stable at diff SHA-256 6923f4cffe44ec6ee5ba2ba3bc5ead92f28f26819d67aeaa81ab45dd5e30b6da. Full check and separate full test remain.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

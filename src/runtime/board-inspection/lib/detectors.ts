@@ -48,10 +48,14 @@ interface DetectionResult {
 		broadPhaseActiveVisits: number;
 		broadPhaseExpiryPops: number;
 		broadPhasePartitionChecks: number;
+		broadPhaseBucketScans: number;
+		broadPhaseBucketIndexOperations: number;
 		hierarchyEvents: number;
 		hierarchyCandidateVisits: number;
 		hierarchyExpiryPops: number;
 		hierarchyPartitionChecks: number;
+		hierarchyBucketScans: number;
+		hierarchyBucketIndexOperations: number;
 		pathSegmentChecks: number;
 	};
 }
@@ -1582,6 +1586,8 @@ function pairSweep<A, B>(
 	work.activeVisits += measured.activeVisits;
 	work.expiryPops += measured.expiryPops;
 	work.partitionChecks += measured.partitionChecks;
+	work.bucketScans += measured.bucketScans;
+	work.bucketIndexOperations += measured.bucketIndexOperations;
 }
 
 function collisionFindings(
@@ -1597,6 +1603,8 @@ function collisionFindings(
 		activeVisits: 0,
 		expiryPops: 0,
 		partitionChecks: 0,
+		bucketScans: 0,
+		bucketIndexOperations: 0,
 	};
 	const byId = model.byId;
 	const segmentItems = segments.map((segment) => ({
@@ -2025,10 +2033,14 @@ export function detectBoard(
 			broadPhaseActiveVisits: collisions.preprocessingWork.activeVisits,
 			broadPhaseExpiryPops: collisions.preprocessingWork.expiryPops,
 			broadPhasePartitionChecks: collisions.preprocessingWork.partitionChecks,
+			broadPhaseBucketScans: collisions.preprocessingWork.bucketScans,
+			broadPhaseBucketIndexOperations: collisions.preprocessingWork.bucketIndexOperations,
 			hierarchyEvents: model.hierarchyWork.events,
 			hierarchyCandidateVisits: model.hierarchyWork.activeVisits,
 			hierarchyExpiryPops: model.hierarchyWork.expiryPops,
 			hierarchyPartitionChecks: model.hierarchyWork.partitionChecks,
+			hierarchyBucketScans: model.hierarchyWork.bucketScans,
+			hierarchyBucketIndexOperations: model.hierarchyWork.bucketIndexOperations,
 			pathSegmentChecks: structural.pathSegmentChecks,
 		},
 	};

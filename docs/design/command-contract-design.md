@@ -133,7 +133,7 @@ has no finite x/y location.
 
 The schema-v1 report exposes `broadPhaseComparisons`, whose public meaning is
 the number of semantically eligible x-overlapping pairs tested before the
-y-axis and exact predicates. Heap, event, expiry, compatibility-bucket, and
+y-axis and exact predicates. Heap, event, expiry, semantic-bucket, and
 path-filter work are private implementation mechanics. They do not enter the
 check contract or its JSON and text results.
 
