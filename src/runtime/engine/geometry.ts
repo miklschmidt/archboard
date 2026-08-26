@@ -127,11 +127,23 @@ export function pointsOf(points: unknown): { x: number; y: number }[] | undefine
 }
 
 /** The offsets of a path, dropping anything that is not a pair of numbers. */
-function pathOffsets(points: unknown): { xs: number[]; ys: number[] } | undefined {
+function pathExtrema(
+	points: unknown,
+): { minX: number; minY: number; maxX: number; maxY: number } | undefined {
 	const normalized = pointsOf(points);
-	return normalized
-		? { xs: normalized.map((point) => point.x), ys: normalized.map((point) => point.y) }
-		: undefined;
+	if (!normalized) return undefined;
+	let minX = normalized[0]!.x,
+		maxX = minX,
+		minY = normalized[0]!.y,
+		maxY = minY;
+	for (let index = 1; index < normalized.length; index += 1) {
+		const current = normalized[index]!;
+		if (current.x < minX) minX = current.x;
+		if (current.x > maxX) maxX = current.x;
+		if (current.y < minY) minY = current.y;
+		if (current.y > maxY) maxY = current.y;
+	}
+	return { minX, minY, maxX, maxY };
 }
 
 /**
@@ -143,17 +155,17 @@ function pathOffsets(points: unknown): { xs: number[]; ys: number[] } | undefine
  * worse than the stale one it would replace.
  */
 export function measureLinear(points: unknown): { width: number; height: number } | undefined {
-	const offsets = pathOffsets(points);
+	const offsets = pathExtrema(points);
 	if (!offsets) return undefined;
 	return {
-		width: Math.max(...offsets.xs) - Math.min(...offsets.xs),
-		height: Math.max(...offsets.ys) - Math.min(...offsets.ys),
+		width: offsets.maxX - offsets.minX,
+		height: offsets.maxY - offsets.minY,
 	};
 }
 
 /** Does this element carry a path, and therefore keep its size in it? */
 export function isPathElement(element: Measurable | null | undefined): boolean {
-	return pathOffsets(element?.points) !== undefined;
+	return pathExtrema(element?.points) !== undefined;
 }
 
 /**
@@ -172,15 +184,13 @@ export function isPathElement(element: Measurable | null | undefined): boolean {
 export function extentOf(element: Measurable | null | undefined): Extent {
 	const x = finite(element?.x) ?? 0;
 	const y = finite(element?.y) ?? 0;
-	const offsets = pathOffsets(element?.points);
+	const offsets = pathExtrema(element?.points);
 	if (offsets) {
-		const minX = Math.min(...offsets.xs);
-		const minY = Math.min(...offsets.ys);
 		return {
-			x: x + minX,
-			y: y + minY,
-			width: Math.max(...offsets.xs) - minX,
-			height: Math.max(...offsets.ys) - minY,
+			x: x + offsets.minX,
+			y: y + offsets.minY,
+			width: offsets.maxX - offsets.minX,
+			height: offsets.maxY - offsets.minY,
 		};
 	}
 	return { x, y, width: finite(element?.width) ?? 0, height: finite(element?.height) ?? 0 };

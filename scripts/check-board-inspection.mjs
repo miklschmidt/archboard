@@ -3584,6 +3584,44 @@ check(
 	limited.findings.some((finding) => finding.code === "INSPECTION_LIMIT_EXCEEDED") &&
 		limited.coverage === "indeterminate",
 );
+const limitedWithUnrelatedExtremes = inspectBoard([
+	...performanceBoard(500, 1500, 500),
+	{
+		id: "unrelated-negative-image",
+		type: "image",
+		x: -Number.MAX_VALUE,
+		y: 0,
+		width: 0,
+		height: 0,
+		angle: 0,
+	},
+	{
+		id: "unrelated-positive-plain",
+		type: "freedraw",
+		x: Number.MAX_VALUE,
+		y: 0,
+		width: 0,
+		height: 0,
+		angle: 0,
+	},
+]);
+const unrelatedLimit = limitedWithUnrelatedExtremes.findings.find(
+	(finding) => finding.code === "INSPECTION_LIMIT_EXCEEDED",
+);
+check(
+	"limit evidence contains only records participating in pair passes",
+	!!unrelatedLimit &&
+		!unrelatedLimit.elements.some(
+			(element) =>
+				element.id === "unrelated-negative-image" || element.id === "unrelated-positive-plain",
+		) &&
+		!limitedWithUnrelatedExtremes.findings.some(
+			(finding) =>
+				finding.reason === "unrepresentable-coordinate-span" &&
+				finding.details.scope === "finding-affected-union" &&
+				finding.elements.some((element) => element.id?.startsWith("unrelated-")),
+		),
+);
 const limitWithExtremeSpan = performanceBoard(500, 1500, 500);
 limitWithExtremeSpan[0].x = -Number.MAX_VALUE;
 limitWithExtremeSpan[0].width = 0;
@@ -3619,9 +3657,9 @@ try {
 	largeCardinalityReport = inspectBoard([
 		connector({
 			id: "large-cardinality-path",
-			angle: 1,
-			width: 749_999,
-			height: 1,
+			angle: 0,
+			width: 1,
+			height: 0,
 			points: manyPathPoints,
 		}),
 	]);
@@ -3629,9 +3667,80 @@ try {
 	largeCardinalityFailure = error;
 }
 check(
-	"large-cardinality public path extrema never use the call argument limit",
-	!largeCardinalityFailure && InspectionReportSchema.safeParse(largeCardinalityReport).success,
+	"large-cardinality supported path reaches iterative stale-dimension measurement",
+	!largeCardinalityFailure &&
+		InspectionReportSchema.safeParse(largeCardinalityReport).success &&
+		largeCardinalityReport.preprocessingWork.pathSegmentChecks === manyPathPoints.length - 1 &&
+		largeCardinalityReport.findings.some(
+			(finding) =>
+				finding.code === "STALE_LINEAR_DIMENSIONS" &&
+				finding.details.measuredWidth === 749_999 &&
+				finding.details.measuredHeight === 1,
+		),
 	largeCardinalityFailure instanceof Error ? largeCardinalityFailure.message : "",
+);
+
+const repeatedPathPoints = Array.from({ length: 4_097 }, (_, index) => [Math.floor(index / 2), 0]);
+const repeatedPathReport = inspectBoard([
+	connector({
+		id: "large-repeated-path",
+		angle: 0,
+		width: 2_048,
+		height: 0,
+		points: repeatedPathPoints,
+	}),
+]);
+check(
+	"zero-segment filtering performs one membership check per supported segment",
+	repeatedPathReport.preprocessingWork.pathSegmentChecks === repeatedPathPoints.length - 1 &&
+		repeatedPathReport.findings.filter(
+			(finding) => finding.code === "AMBIGUOUS_GEOMETRY" && finding.reason === "zero-length",
+		).length === 2_048 &&
+		InspectionReportSchema.safeParse(repeatedPathReport).success,
+);
+
+function sparseSweepBoard(count) {
+	return [
+		...Array.from({ length: count }, (_, index) => ({
+			id: `sparse-node-${index}`,
+			type: "rectangle",
+			x: index * 4,
+			y: 0,
+			width: 1,
+			height: 1,
+			angle: 0,
+			customData: { archboard: { node: `sparse-node-${index}` } },
+		})),
+		...Array.from({ length: count }, (_, index) =>
+			connector({
+				id: `sparse-connector-${index}`,
+				x: 1_000_000 + index * 4,
+				y: 10,
+				width: 1,
+				height: 0,
+				angle: 0,
+				points: [
+					[0, 0],
+					[1, 0],
+				],
+			}),
+		),
+	];
+}
+const sparseSweepResults = [1_000, 2_000, 4_000].map((count) => ({
+	count,
+	report: inspectBoard(sparseSweepBoard(count)),
+}));
+check(
+	"sparse cross-set and hierarchy sweeps have deterministic log-linear preprocessing work",
+	sparseSweepResults.every(
+		({ count, report }) =>
+			report.preprocessingWork.broadPhaseActiveVisits === 0 &&
+			report.preprocessingWork.broadPhaseEvents === count * 6 &&
+			report.preprocessingWork.hierarchyEvents === count * 2 &&
+			report.preprocessingWork.hierarchyCandidateVisits === count &&
+			report.preprocessingWork.hierarchyExpiryPops <= count * 2,
+	),
 );
 
 let ungroupedGroupReads = 0;
@@ -4066,6 +4175,15 @@ const prerequisiteTotalityElements = [
 		angle: 1,
 		startBinding: false,
 	}),
+	connector({
+		id: "persisted-large-path",
+		x: 0,
+		y: 800,
+		width: 1,
+		height: 0,
+		angle: 0,
+		points: Array.from({ length: 10_000 }, (_, index) => [index, index % 2]),
+	}),
 ];
 const prerequisiteTotalityNote = renderBoardNote(
 	{
@@ -4346,6 +4464,14 @@ check(
 					finding.elements.some((element) => element.id === "pbind") &&
 					finding.affectedBBox?.x === Number.MAX_VALUE,
 			),
+		) &&
+		prerequisiteTotalityResult.preprocessingWork.pathSegmentChecks >= 9_999 &&
+		prerequisiteTotalityResult.findings.some(
+			(finding) =>
+				finding.code === "STALE_LINEAR_DIMENSIONS" &&
+				finding.elements.some((element) => element.id === "persisted-large-path") &&
+				finding.details.measuredWidth === 9_999 &&
+				finding.details.measuredHeight === 1,
 		) &&
 		!prerequisiteTotalityResult.findings.some(
 			(finding) =>

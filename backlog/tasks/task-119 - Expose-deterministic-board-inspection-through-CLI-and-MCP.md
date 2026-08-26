@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 17:15'
+updated_date: '2026-08-26 17:36'
 labels:
   - ready-for-agent
 dependencies:
@@ -440,6 +440,8 @@ Commit 3595883 closes numeric-domain and preprocessing bounds without changing t
 Two final bun run fix passes both ran the distributable-skill validator and preserved the exact diff hash cac2514da69982c7766c57b47590afec40734c6d163f1427e8c0260e4c6800c4. Complete bun run check passed, followed by a separate complete bun run test. Each chain ran all four browser suites sequentially and headless. Fixed-point remained 0 of 13 changed, the 10,000-element human case stayed responsive, typed text survived both rename interactions, and live-session converged through all 42 mixed-write cycles.
 
 Two fresh on-demand contract generations were byte-identical: audit Markdown 33,383 bytes, proof JSON 660,919 bytes, and proof Markdown 459,580 bytes. The checkout contains no generated output, canonical docs/design/cli-command-audit.json remains tracked, and the worktree was clean before this Backlog note. TASK-119 remains In Progress with every acceptance criterion unchecked for independent rereview.
+
+Bounded-sweep closure checkpoint: replaced repeated cross-set pair scans and every-node hierarchy scans with one private deterministic minX/maxX event sweep using heap expiry and stable active lists. Eligibility still precedes broadPhaseComparisons, which still increments before y/exact predicates and preserves the exact 1,516,200 and 2,000,001 fixtures. Limit refs and coordinate-span evidence now come only from participating segment, node, obstacle, and label records. Shared linear path measurement uses iterative extrema, zero-segment filtering uses constant-time membership, and the public report exposes deterministic preprocessing work counts. Public tests cover sparse 1k/2k/4k scaling, dense counts, supported 750,000-point stale measurement, repeated-point filtering, unrelated extreme limit records, actual extreme participants, and real-package persisted large paths. Two bun run fix passes were byte-stable at diff hash 890d83be5cab3b18b7f9f739c56f331b5b460d892fc04fad8aaa764f5141d7fc. Focused lint, both TypeScript projects, inspection 586 checks, contracts 58 proofs/978 checks, CLI 579 checks, boundaries, module-scope, geometry, labels, library, boards, branch, Obsidian, changes, one-write, and git diff --check pass. Remaining: commit this checkpoint, bun run check, separate bun run test, sequential browser evidence within both chains, final generator/status/diff checks, and clean-tree callback.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
