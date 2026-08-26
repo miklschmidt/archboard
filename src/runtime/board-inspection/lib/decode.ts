@@ -1,5 +1,5 @@
 import type { ElementRef } from "../schemas.js";
-import { finite, type ExactBox, type ExactPoint, type Segment } from "./geometry.js";
+import { finite, type ExactBox, type ExactPoint } from "./geometry.js";
 
 export interface DecodedRecord {
 	readonly raw: Readonly<Record<string, unknown>> | null;
@@ -67,9 +67,31 @@ export function decodeRecords(records: readonly unknown[]): DecodedRecord[] {
 }
 
 export type PathDecode =
-	| { ok: true; points: ExactPoint[]; segments: Segment[]; zeroSegments: number[] }
-	| { ok: false; issue: "missing" | "non-array" | "empty" | "one-point"; points?: ExactPoint[] }
-	| { ok: false; issue: "malformed-point"; pointIndex: number; points: ExactPoint[] };
+	| {
+			ok: true;
+			relativePoints: ExactPoint[];
+			scenePoints: ExactPoint[] | null;
+			zeroSegments: number[];
+	  }
+	| {
+			ok: false;
+			issue: "missing" | "non-array" | "empty";
+			relativePoints?: ExactPoint[];
+			scenePoints?: ExactPoint[] | null;
+	  }
+	| {
+			ok: false;
+			issue: "one-point";
+			relativePoints: ExactPoint[];
+			scenePoints: ExactPoint[] | null;
+	  }
+	| {
+			ok: false;
+			issue: "malformed-point";
+			pointIndex: number;
+			relativePoints: ExactPoint[];
+			scenePoints: ExactPoint[] | null;
+	  };
 
 export function decodePath(record: DecodedRecord): PathDecode {
 	const raw = record.raw;
@@ -77,9 +99,8 @@ export function decodePath(record: DecodedRecord): PathDecode {
 		return { ok: false, issue: "missing" };
 	if (!Array.isArray(raw.points)) return { ok: false, issue: "non-array" };
 	if (raw.points.length === 0) return { ok: false, issue: "empty" };
-	const originX = finite(raw.x) ? raw.x : 0;
-	const originY = finite(raw.y) ? raw.y : 0;
-	const points: ExactPoint[] = [];
+	const origin = finite(raw.x) && finite(raw.y) ? { x: raw.x, y: raw.y } : null;
+	const relativePoints: ExactPoint[] = [];
 	for (let index = 0; index < raw.points.length; index += 1) {
 		const candidate = raw.points[index];
 		const object =
@@ -89,16 +110,27 @@ export function decodePath(record: DecodedRecord): PathDecode {
 		const x = Array.isArray(candidate) ? candidate[0] : object?.x;
 		const y = Array.isArray(candidate) ? candidate[1] : object?.y;
 		if (!finite(x) || !finite(y))
-			return { ok: false, issue: "malformed-point", pointIndex: index, points };
-		points.push({ x: originX + x, y: originY + y });
+			return {
+				ok: false,
+				issue: "malformed-point",
+				pointIndex: index,
+				relativePoints,
+				scenePoints: origin
+					? relativePoints.map((point) => ({ x: origin.x + point.x, y: origin.y + point.y }))
+					: null,
+			};
+		relativePoints.push({ x, y });
 	}
-	if (points.length === 1) return { ok: false, issue: "one-point", points };
-	const connectorId = record.id ?? "";
+	const scenePoints = origin
+		? relativePoints.map((point) => ({ x: origin.x + point.x, y: origin.y + point.y }))
+		: null;
+	if (relativePoints.length === 1)
+		return { ok: false, issue: "one-point", relativePoints, scenePoints };
 	const zeroSegments: number[] = [];
-	const segments = points.slice(0, -1).map((a, index) => {
-		const b = points[index + 1]!;
+	for (let index = 0; index < relativePoints.length - 1; index += 1) {
+		const a = relativePoints[index]!;
+		const b = relativePoints[index + 1]!;
 		if (a.x === b.x && a.y === b.y) zeroSegments.push(index);
-		return { connectorId, sourceIndex: record.sourceIndex, index, a, b };
-	});
-	return { ok: true, points, segments, zeroSegments };
+	}
+	return { ok: true, relativePoints, scenePoints, zeroSegments };
 }

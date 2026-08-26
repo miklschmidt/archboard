@@ -319,9 +319,11 @@ const storedExtent = (record: DecodedRecord, raw: RawRecord): ExactBox | null =>
 function decodedPathEvidence(
 	record: DecodedRecord,
 	raw: RawRecord,
-	points: readonly ExactPoint[],
+	scenePoints: readonly ExactPoint[] | null | undefined,
 ): { points: readonly ExactPoint[]; affected: ExactBox | null } {
-	if (!locatableOrigin(raw)) return { points: [], affected: null };
+	if (scenePoints === null || (scenePoints === undefined && !locatableOrigin(raw)))
+		return { points: [], affected: null };
+	const points = scenePoints ?? [];
 	return {
 		points,
 		affected: points.length > 0 ? pointBox(points) : storedExtent(record, raw),
@@ -332,7 +334,7 @@ function unusablePathFinding(record: DecodedRecord, raw: RawRecord): InspectionF
 	const decoded = decodePath(record);
 	if (decoded.ok) throw new Error("usable connector path passed to unusablePathFinding");
 	if (decoded.issue === "malformed-point") {
-		const evidence = decodedPathEvidence(record, raw, decoded.points);
+		const evidence = decodedPathEvidence(record, raw, decoded.scenePoints);
 		return make({
 			code: "AMBIGUOUS_GEOMETRY",
 			reason: "malformed-point",
@@ -349,7 +351,7 @@ function unusablePathFinding(record: DecodedRecord, raw: RawRecord): InspectionF
 			...evidence,
 		});
 	}
-	const evidence = decodedPathEvidence(record, raw, decoded.points ?? []);
+	const evidence = decodedPathEvidence(record, raw, decoded.scenePoints);
 	const shared = {
 		code: "AMBIGUOUS_GEOMETRY" as const,
 		severity: "warning" as const,
@@ -427,10 +429,10 @@ function connectorGeometryFindings(
 	const findings: InspectionFinding[] = [];
 	const refs = [record.ref];
 	const decoded = decodePath(record);
-	const decodedPoints = decoded.points ?? [];
-	const pathEvidence = decodedPathEvidence(record, raw, decodedPoints);
+	const pathEvidence = decodedPathEvidence(record, raw, decoded.scenePoints);
 	const angle = raw.angle;
-	if (angle !== undefined && angle !== 0)
+	const unsupportedRotation = angle !== undefined && angle !== 0;
+	if (unsupportedRotation)
 		findings.push(
 			make({
 				code: "UNSUPPORTED_GEOMETRY",
@@ -446,7 +448,8 @@ function connectorGeometryFindings(
 				...pathEvidence,
 			}),
 		);
-	if (raw.curve !== undefined || raw.curveKind !== undefined)
+	const unsupportedCurve = raw.curve !== undefined || raw.curveKind !== undefined;
+	if (unsupportedCurve)
 		findings.push(
 			make({
 				code: "UNSUPPORTED_GEOMETRY",
@@ -459,7 +462,11 @@ function connectorGeometryFindings(
 				...pathEvidence,
 			}),
 		);
-	if (raw.roundness != null || raw.elbowed === true || raw.fixedSegments != null)
+	const unsupportedRounded =
+		raw.roundness != null ||
+		(raw.elbowed !== undefined && raw.elbowed !== null && raw.elbowed !== false) ||
+		raw.fixedSegments != null;
+	if (unsupportedRounded)
 		findings.push(
 			make({
 				code: "UNSUPPORTED_GEOMETRY",
@@ -477,9 +484,6 @@ function connectorGeometryFindings(
 			}),
 		);
 	if (!decoded.ok) return [...findings, unusablePathFinding(record, raw)];
-	segments.push(
-		...decoded.segments.filter((segment) => !decoded.zeroSegments.includes(segment.index)),
-	);
 	for (const segmentIndex of decoded.zeroSegments)
 		findings.push(
 			make({
@@ -490,10 +494,22 @@ function connectorGeometryFindings(
 				details: { connectorId: record.id, sourceIndex: record.sourceIndex, segmentIndex },
 				message: `Connector ${record.id ?? record.sourceIndex} has a zero-length segment.`,
 				elements: refs,
-				points: [decoded.points[segmentIndex]!],
-				affected: pointBox([decoded.points[segmentIndex]!]),
+				points: decoded.scenePoints ? [decoded.scenePoints[segmentIndex]!] : [],
+				affected: decoded.scenePoints ? pointBox([decoded.scenePoints[segmentIndex]!]) : null,
 			}),
 		);
+	const unsupported = unsupportedRotation || unsupportedCurve || unsupportedRounded;
+	if (unsupported || !record.id || !decoded.scenePoints) return findings;
+	for (let index = 0; index < decoded.scenePoints.length - 1; index += 1) {
+		if (decoded.zeroSegments.includes(index)) continue;
+		segments.push({
+			connectorId: record.id,
+			sourceIndex: record.sourceIndex,
+			index,
+			a: decoded.scenePoints[index]!,
+			b: decoded.scenePoints[index + 1]!,
+		});
+	}
 	const measured = measureLinear(raw.points);
 	if (
 		!measured ||
@@ -524,8 +540,8 @@ function connectorGeometryFindings(
 				},
 				message: `Connector ${record.id ?? record.sourceIndex} has stale stored dimensions.`,
 				elements: refs,
-				points: decoded.points,
-				affected: pointBox(decoded.points),
+				points: decoded.scenePoints,
+				affected: pointBox(decoded.scenePoints),
 			}),
 		);
 	return findings;
@@ -640,7 +656,7 @@ function connectorBindingFindings(
 					}),
 				);
 		}
-		if (!readableTargetId) continue;
+		if (!readableTargetId || !record.id) continue;
 		const target = byId.get(readableTargetId);
 		if (!target)
 			findings.push(
@@ -701,6 +717,7 @@ function connectorBindingFindings(
 }
 
 function persistedEndpointFindings(record: DecodedRecord, raw: RawRecord): InspectionFinding[] {
+	if (!record.id) return [];
 	const findings: InspectionFinding[] = [];
 	for (const end of ["start", "end"] as const) {
 		const input = raw[end];
@@ -790,6 +807,7 @@ function boundElementFindings(
 				affected: record.box,
 			}),
 		);
+	if (!record.id) return findings;
 	for (const entry of readableEntries)
 		if (!byId.has(entry.id))
 			findings.push(
@@ -1027,10 +1045,11 @@ const KNOWN_ELEMENT_TYPES = new Set([
 	"freedraw",
 ]);
 
-function hasCoverageRoleEvidence(record: DecodedRecord): boolean {
+function hasCoverageRoleEvidence(record: DecodedRecord, hasIncomingReference: boolean): boolean {
 	const raw = record.raw;
 	const metadata = archboardMetadata(record);
 	return (
+		hasIncomingReference ||
 		identityRoles(record).length > 0 ||
 		libraryAttribution(record) !== null ||
 		groupIds(record).length > 0 ||
@@ -1043,14 +1062,18 @@ function hasCoverageRoleEvidence(record: DecodedRecord): boolean {
 	);
 }
 
-function unsupportedGeometryFindings(record: DecodedRecord, raw: RawRecord): InspectionFinding[] {
+function unsupportedGeometryFindings(
+	record: DecodedRecord,
+	raw: RawRecord,
+	hasIncomingReference: boolean,
+): InspectionFinding[] {
 	const findings: InspectionFinding[] = [];
 	if (
 		record.type !== "arrow" &&
 		record.type !== "line" &&
 		raw.angle !== undefined &&
 		raw.angle !== 0 &&
-		hasCoverageRoleEvidence(record)
+		hasCoverageRoleEvidence(record, hasIncomingReference)
 	)
 		findings.push(
 			make({
@@ -1073,7 +1096,7 @@ function unsupportedGeometryFindings(record: DecodedRecord, raw: RawRecord): Ins
 	const canonicalType = typeof rawType === "string" && rawType.length > 0;
 	if (
 		(!canonicalType || !KNOWN_ELEMENT_TYPES.has(typeof rawType === "string" ? rawType : "")) &&
-		hasCoverageRoleEvidence(record)
+		hasCoverageRoleEvidence(record, hasIncomingReference)
 	) {
 		const rawTypeDescription = typeof rawType === "string" ? rawType : stableDescription(rawType);
 		findings.push(
@@ -1092,6 +1115,27 @@ function unsupportedGeometryFindings(record: DecodedRecord, raw: RawRecord): Ins
 	return findings;
 }
 
+function incomingReferenceIds(records: readonly DecodedRecord[]): ReadonlySet<string> {
+	const ids = new Set<string>();
+	const add = (value: unknown) => {
+		if (typeof value === "string" && value.length > 0) ids.add(value);
+	};
+	for (const record of records.filter((candidate) => candidate.live && candidate.raw)) {
+		const raw = record.raw!;
+		add(raw.containerId);
+		for (const end of ["start", "end"] as const) {
+			const binding = raw[`${end}Binding`];
+			if (binding && typeof binding === "object" && !Array.isArray(binding))
+				add((binding as RawRecord).elementId);
+		}
+		if (!Array.isArray(raw.boundElements)) continue;
+		for (const entry of raw.boundElements)
+			if (entry && typeof entry === "object" && !Array.isArray(entry))
+				add((entry as RawRecord).id);
+	}
+	return ids;
+}
+
 function structuralFindings(
 	records: readonly DecodedRecord[],
 	policy: InspectionPolicy,
@@ -1103,6 +1147,7 @@ function structuralFindings(
 	const findings: InspectionFinding[] = [];
 	const segments: Segment[] = [];
 	const byId = model.byId;
+	const incomingReferences = incomingReferenceIds(records);
 	for (const record of records.filter((candidate) => candidate.live && candidate.raw)) {
 		const raw = record.raw!;
 		if (record.type === "arrow" || record.type === "line") {
@@ -1115,7 +1160,13 @@ function structuralFindings(
 		findings.push(...metadataFindings(record, raw));
 		findings.push(...libraryFindings(record, model));
 		findings.push(...fontFindings(record, raw, policy));
-		findings.push(...unsupportedGeometryFindings(record, raw));
+		findings.push(
+			...unsupportedGeometryFindings(
+				record,
+				raw,
+				record.id !== null && incomingReferences.has(record.id),
+			),
+		);
 	}
 	return { findings, segments };
 }
@@ -1391,7 +1442,12 @@ function collisionFindings(
 		value: segment,
 	}));
 	const leaves = [...model.nodes.values()].filter((node) => node.children.length === 0);
-	const nodeItems = leaves.map((node) => ({ id: node.id, box: node.body, value: node }));
+	const leafNodeItems = leaves.map((node) => ({ id: node.id, box: node.body, value: node }));
+	const allNodeItems = [...model.nodes.values()].map((node) => ({
+		id: node.id,
+		box: node.body,
+		value: node,
+	}));
 	const obstacleItems = model.obstacles.map((obstacle) => ({
 		id: obstacle.id,
 		box: obstacle.box,
@@ -1425,7 +1481,7 @@ function collisionFindings(
 	};
 	pairSweep(
 		segmentItems,
-		nodeItems,
+		leafNodeItems,
 		false,
 		(segment, node) => {
 			const ends = connectorEnds(segment);
@@ -1556,8 +1612,8 @@ function collisionFindings(
 		);
 	if (!counter.limited)
 		pairSweep(
-			nodeItems,
-			nodeItems,
+			leafNodeItems,
+			leafNodeItems,
 			true,
 			(a, b) => a.parentId !== b.id && b.parentId !== a.id,
 			(a, b) => {
@@ -1589,7 +1645,7 @@ function collisionFindings(
 	if (!counter.limited)
 		pairSweep(
 			labelItems,
-			nodeItems,
+			allNodeItems,
 			false,
 			(label, node) => {
 				const own = model.nodeOfElement.get(label.id!);
@@ -1653,7 +1709,7 @@ function collisionFindings(
 			"label-label-overlap",
 		);
 	if (counter.limited) {
-		const allBoxes = [...segmentItems, ...nodeItems, ...obstacleItems, ...labelItems].map(
+		const allBoxes = [...segmentItems, ...allNodeItems, ...obstacleItems, ...labelItems].map(
 			(item) => item.box,
 		);
 		findings.push(
