@@ -1,11 +1,10 @@
-// Minimal zero-dependency flag parser for the CLI.
+// Minimal zero-dependency flag parser for legacy CLI commands.
 //
 // Supports: --flag value, --flag=value, boolean flags, and repeatable flags
 // (declared via `repeatable`), plus positional arguments.
 
-export class CliUsageError extends Error {
-	readonly exitCode = 2;
-}
+export { CliUsageError } from "../command-contract/contract.js";
+import { CliUsageError } from "../command-contract/contract.js";
 
 export interface FlagSpec {
 	// true when the flag consumes a value; false = boolean switch
