@@ -1304,7 +1304,7 @@ try {
 			.match(/cleanElementForExcalidraw[\s\S]*?const\s*\{([^}]*)\}\s*=\s*element/)?.[1] ?? "";
 	const declared = stripped
 		.split(",")
-		.map((s) => s.trim())
+		.map((s) => s.trim().split(":")[0].trim())
 		.filter((s) => /^[a-zA-Z]+$/.test(s));
 	check(
 		"  and the pane has not started stripping something else since",
