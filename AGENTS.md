@@ -60,7 +60,7 @@ bun run reload        # reloads it in place, keeping tabs, panes and the feed
 
 Saving a file reloads nothing; the command is the trigger, and a canvas from
 `canvas start` cannot reload at all. **State that must survive a reload lives
-in `kept()`** (`src/core/hot.ts`), never in module scope, which a reload
+in `kept()`** (`src/runtime/engine/hot.ts`), never in module scope, which a reload
 rebuilds — `bun run test:module-scope` enforces it; waive a false positive
 with `// hot-safe: <reason>`. Mechanics and costs:
 `docs/design/hot-reload-under-bun.md` and the archboard-dev skill.
@@ -68,7 +68,8 @@ with `// hot-safe: <reason>`. Mechanics and costs:
 **Running the suite needs `agent-browser` on PATH**: four checks drive a real
 browser and exit 2 without one. They must stay headless — a window that maps
 steals focus under Hyprland — and run one after another, never at once. A push
-runs `bun run test` and nothing else, and `test:suites` fails when a `test:*`
+runs `bun run check`, which enforces lint, custom boundaries, formatting,
+type-checking, and the complete test chain. `test:suites` fails when a `test:*`
 script is missing from that chain. Changing tests or CI, or a browser check
 failing → `docs/agents/test-suite.md`: what each check proves, the
 constraints, the timings.
@@ -119,10 +120,10 @@ that changed on disk under another editor is refused, never overwritten
 (ADR 0006). These are the rules nothing refuses:
 
 - **The note is the board, and the canvas holds no copy of one** (ADR 0015).
-  `src/core/board-io.ts` is the one place a note is read or written, and it is
+  `src/runtime/engine/board-io.ts` is the one place a note is read or written, and it is
   synchronous on purpose — an `await` between the read and the write would let
   two writes to one board interleave. Every note write goes through
-  `src/core/atomic-write.ts`; the fsync is over half the cost of a write and
+  `src/runtime/engine/atomic-write.ts`; the fsync is over half the cost of a write and
   was accepted with ADR 0015 — do not optimise it away without reopening it.
 - **One writer at a time, per board** (ADR 0016). The lock is a lease file in
   the vault, taken by one write-boundary middleware, deny by default: a
@@ -148,17 +149,17 @@ that changed on disk under another editor is refused, never overwritten
   promote, import: each reaches the note as one read-modify-write under one
   lock acquisition, and `test:one-write` counts writes on the wire.
 - **Renaming an element id is the most dangerous thing in the system.** Every
-  id archboard mints comes from `src/core/ids.ts`: one to eight characters of
+  id archboard mints comes from `src/shared/ids/ids.ts`: one to eight characters of
   Obsidian's block-id alphabet, so the note writer has nothing to rename. No
   second minting site, no longer shape. Why, and what a rename costs:
   `docs/design/server-is-the-truth.md` §4.
 - **A text element's width is measured, not estimated**
-  (`src/core/measure-text.ts`, within 0.0012 px of Chrome):
+  (`src/runtime/engine/measure-text.ts`, within 0.0012 px of Chrome):
   `docs/design/measuring-text-outside-a-browser.md`.
 - **Every write path replaces an element; nothing edits one in place.**
   Branches and snapshots are deep copies, and checks mutate copies to prove
   it (TASK-042, TASK-048).
-- **Every duration is in `src/core/timing.ts`** with what it pulls against
+- **Every duration is in `src/shared/timing/timing.ts`** with what it pulls against
   written beside it. Read the file before tuning one (TASK-066).
 - **`customData.archboard` is archboard's metadata channel** (ADR 0003) and
   survives the human round-trip; archboard's own keys sit under

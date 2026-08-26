@@ -220,7 +220,7 @@ writes the final dirty state after the gesture settles. One report may be in
 flight and one latest delivery queued. The leading hold and its renewal span
 both. Shortening either deadline writes the vault more often; lengthening either
 extends how long an agent may wait. The values governing progress, idle,
-settling, leases and waiting therefore live together in `src/core/timing.ts`.
+settling, leases and waiting therefore live together in `src/shared/timing/timing.ts`.
 
 **The mutex is one concept with a small interface**: ask to write a board, and
 either write it or learn who holds it. Acquiring, renewing, expiring a dead

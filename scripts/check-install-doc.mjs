@@ -78,6 +78,30 @@ function makeRepo(name, files = {}) {
 
 const BEGIN = "<!-- archboard:begin -->";
 
+// Live maintainer and product docs must navigate the current deep-module tree.
+// Measured design investigations are excluded because they carry an explicit
+// historical-path notice and preserve the source locations they measured.
+const liveDocs = [
+	"AGENTS.md",
+	"DESIGN.md",
+	"INSTALL.md",
+	"TESTING.md",
+	"CONTEXT.md",
+	"FLIP_WHITEBOARD.md",
+	"docs/agents/boundaries.md",
+	"docs/agents/test-suite.md",
+	...fs.readdirSync(join(repoRoot, "docs", "adr")).map((name) => `docs/adr/${name}`),
+	"skills/archboard/SKILL.md",
+	"skills/archboard-dev/SKILL.md",
+];
+for (const relativePath of liveDocs) {
+	const text = fs.readFileSync(join(repoRoot, relativePath), "utf-8");
+	assert(
+		!/(?:src\/core\/|frontend\/src\/)/.test(text),
+		`${relativePath} points to a deleted src/core or frontend/src path`,
+	);
+}
+
 // ─── Which doc a repo with neither gets ──────────────────────
 //
 // The end-to-end target cases set HOME to the throwaway directory above, so

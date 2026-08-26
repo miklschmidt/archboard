@@ -13,11 +13,12 @@ concurrency:
 jobs:
   # The whole suite, as one step, on purpose. This workflow used to name two
   # scripts of its own while the suite grew to seventeen around it, so the list
-  # now lives in the `test` script in package.json where it is already
-  # maintained, and `test:suites` fails when a check is in neither the chain nor
-  # the skip list (TASK-082). The skip list is empty as of TASK-072.
+  # now lives in package.json where it is already maintained. `check` enforces
+  # Oxlint (including Archboard's boundary plugin), formatting, type-checking,
+  # and the complete sequential test chain. `test:suites` fails when a suite is
+  # in neither that chain nor the skip list (TASK-082).
   suite:
-    name: Type check, build, and the whole suite
+    name: Lint, format, type check, build, and the whole suite
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -59,10 +60,10 @@ jobs:
       - name: Check the frontend bundle exists
         run: test -d dist/frontend || (echo "dist/frontend not found" && exit 1)
 
-      # The type check and eighteen suites. Every suite that needs a canvas
+      # Lint, formatting, the type check, and every suite. Every suite that needs a canvas
       # starts its own on a random port with a throwaway vault, so nothing here
       # reads a vault, a registry or a running server off the machine it lands
       # on. 58 seconds on a 13th-gen i7 before the browser check, which adds
       # about ten plus a rebuild of the frontend it insists on doing itself.
-      - name: Run the suite
-        run: bun run test
+      - name: Run all checks
+        run: bun run check

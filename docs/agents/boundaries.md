@@ -26,7 +26,7 @@ regardless of whether the folder is named `lib`, `tests`, or something else.
 Root `src/` files are thin process entrypoints only. The existing entrypoints are `src/bin.ts`,
 `src/server.ts`, and `src/dev-canvas.ts`. Do not add implementation to these files.
 
-Browser code belongs under `src/ui/<module>`, not under a separate `frontend/src` tree. Build host
+Browser code belongs under `src/ui/<module>`, not under a separate legacy frontend tree. Build host
 files can stay outside `src/`, but UI implementation follows the same module rules as server code.
 
 ## Import rules
