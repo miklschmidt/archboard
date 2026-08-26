@@ -25,7 +25,7 @@ export const convertMermaidToExcalidraw = async (
 			files: result.files,
 		};
 	} catch (error) {
-		console.error("Error converting Mermaid to Excalidraw:", error);
+		void error;
 		return {
 			elements: [],
 			error: error instanceof Error ? error.message : String(error),

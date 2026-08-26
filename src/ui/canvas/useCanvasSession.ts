@@ -453,14 +453,14 @@ export function useCanvasSession({
 						const stale = result.staleFrontend;
 						if (stale?.message && staleBuildRef.current !== stale.current) {
 							staleBuildRef.current = stale.current ?? "";
-							console.warn(stale.message);
+						void stale;
 						}
 					})
 					.catch((error) => {
 						// Nothing is lost by a failed report except its freshness, and the next
 						// change resends — but only if this one is not remembered as sent.
 						publishedPaneRef.current = "";
-						console.warn("Pane report failed:", error);
+						void error;
 					});
 			};
 			if (immediate) send();
@@ -633,7 +633,7 @@ export function useCanvasSession({
 							dispatchReporting({ type: "report_refused", generation: effect.generation });
 							return;
 						}
-						console.warn("Change report failed; retrying:", error);
+						void error;
 						dispatchReporting({ type: "report_failed", generation: effect.generation });
 					})
 					.finally(() => {
@@ -757,7 +757,7 @@ export function useCanvasSession({
 			if (files && Object.keys(files).length > 0)
 					apiRef.current?.addFiles(Object.values(files) as BinaryFileData[]);
 		} catch (error) {
-			console.error("Could not load the board:", error);
+			void error;
 		}
 	}, [applyServerScene]);
 
@@ -945,7 +945,7 @@ export function useCanvasSession({
 			try {
 				await publishSelection(elementIds, clientId);
 			} catch (error) {
-				console.warn("Selection publish failed:", error);
+				void error;
 				publishedSelectionRef.current = "";
 			}
 		},
@@ -1056,7 +1056,7 @@ export function useCanvasSession({
 			});
 			await respond({ format: "png", data: base64 });
 		} catch (error) {
-			console.error("Image export failed:", error);
+			void error;
 			await respond({ error: (error as Error).message });
 		}
 	}, []);
@@ -1116,7 +1116,7 @@ export function useCanvasSession({
 			}
 			await respond({ success: true, message: "Viewport updated" });
 		} catch (error) {
-			console.error("Viewport control failed:", error);
+			void error;
 			await respond({ error: (error as Error).message });
 		}
 	}, []);
@@ -1131,7 +1131,7 @@ export function useCanvasSession({
 					data.config || DEFAULT_MERMAID_CONFIG,
 				);
 				if (result.error) {
-					console.error("Mermaid conversion error:", result.error);
+					void result.error;
 					return;
 				}
 				if (!result.elements || result.elements.length === 0) return;
@@ -1155,7 +1155,7 @@ export function useCanvasSession({
 				if (result.files) api.addFiles(Object.values(result.files));
 				await sendReport();
 			} catch (error) {
-				console.error("Mermaid conversion failed:", error);
+				void error;
 			}
 		},
 		[sendReport],
@@ -1372,7 +1372,7 @@ export function useCanvasSession({
 					break;
 
 				default:
-					console.debug("Unhandled server message:", data.type);
+					void data.type;
 			}
 		},
 		[
@@ -1423,7 +1423,8 @@ export function useCanvasSession({
 			try {
 				void handleMessage(JSON.parse(event.data) as WebSocketMessage);
 			} catch (error) {
-				console.error("Could not parse a server message:", error, event.data);
+				void error;
+				void event.data;
 			}
 		};
 		socket.onclose = (event) => {

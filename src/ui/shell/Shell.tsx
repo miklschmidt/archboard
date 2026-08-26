@@ -323,7 +323,7 @@ export function Shell(): React.JSX.Element {
 		try {
 			setBoardInfo(await fetchBoardInfo(key));
 		} catch (error) {
-			console.warn("Could not read the board:", error);
+			void error;
 		}
 	}, []);
 

@@ -72,10 +72,8 @@ if (generation !== gate.generation) {
 	} catch (error) {
 		// The old code is still running and still serving. Say so, because the
 		// other reading of a stack trace on a live canvas is that it died.
-		console.error(
-			"\n  !! THE RELOAD FAILED TO EVALUATE. The canvas is still running the code it had.",
-		);
-		console.error(`     ${error instanceof Error ? error.stack : String(error)}\n`);
+		process.stderr.write("\n  !! THE RELOAD FAILED TO EVALUATE. The canvas is still running the code it had.\n");
+		process.stderr.write(`     ${error instanceof Error ? error.stack : String(error)}\n`);
 	}
 
 	const after = readFacts();
@@ -86,16 +84,16 @@ if (generation !== gate.generation) {
 		if (complaints.length > 0) {
 			reportBrokenReload(complaints);
 		} else {
-			console.log(
+			process.stdout.write(
 				`canvas reload ${generation} cost nothing: ` +
 					`${Object.keys(after.boards).length} board(s), ${Object.keys(after.panes).length} pane(s), ` +
-					`${after.sockets} socket(s), feed ${after.feedId} still at cursor ${after.cursor}.`,
+				`${after.sockets} socket(s), feed ${after.feedId} still at cursor ${after.cursor}.` + "\n",
 			);
 		}
 	} else {
-		console.log(
+		process.stdout.write(
 			"canvas running under dev-canvas. Saving a file changes nothing; " +
-				"reload with `bun run reload`.",
+				"reload with `bun run reload`.\n",
 		);
 	}
 }
