@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 13:36'
+updated_date: '2026-08-26 13:44'
 labels:
   - ready-for-agent
 dependencies:
@@ -338,6 +338,8 @@ Resume checkpoint: decomposed structuralFindings into private geometry, binding,
 Formatter-fixture correction: the dense compare fixture pins the two-space JSON bytes emitted by command presentation, while oxfmt uses repository tabs for JSON. Added a one-path formatter ignore and restored the fixture's canonical bytes. test:inspection passes all 27 checks after a real fix pass. A second real fix pass preserved the exact binary diff and porcelain status at hash 8c8126a61dd4a563efb79968c935467a23ce32025102e8c4879bc1a0dbb69a1e; type-check, lint including the skill validator, and git diff --check also pass.
 
 Browser validation: the first sequential chain exposed two stale fixed-point recovery assertions that still expected 12 elements after the approved negative-relative-point connector raised the fixture to 13. The failure did not contradict renderer bounds or path assumptions: the browser and server both held all 13 elements and reported zero element changes. Updated only those two expected counts. An isolated test:browser rerun passed, then the required complete headless sequence passed in order: test:human-performance, test:browser, test:typing, and test:live-session. Fixed-point evidence is 0 of 13 elements changed; the negative straight path round-trips unchanged.
+
+Final implementation validation: the full focused matrix passed, including type-check, test:suites, boundaries, module-scope, contracts and generator check, inspection, CLI, Obsidian/no-side-effect, changes, one-write, geometry, labels, library, boards, and branch compare. After the fixed-point cardinality correction, the complete four-suite browser chain passed sequentially and headless. bun run check then passed lint, skill validation, format verification, both TypeScript projects, all 29 push suites, and all four browser suites. A separate bun run test also passed the complete suite and its own sequential browser chain. No gate was waived or skipped; fixed-point remained 0 of 13 elements changed.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
