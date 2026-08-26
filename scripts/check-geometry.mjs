@@ -27,8 +27,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { withDoing } from "./lib/doing.mjs";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const src = (p) => join(__dirname, "..", "src", p);
+const moduleDir = dirname(fileURLToPath(import.meta.url));
+const src = (p) => join(moduleDir, "..", "src", p);
 
 const { extentOf, measureLinear, remeasureLinear, isPathElement, validateRenderGeometry } =
 	await import(src("core/geometry.ts"));

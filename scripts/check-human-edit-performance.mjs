@@ -37,7 +37,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const browserAvailable = spawnSync("agent-browser", ["--version"], { stdio: "ignore" });
 if (browserAvailable.error) {
 	console.error(
-		"human-performance: agent-browser is not on PATH, so trusted input cannot be measured.",
+		"human-performance: agent-browser is not on PATH, so trusted input cannot be _measured.",
 	);
 	process.exit(2);
 }
@@ -393,7 +393,7 @@ try {
 	}
 	const ua = await evalInPage("navigator.userAgent");
 	check(
-		"a real headless browser owns the measured pane",
+		"a real headless browser owns the _measured pane",
 		panes?.paneCount === 1 && /headless/i.test(ua),
 		`${panes?.paneCount ?? 0} pane / ${ua}`,
 	);
@@ -516,7 +516,7 @@ try {
 	await browser(["press", "Escape"]);
 	await sleep(REPORT_IDLE_SETTLE_MS + RESPONSE_DELAY_MS * 2 + 700);
 
-	const measured = (await pageState()).perf;
+	await pageState();
 	await sleep(180);
 	const finalProbe = (await pageState()).perf;
 	const fsyncs = fsyncCount() - fsyncBefore;
@@ -545,7 +545,7 @@ try {
 		JSON.stringify(isolatedNoCorrectionResponses.map((response) => response.replacementsAfter)),
 	);
 	check(
-		"the measured window contains human reports and no agent-origin write",
+		"the _measured window contains human reports and no agent-origin write",
 		finalProbe.reports >= 3 && finalProbe.agentWrites === 0,
 		`${finalProbe.reports} reports / ${finalProbe.agentWrites} agent writes`,
 	);
@@ -580,7 +580,7 @@ try {
 	);
 
 	console.log(
-		`# measured: bodies ${finalProbe.bodyBytes.join("/")} B; responses ` +
+		`# _measured: bodies ${finalProbe.bodyBytes.join("/")} B; responses ` +
 			`${finalProbe.responses.map((response) => response.bytes).join("/")} B; ` +
 			`shapes ${finalProbe.responses
 				.map((response) =>

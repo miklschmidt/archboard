@@ -29,7 +29,6 @@ import type {
 	LockHolder,
 	NoteWrittenElsewhere,
 	PaneStatus,
-	ServerElement,
 	WebSocketMessage,
 } from "../types";
 import { cleanElementForExcalidraw, elementsForScene } from "./elements";
@@ -1046,12 +1045,12 @@ export function useCanvasSession({
 			const blob = await exportToBlob({ elements, appState, files, mimeType: "image/png" });
 			const base64 = await new Promise<string>((resolve, reject) => {
 				const reader = new FileReader();
-				reader.onload = () => {
+				reader.addEventListener("load", () => {
 					const encoded = (reader.result as string)?.split(",")[1];
 					if (encoded) resolve(encoded);
 					else reject(new Error("Could not extract base64 data from the export"));
-				};
-				reader.onerror = () => reject(reader.error ?? new Error("FileReader failed"));
+				});
+				reader.addEventListener("error", () => reject(reader.error ?? new Error("FileReader failed")));
 				reader.readAsDataURL(blob);
 			});
 			await respond({ format: "png", data: base64 });
@@ -1409,7 +1408,7 @@ export function useCanvasSession({
 		);
 		socketRef.current = socket;
 
-		socket.onopen = () => {
+		socket.addEventListener("open", () => {
 			connectedRef.current = true;
 			setConnected(true);
 			// The server retires a pane when its socket closes, so a reconnection has
@@ -1418,26 +1417,26 @@ export function useCanvasSession({
 			publishStatus();
 			// No fetch here: the server opens every connection, including a
 			// reconnection, by sending the board it is holding.
-		};
-		socket.onmessage = (event) => {
+		});
+		socket.addEventListener("message", (event) => {
 			try {
 				void handleMessage(JSON.parse(event.data) as WebSocketMessage);
 			} catch (error) {
 				void error;
 				void event.data;
 			}
-		};
-		socket.onclose = (event) => {
+		});
+		socket.addEventListener("close", (event) => {
 			connectedRef.current = false;
 			setConnected(false);
 			publishStatus();
 			if (event.code !== 1000 && !closedRef.current) setTimeout(connect, SOCKET_RECONNECT_MS);
-		};
-		socket.onerror = () => {
+		});
+		socket.addEventListener("error", () => {
 			connectedRef.current = false;
 			setConnected(false);
 			publishStatus();
-		};
+		});
 	}, [clientId, handleMessage, publishStatus]);
 
 	const attachExcalidraw = useCallback(

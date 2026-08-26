@@ -507,7 +507,7 @@ const whatMoved = (held, rendered) => {
 			}
 		}
 		if (fields.length > 0) {
-			moved[name] = fields.toSorted();
+			moved[name] = fields.toSorted((a, b) => a.localeCompare(b));
 			values[name] = shown;
 		}
 	}

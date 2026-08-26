@@ -21,7 +21,7 @@ import os from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const moduleDir = dirname(fileURLToPath(import.meta.url));
 
 const vault = fs.mkdtempSync(join(os.tmpdir(), "archboard-library-"));
 process.env.ARCHBOARD_VAULT = vault;
@@ -33,7 +33,7 @@ const {
 	writeLibrary,
 	resetLibraryCache,
 	libraryFilePath,
-} = await import(join(__dirname, "..", "src", "runtime", "engine", "library.ts"));
+} = await import(join(moduleDir, "..", "src", "runtime", "engine", "library.ts"));
 
 let failures = 0;
 let checks = 0;
@@ -167,7 +167,7 @@ assert(
 // and what a placed copy is. Both are pure — no canvas server involved.
 
 const { chooseStencil, remapElements, AmbiguousStencilError, UnknownStencilError } = await import(
-	join(__dirname, "..", "src", "runtime", "engine", "library-catalogue.ts")
+	join(moduleDir, "..", "src", "runtime", "engine", "library-catalogue.ts")
 );
 
 const entries = [
