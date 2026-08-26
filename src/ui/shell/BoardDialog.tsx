@@ -14,6 +14,7 @@ import type { BoardIdentity, BoardListing } from "../types";
 export type BoardDialogMode = "open" | "new" | "save-as";
 
 const LEVELS = ["system", "service", "module"];
+const EMPTY_PANES: Array<{ clientId: string; label: string; board: string | null }> = [];
 
 /** How the vault will address this board — `current` owns the bare name. */
 const address = (name: string, variant: string): string => {
@@ -49,7 +50,7 @@ const TITLES: Record<BoardDialogMode, string> = {
 export function BoardDialog({
 	mode,
 	current,
-	panes = [],
+	panes = EMPTY_PANES,
 	defaultPane,
 	busy,
 	error,
@@ -72,6 +73,7 @@ export function BoardDialog({
 		fetchBoards()
 			.then((result) => {
 				if (live) setListing(result);
+				return result;
 			})
 			.catch((err: Error) => {
 				if (live) setListError(err.message);
@@ -99,7 +101,7 @@ export function BoardDialog({
 			}));
 	}, [listing, filter]);
 
-	const intoPane = asksForPane && pane ? { pane } : {};
+	const intoPane = useMemo(() => (asksForPane && pane ? { pane } : {}), [asksForPane, pane]);
 
 	const submitTyped = useCallback((): void => {
 		const board = (mode === "open" ? filter : name).trim();
@@ -114,19 +116,40 @@ export function BoardDialog({
 						...intoPane,
 					},
 		);
-	}, [filter, name, mode, onSubmit, pane, variant, level, intoPane]);
-	const submitEntry = useCallback((event: React.MouseEvent<HTMLButtonElement>): void => {
-		const board = event.currentTarget.dataset.boardKey;
-		if (board) onSubmit({ board, ...intoPane });
-	}, [intoPane, onSubmit]);
-	const selectPane = useCallback((event: React.ChangeEvent<HTMLSelectElement>): void => setPane(event.target.value), []);
-	const updateFilter = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => setFilter(event.target.value), []);
-	const updateName = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => setName(event.target.value), []);
-	const updateVariant = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => setVariant(event.target.value), []);
-	const updateLevel = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => setLevel(event.target.value), []);
-	const submitOnEnter = useCallback((event: React.KeyboardEvent<HTMLInputElement>): void => {
-		if (event.key === "Enter") submitTyped();
-	}, [submitTyped]);
+	}, [filter, name, mode, onSubmit, variant, level, intoPane]);
+	const submitEntry = useCallback(
+		(event: React.MouseEvent<HTMLButtonElement>): void => {
+			const board = event.currentTarget.dataset.boardKey;
+			if (board) onSubmit({ board, ...intoPane });
+		},
+		[intoPane, onSubmit],
+	);
+	const selectPane = useCallback(
+		(event: React.ChangeEvent<HTMLSelectElement>): void => setPane(event.target.value),
+		[],
+	);
+	const updateFilter = useCallback(
+		(event: React.ChangeEvent<HTMLInputElement>): void => setFilter(event.target.value),
+		[],
+	);
+	const updateName = useCallback(
+		(event: React.ChangeEvent<HTMLInputElement>): void => setName(event.target.value),
+		[],
+	);
+	const updateVariant = useCallback(
+		(event: React.ChangeEvent<HTMLInputElement>): void => setVariant(event.target.value),
+		[],
+	);
+	const updateLevel = useCallback(
+		(event: React.ChangeEvent<HTMLInputElement>): void => setLevel(event.target.value),
+		[],
+	);
+	const submitOnEnter = useCallback(
+		(event: React.KeyboardEvent<HTMLInputElement>): void => {
+			if (event.key === "Enter") submitTyped();
+		},
+		[submitTyped],
+	);
 
 	return (
 		<Modal
@@ -221,14 +244,17 @@ export function BoardDialog({
 						<span>Level</span>
 						<input
 							value={level}
+							aria-label="Level"
 							list="archboard-levels"
 							placeholder="system, service, module…"
 							onChange={updateLevel}
 							onKeyDown={submitOnEnter}
 						/>
-						<datalist id="archboard-levels">
+						<datalist id="archboard-levels" aria-label="Level suggestions">
 							{LEVELS.map((value) => (
-								<option key={value} value={value} />
+								<option key={value} value={value} label={value}>
+									{value}
+								</option>
 							))}
 						</datalist>
 					</label>

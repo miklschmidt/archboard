@@ -7,7 +7,8 @@
 import React, { useEffect, useRef } from "react";
 import { Icon } from "./Icons";
 
-const stopPointerDown = (event: React.PointerEvent<HTMLDivElement>): void => event.stopPropagation();
+const stopPointerDown = (event: React.PointerEvent<HTMLDialogElement>): void =>
+	event.stopPropagation();
 
 interface ModalProps {
 	title: string;
@@ -18,7 +19,7 @@ interface ModalProps {
 }
 
 export function Modal({ title, onCancel, children, footer, wide }: ModalProps): React.JSX.Element {
-	const panelRef = useRef<HTMLDivElement>(null);
+	const panelRef = useRef<HTMLDialogElement>(null);
 
 	useEffect(() => {
 		const onKey = (event: KeyboardEvent) => {
@@ -36,10 +37,9 @@ export function Modal({ title, onCancel, children, footer, wide }: ModalProps): 
 
 	return (
 		<div className="modal-backdrop" onPointerDown={onCancel}>
-			<div
+			<dialog
 				className={`modal${wide ? " modal-wide" : ""}`}
-				role="dialog"
-				aria-modal="true"
+				open
 				aria-label={title}
 				ref={panelRef}
 				onPointerDown={stopPointerDown}
@@ -60,7 +60,7 @@ export function Modal({ title, onCancel, children, footer, wide }: ModalProps): 
 				</div>
 				<div className="modal-body">{children}</div>
 				<div className="modal-footer">{footer}</div>
-			</div>
+			</dialog>
 		</div>
 	);
 }

@@ -19,7 +19,7 @@
 // changes what each outcome costs: with a board held, there are changes on this
 // canvas and in nothing else, and reload is the button that ends them.
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Modal } from "./Modal";
 import type { BoardHold, BoardWriteConflict } from "../types";
 
@@ -49,16 +49,20 @@ export function ConflictDialog({
 	onCancel,
 }: ConflictDialogProps): React.JSX.Element {
 	const held = hold?.writes ?? 0;
+	const footer = useMemo(
+		() => (
+			<button className="btn btn-quiet btn-big" data-autofocus onClick={onCancel} disabled={busy}>
+				{hold ? "Decide later" : "Do nothing"}
+			</button>
+		),
+		[busy, hold, onCancel],
+	);
 	return (
 		<Modal
 			title={hold ? "This board is not being saved" : "Not saved — the note changed on disk"}
 			wide
 			onCancel={onCancel}
-			footer={
-				<button className="btn btn-quiet btn-big" data-autofocus onClick={onCancel} disabled={busy}>
-					{hold ? "Decide later" : "Do nothing"}
-				</button>
-			}
+			footer={footer}
 		>
 			<p>
 				{conflict.reason === "changed" ? (

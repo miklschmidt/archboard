@@ -7,7 +7,7 @@
 // question — which is the seam TASK-006 (panes reporting what the human is
 // looking at) lands on.
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CanvasPane } from "../canvas/CanvasPane";
 import { BoardBar } from "./BoardBar";
 import { BoardNavigator } from "./BoardNavigator";
@@ -68,6 +68,12 @@ interface Notice {
 interface AgentState {
 	heldBy: LockHolder | null;
 	takeBack: () => void;
+}
+
+interface ConflictState {
+	conflict: BoardWriteConflict;
+	request: SaveRequest;
+	hold?: BoardHold | null;
 }
 
 /** "the only pane", "the left pane", "the left and right panes". */
@@ -139,6 +145,66 @@ function saveNotice(saved: BoardSaveResult, paneCount: number): Notice {
 	return { kind: "info", text: wrote };
 }
 
+function samePaneStatus(existing: PaneStatus, status: PaneStatus): boolean {
+	return (
+		existing.connected === status.connected &&
+		existing.clientId === status.clientId &&
+		existing.boardKey === status.boardKey &&
+		existing.elementCount === status.elementCount &&
+		existing.lastChangeAt === status.lastChangeAt &&
+		existing.hold?.since === status.hold?.since &&
+		existing.hold?.writes === status.hold?.writes &&
+		existing.writtenElsewhere?.writtenAt === status.writtenElsewhere?.writtenAt &&
+		existing.writtenElsewhere?.reason === status.writtenElsewhere?.reason &&
+		existing.writtenElsewhere?.version === status.writtenElsewhere?.version &&
+		existing.doing.at(-1)?.at === status.doing.at(-1)?.at &&
+		existing.doing.length === status.doing.length &&
+		existing.board?.variant === status.board?.variant &&
+		existing.board?.level === status.board?.level
+	);
+}
+
+function createAttemptSave(args: {
+	run: (work: () => Promise<void>) => Promise<void>;
+	status: PaneStatus | null;
+	boardKey: string | null;
+	refreshBoardInfo: (key: string | null) => Promise<void>;
+	refreshBoardListing: () => Promise<void>;
+	panes: number;
+	hold: BoardHold | null;
+	setBoardInfo: React.Dispatch<React.SetStateAction<BoardInfo | null>>;
+	setDialog: React.Dispatch<React.SetStateAction<BoardDialogMode | null>>;
+	setDialogError: React.Dispatch<React.SetStateAction<string | null>>;
+	setConflict: React.Dispatch<React.SetStateAction<ConflictState | null>>;
+	setNotice: React.Dispatch<React.SetStateAction<Notice | null>>;
+}): (request: SaveRequest) => void {
+	return (request) => {
+		void args.run(async () => {
+			try {
+				const saved = await saveBoard({ clientId: args.status?.clientId, ...request });
+				const kind = saved.saveKind ?? "same-board";
+				const holdingIt =
+					kind === "branch"
+						? false
+						: kind === "named"
+							? (saved.panes?.moved ?? []).some((pane) => pane.clientId === args.status?.clientId)
+							: saved.board === args.boardKey;
+				if (holdingIt) args.setBoardInfo(saved);
+				else void args.refreshBoardInfo(args.boardKey);
+				args.setDialog(null);
+				args.setConflict(null);
+				args.setNotice(saveNotice(saved, args.panes));
+				void args.refreshBoardListing();
+			} catch (error) {
+				if (!(error instanceof BoardConflictError)) throw error;
+				args.setDialog(null);
+				args.setDialogError(null);
+				args.setConflict({ conflict: error.conflict, request, hold: error.held ?? args.hold });
+			}
+		});
+	};
+}
+
 export function Shell(): React.JSX.Element {
 	// A pane is a slot holding its own canvas. One is the normal case; the list
 	// is what makes a second one a mount rather than a rewrite.
@@ -192,11 +258,7 @@ export function Shell(): React.JSX.Element {
 	// what turns the dialog from a report of one refused save into a choice about
 	// a board, and it is set both when the human clicks the mark in the bar and
 	// when a save runs into the same wall.
-	const [conflict, setConflict] = useState<{
-		conflict: BoardWriteConflict;
-		request: SaveRequest;
-		hold?: BoardHold | null;
-	} | null>(null);
+	const [conflict, setConflict] = useState<ConflictState | null>(null);
 	const [busy, setBusy] = useState(false);
 	const [notice, setNotice] = useState<Notice | null>(null);
 
@@ -218,40 +280,7 @@ export function Shell(): React.JSX.Element {
 	const onStatus = useCallback((status: PaneStatus) => {
 		setStatuses((previous) => {
 			const existing = previous[status.paneId];
-			if (
-				existing &&
-				existing.connected === status.connected &&
-				existing.clientId === status.clientId &&
-				existing.boardKey === status.boardKey &&
-				existing.elementCount === status.elementCount &&
-				existing.lastChangeAt === status.lastChangeAt &&
-				// The hold by value, because it is a different object every time and
-				// because the mark in the bar counts what is held. Left out of this
-				// comparison, a board that started saving again kept its mark up: the
-				// release changes nothing else about the pane, so the whole status
-				// update was discarded as identical.
-				existing.hold?.since === status.hold?.since &&
-				existing.hold?.writes === status.hold?.writes &&
-				// And the same for a note somebody else wrote, for the same reason: it
-				// is the only thing that changed about the pane, so leaving it out of
-				// this comparison throws the whole update away and the mark never
-				// appears (TASK-062). This comparison is the thing that has now eaten
-				// two marks; anything new in the bar belongs in it.
-				existing.writtenElsewhere?.writtenAt === status.writtenElsewhere?.writtenAt &&
-				existing.writtenElsewhere?.reason === status.writtenElsewhere?.reason &&
-				// The mark now says which side is ahead, so the version is part of what
-				// it shows and part of what makes an update worth applying (TASK-091).
-				existing.writtenElsewhere?.version === status.writtenElsewhere?.version &&
-				// And the third thing this has eaten, exactly as advertised: an agent
-				// saying what it is doing changes nothing else about the pane, so
-				// without this the bar keeps showing the line before last (TASK-095).
-				// The newest line is enough, because the list only ever grows at that
-				// end and the bar shows that one.
-				existing.doing.at(-1)?.at === status.doing.at(-1)?.at &&
-				existing.doing.length === status.doing.length &&
-				existing.board?.variant === status.board?.variant &&
-				existing.board?.level === status.board?.level
-			) {
+			if (existing && samePaneStatus(existing, status)) {
 				return previous;
 			}
 			return { ...previous, [status.paneId]: status };
@@ -282,11 +311,10 @@ export function Shell(): React.JSX.Element {
 	// a write that was refused, this is a write that has not happened yet
 	// (TASK-062).
 	const writtenElsewhere = status?.writtenElsewhere ?? null;
-	const onScreenKeys = panes.map((paneId) => statuses[paneId]?.boardKey ?? "").join("|");
-
 	useEffect(() => {
-		void refreshBoardListing();
-	}, [refreshBoardListing, onScreenKeys]);
+		const timer = window.setTimeout(() => void refreshBoardListing(), 0);
+		return () => window.clearTimeout(timer);
+	}, [refreshBoardListing]);
 
 	useEffect(() => {
 		try {
@@ -299,7 +327,10 @@ export function Shell(): React.JSX.Element {
 	// Whoever closed a pane — the button, or a command from outside the browser
 	// — the focus has to land somewhere that still exists.
 	useEffect(() => {
-		if (!panes.includes(focused)) setFocused(panes[0] ?? "pane-1");
+		if (!panes.includes(focused)) {
+			const timer = window.setTimeout(() => setFocused(panes[0] ?? "pane-1"), 0);
+			return () => window.clearTimeout(timer);
+		}
 	}, [panes, focused]);
 
 	// The page title is the board, because a tab in a taskbar is one of the
@@ -328,7 +359,8 @@ export function Shell(): React.JSX.Element {
 	}, []);
 
 	useEffect(() => {
-		void refreshBoardInfo(boardKey);
+		const timer = window.setTimeout(() => void refreshBoardInfo(boardKey), 0);
+		return () => window.clearTimeout(timer);
 	}, [refreshBoardInfo, boardKey]);
 
 	const run = useCallback(
@@ -348,109 +380,100 @@ export function Shell(): React.JSX.Element {
 		[dialog],
 	);
 
-	// Every path that writes the vault goes through here, so there is exactly one
-	// place that knows a save can come back refused.
-	const attemptSave = useCallback(
-		(request: SaveRequest) =>
-			run(async () => {
-				try {
-					// The pane rides along, in the one place every save goes through: it
-					// is what tells the server a person pressed this rather than an agent
-					// that has not said what it is doing (TASK-095).
-					const saved = await saveBoard({ clientId: status?.clientId, ...request });
-					// Whether this pane is now holding what was written is the server's
-					// answer to give, not the shell's to assume. A save used to move the
-					// panes on the board it wrote, so adopting the answer was always
-					// right; a branch writes a second board and moves nothing (ADR 0012),
-					// and adopting it there dates this pane's board by another board's
-					// save. `boardInfo` is what the chrome says this pane is showing, so
-					// that is the chrome describing a board nobody is looking at.
-					const kind = saved.saveKind ?? "same-board";
-					const holdingIt =
-						kind === "branch"
-							? false
-							: kind === "named"
-								? (saved.panes?.moved ?? []).some((pane) => pane.clientId === status?.clientId)
-								: saved.board === boardKey;
-					if (holdingIt) setBoardInfo(saved);
-					else void refreshBoardInfo(boardKey);
-					setDialog(null);
-					setConflict(null);
-					setNotice(saveNotice(saved, panes.length));
-					void refreshBoardListing();
-				} catch (error) {
-					if (!(error instanceof BoardConflictError)) throw error;
-					setDialog(null);
-					setDialogError(null);
-					setConflict({ conflict: error.conflict, request, hold: error.held ?? hold });
-				}
+	// Every path that writes the vault goes through this one save action, so there
+	// is exactly one place that knows a save can come back refused.
+	const attemptSave = useMemo(
+		() =>
+			createAttemptSave({
+				run,
+				status,
+				boardKey,
+				refreshBoardInfo,
+				refreshBoardListing,
+				panes: panes.length,
+				hold,
+				setBoardInfo,
+				setDialog,
+				setDialogError,
+				setConflict,
+				setNotice,
 			}),
-		[run, boardKey, status?.clientId, refreshBoardInfo, refreshBoardListing, panes.length, hold],
+		[run, status, boardKey, refreshBoardInfo, refreshBoardListing, panes.length, hold],
 	);
 
 	// A board is opened INTO a pane. Always name the focused pane when the shell
 	// knows it: another browser tab may have registered a pane even when this
 	// particular shell is not split, and the server must never guess between
 	// them. An explicit picker choice still wins.
-	const paneTarget = (address: { pane?: string }): { pane?: string } =>
-		address.pane ? { pane: address.pane } : status ? { pane: status.clientId } : {};
+	const paneTarget = useCallback(
+		(address: { pane?: string }): { pane?: string } =>
+			address.pane ? { pane: address.pane } : status ? { pane: status.clientId } : {},
+		[status],
+	);
 
-	const handleOpen = (address: {
-		board: string;
-		variant?: string;
-		level?: string;
-		pane?: string;
-	}) =>
-		run(async () => {
-			const opened = await openBoard({ ...address, ...paneTarget(address) });
-			setBoardInfo(opened);
-			setDialog(null);
-			setNotice({ kind: "info", text: `Opened ${opened.board}.` });
-			void refreshBoardListing();
-		});
+	const handleOpen = useCallback(
+		(address: { board: string; variant?: string; level?: string; pane?: string }): void =>
+			void run(async () => {
+				const opened = await openBoard({ ...address, ...paneTarget(address) });
+				setBoardInfo(opened);
+				setDialog(null);
+				setNotice({ kind: "info", text: `Opened ${opened.board}.` });
+				void refreshBoardListing();
+			}),
+		[paneTarget, refreshBoardListing, run],
+	);
 
-	const handleNew = (address: { board: string; variant?: string; level?: string; pane?: string }) =>
-		run(async () => {
-			const created = await newBoard({ ...address, ...paneTarget(address) });
-			setBoardInfo(created);
-			setDialog(null);
-			setNotice({
-				kind: "info",
-				text: `${created.board} started. It is not in the vault until you save it.`,
+	const handleNew = useCallback(
+		(address: { board: string; variant?: string; level?: string; pane?: string }): void =>
+			void run(async () => {
+				const created = await newBoard({ ...address, ...paneTarget(address) });
+				setBoardInfo(created);
+				setDialog(null);
+				setNotice({
+					kind: "info",
+					text: `${created.board} started. It is not in the vault until you save it.`,
+				});
+				void refreshBoardListing();
+			}),
+		[paneTarget, refreshBoardListing, run],
+	);
+
+	const handleNavigate = useCallback(
+		(key: string): void => {
+			const showing = panes.find((paneId) => statuses[paneId]?.boardKey === key);
+			if (showing) {
+				setFocused(showing);
+				return;
+			}
+			handleOpen({ board: key });
+		},
+		[handleOpen, panes, statuses],
+	);
+
+	const handleSaveAs = useCallback(
+		(address: { board: string; variant?: string; level?: string }): void => {
+			if (!boardKey) return;
+			attemptSave({
+				board: boardKey,
+				name: address.board,
+				variant: address.variant,
+				level: address.level,
 			});
-			void refreshBoardListing();
-		});
-
-	const handleNavigate = (key: string): void => {
-		const showing = panes.find((paneId) => statuses[paneId]?.boardKey === key);
-		if (showing) {
-			setFocused(showing);
-			return;
-		}
-		void handleOpen({ board: key });
-	};
-
-	const handleSaveAs = (address: { board: string; variant?: string; level?: string }) => {
-		if (!boardKey) return;
-		void attemptSave({
-			board: boardKey,
-			name: address.board,
-			variant: address.variant,
-			level: address.level,
-		});
-	};
+		},
+		[attemptSave, boardKey],
+	);
 
 	// Every gesture on a named board is already written through to its note.
 	// Scratch is the one exception that needs an explicit action: not to save
 	// the drawing, but to give it a durable address in the vault.
-	const handleNameBoard = () => {
+	const handleNameBoard = useCallback((): void => {
 		if (!boardKey || !boardInfo?.placeholder) return;
 		setDialog("save-as");
-	};
+	}, [boardInfo?.placeholder, boardKey]);
 
 	// The three ways out of a conflict. Each is the human picking which copy
 	// survives; the shell never picks one on its own.
-	const handleReload = () => {
+	const handleReload = useCallback((): void => {
 		const key = conflict?.conflict.board;
 		if (!key) return;
 		// What it cost, said afterwards as well as before. This is the one outcome
@@ -477,13 +500,13 @@ export function Shell(): React.JSX.Element {
 					: { kind: "info", text: `Reloaded ${opened.board} from the vault.` },
 			);
 		});
-	};
+	}, [conflict, panes.length, run, status]);
 
 	// Asked for from the mark, before anything has been refused. One of ADR
 	// 0006's three and not all three: nothing is held, so there is no held copy
 	// to overwrite the note with and none to save elsewhere. Carrying on drawing
 	// is the other answer and it is the Cancel.
-	const handleTakeTheNote = () => {
+	const handleTakeTheNote = useCallback((): void => {
 		const key = writtenElsewhere?.board ?? boardKey;
 		if (!key) return;
 		void run(async () => {
@@ -500,24 +523,79 @@ export function Shell(): React.JSX.Element {
 				text: `${opened.board} is now the note in the vault. What was on this canvas is gone.`,
 			});
 		});
-	};
+	}, [boardKey, panes.length, run, status, writtenElsewhere?.board]);
 
-	const handleOverwrite = () => {
+	const handleOverwrite = useCallback((): void => {
 		if (!conflict) return;
-		void attemptSave({ ...conflict.request, force: true });
-	};
+		attemptSave({ ...conflict.request, force: true });
+	}, [attemptSave, conflict]);
 
-	const handleClear = () =>
-		run(async () => {
-			// One call, not one DELETE per element: the server empties the board and
-			// tells every pane, so nothing depends on this tab finishing the job.
-			const result = await clearBoard(boardKey, status?.clientId ?? "");
-			setConfirmingClear(false);
-			setNotice({
-				kind: "info",
-				text: `Cleared ${result.count} element${result.count === 1 ? "" : "s"}.`,
-			});
-		});
+	const handleClear = useCallback(
+		(): void =>
+			void run(async () => {
+				// One call, not one DELETE per element: the server empties the board and
+				// tells every pane, so nothing depends on this tab finishing the job.
+				const result = await clearBoard(boardKey, status?.clientId ?? "");
+				setConfirmingClear(false);
+				setNotice({
+					kind: "info",
+					text: `Cleared ${result.count} element${result.count === 1 ? "" : "s"}.`,
+				});
+			}),
+		[boardKey, run, status?.clientId],
+	);
+
+	const handleHoldClick = useCallback(() => {
+		if (!hold) return;
+		setDialogError(null);
+		setConflict({ conflict: hold.conflict, request: { board: hold.board }, hold });
+	}, [hold]);
+	const handleNoteClick = useCallback(() => setAskingAboutNote(true), []);
+	const handleOpenDialog = useCallback(() => {
+		setDialogError(null);
+		setDialog("open");
+	}, []);
+	const handleNewDialog = useCallback(() => {
+		setDialogError(null);
+		setDialog("new");
+	}, []);
+	const handleClearDialog = useCallback(() => setConfirmingClear(true), []);
+	const handleCloseLastPane = useCallback(() => {
+		closePane(panes[panes.length - 1] ?? "");
+	}, [closePane, panes]);
+	const handleRefreshListing = useCallback(() => {
+		void refreshBoardListing();
+	}, [refreshBoardListing]);
+	const handlePaneSelect = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+		const paneId = event.currentTarget.dataset.paneId;
+		if (paneId) setFocused(paneId);
+	}, []);
+	const handleBoardError = useCallback((error: string) => {
+		setNotice({ kind: "error", text: error, hold: true });
+	}, []);
+	const handleDismissNotice = useCallback(() => setNotice(null), []);
+	const handleCancelDialog = useCallback(() => {
+		setDialog(null);
+		setDialogError(null);
+	}, []);
+	const handleConflictSaveAs = useCallback(() => {
+		setConflict(null);
+		setDialogError(null);
+		setDialog("save-as");
+	}, []);
+	const handleCancelConflict = useCallback(() => setConflict(null), []);
+	const handleCancelNote = useCallback(() => setAskingAboutNote(false), []);
+	const handleCancelClear = useCallback(() => setConfirmingClear(false), []);
+	const visibleDoing = useMemo(() => status?.doing ?? [], [status?.doing]);
+	const dialogPanes = useMemo(
+		() =>
+			panes.map((paneId, index) => ({
+				clientId: statuses[paneId]?.clientId ?? paneId,
+				label: `pane ${index + 1}`,
+				board: statuses[paneId]?.boardKey ?? null,
+			})),
+		[panes, statuses],
+	);
 
 	useEffect(() => {
 		if (!notice || notice.hold) return;
@@ -528,11 +606,157 @@ export function Shell(): React.JSX.Element {
 	// A refused or failed library install says so in the same place everything
 	// else does. It is taken off the library rather than left there, so the
 	// notice bar stays the one thing that shows a message.
+	const { error: libraryError, dismissError } = library;
 	useEffect(() => {
-		if (!library.error) return;
-		setNotice({ kind: "error", text: library.error });
-		library.dismissError();
-	}, [library.error, library.dismissError]);
+		if (!libraryError) return;
+		const timer = window.setTimeout(() => {
+			setNotice({ kind: "error", text: libraryError });
+			dismissError();
+		}, 0);
+		return () => window.clearTimeout(timer);
+	}, [dismissError, libraryError]);
+
+	const dialogContent = useMemo(
+		() => (
+			<>
+				{dialog && (
+					<BoardDialog
+						mode={dialog}
+						current={identity}
+						panes={dialogPanes}
+						defaultPane={status?.clientId ?? null}
+						busy={busy}
+						error={dialogError}
+						onSubmit={dialog === "open" ? handleOpen : dialog === "new" ? handleNew : handleSaveAs}
+						onCancel={handleCancelDialog}
+					/>
+				)}
+
+				{conflict && (
+					<ConflictDialog
+						conflict={conflict.conflict}
+						hold={conflict.hold ?? null}
+						busy={busy}
+						onReload={handleReload}
+						onOverwrite={handleOverwrite}
+						onSaveAs={handleConflictSaveAs}
+						onCancel={handleCancelConflict}
+					/>
+				)}
+
+				{library.pending && (
+					<InstallLibraryDialog
+						install={library.pending}
+						busy={library.busy}
+						onConfirm={library.acceptInstall}
+						onCancel={library.declineInstall}
+					/>
+				)}
+
+				{askingAboutNote && writtenElsewhere && (
+					<ConfirmDialog
+						title="Somebody else wrote this note"
+						confirmLabel="Show me the note"
+						busy={busy}
+						onCancel={handleCancelNote}
+						onConfirm={handleTakeTheNote}
+						detail={
+							<>
+								<p>
+									<strong>{writtenElsewhere.file}</strong>{" "}
+									{writtenElsewhere.reason === "changed" ? (
+										<>
+											was written at {new Date(writtenElsewhere.writtenAt).toLocaleTimeString()} by
+											something that is not archboard — Obsidian, a sync client, an editor, a{" "}
+											<code>git pull</code>. This pane is showing the board as archboard last wrote
+											it.
+										</>
+									) : (
+										<>
+											is a note archboard has never read, so it cannot say what this board would
+											replace.
+										</>
+									)}
+								</p>
+								<p>
+									Nothing has been lost. Nothing has been written either: the next change to this
+									board will be refused rather than saved over theirs, and you will be offered the
+									full choice then.
+								</p>
+								<p className="hint">
+									Showing you the note replaces what is on this canvas with what is in the vault.
+									Keep a board open in one editor at a time.
+								</p>
+							</>
+						}
+					/>
+				)}
+
+				{confirmingClear && (
+					<ConfirmDialog
+						title="Clear this board?"
+						confirmLabel="Clear the board"
+						busy={busy}
+						onCancel={handleCancelClear}
+						onConfirm={handleClear}
+						detail={
+							<>
+								<p>
+									Every one of the <strong>{status?.elementCount ?? 0}</strong> element
+									{(status?.elementCount ?? 0) === 1 ? "" : "s"} on{" "}
+									<strong>{identity?.board ?? boardKey ?? "this board"}</strong>
+									{identity && identity.variant !== "current" ? (
+										<>
+											{" "}
+											<strong>@{identity.variant}</strong>
+										</>
+									) : null}{" "}
+									will be removed from the canvas.
+								</p>
+								<p className="hint">
+									{boardInfo?.savedAt || boardInfo?.loadedAt
+										? "The note in the vault keeps whatever was last saved to it, until you save the empty board over it."
+										: "This board has never been written to the vault, so there is nothing to recover it from."}
+								</p>
+							</>
+						}
+					/>
+				)}
+			</>
+		),
+		[
+			dialog,
+			identity,
+			dialogPanes,
+			status?.clientId,
+			status?.elementCount,
+			busy,
+			dialogError,
+			handleOpen,
+			handleNew,
+			handleSaveAs,
+			handleCancelDialog,
+			conflict,
+			handleReload,
+			handleOverwrite,
+			handleConflictSaveAs,
+			handleCancelConflict,
+			library.pending,
+			library.busy,
+			library.acceptInstall,
+			library.declineInstall,
+			askingAboutNote,
+			writtenElsewhere,
+			handleCancelNote,
+			handleTakeTheNote,
+			confirmingClear,
+			handleCancelClear,
+			handleClear,
+			boardKey,
+			boardInfo?.savedAt,
+			boardInfo?.loadedAt,
+		],
+	);
 
 	return (
 		<div className="shell" data-theme={theme}>
@@ -545,36 +769,26 @@ export function Shell(): React.JSX.Element {
 				hold={hold}
 				// The one thing that opens the conflict dialog while somebody is
 				// drawing: them asking for it (TASK-079).
-				onHoldClick={() => {
-					if (!hold) return;
-					setDialogError(null);
-					setConflict({ conflict: hold.conflict, request: { board: hold.board }, hold });
-				}}
+				onHoldClick={handleHoldClick}
 				writtenElsewhere={writtenElsewhere}
 				// The mark is a button and the button is not the action. Taking the
 				// note replaces this canvas with theirs, and nothing has been refused
 				// yet, so this pane's scene is the only copy left of the board archboard
 				// last wrote. One stray touch on a 75-inch panel must not be what ends
 				// it.
-				onNoteClick={() => setAskingAboutNote(true)}
+				onNoteClick={handleNoteClick}
 				paneCount={panes.length}
 				theme={theme}
 				onThemeChange={setTheme}
 				busy={busy}
-				onOpen={() => {
-					setDialogError(null);
-					setDialog("open");
-				}}
-				onNew={() => {
-					setDialogError(null);
-					setDialog("new");
-				}}
-				onClear={() => setConfirmingClear(true)}
+				onOpen={handleOpenDialog}
+				onNew={handleNewDialog}
+				onClear={handleClearDialog}
 				onAddPane={addPane}
 				// The button names no pane, so it drops the last one and keeps the
 				// one the human started in. `pane close <spec>` is how a caller says
 				// which half goes.
-				onClosePane={() => closePane(panes[panes.length - 1] ?? "")}
+				onClosePane={handleCloseLastPane}
 			/>
 
 			<div className="workspace">
@@ -584,13 +798,8 @@ export function Shell(): React.JSX.Element {
 					currentKey={boardKey}
 					busy={busy}
 					onSelect={handleNavigate}
-					onRefresh={() => {
-						void refreshBoardListing();
-					}}
-					onNew={() => {
-						setDialogError(null);
-						setDialog("new");
-					}}
+					onRefresh={handleRefreshListing}
+					onNew={handleNewDialog}
 					needsName={boardInfo?.placeholder ?? false}
 					onName={handleNameBoard}
 				/>
@@ -609,7 +818,8 @@ export function Shell(): React.JSX.Element {
 										type="button"
 										key={paneId}
 										className={`pane-tab${paneId === focused ? " focused" : ""}`}
-										onClick={() => setFocused(paneId)}
+										onClick={handlePaneSelect}
+										data-pane-id={paneId}
 									>
 										<span className="focus-dot" />
 										<span>
@@ -639,7 +849,7 @@ export function Shell(): React.JSX.Element {
 								onLibraryChange={library.reportFromPane}
 								onLibraryChangedElsewhere={library.applyFromServer}
 								onLayoutRequest={handleLayoutRequest}
-								onBoardError={(error) => setNotice({ kind: "error", text: error, hold: true })}
+								onBoardError={handleBoardError}
 							/>
 						))}
 					</div>
@@ -656,7 +866,7 @@ export function Shell(): React.JSX.Element {
 							<button
 								className="notice-dismiss"
 								type="button"
-								onClick={() => setNotice(null)}
+								onClick={handleDismissNotice}
 								aria-label="Dismiss notice"
 							>
 								<Icon name="close" size={17} />
@@ -668,7 +878,7 @@ export function Shell(): React.JSX.Element {
 				<AgentRail
 					connected={status?.connected ?? false}
 					heldBy={agentState?.heldBy ?? null}
-					doing={status?.doing ?? []}
+					doing={visibleDoing}
 					takeBack={agentState?.takeBack}
 				/>
 			</div>
@@ -690,130 +900,7 @@ export function Shell(): React.JSX.Element {
 				</div>
 			</footer>
 
-			{dialog && (
-				<BoardDialog
-					mode={dialog}
-					current={identity}
-					panes={panes.map((paneId, index) => ({
-						clientId: statuses[paneId]?.clientId ?? paneId,
-						label: `pane ${index + 1}`,
-						board: statuses[paneId]?.boardKey ?? null,
-					}))}
-					defaultPane={status?.clientId ?? null}
-					busy={busy}
-					error={dialogError}
-					onSubmit={dialog === "open" ? handleOpen : dialog === "new" ? handleNew : handleSaveAs}
-					onCancel={() => {
-						setDialog(null);
-						setDialogError(null);
-					}}
-				/>
-			)}
-
-			{conflict && (
-				<ConflictDialog
-					conflict={conflict.conflict}
-					hold={conflict.hold ?? null}
-					busy={busy}
-					onReload={handleReload}
-					onOverwrite={handleOverwrite}
-					onSaveAs={() => {
-						setConflict(null);
-						setDialogError(null);
-						setDialog("save-as");
-					}}
-					onCancel={() => setConflict(null)}
-				/>
-			)}
-
-			{library.pending && (
-				<InstallLibraryDialog
-					install={library.pending}
-					busy={library.busy}
-					onConfirm={library.acceptInstall}
-					onCancel={library.declineInstall}
-				/>
-			)}
-
-			{/*
-        Two choices, because two is all there is before a write has been
-        refused. Cancel is the default and the one focus lands on: carrying on
-        drawing costs nothing and loses nothing, and the next change is refused
-        rather than written over theirs — which is when the three outcomes
-        become reachable and the hold offers them.
-
-        It closes itself if the mark comes down while it is up, which is what
-        happens when somebody takes the note from a command line instead.
-      */}
-			{askingAboutNote && writtenElsewhere && (
-				<ConfirmDialog
-					title="Somebody else wrote this note"
-					confirmLabel="Show me the note"
-					busy={busy}
-					onCancel={() => setAskingAboutNote(false)}
-					onConfirm={handleTakeTheNote}
-					detail={
-						<>
-							<p>
-								<strong>{writtenElsewhere.file}</strong>{" "}
-								{writtenElsewhere.reason === "changed" ? (
-									<>
-										was written at {new Date(writtenElsewhere.writtenAt).toLocaleTimeString()} by
-										something that is not archboard — Obsidian, a sync client, an editor, a{" "}
-										<code>git pull</code>. This pane is showing the board as archboard last wrote
-										it.
-									</>
-								) : (
-									<>
-										is a note archboard has never read, so it cannot say what this board would
-										replace.
-									</>
-								)}
-							</p>
-							<p>
-								Nothing has been lost. Nothing has been written either: the next change to this
-								board will be refused rather than saved over theirs, and you will be offered the
-								full choice then.
-							</p>
-							<p className="hint">
-								Showing you the note replaces what is on this canvas with what is in the vault. Keep
-								a board open in one editor at a time.
-							</p>
-						</>
-					}
-				/>
-			)}
-
-			{confirmingClear && (
-				<ConfirmDialog
-					title="Clear this board?"
-					confirmLabel="Clear the board"
-					busy={busy}
-					onCancel={() => setConfirmingClear(false)}
-					onConfirm={handleClear}
-					detail={
-						<>
-							<p>
-								Every one of the <strong>{status?.elementCount ?? 0}</strong> element
-								{(status?.elementCount ?? 0) === 1 ? "" : "s"} on{" "}
-								<strong>{identity?.board ?? boardKey ?? "this board"}</strong>
-								{identity && identity.variant !== "current" ? (
-									<>
-										{" "}
-										<strong>@{identity.variant}</strong>
-									</>
-								) : null}{" "}
-								will be removed from the canvas.
-							</p>
-							<p className="hint">
-								{boardInfo?.savedAt || boardInfo?.loadedAt
-									? "The note in the vault keeps whatever was last saved to it, until you save the empty board over it."
-									: "This board has never been written to the vault, so there is nothing to recover it from."}
-							</p>
-						</>
-					}
-				/>
-			)}
+			{dialogContent}
 		</div>
 	);
 }

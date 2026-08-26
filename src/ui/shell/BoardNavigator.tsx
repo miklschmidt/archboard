@@ -73,14 +73,20 @@ export function BoardNavigator({
 			scratch: scratchGroup?.variants[0] ?? null,
 		};
 	}, [listing]);
-	const selectEntry = useCallback((event: React.MouseEvent<HTMLButtonElement>): void => {
-		const key = event.currentTarget.dataset.boardKey;
-		if (key) onSelect(key);
-	}, [onSelect]);
-	const selectScratch = useCallback((event: React.MouseEvent<HTMLButtonElement>): void => {
-		const key = event.currentTarget.dataset.boardKey;
-		if (key) onSelect(key);
-	}, [onSelect]);
+	const selectEntry = useCallback(
+		(event: React.MouseEvent<HTMLButtonElement>): void => {
+			const key = event.currentTarget.dataset.boardKey;
+			if (key) onSelect(key);
+		},
+		[onSelect],
+	);
+	const selectScratch = useCallback(
+		(event: React.MouseEvent<HTMLButtonElement>): void => {
+			const key = event.currentTarget.dataset.boardKey;
+			if (key) onSelect(key);
+		},
+		[onSelect],
+	);
 
 	return (
 		<aside className="board-nav" aria-label="Boards and variants">
