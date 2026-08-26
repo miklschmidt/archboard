@@ -13,7 +13,7 @@ import {
 	type OptionParameter,
 } from "../command-contract/contract.js";
 import { HoldReportSchema, ServerElementSchema } from "../command-contract/schemas.js";
-import type { FlagSpecs } from "./args.js";
+import type { FlagSpecs } from "../command-contract/route-options.js";
 
 export const SNAPSHOT_FLAG_SPEC = { force: { takesValue: false } } as const satisfies FlagSpecs;
 const snapshotFlagParameters = (): OptionParameter[] =>

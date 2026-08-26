@@ -1,7 +1,7 @@
 # Command contract proof design
 
-TASK-123.01 proves a schema-defined CLI without migrating the other commands.
-The fixed review base is `43d0b982ac39346ae3057edf3c9fdffe400b2853`.
+TASK-123.02 completes the schema-defined CLI proven by TASK-123.01. The fixed
+compatibility and review base is `6c42fca6c0d5b9ecaa5ad40fde14ede684722d5a`.
 
 ## Module and seam
 
@@ -12,12 +12,10 @@ argv)`, bootstrap handling, and contract introspection.
 parts of the typed handler interface and remain Commander-free, but they are
 not emitted by introspection. `src/cli/commands/run.ts` is the production adapter at that seam and
 remains the sole registry. Its route tree gives every root and child its own
-contract or legacy owner, parser owner, handler owner, parent, and legacy argv
-rule. A root may therefore migrate without hiding a child. The same tree
+contract, parser owner, handler owner, and parent. The same tree
 derives the 57-path surface, flattened generated registry, longest-path
-dispatch, default aliases, and namespace refusals. Query, update, viewport,
-export, status, and board save use contracts at the foundation checkpoint. The
-other legacy paths stay usable until their family moves.
+dispatch, default aliases, and namespace refusals. All 57 paths use contracts;
+there is no legacy dispatcher, raw-argv handler, or second subcommand catalogue.
 
 The private implementation uses one concrete Commander parser, the process and
 filesystem host, and the production server/browser prerequisite checks. These
@@ -121,11 +119,11 @@ held note, and continuation in that order.
 ## CLI-only compatibility
 
 `src/bin.ts` removes one `--url` before importing runtime configuration.
-`run.ts` retains existing help, version, globals, error mapping, and the mixed
+`run.ts` retains existing help, version, globals, error mapping, and the
 route tree. The checker compares every flattened route's parent, parser owner,
-handler owner, and kind to the canonical audit. Contract identities and counts
-come from the tree, so registering the next contract changes no second migrated
-path list. Introspection is an in-process generation interface and checked-in
+handler owner, and contract identity to the canonical audit. It requires exactly
+57 contracts, zero legacy routes, no family-owned subcommand catalogue, and no
+obsolete parser, stream, or proof-monolith source. Introspection is an in-process generation interface and checked-in
 JSON. It is not a public command, REST route, MCP replacement, or second agent
 command surface.
 
