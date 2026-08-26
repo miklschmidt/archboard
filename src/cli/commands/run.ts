@@ -1,4 +1,12 @@
-import { CliUsageError } from "./args.js";
+import { CliUsageError, type AnyCommandContract } from "../command-contract/contract.js";
+import {
+	exportContract,
+	queryContract,
+	updateContract,
+	viewportContract,
+	WRITE_ANSWER,
+} from "../command-contract/proofs.js";
+import { runCommand } from "../command-contract/runner.js";
 import {
 	BOARD_REFUSAL_CODES,
 	boardHoldSeen,
@@ -13,7 +21,6 @@ import * as elements from "./elements.js";
 import * as scene from "./scene.js";
 import { panes, selection } from "./selection.js";
 import { pane, SUBCOMMANDS as PANE_SUBCOMMANDS } from "./pane.js";
-import { viewport } from "./viewport.js";
 import { promote, demote } from "./promote.js";
 import { repo, SUBCOMMANDS as REPO_SUBCOMMANDS } from "./repo.js";
 import { snapshot, ACTIONS as SNAPSHOT_ACTIONS } from "./snapshot.js";
@@ -26,7 +33,8 @@ import { arrange, OPERATIONS as ARRANGE_OPERATIONS } from "./arrange.js";
 import { installSkill } from "./install-skill.js";
 import { library, ACTIONS as LIBRARY_ACTIONS } from "./library.js";
 
-interface Command {
+interface LegacyCommand {
+	kind?: "legacy";
 	handler: (argv: string[]) => Promise<void>;
 	summary: string;
 	usage: string;
@@ -36,27 +44,18 @@ interface Command {
 	subcommands?: readonly string[];
 }
 
-/**
- * What every write answers with, and the one flag that changes it (TASK-075).
- *
- * Written once, in the four places that write elements, because the four have
- * to say the same thing — and because `--document` is the kind of flag that
- * looks harmless until it is inside a loop.
- */
-const WRITE_ANSWER = [
-	"  ANSWERS WITH WHAT THE BOARD BECAME: `elements` is every element the write touched in",
-	"  its resulting form, including what the server made and you never named — the ids it",
-	"  minted, the text element it expanded from a `label`, the arrows it re-routed behind a",
-	"  move. `fingerprint` is the board in one line: how many elements, the sha-256 of its",
-	"  note, and which edit of that note this write produced. Keep the last one and you can",
-	"  tell in a single comparison whether anything you did not do has changed, instead of",
-	"  re-reading the board — and pass `fingerprint.version` as --expect-version on your",
-	"  next write to have it refused if somebody got there first.",
-	"",
-	"  --document adds the whole board. OFF BY DEFAULT AND USUALLY WRONG: 300 elements is",
-	"  about 60,000 tokens, so a loop that asks for it pulls the board through a context once",
-	"  per box. Use `describe` for a summary or `query` for a part.",
-].join("\n");
+interface ContractCommand {
+	kind: "contract";
+	contract: AnyCommandContract;
+	subcommands?: readonly string[];
+}
+
+type Command = LegacyCommand | ContractCommand;
+
+const commandSummary = (command: Command) =>
+	command.kind === "contract" ? command.contract.summary : command.summary;
+const commandUsage = (command: Command) =>
+	command.kind === "contract" ? command.contract.usage : command.usage;
 
 const COMMANDS: Record<string, Command> = {
 	start: { handler: server.start, summary: "Start the canvas server (detached)", usage: "start" },
@@ -87,13 +86,8 @@ const COMMANDS: Record<string, Command> = {
 		].join("\n"),
 	},
 	update: {
-		handler: elements.update,
-		summary: "Update one element",
-		usage: [
-			'update <id> --set \'{"backgroundColor":"#ffc9c9"}\' [--document]',
-			"",
-			WRITE_ANSWER,
-		].join("\n"),
+		kind: "contract",
+		contract: updateContract,
 	},
 	delete: {
 		handler: elements.del,
@@ -110,10 +104,8 @@ const COMMANDS: Record<string, Command> = {
 	},
 	get: { handler: elements.get, summary: "Get one element by id", usage: "get <id>" },
 	query: {
-		handler: elements.query,
-		summary: "Query elements (server + typed client-side filters)",
-		usage:
-			"query [--type rectangle] [--bbox x0,y0,x1,y1] [--filter locked=true] [--filter-json '{...}']",
+		kind: "contract",
+		contract: queryContract,
 	},
 	selection: {
 		handler: selection,
@@ -177,22 +169,8 @@ const COMMANDS: Record<string, Command> = {
 		].join("\n"),
 	},
 	viewport: {
-		handler: viewport,
-		summary: "Point a pane's camera: fit, centre, or zoom (needs a browser tab)",
-		usage: [
-			"viewport --fit [--zoom-factor 0.8] [--pane <spec>]",
-			"viewport --ids a,b,c [--zoom-factor 0.8] [--pane <spec>]",
-			"viewport --element <id> [--pane <spec>]",
-			"viewport --zoom 1.5 [--offset-x 0] [--offset-y 0] [--pane <spec>]",
-			"",
-			"  Exactly one of those four. --fit frames everything on the board, --ids frames those elements,",
-			"  --element centres on one without changing zoom, and the last sets explicit camera values.",
-			"  --zoom-factor is the padding on a fit: lower leaves more room around the content.",
-			"",
-			"  It names a PANE, not a board, because a pane holds one board and that settles which is meant",
-			"  (ADR 0009). With one pane on screen that is the one; with two, --pane says which half moves,",
-			"  and without it the pane that answers for the browser does.",
-		].join("\n"),
+		kind: "contract",
+		contract: viewportContract,
 	},
 	demote: {
 		handler: demote,
@@ -376,10 +354,8 @@ const COMMANDS: Record<string, Command> = {
 		].join("\n"),
 	},
 	export: {
-		handler: scene.exportCmd,
-		summary: "Export the scene as .excalidraw JSON or Obsidian .excalidraw.md",
-		usage:
-			"export [--out scene.excalidraw | note.excalidraw.md] [--format json|obsidian] [--force] (a .md out path implies obsidian; --force overwrites a non-Excalidraw destination, still preserving its frontmatter)",
+		kind: "contract",
+		contract: exportContract,
 	},
 	import: {
 		handler: scene.importCmd,
@@ -459,6 +435,13 @@ export function cliSurface(): { name: string; subcommands: readonly string[] }[]
 	}));
 }
 
+/** The one registry, projected for generated contract metadata. */
+export function cliContractRegistry(): Array<{ name: string; contract?: AnyCommandContract }> {
+	return Object.entries(COMMANDS).map(([name, command]) =>
+		command.kind === "contract" ? { name, contract: command.contract } : { name },
+	);
+}
+
 function printHelp(): void {
 	const lines = [
 		`archboard ${packageVersion()} — Excalidraw architecture canvas for AI coding agents`,
@@ -472,7 +455,9 @@ function printHelp(): void {
 		"  private — there is nothing to install from npm.",
 		"",
 		"Commands:",
-		...Object.entries(COMMANDS).map(([name, cmd]) => `  ${name.padEnd(14)} ${cmd.summary}`),
+		...Object.entries(COMMANDS).map(
+			([name, command]) => `  ${name.padEnd(14)} ${commandSummary(command)}`,
+		),
 		"",
 		"Conventions:",
 		"  Results are JSON on stdout — except `describe` (plain text), `selection --text`,",
@@ -590,8 +575,9 @@ export async function runCli(argv: string[]): Promise<void> {
 	if (!name || name === "help" || name === "--help" || name === "-h") {
 		const topic = name === "help" ? rest[0] : undefined;
 		if (topic && COMMANDS[topic]) {
+			const command = COMMANDS[topic];
 			process.stdout.write(
-				`Usage: archboard ${COMMANDS[topic].usage}\n  ${COMMANDS[topic].summary}\n`,
+				`Usage: archboard ${commandUsage(command)}\n  ${commandSummary(command)}\n`,
 			);
 		} else {
 			printHelp();
@@ -615,7 +601,8 @@ export async function runCli(argv: string[]): Promise<void> {
 		setRequestedBoard(takeBoardFlag(rest));
 		setWriteDoing(takeDoingFlag(rest));
 		setExpectedVersion(takeExpectVersionFlag(rest));
-		await command.handler(rest);
+		if (command.kind === "contract") await runCommand(command.contract, rest);
+		else await command.handler(rest);
 	} catch (error) {
 		if (!(error as Error & { quiet?: boolean }).quiet) {
 			process.stderr.write(`Error: ${formatBoardRefusal(error) ?? (error as Error).message}\n`);
@@ -632,7 +619,7 @@ export async function runCli(argv: string[]): Promise<void> {
 			);
 		}
 		if (error instanceof CliUsageError) {
-			process.stderr.write(`Usage: archboard ${command.usage}\n`);
+			process.stderr.write(`Usage: archboard ${commandUsage(command)}\n`);
 		}
 		process.exitCode = exitCodeFor(error);
 	}

@@ -153,6 +153,13 @@ note archboard did not write. About fifteen seconds.
 
 ## Wire and lock checks
 
+- `bun run test:contracts` tests the Archboard-owned command-contract interface.
+  Its parser fake returns a prepared invocation and contains no parsing logic.
+  The tests reject malformed public results and private file artifacts before
+  stdout or a local write, pin command-specific held presentation, and prove
+  generated introspection omits private execution and artifact data. The
+  black-box argv cases in `test:cli` continue through the real Commander
+  adapter and the package binary.
 - `bun run test:cli` resolves `bin.archboard` from `package.json` and drives
   that executable from outside the checkout. It covers no-argument help and
   every command/subcommand topic exposed by production `cliSurface()` data. A

@@ -5,6 +5,7 @@
 // contract. Command inventory always comes from the production declarations.
 
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -15,6 +16,12 @@ const pkg = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"));
 const declaredBin = pkg.bin?.archboard;
 if (typeof declaredBin !== "string") throw new Error("package.json must declare bin.archboard");
 const bin = resolve(repoRoot, declaredBin);
+const argvGolden = JSON.parse(
+	readFileSync(
+		join(repoRoot, "src", "cli", "command-contract", "tests", "argv-golden.json"),
+		"utf8",
+	),
+);
 const { cliSurface } = await import(join(repoRoot, "src", "cli", "commands", "run.ts"));
 const { CANVAS_SERVICE_NAME } = await import(
 	join(repoRoot, "src", "runtime", "engine", "canvas-client.ts")
@@ -74,6 +81,7 @@ const element = { id: "shape1", type: "rectangle", x: 0, y: 0, width: 100, heigh
 const document = [element];
 const fingerprint = { elements: 1, note: "contract-note", version: 7 };
 const requests = [];
+let browserClients = 1;
 
 const server = Bun.serve({
 	hostname: "127.0.0.1",
@@ -81,7 +89,11 @@ const server = Bun.serve({
 	async fetch(request) {
 		const url = new URL(request.url);
 		if (url.pathname === "/health") {
-			return Response.json({ service: CANVAS_SERVICE_NAME, status: "ok" });
+			return Response.json({
+				service: CANVAS_SERVICE_NAME,
+				status: "ok",
+				websocket_clients: browserClients,
+			});
 		}
 
 		const text = request.method === "GET" ? "" : await request.text();
@@ -94,6 +106,13 @@ const server = Bun.serve({
 			}
 		}
 		requests.push({ method: request.method, url, body });
+		const held =
+			url.searchParams.get("board") === "held"
+				? { board: "held", message: "held board diagnostic", writes: 1 }
+				: undefined;
+		if (request.method === "POST" && url.pathname === "/api/viewport") {
+			return Response.json({ success: true, message: "Viewport updated" });
+		}
 
 		if (request.method !== "GET" && !url.searchParams.get("doing")) {
 			return Response.json(
@@ -115,7 +134,13 @@ const server = Bun.serve({
 			);
 		}
 		if (request.method === "GET" && url.pathname === "/api/elements") {
-			return Response.json({ success: true, elements: document });
+			return Response.json({ success: true, elements: document, ...(held ? { held } : {}) });
+		}
+		if (request.method === "GET" && url.pathname === "/api/elements/search") {
+			return Response.json({ success: true, elements: document, ...(held ? { held } : {}) });
+		}
+		if (request.method === "GET" && url.pathname === "/api/files") {
+			return Response.json({ success: true, files: {}, ...(held ? { held } : {}) });
 		}
 
 		const askedForDocument = url.searchParams.get("document") === "1" || body?.document === true;
@@ -129,6 +154,7 @@ const server = Bun.serve({
 			deleted: url.pathname.endsWith("/changes") ? 1 : 0,
 			count: 1,
 			fingerprint,
+			...(held ? { held } : {}),
 			...(askedForDocument ? { document } : {}),
 		};
 		if (url.pathname.startsWith("/api/elements")) return Response.json(answer);
@@ -169,6 +195,26 @@ try {
 		"no-argument help describes no alternate protocol transport",
 		!/(model context protocol|json-rpc|stdio server)/i.test(bare.stdout),
 	);
+
+	for (const golden of argvGolden.cases) {
+		const result = await cli(golden.argv);
+		const expectedStdout = golden.stdout.replaceAll("{{VERSION}}", pkg.version);
+		const expectedStderr = golden.stderr.replaceAll("{{VERSION}}", pkg.version);
+		check(`${golden.name} exit`, result.status === golden.status, String(result.status));
+		check(`${golden.name} stdout`, result.stdout === expectedStdout, result.stdout);
+		check(`${golden.name} stderr`, result.stderr === expectedStderr, result.stderr);
+	}
+	for (const alias of [["-h"], ["--help"], ["help", "unknown-topic"]]) {
+		const result = await cli(alias);
+		const digest = createHash("sha256").update(result.stdout).digest("hex");
+		check(`${alias.join(" ")} exits normally`, result.status === 0, String(result.status));
+		check(`${alias.join(" ")} owns stdout`, result.stderr === "", result.stderr);
+		check(
+			`${alias.join(" ")} keeps legacy help bytes`,
+			digest === argvGolden.generalHelpSha256,
+			digest,
+		);
+	}
 
 	const surface = cliSurface();
 	check("the CLI declares commands", surface.length > 0, `${surface.length} commands`);
@@ -231,6 +277,236 @@ try {
 			);
 		}
 	}
+
+	const queryBefore = requests.length;
+	const queried = await cli([
+		"--url",
+		canvasUrl,
+		"query",
+		"ignored-position",
+		"--type=ellipse",
+		"--type",
+		"rectangle",
+		"--filter",
+		"locked=true",
+		"--filter",
+		"id=shape1",
+		"--board=contract",
+	]);
+	check("query real adapter exits normally", queried.status === 0, String(queried.status));
+	check("query real adapter keeps stderr clean", queried.stderr === "", queried.stderr);
+	check(
+		"query keeps its bare-array result",
+		Array.isArray(parseJson("query JSON", queried.stdout)),
+	);
+	const queryRequest = requests
+		.slice(queryBefore)
+		.find((request) => request.url.pathname.startsWith("/api/elements/search"));
+	check(
+		"query nonrepeatable flags remain last-wins",
+		queryRequest?.url.searchParams.get("type") === "rectangle",
+	);
+
+	const stdinBefore = requests.length;
+	const stdinUpdate = await cli(
+		[
+			"update",
+			"shape1",
+			"-",
+			"ignored-tail",
+			"--board",
+			"contract",
+			"--doing",
+			"updating from stdin",
+		],
+		{ url: canvasUrl, input: '{"x":44}' },
+	);
+	check("update dash stdin exits normally", stdinUpdate.status === 0, String(stdinUpdate.status));
+	const stdinWrite = writesSince(stdinBefore)[0];
+	check("update dash routes stdin and ignores excess positionals", stdinWrite?.body?.x === 44);
+
+	const repeatedBefore = requests.length;
+	const repeatedUpdate = await cli(
+		[
+			"update",
+			"shape1",
+			"--set",
+			'{"x":1}',
+			'--set={"x":2}',
+			"--document",
+			"--document",
+			"--board",
+			"contract",
+			"--doing",
+			"checking repeated flags",
+		],
+		{ url: canvasUrl },
+	);
+	check(
+		"repeated update flags exit normally",
+		repeatedUpdate.status === 0,
+		String(repeatedUpdate.status),
+	);
+	const repeatedWrite = writesSince(repeatedBefore)[0];
+	check("nonrepeatable --set remains last-wins", repeatedWrite?.body?.x === 2);
+	check(
+		"repeated boolean flags remain true",
+		repeatedWrite?.url.searchParams.get("document") === "1",
+	);
+
+	const optionLooking = await cli(["update", "shape1", "--set", "--document"]);
+	check(
+		"required options consume option-looking values",
+		optionLooking.status === 2,
+		String(optionLooking.status),
+	);
+	check(
+		"the consumed value reaches Zod/local JSON validation",
+		/Invalid JSON in --set/.test(optionLooking.stderr),
+	);
+
+	const closedUrl = "http://127.0.0.1:1";
+	const queryPrecedence = await cli(["query", "--bbox", "not-a-box"], { url: closedUrl });
+	check(
+		"query keeps server-before-bbox precedence",
+		queryPrecedence.status === 3,
+		String(queryPrecedence.status),
+	);
+	const filterBefore = requests.length;
+	const queryFilterPrecedence = await cli(
+		["query", "--filter", "missing-equals", "--board", "contract"],
+		{
+			url: canvasUrl,
+		},
+	);
+	check(
+		"query invalid filter exits usage",
+		queryFilterPrecedence.status === 2,
+		String(queryFilterPrecedence.status),
+	);
+	check(
+		"query keeps read-before-filter precedence",
+		requests.slice(filterBefore).some((request) => request.url.pathname === "/api/elements"),
+	);
+
+	const viewportBefore = requests.length;
+	const moved = await cli(["viewport", "ignored", "--zoom=1.5", "--offset-x", "2"], {
+		url: canvasUrl,
+	});
+	check("viewport real adapter exits normally", moved.status === 0, String(moved.status));
+	const viewportRequest = requests
+		.slice(viewportBefore)
+		.find((request) => request.url.pathname === "/api/viewport");
+	check(
+		"viewport preserves numeric coercion after browser preflight",
+		viewportRequest?.body?.zoom === 1.5,
+	);
+	check("viewport preserves ignored excess positionals", viewportRequest?.body?.offsetX === 2);
+	const numericBeforeServer = await cli(["viewport", "--zoom", "not-a-number"], { url: closedUrl });
+	check(
+		"viewport keeps server before numeric refusal",
+		numericBeforeServer.status === 3,
+		String(numericBeforeServer.status),
+	);
+	browserClients = 0;
+	const numericBeforeBrowser = await cli(["viewport", "--zoom", "not-a-number"], {
+		url: canvasUrl,
+	});
+	browserClients = 1;
+	check(
+		"viewport keeps browser before numeric refusal",
+		numericBeforeBrowser.status === 4,
+		String(numericBeforeBrowser.status),
+	);
+	const crossFieldBeforeServer = await cli(["viewport", "--fit", "--element", "shape1"], {
+		url: closedUrl,
+	});
+	check(
+		"viewport keeps cross-field refusal before server",
+		crossFieldBeforeServer.status === 2,
+		String(crossFieldBeforeServer.status),
+	);
+
+	const rawExport = await cli(["export", "ignored", "--board", "contract"], { url: canvasUrl });
+	check("raw export exits normally", rawExport.status === 0, String(rawExport.status));
+	check(
+		"raw export owns stdout without a wrapper",
+		parseJson("raw export", rawExport.stdout)?.source === "archboard",
+	);
+	check("raw export bypasses held diagnostics", rawExport.stderr === "", rawExport.stderr);
+
+	const fileExport = await cli(["export", "--out=-", "--board", "contract"], { url: canvasUrl });
+	const fileReceipt = parseJson("file export receipt", fileExport.stdout);
+	check("export --out - exits normally", fileExport.status === 0, String(fileExport.status));
+	check("export --out - remains a literal file", fileReceipt?.file === join(outside, "-"));
+	check(
+		"export file receipt follows JSON stream ownership",
+		fileExport.stderr === "",
+		fileExport.stderr,
+	);
+	const localFormat = await cli(["export", "--format", "invalid"], { url: closedUrl });
+	check(
+		"export format refusal stays before server",
+		localFormat.status === 2,
+		String(localFormat.status),
+	);
+	const unsafeTarget = join(outside, "unsafe.excalidraw.md");
+	writeFileSync(unsafeTarget, "ordinary note");
+	const unsafeExport = await cli(["export", "--out", unsafeTarget], { url: closedUrl });
+	check(
+		"export overwrite refusal stays before server",
+		unsafeExport.status === 2,
+		String(unsafeExport.status),
+	);
+	check(
+		"export overwrite refusal leaves the target unchanged",
+		readFileSync(unsafeTarget, "utf8") === "ordinary note",
+	);
+
+	const heldQuery = await cli(["query", "--board", "held"], { url: canvasUrl });
+	check(
+		"held query keeps its bare array",
+		Array.isArray(parseJson("held query", heldQuery.stdout)),
+	);
+	check(
+		"held query writes only the note to stderr",
+		heldQuery.stderr === "held board diagnostic\n",
+		heldQuery.stderr,
+	);
+
+	const heldUpdate = await cli(
+		["update", "shape1", "--set", '{"x":3}', "--board", "held", "--doing", "checking held update"],
+		{ url: canvasUrl },
+	);
+	check(
+		"held update adds the public held field",
+		parseJson("held update", heldUpdate.stdout)?.held?.board === "held",
+	);
+	check(
+		"held update also owns its stderr note",
+		heldUpdate.stderr === "held board diagnostic\n",
+		heldUpdate.stderr,
+	);
+
+	const heldRaw = await cli(["export", "--board", "held"], { url: canvasUrl });
+	check("held raw export bypasses held stderr", heldRaw.stderr === "", heldRaw.stderr);
+	check(
+		"held raw export remains raw content",
+		parseJson("held raw export", heldRaw.stdout)?.source === "archboard",
+	);
+
+	const heldFile = await cli(["export", "--out", "held.excalidraw", "--board", "held"], {
+		url: canvasUrl,
+	});
+	check(
+		"held file receipt adds the public held field",
+		parseJson("held file", heldFile.stdout)?.held?.board === "held",
+	);
+	check(
+		"held file receipt also owns its stderr note",
+		heldFile.stderr === "held board diagnostic\n",
+		heldFile.stderr,
+	);
 
 	const scenePath = join(outside, "contract.excalidraw");
 	writeFileSync(scenePath, JSON.stringify({ type: "excalidraw", version: 2, elements: document }));
