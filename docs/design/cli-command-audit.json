@@ -152,7 +152,7 @@
 		},
 		{
 			"path": "selection",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/selection.ts",
 			"stdout": "json object or text",
 			"result": "selection report or rendered text",
@@ -167,7 +167,7 @@
 		},
 		{
 			"path": "panes",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/selection.ts",
 			"stdout": "json object or text",
 			"result": "ordered pane report",
@@ -422,7 +422,7 @@
 		},
 		{
 			"path": "compare",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/compare.ts",
 			"stdout": "json object",
 			"result": "semantic node/edge/layout diff",
@@ -437,7 +437,7 @@
 		},
 		{
 			"path": "changes",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/changes.ts",
 			"stdout": "json object or text",
 			"result": "cursor and semantic events",
@@ -527,7 +527,7 @@
 		},
 		{
 			"path": "describe",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/scene.ts",
 			"stdout": "plain text",
 			"result": "AI-readable board description",

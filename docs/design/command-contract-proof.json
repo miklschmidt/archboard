@@ -68,20 +68,16 @@
 		{
 			"name": "selection",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/selection.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "selection",
-			"legacyArgv": "root-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "panes",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/selection.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "panes",
-			"legacyArgv": "root-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "promote",
@@ -239,20 +235,16 @@
 		{
 			"name": "compare",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/compare.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "compare",
-			"legacyArgv": "root-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "changes",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/changes.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "changes",
-			"legacyArgv": "root-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "claim",
@@ -307,11 +299,9 @@
 		{
 			"name": "describe",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/scene.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "describe",
-			"legacyArgv": "root-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "screenshot",
@@ -2161,6 +2151,210 @@
 			]
 		},
 		{
+			"name": "selection",
+			"path": ["selection"],
+			"summary": "What a human currently has selected on the board",
+			"usage": "selection [--text]",
+			"description": "Reads the server-cached browser selection without retransmitting the scene.",
+			"examples": ["archboard selection --board system"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "text",
+					"spellings": ["--text"],
+					"value": "none",
+					"description": "Print the human-readable report"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"text": {
+							"default": false,
+							"type": "boolean"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["text", "tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"anyOf": [
+					{},
+					{
+						"type": "string"
+					}
+				]
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {
+						"key": "text",
+						"present": false
+					},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Structured view state",
+					"presentation": ["result", "held-note"]
+				},
+				{
+					"id": "text",
+					"when": {
+						"key": "text",
+						"present": true
+					},
+					"mode": "text",
+					"held": "stderr-note",
+					"description": "Human-readable view state",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board"],
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/selection",
+					"cardinality": "one",
+					"description": "Read the current selection"
+				}
+			]
+		},
+		{
+			"name": "panes",
+			"path": ["panes"],
+			"summary": "What the human is currently looking at — pane by pane",
+			"usage": "panes [--text]",
+			"description": "Reads pane layout and view state, including the valid no-pane state.",
+			"examples": ["archboard panes --board system"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "text",
+					"spellings": ["--text"],
+					"value": "none",
+					"description": "Print the human-readable report"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"text": {
+							"default": false,
+							"type": "boolean"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["text", "tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"anyOf": [
+					{},
+					{
+						"type": "string"
+					}
+				]
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {
+						"key": "text",
+						"present": false
+					},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Structured view state",
+					"presentation": ["result", "held-note"]
+				},
+				{
+					"id": "text",
+					"when": {
+						"key": "text",
+						"present": true
+					},
+					"mode": "text",
+					"held": "stderr-note",
+					"description": "Human-readable view state",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server"],
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/panes",
+					"cardinality": "one",
+					"description": "Read pane view state"
+				}
+			]
+		},
+		{
 			"name": "viewport",
 			"path": ["viewport"],
 			"summary": "Point a pane's camera: fit, centre, or zoom (needs a browser tab)",
@@ -2655,6 +2849,372 @@
 					"path": "/api/boards/save",
 					"cardinality": "one",
 					"description": "One board-note save attempt"
+				}
+			]
+		},
+		{
+			"name": "compare",
+			"path": ["compare"],
+			"summary": "Structured semantic diff between two variants of a board",
+			"usage": "compare <from> [to]",
+			"description": "Returns the complete semantic comparison without opening either board.",
+			"examples": ["archboard compare payments payments@option-a"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "fromOption",
+					"spellings": ["--from"],
+					"value": "required",
+					"description": "From board"
+				},
+				{
+					"kind": "option",
+					"key": "toOption",
+					"spellings": ["--to"],
+					"value": "required",
+					"description": "To board"
+				},
+				{
+					"kind": "positional",
+					"key": "from",
+					"name": "from",
+					"description": "From board"
+				},
+				{
+					"kind": "positional",
+					"key": "to",
+					"name": "to",
+					"description": "To board"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "extra",
+					"repeatable": true,
+					"description": "Unexpected extra board arguments"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"fromOption": {
+							"type": "string"
+						},
+						"toOption": {
+							"type": "string"
+						},
+						"from": {
+							"type": "string"
+						},
+						"to": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema"
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Complete comparison",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server"],
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/boards/compare",
+					"cardinality": "one",
+					"description": "Read the semantic comparison"
+				}
+			]
+		},
+		{
+			"name": "changes",
+			"path": ["changes"],
+			"summary": "Semantic changes on the board since a cursor — what it became, not which pixels moved",
+			"usage": "changes --board <key> [--since <cursor>] [--coalesce] [--detail] [--text]",
+			"description": "Reads cursor-based semantic change events or their net coalesced difference.",
+			"examples": ["archboard changes --board system --since 4"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "since",
+					"spellings": ["--since"],
+					"value": "required",
+					"description": "Previous response cursor"
+				},
+				{
+					"kind": "option",
+					"key": "coalesce",
+					"spellings": ["--coalesce"],
+					"value": "none",
+					"description": "Return one net difference"
+				},
+				{
+					"kind": "option",
+					"key": "detail",
+					"spellings": ["--detail"],
+					"value": "none",
+					"description": "Include detailed changes"
+				},
+				{
+					"kind": "option",
+					"key": "text",
+					"spellings": ["--text"],
+					"value": "none",
+					"description": "Print a human-readable report"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"since": {
+							"type": "string"
+						},
+						"coalesce": {
+							"default": false,
+							"type": "boolean"
+						},
+						"detail": {
+							"default": false,
+							"type": "boolean"
+						},
+						"text": {
+							"default": false,
+							"type": "boolean"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["coalesce", "detail", "text", "tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"anyOf": [
+					{
+						"type": "object",
+						"properties": {
+							"success": {
+								"type": "boolean"
+							},
+							"board": {
+								"type": "string"
+							},
+							"feedId": {
+								"type": "string"
+							},
+							"cursor": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 9007199254740991
+							},
+							"events": {
+								"type": "array",
+								"items": {
+									"type": "object",
+									"propertyNames": {
+										"type": "string"
+									},
+									"additionalProperties": {}
+								}
+							},
+							"held": {
+								"type": "object",
+								"properties": {
+									"board": {
+										"type": "string"
+									},
+									"message": {
+										"type": "string"
+									}
+								},
+								"required": ["board", "message"],
+								"additionalProperties": {}
+							}
+						},
+						"required": ["success", "board", "cursor", "events"],
+						"additionalProperties": {}
+					},
+					{
+						"type": "string"
+					}
+				]
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {
+						"key": "text",
+						"present": false
+					},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Structured change feed",
+					"presentation": ["result", "held-note"]
+				},
+				{
+					"id": "text",
+					"when": {
+						"key": "text",
+						"present": true
+					},
+					"mode": "text",
+					"held": "stderr-note",
+					"description": "Human-readable change feed",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board"],
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/changes",
+					"cardinality": "one",
+					"description": "Read semantic changes"
+				}
+			]
+		},
+		{
+			"name": "describe",
+			"path": ["describe"],
+			"summary": "AI-readable scene description (plain text)",
+			"usage": "describe",
+			"description": "Returns the complete human-readable description for the named board.",
+			"examples": ["archboard describe --board system"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "string"
+			},
+			"output": [
+				{
+					"id": "text",
+					"when": {},
+					"mode": "text",
+					"held": "stderr-note",
+					"description": "Scene description",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board"],
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/elements",
+					"cardinality": "one",
+					"description": "Read scene elements"
+				},
+				{
+					"method": "GET",
+					"path": "/api/boards/info",
+					"cardinality": "one",
+					"description": "Read the board heading"
 				}
 			]
 		},
@@ -3349,8 +3909,6 @@
 		}
 	],
 	"legacyPaths": [
-		"selection",
-		"panes",
 		"promote",
 		"pane",
 		"pane open",
@@ -3365,14 +3923,11 @@
 		"board info",
 		"board new",
 		"board open",
-		"compare",
-		"changes",
 		"claim",
 		"release",
 		"inject",
 		"inject status",
 		"inject test",
-		"describe",
 		"screenshot",
 		"mermaid",
 		"snapshot",

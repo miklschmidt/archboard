@@ -24,14 +24,74 @@ async function readTextFileOrStdin(inputPath: string | undefined): Promise<strin
 	return fs.readFileSync(path.resolve(inputPath), "utf-8");
 }
 
-export async function describe(argv: string[]): Promise<void> {
-	parseArgs(argv, {});
-	await ensureCanvasRunning();
-	const elements = await getElements();
-	const heading = await boardHeading();
-	// Plain text by design: this is the human/agent-readable scene summary
-	process.stdout.write((heading ? heading + "\n\n" : "") + describeScene(elements) + "\n");
-}
+export const DescribeInputSchema = z.object({ tail: z.array(z.string()).default([]) });
+export type DescribeInput = z.infer<typeof DescribeInputSchema>;
+export const DescribeResultSchema = z.string();
+export type DescribeResult = z.infer<typeof DescribeResultSchema>;
+
+export const describeContract = defineCommand({
+	path: ["describe"],
+	summary: "AI-readable scene description (plain text)",
+	usage: "describe",
+	description: "Returns the complete human-readable description for the named board.",
+	examples: ["archboard describe --board system"],
+	parameters: [
+		{
+			kind: "positional",
+			key: "tail",
+			name: "ignored",
+			repeatable: true,
+			route: "pass-through",
+			description: "Legacy ignored positional content",
+		},
+	],
+	input: { ingress: DescribeInputSchema },
+	result: DescribeResultSchema,
+	output: {
+		cases: [
+			{
+				id: "text",
+				when: {},
+				mode: "text",
+				held: "stderr-note",
+				description: "Scene description",
+				presentation: ["result", "held-note"],
+			},
+		],
+		select: () => "text",
+	},
+	prerequisites: ["server", "board"],
+	effects: ["read"],
+	refusals: [
+		{ code: "BOARD_REQUIRED", exit: 2, stream: "stderr", description: "No board was named." },
+		{
+			code: "CANVAS_UNREACHABLE",
+			exit: 3,
+			stream: "stderr",
+			description: "The canvas could not be reached.",
+		},
+	],
+	relationships: [
+		{
+			method: "GET",
+			path: "/api/elements",
+			cardinality: "one",
+			description: "Read scene elements",
+		},
+		{
+			method: "GET",
+			path: "/api/boards/info",
+			cardinality: "one",
+			description: "Read the board heading",
+		},
+	],
+	async handler(_input, context) {
+		await context.require("server", "describe");
+		const elements = await getElements();
+		const heading = await boardHeading();
+		return { result: (heading ? heading + "\n\n" : "") + describeScene(elements) };
+	},
+});
 
 export async function screenshot(argv: string[]): Promise<void> {
 	const { flags } = parseArgs(argv, {
