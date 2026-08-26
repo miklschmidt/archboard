@@ -533,7 +533,7 @@ export function cliSurface(): { name: string; subcommands: readonly string[] }[]
 	}));
 }
 
-/** The one registry projected as all 57 canonical contract paths. */
+/** The one registry projected as all current canonical contract paths. */
 export interface CliRegistryEntry {
 	name: string;
 	parent: string | null;

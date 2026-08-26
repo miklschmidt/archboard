@@ -44,7 +44,9 @@ for (const { name, subcommands } of cliSurface()) {
 	for (const subcommand of subcommands) expectedPaths.push(`${name} ${subcommand}`);
 }
 const auditedPaths = audit.entries.map((entry) => entry.path);
-check("audit path count", auditedPaths.length === 57, String(auditedPaths.length));
+const currentPathCount = audit.surface.paths;
+const fixedPathCount = compatibility.publicPaths.length;
+check("audit path count", auditedPaths.length === currentPathCount, String(auditedPaths.length));
 check("audit paths are unique", new Set(auditedPaths).size === auditedPaths.length);
 check(
 	"canonical audit matches the production registry",
@@ -57,9 +59,13 @@ check(
 	compatibility.fixedBase,
 );
 check(
-	"fixed-base compatibility covers all 57 canonical paths",
-	JSON.stringify(compatibility.publicPaths) === JSON.stringify(auditedPaths),
+	`fixed-base compatibility keeps its ${fixedPathCount}-path ordered subset`,
+	JSON.stringify(compatibility.publicPaths) ===
+		JSON.stringify(auditedPaths.filter((path) => compatibility.publicPaths.includes(path))),
 );
+for (const entry of audit.entries.filter((entry) => !compatibility.publicPaths.includes(entry.path))) {
+	check(`${entry.path} declares its introducing task`, typeof entry.introducedBy === "string" && entry.introducedBy.length > 0);
+}
 check(
 	"fixed-base compatibility uses executable record schema 2",
 	compatibility.schemaVersion === 2,
@@ -152,19 +158,19 @@ for (const entry of audit.entries) {
 const registry = cliContractRegistry();
 const contracts = registry;
 check(
-	"all-contract registry has exactly 57 entries",
-	registry.length === 57,
+	"all-contract registry has the current audited entry count",
+	registry.length === currentPathCount,
 	String(registry.length),
 );
 check(
 	"all-contract registry paths are unique",
-	new Set(registry.map((entry) => entry.name)).size === 57,
+	new Set(registry.map((entry) => entry.name)).size === currentPathCount,
 );
 check(
 	"all-contract registry matches the canonical audit in order",
 	JSON.stringify(registry.map((entry) => entry.name)) === JSON.stringify(auditedPaths),
 );
-check("all 57 routes are contracts", contracts.length === 57, String(contracts.length));
+check(`all ${currentPathCount} routes are contracts`, contracts.length === currentPathCount, String(contracts.length));
 check(
 	"every route has one executable contract owner",
 	registry.every(
@@ -401,6 +407,16 @@ for (const [code, exit] of [
 check(
 	"viewport does not declare a board refusal",
 	!(byName.get("viewport")?.refusals ?? []).some((refusal) => refusal.code === "BOARD_REQUIRED"),
+);
+const boardCheck = byName.get("check");
+check("check declares only the global board prerequisite", JSON.stringify(boardCheck?.prerequisites) === JSON.stringify(["board"]));
+check("check declares only a local read effect", JSON.stringify(boardCheck?.effects) === JSON.stringify(["local-read"]));
+check("check declares no REST relationships", boardCheck?.relationships.length === 0);
+check("check declares JSON and text output", JSON.stringify(boardCheck?.output.cases.map((entry) => entry.mode)) === JSON.stringify(["json", "text"]));
+check(
+	"check declares strict stdout outcomes 6, 7, and 8",
+	JSON.stringify(boardCheck?.outcomes?.map(({ exit, stream }) => ({ exit, stream }))) ===
+		JSON.stringify([6, 7, 8].map((exit) => ({ exit, stream: "stdout-only" }))),
 );
 
 const sourceFiles = [];

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 13:17'
+updated_date: '2026-08-26 13:20'
 labels:
   - ready-for-agent
 dependencies:
@@ -328,6 +328,8 @@ Checkpoint 2: added the closed schema-v1 inspection report and finding union, ra
 Checkpoint 3: added the inspection-only raw note reader and contract-backed check command. The command has local-read only, no REST relationships or server/browser prerequisite, JSON/text output, policy flags, and strict stdout outcomes 6/7/8. type-check and direct generated help smoke checks passed.
 
 Checkpoint 4: added dense before/after and pinned compare fixtures, pure and package-boundary inspection checks, exact broad-phase performance gates, strict normal-ingest evidence, no-side-effect vault snapshots, and negative-path browser fixed-point coverage. test:inspection (27 checks), type-check, test:suites, and diff checks passed.
+
+Checkpoint 5: extended current contract metadata to 34 commands and 58 paths while preserving the immutable 57-path compatibility subset. Added check-specific schema/effect/outcome assertions, exact general-help normalization, generated audit/proof files, and check outcome documentation. generator --check, test:contracts (58 proofs/969 checks), test:cli (579 checks), and diff checks passed.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
