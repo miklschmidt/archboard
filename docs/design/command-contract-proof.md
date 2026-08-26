@@ -224,6 +224,306 @@ Public result JSON Schema:
 }
 ```
 
+## apply
+
+Validates a complete element patch before applying it as one board write.
+
+Usage:
+
+```text
+archboard apply [patch.json|-] [--document]
+```
+
+Output: json (Patch receipt).
+
+Prerequisites: server, board, doing. Effects: write.
+
+REST relationships:
+
+- GET `/api/elements`, conditional. Resolve updated and deleted ids
+- POST `/api/elements/changes`, one. Apply the complete patch
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean",
+			"const": true
+		},
+		"created": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"updated": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"deleted": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"elements": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"rectangle",
+							"ellipse",
+							"diamond",
+							"arrow",
+							"text",
+							"line",
+							"freedraw",
+							"image"
+						]
+					},
+					"x": {
+						"type": "number"
+					},
+					"y": {
+						"type": "number"
+					}
+				},
+				"required": ["id", "type", "x", "y"],
+				"additionalProperties": {}
+			}
+		},
+		"fingerprint": {
+			"type": "object",
+			"properties": {
+				"elements": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"note": {
+					"type": "string"
+				},
+				"version": {
+					"anyOf": [
+						{
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 9007199254740991
+						},
+						{
+							"type": "null"
+						}
+					]
+				}
+			},
+			"required": ["elements", "note", "version"],
+			"additionalProperties": false
+		},
+		"document": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"rectangle",
+							"ellipse",
+							"diamond",
+							"arrow",
+							"text",
+							"line",
+							"freedraw",
+							"image"
+						]
+					},
+					"x": {
+						"type": "number"
+					},
+					"y": {
+						"type": "number"
+					}
+				},
+				"required": ["id", "type", "x", "y"],
+				"additionalProperties": {}
+			}
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["success", "created", "updated", "deleted", "elements", "fingerprint"],
+	"additionalProperties": {}
+}
+```
+
+## add
+
+Creates one or more elements in one batch.
+
+Usage:
+
+```text
+archboard add [elements.json] (or stdin) [--document]
+add --one '{"type":"rectangle",...}'
+```
+
+Output: json (Creation receipt).
+
+Prerequisites: server, board, doing. Effects: write.
+
+REST relationships:
+
+- POST `/api/elements/batch`, one. Create the batch
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean",
+			"const": true
+		},
+		"count": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"elements": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"rectangle",
+							"ellipse",
+							"diamond",
+							"arrow",
+							"text",
+							"line",
+							"freedraw",
+							"image"
+						]
+					},
+					"x": {
+						"type": "number"
+					},
+					"y": {
+						"type": "number"
+					}
+				},
+				"required": ["id", "type", "x", "y"],
+				"additionalProperties": {}
+			}
+		},
+		"fingerprint": {
+			"type": "object",
+			"properties": {
+				"elements": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"note": {
+					"type": "string"
+				},
+				"version": {
+					"anyOf": [
+						{
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 9007199254740991
+						},
+						{
+							"type": "null"
+						}
+					]
+				}
+			},
+			"required": ["elements", "note", "version"],
+			"additionalProperties": false
+		},
+		"document": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"rectangle",
+							"ellipse",
+							"diamond",
+							"arrow",
+							"text",
+							"line",
+							"freedraw",
+							"image"
+						]
+					},
+					"x": {
+						"type": "number"
+					},
+					"y": {
+						"type": "number"
+					}
+				},
+				"required": ["id", "type", "x", "y"],
+				"additionalProperties": {}
+			}
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["success", "count", "elements", "fingerprint"],
+	"additionalProperties": {}
+}
+```
+
 ## update
 
 Updates one element in one version-checked board write.
@@ -393,6 +693,200 @@ Public result JSON Schema:
 	},
 	"required": ["success", "element", "elements", "fingerprint"],
 	"additionalProperties": false
+}
+```
+
+## delete
+
+Resolves every id before deleting them in one write.
+
+Usage:
+
+```text
+archboard delete <id> [<id> ...] [--document]
+```
+
+Output: json (Deletion receipt).
+
+Prerequisites: server, board, doing. Effects: write.
+
+REST relationships:
+
+- GET `/api/elements`, one. Resolve all ids before writing
+- POST `/api/elements/changes`, one. Delete all ids
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean",
+			"const": true
+		},
+		"deleted": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"count": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"elements": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"rectangle",
+							"ellipse",
+							"diamond",
+							"arrow",
+							"text",
+							"line",
+							"freedraw",
+							"image"
+						]
+					},
+					"x": {
+						"type": "number"
+					},
+					"y": {
+						"type": "number"
+					}
+				},
+				"required": ["id", "type", "x", "y"],
+				"additionalProperties": {}
+			}
+		},
+		"fingerprint": {
+			"type": "object",
+			"properties": {
+				"elements": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"note": {
+					"type": "string"
+				},
+				"version": {
+					"anyOf": [
+						{
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 9007199254740991
+						},
+						{
+							"type": "null"
+						}
+					]
+				}
+			},
+			"required": ["elements", "note", "version"],
+			"additionalProperties": false
+		},
+		"document": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"rectangle",
+							"ellipse",
+							"diamond",
+							"arrow",
+							"text",
+							"line",
+							"freedraw",
+							"image"
+						]
+					},
+					"x": {
+						"type": "number"
+					},
+					"y": {
+						"type": "number"
+					}
+				},
+				"required": ["id", "type", "x", "y"],
+				"additionalProperties": {}
+			}
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["success", "deleted", "count", "elements", "fingerprint"],
+	"additionalProperties": {}
+}
+```
+
+## get
+
+Returns one server-owned element payload.
+
+Usage:
+
+```text
+archboard get <id>
+```
+
+Output: json (Element payload).
+
+Prerequisites: server, board. Effects: read.
+
+REST relationships:
+
+- GET `/api/elements/:id`, one. Read the element
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"id": {
+			"type": "string"
+		},
+		"type": {
+			"type": "string",
+			"enum": ["rectangle", "ellipse", "diamond", "arrow", "text", "line", "freedraw", "image"]
+		},
+		"x": {
+			"type": "number"
+		},
+		"y": {
+			"type": "number"
+		}
+	},
+	"required": ["id", "type", "x", "y"],
+	"additionalProperties": {}
 }
 ```
 
@@ -803,6 +1297,122 @@ Public result JSON Schema:
 			"additionalProperties": false
 		}
 	]
+}
+```
+
+## import
+
+Imports scene data after the canvas prerequisite, merging unless replace is selected.
+
+Usage:
+
+```text
+archboard import [scene.excalidraw|note.excalidraw.md|-] [--replace] (or stdin)
+```
+
+Output: json (Import receipt).
+
+Prerequisites: server, board, doing. Effects: write.
+
+REST relationships:
+
+- POST `/api/elements/batch`, one. Merge imported elements
+- DELETE `/api/elements/clear`, conditional. Clear before replace import
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean",
+			"const": true
+		},
+		"imported": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"files": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"mode": {
+			"type": "string",
+			"enum": ["merge", "replace"]
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["success", "imported", "files", "mode"],
+	"additionalProperties": false
+}
+```
+
+## clear
+
+Clears the named board only after explicit confirmation.
+
+Usage:
+
+```text
+archboard clear --yes
+```
+
+Output: json (Clear receipt).
+
+Prerequisites: server, board, doing. Effects: write.
+
+REST relationships:
+
+- DELETE `/api/elements/clear`, one. Clear the board
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean",
+			"const": true
+		},
+		"cleared": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["success", "cleared"],
+	"additionalProperties": false
 }
 ```
 
