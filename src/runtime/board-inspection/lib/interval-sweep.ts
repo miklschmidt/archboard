@@ -16,6 +16,8 @@ export interface SweepWork {
 	activeVisits: number;
 	expiryPops: number;
 	partitionChecks: number;
+	bucketScans: number;
+	bucketIndexOperations: number;
 }
 
 interface ActiveNode<T> {
@@ -32,6 +34,20 @@ interface ActiveList<T> {
 	semantics: SweepPartition;
 	head: ActiveNode<T> | null;
 	tail: ActiveNode<T> | null;
+	index: BucketIndex<T>;
+	partition: string;
+	exclusions: readonly string[];
+	path: readonly BucketNode<T>[];
+}
+
+interface BucketNode<T> {
+	children: Map<string, BucketNode<T>>;
+	list: ActiveList<T> | null;
+}
+
+interface BucketIndex<T> {
+	roots: Map<string, BucketNode<T>>;
+	active: Set<ActiveList<T>>;
 }
 
 function compareNode<T>(a: ActiveNode<T>, b: ActiveNode<T>): number {
@@ -75,7 +91,26 @@ function append<T>(list: ActiveList<T>, node: ActiveNode<T>): void {
 	list.tail = node;
 }
 
-function remove<T>(node: ActiveNode<T>): void {
+function retireEmptyList<T>(list: ActiveList<T>, work: SweepWork): void {
+	if (list.head) return;
+	list.index.active.delete(list);
+	work.bucketIndexOperations += 1;
+	const leaf = list.path.at(-1)!;
+	leaf.list = null;
+	for (let index = list.path.length - 1; index > 0; index -= 1) {
+		const child = list.path[index]!;
+		if (child.list || child.children.size > 0) break;
+		list.path[index - 1]!.children.delete(list.exclusions[index - 1]!);
+		work.bucketIndexOperations += 1;
+	}
+	const root = list.path[0]!;
+	if (!root.list && root.children.size === 0) {
+		list.index.roots.delete(list.partition);
+		work.bucketIndexOperations += 1;
+	}
+}
+
+function remove<T>(node: ActiveNode<T>, work: SweepWork): void {
 	if (!node.active) return;
 	const list = node.list;
 	if (node.previous) node.previous.next = node.next;
@@ -83,10 +118,53 @@ function remove<T>(node: ActiveNode<T>): void {
 	if (node.next) node.next.previous = node.previous;
 	else list.tail = node.previous;
 	node.active = false;
+	retireEmptyList(list, work);
 }
 
 function pairAllowed(a: SweepPartition, b: SweepPartition): boolean {
 	return !a.excludedPartitions.has(b.partition) && !b.excludedPartitions.has(a.partition);
+}
+
+function bucketFor<T>(
+	index: BucketIndex<T>,
+	semantics: SweepPartition,
+	exclusions: readonly string[],
+	work: SweepWork,
+): ActiveList<T> {
+	work.bucketIndexOperations += 1;
+	let root = index.roots.get(semantics.partition);
+	if (!root) {
+		root = { children: new Map(), list: null };
+		index.roots.set(semantics.partition, root);
+		work.bucketIndexOperations += 1;
+	}
+	const path = [root];
+	let node = root;
+	for (const exclusion of exclusions) {
+		work.bucketIndexOperations += 1;
+		let child = node.children.get(exclusion);
+		if (!child) {
+			child = { children: new Map(), list: null };
+			node.children.set(exclusion, child);
+			work.bucketIndexOperations += 1;
+		}
+		node = child;
+		path.push(node);
+	}
+	if (node.list) return node.list;
+	const list: ActiveList<T> = {
+		semantics,
+		head: null,
+		tail: null,
+		index,
+		partition: semantics.partition,
+		exclusions,
+		path,
+	};
+	node.list = list;
+	index.active.add(list);
+	work.bucketIndexOperations += 1;
+	return list;
 }
 
 /** Enumerate every semantically permitted closed x-overlap once in deterministic start-event order. */
@@ -108,24 +186,26 @@ export function sweepIntervalPairs<A, B>(
 			a.interval.id.localeCompare(b.interval.id) ||
 			a.ordinal - b.ordinal,
 	);
-	const buckets: [Map<string, ActiveList<Value>>, Map<string, ActiveList<Value>>] = [
-		new Map(),
-		new Map(),
+	const buckets: [BucketIndex<Value>, BucketIndex<Value>] = [
+		{ roots: new Map(), active: new Set() },
+		{ roots: new Map(), active: new Set() },
 	];
 	const heap: ActiveNode<Value>[] = [];
-	const partitionKeys = new Map<SweepPartition, string>();
-	const partitionKey = (value: SweepPartition) => {
-		const existing = partitionKeys.get(value);
+	const exclusionsBySemantics = new Map<SweepPartition, readonly string[]>();
+	const sortedExclusions = (value: SweepPartition) => {
+		const existing = exclusionsBySemantics.get(value);
 		if (existing) return existing;
-		const key = `${value.partition}\0${[...value.excludedPartitions].toSorted().join("\0")}`;
-		partitionKeys.set(value, key);
-		return key;
+		const exclusions = [...value.excludedPartitions].toSorted();
+		exclusionsBySemantics.set(value, exclusions);
+		return exclusions;
 	};
 	const work: SweepWork = {
 		events: 0,
 		activeVisits: 0,
 		expiryPops: 0,
 		partitionChecks: 0,
+		bucketScans: 0,
+		bucketIndexOperations: 0,
 	};
 	for (let order = 0; order < events.length; order += 1) {
 		const event = events[order]!;
@@ -133,10 +213,11 @@ export function sweepIntervalPairs<A, B>(
 		while (heap[0] && heap[0].interval.max < event.interval.min) {
 			const expired = heapPop(heap)!;
 			work.expiryPops += 1;
-			remove(expired);
+			remove(expired, work);
 		}
 		const opposite = sameSet ? buckets[0] : buckets[event.set === 0 ? 1 : 0];
-		for (const bucket of opposite.values()) {
+		for (const bucket of opposite.active) {
+			work.bucketScans += 1;
 			if (!bucket.head) continue;
 			work.partitionChecks += 1;
 			if (!pairAllowed(event.interval.semantics, bucket.semantics)) continue;
@@ -149,13 +230,12 @@ export function sweepIntervalPairs<A, B>(
 				if (shouldContinue === false) return work;
 			}
 		}
-		const key = partitionKey(event.interval.semantics);
-		const list = buckets[event.set].get(key) ?? {
-			semantics: event.interval.semantics,
-			head: null,
-			tail: null,
-		};
-		buckets[event.set].set(key, list);
+		const list = bucketFor(
+			buckets[event.set],
+			event.interval.semantics,
+			sortedExclusions(event.interval.semantics),
+			work,
+		);
 		const node: ActiveNode<Value> = {
 			interval: event.interval,
 			set: event.set,

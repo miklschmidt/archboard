@@ -3737,20 +3737,25 @@ function sparseSweepBoard(count) {
 		),
 	];
 }
-const sparseSweepResults = [1_000, 2_000, 4_000].map((count) => ({
+const sparseSweepResults = [1_000, 2_000, 4_000, 8_000].map((count) => ({
 	count,
 	diagnostics: inspectBoardDiagnostics(sparseSweepBoard(count)),
 }));
 check(
-	"sparse cross-set and hierarchy sweeps have deterministic log-linear preprocessing work",
+	"sparse distinct partitions remove expired buckets and keep every indexed operation bounded",
 	sparseSweepResults.every(
 		({ count, diagnostics }) =>
 			diagnostics.work.broadPhaseCompatibleVisits === 0 &&
+			diagnostics.work.broadPhaseBucketScans === 0 &&
+			diagnostics.work.broadPhaseBucketIndexOperations <= diagnostics.work.broadPhaseEvents * 6 &&
 			diagnostics.work.broadPhaseEvents === count * 6 &&
 			diagnostics.work.hierarchyEvents === count * 2 &&
 			diagnostics.work.hierarchyCandidateVisits === count &&
+			diagnostics.work.hierarchyBucketScans === count &&
+			diagnostics.work.hierarchyBucketIndexOperations <= diagnostics.work.hierarchyEvents * 5 &&
 			diagnostics.work.hierarchyExpiryPops <= count * 2,
 	),
+	JSON.stringify(sparseSweepResults.map(({ count, diagnostics }) => [count, diagnostics.work])),
 );
 
 const overlappingSingleConnector = (segmentCount) => [
@@ -3856,6 +3861,259 @@ check(
 		!sameOwnerDiagnostics.report.findings.some((finding) => finding.code === "LABEL_OVERLAP"),
 );
 
+const controlPartitionElements = [
+	semanticNode("cn-b\0cn-c", {
+		id: "cn-target-body",
+		x: 40,
+		y: 0,
+		width: 20,
+		height: 40,
+		boundElements: [{ id: "cn-a", type: "arrow" }],
+	}),
+	semanticNode("cn-c", {
+		id: "cn-end-body",
+		x: -30,
+		y: 60,
+		boundElements: [
+			{ id: "cn-a\0cn-b", type: "arrow" },
+			{ id: "cn-renamed-control", type: "arrow" },
+		],
+	}),
+	connector({
+		id: "cn-a",
+		x: 0,
+		y: 10,
+		width: 100,
+		height: 0,
+		points: [
+			[0, 0],
+			[100, 0],
+		],
+		startBinding: { elementId: "cn-target-body", focus: 0, gap: 0 },
+	}),
+	connector({
+		id: "cn-a\0cn-b",
+		x: 1,
+		y: 20,
+		width: 99,
+		height: 0,
+		points: [
+			[0, 0],
+			[99, 0],
+		],
+		startBinding: { elementId: "cn-end-body", focus: 0, gap: 0 },
+	}),
+	connector({
+		id: "cn-renamed-control",
+		x: 2,
+		y: 30,
+		width: 98,
+		height: 0,
+		points: [
+			[0, 0],
+			[98, 0],
+		],
+		startBinding: { elementId: "cn-end-body", focus: 0, gap: 0 },
+	}),
+	semanticNode("ln-b\0ln-c", {
+		id: "ln-target-body",
+		x: 40,
+		y: 150,
+		width: 40,
+		height: 40,
+		boundElements: [{ id: "ln-a", type: "text" }],
+	}),
+	semanticNode("ln-c", {
+		id: "ln-owner-body",
+		x: -30,
+		y: 220,
+		boundElements: [{ id: "ln-a\0ln-b", type: "text" }],
+	}),
+	{
+		id: "ln-a",
+		type: "text",
+		x: 0,
+		y: 160,
+		width: 70,
+		height: 10,
+		angle: 0,
+		fontFamily: 5,
+		text: "excluded",
+		containerId: "ln-target-body",
+	},
+	{
+		id: "ln-a\0ln-b",
+		type: "text",
+		x: 1,
+		y: 170,
+		width: 70,
+		height: 10,
+		angle: 0,
+		fontFamily: 5,
+		text: "eligible",
+		containerId: "ln-owner-body",
+	},
+	semanticNode("ll-owner\0control", {
+		id: "ll-owner-body",
+		x: 200,
+		y: 150,
+		width: 100,
+		height: 80,
+		boundElements: [
+			{ id: "ll-same-a\0control", type: "text" },
+			{ id: "ll-same-b\0control", type: "text" },
+		],
+	}),
+	...[
+		["ll-same-a\0control", 190],
+		["ll-same-b\0control", 191],
+	].map(([id, x]) => ({
+		id,
+		type: "text",
+		x,
+		y: 170,
+		width: 40,
+		height: 10,
+		angle: 0,
+		fontFamily: 5,
+		text: id,
+		containerId: "ll-owner-body",
+	})),
+	semanticNode("ll-left\0control", {
+		id: "ll-left-body",
+		x: 180,
+		y: 300,
+		boundElements: [{ id: "ll-eligible-a\0control", type: "text" }],
+	}),
+	semanticNode("ll-right\0control", {
+		id: "ll-right-body",
+		x: 320,
+		y: 300,
+		boundElements: [{ id: "ll-eligible-b\0control", type: "text" }],
+	}),
+	...[
+		["ll-eligible-a\0control", "ll-left-body"],
+		["ll-eligible-b\0control", "ll-right-body"],
+	].map(([id, containerId], index) => ({
+		id,
+		type: "text",
+		x: 240 + index,
+		y: 260,
+		width: 40,
+		height: 10,
+		angle: 0,
+		fontFamily: 5,
+		text: id,
+		containerId,
+	})),
+	connector({
+		id: "ss-self\0control",
+		x: 0,
+		y: 400,
+		width: 20,
+		height: 20,
+		points: [
+			[0, 0],
+			[20, 20],
+			[0, 20],
+			[20, 0],
+		],
+	}),
+	connector({
+		id: "ss-eligible-a\0control",
+		x: 100,
+		y: 400,
+		width: 20,
+		height: 20,
+		points: [
+			[0, 0],
+			[20, 20],
+		],
+	}),
+	connector({
+		id: "ss-eligible-b\0control",
+		x: 100,
+		y: 400,
+		width: 20,
+		height: 20,
+		points: [
+			[0, 20],
+			[20, 0],
+		],
+	}),
+	semanticNode("node-a\0control", { x: 200, y: 400, width: 40, height: 40 }),
+	semanticNode("node-b\0control", { x: 220, y: 420, width: 40, height: 40 }),
+	semanticNode("node-zone\0control", { x: 320, y: 400, width: 100, height: 100 }),
+	semanticNode("node-child\0control", { x: 340, y: 420, width: 20, height: 20 }),
+];
+const controlPartitionEvidence = (report) => {
+	const hasConnectorNode = (connectorId, nodeId) =>
+		report.findings.some(
+			(finding) =>
+				finding.code === "CONNECTOR_PENETRATES_NODE" &&
+				finding.details.connectorId === connectorId &&
+				finding.details.nodeId === nodeId,
+		);
+	const hasLabelNode = (labelId, nodeId) =>
+		report.findings.some(
+			(finding) =>
+				finding.code === "LABEL_OVERLAP" &&
+				finding.reason === "label-node-overlap" &&
+				finding.details.labelId === labelId &&
+				finding.details.nodeId === nodeId,
+		);
+	const hasIntersection = (firstId, secondId) =>
+		report.findings.some(
+			(finding) =>
+				finding.code === "CONNECTOR_INTERSECTION_UNMARKED" &&
+				new Set([finding.details.firstConnectorId, finding.details.secondConnectorId]).has(
+					firstId,
+				) &&
+				new Set([finding.details.firstConnectorId, finding.details.secondConnectorId]).has(
+					secondId,
+				),
+		);
+	const hasLabelPair = (firstId, secondId) =>
+		report.findings.some(
+			(finding) =>
+				finding.code === "LABEL_OVERLAP" &&
+				finding.reason === "label-label-overlap" &&
+				new Set([finding.details.firstLabelId, finding.details.secondLabelId]).has(firstId) &&
+				new Set([finding.details.firstLabelId, finding.details.secondLabelId]).has(secondId),
+		);
+	const hasNodePair = (firstId, secondId) =>
+		report.findings.some(
+			(finding) =>
+				finding.code === "NODE_OVERLAP" &&
+				new Set([finding.details.firstNodeId, finding.details.secondNodeId]).has(firstId) &&
+				new Set([finding.details.firstNodeId, finding.details.secondNodeId]).has(secondId),
+		);
+	return (
+		hasConnectorNode("cn-a\0cn-b", "cn-b\0cn-c") &&
+		hasConnectorNode("cn-renamed-control", "cn-b\0cn-c") &&
+		!hasConnectorNode("cn-a", "cn-b\0cn-c") &&
+		hasLabelNode("ln-a\0ln-b", "ln-b\0ln-c") &&
+		!hasLabelNode("ln-a", "ln-b\0ln-c") &&
+		hasIntersection("ss-eligible-a\0control", "ss-eligible-b\0control") &&
+		!report.findings.some(
+			(finding) =>
+				finding.code === "CONNECTOR_INTERSECTION_UNMARKED" &&
+				(finding.details.firstConnectorId === "ss-self\0control" ||
+					finding.details.secondConnectorId === "ss-self\0control"),
+		) &&
+		hasLabelPair("ll-eligible-a\0control", "ll-eligible-b\0control") &&
+		!hasLabelPair("ll-same-a\0control", "ll-same-b\0control") &&
+		hasNodePair("node-a\0control", "node-b\0control") &&
+		!hasNodePair("node-zone\0control", "node-child\0control")
+	);
+};
+const controlPartitionReport = inspectBoard(controlPartitionElements);
+check(
+	"control-character partition identities preserve every eligible pair and semantic exclusion",
+	InspectionReportSchema.safeParse(controlPartitionReport).success &&
+		controlPartitionEvidence(controlPartitionReport),
+);
+
 let sweepSeed = 0x119;
 const randomUnit = () => (sweepSeed = (sweepSeed * 1_664_525 + 1_013_904_223) >>> 0) / 2 ** 32;
 for (let sample = 0; sample < 8; sample += 1) {
@@ -3933,6 +4191,37 @@ const noteFor = (board, elements) =>
 			{ board, variant: "current" },
 		),
 	);
+const noteForEscapedControls = (board, elements) => {
+	const controls = new Set();
+	JSON.stringify(elements, (_key, value) => {
+		if (typeof value === "string" && value.includes("\0")) controls.add(value);
+		return value;
+	});
+	const placeholders = new Map(
+		[...controls]
+			.toSorted((a, b) => a.localeCompare(b))
+			.map((value, index) => [value, `z${index.toString(36).padStart(7, "0")}`]),
+	);
+	const placeholderElements = JSON.parse(
+		JSON.stringify(elements, (_key, value) => placeholders.get(value) ?? value),
+	);
+	let note = renderBoardNote(
+		{
+			type: "excalidraw",
+			version: 2,
+			source: "archboard",
+			elements: placeholderElements,
+			appState: {},
+			files: {},
+		},
+		null,
+		{ board, variant: "current" },
+	);
+	for (const [control, placeholder] of placeholders)
+		note = note.replaceAll(JSON.stringify(placeholder), JSON.stringify(control));
+	check(`${board} persists control ids as escaped JSON`, note.includes("\\u0000"));
+	fs.writeFileSync(path.join(vault, `${board}.excalidraw.md`), note);
+};
 noteFor("clean", []);
 noteFor("warning", [
 	{ id: "txt", type: "text", x: 0, y: 0, width: 30, height: 10, fontFamily: 1, text: "legacy" },
@@ -3969,6 +4258,7 @@ noteFor("error", [
 		customData: { archboard: { node: "b" } },
 	},
 ]);
+noteForEscapedControls("control-partitions", controlPartitionElements);
 noteFor("limit-extreme", limitWithExtremeSpan);
 noteFor("unknown", [{ id: "edge", type: "arrow", x: 0, y: 0, width: 10, height: 0 }]);
 noteFor("malformed", [
@@ -4405,6 +4695,20 @@ check(
 	"package JSON parses through exported schema",
 	CheckResultSchema.safeParse(cleanPackageResult).success &&
 		!("preprocessingWork" in cleanPackageResult),
+);
+const controlPartitionRun = run("control-partitions");
+const controlPartitionResult = controlPartitionRun.stdout
+	? JSON.parse(controlPartitionRun.stdout)
+	: null;
+check(
+	"persisted escaped control-character partitions preserve eligible pairs and exclusions",
+	controlPartitionRun.status === 0 &&
+		controlPartitionRun.stderr === "" &&
+		CheckResultSchema.safeParse(controlPartitionResult).success &&
+		controlPartitionEvidence(controlPartitionResult),
+	`status=${controlPartitionRun.status} stderr=${controlPartitionRun.stderr} findings=${controlPartitionResult?.findings
+		?.map((finding) => `${finding.reason}:${JSON.stringify(finding.details)}`)
+		.join("|")}`,
 );
 const textRun = run("clean", ["--text"]);
 check(
