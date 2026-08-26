@@ -42,6 +42,36 @@ check(
 	contracts.map((entry) => entry.name).join(","),
 );
 
+const byName = new Map(contracts.map((entry) => [entry.name, entry.contract]));
+const expectedPrerequisites = {
+	query: ["server", "board"],
+	update: ["server", "board", "doing"],
+	viewport: ["server", "browser"],
+	export: ["server", "board"],
+};
+for (const [name, expected] of Object.entries(expectedPrerequisites)) {
+	const actual = byName.get(name)?.prerequisites ?? [];
+	check(`${name} declares its complete prerequisites`, actual.join(",") === expected.join(","));
+}
+const updateRefusals = new Map(
+	(byName.get("update")?.refusals ?? []).map((refusal) => [refusal.code, refusal.exit]),
+);
+for (const [code, exit] of [
+	["DOING_REQUIRED", 1],
+	["BOARD_REQUIRED", 2],
+	["CANVAS_UNREACHABLE", 3],
+	["BOARD_HELD", 5],
+	["BOARD_CONFLICT", 5],
+	["BOARD_VERSION_CONFLICT", 5],
+	["CLAIM_REVOKED", 5],
+]) {
+	check(`update declares ${code} exit ${exit}`, updateRefusals.get(code) === exit);
+}
+check(
+	"viewport does not declare a board refusal",
+	!(byName.get("viewport")?.refusals ?? []).some((refusal) => refusal.code === "BOARD_REQUIRED"),
+);
+
 const sourceFiles = [];
 const visit = (directory) => {
 	for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {

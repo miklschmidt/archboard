@@ -198,11 +198,16 @@ try {
 
 	for (const golden of argvGolden.cases) {
 		const result = await cli(golden.argv);
-		const expectedStdout = golden.stdout.replaceAll("{{VERSION}}", pkg.version);
-		const expectedStderr = golden.stderr.replaceAll("{{VERSION}}", pkg.version);
 		check(`${golden.name} exit`, result.status === golden.status, String(result.status));
-		check(`${golden.name} stdout`, result.stdout === expectedStdout, result.stdout);
-		check(`${golden.name} stderr`, result.stderr === expectedStderr, result.stderr);
+		for (const stream of ["stdout", "stderr"]) {
+			const expected = golden[stream]?.replaceAll("{{VERSION}}", pkg.version);
+			const digest = createHash("sha256").update(result[stream]).digest("hex");
+			check(
+				`${golden.name} ${stream}`,
+				expected === undefined ? digest === golden[`${stream}Sha256`] : result[stream] === expected,
+				result[stream],
+			);
+		}
 	}
 	for (const alias of [["-h"], ["--help"], ["help", "unknown-topic"]]) {
 		const result = await cli(alias);

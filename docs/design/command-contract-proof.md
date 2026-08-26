@@ -23,7 +23,7 @@ per box. Use `describe` for a summary or `query` for a part.`
 
 Output: json (Versioned write result).
 
-Prerequisites: server. Effects: local-read, write.
+Prerequisites: server, board, doing. Effects: local-read, write.
 
 REST relationships:
 
@@ -178,7 +178,7 @@ Usage: `archboard query [--type rectangle] [--bbox x0,y0,x1,y1] [--filter locked
 
 Output: json (Bare element array).
 
-Prerequisites: server. Effects: read.
+Prerequisites: server, board. Effects: read.
 
 REST relationships:
 
@@ -279,7 +279,7 @@ Usage: `archboard export [--out scene.excalidraw | note.excalidraw.md] [--format
 
 Output: raw (Exact serialized scene content); file-receipt (Validated file receipt).
 
-Prerequisites: server. Effects: local-read, read, local-write.
+Prerequisites: server, board. Effects: local-read, read, local-write.
 
 REST relationships:
 

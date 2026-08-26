@@ -8,6 +8,7 @@ import {
 } from "../contract.js";
 import { introspectContracts } from "../introspection.js";
 import {
+	productionArgvParser,
 	runCommand,
 	type ArgvParser,
 	type CommandHost,
@@ -137,6 +138,27 @@ async function execute(contract: AnyCommandContract, host = new RecordingHost())
 }
 
 describe("command-contract interface", () => {
+	test("the real adapter owns aliases and optional token arity, not semantic defaults", async () => {
+		const contract = defineCommand({
+			...proofContract({ result: null }),
+			parameters: [
+				{
+					kind: "option",
+					key: "name",
+					spellings: ["-n", "--name"],
+					value: "optional",
+					description: "name",
+				},
+			],
+			input: { ingress: z.object({ name: z.union([z.string(), z.boolean()]).optional() }) },
+		});
+		expect(await productionArgvParser.parse(contract, ["-n", "alice"])).toEqual({
+			name: "alice",
+		});
+		expect(await productionArgvParser.parse(contract, ["--name"])).toEqual({ name: true });
+		expect(await productionArgvParser.parse(contract, [])).toEqual({ name: undefined });
+	});
+
 	test("the recording parser returns a prepared invocation without parsing argv", async () => {
 		const contract = proofContract({ result: { ok: true } });
 		const { parser, host } = await execute(contract);
