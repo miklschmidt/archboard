@@ -13,7 +13,7 @@ parts of the typed handler interface and remain Commander-free, but they are
 not emitted by introspection. `src/cli/commands/run.ts` is the production adapter at that seam and
 remains the sole registry. Its route tree gives every root and child its own
 contract, parser owner, handler owner, and parent. The same tree
-derives the current 58-path surface, flattened generated registry, longest-path
+derives the current 58-path surface, flattened registry view, longest-path
 dispatch, default aliases, and namespace refusals. All 58 paths use contracts;
 there is no legacy dispatcher, raw-argv handler, or second subcommand catalogue.
 
@@ -127,11 +127,27 @@ vault, note, Drawing, schema, and I/O failures exit 1 with empty stdout.
 `src/bin.ts` removes one `--url` before importing runtime configuration.
 `run.ts` retains existing help, version, globals, error mapping, and the
 route tree. The checker compares every flattened route's parent, parser owner,
-handler owner, and contract identity to the canonical audit. It requires exactly
+handler owner, and contract identity to the canonical authored audit at
+`docs/design/cli-command-audit.json`. It requires exactly
 58 current contracts, zero legacy routes, no family-owned subcommand catalogue, and no
-obsolete parser, stream, or proof-monolith source. Introspection is an in-process generation interface and checked-in
-JSON. It is not a public command, REST route, MCP replacement, or second agent
-command surface.
+obsolete parser, stream, or proof-monolith source. Introspection is an
+in-process generation interface. It is not a public command, REST route, MCP
+replacement, or second agent command surface.
+
+## Canonical input and derived views
+
+`docs/design/cli-command-audit.json` is the tracked, human-authored record of
+the reviewed surface, workflow decisions, ownership, ordering, and effects. It
+cannot be reconstructed from introspection without losing those judgments.
+
+The audit Markdown and the JSON and Markdown contract proofs are reproducible
+views, not sources of truth. Run `bun run generate:cli-contract` to render them
+under the ignored `docs/design/generated/` directory. The contract gate builds
+the same projection in memory, reconciles all 58 paths and the immutable
+57-path compatibility subset, validates both renderings, and generates twice
+in fresh temporary directories to prove deterministic bytes without changing
+the checkout. A fresh clone therefore needs no generated files to run the
+gate.
 
 The fixed-base compatibility records are executable package-binary cases, not
 scenario labels. Each one fixes argv, exact stdout and stderr bytes, any
