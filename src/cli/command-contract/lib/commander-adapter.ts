@@ -31,12 +31,7 @@ function commanderUsageError(error: unknown): CliUsageError {
 function shieldSingleDashTokens(argv: readonly string[], declared: ReadonlySet<string>) {
 	const restored = new Map<string, string>();
 	const values = argv.map((token, index) => {
-		if (
-			token === "-" ||
-			token.startsWith("--") ||
-			!token.startsWith("-") ||
-			declared.has(token)
-		)
+		if (token === "-" || token.startsWith("--") || !token.startsWith("-") || declared.has(token))
 			return token;
 		const placeholder = `archboard-single-dash-${index}`;
 		restored.set(placeholder, token);

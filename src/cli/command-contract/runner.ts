@@ -17,10 +17,8 @@ export interface CommandDependencies {
 	prerequisites: PrerequisiteResolver;
 }
 
-export const productionArgvParser: ArgvParser = new CommanderArgvParser();
-
 const productionDependencies: CommandDependencies = {
-	parser: productionArgvParser,
+	parser: new CommanderArgvParser(),
 	host: processCommandHost,
 	prerequisites: productionPrerequisites,
 };

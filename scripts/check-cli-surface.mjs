@@ -163,6 +163,7 @@ const server = Bun.serve({
 });
 
 const canvasUrl = `http://127.0.0.1:${server.port}`;
+const closedUrl = "http://127.0.0.1:1";
 
 function writesSince(offset) {
 	return requests
@@ -197,15 +198,27 @@ try {
 	);
 
 	for (const golden of argvGolden.cases) {
-		const result = await cli(golden.argv);
+		browserClients = golden.server === "no-browser" ? 0 : 1;
+		const result = await cli(
+			golden.argv,
+			golden.server === "mock" || golden.server === "no-browser"
+				? { url: canvasUrl }
+				: golden.server === "closed"
+					? { url: closedUrl }
+					: {},
+		);
+		browserClients = 1;
 		check(`${golden.name} exit`, result.status === golden.status, String(result.status));
 		for (const stream of ["stdout", "stderr"]) {
+			const actual = result[stream]
+				.replaceAll(outside, "{{OUTSIDE}}")
+				.replaceAll(canvasUrl, "{{CANVAS_URL}}");
 			const expected = golden[stream]?.replaceAll("{{VERSION}}", pkg.version);
-			const digest = createHash("sha256").update(result[stream]).digest("hex");
+			const digest = createHash("sha256").update(actual).digest("hex");
 			check(
 				`${golden.name} ${stream}`,
-				expected === undefined ? digest === golden[`${stream}Sha256`] : result[stream] === expected,
-				result[stream],
+				expected === undefined ? digest === golden[`${stream}Sha256`] : actual === expected,
+				actual,
 			);
 		}
 	}
@@ -370,7 +383,6 @@ try {
 		/Invalid JSON in --set/.test(optionLooking.stderr),
 	);
 
-	const closedUrl = "http://127.0.0.1:1";
 	const queryPrecedence = await cli(["query", "--bbox", "not-a-box"], { url: closedUrl });
 	check(
 		"query keeps server-before-bbox precedence",
