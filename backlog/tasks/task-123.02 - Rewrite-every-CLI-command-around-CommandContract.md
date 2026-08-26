@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-26 10:35'
+updated_date: '2026-08-26 10:39'
 labels: []
 dependencies:
   - TASK-123.01
@@ -120,6 +120,8 @@ Migration checkpoint 3 (read/view paths) complete: selection, panes, describe, c
 Migration checkpoint 4 (repo/inject) complete: repo root/list/add/forget and inject root/status/test are typed contracts, with default aliases still owned by the one route tree. Repo diagnostics and cwd/git inference remain ordered around local registry mutations; inject status still ignores trailing argv and test preserves quiet/loud behavior. Gates: stable fix, generation --check, 15 contract tests / 673 checks, 539 CLI checks, type-check, repo suite, and changes/injection suite.
 
 Midpoint validation after repo/inject: first bun run check cleared all gates until the known human-performance transient reported the established no-correction shape [0,0,2]. A complete second bun run check passed clean, including human-performance [0,0], all three sequential headless browser suites, and live-session. No gate was weakened or skipped.
+
+Migration checkpoint 5 (pane/board) complete: pane root/open/close and board root/list/info/new/open are typed contracts; accepted board save remains unchanged. Post-contact staged parsing preserves server-before-late-validation, pane open retains optional second board request, board list --here keeps its immediate prevalidation diagnostic, and browser/refusal ordering remains fixed. Gates: stable fix, generation --check, 15 contract tests / 669 checks, 539 CLI checks, type-check, boards suite, and side-by-side suite.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
