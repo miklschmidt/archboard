@@ -139,7 +139,26 @@ export async function board(argv: string[]): Promise<void> {
 		throw new CliUsageError("board needs a subcommand: list, info, new, open, save");
 	}
 	const rest = argv.slice(1);
+	return boardAction(sub, rest);
+}
 
+export async function boardList(argv: string[]): Promise<void> {
+	return boardAction("list", argv);
+}
+
+export async function boardInfo(argv: string[]): Promise<void> {
+	return boardAction("info", argv);
+}
+
+export async function boardNew(argv: string[]): Promise<void> {
+	return boardAction("new", argv);
+}
+
+export async function boardOpen(argv: string[]): Promise<void> {
+	return boardAction("open", argv);
+}
+
+async function boardAction(sub: string, rest: string[]): Promise<void> {
 	await ensureCanvasRunning();
 
 	if (sub === "list") {

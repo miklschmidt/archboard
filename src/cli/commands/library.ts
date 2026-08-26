@@ -36,7 +36,7 @@ export async function library(argv: string[]): Promise<void> {
 	throw new CliUsageError(USAGE);
 }
 
-async function libraryList(argv: string[]): Promise<void> {
+export async function libraryList(argv: string[]): Promise<void> {
 	const { flags } = parseArgs(argv, { text: { takesValue: false } });
 
 	await ensureCanvasRunning();
@@ -46,7 +46,7 @@ async function libraryList(argv: string[]): Promise<void> {
 	else printJson(catalogue);
 }
 
-async function libraryInsert(argv: string[]): Promise<void> {
+export async function libraryInsert(argv: string[]): Promise<void> {
 	const { positionals, flags } = parseArgs(argv, {
 		x: { takesValue: true },
 		y: { takesValue: true },

@@ -38,7 +38,7 @@ export async function repo(argv: string[]): Promise<void> {
 	throw new CliUsageError(USAGE);
 }
 
-async function repoList(argv: string[]): Promise<void> {
+export async function repoList(argv: string[]): Promise<void> {
 	const { flags } = parseArgs(argv, { text: { takesValue: false } });
 	const repos = listRepos();
 
@@ -61,7 +61,7 @@ async function repoList(argv: string[]): Promise<void> {
 	printJson({ success: true, registry: registryPath(), repos });
 }
 
-async function repoAdd(argv: string[]): Promise<void> {
+export async function repoAdd(argv: string[]): Promise<void> {
 	const { positionals } = parseArgs(argv, {});
 	// The directory is the one thing a person can point at; the identity is
 	// git's to decide, because two people naming the same clone differently is
@@ -83,7 +83,7 @@ async function repoAdd(argv: string[]): Promise<void> {
 	printJson({ success: true, ...entry, registry: registryPath() });
 }
 
-async function repoForget(argv: string[]): Promise<void> {
+export async function repoForget(argv: string[]): Promise<void> {
 	const { positionals } = parseArgs(argv, {});
 	const identity = positionals[0];
 	if (!identity)

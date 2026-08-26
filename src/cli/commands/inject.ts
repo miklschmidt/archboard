@@ -11,36 +11,37 @@ import { getInjection, postInjectionTest } from "../../runtime/engine/canvas-cli
 // defeat the point of it being a separate capability (ADR 0005).
 export async function inject(argv: string[]): Promise<void> {
 	const [sub, ...rest] = argv;
-	if (!sub || sub === "status") {
-		await ensureCanvasRunning();
-		const report = await getInjection();
-		const { success: _success, ...body } = report;
-		printJson(body);
-		return;
-	}
-
-	if (sub === "test") {
-		const { positionals, flags } = parseArgs(rest, {
-			note: { takesValue: true },
-			loud: { takesValue: false },
-			quiet: { takesValue: false },
-		});
-		if (flags.loud && flags.quiet) {
-			throw new CliUsageError("pass --loud or --quiet, not both");
-		}
-		await ensureCanvasRunning();
-		const note = (flags.note as string) ?? positionals.join(" ") ?? undefined;
-		const result = await postInjectionTest({
-			...(note ? { note } : {}),
-			...(flags.loud ? { loud: true } : {}),
-			...(flags.quiet ? { loud: false } : {}),
-		});
-		const { success: _success, ...body } = result;
-		printJson(body);
-		return;
-	}
+	if (!sub || sub === "status") return injectStatus(rest);
+	if (sub === "test") return injectTest(rest);
 
 	throw new CliUsageError(
 		`unknown inject subcommand "${sub}" — try \`inject status\` or \`inject test\``,
 	);
+}
+
+export async function injectStatus(_argv: string[]): Promise<void> {
+	await ensureCanvasRunning();
+	const report = await getInjection();
+	const { success: _success, ...body } = report;
+	printJson(body);
+}
+
+export async function injectTest(argv: string[]): Promise<void> {
+	const { positionals, flags } = parseArgs(argv, {
+		note: { takesValue: true },
+		loud: { takesValue: false },
+		quiet: { takesValue: false },
+	});
+	if (flags.loud && flags.quiet) {
+		throw new CliUsageError("pass --loud or --quiet, not both");
+	}
+	await ensureCanvasRunning();
+	const note = (flags.note as string) ?? positionals.join(" ") ?? undefined;
+	const result = await postInjectionTest({
+		...(note ? { note } : {}),
+		...(flags.loud ? { loud: true } : {}),
+		...(flags.quiet ? { loud: false } : {}),
+	});
+	const { success: _success, ...body } = result;
+	printJson(body);
 }

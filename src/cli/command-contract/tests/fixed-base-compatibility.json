@@ -320,6 +320,52 @@
 			"restEffects": [],
 			"localEffects": [],
 			"artifactCommits": []
+		},
+		{
+			"name": "snapshot-option-leading-restore",
+			"fixture": "mock-server",
+			"argv": ["snapshot", "--force", "restore", "absent", "--board", "contract"],
+			"normalizations": [],
+			"stdout": "",
+			"stderr": "Error: Snapshot \"absent\" not found\n",
+			"mergedEvents": [
+				{ "kind": "contact", "value": "GET /health" },
+				{ "kind": "contact", "value": "GET /api/snapshots/absent" },
+				{
+					"kind": "stderr-bytes",
+					"value": "Error: Snapshot \"absent\" not found\n"
+				},
+				{ "kind": "exit", "value": 1 }
+			],
+			"exit": 1,
+			"heldState": null,
+			"prerequisiteContacts": ["GET /health"],
+			"restEffects": ["GET /api/snapshots/absent"],
+			"localEffects": [],
+			"artifactCommits": []
+		},
+		{
+			"name": "arrange-option-leading-align",
+			"fixture": "mock-server",
+			"argv": ["arrange", "--ids", "shape1", "--to", "left", "align", "--board", "contract"],
+			"normalizations": [],
+			"stdout": "",
+			"stderr": "Error: Need at least 2 elements to align\n",
+			"mergedEvents": [
+				{ "kind": "contact", "value": "GET /health" },
+				{ "kind": "contact", "value": "GET /api/elements" },
+				{
+					"kind": "stderr-bytes",
+					"value": "Error: Need at least 2 elements to align\n"
+				},
+				{ "kind": "exit", "value": 1 }
+			],
+			"exit": 1,
+			"heldState": null,
+			"prerequisiteContacts": ["GET /health"],
+			"restEffects": ["GET /api/elements"],
+			"localEffects": [],
+			"artifactCommits": []
 		}
 	]
 }

@@ -19,18 +19,18 @@ import * as server from "./server.js";
 import * as elements from "./elements.js";
 import * as scene from "./scene.js";
 import { panes, selection } from "./selection.js";
-import { pane } from "./pane.js";
+import * as paneCommands from "./pane.js";
 import { promote, demote } from "./promote.js";
-import { repo } from "./repo.js";
-import { snapshot } from "./snapshot.js";
-import { board } from "./board.js";
+import * as repoCommands from "./repo.js";
+import * as snapshotCommands from "./snapshot.js";
+import * as boardCommands from "./board.js";
 import { compare } from "./compare.js";
 import { changes } from "./changes.js";
 import { claim, release } from "./claim.js";
-import { inject } from "./inject.js";
-import { arrange } from "./arrange.js";
+import * as injectCommands from "./inject.js";
+import * as arrangeCommands from "./arrange.js";
 import { installSkill } from "./install-skill.js";
-import { library } from "./library.js";
+import * as libraryCommands from "./library.js";
 
 type LegacyParserOwner = "legacy args.ts" | "legacy custom parser" | "legacy subcommand dispatch";
 
@@ -58,6 +58,10 @@ interface CommandRoute {
 	bare?:
 		| { kind: "default"; child: string; withLeadingOptions: boolean }
 		| { kind: "namespace-refusal"; message: string };
+	childDiscovery?: {
+		kind: "first-positional";
+		options: Readonly<Record<string, "flag" | "value">>;
+	};
 }
 
 const commandSummary = (route: CommandRoute) =>
@@ -184,10 +188,14 @@ const COMMANDS: Record<string, CommandRoute> = {
 		].join("\n"),
 	},
 	pane: {
-		owner: legacy(pane, "src/cli/commands/pane.ts", "legacy subcommand dispatch"),
+		owner: legacy(paneCommands.pane, "src/cli/commands/pane.ts", "legacy subcommand dispatch"),
 		children: {
-			open: child(legacy(pane, "src/cli/commands/pane.ts")),
-			close: child(legacy(pane, "src/cli/commands/pane.ts")),
+			open: child(
+				legacy(paneCommands.paneOpen, "src/cli/commands/pane.ts", "legacy args.ts", "route-tail"),
+			),
+			close: child(
+				legacy(paneCommands.paneClose, "src/cli/commands/pane.ts", "legacy args.ts", "route-tail"),
+			),
 		},
 		bare: {
 			kind: "namespace-refusal",
@@ -224,11 +232,17 @@ const COMMANDS: Record<string, CommandRoute> = {
 			"demote [--ids a,b,c] [--text]  (default target is the live selection; demotes every element of each node it touches)",
 	},
 	repo: {
-		owner: legacy(repo, "src/cli/commands/repo.ts", "legacy subcommand dispatch"),
+		owner: legacy(repoCommands.repo, "src/cli/commands/repo.ts", "legacy subcommand dispatch"),
 		children: {
-			list: child(legacy(repo, "src/cli/commands/repo.ts")),
-			add: child(legacy(repo, "src/cli/commands/repo.ts")),
-			forget: child(legacy(repo, "src/cli/commands/repo.ts")),
+			list: child(
+				legacy(repoCommands.repoList, "src/cli/commands/repo.ts", "legacy args.ts", "route-tail"),
+			),
+			add: child(
+				legacy(repoCommands.repoAdd, "src/cli/commands/repo.ts", "legacy args.ts", "route-tail"),
+			),
+			forget: child(
+				legacy(repoCommands.repoForget, "src/cli/commands/repo.ts", "legacy args.ts", "route-tail"),
+			),
 		},
 		bare: { kind: "default", child: "list", withLeadingOptions: true },
 		summary:
@@ -251,12 +265,35 @@ const COMMANDS: Record<string, CommandRoute> = {
 		].join("\n"),
 	},
 	board: {
-		owner: legacy(board, "src/cli/commands/board.ts", "legacy subcommand dispatch"),
+		owner: legacy(boardCommands.board, "src/cli/commands/board.ts", "legacy subcommand dispatch"),
 		children: {
-			list: child(legacy(board, "src/cli/commands/board.ts")),
-			info: child(legacy(board, "src/cli/commands/board.ts")),
-			new: child(legacy(board, "src/cli/commands/board.ts")),
-			open: child(legacy(board, "src/cli/commands/board.ts")),
+			list: child(
+				legacy(
+					boardCommands.boardList,
+					"src/cli/commands/board.ts",
+					"legacy args.ts",
+					"route-tail",
+				),
+			),
+			info: child(
+				legacy(
+					boardCommands.boardInfo,
+					"src/cli/commands/board.ts",
+					"legacy args.ts",
+					"route-tail",
+				),
+			),
+			new: child(
+				legacy(boardCommands.boardNew, "src/cli/commands/board.ts", "legacy args.ts", "route-tail"),
+			),
+			open: child(
+				legacy(
+					boardCommands.boardOpen,
+					"src/cli/commands/board.ts",
+					"legacy args.ts",
+					"route-tail",
+				),
+			),
 			save: child(contract(boardSaveContract, "src/cli/command-contract/board-save.ts")),
 		},
 		bare: {
@@ -377,10 +414,28 @@ const COMMANDS: Record<string, CommandRoute> = {
 		].join("\n"),
 	},
 	inject: {
-		owner: legacy(inject, "src/cli/commands/inject.ts", "legacy subcommand dispatch"),
+		owner: legacy(
+			injectCommands.inject,
+			"src/cli/commands/inject.ts",
+			"legacy subcommand dispatch",
+		),
 		children: {
-			status: child(legacy(inject, "src/cli/commands/inject.ts")),
-			test: child(legacy(inject, "src/cli/commands/inject.ts")),
+			status: child(
+				legacy(
+					injectCommands.injectStatus,
+					"src/cli/commands/inject.ts",
+					"legacy args.ts",
+					"route-tail",
+				),
+			),
+			test: child(
+				legacy(
+					injectCommands.injectTest,
+					"src/cli/commands/inject.ts",
+					"legacy args.ts",
+					"route-tail",
+				),
+			),
 		},
 		bare: { kind: "default", child: "status", withLeadingOptions: false },
 		summary:
@@ -432,12 +487,38 @@ const COMMANDS: Record<string, CommandRoute> = {
 			"mermaid [diagram.mmd|-] (or stdin)  (converts in the pane holding --board, so there is no --pane to pass; refused, converting nothing, when no pane is holding it)",
 	},
 	snapshot: {
-		owner: legacy(snapshot, "src/cli/commands/snapshot.ts", "legacy subcommand dispatch"),
+		owner: legacy(
+			snapshotCommands.snapshot,
+			"src/cli/commands/snapshot.ts",
+			"legacy subcommand dispatch",
+		),
 		children: {
-			save: child(legacy(snapshot, "src/cli/commands/snapshot.ts")),
-			list: child(legacy(snapshot, "src/cli/commands/snapshot.ts")),
-			restore: child(legacy(snapshot, "src/cli/commands/snapshot.ts")),
+			save: child(
+				legacy(
+					snapshotCommands.snapshotSave,
+					"src/cli/commands/snapshot.ts",
+					"legacy args.ts",
+					"route-tail",
+				),
+			),
+			list: child(
+				legacy(
+					snapshotCommands.snapshotList,
+					"src/cli/commands/snapshot.ts",
+					"legacy args.ts",
+					"route-tail",
+				),
+			),
+			restore: child(
+				legacy(
+					snapshotCommands.snapshotRestore,
+					"src/cli/commands/snapshot.ts",
+					"legacy args.ts",
+					"route-tail",
+				),
+			),
 		},
+		childDiscovery: { kind: "first-positional", options: { force: "flag" } },
 		bare: {
 			kind: "namespace-refusal",
 			message: "Usage: snapshot save|list|restore [name]",
@@ -447,10 +528,28 @@ const COMMANDS: Record<string, CommandRoute> = {
 			"snapshot save|list|restore [name] [--force]  (a snapshot belongs to the board it was taken on; --force restores it onto a different one)",
 	},
 	library: {
-		owner: legacy(library, "src/cli/commands/library.ts", "legacy subcommand dispatch"),
+		owner: legacy(
+			libraryCommands.library,
+			"src/cli/commands/library.ts",
+			"legacy subcommand dispatch",
+		),
 		children: {
-			list: child(legacy(library, "src/cli/commands/library.ts")),
-			insert: child(legacy(library, "src/cli/commands/library.ts")),
+			list: child(
+				legacy(
+					libraryCommands.libraryList,
+					"src/cli/commands/library.ts",
+					"legacy args.ts",
+					"route-tail",
+				),
+			),
+			insert: child(
+				legacy(
+					libraryCommands.libraryInsert,
+					"src/cli/commands/library.ts",
+					"legacy args.ts",
+					"route-tail",
+				),
+			),
 		},
 		bare: { kind: "default", child: "list", withLeadingOptions: true },
 		summary: "What stencils are in the library, and dropping one onto the board",
@@ -458,15 +557,72 @@ const COMMANDS: Record<string, CommandRoute> = {
 			"library list [--text] | library insert <name> --x <x> --y <y> [--source <file>] [--id <libraryItemId>]  (the palette lives on the canvas server, not in a browser profile, which is why an agent can read and place from it without a browser)",
 	},
 	arrange: {
-		owner: legacy(arrange, "src/cli/commands/arrange.ts", "legacy subcommand dispatch"),
+		owner: legacy(
+			arrangeCommands.arrange,
+			"src/cli/commands/arrange.ts",
+			"legacy subcommand dispatch",
+		),
 		children: {
-			align: child(legacy(arrange, "src/cli/commands/arrange.ts")),
-			distribute: child(legacy(arrange, "src/cli/commands/arrange.ts")),
-			group: child(legacy(arrange, "src/cli/commands/arrange.ts")),
-			ungroup: child(legacy(arrange, "src/cli/commands/arrange.ts")),
-			lock: child(legacy(arrange, "src/cli/commands/arrange.ts")),
-			unlock: child(legacy(arrange, "src/cli/commands/arrange.ts")),
-			duplicate: child(legacy(arrange, "src/cli/commands/arrange.ts")),
+			align: child(
+				legacy(
+					arrangeCommands.arrangeAlign,
+					"src/cli/commands/arrange.ts",
+					"legacy args.ts",
+					"route-tail",
+				),
+			),
+			distribute: child(
+				legacy(
+					arrangeCommands.arrangeDistribute,
+					"src/cli/commands/arrange.ts",
+					"legacy args.ts",
+					"route-tail",
+				),
+			),
+			group: child(
+				legacy(
+					arrangeCommands.arrangeGroup,
+					"src/cli/commands/arrange.ts",
+					"legacy args.ts",
+					"route-tail",
+				),
+			),
+			ungroup: child(
+				legacy(
+					arrangeCommands.arrangeUngroup,
+					"src/cli/commands/arrange.ts",
+					"legacy args.ts",
+					"route-tail",
+				),
+			),
+			lock: child(
+				legacy(
+					arrangeCommands.arrangeLock,
+					"src/cli/commands/arrange.ts",
+					"legacy args.ts",
+					"route-tail",
+				),
+			),
+			unlock: child(
+				legacy(
+					arrangeCommands.arrangeUnlock,
+					"src/cli/commands/arrange.ts",
+					"legacy args.ts",
+					"route-tail",
+				),
+			),
+			duplicate: child(
+				legacy(
+					arrangeCommands.arrangeDuplicate,
+					"src/cli/commands/arrange.ts",
+					"legacy args.ts",
+					"route-tail",
+				),
+			),
+		},
+		childDiscovery: {
+			kind: "first-positional",
+			options: { ids: "value", to: "value", group: "value", offset: "value" },
 		},
 		bare: {
 			kind: "namespace-refusal",
@@ -533,7 +689,9 @@ export interface CliRegistryEntry {
 	kind: "contract" | "legacy";
 	handlerOwner: string;
 	parserOwner: string;
+	handlerName: string;
 	bare?: CommandRoute["bare"];
+	childDiscovery?: CommandRoute["childDiscovery"];
 	legacyArgv?: LegacyCommand["legacyArgv"];
 	handler?: LegacyCommand["handler"];
 	contract?: AnyCommandContract;
@@ -557,7 +715,12 @@ function flattenRoute(
 		kind: route.owner.kind,
 		handlerOwner: route.owner.handlerOwner,
 		parserOwner: parserOwner(route.owner),
+		handlerName:
+			route.owner.kind === "contract"
+				? route.owner.contract.path.join(" ")
+				: route.owner.handler.name,
 		...(route.bare ? { bare: route.bare } : {}),
+		...(route.childDiscovery ? { childDiscovery: route.childDiscovery } : {}),
 		...(route.owner.kind === "contract"
 			? { contract: route.owner.contract }
 			: { handler: route.owner.handler, legacyArgv: route.owner.legacyArgv }),
@@ -585,18 +748,33 @@ function dispatchedCommand(
 	const root = COMMANDS[name];
 	if (!root) return null;
 	let selectedRoute = root;
-	let consumed = 0;
-	while (rest[consumed]) {
-		const nested = selectedRoute.children?.[rest[consumed]!];
-		if (!nested) break;
-		selectedRoute = nested;
-		consumed += 1;
+	let childIndex: number | undefined;
+	const direct = rest[0] ? root.children?.[rest[0]] : undefined;
+	if (direct) {
+		selectedRoute = direct;
+		childIndex = 0;
+	} else if (root.childDiscovery?.kind === "first-positional") {
+		for (let index = 0; index < rest.length; index += 1) {
+			const token = rest[index]!;
+			if (!token.startsWith("--")) {
+				const discovered = root.children?.[token];
+				if (discovered) {
+					selectedRoute = discovered;
+					childIndex = index;
+				}
+				break;
+			}
+			const [spelling, inlineValue] = token.slice(2).split("=", 2);
+			const option = root.childDiscovery.options[spelling!];
+			if (!option) break;
+			if (option === "value" && inlineValue === undefined) index += 1;
+		}
 	}
-	if (consumed === 0 && root.bare?.kind === "namespace-refusal") {
+	if (childIndex === undefined && !root.childDiscovery && root.bare?.kind === "namespace-refusal") {
 		throw new CliUsageError(root.bare.message);
 	}
 	if (
-		consumed === 0 &&
+		childIndex === undefined &&
 		root.bare?.kind === "default" &&
 		(rest.length === 0 || (root.bare.withLeadingOptions && rest[0]?.startsWith("--")))
 	) {
@@ -605,7 +783,7 @@ function dispatchedCommand(
 	const selected = selectedRoute.owner;
 	const argv =
 		selected.kind === "contract" || selected.legacyArgv === "route-tail"
-			? rest.slice(consumed)
+			? rest.filter((_, index) => index !== childIndex)
 			: [...rest];
 	return { root, selected, argv };
 }
