@@ -1,10 +1,11 @@
 ---
 id: TASK-119
 title: Expose deterministic board inspection through the CLI
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 01:26'
+updated_date: '2026-08-26 12:19'
 labels:
   - ready-for-agent
 dependencies:
@@ -86,5 +87,11 @@ CLI rewrite decision: this task now depends on TASK-123.01 and must add check th
 created: 2026-08-26 01:26
 ---
 TASK-124 reconciliation: inspection remains a CLI-only CommandContract. Acceptance criteria and implementation steps contain no equivalent secondary agent transport.
+---
+
+author: @codex
+created: 2026-08-26 12:19
+---
+Planning reopened after TASK-123.02 completed and was pushed at 7b7a4b38c3d06a1f660516b2f404f1672aa52ede. Existing plan must be re-audited against the post-migration source and independently approved before implementation.
 ---
 <!-- COMMENTS:END -->
