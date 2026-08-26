@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 23:37'
+updated_date: '2026-08-26 23:52'
 labels:
   - ready-for-agent
 dependencies:
@@ -539,6 +539,14 @@ On-demand contract generation was repeated with identical bytes, then all three 
 - The shared stable merge-sort owner now meters clone/allocation/cell initialization, source reads, comparisons, destination writes, and uneven tail copies before execution. Model, collision-pass, and interval-array construction meter source reads, allocation, membership, and writes at their primitive owners.
 - Schema-v1 obstacle identity encoding is single-owned and meters each UTF-16 code unit read/emitted plus escaping and separators. A 6,300,000-code-unit library element identity reaches attempted preprocessing unit 25,000,001 in direct and parseable-note/package inspection instead of returning false-clean.
 - Focused validation is green: type-check, lint including skill validation, boundaries, module-scope, 58-path contracts, inspection (689 checks), CLI, geometry, labels, and branch. Two `bun run fix` passes were byte-stable at `295966bd72297d21c439d94d7fbcf60d42a61c85b854f79a07fb20c47304d63d`. Full `bun run check`, separate `bun run test`, sequential browser chain, and final generated-view checks remain pending.
+
+### 2026-08-27 budget-preservation final validation
+
+Complete validation passed for source commit `e9a4976` and checkpoint note `e59292f`. `bun run check` passed. The first separate `bun run test` reached the documented scheduling-sensitive human-performance reconciliation sample `[0,0,2]`; a fresh isolated diagnosis passed at `[0,0]`, then the required complete `bun run test` rerun passed. The successful chains ran all four browser suites sequentially/headlessly: human performance `[0,0]`, fixed point 0 of 13 changed elements, both typed-text rename interactions preserved, and 42 of 42 live-session cycles converged.
+
+On-demand CLI contract generation ran twice with identical bytes: audit Markdown `c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55`, proof JSON `4757efc048d711c45093a249a2b5c819e30ed043cf84eaa2b5c819e30ed043cf84eaa2e642f6a2c40ac5fa`, proof Markdown `70bcf2892140a4916b3ff51a5d51ec71a8b5b2e62dc884358bac70d2ace99bb7`.
+
+Correction to the immediately preceding validation note: the proof JSON SHA-256 is `4757efc048d711c45093a249a2b5c819e30ed043cf84eaa2e642f6a2c40ac5fa`.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
