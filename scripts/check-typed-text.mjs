@@ -89,7 +89,7 @@ const sessionId = (() => {
 		["session", "id", "--scope", "worktree", "--prefix", "archboard-typed"],
 		{ encoding: "utf-8", env: browserEnv },
 	);
-	return asked.stdout?.trim() || `archboard-typed-${Math.random().toString(36).slice(2, 10)}`;
+	return asked.stdout.trim() || `archboard-typed-${Math.random().toString(36).slice(2, 10)}`;
 })();
 
 const browser = (args, stdin) =>

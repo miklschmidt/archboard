@@ -97,7 +97,7 @@ const sessionId = (() => {
 		["session", "id", "--scope", "worktree", "--prefix", "archboard-human-perf"],
 		{ encoding: "utf-8", env: browserEnv },
 	);
-	return answer.stdout?.trim() || `archboard-human-perf-${Math.random().toString(36).slice(2, 9)}`;
+	return answer.stdout.trim() || `archboard-human-perf-${Math.random().toString(36).slice(2, 9)}`;
 })();
 const browser = (args, stdin) =>
 	new Promise((resolve, reject) => {

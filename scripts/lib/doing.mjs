@@ -18,7 +18,7 @@
  * @param {string} what   one line, present tense, as an agent would write it
  */
 export function withDoing(url, method, what) {
-	const verb = (method ?? "GET").toUpperCase();
+	const verb = method.toUpperCase();
 	if (verb === "GET" || verb === "HEAD") return url;
 	if (/[?&]doing=/.test(url)) return url;
 	return `${url}${url.includes("?") ? "&" : "?"}doing=${encodeURIComponent(what)}`;

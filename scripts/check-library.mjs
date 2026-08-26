@@ -218,7 +218,7 @@ assert(
 );
 assert(ambiguous?.candidates.length === 2, "choose: the refusal does not carry both candidates");
 assert(
-	ambiguous?.message.includes("cloud") && ambiguous?.message.includes("drwnio"),
+	ambiguous.message.includes("cloud") && ambiguous.message.includes("drwnio"),
 	"choose: the refusal does not name the sources, so the caller cannot answer it",
 );
 assert(

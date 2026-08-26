@@ -192,7 +192,7 @@ const sessionId = (() => {
 		["session", "id", "--scope", "worktree", "--prefix", "archboard-fixedpoint"],
 		{ encoding: "utf-8", env: browserEnv },
 	);
-	const named = asked.stdout?.trim();
+	const named = asked.stdout.trim();
 	return named || `archboard-fixedpoint-${Math.random().toString(36).slice(2, 10)}`;
 })();
 

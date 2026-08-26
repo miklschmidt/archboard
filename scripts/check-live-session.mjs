@@ -144,7 +144,7 @@ const sessionId = (() => {
 		["session", "id", "--scope", "worktree", "--prefix", "archboard-live"],
 		{ encoding: "utf-8", env: browserEnv },
 	);
-	return asked.stdout?.trim() || `archboard-live-${Math.random().toString(36).slice(2, 10)}`;
+	return asked.stdout.trim() || `archboard-live-${Math.random().toString(36).slice(2, 10)}`;
 })();
 
 const browser = (args, stdin) =>
@@ -1735,7 +1735,7 @@ try {
 	check(
 		"a content edit revokes the claim and tells the agent at its next write",
 		contentRevoked.status === 409 && contentRevoked.body?.code === "CLAIM_REVOKED",
-		`${contentRevoked.status} ${JSON.stringify(contentRevoked.body)?.slice(0, 160)}`,
+		`${contentRevoked.status} ${JSON.stringify(contentRevoked.body).slice(0, 160)}`,
 	);
 
 	const explicitWhy = "checking the explicit take-back control";
@@ -1782,7 +1782,7 @@ try {
 	check(
 		"  and the agent is told at its next write, rather than finding the board changed",
 		lost.status === 409 && lost.body?.code === "CLAIM_REVOKED",
-		`${lost.status} ${JSON.stringify(lost.body)?.slice(0, 160)}`,
+		`${lost.status} ${JSON.stringify(lost.body).slice(0, 160)}`,
 	);
 
 	// The half that has to fail closed, and the reason it is last. Lock state is

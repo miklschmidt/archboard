@@ -49,7 +49,7 @@ export const BOARD_REFUSAL_CODES = new Set([
 let requestedBoard: string | null = null;
 
 export function setRequestedBoard(key: string | null): void {
-	requestedBoard = key && key.trim() ? key.trim() : null;
+	requestedBoard = key?.trim() || null;
 }
 
 export function currentRequestedBoard(): string | null {
@@ -96,7 +96,7 @@ function withBoard(path: string): string {
 let writeDoing: string | null = null;
 
 export function setWriteDoing(doing: string | null): void {
-	writeDoing = doing && doing.trim() ? doing.trim() : null;
+	writeDoing = doing?.trim() || null;
 }
 
 export function currentWriteDoing(): string | null {

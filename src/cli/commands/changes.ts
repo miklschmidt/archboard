@@ -44,7 +44,7 @@ export async function changes(argv: string[]): Promise<void> {
 			if (!net || net.significance === "none") {
 				lines.push(`Nothing has changed on "${String(report.board)}" since then.`);
 			} else {
-				lines.push(`${String(report.board)}: ${net.headline}`);
+				lines.push(`${String(report.board)}: ${String(net.headline)}`);
 				if (typeof net.text === "string") lines.push(net.text);
 			}
 		} else if (report.events.length === 0) {
@@ -52,7 +52,7 @@ export async function changes(argv: string[]): Promise<void> {
 		} else {
 			for (const event of report.events) {
 				lines.push(
-					`[${event.cursor}] ${event.at} — ${event.origin} ${event.significance}: ${event.headline}`,
+					`[${String(event.cursor)}] ${String(event.at)} — ${String(event.origin)} ${String(event.significance)}: ${String(event.headline)}`,
 				);
 					if (typeof event.text === "string") lines.push(event.text);
 			}

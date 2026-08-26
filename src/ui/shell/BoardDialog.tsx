@@ -6,7 +6,7 @@
 // is allowed to grow, so the field suggests the tiers we have but does not
 // refuse a new one.
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Modal } from "./Modal";
 import { fetchBoards } from "../canvas/api";
 import type { BoardIdentity, BoardListing } from "../types";
@@ -101,7 +101,7 @@ export function BoardDialog({
 
 	const intoPane = asksForPane && pane ? { pane } : {};
 
-	const submitTyped = (): void => {
+	const submitTyped = useCallback((): void => {
 		const board = (mode === "open" ? filter : name).trim();
 		if (!board) return;
 		onSubmit(
@@ -114,7 +114,19 @@ export function BoardDialog({
 						...intoPane,
 					},
 		);
-	};
+	}, [filter, name, mode, onSubmit, pane, variant, level, intoPane]);
+	const submitEntry = useCallback((event: React.MouseEvent<HTMLButtonElement>): void => {
+		const board = event.currentTarget.dataset.boardKey;
+		if (board) onSubmit({ board, ...intoPane });
+	}, [intoPane, onSubmit]);
+	const selectPane = useCallback((event: React.ChangeEvent<HTMLSelectElement>): void => setPane(event.target.value), []);
+	const updateFilter = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => setFilter(event.target.value), []);
+	const updateName = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => setName(event.target.value), []);
+	const updateVariant = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => setVariant(event.target.value), []);
+	const updateLevel = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => setLevel(event.target.value), []);
+	const submitOnEnter = useCallback((event: React.KeyboardEvent<HTMLInputElement>): void => {
+		if (event.key === "Enter") submitTyped();
+	}, [submitTyped]);
 
 	return (
 		<Modal
@@ -137,7 +149,7 @@ export function BoardDialog({
 			{asksForPane && (
 				<label className="field">
 					<span>Into which pane</span>
-					<select value={pane} onChange={(event) => setPane(event.target.value)}>
+					<select value={pane} onChange={selectPane}>
 						{panes.map((entry) => (
 							<option key={entry.clientId} value={entry.clientId}>
 								{entry.label}
@@ -156,10 +168,8 @@ export function BoardDialog({
 							data-autofocus
 							value={filter}
 							placeholder="payments, or payments@option-a"
-							onChange={(event) => setFilter(event.target.value)}
-							onKeyDown={(event) => {
-								if (event.key === "Enter") submitTyped();
-							}}
+							onChange={updateFilter}
+							onKeyDown={submitOnEnter}
 						/>
 					</label>
 					{listError && <p className="notice notice-error">{listError}</p>}
@@ -171,7 +181,8 @@ export function BoardDialog({
 								<li key={entry.key}>
 									<button
 										className={`board-row${entry.onScreen ? " board-row-active" : ""}`}
-										onClick={() => onSubmit({ board: entry.key, ...intoPane })}
+										onClick={submitEntry}
+										data-board-key={entry.key}
 										disabled={busy}
 									>
 										<span className="board-row-key">{entry.key}</span>
@@ -193,10 +204,8 @@ export function BoardDialog({
 							data-autofocus
 							value={name}
 							placeholder="payments"
-							onChange={(event) => setName(event.target.value)}
-							onKeyDown={(event) => {
-								if (event.key === "Enter") submitTyped();
-							}}
+							onChange={updateName}
+							onKeyDown={submitOnEnter}
 						/>
 					</label>
 					<label className="field">
@@ -204,10 +213,8 @@ export function BoardDialog({
 						<input
 							value={variant}
 							placeholder="current"
-							onChange={(event) => setVariant(event.target.value)}
-							onKeyDown={(event) => {
-								if (event.key === "Enter") submitTyped();
-							}}
+							onChange={updateVariant}
+							onKeyDown={submitOnEnter}
 						/>
 					</label>
 					<label className="field">
@@ -216,10 +223,8 @@ export function BoardDialog({
 							value={level}
 							list="archboard-levels"
 							placeholder="system, service, module…"
-							onChange={(event) => setLevel(event.target.value)}
-							onKeyDown={(event) => {
-								if (event.key === "Enter") submitTyped();
-							}}
+							onChange={updateLevel}
+							onKeyDown={submitOnEnter}
 						/>
 						<datalist id="archboard-levels">
 							{LEVELS.map((value) => (

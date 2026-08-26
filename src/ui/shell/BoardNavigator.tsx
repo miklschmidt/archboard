@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import type { BoardIdentity, BoardListing } from "../types";
 import { Icon } from "./Icons";
 
@@ -73,6 +73,14 @@ export function BoardNavigator({
 			scratch: scratchGroup?.variants[0] ?? null,
 		};
 	}, [listing]);
+	const selectEntry = useCallback((event: React.MouseEvent<HTMLButtonElement>): void => {
+		const key = event.currentTarget.dataset.boardKey;
+		if (key) onSelect(key);
+	}, [onSelect]);
+	const selectScratch = useCallback((event: React.MouseEvent<HTMLButtonElement>): void => {
+		const key = event.currentTarget.dataset.boardKey;
+		if (key) onSelect(key);
+	}, [onSelect]);
 
 	return (
 		<aside className="board-nav" aria-label="Boards and variants">
@@ -145,7 +153,8 @@ export function BoardNavigator({
 										key={entry.key}
 										disabled={busy}
 										aria-current={selected ? "page" : undefined}
-										onClick={() => onSelect(entry.key)}
+										onClick={selectEntry}
+										data-board-key={entry.key}
 										title={`${entry.key}${entry.onScreen ? " · on screen" : entry.open ? " · open" : ""}`}
 									>
 										<span className="board-nav-variant">{label}</span>
@@ -168,7 +177,8 @@ export function BoardNavigator({
 							className={`board-nav-row scratch-top${scratch?.key === currentKey ? " board-nav-row-current" : ""}`}
 							disabled={busy || !scratch}
 							aria-current={scratch?.key === currentKey ? "page" : undefined}
-							onClick={() => scratch && onSelect(scratch.key)}
+							onClick={selectScratch}
+							data-board-key={scratch?.key}
 						>
 							<span className="board-glyph">SC</span>
 							<span className="board-group-copy">

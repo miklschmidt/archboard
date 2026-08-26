@@ -104,6 +104,7 @@ export function BoardBar({
 	onThemeChange,
 	busy,
 }: BoardBarProps): React.JSX.Element {
+	const toggleTheme = (): void => onThemeChange(theme === "dark" ? "light" : "dark");
 	const boardTitle = identity
 		? `${identity.board}${identity.variant === "current" ? "" : ` / ${identity.variant}`}`
 		: (boardKey ?? "No board");
@@ -206,7 +207,7 @@ export function BoardBar({
 				</button>
 				<button
 					className="btn btn-icon"
-					onClick={() => onThemeChange(theme === "dark" ? "light" : "dark")}
+					onClick={toggleTheme}
 					title={theme === "dark" ? "Use light theme" : "Use dark theme"}
 					aria-label={theme === "dark" ? "Use light theme" : "Use dark theme"}
 				>

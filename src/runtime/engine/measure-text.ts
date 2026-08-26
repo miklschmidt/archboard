@@ -107,7 +107,7 @@ export interface LineMeasurement {
  */
 export function measureLine(text: string, fontSize: number, fontFamily: number): LineMeasurement {
 	const stack = faceStack(fontFamily);
-	if (stack.length === 0) return { width: 0, missing: [...text] };
+	if (stack.length === 0) return { width: 0, missing: Array.from(text) };
 
 	interface Run {
 		face: LoadedFace | undefined;

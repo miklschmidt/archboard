@@ -74,7 +74,7 @@ try {
 		}
 	}
 } finally {
-	compiler.close();
+	void compiler.close();
 }
 
 function parsedSource(file) {
@@ -403,7 +403,7 @@ function analyze(files) {
 			const first = node.arguments[0];
 			removals.push({
 				receiver: node.expression.expression.getText(source),
-				event: first && ts.isStringLiteral(first) ? first.text : null,
+			event: ts.isStringLiteral(first) ? first.text : null,
 			});
 		});
 
@@ -461,7 +461,7 @@ function analyze(files) {
 
 			if (ADD_LISTENER.has(method)) {
 				const first = node.arguments[0];
-				const event = first && ts.isStringLiteral(first) ? first.text : null;
+			const event = ts.isStringLiteral(first) ? first.text : null;
 				if (!pairedWithRemoval(receiver, event, removals) && !guardedByOnceFlag(node, source)) {
 					report(
 						node,

@@ -5,7 +5,7 @@
 // around it — which is what makes a second pane a one-line change in the shell
 // rather than a second copy of the sync logic.
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Excalidraw, getLibraryItemsHash } from "@excalidraw/excalidraw";
 import type { ExcalidrawImperativeAPI, LibraryItems } from "@excalidraw/excalidraw/types";
 import { useCanvasSession } from "./useCanvasSession";
@@ -108,10 +108,30 @@ export function CanvasPane({
 		api.updateScene({ appState: { theme } });
 	}, [api, theme]);
 
-	const interacted = (): void => {
+	const interacted = useCallback((): void => {
 		session.markInteracted();
 		onFocus(paneId);
-	};
+	}, [onFocus, paneId, session.markInteracted]);
+	const setApiFromExcalidraw = useCallback((instance: ExcalidrawImperativeAPI): void => {
+		setApi(instance);
+		session.attachExcalidraw(instance);
+	}, [session.attachExcalidraw]);
+	const handleLibraryChange = useCallback((next: LibraryItems): void => {
+		appliedHashRef.current = getLibraryItemsHash(next);
+		onLibraryChange(next);
+	}, [onLibraryChange]);
+	const handleChange = useCallback((elements: readonly Partial<import("@excalidraw/excalidraw/element/types").ExcalidrawElement>[], appState: import("@excalidraw/excalidraw/types").AppState): void => {
+		if (appState.theme && appState.theme !== theme) onThemeChange(appState.theme);
+		session.handleChange(elements, appState);
+	}, [onThemeChange, session.handleChange, theme]);
+	const initialData = useMemo(() => ({
+		elements: [],
+		appState: {
+			theme,
+			currentItemBackgroundColor: DEFAULT_SHAPE_BACKGROUND,
+			currentItemFillStyle: DEFAULT_FILL_STYLE as "solid",
+		},
+	}), [theme]);
 
 	return (
 		<section
@@ -126,31 +146,15 @@ export function CanvasPane({
 					// board news. A connected pane stays locally editable while the
 					// vault mutex orders persistence, even when an agent holds the board.
 					viewModeEnabled={session.readOnly}
-					excalidrawAPI={(instance: ExcalidrawImperativeAPI) => {
-						setApi(instance);
-						session.attachExcalidraw(instance);
-					}}
-					onLibraryChange={(next) => {
-						appliedHashRef.current = getLibraryItemsHash(next);
-						onLibraryChange(next);
-					}}
-					onChange={(elements, appState) => {
-						if (appState?.theme && appState.theme !== theme) onThemeChange(appState.theme);
-						session.handleChange(elements, appState);
-					}}
+					excalidrawAPI={setApiFromExcalidraw}
+					onLibraryChange={handleLibraryChange}
+					onChange={handleChange}
 					// Excalidraw defaults new shapes to a transparent background, and a
 					// transparent shape is only hit-testable on its stroke — so a box
 					// drawn by the user could not be selected in the middle, which is the
 					// first step of every promotion. Seeding the item defaults
 					// fixes it at the moment of drawing; the picker still overrides.
-					initialData={{
-						elements: [],
-						appState: {
-							theme,
-							currentItemBackgroundColor: DEFAULT_SHAPE_BACKGROUND,
-							currentItemFillStyle: DEFAULT_FILL_STYLE,
-						},
-					}}
+					initialData={initialData}
 				/>
 			</div>
 		</section>
