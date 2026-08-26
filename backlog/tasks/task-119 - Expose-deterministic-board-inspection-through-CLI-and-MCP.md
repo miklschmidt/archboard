@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 21:09'
+updated_date: '2026-08-26 21:34'
 labels:
   - ready-for-agent
 dependencies:
@@ -502,6 +502,12 @@ Final validation completed at 12309e5. Two consecutive real bun run fix passes p
 Union-query remediation checkpoint f95f488 replaces the partial-complement full-bucket fallback for hierarchy semantics with counted range indexes in both event and reciprocal orientations, intersects two-sided candidate results before bucket visitation, and counts candidate/set-membership work plus every remaining hierarchy predicate. Cross-set retained peaks now total both live indexes, and the diagnostics report includes query references and one total sweep-owned state count. Public and diagnostics matrices cover the reported nested-owner labels plus one unrelated node at 1k/2k/4k/8k in both orientations, exact arbitrary exclusions with control characters, same/cross sweeps, deterministic randomized brute-force pair and order differentials, and linear retained state. Obstacle refs now reject unsorted or duplicate elementIds/groupIds/library element IDs while preserving the accepted escaped identity bytes. Two bun run fix passes were byte-stable at 432a0ed0342b916a13d67e1f06f3aca6d27645ddd95e982e38967b97eb4200b6. Focused lint, types, boundaries, module-scope, contracts, inspection (646 checks), geometry, labels, branch, and CLI gates pass. Full bun run check, separate bun run test, final on-demand generation, diff, and clean-tree checks remain.
 
 Final validation for the union-query closure passed. Two real bun run fix passes were byte-identical at tracked-diff SHA-256 432a0ed0342b916a13d67e1f06f3aca6d27645ddd95e982e38967b97eb4200b6. Complete bun run check passed, followed by a separate complete bun run test; each chain ran human-performance, fixed-point, typed-text, and live-session sequentially/headlessly. Focused evidence remained green: 58 contract paths/978 checks, inspection 646 checks, CLI 579 checks, geometry 89, labels 183, boundaries, module-scope, branch, and package cases. Two independent on-demand generation directories were byte-identical with hashes c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, e6be922438f3d8dc9ce2a9bac33cfb68f5a5527492d9b7fbb7cd32d9441442c1, and def3540846fa0854944805a959f2671ba943ffeb0d55c8a47aaa3ab538d949c2. git diff --check passed and the committed worktree was clean before this Backlog-only note. TASK-119 remains In Progress with all nine acceptance criteria unchecked for independent rereview.
+
+### Exact-exclusion and reciprocal-hierarchy closure checkpoint (2026-08-26)
+
+Commit `7718f04` replaces the arbitrary exact-exclusion fallback with a stable structural segment index. Event-side and active-side exact exclusions are combined before bucket visitation; reciprocal hierarchy summaries represent the exact intersection of ancestor coverage, so a profile with one inside and one outside target remains excluded. `pairAllowed` is now an assertion over indexed compatibility. Query-state peaks are sampled before visitor early returns and post-insertion with zero query references; exact membership, hierarchy membership, index update/query, summary, and simultaneous retained-state work are separately counted only through the pure diagnostics entrypoint.
+
+Obstacle refs now reject nonmember library attribution, kind/library contradictions, grouped singletons, and grouped refs without group evidence while retaining the approved escaped identity grammar. The public inspection matrix passes 653 checks, including 1k/2k/4k/8k compact arbitrary-exclusion and reciprocal multi-target cases in both orientations, early-return peak arithmetic, expiry/reinsertion, randomized pair/order differentials, and direct schema rejection. Focused lint, type-check, boundaries, module-scope, 58-path contracts (978 checks), inspection/package, geometry, labels, branch, and CLI (579 checks) pass. Two real `bun run fix` passes were byte-stable at diff SHA-256 `9ed8fd1c67e2a1739b71ee0ca1b20c2f8cd68f50d8dd2487bb04d4ece7648eb5`. Complete check, separate complete test, and final generator/state evidence remain.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
