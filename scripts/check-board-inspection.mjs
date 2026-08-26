@@ -11,6 +11,7 @@ const fixture = (file) =>
 	JSON.parse(fs.readFileSync(path.join(root, "scripts/fixtures/board-inspection", file), "utf8"));
 const {
 	inspectBoard,
+	BROAD_PHASE_PREPROCESSING_LIMIT,
 	InspectionFindingSchema,
 	InspectionReportSchema,
 	CheckResultSchema,
@@ -36,6 +37,11 @@ const check = (label, condition, detail = "") => {
 const frozen = Object.freeze([]);
 const clean = inspectBoard(frozen);
 check("empty board is clean", clean.clean && clean.coverage === "complete");
+check(
+	"schema-v1 publishes the separate preprocessing ceiling",
+	BROAD_PHASE_PREPROCESSING_LIMIT === 25_000_000 &&
+		clean.limits.broadPhasePreprocessingSteps === 25_000_000,
+);
 check("report parses through the public schema", InspectionReportSchema.safeParse(clean).success);
 check(
 	"schema-v1 report omits private preprocessing mechanics",
@@ -69,6 +75,19 @@ check(
 	!malformedReport.clean && malformedReport.coverage === "indeterminate",
 );
 check("inspection does not mutate frozen raw input", JSON.stringify(malformed) === malformedBytes);
+
+for (const type of ["rectangle", "ellipse", "diamond"]) {
+	const decoration = inspectBoard([
+		{ id: `decoration-${type}`, type, x: 0, y: 0, width: 20, height: 20, angle: 0.5 },
+	]);
+	check(
+		`plain rotated ${type} remains known decoration`,
+		decoration.clean &&
+			!decoration.findings.some(
+				(finding) => finding.code === "UNSUPPORTED_GEOMETRY" && finding.reason === "rotation",
+			),
+	);
+}
 check(
 	"invalid identity remains null and source-indexed",
 	malformedReport.findings.some(
@@ -534,6 +553,23 @@ const findingCases = [
 		},
 	],
 	[
+		"INSPECTION_LIMIT_EXCEEDED",
+		"broad-phase-preprocessing-ceiling",
+		"warning",
+		true,
+		{
+			limit: 25_000_000,
+			attempted: 25_000_001,
+			pass: "connector-node",
+			phase: "compatibility-query",
+			completedBroadPhaseComparisons: 17,
+			segmentCount: 2,
+			nodeCount: 3,
+			obstacleCount: 1,
+			labelCount: 4,
+		},
+	],
+	[
 		"CONNECTOR_PENETRATES_NODE",
 		"leaf-footprint-interior",
 		"error",
@@ -631,6 +667,25 @@ for (const finding of schemaFindings) {
 check(
 	"schema rejects an unknown code/reason combination",
 	!InspectionFindingSchema.safeParse({ ...schemaFindings[0], reason: "unknown" }).success,
+);
+const preprocessingSchemaFinding = schemaFindings.find(
+	(finding) => finding.reason === "broad-phase-preprocessing-ceiling",
+);
+check(
+	"preprocessing limit schema closes pass, phase, limit, and attempted values",
+	!!preprocessingSchemaFinding &&
+		!InspectionFindingSchema.safeParse({
+			...preprocessingSchemaFinding,
+			details: { ...preprocessingSchemaFinding.details, pass: "unknown-pass" },
+		}).success &&
+		!InspectionFindingSchema.safeParse({
+			...preprocessingSchemaFinding,
+			details: { ...preprocessingSchemaFinding.details, phase: "unknown-phase" },
+		}).success &&
+		!InspectionFindingSchema.safeParse({
+			...preprocessingSchemaFinding,
+			details: { ...preprocessingSchemaFinding.details, attempted: 25_000_002 },
+		}).success,
 );
 const formatterMatrix = formatInspectionText({
 	board: "schema-matrix",
@@ -3084,6 +3139,22 @@ check(
 		}).success &&
 		!ObstacleRefSchema.safeParse({ ...canonicalObstacleRef, groupIds: [] }).success,
 );
+check(
+	"obstacle schema requires group evidence for every multi-element component and nonempty source",
+	!ObstacleRefSchema.safeParse({
+		...canonicalObstacleRef,
+		kind: "library-component",
+		groupIds: [],
+		library: canonicalObstacleRef.elementIds.map((elementId) => ({
+			elementId,
+			item: `item-${elementId}`,
+		})),
+	}).success &&
+		!ObstacleRefSchema.safeParse({
+			...canonicalLibraryObstacleRef,
+			library: [{ ...canonicalLibraryObstacleRef.library[0], source: "" }],
+		}).success,
+);
 const transitiveGroupedObstacle = obstaclePenetrations([
 	{ ...validLibraryBody("transitive-a"), customData: undefined, groupIds: ["group-a"] },
 	{
@@ -3772,6 +3843,45 @@ check(
 		),
 );
 
+const preprocessingLimitId = `preprocessing-${"x".repeat(6_300_000)}`;
+const preprocessingLimitBoard = [
+	connector({
+		id: preprocessingLimitId,
+		angle: 0,
+		width: 1,
+		height: 0,
+		points: [
+			[0, 0],
+			[1, 0],
+		],
+	}),
+];
+const preprocessingLimited = inspectBoard(preprocessingLimitBoard);
+const preprocessingLimitFinding = preprocessingLimited.findings.find(
+	(finding) => finding.reason === "broad-phase-preprocessing-ceiling",
+);
+check(
+	"direct inspection stops preprocessing at the exact ceiling without executing pair work",
+	InspectionReportSchema.safeParse(preprocessingLimited).success &&
+		preprocessingLimited.broadPhaseComparisons === 0 &&
+		preprocessingLimited.limits.broadPhasePreprocessingSteps === 25_000_000 &&
+		preprocessingLimitFinding?.details.limit === 25_000_000 &&
+		preprocessingLimitFinding?.details.attempted === 25_000_001 &&
+		preprocessingLimitFinding?.details.completedBroadPhaseComparisons === 0 &&
+		preprocessingLimitFinding?.elements[0]?.id === preprocessingLimitId &&
+		preprocessingLimitFinding.points.length === 0 &&
+		preprocessingLimited.coverage === "indeterminate",
+	preprocessingLimitFinding
+		? JSON.stringify({ details: preprocessingLimitFinding.details })
+		: "missing limit finding",
+);
+check(
+	"preprocessing-limit reports are byte deterministic and expose no private step count",
+	JSON.stringify(preprocessingLimited) === JSON.stringify(inspectBoard(preprocessingLimitBoard)) &&
+		!("broadPhasePreprocessingSteps" in preprocessingLimited) &&
+		!("preprocessingWork" in preprocessingLimited),
+);
+
 const manyPathPoints = Array.from({ length: 750_000 }, (_, index) => [index, index % 2]);
 let largeCardinalityReport;
 let largeCardinalityFailure;
@@ -3865,7 +3975,7 @@ check(
 			diagnostics.work.broadPhaseCompatibilityIndexUpdates === count * 10 - 3 &&
 			diagnostics.work.broadPhaseBucketIndexOperations === count * 86 - 32 &&
 			diagnostics.work.broadPhaseExactQuerySteps === 0 &&
-			diagnostics.work.broadPhasePeakRetainedTotalStateRefs <= count * 50 &&
+			diagnostics.work.broadPhasePeakRetainedTotalStateRefs <= count * 65 &&
 			diagnostics.work.broadPhaseCompatibilityTests === 0 &&
 			diagnostics.work.broadPhaseProfileTerminalLookups === diagnostics.work.broadPhaseEvents &&
 			diagnostics.work.broadPhaseProfileCreations ===
@@ -3877,7 +3987,7 @@ check(
 			diagnostics.work.hierarchyEvents === count * 2 &&
 			diagnostics.work.hierarchyCandidateVisits === 0 &&
 			diagnostics.work.hierarchyBucketScans === 0 &&
-			diagnostics.work.hierarchyBucketIndexOperations === count * 35 - 16 &&
+			diagnostics.work.hierarchyBucketIndexOperations === count * 36 - 16 &&
 			diagnostics.work.hierarchyExpiryPops <= count * 2 &&
 			diagnostics.work.containerBoundaryCandidateVisits === 0 &&
 			diagnostics.work.containerBoundaryBucketScans === 0 &&
@@ -4183,7 +4293,7 @@ check(
 			diagnostics.work.peakRetainedProfiles <= count + 1 &&
 			diagnostics.work.peakRetainedExclusionRefs <= count &&
 			diagnostics.work.peakRetainedIndexRefs === count * 8 + 4 &&
-			diagnostics.work.peakRetainedTotalStateRefs <= count * 70,
+			diagnostics.work.peakRetainedTotalStateRefs <= count * 82,
 	),
 	JSON.stringify(
 		partialComplementScaling.map(({ count, reverse, diagnostics }) => [
@@ -4270,7 +4380,7 @@ check(
 				(labelCount + height) * 25 + 2 &&
 			diagnostics.work.broadPhasePeakRetainedExclusionRefs === labelCount * 2 &&
 			diagnostics.work.broadPhasePeakRetainedIndexRefs === labelCount * 5 + height * 4 &&
-			diagnostics.work.broadPhasePeakRetainedTotalStateRefs <= (labelCount + height) * 70 &&
+			diagnostics.work.broadPhasePeakRetainedTotalStateRefs <= (labelCount + height) * 82 &&
 			!diagnostics.report.findings.some((finding) => finding.code === "LABEL_OVERLAP"),
 	),
 	JSON.stringify(
@@ -4809,12 +4919,128 @@ check(
 			diagnostics.work.peakRetainedProfiles <= count + 2 &&
 			diagnostics.work.peakRetainedExactIndexNodes <= count * 9 &&
 			diagnostics.work.peakRetainedExactSummaryRefs <= count * 8 &&
-			diagnostics.work.peakRetainedTotalStateRefs <= count * 40,
+			diagnostics.work.peakRetainedTotalStateRefs <= count * 45,
 	),
 	JSON.stringify(
 		compactExactUnionScaling.map(({ count, diagnostics }) => [count, diagnostics.work]),
 	),
 );
+
+function alternatingExactBudgetSweep(count, reverse = false, enforcePreprocessingLimit = false) {
+	const shared = Array.from({ length: count }, (_, index) => ({
+		id: `shared-${String(index).padStart(5, "0")}`,
+		min: 1,
+		max: 3,
+		partition: "L",
+		excludedPartitions: ["R1"],
+	}));
+	const alternating = Array.from({ length: count }, (_, index) =>
+		index % 2 === 0
+			? {
+					id: `active-${String(index).padStart(5, "0")}`,
+					min: 0,
+					max: 3,
+					partition: "R1",
+					excludedPartitions: [`x${index}`],
+				}
+			: {
+					id: `active-${String(index).padStart(5, "0")}`,
+					min: 0,
+					max: 3,
+					partition: `R${index}`,
+					excludedPartitions: ["L"],
+				},
+	);
+	return diagnoseSweepCompatibility({
+		left: reverse ? alternating : shared,
+		right: reverse ? shared : alternating,
+		sameSet: false,
+		enforcePreprocessingLimit,
+	});
+}
+const alternatingExactArithmetic = [64, 128, 256, 512].flatMap((count) =>
+	[false, true].map((reverse) => ({
+		count,
+		reverse,
+		diagnostics: alternatingExactBudgetSweep(count, reverse),
+	})),
+);
+check(
+	"alternating exact-union work has pinned production arithmetic in both cross orientations",
+	alternatingExactArithmetic.every(
+		({ count, diagnostics }) =>
+			diagnostics.pairs.length === 0 &&
+			diagnostics.work.activeVisits === 0 &&
+			diagnostics.work.bucketScans === 0 &&
+			diagnostics.work.exactQuerySteps === 2 * count * count + count &&
+			diagnostics.work.exactMembershipTests === (3 * count * count) / 2,
+	),
+	JSON.stringify(
+		alternatingExactArithmetic.map(({ count, reverse, diagnostics }) => [
+			count,
+			reverse,
+			diagnostics.work.exactQuerySteps,
+			diagnostics.work.exactMembershipTests,
+		]),
+	),
+);
+const alternatingBelowBudget = alternatingExactBudgetSweep(2_048, false, true);
+const alternatingAtBudget = alternatingExactBudgetSweep(3_072, false, true);
+check(
+	"the production preprocessing budget completes 2,048 and stops 3,072 at the exact attempted unit",
+	alternatingBelowBudget.preprocessingLimit === null &&
+		alternatingBelowBudget.preprocessingSteps < BROAD_PHASE_PREPROCESSING_LIMIT &&
+		alternatingBelowBudget.pairs.length === 0 &&
+		alternatingAtBudget.preprocessingSteps === BROAD_PHASE_PREPROCESSING_LIMIT &&
+		alternatingAtBudget.preprocessingLimit?.attempted === 25_000_001 &&
+		alternatingAtBudget.preprocessingLimit?.phase === "compatibility-query" &&
+		alternatingAtBudget.pairs.length === 0,
+	JSON.stringify({
+		below: {
+			steps: alternatingBelowBudget.preprocessingSteps,
+			limit: alternatingBelowBudget.preprocessingLimit,
+		},
+		at: {
+			steps: alternatingAtBudget.preprocessingSteps,
+			limit: alternatingAtBudget.preprocessingLimit,
+		},
+	}),
+);
+for (const [label, field] of [
+	["many-exclusion", "excludedPartitions"],
+	["many-ancestor", "ancestorTargets"],
+]) {
+	const count = 256,
+		entriesPerProfile = 32;
+	const parents = new Map(
+		Array.from({ length: entriesPerProfile }, (_, index) => [`ancestor-${index}`, null]),
+	);
+	const left = Array.from({ length: count }, (_record, index) => ({
+		id: `${label}-${index}`,
+		min: index * 4,
+		max: index * 4 + 1,
+		partition: `${label}-partition-${index}`,
+		[field]: Array.from({ length: entriesPerProfile }, (_excluded, entry) =>
+			field === "excludedPartitions" ? `${label}-excluded-${index}-${entry}` : `ancestor-${entry}`,
+		),
+	}));
+	const diagnostics = diagnoseSweepCompatibility({
+		left,
+		right: [],
+		sameSet: true,
+		...(field === "ancestorTargets" ? { hierarchyParents: parents } : {}),
+	});
+	const intervalCount = count,
+		exactExclusionEntries = field === "excludedPartitions" ? count * entriesPerProfile : 0,
+		ancestorTargetEntries = field === "ancestorTargets" ? count * entriesPerProfile : 0,
+		semanticInput = intervalCount + exactExclusionEntries + ancestorTargetEntries;
+	check(
+		`${label} retained state is linear in I + E + H`,
+		diagnostics.work.profileSnapshotEntries === exactExclusionEntries + ancestorTargetEntries &&
+			diagnostics.work.peakRetainedTotalStateRefs <= semanticInput * 20,
+		JSON.stringify({ semanticInput, work: diagnostics.work }),
+	);
+}
 function reciprocalMultiTargetSweep(count, reverse) {
 	const parents = new Map([
 		["reciprocal-root", null],
@@ -4902,12 +5128,12 @@ const retainedPeakEarly = diagnoseSweepCompatibility({ ...retainedPeakInput, sto
 check(
 	"retained-state peaks sample query and post-insert phases without combining them",
 	retainedPeakComplete.work.peakRetainedBuckets === 4 &&
-		retainedPeakComplete.work.peakRetainedQueryRefs === 3 &&
-		retainedPeakComplete.work.peakRetainedTotalStateRefs === 133 &&
+		retainedPeakComplete.work.peakRetainedQueryRefs === 0 &&
+		retainedPeakComplete.work.peakRetainedTotalStateRefs === 163 &&
 		retainedPeakEarly.pairs.length === 1 &&
 		retainedPeakEarly.work.peakRetainedBuckets === 3 &&
-		retainedPeakEarly.work.peakRetainedQueryRefs === 3 &&
-		retainedPeakEarly.work.peakRetainedTotalStateRefs === 121,
+		retainedPeakEarly.work.peakRetainedQueryRefs === 0 &&
+		retainedPeakEarly.work.peakRetainedTotalStateRefs === 148,
 	JSON.stringify({ complete: retainedPeakComplete.work, early: retainedPeakEarly.work }),
 );
 const exactReinsertion = diagnoseSweepCompatibility({
@@ -5172,6 +5398,18 @@ for (const [label, ids] of obstacleIdentityCases) {
 	);
 }
 noteFor("clean", []);
+noteFor(
+	"rotated-decoration",
+	["rectangle", "ellipse", "diamond"].map((type, index) => ({
+		id: `persisted-decoration-${type}`,
+		type,
+		x: index * 30,
+		y: 0,
+		width: 20,
+		height: 20,
+		angle: 0.5,
+	})),
+);
 noteFor("warning", [
 	{ id: "txt", type: "text", x: 0, y: 0, width: 30, height: 10, fontFamily: 1, text: "legacy" },
 ]);
@@ -5210,6 +5448,7 @@ noteFor("error", [
 noteForEscapedControls("control-partitions", controlPartitionElements);
 noteForEscapedControls("exact-order-controls", [...exactOrderElements, ...exactHierarchyElements]);
 noteFor("limit-extreme", limitWithExtremeSpan);
+noteFor("preprocessing-limit", preprocessingLimitBoard);
 noteFor("unknown", [{ id: "edge", type: "arrow", x: 0, y: 0, width: 10, height: 0 }]);
 noteFor("malformed", [
 	{ type: "arrow", x: 0, y: 0, width: null, height: 0, points: null, startBinding: "bad" },
@@ -5636,6 +5875,7 @@ const run = (board, args = []) =>
 			EXPRESS_SERVER_URL: `http://127.0.0.1:${sentinelPort}`,
 		},
 		encoding: "utf8",
+		maxBuffer: 64 * 1024 * 1024,
 	});
 const beforeVault = snapshot();
 const jsonRun = run("clean");
@@ -5645,6 +5885,18 @@ check(
 	"package JSON parses through exported schema",
 	CheckResultSchema.safeParse(cleanPackageResult).success &&
 		!("preprocessingWork" in cleanPackageResult),
+);
+const rotatedDecorationRun = run("rotated-decoration", ["--strict"]);
+const rotatedDecorationResult = rotatedDecorationRun.stdout
+	? JSON.parse(rotatedDecorationRun.stdout)
+	: null;
+check(
+	"persisted plain rotated decorations remain complete and clean",
+	rotatedDecorationRun.status === 0 &&
+		rotatedDecorationRun.stderr === "" &&
+		CheckResultSchema.safeParse(rotatedDecorationResult).success &&
+		rotatedDecorationResult.clean &&
+		rotatedDecorationResult.coverage === "complete",
 );
 const controlPartitionRun = run("control-partitions");
 const controlPartitionResult = controlPartitionRun.stdout
@@ -5952,6 +6204,32 @@ check(
 	`status=${limitExtremeRun.status} stderr=${limitExtremeRun.stderr} comparisons=${limitExtremeResult?.broadPhaseComparisons} findings=${limitExtremeResult?.findings
 		?.map((finding) => `${finding.reason}:${finding.elements.length}`)
 		.join(",")}`,
+);
+const preprocessingPackageRun = run("preprocessing-limit");
+const preprocessingStrictRun = run("preprocessing-limit", ["--strict"]);
+const preprocessingTextRun = run("preprocessing-limit", ["--text"]);
+const preprocessingPackageResult = preprocessingPackageRun.stdout
+	? JSON.parse(preprocessingPackageRun.stdout)
+	: null;
+check(
+	"persisted preprocessing ceiling preserves validated stdout and strict/non-strict exits",
+	preprocessingPackageRun.status === 0 &&
+		preprocessingStrictRun.status === 8 &&
+		preprocessingPackageRun.stderr === "" &&
+		preprocessingStrictRun.stderr === "" &&
+		preprocessingPackageRun.stdout === preprocessingStrictRun.stdout &&
+		CheckResultSchema.safeParse(preprocessingPackageResult).success &&
+		preprocessingPackageResult.findings.filter(
+			(finding) => finding.reason === "broad-phase-preprocessing-ceiling",
+		).length === 1 &&
+		preprocessingPackageResult.broadPhaseComparisons === 0,
+	`statuses=${preprocessingPackageRun.status}/${preprocessingStrictRun.status}`,
+);
+check(
+	"persisted preprocessing ceiling text bytes use the exhaustive production formatter",
+	preprocessingTextRun.status === 0 &&
+		preprocessingTextRun.stderr === "" &&
+		preprocessingTextRun.stdout === formatInspectionText(preprocessingPackageResult) + "\n",
 );
 const impossibleVault = path.join(vault, "not-a-directory");
 fs.writeFileSync(impossibleVault, "sentinel");

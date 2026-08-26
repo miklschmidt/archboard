@@ -42,6 +42,12 @@ import {
 	type SweepWork,
 } from "./interval-sweep.js";
 import { compareIdentity, compareIdentityLists } from "./ordering.js";
+import {
+	BROAD_PHASE_PREPROCESSING_LIMIT,
+	PreprocessingBudget,
+	PreprocessingCeilingReached,
+	type PreprocessingPass,
+} from "./preprocessing-budget.js";
 
 export const BROAD_PHASE_COMPARISON_LIMIT = 2_000_000 as const;
 
@@ -49,6 +55,7 @@ interface DetectionResult {
 	findings: InspectionFinding[];
 	broadPhaseComparisons: number;
 	preprocessingWork: {
+		preprocessingSteps: number;
 		broadPhaseEvents: number;
 		broadPhaseActiveVisits: number;
 		broadPhaseExpiryPops: number;
@@ -70,6 +77,8 @@ interface DetectionResult {
 		broadPhaseExactIndexUpdates: number;
 		broadPhaseExactQuerySteps: number;
 		broadPhaseExactMembershipTests: number;
+		broadPhaseIdentityIntersectionComparisons: number;
+		broadPhaseSummaryMergeSteps: number;
 		broadPhaseHierarchySummarySteps: number;
 		broadPhaseCompatibilityTests: number;
 		broadPhaseHierarchyMembershipTests: number;
@@ -132,6 +141,8 @@ const emptySweepWork = (): SweepWork => ({
 	exactIndexUpdates: 0,
 	exactQuerySteps: 0,
 	exactMembershipTests: 0,
+	identityIntersectionComparisons: 0,
+	summaryMergeSteps: 0,
 	hierarchySummarySteps: 0,
 	compatibilityTests: 0,
 	hierarchyMembershipTests: 0,
@@ -231,6 +242,7 @@ const REASON_ORDER = [
 	"zero-length",
 	"collinear-overlap",
 	"broad-phase-comparison-ceiling",
+	"broad-phase-preprocessing-ceiling",
 	"leaf-footprint-interior",
 	"obstacle-footprint-interior",
 	"proper-interior-crossing",
@@ -676,9 +688,12 @@ function connectorGeometryFindings(
 	policy: InspectionPolicy,
 	segments: Segment[],
 	work: { pathSegmentChecks: number },
+	budget: PreprocessingBudget,
 ): InspectionFinding[] {
 	const findings: InspectionFinding[] = [];
 	const refs = [record.ref];
+	if (Array.isArray(raw.points))
+		budget.charge("connector-intersection", "prepare-events", raw.points.length * 3);
 	const decoded = decodePath(record);
 	const pathEvidence = decodedPathEvidence(record, raw, decoded.scenePoints);
 	const angle = raw.angle;
@@ -1302,9 +1317,16 @@ const KNOWN_ELEMENT_TYPES = new Set([
 function hasCoverageRoleEvidence(record: DecodedRecord, hasIncomingReference: boolean): boolean {
 	const raw = record.raw;
 	const metadata = archboardMetadata(record);
+	const malformedClosedAngle =
+		["rectangle", "ellipse", "diamond", "frame"].includes(record.type ?? "") &&
+		raw?.angle !== undefined &&
+		(typeof raw.angle !== "number" || !Number.isFinite(raw.angle));
 	return (
 		hasIncomingReference ||
-		identityRoles(record).length > 0 ||
+		malformedClosedAngle ||
+		record.type === "arrow" ||
+		record.type === "line" ||
+		record.type === "text" ||
 		libraryAttribution(record) !== null ||
 		groupIds(record).length > 0 ||
 		(metadata !== null && "node" in metadata) ||
@@ -1393,10 +1415,12 @@ function structuralFindings(
 	records: readonly DecodedRecord[],
 	policy: InspectionPolicy,
 	model: InspectionModel,
+	budget: PreprocessingBudget,
 ): {
 	findings: InspectionFinding[];
 	segments: Segment[];
 	pathSegmentChecks: number;
+	limit: PreprocessingCeilingReached | null;
 } {
 	const findings: InspectionFinding[] = [];
 	const segments: Segment[] = [];
@@ -1406,7 +1430,12 @@ function structuralFindings(
 	for (const record of records.filter((candidate) => candidate.live && candidate.raw)) {
 		const raw = record.raw!;
 		if (record.type === "arrow" || record.type === "line") {
-			findings.push(...connectorGeometryFindings(record, raw, policy, segments, work));
+			try {
+				findings.push(...connectorGeometryFindings(record, raw, policy, segments, work, budget));
+			} catch (error) {
+				if (!(error instanceof PreprocessingCeilingReached)) throw error;
+				return { findings, segments, pathSegmentChecks: work.pathSegmentChecks, limit: error };
+			}
 			findings.push(...connectorBindingFindings(record, raw, byId, model.duplicateIds));
 			if (record.usableId) {
 				findings.push(...persistedEndpointFindings(record, raw));
@@ -1425,7 +1454,7 @@ function structuralFindings(
 			),
 		);
 	}
-	return { findings, segments, pathSegmentChecks: work.pathSegmentChecks };
+	return { findings, segments, pathSegmentChecks: work.pathSegmentChecks, limit: null };
 }
 
 function labelFindings(
@@ -1641,7 +1670,8 @@ function pairSweep<A, B>(
 	visit: (a: A, b: B) => void,
 	counter: { value: number; limited: boolean; pass: string },
 	work: SweepWork,
-	pass: string,
+	pass: PreprocessingPass,
+	budget: PreprocessingBudget,
 ): void {
 	const measured = sweepIntervalPairs(
 		left.map((item) => ({
@@ -1663,6 +1693,7 @@ function pairSweep<A, B>(
 			const a = aInterval.value;
 			const b = bInterval.value;
 			counter.value += 1;
+			budget.recordBroadPhaseComparisons(counter.value);
 			if (counter.value > BROAD_PHASE_COMPARISON_LIMIT) {
 				counter.limited = true;
 				counter.pass = pass;
@@ -1671,6 +1702,7 @@ function pairSweep<A, B>(
 			if (b.box.y > a.box.y + a.box.height || b.box.y + b.box.height < a.box.y) return;
 			visit(a.value, b.value);
 		},
+		{ budget, pass },
 	);
 	work.events += measured.events;
 	work.activeVisits += measured.activeVisits;
@@ -1693,6 +1725,8 @@ function pairSweep<A, B>(
 	work.exactIndexUpdates += measured.exactIndexUpdates;
 	work.exactQuerySteps += measured.exactQuerySteps;
 	work.exactMembershipTests += measured.exactMembershipTests;
+	work.identityIntersectionComparisons += measured.identityIntersectionComparisons;
+	work.summaryMergeSteps += measured.summaryMergeSteps;
 	work.hierarchySummarySteps += measured.hierarchySummarySteps;
 	work.compatibilityTests += measured.compatibilityTests;
 	work.hierarchyMembershipTests += measured.hierarchyMembershipTests;
@@ -1740,6 +1774,7 @@ function collisionFindings(
 	model: InspectionModel,
 	segments: readonly Segment[],
 	policy: InspectionPolicy,
+	budget: PreprocessingBudget,
 ): CollisionResult {
 	const findings: InspectionFinding[] = [];
 	const counter = { value: 0, limited: false, pass: "" };
@@ -1798,6 +1833,7 @@ function collisionFindings(
 	};
 	const sweepHierarchy = buildSweepHierarchy(
 		new Map([...model.nodes.values()].map((node) => [node.id, node.parentId])),
+		{ budget, pass: "connector-node" },
 	);
 	const connectorNodePartitions = new Map<string, SweepPartition>();
 	for (const segment of segments) {
@@ -1861,6 +1897,7 @@ function collisionFindings(
 		counter,
 		sweepWork,
 		"connector-node",
+		budget,
 	);
 	if (!counter.limited)
 		pairSweep(
@@ -1896,6 +1933,7 @@ function collisionFindings(
 			counter,
 			sweepWork,
 			"connector-obstacle",
+			budget,
 		);
 	if (!counter.limited) {
 		const partitions = new Map<string, SweepPartition>();
@@ -1958,6 +1996,7 @@ function collisionFindings(
 			counter,
 			sweepWork,
 			"connector-intersection",
+			budget,
 		);
 	}
 	if (!counter.limited) {
@@ -2000,6 +2039,7 @@ function collisionFindings(
 			counter,
 			sweepWork,
 			"node-overlap",
+			budget,
 		);
 	}
 	if (!counter.limited)
@@ -2033,6 +2073,7 @@ function collisionFindings(
 			counter,
 			sweepWork,
 			"label-node-overlap",
+			budget,
 		);
 	if (!counter.limited) {
 		const partitions = new Map<string, SweepPartition>();
@@ -2076,6 +2117,7 @@ function collisionFindings(
 			counter,
 			sweepWork,
 			"label-label-overlap",
+			budget,
 		);
 	}
 	if (counter.limited) {
@@ -2118,6 +2160,99 @@ function collisionFindings(
 		broadPhaseComparisons: counter.value,
 		preprocessingWork: sweepWork,
 	};
+}
+
+function emptyInspectionModel(): InspectionModel {
+	return {
+		byId: new Map(),
+		duplicateIds: new Set(),
+		nodes: new Map(),
+		nodeOfElement: new Map(),
+		confirmedLabels: new Map(),
+		labelOwnership: new Map(),
+		connectorEndpoints: new Map(),
+		containerOnlyIds: new Set(),
+		qualifyingGroupedObstacleElementIds: new Set(),
+		obstacles: [],
+		aggregateFailures: [],
+		hierarchyWork: emptySweepWork(),
+		containerBoundaryWork: emptySweepWork(),
+	};
+}
+
+function preprocessingParticipants(
+	records: readonly DecodedRecord[],
+	model: InspectionModel | null,
+): DecodedRecord[] {
+	if (model) {
+		const sourceIndexes = new Set<number>();
+		for (const node of model.nodes.values())
+			for (const record of node.bodies) sourceIndexes.add(record.sourceIndex);
+		for (const obstacle of model.obstacles)
+			for (const record of obstacle.members) sourceIndexes.add(record.sourceIndex);
+		for (const record of records)
+			if (
+				record.live &&
+				record.evidenceBox &&
+				(record.type === "arrow" || record.type === "line" || record.type === "text")
+			)
+				sourceIndexes.add(record.sourceIndex);
+		return records.filter((record) => sourceIndexes.has(record.sourceIndex));
+	}
+	return records.filter((record) => {
+		if (!record.live || !record.evidenceBox) return false;
+		if (record.type === "arrow" || record.type === "line" || record.type === "text") return true;
+		const metadata = archboardMetadata(record);
+		return (
+			(metadata !== null && "node" in metadata) ||
+			libraryAttribution(record) !== null ||
+			(Array.isArray(record.raw?.groupIds) && record.raw.groupIds.length > 0) ||
+			record.raw?.boundElements !== undefined ||
+			record.raw?.containerId !== undefined ||
+			(["rectangle", "ellipse", "diamond", "frame"].includes(record.type ?? "") &&
+				(record.raw?.angle === undefined || record.raw.angle === 0))
+		);
+	});
+}
+
+function preprocessingLimitFinding(
+	records: readonly DecodedRecord[],
+	model: InspectionModel | null,
+	error: PreprocessingCeilingReached,
+	budget: PreprocessingBudget,
+	segmentCount: number,
+): InspectionFinding {
+	const participants = preprocessingParticipants(records, model);
+	return make({
+		code: "INSPECTION_LIMIT_EXCEEDED",
+		reason: "broad-phase-preprocessing-ceiling",
+		severity: "warning",
+		affectsCoverage: true,
+		details: {
+			limit: BROAD_PHASE_PREPROCESSING_LIMIT,
+			attempted: error.attempted,
+			pass: error.pass,
+			phase: error.phase,
+			completedBroadPhaseComparisons: budget.completedBroadPhaseComparisons,
+			segmentCount,
+			nodeCount: model
+				? [...model.nodes.values()].filter((node) => node.children.length === 0).length
+				: 0,
+			obstacleCount: model?.obstacles.length ?? 0,
+			labelCount: model
+				? records.filter(
+						(record) =>
+							record.live &&
+							record.id &&
+							record.type === "text" &&
+							model.labelOwnership.get(record.id)?.state !== "none",
+					).length
+				: 0,
+		},
+		message: `Inspection stopped preprocessing at ${error.pass}/${error.phase}.`,
+		elements: uniqueRefs(participants),
+		affected: affectedOf(participants),
+	});
 }
 
 function sortFindings(findings: readonly InspectionFinding[]): InspectionFinding[] {
@@ -2167,18 +2302,54 @@ export function detectBoard(
 	policy: InspectionPolicy,
 ): DetectionResult {
 	const findings = [...renderFindings(records), ...identityFindings(records)];
-	const model = buildInspectionModel(records);
-	const structural = structuralFindings(records, policy, model);
+	const budget = new PreprocessingBudget();
+	let model = emptyInspectionModel();
+	let modelComplete = false;
+	let limit: PreprocessingCeilingReached | null = null;
+	try {
+		model = buildInspectionModel(records, budget);
+		modelComplete = true;
+	} catch (error) {
+		if (!(error instanceof PreprocessingCeilingReached)) throw error;
+		limit = error;
+	}
+	const structural = modelComplete
+		? structuralFindings(records, policy, model, budget)
+		: { findings: [], segments: [], pathSegmentChecks: 0, limit: null };
 	findings.push(...structural.findings);
-	findings.push(...labelFindings(records, model));
-	const collisions = collisionFindings(records, model, structural.segments, policy);
-	findings.push(...collisions.findings);
+	if (structural.limit) limit = structural.limit;
+	if (modelComplete) findings.push(...labelFindings(records, model));
+	let collisions: CollisionResult = {
+		findings: [],
+		broadPhaseComparisons: budget.completedBroadPhaseComparisons,
+		preprocessingWork: emptySweepWork(),
+	};
+	if (!limit && modelComplete)
+		try {
+			collisions = collisionFindings(records, model, structural.segments, policy, budget);
+			findings.push(...collisions.findings);
+		} catch (error) {
+			if (!(error instanceof PreprocessingCeilingReached)) throw error;
+			limit = error;
+			collisions.broadPhaseComparisons = budget.completedBroadPhaseComparisons;
+		}
+	if (limit)
+		findings.push(
+			preprocessingLimitFinding(
+				records,
+				modelComplete ? model : null,
+				limit,
+				budget,
+				structural.segments.length,
+			),
+		);
 	findings.push(...coordinateSpanFindings(records, model, findings));
 	findings.push(...focusPaddingFindings(findings));
 	return {
 		findings: sortFindings(findings),
 		broadPhaseComparisons: collisions.broadPhaseComparisons,
 		preprocessingWork: {
+			preprocessingSteps: budget.used,
 			broadPhaseEvents: collisions.preprocessingWork.events,
 			broadPhaseActiveVisits: collisions.preprocessingWork.activeVisits,
 			broadPhaseExpiryPops: collisions.preprocessingWork.expiryPops,
@@ -2213,6 +2384,9 @@ export function detectBoard(
 			broadPhaseExactIndexUpdates: collisions.preprocessingWork.exactIndexUpdates,
 			broadPhaseExactQuerySteps: collisions.preprocessingWork.exactQuerySteps,
 			broadPhaseExactMembershipTests: collisions.preprocessingWork.exactMembershipTests,
+			broadPhaseIdentityIntersectionComparisons:
+				collisions.preprocessingWork.identityIntersectionComparisons,
+			broadPhaseSummaryMergeSteps: collisions.preprocessingWork.summaryMergeSteps,
 			broadPhaseHierarchySummarySteps: collisions.preprocessingWork.hierarchySummarySteps,
 			broadPhaseCompatibilityTests: collisions.preprocessingWork.compatibilityTests,
 			broadPhaseHierarchyMembershipTests: collisions.preprocessingWork.hierarchyMembershipTests,

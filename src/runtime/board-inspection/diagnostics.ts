@@ -3,8 +3,16 @@ import type { InspectionPolicyInput, InspectionReport } from "./schemas.js";
 import { decodeRecords } from "./lib/decode.js";
 import { detectBoard } from "./lib/detectors.js";
 import { buildSweepHierarchy, sweepIntervalPairs, type SweepWork } from "./lib/interval-sweep.js";
+import {
+	PreprocessingBudget,
+	PreprocessingCeilingReached,
+	type PreprocessingPass,
+	type PreprocessingPhase,
+} from "./lib/preprocessing-budget.js";
 
 export interface InspectionWorkDiagnostics {
+	/** Inspection-owned logical preprocessing units completed before any ceiling. */
+	preprocessingSteps: number;
 	/** Start events processed across collision passes. */
 	broadPhaseEvents: number;
 	/** Semantically eligible interval items delivered to the public-comparison visitor. */
@@ -38,6 +46,10 @@ export interface InspectionWorkDiagnostics {
 	broadPhaseExactQuerySteps: number;
 	/** Exact excluded-partition membership probes, including binary summary probes. */
 	broadPhaseExactMembershipTests: number;
+	/** Exact identity elements compared while reconciling segment summaries. */
+	broadPhaseIdentityIntersectionComparisons: number;
+	/** Summary values consumed while reducing and merging exact hierarchy coverage. */
+	broadPhaseSummaryMergeSteps: number;
 	/** Hierarchy-summary intersections performed while maintaining the exact index. */
 	broadPhaseHierarchySummarySteps: number;
 	broadPhaseCompatibilityTests: number;
@@ -103,6 +115,12 @@ export interface SweepDiagnosticInterval {
 export interface SweepCompatibilityDiagnostics {
 	pairs: readonly (readonly [string, string])[];
 	work: SweepWork;
+	preprocessingSteps: number;
+	preprocessingLimit: {
+		pass: PreprocessingPass;
+		phase: PreprocessingPhase;
+		attempted: 25_000_001;
+	} | null;
 }
 
 /** Pure development probe for semantic pair enumeration and its owned work. */
@@ -113,9 +131,15 @@ export function diagnoseSweepCompatibility(input: {
 	hierarchyParents?: ReadonlyMap<string, string | null | undefined>;
 	/** Stop after this many emitted pairs to exercise production early-return accounting. */
 	stopAfterPairs?: number;
+	/** Run the production 25M logical preprocessing budget. */
+	enforcePreprocessingLimit?: boolean;
 }): SweepCompatibilityDiagnostics {
+	const budget = input.enforcePreprocessingLimit ? new PreprocessingBudget() : undefined;
 	const hierarchy = input.hierarchyParents
-		? buildSweepHierarchy(input.hierarchyParents)
+		? buildSweepHierarchy(input.hierarchyParents, {
+				budget,
+				pass: "node-hierarchy",
+			})
 		: undefined;
 	const intervals = (items: readonly SweepDiagnosticInterval[]) =>
 		items.map((item) => ({
@@ -131,16 +155,34 @@ export function diagnoseSweepCompatibility(input: {
 			},
 		}));
 	const pairs: Array<readonly [string, string]> = [];
-	const work = sweepIntervalPairs(
-		intervals(input.left),
-		intervals(input.right),
-		input.sameSet,
-		(left, right) => {
-			pairs.push([left.value, right.value]);
-			return input.stopAfterPairs === undefined || pairs.length < input.stopAfterPairs;
-		},
-	);
-	return { pairs, work };
+	let work: SweepWork;
+	let preprocessingLimit: SweepCompatibilityDiagnostics["preprocessingLimit"] = null;
+	try {
+		work = sweepIntervalPairs(
+			intervals(input.left),
+			intervals(input.right),
+			input.sameSet,
+			(left, right) => {
+				pairs.push([left.value, right.value]);
+				return input.stopAfterPairs === undefined || pairs.length < input.stopAfterPairs;
+			},
+			{ budget, pass: "connector-intersection" },
+		);
+	} catch (error) {
+		if (!(error instanceof PreprocessingCeilingReached) || !budget) throw error;
+		work = budget.diagnosticState as SweepWork;
+		preprocessingLimit = {
+			pass: error.pass,
+			phase: error.phase,
+			attempted: error.attempted,
+		};
+	}
+	return {
+		pairs,
+		work,
+		preprocessingSteps: budget?.used ?? 0,
+		preprocessingLimit,
+	};
 }
 
 /** Prove that runtime-mutable ReadonlySet inputs are snapshotted by exact current content. */
@@ -202,6 +244,7 @@ export function inspectBoardDiagnostics(
 	return {
 		report,
 		work: {
+			preprocessingSteps: work.preprocessingSteps,
 			broadPhaseEvents: work.broadPhaseEvents,
 			broadPhaseCompatibleVisits: work.broadPhaseActiveVisits,
 			broadPhaseExpiryPops: work.broadPhaseExpiryPops,
@@ -223,6 +266,8 @@ export function inspectBoardDiagnostics(
 			broadPhaseExactIndexUpdates: work.broadPhaseExactIndexUpdates,
 			broadPhaseExactQuerySteps: work.broadPhaseExactQuerySteps,
 			broadPhaseExactMembershipTests: work.broadPhaseExactMembershipTests,
+			broadPhaseIdentityIntersectionComparisons: work.broadPhaseIdentityIntersectionComparisons,
+			broadPhaseSummaryMergeSteps: work.broadPhaseSummaryMergeSteps,
 			broadPhaseHierarchySummarySteps: work.broadPhaseHierarchySummarySteps,
 			broadPhaseCompatibilityTests: work.broadPhaseCompatibilityTests,
 			broadPhaseHierarchyMembershipTests: work.broadPhaseHierarchyMembershipTests,

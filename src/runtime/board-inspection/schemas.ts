@@ -25,7 +25,7 @@ export const NodeRefSchema = z.strictObject({
 export const LibraryAttributionSchema = z.strictObject({
 	elementId: z.string().min(1),
 	item: z.string().min(1),
-	source: z.string().optional(),
+	source: z.string().min(1).optional(),
 });
 
 const canonicalIdentities = (values: readonly string[]): boolean =>
@@ -85,6 +85,12 @@ export const ObstacleRefSchema = z
 				code: "custom",
 				path: ["kind"],
 				message: "Grouped-component obstacles require multiple elements and group evidence.",
+			});
+		if (obstacle.elementIds.length > 1 && obstacle.groupIds.length === 0)
+			context.addIssue({
+				code: "custom",
+				path: ["groupIds"],
+				message: "Multi-element obstacles require qualifying group evidence.",
 			});
 		if (obstacle.id !== obstacleIdentity(obstacle.elementIds))
 			context.addIssue({
@@ -495,6 +501,33 @@ const layoutFindings = [
 		obstacleCount: z.number().int().nonnegative(),
 		labelCount: z.number().int().nonnegative(),
 	}),
+	variant("INSPECTION_LIMIT_EXCEEDED", "broad-phase-preprocessing-ceiling", true, {
+		limit: z.literal(25_000_000),
+		attempted: z.literal(25_000_001),
+		pass: z.enum([
+			"node-hierarchy",
+			"container-boundary",
+			"connector-node",
+			"connector-obstacle",
+			"connector-intersection",
+			"node-overlap",
+			"label-node-overlap",
+			"label-label-overlap",
+		]),
+		phase: z.enum([
+			"prepare-events",
+			"order-events",
+			"activate-or-expire",
+			"compatibility-query",
+			"hierarchy-query",
+			"candidate-intersection",
+		]),
+		completedBroadPhaseComparisons: z.number().int().nonnegative(),
+		segmentCount: z.number().int().nonnegative(),
+		nodeCount: z.number().int().nonnegative(),
+		obstacleCount: z.number().int().nonnegative(),
+		labelCount: z.number().int().nonnegative(),
+	}),
 	variant("CONNECTOR_PENETRATES_NODE", "leaf-footprint-interior", false, {
 		connectorId: z.string().min(1),
 		segmentIndex: z.number().int().nonnegative(),
@@ -588,7 +621,10 @@ export const InspectionReportSchema = z.strictObject({
 	schemaVersion: z.literal(1),
 	success: z.literal(true),
 	policy: InspectionPolicySchema,
-	limits: z.strictObject({ broadPhaseComparisons: z.literal(2_000_000) }),
+	limits: z.strictObject({
+		broadPhaseComparisons: z.literal(2_000_000),
+		broadPhasePreprocessingSteps: z.literal(25_000_000),
+	}),
 	totalElementCount: z.number().int().nonnegative(),
 	liveElementCount: z.number().int().nonnegative(),
 	locatableElementCount: z.number().int().nonnegative(),

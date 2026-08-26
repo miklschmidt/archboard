@@ -9,6 +9,7 @@ import {
 } from "./schemas.js";
 import { decodeRecords } from "./lib/decode.js";
 import { BROAD_PHASE_COMPARISON_LIMIT, detectBoard } from "./lib/detectors.js";
+import { BROAD_PHASE_PREPROCESSING_LIMIT } from "./lib/preprocessing-budget.js";
 import { compareIdentity } from "./lib/ordering.js";
 
 export {
@@ -41,6 +42,7 @@ export type {
 } from "./schemas.js";
 export { formatInspectionText } from "./lib/format-text.js";
 export { BROAD_PHASE_COMPARISON_LIMIT } from "./lib/detectors.js";
+export { BROAD_PHASE_PREPROCESSING_LIMIT } from "./lib/preprocessing-budget.js";
 
 export const DEFAULT_INSPECTION_POLICY: InspectionPolicy = Object.freeze({
 	allowedFontFamilies: Object.freeze([5]) as unknown as [5],
@@ -96,7 +98,10 @@ export function inspectBoard(
 		schemaVersion: 1,
 		success: true,
 		policy,
-		limits: { broadPhaseComparisons: BROAD_PHASE_COMPARISON_LIMIT },
+		limits: {
+			broadPhaseComparisons: BROAD_PHASE_COMPARISON_LIMIT,
+			broadPhasePreprocessingSteps: BROAD_PHASE_PREPROCESSING_LIMIT,
+		},
 		totalElementCount: records.length,
 		liveElementCount: decoded.filter((record) => record.live).length,
 		locatableElementCount: decoded.filter((record) => record.live && record.box).length,

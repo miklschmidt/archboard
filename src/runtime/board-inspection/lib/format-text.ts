@@ -122,6 +122,7 @@ function verifyInspectionLimit(finding: FindingFor<"INSPECTION_LIMIT_EXCEEDED">)
 	const { reason } = finding;
 	switch (reason) {
 		case "broad-phase-comparison-ceiling":
+		case "broad-phase-preprocessing-ceiling":
 			return;
 		default:
 			return assertNever(reason);
@@ -225,7 +226,7 @@ export function formatInspectionText(result: CheckResult): string {
 		`coverage: ${result.coverage}`,
 		`clean: ${result.clean}`,
 		`severity: error=${result.counts.bySeverity.error} warning=${result.counts.bySeverity.warning}`,
-		`broad-phase: ${result.broadPhaseComparisons}/${result.limits.broadPhaseComparisons}`,
+		`broad-phase: ${result.broadPhaseComparisons}/${result.limits.broadPhaseComparisons} preprocessing-limit=${result.limits.broadPhasePreprocessingSteps}`,
 		`policy: fonts=${allowed} dimension=${result.policy.dimensionTolerance} intersection=${result.policy.intersectionTolerance} overlap=${result.policy.overlapTolerance}`,
 	];
 	for (const finding of result.findings) {

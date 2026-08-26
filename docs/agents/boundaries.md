@@ -26,7 +26,8 @@ regardless of whether the folder is named `lib`, `tests`, or something else.
 `src/runtime/board-inspection/diagnostics.ts` is a pure development entrypoint. It runs the same
 inspection pipeline as `index.ts` and reports deterministic preprocessing work for performance
 regressions. The interface counts profile snapshot entries and trie steps; exact-index updates,
-tree-query steps, excluded-partition probes, bucket tests, and every remaining hierarchy membership
+tree-query steps, excluded-partition probes, identity-intersection comparisons, summary merges,
+bucket tests, and every remaining hierarchy membership
 predicate; bucket lookups, updates, and deletions; hierarchy path, subtree, summary, and index steps;
 eligible visits; and peak retained buckets, profiles, exclusions, exact-index nodes and summaries,
 query references, selected hierarchy parents, and total sweep-owned state. The total is sampled
@@ -36,6 +37,15 @@ enumerator with exact semantic inputs, while `diagnoseMutableProfileSnapshots` p
 is read by exact current content rather than object identity. Tests do not infer this work from the
 public comparison count. Product callers and the `check` command use `index.ts`; diagnostic
 counters never enter schema-v1 report bytes.
+
+The production inspector owns one 25,000,000-unit preprocessing budget across
+model and pair sweeps. Its semantic input size is `I + E + H`: interval count,
+total exact-exclusion entries across profiles, and total ancestor-target
+entries. Retained sweep memory is `O(I + E + H)` references plus emitted
+findings. Arbitrary identity UTF-16 code units count as logical work when read
+or compared. Diagnostics expose the detailed mechanics and retained-state
+peaks; product reports expose only the fixed limit and a closed limit finding
+when the next logical unit is refused.
 
 Root `src/` files are thin process entrypoints only. The existing entrypoints are `src/bin.ts`,
 `src/server.ts`, and `src/dev-canvas.ts`. Do not add implementation to these files.
