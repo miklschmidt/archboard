@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 13:30'
+updated_date: '2026-08-26 13:36'
 labels:
   - ready-for-agent
 dependencies:
@@ -336,6 +336,8 @@ Paused for urgent skill-lint regression after all five approved implementation c
 Resume checkpoint: decomposed structuralFindings into private geometry, binding, reference, metadata, font, and unsupported-geometry helpers while preserving the pure inspection interface and detector order. test:inspection still reports 27 checks, both TypeScript projects pass, and bun run lint passes without a complexity waiver. The lint command ran the TASK-128 distributable-skill validator successfully before oxlint. bun run fix passed twice; both passes ran the skill validator before and after formatting, and pass 2 preserved the exact binary worktree diff hash d640f622c318bfbc68fe68a83f91f263ee79dc62bf5a1f33a7f613ce351896d6 and identical porcelain status. The first fixer pass applied canonical formatting to existing TASK-119 source, test, fixture, and contract paths. No TASK-128-owned path changed. Remaining work is the approved focused matrix, sequential browser evidence, bun run check, separate bun run test, final clean commit state, and independent fixed-range review.
 
 Formatter-fixture correction: the dense compare fixture pins the two-space JSON bytes emitted by command presentation, while oxfmt uses repository tabs for JSON. Added a one-path formatter ignore and restored the fixture's canonical bytes. test:inspection passes all 27 checks after a real fix pass. A second real fix pass preserved the exact binary diff and porcelain status at hash 8c8126a61dd4a563efb79968c935467a23ce32025102e8c4879bc1a0dbb69a1e; type-check, lint including the skill validator, and git diff --check also pass.
+
+Browser validation: the first sequential chain exposed two stale fixed-point recovery assertions that still expected 12 elements after the approved negative-relative-point connector raised the fixture to 13. The failure did not contradict renderer bounds or path assumptions: the browser and server both held all 13 elements and reported zero element changes. Updated only those two expected counts. An isolated test:browser rerun passed, then the required complete headless sequence passed in order: test:human-performance, test:browser, test:typing, and test:live-session. Fixed-point evidence is 0 of 13 elements changed; the negative straight path round-trips unchanged.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
