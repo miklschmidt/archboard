@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 16:27'
+updated_date: '2026-08-26 16:37'
 labels:
   - ready-for-agent
 dependencies:
@@ -398,6 +398,16 @@ Decoded records now compute unique usable IDs once. Duplicate groups stay availa
 The strict render collector is the single x/y/width/height field classifier used by inspection decoding. Direct equivalence cases cover finite, missing, nonfinite, negative, zero, extreme, and derived-overflow records. Derived extent and multi-record span failures remain inspection-only.
 
 The public production suite now has 553 checks. New evidence includes a bounded 9-case aggregate cross-product, six duplicate-role cross-products, the full 8-case text/arrow against text/arrow/line/rectangle table, line reciprocity, semantic/grouped/library/duplicate affected overflows, raw persisted plus/minus MAX_VALUE cases, MAX_VALUE and tiny-by-huge hierarchy arithmetic, equal-area tie order, nested-zone leaf/endpoint/ancestor behavior, and source-indexed duplicate structural findings. Focused lint, type, boundaries, module-scope, contracts, inspection, geometry, labels, branch, and CLI gates are green. Two real fixer passes were byte-stable at d0319cfe748d0533e6db747f13b350271c0edbcc.
+
+### Aggregate/identity totality closure — final validation (2026-08-26)
+
+- Committed checkpoint `e4b7fd7` centralizes aggregate coordinate classification, unique usable identity, bound-element compatibility, overflow-safe hierarchy ordering, and per-record render prerequisites.
+- Public inspection matrix: 553 checks. Added direct and persisted/package cross-products for semantic-node, grouped/library obstacle, duplicate-id, line compatibility, hierarchy arithmetic, and strict-render equivalence. Reports remain schema-valid and dependent layout facts are suppressed after failed prerequisites.
+- Focused gates passed: lint, type-check, boundaries, module-scope/self-test, 58-path contracts (978 checks), inspection, CLI (579 checks), geometry, labels, and branch.
+- `bun run fix` passed twice with identical post-pass diff hash `d0319cfe748d0533e6db747f13b350271c0edbcc`; the distributable-skill validator ran and passed in both commands.
+- Full `bun run check` passed, including four sequential headless browser suites. Separate full `bun run test` passed, including the same browser chain.
+- On-demand contract generation produced identical bytes in two fresh temporary output directories: audit Markdown 33,383 bytes, proof JSON 653,879 bytes, proof Markdown 453,379 bytes. `docs/design/generated` remains absent; canonical `docs/design/cli-command-audit.json` remains tracked.
+- `git diff --check` passed. TASK-119 remains In Progress with every acceptance criterion unchecked pending independent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
