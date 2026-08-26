@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-26 11:53'
+updated_date: '2026-08-26 12:15'
 labels: []
 dependencies:
   - TASK-123.01
@@ -136,6 +136,8 @@ Migration checkpoint 6 (snapshot) complete: snapshot root/save/list/restore are 
 Broad-review remediation at be03419 (fixed base 6c42fca): replaced remaining unconstrained structured result wrappers with concrete public schemas; moved CLI defaults, coercions, enums, required and cross-field rules into named Zod ingress/stage schemas; made pending artifacts a total encoding/content union; simplified registry introspection to required all-contract entries; restored fixed-base held policies with exact byte/event fixtures; reconciled all 57 prerequisites/effects/refusal codes and exits against the canonical audit; preserved inject --wat bytes; and added real jq subprocess coverage for structured exit-0 and exit-3 stdout. Focused gates: 20 contract tests / 123 expectations, 57 contracts / 939+ audit checks, 560 CLI checks, type-check, boundaries, and module-scope passed. Full requested matrix remains before broad rereview handoff.
 
 2026-08-26 broad-review remediation validation: after correcting the board creation result schema to accept the fixed runtime response with optional vaultBacked, the complete focused matrix passed: two stable fix passes, generation --check, 20 contract tests / 123 expectations, 57 contracts / 939 checks, 560 CLI checks, type-check, boundaries, module-scope, one-write (76), doing (39), version (65), lock (120), boards, branch, side-by-side, changes, library (49), install (106), repos, bind, and obsidian (197). A full bun run check then passed clean, followed by a separate full bun run test that passed on its first post-fix run. Both complete chains ran human-performance clean at [0,0] and all browser tests sequentially/headlessly: fixed-point, typed-text, and live-session with all 42 mixed-write cycles converged. No validation gate was weakened or skipped, and no transient occurred in this remediation pass.
+
+2026-08-26 final broad-rereview remediation: board info/new/open now extend a shared protected-server identity state with required version and placeholder, distinct created/saved/source/pane fields, no invented vaultBacked, and truthful pane-open nesting. Injection status and test now use concrete exported schemas, and the meaningful-result checker rejects optional-held-only objects. The test-only command-contract host export was deleted; held/result/artifact/order tests now launch the public two-argument runner with real subprocess streams and files. test:contracts executes the package CLI compatibility-record mode instead of reading checker source. Validation passed with two stable fix passes, generation --check, 21 contract tests / 137 expectations, 57 contracts / 953 checks, 573 CLI checks, type-check, boundaries, module-scope, every invariant/family suite, bun run check, and a separate bun run test. Both complete chains ran human-performance clean at [0,0] and fixed-point, typed-text, and live-session sequentially/headlessly, with all 42 mixed-write cycles converged. No transient, weakened gate, push, finalization, or protected-scope change occurred.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
