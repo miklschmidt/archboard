@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-26 08:49'
+updated_date: '2026-08-26 08:51'
 labels: []
 dependencies:
   - TASK-123.01
@@ -93,6 +93,12 @@ Approved decisions and compatibility policy:
 - Internal generated artifacts are updated here; the released skill/chaining reference remains TASK-123.03 scope.
 - No runtime/server/UI/shared/REST API change, no TASK-119/120/121/126/127/123.03 implementation, no dependency change, no public spelling/result/ordering cleanup, no follow-up task creation, and no weakening or skipping tests/lint/types/boundaries/browser gates.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Foundation implementation started at 7948dbe against fixed compatibility base 6c42fca. Read the approved plan, parent/proof tasks, module and test boundaries, command-contract/deepening design, and ADRs governing CLI, board naming, save conflicts, bindings, source execution, vault truth, and locking. Checkout was clean before edits; scope is limited to approved steps 1-7.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
