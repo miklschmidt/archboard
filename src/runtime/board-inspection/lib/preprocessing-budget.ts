@@ -87,6 +87,34 @@ export function comparePreprocessingIdentity(
 	return left.length < right.length ? -1 : left.length > right.length ? 1 : 0;
 }
 
+export function encodePreprocessingObstacleIdentity(
+	values: readonly string[],
+	budget: PreprocessingBudget,
+	pass: PreprocessingPass,
+): string {
+	budget.charge(pass, "prepare-events", "obstacle:".length);
+	let encoded = "obstacle:";
+	for (let valueIndex = 0; valueIndex < values.length; valueIndex += 1) {
+		budget.charge(pass, "prepare-events");
+		if (valueIndex > 0) {
+			budget.charge(pass, "prepare-events");
+			encoded += ",";
+		}
+		const value = values[valueIndex]!;
+		for (let index = 0; index < value.length; index += 1) {
+			budget.charge(pass, "prepare-events");
+			const codeUnit = value[index]!;
+			if (codeUnit === "\\" || codeUnit === ",") {
+				budget.charge(pass, "prepare-events");
+				encoded += "\\";
+			}
+			budget.charge(pass, "prepare-events");
+			encoded += codeUnit;
+		}
+	}
+	return encoded;
+}
+
 export function stablePreprocessingSort<T>(
 	values: readonly T[],
 	budget: PreprocessingBudget,
@@ -94,9 +122,11 @@ export function stablePreprocessingSort<T>(
 	phase: PreprocessingPhase,
 	compare: (left: T, right: T) => number,
 ): T[] {
-	if (values.length < 2) return [...values];
-	let source = [...values],
-		target = Array.from<T>({ length: values.length });
+	budget.charge(pass, phase, 1 + values.length * 2);
+	let source = [...values];
+	if (values.length < 2) return source;
+	budget.charge(pass, phase, 1 + values.length);
+	let target = Array.from<T>({ length: values.length });
 	for (let width = 1; width < values.length; width *= 2) {
 		for (let start = 0; start < values.length; start += width * 2) {
 			const middle = Math.min(start + width, values.length),
@@ -105,12 +135,23 @@ export function stablePreprocessingSort<T>(
 				right = middle,
 				output = start;
 			while (left < middle && right < end) {
+				budget.charge(pass, phase, 2);
+				const leftValue = source[left]!,
+					rightValue = source[right]!;
+				const takeLeft = compare(leftValue, rightValue) <= 0;
 				budget.charge(pass, phase);
-				target[output++] =
-					compare(source[left]!, source[right]!) <= 0 ? source[left++]! : source[right++]!;
+				target[output++] = takeLeft ? leftValue : rightValue;
+				if (takeLeft) left += 1;
+				else right += 1;
 			}
-			while (left < middle) target[output++] = source[left++]!;
-			while (right < end) target[output++] = source[right++]!;
+			while (left < middle) {
+				budget.charge(pass, phase, 2);
+				target[output++] = source[left++]!;
+			}
+			while (right < end) {
+				budget.charge(pass, phase, 2);
+				target[output++] = source[right++]!;
+			}
 		}
 		[source, target] = [target, source];
 	}

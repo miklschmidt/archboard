@@ -2,9 +2,9 @@ import type { NodeRef, ObstacleRef } from "../schemas.js";
 import type { DecodedRecord } from "./decode.js";
 import { aggregateBoxes, contains, type ExactBox } from "./geometry.js";
 import { sweepIntervalPairs, type SweepWork } from "./interval-sweep.js";
-import { obstacleIdentity } from "./ordering.js";
 import {
 	comparePreprocessingIdentity,
+	encodePreprocessingObstacleIdentity,
 	stablePreprocessingSort,
 	type PreprocessingBudget,
 } from "./preprocessing-budget.js";
@@ -114,6 +114,38 @@ function orderedIdentities(
 	return stablePreprocessingSort(values, budget, pass, "order-events", (left, right) =>
 		comparePreprocessingIdentity(budget, pass, "order-events", left, right),
 	);
+}
+
+function collected<T, U>(
+	values: readonly T[],
+	budget: PreprocessingBudget,
+	pass: ModelPass,
+	mapValue: (value: T) => U,
+): U[] {
+	budget.charge(pass, "prepare-events");
+	const output: U[] = [];
+	for (const value of values) {
+		budget.charge(pass, "prepare-events", 2);
+		output.push(mapValue(value));
+	}
+	return output;
+}
+
+function filteredValues<T>(
+	values: readonly T[],
+	budget: PreprocessingBudget,
+	pass: ModelPass,
+	keep: (value: T) => boolean,
+): T[] {
+	budget.charge(pass, "prepare-events");
+	const output: T[] = [];
+	for (const value of values) {
+		budget.charge(pass, "prepare-events");
+		if (!keep(value)) continue;
+		budget.charge(pass, "prepare-events");
+		output.push(value);
+	}
+	return output;
 }
 
 function object(value: unknown): Readonly<Record<string, unknown>> | null {
@@ -374,8 +406,12 @@ function buildNodes(
 		const labels = members.filter((record) => confirmedLabels.has(record.id ?? ""));
 		const bodies = members.filter((record) => !confirmedLabels.has(record.id ?? ""));
 		const bodyMembers = bodies.length > 0 ? bodies : members;
-		const bodyResult = aggregateBoxes(bodyMembers.map((record) => record.box!));
-		const aggregateResult = aggregateBoxes(members.map((record) => record.box!));
+		const bodyResult = aggregateBoxes(
+			collected(bodyMembers, budget, "node-hierarchy", (record) => record.box!),
+		);
+		const aggregateResult = aggregateBoxes(
+			collected(members, budget, "node-hierarchy", (record) => record.box!),
+		);
 		if (bodyResult.kind !== "representable") {
 			aggregateFailures.push({ scope: "semantic-node-body", subjectId: id, members: bodyMembers });
 			for (const member of members)
@@ -389,12 +425,12 @@ function buildNodes(
 		if (!aggregate)
 			aggregateFailures.push({ scope: "semantic-node-aggregate", subjectId: id, members });
 		const elementIds = orderedIdentities(
-			bodies.map((record) => record.id!),
+			collected(bodies, budget, "node-hierarchy", (record) => record.id!),
 			budget,
 			"node-hierarchy",
 		);
 		const labelElementIds = orderedIdentities(
-			labels.map((record) => record.id!),
+			collected(labels, budget, "node-hierarchy", (record) => record.id!),
 			budget,
 			"node-hierarchy",
 		);
@@ -464,14 +500,30 @@ function assignNodeHierarchy(
 	nodes: Map<string, InspectionNode>,
 	budget: PreprocessingBudget,
 ): SweepWork {
-	const children = [...nodes.values()];
-	const boundaries = children.flatMap((owner) =>
-		owner.boundaries.map((boundary) => ({ owner, boundary })),
-	);
-	const childAreas = new Map(children.map((child) => [child.id, areaFactor(child.body)]));
-	const boundaryAreas = new Map(
-		boundaries.map(({ boundary }) => [boundary, areaFactor(boundary.box!)]),
-	);
+	budget.charge("node-hierarchy", "prepare-events");
+	const children: InspectionNode[] = [];
+	for (const node of nodes.values()) {
+		budget.charge("node-hierarchy", "prepare-events", 2);
+		children.push(node);
+	}
+	budget.charge("node-hierarchy", "prepare-events");
+	const boundaries: Array<{ owner: InspectionNode; boundary: DecodedRecord }> = [];
+	for (const owner of children)
+		for (const boundary of owner.boundaries) {
+			budget.charge("node-hierarchy", "prepare-events", 2);
+			boundaries.push({ owner, boundary });
+		}
+	budget.charge("node-hierarchy", "prepare-events", 2);
+	const childAreas = new Map<string, BinaryFactor>();
+	for (const child of children) {
+		budget.charge("node-hierarchy", "prepare-events", 2);
+		childAreas.set(child.id, areaFactor(child.body));
+	}
+	const boundaryAreas = new Map<DecodedRecord, BinaryFactor>();
+	for (const { boundary } of boundaries) {
+		budget.charge("node-hierarchy", "prepare-events", 2);
+		boundaryAreas.set(boundary, areaFactor(boundary.box!));
+	}
 	const selectedByChild = new Map<string, { owner: InspectionNode; boundary: DecodedRecord }>();
 	const candidateOrder = (
 		a: { owner: InspectionNode; boundary: DecodedRecord },
@@ -493,14 +545,14 @@ function assignNodeHierarchy(
 			b.owner.id,
 		);
 	const work = sweepIntervalPairs(
-		children.map((child) => ({
+		collected(children, budget, "node-hierarchy", (child) => ({
 			id: child.id,
 			min: child.body.x,
 			max: child.body.x + child.body.width,
 			value: child,
 			semantics: { partition: child.id, excludedPartitions: new Set([child.id]) },
 		})),
-		boundaries.map(({ owner, boundary }) => ({
+		collected(boundaries, budget, "node-hierarchy", ({ owner, boundary }) => ({
 			id: boundary.id!,
 			min: boundary.box!.x,
 			max: boundary.box!.x + boundary.box!.width,
@@ -584,19 +636,18 @@ function findContainerOnlyIds(
 	budget: PreprocessingBudget,
 ): { ids: Set<string>; work: SweepWork } {
 	const containerOnlyIds = new Set<string>();
-	const boundaries = live.filter((record) => {
-		budget.charge("container-boundary", "prepare-events");
+	const boundaries = filteredValues(live, budget, "container-boundary", (record) => {
 		return !nodeOfElement.has(record.id ?? "") && validBoundary(record);
 	});
 	const work = sweepIntervalPairs(
-		boundaries.map((record) => ({
+		collected(boundaries, budget, "container-boundary", (record) => ({
 			id: record.id!,
 			min: record.box!.x,
 			max: record.box!.x + record.box!.width,
 			value: record,
 			semantics: { partition: record.id!, excludedPartitions: new Set<string>() },
 		})),
-		[...nodes.values()].map((node) => ({
+		collected([...nodes.values()], budget, "container-boundary", (node) => ({
 			id: node.id,
 			min: node.body.x,
 			max: node.body.x + node.body.width,
@@ -626,8 +677,7 @@ function buildObstacles(
 	InspectionModel,
 	"obstacles" | "qualifyingGroupedObstacleElementIds" | "aggregateFailures"
 > {
-	const eligible = live.filter((record) => {
-		budget.charge("container-boundary", "prepare-events");
+	const eligible = filteredValues(live, budget, "container-boundary", (record) => {
 		const angle = record.raw?.angle;
 		return (
 			record.usableId &&
@@ -644,13 +694,13 @@ function buildObstacles(
 		);
 	});
 	const parent = new Map(
-		eligible.map((record) => {
+		collected(eligible, budget, "container-boundary", (record) => {
 			budget.charge("container-boundary", "prepare-events");
 			return [record.id!, record.id!];
 		}),
 	);
 	const groupsById = new Map(
-		eligible.map((record) => {
+		collected(eligible, budget, "container-boundary", (record) => {
 			budget.charge("container-boundary", "prepare-events");
 			const groups = groupIds(record);
 			for (const group of groups) chargeIdentity(budget, "container-boundary", group);
@@ -728,7 +778,7 @@ function buildObstacles(
 				qualifyingGroupedObstacleElementIds.add(member.id!);
 			}
 		const elementIds = orderedIdentities(
-			members.map((record) => record.id!),
+			collected(members, budget, "container-boundary", (record) => record.id!),
 			budget,
 			"container-boundary",
 		);
@@ -745,7 +795,7 @@ function buildObstacles(
 			"container-boundary",
 		);
 		const library = stablePreprocessingSort(
-			validLibrary.map((record) => {
+			collected(validLibrary, budget, "container-boundary", (record) => {
 				budget.charge("container-boundary", "prepare-events");
 				const attr = libraryAttribution(record)!;
 				return {
@@ -766,10 +816,12 @@ function buildObstacles(
 					b.elementId,
 				),
 		);
-		const obstacleResult = aggregateBoxes(members.map((record) => record.box!));
+		const obstacleResult = aggregateBoxes(
+			collected(members, budget, "container-boundary", (record) => record.box!),
+		);
 		const kind =
 			validLibrary.length > 0 ? ("library-component" as const) : ("grouped-component" as const);
-		const id = obstacleIdentity(elementIds);
+		const id = encodePreprocessingObstacleIdentity(elementIds, budget, "container-boundary");
 		if (obstacleResult.kind !== "representable") {
 			aggregateFailures.push({ scope: "obstacle-component", subjectId: id, members });
 			continue;

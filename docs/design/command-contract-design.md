@@ -133,7 +133,9 @@ unit is not executed, current and later model/pair passes stop, and whichever
 ceiling is attempted first is the only limit finding. Both findings make
 coverage indeterminate. The preprocessing finding records its pass, phase,
 completed comparison count, participant counts, and deterministic evidence
-refs.
+refs. Findings and comparisons from earlier completed predicates remain in the
+report when a later pass reaches the preprocessing ceiling; unfinished exact
+predicates contribute nothing.
 
 Inspection findings use scene-coordinate boxes. `affectedBBox` preserves finite
 local evidence even when an element's stored extent or a multi-element span is

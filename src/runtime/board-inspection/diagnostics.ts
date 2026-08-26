@@ -4,11 +4,47 @@ import { decodeRecords } from "./lib/decode.js";
 import { detectBoard } from "./lib/detectors.js";
 import { buildSweepHierarchy, sweepIntervalPairs, type SweepWork } from "./lib/interval-sweep.js";
 import {
+	comparePreprocessingIdentity,
+	encodePreprocessingObstacleIdentity,
 	PreprocessingBudget,
 	PreprocessingCeilingReached,
+	stablePreprocessingSort,
 	type PreprocessingPass,
 	type PreprocessingPhase,
 } from "./lib/preprocessing-budget.js";
+
+export interface StableSortDiagnostics {
+	ordered: readonly string[];
+	preprocessingSteps: number;
+}
+
+export interface ObstacleIdentityEncodingDiagnostics {
+	id: string;
+	preprocessingSteps: number;
+}
+
+/** Count the production obstacle identity escaping and joining owner. */
+export function diagnoseObstacleIdentityEncoding(
+	canonicalElementIds: readonly string[],
+): ObstacleIdentityEncodingDiagnostics {
+	const budget = new PreprocessingBudget();
+	const id = encodePreprocessingObstacleIdentity(canonicalElementIds, budget, "container-boundary");
+	return { id, preprocessingSteps: budget.used };
+}
+
+/** Count the production stable-order owner's storage and identity work. */
+export function diagnoseStablePreprocessingSort(values: readonly string[]): StableSortDiagnostics {
+	const budget = new PreprocessingBudget();
+	const ordered = stablePreprocessingSort(
+		values,
+		budget,
+		"connector-intersection",
+		"order-events",
+		(left, right) =>
+			comparePreprocessingIdentity(budget, "connector-intersection", "order-events", left, right),
+	);
+	return { ordered, preprocessingSteps: budget.used };
+}
 
 export interface InspectionWorkDiagnostics {
 	/** Inspection-owned logical preprocessing units completed before any ceiling. */
