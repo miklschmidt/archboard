@@ -1002,6 +1002,76 @@ Public result JSON Schema:
 }
 ```
 
+## promote
+
+Promotes selected or named elements as one architecture node write.
+
+Usage:
+
+```text
+archboard promote --kind <kind> [--ids a,b,c] [--path file] [--text]
+```
+
+Output: json (Structured promotion result); text (Promotion summary).
+
+Prerequisites: server, board, doing. Effects: local-read, read, write.
+
+REST relationships:
+
+- GET `/api/elements`, one. Read the board
+- GET `/api/selection`, conditional. Resolve default targets
+- GET `/api/boards/info`, one. Read board variant
+- POST `/api/elements/changes`, conditional. Apply promotion
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"anyOf": [
+		{
+			"type": "object",
+			"properties": {
+				"success": {
+					"type": "boolean",
+					"const": true
+				},
+				"summary": {
+					"type": "string"
+				},
+				"nodes": {
+					"type": "array",
+					"items": {}
+				},
+				"elementsUpdated": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"held": {
+					"type": "object",
+					"properties": {
+						"board": {
+							"type": "string"
+						},
+						"message": {
+							"type": "string"
+						}
+					},
+					"required": ["board", "message"],
+					"additionalProperties": {}
+				}
+			},
+			"required": ["success", "summary", "nodes", "elementsUpdated"],
+			"additionalProperties": {}
+		},
+		{
+			"type": "string"
+		}
+	]
+}
+```
+
 ## pane
 
 Routes pane mutation commands.
@@ -1138,6 +1208,75 @@ Public result JSON Schema:
 	},
 	"required": ["success"],
 	"additionalProperties": false
+}
+```
+
+## demote
+
+Demotes every element belonging to the selected nodes in one write.
+
+Usage:
+
+```text
+archboard demote [--ids a,b,c] [--text]
+```
+
+Output: json (Structured promotion result); text (Promotion summary).
+
+Prerequisites: server, board, doing. Effects: read, write.
+
+REST relationships:
+
+- GET `/api/elements`, one. Read the board
+- GET `/api/selection`, conditional. Resolve default targets
+- POST `/api/elements/changes`, conditional. Apply demotion
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"anyOf": [
+		{
+			"type": "object",
+			"properties": {
+				"success": {
+					"type": "boolean",
+					"const": true
+				},
+				"summary": {
+					"type": "string"
+				},
+				"nodes": {
+					"type": "array",
+					"items": {}
+				},
+				"elementsUpdated": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"held": {
+					"type": "object",
+					"properties": {
+						"board": {
+							"type": "string"
+						},
+						"message": {
+							"type": "string"
+						}
+					},
+					"required": ["board", "message"],
+					"additionalProperties": {}
+				}
+			},
+			"required": ["success", "summary", "nodes", "elementsUpdated"],
+			"additionalProperties": {}
+		},
+		{
+			"type": "string"
+		}
+	]
 }
 ```
 
@@ -1866,6 +2005,58 @@ Public result JSON Schema:
 }
 ```
 
+## claim
+
+Takes or extends a board lease for substantial work.
+
+Usage:
+
+```text
+archboard claim --board <key> --reason <reason> [--for 10m]
+```
+
+Output: json (Claim state).
+
+Prerequisites: server, board. Effects: write.
+
+REST relationships:
+
+- POST `/api/boards/claim`, one. Take or extend the claim
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema"
+}
+```
+
+## release
+
+Ends this caller's board claim if one remains.
+
+Usage:
+
+```text
+archboard release --board <key>
+```
+
+Output: json (Release state).
+
+Prerequisites: server, board. Effects: write.
+
+REST relationships:
+
+- POST `/api/boards/release`, one. Release the claim
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema"
+}
+```
+
 ## inject
 
 Routes injection status and test commands.
@@ -2324,6 +2515,509 @@ Public result JSON Schema:
 	},
 	"required": ["success", "name", "board", "restored"],
 	"additionalProperties": false
+}
+```
+
+## library
+
+Routes stencil catalogue commands.
+
+Usage:
+
+```text
+archboard library list [--text] | library insert <name> --x <x> --y <y> [--source <file>] [--id <libraryItemId>]
+```
+
+Output: json (Namespace refusal).
+
+Prerequisites: none. Effects: none.
+
+REST relationships:
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"not": {}
+}
+```
+
+## library list
+
+Reads the server-backed stencil catalogue.
+
+Usage:
+
+```text
+archboard library list [--text]
+```
+
+Output: json (Structured catalogue); text (Human-readable catalogue).
+
+Prerequisites: server. Effects: read.
+
+REST relationships:
+
+- GET `/api/library`, one. Read the catalogue
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"anyOf": [
+		{},
+		{
+			"type": "string"
+		}
+	]
+}
+```
+
+## library insert
+
+Copies one catalogue stencil to a board in one write.
+
+Usage:
+
+```text
+archboard library insert <name> --x <x> --y <y> [--source <file>] [--id <libraryItemId>]
+```
+
+Output: json (Inserted stencil).
+
+Prerequisites: server, board, doing. Effects: read, write.
+
+REST relationships:
+
+- GET `/api/library`, one. Read the catalogue
+- POST `/api/elements/batch`, one. Insert the stencil
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema"
+}
+```
+
+## arrange
+
+Routes element arrangement commands.
+
+Usage:
+
+```text
+archboard arrange align|distribute|group|ungroup|lock|unlock|duplicate ...
+```
+
+Output: json (Namespace refusal).
+
+Prerequisites: none. Effects: none.
+
+REST relationships:
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"not": {}
+}
+```
+
+## arrange align
+
+Aligns selected elements in one write.
+
+Usage:
+
+```text
+archboard arrange align --ids a,b,c --to left|center|right|top|middle|bottom
+```
+
+Output: json (Arrangement result).
+
+Prerequisites: server, board, doing. Effects: read, write.
+
+REST relationships:
+
+- GET `/api/elements`, one. Read arrangement targets
+- POST `/api/elements/changes`, one. Apply the arrangement in one write
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"aligned": {
+			"type": "boolean"
+		},
+		"elementIds": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"alignment": {
+			"type": "string",
+			"enum": ["left", "center", "right", "top", "middle", "bottom"]
+		},
+		"successCount": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["aligned", "elementIds", "alignment", "successCount"],
+	"additionalProperties": {}
+}
+```
+
+## arrange distribute
+
+Distributes selected elements in one write.
+
+Usage:
+
+```text
+archboard arrange distribute --ids a,b,c --to horizontal|vertical
+```
+
+Output: json (Arrangement result).
+
+Prerequisites: server, board, doing. Effects: read, write.
+
+REST relationships:
+
+- GET `/api/elements`, one. Read arrangement targets
+- POST `/api/elements/changes`, one. Apply the arrangement in one write
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"distributed": {
+			"type": "boolean"
+		},
+		"elementIds": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"direction": {
+			"type": "string",
+			"enum": ["horizontal", "vertical"]
+		},
+		"count": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["distributed", "elementIds", "direction", "count"],
+	"additionalProperties": {}
+}
+```
+
+## arrange group
+
+Groups selected elements in one write.
+
+Usage:
+
+```text
+archboard arrange group --ids a,b,c
+```
+
+Output: json (Arrangement result).
+
+Prerequisites: server, board, doing. Effects: read, write.
+
+REST relationships:
+
+- GET `/api/elements`, one. Read arrangement targets
+- POST `/api/elements/changes`, one. Apply the arrangement in one write
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"groupId": {
+			"type": "string"
+		},
+		"elementIds": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"successCount": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["groupId", "elementIds", "successCount"],
+	"additionalProperties": {}
+}
+```
+
+## arrange ungroup
+
+Removes one group in one write.
+
+Usage:
+
+```text
+archboard arrange ungroup --group <groupId>
+```
+
+Output: json (Arrangement result).
+
+Prerequisites: server, board, doing. Effects: read, write.
+
+REST relationships:
+
+- GET `/api/elements`, one. Read arrangement targets
+- POST `/api/elements/changes`, one. Apply the arrangement in one write
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"groupId": {
+			"type": "string"
+		},
+		"ungrouped": {
+			"type": "boolean"
+		},
+		"elementIds": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"successCount": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["groupId", "ungrouped", "elementIds", "successCount"],
+	"additionalProperties": {}
+}
+```
+
+## arrange lock
+
+Locks selected elements in one write.
+
+Usage:
+
+```text
+archboard arrange lock --ids a,b,c
+```
+
+Output: json (Arrangement result).
+
+Prerequisites: server, board, doing. Effects: read, write.
+
+REST relationships:
+
+- GET `/api/elements`, one. Read arrangement targets
+- POST `/api/elements/changes`, one. Apply the arrangement in one write
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"locked": {
+			"type": "boolean",
+			"const": true
+		},
+		"elementIds": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"successCount": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["locked", "elementIds", "successCount"],
+	"additionalProperties": {}
+}
+```
+
+## arrange unlock
+
+Unlocks selected elements in one write.
+
+Usage:
+
+```text
+archboard arrange unlock --ids a,b,c
+```
+
+Output: json (Arrangement result).
+
+Prerequisites: server, board, doing. Effects: read, write.
+
+REST relationships:
+
+- GET `/api/elements`, one. Read arrangement targets
+- POST `/api/elements/changes`, one. Apply the arrangement in one write
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"unlocked": {
+			"type": "boolean",
+			"const": true
+		},
+		"elementIds": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"successCount": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["unlocked", "elementIds", "successCount"],
+	"additionalProperties": {}
+}
+```
+
+## arrange duplicate
+
+Duplicates selected elements in one write.
+
+Usage:
+
+```text
+archboard arrange duplicate --ids a,b,c [--offset 20,20]
+```
+
+Output: json (Arrangement result).
+
+Prerequisites: server, board, doing. Effects: read, write.
+
+REST relationships:
+
+- GET `/api/elements`, one. Read arrangement targets
+- POST `/api/elements/changes`, one. Apply the arrangement in one write
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema"
 }
 ```
 

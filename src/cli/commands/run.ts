@@ -20,7 +20,7 @@ import { addContract, applyContract, deleteContract, getContract } from "./eleme
 import * as scene from "./scene.js";
 import { panesContract, selectionContract } from "./selection.js";
 import { paneCloseContract, paneContract, paneOpenContract } from "./pane.js";
-import { promote, demote } from "./promote.js";
+import { demoteContract, promoteContract } from "./promote.js";
 import { repoAddContract, repoContract, repoForgetContract, repoListContract } from "./repo.js";
 import {
 	SNAPSHOT_FLAG_SPEC,
@@ -38,11 +38,21 @@ import {
 } from "./board.js";
 import { compareContract } from "./compare.js";
 import { changesContract } from "./changes.js";
-import { claim, release } from "./claim.js";
+import { claimContract, releaseContract } from "./claim.js";
 import { injectContract, injectStatusContract, injectTestContract } from "./inject.js";
-import * as arrangeCommands from "./arrange.js";
+import {
+	ARRANGE_FLAG_SPEC,
+	arrangeAlignContract,
+	arrangeContract,
+	arrangeDistributeContract,
+	arrangeDuplicateContract,
+	arrangeGroupContract,
+	arrangeLockContract,
+	arrangeUngroupContract,
+	arrangeUnlockContract,
+} from "./arrange.js";
 import { installSkillContract } from "./install-skill.js";
-import * as libraryCommands from "./library.js";
+import { libraryContract, libraryInsertContract, libraryListContract } from "./library.js";
 import { childDiscoveryOptions } from "./args.js";
 
 type LegacyParserOwner = "legacy args.ts" | "legacy custom parser" | "legacy subcommand dispatch";
@@ -180,7 +190,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		].join("\n"),
 	},
 	promote: {
-		owner: legacy(promote, "src/cli/commands/promote.ts"),
+		owner: contract(promoteContract, "src/cli/commands/promote.ts"),
 		summary: "Declare the selected elements a node: kind, identity, binding",
 		usage: [
 			'promote --kind service|queue|datastore|gateway|external [--ids a,b,c] [--name "Payments"] [--node payments]',
@@ -231,7 +241,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		owner: contract(viewportContract, "src/cli/command-contract/lib/command-definitions.ts"),
 	},
 	demote: {
-		owner: legacy(demote, "src/cli/commands/promote.ts"),
+		owner: contract(demoteContract, "src/cli/commands/promote.ts"),
 		summary: "Turn nodes back into plain elements",
 		usage:
 			"demote [--ids a,b,c] [--text]  (default target is the live selection; demotes every element of each node it touches)",
@@ -355,7 +365,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		].join("\n"),
 	},
 	claim: {
-		owner: legacy(claim, "src/cli/commands/claim.ts"),
+		owner: contract(claimContract, "src/cli/commands/claim.ts"),
 		summary: "Take a board for a stretch of work, so twenty writes are one uninterrupted act",
 		usage: [
 			'claim --board <key> --reason "redrawing the payment path" [--for 10m]',
@@ -379,7 +389,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		].join("\n"),
 	},
 	release: {
-		owner: legacy(release, "src/cli/commands/claim.ts"),
+		owner: contract(releaseContract, "src/cli/commands/claim.ts"),
 		summary: "Give back a board you claimed",
 		usage: [
 			"release --board <key>",
@@ -464,28 +474,10 @@ const COMMANDS: Record<string, CommandRoute> = {
 			"snapshot save|list|restore [name] [--force]  (a snapshot belongs to the board it was taken on; --force restores it onto a different one)",
 	},
 	library: {
-		owner: legacy(
-			libraryCommands.library,
-			"src/cli/commands/library.ts",
-			"legacy subcommand dispatch",
-		),
+		owner: contract(libraryContract, "src/cli/commands/library.ts"),
 		children: {
-			list: child(
-				legacy(
-					libraryCommands.libraryList,
-					"src/cli/commands/library.ts",
-					"legacy args.ts",
-					"route-tail",
-				),
-			),
-			insert: child(
-				legacy(
-					libraryCommands.libraryInsert,
-					"src/cli/commands/library.ts",
-					"legacy args.ts",
-					"route-tail",
-				),
-			),
+			list: child(contract(libraryListContract, "src/cli/commands/library.ts")),
+			insert: child(contract(libraryInsertContract, "src/cli/commands/library.ts")),
 		},
 		bare: { kind: "default", child: "list", withLeadingOptions: true },
 		summary: "What stencils are in the library, and dropping one onto the board",
@@ -493,72 +485,19 @@ const COMMANDS: Record<string, CommandRoute> = {
 			"library list [--text] | library insert <name> --x <x> --y <y> [--source <file>] [--id <libraryItemId>]  (the palette lives on the canvas server, not in a browser profile, which is why an agent can read and place from it without a browser)",
 	},
 	arrange: {
-		owner: legacy(
-			arrangeCommands.arrange,
-			"src/cli/commands/arrange.ts",
-			"legacy subcommand dispatch",
-		),
+		owner: contract(arrangeContract, "src/cli/commands/arrange.ts"),
 		children: {
-			align: child(
-				legacy(
-					arrangeCommands.arrangeAlign,
-					"src/cli/commands/arrange.ts",
-					"legacy args.ts",
-					"route-tail",
-				),
-			),
-			distribute: child(
-				legacy(
-					arrangeCommands.arrangeDistribute,
-					"src/cli/commands/arrange.ts",
-					"legacy args.ts",
-					"route-tail",
-				),
-			),
-			group: child(
-				legacy(
-					arrangeCommands.arrangeGroup,
-					"src/cli/commands/arrange.ts",
-					"legacy args.ts",
-					"route-tail",
-				),
-			),
-			ungroup: child(
-				legacy(
-					arrangeCommands.arrangeUngroup,
-					"src/cli/commands/arrange.ts",
-					"legacy args.ts",
-					"route-tail",
-				),
-			),
-			lock: child(
-				legacy(
-					arrangeCommands.arrangeLock,
-					"src/cli/commands/arrange.ts",
-					"legacy args.ts",
-					"route-tail",
-				),
-			),
-			unlock: child(
-				legacy(
-					arrangeCommands.arrangeUnlock,
-					"src/cli/commands/arrange.ts",
-					"legacy args.ts",
-					"route-tail",
-				),
-			),
-			duplicate: child(
-				legacy(
-					arrangeCommands.arrangeDuplicate,
-					"src/cli/commands/arrange.ts",
-					"legacy args.ts",
-					"route-tail",
-				),
-			),
+			align: child(contract(arrangeAlignContract, "src/cli/commands/arrange.ts")),
+			distribute: child(contract(arrangeDistributeContract, "src/cli/commands/arrange.ts")),
+			group: child(contract(arrangeGroupContract, "src/cli/commands/arrange.ts")),
+			ungroup: child(contract(arrangeUngroupContract, "src/cli/commands/arrange.ts")),
+			lock: child(contract(arrangeLockContract, "src/cli/commands/arrange.ts")),
+			unlock: child(contract(arrangeUnlockContract, "src/cli/commands/arrange.ts")),
+			duplicate: child(contract(arrangeDuplicateContract, "src/cli/commands/arrange.ts")),
 		},
 		childDiscovery: {
 			kind: "first-positional",
-			options: childDiscoveryOptions(arrangeCommands.ARRANGE_FLAG_SPEC),
+			options: childDiscoveryOptions(ARRANGE_FLAG_SPEC),
 		},
 		bare: {
 			kind: "namespace-refusal",

@@ -182,7 +182,7 @@
 		},
 		{
 			"path": "promote",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/promote.ts",
 			"stdout": "json object or text",
 			"result": "promoted nodes,elements,fingerprint",
@@ -257,7 +257,7 @@
 		},
 		{
 			"path": "demote",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/promote.ts",
 			"stdout": "json object or text",
 			"result": "demoted nodes,elements,fingerprint",
@@ -452,7 +452,7 @@
 		},
 		{
 			"path": "claim",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/claim.ts",
 			"stdout": "json object",
 			"result": "claim holder,reason,until,version",
@@ -467,7 +467,7 @@
 		},
 		{
 			"path": "release",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/claim.ts",
 			"stdout": "json object",
 			"result": "released boolean and board",
@@ -666,7 +666,7 @@
 		},
 		{
 			"path": "library",
-			"parserOwner": "legacy subcommand dispatch",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/library.ts",
 			"stdout": "none by itself",
 			"result": "usage refusal",
@@ -681,7 +681,7 @@
 		},
 		{
 			"path": "library list",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/library.ts",
 			"stdout": "json catalogue or text",
 			"result": "sets/items/source metadata",
@@ -696,7 +696,7 @@
 		},
 		{
 			"path": "library insert",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/library.ts",
 			"stdout": "json write result",
 			"result": "inserted elements,fingerprint",
@@ -711,7 +711,7 @@
 		},
 		{
 			"path": "arrange",
-			"parserOwner": "legacy subcommand dispatch",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/arrange.ts",
 			"stdout": "none by itself",
 			"result": "usage refusal",
@@ -726,7 +726,7 @@
 		},
 		{
 			"path": "arrange align",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/arrange.ts",
 			"stdout": "json write result",
 			"result": "aligned elements,fingerprint",
@@ -741,7 +741,7 @@
 		},
 		{
 			"path": "arrange distribute",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/arrange.ts",
 			"stdout": "json write result",
 			"result": "distributed elements,fingerprint",
@@ -756,7 +756,7 @@
 		},
 		{
 			"path": "arrange group",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/arrange.ts",
 			"stdout": "json write result",
 			"result": "group id,elements,fingerprint",
@@ -771,7 +771,7 @@
 		},
 		{
 			"path": "arrange ungroup",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/arrange.ts",
 			"stdout": "json write result",
 			"result": "ungrouped elements,fingerprint",
@@ -786,7 +786,7 @@
 		},
 		{
 			"path": "arrange lock",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/arrange.ts",
 			"stdout": "json write result",
 			"result": "locked,elements,fingerprint",
@@ -801,7 +801,7 @@
 		},
 		{
 			"path": "arrange unlock",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/arrange.ts",
 			"stdout": "json write result",
 			"result": "unlocked,elements,fingerprint",
@@ -816,7 +816,7 @@
 		},
 		{
 			"path": "arrange duplicate",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/arrange.ts",
 			"stdout": "json write result",
 			"result": "sourceIds,duplicates,elements,fingerprint",
