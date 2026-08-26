@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 15:13'
+updated_date: '2026-08-26 15:23'
 labels:
   - ready-for-agent
 dependencies:
@@ -358,6 +358,8 @@ Review-remediation closure after the generated-ownership amendment: commit 9683e
 Final rereview remediation started from clean 1c293b7 with fixed base 963c3f0. Test seams remain the pure inspectBoard readonly-unknown interface and the real package CLI over parseable notes. TASK-119 stays In Progress with all acceptance criteria unchecked.
 
 Final interaction remediation checkpoint: split relative path structure from nullable absolute scene coordinates, and gated pair/stale analysis on a canonical id, finite two-coordinate origin, supported discriminator set, and usable path. Invalid-id connectors now retain nullable malformed binding/path evidence but skip readable binding, persisted endpoint, dangling entry, stale, and pair producers. Readable incoming binding/container/bound references make malformed target types coverage-applicable. Label-node overlap now considers every semantic node body while connector penetration and node overlap retain leaf scope. The public direct/package matrix grew to 376 checks, including unlocatable collision traps, missing/empty/non-string identity interactions, forward-only malformed target types, every unsupported connector discriminator, and unrelated non-leaf zone label overlap. bun run lint, both TypeScript projects, test:inspection, and git diff --check pass.
+
+Final interaction remediation validation closure: commits c9a483e and 8dc887d close all five rereview findings and retain the user-directed generated ownership. Focused lint, type-check, boundaries, module-scope, contracts (58 proofs/58 audited paths/978 checks), inspection (376 checks), CLI (579 checks), geometry (89 checks), labels (183 checks), and branch gates passed. Two real bun run fix passes both ran the TASK-128 skill validator and produced the identical binary diff hash 61f2b68af759f68813a87b131f8e7a472cd841c2b8d2cc7bf2c7b01976b7ef25; their deterministic formatter output is committed. Two fresh temporary on-demand contract generations were byte-identical, produced the three expected derived views, and left no checkout output. bun run check passed the complete 29-suite chain and all four browser suites sequentially/headless; a separate bun run test then passed the same complete chain. Both browser chains retained fixed-point 0 of 13 changed, 10,000-element human responsiveness, complete typed-text round trips, and live-session 42 of 42 convergence. git diff --check passes. TASK-119 remains In Progress with all acceptance criteria unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
