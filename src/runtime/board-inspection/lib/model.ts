@@ -1,6 +1,7 @@
 import type { NodeRef, ObstacleRef } from "../schemas.js";
 import type { DecodedRecord } from "./decode.js";
 import { aggregateBoxes, contains, type ExactBox } from "./geometry.js";
+import { sweepIntervalPairs, type SweepWork } from "./interval-sweep.js";
 
 export interface InspectionNode {
 	id: string;
@@ -82,6 +83,7 @@ export interface InspectionModel {
 	qualifyingGroupedObstacleElementIds: Set<string>;
 	obstacles: InspectionObstacle[];
 	aggregateFailures: AggregateCoordinateFailure[];
+	hierarchyWork: SweepWork;
 }
 
 const CLOSED = new Set(["rectangle", "ellipse", "diamond", "frame"]);
@@ -357,9 +359,7 @@ function bitLength(value: bigint): number {
 	return value === 0n ? 0 : value.toString(2).length;
 }
 
-function compareArea(a: ExactBox, b: ExactBox): number {
-	const aa = areaFactor(a);
-	const bb = areaFactor(b);
+function compareAreaFactors(aa: BinaryFactor, bb: BinaryFactor): number {
 	if (aa.significand === 0n || bb.significand === 0n)
 		return aa.significand === bb.significand ? 0 : aa.significand === 0n ? -1 : 1;
 	const aMagnitude = bitLength(aa.significand) + aa.exponent;
@@ -371,20 +371,50 @@ function compareArea(a: ExactBox, b: ExactBox): number {
 	return alignedA === alignedB ? 0 : alignedA < alignedB ? -1 : 1;
 }
 
-function assignNodeHierarchy(nodes: Map<string, InspectionNode>): void {
-	for (const child of nodes.values()) {
-		const candidates: Array<{ owner: InspectionNode; boundary: DecodedRecord }> = [];
-		for (const owner of nodes.values()) {
-			if (owner.id === child.id) continue;
-			for (const boundary of owner.boundaries) {
-				if (compareArea(boundary.box!, child.body) > 0 && contains(boundary.box!, child.body)) {
-					candidates.push({ owner, boundary });
-				}
-			}
-		}
-		const selected = candidates.toSorted(
+function assignNodeHierarchy(nodes: Map<string, InspectionNode>): SweepWork {
+	const children = [...nodes.values()];
+	const boundaries = children.flatMap((owner) =>
+		owner.boundaries.map((boundary) => ({ owner, boundary })),
+	);
+	const childAreas = new Map(children.map((child) => [child.id, areaFactor(child.body)]));
+	const boundaryAreas = new Map(
+		boundaries.map(({ boundary }) => [boundary, areaFactor(boundary.box!)]),
+	);
+	const candidates = new Map<string, Array<{ owner: InspectionNode; boundary: DecodedRecord }>>();
+	const work = sweepIntervalPairs(
+		children.map((child) => ({
+			id: child.id,
+			min: child.body.x,
+			max: child.body.x + child.body.width,
+			value: child,
+		})),
+		boundaries.map(({ owner, boundary }) => ({
+			id: `${boundary.id!}\0${owner.id}`,
+			min: boundary.box!.x,
+			max: boundary.box!.x + boundary.box!.width,
+			value: { owner, boundary },
+		})),
+		false,
+		(childInterval, boundaryInterval) => {
+			const child = childInterval.value;
+			const { owner, boundary } = boundaryInterval.value;
+			if (owner.id === child.id) return;
+			if (boundaryInterval.min > childInterval.min || boundaryInterval.max < childInterval.max)
+				return;
+			if (
+				compareAreaFactors(boundaryAreas.get(boundary)!, childAreas.get(child.id)!) <= 0 ||
+				!contains(boundary.box!, child.body)
+			)
+				return;
+			const found = candidates.get(child.id) ?? [];
+			found.push({ owner, boundary });
+			candidates.set(child.id, found);
+		},
+	);
+	for (const child of children) {
+		const selected = (candidates.get(child.id) ?? []).toSorted(
 			(a, b) =>
-				compareArea(a.boundary.box!, b.boundary.box!) ||
+				compareAreaFactors(boundaryAreas.get(a.boundary)!, boundaryAreas.get(b.boundary)!) ||
 				a.boundary.id!.localeCompare(b.boundary.id!) ||
 				a.owner.id.localeCompare(b.owner.id),
 		)[0];
@@ -393,6 +423,7 @@ function assignNodeHierarchy(nodes: Map<string, InspectionNode>): void {
 	for (const node of nodes.values())
 		if (node.parentId) nodes.get(node.parentId)?.children.push(node.id);
 	for (const node of nodes.values()) node.children.sort();
+	return work;
 }
 
 function buildConnectorEndpoints(
@@ -554,7 +585,7 @@ export function buildInspectionModel(records: readonly DecodedRecord[]): Inspect
 		nodeOfElement,
 		aggregateFailures: nodeAggregateFailures,
 	} = buildNodes(live, byId, confirmedLabels);
-	assignNodeHierarchy(nodes);
+	const hierarchyWork = assignNodeHierarchy(nodes);
 	const connectorEndpoints = buildConnectorEndpoints(live, nodeOfElement, duplicateIds);
 	const containerOnlyIds = findContainerOnlyIds(live, nodes, nodeOfElement);
 	const {
@@ -574,6 +605,7 @@ export function buildInspectionModel(records: readonly DecodedRecord[]): Inspect
 		qualifyingGroupedObstacleElementIds,
 		obstacles,
 		aggregateFailures: [...nodeAggregateFailures, ...obstacleAggregateFailures],
+		hierarchyWork,
 	};
 }
 
