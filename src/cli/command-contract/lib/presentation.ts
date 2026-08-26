@@ -57,10 +57,9 @@ export function presentResult(input: {
 	diagnostics: readonly string[];
 	outcome?: CommandOutcomeDeclaration;
 }): void {
-	const steps: readonly OutcomePresentationStep[] = input.outcome?.presentation ?? [
-		"result",
-		"held-note",
-	];
+	const steps: readonly OutcomePresentationStep[] =
+		input.outcome?.presentation ??
+		(input.outputCase.held === "none" ? ["result"] : ["result", "held-note"]);
 	for (const step of steps) {
 		switch (step) {
 			case "diagnostics":
