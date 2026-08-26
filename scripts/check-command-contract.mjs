@@ -52,6 +52,60 @@ check(
 	"fixed-base compatibility covers all 57 canonical paths",
 	JSON.stringify(compatibility.publicPaths) === JSON.stringify(auditedPaths),
 );
+check(
+	"fixed-base compatibility uses executable record schema 2",
+	compatibility.schemaVersion === 2,
+);
+const requiredCompatibilityCases = [
+	"status-unavailable",
+	"status-foreign-service",
+	"board-save-conflict",
+	"board-list-here-failure",
+	"install-skill-late-failure",
+	"promote-binding-resolution-failure",
+	"snapshot-save-missing-name",
+	"snapshot-restore-missing-name",
+];
+check(
+	"fixed-base compatibility records every approved focused scenario",
+	JSON.stringify(compatibility.orderedCases.map((record) => record.name).toSorted()) ===
+		JSON.stringify(requiredCompatibilityCases.toSorted()),
+);
+for (const record of compatibility.orderedCases) {
+	check(
+		`${record.name} records immutable argv`,
+		Array.isArray(record.argv) && record.argv.length > 0,
+	);
+	check(
+		`${record.name} records exact stream bytes`,
+		typeof record.stdout === "string" && typeof record.stderr === "string",
+	);
+	check(
+		`${record.name} records deliberate normalizations`,
+		record.normalizations.every(
+			(rule) =>
+				typeof rule.value === "string" &&
+				typeof rule.token === "string" &&
+				typeof rule.reason === "string" &&
+				rule.reason.length > 0,
+		),
+	);
+	check(
+		`${record.name} records merged events ending in its exit`,
+		Array.isArray(record.mergedEvents) &&
+			record.mergedEvents.at(-1)?.kind === "exit" &&
+			record.mergedEvents.at(-1)?.value === record.exit,
+	);
+	for (const field of ["prerequisiteContacts", "restEffects", "localEffects", "artifactCommits"]) {
+		check(`${record.name} records ${field}`, Array.isArray(record[field]));
+	}
+}
+const cliCheckerSource = fs.readFileSync(join(root, "scripts", "check-cli-surface.mjs"), "utf8");
+check(
+	"the package CLI checker replays the ordered fixed-base records",
+	cliCheckerSource.includes("for (const record of compatibility.orderedCases)") &&
+		cliCheckerSource.includes("exerciseCompatibilityRecord(record)"),
+);
 for (const path of compatibility.publicPaths) {
 	const [command, ...tail] = path.split(" ");
 	const result = spawnSync(join(root, "bin", "canvas"), ["help", command, ...tail], {

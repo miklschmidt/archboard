@@ -1,5 +1,5 @@
 {
-	"schemaVersion": 1,
+	"schemaVersion": 2,
 	"fixedBase": "6c42fca6c0d5b9ecaa5ad40fde14ede684722d5a",
 	"publicPaths": [
 		"start",
@@ -95,28 +95,231 @@
 		"clear": "8e5877aceeee62cf39de629a1aaabcd922042919244a307e29c17a5fb234a89a",
 		"install-skill": "73704c66e7b51af676524aeb15deab8164f271bf25d404c00a8a5b62e1b3f2d5"
 	},
-	"orderedCases": {
-		"statusUnavailable": ["health", "stdout", "exit:3"],
-		"statusForeignService": ["health", "stdout", "exit:3"],
-		"boardSaveConflict": [
-			"health",
-			"save",
-			"conflict-diagnostic",
-			"stdout",
-			"held-note",
-			"continuation",
-			"exit:5"
-		],
-		"boardListHereFailure": ["health", "here-diagnostic", "failure", "exit:2"],
-		"installSkillFailure": ["diagnostic", "failure", "exit:1"],
-		"promoteBinding": [
-			"health",
-			"board-or-selection-read",
-			"binding-resolution",
-			"write",
-			"stdout"
-		],
-		"snapshotSaveMissingName": ["health", "failure", "exit:2"],
-		"snapshotRestoreMissingName": ["health", "failure", "exit:2"]
-	}
+	"orderedCases": [
+		{
+			"name": "status-unavailable",
+			"fixture": "closed-server",
+			"argv": ["status"],
+			"normalizations": [
+				{
+					"value": "closedUrl",
+					"token": "{{CLOSED_URL}}",
+					"reason": "The fixture selects an unused loopback port."
+				}
+			],
+			"stdout": "{\n  \"running\": false,\n  \"url\": \"{{CLOSED_URL}}\"\n}\n",
+			"stderr": "",
+			"mergedEvents": [{ "kind": "stdout" }, { "kind": "exit", "value": 3 }],
+			"exit": 3,
+			"heldState": null,
+			"prerequisiteContacts": [],
+			"restEffects": [],
+			"localEffects": [],
+			"artifactCommits": []
+		},
+		{
+			"name": "status-foreign-service",
+			"fixture": "foreign-server",
+			"argv": ["status"],
+			"normalizations": [
+				{
+					"value": "foreignUrl",
+					"token": "{{FOREIGN_URL}}",
+					"reason": "The fixture binds an ephemeral loopback port."
+				}
+			],
+			"stdout": "{\n  \"running\": false,\n  \"url\": \"{{FOREIGN_URL}}\",\n  \"conflict\": \"another service (or a pre-1.1 canvas build) is answering at this URL\"\n}\n",
+			"stderr": "",
+			"mergedEvents": [
+				{ "kind": "contact", "value": "GET /health" },
+				{ "kind": "stdout" },
+				{ "kind": "exit", "value": 3 }
+			],
+			"exit": 3,
+			"heldState": null,
+			"prerequisiteContacts": ["GET /health"],
+			"restEffects": [],
+			"localEffects": [],
+			"artifactCommits": []
+		},
+		{
+			"name": "board-save-conflict",
+			"fixture": "mock-server",
+			"argv": ["board", "save", "--board", "save-conflict", "--doing", "checking conflict"],
+			"normalizations": [],
+			"stdout": "{\n  \"success\": false,\n  \"conflict\": {\n    \"board\": \"save-conflict\",\n    \"file\": \"/vault/save-conflict.excalidraw.md\",\n    \"reason\": \"changed\",\n    \"actualHash\": \"actual\",\n    \"versionMove\": \"ahead\",\n    \"outcomes\": {\n      \"reload\": \"board open save-conflict --reload\",\n      \"overwrite\": \"board save --force\",\n      \"saveAs\": \"board save --as save-conflict@from-canvas\"\n    },\n    \"message\": \"Refusing fixed-base board save. Nothing was written.\"\n  },\n  \"held\": {\n    \"board\": \"save-conflict\",\n    \"message\": \"held board diagnostic\",\n    \"writes\": 0\n  }\n}\n",
+			"stderr": "Refusing fixed-base board save. Nothing was written.\nheld board diagnostic\n\"save-conflict\" has stopped saving. Changes from here are held on the canvas and reach no note until one of those three is run.\n",
+			"mergedEvents": [
+				{ "kind": "contact", "value": "GET /health" },
+				{ "kind": "contact", "value": "POST /api/boards/save" },
+				{
+					"kind": "stderr-bytes",
+					"value": "Refusing fixed-base board save. Nothing was written.\n"
+				},
+				{ "kind": "stdout" },
+				{ "kind": "stderr-bytes", "value": "held board diagnostic\n" },
+				{
+					"kind": "stderr-bytes",
+					"value": "\"save-conflict\" has stopped saving. Changes from here are held on the canvas and reach no note until one of those three is run.\n"
+				},
+				{ "kind": "exit", "value": 5 }
+			],
+			"exit": 5,
+			"heldState": {
+				"board": "save-conflict",
+				"message": "held board diagnostic",
+				"writes": 0
+			},
+			"prerequisiteContacts": ["GET /health"],
+			"restEffects": ["POST /api/boards/save"],
+			"localEffects": [],
+			"artifactCommits": []
+		},
+		{
+			"name": "board-list-here-failure",
+			"fixture": "mock-server-repo-cwd",
+			"argv": ["board", "list", "--here"],
+			"normalizations": [],
+			"stdout": "",
+			"stderr": "Standing in github.com/miklschmidt/archboard.\nError: unexpected /api/boards\n",
+			"mergedEvents": [
+				{ "kind": "contact", "value": "GET /health" },
+				{ "kind": "contact", "value": "GET /api/boards" },
+				{
+					"kind": "stderr-bytes",
+					"value": "Standing in github.com/miklschmidt/archboard.\n"
+				},
+				{
+					"kind": "stderr-bytes",
+					"value": "Error: unexpected /api/boards\n"
+				},
+				{ "kind": "exit", "value": 1 }
+			],
+			"exit": 1,
+			"heldState": null,
+			"prerequisiteContacts": ["GET /health"],
+			"restEffects": ["GET /api/boards"],
+			"localEffects": ["repository-identity-resolved"],
+			"artifactCommits": []
+		},
+		{
+			"name": "install-skill-late-failure",
+			"fixture": "existing-skill-proc-repo",
+			"argv": ["install-skill", "--dir", "{{SKILL_ROOT}}", "--repo", "/proc", "--yes"],
+			"normalizations": [
+				{
+					"value": "outside",
+					"token": "{{OUTSIDE}}",
+					"reason": "The CLI compatibility harness uses a fresh temporary directory."
+				}
+			],
+			"stdout": "",
+			"stderr": "Replaced existing install at {{OUTSIDE}}/compat-skills/archboard\nError: ENOENT: no such file or directory, open '/proc/AGENTS.md'\n",
+			"mergedEvents": [
+				{
+					"kind": "stderr-bytes",
+					"value": "Replaced existing install at {{OUTSIDE}}/compat-skills/archboard\n"
+				},
+				{
+					"kind": "stderr-bytes",
+					"value": "Error: ENOENT: no such file or directory, open '/proc/AGENTS.md'\n"
+				},
+				{ "kind": "exit", "value": 1 }
+			],
+			"exit": 1,
+			"heldState": null,
+			"prerequisiteContacts": [],
+			"restEffects": [],
+			"localEffects": ["existing-skill-replaced", "repository-doc-not-written"],
+			"artifactCommits": []
+		},
+		{
+			"name": "promote-binding-resolution-failure",
+			"fixture": "mock-server",
+			"argv": [
+				"promote",
+				"--kind",
+				"service",
+				"--ids",
+				"shape1",
+				"--path",
+				"missing.ts",
+				"--board",
+				"contract",
+				"--doing",
+				"checking binding order"
+			],
+			"normalizations": [],
+			"stdout": "",
+			"stderr": "Error: unexpected /api/boards/info\n",
+			"mergedEvents": [
+				{ "kind": "contact", "value": "GET /health" },
+				{ "kind": "contact", "value": "GET /api/elements" },
+				{ "kind": "contact", "value": "GET /api/boards/info" },
+				{
+					"kind": "stderr-bytes",
+					"value": "Error: unexpected /api/boards/info\n"
+				},
+				{ "kind": "exit", "value": 1 }
+			],
+			"exit": 1,
+			"heldState": null,
+			"prerequisiteContacts": ["GET /health"],
+			"restEffects": ["GET /api/elements", "GET /api/boards/info"],
+			"localEffects": ["binding-resolution-failed"],
+			"artifactCommits": []
+		},
+		{
+			"name": "snapshot-save-missing-name",
+			"fixture": "mock-server",
+			"argv": ["snapshot", "save", "--board", "contract"],
+			"normalizations": [],
+			"stdout": "",
+			"stderr": "Error: Usage: snapshot save <name>\nUsage: archboard snapshot save|list|restore [name] [--force]  (a snapshot belongs to the board it was taken on; --force restores it onto a different one)\n",
+			"mergedEvents": [
+				{ "kind": "contact", "value": "GET /health" },
+				{
+					"kind": "stderr-bytes",
+					"value": "Error: Usage: snapshot save <name>\n"
+				},
+				{
+					"kind": "stderr-bytes",
+					"value": "Usage: archboard snapshot save|list|restore [name] [--force]  (a snapshot belongs to the board it was taken on; --force restores it onto a different one)\n"
+				},
+				{ "kind": "exit", "value": 2 }
+			],
+			"exit": 2,
+			"heldState": null,
+			"prerequisiteContacts": ["GET /health"],
+			"restEffects": [],
+			"localEffects": [],
+			"artifactCommits": []
+		},
+		{
+			"name": "snapshot-restore-missing-name",
+			"fixture": "mock-server",
+			"argv": ["snapshot", "restore", "--board", "contract"],
+			"normalizations": [],
+			"stdout": "",
+			"stderr": "Error: Usage: snapshot restore <name>\nUsage: archboard snapshot save|list|restore [name] [--force]  (a snapshot belongs to the board it was taken on; --force restores it onto a different one)\n",
+			"mergedEvents": [
+				{ "kind": "contact", "value": "GET /health" },
+				{
+					"kind": "stderr-bytes",
+					"value": "Error: Usage: snapshot restore <name>\n"
+				},
+				{
+					"kind": "stderr-bytes",
+					"value": "Usage: archboard snapshot save|list|restore [name] [--force]  (a snapshot belongs to the board it was taken on; --force restores it onto a different one)\n"
+				},
+				{ "kind": "exit", "value": 2 }
+			],
+			"exit": 2,
+			"heldState": null,
+			"prerequisiteContacts": ["GET /health"],
+			"restEffects": [],
+			"localEffects": [],
+			"artifactCommits": []
+		}
+	]
 }
