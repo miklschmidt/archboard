@@ -1,6 +1,6 @@
-import { parseArgs, CliUsageError } from "../args.js";
-import { printJson } from "../util.js";
-import { ensureCanvasRunning } from "../../core/spawn.js";
+import { parseArgs, CliUsageError } from "./args.js";
+import { printJson } from "./util.js";
+import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
 import {
 	getBoardInfo,
 	saveSnapshot,
@@ -8,7 +8,7 @@ import {
 	getSnapshot,
 	clearCanvas,
 	batchCreateElementsStrict,
-} from "../../core/canvas-client.js";
+} from "../../runtime/engine/canvas-client.js";
 
 // Validated up front so a `case` added below without a line here is unreachable.
 export const ACTIONS = ["save", "list", "restore"] as const;

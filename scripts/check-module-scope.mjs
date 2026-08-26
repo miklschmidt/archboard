@@ -181,7 +181,7 @@ function moduleGraph(entries) {
 			queue.push(resolved.replace(/\.js$/, ".ts"));
 		}
 	}
-	return [...seen].sort();
+	return [...seen].toSorted();
 }
 
 // ── Parsing helpers ───────────────────────────────────────────────────────
@@ -205,7 +205,7 @@ function isFunctionLike(node) {
  * them, which a reload does not. `kept(name, () => ...)` is skipped for the
  * same reason from the other direction. Its callback runs at most once per
  * process however many times the module around it is re-evaluated, which is
- * the whole contract of src/core/hot.ts.
+ * the whole contract of src/runtime/engine/hot.ts.
  */
 function walkModuleScope(node, visit) {
 	const skip =
@@ -597,7 +597,7 @@ for (const entry of findings) {
 }
 console.error(
 	`\n${findings.length} module-scope finding${findings.length === 1 ? "" : "s"} in ` +
-		`${files.length} modules. Move the state behind kept() (src/core/hot.ts), guard the ` +
+		`${files.length} modules. Move the state behind kept() (src/runtime/engine/hot.ts), guard the ` +
 		"statement, or waive it with `// hot-safe: <reason>` if re-running it is genuinely harmless.",
 );
 process.exit(1);
@@ -615,5 +615,5 @@ process.exit(1);
 // an alias is missed.
 //
 // It is the first of two nets on purpose. The reload canary
-// (src/core/reload-canary.ts) watches the live process afterwards, and it
+// (src/runtime/engine/reload-canary.ts) watches the live process afterwards, and it
 // exists because this will miss things.

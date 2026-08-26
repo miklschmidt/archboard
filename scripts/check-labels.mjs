@@ -51,16 +51,16 @@ const {
 	boundTextDrift,
 	rescueDriftedBoundTexts,
 	labelTextIdFor,
-} = await import(join(__dirname, "..", "src", "core", "labels.ts"));
-const { isBlockId } = await import(join(__dirname, "..", "src", "core", "ids.ts"));
+} = await import(join(__dirname, "..", "src", "runtime", "engine", "labels.ts"));
+const { isBlockId } = await import(join(__dirname, "..", "src", "shared", "ids", "ids.ts"));
 const { expandElements, expandForBoard, repairIndices } = await import(
-	join(__dirname, "..", "src", "core", "expand-elements.ts")
+	join(__dirname, "..", "src", "runtime", "engine", "expand-elements.ts")
 );
 const { applyElementInput } = await import(
-	join(__dirname, "..", "src", "core", "apply-element-input.ts")
+	join(__dirname, "..", "src", "runtime", "engine", "apply-element-input.ts")
 );
 const { diffAgainstBaseline, fingerprint } = await import(
-	join(__dirname, "..", "frontend", "src", "canvas", "changes.ts")
+	join(__dirname, "..", "src", "ui", "canvas", "changes.ts")
 );
 
 let failures = 0;
@@ -723,7 +723,7 @@ const CYCLES = 25;
 	assert(
 		texts
 			.map((t) => t.text)
-			.sort()
+			.toSorted()
 			.join("|") === "AuthService|Gateway|HTTP",
 		`label text was lost: ${texts.map((t) => t.text).join("|")}`,
 	);
@@ -1385,7 +1385,7 @@ const CYCLES = 25;
 		repaired
 			.filter((el) => el.type === "text")
 			.map((t) => t.text)
-			.sort()
+			.toSorted()
 			.join("|") === "AuthService|Gateway|HTTP",
 		"repair dropped a label a human could read",
 	);
@@ -1662,7 +1662,7 @@ const sceneBox = (elements) => ({
 // bezier. Correcting a pixel would restart the feedback loop: the pane
 // moves it, Excalidraw moves it back, the report carries that, the next
 // server update moves it again. So the pane acts only where the record is plainly
-// wrong, which is what `frontend/src/canvas/elements.ts` calls on every
+// wrong, which is what `src/ui/canvas/elements.ts` calls on every
 // conversion.
 
 {

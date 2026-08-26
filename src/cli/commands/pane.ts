@@ -5,11 +5,11 @@
 // different commands — reading the scene every turn is cheap and safe, and
 // changing what is on it is neither.
 
-import { parseArgs, CliUsageError } from "../args.js";
-import { printJson, note, requireBrowserClient } from "../util.js";
-import { ensureCanvasRunning } from "../../core/spawn.js";
-import { closePane, currentRequestedBoard, openPane } from "../../core/canvas-client.js";
-import { paneWords } from "../../core/panes.js";
+import { parseArgs, CliUsageError } from "./args.js";
+import { printJson, note, requireBrowserClient } from "./util.js";
+import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
+import { closePane, currentRequestedBoard, openPane } from "../../runtime/engine/canvas-client.js";
+import { paneWords } from "../../runtime/engine/panes.js";
 
 export const SUBCOMMANDS = ["open", "close"] as const;
 

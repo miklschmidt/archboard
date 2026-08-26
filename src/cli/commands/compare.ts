@@ -1,7 +1,7 @@
-import { parseArgs, CliUsageError } from "../args.js";
-import { printJson } from "../util.js";
-import { ensureCanvasRunning } from "../../core/spawn.js";
-import { compareBoardsOnCanvas } from "../../core/canvas-client.js";
+import { parseArgs, CliUsageError } from "./args.js";
+import { printJson } from "./util.js";
+import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
+import { compareBoardsOnCanvas } from "../../runtime/engine/canvas-client.js";
 
 // `compare <from> [to]` — the structured semantic diff between two variants.
 //

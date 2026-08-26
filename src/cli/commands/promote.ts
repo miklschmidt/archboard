@@ -1,13 +1,13 @@
-import { parseArgs, CliUsageError } from "../args.js";
-import { printJson } from "../util.js";
-import { ensureCanvasRunning } from "../../core/spawn.js";
+import { parseArgs, CliUsageError } from "./args.js";
+import { printJson } from "./util.js";
+import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
 import {
 	applyElementChanges,
 	getBoardInfo,
 	getElements,
 	getSelection,
-} from "../../core/canvas-client.js";
-import { type ServerElement } from "../../types.js";
+} from "../../runtime/engine/canvas-client.js";
+import { type ServerElement } from "../../runtime/engine/types.js";
 import {
 	KINDS,
 	PromotionError,
@@ -19,7 +19,7 @@ import {
 	promotionSummary,
 	resolveBinding,
 	validateNodeId,
-} from "../../core/promote.js";
+} from "../../runtime/engine/promote.js";
 
 // promote / demote — the touchscreen gesture, in one command.
 //

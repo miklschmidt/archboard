@@ -565,7 +565,7 @@ try {
 	const gaps = finalProbe.frames
 		.map((frame) => frame.gap)
 		.filter((gap) => gap > 0)
-		.sort((a, b) => a - b);
+		.toSorted((a, b) => a - b);
 	const median = gaps[Math.floor(gaps.length / 2)] || 1;
 	const reportGaps = finalProbe.responses.flatMap((response) =>
 		finalProbe.frames

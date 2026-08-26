@@ -1,13 +1,13 @@
 import path from "path";
-import { parseArgs, CliUsageError } from "../args.js";
-import { printJson, note } from "../util.js";
+import { parseArgs, CliUsageError } from "./args.js";
+import { printJson, note } from "./util.js";
 import {
 	declareRepo,
 	forgetRepo,
 	listRepos,
 	registryPath,
 	RepoRegistryError,
-} from "../../core/repo-registry.js";
+} from "../../runtime/engine/repo-registry.js";
 
 // repo: the checkouts on this machine, and their identities.
 //

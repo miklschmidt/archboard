@@ -104,7 +104,7 @@ class ManualClock {
 		for (;;) {
 			const due = [...this.timers.values()]
 				.filter((timer) => timer.at <= target)
-				.sort((left, right) => left.at - right.at || left.id - right.id)[0];
+				.toSorted((left, right) => left.at - right.at || left.id - right.id)[0];
 			if (!due) break;
 			this.timers.delete(due.id);
 			this.now = due.at;

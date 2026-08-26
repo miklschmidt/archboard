@@ -209,7 +209,7 @@ try {
 
 	await counting("distributing twenty boxes", () => ops.distributeElements(ids, "vertical"));
 	scene = await byId();
-	const tops = ids.map((id) => scene.get(id).y).sort((a, b) => a - b);
+	const tops = ids.map((id) => scene.get(id).y).toSorted((a, b) => a - b);
 	const gaps = tops.slice(1).map((y, i) => y - tops[i]);
 	assert(
 		gaps.every((gap) => near(gap, gaps[0], 0.01)),

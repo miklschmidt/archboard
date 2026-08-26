@@ -187,7 +187,7 @@ try {
 		socket.once("error", reject);
 	});
 	await sleep(120);
-	const boardKey = [...seen].reverse().find((m) => m.type === "initial_elements")?.board;
+	const boardKey = [...seen].toReversed().find((m) => m.type === "initial_elements")?.board;
 	check("a pane connects and is given a board", boardKey === "scratch", String(boardKey));
 
 	await api("POST", "/api/panes", {
@@ -343,11 +343,11 @@ try {
 		"  and they are the same elements, not redrawn ones",
 		elementsAfter.elements
 			.map((e) => e.id)
-			.sort()
+			.toSorted()
 			.join() ===
 			elementsBefore.elements
 				.map((e) => e.id)
-				.sort()
+				.toSorted()
 				.join(),
 	);
 

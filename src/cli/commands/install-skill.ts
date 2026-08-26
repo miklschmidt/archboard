@@ -4,8 +4,8 @@ import os from "os";
 import readline from "readline/promises";
 import { execFileSync } from "child_process";
 import { fileURLToPath } from "url";
-import { parseArgs, CliUsageError } from "../args.js";
-import { printJson, note } from "../util.js";
+import { parseArgs, CliUsageError } from "./args.js";
+import { printJson, note } from "./util.js";
 
 const SKILL_NAME = "archboard";
 const RETIRED_SKILL_NAMES = ["excalidraw-skill"];
@@ -32,7 +32,7 @@ const DEFAULT_CANVAS_URL = "http://127.0.0.1:3000";
 // src/cli/commands/, so the root is three levels up. Resolving relative to the
 // module path keeps this working from any cwd.
 function packageRoot(): string {
-	return fileURLToPath(new URL("../../..", import.meta.url));
+	return fileURLToPath(new URL("../../../..", import.meta.url));
 }
 
 function findSkillSource(): string {
