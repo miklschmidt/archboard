@@ -365,9 +365,14 @@ const CONTAINER_TYPES = new Set(["rectangle", "ellipse", "diamond", "frame"]);
 // and only an element with no node id is read as a connector here (TASK-053).
 const isConnector = (type: string) => CONNECTOR_TYPES.has(type);
 
-function bindingEnd(el: any, end: "start" | "end"): string | undefined {
-	const binding = end === "start" ? el.startBinding : el.endBinding;
-	return binding?.elementId ?? (end === "start" ? el.start?.id : el.end?.id);
+function bindingEnd(el: unknown, end: "start" | "end"): string | undefined {
+	const record = el && typeof el === "object" ? el as Record<string, unknown> : {};
+	const binding = end === "start" ? record.startBinding : record.endBinding;
+	const bindingRecord = binding && typeof binding === "object" ? binding as Record<string, unknown> : {};
+	const fallback = end === "start" ? record.start : record.end;
+	const fallbackRecord = fallback && typeof fallback === "object" ? fallback as Record<string, unknown> : {};
+	const id = bindingRecord.elementId ?? fallbackRecord.id;
+	return typeof id === "string" ? id : undefined;
 }
 
 // A node is whatever carries its id, and an arrow can carry one, so this is
@@ -458,7 +463,7 @@ function buildBoard(input: CompareSideInput): BoardModel {
 	// so a labelled shape is one thing and not two.
 	const boundLabelOf = new Set<string>();
 	for (const el of all) {
-		const container = (el as any).containerId;
+		const container = el.containerId;
 		if (el.type === "text" && container && container !== el.id && byId.has(container)) {
 			boundLabelOf.add(el.id);
 		}
@@ -483,7 +488,7 @@ function buildBoard(input: CompareSideInput): BoardModel {
 	// A bound label whose container is a node is part of that node whether or not
 	// promotion got round to stamping it.
 	for (const el of all) {
-		const container = (el as any).containerId;
+		const container = el.containerId;
 		if (!boundLabelOf.has(el.id) || !container) continue;
 		const id = nodeOfElement.get(container);
 		if (!id || nodeOfElement.has(el.id)) continue;
@@ -580,8 +585,8 @@ function buildBoard(input: CompareSideInput): BoardModel {
 	const promotedConnectors: Array<{ node: string; from: string; to: string }> = [];
 	for (const el of all) {
 		if (!isConnector(el.type)) continue;
-		const startId = bindingEnd(el as any, "start");
-		const endId = bindingEnd(el as any, "end");
+		const startId = bindingEnd(el as unknown, "start");
+		const endId = bindingEnd(el as unknown, "end");
 		const ownNode = nodeOfElement.get(el.id);
 		if (ownNode) {
 			const from = startId ? nodeOfElement.get(startId) : undefined;
@@ -610,11 +615,11 @@ function buildBoard(input: CompareSideInput): BoardModel {
 				elementId: el.id,
 				type: el.type,
 				...(el.strokeStyle ? { strokeStyle: el.strokeStyle } : {}),
-				...((el as any).startArrowhead !== undefined
-					? { startArrowhead: (el as any).startArrowhead }
+				...(((el as unknown as Record<string, unknown>).startArrowhead !== undefined)
+					? { startArrowhead: typeof (el as unknown as Record<string, unknown>).startArrowhead === "string" ? (el as unknown as Record<string, unknown>).startArrowhead as string : null }
 					: {}),
-				...((el as any).endArrowhead !== undefined
-					? { endArrowhead: (el as any).endArrowhead }
+				...(((el as unknown as Record<string, unknown>).endArrowhead !== undefined)
+					? { endArrowhead: typeof (el as unknown as Record<string, unknown>).endArrowhead === "string" ? (el as unknown as Record<string, unknown>).endArrowhead as string : null }
 					: {}),
 				...(Object.keys(extra).length ? { extra } : {}),
 				fromName: nodes.get(fromNode)?.name ?? fromNode,

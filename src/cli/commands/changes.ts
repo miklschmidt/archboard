@@ -42,10 +42,10 @@ export async function changes(argv: string[]): Promise<void> {
 		} else if (flags.coalesce) {
 			const net = report.coalesced;
 			if (!net || net.significance === "none") {
-				lines.push(`Nothing has changed on "${report.board}" since then.`);
+				lines.push(`Nothing has changed on "${String(report.board)}" since then.`);
 			} else {
-				lines.push(`${report.board}: ${net.headline}`);
-				if (net.text) lines.push(net.text);
+				lines.push(`${String(report.board)}: ${net.headline}`);
+				if (typeof net.text === "string") lines.push(net.text);
 			}
 		} else if (report.events.length === 0) {
 			lines.push(`Nothing has changed on "${report.board}" since then.`);
@@ -54,7 +54,7 @@ export async function changes(argv: string[]): Promise<void> {
 				lines.push(
 					`[${event.cursor}] ${event.at} — ${event.origin} ${event.significance}: ${event.headline}`,
 				);
-				if (event.text) lines.push(event.text);
+					if (typeof event.text === "string") lines.push(event.text);
 			}
 		}
 		// The cursor is part of the answer in text mode too: without it the caller

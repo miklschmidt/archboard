@@ -107,8 +107,9 @@ export function pointsOf(points: unknown): { x: number; y: number }[] | undefine
 	if (!Array.isArray(points) || points.length === 0) return undefined;
 	const normalized: { x: number; y: number }[] = [];
 	for (const point of points) {
-		const x = finite(Array.isArray(point) ? point[0] : (point as any)?.x);
-		const y = finite(Array.isArray(point) ? point[1] : (point as any)?.y);
+		const pointRecord = point && typeof point === "object" && !Array.isArray(point) ? point as Record<string, unknown> : null;
+		const x = finite(Array.isArray(point) ? point[0] : pointRecord?.x);
+		const y = finite(Array.isArray(point) ? point[1] : pointRecord?.y);
 		if (x !== undefined && y !== undefined) normalized.push({ x, y });
 	}
 	return normalized.length === 0 ? undefined : normalized;

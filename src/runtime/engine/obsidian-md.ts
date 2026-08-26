@@ -37,17 +37,21 @@ export function isObsidianExcalidrawMd(content: string): boolean {
 	return content.includes("# Excalidraw Data") || /^---[\s\S]*?excalidraw-plugin:/m.test(content);
 }
 
-export function renameElementId(elements: any[], oldId: string, newId: string): void {
+export function renameElementId(elements: unknown[], oldId: string, newId: string): void {
 	for (const el of elements) {
-		if (el.id === oldId) el.id = newId;
-		if (Array.isArray(el.boundElements)) {
-			for (const bound of el.boundElements) {
-				if (bound.id === oldId) bound.id = newId;
+		if (!el || typeof el !== "object") continue;
+		const record = el as Record<string, unknown>;
+		if (record.id === oldId) record.id = newId;
+		if (Array.isArray(record.boundElements)) {
+			for (const bound of record.boundElements) {
+				if (bound && typeof bound === "object" && (bound as Record<string, unknown>).id === oldId) (bound as Record<string, unknown>).id = newId;
 			}
 		}
-		if (el.startBinding?.elementId === oldId) el.startBinding.elementId = newId;
-		if (el.endBinding?.elementId === oldId) el.endBinding.elementId = newId;
-		if (el.containerId === oldId) el.containerId = newId;
+		for (const key of ["startBinding", "endBinding"] as const) {
+			const binding = record[key];
+			if (binding && typeof binding === "object" && (binding as Record<string, unknown>).elementId === oldId) (binding as Record<string, unknown>).elementId = newId;
+		}
+		if (record.containerId === oldId) record.containerId = newId;
 	}
 }
 
@@ -592,7 +596,7 @@ export interface WrapOptions {
 }
 
 export function wrapSceneAsObsidianMd(
-	scene: Record<string, any>,
+	scene: Record<string, unknown>,
 	existing?: string | null,
 	options: WrapOptions = {},
 ): string {
@@ -605,6 +609,7 @@ export function wrapSceneAsObsidianMd(
 	);
 	const { body, embedded, trailing } = preservedRegions(existing);
 	const wrapped = structuredClone(scene);
+	const wrappedRecord = wrapped as Record<string, unknown>;
 	wrapped.type = "excalidraw";
 	wrapped.version = 2;
 	wrapped.files = wrapped.files ?? {};
@@ -613,21 +618,26 @@ export function wrapSceneAsObsidianMd(
 	// names has its bytes in the vault, put there by the plugin, so writing
 	// base64 for it back into the Drawing block would make two records of one
 	// picture — the second of which nothing reads and nothing keeps in step.
-	for (const entry of readEmbeddedFiles(embedded)) delete wrapped.files[entry.fileId];
+	const wrappedFiles = wrappedRecord.files as Record<string, unknown>;
+	for (const entry of readEmbeddedFiles(embedded)) delete wrappedFiles[entry.fileId];
 
-	const used = new Set<string>(wrapped.elements.map((el: any) => el.id));
+	const wrappedElements = wrappedRecord.elements as unknown[];
+	const used = new Set<string>(wrappedElements.flatMap((el) => el && typeof el === "object" && typeof (el as Record<string, unknown>).id === "string" ? [(el as Record<string, unknown>).id as string] : []));
 	const entries: string[] = [];
-	for (const el of wrapped.elements) {
-		if (el.type !== "text" || el.isDeleted) continue;
+	for (const el of wrappedElements) {
+		if (!el || typeof el !== "object") continue;
+		const record = el as Record<string, unknown>;
+		if (record.type !== "text" || record.isDeleted) continue;
 		// Nothing archboard minted lands here. An id that does came from
 		// elsewhere and cannot be written as a block reference as it stands.
-		if (!isBlockId(el.id)) {
-			const newId = derivedId(el.id, used);
+		if (typeof record.id !== "string") continue;
+		if (!isBlockId(record.id)) {
+			const newId = derivedId(record.id, used);
 			used.add(newId);
-			renameElementId(wrapped.elements, el.id, newId);
+			renameElementId(wrappedElements, record.id, newId);
 		}
-		el.rawText = el.rawText && el.rawText !== "" ? el.rawText : (el.originalText ?? el.text ?? "");
-		if (el.rawText !== "") entries.push(`${el.rawText} ^${el.id}`);
+		record.rawText = record.rawText && record.rawText !== "" ? record.rawText : (record.originalText ?? record.text ?? "");
+		if (record.rawText !== "") entries.push(`${String(record.rawText)} ^${record.id}`);
 	}
 
 	const textSection = entries.length ? entries.join("\n\n") + "\n" : "";
