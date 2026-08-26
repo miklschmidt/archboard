@@ -1,4 +1,4 @@
-import { parseArgs, CliUsageError } from "./args.js";
+import { parseArgs, CliUsageError, type FlagSpecs } from "./args.js";
 import { printJson } from "./util.js";
 import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
 import {
@@ -10,8 +10,12 @@ import {
 	batchCreateElementsStrict,
 } from "../../runtime/engine/canvas-client.js";
 
+export const SNAPSHOT_FLAG_SPEC = {
+	force: { takesValue: false },
+} as const satisfies FlagSpecs;
+
 export async function snapshot(argv: string[]): Promise<void> {
-	const { positionals, flags } = parseArgs(argv, { force: { takesValue: false } });
+	const { positionals, flags } = parseArgs(argv, SNAPSHOT_FLAG_SPEC);
 	const [action, name] = positionals;
 	const tail = [...(flags.force ? ["--force"] : []), ...(name ? [name] : [])];
 
@@ -28,7 +32,7 @@ export async function snapshot(argv: string[]): Promise<void> {
 }
 
 export async function snapshotSave(argv: string[]): Promise<void> {
-	const { positionals } = parseArgs(argv, { force: { takesValue: false } });
+	const { positionals } = parseArgs(argv, SNAPSHOT_FLAG_SPEC);
 	const name = positionals[0];
 	await ensureCanvasRunning();
 	if (!name) throw new CliUsageError("Usage: snapshot save <name>");
@@ -43,7 +47,7 @@ export async function snapshotSave(argv: string[]): Promise<void> {
 }
 
 export async function snapshotList(argv: string[]): Promise<void> {
-	parseArgs(argv, { force: { takesValue: false } });
+	parseArgs(argv, SNAPSHOT_FLAG_SPEC);
 	await ensureCanvasRunning();
 	const result = await listSnapshots();
 	printJson(result.snapshots ?? []);
@@ -51,7 +55,7 @@ export async function snapshotList(argv: string[]): Promise<void> {
 }
 
 export async function snapshotRestore(argv: string[]): Promise<void> {
-	const { positionals, flags } = parseArgs(argv, { force: { takesValue: false } });
+	const { positionals, flags } = parseArgs(argv, SNAPSHOT_FLAG_SPEC);
 	const name = positionals[0];
 	await ensureCanvasRunning();
 	if (!name) throw new CliUsageError("Usage: snapshot restore <name>");

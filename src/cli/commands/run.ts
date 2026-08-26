@@ -31,6 +31,7 @@ import * as injectCommands from "./inject.js";
 import * as arrangeCommands from "./arrange.js";
 import { installSkill } from "./install-skill.js";
 import * as libraryCommands from "./library.js";
+import { childDiscoveryOptions } from "./args.js";
 
 type LegacyParserOwner = "legacy args.ts" | "legacy custom parser" | "legacy subcommand dispatch";
 
@@ -518,7 +519,10 @@ const COMMANDS: Record<string, CommandRoute> = {
 				),
 			),
 		},
-		childDiscovery: { kind: "first-positional", options: { force: "flag" } },
+		childDiscovery: {
+			kind: "first-positional",
+			options: childDiscoveryOptions(snapshotCommands.SNAPSHOT_FLAG_SPEC),
+		},
 		bare: {
 			kind: "namespace-refusal",
 			message: "Usage: snapshot save|list|restore [name]",
@@ -622,7 +626,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		},
 		childDiscovery: {
 			kind: "first-positional",
-			options: { ids: "value", to: "value", group: "value", offset: "value" },
+			options: childDiscoveryOptions(arrangeCommands.ARRANGE_FLAG_SPEC),
 		},
 		bare: {
 			kind: "namespace-refusal",
@@ -689,7 +693,7 @@ export interface CliRegistryEntry {
 	kind: "contract" | "legacy";
 	handlerOwner: string;
 	parserOwner: string;
-	handlerName: string;
+	handlerName?: string;
 	bare?: CommandRoute["bare"];
 	childDiscovery?: CommandRoute["childDiscovery"];
 	legacyArgv?: LegacyCommand["legacyArgv"];
@@ -715,10 +719,7 @@ function flattenRoute(
 		kind: route.owner.kind,
 		handlerOwner: route.owner.handlerOwner,
 		parserOwner: parserOwner(route.owner),
-		handlerName:
-			route.owner.kind === "contract"
-				? route.owner.contract.path.join(" ")
-				: route.owner.handler.name,
+		...(route.owner.kind === "legacy" ? { handlerName: route.owner.handler.name } : {}),
 		...(route.bare ? { bare: route.bare } : {}),
 		...(route.childDiscovery ? { childDiscovery: route.childDiscovery } : {}),
 		...(route.owner.kind === "contract"
