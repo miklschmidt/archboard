@@ -80,6 +80,14 @@ const finite = (v: unknown): number | undefined =>
  * malformed history must not prevent a valid live document from being saved.
  */
 export function validateRenderGeometry(elements: Iterable<RenderGeometryElement>): void {
+	const invalid = collectInvalidRenderGeometry(elements);
+	if (invalid.length > 0) throw new RenderGeometryError(invalid);
+}
+
+/** The pure collection used by strict ingest and read-only inspection alike. */
+export function collectInvalidRenderGeometry(
+	elements: Iterable<RenderGeometryElement>,
+): InvalidRenderGeometry[] {
 	const invalid: InvalidRenderGeometry[] = [];
 	for (const element of elements) {
 		if (element.isDeleted === true) continue;
@@ -93,7 +101,7 @@ export function validateRenderGeometry(elements: Iterable<RenderGeometryElement>
 			fields,
 		});
 	}
-	if (invalid.length > 0) throw new RenderGeometryError(invalid);
+	return invalid;
 }
 
 /** The default local path for a new straight linear element. */
