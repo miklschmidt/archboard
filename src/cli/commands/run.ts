@@ -21,13 +21,13 @@ import * as scene from "./scene.js";
 import { panesContract, selectionContract } from "./selection.js";
 import * as paneCommands from "./pane.js";
 import { promote, demote } from "./promote.js";
-import * as repoCommands from "./repo.js";
+import { repoAddContract, repoContract, repoForgetContract, repoListContract } from "./repo.js";
 import * as snapshotCommands from "./snapshot.js";
 import * as boardCommands from "./board.js";
 import { compareContract } from "./compare.js";
 import { changesContract } from "./changes.js";
 import { claim, release } from "./claim.js";
-import * as injectCommands from "./inject.js";
+import { injectContract, injectStatusContract, injectTestContract } from "./inject.js";
 import * as arrangeCommands from "./arrange.js";
 import { installSkillContract } from "./install-skill.js";
 import * as libraryCommands from "./library.js";
@@ -229,17 +229,11 @@ const COMMANDS: Record<string, CommandRoute> = {
 			"demote [--ids a,b,c] [--text]  (default target is the live selection; demotes every element of each node it touches)",
 	},
 	repo: {
-		owner: legacy(repoCommands.repo, "src/cli/commands/repo.ts", "legacy subcommand dispatch"),
+		owner: contract(repoContract, "src/cli/commands/repo.ts"),
 		children: {
-			list: child(
-				legacy(repoCommands.repoList, "src/cli/commands/repo.ts", "legacy args.ts", "route-tail"),
-			),
-			add: child(
-				legacy(repoCommands.repoAdd, "src/cli/commands/repo.ts", "legacy args.ts", "route-tail"),
-			),
-			forget: child(
-				legacy(repoCommands.repoForget, "src/cli/commands/repo.ts", "legacy args.ts", "route-tail"),
-			),
+			list: child(contract(repoListContract, "src/cli/commands/repo.ts")),
+			add: child(contract(repoAddContract, "src/cli/commands/repo.ts")),
+			forget: child(contract(repoForgetContract, "src/cli/commands/repo.ts")),
 		},
 		bare: { kind: "default", child: "list", withLeadingOptions: true },
 		summary:
@@ -411,28 +405,10 @@ const COMMANDS: Record<string, CommandRoute> = {
 		].join("\n"),
 	},
 	inject: {
-		owner: legacy(
-			injectCommands.inject,
-			"src/cli/commands/inject.ts",
-			"legacy subcommand dispatch",
-		),
+		owner: contract(injectContract, "src/cli/commands/inject.ts"),
 		children: {
-			status: child(
-				legacy(
-					injectCommands.injectStatus,
-					"src/cli/commands/inject.ts",
-					"legacy args.ts",
-					"route-tail",
-				),
-			),
-			test: child(
-				legacy(
-					injectCommands.injectTest,
-					"src/cli/commands/inject.ts",
-					"legacy args.ts",
-					"route-tail",
-				),
-			),
+			status: child(contract(injectStatusContract, "src/cli/commands/inject.ts")),
+			test: child(contract(injectTestContract, "src/cli/commands/inject.ts")),
 		},
 		bare: { kind: "default", child: "status", withLeadingOptions: false },
 		summary:

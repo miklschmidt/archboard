@@ -272,7 +272,7 @@
 		},
 		{
 			"path": "repo",
-			"parserOwner": "legacy subcommand dispatch",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/repo.ts",
 			"stdout": "none by itself",
 			"result": "usage refusal",
@@ -287,7 +287,7 @@
 		},
 		{
 			"path": "repo list",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/repo.ts",
 			"stdout": "json object or text",
 			"result": "registry path and repositories",
@@ -302,7 +302,7 @@
 		},
 		{
 			"path": "repo add",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/repo.ts",
 			"stdout": "json object",
 			"result": "registered repository identity/path",
@@ -317,7 +317,7 @@
 		},
 		{
 			"path": "repo forget",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/repo.ts",
 			"stdout": "json object",
 			"result": "repo,forgotten,registry",
@@ -482,7 +482,7 @@
 		},
 		{
 			"path": "inject",
-			"parserOwner": "legacy subcommand dispatch",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/inject.ts",
 			"stdout": "none by itself",
 			"result": "usage refusal",
@@ -497,7 +497,7 @@
 		},
 		{
 			"path": "inject status",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/inject.ts",
 			"stdout": "json object",
 			"result": "injection configuration and counters",
@@ -512,7 +512,7 @@
 		},
 		{
 			"path": "inject test",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/inject.ts",
 			"stdout": "json object",
 			"result": "injection test report",

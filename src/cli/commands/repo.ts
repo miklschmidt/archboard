@@ -1,6 +1,4 @@
-import path from "path";
-import { parseArgs, CliUsageError } from "./args.js";
-import { printJson, note } from "./util.js";
+import { z } from "zod";
 import {
 	declareRepo,
 	forgetRepo,
@@ -8,101 +6,256 @@ import {
 	registryPath,
 	RepoRegistryError,
 } from "../../runtime/engine/repo-registry.js";
+import { CliUsageError, defineCommand } from "../command-contract/contract.js";
 
-// repo: the checkouts on this machine, and their identities.
-//
-// A binding names a repository and a path inside it, never a directory on one
-// laptop, because the vault it is stored in spans repositories and is meant to
-// be readable from any of them (ADR 0004). Something still has to know where
-// `github.com/acme/payments` is *here*, and this is where that is written down
-// (ADR 0011).
-//
-// Registering a repo is what makes cross-repo work possible without moving:
-// once a checkout is registered, `promote --repo github.com/acme/payments
-// --path src/service.ts` resolves from anywhere, so a system board covering
-// five repositories can be built in one session without a single `cd`.
-//
-// Nothing here talks to the canvas. The registry is a machine-local file, so
-// these run whether or not a server is up.
+const usage = "Usage: repo list [--text] | repo add [dir] | repo forget <identity>";
+const tail = z.array(z.string()).default([]);
 
-const USAGE = "Usage: repo list [--text] | repo add [dir] | repo forget <identity>";
+export const RepoNamespaceInputSchema = z.object({ action: z.string().optional(), tail });
+export type RepoNamespaceInput = z.infer<typeof RepoNamespaceInputSchema>;
+export const RepoNamespaceResultSchema = z.never();
+export type RepoNamespaceResult = z.infer<typeof RepoNamespaceResultSchema>;
+export const repoContract = defineCommand({
+	path: ["repo"],
+	summary:
+		"The repository checkouts on this machine, so a binding can name a repo instead of a directory",
+	usage,
+	description: "Routes repository registry subcommands.",
+	examples: ["archboard repo list"],
+	parameters: [
+		{ kind: "positional", key: "action", name: "subcommand", description: "Repository subcommand" },
+		{
+			kind: "positional",
+			key: "tail",
+			name: "arguments",
+			repeatable: true,
+			route: "pass-through",
+			description: "Subcommand arguments",
+		},
+	],
+	input: { ingress: RepoNamespaceInputSchema },
+	result: RepoNamespaceResultSchema,
+	output: {
+		cases: [{ id: "json", when: {}, mode: "json", held: "none", description: "Namespace refusal" }],
+		select: () => "json",
+	},
+	prerequisites: [],
+	effects: [],
+	refusals: [],
+	relationships: [],
+	async handler() {
+		throw new CliUsageError(usage);
+	},
+});
 
-export async function repo(argv: string[]): Promise<void> {
-	const action = argv[0]?.startsWith("--") ? undefined : argv[0];
-	const rest = action === undefined ? argv : argv.slice(1);
+export const RegisteredRepoResultSchema = z.object({
+	repo: z.string(),
+	root: z.string(),
+	source: z.enum(["declared", "observed"]),
+	addedAt: z.string(),
+	exists: z.boolean().optional(),
+});
+export type RegisteredRepoResult = z.infer<typeof RegisteredRepoResultSchema>;
+export const RepoListInputSchema = z.object({ text: z.boolean().default(false), tail });
+export type RepoListInput = z.infer<typeof RepoListInputSchema>;
+export const RepoListJsonResultSchema = z.object({
+	success: z.literal(true),
+	registry: z.string(),
+	repos: z.array(RegisteredRepoResultSchema),
+});
+export type RepoListJsonResult = z.infer<typeof RepoListJsonResultSchema>;
+export const RepoListResultSchema = z.union([RepoListJsonResultSchema, z.string()]);
+export type RepoListResult = z.infer<typeof RepoListResultSchema>;
+export const repoListContract = defineCommand({
+	path: ["repo", "list"],
+	summary: "List registered repository checkouts",
+	usage: "repo list [--text]",
+	description: "Reads the machine-local repository registry.",
+	examples: ["archboard repo list"],
+	parameters: [
+		{
+			kind: "option",
+			key: "text",
+			spellings: ["--text"],
+			value: "none",
+			description: "Print a human-readable listing",
+		},
+		{
+			kind: "positional",
+			key: "tail",
+			name: "ignored",
+			repeatable: true,
+			route: "pass-through",
+			description: "Legacy ignored positional content",
+		},
+	],
+	input: { ingress: RepoListInputSchema },
+	result: RepoListResultSchema,
+	output: {
+		cases: [
+			{
+				id: "json",
+				when: { key: "text", present: false },
+				mode: "json",
+				held: "none",
+				description: "Repository registry",
+			},
+			{
+				id: "text",
+				when: { key: "text", present: true },
+				mode: "text",
+				held: "none",
+				description: "Human-readable registry",
+			},
+		],
+		select: (input) => (input.text ? "text" : "json"),
+	},
+	prerequisites: [],
+	effects: ["local-read"],
+	refusals: [],
+	relationships: [],
+	async handler(input) {
+		const repos = listRepos();
+		if (!input.text) return { result: { success: true as const, registry: registryPath(), repos } };
+		if (!repos.length)
+			return {
+				result:
+					"No repository is registered on this machine yet.\nRun `repo add` inside a checkout, or bind with absolute paths and archboard will learn as it goes.",
+			};
+		return {
+			result: repos
+				.map(
+					(entry) =>
+						`${entry.repo}\n  ${entry.root}${entry.exists ? "" : "  (gone)"}  [${entry.source}]`,
+				)
+				.join("\n"),
+		};
+	},
+});
 
-	if (action === "add") return repoAdd(rest);
-	if (action === "forget") return repoForget(rest);
-	if (action === undefined || action === "list") return repoList(rest);
-
-	throw new CliUsageError(USAGE);
-}
-
-export async function repoList(argv: string[]): Promise<void> {
-	const { flags } = parseArgs(argv, { text: { takesValue: false } });
-	const repos = listRepos();
-
-	if (flags.text) {
-		if (repos.length === 0) {
-			process.stdout.write(
-				"No repository is registered on this machine yet.\n" +
-					"Run `repo add` inside a checkout, or bind with absolute paths and archboard will learn as it goes.\n",
-			);
-			return;
+export const RepoAddInputSchema = z.object({ dir: z.string().optional(), tail });
+export type RepoAddInput = z.infer<typeof RepoAddInputSchema>;
+export const RepoAddResultSchema = z.object({
+	success: z.literal(true),
+	repo: z.string(),
+	root: z.string(),
+	source: z.enum(["declared", "observed"]),
+	addedAt: z.string(),
+	registry: z.string(),
+});
+export type RepoAddResult = z.infer<typeof RepoAddResultSchema>;
+export const repoAddContract = defineCommand({
+	path: ["repo", "add"],
+	summary: "Register a repository checkout",
+	usage: "repo add [dir]",
+	description: "Derives a checkout identity from git and records its local root.",
+	examples: ["archboard repo add ."],
+	parameters: [
+		{ kind: "positional", key: "dir", name: "dir", description: "Checkout directory" },
+		{
+			kind: "positional",
+			key: "tail",
+			name: "ignored",
+			repeatable: true,
+			route: "pass-through",
+			description: "Legacy ignored positional content",
+		},
+	],
+	input: { ingress: RepoAddInputSchema },
+	result: RepoAddResultSchema,
+	output: {
+		cases: [
+			{
+				id: "json",
+				when: {},
+				mode: "json",
+				held: "none",
+				description: "Registered checkout",
+				presentation: ["diagnostics", "result"],
+			},
+		],
+		select: () => "json",
+	},
+	prerequisites: [],
+	effects: ["local-read", "local-write"],
+	refusals: [],
+	relationships: [],
+	async handler(input, context) {
+		let entry;
+		try {
+			entry = declareRepo(context.resolvePath(input.dir ?? process.cwd()));
+		} catch (error) {
+			if (error instanceof RepoRegistryError) throw new CliUsageError(error.message);
+			throw error;
 		}
-		const lines = repos.map(
-			(entry) =>
-				`${entry.repo}\n  ${entry.root}${entry.exists ? "" : "  (gone)"}  [${entry.source}]`,
-		);
-		process.stdout.write(lines.join("\n") + "\n");
-		return;
-	}
+		return {
+			result: { success: true as const, ...entry, registry: registryPath() },
+			diagnostics: [
+				`"${entry.repo}" is now resolvable from anywhere on this machine: promote --repo ${entry.repo} --path <path inside it>.`,
+			],
+		};
+	},
+});
 
-	printJson({ success: true, registry: registryPath(), repos });
-}
-
-export async function repoAdd(argv: string[]): Promise<void> {
-	const { positionals } = parseArgs(argv, {});
-	// The directory is the one thing a person can point at; the identity is
-	// git's to decide, because two people naming the same clone differently is
-	// what would make the address space useless.
-	const dir = path.resolve(positionals[0] ?? process.cwd());
-
-	let entry;
-	try {
-		entry = declareRepo(dir);
-	} catch (error) {
-		if (error instanceof RepoRegistryError) throw new CliUsageError(error.message);
-		throw error;
-	}
-
-	note(
-		`"${entry.repo}" is now resolvable from anywhere on this machine: ` +
-			`promote --repo ${entry.repo} --path <path inside it>.`,
-	);
-	printJson({ success: true, ...entry, registry: registryPath() });
-}
-
-export async function repoForget(argv: string[]): Promise<void> {
-	const { positionals } = parseArgs(argv, {});
-	const identity = positionals[0];
-	if (!identity)
-		throw new CliUsageError(
-			"repo forget needs a repository identity, e.g. github.com/acme/payments",
-		);
-
-	const forgotten = forgetRepo(identity);
-	if (!forgotten) {
-		const known = listRepos().map((entry) => entry.repo);
-		note(
-			`"${identity}" was not registered, so nothing changed.` +
-				(known.length ? ` Registered here: ${known.join(", ")}.` : ""),
-		);
-	} else {
-		note(
-			`Forgot where "${identity}" is checked out. Bindings that already name it keep their address; ` +
-				"they just have nothing to resolve to until it is registered again.",
-		);
-	}
-	printJson({ success: true, repo: identity, forgotten, registry: registryPath() });
-}
+export const RepoForgetInputSchema = z.object({
+	identity: z
+		.string({ error: "repo forget needs a repository identity, e.g. github.com/acme/payments" })
+		.min(1),
+	tail,
+});
+export type RepoForgetInput = z.infer<typeof RepoForgetInputSchema>;
+export const RepoForgetResultSchema = z.object({
+	success: z.literal(true),
+	repo: z.string(),
+	forgotten: z.boolean(),
+	registry: z.string(),
+});
+export type RepoForgetResult = z.infer<typeof RepoForgetResultSchema>;
+export const repoForgetContract = defineCommand({
+	path: ["repo", "forget"],
+	summary: "Forget a local repository checkout",
+	usage: "repo forget <identity>",
+	description: "Removes one identity from the machine-local registry.",
+	examples: ["archboard repo forget github.com/acme/payments"],
+	parameters: [
+		{ kind: "positional", key: "identity", name: "identity", description: "Repository identity" },
+		{
+			kind: "positional",
+			key: "tail",
+			name: "ignored",
+			repeatable: true,
+			route: "pass-through",
+			description: "Legacy ignored positional content",
+		},
+	],
+	input: { ingress: RepoForgetInputSchema },
+	result: RepoForgetResultSchema,
+	output: {
+		cases: [
+			{
+				id: "json",
+				when: {},
+				mode: "json",
+				held: "none",
+				description: "Forget receipt",
+				presentation: ["diagnostics", "result"],
+			},
+		],
+		select: () => "json",
+	},
+	prerequisites: [],
+	effects: ["local-read", "local-write"],
+	refusals: [],
+	relationships: [],
+	async handler(input) {
+		const forgotten = forgetRepo(input.identity);
+		const known = forgotten ? [] : listRepos().map((entry) => entry.repo);
+		const diagnostic = forgotten
+			? `Forgot where "${input.identity}" is checked out. Bindings that already name it keep their address; they just have nothing to resolve to until it is registered again.`
+			: `"${input.identity}" was not registered, so nothing changed.${known.length ? ` Registered here: ${known.join(", ")}.` : ""}`;
+		return {
+			result: { success: true as const, repo: input.identity, forgotten, registry: registryPath() },
+			diagnostics: [diagnostic],
+		};
+	},
+});
