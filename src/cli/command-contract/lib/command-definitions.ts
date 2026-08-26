@@ -4,16 +4,18 @@ import {
 	searchElements,
 	setViewport,
 	updateElementStrict,
-} from "../../runtime/engine/canvas-client.js";
-import { buildSceneFile } from "../../runtime/engine/scene-document.js";
-import { isObsidianExcalidrawMd, wrapSceneAsObsidianMd } from "../../runtime/engine/obsidian-md.js";
+} from "../../../runtime/engine/canvas-client.js";
+import { buildSceneFile } from "../../../runtime/engine/scene-document.js";
+import {
+	isObsidianExcalidrawMd,
+	wrapSceneAsObsidianMd,
+} from "../../../runtime/engine/obsidian-md.js";
 import {
 	CliUsageError,
 	defineCommand,
-	type AnyCommandContract,
 	type CommandContext,
 	type PendingArtifact,
-} from "./contract.js";
+} from "../contract.js";
 
 const elementType = z.enum([
 	"rectangle",
@@ -60,6 +62,8 @@ const commonRefusals = [
 	},
 ];
 
+const serverRefusal = commonRefusals[1]!;
+
 const tail = z.array(z.string()).default([]);
 
 export const WRITE_ANSWER = [
@@ -100,7 +104,18 @@ const filterPairSchema = z.string().transform((value, context) => {
 		context.addIssue({ code: "custom", message: `--filter expects key=value, got "${value}"` });
 		return z.NEVER;
 	}
-	return { key: value.slice(0, equals), raw: value.slice(equals + 1) };
+	const raw = value.slice(equals + 1);
+	const coerced =
+		raw === "true"
+			? true
+			: raw === "false"
+				? false
+				: raw === "null"
+					? null
+					: raw.trim() !== "" && !Number.isNaN(Number(raw))
+						? Number(raw)
+						: raw;
+	return { key: value.slice(0, equals), raw, coerced };
 });
 
 const filterJsonSchema = z.string().transform((value, context) => {
@@ -117,14 +132,6 @@ const filterJsonSchema = z.string().transform((value, context) => {
 		return z.NEVER;
 	}
 });
-
-function coerceFilter(value: string): unknown {
-	if (value === "true") return true;
-	if (value === "false") return false;
-	if (value === "null") return null;
-	if (value.trim() !== "" && !Number.isNaN(Number(value))) return Number(value);
-	return value;
-}
 
 function lookupPath(value: unknown, dotPath: string): unknown {
 	return dotPath.split(".").reduce((current, key) => {
@@ -209,7 +216,7 @@ export const queryContract = defineCommand({
 		],
 		select: () => "json",
 	},
-	prerequisites: ["server"],
+	prerequisites: ["server", "board"],
 	effects: ["read"],
 	refusals: commonRefusals,
 	relationships: [
@@ -241,8 +248,7 @@ export const queryContract = defineCommand({
 		let results = query.size > 0 ? await searchElements(query) : await getElements();
 		const predicates: Array<(element: unknown) => boolean> = [];
 		for (const value of input.filter) {
-			const { key, raw } = context.parse(filterPairSchema, value);
-			const coerced = coerceFilter(raw);
+			const { key, raw, coerced } = context.parse(filterPairSchema, value);
 			predicates.push((element) => {
 				const actual = lookupPath(element, key);
 				if (Array.isArray(actual)) return actual.includes(raw) || actual.includes(coerced as never);
@@ -277,6 +283,37 @@ const updateIngress = z.object({
 });
 
 const updatesSchema = z.record(z.string(), z.unknown());
+const jsonUpdatesSchema = (source: "inline" | "stream") =>
+	z
+		.string()
+		.transform((raw, context) => {
+			if (source === "stream" && !raw.trim()) {
+				context.addIssue({
+					code: "custom",
+					message: "No updates provided (pass a file argument or pipe JSON to stdin)",
+				});
+				return z.NEVER;
+			}
+			let parsed: unknown;
+			try {
+				parsed = JSON.parse(raw);
+			} catch (error) {
+				context.addIssue({
+					code: "custom",
+					message:
+						source === "inline"
+							? `Invalid JSON in --set: ${(error as Error).message}`
+							: `Invalid JSON updates: ${(error as Error).message}`,
+				});
+				return z.NEVER;
+			}
+			if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+				context.addIssue({ code: "custom", message: "Updates must be a JSON object" });
+				return z.NEVER;
+			}
+			return parsed as Record<string, unknown>;
+		})
+		.pipe(updatesSchema);
 const updateResultSchema = z.object({
 	success: z.literal(true),
 	element: ServerElementSchema,
@@ -287,37 +324,14 @@ const updateResultSchema = z.object({
 });
 
 async function updateInput(input: z.infer<typeof updateIngress>, context: CommandContext) {
-	let raw: string;
-	let label: string;
 	if (input.set !== undefined) {
-		raw = input.set;
-		label = "in --set";
-	} else {
-		raw =
-			input.input !== undefined && input.input !== "-"
-				? context.readTextFile(input.input)
-				: await context.readStdin();
-		label = "updates";
-		if (!raw.trim()) {
-			throw new CliUsageError("No updates provided (pass a file argument or pipe JSON to stdin)");
-		}
+		return context.parse(jsonUpdatesSchema("inline"), input.set);
 	}
-	let parsed: unknown;
-	try {
-		parsed = JSON.parse(raw);
-	} catch (error) {
-		throw new CliUsageError(
-			input.set !== undefined
-				? `Invalid JSON in --set: ${(error as Error).message}`
-				: `Invalid JSON updates: ${(error as Error).message}`,
-		);
-	}
-	if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-		throw new CliUsageError(
-			label === "updates" ? "Updates must be a JSON object" : "Updates must be a JSON object",
-		);
-	}
-	return context.parse(updatesSchema, parsed);
+	const raw =
+		input.input !== undefined && input.input !== "-"
+			? context.readTextFile(input.input)
+			: await context.readStdin();
+	return context.parse(jsonUpdatesSchema("stream"), raw);
 }
 
 export const updateContract = defineCommand({
@@ -386,11 +400,28 @@ export const updateContract = defineCommand({
 		],
 		select: () => "json",
 	},
-	prerequisites: ["server"],
+	prerequisites: ["server", "board", "doing"],
 	effects: ["local-read", "write"],
 	refusals: [
 		...commonRefusals,
-		{ code: "BOARD_HELD", exit: 5, stream: "stderr", description: "The note changed on disk." },
+		{
+			code: "DOING_REQUIRED",
+			exit: 1,
+			stream: "stderr",
+			description: "A board write did not declare what it was doing.",
+		},
+		{
+			code: "BOARD_HELD",
+			exit: 5,
+			stream: "stderr",
+			description: "Another writer currently holds the board lease.",
+		},
+		{
+			code: "BOARD_CONFLICT",
+			exit: 5,
+			stream: "stderr",
+			description: "The note changed on disk outside Archboard.",
+		},
 		{
 			code: "BOARD_VERSION_CONFLICT",
 			exit: 5,
@@ -594,7 +625,7 @@ export const viewportContract = defineCommand({
 	prerequisites: ["server", "browser"],
 	effects: ["browser"],
 	refusals: [
-		...commonRefusals,
+		serverRefusal,
 		{
 			code: "BROWSER_REQUIRED",
 			exit: 4,
@@ -741,7 +772,7 @@ export const exportContract = defineCommand({
 		],
 		select: (input) => (input.out === undefined ? "raw" : "file"),
 	},
-	prerequisites: ["server"],
+	prerequisites: ["server", "board"],
 	effects: ["local-read", "read", "local-write"],
 	refusals: commonRefusals,
 	relationships: [
@@ -791,10 +822,3 @@ export const exportContract = defineCommand({
 		};
 	},
 });
-
-export const proofContracts: readonly AnyCommandContract[] = [
-	queryContract,
-	updateContract,
-	viewportContract,
-	exportContract,
-] as readonly AnyCommandContract[];

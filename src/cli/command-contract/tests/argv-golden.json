@@ -51,6 +51,69 @@
 			"status": 2,
 			"stdout": "",
 			"stderr": "Error: Unknown flag --board\nUsage: archboard query [--type rectangle] [--bbox x0,y0,x1,y1] [--filter locked=true] [--filter-json '{...}']\n"
+		},
+		{
+			"name": "inline equals reaches update JSON semantics",
+			"argv": ["update", "shape1", "--set=not-json"],
+			"status": 2,
+			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"stderrSha256": "696a7fe459f3a896083e3ef08bb8458e0e76be550f7eb32a180bf0b4782a68f8"
+		},
+		{
+			"name": "required update option consumes an option-looking value",
+			"argv": ["update", "shape1", "--set", "--document"],
+			"status": 2,
+			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"stderrSha256": "a3db163139c48cbc6f7c5b931540bddb3d97631c76b7605356e8c1eb3ee226d9"
+		},
+		{
+			"name": "literal dash routes update stdin",
+			"argv": ["update", "shape1", "-"],
+			"status": 2,
+			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"stderrSha256": "765db7997e40a471cd5a50d3c9781ff8fa7b4edb620c3df3d1868553f0172c6c"
+		},
+		{
+			"name": "viewport ignores excess positional content before semantic refusal",
+			"argv": ["viewport", "ignored"],
+			"status": 2,
+			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"stderrSha256": "25e74d8bd39e709e266eab88ef422512f8d43f9ddb820d5705a61c965f87c057"
+		},
+		{
+			"name": "viewport cross-field refusal bytes",
+			"argv": ["viewport", "--fit", "--element", "shape1"],
+			"status": 2,
+			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"stderrSha256": "25e74d8bd39e709e266eab88ef422512f8d43f9ddb820d5705a61c965f87c057"
+		},
+		{
+			"name": "export inline format refusal bytes",
+			"argv": ["export", "--format=invalid"],
+			"status": 2,
+			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"stderrSha256": "f42621750325f598ab64121a09cb2f7ce941b4e0b063ccbe9e220b4ce0ab0041"
+		},
+		{
+			"name": "duplicate doing leaves the second global for the adapter",
+			"argv": ["update", "shape1", "--set", "{}", "--doing", "first", "--doing", "second"],
+			"status": 2,
+			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"stderrSha256": "3f4e3503d94286a948a346e2c454cd5de060e36d13b49b1403663a81951ff5c1"
+		},
+		{
+			"name": "duplicate expect-version leaves the second global for the adapter",
+			"argv": ["query", "--expect-version", "1", "--expect-version=2"],
+			"status": 2,
+			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"stderrSha256": "6d02d8ecd4ff925ae03c616a40a974bc5e6695bbaaa642f88026d2fc4f5a37f1"
+		},
+		{
+			"name": "missing global board value retains exact ownership",
+			"argv": ["query", "--board"],
+			"status": 2,
+			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"stderrSha256": "dc372d8d2659c14a2fe8856b4f7ea0f75645f471edab10ec328d6be68b201e07"
 		}
 	]
 }

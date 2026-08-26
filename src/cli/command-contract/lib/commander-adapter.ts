@@ -12,14 +12,14 @@ function collect(value: string, previous: string[] = []): string[] {
 
 function optionFlags(spellings: readonly string[], value: "none" | "required" | "optional") {
 	const suffix = value === "required" ? " <value>" : value === "optional" ? " [value]" : "";
-	return spellings.map((spelling) => spelling + suffix).join(", ");
+	return spellings.join(", ") + suffix;
 }
 
 function commanderUsageError(error: unknown): CliUsageError {
 	const value = error as Error & { code?: string };
 	const message = value.message.replace(/^error:\s*/i, "");
 	const unknown = message.match(/^unknown option '([^']+)'/i);
-	if (unknown) return new CliUsageError(`Unknown flag ${unknown[1]}`);
+	if (unknown) return new CliUsageError(`Unknown flag ${unknown[1]?.split("=", 1)[0]}`);
 	const missing = message.match(/^option '([^']+)' argument missing/i);
 	if (missing) {
 		const spelling = missing[1]?.match(/--[a-z0-9-]+/i)?.[0] ?? missing[1];
@@ -28,10 +28,16 @@ function commanderUsageError(error: unknown): CliUsageError {
 	return new CliUsageError(message[0]?.toUpperCase() + message.slice(1));
 }
 
-function shieldSingleDashTokens(argv: readonly string[]) {
+function shieldSingleDashTokens(argv: readonly string[], declared: ReadonlySet<string>) {
 	const restored = new Map<string, string>();
 	const values = argv.map((token, index) => {
-		if (token === "-" || token.startsWith("--") || !token.startsWith("-")) return token;
+		if (
+			token === "-" ||
+			token.startsWith("--") ||
+			!token.startsWith("-") ||
+			declared.has(token)
+		)
+			return token;
 		const placeholder = `archboard-single-dash-${index}`;
 		restored.set(placeholder, token);
 		return placeholder;
@@ -70,7 +76,12 @@ export class CommanderArgvParser implements ArgvParser {
 			command.addOption(option);
 		}
 
-		const { values, restored } = shieldSingleDashTokens(argv);
+		const declared = new Set(
+			contract.parameters.flatMap((parameter) =>
+				parameter.kind === "option" ? parameter.spellings : [],
+			),
+		);
+		const { values, restored } = shieldSingleDashTokens(argv, declared);
 		try {
 			await command.parseAsync(["bun", contract.path.join(" "), ...values]);
 		} catch (error) {

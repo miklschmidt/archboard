@@ -248,7 +248,7 @@
 					"description": "Versioned write result"
 				}
 			],
-			"prerequisites": ["server"],
+			"prerequisites": ["server", "board", "doing"],
 			"effects": ["local-read", "write"],
 			"refusals": [
 				{
@@ -264,10 +264,22 @@
 					"description": "The canvas server could not be reached or started."
 				},
 				{
+					"code": "DOING_REQUIRED",
+					"exit": 1,
+					"stream": "stderr",
+					"description": "A board write did not declare what it was doing."
+				},
+				{
 					"code": "BOARD_HELD",
 					"exit": 5,
 					"stream": "stderr",
-					"description": "The note changed on disk."
+					"description": "Another writer currently holds the board lease."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The note changed on disk outside Archboard."
 				},
 				{
 					"code": "BOARD_VERSION_CONFLICT",
@@ -431,7 +443,7 @@
 					"description": "Bare element array"
 				}
 			],
-			"prerequisites": ["server"],
+			"prerequisites": ["server", "board"],
 			"effects": ["read"],
 			"refusals": [
 				{
@@ -627,12 +639,6 @@
 			"effects": ["browser"],
 			"refusals": [
 				{
-					"code": "BOARD_REQUIRED",
-					"exit": 2,
-					"stream": "stderr",
-					"description": "A board-sensitive request did not name a board."
-				},
-				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
@@ -801,7 +807,7 @@
 					"description": "Validated file receipt"
 				}
 			],
-			"prerequisites": ["server"],
+			"prerequisites": ["server", "board"],
 			"effects": ["local-read", "read", "local-write"],
 			"refusals": [
 				{
