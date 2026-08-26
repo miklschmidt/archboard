@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 21:34'
+updated_date: '2026-08-26 21:48'
 labels:
   - ready-for-agent
 dependencies:
@@ -508,6 +508,12 @@ Final validation for the union-query closure passed. Two real bun run fix passes
 Commit `7718f04` replaces the arbitrary exact-exclusion fallback with a stable structural segment index. Event-side and active-side exact exclusions are combined before bucket visitation; reciprocal hierarchy summaries represent the exact intersection of ancestor coverage, so a profile with one inside and one outside target remains excluded. `pairAllowed` is now an assertion over indexed compatibility. Query-state peaks are sampled before visitor early returns and post-insertion with zero query references; exact membership, hierarchy membership, index update/query, summary, and simultaneous retained-state work are separately counted only through the pure diagnostics entrypoint.
 
 Obstacle refs now reject nonmember library attribution, kind/library contradictions, grouped singletons, and grouped refs without group evidence while retaining the approved escaped identity grammar. The public inspection matrix passes 653 checks, including 1k/2k/4k/8k compact arbitrary-exclusion and reciprocal multi-target cases in both orientations, early-return peak arithmetic, expiry/reinsertion, randomized pair/order differentials, and direct schema rejection. Focused lint, type-check, boundaries, module-scope, 58-path contracts (978 checks), inspection/package, geometry, labels, branch, and CLI (579 checks) pass. Two real `bun run fix` passes were byte-stable at diff SHA-256 `9ed8fd1c67e2a1739b71ee0ca1b20c2f8cd68f50d8dd2487bb04d4ece7648eb5`. Complete check, separate complete test, and final generator/state evidence remain.
+
+### Exact-exclusion closure validation (2026-08-26)
+
+Complete `bun run check` passed. The first separate `bun run test` reached the human-performance browser gate and observed one scheduling-sensitive acknowledgement sample with replacement count 2 after two zero samples; the immediately preceding complete check had passed with `[0,0]`. Following `docs/agents/test-suite.md`, the isolated human-performance suite passed with `[0,0]`, then the required complete `bun run test` rerun passed. Both successful complete chains ran all four browser suites sequentially and headlessly: the 10,000-element board remained responsive, fixed-point returned 0 of 13 changed elements, typed text preserved both rename interactions, and live-session converged through 42 of 42 mixed-write cycles.
+
+Two fresh on-demand contract generations were byte-identical: `cli-command-audit.md` c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, `command-contract-proof.json` e6be922438f3d8dc9ce2a9bac33cfb68f5a5527492d9b7fbb7cd32d9441442c1, and `command-contract-proof.md` def3540846fa0854944805a959f2671ba943ffeb0d55c8a47aaa3ab538d949c2. Generated views remain absent/ignored; canonical `docs/design/cli-command-audit.json` remains tracked. `git diff --check` passed. TASK-119 remains In Progress with all nine acceptance criteria unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
