@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+	closeSync,
+	existsSync,
+	mkdtempSync,
+	openSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
+import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
@@ -7,8 +16,6 @@ import { defineCommand, type AnyCommandContract } from "../contract.js";
 import { introspectContracts } from "../introspection.js";
 import { runCommand } from "../runner.js";
 import { PendingArtifactSchema } from "../schemas.js";
-import { commandContractTestHost } from "../testing.js";
-import { cliContractRegistry } from "../../commands/run.js";
 
 const heldCompatibility = JSON.parse(
 	readFileSync(join(import.meta.dir, "held-output-compatibility.json"), "utf8"),
@@ -122,76 +129,97 @@ function temporaryPath(name: string) {
 	return join(directory, name);
 }
 
+function runPublicFixture(
+	record: Record<string, unknown>,
+	artifactPath: string,
+	merged = false,
+): Promise<{
+	status: number | null;
+	stdout: string;
+	stderr: string;
+	merged: string;
+	artifactExistedAtFirstOutput: boolean | null;
+}> {
+	const fixturePath = temporaryPath("record.json");
+	writeFileSync(fixturePath, JSON.stringify(record));
+	const mergedPath = temporaryPath("merged.log");
+	const descriptor = merged ? openSync(mergedPath, "w+") : undefined;
+	return new Promise((resolve) => {
+		const child = spawn(
+			process.execPath,
+			[join(import.meta.dir, "public-runner-fixture.mjs"), fixturePath],
+			{
+				cwd: process.cwd(),
+				env: { ...process.env, EXCALIDRAW_NO_AUTOSTART: "1" },
+				stdio: merged ? ["ignore", descriptor!, descriptor!] : ["ignore", "pipe", "pipe"],
+			},
+		);
+		let stdout = "";
+		let stderr = "";
+		let artifactExistedAtFirstOutput: boolean | null = null;
+		if (!merged) {
+			child.stdout!.setEncoding("utf8");
+			child.stderr!.setEncoding("utf8");
+			child.stdout!.on("data", (chunk) => {
+				if (artifactExistedAtFirstOutput === null) {
+					artifactExistedAtFirstOutput = existsSync(artifactPath);
+				}
+				stdout += chunk;
+			});
+			child.stderr!.on("data", (chunk) => {
+				if (artifactExistedAtFirstOutput === null) {
+					artifactExistedAtFirstOutput = existsSync(artifactPath);
+				}
+				stderr += chunk;
+			});
+		}
+		child.on("close", (status) => {
+			if (descriptor !== undefined) closeSync(descriptor);
+			resolve({
+				status,
+				stdout,
+				stderr,
+				merged: merged ? readFileSync(mergedPath, "utf8") : "",
+				artifactExistedAtFirstOutput,
+			});
+		});
+	});
+}
+
 describe("command-contract public interface", () => {
 	test("fixed-base held policies keep exact bytes and write order for every affected mode", async () => {
 		expect(heldCompatibility.fixedBase).toBe("6c42fca6c0d5b9ecaa5ad40fde14ede684722d5a");
-		const registry = new Map(cliContractRegistry().map((entry) => [entry.name, entry.contract]));
 		for (const record of heldCompatibility.cases) {
-			const source = registry.get(record.path);
-			expect(source, record.name).toBeDefined();
-			const outputCase = source!.output.cases.find(
-				(candidate) => candidate.id === record.outputCase,
-			);
-			expect(outputCase, record.name).toBeDefined();
 			const artifactPath = temporaryPath(`${record.name}.artifact`);
 			const expand = (value: unknown): unknown =>
 				JSON.parse(JSON.stringify(value).replaceAll("{{ARTIFACT}}", artifactPath));
 			const expectedStdout = record.stdout.replaceAll("{{ARTIFACT}}", artifactPath);
-			const expectedEvents = record.events.map((event) =>
-				event.replaceAll("{{ARTIFACT}}", artifactPath).replaceAll("{{STDOUT}}", expectedStdout),
-			);
-			let stdout = "";
-			let stderr = "";
-			const events: string[] = [];
-			const heldSpy = spyOn(commandContractTestHost, "held").mockReturnValue(
-				heldCompatibility.held,
-			);
-			const stdoutSpy = spyOn(commandContractTestHost, "writeStdout").mockImplementation(
-				(value) => {
-					const text = String(value);
-					stdout += text;
-					events.push(`stdout:${text}`);
-				},
-			);
-			const stderrSpy = spyOn(commandContractTestHost, "writeStderr").mockImplementation(
-				(value) => {
-					stderr += value;
-					events.push(`stderr:${value}`);
-				},
-			);
-			const artifactSpy = spyOn(commandContractTestHost, "writeArtifact").mockImplementation(
-				(artifact) => {
-					events.push(`artifact:${artifact.encoding}:${String(artifact.content)}`);
-				},
-			);
-			try {
-				await runCommand(
-					{
-						...source!,
-						path: ["held-proof"],
-						parameters: [],
-						input: { ingress: z.object({}) },
-						output: { cases: [outputCase!], select: () => outputCase!.id },
-						async handler() {
-							return {
-								result: expand(record.result),
-								...(record.artifact === undefined
-									? {}
-									: { pendingArtifact: expand(record.artifact) }),
-							};
-						},
-					} as AnyCommandContract,
-					[],
-				);
-			} finally {
-				heldSpy.mockRestore();
-				stdoutSpy.mockRestore();
-				stderrSpy.mockRestore();
-				artifactSpy.mockRestore();
+			const fixture = {
+				...record,
+				result: expand(record.result),
+				...(record.artifact === undefined ? {} : { artifact: expand(record.artifact) }),
+				held: heldCompatibility.held,
+			};
+			const normal = await runPublicFixture(fixture, artifactPath);
+			expect(normal.status, record.name).toBe(0);
+			expect(normal.stdout, record.name).toBe(expectedStdout);
+			expect(normal.stderr, record.name).toBe(record.stderr);
+			if (record.artifact !== undefined) {
+				expect(readFileSync(artifactPath, "utf8"), record.name).toBe("<svg/>");
+				expect(normal.artifactExistedAtFirstOutput, record.name).toBeTrue();
 			}
-			expect(stdout, record.name).toBe(expectedStdout);
-			expect(stderr, record.name).toBe(record.stderr);
-			expect(events, record.name).toEqual(expectedEvents);
+			const merged = await runPublicFixture(fixture, artifactPath, true);
+			const expectedMerged = record.events
+				.filter((event) => !event.startsWith("artifact:"))
+				.map((event) =>
+					event
+						.replace(/^stdout:|^stderr:/, "")
+						.replaceAll("{{ARTIFACT}}", artifactPath)
+						.replaceAll("{{STDOUT}}", expectedStdout),
+				)
+				.join("");
+			expect(merged.status, record.name).toBe(0);
+			expect(merged.merged, record.name).toBe(expectedMerged);
 		}
 	});
 
@@ -485,6 +513,101 @@ describe("command-contract public interface", () => {
 		expect(viewportIds?.rules.join(" ")).toContain("Split on commas");
 		expect(exportFormat?.when).toBe("before-server");
 		expect(exportFormat?.rules.join(" ")).toContain("obsidian for an --out path ending in .md");
+	});
+
+	test("board and injection result schemas accept the protected server response shapes", async () => {
+		const { BoardInfoResultSchema, BoardNewResultSchema, BoardOpenResultSchema } =
+			await import("../../commands/board.js");
+		const { PaneOpenResultSchema } = await import("../../commands/pane.js");
+		const { InjectStatusResultSchema, InjectTestResultSchema } =
+			await import("../../commands/inject.js");
+		const identityState = {
+			board: "payments",
+			identity: {
+				board: "payments",
+				variant: "current",
+				level: "system",
+				displayName: "Payments",
+			},
+			elementCount: 4,
+			version: 7,
+			placeholder: false,
+			file: "/vault/payments.excalidraw.md",
+			savedAt: "2026-08-26T10:00:00.000Z",
+			loadedAt: "2026-08-26T09:00:00.000Z",
+		};
+		const pane = { paneId: "pane-2", clientId: "client-2", place: "right", position: 2 };
+		const info = { success: true as const, ...identityState };
+		const created = {
+			...info,
+			version: null,
+			elementCount: 0,
+			created: true as const,
+			saved: false as const,
+			pane: null,
+		};
+		const opened = { ...info, source: "vault" as const, pane };
+		expect(BoardInfoResultSchema.parse(info)).toEqual(info);
+		expect(BoardNewResultSchema.parse(created)).toEqual(created);
+		expect(BoardOpenResultSchema.parse(opened)).toEqual(opened);
+		expect(
+			PaneOpenResultSchema.parse({
+				success: true,
+				pane,
+				paneCount: 2,
+				onScreen: [{ paneId: pane.paneId, place: pane.place, board: "payments" }],
+				board: opened,
+			}),
+		).toMatchObject({ board: { version: 7, placeholder: false, source: "vault" } });
+		expect(BoardInfoResultSchema.safeParse({ ...info, version: undefined }).success).toBeFalse();
+		expect(
+			BoardInfoResultSchema.safeParse({ ...info, placeholder: undefined }).success,
+		).toBeFalse();
+		expect(BoardNewResultSchema.safeParse(info).success).toBeFalse();
+		expect(BoardOpenResultSchema.safeParse(info).success).toBeFalse();
+
+		const injectionStatus = {
+			enabled: true,
+			armed: true,
+			loud: false,
+			refusal: null,
+			host: "127.0.0.1",
+			socket: {
+				path: "/tmp/app-server.sock",
+				exists: true,
+				isSocket: true,
+				ownedByUs: true,
+				mode: "600",
+			},
+			connected: true,
+			lastError: null,
+			target: {
+				threadId: "thread-1",
+				reason: "pinned" as const,
+				explanation: "the fixture thread is pinned",
+				activeTurnId: null,
+			},
+			threadsSeen: 1,
+			pending: 0,
+			debounceMs: 200,
+			minIntervalMs: 500,
+			injected: { quiet: 2, loud: 1, failed: 0 },
+			lastInjectionAt: "2026-08-26T10:01:00.000Z",
+			lastInjection: {
+				channel: "quiet" as const,
+				threadId: "thread-1",
+				at: "2026-08-26T10:01:00.000Z",
+				text: "fixture change",
+			},
+		};
+		expect(InjectStatusResultSchema.parse(injectionStatus)).toEqual(injectionStatus);
+		expect(
+			InjectTestResultSchema.parse({ channel: "loud", threadId: "thread-1", text: "probe" }),
+		).toEqual({ channel: "loud", threadId: "thread-1", text: "probe" });
+		expect(
+			InjectStatusResultSchema.safeParse({ held: { board: "x", message: "held" } }).success,
+		).toBeFalse();
+		expect(InjectTestResultSchema.safeParse({ channel: "quiet" }).success).toBeFalse();
 	});
 
 	test("named Zod schemas own migrated defaults, coercions, enums, and cross-field rules", async () => {
