@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-26 09:14'
+updated_date: '2026-08-26 09:43'
 labels: []
 dependencies:
   - TASK-123.01
@@ -102,6 +102,10 @@ Foundation implementation started at 7948dbe against fixed compatibility base 6c
 Foundation steps 1-7 implemented through six registered contracts. Added fixed-base coverage for all 57 help paths and focused byte/event cases; declared nonzero outcomes with held-before-validation, artifact-before-presentation, and exit-last ordering; introduced shared named schemas; generated mixed registry artifacts with 6 contracts + 51 legacy paths; switched dispatch to explicit longest-path subroutes with cached prerequisites and staged post-server token validation; migrated status and board save only as the outcome proofs.
 
 Foundation checkpoint validation complete at 02be79c. bun run fix, generated artifact --check, test:contracts (6 proofs / 57 audited paths / 297 checks), test:cli (33 commands / 24 subcommands / 443 checks), type-check, test:boundaries, test:boards, focused outcome/held/artifact/order coverage, git diff --check, and the full bun run check chain pass. The first full-chain attempt encountered the existing browser human-performance no-reconciliation timing transient ([0,0,2]); the isolated human-performance gate passed immediately ([0,0]), and a complete second bun run check passed including every browser gate. Foundation stops here for the required contract-boundary review; remaining command-family migration is intentionally not started.
+
+Foundation remediation resumed at reviewed head 052ee5b. Scope is limited to the six review findings: executable fixed-base goldens, complete held and artifact validation, one independently owned route tree with generic reconciliation, and board-save success discrimination. The six current contracts and all protected scopes remain fixed.
+
+Foundation review blockers remediated through 30da432 without additional family migration. Executable fixed-base schema 2 now replays eight approved argv cases with exact or documented-normalized streams, merged event order, exits, held state, prerequisite contacts, REST/local effects, and observed artifact targets. Every consuming held policy validates HoldReportSchema; malformed object-field, stderr-note, and file-capable paths suppress structured output and writes. Non-file cases reject all pendingArtifact values. One independently owned route tree now derives the 57-path surface, parent/owner projection, longest dispatch, defaults, namespace refusals, and legacy argv slicing; the checker is generic and records 6 contracts plus 51 legacy paths. Board-save success is literal true and success:false without conflict is rejected. Validation passed: two stable bun run fix passes, generation --check, test:contracts (6 proofs / 57 paths / 590 checks), test:cli (517 checks), type-check, test:boundaries, test:boards, focused held/artifact/route/golden tests, and a complete bun run check. The first full check hit the existing browser human-performance reconciliation timing transient [0,0,2]; its isolated rerun passed [0,0], and the complete second full check passed. Stopped again for foundation review.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
