@@ -8,7 +8,11 @@ import {
 } from "../../runtime/engine/canvas-client.js";
 import { repoIdentityAt, repoRootOf } from "../../runtime/engine/git.js";
 import { CliUsageError, defineCommand } from "../command-contract/contract.js";
-import { HoldReportSchema } from "../command-contract/schemas.js";
+import {
+	BoardIdentityStateSchema,
+	HoldReportSchema,
+	PaneRefSchema,
+} from "../command-contract/schemas.js";
 import { browserRefusal, commonRefusals, serverRefusal } from "../command-contract/common.js";
 
 const usage = "board needs a subcommand: list, info, new, open, save";
@@ -57,25 +61,6 @@ function parseStage(
 	}
 	return { positionals, flags };
 }
-export const BoardCommandResultSchema = z.looseObject({
-	success: z.boolean(),
-	board: z.string(),
-	identity: z.looseObject({ board: z.string(), variant: z.string() }),
-	elementCount: z.number().int().nonnegative(),
-	vaultBacked: z.boolean().optional(),
-	pane: z
-		.looseObject({
-			paneId: z.string(),
-			clientId: z.string(),
-			place: z.string(),
-			position: z.number().int(),
-		})
-		.nullable()
-		.optional(),
-	held: HoldReportSchema.optional(),
-});
-export type BoardCommandResult = z.infer<typeof BoardCommandResultSchema>;
-
 export const BoardNamespaceInputSchema = z.object({ tokens });
 export type BoardNamespaceInput = z.infer<typeof BoardNamespaceInputSchema>;
 export const BoardNamespaceResultSchema = z.never();
@@ -269,7 +254,10 @@ export const BoardInfoStageSchema = z
 	.array(z.string())
 	.transform((value, context) => parseStage(value, {}, context));
 export type BoardInfoStage = z.infer<typeof BoardInfoStageSchema>;
-export const BoardInfoResultSchema = BoardCommandResultSchema;
+export const BoardInfoResultSchema = BoardIdentityStateSchema.extend({
+	success: z.literal(true),
+	held: HoldReportSchema.optional(),
+});
 export type BoardInfoResult = z.infer<typeof BoardInfoResultSchema>;
 export const boardInfoContract = defineCommand({
 	path: ["board", "info"],
@@ -345,7 +333,13 @@ export const BoardNewStageSchema = z
 		return { name, flags: stage.flags };
 	});
 export type BoardNewStage = z.infer<typeof BoardNewStageSchema>;
-export const BoardNewResultSchema = BoardCommandResultSchema;
+export const BoardNewResultSchema = BoardIdentityStateSchema.extend({
+	success: z.literal(true),
+	created: z.literal(true),
+	saved: z.literal(false),
+	pane: PaneRefSchema.nullable(),
+	held: HoldReportSchema.optional(),
+});
 export type BoardNewResult = z.infer<typeof BoardNewResultSchema>;
 export const boardNewContract = defineCommand({
 	path: ["board", "new"],
@@ -431,7 +425,13 @@ export const BoardOpenStageSchema = z
 		return { name, flags: stage.flags };
 	});
 export type BoardOpenStage = z.infer<typeof BoardOpenStageSchema>;
-export const BoardOpenResultSchema = BoardCommandResultSchema;
+export const BoardOpenResultSchema = BoardIdentityStateSchema.extend({
+	success: z.literal(true),
+	source: z.enum(["vault", "memory"]),
+	pane: PaneRefSchema.nullable(),
+	declaredKey: z.string().optional(),
+	held: HoldReportSchema.optional(),
+});
 export type BoardOpenResult = z.infer<typeof BoardOpenResultSchema>;
 export const boardOpenContract = defineCommand({
 	path: ["board", "open"],

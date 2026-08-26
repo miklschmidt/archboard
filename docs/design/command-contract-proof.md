@@ -1488,7 +1488,8 @@ Public result JSON Schema:
 	"type": "object",
 	"properties": {
 		"success": {
-			"type": "boolean"
+			"type": "boolean",
+			"const": true
 		},
 		"pane": {
 			"anyOf": [
@@ -1518,30 +1519,6 @@ Public result JSON Schema:
 				}
 			]
 		},
-		"closed": {
-			"type": "object",
-			"properties": {
-				"paneId": {
-					"type": "string"
-				},
-				"clientId": {
-					"type": "string"
-				},
-				"place": {
-					"type": "string"
-				},
-				"position": {
-					"type": "integer",
-					"minimum": -9007199254740991,
-					"maximum": 9007199254740991
-				},
-				"board": {
-					"type": "string"
-				}
-			},
-			"required": ["paneId", "clientId", "place", "position", "board"],
-			"additionalProperties": {}
-		},
 		"paneCount": {
 			"type": "integer",
 			"minimum": 0,
@@ -1569,9 +1546,6 @@ Public result JSON Schema:
 		"board": {
 			"type": "object",
 			"properties": {
-				"success": {
-					"type": "boolean"
-				},
 				"board": {
 					"type": "string"
 				},
@@ -1583,21 +1557,109 @@ Public result JSON Schema:
 						},
 						"variant": {
 							"type": "string"
+						},
+						"level": {
+							"type": "string"
+						},
+						"displayName": {
+							"type": "string"
 						}
 					},
 					"required": ["board", "variant"],
-					"additionalProperties": {}
+					"additionalProperties": false
 				},
 				"elementCount": {
 					"type": "integer",
 					"minimum": 0,
 					"maximum": 9007199254740991
 				},
-				"vaultBacked": {
+				"version": {
+					"anyOf": [
+						{
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 9007199254740991
+						},
+						{
+							"type": "null"
+						}
+					]
+				},
+				"placeholder": {
 					"type": "boolean"
+				},
+				"file": {
+					"type": "string"
+				},
+				"savedAt": {
+					"type": "string"
+				},
+				"loadedAt": {
+					"type": "string"
+				},
+				"success": {
+					"type": "boolean",
+					"const": true
+				},
+				"source": {
+					"type": "string",
+					"enum": ["vault", "memory"]
+				},
+				"pane": {
+					"anyOf": [
+						{
+							"type": "object",
+							"properties": {
+								"paneId": {
+									"type": "string"
+								},
+								"clientId": {
+									"type": "string"
+								},
+								"place": {
+									"type": "string"
+								},
+								"position": {
+									"type": "integer",
+									"minimum": -9007199254740991,
+									"maximum": 9007199254740991
+								}
+							},
+							"required": ["paneId", "clientId", "place", "position"],
+							"additionalProperties": {}
+						},
+						{
+							"type": "null"
+						}
+					]
+				},
+				"declaredKey": {
+					"type": "string"
+				},
+				"held": {
+					"type": "object",
+					"properties": {
+						"board": {
+							"type": "string"
+						},
+						"message": {
+							"type": "string"
+						}
+					},
+					"required": ["board", "message"],
+					"additionalProperties": {}
 				}
 			},
-			"required": ["success", "board", "identity", "elementCount"],
+			"required": [
+				"board",
+				"identity",
+				"elementCount",
+				"version",
+				"placeholder",
+				"success",
+				"source",
+				"pane"
+			],
 			"additionalProperties": {}
 		},
 		"held": {
@@ -1614,7 +1676,7 @@ Public result JSON Schema:
 			"additionalProperties": {}
 		}
 	},
-	"required": ["success", "paneCount", "onScreen"],
+	"required": ["success", "pane", "paneCount", "onScreen"],
 	"additionalProperties": {}
 }
 ```
@@ -1645,35 +1707,8 @@ Public result JSON Schema:
 	"type": "object",
 	"properties": {
 		"success": {
-			"type": "boolean"
-		},
-		"pane": {
-			"anyOf": [
-				{
-					"type": "object",
-					"properties": {
-						"paneId": {
-							"type": "string"
-						},
-						"clientId": {
-							"type": "string"
-						},
-						"place": {
-							"type": "string"
-						},
-						"position": {
-							"type": "integer",
-							"minimum": -9007199254740991,
-							"maximum": 9007199254740991
-						}
-					},
-					"required": ["paneId", "clientId", "place", "position"],
-					"additionalProperties": {}
-				},
-				{
-					"type": "null"
-				}
-			]
+			"type": "boolean",
+			"const": true
 		},
 		"closed": {
 			"type": "object",
@@ -1723,40 +1758,6 @@ Public result JSON Schema:
 				"additionalProperties": {}
 			}
 		},
-		"board": {
-			"type": "object",
-			"properties": {
-				"success": {
-					"type": "boolean"
-				},
-				"board": {
-					"type": "string"
-				},
-				"identity": {
-					"type": "object",
-					"properties": {
-						"board": {
-							"type": "string"
-						},
-						"variant": {
-							"type": "string"
-						}
-					},
-					"required": ["board", "variant"],
-					"additionalProperties": {}
-				},
-				"elementCount": {
-					"type": "integer",
-					"minimum": 0,
-					"maximum": 9007199254740991
-				},
-				"vaultBacked": {
-					"type": "boolean"
-				}
-			},
-			"required": ["success", "board", "identity", "elementCount"],
-			"additionalProperties": {}
-		},
 		"held": {
 			"type": "object",
 			"properties": {
@@ -1771,7 +1772,7 @@ Public result JSON Schema:
 			"additionalProperties": {}
 		}
 	},
-	"required": ["success", "paneCount", "onScreen"],
+	"required": ["success", "closed", "paneCount", "onScreen"],
 	"additionalProperties": {}
 }
 ```
@@ -1832,7 +1833,7 @@ Public result JSON Schema:
 			"additionalProperties": {}
 		}
 	},
-	"required": ["success"],
+	"required": ["success", "message"],
 	"additionalProperties": false
 }
 ```
@@ -2262,9 +2263,6 @@ Public result JSON Schema:
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"type": "object",
 	"properties": {
-		"success": {
-			"type": "boolean"
-		},
 		"board": {
 			"type": "string"
 		},
@@ -2276,46 +2274,49 @@ Public result JSON Schema:
 				},
 				"variant": {
 					"type": "string"
+				},
+				"level": {
+					"type": "string"
+				},
+				"displayName": {
+					"type": "string"
 				}
 			},
 			"required": ["board", "variant"],
-			"additionalProperties": {}
+			"additionalProperties": false
 		},
 		"elementCount": {
 			"type": "integer",
 			"minimum": 0,
 			"maximum": 9007199254740991
 		},
-		"vaultBacked": {
-			"type": "boolean"
-		},
-		"pane": {
+		"version": {
 			"anyOf": [
 				{
-					"type": "object",
-					"properties": {
-						"paneId": {
-							"type": "string"
-						},
-						"clientId": {
-							"type": "string"
-						},
-						"place": {
-							"type": "string"
-						},
-						"position": {
-							"type": "integer",
-							"minimum": -9007199254740991,
-							"maximum": 9007199254740991
-						}
-					},
-					"required": ["paneId", "clientId", "place", "position"],
-					"additionalProperties": {}
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
 				},
 				{
 					"type": "null"
 				}
 			]
+		},
+		"placeholder": {
+			"type": "boolean"
+		},
+		"file": {
+			"type": "string"
+		},
+		"savedAt": {
+			"type": "string"
+		},
+		"loadedAt": {
+			"type": "string"
+		},
+		"success": {
+			"type": "boolean",
+			"const": true
 		},
 		"held": {
 			"type": "object",
@@ -2331,7 +2332,7 @@ Public result JSON Schema:
 			"additionalProperties": {}
 		}
 	},
-	"required": ["success", "board", "identity", "elementCount"],
+	"required": ["board", "identity", "elementCount", "version", "placeholder", "success"],
 	"additionalProperties": {}
 }
 ```
@@ -2361,9 +2362,6 @@ Public result JSON Schema:
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"type": "object",
 	"properties": {
-		"success": {
-			"type": "boolean"
-		},
 		"board": {
 			"type": "string"
 		},
@@ -2375,18 +2373,57 @@ Public result JSON Schema:
 				},
 				"variant": {
 					"type": "string"
+				},
+				"level": {
+					"type": "string"
+				},
+				"displayName": {
+					"type": "string"
 				}
 			},
 			"required": ["board", "variant"],
-			"additionalProperties": {}
+			"additionalProperties": false
 		},
 		"elementCount": {
 			"type": "integer",
 			"minimum": 0,
 			"maximum": 9007199254740991
 		},
-		"vaultBacked": {
+		"version": {
+			"anyOf": [
+				{
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				{
+					"type": "null"
+				}
+			]
+		},
+		"placeholder": {
 			"type": "boolean"
+		},
+		"file": {
+			"type": "string"
+		},
+		"savedAt": {
+			"type": "string"
+		},
+		"loadedAt": {
+			"type": "string"
+		},
+		"success": {
+			"type": "boolean",
+			"const": true
+		},
+		"created": {
+			"type": "boolean",
+			"const": true
+		},
+		"saved": {
+			"type": "boolean",
+			"const": false
 		},
 		"pane": {
 			"anyOf": [
@@ -2430,7 +2467,17 @@ Public result JSON Schema:
 			"additionalProperties": {}
 		}
 	},
-	"required": ["success", "board", "identity", "elementCount"],
+	"required": [
+		"board",
+		"identity",
+		"elementCount",
+		"version",
+		"placeholder",
+		"success",
+		"created",
+		"saved",
+		"pane"
+	],
 	"additionalProperties": {}
 }
 ```
@@ -2460,9 +2507,6 @@ Public result JSON Schema:
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"type": "object",
 	"properties": {
-		"success": {
-			"type": "boolean"
-		},
 		"board": {
 			"type": "string"
 		},
@@ -2474,18 +2518,53 @@ Public result JSON Schema:
 				},
 				"variant": {
 					"type": "string"
+				},
+				"level": {
+					"type": "string"
+				},
+				"displayName": {
+					"type": "string"
 				}
 			},
 			"required": ["board", "variant"],
-			"additionalProperties": {}
+			"additionalProperties": false
 		},
 		"elementCount": {
 			"type": "integer",
 			"minimum": 0,
 			"maximum": 9007199254740991
 		},
-		"vaultBacked": {
+		"version": {
+			"anyOf": [
+				{
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				{
+					"type": "null"
+				}
+			]
+		},
+		"placeholder": {
 			"type": "boolean"
+		},
+		"file": {
+			"type": "string"
+		},
+		"savedAt": {
+			"type": "string"
+		},
+		"loadedAt": {
+			"type": "string"
+		},
+		"success": {
+			"type": "boolean",
+			"const": true
+		},
+		"source": {
+			"type": "string",
+			"enum": ["vault", "memory"]
 		},
 		"pane": {
 			"anyOf": [
@@ -2515,6 +2594,9 @@ Public result JSON Schema:
 				}
 			]
 		},
+		"declaredKey": {
+			"type": "string"
+		},
 		"held": {
 			"type": "object",
 			"properties": {
@@ -2529,7 +2611,16 @@ Public result JSON Schema:
 			"additionalProperties": {}
 		}
 	},
-	"required": ["success", "board", "identity", "elementCount"],
+	"required": [
+		"board",
+		"identity",
+		"elementCount",
+		"version",
+		"placeholder",
+		"success",
+		"source",
+		"pane"
+	],
 	"additionalProperties": {}
 }
 ```
@@ -3503,6 +3594,186 @@ Public result JSON Schema:
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"type": "object",
 	"properties": {
+		"enabled": {
+			"type": "boolean"
+		},
+		"armed": {
+			"type": "boolean"
+		},
+		"loud": {
+			"type": "boolean"
+		},
+		"refusal": {
+			"anyOf": [
+				{
+					"type": "string"
+				},
+				{
+					"type": "null"
+				}
+			]
+		},
+		"host": {
+			"anyOf": [
+				{
+					"type": "string"
+				},
+				{
+					"type": "null"
+				}
+			]
+		},
+		"socket": {
+			"type": "object",
+			"properties": {
+				"path": {
+					"type": "string"
+				},
+				"exists": {
+					"type": "boolean"
+				},
+				"isSocket": {
+					"type": "boolean"
+				},
+				"ownedByUs": {
+					"type": "boolean"
+				},
+				"mode": {
+					"type": "string"
+				},
+				"problem": {
+					"type": "string"
+				}
+			},
+			"required": ["path", "exists", "isSocket", "ownedByUs"],
+			"additionalProperties": {}
+		},
+		"connected": {
+			"type": "boolean"
+		},
+		"lastError": {
+			"anyOf": [
+				{
+					"type": "string"
+				},
+				{
+					"type": "null"
+				}
+			]
+		},
+		"target": {
+			"type": "object",
+			"properties": {
+				"threadId": {
+					"anyOf": [
+						{
+							"type": "string"
+						},
+						{
+							"type": "null"
+						}
+					]
+				},
+				"reason": {
+					"type": "string",
+					"enum": ["pinned", "none"]
+				},
+				"explanation": {
+					"type": "string"
+				},
+				"activeTurnId": {
+					"anyOf": [
+						{
+							"type": "string"
+						},
+						{
+							"type": "null"
+						}
+					]
+				}
+			},
+			"required": ["threadId", "reason", "explanation"],
+			"additionalProperties": {}
+		},
+		"threadsSeen": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"pending": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"debounceMs": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"minIntervalMs": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"injected": {
+			"type": "object",
+			"properties": {
+				"quiet": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"loud": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"failed": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				}
+			},
+			"required": ["quiet", "loud", "failed"],
+			"additionalProperties": {}
+		},
+		"lastInjectionAt": {
+			"anyOf": [
+				{
+					"type": "string"
+				},
+				{
+					"type": "null"
+				}
+			]
+		},
+		"lastInjection": {
+			"anyOf": [
+				{
+					"type": "object",
+					"properties": {
+						"channel": {
+							"type": "string",
+							"enum": ["quiet", "loud"]
+						},
+						"threadId": {
+							"type": "string"
+						},
+						"at": {
+							"type": "string"
+						},
+						"text": {
+							"type": "string"
+						}
+					},
+					"required": ["channel", "threadId", "at", "text"],
+					"additionalProperties": {}
+				},
+				{
+					"type": "null"
+				}
+			]
+		},
 		"held": {
 			"type": "object",
 			"properties": {
@@ -3517,6 +3788,24 @@ Public result JSON Schema:
 			"additionalProperties": {}
 		}
 	},
+	"required": [
+		"enabled",
+		"armed",
+		"loud",
+		"refusal",
+		"host",
+		"socket",
+		"connected",
+		"lastError",
+		"target",
+		"threadsSeen",
+		"pending",
+		"debounceMs",
+		"minIntervalMs",
+		"injected",
+		"lastInjectionAt",
+		"lastInjection"
+	],
 	"additionalProperties": {}
 }
 ```
@@ -3546,6 +3835,16 @@ Public result JSON Schema:
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"type": "object",
 	"properties": {
+		"channel": {
+			"type": "string",
+			"enum": ["quiet", "loud"]
+		},
+		"threadId": {
+			"type": "string"
+		},
+		"text": {
+			"type": "string"
+		},
 		"held": {
 			"type": "object",
 			"properties": {
@@ -3560,6 +3859,7 @@ Public result JSON Schema:
 			"additionalProperties": {}
 		}
 	},
+	"required": ["channel", "threadId", "text"],
 	"additionalProperties": {}
 }
 ```

@@ -31,6 +31,19 @@ export const BoardAddressSchema = z.object({
 });
 export type BoardAddress = z.infer<typeof BoardAddressSchema>;
 
+/** Stable fields returned by the server's protected board identity response. */
+export const BoardIdentityStateSchema = z.looseObject({
+	board: z.string(),
+	identity: BoardAddressSchema,
+	elementCount: z.number().int().nonnegative(),
+	version: z.number().int().nonnegative().nullable(),
+	placeholder: z.boolean(),
+	file: z.string().optional(),
+	savedAt: z.string().optional(),
+	loadedAt: z.string().optional(),
+});
+export type BoardIdentityState = z.infer<typeof BoardIdentityStateSchema>;
+
 export const BoardVersionSchema = z.number().int().nonnegative().nullable();
 export type BoardVersion = z.infer<typeof BoardVersionSchema>;
 
