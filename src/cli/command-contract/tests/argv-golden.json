@@ -1,0 +1,56 @@
+{
+	"base": "43d0b982ac39346ae3057edf3c9fdffe400b2853",
+	"description": "Independent literal argv results captured from the legacy binary before the proof migration.",
+	"generalHelpSha256": "d783f487e6fbc120a72bb15b4a2941e769dd87d3a2695f50b2152541676ead3a",
+	"cases": [
+		{
+			"name": "query command-level help remains an unknown flag",
+			"argv": ["query", "--help"],
+			"status": 2,
+			"stdout": "",
+			"stderr": "Error: Unknown flag --help\nUsage: archboard query [--type rectangle] [--bbox x0,y0,x1,y1] [--filter locked=true] [--filter-json '{...}']\n"
+		},
+		{
+			"name": "bare double dash remains an unknown flag",
+			"argv": ["query", "--"],
+			"status": 2,
+			"stdout": "",
+			"stderr": "Error: Unknown flag --\nUsage: archboard query [--type rectangle] [--bbox x0,y0,x1,y1] [--filter locked=true] [--filter-json '{...}']\n"
+		},
+		{
+			"name": "uppercase short version remains unknown",
+			"argv": ["-V"],
+			"status": 2,
+			"stdout": "",
+			"stderr": "Unknown command \"-V\". Run `archboard help` for the list.\n"
+		},
+		{
+			"name": "lowercase short version",
+			"argv": ["-v"],
+			"status": 0,
+			"stdout": "{{VERSION}}\n",
+			"stderr": ""
+		},
+		{
+			"name": "long version",
+			"argv": ["--version"],
+			"status": 0,
+			"stdout": "{{VERSION}}\n",
+			"stderr": ""
+		},
+		{
+			"name": "version command alias",
+			"argv": ["version"],
+			"status": 0,
+			"stdout": "{{VERSION}}\n",
+			"stderr": ""
+		},
+		{
+			"name": "duplicate board leaves an unknown flag",
+			"argv": ["query", "--board", "first", "--board", "second"],
+			"status": 2,
+			"stdout": "",
+			"stderr": "Error: Unknown flag --board\nUsage: archboard query [--type rectangle] [--bbox x0,y0,x1,y1] [--filter locked=true] [--filter-json '{...}']\n"
+		}
+	]
+}

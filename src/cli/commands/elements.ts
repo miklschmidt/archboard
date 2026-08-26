@@ -3,10 +3,8 @@ import { printJson, readJsonInput } from "./util.js";
 import {
 	applyElementChanges,
 	batchCreateElementsStrict,
-	updateElementStrict,
 	getElementStrict,
 	getElements,
-	searchElements,
 	type ElementInput,
 } from "../../runtime/engine/canvas-client.js";
 import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
@@ -146,36 +144,6 @@ export async function add(argv: string[]): Promise<void> {
 	});
 }
 
-export async function update(argv: string[]): Promise<void> {
-	const { positionals, flags } = parseArgs(argv, { set: { takesValue: true }, ...DOCUMENT_FLAG });
-	const id = positionals[0];
-	if (!id) throw new CliUsageError('Usage: update <id> --set \'{"backgroundColor": "#ffc9c9"}\'');
-
-	let updates: Record<string, unknown>;
-	if (typeof flags.set === "string") {
-		try {
-			updates = JSON.parse(flags.set);
-		} catch (error) {
-			throw new CliUsageError(`Invalid JSON in --set: ${(error as Error).message}`);
-		}
-	} else {
-		const input = await readJsonInput(positionals[1], "updates");
-		if (!input || typeof input !== "object" || Array.isArray(input))
-			throw new CliUsageError("Updates must be a JSON object");
-		updates = input as Record<string, unknown>;
-	}
-
-	await ensureCanvasRunning();
-	const result = await updateElementStrict({ ...updates, id }, documentAsked(flags));
-	printJson({
-		success: true,
-		element: result.element,
-		elements: result.elements,
-		fingerprint: result.fingerprint,
-		...(result.document ? { document: result.document } : {}),
-	});
-}
-
 export async function del(argv: string[]): Promise<void> {
 	const { positionals, flags } = parseArgs(argv, DOCUMENT_FLAG);
 	if (positionals.length === 0) throw new CliUsageError("Usage: delete <id> [<id> ...]");
@@ -211,91 +179,4 @@ export async function get(argv: string[]): Promise<void> {
 
 	await ensureCanvasRunning();
 	printJson(await getElementStrict(id));
-}
-
-// Coerce "true"/"false"/numeric strings so --filter locked=true works against
-// real element values (the server search endpoint only compares raw strings).
-function coerce(value: string): unknown {
-	if (value === "true") return true;
-	if (value === "false") return false;
-	if (value === "null") return null;
-	if (value.trim() !== "" && !Number.isNaN(Number(value))) return Number(value);
-	return value;
-}
-
-function lookupPath(obj: unknown, dotPath: string): unknown {
-	return dotPath.split(".").reduce((acc, key) => {
-		if (!acc || typeof acc !== "object") return undefined;
-		return (acc as Record<string, unknown>)[key];
-	}, obj);
-}
-
-export async function query(argv: string[]): Promise<void> {
-	const { flags } = parseArgs(argv, {
-		type: { takesValue: true },
-		bbox: { takesValue: true },
-		filter: { takesValue: true, repeatable: true },
-		"filter-json": { takesValue: true },
-	});
-
-	await ensureCanvasRunning();
-
-	// type + bbox filter server-side via the search endpoint. --bbox is a region
-	// to overlap, not a range for an origin to sit in, so an arrow crossing it
-	// is found however far away it started.
-	const queryParams = new URLSearchParams();
-	if (typeof flags.type === "string") queryParams.set("type", flags.type);
-	if (typeof flags.bbox === "string") {
-		const parts = flags.bbox.split(",").map((s) => Number(s.trim()));
-		if (parts.length !== 4 || parts.some(Number.isNaN)) {
-			throw new CliUsageError('--bbox expects "x_min,y_min,x_max,y_max"');
-		}
-		const [xMin, yMin, xMax, yMax] = parts as [number, number, number, number];
-		queryParams.set("x_min", String(xMin));
-		queryParams.set("y_min", String(yMin));
-		queryParams.set("x_max", String(xMax));
-		queryParams.set("y_max", String(yMax));
-	}
-
-	let results = queryParams.size > 0 ? await searchElements(queryParams) : await getElements();
-
-	// key=value / nested / typed predicates filter client-side. Each k=v pair
-	// matches on the coerced value (`locked=true` → boolean) OR the raw string
-	// (`id=123` must still find id: "123").
-	const predicates: Array<(el: ServerElement) => boolean> = [];
-	for (const pair of (flags.filter as string[] | undefined) || []) {
-		const eq = pair.indexOf("=");
-		if (eq === -1) throw new CliUsageError(`--filter expects key=value, got "${pair}"`);
-		const key = pair.slice(0, eq);
-		const raw = pair.slice(eq + 1);
-		const coerced = coerce(raw);
-		predicates.push((el) => {
-			const actual = lookupPath(el, key);
-			if (Array.isArray(actual)) {
-				return actual.includes(raw) || actual.includes(coerced as never);
-			}
-			return actual === coerced || actual === raw;
-		});
-	}
-	if (typeof flags["filter-json"] === "string") {
-		let obj: Record<string, unknown>;
-		try {
-			obj = JSON.parse(flags["filter-json"]);
-		} catch (error) {
-			throw new CliUsageError(`Invalid JSON in --filter-json: ${(error as Error).message}`);
-		}
-		for (const [key, expected] of Object.entries(obj)) {
-			predicates.push((el) => {
-				const actual = lookupPath(el, key);
-				if (Array.isArray(actual)) return actual.includes(expected as never);
-				return actual === expected;
-			});
-		}
-	}
-
-	if (predicates.length > 0) {
-		results = results.filter((el) => predicates.every((matches) => matches(el)));
-	}
-
-	printJson(results);
 }
