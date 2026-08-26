@@ -387,12 +387,14 @@ function assignNodeHierarchy(nodes: Map<string, InspectionNode>): SweepWork {
 			min: child.body.x,
 			max: child.body.x + child.body.width,
 			value: child,
+			semantics: { partition: child.id, excludedPartitions: new Set<string>() },
 		})),
 		boundaries.map(({ owner, boundary }) => ({
 			id: `${boundary.id!}\0${owner.id}`,
 			min: boundary.box!.x,
 			max: boundary.box!.x + boundary.box!.width,
 			value: { owner, boundary },
+			semantics: { partition: owner.id, excludedPartitions: new Set<string>() },
 		})),
 		false,
 		(childInterval, boundaryInterval) => {

@@ -100,7 +100,6 @@ export function inspectBoard(
 		liveElementCount: decoded.filter((record) => record.live).length,
 		locatableElementCount: decoded.filter((record) => record.live && record.box).length,
 		broadPhaseComparisons: detection.broadPhaseComparisons,
-		preprocessingWork: detection.preprocessingWork,
 		coverage,
 		clean: coverage === "complete" && detection.findings.length === 0,
 		maxSeverity: errors > 0 ? "error" : warnings > 0 ? "warning" : "none",

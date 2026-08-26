@@ -36,7 +36,7 @@ import {
 	type BlockingBindingIssue,
 	type InspectionModel,
 } from "./model.js";
-import { sweepIntervalPairs, type SweepWork } from "./interval-sweep.js";
+import { sweepIntervalPairs, type SweepPartition, type SweepWork } from "./interval-sweep.js";
 
 export const BROAD_PHASE_COMPARISON_LIMIT = 2_000_000 as const;
 
@@ -47,9 +47,11 @@ interface DetectionResult {
 		broadPhaseEvents: number;
 		broadPhaseActiveVisits: number;
 		broadPhaseExpiryPops: number;
+		broadPhasePartitionChecks: number;
 		hierarchyEvents: number;
 		hierarchyCandidateVisits: number;
 		hierarchyExpiryPops: number;
+		hierarchyPartitionChecks: number;
 		pathSegmentChecks: number;
 	};
 }
@@ -1525,13 +1527,23 @@ interface PairItem<T> {
 	box: ExactBox;
 	value: T;
 	records: readonly DecodedRecord[];
+	semantics: SweepPartition;
 }
+
+const partitioned = <T>(
+	items: readonly PairItem<T>[],
+	semantics: (value: T) => SweepPartition,
+): PairItem<T>[] => items.map((item) => ({ ...item, semantics: semantics(item.value) }));
+
+const unrestrictedPartition = (partition: string): SweepPartition => ({
+	partition,
+	excludedPartitions: new Set<string>(),
+});
 
 function pairSweep<A, B>(
 	left: readonly PairItem<A>[],
 	right: readonly PairItem<B>[],
 	sameSet: boolean,
-	eligible: (a: A, b: B) => boolean,
 	visit: (a: A, b: B) => void,
 	counter: { value: number; limited: boolean; pass: string },
 	work: SweepWork,
@@ -1543,18 +1555,19 @@ function pairSweep<A, B>(
 			min: item.box.x,
 			max: item.box.x + item.box.width,
 			value: item,
+			semantics: item.semantics,
 		})),
 		right.map((item) => ({
 			id: item.id,
 			min: item.box.x,
 			max: item.box.x + item.box.width,
 			value: item,
+			semantics: item.semantics,
 		})),
 		sameSet,
 		(aInterval, bInterval) => {
 			const a = aInterval.value;
 			const b = bInterval.value;
-			if (!eligible(a.value, b.value)) return;
 			counter.value += 1;
 			if (counter.value > BROAD_PHASE_COMPARISON_LIMIT) {
 				counter.limited = true;
@@ -1568,6 +1581,7 @@ function pairSweep<A, B>(
 	work.events += measured.events;
 	work.activeVisits += measured.activeVisits;
 	work.expiryPops += measured.expiryPops;
+	work.partitionChecks += measured.partitionChecks;
 }
 
 function collisionFindings(
@@ -1578,13 +1592,19 @@ function collisionFindings(
 ): CollisionResult {
 	const findings: InspectionFinding[] = [];
 	const counter = { value: 0, limited: false, pass: "" };
-	const sweepWork: SweepWork = { events: 0, activeVisits: 0, expiryPops: 0 };
+	const sweepWork: SweepWork = {
+		events: 0,
+		activeVisits: 0,
+		expiryPops: 0,
+		partitionChecks: 0,
+	};
 	const byId = model.byId;
 	const segmentItems = segments.map((segment) => ({
 		id: `${segment.connectorId}:${segment.index}`,
 		box: pointBox([segment.a, segment.b])!,
 		value: segment,
 		records: [byId.get(segment.connectorId)!].filter(Boolean),
+		semantics: unrestrictedPartition(segment.connectorId),
 	}));
 	const leaves = [...model.nodes.values()].filter((node) => node.children.length === 0);
 	const leafNodeItems = leaves.map((node) => ({
@@ -1592,18 +1612,21 @@ function collisionFindings(
 		box: node.body,
 		value: node,
 		records: node.bodies,
+		semantics: unrestrictedPartition(node.id),
 	}));
 	const allNodeItems = [...model.nodes.values()].map((node) => ({
 		id: node.id,
 		box: node.body,
 		value: node,
 		records: node.bodies,
+		semantics: unrestrictedPartition(node.id),
 	}));
 	const obstacleItems = model.obstacles.map((obstacle) => ({
 		id: obstacle.id,
 		box: obstacle.box,
 		value: obstacle,
 		records: obstacle.members,
+		semantics: unrestrictedPartition(obstacle.id),
 	}));
 	const labelNodeRecords = records.filter((record) => {
 		if (!record.live || !record.id || record.type !== "text" || !record.box) return false;
@@ -1615,6 +1638,7 @@ function collisionFindings(
 		box: label.box!,
 		value: label,
 		records: [label],
+		semantics: unrestrictedPartition(label.id!),
 	}));
 	const labelLabelItems = labelNodeItems.filter((item) => model.confirmedLabels.has(item.id));
 	const connectorEnds = (segment: Segment) => {
@@ -1626,21 +1650,45 @@ function collisionFindings(
 			}
 		);
 	};
+	const leafNodeIds = new Set(leafNodeItems.map((item) => item.value.id));
+	const connectorNodePartitions = new Map<string, SweepPartition>();
+	for (const segment of segments) {
+		if (connectorNodePartitions.has(segment.connectorId)) continue;
+		const ends = connectorEnds(segment);
+		const excluded = ends.nodeAnalysisEligible
+			? new Set(
+					[
+						ends.startNode,
+						ends.endNode,
+						...semanticParents(model, ends.startNode),
+						...semanticParents(model, ends.endNode),
+					].filter((id): id is string => id !== undefined),
+				)
+			: leafNodeIds;
+		connectorNodePartitions.set(segment.connectorId, {
+			partition: `connector:${segment.connectorId}`,
+			excludedPartitions: excluded,
+		});
+	}
+	const labelNodePartitions = new Map<string, SweepPartition>();
+	for (const label of labelNodeRecords) {
+		const ownership = model.labelOwnership.get(label.id!);
+		const candidateNodes =
+			ownership?.candidateOwnerIds
+				.map((owner) => model.nodeOfElement.get(owner))
+				.filter((owner): owner is string => owner !== undefined) ?? [];
+		const excluded = new Set(candidateNodes);
+		for (const owner of candidateNodes)
+			for (const ancestor of semanticParents(model, owner)) excluded.add(ancestor);
+		labelNodePartitions.set(label.id!, {
+			partition: `label:${label.id!}`,
+			excludedPartitions: excluded,
+		});
+	}
 	pairSweep(
-		segmentItems,
+		partitioned(segmentItems, (segment) => connectorNodePartitions.get(segment.connectorId)!),
 		leafNodeItems,
 		false,
-		(segment, node) => {
-			const ends = connectorEnds(segment);
-			if (!ends.nodeAnalysisEligible) return false;
-			const excluded = new Set([
-				ends.startNode,
-				ends.endNode,
-				...semanticParents(model, ends.startNode),
-				...semanticParents(model, ends.endNode),
-			]);
-			return !excluded.has(node.id);
-		},
 		(segment, node) => {
 			const hit = segmentInsideBox(segment.a, segment.b, node.body, policy.overlapTolerance);
 			if (!hit) return;
@@ -1674,7 +1722,6 @@ function collisionFindings(
 			segmentItems,
 			obstacleItems,
 			false,
-			() => true,
 			(segment, obstacle) => {
 				const hit = segmentInsideBox(segment.a, segment.b, obstacle.box, policy.overlapTolerance);
 				if (!hit) return;
@@ -1707,10 +1754,15 @@ function collisionFindings(
 		);
 	if (!counter.limited)
 		pairSweep(
-			segmentItems,
-			segmentItems,
+			partitioned(segmentItems, (segment) => ({
+				partition: segment.connectorId,
+				excludedPartitions: new Set([segment.connectorId]),
+			})),
+			partitioned(segmentItems, (segment) => ({
+				partition: segment.connectorId,
+				excludedPartitions: new Set([segment.connectorId]),
+			})),
 			true,
-			(a, b) => a.connectorId !== b.connectorId,
 			(a, b) => {
 				const hit = intersectSegments(a.a, a.b, b.a, b.b, policy.intersectionTolerance);
 				if (hit.kind === "proper")
@@ -1763,10 +1815,15 @@ function collisionFindings(
 		);
 	if (!counter.limited)
 		pairSweep(
-			leafNodeItems,
-			leafNodeItems,
+			partitioned(leafNodeItems, (node) => ({
+				partition: node.id,
+				excludedPartitions: new Set(node.parentId ? [node.parentId] : []),
+			})),
+			partitioned(leafNodeItems, (node) => ({
+				partition: node.id,
+				excludedPartitions: new Set(node.parentId ? [node.parentId] : []),
+			})),
 			true,
-			(a, b) => a.parentId !== b.id && b.parentId !== a.id,
 			(a, b) => {
 				const hit = overlap(a.body, b.body);
 				if (!hit || hit.width <= policy.overlapTolerance || hit.height <= policy.overlapTolerance)
@@ -1796,20 +1853,9 @@ function collisionFindings(
 		);
 	if (!counter.limited)
 		pairSweep(
-			labelNodeItems,
+			partitioned(labelNodeItems, (label) => labelNodePartitions.get(label.id!)!),
 			allNodeItems,
 			false,
-			(label, node) => {
-				const ownership = model.labelOwnership.get(label.id!);
-				if (!ownership) return false;
-				const candidateNodes = ownership.candidateOwnerIds
-					.map((owner) => model.nodeOfElement.get(owner))
-					.filter((owner): owner is string => owner !== undefined);
-				const excluded = new Set(candidateNodes);
-				for (const owner of candidateNodes)
-					for (const ancestor of semanticParents(model, owner)) excluded.add(ancestor);
-				return !excluded.has(node.id);
-			},
 			(label, node) => {
 				const hit = overlap(label.box!, node.body);
 				if (!hit || hit.width <= policy.overlapTolerance || hit.height <= policy.overlapTolerance)
@@ -1839,10 +1885,15 @@ function collisionFindings(
 		);
 	if (!counter.limited)
 		pairSweep(
-			labelLabelItems,
-			labelLabelItems,
+			partitioned(labelLabelItems, (label) => {
+				const owner = model.confirmedLabels.get(label.id!)!;
+				return { partition: owner, excludedPartitions: new Set([owner]) };
+			}),
+			partitioned(labelLabelItems, (label) => {
+				const owner = model.confirmedLabels.get(label.id!)!;
+				return { partition: owner, excludedPartitions: new Set([owner]) };
+			}),
 			true,
-			(a, b) => model.confirmedLabels.get(a.id!) !== model.confirmedLabels.get(b.id!),
 			(a, b) => {
 				const hit = overlap(a.box!, b.box!);
 				if (!hit || hit.width <= policy.overlapTolerance || hit.height <= policy.overlapTolerance)
@@ -1973,9 +2024,11 @@ export function detectBoard(
 			broadPhaseEvents: collisions.preprocessingWork.events,
 			broadPhaseActiveVisits: collisions.preprocessingWork.activeVisits,
 			broadPhaseExpiryPops: collisions.preprocessingWork.expiryPops,
+			broadPhasePartitionChecks: collisions.preprocessingWork.partitionChecks,
 			hierarchyEvents: model.hierarchyWork.events,
 			hierarchyCandidateVisits: model.hierarchyWork.activeVisits,
 			hierarchyExpiryPops: model.hierarchyWork.expiryPops,
+			hierarchyPartitionChecks: model.hierarchyWork.partitionChecks,
 			pathSegmentChecks: structural.pathSegmentChecks,
 		},
 	};

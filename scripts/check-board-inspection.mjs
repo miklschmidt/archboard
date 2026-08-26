@@ -16,6 +16,7 @@ const {
 	CheckResultSchema,
 	formatInspectionText,
 } = await import(src("runtime/board-inspection/index.ts"));
+const { inspectBoardDiagnostics } = await import(src("runtime/board-inspection/diagnostics.ts"));
 const { compareBoards } = await import(src("runtime/engine/compare.ts"));
 const { renderBoardNote } = await import(src("runtime/engine/board.ts"));
 const { ingestScene } = await import(src("runtime/engine/board-io.ts"));
@@ -35,8 +36,17 @@ const clean = inspectBoard(frozen);
 check("empty board is clean", clean.clean && clean.coverage === "complete");
 check("report parses through the public schema", InspectionReportSchema.safeParse(clean).success);
 check(
+	"schema-v1 report omits private preprocessing mechanics",
+	!("preprocessingWork" in clean) &&
+		!InspectionReportSchema.safeParse({ ...clean, preprocessingWork: {} }).success,
+);
+check(
 	"repeated inspection is byte deterministic",
 	JSON.stringify(clean) === JSON.stringify(inspectBoard(frozen)),
+);
+check(
+	"development diagnostics run the exact production report pipeline",
+	JSON.stringify(inspectBoardDiagnostics(frozen).report) === JSON.stringify(clean),
 );
 const malformed = Object.freeze([
 	Object.freeze({ type: "arrow", x: 0, y: 0, width: null, height: 0, points: null }),
@@ -3670,7 +3680,6 @@ check(
 	"large-cardinality supported path reaches iterative stale-dimension measurement",
 	!largeCardinalityFailure &&
 		InspectionReportSchema.safeParse(largeCardinalityReport).success &&
-		largeCardinalityReport.preprocessingWork.pathSegmentChecks === manyPathPoints.length - 1 &&
 		largeCardinalityReport.findings.some(
 			(finding) =>
 				finding.code === "STALE_LINEAR_DIMENSIONS" &&
@@ -3681,7 +3690,7 @@ check(
 );
 
 const repeatedPathPoints = Array.from({ length: 4_097 }, (_, index) => [Math.floor(index / 2), 0]);
-const repeatedPathReport = inspectBoard([
+const repeatedPathDiagnostics = inspectBoardDiagnostics([
 	connector({
 		id: "large-repeated-path",
 		angle: 0,
@@ -3690,9 +3699,10 @@ const repeatedPathReport = inspectBoard([
 		points: repeatedPathPoints,
 	}),
 ]);
+const repeatedPathReport = repeatedPathDiagnostics.report;
 check(
 	"zero-segment filtering performs one membership check per supported segment",
-	repeatedPathReport.preprocessingWork.pathSegmentChecks === repeatedPathPoints.length - 1 &&
+	repeatedPathDiagnostics.work.pathSegmentChecks === repeatedPathPoints.length - 1 &&
 		repeatedPathReport.findings.filter(
 			(finding) => finding.code === "AMBIGUOUS_GEOMETRY" && finding.reason === "zero-length",
 		).length === 2_048 &&
@@ -3729,19 +3739,161 @@ function sparseSweepBoard(count) {
 }
 const sparseSweepResults = [1_000, 2_000, 4_000].map((count) => ({
 	count,
-	report: inspectBoard(sparseSweepBoard(count)),
+	diagnostics: inspectBoardDiagnostics(sparseSweepBoard(count)),
 }));
 check(
 	"sparse cross-set and hierarchy sweeps have deterministic log-linear preprocessing work",
 	sparseSweepResults.every(
-		({ count, report }) =>
-			report.preprocessingWork.broadPhaseActiveVisits === 0 &&
-			report.preprocessingWork.broadPhaseEvents === count * 6 &&
-			report.preprocessingWork.hierarchyEvents === count * 2 &&
-			report.preprocessingWork.hierarchyCandidateVisits === count &&
-			report.preprocessingWork.hierarchyExpiryPops <= count * 2,
+		({ count, diagnostics }) =>
+			diagnostics.work.broadPhaseCompatibleVisits === 0 &&
+			diagnostics.work.broadPhaseEvents === count * 6 &&
+			diagnostics.work.hierarchyEvents === count * 2 &&
+			diagnostics.work.hierarchyCandidateVisits === count &&
+			diagnostics.work.hierarchyExpiryPops <= count * 2,
 	),
 );
+
+const overlappingSingleConnector = (segmentCount) => [
+	connector({
+		id: `one-connector-${segmentCount}`,
+		x: 0,
+		y: 0,
+		width: 1,
+		height: segmentCount,
+		angle: 0,
+		points: Array.from({ length: segmentCount + 1 }, (_, index) => [index % 2, index]),
+	}),
+];
+const singleConnectorDiagnostics = [1_000, 2_000, 4_000, 8_000].map((segmentCount) => ({
+	segmentCount,
+	diagnostics: inspectBoardDiagnostics(overlappingSingleConnector(segmentCount)),
+}));
+check(
+	"one connector with densely overlapping x intervals never visits same-connector pairs",
+	singleConnectorDiagnostics.every(
+		({ segmentCount, diagnostics }) =>
+			diagnostics.report.broadPhaseComparisons === 0 &&
+			diagnostics.work.broadPhaseCompatibleVisits === 0 &&
+			diagnostics.work.pathSegmentChecks === segmentCount &&
+			!diagnostics.report.findings.some(
+				(finding) => finding.code === "CONNECTOR_INTERSECTION_UNMARKED",
+			),
+	),
+);
+
+const endpointOnlyDiagnostics = inspectBoardDiagnostics([
+	semanticNode("endpoint-left", {
+		id: "endpoint-left-body",
+		x: 0,
+		y: 0,
+		width: 10,
+		height: 10,
+		boundElements: [{ id: "endpoint-only-connector", type: "arrow" }],
+	}),
+	semanticNode("endpoint-right", {
+		id: "endpoint-right-body",
+		x: 90,
+		y: 0,
+		width: 10,
+		height: 10,
+		boundElements: [{ id: "endpoint-only-connector", type: "arrow" }],
+	}),
+	connector({
+		id: "endpoint-only-connector",
+		x: 0,
+		y: 5,
+		width: 100,
+		height: 2_000,
+		angle: 0,
+		points: Array.from({ length: 2_001 }, (_, index) => [index % 2 ? 100 : 0, index]),
+		startBinding: { elementId: "endpoint-left-body", focus: 0, gap: 0 },
+		endBinding: { elementId: "endpoint-right-body", focus: 0, gap: 0 },
+	}),
+]);
+check(
+	"endpoint-only node candidates are excluded before pair visitation",
+	endpointOnlyDiagnostics.report.broadPhaseComparisons === 0 &&
+		endpointOnlyDiagnostics.work.broadPhaseCompatibleVisits === 0 &&
+		!endpointOnlyDiagnostics.report.findings.some(
+			(finding) => finding.code === "CONNECTOR_PENETRATES_NODE",
+		),
+);
+
+const sameOwnerLabels = Array.from({ length: 256 }, (_, index) => ({
+	id: `same-owner-label-${index}`,
+	type: "text",
+	x: 10,
+	y: 10,
+	width: 20,
+	height: 10,
+	angle: 0,
+	fontFamily: 5,
+	text: `${index}`,
+	containerId: "same-owner-body",
+}));
+const sameOwnerDiagnostics = inspectBoardDiagnostics([
+	semanticNode("same-owner-zone", {
+		id: "same-owner-zone-body",
+		x: 0,
+		y: 0,
+		width: 100,
+		height: 100,
+	}),
+	semanticNode("same-owner", {
+		id: "same-owner-body",
+		x: 5,
+		y: 5,
+		width: 50,
+		height: 50,
+		boundElements: sameOwnerLabels.map((label) => ({ id: label.id, type: "text" })),
+	}),
+	...sameOwnerLabels,
+]);
+check(
+	"same-owner labels and their own or ancestor nodes are excluded before pair visitation",
+	sameOwnerDiagnostics.report.broadPhaseComparisons === 0 &&
+		sameOwnerDiagnostics.work.broadPhaseCompatibleVisits === 0 &&
+		!sameOwnerDiagnostics.report.findings.some((finding) => finding.code === "LABEL_OVERLAP"),
+);
+
+let sweepSeed = 0x119;
+const randomUnit = () => (sweepSeed = (sweepSeed * 1_664_525 + 1_013_904_223) >>> 0) / 2 ** 32;
+for (let sample = 0; sample < 8; sample += 1) {
+	const intervals = Array.from({ length: 24 }, (_, index) => {
+		const x = Math.floor(randomUnit() * 200) - 100;
+		const delta = Math.floor(randomUnit() * 40) + 1;
+		return { id: `oracle-${sample}-${index}`, x, min: x, max: x + delta, delta };
+	});
+	const report = inspectBoard(
+		intervals.map((item) =>
+			connector({
+				id: item.id,
+				x: item.x,
+				y: Number(item.id.split("-").at(-1)) * 100,
+				width: item.delta,
+				height: 1,
+				angle: 0,
+				points: [
+					[0, 0],
+					[item.delta, 1],
+				],
+			}),
+		),
+	);
+	let expected = 0;
+	for (let left = 0; left < intervals.length; left += 1)
+		for (let right = left + 1; right < intervals.length; right += 1)
+			if (
+				intervals[left].min <= intervals[right].max &&
+				intervals[right].min <= intervals[left].max
+			)
+				expected += 1;
+	check(
+		`semantic sweep matches brute-force eligible x-overlap oracle ${sample}`,
+		report.broadPhaseComparisons === expected,
+		`${report.broadPhaseComparisons} versus ${expected}`,
+	);
+}
 
 let ungroupedGroupReads = 0;
 const largeUngrouped = Array.from({ length: 2_000 }, (_, index) => {
@@ -4247,15 +4399,17 @@ const run = (board, args = []) =>
 	});
 const beforeVault = snapshot();
 const jsonRun = run("clean");
+const cleanPackageResult = JSON.parse(jsonRun.stdout);
 check("package CLI works with no canvas", jsonRun.status === 0 && jsonRun.stderr === "");
 check(
 	"package JSON parses through exported schema",
-	CheckResultSchema.safeParse(JSON.parse(jsonRun.stdout)).success,
+	CheckResultSchema.safeParse(cleanPackageResult).success &&
+		!("preprocessingWork" in cleanPackageResult),
 );
 const textRun = run("clean", ["--text"]);
 check(
 	"text mode matches production formatter",
-	textRun.stdout === formatInspectionText(JSON.parse(jsonRun.stdout)) + "\n",
+	textRun.stdout === formatInspectionText(cleanPackageResult) + "\n",
 );
 for (const [board, exit] of [
 	["warning", 6],
@@ -4465,7 +4619,6 @@ check(
 					finding.affectedBBox?.x === Number.MAX_VALUE,
 			),
 		) &&
-		prerequisiteTotalityResult.preprocessingWork.pathSegmentChecks >= 9_999 &&
 		prerequisiteTotalityResult.findings.some(
 			(finding) =>
 				finding.code === "STALE_LINEAR_DIMENSIONS" &&

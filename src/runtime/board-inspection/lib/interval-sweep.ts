@@ -3,12 +3,19 @@ export interface SweepInterval<T> {
 	min: number;
 	max: number;
 	value: T;
+	semantics: SweepPartition;
+}
+
+export interface SweepPartition {
+	partition: string;
+	excludedPartitions: ReadonlySet<string>;
 }
 
 export interface SweepWork {
 	events: number;
 	activeVisits: number;
 	expiryPops: number;
+	partitionChecks: number;
 }
 
 interface ActiveNode<T> {
@@ -18,9 +25,11 @@ interface ActiveNode<T> {
 	active: boolean;
 	previous: ActiveNode<T> | null;
 	next: ActiveNode<T> | null;
+	list: ActiveList<T>;
 }
 
 interface ActiveList<T> {
+	semantics: SweepPartition;
 	head: ActiveNode<T> | null;
 	tail: ActiveNode<T> | null;
 }
@@ -66,9 +75,9 @@ function append<T>(list: ActiveList<T>, node: ActiveNode<T>): void {
 	list.tail = node;
 }
 
-function remove<T>(lists: [ActiveList<T>, ActiveList<T>], node: ActiveNode<T>): void {
+function remove<T>(node: ActiveNode<T>): void {
 	if (!node.active) return;
-	const list = lists[node.set];
+	const list = node.list;
 	if (node.previous) node.previous.next = node.next;
 	else list.head = node.next;
 	if (node.next) node.next.previous = node.previous;
@@ -76,7 +85,11 @@ function remove<T>(lists: [ActiveList<T>, ActiveList<T>], node: ActiveNode<T>): 
 	node.active = false;
 }
 
-/** Enumerate every closed x-interval overlap once in deterministic start-event order. */
+function pairAllowed(a: SweepPartition, b: SweepPartition): boolean {
+	return !a.excludedPartitions.has(b.partition) && !b.excludedPartitions.has(a.partition);
+}
+
+/** Enumerate every semantically permitted closed x-overlap once in deterministic start-event order. */
 export function sweepIntervalPairs<A, B>(
 	left: readonly SweepInterval<A>[],
 	right: readonly SweepInterval<B>[],
@@ -95,29 +108,54 @@ export function sweepIntervalPairs<A, B>(
 			a.interval.id.localeCompare(b.interval.id) ||
 			a.ordinal - b.ordinal,
 	);
-	const lists: [ActiveList<Value>, ActiveList<Value>] = [
-		{ head: null, tail: null },
-		{ head: null, tail: null },
+	const buckets: [Map<string, ActiveList<Value>>, Map<string, ActiveList<Value>>] = [
+		new Map(),
+		new Map(),
 	];
 	const heap: ActiveNode<Value>[] = [];
-	const work: SweepWork = { events: 0, activeVisits: 0, expiryPops: 0 };
+	const partitionKeys = new Map<SweepPartition, string>();
+	const partitionKey = (value: SweepPartition) => {
+		const existing = partitionKeys.get(value);
+		if (existing) return existing;
+		const key = `${value.partition}\0${[...value.excludedPartitions].toSorted().join("\0")}`;
+		partitionKeys.set(value, key);
+		return key;
+	};
+	const work: SweepWork = {
+		events: 0,
+		activeVisits: 0,
+		expiryPops: 0,
+		partitionChecks: 0,
+	};
 	for (let order = 0; order < events.length; order += 1) {
 		const event = events[order]!;
 		work.events += 1;
 		while (heap[0] && heap[0].interval.max < event.interval.min) {
 			const expired = heapPop(heap)!;
 			work.expiryPops += 1;
-			remove(lists, expired);
+			remove(expired);
 		}
-		const opposite = sameSet ? lists[0] : lists[event.set === 0 ? 1 : 0];
-		for (let active = opposite.head; active; active = active.next) {
-			work.activeVisits += 1;
-			const shouldContinue =
-				event.set === 0
-					? visit(event.interval as SweepInterval<A>, active.interval as SweepInterval<B>)
-					: visit(active.interval as SweepInterval<A>, event.interval as SweepInterval<B>);
-			if (shouldContinue === false) return work;
+		const opposite = sameSet ? buckets[0] : buckets[event.set === 0 ? 1 : 0];
+		for (const bucket of opposite.values()) {
+			if (!bucket.head) continue;
+			work.partitionChecks += 1;
+			if (!pairAllowed(event.interval.semantics, bucket.semantics)) continue;
+			for (let active: ActiveNode<Value> | null = bucket.head; active; active = active.next) {
+				work.activeVisits += 1;
+				const shouldContinue =
+					event.set === 0
+						? visit(event.interval as SweepInterval<A>, active.interval as SweepInterval<B>)
+						: visit(active.interval as SweepInterval<A>, event.interval as SweepInterval<B>);
+				if (shouldContinue === false) return work;
+			}
 		}
+		const key = partitionKey(event.interval.semantics);
+		const list = buckets[event.set].get(key) ?? {
+			semantics: event.interval.semantics,
+			head: null,
+			tail: null,
+		};
+		buckets[event.set].set(key, list);
 		const node: ActiveNode<Value> = {
 			interval: event.interval,
 			set: event.set,
@@ -125,8 +163,9 @@ export function sweepIntervalPairs<A, B>(
 			active: true,
 			previous: null,
 			next: null,
+			list,
 		};
-		append(lists[event.set], node);
+		append(list, node);
 		heapPush(heap, node);
 	}
 	return work;

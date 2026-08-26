@@ -157,7 +157,9 @@ note archboard did not write. About fifteen seconds.
   the dense whole-board reroute, the exact 1,516,200 below-limit comparison count, and the
   2,000,001 limit attempt. Its package checks run with no canvas process, parse JSON through the
   exported schema, cover text and strict exits 6/7/8, and compare vault paths, bytes, and mtimes
-  before and after every read.
+  before and after every read. Performance cases import the module-root `diagnostics.ts` entrypoint
+  to count sweep events, compatible visits, expiry work, hierarchy candidates, and path checks.
+  Those counters are development evidence and do not appear in the product report or package CLI.
 
 ## Wire and lock checks
 
