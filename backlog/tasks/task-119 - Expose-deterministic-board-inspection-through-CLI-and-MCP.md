@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 14:21'
+updated_date: '2026-08-26 14:40'
 labels:
   - ready-for-agent
 dependencies:
@@ -316,6 +316,10 @@ RISKS_AND_ROLLBACK
 - Adding check and one exit-help line changes general help. The compatibility test strips exactly those two approved additions and nothing else.
 - The inspection reader could become a permissive general reader. Keep it raw, narrowly named, and unexported outside board I/O and check. Prove normal ingest/write strictness from the same malformed bytes.
 - Every checkpoint is independently revertible. No note schema or persisted bytes change, so rollback requires no data migration.
+
+USER-DIRECTED GENERATED-OWNERSHIP AMENDMENT (2026-08-26)
+
+This amendment supersedes step 23’s requirement to commit generated artifacts with their source, step 24’s tracked generator --check assumption, step 26’s generated-files completion wording, and the generated-file entries in EXPECTED_MODIFIED_FILES. Keep docs/design/cli-command-audit.json tracked as the canonical human-authored audit input. Stop tracking docs/design/cli-command-audit.md, docs/design/command-contract-proof.json, and docs/design/command-contract-proof.md. Generate those three reproducible views on demand into an explicitly ignored location. Contract validation must evaluate the live registry/audit projection in memory or through owned temporary output, retain all 58-path/schema/audit/57-path compatibility/rendering proofs, and add clean-clone-style deterministic generation evidence that leaves the checkout untouched. Documentation must distinguish canonical input from derived views and repair consumers that assumed generated files were always present.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -342,6 +346,8 @@ Browser validation: the first sequential chain exposed two stale fixed-point rec
 Final implementation validation: the full focused matrix passed, including type-check, test:suites, boundaries, module-scope, contracts and generator check, inspection, CLI, Obsidian/no-side-effect, changes, one-write, geometry, labels, library, boards, and branch compare. After the fixed-point cardinality correction, the complete four-suite browser chain passed sequentially and headless. bun run check then passed lint, skill validation, format verification, both TypeScript projects, all 29 push suites, and all four browser suites. A separate bun run test also passed the complete suite and its own sequential browser chain. No gate was waived or skipped; fixed-point remained 0 of 13 elements changed.
 
 Review remediation checkpoint: fixed all independently verified findings without changing protected scope. Penetration tolerance is now applied once with exact/inside/outside public cases; malformed angles and applicable type discriminators produce coverage-affecting unsupported findings; invalid library rescue uses the model's qualifying multi-member grouped-body classification; every finding schema fixes severity and coverage literals, including closed data-dependent subvariants; producer inputs are a discriminated union; check validates policy before vault access; finding order uses the approved declared reason and ref/point/box sequence; unsupported connectors expose decoded absolute path points and extents; and text formatting is compile-time exhaustive by code and reason. The matrix grew from 27 checks at rejected review to 357 checks and covers all closed schema branches with impossible-pair rejection, all intended invalid-id roles, path/binding/reference closures, malformed applicable geometry, exact tolerances, persisted fonts, bound-label semantics, obstacle and actual-boundary zone cases, deterministic ordering/counts/limit, dense reroute, deep mutation traps, real-package malformed notes, zero HTTP, strict exits, and unchanged vault paths/bytes/mtimes. The expansion also found and fixed an order-dependent grouped-obstacle union root and prevented unlocatable paths from inventing coordinates. At commit f5971c4, bun run lint, both TypeScript projects, test:inspection (357 checks), and git diff --check pass. TASK-119 remains In Progress with acceptance criteria unchecked. Remaining validation: approved focused matrix, two byte-stable fix passes, generator check, bun run check, separate bun run test, and final clean-state evidence.
+
+Review-remediation scope amended by direct user instruction: generated CLI audit/proof views are now on-demand ignored outputs, while cli-command-audit.json remains the canonical authored input. Implementation is proceeding under the appended plan amendment without reopening TASK-128 or changing protected runtime behavior.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
