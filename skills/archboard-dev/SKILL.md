@@ -16,7 +16,7 @@ There is no build step for the server or the CLI. bun runs the TypeScript, so
 things still do not:
 
 ```bash
-bunx vite build     # frontend/src/ changed -> dist/frontend/
+bunx vite build     # src/ui/ changed -> dist/frontend/
 ./bin/canvas stop && ./bin/canvas start   # src/ that the SERVER executes changed
 ```
 
@@ -48,7 +48,7 @@ bun watches (`src/dev-canvas.ts`) re-imports the canvas only when
 reload at all and says so.
 
 Anything long-lived you add to the server has to go through `kept()` in
-`src/core/hot.ts`, or a reload will quietly replace it while the tabs stay
+`src/runtime/engine/hot.ts`, or a reload will quietly replace it while the tabs stay
 connected. Two things catch that so you do not have to remember it:
 
 - `bun run test:module-scope` refuses module-scope state in the canvas's import
@@ -87,7 +87,7 @@ person at the wall is watching a box appear on their canvas either way.
 Metadata goes under `customData.archboard` (ADR 0003) — namespaced, never flat,
 because the Obsidian plugin writes its own top-level keys. The explicit
 `backgroundColor` above is only there to show one being honoured — since
-TASK-009 a shape gets a fill on its own (`src/core/appearance.ts`), which is
+TASK-009 a shape gets a fill on its own (`src/shared/appearance/appearance.ts`), which is
 what makes its interior tappable.
 
 Then open <http://127.0.0.1:3000>, **drag the box**, and re-run `query`. The
@@ -105,7 +105,7 @@ To exercise the full interaction, click the box in the browser and then:
 ```bash
 ./bin/canvas selection --text          # what the human has picked
 ./bin/canvas promote --board scratch --kind service --name "Probe" \
-  --path src/core/promote.ts --doing "calling the probe box a service"
+  --path src/runtime/engine/promote.ts --doing "calling the probe box a service"
 ```
 
 ## Taking something from upstream
@@ -159,7 +159,7 @@ sync updates it automatically.
 hasBoundTextElement(el) || ...`, so a _labelled_ transparent shape does hit-test
   inside and an unlabelled one does not. A test built on a labelled probe
   therefore passes whether or not fills work. Since TASK-009 shapes are filled
-  by default (`src/core/appearance.ts`), so this only bites on shapes made
+  by default (`src/shared/appearance/appearance.ts`), so this only bites on shapes made
   before that or explicitly opted out with `"backgroundColor": "transparent"`.
 - **`describe` degrades above 120 nodes** to a per-kind rollup rather than
   dumping every node. That is deliberate (narratability); use `query` when you
