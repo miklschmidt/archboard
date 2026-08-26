@@ -29,8 +29,15 @@ import type { ServerElement } from "../types";
 // The server's own bookkeeping, which is not board content and which
 // Excalidraw has no field for.
 export const cleanElementForExcalidraw = (element: ServerElement): Partial<ExcalidrawElement> => {
-	const { createdAt: _createdAt, updatedAt: _updatedAt, version: _version, syncedAt: _syncedAt, source: _source, syncTimestamp: _syncTimestamp, ...cleanElement } =
-		element;
+	const {
+		createdAt: _createdAt,
+		updatedAt: _updatedAt,
+		version: _version,
+		syncedAt: _syncedAt,
+		source: _source,
+		syncTimestamp: _syncTimestamp,
+		...cleanElement
+	} = element;
 	return cleanElement as Partial<ExcalidrawElement>;
 };
 

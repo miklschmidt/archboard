@@ -44,7 +44,7 @@ export function AgentRail({
 			</header>
 
 			{claimed && (
-				<section className="pane-claim claim-card" role="status">
+				<output className="pane-claim claim-card">
 					<div className="claim-kicker">
 						<Icon name="check" size={16} />
 						Agent has the board
@@ -60,7 +60,7 @@ export function AgentRail({
 					<button type="button" className="pane-claim-take take-back" onClick={takeBack}>
 						Take back control
 					</button>
-				</section>
+				</output>
 			)}
 
 			<div className="activity-header">
@@ -68,9 +68,16 @@ export function AgentRail({
 				<span>{doing.length === 0 ? "No updates" : `Last ${doing.length}`}</span>
 			</div>
 
-			<ol className="pane-doing activity-list" role="status" aria-label="Recent agent activity">
-				{[...doing].toReversed().map((entry, index) => (
-					<li key={`${entry.at}-${entry.by}-${index}`} className="pane-doing-line activity-line">
+			<ol
+				className="pane-doing activity-list"
+				aria-label="Recent agent activity"
+				aria-live="polite"
+			>
+				{[...doing].toReversed().map((entry) => (
+					<li
+						key={`${entry.at}-${entry.by}-${entry.doing}`}
+						className="pane-doing-line activity-line"
+					>
 						<time className="pane-doing-when activity-time">{clock(entry.at)}</time>
 						<span className="activity-marker" aria-hidden="true" />
 						<span className="pane-doing-text activity-text">{entry.doing}</span>

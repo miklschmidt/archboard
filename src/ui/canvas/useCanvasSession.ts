@@ -65,7 +65,7 @@ import {
 	reportPane,
 	takeBoardBack,
 } from "./api";
-import type { PaneReport } from "./api";
+import type { ChangeReportReply, PaneReport } from "./api";
 
 // Messages that say what is on a board, as opposed to messages about the board.
 // A pane that must send a full report ignores the first kind and acts on the
@@ -134,7 +134,7 @@ interface ReportingRuntime {
 	progressTimer: ReturnType<typeof setTimeout> | null;
 	idleTimer: ReturnType<typeof setTimeout> | null;
 	retryTimer: ReturnType<typeof setTimeout> | null;
-	reportPromise: Promise<void> | null;
+	reportPromise: Promise<ChangeReportReply | null> | null;
 }
 
 type ReportingTimer = "progress" | "idle" | "retry";
@@ -273,8 +273,7 @@ export function useCanvasSession({
 	// A pane is a client in its own right: it holds a selection the server can
 	// retire when this pane goes away, and it must be able to skip the echo of
 	// its own change reports.
-	const clientIdRef = useRef<string>(`${paneId}-${Math.random().toString(36).slice(2, 8)}`);
-	const clientId = clientIdRef.current;
+	const [clientId] = useState(() => `${paneId}-${Math.random().toString(36).slice(2, 8)}`);
 
 	const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
 	const socketRef = useRef<WebSocket | null>(null);
@@ -296,6 +295,11 @@ export function useCanvasSession({
 		retryTimer: null,
 		reportPromise: null,
 	});
+	const executeReportingEffectRef = useRef<(effect: ChangeReportingEffect) => void>(
+		() => undefined,
+	);
+	const takeHoldRef = useRef<() => void>(() => undefined);
+	const releaseIfIdleRef = useRef<() => void>(() => undefined);
 
 	// Set while the board this pane holds has stopped saving (ADR 0006,
 	// TASK-079). Nothing about drawing changes — the human carries on and the
@@ -376,8 +380,8 @@ export function useCanvasSession({
 	 */
 	const paneReport = useCallback((): PaneReport | null => {
 		const api = apiRef.current;
-		const board = boardKeyRef.current;
-		if (!api || !board) return null;
+		const boardKey = boardKeyRef.current;
+		if (!api || !boardKey) return null;
 		const appState = api.getAppState();
 		const zoom = appState.zoom?.value ?? 1;
 		// Measured off the DOM rather than taken from appState: Excalidraw catches
@@ -410,7 +414,7 @@ export function useCanvasSession({
 		return {
 			clientId,
 			paneId,
-			board,
+			board: boardKey,
 			primary: primaryRef.current,
 			focused: focusedRef.current,
 			elementCount: api.getSceneElements().length,
@@ -452,8 +456,9 @@ export function useCanvasSession({
 						const stale = result.staleFrontend;
 						if (stale?.message && staleBuildRef.current !== stale.current) {
 							staleBuildRef.current = stale.current ?? "";
-						void stale;
+							void stale;
 						}
+						return result;
 					})
 					.catch((error) => {
 						// Nothing is lost by a failed report except its freshness, and the next
@@ -516,157 +521,185 @@ export function useCanvasSession({
 
 	// ─── Writing the server's news into the scene ────────────────
 
-	const currentScene = (): SceneElement[] =>
-		(apiRef.current?.getSceneElementsIncludingDeleted() as unknown as SceneElement[]) ?? [];
+	const currentScene = useCallback(
+		(): SceneElement[] =>
+			(apiRef.current?.getSceneElementsIncludingDeleted() as unknown as SceneElement[]) ?? [],
+		[],
+	);
 
-	const currentWithheldIds = (): readonly string[] => {
+	const currentWithheldIds = useCallback((): readonly string[] => {
 		const editing = idUnderEditor(apiRef.current);
 		return editing === null ? EMPTY_WITHHELD : [editing];
-	};
+	}, []);
 
-	/** The only function that calls Excalidraw's programmatic scene update. */
-	const applySceneUpdate = (
-		update: SceneUpdate,
-		reportingEffect: Extract<
-			ChangeReportingEffect,
-			{ type: "apply_server_update" | "apply_local_update" }
-		>,
-	): void => {
-		const api = apiRef.current;
-		if (!api) return;
-		api.updateScene({
-			...(update.elements
-				? { elements: elementsForScene(update.elements as Partial<ExcalidrawElement>[]) as unknown as readonly ExcalidrawElement[] }
-				: {}),
-				...(update.appState ? { appState: update.appState as unknown as AppState } : {}),
-			captureUpdate:
-				update.captureUpdate === "immediately"
-					? CaptureUpdateAction.IMMEDIATELY
-					: CaptureUpdateAction.NEVER,
-		});
-		const scene = currentScene();
-		if (reportingEffect.type === "apply_local_update") {
-			dispatchReporting({
-				type: "local_update_applied",
-				generation: reportingEffect.generation,
-				scene,
-			});
-			return;
-		}
-		dispatchReporting({
-			type: "server_update_applied",
-			generation: reportingEffect.generation,
-			scene,
-			baselineUpdate: reportingEffect.baselineUpdate,
-			reportAfterUpdate: reportingEffect.reportAfterUpdate,
-		});
-	};
-
-	const executeReportingEffect = (effect: ChangeReportingEffect): void => {
-		const runtime = reportingRef.current;
-		switch (effect.type) {
-			case "cancel_progress_timer":
-			case "cancel_idle_timer":
-			case "cancel_retry_timer":
-				cancelReportingTimer(
-					runtime,
-					effect.type === "cancel_progress_timer"
-						? "progress"
-						: effect.type === "cancel_idle_timer"
-							? "idle"
-							: "retry",
-				);
-				return;
-			case "start_progress_timer":
-			case "start_idle_timer":
-			case "start_retry_timer":
-				{
-					const which =
-						effect.type === "start_progress_timer"
-							? "progress"
-							: effect.type === "start_idle_timer"
-								? "idle"
-								: "retry";
-					startReportingTimer(runtime, which, effect.delayMs, () => {
-						runtime[timerKey(which)] = null;
-						dispatchReporting(
-							timerFiredEvent(which, effect.generation, currentScene(), currentWithheldIds()),
-						);
-					});
-				}
-				return;
-			case "apply_local_update":
-			case "apply_server_update":
-				applySceneUpdate(effect.update, effect);
-				return;
-			case "finish_server_update":
-				setTimeout(() => {
-					dispatchReporting({
-						type: "server_update_finished",
-						generation: effect.generation,
-						scene: currentScene(),
-						withheldIds: currentWithheldIds(),
-					});
-					publishStatus();
-				}, 0);
-				return;
-			case "send_report": {
-				const target = boardKeyRef.current;
-				const request = reportChanges(target, effect.report, clientId, effect.fullReport)
-					.then((reply) => {
-						if (reply.held) holdRef.current = reply.held;
-						else if (holdRef.current) holdRef.current = null;
-						dispatchReporting({
-							type: "report_succeeded",
-							generation: effect.generation,
-							corrections: {
-								upserts: reply.corrections.upserts.map(cleanElementForExcalidraw) as SceneElement[],
-								deletes: reply.corrections.deletes,
-							},
-							currentScene: currentScene(),
-						});
-					})
-					.catch((error) => {
-						if (error instanceof BoardConflictError) {
-							holdRef.current = error.held ?? holdRef.current;
-							dispatchReporting({ type: "report_refused", generation: effect.generation });
-							return;
-						}
-						void error;
-						dispatchReporting({ type: "report_failed", generation: effect.generation });
-					})
-					.finally(() => {
-						if (runtime.reportPromise === request) runtime.reportPromise = null;
-					});
-				runtime.reportPromise = request;
-				return;
-			}
-			case "send_beacon": {
-				beaconChanges(boardKeyRef.current, effect.report, clientId);
-				return;
-			}
-			case "take_hold":
-				takeHold();
-				return;
-			case "note_change":
-				noteChange();
-				return;
-			case "release_if_idle":
-				releaseIfIdle();
-				return;
-			case "publish_status":
-				publishStatus();
-				return;
-			default:
-				assertNever(effect);
-		}
-	};
-
-	const dispatchReporting = (event: ChangeReportingEvent): void => {
+	const dispatchReporting = useCallback((event: ChangeReportingEvent): void => {
 		const result = reduce(reportingRef.current.state, event);
 		reportingRef.current.state = result.state;
-		for (const effect of result.effects) executeReportingEffect(effect);
-	};
+		for (const effect of result.effects) executeReportingEffectRef.current(effect);
+	}, []);
+
+	/** The only function that calls Excalidraw's programmatic scene update. */
+	const applySceneUpdate = useCallback(
+		(
+			update: SceneUpdate,
+			reportingEffect: Extract<
+				ChangeReportingEffect,
+				{ type: "apply_server_update" | "apply_local_update" }
+			>,
+		): void => {
+			const api = apiRef.current;
+			if (!api) return;
+			api.updateScene({
+				...(update.elements
+					? {
+							elements: elementsForScene(
+								update.elements as Partial<ExcalidrawElement>[],
+							) as unknown as readonly ExcalidrawElement[],
+						}
+					: {}),
+				...(update.appState ? { appState: update.appState as unknown as AppState } : {}),
+				captureUpdate:
+					update.captureUpdate === "immediately"
+						? CaptureUpdateAction.IMMEDIATELY
+						: CaptureUpdateAction.NEVER,
+			});
+			const scene = currentScene();
+			if (reportingEffect.type === "apply_local_update") {
+				dispatchReporting({
+					type: "local_update_applied",
+					generation: reportingEffect.generation,
+					scene,
+				});
+				return;
+			}
+			dispatchReporting({
+				type: "server_update_applied",
+				generation: reportingEffect.generation,
+				scene,
+				baselineUpdate: reportingEffect.baselineUpdate,
+				reportAfterUpdate: reportingEffect.reportAfterUpdate,
+			});
+		},
+		[dispatchReporting, currentScene],
+	);
+
+	const executeReportingEffect = useCallback(
+		(effect: ChangeReportingEffect): void => {
+			const runtime = reportingRef.current;
+			switch (effect.type) {
+				case "cancel_progress_timer":
+				case "cancel_idle_timer":
+				case "cancel_retry_timer":
+					cancelReportingTimer(
+						runtime,
+						effect.type === "cancel_progress_timer"
+							? "progress"
+							: effect.type === "cancel_idle_timer"
+								? "idle"
+								: "retry",
+					);
+					return;
+				case "start_progress_timer":
+				case "start_idle_timer":
+				case "start_retry_timer":
+					{
+						const which =
+							effect.type === "start_progress_timer"
+								? "progress"
+								: effect.type === "start_idle_timer"
+									? "idle"
+									: "retry";
+						startReportingTimer(runtime, which, effect.delayMs, () => {
+							runtime[timerKey(which)] = null;
+							dispatchReporting(
+								timerFiredEvent(which, effect.generation, currentScene(), currentWithheldIds()),
+							);
+						});
+					}
+					return;
+				case "apply_local_update":
+				case "apply_server_update":
+					applySceneUpdate(effect.update, effect);
+					return;
+				case "finish_server_update":
+					setTimeout(() => {
+						dispatchReporting({
+							type: "server_update_finished",
+							generation: effect.generation,
+							scene: currentScene(),
+							withheldIds: currentWithheldIds(),
+						});
+						publishStatus();
+					}, 0);
+					return;
+				case "send_report": {
+					const target = boardKeyRef.current;
+					const request = reportChanges(target, effect.report, clientId, effect.fullReport)
+						.then((reply) => {
+							if (reply.held) holdRef.current = reply.held;
+							else if (holdRef.current) holdRef.current = null;
+							dispatchReporting({
+								type: "report_succeeded",
+								generation: effect.generation,
+								corrections: {
+									upserts: reply.corrections.upserts.map(
+										cleanElementForExcalidraw,
+									) as SceneElement[],
+									deletes: reply.corrections.deletes,
+								},
+								currentScene: currentScene(),
+							});
+							return reply;
+						})
+						.catch((error) => {
+							if (error instanceof BoardConflictError) {
+								holdRef.current = error.held ?? holdRef.current;
+								dispatchReporting({ type: "report_refused", generation: effect.generation });
+								return null;
+							}
+							void error;
+							dispatchReporting({ type: "report_failed", generation: effect.generation });
+							return null;
+						})
+						.finally(() => {
+							if (runtime.reportPromise === request) runtime.reportPromise = null;
+						});
+					runtime.reportPromise = request;
+					return;
+				}
+				case "send_beacon": {
+					beaconChanges(boardKeyRef.current, effect.report, clientId);
+					return;
+				}
+				case "take_hold":
+					takeHoldRef.current();
+					return;
+				case "note_change":
+					noteChange();
+					return;
+				case "release_if_idle":
+					releaseIfIdleRef.current();
+					return;
+				case "publish_status":
+					publishStatus();
+					return;
+				default:
+					assertNever(effect);
+			}
+		},
+		[
+			applySceneUpdate,
+			clientId,
+			currentScene,
+			currentWithheldIds,
+			dispatchReporting,
+			noteChange,
+			publishStatus,
+		],
+	);
+	useEffect(() => {
+		executeReportingEffectRef.current = executeReportingEffect;
+	}, [executeReportingEffect]);
 
 	/**
 	 * Replace the scene outright; the board is now exactly what the server said.
@@ -699,7 +732,7 @@ export function useCanvasSession({
 				baselineUpdate: { type: "replace", withheldIds },
 			});
 		},
-		[],
+		[currentScene, dispatchReporting],
 	);
 
 	/**
@@ -707,40 +740,46 @@ export function useCanvasSession({
 	 * baseline for those ids only — the rest of the scene may hold local edits
 	 * that have not been reported yet and must not be forgotten.
 	 */
-	const applyServerElements = useCallback((incoming: Partial<ExcalidrawElement>[]): void => {
-		const api = apiRef.current;
-		if (!api || incoming.length === 0) return;
+	const applyServerElements = useCallback(
+		(incoming: Partial<ExcalidrawElement>[]): void => {
+			const api = apiRef.current;
+			if (!api || incoming.length === 0) return;
 
-		const { elements } = mergeIncoming(
-			api.getSceneElements() as unknown as SceneElement[],
-			incoming as SceneElement[],
-			reportingRef.current.state.baseline,
-		);
+			const { elements } = mergeIncoming(
+				api.getSceneElements() as unknown as SceneElement[],
+				incoming as SceneElement[],
+				reportingRef.current.state.baseline,
+			);
 
-		dispatchReporting({
-			type: "server_update_requested",
-			update: { elements, captureUpdate: "never" },
-			baselineUpdate: { type: "touch", elements: incoming as SceneElement[] },
-		});
-	}, []);
+			dispatchReporting({
+				type: "server_update_requested",
+				update: { elements, captureUpdate: "never" },
+				baselineUpdate: { type: "touch", elements: incoming as SceneElement[] },
+			});
+		},
+		[dispatchReporting],
+	);
 
-	const removeElements = useCallback((ids: string[]): void => {
-		const api = apiRef.current;
-		if (!api || ids.length === 0) return;
-		const elements = mergeIncomingDeletes(
-			api.getSceneElements() as unknown as SceneElement[],
-			ids,
-			reportingRef.current.state.baseline,
-		);
-		dispatchReporting({
-			type: "server_update_requested",
-			update: {
-				elements,
-				captureUpdate: "never",
-			},
-			baselineUpdate: { type: "delete", ids },
-		});
-	}, []);
+	const removeElements = useCallback(
+		(ids: string[]): void => {
+			const api = apiRef.current;
+			if (!api || ids.length === 0) return;
+			const elements = mergeIncomingDeletes(
+				api.getSceneElements() as unknown as SceneElement[],
+				ids,
+				reportingRef.current.state.baseline,
+			);
+			dispatchReporting({
+				type: "server_update_requested",
+				update: {
+					elements,
+					captureUpdate: "never",
+				},
+				baselineUpdate: { type: "delete", ids },
+			});
+		},
+		[dispatchReporting],
+	);
 
 	// Re-read THIS pane's board from the server. Deliberately not "what board is
 	// the server on": there is no such thing, and a pane that asked would be at
@@ -754,7 +793,7 @@ export function useCanvasSession({
 			applyServerScene(elements.map(cleanElementForExcalidraw));
 			const { files } = await fetchFiles(boardKeyRef.current);
 			if (files && Object.keys(files).length > 0)
-					apiRef.current?.addFiles(Object.values(files) as BinaryFileData[]);
+				apiRef.current?.addFiles(Object.values(files) as BinaryFileData[]);
 		} catch (error) {
 			void error;
 		}
@@ -784,91 +823,98 @@ export function useCanvasSession({
 	 * also what keeps a long gesture's lease alive — the lease is deliberately
 	 * too short to cover one on its own.
 	 */
-	const takeHold = useCallback((): void => {
-		const target = boardKeyRef.current;
-		if (!target) return;
-		const activeAttempt = holdAttemptRef.current;
-		if (
-			activeAttempt?.board === target &&
-			activeAttempt.generation === holdAttemptGenerationRef.current &&
-			activeAttempt.promise
-		)
-			return;
+	const takeHold = useCallback(
+		function takeHold(): void {
+			const target = boardKeyRef.current;
+			if (!target) return;
+			const activeAttempt = holdAttemptRef.current;
+			if (
+				activeAttempt?.board === target &&
+				activeAttempt.generation === holdAttemptGenerationRef.current &&
+				activeAttempt.promise
+			)
+				return;
 
-		const pending = (): boolean => {
-			const state = reportingRef.current.state;
-			return (
-				state.inFlightReport !== null ||
-				hasPendingEdits(state, currentScene(), currentWithheldIds())
-			);
-		};
-		const retryOrRenew = (delayMs: number): void => {
-			if (holdTimerRef.current || !pending() || boardKeyRef.current !== target) return;
-			holdTimerRef.current = setTimeout(() => {
-				holdTimerRef.current = null;
-				takeHold();
-			}, delayMs);
-		};
+			const pending = (): boolean => {
+				const state = reportingRef.current.state;
+				return (
+					state.inFlightReport !== null ||
+					hasPendingEdits(state, currentScene(), currentWithheldIds())
+				);
+			};
+			const retryOrRenew = (delayMs: number): void => {
+				if (holdTimerRef.current || !pending() || boardKeyRef.current !== target) return;
+				holdTimerRef.current = setTimeout(() => {
+					holdTimerRef.current = null;
+					takeHold();
+				}, delayMs);
+			};
 
-		const now = Date.now();
-		if (holdingRef.current && now - lastHoldAtRef.current < LOCK_RENEW_MS) {
-			retryOrRenew(LOCK_RENEW_MS - (now - lastHoldAtRef.current));
-			return;
-		}
-		lastHoldAtRef.current = now;
-		const attempt: HoldAttempt = {
-			board: target,
-			generation: holdAttemptGenerationRef.current,
-			promise: null,
-		};
-		const promise = holdBoard(target, clientId)
-			.then((reply) => {
-				// A board switch landed while this was in flight: the answer is about a
-				// board this pane is no longer holding.
-				if (
-					!ownsHoldAttempt(
-						holdAttemptRef.current,
-						attempt,
-						promise,
-						holdAttemptGenerationRef.current,
-					) ||
-					boardKeyRef.current !== target
-				)
-					return;
-				holdingRef.current = reply.held;
-				setHeldBy(reply.held ? null : (reply.holder ?? UNKNOWN_HOLDER));
-			})
-			.catch(() => {
-				// Persistence has not succeeded, and the local edit remains pending.
-				// Retry while there is content to save; do not reload the board and
-				// erase the only visible copy of the person's work.
-				if (
-					ownsHoldAttempt(
-						holdAttemptRef.current,
-						attempt,
-						promise,
-						holdAttemptGenerationRef.current,
-					) &&
-					boardKeyRef.current === target
-				)
-					holdingRef.current = false;
-			})
-			.finally(() => {
-				if (
-					!ownsHoldAttempt(
-						holdAttemptRef.current,
-						attempt,
-						promise,
-						holdAttemptGenerationRef.current,
+			const now = Date.now();
+			if (holdingRef.current && now - lastHoldAtRef.current < LOCK_RENEW_MS) {
+				retryOrRenew(LOCK_RENEW_MS - (now - lastHoldAtRef.current));
+				return;
+			}
+			lastHoldAtRef.current = now;
+			const attempt: HoldAttempt = {
+				board: target,
+				generation: holdAttemptGenerationRef.current,
+				promise: null,
+			};
+			const promise = holdBoard(target, clientId)
+				.then((reply) => {
+					// A board switch landed while this was in flight: the answer is about a
+					// board this pane is no longer holding.
+					if (
+						!ownsHoldAttempt(
+							holdAttemptRef.current,
+							attempt,
+							promise,
+							holdAttemptGenerationRef.current,
+						) ||
+						boardKeyRef.current !== target
 					)
-				)
-					return;
-				holdAttemptRef.current = null;
-				retryOrRenew(LOCK_RENEW_MS);
-			});
-		attempt.promise = promise;
-		holdAttemptRef.current = attempt;
-	}, [clientId]);
+						return null;
+					holdingRef.current = reply.held;
+					setHeldBy(reply.held ? null : (reply.holder ?? UNKNOWN_HOLDER));
+					return reply;
+				})
+				.catch(() => {
+					// Persistence has not succeeded, and the local edit remains pending.
+					// Retry while there is content to save; do not reload the board and
+					// erase the only visible copy of the person's work.
+					if (
+						ownsHoldAttempt(
+							holdAttemptRef.current,
+							attempt,
+							promise,
+							holdAttemptGenerationRef.current,
+						) &&
+						boardKeyRef.current === target
+					)
+						holdingRef.current = false;
+				})
+				.finally(() => {
+					if (
+						!ownsHoldAttempt(
+							holdAttemptRef.current,
+							attempt,
+							promise,
+							holdAttemptGenerationRef.current,
+						)
+					)
+						return;
+					holdAttemptRef.current = null;
+					retryOrRenew(LOCK_RENEW_MS);
+				});
+			attempt.promise = promise;
+			holdAttemptRef.current = attempt;
+		},
+		[clientId, currentScene, currentWithheldIds],
+	);
+	useEffect(() => {
+		takeHoldRef.current = takeHold;
+	}, [takeHold]);
 
 	/**
 	 * The person takes their board back from an agent that claimed it.
@@ -882,10 +928,11 @@ export function useCanvasSession({
 		const target = boardKeyRef.current;
 		void takeBoardBack(target, clientId)
 			.then((reply) => {
-				if (boardKeyRef.current !== target) return;
+				if (boardKeyRef.current !== target) return null;
 				// Believed only on success. A refusal means somebody is mid-write and
 				// the board is still theirs, and the broadcast will say so anyway.
 				if (reply.held) setHeldBy(null);
+				return reply;
 			})
 			.catch(() => {
 				/* the broadcast is the truth; a failed tap changes nothing */
@@ -910,6 +957,9 @@ export function useCanvasSession({
 		holdingRef.current = false;
 		releaseBoard(boardKeyRef.current, clientId);
 	}, [clientId]);
+	useEffect(() => {
+		releaseIfIdleRef.current = releaseIfIdle;
+	}, [releaseIfIdle]);
 
 	// ─── Reporting user edits ───────────────────────────────────
 
@@ -921,21 +971,24 @@ export function useCanvasSession({
 			withheldIds: currentWithheldIds(),
 		});
 		await reportingRef.current.reportPromise;
-	}, []);
+	}, [currentScene, currentWithheldIds, dispatchReporting]);
 
 	const hasPendingChanges = useCallback((): boolean => {
 		return hasPendingEdits(reportingRef.current.state, currentScene(), currentWithheldIds());
-	}, []);
+	}, [currentScene, currentWithheldIds]);
 
-	const scheduleReport = useCallback((scene?: readonly SceneElement[]): void => {
-		if (!apiRef.current) return;
-		dispatchReporting({ type: "scene_changed", scene: scene ?? currentScene() });
-	}, []);
+	const scheduleReport = useCallback(
+		(scene?: readonly SceneElement[]): void => {
+			if (!apiRef.current) return;
+			dispatchReporting({ type: "scene_changed", scene: scene ?? currentScene() });
+		},
+		[currentScene, dispatchReporting],
+	);
 
 	const flushWithBeacon = useCallback((): void => {
 		if (!apiRef.current || typeof navigator.sendBeacon !== "function") return;
 		dispatchReporting({ type: "flush_requested", scene: currentScene() });
-	}, []);
+	}, [currentScene, dispatchReporting]);
 
 	// ─── Selection ───────────────────────────────────────────────
 
@@ -1015,7 +1068,7 @@ export function useCanvasSession({
 			// a third of a second.
 			schedulePaneReport(true);
 		},
-		[clientId, publishStatus, schedulePaneReport, setBoardIdentity],
+		[clientId, dispatchReporting, publishStatus, schedulePaneReport, setBoardIdentity, setHeldBy],
 	);
 
 	// Re-read THIS pane's board. Deliberately not "what board is the server on":
@@ -1050,7 +1103,9 @@ export function useCanvasSession({
 					if (encoded) resolve(encoded);
 					else reject(new Error("Could not extract base64 data from the export"));
 				});
-				reader.addEventListener("error", () => reject(reader.error ?? new Error("FileReader failed")));
+				reader.addEventListener("error", () =>
+					reject(reader.error ?? new Error("FileReader failed")),
+				);
 				reader.readAsDataURL(blob);
 			});
 			await respond({ format: "png", data: base64 });
@@ -1060,65 +1115,68 @@ export function useCanvasSession({
 		}
 	}, []);
 
-	const answerViewport = useCallback(async (data: WebSocketMessage): Promise<void> => {
-		const api = apiRef.current;
-		if (!api || !data.requestId) return;
-		const respond = (payload: Record<string, unknown>) =>
-			postViewportResult(data.requestId!, payload).catch(() => {});
+	const answerViewport = useCallback(
+		async (data: WebSocketMessage): Promise<void> => {
+			const api = apiRef.current;
+			if (!api || !data.requestId) return;
+			const respond = (payload: Record<string, unknown>) =>
+				postViewportResult(data.requestId!, payload).catch(() => {});
 
-		try {
-			const all = api.getSceneElements();
-			if (data.scrollToContent) {
-				if (all.length > 0) {
-					api.scrollToContent(all, {
+			try {
+				const all = api.getSceneElements();
+				if (data.scrollToContent) {
+					if (all.length > 0) {
+						api.scrollToContent(all, {
+							fitToViewport: true,
+							viewportZoomFactor: data.viewportZoomFactor,
+							animate: true,
+						});
+					}
+				} else if (data.scrollToElementIds !== undefined) {
+					const ids = data.scrollToElementIds;
+					if (
+						!Array.isArray(ids) ||
+						ids.length === 0 ||
+						!ids.every((id) => typeof id === "string" && id.length > 0)
+					) {
+						throw new Error("scrollToElementIds must be a non-empty array of element IDs");
+					}
+					const wanted = new Set(ids);
+					const targets = all.filter((el) => wanted.has(el.id));
+					const found = new Set(targets.map((el) => el.id));
+					const missing = ids.filter((id) => !found.has(id));
+					if (missing.length > 0)
+						throw new Error(`Elements not found for IDs: ${missing.join(", ")}`);
+					api.scrollToContent(targets, {
 						fitToViewport: true,
 						viewportZoomFactor: data.viewportZoomFactor,
 						animate: true,
 					});
-				}
-			} else if (data.scrollToElementIds !== undefined) {
-				const ids = data.scrollToElementIds;
-				if (
-					!Array.isArray(ids) ||
-					ids.length === 0 ||
-					!ids.every((id) => typeof id === "string" && id.length > 0)
-				) {
-					throw new Error("scrollToElementIds must be a non-empty array of element IDs");
-				}
-				const wanted = new Set(ids);
-				const targets = all.filter((el) => wanted.has(el.id));
-				const found = new Set(targets.map((el) => el.id));
-				const missing = ids.filter((id) => !found.has(id));
-				if (missing.length > 0)
-					throw new Error(`Elements not found for IDs: ${missing.join(", ")}`);
-				api.scrollToContent(targets, {
-					fitToViewport: true,
-					viewportZoomFactor: data.viewportZoomFactor,
-					animate: true,
-				});
-			} else if (data.scrollToElementId) {
-				const target = all.find((el) => el.id === data.scrollToElementId);
-				if (!target) throw new Error(`Element ${data.scrollToElementId} not found`);
-				api.scrollToContent([target], { fitToViewport: false, animate: true });
-			} else {
+				} else if (data.scrollToElementId) {
+					const target = all.find((el) => el.id === data.scrollToElementId);
+					if (!target) throw new Error(`Element ${data.scrollToElementId} not found`);
+					api.scrollToContent([target], { fitToViewport: false, animate: true });
+				} else {
 					const appState: Record<string, unknown> = {};
-				if (data.zoom !== undefined) appState.zoom = { value: data.zoom };
-				if (data.offsetX !== undefined) appState.scrollX = data.offsetX;
-				if (data.offsetY !== undefined) appState.scrollY = data.offsetY;
-				if (Object.keys(appState).length > 0) {
-					dispatchReporting({
-						type: "server_update_requested",
-						update: { appState, captureUpdate: "never" },
-						baselineUpdate: { type: "none" },
-					});
+					if (data.zoom !== undefined) appState.zoom = { value: data.zoom };
+					if (data.offsetX !== undefined) appState.scrollX = data.offsetX;
+					if (data.offsetY !== undefined) appState.scrollY = data.offsetY;
+					if (Object.keys(appState).length > 0) {
+						dispatchReporting({
+							type: "server_update_requested",
+							update: { appState, captureUpdate: "never" },
+							baselineUpdate: { type: "none" },
+						});
+					}
 				}
+				await respond({ success: true, message: "Viewport updated" });
+			} catch (error) {
+				void error;
+				await respond({ error: (error as Error).message });
 			}
-			await respond({ success: true, message: "Viewport updated" });
-		} catch (error) {
-			void error;
-			await respond({ error: (error as Error).message });
-		}
-	}, []);
+		},
+		[dispatchReporting],
+	);
 
 	const answerMermaid = useCallback(
 		async (data: WebSocketMessage): Promise<void> => {
@@ -1137,12 +1195,12 @@ export function useCanvasSession({
 
 				// Regenerate ids: mermaid emits stable ones like "A", which would collide
 				// with a previous conversion already on the board.
-					const converted = convertToExcalidrawElements(
-						[...result.elements] as unknown as Parameters<typeof convertToExcalidrawElements>[0],
-						{
+				const converted = convertToExcalidrawElements(
+					[...result.elements] as unknown as Parameters<typeof convertToExcalidrawElements>[0],
+					{
 						regenerateIds: true,
-						},
-					);
+					},
+				);
 				// The conversion is a local edit and is reported immediately.
 				dispatchReporting({
 					type: "local_update_requested",
@@ -1157,7 +1215,7 @@ export function useCanvasSession({
 				void error;
 			}
 		},
-		[sendReport],
+		[dispatchReporting, sendReport],
 	);
 
 	// ─── The socket ──────────────────────────────────────────────
@@ -1382,62 +1440,68 @@ export function useCanvasSession({
 			applyServerElements,
 			applyServerScene,
 			clientId,
+			currentWithheldIds,
+			dispatchReporting,
 			hasPendingChanges,
 			loadBoard,
 			noteChange,
 			onLayoutRequest,
 			onBoardError,
 			onLibraryChanged,
+			publishStatus,
 			removeElements,
 			sendReport,
 		],
 	);
 
-	const connect = useCallback((): void => {
-		if (closedRef.current) return;
-		const existing = socketRef.current;
-		if (
-			existing &&
-			(existing.readyState === WebSocket.CONNECTING || existing.readyState === WebSocket.OPEN)
-		)
-			return;
+	const connect = useCallback(
+		function connect(): void {
+			if (closedRef.current) return;
+			const existing = socketRef.current;
+			if (
+				existing &&
+				(existing.readyState === WebSocket.CONNECTING || existing.readyState === WebSocket.OPEN)
+			)
+				return;
 
-		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-		const socket = new WebSocket(
-			`${protocol}//${window.location.host}/?clientId=${encodeURIComponent(clientId)}`,
-		);
-		socketRef.current = socket;
+			const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+			const socket = new WebSocket(
+				`${protocol}//${window.location.host}/?clientId=${encodeURIComponent(clientId)}`,
+			);
+			socketRef.current = socket;
 
-		socket.addEventListener("open", () => {
-			connectedRef.current = true;
-			setConnected(true);
-			// The server retires a pane when its socket closes, so a reconnection has
-			// to re-announce this one even though nothing about it changed.
-			publishedPaneRef.current = "";
-			publishStatus();
-			// No fetch here: the server opens every connection, including a
-			// reconnection, by sending the board it is holding.
-		});
-		socket.addEventListener("message", (event) => {
-			try {
-				void handleMessage(JSON.parse(event.data) as WebSocketMessage);
-			} catch (error) {
-				void error;
-				void event.data;
-			}
-		});
-		socket.addEventListener("close", (event) => {
-			connectedRef.current = false;
-			setConnected(false);
-			publishStatus();
-			if (event.code !== 1000 && !closedRef.current) setTimeout(connect, SOCKET_RECONNECT_MS);
-		});
-		socket.addEventListener("error", () => {
-			connectedRef.current = false;
-			setConnected(false);
-			publishStatus();
-		});
-	}, [clientId, handleMessage, publishStatus]);
+			socket.addEventListener("open", () => {
+				connectedRef.current = true;
+				setConnected(true);
+				// The server retires a pane when its socket closes, so a reconnection has
+				// to re-announce this one even though nothing about it changed.
+				publishedPaneRef.current = "";
+				publishStatus();
+				// No fetch here: the server opens every connection, including a
+				// reconnection, by sending the board it is holding.
+			});
+			socket.addEventListener("message", (event) => {
+				try {
+					void handleMessage(JSON.parse(event.data) as WebSocketMessage);
+				} catch (error) {
+					void error;
+					void event.data;
+				}
+			});
+			socket.addEventListener("close", (event) => {
+				connectedRef.current = false;
+				setConnected(false);
+				publishStatus();
+				if (event.code !== 1000 && !closedRef.current) setTimeout(connect, SOCKET_RECONNECT_MS);
+			});
+			socket.addEventListener("error", () => {
+				connectedRef.current = false;
+				setConnected(false);
+				publishStatus();
+			});
+		},
+		[clientId, handleMessage, publishStatus],
+	);
 
 	const attachExcalidraw = useCallback(
 		(api: ExcalidrawImperativeAPI): void => {
@@ -1473,11 +1537,15 @@ export function useCanvasSession({
 			// close.
 			socketRef.current?.close(1000);
 		};
-	}, [clientId, flushWithBeacon]);
+	}, [clientId, dispatchReporting, flushWithBeacon]);
 
 	const handleChange = useCallback(
 		(elements: readonly Partial<ExcalidrawElement>[], appState: unknown): void => {
-			handleSelectionChange(appState && typeof appState === "object" ? appState as { selectedElementIds?: Record<string, boolean> } : null);
+			handleSelectionChange(
+				appState && typeof appState === "object"
+					? (appState as { selectedElementIds?: Record<string, boolean> })
+					: null,
+			);
 			// Excalidraw calls onChange for camera and selection state too. Classify
 			// content from the element array it supplied before any hold or report
 			// effect; a pan or zoom must never take a claimed board.
@@ -1491,7 +1559,7 @@ export function useCanvasSession({
 
 	const markInteracted = useCallback((): void => {
 		dispatchReporting({ type: "user_interacted" });
-	}, []);
+	}, [dispatchReporting]);
 
 	return {
 		attachExcalidraw,

@@ -79,6 +79,7 @@ export function useLibrary(): LibraryController {
 				serverHashRef.current = getLibraryItemsHash(result.items);
 				loadedRef.current = true;
 				setItems(result.items);
+				return result;
 			})
 			.catch((failure) => {
 				if (cancelled) return;
@@ -116,13 +117,16 @@ export function useLibrary(): LibraryController {
 
 	useEffect(() => {
 		const requested = pendingLibraryUrl();
-		if (requested) void offer(requested);
+		const initialTimer = requested ? window.setTimeout(() => void offer(requested), 0) : null;
 		const onHashChange = (): void => {
 			const next = pendingLibraryUrl();
 			if (next) void offer(next);
 		};
 		window.addEventListener("hashchange", onHashChange);
-		return () => window.removeEventListener("hashchange", onHashChange);
+		return () => {
+			if (initialTimer !== null) window.clearTimeout(initialTimer);
+			window.removeEventListener("hashchange", onHashChange);
+		};
 	}, [offer]);
 
 	const acceptInstall = useCallback((): void => {
