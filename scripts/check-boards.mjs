@@ -288,7 +288,7 @@ const { readBoardFile, readNote } = await import(src("runtime/engine/board-io.ts
 // server below.
 {
 	const { default: app } = await import(src("server.ts"));
-	const { snapshots } = await import(src("types.ts"));
+	const { snapshots } = await import(src("runtime/engine/types.ts"));
 	const { readBoardContent, writeBoardContent } = await import(src("runtime/engine/board-io.ts"));
 	const listener = app.listen(0, "127.0.0.1");
 	await new Promise((resolve) => listener.once("listening", resolve));
