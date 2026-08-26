@@ -1,7 +1,7 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { Shell } from './shell/Shell'
-import '@excalidraw/excalidraw/index.css'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { Shell } from "./shell/Shell";
+import "@excalidraw/excalidraw/index.css";
 
 // Name the tab so libraries.excalidraw.com can come back to it.
 //
@@ -10,15 +10,15 @@ import '@excalidraw/excalidraw/index.css'
 // unnamed tab therefore gets "_blank" and the human ends up looking at a second
 // copy of archboard, with the first one none the wiser. Naming it makes the
 // return a hashchange in the tab they started from.
-window.name = 'archboard'
+window.name = "archboard";
 
-const rootElement = document.getElementById('root')
+const rootElement = document.getElementById("root");
 if (!rootElement) {
-  throw new Error('Root element not found')
+	throw new Error("Root element not found");
 }
 
 ReactDOM.createRoot(rootElement).render(
-  <React.StrictMode>
-    <Shell />
-  </React.StrictMode>,
-)
+	<React.StrictMode>
+		<Shell />
+	</React.StrictMode>,
+);

@@ -39,14 +39,14 @@
 // the comparison is against without touching the file, and a gate that watched
 // only the file would leave the mark up after the thing that clears it.
 
-import fs from 'node:fs';
+import fs from "node:fs";
 
-import { holdOn } from './board-hold.js';
-import { ForeignWrite, foreignWriteTo } from './board-io.js';
-import { boards } from './board-store.js';
-import { normalizeBoardKey } from './board.js';
-import { VersionMove, describeVersionMove } from './board-version.js';
-import { kept } from './hot.js';
+import { holdOn } from "./board-hold.js";
+import { type ForeignWrite, foreignWriteTo } from "./board-io.js";
+import { boards } from "./board-store.js";
+import { normalizeBoardKey } from "./board.js";
+import { type VersionMove, describeVersionMove } from "./board-version.js";
+import { kept } from "./hot.js";
 
 /**
  * A board whose note has been written by something that is not archboard.
@@ -56,52 +56,52 @@ import { kept } from './hot.js';
  * a sha-256.
  */
 export interface NoteWrittenElsewhere {
-  board: string;
-  file: string;
-  /**
-   * `changed` — archboard had read these bytes and they are different now.
-   * `unseen` — there is a note at this path archboard has never read, so it
-   * cannot say what writing over it would delete.
-   */
-  reason: 'changed' | 'unseen';
-  /** When the note was last written, from the filesystem. */
-  writtenAt: string;
-  /** When archboard last read it. Absent when it never has. */
-  lastReadAt?: string;
-  /**
-   * Which side is newer, which is the question this mark exists to answer and
-   * could not (TASK-091). The mark used to be able to say only that the note is
-   * not the one on screen. `ahead` is another archboard and this pane is behind
-   * it; `unchanged` is an editor that keeps no version, so the note is newer but
-   * by an unknown amount; `behind` is the note having been reverted under a
-   * pane holding the later work.
-   */
-  versionMove: VersionMove;
-  /** What archboard last wrote there, and what the note carries now. */
-  version: number | null;
-  ourVersion: number | null;
-  message: string;
+	board: string;
+	file: string;
+	/**
+	 * `changed` — archboard had read these bytes and they are different now.
+	 * `unseen` — there is a note at this path archboard has never read, so it
+	 * cannot say what writing over it would delete.
+	 */
+	reason: "changed" | "unseen";
+	/** When the note was last written, from the filesystem. */
+	writtenAt: string;
+	/** When archboard last read it. Absent when it never has. */
+	lastReadAt?: string;
+	/**
+	 * Which side is newer, which is the question this mark exists to answer and
+	 * could not (TASK-091). The mark used to be able to say only that the note is
+	 * not the one on screen. `ahead` is another archboard and this pane is behind
+	 * it; `unchanged` is an editor that keeps no version, so the note is newer but
+	 * by an unknown amount; `behind` is the note having been reverted under a
+	 * pane holding the later work.
+	 */
+	versionMove: VersionMove;
+	/** What archboard last wrote there, and what the note carries now. */
+	version: number | null;
+	ourVersion: number | null;
+	message: string;
 }
 
 /** Where this news goes: set once, by the server, to the thing that tells the panes. */
 type NoteSink = (board: string, written: NoteWrittenElsewhere | null) => void;
 
 interface Looked {
-  /** What the gate saw last time, so a note is not re-read for nothing. */
-  file: string;
-  mtimeMs: number;
-  size: number;
-  baselineHash: string;
-  answer: NoteWrittenElsewhere | null;
+	/** What the gate saw last time, so a note is not re-read for nothing. */
+	file: string;
+	mtimeMs: number;
+	size: number;
+	baselineHash: string;
+	answer: NoteWrittenElsewhere | null;
 }
 
 // Both in kept(), because a hot reload must not make the canvas forget what it
 // has already said: re-announcing a mark that is already up is a message every
 // pane has, and forgetting one that is up is a mark that never comes down
 // (src/core/hot.ts).
-const looks = () => kept('note-watch:looks', () => new Map<string, Looked>());
-const announced = () => kept('note-watch:announced', () => new Map<string, string | null>());
-const sinkHolder = () => kept('note-watch:sink', () => ({ notify: null as NoteSink | null }));
+const looks = () => kept("note-watch:looks", () => new Map<string, Looked>());
+const announced = () => kept("note-watch:announced", () => new Map<string, string | null>());
+const sinkHolder = () => kept("note-watch:sink", () => ({ notify: null as NoteSink | null }));
 
 /**
  * Who wrote this note last, if it was not archboard.
@@ -112,45 +112,45 @@ const sinkHolder = () => kept('note-watch:sink', () => ({ notify: null as NoteSi
  * is this state one step further on and says more about it.
  */
 export function noteWrittenElsewhere(board: string): NoteWrittenElsewhere | null {
-  const key = normalizeBoardKey(board);
-  const state = boards.get(key);
-  if (!state?.file) return null;
-  if (holdOn(key)) return null;
+	const key = normalizeBoardKey(board);
+	const state = boards.get(key);
+	if (!state?.file) return null;
+	if (holdOn(key)) return null;
 
-  const file = state.file;
-  let stat: fs.Stats | undefined;
-  try {
-    stat = fs.statSync(file);
-  } catch {
-    // Not there is not somebody else's work; it is a board nobody has written
-    // yet, and the next write creates it. The same answer the refusal gives.
-    looks().delete(key);
-    return null;
-  }
+	const file = state.file;
+	let stat: fs.Stats | undefined;
+	try {
+		stat = fs.statSync(file);
+	} catch {
+		// Not there is not somebody else's work; it is a board nobody has written
+		// yet, and the next write creates it. The same answer the refusal gives.
+		looks().delete(key);
+		return null;
+	}
 
-  // The baseline is half of the comparison, so it is half of the gate.
-  const baselineHash = baselineHashFor(file);
-  const seen = looks().get(key);
-  if (
-    seen &&
-    seen.file === file &&
-    seen.mtimeMs === stat.mtimeMs &&
-    seen.size === stat.size &&
-    seen.baselineHash === baselineHash
-  ) {
-    return seen.answer;
-  }
+	// The baseline is half of the comparison, so it is half of the gate.
+	const baselineHash = baselineHashFor(file);
+	const seen = looks().get(key);
+	if (
+		seen &&
+		seen.file === file &&
+		seen.mtimeMs === stat.mtimeMs &&
+		seen.size === stat.size &&
+		seen.baselineHash === baselineHash
+	) {
+		return seen.answer;
+	}
 
-  let bytes: Buffer;
-  try {
-    bytes = fs.readFileSync(file);
-  } catch {
-    looks().delete(key);
-    return null;
-  }
-  const answer = describe(key, foreignWriteTo(file, bytes));
-  looks().set(key, { file, mtimeMs: stat.mtimeMs, size: stat.size, baselineHash, answer });
-  return answer;
+	let bytes: Buffer;
+	try {
+		bytes = fs.readFileSync(file);
+	} catch {
+		looks().delete(key);
+		return null;
+	}
+	const answer = describe(key, foreignWriteTo(file, bytes));
+	looks().set(key, { file, mtimeMs: stat.mtimeMs, size: stat.size, baselineHash, answer });
+	return answer;
 }
 
 /**
@@ -161,15 +161,16 @@ export function noteWrittenElsewhere(board: string): NoteWrittenElsewhere | null
  * thousand times an hour for nothing.
  */
 export function refreshNoteWatch(board: string): void {
-  const key = normalizeBoardKey(board);
-  const written = noteWrittenElsewhere(key);
-  // The stamp rather than the object, so that a note written twice by another
-  // editor is two pieces of news and the same note looked at twice is one.
-  const stamp = written === null ? null : `${written.reason}:${written.writtenAt}:${written.version ?? '-'}`;
-  const before = announced();
-  if (before.has(key) && before.get(key) === stamp) return;
-  before.set(key, stamp);
-  sinkHolder().notify?.(key, written);
+	const key = normalizeBoardKey(board);
+	const written = noteWrittenElsewhere(key);
+	// The stamp rather than the object, so that a note written twice by another
+	// editor is two pieces of news and the same note looked at twice is one.
+	const stamp =
+		written === null ? null : `${written.reason}:${written.writtenAt}:${written.version ?? "-"}`;
+	const before = announced();
+	if (before.has(key) && before.get(key) === stamp) return;
+	before.set(key, stamp);
+	sinkHolder().notify?.(key, written);
 }
 
 /**
@@ -178,23 +179,23 @@ export function refreshNoteWatch(board: string): void {
  * watch without standing a browser up.
  */
 export function onNoteWrittenElsewhere(sink: NoteSink | null): void {
-  sinkHolder().notify = sink;
+	sinkHolder().notify = sink;
 }
 
 /** Forget what has been looked at and said. For a check that wants a clean process. */
 export function forgetNoteWatch(): void {
-  looks().clear();
-  announced().clear();
+	looks().clear();
+	announced().clear();
 }
 
 function baselineHashFor(file: string): string {
-  let best: { hash: string; at: string } | null = null;
-  for (const board of boards.values()) {
-    const baseline = board.baseline;
-    if (!baseline || baseline.file !== file) continue;
-    if (!best || baseline.at > best.at) best = baseline;
-  }
-  return best?.hash ?? '';
+	let best: { hash: string; at: string } | null = null;
+	for (const board of boards.values()) {
+		const baseline = board.baseline;
+		if (!baseline || baseline.file !== file) continue;
+		if (!best || baseline.at > best.at) best = baseline;
+	}
+	return best?.hash ?? "";
 }
 
 /**
@@ -208,31 +209,32 @@ function baselineHashFor(file: string): string {
  * only thing that prevents it.
  */
 function describe(board: string, foreign: ForeignWrite | null): NoteWrittenElsewhere | null {
-  if (!foreign) return null;
-  const lead = foreign.reason === 'changed'
-    ? `${foreign.file} has been written by something other than archboard since archboard last wrote it, ` +
-      'so this pane is showing a board the vault no longer holds.'
-    : `There is a note at ${foreign.file} that archboard has never read, ` +
-      'so it cannot say what this board would replace.';
-  return {
-    board,
-    file: foreign.file,
-    reason: foreign.reason,
-    writtenAt: foreign.fileModifiedAt,
-    ...(foreign.lastReadAt ? { lastReadAt: foreign.lastReadAt } : {}),
-    versionMove: foreign.versionMove,
-    version: foreign.actualVersion,
-    ourVersion: foreign.expectedVersion,
-    message: [
-      lead,
-      // Which side is newer, from the same comparison the refusal makes, so the
-      // mark and the refusal say one thing (TASK-091).
-      describeVersionMove(foreign.versionMove, foreign.expectedVersion, foreign.actualVersion),
-      'Nothing has been written and nothing is lost: the next change to this board will be refused ' +
-      'rather than saved over theirs.',
-      `Take the note with \`board open ${board} --reload\`, which discards what is on this canvas, ` +
-      'or carry on drawing and choose when you are asked.',
-      'Keep a board open in one editor at a time.'
-    ].join('\n')
-  };
+	if (!foreign) return null;
+	const lead =
+		foreign.reason === "changed"
+			? `${foreign.file} has been written by something other than archboard since archboard last wrote it, ` +
+				"so this pane is showing a board the vault no longer holds."
+			: `There is a note at ${foreign.file} that archboard has never read, ` +
+				"so it cannot say what this board would replace.";
+	return {
+		board,
+		file: foreign.file,
+		reason: foreign.reason,
+		writtenAt: foreign.fileModifiedAt,
+		...(foreign.lastReadAt ? { lastReadAt: foreign.lastReadAt } : {}),
+		versionMove: foreign.versionMove,
+		version: foreign.actualVersion,
+		ourVersion: foreign.expectedVersion,
+		message: [
+			lead,
+			// Which side is newer, from the same comparison the refusal makes, so the
+			// mark and the refusal say one thing (TASK-091).
+			describeVersionMove(foreign.versionMove, foreign.expectedVersion, foreign.actualVersion),
+			"Nothing has been written and nothing is lost: the next change to this board will be refused " +
+				"rather than saved over theirs.",
+			`Take the note with \`board open ${board} --reload\`, which discards what is on this canvas, ` +
+				"or carry on drawing and choose when you are asked.",
+			"Keep a board open in one editor at a time.",
+		].join("\n"),
+	};
 }

@@ -1,7 +1,7 @@
-import { parseArgs, CliUsageError } from '../args.js';
-import { printJson } from '../util.js';
-import { ensureCanvasRunning } from '../../core/spawn.js';
-import { getInjection, postInjectionTest } from '../../core/canvas-client.js';
+import { parseArgs, CliUsageError } from "../args.js";
+import { printJson } from "../util.js";
+import { ensureCanvasRunning } from "../../core/spawn.js";
+import { getInjection, postInjectionTest } from "../../core/canvas-client.js";
 
 // `inject status` / `inject test` — is the canvas able to reach the thread?
 //
@@ -9,39 +9,40 @@ import { getInjection, postInjectionTest } from '../../core/canvas-client.js';
 // thread is decided when the canvas server starts, from ARCHBOARD_INJECT and
 // the address it bound, and a command that could flip it at runtime would
 // defeat the point of it being a separate capability (ADR 0005).
-// The CLI's side of the surface-parity check reads this list.
-export const SUBCOMMANDS = ['status', 'test'] as const;
+export const SUBCOMMANDS = ["status", "test"] as const;
 
 export async function inject(argv: string[]): Promise<void> {
-  const [sub, ...rest] = argv;
-  if (!sub || sub === 'status') {
-    await ensureCanvasRunning();
-    const report = await getInjection();
-    const { success, ...body } = report;
-    printJson(body);
-    return;
-  }
+	const [sub, ...rest] = argv;
+	if (!sub || sub === "status") {
+		await ensureCanvasRunning();
+		const report = await getInjection();
+		const { success, ...body } = report;
+		printJson(body);
+		return;
+	}
 
-  if (sub === 'test') {
-    const { positionals, flags } = parseArgs(rest, {
-      note: { takesValue: true },
-      loud: { takesValue: false },
-      quiet: { takesValue: false }
-    });
-    if (flags.loud && flags.quiet) {
-      throw new CliUsageError('pass --loud or --quiet, not both');
-    }
-    await ensureCanvasRunning();
-    const note = (flags.note as string) ?? positionals.join(' ') ?? undefined;
-    const result = await postInjectionTest({
-      ...(note ? { note } : {}),
-      ...(flags.loud ? { loud: true } : {}),
-      ...(flags.quiet ? { loud: false } : {})
-    });
-    const { success, ...body } = result;
-    printJson(body);
-    return;
-  }
+	if (sub === "test") {
+		const { positionals, flags } = parseArgs(rest, {
+			note: { takesValue: true },
+			loud: { takesValue: false },
+			quiet: { takesValue: false },
+		});
+		if (flags.loud && flags.quiet) {
+			throw new CliUsageError("pass --loud or --quiet, not both");
+		}
+		await ensureCanvasRunning();
+		const note = (flags.note as string) ?? positionals.join(" ") ?? undefined;
+		const result = await postInjectionTest({
+			...(note ? { note } : {}),
+			...(flags.loud ? { loud: true } : {}),
+			...(flags.quiet ? { loud: false } : {}),
+		});
+		const { success, ...body } = result;
+		printJson(body);
+		return;
+	}
 
-  throw new CliUsageError(`unknown inject subcommand "${sub}" — try \`inject status\` or \`inject test\``);
+	throw new CliUsageError(
+		`unknown inject subcommand "${sub}" — try \`inject status\` or \`inject test\``,
+	);
 }

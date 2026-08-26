@@ -67,7 +67,7 @@ it is most obviously still working.
 So the canvas renews on the agent's behalf, and a claim is bounded by the three
 things that can actually be observed: the length the agent asked for, capped,
 which is the only bound on an agent that walked away; the lease, which frees the
-board within seconds of the *canvas* dying, that being the process a lock file
+board within seconds of the _canvas_ dying, that being the process a lock file
 can be orphaned by; and the person, at any moment.
 
 **A person can always take it back.** The lock excludes writers from each other.
@@ -203,7 +203,7 @@ steps would say what is being attempted and never how far it has got.
 **It is not board content.** It is what somebody said while changing something,
 not a fact about the board, so it never reaches the note and dies with the
 canvas — the carve-out ADR 0015 already draws for panes, sockets and what a
-person has selected. The board reports what it *became* separately, by diffing.
+person has selected. The board reports what it _became_ separately, by diffing.
 That is a different question with a different answer: a move that changes
 nothing nameable still had an intent, and a line that turns out to be wrong is
 still what was said.

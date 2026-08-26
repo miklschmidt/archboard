@@ -5,10 +5,10 @@
 // a pane that was looking at it. The fix was the `if (!boards.has(...))` guard
 // that is deliberately missing here.
 
-import { kept } from '../../../src/core/hot.js';
+import { kept } from "../../../src/core/hot.js";
 
-const boards = kept('fixture-boards', () => new Map<string, { elements: string[] }>());
+const boards = kept("fixture-boards", () => new Map<string, { elements: string[] }>());
 
-boards.set('scratch', { elements: [] });
+boards.set("scratch", { elements: [] });
 
 export { boards };

@@ -33,19 +33,19 @@
 // goes through a third-party site, and one dialog is a small price for never
 // silently installing 800 shapes from a link.
 
-import { parseLibraryTokensFromUrl, restoreLibraryItems } from '@excalidraw/excalidraw'
-import type { LibraryItems } from '@excalidraw/excalidraw/types'
+import { parseLibraryTokensFromUrl, restoreLibraryItems } from "@excalidraw/excalidraw";
+import type { LibraryItems } from "@excalidraw/excalidraw/types";
 
 /** Host, plus an optional path prefix it is confined to. */
 const ALLOWED_SOURCES: Array<{ host: string; prefix?: string }> = [
-  { host: 'excalidraw.com' },
-  { host: 'raw.githubusercontent.com', prefix: '/excalidraw/excalidraw-libraries/' }
-]
+	{ host: "excalidraw.com" },
+	{ host: "raw.githubusercontent.com", prefix: "/excalidraw/excalidraw-libraries/" },
+];
 
-const MAX_LIBRARY_BYTES = 8 * 1024 * 1024
+const MAX_LIBRARY_BYTES = 8 * 1024 * 1024;
 
 function hostMatches(hostname: string, allowed: string): boolean {
-  return hostname === allowed || hostname.endsWith(`.${allowed}`)
+	return hostname === allowed || hostname.endsWith(`.${allowed}`);
 }
 
 /**
@@ -53,32 +53,35 @@ function hostMatches(hostname: string, allowed: string): boolean {
  * Exported so the refusal can be tested without a network.
  */
 export function validateLibrarySource(candidate: string): URL {
-  let url: URL
-  try {
-    url = new URL(candidate)
-  } catch {
-    throw new Error(`That library link is not a URL: ${candidate}`)
-  }
-  if (url.protocol !== 'https:') {
-    throw new Error(`Refusing to install a library over ${url.protocol.replace(':', '')} — https only.`)
-  }
-  const allowed = ALLOWED_SOURCES.some(
-    source => hostMatches(url.hostname, source.host) &&
-      (!source.prefix || url.pathname.startsWith(source.prefix))
-  )
-  if (!allowed) {
-    throw new Error(
-      `Refusing to install a library from ${url.hostname}. archboard fetches libraries only from ` +
-      'excalidraw.com and the excalidraw-libraries repository. Download the .excalidrawlib and ' +
-      'drop it on the canvas if you trust it.'
-    )
-  }
-  return url
+	let url: URL;
+	try {
+		url = new URL(candidate);
+	} catch {
+		throw new Error(`That library link is not a URL: ${candidate}`);
+	}
+	if (url.protocol !== "https:") {
+		throw new Error(
+			`Refusing to install a library over ${url.protocol.replace(":", "")} — https only.`,
+		);
+	}
+	const allowed = ALLOWED_SOURCES.some(
+		(source) =>
+			hostMatches(url.hostname, source.host) &&
+			(!source.prefix || url.pathname.startsWith(source.prefix)),
+	);
+	if (!allowed) {
+		throw new Error(
+			`Refusing to install a library from ${url.hostname}. archboard fetches libraries only from ` +
+				"excalidraw.com and the excalidraw-libraries repository. Download the .excalidrawlib and " +
+				"drop it on the canvas if you trust it.",
+		);
+	}
+	return url;
 }
 
 /** What the hash is asking us to install, or null when it is asking nothing. */
 export function pendingLibraryUrl(): string | null {
-  return parseLibraryTokensFromUrl()?.libraryUrl ?? null
+	return parseLibraryTokensFromUrl()?.libraryUrl ?? null;
 }
 
 /**
@@ -89,59 +92,61 @@ export function pendingLibraryUrl(): string | null {
  * what happened.
  */
 export function clearLibraryHash(): void {
-  const params = new URLSearchParams(window.location.hash.slice(1))
-  if (!params.has('addLibrary')) return
-  params.delete('addLibrary')
-  params.delete('token')
-  const rest = params.toString()
-  window.history.replaceState({}, '', rest ? `#${rest}` : window.location.pathname)
+	const params = new URLSearchParams(window.location.hash.slice(1));
+	if (!params.has("addLibrary")) return;
+	params.delete("addLibrary");
+	params.delete("token");
+	const rest = params.toString();
+	window.history.replaceState({}, "", rest ? `#${rest}` : window.location.pathname);
 }
 
 export interface FetchedLibrary {
-  url: URL
-  items: LibraryItems
+	url: URL;
+	items: LibraryItems;
 }
 
 /** Fetch and normalise a library. Throws with something sayable out loud. */
 export async function fetchLibraryFrom(candidate: string): Promise<FetchedLibrary> {
-  const url = validateLibrarySource(decodeURIComponent(candidate))
+	const url = validateLibrarySource(decodeURIComponent(candidate));
 
-  const response = await fetch(url.href, {
-    credentials: 'omit',
-    referrerPolicy: 'no-referrer',
-    headers: { Accept: 'application/json, text/plain, */*' }
-  })
-  if (!response.ok) {
-    throw new Error(`${url.hostname} answered ${response.status} for that library.`)
-  }
-  // A redirect is allowed to move us, but not out of the allowlist.
-  if (response.url) validateLibrarySource(response.url)
+	const response = await fetch(url.href, {
+		credentials: "omit",
+		referrerPolicy: "no-referrer",
+		headers: { Accept: "application/json, text/plain, */*" },
+	});
+	if (!response.ok) {
+		throw new Error(`${url.hostname} answered ${response.status} for that library.`);
+	}
+	// A redirect is allowed to move us, but not out of the allowlist.
+	if (response.url) validateLibrarySource(response.url);
 
-  const declared = Number(response.headers.get('content-length') ?? '0')
-  if (declared > MAX_LIBRARY_BYTES) {
-    throw new Error(`That library is ${Math.round(declared / 1024 / 1024)}MB. Refusing to load it.`)
-  }
-  const text = await response.text()
-  if (text.length > MAX_LIBRARY_BYTES) {
-    throw new Error('That library is larger than 8MB. Refusing to load it.')
-  }
+	const declared = Number(response.headers.get("content-length") ?? "0");
+	if (declared > MAX_LIBRARY_BYTES) {
+		throw new Error(
+			`That library is ${Math.round(declared / 1024 / 1024)}MB. Refusing to load it.`,
+		);
+	}
+	const text = await response.text();
+	if (text.length > MAX_LIBRARY_BYTES) {
+		throw new Error("That library is larger than 8MB. Refusing to load it.");
+	}
 
-  let parsed: any
-  try {
-    parsed = JSON.parse(text)
-  } catch {
-    throw new Error(`${url.hostname} did not return a library file.`)
-  }
-  if (parsed?.type !== 'excalidrawlib') {
-    throw new Error(`${url.pathname.split('/').pop()} is not an .excalidrawlib file.`)
-  }
+	let parsed: any;
+	try {
+		parsed = JSON.parse(text);
+	} catch {
+		throw new Error(`${url.hostname} did not return a library file.`);
+	}
+	if (parsed?.type !== "excalidrawlib") {
+		throw new Error(`${url.pathname.split("/").pop()} is not an .excalidrawlib file.`);
+	}
 
-  // Both published formats reach this point: version 1 is a bare array of
-  // element arrays, version 2 wraps each in an item. restoreLibraryItems reads
-  // both and is the only thing that touches the elements themselves.
-  const items = restoreLibraryItems(parsed.libraryItems ?? parsed.library ?? [], 'published')
-  if (items.length === 0) {
-    throw new Error('That library has nothing in it.')
-  }
-  return { url, items }
+	// Both published formats reach this point: version 1 is a bare array of
+	// element arrays, version 2 wraps each in an item. restoreLibraryItems reads
+	// both and is the only thing that touches the elements themselves.
+	const items = restoreLibraryItems(parsed.libraryItems ?? parsed.library ?? [], "published");
+	if (items.length === 0) {
+		throw new Error("That library has nothing in it.");
+	}
+	return { url, items };
 }

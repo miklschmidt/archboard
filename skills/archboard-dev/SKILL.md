@@ -25,7 +25,7 @@ behaviour until it is restarted while the CLI already has the new one. That
 split is what made TASK-056 confusing.
 
 **A restart costs the process and nothing on a saving board** — every write
-already went to its note (ADR 0015). The one exception is a *held* board
+already went to its note (ADR 0015). The one exception is a _held_ board
 (TASK-079), one whose write was refused because the note changed underneath:
 its changes since live in the canvas process and in no note, and `board list`
 shows a `held` block for it. Check for one before restarting. What a restart
@@ -80,7 +80,7 @@ EOF
 
 Every command that touches a board names it, and one that does not is refused
 (ADR 0009). `scratch` is what a lone pane holds, so it is the board a probe
-usually wants. Every command that *changes* a board also says what it is doing,
+usually wants. Every command that _changes_ a board also says what it is doing,
 and is refused without it (TASK-095) — including a throwaway probe, because the
 person at the wall is watching a box appear on their canvas either way.
 
@@ -156,7 +156,7 @@ sync updates it automatically.
 - **A shape with `backgroundColor: transparent` is only hit-testable on its
   stroke** — with one exception that will waste an afternoon if you don't know
   it. Excalidraw's rule is `!isTransparent(backgroundColor) ||
-  hasBoundTextElement(el) || ...`, so a *labelled* transparent shape does hit-test
+hasBoundTextElement(el) || ...`, so a _labelled_ transparent shape does hit-test
   inside and an unlabelled one does not. A test built on a labelled probe
   therefore passes whether or not fills work. Since TASK-009 shapes are filled
   by default (`src/core/appearance.ts`), so this only bites on shapes made
@@ -178,7 +178,7 @@ sync updates it automatically.
   verifies the sha-256 of the bytes it last wrote at the note's path before
   writing again; a note that changed underneath is reported, never overwritten.
   Every gesture is a write, so the check runs on every one, and a refusal stops
-  the board saving — it is *held* (TASK-079) — rather than opening a dialog.
+  the board saving — it is _held_ (TASK-079) — rather than opening a dialog.
   Do not "fix" this by reloading or merging — both were considered and
   rejected, because an Excalidraw scene has no merge and reloading just swaps
   which side loses silently. `--force` exists for the human, not for you.

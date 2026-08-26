@@ -11,15 +11,15 @@ None of this is our work. Every file is somebody else's, taken verbatim from
 libraries" button — and the table below is the attribution that goes with it.
 Keep it accurate: if a file is replaced or one is added, its row moves with it.
 
-| File | Library | Author | Upstream path |
-|---|---|---|---|
-| `architecture-diagram-components.excalidrawlib` | Architecture Diagram Components — common components for architecture diagrams | [Anna Pastushko](https://www.linkedin.com/in/annpastushko) | `anna-pastushko/architecture-diagram-components.excalidrawlib` |
-| `awesome-icons.excalidrawlib` | Awesome Icons — a growing collection of do-whatever-you-want icons | [ferminrp](https://github.com/ferminrp) | `ferminrp/awesome-icons.excalidrawlib` |
-| `cloud.excalidrawlib` | Cloud — Kubernetes, Gardener, AWS, Azure, GCP logos and architecture icons | [rfranzke](https://twitter.com/rafaelfranzke) | `cloud/cloud.excalidrawlib` |
-| `decision-flow-control.excalidrawlib` | Decision Flow Control — yes/no condition boxes | [James Wiens](https://github.com/aretecode) | `aretecode/decision-flow-control.excalidrawlib` |
-| `drwnio.excalidrawlib` | Software Logos — archive, database, docker, Kubernetes, load balancer, Postgres, Redis, Nginx, RabbitMQ, reverse proxy | [drwnio.polyrand.net](https://drwnio.polyrand.net/) | `drwnio/drwnio.excalidrawlib` |
-| `software-architecture.excalidrawlib` | Software Architecture — microservice, database, cache, event bus, browser, mobile device | [Youri Tjang](https://github.com/youritjang) | `youritjang/software-architecture.excalidrawlib` |
-| `system-design.excalidrawlib` | System Design Components — pieces for high-level system diagrams | [Rohan Pithadiya](https://github.com/Rohanpithadiya) | `rohanp/system-design.excalidrawlib` |
+| File                                            | Library                                                                                                                | Author                                                     | Upstream path                                                  |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------- |
+| `architecture-diagram-components.excalidrawlib` | Architecture Diagram Components — common components for architecture diagrams                                          | [Anna Pastushko](https://www.linkedin.com/in/annpastushko) | `anna-pastushko/architecture-diagram-components.excalidrawlib` |
+| `awesome-icons.excalidrawlib`                   | Awesome Icons — a growing collection of do-whatever-you-want icons                                                     | [ferminrp](https://github.com/ferminrp)                    | `ferminrp/awesome-icons.excalidrawlib`                         |
+| `cloud.excalidrawlib`                           | Cloud — Kubernetes, Gardener, AWS, Azure, GCP logos and architecture icons                                             | [rfranzke](https://twitter.com/rafaelfranzke)              | `cloud/cloud.excalidrawlib`                                    |
+| `decision-flow-control.excalidrawlib`           | Decision Flow Control — yes/no condition boxes                                                                         | [James Wiens](https://github.com/aretecode)                | `aretecode/decision-flow-control.excalidrawlib`                |
+| `drwnio.excalidrawlib`                          | Software Logos — archive, database, docker, Kubernetes, load balancer, Postgres, Redis, Nginx, RabbitMQ, reverse proxy | [drwnio.polyrand.net](https://drwnio.polyrand.net/)        | `drwnio/drwnio.excalidrawlib`                                  |
+| `software-architecture.excalidrawlib`           | Software Architecture — microservice, database, cache, event bus, browser, mobile device                               | [Youri Tjang](https://github.com/youritjang)               | `youritjang/software-architecture.excalidrawlib`               |
+| `system-design.excalidrawlib`                   | System Design Components — pieces for high-level system diagrams                                                       | [Rohan Pithadiya](https://github.com/Rohanpithadiya)       | `rohanp/system-design.excalidrawlib`                           |
 
 [repo]: https://github.com/excalidraw/excalidraw-libraries
 

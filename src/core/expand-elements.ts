@@ -1,13 +1,17 @@
-import { ServerElement, normalizeFontFamily } from '../types.js';
-import { generateKeyBetween } from 'fractional-indexing';
+import { type ServerElement, normalizeFontFamily } from "../types.js";
+import { generateKeyBetween } from "fractional-indexing";
 import {
-  LabelledElement, boundTextPlacement, boundTextsByContainer, labelSeedOf, labelTextIdFor
-} from './labels.js';
-import { bindingFromRef } from './arrow-binding.js';
-import { fnv1a, type IdsInUse } from './ids.js';
-import { lineHeightOf } from './fonts.js';
-import { canMeasure, measureText } from './measure-text.js';
-import { DEFAULT_LINEAR_POINTS } from './geometry.js';
+	type LabelledElement,
+	boundTextPlacement,
+	boundTextsByContainer,
+	labelSeedOf,
+	labelTextIdFor,
+} from "./labels.js";
+import { bindingFromRef } from "./arrow-binding.js";
+import { fnv1a, type IdsInUse } from "./ids.js";
+import { lineHeightOf } from "./fonts.js";
+import { canMeasure, measureText } from "./measure-text.js";
+import { DEFAULT_LINEAR_POINTS } from "./geometry.js";
 
 // The one conversion, in one direction, at one boundary (ADR 0015).
 //
@@ -43,47 +47,47 @@ import { DEFAULT_LINEAR_POINTS } from './geometry.js';
 // would carry.
 
 export interface ExpandOptions {
-  // Derive seeds, versionNonces, and `updated` timestamps from element ids
-  // and updatedAt instead of Math.random()/Date.now(), so repeated exports
-  // of an unchanged scene are byte-identical (keeps committed .excalidraw
-  // files diff-clean).
-  deterministic?: boolean;
-  /**
-   * Elements bound for the board's own map rather than for a file.
-   *
-   * The difference is bookkeeping, not conversion: the store keeps
-   * `createdAt`, `updatedAt`, `source` and the server's `version`. The
-   * conversion either way is this one, and neither way keeps a seed — not a
-   * `label`, and not an arrow's `start` and `end`.
-   */
-  forStore?: boolean;
-  /**
-   * Keep that bookkeeping without the rest of `forStore`.
-   *
-   * A board's note is where the board lives (ADR 0015), so it has to hold
-   * everything the board is, and that includes one field nothing else can
-   * recover: `source`, which says a human drew an element rather than an
-   * agent, and which `describe` reports and `compare` reads. What an arrow
-   * joins is not in that class — it is in `startBinding` and `endBinding`,
-   * which are Excalidraw's own fields and go into the note as themselves.
-   *
-   * Not `forStore`, because a note is a whole document: its z-order is restated
-   * and its labels are expanded, neither of which a partial write wants. And
-   * not on by default, because `export --out` writes a file for another tool,
-   * where archboard's bookkeeping is noise.
-   */
-  keepServerFields?: boolean;
-  /** Ids already spoken for elsewhere, so an expanded label cannot take one. */
-  inUse?: IdsInUse;
+	// Derive seeds, versionNonces, and `updated` timestamps from element ids
+	// and updatedAt instead of Math.random()/Date.now(), so repeated exports
+	// of an unchanged scene are byte-identical (keeps committed .excalidraw
+	// files diff-clean).
+	deterministic?: boolean;
+	/**
+	 * Elements bound for the board's own map rather than for a file.
+	 *
+	 * The difference is bookkeeping, not conversion: the store keeps
+	 * `createdAt`, `updatedAt`, `source` and the server's `version`. The
+	 * conversion either way is this one, and neither way keeps a seed — not a
+	 * `label`, and not an arrow's `start` and `end`.
+	 */
+	forStore?: boolean;
+	/**
+	 * Keep that bookkeeping without the rest of `forStore`.
+	 *
+	 * A board's note is where the board lives (ADR 0015), so it has to hold
+	 * everything the board is, and that includes one field nothing else can
+	 * recover: `source`, which says a human drew an element rather than an
+	 * agent, and which `describe` reports and `compare` reads. What an arrow
+	 * joins is not in that class — it is in `startBinding` and `endBinding`,
+	 * which are Excalidraw's own fields and go into the note as themselves.
+	 *
+	 * Not `forStore`, because a note is a whole document: its z-order is restated
+	 * and its labels are expanded, neither of which a partial write wants. And
+	 * not on by default, because `export --out` writes a file for another tool,
+	 * where archboard's bookkeeping is noise.
+	 */
+	keepServerFields?: boolean;
+	/** Ids already spoken for elsewhere, so an expanded label cannot take one. */
+	inUse?: IdsInUse;
 }
 
 // Excalidraw's defaults, from its own bundle rather than from anything's
 // output: `DEFAULT_ELEMENT_PROPS` for the shared properties, `AppState` for
 // what a freshly drawn element gets.
-const DEFAULT_FONT_FAMILY = 5;        // Excalifont. Virgil, our old default, is deprecated.
+const DEFAULT_FONT_FAMILY = 5; // Excalifont. Virgil, our old default, is deprecated.
 const DEFAULT_FONT_SIZE = 20;
-const DEFAULT_TEXT_ALIGN = 'left';    // for a standalone text; a bound one is centred
-const DEFAULT_VERTICAL_ALIGN = 'top';
+const DEFAULT_TEXT_ALIGN = "left"; // for a standalone text; a bound one is centred
+const DEFAULT_VERTICAL_ALIGN = "top";
 const DEFAULT_STROKE_WIDTH = 2;
 
 // Excalidraw's `index` is a fractional index, and it is the z-order. Two rules
@@ -93,24 +97,24 @@ const DEFAULT_STROKE_WIDTH = 2;
 //
 // These are the integer keys of the same scheme: one leading letter saying how
 // many digits follow, then base-62 digits. `a0` through `az`, then `b00`.
-const INDEX_DIGITS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const INDEX_DIGITS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 export function fractionalIndex(position: number): string {
-  let width = 1;
-  let offset = 0;
-  let span = INDEX_DIGITS.length;
-  // `a` holds 62, `b` holds 62², and so on; `az` < `b00` because `a` < `b`.
-  while (position >= offset + span && width < 26) {
-    offset += span;
-    width += 1;
-    span *= INDEX_DIGITS.length;
-  }
-  let remaining = position - offset;
-  let digits = '';
-  for (let i = 0; i < width; i++) {
-    digits = (INDEX_DIGITS[remaining % INDEX_DIGITS.length] as string) + digits;
-    remaining = Math.floor(remaining / INDEX_DIGITS.length);
-  }
-  return (INDEX_DIGITS[36 + width - 1] as string) + digits;   // 36 is 'a'
+	let width = 1;
+	let offset = 0;
+	let span = INDEX_DIGITS.length;
+	// `a` holds 62, `b` holds 62², and so on; `az` < `b00` because `a` < `b`.
+	while (position >= offset + span && width < 26) {
+		offset += span;
+		width += 1;
+		span *= INDEX_DIGITS.length;
+	}
+	let remaining = position - offset;
+	let digits = "";
+	for (let i = 0; i < width; i++) {
+		digits = (INDEX_DIGITS[remaining % INDEX_DIGITS.length] as string) + digits;
+		remaining = Math.floor(remaining / INDEX_DIGITS.length);
+	}
+	return (INDEX_DIGITS[36 + width - 1] as string) + digits; // 36 is 'a'
 }
 
 /**
@@ -123,21 +127,21 @@ export function fractionalIndex(position: number): string {
  * repair use the shared fractional-indexing implementation below.
  */
 export function indexPosition(key: string): number | null {
-  const width = INDEX_DIGITS.indexOf(key[0] as string) - 36 + 1;   // 36 is 'a'
-  if (width < 1 || key.length !== width + 1) return null;
-  let offset = 0;
-  let span = INDEX_DIGITS.length;
-  for (let w = 1; w < width; w++) {
-    offset += span;
-    span *= INDEX_DIGITS.length;
-  }
-  let value = 0;
-  for (let i = 1; i < key.length; i++) {
-    const digit = INDEX_DIGITS.indexOf(key[i] as string);
-    if (digit < 0) return null;
-    value = value * INDEX_DIGITS.length + digit;
-  }
-  return offset + value;
+	const width = INDEX_DIGITS.indexOf(key[0] as string) - 36 + 1; // 36 is 'a'
+	if (width < 1 || key.length !== width + 1) return null;
+	let offset = 0;
+	let span = INDEX_DIGITS.length;
+	for (let w = 1; w < width; w++) {
+		offset += span;
+		span *= INDEX_DIGITS.length;
+	}
+	let value = 0;
+	for (let i = 1; i < key.length; i++) {
+		const digit = INDEX_DIGITS.indexOf(key[i] as string);
+		if (digit < 0) return null;
+		value = value * INDEX_DIGITS.length + digit;
+	}
+	return offset + value;
 }
 
 /**
@@ -145,15 +149,15 @@ export function indexPosition(key: string): number | null {
  * for anything that carries none.
  */
 function inZOrder<T extends { index?: string | null }>(elements: T[]): T[] {
-  return elements
-    .map((element, position) => ({ element, position }))
-    .sort((a, b) => {
-      const ai = typeof a.element.index === 'string' ? a.element.index : null;
-      const bi = typeof b.element.index === 'string' ? b.element.index : null;
-      if (ai !== null && bi !== null && ai !== bi) return ai < bi ? -1 : 1;
-      return a.position - b.position;
-    })
-    .map(({ element }) => element);
+	return elements
+		.map((element, position) => ({ element, position }))
+		.sort((a, b) => {
+			const ai = typeof a.element.index === "string" ? a.element.index : null;
+			const bi = typeof b.element.index === "string" ? b.element.index : null;
+			if (ai !== null && bi !== null && ai !== bi) return ai < bi ? -1 : 1;
+			return a.position - b.position;
+		})
+		.map(({ element }) => element);
 }
 
 /**
@@ -180,43 +184,43 @@ function inZOrder<T extends { index?: string | null }>(elements: T[]): T[] {
  * Returns the ids that went with them and the elements it had to rewrite.
  */
 export function settleDeletions(
-  deleted: readonly string[],
-  board: Map<string, ServerElement>
+	deleted: readonly string[],
+	board: Map<string, ServerElement>,
 ): { alsoDeleted: string[]; changed: ServerElement[] } {
-  if (deleted.length === 0) return { alsoDeleted: [], changed: [] };
-  const gone = new Set(deleted);
+	if (deleted.length === 0) return { alsoDeleted: [], changed: [] };
+	const gone = new Set(deleted);
 
-  // A label belongs to its container, so it goes too.
-  const alsoDeleted: string[] = [];
-  for (const element of board.values()) {
-    const container = element.containerId;
-    if (typeof container === 'string' && gone.has(container)) {
-      alsoDeleted.push(element.id);
-      gone.add(element.id);
-    }
-  }
-  for (const id of alsoDeleted) board.delete(id);
+	// A label belongs to its container, so it goes too.
+	const alsoDeleted: string[] = [];
+	for (const element of board.values()) {
+		const container = element.containerId;
+		if (typeof container === "string" && gone.has(container)) {
+			alsoDeleted.push(element.id);
+			gone.add(element.id);
+		}
+	}
+	for (const id of alsoDeleted) board.delete(id);
 
-  const changed: ServerElement[] = [];
-  for (const element of board.values()) {
-    const refs = Array.isArray(element.boundElements) ? element.boundElements : null;
-    const kept = refs?.filter((ref: any) => !(ref && gone.has(ref.id)));
-    const loosened = refs !== null && kept !== undefined && kept.length !== refs.length;
-    const starts = (element as any).startBinding;
-    const ends = (element as any).endBinding;
-    const unbindStart = starts && gone.has(starts.elementId);
-    const unbindEnd = ends && gone.has(ends.elementId);
-    if (!loosened && !unbindStart && !unbindEnd) continue;
-    const repaired = {
-      ...element,
-      ...(loosened ? { boundElements: kept as ServerElement['boundElements'] } : {}),
-      ...(unbindStart ? { startBinding: null } : {}),
-      ...(unbindEnd ? { endBinding: null } : {})
-    } as ServerElement;
-    board.set(repaired.id, repaired);
-    changed.push(repaired);
-  }
-  return { alsoDeleted, changed };
+	const changed: ServerElement[] = [];
+	for (const element of board.values()) {
+		const refs = Array.isArray(element.boundElements) ? element.boundElements : null;
+		const kept = refs?.filter((ref: any) => !(ref && gone.has(ref.id)));
+		const loosened = refs !== null && kept !== undefined && kept.length !== refs.length;
+		const starts = (element as any).startBinding;
+		const ends = (element as any).endBinding;
+		const unbindStart = starts && gone.has(starts.elementId);
+		const unbindEnd = ends && gone.has(ends.elementId);
+		if (!loosened && !unbindStart && !unbindEnd) continue;
+		const repaired = {
+			...element,
+			...(loosened ? { boundElements: kept as ServerElement["boundElements"] } : {}),
+			...(unbindStart ? { startBinding: null } : {}),
+			...(unbindEnd ? { endBinding: null } : {}),
+		} as ServerElement;
+		board.set(repaired.id, repaired);
+		changed.push(repaired);
+	}
+	return { alsoDeleted, changed };
 }
 
 /**
@@ -238,39 +242,39 @@ export function settleDeletions(
  * having told nobody (`scripts/check-live-session.mjs` caught it on cycle 7).
  */
 export function settledIndices(
-  ordered: ReadonlyArray<{ index?: string | null }>
+	ordered: ReadonlyArray<{ index?: string | null }>,
 ): Array<string | null> {
-  const wanted: Array<string | null> = [];
-  let last: string | null = null;
-  const valid = (key: unknown): key is string => {
-    if (typeof key !== 'string') return false;
-    try {
-      generateKeyBetween(key, null);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-  for (const [at, element] of ordered.entries()) {
-    const key = element.index;
-    if (valid(key) && (last === null || key > last)) {
-      last = key;
-      wanted.push(null);
-      continue;
-    }
-    let next: string | null = null;
-    for (let ahead = at + 1; ahead < ordered.length; ahead += 1) {
-      const candidate = ordered[ahead]?.index;
-      if (valid(candidate) && (last === null || candidate > last)) {
-        next = candidate;
-        break;
-      }
-    }
-    const repaired = generateKeyBetween(last, next);
-    wanted.push(repaired);
-    last = repaired;
-  }
-  return wanted;
+	const wanted: Array<string | null> = [];
+	let last: string | null = null;
+	const valid = (key: unknown): key is string => {
+		if (typeof key !== "string") return false;
+		try {
+			generateKeyBetween(key, null);
+			return true;
+		} catch {
+			return false;
+		}
+	};
+	for (const [at, element] of ordered.entries()) {
+		const key = element.index;
+		if (valid(key) && (last === null || key > last)) {
+			last = key;
+			wanted.push(null);
+			continue;
+		}
+		let next: string | null = null;
+		for (let ahead = at + 1; ahead < ordered.length; ahead += 1) {
+			const candidate = ordered[ahead]?.index;
+			if (valid(candidate) && (last === null || candidate > last)) {
+				next = candidate;
+				break;
+			}
+		}
+		const repaired = generateKeyBetween(last, next);
+		wanted.push(repaired);
+		last = repaired;
+	}
+	return wanted;
 }
 
 /**
@@ -290,48 +294,50 @@ export function settledIndices(
  * Returns the elements it had to change, for whoever is reporting the write.
  */
 export function repairIndices(board: Map<string, ServerElement>): ServerElement[] {
-  const held = [...board.values()];
-  const ordered = inZOrder(held);
-  const changed: ServerElement[] = [];
-  const settled: ServerElement[] = [];
-  const wanted = settledIndices(ordered);
-  for (const [at, element] of ordered.entries()) {
-    const index = wanted[at];
-    if (index === null || index === undefined) {
-      settled.push(element);
-      continue;
-    }
-    // Replaced rather than edited: a snapshot or a branch may be holding a
-    // deep copy taken from this one, and every write path here replaces
-    // (TASK-042).
-    const repaired = { ...element, index };
-    changed.push(repaired);
-    settled.push(repaired);
-  }
-  const reordered = ordered.some((element, at) => element !== held[at]);
-  if (changed.length === 0 && !reordered) return changed;
-  board.clear();
-  for (const element of settled) board.set(element.id, element);
-  return changed;
+	const held = [...board.values()];
+	const ordered = inZOrder(held);
+	const changed: ServerElement[] = [];
+	const settled: ServerElement[] = [];
+	const wanted = settledIndices(ordered);
+	for (const [at, element] of ordered.entries()) {
+		const index = wanted[at];
+		if (index === null || index === undefined) {
+			settled.push(element);
+			continue;
+		}
+		// Replaced rather than edited: a snapshot or a branch may be holding a
+		// deep copy taken from this one, and every write path here replaces
+		// (TASK-042).
+		const repaired = { ...element, index };
+		changed.push(repaired);
+		settled.push(repaired);
+	}
+	const reordered = ordered.some((element, at) => element !== held[at]);
+	if (changed.length === 0 && !reordered) return changed;
+	board.clear();
+	for (const element of settled) board.set(element.id, element);
+	return changed;
 }
 
 // Canonical key order for exported elements: identity/geometry first, the
 // rest alphabetical — so a no-op import→export cycle is byte-identical and
 // committed .excalidraw files produce minimal git diffs.
-const KEY_ORDER = ['id', 'type', 'x', 'y', 'width', 'height'];
+const KEY_ORDER = ["id", "type", "x", "y", "width", "height"];
 export function canonicalizeKeys(v: any): any {
-  if (Array.isArray(v)) return v.map(canonicalizeKeys);
-  if (v && typeof v === 'object') {
-    const keys = Object.keys(v).sort((a, b) => {
-      const ia = KEY_ORDER.indexOf(a); const ib = KEY_ORDER.indexOf(b);
-      if (ia !== -1 || ib !== -1) return (ia === -1 ? KEY_ORDER.length : ia) - (ib === -1 ? KEY_ORDER.length : ib);
-      return a < b ? -1 : 1;
-    });
-    const out: Record<string, any> = {};
-    for (const k of keys) out[k] = canonicalizeKeys(v[k]);
-    return out;
-  }
-  return v;
+	if (Array.isArray(v)) return v.map(canonicalizeKeys);
+	if (v && typeof v === "object") {
+		const keys = Object.keys(v).sort((a, b) => {
+			const ia = KEY_ORDER.indexOf(a);
+			const ib = KEY_ORDER.indexOf(b);
+			if (ia !== -1 || ib !== -1)
+				return (ia === -1 ? KEY_ORDER.length : ia) - (ib === -1 ? KEY_ORDER.length : ib);
+			return a < b ? -1 : 1;
+		});
+		const out: Record<string, any> = {};
+		for (const k of keys) out[k] = canonicalizeKeys(v[k]);
+		return out;
+	}
+	return v;
 }
 
 /**
@@ -355,290 +361,305 @@ export function canonicalizeKeys(v: any): any {
  * problem while this pair was not.
  */
 export function expandElements(
-  sourceElements: ServerElement[],
-  options: ExpandOptions = {}
+	sourceElements: ServerElement[],
+	options: ExpandOptions = {},
 ): Record<string, any>[] {
-  const { deterministic = false, forStore = false, keepServerFields = forStore } = options;
-  const seedFor = (key: string): number =>
-    deterministic ? (fnv1a(key) % 2147483646) + 1 : Math.floor(Math.random() * 2147483647);
-  const updatedFor = (el: any): number => {
-    if (!deterministic) return Date.now();
-    // Prefer a preserved `updated` (re-imported scene) over the server's
-    // updatedAt, so no-op import→export cycles are byte-identical.
-    if (typeof el.updated === 'number') return el.updated;
-    const parsed = Date.parse(el.updatedAt ?? el.createdAt ?? '');
-    return Number.isNaN(parsed) ? 1 : parsed;
-  };
+	const { deterministic = false, forStore = false, keepServerFields = forStore } = options;
+	const seedFor = (key: string): number =>
+		deterministic ? (fnv1a(key) % 2147483646) + 1 : Math.floor(Math.random() * 2147483647);
+	const updatedFor = (el: any): number => {
+		if (!deterministic) return Date.now();
+		// Prefer a preserved `updated` (re-imported scene) over the server's
+		// updatedAt, so no-op import→export cycles are byte-identical.
+		if (typeof el.updated === "number") return el.updated;
+		const parsed = Date.parse(el.updatedAt ?? el.createdAt ?? "");
+		return Number.isNaN(parsed) ? 1 : parsed;
+	};
 
-  const cleanedExportElements: Record<string, any>[] = [];
-  const boundTextElements: Record<string, any>[] = [];
+	const cleanedExportElements: Record<string, any>[] = [];
+	const boundTextElements: Record<string, any>[] = [];
 
-  // Every name the scene already spends, so a label expanded here cannot be
-  // handed one of them. `inUse` carries the rest of the board when this is
-  // converting one write rather than a whole scene.
-  const named = new Set<string>(sourceElements.map((el) => el.id));
-  const taken: IdsInUse = {
-    has: (id: string) => named.has(id) || (options.inUse?.has(id) ?? false)
-  };
+	// Every name the scene already spends, so a label expanded here cannot be
+	// handed one of them. `inUse` carries the rest of the board when this is
+	// converting one write rather than a whole scene.
+	const named = new Set<string>(sourceElements.map((el) => el.id));
+	const taken: IdsInUse = {
+		has: (id: string) => named.has(id) || (options.inUse?.has(id) ?? false),
+	};
 
-  function makeBaseElement(el: any, rest: any): Record<string, any> {
-    return {
-      ...rest,
-      angle: rest.angle ?? 0,
-      strokeColor: rest.strokeColor ?? '#1e1e1e',
-      backgroundColor: rest.backgroundColor ?? 'transparent',
-      fillStyle: rest.fillStyle ?? 'solid',
-      strokeWidth: rest.strokeWidth ?? DEFAULT_STROKE_WIDTH,
-      strokeStyle: rest.strokeStyle ?? 'solid',
-      roughness: rest.roughness ?? 1,
-      opacity: rest.opacity ?? 100,
-      groupIds: rest.groupIds ?? [],
-      frameId: rest.frameId ?? null,
-      // Rounded, because `currentItemRoundness` is `round` and a box a human
-      // draws is rounded. `convertToExcalidrawElements` produced `null` here,
-      // which is that converter declining to choose rather than Excalidraw
-      // wanting square corners, and adopting it would have made every
-      // agent-drawn box differ from every user-drawn one.
-      roundness: rest.roundness ?? (
-        el.type === 'rectangle' || el.type === 'diamond' || el.type === 'ellipse'
-          ? { type: 3 } : null
-      ),
-      seed: rest.seed ?? seedFor(`${el.id}:seed`),
-      version: rest.version ?? 1,
-      versionNonce: rest.versionNonce ?? seedFor(`${el.id}:nonce`),
-      isDeleted: rest.isDeleted ?? false,
-      boundElements: rest.boundElements ?? null,
-      updated: updatedFor(el),
-      link: rest.link ?? null,
-      locked: rest.locked ?? false
-    };
-  }
+	function makeBaseElement(el: any, rest: any): Record<string, any> {
+		return {
+			...rest,
+			angle: rest.angle ?? 0,
+			strokeColor: rest.strokeColor ?? "#1e1e1e",
+			backgroundColor: rest.backgroundColor ?? "transparent",
+			fillStyle: rest.fillStyle ?? "solid",
+			strokeWidth: rest.strokeWidth ?? DEFAULT_STROKE_WIDTH,
+			strokeStyle: rest.strokeStyle ?? "solid",
+			roughness: rest.roughness ?? 1,
+			opacity: rest.opacity ?? 100,
+			groupIds: rest.groupIds ?? [],
+			frameId: rest.frameId ?? null,
+			// Rounded, because `currentItemRoundness` is `round` and a box a human
+			// draws is rounded. `convertToExcalidrawElements` produced `null` here,
+			// which is that converter declining to choose rather than Excalidraw
+			// wanting square corners, and adopting it would have made every
+			// agent-drawn box differ from every user-drawn one.
+			roundness:
+				rest.roundness ??
+				(el.type === "rectangle" || el.type === "diamond" || el.type === "ellipse"
+					? { type: 3 }
+					: null),
+			seed: rest.seed ?? seedFor(`${el.id}:seed`),
+			version: rest.version ?? 1,
+			versionNonce: rest.versionNonce ?? seedFor(`${el.id}:nonce`),
+			isDeleted: rest.isDeleted ?? false,
+			boundElements: rest.boundElements ?? null,
+			updated: updatedFor(el),
+			link: rest.link ?? null,
+			locked: rest.locked ?? false,
+		};
+	}
 
-  for (const el of sourceElements) {
-    // Strip server-only fields. They come back at the end of the loop when
-    // these elements are going to the board's own map rather than to a file,
-    // because there that bookkeeping is the point.
-    const {
-      createdAt, updatedAt, syncedAt, source: keptSource,
-      syncTimestamp, label, start, end, text,
-      version: serverVersion,
-      ...rest
-    } = el as any;
+	for (const el of sourceElements) {
+		// Strip server-only fields. They come back at the end of the loop when
+		// these elements are going to the board's own map rather than to a file,
+		// because there that bookkeeping is the point.
+		const {
+			createdAt,
+			updatedAt,
+			syncedAt,
+			source: keptSource,
+			syncTimestamp,
+			label,
+			start,
+			end,
+			text,
+			version: serverVersion,
+			...rest
+		} = el as any;
 
-    const base = makeBaseElement(el, rest);
-    const restoreServerFields = (element: Record<string, any>): Record<string, any> => {
-      if (!keepServerFields) return element;
-      if (createdAt !== undefined) element.createdAt = createdAt;
-      if (updatedAt !== undefined) element.updatedAt = updatedAt;
-      if (syncedAt !== undefined) element.syncedAt = syncedAt;
-      if (keptSource !== undefined) element.source = keptSource;
-      if (syncTimestamp !== undefined) element.syncTimestamp = syncTimestamp;
-      if (serverVersion !== undefined) element.version = serverVersion;
-      // Nothing here restores `label`, `text` on anything that is not a text
-      // element, or an arrow's `start` and `end`. All of them are the seed, and
-      // the seed is an input format: it has been read by now, and what it said
-      // is a text element and a binding on the board. Storing it too would be
-      // one fact spelled twice, which is what needed a rule for which spelling
-      // wins, which is what TASK-024, TASK-028 and TASK-029 each were
-      // (TASK-073), and what TASK-088 was when a human re-bound an arrow and
-      // the ref went on naming the shape they had dragged it off.
-      return element;
-    };
+		const base = makeBaseElement(el, rest);
+		const restoreServerFields = (element: Record<string, any>): Record<string, any> => {
+			if (!keepServerFields) return element;
+			if (createdAt !== undefined) element.createdAt = createdAt;
+			if (updatedAt !== undefined) element.updatedAt = updatedAt;
+			if (syncedAt !== undefined) element.syncedAt = syncedAt;
+			if (keptSource !== undefined) element.source = keptSource;
+			if (syncTimestamp !== undefined) element.syncTimestamp = syncTimestamp;
+			if (serverVersion !== undefined) element.version = serverVersion;
+			// Nothing here restores `label`, `text` on anything that is not a text
+			// element, or an arrow's `start` and `end`. All of them are the seed, and
+			// the seed is an input format: it has been read by now, and what it said
+			// is a text element and a binding on the board. Storing it too would be
+			// one fact spelled twice, which is what needed a rule for which spelling
+			// wins, which is what TASK-024, TASK-028 and TASK-029 each were
+			// (TASK-073), and what TASK-088 was when a human re-bound an arrow and
+			// the ref went on naming the shape they had dragged it off.
+			return element;
+		};
 
-    // Standalone text elements: keep text directly
-    if (el.type === 'text') {
-      base.text = text ?? rest.text ?? '';
-      base.originalText = rest.originalText ?? base.text;
-      base.fontSize = rest.fontSize ?? DEFAULT_FONT_SIZE;
-      base.fontFamily = normalizeFontFamily(rest.fontFamily) ?? DEFAULT_FONT_FAMILY;
-      base.textAlign = rest.textAlign ?? DEFAULT_TEXT_ALIGN;
-      base.verticalAlign = rest.verticalAlign ?? DEFAULT_VERTICAL_ALIGN;
-      base.autoResize = rest.autoResize ?? true;
-      base.lineHeight = rest.lineHeight ?? lineHeightOf(base.fontFamily);
-      base.containerId = rest.containerId ?? null;
-      sizeText(base);
-      cleanedExportElements.push(restoreServerFields(base));
-      continue;
-    }
+		// Standalone text elements: keep text directly
+		if (el.type === "text") {
+			base.text = text ?? rest.text ?? "";
+			base.originalText = rest.originalText ?? base.text;
+			base.fontSize = rest.fontSize ?? DEFAULT_FONT_SIZE;
+			base.fontFamily = normalizeFontFamily(rest.fontFamily) ?? DEFAULT_FONT_FAMILY;
+			base.textAlign = rest.textAlign ?? DEFAULT_TEXT_ALIGN;
+			base.verticalAlign = rest.verticalAlign ?? DEFAULT_VERTICAL_ALIGN;
+			base.autoResize = rest.autoResize ?? true;
+			base.lineHeight = rest.lineHeight ?? lineHeightOf(base.fontFamily);
+			base.containerId = rest.containerId ?? null;
+			sizeText(base);
+			cleanedExportElements.push(restoreServerFields(base));
+			continue;
+		}
 
-    // An arrow ends where its bindings say. A scene from a browser or a note
-    // already carries them; an agent says `start: { id }`, which is the input
-    // spelling of the same thing and becomes a binding here, through the one
-    // conversion `arrow-binding.ts` holds. From here on the binding is all
-    // anything reads, including the server's own routing (TASK-088).
-    if (el.type === 'arrow' || el.type === 'line') {
-      base.points = rest.points ?? DEFAULT_LINEAR_POINTS.map(point => [...point]);
-      base.lastCommittedPoint = null;
-      base.startBinding = rest.startBinding
-        ? { ...rest.startBinding, fixedPoint: rest.startBinding.fixedPoint ?? null }
-        : bindingFromRef(start);
-      base.endBinding = rest.endBinding
-        ? { ...rest.endBinding, fixedPoint: rest.endBinding.fixedPoint ?? null }
-        : bindingFromRef(end);
-      base.startArrowhead = rest.startArrowhead ?? null;
-      base.endArrowhead = rest.endArrowhead ?? (el.type === 'arrow' ? 'arrow' : null);
-      // Only an arrow can be elbowed. A line carrying `elbowed: false` is a
-      // field Excalidraw's line type does not have.
-      if (el.type === 'arrow') base.elbowed = rest.elbowed ?? false;
-    }
+		// An arrow ends where its bindings say. A scene from a browser or a note
+		// already carries them; an agent says `start: { id }`, which is the input
+		// spelling of the same thing and becomes a binding here, through the one
+		// conversion `arrow-binding.ts` holds. From here on the binding is all
+		// anything reads, including the server's own routing (TASK-088).
+		if (el.type === "arrow" || el.type === "line") {
+			base.points = rest.points ?? DEFAULT_LINEAR_POINTS.map((point) => [...point]);
+			base.lastCommittedPoint = null;
+			base.startBinding = rest.startBinding
+				? { ...rest.startBinding, fixedPoint: rest.startBinding.fixedPoint ?? null }
+				: bindingFromRef(start);
+			base.endBinding = rest.endBinding
+				? { ...rest.endBinding, fixedPoint: rest.endBinding.fixedPoint ?? null }
+				: bindingFromRef(end);
+			base.startArrowhead = rest.startArrowhead ?? null;
+			base.endArrowhead = rest.endArrowhead ?? (el.type === "arrow" ? "arrow" : null);
+			// Only an arrow can be elbowed. A line carrying `elbowed: false` is a
+			// field Excalidraw's line type does not have.
+			if (el.type === "arrow") base.elbowed = rest.elbowed ?? false;
+		}
 
-    // Freedraw carries a stroke's own record of how it was drawn. A user-drawn
-    // one always has these; one an agent wrote had none, so the browser filled
-    // them in on a server update and the note never learned.
-    if (el.type === 'freedraw') {
-      base.points = rest.points ?? [];
-      base.pressures = rest.pressures ?? [];
-      base.simulatePressure = rest.simulatePressure ?? true;
-      base.lastCommittedPoint = rest.lastCommittedPoint ?? null;
-    }
+		// Freedraw carries a stroke's own record of how it was drawn. A user-drawn
+		// one always has these; one an agent wrote had none, so the browser filled
+		// them in on a server update and the note never learned.
+		if (el.type === "freedraw") {
+			base.points = rest.points ?? [];
+			base.pressures = rest.pressures ?? [];
+			base.simulatePressure = rest.simulatePressure ?? true;
+			base.lastCommittedPoint = rest.lastCommittedPoint ?? null;
+		}
 
-    // Generate a bound text element for `label`/`text` on shapes and arrows —
-    // unless the element already carries a bound text reference (a scene
-    // synced from a browser tab, or a re-imported expanded export).
-    // A reference to a text element that is not here is not a label. An
-    // element left holding one — a pane that reported a deletion, a scene
-    // edited by a user — must still be able to grow a real one.
-    //
-    // Judged against the whole document when there is one. A write names a few
-    // elements and the board holds the rest, so `expandForBoard` is where the
-    // references are squared with the board before this can be asked.
-    const labelText = label?.text || text;
-    const hasBoundText = Array.isArray(base.boundElements) &&
-      base.boundElements.some((b: any) => b?.type === 'text' &&
-        (forStore || sourceElements.some((other) => other.id === b.id && other.type === 'text')));
-    if (labelText && !hasBoundText) {
-      // Named the same way the browser's expansion names it (labels.ts), so
-      // whichever of the two gets there first, the label keeps one name — and
-      // that name is short enough to be a block reference, so writing the note
-      // does not rename it (TASK-069).
-      const textId = labelTextIdFor(base.id, taken);
-      named.add(textId);
-      // Add binding reference to parent
-      base.boundElements = [
-        ...(Array.isArray(base.boundElements) ? base.boundElements : []),
-        { type: 'text', id: textId }
-      ];
+		// Generate a bound text element for `label`/`text` on shapes and arrows —
+		// unless the element already carries a bound text reference (a scene
+		// synced from a browser tab, or a re-imported expanded export).
+		// A reference to a text element that is not here is not a label. An
+		// element left holding one — a pane that reported a deletion, a scene
+		// edited by a user — must still be able to grow a real one.
+		//
+		// Judged against the whole document when there is one. A write names a few
+		// elements and the board holds the rest, so `expandForBoard` is where the
+		// references are squared with the board before this can be asked.
+		const labelText = label?.text || text;
+		const hasBoundText =
+			Array.isArray(base.boundElements) &&
+			base.boundElements.some(
+				(b: any) =>
+					b?.type === "text" &&
+					(forStore || sourceElements.some((other) => other.id === b.id && other.type === "text")),
+			);
+		if (labelText && !hasBoundText) {
+			// Named the same way the browser's expansion names it (labels.ts), so
+			// whichever of the two gets there first, the label keeps one name — and
+			// that name is short enough to be a block reference, so writing the note
+			// does not rename it (TASK-069).
+			const textId = labelTextIdFor(base.id, taken);
+			named.add(textId);
+			// Add binding reference to parent
+			base.boundElements = [
+				...(Array.isArray(base.boundElements) ? base.boundElements : []),
+				{ type: "text", id: textId },
+			];
 
-      const isArrow = el.type === 'arrow' || el.type === 'line';
-      const fontSize = rest.fontSize ?? DEFAULT_FONT_SIZE;
-      const fontFamily = normalizeFontFamily(rest.fontFamily) ?? DEFAULT_FONT_FAMILY;
-      const lineHeight = lineHeightOf(fontFamily);
+			const isArrow = el.type === "arrow" || el.type === "line";
+			const fontSize = rest.fontSize ?? DEFAULT_FONT_SIZE;
+			const fontFamily = normalizeFontFamily(rest.fontFamily) ?? DEFAULT_FONT_FAMILY;
+			const lineHeight = lineHeightOf(fontFamily);
 
-      const label = {
-        id: textId,
-        type: 'text',
-        // Placed below, once its size is known.
-        x: base.x,
-        y: base.y,
-        width: 0,
-        height: 0,
-        angle: 0,
-        strokeColor: isArrow ? '#1e1e1e' : base.strokeColor,
-        backgroundColor: 'transparent',
-        fillStyle: 'solid',
-        strokeWidth: DEFAULT_STROKE_WIDTH,
-        strokeStyle: 'solid',
-        roughness: 1,
-        opacity: 100,
-        groupIds: [],
-        frameId: null,
-        roundness: null,
-        seed: seedFor(`${textId}:seed`),
-        version: 1,
-        versionNonce: seedFor(`${textId}:nonce`),
-        isDeleted: false,
-        boundElements: null,
-        updated: updatedFor(el),
-        link: null,
-        locked: false,
-        text: labelText,
-        originalText: labelText,
-        fontSize,
-        fontFamily,
-        textAlign: 'center',
-        verticalAlign: 'middle',
-        autoResize: true,
-        lineHeight,
-        containerId: base.id
-      } as Record<string, any>;
+			const label = {
+				id: textId,
+				type: "text",
+				// Placed below, once its size is known.
+				x: base.x,
+				y: base.y,
+				width: 0,
+				height: 0,
+				angle: 0,
+				strokeColor: isArrow ? "#1e1e1e" : base.strokeColor,
+				backgroundColor: "transparent",
+				fillStyle: "solid",
+				strokeWidth: DEFAULT_STROKE_WIDTH,
+				strokeStyle: "solid",
+				roughness: 1,
+				opacity: 100,
+				groupIds: [],
+				frameId: null,
+				roundness: null,
+				seed: seedFor(`${textId}:seed`),
+				version: 1,
+				versionNonce: seedFor(`${textId}:nonce`),
+				isDeleted: false,
+				boundElements: null,
+				updated: updatedFor(el),
+				link: null,
+				locked: false,
+				text: labelText,
+				originalText: labelText,
+				fontSize,
+				fontFamily,
+				textAlign: "center",
+				verticalAlign: "middle",
+				autoResize: true,
+				lineHeight,
+				containerId: base.id,
+			} as Record<string, any>;
 
-      // A label has no opinion about where it is: it is as wide as its glyphs
-      // and its container decides the rest. Both used to be guesses — an
-      // estimate of 0.6 x fontSize per character, and a rectangle a quarter of
-      // the way down its container — and both were wrong by tens of pixels on
-      // every board (`labels.ts`, `measure-text.ts`).
-      sizeText(label);
-      const placement = boundTextPlacement(base as LabelledElement, label as LabelledElement);
-      if (placement) { label.x = placement.x; label.y = placement.y; }
+			// A label has no opinion about where it is: it is as wide as its glyphs
+			// and its container decides the rest. Both used to be guesses — an
+			// estimate of 0.6 x fontSize per character, and a rectangle a quarter of
+			// the way down its container — and both were wrong by tens of pixels on
+			// every board (`labels.ts`, `measure-text.ts`).
+			sizeText(label);
+			const placement = boundTextPlacement(base as LabelledElement, label as LabelledElement);
+			if (placement) {
+				label.x = placement.x;
+				label.y = placement.y;
+			}
 
-      boundTextElements.push(label);
-    }
+			boundTextElements.push(label);
+		}
 
-    cleanedExportElements.push(restoreServerFields(base));
-  }
+		cleanedExportElements.push(restoreServerFields(base));
+	}
 
-  // Patch shapes' boundElements to include connected arrows
-  const shapeBoundArrows = new Map<string, { type: string; id: string }[]>();
-  for (const el of cleanedExportElements) {
-    if (el.startBinding?.elementId) {
-      const arr = shapeBoundArrows.get(el.startBinding.elementId) || [];
-      arr.push({ type: 'arrow', id: el.id });
-      shapeBoundArrows.set(el.startBinding.elementId, arr);
-    }
-    if (el.endBinding?.elementId) {
-      const arr = shapeBoundArrows.get(el.endBinding.elementId) || [];
-      arr.push({ type: 'arrow', id: el.id });
-      shapeBoundArrows.set(el.endBinding.elementId, arr);
-    }
-  }
-  for (const el of cleanedExportElements) {
-    const arrowBindings = shapeBoundArrows.get(el.id);
-    if (arrowBindings) {
-      // Skip refs the element already carries (re-exported expanded scenes),
-      // otherwise every export cycle appends duplicate boundElements entries.
-      const existing = new Set(
-        (Array.isArray(el.boundElements) ? el.boundElements : []).map((b: any) => b?.id)
-      );
-      const additions = arrowBindings.filter(b => !existing.has(b.id));
-      if (additions.length > 0) {
-        el.boundElements = [
-          ...(Array.isArray(el.boundElements) ? el.boundElements : []),
-          ...additions
-        ];
-      }
-    }
-  }
+	// Patch shapes' boundElements to include connected arrows
+	const shapeBoundArrows = new Map<string, { type: string; id: string }[]>();
+	for (const el of cleanedExportElements) {
+		if (el.startBinding?.elementId) {
+			const arr = shapeBoundArrows.get(el.startBinding.elementId) || [];
+			arr.push({ type: "arrow", id: el.id });
+			shapeBoundArrows.set(el.startBinding.elementId, arr);
+		}
+		if (el.endBinding?.elementId) {
+			const arr = shapeBoundArrows.get(el.endBinding.elementId) || [];
+			arr.push({ type: "arrow", id: el.id });
+			shapeBoundArrows.set(el.endBinding.elementId, arr);
+		}
+	}
+	for (const el of cleanedExportElements) {
+		const arrowBindings = shapeBoundArrows.get(el.id);
+		if (arrowBindings) {
+			// Skip refs the element already carries (re-exported expanded scenes),
+			// otherwise every export cycle appends duplicate boundElements entries.
+			const existing = new Set(
+				(Array.isArray(el.boundElements) ? el.boundElements : []).map((b: any) => b?.id),
+			);
+			const additions = arrowBindings.filter((b) => !existing.has(b.id));
+			if (additions.length > 0) {
+				el.boundElements = [
+					...(Array.isArray(el.boundElements) ? el.boundElements : []),
+					...additions,
+				];
+			}
+		}
+	}
 
-  // Append all bound text elements after their parents
-  cleanedExportElements.push(...boundTextElements);
+	// Append all bound text elements after their parents
+	cleanedExportElements.push(...boundTextElements);
 
-  // Restate `index` over the whole document, in one increasing run.
-  //
-  // z-order is what `index` means, so the existing order is kept: elements
-  // sort by the index they arrived with, and anything without one keeps its
-  // place in the array. What changes is that a run that does not increase is
-  // repaired — `fractionalIndex` is monotonic past ten elements where `a${n}`
-  // was not, and a board of twelve came back from a render with five indices
-  // repaired because `a10` sorts before `a2`.
-  //
-  // The same rule the board is held to (`settledIndices`), because a note is
-  // the board (ADR 0015) and a second rule here would be a second answer.
-  //
-  // Not done for the store, where a write names a few elements and the board
-  // holds the rest: settling a partial document's indices would renumber it
-  // against elements it cannot see.
-  if (!forStore) {
-    const order = inZOrder(cleanedExportElements);
-    const wanted = settledIndices(order);
-    order.forEach((element, at) => {
-      const index = wanted[at];
-      if (index !== null && index !== undefined) element.index = index;
-    });
-    cleanedExportElements.length = 0;
-    cleanedExportElements.push(...order);
-  }
+	// Restate `index` over the whole document, in one increasing run.
+	//
+	// z-order is what `index` means, so the existing order is kept: elements
+	// sort by the index they arrived with, and anything without one keeps its
+	// place in the array. What changes is that a run that does not increase is
+	// repaired — `fractionalIndex` is monotonic past ten elements where `a${n}`
+	// was not, and a board of twelve came back from a render with five indices
+	// repaired because `a10` sorts before `a2`.
+	//
+	// The same rule the board is held to (`settledIndices`), because a note is
+	// the board (ADR 0015) and a second rule here would be a second answer.
+	//
+	// Not done for the store, where a write names a few elements and the board
+	// holds the rest: settling a partial document's indices would renumber it
+	// against elements it cannot see.
+	if (!forStore) {
+		const order = inZOrder(cleanedExportElements);
+		const wanted = settledIndices(order);
+		order.forEach((element, at) => {
+			const index = wanted[at];
+			if (index !== null && index !== undefined) element.index = index;
+		});
+		cleanedExportElements.length = 0;
+		cleanedExportElements.push(...order);
+	}
 
-  return deterministic ? canonicalizeKeys(cleanedExportElements) : cleanedExportElements;
+	return deterministic ? canonicalizeKeys(cleanedExportElements) : cleanedExportElements;
 }
 
 /**
@@ -664,51 +685,52 @@ export function expandElements(
  * this paragraph to hold the line on its own.
  */
 export function expandForBoard(
-  written: ServerElement[],
-  board: ReadonlyMap<string, ServerElement>
+	written: ServerElement[],
+	board: ReadonlyMap<string, ServerElement>,
 ): ServerElement[] {
-  if (written.length === 0) return [];
+	if (written.length === 0) return [];
 
-  // A container whose label the board already holds keeps it, whichever
-  // direction the binding is recorded in.
-  //
-  // A binding is written down twice and either half can be the one that
-  // survives: the text names its container in `containerId`, the container
-  // names its text in `boundElements`. A pane reports the text the instant a
-  // person types into it while the container has nothing new to say; a note
-  // edited by a user or a scene imported from elsewhere can arrive with one end
-  // missing outright. The expansion below looks at the container's end only,
-  // so on such a board a write carrying a label would read as a label nobody
-  // had expanded, and it would expand a second one.
-  //
-  // Deleting the seed narrowed this without removing it. The write that trips
-  // it is now always one carrying a label of its own, which means a rename —
-  // the board's own copy of a container no longer carries anything to expand.
-  // Taking it out fails three checks in `check-labels` (TASK-073).
-  const labelled = boundTextsByContainer([...board.values()]);
-  const mended = written.map((element) => {
-    const textIds = labelled.get(element.id) ?? [];
-    const refs = Array.isArray(element.boundElements) ? element.boundElements : [];
-    // A reference to a text element the board does not hold is not a label,
-    // and leaving it would suppress the real one.
-    const live = refs.filter((ref) =>
-      ref?.type !== 'text' || textIds.includes(ref.id) || board.has(ref.id));
-    const named = live.some((ref) => ref?.type === 'text' && textIds.includes(ref.id));
-    if (named || textIds.length === 0) {
-      return live.length === refs.length
-        ? element
-        : { ...element, boundElements: live.length > 0 ? live : null } as ServerElement;
-    }
-    return {
-      ...element,
-      boundElements: [...live, { id: textIds[0] as string, type: 'text' }]
-    } as ServerElement;
-  });
+	// A container whose label the board already holds keeps it, whichever
+	// direction the binding is recorded in.
+	//
+	// A binding is written down twice and either half can be the one that
+	// survives: the text names its container in `containerId`, the container
+	// names its text in `boundElements`. A pane reports the text the instant a
+	// person types into it while the container has nothing new to say; a note
+	// edited by a user or a scene imported from elsewhere can arrive with one end
+	// missing outright. The expansion below looks at the container's end only,
+	// so on such a board a write carrying a label would read as a label nobody
+	// had expanded, and it would expand a second one.
+	//
+	// Deleting the seed narrowed this without removing it. The write that trips
+	// it is now always one carrying a label of its own, which means a rename —
+	// the board's own copy of a container no longer carries anything to expand.
+	// Taking it out fails three checks in `check-labels` (TASK-073).
+	const labelled = boundTextsByContainer([...board.values()]);
+	const mended = written.map((element) => {
+		const textIds = labelled.get(element.id) ?? [];
+		const refs = Array.isArray(element.boundElements) ? element.boundElements : [];
+		// A reference to a text element the board does not hold is not a label,
+		// and leaving it would suppress the real one.
+		const live = refs.filter(
+			(ref) => ref?.type !== "text" || textIds.includes(ref.id) || board.has(ref.id),
+		);
+		const named = live.some((ref) => ref?.type === "text" && textIds.includes(ref.id));
+		if (named || textIds.length === 0) {
+			return live.length === refs.length
+				? element
+				: ({ ...element, boundElements: live.length > 0 ? live : null } as ServerElement);
+		}
+		return {
+			...element,
+			boundElements: [...live, { id: textIds[0] as string, type: "text" }],
+		} as ServerElement;
+	});
 
-  return expandElements(mended, {
-    forStore: true,
-    inUse: { has: (id: string) => board.has(id) }
-  }) as unknown as ServerElement[];
+	return expandElements(mended, {
+		forStore: true,
+		inUse: { has: (id: string) => board.has(id) },
+	}) as unknown as ServerElement[];
 }
 
 /**
@@ -721,23 +743,25 @@ export function expandForBoard(
  * way through. Nothing is stored here; the caller owns the board.
  */
 export function relabelBoundTexts(
-  written: readonly ServerElement[],
-  board: ReadonlyMap<string, ServerElement>
+	written: readonly ServerElement[],
+	board: ReadonlyMap<string, ServerElement>,
 ): ServerElement[] {
-  const labelled = boundTextsByContainer([...board.values()]);
-  const relabelled: ServerElement[] = [];
-  for (const container of written) {
-    const wanted = labelSeedOf(container as LabelledElement);
-    if (wanted === undefined) continue;
-    const textId = labelled.get(container.id)?.[0];
-    if (!textId) continue;
-    const existing = board.get(textId);
-    if (!existing || existing.text === wanted) continue;
-    const [remeasured] = expandForBoard(
-      [{ ...existing, text: wanted, originalText: wanted } as ServerElement], board);
-    if (remeasured) relabelled.push(remeasured);
-  }
-  return relabelled;
+	const labelled = boundTextsByContainer([...board.values()]);
+	const relabelled: ServerElement[] = [];
+	for (const container of written) {
+		const wanted = labelSeedOf(container as LabelledElement);
+		if (wanted === undefined) continue;
+		const textId = labelled.get(container.id)?.[0];
+		if (!textId) continue;
+		const existing = board.get(textId);
+		if (!existing || existing.text === wanted) continue;
+		const [remeasured] = expandForBoard(
+			[{ ...existing, text: wanted, originalText: wanted } as ServerElement],
+			board,
+		);
+		if (remeasured) relabelled.push(remeasured);
+	}
+	return relabelled;
 }
 
 /**
@@ -756,12 +780,13 @@ export function relabelBoundTexts(
  * whatever the element carries is left alone.
  */
 function sizeText(element: Record<string, any>): void {
-  if (element.autoResize === false) return;
-  const fontFamily = typeof element.fontFamily === 'number' ? element.fontFamily : DEFAULT_FONT_FAMILY;
-  if (!canMeasure(fontFamily)) return;
-  const fontSize = typeof element.fontSize === 'number' ? element.fontSize : DEFAULT_FONT_SIZE;
-  const lineHeight = typeof element.lineHeight === 'number' ? element.lineHeight : undefined;
-  const measured = measureText(String(element.text ?? ''), fontSize, fontFamily, lineHeight);
-  element.width = measured.width;
-  element.height = measured.height;
+	if (element.autoResize === false) return;
+	const fontFamily =
+		typeof element.fontFamily === "number" ? element.fontFamily : DEFAULT_FONT_FAMILY;
+	if (!canMeasure(fontFamily)) return;
+	const fontSize = typeof element.fontSize === "number" ? element.fontSize : DEFAULT_FONT_SIZE;
+	const lineHeight = typeof element.lineHeight === "number" ? element.lineHeight : undefined;
+	const measured = measureText(String(element.text ?? ""), fontSize, fontFamily, lineHeight);
+	element.width = measured.width;
+	element.height = measured.height;
 }

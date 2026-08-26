@@ -96,17 +96,17 @@ with two agent docs is a repo where one of them is out of date.
 Nothing prompts when stdin is not a terminal, which is the case whenever an
 agent runs the command. It takes the offered vault and prints what it chose.
 
-| Flag | For |
-|---|---|
-| `--agent codex` | explicitly select Codex using the skills.sh agent name; installs in the shared default |
-| `--agent claude-code` | select Claude Code using the skills.sh agent name; installs in `~/.claude/skills` |
-| `--target claude` | shortcut for `--agent claude-code` |
-| `--dir <skills-root>` | install into another explicit project or user skills root |
-| `--vault <path>` | name the vault instead of being asked |
-| `--yes` | take the offered vault without being asked |
-| `--repo <dir>` | set up a repo other than the one you are standing in |
-| `--doc <file>` | write the block somewhere other than the repo root |
-| `--no-doc` | install the skill and touch nothing in the repo |
+| Flag                  | For                                                                                    |
+| --------------------- | -------------------------------------------------------------------------------------- |
+| `--agent codex`       | explicitly select Codex using the skills.sh agent name; installs in the shared default |
+| `--agent claude-code` | select Claude Code using the skills.sh agent name; installs in `~/.claude/skills`      |
+| `--target claude`     | shortcut for `--agent claude-code`                                                     |
+| `--dir <skills-root>` | install into another explicit project or user skills root                              |
+| `--vault <path>`      | name the vault instead of being asked                                                  |
+| `--yes`               | take the offered vault without being asked                                             |
+| `--repo <dir>`        | set up a repo other than the one you are standing in                                   |
+| `--doc <file>`        | write the block somewhere other than the repo root                                     |
+| `--no-doc`            | install the skill and touch nothing in the repo                                        |
 
 **Then fill in "Boards for this repo".** The installer cannot know which board
 covers this code, what your levels mean, or the gotcha that will cost the next
@@ -145,29 +145,6 @@ started with. `archboard board list` prints the vault in use, and
 `archboard stop` is how you switch. That is the one that bites when you move
 between two repos that each keep their own boards.
 
-## Optional: MCP, for a client with no shell
-
-Skip this if you drive archboard from Codex or Claude Code. Both have a shell,
-and the CLI is the default surface (ADR 0008).
-
-For Claude Desktop or anything else that cannot run a command, add to your MCP
-client config:
-
-```toml
-[mcp_servers.archboard]
-command = "bun"
-args = ["/home/you/Projects/archboard/src/bin.ts"]
-env = { ARCHBOARD_VAULT = "/home/you/vaults/architecture" }
-startup_timeout_sec = 20
-```
-
-The client spawns that command, so `bun` has to resolve on the PATH the client
-inherits, which for a desktop app is often shorter than your shell's. If the
-server never starts, put the absolute path from `which bun` in `command`.
-
-The tool prefix a client shows comes from the key you choose there, not from
-anything archboard sets.
-
 ## Working in a repo
 
 Start the canvas from anywhere and open a board:
@@ -193,11 +170,10 @@ repository identity, repo-relative path, and branch/commit details when
 available — never the absolute path or a `file://` URL. Tappable targets are
 derived later from the binding and this machine's checkout registry.
 
-A bare relative path is resolved against an explicit working-directory origin
-on surfaces that have one, and the result says which repository that produced.
-Over MCP, where a shell-less client cannot express a working directory, use a
-registered repository identity plus repo-relative path instead of relying on a
-relative path.
+A bare relative path is resolved against the CLI's explicit working-directory
+origin, and the result says which repository that produced. Protocol-neutral
+application callers with no working directory must use a registered repository
+identity plus a repo-relative path instead.
 
 `--branch` and `--commit` override the revision metadata when you need to name
 something git cannot tell you.

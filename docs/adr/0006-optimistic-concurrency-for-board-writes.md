@@ -8,7 +8,7 @@ Boards are shared with Obsidian, and neither side knows about the other:
 archboard holds the canvas in memory, the Obsidian Excalidraw plugin holds scene
 state in memory when a board is open, and a synced vault is effectively a third
 writer. Last-writer-wins would silently eat hand-arranged work, which is the one
-failure mode a board cannot tolerate — the layout *is* the content, and a person
+failure mode a board cannot tolerate — the layout _is_ the content, and a person
 cannot tell at a glance that a version of it went missing.
 
 This is not theoretical: the Obsidian Excalidraw plugin has a documented class
@@ -69,9 +69,8 @@ with autosave repeatedly implicated.
   while somebody remembered them. So the canvas fills it in from what it last
   told that writer, checked at the write boundary where the lock is already
   held. Who it can do that for is decided by who it can identify, and that turns
-  out to be exactly the writers the lock can identify: a claim, whose record
-  lives with the claim, and a client process that lives long enough to have been
-  told, which is what an MCP server is. A person is never checked at all — their
+  out to be the writer the lock can identify: a claim, whose record lives with
+  the claim. A person is never checked at all — their
   gesture took the board at its leading edge and refusing it would stop a wall
   display responding to the person standing at it. An unclaimed agent's process
   is anonymous by construction, and every stand-in for that identity is one that
