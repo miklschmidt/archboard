@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 18:04'
+updated_date: '2026-08-26 18:18'
 labels:
   - ready-for-agent
 dependencies:
@@ -445,7 +445,19 @@ Bounded-sweep closure checkpoint: replaced repeated cross-set pair scans and eve
 
 Bounded-sweep closure validation: commit 21df1a2 passes the complete required validation. bun run check passed lint and distributable-skill validation, format verification, both TypeScript projects, all 29 push suites, and the four browser suites sequentially/headless. A separate bun run test passed the same complete suite and sequential browser chain. Both browser chains reported fixed-point 0 of 13 elements changed, the 10,000-element human board remained responsive, typed text survived both rename interactions, and live-session converged through 42 of 42 mixed-write cycles. Inspection passes 586 checks while retaining exact broad-phase counts 1,516,200 and 2,000,001. Two explicit on-demand generations from absent output directories were byte-identical: cli-command-audit.md 33,383 bytes, command-contract-proof.json 662,300 bytes, and command-contract-proof.md 460,808 bytes. Generated views remain outside the checkout; docs/design/cli-command-audit.json remains the tracked canonical input. TASK-119 remains In Progress with all acceptance criteria unchecked. No protected TASK-090/TASK-120/TASK-123.03, route, UI, session, persistence, write, or released-skill behavior changed.
 
-Semantic-sweep closure (2026-08-26):\n- Replaced post-enumeration eligibility with caller-owned semantic partitions and cached exclusion sets. Same-connector segments, same-owner labels, connector endpoint/ancestor nodes, and label owner/ancestor nodes are excluded before the pair visitor and before broadPhaseComparisons.\n- Removed preprocessingWork from schema-v1 reports and package output. Added the pure module-root diagnostics entrypoint for development-only event, compatible-visit, expiry, partition, hierarchy, and path counters.\n- Added public/diagnostic scaling coverage through 1k/2k/4k/8k same-connector segments, dense multi-connector counts, endpoint/ancestor and label-owner A=0 cases, and randomized brute-force differential checks.\n- Updated boundary, test-suite, and contract-design documentation. Generated proofs remain on-demand and ignored; canonical audit JSON remains tracked.\nFocused validation green: type-check, lint (including distributable skill validation), inspection (599 checks), contracts (58 proofs / 978 checks), CLI (579 checks), boundaries, module-scope, geometry, labels, branch, library, boards, Obsidian, changes, one-write, and suite-chain. Two bun run fix passes were byte-stable at diff SHA-256 3652396bdd9b0b2d3218c831f16599e6f5b98732967095b793046f67ef4fe5bd. Full check and separate full test remain.
+Semantic-sweep closure (2026-08-26):
+- Replaced post-enumeration eligibility with caller-owned semantic partitions and cached exclusion sets. Same-connector segments, same-owner labels, connector endpoint/ancestor nodes, and label owner/ancestor nodes are excluded before the pair visitor and before broadPhaseComparisons.
+- Removed preprocessingWork from schema-v1 reports and package output. Added the pure module-root diagnostics entrypoint for development-only event, compatible-visit, expiry, partition, hierarchy, and path counters.
+- Added public/diagnostic scaling coverage through 1k/2k/4k/8k same-connector segments, dense multi-connector counts, endpoint/ancestor and label-owner A=0 cases, and randomized brute-force differential checks.
+- Updated boundary, test-suite, and contract-design documentation. Generated proofs remain on-demand and ignored; canonical audit JSON remains tracked.
+Focused validation green: type-check, lint (including distributable skill validation), inspection (599 checks), contracts (58 proofs / 978 checks), CLI (579 checks), boundaries, module-scope, geometry, labels, branch, library, boards, Obsidian, changes, one-write, and suite-chain. Two bun run fix passes were byte-stable at diff SHA-256 3652396bdd9b0b2d3218c831f16599e6f5b98732967095b793046f67ef4fe5bd. Full check and separate full test remain.
+
+Semantic-sweep closure validation (2026-08-26):
+- Checkpoint 5cf51b7 implements semantic partitioning before pair visitation and removes private preprocessing work from schema-v1/package output behind the pure module-root diagnostics interface.
+- The first full check reached human-performance and observed one overlapping acknowledgement sample with replacement count 2; isolated diagnosis immediately passed with ordinary acknowledgement replacements [0,0]. No source change was made. The required complete bun run check rerun then passed.
+- Complete bun run check and a separate complete bun run test are green. Both ran human-performance, fixed-point, typed-text, and live-session sequentially/headless; fixed-point returned 0/13 changed elements and live-session converged through 42/42 cycles.
+- Two independent on-demand generations produced identical cli-command-audit.md, command-contract-proof.json, and command-contract-proof.md bytes. SHA-256 values were c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, ca5e28eeee97dcbea9d58b31e912679ad069c89f0f7fc2ba318afe6c9d0e4e1f, and 63449ca7440f77b714248e3e8bf9c87c3b0e520e8b070b41fc2a740aca41f7e5 respectively. Generated files remained outside the checkout.
+- TASK-119 remains In Progress with all acceptance criteria unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
