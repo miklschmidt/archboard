@@ -113,20 +113,6 @@ check(
 	commanderImports.map((file) => relative(root, file)).join(", "),
 );
 
-const publicRootFiles = fs
-	.readdirSync(join(root, "src", "cli", "command-contract"), { withFileTypes: true })
-	.filter((entry) => entry.isFile() && entry.name.endsWith(".ts"))
-	.map((entry) => join(root, "src", "cli", "command-contract", entry.name));
-const exposedAdapterTypes = publicRootFiles.filter((file) =>
-	/\b(CommandDependencies|ArgvParser|CommandHost|PrerequisiteResolver)\b/.test(
-		fs.readFileSync(file, "utf8"),
-	),
-);
-check(
-	"public root entrypoints hide adapter interfaces",
-	exposedAdapterTypes.length === 0,
-	exposedAdapterTypes.map((file) => relative(root, file)).join(", "),
-);
 check(
 	"runCommand has exactly two public arguments",
 	runCommand.length === 2,

@@ -92,7 +92,7 @@
 		},
 		{
 			"path": "update",
-			"parserOwner": "CommandContract real Commander adapter",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
 			"stdout": "validated json object",
 			"result": "success,element,elements,fingerprint,document?,held?",
@@ -137,7 +137,7 @@
 		},
 		{
 			"path": "query",
-			"parserOwner": "CommandContract real Commander adapter",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
 			"stdout": "validated bare json array",
 			"result": "ServerElement[]",
@@ -242,7 +242,7 @@
 		},
 		{
 			"path": "viewport",
-			"parserOwner": "CommandContract real Commander adapter",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
 			"stdout": "validated json object",
 			"result": "success,message?,held?",
@@ -557,7 +557,7 @@
 		},
 		{
 			"path": "export",
-			"parserOwner": "CommandContract real Commander adapter",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/command-contract/lib/command-definitions.ts",
 			"stdout": "validated raw content or json receipt",
 			"result": "string or success,file,elements,format,held?",
