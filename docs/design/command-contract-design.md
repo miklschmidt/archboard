@@ -122,6 +122,19 @@ also contains errors. Non-strict reports always exit 0 after successful
 inspection. Usage and policy failures still exit 2 with empty stdout;
 vault, note, Drawing, schema, and I/O failures exit 1 with empty stdout.
 
+Schema-v1 reports publish two independent limits: `broadPhaseComparisons` is
+2,000,000 and `broadPhasePreprocessingSteps` is 25,000,000. The report exposes
+the completed eligible comparison count, but it does not expose the internal
+preprocessing count. Attempting comparison 2,000,001 emits
+`INSPECTION_LIMIT_EXCEEDED/broad-phase-comparison-ceiling`; attempting logical
+preprocessing unit 25,000,001 emits
+`INSPECTION_LIMIT_EXCEEDED/broad-phase-preprocessing-ceiling`. The attempted
+unit is not executed, current and later model/pair passes stop, and whichever
+ceiling is attempted first is the only limit finding. Both findings make
+coverage indeterminate. The preprocessing finding records its pass, phase,
+completed comparison count, participant counts, and deterministic evidence
+refs.
+
 Inspection findings use scene-coordinate boxes. `affectedBBox` preserves finite
 local evidence even when an element's stored extent or a multi-element span is
 not representable. A normal `focusBBox` expands that box by exactly 16 px on
@@ -141,7 +154,9 @@ other controls, lone surrogates, and ordinary IDs byte for byte. The report sche
 obstacle reference whose `id` is not that exact derivation. It also requires canonical unique
 element, group, and library-attribution arrays; every attribution must name a constituent element;
 library components must have attribution; and grouped components must have no attribution, at
-least two constituent elements, and qualifying group evidence.
+least two constituent elements, and qualifying group evidence. Every multi-element obstacle,
+including a library component, requires qualifying group evidence. An optional library `source`
+is a nonempty string.
 
 The schema-v1 report exposes `broadPhaseComparisons`, whose public meaning is
 the number of semantically eligible x-overlapping pairs tested before the

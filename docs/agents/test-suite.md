@@ -168,6 +168,14 @@ note archboard did not write. About fifteen seconds.
   and dense hierarchy matrices cover model preprocessing. Mutable-set reuse proves snapshots use
   exact current content. These counters are development evidence and do not appear in the product
   report or package CLI.
+  The suite also pins the separate 25,000,000 logical preprocessing ceiling:
+  alternating exact-exclusion inputs complete at 2,048 intervals per side and
+  stop before unit 25,000,001 at 3,072, while the established dense board still
+  reaches the public comparison ceiling first. Exact arithmetic is checked at
+  64/128/256/512, and many-exclusion and many-ancestor families gate retained
+  references against `I + E + H`. Direct and persisted package cases prove the
+  closed finding, strict/non-strict exits, deterministic rendering, and absence
+  of product preprocessing counters.
 
 ## Wire and lock checks
 
