@@ -30,7 +30,7 @@ import type { PaneRegistration } from "./runtime/engine/panes.js";
 import { BoardRequiredError } from "./runtime/engine/board-target.js";
 import { RenderGeometryError } from "./runtime/engine/geometry.js";
 import { z } from "zod";
-import WebSocket from "ws";
+import { WebSocket } from "ws";
 import { isMainModule } from "./runtime/engine/entry.js";
 import { kept } from "./runtime/engine/hot.js";
 import { askForReload, reloadIsAskable } from "./runtime/engine/reload-token.js";
@@ -119,7 +119,11 @@ import { compareBoards } from "./runtime/engine/compare.js";
 import type { CompareSideInput } from "./runtime/engine/compare.js";
 import { changeFeed } from "./runtime/engine/change-feed.js";
 import type { ChangeEvent } from "./runtime/engine/change-feed.js";
-import { PANE_LAYOUT_TIMEOUT_MS, PANE_SETTLE_CAP_MS, REPORT_PROGRESS_MS } from "./shared/timing/timing.js";
+import {
+	PANE_LAYOUT_TIMEOUT_MS,
+	PANE_SETTLE_CAP_MS,
+	REPORT_PROGRESS_MS,
+} from "./shared/timing/timing.js";
 import { narrateChange } from "./runtime/engine/changes.js";
 import { injectTest, injectionStatus, startInjection } from "./runtime/engine/injection.js";
 import { readLibrary, writeLibrary } from "./runtime/engine/library.js";
@@ -147,6 +151,16 @@ const moduleFile = fileURLToPath(import.meta.url);
 const moduleDir = path.dirname(moduleFile);
 
 const app = express();
+
+type AsyncEndpoint = (req: Request, res: Response, next: NextFunction) => Promise<unknown>;
+
+function asyncEndpoint(
+	handler: AsyncEndpoint,
+): (req: Request, res: Response, next: NextFunction) => void {
+	return (req, res, next) => {
+		void handler(req, res, next).catch((error) => setImmediate(next, error));
+	};
+}
 
 // The port and the sockets on it are made once per process and reused across a
 // hot reload; the routes and handlers on them are replaced every time this file
@@ -403,7 +417,12 @@ function announceDoing(board: string, entry: DoingEntry): void {
  * writer can state (CLAUDE.md's principle, ADR 0016's claim from the other
  * end).
  */
-function refuseUndescribedWrite(res: Response, board: string, path: string, problem: string): void {
+function refuseUndescribedWrite(
+	res: Response,
+	board: string,
+	requestPath: string,
+	problem: string,
+): void {
 	res.status(400).json({
 		success: false,
 		code: "DOING_REQUIRED",
@@ -411,7 +430,7 @@ function refuseUndescribedWrite(res: Response, board: string, path: string, prob
 			`This write to "${board}" says nothing about what it is doing (${problem}). Say it in one short ` +
 			'line, in the present tense — "adding the payment queue", "rerouting orders through it" — and it ' +
 			"goes up on the canvas as the write lands, so the person at the board can see what you are up to. " +
-			`On the command line that is \`--doing "..."\`, and on the API it is \`?doing=\` (${path}). ` +
+			`On the command line that is \`--doing "..."\`, and on the API it is \`?doing=\` (${requestPath}). ` +
 			`A claim's \`reason\` is the overall reason and does not stand in for this: ` +
 			"this is the step. Nothing was written.",
 		board,
@@ -568,10 +587,9 @@ function holdResponse(key: string): Record<string, unknown> {
  * to write to a board to discover that writing to it goes nowhere.
  */
 function openBoards(): Array<Record<string, unknown>> {
-	return boardSummaries(boardElementCount).map((summary) => ({
-		...summary,
-		...holdResponse(summary.key),
-	}));
+	return boardSummaries(boardElementCount).map((summary) =>
+		Object.assign({}, summary, holdResponse(summary.key)),
+	);
 }
 
 // Which board a request is about, and what is on it. `?board=` or a `board`
@@ -993,52 +1011,51 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 		});
 	}
 
-	void holdBoard({ board: key, holder: writer })
-		.then((hold) => {
-			// Under the lock, so no other archboard writer can land between the
-			// version being read and the note being written; before `next()`, so a
-			// refusal writes nothing (TASK-091). The board is given straight back:
-			// the handlers that would do that on `finish` are registered below this,
-			// and a request that never reaches the handler never took the board for
-			// any longer than this line.
-			const rememberedBy =
-				writer.kind === "agent" && claimWriterId(key) === writer.id ? writer.id : undefined;
-			const conflict = checkBoardVersion({
-				board: key,
-				file: boards.get(key)?.file,
-				writesNote: writesBoardNote(key),
-				...(stated.expected !== undefined ? { stated: stated.expected } : {}),
-				...(rememberedBy ? { rememberedBy } : {}),
-			});
-			if (conflict) {
-				res.status(409).json({
-					success: false,
-					code: "BOARD_VERSION_CONFLICT",
-					error: conflict.message,
-					versionConflict: conflict,
-					...refusalDocument(key),
-				});
-				if (hold.created) releaseHold(key, hold.holder.id);
-				return;
-			}
-			if (hold.created) {
-				let given = false;
-				const give = (): void => {
-					if (given) return;
-					given = true;
-					releaseHold(key, hold.holder.id);
-				};
-				// Both, because a client that hangs up mid-write never finishes the
-				// response, and a board held by a request nobody is listening to is a
-				// board held until the lease lapses.
-				res.on("finish", give);
-				res.on("close", give);
-			}
-			next();
-		})
-		.catch((error) => {
-			answerBoardError(res, error);
+	void (async () => {
+		const hold = await holdBoard({ board: key, holder: writer });
+		// Under the lock, so no other archboard writer can land between the
+		// version being read and the note being written; before `next()`, so a
+		// refusal writes nothing (TASK-091). The board is given straight back:
+		// the handlers that would do that on `finish` are registered below this,
+		// and a request that never reaches the handler never took the board for
+		// any longer than this line.
+		const rememberedBy =
+			writer.kind === "agent" && claimWriterId(key) === writer.id ? writer.id : undefined;
+		const conflict = checkBoardVersion({
+			board: key,
+			file: boards.get(key)?.file,
+			writesNote: writesBoardNote(key),
+			...(stated.expected !== undefined ? { stated: stated.expected } : {}),
+			...(rememberedBy ? { rememberedBy } : {}),
 		});
+		if (conflict) {
+			res.status(409).json({
+				success: false,
+				code: "BOARD_VERSION_CONFLICT",
+				error: conflict.message,
+				versionConflict: conflict,
+				...refusalDocument(key),
+			});
+			if (hold.created) releaseHold(key, hold.holder.id);
+			return;
+		}
+		if (hold.created) {
+			let given = false;
+			const give = (): void => {
+				if (given) return;
+				given = true;
+				releaseHold(key, hold.holder.id);
+			};
+			// Both, because a client that hangs up mid-write never finishes the
+			// response, and a board held by a request nobody is listening to is a
+			// board held until the lease lapses.
+			res.on("finish", give);
+			res.on("close", give);
+		}
+		next();
+	})().catch((error) => {
+		answerBoardError(res, error);
+	});
 });
 
 /**
@@ -1149,29 +1166,29 @@ app.post("/api/boards/claim", (req: Request, res: Response) => {
 		// An agent that lost the board hears that before it is given another one,
 		// or it would claim its way straight back onto a board somebody just took.
 		if (refuseRevokedClaim(res, key)) return;
+		const reason = body.reason.trim();
 
 		const forMs =
 			typeof body.forMs === "number" && Number.isFinite(body.forMs) ? body.forMs : undefined;
-		void claimBoard({
-			board: key,
-			reason: body.reason.trim(),
-			...(forMs !== undefined ? { forMs } : {}),
-		})
-			.then(({ claim, created }) => {
-				// Taking the board is the first thing the canvas tells this agent about
-				// it, so it is where the record of what the agent has seen starts
-				// (TASK-091). Without the seed the first write under a claim would be
-				// the one write nothing checked, and the rest of the claimed work may
-				// depend on it.
-				const file = boards.get(key)?.file;
-				const version = created
-					? rememberVersionAt(claim.holder.id, file)
-					: file
-						? versionOfNoteAt(file)
-						: null;
-				res.json({ success: true, board: key, claim, created, version });
-			})
-			.catch((error) => answerBoardError(res, error));
+		void (async () => {
+			const { claim, created } = await claimBoard({
+				board: key,
+				reason,
+				...(forMs !== undefined ? { forMs } : {}),
+			});
+			// Taking the board is the first thing the canvas tells this agent about
+			// it, so it is where the record of what the agent has seen starts
+			// (TASK-091). Without the seed the first write under a claim would be
+			// the one write nothing checked, and the rest of the claimed work may
+			// depend on it.
+			const file = boards.get(key)?.file;
+			const version = created
+				? rememberVersionAt(claim.holder.id, file)
+				: file
+					? versionOfNoteAt(file)
+					: null;
+			res.json({ success: true, board: key, claim, created, version });
+		})().catch((error) => answerBoardError(res, error));
 	} catch (error) {
 		answerBoardError(res, error);
 	}
@@ -1772,8 +1789,8 @@ app.get("/api/changes", (req: Request, res: Response) => {
 			wantDetail ? event : { ...event, change: { ...event.change, detail: undefined } };
 
 		if (coalesce) {
-			const net = changeFeed.coalesce(since, board);
-			if (!net) {
+			const netDiff = changeFeed.coalesce(since, board);
+			if (!netDiff) {
 				return res.json({
 					success: true,
 					board,
@@ -1790,19 +1807,19 @@ app.get("/api/changes", (req: Request, res: Response) => {
 				success: true,
 				board,
 				feedId: changeFeed.status().feedId,
-				cursor: net.cursor,
-				since: net.since,
-				events: net.events.map(strip),
+				cursor: netDiff.cursor,
+				since: netDiff.since,
+				events: netDiff.events.map(strip),
 				coalesced: {
-					significance: net.change.significance,
-					headline: net.change.headline,
-					text: narrateChange(net.change),
-					counts: net.change.counts,
-					nodes: net.change.nodes,
-					edges: net.change.edges,
-					layout: net.change.layout,
-					warnings: net.change.warnings,
-					...(wantDetail ? { detail: net.change.detail } : {}),
+					significance: netDiff.change.significance,
+					headline: netDiff.change.headline,
+					text: narrateChange(netDiff.change),
+					counts: netDiff.change.counts,
+					nodes: netDiff.change.nodes,
+					edges: netDiff.change.edges,
+					layout: netDiff.change.layout,
+					warnings: netDiff.change.warnings,
+					...(wantDetail ? { detail: netDiff.change.detail } : {}),
 				},
 			});
 		}
@@ -1832,18 +1849,21 @@ app.get("/api/injection", (_req: Request, res: Response) => {
 	res.json({ success: true, ...injectionStatus() });
 });
 
-app.post("/api/injection/test", async (req: Request, res: Response) => {
-	try {
-		const note = typeof req.body?.note === "string" ? req.body.note : undefined;
-		const loud = req.body?.loud === true ? true : req.body?.loud === false ? false : undefined;
-		const result = await injectTest(note, loud);
-		res.json({ success: true, ...result });
-	} catch (error) {
-		res
-			.status(409)
-			.json({ success: false, error: (error as Error).message, status: injectionStatus() });
-	}
-});
+app.post(
+	"/api/injection/test",
+	asyncEndpoint(async (req: Request, res: Response) => {
+		try {
+			const note = typeof req.body?.note === "string" ? req.body.note : undefined;
+			const loud = req.body?.loud === true ? true : req.body?.loud === false ? false : undefined;
+			const result = await injectTest(note, loud);
+			res.json({ success: true, ...result });
+		} catch (error) {
+			res
+				.status(409)
+				.json({ success: false, error: (error as Error).message, status: injectionStatus() });
+		}
+	}),
+);
 
 // ─── Selection ────────────────────────────────────────────────
 //
@@ -2038,7 +2058,7 @@ interface PendingPaneClose {
 const pendingPaneCloses = kept("pending-pane-closes", () => new Set<PendingPaneClose>());
 
 function notePaneOpened(registration: PaneRegistration): void {
-	for (const pending of [...pendingPaneOpens]) {
+	for (const pending of pendingPaneOpens) {
 		if (pending.known.has(registration.clientId)) continue;
 		pendingPaneOpens.delete(pending);
 		clearTimeout(pending.timeout);
@@ -2047,7 +2067,7 @@ function notePaneOpened(registration: PaneRegistration): void {
 }
 
 function notePaneClosed(clientId: string): void {
-	for (const pending of [...pendingPaneCloses]) {
+	for (const pending of pendingPaneCloses) {
 		if (pending.clientId !== clientId) continue;
 		pendingPaneCloses.delete(pending);
 		clearTimeout(pending.timeout);
@@ -2087,145 +2107,153 @@ async function settleAfterLayout(askedAt: string): Promise<void> {
 // It takes no board. What lands in the new pane is a separate act — `board
 // open ... --pane <the pane this answered with>` — so that opening a board
 // stays the one thing that decides which board a pane holds (ADR 0009).
-app.post("/api/panes/open", async (req: Request, res: Response) => {
-	const answering = primaryPane();
-	if (!answering) return res.status(503).json(noBrowserBody("Opening a pane"));
+app.post(
+	"/api/panes/open",
+	asyncEndpoint(async (req: Request, res: Response) => {
+		const answering = primaryPane();
+		if (!answering) return res.status(503).json(noBrowserBody("Opening a pane"));
 
-	if (panes.size >= MAX_PANES) {
-		const showing = panesInOrder(Array.from(panes.values()))
-			.map((entry) => `${entry.place} (${paneBoards.get(entry.pane.clientId) ?? entry.pane.board})`)
-			.join(", ");
-		return res.status(409).json({
-			success: false,
-			error:
-				`The canvas is already showing ${panes.size} panes: ${showing}. ` +
-				"Point one of them at another board with `board open <name> --pane <spec>`, " +
-				"or close one first with `pane close <spec>`.",
+		if (panes.size >= MAX_PANES) {
+			const showing = panesInOrder(Array.from(panes.values()))
+				.map(
+					(entry) => `${entry.place} (${paneBoards.get(entry.pane.clientId) ?? entry.pane.board})`,
+				)
+				.join(", ");
+			return res.status(409).json({
+				success: false,
+				error:
+					`The canvas is already showing ${panes.size} panes: ${showing}. ` +
+					"Point one of them at another board with `board open <name> --pane <spec>`, " +
+					"or close one first with `pane close <spec>`.",
+			});
+		}
+
+		const askedAt = new Date().toISOString();
+		let pending!: PendingPaneOpen;
+		const opened = new Promise<PaneRegistration>((resolve, reject) => {
+			pending = {
+				resolve,
+				reject,
+				known: new Set(panes.keys()),
+				timeout: setTimeout(() => {
+					pendingPaneOpens.delete(pending);
+					reject(
+						new Error(
+							"The browser was asked for another pane and none appeared within 10 seconds. " +
+								"The tab may be running an older build of the canvas — reload it and try again.",
+						),
+					);
+				}, PANE_LAYOUT_TIMEOUT_MS),
+			};
+			pendingPaneOpens.add(pending);
 		});
-	}
 
-	const askedAt = new Date().toISOString();
-	let pending!: PendingPaneOpen;
-	const opened = new Promise<PaneRegistration>((resolve, reject) => {
-		pending = {
-			resolve,
-			reject,
-			known: new Set(panes.keys()),
-			timeout: setTimeout(() => {
-				pendingPaneOpens.delete(pending);
-				reject(
-					new Error(
-						"The browser was asked for another pane and none appeared within 10 seconds. " +
-							"The tab may be running an older build of the canvas — reload it and try again.",
-					),
-				);
-			}, PANE_LAYOUT_TIMEOUT_MS),
-		};
-		pendingPaneOpens.add(pending);
-	});
+		if (!sendLayoutToPane(answering.clientId, { type: "pane_open" })) {
+			pendingPaneOpens.delete(pending);
+			clearTimeout(pending.timeout);
+			return res.status(503).json(noBrowserBody("Opening a pane"));
+		}
 
-	if (!sendLayoutToPane(answering.clientId, { type: "pane_open" })) {
-		pendingPaneOpens.delete(pending);
-		clearTimeout(pending.timeout);
-		return res.status(503).json(noBrowserBody("Opening a pane"));
-	}
-
-	try {
-		const pane = await opened;
-		await settleAfterLayout(askedAt);
-		logger.info(`Pane opened on request: ${pane.paneId} (${panes.size} on screen)`);
-		res.json({
-			success: true,
-			...paneResponse(panes.get(pane.clientId) ?? pane),
-			paneCount: panes.size,
-			onScreen: boardsOnScreen(),
-		});
-	} catch (error) {
-		res.status(504).json({ success: false, error: (error as Error).message });
-	}
-});
+		try {
+			const pane = await opened;
+			await settleAfterLayout(askedAt);
+			logger.info(`Pane opened on request: ${pane.paneId} (${panes.size} on screen)`);
+			res.json({
+				success: true,
+				...paneResponse(panes.get(pane.clientId) ?? pane),
+				paneCount: panes.size,
+				onScreen: boardsOnScreen(),
+			});
+		} catch (error) {
+			res.status(504).json({ success: false, error: (error as Error).message });
+		}
+	}),
+);
 
 // Close one pane, named the way every other pane is named.
 //
 // Always named: unlike opening a board, which can only land somewhere visible
 // and wrong, closing takes a board off the screen, and guessing which one is
 // the mistake that costs the human the half they were reading.
-app.post("/api/panes/close", async (req: Request, res: Response) => {
-	const spec = typeof req.body?.pane === "string" ? req.body.pane.trim() : "";
-	const registrations = Array.from(panes.values());
+app.post(
+	"/api/panes/close",
+	asyncEndpoint(async (req: Request, res: Response) => {
+		const spec = typeof req.body?.pane === "string" ? req.body.pane.trim() : "";
+		const registrations = Array.from(panes.values());
 
-	if (registrations.length === 0) return res.status(503).json(noBrowserBody("Closing a pane"));
+		if (registrations.length === 0) return res.status(503).json(noBrowserBody("Closing a pane"));
 
-	if (registrations.length === 1) {
-		return res.status(409).json({
-			success: false,
-			error:
-				"That is the only pane on screen, and closing it would leave the canvas showing nothing " +
-				"with no way back except reloading the browser. Its board is unaffected either way — " +
-				"point the pane somewhere else with `board open <name>` instead.",
-		});
-	}
-
-	let target: PaneRegistration;
-	let place: string;
-	try {
-		if (!spec) {
-			throw new Error(
-				"Say which pane to close. " +
-					panesInOrder(registrations)
-						.map((entry) => `\`pane close ${entry.place}\` drops ${entry.pane.board}`)
-						.join(", ") +
-					".",
-			);
+		if (registrations.length === 1) {
+			return res.status(409).json({
+				success: false,
+				error:
+					"That is the only pane on screen, and closing it would leave the canvas showing nothing " +
+					"with no way back except reloading the browser. Its board is unaffected either way — " +
+					"point the pane somewhere else with `board open <name>` instead.",
+			});
 		}
-		target = resolvePaneSpec(registrations, spec);
-		place =
-			panesInOrder(registrations).find((entry) => entry.pane.clientId === target.clientId)?.place ??
-			spec;
-	} catch (error) {
-		return res.status(400).json({ success: false, error: (error as Error).message });
-	}
 
-	const askedAt = new Date().toISOString();
-	let pending!: PendingPaneClose;
-	const closed = new Promise<void>((resolve, reject) => {
-		pending = {
-			clientId: target.clientId,
-			resolve,
-			reject,
-			timeout: setTimeout(() => {
-				pendingPaneCloses.delete(pending);
-				reject(
-					new Error(
-						`The browser was asked to close the ${place} pane and it is still there after 10 seconds. ` +
-							"The tab may be running an older build of the canvas — reload it and try again.",
-					),
+		let target: PaneRegistration;
+		let place: string;
+		try {
+			if (!spec) {
+				throw new Error(
+					"Say which pane to close. " +
+						panesInOrder(registrations)
+							.map((entry) => `\`pane close ${entry.place}\` drops ${entry.pane.board}`)
+							.join(", ") +
+						".",
 				);
-			}, PANE_LAYOUT_TIMEOUT_MS),
-		};
-		pendingPaneCloses.add(pending);
-	});
+			}
+			target = resolvePaneSpec(registrations, spec);
+			place =
+				panesInOrder(registrations).find((entry) => entry.pane.clientId === target.clientId)
+					?.place ?? spec;
+		} catch (error) {
+			return res.status(400).json({ success: false, error: (error as Error).message });
+		}
 
-	if (!sendLayoutToPane(target.clientId, { type: "pane_close" })) {
-		pendingPaneCloses.delete(pending);
-		clearTimeout(pending.timeout);
-		return res.status(503).json(noBrowserBody("Closing a pane"));
-	}
-
-	try {
-		await closed;
-		await settleAfterLayout(askedAt);
-		logger.info(`Pane closed on request: ${target.paneId} (${panes.size} left on screen)`);
-		res.json({
-			success: true,
-			closed: { paneId: target.paneId, clientId: target.clientId, place, board: target.board },
-			paneCount: panes.size,
-			onScreen: boardsOnScreen(),
+		const askedAt = new Date().toISOString();
+		let pending!: PendingPaneClose;
+		const closed = new Promise<void>((resolve, reject) => {
+			pending = {
+				clientId: target.clientId,
+				resolve,
+				reject,
+				timeout: setTimeout(() => {
+					pendingPaneCloses.delete(pending);
+					reject(
+						new Error(
+							`The browser was asked to close the ${place} pane and it is still there after 10 seconds. ` +
+								"The tab may be running an older build of the canvas — reload it and try again.",
+						),
+					);
+				}, PANE_LAYOUT_TIMEOUT_MS),
+			};
+			pendingPaneCloses.add(pending);
 		});
-	} catch (error) {
-		res.status(504).json({ success: false, error: (error as Error).message });
-	}
-});
+
+		if (!sendLayoutToPane(target.clientId, { type: "pane_close" })) {
+			pendingPaneCloses.delete(pending);
+			clearTimeout(pending.timeout);
+			return res.status(503).json(noBrowserBody("Closing a pane"));
+		}
+
+		try {
+			await closed;
+			await settleAfterLayout(askedAt);
+			logger.info(`Pane closed on request: ${target.paneId} (${panes.size} left on screen)`);
+			res.json({
+				success: true,
+				closed: { paneId: target.paneId, clientId: target.clientId, place, board: target.board },
+				paneCount: panes.size,
+				onScreen: boardsOnScreen(),
+			});
+		} catch (error) {
+			res.status(504).json({ success: false, error: (error as Error).message });
+		}
+	}),
+);
 
 // ─── Files API (for image elements) ───────────────────────────
 //
@@ -2425,7 +2453,7 @@ app.post("/api/export/image", (req: Request, res: Response) => {
 
 		exportPromise
 			.then((result) => {
-				res.json({
+				return res.json({
 					success: true,
 					format: result.format,
 					data: result.data,
@@ -2606,7 +2634,7 @@ app.post("/api/viewport", (req: Request, res: Response) => {
 
 		viewportPromise
 			.then((result) => {
-				res.json(result);
+				return res.json(result);
 			})
 			.catch((error) => {
 				res.status(500).json({
@@ -2977,12 +3005,16 @@ app.get("/api/boards", (req: Request, res: Response) => {
 		const vault = requireVaultRoot();
 		const repo = typeof req.query.repo === "string" ? req.query.repo.trim() : "";
 		if (repo) {
-			const open = Array.from(boards.entries()).map(([key, board]) => ({
-				key,
-				identity: board.identity,
-				elements: boardElements(board),
-				...(board.file ? { file: board.file } : {}),
-			}));
+			const open = Array.from(boards.entries()).map(([key, board]) =>
+				Object.assign(
+					{
+						key,
+						identity: board.identity,
+						elements: boardElements(board),
+					},
+					board.file ? { file: board.file } : {},
+				),
+			);
 			const found = boardsForRepo(repo, open, vault);
 			return res.json({
 				success: true,
@@ -3339,12 +3371,21 @@ function loadSideForCompare(key: string): CompareSideInput | null {
 	const loaded = readBoardFile(identity);
 	if (!loaded) return null;
 	const scene = JSON.parse(loaded.sceneJson);
-		const sceneRecord = scene && typeof scene === "object" && !Array.isArray(scene) ? scene as Record<string, unknown> : {};
-		const raw: unknown[] = Array.isArray(scene) ? scene : (Array.isArray(sceneRecord.elements) ? sceneRecord.elements : []);
+	const sceneRecord =
+		scene && typeof scene === "object" && !Array.isArray(scene)
+			? (scene as Record<string, unknown>)
+			: {};
+	const raw: unknown[] = Array.isArray(scene)
+		? scene
+		: Array.isArray(sceneRecord.elements)
+			? sceneRecord.elements
+			: [];
 	return {
 		key,
 		identity: loaded.identity,
-		elements: raw.filter((el) => el && typeof el === "object" && (el as Record<string, unknown>).isDeleted !== true) as ServerElement[],
+		elements: raw.filter(
+			(el) => el && typeof el === "object" && (el as Record<string, unknown>).isDeleted !== true,
+		) as ServerElement[],
 		source: "vault",
 		file: loaded.file,
 		onScreen: false,
@@ -3511,13 +3552,17 @@ app.put("/api/library", (req: Request, res: Response) => {
 			})
 			.parse(req.body ?? {});
 
-		const items: LibraryItem[] = body.items.map((item) => ({
-			id: item.id,
-			status: item.status ?? "published",
-			elements: item.elements,
-			created: item.created ?? Date.now(),
-			...(item.name ? { name: item.name } : {}),
-		}));
+		const items: LibraryItem[] = body.items.map((item) =>
+			Object.assign(
+				{
+					id: item.id,
+					status: item.status ?? "published",
+					elements: item.elements,
+					created: item.created ?? Date.now(),
+				},
+				item.name ? { name: item.name } : {},
+			),
+		);
 
 		const state = writeLibrary(items);
 		// Including the tab that sent it. It recognises its own write by content

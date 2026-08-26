@@ -89,6 +89,15 @@ const DEFAULT_FONT_SIZE = 20;
 const DEFAULT_TEXT_ALIGN = "left"; // for a standalone text; a bound one is centred
 const DEFAULT_VERTICAL_ALIGN = "top";
 const DEFAULT_STROKE_WIDTH = 2;
+const validIndexKey = (key: unknown): key is string => {
+	if (typeof key !== "string") return false;
+	try {
+		generateKeyBetween(key, null);
+		return true;
+	} catch {
+		return false;
+	}
+};
 
 // Excalidraw's `index` is a fractional index, and it is the z-order. Two rules
 // make one valid: the strings increase along the array, and each parses. Ours
@@ -205,13 +214,19 @@ export function settleDeletions(
 	for (const element of board.values()) {
 		const refs = Array.isArray(element.boundElements) ? element.boundElements : null;
 		const kept = refs?.filter((ref: unknown) => {
-			const record = ref && typeof ref === "object" ? ref as Record<string, unknown> : {};
+			const record = ref && typeof ref === "object" ? (ref as Record<string, unknown>) : {};
 			return !(typeof record.id === "string" && gone.has(record.id));
 		});
 		const loosened = refs !== null && kept !== undefined && kept.length !== refs.length;
 		const source = element as unknown as Record<string, unknown>;
-		const starts = source.startBinding && typeof source.startBinding === "object" ? source.startBinding as Record<string, unknown> : null;
-		const ends = source.endBinding && typeof source.endBinding === "object" ? source.endBinding as Record<string, unknown> : null;
+		const starts =
+			source.startBinding && typeof source.startBinding === "object"
+				? (source.startBinding as Record<string, unknown>)
+				: null;
+		const ends =
+			source.endBinding && typeof source.endBinding === "object"
+				? (source.endBinding as Record<string, unknown>)
+				: null;
 		const unbindStart = typeof starts?.elementId === "string" && gone.has(starts.elementId);
 		const unbindEnd = typeof ends?.elementId === "string" && gone.has(ends.elementId);
 		if (!loosened && !unbindStart && !unbindEnd) continue;
@@ -250,18 +265,9 @@ export function settledIndices(
 ): Array<string | null> {
 	const wanted: Array<string | null> = [];
 	let last: string | null = null;
-	const valid = (key: unknown): key is string => {
-		if (typeof key !== "string") return false;
-		try {
-			generateKeyBetween(key, null);
-			return true;
-		} catch {
-			return false;
-		}
-	};
 	for (const [at, element] of ordered.entries()) {
 		const key = element.index;
-		if (valid(key) && (last === null || key > last)) {
+		if (validIndexKey(key) && (last === null || key > last)) {
 			last = key;
 			wanted.push(null);
 			continue;
@@ -269,7 +275,7 @@ export function settledIndices(
 		let next: string | null = null;
 		for (let ahead = at + 1; ahead < ordered.length; ahead += 1) {
 			const candidate = ordered[ahead]?.index;
-			if (valid(candidate) && (last === null || candidate > last)) {
+			if (validIndexKey(candidate) && (last === null || candidate > last)) {
 				next = candidate;
 				break;
 			}
@@ -392,7 +398,10 @@ export function expandElements(
 		has: (id: string) => named.has(id) || (options.inUse?.has(id) ?? false),
 	};
 
-	function makeBaseElement(el: Record<string, unknown>, rest: Record<string, unknown>): Record<string, unknown> {
+	function makeBaseElement(
+		el: Record<string, unknown>,
+		rest: Record<string, unknown>,
+	): Record<string, unknown> {
 		return {
 			...rest,
 			angle: rest.angle ?? 0,
@@ -424,6 +433,96 @@ export function expandElements(
 			link: rest.link ?? null,
 			locked: rest.locked ?? false,
 		};
+	}
+
+	function appendLabel(
+		el: ServerElement,
+		base: Record<string, unknown>,
+		rest: Record<string, unknown>,
+		label: unknown,
+		text: unknown,
+	): void {
+		const labelText =
+			(label &&
+			typeof label === "object" &&
+			typeof (label as Record<string, unknown>).text === "string"
+				? (label as Record<string, unknown>).text
+				: undefined) || (typeof text === "string" ? text : undefined);
+		const hasBoundText =
+			Array.isArray(base.boundElements) &&
+			base.boundElements.some((binding: unknown) => {
+				const record =
+					binding && typeof binding === "object" ? (binding as Record<string, unknown>) : {};
+				return (
+					record.type === "text" &&
+					typeof record.id === "string" &&
+					(forStore ||
+						sourceElements.some((other) => other.id === record.id && other.type === "text"))
+				);
+			});
+		if (!labelText || hasBoundText) return;
+
+		const textId = labelTextIdFor(String(base.id), taken);
+		named.add(textId);
+		base.boundElements = [
+			...(Array.isArray(base.boundElements) ? base.boundElements : []),
+			{ type: "text", id: textId },
+		];
+		const isArrow = el.type === "arrow" || el.type === "line";
+		const fontSize = typeof rest.fontSize === "number" ? rest.fontSize : DEFAULT_FONT_SIZE;
+		const fontFamily =
+			normalizeFontFamily(
+				typeof rest.fontFamily === "string" || typeof rest.fontFamily === "number"
+					? rest.fontFamily
+					: undefined,
+			) ?? DEFAULT_FONT_FAMILY;
+		const lineHeight = lineHeightOf(fontFamily);
+		const labelElement = {
+			id: textId,
+			type: "text",
+			x: base.x,
+			y: base.y,
+			width: 0,
+			height: 0,
+			angle: 0,
+			strokeColor: isArrow ? "#1e1e1e" : base.strokeColor,
+			backgroundColor: "transparent",
+			fillStyle: "solid",
+			strokeWidth: DEFAULT_STROKE_WIDTH,
+			strokeStyle: "solid",
+			roughness: 1,
+			opacity: 100,
+			groupIds: [],
+			frameId: null,
+			roundness: null,
+			seed: seedFor(`${textId}:seed`),
+			version: 1,
+			versionNonce: seedFor(`${textId}:nonce`),
+			isDeleted: false,
+			boundElements: null,
+			updated: updatedFor(el as unknown as Record<string, unknown>),
+			link: null,
+			locked: false,
+			text: labelText,
+			originalText: labelText,
+			fontSize,
+			fontFamily,
+			textAlign: "center",
+			verticalAlign: "middle",
+			autoResize: true,
+			lineHeight,
+			containerId: base.id,
+		} as Record<string, unknown>;
+		sizeText(labelElement);
+		const placement = boundTextPlacement(
+			base as unknown as LabelledElement,
+			labelElement as unknown as LabelledElement,
+		);
+		if (placement) {
+			labelElement.x = placement.x;
+			labelElement.y = placement.y;
+		}
+		boundTextElements.push(labelElement);
 	}
 
 	for (const el of sourceElements) {
@@ -469,11 +568,21 @@ export function expandElements(
 			base.text = text ?? rest.text ?? "";
 			base.originalText = rest.originalText ?? base.text;
 			base.fontSize = rest.fontSize ?? DEFAULT_FONT_SIZE;
-			base.fontFamily = normalizeFontFamily(typeof rest.fontFamily === "string" || typeof rest.fontFamily === "number" ? rest.fontFamily : undefined) ?? DEFAULT_FONT_FAMILY;
+			base.fontFamily =
+				normalizeFontFamily(
+					typeof rest.fontFamily === "string" || typeof rest.fontFamily === "number"
+						? rest.fontFamily
+						: undefined,
+				) ?? DEFAULT_FONT_FAMILY;
 			base.textAlign = rest.textAlign ?? DEFAULT_TEXT_ALIGN;
 			base.verticalAlign = rest.verticalAlign ?? DEFAULT_VERTICAL_ALIGN;
 			base.autoResize = rest.autoResize ?? true;
-			base.lineHeight = typeof rest.lineHeight === "number" ? rest.lineHeight : lineHeightOf(typeof base.fontFamily === "number" ? base.fontFamily : DEFAULT_FONT_FAMILY);
+			base.lineHeight =
+				typeof rest.lineHeight === "number"
+					? rest.lineHeight
+					: lineHeightOf(
+							typeof base.fontFamily === "number" ? base.fontFamily : DEFAULT_FONT_FAMILY,
+						);
 			base.containerId = rest.containerId ?? null;
 			sizeText(base);
 			cleanedExportElements.push(restoreServerFields(base));
@@ -486,10 +595,16 @@ export function expandElements(
 		// conversion `arrow-binding.ts` holds. From here on the binding is all
 		// anything reads, including the server's own routing (TASK-088).
 		if (el.type === "arrow" || el.type === "line") {
-			base.points = rest.points ?? DEFAULT_LINEAR_POINTS.map((point) => [...point]);
+			base.points = rest.points ?? DEFAULT_LINEAR_POINTS.map((point) => point.slice());
 			base.lastCommittedPoint = null;
-			const startRecord = rest.startBinding && typeof rest.startBinding === "object" ? rest.startBinding as Record<string, unknown> : null;
-			const endRecord = rest.endBinding && typeof rest.endBinding === "object" ? rest.endBinding as Record<string, unknown> : null;
+			const startRecord =
+				rest.startBinding && typeof rest.startBinding === "object"
+					? (rest.startBinding as Record<string, unknown>)
+					: null;
+			const endRecord =
+				rest.endBinding && typeof rest.endBinding === "object"
+					? (rest.endBinding as Record<string, unknown>)
+					: null;
 			base.startBinding = startRecord
 				? { ...startRecord, fixedPoint: startRecord.fixedPoint ?? null }
 				: bindingFromRef(start);
@@ -513,99 +628,7 @@ export function expandElements(
 			base.lastCommittedPoint = rest.lastCommittedPoint ?? null;
 		}
 
-		// Generate a bound text element for `label`/`text` on shapes and arrows —
-		// unless the element already carries a bound text reference (a scene
-		// synced from a browser tab, or a re-imported expanded export).
-		// A reference to a text element that is not here is not a label. An
-		// element left holding one — a pane that reported a deletion, a scene
-		// edited by a user — must still be able to grow a real one.
-		//
-		// Judged against the whole document when there is one. A write names a few
-		// elements and the board holds the rest, so `expandForBoard` is where the
-		// references are squared with the board before this can be asked.
-		const labelText =
-			(label && typeof label === "object" && typeof (label as Record<string, unknown>).text === "string"
-				? (label as Record<string, unknown>).text
-				: undefined) || (typeof text === "string" ? text : undefined);
-		const hasBoundText =
-			Array.isArray(base.boundElements) &&
-			base.boundElements.some(
-				(b: unknown) => {
-					const binding = b && typeof b === "object" ? b as Record<string, unknown> : {};
-					return binding.type === "text" && typeof binding.id === "string" &&
-						(forStore || sourceElements.some((other) => other.id === binding.id && other.type === "text"));
-				},
-			);
-		if (labelText && !hasBoundText) {
-			// Named the same way the browser's expansion names it (labels.ts), so
-			// whichever of the two gets there first, the label keeps one name — and
-			// that name is short enough to be a block reference, so writing the note
-			// does not rename it (TASK-069).
-			const textId = labelTextIdFor(String(base.id), taken);
-			named.add(textId);
-			// Add binding reference to parent
-			base.boundElements = [
-				...(Array.isArray(base.boundElements) ? base.boundElements : []),
-				{ type: "text", id: textId },
-			];
-
-			const isArrow = el.type === "arrow" || el.type === "line";
-			const fontSize = typeof rest.fontSize === "number" ? rest.fontSize : DEFAULT_FONT_SIZE;
-			const fontFamily = normalizeFontFamily(typeof rest.fontFamily === "string" || typeof rest.fontFamily === "number" ? rest.fontFamily : undefined) ?? DEFAULT_FONT_FAMILY;
-			const lineHeight = lineHeightOf(fontFamily);
-
-			const label = {
-				id: textId,
-				type: "text",
-				// Placed below, once its size is known.
-				x: base.x,
-				y: base.y,
-				width: 0,
-				height: 0,
-				angle: 0,
-				strokeColor: isArrow ? "#1e1e1e" : base.strokeColor,
-				backgroundColor: "transparent",
-				fillStyle: "solid",
-				strokeWidth: DEFAULT_STROKE_WIDTH,
-				strokeStyle: "solid",
-				roughness: 1,
-				opacity: 100,
-				groupIds: [],
-				frameId: null,
-				roundness: null,
-				seed: seedFor(`${textId}:seed`),
-				version: 1,
-				versionNonce: seedFor(`${textId}:nonce`),
-				isDeleted: false,
-				boundElements: null,
-				updated: updatedFor(el as unknown as Record<string, unknown>),
-				link: null,
-				locked: false,
-				text: labelText,
-				originalText: labelText,
-				fontSize,
-				fontFamily,
-				textAlign: "center",
-				verticalAlign: "middle",
-				autoResize: true,
-				lineHeight,
-				containerId: base.id,
-			} as Record<string, unknown>;
-
-			// A label has no opinion about where it is: it is as wide as its glyphs
-			// and its container decides the rest. Both used to be guesses — an
-			// estimate of 0.6 x fontSize per character, and a rectangle a quarter of
-			// the way down its container — and both were wrong by tens of pixels on
-			// every board (`labels.ts`, `measure-text.ts`).
-			sizeText(label);
-			const placement = boundTextPlacement(base as unknown as LabelledElement, label as unknown as LabelledElement);
-			if (placement) {
-				label.x = placement.x;
-				label.y = placement.y;
-			}
-
-			boundTextElements.push(label);
-		}
+		appendLabel(el, base, rest, label, text);
 
 		cleanedExportElements.push(restoreServerFields(base));
 	}
@@ -613,8 +636,14 @@ export function expandElements(
 	// Patch shapes' boundElements to include connected arrows
 	const shapeBoundArrows = new Map<string, { type: string; id: string }[]>();
 	for (const el of cleanedExportElements) {
-		const startBinding = el.startBinding && typeof el.startBinding === "object" ? el.startBinding as Record<string, unknown> : null;
-		const endBinding = el.endBinding && typeof el.endBinding === "object" ? el.endBinding as Record<string, unknown> : null;
+		const startBinding =
+			el.startBinding && typeof el.startBinding === "object"
+				? (el.startBinding as Record<string, unknown>)
+				: null;
+		const endBinding =
+			el.endBinding && typeof el.endBinding === "object"
+				? (el.endBinding as Record<string, unknown>)
+				: null;
 		if (typeof startBinding?.elementId === "string") {
 			const arr = shapeBoundArrows.get(startBinding.elementId) || [];
 			arr.push({ type: "arrow", id: String(el.id) });
@@ -633,7 +662,7 @@ export function expandElements(
 			// otherwise every export cycle appends duplicate boundElements entries.
 			const existing = new Set(
 				(Array.isArray(el.boundElements) ? el.boundElements : []).map((b: unknown) => {
-					const record = b && typeof b === "object" ? b as Record<string, unknown> : {};
+					const record = b && typeof b === "object" ? (b as Record<string, unknown>) : {};
 					return typeof record.id === "string" ? record.id : undefined;
 				}),
 			);
@@ -676,7 +705,9 @@ export function expandElements(
 		cleanedExportElements.push(...order);
 	}
 
-	return deterministic ? canonicalizeKeys(cleanedExportElements) as Record<string, unknown>[] : cleanedExportElements;
+	return deterministic
+		? (canonicalizeKeys(cleanedExportElements) as Record<string, unknown>[])
+		: cleanedExportElements;
 }
 
 /**

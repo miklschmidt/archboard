@@ -196,7 +196,9 @@ export async function stopCanvas(): Promise<StopResult> {
 	try {
 		process.kill(pid, "SIGTERM");
 	} catch (error) {
-		throw new Error(`Failed to signal canvas server (pid ${pid}): ${(error as Error).message}`, { cause: error });
+		throw new Error(`Failed to signal canvas server (pid ${pid}): ${(error as Error).message}`, {
+			cause: error,
+		});
 	}
 
 	const deadline = Date.now() + 5000;

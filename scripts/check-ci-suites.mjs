@@ -46,7 +46,7 @@ const fail = (message) => {
 // --- the two lists ----------------------------------------------------------
 
 const pkg = JSON.parse(fs.readFileSync(join(repoRoot, "package.json"), "utf-8"));
-const suites = Object.keys(pkg.scripts).filter((name) => name.startsWith('test:'));
+const suites = Object.keys(pkg.scripts).filter((name) => name.startsWith("test:"));
 const chain = new Set(pkg.scripts.test.match(/test:[\w-]+/g) ?? []);
 const workflow = fs.readFileSync(workflowPath, "utf-8");
 

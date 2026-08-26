@@ -92,11 +92,11 @@ export async function alignElements(
 
 	const upserts = elementsToAlign.map((el) => {
 		const edge = edgeFn(el);
-		return {
-			id: el.id,
-			...(edge.x === undefined ? {} : { x: el.x + (edge.x - box(el).x) }),
-			...(edge.y === undefined ? {} : { y: el.y + (edge.y - box(el).y) }),
-		};
+		return Object.assign(
+			{ id: el.id },
+			edge.x === undefined ? {} : { x: el.x + (edge.x - box(el).x) },
+			edge.y === undefined ? {} : { y: el.y + (edge.y - box(el).y) },
+		);
 	});
 	await applyElementChanges({ upserts });
 
@@ -240,19 +240,25 @@ export async function duplicateElements(
 	// each copy reserves its name at the moment it is minted.
 	const taken = new Set<string>(elementIds);
 	const duplicates: ServerElement[] = originals.map((original) => {
-		const { createdAt: _createdAt, updatedAt: _updatedAt, version: _version, syncedAt: _syncedAt, source: _source, syncTimestamp: _syncTimestamp, ...rest } =
-			original as unknown as Record<string, unknown>;
+		const {
+			createdAt: _createdAt,
+			updatedAt: _updatedAt,
+			version: _version,
+			syncedAt: _syncedAt,
+			source: _source,
+			syncTimestamp: _syncTimestamp,
+			...rest
+		} = original as unknown as Record<string, unknown>;
 		const copyId = mintId(taken);
 		taken.add(copyId);
-		return {
-			...rest,
+		return Object.assign({}, rest, {
 			id: copyId,
 			x: original.x + offsetX,
 			y: original.y + offsetY,
 			createdAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 			version: 1,
-		} as ServerElement;
+		}) as unknown as ServerElement;
 	});
 
 	if (duplicates.length === 0) {

@@ -14,12 +14,13 @@ import { type ServerElement } from "../../runtime/engine/types.js";
 
 // apply: primary mutation command — {create:[], update:[], delete:[]} in one
 // invocation; a bare JSON array is shorthand for {create: [...]}.
-function normalizePatchUpdate(update: unknown): { id: string; updates: Record<string, unknown> } {
-	if (!update || typeof update !== "object" || Array.isArray(update)) {
+function normalizePatchUpdate(value: unknown): { id: string; updates: Record<string, unknown> } {
+	if (!value || typeof value !== "object" || Array.isArray(value)) {
 		throw new CliUsageError('Every update entry must be an object with an "id"');
 	}
-	const record = update as Record<string, unknown>;
-	if (typeof record.id !== "string" || !record.id) throw new CliUsageError('Every update entry needs an "id"');
+	const record = value as Record<string, unknown>;
+	if (typeof record.id !== "string" || !record.id)
+		throw new CliUsageError('Every update entry needs an "id"');
 
 	const id = record.id;
 	const set = record.set;
@@ -53,10 +54,16 @@ export async function apply(argv: string[]): Promise<void> {
 	const { positionals, flags } = parseArgs(argv, DOCUMENT_FLAG);
 	const input = await readJsonInput(positionals[0], "patch");
 
-	const patch: { create?: ElementInput[]; update?: unknown[]; delete?: string[] } = Array.isArray(input)
-		? { create: input.filter((value): value is ElementInput => Boolean(value && typeof value === "object")) }
+	const patch: { create?: ElementInput[]; update?: unknown[]; delete?: string[] } = Array.isArray(
+		input,
+	)
+		? {
+				create: input.filter((value): value is ElementInput =>
+					Boolean(value && typeof value === "object"),
+				),
+			}
 		: input && typeof input === "object"
-			? input as { create?: ElementInput[]; update?: unknown[]; delete?: string[] }
+			? (input as { create?: ElementInput[]; update?: unknown[]; delete?: string[] })
 			: {};
 
 	if (!patch.create?.length && !patch.update?.length && !patch.delete?.length) {
@@ -73,8 +80,8 @@ export async function apply(argv: string[]): Promise<void> {
 	const deletes = patch.delete ?? [];
 	if (patch.update?.length || deletes.length) {
 		const onBoard = new Set((await getElements()).map((element) => element.id));
-		for (const update of patch.update ?? []) {
-			const { id, updates: fields } = normalizePatchUpdate(update);
+		for (const patchEntry of patch.update ?? []) {
+			const { id, updates: fields } = normalizePatchUpdate(patchEntry);
 			if (!onBoard.has(id)) throw new Error(`Element ${id} not found`);
 			updates.push({ ...fields, id });
 		}
@@ -123,9 +130,9 @@ export async function add(argv: string[]): Promise<void> {
 		}
 	} else {
 		const input = await readJsonInput(positionals[0], "elements");
-		elements = (Array.isArray(input) ? input : [input]).filter(
-		(value): value is ElementInput => Boolean(value && typeof value === "object"),
-	);
+		elements = (Array.isArray(input) ? input : [input]).filter((value): value is ElementInput =>
+			Boolean(value && typeof value === "object"),
+		);
 	}
 
 	await ensureCanvasRunning();

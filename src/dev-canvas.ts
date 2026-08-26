@@ -72,7 +72,9 @@ if (generation !== gate.generation) {
 	} catch (error) {
 		// The old code is still running and still serving. Say so, because the
 		// other reading of a stack trace on a live canvas is that it died.
-		process.stderr.write("\n  !! THE RELOAD FAILED TO EVALUATE. The canvas is still running the code it had.\n");
+		process.stderr.write(
+			"\n  !! THE RELOAD FAILED TO EVALUATE. The canvas is still running the code it had.\n",
+		);
 		process.stderr.write(`     ${error instanceof Error ? error.stack : String(error)}\n`);
 	}
 
@@ -87,7 +89,7 @@ if (generation !== gate.generation) {
 			process.stdout.write(
 				`canvas reload ${generation} cost nothing: ` +
 					`${Object.keys(after.boards).length} board(s), ${Object.keys(after.panes).length} pane(s), ` +
-				`${after.sockets} socket(s), feed ${after.feedId} still at cursor ${after.cursor}.` + "\n",
+					`${after.sockets} socket(s), feed ${after.feedId} still at cursor ${after.cursor}.\n`,
 			);
 		}
 	} else {

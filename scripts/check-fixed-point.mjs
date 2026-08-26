@@ -87,6 +87,22 @@ import { withDoing } from "./lib/doing.mjs";
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const src = (p) => path.join(repoRoot, "src", p);
+const finiteTelemetry = (value) => typeof value === "number" && Number.isFinite(value);
+const roundedGeometry = (report) => ({
+	rect: {
+		x: Math.round(report?.rect?.x),
+		y: Math.round(report?.rect?.y),
+		width: Math.round(report?.rect?.width),
+		height: Math.round(report?.rect?.height),
+	},
+	viewport: {
+		x: Math.round(report?.viewport?.x),
+		y: Math.round(report?.viewport?.y),
+		width: Math.round(report?.viewport?.width),
+		height: Math.round(report?.viewport?.height),
+		zoom: Math.round(report?.viewport?.zoom),
+	},
+});
 const skipBuild = process.argv.includes("--skip-build");
 
 let failures = 0;
@@ -476,12 +492,12 @@ const sameValue = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 /** What the browser did to each element, as field names plus printable values. */
 const whatMoved = (held, rendered) => {
-	const server = new Map(held.map((e) => [e.id, e]));
+	const serverElements = new Map(held.map((e) => [e.id, e]));
 	const page = new Map(rendered.map((e) => [e.id, e]));
 	const moved = {};
 	const values = {};
 
-	for (const [id, ours] of server) {
+	for (const [id, ours] of serverElements) {
 		const theirs = page.get(id);
 		const name = nameOf(ours);
 		if (!theirs) {
@@ -513,12 +529,12 @@ const whatMoved = (held, rendered) => {
 	}
 
 	for (const [id, theirs] of page) {
-		if (server.has(id)) continue;
+		if (serverElements.has(id)) continue;
 		const name = `${nameOf(theirs)} <invented>`;
 		moved[name] = ["<not on the server at all>"];
 		values[name] = [`the browser is holding a ${theirs.type} the server never wrote`];
 	}
-	return { moved, values, serverCount: server.size, pageCount: page.size };
+	return { moved, values, serverCount: serverElements.size, pageCount: page.size };
 };
 
 const report = ({ moved, values, serverCount, pageCount }) => {
@@ -695,7 +711,7 @@ try {
 
 	let panes = await waitFor(
 		async () => (await api("GET", "/api/panes")).body,
-		(report) => report?.paneCount >= 1,
+		(telemetry) => telemetry?.paneCount >= 1,
 	);
 	check(
 		"  and registers a pane, so there is something rendering",
@@ -854,11 +870,11 @@ try {
 	);
 	const correctedPanes = await waitFor(
 		async () => (await api("GET", "/api/panes")).body,
-		(report) =>
-			report?.panes?.[0]?.board === "legacy-geometry" && report?.panes?.[0]?.elementCount === 1,
+		(telemetry) =>
+			telemetry?.panes?.[0]?.board === "legacy-geometry" &&
+			telemetry?.panes?.[0]?.elementCount === 1,
 		PANE_SETTLE_CAP_MS,
 	);
-	const finiteTelemetry = (value) => typeof value === "number" && Number.isFinite(value);
 	const correctedPane = correctedPanes?.panes?.[0];
 	check(
 		"after the note is corrected, the same board opens and renders",
@@ -910,21 +926,6 @@ try {
 		(pane) => pane?.board === "fixedpoint" && pane?.elementCount === 12,
 		PANE_SETTLE_CAP_MS,
 	);
-	const roundedGeometry = (report) => ({
-		rect: {
-			x: Math.round(report?.rect?.x),
-			y: Math.round(report?.rect?.y),
-			width: Math.round(report?.rect?.width),
-			height: Math.round(report?.rect?.height),
-		},
-		viewport: {
-			x: Math.round(report?.viewport?.x),
-			y: Math.round(report?.viewport?.y),
-			width: Math.round(report?.viewport?.width),
-			height: Math.round(report?.viewport?.height),
-			zoom: Math.round(report?.viewport?.zoom),
-		},
-	});
 	const expectedPublishedGeometry = roundedGeometry(publishedPane);
 	const telemetryProbeInstalled = await evalInPage(`(() => {
     const pane = document.querySelector('.pane-canvas');
@@ -1004,7 +1005,7 @@ try {
     const bodies = (window.__task117PanePosts ?? []).map(body => JSON.parse(body));
     return bodies.at(-1) ?? null;
   })()`),
-		(report) => report !== null,
+		(telemetry) => telemetry !== null,
 		PANE_SETTLE_CAP_MS,
 	);
 	const recoveredOnServer = await waitFor(

@@ -60,9 +60,7 @@ for (const name of names) {
 	let ok = false;
 	try {
 		ok = fs.readlinkSync(link) === wanted;
-	} catch {
-		ok = false;
-	}
+	} catch {}
 	if (!ok) {
 		fs.rmSync(link, { recursive: true, force: true });
 		fs.symlinkSync(wanted, link);

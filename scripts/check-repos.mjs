@@ -323,7 +323,7 @@ const cli = (args, cwd = nowhere) => {
 			EXCALIDRAW_NO_AUTOSTART: "1",
 		},
 	});
-	return { ok: run.status === 0, out: run.stdout ?? "", err: run.stderr ?? "" };
+	return { ok: run.status === 0, out: run.stdout, err: run.stderr };
 };
 
 try {

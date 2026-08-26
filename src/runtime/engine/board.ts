@@ -96,6 +96,10 @@ const SLUG_RE = /^[a-z0-9]+(?:[-_.][a-z0-9]+)*$/i;
 // `@` separates name from variant, so it can never appear in a name. The rest
 // are characters that are hostile in a path or in an Obsidian wiki-link.
 const NAME_SEGMENT_BAD_RE = /[@\\:*?"<>|[\]#^]/;
+const hasControlCharacter = (value: string): boolean =>
+	Array.from(value).some(
+		(character) => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127,
+	);
 
 // ─── Normalisation ────────────────────────────────────────────
 //
@@ -142,7 +146,7 @@ export function validateBoardName(name: string): string {
 					'("@" separates the variant; the rest break paths or Obsidian links)',
 			);
 		}
-		if (/[\u0000-\u001f\u007f]/.test(segment)) {
+		if (hasControlCharacter(segment)) {
 			throw new Error(`Invalid board name "${name}": control characters are not allowed`);
 		}
 	}
@@ -440,8 +444,15 @@ export function extractSceneElements(note: string): ServerElement[] {
 		throw new Error("not an Obsidian .excalidraw.md note");
 	}
 	const scene = JSON.parse(extractSceneJsonFromObsidianMd(note));
-	const record = scene && typeof scene === "object" && !Array.isArray(scene) ? scene as Record<string, unknown> : {};
-	const raw: unknown[] = Array.isArray(scene) ? scene : (Array.isArray(record.elements) ? record.elements : []);
+	const record =
+		scene && typeof scene === "object" && !Array.isArray(scene)
+			? (scene as Record<string, unknown>)
+			: {};
+	const raw: unknown[] = Array.isArray(scene)
+		? scene
+		: Array.isArray(record.elements)
+			? record.elements
+			: [];
 	return raw.filter((el) => {
 		if (!el || typeof el !== "object") return false;
 		return (el as Record<string, unknown>).isDeleted !== true;

@@ -51,7 +51,10 @@ import {
 import type { SocketCheck } from "./app-server-control.js";
 import { kept } from "./hot.js";
 import { recentDoing } from "./board-doing.js";
-import { DEFAULT_INJECT_DEBOUNCE_MS, DEFAULT_INJECT_MIN_INTERVAL_MS } from "../../shared/timing/timing.js";
+import {
+	DEFAULT_INJECT_DEBOUNCE_MS,
+	DEFAULT_INJECT_MIN_INTERVAL_MS,
+} from "../../shared/timing/timing.js";
 import logger from "./logger.js";
 
 const truthy = (value: string | undefined) => value === "1" || value === "true" || value === "yes";
@@ -234,7 +237,7 @@ class Injector {
 	}
 
 	private observe(method: string, params: unknown): void {
-		const record = params && typeof params === "object" ? params as Record<string, unknown> : {};
+		const record = params && typeof params === "object" ? (params as Record<string, unknown>) : {};
 		const threadId = record.threadId;
 		if (typeof threadId !== "string" || !threadId) return;
 
@@ -243,8 +246,11 @@ class Injector {
 				this.touch(threadId);
 				break;
 			case "turn/started":
-					const turn = record.turn && typeof record.turn === "object" ? record.turn as Record<string, unknown> : {};
-					this.touch(threadId).activeTurnId = typeof turn.id === "string" ? turn.id : null;
+				const turn =
+					record.turn && typeof record.turn === "object"
+						? (record.turn as Record<string, unknown>)
+						: {};
+				this.touch(threadId).activeTurnId = typeof turn.id === "string" ? turn.id : null;
 				break;
 			case "turn/completed":
 			case "turn/failed":

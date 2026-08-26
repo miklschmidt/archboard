@@ -2,7 +2,11 @@ import { z } from "zod";
 
 import { EXCALIDRAW_ELEMENT_TYPES, normalizeFontFamily } from "./types.js";
 import type { ExcalidrawElementType, ServerElement } from "./types.js";
-import { DEFAULT_FILL_STYLE, DEFAULT_SHAPE_BACKGROUND, FILLABLE_TYPES } from "../../shared/appearance/appearance.js";
+import {
+	DEFAULT_FILL_STYLE,
+	DEFAULT_SHAPE_BACKGROUND,
+	FILLABLE_TYPES,
+} from "../../shared/appearance/appearance.js";
 import { bindingFromRef, bindingOf, boundEndpoint, centreOf } from "./arrow-binding.js";
 import {
 	expandForBoard,
@@ -216,10 +220,15 @@ function wellFormNewElement(
 			(element as unknown as Record<string, unknown>).end !== undefined) &&
 		!Array.isArray(element.points)
 	) {
-	(element as unknown as Record<string, unknown>).points = DEFAULT_LINEAR_POINTS.map((point) => [...point]);
+		(element as unknown as Record<string, unknown>).points = DEFAULT_LINEAR_POINTS.map((point) => [
+			...point,
+		]);
 	}
 	applyDefaultFill(element);
-	spendArrowRefs(element as unknown as Record<string, unknown>, elementParams as Record<string, unknown>);
+	spendArrowRefs(
+		element as unknown as Record<string, unknown>,
+		elementParams as Record<string, unknown>,
+	);
 	return element;
 }
 
@@ -244,7 +253,11 @@ function mergeElementUpdate(existing: ServerElement, raw: Record<string, unknown
 		...updates,
 		fontFamily:
 			updates.fontFamily !== undefined
-				? normalizeFontFamily(typeof updates.fontFamily === "string" || typeof updates.fontFamily === "number" ? updates.fontFamily : undefined)
+				? normalizeFontFamily(
+						typeof updates.fontFamily === "string" || typeof updates.fontFamily === "number"
+							? updates.fontFamily
+							: undefined,
+					)
 				: existing.fontFamily,
 	};
 	bumpVersion(element, existing);
@@ -271,7 +284,10 @@ function mergeElementUpdate(existing: ServerElement, raw: Record<string, unknown
 		}
 	}
 
-	spendArrowRefs(element as unknown as Record<string, unknown>, statement as Record<string, unknown>);
+	spendArrowRefs(
+		element as unknown as Record<string, unknown>,
+		statement as Record<string, unknown>,
+	);
 	const changed = (key: string) => hasOwn(statement, key);
 	if (changed("points")) sizeFromPath(element);
 	const isLinear = element.type === "arrow" || element.type === "line";

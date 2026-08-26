@@ -76,6 +76,13 @@ const check = (label, condition, extra = "") => {
 	return condition;
 };
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const shape = (x) => [
+	"add",
+	"--board",
+	"payments",
+	"--one",
+	JSON.stringify({ type: "rectangle", x, y: 10, width: 60, height: 40 }),
+];
 
 const { makeIdentity, vaultPathFor } = await import(src("core/board.ts"));
 const {
@@ -543,34 +550,26 @@ try {
 	// --- and from the command line ------------------------------------------
 
 	const said = ["--doing", "adding a box against a version"];
-	const shape = (x) => [
-		"add",
-		"--board",
-		"payments",
-		"--one",
-		JSON.stringify({ type: "rectangle", x, y: 10, width: 60, height: 40 }),
-	];
 	const at = versionOfNoteAt(noteFile);
 	const ok = cli([...shape(900), "--expect-version", String(at), ...said]);
 	check("the command line can state it too", ok.status === 0, ok.stderr.trim().split("\n")[0]);
 	const refused = cli([...shape(950), "--expect-version", String(at), ...said]);
 	check(
 		"  and is refused on the next one, having moved the board on itself",
-		refused.status !== 0 && /version/.test(refused.stderr ?? ""),
+		refused.status !== 0 && /version/.test(refused.stderr),
 		`${refused.status} ${refused.stderr.trim().split("\n")[0]}`,
 	);
 	check(
 		"  printing the unchanged reason before the attached board on the CLI",
-		(refused.stderr ?? "").indexOf("Refusing to write") >= 0 &&
-			(refused.stderr ?? "").indexOf("Refusing to write") <
-				(refused.stderr ?? "").indexOf('"document"') &&
-			(refused.stderr ?? "").includes(`"version": ${at + 1}`),
+		refused.stderr.indexOf("Refusing to write") >= 0 &&
+			refused.stderr.indexOf("Refusing to write") < refused.stderr.indexOf('"document"') &&
+			refused.stderr.includes(`"version": ${at + 1}`),
 		refused.stderr.trim().split("\n")[0],
 	);
 	const mistyped = cli([...shape(10), "--expect-version", "latest", ...said]);
 	check(
 		"  and a mistyped one is a usage error rather than a write with no precondition",
-		mistyped.status === 2 && /--expect-version takes a whole number/.test(mistyped.stderr ?? ""),
+		mistyped.status === 2 && /--expect-version takes a whole number/.test(mistyped.stderr),
 		`${mistyped.status} ${mistyped.stderr.trim().split("\n")[0]}`,
 	);
 
@@ -690,18 +689,20 @@ try {
 	} catch (error) {
 		refusedClient = error;
 	}
+	if (!refusedClient?.refusal) throw new Error("the client did not retain the version refusal");
+	const clientRefusal = refusedClient.refusal;
 	check(
 		"  so a write built on what it saw two calls ago is refused, with nothing threaded through the agent",
-		refusedClient?.code === "BOARD_VERSION_CONFLICT",
-		String(refusedClient?.code ?? "not refused"),
+		refusedClient.code === "BOARD_VERSION_CONFLICT",
+		String(refusedClient.code ?? "not refused"),
 	);
 	check(
 		"  and the client error keeps that response document and version for either surface to print",
-		refusedClient?.refusal?.version === 6 &&
-		refusedClient?.refusal?.document.some((element) => element.id === "r2" && element.x === 280),
+		clientRefusal.version === 6 &&
+			clientRefusal.document.some((element) => element.id === "r2" && element.x === 280),
 		JSON.stringify({
-			version: refusedClient?.refusal?.version,
-			count: refusedClient?.refusal?.document?.length,
+			version: clientRefusal.version,
+			count: clientRefusal.document.length,
 		}),
 	);
 	check(

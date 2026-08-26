@@ -44,12 +44,18 @@ export function renameElementId(elements: unknown[], oldId: string, newId: strin
 		if (record.id === oldId) record.id = newId;
 		if (Array.isArray(record.boundElements)) {
 			for (const bound of record.boundElements) {
-				if (bound && typeof bound === "object" && (bound as Record<string, unknown>).id === oldId) (bound as Record<string, unknown>).id = newId;
+				if (bound && typeof bound === "object" && (bound as Record<string, unknown>).id === oldId)
+					(bound as Record<string, unknown>).id = newId;
 			}
 		}
 		for (const key of ["startBinding", "endBinding"] as const) {
 			const binding = record[key];
-			if (binding && typeof binding === "object" && (binding as Record<string, unknown>).elementId === oldId) (binding as Record<string, unknown>).elementId = newId;
+			if (
+				binding &&
+				typeof binding === "object" &&
+				(binding as Record<string, unknown>).elementId === oldId
+			)
+				(binding as Record<string, unknown>).elementId = newId;
 		}
 		if (record.containerId === oldId) record.containerId = newId;
 	}
@@ -622,7 +628,13 @@ export function wrapSceneAsObsidianMd(
 	for (const entry of readEmbeddedFiles(embedded)) delete wrappedFiles[entry.fileId];
 
 	const wrappedElements = wrappedRecord.elements as unknown[];
-	const used = new Set<string>(wrappedElements.flatMap((el) => el && typeof el === "object" && typeof (el as Record<string, unknown>).id === "string" ? [(el as Record<string, unknown>).id as string] : []));
+	const used = new Set<string>(
+		wrappedElements.flatMap((el) =>
+			el && typeof el === "object" && typeof (el as Record<string, unknown>).id === "string"
+				? [(el as Record<string, unknown>).id as string]
+				: [],
+		),
+	);
 	const entries: string[] = [];
 	for (const el of wrappedElements) {
 		if (!el || typeof el !== "object") continue;
@@ -636,7 +648,10 @@ export function wrapSceneAsObsidianMd(
 			used.add(newId);
 			renameElementId(wrappedElements, record.id, newId);
 		}
-		record.rawText = record.rawText && record.rawText !== "" ? record.rawText : (record.originalText ?? record.text ?? "");
+		record.rawText =
+			record.rawText && record.rawText !== ""
+				? record.rawText
+				: (record.originalText ?? record.text ?? "");
 		if (record.rawText !== "") entries.push(`${String(record.rawText)} ^${record.id}`);
 	}
 

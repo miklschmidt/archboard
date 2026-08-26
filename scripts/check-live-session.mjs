@@ -404,16 +404,22 @@ const INSTALL_INJECTOR = `(() => {
 // `{elementId, fixedPoint, focus, gap}`, and the note is written through
 // `canonicalizeKeys` whichever way round it arrives. Sorted recursively.
 // Nothing else is normalised: values are compared exactly, floats included.
+const canonicalise = (value) => {
+	if (Array.isArray(value)) return value.map(canonicalise);
+	if (value && typeof value === "object") {
+		const sorted = {};
+		for (const key of Object.keys(value).toSorted()) sorted[key] = canonicalise(value[key]);
+		return sorted;
+	}
+	return value;
+};
+const name = (element) =>
+	element.type === "text"
+		? `${element.id} (text ${JSON.stringify(element.text)})`
+		: `${element.id} (${element.type})`;
+const shapes = () => ["auth", "queue", "store"];
+
 function elementFields(element, ignored) {
-	const canonicalise = (value) => {
-		if (Array.isArray(value)) return value.map(canonicalise);
-		if (value && typeof value === "object") {
-			const sorted = {};
-			for (const key of Object.keys(value).toSorted()) sorted[key] = canonicalise(value[key]);
-			return sorted;
-		}
-		return value;
-	};
 	const fields = {};
 	for (const key of Object.keys(element).toSorted()) {
 		if (ignored.indexOf(key) !== -1) continue;
@@ -485,10 +491,6 @@ const divergences = (server, pane) => {
 	const theirs = new Map(pane.map((element) => [element.id, element]));
 	const found = [];
 	// A text element's id says nothing to a reader; what it reads does.
-	const name = (element) =>
-		element.type === "text"
-			? `${element.id} (text ${JSON.stringify(element.text)})`
-			: `${element.id} (${element.type})`;
 	for (const [id, element] of ours) {
 		const other = theirs.get(id);
 		if (!other) {
@@ -616,13 +618,13 @@ const held = async () => (await api("GET", `/api/elements?board=${BOARD}`)).body
 const agree = async ({ tries = 60, gap = 100 } = {}) => {
 	let last = null;
 	for (let i = 0; i < tries; i++) {
-		const server = snapshotOf(await held());
+		const serverSnapshot = snapshotOf(await held());
 		const read = await paneSnapshot();
 		if (read.error) throw new Error(`could not read the pane: ${read.error}`);
 		// Agreement is what `divergences` finds nothing to say about, not string
 		// equality: the two sides measure a text's width with two measurers and
 		// the last decimal places are allowed to differ (see MEASURER_EPSILON).
-		last = divergences(server, read.elements);
+		last = divergences(serverSnapshot, read.elements);
 		if (last.length === 0) return { agreed: true };
 		await sleep(gap);
 	}
@@ -898,7 +900,6 @@ try {
 
 	// --- the session ---------------------------------------------------------
 
-	const shapes = () => ["auth", "queue", "store"];
 	let created = 0;
 	let bothSides = 0;
 	let bounced = 0;
@@ -995,8 +996,8 @@ try {
 		} else if (humanMove === "delete") {
 			// Something the agent made and nothing is bound to, so a delete is a
 			// delete rather than a cascade.
-			const spare = madeIds.filter((id) => id.startsWith("svc") && byId.has(id));
-			target = spare[0];
+			const spare = madeIds.find((id) => id.startsWith("svc") && byId.has(id));
+			target = spare;
 			if (target) {
 				madeIds.splice(madeIds.indexOf(target), 1);
 				edit = { kind: "delete", id: target };
@@ -1691,8 +1692,8 @@ try {
 	if (!dragPoint.error) {
 		await browser(["mouse", "move", String(dragPoint.x), String(dragPoint.y)]);
 		await browser(["mouse", "down"]);
-		for (let step = 1; step <= 4; step++) {
-			await browser(["mouse", "move", String(dragPoint.x + step * 9), String(dragPoint.y)]);
+		for (let segment = 1; segment <= 4; segment++) {
+			await browser(["mouse", "move", String(dragPoint.x + segment * 9), String(dragPoint.y)]);
 		}
 		await browser(["mouse", "up"]);
 	}

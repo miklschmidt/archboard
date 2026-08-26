@@ -17,6 +17,11 @@ import type { ArchboardBlock, LogicalAddress } from "./metadata.js";
 export { archboardBlock, nodeIdOf, nodeIdsOnBoard } from "./metadata.js";
 export type { ArchboardBlock, LogicalAddress } from "./metadata.js";
 
+const areaOf = (el: ServerElement): number => {
+	const extent = extentOf(el);
+	return extent.width * extent.height;
+};
+
 // Promotion — declaring a set of elements to be a node, giving it a kind and
 // usually a binding in the same act (CONTEXT.md).
 //
@@ -511,10 +516,6 @@ export function planPromotion(request: PromotionRequest): PromotionPlan {
 		// hold an arrow, whose stored size is the box round its path and whose
 		// stored origin is its first point, so the untouched numbers can assign the
 		// connector's label to the node instead of the box's label (TASK-038).
-		const areaOf = (el: ServerElement) => {
-			const e = extentOf(el);
-			return e.width * e.height;
-		};
 		const labelled = shapes
 			.map((el) => ({ el, label: labelOf(el, board), area: areaOf(el) }))
 			.filter((x) => x.label)

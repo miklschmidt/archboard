@@ -155,7 +155,10 @@ export function ingestScene(
 	// the maps start empty and are filled from this scene alone.
 	const taken = new Set<string>(
 		sceneElements
-			.filter((raw): raw is { id: string } => !!raw && typeof (raw as Record<string, unknown>).id === "string")
+			.filter(
+				(raw): raw is { id: string } =>
+					!!raw && typeof (raw as Record<string, unknown>).id === "string",
+			)
 			.map((raw) => raw.id),
 	);
 	for (const raw of sceneElements) {

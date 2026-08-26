@@ -29,6 +29,24 @@ import { withDoing } from "./lib/doing.mjs";
 
 const moduleDir = dirname(fileURLToPath(import.meta.url));
 const src = (p) => join(moduleDir, "..", "src", p);
+const node = (id, name) => ({ archboard: { node: id, kind: "service", name } });
+const trueEdges = (el) => {
+	if (!Array.isArray(el.points) || el.points.length === 0) {
+		return { x0: el.x, y0: el.y, x1: el.x + (el.width || 0), y1: el.y + (el.height || 0) };
+	}
+	const xs = el.points.map(([px]) => el.x + px);
+	const ys = el.points.map(([, py]) => el.y + py);
+	return { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) };
+};
+const staleBox = (el) => ({ x: el.x, y: el.y, w: el.width || 0, h: el.height || 0 });
+const centreOf = (box) => ({ cx: box.x + box.w / 2, cy: box.y + box.h / 2 });
+const path = (el) => JSON.stringify(el.points);
+const at = (el, index) => ({ x: el.x + el.points[index][0], y: el.y + el.points[index][1] });
+const onOutline = (end, box) =>
+	Math.max(
+		Math.abs(end.x - (box.x + box.width / 2)) / (box.width / 2 + 15),
+		Math.abs(end.y - (box.y + box.height / 2)) / (box.height / 2 + 15),
+	);
 
 const { extentOf, measureLinear, remeasureLinear, isPathElement, validateRenderGeometry } =
 	await import(src("core/geometry.ts"));
@@ -472,7 +490,6 @@ for (const [name, arrow] of Object.entries(arrows)) {
 // Both strokes below run up and to the left, so each stores an origin that is
 // the far corner of the board it covers.
 {
-	const node = (id, name) => ({ archboard: { node: id, kind: "service", name } });
 	const elements = [
 		// `hub` is a small box with a stroke reaching out of it. The stroke's
 		// origin is 1100px away from the box; its far end lands on it.
@@ -661,7 +678,6 @@ for (const [name, arrow] of Object.entries(arrows)) {
 	};
 	const board = "?board=scratch";
 	const elementsOn = async () => (await api("GET", `/api/elements${board}`))?.elements ?? [];
-	const node = (id, name) => ({ archboard: { node: id, kind: "service", name } });
 
 	try {
 		for (let i = 0; i < 100; i++) {
@@ -769,7 +785,8 @@ for (const [name, arrow] of Object.entries(arrows)) {
 
 		const linearsOn = async () =>
 			(await elementsOn()).filter((el) => el.type === "arrow" || el.type === "line");
-		const badlySized = (arrows) => arrows.filter((el) => remeasureLinear(el) !== undefined);
+		const badlySized = (linearElements) =>
+			linearElements.filter((el) => remeasureLinear(el) !== undefined);
 
 		const drawn = await linearsOn();
 		assert(drawn.length === 4, `the board should hold four arrows, not ${drawn.length}`);
@@ -852,14 +869,6 @@ for (const [name, arrow] of Object.entries(arrows)) {
 		// a corner crops nothing but frames empty canvas, and every screenshot
 		// inherits it. Worked out here from the raw points rather than through the
 		// helper under test, so the two are independent statements.
-		const trueEdges = (el) => {
-			if (!Array.isArray(el.points) || el.points.length === 0) {
-				return { x0: el.x, y0: el.y, x1: el.x + (el.width || 0), y1: el.y + (el.height || 0) };
-			}
-			const xs = el.points.map(([px]) => el.x + px);
-			const ys = el.points.map(([, py]) => el.y + py);
-			return { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) };
-		};
 		const edges = scene.map(trueEdges);
 		assert(
 			near(minX, Math.min(...edges.map((e) => e.x0)), 1) &&
@@ -877,8 +886,6 @@ for (const [name, arrow] of Object.entries(arrows)) {
 		// the same board, measured both ways, and only one of them agrees with
 		// where the arrow is on screen.
 		const frame = boundingBoxOf(scene.map(boxOf));
-		const staleBox = (el) => ({ x: el.x, y: el.y, w: el.width || 0, h: el.height || 0 });
-		const centreOf = (box) => ({ cx: box.x + box.w / 2, cy: box.y + box.h / 2 });
 
 		const misnamed = [];
 		for (const el of scene.filter((e) => e.type === "arrow")) {
@@ -1017,8 +1024,6 @@ for (const [name, arrow] of Object.entries(arrows)) {
 		const wires = "?board=wires";
 		const wiresOn = async () => (await api("GET", `/api/elements${wires}`))?.elements ?? [];
 		const wire = async (id) => (await wiresOn()).find((el) => el.id === id);
-		const path = (el) => JSON.stringify(el.points);
-		const at = (el, index) => ({ x: el.x + el.points[index][0], y: el.y + el.points[index][1] });
 
 		await api("POST", `/api/elements/batch${wires}`, {
 			elements: [
@@ -1180,11 +1185,6 @@ for (const [name, arrow] of Object.entries(arrows)) {
 		// shape. A person dragging this end in a browser would have been given
 		// this point by Excalidraw; the report above is a fixture, so one write
 		// settles it there first and everything after compares against that.
-		const onOutline = (end, box) =>
-			Math.max(
-				Math.abs(end.x - (box.x + box.width / 2)) / (box.width / 2 + 15),
-				Math.abs(end.y - (box.y + box.height / 2)) / (box.height / 2 + 15),
-			);
 		const asDropped = at(userDrawn, 1);
 		await api("PUT", `/api/elements/d${wires}`, { x: 1000, y: 1000 });
 		const settledEnd = at(await wire("user-arrow"), 1);

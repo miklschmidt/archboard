@@ -38,7 +38,7 @@ import os from "node:os";
 import { spawn } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import WebSocket from "ws";
+import { WebSocket } from "ws";
 import { withDoing } from "./lib/doing.mjs";
 
 const moduleDir = dirname(fileURLToPath(import.meta.url));
@@ -563,7 +563,7 @@ const refusal = async (promise) => {
 		check(
 			`a claim over ${String(how)}: the claim is live`,
 			claim.created === true,
-				JSON.stringify(claim.claim),
+			JSON.stringify(claim.claim),
 		);
 		lapse(lockFileFor(board));
 
@@ -1087,7 +1087,7 @@ try {
 		check(
 			"and a write to it is refused while the first canvas holds the board",
 			acrossServers.status === 409 && refused?.code === "BOARD_HELD",
-		`${acrossServers.status} ${JSON.stringify(refused).slice(0, 140)}`,
+			`${acrossServers.status} ${JSON.stringify(refused).slice(0, 140)}`,
 		);
 		check(
 			"  naming the holder on the other canvas, which it has never heard of",
@@ -1190,7 +1190,7 @@ try {
 		check(
 			"  and the agent on the first canvas is told it lost the board",
 			toldElsewhere.status === 409 && toldElsewhere.body?.code === "CLAIM_REVOKED",
-		`${toldElsewhere.status} ${JSON.stringify(toldElsewhere.body).slice(0, 200)}`,
+			`${toldElsewhere.status} ${JSON.stringify(toldElsewhere.body).slice(0, 200)}`,
 		);
 
 		otherSocket.close();

@@ -70,10 +70,13 @@ export async function importScene(options: {
 	if (isObsidianExcalidrawMd(raw)) raw = extractSceneJsonFromObsidianMd(raw);
 
 	const sceneData: unknown = JSON.parse(raw);
-	const sceneRecord = sceneData && typeof sceneData === "object" ? sceneData as Record<string, unknown> : {};
+	const sceneRecord =
+		sceneData && typeof sceneData === "object" ? (sceneData as Record<string, unknown>) : {};
 	const elements: ServerElement[] = Array.isArray(sceneData)
-		? sceneData as ServerElement[]
-		: Array.isArray(sceneRecord.elements) ? sceneRecord.elements as ServerElement[] : [];
+		? (sceneData as ServerElement[])
+		: Array.isArray(sceneRecord.elements)
+			? (sceneRecord.elements as ServerElement[])
+			: [];
 	if (elements.length === 0) throw new Error("No elements found in the import data");
 
 	if (options.mode === "replace") await clearCanvas();

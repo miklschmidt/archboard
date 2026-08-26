@@ -54,7 +54,7 @@ export async function changes(argv: string[]): Promise<void> {
 				lines.push(
 					`[${String(event.cursor)}] ${String(event.at)} — ${String(event.origin)} ${String(event.significance)}: ${String(event.headline)}`,
 				);
-					if (typeof event.text === "string") lines.push(event.text);
+				if (typeof event.text === "string") lines.push(event.text);
 			}
 		}
 		// The cursor is part of the answer in text mode too: without it the caller

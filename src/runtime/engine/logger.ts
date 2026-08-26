@@ -70,7 +70,7 @@ const logger: winston.Logger = kept("logger", () =>
 					info.metadata && Object.keys(info.metadata).length
 						? ` ${JSON.stringify(info.metadata)}`
 						: "";
-					return `${String(info.timestamp)} [${String(info.level)}] ${String(info.message)}${extra}`;
+				return `${String(info.timestamp)} [${String(info.level)}] ${String(info.message)}${extra}`;
 			}),
 		),
 

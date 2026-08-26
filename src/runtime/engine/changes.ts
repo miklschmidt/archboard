@@ -65,6 +65,9 @@ import {
 } from "./compare.js";
 import { nodeIdOf, readElementMetadata } from "./metadata.js";
 
+const changeRank = (m: { changes: object }): number =>
+	["cluster", "container", "group"].some((k) => k in m.changes) ? 0 : 1;
+
 // Synthetic node ids are namespaced so that nothing downstream can mistake one
 // for something a human promoted. Nothing outside this module should ever
 // print one: `anonymous: true` plus a type is what a reader gets.
@@ -251,15 +254,16 @@ interface IdentityPair {
  * the pair is resolved BEFORE the diff — the old state is rewritten to use the
  * new node id — so compare sees one continuous node whose fields changed.
  */
+const nodeByElement = (elements: ServerElement[]): Map<string, string> => {
+	const map = new Map<string, string>();
+	for (const el of elements) {
+		const node = nodeIdOf(el);
+		if (node) map.set(el.id, node);
+	}
+	return map;
+};
+
 function identityPairs(before: ServerElement[], after: ServerElement[]): IdentityPair[] {
-	const nodeByElement = (elements: ServerElement[]) => {
-		const map = new Map<string, string>();
-		for (const el of elements) {
-			const node = nodeIdOf(el);
-			if (node) map.set(el.id, node);
-		}
-		return map;
-	};
 	const was = nodeByElement(before);
 	const now = nodeByElement(after);
 
@@ -407,7 +411,7 @@ export function diffBoardStates(
 		// would say the same thing twice in different words.
 		changed: detail.nodes.changed
 			.filter((n) => !identityNodes.has(n.node))
-			.map((n) => ({ ...n, changes: withoutStorageArtefacts(n.changes) }))
+			.map((n) => Object.assign({}, n, { changes: withoutStorageArtefacts(n.changes) }))
 			.filter((n) => Object.keys(n.changes).length > 0)
 			.map(changedNodeOf),
 		identity: identityChanges,
@@ -548,10 +552,8 @@ export function headlineFor(change: SemanticChange): string {
 		// cluster membership say who a node now belongs with, whereas region only
 		// says roughly where it sits and is the coarsest thing this can notice.
 		// Headline the ones that name a relationship when there are any.
-		const rank = (m: (typeof change.nodes.moved)[number]) =>
-			["cluster", "container", "group"].some((k) => k in m.changes) ? 0 : 1;
-		const ordered = [...change.nodes.moved].toSorted((a, b) => rank(a) - rank(b));
-		const deliberate = ordered.filter((m) => rank(m) === 0);
+		const ordered = [...change.nodes.moved].toSorted((a, b) => changeRank(a) - changeRank(b));
+		const deliberate = ordered.filter((m) => changeRank(m) === 0);
 		const subjects = (deliberate.length > 0 ? deliberate : ordered).map((m) => quoted(m.name));
 		return `${list(subjects)} moved`;
 	}

@@ -35,7 +35,7 @@ import os from "node:os";
 import { spawn, spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import WebSocket from "ws";
+import { WebSocket } from "ws";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = (p) => join(repoRoot, "src", p);
@@ -157,8 +157,9 @@ try {
 		["POST", "/api/elements/from-mermaid?board=payments", { mermaidDiagram: "graph TD; A-->B;" }],
 	]) {
 		const refused = await api(method, path, body);
+		const requestPath = String(path);
 		check(
-			`  ${method} ${path.split("?")[0]} is refused the same way`,
+			`  ${String(method)} ${requestPath.split("?")[0]} is refused the same way`,
 			refused.status === 400 && refused.body?.code === "DOING_REQUIRED",
 			`${String(refused.status)} ${String(refused.body?.code ?? "")}`,
 		);
@@ -171,7 +172,7 @@ try {
 		"the CLI is refused too, by the canvas rather than by a second list of write commands",
 		bareCli.status !== 0 &&
 			/says nothing about what it is doing/.test(`${bareCli.stdout}${bareCli.stderr}`),
-		`${bareCli.status} ${(bareCli.stderr ?? "").split("\n")[0]}`,
+		`${bareCli.status} ${bareCli.stderr.split("\n")[0]}`,
 	);
 	const saidCli = cli([
 		"add",
@@ -185,7 +186,7 @@ try {
 	check(
 		"  and goes through with --doing, which is global like --board",
 		saidCli.status === 0,
-		`${saidCli.status} ${(saidCli.stderr ?? "").split("\n")[0]}`,
+		`${saidCli.status} ${saidCli.stderr.split("\n")[0]}`,
 	);
 	check(
 		"  and `archboard help` says the flag exists, which is where a shell agent looks",
@@ -288,9 +289,7 @@ try {
 	);
 	check(
 		"  by an agent, and by which one, so two agents do not read as one",
-		news.doing?.kind === "agent" &&
-			typeof news.doing?.by === "string" &&
-			news.doing.by.length > 0,
+		news.doing?.kind === "agent" && typeof news.doing?.by === "string" && news.doing.by.length > 0,
 		JSON.stringify(news?.doing?.by),
 	);
 	check(

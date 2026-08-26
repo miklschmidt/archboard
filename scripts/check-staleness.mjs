@@ -26,7 +26,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import WebSocket from "ws";
+import { WebSocket } from "ws";
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const src = (p) => path.join(repoRoot, "src", p);

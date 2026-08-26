@@ -117,10 +117,10 @@ export function checkDoing(raw: unknown): DoingCheck {
 export function recordDoing(board: string, entry: DoingEntry): DoingEntry[] {
 	const key = normalizeBoardKey(board);
 	const { byBoard } = store();
-	const kept = byBoard.get(key) ?? [];
-	const last = kept[kept.length - 1];
+	const existing = byBoard.get(key) ?? [];
+	const last = existing[existing.length - 1];
 	const repeat = last !== undefined && last.doing === entry.doing;
-	const list = [...(repeat ? kept.slice(0, -1) : kept), entry].slice(-DOING_KEPT);
+	const list = [...(repeat ? existing.slice(0, -1) : existing), entry].slice(-DOING_KEPT);
 	byBoard.set(key, list);
 	return list;
 }

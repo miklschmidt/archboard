@@ -43,12 +43,12 @@ function boardListText(result: Awaited<ReturnType<typeof listBoardsOnCanvas>>): 
 			);
 		}
 		const lines = [`Boards describing ${result.repo}:`];
-		for (const board of result.boards) {
-			const level = board.identity?.level ? `, ${board.identity.level}` : "";
+		for (const entry of result.boards) {
+			const level = entry.identity?.level ? `, ${entry.identity.level}` : "";
 			lines.push(
-				`  ${board.key} (${board.identity?.variant ?? "current"}${level}, ${board.source ?? "vault"})`,
+				`  ${entry.key} (${entry.identity?.variant ?? "current"}${level}, ${entry.source ?? "vault"})`,
 			);
-			for (const node of board.nodes ?? []) {
+			for (const node of entry.nodes ?? []) {
 				lines.push(
 					`    ${node.name ?? node.node}${node.kind ? ` [${node.kind}]` : ""} -> ${node.path}`,
 				);
@@ -58,7 +58,7 @@ function boardListText(result: Awaited<ReturnType<typeof listBoardsOnCanvas>>): 
 		return lines.join("\n");
 	}
 	if (result.boards.length === 0) return `No boards in ${result.vault} yet.`;
-	return [`Boards in ${result.vault}:`, ...result.boards.map((board) => `  ${board.key}`)].join(
+	return [`Boards in ${result.vault}:`, ...result.boards.map((entry) => `  ${entry.key}`)].join(
 		"\n",
 	);
 }
@@ -74,6 +74,9 @@ const ADDRESS_FLAGS = {
 // putting a board on the half of the screen nobody asked for is a guess, and
 // the canvas refuses rather than making it.
 const PANE_FLAG = { pane: { takesValue: true } };
+
+const paneSpec = (place: string, index: number): string =>
+	place.includes(" ") ? String(index + 1) : place;
 
 /**
  * How a human points at panes: "the left pane", "the left and right panes".
@@ -123,12 +126,10 @@ function howToShowBranch(
 	}
 	// Overlapping tabs are placed "tab 1 of 2", which is a description rather
 	// than something to type, so those are pointed at by position instead.
-	const spec = (place: string, index: number): string =>
-		place.includes(" ") ? String(index + 1) : place;
 	const cost = onScreen
 		.map(
 			(pane, index) =>
-				`\`board open ${branch} --pane ${spec(pane.place, index)}\` replaces "${pane.board}"`,
+				`\`board open ${branch} --pane ${paneSpec(pane.place, index)}\` replaces "${pane.board}"`,
 		)
 		.join(", ");
 	return `The screen is full, so putting it up takes a board off: ${cost}.`;

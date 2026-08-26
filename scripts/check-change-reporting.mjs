@@ -56,14 +56,12 @@ check(
 	let generation = 0;
 	const firstPromise = Promise.resolve();
 	const first = { board: "a", generation, promise: firstPromise };
-	let current = first;
 	generation += 1;
-	current = null;
 	generation += 1;
 	const secondPromise = Promise.resolve();
 	const second = { board: "a", generation, promise: secondPromise };
-	current = second;
-	if (ownsHoldAttempt(current, first, firstPromise, generation)) current = null;
+	const current = second;
+	ownsHoldAttempt(current, first, firstPromise, generation);
 	check(
 		"a late hold from an earlier away-and-back generation cannot clear the newer attempt",
 		current === second && ownsHoldAttempt(current, second, secondPromise, generation),
@@ -482,7 +480,13 @@ class Harness {
 		h.due();
 		h.edit(id, newerEdit);
 		h.accept({
-			upserts: [Object.assign({}, h.server.document.find((element) => element.id === id), correction)],
+			upserts: [
+				Object.assign(
+					{},
+					h.server.document.find((element) => element.id === id),
+					correction,
+				),
+			],
 			deletes: [],
 		});
 		check(
@@ -491,7 +495,7 @@ class Harness {
 		);
 		h.due();
 		check(
-				`  and the next ${String(name)} delta converges from the canonical baseline`,
+			`  and the next ${String(name)} delta converges from the canonical baseline`,
 			h.server.requests[0]?.report.upserts.some((element) => element.id === id),
 		);
 		h.accept();

@@ -403,7 +403,7 @@ function analyze(files) {
 			const first = node.arguments[0];
 			removals.push({
 				receiver: node.expression.expression.getText(source),
-			event: ts.isStringLiteral(first) ? first.text : null,
+				event: ts.isStringLiteral(first) ? first.text : null,
 			});
 		});
 
@@ -415,7 +415,7 @@ function analyze(files) {
 			if (ts.isNewExpression(node)) {
 				const constructed = node.expression.getText(source);
 				const root = constructed.split(".")[0];
-				if (HARMLESS_CONSTRUCTORS.has(root) || constructed.endsWith('Error')) return;
+				if (HARMLESS_CONSTRUCTORS.has(root) || constructed.endsWith("Error")) return;
 				const name = declaredNameFor(node);
 				// A container bound to a name nobody writes to is a lookup table.
 				if (name && CONTAINERS.has(constructed) && !mutatedNames.has(name)) return;
@@ -461,7 +461,7 @@ function analyze(files) {
 
 			if (ADD_LISTENER.has(method)) {
 				const first = node.arguments[0];
-			const event = ts.isStringLiteral(first) ? first.text : null;
+				const event = ts.isStringLiteral(first) ? first.text : null;
 				if (!pairedWithRemoval(receiver, event, removals) && !guardedByOnceFlag(node, source)) {
 					report(
 						node,
