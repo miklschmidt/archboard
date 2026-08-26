@@ -606,7 +606,7 @@
 		},
 		{
 			"path": "snapshot",
-			"parserOwner": "legacy subcommand dispatch",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/snapshot.ts",
 			"stdout": "none by itself",
 			"result": "usage refusal",
@@ -621,7 +621,7 @@
 		},
 		{
 			"path": "snapshot save",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/snapshot.ts",
 			"stdout": "json object",
 			"result": "success,name,elementCount,createdAt",
@@ -636,7 +636,7 @@
 		},
 		{
 			"path": "snapshot list",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/snapshot.ts",
 			"stdout": "bare json array",
 			"result": "snapshot[]",
@@ -651,7 +651,7 @@
 		},
 		{
 			"path": "snapshot restore",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/snapshot.ts",
 			"stdout": "json object",
 			"result": "success,name,board,restored",

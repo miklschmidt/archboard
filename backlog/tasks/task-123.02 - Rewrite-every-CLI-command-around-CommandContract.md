@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-26 10:39'
+updated_date: '2026-08-26 10:41'
 labels: []
 dependencies:
   - TASK-123.01
@@ -122,6 +122,8 @@ Migration checkpoint 4 (repo/inject) complete: repo root/list/add/forget and inj
 Midpoint validation after repo/inject: first bun run check cleared all gates until the known human-performance transient reported the established no-correction shape [0,0,2]. A complete second bun run check passed clean, including human-performance [0,0], all three sequential headless browser suites, and live-session. No gate was weakened or skipped.
 
 Migration checkpoint 5 (pane/board) complete: pane root/open/close and board root/list/info/new/open are typed contracts; accepted board save remains unchanged. Post-contact staged parsing preserves server-before-late-validation, pane open retains optional second board request, board list --here keeps its immediate prevalidation diagnostic, and browser/refusal ordering remains fixed. Gates: stable fix, generation --check, 15 contract tests / 669 checks, 539 CLI checks, type-check, boards suite, and side-by-side suite.
+
+Migration checkpoint 6 (snapshot) complete: snapshot root/save/list/restore are typed contracts using one shared force option spec also consumed by route discovery. Missing names remain after server contact, option-leading restore remains compatible, and restore retains snapshot read -> board check -> clear -> batch order. Gates: stable fix, generation --check, 15 contract tests / 667 checks, 539 CLI checks, type-check, and boards suite.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

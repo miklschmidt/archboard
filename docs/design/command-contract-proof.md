@@ -2136,6 +2136,197 @@ Public result JSON Schema:
 }
 ```
 
+## snapshot
+
+Routes snapshot lifecycle commands.
+
+Usage:
+
+```text
+archboard snapshot save|list|restore [name] [--force]
+```
+
+Output: json (Namespace refusal).
+
+Prerequisites: none. Effects: none.
+
+REST relationships:
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"not": {}
+}
+```
+
+## snapshot save
+
+Captures the named board as an immutable snapshot.
+
+Usage:
+
+```text
+archboard snapshot save <name>
+```
+
+Output: json (Saved snapshot).
+
+Prerequisites: server, board, doing. Effects: write.
+
+REST relationships:
+
+- POST `/api/snapshots`, one. Save the snapshot
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean",
+			"const": true
+		},
+		"name": {
+			"type": "string"
+		},
+		"elements": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"createdAt": {
+			"type": "string"
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["success", "name", "elements", "createdAt"],
+	"additionalProperties": false
+}
+```
+
+## snapshot list
+
+Lists snapshots associated with the named board.
+
+Usage:
+
+```text
+archboard snapshot list
+```
+
+Output: json (Snapshot listing).
+
+Prerequisites: server, board. Effects: read.
+
+REST relationships:
+
+- GET `/api/snapshots`, one. List snapshots
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "array",
+	"items": {
+		"type": "object",
+		"properties": {
+			"name": {
+				"type": "string"
+			},
+			"createdAt": {
+				"type": "string"
+			},
+			"elementCount": {
+				"type": "integer",
+				"minimum": 0,
+				"maximum": 9007199254740991
+			}
+		},
+		"required": ["name", "createdAt"],
+		"additionalProperties": {}
+	}
+}
+```
+
+## snapshot restore
+
+Reads the snapshot and target before clearing and restoring the board.
+
+Usage:
+
+```text
+archboard snapshot restore <name> [--force]
+```
+
+Output: json (Restored snapshot).
+
+Prerequisites: server, board, doing. Effects: read, write.
+
+REST relationships:
+
+- GET `/api/snapshots/:name`, one. Read the snapshot
+- GET `/api/boards/info`, one. Read the target board
+- DELETE `/api/elements/clear`, one. Clear the target
+- POST `/api/elements/batch`, one. Restore elements
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean",
+			"const": true
+		},
+		"name": {
+			"type": "string"
+		},
+		"board": {
+			"type": "string"
+		},
+		"restored": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 9007199254740991
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["success", "name", "board", "restored"],
+	"additionalProperties": false
+}
+```
+
 ## clear
 
 Clears the named board only after explicit confirmation.
