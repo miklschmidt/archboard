@@ -1,11 +1,11 @@
 ---
 id: TASK-123.02
 title: Rewrite every CLI command around CommandContract
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-26 12:15'
+updated_date: '2026-08-26 12:19'
 labels: []
 dependencies:
   - TASK-123.01
@@ -16,6 +16,18 @@ references:
   - src/cli/commands
   - src/core/canvas-client.ts
   - tasks/task-123.01
+modified_files:
+  - src/cli/command-contract
+  - src/cli/commands
+  - scripts/check-cli-surface.mjs
+  - scripts/check-command-contract.mjs
+  - scripts/generate-cli-contract.mjs
+  - scripts/fixtures/command-contract
+  - docs/design/cli-command-audit.json
+  - docs/design/cli-command-audit.md
+  - docs/design/command-contract-design.md
+  - docs/design/command-contract-proof.json
+  - docs/design/command-contract-proof.md
 parent_task_id: TASK-123
 priority: high
 type: task
@@ -34,14 +46,14 @@ Migrate in vertical slices while keeping the complete CLI usable and tests green
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every existing public command and subcommand is registered through CommandContract and handled through the local adapter, with no command handler receiving raw argv or importing Commander.
-- [ ] #2 Every structured-success path returns a named, exported Zod result schema and inferred TypeScript type; the command boundary performs validation and serialization, and handlers contain no printJson calls.
-- [ ] #3 Reusable schemas define shared board addresses, versions and fingerprints, affected and generated elements, stable handles, file artifacts, browser and server state, and refusal details without forcing unrelated commands into one oversized envelope.
-- [ ] #4 JSON stdout remains valid and free of diagnostics; text, raw-content, and file-output commands use explicit contract modes; declared errors and refusals map consistently to stderr and established process exits.
-- [ ] #5 Public command names, aliases, flags, defaults, stdin and file behavior, output meanings, ordering guarantees, browser and server prerequisites, and write semantics remain compatible except where a linked approved task specifies a change.
-- [ ] #6 Legacy command registry, duplicated argument parsers, handler-side printing, and obsolete usage strings are deleted after migration, leaving one command-definition path.
-- [ ] #7 Tests exercise every command contract plus representative end-to-end invocations, including invalid and cross-field input, invalid handler output, one-write enforcement, optimistic concurrency, absent browser or server, stdin, files, text mode, and jq consumption.
-- [ ] #8 The CLI continues to run from source under the repository Bun version requirements, and Commander remains confined to the adapter boundary.
+- [x] #1 Every existing public command and subcommand is registered through CommandContract and handled through the local adapter, with no command handler receiving raw argv or importing Commander.
+- [x] #2 Every structured-success path returns a named, exported Zod result schema and inferred TypeScript type; the command boundary performs validation and serialization, and handlers contain no printJson calls.
+- [x] #3 Reusable schemas define shared board addresses, versions and fingerprints, affected and generated elements, stable handles, file artifacts, browser and server state, and refusal details without forcing unrelated commands into one oversized envelope.
+- [x] #4 JSON stdout remains valid and free of diagnostics; text, raw-content, and file-output commands use explicit contract modes; declared errors and refusals map consistently to stderr and established process exits.
+- [x] #5 Public command names, aliases, flags, defaults, stdin and file behavior, output meanings, ordering guarantees, browser and server prerequisites, and write semantics remain compatible except where a linked approved task specifies a change.
+- [x] #6 Legacy command registry, duplicated argument parsers, handler-side printing, and obsolete usage strings are deleted after migration, leaving one command-definition path.
+- [x] #7 Tests exercise every command contract plus representative end-to-end invocations, including invalid and cross-field input, invalid handler output, one-write enforcement, optimistic concurrency, absent browser or server, stdin, files, text mode, and jq consumption.
+- [x] #8 The CLI continues to run from source under the repository Bun version requirements, and Commander remains confined to the adapter boundary.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -138,6 +150,8 @@ Broad-review remediation at be03419 (fixed base 6c42fca): replaced remaining unc
 2026-08-26 broad-review remediation validation: after correcting the board creation result schema to accept the fixed runtime response with optional vaultBacked, the complete focused matrix passed: two stable fix passes, generation --check, 20 contract tests / 123 expectations, 57 contracts / 939 checks, 560 CLI checks, type-check, boundaries, module-scope, one-write (76), doing (39), version (65), lock (120), boards, branch, side-by-side, changes, library (49), install (106), repos, bind, and obsidian (197). A full bun run check then passed clean, followed by a separate full bun run test that passed on its first post-fix run. Both complete chains ran human-performance clean at [0,0] and all browser tests sequentially/headlessly: fixed-point, typed-text, and live-session with all 42 mixed-write cycles converged. No validation gate was weakened or skipped, and no transient occurred in this remediation pass.
 
 2026-08-26 final broad-rereview remediation: board info/new/open now extend a shared protected-server identity state with required version and placeholder, distinct created/saved/source/pane fields, no invented vaultBacked, and truthful pane-open nesting. Injection status and test now use concrete exported schemas, and the meaningful-result checker rejects optional-held-only objects. The test-only command-contract host export was deleted; held/result/artifact/order tests now launch the public two-argument runner with real subprocess streams and files. test:contracts executes the package CLI compatibility-record mode instead of reading checker source. Validation passed with two stable fix passes, generation --check, 21 contract tests / 137 expectations, 57 contracts / 953 checks, 573 CLI checks, type-check, boundaries, module-scope, every invariant/family suite, bun run check, and a separate bun run test. Both complete chains ran human-performance clean at [0,0] and fixed-point, typed-text, and live-session sequentially/headlessly, with all 42 mixed-write cycles converged. No transient, weakened gate, push, finalization, or protected-scope change occurred.
+
+Final parent acceptance verification at 9832525cf92c9f5ea0346114648364b37d68f9f5: bun run test:contracts passed 21 tests / 137 expectations plus 57 contracts, 57 audited paths, and 953 checks; bun run test:cli passed 573 checks; both TypeScript projects passed; test:suites confirmed 28/28 push suites. The implementation worker completed two byte-stable fix passes, bun run check, and a separate full bun run test with all browser suites sequential/headless. Independent broad Standards and Spec rereviews of 6c42fca6c0d5b9ecaa5ad40fde14ede684722d5a..9832525cf92c9f5ea0346114648364b37d68f9f5 are clean.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -155,3 +169,9 @@ created: 2026-08-26 08:49
 Plan approved after independent high-stakes review and two focused amendment rounds. Implementation is authorized only within the recorded fixed-base compatibility, zero-legacy, validation, and protected-scope gates.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Migrated all 33 commands and 24 subcommands to 57 schema-defined CommandContracts and removed the legacy argv/parser/printing boundary. Every structured result now has a meaningful named Zod schema and inferred type; the boundary owns staged input validation, held-adjusted result and artifact validation, output modes, diagnostics, refusals, and exits. Generated audit/proof/help metadata comes from the all-contract registry, fixed-base executable records preserve public behavior, and real jq tests prove structured stdout consumption. Verified by stable fix passes, both complete test chains, focused parent gates, and clean independent broad Standards and Spec reviews.
+<!-- SECTION:FINAL_SUMMARY:END -->
