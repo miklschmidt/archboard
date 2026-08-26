@@ -164,25 +164,28 @@ for (const entry of audit.entries) {
 const registry = cliContractRegistry();
 const contracts = registry.filter((entry) => entry.kind === "contract" && entry.contract);
 const legacy = registry.filter((entry) => entry.kind === "legacy");
-check("mixed registry has 57 entries", registry.length === 57, String(registry.length));
-check("mixed registry paths are unique", new Set(registry.map((entry) => entry.name)).size === 57);
 check(
-	"mixed registry matches the canonical audit in order",
+	"all-contract registry has exactly 57 entries",
+	registry.length === 57,
+	String(registry.length),
+);
+check(
+	"all-contract registry paths are unique",
+	new Set(registry.map((entry) => entry.name)).size === 57,
+);
+check(
+	"all-contract registry matches the canonical audit in order",
 	JSON.stringify(registry.map((entry) => entry.name)) === JSON.stringify(auditedPaths),
 );
+check("all 57 routes are contracts", contracts.length === 57, String(contracts.length));
+check("no legacy routes remain", legacy.length === 0, String(legacy.length));
 check(
-	"contract plus legacy remains 57",
-	contracts.length + legacy.length === 57,
-	`${contracts.length} + ${legacy.length}`,
-);
-check(
-	"every mixed route has one executable owner",
+	"every route has one executable contract owner",
 	registry.every(
 		(entry) =>
 			typeof entry.handlerOwner === "string" &&
-			(entry.kind === "legacy"
-				? typeof entry.handler === "function" && typeof entry.legacyArgv === "string"
-				: entry.contract?.path.join(" ") === entry.name),
+			entry.kind === "contract" &&
+			entry.contract?.path.join(" ") === entry.name,
 	),
 );
 check(
@@ -311,6 +314,21 @@ const visit = (directory) => {
 	}
 };
 visit(join(root, "src"));
+const familyCommandSources = sourceFiles
+	.filter(
+		(file) =>
+			relative(root, file).startsWith("src/cli/commands/") &&
+			relative(root, file) !== "src/cli/commands/run.ts",
+	)
+	.map((file) => [relative(root, file), fs.readFileSync(file, "utf8")]);
+const duplicateSubcommandCatalogues = familyCommandSources
+	.filter(([, source]) => /switch\s*\(\s*(?:action|op|command|subcommand)\s*\)/.test(source))
+	.map(([file]) => file);
+check(
+	"family modules contain no duplicate subcommand catalogues",
+	duplicateSubcommandCatalogues.length === 0,
+	duplicateSubcommandCatalogues.join(", "),
+);
 const commanderImports = sourceFiles.filter((file) =>
 	/from ["']commander["']/.test(fs.readFileSync(file, "utf8")),
 );
@@ -407,7 +425,7 @@ check(
 );
 check(
 	"generated legacy paths cover every registered legacy path",
-	JSON.stringify(generatedProof.legacyPaths) === JSON.stringify(legacy.map((entry) => entry.name)),
+	JSON.stringify(generatedProof.legacyPaths) === JSON.stringify([]),
 );
 check(
 	"generated routes cover every owner and parent in the mixed tree",
