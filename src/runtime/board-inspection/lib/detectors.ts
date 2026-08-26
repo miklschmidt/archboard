@@ -37,6 +37,7 @@ import {
 	type InspectionModel,
 } from "./model.js";
 import { sweepIntervalPairs, type SweepPartition, type SweepWork } from "./interval-sweep.js";
+import { compareIdentity, compareIdentityLists } from "./ordering.js";
 
 export const BROAD_PHASE_COMPARISON_LIMIT = 2_000_000 as const;
 
@@ -50,12 +51,14 @@ interface DetectionResult {
 		broadPhasePartitionChecks: number;
 		broadPhaseBucketScans: number;
 		broadPhaseBucketIndexOperations: number;
+		broadPhaseCompatibilityProfiles: number;
 		hierarchyEvents: number;
 		hierarchyCandidateVisits: number;
 		hierarchyExpiryPops: number;
 		hierarchyPartitionChecks: number;
 		hierarchyBucketScans: number;
 		hierarchyBucketIndexOperations: number;
+		hierarchyCompatibilityProfiles: number;
 		pathSegmentChecks: number;
 	};
 }
@@ -164,8 +167,8 @@ function make(input: FindingInput): InspectionFinding {
 		affectsCoverage: input.affectsCoverage,
 		message: input.message,
 		elements: [...(input.elements ?? [])].toSorted(refOrder),
-		nodes: [...(input.nodes ?? [])].toSorted((a, b) => a.id.localeCompare(b.id)),
-		obstacles: [...(input.obstacles ?? [])].toSorted((a, b) => a.id.localeCompare(b.id)),
+		nodes: [...(input.nodes ?? [])].toSorted((a, b) => compareIdentity(a.id, b.id)),
+		obstacles: [...(input.obstacles ?? [])].toSorted((a, b) => compareIdentity(a.id, b.id)),
 		points: [...(input.points ?? [])].map(point).toSorted(pointOrder),
 		affectedBBox,
 		focusBBox: focusResult.kind === "representable" ? focusResult.box : null,
@@ -174,7 +177,7 @@ function make(input: FindingInput): InspectionFinding {
 }
 
 const refOrder = (a: ElementRef, b: ElementRef) =>
-	(a.id ?? "").localeCompare(b.id ?? "") || a.sourceIndex - b.sourceIndex;
+	compareIdentity(a.id ?? "", b.id ?? "") || a.sourceIndex - b.sourceIndex;
 const pointOrder = (a: ScenePoint, b: ScenePoint) => a.x - b.x || a.y - b.y;
 const numberListOrder = (a: readonly number[], b: readonly number[]): number => {
 	for (let index = 0; index < Math.min(a.length, b.length); index += 1) {
@@ -1365,7 +1368,7 @@ function labelFindings(
 				details: {
 					containerId: duplicate.containerId,
 					keeperId: duplicate.keep,
-					duplicateIds: duplicate.remove.toSorted(),
+					duplicateIds: duplicate.remove.toSorted(compareIdentity),
 				},
 				message: `Container ${duplicate.containerId} has duplicate labels.`,
 				elements: uniqueRefs(involved),
@@ -1539,10 +1542,36 @@ const partitioned = <T>(
 	semantics: (value: T) => SweepPartition,
 ): PairItem<T>[] => items.map((item) => ({ ...item, semantics: semantics(item.value) }));
 
+const NO_EXCLUSIONS: ReadonlySet<string> = new Set<string>();
+
 const unrestrictedPartition = (partition: string): SweepPartition => ({
 	partition,
-	excludedPartitions: new Set<string>(),
+	excludedPartitions: NO_EXCLUSIONS,
 });
+
+interface StringSetNode {
+	children: Map<string, StringSetNode>;
+	value: ReadonlySet<string> | null;
+}
+
+function internStringSet(
+	root: StringSetNode,
+	keys: readonly string[],
+	build: (sortedKeys: readonly string[]) => ReadonlySet<string>,
+): ReadonlySet<string> {
+	const sortedKeys = [...new Set(keys)].toSorted(compareIdentity);
+	let node = root;
+	for (const key of sortedKeys) {
+		let child = node.children.get(key);
+		if (!child) {
+			child = { children: new Map(), value: null };
+			node.children.set(key, child);
+		}
+		node = child;
+	}
+	if (!node.value) node.value = build(sortedKeys);
+	return node.value;
+}
 
 function pairSweep<A, B>(
 	left: readonly PairItem<A>[],
@@ -1588,6 +1617,7 @@ function pairSweep<A, B>(
 	work.partitionChecks += measured.partitionChecks;
 	work.bucketScans += measured.bucketScans;
 	work.bucketIndexOperations += measured.bucketIndexOperations;
+	work.compatibilityProfiles += measured.compatibilityProfiles;
 }
 
 function collisionFindings(
@@ -1605,6 +1635,7 @@ function collisionFindings(
 		partitionChecks: 0,
 		bucketScans: 0,
 		bucketIndexOperations: 0,
+		compatibilityProfiles: 0,
 	};
 	const byId = model.byId;
 	const segmentItems = segments.map((segment) => ({
@@ -1679,15 +1710,19 @@ function collisionFindings(
 		});
 	}
 	const labelNodePartitions = new Map<string, SweepPartition>();
+	const labelExclusionSets: StringSetNode = { children: new Map(), value: null };
 	for (const label of labelNodeRecords) {
 		const ownership = model.labelOwnership.get(label.id!);
 		const candidateNodes =
 			ownership?.candidateOwnerIds
 				.map((owner) => model.nodeOfElement.get(owner))
 				.filter((owner): owner is string => owner !== undefined) ?? [];
-		const excluded = new Set(candidateNodes);
-		for (const owner of candidateNodes)
-			for (const ancestor of semanticParents(model, owner)) excluded.add(ancestor);
+		const excluded = internStringSet(labelExclusionSets, candidateNodes, (owners) => {
+			const exclusions = new Set(owners);
+			for (const owner of owners)
+				for (const ancestor of semanticParents(model, owner)) exclusions.add(ancestor);
+			return exclusions;
+		});
 		labelNodePartitions.set(label.id!, {
 			partition: `label:${label.id!}`,
 			excludedPartitions: excluded,
@@ -1760,16 +1795,17 @@ function collisionFindings(
 			sweepWork,
 			"connector-obstacle",
 		);
-	if (!counter.limited)
+	if (!counter.limited) {
+		const partitions = new Map<string, SweepPartition>();
+		for (const segment of segments)
+			if (!partitions.has(segment.connectorId))
+				partitions.set(segment.connectorId, {
+					partition: segment.connectorId,
+					excludedPartitions: new Set([segment.connectorId]),
+				});
 		pairSweep(
-			partitioned(segmentItems, (segment) => ({
-				partition: segment.connectorId,
-				excludedPartitions: new Set([segment.connectorId]),
-			})),
-			partitioned(segmentItems, (segment) => ({
-				partition: segment.connectorId,
-				excludedPartitions: new Set([segment.connectorId]),
-			})),
+			partitioned(segmentItems, (segment) => partitions.get(segment.connectorId)!),
+			partitioned(segmentItems, (segment) => partitions.get(segment.connectorId)!),
 			true,
 			(a, b) => {
 				const hit = intersectSegments(a.a, a.b, b.a, b.b, policy.intersectionTolerance);
@@ -1821,16 +1857,20 @@ function collisionFindings(
 			sweepWork,
 			"connector-intersection",
 		);
-	if (!counter.limited)
+	}
+	if (!counter.limited) {
+		const partitions = new Map(
+			leaves.map((node) => [
+				node.id,
+				{
+					partition: node.id,
+					excludedPartitions: new Set(node.parentId ? [node.parentId] : []),
+				} satisfies SweepPartition,
+			]),
+		);
 		pairSweep(
-			partitioned(leafNodeItems, (node) => ({
-				partition: node.id,
-				excludedPartitions: new Set(node.parentId ? [node.parentId] : []),
-			})),
-			partitioned(leafNodeItems, (node) => ({
-				partition: node.id,
-				excludedPartitions: new Set(node.parentId ? [node.parentId] : []),
-			})),
+			partitioned(leafNodeItems, (node) => partitions.get(node.id)!),
+			partitioned(leafNodeItems, (node) => partitions.get(node.id)!),
 			true,
 			(a, b) => {
 				const hit = overlap(a.body, b.body);
@@ -1859,6 +1899,7 @@ function collisionFindings(
 			sweepWork,
 			"node-overlap",
 		);
+	}
 	if (!counter.limited)
 		pairSweep(
 			partitioned(labelNodeItems, (label) => labelNodePartitions.get(label.id!)!),
@@ -1891,15 +1932,21 @@ function collisionFindings(
 			sweepWork,
 			"label-node-overlap",
 		);
-	if (!counter.limited)
+	if (!counter.limited) {
+		const partitions = new Map<string, SweepPartition>();
+		for (const label of labelLabelItems) {
+			const owner = model.confirmedLabels.get(label.id!)!;
+			if (!partitions.has(owner))
+				partitions.set(owner, { partition: owner, excludedPartitions: new Set([owner]) });
+		}
 		pairSweep(
 			partitioned(labelLabelItems, (label) => {
 				const owner = model.confirmedLabels.get(label.id!)!;
-				return { partition: owner, excludedPartitions: new Set([owner]) };
+				return partitions.get(owner)!;
 			}),
 			partitioned(labelLabelItems, (label) => {
 				const owner = model.confirmedLabels.get(label.id!)!;
-				return { partition: owner, excludedPartitions: new Set([owner]) };
+				return partitions.get(owner)!;
 			}),
 			true,
 			(a, b) => {
@@ -1928,6 +1975,7 @@ function collisionFindings(
 			sweepWork,
 			"label-label-overlap",
 		);
+	}
 	if (counter.limited) {
 		const allBoxes = [...segmentItems, ...allNodeItems, ...obstacleItems, ...labelNodeItems].map(
 			(item) => item.box,
@@ -1978,20 +2026,20 @@ function sortFindings(findings: readonly InspectionFinding[]): InspectionFinding
 		if (code) return code;
 		const reason = REASON_ORDER.indexOf(a.reason) - REASON_ORDER.indexOf(b.reason);
 		if (reason) return reason;
-		const nodes = a.nodes
-			.map((node) => node.id)
-			.join("\0")
-			.localeCompare(b.nodes.map((node) => node.id).join("\0"));
+		const nodes = compareIdentityLists(
+			a.nodes.map((node) => node.id),
+			b.nodes.map((node) => node.id),
+		);
 		if (nodes) return nodes;
-		const obstacles = a.obstacles
-			.map((obstacle) => obstacle.id)
-			.join("\0")
-			.localeCompare(b.obstacles.map((obstacle) => obstacle.id).join("\0"));
+		const obstacles = compareIdentityLists(
+			a.obstacles.map((obstacle) => obstacle.id),
+			b.obstacles.map((obstacle) => obstacle.id),
+		);
 		if (obstacles) return obstacles;
-		const elements = a.elements
-			.map((element) => element.id ?? "")
-			.join("\0")
-			.localeCompare(b.elements.map((element) => element.id ?? "").join("\0"));
+		const elements = compareIdentityLists(
+			a.elements.map((element) => element.id ?? ""),
+			b.elements.map((element) => element.id ?? ""),
+		);
 		if (elements) return elements;
 		const sources = numberListOrder(
 			a.elements.map((element) => element.sourceIndex),
@@ -2007,7 +2055,7 @@ function sortFindings(findings: readonly InspectionFinding[]): InspectionFinding
 			(boxA?.y ?? Infinity) - (boxB?.y ?? Infinity) ||
 			(boxA?.width ?? Infinity) - (boxB?.width ?? Infinity) ||
 			(boxA?.height ?? Infinity) - (boxB?.height ?? Infinity) ||
-			a.message.localeCompare(b.message)
+			compareIdentity(a.message, b.message)
 		);
 	});
 }
@@ -2035,12 +2083,14 @@ export function detectBoard(
 			broadPhasePartitionChecks: collisions.preprocessingWork.partitionChecks,
 			broadPhaseBucketScans: collisions.preprocessingWork.bucketScans,
 			broadPhaseBucketIndexOperations: collisions.preprocessingWork.bucketIndexOperations,
+			broadPhaseCompatibilityProfiles: collisions.preprocessingWork.compatibilityProfiles,
 			hierarchyEvents: model.hierarchyWork.events,
 			hierarchyCandidateVisits: model.hierarchyWork.activeVisits,
 			hierarchyExpiryPops: model.hierarchyWork.expiryPops,
 			hierarchyPartitionChecks: model.hierarchyWork.partitionChecks,
 			hierarchyBucketScans: model.hierarchyWork.bucketScans,
 			hierarchyBucketIndexOperations: model.hierarchyWork.bucketIndexOperations,
+			hierarchyCompatibilityProfiles: model.hierarchyWork.compatibilityProfiles,
 			pathSegmentChecks: structural.pathSegmentChecks,
 		},
 	};
