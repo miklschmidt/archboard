@@ -8,6 +8,13 @@ node_modules
 # (ADR 0014). A dist/ left over from before that holds compiled JS nothing reads.
 dist/
 
+# On-demand CLI contract views. The authored source is
+# docs/design/cli-command-audit.json; these three render from it and the live
+# command registry with `bun run generate:cli-contract`.
+docs/design/generated/cli-command-audit.md
+docs/design/generated/command-contract-proof.json
+docs/design/generated/command-contract-proof.md
+
 # Environment files
 .env
 

@@ -166,6 +166,14 @@ note archboard did not write. About fifteen seconds.
   The tests reject malformed public results and private file artifacts before
   stdout or a local write, pin command-specific held presentation, and prove
   generated introspection omits private execution and artifact data. The
+  canonical command audit is the authored
+  `docs/design/cli-command-audit.json`; the Markdown audit and JSON/Markdown
+  proofs are derived views. The gate renders and validates them in memory, then
+  invokes `bun run generate:cli-contract -- --output-dir <temporary-directory>`
+  twice from absent output directories and compares exact bytes. It removes
+  the temporary outputs and proves the checkout status is unchanged. For a
+  local readable copy, `bun run generate:cli-contract` writes the three views
+  to ignored `docs/design/generated/`. The
   black-box argv cases in `test:cli` continue through the real Commander
   adapter and the package binary.
 - `bun run test:cli` resolves `bin.archboard` from `package.json` and drives

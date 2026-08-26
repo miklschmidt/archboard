@@ -3,8 +3,13 @@
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
+import os from "node:os";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+	CLI_CONTRACT_ARTIFACT_NAMES,
+	renderCliContractArtifacts,
+} from "./lib/cli-contract-artifacts.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const audit = JSON.parse(
@@ -581,19 +586,9 @@ for (const publicHandlerType of ["CommandContext", "CommandExecution", "PendingA
 	);
 }
 
-const proofJson = fs.readFileSync(
-	join(root, "docs", "design", "command-contract-proof.json"),
-	"utf8",
-);
+const renderedArtifacts = await renderCliContractArtifacts(root);
+const proofJson = renderedArtifacts.artifacts.get("command-contract-proof.json");
 const generatedProof = JSON.parse(proofJson);
-const expectedGeneratedRoutes = registry.map(
-	({ name, parent, handlerOwner, parserOwner, bare, childDiscovery }) => {
-		const route = { name, parent, handlerOwner, parserOwner };
-		if (bare) route.bare = bare;
-		if (childDiscovery) route.childDiscovery = childDiscovery;
-		return route;
-	},
-);
 check(
 	"generated contracts cover every registered contract",
 	JSON.stringify(generatedProof.contracts.map((entry) => entry.name)) ===
@@ -601,7 +596,7 @@ check(
 );
 check(
 	"generated routes cover every contract owner and parent",
-	JSON.stringify(generatedProof.routes) === JSON.stringify(expectedGeneratedRoutes),
+	JSON.stringify(generatedProof.routes) === JSON.stringify(renderedArtifacts.routes),
 );
 check(
 	"generated contract routes omit synthetic handler names",
@@ -612,15 +607,83 @@ for (const privateName of ["pendingArtifact", "artifactSchema", "CommanderArgvPa
 }
 check("proof omits an internal stdout key", !/"stdout"\s*:/.test(proofJson));
 
-const proofMarkdown = fs.readFileSync(
-	join(root, "docs", "design", "command-contract-proof.md"),
-	"utf8",
-);
+const proofMarkdown = renderedArtifacts.artifacts.get("command-contract-proof.md");
 check("generated usage never uses inline code", !/^Usage: `archboard/m.test(proofMarkdown));
 check(
 	"every generated usage is a fenced text block",
 	(proofMarkdown.match(/^Usage:\n\n```text\narchboard /gm) ?? []).length === contracts.length,
 );
+const auditMarkdown = renderedArtifacts.artifacts.get("cli-command-audit.md");
+check(
+	"generated audit renders every canonical path",
+	(auditMarkdown.match(/^\| +`[^`]+` +\|/gm) ?? []).length === auditedPaths.length,
+);
+check(
+	"generated audit renders every workflow decision",
+	audit.workflows.every((workflow) => auditMarkdown.includes(`### ${workflow.name}`)),
+);
+
+const generationRoot = fs.mkdtempSync(join(os.tmpdir(), "archboard-cli-contract-generation-"));
+const firstOutput = join(generationRoot, "first");
+const secondOutput = join(generationRoot, "second");
+const statusBeforeGeneration = spawnSync(
+	"git",
+	["status", "--porcelain", "--untracked-files=all"],
+	{ cwd: root, encoding: "utf8" },
+).stdout;
+let firstGeneration;
+let secondGeneration;
+let generatedFileNames = [];
+let repeatedBytesMatch = false;
+try {
+	firstGeneration = spawnSync(
+		"bun",
+		["run", "generate:cli-contract", "--", "--output-dir", firstOutput],
+		{ cwd: root, encoding: "utf8" },
+	);
+	secondGeneration = spawnSync(
+		"bun",
+		["run", "generate:cli-contract", "--", "--output-dir", secondOutput],
+		{ cwd: root, encoding: "utf8" },
+	);
+	generatedFileNames = fs.existsSync(firstOutput) ? fs.readdirSync(firstOutput).toSorted() : [];
+	repeatedBytesMatch = CLI_CONTRACT_ARTIFACT_NAMES.every(
+		(name) =>
+			fs.existsSync(join(firstOutput, name)) &&
+			fs.existsSync(join(secondOutput, name)) &&
+			fs.readFileSync(join(firstOutput, name), "utf8") ===
+				fs.readFileSync(join(secondOutput, name), "utf8"),
+	);
+} finally {
+	fs.rmSync(generationRoot, { recursive: true, force: true });
+}
+check(
+	"on-demand generation succeeds from two absent output directories",
+	firstGeneration.status === 0 && secondGeneration.status === 0,
+	`${firstGeneration.status}: ${firstGeneration.stderr || secondGeneration.stderr || ""}`,
+);
+check(
+	"on-demand generation writes only the three declared derived views",
+	JSON.stringify(generatedFileNames) === JSON.stringify(CLI_CONTRACT_ARTIFACT_NAMES.toSorted()),
+	JSON.stringify(generatedFileNames),
+);
+check("repeated on-demand generation is byte-deterministic", repeatedBytesMatch);
+const statusAfterGeneration = spawnSync("git", ["status", "--porcelain", "--untracked-files=all"], {
+	cwd: root,
+	encoding: "utf8",
+}).stdout;
+check(
+	"temporary on-demand generation leaves the checkout unchanged",
+	statusAfterGeneration === statusBeforeGeneration,
+);
+for (const name of CLI_CONTRACT_ARTIFACT_NAMES) {
+	const ignored = spawnSync(
+		"git",
+		["check-ignore", "--quiet", join("docs", "design", "generated", name)],
+		{ cwd: root },
+	);
+	check(`${name} has a precise ignored on-demand destination`, ignored.status === 0);
+}
 
 if (failures > 0) {
 	console.error(`\n${failures} of ${checks} command-contract checks failed.`);
