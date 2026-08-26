@@ -197,7 +197,7 @@
 		},
 		{
 			"path": "pane",
-			"parserOwner": "legacy subcommand dispatch",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/pane.ts",
 			"stdout": "none by itself",
 			"result": "usage refusal",
@@ -212,7 +212,7 @@
 		},
 		{
 			"path": "pane open",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract staged token parser",
 			"handlerOwner": "src/cli/commands/pane.ts",
 			"stdout": "json object",
 			"result": "pane layout/open result",
@@ -227,7 +227,7 @@
 		},
 		{
 			"path": "pane close",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract staged token parser",
 			"handlerOwner": "src/cli/commands/pane.ts",
 			"stdout": "json object",
 			"result": "pane layout/close result",
@@ -332,7 +332,7 @@
 		},
 		{
 			"path": "board",
-			"parserOwner": "legacy subcommand dispatch",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/board.ts",
 			"stdout": "none by itself",
 			"result": "usage refusal",
@@ -347,7 +347,7 @@
 		},
 		{
 			"path": "board list",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract staged token parser",
 			"handlerOwner": "src/cli/commands/board.ts",
 			"stdout": "json object or text",
 			"result": "open and vault boards with bindings",
@@ -362,7 +362,7 @@
 		},
 		{
 			"path": "board info",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract staged token parser",
 			"handlerOwner": "src/cli/commands/board.ts",
 			"stdout": "json object",
 			"result": "board identity,file,version,held",
@@ -377,7 +377,7 @@
 		},
 		{
 			"path": "board new",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract staged token parser",
 			"handlerOwner": "src/cli/commands/board.ts",
 			"stdout": "json object",
 			"result": "new board and pane placement",
@@ -392,7 +392,7 @@
 		},
 		{
 			"path": "board open",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract staged token parser",
 			"handlerOwner": "src/cli/commands/board.ts",
 			"stdout": "json object",
 			"result": "opened board/source/panes",

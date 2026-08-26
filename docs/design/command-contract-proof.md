@@ -1002,6 +1002,84 @@ Public result JSON Schema:
 }
 ```
 
+## pane
+
+Routes pane mutation commands.
+
+Usage:
+
+```text
+archboard pane open [--board <key>] | pane close <spec>
+```
+
+Output: json (Namespace refusal).
+
+Prerequisites: none. Effects: none.
+
+REST relationships:
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"not": {}
+}
+```
+
+## pane open
+
+Splits the rendered canvas and optionally opens the globally named board there.
+
+Usage:
+
+```text
+archboard pane open [--board <key>]
+```
+
+Output: json (Opened pane).
+
+Prerequisites: server, browser. Effects: browser.
+
+REST relationships:
+
+- POST `/api/panes/open`, one. Open the pane
+- POST `/api/boards/open`, conditional. Open the named board in the new pane
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema"
+}
+```
+
+## pane close
+
+Takes one board off screen without changing the board itself.
+
+Usage:
+
+```text
+archboard pane close <spec>
+```
+
+Output: json (Closed pane).
+
+Prerequisites: server, browser. Effects: browser.
+
+REST relationships:
+
+- POST `/api/panes/close`, one. Close the selected pane
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema"
+}
+```
+
 ## viewport
 
 Moves the camera owned by a rendered browser pane.
@@ -1245,6 +1323,212 @@ Public result JSON Schema:
 	},
 	"required": ["success", "repo", "forgotten", "registry"],
 	"additionalProperties": false
+}
+```
+
+## board
+
+Routes board lifecycle commands.
+
+Usage:
+
+```text
+archboard board needs a subcommand: list, info, new, open, save
+```
+
+Output: json (Namespace refusal).
+
+Prerequisites: none. Effects: none.
+
+REST relationships:
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"not": {}
+}
+```
+
+## board list
+
+Lists vault and in-memory boards, optionally filtered by repository binding.
+
+Usage:
+
+```text
+archboard board list [--repo <host/owner/name> | --here] [--text]
+```
+
+Output: json (Board listing); text (Human-readable board listing).
+
+Prerequisites: server. Effects: local-read, read.
+
+REST relationships:
+
+- GET `/api/boards`, one. List boards
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"anyOf": [
+		{
+			"type": "object",
+			"properties": {
+				"success": {
+					"type": "boolean",
+					"const": true
+				},
+				"vault": {
+					"type": "string"
+				},
+				"boards": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"key": {
+								"type": "string"
+							}
+						},
+						"required": ["key"],
+						"additionalProperties": {}
+					}
+				},
+				"open": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"key": {
+								"type": "string"
+							}
+						},
+						"required": ["key"],
+						"additionalProperties": {}
+					}
+				},
+				"onScreen": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"paneId": {
+								"type": "string"
+							},
+							"place": {
+								"type": "string"
+							},
+							"board": {
+								"type": "string"
+							}
+						},
+						"required": ["paneId", "place", "board"],
+						"additionalProperties": {}
+					}
+				},
+				"held": {
+					"type": "object",
+					"properties": {
+						"board": {
+							"type": "string"
+						},
+						"message": {
+							"type": "string"
+						}
+					},
+					"required": ["board", "message"],
+					"additionalProperties": {}
+				}
+			},
+			"required": ["success", "vault", "boards", "open", "onScreen"],
+			"additionalProperties": {}
+		},
+		{
+			"type": "string"
+		}
+	]
+}
+```
+
+## board info
+
+Reads the globally named board's current identity and save state.
+
+Usage:
+
+```text
+archboard board info
+```
+
+Output: json (Board state).
+
+Prerequisites: server, board. Effects: read.
+
+REST relationships:
+
+- GET `/api/boards/info`, one. Read board state
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema"
+}
+```
+
+## board new
+
+Creates an empty board after server contact and optionally shows it in one pane.
+
+Usage:
+
+```text
+archboard board new <name> [--variant v] [--level l] [--pane <spec>]
+```
+
+Output: json (New board).
+
+Prerequisites: server. Effects: write.
+
+REST relationships:
+
+- POST `/api/boards/new`, one. Create the board
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema"
+}
+```
+
+## board open
+
+Loads one board and optionally points a selected pane at it.
+
+Usage:
+
+```text
+archboard board open <name[@variant]> [--variant v] [--reload] [--pane <spec>]
+```
+
+Output: json (Opened board).
+
+Prerequisites: server. Effects: read, browser.
+
+REST relationships:
+
+- POST `/api/boards/open`, one. Open the board
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema"
 }
 ```
 

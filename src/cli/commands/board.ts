@@ -1,376 +1,513 @@
-import { parseArgs, CliUsageError } from "./args.js";
-import { printJson, note } from "./util.js";
-import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
-import { repoIdentityAt, repoRootOf } from "../../runtime/engine/git.js";
+import { z } from "zod";
 import {
-	listBoardsOnCanvas,
 	getBoardInfo,
-	openBoard,
+	listBoardsOnCanvas,
 	newBoard,
-	saveBoard,
-	boardConflictOf,
+	openBoard,
+	type BoardListResponse,
+	type BoardResponse,
 } from "../../runtime/engine/canvas-client.js";
-import { MAX_PANES } from "../../runtime/engine/panes.js";
+import { repoIdentityAt, repoRootOf } from "../../runtime/engine/git.js";
+import { CliUsageError, defineCommand } from "../command-contract/contract.js";
+import { HoldReportSchema } from "../command-contract/schemas.js";
 
-/**
- * The repository the caller is standing in, as an identity.
- *
- * This is a read, not a write: asking which boards describe where you are is
- * exactly a question about here. The identity is still resolved in this
- * process, where the working directory belongs to the caller, and printed back,
- * so nothing downstream has to guess (ADR 0011).
- */
+const usage = "board needs a subcommand: list, info, new, open, save";
+const tokens = z.array(z.string()).default([]);
+type Stage = { positionals: string[]; flags: Record<string, string | boolean> };
+function parseStage(
+	values: string[],
+	specs: Readonly<Record<string, "flag" | "value">>,
+	context: z.RefinementCtx,
+): Stage | typeof z.NEVER {
+	const positionals: string[] = [];
+	const flags: Record<string, string | boolean> = {};
+	for (let index = 0; index < values.length; index += 1) {
+		const token = values[index]!;
+		if (!token.startsWith("--")) {
+			positionals.push(token);
+			continue;
+		}
+		let name = token.slice(2);
+		let inline: string | undefined;
+		const equals = name.indexOf("=");
+		if (equals !== -1) {
+			inline = name.slice(equals + 1);
+			name = name.slice(0, equals);
+		}
+		const spec = specs[name];
+		if (!spec) {
+			context.addIssue({ code: "custom", message: `Unknown flag --${name}` });
+			return z.NEVER;
+		}
+		if (spec === "flag") {
+			if (inline !== undefined) {
+				context.addIssue({ code: "custom", message: `Flag --${name} does not take a value` });
+				return z.NEVER;
+			}
+			flags[name] = true;
+			continue;
+		}
+		const value = inline ?? values[index + 1];
+		if (value === undefined) {
+			context.addIssue({ code: "custom", message: `Flag --${name} requires a value` });
+			return z.NEVER;
+		}
+		if (inline === undefined) index += 1;
+		flags[name] = value;
+	}
+	return { positionals, flags };
+}
+const BoardResponseValidator = z.looseObject({
+	success: z.boolean(),
+	board: z.string(),
+	identity: z.looseObject({ board: z.string(), variant: z.string() }).optional(),
+	elementCount: z.number().int().nonnegative().optional(),
+	vaultBacked: z.boolean().optional(),
+	held: HoldReportSchema.optional(),
+});
+export type BoardCommandResult = BoardResponse & { held?: z.infer<typeof HoldReportSchema> };
+export const BoardCommandResultSchema = z.custom<BoardCommandResult>(
+	(value) => BoardResponseValidator.safeParse(value).success,
+);
+
+export const BoardNamespaceInputSchema = z.object({ tokens });
+export type BoardNamespaceInput = z.infer<typeof BoardNamespaceInputSchema>;
+export const BoardNamespaceResultSchema = z.never();
+export type BoardNamespaceResult = z.infer<typeof BoardNamespaceResultSchema>;
+export const boardContract = defineCommand({
+	path: ["board"],
+	summary: "Load, save and list boards in the vault",
+	usage,
+	description: "Routes board lifecycle commands.",
+	examples: ["archboard board list"],
+	parameters: [
+		{
+			kind: "positional",
+			key: "tokens",
+			name: "arguments",
+			repeatable: true,
+			route: "pass-through",
+			description: "Namespace arguments",
+		},
+	],
+	input: { ingress: BoardNamespaceInputSchema },
+	result: BoardNamespaceResultSchema,
+	output: {
+		cases: [{ id: "json", when: {}, mode: "json", held: "none", description: "Namespace refusal" }],
+		select: () => "json",
+	},
+	prerequisites: [],
+	effects: [],
+	refusals: [],
+	relationships: [],
+	async handler() {
+		throw new CliUsageError(usage);
+	},
+});
+
 function repoIdentityHere(): string {
 	const root = repoRootOf(process.cwd());
-	if (!root) {
+	if (!root)
 		throw new CliUsageError(
-			`${process.cwd()} is not inside a git repository, so there is no repository to look for. ` +
-				"Name one with --repo <host/owner/name>, or drop the filter to list every board.",
+			`${process.cwd()} is not inside a git repository, so there is no repository to look for. Name one with --repo <host/owner/name>, or drop the filter to list every board.`,
 		);
-	}
 	return repoIdentityAt(root);
 }
-
-/** The listing as prose: what an agent arriving in a repo reads. */
-function boardListText(result: Awaited<ReturnType<typeof listBoardsOnCanvas>>): string {
+function boardListText(result: BoardListResponse): string {
 	if (result.repo) {
-		if (result.boards.length === 0) {
-			return (
-				`No board in ${result.vault} has a node bound to ${result.repo} ` +
-				`(${result.scanned ?? 0} board(s) read).`
-			);
-		}
+		if (!result.boards.length)
+			return `No board in ${result.vault} has a node bound to ${result.repo} (${result.scanned ?? 0} board(s) read).`;
 		const lines = [`Boards describing ${result.repo}:`];
 		for (const entry of result.boards) {
 			const level = entry.identity?.level ? `, ${entry.identity.level}` : "";
 			lines.push(
 				`  ${entry.key} (${entry.identity?.variant ?? "current"}${level}, ${entry.source ?? "vault"})`,
 			);
-			for (const node of entry.nodes ?? []) {
+			for (const node of entry.nodes ?? [])
 				lines.push(
 					`    ${node.name ?? node.node}${node.kind ? ` [${node.kind}]` : ""} -> ${node.path}`,
 				);
-			}
 		}
 		lines.push(`Open one with \`board open ${result.boards[0]!.key}\`.`);
 		return lines.join("\n");
 	}
-	if (result.boards.length === 0) return `No boards in ${result.vault} yet.`;
+	if (!result.boards.length) return `No boards in ${result.vault} yet.`;
 	return [`Boards in ${result.vault}:`, ...result.boards.map((entry) => `  ${entry.key}`)].join(
 		"\n",
 	);
 }
 
-// Boards are addressed as `name` or `name@variant` — `current` is the variant
-// that owns the bare name, because it is the architecture that exists.
-const ADDRESS_FLAGS = {
-	variant: { takesValue: true },
-	level: { takesValue: true },
-};
-
-// Which pane to show the board in. Required once more than one pane is open:
-// putting a board on the half of the screen nobody asked for is a guess, and
-// the canvas refuses rather than making it.
-const PANE_FLAG = { pane: { takesValue: true } };
-
-const paneSpec = (place: string, index: number): string =>
-	place.includes(" ") ? String(index + 1) : place;
-
-/**
- * How a human points at panes: "the left pane", "the left and right panes".
- *
- * The canvas names a solo pane "the only pane", which already reads as a
- * phrase, so it loses the article here rather than coming out as "the the only
- * pane pane".
- */
-function listPanes(refs: Array<{ place: string }>): string {
-	const places = refs.map((ref) => (ref.place === "the only pane" ? "only" : ref.place));
-	const noun = places.length === 1 ? "pane" : "panes";
-	if (places.length === 1) return `the ${places[0]} ${noun}`;
-	return `the ${places.slice(0, -1).join(", ")} and ${places[places.length - 1]} ${noun}`;
-}
-
-/**
- * How to put a branch on screen without losing the board it came from.
- *
- * A branch exists so that the architecture that exists can sit beside the one
- * being proposed (ADR 0012), which is why the save leaves every pane where it
- * was. The command offered here has to keep that true. `pane open` makes a
- * pane and cannot target an existing one, so it can never take a board off the
- * screen; `board open` replaces whatever the pane it names is holding, and
- * with one pane on screen that is the source itself. So this offered
- * `board open` for years and told the caller to undo the save's whole point
- * with a separate command (TASK-054).
- *
- * `board open` is right once the screen is full, because then there is no
- * other way up. It says which board each pane would lose, so the choice is
- * made with the cost in view.
- */
-function howToShowBranch(
-	branch: string,
-	onScreen: Array<{ place: string; board: string }>,
-): string {
-	if (onScreen.length === 0) {
-		return (
-			"No pane is open, so nothing is showing either board. Open the canvas in a browser, " +
-			`then \`pane open --board ${branch}\`.`
-		);
-	}
-	if (onScreen.length < MAX_PANES) {
-		return (
-			`Put it beside ${onScreen.length === 1 ? "that one" : "those"} with ` +
-			`\`pane open --board ${branch}\`, which makes a pane rather than taking one.`
-		);
-	}
-	// Overlapping tabs are placed "tab 1 of 2", which is a description rather
-	// than something to type, so those are pointed at by position instead.
-	const cost = onScreen
-		.map(
-			(pane, index) =>
-				`\`board open ${branch} --pane ${paneSpec(pane.place, index)}\` replaces "${pane.board}"`,
-		)
-		.join(", ");
-	return `The screen is full, so putting it up takes a board off: ${cost}.`;
-}
-
-export async function board(argv: string[]): Promise<void> {
-	const sub = argv[0];
-	if (!sub) {
-		throw new CliUsageError("board needs a subcommand: list, info, new, open, save");
-	}
-	const rest = argv.slice(1);
-	return boardAction(sub, rest);
-}
-
-export async function boardList(argv: string[]): Promise<void> {
-	return boardAction("list", argv);
-}
-
-export async function boardInfo(argv: string[]): Promise<void> {
-	return boardAction("info", argv);
-}
-
-export async function boardNew(argv: string[]): Promise<void> {
-	return boardAction("new", argv);
-}
-
-export async function boardOpen(argv: string[]): Promise<void> {
-	return boardAction("open", argv);
-}
-
-async function boardAction(sub: string, rest: string[]): Promise<void> {
-	await ensureCanvasRunning();
-
-	if (sub === "list") {
-		const { flags } = parseArgs(rest, {
-			repo: { takesValue: true },
-			here: { takesValue: false },
-			text: { takesValue: false },
-		});
-
-		// Which repository, if the question is "what describes this code" rather
-		// than "what boards are there". --here reads the working directory, which
-		// on a command line is the caller's own; the identity it found is echoed,
-		// and the server is only ever given an identity (ADR 0011).
+export const BoardListInputSchema = z.object({ tokens });
+export type BoardListInput = z.infer<typeof BoardListInputSchema>;
+export const BoardListStageSchema = z
+	.array(z.string())
+	.transform((value, context) =>
+		parseStage(value, { repo: "value", here: "flag", text: "flag" }, context),
+	);
+export type BoardListStage = z.infer<typeof BoardListStageSchema>;
+export const BoardListJsonResultSchema = z.looseObject({
+	success: z.literal(true),
+	vault: z.string(),
+	boards: z.array(z.looseObject({ key: z.string() })),
+	open: z.array(z.looseObject({ key: z.string() })),
+	onScreen: z.array(z.looseObject({ paneId: z.string(), place: z.string(), board: z.string() })),
+	held: HoldReportSchema.optional(),
+});
+export type BoardListJsonResult = z.infer<typeof BoardListJsonResultSchema>;
+export const BoardListResultSchema = z.union([BoardListJsonResultSchema, z.string()]);
+export type BoardListResult = z.infer<typeof BoardListResultSchema>;
+export const boardListContract = defineCommand({
+	path: ["board", "list"],
+	summary: "List boards in the vault or describing one repository",
+	usage: "board list [--repo <host/owner/name> | --here] [--text]",
+	description: "Lists vault and in-memory boards, optionally filtered by repository binding.",
+	examples: ["archboard board list --here --text"],
+	parameters: [
+		{
+			kind: "positional",
+			key: "tokens",
+			name: "list-token",
+			repeatable: true,
+			route: "staged-tokens",
+			description: "Validated after server contact",
+		},
+	],
+	input: {
+		ingress: BoardListInputSchema,
+		stages: [
+			{
+				name: "list-options",
+				when: "after-server",
+				description: "Repository and output selection",
+				schema: BoardListStageSchema,
+			},
+		],
+	},
+	result: BoardListResultSchema,
+	output: {
+		cases: [
+			{
+				id: "json",
+				when: {},
+				mode: "json",
+				held: "object-field-and-stderr-note",
+				description: "Board listing",
+				presentation: ["diagnostics", "result", "held-note"],
+			},
+			{
+				id: "text",
+				when: {},
+				mode: "text",
+				held: "stderr-note",
+				description: "Human-readable board listing",
+				presentation: ["diagnostics", "result", "held-note"],
+			},
+		],
+		select: (input) => (input.tokens.includes("--text") ? "text" : "json"),
+	},
+	prerequisites: ["server"],
+	effects: ["local-read", "read"],
+	refusals: [
+		{
+			code: "CANVAS_UNREACHABLE",
+			exit: 3,
+			stream: "stderr",
+			description: "The canvas could not be reached.",
+		},
+	],
+	relationships: [
+		{ method: "GET", path: "/api/boards", cardinality: "one", description: "List boards" },
+	],
+	async handler(input, context) {
+		await context.require("server", "board list");
+		const stage = context.parse(BoardListStageSchema, input.tokens);
 		let repo: string | undefined;
-		if (flags.here) {
-			if (typeof flags.repo === "string")
+		if (stage.flags.here) {
+			if (typeof stage.flags.repo === "string")
 				throw new CliUsageError("--here and --repo say the same thing twice; pick one.");
 			repo = repoIdentityHere();
-			note(`Standing in ${repo}.`);
-		} else if (typeof flags.repo === "string") {
-			repo = flags.repo;
-		}
-
+			context.diagnostic(`Standing in ${repo}.`);
+		} else if (typeof stage.flags.repo === "string") repo = stage.flags.repo;
 		const result = await listBoardsOnCanvas(repo);
-		// A canvas server older than this CLI ignores ?repo= and answers with every
-		// board. Silently handing that back as "the boards describing your repo"
-		// would be a wrong answer wearing a right answer's clothes.
-		if (repo && !result.repo) {
+		if (repo && !result.repo)
 			throw new Error(
-				"The canvas server is older than this CLI and ignored the repository filter, so this would " +
-					"have listed every board as though each described " +
-					repo +
-					". Restart it (`canvas stop` " +
-					"then `canvas start`) and try again.",
+				`The canvas server is older than this CLI and ignored the repository filter, so this would have listed every board as though each described ${repo}. Restart it (\`canvas stop\` then \`canvas start\`) and try again.`,
 			);
-		}
-
-		// Two notes at one address. Only one of them can be opened, so this is
-		// said out loud rather than left in the JSON (ADR 0010).
-		const collisions = (result.boards ?? []).filter((entry) => entry.collidesWith?.length);
+		const diagnostics: string[] = [];
 		const reported = new Set<string>();
-		for (const entry of collisions) {
+		for (const entry of result.boards.filter((candidate) => candidate.collidesWith?.length)) {
 			if (reported.has(entry.key)) continue;
 			reported.add(entry.key);
-			note(
-				`"${entry.key}" is the address of ${(entry.collidesWith?.length ?? 0) + 1} notes that differ only in ` +
-					`casing or accents: ${[entry.file, ...(entry.collidesWith ?? [])].join(", ")}. ` +
-					`Board names are case-insensitive, so only ${entry.file} is reachable. Rename or delete the others.`,
+			diagnostics.push(
+				`"${entry.key}" is the address of ${(entry.collidesWith?.length ?? 0) + 1} notes that differ only in casing or accents: ${[entry.file, ...(entry.collidesWith ?? [])].join(", ")}. Board names are case-insensitive, so only ${entry.file} is reachable. Rename or delete the others.`,
 			);
 		}
+		if (stage.flags.text) return { result: boardListText(result), diagnostics };
+		return {
+			result: {
+				success: true as const,
+				vault: result.vault,
+				...(result.repo ? { repo: result.repo, scanned: result.scanned } : {}),
+				...(result.unreadable ? { unreadable: result.unreadable } : {}),
+				boards: result.boards,
+				open: result.open,
+				onScreen: result.onScreen,
+			} as BoardListJsonResult,
+			diagnostics,
+		};
+	},
+});
 
-		if (flags.text) {
-			process.stdout.write(boardListText(result) + "\n");
-			return;
-		}
-		printJson({
-			success: true,
-			vault: result.vault,
-			...(result.repo ? { repo: result.repo, scanned: result.scanned } : {}),
-			...(result.unreadable ? { unreadable: result.unreadable } : {}),
-			boards: result.boards,
-			open: result.open,
-			onScreen: result.onScreen,
-		});
-		return;
-	}
+export const BoardInfoInputSchema = z.object({ tokens });
+export type BoardInfoInput = z.infer<typeof BoardInfoInputSchema>;
+export const BoardInfoStageSchema = z
+	.array(z.string())
+	.transform((value, context) => parseStage(value, {}, context));
+export type BoardInfoStage = z.infer<typeof BoardInfoStageSchema>;
+export const BoardInfoResultSchema = BoardCommandResultSchema;
+export type BoardInfoResult = z.infer<typeof BoardInfoResultSchema>;
+export const boardInfoContract = defineCommand({
+	path: ["board", "info"],
+	summary: "Report one named board's identity and save state",
+	usage: "board info",
+	description: "Reads the globally named board's current identity and save state.",
+	examples: ["archboard board info --board payments"],
+	parameters: [
+		{
+			kind: "positional",
+			key: "tokens",
+			name: "info-token",
+			repeatable: true,
+			route: "staged-tokens",
+			description: "Validated after server contact",
+		},
+	],
+	input: {
+		ingress: BoardInfoInputSchema,
+		stages: [
+			{
+				name: "info-arguments",
+				when: "after-server",
+				description: "Legacy no-option grammar",
+				schema: BoardInfoStageSchema,
+			},
+		],
+	},
+	result: BoardInfoResultSchema,
+	output: {
+		cases: [
+			{
+				id: "json",
+				when: {},
+				mode: "json",
+				held: "object-field-and-stderr-note",
+				description: "Board state",
+				presentation: ["result", "held-note"],
+			},
+		],
+		select: () => "json",
+	},
+	prerequisites: ["server", "board"],
+	effects: ["read"],
+	refusals: [
+		{ code: "BOARD_REQUIRED", exit: 2, stream: "stderr", description: "No board was named." },
+		{
+			code: "CANVAS_UNREACHABLE",
+			exit: 3,
+			stream: "stderr",
+			description: "The canvas could not be reached.",
+		},
+	],
+	relationships: [
+		{
+			method: "GET",
+			path: "/api/boards/info",
+			cardinality: "one",
+			description: "Read board state",
+		},
+	],
+	async handler(input, context) {
+		await context.require("server", "board info");
+		context.parse(BoardInfoStageSchema, input.tokens);
+		return { result: await getBoardInfo() };
+	},
+});
 
-	if (sub === "info") {
-		parseArgs(rest, {});
-		const result = await getBoardInfo();
-		printJson(result);
-		return;
-	}
-
-	if (sub === "new") {
-		const { positionals, flags } = parseArgs(rest, { ...ADDRESS_FLAGS, ...PANE_FLAG });
-		const name = positionals[0];
+const addressSpecs = { variant: "value", level: "value", pane: "value" } as const;
+export const BoardNewInputSchema = z.object({ tokens });
+export type BoardNewInput = z.infer<typeof BoardNewInputSchema>;
+export const BoardNewStageSchema = z
+	.array(z.string())
+	.transform((value, context) => parseStage(value, addressSpecs, context));
+export type BoardNewStage = z.infer<typeof BoardNewStageSchema>;
+export const BoardNewResultSchema = BoardCommandResultSchema;
+export type BoardNewResult = z.infer<typeof BoardNewResultSchema>;
+export const boardNewContract = defineCommand({
+	path: ["board", "new"],
+	summary: "Start a new empty board",
+	usage: "board new <name> [--variant v] [--level l] [--pane <spec>]",
+	description: "Creates an empty board after server contact and optionally shows it in one pane.",
+	examples: ["archboard board new payments --level system"],
+	parameters: [
+		{
+			kind: "positional",
+			key: "tokens",
+			name: "new-token",
+			repeatable: true,
+			route: "staged-tokens",
+			description: "Validated after server contact",
+		},
+	],
+	input: {
+		ingress: BoardNewInputSchema,
+		stages: [
+			{
+				name: "new-options",
+				when: "after-server",
+				description: "Board address and pane options",
+				schema: BoardNewStageSchema,
+			},
+		],
+	},
+	result: BoardNewResultSchema,
+	output: {
+		cases: [
+			{
+				id: "json",
+				when: {},
+				mode: "json",
+				held: "object-field-and-stderr-note",
+				description: "New board",
+				presentation: ["diagnostics", "result", "held-note"],
+			},
+		],
+		select: () => "json",
+	},
+	prerequisites: ["server"],
+	effects: ["write"],
+	refusals: [
+		{
+			code: "CANVAS_UNREACHABLE",
+			exit: 3,
+			stream: "stderr",
+			description: "The canvas could not be reached.",
+		},
+	],
+	relationships: [
+		{
+			method: "POST",
+			path: "/api/boards/new",
+			cardinality: "one",
+			description: "Create the board",
+		},
+	],
+	async handler(input, context) {
+		await context.require("server", "board new");
+		const stage = context.parse(BoardNewStageSchema, input.tokens);
+		const name = stage.positionals[0];
 		if (!name) throw new CliUsageError("board new needs a name");
 		const result = await newBoard({
 			board: name,
-			...(flags.variant ? { variant: flags.variant as string } : {}),
-			...(flags.level ? { level: flags.level as string } : {}),
-			...(flags.pane ? { pane: flags.pane as string } : {}),
+			...(typeof stage.flags.variant === "string" ? { variant: stage.flags.variant } : {}),
+			...(typeof stage.flags.level === "string" ? { level: stage.flags.level } : {}),
+			...(typeof stage.flags.pane === "string" ? { pane: stage.flags.pane } : {}),
 		});
-		note(
-			`Board "${result.board}" is empty. Its note is written the moment something is drawn on it.` +
-				(result.pane ? ` It is on screen in ${listPanes([result.pane])}.` : ""),
-		);
-		printJson(result);
-		return;
-	}
+		return {
+			result,
+			diagnostics: [
+				`Board "${result.board}" is empty. Its note is written the moment something is drawn on it.${result.pane ? ` It is on screen in ${result.pane.place === "the only pane" ? "the only pane" : `the ${result.pane.place} pane`}.` : ""}`,
+			],
+		};
+	},
+});
 
-	if (sub === "open") {
-		const { positionals, flags } = parseArgs(rest, {
-			...ADDRESS_FLAGS,
-			...PANE_FLAG,
-			reload: { takesValue: false },
-		});
-		const name = positionals[0];
+export const BoardOpenInputSchema = z.object({ tokens });
+export type BoardOpenInput = z.infer<typeof BoardOpenInputSchema>;
+export const BoardOpenStageSchema = z
+	.array(z.string())
+	.transform((value, context) => parseStage(value, { ...addressSpecs, reload: "flag" }, context));
+export type BoardOpenStage = z.infer<typeof BoardOpenStageSchema>;
+export const BoardOpenResultSchema = BoardCommandResultSchema;
+export type BoardOpenResult = z.infer<typeof BoardOpenResultSchema>;
+export const boardOpenContract = defineCommand({
+	path: ["board", "open"],
+	summary: "Open a board from memory or its vault note",
+	usage: "board open <name[@variant]> [--variant v] [--reload] [--pane <spec>]",
+	description: "Loads one board and optionally points a selected pane at it.",
+	examples: ["archboard board open payments@option-a --pane right"],
+	parameters: [
+		{
+			kind: "positional",
+			key: "tokens",
+			name: "open-token",
+			repeatable: true,
+			route: "staged-tokens",
+			description: "Validated after server contact",
+		},
+	],
+	input: {
+		ingress: BoardOpenInputSchema,
+		stages: [
+			{
+				name: "open-options",
+				when: "after-server",
+				description: "Board address, reload, and pane options",
+				schema: BoardOpenStageSchema,
+			},
+		],
+	},
+	result: BoardOpenResultSchema,
+	output: {
+		cases: [
+			{
+				id: "json",
+				when: {},
+				mode: "json",
+				held: "object-field-and-stderr-note",
+				description: "Opened board",
+				presentation: ["diagnostics", "result", "held-note"],
+			},
+		],
+		select: () => "json",
+	},
+	prerequisites: ["server"],
+	effects: ["read", "browser"],
+	refusals: [
+		{
+			code: "CANVAS_UNREACHABLE",
+			exit: 3,
+			stream: "stderr",
+			description: "The canvas could not be reached.",
+		},
+	],
+	relationships: [
+		{ method: "POST", path: "/api/boards/open", cardinality: "one", description: "Open the board" },
+	],
+	async handler(input, context) {
+		await context.require("server", "board open");
+		const stage = context.parse(BoardOpenStageSchema, input.tokens);
+		const name = stage.positionals[0];
 		if (!name) throw new CliUsageError("board open needs a board name");
 		const result = await openBoard({
 			board: name,
-			...(flags.variant ? { variant: flags.variant as string } : {}),
-			...(flags.level ? { level: flags.level as string } : {}),
-			...(flags.reload ? { reload: true } : {}),
-			...(flags.pane ? { pane: flags.pane as string } : {}),
+			...(typeof stage.flags.variant === "string" ? { variant: stage.flags.variant } : {}),
+			...(typeof stage.flags.level === "string" ? { level: stage.flags.level } : {}),
+			...(stage.flags.reload ? { reload: true } : {}),
+			...(typeof stage.flags.pane === "string" ? { pane: stage.flags.pane } : {}),
 		});
-		// Where it landed, said out loud: opening a board shows it somewhere, and
-		// which pane that is is the one thing the caller cannot see from here.
-		note(
+		const diagnostics = [
 			result.pane
-				? `"${result.board}" is showing in ${listPanes([result.pane])}. ` +
-						`Commands still name it: \`--board ${result.board}\`.`
+				? `"${result.board}" is showing in ${result.pane.place === "the only pane" ? "the only pane" : `the ${result.pane.place} pane`}. Commands still name it: \`--board ${result.board}\`.`
 				: `"${result.board}" is loaded, but no pane is open, so nothing is showing it.`,
-		);
-		if (result.source === "memory") {
-			note(
-				`"${result.board}" was already open here, so this only pointed a pane at it. ` +
-					"Pass --reload to re-read its address off disk, which is also what un-sticks a board " +
-					"after a write was refused.",
+		];
+		if (result.source === "memory")
+			diagnostics.push(
+				`"${result.board}" was already open here, so this only pointed a pane at it. Pass --reload to re-read its address off disk, which is also what un-sticks a board after a write was refused.`,
 			);
-		}
-		if (result.declaredKey) {
-			note(
-				`Note: this file's frontmatter says it is board "${result.declaredKey}", not "${result.board}". ` +
-					"The path is the address, so it opened as the path says; saving rewrites the frontmatter to match.",
+		if (result.declaredKey)
+			diagnostics.push(
+				`Note: this file's frontmatter says it is board "${result.declaredKey}", not "${result.board}". The path is the address, so it opened as the path says; saving rewrites the frontmatter to match.`,
 			);
-		}
-		printJson(result);
-		return;
-	}
-
-	if (sub !== "save") {
-		throw new CliUsageError("board needs a subcommand: list, info, new, open, save");
-	}
-
-	// save
-	const { flags } = parseArgs(rest, {
-		...ADDRESS_FLAGS,
-		as: { takesValue: true },
-		force: { takesValue: false },
-	});
-
-	let result;
-	try {
-		result = await saveBoard({
-			...(flags.as ? { name: flags.as as string } : {}),
-			...(flags.variant ? { variant: flags.variant as string } : {}),
-			...(flags.level ? { level: flags.level as string } : {}),
-			...(flags.force ? { force: true } : {}),
-		});
-	} catch (error) {
-		const conflict = boardConflictOf(error);
-		if (!conflict) throw error;
-		// A refused save is an answer, not a crash: the message goes to stderr for
-		// the human, the structured conflict to stdout for whatever is scripting
-		// this, and the exit code says which of the two happened.
-		note(conflict.message);
-		printJson({ success: false, conflict });
-		const quiet = new Error(conflict.message);
-		const failure = quiet as Error & { quiet?: boolean; code?: string };
-		failure.quiet = true;
-		failure.code = "BOARD_CONFLICT";
-		throw quiet;
-	}
-
-	// What the save did to the screen. A save writes a file; `board open`
-	// chooses what is on show (ADR 0012), so the one case where a save moves a
-	// pane and the one where it deliberately does not both get said out loud.
-	const moved = result.panes?.moved ?? [];
-	const kept = result.panes?.kept ?? [];
-	if (moved.length) {
-		note(
-			`"${result.board}" is now showing in ${listPanes(moved)}, which held the board it was saved from.`,
-		);
-	} else if (result.saveKind === "branch") {
-		note(
-			`Branched "${result.savedFrom}" to "${result.board}". ` +
-				(kept.length
-					? `Nothing moved: ${listPanes(kept)} still ${kept.length > 1 ? "hold" : "holds"} ` +
-						`"${result.savedFrom}", and the branch is not showing anywhere. `
-					: `No pane was holding "${result.savedFrom}", and the branch is not showing anywhere either. `) +
-				howToShowBranch(result.board, result.panes?.onScreen ?? []),
-		);
-	}
-
-	// One of the two outcomes that end a hold has just been taken, so what this
-	// save did is bigger than the file it wrote: the board is being written down
-	// again, and the changes that were riding on the choice went somewhere
-	// (ADR 0006, TASK-079).
-	const ended = result.resolvedHold;
-	if (ended) {
-		const held = `${ended.writes} change${ended.writes === 1 ? "" : "s"}`;
-		note(
-			ended.outcome === "overwrite"
-				? `"${ended.board}" is saving again, with the ${held} that were held on the canvas. ` +
-						`Whatever ${result.file} held before is gone.`
-				: `The ${held} that were held are in ${result.file}, and it is what the panes now show. ` +
-						`"${ended.board}" is saving again and holds the version the other editor wrote.`,
-		);
-	}
-
-	if (result.forced) {
-		note(`Overwrote ${result.file} on your say-so; whatever that note held is gone.`);
-	} else if (result.overwrote) {
-		// The convention, stated where it is actionable: the check catches a note
-		// that has already changed on disk, and cannot see a copy still sitting in
-		// another editor's memory.
-		note(
-			"Saved after checking the note had not changed on disk. archboard cannot see an unsaved copy " +
-				"held in Obsidian, so keep a board open in one editor at a time.",
-		);
-	}
-	printJson(result);
-}
+		return { result, diagnostics };
+	},
+});
