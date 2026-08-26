@@ -6,16 +6,12 @@ import type {
 	PendingArtifact,
 } from "../contract.js";
 import { CliUsageError } from "../contract.js";
-import type { ArgvParser } from "./commander-adapter.js";
-import type { CommandHost } from "./host.js";
+import { CommanderArgvParser } from "./commander-adapter.js";
+import { processCommandHost } from "./host.js";
 import { applyHeld, emitResult } from "./presentation.js";
-import type { PrerequisiteResolver } from "./prerequisites.js";
+import { requirePrerequisite } from "./prerequisites.js";
 
-export interface CommandDependencies {
-	parser: ArgvParser;
-	host: CommandHost;
-	prerequisites: PrerequisiteResolver;
-}
+const commanderParser = new CommanderArgvParser();
 
 function selectedCase(contract: AnyCommandContract, input: unknown): OutputCase {
 	const id = contract.output.select(input as Record<string, unknown>);
@@ -33,32 +29,24 @@ function parseInput<T>(schema: z.ZodType<T>, value: unknown): T {
 export async function executeCommand(
 	contract: AnyCommandContract,
 	argv: readonly string[],
-	dependencies: CommandDependencies,
 ): Promise<void> {
-	const tokens = await dependencies.parser.parse(contract, argv);
+	const tokens = await commanderParser.parse(contract, argv);
 	const input = parseInput(contract.input.ingress, tokens);
 	const context: CommandContext = {
-		require: (prerequisite, description) =>
-			dependencies.prerequisites.require(prerequisite, description),
-		readStdin: () => dependencies.host.readStdin(),
-		readTextFile: (file) => dependencies.host.readTextFile(file),
-		readOptionalTextFile: (file) => dependencies.host.readOptionalTextFile(file),
-		resolvePath: (file) => dependencies.host.resolvePath(file),
+		require: requirePrerequisite,
+		readStdin: () => processCommandHost.readStdin(),
+		readTextFile: (file) => processCommandHost.readTextFile(file),
+		readOptionalTextFile: (file) => processCommandHost.readOptionalTextFile(file),
+		resolvePath: (file) => processCommandHost.resolvePath(file),
 		parse: <T>(schema: z.ZodType<T>, value: unknown) => parseInput(schema, value),
 	};
 	const execution = await contract.handler(input, context);
 	const outputCase = selectedCase(contract, input);
-	const held = dependencies.host.held();
+	const held = processCommandHost.held();
 	const publicResult = applyHeld(execution.result, held, outputCase.held);
 	const validatedResult = contract.result.parse(publicResult);
 	const artifact = outputCase.artifact
 		? outputCase.artifact.parse(execution.pendingArtifact)
 		: undefined;
-	emitResult(
-		dependencies.host,
-		outputCase,
-		validatedResult,
-		artifact as PendingArtifact | undefined,
-		held,
-	);
+	emitResult(outputCase, validatedResult, artifact as PendingArtifact | undefined, held);
 }

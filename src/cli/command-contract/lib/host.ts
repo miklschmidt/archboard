@@ -3,48 +3,37 @@ import path from "path";
 import { boardHoldSeen } from "../../../runtime/engine/canvas-client.js";
 import type { PendingArtifact } from "../contract.js";
 
-export interface CommandHost {
-	readStdin(): Promise<string>;
-	readTextFile(file: string): string;
-	readOptionalTextFile(file: string): string | undefined;
-	resolvePath(file: string): string;
-	writeArtifact(artifact: PendingArtifact): void;
-	writeStdout(value: string | Uint8Array): void;
-	writeStderr(value: string): void;
-	held(): unknown;
-}
-
-export const processCommandHost: CommandHost = {
+export const processCommandHost = {
 	async readStdin() {
 		if (process.stdin.isTTY) return "";
 		const chunks: Buffer[] = [];
 		for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
 		return Buffer.concat(chunks).toString("utf8");
 	},
-	readTextFile(file) {
+	readTextFile(file: string) {
 		return fs.readFileSync(file, "utf8");
 	},
-	readOptionalTextFile(file) {
+	readOptionalTextFile(file: string) {
 		try {
 			return fs.readFileSync(file, "utf8");
 		} catch {
 			return undefined;
 		}
 	},
-	resolvePath(file) {
+	resolvePath(file: string) {
 		return path.resolve(file);
 	},
-	writeArtifact(artifact) {
+	writeArtifact(artifact: PendingArtifact) {
 		if (artifact.encoding === "binary") {
 			fs.writeFileSync(artifact.path, artifact.content);
 			return;
 		}
 		fs.writeFileSync(artifact.path, String(artifact.content), "utf8");
 	},
-	writeStdout(value) {
+	writeStdout(value: string | Uint8Array) {
 		process.stdout.write(value);
 	},
-	writeStderr(value) {
+	writeStderr(value: string) {
 		process.stderr.write(value);
 	},
 	held() {

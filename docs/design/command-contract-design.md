@@ -16,15 +16,14 @@ a legacy handler. Query, update, viewport, and export use contracts in this
 proof. TASK-123.02 replaces the other entries and then deletes the legacy
 branch, raw parser helpers, and handler-owned output.
 
-The module has three internal seams. `ArgvParser` isolates the real Commander
-adapter and permits a recording fake that returns a prepared invocation without
-parsing. `CommandHost` isolates process/filesystem behavior and permits a
-recording adapter. `PrerequisiteResolver` isolates ordered server/browser
-checks and permits an ordered fake. These seams are justified by their
-production and fake adapters, but their interfaces, dependency bundle, and
-implementations are private. The public runner has no optional dependency bag;
-its tests observe real stdout, temporary-file writes, and network effects
-through the two-argument interface.
+The private implementation uses one concrete Commander parser, the process and
+filesystem host, and the production server/browser prerequisite checks. These
+are implementation details, not internal seams. There is no dependency bundle
+or optional dependency bag. Introducing an interface for one implementation
+would add indirection without adding a behavior that can vary. A future seam
+requires a second real adapter. Tests observe stdout, temporary-file writes,
+network effects, prerequisite ordering, and held presentation through the
+two-argument interface or the package CLI.
 
 ## Single semantic owner
 
@@ -109,5 +108,4 @@ JSON. It is not a public command, REST route, MCP replacement, or second agent
 command surface.
 
 The independent argv golden records legacy bytes at the fixed base. Tests run
-those cases through the package binary and real Commander adapter. The
-recording fake is for runner tests only.
+those cases through the package binary and concrete Commander implementation.
