@@ -1,12 +1,20 @@
 #!/usr/bin/env bun
 
 import fs from "node:fs";
+import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const audit = JSON.parse(
 	fs.readFileSync(join(root, "docs", "design", "cli-command-audit.json"), "utf8"),
+);
+const compatibility = JSON.parse(
+	fs.readFileSync(
+		join(root, "src", "cli", "command-contract", "tests", "fixed-base-compatibility.json"),
+		"utf8",
+	),
 );
 const { cliSurface, cliContractRegistry } = await import(
 	join(root, "src", "cli", "commands", "run.ts")
@@ -35,6 +43,31 @@ check(
 	JSON.stringify(auditedPaths.toSorted((left, right) => left.localeCompare(right))) ===
 		JSON.stringify(expectedPaths.toSorted((left, right) => left.localeCompare(right))),
 );
+check(
+	"fixed-base compatibility names the review base",
+	compatibility.fixedBase === "6c42fca6c0d5b9ecaa5ad40fde14ede684722d5a",
+	compatibility.fixedBase,
+);
+check(
+	"fixed-base compatibility covers all 57 canonical paths",
+	JSON.stringify(compatibility.publicPaths) === JSON.stringify(auditedPaths),
+);
+for (const path of compatibility.publicPaths) {
+	const [command, ...tail] = path.split(" ");
+	const result = spawnSync(join(root, "bin", "canvas"), ["help", command, ...tail], {
+		cwd: root,
+		encoding: "utf8",
+		env: { ...process.env, EXCALIDRAW_NO_AUTOSTART: "1" },
+	});
+	const digest = createHash("sha256").update(result.stdout).digest("hex");
+	check(`${path} fixed-base help exits 0`, result.status === 0, String(result.status));
+	check(`${path} fixed-base help keeps stderr empty`, result.stderr === "", result.stderr);
+	check(
+		`${path} fixed-base help bytes`,
+		digest === compatibility.helpStdoutSha256ByCommand[command],
+		digest,
+	);
+}
 
 for (const entry of audit.entries) {
 	check(
