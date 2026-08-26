@@ -507,6 +507,16 @@ const finiteNumber = (flag: string) =>
 		return parsed;
 	});
 
+const viewportIdsSchema = z
+	.string()
+	.transform((value) =>
+		value
+			.split(",")
+			.map((id) => id.trim())
+			.filter(Boolean),
+	)
+	.describe("Split comma-separated ids, trim whitespace, and discard empty ids.");
+
 const viewportResultSchema = z.object({
 	success: z.boolean(),
 	message: z.string().optional(),
@@ -602,6 +612,13 @@ export const viewportContract = defineCommand({
 		ingress: viewportIngress,
 		stages: [
 			{
+				name: "ids",
+				when: "after-browser",
+				description: "Comma-separated ids become the viewport element-id array",
+				rules: ["Split on commas, trim each id, and discard empty ids."],
+				schema: viewportIdsSchema,
+			},
+			{
 				name: "numbers",
 				when: "after-browser",
 				description: "Finite zoom and offset values",
@@ -644,16 +661,10 @@ export const viewportContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "Moving the camera");
 		await context.require("browser", "Moving the camera");
+		const ids = input.ids === undefined ? undefined : context.parse(viewportIdsSchema, input.ids);
 		const result = await setViewport({
 			...(input.fit ? { scrollToContent: true } : {}),
-			...(input.ids !== undefined
-				? {
-						scrollToElementIds: input.ids
-							.split(",")
-							.map((id) => id.trim())
-							.filter(Boolean),
-					}
-				: {}),
+			...(ids !== undefined ? { scrollToElementIds: ids } : {}),
 			...(input.element !== undefined ? { scrollToElementId: input.element } : {}),
 			...(input.zoom !== undefined
 				? { zoom: context.parse(finiteNumber("zoom"), input.zoom) }
@@ -683,6 +694,11 @@ const exportIngress = z.object({
 const exportFormatSchema = z.enum(["json", "obsidian"], {
 	error: "--format must be json or obsidian",
 });
+const resolvedExportFormatSchema = z
+	.object({ format: z.string().optional(), out: z.string().optional() })
+	.transform(({ format, out }) => format ?? (out?.endsWith(".md") ? "obsidian" : "json"))
+	.pipe(exportFormatSchema)
+	.describe("Use the explicit format, otherwise infer obsidian for .md output and json elsewhere.");
 const ExportReceiptSchema = z.object({
 	success: z.literal(true),
 	file: z.string(),
@@ -747,7 +763,11 @@ export const exportContract = defineCommand({
 				name: "format",
 				when: "before-server",
 				description: "Explicit format or .md inference",
-				schema: exportFormatSchema,
+				rules: [
+					"Use an explicit --format when present.",
+					"Otherwise use obsidian for an --out path ending in .md, and json for every other destination or stdout.",
+				],
+				schema: resolvedExportFormatSchema,
 			},
 		],
 	},
@@ -790,10 +810,10 @@ export const exportContract = defineCommand({
 		},
 	],
 	async handler(input, context) {
-		const format = context.parse(
-			exportFormatSchema,
-			input.format ?? (input.out?.endsWith(".md") ? "obsidian" : "json"),
-		);
+		const format = context.parse(resolvedExportFormatSchema, {
+			format: input.format,
+			out: input.out,
+		});
 		const resolved = input.out ? context.resolvePath(input.out) : undefined;
 		const existing =
 			resolved && format === "obsidian" ? context.readOptionalTextFile(resolved) : undefined;
