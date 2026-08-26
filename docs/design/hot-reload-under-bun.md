@@ -7,12 +7,12 @@ trusted.
 
 ## What bun re-evaluates
 
-| Trigger | What happens |
-|---|---|
-| `bun --hot`, any watched file changes | the **whole** import graph re-evaluates, not the file that changed |
-| touching a watched file's mtime without changing its bytes | nothing. bun wants new bytes |
-| a cache-busting dynamic import with no `--hot` | re-reads that one module. Its own imports stay cached, so it cannot reload a graph |
-| a dynamically imported, runtime-computed, out-of-tree path | watched like any other |
+| Trigger                                                    | What happens                                                                       |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `bun --hot`, any watched file changes                      | the **whole** import graph re-evaluates, not the file that changed                 |
+| touching a watched file's mtime without changing its bytes | nothing. bun wants new bytes                                                       |
+| a cache-busting dynamic import with no `--hot`             | re-reads that one module. Its own imports stay cached, so it cannot reload a graph |
+| a dynamically imported, runtime-computed, out-of-tree path | watched like any other                                                             |
 
 Row one is why every module with an evaluation-time side effect was a hazard on
 every save: editing one file re-ran all of them. Row three is why a

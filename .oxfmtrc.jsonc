@@ -1,0 +1,8 @@
+{
+	"useTabs": true,
+	"lineWidth": 100,
+	"quoteStyle": "double",
+	"semicolons": "always",
+	"trailingComma": "all",
+	"endOfLine": "lf",
+}

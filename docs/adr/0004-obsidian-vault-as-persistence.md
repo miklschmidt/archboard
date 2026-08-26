@@ -27,6 +27,7 @@ in the vault. Human-authored board and web links remain ordinary Excalidraw
 links and are preserved.
 
 ## Status note
+
 Originally recorded as provisional pending two blockers, both now closed:
 export preserves custom frontmatter (TASK-002) and boards are addressable,
 persisted vault notes (TASK-003) — verified idempotent and byte-lossless

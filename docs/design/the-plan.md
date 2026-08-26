@@ -23,17 +23,17 @@ can stop at any boundary without leaving the canvas in a state nobody can use.
 
 ## The order, at a glance
 
-| Stage | What | Tasks | After |
-|---|---|---|---|
-| 1 | Batch the fan-out | TASK-068, TASK-064 | nothing |
-| 2 | Mint every id once | TASK-069 | nothing |
-| 3 | Find out how text can be measured | TASK-070 | nothing |
-| 4 | Build the check that can tell | TASK-071 | nothing |
-| 5 | One converter | TASK-072 | 2, 3, 4 |
-| 6 | Delete the label seed | TASK-073 | 5 |
-| 7 | A write returns the document | TASK-074, TASK-075, TASK-076 | 5 |
-| 8 | The vault is the truth | TASK-061, TASK-060, TASK-077, TASK-078, TASK-063, TASK-079 | 1, 7 |
-| 9 | One writer at a time | TASK-066, TASK-067, TASK-080, TASK-081, TASK-062 | 1, 8 |
+| Stage | What                              | Tasks                                                      | After   |
+| ----- | --------------------------------- | ---------------------------------------------------------- | ------- |
+| 1     | Batch the fan-out                 | TASK-068, TASK-064                                         | nothing |
+| 2     | Mint every id once                | TASK-069                                                   | nothing |
+| 3     | Find out how text can be measured | TASK-070                                                   | nothing |
+| 4     | Build the check that can tell     | TASK-071                                                   | nothing |
+| 5     | One converter                     | TASK-072                                                   | 2, 3, 4 |
+| 6     | Delete the label seed             | TASK-073                                                   | 5       |
+| 7     | A write returns the document      | TASK-074, TASK-075, TASK-076                               | 5       |
+| 8     | The vault is the truth            | TASK-061, TASK-060, TASK-077, TASK-078, TASK-063, TASK-079 | 1, 7    |
+| 9     | One writer at a time              | TASK-066, TASK-067, TASK-080, TASK-081, TASK-062           | 1, 8    |
 
 Stages 1 to 4 have no dependencies and can run at the same time. Everything
 after stage 5 is a chain.
@@ -130,7 +130,7 @@ they keep the ids they have.
 `boards`, `branch`.
 
 **Done.** Two corrections to what is written above, found by doing it.
-`generateId` did *not* already produce eight-character ids: it was
+`generateId` did _not_ already produce eight-character ids: it was
 `Date.now().toString(36) + Math.random().toString(36).substring(2)`, which is
 18 or 19 characters. So every id the server minted was too long to be a block
 reference, and the note writer renamed every text element on an agent-drawn
@@ -632,18 +632,18 @@ decided anything.
 
 ## Where the ten open tasks land
 
-| Task | Verdict | Stage |
-|---|---|---|
-| TASK-065 | Changed: it is the parent, and the plan is here | all |
-| TASK-064 | Stands; ADR 0015 closes the alternative it offered | 1 |
-| TASK-060 | Still real; the fix moves to the note boundary and gets urgent | 8 |
-| TASK-061 | Was tidy-up, now a prerequisite | 8 |
-| TASK-063 | Superseded; it is a line item in TASK-078 | 8 |
-| TASK-066 | Stands; now explicitly before TASK-067 | 9 |
-| TASK-067 | Stands; the long claim split out, two assumptions corrected | 9 |
-| TASK-062 | Half superseded; the other half survives and grows | 9 |
-| TASK-056 | Stands; one stale file reference corrected | outside |
-| TASK-058 | Stands | outside |
+| Task     | Verdict                                                        | Stage   |
+| -------- | -------------------------------------------------------------- | ------- |
+| TASK-065 | Changed: it is the parent, and the plan is here                | all     |
+| TASK-064 | Stands; ADR 0015 closes the alternative it offered             | 1       |
+| TASK-060 | Still real; the fix moves to the note boundary and gets urgent | 8       |
+| TASK-061 | Was tidy-up, now a prerequisite                                | 8       |
+| TASK-063 | Superseded; it is a line item in TASK-078                      | 8       |
+| TASK-066 | Stands; now explicitly before TASK-067                         | 9       |
+| TASK-067 | Stands; the long claim split out, two assumptions corrected    | 9       |
+| TASK-062 | Half superseded; the other half survives and grows             | 9       |
+| TASK-056 | Stands; one stale file reference corrected                     | outside |
+| TASK-058 | Stands                                                         | outside |
 
 TASK-056 and TASK-058 are outside the order on purpose. Neither ADR touches
 them, they do not depend on anything here, and nothing here depends on them.

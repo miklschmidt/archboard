@@ -1,36 +1,33 @@
-# Push to a live Codex thread via app-server injection, not MCP
+# Push to a live Codex thread via app-server injection
 
 When the board changes, archboard reaches the agent through the Codex
-app-server control socket — `thread/inject_items` for quiet state updates that
-do not start a turn, `turn/steer` for changes worth interrupting over. MCP is
-used for pull only.
+app-server control socket: `thread/inject_items` for quiet state updates that do
+not start a turn, and `turn/steer` for changes worth interrupting over. CLI
+responses are pull-only and cannot report a later human change.
 
-This is not a preference. Codex's MCP client **discards every standard
-server-initiated notification** into tracing logs — progress, logging,
-`resources/updated`, `tools/list_changed`, `cancelled` — and never calls
-`resources/subscribe` anywhere in the codebase. The one in-protocol push that
-works is `elicitation/create`, which prompts the human rather than informing the
-model. An MCP server simply cannot tell Codex that external state changed.
+A board does not currently carry an exact Codex task identity. Automatic
+injection therefore requires `ARCHBOARD_INJECT_THREAD` to name the target.
+Recent activity and the number of loaded tasks are observations, not ownership,
+so Archboard declines to inject when no deterministic route is configured.
 
 ## Rejected: patching Codex to add a world-state section
 
-`codex-rs/core/src/context/world_state/` is a diff-only external-state engine —
+`codex-rs/core/src/context/world_state/` is a diff-only external-state engine:
 `snapshot()` plus `render_diff()` per turn, full context on turn one and deltas
-after — and is a strictly better abstraction for a canvas than anything above:
-in-process, structured, never re-sending unchanged text. Every implementation is
-in-tree Rust assembled at startup with no config or plugin registration surface,
-so using it means forking and maintaining a 110GB monorepo to avoid keeping a
-state file. Not worth it. Revisit only if Codex exposes `TurnInputContributor`
-registration to plugins.
+after. It is a better abstraction for a canvas than an external injector, but
+every implementation is in-tree Rust assembled at startup with no config or
+plugin registration interface. Using it means maintaining a Codex fork.
+Revisit only if Codex exposes contributor registration to plugins.
 
 ## Consequences
 
-Injection requires the app-server daemon to be running. That is satisfied in
-practice because voice runs through app-server anyway; a `UserPromptSubmit` hook
-that does its own diffing is the fallback when no daemon is present.
+Injection requires the app-server daemon and an explicit task route. Quiet
+injection appends state without starting a turn; loud injection remains an
+opt-in experiment because it can make the agent speak over the person at the
+board.
 
-**Security.** The control socket is filesystem-permission-guarded but
-multi-client, and the canvas server has no authentication. Anything that can
-reach the canvas could drive the coding agent, so turn injection stays
-loopback-only and behind an explicit switch — never implied by the canvas simply
-being up. See `DESIGN.md`.
+The control socket is filesystem-permission-guarded but multi-client, and the
+canvas server has no authentication. Anything that can reach the canvas could
+drive the coding agent, so injection stays loopback-only and behind
+`ARCHBOARD_INJECT=1`. It is never implied by the canvas being up. See
+`DESIGN.md`.

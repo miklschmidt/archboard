@@ -26,19 +26,19 @@
 // is a real cost and it is the right one: a canary that shares its idea of the
 // truth with the thing it is checking is not a canary.
 
-const REGISTRY = Symbol.for('archboard.kept');
+const REGISTRY = Symbol.for("archboard.kept");
 
 type Registry = Map<string, unknown>;
 
 function registry(): Registry | null {
-  const host = globalThis as typeof globalThis & { [REGISTRY]?: Registry };
-  return host[REGISTRY] ?? null;
+	const host = globalThis as typeof globalThis & { [REGISTRY]?: Registry };
+	return host[REGISTRY] ?? null;
 }
 
 function keptValue<T>(name: string): T | null {
-  const store = registry();
-  if (!store || !store.has(name)) return null;
-  return store.get(name) as T;
+	const store = registry();
+	if (!store || !store.has(name)) return null;
+	return store.get(name) as T;
 }
 
 /**
@@ -50,84 +50,85 @@ function keptValue<T>(name: string): T | null {
  * uses to mean "since last turn". Nothing here is derived or recomputable.
  */
 export interface ReloadFacts {
-  /**
-   * Board key to where that board's note is.
-   *
-   * It used to be the number of elements on the board, which was the right
-   * fact while the process was the only place they were: the TASK-057 bug this
-   * was built for re-ran `boards.set()` at module scope and replaced an open
-   * board with an empty one, and the count went to zero. Board content is in
-   * the vault now (ADR 0015), so a count would be a fact about the disk and a
-   * reload cannot modify it — the same bug would go unreported.
-   *
-   * What a reload can still lose is this: which boards this canvas has open and
-   * where each one's note is. Lose that and a pane is pointed at a board the
-   * canvas cannot find, which is the same loss arriving a moment later. The
-   * unguarded `boards.set()` blanks it, so the canary still catches exactly
-   * what it was built to catch.
-   */
-  boards: Record<string, string>;
-  /**
-   * Board key to how many elements are on the copy of it this canvas is
-   * holding, for each board that has stopped saving (ADR 0006, TASK-079).
-   *
-   * The exception to the note above. Board content is in the vault and a
-   * reload cannot modify it — unless the board's note was taken over by another
-   * editor, in which case what is on that board is in this process and nowhere
-   * else, and a reload that dropped it would drop the only copy. So this one
-   * really is a count, and it is the only count left here.
-   */
-  held: Record<string, number>;
-  /** Client id to the board that pane has been pointed at. */
-  paneBoards: Record<string, string>;
-  /** Client id to the pane it registered as. */
-  panes: Record<string, string>;
-  /** Sockets the canvas is holding, open or not. */
-  sockets: number;
-  /** The change feed's identity, which a cursor is only meaningful within. */
-  feedId: string | null;
-  /** The cursor a caller starting now would be given. */
-  cursor: number | null;
+	/**
+	 * Board key to where that board's note is.
+	 *
+	 * It used to be the number of elements on the board, which was the right
+	 * fact while the process was the only place they were: the TASK-057 bug this
+	 * was built for re-ran `boards.set()` at module scope and replaced an open
+	 * board with an empty one, and the count went to zero. Board content is in
+	 * the vault now (ADR 0015), so a count would be a fact about the disk and a
+	 * reload cannot modify it — the same bug would go unreported.
+	 *
+	 * What a reload can still lose is this: which boards this canvas has open and
+	 * where each one's note is. Lose that and a pane is pointed at a board the
+	 * canvas cannot find, which is the same loss arriving a moment later. The
+	 * unguarded `boards.set()` blanks it, so the canary still catches exactly
+	 * what it was built to catch.
+	 */
+	boards: Record<string, string>;
+	/**
+	 * Board key to how many elements are on the copy of it this canvas is
+	 * holding, for each board that has stopped saving (ADR 0006, TASK-079).
+	 *
+	 * The exception to the note above. Board content is in the vault and a
+	 * reload cannot modify it — unless the board's note was taken over by another
+	 * editor, in which case what is on that board is in this process and nowhere
+	 * else, and a reload that dropped it would drop the only copy. So this one
+	 * really is a count, and it is the only count left here.
+	 */
+	held: Record<string, number>;
+	/** Client id to the board that pane has been pointed at. */
+	paneBoards: Record<string, string>;
+	/** Client id to the pane it registered as. */
+	panes: Record<string, string>;
+	/** Sockets the canvas is holding, open or not. */
+	sockets: number;
+	/** The change feed's identity, which a cursor is only meaningful within. */
+	feedId: string | null;
+	/** The cursor a caller starting now would be given. */
+	cursor: number | null;
 }
 
 /** Read the facts out of the running canvas. */
 export function readFacts(): ReloadFacts {
-  const boards: Record<string, string> = {};
-  const boardMap = keptValue<Map<string, { file?: string }>>('boards');
-  if (boardMap) {
-    for (const [key, board] of boardMap) boards[key] = board.file ?? 'nowhere';
-  }
+	const boards: Record<string, string> = {};
+	const boardMap = keptValue<Map<string, { file?: string }>>("boards");
+	if (boardMap) {
+		for (const [key, board] of boardMap) boards[key] = board.file ?? "nowhere";
+	}
 
-  const held: Record<string, number> = {};
-  const holdMap = keptValue<Map<string, { content: { elements: Map<string, unknown> } }>>('board-holds');
-  if (holdMap) {
-    for (const [key, hold] of holdMap) held[key] = hold.content?.elements?.size ?? 0;
-  }
+	const held: Record<string, number> = {};
+	const holdMap =
+		keptValue<Map<string, { content: { elements: Map<string, unknown> } }>>("board-holds");
+	if (holdMap) {
+		for (const [key, hold] of holdMap) held[key] = hold.content?.elements?.size ?? 0;
+	}
 
-  const paneBoards: Record<string, string> = {};
-  const paneBoardMap = keptValue<Map<string, string>>('pane-boards');
-  if (paneBoardMap) {
-    for (const [clientId, board] of paneBoardMap) paneBoards[clientId] = board;
-  }
+	const paneBoards: Record<string, string> = {};
+	const paneBoardMap = keptValue<Map<string, string>>("pane-boards");
+	if (paneBoardMap) {
+		for (const [clientId, board] of paneBoardMap) paneBoards[clientId] = board;
+	}
 
-  const panes: Record<string, string> = {};
-  const paneMap = keptValue<Map<string, { paneId: string }>>('panes');
-  if (paneMap) {
-    for (const [clientId, pane] of paneMap) panes[clientId] = pane.paneId;
-  }
+	const panes: Record<string, string> = {};
+	const paneMap = keptValue<Map<string, { paneId: string }>>("panes");
+	if (paneMap) {
+		for (const [clientId, pane] of paneMap) panes[clientId] = pane.paneId;
+	}
 
-  const socketSet = keptValue<Set<unknown>>('ws-clients');
-  const feed = keptValue<{ id: string; cursor: number }>('change-feed');
+	const socketSet = keptValue<Set<unknown>>("ws-clients");
+	const feed = keptValue<{ id: string; cursor: number }>("change-feed");
 
-  return {
-    boards,
-    held,
-    paneBoards,
-    panes,
-    sockets: socketSet ? socketSet.size : 0,
-    feedId: feed ? feed.id : null,
-    cursor: feed ? feed.cursor : null
-  };
+	return {
+		boards,
+		held,
+		paneBoards,
+		panes,
+		sockets: socketSet ? socketSet.size : 0,
+		feedId: feed ? feed.id : null,
+		cursor: feed ? feed.cursor : null,
+	};
 }
 
 /**
@@ -143,67 +144,69 @@ export function readFacts(): ReloadFacts {
  * rebuilt, and every saved cursor anywhere now means something else.
  */
 export function compareFacts(before: ReloadFacts, after: ReloadFacts): string[] {
-  const complaints: string[] = [];
+	const complaints: string[] = [];
 
-  for (const [key, file] of Object.entries(before.boards)) {
-    if (!(key in after.boards)) {
-      complaints.push(`board "${key}" is gone, and its note is at ${file}`);
-    } else if (after.boards[key] !== file) {
-      complaints.push(
-        `board "${key}" had its note at ${file} and now has it at ${after.boards[key]}`
-      );
-    }
-  }
-  for (const key of Object.keys(after.boards)) {
-    if (!(key in before.boards)) complaints.push(`board "${key}" appeared out of nowhere`);
-  }
+	for (const [key, file] of Object.entries(before.boards)) {
+		if (!(key in after.boards)) {
+			complaints.push(`board "${key}" is gone, and its note is at ${file}`);
+		} else if (after.boards[key] !== file) {
+			complaints.push(
+				`board "${key}" had its note at ${file} and now has it at ${after.boards[key]}`,
+			);
+		}
+	}
+	for (const key of Object.keys(after.boards)) {
+		if (!(key in before.boards)) complaints.push(`board "${key}" appeared out of nowhere`);
+	}
 
-  // A held board's elements are in this process and in no note, so this is the
-  // one loss a reload can still cause that costs somebody's drawing.
-  for (const [key, count] of Object.entries(before.held)) {
-    if (!(key in after.held)) {
-      complaints.push(
-        `board "${key}" had stopped saving and this canvas was holding its ${count} element(s); ` +
-        'that copy is gone, and it was the only one'
-      );
-    } else if ((after.held[key] ?? 0) < count) {
-      complaints.push(
-        `board "${key}" was holding ${count} element(s) it has not saved and now holds ${after.held[key] ?? 0}`
-      );
-    }
-  }
+	// A held board's elements are in this process and in no note, so this is the
+	// one loss a reload can still cause that costs somebody's drawing.
+	for (const [key, count] of Object.entries(before.held)) {
+		if (!(key in after.held)) {
+			complaints.push(
+				`board "${key}" had stopped saving and this canvas was holding its ${count} element(s); ` +
+					"that copy is gone, and it was the only one",
+			);
+		} else if ((after.held[key] ?? 0) < count) {
+			complaints.push(
+				`board "${key}" was holding ${count} element(s) it has not saved and now holds ${after.held[key] ?? 0}`,
+			);
+		}
+	}
 
-  for (const [clientId, board] of Object.entries(before.paneBoards)) {
-    if (!(clientId in after.paneBoards)) {
-      complaints.push(`pane ${clientId} lost its board, which was "${board}"`);
-    } else if (after.paneBoards[clientId] !== board) {
-      complaints.push(`pane ${clientId} was holding "${board}" and now holds "${after.paneBoards[clientId]}"`);
-    }
-  }
+	for (const [clientId, board] of Object.entries(before.paneBoards)) {
+		if (!(clientId in after.paneBoards)) {
+			complaints.push(`pane ${clientId} lost its board, which was "${board}"`);
+		} else if (after.paneBoards[clientId] !== board) {
+			complaints.push(
+				`pane ${clientId} was holding "${board}" and now holds "${after.paneBoards[clientId]}"`,
+			);
+		}
+	}
 
-  for (const clientId of Object.keys(before.panes)) {
-    if (!(clientId in after.panes)) {
-      complaints.push(`pane ${before.panes[clientId]} (${clientId}) is no longer registered`);
-    }
-  }
+	for (const clientId of Object.keys(before.panes)) {
+		if (!(clientId in after.panes)) {
+			complaints.push(`pane ${before.panes[clientId]} (${clientId}) is no longer registered`);
+		}
+	}
 
-  if (after.sockets !== before.sockets) {
-    complaints.push(
-      `${before.sockets} socket${before.sockets === 1 ? '' : 's'} before the reload, ` +
-      `${after.sockets} after: a tab may think it is still connected`
-    );
-  }
+	if (after.sockets !== before.sockets) {
+		complaints.push(
+			`${before.sockets} socket${before.sockets === 1 ? "" : "s"} before the reload, ` +
+				`${after.sockets} after: a tab may think it is still connected`,
+		);
+	}
 
-  if (before.feedId !== after.feedId) {
-    complaints.push(
-      `the change feed is a different feed (${before.feedId} -> ${after.feedId}), ` +
-      'so every cursor saved anywhere is now meaningless'
-    );
-  } else if (before.cursor !== null && after.cursor !== null && after.cursor < before.cursor) {
-    complaints.push(`the change feed cursor went backwards, ${before.cursor} -> ${after.cursor}`);
-  }
+	if (before.feedId !== after.feedId) {
+		complaints.push(
+			`the change feed is a different feed (${before.feedId} -> ${after.feedId}), ` +
+				"so every cursor saved anywhere is now meaningless",
+		);
+	} else if (before.cursor !== null && after.cursor !== null && after.cursor < before.cursor) {
+		complaints.push(`the change feed cursor went backwards, ${before.cursor} -> ${after.cursor}`);
+	}
 
-  return complaints;
+	return complaints;
 }
 
 /**
@@ -219,29 +222,30 @@ export function compareFacts(before: ReloadFacts, after: ReloadFacts): string[] 
  * into a second failure.
  */
 export function reportBrokenReload(complaints: string[]): void {
-  const banner = [
-    '',
-    '  !! THE RELOAD BROKE SOMETHING. The canvas is not what it was.',
-    ...complaints.map(line => `     - ${line}`),
-    '     Restart the canvas before trusting anything on it.',
-    ''
-  ].join('\n');
-  // console, not the logger: this has to be on screen at its own size, and it
-  // must work even if the logger is one of the things the reload broke.
-  console.error(banner);
+	const banner = [
+		"",
+		"  !! THE RELOAD BROKE SOMETHING. The canvas is not what it was.",
+		...complaints.map((line) => `     - ${line}`),
+		"     Restart the canvas before trusting anything on it.",
+		"",
+	].join("\n");
+	// console, not the logger: this has to be on screen at its own size, and it
+	// must work even if the logger is one of the things the reload broke.
+	console.error(banner);
 
-  const sockets = keptValue<Set<{ readyState: number; send: (data: string) => void }>>('ws-clients');
-  if (!sockets) return;
-  const message = JSON.stringify({ type: 'reload_broken', complaints });
-  for (const socket of sockets) {
-    try {
-      // 1 is WebSocket.OPEN. Compared as a number so this module does not have
-      // to import `ws`, which would put a second copy of it on the dev entry's
-      // side of the reload boundary.
-      if (socket.readyState === 1) socket.send(message);
-    } catch {
-      // A socket that cannot be told is exactly the kind of damage being
-      // reported. The terminal already has it.
-    }
-  }
+	const sockets =
+		keptValue<Set<{ readyState: number; send: (data: string) => void }>>("ws-clients");
+	if (!sockets) return;
+	const message = JSON.stringify({ type: "reload_broken", complaints });
+	for (const socket of sockets) {
+		try {
+			// 1 is WebSocket.OPEN. Compared as a number so this module does not have
+			// to import `ws`, which would put a second copy of it on the dev entry's
+			// side of the reload boundary.
+			if (socket.readyState === 1) socket.send(message);
+		} catch {
+			// A socket that cannot be told is exactly the kind of damage being
+			// reported. The terminal already has it.
+		}
+	}
 }

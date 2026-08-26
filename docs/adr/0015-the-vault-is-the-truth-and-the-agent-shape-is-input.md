@@ -143,7 +143,7 @@ removing invariants that held only while somebody remembered them.
 rather than its own accumulated copy, so divergence cannot build up across a
 session: every write is a resync.
 
-What a canvas sends *up* is still a delta, and stays that way. A pane may only
+What a canvas sends _up_ is still a delta, and stays that way. A pane may only
 claim a deletion for an element it has actually received, which is what stops a
 stale or half-loaded pane truncating a board it cannot see all of.
 

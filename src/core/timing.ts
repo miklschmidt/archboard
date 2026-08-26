@@ -43,7 +43,7 @@
  * already-started agent write. At most one report is in flight; another due
  * deadline records one queued latest delivery rather than fanning out.
  */
-export const REPORT_PROGRESS_MS = 400
+export const REPORT_PROGRESS_MS = 400;
 
 /**
  * The trailing idle deadline from the last content edit to the final report.
@@ -52,7 +52,7 @@ export const REPORT_PROGRESS_MS = 400
  * deliberately twice REPORT_PROGRESS_MS: continuous work makes progress at
  * 400 ms, while a brief pause does not immediately manufacture another tail.
  */
-export const REPORT_IDLE_SETTLE_MS = 800
+export const REPORT_IDLE_SETTLE_MS = 800;
 
 /**
  * How long the pane waits before retrying a report the server refused or never
@@ -65,7 +65,7 @@ export const REPORT_IDLE_SETTLE_MS = 800
  * agent hearing about one drag twice costs it a sentence, and a retry inside
  * the settle window would mean hammering a server that is already failing.
  */
-export const REPORT_RETRY_MS = 2000
+export const REPORT_RETRY_MS = 2000;
 
 /**
  * How long the pane waits before publishing a changed selection.
@@ -80,7 +80,7 @@ export const REPORT_RETRY_MS = 2000
  * them. Raising this past REPORT_PROGRESS_MS reverses that, and the symptom
  * would be an agent describing a move against the previous selection.
  */
-export const SELECTION_DEBOUNCE_MS = 150
+export const SELECTION_DEBOUNCE_MS = 150;
 
 /**
  * How long a pane waits before dialling the socket again after it drops.
@@ -94,7 +94,7 @@ export const SELECTION_DEBOUNCE_MS = 150
  * reports go by HTTP and are not gated on the socket, so a dropped socket must
  * not also stop a user's edits reaching the server.
  */
-export const SOCKET_RECONNECT_MS = 3000
+export const SOCKET_RECONNECT_MS = 3000;
 
 // ── What a pane looks like from outside ───────────────────────────────────
 
@@ -106,7 +106,7 @@ export const SOCKET_RECONNECT_MS = 3000
  * actually changed. An agent must be able to read it every turn, which it can
  * only afford if the browser is not posting it continuously.
  */
-export const PANE_DEBOUNCE_MS = 300
+export const PANE_DEBOUNCE_MS = 300;
 
 /**
  * How long the server waits for the panes to say where they ended up, after
@@ -124,7 +124,7 @@ export const PANE_DEBOUNCE_MS = 300
  * the browser is still sitting on the report that would have ended the wait.
  * 300 against 1500 leaves room for the round trip and a slow frame.
  */
-export const PANE_SETTLE_CAP_MS = 1500
+export const PANE_SETTLE_CAP_MS = 1500;
 
 /**
  * How long the server waits for the browser to change its layout at all.
@@ -135,7 +135,7 @@ export const PANE_SETTLE_CAP_MS = 1500
  * it is generous because failing it means telling a user their split did not
  * happen when it may only have been slow.
  */
-export const PANE_LAYOUT_TIMEOUT_MS = 10000
+export const PANE_LAYOUT_TIMEOUT_MS = 10000;
 
 // ── When a board is considered still ──────────────────────────────────────
 
@@ -157,7 +157,7 @@ export const PANE_LAYOUT_TIMEOUT_MS = 10000
  * "they rearranged that corner" into one thing the agent is told rather than
  * three.
  */
-export const DEFAULT_SETTLE_MS = 1200
+export const DEFAULT_SETTLE_MS = 1200;
 
 /**
  * The longest the feed will hold an unsettled board before emitting anyway.
@@ -168,7 +168,7 @@ export const DEFAULT_SETTLE_MS = 1200
  * windows, so a long stretch of continuous work still reports every few
  * seconds.
  */
-export const DEFAULT_SETTLE_MAX_MS = 6000
+export const DEFAULT_SETTLE_MAX_MS = 6000;
 
 // ── Pushing change events into a live thread ──────────────────────────────
 
@@ -181,7 +181,7 @@ export const DEFAULT_SETTLE_MAX_MS = 6000
  * rearranging three boxes in a row produces three settled events and should
  * cost the agent one interruption.
  */
-export const DEFAULT_INJECT_DEBOUNCE_MS = 4000
+export const DEFAULT_INJECT_DEBOUNCE_MS = 4000;
 
 /**
  * The floor on how often the thread may be interrupted, whatever the board is
@@ -191,7 +191,7 @@ export const DEFAULT_INJECT_DEBOUNCE_MS = 4000
  * working continuously on the board generates events forever, and an agent
  * being told about them every four seconds cannot get anything else done.
  */
-export const DEFAULT_INJECT_MIN_INTERVAL_MS = 10_000
+export const DEFAULT_INJECT_MIN_INTERVAL_MS = 10_000;
 
 // ── One writer at a time (ADR 0016) ───────────────────────────────────────
 //
@@ -215,7 +215,7 @@ export const DEFAULT_INJECT_MIN_INTERVAL_MS = 10_000
  * not this number, so raising it to survive a long edit is the wrong fix,
  * and it is paid for in how long a crashed holder keeps the board.
  */
-export const LOCK_LEASE_MS = 3000
+export const LOCK_LEASE_MS = 3000;
 
 /**
  * How often a live holder renews.
@@ -227,7 +227,7 @@ export const LOCK_LEASE_MS = 3000
  * long. Pushing this closer to the lease trades the second property for
  * nothing.
  */
-export const LOCK_RENEW_MS = 1000
+export const LOCK_RENEW_MS = 1000;
 
 /**
  * How long an agent waits for a board somebody else holds before giving up and
@@ -246,7 +246,7 @@ export const LOCK_RENEW_MS = 1000
  * this one for how long a person is willing to hear nothing, that one for how
  * long a crash costs.
  */
-export const LOCK_WAIT_CAP_MS = 5000
+export const LOCK_WAIT_CAP_MS = 5000;
 
 /**
  * How often a waiter re-asks for a board somebody else is holding.
@@ -262,7 +262,7 @@ export const LOCK_WAIT_CAP_MS = 5000
  * user who has just finished; lowering it buys nothing once it is under the
  * time a write takes.
  */
-export const LOCK_POLL_MS = 50
+export const LOCK_POLL_MS = 50;
 
 /**
  * How long a process pauses after taking over a lapsed lease before it
@@ -278,7 +278,7 @@ export const LOCK_POLL_MS = 50
  * It is paid only when a lease has actually lapsed, which means only after a
  * holder died. Nothing on the ordinary path waits it out.
  */
-export const LOCK_STEAL_GUARD_MS = 25
+export const LOCK_STEAL_GUARD_MS = 25;
 
 /**
  * How long the panes are left believing a board is still held after it was
@@ -300,7 +300,7 @@ export const LOCK_STEAL_GUARD_MS = 25
  * fan-out and short enough that a user never notices a board they can already
  * write to.
  */
-export const LOCK_FREE_LINGER_MS = LOCK_RENEW_MS
+export const LOCK_FREE_LINGER_MS = LOCK_RENEW_MS;
 
 // ── A claim: one writer for longer than one write (ADR 0016, TASK-080) ────
 
@@ -318,7 +318,7 @@ export const LOCK_FREE_LINGER_MS = LOCK_RENEW_MS
  * that a claim nobody released stops mattering before the person who wanted
  * the board has given up on it.
  */
-export const CLAIM_DEFAULT_MS = 10 * 60_000
+export const CLAIM_DEFAULT_MS = 10 * 60_000;
 
 /**
  * The longest claim anybody may ask for, however long they said.
@@ -333,7 +333,7 @@ export const CLAIM_DEFAULT_MS = 10 * 60_000
  * about the work, not about the display, and a refusal would leave the agent
  * unclaimed and drawing anyway.
  */
-export const CLAIM_MAX_MS = 60 * 60_000
+export const CLAIM_MAX_MS = 60 * 60_000;
 
 /**
  * How long a claimed board's lease runs between renewals.
@@ -350,7 +350,7 @@ export const CLAIM_MAX_MS = 60 * 60_000
  * satisfied by the same three seconds today, and the two would be tuned for
  * different reasons.
  */
-export const CLAIM_LEASE_MS = LOCK_LEASE_MS
+export const CLAIM_LEASE_MS = LOCK_LEASE_MS;
 
 /**
  * How often a canvas looks at the lock files of the boards on its screen.
@@ -368,4 +368,4 @@ export const CLAIM_LEASE_MS = LOCK_LEASE_MS
  * second, and only while a browser is connected: with nothing rendering, there
  * is no pane to be wrong.
  */
-export const LOCK_WATCH_MS = LOCK_RENEW_MS
+export const LOCK_WATCH_MS = LOCK_RENEW_MS;

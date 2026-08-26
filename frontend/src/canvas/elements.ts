@@ -23,23 +23,16 @@
 // that is not in this server update would make Excalidraw throw, and a pane can
 // legitimately receive a partial board.
 
-import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
-import type { ServerElement } from '../types'
+import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
+import type { ServerElement } from "../types";
 
 // The server's own bookkeeping, which is not board content and which
 // Excalidraw has no field for.
 export const cleanElementForExcalidraw = (element: ServerElement): Partial<ExcalidrawElement> => {
-  const {
-    createdAt,
-    updatedAt,
-    version,
-    syncedAt,
-    source,
-    syncTimestamp,
-    ...cleanElement
-  } = element;
-  return cleanElement as Partial<ExcalidrawElement>;
-}
+	const { createdAt, updatedAt, version, syncedAt, source, syncTimestamp, ...cleanElement } =
+		element;
+	return cleanElement as Partial<ExcalidrawElement>;
+};
 
 /**
  * Drop references to elements this server update does not carry.
@@ -50,38 +43,40 @@ export const cleanElementForExcalidraw = (element: ServerElement): Partial<Excal
  * something that is not there is the one shape it will not survive, so the
  * pointer goes rather than the render.
  */
-const validateAndFixBindings = (elements: Partial<ExcalidrawElement>[]): Partial<ExcalidrawElement>[] => {
-  const elementMap = new Map(elements.map(el => [el.id!, el]));
+const validateAndFixBindings = (
+	elements: Partial<ExcalidrawElement>[],
+): Partial<ExcalidrawElement>[] => {
+	const elementMap = new Map(elements.map((el) => [el.id!, el]));
 
-  return elements.map(element => {
-    // A loose view on purpose: boundElements and containerId only exist on some
-    // members of the element union, and this function runs before we know which.
-    const fixedElement = { ...element } as Record<string, any>;
+	return elements.map((element) => {
+		// A loose view on purpose: boundElements and containerId only exist on some
+		// members of the element union, and this function runs before we know which.
+		const fixedElement = { ...element } as Record<string, any>;
 
-    if (fixedElement.boundElements) {
-      if (Array.isArray(fixedElement.boundElements)) {
-        fixedElement.boundElements = fixedElement.boundElements.filter((binding: any) => {
-          if (!binding || typeof binding !== 'object') return false;
-          if (!binding.id || !binding.type) return false;
-          if (!elementMap.has(binding.id)) return false;
-          if (!['text', 'arrow'].includes(binding.type)) return false;
-          return true;
-        });
-        if (fixedElement.boundElements.length === 0) {
-          fixedElement.boundElements = null;
-        }
-      } else {
-        fixedElement.boundElements = null;
-      }
-    }
+		if (fixedElement.boundElements) {
+			if (Array.isArray(fixedElement.boundElements)) {
+				fixedElement.boundElements = fixedElement.boundElements.filter((binding: any) => {
+					if (!binding || typeof binding !== "object") return false;
+					if (!binding.id || !binding.type) return false;
+					if (!elementMap.has(binding.id)) return false;
+					if (!["text", "arrow"].includes(binding.type)) return false;
+					return true;
+				});
+				if (fixedElement.boundElements.length === 0) {
+					fixedElement.boundElements = null;
+				}
+			} else {
+				fixedElement.boundElements = null;
+			}
+		}
 
-    if (fixedElement.containerId && !elementMap.has(fixedElement.containerId)) {
-      fixedElement.containerId = null;
-    }
+		if (fixedElement.containerId && !elementMap.has(fixedElement.containerId)) {
+			fixedElement.containerId = null;
+		}
 
-    return fixedElement;
-  });
-}
+		return fixedElement;
+	});
+};
 
 /**
  * What this pane hands Excalidraw.
@@ -91,8 +86,8 @@ const validateAndFixBindings = (elements: Partial<ExcalidrawElement>[]): Partial
  * them on the canvas.
  */
 export const elementsForScene = (
-  elements: Partial<ExcalidrawElement>[]
+	elements: Partial<ExcalidrawElement>[],
 ): Partial<ExcalidrawElement>[] => {
-  if (elements.length === 0) return []
-  return validateAndFixBindings(elements)
-}
+	if (elements.length === 0) return [];
+	return validateAndFixBindings(elements);
+};

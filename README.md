@@ -29,7 +29,8 @@ and keeping architectural nodes connected to the code they represent.
   metadata.
 - Provides a curated architecture stencil library, Mermaid import, layout
   operations, snapshots, and PNG, SVG, and Excalidraw export.
-- Exposes the same canvas through a CLI, MCP tools, and a loopback REST API.
+- Exposes the canvas through an agent-facing CLI and a loopback REST API for
+  the application and local integrations.
 
 The CLI is the primary interface. It lets a coding agent operate the canvas
 from any shell while every change appears immediately in the browser.
@@ -107,7 +108,7 @@ archboard install-skill
 The installer copies the bundled agent skill, chooses or creates a vault, and
 records the machine-specific command and vault path in the target repository's
 agent instructions. See [INSTALL.md](INSTALL.md) for target options, shared
-vaults, MCP configuration, and repository bindings.
+vaults and repository bindings.
 
 Once installed, ask the agent to map the current architecture onto a named
 board. A typical comparison branches that board into a variant and opens the
@@ -144,9 +145,9 @@ The canvas binds to `127.0.0.1` by default and has no authentication. Keep it
 on loopback; use an SSH tunnel rather than exposing it directly to a network.
 
 Optional injection into a live Codex thread is disabled by default, must be
-enabled explicitly with `ARCHBOARD_INJECT=1`, and refuses to arm when the
-canvas is not bound to loopback. See [TESTING.md](TESTING.md) before enabling
-voice or injection.
+enabled explicitly with `ARCHBOARD_INJECT=1`, must name the exact task with
+`ARCHBOARD_INJECT_THREAD`, and refuses to arm when the canvas is not bound to
+loopback. See [TESTING.md](TESTING.md) before enabling voice or injection.
 
 ## Documentation
 

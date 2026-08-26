@@ -27,49 +27,49 @@
 
 /** As much of an element as placing it requires. */
 export interface Measurable {
-  x?: unknown;
-  y?: unknown;
-  width?: unknown;
-  height?: unknown;
-  points?: unknown;
+	x?: unknown;
+	y?: unknown;
+	width?: unknown;
+	height?: unknown;
+	points?: unknown;
 }
 
 export interface RenderGeometryElement extends Measurable {
-  id?: unknown;
-  type?: unknown;
-  isDeleted?: unknown;
+	id?: unknown;
+	type?: unknown;
+	isDeleted?: unknown;
 }
 
 export interface InvalidRenderGeometry {
-  id: string;
-  type: string;
-  fields: Array<'x' | 'y' | 'width' | 'height'>;
+	id: string;
+	type: string;
+	fields: Array<"x" | "y" | "width" | "height">;
 }
 
 /** A complete document cannot be handed to Excalidraw safely. */
 export class RenderGeometryError extends Error {
-  constructor(readonly invalid: InvalidRenderGeometry[]) {
-    const details = invalid
-      .map(element => `${element.id} (${element.type}): ${element.fields.join(', ')}`)
-      .join('; ');
-    super(
-      `Invalid render geometry: ${details}. ` +
-      'Every live element needs finite x, y, width and height. Correct the element geometry and try again.'
-    );
-    this.name = 'RenderGeometryError';
-  }
+	constructor(readonly invalid: InvalidRenderGeometry[]) {
+		const details = invalid
+			.map((element) => `${element.id} (${element.type}): ${element.fields.join(", ")}`)
+			.join("; ");
+		super(
+			`Invalid render geometry: ${details}. ` +
+				"Every live element needs finite x, y, width and height. Correct the element geometry and try again.",
+		);
+		this.name = "RenderGeometryError";
+	}
 }
 
 /** An axis-aligned box in scene coordinates, in the element's own vocabulary. */
 export interface Extent {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+	x: number;
+	y: number;
+	width: number;
+	height: number;
 }
 
 const finite = (v: unknown): number | undefined =>
-  typeof v === 'number' && Number.isFinite(v) ? v : undefined;
+	typeof v === "number" && Number.isFinite(v) ? v : undefined;
 
 /**
  * Refuse a document Excalidraw cannot render without producing a non-finite
@@ -80,42 +80,46 @@ const finite = (v: unknown): number | undefined =>
  * malformed history must not prevent a valid live document from being saved.
  */
 export function validateRenderGeometry(elements: Iterable<RenderGeometryElement>): void {
-  const invalid: InvalidRenderGeometry[] = [];
-  for (const element of elements) {
-    if (element.isDeleted === true) continue;
-    const fields = (['x', 'y', 'width', 'height'] as const)
-      .filter(field => finite(element[field]) === undefined);
-    if (fields.length === 0) continue;
-    invalid.push({
-      id: typeof element.id === 'string' && element.id ? element.id : '<unnamed>',
-      type: typeof element.type === 'string' && element.type ? element.type : '<unknown>',
-      fields
-    });
-  }
-  if (invalid.length > 0) throw new RenderGeometryError(invalid);
+	const invalid: InvalidRenderGeometry[] = [];
+	for (const element of elements) {
+		if (element.isDeleted === true) continue;
+		const fields = (["x", "y", "width", "height"] as const).filter(
+			(field) => finite(element[field]) === undefined,
+		);
+		if (fields.length === 0) continue;
+		invalid.push({
+			id: typeof element.id === "string" && element.id ? element.id : "<unnamed>",
+			type: typeof element.type === "string" && element.type ? element.type : "<unknown>",
+			fields,
+		});
+	}
+	if (invalid.length > 0) throw new RenderGeometryError(invalid);
 }
 
 /** The default local path for a new straight linear element. */
-export const DEFAULT_LINEAR_POINTS = [[0, 0], [100, 0]] as const;
+export const DEFAULT_LINEAR_POINTS = [
+	[0, 0],
+	[100, 0],
+] as const;
 
 /** Valid point tuples or objects, in one normalized shape. */
 export function pointsOf(points: unknown): { x: number; y: number }[] | undefined {
-  if (!Array.isArray(points) || points.length === 0) return undefined;
-  const normalized: { x: number; y: number }[] = [];
-  for (const point of points) {
-    const x = finite(Array.isArray(point) ? point[0] : (point as any)?.x);
-    const y = finite(Array.isArray(point) ? point[1] : (point as any)?.y);
-    if (x !== undefined && y !== undefined) normalized.push({ x, y });
-  }
-  return normalized.length === 0 ? undefined : normalized;
+	if (!Array.isArray(points) || points.length === 0) return undefined;
+	const normalized: { x: number; y: number }[] = [];
+	for (const point of points) {
+		const x = finite(Array.isArray(point) ? point[0] : (point as any)?.x);
+		const y = finite(Array.isArray(point) ? point[1] : (point as any)?.y);
+		if (x !== undefined && y !== undefined) normalized.push({ x, y });
+	}
+	return normalized.length === 0 ? undefined : normalized;
 }
 
 /** The offsets of a path, dropping anything that is not a pair of numbers. */
 function pathOffsets(points: unknown): { xs: number[]; ys: number[] } | undefined {
-  const normalized = pointsOf(points);
-  return normalized
-    ? { xs: normalized.map(point => point.x), ys: normalized.map(point => point.y) }
-    : undefined;
+	const normalized = pointsOf(points);
+	return normalized
+		? { xs: normalized.map((point) => point.x), ys: normalized.map((point) => point.y) }
+		: undefined;
 }
 
 /**
@@ -127,17 +131,17 @@ function pathOffsets(points: unknown): { xs: number[]; ys: number[] } | undefine
  * worse than the stale one it would replace.
  */
 export function measureLinear(points: unknown): { width: number; height: number } | undefined {
-  const offsets = pathOffsets(points);
-  if (!offsets) return undefined;
-  return {
-    width: Math.max(...offsets.xs) - Math.min(...offsets.xs),
-    height: Math.max(...offsets.ys) - Math.min(...offsets.ys)
-  };
+	const offsets = pathOffsets(points);
+	if (!offsets) return undefined;
+	return {
+		width: Math.max(...offsets.xs) - Math.min(...offsets.xs),
+		height: Math.max(...offsets.ys) - Math.min(...offsets.ys),
+	};
 }
 
 /** Does this element carry a path, and therefore keep its size in it? */
 export function isPathElement(element: Measurable | null | undefined): boolean {
-  return pathOffsets(element?.points) !== undefined;
+	return pathOffsets(element?.points) !== undefined;
 }
 
 /**
@@ -154,28 +158,28 @@ export function isPathElement(element: Measurable | null | undefined): boolean {
  * origin.
  */
 export function extentOf(element: Measurable | null | undefined): Extent {
-  const x = finite(element?.x) ?? 0;
-  const y = finite(element?.y) ?? 0;
-  const offsets = pathOffsets(element?.points);
-  if (offsets) {
-    const minX = Math.min(...offsets.xs);
-    const minY = Math.min(...offsets.ys);
-    return {
-      x: x + minX,
-      y: y + minY,
-      width: Math.max(...offsets.xs) - minX,
-      height: Math.max(...offsets.ys) - minY
-    };
-  }
-  return { x, y, width: finite(element?.width) ?? 0, height: finite(element?.height) ?? 0 };
+	const x = finite(element?.x) ?? 0;
+	const y = finite(element?.y) ?? 0;
+	const offsets = pathOffsets(element?.points);
+	if (offsets) {
+		const minX = Math.min(...offsets.xs);
+		const minY = Math.min(...offsets.ys);
+		return {
+			x: x + minX,
+			y: y + minY,
+			width: Math.max(...offsets.xs) - minX,
+			height: Math.max(...offsets.ys) - minY,
+		};
+	}
+	return { x, y, width: finite(element?.width) ?? 0, height: finite(element?.height) ?? 0 };
 }
 
 /** A region of board to ask a question about. Any side may be unbounded. */
 export interface Region {
-  xMin: number;
-  xMax: number;
-  yMin: number;
-  yMax: number;
+	xMin: number;
+	xMax: number;
+	yMin: number;
+	yMax: number;
 }
 
 /**
@@ -192,9 +196,13 @@ export interface Region {
  * it, and a point-sized element is judged the same way a box is.
  */
 export function overlapsRegion(element: Measurable | null | undefined, region: Region): boolean {
-  const extent = extentOf(element);
-  return extent.x <= region.xMax && extent.x + extent.width >= region.xMin &&
-    extent.y <= region.yMax && extent.y + extent.height >= region.yMin;
+	const extent = extentOf(element);
+	return (
+		extent.x <= region.xMax &&
+		extent.x + extent.width >= region.xMin &&
+		extent.y <= region.yMax &&
+		extent.y + extent.height >= region.yMin
+	);
 }
 
 /**
@@ -207,17 +215,19 @@ export function overlapsRegion(element: Measurable | null | undefined, region: R
  * feed over nothing.
  */
 export function remeasureLinear(
-  element: Measurable | null | undefined
+	element: Measurable | null | undefined,
 ): { width: number; height: number } | undefined {
-  const measured = measureLinear(element?.points);
-  if (!measured) return undefined;
-  const width = finite(element?.width);
-  const height = finite(element?.height);
-  if (
-    width !== undefined && height !== undefined &&
-    Math.abs(width - measured.width) < 0.5 && Math.abs(height - measured.height) < 0.5
-  ) {
-    return undefined;
-  }
-  return measured;
+	const measured = measureLinear(element?.points);
+	if (!measured) return undefined;
+	const width = finite(element?.width);
+	const height = finite(element?.height);
+	if (
+		width !== undefined &&
+		height !== undefined &&
+		Math.abs(width - measured.width) < 0.5 &&
+		Math.abs(height - measured.height) < 0.5
+	) {
+		return undefined;
+	}
+	return measured;
 }

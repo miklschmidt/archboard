@@ -60,28 +60,28 @@
 // because exclusion reads the file, and `watchBoardLocks` is what stops its
 // panes finding out at the write rather than before the edit (TASK-080).
 
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
-import { VAULT_STATE_DIR, normalizeBoardKey, requireVaultRoot } from './board.js';
-import { kept } from './hot.js';
-import { forgetRememberedVersion } from './board-version.js';
+import { VAULT_STATE_DIR, normalizeBoardKey, requireVaultRoot } from "./board.js";
+import { kept } from "./hot.js";
+import { forgetRememberedVersion } from "./board-version.js";
 import {
-  CLAIM_DEFAULT_MS,
-  CLAIM_LEASE_MS,
-  CLAIM_MAX_MS,
-  LOCK_FREE_LINGER_MS,
-  LOCK_LEASE_MS,
-  LOCK_POLL_MS,
-  LOCK_RENEW_MS,
-  LOCK_STEAL_GUARD_MS,
-  LOCK_WAIT_CAP_MS,
-  LOCK_WATCH_MS
-} from './timing.js';
+	CLAIM_DEFAULT_MS,
+	CLAIM_LEASE_MS,
+	CLAIM_MAX_MS,
+	LOCK_FREE_LINGER_MS,
+	LOCK_LEASE_MS,
+	LOCK_POLL_MS,
+	LOCK_RENEW_MS,
+	LOCK_STEAL_GUARD_MS,
+	LOCK_WAIT_CAP_MS,
+	LOCK_WATCH_MS,
+} from "./timing.js";
 
 /** A person at the canvas, or an agent writing to it. */
-export type HolderKind = 'human' | 'agent';
+export type HolderKind = "human" | "agent";
 
 /**
  * Who has a board, and until when.
@@ -93,33 +93,33 @@ export type HolderKind = 'human' | 'agent';
  * inside one claim with no gap between them.
  */
 export interface LockHolder {
-  id: string;
-  kind: HolderKind;
-  /** When this holder took it. Not moved by a renewal: "since when" is the question a refusal answers. */
-  since: string;
-  /** When the lease lapses unless it is renewed. */
-  until: string;
-  /** Which canvas process, so a refusal can say "another canvas" and mean it. */
-  process: string;
-  /** What the holder said it was doing. Empty for a per-write hold, and the sentence a claim shows on the pane. */
-  reason?: string;
-  /**
-   * A claim rather than one write: an agent said in advance that it is about to
-   * redraw this board, and holds it across every write until it says otherwise.
-   *
-   * Written down rather than inferred from a long lease or a reason, because
-   * three different things ask the question and all three would get it wrong by
-   * guessing. A person's hold takes a claimed board and waits out an unclaimed
-   * one; a pane puts up a banner naming the holder for a claim and nothing at
-   * all for a twenty-millisecond write; and a refusal says "holds" rather than
-   * "is writing".
-   */
-  claimed?: boolean;
+	id: string;
+	kind: HolderKind;
+	/** When this holder took it. Not moved by a renewal: "since when" is the question a refusal answers. */
+	since: string;
+	/** When the lease lapses unless it is renewed. */
+	until: string;
+	/** Which canvas process, so a refusal can say "another canvas" and mean it. */
+	process: string;
+	/** What the holder said it was doing. Empty for a per-write hold, and the sentence a claim shows on the pane. */
+	reason?: string;
+	/**
+	 * A claim rather than one write: an agent said in advance that it is about to
+	 * redraw this board, and holds it across every write until it says otherwise.
+	 *
+	 * Written down rather than inferred from a long lease or a reason, because
+	 * three different things ask the question and all three would get it wrong by
+	 * guessing. A person's hold takes a claimed board and waits out an unclaimed
+	 * one; a pane puts up a banner naming the holder for a claim and nothing at
+	 * all for a twenty-millisecond write; and a refusal says "holds" rather than
+	 * "is writing".
+	 */
+	claimed?: boolean;
 }
 
 /** The lease as it sits on disk: a holder plus the token that proves it is ours. */
 interface LockRecord extends LockHolder {
-  token: string;
+	token: string;
 }
 
 /**
@@ -132,63 +132,63 @@ interface LockRecord extends LockHolder {
  * sentence so a voice session has something to say instead of going silent.
  */
 export class BoardHeldError extends Error {
-  readonly code = 'BOARD_HELD';
-  readonly board: string;
-  readonly holder: LockHolder | null;
-  readonly waitedMs: number;
+	readonly code = "BOARD_HELD";
+	readonly board: string;
+	readonly holder: LockHolder | null;
+	readonly waitedMs: number;
 
-  constructor(board: string, holder: LockHolder | null, waitedMs: number) {
-    super(describeHold(board, holder, waitedMs));
-    this.name = 'BoardHeldError';
-    this.board = board;
-    this.holder = holder;
-    this.waitedMs = waitedMs;
-  }
+	constructor(board: string, holder: LockHolder | null, waitedMs: number) {
+		super(describeHold(board, holder, waitedMs));
+		this.name = "BoardHeldError";
+		this.board = board;
+		this.holder = holder;
+		this.waitedMs = waitedMs;
+	}
 }
 
 /** What `holdBoard` gives back: who holds it, and whether this call is what took it. */
 export interface LockHold {
-  holder: LockHolder;
-  /**
-   * Did this call take the lock, or join one the same holder already had?
-   *
-   * The only reason a caller cares: releasing what you did not take is how a
-   * user's edit loses the board to the write in the middle of it.
-   */
-  created: boolean;
+	holder: LockHolder;
+	/**
+	 * Did this call take the lock, or join one the same holder already had?
+	 *
+	 * The only reason a caller cares: releasing what you did not take is how a
+	 * user's edit loses the board to the write in the middle of it.
+	 */
+	created: boolean;
 }
 
 export interface LockRequest {
-  /** The board key. Normalised here, so two spellings of one board are one lock. */
-  board: string;
-  holder: { id: string; kind: HolderKind; reason?: string; claimed?: boolean };
-  /**
-   * How long to wait for somebody else, in ms. Defaults to LOCK_WAIT_CAP_MS,
-   * which is what an agent uses: a person's hold tracks one edit interaction,
-   * so the expected wait is short and waiting beats failing.
-   *
-   * A person's own hold passes REPORT_PROGRESS_MS instead. An agent's write is
-   * about twenty milliseconds and an edit that starts during one has not lost
-   * the board, but a person cannot be made to wait five seconds to find out
-   * whether their edit was accepted. Zero means ask once.
-   */
-  waitMs?: number;
-  /** How long the lease runs, in ms. Defaults to LOCK_LEASE_MS. */
-  leaseMs?: number;
-  /**
-   * Take a claimed board away from the agent holding it.
-   *
-   * Only a person's hold ever sets it, and it only ever takes a *claim* — a
-   * per-write hold is twenty milliseconds and is waited out, because taking a
-   * board from a write in progress is two writers to one note, which is the
-   * thing this whole file exists instead of.
-   *
-   * A claim is different because it may run for minutes, and no agent may make
-   * a 75-inch display stop responding to the person standing at it (ADR 0016).
-   * The agent is told at its next act; nothing it has already written is
-   * touched, because a write is in the note and revoking is not undoing.
-   */
-  revokeClaim?: boolean;
+	/** The board key. Normalised here, so two spellings of one board are one lock. */
+	board: string;
+	holder: { id: string; kind: HolderKind; reason?: string; claimed?: boolean };
+	/**
+	 * How long to wait for somebody else, in ms. Defaults to LOCK_WAIT_CAP_MS,
+	 * which is what an agent uses: a person's hold tracks one edit interaction,
+	 * so the expected wait is short and waiting beats failing.
+	 *
+	 * A person's own hold passes REPORT_PROGRESS_MS instead. An agent's write is
+	 * about twenty milliseconds and an edit that starts during one has not lost
+	 * the board, but a person cannot be made to wait five seconds to find out
+	 * whether their edit was accepted. Zero means ask once.
+	 */
+	waitMs?: number;
+	/** How long the lease runs, in ms. Defaults to LOCK_LEASE_MS. */
+	leaseMs?: number;
+	/**
+	 * Take a claimed board away from the agent holding it.
+	 *
+	 * Only a person's hold ever sets it, and it only ever takes a *claim* — a
+	 * per-write hold is twenty milliseconds and is waited out, because taking a
+	 * board from a write in progress is two writers to one note, which is the
+	 * thing this whole file exists instead of.
+	 *
+	 * A claim is different because it may run for minutes, and no agent may make
+	 * a 75-inch display stop responding to the person standing at it (ADR 0016).
+	 * The agent is told at its next act; nothing it has already written is
+	 * touched, because a write is in the note and revoking is not undoing.
+	 */
+	revokeClaim?: boolean;
 }
 
 /** Where the news goes: the board, and who holds it now, or null for free. */
@@ -211,12 +211,12 @@ export type LockSink = (board: string, holder: LockHolder | null) => void;
  * make impossible.
  */
 export async function withBoardLock<T>(request: LockRequest, write: () => T): Promise<T> {
-  const hold = await holdBoard(request);
-  try {
-    return write();
-  } finally {
-    if (hold.created) releaseHold(request.board, request.holder.id);
-  }
+	const hold = await holdBoard(request);
+	try {
+		return write();
+	} finally {
+		if (hold.created) releaseHold(request.board, request.holder.id);
+	}
 }
 
 /**
@@ -230,33 +230,33 @@ export async function withBoardLock<T>(request: LockRequest, write: () => T): Pr
  * one.
  */
 export async function holdBoard(request: LockRequest): Promise<LockHold> {
-  const board = normalizeBoardKey(request.board);
-  const leaseMs = request.leaseMs ?? LOCK_LEASE_MS;
-  const waitMs = request.waitMs ?? LOCK_WAIT_CAP_MS;
-  const startedAt = Date.now();
-  const deadline = startedAt + waitMs;
+	const board = normalizeBoardKey(request.board);
+	const leaseMs = request.leaseMs ?? LOCK_LEASE_MS;
+	const waitMs = request.waitMs ?? LOCK_WAIT_CAP_MS;
+	const startedAt = Date.now();
+	const deadline = startedAt + waitMs;
 
-  let blocker: LockHolder | null = null;
-  // Bounded so that a lock moving between holders faster than we can read it ends
-  // in a refusal naming somebody rather than in a loop.
-  let attemptsPastDeadline = 0;
+	let blocker: LockHolder | null = null;
+	// Bounded so that a lock moving between holders faster than we can read it ends
+	// in a refusal naming somebody rather than in a loop.
+	let attemptsPastDeadline = 0;
 
-  for (;;) {
-    const result = await attempt(board, request.holder, leaseMs, request.revokeClaim === true);
-    if (result.ok) return { holder: result.holder, created: result.created };
-    // `null` means the file moved under us rather than that somebody has it:
-    // worth another go, and worth not reporting as a holder.
-    if (result.holder) blocker = result.holder;
+	for (;;) {
+		const result = await attempt(board, request.holder, leaseMs, request.revokeClaim === true);
+		if (result.ok) return { holder: result.holder, created: result.created };
+		// `null` means the file moved under us rather than that somebody has it:
+		// worth another go, and worth not reporting as a holder.
+		if (result.holder) blocker = result.holder;
 
-    if (Date.now() >= deadline) {
-      if (blocker || attemptsPastDeadline >= 2) break;
-      attemptsPastDeadline += 1;
-      continue;
-    }
-    await sleep(Math.min(LOCK_POLL_MS, Math.max(1, deadline - Date.now())));
-  }
+		if (Date.now() >= deadline) {
+			if (blocker || attemptsPastDeadline >= 2) break;
+			attemptsPastDeadline += 1;
+			continue;
+		}
+		await sleep(Math.min(LOCK_POLL_MS, Math.max(1, deadline - Date.now())));
+	}
 
-  throw new BoardHeldError(request.board, blocker, Date.now() - startedAt);
+	throw new BoardHeldError(request.board, blocker, Date.now() - startedAt);
 }
 
 /**
@@ -268,22 +268,22 @@ export async function holdBoard(request: LockRequest): Promise<LockHold> {
  * how a pane's release tells "I gave it back" from "it had already lapsed".
  */
 export function releaseHold(board: string, holderId: string): boolean {
-  const key = normalizeBoardKey(board);
-  const file = lockPathFor(key);
-  const current = readRecord(file);
-  if (!current || current.id !== holderId) return false;
-  try {
-    fs.unlinkSync(file);
-  } catch {
-    /* already gone: released is released */
-  }
-  announceFreeSoon(key);
-  return true;
+	const key = normalizeBoardKey(board);
+	const file = lockPathFor(key);
+	const current = readRecord(file);
+	if (!current || current.id !== holderId) return false;
+	try {
+		fs.unlinkSync(file);
+	} catch {
+		/* already gone: released is released */
+	}
+	announceFreeSoon(key);
+	return true;
 }
 
 /** Who holds this board right now, or null. A lapsed lease reads as free. */
 export function boardLockState(board: string): LockHolder | null {
-  return liveHolder(readRecord(lockPathFor(normalizeBoardKey(board))));
+	return liveHolder(readRecord(lockPathFor(normalizeBoardKey(board))));
 }
 
 // ── A claim: one writer for longer than one write ─────────────────────────
@@ -312,16 +312,16 @@ export function boardLockState(board: string): LockHolder | null {
 
 /** An agent's claim on a board: who holds it, why, and when it runs out. */
 export interface Claim {
-  board: string;
-  holder: LockHolder;
-  /** When the claim itself ends, whatever the lease says. */
-  expires: string;
+	board: string;
+	holder: LockHolder;
+	/** When the claim itself ends, whatever the lease says. */
+	expires: string;
 }
 
 /** A claim that was taken back, and by whom. */
 export interface ClaimRevocation {
-  claim: Claim;
-  by: LockHolder | null;
+	claim: Claim;
+	by: LockHolder | null;
 }
 
 /**
@@ -338,31 +338,31 @@ export interface ClaimRevocation {
  * person at the canvas.
  */
 export async function claimBoard(request: {
-  board: string;
-  reason: string;
-  forMs?: number;
-  waitMs?: number;
+	board: string;
+	reason: string;
+	forMs?: number;
+	waitMs?: number;
 }): Promise<{ claim: Claim; created: boolean }> {
-  const board = normalizeBoardKey(request.board);
-  const forMs = Math.min(Math.max(request.forMs ?? CLAIM_DEFAULT_MS, CLAIM_LEASE_MS), CLAIM_MAX_MS);
-  const existing = liveClaim(board);
-  const id = existing?.holder.id ?? `claim-${newToken()}`;
+	const board = normalizeBoardKey(request.board);
+	const forMs = Math.min(Math.max(request.forMs ?? CLAIM_DEFAULT_MS, CLAIM_LEASE_MS), CLAIM_MAX_MS);
+	const existing = liveClaim(board);
+	const id = existing?.holder.id ?? `claim-${newToken()}`;
 
-  const hold = await holdBoard({
-    board,
-    holder: { id, kind: 'agent', reason: request.reason, claimed: true },
-    leaseMs: CLAIM_LEASE_MS,
-    ...(request.waitMs !== undefined ? { waitMs: request.waitMs } : {})
-  });
+	const hold = await holdBoard({
+		board,
+		holder: { id, kind: "agent", reason: request.reason, claimed: true },
+		leaseMs: CLAIM_LEASE_MS,
+		...(request.waitMs !== undefined ? { waitMs: request.waitMs } : {}),
+	});
 
-  const entry: ClaimEntry = {
-    holder: hold.holder,
-    expires: Date.now() + forMs,
-    timer: existing?.timer ?? null
-  };
-  claims().set(board, entry);
-  if (!entry.timer) entry.timer = startRenewing(board);
-  return { claim: claimOf(board, entry), created: existing === null };
+	const entry: ClaimEntry = {
+		holder: hold.holder,
+		expires: Date.now() + forMs,
+		timer: existing?.timer ?? null,
+	};
+	claims().set(board, entry);
+	if (!entry.timer) entry.timer = startRenewing(board);
+	return { claim: claimOf(board, entry), created: existing === null };
 }
 
 /**
@@ -373,19 +373,19 @@ export async function claimBoard(request: {
  * agent doing the right thing a moment late.
  */
 export function releaseClaim(board: string): Claim | null {
-  const key = normalizeBoardKey(board);
-  const entry = claims().get(key);
-  if (!entry) return null;
-  dropClaim(key, entry);
-  releaseHold(key, entry.holder.id);
-  return claimOf(key, entry);
+	const key = normalizeBoardKey(board);
+	const entry = claims().get(key);
+	if (!entry) return null;
+	dropClaim(key, entry);
+	releaseHold(key, entry.holder.id);
+	return claimOf(key, entry);
 }
 
 /** The claim this canvas holds on a board, or null. An expired one reads as none. */
 export function claimOn(board: string): Claim | null {
-  const key = normalizeBoardKey(board);
-  const entry = liveClaim(key);
-  return entry ? claimOf(key, entry) : null;
+	const key = normalizeBoardKey(board);
+	const entry = liveClaim(key);
+	return entry ? claimOf(key, entry) : null;
 }
 
 /**
@@ -401,7 +401,7 @@ export function claimOn(board: string): Claim | null {
  * while the person who revoked it is still editing.
  */
 export function claimWriterId(board: string): string | null {
-  return liveClaim(normalizeBoardKey(board))?.holder.id ?? null;
+	return liveClaim(normalizeBoardKey(board))?.holder.id ?? null;
 }
 
 /**
@@ -416,33 +416,33 @@ export function claimWriterId(board: string): string | null {
  * fails once and says what happened, and what it does after that is ordinary.
  */
 export function takeClaimRevocation(board: string): ClaimRevocation | null {
-  const key = normalizeBoardKey(board);
-  const lost = revocations().get(key);
-  if (!lost) return null;
-  revocations().delete(key);
-  return lost;
+	const key = normalizeBoardKey(board);
+	const lost = revocations().get(key);
+	if (!lost) return null;
+	revocations().delete(key);
+	return lost;
 }
 
 interface ClaimEntry {
-  holder: LockHolder;
-  /** ms since the epoch, because everything that compares it is a clock read. */
-  expires: number;
-  timer: ReturnType<typeof setInterval> | null;
+	holder: LockHolder;
+	/** ms since the epoch, because everything that compares it is a clock read. */
+	expires: number;
+	timer: ReturnType<typeof setInterval> | null;
 }
 
 function claimOf(board: string, entry: ClaimEntry): Claim {
-  return { board, holder: entry.holder, expires: stamp(entry.expires) };
+	return { board, holder: entry.holder, expires: stamp(entry.expires) };
 }
 
 function liveClaim(board: string): ClaimEntry | null {
-  const entry = claims().get(board);
-  if (!entry) return null;
-  if (Date.now() < entry.expires) return entry;
-  // Ran its course. Dropped here rather than only on the renewal tick, so the
-  // answer to "is this board claimed" never depends on when a timer last fired.
-  dropClaim(board, entry);
-  releaseHold(board, entry.holder.id);
-  return null;
+	const entry = claims().get(board);
+	if (!entry) return null;
+	if (Date.now() < entry.expires) return entry;
+	// Ran its course. Dropped here rather than only on the renewal tick, so the
+	// answer to "is this board claimed" never depends on when a timer last fired.
+	dropClaim(board, entry);
+	releaseHold(board, entry.holder.id);
+	return null;
 }
 
 /**
@@ -458,36 +458,38 @@ function liveClaim(board: string): ClaimEntry | null {
  * could tell it.
  */
 function startRenewing(board: string): ReturnType<typeof setInterval> {
-  const timer = setInterval(() => { renewClaim(board); }, LOCK_RENEW_MS);
-  timer.unref?.();
-  return timer;
+	const timer = setInterval(() => {
+		renewClaim(board);
+	}, LOCK_RENEW_MS);
+	timer.unref?.();
+	return timer;
 }
 
 function stopRenewing(entry: ClaimEntry): void {
-  if (entry.timer) clearInterval(entry.timer);
-  entry.timer = null;
+	if (entry.timer) clearInterval(entry.timer);
+	entry.timer = null;
 }
 
 function dropClaim(board: string, entry: ClaimEntry): void {
-  stopRenewing(entry);
-  forgetRememberedVersion(entry.holder.id);
-  claims().delete(board);
+	stopRenewing(entry);
+	forgetRememberedVersion(entry.holder.id);
+	claims().delete(board);
 }
 
 function renewClaim(board: string): void {
-  const entry = liveClaim(board);
-  if (!entry) return;
-  const renewed = renewRecord(board, entry.holder.id, CLAIM_LEASE_MS);
-  if (renewed) {
-    entry.holder = renewed;
-    return;
-  }
-  // The lock is not ours any more, and a renewal may not take it back. That
-  // distinction is the whole of cross-canvas revocation: a person at another
-  // canvas takes the board and lets go of it a second later, and a renewal that
-  // took a free lock would restore the claim while the person who revoked it
-  // is still editing, with nobody ever told.
-  noteClaimRevoked(board, entry.holder, boardLockState(board));
+	const entry = liveClaim(board);
+	if (!entry) return;
+	const renewed = renewRecord(board, entry.holder.id, CLAIM_LEASE_MS);
+	if (renewed) {
+		entry.holder = renewed;
+		return;
+	}
+	// The lock is not ours any more, and a renewal may not take it back. That
+	// distinction is the whole of cross-canvas revocation: a person at another
+	// canvas takes the board and lets go of it a second later, and a renewal that
+	// took a free lock would restore the claim while the person who revoked it
+	// is still editing, with nobody ever told.
+	noteClaimRevoked(board, entry.holder, boardLockState(board));
 }
 
 /**
@@ -498,13 +500,13 @@ function renewClaim(board: string): void {
  * have this", and the only honest answers are yes and no.
  */
 function renewRecord(board: string, id: string, leaseMs: number): LockHolder | null {
-  const file = lockPathFor(board);
-  const live = liveRecord(readRecord(file));
-  if (!live || live.id !== id) return null;
-  const renewed: LockRecord = { ...live, until: stamp(Date.now() + leaseMs) };
-  writeRecord(file, renewed);
-  announceHeld(board, holderOf(renewed));
-  return holderOf(renewed);
+	const file = lockPathFor(board);
+	const live = liveRecord(readRecord(file));
+	if (!live || live.id !== id) return null;
+	const renewed: LockRecord = { ...live, until: stamp(Date.now() + leaseMs) };
+	writeRecord(file, renewed);
+	announceHeld(board, holderOf(renewed));
+	return holderOf(renewed);
 }
 
 /**
@@ -515,10 +517,10 @@ function renewRecord(board: string, id: string, leaseMs: number): LockHolder | n
  * about a claim this canvas never held — that canvas records its own.
  */
 function noteClaimRevoked(board: string, lost: LockHolder, by: LockHolder | null): void {
-  const entry = claims().get(board);
-  if (!entry || entry.holder.id !== lost.id) return;
-  dropClaim(board, entry);
-  revocations().set(board, { claim: claimOf(board, entry), by });
+	const entry = claims().get(board);
+	if (!entry || entry.holder.id !== lost.id) return;
+	dropClaim(board, entry);
+	revocations().set(board, { claim: claimOf(board, entry), by });
 }
 
 // ── Watching a board somebody else may be holding ─────────────────────────
@@ -544,38 +546,40 @@ function noteClaimRevoked(board: string, lost: LockHolder, by: LockHolder | null
  * with nothing rendering there is no pane to be wrong.
  */
 export function watchBoardLocks(boards: (() => string[]) | null): void {
-  const watch = watcher();
-  watch.boards = boards;
-  if (!boards) {
-    if (watch.timer) clearInterval(watch.timer);
-    watch.timer = null;
-    return;
-  }
-  if (watch.timer) return;
-  const timer = setInterval(() => { sweepBoardLocks(); }, LOCK_WATCH_MS);
-  timer.unref?.();
-  watch.timer = timer;
+	const watch = watcher();
+	watch.boards = boards;
+	if (!boards) {
+		if (watch.timer) clearInterval(watch.timer);
+		watch.timer = null;
+		return;
+	}
+	if (watch.timer) return;
+	const timer = setInterval(() => {
+		sweepBoardLocks();
+	}, LOCK_WATCH_MS);
+	timer.unref?.();
+	watch.timer = timer;
 }
 
 function sweepBoardLocks(): void {
-  const watch = watcher();
-  const boards = watch.boards?.() ?? [];
-  for (const board of new Set(boards.map(normalizeBoardKey))) {
-    // Whatever else rides on this beat goes first, because the lock's linger
-    // below is about the lock and has nothing to say about anybody else's
-    // question.
-    try {
-      sweepHolder().also?.(board);
-    } catch (error) {
-      // A passenger that throws must not stop the lock from being watched.
-      console.warn('A board sweep passenger failed:', error);
-    }
-    // A board whose release is still lingering is one this canvas is in the
-    // middle of telling the panes about. Saying "free" here would undo the
-    // linger and put every pane back to flickering through an agent's fan-out.
-    if (lingers().has(board)) continue;
-    announce(board, boardLockState(board));
-  }
+	const watch = watcher();
+	const boards = watch.boards?.() ?? [];
+	for (const board of new Set(boards.map(normalizeBoardKey))) {
+		// Whatever else rides on this beat goes first, because the lock's linger
+		// below is about the lock and has nothing to say about anybody else's
+		// question.
+		try {
+			sweepHolder().also?.(board);
+		} catch (error) {
+			// A passenger that throws must not stop the lock from being watched.
+			console.warn("A board sweep passenger failed:", error);
+		}
+		// A board whose release is still lingering is one this canvas is in the
+		// middle of telling the panes about. Saying "free" here would undo the
+		// linger and put every pane back to flickering through an agent's fan-out.
+		if (lingers().has(board)) continue;
+		announce(board, boardLockState(board));
+	}
 }
 
 /**
@@ -590,7 +594,7 @@ function sweepBoardLocks(): void {
  * does with it: this module knows about locks, and a note is not a lock.
  */
 export function onBoardSweep(sink: ((board: string) => void) | null): void {
-  sweepHolder().also = sink;
+	sweepHolder().also = sink;
 }
 
 /**
@@ -601,7 +605,7 @@ export function onBoardSweep(sink: ((board: string) => void) | null): void {
  * and because a check can watch the news without standing a browser up.
  */
 export function onBoardLockChanged(sink: LockSink | null): void {
-  sinkHolder().notify = sink;
+	sinkHolder().notify = sink;
 }
 
 /**
@@ -612,19 +616,19 @@ export function onBoardLockChanged(sink: LockSink | null): void {
  * said.
  */
 export function forgetLockAnnouncements(): void {
-  for (const timer of lingers().values()) clearTimeout(timer);
-  lingers().clear();
-  announced().clear();
-  for (const [board, entry] of claims()) dropClaim(board, entry);
-  revocations().clear();
-  watchBoardLocks(null);
+	for (const timer of lingers().values()) clearTimeout(timer);
+	lingers().clear();
+	announced().clear();
+	for (const [board, entry] of claims()) dropClaim(board, entry);
+	revocations().clear();
+	watchBoardLocks(null);
 }
 
 // ── Acquiring ─────────────────────────────────────────────────────────────
 
 type Attempt =
-  | { ok: true; holder: LockHolder; created: boolean }
-  | { ok: false; holder: LockHolder | null };
+	| { ok: true; holder: LockHolder; created: boolean }
+	| { ok: false; holder: LockHolder | null };
 
 /**
  * One go at taking the board.
@@ -648,124 +652,126 @@ type Attempt =
  * afterwards believes it has the board.
  */
 async function attempt(
-  board: string,
-  who: { id: string; kind: HolderKind; reason?: string; claimed?: boolean },
-  leaseMs: number,
-  revoke: boolean
+	board: string,
+	who: { id: string; kind: HolderKind; reason?: string; claimed?: boolean },
+	leaseMs: number,
+	revoke: boolean,
 ): Promise<Attempt> {
-  const file = lockPathFor(board);
-  const current = readRecord(file);
-  const live = liveRecord(current);
-  // A person taking a board an agent claimed. Not "an agent holds it": a write
-  // is twenty milliseconds and is waited out, and a claim is the only hold long
-  // enough for waiting it out to mean an unresponsive board.
-  const revoking = Boolean(live && revoke && who.kind === 'human' && live.claimed && live.id !== who.id);
+	const file = lockPathFor(board);
+	const current = readRecord(file);
+	const live = liveRecord(current);
+	// A person taking a board an agent claimed. Not "an agent holds it": a write
+	// is twenty milliseconds and is waited out, and a claim is the only hold long
+	// enough for waiting it out to mean an unresponsive board.
+	const revoking = Boolean(
+		live && revoke && who.kind === "human" && live.claimed && live.id !== who.id,
+	);
 
-  // WHETHER THE CLAIM ENDS IS A QUESTION ABOUT THE CLAIM, NOT ABOUT THE LEASE
-  // UNDER IT. The line above answers a different one — may this person take a
-  // board somebody is holding — and that is rightly about the lock record,
-  // because it is the record that says the board is taken. Ending the claim was
-  // riding on the same flag, and a claim outlives its lease by design: it runs
-  // for ten minutes over a three-second lease the canvas re-takes every second
-  // (ADR 0016). Let that renewal be late — a blocked event loop, a busy
-  // machine — and the take-back request reaches a lock that is momentarily nobody's. The
-  // person got the board either way, and the agent was never told it had lost
-  // it: its next write went through as if nothing had happened.
-  //
-  // So the claim this canvas holds is what is asked, and a lapsed lease under a
-  // live claim revokes exactly as a live one does. A claim held on another
-  // canvas is not here to end; that one finds out when its own renewal is
-  // refused, which is the same discovery a renewal interval later.
-  const endsClaimHere = (taker: LockRecord): void => {
-    if (!revoke || who.kind !== 'human') return;
-    const claimHere = claims().get(board);
-    if (!claimHere || claimHere.holder.id === who.id) return;
-    noteClaimRevoked(board, claimHere.holder, holderOf(taker));
-  };
+	// WHETHER THE CLAIM ENDS IS A QUESTION ABOUT THE CLAIM, NOT ABOUT THE LEASE
+	// UNDER IT. The line above answers a different one — may this person take a
+	// board somebody is holding — and that is rightly about the lock record,
+	// because it is the record that says the board is taken. Ending the claim was
+	// riding on the same flag, and a claim outlives its lease by design: it runs
+	// for ten minutes over a three-second lease the canvas re-takes every second
+	// (ADR 0016). Let that renewal be late — a blocked event loop, a busy
+	// machine — and the take-back request reaches a lock that is momentarily nobody's. The
+	// person got the board either way, and the agent was never told it had lost
+	// it: its next write went through as if nothing had happened.
+	//
+	// So the claim this canvas holds is what is asked, and a lapsed lease under a
+	// live claim revokes exactly as a live one does. A claim held on another
+	// canvas is not here to end; that one finds out when its own renewal is
+	// refused, which is the same discovery a renewal interval later.
+	const endsClaimHere = (taker: LockRecord): void => {
+		if (!revoke || who.kind !== "human") return;
+		const claimHere = claims().get(board);
+		if (!claimHere || claimHere.holder.id === who.id) return;
+		noteClaimRevoked(board, claimHere.holder, holderOf(taker));
+	};
 
-  if (live && live.id === who.id) {
-    // Reentrant, which is also what renewal is. `since` is kept: a refusal
-    // saying how long a board has been held must mean since it was taken, not
-    // since it was last renewed.
-    const renewed: LockRecord = {
-      ...live,
-      kind: who.kind,
-      until: stamp(Date.now() + leaseMs),
-      ...(who.reason !== undefined ? { reason: who.reason } : {}),
-      ...(who.claimed ? { claimed: true } : {})
-    };
-    writeRecord(file, renewed);
-    // A person who already holds the lock and taps to take a claimed board back
-    // arrives here rather than below: their previous hold outlived the claim's
-    // lapsed lease. The claim still ends.
-    endsClaimHere(renewed);
-    announceHeld(board, holderOf(renewed));
-    return { ok: true, holder: holderOf(renewed), created: false };
-  }
+	if (live && live.id === who.id) {
+		// Reentrant, which is also what renewal is. `since` is kept: a refusal
+		// saying how long a board has been held must mean since it was taken, not
+		// since it was last renewed.
+		const renewed: LockRecord = {
+			...live,
+			kind: who.kind,
+			until: stamp(Date.now() + leaseMs),
+			...(who.reason !== undefined ? { reason: who.reason } : {}),
+			...(who.claimed ? { claimed: true } : {}),
+		};
+		writeRecord(file, renewed);
+		// A person who already holds the lock and taps to take a claimed board back
+		// arrives here rather than below: their previous hold outlived the claim's
+		// lapsed lease. The claim still ends.
+		endsClaimHere(renewed);
+		announceHeld(board, holderOf(renewed));
+		return { ok: true, holder: holderOf(renewed), created: false };
+	}
 
-  if (live && !revoking) {
-    // Somebody else's, and still theirs. Announce it: this is how a pane in
-    // this process learns an agent in this process has the board.
-    announceHeld(board, holderOf(live));
-    return { ok: false, holder: holderOf(live) };
-  }
+	if (live && !revoking) {
+		// Somebody else's, and still theirs. Announce it: this is how a pane in
+		// this process learns an agent in this process has the board.
+		announceHeld(board, holderOf(live));
+		return { ok: false, holder: holderOf(live) };
+	}
 
-  const record: LockRecord = {
-    id: who.id,
-    kind: who.kind,
-    since: stamp(Date.now()),
-    until: stamp(Date.now() + leaseMs),
-    process: processName(),
-    ...(who.reason !== undefined ? { reason: who.reason } : {}),
-    ...(who.claimed ? { claimed: true } : {}),
-    token: newToken()
-  };
+	const record: LockRecord = {
+		id: who.id,
+		kind: who.kind,
+		since: stamp(Date.now()),
+		until: stamp(Date.now() + leaseMs),
+		process: processName(),
+		...(who.reason !== undefined ? { reason: who.reason } : {}),
+		...(who.claimed ? { claimed: true } : {}),
+		token: newToken(),
+	};
 
-  if (!current) {
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    try {
-      const handle = fs.openSync(file, 'wx');
-      try {
-        fs.writeFileSync(handle, JSON.stringify(record));
-      } finally {
-        fs.closeSync(handle);
-      }
-      // Nothing was holding the board, and a claim on this canvas may still
-      // have believed it was: a lease that lapsed and was tidied away leaves no
-      // record to read, and the claim above it runs for minutes longer.
-      endsClaimHere(record);
-      announceHeld(board, holderOf(record));
-      return { ok: true, holder: holderOf(record), created: true };
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
-      // Somebody created it between our read and our create. Whatever they
-      // wrote is the answer, and if it is already lapsed we fall through and
-      // take it over the same way any other lapsed lease is taken over.
-      const raced = liveRecord(readRecord(file));
-      if (raced) {
-        announceHeld(board, holderOf(raced));
-        return { ok: false, holder: holderOf(raced) };
-      }
-    }
-  }
+	if (!current) {
+		fs.mkdirSync(path.dirname(file), { recursive: true });
+		try {
+			const handle = fs.openSync(file, "wx");
+			try {
+				fs.writeFileSync(handle, JSON.stringify(record));
+			} finally {
+				fs.closeSync(handle);
+			}
+			// Nothing was holding the board, and a claim on this canvas may still
+			// have believed it was: a lease that lapsed and was tidied away leaves no
+			// record to read, and the claim above it runs for minutes longer.
+			endsClaimHere(record);
+			announceHeld(board, holderOf(record));
+			return { ok: true, holder: holderOf(record), created: true };
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+			// Somebody created it between our read and our create. Whatever they
+			// wrote is the answer, and if it is already lapsed we fall through and
+			// take it over the same way any other lapsed lease is taken over.
+			const raced = liveRecord(readRecord(file));
+			if (raced) {
+				announceHeld(board, holderOf(raced));
+				return { ok: false, holder: holderOf(raced) };
+			}
+		}
+	}
 
-  // Taking over a lease whose holder is gone, or a claim a person is taking
-  // back. The first is only ever reached after a crash, so the guard below is
-  // paid by nobody on the ordinary path; the second is paid by one take-back action.
-  writeRecord(file, record);
-  await sleep(LOCK_STEAL_GUARD_MS);
-  const settled = readRecord(file);
-  if (!settled || settled.token !== record.token) {
-    const rival = liveRecord(settled);
-    return { ok: false, holder: rival ? holderOf(rival) : null };
-  }
-  // Only now, because until the read-back this process did not have the board.
-  // A claim held here stops being renewed at this moment; one held on another
-  // canvas finds out when its own renewal is refused, which is the same
-  // discovery arriving one renewal interval later.
-  endsClaimHere(record);
-  announceHeld(board, holderOf(record));
-  return { ok: true, holder: holderOf(record), created: true };
+	// Taking over a lease whose holder is gone, or a claim a person is taking
+	// back. The first is only ever reached after a crash, so the guard below is
+	// paid by nobody on the ordinary path; the second is paid by one take-back action.
+	writeRecord(file, record);
+	await sleep(LOCK_STEAL_GUARD_MS);
+	const settled = readRecord(file);
+	if (!settled || settled.token !== record.token) {
+		const rival = liveRecord(settled);
+		return { ok: false, holder: rival ? holderOf(rival) : null };
+	}
+	// Only now, because until the read-back this process did not have the board.
+	// A claim held here stops being renewed at this moment; one held on another
+	// canvas finds out when its own renewal is refused, which is the same
+	// discovery arriving one renewal interval later.
+	endsClaimHere(record);
+	announceHeld(board, holderOf(record));
+	return { ok: true, holder: holderOf(record), created: true };
 }
 
 // ── The lease file ────────────────────────────────────────────────────────
@@ -784,31 +790,31 @@ async function attempt(
  * create, and two boards cannot collide onto one lock.
  */
 function lockPathFor(board: string): string {
-  return path.join(
-    requireVaultRoot(),
-    VAULT_STATE_DIR,
-    'locks',
-    `${encodeURIComponent(normalizeBoardKey(board))}.lock`
-  );
+	return path.join(
+		requireVaultRoot(),
+		VAULT_STATE_DIR,
+		"locks",
+		`${encodeURIComponent(normalizeBoardKey(board))}.lock`,
+	);
 }
 
 function readRecord(file: string): LockRecord | null {
-  let raw: string;
-  try {
-    raw = fs.readFileSync(file, 'utf-8');
-  } catch {
-    return null;
-  }
-  try {
-    const parsed = JSON.parse(raw) as Partial<LockRecord>;
-    if (!parsed || typeof parsed.id !== 'string' || typeof parsed.until !== 'string') return null;
-    if (typeof parsed.token !== 'string') return null;
-    return parsed as LockRecord;
-  } catch {
-    // Half-written by an older archboard, or something else entirely. Nothing
-    // that cannot be read holds a board (see the header).
-    return null;
-  }
+	let raw: string;
+	try {
+		raw = fs.readFileSync(file, "utf-8");
+	} catch {
+		return null;
+	}
+	try {
+		const parsed = JSON.parse(raw) as Partial<LockRecord>;
+		if (!parsed || typeof parsed.id !== "string" || typeof parsed.until !== "string") return null;
+		if (typeof parsed.token !== "string") return null;
+		return parsed as LockRecord;
+	} catch {
+		// Half-written by an older archboard, or something else entirely. Nothing
+		// that cannot be read holds a board (see the header).
+		return null;
+	}
 }
 
 /**
@@ -824,33 +830,37 @@ function readRecord(file: string): LockRecord | null {
  * inside one process are two different attempts at the same path.
  */
 function writeRecord(file: string, record: LockRecord): void {
-  const dir = path.dirname(file);
-  fs.mkdirSync(dir, { recursive: true });
-  const tmp = path.join(dir, `.${path.basename(file)}.${record.token}.tmp`);
-  try {
-    fs.writeFileSync(tmp, JSON.stringify(record));
-    fs.renameSync(tmp, file);
-  } catch (error) {
-    try { fs.unlinkSync(tmp); } catch { /* never created, or already renamed */ }
-    throw error;
-  }
+	const dir = path.dirname(file);
+	fs.mkdirSync(dir, { recursive: true });
+	const tmp = path.join(dir, `.${path.basename(file)}.${record.token}.tmp`);
+	try {
+		fs.writeFileSync(tmp, JSON.stringify(record));
+		fs.renameSync(tmp, file);
+	} catch (error) {
+		try {
+			fs.unlinkSync(tmp);
+		} catch {
+			/* never created, or already renamed */
+		}
+		throw error;
+	}
 }
 
 function liveRecord(record: LockRecord | null): LockRecord | null {
-  if (!record) return null;
-  const until = Date.parse(record.until);
-  return Number.isFinite(until) && until > Date.now() ? record : null;
+	if (!record) return null;
+	const until = Date.parse(record.until);
+	return Number.isFinite(until) && until > Date.now() ? record : null;
 }
 
 function liveHolder(record: LockRecord | null): LockHolder | null {
-  const live = liveRecord(record);
-  return live ? holderOf(live) : null;
+	const live = liveRecord(record);
+	return live ? holderOf(live) : null;
 }
 
 /** The record without the token: what anybody outside this module is told. */
 function holderOf(record: LockRecord): LockHolder {
-  const { token: _token, ...holder } = record;
-  return holder;
+	const { token: _token, ...holder } = record;
+	return holder;
 }
 
 // ── Telling the panes ─────────────────────────────────────────────────────
@@ -863,8 +873,8 @@ function holderOf(record: LockRecord): LockHolder {
  * "may I draw" does not change when a lease is refreshed.
  */
 function announceHeld(board: string, holder: LockHolder): void {
-  clearLinger(board);
-  announce(board, holder);
+	clearLinger(board);
+	announce(board, holder);
 }
 
 /**
@@ -882,31 +892,31 @@ function announceHeld(board: string, holder: LockHolder): void {
  * free.
  */
 function announceFreeSoon(board: string): void {
-  clearLinger(board);
-  const timer = setTimeout(() => {
-    lingers().delete(board);
-    announce(board, boardLockState(board));
-  }, LOCK_FREE_LINGER_MS);
-  // Never a reason for a process to stay alive.
-  timer.unref?.();
-  lingers().set(board, timer);
+	clearLinger(board);
+	const timer = setTimeout(() => {
+		lingers().delete(board);
+		announce(board, boardLockState(board));
+	}, LOCK_FREE_LINGER_MS);
+	// Never a reason for a process to stay alive.
+	timer.unref?.();
+	lingers().set(board, timer);
 }
 
 function clearLinger(board: string): void {
-  const timer = lingers().get(board);
-  if (timer) {
-    clearTimeout(timer);
-    lingers().delete(board);
-  }
+	const timer = lingers().get(board);
+	if (timer) {
+		clearTimeout(timer);
+		lingers().delete(board);
+	}
 }
 
 function announce(board: string, holder: LockHolder | null): void {
-  const stampOf = holder
-    ? `${holder.id}|${holder.kind}|${holder.since}|${holder.reason ?? ''}|${holder.claimed ? 'claim' : 'write'}`
-    : '';
-  if (announced().get(board) === stampOf) return;
-  announced().set(board, stampOf);
-  sinkHolder().notify?.(board, holder);
+	const stampOf = holder
+		? `${holder.id}|${holder.kind}|${holder.since}|${holder.reason ?? ""}|${holder.claimed ? "claim" : "write"}`
+		: "";
+	if (announced().get(board) === stampOf) return;
+	announced().set(board, stampOf);
+	sinkHolder().notify?.(board, holder);
 }
 
 // ── Process-lived state ───────────────────────────────────────────────────
@@ -916,51 +926,56 @@ function announce(board: string, holder: LockHolder | null): void {
 // copy has replaced (ADR 0014, `src/core/hot.ts`).
 
 function announced(): Map<string, string> {
-  return kept('board-lock-announced', () => new Map<string, string>());
+	return kept("board-lock-announced", () => new Map<string, string>());
 }
 
 function lingers(): Map<string, ReturnType<typeof setTimeout>> {
-  return kept('board-lock-lingers', () => new Map<string, ReturnType<typeof setTimeout>>());
+	return kept("board-lock-lingers", () => new Map<string, ReturnType<typeof setTimeout>>());
 }
 
 function sinkHolder(): { notify: LockSink | null } {
-  return kept('board-lock-sink', () => ({ notify: null as LockSink | null }));
+	return kept("board-lock-sink", () => ({ notify: null as LockSink | null }));
 }
 
 function sweepHolder(): { also: ((board: string) => void) | null } {
-  return kept('board-lock-sweep', () => ({ also: null as ((board: string) => void) | null }));
+	return kept("board-lock-sweep", () => ({ also: null as ((board: string) => void) | null }));
 }
 
 // A claim outlives a reload by definition: it is minutes long, and a reload is
 // how this canvas's code changes under it. Losing the registry would leave the
 // lock file renewed by nobody and the board free in three seconds, mid-redraw.
 function claims(): Map<string, ClaimEntry> {
-  return kept('board-lock-claims', () => new Map<string, ClaimEntry>());
+	return kept("board-lock-claims", () => new Map<string, ClaimEntry>());
 }
 
 function revocations(): Map<string, ClaimRevocation> {
-  return kept('board-lock-revocations', () => new Map<string, ClaimRevocation>());
+	return kept("board-lock-revocations", () => new Map<string, ClaimRevocation>());
 }
 
-function watcher(): { boards: (() => string[]) | null; timer: ReturnType<typeof setInterval> | null } {
-  return kept('board-lock-watch', () => ({
-    boards: null as (() => string[]) | null,
-    timer: null as ReturnType<typeof setInterval> | null
-  }));
+function watcher(): {
+	boards: (() => string[]) | null;
+	timer: ReturnType<typeof setInterval> | null;
+} {
+	return kept("board-lock-watch", () => ({
+		boards: null as (() => string[]) | null,
+		timer: null as ReturnType<typeof setInterval> | null,
+	}));
 }
 
 // ── Small things ──────────────────────────────────────────────────────────
 
 export function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => { setTimeout(resolve, ms); });
+	return new Promise((resolve) => {
+		setTimeout(resolve, ms);
+	});
 }
 
 function stamp(at: number): string {
-  return new Date(at).toISOString();
+	return new Date(at).toISOString();
 }
 
 function newToken(): string {
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+	return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 /**
@@ -972,34 +987,37 @@ function newToken(): string {
  * reads as a bug in this one.
  */
 function processName(): string {
-  return `${os.hostname()}:${process.pid}`;
+	return `${os.hostname()}:${process.pid}`;
 }
 
 function isThisProcess(holder: LockHolder): boolean {
-  return holder.process === processName();
+	return holder.process === processName();
 }
 
 /** The sentence a refusal carries: who has the board, and since when. */
 function describeHold(board: string, holder: LockHolder | null, waitedMs: number): string {
-  const waited = `Waited ${seconds(waitedMs)}.`;
-  if (!holder) {
-    return `Board "${board}" is being written by somebody else and did not come free. ${waited}`;
-  }
-  const held = seconds(Math.max(0, Date.now() - Date.parse(holder.since)));
-  const who = holder.kind === 'human'
-    ? 'the person at the canvas'
-    : holder.claimed
-      ? `an agent that has claimed it${holder.reason ? ` (${holder.reason})` : ''}`
-      : holder.reason ? `an agent (${holder.reason})` : 'an agent';
-  const where = isThisProcess(holder) ? '' : ` on another canvas (${holder.process})`;
-  return `Board "${board}" is held by ${who}${where}, since ${clock(holder.since)} (${held}). ${waited}`;
+	const waited = `Waited ${seconds(waitedMs)}.`;
+	if (!holder) {
+		return `Board "${board}" is being written by somebody else and did not come free. ${waited}`;
+	}
+	const held = seconds(Math.max(0, Date.now() - Date.parse(holder.since)));
+	const who =
+		holder.kind === "human"
+			? "the person at the canvas"
+			: holder.claimed
+				? `an agent that has claimed it${holder.reason ? ` (${holder.reason})` : ""}`
+				: holder.reason
+					? `an agent (${holder.reason})`
+					: "an agent";
+	const where = isThisProcess(holder) ? "" : ` on another canvas (${holder.process})`;
+	return `Board "${board}" is held by ${who}${where}, since ${clock(holder.since)} (${held}). ${waited}`;
 }
 
 function seconds(ms: number): string {
-  return `${(ms / 1000).toFixed(1)} s`;
+	return `${(ms / 1000).toFixed(1)} s`;
 }
 
 function clock(iso: string): string {
-  const at = new Date(iso);
-  return Number.isNaN(at.getTime()) ? iso : at.toTimeString().slice(0, 8);
+	const at = new Date(iso);
+	return Number.isNaN(at.getTime()) ? iso : at.toTimeString().slice(0, 8);
 }
