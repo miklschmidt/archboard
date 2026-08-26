@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 19:30'
+updated_date: '2026-08-26 20:12'
 labels:
   - ready-for-agent
 dependencies:
@@ -488,6 +488,14 @@ The public inspection matrix has 607 checks. New direct and real persisted/packa
 ### Compatible-bucket remediation validation closure
 
 The complete `bun run check` passed, followed by a separate complete `bun run test`. Each chain ran all four browser suites sequentially and headless: the 10,000-element human-performance board remained responsive, fixed-point returned 0 of 13 changed elements, both typed-text interactions round-tripped, and all 42 mixed-write live-session cycles converged. The on-demand command-contract check generated all three ignored views into two absent temporary directories, proved repeated byte identity, and left the checkout unchanged; the canonical authored audit JSON remains tracked. `git diff --check` passes. TASK-119 remains In Progress with every acceptance criterion unchecked for independent rereview.
+
+Review remediation checkpoint 96baba6 (fix(inspection): bound compatibility preprocessing): replaced the profile-pair compatible-Set cache and all-profile event scan with exact-content profile snapshots, active bucket indexes, heavy-light ancestor path counts, subtree target summaries, expiry cleanup, and linear retained-state accounting. Runtime-mutable ReadonlySet inputs are snapshotted by current exact content; the module-root diagnostic proves exclude/include/exclude after mutation. Connector-node skips classification-blocked connectors instead of materializing all-leaf exclusions. Unpromoted boundary classification now uses the deterministic x sweep, and hierarchy selection retains only the current exact best parent per child.
+
+Parent-approved schema-v1 amendment recorded in 5980cdf is implemented by one obstacleIdentity owner: exact UTF-16 sort; backslash -> double backslash; comma -> backslash-comma; literal comma join; obstacle: prefix. ObstacleRefSchema verifies id against elementIds. Direct and real package cases cover comma, backslash, combined backslash-comma, NUL, U+001F, lone surrogate, empty-looking prefixes, reversed input, and formerly colliding raw joins.
+
+Focused evidence after two byte-stable fix passes (tracked diff SHA-256 8b5df30021cb08e67d07792e44f079e05e49fccac58ac1d943e3ebb014deee23): lint and formatting green; both TypeScript projects green; boundaries and module-scope green; 58 command proofs / 58 audited paths / 978 contract checks; 634 inspection checks; 579 CLI checks; geometry 89; labels 183; branch comparison green. Inspection matrices cover sparse insert-after-expiry at 1k/2k/4k/8k, shared-ancestor distinct conflicting profiles at 1k/2k/4k/8k with zero bucket scans/tests and exact linear profile/reference counts, dense same-set distinct profiles with complete unique enumeration, mutable Set reuse, sparse boundary-node preprocessing, and dense hierarchy one-best retained state. Public 1,516,200 and 2,000,001 comparison fixtures remain green.
+
+Remaining before rereview: complete bun run check, separate complete bun run test, sequential headless browser evidence within each chain, final on-demand generation/determinism, git diff --check, task-state and clean-tree confirmation. TASK-119 remains In Progress with all acceptance criteria unchecked.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
