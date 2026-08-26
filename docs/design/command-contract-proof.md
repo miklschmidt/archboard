@@ -2196,6 +2196,55 @@ Public result JSON Schema:
 }
 ```
 
+## screenshot
+
+Renders one pane in the browser and returns raw SVG or a validated file receipt.
+
+Usage:
+
+```text
+archboard screenshot [--out file.png] [--format png|svg] [--no-background] [--pane <spec>]
+```
+
+Output: raw (Raw SVG image); file-receipt (Written image receipt).
+
+Prerequisites: server, browser. Effects: browser, local-write.
+
+REST relationships:
+
+- POST `/api/export/image`, one. Render the selected pane
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"anyOf": [
+		{
+			"type": "string"
+		},
+		{
+			"type": "object",
+			"properties": {
+				"success": {
+					"type": "boolean",
+					"const": true
+				},
+				"file": {
+					"type": "string"
+				},
+				"format": {
+					"type": "string",
+					"enum": ["png", "svg"]
+				}
+			},
+			"required": ["success", "file", "format"],
+			"additionalProperties": false
+		}
+	]
+}
+```
+
 ## export
 
 Builds a portable scene and emits raw content or writes one local file.
@@ -2324,6 +2373,32 @@ Public result JSON Schema:
 	},
 	"required": ["success", "imported", "files", "mode"],
 	"additionalProperties": false
+}
+```
+
+## mermaid
+
+Reads Mermaid text locally before contacting the canvas, then converts it in the board's pane.
+
+Usage:
+
+```text
+archboard mermaid [diagram.mmd|-] (or stdin)
+```
+
+Output: json (Mermaid conversion receipt).
+
+Prerequisites: server, browser, board, doing. Effects: local-read, browser, write.
+
+REST relationships:
+
+- POST `/api/elements/from-mermaid`, one. Convert and write the diagram
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema"
 }
 ```
 
@@ -3018,6 +3093,44 @@ Public result JSON Schema:
 ```json
 {
 	"$schema": "https://json-schema.org/draft/2020-12/schema"
+}
+```
+
+## share
+
+Reads only the board elements and uploads an encrypted share payload.
+
+Usage:
+
+```text
+archboard share
+```
+
+Output: json (Share URL).
+
+Prerequisites: server, board. Effects: read.
+
+REST relationships:
+
+- GET `/api/elements`, one. Read elements for the share payload
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean",
+			"const": true
+		},
+		"url": {
+			"type": "string"
+		}
+	},
+	"required": ["success", "url"],
+	"additionalProperties": false
 }
 ```
 

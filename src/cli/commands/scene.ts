@@ -1,28 +1,25 @@
-import fs from "fs";
-import path from "path";
 import os from "os";
+import path from "path";
 import { z } from "zod";
-import { parseArgs, CliUsageError, readStdin } from "./args.js";
-import { printJson, note, requireBrowserClient } from "./util.js";
-import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
+import { CliUsageError } from "../command-contract/contract.js";
 import {
 	getElements,
 	clearCanvas,
 	exportImage,
 	sendMermaid,
 	boardHeading,
+	type PaneRef,
 } from "../../runtime/engine/canvas-client.js";
 import { importScene } from "../../runtime/engine/scene-document.js";
 import { describeScene } from "../../runtime/engine/describe.js";
 import { exportToExcalidrawUrl } from "../../runtime/engine/share-url.js";
 import { EXPRESS_SERVER_URL } from "../../runtime/engine/config.js";
-import { defineCommand } from "../command-contract/contract.js";
-import { HoldReportSchema } from "../command-contract/schemas.js";
-
-async function readTextFileOrStdin(inputPath: string | undefined): Promise<string> {
-	if (!inputPath || inputPath === "-") return await readStdin();
-	return fs.readFileSync(path.resolve(inputPath), "utf-8");
-}
+import { defineCommand, type PendingArtifact } from "../command-contract/contract.js";
+import {
+	HoldReportSchema,
+	PaneRefSchema,
+	PendingArtifactSchema,
+} from "../command-contract/schemas.js";
 
 export const DescribeInputSchema = z.object({ tail: z.array(z.string()).default([]) });
 export type DescribeInput = z.infer<typeof DescribeInputSchema>;
@@ -93,47 +90,133 @@ export const describeContract = defineCommand({
 	},
 });
 
-export async function screenshot(argv: string[]): Promise<void> {
-	const { flags } = parseArgs(argv, {
-		out: { takesValue: true },
-		format: { takesValue: true },
-		"no-background": { takesValue: false },
-		pane: { takesValue: true },
-	});
-
-	const format = (flags.format as string | undefined) ?? "png";
-	if (format !== "png" && format !== "svg") {
-		throw new CliUsageError("--format must be png or svg");
-	}
-
-	await ensureCanvasRunning();
-	await requireBrowserClient("screenshot");
-
-	// A picture is of one pane, and with a proposal in the second one the pane
-	// that answers by default is the wrong half of the wall.
-	const result = await exportImage(
-		format,
-		!flags["no-background"],
-		typeof flags.pane === "string" ? flags.pane : undefined,
-	);
-
-	let outPath = flags.out as string | undefined;
-	if (!outPath && format === "svg") {
-		process.stdout.write(result.data + "\n");
-		return;
-	}
-	if (!outPath) {
-		outPath = path.join(os.tmpdir(), `excalidraw-screenshot-${Date.now()}.png`);
-	}
-
-	const resolved = path.resolve(outPath);
-	if (format === "svg") {
-		fs.writeFileSync(resolved, result.data, "utf-8");
-	} else {
-		fs.writeFileSync(resolved, Buffer.from(result.data, "base64"));
-	}
-	printJson({ success: true, file: resolved, format });
+export const ScreenshotInputSchema = z.object({
+	out: z.string().optional(),
+	format: z.string().optional(),
+	noBackground: z.boolean().default(false),
+	pane: z.string().optional(),
+	tail: z.array(z.string()).default([]),
+});
+export type ScreenshotInput = z.infer<typeof ScreenshotInputSchema>;
+export const ScreenshotReceiptSchema = z.object({
+	success: z.literal(true),
+	file: z.string(),
+	format: z.enum(["png", "svg"]),
+});
+export type ScreenshotReceipt = z.infer<typeof ScreenshotReceiptSchema>;
+export const ScreenshotResultSchema = z.union([z.string(), ScreenshotReceiptSchema]);
+export type ScreenshotResult = z.infer<typeof ScreenshotResultSchema>;
+function screenshotFormat(value: string | undefined): "png" | "svg" {
+	const format = value ?? "png";
+	if (format !== "png" && format !== "svg") throw new CliUsageError("--format must be png or svg");
+	return format;
 }
+export const screenshotContract = defineCommand({
+	path: ["screenshot"],
+	summary: "Capture one pane (needs an open browser tab)",
+	usage: "screenshot [--out file.png] [--format png|svg] [--no-background] [--pane <spec>]",
+	description: "Renders one pane in the browser and returns raw SVG or a validated file receipt.",
+	examples: ["archboard screenshot --board system --out system.png"],
+	parameters: [
+		{
+			kind: "option",
+			key: "out",
+			spellings: ["--out"],
+			value: "required",
+			route: "stdin-or-file",
+			description: "Destination file",
+		},
+		{
+			kind: "option",
+			key: "format",
+			spellings: ["--format"],
+			value: "required",
+			description: "png or svg",
+		},
+		{
+			kind: "option",
+			key: "noBackground",
+			spellings: ["--no-background"],
+			value: "none",
+			description: "Render without the canvas background",
+		},
+		{
+			kind: "option",
+			key: "pane",
+			spellings: ["--pane"],
+			value: "required",
+			description: "Pane selector",
+		},
+		{
+			kind: "positional",
+			key: "tail",
+			name: "ignored",
+			repeatable: true,
+			route: "pass-through",
+			description: "Legacy ignored positional content",
+		},
+	],
+	input: { ingress: ScreenshotInputSchema },
+	result: ScreenshotResultSchema,
+	output: {
+		cases: [
+			{ id: "raw-svg", when: {}, mode: "raw", held: "none", description: "Raw SVG image" },
+			{
+				id: "file",
+				when: {},
+				mode: "file-receipt",
+				held: "none",
+				description: "Written image receipt",
+				artifact: PendingArtifactSchema,
+			},
+		],
+		select: (input) => (input.format === "svg" && input.out === undefined ? "raw-svg" : "file"),
+	},
+	prerequisites: ["server", "browser"],
+	effects: ["browser", "local-write"],
+	refusals: [
+		{ code: "BOARD_REQUIRED", exit: 2, stream: "stderr", description: "No board was named." },
+		{
+			code: "CANVAS_UNREACHABLE",
+			exit: 3,
+			stream: "stderr",
+			description: "The canvas could not be reached.",
+		},
+		{
+			code: "BROWSER_REQUIRED",
+			exit: 4,
+			stream: "stderr",
+			description: "No browser tab was connected.",
+		},
+	],
+	relationships: [
+		{
+			method: "POST",
+			path: "/api/export/image",
+			cardinality: "one",
+			description: "Render the selected pane",
+		},
+	],
+	async handler(input, context) {
+		const format = screenshotFormat(input.format);
+		await context.require("server", "screenshot");
+		await context.require("browser", "screenshot");
+		const image = await exportImage(format, !input.noBackground, input.pane);
+		if (!input.out && format === "svg") return { result: image.data };
+		const resolved = context.resolvePath(
+			input.out ?? path.join(os.tmpdir(), `excalidraw-screenshot-${Date.now()}.png`),
+		);
+		const artifact: PendingArtifact = {
+			path: resolved,
+			content: format === "svg" ? image.data : Buffer.from(image.data, "base64"),
+			encoding: format === "svg" ? "utf8" : "binary",
+		};
+		return {
+			result: { success: true as const, file: resolved, format },
+			pendingArtifact: artifact,
+		};
+	},
+});
 
 export const ImportInputSchema = z.object({
 	file: z.string().optional(),
@@ -246,42 +329,171 @@ export const importContract = defineCommand({
 	},
 });
 
-export async function mermaid(argv: string[]): Promise<void> {
-	const { positionals } = parseArgs(argv, {});
+export const MermaidInputSchema = z.object({
+	file: z.string().optional(),
+	tail: z.array(z.string()).default([]),
+});
+export type MermaidInput = z.infer<typeof MermaidInputSchema>;
+const MermaidResultValidator = z.looseObject({
+	success: z.boolean(),
+	board: z.string().optional(),
+	pane: PaneRefSchema.nullable(),
+	message: z.string().optional(),
+	held: HoldReportSchema.optional(),
+});
+export type MermaidResult = {
+	success: boolean;
+	board?: string;
+	pane: PaneRef | null;
+	message?: string;
+	held?: z.infer<typeof HoldReportSchema>;
+};
+export const MermaidResultSchema = z.custom<MermaidResult>(
+	(value) => MermaidResultValidator.safeParse(value).success,
+);
+export const mermaidContract = defineCommand({
+	path: ["mermaid"],
+	summary: "Render a Mermaid diagram onto the canvas (needs a browser tab)",
+	usage: "mermaid [diagram.mmd|-] (or stdin)",
+	description:
+		"Reads Mermaid text locally before contacting the canvas, then converts it in the board's pane.",
+	examples: ['archboard mermaid diagram.mmd --board system --doing "drawing diagram"'],
+	parameters: [
+		{
+			kind: "positional",
+			key: "file",
+			name: "file",
+			route: "stdin-or-file",
+			description: "Mermaid file, or -/omitted for stdin",
+		},
+		{
+			kind: "positional",
+			key: "tail",
+			name: "ignored",
+			repeatable: true,
+			route: "pass-through",
+			description: "Legacy ignored positional content",
+		},
+	],
+	input: { ingress: MermaidInputSchema },
+	result: MermaidResultSchema,
+	output: {
+		cases: [
+			{
+				id: "json",
+				when: {},
+				mode: "json",
+				held: "object-field-and-stderr-note",
+				description: "Mermaid conversion receipt",
+				presentation: ["diagnostics", "result", "held-note"],
+			},
+		],
+		select: () => "json",
+	},
+	prerequisites: ["server", "browser", "board", "doing"],
+	effects: ["local-read", "browser", "write"],
+	refusals: [
+		{ code: "BOARD_REQUIRED", exit: 2, stream: "stderr", description: "No board was named." },
+		{
+			code: "CANVAS_UNREACHABLE",
+			exit: 3,
+			stream: "stderr",
+			description: "The canvas could not be reached.",
+		},
+		{
+			code: "BROWSER_REQUIRED",
+			exit: 4,
+			stream: "stderr",
+			description: "No browser tab was connected.",
+		},
+		{ code: "BOARD_CONFLICT", exit: 5, stream: "stderr", description: "The write was refused." },
+	],
+	relationships: [
+		{
+			method: "POST",
+			path: "/api/elements/from-mermaid",
+			cardinality: "one",
+			description: "Convert and write the diagram",
+		},
+	],
+	async handler(input, context) {
+		const diagram =
+			input.file && input.file !== "-"
+				? context.readTextFile(context.resolvePath(input.file))
+				: await context.readStdin();
+		if (!diagram.trim())
+			throw new CliUsageError("No Mermaid diagram provided (pass a file or pipe to stdin)");
+		await context.require("server", "mermaid conversion");
+		await context.require("browser", "mermaid conversion");
+		const result = await sendMermaid(diagram);
+		const where = result.pane
+			? result.pane.place === "the only pane"
+				? "the only pane"
+				: `the ${result.pane.place} pane`
+			: "the open canvas tab";
+		return {
+			result: {
+				success: result.success ?? true,
+				board: result.board,
+				pane: result.pane ?? null,
+				message: result.message,
+			},
+			diagnostics: [`Conversion happens in ${where}, at ${EXPRESS_SERVER_URL}.`],
+		};
+	},
+});
 
-	const diagram = await readTextFileOrStdin(positionals[0]);
-	if (!diagram.trim()) {
-		throw new CliUsageError("No Mermaid diagram provided (pass a file or pipe to stdin)");
-	}
-
-	await ensureCanvasRunning();
-	// Conversion happens in the browser (mermaid-to-excalidraw needs DOM access)
-	await requireBrowserClient("mermaid conversion");
-
-	const result = await sendMermaid(diagram);
-	// Which half of the screen to watch. The pane came from the board, so this
-	// is a report rather than a choice the caller had to make (TASK-046).
-	const where = result.pane
-		? result.pane.place === "the only pane"
-			? "the only pane"
-			: `the ${result.pane.place} pane`
-		: "the open canvas tab";
-	note(`Conversion happens in ${where}, at ${EXPRESS_SERVER_URL}.`);
-	printJson({
-		success: result.success ?? true,
-		board: result.board,
-		pane: result.pane ?? null,
-		message: result.message,
-	});
-}
-
-export async function share(argv: string[]): Promise<void> {
-	parseArgs(argv, {});
-	await ensureCanvasRunning();
-	const elements = await getElements();
-	const url = await exportToExcalidrawUrl(elements);
-	printJson({ success: true, url });
-}
+export const ShareInputSchema = z.object({ tail: z.array(z.string()).default([]) });
+export type ShareInput = z.infer<typeof ShareInputSchema>;
+export const ShareResultSchema = z.object({ success: z.literal(true), url: z.string() });
+export type ShareResult = z.infer<typeof ShareResultSchema>;
+export const shareContract = defineCommand({
+	path: ["share"],
+	summary: "Export to a shareable excalidraw.com URL",
+	usage: "share",
+	description: "Reads only the board elements and uploads an encrypted share payload.",
+	examples: ["archboard share --board system"],
+	parameters: [
+		{
+			kind: "positional",
+			key: "tail",
+			name: "ignored",
+			repeatable: true,
+			route: "pass-through",
+			description: "Legacy ignored positional content",
+		},
+	],
+	input: { ingress: ShareInputSchema },
+	result: ShareResultSchema,
+	output: {
+		cases: [{ id: "json", when: {}, mode: "json", held: "none", description: "Share URL" }],
+		select: () => "json",
+	},
+	prerequisites: ["server", "board"],
+	effects: ["read"],
+	refusals: [
+		{ code: "BOARD_REQUIRED", exit: 2, stream: "stderr", description: "No board was named." },
+		{
+			code: "CANVAS_UNREACHABLE",
+			exit: 3,
+			stream: "stderr",
+			description: "The canvas could not be reached.",
+		},
+	],
+	relationships: [
+		{
+			method: "GET",
+			path: "/api/elements",
+			cardinality: "one",
+			description: "Read elements for the share payload",
+		},
+	],
+	async handler(_input, context) {
+		await context.require("server", "share");
+		const url = await exportToExcalidrawUrl(await getElements());
+		return { result: { success: true as const, url } };
+	},
+});
 
 export const ClearInputSchema = z.object({
 	yes: z.literal(true, { error: "clear wipes the whole canvas; pass --yes to confirm" }),
