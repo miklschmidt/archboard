@@ -26,20 +26,16 @@
 		{
 			"name": "apply",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/elements.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "apply",
-			"legacyArgv": "root-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "add",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/elements.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "add",
-			"legacyArgv": "root-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "update",
@@ -51,20 +47,16 @@
 		{
 			"name": "delete",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/elements.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "del",
-			"legacyArgv": "root-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "get",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/elements.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "get",
-			"legacyArgv": "root-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "query",
@@ -340,11 +332,9 @@
 		{
 			"name": "import",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/scene.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "importCmd",
-			"legacyArgv": "root-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "mermaid",
@@ -530,11 +520,9 @@
 		{
 			"name": "clear",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/scene.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "clear",
-			"legacyArgv": "root-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "install-skill",
@@ -902,6 +890,470 @@
 			]
 		},
 		{
+			"name": "apply",
+			"path": ["apply"],
+			"summary": "Apply a {create,update,delete} patch as a single write",
+			"usage": "apply [patch.json|-] [--document]",
+			"description": "Validates a complete element patch before applying it as one board write.",
+			"examples": ["archboard apply patch.json --board system --doing \"updating services\""],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "document",
+					"spellings": ["--document"],
+					"value": "none",
+					"description": "Include the complete board document"
+				},
+				{
+					"kind": "positional",
+					"key": "file",
+					"name": "file",
+					"route": "stdin-or-file",
+					"description": "JSON file, or -/omitted for stdin"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"file": {
+							"type": "string"
+						},
+						"document": {
+							"default": false,
+							"type": "boolean"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["document", "tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"const": true
+					},
+					"created": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"updated": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"deleted": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"elements": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string"
+								},
+								"type": {
+									"type": "string",
+									"enum": [
+										"rectangle",
+										"ellipse",
+										"diamond",
+										"arrow",
+										"text",
+										"line",
+										"freedraw",
+										"image"
+									]
+								},
+								"x": {
+									"type": "number"
+								},
+								"y": {
+									"type": "number"
+								}
+							},
+							"required": ["id", "type", "x", "y"],
+							"additionalProperties": {}
+						}
+					},
+					"fingerprint": {
+						"type": "object",
+						"properties": {
+							"elements": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 9007199254740991
+							},
+							"note": {
+								"type": "string"
+							},
+							"version": {
+								"anyOf": [
+									{
+										"type": "integer",
+										"minimum": 0,
+										"maximum": 9007199254740991
+									},
+									{
+										"type": "null"
+									}
+								]
+							}
+						},
+						"required": ["elements", "note", "version"],
+						"additionalProperties": false
+					},
+					"document": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string"
+								},
+								"type": {
+									"type": "string",
+									"enum": [
+										"rectangle",
+										"ellipse",
+										"diamond",
+										"arrow",
+										"text",
+										"line",
+										"freedraw",
+										"image"
+									]
+								},
+								"x": {
+									"type": "number"
+								},
+								"y": {
+									"type": "number"
+								}
+							},
+							"required": ["id", "type", "x", "y"],
+							"additionalProperties": {}
+						}
+					},
+					"held": {
+						"type": "object",
+						"properties": {
+							"board": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": ["board", "message"],
+						"additionalProperties": {}
+					}
+				},
+				"required": ["success", "created", "updated", "deleted", "elements", "fingerprint"],
+				"additionalProperties": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Patch receipt",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board", "doing"],
+			"effects": ["write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board write was refused."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/elements",
+					"cardinality": "conditional",
+					"description": "Resolve updated and deleted ids"
+				},
+				{
+					"method": "POST",
+					"path": "/api/elements/changes",
+					"cardinality": "one",
+					"description": "Apply the complete patch"
+				}
+			]
+		},
+		{
+			"name": "add",
+			"path": ["add"],
+			"summary": "Create elements from a JSON array",
+			"usage": "add [elements.json] (or stdin) [--document]\nadd --one '{\"type\":\"rectangle\",...}'",
+			"description": "Creates one or more elements in one batch.",
+			"examples": ["archboard add elements.json --board system --doing \"adding services\""],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "one",
+					"spellings": ["--one"],
+					"value": "required",
+					"description": "One inline JSON element"
+				},
+				{
+					"kind": "option",
+					"key": "document",
+					"spellings": ["--document"],
+					"value": "none",
+					"description": "Include the complete board document"
+				},
+				{
+					"kind": "positional",
+					"key": "file",
+					"name": "file",
+					"route": "stdin-or-file",
+					"description": "JSON file, or -/omitted for stdin"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"file": {
+							"type": "string"
+						},
+						"one": {
+							"type": "string"
+						},
+						"document": {
+							"default": false,
+							"type": "boolean"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["document", "tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"const": true
+					},
+					"count": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"elements": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string"
+								},
+								"type": {
+									"type": "string",
+									"enum": [
+										"rectangle",
+										"ellipse",
+										"diamond",
+										"arrow",
+										"text",
+										"line",
+										"freedraw",
+										"image"
+									]
+								},
+								"x": {
+									"type": "number"
+								},
+								"y": {
+									"type": "number"
+								}
+							},
+							"required": ["id", "type", "x", "y"],
+							"additionalProperties": {}
+						}
+					},
+					"fingerprint": {
+						"type": "object",
+						"properties": {
+							"elements": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 9007199254740991
+							},
+							"note": {
+								"type": "string"
+							},
+							"version": {
+								"anyOf": [
+									{
+										"type": "integer",
+										"minimum": 0,
+										"maximum": 9007199254740991
+									},
+									{
+										"type": "null"
+									}
+								]
+							}
+						},
+						"required": ["elements", "note", "version"],
+						"additionalProperties": false
+					},
+					"document": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string"
+								},
+								"type": {
+									"type": "string",
+									"enum": [
+										"rectangle",
+										"ellipse",
+										"diamond",
+										"arrow",
+										"text",
+										"line",
+										"freedraw",
+										"image"
+									]
+								},
+								"x": {
+									"type": "number"
+								},
+								"y": {
+									"type": "number"
+								}
+							},
+							"required": ["id", "type", "x", "y"],
+							"additionalProperties": {}
+						}
+					},
+					"held": {
+						"type": "object",
+						"properties": {
+							"board": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": ["board", "message"],
+						"additionalProperties": {}
+					}
+				},
+				"required": ["success", "count", "elements", "fingerprint"],
+				"additionalProperties": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Creation receipt",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board", "doing"],
+			"effects": ["write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board write was refused."
+				}
+			],
+			"relationships": [
+				{
+					"method": "POST",
+					"path": "/api/elements/batch",
+					"cardinality": "one",
+					"description": "Create the batch"
+				}
+			]
+		},
+		{
 			"name": "update",
 			"path": ["update"],
 			"summary": "Update one element",
@@ -1201,6 +1653,336 @@
 					"path": "/api/elements/:id",
 					"cardinality": "one",
 					"description": "Exactly one board write"
+				}
+			]
+		},
+		{
+			"name": "delete",
+			"path": ["delete"],
+			"summary": "Delete elements by id",
+			"usage": "delete <id> [<id> ...] [--document]",
+			"description": "Resolves every id before deleting them in one write.",
+			"examples": ["archboard delete box-a box-b --board system --doing \"removing boxes\""],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "document",
+					"spellings": ["--document"],
+					"value": "none",
+					"description": "Include the complete board document"
+				},
+				{
+					"kind": "positional",
+					"key": "ids",
+					"name": "id",
+					"repeatable": true,
+					"description": "Element ids"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"ids": {
+							"minItems": 1,
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						},
+						"document": {
+							"default": false,
+							"type": "boolean"
+						}
+					},
+					"required": ["ids", "document"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"const": true
+					},
+					"deleted": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"count": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"elements": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string"
+								},
+								"type": {
+									"type": "string",
+									"enum": [
+										"rectangle",
+										"ellipse",
+										"diamond",
+										"arrow",
+										"text",
+										"line",
+										"freedraw",
+										"image"
+									]
+								},
+								"x": {
+									"type": "number"
+								},
+								"y": {
+									"type": "number"
+								}
+							},
+							"required": ["id", "type", "x", "y"],
+							"additionalProperties": {}
+						}
+					},
+					"fingerprint": {
+						"type": "object",
+						"properties": {
+							"elements": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 9007199254740991
+							},
+							"note": {
+								"type": "string"
+							},
+							"version": {
+								"anyOf": [
+									{
+										"type": "integer",
+										"minimum": 0,
+										"maximum": 9007199254740991
+									},
+									{
+										"type": "null"
+									}
+								]
+							}
+						},
+						"required": ["elements", "note", "version"],
+						"additionalProperties": false
+					},
+					"document": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string"
+								},
+								"type": {
+									"type": "string",
+									"enum": [
+										"rectangle",
+										"ellipse",
+										"diamond",
+										"arrow",
+										"text",
+										"line",
+										"freedraw",
+										"image"
+									]
+								},
+								"x": {
+									"type": "number"
+								},
+								"y": {
+									"type": "number"
+								}
+							},
+							"required": ["id", "type", "x", "y"],
+							"additionalProperties": {}
+						}
+					},
+					"held": {
+						"type": "object",
+						"properties": {
+							"board": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": ["board", "message"],
+						"additionalProperties": {}
+					}
+				},
+				"required": ["success", "deleted", "count", "elements", "fingerprint"],
+				"additionalProperties": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Deletion receipt",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board", "doing"],
+			"effects": ["write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board write was refused."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/elements",
+					"cardinality": "one",
+					"description": "Resolve all ids before writing"
+				},
+				{
+					"method": "POST",
+					"path": "/api/elements/changes",
+					"cardinality": "one",
+					"description": "Delete all ids"
+				}
+			]
+		},
+		{
+			"name": "get",
+			"path": ["get"],
+			"summary": "Get one element by id",
+			"usage": "get <id>",
+			"description": "Returns one server-owned element payload.",
+			"examples": ["archboard get box-a --board system"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "id",
+					"name": "id",
+					"description": "Element id"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"id": {
+							"type": "string",
+							"minLength": 1
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["id", "tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"rectangle",
+							"ellipse",
+							"diamond",
+							"arrow",
+							"text",
+							"line",
+							"freedraw",
+							"image"
+						]
+					},
+					"x": {
+						"type": "number"
+					},
+					"y": {
+						"type": "number"
+					}
+				},
+				"required": ["id", "type", "x", "y"],
+				"additionalProperties": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Element payload",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board"],
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/elements/:id",
+					"cardinality": "one",
+					"description": "Read the element"
 				}
 			]
 		},
@@ -2061,6 +2843,267 @@
 			]
 		},
 		{
+			"name": "import",
+			"path": ["import"],
+			"summary": "Import a .excalidraw or Obsidian .excalidraw.md file (merge by default)",
+			"usage": "import [scene.excalidraw|note.excalidraw.md|-] [--replace] (or stdin)",
+			"description": "Imports scene data after the canvas prerequisite, merging unless replace is selected.",
+			"examples": ["archboard import scene.excalidraw --board system --doing \"importing scene\""],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "replace",
+					"spellings": ["--replace"],
+					"value": "none",
+					"description": "Replace rather than merge"
+				},
+				{
+					"kind": "positional",
+					"key": "file",
+					"name": "file",
+					"route": "stdin-or-file",
+					"description": "Scene file, or -/omitted for stdin"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"file": {
+							"type": "string"
+						},
+						"replace": {
+							"default": false,
+							"type": "boolean"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["replace", "tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"const": true
+					},
+					"imported": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"files": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"mode": {
+						"type": "string",
+						"enum": ["merge", "replace"]
+					},
+					"held": {
+						"type": "object",
+						"properties": {
+							"board": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": ["board", "message"],
+						"additionalProperties": {}
+					}
+				},
+				"required": ["success", "imported", "files", "mode"],
+				"additionalProperties": false
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Import receipt",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board", "doing"],
+			"effects": ["write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The write was refused."
+				}
+			],
+			"relationships": [
+				{
+					"method": "POST",
+					"path": "/api/elements/batch",
+					"cardinality": "one",
+					"description": "Merge imported elements"
+				},
+				{
+					"method": "DELETE",
+					"path": "/api/elements/clear",
+					"cardinality": "conditional",
+					"description": "Clear before replace import"
+				}
+			]
+		},
+		{
+			"name": "clear",
+			"path": ["clear"],
+			"summary": "Clear the whole canvas",
+			"usage": "clear --yes",
+			"description": "Clears the named board only after explicit confirmation.",
+			"examples": ["archboard clear --yes --board scratch --doing \"clearing scratch\""],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "yes",
+					"spellings": ["--yes"],
+					"value": "none",
+					"description": "Confirm the destructive write"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"yes": {
+							"type": "boolean",
+							"const": true
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["yes", "tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"const": true
+					},
+					"cleared": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"held": {
+						"type": "object",
+						"properties": {
+							"board": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": ["board", "message"],
+						"additionalProperties": {}
+					}
+				},
+				"required": ["success", "cleared"],
+				"additionalProperties": false
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Clear receipt",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board", "doing"],
+			"effects": ["write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The clear was refused."
+				}
+			],
+			"relationships": [
+				{
+					"method": "DELETE",
+					"path": "/api/elements/clear",
+					"cardinality": "one",
+					"description": "Clear the board"
+				}
+			]
+		},
+		{
 			"name": "install-skill",
 			"path": ["install-skill"],
 			"summary": "Install the bundled agent skill and write the setup into this repo",
@@ -2306,10 +3349,6 @@
 		}
 	],
 	"legacyPaths": [
-		"apply",
-		"add",
-		"delete",
-		"get",
 		"selection",
 		"panes",
 		"promote",
@@ -2335,7 +3374,6 @@
 		"inject test",
 		"describe",
 		"screenshot",
-		"import",
 		"mermaid",
 		"snapshot",
 		"snapshot save",
@@ -2352,7 +3390,6 @@
 		"arrange lock",
 		"arrange unlock",
 		"arrange duplicate",
-		"share",
-		"clear"
+		"share"
 	]
 }

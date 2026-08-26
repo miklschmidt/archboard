@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import os from "os";
+import { z } from "zod";
 import { parseArgs, CliUsageError, readStdin } from "./args.js";
 import { printJson, note, requireBrowserClient } from "./util.js";
 import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
@@ -15,6 +16,8 @@ import { importScene } from "../../runtime/engine/scene-document.js";
 import { describeScene } from "../../runtime/engine/describe.js";
 import { exportToExcalidrawUrl } from "../../runtime/engine/share-url.js";
 import { EXPRESS_SERVER_URL } from "../../runtime/engine/config.js";
+import { defineCommand } from "../command-contract/contract.js";
+import { HoldReportSchema } from "../command-contract/schemas.js";
 
 async function readTextFileOrStdin(inputPath: string | undefined): Promise<string> {
 	if (!inputPath || inputPath === "-") return await readStdin();
@@ -72,24 +75,116 @@ export async function screenshot(argv: string[]): Promise<void> {
 	printJson({ success: true, file: resolved, format });
 }
 
-export async function importCmd(argv: string[]): Promise<void> {
-	const { positionals, flags } = parseArgs(argv, { replace: { takesValue: false } });
+export const ImportInputSchema = z.object({
+	file: z.string().optional(),
+	replace: z.boolean().default(false),
+	tail: z.array(z.string()).default([]),
+});
+export type ImportInput = z.infer<typeof ImportInputSchema>;
 
-	await ensureCanvasRunning();
+export const ImportResultSchema = z.object({
+	success: z.literal(true),
+	imported: z.number().int().nonnegative(),
+	files: z.number().int().nonnegative(),
+	mode: z.enum(["merge", "replace"]),
+	held: HoldReportSchema.optional(),
+});
+export type ImportResult = z.infer<typeof ImportResultSchema>;
 
-	const mode = flags.replace ? ("replace" as const) : ("merge" as const);
-	// File access belongs to the CLI. The domain import accepts scene data and
-	// does not carry a second, caller-specific path policy.
-	const data = await readTextFileOrStdin(positionals[0]);
-	if (!data.trim()) {
-		throw new CliUsageError(
-			"No scene provided (pass a .excalidraw / .excalidraw.md file or pipe JSON to stdin)",
-		);
-	}
-	const result = await importScene({ data, mode });
-
-	printJson({ success: true, imported: result.count, files: result.fileCount, mode: result.mode });
-}
+export const importContract = defineCommand({
+	path: ["import"],
+	summary: "Import a .excalidraw or Obsidian .excalidraw.md file (merge by default)",
+	usage: "import [scene.excalidraw|note.excalidraw.md|-] [--replace] (or stdin)",
+	description:
+		"Imports scene data after the canvas prerequisite, merging unless replace is selected.",
+	examples: ['archboard import scene.excalidraw --board system --doing "importing scene"'],
+	parameters: [
+		{
+			kind: "option",
+			key: "replace",
+			spellings: ["--replace"],
+			value: "none",
+			description: "Replace rather than merge",
+		},
+		{
+			kind: "positional",
+			key: "file",
+			name: "file",
+			route: "stdin-or-file",
+			description: "Scene file, or -/omitted for stdin",
+		},
+		{
+			kind: "positional",
+			key: "tail",
+			name: "ignored",
+			repeatable: true,
+			route: "pass-through",
+			description: "Legacy ignored positional content",
+		},
+	],
+	input: { ingress: ImportInputSchema },
+	result: ImportResultSchema,
+	output: {
+		cases: [
+			{
+				id: "json",
+				when: {},
+				mode: "json",
+				held: "object-field-and-stderr-note",
+				description: "Import receipt",
+				presentation: ["result", "held-note"],
+			},
+		],
+		select: () => "json",
+	},
+	prerequisites: ["server", "board", "doing"],
+	effects: ["write"],
+	refusals: [
+		{ code: "BOARD_REQUIRED", exit: 2, stream: "stderr", description: "No board was named." },
+		{
+			code: "CANVAS_UNREACHABLE",
+			exit: 3,
+			stream: "stderr",
+			description: "The canvas could not be reached.",
+		},
+		{ code: "BOARD_CONFLICT", exit: 5, stream: "stderr", description: "The write was refused." },
+	],
+	relationships: [
+		{
+			method: "POST",
+			path: "/api/elements/batch",
+			cardinality: "one",
+			description: "Merge imported elements",
+		},
+		{
+			method: "DELETE",
+			path: "/api/elements/clear",
+			cardinality: "conditional",
+			description: "Clear before replace import",
+		},
+	],
+	async handler(input, context) {
+		await context.require("server", "import");
+		const data =
+			input.file && input.file !== "-"
+				? context.readTextFile(context.resolvePath(input.file))
+				: await context.readStdin();
+		if (!data.trim())
+			throw new CliUsageError(
+				"No scene provided (pass a .excalidraw / .excalidraw.md file or pipe JSON to stdin)",
+			);
+		const mode = input.replace ? ("replace" as const) : ("merge" as const);
+		const result = await importScene({ data, mode });
+		return {
+			result: {
+				success: true as const,
+				imported: result.count,
+				files: result.fileCount,
+				mode: result.mode,
+			},
+		};
+	},
+});
 
 export async function mermaid(argv: string[]): Promise<void> {
 	const { positionals } = parseArgs(argv, {});
@@ -128,13 +223,79 @@ export async function share(argv: string[]): Promise<void> {
 	printJson({ success: true, url });
 }
 
-export async function clear(argv: string[]): Promise<void> {
-	const { flags } = parseArgs(argv, { yes: { takesValue: false } });
-	if (!flags.yes) {
-		throw new CliUsageError("clear wipes the whole canvas; pass --yes to confirm");
-	}
+export const ClearInputSchema = z.object({
+	yes: z.literal(true, { error: "clear wipes the whole canvas; pass --yes to confirm" }),
+	tail: z.array(z.string()).default([]),
+});
+export type ClearInput = z.infer<typeof ClearInputSchema>;
+export const ClearResultSchema = z.object({
+	success: z.literal(true),
+	cleared: z.number().int().nonnegative(),
+	held: HoldReportSchema.optional(),
+});
+export type ClearResult = z.infer<typeof ClearResultSchema>;
 
-	await ensureCanvasRunning();
-	const result = await clearCanvas();
-	printJson({ success: true, cleared: result.count ?? 0 });
-}
+export const clearContract = defineCommand({
+	path: ["clear"],
+	summary: "Clear the whole canvas",
+	usage: "clear --yes",
+	description: "Clears the named board only after explicit confirmation.",
+	examples: ['archboard clear --yes --board scratch --doing "clearing scratch"'],
+	parameters: [
+		{
+			kind: "option",
+			key: "yes",
+			spellings: ["--yes"],
+			value: "none",
+			description: "Confirm the destructive write",
+		},
+		{
+			kind: "positional",
+			key: "tail",
+			name: "ignored",
+			repeatable: true,
+			route: "pass-through",
+			description: "Legacy ignored positional content",
+		},
+	],
+	input: { ingress: ClearInputSchema },
+	result: ClearResultSchema,
+	output: {
+		cases: [
+			{
+				id: "json",
+				when: {},
+				mode: "json",
+				held: "object-field-and-stderr-note",
+				description: "Clear receipt",
+				presentation: ["result", "held-note"],
+			},
+		],
+		select: () => "json",
+	},
+	prerequisites: ["server", "board", "doing"],
+	effects: ["write"],
+	refusals: [
+		{ code: "BOARD_REQUIRED", exit: 2, stream: "stderr", description: "No board was named." },
+		{
+			code: "CANVAS_UNREACHABLE",
+			exit: 3,
+			stream: "stderr",
+			description: "The canvas could not be reached.",
+		},
+		{ code: "BOARD_CONFLICT", exit: 5, stream: "stderr", description: "The clear was refused." },
+	],
+	relationships: [
+		{
+			method: "DELETE",
+			path: "/api/elements/clear",
+			cardinality: "one",
+			description: "Clear the board",
+		},
+	],
+	async handler(_input, context) {
+		await context.require("server", "clear");
+		const result = await clearCanvas();
+		return { result: { success: true as const, cleared: result.count ?? 0 } };
+	},
+});

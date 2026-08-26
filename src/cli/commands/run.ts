@@ -16,7 +16,7 @@ import {
 } from "../../runtime/engine/canvas-client.js";
 import { packageVersion } from "../../runtime/engine/package-version.js";
 import { startContract, stopContract } from "./server.js";
-import * as elements from "./elements.js";
+import { addContract, applyContract, deleteContract, getContract } from "./elements.js";
 import * as scene from "./scene.js";
 import { panes, selection } from "./selection.js";
 import * as paneCommands from "./pane.js";
@@ -103,7 +103,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		owner: contract(statusContract, "src/cli/command-contract/status.ts"),
 	},
 	apply: {
-		owner: legacy(elements.apply, "src/cli/commands/elements.ts"),
+		owner: contract(applyContract, "src/cli/commands/elements.ts"),
 		summary: "Apply a {create,update,delete} patch as a single write",
 		usage: [
 			"apply [patch.json|-] [--document]",
@@ -113,7 +113,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		].join("\n"),
 	},
 	add: {
-		owner: legacy(elements.add, "src/cli/commands/elements.ts"),
+		owner: contract(addContract, "src/cli/commands/elements.ts"),
 		summary: "Create elements from a JSON array",
 		usage: [
 			"add [elements.json] (or stdin) [--document]",
@@ -126,7 +126,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		owner: contract(updateContract, "src/cli/command-contract/lib/command-definitions.ts"),
 	},
 	delete: {
-		owner: legacy(elements.del, "src/cli/commands/elements.ts"),
+		owner: contract(deleteContract, "src/cli/commands/elements.ts"),
 		summary: "Delete elements by id",
 		usage: [
 			"delete <id> [<id> ...] [--document]",
@@ -139,7 +139,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		].join("\n"),
 	},
 	get: {
-		owner: legacy(elements.get, "src/cli/commands/elements.ts"),
+		owner: contract(getContract, "src/cli/commands/elements.ts"),
 		summary: "Get one element by id",
 		usage: "get <id>",
 	},
@@ -473,7 +473,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		owner: contract(exportContract, "src/cli/command-contract/lib/command-definitions.ts"),
 	},
 	import: {
-		owner: legacy(scene.importCmd, "src/cli/commands/scene.ts"),
+		owner: contract(scene.importContract, "src/cli/commands/scene.ts"),
 		summary: "Import a .excalidraw or Obsidian .excalidraw.md file (merge by default)",
 		usage: "import [scene.excalidraw|note.excalidraw.md|-] [--replace] (or stdin)",
 	},
@@ -638,7 +638,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		usage: "share",
 	},
 	clear: {
-		owner: legacy(scene.clear, "src/cli/commands/scene.ts"),
+		owner: contract(scene.clearContract, "src/cli/commands/scene.ts"),
 		summary: "Clear the whole canvas",
 		usage: "clear --yes",
 	},

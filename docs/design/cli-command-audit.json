@@ -62,7 +62,7 @@
 		},
 		{
 			"path": "apply",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/elements.ts",
 			"stdout": "json object",
 			"result": "success,created,updated,deleted,elements,fingerprint,document?",
@@ -77,7 +77,7 @@
 		},
 		{
 			"path": "add",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/elements.ts",
 			"stdout": "json object",
 			"result": "success,count,elements,fingerprint,document?",
@@ -107,7 +107,7 @@
 		},
 		{
 			"path": "delete",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/elements.ts",
 			"stdout": "json object",
 			"result": "success,deleted,count,elements,fingerprint,document?",
@@ -122,7 +122,7 @@
 		},
 		{
 			"path": "get",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/elements.ts",
 			"stdout": "json object",
 			"result": "ServerElement",
@@ -574,7 +574,7 @@
 		},
 		{
 			"path": "import",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/scene.ts",
 			"stdout": "json object",
 			"result": "success,imported,files,mode",
@@ -846,7 +846,7 @@
 		},
 		{
 			"path": "clear",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/scene.ts",
 			"stdout": "json object",
 			"result": "success,cleared",
