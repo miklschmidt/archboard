@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-26 11:07'
+updated_date: '2026-08-26 11:41'
 labels: []
 dependencies:
   - TASK-123.01
@@ -132,6 +132,8 @@ Migration checkpoint 6 (snapshot) complete: snapshot root/save/list/restore are 
 2026-08-26 zero-legacy deletion checkpoint: after the separately committed 57-contract/0-legacy proof gate passed, deleted LegacyCommand fallback routing, args.ts, util.ts, the proof definition monolith, and its obsolete sibling fixture. Rehomed query/update/viewport/export beside named exported schemas, moved shared option discovery to the contract module, added source/deletion guards, and refreshed schema-6 artifacts/design. Gates: stable fix, generation --check, 670 contract checks, 539 CLI checks, type-check, and boundaries passed.
 
 2026-08-26 final zero-legacy validation: all 57 canonical CLI paths are command contracts and the generic registry checker reports 57 proofs, 57 audited paths, and 670 checks with zero legacy routes. Two consecutive bun run fix passes were byte-stable. Generation --check, test:contracts, test:cli (539 checks), type-check, boundaries, module-scope, one-write (76), doing (39), version (65), lock (120), boards, branch, side-by-side, changes, library (49), install (106), repos, bind, obsidian (197), bun run check, and a separate full bun run test all passed. Both complete chains ran human-performance, browser fixed-point, typed-text, and live-session sequentially/headlessly; human-performance completed clean at [0,0], and live-session converged for all 42 cycles. During the focused matrix only, test:one-write initially encountered an orphan test server process on random port 39852; after identifying and terminating PID 2710568, the focused rerun passed, and both subsequent complete chains passed without that failure. No gate was weakened or retried away. TASK-123.03 and protected runtime/server/UI/shared/REST/dependency scope remain untouched.
+
+Broad-review remediation at be03419 (fixed base 6c42fca): replaced remaining unconstrained structured result wrappers with concrete public schemas; moved CLI defaults, coercions, enums, required and cross-field rules into named Zod ingress/stage schemas; made pending artifacts a total encoding/content union; simplified registry introspection to required all-contract entries; restored fixed-base held policies with exact byte/event fixtures; reconciled all 57 prerequisites/effects/refusal codes and exits against the canonical audit; preserved inject --wat bytes; and added real jq subprocess coverage for structured exit-0 and exit-3 stdout. Focused gates: 20 contract tests / 123 expectations, 57 contracts / 939+ audit checks, 560 CLI checks, type-check, boundaries, and module-scope passed. Full requested matrix remains before broad rereview handoff.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
