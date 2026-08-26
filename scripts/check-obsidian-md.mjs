@@ -16,11 +16,11 @@ import { fileURLToPath } from "node:url";
 const moduleDir = dirname(fileURLToPath(import.meta.url));
 const src = (rel) => join(moduleDir, "..", "src", rel);
 const { wrapSceneAsObsidianMd, extractSceneJsonFromObsidianMd, embeddedFilesIn } = await import(
-	src("core/obsidian-md.ts")
+	src("runtime/engine/obsidian-md.ts")
 );
-const { mintId, derivedId, isBlockId } = await import(src("core/ids.ts"));
-const { applyElementInput } = await import(src("core/apply-element-input.ts"));
-const { buildScene } = await import(src("core/scene-document.ts"));
+const { mintId, derivedId, isBlockId } = await import(src("shared/ids/ids.ts"));
+const { applyElementInput } = await import(src("runtime/engine/apply-element-input.ts"));
+const { buildScene } = await import(src("runtime/engine/scene-document.ts"));
 
 let failures = 0;
 let checks = 0;

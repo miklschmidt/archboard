@@ -482,7 +482,7 @@ try {
 	);
 	const rawNote = fs.readFileSync(path.join(vault, "systems.excalidraw.md"), "utf-8");
 	const noteScene = JSON.parse(
-		(await import(src("core/obsidian-md.ts"))).extractSceneJsonFromObsidianMd(rawNote),
+		(await import(src("runtime/engine/obsidian-md.ts"))).extractSceneJsonFromObsidianMd(rawNote),
 	);
 	const persisted = noteScene.elements ?? [];
 	const persistedAlpha = persisted.find((el) => el.id === alphaId);
