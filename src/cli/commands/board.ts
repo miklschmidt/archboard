@@ -297,8 +297,9 @@ export async function board(argv: string[]): Promise<void> {
 		note(conflict.message);
 		printJson({ success: false, conflict });
 		const quiet = new Error(conflict.message);
-		(quiet as any).quiet = true;
-		(quiet as any).code = "BOARD_CONFLICT";
+		const failure = quiet as Error & { quiet?: boolean; code?: string };
+		failure.quiet = true;
+		failure.code = "BOARD_CONFLICT";
 		throw quiet;
 	}
 

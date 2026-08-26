@@ -63,7 +63,7 @@ function labelOf(el: ServerElement, elements: ServerElement[]): string | undefin
 	const direct = el.label?.text ?? el.text;
 	if (direct) return String(direct);
 	for (const other of elements) {
-		if (other.type === "text" && (other as any).containerId === el.id) {
+		if (other.type === "text" && other.containerId === el.id) {
 			const text = other.text ?? other.originalText;
 			if (text) return String(text);
 		}

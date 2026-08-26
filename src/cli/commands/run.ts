@@ -504,13 +504,13 @@ function printHelp(): void {
 
 function exitCodeFor(error: unknown): number {
 	if (error instanceof CliUsageError) return 2;
-	const code = (error as any)?.code;
+	const code = (error as Error & { code?: string }).code;
 	if (code === "CANVAS_UNREACHABLE") return 3;
 	if (code === "BROWSER_REQUIRED") return 4;
 	// Every refusal leaves the board unwritten, so they share the exit status a
 	// script already watches for. The attached body says whether another holder,
 	// a revoked claim, a moved version or a changed note stopped it.
-	if (code === "BOARD_CONFLICT" || BOARD_REFUSAL_CODES.has(code)) return 5;
+	if (code === "BOARD_CONFLICT" || (code !== undefined && BOARD_REFUSAL_CODES.has(code))) return 5;
 	// A missing board is a mistake at the keyboard, like any other usage error.
 	if (code === "BOARD_REQUIRED") return 2;
 	return 1;
@@ -617,7 +617,7 @@ export async function runCli(argv: string[]): Promise<void> {
 		setExpectedVersion(takeExpectVersionFlag(rest));
 		await command.handler(rest);
 	} catch (error) {
-		if (!(error as any)?.quiet) {
+		if (!(error as Error & { quiet?: boolean }).quiet) {
 			process.stderr.write(`Error: ${formatBoardRefusal(error) ?? (error as Error).message}\n`);
 		}
 		// A refused write does not stop the board being drawn on, it stops the

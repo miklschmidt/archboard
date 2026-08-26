@@ -20,7 +20,7 @@ import {
 } from "@excalidraw/excalidraw";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
-import type { LibraryItems } from "@excalidraw/excalidraw/types";
+import type { AppState, BinaryFileData, LibraryItems } from "@excalidraw/excalidraw/types";
 import { convertMermaidToExcalidraw, DEFAULT_MERMAID_CONFIG } from "./mermaidConverter";
 import type {
 	BoardHold,
@@ -537,9 +537,9 @@ export function useCanvasSession({
 		if (!api) return;
 		api.updateScene({
 			...(update.elements
-				? { elements: elementsForScene(update.elements as Partial<ExcalidrawElement>[]) as any }
+				? { elements: elementsForScene(update.elements as Partial<ExcalidrawElement>[]) as unknown as readonly ExcalidrawElement[] }
 				: {}),
-			...(update.appState ? { appState: update.appState as any } : {}),
+				...(update.appState ? { appState: update.appState as unknown as AppState } : {}),
 			captureUpdate:
 				update.captureUpdate === "immediately"
 					? CaptureUpdateAction.IMMEDIATELY
@@ -755,7 +755,7 @@ export function useCanvasSession({
 			applyServerScene(elements.map(cleanElementForExcalidraw));
 			const { files } = await fetchFiles(boardKeyRef.current);
 			if (files && Object.keys(files).length > 0)
-				apiRef.current?.addFiles(Object.values(files) as any);
+					apiRef.current?.addFiles(Object.values(files) as BinaryFileData[]);
 		} catch (error) {
 			console.error("Could not load the board:", error);
 		}
@@ -1102,7 +1102,7 @@ export function useCanvasSession({
 				if (!target) throw new Error(`Element ${data.scrollToElementId} not found`);
 				api.scrollToContent([target], { fitToViewport: false, animate: true });
 			} else {
-				const appState: any = {};
+					const appState: Record<string, unknown> = {};
 				if (data.zoom !== undefined) appState.zoom = { value: data.zoom };
 				if (data.offsetX !== undefined) appState.scrollX = data.offsetX;
 				if (data.offsetY !== undefined) appState.scrollY = data.offsetY;
@@ -1138,9 +1138,12 @@ export function useCanvasSession({
 
 				// Regenerate ids: mermaid emits stable ones like "A", which would collide
 				// with a previous conversion already on the board.
-				const converted = convertToExcalidrawElements([...result.elements] as any, {
-					regenerateIds: true,
-				});
+					const converted = convertToExcalidrawElements(
+						[...result.elements] as unknown as Parameters<typeof convertToExcalidrawElements>[0],
+						{
+						regenerateIds: true,
+						},
+					);
 				// The conversion is a local edit and is reported immediately.
 				dispatchReporting({
 					type: "local_update_requested",
@@ -1473,8 +1476,8 @@ export function useCanvasSession({
 	}, [clientId, flushWithBeacon]);
 
 	const handleChange = useCallback(
-		(elements: readonly Partial<ExcalidrawElement>[], appState: any): void => {
-			handleSelectionChange(appState);
+		(elements: readonly Partial<ExcalidrawElement>[], appState: unknown): void => {
+			handleSelectionChange(appState && typeof appState === "object" ? appState as { selectedElementIds?: Record<string, boolean> } : null);
 			// Excalidraw calls onChange for camera and selection state too. Classify
 			// content from the element array it supplied before any hold or report
 			// effect; a pan or zoom must never take a claimed board.

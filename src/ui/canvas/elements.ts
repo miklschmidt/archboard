@@ -51,18 +51,20 @@ const validateAndFixBindings = (
 	return elements.map((element) => {
 		// A loose view on purpose: boundElements and containerId only exist on some
 		// members of the element union, and this function runs before we know which.
-		const fixedElement = { ...element } as Record<string, any>;
+		const fixedElement = { ...element } as Record<string, unknown>;
 
 		if (fixedElement.boundElements) {
 			if (Array.isArray(fixedElement.boundElements)) {
-				fixedElement.boundElements = fixedElement.boundElements.filter((binding: any) => {
+				const boundElements = fixedElement.boundElements.filter((binding: unknown) => {
 					if (!binding || typeof binding !== "object") return false;
-					if (!binding.id || !binding.type) return false;
-					if (!elementMap.has(binding.id)) return false;
-					if (!["text", "arrow"].includes(binding.type)) return false;
+					const record = binding as Record<string, unknown>;
+					if (typeof record.id !== "string" || typeof record.type !== "string") return false;
+					if (!elementMap.has(record.id)) return false;
+					if (!["text", "arrow"].includes(record.type)) return false;
 					return true;
 				});
-				if (fixedElement.boundElements.length === 0) {
+				fixedElement.boundElements = boundElements;
+				if (boundElements.length === 0) {
 					fixedElement.boundElements = null;
 				}
 			} else {
@@ -70,7 +72,7 @@ const validateAndFixBindings = (
 			}
 		}
 
-		if (fixedElement.containerId && !elementMap.has(fixedElement.containerId)) {
+		if (typeof fixedElement.containerId === "string" && !elementMap.has(fixedElement.containerId)) {
 			fixedElement.containerId = null;
 		}
 

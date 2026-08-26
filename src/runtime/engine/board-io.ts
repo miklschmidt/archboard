@@ -155,7 +155,7 @@ export function ingestScene(
 	// the maps start empty and are filled from this scene alone.
 	const taken = new Set<string>(
 		sceneElements
-			.filter((raw): raw is { id: string } => !!raw && typeof (raw as any).id === "string")
+			.filter((raw): raw is { id: string } => !!raw && typeof (raw as Record<string, unknown>).id === "string")
 			.map((raw) => raw.id),
 	);
 	for (const raw of sceneElements) {
@@ -271,7 +271,7 @@ export function readNoteFile(file: string, root = requireVaultRoot()): NoteFile 
  *
  * Two jobs on top of the read, and only these two: turn an identity into a
  * path, and say what the note's own frontmatter claims. The bytes come back
- * exactly as any other read gets them.
+ * exactly as unknown other read gets them.
  */
 export function readBoardFile(
 	identity: Pick<BoardIdentity, "board" | "variant" | "displayName">,
@@ -368,7 +368,7 @@ export function renderContent(
 	const files = boardFilesMessage(content).files ?? {};
 	const { scene, elementCount } = buildScene(
 		stripBindingPresentationLinks(content.elements.values()),
-		files as any as Record<string, any>,
+		files as unknown as Record<string, unknown>,
 		{ keepServerFields: true },
 	);
 	// expandElements normalizes a missing link to null, so apply the same

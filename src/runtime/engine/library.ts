@@ -28,7 +28,7 @@ import logger from "./logger.js";
 export interface LibraryItem {
 	id: string;
 	status: "published" | "unpublished";
-	elements: any[];
+	elements: unknown[];
 	created: number;
 	name?: string;
 }
@@ -84,35 +84,36 @@ export function parseLibraryFile(json: string, setName: string): LibraryItem[] {
 	return parseLibraryDocument(JSON.parse(json), setName);
 }
 
-export function parseLibraryDocument(parsed: any, setName: string): LibraryItem[] {
+export function parseLibraryDocument(parsed: unknown, setName: string): LibraryItem[] {
 	if (!parsed || typeof parsed !== "object") {
 		throw new Error(`${setName}: not a library file`);
 	}
-	const raw: any[] = Array.isArray(parsed.libraryItems)
-		? parsed.libraryItems
-		: Array.isArray(parsed.library)
-			? parsed.library
+	const document = parsed as Record<string, unknown>;
+	const raw: unknown[] = Array.isArray(document.libraryItems)
+		? document.libraryItems
+		: Array.isArray(document.library)
+			? document.library
 			: [];
 
 	const items: LibraryItem[] = [];
 	raw.forEach((entry, index) => {
 		// v1: the item *is* its elements.
-		const elements = Array.isArray(entry) ? entry : entry?.elements;
+		const record = entry && typeof entry === "object" && !Array.isArray(entry) ? entry as Record<string, unknown> : null;
+		const elements = Array.isArray(entry) ? entry : record?.elements;
 		if (!Array.isArray(elements) || elements.length === 0) return;
 		const item: LibraryItem = {
 			// An item's own id is kept when it has one, so that installing the same
 			// library from the site later merges with the seeded copy instead of
 			// duplicating it — Excalidraw merges library items by id.
 			id:
-				(!Array.isArray(entry) && typeof entry.id === "string" && entry.id) ||
+				(record && typeof record.id === "string" && record.id) ||
 				deriveId(setName, index),
-			status: !Array.isArray(entry) && entry.status === "unpublished" ? "unpublished" : "published",
-			elements: elements.filter((el: any) => el && typeof el === "object" && !el.isDeleted),
+			status: record?.status === "unpublished" ? "unpublished" : "published",
+			elements: elements.filter((el: unknown) => el && typeof el === "object" && (el as Record<string, unknown>).isDeleted !== true),
 			created:
-				(!Array.isArray(entry) && typeof entry.created === "number" && entry.created) || Date.now(),
+				(record && typeof record.created === "number" && record.created) || Date.now(),
 		};
-		if (!Array.isArray(entry) && typeof entry.name === "string" && entry.name)
-			item.name = entry.name;
+		if (record && typeof record.name === "string" && record.name) item.name = record.name;
 		if (item.elements.length > 0) items.push(item);
 	});
 	return items;
