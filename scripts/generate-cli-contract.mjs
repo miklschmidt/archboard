@@ -100,7 +100,18 @@ const generated = [
 	[auditMarkdownPath, auditMarkdown + "\n"],
 	[proofJsonPath, proofJson],
 	[proofMarkdownPath, proofMarkdown.join("\n") + "\n"],
-];
+].map(([file, content]) => {
+	const formatted = Bun.spawnSync(["bunx", "oxfmt", "--stdin-filepath", file], {
+		cwd: root,
+		stdin: new TextEncoder().encode(content),
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	if (formatted.exitCode !== 0) {
+		throw new Error(`Could not format ${file}: ${formatted.stderr.toString()}`);
+	}
+	return [file, formatted.stdout.toString()];
+});
 
 let failures = 0;
 for (const [file, content] of generated) {
