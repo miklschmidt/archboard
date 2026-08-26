@@ -137,7 +137,8 @@ const server = Bun.serve({
 			return Response.json({ success: true, elements: document, ...(held ? { held } : {}) });
 		}
 		if (request.method === "GET" && url.pathname === "/api/elements/search") {
-			return Response.json({ success: true, elements: document, ...(held ? { held } : {}) });
+			const searched = url.searchParams.get("type") === "ellipse" ? [] : document;
+			return Response.json({ success: true, elements: searched, ...(held ? { held } : {}) });
 		}
 		if (request.method === "GET" && url.pathname === "/api/files") {
 			return Response.json({ success: true, files: {}, ...(held ? { held } : {}) });
