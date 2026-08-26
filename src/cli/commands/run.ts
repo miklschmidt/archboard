@@ -22,7 +22,13 @@ import { panesContract, selectionContract } from "./selection.js";
 import { paneCloseContract, paneContract, paneOpenContract } from "./pane.js";
 import { promote, demote } from "./promote.js";
 import { repoAddContract, repoContract, repoForgetContract, repoListContract } from "./repo.js";
-import * as snapshotCommands from "./snapshot.js";
+import {
+	SNAPSHOT_FLAG_SPEC,
+	snapshotContract,
+	snapshotListContract,
+	snapshotRestoreContract,
+	snapshotSaveContract,
+} from "./snapshot.js";
 import {
 	boardContract,
 	boardInfoContract,
@@ -439,40 +445,15 @@ const COMMANDS: Record<string, CommandRoute> = {
 			"mermaid [diagram.mmd|-] (or stdin)  (converts in the pane holding --board, so there is no --pane to pass; refused, converting nothing, when no pane is holding it)",
 	},
 	snapshot: {
-		owner: legacy(
-			snapshotCommands.snapshot,
-			"src/cli/commands/snapshot.ts",
-			"legacy subcommand dispatch",
-		),
+		owner: contract(snapshotContract, "src/cli/commands/snapshot.ts"),
 		children: {
-			save: child(
-				legacy(
-					snapshotCommands.snapshotSave,
-					"src/cli/commands/snapshot.ts",
-					"legacy args.ts",
-					"route-tail",
-				),
-			),
-			list: child(
-				legacy(
-					snapshotCommands.snapshotList,
-					"src/cli/commands/snapshot.ts",
-					"legacy args.ts",
-					"route-tail",
-				),
-			),
-			restore: child(
-				legacy(
-					snapshotCommands.snapshotRestore,
-					"src/cli/commands/snapshot.ts",
-					"legacy args.ts",
-					"route-tail",
-				),
-			),
+			save: child(contract(snapshotSaveContract, "src/cli/commands/snapshot.ts")),
+			list: child(contract(snapshotListContract, "src/cli/commands/snapshot.ts")),
+			restore: child(contract(snapshotRestoreContract, "src/cli/commands/snapshot.ts")),
 		},
 		childDiscovery: {
 			kind: "first-positional",
-			options: childDiscoveryOptions(snapshotCommands.SNAPSHOT_FLAG_SPEC),
+			options: childDiscoveryOptions(SNAPSHOT_FLAG_SPEC),
 		},
 		bare: {
 			kind: "namespace-refusal",

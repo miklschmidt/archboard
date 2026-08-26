@@ -308,10 +308,9 @@
 		{
 			"name": "snapshot",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/snapshot.ts",
-			"parserOwner": "legacy subcommand dispatch",
-			"handlerName": "snapshot",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"bare": {
 				"kind": "namespace-refusal",
 				"message": "Usage: snapshot save|list|restore [name]"
@@ -321,35 +320,28 @@
 				"options": {
 					"force": "flag"
 				}
-			},
-			"legacyArgv": "root-tail"
+			}
 		},
 		{
 			"name": "snapshot save",
 			"parent": "snapshot",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/snapshot.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "snapshotSave",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "snapshot list",
 			"parent": "snapshot",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/snapshot.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "snapshotList",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "snapshot restore",
 			"parent": "snapshot",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/snapshot.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "snapshotRestore",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "library",
@@ -4820,6 +4812,519 @@
 			]
 		},
 		{
+			"name": "snapshot",
+			"path": ["snapshot"],
+			"summary": "Save / list / restore named canvas snapshots",
+			"usage": "snapshot save|list|restore [name] [--force]",
+			"description": "Routes snapshot lifecycle commands.",
+			"examples": ["archboard snapshot list --board payments"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "force",
+					"spellings": ["--force"],
+					"value": "none",
+					"description": "force option"
+				},
+				{
+					"kind": "positional",
+					"key": "action",
+					"name": "subcommand",
+					"description": "Snapshot subcommand"
+				},
+				{
+					"kind": "positional",
+					"key": "name",
+					"name": "name",
+					"description": "Snapshot name"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"force": {
+							"default": false,
+							"type": "boolean"
+						},
+						"action": {
+							"type": "string"
+						},
+						"name": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["force", "tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"not": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "none",
+					"description": "Namespace refusal"
+				}
+			],
+			"outcomes": [],
+			"prerequisites": [],
+			"effects": [],
+			"refusals": [],
+			"relationships": []
+		},
+		{
+			"name": "snapshot save",
+			"path": ["snapshot", "save"],
+			"summary": "Save a named snapshot of one board",
+			"usage": "snapshot save <name>",
+			"description": "Captures the named board as an immutable snapshot.",
+			"examples": ["archboard snapshot save before --board payments --doing \"saving checkpoint\""],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "force",
+					"spellings": ["--force"],
+					"value": "none",
+					"description": "force option"
+				},
+				{
+					"kind": "positional",
+					"key": "name",
+					"name": "name",
+					"description": "Snapshot name"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"force": {
+							"default": false,
+							"type": "boolean"
+						},
+						"name": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["force", "tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"const": true
+					},
+					"name": {
+						"type": "string"
+					},
+					"elements": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"createdAt": {
+						"type": "string"
+					},
+					"held": {
+						"type": "object",
+						"properties": {
+							"board": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": ["board", "message"],
+						"additionalProperties": {}
+					}
+				},
+				"required": ["success", "name", "elements", "createdAt"],
+				"additionalProperties": false
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Saved snapshot",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board", "doing"],
+			"effects": ["write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board write was refused."
+				}
+			],
+			"relationships": [
+				{
+					"method": "POST",
+					"path": "/api/snapshots",
+					"cardinality": "one",
+					"description": "Save the snapshot"
+				}
+			]
+		},
+		{
+			"name": "snapshot list",
+			"path": ["snapshot", "list"],
+			"summary": "List snapshots for one board",
+			"usage": "snapshot list",
+			"description": "Lists snapshots associated with the named board.",
+			"examples": ["archboard snapshot list --board payments"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "force",
+					"spellings": ["--force"],
+					"value": "none",
+					"description": "force option"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"force": {
+							"default": false,
+							"type": "boolean"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["force", "tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "array",
+				"items": {
+					"type": "object",
+					"properties": {
+						"name": {
+							"type": "string"
+						},
+						"createdAt": {
+							"type": "string"
+						},
+						"elementCount": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 9007199254740991
+						}
+					},
+					"required": ["name", "createdAt"],
+					"additionalProperties": {}
+				}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "stderr-note",
+					"description": "Snapshot listing",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board"],
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/snapshots",
+					"cardinality": "one",
+					"description": "List snapshots"
+				}
+			]
+		},
+		{
+			"name": "snapshot restore",
+			"path": ["snapshot", "restore"],
+			"summary": "Restore a named board snapshot",
+			"usage": "snapshot restore <name> [--force]",
+			"description": "Reads the snapshot and target before clearing and restoring the board.",
+			"examples": [
+				"archboard snapshot restore before --board payments --doing \"restoring checkpoint\""
+			],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "force",
+					"spellings": ["--force"],
+					"value": "none",
+					"description": "force option"
+				},
+				{
+					"kind": "positional",
+					"key": "name",
+					"name": "name",
+					"description": "Snapshot name"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"force": {
+							"default": false,
+							"type": "boolean"
+						},
+						"name": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["force", "tail"],
+					"additionalProperties": false
+				},
+				"stages": [
+					{
+						"name": "snapshot-document",
+						"when": "after-read",
+						"description": "Server snapshot elements restored as one batch after clear",
+						"rules": [],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "array",
+							"items": {
+								"type": "object",
+								"properties": {
+									"id": {
+										"type": "string"
+									},
+									"type": {
+										"type": "string",
+										"enum": [
+											"rectangle",
+											"ellipse",
+											"diamond",
+											"arrow",
+											"text",
+											"line",
+											"freedraw",
+											"image"
+										]
+									},
+									"x": {
+										"type": "number"
+									},
+									"y": {
+										"type": "number"
+									}
+								},
+								"required": ["id", "type", "x", "y"],
+								"additionalProperties": {}
+							}
+						}
+					}
+				]
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"const": true
+					},
+					"name": {
+						"type": "string"
+					},
+					"board": {
+						"type": "string"
+					},
+					"restored": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"held": {
+						"type": "object",
+						"properties": {
+							"board": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": ["board", "message"],
+						"additionalProperties": {}
+					}
+				},
+				"required": ["success", "name", "board", "restored"],
+				"additionalProperties": false
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Restored snapshot",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board", "doing"],
+			"effects": ["read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board write was refused."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/snapshots/:name",
+					"cardinality": "one",
+					"description": "Read the snapshot"
+				},
+				{
+					"method": "GET",
+					"path": "/api/boards/info",
+					"cardinality": "one",
+					"description": "Read the target board"
+				},
+				{
+					"method": "DELETE",
+					"path": "/api/elements/clear",
+					"cardinality": "one",
+					"description": "Clear the target"
+				},
+				{
+					"method": "POST",
+					"path": "/api/elements/batch",
+					"cardinality": "one",
+					"description": "Restore elements"
+				}
+			]
+		},
+		{
 			"name": "clear",
 			"path": ["clear"],
 			"summary": "Clear the whole canvas",
@@ -5189,10 +5694,6 @@
 		"release",
 		"screenshot",
 		"mermaid",
-		"snapshot",
-		"snapshot save",
-		"snapshot list",
-		"snapshot restore",
 		"library",
 		"library list",
 		"library insert",
