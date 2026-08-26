@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:53'
-updated_date: '2026-08-26 07:51'
+updated_date: '2026-08-26 08:03'
 labels: []
 dependencies:
   - TASK-124
@@ -68,6 +68,8 @@ In parallel, trace real workflows from tests, task history, and architecture-boa
 12. For audit collapse candidates, obtain parent approval, read task-creation instructions, search duplicates, create focused linked or child tasks through Backlog, and record IDs. Do not implement collapses, TASK-123.02, or TASK-119 here.
 13. Commit in focused checkpoints for audit/design, the command-contract module and compatibility golden, and the four proof migrations plus generated artifacts. Stage explicit files and preserve parent-owned work.
 14. Run the command-contract and CLI suites, generation freshness, import boundaries, one-write/doing/version/boards/browser checks, two stable fix passes, bun run check, and the complete sequential test chain. Use independent Standards and Spec review over fixed base 43d0b982ac39346ae3057edf3c9fdffe400b2853 and remediate until both are clean.
+
+15. Approved review amendment superseding step 6: remove the ArgvParser, CommandHost, and PrerequisiteResolver dependency ports because remediation left only one production implementation of each. Private execution calls the concrete Commander adapter, host, and prerequisite implementations directly. Keep the two-argument public runCommand and the approved Archboard-owned handler types. Do not add test-only fake adapters or private-source tests merely to justify seams. Prove parsing, ordered prerequisites, held presentation, staged Zod behavior, artifact validation/write ordering, and network effects through the public contract and package CLI interfaces. Update the design to state that these are private implementations, not seams; introduce a seam later only when a second real adapter exists.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -97,5 +99,11 @@ author: @codex
 created: 2026-08-26 06:47
 ---
 Plan approved after independent high-stakes review. Approval requires the isolated Commander 15.0.0 Bun smoke to pass before package.json or bun.lock changes.
+---
+
+author: @codex
+created: 2026-08-26 08:03
+---
+Review amendment approved: remove hypothetical parser/host/prerequisite ports instead of restoring test-only fake adapters. Public interface and handler-facing types remain unchanged; tests stay at the module interface.
 ---
 <!-- COMMENTS:END -->
