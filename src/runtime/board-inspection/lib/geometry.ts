@@ -86,10 +86,11 @@ export type SegmentIntersection =
 	| { kind: "proper"; point: ExactPoint }
 	| { kind: "collinear"; points: [ExactPoint, ExactPoint] };
 
+const cross = (u: ExactPoint, v: ExactPoint) => u.x * v.y - u.y * v.x;
+
 export function intersectSegments(
 	a: ExactPoint, b: ExactPoint, c: ExactPoint, d: ExactPoint, tolerance: number,
 ): SegmentIntersection {
-	const cross = (u: ExactPoint, v: ExactPoint) => u.x * v.y - u.y * v.x;
 	const r = { x: b.x - a.x, y: b.y - a.y };
 	const s = { x: d.x - c.x, y: d.y - c.y };
 	const ca = { x: c.x - a.x, y: c.y - a.y };

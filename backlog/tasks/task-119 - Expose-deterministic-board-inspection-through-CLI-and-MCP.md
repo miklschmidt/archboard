@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 13:20'
+updated_date: '2026-08-26 13:21'
 labels:
   - ready-for-agent
 dependencies:
@@ -330,6 +330,8 @@ Checkpoint 3: added the inspection-only raw note reader and contract-backed chec
 Checkpoint 4: added dense before/after and pinned compare fixtures, pure and package-boundary inspection checks, exact broad-phase performance gates, strict normal-ingest evidence, no-side-effect vault snapshots, and negative-path browser fixed-point coverage. test:inspection (27 checks), type-check, test:suites, and diff checks passed.
 
 Checkpoint 5: extended current contract metadata to 34 commands and 58 paths while preserving the immutable 57-path compatibility subset. Added check-specific schema/effect/outcome assertions, exact general-help normalization, generated audit/proof files, and check outcome documentation. generator --check, test:contracts (58 proofs/969 checks), test:cli (579 checks), and diff checks passed.
+
+Paused for urgent skill-lint regression after all five approved implementation checkpoints were committed. Completed validation: type-check; test:inspection (27 checks); test:geometry; test:labels; test:branch; test:boundaries; test:module-scope; test:suites; generator --check; test:contracts (58 proofs/969 checks); test:cli (579 checks); and git diff --check at the recorded checkpoints. The first required bun run fix stopped before formatting because inspection lint found several issues. The cleanup checkpoint resolves every reported issue except structuralFindings complexity 150 versus the repository limit 60; focused type-check and diff checks pass, while focused bunx oxlint reports only that remaining complexity error. Remaining on resume: split structuralFindings without disabling lint, complete two stable fix passes, focused matrix, sequential fixed-point browser evidence, bun run check, separate bun run test, clean committed worktree, and independent fixed-range review. Work paused at a clean checkpoint for the urgent distributable-skill lint regression.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

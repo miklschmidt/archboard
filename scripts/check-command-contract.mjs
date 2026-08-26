@@ -63,8 +63,8 @@ check(
 	JSON.stringify(compatibility.publicPaths) ===
 		JSON.stringify(auditedPaths.filter((path) => compatibility.publicPaths.includes(path))),
 );
-for (const entry of audit.entries.filter((entry) => !compatibility.publicPaths.includes(entry.path))) {
-	check(`${entry.path} declares its introducing task`, typeof entry.introducedBy === "string" && entry.introducedBy.length > 0);
+for (const currentEntry of audit.entries.filter((candidate) => !compatibility.publicPaths.includes(candidate.path))) {
+	check(`${currentEntry.path} declares its introducing task`, typeof currentEntry.introducedBy === "string" && currentEntry.introducedBy.length > 0);
 }
 check(
 	"fixed-base compatibility uses executable record schema 2",

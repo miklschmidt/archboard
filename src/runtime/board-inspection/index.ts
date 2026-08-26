@@ -5,7 +5,34 @@ import {
 import { decodeRecords } from "./lib/decode.js";
 import { BROAD_PHASE_COMPARISON_LIMIT, detectBoard } from "./lib/detectors.js";
 
-export * from "./schemas.js";
+export {
+	CheckResultSchema,
+	ElementRefSchema,
+	FindingCodeSchema,
+	FontFamilySchema,
+	InspectionFindingSchema,
+	InspectionPolicyInputSchema,
+	InspectionPolicySchema,
+	InspectionReportSchema,
+	IntendedRoleSchema,
+	LibraryAttributionSchema,
+	NodeRefSchema,
+	ObstacleRefSchema,
+	SceneBBoxSchema,
+	ScenePointSchema,
+} from "./schemas.js";
+export type {
+	CheckResult,
+	ElementRef,
+	InspectionFinding,
+	InspectionPolicy,
+	InspectionPolicyInput,
+	InspectionReport,
+	NodeRef,
+	ObstacleRef,
+	SceneBBox,
+	ScenePoint,
+} from "./schemas.js";
 export { formatInspectionText } from "./lib/format-text.js";
 export { BROAD_PHASE_COMPARISON_LIMIT } from "./lib/detectors.js";
 

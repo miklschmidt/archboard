@@ -205,9 +205,9 @@ export function buildInspectionModel(records: readonly DecodedRecord[]): Inspect
 	return { byId, nodes, nodeOfElement, confirmedLabels, containerOnlyIds, obstacles };
 }
 
-export function semanticParents(model: InspectionModel, nodeId: string | undefined): Set<string> {
+export function semanticParents(model: InspectionModel, startingNodeId: string | undefined): Set<string> {
 	const found = new Set<string>();
-	let current = nodeId ? model.nodes.get(nodeId)?.parentId : null;
+	let current = startingNodeId ? model.nodes.get(startingNodeId)?.parentId : null;
 	while (current && !found.has(current)) {
 		found.add(current);
 		current = model.nodes.get(current)?.parentId ?? null;
