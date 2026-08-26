@@ -129,5 +129,10 @@ path list. Introspection is an in-process generation interface and checked-in
 JSON. It is not a public command, REST route, MCP replacement, or second agent
 command surface.
 
-The independent argv golden records legacy bytes at the fixed base. Tests run
-those cases through the package binary and concrete Commander implementation.
+The fixed-base compatibility records are executable package-binary cases, not
+scenario labels. Each one fixes argv, exact stdout and stderr bytes, any
+documented normalization, merged contact and stream order, exit, held state,
+prerequisite contacts, REST and local effects, and artifact commits. The CLI
+checker replays every record against HEAD. Help hashes cover all 57 paths; the
+ordered records cover the approved status, board-save, immediate-diagnostic,
+binding-resolution, and late-validation cases.
