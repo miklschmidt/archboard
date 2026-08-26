@@ -38,19 +38,20 @@ interface DetectionResult {
 	findings: InspectionFinding[];
 	broadPhaseComparisons: number;
 }
-interface FindingInput {
-	code: string;
-	reason: string;
-	severity: "error" | "warning";
-	affectsCoverage: boolean;
-	details: Record<string, unknown>;
-	message: string;
-	elements?: readonly ElementRef[];
-	nodes?: readonly NodeRef[];
-	obstacles?: readonly ObstacleRef[];
-	points?: readonly ExactPoint[];
-	affected?: ExactBox | null;
-}
+type FindingInput = InspectionFinding extends infer Finding
+	? Finding extends InspectionFinding
+		? Omit<
+				Finding,
+				"elements" | "nodes" | "obstacles" | "points" | "affectedBBox" | "focusBBox"
+			> & {
+				elements?: readonly ElementRef[];
+				nodes?: readonly NodeRef[];
+				obstacles?: readonly ObstacleRef[];
+				points?: readonly ExactPoint[];
+				affected?: ExactBox | null;
+			}
+		: never
+	: never;
 
 const CODE_ORDER = [
 	"INVALID_RENDER_GEOMETRY",
@@ -67,6 +68,58 @@ const CODE_ORDER = [
 	"NODE_OVERLAP",
 	"LABEL_OVERLAP",
 ];
+
+const REASON_ORDER = [
+	"invalid-render-fields",
+	"unlocatable-record",
+	"width",
+	"height",
+	"width-and-height",
+	"invalid-element-identity",
+	"duplicate-element-id",
+	"missing-binding-target",
+	"invalid-binding-target-type",
+	"missing-binding-reciprocal",
+	"malformed-start-binding",
+	"malformed-end-binding",
+	"malformed-bound-elements",
+	"malformed-container-id",
+	"dangling-bound-text",
+	"dangling-bound-arrow",
+	"conflicting-bound-label-owner",
+	"persisted-agent-endpoint",
+	"invalid-node-metadata",
+	"invalid-code-binding",
+	"derived-link-persisted",
+	"invalid-library-attribution",
+	"orphan",
+	"duplicate",
+	"missing-reciprocal",
+	"conflicting-owner",
+	"drift",
+	"persisted-seed",
+	"missing-font-family",
+	"disallowed-font-family",
+	"invalid-font-family",
+	"unsupported-type",
+	"rotation",
+	"curve",
+	"rounded-or-elbowed",
+	"points-missing",
+	"points-not-array",
+	"points-empty",
+	"points-one-point",
+	"malformed-point",
+	"zero-length",
+	"collinear-overlap",
+	"broad-phase-comparison-ceiling",
+	"leaf-footprint-interior",
+	"obstacle-footprint-interior",
+	"proper-interior-crossing",
+	"leaf-footprint-overlap",
+	"label-node-overlap",
+	"label-label-overlap",
+] as const;
 
 function make(input: FindingInput): InspectionFinding {
 	const affectedBBox =
@@ -92,6 +145,13 @@ function make(input: FindingInput): InspectionFinding {
 const refOrder = (a: ElementRef, b: ElementRef) =>
 	(a.id ?? "").localeCompare(b.id ?? "") || a.sourceIndex - b.sourceIndex;
 const pointOrder = (a: ScenePoint, b: ScenePoint) => a.x - b.x || a.y - b.y;
+const numberListOrder = (a: readonly number[], b: readonly number[]): number => {
+	for (let index = 0; index < Math.min(a.length, b.length); index += 1) {
+		const difference = a[index]! - b[index]!;
+		if (difference) return difference;
+	}
+	return a.length - b.length;
+};
 const uniqueRefs = (records: readonly DecodedRecord[]) => [
 	...new Map(records.map((record) => [`${record.sourceIndex}`, record.ref])).values(),
 ];
@@ -100,8 +160,13 @@ const boxesOf = (records: readonly DecodedRecord[]): ExactBox[] =>
 const affectedOf = (records: readonly DecodedRecord[]): ExactBox | null =>
 	unionBoxes(boxesOf(records));
 
-function identityRoles(record: DecodedRecord): string[] {
-	const roles = new Set<string>();
+type IntendedRole = Extract<
+	InspectionFinding,
+	{ code: "BROKEN_REFERENCE"; reason: "invalid-element-identity" }
+>["details"]["intendedRoles"][number];
+
+function identityRoles(record: DecodedRecord): IntendedRole[] {
+	const roles = new Set<IntendedRole>();
 	const type = record.type;
 	const metadata = archboardMetadata(record);
 	if (type === "arrow" || type === "line") roles.add("connector");
@@ -130,30 +195,37 @@ function identityFindings(records: readonly DecodedRecord[]): InspectionFinding[
 		if (!record.id) {
 			const roles = identityRoles(record);
 			const missing = !record.raw || !("id" in record.raw) || rawId === undefined;
-			const issue = missing ? "missing-id" : rawId === "" ? "empty-string-id" : "non-string-id";
-			const rawIdType = !record.raw || !("id" in record.raw) ? "missing" : kindOf(rawId);
+			const issue: "missing-id" | "empty-string-id" | "non-string-id" = missing
+				? "missing-id"
+				: rawId === ""
+					? "empty-string-id"
+					: "non-string-id";
+			const rawIdType: ReturnType<typeof kindOf> | "missing" =
+				!record.raw || !("id" in record.raw) ? "missing" : kindOf(rawId);
+			const shared = {
+				code: "BROKEN_REFERENCE",
+				reason: "invalid-element-identity",
+				severity: "error",
+				message: `Element at source index ${record.sourceIndex} has ${issue}.`,
+				elements: [record.ref],
+				affected:
+					record.box ??
+					(record.raw && typeof record.raw.x === "number" && typeof record.raw.y === "number"
+						? { x: record.raw.x, y: record.raw.y, width: 0, height: 0 }
+						: null),
+			} as const;
+			const details = {
+				identityIssue: issue,
+				rawIdType,
+				rawIdDescription: stableDescription(rawId),
+				sourceIndex: record.sourceIndex,
+				intendedRoles: roles,
+				availableElementType: record.type,
+			};
 			findings.push(
-				make({
-					code: "BROKEN_REFERENCE",
-					reason: "invalid-element-identity",
-					severity: "error",
-					affectsCoverage: roles.length > 0,
-					details: {
-						identityIssue: issue,
-						rawIdType,
-						rawIdDescription: stableDescription(rawId),
-						sourceIndex: record.sourceIndex,
-						intendedRoles: roles,
-						availableElementType: record.type,
-					},
-					message: `Element at source index ${record.sourceIndex} has ${issue}.`,
-					elements: [record.ref],
-					affected:
-						record.box ??
-						(record.raw && typeof record.raw.x === "number" && typeof record.raw.y === "number"
-							? { x: record.raw.x, y: record.raw.y, width: 0, height: 0 }
-							: null),
-				}),
+				roles.length > 0
+					? make({ ...shared, affectsCoverage: true, details })
+					: make({ ...shared, affectsCoverage: false, details: { ...details, intendedRoles: [] } }),
 			);
 		} else {
 			const list = duplicate.get(record.id) ?? [];
@@ -224,6 +296,7 @@ function renderFindings(records: readonly DecodedRecord[]): InspectionFinding[] 
 					},
 					message: `Element ${record.id ?? `at source index ${record.sourceIndex}`} has invalid render geometry.`,
 					elements: [record.ref],
+					points: [{ x: raw.x as number, y: raw.y as number }],
 					affected: { x: raw.x as number, y: raw.y as number, width: 0, height: 0 },
 				}),
 			);
@@ -234,10 +307,32 @@ function renderFindings(records: readonly DecodedRecord[]): InspectionFinding[] 
 type RecordMap = ReadonlyMap<string, DecodedRecord>;
 type RawRecord = Readonly<Record<string, unknown>>;
 
+const locatableOrigin = (raw: RawRecord): raw is RawRecord & { x: number; y: number } =>
+	typeof raw.x === "number" &&
+	Number.isFinite(raw.x) &&
+	typeof raw.y === "number" &&
+	Number.isFinite(raw.y);
+
+const storedExtent = (record: DecodedRecord, raw: RawRecord): ExactBox | null =>
+	record.box ?? (locatableOrigin(raw) ? { x: raw.x, y: raw.y, width: 0, height: 0 } : null);
+
+function decodedPathEvidence(
+	record: DecodedRecord,
+	raw: RawRecord,
+	points: readonly ExactPoint[],
+): { points: readonly ExactPoint[]; affected: ExactBox | null } {
+	if (!locatableOrigin(raw)) return { points: [], affected: null };
+	return {
+		points,
+		affected: points.length > 0 ? pointBox(points) : storedExtent(record, raw),
+	};
+}
+
 function unusablePathFinding(record: DecodedRecord, raw: RawRecord): InspectionFinding {
 	const decoded = decodePath(record);
 	if (decoded.ok) throw new Error("usable connector path passed to unusablePathFinding");
-	if (decoded.issue === "malformed-point")
+	if (decoded.issue === "malformed-point") {
+		const evidence = decodedPathEvidence(record, raw, decoded.points);
 		return make({
 			code: "AMBIGUOUS_GEOMETRY",
 			reason: "malformed-point",
@@ -251,20 +346,24 @@ function unusablePathFinding(record: DecodedRecord, raw: RawRecord): InspectionF
 			},
 			message: `Connector ${record.id ?? record.sourceIndex} has a malformed point.`,
 			elements: [record.ref],
-			points: decoded.points,
-			affected: decoded.points.length ? pointBox(decoded.points) : record.box,
+			...evidence,
 		});
-	const reason =
-		decoded.issue === "missing"
-			? "points-missing"
-			: decoded.issue === "non-array"
-				? "points-not-array"
-				: decoded.issue === "empty"
-					? "points-empty"
-					: "points-one-point";
-	const details =
-		reason === "points-missing"
-			? {
+	}
+	const evidence = decodedPathEvidence(record, raw, decoded.points ?? []);
+	const shared = {
+		code: "AMBIGUOUS_GEOMETRY" as const,
+		severity: "warning" as const,
+		affectsCoverage: true as const,
+		message: `Connector ${record.id ?? record.sourceIndex} has no usable path.`,
+		elements: [record.ref],
+		...evidence,
+	};
+	switch (decoded.issue) {
+		case "missing":
+			return make({
+				...shared,
+				reason: "points-missing",
+				details: {
 					connectorId: record.id,
 					sourceIndex: record.sourceIndex,
 					rawPointsKind: "missing",
@@ -272,47 +371,51 @@ function unusablePathFinding(record: DecodedRecord, raw: RawRecord): InspectionF
 					pointCount: null,
 					minimumRequired: 2,
 					issue: "missing",
-				}
-			: reason === "points-not-array"
-				? {
-						connectorId: record.id,
-						sourceIndex: record.sourceIndex,
-						rawPointsKind: kindOf(raw.points),
-						rawPointsDescription: stableDescription(raw.points),
-						pointCount: null,
-						minimumRequired: 2,
-						issue: "non-array",
-					}
-				: reason === "points-empty"
-					? {
-							connectorId: record.id,
-							sourceIndex: record.sourceIndex,
-							rawPointsKind: "array",
-							rawPointsDescription: "array",
-							pointCount: 0,
-							minimumRequired: 2,
-							issue: "empty",
-						}
-					: {
-							connectorId: record.id,
-							sourceIndex: record.sourceIndex,
-							rawPointsKind: "array",
-							rawPointsDescription: "array",
-							pointCount: 1,
-							minimumRequired: 2,
-							issue: "insufficient-cardinality",
-						};
-	return make({
-		code: "AMBIGUOUS_GEOMETRY",
-		reason,
-		severity: "warning",
-		affectsCoverage: true,
-		details,
-		message: `Connector ${record.id ?? record.sourceIndex} has no usable path.`,
-		elements: [record.ref],
-		points: decoded.points ?? [],
-		affected: decoded.points?.length ? pointBox(decoded.points) : record.box,
-	});
+				},
+			});
+		case "non-array":
+			return make({
+				...shared,
+				reason: "points-not-array",
+				details: {
+					connectorId: record.id,
+					sourceIndex: record.sourceIndex,
+					rawPointsKind: kindOf(raw.points),
+					rawPointsDescription: stableDescription(raw.points),
+					pointCount: null,
+					minimumRequired: 2,
+					issue: "non-array",
+				},
+			});
+		case "empty":
+			return make({
+				...shared,
+				reason: "points-empty",
+				details: {
+					connectorId: record.id,
+					sourceIndex: record.sourceIndex,
+					rawPointsKind: "array",
+					rawPointsDescription: "array",
+					pointCount: 0,
+					minimumRequired: 2,
+					issue: "empty",
+				},
+			});
+		case "one-point":
+			return make({
+				...shared,
+				reason: "points-one-point",
+				details: {
+					connectorId: record.id,
+					sourceIndex: record.sourceIndex,
+					rawPointsKind: "array",
+					rawPointsDescription: "array",
+					pointCount: 1,
+					minimumRequired: 2,
+					issue: "insufficient-cardinality",
+				},
+			});
+	}
 }
 
 function connectorGeometryFindings(
@@ -323,18 +426,24 @@ function connectorGeometryFindings(
 ): InspectionFinding[] {
 	const findings: InspectionFinding[] = [];
 	const refs = [record.ref];
+	const decoded = decodePath(record);
+	const decodedPoints = decoded.points ?? [];
+	const pathEvidence = decodedPathEvidence(record, raw, decodedPoints);
 	const angle = raw.angle;
-	if (typeof angle === "number" && Number.isFinite(angle) && angle !== 0)
+	if (angle !== undefined && angle !== 0)
 		findings.push(
 			make({
 				code: "UNSUPPORTED_GEOMETRY",
 				reason: "rotation",
 				severity: "warning",
 				affectsCoverage: true,
-				details: { angle },
+				details: {
+					angle:
+						typeof angle === "number" && Number.isFinite(angle) ? angle : stableDescription(angle),
+				},
 				message: `Connector ${record.id ?? record.sourceIndex} is rotated.`,
 				elements: refs,
-				affected: record.box,
+				...pathEvidence,
 			}),
 		);
 	if (raw.curve !== undefined || raw.curveKind !== undefined)
@@ -347,7 +456,7 @@ function connectorGeometryFindings(
 				details: { curveKind: stableDescription(raw.curveKind ?? raw.curve) },
 				message: `Connector ${record.id ?? record.sourceIndex} is curved.`,
 				elements: refs,
-				affected: record.box,
+				...pathEvidence,
 			}),
 		);
 	if (raw.roundness != null || raw.elbowed === true || raw.fixedSegments != null)
@@ -364,10 +473,9 @@ function connectorGeometryFindings(
 				},
 				message: `Connector ${record.id ?? record.sourceIndex} uses rounded or elbowed geometry.`,
 				elements: refs,
-				affected: record.box,
+				...pathEvidence,
 			}),
 		);
-	const decoded = decodePath(record);
 	if (!decoded.ok) return [...findings, unusablePathFinding(record, raw)];
 	segments.push(
 		...decoded.segments.filter((segment) => !decoded.zeroSegments.includes(segment.index)),
@@ -423,16 +531,32 @@ function connectorGeometryFindings(
 	return findings;
 }
 
+type BindingIssue =
+	| "not-object"
+	| "array"
+	| "missing-element-id"
+	| "empty-element-id"
+	| "non-string-element-id"
+	| "missing-focus"
+	| "nonfinite-focus"
+	| "missing-gap"
+	| "nonfinite-gap"
+	| "invalid-fixed-point";
+type BlockingBindingIssue = Extract<
+	BindingIssue,
+	"not-object" | "array" | "missing-element-id" | "empty-element-id" | "non-string-element-id"
+>;
+
 function bindingIssue(value: unknown): {
 	binding: Record<string, unknown> | null;
-	issue: string | null;
+	issue: BindingIssue | null;
 	readableTargetId: string | null;
 } {
 	const binding =
 		value && typeof value === "object" && !Array.isArray(value)
 			? (value as Record<string, unknown>)
 			: null;
-	let issue: string | null = null;
+	let issue: BindingIssue | null = null;
 	if (!binding) issue = Array.isArray(value) ? "array" : "not-object";
 	else if (!("elementId" in binding)) issue = "missing-element-id";
 	else if (binding.elementId === "") issue = "empty-element-id";
@@ -457,7 +581,7 @@ function bindingIssue(value: unknown): {
 	return { binding, issue, readableTargetId };
 }
 
-const bindingBlocksClassification = (issue: string): boolean =>
+const bindingBlocksClassification = (issue: BindingIssue): issue is BlockingBindingIssue =>
 	[
 		"not-object",
 		"array",
@@ -476,26 +600,46 @@ function connectorBindingFindings(
 		const value = raw[`${end}Binding`];
 		if (value == null) continue;
 		const { issue, readableTargetId } = bindingIssue(value);
-		if (issue)
-			findings.push(
-				make({
-					code: "BROKEN_REFERENCE",
-					reason: `malformed-${end}-binding`,
-					severity: "error",
-					affectsCoverage: bindingBlocksClassification(issue),
-					details: {
-						connectorId: record.id,
-						sourceIndex: record.sourceIndex,
-						rawKind: kindOf(value),
-						issue,
-						readableTargetId,
-						classificationBlocked: bindingBlocksClassification(issue),
-					},
-					message: `Connector ${record.id ?? record.sourceIndex} has a malformed ${end} binding.`,
-					elements: [record.ref],
-					affected: record.box,
-				}),
-			);
+		if (issue) {
+			const shared = {
+				code: "BROKEN_REFERENCE",
+				reason: `malformed-${end}-binding` as const,
+				severity: "error",
+				message: `Connector ${record.id ?? record.sourceIndex} has a malformed ${end} binding.`,
+				elements: [record.ref],
+				affected: record.box,
+			} as const;
+			if (bindingBlocksClassification(issue))
+				findings.push(
+					make({
+						...shared,
+						affectsCoverage: true,
+						details: {
+							connectorId: record.id,
+							sourceIndex: record.sourceIndex,
+							rawKind: kindOf(value),
+							issue,
+							readableTargetId,
+							classificationBlocked: true,
+						},
+					}),
+				);
+			else
+				findings.push(
+					make({
+						...shared,
+						affectsCoverage: false,
+						details: {
+							connectorId: record.id,
+							sourceIndex: record.sourceIndex,
+							rawKind: kindOf(value),
+							issue,
+							readableTargetId,
+							classificationBlocked: false,
+						},
+					}),
+				);
+		}
 		if (!readableTargetId) continue;
 		const target = byId.get(readableTargetId);
 		if (!target)
@@ -599,7 +743,15 @@ function boundElementFindings(
 	if (bounds == null) return [];
 	const findings: InspectionFinding[] = [];
 	const readableEntries: Array<{ id: string; type: "text" | "arrow" }> = [];
-	const problems: Array<{ issue: string; entryIndex: number | null }> = [];
+	type BoundElementIssue =
+		| "not-array"
+		| "entry-not-object"
+		| "missing-id"
+		| "empty-id"
+		| "non-string-id"
+		| "missing-type"
+		| "invalid-type";
+	const problems: Array<{ issue: BoundElementIssue; entryIndex: number | null }> = [];
 	if (!Array.isArray(bounds)) problems.push({ issue: "not-array", entryIndex: null });
 	else
 		bounds.forEach((entry, entryIndex) => {
@@ -607,7 +759,7 @@ function boundElementFindings(
 				entry && typeof entry === "object" && !Array.isArray(entry)
 					? (entry as Record<string, unknown>)
 					: null;
-			let issue: string | null = null;
+			let issue: BoundElementIssue | null = null;
 			if (!item) issue = "entry-not-object";
 			else if (!("id" in item)) issue = "missing-id";
 			else if (item.id === "") issue = "empty-id";
@@ -731,6 +883,14 @@ function fontFindings(
 ): InspectionFinding[] {
 	if (record.type !== "text") return [];
 	const allowed = policy.allowedFontFamilies;
+	const points = record.box
+		? [
+				{
+					x: record.box.x + record.box.width / 2,
+					y: record.box.y + record.box.height / 2,
+				},
+			]
+		: [];
 	if (!("fontFamily" in raw) || raw.fontFamily === undefined)
 		return allowed !== "any" && !allowed.includes(1)
 			? [
@@ -742,6 +902,7 @@ function fontFindings(
 						details: { effectiveFamily: 1, allowedFamilies: allowed },
 						message: `Text ${record.id ?? record.sourceIndex} uses legacy font family 1.`,
 						elements: [record.ref],
+						points,
 						affected: record.box,
 					}),
 				]
@@ -764,6 +925,7 @@ function fontFindings(
 				},
 				message: `Text ${record.id ?? record.sourceIndex} has invalid persisted fontFamily.`,
 				elements: [record.ref],
+				points,
 				affected: record.box,
 			}),
 		];
@@ -781,6 +943,7 @@ function fontFindings(
 					},
 					message: `Text ${record.id ?? record.sourceIndex} uses disallowed font family ${raw.fontFamily}.`,
 					elements: [record.ref],
+					points,
 					affected: record.box,
 				}),
 			]
@@ -815,25 +978,69 @@ function containerFindings(record: DecodedRecord, raw: RawRecord): InspectionFin
 	];
 }
 
-function libraryFindings(record: DecodedRecord): InspectionFinding[] {
+function libraryFindings(record: DecodedRecord, model: InspectionModel): InspectionFinding[] {
 	const library = libraryAttribution(record);
 	if (!library || library.valid || !record.id) return [];
-	return [
-		make({
-			code: "BROKEN_REFERENCE",
-			reason: "invalid-library-attribution",
-			severity: "error",
-			affectsCoverage: groupIds(record).length < 1,
-			details: {
-				elementId: record.id,
-				issues: library.issues,
-				rescuedByGroup: groupIds(record).length > 0,
-			},
-			message: `Element ${record.id} has invalid library attribution.`,
-			elements: [record.ref],
-			affected: record.box,
-		}),
-	];
+	const rescuedByGroup = model.qualifyingGroupedObstacleElementIds.has(record.id);
+	const shared = {
+		code: "BROKEN_REFERENCE",
+		reason: "invalid-library-attribution",
+		severity: "error",
+		message: `Element ${record.id} has invalid library attribution.`,
+		elements: [record.ref],
+		affected: record.box,
+	} as const;
+	return rescuedByGroup
+		? [
+				make({
+					...shared,
+					affectsCoverage: false,
+					details: {
+						elementId: record.id,
+						issues: library.issues,
+						rescuedByGroup: true,
+					},
+				}),
+			]
+		: [
+				make({
+					...shared,
+					affectsCoverage: true,
+					details: {
+						elementId: record.id,
+						issues: library.issues,
+						rescuedByGroup: false,
+					},
+				}),
+			];
+}
+
+const KNOWN_ELEMENT_TYPES = new Set([
+	"rectangle",
+	"ellipse",
+	"diamond",
+	"frame",
+	"text",
+	"arrow",
+	"line",
+	"image",
+	"freedraw",
+]);
+
+function hasCoverageRoleEvidence(record: DecodedRecord): boolean {
+	const raw = record.raw;
+	const metadata = archboardMetadata(record);
+	return (
+		identityRoles(record).length > 0 ||
+		libraryAttribution(record) !== null ||
+		groupIds(record).length > 0 ||
+		(metadata !== null && "node" in metadata) ||
+		raw?.boundElements !== undefined ||
+		raw?.containerId !== undefined ||
+		raw?.startBinding !== undefined ||
+		raw?.endBinding !== undefined ||
+		raw?.points !== undefined
+	);
 }
 
 function unsupportedGeometryFindings(record: DecodedRecord, raw: RawRecord): InspectionFinding[] {
@@ -841,10 +1048,9 @@ function unsupportedGeometryFindings(record: DecodedRecord, raw: RawRecord): Ins
 	if (
 		record.type !== "arrow" &&
 		record.type !== "line" &&
-		typeof raw.angle === "number" &&
-		Number.isFinite(raw.angle) &&
+		raw.angle !== undefined &&
 		raw.angle !== 0 &&
-		identityRoles(record).length > 0
+		hasCoverageRoleEvidence(record)
 	)
 		findings.push(
 			make({
@@ -852,54 +1058,51 @@ function unsupportedGeometryFindings(record: DecodedRecord, raw: RawRecord): Ins
 				reason: "rotation",
 				severity: "warning",
 				affectsCoverage: true,
-				details: { angle: raw.angle },
+				details: {
+					angle:
+						typeof raw.angle === "number" && Number.isFinite(raw.angle)
+							? raw.angle
+							: stableDescription(raw.angle),
+				},
 				message: `Element ${record.id ?? record.sourceIndex} is rotated.`,
 				elements: [record.ref],
 				affected: record.box,
 			}),
 		);
+	const rawType = raw.type;
+	const canonicalType = typeof rawType === "string" && rawType.length > 0;
 	if (
-		record.type &&
-		![
-			"rectangle",
-			"ellipse",
-			"diamond",
-			"frame",
-			"text",
-			"arrow",
-			"line",
-			"image",
-			"freedraw",
-		].includes(record.type) &&
-		identityRoles(record).length > 0
-	)
+		(!canonicalType || !KNOWN_ELEMENT_TYPES.has(typeof rawType === "string" ? rawType : "")) &&
+		hasCoverageRoleEvidence(record)
+	) {
+		const rawTypeDescription = typeof rawType === "string" ? rawType : stableDescription(rawType);
 		findings.push(
 			make({
 				code: "UNSUPPORTED_GEOMETRY",
 				reason: "unsupported-type",
 				severity: "warning",
 				affectsCoverage: true,
-				details: { rawType: record.type },
-				message: `Element ${record.id ?? record.sourceIndex} has unsupported type ${record.type}.`,
+				details: { rawType: rawTypeDescription },
+				message: `Element ${record.id ?? record.sourceIndex} has unsupported type ${rawTypeDescription}.`,
 				elements: [record.ref],
 				affected: record.box,
 			}),
 		);
+	}
 	return findings;
 }
 
 function structuralFindings(
 	records: readonly DecodedRecord[],
 	policy: InspectionPolicy,
+	model: InspectionModel,
 ): {
 	findings: InspectionFinding[];
 	segments: Segment[];
 } {
 	const findings: InspectionFinding[] = [];
 	const segments: Segment[] = [];
-	const byId = new Map(
-		records.filter((record) => record.live && record.id).map((record) => [record.id!, record]),
-	);
+	const byId = model.byId;
 	for (const record of records.filter((candidate) => candidate.live && candidate.raw)) {
 		const raw = record.raw!;
 		if (record.type === "arrow" || record.type === "line") {
@@ -910,7 +1113,7 @@ function structuralFindings(
 		findings.push(...boundElementFindings(record, raw, byId));
 		findings.push(...containerFindings(record, raw));
 		findings.push(...metadataFindings(record, raw));
-		findings.push(...libraryFindings(record));
+		findings.push(...libraryFindings(record, model));
 		findings.push(...fontFindings(record, raw, policy));
 		findings.push(...unsupportedGeometryFindings(record, raw));
 	}
@@ -1482,22 +1685,37 @@ function sortFindings(findings: readonly InspectionFinding[]): InspectionFinding
 		if (severity) return severity;
 		const code = CODE_ORDER.indexOf(a.code) - CODE_ORDER.indexOf(b.code);
 		if (code) return code;
-		const reason = a.reason.localeCompare(b.reason);
+		const reason = REASON_ORDER.indexOf(a.reason) - REASON_ORDER.indexOf(b.reason);
 		if (reason) return reason;
-		const refsA = [
-			...a.nodes.map((n) => n.id),
-			...a.obstacles.map((o) => o.id),
-			...a.elements.map((e) => e.id ?? `#${e.sourceIndex}`),
-		].join("\0");
-		const refsB = [
-			...b.nodes.map((n) => n.id),
-			...b.obstacles.map((o) => o.id),
-			...b.elements.map((e) => e.id ?? `#${e.sourceIndex}`),
-		].join("\0");
+		const nodes = a.nodes
+			.map((node) => node.id)
+			.join("\0")
+			.localeCompare(b.nodes.map((node) => node.id).join("\0"));
+		if (nodes) return nodes;
+		const obstacles = a.obstacles
+			.map((obstacle) => obstacle.id)
+			.join("\0")
+			.localeCompare(b.obstacles.map((obstacle) => obstacle.id).join("\0"));
+		if (obstacles) return obstacles;
+		const elements = a.elements
+			.map((element) => element.id ?? "")
+			.join("\0")
+			.localeCompare(b.elements.map((element) => element.id ?? "").join("\0"));
+		if (elements) return elements;
+		const sources = numberListOrder(
+			a.elements.map((element) => element.sourceIndex),
+			b.elements.map((element) => element.sourceIndex),
+		);
+		if (sources) return sources;
+		const boxA = a.affectedBBox;
+		const boxB = b.affectedBBox;
 		return (
-			refsA.localeCompare(refsB) ||
 			(a.points[0]?.x ?? Infinity) - (b.points[0]?.x ?? Infinity) ||
 			(a.points[0]?.y ?? Infinity) - (b.points[0]?.y ?? Infinity) ||
+			(boxA?.x ?? Infinity) - (boxB?.x ?? Infinity) ||
+			(boxA?.y ?? Infinity) - (boxB?.y ?? Infinity) ||
+			(boxA?.width ?? Infinity) - (boxB?.width ?? Infinity) ||
+			(boxA?.height ?? Infinity) - (boxB?.height ?? Infinity) ||
 			a.message.localeCompare(b.message)
 		);
 	});
@@ -1508,9 +1726,9 @@ export function detectBoard(
 	policy: InspectionPolicy,
 ): DetectionResult {
 	const findings = [...renderFindings(records), ...identityFindings(records)];
-	const structural = structuralFindings(records, policy);
-	findings.push(...structural.findings);
 	const model = buildInspectionModel(records);
+	const structural = structuralFindings(records, policy, model);
+	findings.push(...structural.findings);
 	findings.push(...labelFindings(records, model));
 	const collisions = collisionFindings(records, model, structural.segments, policy);
 	findings.push(...collisions.findings);

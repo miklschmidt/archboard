@@ -2,15 +2,20 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const src = (file) => path.join(root, "src", file);
 const fixture = (file) =>
 	JSON.parse(fs.readFileSync(path.join(root, "scripts/fixtures/board-inspection", file), "utf8"));
-const { inspectBoard, InspectionReportSchema, CheckResultSchema, formatInspectionText } =
-	await import(src("runtime/board-inspection/index.ts"));
+const {
+	inspectBoard,
+	InspectionFindingSchema,
+	InspectionReportSchema,
+	CheckResultSchema,
+	formatInspectionText,
+} = await import(src("runtime/board-inspection/index.ts"));
 const { compareBoards } = await import(src("runtime/engine/compare.ts"));
 const { renderBoardNote } = await import(src("runtime/engine/board.ts"));
 const { ingestScene } = await import(src("runtime/engine/board-io.ts"));
@@ -61,6 +66,1732 @@ for (const finding of malformedReport.findings)
 				finding.focusBBox.width === finding.affectedBBox.width + 32 &&
 				finding.focusBBox.height === finding.affectedBBox.height + 32,
 		);
+
+const findingCases = [
+	[
+		"INVALID_RENDER_GEOMETRY",
+		"invalid-render-fields",
+		"error",
+		true,
+		{ invalidFields: ["width"], valueKinds: { width: "null" } },
+	],
+	[
+		"INVALID_RENDER_GEOMETRY",
+		"unlocatable-record",
+		"error",
+		true,
+		{ recordKind: "object", invalidFields: ["x"], sourceIndex: 0 },
+	],
+	...["width", "height", "width-and-height"].map((reason) => [
+		"STALE_LINEAR_DIMENSIONS",
+		reason,
+		"error",
+		false,
+		{
+			storedWidth: 10,
+			storedHeight: 10,
+			measuredWidth: 11,
+			measuredHeight: 11,
+			widthDelta: 1,
+			heightDelta: 1,
+		},
+	]),
+	[
+		"BROKEN_REFERENCE",
+		"invalid-element-identity",
+		"error",
+		true,
+		{
+			identityIssue: "missing-id",
+			rawIdType: "missing",
+			rawIdDescription: "missing",
+			sourceIndex: 0,
+			intendedRoles: ["connector"],
+			availableElementType: "arrow",
+		},
+	],
+	[
+		"BROKEN_REFERENCE",
+		"duplicate-element-id",
+		"error",
+		true,
+		{ duplicateId: "dup", sourceIndexes: [0, 1] },
+	],
+	[
+		"BROKEN_REFERENCE",
+		"missing-binding-target",
+		"error",
+		true,
+		{ connectorId: "edge", end: "start", targetId: "gone" },
+	],
+	[
+		"BROKEN_REFERENCE",
+		"invalid-binding-target-type",
+		"error",
+		true,
+		{ connectorId: "edge", end: "start", targetId: "other", targetType: "arrow" },
+	],
+	[
+		"BROKEN_REFERENCE",
+		"missing-binding-reciprocal",
+		"error",
+		false,
+		{ connectorId: "edge", end: "start", targetId: "node" },
+	],
+	...["malformed-start-binding", "malformed-end-binding"].map((reason) => [
+		"BROKEN_REFERENCE",
+		reason,
+		"error",
+		true,
+		{
+			connectorId: "edge",
+			sourceIndex: 0,
+			rawKind: "object",
+			issue: "missing-element-id",
+			readableTargetId: null,
+			classificationBlocked: true,
+		},
+	]),
+	[
+		"BROKEN_REFERENCE",
+		"malformed-bound-elements",
+		"error",
+		true,
+		{
+			ownerId: "node",
+			sourceIndex: 0,
+			rawKind: "array",
+			entryIndex: 0,
+			issue: "entry-not-object",
+			readableEntries: [],
+			classificationBlocked: true,
+		},
+	],
+	[
+		"BROKEN_REFERENCE",
+		"malformed-container-id",
+		"error",
+		true,
+		{
+			textId: "label",
+			sourceIndex: 0,
+			rawKind: "string",
+			rawDescription: '""',
+			issue: "empty-container-id",
+			ownerClassificationBlocked: true,
+		},
+	],
+	...["dangling-bound-text", "dangling-bound-arrow"].map((reason) => [
+		"BROKEN_REFERENCE",
+		reason,
+		"error",
+		false,
+		{ ownerId: "node", targetId: "gone" },
+	]),
+	[
+		"BROKEN_REFERENCE",
+		"conflicting-bound-label-owner",
+		"error",
+		true,
+		{ textId: "label", forwardContainerId: "a", reverseContainerIds: ["a", "b"] },
+	],
+	[
+		"BROKEN_REFERENCE",
+		"persisted-agent-endpoint",
+		"error",
+		true,
+		{ connectorId: "edge", end: "start", inputTargetId: "node", bindingTargetId: null },
+	],
+	[
+		"BROKEN_REFERENCE",
+		"invalid-node-metadata",
+		"error",
+		true,
+		{ elementId: "node", valueKind: "number" },
+	],
+	[
+		"BROKEN_REFERENCE",
+		"invalid-code-binding",
+		"error",
+		false,
+		{ elementId: "node", issues: ["path must be a nonempty string"] },
+	],
+	[
+		"BROKEN_REFERENCE",
+		"derived-link-persisted",
+		"error",
+		false,
+		{ elementId: "node", link: "file:///tmp/node.ts" },
+	],
+	[
+		"BROKEN_REFERENCE",
+		"invalid-library-attribution",
+		"error",
+		true,
+		{
+			elementId: "body",
+			issues: ["itemId or item must be a nonempty string"],
+			rescuedByGroup: false,
+		},
+	],
+	["LABEL_CORRUPTION", "orphan", "error", true, { textId: "label", containerId: "gone" }],
+	[
+		"LABEL_CORRUPTION",
+		"duplicate",
+		"error",
+		false,
+		{ containerId: "node", keeperId: "a", duplicateIds: ["b"] },
+	],
+	[
+		"LABEL_CORRUPTION",
+		"missing-reciprocal",
+		"error",
+		false,
+		{ textId: "label", containerId: "node", missingSide: "container" },
+	],
+	[
+		"LABEL_CORRUPTION",
+		"conflicting-owner",
+		"error",
+		true,
+		{ textId: "label", containerId: "a", otherContainerIds: ["b"] },
+	],
+	[
+		"LABEL_CORRUPTION",
+		"drift",
+		"error",
+		false,
+		{ textId: "label", containerId: "node", distance: 20, allowed: 5 },
+	],
+	["LABEL_CORRUPTION", "persisted-seed", "error", false, { elementId: "node", seedField: "label" }],
+	[
+		"FONT_POLICY_VIOLATION",
+		"missing-font-family",
+		"warning",
+		false,
+		{ effectiveFamily: 1, allowedFamilies: [5] },
+	],
+	[
+		"FONT_POLICY_VIOLATION",
+		"disallowed-font-family",
+		"warning",
+		false,
+		{ rawFamily: 1, effectiveFamily: 1, allowedFamilies: [5] },
+	],
+	[
+		"FONT_POLICY_VIOLATION",
+		"invalid-font-family",
+		"warning",
+		false,
+		{ rawType: "string", rawDescription: '"5"', allowedFamilies: [5] },
+	],
+	["UNSUPPORTED_GEOMETRY", "unsupported-type", "warning", true, { rawType: '"selection"' }],
+	["UNSUPPORTED_GEOMETRY", "rotation", "warning", true, { angle: 1 }],
+	["UNSUPPORTED_GEOMETRY", "curve", "warning", true, { curveKind: "bezier" }],
+	[
+		"UNSUPPORTED_GEOMETRY",
+		"rounded-or-elbowed",
+		"warning",
+		true,
+		{ roundness: "object", elbowed: false, fixedSegments: false },
+	],
+	[
+		"AMBIGUOUS_GEOMETRY",
+		"points-missing",
+		"warning",
+		true,
+		{
+			connectorId: "edge",
+			sourceIndex: 0,
+			rawPointsKind: "missing",
+			rawPointsDescription: "missing",
+			pointCount: null,
+			minimumRequired: 2,
+			issue: "missing",
+		},
+	],
+	[
+		"AMBIGUOUS_GEOMETRY",
+		"points-not-array",
+		"warning",
+		true,
+		{
+			connectorId: "edge",
+			sourceIndex: 0,
+			rawPointsKind: "null",
+			rawPointsDescription: "null",
+			pointCount: null,
+			minimumRequired: 2,
+			issue: "non-array",
+		},
+	],
+	[
+		"AMBIGUOUS_GEOMETRY",
+		"points-empty",
+		"warning",
+		true,
+		{
+			connectorId: "edge",
+			sourceIndex: 0,
+			rawPointsKind: "array",
+			rawPointsDescription: "array",
+			pointCount: 0,
+			minimumRequired: 2,
+			issue: "empty",
+		},
+	],
+	[
+		"AMBIGUOUS_GEOMETRY",
+		"points-one-point",
+		"warning",
+		true,
+		{
+			connectorId: "edge",
+			sourceIndex: 0,
+			rawPointsKind: "array",
+			rawPointsDescription: "array",
+			pointCount: 1,
+			minimumRequired: 2,
+			issue: "insufficient-cardinality",
+		},
+	],
+	[
+		"AMBIGUOUS_GEOMETRY",
+		"malformed-point",
+		"warning",
+		true,
+		{
+			connectorId: "edge",
+			sourceIndex: 0,
+			pointIndex: 1,
+			issue: "point must contain two finite numbers",
+		},
+	],
+	[
+		"AMBIGUOUS_GEOMETRY",
+		"zero-length",
+		"warning",
+		true,
+		{ connectorId: "edge", sourceIndex: 0, segmentIndex: 0 },
+	],
+	[
+		"AMBIGUOUS_GEOMETRY",
+		"collinear-overlap",
+		"warning",
+		true,
+		{ firstConnectorId: "a", firstSegmentIndex: 0, secondConnectorId: "b", secondSegmentIndex: 0 },
+	],
+	[
+		"INSPECTION_LIMIT_EXCEEDED",
+		"broad-phase-comparison-ceiling",
+		"warning",
+		true,
+		{
+			limit: 2000000,
+			attempted: 2000001,
+			pass: "node-overlap",
+			segmentCount: 0,
+			nodeCount: 2001,
+			obstacleCount: 0,
+			labelCount: 0,
+		},
+	],
+	[
+		"CONNECTOR_PENETRATES_NODE",
+		"leaf-footprint-interior",
+		"error",
+		false,
+		{
+			connectorId: "edge",
+			segmentIndex: 0,
+			nodeId: "node",
+			entry: { x: 0, y: 0 },
+			exit: { x: 1, y: 0 },
+		},
+	],
+	[
+		"CONNECTOR_PENETRATES_OBSTACLE",
+		"obstacle-footprint-interior",
+		"error",
+		false,
+		{
+			connectorId: "edge",
+			segmentIndex: 0,
+			obstacleId: "obstacle:body",
+			entry: { x: 0, y: 0 },
+			exit: { x: 1, y: 0 },
+		},
+	],
+	[
+		"CONNECTOR_INTERSECTION_UNMARKED",
+		"proper-interior-crossing",
+		"error",
+		false,
+		{
+			firstConnectorId: "a",
+			firstSegmentIndex: 0,
+			secondConnectorId: "b",
+			secondSegmentIndex: 0,
+			point: { x: 0, y: 0 },
+		},
+	],
+	[
+		"NODE_OVERLAP",
+		"leaf-footprint-overlap",
+		"error",
+		false,
+		{ firstNodeId: "a", secondNodeId: "b", overlapWidth: 1, overlapHeight: 1 },
+	],
+	[
+		"LABEL_OVERLAP",
+		"label-node-overlap",
+		"error",
+		false,
+		{ labelId: "label", nodeId: "node", overlapWidth: 1, overlapHeight: 1 },
+	],
+	[
+		"LABEL_OVERLAP",
+		"label-label-overlap",
+		"error",
+		false,
+		{ firstLabelId: "a", secondLabelId: "b", overlapWidth: 1, overlapHeight: 1 },
+	],
+];
+const schemaFindings = findingCases.map(
+	([code, reason, severity, affectsCoverage, details], sourceIndex) => ({
+		code,
+		reason,
+		severity,
+		affectsCoverage,
+		details,
+		message: `${String(code)}/${String(reason)}`,
+		elements: [{ id: `e${sourceIndex}`, type: "rectangle", sourceIndex }],
+		nodes: [],
+		obstacles: [],
+		points: [],
+		affectedBBox: { x: 0, y: 0, width: 0, height: 0 },
+		focusBBox: { x: -16, y: -16, width: 32, height: 32 },
+	}),
+);
+for (const finding of schemaFindings) {
+	check(
+		`schema accepts ${String(finding.code)}/${String(finding.reason)}`,
+		InspectionFindingSchema.safeParse(finding).success,
+	);
+	check(
+		`schema fixes severity for ${String(finding.code)}/${String(finding.reason)}`,
+		!InspectionFindingSchema.safeParse({
+			...finding,
+			severity: finding.severity === "error" ? "warning" : "error",
+		}).success,
+	);
+	check(
+		`schema fixes coverage for ${String(finding.code)}/${String(finding.reason)}`,
+		!InspectionFindingSchema.safeParse({ ...finding, affectsCoverage: !finding.affectsCoverage })
+			.success,
+	);
+}
+check(
+	"schema rejects an unknown code/reason combination",
+	!InspectionFindingSchema.safeParse({ ...schemaFindings[0], reason: "unknown" }).success,
+);
+const formatterMatrix = formatInspectionText({
+	board: "schema-matrix",
+	schemaVersion: 1,
+	success: true,
+	policy: clean.policy,
+	limits: clean.limits,
+	totalElementCount: 0,
+	liveElementCount: 0,
+	locatableElementCount: 0,
+	broadPhaseComparisons: 0,
+	coverage: "indeterminate",
+	clean: false,
+	maxSeverity: "error",
+	counts: clean.counts,
+	coverageReasons: [],
+	findings: schemaFindings.map((finding) => InspectionFindingSchema.parse(finding)),
+});
+check(
+	"formatter visits every closed code/reason",
+	findingCases.every(([code, reason]) =>
+		formatterMatrix.includes(`${String(code)}/${String(reason)}`),
+	),
+);
+
+const semanticNode = (id, overrides = {}) => ({
+	id,
+	type: "rectangle",
+	x: 0,
+	y: 0,
+	width: 10,
+	height: 10,
+	angle: 0,
+	customData: { archboard: { node: id } },
+	...overrides,
+});
+const penetrating = (depth) =>
+	inspectBoard(
+		[
+			semanticNode("node"),
+			{
+				id: "edge",
+				type: "arrow",
+				x: -1,
+				y: 5,
+				width: 1 + depth,
+				height: 0,
+				angle: 0,
+				points: [
+					[0, 0],
+					[1 + depth, 0],
+				],
+			},
+		],
+		{ overlapTolerance: 0.5 },
+	).findings.some((finding) => finding.code === "CONNECTOR_PENETRATES_NODE");
+check("penetration exactly at tolerance is excluded", !penetrating(0.5));
+check("penetration just inside tolerance is detected", penetrating(0.501));
+check("penetration just outside tolerance is excluded", !penetrating(0.499));
+
+for (const malformedAngle of ["bad", null, false]) {
+	const report = inspectBoard([semanticNode("node", { angle: malformedAngle })]);
+	check(
+		`malformed node angle ${JSON.stringify(malformedAngle)} blocks coverage`,
+		report.coverage === "indeterminate" &&
+			report.findings.some(
+				(finding) => finding.code === "UNSUPPORTED_GEOMETRY" && finding.reason === "rotation",
+			),
+	);
+}
+const invalidLibrary = (id, groupIds = [], extra = {}) => ({
+	id,
+	type: "rectangle",
+	x: 0,
+	y: 0,
+	width: 10,
+	height: 10,
+	angle: 0,
+	groupIds,
+	customData: { library: {} },
+	...extra,
+});
+const libraryFinding = (elements) =>
+	inspectBoard(elements).findings.find(
+		(finding) =>
+			finding.code === "BROKEN_REFERENCE" && finding.reason === "invalid-library-attribution",
+	);
+const singletonLibrary = libraryFinding([invalidLibrary("body", ["g"])]);
+check(
+	"singleton group does not rescue invalid library attribution",
+	singletonLibrary?.affectsCoverage === true && singletonLibrary.details.rescuedByGroup === false,
+);
+const sharedLibrary = libraryFinding([
+	invalidLibrary("body", ["g"]),
+	{ ...invalidLibrary("peer", ["g"]), customData: undefined, x: 20 },
+]);
+check(
+	"qualifying shared body group rescues invalid library attribution",
+	sharedLibrary?.affectsCoverage === false && sharedLibrary.details.rescuedByGroup === true,
+);
+const decorationLibrary = libraryFinding([
+	invalidLibrary("body", ["g"]),
+	{
+		id: "decoration",
+		type: "text",
+		x: 20,
+		y: 0,
+		width: 10,
+		height: 10,
+		angle: 0,
+		groupIds: ["g"],
+		fontFamily: 5,
+		text: "note",
+	},
+]);
+check(
+	"decoration group does not rescue invalid library attribution",
+	decorationLibrary?.affectsCoverage === true && decorationLibrary.details.rescuedByGroup === false,
+);
+
+const ordered = inspectBoard([
+	{
+		type: "arrow",
+		x: 0,
+		y: 0,
+		width: 10,
+		height: 0,
+		points: [
+			[0, 0],
+			[10, 0],
+		],
+	},
+	{ id: "dup", type: "rectangle", x: 0, y: 0, width: 10, height: 10 },
+	{ id: "dup", type: "rectangle", x: 20, y: 0, width: 10, height: 10 },
+]);
+check(
+	"broken-reference findings use declared reason order",
+	ordered.findings
+		.filter((finding) => finding.code === "BROKEN_REFERENCE")
+		.slice(0, 2)
+		.map((finding) => finding.reason)
+		.join(",") === "invalid-element-identity,duplicate-element-id",
+);
+const rotatedNegativePath = inspectBoard([
+	{
+		id: "rotated",
+		type: "arrow",
+		x: 100,
+		y: 100,
+		width: 20,
+		height: 10,
+		angle: 1,
+		points: [
+			[0, 0],
+			[-20, -10],
+		],
+	},
+]).findings.find(
+	(finding) => finding.code === "UNSUPPORTED_GEOMETRY" && finding.reason === "rotation",
+);
+check(
+	"unsupported connector exposes decoded negative-relative path extent",
+	JSON.stringify(rotatedNegativePath?.points) ===
+		JSON.stringify([
+			{ x: 80, y: 90 },
+			{ x: 100, y: 100 },
+		]) &&
+		JSON.stringify(rotatedNegativePath?.affectedBBox) ===
+			JSON.stringify({ x: 80, y: 90, width: 20, height: 10 }),
+);
+if (rotatedNegativePath) {
+	check(
+		"finding schema rejects an impossible severity",
+		!InspectionFindingSchema.safeParse({ ...rotatedNegativePath, severity: "error" }).success,
+	);
+	check(
+		"finding schema rejects an impossible coverage flag",
+		!InspectionFindingSchema.safeParse({ ...rotatedNegativePath, affectsCoverage: false }).success,
+	);
+}
+
+const identityRoleCases = [
+	[
+		"connector",
+		{
+			type: "arrow",
+			x: 0,
+			y: 0,
+			width: 10,
+			height: 0,
+			points: [
+				[0, 0],
+				[10, 0],
+			],
+		},
+	],
+	[
+		"semantic-node-member",
+		{
+			type: "rectangle",
+			x: 0,
+			y: 0,
+			width: 10,
+			height: 10,
+			customData: { archboard: { node: "node" } },
+		},
+	],
+	[
+		"valid-library-body",
+		{
+			type: "rectangle",
+			x: 0,
+			y: 0,
+			width: 10,
+			height: 10,
+			customData: { library: { itemId: "item" } },
+		},
+	],
+	[
+		"qualifying-group-body",
+		{ type: "rectangle", x: 0, y: 0, width: 10, height: 10, groupIds: ["group"] },
+	],
+	[
+		"bound-label",
+		{
+			type: "text",
+			x: 0,
+			y: 0,
+			width: 10,
+			height: 10,
+			fontFamily: 5,
+			containerId: "node",
+			text: "label",
+		},
+	],
+	["label-container", { type: "rectangle", x: 0, y: 0, width: 10, height: 10, boundElements: [] }],
+	["closed-boundary", { type: "frame", x: 0, y: 0, width: 10, height: 10 }],
+	[
+		"font-policy-text",
+		{ type: "text", x: 0, y: 0, width: 10, height: 10, fontFamily: 5, text: "label" },
+	],
+	["node-overlap-body", { type: "ellipse", x: 0, y: 0, width: 10, height: 10 }],
+	[
+		"label-overlap-body",
+		{ type: "text", x: 0, y: 0, width: 10, height: 10, fontFamily: 5, text: "label" },
+	],
+];
+for (const [role, base] of identityRoleCases)
+	for (const [identity, rawId] of [
+		["missing", undefined],
+		["empty", ""],
+		["non-string", 42],
+	]) {
+		const element = { ...base };
+		if (identity !== "missing") element.id = rawId;
+		const report = inspectBoard([element]);
+		const finding = report.findings.find(
+			(candidate) =>
+				candidate.code === "BROKEN_REFERENCE" && candidate.reason === "invalid-element-identity",
+		);
+		check(
+			`${String(identity)} identity closes ${String(role)}`,
+			finding?.elements[0]?.id === null &&
+				finding.elements[0].sourceIndex === 0 &&
+				finding.details.intendedRoles.includes(role) &&
+				report.coverage === "indeterminate",
+		);
+	}
+
+const connector = (overrides = {}) => ({
+	id: "edge",
+	type: "arrow",
+	x: 10,
+	y: 20,
+	width: 30,
+	height: 40,
+	angle: 0,
+	...overrides,
+});
+const pathCases = [
+	["absent", {}, "points-missing", []],
+	["undefined", { points: undefined }, "points-missing", []],
+	["null", { points: null }, "points-not-array", []],
+	["object", { points: {} }, "points-not-array", []],
+	["string", { points: "bad" }, "points-not-array", []],
+	["empty", { points: [] }, "points-empty", []],
+	["one-valid", { points: [[-2, -3]] }, "points-one-point", [{ x: 8, y: 17 }]],
+	["one-malformed", { points: [[0]] }, "malformed-point", []],
+	[
+		"longer-malformed",
+		{
+			points: [
+				[0, 0],
+				[-5, -6],
+				["bad", 1],
+			],
+		},
+		"malformed-point",
+		[
+			{ x: 5, y: 14 },
+			{ x: 10, y: 20 },
+		],
+	],
+	[
+		"duplicate-consecutive",
+		{
+			points: [
+				[0, 0],
+				[0, 0],
+				[10, 0],
+			],
+		},
+		"zero-length",
+		[{ x: 10, y: 20 }],
+	],
+];
+for (const [label, overrides, reason, expectedPoints] of pathCases) {
+	const report = inspectBoard([connector(overrides)]);
+	const finding = report.findings.find(
+		(candidate) => candidate.code === "AMBIGUOUS_GEOMETRY" && candidate.reason === reason,
+	);
+	check(
+		`path ${String(label)} is closed and source-indexed`,
+		finding?.elements[0]?.sourceIndex === 0 &&
+			finding.affectsCoverage === true &&
+			report.coverage === "indeterminate" &&
+			JSON.stringify(finding.points) === JSON.stringify(expectedPoints),
+	);
+}
+const locatableWithoutSize = inspectBoard([
+	{ id: "edge", type: "arrow", x: 10, y: 20, width: null, height: 0 },
+]);
+check(
+	"locatable malformed path keeps a zero-area source extent",
+	locatableWithoutSize.findings.every(
+		(finding) =>
+			finding.affectedBBox !== null &&
+			finding.affectedBBox.x === 10 &&
+			finding.affectedBBox.y === 20,
+	),
+);
+const unlocatableUnsupported = inspectBoard([
+	{
+		id: "edge",
+		type: "arrow",
+		x: null,
+		y: 20,
+		width: 10,
+		height: 0,
+		angle: 1,
+		points: [
+			[0, 0],
+			[10, 0],
+		],
+	},
+]);
+check(
+	"unlocatable unsupported path does not invent absolute points or boxes",
+	unlocatableUnsupported.findings.every(
+		(finding) => finding.affectedBBox === null && finding.focusBBox === null,
+	) &&
+		unlocatableUnsupported.findings
+			.filter((finding) => finding.code === "UNSUPPORTED_GEOMETRY")
+			.every((finding) => finding.points.length === 0),
+);
+
+const completeBinding = { elementId: "node", focus: 0, gap: 0 };
+const bindingCases = [
+	["not-object", "bad", true],
+	["array", [], true],
+	["missing-element-id", { focus: 0, gap: 0 }, true],
+	["empty-element-id", { elementId: "", focus: 0, gap: 0 }, true],
+	["non-string-element-id", { elementId: 1, focus: 0, gap: 0 }, true],
+	["missing-focus", { elementId: "node", gap: 0 }, false],
+	["nonfinite-focus", { elementId: "node", focus: "bad", gap: 0 }, false],
+	["missing-gap", { elementId: "node", focus: 0 }, false],
+	["nonfinite-gap", { elementId: "node", focus: 0, gap: null }, false],
+	["invalid-fixed-point", { ...completeBinding, fixedPoint: [0] }, false],
+];
+for (const end of ["start", "end"])
+	for (const [issue, value, blocked] of bindingCases) {
+		const report = inspectBoard([
+			connector({
+				points: [
+					[0, 0],
+					[10, 0],
+				],
+				[`${end}Binding`]: value,
+			}),
+		]);
+		const finding = report.findings.find(
+			(candidate) =>
+				candidate.code === "BROKEN_REFERENCE" && candidate.reason === `malformed-${end}-binding`,
+		);
+		check(
+			`${end} binding ${String(issue)} retains classification semantics`,
+			finding?.details.issue === issue &&
+				finding.details.classificationBlocked === blocked &&
+				finding.affectsCoverage === blocked,
+		);
+	}
+for (const canonicalBinding of [undefined, null]) {
+	const report = inspectBoard([
+		connector({
+			points: [
+				[0, 0],
+				[10, 0],
+			],
+			startBinding: canonicalBinding,
+		}),
+	]);
+	check(
+		"absent or null binding remains canonical",
+		!report.findings.some((finding) => finding.reason === "malformed-start-binding"),
+	);
+}
+
+const boundElementCases = [
+	["not-array", "bad", "not-array"],
+	["entry-not-object", [null], "entry-not-object"],
+	["missing-id", [{ type: "text" }], "missing-id"],
+	["empty-id", [{ id: "", type: "text" }], "empty-id"],
+	["non-string-id", [{ id: 1, type: "text" }], "non-string-id"],
+	["missing-type", [{ id: "label" }], "missing-type"],
+	["invalid-type", [{ id: "label", type: "image" }], "invalid-type"],
+];
+for (const [label, boundElements, issue] of boundElementCases) {
+	const report = inspectBoard([semanticNode("node", { boundElements })]);
+	const finding = report.findings.find(
+		(candidate) =>
+			candidate.code === "BROKEN_REFERENCE" && candidate.reason === "malformed-bound-elements",
+	);
+	check(
+		`boundElements ${String(label)} blocks classification`,
+		finding?.details.issue === issue &&
+			finding.details.classificationBlocked === true &&
+			finding.affectsCoverage === true,
+	);
+}
+for (const containerId of ["", 42, false]) {
+	const finding = inspectBoard([
+		{
+			id: "label",
+			type: "text",
+			x: 0,
+			y: 0,
+			width: 10,
+			height: 10,
+			fontFamily: 5,
+			text: "label",
+			containerId,
+		},
+	]).findings.find((candidate) => candidate.reason === "malformed-container-id");
+	check(
+		`containerId ${JSON.stringify(containerId)} blocks owner classification`,
+		finding?.affectsCoverage === true && finding.details.ownerClassificationBlocked === true,
+	);
+}
+
+const malformedRoleCases = [
+	["library obstacle", invalidLibrary("body", [], { customData: { library: { itemId: "item" } } })],
+	["group obstacle", { ...invalidLibrary("body", ["g"]), customData: undefined }],
+	["closed boundary", { id: "frame", type: "frame", x: 0, y: 0, width: 20, height: 20 }],
+];
+for (const [role, base] of malformedRoleCases)
+	for (const angle of ["bad", null, false]) {
+		const report = inspectBoard([{ ...base, angle }]);
+		check(
+			`malformed ${String(role)} angle ${JSON.stringify(angle)} cannot go false-clean`,
+			report.coverage === "indeterminate" &&
+				report.findings.some(
+					(finding) => finding.code === "UNSUPPORTED_GEOMETRY" && finding.reason === "rotation",
+				),
+		);
+	}
+for (const rawType of [undefined, null, false, "unknown-applicable"]) {
+	const element = {
+		id: "body",
+		x: 0,
+		y: 0,
+		width: 10,
+		height: 10,
+		angle: 0,
+		customData: { library: { itemId: "item" } },
+	};
+	if (rawType !== undefined) element.type = rawType;
+	const report = inspectBoard([element]);
+	check(
+		`malformed applicable type ${JSON.stringify(rawType)} cannot go false-clean`,
+		report.coverage === "indeterminate" &&
+			report.findings.some(
+				(finding) =>
+					finding.code === "UNSUPPORTED_GEOMETRY" && finding.reason === "unsupported-type",
+			),
+	);
+}
+
+const referenceCases = [
+	[
+		"missing-binding-target",
+		[
+			connector({
+				points: [
+					[0, 0],
+					[10, 0],
+				],
+				startBinding: completeBinding,
+			}),
+		],
+	],
+	[
+		"invalid-binding-target-type",
+		[
+			connector({
+				points: [
+					[0, 0],
+					[10, 0],
+				],
+				startBinding: { elementId: "other", focus: 0, gap: 0 },
+			}),
+			{
+				...connector({
+					id: "other",
+					y: 100,
+					points: [
+						[0, 0],
+						[10, 0],
+					],
+				}),
+			},
+		],
+	],
+	[
+		"missing-binding-reciprocal",
+		[
+			connector({
+				points: [
+					[0, 0],
+					[10, 0],
+				],
+				startBinding: completeBinding,
+			}),
+			semanticNode("node"),
+		],
+	],
+	[
+		"dangling-bound-text",
+		[semanticNode("node", { boundElements: [{ id: "gone", type: "text" }] })],
+	],
+	[
+		"dangling-bound-arrow",
+		[semanticNode("node", { boundElements: [{ id: "gone", type: "arrow" }] })],
+	],
+	[
+		"persisted-agent-endpoint",
+		[
+			connector({
+				points: [
+					[0, 0],
+					[10, 0],
+				],
+				start: { id: "node" },
+			}),
+		],
+	],
+	["invalid-node-metadata", [semanticNode("node", { customData: { archboard: { node: 7 } } })]],
+	[
+		"invalid-code-binding",
+		[
+			semanticNode("node", {
+				customData: { archboard: { node: "node", binding: { path: "../bad" } } },
+			}),
+		],
+	],
+	[
+		"derived-link-persisted",
+		[
+			semanticNode("node", {
+				customData: { archboard: { node: "node", binding: { path: "src/a.ts" } } },
+				link: "file:///tmp/a.ts",
+			}),
+		],
+	],
+];
+for (const [reason, elements] of referenceCases)
+	check(
+		`direct inspector emits ${String(reason)}`,
+		inspectBoard(elements).findings.some(
+			(finding) => finding.code === "BROKEN_REFERENCE" && finding.reason === reason,
+		),
+	);
+
+const fontElement = (fontFamily) => ({
+	id: "label",
+	type: "text",
+	x: 10,
+	y: 20,
+	width: 30,
+	height: 10,
+	text: "label",
+	...(fontFamily === undefined ? {} : { fontFamily }),
+});
+for (const [label, family, expectedReason] of [
+	["absent", undefined, "missing-font-family"],
+	["legacy one", 1, "disallowed-font-family"],
+	["current five", 5, null],
+	...[2, 3, 6, 7, 8].map((validFamily) => [
+		`valid ${validFamily}`,
+		validFamily,
+		"disallowed-font-family",
+	]),
+	["string five", "5", "invalid-font-family"],
+	["zero", 0, "invalid-font-family"],
+	["four", 4, "invalid-font-family"],
+	["fractional", 5.5, "invalid-font-family"],
+	["NaN", Number.NaN, "invalid-font-family"],
+	["infinity", Number.POSITIVE_INFINITY, "invalid-font-family"],
+]) {
+	const report = inspectBoard([fontElement(family)]);
+	const fontFinding = report.findings.find((finding) => finding.code === "FONT_POLICY_VIOLATION");
+	check(
+		`persisted font ${String(label)} uses exact semantics`,
+		expectedReason === null
+			? fontFinding === undefined
+			: fontFinding?.reason === expectedReason &&
+					JSON.stringify(fontFinding.points) === JSON.stringify([{ x: 25, y: 25 }]),
+	);
+}
+check(
+	"font policy any accepts a missing legacy family",
+	!inspectBoard([fontElement(undefined)], { allowedFontFamilies: "any" }).findings.some(
+		(finding) => finding.code === "FONT_POLICY_VIOLATION",
+	),
+);
+
+const staleAt = (delta) =>
+	inspectBoard([
+		connector({
+			x: 0,
+			y: 0,
+			width: 10 + delta,
+			height: 0,
+			points: [
+				[0, 0],
+				[10, 0],
+			],
+		}),
+	]).findings.some((finding) => finding.code === "STALE_LINEAR_DIMENSIONS");
+check("dimension tolerance exact boundary is stale", staleAt(0.5));
+check("dimension tolerance just inside is not stale", !staleAt(0.499));
+check("dimension tolerance just outside is stale", staleAt(0.501));
+const crossingAt = (x) =>
+	inspectBoard([
+		connector({
+			id: "horizontal",
+			x: 0,
+			y: 0,
+			width: 10,
+			height: 0,
+			points: [
+				[0, 0],
+				[10, 0],
+			],
+		}),
+		connector({
+			id: "vertical",
+			x,
+			y: -5,
+			width: 0,
+			height: 10,
+			points: [
+				[0, 0],
+				[0, 10],
+			],
+		}),
+	]).findings.some((finding) => finding.code === "CONNECTOR_INTERSECTION_UNMARKED");
+check("intersection exact endpoint tolerance is contact", !crossingAt(9.5));
+check("intersection just inside endpoint tolerance is contact", !crossingAt(9.501));
+check("intersection just outside endpoint tolerance is proper", crossingAt(9.499));
+const nodesOverlapAt = (overlapWidth) =>
+	inspectBoard([semanticNode("a"), semanticNode("b", { x: 10 - overlapWidth })]).findings.some(
+		(finding) => finding.code === "NODE_OVERLAP",
+	);
+check("node overlap exact tolerance is excluded", !nodesOverlapAt(0.5));
+check("node overlap just inside tolerance is excluded", !nodesOverlapAt(0.499));
+check("node overlap just outside tolerance is detected", nodesOverlapAt(0.501));
+
+const labelContainer = (overrides = {}) => ({
+	id: "svc",
+	type: "rectangle",
+	x: 0,
+	y: 0,
+	width: 200,
+	height: 80,
+	angle: 0,
+	boundElements: [{ id: "svc-label", type: "text" }],
+	...overrides,
+});
+const placedLabel = (overrides = {}) => ({
+	id: "svc-label",
+	type: "text",
+	containerId: "svc",
+	x: 50,
+	y: 27,
+	width: 100,
+	height: 26,
+	fontFamily: 5,
+	text: "AuthService",
+	...overrides,
+});
+for (const [alignment, overrides] of [
+	["centred", {}],
+	["top", { y: 5 }],
+	["left", { x: 0 }],
+])
+	check(
+		`${String(alignment)} bound label is not generic placement drift`,
+		!inspectBoard([labelContainer(), placedLabel(overrides)]).findings.some(
+			(finding) => finding.code === "LABEL_CORRUPTION" && finding.reason === "drift",
+		),
+	);
+check(
+	"boundTextDrift alone reports an abandoned label",
+	inspectBoard([labelContainer({ y: 900 }), placedLabel()]).findings.some(
+		(finding) => finding.code === "LABEL_CORRUPTION" && finding.reason === "drift",
+	),
+);
+check(
+	"orphan label is coverage-affecting",
+	inspectBoard([placedLabel({ containerId: "gone" })]).findings.some(
+		(finding) =>
+			finding.code === "LABEL_CORRUPTION" && finding.reason === "orphan" && finding.affectsCoverage,
+	),
+);
+check(
+	"duplicate labels are reported without changing coverage",
+	inspectBoard([
+		labelContainer({
+			boundElements: [
+				{ id: "a", type: "text" },
+				{ id: "b", type: "text" },
+			],
+		}),
+		placedLabel({ id: "a" }),
+		placedLabel({ id: "b", x: 60 }),
+	]).findings.some(
+		(finding) =>
+			finding.code === "LABEL_CORRUPTION" &&
+			finding.reason === "duplicate" &&
+			!finding.affectsCoverage,
+	),
+);
+check(
+	"missing label reciprocal is distinct",
+	inspectBoard([labelContainer({ boundElements: [] }), placedLabel()]).findings.some(
+		(finding) => finding.code === "LABEL_CORRUPTION" && finding.reason === "missing-reciprocal",
+	),
+);
+const conflictingLabels = inspectBoard([
+	labelContainer(),
+	labelContainer({ id: "other", x: 300, boundElements: [{ id: "svc-label", type: "text" }] }),
+	placedLabel(),
+]);
+check(
+	"conflicting owners emit both structural and label findings",
+	conflictingLabels.findings.some(
+		(finding) => finding.reason === "conflicting-bound-label-owner",
+	) &&
+		conflictingLabels.findings.some(
+			(finding) => finding.code === "LABEL_CORRUPTION" && finding.reason === "conflicting-owner",
+		),
+);
+
+const validLibraryBody = (id, x = 0, groupIds = []) => ({
+	id,
+	type: "rectangle",
+	x,
+	y: 0,
+	width: 10,
+	height: 10,
+	angle: 0,
+	groupIds,
+	customData: { library: { itemId: `item-${id}`, source: "catalogue" } },
+});
+const through = connector({
+	id: "through",
+	x: -10,
+	y: 5,
+	width: 60,
+	height: 0,
+	points: [
+		[0, 0],
+		[60, 0],
+	],
+});
+const obstaclePenetrations = (elements) =>
+	inspectBoard([through, ...elements]).findings.filter(
+		(finding) => finding.code === "CONNECTOR_PENETRATES_OBSTACLE",
+	);
+const singletonObstacle = obstaclePenetrations([validLibraryBody("body")]);
+check(
+	"library-attributed singleton is a closed obstacle",
+	singletonObstacle[0]?.obstacles[0]?.kind === "library-component" &&
+		JSON.stringify(singletonObstacle[0].obstacles[0].elementIds) === JSON.stringify(["body"]),
+);
+const groupedObstacle = obstaclePenetrations([
+	{ ...validLibraryBody("b", 20, ["g"]), customData: undefined },
+	{ ...validLibraryBody("a", 0, ["g"]), customData: undefined },
+]);
+check(
+	"qualifying multi-body group is one stable obstacle",
+	groupedObstacle.length === 1 &&
+		groupedObstacle[0].obstacles[0]?.kind === "grouped-component" &&
+		groupedObstacle[0].obstacles[0]?.id === "obstacle:a,b" &&
+		JSON.stringify(groupedObstacle[0].obstacles[0]?.elementIds) === JSON.stringify(["a", "b"]),
+);
+for (const [label, elements] of [
+	["plain shape", [{ ...validLibraryBody("plain"), customData: undefined, groupIds: [] }]],
+	["group singleton", [{ ...validLibraryBody("single"), customData: undefined, groupIds: ["g"] }]],
+	[
+		"heading decoration group",
+		[
+			{
+				id: "heading",
+				type: "text",
+				x: 0,
+				y: 0,
+				width: 10,
+				height: 10,
+				fontFamily: 5,
+				text: "heading",
+				groupIds: ["g"],
+			},
+			{
+				id: "callout",
+				type: "text",
+				x: 20,
+				y: 0,
+				width: 10,
+				height: 10,
+				fontFamily: 5,
+				text: "callout",
+				groupIds: ["g"],
+			},
+		],
+	],
+	[
+		"image",
+		[
+			{
+				id: "image",
+				type: "image",
+				x: 0,
+				y: 0,
+				width: 10,
+				height: 10,
+				groupIds: ["g"],
+				customData: { library: { itemId: "image" } },
+			},
+		],
+	],
+	[
+		"freedraw",
+		[
+			{
+				id: "free",
+				type: "freedraw",
+				x: 0,
+				y: 0,
+				width: 10,
+				height: 10,
+				groupIds: ["g"],
+				customData: { library: { itemId: "free" } },
+			},
+		],
+	],
+	[
+		"all-line stencil",
+		[
+			{
+				id: "l1",
+				type: "line",
+				x: 0,
+				y: 0,
+				width: 10,
+				height: 0,
+				points: [
+					[0, 0],
+					[10, 0],
+				],
+				groupIds: ["g"],
+			},
+			{
+				id: "l2",
+				type: "line",
+				x: 20,
+				y: 0,
+				width: 10,
+				height: 0,
+				points: [
+					[0, 0],
+					[10, 0],
+				],
+				groupIds: ["g"],
+			},
+		],
+	],
+	[
+		"decoration-assisted body",
+		[
+			{ ...validLibraryBody("body", 0, ["g"]), customData: undefined },
+			{
+				id: "caption",
+				type: "text",
+				x: 20,
+				y: 0,
+				width: 10,
+				height: 10,
+				fontFamily: 5,
+				text: "caption",
+				groupIds: ["g"],
+			},
+		],
+	],
+])
+	check(`${String(label)} is not a routing obstacle`, obstaclePenetrations(elements).length === 0);
+const promotedGroup = obstaclePenetrations([
+	semanticNode("a", { x: 0, groupIds: ["g"] }),
+	semanticNode("b", { x: 20, groupIds: ["g"] }),
+]);
+check("a group containing promoted nodes does not become an obstacle", promotedGroup.length === 0);
+
+const endpointNode = semanticNode("endpoint", {
+	boundElements: [{ id: "bound-edge", type: "arrow" }],
+});
+const endpointEdge = connector({
+	id: "bound-edge",
+	x: -10,
+	y: 5,
+	width: 30,
+	height: 0,
+	points: [
+		[0, 0],
+		[30, 0],
+	],
+	startBinding: { elementId: "endpoint", focus: 0, gap: 0 },
+});
+check(
+	"connector excludes its own endpoint node",
+	!inspectBoard([endpointNode, endpointEdge]).findings.some(
+		(finding) => finding.code === "CONNECTOR_PENETRATES_NODE",
+	),
+);
+const nestedEndpoint = inspectBoard([
+	semanticNode("outer", { x: 0, y: 0, width: 100, height: 100 }),
+	semanticNode("middle", { x: 10, y: 10, width: 70, height: 70 }),
+	semanticNode("endpoint", {
+		x: 20,
+		y: 20,
+		width: 10,
+		height: 10,
+		boundElements: [{ id: "nested-edge", type: "arrow" }],
+	}),
+	connector({
+		id: "nested-edge",
+		x: -10,
+		y: 25,
+		width: 120,
+		height: 0,
+		points: [
+			[0, 0],
+			[120, 0],
+		],
+		startBinding: { elementId: "endpoint", focus: 0, gap: 0 },
+	}),
+]);
+check(
+	"nested endpoint excludes transitive containing zones",
+	!nestedEndpoint.findings.some((finding) => finding.code === "CONNECTOR_PENETRATES_NODE"),
+);
+check(
+	"equal-area semantic shapes do not invent a zone parent",
+	inspectBoard([semanticNode("a"), semanticNode("b")]).findings.some(
+		(finding) => finding.code === "NODE_OVERLAP",
+	),
+);
+check(
+	"multi-element union does not become a false zone boundary",
+	inspectBoard([
+		semanticNode("union", { id: "left", x: 0, width: 10 }),
+		semanticNode("union", { id: "right", x: 30, width: 10 }),
+		semanticNode("inside-gap", { x: 15, width: 10 }),
+	]).findings.some((finding) => finding.code === "NODE_OVERLAP"),
+);
+check(
+	"container-only boundary is not a routing obstacle",
+	!inspectBoard([
+		{ id: "frame", type: "frame", x: 0, y: 0, width: 100, height: 100, angle: 0 },
+		semanticNode("inside", { x: 10, y: 10 }),
+		connector({
+			id: "frame-edge",
+			x: -10,
+			y: 90,
+			width: 120,
+			height: 0,
+			points: [
+				[0, 0],
+				[120, 0],
+			],
+		}),
+	]).findings.some((finding) => finding.code.includes("PENETRATES")),
+);
+const outsideLabelZone = inspectBoard([
+	semanticNode("zone", {
+		id: "zone-body",
+		x: 0,
+		y: 0,
+		width: 100,
+		height: 100,
+		boundElements: [{ id: "zone-label", type: "text" }],
+	}),
+	{
+		id: "zone-label",
+		type: "text",
+		containerId: "zone-body",
+		x: 150,
+		y: 40,
+		width: 20,
+		height: 10,
+		fontFamily: 5,
+		text: "zone",
+	},
+	semanticNode("outside-child", { x: 150, y: 40 }),
+	connector({
+		id: "zone-crossing",
+		x: -10,
+		y: 50,
+		width: 120,
+		height: 0,
+		points: [
+			[0, 0],
+			[120, 0],
+		],
+	}),
+]);
+check(
+	"a bound label outside a shape does not create a false zone boundary",
+	outsideLabelZone.findings.some(
+		(finding) => finding.code === "CONNECTOR_PENETRATES_NODE" && finding.details.nodeId === "zone",
+	),
+);
+const promotedMultiMember = inspectBoard([
+	semanticNode("multi", { id: "right", x: 20 }),
+	semanticNode("multi", { id: "left", x: 0 }),
+	connector({
+		id: "multi-crossing",
+		x: -10,
+		y: 5,
+		width: 50,
+		height: 0,
+		points: [
+			[0, 0],
+			[50, 0],
+		],
+	}),
+]).findings.find(
+	(finding) => finding.code === "CONNECTOR_PENETRATES_NODE" && finding.details.nodeId === "multi",
+);
+check(
+	"promoted multi-element node exposes one sorted semantic identity",
+	JSON.stringify(promotedMultiMember?.nodes[0]?.elementIds) === JSON.stringify(["left", "right"]),
+);
+
+const directReasonCases = [
+	[
+		"invalid-render-fields",
+		() => inspectBoard([{ id: "bad", type: "rectangle", x: 0, y: 0, width: null, height: 10 }]),
+	],
+	[
+		"unlocatable-record",
+		() => inspectBoard([{ id: "bad", type: "rectangle", x: null, y: 0, width: 10, height: 10 }]),
+	],
+	[
+		"width",
+		() =>
+			inspectBoard([
+				connector({
+					x: 0,
+					y: 0,
+					width: 10.6,
+					height: 5,
+					points: [
+						[0, 0],
+						[10, 5],
+					],
+				}),
+			]),
+	],
+	[
+		"height",
+		() =>
+			inspectBoard([
+				connector({
+					x: 0,
+					y: 0,
+					width: 10,
+					height: 5.6,
+					points: [
+						[0, 0],
+						[10, 5],
+					],
+				}),
+			]),
+	],
+	[
+		"width-and-height",
+		() =>
+			inspectBoard([
+				connector({
+					x: 0,
+					y: 0,
+					width: 10.6,
+					height: 5.6,
+					points: [
+						[0, 0],
+						[10, 5],
+					],
+				}),
+			]),
+	],
+	["persisted-seed", () => inspectBoard([semanticNode("node", { label: { text: "spent" } })])],
+	[
+		"curve",
+		() =>
+			inspectBoard([
+				connector({
+					points: [
+						[0, 0],
+						[10, 0],
+					],
+					curveKind: "bezier",
+				}),
+			]),
+	],
+	[
+		"rounded-or-elbowed",
+		() =>
+			inspectBoard([
+				connector({
+					points: [
+						[0, 0],
+						[10, 0],
+					],
+					roundness: { type: 2 },
+				}),
+			]),
+	],
+	[
+		"collinear-overlap",
+		() =>
+			inspectBoard([
+				connector({
+					id: "a",
+					x: 0,
+					y: 0,
+					width: 20,
+					height: 0,
+					points: [
+						[0, 0],
+						[20, 0],
+					],
+				}),
+				connector({
+					id: "b",
+					x: 10,
+					y: 0,
+					width: 20,
+					height: 0,
+					points: [
+						[0, 0],
+						[20, 0],
+					],
+				}),
+			]),
+	],
+	[
+		"label-node-overlap",
+		() =>
+			inspectBoard([
+				semanticNode("owner", {
+					id: "owner",
+					x: 0,
+					y: 0,
+					width: 10,
+					height: 10,
+					boundElements: [{ id: "owner-label", type: "text" }],
+				}),
+				{
+					id: "owner-label",
+					type: "text",
+					containerId: "owner",
+					x: 20,
+					y: 0,
+					width: 10,
+					height: 10,
+					fontFamily: 5,
+					text: "owner",
+				},
+				semanticNode("other", { id: "other", x: 20, y: 0, width: 10, height: 10 }),
+			]),
+	],
+	[
+		"label-label-overlap",
+		() =>
+			inspectBoard([
+				semanticNode("a", {
+					id: "a",
+					x: 0,
+					y: 0,
+					width: 10,
+					height: 10,
+					boundElements: [{ id: "la", type: "text" }],
+				}),
+				{
+					id: "la",
+					type: "text",
+					containerId: "a",
+					x: 20,
+					y: 0,
+					width: 10,
+					height: 10,
+					fontFamily: 5,
+					text: "a",
+				},
+				semanticNode("b", {
+					id: "b",
+					x: 40,
+					y: 0,
+					width: 10,
+					height: 10,
+					boundElements: [{ id: "lb", type: "text" }],
+				}),
+				{
+					id: "lb",
+					type: "text",
+					containerId: "b",
+					x: 20,
+					y: 0,
+					width: 10,
+					height: 10,
+					fontFamily: 5,
+					text: "b",
+				},
+			]),
+	],
+];
+for (const [reason, produce] of directReasonCases) {
+	const report = produce();
+	check(
+		`direct inspectBoard produces ${String(reason)}`,
+		report.findings.some((finding) => finding.reason === reason) &&
+			InspectionReportSchema.safeParse(report).success,
+	);
+}
+const normalizedPolicyReport = inspectBoard([], { allowedFontFamilies: [8, 5, 8, 2] });
+check(
+	"policy normalization sorts and deduplicates persisted font families",
+	JSON.stringify(normalizedPolicyReport.policy.allowedFontFamilies) === JSON.stringify([2, 5, 8]),
+);
+for (const invalidPolicy of [
+	{ overlapTolerance: -1 },
+	{ dimensionTolerance: Number.NaN },
+	{ intersectionTolerance: Number.POSITIVE_INFINITY },
+]) {
+	let rejected = false;
+	try {
+		inspectBoard([], invalidPolicy);
+	} catch {
+		rejected = true;
+	}
+	check("pure inspector rejects an invalid policy before decoding", rejected);
+}
+const hostileInput = structuredClone(fixture("dense-after.excalidraw.json"));
+const deepFreeze = (value) => {
+	if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
+	for (const child of Object.values(value)) deepFreeze(child);
+	return Object.freeze(value);
+};
+deepFreeze(hostileInput);
+const hostileBytes = JSON.stringify(hostileInput);
+const hostileFirst = inspectBoard(hostileInput);
+check("deep-frozen dense input is not mutated", JSON.stringify(hostileInput) === hostileBytes);
+const firstFindingMessage = hostileFirst.findings[0]?.message;
+if (hostileFirst.findings[0]) hostileFirst.findings[0].message = "caller mutation";
+check(
+	"caller mutation of one report cannot affect the next report",
+	inspectBoard(hostileInput).findings[0]?.message === firstFindingMessage,
+);
 
 const before = fixture("dense-before.excalidraw.json"),
 	after = fixture("dense-after.excalidraw.json");
@@ -133,7 +1864,7 @@ function performanceBoard(nodeCount, connectorCount, labelCount) {
 	const connectors = Array.from({ length: connectorCount }, (_, index) => {
 		const start = index % nodeCount,
 			end = (index + 1) % nodeCount;
-		const connector = {
+		const edge = {
 			id: `e${index}`,
 			type: "arrow",
 			x: 0,
@@ -148,9 +1879,9 @@ function performanceBoard(nodeCount, connectorCount, labelCount) {
 			startBinding: { elementId: `n${start}`, focus: 0, gap: 0 },
 			endBinding: { elementId: `n${end}`, focus: 0, gap: 0 },
 		};
-		nodes[start].boundElements.push({ id: connector.id, type: "arrow" });
-		nodes[end].boundElements.push({ id: connector.id, type: "arrow" });
-		return connector;
+		nodes[start].boundElements.push({ id: edge.id, type: "arrow" });
+		nodes[end].boundElements.push({ id: edge.id, type: "arrow" });
+		return edge;
 	});
 	for (let index = 0; index < labelCount; index += 1)
 		nodes[index].boundElements.push({ id: `t${index}`, type: "text" });
@@ -213,6 +1944,161 @@ noteFor("error", [
 	},
 ]);
 noteFor("unknown", [{ id: "edge", type: "arrow", x: 0, y: 0, width: 10, height: 0 }]);
+noteFor("malformed", [
+	{ type: "arrow", x: 0, y: 0, width: null, height: 0, points: null, startBinding: "bad" },
+	{
+		id: "",
+		type: "text",
+		x: 0,
+		y: 20,
+		width: 10,
+		height: 10,
+		fontFamily: 5,
+		text: "empty id",
+		containerId: 42,
+	},
+	{
+		id: 42,
+		type: "rectangle",
+		x: 0,
+		y: 40,
+		width: 10,
+		height: 10,
+		customData: { library: { itemId: "item" } },
+	},
+	{ id: "empty-path", type: "arrow", x: 0, y: 60, width: 10, height: 0, points: [] },
+	{ id: "one-path", type: "arrow", x: 0, y: 80, width: 10, height: 0, points: [[-2, -3]] },
+	{
+		id: "tuple-path",
+		type: "arrow",
+		x: 0,
+		y: 100,
+		width: 10,
+		height: 0,
+		points: [
+			[0, 0],
+			["bad", 0],
+		],
+	},
+	{
+		id: "zero-path",
+		type: "arrow",
+		x: 0,
+		y: 120,
+		width: 10,
+		height: 0,
+		points: [
+			[0, 0],
+			[0, 0],
+			[10, 0],
+		],
+	},
+	{
+		id: "bad-end",
+		type: "arrow",
+		x: 0,
+		y: 140,
+		width: 10,
+		height: 0,
+		points: [
+			[0, 0],
+			[10, 0],
+		],
+		endBinding: { elementId: "node", gap: 0 },
+	},
+	{
+		id: "rotated-path",
+		type: "arrow",
+		x: 100,
+		y: 100,
+		width: 20,
+		height: 10,
+		angle: 1,
+		points: [
+			[0, 0],
+			[-20, -10],
+		],
+	},
+	{
+		id: "curved-path",
+		type: "arrow",
+		x: 0,
+		y: 160,
+		width: 10,
+		height: 0,
+		points: [
+			[0, 0],
+			[10, 0],
+		],
+		curveKind: "bezier",
+	},
+	{
+		id: "rounded-path",
+		type: "arrow",
+		x: 0,
+		y: 180,
+		width: 10,
+		height: 0,
+		points: [
+			[0, 0],
+			[10, 0],
+		],
+		roundness: { type: 2 },
+	},
+	{
+		id: "node",
+		type: "rectangle",
+		x: 20,
+		y: 0,
+		width: 10,
+		height: 10,
+		boundElements: [{ id: "gone", type: "arrow" }, null],
+		customData: { archboard: { node: "node", binding: { path: "../bad" } } },
+	},
+	{
+		id: "unknown",
+		type: "future-shape",
+		x: 40,
+		y: 0,
+		width: 10,
+		height: 10,
+		customData: { archboard: { node: "future" } },
+	},
+	{
+		id: "invalid-library",
+		type: "rectangle",
+		x: 60,
+		y: 0,
+		width: 10,
+		height: 10,
+		customData: { library: {} },
+	},
+]);
+const sentinelLog = path.join(os.tmpdir(), `archboard-inspection-http-${process.pid}.log`);
+fs.writeFileSync(sentinelLog, "");
+const sentinel = spawn(
+	process.execPath,
+	[
+		"-e",
+		"const fs = require('node:fs'); const server = Bun.serve({ port: 0, fetch() { fs.appendFileSync(process.env.SENTINEL_LOG, 'contact\\n'); return new Response('unexpected'); } }); console.log(server.port);",
+	],
+	{
+		env: { ...process.env, SENTINEL_LOG: sentinelLog },
+		stdio: ["ignore", "pipe", "inherit"],
+	},
+);
+const sentinelPort = await new Promise((resolve, reject) => {
+	let output = "";
+	const timeout = setTimeout(() => reject(new Error("HTTP sentinel did not start")), 5000);
+	sentinel.once("error", reject);
+	sentinel.stdout.on("data", (chunk) => {
+		output += chunk;
+		const line = output.split("\n")[0];
+		if (!/^\d+$/.test(line)) return;
+		clearTimeout(timeout);
+		resolve(Number(line));
+	});
+});
 const snapshot = () =>
 	JSON.stringify(
 		fs
@@ -227,7 +2113,12 @@ const snapshot = () =>
 const run = (board, args = []) =>
 	spawnSync(path.join(root, "bin/canvas"), ["check", "--board", board, ...args], {
 		cwd: root,
-		env: { ...process.env, ARCHBOARD_VAULT: vault, EXCALIDRAW_NO_AUTOSTART: "1" },
+		env: {
+			...process.env,
+			ARCHBOARD_VAULT: vault,
+			EXCALIDRAW_NO_AUTOSTART: "1",
+			EXPRESS_SERVER_URL: `http://127.0.0.1:${sentinelPort}`,
+		},
 		encoding: "utf8",
 	});
 const beforeVault = snapshot();
@@ -264,7 +2155,72 @@ check(
 	"operational failure has empty stdout and exit 1",
 	missing.status === 1 && missing.stdout === "",
 );
-check("CLI leaves vault paths, bytes, and mtimes unchanged", snapshot() === beforeVault);
+const invalidPolicyMissing = run("missing", ["--overlap-tolerance", "bad"]);
+check(
+	"invalid policy wins before missing-note I/O",
+	invalidPolicyMissing.status === 2 && invalidPolicyMissing.stdout === "",
+);
+const malformedRun = run("malformed", ["--strict"]);
+const malformedResult = JSON.parse(malformedRun.stdout);
+check(
+	"persisted malformed note reports through the real package",
+	malformedRun.status === 8 &&
+		CheckResultSchema.safeParse(malformedResult).success &&
+		malformedResult.findings.some(
+			(finding) =>
+				finding.reason === "invalid-element-identity" && finding.elements[0]?.id === null,
+		) &&
+		malformedResult.findings.some((finding) => finding.reason === "points-not-array") &&
+		malformedResult.findings.some((finding) => finding.reason === "malformed-start-binding") &&
+		malformedResult.findings.some((finding) => finding.reason === "malformed-bound-elements") &&
+		malformedResult.findings.some((finding) => finding.reason === "malformed-container-id") &&
+		malformedResult.findings.some((finding) => finding.reason === "invalid-code-binding") &&
+		malformedResult.findings.some((finding) => finding.reason === "invalid-library-attribution") &&
+		malformedResult.findings.some((finding) => finding.reason === "points-empty") &&
+		malformedResult.findings.some((finding) => finding.reason === "points-one-point") &&
+		malformedResult.findings.some((finding) => finding.reason === "malformed-point") &&
+		malformedResult.findings.some((finding) => finding.reason === "zero-length") &&
+		malformedResult.findings.some((finding) => finding.reason === "rotation") &&
+		malformedResult.findings.some((finding) => finding.reason === "curve") &&
+		malformedResult.findings.some((finding) => finding.reason === "rounded-or-elbowed") &&
+		malformedResult.findings.some((finding) => finding.reason === "unsupported-type"),
+	malformedResult.findings.map((finding) => finding.reason).join(","),
+);
+const impossibleVault = path.join(vault, "not-a-directory");
+fs.writeFileSync(impossibleVault, "sentinel");
+const invalidBeforeIo = spawnSync(
+	path.join(root, "bin/canvas"),
+	["check", "--board", "missing", "--overlap-tolerance", "bad"],
+	{
+		cwd: root,
+		env: {
+			...process.env,
+			ARCHBOARD_VAULT: impossibleVault,
+			EXCALIDRAW_NO_AUTOSTART: "1",
+			EXPRESS_SERVER_URL: `http://127.0.0.1:${sentinelPort}`,
+		},
+		encoding: "utf8",
+	},
+);
+check(
+	"invalid policy precedes an unreadable vault at the package boundary",
+	invalidBeforeIo.status === 2 &&
+		invalidBeforeIo.stdout === "" &&
+		invalidBeforeIo.stderr.includes("finite nonnegative") &&
+		!invalidBeforeIo.stderr.includes("not-a-directory"),
+);
+fs.rmSync(impossibleVault);
+const unchangedVault = snapshot() === beforeVault;
+check("CLI leaves vault paths, bytes, and mtimes unchanged", unchangedVault);
+check(
+	"no write, lock, claim, open, save, repair, rewrite, or id-mint side effect occurs",
+	unchangedVault &&
+		malformedResult.findings.some(
+			(finding) =>
+				finding.reason === "invalid-element-identity" && finding.elements[0]?.id === null,
+		),
+);
+check("check makes zero HTTP contacts", fs.readFileSync(sentinelLog, "utf8") === "");
 check(
 	"normal ingest remains strict",
 	(() => {
@@ -277,6 +2233,8 @@ check(
 	})(),
 );
 fs.rmSync(vault, { recursive: true, force: true });
+sentinel.kill();
+fs.rmSync(sentinelLog, { force: true });
 if (failures) {
 	console.error(`board-inspection: ${failures} of ${checks} checks failed`);
 	process.exit(1);
