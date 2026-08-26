@@ -3514,10 +3514,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -3766,10 +3767,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -4016,10 +4018,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -4277,10 +4280,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -4538,10 +4542,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -4799,10 +4804,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -5027,7 +5033,302 @@ Public result JSON Schema:
 												"minimum": 0,
 												"maximum": 9007199254740991
 											},
+											"availableElementType": {
+												"anyOf": [
+													{
+														"type": "string"
+													},
+													{
+														"type": "null"
+													}
+												]
+											},
 											"intendedRoles": {
+												"type": "array",
+												"prefixItems": []
+											}
+										},
+										"required": [
+											"identityIssue",
+											"rawIdType",
+											"rawIdDescription",
+											"sourceIndex",
+											"availableElementType",
+											"intendedRoles"
+										],
+										"additionalProperties": false
+									}
+								},
+								"required": [
+									"code",
+									"reason",
+									"severity",
+									"affectsCoverage",
+									"message",
+									"elements",
+									"nodes",
+									"obstacles",
+									"points",
+									"affectedBBox",
+									"focusBBox",
+									"details"
+								],
+								"additionalProperties": false
+							},
+							{
+								"type": "object",
+								"properties": {
+									"code": {
+										"type": "string",
+										"const": "BROKEN_REFERENCE"
+									},
+									"reason": {
+										"type": "string",
+										"const": "invalid-element-identity"
+									},
+									"severity": {
+										"type": "string",
+										"const": "error"
+									},
+									"affectsCoverage": {
+										"type": "boolean",
+										"const": true
+									},
+									"message": {
+										"type": "string",
+										"minLength": 1
+									},
+									"elements": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"type": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"sourceIndex": {
+													"type": "integer",
+													"minimum": 0,
+													"maximum": 9007199254740991
+												}
+											},
+											"required": ["id", "type", "sourceIndex"],
+											"additionalProperties": false
+										}
+									},
+									"nodes": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"type": "string",
+													"minLength": 1
+												},
+												"elementIds": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"minLength": 1
+													}
+												},
+												"labelElementIds": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"minLength": 1
+													}
+												}
+											},
+											"required": ["id", "elementIds", "labelElementIds"],
+											"additionalProperties": false
+										}
+									},
+									"obstacles": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"type": "string",
+													"pattern": "^obstacle:.*"
+												},
+												"kind": {
+													"type": "string",
+													"enum": ["library-component", "grouped-component"]
+												},
+												"elementIds": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"minLength": 1
+													}
+												},
+												"groupIds": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"minLength": 1
+													}
+												},
+												"library": {
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"elementId": {
+																"type": "string",
+																"minLength": 1
+															},
+															"item": {
+																"type": "string",
+																"minLength": 1
+															},
+															"source": {
+																"type": "string"
+															}
+														},
+														"required": ["elementId", "item"],
+														"additionalProperties": false
+													}
+												}
+											},
+											"required": ["id", "kind", "elementIds", "groupIds", "library"],
+											"additionalProperties": false
+										}
+									},
+									"points": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"x": {
+													"type": "number"
+												},
+												"y": {
+													"type": "number"
+												}
+											},
+											"required": ["x", "y"],
+											"additionalProperties": false
+										}
+									},
+									"affectedBBox": {
+										"anyOf": [
+											{
+												"type": "object",
+												"properties": {
+													"x": {
+														"type": "number"
+													},
+													"y": {
+														"type": "number"
+													},
+													"width": {
+														"type": "number",
+														"minimum": 0
+													},
+													"height": {
+														"type": "number",
+														"minimum": 0
+													}
+												},
+												"required": ["x", "y", "width", "height"],
+												"additionalProperties": false
+											},
+											{
+												"type": "null"
+											}
+										]
+									},
+									"focusBBox": {
+										"anyOf": [
+											{
+												"type": "object",
+												"properties": {
+													"x": {
+														"type": "number"
+													},
+													"y": {
+														"type": "number"
+													},
+													"width": {
+														"type": "number",
+														"minimum": 0
+													},
+													"height": {
+														"type": "number",
+														"minimum": 0
+													}
+												},
+												"required": ["x", "y", "width", "height"],
+												"additionalProperties": false
+											},
+											{
+												"type": "null"
+											}
+										]
+									},
+									"details": {
+										"type": "object",
+										"properties": {
+											"identityIssue": {
+												"type": "string",
+												"enum": ["missing-id", "empty-string-id", "non-string-id"]
+											},
+											"rawIdType": {
+												"type": "string",
+												"enum": [
+													"missing",
+													"undefined",
+													"null",
+													"string",
+													"number",
+													"boolean",
+													"bigint",
+													"symbol",
+													"function",
+													"array",
+													"object"
+												]
+											},
+											"rawIdDescription": {
+												"type": "string"
+											},
+											"sourceIndex": {
+												"type": "integer",
+												"minimum": 0,
+												"maximum": 9007199254740991
+											},
+											"availableElementType": {
+												"anyOf": [
+													{
+														"type": "string"
+													},
+													{
+														"type": "null"
+													}
+												]
+											},
+											"intendedRoles": {
+												"minItems": 1,
 												"type": "array",
 												"items": {
 													"type": "string",
@@ -5044,16 +5345,6 @@ Public result JSON Schema:
 														"label-overlap-body"
 													]
 												}
-											},
-											"availableElementType": {
-												"anyOf": [
-													{
-														"type": "string"
-													},
-													{
-														"type": "null"
-													}
-												]
 											}
 										},
 										"required": [
@@ -5061,8 +5352,8 @@ Public result JSON Schema:
 											"rawIdType",
 											"rawIdDescription",
 											"sourceIndex",
-											"intendedRoles",
-											"availableElementType"
+											"availableElementType",
+											"intendedRoles"
 										],
 										"additionalProperties": false
 									}
@@ -5096,10 +5387,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -5343,10 +5635,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -5589,10 +5882,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -5838,10 +6132,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -6084,10 +6379,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -6303,6 +6599,17 @@ Public result JSON Schema:
 											"rawKind": {
 												"type": "string"
 											},
+											"readableTargetId": {
+												"anyOf": [
+													{
+														"type": "string",
+														"minLength": 1
+													},
+													{
+														"type": "null"
+													}
+												]
+											},
 											"issue": {
 												"type": "string",
 												"enum": [
@@ -6310,13 +6617,273 @@ Public result JSON Schema:
 													"array",
 													"missing-element-id",
 													"empty-element-id",
-													"non-string-element-id",
-													"missing-focus",
-													"nonfinite-focus",
-													"missing-gap",
-													"nonfinite-gap",
-													"invalid-fixed-point"
+													"non-string-element-id"
 												]
+											},
+											"classificationBlocked": {
+												"type": "boolean",
+												"const": true
+											}
+										},
+										"required": [
+											"connectorId",
+											"sourceIndex",
+											"rawKind",
+											"readableTargetId",
+											"issue",
+											"classificationBlocked"
+										],
+										"additionalProperties": false
+									}
+								},
+								"required": [
+									"code",
+									"reason",
+									"severity",
+									"affectsCoverage",
+									"message",
+									"elements",
+									"nodes",
+									"obstacles",
+									"points",
+									"affectedBBox",
+									"focusBBox",
+									"details"
+								],
+								"additionalProperties": false
+							},
+							{
+								"type": "object",
+								"properties": {
+									"code": {
+										"type": "string",
+										"const": "BROKEN_REFERENCE"
+									},
+									"reason": {
+										"type": "string",
+										"const": "malformed-start-binding"
+									},
+									"severity": {
+										"type": "string",
+										"const": "error"
+									},
+									"affectsCoverage": {
+										"type": "boolean",
+										"const": false
+									},
+									"message": {
+										"type": "string",
+										"minLength": 1
+									},
+									"elements": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"type": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"sourceIndex": {
+													"type": "integer",
+													"minimum": 0,
+													"maximum": 9007199254740991
+												}
+											},
+											"required": ["id", "type", "sourceIndex"],
+											"additionalProperties": false
+										}
+									},
+									"nodes": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"type": "string",
+													"minLength": 1
+												},
+												"elementIds": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"minLength": 1
+													}
+												},
+												"labelElementIds": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"minLength": 1
+													}
+												}
+											},
+											"required": ["id", "elementIds", "labelElementIds"],
+											"additionalProperties": false
+										}
+									},
+									"obstacles": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"type": "string",
+													"pattern": "^obstacle:.*"
+												},
+												"kind": {
+													"type": "string",
+													"enum": ["library-component", "grouped-component"]
+												},
+												"elementIds": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"minLength": 1
+													}
+												},
+												"groupIds": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"minLength": 1
+													}
+												},
+												"library": {
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"elementId": {
+																"type": "string",
+																"minLength": 1
+															},
+															"item": {
+																"type": "string",
+																"minLength": 1
+															},
+															"source": {
+																"type": "string"
+															}
+														},
+														"required": ["elementId", "item"],
+														"additionalProperties": false
+													}
+												}
+											},
+											"required": ["id", "kind", "elementIds", "groupIds", "library"],
+											"additionalProperties": false
+										}
+									},
+									"points": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"x": {
+													"type": "number"
+												},
+												"y": {
+													"type": "number"
+												}
+											},
+											"required": ["x", "y"],
+											"additionalProperties": false
+										}
+									},
+									"affectedBBox": {
+										"anyOf": [
+											{
+												"type": "object",
+												"properties": {
+													"x": {
+														"type": "number"
+													},
+													"y": {
+														"type": "number"
+													},
+													"width": {
+														"type": "number",
+														"minimum": 0
+													},
+													"height": {
+														"type": "number",
+														"minimum": 0
+													}
+												},
+												"required": ["x", "y", "width", "height"],
+												"additionalProperties": false
+											},
+											{
+												"type": "null"
+											}
+										]
+									},
+									"focusBBox": {
+										"anyOf": [
+											{
+												"type": "object",
+												"properties": {
+													"x": {
+														"type": "number"
+													},
+													"y": {
+														"type": "number"
+													},
+													"width": {
+														"type": "number",
+														"minimum": 0
+													},
+													"height": {
+														"type": "number",
+														"minimum": 0
+													}
+												},
+												"required": ["x", "y", "width", "height"],
+												"additionalProperties": false
+											},
+											{
+												"type": "null"
+											}
+										]
+									},
+									"details": {
+										"type": "object",
+										"properties": {
+											"connectorId": {
+												"anyOf": [
+													{
+														"type": "string",
+														"minLength": 1
+													},
+													{
+														"type": "null"
+													}
+												]
+											},
+											"sourceIndex": {
+												"type": "integer",
+												"minimum": 0,
+												"maximum": 9007199254740991
+											},
+											"rawKind": {
+												"type": "string"
 											},
 											"readableTargetId": {
 												"anyOf": [
@@ -6329,16 +6896,27 @@ Public result JSON Schema:
 													}
 												]
 											},
+											"issue": {
+												"type": "string",
+												"enum": [
+													"missing-focus",
+													"nonfinite-focus",
+													"missing-gap",
+													"nonfinite-gap",
+													"invalid-fixed-point"
+												]
+											},
 											"classificationBlocked": {
-												"type": "boolean"
+												"type": "boolean",
+												"const": false
 											}
 										},
 										"required": [
 											"connectorId",
 											"sourceIndex",
 											"rawKind",
-											"issue",
 											"readableTargetId",
+											"issue",
 											"classificationBlocked"
 										],
 										"additionalProperties": false
@@ -6373,10 +6951,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -6592,6 +7171,17 @@ Public result JSON Schema:
 											"rawKind": {
 												"type": "string"
 											},
+											"readableTargetId": {
+												"anyOf": [
+													{
+														"type": "string",
+														"minLength": 1
+													},
+													{
+														"type": "null"
+													}
+												]
+											},
 											"issue": {
 												"type": "string",
 												"enum": [
@@ -6599,13 +7189,273 @@ Public result JSON Schema:
 													"array",
 													"missing-element-id",
 													"empty-element-id",
-													"non-string-element-id",
-													"missing-focus",
-													"nonfinite-focus",
-													"missing-gap",
-													"nonfinite-gap",
-													"invalid-fixed-point"
+													"non-string-element-id"
 												]
+											},
+											"classificationBlocked": {
+												"type": "boolean",
+												"const": true
+											}
+										},
+										"required": [
+											"connectorId",
+											"sourceIndex",
+											"rawKind",
+											"readableTargetId",
+											"issue",
+											"classificationBlocked"
+										],
+										"additionalProperties": false
+									}
+								},
+								"required": [
+									"code",
+									"reason",
+									"severity",
+									"affectsCoverage",
+									"message",
+									"elements",
+									"nodes",
+									"obstacles",
+									"points",
+									"affectedBBox",
+									"focusBBox",
+									"details"
+								],
+								"additionalProperties": false
+							},
+							{
+								"type": "object",
+								"properties": {
+									"code": {
+										"type": "string",
+										"const": "BROKEN_REFERENCE"
+									},
+									"reason": {
+										"type": "string",
+										"const": "malformed-end-binding"
+									},
+									"severity": {
+										"type": "string",
+										"const": "error"
+									},
+									"affectsCoverage": {
+										"type": "boolean",
+										"const": false
+									},
+									"message": {
+										"type": "string",
+										"minLength": 1
+									},
+									"elements": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"type": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"sourceIndex": {
+													"type": "integer",
+													"minimum": 0,
+													"maximum": 9007199254740991
+												}
+											},
+											"required": ["id", "type", "sourceIndex"],
+											"additionalProperties": false
+										}
+									},
+									"nodes": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"type": "string",
+													"minLength": 1
+												},
+												"elementIds": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"minLength": 1
+													}
+												},
+												"labelElementIds": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"minLength": 1
+													}
+												}
+											},
+											"required": ["id", "elementIds", "labelElementIds"],
+											"additionalProperties": false
+										}
+									},
+									"obstacles": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"type": "string",
+													"pattern": "^obstacle:.*"
+												},
+												"kind": {
+													"type": "string",
+													"enum": ["library-component", "grouped-component"]
+												},
+												"elementIds": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"minLength": 1
+													}
+												},
+												"groupIds": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"minLength": 1
+													}
+												},
+												"library": {
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"elementId": {
+																"type": "string",
+																"minLength": 1
+															},
+															"item": {
+																"type": "string",
+																"minLength": 1
+															},
+															"source": {
+																"type": "string"
+															}
+														},
+														"required": ["elementId", "item"],
+														"additionalProperties": false
+													}
+												}
+											},
+											"required": ["id", "kind", "elementIds", "groupIds", "library"],
+											"additionalProperties": false
+										}
+									},
+									"points": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"x": {
+													"type": "number"
+												},
+												"y": {
+													"type": "number"
+												}
+											},
+											"required": ["x", "y"],
+											"additionalProperties": false
+										}
+									},
+									"affectedBBox": {
+										"anyOf": [
+											{
+												"type": "object",
+												"properties": {
+													"x": {
+														"type": "number"
+													},
+													"y": {
+														"type": "number"
+													},
+													"width": {
+														"type": "number",
+														"minimum": 0
+													},
+													"height": {
+														"type": "number",
+														"minimum": 0
+													}
+												},
+												"required": ["x", "y", "width", "height"],
+												"additionalProperties": false
+											},
+											{
+												"type": "null"
+											}
+										]
+									},
+									"focusBBox": {
+										"anyOf": [
+											{
+												"type": "object",
+												"properties": {
+													"x": {
+														"type": "number"
+													},
+													"y": {
+														"type": "number"
+													},
+													"width": {
+														"type": "number",
+														"minimum": 0
+													},
+													"height": {
+														"type": "number",
+														"minimum": 0
+													}
+												},
+												"required": ["x", "y", "width", "height"],
+												"additionalProperties": false
+											},
+											{
+												"type": "null"
+											}
+										]
+									},
+									"details": {
+										"type": "object",
+										"properties": {
+											"connectorId": {
+												"anyOf": [
+													{
+														"type": "string",
+														"minLength": 1
+													},
+													{
+														"type": "null"
+													}
+												]
+											},
+											"sourceIndex": {
+												"type": "integer",
+												"minimum": 0,
+												"maximum": 9007199254740991
+											},
+											"rawKind": {
+												"type": "string"
 											},
 											"readableTargetId": {
 												"anyOf": [
@@ -6618,16 +7468,27 @@ Public result JSON Schema:
 													}
 												]
 											},
+											"issue": {
+												"type": "string",
+												"enum": [
+													"missing-focus",
+													"nonfinite-focus",
+													"missing-gap",
+													"nonfinite-gap",
+													"invalid-fixed-point"
+												]
+											},
 											"classificationBlocked": {
-												"type": "boolean"
+												"type": "boolean",
+												"const": false
 											}
 										},
 										"required": [
 											"connectorId",
 											"sourceIndex",
 											"rawKind",
-											"issue",
 											"readableTargetId",
+											"issue",
 											"classificationBlocked"
 										],
 										"additionalProperties": false
@@ -6662,10 +7523,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -6924,7 +7786,8 @@ Public result JSON Schema:
 												}
 											},
 											"classificationBlocked": {
-												"type": "boolean"
+												"type": "boolean",
+												"const": true
 											}
 										},
 										"required": [
@@ -6968,10 +7831,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -7195,7 +8059,8 @@ Public result JSON Schema:
 												"enum": ["empty-container-id", "non-string-container-id"]
 											},
 											"ownerClassificationBlocked": {
-												"type": "boolean"
+												"type": "boolean",
+												"const": true
 											}
 										},
 										"required": [
@@ -7238,10 +8103,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -7480,10 +8346,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -7722,10 +8589,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -7971,10 +8839,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -8228,10 +9097,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -8469,10 +9339,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -8714,10 +9585,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -8955,10 +9827,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -9167,7 +10040,258 @@ Public result JSON Schema:
 												}
 											},
 											"rescuedByGroup": {
-												"type": "boolean"
+												"type": "boolean",
+												"const": false
+											}
+										},
+										"required": ["elementId", "issues", "rescuedByGroup"],
+										"additionalProperties": false
+									}
+								},
+								"required": [
+									"code",
+									"reason",
+									"severity",
+									"affectsCoverage",
+									"message",
+									"elements",
+									"nodes",
+									"obstacles",
+									"points",
+									"affectedBBox",
+									"focusBBox",
+									"details"
+								],
+								"additionalProperties": false
+							},
+							{
+								"type": "object",
+								"properties": {
+									"code": {
+										"type": "string",
+										"const": "BROKEN_REFERENCE"
+									},
+									"reason": {
+										"type": "string",
+										"const": "invalid-library-attribution"
+									},
+									"severity": {
+										"type": "string",
+										"const": "error"
+									},
+									"affectsCoverage": {
+										"type": "boolean",
+										"const": false
+									},
+									"message": {
+										"type": "string",
+										"minLength": 1
+									},
+									"elements": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"type": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"sourceIndex": {
+													"type": "integer",
+													"minimum": 0,
+													"maximum": 9007199254740991
+												}
+											},
+											"required": ["id", "type", "sourceIndex"],
+											"additionalProperties": false
+										}
+									},
+									"nodes": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"type": "string",
+													"minLength": 1
+												},
+												"elementIds": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"minLength": 1
+													}
+												},
+												"labelElementIds": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"minLength": 1
+													}
+												}
+											},
+											"required": ["id", "elementIds", "labelElementIds"],
+											"additionalProperties": false
+										}
+									},
+									"obstacles": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"type": "string",
+													"pattern": "^obstacle:.*"
+												},
+												"kind": {
+													"type": "string",
+													"enum": ["library-component", "grouped-component"]
+												},
+												"elementIds": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"minLength": 1
+													}
+												},
+												"groupIds": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"minLength": 1
+													}
+												},
+												"library": {
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"elementId": {
+																"type": "string",
+																"minLength": 1
+															},
+															"item": {
+																"type": "string",
+																"minLength": 1
+															},
+															"source": {
+																"type": "string"
+															}
+														},
+														"required": ["elementId", "item"],
+														"additionalProperties": false
+													}
+												}
+											},
+											"required": ["id", "kind", "elementIds", "groupIds", "library"],
+											"additionalProperties": false
+										}
+									},
+									"points": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"x": {
+													"type": "number"
+												},
+												"y": {
+													"type": "number"
+												}
+											},
+											"required": ["x", "y"],
+											"additionalProperties": false
+										}
+									},
+									"affectedBBox": {
+										"anyOf": [
+											{
+												"type": "object",
+												"properties": {
+													"x": {
+														"type": "number"
+													},
+													"y": {
+														"type": "number"
+													},
+													"width": {
+														"type": "number",
+														"minimum": 0
+													},
+													"height": {
+														"type": "number",
+														"minimum": 0
+													}
+												},
+												"required": ["x", "y", "width", "height"],
+												"additionalProperties": false
+											},
+											{
+												"type": "null"
+											}
+										]
+									},
+									"focusBBox": {
+										"anyOf": [
+											{
+												"type": "object",
+												"properties": {
+													"x": {
+														"type": "number"
+													},
+													"y": {
+														"type": "number"
+													},
+													"width": {
+														"type": "number",
+														"minimum": 0
+													},
+													"height": {
+														"type": "number",
+														"minimum": 0
+													}
+												},
+												"required": ["x", "y", "width", "height"],
+												"additionalProperties": false
+											},
+											{
+												"type": "null"
+											}
+										]
+									},
+									"details": {
+										"type": "object",
+										"properties": {
+											"elementId": {
+												"type": "string",
+												"minLength": 1
+											},
+											"issues": {
+												"minItems": 1,
+												"type": "array",
+												"items": {
+													"type": "string"
+												}
+											},
+											"rescuedByGroup": {
+												"type": "boolean",
+												"const": true
 											}
 										},
 										"required": ["elementId", "issues", "rescuedByGroup"],
@@ -9203,10 +10327,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -9445,10 +10570,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -9695,10 +10821,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -9941,10 +11068,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -10190,10 +11318,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -10440,10 +11569,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -10682,10 +11812,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "warning"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -10936,10 +12067,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "warning"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -11196,10 +12328,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "warning"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -11452,10 +12585,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "warning"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -11689,10 +12823,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "warning"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -11890,7 +13025,14 @@ Public result JSON Schema:
 										"type": "object",
 										"properties": {
 											"angle": {
-												"type": "number"
+												"anyOf": [
+													{
+														"type": "number"
+													},
+													{
+														"type": "string"
+													}
+												]
 											}
 										},
 										"required": ["angle"],
@@ -11926,10 +13068,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "warning"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -12163,10 +13306,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "warning"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -12413,10 +13557,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "warning"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -12689,10 +13834,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "warning"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -12964,10 +14110,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "warning"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -13241,10 +14388,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "warning"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -13518,10 +14666,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "warning"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -13776,10 +14925,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "warning"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -14031,10 +15181,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "warning"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -14288,10 +15439,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "warning"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": true
 									},
 									"message": {
 										"type": "string",
@@ -14563,10 +15715,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -14836,10 +15989,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -15109,10 +16263,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -15380,10 +16535,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -15630,10 +16786,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
@@ -15880,10 +17037,11 @@ Public result JSON Schema:
 									},
 									"severity": {
 										"type": "string",
-										"enum": ["error", "warning"]
+										"const": "error"
 									},
 									"affectsCoverage": {
-										"type": "boolean"
+										"type": "boolean",
+										"const": false
 									},
 									"message": {
 										"type": "string",
