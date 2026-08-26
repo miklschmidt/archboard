@@ -46,6 +46,7 @@ function verifyBrokenReference(finding: FindingFor<"BROKEN_REFERENCE">): void {
 		case "malformed-container-id":
 		case "dangling-bound-text":
 		case "dangling-bound-arrow":
+		case "bound-element-target-type-mismatch":
 		case "conflicting-bound-label-owner":
 		case "persisted-agent-endpoint":
 		case "invalid-node-metadata":
@@ -106,6 +107,7 @@ function verifyAmbiguousGeometry(finding: FindingFor<"AMBIGUOUS_GEOMETRY">): voi
 		case "points-empty":
 		case "points-one-point":
 		case "malformed-point":
+		case "absolute-point-overflow":
 		case "zero-length":
 		case "collinear-overlap":
 			return;
