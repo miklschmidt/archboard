@@ -46,7 +46,7 @@ export const CONTROL_SOCKET_FILE = "app-server-control.sock";
 
 export function codexHome(): string {
 	const fromEnv = process.env.CODEX_HOME;
-	if (fromEnv && fromEnv.trim()) return path.resolve(fromEnv.trim());
+	if (fromEnv?.trim()) return path.resolve(fromEnv.trim());
 	return path.join(os.homedir(), ".codex");
 }
 

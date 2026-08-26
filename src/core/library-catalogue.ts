@@ -327,7 +327,7 @@ export function remapElements(
 		if (typeof el.containerId === "string")
 			el.containerId = mapId(el.containerId) ?? el.containerId;
 		if (typeof el.frameId === "string") el.frameId = mapId(el.frameId) ?? el.frameId;
-		el.customData = { ...(el.customData ?? {}), ...attribution };
+		el.customData = { ...el.customData, ...attribution };
 		return el;
 	});
 }

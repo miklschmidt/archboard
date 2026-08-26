@@ -132,8 +132,7 @@ export function noteWrittenElsewhere(board: string): NoteWrittenElsewhere | null
 	const baselineHash = baselineHashFor(file);
 	const seen = looks().get(key);
 	if (
-		seen &&
-		seen.file === file &&
+		seen?.file === file &&
 		seen.mtimeMs === stat.mtimeMs &&
 		seen.size === stat.size &&
 		seen.baselineHash === baselineHash

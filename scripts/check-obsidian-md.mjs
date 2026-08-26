@@ -102,7 +102,7 @@ function checkStable(name, note, expectScene, expectedHeadings = 1) {
 		note.includes("\n# Excalidraw Data\n## Text Elements\n"),
 		`${name}: data section shape is broken`,
 	);
-	assert(/^---\n/.test(note), `${name}: note does not start with frontmatter`);
+	assert(note.startsWith('---\n'), `${name}: note does not start with frontmatter`);
 	// Only the data section's own heading is a *region* boundary; other
 	// occurrences — quoted in prose, or the raw text of a text element — are
 	// content, and content is exactly what must survive.

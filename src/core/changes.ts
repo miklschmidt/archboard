@@ -93,7 +93,7 @@ export function withSyntheticNodeIds(elements: ServerElement[]): ServerElement[]
 		if ((el as any).containerId) return el;
 		const custom = (el.customData ?? {}) as Record<string, unknown>;
 		const block = {
-			...(readElementMetadata(el).archboard ?? {}),
+			...readElementMetadata(el).archboard,
 			node: `${ANON_NODE_PREFIX}${el.id}`,
 		};
 		return { ...el, customData: { ...custom, archboard: block } } as ServerElement;
@@ -299,7 +299,7 @@ function applyIdentityPairs(before: ServerElement[], pairs: IdentityPair[]): Ser
 			...el,
 			customData: {
 				...custom,
-				archboard: { ...(readElementMetadata(el).archboard ?? {}), node: renamed },
+				archboard: { ...readElementMetadata(el).archboard, node: renamed },
 			},
 		} as ServerElement;
 	});
