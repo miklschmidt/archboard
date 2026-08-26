@@ -66,12 +66,15 @@ const {
 	claimOn,
 	claimWriterId,
 	holdBoard,
+	onBoardSweep,
 	onBoardLockChanged,
 	releaseClaim,
 	releaseHold,
 	takeClaimRevocation,
+	watchBoardLocks,
 	withBoardLock,
 } = await import(src("runtime/engine/board-lock.ts"));
+const { default: logger } = await import(src("runtime/engine/logger.ts"));
 const {
 	CLAIM_LEASE_MS,
 	LOCK_FREE_LINGER_MS,
@@ -84,6 +87,27 @@ const {
 
 const agent = (id) => ({ id, kind: "agent" });
 const person = (id) => ({ id, kind: "human" });
+
+// The note watcher rides the lock sweep. Its failure must be visible without
+// preventing the lock half of the beat from continuing.
+{
+	const warnings = [];
+	const originalWarn = logger.warn;
+	logger.warn = (...args) => warnings.push(args);
+	onBoardSweep(() => {
+		throw new Error("note-watch fixture failed");
+	});
+	watchBoardLocks(() => ["passenger-fixture"]);
+	await sleep(LOCK_WATCH_MS + 100);
+	watchBoardLocks(null);
+	onBoardSweep(null);
+	logger.warn = originalWarn;
+	check(
+		"a failed note-watch passenger emits a warning and leaves the lock sweep alive",
+		warnings.some(([message]) => String(message).includes("lock watch continues")),
+		warnings.map(([message]) => String(message)).join(" | "),
+	);
+}
 
 /**
  * A take that is meant to succeed.
@@ -1253,7 +1277,7 @@ try {
 	);
 	check(
 		"and one file in src/ sends the lock broadcast",
-		senders.length === 1 && senders[0].endsWith("server.ts"),
+		senders.length === 1 && senders[0].endsWith("server/canvas/lib/application.ts"),
 		senders.map((f) => f.replace(repoRoot, "")).join(", ") || "none",
 	);
 
@@ -1264,7 +1288,7 @@ try {
 	);
 	check(
 		"  through the one sink the module exposes, registered in one place",
-		sinks.length === 1 && sinks[0].endsWith("server.ts"),
+		sinks.length === 1 && sinks[0].endsWith("server/canvas/lib/application.ts"),
 		sinks.map((f) => f.replace(repoRoot, "")).join(", ") || "none",
 	);
 

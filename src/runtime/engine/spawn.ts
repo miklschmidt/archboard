@@ -127,7 +127,8 @@ export async function ensureCanvasRunning(
 		throw error;
 	}
 
-	// src/core/spawn.ts -> src/server.ts; spawn args must be path strings.
+	// This runtime module resolves the thin src/server.ts process entrypoint;
+	// spawn args must be path strings.
 	// process.execPath is the bun that is running us, which is what can read a
 	// .ts entry point at all.
 	const serverEntry = fileURLToPath(new URL("../../server.ts", import.meta.url));

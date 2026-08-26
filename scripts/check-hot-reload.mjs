@@ -156,7 +156,7 @@ const box = (label, x) => ({
 	customData: { archboard: { node: label.toLowerCase(), kind: "service", name: label } },
 });
 
-// A route the running canvas does not have. Adding it to server.ts is how this
+// A route the running canvas does not have. Adding it to the application is how this
 // check tells "the source was re-evaluated" from "the process is still alive":
 // `app` is rebuilt on every reload, so the route can only exist if the new
 // source ran.
@@ -298,7 +298,7 @@ try {
 
 	// ── A reload that is asked for ─────────────────────────────
 
-	edit(src("server.ts"), (text) => text + PROBE_ROUTE);
+	edit(src("server/canvas/lib/application.ts"), (text) => text + PROBE_ROUTE);
 	await sleep(600);
 	const reloadLog = await askForReload();
 

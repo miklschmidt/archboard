@@ -22,7 +22,7 @@
 //
 // WHAT IS MODELLED AND WHY. The real write boundary is used — this file's
 // `boardOf` calls `expandElements`, the one converter, exactly as
-// `src/server.ts` does. What is modelled is the *pane*: the baseline it
+// the server application does. What is modelled is the *pane*: the baseline it
 // reports against, the human typing into a text element, and Excalidraw's
 // deletion of a bound text somebody emptied. Those need a DOM, and the loop
 // they close is the one that has to be run to exhaustion rather than looked at.
@@ -220,7 +220,7 @@ function cycle(store, baseline, { contain, types, empties }) {
 /**
  * An agent's write, through the code that performs one.
  *
- * `applyElementInput` is the write conversion entry `src/server.ts` calls.
+ * `applyElementInput` is the write conversion entry the server application calls.
  * The HTTP read, persistence and broadcast stay outside it, so a Map is all
  * this check needs to exercise the real stage order. The text elements are on
  * the board before any pane has seen it, which is the change everything below

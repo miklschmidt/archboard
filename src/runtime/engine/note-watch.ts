@@ -13,7 +13,7 @@
 //   a hold      archboard tried to write and was refused, and the board has
 //               stopped saving. Something happened. src/core/board-hold.ts
 //   a lock      another archboard writer has the board right now.
-//               src/core/board-lock.ts
+//               src/runtime/engine/board-lock.ts
 //   this        nobody has tried to write yet, so nothing has been refused, and
 //               the note is nevertheless not the one this pane is showing
 //
@@ -98,7 +98,7 @@ interface Looked {
 // Both in kept(), because a hot reload must not make the canvas forget what it
 // has already said: re-announcing a mark that is already up is a message every
 // pane has, and forgetting one that is up is a mark that never comes down
-// (src/core/hot.ts).
+// (src/runtime/engine/hot.ts).
 const looks = () => kept("note-watch:looks", () => new Map<string, Looked>());
 const announced = () => kept("note-watch:announced", () => new Map<string, string | null>());
 const sinkHolder = () => kept("note-watch:sink", () => ({ notify: null as NoteSink | null }));

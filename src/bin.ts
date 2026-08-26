@@ -6,7 +6,7 @@
 //   <subcommand>  -> CLI command
 //
 // IMPORTANT: never statically import ./server.js here. The CLI reaches the
-// canvas by spawning src/server.ts as a child process (see core/spawn.ts).
+// canvas by spawning src/server.ts as a child process (see runtime/engine/spawn.ts).
 
 // Disable colors to prevent ANSI color codes from breaking JSON parsing
 process.env.NODE_DISABLE_COLORS = "1";
