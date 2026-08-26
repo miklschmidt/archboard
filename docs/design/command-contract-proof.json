@@ -1,970 +1,836 @@
 {
-  "schemaVersion": 1,
-  "generatedFrom": "src/cli/commands/run.ts",
-  "contracts": [
-    {
-      "name": "update",
-      "path": [
-        "update"
-      ],
-      "summary": "Update one element",
-      "usage": "update <id> --set '{\"backgroundColor\":\"#ffc9c9\"}' [--document]\n\n  ANSWERS WITH WHAT THE BOARD BECAME: `elements` is every element the write touched in\n  its resulting form, including what the server made and you never named — the ids it\n  minted, the text element it expanded from a `label`, the arrows it re-routed behind a\n  move. `fingerprint` is the board in one line: how many elements, the sha-256 of its\n  note, and which edit of that note this write produced. Keep the last one and you can\n  tell in a single comparison whether anything you did not do has changed, instead of\n  re-reading the board — and pass `fingerprint.version` as --expect-version on your\n  next write to have it refused if somebody got there first.\n\n  --document adds the whole board. OFF BY DEFAULT AND USUALLY WRONG: 300 elements is\n  about 60,000 tokens, so a loop that asks for it pulls the board through a context once\n  per box. Use `describe` for a summary or `query` for a part.",
-      "description": "Updates one element in one version-checked board write.",
-      "examples": [
-        "archboard update box --set '{\"x\":120}' --board payments --doing \"moving box\""
-      ],
-      "parameters": [
-        {
-          "kind": "positional",
-          "key": "id",
-          "name": "id",
-          "description": "Element id"
-        },
-        {
-          "kind": "positional",
-          "key": "input",
-          "name": "updates.json|-",
-          "route": "stdin-or-file",
-          "description": "JSON update source"
-        },
-        {
-          "kind": "positional",
-          "key": "tail",
-          "name": "ignored",
-          "repeatable": true,
-          "route": "pass-through",
-          "description": "Legacy ignored positional content"
-        },
-        {
-          "kind": "option",
-          "key": "set",
-          "spellings": [
-            "--set"
-          ],
-          "value": "required",
-          "description": "Inline JSON update"
-        },
-        {
-          "kind": "option",
-          "key": "document",
-          "spellings": [
-            "--document"
-          ],
-          "value": "none",
-          "description": "Include the whole board"
-        }
-      ],
-      "input": {
-        "schema": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "minLength": 1
-            },
-            "input": {
-              "type": "string"
-            },
-            "tail": {
-              "default": [],
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "set": {
-              "type": "string"
-            },
-            "document": {
-              "default": false,
-              "type": "boolean"
-            }
-          },
-          "required": [
-            "id",
-            "tail",
-            "document"
-          ],
-          "additionalProperties": false
-        },
-        "stages": [
-          {
-            "name": "updates",
-            "when": "before-server",
-            "description": "JSON object from --set, file, or stdin",
-            "schema": {
-              "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "type": "object",
-              "propertyNames": {
-                "type": "string"
-              },
-              "additionalProperties": {}
-            }
-          }
-        ]
-      },
-      "result": {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "const": true
-          },
-          "element": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "type": {
-                "type": "string",
-                "enum": [
-                  "rectangle",
-                  "ellipse",
-                  "diamond",
-                  "arrow",
-                  "text",
-                  "line",
-                  "freedraw",
-                  "image"
-                ]
-              },
-              "x": {
-                "type": "number"
-              },
-              "y": {
-                "type": "number"
-              }
-            },
-            "required": [
-              "id",
-              "type",
-              "x",
-              "y"
-            ],
-            "additionalProperties": {}
-          },
-          "elements": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "type": {
-                  "type": "string",
-                  "enum": [
-                    "rectangle",
-                    "ellipse",
-                    "diamond",
-                    "arrow",
-                    "text",
-                    "line",
-                    "freedraw",
-                    "image"
-                  ]
-                },
-                "x": {
-                  "type": "number"
-                },
-                "y": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "id",
-                "type",
-                "x",
-                "y"
-              ],
-              "additionalProperties": {}
-            }
-          },
-          "fingerprint": {
-            "type": "object",
-            "properties": {
-              "elements": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 9007199254740991
-              },
-              "note": {
-                "type": "string"
-              },
-              "version": {
-                "anyOf": [
-                  {
-                    "type": "integer",
-                    "minimum": 0,
-                    "maximum": 9007199254740991
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              }
-            },
-            "required": [
-              "elements",
-              "note",
-              "version"
-            ],
-            "additionalProperties": false
-          },
-          "document": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "type": {
-                  "type": "string",
-                  "enum": [
-                    "rectangle",
-                    "ellipse",
-                    "diamond",
-                    "arrow",
-                    "text",
-                    "line",
-                    "freedraw",
-                    "image"
-                  ]
-                },
-                "x": {
-                  "type": "number"
-                },
-                "y": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "id",
-                "type",
-                "x",
-                "y"
-              ],
-              "additionalProperties": {}
-            }
-          },
-          "held": {
-            "type": "object",
-            "properties": {
-              "board": {
-                "type": "string"
-              },
-              "message": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "board",
-              "message"
-            ],
-            "additionalProperties": {}
-          }
-        },
-        "required": [
-          "success",
-          "element",
-          "elements",
-          "fingerprint"
-        ],
-        "additionalProperties": false
-      },
-      "output": [
-        {
-          "id": "json",
-          "when": {},
-          "mode": "json",
-          "held": "object-field-and-stderr-note",
-          "description": "Versioned write result"
-        }
-      ],
-      "prerequisites": [
-        "server"
-      ],
-      "effects": [
-        "local-read",
-        "write"
-      ],
-      "refusals": [
-        {
-          "code": "BOARD_REQUIRED",
-          "exit": 2,
-          "stream": "stderr",
-          "description": "A board-sensitive request did not name a board."
-        },
-        {
-          "code": "CANVAS_UNREACHABLE",
-          "exit": 3,
-          "stream": "stderr",
-          "description": "The canvas server could not be reached or started."
-        },
-        {
-          "code": "BOARD_HELD",
-          "exit": 5,
-          "stream": "stderr",
-          "description": "The note changed on disk."
-        },
-        {
-          "code": "BOARD_VERSION_CONFLICT",
-          "exit": 5,
-          "stream": "stderr",
-          "description": "The board advanced past expect-version."
-        },
-        {
-          "code": "CLAIM_REVOKED",
-          "exit": 5,
-          "stream": "stderr",
-          "description": "The person took back the claim."
-        }
-      ],
-      "relationships": [
-        {
-          "method": "PUT",
-          "path": "/api/elements/:id",
-          "cardinality": "one",
-          "description": "Exactly one board write"
-        }
-      ]
-    },
-    {
-      "name": "query",
-      "path": [
-        "query"
-      ],
-      "summary": "Query elements (server + typed client-side filters)",
-      "usage": "query [--type rectangle] [--bbox x0,y0,x1,y1] [--filter locked=true] [--filter-json '{...}']",
-      "description": "Queries the board and applies typed client-side predicates without changing it.",
-      "examples": [
-        "archboard query --board payments --type rectangle"
-      ],
-      "parameters": [
-        {
-          "kind": "option",
-          "key": "type",
-          "spellings": [
-            "--type"
-          ],
-          "value": "required",
-          "description": "Element type"
-        },
-        {
-          "kind": "option",
-          "key": "bbox",
-          "spellings": [
-            "--bbox"
-          ],
-          "value": "required",
-          "description": "Overlap rectangle"
-        },
-        {
-          "kind": "option",
-          "key": "filter",
-          "spellings": [
-            "--filter"
-          ],
-          "value": "required",
-          "occurrences": "append",
-          "description": "Typed key=value predicate"
-        },
-        {
-          "kind": "option",
-          "key": "filterJson",
-          "spellings": [
-            "--filter-json"
-          ],
-          "value": "required",
-          "description": "JSON predicates"
-        },
-        {
-          "kind": "positional",
-          "key": "tail",
-          "name": "ignored",
-          "repeatable": true,
-          "route": "pass-through",
-          "description": "Legacy ignored positional content"
-        }
-      ],
-      "input": {
-        "schema": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "type": {
-              "type": "string"
-            },
-            "bbox": {
-              "type": "string"
-            },
-            "filter": {
-              "default": [],
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "filterJson": {
-              "type": "string"
-            },
-            "tail": {
-              "default": [],
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "required": [
-            "filter",
-            "tail"
-          ],
-          "additionalProperties": false
-        },
-        "stages": [
-          {
-            "name": "bbox",
-            "when": "after-server",
-            "description": "Four finite comma-separated numbers",
-            "schema": {
-              "$schema": "https://json-schema.org/draft/2020-12/schema"
-            }
-          },
-          {
-            "name": "filters",
-            "when": "after-read",
-            "description": "Typed key=value and JSON predicates",
-            "schema": {
-              "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "anyOf": [
-                {},
-                {}
-              ]
-            }
-          }
-        ]
-      },
-      "result": {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "rectangle",
-                "ellipse",
-                "diamond",
-                "arrow",
-                "text",
-                "line",
-                "freedraw",
-                "image"
-              ]
-            },
-            "x": {
-              "type": "number"
-            },
-            "y": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "id",
-            "type",
-            "x",
-            "y"
-          ],
-          "additionalProperties": {}
-        }
-      },
-      "output": [
-        {
-          "id": "json",
-          "when": {},
-          "mode": "json",
-          "held": "stderr-note",
-          "description": "Bare element array"
-        }
-      ],
-      "prerequisites": [
-        "server"
-      ],
-      "effects": [
-        "read"
-      ],
-      "refusals": [
-        {
-          "code": "BOARD_REQUIRED",
-          "exit": 2,
-          "stream": "stderr",
-          "description": "A board-sensitive request did not name a board."
-        },
-        {
-          "code": "CANVAS_UNREACHABLE",
-          "exit": 3,
-          "stream": "stderr",
-          "description": "The canvas server could not be reached or started."
-        }
-      ],
-      "relationships": [
-        {
-          "method": "GET",
-          "path": "/api/elements",
-          "cardinality": "conditional",
-          "description": "Unconstrained read"
-        },
-        {
-          "method": "GET",
-          "path": "/api/elements/search",
-          "cardinality": "conditional",
-          "description": "Type or bbox search"
-        }
-      ]
-    },
-    {
-      "name": "viewport",
-      "path": [
-        "viewport"
-      ],
-      "summary": "Point a pane's camera: fit, centre, or zoom (needs a browser tab)",
-      "usage": "viewport --fit [--zoom-factor 0.8] [--pane <spec>]\nviewport --ids a,b,c [--zoom-factor 0.8] [--pane <spec>]\nviewport --element <id> [--pane <spec>]\nviewport --zoom 1.5 [--offset-x 0] [--offset-y 0] [--pane <spec>]\n\n  Exactly one of those four. --fit frames everything on the board, --ids frames those elements,\n  --element centres on one without changing zoom, and the last sets explicit camera values.\n  --zoom-factor is the padding on a fit: lower leaves more room around the content.\n\n  It names a PANE, not a board, because a pane holds one board and that settles which is meant\n  (ADR 0009). With one pane on screen that is the one; with two, --pane says which half moves,\n  and without it the pane that answers for the browser does.",
-      "description": "Moves the camera owned by a rendered browser pane.",
-      "examples": [
-        "archboard viewport --fit",
-        "archboard viewport --zoom 1.5 --offset-x 20"
-      ],
-      "parameters": [
-        {
-          "kind": "option",
-          "key": "fit",
-          "spellings": [
-            "--fit"
-          ],
-          "value": "none",
-          "description": "Fit the whole board"
-        },
-        {
-          "kind": "option",
-          "key": "ids",
-          "spellings": [
-            "--ids"
-          ],
-          "value": "required",
-          "description": "Fit selected element ids"
-        },
-        {
-          "kind": "option",
-          "key": "element",
-          "spellings": [
-            "--element"
-          ],
-          "value": "required",
-          "description": "Centre one element"
-        },
-        {
-          "kind": "option",
-          "key": "zoom",
-          "spellings": [
-            "--zoom"
-          ],
-          "value": "required",
-          "description": "Set zoom"
-        },
-        {
-          "kind": "option",
-          "key": "offsetX",
-          "spellings": [
-            "--offset-x"
-          ],
-          "value": "required",
-          "description": "Set horizontal offset"
-        },
-        {
-          "kind": "option",
-          "key": "offsetY",
-          "spellings": [
-            "--offset-y"
-          ],
-          "value": "required",
-          "description": "Set vertical offset"
-        },
-        {
-          "kind": "option",
-          "key": "zoomFactor",
-          "spellings": [
-            "--zoom-factor"
-          ],
-          "value": "required",
-          "description": "Fit padding factor"
-        },
-        {
-          "kind": "option",
-          "key": "pane",
-          "spellings": [
-            "--pane"
-          ],
-          "value": "required",
-          "description": "Pane selector"
-        },
-        {
-          "kind": "positional",
-          "key": "tail",
-          "name": "ignored",
-          "repeatable": true,
-          "route": "pass-through",
-          "description": "Legacy ignored positional content"
-        }
-      ],
-      "input": {
-        "schema": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "fit": {
-              "default": false,
-              "type": "boolean"
-            },
-            "ids": {
-              "type": "string"
-            },
-            "element": {
-              "type": "string"
-            },
-            "zoom": {
-              "type": "string"
-            },
-            "offsetX": {
-              "type": "string"
-            },
-            "offsetY": {
-              "type": "string"
-            },
-            "zoomFactor": {
-              "type": "string"
-            },
-            "pane": {
-              "type": "string"
-            },
-            "tail": {
-              "default": [],
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "required": [
-            "fit",
-            "tail"
-          ],
-          "additionalProperties": false
-        },
-        "stages": [
-          {
-            "name": "numbers",
-            "when": "after-browser",
-            "description": "Finite zoom and offset values",
-            "schema": {
-              "$schema": "https://json-schema.org/draft/2020-12/schema"
-            }
-          }
-        ]
-      },
-      "result": {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string"
-          },
-          "held": {
-            "type": "object",
-            "properties": {
-              "board": {
-                "type": "string"
-              },
-              "message": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "board",
-              "message"
-            ],
-            "additionalProperties": {}
-          }
-        },
-        "required": [
-          "success"
-        ],
-        "additionalProperties": false
-      },
-      "output": [
-        {
-          "id": "json",
-          "when": {},
-          "mode": "json",
-          "held": "object-field-and-stderr-note",
-          "description": "Viewport acknowledgement"
-        }
-      ],
-      "prerequisites": [
-        "server",
-        "browser"
-      ],
-      "effects": [
-        "browser"
-      ],
-      "refusals": [
-        {
-          "code": "BOARD_REQUIRED",
-          "exit": 2,
-          "stream": "stderr",
-          "description": "A board-sensitive request did not name a board."
-        },
-        {
-          "code": "CANVAS_UNREACHABLE",
-          "exit": 3,
-          "stream": "stderr",
-          "description": "The canvas server could not be reached or started."
-        },
-        {
-          "code": "BROWSER_REQUIRED",
-          "exit": 4,
-          "stream": "stderr",
-          "description": "No browser pane is rendering the canvas."
-        }
-      ],
-      "relationships": [
-        {
-          "method": "POST",
-          "path": "/api/viewport",
-          "cardinality": "one",
-          "description": "One browser camera request"
-        }
-      ]
-    },
-    {
-      "name": "export",
-      "path": [
-        "export"
-      ],
-      "summary": "Export the scene as .excalidraw JSON or Obsidian .excalidraw.md",
-      "usage": "export [--out scene.excalidraw | note.excalidraw.md] [--format json|obsidian] [--force] (a .md out path implies obsidian; --force overwrites a non-Excalidraw destination, still preserving its frontmatter)",
-      "description": "Builds a portable scene and emits raw content or writes one local file.",
-      "examples": [
-        "archboard export --board payments",
-        "archboard export --board payments --out payments.excalidraw"
-      ],
-      "parameters": [
-        {
-          "kind": "option",
-          "key": "out",
-          "spellings": [
-            "--out"
-          ],
-          "value": "required",
-          "route": "stdin-or-file",
-          "description": "Destination file"
-        },
-        {
-          "kind": "option",
-          "key": "format",
-          "spellings": [
-            "--format"
-          ],
-          "value": "required",
-          "description": "json or obsidian"
-        },
-        {
-          "kind": "option",
-          "key": "force",
-          "spellings": [
-            "--force"
-          ],
-          "value": "none",
-          "description": "Overwrite a non-Excalidraw note"
-        },
-        {
-          "kind": "positional",
-          "key": "tail",
-          "name": "ignored",
-          "repeatable": true,
-          "route": "pass-through",
-          "description": "Legacy ignored positional content"
-        }
-      ],
-      "input": {
-        "schema": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "out": {
-              "type": "string"
-            },
-            "format": {
-              "type": "string"
-            },
-            "force": {
-              "default": false,
-              "type": "boolean"
-            },
-            "tail": {
-              "default": [],
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "required": [
-            "force",
-            "tail"
-          ],
-          "additionalProperties": false
-        },
-        "stages": [
-          {
-            "name": "format",
-            "when": "before-server",
-            "description": "Explicit format or .md inference",
-            "schema": {
-              "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "type": "string",
-              "enum": [
-                "json",
-                "obsidian"
-              ]
-            }
-          }
-        ]
-      },
-      "result": {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "success": {
-                "type": "boolean",
-                "const": true
-              },
-              "file": {
-                "type": "string"
-              },
-              "elements": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 9007199254740991
-              },
-              "format": {
-                "type": "string",
-                "enum": [
-                  "json",
-                  "obsidian"
-                ]
-              },
-              "held": {
-                "type": "object",
-                "properties": {
-                  "board": {
-                    "type": "string"
-                  },
-                  "message": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "board",
-                  "message"
-                ],
-                "additionalProperties": {}
-              }
-            },
-            "required": [
-              "success",
-              "file",
-              "elements",
-              "format"
-            ],
-            "additionalProperties": false
-          }
-        ]
-      },
-      "output": [
-        {
-          "id": "raw",
-          "when": {
-            "key": "out",
-            "present": false
-          },
-          "mode": "raw",
-          "held": "none",
-          "description": "Exact serialized scene content"
-        },
-        {
-          "id": "file",
-          "when": {
-            "key": "out",
-            "present": true
-          },
-          "mode": "file-receipt",
-          "held": "object-field-and-stderr-note",
-          "description": "Validated file receipt"
-        }
-      ],
-      "prerequisites": [
-        "server"
-      ],
-      "effects": [
-        "local-read",
-        "read",
-        "local-write"
-      ],
-      "refusals": [
-        {
-          "code": "BOARD_REQUIRED",
-          "exit": 2,
-          "stream": "stderr",
-          "description": "A board-sensitive request did not name a board."
-        },
-        {
-          "code": "CANVAS_UNREACHABLE",
-          "exit": 3,
-          "stream": "stderr",
-          "description": "The canvas server could not be reached or started."
-        }
-      ],
-      "relationships": [
-        {
-          "method": "GET",
-          "path": "/api/elements",
-          "cardinality": "parallel",
-          "description": "Required scene elements"
-        },
-        {
-          "method": "GET",
-          "path": "/api/files",
-          "cardinality": "parallel",
-          "description": "Best-effort image files"
-        }
-      ]
-    }
-  ]
+	"schemaVersion": 1,
+	"generatedFrom": "src/cli/commands/run.ts",
+	"contracts": [
+		{
+			"name": "update",
+			"path": ["update"],
+			"summary": "Update one element",
+			"usage": "update <id> --set '{\"backgroundColor\":\"#ffc9c9\"}' [--document]\n\n  ANSWERS WITH WHAT THE BOARD BECAME: `elements` is every element the write touched in\n  its resulting form, including what the server made and you never named — the ids it\n  minted, the text element it expanded from a `label`, the arrows it re-routed behind a\n  move. `fingerprint` is the board in one line: how many elements, the sha-256 of its\n  note, and which edit of that note this write produced. Keep the last one and you can\n  tell in a single comparison whether anything you did not do has changed, instead of\n  re-reading the board — and pass `fingerprint.version` as --expect-version on your\n  next write to have it refused if somebody got there first.\n\n  --document adds the whole board. OFF BY DEFAULT AND USUALLY WRONG: 300 elements is\n  about 60,000 tokens, so a loop that asks for it pulls the board through a context once\n  per box. Use `describe` for a summary or `query` for a part.",
+			"description": "Updates one element in one version-checked board write.",
+			"examples": [
+				"archboard update box --set '{\"x\":120}' --board payments --doing \"moving box\""
+			],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "id",
+					"name": "id",
+					"description": "Element id"
+				},
+				{
+					"kind": "positional",
+					"key": "input",
+					"name": "updates.json|-",
+					"route": "stdin-or-file",
+					"description": "JSON update source"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				},
+				{
+					"kind": "option",
+					"key": "set",
+					"spellings": ["--set"],
+					"value": "required",
+					"description": "Inline JSON update"
+				},
+				{
+					"kind": "option",
+					"key": "document",
+					"spellings": ["--document"],
+					"value": "none",
+					"description": "Include the whole board"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"id": {
+							"type": "string",
+							"minLength": 1
+						},
+						"input": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						},
+						"set": {
+							"type": "string"
+						},
+						"document": {
+							"default": false,
+							"type": "boolean"
+						}
+					},
+					"required": ["id", "tail", "document"],
+					"additionalProperties": false
+				},
+				"stages": [
+					{
+						"name": "updates",
+						"when": "before-server",
+						"description": "JSON object from --set, file, or stdin",
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "object",
+							"propertyNames": {
+								"type": "string"
+							},
+							"additionalProperties": {}
+						}
+					}
+				]
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"const": true
+					},
+					"element": {
+						"type": "object",
+						"properties": {
+							"id": {
+								"type": "string"
+							},
+							"type": {
+								"type": "string",
+								"enum": [
+									"rectangle",
+									"ellipse",
+									"diamond",
+									"arrow",
+									"text",
+									"line",
+									"freedraw",
+									"image"
+								]
+							},
+							"x": {
+								"type": "number"
+							},
+							"y": {
+								"type": "number"
+							}
+						},
+						"required": ["id", "type", "x", "y"],
+						"additionalProperties": {}
+					},
+					"elements": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string"
+								},
+								"type": {
+									"type": "string",
+									"enum": [
+										"rectangle",
+										"ellipse",
+										"diamond",
+										"arrow",
+										"text",
+										"line",
+										"freedraw",
+										"image"
+									]
+								},
+								"x": {
+									"type": "number"
+								},
+								"y": {
+									"type": "number"
+								}
+							},
+							"required": ["id", "type", "x", "y"],
+							"additionalProperties": {}
+						}
+					},
+					"fingerprint": {
+						"type": "object",
+						"properties": {
+							"elements": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 9007199254740991
+							},
+							"note": {
+								"type": "string"
+							},
+							"version": {
+								"anyOf": [
+									{
+										"type": "integer",
+										"minimum": 0,
+										"maximum": 9007199254740991
+									},
+									{
+										"type": "null"
+									}
+								]
+							}
+						},
+						"required": ["elements", "note", "version"],
+						"additionalProperties": false
+					},
+					"document": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string"
+								},
+								"type": {
+									"type": "string",
+									"enum": [
+										"rectangle",
+										"ellipse",
+										"diamond",
+										"arrow",
+										"text",
+										"line",
+										"freedraw",
+										"image"
+									]
+								},
+								"x": {
+									"type": "number"
+								},
+								"y": {
+									"type": "number"
+								}
+							},
+							"required": ["id", "type", "x", "y"],
+							"additionalProperties": {}
+						}
+					},
+					"held": {
+						"type": "object",
+						"properties": {
+							"board": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": ["board", "message"],
+						"additionalProperties": {}
+					}
+				},
+				"required": ["success", "element", "elements", "fingerprint"],
+				"additionalProperties": false
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Versioned write result"
+				}
+			],
+			"prerequisites": ["server"],
+			"effects": ["local-read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "A board-sensitive request did not name a board."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The note changed on disk."
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board advanced past expect-version."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
+				}
+			],
+			"relationships": [
+				{
+					"method": "PUT",
+					"path": "/api/elements/:id",
+					"cardinality": "one",
+					"description": "Exactly one board write"
+				}
+			]
+		},
+		{
+			"name": "query",
+			"path": ["query"],
+			"summary": "Query elements (server + typed client-side filters)",
+			"usage": "query [--type rectangle] [--bbox x0,y0,x1,y1] [--filter locked=true] [--filter-json '{...}']",
+			"description": "Queries the board and applies typed client-side predicates without changing it.",
+			"examples": ["archboard query --board payments --type rectangle"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "type",
+					"spellings": ["--type"],
+					"value": "required",
+					"description": "Element type"
+				},
+				{
+					"kind": "option",
+					"key": "bbox",
+					"spellings": ["--bbox"],
+					"value": "required",
+					"description": "Overlap rectangle"
+				},
+				{
+					"kind": "option",
+					"key": "filter",
+					"spellings": ["--filter"],
+					"value": "required",
+					"occurrences": "append",
+					"description": "Typed key=value predicate"
+				},
+				{
+					"kind": "option",
+					"key": "filterJson",
+					"spellings": ["--filter-json"],
+					"value": "required",
+					"description": "JSON predicates"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"type": {
+							"type": "string"
+						},
+						"bbox": {
+							"type": "string"
+						},
+						"filter": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						},
+						"filterJson": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["filter", "tail"],
+					"additionalProperties": false
+				},
+				"stages": [
+					{
+						"name": "bbox",
+						"when": "after-server",
+						"description": "Four finite comma-separated numbers",
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema"
+						}
+					},
+					{
+						"name": "filters",
+						"when": "after-read",
+						"description": "Typed key=value and JSON predicates",
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"anyOf": [{}, {}]
+						}
+					}
+				]
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "array",
+				"items": {
+					"type": "object",
+					"properties": {
+						"id": {
+							"type": "string"
+						},
+						"type": {
+							"type": "string",
+							"enum": [
+								"rectangle",
+								"ellipse",
+								"diamond",
+								"arrow",
+								"text",
+								"line",
+								"freedraw",
+								"image"
+							]
+						},
+						"x": {
+							"type": "number"
+						},
+						"y": {
+							"type": "number"
+						}
+					},
+					"required": ["id", "type", "x", "y"],
+					"additionalProperties": {}
+				}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "stderr-note",
+					"description": "Bare element array"
+				}
+			],
+			"prerequisites": ["server"],
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "A board-sensitive request did not name a board."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas server could not be reached or started."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/elements",
+					"cardinality": "conditional",
+					"description": "Unconstrained read"
+				},
+				{
+					"method": "GET",
+					"path": "/api/elements/search",
+					"cardinality": "conditional",
+					"description": "Type or bbox search"
+				}
+			]
+		},
+		{
+			"name": "viewport",
+			"path": ["viewport"],
+			"summary": "Point a pane's camera: fit, centre, or zoom (needs a browser tab)",
+			"usage": "viewport --fit [--zoom-factor 0.8] [--pane <spec>]\nviewport --ids a,b,c [--zoom-factor 0.8] [--pane <spec>]\nviewport --element <id> [--pane <spec>]\nviewport --zoom 1.5 [--offset-x 0] [--offset-y 0] [--pane <spec>]\n\n  Exactly one of those four. --fit frames everything on the board, --ids frames those elements,\n  --element centres on one without changing zoom, and the last sets explicit camera values.\n  --zoom-factor is the padding on a fit: lower leaves more room around the content.\n\n  It names a PANE, not a board, because a pane holds one board and that settles which is meant\n  (ADR 0009). With one pane on screen that is the one; with two, --pane says which half moves,\n  and without it the pane that answers for the browser does.",
+			"description": "Moves the camera owned by a rendered browser pane.",
+			"examples": ["archboard viewport --fit", "archboard viewport --zoom 1.5 --offset-x 20"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "fit",
+					"spellings": ["--fit"],
+					"value": "none",
+					"description": "Fit the whole board"
+				},
+				{
+					"kind": "option",
+					"key": "ids",
+					"spellings": ["--ids"],
+					"value": "required",
+					"description": "Fit selected element ids"
+				},
+				{
+					"kind": "option",
+					"key": "element",
+					"spellings": ["--element"],
+					"value": "required",
+					"description": "Centre one element"
+				},
+				{
+					"kind": "option",
+					"key": "zoom",
+					"spellings": ["--zoom"],
+					"value": "required",
+					"description": "Set zoom"
+				},
+				{
+					"kind": "option",
+					"key": "offsetX",
+					"spellings": ["--offset-x"],
+					"value": "required",
+					"description": "Set horizontal offset"
+				},
+				{
+					"kind": "option",
+					"key": "offsetY",
+					"spellings": ["--offset-y"],
+					"value": "required",
+					"description": "Set vertical offset"
+				},
+				{
+					"kind": "option",
+					"key": "zoomFactor",
+					"spellings": ["--zoom-factor"],
+					"value": "required",
+					"description": "Fit padding factor"
+				},
+				{
+					"kind": "option",
+					"key": "pane",
+					"spellings": ["--pane"],
+					"value": "required",
+					"description": "Pane selector"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"fit": {
+							"default": false,
+							"type": "boolean"
+						},
+						"ids": {
+							"type": "string"
+						},
+						"element": {
+							"type": "string"
+						},
+						"zoom": {
+							"type": "string"
+						},
+						"offsetX": {
+							"type": "string"
+						},
+						"offsetY": {
+							"type": "string"
+						},
+						"zoomFactor": {
+							"type": "string"
+						},
+						"pane": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["fit", "tail"],
+					"additionalProperties": false
+				},
+				"stages": [
+					{
+						"name": "numbers",
+						"when": "after-browser",
+						"description": "Finite zoom and offset values",
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema"
+						}
+					}
+				]
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"success": {
+						"type": "boolean"
+					},
+					"message": {
+						"type": "string"
+					},
+					"held": {
+						"type": "object",
+						"properties": {
+							"board": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": ["board", "message"],
+						"additionalProperties": {}
+					}
+				},
+				"required": ["success"],
+				"additionalProperties": false
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Viewport acknowledgement"
+				}
+			],
+			"prerequisites": ["server", "browser"],
+			"effects": ["browser"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "A board-sensitive request did not name a board."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "BROWSER_REQUIRED",
+					"exit": 4,
+					"stream": "stderr",
+					"description": "No browser pane is rendering the canvas."
+				}
+			],
+			"relationships": [
+				{
+					"method": "POST",
+					"path": "/api/viewport",
+					"cardinality": "one",
+					"description": "One browser camera request"
+				}
+			]
+		},
+		{
+			"name": "export",
+			"path": ["export"],
+			"summary": "Export the scene as .excalidraw JSON or Obsidian .excalidraw.md",
+			"usage": "export [--out scene.excalidraw | note.excalidraw.md] [--format json|obsidian] [--force] (a .md out path implies obsidian; --force overwrites a non-Excalidraw destination, still preserving its frontmatter)",
+			"description": "Builds a portable scene and emits raw content or writes one local file.",
+			"examples": [
+				"archboard export --board payments",
+				"archboard export --board payments --out payments.excalidraw"
+			],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "out",
+					"spellings": ["--out"],
+					"value": "required",
+					"route": "stdin-or-file",
+					"description": "Destination file"
+				},
+				{
+					"kind": "option",
+					"key": "format",
+					"spellings": ["--format"],
+					"value": "required",
+					"description": "json or obsidian"
+				},
+				{
+					"kind": "option",
+					"key": "force",
+					"spellings": ["--force"],
+					"value": "none",
+					"description": "Overwrite a non-Excalidraw note"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"out": {
+							"type": "string"
+						},
+						"format": {
+							"type": "string"
+						},
+						"force": {
+							"default": false,
+							"type": "boolean"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["force", "tail"],
+					"additionalProperties": false
+				},
+				"stages": [
+					{
+						"name": "format",
+						"when": "before-server",
+						"description": "Explicit format or .md inference",
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "string",
+							"enum": ["json", "obsidian"]
+						}
+					}
+				]
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "object",
+						"properties": {
+							"success": {
+								"type": "boolean",
+								"const": true
+							},
+							"file": {
+								"type": "string"
+							},
+							"elements": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 9007199254740991
+							},
+							"format": {
+								"type": "string",
+								"enum": ["json", "obsidian"]
+							},
+							"held": {
+								"type": "object",
+								"properties": {
+									"board": {
+										"type": "string"
+									},
+									"message": {
+										"type": "string"
+									}
+								},
+								"required": ["board", "message"],
+								"additionalProperties": {}
+							}
+						},
+						"required": ["success", "file", "elements", "format"],
+						"additionalProperties": false
+					}
+				]
+			},
+			"output": [
+				{
+					"id": "raw",
+					"when": {
+						"key": "out",
+						"present": false
+					},
+					"mode": "raw",
+					"held": "none",
+					"description": "Exact serialized scene content"
+				},
+				{
+					"id": "file",
+					"when": {
+						"key": "out",
+						"present": true
+					},
+					"mode": "file-receipt",
+					"held": "object-field-and-stderr-note",
+					"description": "Validated file receipt"
+				}
+			],
+			"prerequisites": ["server"],
+			"effects": ["local-read", "read", "local-write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "A board-sensitive request did not name a board."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas server could not be reached or started."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/elements",
+					"cardinality": "parallel",
+					"description": "Required scene elements"
+				},
+				{
+					"method": "GET",
+					"path": "/api/files",
+					"cardinality": "parallel",
+					"description": "Best-effort image files"
+				}
+			]
+		}
+	]
 }
