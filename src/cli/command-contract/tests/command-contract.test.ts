@@ -10,6 +10,7 @@ import { runCommand } from "../runner.js";
 const temporaryDirectories: string[] = [];
 
 afterEach(() => {
+	process.exitCode = 0;
 	for (const directory of temporaryDirectories.splice(0)) {
 		rmSync(directory, { recursive: true, force: true });
 	}
@@ -187,6 +188,80 @@ describe("command-contract public interface", () => {
 		expect(existsSync(path)).toBeFalse();
 	});
 
+	test("an undeclared outcome reaches no structured output", async () => {
+		const contract = defineCommand({
+			...proofContract({ result: { ok: true }, resultSchema: z.object({ ok: z.boolean() }) }),
+			async handler() {
+				return { result: { ok: true }, outcome: "missing" };
+			},
+		});
+		const execution = await executePublic(contract);
+		expect(execution.error).toEqual(new Error("proof: undeclared outcome missing"));
+		expect(execution.stdout).toBe("");
+		expect(execution.stderr).toBe("");
+	});
+
+	test("a declared outcome validates before ordered presentation and sets exit last", async () => {
+		const events: string[] = [];
+		const contract = defineCommand({
+			...proofContract({ result: { ok: true }, resultSchema: z.object({ ok: z.boolean() }) }),
+			outcomes: [
+				{
+					id: "refused",
+					exit: 5,
+					description: "refused proof",
+					stream: "stdout-and-stderr",
+					held: "none",
+					presentation: ["diagnostics", "result"],
+				},
+			],
+			async handler() {
+				return { result: { ok: true }, outcome: "refused", diagnostics: ["refused"] };
+			},
+		});
+		const stdoutSpy = spyOn(process.stdout, "write").mockImplementation((value) => {
+			events.push(`stdout:${String(value)}`);
+			expect(process.exitCode).not.toBe(5);
+			return true;
+		});
+		const stderrSpy = spyOn(process.stderr, "write").mockImplementation((value) => {
+			events.push(`stderr:${String(value)}`);
+			expect(process.exitCode).not.toBe(5);
+			return true;
+		});
+		try {
+			await runCommand(contract, []);
+		} finally {
+			stdoutSpy.mockRestore();
+			stderrSpy.mockRestore();
+		}
+		expect(events).toEqual(["stderr:refused\n", 'stdout:{\n  "ok": true\n}\n']);
+		expect(process.exitCode).toBe(5);
+	});
+
+	test("an invalid declared-outcome result emits neither deferred diagnostics nor output", async () => {
+		const contract = defineCommand({
+			...proofContract({ result: null, resultSchema: z.object({ ok: z.boolean() }) }),
+			outcomes: [
+				{
+					id: "unavailable",
+					exit: 3,
+					description: "unavailable proof",
+					stream: "stdout-and-stderr",
+					held: "none",
+					presentation: ["diagnostics", "result"],
+				},
+			],
+			async handler() {
+				return { result: { ok: "no" }, outcome: "unavailable", diagnostics: ["hidden"] };
+			},
+		});
+		const execution = await executePublic(contract);
+		expect(execution.error).toBeInstanceOf(z.ZodError);
+		expect(execution.stdout).toBe("");
+		expect(execution.stderr).toBe("");
+	});
+
 	test("file output validates, writes, then emits its public receipt", async () => {
 		const path = temporaryPath("result.txt");
 		const execution = await executePublic(
@@ -243,6 +318,7 @@ describe("command-contract public interface", () => {
 		expect(json).not.toContain("content");
 		expect(json).not.toContain("encoding");
 		expect(json).not.toContain("commander");
+		expect(json).not.toContain("diagnostics");
 	});
 
 	test("staged metadata owns viewport id coercion and export format inference", async () => {

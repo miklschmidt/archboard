@@ -80,6 +80,19 @@ export interface OutputPolicy<Input> {
 	select(input: Input): string;
 }
 
+export type OutcomeStreamPolicy = "stdout-only" | "stderr-only" | "stdout-and-stderr";
+export type OutcomePresentationStep = "diagnostics" | "result" | "held-note" | "continuation";
+
+/** A public, declared nonzero command result. Ordinary success is always exit 0. */
+export interface CommandOutcomeDeclaration {
+	id: string;
+	exit: number;
+	description: string;
+	stream: OutcomeStreamPolicy;
+	held: HeldPolicy;
+	presentation: readonly [OutcomePresentationStep, ...OutcomePresentationStep[]];
+}
+
 export interface PendingArtifact {
 	path: string;
 	content: string | Uint8Array;
@@ -88,6 +101,10 @@ export interface PendingArtifact {
 
 export interface CommandExecution<Result> {
 	result: Result;
+	/** Selects one public declaration; it carries no policy of its own. */
+	outcome?: string;
+	/** Deferred diagnostic content, presented only after result and artifact validation. */
+	diagnostics?: readonly string[];
 	pendingArtifact?: unknown;
 }
 
@@ -98,6 +115,8 @@ export interface CommandContext {
 	readOptionalTextFile(path: string): string | undefined;
 	resolvePath(path: string): string;
 	parse<T>(schema: z.ZodType<T>, value: unknown): T;
+	/** The sole lane that may write a diagnostic before public result validation. */
+	diagnostic(message: string): void;
 }
 
 export interface CommandContract<Shape extends z.ZodRawShape, Result> {
@@ -110,6 +129,7 @@ export interface CommandContract<Shape extends z.ZodRawShape, Result> {
 	input: CommandInput<Shape>;
 	result: z.ZodType<Result>;
 	output: OutputPolicy<z.output<z.ZodObject<Shape>>>;
+	outcomes?: readonly CommandOutcomeDeclaration[];
 	prerequisites: readonly Prerequisite[];
 	effects: readonly CommandEffect[];
 	refusals: readonly RefusalContract[];
@@ -158,6 +178,28 @@ export function defineCommand<Shape extends z.ZodRawShape, Result>(
 		}
 		if (outputCase.mode !== "file-receipt" && outputCase.artifact) {
 			throw new Error(`${contract.path.join(" ")}: only file output may declare an artifact`);
+		}
+	}
+
+	const outcomeIds = new Set<string>();
+	for (const outcome of contract.outcomes ?? []) {
+		if (outcomeIds.has(outcome.id)) {
+			throw new Error(`${contract.path.join(" ")}: duplicate outcome ${outcome.id}`);
+		}
+		outcomeIds.add(outcome.id);
+		if (!Number.isInteger(outcome.exit) || outcome.exit <= 0) {
+			throw new Error(`${contract.path.join(" ")}: outcome ${outcome.id} needs a nonzero exit`);
+		}
+		const writesStdout = outcome.presentation.includes("result");
+		const writesStderr = outcome.presentation.some((step) => step !== "result");
+		if (outcome.stream === "stdout-only" && (!writesStdout || writesStderr)) {
+			throw new Error(`${contract.path.join(" ")}: outcome ${outcome.id} violates stdout-only`);
+		}
+		if (outcome.stream === "stderr-only" && (writesStdout || !writesStderr)) {
+			throw new Error(`${contract.path.join(" ")}: outcome ${outcome.id} violates stderr-only`);
+		}
+		if (outcome.stream === "stdout-and-stderr" && (!writesStdout || !writesStderr)) {
+			throw new Error(`${contract.path.join(" ")}: outcome ${outcome.id} needs both streams`);
 		}
 	}
 

@@ -249,6 +249,7 @@
 					"description": "Versioned write result"
 				}
 			],
+			"outcomes": [],
 			"prerequisites": ["server", "board", "doing"],
 			"effects": ["local-read", "write"],
 			"refusals": [
@@ -446,6 +447,7 @@
 					"description": "Bare element array"
 				}
 			],
+			"outcomes": [],
 			"prerequisites": ["server", "board"],
 			"effects": ["read"],
 			"refusals": [
@@ -649,6 +651,7 @@
 					"description": "Viewport acknowledgement"
 				}
 			],
+			"outcomes": [],
 			"prerequisites": ["server", "browser"],
 			"effects": ["browser"],
 			"refusals": [
@@ -826,6 +829,7 @@
 					"description": "Validated file receipt"
 				}
 			],
+			"outcomes": [],
 			"prerequisites": ["server", "board"],
 			"effects": ["local-read", "read", "local-write"],
 			"refusals": [

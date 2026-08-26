@@ -16,36 +16,12 @@ import {
 	type CommandContext,
 	type PendingArtifact,
 } from "../contract.js";
-
-const elementType = z.enum([
-	"rectangle",
-	"ellipse",
-	"diamond",
-	"arrow",
-	"text",
-	"line",
-	"freedraw",
-	"image",
-]);
-
-const ServerElementSchema = z.looseObject({
-	id: z.string(),
-	type: elementType,
-	x: z.number(),
-	y: z.number(),
-});
-type PublicElement = z.infer<typeof ServerElementSchema>;
-
-const HoldReportSchema = z.looseObject({
-	board: z.string(),
-	message: z.string(),
-});
-
-const BoardFingerprintSchema = z.object({
-	elements: z.number().int().nonnegative(),
-	note: z.string(),
-	version: z.number().int().nonnegative().nullable(),
-});
+import {
+	BoardFingerprintSchema,
+	HoldReportSchema,
+	ServerElementSchema,
+	type ServerElementResult as PublicElement,
+} from "../schemas.js";
 
 const commonRefusals = [
 	{
