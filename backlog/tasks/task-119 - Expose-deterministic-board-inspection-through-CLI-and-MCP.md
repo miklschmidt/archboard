@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 23:05'
+updated_date: '2026-08-26 23:37'
 labels:
   - ready-for-agent
 dependencies:
@@ -531,6 +531,14 @@ Two fresh on-demand contract generations were byte-identical: `cli-command-audit
 Complete validation passed after source commit `81c9324` and evidence commit `c70e8a7`. The first `bun run check` observed the documented scheduling-sensitive human-performance reconciliation sample `[0,0,2]`; isolated diagnosis immediately passed at `[0,0]`, and the required full `bun run check` rerun passed. A separate complete `bun run test` then passed. Each successful full chain ran human-performance, fixed-point, typed-text, and live-session sequentially/headlessly: `[0,0]`, 0 of 13 changed elements, both text rename interactions preserved, and 42 of 42 mixed-write cycles converged.
 
 On-demand contract generation was repeated with identical bytes, then all three ignored views were removed: audit Markdown `c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55`, proof JSON `4757efc048d711c45093a249a2b5c819e30ed043cf84eaa2e642f6a2c40ac5fa`, proof Markdown `70bcf2892140a4916b3ff51a5d51ec71a8b5b2e62dc884358bac70d2ace99bb7`. Canonical `docs/design/cli-command-audit.json` remains tracked. `git diff --check` passes. TASK-119 remains In Progress with all nine acceptance criteria unchecked for independent rereview.
+
+### Budget-preservation remediation checkpoint (2026-08-27)
+
+- Commit `e9a4976` preserves caller-owned collision findings, completed broad-phase comparisons, and cumulative sweep diagnostics when the preprocessing ceiling aborts a later pass.
+- Direct and real package coverage now exercises connector-intersection stops during `prepare-events` and `activate-or-expire` after an earlier connector-node penetration; the completed finding remains once, ordering and participant evidence remain deterministic, strict mode exits 8, non-strict exits 0, and no I/O side effect is introduced.
+- The shared stable merge-sort owner now meters clone/allocation/cell initialization, source reads, comparisons, destination writes, and uneven tail copies before execution. Model, collision-pass, and interval-array construction meter source reads, allocation, membership, and writes at their primitive owners.
+- Schema-v1 obstacle identity encoding is single-owned and meters each UTF-16 code unit read/emitted plus escaping and separators. A 6,300,000-code-unit library element identity reaches attempted preprocessing unit 25,000,001 in direct and parseable-note/package inspection instead of returning false-clean.
+- Focused validation is green: type-check, lint including skill validation, boundaries, module-scope, 58-path contracts, inspection (689 checks), CLI, geometry, labels, and branch. Two `bun run fix` passes were byte-stable at `295966bd72297d21c439d94d7fbcf60d42a61c85b854f79a07fb20c47304d63d`. Full `bun run check`, separate `bun run test`, sequential browser chain, and final generated-view checks remain pending.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
