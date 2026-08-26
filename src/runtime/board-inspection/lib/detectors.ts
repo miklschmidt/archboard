@@ -12,6 +12,7 @@ import { InspectionFindingSchema } from "../schemas.js";
 import { decodePath, kindOf, stableDescription, type DecodedRecord } from "./decode.js";
 import {
 	box,
+	finite,
 	focus,
 	intersectSegments,
 	overlap,
@@ -26,9 +27,12 @@ import {
 import {
 	archboardMetadata,
 	buildInspectionModel,
+	classifyBindingTarget,
+	classifyBoundElements,
 	groupIds,
 	libraryAttribution,
 	semanticParents,
+	type BlockingBindingIssue,
 	type InspectionModel,
 } from "./model.js";
 
@@ -86,6 +90,7 @@ const REASON_ORDER = [
 	"malformed-container-id",
 	"dangling-bound-text",
 	"dangling-bound-arrow",
+	"bound-element-target-type-mismatch",
 	"conflicting-bound-label-owner",
 	"persisted-agent-endpoint",
 	"invalid-node-metadata",
@@ -110,6 +115,7 @@ const REASON_ORDER = [
 	"points-empty",
 	"points-one-point",
 	"malformed-point",
+	"absolute-point-overflow",
 	"zero-length",
 	"collinear-overlap",
 	"broad-phase-comparison-ceiling",
@@ -210,7 +216,7 @@ function identityFindings(records: readonly DecodedRecord[]): InspectionFinding[
 				elements: [record.ref],
 				affected:
 					record.box ??
-					(record.raw && typeof record.raw.x === "number" && typeof record.raw.y === "number"
+					(record.raw && finite(record.raw.x) && finite(record.raw.y)
 						? { x: record.raw.x, y: record.raw.y, width: 0, height: 0 }
 						: null),
 			} as const;
@@ -260,6 +266,10 @@ function renderFindings(records: readonly DecodedRecord[]): InspectionFinding[] 
 		const fields = (["x", "y", "width", "height"] as const).filter(
 			(field) => typeof raw?.[field] !== "number" || !Number.isFinite(raw[field]),
 		);
+		if (finite(raw?.x) && finite(raw?.width) && !finite(raw.x + Math.max(0, raw.width)))
+			fields.push("width");
+		if (finite(raw?.y) && finite(raw?.height) && !finite(raw.y + Math.max(0, raw.height)))
+			fields.push("height");
 		if (fields.length === 0) continue;
 		const locatable =
 			typeof raw?.x === "number" &&
@@ -324,15 +334,34 @@ function decodedPathEvidence(
 	if (scenePoints === null || (scenePoints === undefined && !locatableOrigin(raw)))
 		return { points: [], affected: null };
 	const points = scenePoints ?? [];
+	const pathBox = points.length > 0 ? pointBox(points) : null;
 	return {
 		points,
-		affected: points.length > 0 ? pointBox(points) : storedExtent(record, raw),
+		affected: pathBox ?? storedExtent(record, raw),
 	};
 }
 
 function unusablePathFinding(record: DecodedRecord, raw: RawRecord): InspectionFinding {
 	const decoded = decodePath(record);
 	if (decoded.ok) throw new Error("usable connector path passed to unusablePathFinding");
+	if (decoded.issue === "absolute-point-overflow") {
+		const evidence = decodedPathEvidence(record, raw, decoded.scenePoints);
+		return make({
+			code: "AMBIGUOUS_GEOMETRY",
+			reason: "absolute-point-overflow",
+			severity: "warning",
+			affectsCoverage: true,
+			details: {
+				connectorId: record.id,
+				sourceIndex: record.sourceIndex,
+				pointIndex: decoded.pointIndex,
+				issue: "absolute path coordinate or segment arithmetic exceeded finite inspection range",
+			},
+			message: `Connector ${record.id ?? record.sourceIndex} overflows absolute path coordinates.`,
+			elements: [record.ref],
+			...evidence,
+		});
+	}
 	if (decoded.issue === "malformed-point") {
 		const evidence = decodedPathEvidence(record, raw, decoded.scenePoints);
 		return make({
@@ -548,63 +577,62 @@ function connectorGeometryFindings(
 }
 
 type BindingIssue =
-	| "not-object"
-	| "array"
-	| "missing-element-id"
-	| "empty-element-id"
-	| "non-string-element-id"
+	| BlockingBindingIssue
 	| "missing-focus"
 	| "nonfinite-focus"
 	| "missing-gap"
 	| "nonfinite-gap"
 	| "invalid-fixed-point";
-type BlockingBindingIssue = Extract<
-	BindingIssue,
-	"not-object" | "array" | "missing-element-id" | "empty-element-id" | "non-string-element-id"
->;
+type BindingInspection =
+	| {
+			binding: Record<string, unknown> | null;
+			issue: BlockingBindingIssue;
+			readableTargetId: null;
+			classificationBlocked: true;
+	  }
+	| {
+			binding: Record<string, unknown>;
+			issue: Exclude<BindingIssue, BlockingBindingIssue> | null;
+			readableTargetId: string;
+			classificationBlocked: false;
+	  };
 
-function bindingIssue(value: unknown): {
-	binding: Record<string, unknown> | null;
-	issue: BindingIssue | null;
-	readableTargetId: string | null;
-} {
+function bindingIssue(value: unknown): BindingInspection {
 	const binding =
 		value && typeof value === "object" && !Array.isArray(value)
 			? (value as Record<string, unknown>)
 			: null;
-	let issue: BindingIssue | null = null;
-	if (!binding) issue = Array.isArray(value) ? "array" : "not-object";
-	else if (!("elementId" in binding)) issue = "missing-element-id";
-	else if (binding.elementId === "") issue = "empty-element-id";
-	else if (typeof binding.elementId !== "string") issue = "non-string-element-id";
-	else if (!("focus" in binding)) issue = "missing-focus";
-	else if (typeof binding.focus !== "number" || !Number.isFinite(binding.focus))
-		issue = "nonfinite-focus";
-	else if (!("gap" in binding)) issue = "missing-gap";
-	else if (typeof binding.gap !== "number" || !Number.isFinite(binding.gap))
-		issue = "nonfinite-gap";
-	else if (
-		binding.fixedPoint != null &&
-		(!Array.isArray(binding.fixedPoint) ||
-			binding.fixedPoint.length !== 2 ||
-			binding.fixedPoint.some((n) => typeof n !== "number" || !Number.isFinite(n)))
-	)
-		issue = "invalid-fixed-point";
-	const readableTargetId =
-		binding && typeof binding.elementId === "string" && binding.elementId.length > 0
-			? binding.elementId
-			: null;
-	return { binding, issue, readableTargetId };
+	const target = classifyBindingTarget(value);
+	if (target.blockingIssue)
+		return {
+			binding,
+			issue: target.blockingIssue,
+			readableTargetId: null,
+			classificationBlocked: true,
+		};
+	let issue: Exclude<BindingIssue, BlockingBindingIssue> | null = null;
+	if (binding) {
+		if (!("focus" in binding)) issue = "missing-focus";
+		else if (typeof binding.focus !== "number" || !Number.isFinite(binding.focus))
+			issue = "nonfinite-focus";
+		else if (!("gap" in binding)) issue = "missing-gap";
+		else if (typeof binding.gap !== "number" || !Number.isFinite(binding.gap))
+			issue = "nonfinite-gap";
+		else if (
+			binding.fixedPoint != null &&
+			(!Array.isArray(binding.fixedPoint) ||
+				binding.fixedPoint.length !== 2 ||
+				binding.fixedPoint.some((n) => typeof n !== "number" || !Number.isFinite(n)))
+		)
+			issue = "invalid-fixed-point";
+	}
+	return {
+		binding: binding!,
+		issue,
+		readableTargetId: target.readableTargetId!,
+		classificationBlocked: false,
+	};
 }
-
-const bindingBlocksClassification = (issue: BindingIssue): issue is BlockingBindingIssue =>
-	[
-		"not-object",
-		"array",
-		"missing-element-id",
-		"empty-element-id",
-		"non-string-element-id",
-	].includes(issue);
 
 function connectorBindingFindings(
 	record: DecodedRecord,
@@ -615,7 +643,7 @@ function connectorBindingFindings(
 	for (const end of ["start", "end"] as const) {
 		const value = raw[`${end}Binding`];
 		if (value == null) continue;
-		const { issue, readableTargetId } = bindingIssue(value);
+		const { issue, readableTargetId, classificationBlocked } = bindingIssue(value);
 		if (issue) {
 			const shared = {
 				code: "BROKEN_REFERENCE",
@@ -625,7 +653,7 @@ function connectorBindingFindings(
 				elements: [record.ref],
 				affected: record.box,
 			} as const;
-			if (bindingBlocksClassification(issue))
+			if (classificationBlocked)
 				findings.push(
 					make({
 						...shared,
@@ -759,33 +787,7 @@ function boundElementFindings(
 	const bounds = raw.boundElements;
 	if (bounds == null) return [];
 	const findings: InspectionFinding[] = [];
-	const readableEntries: Array<{ id: string; type: "text" | "arrow" }> = [];
-	type BoundElementIssue =
-		| "not-array"
-		| "entry-not-object"
-		| "missing-id"
-		| "empty-id"
-		| "non-string-id"
-		| "missing-type"
-		| "invalid-type";
-	const problems: Array<{ issue: BoundElementIssue; entryIndex: number | null }> = [];
-	if (!Array.isArray(bounds)) problems.push({ issue: "not-array", entryIndex: null });
-	else
-		bounds.forEach((entry, entryIndex) => {
-			const item =
-				entry && typeof entry === "object" && !Array.isArray(entry)
-					? (entry as Record<string, unknown>)
-					: null;
-			let issue: BoundElementIssue | null = null;
-			if (!item) issue = "entry-not-object";
-			else if (!("id" in item)) issue = "missing-id";
-			else if (item.id === "") issue = "empty-id";
-			else if (typeof item.id !== "string") issue = "non-string-id";
-			else if (!("type" in item)) issue = "missing-type";
-			else if (item.type !== "text" && item.type !== "arrow") issue = "invalid-type";
-			else readableEntries.push({ id: item.id, type: item.type });
-			if (issue) problems.push({ issue, entryIndex });
-		});
+	const { readableEntries, problems } = classifyBoundElements(bounds);
 	for (const problem of problems)
 		findings.push(
 			make({
@@ -808,8 +810,9 @@ function boundElementFindings(
 			}),
 		);
 	if (!record.id) return findings;
-	for (const entry of readableEntries)
-		if (!byId.has(entry.id))
+	for (const entry of readableEntries) {
+		const target = byId.get(entry.id);
+		if (!target)
 			findings.push(
 				make({
 					code: "BROKEN_REFERENCE",
@@ -822,6 +825,29 @@ function boundElementFindings(
 					affected: record.box,
 				}),
 			);
+		else if (
+			target.type !== null &&
+			KNOWN_ELEMENT_TYPES.has(target.type) &&
+			target.type !== entry.type
+		)
+			findings.push(
+				make({
+					code: "BROKEN_REFERENCE",
+					reason: "bound-element-target-type-mismatch",
+					severity: "error",
+					affectsCoverage: true,
+					details: {
+						ownerId: record.id,
+						targetId: entry.id,
+						declaredType: entry.type,
+						actualType: target.type,
+					},
+					message: `Element ${record.id} declares ${entry.id} as bound ${entry.type}, but it is ${target.type}.`,
+					elements: [record.ref, target.ref],
+					affected: affectedOf([record, target]),
+				}),
+			);
+	}
 	return findings;
 }
 
@@ -1275,60 +1301,32 @@ function labelFindings(
 					affected: record.box,
 				}),
 			);
-		if (
-			record.type === "text" &&
-			typeof record.raw?.containerId === "string" &&
-			record.raw.containerId
-		) {
-			const container = byId.get(record.raw.containerId);
-			if (
-				container &&
-				(!Array.isArray(container.raw?.boundElements) ||
-					!container.raw.boundElements.some(
-						(entry) =>
-							entry &&
-							typeof entry === "object" &&
-							!Array.isArray(entry) &&
-							(entry as Record<string, unknown>).id === record.id &&
-							(entry as Record<string, unknown>).type === "text",
-					))
-			)
+	}
+	for (const ownership of model.labelOwnership.values()) {
+		const textId = ownership.labelId;
+		const text = byId.get(textId);
+		if (text?.type !== "text") continue;
+		if (ownership.state === "forward-only" && ownership.forwardOwnerId) {
+			const owner = byId.get(ownership.forwardOwnerId);
+			if (owner)
 				findings.push(
 					make({
 						code: "LABEL_CORRUPTION",
 						reason: "missing-reciprocal",
 						severity: "error",
 						affectsCoverage: false,
-						details: { textId: record.id!, containerId: container.id!, missingSide: "container" },
-						message: `Label ${record.id} is not named by container ${container.id}.`,
-						elements: [record.ref, container.ref],
-						affected: affectedOf([record, container]),
+						details: { textId, containerId: owner.id!, missingSide: "container" },
+						message: `Label ${textId} is not named by container ${owner.id}.`,
+						elements: [text.ref, owner.ref],
+						affected: affectedOf([text, owner]),
 					}),
 				);
 		}
-	}
-	const reverseOwners = new Map<string, string[]>();
-	for (const owner of records.filter(
-		(record) => record.live && record.id && Array.isArray(record.raw?.boundElements),
-	)) {
-		for (const entry of owner.raw!.boundElements as unknown[]) {
-			if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
-			const ref = entry as Record<string, unknown>;
-			if (ref.type !== "text" || typeof ref.id !== "string" || !ref.id) continue;
-			const owners = reverseOwners.get(ref.id) ?? [];
-			if (!owners.includes(owner.id!)) owners.push(owner.id!);
-			reverseOwners.set(ref.id, owners);
-		}
-	}
-	for (const [textId, owners] of reverseOwners) {
-		const text = byId.get(textId);
-		if (text?.type !== "text") continue;
-		const forward =
-			typeof text.raw?.containerId === "string" && text.raw.containerId
-				? text.raw.containerId
-				: null;
-		if (!forward) {
-			for (const ownerId of owners) {
+		if (
+			ownership.state === "reverse-only" ||
+			(!ownership.forwardOwnerId && ownership.state === "conflicting")
+		)
+			for (const ownerId of ownership.reverseOwnerIds) {
 				const owner = byId.get(ownerId);
 				if (!owner) continue;
 				findings.push(
@@ -1344,32 +1342,37 @@ function labelFindings(
 					}),
 				);
 			}
-			continue;
-		}
-		const other = owners.filter((owner) => owner !== forward).toSorted();
-		if (other.length === 0) continue;
-		const involved = [text, byId.get(forward), ...other.map((id) => byId.get(id))].filter(
+		if (ownership.state !== "conflicting") continue;
+		const primaryOwnerId = ownership.forwardOwnerId ?? ownership.reverseOwnerIds[0];
+		if (!primaryOwnerId) continue;
+		const other = ownership.candidateOwnerIds.filter((owner) => owner !== primaryOwnerId);
+		const involved = [text, ...ownership.candidateOwnerIds.map((id) => byId.get(id))].filter(
 			(record): record is DecodedRecord => !!record,
 		);
-		findings.push(
-			make({
-				code: "BROKEN_REFERENCE",
-				reason: "conflicting-bound-label-owner",
-				severity: "error",
-				affectsCoverage: true,
-				details: { textId, forwardContainerId: forward, reverseContainerIds: owners.toSorted() },
-				message: `Label ${textId} has conflicting owners.`,
-				elements: uniqueRefs(involved),
-				affected: affectedOf(involved),
-			}),
-		);
+		if (ownership.forwardOwnerId)
+			findings.push(
+				make({
+					code: "BROKEN_REFERENCE",
+					reason: "conflicting-bound-label-owner",
+					severity: "error",
+					affectsCoverage: true,
+					details: {
+						textId,
+						forwardContainerId: ownership.forwardOwnerId,
+						reverseContainerIds: ownership.reverseOwnerIds,
+					},
+					message: `Label ${textId} has conflicting owners.`,
+					elements: uniqueRefs(involved),
+					affected: affectedOf(involved),
+				}),
+			);
 		findings.push(
 			make({
 				code: "LABEL_CORRUPTION",
 				reason: "conflicting-owner",
 				severity: "error",
 				affectsCoverage: true,
-				details: { textId, containerId: forward, otherContainerIds: other },
+				details: { textId, containerId: primaryOwnerId, otherContainerIds: other },
 				message: `Label ${textId} is bound to more than one container.`,
 				elements: uniqueRefs(involved),
 				affected: affectedOf(involved),
@@ -1452,31 +1455,25 @@ function collisionFindings(
 		box: obstacle.box,
 		value: obstacle,
 	}));
-	const labelRecords = records.filter(
-		(r) => r.live && r.id && r.type === "text" && r.box && model.confirmedLabels.has(r.id),
-	);
-	const labelItems = labelRecords.map((label) => ({
+	const labelNodeRecords = records.filter((record) => {
+		if (!record.live || !record.id || record.type !== "text" || !record.box) return false;
+		const state = model.labelOwnership.get(record.id)?.state;
+		return state !== undefined && state !== "none" && state !== "blocked";
+	});
+	const labelNodeItems = labelNodeRecords.map((label) => ({
 		id: label.id!,
 		box: label.box!,
 		value: label,
 	}));
+	const labelLabelItems = labelNodeItems.filter((item) => model.confirmedLabels.has(item.id));
 	const connectorEnds = (segment: Segment) => {
-		const connector = byId.get(segment.connectorId);
-		const target = (end: "start" | "end") => {
-			const value = connector?.raw?.[`${end}Binding`];
-			return value &&
-				typeof value === "object" &&
-				!Array.isArray(value) &&
-				typeof (value as Record<string, unknown>).elementId === "string"
-				? ((value as Record<string, unknown>).elementId as string)
-				: undefined;
-		};
-		const start = target("start"),
-			end = target("end");
-		return {
-			startNode: start ? model.nodeOfElement.get(start) : undefined,
-			endNode: end ? model.nodeOfElement.get(end) : undefined,
-		};
+		return (
+			model.connectorEndpoints.get(segment.connectorId) ?? {
+				nodeAnalysisEligible: false,
+				startNode: undefined,
+				endNode: undefined,
+			}
+		);
 	};
 	pairSweep(
 		segmentItems,
@@ -1484,6 +1481,7 @@ function collisionFindings(
 		false,
 		(segment, node) => {
 			const ends = connectorEnds(segment);
+			if (!ends.nodeAnalysisEligible) return false;
 			const excluded = new Set([
 				ends.startNode,
 				ends.endNode,
@@ -1643,12 +1641,19 @@ function collisionFindings(
 		);
 	if (!counter.limited)
 		pairSweep(
-			labelItems,
+			labelNodeItems,
 			allNodeItems,
 			false,
 			(label, node) => {
-				const own = model.nodeOfElement.get(label.id!);
-				return own !== node.id && !semanticParents(model, own).has(node.id);
+				const ownership = model.labelOwnership.get(label.id!);
+				if (!ownership) return false;
+				const candidateNodes = ownership.candidateOwnerIds
+					.map((owner) => model.nodeOfElement.get(owner))
+					.filter((owner): owner is string => owner !== undefined);
+				const excluded = new Set(candidateNodes);
+				for (const owner of candidateNodes)
+					for (const ancestor of semanticParents(model, owner)) excluded.add(ancestor);
+				return !excluded.has(node.id);
 			},
 			(label, node) => {
 				const hit = overlap(label.box!, node.body);
@@ -1678,8 +1683,8 @@ function collisionFindings(
 		);
 	if (!counter.limited)
 		pairSweep(
-			labelItems,
-			labelItems,
+			labelLabelItems,
+			labelLabelItems,
 			true,
 			(a, b) => model.confirmedLabels.get(a.id!) !== model.confirmedLabels.get(b.id!),
 			(a, b) => {
@@ -1708,7 +1713,7 @@ function collisionFindings(
 			"label-label-overlap",
 		);
 	if (counter.limited) {
-		const allBoxes = [...segmentItems, ...allNodeItems, ...obstacleItems, ...labelItems].map(
+		const allBoxes = [...segmentItems, ...allNodeItems, ...obstacleItems, ...labelNodeItems].map(
 			(item) => item.box,
 		);
 		findings.push(
@@ -1724,7 +1729,7 @@ function collisionFindings(
 					segmentCount: segments.length,
 					nodeCount: leaves.length,
 					obstacleCount: model.obstacles.length,
-					labelCount: labelRecords.length,
+					labelCount: labelNodeRecords.length,
 				},
 				message: `Inspection stopped pair analysis at comparison ${counter.value}.`,
 				affected: unionBoxes(allBoxes),

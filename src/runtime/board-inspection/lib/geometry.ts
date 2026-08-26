@@ -22,7 +22,8 @@ export const finite = (value: unknown): value is number =>
 	typeof value === "number" && Number.isFinite(value);
 
 export function normalizeNumber(value: number): number {
-	const rounded = Math.round(value * 1000) / 1000;
+	const rounded =
+		Math.abs(value) > Number.MAX_VALUE / 1000 ? value : Math.round(value * 1000) / 1000;
 	return Object.is(rounded, -0) ? 0 : rounded;
 }
 
@@ -47,7 +48,11 @@ export function unionBoxes(values: readonly ExactBox[]): ExactBox | null {
 	const minY = Math.min(...values.map((value) => value.y));
 	const maxX = Math.max(...values.map((value) => value.x + value.width));
 	const maxY = Math.max(...values.map((value) => value.y + value.height));
-	return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+	const width = maxX - minX;
+	const height = maxY - minY;
+	return finite(minX) && finite(minY) && finite(width) && finite(height)
+		? { x: minX, y: minY, width, height }
+		: null;
 }
 
 export function pointBox(points: readonly ExactPoint[]): ExactBox | null {
@@ -56,7 +61,11 @@ export function pointBox(points: readonly ExactPoint[]): ExactBox | null {
 	const minY = Math.min(...points.map((value) => value.y));
 	const maxX = Math.max(...points.map((value) => value.x));
 	const maxY = Math.max(...points.map((value) => value.y));
-	return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+	const width = maxX - minX;
+	const height = maxY - minY;
+	return finite(minX) && finite(minY) && finite(width) && finite(height)
+		? { x: minX, y: minY, width, height }
+		: null;
 }
 
 export function overlap(a: ExactBox, b: ExactBox): ExactBox | null {

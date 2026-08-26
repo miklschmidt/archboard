@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 15:23'
+updated_date: '2026-08-26 15:54'
 labels:
   - ready-for-agent
 dependencies:
@@ -324,6 +324,8 @@ This amendment supersedes step 23’s requirement to commit generated artifacts 
 FINAL INTERACTION AND COORDINATE-TOTALITY REMEDIATION (2026-08-26)
 
 After rejected rereview head 1c293b7c48a28c590652ae516a07c4579a3504f6, close five verified interaction holes through the existing pure inspectBoard and package CLI seams. Separate relative path validation from finite absolute origin eligibility; stop every identity-dependent producer after invalid identity while retaining nullable malformed-structure findings; treat readable incoming references as applicability evidence for malformed target types; expose unsupported path evidence without enqueueing segments or supported stale/collision predicates; and compare labels against all unrelated semantic node bodies while preserving own-node and ancestor exclusions. Expand the public matrix with direct and parseable-note/package interaction cases, audit adjacent nullable/unlocatable/unsupported/incoming/leaf-only consumers, preserve generated-artifact ownership and protected scope, commit rollback-safe checkpoints, and rerun every required focused and complete gate.
+
+PREREQUISITE-TOTALITY CLOSURE (2026-08-26)\n\nAfter rejected head a1a1b941e83b9d26b70593cc5d8fd24714691a99, close four source-verified shared-rule defects without changing the public inspectBoard interface. Use the same finite-coordinate rule for identity fallback, render evidence, absolute path derivation, and segment eligibility; make endpoint binding classification an explicit prerequisite for node penetration; centralize label ownership classification in the inspection model for diagnostics and collision exclusions; and add a closed BROKEN_REFERENCE reason for readable boundElements target-type mismatch. Drive each change through public direct and persisted/package cases, then add a bounded deterministic cross-product matrix over identity, coordinate, path, endpoint, ownership, and target-type states. Preserve generated ownership and all protected scope. Commit rollback-safe checkpoints and rerun the complete required focused, fixer, generator, repository, and sequential browser gates.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -360,6 +362,16 @@ Final rereview remediation started from clean 1c293b7 with fixed base 963c3f0. T
 Final interaction remediation checkpoint: split relative path structure from nullable absolute scene coordinates, and gated pair/stale analysis on a canonical id, finite two-coordinate origin, supported discriminator set, and usable path. Invalid-id connectors now retain nullable malformed binding/path evidence but skip readable binding, persisted endpoint, dangling entry, stale, and pair producers. Readable incoming binding/container/bound references make malformed target types coverage-applicable. Label-node overlap now considers every semantic node body while connector penetration and node overlap retain leaf scope. The public direct/package matrix grew to 376 checks, including unlocatable collision traps, missing/empty/non-string identity interactions, forward-only malformed target types, every unsupported connector discriminator, and unrelated non-leaf zone label overlap. bun run lint, both TypeScript projects, test:inspection, and git diff --check pass.
 
 Final interaction remediation validation closure: commits c9a483e and 8dc887d close all five rereview findings and retain the user-directed generated ownership. Focused lint, type-check, boundaries, module-scope, contracts (58 proofs/58 audited paths/978 checks), inspection (376 checks), CLI (579 checks), geometry (89 checks), labels (183 checks), and branch gates passed. Two real bun run fix passes both ran the TASK-128 skill validator and produced the identical binary diff hash 61f2b68af759f68813a87b131f8e7a472cd841c2b8d2cc7bf2c7b01976b7ef25; their deterministic formatter output is committed. Two fresh temporary on-demand contract generations were byte-identical, produced the three expected derived views, and left no checkout output. bun run check passed the complete 29-suite chain and all four browser suites sequentially/headless; a separate bun run test then passed the same complete chain. Both browser chains retained fixed-point 0 of 13 changed, 10,000-element human responsiveness, complete typed-text round trips, and live-session 42 of 42 convergence. git diff --check passes. TASK-119 remains In Progress with all acceptance criteria unchecked for independent rereview.
+
+Prerequisite-totality remediation started from clean a1a1b94 with fixed base 963c3f0. Approved test seams remain the pure inspectBoard readonly-unknown interface and the real package CLI over parseable notes. TASK-119 stays In Progress with every acceptance criterion unchecked.
+
+### Prerequisite-totality closure implementation
+
+Centralized binding target, boundElements, connector endpoint, and label ownership prerequisite classification in the inspection model. Non-finite identity fallback coordinates and overflowed absolute path arithmetic now remain schema-total with finite-prefix evidence or null boxes. Blocking endpoint structures suppress only connector-to-node analysis; reverse-only label ownership participates consistently, while conflicting or malformed ownership blocks unresolved layout claims. Readable boundElements entries now validate declared text/arrow discriminators against known target types through a new closed coverage-affecting reason.
+
+Expanded the public production test to 514 checks: NaN and both infinities on both axes across invalid identities; finite MAX_VALUE addition overflow; every blocking endpoint on start, end, and both; forward/reverse/matching/conflicting/malformed ownership; known target discriminator cross-products; raw JSON 1e400 package evidence; and a deterministic 80-case prerequisite matrix proving no throws, schema validity, indeterminate coverage, and dependent-layout suppression. Persisted package evidence includes every known text/arrow/rectangle mismatch and matching pair.
+
+Focused validation green: lint (including distributable skill validation), type-check, boundaries, module-scope/self-test, 58-path contracts (978 checks), inspection (514), geometry (89), labels (183), branch, and CLI surface (579). Two real bun run fix passes were byte-stable at diff hash 0d68720500036750dea4922b3fccfa78c2d26a92. Full bun run check and separate bun run test remain to run after the remediation checkpoint.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

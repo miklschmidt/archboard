@@ -190,6 +190,13 @@ const findingCases = [
 	]),
 	[
 		"BROKEN_REFERENCE",
+		"bound-element-target-type-mismatch",
+		"error",
+		true,
+		{ ownerId: "node", targetId: "label", declaredType: "text", actualType: "rectangle" },
+	],
+	[
+		"BROKEN_REFERENCE",
 		"conflicting-bound-label-owner",
 		"error",
 		true,
@@ -366,6 +373,13 @@ const findingCases = [
 			pointIndex: 1,
 			issue: "point must contain two finite numbers",
 		},
+	],
+	[
+		"AMBIGUOUS_GEOMETRY",
+		"absolute-point-overflow",
+		"warning",
+		true,
+		{ connectorId: "edge", sourceIndex: 0, pointIndex: 1, issue: "overflow" },
 	],
 	[
 		"AMBIGUOUS_GEOMETRY",
@@ -860,6 +874,76 @@ check(
 			.every((finding) => finding.points.length === 0),
 );
 
+for (const [identity, rawId] of [
+	["missing", undefined],
+	["empty", ""],
+	["non-string", 42],
+])
+	for (const [coordinate, value] of [
+		["NaN", Number.NaN],
+		["positive infinity", Number.POSITIVE_INFINITY],
+		["negative infinity", Number.NEGATIVE_INFINITY],
+	])
+		for (const axis of ["x", "y"]) {
+			const element = {
+				type: "arrow",
+				x: axis === "x" ? value : 5,
+				y: axis === "y" ? value : 5,
+				width: 10,
+				height: 0,
+				angle: 0,
+				points: [
+					[0, 0],
+					[10, 0],
+				],
+			};
+			if (identity !== "missing") element.id = rawId;
+			let report;
+			let failure;
+			try {
+				report = inspectBoard([element]);
+			} catch (error) {
+				failure = error;
+			}
+			check(
+				`${identity} identity with ${coordinate} ${axis} origin stays schema-total and unlocatable`,
+				!failure &&
+					InspectionReportSchema.safeParse(report).success &&
+					report.coverage === "indeterminate" &&
+					report.findings.every(
+						(finding) => finding.affectedBBox === null && finding.focusBBox === null,
+					),
+				failure instanceof Error ? failure.message : "",
+			);
+		}
+
+const overflowPath = inspectBoard([
+	connector({
+		id: "overflow-path",
+		x: Number.MAX_VALUE,
+		y: 0,
+		width: 10,
+		height: 0,
+		points: [
+			[0, 0],
+			[Number.MAX_VALUE, 0],
+		],
+	}),
+]);
+check(
+	"finite path operands that overflow absolute coordinates stay schema-total",
+	InspectionReportSchema.safeParse(overflowPath).success &&
+		overflowPath.coverage === "indeterminate" &&
+		overflowPath.findings.some(
+			(finding) =>
+				finding.code === "AMBIGUOUS_GEOMETRY" &&
+				finding.reason === "absolute-point-overflow" &&
+				finding.points.every(
+					(pathPoint) => Number.isFinite(pathPoint.x) && Number.isFinite(pathPoint.y),
+				),
+		),
+);
+
 const supportedConnectorResultCodes = new Set([
 	"STALE_LINEAR_DIMENSIONS",
 	"CONNECTOR_PENETRATES_NODE",
@@ -1163,6 +1247,51 @@ for (const canonicalBinding of [undefined, null]) {
 	);
 }
 
+/** @type {Array<[string, unknown]>} */
+const blockingEndpointBindings = [
+	["not-object", "bad"],
+	["array", []],
+	["missing-element-id", { focus: 0, gap: 0 }],
+	["empty-element-id", { elementId: "", focus: 0, gap: 0 }],
+	["non-string-element-id", { elementId: 1, focus: 0, gap: 0 }],
+];
+/** @type {Array<Array<"start" | "end">>} */
+const blockingEndpointCombinations = [["start"], ["end"], ["start", "end"]];
+for (const [label, value] of blockingEndpointBindings)
+	for (const ends of blockingEndpointCombinations) {
+		const bindings = Object.fromEntries(ends.map((end) => [`${end}Binding`, value]));
+		const report = inspectBoard([
+			semanticNode(`candidate-${label}-${ends.join("-")}`, { x: 40, y: 0 }),
+			connector({
+				id: `blocked-${label}-${ends.join("-")}`,
+				x: 0,
+				y: 5,
+				width: 100,
+				height: 0,
+				points: [
+					[0, 0],
+					[100, 0],
+				],
+				...bindings,
+			}),
+		]);
+		check(
+			`${label} ${ends.join("+")} endpoint classification suppresses node penetration`,
+			report.coverage === "indeterminate" &&
+				report.findings.some(
+					(finding) =>
+						finding.code === "BROKEN_REFERENCE" &&
+						finding.reason === `malformed-${ends[0]}-binding` &&
+						finding.affectsCoverage,
+				) &&
+				!report.findings.some(
+					(finding) =>
+						finding.code === "CONNECTOR_PENETRATES_NODE" &&
+						finding.details.connectorId === `blocked-${label}-${ends.join("-")}`,
+				),
+		);
+	}
+
 const boundElementCases = [
 	["not-array", "bad", "not-array"],
 	["entry-not-object", [null], "entry-not-object"],
@@ -1183,6 +1312,86 @@ for (const [label, boundElements, issue] of boundElementCases) {
 		finding?.details.issue === issue &&
 			finding.details.classificationBlocked === true &&
 			finding.affectsCoverage === true,
+	);
+}
+
+const boundTargetTypeCases = [
+	["text-to-rectangle", "text", "rectangle", true],
+	["text-to-arrow", "text", "arrow", true],
+	["arrow-to-text", "arrow", "text", true],
+	["arrow-to-rectangle", "arrow", "rectangle", true],
+	["matching-text", "text", "text", false],
+	["matching-arrow", "arrow", "arrow", false],
+];
+for (const [label, declaredType, actualType, mismatch] of boundTargetTypeCases) {
+	const target =
+		actualType === "text"
+			? {
+					id: `target-${label}`,
+					type: "text",
+					x: 40,
+					y: 0,
+					width: 10,
+					height: 10,
+					fontFamily: 5,
+					text: "target",
+				}
+			: actualType === "arrow"
+				? connector({
+						id: `target-${label}`,
+						x: 40,
+						y: 0,
+						width: 10,
+						height: 0,
+						points: [
+							[0, 0],
+							[10, 0],
+						],
+					})
+				: { id: `target-${label}`, type: "rectangle", x: 40, y: 0, width: 10, height: 10 };
+	const report = inspectBoard([
+		semanticNode(`owner-${label}`, {
+			boundElements: [{ id: target.id, type: declaredType }],
+		}),
+		target,
+	]);
+	const finding = report.findings.find(
+		(candidate) =>
+			candidate.code === "BROKEN_REFERENCE" &&
+			candidate.reason === "bound-element-target-type-mismatch",
+	);
+	check(
+		`boundElements ${label} validates declared and actual target types`,
+		mismatch
+			? finding?.affectsCoverage === true &&
+					finding.details.declaredType === declaredType &&
+					finding.details.actualType === actualType &&
+					!report.clean
+			: !finding,
+	);
+}
+for (const [label, rawType] of [
+	["missing", undefined],
+	["null", null],
+	["boolean", false],
+	["unknown", "future-target"],
+]) {
+	const target = { id: `unknown-bound-${label}`, x: 40, y: 0, width: 10, height: 10 };
+	if (label !== "missing") target.type = rawType;
+	const report = inspectBoard([
+		semanticNode(`unknown-owner-${label}`, {
+			boundElements: [{ id: target.id, type: "text" }],
+		}),
+		target,
+	]);
+	check(
+		`boundElements target with ${label} type stays indeterminate without a false mismatch`,
+		report.coverage === "indeterminate" &&
+			report.findings.some(
+				(finding) =>
+					finding.code === "UNSUPPORTED_GEOMETRY" && finding.reason === "unsupported-type",
+			) &&
+			!report.findings.some((finding) => finding.reason === "bound-element-target-type-mismatch"),
 	);
 }
 for (const containerId of ["", 42, false]) {
@@ -1518,6 +1727,348 @@ check(
 			(finding) => finding.code === "LABEL_CORRUPTION" && finding.reason === "conflicting-owner",
 		),
 );
+
+const ownershipNode = (id, x) =>
+	semanticNode(id, {
+		id: `${id}-body`,
+		x,
+		y: 0,
+		width: 100,
+		height: 100,
+	});
+const ownershipLabel = (overrides = {}) => ({
+	id: "ownership-label",
+	type: "text",
+	x: 35,
+	y: 20,
+	width: 30,
+	height: 20,
+	fontFamily: 5,
+	text: "ownership",
+	...overrides,
+});
+const ownershipOwner = (id, boundElements) =>
+	semanticNode(id, { id: `${id}-body`, x: 0, y: 0, width: 100, height: 100, boundElements });
+/** @type {Array<[string, object[], string | null, boolean]>} */
+const labelOwnershipCases = [
+	[
+		"forward-only",
+		[ownershipOwner("owner", []), ownershipLabel({ containerId: "owner-body" })],
+		"owner",
+		false,
+	],
+	[
+		"reverse-only",
+		[ownershipOwner("owner", [{ id: "ownership-label", type: "text" }]), ownershipLabel()],
+		"owner",
+		false,
+	],
+	[
+		"matching",
+		[
+			ownershipOwner("owner", [{ id: "ownership-label", type: "text" }]),
+			ownershipLabel({ containerId: "owner-body" }),
+		],
+		"owner",
+		false,
+	],
+	[
+		"conflicting",
+		[
+			ownershipOwner("owner", [{ id: "ownership-label", type: "text" }]),
+			ownershipOwner("other-owner", [{ id: "ownership-label", type: "text" }]),
+			ownershipLabel({ containerId: "owner-body" }),
+		],
+		null,
+		true,
+	],
+];
+for (const [label, ownershipElements, resolvedOwner, indeterminate] of labelOwnershipCases) {
+	const report = inspectBoard([...ownershipElements, ownershipNode("unrelated", 50)]);
+	check(
+		`${label} label ownership drives the same overlap exclusions and diagnostics`,
+		(indeterminate ? report.coverage === "indeterminate" : true) &&
+			!report.findings.some(
+				(finding) =>
+					finding.code === "LABEL_OVERLAP" &&
+					["owner", "other-owner"].includes(finding.details.nodeId),
+			) &&
+			report.findings.some(
+				(finding) =>
+					finding.code === "LABEL_OVERLAP" &&
+					finding.details.nodeId === "unrelated" &&
+					finding.details.labelId === "ownership-label",
+			) &&
+			(resolvedOwner === null ||
+				report.findings.some(
+					(finding) => finding.reason === "missing-reciprocal" || label === "matching",
+				)),
+	);
+}
+
+const reverseOnlyAncestor = inspectBoard([
+	semanticNode("zone", { id: "zone-body", x: 0, y: 0, width: 200, height: 200 }),
+	semanticNode("owner", {
+		id: "owner-body",
+		x: 20,
+		y: 20,
+		width: 80,
+		height: 80,
+		boundElements: [{ id: "ancestor-label", type: "text" }],
+	}),
+	{
+		id: "ancestor-label",
+		type: "text",
+		x: 90,
+		y: 40,
+		width: 30,
+		height: 20,
+		fontFamily: 5,
+		text: "reverse",
+	},
+]);
+check(
+	"reverse-only ownership excludes its owner and transitive zone ancestors",
+	!reverseOnlyAncestor.findings.some(
+		(finding) =>
+			finding.code === "LABEL_OVERLAP" && ["owner", "zone"].includes(finding.details.nodeId),
+	),
+);
+
+const blockedReverseOwnership = inspectBoard([
+	ownershipOwner("owner", [{ id: "blocked-reverse-label", type: "text" }, { id: "broken-entry" }]),
+	ownershipLabel({ id: "blocked-reverse-label" }),
+	ownershipNode("unrelated", 50),
+]);
+check(
+	"partially malformed reverse references block the shared label ownership classifier",
+	blockedReverseOwnership.coverage === "indeterminate" &&
+		blockedReverseOwnership.findings.some(
+			(finding) => finding.reason === "malformed-bound-elements" && finding.affectsCoverage,
+		) &&
+		!blockedReverseOwnership.findings.some(
+			(finding) =>
+				finding.code === "LABEL_OVERLAP" && finding.details.labelId === "blocked-reverse-label",
+		),
+);
+
+const totalityIdentityStates = [
+	["valid", "valid"],
+	["missing", undefined],
+	["empty", ""],
+	["non-string", 42],
+];
+const totalityCoordinateStates = [
+	["finite", { x: 0, y: 5, width: 100, height: 0 }, false, true],
+	["nan-x", { x: Number.NaN, y: 5, width: 100, height: 0 }, true, false],
+	[
+		"positive-infinity-x",
+		{ x: Number.POSITIVE_INFINITY, y: 5, width: 100, height: 0 },
+		true,
+		false,
+	],
+	[
+		"negative-infinity-y",
+		{ x: 0, y: Number.NEGATIVE_INFINITY, width: 100, height: 0 },
+		true,
+		false,
+	],
+	[
+		"overflowed-stored-extent",
+		{ x: Number.MAX_VALUE, y: 5, width: Number.MAX_VALUE, height: 0 },
+		true,
+		true,
+	],
+];
+const totalityPathStates = [
+	[
+		"valid",
+		[
+			[0, 0],
+			[100, 0],
+		],
+		false,
+	],
+	["missing", undefined, true],
+	[
+		"malformed",
+		[
+			[0, 0],
+			["bad", 0],
+		],
+		true,
+	],
+	[
+		"overflow",
+		[
+			[0, 0],
+			[Number.MAX_VALUE, 0],
+		],
+		true,
+	],
+];
+const totalityEndpointStates = [
+	["absent", undefined, false],
+	["readable", { elementId: "candidate", focus: 0, gap: 0 }, false],
+	["not-object", "bad", true],
+	["empty-id", { elementId: "", focus: 0, gap: 0 }, true],
+];
+const totalityOwnershipStates = [
+	"matching",
+	"forward-only",
+	"reverse-only",
+	"conflicting",
+	"malformed",
+];
+const totalityTargetStates = ["matching", "mismatch", "missing", "unknown"];
+let totalityCaseIndex = 0;
+for (const [identityLabel, rawId] of totalityIdentityStates)
+	for (const [
+		coordinateLabel,
+		coordinates,
+		coordinateIndeterminate,
+		locatableOrigin,
+	] of totalityCoordinateStates)
+		for (const [pathLabel, rawPoints, pathIndeterminate] of totalityPathStates) {
+			const caseId = `totality-${totalityCaseIndex}`;
+			const [endpointLabel, endpointBinding, endpointBlocked] =
+				totalityEndpointStates[totalityCaseIndex % totalityEndpointStates.length];
+			const ownershipState =
+				totalityOwnershipStates[
+					Math.floor(totalityCaseIndex / totalityEndpointStates.length) %
+						totalityOwnershipStates.length
+				];
+			const targetState =
+				totalityTargetStates[
+					Math.floor(
+						totalityCaseIndex / (totalityEndpointStates.length * totalityOwnershipStates.length),
+					) % totalityTargetStates.length
+				];
+			const connectorId = `${caseId}-edge`;
+			const candidateId = `${caseId}-candidate`;
+			const edge = {
+				type: "arrow",
+				...coordinates,
+				angle: 0,
+				...(rawPoints === undefined ? {} : { points: rawPoints }),
+				...(endpointBinding === undefined ? {} : { startBinding: endpointBinding }),
+			};
+			if (identityLabel === "valid") edge.id = connectorId;
+			else if (identityLabel !== "missing") edge.id = rawId;
+			if (endpointLabel === "readable")
+				edge.startBinding = { ...endpointBinding, elementId: candidateId };
+
+			const labelId = `${caseId}-label`;
+			const ownerAId = `${caseId}-owner-a`;
+			const ownerBId = `${caseId}-owner-b`;
+			const ownerARefs =
+				ownershipState === "matching" ||
+				ownershipState === "reverse-only" ||
+				ownershipState === "conflicting" ||
+				ownershipState === "malformed"
+					? [{ id: labelId, type: "text" }]
+					: [];
+			const ownerBRefs = ownershipState === "conflicting" ? [{ id: labelId, type: "text" }] : [];
+			const labelContainerId =
+				ownershipState === "matching" ||
+				ownershipState === "forward-only" ||
+				ownershipState === "conflicting"
+					? `${ownerAId}-body`
+					: ownershipState === "malformed"
+						? false
+						: undefined;
+
+			const targetId = `${caseId}-bound-target`;
+			const referenceOwner = semanticNode(`${caseId}-reference-owner`, {
+				id: `${caseId}-reference-owner-body`,
+				x: 400,
+				y: 200,
+				boundElements: [{ id: targetId, type: "text" }],
+			});
+			const boundTarget =
+				targetState === "missing"
+					? []
+					: [
+							targetState === "matching"
+								? {
+										id: targetId,
+										type: "text",
+										x: 410,
+										y: 210,
+										width: 20,
+										height: 10,
+										fontFamily: 5,
+										text: "target",
+									}
+								: targetState === "mismatch"
+									? { id: targetId, type: "rectangle", x: 410, y: 210, width: 20, height: 10 }
+									: { id: targetId, type: "future-target", x: 410, y: 210, width: 20, height: 10 },
+						];
+			const elements = [
+				edge,
+				semanticNode(candidateId, { x: 40, y: 0 }),
+				ownershipOwner(ownerAId, ownerARefs),
+				ownershipOwner(ownerBId, ownerBRefs),
+				ownershipLabel({
+					id: labelId,
+					...(labelContainerId === undefined ? {} : { containerId: labelContainerId }),
+				}),
+				ownershipNode(`${caseId}-unrelated`, 50),
+				referenceOwner,
+				...boundTarget,
+			];
+			let report;
+			let failure;
+			try {
+				report = inspectBoard(elements);
+			} catch (error) {
+				failure = error;
+			}
+			const identityInvalid = identityLabel !== "valid";
+			const ownershipIndeterminate =
+				ownershipState === "conflicting" || ownershipState === "malformed";
+			const targetIndeterminate = targetState === "mismatch" || targetState === "unknown";
+			const prerequisiteSkipped =
+				identityInvalid ||
+				coordinateIndeterminate ||
+				pathIndeterminate ||
+				endpointBlocked ||
+				ownershipIndeterminate ||
+				targetIndeterminate;
+			const connectorGeometryEligible = !identityInvalid && locatableOrigin && !pathIndeterminate;
+			check(
+				`totality matrix ${totalityCaseIndex}: ${String(identityLabel)}/${String(coordinateLabel)}/${String(pathLabel)}/${String(endpointLabel)}/${ownershipState}/${targetState}`,
+				!failure &&
+					InspectionReportSchema.safeParse(report).success &&
+					(!prerequisiteSkipped || report.coverage === "indeterminate") &&
+					(connectorGeometryEligible ||
+						!report.findings.some(
+							(finding) =>
+								supportedConnectorResultCodes.has(finding.code) &&
+								findingUsesConnector(finding, connectorId),
+						)) &&
+					(!endpointBlocked ||
+						!report.findings.some(
+							(finding) =>
+								finding.code === "CONNECTOR_PENETRATES_NODE" &&
+								finding.details.connectorId === connectorId,
+						)) &&
+					(ownershipState !== "malformed" ||
+						!report.findings.some(
+							(finding) => finding.code === "LABEL_OVERLAP" && finding.details.labelId === labelId,
+						)) &&
+					(ownershipState !== "conflicting" ||
+						!report.findings.some(
+							(finding) =>
+								finding.code === "LABEL_OVERLAP" &&
+								finding.details.labelId === labelId &&
+								[ownerAId, ownerBId].includes(finding.details.nodeId),
+						)),
+				failure instanceof Error ? failure.message : "",
+			);
+			totalityCaseIndex += 1;
+		}
+check("totality matrix stays deliberately bounded", totalityCaseIndex === 80);
 
 const nonLeafZoneLabelOverlap = inspectBoard([
 	semanticNode("zone", { id: "zone-body", x: 0, y: 0, width: 200, height: 200 }),
@@ -2377,6 +2928,129 @@ noteFor(
 		["unknown", "future-target", 60],
 	].flatMap(([label, rawType, y]) => incomingReferenceElements(label, rawType, y)),
 );
+const prerequisiteTotalityElements = [
+	connector({
+		id: "jover",
+		x: 0,
+		y: 300,
+		width: 10,
+		height: 0,
+		points: [
+			[0, 0],
+			["INSPECTION_OVERFLOW_NUMBER", 0],
+		],
+	}),
+	semanticNode("blocked-endpoint-node", { id: "bnnode", x: 40, y: 0 }),
+	connector({
+		id: "bedge",
+		x: 0,
+		y: 5,
+		width: 100,
+		height: 0,
+		points: [
+			[0, 0],
+			[100, 0],
+		],
+		startBinding: { elementId: "", focus: 0, gap: 0 },
+	}),
+	semanticNode("reverse-owner", {
+		id: "rowner",
+		x: 0,
+		y: 100,
+		width: 100,
+		height: 100,
+		boundElements: [{ id: "rlbl", type: "text" }],
+	}),
+	{
+		id: "rlbl",
+		type: "text",
+		x: 80,
+		y: 120,
+		width: 40,
+		height: 20,
+		fontFamily: 5,
+		text: "reverse",
+	},
+	semanticNode("reverse-unrelated", { id: "runrel", x: 100, y: 100, width: 50, height: 50 }),
+	semanticNode("mismatch-owner", {
+		x: 200,
+		y: 100,
+		id: "mowner",
+		boundElements: [{ id: "mtarget", type: "text" }],
+	}),
+	{ id: "mtarget", type: "rectangle", x: 220, y: 100, width: 10, height: 10 },
+	semanticNode("unknown-target-owner", {
+		x: 260,
+		y: 100,
+		id: "uowner",
+		boundElements: [{ id: "utarget", type: "arrow" }],
+	}),
+	{ id: "utarget", type: "future-target", x: 280, y: 100, width: 10, height: 10 },
+	...[
+		["b1", "text", "rectangle"],
+		["b2", "text", "arrow"],
+		["b3", "arrow", "text"],
+		["b4", "arrow", "rectangle"],
+		["b5", "text", "text"],
+		["b6", "arrow", "arrow"],
+	].flatMap(([prefix, declaredType, actualType], index) => {
+		const targetId = `${prefix}t`;
+		const target =
+			actualType === "text"
+				? {
+						id: targetId,
+						type: "text",
+						x: 350 + index * 30,
+						y: 100,
+						width: 10,
+						height: 10,
+						fontFamily: 5,
+						text: "target",
+					}
+				: actualType === "arrow"
+					? connector({
+							id: targetId,
+							x: 350 + index * 30,
+							y: 100,
+							width: 10,
+							height: 0,
+							points: [
+								[0, 0],
+								[10, 0],
+							],
+						})
+					: {
+							id: targetId,
+							type: "rectangle",
+							x: 350 + index * 30,
+							y: 100,
+							width: 10,
+							height: 10,
+						};
+		return [
+			semanticNode(`${prefix}o`, {
+				id: `${prefix}ob`,
+				x: 350 + index * 30,
+				y: 150,
+				boundElements: [{ id: targetId, type: declaredType }],
+			}),
+			target,
+		];
+	}),
+];
+const prerequisiteTotalityNote = renderBoardNote(
+	{
+		type: "excalidraw",
+		version: 2,
+		source: "archboard",
+		elements: prerequisiteTotalityElements,
+		appState: {},
+		files: {},
+	},
+	null,
+	{ board: "prerequisite-totality", variant: "current" },
+).replace('"INSPECTION_OVERFLOW_NUMBER"', "1e400");
+fs.writeFileSync(path.join(vault, "prerequisite-totality.excalidraw.md"), prerequisiteTotalityNote);
 const sentinelLog = path.join(os.tmpdir(), `archboard-inspection-http-${process.pid}.log`);
 fs.writeFileSync(sentinelLog, "");
 const sentinel = spawn(
@@ -2526,6 +3200,59 @@ check(
 			(finding) => finding.code === "UNSUPPORTED_GEOMETRY" && finding.reason === "unsupported-type",
 		).length === 4,
 	incomingTypesRun.stderr,
+);
+const prerequisiteTotalityRun = run("prerequisite-totality", ["--strict"]);
+const prerequisiteTotalityResult = prerequisiteTotalityRun.stdout
+	? JSON.parse(prerequisiteTotalityRun.stdout)
+	: null;
+check(
+	"persisted prerequisite interactions and JSON 1e400 stay schema-total and indeterminate",
+	prerequisiteTotalityRun.status === 8 &&
+		prerequisiteTotalityRun.stderr === "" &&
+		CheckResultSchema.safeParse(prerequisiteTotalityResult).success &&
+		prerequisiteTotalityResult.findings.some(
+			(finding) =>
+				finding.code === "AMBIGUOUS_GEOMETRY" &&
+				finding.reason === "malformed-point" &&
+				finding.elements[0]?.id === "jover",
+		) &&
+		prerequisiteTotalityResult.findings.some(
+			(finding) => finding.reason === "bound-element-target-type-mismatch",
+		) &&
+		prerequisiteTotalityResult.findings.filter(
+			(finding) => finding.reason === "bound-element-target-type-mismatch",
+		).length === 5 &&
+		!["b5t", "b6t"].some((targetId) =>
+			prerequisiteTotalityResult.findings.some(
+				(finding) =>
+					finding.reason === "bound-element-target-type-mismatch" &&
+					finding.details.targetId === targetId,
+			),
+		) &&
+		prerequisiteTotalityResult.findings.some(
+			(finding) =>
+				finding.code === "UNSUPPORTED_GEOMETRY" &&
+				finding.reason === "unsupported-type" &&
+				finding.elements[0]?.id === "utarget",
+		) &&
+		prerequisiteTotalityResult.findings.some(
+			(finding) =>
+				finding.code === "LABEL_OVERLAP" &&
+				finding.details.labelId === "rlbl" &&
+				finding.details.nodeId === "reverse-unrelated",
+		) &&
+		!prerequisiteTotalityResult.findings.some(
+			(finding) =>
+				(finding.code === "CONNECTOR_PENETRATES_NODE" && finding.details.connectorId === "bedge") ||
+				(finding.code === "LABEL_OVERLAP" &&
+					finding.details.labelId === "rlbl" &&
+					finding.details.nodeId === "reverse-owner"),
+		),
+	`status=${prerequisiteTotalityRun.status} stderr=${prerequisiteTotalityRun.stderr} findings=${prerequisiteTotalityResult?.findings
+		?.map(
+			(finding) => `${finding.reason}:${finding.elements.map((element) => element.id).join("+")}`,
+		)
+		.join(",")}`,
 );
 const impossibleVault = path.join(vault, "not-a-directory");
 fs.writeFileSync(impossibleVault, "sentinel");
