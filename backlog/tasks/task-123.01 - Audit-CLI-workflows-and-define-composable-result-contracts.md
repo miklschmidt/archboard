@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:53'
-updated_date: '2026-08-26 07:10'
+updated_date: '2026-08-26 07:36'
 labels: []
 dependencies:
   - TASK-124
@@ -78,6 +78,8 @@ Checkpoint ac2b34b records the canonical 57-path CLI audit, generated Markdown v
 Follow-up disposition recorded: created standalone To Do tasks TASK-126 (replace import as one atomic board write) and TASK-127 (snapshot restore as one atomic board write). The device-trust stencil/insert/promote/group/arrange collapse was rejected because those operations can encode separate human intent and current evidence is one workflow, not repeated released use; reconsider only after TASK-119 through TASK-122 provide production-backed completion/evaluation evidence. Neither follow-up was started or given an implementation plan.
 
 Proof implementation checkpoint 1a0438d: introduced the CommandContract deep module, adopted Commander 15.0.0 only behind the private adapter after the Bun smoke, and migrated exactly query/update/viewport/export through run.ts. Removed their duplicate legacy handlers. Focused validation passed: type-check, 7 contract tests plus artifact freshness/ownership checks, and the real CLI surface/argv suite with 338 checks.
+
+Review and validation checkpoint: independent Standards and Spec rereviews both pass over fixed base 43d0b982ac39346ae3057edf3c9fdffe400b2853 after fixes in 3bd180c, fba77f7, and 92171c2. The fixed-base golden now distinguishes exits 0-5, globals, aliases, equals/option-looking/dash/excess arguments, repeatable append and nonrepeatable last-wins, exact stream ownership, and all held modes; test:cli passes 401 checks. Two consecutive bun run fix passes were stable. bun run check passed the complete chain, and a separate sequential bun run test passed. The human-performance browser gate transiently reported [0,0,2] reconciliation in earlier full invocations, passed immediately in isolation, then passed in both the green check and final green test; no source change was made for the transient. TASK-123.01 remains In Progress with acceptance criteria untouched for parent review.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
