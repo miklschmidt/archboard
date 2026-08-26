@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:53'
-updated_date: '2026-08-26 07:36'
+updated_date: '2026-08-26 07:51'
 labels: []
 dependencies:
   - TASK-124
@@ -80,6 +80,8 @@ Follow-up disposition recorded: created standalone To Do tasks TASK-126 (replace
 Proof implementation checkpoint 1a0438d: introduced the CommandContract deep module, adopted Commander 15.0.0 only behind the private adapter after the Bun smoke, and migrated exactly query/update/viewport/export through run.ts. Removed their duplicate legacy handlers. Focused validation passed: type-check, 7 contract tests plus artifact freshness/ownership checks, and the real CLI surface/argv suite with 338 checks.
 
 Review and validation checkpoint: independent Standards and Spec rereviews both pass over fixed base 43d0b982ac39346ae3057edf3c9fdffe400b2853 after fixes in 3bd180c, fba77f7, and 92171c2. The fixed-base golden now distinguishes exits 0-5, globals, aliases, equals/option-looking/dash/excess arguments, repeatable append and nonrepeatable last-wins, exact stream ownership, and all held modes; test:cli passes 401 checks. Two consecutive bun run fix passes were stable. bun run check passed the complete chain, and a separate sequential bun run test passed. The human-performance browser gate transiently reported [0,0,2] reconciliation in earlier full invocations, passed immediately in isolation, then passed in both the green check and final green test; no source change was made for the transient. TASK-123.01 remains In Progress with acceptance criteria untouched for parent review.
+
+Review remediation checkpoint 0fa4612: corrected the four proof handler owners and made test:contracts verify every audit owner plus registry/definition reconciliation; moved viewport id coercion and export format inference/defaulting into staged Zod schemas with generated rules and source ownership checks; mapped Commander values through Option.attributeName(); reduced public runCommand to the production two-argument interface while keeping handler-facing Archboard types; restored exact legacy attached-value boolean diagnostics with fixed-base goldens; and rendered generated usage in fenced text blocks. Focused gates passed: type-check, test:contracts (89 checks plus 9 Bun tests), test:cli (415 checks), test:one-write (76), test:obsidian (197), and test:browser fixed-point.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
