@@ -111,11 +111,18 @@ for (const record of compatibility.orderedCases) {
 		check(`${record.name} records ${field}`, Array.isArray(record[field]));
 	}
 }
-const cliCheckerSource = fs.readFileSync(join(root, "scripts", "check-cli-surface.mjs"), "utf8");
+const compatibilityRun = spawnSync(
+	"bun",
+	[join(root, "scripts", "check-cli-surface.mjs"), "--compatibility-only"],
+	{ cwd: root, encoding: "utf8" },
+);
 check(
-	"the package CLI checker replays the ordered fixed-base records",
-	cliCheckerSource.includes("for (const record of compatibility.orderedCases)") &&
-		cliCheckerSource.includes("exerciseCompatibilityRecord(record)"),
+	"test:contracts executes the package compatibility records",
+	compatibilityRun.status === 0 &&
+		compatibilityRun.stdout.includes(
+			`cli compatibility: ${compatibility.orderedCases.length} records passed.`,
+		),
+	`${compatibilityRun.status}: ${compatibilityRun.stderr || compatibilityRun.stdout}`,
 );
 for (const path of compatibility.publicPaths) {
 	const [command, ...tail] = path.split(" ");
@@ -201,6 +208,7 @@ for (const entry of registry.filter((candidate) => candidate.bare?.kind === "def
 const byName = new Map(contracts.map((entry) => [entry.name, entry.contract]));
 const auditByPath = new Map(audit.entries.map((entry) => [entry.path, entry]));
 const publicContracts = introspectContracts(registry);
+const publicContractByName = new Map(publicContracts.map((contract) => [contract.name, contract]));
 const unconstrainedBranch = (schema) => {
 	if (!schema || typeof schema !== "object" || Array.isArray(schema)) return false;
 	const keys = Object.keys(schema).filter((key) => key !== "$schema");
@@ -216,6 +224,82 @@ const unconstrainedBranch = (schema) => {
 		schema.additionalProperties !== false
 	);
 };
+const bookkeepingFields = new Set(["success", "held"]);
+const meaningfulObjectBranches = (schema) => {
+	if (!schema || typeof schema !== "object" || Array.isArray(schema)) return true;
+	for (const keyword of ["anyOf", "oneOf"]) {
+		if (Array.isArray(schema[keyword])) return schema[keyword].every(meaningfulObjectBranches);
+	}
+	if (Array.isArray(schema.allOf)) return schema.allOf.every(meaningfulObjectBranches);
+	if (schema.type !== "object") return true;
+	return (schema.required ?? []).some((field) => !bookkeepingFields.has(field));
+};
+check(
+	"meaningful result guard rejects an optional-held-only loose object",
+	!meaningfulObjectBranches({
+		type: "object",
+		properties: { held: { type: "object" } },
+		additionalProperties: {},
+	}),
+);
+for (const { path, fields } of [
+	{
+		path: "board info",
+		fields: ["success", "board", "identity", "elementCount", "version", "placeholder"],
+	},
+	{
+		path: "board new",
+		fields: [
+			"success",
+			"board",
+			"identity",
+			"elementCount",
+			"version",
+			"placeholder",
+			"created",
+			"saved",
+			"pane",
+		],
+	},
+	{
+		path: "board open",
+		fields: [
+			"success",
+			"board",
+			"identity",
+			"elementCount",
+			"version",
+			"placeholder",
+			"source",
+			"pane",
+		],
+	},
+	{
+		path: "inject status",
+		fields: ["enabled", "armed", "socket", "target", "injected", "lastInjection"],
+	},
+	{ path: "inject test", fields: ["channel", "threadId", "text"] },
+]) {
+	const schema = publicContractByName.get(path)?.result;
+	check(
+		`${path} generated schema exposes its stable required fields`,
+		fields.every((field) => schema?.required?.includes(field)),
+		JSON.stringify(schema?.required),
+	);
+}
+for (const path of ["board info", "board new", "board open"]) {
+	const schema = publicContractByName.get(path)?.result;
+	check(
+		`${path} generated schema does not invent vaultBacked`,
+		!("vaultBacked" in (schema?.properties ?? {})),
+	);
+}
+const paneOpenBoard = publicContractByName.get("pane open")?.result?.properties?.board;
+check(
+	"pane open generated nesting exposes the board-open source and version",
+	["source", "version", "placeholder"].every((field) => paneOpenBoard?.required?.includes(field)),
+	JSON.stringify(paneOpenBoard),
+);
 for (const contract of publicContracts) {
 	const structured = contract.output.some((output) =>
 		["json", "file-receipt"].includes(output.mode),
@@ -226,7 +310,7 @@ for (const contract of publicContracts) {
 	if (structured && !namespaceRefusal) {
 		check(
 			`${contract.name} has no unconstrained structured result branch`,
-			!unconstrainedBranch(contract.result),
+			!unconstrainedBranch(contract.result) && meaningfulObjectBranches(contract.result),
 			JSON.stringify(contract.result),
 		);
 	} else {
@@ -347,9 +431,32 @@ for (const deleted of [
 	"src/cli/commands/args.ts",
 	"src/cli/commands/util.ts",
 	"src/cli/command-contract/lib/command-definitions.ts",
+	"src/cli/command-contract/testing.ts",
 ]) {
 	check(`${deleted} stays deleted`, !fs.existsSync(join(root, deleted)));
 }
+const commandContractRootTestFiles = fs
+	.readdirSync(join(root, "src", "cli", "command-contract"), { withFileTypes: true })
+	.filter((entry) => entry.isFile() && /(?:test|testing|fixture)/i.test(entry.name))
+	.map((entry) => entry.name);
+check(
+	"the public command-contract root has no test-only entrypoint",
+	commandContractRootTestFiles.length === 0,
+	commandContractRootTestFiles.join(", "),
+);
+const privateHostTestImports = sourceFiles
+	.filter((file) => relative(root, file).startsWith("src/cli/command-contract/tests/"))
+	.filter((file) =>
+		/processCommandHost|commandContractTestHost|\/lib\/host\.js/.test(
+			fs.readFileSync(file, "utf8"),
+		),
+	)
+	.map((file) => relative(root, file));
+check(
+	"contract tests use no private host or test-only host export",
+	privateHostTestImports.length === 0,
+	privateHostTestImports.join(", "),
+);
 const commandModuleViolations = familyCommandSources
 	.filter(([, source]) =>
 		/\b(?:parseArgs|printJson|requireBrowserClient)\s*\(|process\.(?:stdout|stderr)|argv\s*:\s*string\[\]/.test(
@@ -411,6 +518,7 @@ for (const schema of [
 	"ElementIdSchema",
 	"ServerElementSchema",
 	"BoardAddressSchema",
+	"BoardIdentityStateSchema",
 	"BoardFingerprintSchema",
 	"BoardRefusalSchema",
 	"HoldReportSchema",
