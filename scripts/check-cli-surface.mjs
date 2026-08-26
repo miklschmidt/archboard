@@ -4,7 +4,7 @@
 // a directory outside the checkout, while a tiny HTTP double records the wire
 // contract. Command inventory always comes from the production declarations.
 
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
 	closeSync,
@@ -636,6 +636,36 @@ try {
 	check(
 		"query keeps its bare-array result",
 		Array.isArray(parseJson("query JSON", queried.stdout)),
+	);
+	const structuredSuccess = await cli(["get", "shape1", "--board", "contract"], {
+		url: canvasUrl,
+	});
+	const jqSuccess = spawnSync("jq", ["-r", ".id"], {
+		input: structuredSuccess.stdout,
+		encoding: "utf8",
+	});
+	check("structured success command preserves exit 0", structuredSuccess.status === 0);
+	check("structured success command preserves empty stderr", structuredSuccess.stderr === "");
+	check("structured success stdout is consumable by real jq", jqSuccess.status === 0);
+	check("jq selects a structured success field", jqSuccess.stdout === "shape1\n", jqSuccess.stdout);
+	check(
+		"jq writes no diagnostic for structured success",
+		jqSuccess.stderr === "",
+		jqSuccess.stderr,
+	);
+	const structuredNonzero = await cli(["status"], { url: closedUrl });
+	const jqNonzero = spawnSync("jq", ["-r", ".running"], {
+		input: structuredNonzero.stdout,
+		encoding: "utf8",
+	});
+	check("structured nonzero command preserves exit 3", structuredNonzero.status === 3);
+	check("structured nonzero command preserves empty stderr", structuredNonzero.stderr === "");
+	check("structured nonzero stdout is consumable by real jq", jqNonzero.status === 0);
+	check("jq selects a structured nonzero field", jqNonzero.stdout === "false\n", jqNonzero.stdout);
+	check(
+		"jq writes no diagnostic for structured nonzero",
+		jqNonzero.stderr === "",
+		jqNonzero.stderr,
 	);
 	const queryRequest = requests
 		.slice(queryBefore)
