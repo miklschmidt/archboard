@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-26 10:24'
+updated_date: '2026-08-26 10:26'
 labels: []
 dependencies:
   - TASK-123.01
@@ -114,6 +114,8 @@ Foundation standards remediation (2026-08-26, commit 08a0b8f): snapshot and arra
 Migration checkpoint 1 (server/local control) complete at 2026-08-26: start, stop, and install-skill now execute as typed contracts alongside accepted status. Added a host-owned prompt boundary so install handlers do not write streams, preserved immediate replacement/removal/setup diagnostics and the fixed-base late-failure ordering, and kept stop identity safety. Gates: stable fix, generation --check, 15 contract tests / 665 checks, 539 CLI checks, type-check, and 106 install checks.
 
 Migration checkpoint 2 (basic element/scene paths) complete: apply, add, delete, get, clear, and import now use named typed contracts. Input reads retain their fixed phase (apply/add before server; import after server), all writes retain the existing REST sequence and held result policy, and import remains the existing merge/replace behavior. Gates: stable fix, generation --check, 15 contract tests / 671 checks, 539 CLI checks, type-check, 76 one-write checks, and 39 doing checks.
+
+Migration checkpoint 3 (read/view paths) complete: selection, panes, describe, compare, and changes now use named typed contracts with JSON/text output selected centrally. No-pane panes remains a server-only success; selection/describe/changes retain board requirements; compare payloads remain complete and loose at the forwarded server boundary. Gates: stable fix, generation --check, 15 contract tests / 676 checks, 539 CLI checks, type-check, full changes/injection checks, and side-by-side checks.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

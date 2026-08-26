@@ -18,14 +18,14 @@ import { packageVersion } from "../../runtime/engine/package-version.js";
 import { startContract, stopContract } from "./server.js";
 import { addContract, applyContract, deleteContract, getContract } from "./elements.js";
 import * as scene from "./scene.js";
-import { panes, selection } from "./selection.js";
+import { panesContract, selectionContract } from "./selection.js";
 import * as paneCommands from "./pane.js";
 import { promote, demote } from "./promote.js";
 import * as repoCommands from "./repo.js";
 import * as snapshotCommands from "./snapshot.js";
 import * as boardCommands from "./board.js";
-import { compare } from "./compare.js";
-import { changes } from "./changes.js";
+import { compareContract } from "./compare.js";
+import { changesContract } from "./changes.js";
 import { claim, release } from "./claim.js";
 import * as injectCommands from "./inject.js";
 import * as arrangeCommands from "./arrange.js";
@@ -147,12 +147,12 @@ const COMMANDS: Record<string, CommandRoute> = {
 		owner: contract(queryContract, "src/cli/command-contract/lib/command-definitions.ts"),
 	},
 	selection: {
-		owner: legacy(selection, "src/cli/commands/selection.ts"),
+		owner: contract(selectionContract, "src/cli/commands/selection.ts"),
 		summary: "What a human currently has selected on the board",
 		usage: "selection [--text]",
 	},
 	panes: {
-		owner: legacy(panes, "src/cli/commands/selection.ts"),
+		owner: contract(panesContract, "src/cli/commands/selection.ts"),
 		summary: "What the human is currently looking at — pane by pane",
 		usage: [
 			"panes [--text]",
@@ -332,7 +332,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		].join("\n"),
 	},
 	compare: {
-		owner: legacy(compare, "src/cli/commands/compare.ts"),
+		owner: contract(compareContract, "src/cli/commands/compare.ts"),
 		summary: "Structured semantic diff between two variants of a board",
 		usage: [
 			"compare <from> [to]        e.g. compare payments payments@option-a",
@@ -355,7 +355,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		].join("\n"),
 	},
 	changes: {
-		owner: legacy(changes, "src/cli/commands/changes.ts"),
+		owner: contract(changesContract, "src/cli/commands/changes.ts"),
 		summary:
 			"Semantic changes on the board since a cursor — what it became, not which pixels moved",
 		usage: [
@@ -454,7 +454,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		].join("\n"),
 	},
 	describe: {
-		owner: legacy(scene.describe, "src/cli/commands/scene.ts"),
+		owner: contract(scene.describeContract, "src/cli/commands/scene.ts"),
 		summary: "AI-readable scene description (plain text)",
 		usage: "describe",
 	},
