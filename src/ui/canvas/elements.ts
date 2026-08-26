@@ -8,7 +8,7 @@
 // misplaced, and dropping the seeds it had already spent.
 //
 // That was the second converter. Under ADR 0015 there is one, it is
-// `src/core/expand-elements.ts`, it runs on the way in, and what a pane
+// `src/runtime/engine/expand-elements.ts`, it runs on the way in, and what a pane
 // receives is already what Excalidraw renders. So there is nothing to convert
 // here and nothing to correct.
 //

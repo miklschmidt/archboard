@@ -78,6 +78,25 @@ function makeRepo(name, files = {}) {
 
 const BEGIN = "<!-- archboard:begin -->";
 
+function sourceFiles(directory) {
+	const files = [];
+	for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+		const file = join(directory, entry.name);
+		if (entry.isDirectory()) files.push(...sourceFiles(file));
+		else if (entry.isFile() && /\.[cm]?[jt]sx?$/.test(entry.name)) files.push(file);
+	}
+	return files;
+}
+
+// Scan the live source tree itself, not a list of files that happened to exist
+// when this check was written. The check's own matcher is outside src/; the
+// custom boundary plugin's matcher is intentionally outside this scan too.
+const staleLivePath = /(?:src\/core\/|frontend\/src\/)/;
+for (const file of sourceFiles(join(repoRoot, "src"))) {
+	const text = fs.readFileSync(file, "utf-8");
+	assert(!staleLivePath.test(text), `${file} points to a deleted live source path`);
+}
+
 // Live maintainer and product docs must navigate the current deep-module tree.
 // Measured design investigations are excluded because they carry an explicit
 // historical-path notice and preserve the source locations they measured.

@@ -62,7 +62,7 @@ const moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
 // The curated sets ship in the checkout, not in the frontend bundle: the
 // browser never needs them, because it gets the library from the server like
-// everything else. Resolved from src/core/ back to the repo root.
+// everything else. Resolved from src/runtime/engine/ back to the repo root.
 const CURATED_DIR = path.resolve(moduleDir, "../../../libraries");
 
 export function libraryFilePath(): string | null {
@@ -159,7 +159,7 @@ export function curatedSets(): Array<{ name: string; items: LibraryItem[] }> {
 
 // Kept across a hot reload. With no vault configured this is not a cache at
 // all, it is the library, so rebuilding it on a file save would empty the
-// palette (src/core/hot.ts).
+// palette (src/runtime/engine/hot.ts).
 const cache = kept("library", () => ({ state: null as LibraryState | null }));
 
 function emptyState(): LibraryState {

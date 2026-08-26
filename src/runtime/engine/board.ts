@@ -432,7 +432,7 @@ export function hashBoardBytes(bytes: Buffer): string {
 // dropped, because a scene keeps its tombstones and nothing outside Excalidraw
 // wants them.
 //
-// Deliberately not `readNoteFile` (src/core/board-io.ts), which is the one way
+// Deliberately not `readNoteFile` (src/runtime/engine/board-io.ts), which is the one way
 // a board is read. This is the vault scan behind `board list --repo`: it opens
 // every note in the vault looking for bindings, which live on elements, and it
 // never hashes, never writes and never draws. Reading a note the way a request
@@ -467,7 +467,7 @@ export function extractSceneElements(note: string): ServerElement[] {
 // Preserving that section keeps the record; following it is what keeps the
 // picture, so a board the plugin has touched still renders here.
 //
-// Following it happens in `readNoteFile` (src/core/board-io.ts) and nowhere
+// Following it happens in `readNoteFile` (src/runtime/engine/board-io.ts) and nowhere
 // else, so every read of a board gets the pictures without knowing this
 // section exists — and there is no second reader for a fix here to miss.
 

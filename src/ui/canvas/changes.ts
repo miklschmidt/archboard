@@ -83,7 +83,7 @@ export function diffAgainstBaseline(
 	 * (TASK-098). Reporting it is what gets it renamed, because its id is the
 	 * 21-character nanoid Excalidraw minted and a note can only hold eight
 	 * characters, and a rename appears in the scene as five typed characters
-	 * vanishing with no error (`src/core/ids.ts`).
+	 * vanishing with no error (`src/shared/ids/ids.ts`).
 	 *
 	 * Withheld is not the same as agreed. An element already in the baseline
 	 * keeps the print it had, so the edit remains pending and goes out on the

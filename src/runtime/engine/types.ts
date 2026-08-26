@@ -425,7 +425,7 @@ export interface Snapshot {
 //
 // Kept across a hot reload, along with every other holder in this file: a
 // snapshot is taken to protect work, so a file save must not be what loses it
-// (src/core/hot.ts).
+// (src/runtime/engine/hot.ts).
 export const snapshots = kept("snapshots", () => new Map<string, Snapshot>());
 
 // The current selection, or null when nothing is selected. A mutable holder so
@@ -472,7 +472,7 @@ export function validateElement(element: Partial<ServerElement>): element is Ser
 	return true;
 }
 
-// Ids are minted in src/core/ids.ts and nowhere else. See the header there for
+// Ids are minted in src/shared/ids/ids.ts and nowhere else. See the header there for
 // why the shape they come out in is not negotiable.
 
 // Normalize fontFamily from string names to numeric values that Excalidraw expects

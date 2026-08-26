@@ -81,7 +81,7 @@ const CONTENT_MESSAGES = new Set([
 	"files_added",
 ]);
 
-// Every duration this pane waits out. They are in src/core/timing.ts with the
+// Every duration this pane waits out. They are in src/shared/timing/timing.ts with the
 // server's and the change feed's, because they pull against each other and one
 // tuned on its own is one tuned in ignorance of the rest (ADR 0016). The
 // reasons for the numbers are there too.

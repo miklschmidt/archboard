@@ -146,7 +146,7 @@ export function readFrontmatterValue(content: string, key: string): string | und
 // byte of it alone.
 //
 // The write path renders a whole note and only then knows what its version
-// should be (src/core/board-io.ts): the counter moves when the rendered
+// should be (src/runtime/engine/board-io.ts): the counter moves when the rendered
 // document differs from the destination, so it cannot be an input to the
 // render. Rendering twice to settle one line would mean serialising a scene
 // that can be megabytes for a second time, so the line is set on the rendered

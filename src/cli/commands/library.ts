@@ -17,7 +17,7 @@ import {
 // server rather than in a browser profile (ADR 0007), which means an agent
 // can be told what is available to drag onto a board instead of guessing.
 //
-// Both actions are thin over src/core/library-catalogue.ts, which the server
+// Both actions are thin over src/runtime/engine/library-catalogue.ts, which the server
 // routes also use, so the two callers cannot answer differently.
 
 const USAGE =

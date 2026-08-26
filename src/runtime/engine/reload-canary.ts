@@ -19,7 +19,7 @@
 // modules that own them. That is deliberate. This module is evaluated on the
 // dev entry's side of the reload boundary, so an import of `board-store.js`
 // here would bind to whichever copy happened to be current, which is the
-// ambiguity the registry exists to remove (src/core/hot.ts). Reading the
+// ambiguity the registry exists to remove (src/runtime/engine/hot.ts). Reading the
 // registry means the canary sees exactly what the running canvas sees.
 //
 // The cost is that the shapes below are duplicated rather than imported. That

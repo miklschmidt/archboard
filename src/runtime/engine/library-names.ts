@@ -7,7 +7,7 @@
 // they need no entry here. The other 100 are in the older v1 format (a bare
 // array of element arrays), which carries no name at all, so this file
 // supplies one for every one of them. Keyed by the item id exactly as
-// src/core/library.ts derives it for v1 sets — `deriveId(setName, index)`,
+// src/runtime/engine/library.ts derives it for v1 sets — `deriveId(setName, index)`,
 // i.e. `sha256(`${setName}:${index}`).hex.slice(0, 20)` — so a name here
 // always lines up with the matching seeded item, however it was reached.
 //

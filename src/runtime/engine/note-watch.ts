@@ -11,7 +11,7 @@
 // which is the moment after somebody has spent an hour drawing on it.
 //
 //   a hold      archboard tried to write and was refused, and the board has
-//               stopped saving. Something happened. src/core/board-hold.ts
+//               stopped saving. Something happened. src/runtime/engine/board-hold.ts
 //   a lock      another archboard writer has the board right now.
 //               src/runtime/engine/board-lock.ts
 //   this        nobody has tried to write yet, so nothing has been refused, and

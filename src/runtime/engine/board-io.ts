@@ -22,7 +22,7 @@
 //
 // Now a request reads the note, works on what it read, and writes it back. What
 // the process holds between requests is which boards are open and where each
-// one's note is (src/core/board-store.ts); the content belongs to the request
+// one's note is (src/runtime/engine/board-store.ts); the content belongs to the request
 // that read it and is gone when the response goes out.
 //
 // The cost is a read-modify-write per mutating request: 15.6 ms on a 56-element
@@ -330,7 +330,7 @@ export function readNote(file: string): BoardContent | null {
  * A board on hold is the one case where the note is not the answer, and it is
  * not an exception to ADR 0015 so much as the situation ADR 0015 assumes cannot
  * be avoided: the note has been taken over by another editor, so it holds their
- * board and not this one (src/core/board-hold.ts). There is still exactly one
+ * board and not this one (src/runtime/engine/board-hold.ts). There is still exactly one
  * answer here, which is the whole property — every reader, every describe,
  * every pane and the change feed come through this line and see the same board.
  *
@@ -386,7 +386,7 @@ export function renderContent(
  * before the note writer has to.
  *
  * A text element's block id is its element id, and a block reference cannot
- * hold more than eight characters (`src/core/ids.ts`), so `wrapSceneAsObsidianMd`
+ * hold more than eight characters (`src/shared/ids/ids.ts`), so `wrapSceneAsObsidianMd`
  * renames a longer one on the way into a note. Nothing archboard mints needs
  * that (TASK-069), and a pane settles what Excalidraw minted before it reports
  * it, because renaming a text element somebody has an editor open on is how

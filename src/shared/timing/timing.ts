@@ -21,8 +21,8 @@
 // it stays free of `process`, `node:` imports and anything a browser does not
 // have. Where a value can be overridden from the environment, the default is
 // here and the override stays at the point of use, in the process that has an
-// environment to read. `src/core/labels`, `src/core/appearance` and
-// `src/core/expand-elements` cross the same boundary the same way.
+// environment to read. `src/runtime/engine/labels`, `src/shared/appearance` and
+// `src/runtime/engine/expand-elements` cross the same boundary the same way.
 
 // ── A user's edits reaching the server ────────────────────────────────────
 

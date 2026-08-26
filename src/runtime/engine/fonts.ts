@@ -89,7 +89,7 @@ function registryChunk(): { file: string; source: string } {
 	}
 	throw new Error(
 		`No font registry in the Excalidraw bundle at ${EXCALIDRAW_DIST}. ` +
-			"The package layout has changed; see src/core/fonts.ts.",
+			"The package layout has changed; see src/runtime/engine/fonts.ts.",
 	);
 }
 
@@ -219,7 +219,7 @@ function readRegistry(): Map<string, FamilyDescriptor> {
 	if (registry.size === 0) {
 		throw new Error(
 			`Read no font families out of the Excalidraw bundle at ${EXCALIDRAW_DIST}. ` +
-				"The package layout has changed; see src/core/fonts.ts.",
+				"The package layout has changed; see src/runtime/engine/fonts.ts.",
 		);
 	}
 	return registry;
