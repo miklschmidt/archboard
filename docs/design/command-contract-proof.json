@@ -146,7 +146,8 @@
 			"parserOwner": "legacy subcommand dispatch",
 			"bare": {
 				"kind": "default",
-				"child": "list"
+				"child": "list",
+				"withLeadingOptions": true
 			},
 			"legacyArgv": "root-tail"
 		},
@@ -265,7 +266,8 @@
 			"parserOwner": "legacy subcommand dispatch",
 			"bare": {
 				"kind": "default",
-				"child": "status"
+				"child": "status",
+				"withLeadingOptions": false
 			},
 			"legacyArgv": "root-tail"
 		},
@@ -368,7 +370,8 @@
 			"parserOwner": "legacy subcommand dispatch",
 			"bare": {
 				"kind": "default",
-				"child": "list"
+				"child": "list",
+				"withLeadingOptions": true
 			},
 			"legacyArgv": "root-tail"
 		},

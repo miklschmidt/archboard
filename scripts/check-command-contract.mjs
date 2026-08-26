@@ -169,8 +169,9 @@ const byName = new Map(contracts.map((entry) => [entry.name, entry.contract]));
 const auditByPath = new Map(audit.entries.map((entry) => [entry.path, entry]));
 for (const entry of registry) {
 	const audited = auditByPath.get(entry.name);
-	const expectedParent = entry.name.includes(" ")
-		? entry.name.slice(0, entry.name.lastIndexOf(" "))
+	const auditedPath = audited?.path ?? "";
+	const expectedParent = auditedPath.includes(" ")
+		? auditedPath.slice(0, auditedPath.lastIndexOf(" "))
 		: null;
 	check(
 		`${entry.name} parent matches its canonical path`,

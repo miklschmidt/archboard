@@ -314,7 +314,9 @@ function localEffectsOf(record, result, requestEffects, runtime) {
 	}
 	if (record.name === "install-skill-late-failure") {
 		const installed = join(runtime.outside, "compat-skills", "archboard");
-		return !existsSync(join(installed, "old.txt")) && existsSync(join(installed, "SKILL.md"))
+		return !existsSync(join(installed, "old.txt")) &&
+			existsSync(join(installed, "SKILL.md")) &&
+			!existsSync("/proc/AGENTS.md")
 			? ["existing-skill-replaced", "repository-doc-not-written"]
 			: [];
 	}
@@ -352,6 +354,12 @@ async function exerciseCompatibilityRecord(record) {
 
 	try {
 		prepare();
+		const artifactTargets = argv.flatMap((token, index) =>
+			token === "--out" && argv[index + 1] ? [argv[index + 1]] : [],
+		);
+		const artifactBefore = new Map(
+			artifactTargets.map((path) => [path, existsSync(path) ? readFileSync(path) : null]),
+		);
 		const requestOffset = requests.length;
 		const result = await cli(argv, options);
 		const requestEffects = requests
@@ -359,6 +367,11 @@ async function exerciseCompatibilityRecord(record) {
 			.map((request) => `${request.method} ${request.url.pathname}`);
 		const prerequisiteContacts = result.events.filter((event) => event === "GET /health");
 		const actualLocalEffects = localEffectsOf(record, result, requestEffects, runtime);
+		const artifactCommits = artifactTargets.filter((path) => {
+			if (!existsSync(path)) return false;
+			const before = artifactBefore.get(path);
+			return before === null || !readFileSync(path).equals(before);
+		});
 		check(`${record.name} fixed-base argv exits exactly`, result.status === record.exit);
 		check(
 			`${record.name} fixed-base stdout bytes`,
@@ -391,7 +404,8 @@ async function exerciseCompatibilityRecord(record) {
 		);
 		check(
 			`${record.name} fixed-base artifact commits`,
-			JSON.stringify([]) === JSON.stringify(record.artifactCommits),
+			JSON.stringify(artifactCommits) === JSON.stringify(record.artifactCommits),
+			artifactCommits.join(" | "),
 		);
 
 		prepare();
