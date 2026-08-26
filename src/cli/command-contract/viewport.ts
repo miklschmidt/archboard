@@ -62,7 +62,7 @@ const viewportIdsSchema = z
 
 export const ViewportResultSchema = z.object({
 	success: z.boolean(),
-	message: z.string().optional(),
+	message: z.string(),
 	held: HoldReportSchema.optional(),
 });
 export type ViewportResult = z.infer<typeof ViewportResultSchema>;

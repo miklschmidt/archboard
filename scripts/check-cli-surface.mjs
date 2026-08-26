@@ -42,6 +42,7 @@ const { CANVAS_SERVICE_NAME } = await import(
 	join(repoRoot, "src", "runtime", "engine", "canvas-client.ts")
 );
 const outside = mkdtempSync(join(tmpdir(), "archboard-cli-contract-"));
+const compatibilityOnly = process.argv.includes("--compatibility-only");
 
 let failures = 0;
 let checks = 0;
@@ -63,6 +64,7 @@ function parseJson(label, value) {
 }
 
 let activeEvents = null;
+let activeCompatibilityRecord = null;
 
 function cli(args, { url, input, cwd = outside } = {}) {
 	return new Promise((finish) => {
@@ -134,6 +136,62 @@ function cliMerged(args, { url, cwd = outside } = {}) {
 const element = { id: "shape1", type: "rectangle", x: 0, y: 0, width: 100, height: 80 };
 const document = [element];
 const fingerprint = { elements: 1, note: "contract-note", version: 7 };
+const boardIdentity = {
+	board: "contract",
+	variant: "current",
+	level: "system",
+	displayName: "Contract",
+};
+const boardState = {
+	board: "contract",
+	identity: boardIdentity,
+	elementCount: 1,
+	version: 7,
+	placeholder: false,
+	file: "/vault/contract.excalidraw.md",
+	savedAt: "2026-08-26T10:00:00.000Z",
+	loadedAt: "2026-08-26T09:00:00.000Z",
+};
+const paneRef = {
+	paneId: "pane-right",
+	clientId: "client-right",
+	place: "right",
+	position: 2,
+};
+const injectionStatus = {
+	enabled: true,
+	armed: true,
+	loud: false,
+	refusal: null,
+	host: "127.0.0.1",
+	socket: {
+		path: "/tmp/app-server.sock",
+		exists: true,
+		isSocket: true,
+		ownedByUs: true,
+		mode: "600",
+	},
+	connected: true,
+	lastError: null,
+	target: {
+		threadId: "thread-fixture",
+		reason: "pinned",
+		explanation: "the fixture thread is pinned",
+		activeTurnId: null,
+	},
+	threadsSeen: 1,
+	pending: 0,
+	debounceMs: 200,
+	minIntervalMs: 500,
+	injected: { quiet: 2, loud: 1, failed: 0 },
+	lastInjectionAt: "2026-08-26T10:01:00.000Z",
+	lastInjection: {
+		channel: "quiet",
+		threadId: "thread-fixture",
+		at: "2026-08-26T10:01:00.000Z",
+		text: "fixture change",
+	},
+};
 const requests = [];
 let browserClients = 1;
 
@@ -169,6 +227,53 @@ const server = Bun.serve({
 					: undefined;
 		if (request.method === "POST" && url.pathname === "/api/viewport") {
 			return Response.json({ success: true, message: "Viewport updated" });
+		}
+		if (request.method === "GET" && url.pathname === "/api/boards/info") {
+			if (activeCompatibilityRecord === "promote-binding-resolution-failure") {
+				return Response.json(
+					{ success: false, error: "unexpected /api/boards/info" },
+					{ status: 404 },
+				);
+			}
+			return Response.json({ success: true, ...boardState });
+		}
+		if (request.method === "POST" && url.pathname === "/api/boards/new") {
+			return Response.json({
+				success: true,
+				...boardState,
+				version: null,
+				elementCount: 0,
+				created: true,
+				saved: false,
+				pane: null,
+			});
+		}
+		if (request.method === "POST" && url.pathname === "/api/boards/open") {
+			return Response.json({
+				success: true,
+				...boardState,
+				source: "vault",
+				pane: body?.pane ? paneRef : null,
+			});
+		}
+		if (request.method === "POST" && url.pathname === "/api/panes/open") {
+			return Response.json({
+				success: true,
+				pane: paneRef,
+				paneCount: 2,
+				onScreen: [{ paneId: paneRef.paneId, place: paneRef.place, board: "contract" }],
+			});
+		}
+		if (request.method === "GET" && url.pathname === "/api/injection") {
+			return Response.json({ success: true, ...injectionStatus });
+		}
+		if (request.method === "POST" && url.pathname === "/api/injection/test") {
+			return Response.json({
+				success: true,
+				channel: body?.loud ? "loud" : "quiet",
+				threadId: "thread-fixture",
+				text: "fixture injection text",
+			});
 		}
 		if (request.method === "POST" && url.pathname === "/api/boards/save") {
 			if (url.searchParams.get("board") === "false-success") {
@@ -325,6 +430,7 @@ function localEffectsOf(record, result, requestEffects, runtime) {
 
 async function exerciseCompatibilityRecord(record) {
 	let foreign;
+	activeCompatibilityRecord = record.name;
 	const runtime = { outside, closedUrl, canvasUrl };
 	let options = { url: canvasUrl };
 	if (record.fixture === "closed-server") options = { url: closedUrl };
@@ -434,6 +540,7 @@ async function exerciseCompatibilityRecord(record) {
 			merged.events.join(" | "),
 		);
 	} finally {
+		activeCompatibilityRecord = null;
 		foreign?.stop(true);
 	}
 }
@@ -458,6 +565,73 @@ try {
 	for (const record of compatibility.orderedCases) {
 		await exerciseCompatibilityRecord(record);
 	}
+	if (compatibilityOnly) {
+		if (failures > 0) {
+			console.error(`\n${failures} of ${checks} compatibility checks failed.`);
+			server.stop(true);
+			rmSync(outside, { recursive: true, force: true });
+			process.exit(1);
+		}
+		console.log(`cli compatibility: ${compatibility.orderedCases.length} records passed.`);
+		server.stop(true);
+		rmSync(outside, { recursive: true, force: true });
+		process.exit(0);
+	}
+
+	const boardInfo = await cli(["board", "info", "--board", "contract"], { url: canvasUrl });
+	const boardInfoBody = parseJson("board info fixture", boardInfo.stdout);
+	check("board info accepts the protected identity response", boardInfo.status === 0);
+	check(
+		"board info exposes required version and placeholder",
+		boardInfoBody?.version === 7 && boardInfoBody?.placeholder === false,
+	);
+	check("board info does not invent vaultBacked", !("vaultBacked" in (boardInfoBody ?? {})));
+
+	const boardNew = await cli(["board", "new", "contract-new"], { url: canvasUrl });
+	const boardNewBody = parseJson("board new fixture", boardNew.stdout);
+	check("board new accepts its protected response", boardNew.status === 0);
+	check(
+		"board new exposes creation and save state",
+		boardNewBody?.created === true &&
+			boardNewBody?.saved === false &&
+			boardNewBody?.version === null,
+	);
+
+	const boardOpen = await cli(["board", "open", "contract"], { url: canvasUrl });
+	const boardOpenBody = parseJson("board open fixture", boardOpen.stdout);
+	check("board open accepts its protected response", boardOpen.status === 0);
+	check("board open exposes its source", boardOpenBody?.source === "vault");
+
+	const paneOpen = await cli(["pane", "open", "--board", "contract"], { url: canvasUrl });
+	const paneOpenBody = parseJson("pane open fixture", paneOpen.stdout);
+	check("pane open accepts its nested board response", paneOpen.status === 0);
+	check(
+		"pane open nests the truthful board-open fields",
+		paneOpenBody?.board?.source === "vault" &&
+			paneOpenBody?.board?.version === 7 &&
+			paneOpenBody?.board?.placeholder === false,
+	);
+
+	const injectStatusResult = await cli(["inject", "status"], { url: canvasUrl });
+	const injectStatusBody = parseJson("inject status fixture", injectStatusResult.stdout);
+	check("inject status accepts the complete status report", injectStatusResult.status === 0);
+	check(
+		"inject status exposes its target and counters",
+		injectStatusBody?.target?.threadId === "thread-fixture" &&
+			injectStatusBody?.injected?.quiet === 2,
+	);
+
+	const injectTestResult = await cli(["inject", "test", "--note", "fixture"], {
+		url: canvasUrl,
+	});
+	const injectTestBody = parseJson("inject test fixture", injectTestResult.stdout);
+	check("inject test accepts its concrete probe result", injectTestResult.status === 0);
+	check(
+		"inject test exposes channel, thread, and text",
+		injectTestBody?.channel === "quiet" &&
+			injectTestBody?.threadId === "thread-fixture" &&
+			injectTestBody?.text === "fixture injection text",
+	);
 
 	const conflictMessage = "Refusing fixed-base board save. Nothing was written.";
 	const malformedHeld = await cli(

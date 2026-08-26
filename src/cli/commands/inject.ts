@@ -4,7 +4,27 @@ import { CliUsageError, defineCommand } from "../command-contract/contract.js";
 import { HoldReportSchema } from "../command-contract/schemas.js";
 
 const tail = z.array(z.string()).default([]);
-const resultSchema = z.looseObject({ held: HoldReportSchema.optional() });
+
+const InjectionSocketSchema = z.looseObject({
+	path: z.string(),
+	exists: z.boolean(),
+	isSocket: z.boolean(),
+	ownedByUs: z.boolean(),
+	mode: z.string().optional(),
+	problem: z.string().optional(),
+});
+const InjectionTargetSchema = z.looseObject({
+	threadId: z.string().nullable(),
+	reason: z.enum(["pinned", "none"]),
+	explanation: z.string(),
+	activeTurnId: z.string().nullable().optional(),
+});
+const LastInjectionSchema = z.looseObject({
+	channel: z.enum(["quiet", "loud"]),
+	threadId: z.string(),
+	at: z.string(),
+	text: z.string(),
+});
 
 export const InjectNamespaceInputSchema = z.object({ action: z.string().optional(), tail });
 export type InjectNamespaceInput = z.infer<typeof InjectNamespaceInputSchema>;
@@ -47,7 +67,29 @@ export const injectContract = defineCommand({
 
 export const InjectStatusInputSchema = z.object({ tail });
 export type InjectStatusInput = z.infer<typeof InjectStatusInputSchema>;
-export const InjectStatusResultSchema = resultSchema;
+export const InjectStatusResultSchema = z.looseObject({
+	enabled: z.boolean(),
+	armed: z.boolean(),
+	loud: z.boolean(),
+	refusal: z.string().nullable(),
+	host: z.string().nullable(),
+	socket: InjectionSocketSchema,
+	connected: z.boolean(),
+	lastError: z.string().nullable(),
+	target: InjectionTargetSchema,
+	threadsSeen: z.number().int().nonnegative(),
+	pending: z.number().int().nonnegative(),
+	debounceMs: z.number().int().nonnegative(),
+	minIntervalMs: z.number().int().nonnegative(),
+	injected: z.looseObject({
+		quiet: z.number().int().nonnegative(),
+		loud: z.number().int().nonnegative(),
+		failed: z.number().int().nonnegative(),
+	}),
+	lastInjectionAt: z.string().nullable(),
+	lastInjection: LastInjectionSchema.nullable(),
+	held: HoldReportSchema.optional(),
+});
 export type InjectStatusResult = z.infer<typeof InjectStatusResultSchema>;
 export const injectStatusContract = defineCommand({
 	path: ["inject", "status"],
@@ -101,7 +143,7 @@ export const injectStatusContract = defineCommand({
 	async handler(_input, context) {
 		await context.require("server", "inject status");
 		const { success: _success, ...body } = await getInjection();
-		return { result: body };
+		return { result: InjectStatusResultSchema.parse(body) };
 	},
 });
 
@@ -128,7 +170,12 @@ export const InjectTestStageSchema = z
 		return { note, loud: input.loud ? true : input.quiet ? false : undefined };
 	});
 export type InjectTestStage = z.infer<typeof InjectTestStageSchema>;
-export const InjectTestResultSchema = resultSchema;
+export const InjectTestResultSchema = z.looseObject({
+	channel: z.enum(["quiet", "loud"]),
+	threadId: z.string(),
+	text: z.string(),
+	held: HoldReportSchema.optional(),
+});
 export type InjectTestResult = z.infer<typeof InjectTestResultSchema>;
 export const injectTestContract = defineCommand({
 	path: ["inject", "test"],
@@ -217,6 +264,6 @@ export const injectTestContract = defineCommand({
 			...(request.note ? { note: request.note } : {}),
 			...(request.loud !== undefined ? { loud: request.loud } : {}),
 		});
-		return { result: body };
+		return { result: InjectTestResultSchema.parse(body) };
 	},
 });

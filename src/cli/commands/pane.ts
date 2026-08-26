@@ -4,6 +4,7 @@ import { paneWords } from "../../runtime/engine/panes.js";
 import { CliUsageError, defineCommand } from "../command-contract/contract.js";
 import { HoldReportSchema, PaneRefSchema } from "../command-contract/schemas.js";
 import { serverBrowserRefusals } from "../command-contract/common.js";
+import { BoardOpenResultSchema } from "./board.js";
 
 const usage =
 	"pane needs a subcommand: open, close. For what is on screen right now, without changing it, run `archboard panes`.";
@@ -16,24 +17,11 @@ const stagedNoFlags = z.array(z.string()).transform((values, context) => {
 		}
 	return values;
 });
-export const PaneCommandResultSchema = z.looseObject({
-	success: z.boolean(),
-	pane: PaneRefSchema.nullish(),
-	closed: PaneRefSchema.extend({ board: z.string() }).optional(),
-	paneCount: z.number().int().nonnegative(),
-	onScreen: z.array(z.looseObject({ paneId: z.string(), place: z.string(), board: z.string() })),
-	board: z
-		.looseObject({
-			success: z.boolean(),
-			board: z.string(),
-			identity: z.looseObject({ board: z.string(), variant: z.string() }),
-			elementCount: z.number().int().nonnegative(),
-			vaultBacked: z.boolean().optional(),
-		})
-		.optional(),
-	held: HoldReportSchema.optional(),
+const OnScreenPaneSchema = z.looseObject({
+	paneId: z.string(),
+	place: z.string(),
+	board: z.string(),
 });
-export type PaneCommandResult = z.infer<typeof PaneCommandResultSchema>;
 
 export const PaneNamespaceInputSchema = z.object({ tokens });
 export type PaneNamespaceInput = z.infer<typeof PaneNamespaceInputSchema>;
@@ -74,7 +62,14 @@ export const PaneOpenInputSchema = z.object({ tokens });
 export type PaneOpenInput = z.infer<typeof PaneOpenInputSchema>;
 export const PaneOpenStageSchema = stagedNoFlags;
 export type PaneOpenStage = z.infer<typeof PaneOpenStageSchema>;
-export const PaneOpenResultSchema = PaneCommandResultSchema;
+export const PaneOpenResultSchema = z.looseObject({
+	success: z.literal(true),
+	pane: PaneRefSchema.nullable(),
+	paneCount: z.number().int().nonnegative(),
+	onScreen: z.array(OnScreenPaneSchema),
+	board: BoardOpenResultSchema.optional(),
+	held: HoldReportSchema.optional(),
+});
 export type PaneOpenResult = z.infer<typeof PaneOpenResultSchema>;
 export const paneOpenContract = defineCommand({
 	path: ["pane", "open"],
@@ -159,7 +154,13 @@ export const PaneCloseStageSchema = stagedNoFlags.transform((values, context) =>
 	return { spec };
 });
 export type PaneCloseStage = z.infer<typeof PaneCloseStageSchema>;
-export const PaneCloseResultSchema = PaneCommandResultSchema;
+export const PaneCloseResultSchema = z.looseObject({
+	success: z.literal(true),
+	closed: PaneRefSchema.extend({ board: z.string() }),
+	paneCount: z.number().int().nonnegative(),
+	onScreen: z.array(OnScreenPaneSchema),
+	held: HoldReportSchema.optional(),
+});
 export type PaneCloseResult = z.infer<typeof PaneCloseResultSchema>;
 export const paneCloseContract = defineCommand({
 	path: ["pane", "close"],
