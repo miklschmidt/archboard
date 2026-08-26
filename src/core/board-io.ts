@@ -568,7 +568,7 @@ export function foreignWriteTo(file: string, destination: Buffer | undefined): F
 	// belongs to a path: `board save --as other` writes a file some other open
 	// board is the one that read.
 	const expected = baselineForFile(file);
-	if (expected && expected.hash === actualHash) return null;
+	if (expected?.hash === actualHash) return null;
 	// Read only once the bytes are already known to differ: the version answers
 	// "who wrote this", which is a question that only arises after the hash has
 	// said somebody did. The hash still decides, and this only ever describes.
