@@ -268,7 +268,7 @@ export function remapElements(
 	targetX: number,
 	targetY: number,
 	attribution: Record<string, unknown>,
-): any[] {
+): unknown[] {
 	const taken = new Set<string>();
 	const freshId = () => {
 		const id = mintId(taken);
@@ -365,8 +365,8 @@ export async function insertStencil(
 	const attribution = {
 		library: { item: entry.name, itemId: entry.id, source: entry.source },
 	};
-	const elements = remapElements(item.elements, query.x, query.y, attribution);
-	const created = (await batchCreateElementsStrict(elements)).elements;
+	const elements = remapElements(item.elements as Array<Record<string, unknown>>, query.x, query.y, attribution);
+	const created = (await batchCreateElementsStrict(elements as Array<Record<string, unknown>>)).elements;
 
 	return {
 		success: true,

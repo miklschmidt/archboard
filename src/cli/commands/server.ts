@@ -53,8 +53,9 @@ export async function status(argv: string[]): Promise<void> {
 	} catch {
 		printJson({ running: false, url: EXPRESS_SERVER_URL });
 		const error = new Error(`Canvas server is not running at ${EXPRESS_SERVER_URL}`);
-		(error as any).code = "CANVAS_UNREACHABLE";
-		(error as any).quiet = true; // JSON above already tells the story
+		const failure = error as Error & { code?: string; quiet?: boolean };
+		failure.code = "CANVAS_UNREACHABLE";
+		failure.quiet = true; // JSON above already tells the story
 		throw error;
 	}
 
@@ -65,7 +66,7 @@ export async function status(argv: string[]): Promise<void> {
 			conflict: "another service (or a pre-1.1 canvas build) is answering at this URL",
 		});
 		const error = foreignServiceError();
-		(error as any).quiet = true;
+		(error as Error & { quiet?: boolean }).quiet = true;
 		throw error;
 	}
 

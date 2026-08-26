@@ -100,7 +100,7 @@ export function checkSocket(socketPath = controlSocketPath()): SocketCheck {
 
 export interface ControlNotification {
 	method: string;
-	params: any;
+	params: unknown;
 }
 
 export interface AppServerControlOptions {
@@ -116,10 +116,12 @@ export interface AppServerControlOptions {
 }
 
 interface Pending {
-	resolve: (value: any) => void;
+	resolve: (value: unknown) => void;
 	reject: (error: Error) => void;
 	timer: NodeJS.Timeout;
 }
+
+type RpcRecord = Record<string, unknown>;
 
 export class AppServerControl extends EventEmitter {
 	readonly socketPath: string;
@@ -200,19 +202,22 @@ export class AppServerControl extends EventEmitter {
 			});
 
 			ws.on("message", (raw) => {
-				let message: any;
+				let message: RpcRecord;
 				try {
-					message = JSON.parse(raw.toString());
+					const parsed: unknown = JSON.parse(raw.toString());
+					if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return;
+					message = parsed as RpcRecord;
 				} catch {
 					return; // a frame we cannot read is the daemon's business, not ours
 				}
 
 				if (message.id === "initialize") {
 					clearTimeout(timer);
-					if (message.error) {
+					if (message.error && typeof message.error === "object") {
+						const rpcError = message.error as RpcRecord;
 						fail(
 							new Error(
-								`initialize was refused: ${message.error.message ?? JSON.stringify(message.error)}`,
+								`initialize was refused: ${String(rpcError.message ?? JSON.stringify(rpcError))}`,
 							),
 						);
 						return;
@@ -234,7 +239,7 @@ export class AppServerControl extends EventEmitter {
 				// A connect failure arrives as an AggregateError with an empty
 				// message, which is the least useful thing to log, so the code is
 				// pulled out when there is nothing else to say.
-				const reason = (error as Error).message || (error as any).code || String(error);
+				const reason = (error as Error).message || String((error as Error & { code?: unknown }).code ?? "") || String(error);
 				logger.warn(`app-server control socket error: ${reason}`);
 				fail(new Error(String(reason)));
 			});
@@ -255,16 +260,20 @@ export class AppServerControl extends EventEmitter {
 		return this.ready;
 	}
 
-	private handle(message: any): void {
+	private handle(message: RpcRecord): void {
 		if (message.id !== undefined && (message.result !== undefined || message.error !== undefined)) {
 			const entry = typeof message.id === "number" ? this.pending.get(message.id) : undefined;
 			if (!entry) return;
 			clearTimeout(entry.timer);
-			this.pending.delete(message.id);
+			this.pending.delete(message.id as number);
 			if (message.error) {
-				const error = new Error(message.error.message ?? "the app-server refused the call");
-				(error as any).code = message.error.code;
-				(error as any).data = message.error.data;
+				const rpcError = message.error as RpcRecord;
+				const error = new Error(String(rpcError.message ?? "the app-server refused the call")) as Error & {
+					code?: unknown;
+					data?: unknown;
+				};
+				error.code = rpcError.code;
+				error.data = rpcError.data;
 				entry.reject(error);
 			} else {
 				entry.resolve(message.result);
@@ -302,7 +311,7 @@ export class AppServerControl extends EventEmitter {
 	}
 
 	/** One JSON-RPC call. `params` is always sent, even when empty. */
-	async call<T = any>(method: string, params: Record<string, any> = {}): Promise<T> {
+	async call<T = unknown>(method: string, params: Record<string, unknown> = {}): Promise<T> {
 		await this.connect();
 		const ws = this.ws;
 		if (!ws || ws.readyState !== WebSocket.OPEN)
@@ -316,7 +325,7 @@ export class AppServerControl extends EventEmitter {
 				);
 			}, this.requestTimeoutMs);
 			timer.unref?.();
-			this.pending.set(id, { resolve, reject, timer });
+			this.pending.set(id, { resolve: (value) => resolve(value as T), reject, timer });
 			ws.send(JSON.stringify({ id, method, params }));
 		});
 	}

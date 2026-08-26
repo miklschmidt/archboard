@@ -147,7 +147,7 @@ export function currentExpectedVersion(): number | null | undefined {
  */
 function rememberVersion(data: unknown): void {
 	if (!requestedBoard || !data || typeof data !== "object") return;
-	const body = data as Record<string, any>;
+	const body = data as Record<string, unknown>;
 	// A fingerprint, a version conflict and a write-boundary refusal are always
 	// about the board the request named. Another bare `version` is not: `board
 	// save --as other` answers about the note it wrote, which is a different
@@ -319,12 +319,13 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 		`${EXPRESS_SERVER_URL}${withWriteClaims(withBoard(path), init?.method)}`,
 		init,
 	);
-	const data = (await response.json().catch(() => null)) as any;
+	const data = (await response.json().catch(() => null)) as unknown;
 	// Whether that board is saving. Read off every answer, refusals included,
 	// because the answer that most needs it is the one refusing the write that
 	// stopped it.
 	if (data && typeof data === "object") {
-		heldBoard = data.held && typeof data.held === "object" ? (data.held as HoldReport) : null;
+		const body = data as Record<string, unknown>;
+		heldBoard = body.held && typeof body.held === "object" ? (body.held as HoldReport) : null;
 	}
 	// And which version of it this process has now been told about, for the same
 	// reason: read off every answer including the refusals (TASK-091).
@@ -335,21 +336,22 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 	return data as T;
 }
 
-function responseError(data: any, response: Response): Error {
+function responseError(data: unknown, response: Response): Error {
+	const body = data && typeof data === "object" ? data as Record<string, unknown> : {};
 	const error = new Error(
-		data?.error || `HTTP server error: ${response.status} ${response.statusText}`,
-	);
+		typeof body.error === "string" ? body.error : `HTTP server error: ${response.status} ${response.statusText}`,
+	) as Error & { code?: unknown; conflict?: unknown; open?: unknown; refusal?: unknown };
 	// Refused board writes are results, not faults. Keep their structured body
 	// on the error so the CLI does not have to reconstruct what the canvas
 	// said, or read the board after the refusal.
-	if (data?.conflict) {
-		(error as any).code = "BOARD_CONFLICT";
-		(error as any).conflict = data.conflict as BoardWriteConflict;
-	} else if (typeof data?.code === "string") {
-		(error as any).code = data.code;
-		if (Array.isArray(data.open)) (error as any).open = data.open;
+	if (body.conflict) {
+		error.code = "BOARD_CONFLICT";
+		error.conflict = body.conflict as BoardWriteConflict;
+	} else if (typeof body.code === "string") {
+		error.code = body.code;
+		if (Array.isArray(body.open)) error.open = body.open;
 	}
-	if (isBoardRefusal(data)) (error as any).refusal = data;
+	if (isBoardRefusal(data)) error.refusal = data;
 	return error;
 }
 
@@ -366,7 +368,7 @@ function isBoardRefusal(data: unknown): data is BoardRefusal {
 }
 
 export function boardRefusalOf(error: unknown): BoardRefusal | null {
-	const refusal = (error as any)?.refusal;
+	const refusal = error && typeof error === "object" ? (error as { refusal?: unknown }).refusal : undefined;
 	return isBoardRefusal(refusal) ? refusal : null;
 }
 
@@ -380,7 +382,7 @@ export function formatBoardRefusal(error: unknown): string | null {
 
 // A save the server refused because the destination changed underneath it.
 export function boardConflictOf(error: unknown): BoardWriteConflict | null {
-	const conflict = (error as any)?.conflict;
+	const conflict = error && typeof error === "object" ? (error as { conflict?: unknown }).conflict : undefined;
 	return conflict && typeof conflict === "object" ? (conflict as BoardWriteConflict) : null;
 }
 
@@ -480,7 +482,7 @@ export async function openPane(params: { board?: string } = {}): Promise<PaneLay
 						`\`board open <name> --pane ${created.pane.place}\`, or close it with \`pane close ${created.pane.place}\`.`
 					: ""),
 		);
-		(failure as any).code = (error as any)?.code;
+		(failure as Error & { code?: unknown }).code = error && typeof error === "object" ? (error as { code?: unknown }).code : undefined;
 		throw failure;
 	}
 }
@@ -535,12 +537,12 @@ export async function releaseBoardClaim(): Promise<ClaimReleaseReply> {
 	});
 }
 
-export async function getFiles(): Promise<Record<string, any>> {
-	const data = await requestJson<{ files?: Record<string, any> }>("/api/files");
+export async function getFiles(): Promise<Record<string, unknown>> {
+	const data = await requestJson<{ files?: Record<string, unknown> }>("/api/files");
 	return data.files || {};
 }
 
-export async function postFiles(files: any[]): Promise<void> {
+export async function postFiles(files: unknown[]): Promise<void> {
 	await requestJson("/api/files", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -572,7 +574,7 @@ export async function setViewport(
 	});
 }
 
-export async function saveSnapshot(name: string): Promise<any> {
+export async function saveSnapshot(name: string): Promise<{ elementCount: number; createdAt: string }> {
 	return requestJson("/api/snapshots", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -582,7 +584,7 @@ export async function saveSnapshot(name: string): Promise<any> {
 
 export async function listSnapshots(): Promise<{
 	success: boolean;
-	snapshots: any[];
+	snapshots: unknown[];
 	count: number;
 }> {
 	return requestJson("/api/snapshots");
@@ -816,12 +818,12 @@ export interface ChangeFeedResponse {
 	feedId?: string;
 	cursor: number;
 	since?: string;
-	events: Array<Record<string, any>>;
-	coalesced?: Record<string, any> | null;
+	events: Array<Record<string, unknown>>;
+	coalesced?: Record<string, unknown> | null;
 	truncated?: boolean;
 	message?: string;
-	feed?: Record<string, any>;
-	injection?: Record<string, any>;
+	feed?: Record<string, unknown>;
+	injection?: Record<string, unknown>;
 }
 
 export async function getChanges(params: {
@@ -840,7 +842,7 @@ export async function getChanges(params: {
 
 export interface InjectionReport {
 	success: boolean;
-	[key: string]: any;
+	[key: string]: unknown;
 }
 
 export async function getInjection(): Promise<InjectionReport> {
@@ -991,7 +993,7 @@ export function foreignServiceError(): Error {
 			`(a pre-1.1 canvas build or an unrelated service on the port). ` +
 			`Upgrade/stop that service, or point EXPRESS_SERVER_URL elsewhere.`,
 	);
-	(error as any).code = "CANVAS_UNREACHABLE";
+	(error as Error & { code?: string }).code = "CANVAS_UNREACHABLE";
 	return error;
 }
 
@@ -1032,7 +1034,7 @@ async function assertCanvasIdentity(): Promise<void> {
 							`The service at ${EXPRESS_SERVER_URL} did not answer the /health identity probe within 1500ms — ` +
 								`refusing to send it requests.`,
 						);
-						(timeoutError as any).code = "CANVAS_UNREACHABLE";
+		(timeoutError as Error & { code?: string }).code = "CANVAS_UNREACHABLE";
 						throw timeoutError;
 					}
 					// Connection-level unreachable (refused/reset/DNS): canvas is down

@@ -338,7 +338,7 @@ export const CLAIM_MAX_MS = 60 * 60_000;
 /**
  * How long a claimed board's lease runs between renewals.
  *
- * Deliberately the same lease as any other hold: what makes a claim long is
+ * Deliberately the same lease as unknown other hold: what makes a claim long is
  * that the canvas keeps renewing it, not that it is written down for longer. A
  * long lease with no renewal would mean a canvas that died mid-claim costs the
  * vault the whole claim, which is the failure the lease exists to prevent

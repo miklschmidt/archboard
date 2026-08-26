@@ -61,7 +61,7 @@ function pairs(o: Record<string, unknown>, max = 160): string {
 function formatBinding(v: unknown): string | undefined {
 	if (typeof v === "string") return v.trim() || undefined;
 	if (!v || typeof v !== "object") return undefined;
-	const b = v as Record<string, any>;
+	const b = v as Record<string, unknown>;
 	const path = typeof b.path === "string" ? b.path : undefined;
 	if (!path && !b.repo) return pairs(b) || undefined;
 	const repo = typeof b.repo === "string" ? `${b.repo}:` : "";
@@ -72,7 +72,7 @@ function formatBinding(v: unknown): string | undefined {
 
 function bindingPathOf(v: unknown): string | undefined {
 	if (typeof v === "string") return v.trim() || undefined;
-	if (v && typeof v === "object" && typeof (v as any).path === "string") return (v as any).path;
+	if (v && typeof v === "object" && typeof (v as Record<string, unknown>).path === "string") return (v as Record<string, unknown>).path as string;
 	return undefined;
 }
 
@@ -163,10 +163,10 @@ function foldBoundText(all: ServerElement[], byId: Map<string, ServerElement>): 
 	const hidden = new Set<string>();
 	const labelOf = new Map<string, string>();
 	for (const el of all) {
-		const container = (el as any).containerId;
+		const container = el.containerId;
 		if (el.type === "text" && container && byId.has(container) && container !== el.id) {
 			hidden.add(el.id);
-			const text = el.text ?? (el as any).originalText;
+			const text = el.text ?? (el as unknown as Record<string, unknown>).originalText;
 			if (text) labelOf.set(container, String(text));
 		}
 	}
@@ -227,9 +227,14 @@ function foldNodes(items: Item[]): NodeFold {
 	return { items: items.filter((i) => !hidden.has(i.el.id)), hidden: hidden.size, primaryOf };
 }
 
-function bindingOf(el: any, end: "start" | "end"): string | undefined {
-	const binding = end === "start" ? el.startBinding : el.endBinding;
-	return binding?.elementId ?? (end === "start" ? el.start?.id : el.end?.id);
+function bindingOf(el: unknown, end: "start" | "end"): string | undefined {
+	const record = el && typeof el === "object" ? el as Record<string, unknown> : {};
+	const binding = end === "start" ? record.startBinding : record.endBinding;
+	const bindingRecord = binding && typeof binding === "object" ? binding as Record<string, unknown> : {};
+	const fallback = end === "start" ? record.start : record.end;
+	const fallbackRecord = fallback && typeof fallback === "object" ? fallback as Record<string, unknown> : {};
+	const id = bindingRecord.elementId ?? fallbackRecord.id;
+	return typeof id === "string" ? id : undefined;
 }
 
 function counts(values: (string | undefined)[]): Record<string, number> {
@@ -338,7 +343,7 @@ export function describeScene(allElements: ServerElement[]): string {
 	// keep working.
 	const edges: Edge[] = [];
 	for (const item of connectors) {
-		const el: any = item.el;
+		const el: unknown = item.el;
 		const fromId = primary(bindingOf(el, "start"));
 		const toId = primary(bindingOf(el, "end"));
 		if (!fromId && !toId) continue;

@@ -233,8 +233,9 @@ class Injector {
 		return fresh;
 	}
 
-	private observe(method: string, params: any): void {
-		const threadId = params?.threadId;
+	private observe(method: string, params: unknown): void {
+		const record = params && typeof params === "object" ? params as Record<string, unknown> : {};
+		const threadId = record.threadId;
 		if (typeof threadId !== "string" || !threadId) return;
 
 		switch (method) {
@@ -242,7 +243,8 @@ class Injector {
 				this.touch(threadId);
 				break;
 			case "turn/started":
-				this.touch(threadId).activeTurnId = params?.turn?.id ?? null;
+					const turn = record.turn && typeof record.turn === "object" ? record.turn as Record<string, unknown> : {};
+					this.touch(threadId).activeTurnId = typeof turn.id === "string" ? turn.id : null;
 				break;
 			case "turn/completed":
 			case "turn/failed":

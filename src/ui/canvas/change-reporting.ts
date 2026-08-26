@@ -13,7 +13,15 @@ import {
 	type ChangeReport,
 } from "./changes";
 
-export type SceneElement = Record<string, any>;
+export type SceneElement = Record<string, unknown> & {
+	id: string;
+	type?: string;
+	isDeleted?: boolean;
+	containerId?: string | null;
+	boundElements?: Array<{ id: string; type: string }> | null;
+	startBinding?: { elementId: string } | null;
+	endBinding?: { elementId: string } | null;
+};
 
 type BaselineUpdate =
 	| { type: "replace"; withheldIds: readonly string[] }
@@ -249,19 +257,24 @@ function renameTextIds(
 		const next: SceneElement = { ...element };
 		next.id = renamed(next.id) ?? next.id;
 		if (Array.isArray(next.boundElements)) {
-			next.boundElements = next.boundElements.map((bound: any) =>
-				bound && renamed(bound.id) ? { ...bound, id: renames.get(bound.id) } : bound,
-			);
+			next.boundElements = next.boundElements.map((bound: unknown) =>
+				bound && typeof bound === "object" && renamed((bound as { id?: unknown }).id)
+					? { ...bound, id: renames.get((bound as { id: string }).id) }
+					: bound,
+			) as Array<{ id: string; type: string }>;
 		}
-		if (renamed(next.containerId)) next.containerId = renames.get(next.containerId);
-		if (next.startBinding && renamed(next.startBinding.elementId)) {
+		const containerId = renamed(next.containerId);
+		if (containerId) next.containerId = containerId;
+		const startId = next.startBinding ? renamed(next.startBinding.elementId) : undefined;
+		if (next.startBinding && startId) {
 			next.startBinding = {
 				...next.startBinding,
-				elementId: renames.get(next.startBinding.elementId),
+				elementId: startId,
 			};
 		}
-		if (next.endBinding && renamed(next.endBinding.elementId)) {
-			next.endBinding = { ...next.endBinding, elementId: renames.get(next.endBinding.elementId) };
+		const endId = next.endBinding ? renamed(next.endBinding.elementId) : undefined;
+		if (next.endBinding && endId) {
+			next.endBinding = { ...next.endBinding, elementId: endId };
 		}
 		return next;
 	});

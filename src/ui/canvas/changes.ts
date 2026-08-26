@@ -31,7 +31,7 @@ const VOLATILE = new Set([
 	"syncTimestamp",
 ]);
 
-export function fingerprint(element: Record<string, any>): string {
+export function fingerprint(element: Record<string, unknown>): string {
 	const keys = Object.keys(element)
 		.filter((key) => !VOLATILE.has(key))
 		.toSorted();
@@ -51,14 +51,14 @@ const SERVER_BOOKKEEPING = [
 ];
 
 /** The element as it goes on the wire: ours to describe, the server's to stamp. */
-export function toWire(element: Record<string, any>): Record<string, any> {
-	const wire: Record<string, any> = { ...element };
+export function toWire(element: Record<string, unknown>): Record<string, unknown> {
+	const wire: Record<string, unknown> = { ...element };
 	for (const key of SERVER_BOOKKEEPING) delete wire[key];
 	return wire;
 }
 
 export interface ChangeReport {
-	upserts: Record<string, any>[];
+	upserts: Record<string, unknown>[];
 	deletes: string[];
 	/**
 	 * The baseline this report would establish if the server accepts it. Held
@@ -74,7 +74,7 @@ export function isEmpty(report: ChangeReport): boolean {
 const NOTHING_WITHHELD: ReadonlySet<string> = new Set();
 
 export function diffAgainstBaseline(
-	scene: readonly Record<string, any>[],
+	scene: readonly Record<string, unknown>[],
 	baseline: Baseline,
 	/**
 	 * Elements this pane is deliberately not telling the server about yet, by id.
@@ -92,7 +92,7 @@ export function diffAgainstBaseline(
 	 */
 	withheld: ReadonlySet<string> = NOTHING_WITHHELD,
 ): ChangeReport {
-	const upserts: Record<string, any>[] = [];
+	const upserts: Record<string, unknown>[] = [];
 	const nextBaseline: Baseline = new Map();
 
 	for (const element of scene) {
@@ -134,7 +134,7 @@ export function diffAgainstBaseline(
  * Record elements that arrived from the server as already agreed, so the next
  * diff does not report them straight back.
  */
-export function baselineFrom(scene: readonly Record<string, any>[]): Baseline {
+export function baselineFrom(scene: readonly Record<string, unknown>[]): Baseline {
 	const baseline: Baseline = new Map();
 	for (const element of scene) {
 		if (!element || typeof element.id !== "string" || element.isDeleted) continue;

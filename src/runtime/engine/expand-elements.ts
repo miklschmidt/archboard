@@ -204,12 +204,16 @@ export function settleDeletions(
 	const changed: ServerElement[] = [];
 	for (const element of board.values()) {
 		const refs = Array.isArray(element.boundElements) ? element.boundElements : null;
-		const kept = refs?.filter((ref: any) => !(ref && gone.has(ref.id)));
+		const kept = refs?.filter((ref: unknown) => {
+			const record = ref && typeof ref === "object" ? ref as Record<string, unknown> : {};
+			return !(typeof record.id === "string" && gone.has(record.id));
+		});
 		const loosened = refs !== null && kept !== undefined && kept.length !== refs.length;
-		const starts = (element as any).startBinding;
-		const ends = (element as any).endBinding;
-		const unbindStart = starts && gone.has(starts.elementId);
-		const unbindEnd = ends && gone.has(ends.elementId);
+		const source = element as unknown as Record<string, unknown>;
+		const starts = source.startBinding && typeof source.startBinding === "object" ? source.startBinding as Record<string, unknown> : null;
+		const ends = source.endBinding && typeof source.endBinding === "object" ? source.endBinding as Record<string, unknown> : null;
+		const unbindStart = typeof starts?.elementId === "string" && gone.has(starts.elementId);
+		const unbindEnd = typeof ends?.elementId === "string" && gone.has(ends.elementId);
 		if (!loosened && !unbindStart && !unbindEnd) continue;
 		const repaired = {
 			...element,
@@ -323,18 +327,19 @@ export function repairIndices(board: Map<string, ServerElement>): ServerElement[
 // rest alphabetical — so a no-op import→export cycle is byte-identical and
 // committed .excalidraw files produce minimal git diffs.
 const KEY_ORDER = ["id", "type", "x", "y", "width", "height"];
-export function canonicalizeKeys(v: any): any {
+export function canonicalizeKeys(v: unknown): unknown {
 	if (Array.isArray(v)) return v.map(canonicalizeKeys);
 	if (v && typeof v === "object") {
-		const keys = Object.keys(v).toSorted((a, b) => {
+		const record = v as Record<string, unknown>;
+		const keys = Object.keys(record).toSorted((a, b) => {
 			const ia = KEY_ORDER.indexOf(a);
 			const ib = KEY_ORDER.indexOf(b);
 			if (ia !== -1 || ib !== -1)
 				return (ia === -1 ? KEY_ORDER.length : ia) - (ib === -1 ? KEY_ORDER.length : ib);
 			return a < b ? -1 : 1;
 		});
-		const out: Record<string, any> = {};
-		for (const k of keys) out[k] = canonicalizeKeys(v[k]);
+		const out: Record<string, unknown> = {};
+		for (const k of keys) out[k] = canonicalizeKeys(record[k]);
 		return out;
 	}
 	return v;
@@ -363,21 +368,21 @@ export function canonicalizeKeys(v: any): any {
 export function expandElements(
 	sourceElements: ServerElement[],
 	options: ExpandOptions = {},
-): Record<string, any>[] {
+): Record<string, unknown>[] {
 	const { deterministic = false, forStore = false, keepServerFields = forStore } = options;
 	const seedFor = (key: string): number =>
 		deterministic ? (fnv1a(key) % 2147483646) + 1 : Math.floor(Math.random() * 2147483647);
-	const updatedFor = (el: any): number => {
+	const updatedFor = (el: Record<string, unknown>): number => {
 		if (!deterministic) return Date.now();
 		// Prefer a preserved `updated` (re-imported scene) over the server's
 		// updatedAt, so no-op import→export cycles are byte-identical.
 		if (typeof el.updated === "number") return el.updated;
-		const parsed = Date.parse(el.updatedAt ?? el.createdAt ?? "");
+		const parsed = Date.parse(String(el.updatedAt ?? el.createdAt ?? ""));
 		return Number.isNaN(parsed) ? 1 : parsed;
 	};
 
-	const cleanedExportElements: Record<string, any>[] = [];
-	const boundTextElements: Record<string, any>[] = [];
+	const cleanedExportElements: Record<string, unknown>[] = [];
+	const boundTextElements: Record<string, unknown>[] = [];
 
 	// Every name the scene already spends, so a label expanded here cannot be
 	// handed one of them. `inUse` carries the rest of the board when this is
@@ -387,7 +392,7 @@ export function expandElements(
 		has: (id: string) => named.has(id) || (options.inUse?.has(id) ?? false),
 	};
 
-	function makeBaseElement(el: any, rest: any): Record<string, any> {
+	function makeBaseElement(el: Record<string, unknown>, rest: Record<string, unknown>): Record<string, unknown> {
 		return {
 			...rest,
 			angle: rest.angle ?? 0,
@@ -410,9 +415,9 @@ export function expandElements(
 				(el.type === "rectangle" || el.type === "diamond" || el.type === "ellipse"
 					? { type: 3 }
 					: null),
-			seed: rest.seed ?? seedFor(`${el.id}:seed`),
+			seed: rest.seed ?? seedFor(`${String(el.id)}:seed`),
 			version: rest.version ?? 1,
-			versionNonce: rest.versionNonce ?? seedFor(`${el.id}:nonce`),
+			versionNonce: rest.versionNonce ?? seedFor(`${String(el.id)}:nonce`),
 			isDeleted: rest.isDeleted ?? false,
 			boundElements: rest.boundElements ?? null,
 			updated: updatedFor(el),
@@ -437,10 +442,10 @@ export function expandElements(
 			text,
 			version: serverVersion,
 			...rest
-		} = el as any;
+		} = el as unknown as Record<string, unknown>;
 
-		const base = makeBaseElement(el, rest);
-		const restoreServerFields = (element: Record<string, any>): Record<string, any> => {
+		const base = makeBaseElement(el as unknown as Record<string, unknown>, rest);
+		const restoreServerFields = (element: Record<string, unknown>): Record<string, unknown> => {
 			if (!keepServerFields) return element;
 			if (createdAt !== undefined) element.createdAt = createdAt;
 			if (updatedAt !== undefined) element.updatedAt = updatedAt;
@@ -464,11 +469,11 @@ export function expandElements(
 			base.text = text ?? rest.text ?? "";
 			base.originalText = rest.originalText ?? base.text;
 			base.fontSize = rest.fontSize ?? DEFAULT_FONT_SIZE;
-			base.fontFamily = normalizeFontFamily(rest.fontFamily) ?? DEFAULT_FONT_FAMILY;
+			base.fontFamily = normalizeFontFamily(typeof rest.fontFamily === "string" || typeof rest.fontFamily === "number" ? rest.fontFamily : undefined) ?? DEFAULT_FONT_FAMILY;
 			base.textAlign = rest.textAlign ?? DEFAULT_TEXT_ALIGN;
 			base.verticalAlign = rest.verticalAlign ?? DEFAULT_VERTICAL_ALIGN;
 			base.autoResize = rest.autoResize ?? true;
-			base.lineHeight = rest.lineHeight ?? lineHeightOf(base.fontFamily);
+			base.lineHeight = typeof rest.lineHeight === "number" ? rest.lineHeight : lineHeightOf(typeof base.fontFamily === "number" ? base.fontFamily : DEFAULT_FONT_FAMILY);
 			base.containerId = rest.containerId ?? null;
 			sizeText(base);
 			cleanedExportElements.push(restoreServerFields(base));
@@ -483,11 +488,13 @@ export function expandElements(
 		if (el.type === "arrow" || el.type === "line") {
 			base.points = rest.points ?? DEFAULT_LINEAR_POINTS.map((point) => [...point]);
 			base.lastCommittedPoint = null;
-			base.startBinding = rest.startBinding
-				? { ...rest.startBinding, fixedPoint: rest.startBinding.fixedPoint ?? null }
+			const startRecord = rest.startBinding && typeof rest.startBinding === "object" ? rest.startBinding as Record<string, unknown> : null;
+			const endRecord = rest.endBinding && typeof rest.endBinding === "object" ? rest.endBinding as Record<string, unknown> : null;
+			base.startBinding = startRecord
+				? { ...startRecord, fixedPoint: startRecord.fixedPoint ?? null }
 				: bindingFromRef(start);
-			base.endBinding = rest.endBinding
-				? { ...rest.endBinding, fixedPoint: rest.endBinding.fixedPoint ?? null }
+			base.endBinding = endRecord
+				? { ...endRecord, fixedPoint: endRecord.fixedPoint ?? null }
 				: bindingFromRef(end);
 			base.startArrowhead = rest.startArrowhead ?? null;
 			base.endArrowhead = rest.endArrowhead ?? (el.type === "arrow" ? "arrow" : null);
@@ -516,20 +523,25 @@ export function expandElements(
 		// Judged against the whole document when there is one. A write names a few
 		// elements and the board holds the rest, so `expandForBoard` is where the
 		// references are squared with the board before this can be asked.
-		const labelText = label?.text || text;
+		const labelText =
+			(label && typeof label === "object" && typeof (label as Record<string, unknown>).text === "string"
+				? (label as Record<string, unknown>).text
+				: undefined) || (typeof text === "string" ? text : undefined);
 		const hasBoundText =
 			Array.isArray(base.boundElements) &&
 			base.boundElements.some(
-				(b: any) =>
-					b?.type === "text" &&
-					(forStore || sourceElements.some((other) => other.id === b.id && other.type === "text")),
+				(b: unknown) => {
+					const binding = b && typeof b === "object" ? b as Record<string, unknown> : {};
+					return binding.type === "text" && typeof binding.id === "string" &&
+						(forStore || sourceElements.some((other) => other.id === binding.id && other.type === "text"));
+				},
 			);
 		if (labelText && !hasBoundText) {
 			// Named the same way the browser's expansion names it (labels.ts), so
 			// whichever of the two gets there first, the label keeps one name — and
 			// that name is short enough to be a block reference, so writing the note
 			// does not rename it (TASK-069).
-			const textId = labelTextIdFor(base.id, taken);
+			const textId = labelTextIdFor(String(base.id), taken);
 			named.add(textId);
 			// Add binding reference to parent
 			base.boundElements = [
@@ -538,8 +550,8 @@ export function expandElements(
 			];
 
 			const isArrow = el.type === "arrow" || el.type === "line";
-			const fontSize = rest.fontSize ?? DEFAULT_FONT_SIZE;
-			const fontFamily = normalizeFontFamily(rest.fontFamily) ?? DEFAULT_FONT_FAMILY;
+			const fontSize = typeof rest.fontSize === "number" ? rest.fontSize : DEFAULT_FONT_SIZE;
+			const fontFamily = normalizeFontFamily(typeof rest.fontFamily === "string" || typeof rest.fontFamily === "number" ? rest.fontFamily : undefined) ?? DEFAULT_FONT_FAMILY;
 			const lineHeight = lineHeightOf(fontFamily);
 
 			const label = {
@@ -566,7 +578,7 @@ export function expandElements(
 				versionNonce: seedFor(`${textId}:nonce`),
 				isDeleted: false,
 				boundElements: null,
-				updated: updatedFor(el),
+				updated: updatedFor(el as unknown as Record<string, unknown>),
 				link: null,
 				locked: false,
 				text: labelText,
@@ -578,7 +590,7 @@ export function expandElements(
 				autoResize: true,
 				lineHeight,
 				containerId: base.id,
-			} as Record<string, any>;
+			} as Record<string, unknown>;
 
 			// A label has no opinion about where it is: it is as wide as its glyphs
 			// and its container decides the rest. Both used to be guesses — an
@@ -586,7 +598,7 @@ export function expandElements(
 			// the way down its container — and both were wrong by tens of pixels on
 			// every board (`labels.ts`, `measure-text.ts`).
 			sizeText(label);
-			const placement = boundTextPlacement(base as LabelledElement, label as LabelledElement);
+			const placement = boundTextPlacement(base as unknown as LabelledElement, label as unknown as LabelledElement);
 			if (placement) {
 				label.x = placement.x;
 				label.y = placement.y;
@@ -601,24 +613,29 @@ export function expandElements(
 	// Patch shapes' boundElements to include connected arrows
 	const shapeBoundArrows = new Map<string, { type: string; id: string }[]>();
 	for (const el of cleanedExportElements) {
-		if (el.startBinding?.elementId) {
-			const arr = shapeBoundArrows.get(el.startBinding.elementId) || [];
-			arr.push({ type: "arrow", id: el.id });
-			shapeBoundArrows.set(el.startBinding.elementId, arr);
+		const startBinding = el.startBinding && typeof el.startBinding === "object" ? el.startBinding as Record<string, unknown> : null;
+		const endBinding = el.endBinding && typeof el.endBinding === "object" ? el.endBinding as Record<string, unknown> : null;
+		if (typeof startBinding?.elementId === "string") {
+			const arr = shapeBoundArrows.get(startBinding.elementId) || [];
+			arr.push({ type: "arrow", id: String(el.id) });
+			shapeBoundArrows.set(startBinding.elementId, arr);
 		}
-		if (el.endBinding?.elementId) {
-			const arr = shapeBoundArrows.get(el.endBinding.elementId) || [];
-			arr.push({ type: "arrow", id: el.id });
-			shapeBoundArrows.set(el.endBinding.elementId, arr);
+		if (typeof endBinding?.elementId === "string") {
+			const arr = shapeBoundArrows.get(endBinding.elementId) || [];
+			arr.push({ type: "arrow", id: String(el.id) });
+			shapeBoundArrows.set(endBinding.elementId, arr);
 		}
 	}
 	for (const el of cleanedExportElements) {
-		const arrowBindings = shapeBoundArrows.get(el.id);
+		const arrowBindings = shapeBoundArrows.get(String(el.id));
 		if (arrowBindings) {
 			// Skip refs the element already carries (re-exported expanded scenes),
 			// otherwise every export cycle appends duplicate boundElements entries.
 			const existing = new Set(
-				(Array.isArray(el.boundElements) ? el.boundElements : []).map((b: any) => b?.id),
+				(Array.isArray(el.boundElements) ? el.boundElements : []).map((b: unknown) => {
+					const record = b && typeof b === "object" ? b as Record<string, unknown> : {};
+					return typeof record.id === "string" ? record.id : undefined;
+				}),
 			);
 			const additions = arrowBindings.filter((b) => !existing.has(b.id));
 			if (additions.length > 0) {
@@ -659,7 +676,7 @@ export function expandElements(
 		cleanedExportElements.push(...order);
 	}
 
-	return deterministic ? canonicalizeKeys(cleanedExportElements) : cleanedExportElements;
+	return deterministic ? canonicalizeKeys(cleanedExportElements) as Record<string, unknown>[] : cleanedExportElements;
 }
 
 /**
@@ -779,7 +796,7 @@ export function relabelBoundTexts(
  * viewer's system calls Helvetica — has no honest server-side width at all, so
  * whatever the element carries is left alone.
  */
-function sizeText(element: Record<string, any>): void {
+function sizeText(element: Record<string, unknown>): void {
 	if (element.autoResize === false) return;
 	const fontFamily =
 		typeof element.fontFamily === "number" ? element.fontFamily : DEFAULT_FONT_FAMILY;

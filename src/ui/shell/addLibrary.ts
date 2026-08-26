@@ -131,20 +131,24 @@ export async function fetchLibraryFrom(candidate: string): Promise<FetchedLibrar
 		throw new Error("That library is larger than 8MB. Refusing to load it.");
 	}
 
-	let parsed: any;
+	let parsed: unknown;
 	try {
 		parsed = JSON.parse(text);
 	} catch {
 		throw new Error(`${url.hostname} did not return a library file.`);
 	}
-	if (parsed?.type !== "excalidrawlib") {
+	const document = parsed && typeof parsed === "object" ? parsed as Record<string, unknown> : {};
+	if (document.type !== "excalidrawlib") {
 		throw new Error(`${url.pathname.split("/").pop()} is not an .excalidrawlib file.`);
 	}
 
 	// Both published formats reach this point: version 1 is a bare array of
 	// element arrays, version 2 wraps each in an item. restoreLibraryItems reads
 	// both and is the only thing that touches the elements themselves.
-	const items = restoreLibraryItems(parsed.libraryItems ?? parsed.library ?? [], "published");
+	const items = restoreLibraryItems(
+		Array.isArray(document.libraryItems) ? document.libraryItems : Array.isArray(document.library) ? document.library : [],
+		"published",
+	);
 	if (items.length === 0) {
 		throw new Error("That library has nothing in it.");
 	}

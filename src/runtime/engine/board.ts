@@ -389,7 +389,7 @@ export function panesFollowSave(kind: BoardSaveKind): boolean {
 // touched — and only when their value actually changed. That is what keeps two
 // saves of an unchanged board byte-identical.
 export function renderBoardNote(
-	scene: Record<string, any>,
+	scene: Record<string, unknown>,
 	existingNote: string | null | undefined,
 	identity: BoardIdentity,
 ): string {
@@ -440,8 +440,12 @@ export function extractSceneElements(note: string): ServerElement[] {
 		throw new Error("not an Obsidian .excalidraw.md note");
 	}
 	const scene = JSON.parse(extractSceneJsonFromObsidianMd(note));
-	const raw: any[] = Array.isArray(scene) ? scene : (scene.elements ?? []);
-	return raw.filter((el) => el && typeof el === "object" && !el.isDeleted) as ServerElement[];
+	const record = scene && typeof scene === "object" && !Array.isArray(scene) ? scene as Record<string, unknown> : {};
+	const raw: unknown[] = Array.isArray(scene) ? scene : (Array.isArray(record.elements) ? record.elements : []);
+	return raw.filter((el) => {
+		if (!el || typeof el !== "object") return false;
+		return (el as Record<string, unknown>).isDeleted !== true;
+	}) as ServerElement[];
 }
 
 // --- images the plugin moved into the vault --------------------------------

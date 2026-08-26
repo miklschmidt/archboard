@@ -352,7 +352,7 @@ export function labelOf(el: ServerElement, board: ServerElement[]): string | und
 	// A labelled shape that came back through a frontend sync carries its label
 	// as a separate bound text element.
 	for (const other of board) {
-		if (other.type === "text" && (other as any).containerId === el.id) {
+		if (other.type === "text" && other.containerId === el.id) {
 			const text = other.text ?? other.originalText;
 			if (text) return String(text);
 		}
@@ -374,7 +374,7 @@ function partition(
 	const targetIds = new Set(targets.map((t) => t.id));
 	const labelsByContainer = new Map<string, ServerElement[]>();
 	for (const el of board) {
-		const container = (el as any).containerId;
+		const container = el.containerId;
 		if (el.type === "text" && container && container !== el.id && targetIds.has(container)) {
 			const list = labelsByContainer.get(container) ?? [];
 			list.push(el);
@@ -382,7 +382,7 @@ function partition(
 		}
 	}
 	const isFoldedLabel = (el: ServerElement) => {
-		const container = (el as any).containerId;
+		const container = el.containerId;
 		return el.type === "text" && container && targetIds.has(container);
 	};
 	return { shapes: targets.filter((el) => !isFoldedLabel(el)), labelsByContainer };

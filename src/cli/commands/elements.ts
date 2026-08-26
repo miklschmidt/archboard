@@ -7,19 +7,23 @@ import {
 	getElementStrict,
 	getElements,
 	searchElements,
+	type ElementInput,
 } from "../../runtime/engine/canvas-client.js";
 import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
 import { type ServerElement } from "../../runtime/engine/types.js";
 
 // apply: primary mutation command — {create:[], update:[], delete:[]} in one
 // invocation; a bare JSON array is shorthand for {create: [...]}.
-function normalizePatchUpdate(update: any): { id: string; updates: Record<string, any> } {
+function normalizePatchUpdate(update: unknown): { id: string; updates: Record<string, unknown> } {
 	if (!update || typeof update !== "object" || Array.isArray(update)) {
 		throw new CliUsageError('Every update entry must be an object with an "id"');
 	}
-	if (!update.id) throw new CliUsageError('Every update entry needs an "id"');
+	const record = update as Record<string, unknown>;
+	if (typeof record.id !== "string" || !record.id) throw new CliUsageError('Every update entry needs an "id"');
 
-	const { id, set, ...rest } = update;
+	const id = record.id;
+	const set = record.set;
+	const { set: _set, id: _id, ...rest } = record;
 	if (set === undefined) {
 		return { id, updates: rest };
 	}
@@ -29,7 +33,7 @@ function normalizePatchUpdate(update: any): { id: string; updates: Record<string
 	if (Object.keys(rest).length > 0) {
 		throw new CliUsageError('Use either direct update fields or "set", not both');
 	}
-	return { id, updates: set };
+	return { id, updates: set as Record<string, unknown> };
 }
 
 /**
@@ -49,9 +53,11 @@ export async function apply(argv: string[]): Promise<void> {
 	const { positionals, flags } = parseArgs(argv, DOCUMENT_FLAG);
 	const input = await readJsonInput(positionals[0], "patch");
 
-	const patch: { create?: any[]; update?: any[]; delete?: string[] } = Array.isArray(input)
-		? { create: input }
-		: input;
+	const patch: { create?: ElementInput[]; update?: unknown[]; delete?: string[] } = Array.isArray(input)
+		? { create: input.filter((value): value is ElementInput => Boolean(value && typeof value === "object")) }
+		: input && typeof input === "object"
+			? input as { create?: ElementInput[]; update?: unknown[]; delete?: string[] }
+			: {};
 
 	if (!patch.create?.length && !patch.update?.length && !patch.delete?.length) {
 		throw new CliUsageError("Patch has no create/update/delete operations");
@@ -108,7 +114,7 @@ export async function apply(argv: string[]): Promise<void> {
 export async function add(argv: string[]): Promise<void> {
 	const { positionals, flags } = parseArgs(argv, { one: { takesValue: true }, ...DOCUMENT_FLAG });
 
-	let elements: any[];
+	let elements: ElementInput[];
 	if (typeof flags.one === "string") {
 		try {
 			elements = [JSON.parse(flags.one)];
@@ -117,7 +123,9 @@ export async function add(argv: string[]): Promise<void> {
 		}
 	} else {
 		const input = await readJsonInput(positionals[0], "elements");
-		elements = Array.isArray(input) ? input : [input];
+		elements = (Array.isArray(input) ? input : [input]).filter(
+		(value): value is ElementInput => Boolean(value && typeof value === "object"),
+	);
 	}
 
 	await ensureCanvasRunning();
@@ -144,7 +152,10 @@ export async function update(argv: string[]): Promise<void> {
 			throw new CliUsageError(`Invalid JSON in --set: ${(error as Error).message}`);
 		}
 	} else {
-		updates = await readJsonInput(positionals[1], "updates");
+		const input = await readJsonInput(positionals[1], "updates");
+		if (!input || typeof input !== "object" || Array.isArray(input))
+			throw new CliUsageError("Updates must be a JSON object");
+		updates = input as Record<string, unknown>;
 	}
 
 	await ensureCanvasRunning();
@@ -205,8 +216,11 @@ function coerce(value: string): unknown {
 	return value;
 }
 
-function lookupPath(obj: any, dotPath: string): any {
-	return dotPath.split(".").reduce((acc, key) => (acc == null ? acc : acc[key]), obj);
+function lookupPath(obj: unknown, dotPath: string): unknown {
+	return dotPath.split(".").reduce((acc, key) => {
+		if (!acc || typeof acc !== "object") return undefined;
+		return (acc as Record<string, unknown>)[key];
+	}, obj);
 }
 
 export async function query(argv: string[]): Promise<void> {

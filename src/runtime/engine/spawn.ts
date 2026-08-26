@@ -54,7 +54,7 @@ function unreachableError(reason: string): Error {
 		`Canvas server is not reachable at ${EXPRESS_SERVER_URL} (${reason}). ` +
 			`Start it with \`archboard start\` (\`./bin/canvas start\` in the repo) or \`bun src/server.ts\`.`,
 	);
-	(error as any).code = "CANVAS_UNREACHABLE";
+	(error as Error & { code?: string }).code = "CANVAS_UNREACHABLE";
 	return error;
 }
 
@@ -123,7 +123,7 @@ export async function ensureCanvasRunning(
 	// healthy". Ask the same question here, where somebody is reading.
 	if (!ARCHBOARD_VAULT) {
 		const error = new Error(noVaultMessage());
-		(error as any).code = "CANVAS_UNREACHABLE";
+		(error as Error & { code?: string }).code = "CANVAS_UNREACHABLE";
 		throw error;
 	}
 

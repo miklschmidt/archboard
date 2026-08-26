@@ -32,13 +32,13 @@ export async function requireBrowserClient(what: string): Promise<void> {
 		const error = new Error(
 			`${what} requires the canvas to be open in a browser. Open ${EXPRESS_SERVER_URL} and retry.`,
 		);
-		(error as any).code = "BROWSER_REQUIRED";
+		(error as Error & { code?: string }).code = "BROWSER_REQUIRED";
 		throw error;
 	}
 }
 
 // Read JSON input from a positional file argument or stdin ("-" = stdin).
-export async function readJsonInput(file: string | undefined, what: string): Promise<any> {
+export async function readJsonInput(file: string | undefined, what: string): Promise<unknown> {
 	const raw =
 		file !== undefined && file !== "-" ? fs.readFileSync(file, "utf-8") : await readStdin();
 	if (!raw.trim()) {

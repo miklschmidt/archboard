@@ -241,7 +241,7 @@ export async function duplicateElements(
 	const taken = new Set<string>(elementIds);
 	const duplicates: ServerElement[] = originals.map((original) => {
 		const { createdAt, updatedAt, version, syncedAt, source, syncTimestamp, ...rest } =
-			original as any;
+			original as unknown as Record<string, unknown>;
 		const copyId = mintId(taken);
 		taken.add(copyId);
 		return {

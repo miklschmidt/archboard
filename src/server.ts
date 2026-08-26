@@ -1398,7 +1398,7 @@ app.get("/api/elements/search", (req: Request, res: Response) => {
 		if (Object.keys(filters).length > 0) {
 			results = results.filter((element) => {
 				return Object.entries(filters).every(([key, value]) => {
-					return (element as any)[key] === value;
+					return (element as unknown as Record<string, unknown>)[key] === value;
 				});
 			});
 		}
@@ -3339,11 +3339,12 @@ function loadSideForCompare(key: string): CompareSideInput | null {
 	const loaded = readBoardFile(identity);
 	if (!loaded) return null;
 	const scene = JSON.parse(loaded.sceneJson);
-	const raw: any[] = Array.isArray(scene) ? scene : (scene.elements ?? []);
+		const sceneRecord = scene && typeof scene === "object" && !Array.isArray(scene) ? scene as Record<string, unknown> : {};
+		const raw: unknown[] = Array.isArray(scene) ? scene : (Array.isArray(sceneRecord.elements) ? sceneRecord.elements : []);
 	return {
 		key,
 		identity: loaded.identity,
-		elements: raw.filter((el) => el && typeof el === "object" && !el.isDeleted) as ServerElement[],
+		elements: raw.filter((el) => el && typeof el === "object" && (el as Record<string, unknown>).isDeleted !== true) as ServerElement[],
 		source: "vault",
 		file: loaded.file,
 		onScreen: false,

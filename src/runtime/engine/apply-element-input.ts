@@ -176,10 +176,11 @@ function wellFormStatement(
 function applyDefaultFill(element: ServerElement): void {
 	if (!FILLABLE_TYPES.has(element.type) || element.backgroundColor !== undefined) return;
 	element.backgroundColor = DEFAULT_SHAPE_BACKGROUND;
-	if ((element as any).fillStyle === undefined) (element as any).fillStyle = DEFAULT_FILL_STYLE;
+	const dynamic = element as unknown as Record<string, unknown>;
+	if (dynamic.fillStyle === undefined) dynamic.fillStyle = DEFAULT_FILL_STYLE;
 }
 
-function spendArrowRefs(element: Record<string, any>, stated: Record<string, any>): void {
+function spendArrowRefs(element: Record<string, unknown>, stated: Record<string, unknown>): void {
 	if (element.type !== "arrow" && element.type !== "line") return;
 	for (const [ref, binding] of [
 		["start", "startBinding"],
@@ -211,13 +212,14 @@ function wellFormNewElement(
 
 	if (
 		(element.type === "arrow" || element.type === "line") &&
-		((element as any).start !== undefined || (element as any).end !== undefined) &&
+		((element as unknown as Record<string, unknown>).start !== undefined ||
+			(element as unknown as Record<string, unknown>).end !== undefined) &&
 		!Array.isArray(element.points)
 	) {
-		(element as any).points = DEFAULT_LINEAR_POINTS.map((point) => [...point]);
+	(element as unknown as Record<string, unknown>).points = DEFAULT_LINEAR_POINTS.map((point) => [...point]);
 	}
 	applyDefaultFill(element);
-	spendArrowRefs(element as Record<string, any>, elementParams as Record<string, any>);
+	spendArrowRefs(element as unknown as Record<string, unknown>, elementParams as Record<string, unknown>);
 	return element;
 }
 
@@ -236,13 +238,13 @@ function mergeElementUpdate(existing: ServerElement, raw: Record<string, unknown
 	const { board: _boardField, ...updates } = UpdateElementSchema.parse({
 		...statement,
 		id: existing.id,
-	}) as Record<string, any>;
+	}) as Record<string, unknown>;
 	const element: ServerElement = {
 		...existing,
 		...updates,
 		fontFamily:
 			updates.fontFamily !== undefined
-				? normalizeFontFamily(updates.fontFamily)
+				? normalizeFontFamily(typeof updates.fontFamily === "string" || typeof updates.fontFamily === "number" ? updates.fontFamily : undefined)
 				: existing.fontFamily,
 	};
 	bumpVersion(element, existing);
@@ -265,11 +267,11 @@ function mergeElementUpdate(existing: ServerElement, raw: Record<string, unknown
 			element.text = normalizedExistingOriginalText;
 			element.originalText = normalizedExistingOriginalText;
 		} else {
-			element.originalText = incomingText;
+			element.originalText = typeof incomingText === "string" ? incomingText : "";
 		}
 	}
 
-	spendArrowRefs(element as Record<string, any>, statement as Record<string, any>);
+	spendArrowRefs(element as unknown as Record<string, unknown>, statement as Record<string, unknown>);
 	const changed = (key: string) => hasOwn(statement, key);
 	if (changed("points")) sizeFromPath(element);
 	const isLinear = element.type === "arrow" || element.type === "line";
@@ -305,9 +307,10 @@ function resolveArrowBindings(
 
 	for (const element of written) {
 		if (element.type !== "arrow" && element.type !== "line") continue;
-		if ((element as any).elbowed === true) continue;
-		const startBinding = bindingOf((element as any).startBinding);
-		const endBinding = bindingOf((element as any).endBinding);
+		const dynamic = element as unknown as Record<string, unknown>;
+		if (dynamic.elbowed === true) continue;
+		const startBinding = bindingOf(dynamic.startBinding);
+		const endBinding = bindingOf(dynamic.endBinding);
 		const startElement = startBinding ? available.get(startBinding.elementId) : undefined;
 		const endElement = endBinding ? available.get(endBinding.elementId) : undefined;
 		if (!startElement && !endElement) continue;
@@ -337,7 +340,8 @@ function rerouteBoundArrows(movedId: string, board: Map<string, ServerElement>):
 	for (const element of board.values()) {
 		if (element.type !== "arrow" && element.type !== "line") continue;
 		const joins = (binding: unknown) => bindingOf(binding)?.elementId === movedId;
-		if (!joins((element as any).startBinding) && !joins((element as any).endBinding)) continue;
+		const dynamic = element as unknown as Record<string, unknown>;
+		if (!joins(dynamic.startBinding) && !joins(dynamic.endBinding)) continue;
 		resolveArrowBindings([element], board);
 		bumpVersion(element);
 		rerouted.push(element);

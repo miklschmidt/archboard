@@ -3,14 +3,14 @@ import { expandElements } from "./expand-elements.js";
 import { extractSceneJsonFromObsidianMd, isObsidianExcalidrawMd } from "./obsidian-md.js";
 
 export interface ExportedScene {
-	scene: Record<string, any>;
+	scene: Record<string, unknown>;
 	elementCount: number;
 }
 
 /** Build one Excalidraw document from the supplied board-shape elements. */
 export function buildScene(
 	sceneElements: ServerElement[],
-	sceneFiles: Record<string, any> = {},
+	sceneFiles: Record<string, unknown> = {},
 	// A board's own note keeps archboard's bookkeeping, because the note is the
 	// board (ADR 0015). A file written for another tool does not.
 	options: { keepServerFields?: boolean } = {},
@@ -23,13 +23,13 @@ export function buildScene(
 	// Only the images these elements actually draw. A scene's `files` map is
 	// keyed by the `fileId` an image element carries, so the elements decide
 	// what belongs in it (TASK-060).
-	const used: Record<string, any> = {};
+	const used: Record<string, unknown> = {};
 	for (const element of exportElements as Array<{ fileId?: unknown }>) {
 		const id = element.fileId;
 		if (typeof id === "string" && sceneFiles[id]) used[id] = sceneFiles[id];
 	}
 
-	const scene: Record<string, any> = {
+	const scene: Record<string, unknown> = {
 		type: "excalidraw",
 		version: 2,
 		source: "archboard",
@@ -69,8 +69,11 @@ export async function importScene(options: {
 	let raw = options.data;
 	if (isObsidianExcalidrawMd(raw)) raw = extractSceneJsonFromObsidianMd(raw);
 
-	const sceneData: any = JSON.parse(raw);
-	const elements: ServerElement[] = Array.isArray(sceneData) ? sceneData : sceneData.elements || [];
+	const sceneData: unknown = JSON.parse(raw);
+	const sceneRecord = sceneData && typeof sceneData === "object" ? sceneData as Record<string, unknown> : {};
+	const elements: ServerElement[] = Array.isArray(sceneData)
+		? sceneData as ServerElement[]
+		: Array.isArray(sceneRecord.elements) ? sceneRecord.elements as ServerElement[] : [];
 	if (elements.length === 0) throw new Error("No elements found in the import data");
 
 	if (options.mode === "replace") await clearCanvas();
@@ -79,7 +82,7 @@ export async function importScene(options: {
 		throw new Error("Import failed: canvas rejected the batch create (elements were not restored)");
 
 	let fileCount = 0;
-	const importFiles = sceneData.files;
+	const importFiles = sceneRecord.files;
 	if (importFiles && typeof importFiles === "object") {
 		const files = Object.values(importFiles);
 		if (files.length > 0) {
