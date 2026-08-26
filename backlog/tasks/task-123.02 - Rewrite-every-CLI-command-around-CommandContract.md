@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-26 10:57'
+updated_date: '2026-08-26 11:07'
 labels: []
 dependencies:
   - TASK-123.01
@@ -130,6 +130,8 @@ Migration checkpoint 6 (snapshot) complete: snapshot root/save/list/restore are 
 2026-08-26 migration checkpoint 8: migrated screenshot, mermaid, and share. Screenshot now declares raw SVG versus validated file-artifact output; Mermaid preserves local-read before server/browser and diagnostic-before-result presentation; share retains elements-only read and URL result. Generated proof is fresh at 57 contracts / 0 legacy routes; generation --check, 667 contract checks, 539 CLI checks, type-check, side-by-side, and boards passed.
 
 2026-08-26 zero-legacy deletion checkpoint: after the separately committed 57-contract/0-legacy proof gate passed, deleted LegacyCommand fallback routing, args.ts, util.ts, the proof definition monolith, and its obsolete sibling fixture. Rehomed query/update/viewport/export beside named exported schemas, moved shared option discovery to the contract module, added source/deletion guards, and refreshed schema-6 artifacts/design. Gates: stable fix, generation --check, 670 contract checks, 539 CLI checks, type-check, and boundaries passed.
+
+2026-08-26 final zero-legacy validation: all 57 canonical CLI paths are command contracts and the generic registry checker reports 57 proofs, 57 audited paths, and 670 checks with zero legacy routes. Two consecutive bun run fix passes were byte-stable. Generation --check, test:contracts, test:cli (539 checks), type-check, boundaries, module-scope, one-write (76), doing (39), version (65), lock (120), boards, branch, side-by-side, changes, library (49), install (106), repos, bind, obsidian (197), bun run check, and a separate full bun run test all passed. Both complete chains ran human-performance, browser fixed-point, typed-text, and live-session sequentially/headlessly; human-performance completed clean at [0,0], and live-session converged for all 42 cycles. During the focused matrix only, test:one-write initially encountered an orphan test server process on random port 39852; after identifying and terminating PID 2710568, the focused rerun passed, and both subsequent complete chains passed without that failure. No gate was weakened or retried away. TASK-123.03 and protected runtime/server/UI/shared/REST/dependency scope remain untouched.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
