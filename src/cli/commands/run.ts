@@ -19,11 +19,17 @@ import { startContract, stopContract } from "./server.js";
 import { addContract, applyContract, deleteContract, getContract } from "./elements.js";
 import * as scene from "./scene.js";
 import { panesContract, selectionContract } from "./selection.js";
-import * as paneCommands from "./pane.js";
+import { paneCloseContract, paneContract, paneOpenContract } from "./pane.js";
 import { promote, demote } from "./promote.js";
 import { repoAddContract, repoContract, repoForgetContract, repoListContract } from "./repo.js";
 import * as snapshotCommands from "./snapshot.js";
-import * as boardCommands from "./board.js";
+import {
+	boardContract,
+	boardInfoContract,
+	boardListContract,
+	boardNewContract,
+	boardOpenContract,
+} from "./board.js";
 import { compareContract } from "./compare.js";
 import { changesContract } from "./changes.js";
 import { claim, release } from "./claim.js";
@@ -185,14 +191,10 @@ const COMMANDS: Record<string, CommandRoute> = {
 		].join("\n"),
 	},
 	pane: {
-		owner: legacy(paneCommands.pane, "src/cli/commands/pane.ts", "legacy subcommand dispatch"),
+		owner: contract(paneContract, "src/cli/commands/pane.ts"),
 		children: {
-			open: child(
-				legacy(paneCommands.paneOpen, "src/cli/commands/pane.ts", "legacy args.ts", "route-tail"),
-			),
-			close: child(
-				legacy(paneCommands.paneClose, "src/cli/commands/pane.ts", "legacy args.ts", "route-tail"),
-			),
+			open: child(contract(paneOpenContract, "src/cli/commands/pane.ts")),
+			close: child(contract(paneCloseContract, "src/cli/commands/pane.ts")),
 		},
 		bare: {
 			kind: "namespace-refusal",
@@ -256,35 +258,12 @@ const COMMANDS: Record<string, CommandRoute> = {
 		].join("\n"),
 	},
 	board: {
-		owner: legacy(boardCommands.board, "src/cli/commands/board.ts", "legacy subcommand dispatch"),
+		owner: contract(boardContract, "src/cli/commands/board.ts"),
 		children: {
-			list: child(
-				legacy(
-					boardCommands.boardList,
-					"src/cli/commands/board.ts",
-					"legacy args.ts",
-					"route-tail",
-				),
-			),
-			info: child(
-				legacy(
-					boardCommands.boardInfo,
-					"src/cli/commands/board.ts",
-					"legacy args.ts",
-					"route-tail",
-				),
-			),
-			new: child(
-				legacy(boardCommands.boardNew, "src/cli/commands/board.ts", "legacy args.ts", "route-tail"),
-			),
-			open: child(
-				legacy(
-					boardCommands.boardOpen,
-					"src/cli/commands/board.ts",
-					"legacy args.ts",
-					"route-tail",
-				),
-			),
+			list: child(contract(boardListContract, "src/cli/commands/board.ts")),
+			info: child(contract(boardInfoContract, "src/cli/commands/board.ts")),
+			new: child(contract(boardNewContract, "src/cli/commands/board.ts")),
+			open: child(contract(boardOpenContract, "src/cli/commands/board.ts")),
 			save: child(contract(boardSaveContract, "src/cli/command-contract/board-save.ts")),
 		},
 		bare: {

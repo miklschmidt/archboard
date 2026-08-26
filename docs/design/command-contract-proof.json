@@ -91,33 +91,27 @@
 		{
 			"name": "pane",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/pane.ts",
-			"parserOwner": "legacy subcommand dispatch",
-			"handlerName": "pane",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"bare": {
 				"kind": "namespace-refusal",
 				"message": "pane needs a subcommand: open, close. For what is on screen right now, without changing it, run `archboard panes`."
-			},
-			"legacyArgv": "root-tail"
+			}
 		},
 		{
 			"name": "pane open",
 			"parent": "pane",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/pane.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "paneOpen",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract staged token parser"
 		},
 		{
 			"name": "pane close",
 			"parent": "pane",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/pane.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "paneClose",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract staged token parser"
 		},
 		{
 			"name": "viewport",
@@ -171,51 +165,41 @@
 		{
 			"name": "board",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/board.ts",
-			"parserOwner": "legacy subcommand dispatch",
-			"handlerName": "board",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"bare": {
 				"kind": "namespace-refusal",
 				"message": "board needs a subcommand: list, info, new, open, save"
-			},
-			"legacyArgv": "root-tail"
+			}
 		},
 		{
 			"name": "board list",
 			"parent": "board",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/board.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "boardList",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract staged token parser"
 		},
 		{
 			"name": "board info",
 			"parent": "board",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/board.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "boardInfo",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract staged token parser"
 		},
 		{
 			"name": "board new",
 			"parent": "board",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/board.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "boardNew",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract staged token parser"
 		},
 		{
 			"name": "board open",
 			"parent": "board",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/board.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "boardOpen",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract staged token parser"
 		},
 		{
 			"name": "board save",
@@ -2341,6 +2325,234 @@
 			]
 		},
 		{
+			"name": "pane",
+			"path": ["pane"],
+			"summary": "Split the canvas into another pane, or close one",
+			"usage": "pane open [--board <key>] | pane close <spec>",
+			"description": "Routes pane mutation commands.",
+			"examples": ["archboard pane open"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "tokens",
+					"name": "arguments",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Namespace arguments"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"tokens": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tokens"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"not": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "none",
+					"description": "Namespace refusal"
+				}
+			],
+			"outcomes": [],
+			"prerequisites": [],
+			"effects": [],
+			"refusals": [],
+			"relationships": []
+		},
+		{
+			"name": "pane open",
+			"path": ["pane", "open"],
+			"summary": "Open a second browser pane",
+			"usage": "pane open [--board <key>]",
+			"description": "Splits the rendered canvas and optionally opens the globally named board there.",
+			"examples": ["archboard pane open --board payments@option-a"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "tokens",
+					"name": "open-token",
+					"repeatable": true,
+					"route": "staged-tokens",
+					"description": "Validated after server contact"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"tokens": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tokens"],
+					"additionalProperties": false
+				},
+				"stages": [
+					{
+						"name": "open-arguments",
+						"when": "after-server",
+						"description": "Legacy no-option grammar",
+						"rules": [],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema"
+						}
+					}
+				]
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema"
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Opened pane",
+					"presentation": ["diagnostics", "result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "browser"],
+			"effects": ["browser"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BROWSER_REQUIRED",
+					"exit": 4,
+					"stream": "stderr",
+					"description": "No browser pane can be split."
+				}
+			],
+			"relationships": [
+				{
+					"method": "POST",
+					"path": "/api/panes/open",
+					"cardinality": "one",
+					"description": "Open the pane"
+				},
+				{
+					"method": "POST",
+					"path": "/api/boards/open",
+					"cardinality": "conditional",
+					"description": "Open the named board in the new pane"
+				}
+			]
+		},
+		{
+			"name": "pane close",
+			"path": ["pane", "close"],
+			"summary": "Close one browser pane",
+			"usage": "pane close <spec>",
+			"description": "Takes one board off screen without changing the board itself.",
+			"examples": ["archboard pane close right"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "tokens",
+					"name": "close-token",
+					"repeatable": true,
+					"route": "staged-tokens",
+					"description": "Validated after server contact"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"tokens": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tokens"],
+					"additionalProperties": false
+				},
+				"stages": [
+					{
+						"name": "close-arguments",
+						"when": "after-server",
+						"description": "Pane selector and legacy no-option grammar",
+						"rules": [],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema"
+						}
+					}
+				]
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema"
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Closed pane",
+					"presentation": ["diagnostics", "result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "browser"],
+			"effects": ["browser"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				},
+				{
+					"code": "BROWSER_REQUIRED",
+					"exit": 4,
+					"stream": "stderr",
+					"description": "No browser pane can be closed."
+				}
+			],
+			"relationships": [
+				{
+					"method": "POST",
+					"path": "/api/panes/close",
+					"cardinality": "one",
+					"description": "Close the selected pane"
+				}
+			]
+		},
+		{
 			"name": "viewport",
 			"path": ["viewport"],
 			"summary": "Point a pane's camera: fit, centre, or zoom (needs a browser tab)",
@@ -2892,6 +3104,463 @@
 			"effects": ["local-read", "local-write"],
 			"refusals": [],
 			"relationships": []
+		},
+		{
+			"name": "board",
+			"path": ["board"],
+			"summary": "Load, save and list boards in the vault",
+			"usage": "board needs a subcommand: list, info, new, open, save",
+			"description": "Routes board lifecycle commands.",
+			"examples": ["archboard board list"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "tokens",
+					"name": "arguments",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Namespace arguments"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"tokens": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tokens"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"not": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "none",
+					"description": "Namespace refusal"
+				}
+			],
+			"outcomes": [],
+			"prerequisites": [],
+			"effects": [],
+			"refusals": [],
+			"relationships": []
+		},
+		{
+			"name": "board list",
+			"path": ["board", "list"],
+			"summary": "List boards in the vault or describing one repository",
+			"usage": "board list [--repo <host/owner/name> | --here] [--text]",
+			"description": "Lists vault and in-memory boards, optionally filtered by repository binding.",
+			"examples": ["archboard board list --here --text"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "tokens",
+					"name": "list-token",
+					"repeatable": true,
+					"route": "staged-tokens",
+					"description": "Validated after server contact"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"tokens": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tokens"],
+					"additionalProperties": false
+				},
+				"stages": [
+					{
+						"name": "list-options",
+						"when": "after-server",
+						"description": "Repository and output selection",
+						"rules": [],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema"
+						}
+					}
+				]
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"anyOf": [
+					{
+						"type": "object",
+						"properties": {
+							"success": {
+								"type": "boolean",
+								"const": true
+							},
+							"vault": {
+								"type": "string"
+							},
+							"boards": {
+								"type": "array",
+								"items": {
+									"type": "object",
+									"properties": {
+										"key": {
+											"type": "string"
+										}
+									},
+									"required": ["key"],
+									"additionalProperties": {}
+								}
+							},
+							"open": {
+								"type": "array",
+								"items": {
+									"type": "object",
+									"properties": {
+										"key": {
+											"type": "string"
+										}
+									},
+									"required": ["key"],
+									"additionalProperties": {}
+								}
+							},
+							"onScreen": {
+								"type": "array",
+								"items": {
+									"type": "object",
+									"properties": {
+										"paneId": {
+											"type": "string"
+										},
+										"place": {
+											"type": "string"
+										},
+										"board": {
+											"type": "string"
+										}
+									},
+									"required": ["paneId", "place", "board"],
+									"additionalProperties": {}
+								}
+							},
+							"held": {
+								"type": "object",
+								"properties": {
+									"board": {
+										"type": "string"
+									},
+									"message": {
+										"type": "string"
+									}
+								},
+								"required": ["board", "message"],
+								"additionalProperties": {}
+							}
+						},
+						"required": ["success", "vault", "boards", "open", "onScreen"],
+						"additionalProperties": {}
+					},
+					{
+						"type": "string"
+					}
+				]
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Board listing",
+					"presentation": ["diagnostics", "result", "held-note"]
+				},
+				{
+					"id": "text",
+					"when": {},
+					"mode": "text",
+					"held": "stderr-note",
+					"description": "Human-readable board listing",
+					"presentation": ["diagnostics", "result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server"],
+			"effects": ["local-read", "read"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/boards",
+					"cardinality": "one",
+					"description": "List boards"
+				}
+			]
+		},
+		{
+			"name": "board info",
+			"path": ["board", "info"],
+			"summary": "Report one named board's identity and save state",
+			"usage": "board info",
+			"description": "Reads the globally named board's current identity and save state.",
+			"examples": ["archboard board info --board payments"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "tokens",
+					"name": "info-token",
+					"repeatable": true,
+					"route": "staged-tokens",
+					"description": "Validated after server contact"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"tokens": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tokens"],
+					"additionalProperties": false
+				},
+				"stages": [
+					{
+						"name": "info-arguments",
+						"when": "after-server",
+						"description": "Legacy no-option grammar",
+						"rules": [],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema"
+						}
+					}
+				]
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema"
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Board state",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server", "board"],
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/boards/info",
+					"cardinality": "one",
+					"description": "Read board state"
+				}
+			]
+		},
+		{
+			"name": "board new",
+			"path": ["board", "new"],
+			"summary": "Start a new empty board",
+			"usage": "board new <name> [--variant v] [--level l] [--pane <spec>]",
+			"description": "Creates an empty board after server contact and optionally shows it in one pane.",
+			"examples": ["archboard board new payments --level system"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "tokens",
+					"name": "new-token",
+					"repeatable": true,
+					"route": "staged-tokens",
+					"description": "Validated after server contact"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"tokens": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tokens"],
+					"additionalProperties": false
+				},
+				"stages": [
+					{
+						"name": "new-options",
+						"when": "after-server",
+						"description": "Board address and pane options",
+						"rules": [],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema"
+						}
+					}
+				]
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema"
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "New board",
+					"presentation": ["diagnostics", "result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server"],
+			"effects": ["write"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				}
+			],
+			"relationships": [
+				{
+					"method": "POST",
+					"path": "/api/boards/new",
+					"cardinality": "one",
+					"description": "Create the board"
+				}
+			]
+		},
+		{
+			"name": "board open",
+			"path": ["board", "open"],
+			"summary": "Open a board from memory or its vault note",
+			"usage": "board open <name[@variant]> [--variant v] [--reload] [--pane <spec>]",
+			"description": "Loads one board and optionally points a selected pane at it.",
+			"examples": ["archboard board open payments@option-a --pane right"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "tokens",
+					"name": "open-token",
+					"repeatable": true,
+					"route": "staged-tokens",
+					"description": "Validated after server contact"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"tokens": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tokens"],
+					"additionalProperties": false
+				},
+				"stages": [
+					{
+						"name": "open-options",
+						"when": "after-server",
+						"description": "Board address, reload, and pane options",
+						"rules": [],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema"
+						}
+					}
+				]
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema"
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Opened board",
+					"presentation": ["diagnostics", "result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server"],
+			"effects": ["read", "browser"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				}
+			],
+			"relationships": [
+				{
+					"method": "POST",
+					"path": "/api/boards/open",
+					"cardinality": "one",
+					"description": "Open the board"
+				}
+			]
 		},
 		{
 			"name": "board save",
@@ -4515,15 +5184,7 @@
 	],
 	"legacyPaths": [
 		"promote",
-		"pane",
-		"pane open",
-		"pane close",
 		"demote",
-		"board",
-		"board list",
-		"board info",
-		"board new",
-		"board open",
 		"claim",
 		"release",
 		"screenshot",
