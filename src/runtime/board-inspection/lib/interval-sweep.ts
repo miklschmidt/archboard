@@ -1,4 +1,8 @@
-import { compareIdentity, compareIdentityLists } from "./ordering.js";
+import type {
+	PreprocessingBudget,
+	PreprocessingPass,
+	PreprocessingPhase,
+} from "./preprocessing-budget.js";
 
 export interface SweepInterval<T> {
 	id: string;
@@ -38,6 +42,8 @@ export interface SweepWork {
 	exactIndexUpdates: number;
 	exactQuerySteps: number;
 	exactMembershipTests: number;
+	identityIntersectionComparisons: number;
+	summaryMergeSteps: number;
 	hierarchySummarySteps: number;
 	compatibilityTests: number;
 	hierarchyMembershipTests: number;
@@ -61,6 +67,59 @@ export interface SweepWork {
 	peakRetainedSelections: number;
 }
 
+export interface SweepOptions {
+	budget?: PreprocessingBudget;
+	pass?: PreprocessingPass;
+}
+
+type RuntimeSweepWork = SweepWork & { runtime?: Required<SweepOptions> };
+
+function spend(work: SweepWork, phase: PreprocessingPhase, units = 1): void {
+	const runtime = (work as RuntimeSweepWork).runtime;
+	if (runtime) runtime.budget.charge(runtime.pass, phase, units);
+}
+
+function spendOptions(
+	options: SweepOptions | undefined,
+	phase: PreprocessingPhase,
+	units = 1,
+): void {
+	if (options?.budget && options.pass) options.budget.charge(options.pass, phase, units);
+}
+
+function comparedIdentity(left: string, right: string, charge: (units: number) => void): number {
+	const shared = Math.min(left.length, right.length);
+	for (let index = 0; index < shared; index += 1) {
+		charge(2);
+		const aa = left.charCodeAt(index),
+			bb = right.charCodeAt(index);
+		if (aa !== bb) return aa < bb ? -1 : 1;
+	}
+	return left.length < right.length ? -1 : left.length > right.length ? 1 : 0;
+}
+
+function stableSorted<T>(values: readonly T[], compare: (left: T, right: T) => number): T[] {
+	if (values.length < 2) return [...values];
+	let source = [...values],
+		target = Array.from<T>({ length: values.length });
+	for (let width = 1; width < values.length; width *= 2) {
+		for (let start = 0; start < values.length; start += width * 2) {
+			const middle = Math.min(start + width, values.length),
+				end = Math.min(start + width * 2, values.length);
+			let left = start,
+				right = middle,
+				output = start;
+			while (left < middle && right < end)
+				target[output++] =
+					compare(source[left]!, source[right]!) <= 0 ? source[left++]! : source[right++]!;
+			while (left < middle) target[output++] = source[left++]!;
+			while (right < end) target[output++] = source[right++]!;
+		}
+		[source, target] = [target, source];
+	}
+	return source;
+}
+
 interface HierarchyNode {
 	id: string;
 	parent: string | null;
@@ -76,17 +135,19 @@ export interface SweepHierarchy {
 	readonly size: number;
 	position(id: string): number | undefined;
 	subtree(id: string): readonly [number, number] | null;
-	pathToRoot(id: string): readonly (readonly [number, number])[];
-	isAncestor(ancestor: string, descendant: string): boolean;
-	lca(left: string, right: string): string | null;
+	pathToRoot(id: string, step?: () => void): readonly (readonly [number, number])[];
+	isAncestor(ancestor: string, descendant: string, step?: () => void): boolean;
+	lca(left: string, right: string, step?: () => void): string | null;
 }
 
 /** Build deterministic heavy-light coordinates without retaining per-profile ancestor copies. */
 export function buildSweepHierarchy(
 	parents: ReadonlyMap<string, string | null | undefined>,
+	options?: SweepOptions,
 ): SweepHierarchy {
 	const nodes = new Map<string, HierarchyNode>();
-	for (const id of parents.keys())
+	for (const id of parents.keys()) {
+		spendOptions(options, "prepare-events", 2 + id.length);
 		nodes.set(id, {
 			id,
 			parent: null,
@@ -96,25 +157,36 @@ export function buildSweepHierarchy(
 			head: id,
 			position: -1,
 		});
+	}
 	for (const [id, parent] of parents) {
+		spendOptions(options, "prepare-events", 2);
 		if (!parent || !nodes.has(parent) || parent === id) continue;
 		nodes.get(id)!.parent = parent;
 		nodes.get(parent)!.children.push(id);
 	}
-	for (const node of nodes.values()) node.children.sort(compareIdentity);
-	const roots = [...nodes.values()]
-		.filter((node) => node.parent === null)
-		.map((node) => node.id)
-		.toSorted(compareIdentity);
+	for (const node of nodes.values())
+		node.children = stableSorted(node.children, (left, right) => {
+			spendOptions(options, "order-events");
+			return comparedIdentity(left, right, (units) => spendOptions(options, "order-events", units));
+		});
+	const roots = stableSorted(
+		[...nodes.values()].filter((node) => node.parent === null).map((node) => node.id),
+		(left, right) => {
+			spendOptions(options, "order-events");
+			return comparedIdentity(left, right, (units) => spendOptions(options, "order-events", units));
+		},
+	);
 	const order: string[] = [];
 	const stack = roots.toReversed();
 	while (stack.length > 0) {
+		spendOptions(options, "hierarchy-query");
 		const id = stack.pop()!;
 		order.push(id);
 		const children = nodes.get(id)!.children;
 		for (let index = children.length - 1; index >= 0; index -= 1) stack.push(children[index]!);
 	}
 	for (let index = order.length - 1; index >= 0; index -= 1) {
+		spendOptions(options, "hierarchy-query");
 		const node = nodes.get(order[index]!)!;
 		let heavy: HierarchyNode | null = null;
 		for (const childId of node.children) {
@@ -123,7 +195,10 @@ export function buildSweepHierarchy(
 			if (
 				!heavy ||
 				child.size > heavy.size ||
-				(child.size === heavy.size && compareIdentity(child.id, heavy.id) < 0)
+				(child.size === heavy.size &&
+					comparedIdentity(child.id, heavy.id, (units) =>
+						spendOptions(options, "hierarchy-query", units),
+					) < 0)
 			)
 				heavy = child;
 		}
@@ -134,6 +209,7 @@ export function buildSweepHierarchy(
 		.toReversed()
 		.map((id) => ({ id, head: id }));
 	while (chains.length > 0) {
+		spendOptions(options, "hierarchy-query");
 		let { id, head } = chains.pop()!;
 		while (true) {
 			const node = nodes.get(id)!;
@@ -155,17 +231,20 @@ export function buildSweepHierarchy(
 			const node = nodes.get(id);
 			return node ? [node.position, node.position + node.size - 1] : null;
 		},
-		pathToRoot: (id) => {
+		pathToRoot: (id, step) => {
 			const ranges: Array<readonly [number, number]> = [];
 			let node = nodes.get(id);
 			while (node) {
+				step?.();
 				const head = nodes.get(node.head)!;
 				ranges.push([head.position, node.position]);
 				node = head.parent ? nodes.get(head.parent) : undefined;
 			}
 			return ranges;
 		},
-		isAncestor: (ancestor, descendant) => {
+		isAncestor: (ancestor, descendant, step) => {
+			step?.();
+			step?.();
 			const aa = nodes.get(ancestor);
 			const dd = nodes.get(descendant);
 			return (
@@ -175,11 +254,14 @@ export function buildSweepHierarchy(
 				dd.position < aa.position + aa.size
 			);
 		},
-		lca: (left, right) => {
+		lca: (left, right, step) => {
+			step?.();
+			step?.();
 			let aa = nodes.get(left),
 				bb = nodes.get(right);
 			if (!aa || !bb) return null;
 			while (aa.head !== bb.head) {
+				step?.();
 				const aHead: HierarchyNode = nodes.get(aa.head)!,
 					bHead: HierarchyNode = nodes.get(bb.head)!;
 				if (aHead.position > bHead.position) {
@@ -251,13 +333,18 @@ const EMPTY_IDENTITIES: readonly string[] = Object.freeze([]);
 function identityIntersection(
 	left: readonly string[],
 	right: readonly string[],
+	work: SweepWork,
 ): readonly string[] {
 	if (left === right) return left;
 	const intersection: string[] = [];
 	let aa = 0,
 		bb = 0;
 	while (aa < left.length && bb < right.length) {
-		const compared = compareIdentity(left[aa]!, right[bb]!);
+		spend(work, "compatibility-query");
+		work.identityIntersectionComparisons += 1;
+		const compared = comparedIdentity(left[aa]!, right[bb]!, (units) =>
+			spend(work, "compatibility-query", units),
+		);
 		if (compared === 0) {
 			intersection.push(left[aa]!);
 			aa += 1;
@@ -274,9 +361,12 @@ function includesIdentity(values: readonly string[], wanted: string, work: Sweep
 	let min = 0,
 		max = values.length - 1;
 	while (min <= max) {
+		spend(work, "compatibility-query");
 		work.exactMembershipTests += 1;
 		const middle = Math.floor((min + max) / 2);
-		const compared = compareIdentity(values[middle]!, wanted);
+		const compared = comparedIdentity(values[middle]!, wanted, (units) =>
+			spend(work, "compatibility-query", units),
+		);
 		if (compared === 0) return true;
 		if (compared < 0) min = middle + 1;
 		else max = middle - 1;
@@ -294,10 +384,11 @@ class ExactCompatibilityIndex<T> {
 	readonly hierarchy: SweepHierarchy | undefined;
 	retainedSummaryRefs = 0;
 
-	constructor(length: number, hierarchy: SweepHierarchy | undefined) {
+	constructor(length: number, hierarchy: SweepHierarchy | undefined, work: SweepWork) {
 		let size = 1;
 		while (size < Math.max(1, length)) size *= 2;
 		this.size = size;
+		spend(work, "prepare-events", size * 2 * 5);
 		this.counts = Array.from({ length: size * 2 }, () => 0);
 		this.lists = Array.from({ length: size * 2 }, () => null);
 		this.partitions = Array.from({ length: size * 2 }, () => null);
@@ -320,10 +411,11 @@ class ExactCompatibilityIndex<T> {
 		if (!this.hierarchy || values.length < 2) return values;
 		const kept: string[] = [];
 		for (const value of values) {
+			work.summaryMergeSteps += 1;
 			let redundant = false;
 			for (const candidate of kept) {
 				work.hierarchyMembershipTests += 1;
-				if (this.hierarchy.isAncestor(value, candidate)) {
+				if (this.hierarchy.isAncestor(value, candidate, () => spend(work, "hierarchy-query"))) {
 					redundant = true;
 					break;
 				}
@@ -331,11 +423,15 @@ class ExactCompatibilityIndex<T> {
 			if (redundant) continue;
 			for (let index = kept.length - 1; index >= 0; index -= 1) {
 				work.hierarchyMembershipTests += 1;
-				if (this.hierarchy.isAncestor(kept[index]!, value)) kept.splice(index, 1);
+				if (this.hierarchy.isAncestor(kept[index]!, value, () => spend(work, "hierarchy-query")))
+					kept.splice(index, 1);
 			}
 			kept.push(value);
 		}
-		return kept.toSorted(compareIdentity);
+		return stableSorted(kept, (left, right) => {
+			spend(work, "order-events");
+			return comparedIdentity(left, right, (units) => spend(work, "order-events", units));
+		});
 	}
 
 	private intersectCoverage(
@@ -348,14 +444,17 @@ class ExactCompatibilityIndex<T> {
 		const lcas = new Set<string>();
 		for (const aa of left)
 			for (const bb of right) {
+				spend(work, "hierarchy-query");
+				work.summaryMergeSteps += 1;
 				work.hierarchySummarySteps += 1;
-				const lca = this.hierarchy.lca(aa, bb);
+				const lca = this.hierarchy.lca(aa, bb, () => spend(work, "hierarchy-query"));
 				if (lca) lcas.add(lca);
 			}
 		return this.reducedCoverage([...lcas], work);
 	}
 
 	set(rank: number, list: ActiveList<T> | null, work: SweepWork): void {
+		spend(work, "activate-or-expire", 5);
 		let node = this.size + rank;
 		this.retainedSummaryRefs -= this.summaryRefs(node);
 		this.lists[node] = list;
@@ -368,6 +467,7 @@ class ExactCompatibilityIndex<T> {
 		this.retainedSummaryRefs += this.summaryRefs(node);
 		work.exactIndexUpdates += 1;
 		while (node > 1) {
+			spend(work, "activate-or-expire", 5);
 			node = Math.floor(node / 2);
 			this.retainedSummaryRefs -= this.summaryRefs(node);
 			const left = node * 2,
@@ -392,6 +492,7 @@ class ExactCompatibilityIndex<T> {
 				this.commonExclusions[node] = identityIntersection(
 					this.commonExclusions[left] ?? EMPTY_IDENTITIES,
 					this.commonExclusions[right] ?? EMPTY_IDENTITIES,
+					work,
 				);
 				this.commonTargetCoverage[node] = this.intersectCoverage(
 					this.commonTargetCoverage[left] ?? EMPTY_IDENTITIES,
@@ -411,6 +512,7 @@ class ExactCompatibilityIndex<T> {
 	): Set<ActiveList<T>> {
 		const candidates = new Set<ActiveList<T>>();
 		const walk = (node: number): void => {
+			spend(work, "compatibility-query");
 			work.exactQuerySteps += 1;
 			if (this.counts[node] === 0) return;
 			const partition = this.partitions[node];
@@ -421,11 +523,15 @@ class ExactCompatibilityIndex<T> {
 			if (this.hierarchy && commonTargets)
 				for (const target of commonTargets) {
 					work.hierarchyMembershipTests += 1;
-					if (this.hierarchy.isAncestor(eventPartition, target)) return;
+					if (
+						this.hierarchy.isAncestor(eventPartition, target, () => spend(work, "hierarchy-query"))
+					)
+						return;
 				}
 			if (node >= this.size) {
 				const list = this.lists[node]!;
 				work.compatibilityQuerySteps += 1;
+				spend(work, "candidate-intersection");
 				candidates.add(list);
 				return;
 			}
@@ -437,10 +543,17 @@ class ExactCompatibilityIndex<T> {
 	}
 }
 
-function mergedRanges(ranges: readonly (readonly [number, number])[]): Array<[number, number]> {
-	const ordered = ranges
-		.map(([min, max]) => [min, max] as [number, number])
-		.toSorted((a, b) => a[0] - b[0] || a[1] - b[1]);
+function mergedRanges(
+	ranges: readonly (readonly [number, number])[],
+	work: SweepWork,
+): Array<[number, number]> {
+	const ordered = stableSorted(
+		ranges.map(([min, max]) => [min, max] as [number, number]),
+		(a, b) => {
+			spend(work, "order-events");
+			return a[0] - b[0] || a[1] - b[1];
+		},
+	);
 	const merged: Array<[number, number]> = [];
 	for (const range of ordered) {
 		const previous = merged.at(-1);
@@ -453,26 +566,29 @@ function mergedRanges(ranges: readonly (readonly [number, number])[]): Array<[nu
 class RangeCount {
 	readonly size: number;
 	readonly values: number[];
-	constructor(size: number) {
+	constructor(size: number, work: SweepWork) {
 		let treeSize = 1;
 		while (treeSize < Math.max(1, size)) treeSize *= 2;
 		this.size = treeSize;
+		spend(work, "prepare-events", treeSize * 2);
 		this.values = Array.from({ length: treeSize * 2 }, () => 0);
 	}
-	add(position: number, delta: number): number {
+	add(position: number, delta: number, work: SweepWork): number {
 		let steps = 0;
 		for (let index = this.size + position; index > 0; index = Math.floor(index / 2)) {
+			spend(work, "activate-or-expire");
 			this.values[index]! += delta;
 			steps += 1;
 		}
 		return steps;
 	}
-	range(min: number, max: number): { value: number; steps: number } {
+	range(min: number, max: number, work: SweepWork): { value: number; steps: number } {
 		let left = min + this.size,
 			right = max + this.size,
 			value = 0,
 			steps = 0;
 		while (left <= right) {
+			spend(work, "hierarchy-query");
 			steps += 1;
 			if (left % 2 === 1) value += this.values[left++]!;
 			if (right % 2 === 0) value += this.values[right--]!;
@@ -481,9 +597,10 @@ class RangeCount {
 		}
 		return { value, steps };
 	}
-	positive(min: number, max: number, visit: (position: number) => void): number {
+	positive(min: number, max: number, visit: (position: number) => void, work: SweepWork): number {
 		let steps = 0;
 		const walk = (node: number, nodeMin: number, nodeMax: number): void => {
+			spend(work, "hierarchy-query");
 			steps += 1;
 			if (this.values[node] === 0 || nodeMax < min || nodeMin > max) return;
 			if (nodeMin === nodeMax) {
@@ -502,29 +619,33 @@ class RangeCount {
 class RangeMaximum {
 	readonly size: number;
 	readonly values: number[];
-	constructor(length: number) {
+	constructor(length: number, work: SweepWork) {
 		let size = 1;
 		while (size < Math.max(1, length)) size *= 2;
 		this.size = size;
+		spend(work, "prepare-events", size * 2);
 		this.values = Array.from({ length: size * 2 }, () => 0);
 	}
-	add(position: number, delta: number): number {
+	add(position: number, delta: number, work: SweepWork): number {
 		let index = this.size + position;
+		spend(work, "activate-or-expire");
 		this.values[index]! += delta;
 		let steps = 1;
 		while (index > 1) {
+			spend(work, "activate-or-expire");
 			index = Math.floor(index / 2);
 			this.values[index] = Math.max(this.values[index * 2]!, this.values[index * 2 + 1]!);
 			steps += 1;
 		}
 		return steps;
 	}
-	max(min: number, max: number): { value: number; steps: number } {
+	max(min: number, max: number, work: SweepWork): { value: number; steps: number } {
 		let left = min + this.size,
 			right = max + this.size,
 			value = 0,
 			steps = 0;
 		while (left <= right) {
+			spend(work, "hierarchy-query");
 			steps += 1;
 			if (left % 2 === 1) value = Math.max(value, this.values[left++]!);
 			if (right % 2 === 0) value = Math.max(value, this.values[right--]!);
@@ -535,8 +656,8 @@ class RangeMaximum {
 	}
 }
 
-function emptyWork(): SweepWork {
-	return {
+function emptyWork(options?: SweepOptions): SweepWork {
+	const work: RuntimeSweepWork = {
 		events: 0,
 		activeVisits: 0,
 		expiryPops: 0,
@@ -558,6 +679,8 @@ function emptyWork(): SweepWork {
 		exactIndexUpdates: 0,
 		exactQuerySteps: 0,
 		exactMembershipTests: 0,
+		identityIntersectionComparisons: 0,
+		summaryMergeSteps: 0,
 		hierarchySummarySteps: 0,
 		compatibilityTests: 0,
 		hierarchyMembershipTests: 0,
@@ -578,25 +701,35 @@ function emptyWork(): SweepWork {
 		peakRetainedTotalStateRefs: 0,
 		peakRetainedSelections: 0,
 	};
+	if (options?.budget && options.pass)
+		Object.defineProperty(work, "runtime", {
+			value: { budget: options.budget, pass: options.pass },
+			enumerable: false,
+		});
+	return work;
 }
 
-function compareNode<T>(a: ActiveNode<T>, b: ActiveNode<T>): number {
+function compareNode<T>(a: ActiveNode<T>, b: ActiveNode<T>, work: SweepWork): number {
+	spend(work, "activate-or-expire", 2);
 	return a.interval.max - b.interval.max || a.order - b.order;
 }
 
-function heapPush<T>(heap: ActiveNode<T>[], node: ActiveNode<T>): void {
+function heapPush<T>(heap: ActiveNode<T>[], node: ActiveNode<T>, work: SweepWork): void {
+	spend(work, "activate-or-expire");
 	heap.push(node);
 	let index = heap.length - 1;
 	while (index > 0) {
 		const parent = Math.floor((index - 1) / 2);
-		if (compareNode(heap[parent]!, node) <= 0) break;
+		if (compareNode(heap[parent]!, node, work) <= 0) break;
+		spend(work, "activate-or-expire");
 		heap[index] = heap[parent]!;
 		index = parent;
 	}
 	heap[index] = node;
 }
 
-function heapPop<T>(heap: ActiveNode<T>[]): ActiveNode<T> | undefined {
+function heapPop<T>(heap: ActiveNode<T>[], work: SweepWork): ActiveNode<T> | undefined {
+	spend(work, "activate-or-expire");
 	const first = heap[0];
 	const last = heap.pop();
 	if (!first || !last || heap.length === 0) return first;
@@ -605,8 +738,10 @@ function heapPop<T>(heap: ActiveNode<T>[]): ActiveNode<T> | undefined {
 		const left = index * 2 + 1;
 		if (left >= heap.length) break;
 		const right = left + 1;
-		const child = right < heap.length && compareNode(heap[right]!, heap[left]!) < 0 ? right : left;
-		if (compareNode(last, heap[child]!) <= 0) break;
+		const child =
+			right < heap.length && compareNode(heap[right]!, heap[left]!, work) < 0 ? right : left;
+		if (compareNode(last, heap[child]!, work) <= 0) break;
+		spend(work, "activate-or-expire");
 		heap[index] = heap[child]!;
 		index = child;
 	}
@@ -615,22 +750,26 @@ function heapPop<T>(heap: ActiveNode<T>[]): ActiveNode<T> | undefined {
 }
 
 function lookup(work: SweepWork, count = 1): void {
+	spend(work, "activate-or-expire", count);
 	work.bucketLookups += count;
 	work.bucketIndexOperations += count;
 }
 
 function update(work: SweepWork, count = 1): void {
+	spend(work, "activate-or-expire", count);
 	work.bucketUpdates += count;
 	work.bucketIndexOperations += count;
 }
 
 function deleted(work: SweepWork, count = 1): void {
+	spend(work, "activate-or-expire", count);
 	work.bucketDeletes += count;
 	work.bucketIndexOperations += count;
 }
 
 function append<T>(list: ActiveList<T>, node: ActiveNode<T>, work: SweepWork): void {
 	const wasEmpty = list.head === null;
+	spend(work, "activate-or-expire", 3);
 	node.previous = list.tail;
 	if (list.tail) list.tail.next = node;
 	else list.head = node;
@@ -647,17 +786,19 @@ function indexRefDelta<T>(list: ActiveList<T>, delta: 1 | -1, work: SweepWork): 
 		if (delta === 1) {
 			if (!lists) {
 				lists = new Set();
-				index.excludedByPartition.set(exclusion, lists);
 				update(work);
+				index.excludedByPartition.set(exclusion, lists);
 			}
+			spend(work, "activate-or-expire");
 			lists.add(list);
 			work.compatibilityIndexUpdates += 1;
 		} else {
+			spend(work, "activate-or-expire");
 			lists?.delete(list);
 			work.compatibilityIndexUpdates += 1;
 			if (lists?.size === 0) {
-				index.excludedByPartition.delete(exclusion);
 				deleted(work);
+				index.excludedByPartition.delete(exclusion);
 			}
 		}
 	}
@@ -669,26 +810,29 @@ function indexRefDelta<T>(list: ActiveList<T>, delta: 1 | -1, work: SweepWork): 
 	if (!hierarchy) return;
 	const position = hierarchy.position(list.partition);
 	if (position !== undefined) {
-		work.hierarchyIndexUpdateSteps += index.partitionCounts.add(position, delta);
+		work.hierarchyIndexUpdateSteps += index.partitionCounts.add(position, delta, work);
 		lookup(work);
 		let lists = index.partitionLists.get(position);
 		if (delta === 1) {
 			if (!lists) {
 				lists = new Set();
-				index.partitionLists.set(position, lists);
 				update(work);
+				index.partitionLists.set(position, lists);
 			}
+			spend(work, "activate-or-expire");
 			lists.add(list);
 			work.compatibilityIndexUpdates += 1;
 		} else {
+			spend(work, "activate-or-expire");
 			lists?.delete(list);
 			work.compatibilityIndexUpdates += 1;
 			if (lists?.size === 0) {
-				index.partitionLists.delete(position);
 				deleted(work);
+				index.partitionLists.delete(position);
 			}
 		}
 	} else {
+		spend(work, "activate-or-expire");
 		if (delta === 1) index.unpositionedLists.add(list);
 		else index.unpositionedLists.delete(list);
 		work.compatibilityIndexUpdates += 1;
@@ -696,29 +840,32 @@ function indexRefDelta<T>(list: ActiveList<T>, delta: 1 | -1, work: SweepWork): 
 	for (const target of list.profile.ancestorTargets) {
 		const targetPosition = hierarchy.position(target);
 		if (targetPosition !== undefined) {
-			work.hierarchyIndexUpdateSteps += index.targetCounts.add(targetPosition, delta);
-			work.hierarchyIndexUpdateSteps += index.targetPositionCounts.add(targetPosition, delta);
+			work.hierarchyIndexUpdateSteps += index.targetCounts.add(targetPosition, delta, work);
+			work.hierarchyIndexUpdateSteps += index.targetPositionCounts.add(targetPosition, delta, work);
 			lookup(work);
 			let lists = index.targetLists.get(targetPosition);
 			if (delta === 1) {
 				if (!lists) {
 					lists = new Set();
-					index.targetLists.set(targetPosition, lists);
 					update(work);
+					index.targetLists.set(targetPosition, lists);
 				}
+				spend(work, "activate-or-expire");
 				lists.add(list);
 				work.compatibilityIndexUpdates += 1;
 			} else {
+				spend(work, "activate-or-expire");
 				lists?.delete(list);
 				work.compatibilityIndexUpdates += 1;
 				if (lists?.size === 0) {
-					index.targetLists.delete(targetPosition);
 					deleted(work);
+					index.targetLists.delete(targetPosition);
 				}
 			}
 		}
 	}
 	if (list.profile.ancestorTargets.length === 0) {
+		spend(work, "activate-or-expire");
 		if (delta === 1) index.untargetedLists.add(list);
 		else index.untargetedLists.delete(list);
 		work.compatibilityIndexUpdates += 1;
@@ -726,12 +873,12 @@ function indexRefDelta<T>(list: ActiveList<T>, delta: 1 | -1, work: SweepWork): 
 }
 
 function activateList<T>(list: ActiveList<T>, work: SweepWork): void {
-	list.index.activeLists.add(list);
 	update(work);
+	list.index.activeLists.add(list);
 	list.index.totalBuckets += 1;
 	lookup(work);
-	list.index.profileCounts.set(list.profile, (list.index.profileCounts.get(list.profile) ?? 0) + 1);
 	update(work);
+	list.index.profileCounts.set(list.profile, (list.index.profileCounts.get(list.profile) ?? 0) + 1);
 	indexRefDelta(list, 1, work);
 	list.index.exact.set(list.exactRank, list, work);
 }
@@ -740,23 +887,23 @@ function retireEmptyList<T>(list: ActiveList<T>, work: SweepWork): void {
 	if (list.head) return;
 	lookup(work);
 	const profiles = list.index.buckets.get(list.partition)!;
+	deleted(work);
 	profiles.delete(list.profile);
-	deleted(work);
 	if (profiles.size === 0) {
-		list.index.buckets.delete(list.partition);
 		deleted(work);
+		list.index.buckets.delete(list.partition);
 	}
-	list.index.activeLists.delete(list);
 	deleted(work);
+	list.index.activeLists.delete(list);
 	list.index.totalBuckets -= 1;
 	lookup(work);
 	const profileCount = list.index.profileCounts.get(list.profile)! - 1;
 	if (profileCount === 0) {
-		list.index.profileCounts.delete(list.profile);
 		deleted(work);
+		list.index.profileCounts.delete(list.profile);
 	} else {
-		list.index.profileCounts.set(list.profile, profileCount);
 		update(work);
+		list.index.profileCounts.set(list.profile, profileCount);
 	}
 	indexRefDelta(list, -1, work);
 	list.index.exact.set(list.exactRank, null, work);
@@ -765,6 +912,7 @@ function retireEmptyList<T>(list: ActiveList<T>, work: SweepWork): void {
 function remove<T>(node: ActiveNode<T>, work: SweepWork): void {
 	if (!node.active) return;
 	const list = node.list;
+	spend(work, "activate-or-expire", 4);
 	if (node.previous) node.previous.next = node.next;
 	else list.head = node.next;
 	if (node.next) node.next.previous = node.previous;
@@ -785,8 +933,8 @@ function bucketFor<T>(
 	let profiles = index.buckets.get(partition);
 	if (!profiles) {
 		profiles = new Map();
-		index.buckets.set(partition, profiles);
 		update(work);
+		index.buckets.set(partition, profiles);
 	}
 	lookup(work);
 	const existing = profiles.get(profile);
@@ -799,8 +947,8 @@ function bucketFor<T>(
 		index,
 		exactRank,
 	};
-	profiles.set(profile, list);
 	update(work);
+	profiles.set(profile, list);
 	return list;
 }
 
@@ -810,36 +958,54 @@ function canonicalProfile(
 	work: SweepWork,
 ): CompatibilityProfile {
 	const profileOrder = (a: string, b: string) => {
+		spend(work, "order-events");
 		work.profileSortComparisons += 1;
-		return compareIdentity(a, b);
+		return comparedIdentity(a, b, (units) => spend(work, "order-events", units));
 	};
-	const exclusions = [...semantics.excludedPartitions].toSorted(profileOrder);
-	const ancestorTargets = [...new Set(semantics.ancestorTargets ?? [])].toSorted(profileOrder);
+	const exclusions = stableSorted([...semantics.excludedPartitions], profileOrder);
+	const ancestorTargets = stableSorted([...new Set(semantics.ancestorTargets ?? [])], profileOrder);
+	spend(
+		work,
+		"prepare-events",
+		1 +
+			exclusions.length +
+			ancestorTargets.length +
+			exclusions.reduce((total, value) => total + value.length, 0) +
+			ancestorTargets.reduce((total, value) => total + value.length, 0),
+	);
 	work.profileSnapshotEntries += exclusions.length + ancestorTargets.length;
 	let node = root;
 	for (const exclusion of exclusions) {
+		spend(work, "prepare-events", 2);
 		work.profileTrieSteps += 1;
+		spend(work, "prepare-events");
 		let child = node.children.get(exclusion);
 		if (!child) {
 			child = { children: new Map(), profiles: new Map(), profile: null };
+			spend(work, "prepare-events");
 			node.children.set(exclusion, child);
 			work.peakRetainedProfileTrieNodes += 1;
 		}
 		node = child;
 	}
 	const hierarchyKey = semantics.hierarchy ?? null;
+	spend(work, "prepare-events");
 	let hierarchyNode = node.profiles.get(hierarchyKey);
 	if (!hierarchyNode) {
 		hierarchyNode = { children: new Map(), profiles: new Map(), profile: null };
+		spend(work, "prepare-events");
 		node.profiles.set(hierarchyKey, hierarchyNode);
 		work.peakRetainedProfileTrieNodes += 1;
 	}
 	let targetNode = hierarchyNode;
 	for (const target of ancestorTargets) {
+		spend(work, "prepare-events", 2);
 		work.profileTrieSteps += 1;
+		spend(work, "prepare-events");
 		let child = targetNode.children.get(target);
 		if (!child) {
 			child = { children: new Map(), profiles: new Map(), profile: null };
+			spend(work, "prepare-events");
 			targetNode.children.set(target, child);
 			work.peakRetainedProfileTrieNodes += 1;
 		}
@@ -847,6 +1013,7 @@ function canonicalProfile(
 	}
 	work.profileTerminalLookups += 1;
 	if (!targetNode.profile) {
+		spend(work, "prepare-events", exclusions.length + 1);
 		targetNode.profile = {
 			exclusions,
 			excluded: new Set(exclusions),
@@ -863,13 +1030,25 @@ function partitionExcluded(
 	profile: CompatibilityProfile,
 	partition: string,
 	work?: SweepWork,
+	chargeBudget = true,
 ): boolean {
-	if (work) work.exactMembershipTests += 1;
+	if (work) {
+		if (chargeBudget) spend(work, "compatibility-query");
+		work.exactMembershipTests += 1;
+	}
 	if (profile.excluded.has(partition)) return true;
 	if (!profile.hierarchy) return false;
 	for (const target of profile.ancestorTargets) {
-		if (work) work.hierarchyMembershipTests += 1;
-		if (profile.hierarchy.isAncestor(partition, target)) return true;
+		if (work) {
+			if (chargeBudget) spend(work, "hierarchy-query");
+			work.hierarchyMembershipTests += 1;
+		}
+		if (
+			profile.hierarchy.isAncestor(partition, target, () =>
+				chargeBudget ? spend(work!, "hierarchy-query") : undefined,
+			)
+		)
+			return true;
 	}
 	return false;
 }
@@ -883,8 +1062,10 @@ function hierarchyEventExcludesAll<T>(
 	for (const target of profile.ancestorTargets) {
 		work.hierarchyPathQueries += 1;
 		let count = 0;
-		for (const [min, max] of index.hierarchy.pathToRoot(target)) {
-			const measured = index.partitionCounts.range(min, max);
+		for (const [min, max] of index.hierarchy.pathToRoot(target, () =>
+			spend(work, "hierarchy-query"),
+		)) {
+			const measured = index.partitionCounts.range(min, max, work);
 			count += measured.value;
 			work.hierarchyPathSteps += measured.steps + 1;
 		}
@@ -902,8 +1083,8 @@ function pairAllowed(
 	work: SweepWork,
 ): boolean {
 	return (
-		!partitionExcluded(event, active.partition, work) &&
-		!partitionExcluded(active.profile, eventPartition, work)
+		!partitionExcluded(event, active.partition, work, false) &&
+		!partitionExcluded(active.profile, eventPartition, work, false)
 	);
 }
 
@@ -918,7 +1099,7 @@ function hierarchyCandidates<T>(
 	const ranges: Array<readonly [number, number]> = [];
 	for (const target of profile.ancestorTargets) {
 		work.hierarchyPathQueries += 1;
-		const path = hierarchy.pathToRoot(target);
+		const path = hierarchy.pathToRoot(target, () => spend(work, "hierarchy-query"));
 		work.hierarchyPathSteps += path.length;
 		ranges.push(...path);
 	}
@@ -926,20 +1107,25 @@ function hierarchyCandidates<T>(
 		const position = hierarchy.position(exclusion);
 		if (position !== undefined) ranges.push([position, position]);
 	}
-	const excluded = mergedRanges(ranges);
+	const excluded = mergedRanges(ranges, work);
 	const candidates = new Set<ActiveList<T>>();
 	let cursor = 0;
 	const collect = (min: number, max: number) => {
 		if (min > max) return;
 		work.hierarchySubtreeQueries += 1;
-		work.hierarchySubtreeSteps += index.partitionCounts.positive(min, max, (position) => {
-			lookup(work);
-			const lists = index.partitionLists.get(position)!;
-			for (const list of lists) {
-				work.compatibilityQuerySteps += 1;
-				candidates.add(list);
-			}
-		});
+		work.hierarchySubtreeSteps += index.partitionCounts.positive(
+			min,
+			max,
+			(position) => {
+				lookup(work);
+				const lists = index.partitionLists.get(position)!;
+				for (const list of lists) {
+					work.compatibilityQuerySteps += 1;
+					candidates.add(list);
+				}
+			},
+			work,
+		);
 	};
 	for (const [min, max] of excluded) {
 		collect(cursor, min - 1);
@@ -960,55 +1146,88 @@ export function sweepIntervalPairs<A, B>(
 	right: readonly SweepInterval<B>[],
 	sameSet: boolean,
 	visit: (left: SweepInterval<A>, right: SweepInterval<B>) => boolean | void,
+	options?: SweepOptions,
 ): SweepWork {
 	type Value = A | B;
-	const work = emptyWork();
+	const work = emptyWork(options);
+	options?.budget?.attachDiagnosticState(work);
 	const profileRoot: ProfileNode = { children: new Map(), profiles: new Map(), profile: null };
-	const events: Array<{
+	const profileBySemantics = new Map<SweepPartition, CompatibilityProfile>();
+	let events: Array<{
 		interval: SweepInterval<Value>;
 		set: 0 | 1;
 		ordinal: number;
 		profile: CompatibilityProfile;
 	}> = [];
 	let retainedCanonicalProfileRefs = 0;
-	const addEvent = (interval: SweepInterval<Value>, set: 0 | 1, ordinal: number) =>
+	const addEvent = (interval: SweepInterval<Value>, set: 0 | 1, ordinal: number) => {
+		spend(work, "prepare-events");
+		spend(work, "prepare-events");
+		let profile = profileBySemantics.get(interval.semantics);
+		if (!profile) {
+			profile = canonicalProfile(profileRoot, interval.semantics, work);
+			spend(work, "prepare-events");
+			profileBySemantics.set(interval.semantics, profile);
+		}
 		events.push({
 			interval,
 			set,
 			ordinal,
-			profile: canonicalProfile(profileRoot, interval.semantics, work),
+			profile,
 		});
+	};
 	left.forEach((interval, ordinal) => addEvent(interval, 0, ordinal));
 	if (!sameSet) right.forEach((interval, ordinal) => addEvent(interval, 1, ordinal));
 	const retainedProfiles = new Set<CompatibilityProfile>();
 	for (const event of events) {
+		spend(work, "prepare-events");
 		if (retainedProfiles.has(event.profile)) continue;
+		spend(work, "prepare-events");
 		retainedProfiles.add(event.profile);
 		// Arrays and the exact Set retain their entries separately.
 		retainedCanonicalProfileRefs +=
 			1 + event.profile.exclusions.length * 2 + event.profile.ancestorTargets.length;
 	}
-	events.sort(
-		(a, b) =>
-			a.interval.min - b.interval.min ||
-			a.interval.max - b.interval.max ||
-			a.set - b.set ||
-			compareIdentity(a.interval.id, b.interval.id) ||
-			compareIdentityLists(a.profile.exclusions, b.profile.exclusions) ||
-			compareIdentityLists(a.profile.ancestorTargets, b.profile.ancestorTargets) ||
-			a.ordinal - b.ordinal,
-	);
+	const orderedEvents = stableSorted(events, (a, b) => {
+		spend(work, "order-events");
+		const numeric =
+			a.interval.min - b.interval.min || a.interval.max - b.interval.max || a.set - b.set;
+		if (numeric) return numeric;
+		const identity = comparedIdentity(a.interval.id, b.interval.id, (units) =>
+			spend(work, "order-events", units),
+		);
+		if (identity) return identity;
+		const compareLists = (first: readonly string[], second: readonly string[]) => {
+			for (let index = 0; index < Math.min(first.length, second.length); index += 1) {
+				const compared = comparedIdentity(first[index]!, second[index]!, (units) =>
+					spend(work, "order-events", units),
+				);
+				if (compared) return compared;
+			}
+			return first.length - second.length;
+		};
+		return (
+			compareLists(a.profile.exclusions, b.profile.exclusions) ||
+			compareLists(a.profile.ancestorTargets, b.profile.ancestorTargets) ||
+			a.ordinal - b.ordinal
+		);
+	});
+	events = orderedEvents;
 	const hierarchy = events.find((event) => event.profile.hierarchy)?.profile.hierarchy;
 	const rankSpecs: Array<{ partition: string; profile: CompatibilityProfile }> = [];
 	const seenRanks = new Map<string, Set<CompatibilityProfile>>();
 	for (const event of events) {
 		const partition = event.interval.semantics.partition;
+		spend(work, "prepare-events");
 		let profiles = seenRanks.get(partition);
 		if (!profiles) {
 			profiles = new Set();
+			spend(work, "prepare-events");
 			seenRanks.set(partition, profiles);
 		}
+		spend(work, "prepare-events");
 		if (!profiles.has(event.profile)) {
+			spend(work, "prepare-events");
 			profiles.add(event.profile);
 			rankSpecs.push({ partition, profile: event.profile });
 		}
@@ -1018,27 +1237,38 @@ export function sweepIntervalPairs<A, B>(
 	// per-query sort.
 	const ranks = new Map<string, Map<CompatibilityProfile, number>>();
 	for (const [rank, spec] of rankSpecs.entries()) {
+		spend(work, "prepare-events");
 		let profiles = ranks.get(spec.partition);
 		if (!profiles) {
 			profiles = new Map();
+			spend(work, "prepare-events");
 			ranks.set(spec.partition, profiles);
 		}
+		spend(work, "prepare-events");
 		profiles.set(spec.profile, rank);
 	}
+	const retainedRankAndProfileIndexRefs =
+		profileBySemantics.size * 2 +
+		retainedProfiles.size +
+		seenRanks.size +
+		[...seenRanks.values()].reduce((total, profiles) => total + profiles.size, 0) +
+		rankSpecs.length +
+		ranks.size +
+		[...ranks.values()].reduce((total, profiles) => total + profiles.size, 0);
 	const makeIndex = (): BucketIndex<Value> => ({
 		buckets: new Map(),
 		activeLists: new Set(),
 		profileCounts: new Map(),
 		excludedByPartition: new Map(),
 		hierarchy,
-		partitionCounts: new RangeCount(hierarchy?.size ?? 0),
-		targetCounts: new RangeMaximum(hierarchy?.size ?? 0),
-		targetPositionCounts: new RangeCount(hierarchy?.size ?? 0),
+		partitionCounts: new RangeCount(hierarchy?.size ?? 0, work),
+		targetCounts: new RangeMaximum(hierarchy?.size ?? 0, work),
+		targetPositionCounts: new RangeCount(hierarchy?.size ?? 0, work),
 		partitionLists: new Map(),
 		targetLists: new Map(),
 		unpositionedLists: new Set(),
 		untargetedLists: new Set(),
-		exact: new ExactCompatibilityIndex(rankSpecs.length, hierarchy),
+		exact: new ExactCompatibilityIndex(rankSpecs.length, hierarchy, work),
 		totalBuckets: 0,
 		retainedExclusionRefs: 0,
 		retainedIndexRefs: 0,
@@ -1096,6 +1326,7 @@ export function sweepIntervalPairs<A, B>(
 			events.length * 2 +
 				work.peakRetainedProfileTrieNodes +
 				retainedCanonicalProfileRefs +
+				retainedRankAndProfileIndexRefs +
 				hierarchyCells +
 				exactNodes * 4 +
 				exactSummaryRefs +
@@ -1104,10 +1335,11 @@ export function sweepIntervalPairs<A, B>(
 		);
 	};
 	for (let order = 0; order < events.length; order += 1) {
+		spend(work, "activate-or-expire");
 		const event = events[order]!;
 		work.events += 1;
 		while (heap[0] && heap[0].interval.max < event.interval.min) {
-			remove(heapPop(heap)!, work);
+			remove(heapPop(heap, work)!, work);
 			work.expiryPops += 1;
 		}
 		const opposite = sameSet ? indexes[0] : indexes[event.set === 0 ? 1 : 0];
@@ -1118,13 +1350,29 @@ export function sweepIntervalPairs<A, B>(
 			const subtree = opposite.hierarchy?.subtree(event.interval.semantics.partition);
 			if (subtree) {
 				work.hierarchySubtreeQueries += 1;
-				const measured = opposite.targetPositionCounts.range(subtree[0], subtree[1]);
+				const measured = opposite.targetPositionCounts.range(subtree[0], subtree[1], work);
 				work.hierarchySubtreeSteps += measured.steps;
 				activeHierarchyExclusions = measured.value > 0;
 			}
-			lookup(work);
+			let eventExcludesActivePartition = false;
+			for (const exclusion of event.profile.exclusions) {
+				spend(work, "compatibility-query");
+				work.bucketLookups += 1;
+				work.bucketIndexOperations += 1;
+				work.exactQuerySteps += 1;
+				work.exactMembershipTests += 1;
+				if (opposite.buckets.has(exclusion)) {
+					eventExcludesActivePartition = true;
+					break;
+				}
+			}
+			spend(work, "compatibility-query");
+			work.bucketLookups += 1;
+			work.bucketIndexOperations += 1;
+			work.exactQuerySteps += 1;
+			work.exactMembershipTests += 1;
 			const needsExactQuery =
-				event.profile.exclusions.length > 0 ||
+				eventExcludesActivePartition ||
 				(opposite.excludedByPartition.get(event.interval.semantics.partition)?.size ?? 0) > 0 ||
 				activeHierarchyExclusions;
 			const activeCandidates = needsExactQuery
@@ -1138,6 +1386,7 @@ export function sweepIntervalPairs<A, B>(
 						? [eventCandidates, activeCandidates]
 						: [activeCandidates, eventCandidates];
 				for (const candidate of smaller) {
+					spend(work, "candidate-intersection", 2);
 					work.compatibilityQuerySteps += 1;
 					if (larger.has(candidate)) intersection.add(candidate);
 				}
@@ -1182,7 +1431,7 @@ export function sweepIntervalPairs<A, B>(
 			list,
 		};
 		append(list, node, work);
-		heapPush(heap, node);
+		heapPush(heap, node, work);
 		sampleRetainedState(0);
 	}
 	return work;
