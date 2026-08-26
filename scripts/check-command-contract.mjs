@@ -11,6 +11,7 @@ const audit = JSON.parse(
 const { cliSurface, cliContractRegistry } = await import(
 	join(root, "src", "cli", "commands", "run.ts")
 );
+const { runCommand } = await import(join(root, "src", "cli", "command-contract", "runner.ts"));
 
 let failures = 0;
 let checks = 0;
@@ -35,6 +36,14 @@ check(
 		JSON.stringify(expectedPaths.toSorted((left, right) => left.localeCompare(right))),
 );
 
+for (const entry of audit.entries) {
+	check(
+		`${entry.path} handler owner exists`,
+		fs.existsSync(join(root, entry.handlerOwner)),
+		entry.handlerOwner,
+	);
+}
+
 const contracts = cliContractRegistry().filter((entry) => entry.contract);
 check(
 	"the proof migrates exactly four commands",
@@ -43,6 +52,19 @@ check(
 );
 
 const byName = new Map(contracts.map((entry) => [entry.name, entry.contract]));
+const auditByPath = new Map(audit.entries.map((entry) => [entry.path, entry]));
+for (const entry of contracts) {
+	const audited = auditByPath.get(entry.name);
+	const owner = audited?.handlerOwner;
+	const definition =
+		owner && fs.existsSync(join(root, owner)) ? fs.readFileSync(join(root, owner), "utf8") : "";
+	check(
+		`${entry.name} owner defines the registered contract`,
+		entry.contract?.path.join(" ") === entry.name &&
+			definition.includes(`export const ${entry.name}Contract = defineCommand`),
+		owner ?? "missing audit entry",
+	);
+}
 const expectedPrerequisites = {
 	query: ["server", "board"],
 	update: ["server", "board", "doing"],
@@ -91,13 +113,55 @@ check(
 	commanderImports.map((file) => relative(root, file)).join(", "),
 );
 
+const publicRootFiles = fs
+	.readdirSync(join(root, "src", "cli", "command-contract"), { withFileTypes: true })
+	.filter((entry) => entry.isFile() && entry.name.endsWith(".ts"))
+	.map((entry) => join(root, "src", "cli", "command-contract", entry.name));
+const exposedAdapterTypes = publicRootFiles.filter((file) =>
+	/\b(CommandDependencies|ArgvParser|CommandHost|PrerequisiteResolver)\b/.test(
+		fs.readFileSync(file, "utf8"),
+	),
+);
+check(
+	"public root entrypoints hide adapter interfaces",
+	exposedAdapterTypes.length === 0,
+	exposedAdapterTypes.map((file) => relative(root, file)).join(", "),
+);
+check(
+	"runCommand has exactly two public arguments",
+	runCommand.length === 2,
+	String(runCommand.length),
+);
+
+const contractSource = fs.readFileSync(
+	join(root, "src", "cli", "command-contract", "contract.ts"),
+	"utf8",
+);
+for (const publicHandlerType of ["CommandContext", "CommandExecution", "PendingArtifact"]) {
+	check(
+		`handler interface retains ${publicHandlerType}`,
+		new RegExp(`export interface ${publicHandlerType}\\b`).test(contractSource),
+	);
+}
+
 const proofJson = fs.readFileSync(
 	join(root, "docs", "design", "command-contract-proof.json"),
 	"utf8",
 );
-for (const privateName of ["pendingArtifact", "artifactSchema", "stdout", "CommanderArgvParser"]) {
+for (const privateName of ["pendingArtifact", "artifactSchema", "CommanderArgvParser"]) {
 	check(`proof omits ${privateName}`, !proofJson.includes(privateName));
 }
+check("proof omits an internal stdout key", !/"stdout"\s*:/.test(proofJson));
+
+const proofMarkdown = fs.readFileSync(
+	join(root, "docs", "design", "command-contract-proof.md"),
+	"utf8",
+);
+check("generated usage never uses inline code", !/^Usage: `archboard/m.test(proofMarkdown));
+check(
+	"every generated usage is a fenced text block",
+	(proofMarkdown.match(/^Usage:\n\n```text\narchboard /gm) ?? []).length === contracts.length,
+);
 
 if (failures > 0) {
 	console.error(`\n${failures} of ${checks} command-contract checks failed.`);

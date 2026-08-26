@@ -31,6 +31,7 @@ export interface InputStage {
 	name: string;
 	when: "before-server" | "after-server" | "after-browser" | "after-read";
 	description: string;
+	rules?: readonly string[];
 	schema: z.ZodType;
 }
 

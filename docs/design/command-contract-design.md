@@ -5,19 +5,26 @@ The fixed review base is `43d0b982ac39346ae3057edf3c9fdffe400b2853`.
 
 ## Module and seam
 
-`src/cli/command-contract` is one deep module. Its interface is
-`CommandContract`, `runCommand`, bootstrap handling, and contract
-introspection. `src/cli/commands/run.ts` is the production adapter at that
+`src/cli/command-contract` is one deep module. Its public interface is
+`CommandContract`, the production-only two-argument `runCommand(contract,
+argv)`, bootstrap handling, and contract introspection.
+`CommandContext`, `CommandExecution`, and `PendingArtifact` are Archboard-owned
+parts of the typed handler interface and remain Commander-free, but they are
+not emitted by introspection. `src/cli/commands/run.ts` is the production adapter at that
 seam and remains the sole registry. The registry contains either a contract or
 a legacy handler. Query, update, viewport, and export use contracts in this
 proof. TASK-123.02 replaces the other entries and then deletes the legacy
 branch, raw parser helpers, and handler-owned output.
 
-The module has three internal seams. `ArgvParser` has the Commander adapter and
-a recording fake that returns a prepared invocation without parsing.
-`CommandHost` has process/filesystem and recording adapters.
-`PrerequisiteResolver` has server/browser and ordered recording adapters. The
-module keeps these seams private because callers need none of their mechanics.
+The module has three internal seams. `ArgvParser` isolates the real Commander
+adapter and permits a recording fake that returns a prepared invocation without
+parsing. `CommandHost` isolates process/filesystem behavior and permits a
+recording adapter. `PrerequisiteResolver` isolates ordered server/browser
+checks and permits an ordered fake. These seams are justified by their
+production and fake adapters, but their interfaces, dependency bundle, and
+implementations are private. The public runner has no optional dependency bag;
+its tests observe real stdout, temporary-file writes, and network effects
+through the two-argument interface.
 
 ## Single semantic owner
 

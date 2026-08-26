@@ -34,6 +34,7 @@ export function introspectContracts(entries: readonly RegistryContractEntry[]) {
 					name: stage.name,
 					when: stage.when,
 					description: stage.description,
+					rules: stage.rules ?? [],
 					schema: jsonSchema(stage.schema),
 				})),
 			},
