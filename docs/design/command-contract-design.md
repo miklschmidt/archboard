@@ -138,7 +138,10 @@ constituent IDs by exact ECMAScript UTF-16 code-unit order, replace each backsla
 each comma with `\,`, join the encoded IDs with a literal comma, then prefix the result with
 `obstacle:`. No other character is escaped. This keeps commas injective while preserving NUL,
 other controls, lone surrogates, and ordinary IDs byte for byte. The report schema rejects an
-obstacle reference whose `id` is not that exact derivation.
+obstacle reference whose `id` is not that exact derivation. It also requires canonical unique
+element, group, and library-attribution arrays; every attribution must name a constituent element;
+library components must have attribution; and grouped components must have no attribution, at
+least two constituent elements, and qualifying group evidence.
 
 The schema-v1 report exposes `broadPhaseComparisons`, whose public meaning is
 the number of semantically eligible x-overlapping pairs tested before the

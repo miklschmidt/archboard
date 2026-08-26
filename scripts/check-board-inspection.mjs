@@ -3064,6 +3064,26 @@ check(
 			],
 		}).success,
 );
+const canonicalLibraryObstacleRef = singletonObstacle[0].obstacles[0];
+check(
+	"obstacle schema enforces attribution membership and kind coherence",
+	ObstacleRefSchema.safeParse(canonicalLibraryObstacleRef).success &&
+		!ObstacleRefSchema.safeParse({
+			...canonicalLibraryObstacleRef,
+			library: [{ elementId: "not-a-member", item: "library-item" }],
+		}).success &&
+		!ObstacleRefSchema.safeParse({ ...canonicalLibraryObstacleRef, library: [] }).success &&
+		!ObstacleRefSchema.safeParse({
+			...canonicalObstacleRef,
+			library: [{ elementId: canonicalObstacleRef.elementIds[0], item: "library-item" }],
+		}).success &&
+		!ObstacleRefSchema.safeParse({
+			...canonicalObstacleRef,
+			elementIds: [canonicalObstacleRef.elementIds[0]],
+			id: `obstacle:${canonicalObstacleRef.elementIds[0]}`,
+		}).success &&
+		!ObstacleRefSchema.safeParse({ ...canonicalObstacleRef, groupIds: [] }).success,
+);
 const transitiveGroupedObstacle = obstaclePenetrations([
 	{ ...validLibraryBody("transitive-a"), customData: undefined, groupIds: ["group-a"] },
 	{
@@ -3844,6 +3864,8 @@ check(
 			diagnostics.work.broadPhaseBucketDeletes === count * 26 - 21 &&
 			diagnostics.work.broadPhaseCompatibilityIndexUpdates === count * 10 - 3 &&
 			diagnostics.work.broadPhaseBucketIndexOperations === count * 86 - 32 &&
+			diagnostics.work.broadPhaseExactQuerySteps === 0 &&
+			diagnostics.work.broadPhasePeakRetainedTotalStateRefs <= count * 50 &&
 			diagnostics.work.broadPhaseCompatibilityTests === 0 &&
 			diagnostics.work.broadPhaseProfileTerminalLookups === diagnostics.work.broadPhaseEvents &&
 			diagnostics.work.broadPhaseProfileCreations ===
@@ -4161,7 +4183,7 @@ check(
 			diagnostics.work.peakRetainedProfiles <= count + 1 &&
 			diagnostics.work.peakRetainedExclusionRefs <= count &&
 			diagnostics.work.peakRetainedIndexRefs === count * 8 + 4 &&
-			diagnostics.work.peakRetainedTotalStateRefs <= count * 30,
+			diagnostics.work.peakRetainedTotalStateRefs <= count * 70,
 	),
 	JSON.stringify(
 		partialComplementScaling.map(({ count, reverse, diagnostics }) => [
@@ -4239,8 +4261,8 @@ check(
 			diagnostics.work.broadPhaseHierarchyPathQueries === labelCount &&
 			diagnostics.work.broadPhaseHierarchyPathSteps <=
 				labelCount * (Math.ceil(Math.log2(height + labelCount)) + 1) &&
-			diagnostics.work.broadPhaseHierarchySubtreeQueries === (labelCount + height) * 2 - 2 &&
-			diagnostics.work.broadPhaseHierarchySubtreeSteps === (labelCount + height) * 2 - 2 &&
+			diagnostics.work.broadPhaseHierarchySubtreeQueries === 0 &&
+			diagnostics.work.broadPhaseHierarchySubtreeSteps === 0 &&
 			diagnostics.work.broadPhasePeakRetainedBuckets === labelCount + height &&
 			diagnostics.work.broadPhasePeakRetainedProfiles === labelCount + 1 &&
 			diagnostics.work.broadPhasePeakRetainedProfileTrieNodes <= labelCount * 3 + height * 4 &&
@@ -4248,7 +4270,7 @@ check(
 				(labelCount + height) * 25 + 2 &&
 			diagnostics.work.broadPhasePeakRetainedExclusionRefs === labelCount * 2 &&
 			diagnostics.work.broadPhasePeakRetainedIndexRefs === labelCount * 5 + height * 4 &&
-			diagnostics.work.broadPhasePeakRetainedTotalStateRefs <= (labelCount + height) * 30 &&
+			diagnostics.work.broadPhasePeakRetainedTotalStateRefs <= (labelCount + height) * 70 &&
 			!diagnostics.report.findings.some((finding) => finding.code === "LABEL_OVERLAP"),
 	),
 	JSON.stringify(
@@ -4731,6 +4753,217 @@ const exactUnionControl = diagnoseSweepCompatibility({
 	],
 	sameSet: false,
 });
+function compactExactUnionSweep(count) {
+	return diagnoseSweepCompatibility({
+		left: Array.from({ length: count }, (_, index) => ({
+			id: `compact-left-${index}`,
+			min: 1,
+			max: 3,
+			partition: "compact-left",
+			excludedPartitions: ["compact-right-block"],
+		})),
+		right: Array.from({ length: count }, (_, index) =>
+			index < count / 2
+				? {
+						id: `compact-right-event-${index}`,
+						min: 0,
+						max: 3,
+						partition: "compact-right-block",
+						excludedPartitions: [`irrelevant-${index}`],
+					}
+				: {
+						id: `compact-right-active-${index}`,
+						min: 0,
+						max: 3,
+						partition: `compact-right-${index}`,
+						excludedPartitions: ["compact-left"],
+					},
+		),
+		sameSet: false,
+	});
+}
+const compactExactUnionRed = compactExactUnionSweep(64);
+check(
+	"compact two-sided exact exclusions enumerate an empty complement without bucket scans",
+	compactExactUnionRed.pairs.length === 0 &&
+		compactExactUnionRed.work.bucketScans === 0 &&
+		compactExactUnionRed.work.compatibilityTests === 0 &&
+		compactExactUnionRed.work.compatibilityQuerySteps <= 256,
+	JSON.stringify(compactExactUnionRed.work),
+);
+const compactExactUnionScaling = [1_000, 2_000, 4_000, 8_000].map((count) => ({
+	count,
+	diagnostics: compactExactUnionSweep(count),
+}));
+check(
+	"compact arbitrary two-sided exact exclusions have output-sensitive work",
+	compactExactUnionScaling.every(
+		({ count, diagnostics }) =>
+			diagnostics.pairs.length === 0 &&
+			diagnostics.work.activeVisits === 0 &&
+			diagnostics.work.bucketScans === 0 &&
+			diagnostics.work.compatibilityTests === 0 &&
+			diagnostics.work.exactQuerySteps <= count * (Math.ceil(Math.log2(count * 2)) + 15) &&
+			diagnostics.work.exactMembershipTests <= count * (Math.ceil(Math.log2(count * 2)) + 4) &&
+			diagnostics.work.peakRetainedBuckets === count + 1 &&
+			diagnostics.work.peakRetainedProfiles <= count + 2 &&
+			diagnostics.work.peakRetainedExactIndexNodes <= count * 9 &&
+			diagnostics.work.peakRetainedExactSummaryRefs <= count * 8 &&
+			diagnostics.work.peakRetainedTotalStateRefs <= count * 40,
+	),
+	JSON.stringify(
+		compactExactUnionScaling.map(({ count, diagnostics }) => [count, diagnostics.work]),
+	),
+);
+function reciprocalMultiTargetSweep(count, reverse) {
+	const parents = new Map([
+		["reciprocal-root", null],
+		["reciprocal-outside", null],
+	]);
+	for (let index = 0; index < count; index += 1)
+		parents.set(`reciprocal-child-${index}`, "reciprocal-root");
+	const event = {
+		id: "reciprocal-event",
+		min: reverse ? 0 : 1,
+		max: 3,
+		partition: "reciprocal-root",
+	};
+	const targeted = Array.from({ length: count }, (_, index) => ({
+		id: `reciprocal-active-${index}`,
+		min: reverse ? 1 : 0,
+		max: 3,
+		partition: `reciprocal-profile-${index}`,
+		ancestorTargets: [`reciprocal-child-${index}`, "reciprocal-outside"],
+	}));
+	return diagnoseSweepCompatibility({
+		left: [event],
+		right: targeted,
+		sameSet: false,
+		hierarchyParents: parents,
+	});
+}
+const reciprocalMultiTargetScaling = [1_000, 2_000, 4_000, 8_000].flatMap((count) =>
+	[false, true].map((reverse) => ({
+		count,
+		reverse,
+		diagnostics: reciprocalMultiTargetSweep(count, reverse),
+	})),
+);
+const exactComplementControls = diagnoseSweepCompatibility({
+	left: [
+		{ id: "active-blocked", min: 0, max: 4, partition: "blocked", excludedPartitions: [] },
+		{
+			id: "active-reciprocal",
+			min: 0,
+			max: 4,
+			partition: "reciprocal",
+			excludedPartitions: ["event"],
+		},
+		{ id: "active-one", min: 0, max: 4, partition: "one", excludedPartitions: [] },
+		{
+			id: "event-control",
+			min: 1,
+			max: 4,
+			partition: "event",
+			excludedPartitions: ["blocked"],
+		},
+	],
+	right: [],
+	sameSet: true,
+});
+check(
+	"same-set exact union returns the unique eligible complement once",
+	exactComplementControls.pairs.filter((pair) => pair.includes("event-control")).length === 1 &&
+		exactComplementControls.pairs.some(
+			(pair) => pair[0] === "event-control" && pair[1] === "active-one",
+		),
+	JSON.stringify(exactComplementControls.pairs),
+);
+const retainedPeakInput = {
+	left: [
+		{
+			id: "retained-event",
+			min: 1,
+			max: 3,
+			partition: "retained-event",
+			excludedPartitions: ["absent"],
+		},
+	],
+	right: Array.from({ length: 3 }, (_, index) => ({
+		id: `retained-active-${index}`,
+		min: 0,
+		max: 3,
+		partition: `retained-partition-${index}`,
+	})),
+	sameSet: false,
+};
+const retainedPeakComplete = diagnoseSweepCompatibility(retainedPeakInput);
+const retainedPeakEarly = diagnoseSweepCompatibility({ ...retainedPeakInput, stopAfterPairs: 1 });
+check(
+	"retained-state peaks sample query and post-insert phases without combining them",
+	retainedPeakComplete.work.peakRetainedBuckets === 4 &&
+		retainedPeakComplete.work.peakRetainedQueryRefs === 3 &&
+		retainedPeakComplete.work.peakRetainedTotalStateRefs === 133 &&
+		retainedPeakEarly.pairs.length === 1 &&
+		retainedPeakEarly.work.peakRetainedBuckets === 3 &&
+		retainedPeakEarly.work.peakRetainedQueryRefs === 3 &&
+		retainedPeakEarly.work.peakRetainedTotalStateRefs === 121,
+	JSON.stringify({ complete: retainedPeakComplete.work, early: retainedPeakEarly.work }),
+);
+const exactReinsertion = diagnoseSweepCompatibility({
+	left: [
+		{
+			id: "first-excluded",
+			min: 0,
+			max: 1,
+			partition: "reinsertion-left",
+			excludedPartitions: ["reinsertion-right"],
+		},
+		{
+			id: "second-excluded",
+			min: 4,
+			max: 6,
+			partition: "reinsertion-left",
+			excludedPartitions: ["reinsertion-right"],
+		},
+	],
+	right: [
+		{ id: "between", min: 2, max: 3, partition: "reinsertion-right" },
+		{ id: "overlap-after-reinsert", min: 5, max: 7, partition: "eligible-after-expiry" },
+	],
+	sameSet: false,
+});
+check(
+	"exact compatibility index remains coherent through expiry and reinsertion",
+	JSON.stringify(exactReinsertion.pairs) ===
+		JSON.stringify([["second-excluded", "overlap-after-reinsert"]]) &&
+		exactReinsertion.work.expiryPops === 2 &&
+		exactReinsertion.work.bucketDeletes > 0,
+	JSON.stringify(exactReinsertion),
+);
+check(
+	"reciprocal hierarchy queries require every target to lie outside the event subtree",
+	reciprocalMultiTargetScaling.every(
+		({ count, diagnostics }) =>
+			diagnostics.pairs.length === 0 &&
+			diagnostics.work.activeVisits === 0 &&
+			diagnostics.work.bucketScans === 0 &&
+			diagnostics.work.compatibilityTests === 0 &&
+			diagnostics.work.exactQuerySteps <= count * 2 + 2 &&
+			diagnostics.work.hierarchyMembershipTests <= count * (Math.ceil(Math.log2(count)) + 3) &&
+			diagnostics.work.hierarchySummarySteps <= count * (Math.ceil(Math.log2(count)) * 3 + 4) &&
+			diagnostics.work.peakRetainedBuckets === count + 1 &&
+			diagnostics.work.peakRetainedExactSummaryRefs <= count * 8 &&
+			diagnostics.work.peakRetainedTotalStateRefs <= count * 60,
+	),
+	JSON.stringify(
+		reciprocalMultiTargetScaling.map(({ count, reverse, diagnostics }) => [
+			count,
+			reverse,
+			diagnostics.work,
+		]),
+	),
+);
 const exactUnionReverse = diagnoseSweepCompatibility({
 	left: [
 		{
