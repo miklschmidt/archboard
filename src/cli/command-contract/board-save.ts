@@ -57,7 +57,7 @@ const BoardSavePanesSchema = z.looseObject({
 });
 
 export const BoardSaveSuccessResultSchema = z.looseObject({
-	success: z.boolean(),
+	success: z.literal(true),
 	board: z.string(),
 	identity: BoardAddressSchema,
 	saveKind: z.enum(["same-board", "named", "branch"]).optional(),
@@ -236,8 +236,12 @@ export const boardSaveContract = defineCommand({
 				...(options.level ? { level: options.level } : {}),
 				...(options.force ? { force: true } : {}),
 			});
+			if (result.success !== true) {
+				// Keep an invalid server reply intact so the command boundary rejects it.
+				return { result: result as never };
+			}
 			return {
-				result: result as unknown as BoardSaveSuccessResult,
+				result: { ...result, success: true as const } as BoardSaveSuccessResult,
 				diagnostics: successDiagnostics(result),
 			};
 		} catch (error) {
@@ -245,9 +249,9 @@ export const boardSaveContract = defineCommand({
 			if (!conflict) throw error;
 			return {
 				result: {
-					success: false,
-					conflict,
-				} as unknown as BoardSaveConflictResult,
+					success: false as const,
+					conflict: { ...conflict },
+				},
 				outcome: "board-conflict" as const,
 				diagnostics: [conflict.message],
 			};

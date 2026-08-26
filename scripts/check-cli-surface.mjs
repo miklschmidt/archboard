@@ -162,6 +162,13 @@ const server = Bun.serve({
 			return Response.json({ success: true, message: "Viewport updated" });
 		}
 		if (request.method === "POST" && url.pathname === "/api/boards/save") {
+			if (url.searchParams.get("board") === "false-success") {
+				return Response.json({
+					success: false,
+					board: "false-success",
+					identity: { board: "false-success", variant: "current" },
+				});
+			}
 			const conflict = {
 				board: "save-conflict",
 				file: "/vault/save-conflict.excalidraw.md",
@@ -417,6 +424,12 @@ try {
 			!malformedHeld.stderr.includes("has stopped saving"),
 		malformedHeld.stderr,
 	);
+	const falseSuccess = await cli(
+		["board", "save", "--board", "false-success", "--doing", "checking discrimination"],
+		{ url: canvasUrl },
+	);
+	check("board save rejects success:false without a conflict", falseSuccess.status === 1);
+	check("board save false success reaches no structured stdout", falseSuccess.stdout === "");
 
 	const lateSaveClosed = await cli(["board", "save", "--unknown", "--board", "contract"], {
 		url: closedUrl,

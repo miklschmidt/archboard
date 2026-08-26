@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import { z } from "zod";
 import type {
 	AnyCommandContract,
 	CommandOutcomeDeclaration,
@@ -7,6 +7,7 @@ import type {
 	PendingArtifact,
 } from "../contract.js";
 import { CliUsageError } from "../contract.js";
+import { HoldReportSchema } from "../schemas.js";
 import { CommanderArgvParser } from "./commander-adapter.js";
 import { processCommandHost } from "./host.js";
 import { applyHeld, commitArtifact, presentResult } from "./presentation.js";
@@ -62,13 +63,17 @@ export async function executeCommand(
 	const execution = await contract.handler(input, context);
 	const outcome = selectedOutcome(contract, execution.outcome);
 	const outputCase = selectedCase(contract, input);
-	const held = processCommandHost.held();
 	const heldPolicy = outcome?.held ?? outputCase.held;
+	const observedHeld = processCommandHost.held();
+	const held =
+		heldPolicy === "none" || observedHeld === null || observedHeld === undefined
+			? observedHeld
+			: HoldReportSchema.parse(observedHeld);
 	const publicResult = applyHeld(execution.result, held, heldPolicy);
 	const validatedResult = contract.result.parse(publicResult);
 	const artifact = outputCase.artifact
 		? outputCase.artifact.parse(execution.pendingArtifact)
-		: undefined;
+		: z.undefined().parse(execution.pendingArtifact);
 	commitArtifact(outputCase, artifact as PendingArtifact | undefined);
 	presentResult({
 		outputCase,
