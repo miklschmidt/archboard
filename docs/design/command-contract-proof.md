@@ -1063,6 +1063,191 @@ Public result JSON Schema:
 }
 ```
 
+## repo
+
+Routes repository registry subcommands.
+
+Usage:
+
+```text
+archboard Usage: repo list [--text] | repo add [dir] | repo forget <identity>
+```
+
+Output: json (Namespace refusal).
+
+Prerequisites: none. Effects: none.
+
+REST relationships:
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"not": {}
+}
+```
+
+## repo list
+
+Reads the machine-local repository registry.
+
+Usage:
+
+```text
+archboard repo list [--text]
+```
+
+Output: json (Repository registry); text (Human-readable registry).
+
+Prerequisites: none. Effects: local-read.
+
+REST relationships:
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"anyOf": [
+		{
+			"type": "object",
+			"properties": {
+				"success": {
+					"type": "boolean",
+					"const": true
+				},
+				"registry": {
+					"type": "string"
+				},
+				"repos": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"repo": {
+								"type": "string"
+							},
+							"root": {
+								"type": "string"
+							},
+							"source": {
+								"type": "string",
+								"enum": ["declared", "observed"]
+							},
+							"addedAt": {
+								"type": "string"
+							},
+							"exists": {
+								"type": "boolean"
+							}
+						},
+						"required": ["repo", "root", "source", "addedAt"],
+						"additionalProperties": false
+					}
+				}
+			},
+			"required": ["success", "registry", "repos"],
+			"additionalProperties": false
+		},
+		{
+			"type": "string"
+		}
+	]
+}
+```
+
+## repo add
+
+Derives a checkout identity from git and records its local root.
+
+Usage:
+
+```text
+archboard repo add [dir]
+```
+
+Output: json (Registered checkout).
+
+Prerequisites: none. Effects: local-read, local-write.
+
+REST relationships:
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean",
+			"const": true
+		},
+		"repo": {
+			"type": "string"
+		},
+		"root": {
+			"type": "string"
+		},
+		"source": {
+			"type": "string",
+			"enum": ["declared", "observed"]
+		},
+		"addedAt": {
+			"type": "string"
+		},
+		"registry": {
+			"type": "string"
+		}
+	},
+	"required": ["success", "repo", "root", "source", "addedAt", "registry"],
+	"additionalProperties": false
+}
+```
+
+## repo forget
+
+Removes one identity from the machine-local registry.
+
+Usage:
+
+```text
+archboard repo forget <identity>
+```
+
+Output: json (Forget receipt).
+
+Prerequisites: none. Effects: local-read, local-write.
+
+REST relationships:
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"success": {
+			"type": "boolean",
+			"const": true
+		},
+		"repo": {
+			"type": "string"
+		},
+		"forgotten": {
+			"type": "boolean"
+		},
+		"registry": {
+			"type": "string"
+		}
+	},
+	"required": ["success", "repo", "forgotten", "registry"],
+	"additionalProperties": false
+}
+```
+
 ## board save
 
 Writes or branches a board note and returns structured save or conflict state.
@@ -1394,6 +1579,117 @@ Public result JSON Schema:
 			"type": "string"
 		}
 	]
+}
+```
+
+## inject
+
+Routes injection status and test commands.
+
+Usage:
+
+```text
+archboard inject status | inject test [--note "..."] [--loud]
+```
+
+Output: json (Namespace refusal).
+
+Prerequisites: none. Effects: none.
+
+REST relationships:
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"not": {}
+}
+```
+
+## inject status
+
+Reports the server-start injection decision and target.
+
+Usage:
+
+```text
+archboard inject status
+```
+
+Output: json (Injection status).
+
+Prerequisites: server. Effects: read.
+
+REST relationships:
+
+- GET `/api/injection`, one. Read injection status
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"additionalProperties": {}
+}
+```
+
+## inject test
+
+Sends one explicit injection probe, quietly unless loud is selected.
+
+Usage:
+
+```text
+archboard inject test [--note "..."] [--loud]
+```
+
+Output: json (Injection probe result).
+
+Prerequisites: server. Effects: write.
+
+REST relationships:
+
+- POST `/api/injection/test`, one. Send the injection probe
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"additionalProperties": {}
 }
 ```
 
