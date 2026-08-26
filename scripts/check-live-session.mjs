@@ -445,6 +445,7 @@ const paneSnapshot = () =>
 	evalInPage(`(() => {
   const app = ${APP};
   if (!app) return { error: 'no Excalidraw app instance' };
+  const canonicalise = ${canonicalise.toString()};
   const elementFields = ${elementFields.toString()};
   const ignored = ${JSON.stringify([...IGNORED])};
   return {
