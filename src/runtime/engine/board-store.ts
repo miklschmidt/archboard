@@ -94,7 +94,7 @@ function newBoardState(identity: BoardIdentity): BoardState {
 // first-time user has something in front of them and something to name.
 //
 // Its note is `<vault>/.archboard/scratch.excalidraw.md`, and the canvas
-// adopts whatever is there when it starts (`adoptScratchBoard` in server.ts).
+// adopts whatever is there when it starts (`adoptScratchBoard` in the server application).
 // The path is not resolved here, because this module is loaded by processes
 // that have no vault and no business demanding one.
 export const SCRATCH_KEY = boardKey(makeIdentity({ board: SCRATCH_BOARD }));

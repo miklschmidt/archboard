@@ -50,7 +50,7 @@
 // the edit. Panes are told before the edit instead:
 // `onBoardLockChanged` is where that news goes, and the server turns it into a
 // `board_lock` message. Whether a pane can hear it is the pane's problem and it
-// fails closed — see `frontend/src/canvas/useCanvasSession.ts`.
+// fails closed — see `src/ui/canvas/useCanvasSession.ts`.
 //
 // AND AN AGENT MAY CLAIM A BOARD FOR LONGER THAN ONE WRITE. `claimBoard` is
 // that, and the section on it below is where the reasoning lives: a claim is a
@@ -67,6 +67,7 @@ import path from "node:path";
 import { VAULT_STATE_DIR, normalizeBoardKey, requireVaultRoot } from "./board.js";
 import { kept } from "./hot.js";
 import { forgetRememberedVersion } from "./board-version.js";
+import logger from "./logger.js";
 import {
 	CLAIM_DEFAULT_MS,
 	CLAIM_LEASE_MS,
@@ -572,7 +573,9 @@ function sweepBoardLocks(): void {
 			sweepHolder().also?.(board);
 		} catch (error) {
 			// A passenger that throws must not stop the lock from being watched.
-			void error;
+			logger.warn(`Board lock sweep passenger failed for "${board}"; lock watch continues.`, {
+				error,
+			});
 		}
 		// A board whose release is still lingering is one this canvas is in the
 		// middle of telling the panes about. Saying "free" here would undo the
@@ -923,7 +926,7 @@ function announce(board: string, holder: LockHolder | null): void {
 //
 // In `kept()` rather than module scope: a hot reload rebuilds module scope, and
 // a linger timer left behind by the old copy would fire into a sink the new
-// copy has replaced (ADR 0014, `src/core/hot.ts`).
+// copy has replaced (ADR 0014, `src/runtime/engine/hot.ts`).
 
 function announced(): Map<string, string> {
 	return kept("board-lock-announced", () => new Map<string, string>());

@@ -377,7 +377,7 @@ export function classifyBoardSave(sourceKey: string, targetKey: string): BoardSa
  *
  * There is a second case this cannot see, and the save route adds it: saving a
  * board that has STOPPED SAVING somewhere else (ADR 0006, TASK-079). That is
- * spelt out where the panes are chosen in `src/server.ts`, because whether a
+ * spelt out where the panes are chosen in the server application, because whether a
  * board is held is not something this function is told. Briefly: the two notes
  * hold one drawing, and the board left behind is about to go back to the
  * version another editor wrote, so a pane kept on it would show the human

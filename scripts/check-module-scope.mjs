@@ -48,6 +48,7 @@ const fixtureFiles = fs
 const ENTRIES = [
 	path.join(repoRoot, "src", "dev-canvas.ts"),
 	path.join(repoRoot, "src", "server.ts"),
+	path.join(repoRoot, "src", "server", "canvas", "lib", "application.ts"),
 ];
 
 // TypeScript 7's native compiler no longer exposes createSourceFile from the
