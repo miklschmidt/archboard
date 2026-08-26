@@ -158,10 +158,11 @@ note archboard did not write. About fifteen seconds.
   2,000,001 limit attempt. Its package checks run with no canvas process, parse JSON through the
   exported schema, cover text and strict exits 6/7/8, and compare vault paths, bytes, and mtimes
   before and after every read. Performance cases import the module-root `diagnostics.ts` entrypoint
-  to count every profile snapshot/trie step, compatibility query/test, bucket
+  to count every profile snapshot/trie step, compatibility query step/bucket test/hierarchy predicate, bucket
   lookup/update/delete, hierarchy path/subtree/index step, eligible visit, expiry, and path check.
-  Peak counters pin retained buckets, profiles, exclusion and index references, and selected
-  hierarchy parents. Sparse, distinct-profile, shared-ancestor, and dense 1k/2k/4k/8k cases pin
+  Peak counters total both live cross-set indexes and pin retained buckets, profiles, exclusion and
+  index references, all sweep-owned state, and selected hierarchy parents. Sparse,
+  partial-complement, distinct-profile, shared-ancestor, and dense 1k/2k/4k/8k cases pin
   cleanup, time, and memory independently of the public comparison count. Separate boundary-node
   and dense hierarchy matrices cover model preprocessing. Mutable-set reuse proves snapshots use
   exact current content. These counters are development evidence and do not appear in the product

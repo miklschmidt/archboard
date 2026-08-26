@@ -131,7 +131,9 @@ each side. If IEEE-754 arithmetic cannot represent all four exact deltas,
 coverage, so strict mode exits 8. A null `affectedBBox` still means the record
 has no finite x/y location.
 
-Schema-v1 obstacle references derive `id` from `elementIds`; callers cannot choose it. Sort the
+Schema-v1 obstacle references derive `id` from `elementIds`; callers cannot choose it. The schema
+requires `elementIds` and `groupIds` to be unique and exactly sorted, and requires library entries
+to have unique element IDs in the same order. Sort the
 constituent IDs by exact ECMAScript UTF-16 code-unit order, replace each backslash with `\\` and
 each comma with `\,`, join the encoded IDs with a literal comma, then prefix the result with
 `obstacle:`. No other character is escaped. This keeps commas injective while preserving NUL,

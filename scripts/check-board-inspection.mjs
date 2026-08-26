@@ -17,9 +17,8 @@ const {
 	ObstacleRefSchema,
 	formatInspectionText,
 } = await import(src("runtime/board-inspection/index.ts"));
-const { inspectBoardDiagnostics, diagnoseMutableProfileSnapshots } = await import(
-	src("runtime/board-inspection/diagnostics.ts")
-);
+const { inspectBoardDiagnostics, diagnoseMutableProfileSnapshots, diagnoseSweepCompatibility } =
+	await import(src("runtime/board-inspection/diagnostics.ts"));
 const { compareBoards } = await import(src("runtime/engine/compare.ts"));
 const { renderBoardNote } = await import(src("runtime/engine/board.ts"));
 const { ingestScene } = await import(src("runtime/engine/board-io.ts"));
@@ -3036,6 +3035,35 @@ check(
 	!ObstacleRefSchema.safeParse({ ...groupedObstacle[0].obstacles[0], id: "obstacle:a,b,c" })
 		.success,
 );
+const canonicalObstacleRef = groupedObstacle[0].obstacles[0];
+check(
+	"obstacle schema requires canonical element, group, and library arrays",
+	ObstacleRefSchema.safeParse(canonicalObstacleRef).success &&
+		!ObstacleRefSchema.safeParse({
+			...canonicalObstacleRef,
+			elementIds: canonicalObstacleRef.elementIds.toReversed(),
+		}).success &&
+		!ObstacleRefSchema.safeParse({
+			...canonicalObstacleRef,
+			elementIds: [canonicalObstacleRef.elementIds[0], canonicalObstacleRef.elementIds[0]],
+		}).success &&
+		!ObstacleRefSchema.safeParse({ ...canonicalObstacleRef, groupIds: ["z", "a"] }).success &&
+		!ObstacleRefSchema.safeParse({ ...canonicalObstacleRef, groupIds: ["g", "g"] }).success &&
+		!ObstacleRefSchema.safeParse({
+			...canonicalObstacleRef,
+			library: [
+				{ elementId: "z", item: "one" },
+				{ elementId: "a", item: "two" },
+			],
+		}).success &&
+		!ObstacleRefSchema.safeParse({
+			...canonicalObstacleRef,
+			library: [
+				{ elementId: "a", item: "one" },
+				{ elementId: "a", item: "two" },
+			],
+		}).success,
+);
 const transitiveGroupedObstacle = obstaclePenetrations([
 	{ ...validLibraryBody("transitive-a"), customData: undefined, groupIds: ["group-a"] },
 	{
@@ -3811,18 +3839,18 @@ check(
 		({ count, diagnostics }) =>
 			diagnostics.work.broadPhaseCompatibleVisits === 0 &&
 			diagnostics.work.broadPhaseBucketScans === 0 &&
-			diagnostics.work.broadPhaseBucketLookups === count * 32 - 11 &&
-			diagnostics.work.broadPhaseBucketUpdates === count * 25 &&
-			diagnostics.work.broadPhaseBucketDeletes === count * 25 - 21 &&
-			diagnostics.work.broadPhaseCompatibilityIndexUpdates === count * 2 - 1 &&
-			diagnostics.work.broadPhaseBucketIndexOperations === count * 82 - 32 &&
+			diagnostics.work.broadPhaseBucketLookups === count * 34 - 11 &&
+			diagnostics.work.broadPhaseBucketUpdates === count * 26 &&
+			diagnostics.work.broadPhaseBucketDeletes === count * 26 - 21 &&
+			diagnostics.work.broadPhaseCompatibilityIndexUpdates === count * 10 - 3 &&
+			diagnostics.work.broadPhaseBucketIndexOperations === count * 86 - 32 &&
 			diagnostics.work.broadPhaseCompatibilityTests === 0 &&
 			diagnostics.work.broadPhaseProfileTerminalLookups === diagnostics.work.broadPhaseEvents &&
 			diagnostics.work.broadPhaseProfileCreations ===
 				diagnostics.work.broadPhaseCompatibilityProfiles &&
 			diagnostics.work.broadPhasePeakRetainedBuckets <= 1 &&
 			diagnostics.work.broadPhasePeakRetainedProfiles <= 1 &&
-			diagnostics.work.broadPhasePeakRetainedIndexRefs <= 2 &&
+			diagnostics.work.broadPhasePeakRetainedIndexRefs <= 5 &&
 			diagnostics.work.broadPhaseEvents === count * 6 &&
 			diagnostics.work.hierarchyEvents === count * 2 &&
 			diagnostics.work.hierarchyCandidateVisits === 0 &&
@@ -3889,7 +3917,7 @@ check(
 		denseDistinctDiagnostics.work.broadPhasePeakRetainedExclusionRefs <=
 			denseDistinctConnectorCount &&
 		denseDistinctDiagnostics.work.broadPhasePeakRetainedIndexRefs <=
-			denseDistinctConnectorCount * 2 &&
+			denseDistinctConnectorCount * 5 &&
 		denseDistinctDiagnostics.report.clean,
 	JSON.stringify(denseDistinctDiagnostics.work),
 );
@@ -4027,6 +4055,124 @@ check(
 	),
 );
 
+function partialComplementLabelBoard(count) {
+	const labels = Array.from({ length: count }, (_, index) => ({
+		id: `partial-label-${count}-${index}`,
+		type: "text",
+		x: count + 1,
+		y: count + 1 + index * 2,
+		width: 1,
+		height: 1,
+		angle: 0,
+		fontFamily: 5,
+		text: `${index}`,
+		containerId: `partial-owner-${count - 1}`,
+	}));
+	return [
+		...Array.from({ length: count }, (_, index) =>
+			semanticNode(`partial-owner-${index}`, {
+				x: index,
+				y: index,
+				width: (count - index) * 4,
+				height: (count - index) * 4,
+				...(index === count - 1
+					? { boundElements: labels.map((label) => ({ id: label.id, type: "text" })) }
+					: {}),
+			}),
+		),
+		semanticNode(`partial-unrelated-${count}`, {
+			x: count,
+			y: count * 10,
+			width: count * 2,
+			height: 1,
+		}),
+		...labels,
+	];
+}
+const partialComplementDiagnostics = [32, 64, 128, 256].map((count) => ({
+	count,
+	diagnostics: inspectBoardDiagnostics(partialComplementLabelBoard(count)),
+}));
+check(
+	"two-sided hierarchy exclusions enumerate only the partial complement",
+	partialComplementDiagnostics.every(
+		({ count, diagnostics }) =>
+			diagnostics.report.broadPhaseComparisons <= count + 1 &&
+			diagnostics.work.broadPhaseBucketScans <= count * 4 &&
+			diagnostics.work.broadPhaseCompatibilityTests <= count * 4,
+	),
+	JSON.stringify(
+		partialComplementDiagnostics.map(({ count, diagnostics }) => [count, diagnostics.work]),
+	),
+);
+
+function partialComplementSweep(count, reverse) {
+	const parents = new Map();
+	for (let index = 0; index < count; index += 1)
+		parents.set(`chain-${index}`, index === 0 ? null : `chain-${index - 1}`);
+	parents.set("unrelated", null);
+	const labels = Array.from({ length: count }, (_, index) => ({
+		id: `label-${index}`,
+		min: reverse ? 0 : 1,
+		max: 3,
+		partition: `label-${index}`,
+		ancestorTargets: [`chain-${count - 1}`],
+	}));
+	const nodes = [
+		...Array.from({ length: count }, (_, index) => ({
+			id: `node-${index}`,
+			min: reverse ? 1 : 0,
+			max: 3,
+			partition: `chain-${index}`,
+		})),
+		{
+			id: "node-unrelated",
+			min: reverse ? 1 : 0,
+			max: 3,
+			partition: "unrelated",
+		},
+	];
+	return diagnoseSweepCompatibility({
+		left: labels,
+		right: nodes,
+		sameSet: false,
+		hierarchyParents: parents,
+	});
+}
+const partialComplementScaling = [1_000, 2_000, 4_000, 8_000].flatMap((count) =>
+	[false, true].map((reverse) => ({
+		count,
+		reverse,
+		diagnostics: partialComplementSweep(count, reverse),
+	})),
+);
+check(
+	"partial-complement hierarchy queries stay bounded in both event orientations",
+	partialComplementScaling.every(
+		({ count, diagnostics }) =>
+			diagnostics.pairs.length === count &&
+			diagnostics.work.activeVisits === count &&
+			diagnostics.work.bucketScans === count &&
+			diagnostics.work.compatibilityTests === count &&
+			diagnostics.work.compatibilityQuerySteps <= count * 3 &&
+			diagnostics.work.hierarchyMembershipTests <= count * 2 &&
+			diagnostics.work.hierarchySubtreeSteps <= count * 50 &&
+			diagnostics.work.peakRetainedBuckets === count * 2 + 1 &&
+			diagnostics.work.peakRetainedProfiles <= count + 1 &&
+			diagnostics.work.peakRetainedExclusionRefs <= count &&
+			diagnostics.work.peakRetainedIndexRefs === count * 8 + 4 &&
+			diagnostics.work.peakRetainedTotalStateRefs <= count * 30,
+	),
+	JSON.stringify(
+		partialComplementScaling.map(({ count, reverse, diagnostics }) => [
+			count,
+			reverse,
+			diagnostics.pairs.length,
+			diagnostics.work,
+		]),
+	),
+);
+
 function distinctConflictingLabelBoard(height, labelCount) {
 	const labels = Array.from({ length: labelCount }, (_, index) => ({
 		id: `profile-label-${height}-${index}`,
@@ -4091,16 +4237,18 @@ check(
 			diagnostics.work.broadPhaseProfileCreations ===
 				diagnostics.work.broadPhaseCompatibilityProfiles &&
 			diagnostics.work.broadPhaseHierarchyPathQueries === labelCount &&
-			diagnostics.work.broadPhaseHierarchyPathSteps === labelCount * 2 &&
-			diagnostics.work.broadPhaseHierarchySubtreeQueries === 0 &&
-			diagnostics.work.broadPhaseHierarchySubtreeSteps === 0 &&
-			diagnostics.work.broadPhasePeakRetainedBuckets === labelCount &&
+			diagnostics.work.broadPhaseHierarchyPathSteps <=
+				labelCount * (Math.ceil(Math.log2(height + labelCount)) + 1) &&
+			diagnostics.work.broadPhaseHierarchySubtreeQueries === (labelCount + height) * 2 - 2 &&
+			diagnostics.work.broadPhaseHierarchySubtreeSteps === (labelCount + height) * 2 - 2 &&
+			diagnostics.work.broadPhasePeakRetainedBuckets === labelCount + height &&
 			diagnostics.work.broadPhasePeakRetainedProfiles === labelCount + 1 &&
 			diagnostics.work.broadPhasePeakRetainedProfileTrieNodes <= labelCount * 3 + height * 4 &&
 			diagnostics.work.broadPhasePeakRetainedHierarchyIndexCells <=
-				(labelCount + height) * 10 + 2 &&
+				(labelCount + height) * 25 + 2 &&
 			diagnostics.work.broadPhasePeakRetainedExclusionRefs === labelCount * 2 &&
-			diagnostics.work.broadPhasePeakRetainedIndexRefs === labelCount * 3 &&
+			diagnostics.work.broadPhasePeakRetainedIndexRefs === labelCount * 5 + height * 4 &&
+			diagnostics.work.broadPhasePeakRetainedTotalStateRefs <= (labelCount + height) * 30 &&
 			!diagnostics.report.findings.some((finding) => finding.code === "LABEL_OVERLAP"),
 	),
 	JSON.stringify(
@@ -4145,7 +4293,7 @@ check(
 			diagnostics.work.containerBoundaryCandidateVisits === 0 &&
 			diagnostics.work.containerBoundaryBucketScans === 0 &&
 			diagnostics.work.containerBoundaryPeakRetainedBuckets <= 1 &&
-			diagnostics.work.containerBoundaryPeakRetainedIndexRefs <= 1,
+			diagnostics.work.containerBoundaryPeakRetainedIndexRefs <= 4,
 	),
 	JSON.stringify(
 		sparseContainerDiagnostics.map(({ count, diagnostics }) => [count, diagnostics.work]),
@@ -4556,6 +4704,113 @@ for (let sample = 0; sample < 8; sample += 1) {
 		`semantic sweep matches brute-force eligible x-overlap oracle ${sample}`,
 		report.broadPhaseComparisons === expected,
 		`${report.broadPhaseComparisons} versus ${expected}`,
+	);
+}
+
+const exactUnionControl = diagnoseSweepCompatibility({
+	left: [
+		{
+			id: "event\0control",
+			min: 1,
+			max: 2,
+			partition: "event\0control",
+			excludedPartitions: ["active,a", "active\\b"],
+		},
+	],
+	right: [
+		{ id: "blocked-comma", min: 0, max: 3, partition: "active,a" },
+		{ id: "blocked-slash", min: 0, max: 3, partition: "active\\b" },
+		{
+			id: "blocked-reciprocal",
+			min: 0,
+			max: 3,
+			partition: "active\u001fcontrol",
+			excludedPartitions: ["event\0control"],
+		},
+		{ id: "eligible-control", min: 0, max: 3, partition: "eligible\ud800" },
+	],
+	sameSet: false,
+});
+const exactUnionReverse = diagnoseSweepCompatibility({
+	left: [
+		{
+			id: "active-reciprocal",
+			min: 0,
+			max: 3,
+			partition: "active",
+			excludedPartitions: ["event"],
+		},
+		{ id: "active-eligible", min: 0, max: 3, partition: "eligible" },
+	],
+	right: [{ id: "event", min: 1, max: 2, partition: "event" }],
+	sameSet: false,
+});
+const exactUnionSameSet = diagnoseSweepCompatibility({
+	left: [
+		{ id: "same-a", min: 0, max: 4, partition: "same", excludedPartitions: ["same"] },
+		{ id: "same-b", min: 1, max: 3, partition: "same", excludedPartitions: ["same"] },
+		{ id: "other", min: 2, max: 5, partition: "other", excludedPartitions: ["other"] },
+	],
+	right: [],
+	sameSet: true,
+});
+check(
+	"exact two-sided exclusions preserve controls, orientations, and same-set uniqueness",
+	JSON.stringify(exactUnionControl.pairs) ===
+		JSON.stringify([["event\0control", "eligible-control"]]) &&
+		JSON.stringify(exactUnionReverse.pairs) === JSON.stringify([["active-eligible", "event"]]) &&
+		JSON.stringify(exactUnionSameSet.pairs) ===
+			JSON.stringify([
+				["other", "same-a"],
+				["other", "same-b"],
+			]),
+);
+
+let semanticSweepSeed = 0x5119;
+const semanticRandom = () =>
+	(semanticSweepSeed = (semanticSweepSeed * 1_103_515_245 + 12_345) >>> 0) / 2 ** 32;
+for (let sample = 0; sample < 8; sample += 1) {
+	const makeSide = (side) =>
+		Array.from({ length: 18 }, (unused, index) => {
+			const min = Math.floor(semanticRandom() * 30);
+			const partition = `${side}-partition-${index % 7}`;
+			const excludedPartitions = Array.from({ length: 7 }, (entry, candidate) => candidate)
+				.filter(() => semanticRandom() < 0.18)
+				.map((candidate) => `${side === "left" ? "right" : "left"}-partition-${candidate}`);
+			return {
+				id: `${side}-${sample}-${index}`,
+				min,
+				max: min + 1 + Math.floor(semanticRandom() * 8),
+				partition,
+				excludedPartitions,
+			};
+		});
+	const left = makeSide("left"),
+		right = makeSide("right");
+	const actual = diagnoseSweepCompatibility({ left, right, sameSet: false }).pairs;
+	const expected = [];
+	for (const a of left)
+		for (const b of right)
+			if (
+				a.min <= b.max &&
+				b.min <= a.max &&
+				!a.excludedPartitions.includes(b.partition) &&
+				!b.excludedPartitions.includes(a.partition)
+			)
+				expected.push([a.id, b.id]);
+	const actualSet = new Set(actual.map((pair) => JSON.stringify(pair)));
+	const expectedSet = new Set(expected.map((pair) => JSON.stringify(pair)));
+	const reversed = diagnoseSweepCompatibility({
+		left: left.toReversed(),
+		right: right.toReversed(),
+		sameSet: false,
+	}).pairs;
+	check(
+		`two-sided semantic sweep matches brute force and stable order ${sample}`,
+		actual.length === expected.length &&
+			actualSet.size === actual.length &&
+			[...expectedSet].every((pair) => actualSet.has(pair)) &&
+			JSON.stringify(reversed) === JSON.stringify(actual),
 	);
 }
 
