@@ -520,7 +520,7 @@ const { readBoardFile, readNote } = await import(src("runtime/engine/board-io.ts
 			specs,
 		);
 
-		const runSrc = fs.readFileSync(path.join(repoRoot, "src/cli/run.ts"), "utf8");
+		const runSrc = fs.readFileSync(path.join(repoRoot, "src/cli/commands/run.ts"), "utf8");
 		check(
 			"  and the CLI help teaches the same ones",
 			named.every((word) => runSrc.includes(word)),
