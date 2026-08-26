@@ -12,11 +12,17 @@ export function compareIdentityLists(a: readonly string[], b: readonly string[])
 	return a.length - b.length;
 }
 
-/** Schema-v1 obstacle identity: exact-sort, escape backslash/comma only, then comma-join. */
+/** Schema-v1 obstacle identity from schema-validated canonical constituent ids. */
 export function obstacleIdentity(values: readonly string[]): string {
-	const encoded = values
-		.toSorted(compareIdentity)
-		.map((value) => value.replaceAll("\\", "\\\\").replaceAll(",", "\\,"))
-		.join(",");
-	return `obstacle:${encoded}`;
+	let encoded = "obstacle:";
+	for (let valueIndex = 0; valueIndex < values.length; valueIndex += 1) {
+		if (valueIndex > 0) encoded += ",";
+		const value = values[valueIndex]!;
+		for (let index = 0; index < value.length; index += 1) {
+			const codeUnit = value[index]!;
+			if (codeUnit === "\\" || codeUnit === ",") encoded += "\\";
+			encoded += codeUnit;
+		}
+	}
+	return encoded;
 }
