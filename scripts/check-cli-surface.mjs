@@ -6,7 +6,16 @@
 
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+	closeSync,
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	openSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -47,10 +56,14 @@ function parseJson(label, value) {
 	}
 }
 
-function cli(args, { url, input } = {}) {
+let activeEvents = null;
+
+function cli(args, { url, input, cwd = outside } = {}) {
 	return new Promise((finish) => {
+		const events = [];
+		activeEvents = events;
 		const child = spawn(bin, args, {
-			cwd: outside,
+			cwd,
 			env: {
 				...process.env,
 				EXCALIDRAW_NO_AUTOSTART: "1",
@@ -62,18 +75,52 @@ function cli(args, { url, input } = {}) {
 		let stderr = "";
 		child.stdout.setEncoding("utf8");
 		child.stderr.setEncoding("utf8");
-		child.stdout.on("data", (chunk) => (stdout += chunk));
-		child.stderr.on("data", (chunk) => (stderr += chunk));
+		child.stdout.on("data", (chunk) => {
+			stdout += chunk;
+			events.push(`stdout:${chunk}`);
+		});
+		child.stderr.on("data", (chunk) => {
+			stderr += chunk;
+			events.push(`stderr:${chunk}`);
+		});
 		const timeout = setTimeout(() => child.kill("SIGKILL"), 20_000);
 		child.on("error", (error) => {
 			clearTimeout(timeout);
-			finish({ status: null, stdout, stderr: stderr + error.message });
+			activeEvents = null;
+			finish({ status: null, stdout, stderr: stderr + error.message, events });
 		});
 		child.on("close", (status, signal) => {
 			clearTimeout(timeout);
-			finish({ status, signal, stdout, stderr });
+			events.push(`exit:${status}`);
+			activeEvents = null;
+			finish({ status, signal, stdout, stderr, events });
 		});
 		child.stdin.end(input);
+	});
+}
+
+function cliMerged(args, { url, cwd = outside } = {}) {
+	return new Promise((finish) => {
+		const events = [];
+		activeEvents = events;
+		const mergedPath = join(outside, `merged-${Date.now()}-${Math.random()}.log`);
+		const descriptor = openSync(mergedPath, "w+");
+		const child = spawn(bin, args, {
+			cwd,
+			env: {
+				...process.env,
+				EXCALIDRAW_NO_AUTOSTART: "1",
+				...(url ? { EXPRESS_SERVER_URL: url } : {}),
+			},
+			stdio: ["ignore", descriptor, descriptor],
+		});
+		const timeout = setTimeout(() => child.kill("SIGKILL"), 20_000);
+		child.on("close", (status) => {
+			clearTimeout(timeout);
+			closeSync(descriptor);
+			activeEvents = null;
+			finish({ status, merged: readFileSync(mergedPath, "utf8"), events });
+		});
 	});
 }
 
@@ -88,6 +135,7 @@ const server = Bun.serve({
 	port: 0,
 	async fetch(request) {
 		const url = new URL(request.url);
+		activeEvents?.push(`${request.method} ${url.pathname}`);
 		if (url.pathname === "/health") {
 			return Response.json({
 				service: CANVAS_SERVICE_NAME,
@@ -112,6 +160,37 @@ const server = Bun.serve({
 				: undefined;
 		if (request.method === "POST" && url.pathname === "/api/viewport") {
 			return Response.json({ success: true, message: "Viewport updated" });
+		}
+		if (request.method === "POST" && url.pathname === "/api/boards/save") {
+			const conflict = {
+				board: "save-conflict",
+				file: "/vault/save-conflict.excalidraw.md",
+				reason: "changed",
+				actualHash: "actual",
+				versionMove: "ahead",
+				outcomes: {
+					reload: "board open save-conflict --reload",
+					overwrite: "board save --force",
+					saveAs: "board save --as save-conflict@from-canvas",
+				},
+				message: "Refusing fixed-base board save. Nothing was written.",
+			};
+			const malformedHeld = url.searchParams.get("board") === "invalid-held";
+			return Response.json(
+				{
+					success: false,
+					error: conflict.message,
+					conflict,
+					held: malformedHeld
+						? { board: 9, message: false }
+						: {
+								board: "save-conflict",
+								message: "held board diagnostic",
+								writes: 0,
+							},
+				},
+				{ status: 409 },
+			);
 		}
 
 		if (request.method !== "GET" && !url.searchParams.get("doing")) {
@@ -196,6 +275,226 @@ try {
 	check(
 		"no-argument help describes no alternate protocol transport",
 		!/(model context protocol|json-rpc|stdio server)/i.test(bare.stdout),
+	);
+
+	const unavailableStatus = await cli(["status"], { url: closedUrl });
+	check(
+		"status unavailable exits 3",
+		unavailableStatus.status === 3,
+		String(unavailableStatus.status),
+	);
+	check(
+		"status unavailable keeps stderr empty",
+		unavailableStatus.stderr === "",
+		unavailableStatus.stderr,
+	);
+	check(
+		"status unavailable exact stdout bytes",
+		unavailableStatus.stdout === JSON.stringify({ running: false, url: closedUrl }, null, 2) + "\n",
+		unavailableStatus.stdout,
+	);
+	check(
+		"status unavailable sets exit after stdout",
+		unavailableStatus.events.at(-1) === "exit:3" &&
+			unavailableStatus.events[0]?.startsWith("stdout:"),
+		unavailableStatus.events.join(" | "),
+	);
+
+	const foreign = Bun.serve({
+		hostname: "127.0.0.1",
+		port: 0,
+		fetch() {
+			activeEvents?.push("GET /health");
+			return Response.json({ service: "somebody-else", status: "ok" });
+		},
+	});
+	try {
+		const foreignUrl = `http://127.0.0.1:${foreign.port}`;
+		const foreignStatus = await cli(["status"], { url: foreignUrl });
+		check(
+			"status foreign service exits 3",
+			foreignStatus.status === 3,
+			String(foreignStatus.status),
+		);
+		check(
+			"status foreign service keeps stderr empty",
+			foreignStatus.stderr === "",
+			foreignStatus.stderr,
+		);
+		check(
+			"status foreign service exact stdout bytes",
+			foreignStatus.stdout ===
+				JSON.stringify(
+					{
+						running: false,
+						url: foreignUrl,
+						conflict: "another service (or a pre-1.1 canvas build) is answering at this URL",
+					},
+					null,
+					2,
+				) +
+					"\n",
+			foreignStatus.stdout,
+		);
+		check(
+			"status foreign service preserves health-output-exit order",
+			foreignStatus.events[0] === "GET /health" &&
+				foreignStatus.events[1]?.startsWith("stdout:") &&
+				foreignStatus.events.at(-1) === "exit:3",
+			foreignStatus.events.join(" | "),
+		);
+	} finally {
+		foreign.stop(true);
+	}
+
+	const saveConflict = await cli(
+		["board", "save", "--board", "save-conflict", "--doing", "checking conflict"],
+		{ url: canvasUrl },
+	);
+	const conflict = {
+		board: "save-conflict",
+		file: "/vault/save-conflict.excalidraw.md",
+		reason: "changed",
+		actualHash: "actual",
+		versionMove: "ahead",
+		outcomes: {
+			reload: "board open save-conflict --reload",
+			overwrite: "board save --force",
+			saveAs: "board save --as save-conflict@from-canvas",
+		},
+		message: "Refusing fixed-base board save. Nothing was written.",
+	};
+	const held = {
+		board: "save-conflict",
+		message: "held board diagnostic",
+		writes: 0,
+	};
+	check("board save conflict exits 5", saveConflict.status === 5, String(saveConflict.status));
+	check(
+		"board save conflict exact stdout bytes and final newline",
+		saveConflict.stdout === JSON.stringify({ success: false, conflict, held }, null, 2) + "\n",
+		saveConflict.stdout,
+	);
+	check(
+		"board save conflict exact ordered stderr bytes",
+		saveConflict.stderr ===
+			conflict.message +
+				"\n" +
+				held.message +
+				"\n" +
+				'"save-conflict" has stopped saving. Changes from here are held on the canvas and reach no note until one of those three is run.\n',
+		saveConflict.stderr,
+	);
+	const mergedSaveConflict = await cliMerged(
+		["board", "save", "--board", "save-conflict", "--doing", "checking merged order"],
+		{ url: canvasUrl },
+	);
+	const expectedMergedConflict =
+		conflict.message +
+		"\n" +
+		JSON.stringify({ success: false, conflict, held }, null, 2) +
+		"\n" +
+		held.message +
+		"\n" +
+		'"save-conflict" has stopped saving. Changes from here are held on the canvas and reach no note until one of those three is run.\n';
+	check(
+		"board save conflict preserves contacts and conflict-result-held-continuation-exit order",
+		mergedSaveConflict.status === 5 &&
+			mergedSaveConflict.events.indexOf("GET /health") <
+				mergedSaveConflict.events.indexOf("POST /api/boards/save") &&
+			mergedSaveConflict.merged === expectedMergedConflict,
+		`${mergedSaveConflict.events.join(" | ")}\n${mergedSaveConflict.merged}`,
+	);
+	const malformedHeld = await cli(
+		["board", "save", "--board", "invalid-held", "--doing", "checking validation"],
+		{ url: canvasUrl },
+	);
+	check("malformed held data is a validation failure", malformedHeld.status === 1);
+	check("malformed held data reaches no structured stdout", malformedHeld.stdout === "");
+	check(
+		"malformed held data fails before the declared conflict presentation",
+		!malformedHeld.stderr.includes(conflict.message) &&
+			!malformedHeld.stderr.includes("has stopped saving"),
+		malformedHeld.stderr,
+	);
+
+	const lateSaveClosed = await cli(["board", "save", "--unknown", "--board", "contract"], {
+		url: closedUrl,
+	});
+	check("board save keeps server before staged token validation", lateSaveClosed.status === 3);
+	const lateSaveMock = await cli(["board", "save", "--unknown", "--board", "contract"], {
+		url: canvasUrl,
+	});
+	check("board save staged unknown flag exits usage after contact", lateSaveMock.status === 2);
+	check(
+		"board save staged token validation performs no save",
+		lateSaveMock.events.includes("GET /health") &&
+			!lateSaveMock.events.includes("POST /api/boards/save"),
+		lateSaveMock.events.join(" | "),
+	);
+
+	for (const action of ["save", "restore"]) {
+		const missingName = await cli(["snapshot", action, "--board", "contract"], {
+			url: canvasUrl,
+		});
+		check(`snapshot ${action} missing name exits usage`, missingName.status === 2);
+		check(
+			`snapshot ${action} preserves server-before-name order`,
+			missingName.events[0] === "GET /health" &&
+				missingName.events.some((event) => event.startsWith("stderr:Error:")),
+			missingName.events.join(" | "),
+		);
+	}
+
+	const boardHere = await cliMerged(["board", "list", "--here"], {
+		url: canvasUrl,
+		cwd: repoRoot,
+	});
+	check("board list --here failure keeps its immediate diagnostic", boardHere.status === 1);
+	check(
+		"board list --here diagnostic precedes its request failure",
+		/^Standing in .+\.\nError:/s.test(boardHere.merged),
+		boardHere.merged,
+	);
+
+	const promoteBinding = await cli(
+		[
+			"promote",
+			"--kind",
+			"service",
+			"--ids",
+			"shape1",
+			"--path",
+			"missing.ts",
+			"--board",
+			"contract",
+			"--doing",
+			"checking binding order",
+		],
+		{ url: canvasUrl },
+	);
+	check("promote missing binding fails after its board read", promoteBinding.status === 1);
+	check(
+		"promote binding resolution follows server and element contact without a write",
+		promoteBinding.events.includes("GET /health") &&
+			promoteBinding.events.includes("GET /api/elements") &&
+			!promoteBinding.events.some((event) => event.startsWith("POST /api/elements")),
+		promoteBinding.events.join(" | "),
+	);
+
+	const skillRoot = join(outside, "compat-skills");
+	const oldSkill = join(skillRoot, "archboard");
+	mkdirSync(oldSkill, { recursive: true });
+	writeFileSync(join(oldSkill, "old.txt"), "old");
+	const installFailure = await cliMerged(
+		["install-skill", "--dir", skillRoot, "--repo", "/proc", "--yes"],
+		{},
+	);
+	check("install-skill post-replacement failure exits 1", installFailure.status === 1);
+	check(
+		"install-skill replacement diagnostic precedes the later setup failure",
+		installFailure.merged.startsWith(`Replaced existing install at ${oldSkill}\nError:`),
+		installFailure.merged,
 	);
 
 	for (const golden of argvGolden.cases) {

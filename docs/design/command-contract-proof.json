@@ -3,6 +3,171 @@
 	"generatedFrom": "src/cli/commands/run.ts",
 	"contracts": [
 		{
+			"name": "status",
+			"path": ["status"],
+			"summary": "Canvas health, element count, browser clients",
+			"usage": "status",
+			"description": "Reports canvas availability, identity, source freshness, and synchronization state.",
+			"examples": ["archboard status"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"anyOf": [
+					{
+						"type": "object",
+						"properties": {
+							"running": {
+								"type": "boolean",
+								"const": false
+							},
+							"url": {
+								"type": "string"
+							}
+						},
+						"required": ["running", "url"],
+						"additionalProperties": {}
+					},
+					{
+						"type": "object",
+						"properties": {
+							"running": {
+								"type": "boolean",
+								"const": false
+							},
+							"url": {
+								"type": "string"
+							},
+							"conflict": {
+								"type": "string"
+							}
+						},
+						"required": ["running", "url", "conflict"],
+						"additionalProperties": {}
+					},
+					{
+						"type": "object",
+						"properties": {
+							"running": {
+								"type": "boolean",
+								"const": true
+							},
+							"url": {
+								"type": "string"
+							},
+							"pid": {
+								"type": "integer",
+								"minimum": -9007199254740991,
+								"maximum": 9007199254740991
+							},
+							"elements": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 9007199254740991
+							},
+							"browserClients": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 9007199254740991
+							},
+							"stale": {
+								"type": "object",
+								"properties": {
+									"startedAt": {
+										"type": "string"
+									},
+									"changedFile": {
+										"type": "string"
+									},
+									"changedAt": {
+										"type": "string"
+									},
+									"says": {
+										"type": "string"
+									}
+								},
+								"required": ["startedAt", "changedFile", "changedAt", "says"],
+								"additionalProperties": false
+							}
+						},
+						"required": ["running", "url", "elements", "browserClients"],
+						"additionalProperties": {}
+					}
+				]
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "none",
+					"description": "Canvas status",
+					"presentation": ["result", "diagnostics"]
+				}
+			],
+			"outcomes": [
+				{
+					"id": "unavailable",
+					"exit": 3,
+					"description": "No canvas is answering at the configured URL.",
+					"stream": "stdout-only",
+					"held": "none",
+					"presentation": ["result"]
+				},
+				{
+					"id": "foreign-service",
+					"exit": 3,
+					"description": "Another service or an incompatible canvas is answering.",
+					"stream": "stdout-only",
+					"held": "none",
+					"presentation": ["result"]
+				}
+			],
+			"prerequisites": [],
+			"effects": ["read"],
+			"refusals": [],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/health",
+					"cardinality": "one",
+					"description": "Identity and health"
+				},
+				{
+					"method": "GET",
+					"path": "/api/sync/status",
+					"cardinality": "conditional",
+					"description": "Best-effort synchronization state after valid health"
+				}
+			]
+		},
+		{
 			"name": "update",
 			"path": ["update"],
 			"summary": "Update one element",
@@ -678,6 +843,305 @@
 			]
 		},
 		{
+			"name": "board save",
+			"path": ["board", "save"],
+			"summary": "Save one named board note without moving proposal panes",
+			"usage": "board save --board <key> [--as <name>] [--variant v] [--level l] [--force]",
+			"description": "Writes or branches a board note and returns structured save or conflict state.",
+			"examples": ["archboard board save --board payments"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "tokens",
+					"name": "save-token",
+					"repeatable": true,
+					"route": "staged-tokens",
+					"description": "Validated after the server contact to preserve refusal precedence"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"tokens": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tokens"],
+					"additionalProperties": false
+				},
+				"stages": [
+					{
+						"name": "save-options",
+						"when": "after-server",
+						"description": "Save flags and their legacy last-wins behavior",
+						"rules": [],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema"
+						}
+					}
+				]
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"anyOf": [
+					{
+						"type": "object",
+						"properties": {
+							"success": {
+								"type": "boolean"
+							},
+							"board": {
+								"type": "string"
+							},
+							"identity": {
+								"type": "object",
+								"properties": {
+									"board": {
+										"type": "string"
+									},
+									"variant": {
+										"type": "string"
+									},
+									"level": {
+										"type": "string"
+									},
+									"displayName": {
+										"type": "string"
+									}
+								},
+								"required": ["board", "variant"],
+								"additionalProperties": false
+							},
+							"saveKind": {
+								"type": "string",
+								"enum": ["same-board", "named", "branch"]
+							},
+							"savedFrom": {
+								"type": "string"
+							},
+							"file": {
+								"type": "string"
+							},
+							"panes": {
+								"type": "object",
+								"properties": {
+									"moved": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"paneId": {
+													"type": "string"
+												},
+												"clientId": {
+													"type": "string"
+												},
+												"place": {
+													"type": "string"
+												},
+												"position": {
+													"type": "integer",
+													"minimum": -9007199254740991,
+													"maximum": 9007199254740991
+												}
+											},
+											"required": ["paneId", "clientId", "place", "position"],
+											"additionalProperties": {}
+										}
+									},
+									"kept": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"paneId": {
+													"type": "string"
+												},
+												"clientId": {
+													"type": "string"
+												},
+												"place": {
+													"type": "string"
+												},
+												"position": {
+													"type": "integer",
+													"minimum": -9007199254740991,
+													"maximum": 9007199254740991
+												}
+											},
+											"required": ["paneId", "clientId", "place", "position"],
+											"additionalProperties": {}
+										}
+									},
+									"onScreen": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"paneId": {
+													"type": "string"
+												},
+												"place": {
+													"type": "string"
+												},
+												"board": {
+													"type": "string"
+												}
+											},
+											"required": ["paneId", "place", "board"],
+											"additionalProperties": {}
+										}
+									}
+								},
+								"required": ["moved", "kept"],
+								"additionalProperties": {}
+							},
+							"held": {
+								"type": "object",
+								"properties": {
+									"board": {
+										"type": "string"
+									},
+									"message": {
+										"type": "string"
+									}
+								},
+								"required": ["board", "message"],
+								"additionalProperties": {}
+							}
+						},
+						"required": ["success", "board", "identity"],
+						"additionalProperties": {}
+					},
+					{
+						"type": "object",
+						"properties": {
+							"success": {
+								"type": "boolean",
+								"const": false
+							},
+							"conflict": {
+								"type": "object",
+								"properties": {
+									"board": {
+										"type": "string"
+									},
+									"file": {
+										"type": "string"
+									},
+									"reason": {
+										"type": "string",
+										"enum": ["changed", "unseen"]
+									},
+									"actualHash": {
+										"type": "string"
+									},
+									"versionMove": {
+										"type": "string",
+										"enum": ["unchanged", "behind", "ahead", "unknown"]
+									},
+									"outcomes": {
+										"type": "object",
+										"properties": {
+											"reload": {
+												"type": "string"
+											},
+											"overwrite": {
+												"type": "string"
+											},
+											"saveAs": {
+												"type": "string"
+											}
+										},
+										"required": ["reload", "overwrite", "saveAs"],
+										"additionalProperties": false
+									},
+									"message": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"board",
+									"file",
+									"reason",
+									"actualHash",
+									"versionMove",
+									"outcomes",
+									"message"
+								],
+								"additionalProperties": {}
+							},
+							"held": {
+								"type": "object",
+								"properties": {
+									"board": {
+										"type": "string"
+									},
+									"message": {
+										"type": "string"
+									}
+								},
+								"required": ["board", "message"],
+								"additionalProperties": {}
+							}
+						},
+						"required": ["success", "conflict"],
+						"additionalProperties": false
+					}
+				]
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Board save or structured conflict",
+					"presentation": ["diagnostics", "result", "held-note"]
+				}
+			],
+			"outcomes": [
+				{
+					"id": "board-conflict",
+					"exit": 5,
+					"description": "The destination note changed and the save was refused.",
+					"stream": "stdout-and-stderr",
+					"held": "object-field-and-stderr-note",
+					"presentation": ["diagnostics", "result", "held-note", "continuation"]
+				}
+			],
+			"prerequisites": ["server", "board"],
+			"effects": ["local-read", "write"],
+			"refusals": [
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2,
+					"stream": "stderr",
+					"description": "No board was named."
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached or started."
+				}
+			],
+			"relationships": [
+				{
+					"method": "POST",
+					"path": "/api/boards/save",
+					"cardinality": "one",
+					"description": "One board-note save attempt"
+				}
+			]
+		},
+		{
 			"name": "export",
 			"path": ["export"],
 			"summary": "Export the scene as .excalidraw JSON or Obsidian .excalidraw.md",
@@ -865,7 +1329,6 @@
 	"legacyPaths": [
 		"start",
 		"stop",
-		"status",
 		"apply",
 		"add",
 		"delete",
@@ -886,7 +1349,6 @@
 		"board info",
 		"board new",
 		"board open",
-		"board save",
 		"compare",
 		"changes",
 		"claim",
