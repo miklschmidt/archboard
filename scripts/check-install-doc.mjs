@@ -12,7 +12,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import { execFileSync, spawnSync } from "node:child_process";
-import { dirname, join } from "node:path";
+import { dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const moduleDir = dirname(fileURLToPath(import.meta.url));
@@ -78,12 +78,64 @@ function makeRepo(name, files = {}) {
 
 const BEGIN = "<!-- archboard:begin -->";
 
+// Every regular file under src/ must be classified before its contents are
+// read. New text source types are admitted here; known binary assets are
+// skipped; an unknown extension fails loudly instead of being decoded or
+// silently omitted from the stale-path guard.
+const TEXT_SOURCE_EXTENSIONS = new Set([
+	".ts",
+	".tsx",
+	".js",
+	".jsx",
+	".mjs",
+	".cjs",
+	".mts",
+	".cts",
+	".css",
+	".scss",
+	".sass",
+	".less",
+	".html",
+	".md",
+	".json",
+	".jsonc",
+	".yaml",
+	".yml",
+	".toml",
+	".svg",
+]);
+const BINARY_SOURCE_EXTENSIONS = new Set([
+	".avif",
+	".bmp",
+	".gif",
+	".ico",
+	".jpeg",
+	".jpg",
+	".mp3",
+	".mp4",
+	".otf",
+	".pdf",
+	".png",
+	".ttf",
+	".wasm",
+	".webp",
+	".woff",
+	".woff2",
+	".zip",
+]);
+
 function sourceFiles(directory) {
 	const files = [];
 	for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
 		const file = join(directory, entry.name);
 		if (entry.isDirectory()) files.push(...sourceFiles(file));
-		else if (entry.isFile() && /\.[cm]?[jt]sx?$/.test(entry.name)) files.push(file);
+		else if (entry.isFile()) {
+			const extension = extname(entry.name).toLowerCase();
+			if (TEXT_SOURCE_EXTENSIONS.has(extension)) files.push(file);
+			else if (!BINARY_SOURCE_EXTENSIONS.has(extension)) {
+				throw new Error(`Unclassified regular file under src/: ${file}`);
+			}
+		}
 	}
 	return files;
 }
@@ -92,9 +144,32 @@ function sourceFiles(directory) {
 // when this check was written. The check's own matcher is outside src/; the
 // custom boundary plugin's matcher is intentionally outside this scan too.
 const staleLivePath = /(?:src\/core\/|frontend\/src\/)/;
-for (const file of sourceFiles(join(repoRoot, "src"))) {
-	const text = fs.readFileSync(file, "utf-8");
-	assert(!staleLivePath.test(text), `${file} points to a deleted live source path`);
+function staleSourceFiles() {
+	return sourceFiles(join(repoRoot, "src")).filter((file) =>
+		staleLivePath.test(fs.readFileSync(file, "utf-8")),
+	);
+}
+
+for (const file of staleSourceFiles()) {
+	assert(false, `${file} points to a deleted live source path`);
+}
+
+const staleCssFixture = join(
+	repoRoot,
+	"src",
+	"ui",
+	`.stale-path-${process.pid}-${Date.now()}`,
+	"nested.css",
+);
+fs.mkdirSync(dirname(staleCssFixture), { recursive: true });
+try {
+	fs.writeFileSync(staleCssFixture, "/* src/core/old.css */\n", "utf-8");
+	assert(
+		staleSourceFiles().includes(staleCssFixture),
+		"the recursive stale-path guard catches a nested non-JS/TS source file",
+	);
+} finally {
+	fs.rmSync(dirname(staleCssFixture), { recursive: true, force: true });
 }
 
 // Live maintainer and product docs must navigate the current deep-module tree.
