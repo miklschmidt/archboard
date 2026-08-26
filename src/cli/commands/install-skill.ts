@@ -32,7 +32,7 @@ const DEFAULT_CANVAS_URL = "http://127.0.0.1:3000";
 // src/cli/commands/, so the root is three levels up. Resolving relative to the
 // module path keeps this working from any cwd.
 function packageRoot(): string {
-	return fileURLToPath(new URL("../../../..", import.meta.url));
+	return fileURLToPath(new URL("../../..", import.meta.url));
 }
 
 function findSkillSource(): string {
