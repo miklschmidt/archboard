@@ -36,12 +36,27 @@ import {
 	type BlockingBindingIssue,
 	type InspectionModel,
 } from "./model.js";
+import { sweepIntervalPairs, type SweepWork } from "./interval-sweep.js";
 
 export const BROAD_PHASE_COMPARISON_LIMIT = 2_000_000 as const;
 
 interface DetectionResult {
 	findings: InspectionFinding[];
 	broadPhaseComparisons: number;
+	preprocessingWork: {
+		broadPhaseEvents: number;
+		broadPhaseActiveVisits: number;
+		broadPhaseExpiryPops: number;
+		hierarchyEvents: number;
+		hierarchyCandidateVisits: number;
+		hierarchyExpiryPops: number;
+		pathSegmentChecks: number;
+	};
+}
+interface CollisionResult {
+	findings: InspectionFinding[];
+	broadPhaseComparisons: number;
+	preprocessingWork: SweepWork;
 }
 type FindingInput = InspectionFinding extends infer Finding
 	? Finding extends InspectionFinding
@@ -566,6 +581,7 @@ function connectorGeometryFindings(
 	raw: RawRecord,
 	policy: InspectionPolicy,
 	segments: Segment[],
+	work: { pathSegmentChecks: number },
 ): InspectionFinding[] {
 	const findings: InspectionFinding[] = [];
 	const refs = [record.ref];
@@ -641,8 +657,10 @@ function connectorGeometryFindings(
 		);
 	const unsupported = unsupportedRotation || unsupportedCurve || unsupportedRounded;
 	if (unsupported || !record.usableId || !record.id || !decoded.scenePoints) return findings;
+	const zeroSegments = new Set(decoded.zeroSegments);
 	for (let index = 0; index < decoded.scenePoints.length - 1; index += 1) {
-		if (decoded.zeroSegments.includes(index)) continue;
+		work.pathSegmentChecks += 1;
+		if (zeroSegments.has(index)) continue;
 		segments.push({
 			connectorId: record.id,
 			sourceIndex: record.sourceIndex,
@@ -1284,15 +1302,17 @@ function structuralFindings(
 ): {
 	findings: InspectionFinding[];
 	segments: Segment[];
+	pathSegmentChecks: number;
 } {
 	const findings: InspectionFinding[] = [];
 	const segments: Segment[] = [];
+	const work = { pathSegmentChecks: 0 };
 	const byId = model.byId;
 	const incomingReferences = incomingReferenceIds(records);
 	for (const record of records.filter((candidate) => candidate.live && candidate.raw)) {
 		const raw = record.raw!;
 		if (record.type === "arrow" || record.type === "line") {
-			findings.push(...connectorGeometryFindings(record, raw, policy, segments));
+			findings.push(...connectorGeometryFindings(record, raw, policy, segments, work));
 			findings.push(...connectorBindingFindings(record, raw, byId, model.duplicateIds));
 			if (record.usableId) {
 				findings.push(...persistedEndpointFindings(record, raw));
@@ -1311,7 +1331,7 @@ function structuralFindings(
 			),
 		);
 	}
-	return { findings, segments };
+	return { findings, segments, pathSegmentChecks: work.pathSegmentChecks };
 }
 
 function labelFindings(
@@ -1504,6 +1524,7 @@ interface PairItem<T> {
 	id: string;
 	box: ExactBox;
 	value: T;
+	records: readonly DecodedRecord[];
 }
 
 function pairSweep<A, B>(
@@ -1513,38 +1534,40 @@ function pairSweep<A, B>(
 	eligible: (a: A, b: B) => boolean,
 	visit: (a: A, b: B) => void,
 	counter: { value: number; limited: boolean; pass: string },
+	work: SweepWork,
 	pass: string,
 ): void {
-	const aSorted = left.toSorted(
-		(a, b) =>
-			a.box.x - b.box.x ||
-			a.box.x + a.box.width - (b.box.x + b.box.width) ||
-			a.id.localeCompare(b.id),
-	);
-	const bSorted = sameSet
-		? (aSorted as unknown as PairItem<B>[])
-		: right.toSorted(
-				(a, b) =>
-					a.box.x - b.box.x ||
-					a.box.x + a.box.width - (b.box.x + b.box.width) ||
-					a.id.localeCompare(b.id),
-			);
-	for (let i = 0; i < aSorted.length && !counter.limited; i += 1) {
-		const a = aSorted[i]!;
-		for (let j = sameSet ? i + 1 : 0; j < bSorted.length; j += 1) {
-			const b = bSorted[j]!;
-			if (b.box.x > a.box.x + a.box.width) break;
-			if (b.box.x + b.box.width < a.box.x || !eligible(a.value, b.value)) continue;
+	const measured = sweepIntervalPairs(
+		left.map((item) => ({
+			id: item.id,
+			min: item.box.x,
+			max: item.box.x + item.box.width,
+			value: item,
+		})),
+		right.map((item) => ({
+			id: item.id,
+			min: item.box.x,
+			max: item.box.x + item.box.width,
+			value: item,
+		})),
+		sameSet,
+		(aInterval, bInterval) => {
+			const a = aInterval.value;
+			const b = bInterval.value;
+			if (!eligible(a.value, b.value)) return;
 			counter.value += 1;
 			if (counter.value > BROAD_PHASE_COMPARISON_LIMIT) {
 				counter.limited = true;
 				counter.pass = pass;
-				break;
+				return false;
 			}
-			if (b.box.y > a.box.y + a.box.height || b.box.y + b.box.height < a.box.y) continue;
+			if (b.box.y > a.box.y + a.box.height || b.box.y + b.box.height < a.box.y) return;
 			visit(a.value, b.value);
-		}
-	}
+		},
+	);
+	work.events += measured.events;
+	work.activeVisits += measured.activeVisits;
+	work.expiryPops += measured.expiryPops;
 }
 
 function collisionFindings(
@@ -1552,26 +1575,35 @@ function collisionFindings(
 	model: InspectionModel,
 	segments: readonly Segment[],
 	policy: InspectionPolicy,
-): DetectionResult {
+): CollisionResult {
 	const findings: InspectionFinding[] = [];
 	const counter = { value: 0, limited: false, pass: "" };
+	const sweepWork: SweepWork = { events: 0, activeVisits: 0, expiryPops: 0 };
 	const byId = model.byId;
 	const segmentItems = segments.map((segment) => ({
 		id: `${segment.connectorId}:${segment.index}`,
 		box: pointBox([segment.a, segment.b])!,
 		value: segment,
+		records: [byId.get(segment.connectorId)!].filter(Boolean),
 	}));
 	const leaves = [...model.nodes.values()].filter((node) => node.children.length === 0);
-	const leafNodeItems = leaves.map((node) => ({ id: node.id, box: node.body, value: node }));
+	const leafNodeItems = leaves.map((node) => ({
+		id: node.id,
+		box: node.body,
+		value: node,
+		records: node.bodies,
+	}));
 	const allNodeItems = [...model.nodes.values()].map((node) => ({
 		id: node.id,
 		box: node.body,
 		value: node,
+		records: node.bodies,
 	}));
 	const obstacleItems = model.obstacles.map((obstacle) => ({
 		id: obstacle.id,
 		box: obstacle.box,
 		value: obstacle,
+		records: obstacle.members,
 	}));
 	const labelNodeRecords = records.filter((record) => {
 		if (!record.live || !record.id || record.type !== "text" || !record.box) return false;
@@ -1582,6 +1614,7 @@ function collisionFindings(
 		id: label.id!,
 		box: label.box!,
 		value: label,
+		records: [label],
 	}));
 	const labelLabelItems = labelNodeItems.filter((item) => model.confirmedLabels.has(item.id));
 	const connectorEnds = (segment: Segment) => {
@@ -1633,6 +1666,7 @@ function collisionFindings(
 			);
 		},
 		counter,
+		sweepWork,
 		"connector-node",
 	);
 	if (!counter.limited)
@@ -1668,6 +1702,7 @@ function collisionFindings(
 				);
 			},
 			counter,
+			sweepWork,
 			"connector-obstacle",
 		);
 	if (!counter.limited)
@@ -1723,6 +1758,7 @@ function collisionFindings(
 					);
 			},
 			counter,
+			sweepWork,
 			"connector-intersection",
 		);
 	if (!counter.limited)
@@ -1755,6 +1791,7 @@ function collisionFindings(
 				);
 			},
 			counter,
+			sweepWork,
 			"node-overlap",
 		);
 	if (!counter.limited)
@@ -1797,6 +1834,7 @@ function collisionFindings(
 				);
 			},
 			counter,
+			sweepWork,
 			"label-node-overlap",
 		);
 	if (!counter.limited)
@@ -1828,6 +1866,7 @@ function collisionFindings(
 				);
 			},
 			counter,
+			sweepWork,
 			"label-label-overlap",
 		);
 	if (counter.limited) {
@@ -1852,7 +1891,9 @@ function collisionFindings(
 				},
 				message: `Inspection stopped pair analysis at comparison ${counter.value}.`,
 				elements: uniqueRefs(
-					records.filter((record) => record.live && record.evidenceBox !== null),
+					[...segmentItems, ...allNodeItems, ...obstacleItems, ...labelNodeItems].flatMap(
+						(item) => item.records,
+					),
 				),
 				affected:
 					aggregate.kind === "representable"
@@ -1863,7 +1904,11 @@ function collisionFindings(
 			}),
 		);
 	}
-	return { findings, broadPhaseComparisons: counter.value };
+	return {
+		findings,
+		broadPhaseComparisons: counter.value,
+		preprocessingWork: sweepWork,
+	};
 }
 
 function sortFindings(findings: readonly InspectionFinding[]): InspectionFinding[] {
@@ -1924,5 +1969,14 @@ export function detectBoard(
 	return {
 		findings: sortFindings(findings),
 		broadPhaseComparisons: collisions.broadPhaseComparisons,
+		preprocessingWork: {
+			broadPhaseEvents: collisions.preprocessingWork.events,
+			broadPhaseActiveVisits: collisions.preprocessingWork.activeVisits,
+			broadPhaseExpiryPops: collisions.preprocessingWork.expiryPops,
+			hierarchyEvents: model.hierarchyWork.events,
+			hierarchyCandidateVisits: model.hierarchyWork.activeVisits,
+			hierarchyExpiryPops: model.hierarchyWork.expiryPops,
+			pathSegmentChecks: structural.pathSegmentChecks,
+		},
 	};
 }

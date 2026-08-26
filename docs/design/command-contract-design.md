@@ -131,6 +131,13 @@ each side. If IEEE-754 arithmetic cannot represent all four exact deltas,
 coverage, so strict mode exits 8. A null `affectedBBox` still means the record
 has no finite x/y location.
 
+The report's `preprocessingWork` object exposes deterministic work counts for
+the x-interval sweeps and supported path filtering. These counts describe
+events, active interval visits, expiry operations, and path segment checks.
+They are diagnostic data, separate from `broadPhaseComparisons`, whose public
+meaning remains the number of semantically eligible x-overlapping pairs tested
+before the y-axis and exact predicates.
+
 ## CLI-only compatibility
 
 `src/bin.ts` removes one `--url` before importing runtime configuration.
