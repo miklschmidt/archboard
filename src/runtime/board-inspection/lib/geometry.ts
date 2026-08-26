@@ -110,7 +110,6 @@ export function segmentInsideBox(
 	if (high <= 0 || low >= 1) return null;
 	const entry = { x: a.x + dx * Math.max(0, low), y: a.y + dy * Math.max(0, low) };
 	const exit = { x: a.x + dx * Math.min(1, high), y: a.y + dy * Math.min(1, high) };
-	if (Math.hypot(exit.x - entry.x, exit.y - entry.y) <= tolerance) return null;
 	return { entry, exit };
 }
 

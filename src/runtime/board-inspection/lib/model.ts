@@ -29,6 +29,7 @@ export interface InspectionModel {
 	nodeOfElement: Map<string, string>;
 	confirmedLabels: Map<string, string>;
 	containerOnlyIds: Set<string>;
+	qualifyingGroupedObstacleElementIds: Set<string>;
 	obstacles: InspectionObstacle[];
 }
 
@@ -213,7 +214,9 @@ export function buildInspectionModel(records: readonly DecodedRecord[]): Inspect
 	const join = (a: string, b: string) => {
 		const aa = find(a),
 			bb = find(b);
-		if (aa !== bb) parent.set(bb, aa < bb ? aa : bb);
+		if (aa === bb) return;
+		if (aa < bb) parent.set(bb, aa);
+		else parent.set(aa, bb);
 	};
 	for (let i = 0; i < eligible.length; i += 1)
 		for (let j = i + 1; j < eligible.length; j += 1) {
@@ -229,10 +232,13 @@ export function buildInspectionModel(records: readonly DecodedRecord[]): Inspect
 		components.set(root, members);
 	}
 	const obstacles: InspectionObstacle[] = [];
+	const qualifyingGroupedObstacleElementIds = new Set<string>();
 	for (const members of components.values()) {
 		const validLibrary = members.filter((record) => libraryAttribution(record)?.valid);
 		const sharedGroup = members.length >= 2;
 		if (validLibrary.length === 0 && !sharedGroup) continue;
+		if (sharedGroup)
+			for (const member of members) qualifyingGroupedObstacleElementIds.add(member.id!);
 		const elementIds = members.map((record) => record.id!).toSorted();
 		const groups = [...new Set(members.flatMap(groupIds))].toSorted();
 		const library = validLibrary
@@ -258,7 +264,15 @@ export function buildInspectionModel(records: readonly DecodedRecord[]): Inspect
 		});
 	}
 	obstacles.sort((a, b) => a.id.localeCompare(b.id));
-	return { byId, nodes, nodeOfElement, confirmedLabels, containerOnlyIds, obstacles };
+	return {
+		byId,
+		nodes,
+		nodeOfElement,
+		confirmedLabels,
+		containerOnlyIds,
+		qualifyingGroupedObstacleElementIds,
+		obstacles,
+	};
 }
 
 export function semanticParents(
