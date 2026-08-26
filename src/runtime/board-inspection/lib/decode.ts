@@ -11,11 +11,23 @@ export interface DecodedRecord {
 	readonly box: ExactBox | null;
 }
 
-export const kindOf = (value: unknown): string => {
+export type ValueKind =
+	| "undefined"
+	| "null"
+	| "array"
+	| "string"
+	| "number"
+	| "boolean"
+	| "bigint"
+	| "symbol"
+	| "function"
+	| "object";
+
+export const kindOf = (value: unknown): ValueKind => {
 	if (value === undefined) return "undefined";
 	if (value === null) return "null";
 	if (Array.isArray(value)) return "array";
-	return typeof value;
+	return typeof value as ValueKind;
 };
 
 export function stableDescription(value: unknown): string {

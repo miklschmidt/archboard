@@ -34,8 +34,6 @@ export const ObstacleRefSchema = z.strictObject({
 });
 
 const common = {
-	severity: z.enum(["error", "warning"]),
-	affectsCoverage: z.boolean(),
 	message: z.string().min(1),
 	elements: z.array(ElementRefSchema),
 	nodes: z.array(NodeRefSchema),
@@ -45,14 +43,38 @@ const common = {
 	focusBBox: SceneBBoxSchema.nullable(),
 };
 
-const variant = <Code extends string, Reason extends string, Shape extends z.ZodRawShape>(
+const severityByCode = {
+	INVALID_RENDER_GEOMETRY: "error",
+	STALE_LINEAR_DIMENSIONS: "error",
+	BROKEN_REFERENCE: "error",
+	LABEL_CORRUPTION: "error",
+	FONT_POLICY_VIOLATION: "warning",
+	UNSUPPORTED_GEOMETRY: "warning",
+	AMBIGUOUS_GEOMETRY: "warning",
+	INSPECTION_LIMIT_EXCEEDED: "warning",
+	CONNECTOR_PENETRATES_NODE: "error",
+	CONNECTOR_PENETRATES_OBSTACLE: "error",
+	CONNECTOR_INTERSECTION_UNMARKED: "error",
+	NODE_OVERLAP: "error",
+	LABEL_OVERLAP: "error",
+} as const;
+
+const variant = <
+	Code extends keyof typeof severityByCode,
+	Reason extends string,
+	Coverage extends boolean,
+	Shape extends z.ZodRawShape,
+>(
 	code: Code,
 	reason: Reason,
+	affectsCoverage: Coverage,
 	details: Shape,
 ) =>
 	z.strictObject({
 		code: z.literal(code),
 		reason: z.literal(reason),
+		severity: z.literal(severityByCode[code]),
+		affectsCoverage: z.literal(affectsCoverage),
 		...common,
 		details: z.strictObject(details),
 	});
@@ -84,11 +106,11 @@ export const IntendedRoleSchema = z.enum([
 ]);
 
 const invalidRender = [
-	variant("INVALID_RENDER_GEOMETRY", "invalid-render-fields", {
+	variant("INVALID_RENDER_GEOMETRY", "invalid-render-fields", true, {
 		invalidFields: z.array(z.enum(["x", "y", "width", "height"])).min(1),
 		valueKinds: z.partialRecord(z.enum(["x", "y", "width", "height"]), z.string()),
 	}),
-	variant("INVALID_RENDER_GEOMETRY", "unlocatable-record", {
+	variant("INVALID_RENDER_GEOMETRY", "unlocatable-record", true, {
 		recordKind: z.string(),
 		invalidFields: z.array(z.enum(["x", "y"])).min(1),
 		sourceIndex: z.number().int().nonnegative(),
@@ -96,7 +118,7 @@ const invalidRender = [
 ] as const;
 
 const staleLinear = (["width", "height", "width-and-height"] as const).map((reason) =>
-	variant("STALE_LINEAR_DIMENSIONS", reason, {
+	variant("STALE_LINEAR_DIMENSIONS", reason, false, {
 		storedWidth: finite,
 		storedHeight: finite,
 		measuredWidth: nonnegative,
@@ -106,18 +128,6 @@ const staleLinear = (["width", "height", "width-and-height"] as const).map((reas
 	}),
 );
 
-const malformedBindingIssue = z.enum([
-	"not-object",
-	"array",
-	"missing-element-id",
-	"empty-element-id",
-	"non-string-element-id",
-	"missing-focus",
-	"nonfinite-focus",
-	"missing-gap",
-	"nonfinite-gap",
-	"invalid-fixed-point",
-]);
 const malformedBoundIssue = z.enum([
 	"not-array",
 	"entry-not-object",
@@ -127,46 +137,94 @@ const malformedBoundIssue = z.enum([
 	"missing-type",
 	"invalid-type",
 ]);
-const brokenReference = [
-	variant("BROKEN_REFERENCE", "invalid-element-identity", {
-		identityIssue: z.enum(["missing-id", "empty-string-id", "non-string-id"]),
-		rawIdType: idType,
-		rawIdDescription: z.string(),
-		sourceIndex: z.number().int().nonnegative(),
-		intendedRoles: z.array(IntendedRoleSchema),
-		availableElementType: z.string().nullable(),
+const invalidIdentityDetails = {
+	identityIssue: z.enum(["missing-id", "empty-string-id", "non-string-id"]),
+	rawIdType: idType,
+	rawIdDescription: z.string(),
+	sourceIndex: z.number().int().nonnegative(),
+	availableElementType: z.string().nullable(),
+};
+const invalidIdentity = [
+	variant("BROKEN_REFERENCE", "invalid-element-identity", false, {
+		...invalidIdentityDetails,
+		intendedRoles: z.tuple([]),
 	}),
-	variant("BROKEN_REFERENCE", "duplicate-element-id", {
+	variant("BROKEN_REFERENCE", "invalid-element-identity", true, {
+		...invalidIdentityDetails,
+		intendedRoles: z.array(IntendedRoleSchema).min(1),
+	}),
+] as const;
+const malformedBindingDetails = {
+	connectorId: z.string().min(1).nullable(),
+	sourceIndex: z.number().int().nonnegative(),
+	rawKind: z.string(),
+	readableTargetId: z.string().min(1).nullable(),
+};
+const blockedBindingIssue = z.enum([
+	"not-object",
+	"array",
+	"missing-element-id",
+	"empty-element-id",
+	"non-string-element-id",
+]);
+const readableBindingIssue = z.enum([
+	"missing-focus",
+	"nonfinite-focus",
+	"missing-gap",
+	"nonfinite-gap",
+	"invalid-fixed-point",
+]);
+const malformedBindings = (["malformed-start-binding", "malformed-end-binding"] as const).flatMap(
+	(reason) => [
+		variant("BROKEN_REFERENCE", reason, true, {
+			...malformedBindingDetails,
+			issue: blockedBindingIssue,
+			classificationBlocked: z.literal(true),
+		}),
+		variant("BROKEN_REFERENCE", reason, false, {
+			...malformedBindingDetails,
+			issue: readableBindingIssue,
+			classificationBlocked: z.literal(false),
+		}),
+	],
+);
+const invalidLibraryAttribution = [
+	variant("BROKEN_REFERENCE", "invalid-library-attribution", true, {
+		elementId: z.string().min(1),
+		issues: z.array(z.string()).min(1),
+		rescuedByGroup: z.literal(false),
+	}),
+	variant("BROKEN_REFERENCE", "invalid-library-attribution", false, {
+		elementId: z.string().min(1),
+		issues: z.array(z.string()).min(1),
+		rescuedByGroup: z.literal(true),
+	}),
+] as const;
+
+const brokenReference = [
+	...invalidIdentity,
+	variant("BROKEN_REFERENCE", "duplicate-element-id", true, {
 		duplicateId: z.string().min(1),
 		sourceIndexes: z.array(z.number().int().nonnegative()).min(2),
 	}),
-	variant("BROKEN_REFERENCE", "missing-binding-target", {
+	variant("BROKEN_REFERENCE", "missing-binding-target", true, {
 		connectorId: z.string().min(1),
 		end: z.enum(["start", "end"]),
 		targetId: z.string().min(1),
 	}),
-	variant("BROKEN_REFERENCE", "invalid-binding-target-type", {
+	variant("BROKEN_REFERENCE", "invalid-binding-target-type", true, {
 		connectorId: z.string().min(1),
 		end: z.enum(["start", "end"]),
 		targetId: z.string().min(1),
 		targetType: z.string(),
 	}),
-	variant("BROKEN_REFERENCE", "missing-binding-reciprocal", {
+	variant("BROKEN_REFERENCE", "missing-binding-reciprocal", false, {
 		connectorId: z.string().min(1),
 		end: z.enum(["start", "end"]),
 		targetId: z.string().min(1),
 	}),
-	...(["malformed-start-binding", "malformed-end-binding"] as const).map((reason) =>
-		variant("BROKEN_REFERENCE", reason, {
-			connectorId: z.string().min(1).nullable(),
-			sourceIndex: z.number().int().nonnegative(),
-			rawKind: z.string(),
-			issue: malformedBindingIssue,
-			readableTargetId: z.string().min(1).nullable(),
-			classificationBlocked: z.boolean(),
-		}),
-	),
-	variant("BROKEN_REFERENCE", "malformed-bound-elements", {
+	...malformedBindings,
+	variant("BROKEN_REFERENCE", "malformed-bound-elements", true, {
 		ownerId: z.string().min(1).nullable(),
 		sourceIndex: z.number().int().nonnegative(),
 		rawKind: z.string(),
@@ -175,95 +233,91 @@ const brokenReference = [
 		readableEntries: z.array(
 			z.strictObject({ id: z.string().min(1), type: z.enum(["text", "arrow"]) }),
 		),
-		classificationBlocked: z.boolean(),
+		classificationBlocked: z.literal(true),
 	}),
-	variant("BROKEN_REFERENCE", "malformed-container-id", {
+	variant("BROKEN_REFERENCE", "malformed-container-id", true, {
 		textId: z.string().min(1).nullable(),
 		sourceIndex: z.number().int().nonnegative(),
 		rawKind: z.string(),
 		rawDescription: z.string(),
 		issue: z.enum(["empty-container-id", "non-string-container-id"]),
-		ownerClassificationBlocked: z.boolean(),
+		ownerClassificationBlocked: z.literal(true),
 	}),
 	...(["dangling-bound-text", "dangling-bound-arrow"] as const).map((reason) =>
-		variant("BROKEN_REFERENCE", reason, {
+		variant("BROKEN_REFERENCE", reason, false, {
 			ownerId: z.string().min(1),
 			targetId: z.string().min(1),
 		}),
 	),
-	variant("BROKEN_REFERENCE", "conflicting-bound-label-owner", {
+	variant("BROKEN_REFERENCE", "conflicting-bound-label-owner", true, {
 		textId: z.string().min(1),
 		forwardContainerId: z.string().min(1),
 		reverseContainerIds: z.array(z.string().min(1)),
 	}),
-	variant("BROKEN_REFERENCE", "persisted-agent-endpoint", {
+	variant("BROKEN_REFERENCE", "persisted-agent-endpoint", true, {
 		connectorId: z.string().min(1),
 		end: z.enum(["start", "end"]),
 		inputTargetId: z.string().min(1),
 		bindingTargetId: z.string().min(1).nullable(),
 	}),
-	variant("BROKEN_REFERENCE", "invalid-node-metadata", {
+	variant("BROKEN_REFERENCE", "invalid-node-metadata", true, {
 		elementId: z.string().min(1),
 		valueKind: z.string(),
 	}),
-	variant("BROKEN_REFERENCE", "invalid-code-binding", {
+	variant("BROKEN_REFERENCE", "invalid-code-binding", false, {
 		elementId: z.string().min(1),
 		issues: z.array(z.string()).min(1),
 	}),
-	variant("BROKEN_REFERENCE", "derived-link-persisted", {
+	variant("BROKEN_REFERENCE", "derived-link-persisted", false, {
 		elementId: z.string().min(1),
 		link: z.string(),
 	}),
-	variant("BROKEN_REFERENCE", "invalid-library-attribution", {
-		elementId: z.string().min(1),
-		issues: z.array(z.string()).min(1),
-		rescuedByGroup: z.boolean(),
-	}),
+	...invalidLibraryAttribution,
 ] as const;
 
 const labelCorruption = [
-	variant("LABEL_CORRUPTION", "orphan", {
+	variant("LABEL_CORRUPTION", "orphan", true, {
 		textId: z.string().min(1),
 		containerId: z.string().min(1),
 	}),
-	variant("LABEL_CORRUPTION", "duplicate", {
+	variant("LABEL_CORRUPTION", "duplicate", false, {
 		containerId: z.string().min(1),
 		keeperId: z.string().min(1),
 		duplicateIds: z.array(z.string().min(1)).min(1),
 	}),
-	variant("LABEL_CORRUPTION", "missing-reciprocal", {
+	variant("LABEL_CORRUPTION", "missing-reciprocal", false, {
 		textId: z.string().min(1),
 		containerId: z.string().min(1),
 		missingSide: z.enum(["text", "container"]),
 	}),
-	variant("LABEL_CORRUPTION", "conflicting-owner", {
+	variant("LABEL_CORRUPTION", "conflicting-owner", true, {
 		textId: z.string().min(1),
 		containerId: z.string().min(1),
 		otherContainerIds: z.array(z.string().min(1)),
 	}),
-	variant("LABEL_CORRUPTION", "drift", {
+	variant("LABEL_CORRUPTION", "drift", false, {
 		textId: z.string().min(1),
 		containerId: z.string().min(1),
 		distance: nonnegative,
 		allowed: nonnegative,
 	}),
-	variant("LABEL_CORRUPTION", "persisted-seed", {
+	variant("LABEL_CORRUPTION", "persisted-seed", false, {
 		elementId: z.string().min(1),
 		seedField: z.enum(["label", "text"]),
 	}),
 ] as const;
 
 const fontPolicy = [
-	variant("FONT_POLICY_VIOLATION", "missing-font-family", {
+	variant("FONT_POLICY_VIOLATION", "missing-font-family", false, {
 		effectiveFamily: z.literal(1),
 		allowedFamilies: z.union([z.literal("any"), z.array(z.number().int())]),
 	}),
-	variant("FONT_POLICY_VIOLATION", "disallowed-font-family", {
+	variant("FONT_POLICY_VIOLATION", "disallowed-font-family", false, {
 		rawFamily: z.number().int(),
 		effectiveFamily: z.number().int(),
 		allowedFamilies: z.union([z.literal("any"), z.array(z.number().int())]),
 	}),
-	variant("FONT_POLICY_VIOLATION", "invalid-font-family", {
+	variant("FONT_POLICY_VIOLATION", "invalid-font-family", false, {
 		rawType: z.string(),
 		rawDescription: z.string(),
 		allowedFamilies: z.union([z.literal("any"), z.array(z.number().int())]),
@@ -271,10 +325,12 @@ const fontPolicy = [
 ] as const;
 
 const unsupported = [
-	variant("UNSUPPORTED_GEOMETRY", "unsupported-type", { rawType: z.string() }),
-	variant("UNSUPPORTED_GEOMETRY", "rotation", { angle: finite }),
-	variant("UNSUPPORTED_GEOMETRY", "curve", { curveKind: z.string() }),
-	variant("UNSUPPORTED_GEOMETRY", "rounded-or-elbowed", {
+	variant("UNSUPPORTED_GEOMETRY", "unsupported-type", true, { rawType: z.string() }),
+	variant("UNSUPPORTED_GEOMETRY", "rotation", true, {
+		angle: z.union([finite, z.string()]),
+	}),
+	variant("UNSUPPORTED_GEOMETRY", "curve", true, { curveKind: z.string() }),
+	variant("UNSUPPORTED_GEOMETRY", "rounded-or-elbowed", true, {
 		roundness: z.string().nullable(),
 		elbowed: z.boolean(),
 		fixedSegments: z.boolean(),
@@ -282,7 +338,7 @@ const unsupported = [
 ] as const;
 
 const ambiguous = [
-	variant("AMBIGUOUS_GEOMETRY", "points-missing", {
+	variant("AMBIGUOUS_GEOMETRY", "points-missing", true, {
 		connectorId: z.string().min(1).nullable(),
 		sourceIndex: z.number().int().nonnegative(),
 		rawPointsKind: z.literal("missing"),
@@ -291,7 +347,7 @@ const ambiguous = [
 		minimumRequired: z.literal(2),
 		issue: z.literal("missing"),
 	}),
-	variant("AMBIGUOUS_GEOMETRY", "points-not-array", {
+	variant("AMBIGUOUS_GEOMETRY", "points-not-array", true, {
 		connectorId: z.string().min(1).nullable(),
 		sourceIndex: z.number().int().nonnegative(),
 		rawPointsKind: z.string(),
@@ -300,7 +356,7 @@ const ambiguous = [
 		minimumRequired: z.literal(2),
 		issue: z.literal("non-array"),
 	}),
-	variant("AMBIGUOUS_GEOMETRY", "points-empty", {
+	variant("AMBIGUOUS_GEOMETRY", "points-empty", true, {
 		connectorId: z.string().min(1).nullable(),
 		sourceIndex: z.number().int().nonnegative(),
 		rawPointsKind: z.literal("array"),
@@ -309,7 +365,7 @@ const ambiguous = [
 		minimumRequired: z.literal(2),
 		issue: z.literal("empty"),
 	}),
-	variant("AMBIGUOUS_GEOMETRY", "points-one-point", {
+	variant("AMBIGUOUS_GEOMETRY", "points-one-point", true, {
 		connectorId: z.string().min(1).nullable(),
 		sourceIndex: z.number().int().nonnegative(),
 		rawPointsKind: z.literal("array"),
@@ -318,18 +374,18 @@ const ambiguous = [
 		minimumRequired: z.literal(2),
 		issue: z.literal("insufficient-cardinality"),
 	}),
-	variant("AMBIGUOUS_GEOMETRY", "malformed-point", {
+	variant("AMBIGUOUS_GEOMETRY", "malformed-point", true, {
 		connectorId: z.string().min(1).nullable(),
 		sourceIndex: z.number().int().nonnegative(),
 		pointIndex: z.number().int().nonnegative(),
 		issue: z.string(),
 	}),
-	variant("AMBIGUOUS_GEOMETRY", "zero-length", {
+	variant("AMBIGUOUS_GEOMETRY", "zero-length", true, {
 		connectorId: z.string().min(1).nullable(),
 		sourceIndex: z.number().int().nonnegative(),
 		segmentIndex: z.number().int().nonnegative(),
 	}),
-	variant("AMBIGUOUS_GEOMETRY", "collinear-overlap", {
+	variant("AMBIGUOUS_GEOMETRY", "collinear-overlap", true, {
 		firstConnectorId: z.string().min(1),
 		firstSegmentIndex: z.number().int().nonnegative(),
 		secondConnectorId: z.string().min(1),
@@ -338,7 +394,7 @@ const ambiguous = [
 ] as const;
 
 const layoutFindings = [
-	variant("INSPECTION_LIMIT_EXCEEDED", "broad-phase-comparison-ceiling", {
+	variant("INSPECTION_LIMIT_EXCEEDED", "broad-phase-comparison-ceiling", true, {
 		limit: z.number().int().positive(),
 		attempted: z.number().int().positive(),
 		pass: z.string(),
@@ -347,40 +403,40 @@ const layoutFindings = [
 		obstacleCount: z.number().int().nonnegative(),
 		labelCount: z.number().int().nonnegative(),
 	}),
-	variant("CONNECTOR_PENETRATES_NODE", "leaf-footprint-interior", {
+	variant("CONNECTOR_PENETRATES_NODE", "leaf-footprint-interior", false, {
 		connectorId: z.string().min(1),
 		segmentIndex: z.number().int().nonnegative(),
 		nodeId: z.string().min(1),
 		entry: ScenePointSchema,
 		exit: ScenePointSchema,
 	}),
-	variant("CONNECTOR_PENETRATES_OBSTACLE", "obstacle-footprint-interior", {
+	variant("CONNECTOR_PENETRATES_OBSTACLE", "obstacle-footprint-interior", false, {
 		connectorId: z.string().min(1),
 		segmentIndex: z.number().int().nonnegative(),
 		obstacleId: z.string().min(1),
 		entry: ScenePointSchema,
 		exit: ScenePointSchema,
 	}),
-	variant("CONNECTOR_INTERSECTION_UNMARKED", "proper-interior-crossing", {
+	variant("CONNECTOR_INTERSECTION_UNMARKED", "proper-interior-crossing", false, {
 		firstConnectorId: z.string().min(1),
 		firstSegmentIndex: z.number().int().nonnegative(),
 		secondConnectorId: z.string().min(1),
 		secondSegmentIndex: z.number().int().nonnegative(),
 		point: ScenePointSchema,
 	}),
-	variant("NODE_OVERLAP", "leaf-footprint-overlap", {
+	variant("NODE_OVERLAP", "leaf-footprint-overlap", false, {
 		firstNodeId: z.string().min(1),
 		secondNodeId: z.string().min(1),
 		overlapWidth: nonnegative,
 		overlapHeight: nonnegative,
 	}),
-	variant("LABEL_OVERLAP", "label-node-overlap", {
+	variant("LABEL_OVERLAP", "label-node-overlap", false, {
 		labelId: z.string().min(1),
 		nodeId: z.string().min(1),
 		overlapWidth: nonnegative,
 		overlapHeight: nonnegative,
 	}),
-	variant("LABEL_OVERLAP", "label-label-overlap", {
+	variant("LABEL_OVERLAP", "label-label-overlap", false, {
 		firstLabelId: z.string().min(1),
 		secondLabelId: z.string().min(1),
 		overlapWidth: nonnegative,
