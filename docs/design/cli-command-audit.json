@@ -17,7 +17,7 @@
 	"entries": [
 		{
 			"path": "start",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/server.ts",
 			"stdout": "json object",
 			"result": "running,url,pid,spawned",
@@ -32,7 +32,7 @@
 		},
 		{
 			"path": "stop",
-			"parserOwner": "legacy args.ts",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/server.ts",
 			"stdout": "json object",
 			"result": "stopped,pid,message",
@@ -861,7 +861,7 @@
 		},
 		{
 			"path": "install-skill",
-			"parserOwner": "legacy custom parser",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/install-skill.ts",
 			"stdout": "json object or source text",
 			"result": "installed paths and documentation result",

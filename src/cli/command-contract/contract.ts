@@ -115,6 +115,7 @@ export interface CommandContext {
 	readTextFile(path: string): string;
 	readOptionalTextFile(path: string): string | undefined;
 	resolvePath(path: string): string;
+	prompt(question: string, fallback: string): Promise<string>;
 	parse<T>(schema: z.ZodType<T>, value: unknown): T;
 	/** The sole lane that may write a diagnostic before public result validation. */
 	diagnostic(message: string): void;
