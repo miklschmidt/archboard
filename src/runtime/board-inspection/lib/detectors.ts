@@ -14,7 +14,7 @@ import {
 	box,
 	aggregateBoxes,
 	finite,
-	focus,
+	focusBox,
 	intersectSegments,
 	overlap,
 	point,
@@ -118,6 +118,7 @@ const REASON_ORDER = [
 	"malformed-point",
 	"absolute-point-overflow",
 	"unrepresentable-coordinate-span",
+	"unrepresentable-focus-padding",
 	"zero-length",
 	"collinear-overlap",
 	"broad-phase-comparison-ceiling",
@@ -134,6 +135,7 @@ function make(input: FindingInput): InspectionFinding {
 		input.affected === null
 			? null
 			: box(input.affected ?? pointBox(input.points ?? []) ?? { x: 0, y: 0, width: 0, height: 0 });
+	const focusResult = focusBox(affectedBBox);
 	return InspectionFindingSchema.parse({
 		code: input.code,
 		reason: input.reason,
@@ -145,7 +147,7 @@ function make(input: FindingInput): InspectionFinding {
 		obstacles: [...(input.obstacles ?? [])].toSorted((a, b) => a.id.localeCompare(b.id)),
 		points: [...(input.points ?? [])].map(point).toSorted(pointOrder),
 		affectedBBox,
-		focusBBox: focus(affectedBBox),
+		focusBBox: focusResult.kind === "representable" ? focusResult.box : null,
 		details: input.details,
 	});
 }
@@ -163,10 +165,10 @@ const numberListOrder = (a: readonly number[], b: readonly number[]): number => 
 const uniqueRefs = (records: readonly DecodedRecord[]) => [
 	...new Map(records.map((record) => [`${record.sourceIndex}`, record.ref])).values(),
 ];
-const boxesOf = (records: readonly DecodedRecord[]): ExactBox[] =>
-	records.flatMap((r) => (r.box ? [r.box] : []));
+const evidenceBoxesOf = (records: readonly DecodedRecord[]): ExactBox[] =>
+	records.flatMap((record) => (record.evidenceBox ? [record.evidenceBox] : []));
 const affectedOf = (records: readonly DecodedRecord[]): ExactBox | null => {
-	const aggregate = aggregateBoxes(boxesOf(records));
+	const aggregate = aggregateBoxes(evidenceBoxesOf(records));
 	return aggregate.kind === "representable"
 		? aggregate.box
 		: aggregate.kind === "unrepresentable"
@@ -222,11 +224,7 @@ function identityFindings(records: readonly DecodedRecord[]): InspectionFinding[
 				severity: "error",
 				message: `Element at source index ${record.sourceIndex} has ${issue}.`,
 				elements: [record.ref],
-				affected:
-					record.box ??
-					(record.raw && finite(record.raw.x) && finite(record.raw.y)
-						? { x: record.raw.x, y: record.raw.y, width: 0, height: 0 }
-						: null),
+				affected: record.evidenceBox,
 			} as const;
 			const details = {
 				identityIssue: issue,
@@ -309,7 +307,7 @@ function renderFindings(records: readonly DecodedRecord[]): InspectionFinding[] 
 					message: `Element ${record.id ?? `at source index ${record.sourceIndex}`} has invalid render geometry.`,
 					elements: [record.ref],
 					points: [{ x: raw.x as number, y: raw.y as number }],
-					affected: { x: raw.x as number, y: raw.y as number, width: 0, height: 0 },
+					affected: record.evidenceBox,
 				}),
 			);
 	}
@@ -327,7 +325,7 @@ function coordinateSpanFinding(
 	members: readonly DecodedRecord[],
 ): InspectionFinding {
 	const sources = members.map((record) => record.sourceIndex).toSorted((a, b) => a - b);
-	const aggregate = aggregateBoxes(boxesOf(members));
+	const aggregate = aggregateBoxes(evidenceBoxesOf(members));
 	const originEvidence = members
 		.filter((record) => record.raw && finite(record.raw.x) && finite(record.raw.y))
 		.toSorted((a, b) => a.sourceIndex - b.sourceIndex)[0];
@@ -382,8 +380,9 @@ function coordinateSpanFindings(
 	for (const finding of produced) {
 		const members = finding.elements
 			.map((reference) => bySource.get(reference.sourceIndex))
-			.filter((record): record is DecodedRecord => !!record && !!record.box);
-		if (members.length < 2 || aggregateBoxes(boxesOf(members)).kind !== "unrepresentable") continue;
+			.filter((record): record is DecodedRecord => !!record && !!record.evidenceBox);
+		if (members.length < 2 || aggregateBoxes(evidenceBoxesOf(members)).kind !== "unrepresentable")
+			continue;
 		const key = members
 			.map((record) => record.sourceIndex)
 			.toSorted((a, b) => a - b)
@@ -393,6 +392,38 @@ function coordinateSpanFindings(
 		findings.push(coordinateSpanFinding("finding-affected-union", null, members));
 	}
 	return findings;
+}
+
+function focusPaddingFindings(produced: readonly InspectionFinding[]): InspectionFinding[] {
+	return produced.flatMap((finding) => {
+		if (
+			finding.affectedBBox === null ||
+			finding.focusBBox !== null ||
+			(finding.code === "AMBIGUOUS_GEOMETRY" && finding.reason === "unrepresentable-focus-padding")
+		)
+			return [];
+		const focusResult = focusBox(finding.affectedBBox);
+		if (focusResult.kind !== "unrepresentable") return [];
+		return [
+			make({
+				code: "AMBIGUOUS_GEOMETRY",
+				reason: "unrepresentable-focus-padding",
+				severity: "warning",
+				affectsCoverage: true,
+				details: {
+					padding: 16,
+					failedDeltas: focusResult.failedDeltas,
+					issue: "exact-16px-padding-is-not-finite-and-representable",
+				},
+				message: `Finding ${finding.code}/${finding.reason} cannot represent exact 16px focus padding.`,
+				elements: finding.elements,
+				nodes: finding.nodes,
+				obstacles: finding.obstacles,
+				points: finding.points,
+				affected: finding.affectedBBox,
+			}),
+		];
+	});
 }
 
 type RecordMap = ReadonlyMap<string, DecodedRecord>;
@@ -405,7 +436,7 @@ const locatableOrigin = (raw: RawRecord): raw is RawRecord & { x: number; y: num
 	Number.isFinite(raw.y);
 
 const storedExtent = (record: DecodedRecord, raw: RawRecord): ExactBox | null =>
-	record.box ?? (locatableOrigin(raw) ? { x: raw.x, y: raw.y, width: 0, height: 0 } : null);
+	record.evidenceBox ?? (locatableOrigin(raw) ? { x: raw.x, y: raw.y, width: 0, height: 0 } : null);
 
 function decodedPathEvidence(
 	record: DecodedRecord,
@@ -733,7 +764,7 @@ function connectorBindingFindings(
 				severity: "error",
 				message: `Connector ${record.id ?? record.sourceIndex} has a malformed ${end} binding.`,
 				elements: [record.ref],
-				affected: record.box,
+				affected: record.evidenceBox,
 			} as const;
 			if (classificationBlocked)
 				findings.push(
@@ -779,7 +810,7 @@ function connectorBindingFindings(
 					details: { connectorId: record.id!, end, targetId: readableTargetId },
 					message: `Connector ${record.id} names missing target ${readableTargetId}.`,
 					elements: [record.ref],
-					affected: record.box,
+					affected: record.evidenceBox,
 				}),
 			);
 		else if (target.type === "arrow" || target.type === "line")
@@ -855,7 +886,7 @@ function persistedEndpointFindings(record: DecodedRecord, raw: RawRecord): Inspe
 					},
 					message: `Connector ${record.id} persists an input-only ${end} endpoint.`,
 					elements: [record.ref],
-					affected: record.box,
+					affected: record.evidenceBox,
 				}),
 			);
 	}
@@ -890,7 +921,7 @@ function boundElementFindings(
 				},
 				message: `Element ${record.id ?? record.sourceIndex} has malformed boundElements.`,
 				elements: [record.ref],
-				affected: record.box,
+				affected: record.evidenceBox,
 			}),
 		);
 	if (!record.usableId || !record.id) return findings;
@@ -907,7 +938,7 @@ function boundElementFindings(
 					details: { ownerId: record.id!, targetId: entry.id },
 					message: `Element ${record.id} names missing bound ${entry.type} ${entry.id}.`,
 					elements: [record.ref],
-					affected: record.box,
+					affected: record.evidenceBox,
 				}),
 			);
 		else if (
@@ -954,7 +985,7 @@ function metadataFindings(record: DecodedRecord, raw: RawRecord): InspectionFind
 				details: { elementId: record.id, valueKind: kindOf(metadata.node) },
 				message: `Element ${record.id} has invalid node metadata.`,
 				elements: [record.ref],
-				affected: record.box,
+				affected: record.evidenceBox,
 			}),
 		);
 	const binding = metadata?.binding;
@@ -986,7 +1017,7 @@ function metadataFindings(record: DecodedRecord, raw: RawRecord): InspectionFind
 				details: { elementId: record.id, issues },
 				message: `Element ${record.id} has an invalid code binding.`,
 				elements: [record.ref],
-				affected: record.box,
+				affected: record.evidenceBox,
 			}),
 		);
 	if (typeof raw.link === "string" && raw.link)
@@ -999,7 +1030,7 @@ function metadataFindings(record: DecodedRecord, raw: RawRecord): InspectionFind
 				details: { elementId: record.id, link: raw.link },
 				message: `Element ${record.id} persists a derived binding link.`,
 				elements: [record.ref],
-				affected: record.box,
+				affected: record.evidenceBox,
 			}),
 		);
 	return findings;
@@ -1032,7 +1063,7 @@ function fontFindings(
 						message: `Text ${record.id ?? record.sourceIndex} uses legacy font family 1.`,
 						elements: [record.ref],
 						points,
-						affected: record.box,
+						affected: record.evidenceBox,
 					}),
 				]
 			: [];
@@ -1055,7 +1086,7 @@ function fontFindings(
 				message: `Text ${record.id ?? record.sourceIndex} has invalid persisted fontFamily.`,
 				elements: [record.ref],
 				points,
-				affected: record.box,
+				affected: record.evidenceBox,
 			}),
 		];
 	return allowed !== "any" && !allowed.includes(raw.fontFamily as 1 | 2 | 3 | 5 | 6 | 7 | 8)
@@ -1073,7 +1104,7 @@ function fontFindings(
 					message: `Text ${record.id ?? record.sourceIndex} uses disallowed font family ${raw.fontFamily}.`,
 					elements: [record.ref],
 					points,
-					affected: record.box,
+					affected: record.evidenceBox,
 				}),
 			]
 		: [];
@@ -1102,7 +1133,7 @@ function containerFindings(record: DecodedRecord, raw: RawRecord): InspectionFin
 			},
 			message: `Text ${record.id ?? record.sourceIndex} has a malformed containerId.`,
 			elements: [record.ref],
-			affected: record.box,
+			affected: record.evidenceBox,
 		}),
 	];
 }
@@ -1117,7 +1148,7 @@ function libraryFindings(record: DecodedRecord, model: InspectionModel): Inspect
 		severity: "error",
 		message: `Element ${record.id} has invalid library attribution.`,
 		elements: [record.ref],
-		affected: record.box,
+		affected: record.evidenceBox,
 	} as const;
 	return rescuedByGroup
 		? [
@@ -1200,7 +1231,7 @@ function unsupportedGeometryFindings(
 				},
 				message: `Element ${record.id ?? record.sourceIndex} is rotated.`,
 				elements: [record.ref],
-				affected: record.box,
+				affected: record.evidenceBox,
 			}),
 		);
 	const rawType = raw.type;
@@ -1219,7 +1250,7 @@ function unsupportedGeometryFindings(
 				details: { rawType: rawTypeDescription },
 				message: `Element ${record.id ?? record.sourceIndex} has unsupported type ${rawTypeDescription}.`,
 				elements: [record.ref],
-				affected: record.box,
+				affected: record.evidenceBox,
 			}),
 		);
 	}
@@ -1330,7 +1361,7 @@ function labelFindings(
 					details: { textId, containerId },
 					message: `Label ${textId} names missing container ${containerId}.`,
 					elements: [text.ref],
-					affected: text.box,
+					affected: text.evidenceBox,
 				}),
 			);
 	}
@@ -1372,7 +1403,7 @@ function labelFindings(
 					details: { elementId: record.id!, seedField: "label" },
 					message: `Element ${record.id} persists an input-only label seed.`,
 					elements: [record.ref],
-					affected: record.box,
+					affected: record.evidenceBox,
 				}),
 			);
 		if (record.type !== "text" && typeof record.raw?.text === "string")
@@ -1385,7 +1416,7 @@ function labelFindings(
 					details: { elementId: record.id!, seedField: "text" },
 					message: `Element ${record.id} persists an input-only text seed.`,
 					elements: [record.ref],
-					affected: record.box,
+					affected: record.evidenceBox,
 				}),
 			);
 	}
@@ -1820,6 +1851,9 @@ function collisionFindings(
 					labelCount: labelNodeRecords.length,
 				},
 				message: `Inspection stopped pair analysis at comparison ${counter.value}.`,
+				elements: uniqueRefs(
+					records.filter((record) => record.live && record.evidenceBox !== null),
+				),
 				affected:
 					aggregate.kind === "representable"
 						? aggregate.box
@@ -1886,6 +1920,7 @@ export function detectBoard(
 	const collisions = collisionFindings(records, model, structural.segments, policy);
 	findings.push(...collisions.findings);
 	findings.push(...coordinateSpanFindings(records, model, findings));
+	findings.push(...focusPaddingFindings(findings));
 	return {
 		findings: sortFindings(findings),
 		broadPhaseComparisons: collisions.broadPhaseComparisons,

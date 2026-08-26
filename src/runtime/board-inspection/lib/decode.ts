@@ -13,6 +13,7 @@ export interface DecodedRecord {
 	readonly type: string | null;
 	readonly ref: ElementRef;
 	readonly box: ExactBox | null;
+	readonly evidenceBox: ExactBox | null;
 	readonly invalidRenderFields: Array<"x" | "y" | "width" | "height">;
 	readonly extentRepresentable: boolean;
 }
@@ -77,6 +78,9 @@ export function decodeRecords(records: readonly unknown[]): DecodedRecord[] {
 			normalizedHeight !== undefined;
 		const finiteExtent =
 			perRecordValid && finite(x + normalizedWidth) && finite(y + normalizedHeight);
+		const recordBox = finiteExtent
+			? { x, y, width: normalizedWidth, height: normalizedHeight }
+			: null;
 		return {
 			raw,
 			sourceIndex,
@@ -85,7 +89,9 @@ export function decodeRecords(records: readonly unknown[]): DecodedRecord[] {
 			usableId: !!id && idCounts.get(id) === 1,
 			type,
 			ref: { id, type, sourceIndex },
-			box: finiteExtent ? { x, y, width: normalizedWidth, height: normalizedHeight } : null,
+			box: recordBox,
+			evidenceBox:
+				recordBox ?? (x !== undefined && y !== undefined ? { x, y, width: 0, height: 0 } : null),
 			invalidRenderFields,
 			extentRepresentable: perRecordValid && finiteExtent,
 		};
