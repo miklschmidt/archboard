@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 17:36'
+updated_date: '2026-08-26 17:45'
 labels:
   - ready-for-agent
 dependencies:
@@ -442,6 +442,8 @@ Two final bun run fix passes both ran the distributable-skill validator and pres
 Two fresh on-demand contract generations were byte-identical: audit Markdown 33,383 bytes, proof JSON 660,919 bytes, and proof Markdown 459,580 bytes. The checkout contains no generated output, canonical docs/design/cli-command-audit.json remains tracked, and the worktree was clean before this Backlog note. TASK-119 remains In Progress with every acceptance criterion unchecked for independent rereview.
 
 Bounded-sweep closure checkpoint: replaced repeated cross-set pair scans and every-node hierarchy scans with one private deterministic minX/maxX event sweep using heap expiry and stable active lists. Eligibility still precedes broadPhaseComparisons, which still increments before y/exact predicates and preserves the exact 1,516,200 and 2,000,001 fixtures. Limit refs and coordinate-span evidence now come only from participating segment, node, obstacle, and label records. Shared linear path measurement uses iterative extrema, zero-segment filtering uses constant-time membership, and the public report exposes deterministic preprocessing work counts. Public tests cover sparse 1k/2k/4k scaling, dense counts, supported 750,000-point stale measurement, repeated-point filtering, unrelated extreme limit records, actual extreme participants, and real-package persisted large paths. Two bun run fix passes were byte-stable at diff hash 890d83be5cab3b18b7f9f739c56f331b5b460d892fc04fad8aaa764f5141d7fc. Focused lint, both TypeScript projects, inspection 586 checks, contracts 58 proofs/978 checks, CLI 579 checks, boundaries, module-scope, geometry, labels, library, boards, branch, Obsidian, changes, one-write, and git diff --check pass. Remaining: commit this checkpoint, bun run check, separate bun run test, sequential browser evidence within both chains, final generator/status/diff checks, and clean-tree callback.
+
+Bounded-sweep closure validation: commit 21df1a2 passes the complete required validation. bun run check passed lint and distributable-skill validation, format verification, both TypeScript projects, all 29 push suites, and the four browser suites sequentially/headless. A separate bun run test passed the same complete suite and sequential browser chain. Both browser chains reported fixed-point 0 of 13 elements changed, the 10,000-element human board remained responsive, typed text survived both rename interactions, and live-session converged through 42 of 42 mixed-write cycles. Inspection passes 586 checks while retaining exact broad-phase counts 1,516,200 and 2,000,001. Two explicit on-demand generations from absent output directories were byte-identical: cli-command-audit.md 33,383 bytes, command-contract-proof.json 662,300 bytes, and command-contract-proof.md 460,808 bytes. Generated views remain outside the checkout; docs/design/cli-command-audit.json remains the tracked canonical input. TASK-119 remains In Progress with all acceptance criteria unchecked. No protected TASK-090/TASK-120/TASK-123.03, route, UI, session, persistence, write, or released-skill behavior changed.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
