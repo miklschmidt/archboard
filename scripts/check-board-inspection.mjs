@@ -860,6 +860,258 @@ check(
 			.every((finding) => finding.points.length === 0),
 );
 
+const supportedConnectorResultCodes = new Set([
+	"STALE_LINEAR_DIMENSIONS",
+	"CONNECTOR_PENETRATES_NODE",
+	"CONNECTOR_PENETRATES_OBSTACLE",
+	"CONNECTOR_INTERSECTION_UNMARKED",
+]);
+const findingUsesConnector = (finding, connectorId) =>
+	finding.elements.some((element) => element.id === connectorId) ||
+	("connectorId" in finding.details && finding.details.connectorId === connectorId) ||
+	("firstConnectorId" in finding.details && finding.details.firstConnectorId === connectorId) ||
+	("secondConnectorId" in finding.details && finding.details.secondConnectorId === connectorId);
+const interactionElements = (identityLabel, rawId, y = 0) => {
+	const targetId = `target-${identityLabel}`;
+	const invalidConnector = {
+		type: "arrow",
+		x: 0,
+		y: y + 5,
+		width: 101,
+		height: 0,
+		angle: 0,
+		points: [
+			[0, 0],
+			[100, 0],
+		],
+		startBinding: { elementId: targetId, focus: 0, gap: 0 },
+		start: { id: `input-${identityLabel}` },
+		boundElements: [{ id: `gone-${identityLabel}`, type: "text" }],
+	};
+	if (identityLabel !== "missing") invalidConnector.id = rawId;
+	return [
+		invalidConnector,
+		semanticNode(targetId, { x: 200, y }),
+		semanticNode(`node-${identityLabel}`, { x: 40, y, width: 10, height: 10 }),
+		{
+			id: `obstacle-${identityLabel}`,
+			type: "rectangle",
+			x: 60,
+			y,
+			width: 10,
+			height: 10,
+			angle: 0,
+			customData: { library: { itemId: `item-${identityLabel}` } },
+		},
+		connector({
+			id: `other-${identityLabel}`,
+			x: 80,
+			y,
+			width: 0,
+			height: 10,
+			points: [
+				[0, 0],
+				[0, 10],
+			],
+		}),
+	];
+};
+
+const unlocatableCollisionTrap = inspectBoard([
+	{
+		id: "unlocatable",
+		type: "arrow",
+		x: null,
+		y: 5,
+		width: 100,
+		height: 0,
+		angle: 0,
+		points: [
+			[0, 0],
+			[100, 0],
+		],
+	},
+	semanticNode("fabricated-node", { x: 40, y: 0 }),
+	{
+		id: "fabricated-obstacle",
+		type: "rectangle",
+		x: 60,
+		y: 0,
+		width: 10,
+		height: 10,
+		angle: 0,
+		customData: { library: { itemId: "fabricated-obstacle" } },
+	},
+	connector({
+		id: "fabricated-crossing",
+		x: 80,
+		y: 0,
+		width: 0,
+		height: 10,
+		points: [
+			[0, 0],
+			[0, 10],
+		],
+	}),
+]);
+check(
+	"unlocatable connector origin cannot feed node, obstacle, or connector pair analysis",
+	unlocatableCollisionTrap.coverage === "indeterminate" &&
+		unlocatableCollisionTrap.findings.some(
+			(finding) =>
+				finding.code === "INVALID_RENDER_GEOMETRY" &&
+				finding.reason === "unlocatable-record" &&
+				finding.elements[0]?.id === "unlocatable",
+		) &&
+		!unlocatableCollisionTrap.findings.some(
+			(finding) =>
+				supportedConnectorResultCodes.has(finding.code) &&
+				findingUsesConnector(finding, "unlocatable"),
+		),
+);
+
+for (const [identityLabel, rawId] of [
+	["missing", undefined],
+	["empty", ""],
+	["non-string", 42],
+]) {
+	let report;
+	let failure;
+	try {
+		report = inspectBoard(interactionElements(identityLabel, rawId));
+	} catch (error) {
+		failure = error;
+	}
+	check(
+		`${identityLabel} connector identity remains schema-total across downstream interactions`,
+		!failure &&
+			InspectionReportSchema.safeParse(report).success &&
+			report.coverage === "indeterminate" &&
+			report.findings.some(
+				(finding) =>
+					finding.code === "BROKEN_REFERENCE" &&
+					finding.reason === "invalid-element-identity" &&
+					finding.elements[0]?.sourceIndex === 0,
+			) &&
+			!report.findings.some(
+				(finding) =>
+					supportedConnectorResultCodes.has(finding.code) ||
+					[
+						"missing-binding-target",
+						"invalid-binding-target-type",
+						"missing-binding-reciprocal",
+						"persisted-agent-endpoint",
+						"dangling-bound-text",
+						"dangling-bound-arrow",
+					].includes(finding.reason),
+			),
+		failure instanceof Error ? failure.message : "",
+	);
+}
+
+const incomingReferenceElements = (label, rawType, y = 0) => {
+	const target = { id: `incoming-${label}`, x: 200, y, width: 10, height: 10, angle: 0 };
+	if (label !== "missing") target.type = rawType;
+	return [
+		connector({
+			id: `incoming-edge-${label}`,
+			x: 0,
+			y,
+			width: 10,
+			height: 0,
+			points: [
+				[0, 0],
+				[10, 0],
+			],
+			startBinding: { elementId: target.id, focus: 0, gap: 0 },
+		}),
+		target,
+	];
+};
+for (const [label, rawType] of [
+	["missing", undefined],
+	["null", null],
+	["boolean", false],
+	["unknown", "future-target"],
+]) {
+	const report = inspectBoard(incomingReferenceElements(label, rawType));
+	check(
+		`forward-only incoming reference makes ${label} target type coverage-applicable`,
+		report.coverage === "indeterminate" &&
+			report.findings.some(
+				(finding) =>
+					finding.code === "UNSUPPORTED_GEOMETRY" &&
+					finding.reason === "unsupported-type" &&
+					finding.elements[0]?.id === `incoming-${label}`,
+			),
+	);
+}
+
+const unsupportedConnectorCases = /** @type {const} */ ([
+	["rotation", { angle: 1 }, "rotation"],
+	["malformed-angle", { angle: "bad" }, "rotation"],
+	["curve", { curve: false }, "curve"],
+	["curve-kind", { curveKind: "bezier" }, "curve"],
+	["roundness", { roundness: { type: 2 } }, "rounded-or-elbowed"],
+	["elbowed", { elbowed: true }, "rounded-or-elbowed"],
+	["malformed-elbowed", { elbowed: "bad" }, "rounded-or-elbowed"],
+	["fixed-segments", { fixedSegments: [] }, "rounded-or-elbowed"],
+]);
+for (const [label, discriminator, reason] of unsupportedConnectorCases) {
+	const connectorId = `unsupported-${label}`;
+	const report = inspectBoard([
+		connector({
+			id: connectorId,
+			x: 0,
+			y: 5,
+			width: 101,
+			height: 0,
+			points: [
+				[0, 0],
+				[100, 0],
+			],
+			...discriminator,
+		}),
+		semanticNode(`unsupported-node-${label}`, { x: 40, y: 0 }),
+		{
+			id: `unsupported-obstacle-${label}`,
+			type: "rectangle",
+			x: 60,
+			y: 0,
+			width: 10,
+			height: 10,
+			angle: 0,
+			customData: { library: { itemId: `unsupported-item-${label}` } },
+		},
+		connector({
+			id: `supported-crossing-${label}`,
+			x: 80,
+			y: 0,
+			width: 0,
+			height: 10,
+			points: [
+				[0, 0],
+				[0, 10],
+			],
+		}),
+	]);
+	check(
+		`${label} connector exposes evidence but no supported geometry result`,
+		report.findings.some(
+			(finding) =>
+				finding.code === "UNSUPPORTED_GEOMETRY" &&
+				finding.reason === reason &&
+				finding.elements[0]?.id === connectorId &&
+				finding.points.length === 2,
+		) &&
+			!report.findings.some(
+				(finding) =>
+					supportedConnectorResultCodes.has(finding.code) &&
+					findingUsesConnector(finding, connectorId),
+			),
+	);
+}
+
 const completeBinding = { elementId: "node", focus: 0, gap: 0 };
 const bindingCases = [
 	["not-object", "bad", true],
@@ -1265,6 +1517,40 @@ check(
 		conflictingLabels.findings.some(
 			(finding) => finding.code === "LABEL_CORRUPTION" && finding.reason === "conflicting-owner",
 		),
+);
+
+const nonLeafZoneLabelOverlap = inspectBoard([
+	semanticNode("zone", { id: "zone-body", x: 0, y: 0, width: 200, height: 200 }),
+	semanticNode("zone-child", { id: "zone-child-body", x: 20, y: 20, width: 30, height: 30 }),
+	semanticNode("label-owner", {
+		id: "label-owner-body",
+		x: 220,
+		y: 40,
+		width: 100,
+		height: 60,
+		boundElements: [{ id: "zone-overlap-label", type: "text" }],
+	}),
+	{
+		id: "zone-overlap-label",
+		type: "text",
+		containerId: "label-owner-body",
+		x: 180,
+		y: 55,
+		width: 50,
+		height: 20,
+		fontFamily: 5,
+		text: "other label",
+	},
+]);
+check(
+	"an unrelated label overlapping only a non-leaf zone is reported",
+	nonLeafZoneLabelOverlap.findings.some(
+		(finding) =>
+			finding.code === "LABEL_OVERLAP" &&
+			finding.reason === "label-node-overlap" &&
+			finding.details.labelId === "zone-overlap-label" &&
+			finding.details.nodeId === "zone",
+	),
 );
 
 const validLibraryBody = (id, x = 0, groupIds = []) => ({
@@ -2074,6 +2360,23 @@ noteFor("malformed", [
 		customData: { library: {} },
 	},
 ]);
+noteFor(
+	"identity-interactions",
+	[
+		["missing", undefined, 0],
+		["empty", "", 30],
+		["non-string", 42, 60],
+	].flatMap(([label, rawId, y]) => interactionElements(label, rawId, y)),
+);
+noteFor(
+	"incoming-types",
+	[
+		["missing", undefined, 0],
+		["null", null, 20],
+		["boolean", false, 40],
+		["unknown", "future-target", 60],
+	].flatMap(([label, rawType, y]) => incomingReferenceElements(label, rawType, y)),
+);
 const sentinelLog = path.join(os.tmpdir(), `archboard-inspection-http-${process.pid}.log`);
 fs.writeFileSync(sentinelLog, "");
 const sentinel = spawn(
@@ -2185,6 +2488,45 @@ check(
 		malformedResult.findings.some((finding) => finding.reason === "rounded-or-elbowed") &&
 		malformedResult.findings.some((finding) => finding.reason === "unsupported-type"),
 	malformedResult.findings.map((finding) => finding.reason).join(","),
+);
+const identityInteractionRun = run("identity-interactions", ["--strict"]);
+const identityInteractionResult = identityInteractionRun.stdout
+	? JSON.parse(identityInteractionRun.stdout)
+	: null;
+check(
+	"persisted invalid identities stay schema-total across every downstream interaction",
+	identityInteractionRun.status === 8 &&
+		identityInteractionRun.stderr === "" &&
+		CheckResultSchema.safeParse(identityInteractionResult).success &&
+		identityInteractionResult.findings.filter(
+			(finding) => finding.reason === "invalid-element-identity",
+		).length === 3 &&
+		!identityInteractionResult.findings.some(
+			(finding) =>
+				supportedConnectorResultCodes.has(finding.code) ||
+				[
+					"missing-binding-target",
+					"invalid-binding-target-type",
+					"missing-binding-reciprocal",
+					"persisted-agent-endpoint",
+					"dangling-bound-text",
+					"dangling-bound-arrow",
+				].includes(finding.reason),
+		),
+	identityInteractionRun.stderr,
+);
+const incomingTypesRun = run("incoming-types", ["--strict"]);
+const incomingTypesResult = incomingTypesRun.stdout ? JSON.parse(incomingTypesRun.stdout) : null;
+check(
+	"persisted forward-only malformed target types are indeterminate rather than complete errors",
+	incomingTypesRun.status === 8 &&
+		incomingTypesRun.stderr === "" &&
+		CheckResultSchema.safeParse(incomingTypesResult).success &&
+		incomingTypesResult.findings.filter(
+			(finding) =>
+				finding.code === "UNSUPPORTED_GEOMETRY" && finding.reason === "unsupported-type",
+		).length === 4,
+	incomingTypesRun.stderr,
 );
 const impossibleVault = path.join(vault, "not-a-directory");
 fs.writeFileSync(impossibleVault, "sentinel");

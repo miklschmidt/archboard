@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 14:54'
+updated_date: '2026-08-26 15:13'
 labels:
   - ready-for-agent
 dependencies:
@@ -320,6 +320,10 @@ RISKS_AND_ROLLBACK
 USER-DIRECTED GENERATED-OWNERSHIP AMENDMENT (2026-08-26)
 
 This amendment supersedes step 23’s requirement to commit generated artifacts with their source, step 24’s tracked generator --check assumption, step 26’s generated-files completion wording, and the generated-file entries in EXPECTED_MODIFIED_FILES. Keep docs/design/cli-command-audit.json tracked as the canonical human-authored audit input. Stop tracking docs/design/cli-command-audit.md, docs/design/command-contract-proof.json, and docs/design/command-contract-proof.md. Generate those three reproducible views on demand into an explicitly ignored location. Contract validation must evaluate the live registry/audit projection in memory or through owned temporary output, retain all 58-path/schema/audit/57-path compatibility/rendering proofs, and add clean-clone-style deterministic generation evidence that leaves the checkout untouched. Documentation must distinguish canonical input from derived views and repair consumers that assumed generated files were always present.
+
+FINAL INTERACTION AND COORDINATE-TOTALITY REMEDIATION (2026-08-26)
+
+After rejected rereview head 1c293b7c48a28c590652ae516a07c4579a3504f6, close five verified interaction holes through the existing pure inspectBoard and package CLI seams. Separate relative path validation from finite absolute origin eligibility; stop every identity-dependent producer after invalid identity while retaining nullable malformed-structure findings; treat readable incoming references as applicability evidence for malformed target types; expose unsupported path evidence without enqueueing segments or supported stale/collision predicates; and compare labels against all unrelated semantic node bodies while preserving own-node and ancestor exclusions. Expand the public matrix with direct and parseable-note/package interaction cases, audit adjacent nullable/unlocatable/unsupported/incoming/leaf-only consumers, preserve generated-artifact ownership and protected scope, commit rollback-safe checkpoints, and rerun every required focused and complete gate.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -350,6 +354,10 @@ Review remediation checkpoint: fixed all independently verified findings without
 Review-remediation scope amended by direct user instruction: generated CLI audit/proof views are now on-demand ignored outputs, while cli-command-audit.json remains the canonical authored input. Implementation is proceeding under the appended plan amendment without reopening TASK-128 or changing protected runtime behavior.
 
 Review-remediation closure after the generated-ownership amendment: commit 9683eb7 keeps docs/design/cli-command-audit.json as the canonical authored input, removes the three reproducible views from tracking, renders them on demand under ignored docs/design/generated/, and validates their live projection plus two absent-directory byte-identical generations without touching the checkout. Final gates on the committed tree: two bun run fix passes both produced the empty SHA-256 diff e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855; bun run check passed; a separate bun run test passed; both full chains ran all four browser suites sequentially/headless, with fixed-point 0 of 13 changed and live-session 42 of 42 cycles converged. The earlier separate-test human-performance failure was isolated per docs/agents/test-suite.md, its browser-created text correction was diagnosed without retaining instrumentation, the isolated rerun passed, and both required complete chains then passed. TASK-119 remains In Progress with every acceptance criterion unchecked for independent rereview.
+
+Final rereview remediation started from clean 1c293b7 with fixed base 963c3f0. Test seams remain the pure inspectBoard readonly-unknown interface and the real package CLI over parseable notes. TASK-119 stays In Progress with all acceptance criteria unchecked.
+
+Final interaction remediation checkpoint: split relative path structure from nullable absolute scene coordinates, and gated pair/stale analysis on a canonical id, finite two-coordinate origin, supported discriminator set, and usable path. Invalid-id connectors now retain nullable malformed binding/path evidence but skip readable binding, persisted endpoint, dangling entry, stale, and pair producers. Readable incoming binding/container/bound references make malformed target types coverage-applicable. Label-node overlap now considers every semantic node body while connector penetration and node overlap retain leaf scope. The public direct/package matrix grew to 376 checks, including unlocatable collision traps, missing/empty/non-string identity interactions, forward-only malformed target types, every unsupported connector discriminator, and unrelated non-leaf zone label overlap. bun run lint, both TypeScript projects, test:inspection, and git diff --check pass.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
