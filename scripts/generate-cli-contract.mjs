@@ -19,6 +19,14 @@ const { introspectContracts } = await import(
 const registry = cliContractRegistry();
 const proof = introspectContracts(registry);
 const legacyPaths = registry.filter((entry) => entry.kind === "legacy").map((entry) => entry.name);
+const generatedRoutes = registry.map(
+	({ name, parent, kind, handlerOwner, parserOwner, bare, legacyArgv }) => {
+		const route = { name, parent, kind, handlerOwner, parserOwner };
+		if (bare) route.bare = bare;
+		if (legacyArgv) route.legacyArgv = legacyArgv;
+		return route;
+	},
+);
 
 const cell = (value) =>
 	(Array.isArray(value) ? value.join("; ") : String(value ?? ""))
@@ -57,8 +65,9 @@ const auditMarkdown = [
 const proofJson =
 	JSON.stringify(
 		{
-			schemaVersion: 2,
+			schemaVersion: 3,
 			generatedFrom: "src/cli/commands/run.ts",
+			routes: generatedRoutes,
 			contracts: proof,
 			legacyPaths,
 		},

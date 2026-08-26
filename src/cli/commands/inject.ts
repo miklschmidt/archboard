@@ -9,8 +9,6 @@ import { getInjection, postInjectionTest } from "../../runtime/engine/canvas-cli
 // thread is decided when the canvas server starts, from ARCHBOARD_INJECT and
 // the address it bound, and a command that could flip it at runtime would
 // defeat the point of it being a separate capability (ADR 0005).
-export const SUBCOMMANDS = ["status", "test"] as const;
-
 export async function inject(argv: string[]): Promise<void> {
 	const [sub, ...rest] = argv;
 	if (!sub || sub === "status") {
