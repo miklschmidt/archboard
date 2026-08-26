@@ -69,7 +69,7 @@ const refusal = (read) => {
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-boards-"));
 process.env.ARCHBOARD_VAULT = vault;
 
-const { labelTextIdFor } = await import(src("core/labels.ts"));
+const { labelTextIdFor } = await import(src("runtime/engine/labels.ts"));
 
 let failures = 0;
 const check = (label, cond, extra = "") => {
@@ -88,10 +88,12 @@ const {
 	SCRATCH_KEY,
 	boards: boardStore,
 	getOrCreateBoard,
-} = await import(src("core/board-store.ts"));
-const { BoardRequiredError } = await import(src("core/board-target.ts"));
-const { resolvePaneSpec, soloPane, panesInOrder, MAX_PANES } = await import(src("core/panes.ts"));
-const { planPromotion } = await import(src("core/promote.ts"));
+} = await import(src("runtime/engine/board-store.ts"));
+const { BoardRequiredError } = await import(src("runtime/engine/board-target.ts"));
+const { resolvePaneSpec, soloPane, panesInOrder, MAX_PANES } = await import(
+	src("runtime/engine/panes.ts")
+);
+const { planPromotion } = await import(src("runtime/engine/promote.ts"));
 const {
 	boardKey,
 	makeIdentity,
@@ -102,10 +104,10 @@ const {
 	listBoards,
 	identityFrontmatter,
 	renderBoardNote,
-} = await import(src("core/board.ts"));
+} = await import(src("runtime/engine/board.ts"));
 // `board open`'s reader lives with the per-request one now, on top of the same
 // `readNoteFile` (TASK-089).
-const { readBoardFile, readNote } = await import(src("core/board-io.ts"));
+const { readBoardFile, readNote } = await import(src("runtime/engine/board-io.ts"));
 
 // Board addresses are case-insensitive and unicode-normalised (ADR 0010).
 // Boards get named out loud, and a human cannot pronounce casing, so two
@@ -287,7 +289,7 @@ const { readBoardFile, readNote } = await import(src("core/board-io.ts"));
 {
 	const { default: app } = await import(src("server.ts"));
 	const { snapshots } = await import(src("types.ts"));
-	const { readBoardContent, writeBoardContent } = await import(src("core/board-io.ts"));
+	const { readBoardContent, writeBoardContent } = await import(src("runtime/engine/board-io.ts"));
 	const listener = app.listen(0, "127.0.0.1");
 	await new Promise((resolve) => listener.once("listening", resolve));
 	const at = `http://127.0.0.1:${listener.address().port}`;
@@ -356,7 +358,7 @@ const { readBoardFile, readNote } = await import(src("core/board-io.ts"));
 // after that settlement: the error must name the settled block id, and the
 // note must remain byte-identical.
 {
-	const { readBoardContent, writeBoardContent } = await import(src("core/board-io.ts"));
+	const { readBoardContent, writeBoardContent } = await import(src("runtime/engine/board-io.ts"));
 	const identity = makeIdentity({ board: "final-geometry-guard", level: "service" });
 	const { board } = getOrCreateBoard(identity);
 	board.file = vaultPathFor(identity);
@@ -1979,12 +1981,14 @@ try {
 	// beat, the message and the pane that hears it — is checked further down
 	// against a real canvas.
 	{
-		const { noteWrittenElsewhere, forgetNoteWatch } = await import(src("core/note-watch.ts"));
-		const { writeBoardContent, emptyContent } = await import(src("core/board-io.ts"));
-		const { beginHold, releaseHold } = await import(src("core/board-hold.ts"));
-		const { recordBaseline } = await import(src("core/board-store.ts"));
-		const { hashBoardBytes } = await import(src("core/board.ts"));
-		const { versionNumber } = await import(src("core/board-version.ts"));
+		const { noteWrittenElsewhere, forgetNoteWatch } = await import(
+			src("runtime/engine/note-watch.ts")
+		);
+		const { writeBoardContent, emptyContent } = await import(src("runtime/engine/board-io.ts"));
+		const { beginHold, releaseHold } = await import(src("runtime/engine/board-hold.ts"));
+		const { recordBaseline } = await import(src("runtime/engine/board-store.ts"));
+		const { hashBoardBytes } = await import(src("runtime/engine/board.ts"));
+		const { versionNumber } = await import(src("runtime/engine/board-version.ts"));
 
 		const identity = makeIdentity({ board: "notewatch" });
 		const { key: watched, board: watchedBoard } = getOrCreateBoard(identity);
@@ -2894,7 +2898,7 @@ try {
 		// board": a dotfile with a .tmp suffix, which `listBoards` skips twice over
 		// and Obsidian does not show. Asserted against the helper rather than
 		// against a race, because the file only exists for the length of a write.
-		const { writeFileAtomic, tempPathFor } = await import(src("core/atomic-write.ts"));
+		const { writeFileAtomic, tempPathFor } = await import(src("runtime/engine/atomic-write.ts"));
 		const tempName = path.basename(tempPathFor(path.join(vault, "payments.excalidraw.md")));
 		check(
 			"the temp file a write goes through is hidden from a vault",
@@ -3098,7 +3102,7 @@ try {
 	// by things other than `board save` — the filter is not on the save path, it
 	// is on the only path that builds a scene.
 	{
-		const { buildScene } = await import(src("core/scene-document.ts"));
+		const { buildScene } = await import(src("runtime/engine/scene-document.ts"));
 		const everyImage = {
 			"img-a": { id: "img-a", dataURL: pngA, mimeType: "image/png" },
 			"img-b": { id: "img-b", dataURL: pngB, mimeType: "image/png" },

@@ -107,14 +107,14 @@ await new Promise((resolve) => proxy.listen(PROXY_PORT, "127.0.0.1", resolve));
 // The client reads its canvas URL at import time, so the proxy has to be the
 // canvas before anything under src/ is loaded.
 process.env.EXPRESS_SERVER_URL = proxyBase;
-const client = await import(src("core/canvas-client.ts"));
+const client = await import(src("runtime/engine/canvas-client.ts"));
 const { setRequestedBoard, setWriteDoing } = client;
 // The element ops below are driven through the client rather than over the
 // wire, so this stands in for the CLI's --doing (TASK-095). Direct client calls later
 // pass `doing` as an argument, the way a client would.
 setWriteDoing("checking that one intent is one write");
-const ops = await import(src("core/element-ops.ts"));
-const { boundTextPlacement } = await import(src("core/labels.ts"));
+const ops = await import(src("runtime/engine/element-ops.ts"));
+const { boundTextPlacement } = await import(src("runtime/engine/labels.ts"));
 
 const api = async (method, url, body) => {
 	// Every write says what it is doing, once for the whole check (TASK-095,
@@ -836,7 +836,7 @@ try {
 	// ─── One route-level door ────────────────────────────────────
 
 	const serverSource = fs.readFileSync(src("server.ts"), "utf-8");
-	const doorSource = fs.readFileSync(src("core/board-write.ts"), "utf-8");
+	const doorSource = fs.readFileSync(src("runtime/engine/board-write.ts"), "utf-8");
 	assert(
 		(serverSource.match(/answerBoardWrite\(res, \{/g) ?? []).length === 9,
 		"server.ts should route all nine board-writing routes through the response wrapper",

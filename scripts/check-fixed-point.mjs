@@ -112,7 +112,7 @@ const check = (label, cond, extra = "") => {
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const { PANE_DEBOUNCE_MS, PANE_LAYOUT_TIMEOUT_MS, PANE_SETTLE_CAP_MS, REPORT_PROGRESS_MS } =
-	await import(src("core/timing.ts"));
+	await import(src("shared/timing/timing.ts"));
 
 // Browser waits are observations with a deadline, not guessed pauses. The poll
 // cadence follows the two browser debounces, and the outer cap is the same one
@@ -392,8 +392,8 @@ const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-fixedpoint-"));
 // auto-resizing Helvetica text and no finite width or height. Build the valid
 // form through the same converter as a normal write, then remove only those
 // two fields. The correction later restores these original bytes.
-const { renderBoardNote } = await import(src("core/board.ts"));
-const { expandElements } = await import(src("core/expand-elements.ts"));
+const { renderBoardNote } = await import(src("runtime/engine/board.ts"));
+const { expandElements } = await import(src("runtime/engine/expand-elements.ts"));
 const legacyIdentity = { board: "legacy-geometry", variant: "current" };
 const validLegacyScene = {
 	type: "excalidraw",

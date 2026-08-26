@@ -61,10 +61,10 @@ const PORT = Number(process.env.PORT || 35000 + Math.floor(Math.random() * 2000)
 const base = `http://127.0.0.1:${PORT}`;
 process.env.EXPRESS_SERVER_URL = base;
 
-const { planPromotion } = await import(src("core/promote.ts"));
-const { describeScene } = await import(src("core/describe.ts"));
-const { insertStencil } = await import(src("core/library-catalogue.ts"));
-const { setRequestedBoard, setWriteDoing } = await import(src("core/canvas-client.ts"));
+const { planPromotion } = await import(src("runtime/engine/promote.ts"));
+const { describeScene } = await import(src("runtime/engine/describe.ts"));
+const { insertStencil } = await import(src("runtime/engine/library-catalogue.ts"));
+const { setRequestedBoard, setWriteDoing } = await import(src("runtime/engine/canvas-client.ts"));
 // Driving the client directly means setting what the CLI's --doing
 // `doing` argument set, or the canvas refuses the write (TASK-095).
 setWriteDoing("checking a branch against the board it came from");

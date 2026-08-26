@@ -84,7 +84,7 @@ const shape = (x) => [
 	JSON.stringify({ type: "rectangle", x, y: 10, width: 60, height: 40 }),
 ];
 
-const { makeIdentity, vaultPathFor } = await import(src("core/board.ts"));
+const { makeIdentity, vaultPathFor } = await import(src("runtime/engine/board.ts"));
 const {
 	checkBoardVersion,
 	forgetRememberedVersion,
@@ -93,17 +93,17 @@ const {
 	versionNumber,
 	versionMove,
 	versionOfNoteAt,
-} = await import(src("core/board-version.ts"));
+} = await import(src("runtime/engine/board-version.ts"));
 const {
 	getOrCreateBoard,
 	boards: boardStore,
 	recordBaseline,
-} = await import(src("core/board-store.ts"));
+} = await import(src("runtime/engine/board-store.ts"));
 const { _emptyContent, foreignWriteTo, readNote, writeBoardContent } = await import(
-	src("core/board-io.ts")
+	src("runtime/engine/board-io.ts")
 );
-const { hashBoardBytes } = await import(src("core/board.ts"));
-const { noteWrittenElsewhere, forgetNoteWatch } = await import(src("core/note-watch.ts"));
+const { hashBoardBytes } = await import(src("runtime/engine/board.ts"));
+const { noteWrittenElsewhere, forgetNoteWatch } = await import(src("runtime/engine/note-watch.ts"));
 
 const box = (id, x) => ({
 	id,
@@ -649,7 +649,7 @@ try {
 	// The other identity. A long-lived client can retain what the canvas last
 	// told it. Driven here through the client module directly.
 
-	const client = await import(src("core/canvas-client.ts"));
+	const client = await import(src("runtime/engine/canvas-client.ts"));
 	const {
 		setRequestedBoard,
 		setWriteDoing,
