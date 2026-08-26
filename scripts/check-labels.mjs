@@ -1868,7 +1868,7 @@ const sceneBox = (elements) => ({
 
 		// And the seed that asked for those labels is not on the board. It was
 		// read, it produced four text elements, and it is spent (TASK-073).
-		const held = drawn
+		const held = drawnElements
 			.filter((element) => seedOf(element) !== undefined)
 			.map((element) => element.id);
 		assert(held.length === 0, `the board came back holding a label seed on ${held.join(", ")}`);
