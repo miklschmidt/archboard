@@ -1,11 +1,11 @@
 ---
 id: TASK-123.01
 title: Design and prove the schema-driven CLI contract
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:53'
-updated_date: '2026-08-26 08:06'
+updated_date: '2026-08-26 08:19'
 labels: []
 dependencies:
   - TASK-124
@@ -23,6 +23,25 @@ references:
   - tasks/task-119
   - tasks/task-120
   - tasks/task-121
+modified_files:
+  - package.json
+  - bun.lock
+  - src/bin.ts
+  - src/cli/command-contract
+  - src/cli/commands/run.ts
+  - src/cli/commands/elements.ts
+  - src/cli/commands/scene.ts
+  - src/cli/commands/viewport.ts
+  - scripts/check-cli-surface.mjs
+  - scripts/check-command-contract.mjs
+  - scripts/generate-cli-contract.mjs
+  - docs/agents/test-suite.md
+  - docs/design/cli-command-audit.json
+  - docs/design/cli-command-audit.md
+  - docs/design/command-contract-design.md
+  - docs/design/command-contract-proof.json
+  - docs/design/command-contract-proof.md
+  - docs/design/commander-zod-evaluation.md
 parent_task_id: TASK-123
 priority: high
 type: task
@@ -41,14 +60,14 @@ In parallel, trace real workflows from tests, task history, and architecture-boa
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A checked-in audit enumerates every public command and subcommand with current parsing owner, stdout mode, result shape or type owner, diagnostics, exits, prerequisites, board and write semantics, ordering guarantees, and fields needed by likely next commands.
-- [ ] #2 A checked-in design defines CommandContract and its Zod input and output schemas, command metadata, prerequisites, effects, refusals and exit mappings, output modes, examples, typed handler, composition rules, and compatibility policy.
-- [ ] #3 The local adapter is the only module coupled to Commander; its supported argument and option semantics include aliases, booleans, repeatable values, defaults, coercion, enums, optional and required values, stdin and file inputs, pass-through content where intentional, and cross-field validation.
-- [ ] #4 Representative proof commands cover a structured read, a versioned element write, a browser-dependent operation, and an intentional text, raw-content, or file-output operation without changing their established public behavior.
-- [ ] #5 The proof validates successful results before stdout, keeps diagnostics on stderr, maps declared refusals to exits, exposes machine-readable contract metadata, and generates help plus a result-reference fragment from the same source.
-- [ ] #6 The dependency evaluation records zod-commander compatibility and its missing result, prerequisite, effect, and refusal contracts, and confirms the Archboard contract does not expose that package or Commander types.
-- [ ] #7 The workflow audit classifies real command chains as necessary composition, missing return data, missing handle, duplicated query, caller-side work Archboard already knows, or candidate single act; approved collapses become focused child or linked tasks and rejected collapses retain their reasons.
-- [ ] #8 The design preserves public CLI spellings, one requested act per write, claims, board-version refusal, browser and server boundaries, and explicitly documented CLI-to-REST relationships without recreating a second agent command surface.
+- [x] #1 A checked-in audit enumerates every public command and subcommand with current parsing owner, stdout mode, result shape or type owner, diagnostics, exits, prerequisites, board and write semantics, ordering guarantees, and fields needed by likely next commands.
+- [x] #2 A checked-in design defines CommandContract and its Zod input and output schemas, command metadata, prerequisites, effects, refusals and exit mappings, output modes, examples, typed handler, composition rules, and compatibility policy.
+- [x] #3 The local adapter is the only module coupled to Commander; its supported argument and option semantics include aliases, booleans, repeatable values, defaults, coercion, enums, optional and required values, stdin and file inputs, pass-through content where intentional, and cross-field validation.
+- [x] #4 Representative proof commands cover a structured read, a versioned element write, a browser-dependent operation, and an intentional text, raw-content, or file-output operation without changing their established public behavior.
+- [x] #5 The proof validates successful results before stdout, keeps diagnostics on stderr, maps declared refusals to exits, exposes machine-readable contract metadata, and generates help plus a result-reference fragment from the same source.
+- [x] #6 The dependency evaluation records zod-commander compatibility and its missing result, prerequisite, effect, and refusal contracts, and confirms the Archboard contract does not expose that package or Commander types.
+- [x] #7 The workflow audit classifies real command chains as necessary composition, missing return data, missing handle, duplicated query, caller-side work Archboard already knows, or candidate single act; approved collapses become focused child or linked tasks and rejected collapses retain their reasons.
+- [x] #8 The design preserves public CLI spellings, one requested act per write, claims, board-version refusal, browser and server boundaries, and explicitly documented CLI-to-REST relationships without recreating a second agent command surface.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -86,6 +105,8 @@ Review and validation checkpoint: independent Standards and Spec rereviews both 
 Review remediation checkpoint 0fa4612: corrected the four proof handler owners and made test:contracts verify every audit owner plus registry/definition reconciliation; moved viewport id coercion and export format inference/defaulting into staged Zod schemas with generated rules and source ownership checks; mapped Commander values through Option.attributeName(); reduced public runCommand to the production two-argument interface while keeping handler-facing Archboard types; restored exact legacy attached-value boolean diagnostics with fixed-base goldens; and rendered generated usage in fenced text blocks. Focused gates passed: type-check, test:contracts (89 checks plus 9 Bun tests), test:cli (415 checks), test:one-write (76), test:obsidian (197), and test:browser fixed-point.
 
 Approved plan amendment checkpoint 5d50be5: removed CommandDependencies and the single-implementation ArgvParser, CommandHost, and PrerequisiteResolver ports. Private execution now calls the concrete Commander parser, process/filesystem host, and server/browser prerequisite function directly; public runCommand remains two arguments and CommandContext, CommandExecution, and PendingArtifact are unchanged. The design and canonical audit now call these private concrete implementations, not seams. Deleted the test that read private command-definitions source; public introspection and public runner/package CLI tests retain coverage for staged viewport ids, export format inference/default, refusal precedence, held output, network effects, and artifact validation before write. Focused gates passed: type-check, generation freshness, test:contracts (88 checks plus 9 Bun tests), test:cli (415), test:boundaries, test:one-write (76), test:obsidian (197), and fixed-point browser.
+
+Final acceptance verification at 96a3d0af05314b22aaf22987f5bf7ed148e4141c: bun run test:contracts passed 9 tests and 88 contract checks; bun run test:cli passed 415 checks; both TypeScript projects passed; test:suites confirmed all 28 push suites. The implementation worker also completed two byte-stable bun run fix passes, bun run check, and a separate full bun run test; Standards and Spec independently rereviewed the complete fixed range 43d0b982ac39346ae3057edf3c9fdffe400b2853..96a3d0af05314b22aaf22987f5bf7ed148e4141c and reported no findings.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -109,3 +130,9 @@ created: 2026-08-26 08:03
 Review amendment approved: remove hypothetical parser/host/prerequisite ports instead of restoring test-only fake adapters. Public interface and handler-facing types remain unchanged; tests stay at the module interface.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Defined and proved an Archboard-owned, schema-driven CLI contract without changing the established command surface. The checked-in audit covers all 33 commands and 24 subcommands; Commander 15.0.0 is isolated behind the private adapter; query, update, viewport, and export prove structured read, versioned write, browser prerequisite, and raw/file output behavior. Generated contract/reference artifacts, fixed-base argv goldens, result-before-output validation, and workflow classifications are enforced by the 28-suite test chain. Approved one-write follow-ups were recorded as TASK-126 and TASK-127; the broader stencil collapse was rejected with rationale. Verified by stable fix passes, bun run check, a separate full bun run test, focused parent checks, and clean independent Standards and Spec reviews.
+<!-- SECTION:FINAL_SUMMARY:END -->
