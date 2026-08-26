@@ -18,24 +18,11 @@ const { introspectContracts } = await import(
 );
 const registry = cliContractRegistry();
 const proof = introspectContracts(registry);
-const legacyPaths = registry.filter((entry) => entry.kind === "legacy").map((entry) => entry.name);
 const generatedRoutes = registry.map(
-	({
-		name,
-		parent,
-		kind,
-		handlerOwner,
-		parserOwner,
-		handlerName,
-		bare,
-		childDiscovery,
-		legacyArgv,
-	}) => {
+	({ name, parent, kind, handlerOwner, parserOwner, bare, childDiscovery }) => {
 		const route = { name, parent, kind, handlerOwner, parserOwner };
-		if (handlerName) route.handlerName = handlerName;
 		if (bare) route.bare = bare;
 		if (childDiscovery) route.childDiscovery = childDiscovery;
-		if (legacyArgv) route.legacyArgv = legacyArgv;
 		return route;
 	},
 );
@@ -77,11 +64,10 @@ const auditMarkdown = [
 const proofJson =
 	JSON.stringify(
 		{
-			schemaVersion: 5,
+			schemaVersion: 6,
 			generatedFrom: "src/cli/commands/run.ts",
 			routes: generatedRoutes,
 			contracts: proof,
-			legacyPaths,
 		},
 		null,
 		2,

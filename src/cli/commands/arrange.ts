@@ -15,7 +15,7 @@ import {
 	type OptionParameter,
 } from "../command-contract/contract.js";
 import { HoldReportSchema } from "../command-contract/schemas.js";
-import type { FlagSpecs } from "./args.js";
+import type { FlagSpecs } from "../command-contract/route-options.js";
 
 const ALIGNMENTS = new Set(["left", "center", "right", "top", "middle", "bottom"]);
 const DIRECTIONS = new Set(["horizontal", "vertical"]);

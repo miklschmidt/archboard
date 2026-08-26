@@ -20,12 +20,11 @@ const { cliSurface, cliContractRegistry } = await import(
 	join(root, "src", "cli", "commands", "run.ts")
 );
 const { runCommand } = await import(join(root, "src", "cli", "command-contract", "runner.ts"));
-const { childDiscoveryOptions } = await import(join(root, "src", "cli", "commands", "args.ts"));
+const { childDiscoveryOptions } = await import(
+	join(root, "src", "cli", "command-contract", "route-options.ts")
+);
 const { SNAPSHOT_FLAG_SPEC } = await import(join(root, "src", "cli", "commands", "snapshot.ts"));
 const { ARRANGE_FLAG_SPEC } = await import(join(root, "src", "cli", "commands", "arrange.ts"));
-const { duplicateSiblingRegistry } = await import(
-	join(root, "scripts", "fixtures", "command-contract", "duplicate-sibling-handlers.mjs")
-);
 
 let failures = 0;
 let checks = 0;
@@ -35,28 +34,6 @@ const check = (label, condition, detail = "") => {
 	failures += 1;
 	console.error(`FAIL: ${label}${detail ? `: ${detail}` : ""}`);
 };
-
-function duplicateLegacySiblingHandlers(entries) {
-	const duplicates = [];
-	const childrenByParent = new Map();
-	for (const entry of entries.filter(
-		(candidate) => candidate.kind === "legacy" && candidate.parent !== null,
-	)) {
-		const siblings = childrenByParent.get(entry.parent) ?? [];
-		siblings.push(entry);
-		childrenByParent.set(entry.parent, siblings);
-	}
-	for (const siblings of childrenByParent.values()) {
-		for (let left = 0; left < siblings.length; left += 1) {
-			for (let right = left + 1; right < siblings.length; right += 1) {
-				if (siblings[left].handler === siblings[right].handler) {
-					duplicates.push(`${siblings[left].name} = ${siblings[right].name}`);
-				}
-			}
-		}
-	}
-	return duplicates;
-}
 
 const expectedPaths = [];
 for (const { name, subcommands } of cliSurface()) {
@@ -163,7 +140,6 @@ for (const entry of audit.entries) {
 
 const registry = cliContractRegistry();
 const contracts = registry.filter((entry) => entry.kind === "contract" && entry.contract);
-const legacy = registry.filter((entry) => entry.kind === "legacy");
 check(
 	"all-contract registry has exactly 57 entries",
 	registry.length === 57,
@@ -178,7 +154,10 @@ check(
 	JSON.stringify(registry.map((entry) => entry.name)) === JSON.stringify(auditedPaths),
 );
 check("all 57 routes are contracts", contracts.length === 57, String(contracts.length));
-check("no legacy routes remain", legacy.length === 0, String(legacy.length));
+check(
+	"no legacy routes remain",
+	registry.every((entry) => entry.kind === "contract"),
+);
 check(
 	"every route has one executable contract owner",
 	registry.every(
@@ -189,37 +168,8 @@ check(
 	),
 );
 check(
-	"legacy handler metadata names the actual callable",
-	legacy.every(
-		(entry) =>
-			typeof entry.handlerName === "string" &&
-			entry.handlerName.length > 0 &&
-			entry.handlerName === entry.handler?.name,
-	),
-);
-check(
 	"contract identity does not pretend to be a handler name",
 	contracts.every((entry) => !("handlerName" in entry)),
-);
-for (const entry of legacy.filter((candidate) => candidate.parent !== null)) {
-	const parent = registry.find((candidate) => candidate.name === entry.parent);
-	check(`${entry.name} consumes route-tail argv`, entry.legacyArgv === "route-tail");
-	check(
-		`${entry.name} executes independently of its family root`,
-		typeof entry.handler === "function" && entry.handler !== parent?.handler,
-		entry.handlerName,
-	);
-}
-const siblingHandlerDuplicates = duplicateLegacySiblingHandlers(registry);
-check(
-	"legacy sibling routes have pairwise-unique handlers",
-	siblingHandlerDuplicates.length === 0,
-	siblingHandlerDuplicates.join(", "),
-);
-check(
-	"duplicate-sibling self-test fixture is rejected",
-	JSON.stringify(duplicateLegacySiblingHandlers(duplicateSiblingRegistry)) ===
-		JSON.stringify(["fixture first = fixture second"]),
 );
 for (const [family, spec] of [
 	["snapshot", SNAPSHOT_FLAG_SPEC],
@@ -329,6 +279,37 @@ check(
 	duplicateSubcommandCatalogues.length === 0,
 	duplicateSubcommandCatalogues.join(", "),
 );
+for (const deleted of [
+	"src/cli/commands/args.ts",
+	"src/cli/commands/util.ts",
+	"src/cli/command-contract/lib/command-definitions.ts",
+]) {
+	check(`${deleted} stays deleted`, !fs.existsSync(join(root, deleted)));
+}
+const commandModuleViolations = familyCommandSources
+	.filter(([, source]) =>
+		/\b(?:parseArgs|printJson|requireBrowserClient)\s*\(|process\.(?:stdout|stderr)|argv\s*:\s*string\[\]/.test(
+			source,
+		),
+	)
+	.map(([file]) => file);
+check(
+	"command handlers receive validated input and own no streams or raw argv",
+	commandModuleViolations.length === 0,
+	commandModuleViolations.join(", "),
+);
+const obsoleteInfrastructureReferences = sourceFiles
+	.filter((file) =>
+		/LegacyCommand|command-definitions|commands\/(?:args|util)\.js/.test(
+			fs.readFileSync(file, "utf8"),
+		),
+	)
+	.map((file) => relative(root, file));
+check(
+	"source contains no obsolete CLI infrastructure references",
+	obsoleteInfrastructureReferences.length === 0,
+	obsoleteInfrastructureReferences.join(", "),
+);
 const commanderImports = sourceFiles.filter((file) =>
 	/from ["']commander["']/.test(fs.readFileSync(file, "utf8")),
 );
@@ -399,22 +380,10 @@ const proofJson = fs.readFileSync(
 );
 const generatedProof = JSON.parse(proofJson);
 const expectedGeneratedRoutes = registry.map(
-	({
-		name,
-		parent,
-		kind,
-		handlerOwner,
-		parserOwner,
-		handlerName,
-		bare,
-		childDiscovery,
-		legacyArgv,
-	}) => {
+	({ name, parent, kind, handlerOwner, parserOwner, bare, childDiscovery }) => {
 		const route = { name, parent, kind, handlerOwner, parserOwner };
-		if (handlerName) route.handlerName = handlerName;
 		if (bare) route.bare = bare;
 		if (childDiscovery) route.childDiscovery = childDiscovery;
-		if (legacyArgv) route.legacyArgv = legacyArgv;
 		return route;
 	},
 );
@@ -423,10 +392,7 @@ check(
 	JSON.stringify(generatedProof.contracts.map((entry) => entry.name)) ===
 		JSON.stringify(contracts.map((entry) => entry.name)),
 );
-check(
-	"generated legacy paths cover every registered legacy path",
-	JSON.stringify(generatedProof.legacyPaths) === JSON.stringify([]),
-);
+check("generated proof omits legacy paths", !("legacyPaths" in generatedProof));
 check(
 	"generated routes cover every owner and parent in the mixed tree",
 	JSON.stringify(generatedProof.routes) === JSON.stringify(expectedGeneratedRoutes),
@@ -436,16 +402,6 @@ check(
 	generatedProof.routes
 		.filter((entry) => entry.kind === "contract")
 		.every((entry) => !("handlerName" in entry)),
-);
-check(
-	"generated legacy handler names match their live callables",
-	generatedProof.routes
-		.filter((entry) => entry.kind === "legacy")
-		.every(
-			(entry) =>
-				entry.handlerName ===
-				registry.find((candidate) => candidate.name === entry.name)?.handler?.name,
-		),
 );
 for (const privateName of ["pendingArtifact", "artifactSchema", "CommanderArgvParser"]) {
 	check(`proof omits ${privateName}`, !proofJson.includes(privateName));
