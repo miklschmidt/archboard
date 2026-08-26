@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 16:03'
+updated_date: '2026-08-26 16:27'
 labels:
   - ready-for-agent
 dependencies:
@@ -326,6 +326,14 @@ FINAL INTERACTION AND COORDINATE-TOTALITY REMEDIATION (2026-08-26)
 After rejected rereview head 1c293b7c48a28c590652ae516a07c4579a3504f6, close five verified interaction holes through the existing pure inspectBoard and package CLI seams. Separate relative path validation from finite absolute origin eligibility; stop every identity-dependent producer after invalid identity while retaining nullable malformed-structure findings; treat readable incoming references as applicability evidence for malformed target types; expose unsupported path evidence without enqueueing segments or supported stale/collision predicates; and compare labels against all unrelated semantic node bodies while preserving own-node and ancestor exclusions. Expand the public matrix with direct and parseable-note/package interaction cases, audit adjacent nullable/unlocatable/unsupported/incoming/leaf-only consumers, preserve generated-artifact ownership and protected scope, commit rollback-safe checkpoints, and rerun every required focused and complete gate.
 
 PREREQUISITE-TOTALITY CLOSURE (2026-08-26)\n\nAfter rejected head a1a1b941e83b9d26b70593cc5d8fd24714691a99, close four source-verified shared-rule defects without changing the public inspectBoard interface. Use the same finite-coordinate rule for identity fallback, render evidence, absolute path derivation, and segment eligibility; make endpoint binding classification an explicit prerequisite for node penetration; centralize label ownership classification in the inspection model for diagnostics and collision exclusions; and add a closed BROKEN_REFERENCE reason for readable boundElements target-type mismatch. Drive each change through public direct and persisted/package cases, then add a bounded deterministic cross-product matrix over identity, coordinate, path, endpoint, ownership, and target-type states. Preserve generated ownership and all protected scope. Commit rollback-safe checkpoints and rerun the complete required focused, fixer, generator, repository, and sequential browser gates.
+
+### AGGREGATE/IDENTITY TOTALITY CLOSURE
+
+1. Replace duplicate per-record render checks with the strict ingest collector as the shared field-validity rule, while keeping derived span and hierarchy arithmetic inspection-only.
+2. Add a closed aggregate-coordinate finding and an explicit aggregate result used by node, obstacle, and affected-union construction. Failed aggregates retain finite constituent evidence and exclude only dependent aggregate consumers.
+3. Compute unique usable IDs once and thread that eligibility through every identity-dependent model and detector producer.
+4. Centralize bound-element compatibility, including declared arrow to actual line, and replace hierarchy area multiplication with an overflow-safe finite-box comparison.
+5. Expand direct and persisted public cross-products, then run focused and complete validation without changing generated ownership or protected scope.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -378,6 +386,18 @@ Focused validation green: lint (including distributable skill validation), type-
 Committed remediation as 4dc8427. `bun run check` completed green, followed by a separate complete `bun run test`; each ran all four browser suites sequentially and headless. Human-performance held the 10,000-element board responsive, fixed-point returned 0/13 changed elements, typed-text preserved both rename interactions, and live-session converged through all 42 mixed-write cycles.
 
 The on-demand CLI-contract renderer succeeded from an absent generated-output directory into two independent temporary directories. All three derived views (`cli-command-audit.md`, `command-contract-proof.json`, and `command-contract-proof.md`) were byte-identical between runs and left no checkout output. The canonical authored `docs/design/cli-command-audit.json` remains tracked; generated ownership is unchanged. `git diff --check` passed. TASK-119 intentionally remains In Progress with every acceptance criterion unchecked pending independent rereview.
+
+Aggregate/identity totality remediation started from clean rejected head 0766f143b95d2e22edbcba8ed8d250b5ebc2179b. Fixed base remains an ancestor. TASK-119 stays In Progress with acceptance criteria unchecked.
+
+### Aggregate/identity totality implementation
+
+Added one explicit aggregate-box classification that distinguishes empty input, a finite representable union, and finite constituents whose span cannot be represented. Node bodies, node aggregates, grouped/library obstacles, broad-phase affected regions, and multi-record finding unions now consume that result. The closed warning `AMBIGUOUS_GEOMETRY/unrepresentable-coordinate-span` is coverage-affecting, source-indexed, formatter-exhaustive, and keeps a finite local constituent box when one combined box is impossible. Failed node-body and obstacle aggregates are excluded from their dependent pair consumers; node aggregate-only failure does not discard a valid node body.
+
+Decoded records now compute unique usable IDs once. Duplicate groups stay available for source-indexed render and structural evidence but cannot enter maps, node membership, endpoint resolution, label ownership, obstacle identity, connector segments, reference resolution, or pair analysis. Bound-element compatibility is centralized: text accepts text; arrow accepts arrow or line. Hierarchy area ordering now compares normalized exponent/mantissa keys instead of multiplying widths and heights.
+
+The strict render collector is the single x/y/width/height field classifier used by inspection decoding. Direct equivalence cases cover finite, missing, nonfinite, negative, zero, extreme, and derived-overflow records. Derived extent and multi-record span failures remain inspection-only.
+
+The public production suite now has 553 checks. New evidence includes a bounded 9-case aggregate cross-product, six duplicate-role cross-products, the full 8-case text/arrow against text/arrow/line/rectangle table, line reciprocity, semantic/grouped/library/duplicate affected overflows, raw persisted plus/minus MAX_VALUE cases, MAX_VALUE and tiny-by-huge hierarchy arithmetic, equal-area tie order, nested-zone leaf/endpoint/ancestor behavior, and source-indexed duplicate structural findings. Focused lint, type, boundaries, module-scope, contracts, inspection, geometry, labels, branch, and CLI gates are green. Two real fixer passes were byte-stable at d0319cfe748d0533e6db747f13b350271c0edbcc.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

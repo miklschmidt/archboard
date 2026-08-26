@@ -42,8 +42,22 @@ export const focus = (value: SceneBBox | null): SceneBBox | null =>
 		? null
 		: box({ x: value.x - 16, y: value.y - 16, width: value.width + 32, height: value.height + 32 });
 
-export function unionBoxes(values: readonly ExactBox[]): ExactBox | null {
-	if (values.length === 0) return null;
+export type AggregateBoxResult =
+	| { kind: "empty" }
+	| { kind: "representable"; box: ExactBox }
+	| { kind: "unrepresentable"; representative: ExactBox };
+
+const boxOrder = (a: ExactBox, b: ExactBox): number => {
+	for (const field of ["x", "y", "width", "height"] as const) {
+		if (a[field] < b[field]) return -1;
+		if (a[field] > b[field]) return 1;
+	}
+	return 0;
+};
+
+/** Classify an exact union without conflating no input with an unrepresentable finite span. */
+export function aggregateBoxes(values: readonly ExactBox[]): AggregateBoxResult {
+	if (values.length === 0) return { kind: "empty" };
 	const minX = Math.min(...values.map((value) => value.x));
 	const minY = Math.min(...values.map((value) => value.y));
 	const maxX = Math.max(...values.map((value) => value.x + value.width));
@@ -51,8 +65,8 @@ export function unionBoxes(values: readonly ExactBox[]): ExactBox | null {
 	const width = maxX - minX;
 	const height = maxY - minY;
 	return finite(minX) && finite(minY) && finite(width) && finite(height)
-		? { x: minX, y: minY, width, height }
-		: null;
+		? { kind: "representable", box: { x: minX, y: minY, width, height } }
+		: { kind: "unrepresentable", representative: values.toSorted(boxOrder)[0]! };
 }
 
 export function pointBox(points: readonly ExactPoint[]): ExactBox | null {

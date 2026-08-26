@@ -112,7 +112,7 @@ const invalidRender = [
 	}),
 	variant("INVALID_RENDER_GEOMETRY", "unlocatable-record", true, {
 		recordKind: z.string(),
-		invalidFields: z.array(z.enum(["x", "y"])).min(1),
+		invalidFields: z.array(z.enum(["x", "y", "width", "height"])).min(1),
 		sourceIndex: z.number().int().nonnegative(),
 	}),
 ] as const;
@@ -391,6 +391,18 @@ const ambiguous = [
 		sourceIndex: z.number().int().nonnegative(),
 		pointIndex: z.number().int().nonnegative(),
 		issue: z.string(),
+	}),
+	variant("AMBIGUOUS_GEOMETRY", "unrepresentable-coordinate-span", true, {
+		scope: z.enum([
+			"record-extent",
+			"semantic-node-body",
+			"semantic-node-aggregate",
+			"obstacle-component",
+			"finding-affected-union",
+		]),
+		subjectId: z.string().min(1).nullable(),
+		sourceIndexes: z.array(z.number().int().nonnegative()).min(1),
+		issue: z.literal("finite-constituents-have-no-finite-union"),
 	}),
 	variant("AMBIGUOUS_GEOMETRY", "zero-length", true, {
 		connectorId: z.string().min(1).nullable(),
