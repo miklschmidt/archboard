@@ -1,13 +1,13 @@
 import type { NodeRef, ObstacleRef } from "../schemas.js";
 import type { DecodedRecord } from "./decode.js";
-import { contains, unionBoxes, type ExactBox } from "./geometry.js";
+import { aggregateBoxes, contains, type ExactBox } from "./geometry.js";
 
 export interface InspectionNode {
 	id: string;
 	members: DecodedRecord[];
 	bodies: DecodedRecord[];
 	labels: DecodedRecord[];
-	aggregate: ExactBox;
+	aggregate: ExactBox | null;
 	body: ExactBox;
 	boundaries: DecodedRecord[];
 	parentId: string | null;
@@ -21,6 +21,12 @@ export interface InspectionObstacle {
 	members: DecodedRecord[];
 	box: ExactBox;
 	ref: ObstacleRef;
+}
+
+export interface AggregateCoordinateFailure {
+	scope: "semantic-node-body" | "semantic-node-aggregate" | "obstacle-component";
+	subjectId: string;
+	members: DecodedRecord[];
 }
 
 export type BlockingBindingIssue =
@@ -66,6 +72,7 @@ export interface BoundElementsClassification {
 
 export interface InspectionModel {
 	byId: Map<string, DecodedRecord>;
+	duplicateIds: Set<string>;
 	nodes: Map<string, InspectionNode>;
 	nodeOfElement: Map<string, string>;
 	confirmedLabels: Map<string, string>;
@@ -74,6 +81,7 @@ export interface InspectionModel {
 	containerOnlyIds: Set<string>;
 	qualifyingGroupedObstacleElementIds: Set<string>;
 	obstacles: InspectionObstacle[];
+	aggregateFailures: AggregateCoordinateFailure[];
 }
 
 const CLOSED = new Set(["rectangle", "ellipse", "diamond", "frame"]);
@@ -118,6 +126,15 @@ export function classifyBindingTarget(value: unknown): BindingTargetClassificati
 	if (typeof value.elementId !== "string")
 		return { readableTargetId: null, blockingIssue: "non-string-element-id" };
 	return { readableTargetId: value.elementId, blockingIssue: null };
+}
+
+export function boundElementTargetCompatible(
+	declaredType: "text" | "arrow",
+	actualType: string,
+): boolean {
+	return declaredType === "text"
+		? actualType === "text"
+		: actualType === "arrow" || actualType === "line";
 }
 
 export function archboardMetadata(record: DecodedRecord): Readonly<Record<string, unknown>> | null {
@@ -181,6 +198,7 @@ function validBoundary(record: DecodedRecord): boolean {
 function buildLabelClassifications(
 	live: readonly DecodedRecord[],
 	byId: ReadonlyMap<string, DecodedRecord>,
+	duplicateIds: ReadonlySet<string>,
 ): Pick<InspectionModel, "labelOwnership" | "confirmedLabels"> {
 	const reverseLabelOwners = new Map<string, Set<string>>();
 	const labelsWithBlockedReverseClassification = new Set<string>();
@@ -189,6 +207,10 @@ function buildLabelClassifications(
 		const bounds = classifyBoundElements(owner.raw.boundElements);
 		for (const reference of bounds.readableEntries) {
 			if (reference.type !== "text" || byId.get(reference.id)?.type !== "text") continue;
+			if (!owner.usableId) {
+				labelsWithBlockedReverseClassification.add(reference.id);
+				continue;
+			}
 			const owners = reverseLabelOwners.get(reference.id) ?? new Set<string>();
 			owners.add(owner.id);
 			reverseLabelOwners.set(reference.id, owners);
@@ -198,13 +220,14 @@ function buildLabelClassifications(
 	const labelOwnership = new Map<string, LabelOwnershipClassification>();
 	const confirmedLabels = new Map<string, string>();
 	for (const record of live) {
-		if (record.type !== "text" || !record.id) continue;
+		if (record.type !== "text" || !record.usableId || !record.id) continue;
 		const rawContainer = record.raw?.containerId;
 		const blocked =
 			(rawContainer !== undefined &&
 				rawContainer !== null &&
 				(typeof rawContainer !== "string" || rawContainer.length === 0)) ||
-			labelsWithBlockedReverseClassification.has(record.id);
+			labelsWithBlockedReverseClassification.has(record.id) ||
+			(typeof rawContainer === "string" && duplicateIds.has(rawContainer));
 		const forwardOwnerId =
 			typeof rawContainer === "string" && rawContainer.length > 0 ? rawContainer : null;
 		const reverseOwnerIds = [...(reverseLabelOwners.get(record.id) ?? [])].toSorted();
@@ -248,12 +271,12 @@ function buildNodes(
 	live: readonly DecodedRecord[],
 	byId: ReadonlyMap<string, DecodedRecord>,
 	confirmedLabels: ReadonlyMap<string, string>,
-): Pick<InspectionModel, "nodes" | "nodeOfElement"> {
+): Pick<InspectionModel, "nodes" | "nodeOfElement" | "aggregateFailures"> {
 	const grouped = new Map<string, DecodedRecord[]>();
 	const nodeOfElement = new Map<string, string>();
 	for (const record of live) {
 		const node = nodeId(record);
-		if (!node || !record.id || !record.box) continue;
+		if (!node || !record.usableId || !record.id || !record.box) continue;
 		const members = grouped.get(node) ?? [];
 		members.push(record);
 		grouped.set(node, members);
@@ -268,12 +291,21 @@ function buildNodes(
 	}
 
 	const nodes = new Map<string, InspectionNode>();
+	const aggregateFailures: AggregateCoordinateFailure[] = [];
 	for (const [id, members] of grouped) {
 		const labels = members.filter((record) => confirmedLabels.has(record.id ?? ""));
 		const bodies = members.filter((record) => !confirmedLabels.has(record.id ?? ""));
-		const bodyBox = unionBoxes((bodies.length > 0 ? bodies : members).map((record) => record.box!));
-		const aggregate = unionBoxes(members.map((record) => record.box!));
-		if (!bodyBox || !aggregate) continue;
+		const bodyMembers = bodies.length > 0 ? bodies : members;
+		const bodyResult = aggregateBoxes(bodyMembers.map((record) => record.box!));
+		const aggregateResult = aggregateBoxes(members.map((record) => record.box!));
+		if (bodyResult.kind !== "representable") {
+			aggregateFailures.push({ scope: "semantic-node-body", subjectId: id, members: bodyMembers });
+			for (const member of members) if (member.id) nodeOfElement.delete(member.id);
+			continue;
+		}
+		const aggregate = aggregateResult.kind === "representable" ? aggregateResult.box : null;
+		if (!aggregate)
+			aggregateFailures.push({ scope: "semantic-node-aggregate", subjectId: id, members });
 		const elementIds = bodies.map((record) => record.id!).toSorted();
 		const labelElementIds = labels.map((record) => record.id!).toSorted();
 		nodes.set(id, {
@@ -282,31 +314,60 @@ function buildNodes(
 			bodies,
 			labels,
 			aggregate,
-			body: bodyBox,
+			body: bodyResult.box,
 			boundaries: bodies.filter(validBoundary),
 			parentId: null,
 			children: [],
 			ref: { id, elementIds, labelElementIds },
 		});
 	}
-	return { nodes, nodeOfElement };
+	return { nodes, nodeOfElement, aggregateFailures };
+}
+
+interface AreaKey {
+	exponent: number;
+	mantissa: number;
+}
+
+function areaFactor(value: number): AreaKey {
+	const exponent = Math.floor(Math.log2(value));
+	return { exponent, mantissa: value / 2 ** exponent };
+}
+
+function areaKey(box: ExactBox): AreaKey {
+	if (box.width === 0 || box.height === 0)
+		return { exponent: Number.NEGATIVE_INFINITY, mantissa: 0 };
+	const width = areaFactor(box.width);
+	const height = areaFactor(box.height);
+	let exponent = width.exponent + height.exponent;
+	let mantissa = width.mantissa * height.mantissa;
+	if (mantissa >= 2) {
+		mantissa /= 2;
+		exponent += 1;
+	}
+	return { exponent, mantissa };
+}
+
+function compareArea(a: ExactBox, b: ExactBox): number {
+	const aa = areaKey(a);
+	const bb = areaKey(b);
+	return aa.exponent - bb.exponent || aa.mantissa - bb.mantissa;
 }
 
 function assignNodeHierarchy(nodes: Map<string, InspectionNode>): void {
 	for (const child of nodes.values()) {
-		const candidates: Array<{ owner: InspectionNode; boundary: DecodedRecord; area: number }> = [];
+		const candidates: Array<{ owner: InspectionNode; boundary: DecodedRecord }> = [];
 		for (const owner of nodes.values()) {
 			if (owner.id === child.id) continue;
 			for (const boundary of owner.boundaries) {
-				const area = boundary.box!.width * boundary.box!.height;
-				if (area > child.body.width * child.body.height && contains(boundary.box!, child.body)) {
-					candidates.push({ owner, boundary, area });
+				if (compareArea(boundary.box!, child.body) > 0 && contains(boundary.box!, child.body)) {
+					candidates.push({ owner, boundary });
 				}
 			}
 		}
 		const selected = candidates.toSorted(
 			(a, b) =>
-				a.area - b.area ||
+				compareArea(a.boundary.box!, b.boundary.box!) ||
 				a.boundary.id!.localeCompare(b.boundary.id!) ||
 				a.owner.id.localeCompare(b.owner.id),
 		)[0];
@@ -320,16 +381,20 @@ function assignNodeHierarchy(nodes: Map<string, InspectionNode>): void {
 function buildConnectorEndpoints(
 	live: readonly DecodedRecord[],
 	nodeOfElement: ReadonlyMap<string, string>,
+	duplicateIds: ReadonlySet<string>,
 ): Map<string, ConnectorEndpointClassification> {
 	const connectorEndpoints = new Map<string, ConnectorEndpointClassification>();
 	for (const record of live) {
-		if (!record.id || (record.type !== "arrow" && record.type !== "line")) continue;
+		if (!record.usableId || !record.id || (record.type !== "arrow" && record.type !== "line"))
+			continue;
 		const endpoint = (end: "start" | "end") => {
 			const value = record.raw?.[`${end}Binding`];
 			if (value == null) return { blocked: false, node: undefined };
 			const target = classifyBindingTarget(value);
 			return {
-				blocked: target.blockingIssue !== null,
+				blocked:
+					target.blockingIssue !== null ||
+					(target.readableTargetId !== null && duplicateIds.has(target.readableTargetId)),
 				node: target.readableTargetId ? nodeOfElement.get(target.readableTargetId) : undefined,
 			};
 		};
@@ -363,10 +428,14 @@ function buildObstacles(
 	nodeOfElement: ReadonlyMap<string, string>,
 	confirmedLabels: ReadonlyMap<string, string>,
 	containerOnlyIds: ReadonlySet<string>,
-): Pick<InspectionModel, "obstacles" | "qualifyingGroupedObstacleElementIds"> {
+): Pick<
+	InspectionModel,
+	"obstacles" | "qualifyingGroupedObstacleElementIds" | "aggregateFailures"
+> {
 	const eligible = live.filter((record) => {
 		const angle = record.raw?.angle;
 		return (
+			record.usableId &&
 			!!record.id &&
 			!!record.type &&
 			!!record.box &&
@@ -407,6 +476,7 @@ function buildObstacles(
 	}
 	const obstacles: InspectionObstacle[] = [];
 	const qualifyingGroupedObstacleElementIds = new Set<string>();
+	const aggregateFailures: AggregateCoordinateFailure[] = [];
 	for (const members of components.values()) {
 		const validLibrary = members.filter((record) => libraryAttribution(record)?.valid);
 		const sharedGroup = members.length >= 2;
@@ -425,39 +495,49 @@ function buildObstacles(
 				};
 			})
 			.toSorted((a, b) => a.elementId.localeCompare(b.elementId));
-		const obstacleBox = unionBoxes(members.map((record) => record.box!))!;
+		const obstacleResult = aggregateBoxes(members.map((record) => record.box!));
 		const kind =
 			validLibrary.length > 0 ? ("library-component" as const) : ("grouped-component" as const);
 		const id = `obstacle:${elementIds.join(",")}`;
+		if (obstacleResult.kind !== "representable") {
+			aggregateFailures.push({ scope: "obstacle-component", subjectId: id, members });
+			continue;
+		}
 		obstacles.push({
 			id,
 			kind,
 			members,
-			box: obstacleBox,
+			box: obstacleResult.box,
 			ref: { id, kind, elementIds, groupIds: groups, library },
 		});
 	}
 	obstacles.sort((a, b) => a.id.localeCompare(b.id));
-	return { obstacles, qualifyingGroupedObstacleElementIds };
+	return { obstacles, qualifyingGroupedObstacleElementIds, aggregateFailures };
 }
 
 export function buildInspectionModel(records: readonly DecodedRecord[]): InspectionModel {
 	const live = records.filter((record) => record.live && record.raw);
 	const byId = new Map<string, DecodedRecord>();
-	for (const record of live) if (record.id && !byId.has(record.id)) byId.set(record.id, record);
-	const { labelOwnership, confirmedLabels } = buildLabelClassifications(live, byId);
-	const { nodes, nodeOfElement } = buildNodes(live, byId, confirmedLabels);
-	assignNodeHierarchy(nodes);
-	const connectorEndpoints = buildConnectorEndpoints(live, nodeOfElement);
-	const containerOnlyIds = findContainerOnlyIds(live, nodes, nodeOfElement);
-	const { obstacles, qualifyingGroupedObstacleElementIds } = buildObstacles(
-		live,
+	const duplicateIds = new Set<string>();
+	for (const record of live) if (record.id && !record.usableId) duplicateIds.add(record.id);
+	for (const record of live) if (record.usableId && record.id) byId.set(record.id, record);
+	const { labelOwnership, confirmedLabels } = buildLabelClassifications(live, byId, duplicateIds);
+	const {
+		nodes,
 		nodeOfElement,
-		confirmedLabels,
-		containerOnlyIds,
-	);
+		aggregateFailures: nodeAggregateFailures,
+	} = buildNodes(live, byId, confirmedLabels);
+	assignNodeHierarchy(nodes);
+	const connectorEndpoints = buildConnectorEndpoints(live, nodeOfElement, duplicateIds);
+	const containerOnlyIds = findContainerOnlyIds(live, nodes, nodeOfElement);
+	const {
+		obstacles,
+		qualifyingGroupedObstacleElementIds,
+		aggregateFailures: obstacleAggregateFailures,
+	} = buildObstacles(live, nodeOfElement, confirmedLabels, containerOnlyIds);
 	return {
 		byId,
+		duplicateIds,
 		nodes,
 		nodeOfElement,
 		confirmedLabels,
@@ -466,6 +546,7 @@ export function buildInspectionModel(records: readonly DecodedRecord[]): Inspect
 		containerOnlyIds,
 		qualifyingGroupedObstacleElementIds,
 		obstacles,
+		aggregateFailures: [...nodeAggregateFailures, ...obstacleAggregateFailures],
 	};
 }
 

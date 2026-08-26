@@ -19,6 +19,7 @@ const {
 const { compareBoards } = await import(src("runtime/engine/compare.ts"));
 const { renderBoardNote } = await import(src("runtime/engine/board.ts"));
 const { ingestScene } = await import(src("runtime/engine/board-io.ts"));
+const { collectInvalidRenderGeometry } = await import(src("runtime/engine/geometry.ts"));
 let failures = 0,
 	checks = 0;
 const check = (label, condition, detail = "") => {
@@ -66,6 +67,39 @@ for (const finding of malformedReport.findings)
 				finding.focusBBox.width === finding.affectedBBox.width + 32 &&
 				finding.focusBBox.height === finding.affectedBBox.height + 32,
 		);
+
+const renderPrerequisiteCases = [
+	["finite", { x: 1, y: 2, width: 3, height: 4 }],
+	["missing", {}],
+	["nonfinite", { x: Number.NaN, y: Number.POSITIVE_INFINITY, width: 3, height: 4 }],
+	["negative", { x: -10, y: -20, width: -3, height: -4 }],
+	["zero", { x: 0, y: 0, width: 0, height: 0 }],
+	["extreme", { x: Number.MAX_VALUE, y: -Number.MAX_VALUE, width: 0, height: 0 }],
+	["derived-overflow", { x: Number.MAX_VALUE, y: 0, width: Number.MAX_VALUE, height: 1 }],
+];
+for (const [label, fields] of renderPrerequisiteCases) {
+	const raw = { id: `render-${String(label)}`, type: "rectangle", ...fields };
+	const strictFields = collectInvalidRenderGeometry([raw])[0]?.fields ?? [];
+	const report = inspectBoard([raw]);
+	const inspectionFields =
+		report.findings.find((finding) => finding.code === "INVALID_RENDER_GEOMETRY")?.details
+			.invalidFields ?? [];
+	check(
+		`strict ingest and inspection share ${String(label)} per-record render prerequisites`,
+		JSON.stringify(inspectionFields) === JSON.stringify(strictFields),
+		`${JSON.stringify(inspectionFields)} != ${JSON.stringify(strictFields)}`,
+	);
+	if (label === "derived-overflow")
+		check(
+			"derived extent overflow is inspection-only aggregate evidence",
+			strictFields.length === 0 &&
+				report.findings.some(
+					(finding) =>
+						finding.reason === "unrepresentable-coordinate-span" &&
+						finding.details.scope === "record-extent",
+				),
+		);
+}
 
 const findingCases = [
 	[
@@ -380,6 +414,18 @@ const findingCases = [
 		"warning",
 		true,
 		{ connectorId: "edge", sourceIndex: 0, pointIndex: 1, issue: "overflow" },
+	],
+	[
+		"AMBIGUOUS_GEOMETRY",
+		"unrepresentable-coordinate-span",
+		"warning",
+		true,
+		{
+			scope: "semantic-node-body",
+			subjectId: "node",
+			sourceIndexes: [0, 1],
+			issue: "finite-constituents-have-no-finite-union",
+		},
 	],
 	[
 		"AMBIGUOUS_GEOMETRY",
@@ -944,6 +990,278 @@ check(
 		),
 );
 
+const unrepresentableSemanticNode = inspectBoard([
+	semanticNode("aggregate-node", {
+		id: "aggregate-positive",
+		x: Number.MAX_VALUE,
+		y: 0,
+		width: 0,
+		height: 10,
+	}),
+	semanticNode("aggregate-node", {
+		id: "aggregate-negative",
+		x: -Number.MAX_VALUE,
+		y: 0,
+		width: 0,
+		height: 10,
+	}),
+]);
+check(
+	"a semantic node with an unrepresentable finite span is explicit and schema-total",
+	unrepresentableSemanticNode.coverage === "indeterminate" &&
+		unrepresentableSemanticNode.findings.some(
+			(finding) =>
+				finding.code === "AMBIGUOUS_GEOMETRY" &&
+				finding.reason === "unrepresentable-coordinate-span" &&
+				finding.details.scope === "semantic-node-body" &&
+				finding.affectedBBox !== null,
+		),
+);
+
+for (const [kind, firstExtra] of [
+	["grouped", { groupIds: ["aggregate-group"] }],
+	[
+		"library",
+		{
+			groupIds: ["aggregate-library-group"],
+			customData: { library: { itemId: "aggregate-library" } },
+		},
+	],
+]) {
+	const first = {
+		id: `${String(kind)}-positive`,
+		type: "rectangle",
+		x: Number.MAX_VALUE,
+		y: 0,
+		width: 1,
+		height: 10,
+		...firstExtra,
+	};
+	const second = {
+		id: `${String(kind)}-negative`,
+		type: "rectangle",
+		x: -Number.MAX_VALUE,
+		y: 0,
+		width: 1,
+		height: 10,
+		groupIds: first.groupIds,
+	};
+	const report = inspectBoard([first, second]);
+	check(
+		`${String(kind)} obstacle aggregate overflow is explicit and excludes the obstacle`,
+		report.coverage === "indeterminate" &&
+			report.findings.some(
+				(finding) =>
+					finding.reason === "unrepresentable-coordinate-span" &&
+					finding.details.scope === "obstacle-component" &&
+					finding.affectedBBox !== null,
+			) &&
+			!report.findings.some((finding) => finding.code === "CONNECTOR_PENETRATES_OBSTACLE"),
+	);
+}
+
+const duplicateAffectedOverflow = inspectBoard([
+	semanticNode("duplicate-positive", { id: "aggregate-duplicate", x: Number.MAX_VALUE, width: 0 }),
+	semanticNode("duplicate-negative", { id: "aggregate-duplicate", x: -Number.MAX_VALUE, width: 0 }),
+]);
+check(
+	"duplicate-id affected unions retain a finite local box and explicit span failure",
+	duplicateAffectedOverflow.findings.some(
+		(finding) => finding.reason === "duplicate-element-id" && finding.affectedBBox !== null,
+	) &&
+		duplicateAffectedOverflow.findings.some(
+			(finding) =>
+				finding.reason === "unrepresentable-coordinate-span" &&
+				finding.details.scope === "finding-affected-union" &&
+				finding.elements.length === 2,
+		),
+);
+
+const aggregatePairSuppression = inspectBoard([
+	semanticNode("unrepresentable-pair-node", {
+		id: "pair-positive",
+		x: Number.MAX_VALUE,
+		y: 0,
+		width: 0,
+		height: 10,
+	}),
+	semanticNode("unrepresentable-pair-node", {
+		id: "pair-negative",
+		x: -Number.MAX_VALUE,
+		y: 0,
+		width: 0,
+		height: 10,
+	}),
+	connector({ id: "pair-edge", x: -10, y: 5, width: 20, height: 0 }),
+]);
+check(
+	"pair consumers omit only a node whose aggregate body is unrepresentable",
+	aggregatePairSuppression.coverage === "indeterminate" &&
+		!aggregatePairSuppression.findings.some(
+			(finding) => finding.code === "CONNECTOR_PENETRATES_NODE" || finding.code === "NODE_OVERLAP",
+		),
+);
+
+const maxHierarchy = inspectBoard([
+	semanticNode("max-zone", { id: "max-zone-body", x: 0, y: 0, width: Number.MAX_VALUE, height: 2 }),
+	semanticNode("max-child", {
+		id: "max-child-body",
+		x: 0,
+		y: 0,
+		width: Number.MAX_VALUE / 2,
+		height: 1,
+	}),
+]);
+check(
+	"MAX_VALUE hierarchy area comparison keeps the containing zone out of leaf overlap",
+	!maxHierarchy.findings.some(
+		(finding) =>
+			finding.code === "NODE_OVERLAP" &&
+			[finding.details.firstNodeId, finding.details.secondNodeId].includes("max-zone"),
+	),
+);
+
+const equalAreaHierarchy = inspectBoard([
+	semanticNode("stable-zone-a", { id: "a-boundary", x: 0, y: 0, width: 100, height: 100 }),
+	semanticNode("stable-zone-b", { id: "b-boundary", x: 0, y: 0, width: 100, height: 100 }),
+	semanticNode("stable-child", { id: "stable-child-body", x: 10, y: 10, width: 10, height: 10 }),
+]);
+check(
+	"equal-area hierarchy competitors use the stable boundary id tie-break",
+	!equalAreaHierarchy.findings.some(
+		(finding) =>
+			finding.code === "NODE_OVERLAP" &&
+			[finding.details.firstNodeId, finding.details.secondNodeId].includes("stable-zone-a") &&
+			[finding.details.firstNodeId, finding.details.secondNodeId].includes("stable-child"),
+	) &&
+		equalAreaHierarchy.findings.some(
+			(finding) =>
+				finding.code === "NODE_OVERLAP" &&
+				[finding.details.firstNodeId, finding.details.secondNodeId].includes("stable-zone-b") &&
+				[finding.details.firstNodeId, finding.details.secondNodeId].includes("stable-child"),
+		),
+);
+
+const aspectHierarchy = inspectBoard([
+	semanticNode("aspect-zone", {
+		id: "aspect-zone-body",
+		x: 0,
+		y: 0,
+		width: Number.MAX_VALUE,
+		height: Number.MIN_VALUE * 4,
+	}),
+	semanticNode("aspect-child", {
+		id: "aspect-child-body",
+		x: 0,
+		y: 0,
+		width: Number.MAX_VALUE / 2,
+		height: Number.MIN_VALUE * 2,
+	}),
+]);
+check(
+	"tiny-by-huge hierarchy arithmetic preserves strict containment",
+	!aspectHierarchy.findings.some((finding) => finding.code === "NODE_OVERLAP"),
+);
+
+const nestedHierarchy = inspectBoard([
+	semanticNode("outer-zone", { id: "outer-body", x: 0, y: 0, width: 300, height: 300 }),
+	semanticNode("inner-zone", { id: "inner-body", x: 20, y: 20, width: 220, height: 220 }),
+	semanticNode("nested-leaf", {
+		id: "nested-leaf-body",
+		x: 40,
+		y: 60,
+		width: 50,
+		height: 50,
+		boundElements: [{ id: "nested-edge", type: "arrow" }],
+	}),
+	semanticNode("nested-peer", { id: "nested-peer-body", x: 80, y: 60, width: 50, height: 50 }),
+	connector({
+		id: "nested-edge",
+		x: 40,
+		y: 85,
+		width: 120,
+		height: 0,
+		points: [
+			[0, 0],
+			[120, 0],
+		],
+		startBinding: { elementId: "nested-leaf-body", focus: 0, gap: 0 },
+	}),
+]);
+check(
+	"nested hierarchy keeps leaf scope, endpoint ancestors, and unrelated overlap distinct",
+	nestedHierarchy.findings.some(
+		(finding) =>
+			finding.code === "NODE_OVERLAP" &&
+			[finding.details.firstNodeId, finding.details.secondNodeId].includes("nested-leaf") &&
+			[finding.details.firstNodeId, finding.details.secondNodeId].includes("nested-peer"),
+	) &&
+		nestedHierarchy.findings.some(
+			(finding) =>
+				finding.code === "CONNECTOR_PENETRATES_NODE" && finding.details.nodeId === "nested-peer",
+		) &&
+		!nestedHierarchy.findings.some(
+			(finding) =>
+				(finding.code === "NODE_OVERLAP" || finding.code === "CONNECTOR_PENETRATES_NODE") &&
+				["outer-zone", "inner-zone"].includes(
+					"nodeId" in finding.details ? finding.details.nodeId : finding.details.firstNodeId,
+				),
+		),
+);
+
+const aggregateMatrixRoles = ["semantic-node", "grouped-obstacle", "duplicate-id"];
+const aggregateMatrixSpans = [
+	["local", 0, 10, 1, false],
+	["opposite-extremes", -Number.MAX_VALUE, Number.MAX_VALUE, 1, true],
+	["derived-extent", Number.MAX_VALUE, 0, Number.MAX_VALUE, true],
+];
+let aggregateMatrixCount = 0;
+for (const role of aggregateMatrixRoles)
+	for (const [span, firstX, secondX, firstWidth, indeterminate] of aggregateMatrixSpans) {
+		const shared = role === "grouped-obstacle" ? { groupIds: [`matrix-${span}`] } : {};
+		const first = semanticNode("matrix-node", {
+			id: role === "duplicate-id" ? "matrix-duplicate" : `matrix-a-${aggregateMatrixCount}`,
+			x: firstX,
+			y: 700,
+			width: firstWidth,
+			height: 10,
+			...shared,
+			...(role === "grouped-obstacle" ? { customData: undefined } : {}),
+		});
+		const second = semanticNode("matrix-node", {
+			id: role === "duplicate-id" ? "matrix-duplicate" : `matrix-b-${aggregateMatrixCount}`,
+			x: secondX,
+			y: 700,
+			width: 1,
+			height: 10,
+			...shared,
+			...(role === "grouped-obstacle" ? { customData: undefined } : {}),
+		});
+		const elements = [first, second];
+		let report;
+		let failure;
+		try {
+			report = inspectBoard(elements);
+		} catch (error) {
+			failure = error;
+		}
+		const dependentFinding = report?.findings.some((finding) =>
+			["CONNECTOR_PENETRATES_NODE", "CONNECTOR_PENETRATES_OBSTACLE", "NODE_OVERLAP"].includes(
+				finding.code,
+			),
+		);
+		check(
+			`aggregate matrix ${role}/${span} is total and prerequisite-gated`,
+			!failure &&
+				InspectionReportSchema.safeParse(report).success &&
+				(!indeterminate || report.coverage === "indeterminate") &&
+				(!indeterminate || !dependentFinding),
+			failure instanceof Error ? failure.message : "",
+		);
+		aggregateMatrixCount += 1;
+	}
+check("aggregate cross-product stays deliberately bounded", aggregateMatrixCount === 9);
+
 const supportedConnectorResultCodes = new Set([
 	"STALE_LINEAR_DIMENSIONS",
 	"CONNECTOR_PENETRATES_NODE",
@@ -1316,12 +1634,14 @@ for (const [label, boundElements, issue] of boundElementCases) {
 }
 
 const boundTargetTypeCases = [
-	["text-to-rectangle", "text", "rectangle", true],
+	["text-to-text", "text", "text", false],
 	["text-to-arrow", "text", "arrow", true],
+	["text-to-line", "text", "line", true],
+	["text-to-rectangle", "text", "rectangle", true],
 	["arrow-to-text", "arrow", "text", true],
+	["arrow-to-arrow", "arrow", "arrow", false],
+	["arrow-to-line", "arrow", "line", false],
 	["arrow-to-rectangle", "arrow", "rectangle", true],
-	["matching-text", "text", "text", false],
-	["matching-arrow", "arrow", "arrow", false],
 ];
 for (const [label, declaredType, actualType, mismatch] of boundTargetTypeCases) {
 	const target =
@@ -1336,9 +1656,10 @@ for (const [label, declaredType, actualType, mismatch] of boundTargetTypeCases) 
 					fontFamily: 5,
 					text: "target",
 				}
-			: actualType === "arrow"
+			: actualType === "arrow" || actualType === "line"
 				? connector({
 						id: `target-${label}`,
+						type: actualType,
 						x: 40,
 						y: 0,
 						width: 10,
@@ -1347,6 +1668,9 @@ for (const [label, declaredType, actualType, mismatch] of boundTargetTypeCases) 
 							[0, 0],
 							[10, 0],
 						],
+						...(label === "arrow-to-line"
+							? { startBinding: { elementId: `owner-${label}`, focus: 0, gap: 0 } }
+							: {}),
 					})
 				: { id: `target-${label}`, type: "rectangle", x: 40, y: 0, width: 10, height: 10 };
 	const report = inspectBoard([
@@ -1367,7 +1691,11 @@ for (const [label, declaredType, actualType, mismatch] of boundTargetTypeCases) 
 					finding.details.declaredType === declaredType &&
 					finding.details.actualType === actualType &&
 					!report.clean
-			: !finding,
+			: !finding &&
+					(label !== "arrow-to-line" ||
+						!report.findings.some(
+							(candidate) => candidate.reason === "missing-binding-reciprocal",
+						)),
 	);
 }
 for (const [label, rawType] of [
@@ -1394,6 +1722,168 @@ for (const [label, rawType] of [
 			!report.findings.some((finding) => finding.reason === "bound-element-target-type-mismatch"),
 	);
 }
+
+const duplicateIdentityCases = [
+	[
+		"binding target",
+		[
+			semanticNode("duplicate-target-a", { id: "dup-target", x: 40, y: 0 }),
+			semanticNode("duplicate-target-b", { id: "dup-target", x: 70, y: 0 }),
+			connector({
+				id: "target-edge",
+				x: 0,
+				y: 5,
+				width: 100,
+				height: 0,
+				points: [
+					[0, 0],
+					[100, 0],
+				],
+				startBinding: { elementId: "dup-target", focus: 0, gap: 0 },
+			}),
+		],
+		["missing-binding-target", "invalid-binding-target-type", "leaf-footprint-interior"],
+	],
+	[
+		"connector",
+		[
+			semanticNode("connector-candidate", { x: 40, y: 20 }),
+			connector({ id: "dup-edge", x: 0, y: 25, width: 100, height: 0 }),
+			connector({ id: "dup-edge", x: 0, y: 25, width: 100, height: 0 }),
+		],
+		["leaf-footprint-interior", "proper-interior-crossing", "collinear-overlap"],
+	],
+	[
+		"semantic node member",
+		[
+			semanticNode("duplicate-node-a", { id: "dup-node", x: 0, y: 0, width: 100, height: 100 }),
+			semanticNode("duplicate-node-b", { id: "dup-node", x: 20, y: 20, width: 100, height: 100 }),
+			semanticNode("other-node", { x: 40, y: 40, width: 20, height: 20 }),
+		],
+		["leaf-footprint-overlap"],
+	],
+	[
+		"label and container ownership",
+		[
+			semanticNode("owner-a", {
+				id: "dup-owner",
+				boundElements: [{ id: "dup-label", type: "text" }],
+			}),
+			semanticNode("owner-b", {
+				id: "dup-owner",
+				x: 100,
+				boundElements: [{ id: "dup-label", type: "text" }],
+			}),
+			{
+				id: "dup-label",
+				type: "text",
+				x: 35,
+				y: 20,
+				width: 30,
+				height: 20,
+				fontFamily: 5,
+				text: "duplicate",
+				containerId: "dup-owner",
+			},
+			{
+				id: "dup-label",
+				type: "text",
+				x: 105,
+				y: 20,
+				width: 30,
+				height: 20,
+				fontFamily: 5,
+				text: "duplicate",
+				containerId: "dup-owner",
+			},
+			semanticNode("duplicate-unrelated", { x: 50, y: 0, width: 100, height: 100 }),
+		],
+		["label-node-overlap", "label-label-overlap", "missing-reciprocal", "conflicting-owner"],
+	],
+	[
+		"obstacle member",
+		[
+			{
+				id: "dup-obstacle",
+				type: "rectangle",
+				x: 40,
+				y: 0,
+				width: 30,
+				height: 30,
+				groupIds: ["g"],
+			},
+			{
+				id: "dup-obstacle",
+				type: "rectangle",
+				x: 40,
+				y: 0,
+				width: 30,
+				height: 30,
+				groupIds: ["g"],
+			},
+			{
+				id: "other-obstacle",
+				type: "rectangle",
+				x: 70,
+				y: 0,
+				width: 30,
+				height: 30,
+				groupIds: ["g"],
+			},
+			connector({ id: "obstacle-edge", x: 0, y: 15, width: 120, height: 0 }),
+		],
+		["obstacle-footprint-interior"],
+	],
+	[
+		"bound reference target",
+		[
+			semanticNode("reference-owner", {
+				boundElements: [{ id: "dup-reference", type: "arrow" }],
+			}),
+			connector({ id: "dup-reference", x: 100, y: 0 }),
+			{ id: "dup-reference", type: "rectangle", x: 120, y: 0, width: 10, height: 10 },
+		],
+		["dangling-bound-arrow", "bound-element-target-type-mismatch"],
+	],
+];
+for (const [label, elements, forbiddenReasons] of duplicateIdentityCases) {
+	const report = inspectBoard(elements);
+	check(
+		`duplicate ${String(label)} stays indeterminate without identity-dependent facts`,
+		report.coverage === "indeterminate" &&
+			report.findings.some((finding) => finding.reason === "duplicate-element-id") &&
+			!report.findings.some((finding) => forbiddenReasons.includes(finding.reason)),
+		report.findings.map((finding) => finding.reason).join(","),
+	);
+}
+const duplicateStructuralEvidence = inspectBoard([
+	connector({
+		id: "duplicate-structure",
+		points: [
+			[0, 0],
+			["bad", 0],
+		],
+	}),
+	connector({
+		id: "duplicate-structure",
+		x: 20,
+		points: [
+			[0, 0],
+			[false, 0],
+		],
+	}),
+]);
+check(
+	"duplicate records retain source-indexed per-record structural findings",
+	duplicateStructuralEvidence.findings.filter((finding) => finding.reason === "malformed-point")
+		.length === 2 &&
+		JSON.stringify(
+			duplicateStructuralEvidence.findings
+				.filter((finding) => finding.reason === "malformed-point")
+				.map((finding) => finding.details.sourceIndex)
+				.toSorted((a, b) => a - b),
+		) === JSON.stringify([0, 1]),
+);
 for (const containerId of ["", 42, false]) {
 	const finding = inspectBoard([
 		{
@@ -2993,6 +3483,8 @@ const prerequisiteTotalityElements = [
 		["b4", "arrow", "rectangle"],
 		["b5", "text", "text"],
 		["b6", "arrow", "arrow"],
+		["b7", "text", "line"],
+		["b8", "arrow", "line"],
 	].flatMap(([prefix, declaredType, actualType], index) => {
 		const targetId = `${prefix}t`;
 		const target =
@@ -3007,9 +3499,10 @@ const prerequisiteTotalityElements = [
 						fontFamily: 5,
 						text: "target",
 					}
-				: actualType === "arrow"
+				: actualType === "arrow" || actualType === "line"
 					? connector({
 							id: targetId,
+							type: actualType,
 							x: 350 + index * 30,
 							y: 100,
 							width: 10,
@@ -3018,6 +3511,9 @@ const prerequisiteTotalityElements = [
 								[0, 0],
 								[10, 0],
 							],
+							...(prefix === "b8"
+								? { startBinding: { elementId: `${prefix}ob`, focus: 0, gap: 0 } }
+								: {}),
 						})
 					: {
 							id: targetId,
@@ -3036,6 +3532,55 @@ const prerequisiteTotalityElements = [
 			}),
 			target,
 		];
+	}),
+	semanticNode("package-aggregate", {
+		id: "paggp",
+		x: Number.MAX_VALUE,
+		y: 300,
+		width: 0,
+		height: 10,
+	}),
+	semanticNode("package-aggregate", {
+		id: "paggn",
+		x: -Number.MAX_VALUE,
+		y: 300,
+		width: 0,
+		height: 10,
+	}),
+	{
+		id: "pobsp",
+		type: "rectangle",
+		x: Number.MAX_VALUE,
+		y: 320,
+		width: 1,
+		height: 10,
+		groupIds: ["pg"],
+	},
+	{
+		id: "pobsn",
+		type: "rectangle",
+		x: -Number.MAX_VALUE,
+		y: 320,
+		width: 1,
+		height: 10,
+		groupIds: ["pg"],
+	},
+	semanticNode("duplicate-candidate", { id: "dupn", x: 40, y: 480 }),
+	connector({ id: "dupcon", x: 0, y: 485, width: 100, height: 0 }),
+	connector({ id: "dupcon", x: 0, y: 485, width: 100, height: 0 }),
+	semanticNode("package-max-zone", {
+		id: "pmzone",
+		x: 0,
+		y: 600,
+		width: Number.MAX_VALUE,
+		height: 2,
+	}),
+	semanticNode("package-max-child", {
+		id: "pmchild",
+		x: 0,
+		y: 600,
+		width: Number.MAX_VALUE / 2,
+		height: 1,
 	}),
 ];
 const prerequisiteTotalityNote = renderBoardNote(
@@ -3216,18 +3761,40 @@ check(
 				finding.reason === "malformed-point" &&
 				finding.elements[0]?.id === "jover",
 		) &&
+		["semantic-node-body", "obstacle-component"].every((scope) =>
+			prerequisiteTotalityResult.findings.some(
+				(finding) =>
+					finding.reason === "unrepresentable-coordinate-span" && finding.details.scope === scope,
+			),
+		) &&
+		prerequisiteTotalityResult.findings.some(
+			(finding) =>
+				finding.reason === "duplicate-element-id" && finding.details.duplicateId === "dupcon",
+		) &&
+		!prerequisiteTotalityResult.findings.some(
+			(finding) =>
+				[
+					"CONNECTOR_PENETRATES_NODE",
+					"CONNECTOR_PENETRATES_OBSTACLE",
+					"CONNECTOR_INTERSECTION_UNMARKED",
+				].includes(finding.code) && finding.elements.some((element) => element.id === "dupcon"),
+		) &&
 		prerequisiteTotalityResult.findings.some(
 			(finding) => finding.reason === "bound-element-target-type-mismatch",
 		) &&
 		prerequisiteTotalityResult.findings.filter(
 			(finding) => finding.reason === "bound-element-target-type-mismatch",
-		).length === 5 &&
-		!["b5t", "b6t"].some((targetId) =>
+		).length === 6 &&
+		!["b5t", "b6t", "b8t"].some((targetId) =>
 			prerequisiteTotalityResult.findings.some(
 				(finding) =>
 					finding.reason === "bound-element-target-type-mismatch" &&
 					finding.details.targetId === targetId,
 			),
+		) &&
+		!prerequisiteTotalityResult.findings.some(
+			(finding) =>
+				finding.reason === "missing-binding-reciprocal" && finding.details.connectorId === "b8t",
 		) &&
 		prerequisiteTotalityResult.findings.some(
 			(finding) =>
