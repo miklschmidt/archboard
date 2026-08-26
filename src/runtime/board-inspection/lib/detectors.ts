@@ -1130,8 +1130,7 @@ function incomingReferenceIds(records: readonly DecodedRecord[]): ReadonlySet<st
 		}
 		if (!Array.isArray(raw.boundElements)) continue;
 		for (const entry of raw.boundElements)
-			if (entry && typeof entry === "object" && !Array.isArray(entry))
-				add((entry as RawRecord).id);
+			if (entry && typeof entry === "object" && !Array.isArray(entry)) add((entry as RawRecord).id);
 	}
 	return ids;
 }
