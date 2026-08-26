@@ -15,8 +15,8 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const repoRoot = join(__dirname, "..");
+const moduleDir = dirname(fileURLToPath(import.meta.url));
+const repoRoot = join(moduleDir, "..");
 const bin = join(repoRoot, "src", "bin.ts");
 
 let failures = 0;

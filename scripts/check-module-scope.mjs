@@ -181,7 +181,7 @@ function moduleGraph(entries) {
 			queue.push(resolved.replace(/\.js$/, ".ts"));
 		}
 	}
-	return [...seen].toSorted();
+	return [...seen].toSorted((a, b) => a.localeCompare(b));
 }
 
 // ── Parsing helpers ───────────────────────────────────────────────────────

@@ -13,8 +13,8 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const src = (rel) => join(__dirname, "..", "src", rel);
+const moduleDir = dirname(fileURLToPath(import.meta.url));
+const src = (rel) => join(moduleDir, "..", "src", rel);
 const { wrapSceneAsObsidianMd, extractSceneJsonFromObsidianMd, embeddedFilesIn } = await import(
 	src("core/obsidian-md.ts")
 );

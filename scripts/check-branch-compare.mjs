@@ -159,7 +159,7 @@ const addArrow = (board, from, to) =>
 	});
 
 /**
- * Promote a shape the way `promote --kind ... --variant ...` does: the real
+ * Promote a shape the way `promote --_kind ... --variant ...` does: the real
  * planner decides the node id from the label, and the updates go over the same
  * HTTP route the CLI uses. Deriving the id from the label is the whole reason a
  * reworded redraw stops comparing, so nothing here may shortcut it.
@@ -168,8 +168,8 @@ const addArrow = (board, from, to) =>
  * Leaving it off would make this check depend on what `promote` defaults to on
  * a variant board, and that default is being changed under TASK-040.
  */
-async function promote(board, elementId, kind, variant) {
-	return promoteTogether(board, [elementId], kind, variant);
+async function promote(board, elementId, _kind, variant) {
+	return promoteTogether(board, [elementId], _kind, variant);
 }
 
 /**
@@ -177,14 +177,14 @@ async function promote(board, elementId, kind, variant) {
  * out of lines carries no label to derive an id from, so the name is spoken,
  * which is what the CLI's `--name` is for.
  */
-async function promoteTogether(board, elementIds, kind, variant, name) {
+async function promoteTogether(board, elementIds, _kind, variant, name) {
 	const all = await elementsOn(board);
 	const wanted = new Set(elementIds);
 	const targets = all.filter((el) => wanted.has(el.id));
 	const plan = planPromotion({
 		targets,
 		board: all,
-		kind,
+		_kind,
 		variant,
 		level: "service",
 		...(name ? { name } : {}),
@@ -198,9 +198,9 @@ async function promoteTogether(board, elementIds, kind, variant, name) {
 /** The whole architecture at once: boxes in a row, arrows along it, promoted. */
 async function draw(board, variant, nodes, edges) {
 	const ids = {};
-	for (const [label, kind, x, y] of nodes) ids[label] = await addBox(board, label, x, y);
+	for (const [label, _kind, x, y] of nodes) ids[label] = await addBox(board, label, x, y);
 	for (const [from, to] of edges) await addArrow(board, ids[from], ids[to]);
-	for (const [label, kind] of nodes) await promote(board, ids[label], kind, variant);
+	for (const [label, _kind] of nodes) await promote(board, ids[label], _kind, variant);
 	return ids;
 }
 

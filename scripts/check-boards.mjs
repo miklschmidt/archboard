@@ -2571,7 +2571,7 @@ try {
 
 		// Outcome one: reload. It takes the note and ends the held work, which is
 		// what it says it costs.
-		const reloadCase = await stopSaving("holdreload", "theirs2");
+		await stopSaving("holdreload", "theirs2");
 		await scratchApi("POST", "/api/elements?board=holdreload", {
 			id: "held2",
 			type: "rectangle",

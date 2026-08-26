@@ -240,7 +240,7 @@ export async function duplicateElements(
 	// each copy reserves its name at the moment it is minted.
 	const taken = new Set<string>(elementIds);
 	const duplicates: ServerElement[] = originals.map((original) => {
-		const { createdAt, updatedAt, version, syncedAt, source, syncTimestamp, ...rest } =
+		const { createdAt: _createdAt, updatedAt: _updatedAt, version: _version, syncedAt: _syncedAt, source: _source, syncTimestamp: _syncTimestamp, ...rest } =
 			original as unknown as Record<string, unknown>;
 		const copyId = mintId(taken);
 		taken.add(copyId);

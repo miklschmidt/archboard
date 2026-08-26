@@ -30,8 +30,8 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const src = (p) => join(__dirname, "..", "src", p);
+const moduleDir = dirname(fileURLToPath(import.meta.url));
+const src = (p) => join(moduleDir, "..", "src", p);
 
 const { measureText, measureLineWidth, canMeasure, faceFileFor } = await import(
 	src("core/measure-text.ts")

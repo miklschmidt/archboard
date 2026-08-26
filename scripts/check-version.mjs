@@ -92,7 +92,7 @@ const {
 	boards: boardStore,
 	recordBaseline,
 } = await import(src("core/board-store.ts"));
-const { emptyContent, foreignWriteTo, readNote, writeBoardContent } = await import(
+const { _emptyContent, foreignWriteTo, readNote, writeBoardContent } = await import(
 	src("core/board-io.ts")
 );
 const { hashBoardBytes } = await import(src("core/board.ts"));

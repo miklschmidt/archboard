@@ -7,9 +7,9 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const repoRoot = join(__dirname, "..");
+const moduleFile = fileURLToPath(import.meta.url);
+const moduleDir = dirname(moduleFile);
+const repoRoot = join(moduleDir, "..");
 const serverPath = join(repoRoot, "src", "server.ts");
 // The bun running this file, which is also what `canvas start` spawns (ADR 0014).
 const runtime = process.execPath;

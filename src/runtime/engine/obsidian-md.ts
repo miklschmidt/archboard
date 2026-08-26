@@ -707,10 +707,10 @@ const f = String.fromCharCode;
 
 function decompressFromBase64(input: string): string | null {
 	if (input === "") return null;
-	return _decompress(input.length, 32, (index) => keyStrBase64.indexOf(input.charAt(index)));
+	return decompress(input.length, 32, (index) => keyStrBase64.indexOf(input.charAt(index)));
 }
 
-function _decompress(
+function decompress(
 	length: number,
 	resetValue: number,
 	getNextValue: (index: number) => number,

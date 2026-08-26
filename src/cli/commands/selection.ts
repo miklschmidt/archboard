@@ -21,7 +21,7 @@ export async function selection(argv: string[]): Promise<void> {
 		return;
 	}
 
-	const { success, text, ...rest } = report;
+	const { success: _success, text: _text, ...rest } = report;
 	printJson(rest);
 }
 
@@ -44,6 +44,6 @@ export async function panes(argv: string[]): Promise<void> {
 		return;
 	}
 
-	const { success, text, ...rest } = report;
+	const { success: _success, text: _text, ...rest } = report;
 	printJson(rest);
 }

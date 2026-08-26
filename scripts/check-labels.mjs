@@ -41,7 +41,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { withDoing } from "./lib/doing.mjs";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const moduleDir = dirname(fileURLToPath(import.meta.url));
 const {
 	boundTextsByContainer,
 	planLabelRepair,
@@ -51,16 +51,16 @@ const {
 	boundTextDrift,
 	rescueDriftedBoundTexts,
 	labelTextIdFor,
-} = await import(join(__dirname, "..", "src", "runtime", "engine", "labels.ts"));
-const { isBlockId } = await import(join(__dirname, "..", "src", "shared", "ids", "ids.ts"));
+} = await import(join(moduleDir, "..", "src", "runtime", "engine", "labels.ts"));
+const { isBlockId } = await import(join(moduleDir, "..", "src", "shared", "ids", "ids.ts"));
 const { expandElements, expandForBoard, repairIndices } = await import(
-	join(__dirname, "..", "src", "runtime", "engine", "expand-elements.ts")
+	join(moduleDir, "..", "src", "runtime", "engine", "expand-elements.ts")
 );
 const { applyElementInput } = await import(
-	join(__dirname, "..", "src", "runtime", "engine", "apply-element-input.ts")
+	join(moduleDir, "..", "src", "runtime", "engine", "apply-element-input.ts")
 );
 const { diffAgainstBaseline, fingerprint } = await import(
-	join(__dirname, "..", "src", "ui", "canvas", "changes.ts")
+	join(moduleDir, "..", "src", "ui", "canvas", "changes.ts")
 );
 
 let failures = 0;
@@ -723,7 +723,7 @@ const CYCLES = 25;
 	assert(
 		texts
 			.map((t) => t.text)
-			.toSorted()
+			.toSorted((a, b) => String(a).localeCompare(String(b)))
 			.join("|") === "AuthService|Gateway|HTTP",
 		`label text was lost: ${texts.map((t) => t.text).join("|")}`,
 	);
@@ -1385,7 +1385,7 @@ const CYCLES = 25;
 		repaired
 			.filter((el) => el.type === "text")
 			.map((t) => t.text)
-			.toSorted()
+				.toSorted((a, b) => String(a).localeCompare(String(b)))
 			.join("|") === "AuthService|Gateway|HTTP",
 		"repair dropped a label a human could read",
 	);
@@ -1750,7 +1750,7 @@ const sceneBox = (elements) => ({
 	const PORT = 35000 + Math.floor(Math.random() * 2000);
 	const base = `http://127.0.0.1:${PORT}`;
 	const vault = fs.mkdtempSync(join(os.tmpdir(), "archboard-labels-"));
-	const server = spawn(process.execPath, [join(__dirname, "..", "src", "server.ts")], {
+	const server = spawn(process.execPath, [join(moduleDir, "..", "src", "server.ts")], {
 		env: {
 			...process.env,
 			PORT: String(PORT),

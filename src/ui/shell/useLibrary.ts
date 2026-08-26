@@ -42,7 +42,7 @@ export interface LibraryController {
 }
 
 function libraryName(url: URL): string {
-	const file = url.pathname.split("/").filter(Boolean).pop() ?? "library";
+	const file = url.pathname.split("/").findLast(Boolean) ?? "library";
 	return file.replace(/\.excalidrawlib$/, "").replace(/[-_]/g, " ");
 }
 

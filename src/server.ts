@@ -143,8 +143,8 @@ import { frontendState, sourceState } from "./runtime/engine/staleness.js";
 // Load environment variables
 dotenv.config({ quiet: true });
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const moduleFile = fileURLToPath(import.meta.url);
+const moduleDir = path.dirname(moduleFile);
 
 const app = express();
 
@@ -226,11 +226,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // module sitting in `dist/`, and the broad mount served all of it. What is
 // reachable is now this line's decision rather than a build tool's.
 // `scripts/check-local-bind.mjs` plants a file in `dist/` and checks it 404s.
-app.use(express.static(path.join(__dirname, "../dist/frontend")));
+app.use(express.static(path.join(moduleDir, "../dist/frontend")));
 // Serve Excalidraw fonts so the font subsetting worker can fetch them for export
 app.use(
 	"/assets/fonts",
-	express.static(path.join(__dirname, "../node_modules/@excalidraw/excalidraw/dist/prod/fonts")),
+	express.static(path.join(moduleDir, "../node_modules/@excalidraw/excalidraw/dist/prod/fonts")),
 );
 
 // WebSocket connections.
@@ -317,7 +317,7 @@ function broadcast(message: WebSocketMessage, board: string): void {
 			if (client.readyState === WebSocket.OPEN) {
 				client.send(data);
 			}
-		} catch (err) {
+		} catch {
 			logger.warn("Failed to send to client, removing");
 			clients.delete(client);
 		}
@@ -1658,7 +1658,7 @@ app.post("/api/elements/changes", (req: Request, res: Response) => {
 			source,
 			origin,
 			clientId,
-			mutation: elementMutation<null>((content) => {
+			mutation: elementMutation<null>((_content) => {
 				// A pane may send its whole screen only while this board is held. The
 				// check and the clear both happen inside the isolated mutation, before
 				// any note can be written.
@@ -3543,7 +3543,7 @@ app.put("/api/library", (req: Request, res: Response) => {
 
 // Serve the frontend
 app.get("/", (req: Request, res: Response) => {
-	const htmlFile = path.join(__dirname, "../dist/frontend/index.html");
+	const htmlFile = path.join(moduleDir, "../dist/frontend/index.html");
 	res.sendFile(htmlFile, (err) => {
 		if (err) {
 			logger.error("Error serving frontend:", err);
@@ -3624,7 +3624,7 @@ app.get("/api/sync/status", (req: Request, res: Response) => {
 });
 
 // Error handling middleware
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
 	logger.error("Unhandled error:", err);
 	res.status(500).json({
 		success: false,

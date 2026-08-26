@@ -654,7 +654,7 @@ export function planDemotion(targets: ServerElement[], board: ServerElement[]): 
 			const custom = (
 				el.customData && typeof el.customData === "object" ? el.customData : {}
 			) as Record<string, unknown>;
-			const { archboard, ...rest } = custom;
+			const { archboard: _archboard, ...rest } = custom;
 			const ourBinding = readElementMetadata(el).archboard?.binding;
 			// Older notes may still contain the file presentation promotion used to
 			// store. Do not mistake an unrelated human-authored web link for ours.

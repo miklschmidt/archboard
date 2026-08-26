@@ -41,8 +41,8 @@ import { fileURLToPath } from "node:url";
 import WebSocket from "ws";
 import { withDoing } from "./lib/doing.mjs";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const repoRoot = join(__dirname, "..");
+const moduleDir = dirname(fileURLToPath(import.meta.url));
+const repoRoot = join(moduleDir, "..");
 const src = (p) => join(repoRoot, "src", p);
 
 let failures = 0;
