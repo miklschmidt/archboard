@@ -1,11 +1,11 @@
 ---
 id: TASK-128
 title: Validate distributable skill frontmatter during lint
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-26 13:22'
-updated_date: '2026-08-26 13:25'
+updated_date: '2026-08-26 13:31'
 labels: []
 dependencies: []
 references:
@@ -26,12 +26,12 @@ The tracked archboard skill currently fails discovery because its YAML frontmatt
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 bun run lint fails with a file-specific diagnostic when any distributable SKILL.md has missing or invalid YAML frontmatter, including the reported unquoted colon-space case
-- [ ] #2 bun run fix and the repository check path also validate distributable skill frontmatter after formatting, without Python
-- [ ] #3 The validator discovers all tracked skills under skills/*/SKILL.md and proves its negative path with a deterministic self-test or fixture
-- [ ] #4 The tracked archboard and archboard-dev skill frontmatter parse successfully with Bun YAML parsing
-- [ ] #5 The archboard CLI quick-reference table preserves the intended literal pipe spellings without malformed columns or reduced guidance
-- [ ] #6 Focused validation, bun run lint, bun run fix, type-check, and the relevant skill installation/sync checks pass
+- [x] #1 bun run lint fails with a file-specific diagnostic when any distributable SKILL.md has missing or invalid YAML frontmatter, including the reported unquoted colon-space case
+- [x] #2 bun run fix and the repository check path also validate distributable skill frontmatter after formatting, without Python
+- [x] #3 The validator discovers all tracked skills under skills/*/SKILL.md and proves its negative path with a deterministic self-test or fixture
+- [x] #4 The tracked archboard and archboard-dev skill frontmatter parse successfully with Bun YAML parsing
+- [x] #5 The archboard CLI quick-reference table preserves the intended literal pipe spellings without malformed columns or reduced guidance
+- [x] #6 Focused validation, bun run lint, bun run fix, type-check, and the relevant skill installation/sync checks pass
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -48,4 +48,12 @@ The tracked archboard skill currently fails discovery because its YAML frontmatt
 
 <!-- SECTION:NOTES:BEGIN -->
 Reproduced the reported Bun YAML parse failure and two malformed quick-reference rows. Added scripts/check-skills.mjs with exact YAML and table negative self-tests, wired it into lint and both ends of fix, repaired the tracked skill, synced derived skill copies, and passed lint:skills, targeted oxlint, type-check, and test:install. Full lint/fix currently reaches and stops only on TASK-119 structuralFindings complexity 150/60, which is recorded in the paused TASK-119 worker and must be resolved before TASK-128 finalization.
+
+Final validation passed. bun run lint ran the skill self-test, validated both distributable skills, and passed oxlint. bun run fix passed twice with skill validation before and after formatting; the second corrected pass was byte-stable. Direct Bun parsing passed for tracked and synced archboard/archboard-dev copies. type-check passed, sync:skills completed, test:install passed 106 checks, lint:skills passed, and no Python or package dependency was added.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added a Bun-native distributable-skill lint that rejects invalid YAML frontmatter and malformed Markdown table columns with file-specific diagnostics. Wired it into lint, fix, and check; repaired the archboard description and literal-pipe quick-reference rows; synced the live skills. Verified with deterministic red/green self-tests, both real lint/fix paths, type-check, skill sync, and 106 install-skill checks.
+<!-- SECTION:FINAL_SUMMARY:END -->
