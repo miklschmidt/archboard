@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 13:44'
+updated_date: '2026-08-26 14:21'
 labels:
   - ready-for-agent
 dependencies:
@@ -340,6 +340,8 @@ Formatter-fixture correction: the dense compare fixture pins the two-space JSON 
 Browser validation: the first sequential chain exposed two stale fixed-point recovery assertions that still expected 12 elements after the approved negative-relative-point connector raised the fixture to 13. The failure did not contradict renderer bounds or path assumptions: the browser and server both held all 13 elements and reported zero element changes. Updated only those two expected counts. An isolated test:browser rerun passed, then the required complete headless sequence passed in order: test:human-performance, test:browser, test:typing, and test:live-session. Fixed-point evidence is 0 of 13 elements changed; the negative straight path round-trips unchanged.
 
 Final implementation validation: the full focused matrix passed, including type-check, test:suites, boundaries, module-scope, contracts and generator check, inspection, CLI, Obsidian/no-side-effect, changes, one-write, geometry, labels, library, boards, and branch compare. After the fixed-point cardinality correction, the complete four-suite browser chain passed sequentially and headless. bun run check then passed lint, skill validation, format verification, both TypeScript projects, all 29 push suites, and all four browser suites. A separate bun run test also passed the complete suite and its own sequential browser chain. No gate was waived or skipped; fixed-point remained 0 of 13 elements changed.
+
+Review remediation checkpoint: fixed all independently verified findings without changing protected scope. Penetration tolerance is now applied once with exact/inside/outside public cases; malformed angles and applicable type discriminators produce coverage-affecting unsupported findings; invalid library rescue uses the model's qualifying multi-member grouped-body classification; every finding schema fixes severity and coverage literals, including closed data-dependent subvariants; producer inputs are a discriminated union; check validates policy before vault access; finding order uses the approved declared reason and ref/point/box sequence; unsupported connectors expose decoded absolute path points and extents; and text formatting is compile-time exhaustive by code and reason. The matrix grew from 27 checks at rejected review to 357 checks and covers all closed schema branches with impossible-pair rejection, all intended invalid-id roles, path/binding/reference closures, malformed applicable geometry, exact tolerances, persisted fonts, bound-label semantics, obstacle and actual-boundary zone cases, deterministic ordering/counts/limit, dense reroute, deep mutation traps, real-package malformed notes, zero HTTP, strict exits, and unchanged vault paths/bytes/mtimes. The expansion also found and fixed an order-dependent grouped-obstacle union root and prevented unlocatable paths from inventing coordinates. At commit f5971c4, bun run lint, both TypeScript projects, test:inspection (357 checks), and git diff --check pass. TASK-119 remains In Progress with acceptance criteria unchecked. Remaining validation: approved focused matrix, two byte-stable fix passes, generator check, bun run check, separate bun run test, and final clean-state evidence.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
