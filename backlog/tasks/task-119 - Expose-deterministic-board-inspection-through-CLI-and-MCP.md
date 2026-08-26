@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 13:12'
+updated_date: '2026-08-26 13:14'
 labels:
   - ready-for-agent
 dependencies:
@@ -324,6 +324,8 @@ RISKS_AND_ROLLBACK
 Checkpoint 1: extracted the shared architecture-facts entrypoint and adapted compare without changing its semantic model. bun run type-check, bun run test:branch, and git diff --check passed; branch coverage retained promoted stencil nodes, promoted connectors, warnings, node order, and edge facts.
 
 Checkpoint 2: added the closed schema-v1 inspection report and finding union, raw-record decoding, deterministic node/zone/obstacle modeling, persisted-font and label checks, supported geometry predicates, broad-phase counting with the 2,000,000 ceiling, exact affected/focus boxes, and deterministic sorting. type-check, geometry, labels, branch, boundaries, module-scope, and diff checks passed.
+
+Checkpoint 3: added the inspection-only raw note reader and contract-backed check command. The command has local-read only, no REST relationships or server/browser prerequisite, JSON/text output, policy flags, and strict stdout outcomes 6/7/8. type-check and direct generated help smoke checks passed.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

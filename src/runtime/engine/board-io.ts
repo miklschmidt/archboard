@@ -54,6 +54,7 @@ import {
 	identityFromFrontmatter,
 	identityFromVaultPath,
 	makeIdentity,
+	parseBoardKey,
 	renderBoardNote,
 	requireVaultRoot,
 	sceneJsonWithEmbeddedImages,
@@ -316,6 +317,27 @@ export function readNote(file: string): BoardContent | null {
 		Array.isArray(scene) ? null : scene.files,
 	);
 	return { elements, files, note: note.raw, hash: note.hash, version: note.version };
+}
+
+/**
+ * Read raw persisted element records for the read-only inspection command.
+ *
+ * This stops before ingestScene. In particular, it does not mint ids, stamp
+ * server fields, validate render geometry, deduplicate into a map, register a
+ * board, or establish a write baseline.
+ */
+export function readRawBoardElementsForInspection(key: string): readonly unknown[] {
+	const root = requireVaultRoot();
+	const identity = parseBoardKey(key);
+	const file = vaultPathFor(identity, root);
+	const note = readNoteFile(file, root);
+	if (!note) throw new Error(`Board note not found: ${file}`);
+	const scene: unknown = JSON.parse(note.sceneJson);
+	if (Array.isArray(scene)) return scene;
+	if (!scene || typeof scene !== "object" || !Array.isArray((scene as Record<string, unknown>).elements)) {
+		throw new Error(`${file} has no elements array in its Drawing payload.`);
+	}
+	return (scene as { elements: unknown[] }).elements;
 }
 
 /**
