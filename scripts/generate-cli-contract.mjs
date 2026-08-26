@@ -16,7 +16,9 @@ const { cliContractRegistry } = await import(join(root, "src", "cli", "commands"
 const { introspectContracts } = await import(
 	join(root, "src", "cli", "command-contract", "introspection.ts")
 );
-const proof = introspectContracts(cliContractRegistry());
+const registry = cliContractRegistry();
+const proof = introspectContracts(registry);
+const legacyPaths = registry.filter((entry) => entry.kind === "legacy").map((entry) => entry.name);
 
 const cell = (value) =>
 	(Array.isArray(value) ? value.join("; ") : String(value ?? ""))
@@ -55,9 +57,10 @@ const auditMarkdown = [
 const proofJson =
 	JSON.stringify(
 		{
-			schemaVersion: 1,
+			schemaVersion: 2,
 			generatedFrom: "src/cli/commands/run.ts",
 			contracts: proof,
+			legacyPaths,
 		},
 		null,
 		2,

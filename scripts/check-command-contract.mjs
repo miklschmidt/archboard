@@ -77,7 +77,20 @@ for (const entry of audit.entries) {
 	);
 }
 
-const contracts = cliContractRegistry().filter((entry) => entry.contract);
+const registry = cliContractRegistry();
+const contracts = registry.filter((entry) => entry.kind === "contract" && entry.contract);
+const legacy = registry.filter((entry) => entry.kind === "legacy");
+check("mixed registry has 57 entries", registry.length === 57, String(registry.length));
+check("mixed registry paths are unique", new Set(registry.map((entry) => entry.name)).size === 57);
+check(
+	"mixed registry matches the canonical audit in order",
+	JSON.stringify(registry.map((entry) => entry.name)) === JSON.stringify(auditedPaths),
+);
+check(
+	"contract plus legacy remains 57",
+	contracts.length + legacy.length === 57,
+	`${contracts.length} + ${legacy.length}`,
+);
 check(
 	"the proof migrates exactly four commands",
 	contracts.map((entry) => entry.name).join(",") === "update,query,viewport,export",
@@ -166,6 +179,16 @@ for (const publicHandlerType of ["CommandContext", "CommandExecution", "PendingA
 const proofJson = fs.readFileSync(
 	join(root, "docs", "design", "command-contract-proof.json"),
 	"utf8",
+);
+const generatedProof = JSON.parse(proofJson);
+check(
+	"generated contracts cover every registered contract",
+	JSON.stringify(generatedProof.contracts.map((entry) => entry.name)) ===
+		JSON.stringify(contracts.map((entry) => entry.name)),
+);
+check(
+	"generated legacy paths cover every registered legacy path",
+	JSON.stringify(generatedProof.legacyPaths) === JSON.stringify(legacy.map((entry) => entry.name)),
 );
 for (const privateName of ["pendingArtifact", "artifactSchema", "CommanderArgvParser"]) {
 	check(`proof omits ${privateName}`, !proofJson.includes(privateName));
