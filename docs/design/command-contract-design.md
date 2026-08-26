@@ -131,12 +131,11 @@ each side. If IEEE-754 arithmetic cannot represent all four exact deltas,
 coverage, so strict mode exits 8. A null `affectedBBox` still means the record
 has no finite x/y location.
 
-The report's `preprocessingWork` object exposes deterministic work counts for
-the x-interval sweeps and supported path filtering. These counts describe
-events, active interval visits, expiry operations, and path segment checks.
-They are diagnostic data, separate from `broadPhaseComparisons`, whose public
-meaning remains the number of semantically eligible x-overlapping pairs tested
-before the y-axis and exact predicates.
+The schema-v1 report exposes `broadPhaseComparisons`, whose public meaning is
+the number of semantically eligible x-overlapping pairs tested before the
+y-axis and exact predicates. Heap, event, expiry, compatibility-bucket, and
+path-filter work are private implementation mechanics. They do not enter the
+check contract or its JSON and text results.
 
 ## CLI-only compatibility
 
