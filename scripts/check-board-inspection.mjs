@@ -2523,8 +2523,7 @@ check(
 		incomingTypesRun.stderr === "" &&
 		CheckResultSchema.safeParse(incomingTypesResult).success &&
 		incomingTypesResult.findings.filter(
-			(finding) =>
-				finding.code === "UNSUPPORTED_GEOMETRY" && finding.reason === "unsupported-type",
+			(finding) => finding.code === "UNSUPPORTED_GEOMETRY" && finding.reason === "unsupported-type",
 		).length === 4,
 	incomingTypesRun.stderr,
 );
