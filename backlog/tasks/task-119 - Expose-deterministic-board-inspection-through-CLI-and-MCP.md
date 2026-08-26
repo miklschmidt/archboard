@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 19:20'
+updated_date: '2026-08-26 19:30'
 labels:
   - ready-for-agent
 dependencies:
@@ -346,6 +346,10 @@ Ordinary focus-safe affected boxes keep the exact 16 px expansion. When a finite
 3. Replace hierarchy multiplication and variadic extrema with total iterative arithmetic.
 4. Index obstacle candidates by group membership and union only records sharing a group.
 5. Expand direct and persisted/package cross-products, then run every focused and complete gate without changing generated ownership or protected scope.
+
+### Parent-approved schema-v1 obstacle identity amendment
+
+Legal element IDs may contain commas, so the former literal comma join is ambiguous and cannot serve as a deterministic obstacle identity. Schema version 1 now uses this exact grammar: sort constituent elementIds with the exact UTF-16 code-unit comparator; in each ID replace every backslash with two backslashes and every comma with backslash-comma; join the encoded IDs with a literal comma; prefix the result with the literal obstacle:. No other character is escaped. NUL, other controls, lone surrogates, and shared prefixes remain exact. The inspection schema verifies that obstacle id is precisely this encoding of elementIds. Model construction, schemas, formatter output, JSON/text documentation, and tests consume one owner for the grammar. Direct and persisted/package cases cover comma, backslash, combined backslash-comma, controls, empty-looking prefixes, reversed input, and pairs that collided under the raw join.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
