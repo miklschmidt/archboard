@@ -1,4 +1,5 @@
 import type { ElementRef } from "../schemas.js";
+import { collectInvalidRenderGeometry } from "../../engine/geometry.js";
 import { finite, type ExactBox, type ExactPoint } from "./geometry.js";
 
 const MAX_ANALYZABLE_SEGMENT_COMPONENT = Math.sqrt(Number.MAX_VALUE) / 2;
@@ -8,9 +9,12 @@ export interface DecodedRecord {
 	readonly sourceIndex: number;
 	readonly live: boolean;
 	readonly id: string | null;
+	readonly usableId: boolean;
 	readonly type: string | null;
 	readonly ref: ElementRef;
 	readonly box: ExactBox | null;
+	readonly invalidRenderFields: Array<"x" | "y" | "width" | "height">;
+	readonly extentRepresentable: boolean;
 }
 
 export type ValueKind =
@@ -41,6 +45,15 @@ export function stableDescription(value: unknown): string {
 }
 
 export function decodeRecords(records: readonly unknown[]): DecodedRecord[] {
+	const idCounts = new Map<string, number>();
+	for (const value of records) {
+		const raw =
+			value && typeof value === "object" && !Array.isArray(value)
+				? (value as Readonly<Record<string, unknown>>)
+				: null;
+		if (raw?.isDeleted === true || typeof raw?.id !== "string" || raw.id.length === 0) continue;
+		idCounts.set(raw.id, (idCounts.get(raw.id) ?? 0) + 1);
+	}
 	return records.map((value, sourceIndex) => {
 		const raw =
 			value && typeof value === "object" && !Array.isArray(value)
@@ -49,27 +62,32 @@ export function decodeRecords(records: readonly unknown[]): DecodedRecord[] {
 		const rawId = raw?.id;
 		const id = typeof rawId === "string" && rawId.length > 0 ? rawId : null;
 		const type = typeof raw?.type === "string" ? raw.type : null;
+		const invalidRenderFields = collectInvalidRenderGeometry([raw ?? {}])[0]?.fields ?? [];
 		const x = raw && finite(raw.x) ? raw.x : undefined;
 		const y = raw && finite(raw.y) ? raw.y : undefined;
 		const width = raw && finite(raw.width) ? raw.width : undefined;
 		const height = raw && finite(raw.height) ? raw.height : undefined;
 		const normalizedWidth = width === undefined ? undefined : Math.max(0, width);
 		const normalizedHeight = height === undefined ? undefined : Math.max(0, height);
-		const finiteExtent =
+		const perRecordValid =
+			invalidRenderFields.length === 0 &&
 			x !== undefined &&
 			y !== undefined &&
 			normalizedWidth !== undefined &&
-			normalizedHeight !== undefined &&
-			finite(x + normalizedWidth) &&
-			finite(y + normalizedHeight);
+			normalizedHeight !== undefined;
+		const finiteExtent =
+			perRecordValid && finite(x + normalizedWidth) && finite(y + normalizedHeight);
 		return {
 			raw,
 			sourceIndex,
 			live: raw?.isDeleted !== true,
 			id,
+			usableId: !!id && idCounts.get(id) === 1,
 			type,
 			ref: { id, type, sourceIndex },
 			box: finiteExtent ? { x, y, width: normalizedWidth, height: normalizedHeight } : null,
+			invalidRenderFields,
+			extentRepresentable: perRecordValid && finiteExtent,
 		};
 	});
 }

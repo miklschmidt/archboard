@@ -12,6 +12,7 @@ import { InspectionFindingSchema } from "../schemas.js";
 import { decodePath, kindOf, stableDescription, type DecodedRecord } from "./decode.js";
 import {
 	box,
+	aggregateBoxes,
 	finite,
 	focus,
 	intersectSegments,
@@ -19,13 +20,13 @@ import {
 	point,
 	pointBox,
 	segmentInsideBox,
-	unionBoxes,
 	type ExactBox,
 	type ExactPoint,
 	type Segment,
 } from "./geometry.js";
 import {
 	archboardMetadata,
+	boundElementTargetCompatible,
 	buildInspectionModel,
 	classifyBindingTarget,
 	classifyBoundElements,
@@ -116,6 +117,7 @@ const REASON_ORDER = [
 	"points-one-point",
 	"malformed-point",
 	"absolute-point-overflow",
+	"unrepresentable-coordinate-span",
 	"zero-length",
 	"collinear-overlap",
 	"broad-phase-comparison-ceiling",
@@ -163,8 +165,14 @@ const uniqueRefs = (records: readonly DecodedRecord[]) => [
 ];
 const boxesOf = (records: readonly DecodedRecord[]): ExactBox[] =>
 	records.flatMap((r) => (r.box ? [r.box] : []));
-const affectedOf = (records: readonly DecodedRecord[]): ExactBox | null =>
-	unionBoxes(boxesOf(records));
+const affectedOf = (records: readonly DecodedRecord[]): ExactBox | null => {
+	const aggregate = aggregateBoxes(boxesOf(records));
+	return aggregate.kind === "representable"
+		? aggregate.box
+		: aggregate.kind === "unrepresentable"
+			? aggregate.representative
+			: null;
+};
 
 type IntendedRole = Extract<
 	InspectionFinding,
@@ -263,13 +271,7 @@ function renderFindings(records: readonly DecodedRecord[]): InspectionFinding[] 
 	const findings: InspectionFinding[] = [];
 	for (const record of records.filter((candidate) => candidate.live)) {
 		const raw = record.raw;
-		const fields = (["x", "y", "width", "height"] as const).filter(
-			(field) => typeof raw?.[field] !== "number" || !Number.isFinite(raw[field]),
-		);
-		if (finite(raw?.x) && finite(raw?.width) && !finite(raw.x + Math.max(0, raw.width)))
-			fields.push("width");
-		if (finite(raw?.y) && finite(raw?.height) && !finite(raw.y + Math.max(0, raw.height)))
-			fields.push("height");
+		const fields = record.invalidRenderFields;
 		if (fields.length === 0) continue;
 		const locatable =
 			typeof raw?.x === "number" &&
@@ -285,7 +287,7 @@ function renderFindings(records: readonly DecodedRecord[]): InspectionFinding[] 
 					affectsCoverage: true,
 					details: {
 						recordKind: record.type ?? kindOf(record.raw),
-						invalidFields: fields.filter((f) => f === "x" || f === "y"),
+						invalidFields: fields,
 						sourceIndex: record.sourceIndex,
 					},
 					message: `Element at source index ${record.sourceIndex} cannot be located.`,
@@ -310,6 +312,85 @@ function renderFindings(records: readonly DecodedRecord[]): InspectionFinding[] 
 					affected: { x: raw.x as number, y: raw.y as number, width: 0, height: 0 },
 				}),
 			);
+	}
+	return findings;
+}
+
+type CoordinateSpanScope = Extract<
+	InspectionFinding,
+	{ code: "AMBIGUOUS_GEOMETRY"; reason: "unrepresentable-coordinate-span" }
+>["details"]["scope"];
+
+function coordinateSpanFinding(
+	scope: CoordinateSpanScope,
+	subjectId: string | null,
+	members: readonly DecodedRecord[],
+): InspectionFinding {
+	const sources = members.map((record) => record.sourceIndex).toSorted((a, b) => a - b);
+	const aggregate = aggregateBoxes(boxesOf(members));
+	const originEvidence = members
+		.filter((record) => record.raw && finite(record.raw.x) && finite(record.raw.y))
+		.toSorted((a, b) => a.sourceIndex - b.sourceIndex)[0];
+	const affected =
+		aggregate.kind === "representable"
+			? aggregate.box
+			: aggregate.kind === "unrepresentable"
+				? aggregate.representative
+				: originEvidence?.raw
+					? {
+							x: originEvidence.raw.x as number,
+							y: originEvidence.raw.y as number,
+							width: 0,
+							height: 0,
+						}
+					: null;
+	return make({
+		code: "AMBIGUOUS_GEOMETRY",
+		reason: "unrepresentable-coordinate-span",
+		severity: "warning",
+		affectsCoverage: true,
+		details: {
+			scope,
+			subjectId,
+			sourceIndexes: sources,
+			issue: "finite-constituents-have-no-finite-union",
+		},
+		message: `${scope} ${subjectId ?? sources.join(",")} has no finite aggregate coordinate span.`,
+		elements: uniqueRefs(members),
+		affected,
+	});
+}
+
+function coordinateSpanFindings(
+	records: readonly DecodedRecord[],
+	model: InspectionModel,
+	produced: readonly InspectionFinding[],
+): InspectionFinding[] {
+	const findings: InspectionFinding[] = [];
+	for (const record of records)
+		if (
+			record.live &&
+			record.raw &&
+			record.invalidRenderFields.length === 0 &&
+			!record.extentRepresentable
+		)
+			findings.push(coordinateSpanFinding("record-extent", record.id, [record]));
+	for (const failure of model.aggregateFailures)
+		findings.push(coordinateSpanFinding(failure.scope, failure.subjectId, failure.members));
+	const bySource = new Map(records.map((record) => [record.sourceIndex, record]));
+	const seen = new Set<string>();
+	for (const finding of produced) {
+		const members = finding.elements
+			.map((reference) => bySource.get(reference.sourceIndex))
+			.filter((record): record is DecodedRecord => !!record && !!record.box);
+		if (members.length < 2 || aggregateBoxes(boxesOf(members)).kind !== "unrepresentable") continue;
+		const key = members
+			.map((record) => record.sourceIndex)
+			.toSorted((a, b) => a - b)
+			.join(",");
+		if (seen.has(key)) continue;
+		seen.add(key);
+		findings.push(coordinateSpanFinding("finding-affected-union", null, members));
 	}
 	return findings;
 }
@@ -528,7 +609,7 @@ function connectorGeometryFindings(
 			}),
 		);
 	const unsupported = unsupportedRotation || unsupportedCurve || unsupportedRounded;
-	if (unsupported || !record.id || !decoded.scenePoints) return findings;
+	if (unsupported || !record.usableId || !record.id || !decoded.scenePoints) return findings;
 	for (let index = 0; index < decoded.scenePoints.length - 1; index += 1) {
 		if (decoded.zeroSegments.includes(index)) continue;
 		segments.push({
@@ -638,6 +719,7 @@ function connectorBindingFindings(
 	record: DecodedRecord,
 	raw: RawRecord,
 	byId: RecordMap,
+	duplicateIds: ReadonlySet<string>,
 ): InspectionFinding[] {
 	const findings: InspectionFinding[] = [];
 	for (const end of ["start", "end"] as const) {
@@ -684,7 +766,8 @@ function connectorBindingFindings(
 					}),
 				);
 		}
-		if (!readableTargetId || !record.id) continue;
+		if (!readableTargetId || !record.usableId || !record.id || duplicateIds.has(readableTargetId))
+			continue;
 		const target = byId.get(readableTargetId);
 		if (!target)
 			findings.push(
@@ -783,6 +866,7 @@ function boundElementFindings(
 	record: DecodedRecord,
 	raw: RawRecord,
 	byId: RecordMap,
+	duplicateIds: ReadonlySet<string>,
 ): InspectionFinding[] {
 	const bounds = raw.boundElements;
 	if (bounds == null) return [];
@@ -809,8 +893,9 @@ function boundElementFindings(
 				affected: record.box,
 			}),
 		);
-	if (!record.id) return findings;
+	if (!record.usableId || !record.id) return findings;
 	for (const entry of readableEntries) {
+		if (duplicateIds.has(entry.id)) continue;
 		const target = byId.get(entry.id);
 		if (!target)
 			findings.push(
@@ -828,7 +913,7 @@ function boundElementFindings(
 		else if (
 			target.type !== null &&
 			KNOWN_ELEMENT_TYPES.has(target.type) &&
-			target.type !== entry.type
+			!boundElementTargetCompatible(entry.type, target.type)
 		)
 			findings.push(
 				make({
@@ -1177,13 +1262,15 @@ function structuralFindings(
 		const raw = record.raw!;
 		if (record.type === "arrow" || record.type === "line") {
 			findings.push(...connectorGeometryFindings(record, raw, policy, segments));
-			findings.push(...connectorBindingFindings(record, raw, byId));
-			findings.push(...persistedEndpointFindings(record, raw));
+			findings.push(...connectorBindingFindings(record, raw, byId, model.duplicateIds));
+			if (record.usableId) {
+				findings.push(...persistedEndpointFindings(record, raw));
+			}
 		}
-		findings.push(...boundElementFindings(record, raw, byId));
+		findings.push(...boundElementFindings(record, raw, byId, model.duplicateIds));
 		findings.push(...containerFindings(record, raw));
 		findings.push(...metadataFindings(record, raw));
-		findings.push(...libraryFindings(record, model));
+		if (record.usableId) findings.push(...libraryFindings(record, model));
 		findings.push(...fontFindings(record, raw, policy));
 		findings.push(
 			...unsupportedGeometryFindings(
@@ -1201,7 +1288,7 @@ function labelFindings(
 	model: InspectionModel,
 ): InspectionFinding[] {
 	const valid = records
-		.filter((r) => r.live && r.raw && r.id && r.type)
+		.filter((r) => r.live && r.raw && r.usableId && r.id && r.type)
 		.map((r) => r.raw!) as unknown as Array<Record<string, unknown>>;
 	const findings: InspectionFinding[] = [];
 	const byId = model.byId;
@@ -1716,6 +1803,7 @@ function collisionFindings(
 		const allBoxes = [...segmentItems, ...allNodeItems, ...obstacleItems, ...labelNodeItems].map(
 			(item) => item.box,
 		);
+		const aggregate = aggregateBoxes(allBoxes);
 		findings.push(
 			make({
 				code: "INSPECTION_LIMIT_EXCEEDED",
@@ -1732,7 +1820,12 @@ function collisionFindings(
 					labelCount: labelNodeRecords.length,
 				},
 				message: `Inspection stopped pair analysis at comparison ${counter.value}.`,
-				affected: unionBoxes(allBoxes),
+				affected:
+					aggregate.kind === "representable"
+						? aggregate.box
+						: aggregate.kind === "unrepresentable"
+							? aggregate.representative
+							: null,
 			}),
 		);
 	}
@@ -1792,6 +1885,7 @@ export function detectBoard(
 	findings.push(...labelFindings(records, model));
 	const collisions = collisionFindings(records, model, structural.segments, policy);
 	findings.push(...collisions.findings);
+	findings.push(...coordinateSpanFindings(records, model, findings));
 	return {
 		findings: sortFindings(findings),
 		broadPhaseComparisons: collisions.broadPhaseComparisons,
