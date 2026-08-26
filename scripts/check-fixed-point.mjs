@@ -674,13 +674,23 @@ try {
 				end: { id: "dia1" },
 				label: { text: "gRPC" },
 			},
+			{
+				id: "negative-path",
+				type: "arrow",
+				x: 900,
+				y: 420,
+				points: [
+					[0, 0],
+					[-120, -90],
+				],
+			},
 		],
 	});
-	// Twelve, not eight: four of those elements carry a label, and a label is a
+	// Thirteen, not nine: four of those elements carry a label, and a label is a
 	// text element from the moment it is written (ADR 0015).
 	check(
-		"a board is drawn covering every type an agent can create",
-		made.status === 200 && made.body?.elements?.length === 12,
+		"a board is drawn covering every type an agent can create and a negative path",
+		made.status === 200 && made.body?.elements?.length === 13,
 		`status ${made.status}, ${made.body?.elements?.length} elements`,
 	);
 

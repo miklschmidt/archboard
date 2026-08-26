@@ -1,0 +1,581 @@
+{
+  "success": true,
+  "from": {
+    "board": "dense",
+    "identity": {
+      "board": "dense",
+      "variant": "current"
+    },
+    "source": "vault",
+    "elementCount": 15,
+    "nodeCount": 6,
+    "edgeCount": 0,
+    "plainCount": 4,
+    "nodeBox": {
+      "minX": -100,
+      "minY": -100,
+      "maxX": 600,
+      "maxY": 500
+    },
+    "regionFrame": {
+      "minX": -100,
+      "minY": -100,
+      "maxX": 600,
+      "maxY": 500
+    }
+  },
+  "to": {
+    "board": "dense",
+    "identity": {
+      "board": "dense",
+      "variant": "current"
+    },
+    "source": "vault",
+    "elementCount": 15,
+    "nodeCount": 6,
+    "edgeCount": 0,
+    "plainCount": 4,
+    "nodeBox": {
+      "minX": -100,
+      "minY": -100,
+      "maxX": 600,
+      "maxY": 500
+    },
+    "regionFrame": {
+      "minX": -100,
+      "minY": -100,
+      "maxX": 600,
+      "maxY": 500
+    }
+  },
+  "summary": {
+    "comparable": true,
+    "identical": true,
+    "sharedNodes": 6,
+    "nodesAdded": 0,
+    "nodesRemoved": 0,
+    "nodesChanged": 0,
+    "nodesUnchanged": 6,
+    "nodesMovedOnly": 0,
+    "edgesAdded": 0,
+    "edgesRemoved": 0,
+    "edgesChanged": 0,
+    "edgesUnchanged": 0,
+    "layoutSignalsChanged": 0
+  },
+  "nodes": {
+    "added": [],
+    "removed": [],
+    "changed": [],
+    "unchanged": [
+      {
+        "node": "a",
+        "name": "A",
+        "kind": "service",
+        "facts": {
+          "node": "a",
+          "name": "A",
+          "label": "A",
+          "kind": "service",
+          "elementIds": [
+            "a",
+            "al"
+          ],
+          "elementCount": 2,
+          "types": [
+            "rectangle",
+            "text"
+          ],
+          "cosmetic": {
+            "type": "rectangle",
+            "width": 80,
+            "height": 60
+          },
+          "layout": {
+            "cluster": "c1",
+            "clusterWith": [
+              "b",
+              "c",
+              "d",
+              "subsystem",
+              "system"
+            ],
+            "clusterSize": 6,
+            "container": "node:subsystem",
+            "group": "g1",
+            "region": "top-left",
+            "prominence": "typical"
+          },
+          "degree": {
+            "in": 0,
+            "out": 0
+          },
+          "out": [],
+          "in": []
+        }
+      },
+      {
+        "node": "b",
+        "name": "B",
+        "kind": "service",
+        "facts": {
+          "node": "b",
+          "name": "B",
+          "label": "B",
+          "kind": "service",
+          "elementIds": [
+            "b",
+            "bl"
+          ],
+          "elementCount": 2,
+          "types": [
+            "rectangle",
+            "text"
+          ],
+          "cosmetic": {
+            "type": "rectangle",
+            "width": 80,
+            "height": 60
+          },
+          "layout": {
+            "cluster": "c1",
+            "clusterWith": [
+              "a",
+              "c",
+              "d",
+              "subsystem",
+              "system"
+            ],
+            "clusterSize": 6,
+            "container": "node:subsystem",
+            "group": "g1",
+            "region": "top-right",
+            "prominence": "typical"
+          },
+          "degree": {
+            "in": 0,
+            "out": 0
+          },
+          "out": [],
+          "in": []
+        }
+      },
+      {
+        "node": "c",
+        "name": "c",
+        "kind": "datastore",
+        "facts": {
+          "node": "c",
+          "name": "c",
+          "kind": "datastore",
+          "elementIds": [
+            "c"
+          ],
+          "elementCount": 1,
+          "types": [
+            "rectangle"
+          ],
+          "cosmetic": {
+            "type": "rectangle",
+            "width": 80,
+            "height": 60
+          },
+          "layout": {
+            "cluster": "c1",
+            "clusterWith": [
+              "a",
+              "b",
+              "d",
+              "subsystem",
+              "system"
+            ],
+            "clusterSize": 6,
+            "container": "node:subsystem",
+            "group": null,
+            "region": "bottom-left",
+            "prominence": "typical"
+          },
+          "degree": {
+            "in": 0,
+            "out": 0
+          },
+          "out": [],
+          "in": []
+        }
+      },
+      {
+        "node": "d",
+        "name": "d",
+        "kind": "queue",
+        "facts": {
+          "node": "d",
+          "name": "d",
+          "kind": "queue",
+          "elementIds": [
+            "d"
+          ],
+          "elementCount": 1,
+          "types": [
+            "rectangle"
+          ],
+          "cosmetic": {
+            "type": "rectangle",
+            "width": 80,
+            "height": 60
+          },
+          "layout": {
+            "cluster": "c1",
+            "clusterWith": [
+              "a",
+              "b",
+              "c",
+              "subsystem",
+              "system"
+            ],
+            "clusterSize": 6,
+            "container": "node:subsystem",
+            "group": null,
+            "region": "bottom-right",
+            "prominence": "typical"
+          },
+          "degree": {
+            "in": 0,
+            "out": 0
+          },
+          "out": [],
+          "in": []
+        }
+      },
+      {
+        "node": "subsystem",
+        "name": "subsystem",
+        "kind": "service",
+        "facts": {
+          "node": "subsystem",
+          "name": "subsystem",
+          "kind": "service",
+          "elementIds": [
+            "subzone"
+          ],
+          "elementCount": 1,
+          "types": [
+            "rectangle"
+          ],
+          "cosmetic": {
+            "type": "rectangle",
+            "width": 600,
+            "height": 500
+          },
+          "layout": {
+            "cluster": "c1",
+            "clusterWith": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "system"
+            ],
+            "clusterSize": 6,
+            "container": "node:system",
+            "group": null,
+            "region": "centre",
+            "prominence": "larger"
+          },
+          "degree": {
+            "in": 0,
+            "out": 0
+          },
+          "out": [],
+          "in": []
+        }
+      },
+      {
+        "node": "system",
+        "name": "system",
+        "kind": "system",
+        "facts": {
+          "node": "system",
+          "name": "system",
+          "kind": "system",
+          "elementIds": [
+            "zone"
+          ],
+          "elementCount": 1,
+          "types": [
+            "rectangle"
+          ],
+          "cosmetic": {
+            "type": "rectangle",
+            "width": 700,
+            "height": 600
+          },
+          "layout": {
+            "cluster": "c1",
+            "clusterWith": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "subsystem"
+            ],
+            "clusterSize": 6,
+            "container": null,
+            "group": null,
+            "region": "centre",
+            "prominence": "larger"
+          },
+          "degree": {
+            "in": 0,
+            "out": 0
+          },
+          "out": [],
+          "in": []
+        }
+      }
+    ]
+  },
+  "edges": {
+    "added": [],
+    "removed": [],
+    "changed": [],
+    "unchanged": [],
+    "rerouted": [],
+    "unresolved": {
+      "from": [
+        {
+          "elementId": "h",
+          "type": "arrow",
+          "reason": "drawn but bound to nothing at either end"
+        },
+        {
+          "elementId": "v",
+          "type": "line",
+          "reason": "drawn but bound to nothing at either end"
+        },
+        {
+          "elementId": "neg",
+          "type": "arrow",
+          "reason": "drawn but bound to nothing at either end"
+        }
+      ],
+      "to": [
+        {
+          "elementId": "h",
+          "type": "arrow",
+          "reason": "drawn but bound to nothing at either end"
+        },
+        {
+          "elementId": "v",
+          "type": "line",
+          "reason": "drawn but bound to nothing at either end"
+        },
+        {
+          "elementId": "neg",
+          "type": "arrow",
+          "reason": "drawn but bound to nothing at either end"
+        }
+      ]
+    }
+  },
+  "layout": {
+    "method": {
+      "cluster": "Which other nodes this one sits within 160px of, as a set of node ids. Membership, not position: a cluster that was dragged across the board unchanged reports nothing.",
+      "container": "The smallest shape strictly containing the node — a boundary someone drew round a subsystem. Keyed by node id when the container is itself a node, else by its label.",
+      "group": "Excalidraw group membership, as a set of node ids. Excalidraw group ids are random per board, so only the membership compares.",
+      "region": "Whereabouts on the board, in thirds of the box round the nodes both boards have (reported per side as regionFrame). Anchored to the shared nodes so that a node present on only one side cannot rename its neighbours' whereabouts; nodes on one side only are still placed in that frame, and are clamped to an edge third when they sit outside it. Reported as a change only when the node's own centre moved, so a region name that shifted because the frame did is not called movement. Still relative to each side's own frame, so the two sides' thirds are not the same physical place — see boxAspectDiverged.",
+      "relation": "Coarse direction between two nodes (above / below / left-of / right-of / above-left …), computed only for pairs that are edge-connected or co-clustered on either side.",
+      "prominence": "Node area against the median node on its own board: smaller / typical / larger. Relative, so a board drawn at a different scale reports nothing."
+    },
+    "cannotExpress": [
+      "Absolute position. A board panned, zoomed or redrawn at another scale reports no layout change — deliberate.",
+      "Movement below the thresholds: a nudge that neither crosses a region third nor breaks the 160px cluster gap is invisible.",
+      "Tidiness: alignment, even spacing, straightened or orthogonal edges produce no signal at all.",
+      "Edge geometry: an edge dragged round an obstacle keeps its endpoints and reads as unchanged.",
+      "Ordering between clusters that share no edge — relations are only computed for pairs that are edge-connected or co-clustered.",
+      "Region names are relative to each side's own frame — the box round the nodes both boards have — so \"top-left\" on one is not the same physical place as on the other; see boxAspectDiverged.",
+      "A node that stayed exactly where it was while the board was rearranged round it reports no region change, because its region name only moved when the frame did. The nodes that were actually moved still report; read those.",
+      "Where two boards share fewer than two nodes there is nothing to anchor the frame to, so each side is framed by its own nodes and one far-flung node re-frames every region on that side.",
+      "Size, colour and stroke are reported per node as `cosmetic` and never counted as a change to the architecture."
+    ],
+    "clusters": {
+      "from": [
+        {
+          "id": "c1",
+          "region": "centre",
+          "size": 6,
+          "members": [
+            "a",
+            "b",
+            "c",
+            "d",
+            "subsystem",
+            "system"
+          ],
+          "names": [
+            "system",
+            "subsystem",
+            "A",
+            "B",
+            "c",
+            "d"
+          ]
+        }
+      ],
+      "to": [
+        {
+          "id": "c1",
+          "region": "centre",
+          "size": 6,
+          "members": [
+            "a",
+            "b",
+            "c",
+            "d",
+            "subsystem",
+            "system"
+          ],
+          "names": [
+            "system",
+            "subsystem",
+            "A",
+            "B",
+            "c",
+            "d"
+          ]
+        }
+      ],
+      "changes": [
+        {
+          "kind": "stable",
+          "from": [
+            "c1"
+          ],
+          "to": [
+            "c1"
+          ],
+          "sharedMembers": [
+            "a",
+            "b",
+            "c",
+            "d",
+            "subsystem",
+            "system"
+          ],
+          "joined": [],
+          "left": []
+        }
+      ]
+    },
+    "groups": {
+      "from": [
+        {
+          "id": "g1",
+          "region": "n/a",
+          "size": 2,
+          "members": [
+            "a",
+            "b"
+          ],
+          "names": [
+            "A",
+            "B"
+          ]
+        }
+      ],
+      "to": [
+        {
+          "id": "g1",
+          "region": "n/a",
+          "size": 2,
+          "members": [
+            "a",
+            "b"
+          ],
+          "names": [
+            "A",
+            "B"
+          ]
+        }
+      ],
+      "changes": [
+        {
+          "kind": "stable",
+          "from": [
+            "g1"
+          ],
+          "to": [
+            "g1"
+          ],
+          "sharedMembers": [
+            "a",
+            "b"
+          ],
+          "joined": [],
+          "left": []
+        }
+      ]
+    },
+    "moved": [],
+    "relations": {
+      "compared": 15,
+      "changes": []
+    },
+    "boxAspectDiverged": false
+  },
+  "plain": {
+    "from": {
+      "count": 4,
+      "byType": {
+        "rectangle": 1,
+        "diamond": 1,
+        "text": 1,
+        "image": 1
+      },
+      "labelled": [
+        {
+          "id": "decor1",
+          "type": "text",
+          "label": "heading",
+          "region": "bottom-centre",
+          "humanDrawn": false
+        }
+      ],
+      "unlabelled": {
+        "rectangle": 1,
+        "diamond": 1,
+        "image": 1
+      },
+      "unidentified": []
+    },
+    "to": {
+      "count": 4,
+      "byType": {
+        "rectangle": 1,
+        "diamond": 1,
+        "text": 1,
+        "image": 1
+      },
+      "labelled": [
+        {
+          "id": "decor1",
+          "type": "text",
+          "label": "heading",
+          "region": "bottom-centre",
+          "humanDrawn": false
+        }
+      ],
+      "unlabelled": {
+        "rectangle": 1,
+        "diamond": 1,
+        "image": 1
+      },
+      "unidentified": []
+    },
+    "labelOnlyOnFrom": [],
+    "labelOnlyOnTo": [],
+    "labelOnBoth": [
+      "heading"
+    ]
+  },
+  "warnings": []
+}

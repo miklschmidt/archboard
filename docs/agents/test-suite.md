@@ -151,6 +151,14 @@ note archboard did not write. About fifteen seconds.
   a module's `tests/` directory are accepted. The check removes every temporary
   path before it exits.
 
+## Board inspection check
+
+- `bun run test:inspection` drives the pure raw-record inspector and the real package binary. It pins
+  the dense whole-board reroute, the exact 1,516,200 below-limit comparison count, and the
+  2,000,001 limit attempt. Its package checks run with no canvas process, parse JSON through the
+  exported schema, cover text and strict exits 6/7/8, and compare vault paths, bytes, and mtimes
+  before and after every read.
+
 ## Wire and lock checks
 
 - `bun run test:contracts` tests the Archboard-owned command-contract interface.
