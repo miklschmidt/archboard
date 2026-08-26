@@ -45,11 +45,7 @@ const common = {
 	focusBBox: SceneBBoxSchema.nullable(),
 };
 
-const variant = <
-	Code extends string,
-	Reason extends string,
-	Shape extends z.ZodRawShape,
->(
+const variant = <Code extends string, Reason extends string, Shape extends z.ZodRawShape>(
 	code: Code,
 	reason: Reason,
 	details: Shape,
@@ -287,24 +283,40 @@ const unsupported = [
 
 const ambiguous = [
 	variant("AMBIGUOUS_GEOMETRY", "points-missing", {
-		connectorId: z.string().min(1).nullable(), sourceIndex: z.number().int().nonnegative(),
-		rawPointsKind: z.literal("missing"), rawPointsDescription: z.string(), pointCount: z.null(),
-		minimumRequired: z.literal(2), issue: z.literal("missing"),
+		connectorId: z.string().min(1).nullable(),
+		sourceIndex: z.number().int().nonnegative(),
+		rawPointsKind: z.literal("missing"),
+		rawPointsDescription: z.string(),
+		pointCount: z.null(),
+		minimumRequired: z.literal(2),
+		issue: z.literal("missing"),
 	}),
 	variant("AMBIGUOUS_GEOMETRY", "points-not-array", {
-		connectorId: z.string().min(1).nullable(), sourceIndex: z.number().int().nonnegative(),
-		rawPointsKind: z.string(), rawPointsDescription: z.string(), pointCount: z.null(),
-		minimumRequired: z.literal(2), issue: z.literal("non-array"),
+		connectorId: z.string().min(1).nullable(),
+		sourceIndex: z.number().int().nonnegative(),
+		rawPointsKind: z.string(),
+		rawPointsDescription: z.string(),
+		pointCount: z.null(),
+		minimumRequired: z.literal(2),
+		issue: z.literal("non-array"),
 	}),
 	variant("AMBIGUOUS_GEOMETRY", "points-empty", {
-		connectorId: z.string().min(1).nullable(), sourceIndex: z.number().int().nonnegative(),
-		rawPointsKind: z.literal("array"), rawPointsDescription: z.string(), pointCount: z.literal(0),
-		minimumRequired: z.literal(2), issue: z.literal("empty"),
+		connectorId: z.string().min(1).nullable(),
+		sourceIndex: z.number().int().nonnegative(),
+		rawPointsKind: z.literal("array"),
+		rawPointsDescription: z.string(),
+		pointCount: z.literal(0),
+		minimumRequired: z.literal(2),
+		issue: z.literal("empty"),
 	}),
 	variant("AMBIGUOUS_GEOMETRY", "points-one-point", {
-		connectorId: z.string().min(1).nullable(), sourceIndex: z.number().int().nonnegative(),
-		rawPointsKind: z.literal("array"), rawPointsDescription: z.string(), pointCount: z.literal(1),
-		minimumRequired: z.literal(2), issue: z.literal("insufficient-cardinality"),
+		connectorId: z.string().min(1).nullable(),
+		sourceIndex: z.number().int().nonnegative(),
+		rawPointsKind: z.literal("array"),
+		rawPointsDescription: z.string(),
+		pointCount: z.literal(1),
+		minimumRequired: z.literal(2),
+		issue: z.literal("insufficient-cardinality"),
 	}),
 	variant("AMBIGUOUS_GEOMETRY", "malformed-point", {
 		connectorId: z.string().min(1).nullable(),
@@ -318,41 +330,61 @@ const ambiguous = [
 		segmentIndex: z.number().int().nonnegative(),
 	}),
 	variant("AMBIGUOUS_GEOMETRY", "collinear-overlap", {
-		firstConnectorId: z.string().min(1), firstSegmentIndex: z.number().int().nonnegative(),
-		secondConnectorId: z.string().min(1), secondSegmentIndex: z.number().int().nonnegative(),
+		firstConnectorId: z.string().min(1),
+		firstSegmentIndex: z.number().int().nonnegative(),
+		secondConnectorId: z.string().min(1),
+		secondSegmentIndex: z.number().int().nonnegative(),
 	}),
 ] as const;
 
 const layoutFindings = [
 	variant("INSPECTION_LIMIT_EXCEEDED", "broad-phase-comparison-ceiling", {
-		limit: z.number().int().positive(), attempted: z.number().int().positive(), pass: z.string(),
-		segmentCount: z.number().int().nonnegative(), nodeCount: z.number().int().nonnegative(),
-		obstacleCount: z.number().int().nonnegative(), labelCount: z.number().int().nonnegative(),
+		limit: z.number().int().positive(),
+		attempted: z.number().int().positive(),
+		pass: z.string(),
+		segmentCount: z.number().int().nonnegative(),
+		nodeCount: z.number().int().nonnegative(),
+		obstacleCount: z.number().int().nonnegative(),
+		labelCount: z.number().int().nonnegative(),
 	}),
 	variant("CONNECTOR_PENETRATES_NODE", "leaf-footprint-interior", {
-		connectorId: z.string().min(1), segmentIndex: z.number().int().nonnegative(),
-		nodeId: z.string().min(1), entry: ScenePointSchema, exit: ScenePointSchema,
+		connectorId: z.string().min(1),
+		segmentIndex: z.number().int().nonnegative(),
+		nodeId: z.string().min(1),
+		entry: ScenePointSchema,
+		exit: ScenePointSchema,
 	}),
 	variant("CONNECTOR_PENETRATES_OBSTACLE", "obstacle-footprint-interior", {
-		connectorId: z.string().min(1), segmentIndex: z.number().int().nonnegative(),
-		obstacleId: z.string().min(1), entry: ScenePointSchema, exit: ScenePointSchema,
+		connectorId: z.string().min(1),
+		segmentIndex: z.number().int().nonnegative(),
+		obstacleId: z.string().min(1),
+		entry: ScenePointSchema,
+		exit: ScenePointSchema,
 	}),
 	variant("CONNECTOR_INTERSECTION_UNMARKED", "proper-interior-crossing", {
-		firstConnectorId: z.string().min(1), firstSegmentIndex: z.number().int().nonnegative(),
-		secondConnectorId: z.string().min(1), secondSegmentIndex: z.number().int().nonnegative(),
+		firstConnectorId: z.string().min(1),
+		firstSegmentIndex: z.number().int().nonnegative(),
+		secondConnectorId: z.string().min(1),
+		secondSegmentIndex: z.number().int().nonnegative(),
 		point: ScenePointSchema,
 	}),
 	variant("NODE_OVERLAP", "leaf-footprint-overlap", {
-		firstNodeId: z.string().min(1), secondNodeId: z.string().min(1),
-		overlapWidth: nonnegative, overlapHeight: nonnegative,
+		firstNodeId: z.string().min(1),
+		secondNodeId: z.string().min(1),
+		overlapWidth: nonnegative,
+		overlapHeight: nonnegative,
 	}),
 	variant("LABEL_OVERLAP", "label-node-overlap", {
-		labelId: z.string().min(1), nodeId: z.string().min(1),
-		overlapWidth: nonnegative, overlapHeight: nonnegative,
+		labelId: z.string().min(1),
+		nodeId: z.string().min(1),
+		overlapWidth: nonnegative,
+		overlapHeight: nonnegative,
 	}),
 	variant("LABEL_OVERLAP", "label-label-overlap", {
-		firstLabelId: z.string().min(1), secondLabelId: z.string().min(1),
-		overlapWidth: nonnegative, overlapHeight: nonnegative,
+		firstLabelId: z.string().min(1),
+		secondLabelId: z.string().min(1),
+		overlapWidth: nonnegative,
+		overlapHeight: nonnegative,
 	}),
 ] as const;
 
@@ -369,7 +401,13 @@ export const InspectionFindingSchema = z.union([
 export type InspectionFinding = z.infer<typeof InspectionFindingSchema>;
 
 export const FontFamilySchema = z.union([
-	z.literal(1), z.literal(2), z.literal(3), z.literal(5), z.literal(6), z.literal(7), z.literal(8),
+	z.literal(1),
+	z.literal(2),
+	z.literal(3),
+	z.literal(5),
+	z.literal(6),
+	z.literal(7),
+	z.literal(8),
 ]);
 export const InspectionPolicyInputSchema = z.strictObject({
 	allowedFontFamilies: z.union([z.literal("any"), z.array(FontFamilySchema)]).optional(),
@@ -384,10 +422,19 @@ export const InspectionPolicySchema = z.strictObject({
 	overlapTolerance: nonnegative,
 });
 export const FindingCodeSchema = z.enum([
-	"INVALID_RENDER_GEOMETRY", "STALE_LINEAR_DIMENSIONS", "BROKEN_REFERENCE", "LABEL_CORRUPTION",
-	"FONT_POLICY_VIOLATION", "UNSUPPORTED_GEOMETRY", "AMBIGUOUS_GEOMETRY",
-	"INSPECTION_LIMIT_EXCEEDED", "CONNECTOR_PENETRATES_NODE", "CONNECTOR_PENETRATES_OBSTACLE",
-	"CONNECTOR_INTERSECTION_UNMARKED", "NODE_OVERLAP", "LABEL_OVERLAP",
+	"INVALID_RENDER_GEOMETRY",
+	"STALE_LINEAR_DIMENSIONS",
+	"BROKEN_REFERENCE",
+	"LABEL_CORRUPTION",
+	"FONT_POLICY_VIOLATION",
+	"UNSUPPORTED_GEOMETRY",
+	"AMBIGUOUS_GEOMETRY",
+	"INSPECTION_LIMIT_EXCEEDED",
+	"CONNECTOR_PENETRATES_NODE",
+	"CONNECTOR_PENETRATES_OBSTACLE",
+	"CONNECTOR_INTERSECTION_UNMARKED",
+	"NODE_OVERLAP",
+	"LABEL_OVERLAP",
 ]);
 export const InspectionReportSchema = z.strictObject({
 	schemaVersion: z.literal(1),
@@ -402,7 +449,10 @@ export const InspectionReportSchema = z.strictObject({
 	clean: z.boolean(),
 	maxSeverity: z.enum(["none", "warning", "error"]),
 	counts: z.strictObject({
-		bySeverity: z.strictObject({ error: z.number().int().nonnegative(), warning: z.number().int().nonnegative() }),
+		bySeverity: z.strictObject({
+			error: z.number().int().nonnegative(),
+			warning: z.number().int().nonnegative(),
+		}),
 		byCode: z.record(FindingCodeSchema, z.number().int().nonnegative()),
 	}),
 	coverageReasons: z.array(z.string()),

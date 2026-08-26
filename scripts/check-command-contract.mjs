@@ -63,8 +63,13 @@ check(
 	JSON.stringify(compatibility.publicPaths) ===
 		JSON.stringify(auditedPaths.filter((path) => compatibility.publicPaths.includes(path))),
 );
-for (const currentEntry of audit.entries.filter((candidate) => !compatibility.publicPaths.includes(candidate.path))) {
-	check(`${currentEntry.path} declares its introducing task`, typeof currentEntry.introducedBy === "string" && currentEntry.introducedBy.length > 0);
+for (const currentEntry of audit.entries.filter(
+	(candidate) => !compatibility.publicPaths.includes(candidate.path),
+)) {
+	check(
+		`${currentEntry.path} declares its introducing task`,
+		typeof currentEntry.introducedBy === "string" && currentEntry.introducedBy.length > 0,
+	);
 }
 check(
 	"fixed-base compatibility uses executable record schema 2",
@@ -170,7 +175,11 @@ check(
 	"all-contract registry matches the canonical audit in order",
 	JSON.stringify(registry.map((entry) => entry.name)) === JSON.stringify(auditedPaths),
 );
-check(`all ${currentPathCount} routes are contracts`, contracts.length === currentPathCount, String(contracts.length));
+check(
+	`all ${currentPathCount} routes are contracts`,
+	contracts.length === currentPathCount,
+	String(contracts.length),
+);
 check(
 	"every route has one executable contract owner",
 	registry.every(
@@ -409,10 +418,20 @@ check(
 	!(byName.get("viewport")?.refusals ?? []).some((refusal) => refusal.code === "BOARD_REQUIRED"),
 );
 const boardCheck = byName.get("check");
-check("check declares only the global board prerequisite", JSON.stringify(boardCheck?.prerequisites) === JSON.stringify(["board"]));
-check("check declares only a local read effect", JSON.stringify(boardCheck?.effects) === JSON.stringify(["local-read"]));
+check(
+	"check declares only the global board prerequisite",
+	JSON.stringify(boardCheck?.prerequisites) === JSON.stringify(["board"]),
+);
+check(
+	"check declares only a local read effect",
+	JSON.stringify(boardCheck?.effects) === JSON.stringify(["local-read"]),
+);
 check("check declares no REST relationships", boardCheck?.relationships.length === 0);
-check("check declares JSON and text output", JSON.stringify(boardCheck?.output.cases.map((entry) => entry.mode)) === JSON.stringify(["json", "text"]));
+check(
+	"check declares JSON and text output",
+	JSON.stringify(boardCheck?.output.cases.map((entry) => entry.mode)) ===
+		JSON.stringify(["json", "text"]),
+);
 check(
 	"check declares strict stdout outcomes 6, 7, and 8",
 	JSON.stringify(boardCheck?.outcomes?.map(({ exit, stream }) => ({ exit, stream }))) ===
