@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 15:54'
+updated_date: '2026-08-26 16:03'
 labels:
   - ready-for-agent
 dependencies:
@@ -372,6 +372,12 @@ Centralized binding target, boundElements, connector endpoint, and label ownersh
 Expanded the public production test to 514 checks: NaN and both infinities on both axes across invalid identities; finite MAX_VALUE addition overflow; every blocking endpoint on start, end, and both; forward/reverse/matching/conflicting/malformed ownership; known target discriminator cross-products; raw JSON 1e400 package evidence; and a deterministic 80-case prerequisite matrix proving no throws, schema validity, indeterminate coverage, and dependent-layout suppression. Persisted package evidence includes every known text/arrow/rectangle mismatch and matching pair.
 
 Focused validation green: lint (including distributable skill validation), type-check, boundaries, module-scope/self-test, 58-path contracts (978 checks), inspection (514), geometry (89), labels (183), branch, and CLI surface (579). Two real bun run fix passes were byte-stable at diff hash 0d68720500036750dea4922b3fccfa78c2d26a92. Full bun run check and separate bun run test remain to run after the remediation checkpoint.
+
+### Prerequisite-totality closure validation
+
+Committed remediation as 4dc8427. `bun run check` completed green, followed by a separate complete `bun run test`; each ran all four browser suites sequentially and headless. Human-performance held the 10,000-element board responsive, fixed-point returned 0/13 changed elements, typed-text preserved both rename interactions, and live-session converged through all 42 mixed-write cycles.
+
+The on-demand CLI-contract renderer succeeded from an absent generated-output directory into two independent temporary directories. All three derived views (`cli-command-audit.md`, `command-contract-proof.json`, and `command-contract-proof.md`) were byte-identical between runs and left no checkout output. The canonical authored `docs/design/cli-command-audit.json` remains tracked; generated ownership is unchanged. `git diff --check` passed. TASK-119 intentionally remains In Progress with every acceptance criterion unchecked pending independent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
