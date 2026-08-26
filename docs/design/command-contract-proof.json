@@ -138,43 +138,35 @@
 		{
 			"name": "repo",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/repo.ts",
-			"parserOwner": "legacy subcommand dispatch",
-			"handlerName": "repo",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"bare": {
 				"kind": "default",
 				"child": "list",
 				"withLeadingOptions": true
-			},
-			"legacyArgv": "root-tail"
+			}
 		},
 		{
 			"name": "repo list",
 			"parent": "repo",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/repo.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "repoList",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "repo add",
 			"parent": "repo",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/repo.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "repoAdd",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "repo forget",
 			"parent": "repo",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/repo.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "repoForget",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "board",
@@ -267,34 +259,28 @@
 		{
 			"name": "inject",
 			"parent": null,
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/inject.ts",
-			"parserOwner": "legacy subcommand dispatch",
-			"handlerName": "inject",
+			"parserOwner": "CommandContract concrete Commander parser",
 			"bare": {
 				"kind": "default",
 				"child": "status",
 				"withLeadingOptions": false
-			},
-			"legacyArgv": "root-tail"
+			}
 		},
 		{
 			"name": "inject status",
 			"parent": "inject",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/inject.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "injectStatus",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "inject test",
 			"parent": "inject",
-			"kind": "legacy",
+			"kind": "contract",
 			"handlerOwner": "src/cli/commands/inject.ts",
-			"parserOwner": "legacy args.ts",
-			"handlerName": "injectTest",
-			"legacyArgv": "route-tail"
+			"parserOwner": "CommandContract concrete Commander parser"
 		},
 		{
 			"name": "describe",
@@ -2553,6 +2539,361 @@
 			]
 		},
 		{
+			"name": "repo",
+			"path": ["repo"],
+			"summary": "The repository checkouts on this machine, so a binding can name a repo instead of a directory",
+			"usage": "Usage: repo list [--text] | repo add [dir] | repo forget <identity>",
+			"description": "Routes repository registry subcommands.",
+			"examples": ["archboard repo list"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "action",
+					"name": "subcommand",
+					"description": "Repository subcommand"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "arguments",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Subcommand arguments"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"not": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "none",
+					"description": "Namespace refusal"
+				}
+			],
+			"outcomes": [],
+			"prerequisites": [],
+			"effects": [],
+			"refusals": [],
+			"relationships": []
+		},
+		{
+			"name": "repo list",
+			"path": ["repo", "list"],
+			"summary": "List registered repository checkouts",
+			"usage": "repo list [--text]",
+			"description": "Reads the machine-local repository registry.",
+			"examples": ["archboard repo list"],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "text",
+					"spellings": ["--text"],
+					"value": "none",
+					"description": "Print a human-readable listing"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"text": {
+							"default": false,
+							"type": "boolean"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["text", "tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"anyOf": [
+					{
+						"type": "object",
+						"properties": {
+							"success": {
+								"type": "boolean",
+								"const": true
+							},
+							"registry": {
+								"type": "string"
+							},
+							"repos": {
+								"type": "array",
+								"items": {
+									"type": "object",
+									"properties": {
+										"repo": {
+											"type": "string"
+										},
+										"root": {
+											"type": "string"
+										},
+										"source": {
+											"type": "string",
+											"enum": ["declared", "observed"]
+										},
+										"addedAt": {
+											"type": "string"
+										},
+										"exists": {
+											"type": "boolean"
+										}
+									},
+									"required": ["repo", "root", "source", "addedAt"],
+									"additionalProperties": false
+								}
+							}
+						},
+						"required": ["success", "registry", "repos"],
+						"additionalProperties": false
+					},
+					{
+						"type": "string"
+					}
+				]
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {
+						"key": "text",
+						"present": false
+					},
+					"mode": "json",
+					"held": "none",
+					"description": "Repository registry"
+				},
+				{
+					"id": "text",
+					"when": {
+						"key": "text",
+						"present": true
+					},
+					"mode": "text",
+					"held": "none",
+					"description": "Human-readable registry"
+				}
+			],
+			"outcomes": [],
+			"prerequisites": [],
+			"effects": ["local-read"],
+			"refusals": [],
+			"relationships": []
+		},
+		{
+			"name": "repo add",
+			"path": ["repo", "add"],
+			"summary": "Register a repository checkout",
+			"usage": "repo add [dir]",
+			"description": "Derives a checkout identity from git and records its local root.",
+			"examples": ["archboard repo add ."],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "dir",
+					"name": "dir",
+					"description": "Checkout directory"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"dir": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"const": true
+					},
+					"repo": {
+						"type": "string"
+					},
+					"root": {
+						"type": "string"
+					},
+					"source": {
+						"type": "string",
+						"enum": ["declared", "observed"]
+					},
+					"addedAt": {
+						"type": "string"
+					},
+					"registry": {
+						"type": "string"
+					}
+				},
+				"required": ["success", "repo", "root", "source", "addedAt", "registry"],
+				"additionalProperties": false
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "none",
+					"description": "Registered checkout",
+					"presentation": ["diagnostics", "result"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": [],
+			"effects": ["local-read", "local-write"],
+			"refusals": [],
+			"relationships": []
+		},
+		{
+			"name": "repo forget",
+			"path": ["repo", "forget"],
+			"summary": "Forget a local repository checkout",
+			"usage": "repo forget <identity>",
+			"description": "Removes one identity from the machine-local registry.",
+			"examples": ["archboard repo forget github.com/acme/payments"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "identity",
+					"name": "identity",
+					"description": "Repository identity"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored positional content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"identity": {
+							"type": "string",
+							"minLength": 1
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["identity", "tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"success": {
+						"type": "boolean",
+						"const": true
+					},
+					"repo": {
+						"type": "string"
+					},
+					"forgotten": {
+						"type": "boolean"
+					},
+					"registry": {
+						"type": "string"
+					}
+				},
+				"required": ["success", "repo", "forgotten", "registry"],
+				"additionalProperties": false
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "none",
+					"description": "Forget receipt",
+					"presentation": ["diagnostics", "result"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": [],
+			"effects": ["local-read", "local-write"],
+			"refusals": [],
+			"relationships": []
+		},
+		{
 			"name": "board save",
 			"path": ["board", "save"],
 			"summary": "Save one named board note without moving proposal panes",
@@ -3134,6 +3475,270 @@
 					"path": "/api/changes",
 					"cardinality": "one",
 					"description": "Read semantic changes"
+				}
+			]
+		},
+		{
+			"name": "inject",
+			"path": ["inject"],
+			"summary": "Whether the canvas can push board changes into a live Codex thread, and a probe to prove it",
+			"usage": "inject status | inject test [--note \"...\"] [--loud]",
+			"description": "Routes injection status and test commands.",
+			"examples": ["archboard inject status"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "action",
+					"name": "subcommand",
+					"description": "Injection subcommand"
+				},
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "arguments",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Subcommand arguments"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string"
+						},
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"not": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "none",
+					"description": "Namespace refusal"
+				}
+			],
+			"outcomes": [],
+			"prerequisites": [],
+			"effects": [],
+			"refusals": [],
+			"relationships": []
+		},
+		{
+			"name": "inject status",
+			"path": ["inject", "status"],
+			"summary": "Report injection capability and target",
+			"usage": "inject status",
+			"description": "Reports the server-start injection decision and target.",
+			"examples": ["archboard inject status"],
+			"parameters": [
+				{
+					"kind": "positional",
+					"key": "tail",
+					"name": "ignored",
+					"repeatable": true,
+					"route": "pass-through",
+					"description": "Legacy ignored trailing content"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"tail": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["tail"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"held": {
+						"type": "object",
+						"properties": {
+							"board": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": ["board", "message"],
+						"additionalProperties": {}
+					}
+				},
+				"additionalProperties": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Injection status",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server"],
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				}
+			],
+			"relationships": [
+				{
+					"method": "GET",
+					"path": "/api/injection",
+					"cardinality": "one",
+					"description": "Read injection status"
+				}
+			]
+		},
+		{
+			"name": "inject test",
+			"path": ["inject", "test"],
+			"summary": "Probe the configured Codex injection route",
+			"usage": "inject test [--note \"...\"] [--loud]",
+			"description": "Sends one explicit injection probe, quietly unless loud is selected.",
+			"examples": ["archboard inject test --note \"wiring check\""],
+			"parameters": [
+				{
+					"kind": "option",
+					"key": "note",
+					"spellings": ["--note"],
+					"value": "required",
+					"description": "Probe text"
+				},
+				{
+					"kind": "option",
+					"key": "loud",
+					"spellings": ["--loud"],
+					"value": "none",
+					"description": "Steer the running turn"
+				},
+				{
+					"kind": "option",
+					"key": "quiet",
+					"spellings": ["--quiet"],
+					"value": "none",
+					"description": "Append without steering"
+				},
+				{
+					"kind": "positional",
+					"key": "words",
+					"name": "note",
+					"repeatable": true,
+					"description": "Unquoted probe text"
+				}
+			],
+			"input": {
+				"schema": {
+					"$schema": "https://json-schema.org/draft/2020-12/schema",
+					"type": "object",
+					"properties": {
+						"note": {
+							"type": "string"
+						},
+						"loud": {
+							"default": false,
+							"type": "boolean"
+						},
+						"quiet": {
+							"default": false,
+							"type": "boolean"
+						},
+						"words": {
+							"default": [],
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					"required": ["loud", "quiet", "words"],
+					"additionalProperties": false
+				},
+				"stages": []
+			},
+			"result": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"type": "object",
+				"properties": {
+					"held": {
+						"type": "object",
+						"properties": {
+							"board": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": ["board", "message"],
+						"additionalProperties": {}
+					}
+				},
+				"additionalProperties": {}
+			},
+			"output": [
+				{
+					"id": "json",
+					"when": {},
+					"mode": "json",
+					"held": "object-field-and-stderr-note",
+					"description": "Injection probe result",
+					"presentation": ["result", "held-note"]
+				}
+			],
+			"outcomes": [],
+			"prerequisites": ["server"],
+			"effects": ["write"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3,
+					"stream": "stderr",
+					"description": "The canvas could not be reached."
+				}
+			],
+			"relationships": [
+				{
+					"method": "POST",
+					"path": "/api/injection/test",
+					"cardinality": "one",
+					"description": "Send the injection probe"
 				}
 			]
 		},
@@ -3914,10 +4519,6 @@
 		"pane open",
 		"pane close",
 		"demote",
-		"repo",
-		"repo list",
-		"repo add",
-		"repo forget",
 		"board",
 		"board list",
 		"board info",
@@ -3925,9 +4526,6 @@
 		"board open",
 		"claim",
 		"release",
-		"inject",
-		"inject status",
-		"inject test",
 		"screenshot",
 		"mermaid",
 		"snapshot",
