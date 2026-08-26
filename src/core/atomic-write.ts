@@ -23,8 +23,8 @@
 // copy of a board, so that is the board, gone. The cost was accepted when
 // ADR 0015 was accepted. Nobody should optimise it away without reopening it.
 
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from "node:fs";
+import path from "node:path";
 
 /**
  * The temp file's name, which matters as much as the mechanism.
@@ -36,8 +36,8 @@ import path from 'node:path';
  * board. The pid keeps two processes writing the same path apart.
  */
 export function tempPathFor(file: string): string {
-  const dir = path.dirname(file);
-  return path.join(dir, `.${path.basename(file)}.${process.pid}.tmp`);
+	const dir = path.dirname(file);
+	return path.join(dir, `.${path.basename(file)}.${process.pid}.tmp`);
 }
 
 /**
@@ -48,23 +48,33 @@ export function tempPathFor(file: string): string {
  * untidier than it found it.
  */
 export function writeFileAtomic(file: string, data: string | Buffer): void {
-  const tmp = tempPathFor(file);
-  let handle: number | undefined;
-  try {
-    handle = fs.openSync(tmp, 'w');
-    fs.writeFileSync(handle, data);
-    // Before the rename, not after: this is the step that makes the new name
-    // point at whole content on the far side of a power cut.
-    fs.fsyncSync(handle);
-    fs.closeSync(handle);
-    handle = undefined;
-    fs.renameSync(tmp, file);
-    fsyncDir(path.dirname(file));
-  } catch (error) {
-    if (handle !== undefined) { try { fs.closeSync(handle); } catch { /* already gone */ } }
-    try { fs.unlinkSync(tmp); } catch { /* never created, or already renamed */ }
-    throw error;
-  }
+	const tmp = tempPathFor(file);
+	let handle: number | undefined;
+	try {
+		handle = fs.openSync(tmp, "w");
+		fs.writeFileSync(handle, data);
+		// Before the rename, not after: this is the step that makes the new name
+		// point at whole content on the far side of a power cut.
+		fs.fsyncSync(handle);
+		fs.closeSync(handle);
+		handle = undefined;
+		fs.renameSync(tmp, file);
+		fsyncDir(path.dirname(file));
+	} catch (error) {
+		if (handle !== undefined) {
+			try {
+				fs.closeSync(handle);
+			} catch {
+				/* already gone */
+			}
+		}
+		try {
+			fs.unlinkSync(tmp);
+		} catch {
+			/* never created, or already renamed */
+		}
+		throw error;
+	}
 }
 
 // The rename itself is a directory change, and it is durable only once the
@@ -72,11 +82,19 @@ export function writeFileAtomic(file: string, data: string | Buffer): void {
 // not portable, and a platform that refuses gives up durability of the rename
 // rather than the write, which is the smaller of the two.
 function fsyncDir(dir: string): void {
-  let handle: number | undefined;
-  try {
-    handle = fs.openSync(dir, 'r');
-    fs.fsyncSync(handle);
-  } catch { /* not supported here */ } finally {
-    if (handle !== undefined) { try { fs.closeSync(handle); } catch { /* ignore */ } }
-  }
+	let handle: number | undefined;
+	try {
+		handle = fs.openSync(dir, "r");
+		fs.fsyncSync(handle);
+	} catch {
+		/* not supported here */
+	} finally {
+		if (handle !== undefined) {
+			try {
+				fs.closeSync(handle);
+			} catch {
+				/* ignore */
+			}
+		}
+	}
 }

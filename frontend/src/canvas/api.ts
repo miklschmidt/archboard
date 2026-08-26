@@ -1,11 +1,18 @@
 // Every server call the browser makes, in one place, so a pane and the shell
 // disagree about nothing.
 
-import type { LibraryItems } from '@excalidraw/excalidraw/types'
+import type { LibraryItems } from "@excalidraw/excalidraw/types";
 import type {
-  BoardHold, BoardIdentity, BoardInfo, BoardListing, BoardSaveResult, BoardWriteConflict, LockHolder, ServerElement
-} from '../types'
-import type { ChangeReport } from './changes'
+	BoardHold,
+	BoardIdentity,
+	BoardInfo,
+	BoardListing,
+	BoardSaveResult,
+	BoardWriteConflict,
+	LockHolder,
+	ServerElement,
+} from "../types";
+import type { ChangeReport } from "./changes";
 
 /**
  * A refused board write. Distinct from a plain Error because the shell has to
@@ -13,43 +20,46 @@ import type { ChangeReport } from './changes'
  * saving, not a fault.
  */
 export class BoardConflictError extends Error {
-  constructor(
-    public readonly conflict: BoardWriteConflict,
-    /** The hold this refusal started or ran into, when the board has one. */
-    public readonly held?: BoardHold
-  ) {
-    super(conflict.message)
-    this.name = 'BoardConflictError'
-  }
+	constructor(
+		public readonly conflict: BoardWriteConflict,
+		/** The hold this refusal started or ran into, when the board has one. */
+		public readonly held?: BoardHold,
+	) {
+		super(conflict.message);
+		this.name = "BoardConflictError";
+	}
 }
 
 async function json<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, init)
-  const body = await response.json().catch(() => ({}))
-  if (!response.ok || body?.success === false) {
-    if (body?.conflict) {
-      throw new BoardConflictError(body.conflict as BoardWriteConflict, body.held as BoardHold | undefined)
-    }
-    throw new Error(body?.error ?? `${init?.method ?? 'GET'} ${url} failed (${response.status})`)
-  }
-  return body as T
+	const response = await fetch(url, init);
+	const body = await response.json().catch(() => ({}));
+	if (!response.ok || body?.success === false) {
+		if (body?.conflict) {
+			throw new BoardConflictError(
+				body.conflict as BoardWriteConflict,
+				body.held as BoardHold | undefined,
+			);
+		}
+		throw new Error(body?.error ?? `${init?.method ?? "GET"} ${url} failed (${response.status})`);
+	}
+	return body as T;
 }
 
 function post<T>(url: string, payload: unknown): Promise<T> {
-  return json<T>(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
+	return json<T>(url, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(payload),
+	});
 }
 
 const boardQuery = (board: string | null): string =>
-  board ? `?board=${encodeURIComponent(board)}` : ''
+	board ? `?board=${encodeURIComponent(board)}` : "";
 
 // ─── Elements ─────────────────────────────────────────────────
 
 export function fetchElements(board: string | null) {
-  return json<{ elements: ServerElement[] }>(`/api/elements${boardQuery(board)}`)
+	return json<{ elements: ServerElement[] }>(`/api/elements${boardQuery(board)}`);
 }
 
 /**
@@ -58,7 +68,7 @@ export function fetchElements(board: string | null) {
  * board used to get every image in the process (TASK-060).
  */
 export function fetchFiles(board: string | null) {
-  return json<{ files?: Record<string, unknown> }>(`/api/files${boardQuery(board)}`)
+	return json<{ files?: Record<string, unknown> }>(`/api/files${boardQuery(board)}`);
 }
 
 /**
@@ -74,49 +84,55 @@ export function fetchFiles(board: string | null) {
  * explicit whole-document recovery answer.
  */
 export function reportChanges(
-  board: string | null,
-  report: ChangeReport,
-  clientId: string,
-  fullReport = false
+	board: string | null,
+	report: ChangeReport,
+	clientId: string,
+	fullReport = false,
 ): Promise<ChangeReportReply> {
-  return post(`/api/elements/changes${boardQuery(board)}`, changeReportPayload(report, clientId, fullReport))
+	return post(
+		`/api/elements/changes${boardQuery(board)}`,
+		changeReportPayload(report, clientId, fullReport),
+	);
 }
 
 function changeReportPayload(report: ChangeReport, clientId: string, fullReport = false) {
-  return {
-    upserts: report.upserts,
-    deletes: report.deletes,
-    clientId,
-    timestamp: new Date().toISOString(),
-    // Only ever on a board that has stopped saving, and the server refuses it
-    // anywhere else: it says "this is the whole board", which is the one thing
-    // a pane is otherwise never allowed to say (TASK-016, TASK-079).
-    ...(fullReport ? { fullReport: true } : {})
-  }
+	return {
+		upserts: report.upserts,
+		deletes: report.deletes,
+		clientId,
+		timestamp: new Date().toISOString(),
+		// Only ever on a board that has stopped saving, and the server refuses it
+		// anywhere else: it says "this is the whole board", which is the one thing
+		// a pane is otherwise never allowed to say (TASK-016, TASK-079).
+		...(fullReport ? { fullReport: true } : {}),
+	};
 }
 
-export function beaconChanges(board: string | null, report: ChangeReport, clientId: string): boolean {
-  if (typeof navigator.sendBeacon !== 'function') return false
-  const body = new Blob(
-    [JSON.stringify(changeReportPayload(report, clientId))],
-    { type: 'application/json' }
-  )
-  return navigator.sendBeacon(`/api/elements/changes${boardQuery(board)}`, body)
+export function beaconChanges(
+	board: string | null,
+	report: ChangeReport,
+	clientId: string,
+): boolean {
+	if (typeof navigator.sendBeacon !== "function") return false;
+	const body = new Blob([JSON.stringify(changeReportPayload(report, clientId))], {
+		type: "application/json",
+	});
+	return navigator.sendBeacon(`/api/elements/changes${boardQuery(board)}`, body);
 }
 
 export interface ChangeReportReply {
-  created: number
-  updated: number
-  deleted: number
-  count: number
-  /** Canonical changes made after input conversion and before persistence. */
-  corrections: { upserts: ServerElement[]; deletes: string[] }
-  /** The authoritative board fingerprint after persistence. */
-  fingerprint: { elements: number; note: string; version: number | null }
-  /** Only present for explicit held-board full-report recovery. */
-  document?: ServerElement[]
-  /** Set when this board has stopped saving: what is held, and the way out. */
-  held?: BoardHold
+	created: number;
+	updated: number;
+	deleted: number;
+	count: number;
+	/** Canonical changes made after input conversion and before persistence. */
+	corrections: { upserts: ServerElement[]; deletes: string[] };
+	/** The authoritative board fingerprint after persistence. */
+	fingerprint: { elements: number; note: string; version: number | null };
+	/** Only present for explicit held-board full-report recovery. */
+	document?: ServerElement[];
+	/** Set when this board has stopped saving: what is held, and the way out. */
+	held?: BoardHold;
 }
 
 /**
@@ -129,18 +145,18 @@ export interface ChangeReportReply {
  * unsplit or a closed tab retires it without anyone saying so.
  */
 export function reportPane(pane: PaneReport): Promise<PaneReply> {
-  return post('/api/panes', pane)
+	return post("/api/panes", pane);
 }
 
 export interface PaneReply {
-  success: true
-  registered: boolean
-  paneCount: number
-  /**
-   * Set when this tab is running a bundle the canvas no longer serves, i.e.
-   * somebody rebuilt the frontend after the tab was opened (TASK-056).
-   */
-  staleFrontend?: { loaded: string | null; current: string | null; message: string | null }
+	success: true;
+	registered: boolean;
+	paneCount: number;
+	/**
+	 * Set when this tab is running a bundle the canvas no longer serves, i.e.
+	 * somebody rebuilt the frontend after the tab was opened (TASK-056).
+	 */
+	staleFrontend?: { loaded: string | null; current: string | null; message: string | null };
 }
 
 /**
@@ -154,35 +170,35 @@ export interface PaneReply {
  * nothing about that.
  */
 export function loadedBundle(): string | undefined {
-  const script = document.querySelector('script[type="module"][src]')
-  return script?.getAttribute('src') ?? undefined
+	const script = document.querySelector('script[type="module"][src]');
+	return script?.getAttribute("src") ?? undefined;
 }
 
 export interface PaneReport {
-  clientId: string
-  paneId: string
-  board: string
-  primary: boolean
-  focused: boolean
-  elementCount: number
-  /** Where the pane is in the page, in CSS pixels. */
-  rect: { x: number; y: number; width: number; height: number }
-  /** Which part of the board is on screen, in scene coordinates. */
-  viewport: { x: number; y: number; width: number; height: number; zoom: number }
-  /** Which bundle this tab is running, so the canvas can say when it is old. */
-  build?: string
+	clientId: string;
+	paneId: string;
+	board: string;
+	primary: boolean;
+	focused: boolean;
+	elementCount: number;
+	/** Where the pane is in the page, in CSS pixels. */
+	rect: { x: number; y: number; width: number; height: number };
+	/** Which part of the board is on screen, in scene coordinates. */
+	viewport: { x: number; y: number; width: number; height: number; zoom: number };
+	/** Which bundle this tab is running, so the canvas can say when it is old. */
+	build?: string;
 }
 
 export function publishSelection(elementIds: readonly string[], clientId: string) {
-  return post<{ success: true }>('/api/selection', { elementIds, clientId })
+	return post<{ success: true }>("/api/selection", { elementIds, clientId });
 }
 
 export function postExportResult(requestId: string, payload: Record<string, unknown>) {
-  return post<{ success: true }>('/api/export/image/result', { requestId, ...payload })
+	return post<{ success: true }>("/api/export/image/result", { requestId, ...payload });
 }
 
 export function postViewportResult(requestId: string, payload: Record<string, unknown>) {
-  return post<{ success: true }>('/api/viewport/result', { requestId, ...payload })
+	return post<{ success: true }>("/api/viewport/result", { requestId, ...payload });
 }
 
 // ─── The board's mutex ────────────────────────────────────────
@@ -198,20 +214,23 @@ export function postViewportResult(requestId: string, payload: Record<string, un
 // read who.
 
 export interface HoldReply {
-  held: boolean
-  /** Who has it: this pane on success, somebody else on a refusal. */
-  holder: LockHolder | null
+	held: boolean;
+	/** Who has it: this pane on success, somebody else on a refusal. */
+	holder: LockHolder | null;
 }
 
 export async function holdBoard(board: string | null, clientId: string): Promise<HoldReply> {
-  const response = await fetch(`/api/boards/hold${boardQuery(board)}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ clientId })
-  })
-  const body = await response.json().catch(() => ({})) as { success?: boolean; holder?: LockHolder | null }
-  if (response.ok && body.success) return { held: true, holder: body.holder ?? null }
-  return { held: false, holder: body.holder ?? null }
+	const response = await fetch(`/api/boards/hold${boardQuery(board)}`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ clientId }),
+	});
+	const body = (await response.json().catch(() => ({}))) as {
+		success?: boolean;
+		holder?: LockHolder | null;
+	};
+	if (response.ok && body.success) return { held: true, holder: body.holder ?? null };
+	return { held: false, holder: body.holder ?? null };
 }
 
 /**
@@ -219,11 +238,11 @@ export async function holdBoard(board: string | null, clientId: string): Promise
  * release that never arrives costs LOCK_LEASE_MS and not the board.
  */
 export function releaseBoard(board: string | null, clientId: string): void {
-  void fetch(`/api/boards/hold/release${boardQuery(board)}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ clientId })
-  }).catch(() => { })
+	void fetch(`/api/boards/hold/release${boardQuery(board)}`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ clientId }),
+	}).catch(() => {});
 }
 
 /**
@@ -241,9 +260,9 @@ export function releaseBoard(board: string | null, clientId: string): void {
  * already wrote is undone — a claim was never a transaction (ADR 0016).
  */
 export async function takeBoardBack(board: string | null, clientId: string): Promise<HoldReply> {
-  const taken = await holdBoard(board, clientId)
-  if (taken.held) releaseBoard(board, clientId)
-  return taken
+	const taken = await holdBoard(board, clientId);
+	if (taken.held) releaseBoard(board, clientId);
+	return taken;
 }
 
 /**
@@ -255,8 +274,8 @@ export async function takeBoardBack(board: string | null, clientId: string): Pro
  * doing (TASK-095). Nobody is going to narrate their own button press.
  */
 export function clearBoard(board: string | null, clientId: string) {
-  const query = `${boardQuery(board)}${boardQuery(board) ? '&' : '?'}clientId=${encodeURIComponent(clientId)}`
-  return json<{ count: number }>(`/api/elements/clear${query}`, { method: 'DELETE' })
+	const query = `${boardQuery(board)}${boardQuery(board) ? "&" : "?"}clientId=${encodeURIComponent(clientId)}`;
+	return json<{ count: number }>(`/api/elements/clear${query}`, { method: "DELETE" });
 }
 
 // ─── The library ──────────────────────────────────────────────
@@ -265,18 +284,18 @@ export function clearBoard(board: string | null, clientId: string) {
 // they carry reaches the element store until a human drags one onto a canvas.
 
 export function fetchLibrary() {
-  return json<{ items: LibraryItems; seeded: string[]; file: string | null; vaultBacked: boolean }>(
-    '/api/library'
-  )
+	return json<{ items: LibraryItems; seeded: string[]; file: string | null; vaultBacked: boolean }>(
+		"/api/library",
+	);
 }
 
 /** The whole palette, because Excalidraw reports the whole palette. */
 export function putLibrary(items: LibraryItems) {
-  return json<{ count: number; file: string | null; vaultBacked: boolean }>('/api/library', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ items })
-  })
+	return json<{ count: number; file: string | null; vaultBacked: boolean }>("/api/library", {
+		method: "PUT",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ items }),
+	});
 }
 
 // ─── Boards ───────────────────────────────────────────────────
@@ -287,39 +306,41 @@ export function putLibrary(items: LibraryItems) {
  * the shell asks about the board in the pane the human is using (ADR 0009).
  */
 export function fetchBoardInfo(board: string) {
-  return json<BoardInfo & { success: true }>(`/api/boards/info?board=${encodeURIComponent(board)}`)
+	return json<BoardInfo & { success: true }>(`/api/boards/info?board=${encodeURIComponent(board)}`);
 }
 
 export function fetchBoards() {
-  return json<BoardListing>('/api/boards')
+	return json<BoardListing>("/api/boards");
 }
 
 /** `pane` is the pane to show it in — required once more than one is open. */
-export function openBoard(address: Partial<BoardIdentity> & { board: string; reload?: boolean; pane?: string }) {
-  return post<BoardInfo>('/api/boards/open', address)
+export function openBoard(
+	address: Partial<BoardIdentity> & { board: string; reload?: boolean; pane?: string },
+) {
+	return post<BoardInfo>("/api/boards/open", address);
 }
 
 export function newBoard(address: Partial<BoardIdentity> & { board: string; pane?: string }) {
-  return post<BoardInfo>('/api/boards/new', address)
+	return post<BoardInfo>("/api/boards/new", address);
 }
 
 /** Throws BoardConflictError when the note at the destination is not ours to overwrite. */
 export function saveBoard(as: SaveRequest) {
-  return post<BoardSaveResult>('/api/boards/save', as)
+	return post<BoardSaveResult>("/api/boards/save", as);
 }
 
 export interface SaveRequest {
-  /** Which board to write. Required: the server has no default (ADR 0009). */
-  board: string
-  /**
-   * The pane the person pressed Save in. As on `clearBoard`: it is what makes
-   * this a person's write rather than an unnamed one, and an unnamed writer is
-   * an agent, which must say what it is doing (TASK-095).
-   */
-  clientId?: string
-  name?: string
-  variant?: string
-  level?: string
-  /** The human's "overwrite it anyway", never the shell's own initiative. */
-  force?: boolean
+	/** Which board to write. Required: the server has no default (ADR 0009). */
+	board: string;
+	/**
+	 * The pane the person pressed Save in. As on `clearBoard`: it is what makes
+	 * this a person's write rather than an unnamed one, and an unnamed writer is
+	 * an agent, which must say what it is doing (TASK-095).
+	 */
+	clientId?: string;
+	name?: string;
+	variant?: string;
+	level?: string;
+	/** The human's "overwrite it anyway", never the shell's own initiative. */
+	force?: boolean;
 }

@@ -1,46 +1,50 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "allowJs": false,
-    "checkJs": false,
-    // bun runs the TypeScript, so tsc is a type checker here and never an
-    // emitter (ADR 0014). noEmit is set in the config, not just on the
-    // command line, so a bare `tsc` cannot refill dist/ behind our backs.
-    "noEmit": true,
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
-    "noImplicitThis": true,
-    "noImplicitReturns": false,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmitOnError": false,
-    "preserveConstEnums": true,
-    "removeComments": false,
-    "types": ["node"]
-  },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "frontend",
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "**/*.js",
-    "**/*.jsx"
-  ]
-} 
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleDetection": "force",
+		"moduleResolution": "bundler",
+		"allowImportingTsExtensions": true,
+		"allowJs": false,
+		"checkJs": false,
+		// bun runs the TypeScript, so tsc is a type checker here and never an
+		// emitter (ADR 0014). noEmit is set in the config, not just on the
+		// command line, so a bare `tsc` cannot refill dist/ behind our backs.
+		"noEmit": true,
+		"strict": true,
+		"noImplicitAny": true,
+		"strictNullChecks": true,
+		"strictFunctionTypes": true,
+		"strictBindCallApply": true,
+		"strictPropertyInitialization": true,
+		"noImplicitThis": true,
+		"noImplicitReturns": false,
+		"noFallthroughCasesInSwitch": true,
+		"noUncheckedIndexedAccess": true,
+		"noImplicitOverride": true,
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"forceConsistentCasingInFileNames": true,
+		"skipLibCheck": true,
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"verbatimModuleSyntax": true,
+		"noUnusedLocals": false,
+		"noUnusedParameters": false,
+		"noPropertyAccessFromIndexSignature": false,
+		"noEmitOnError": false,
+		"preserveConstEnums": true,
+		"removeComments": false,
+		"types": ["node"]
+	},
+	"include": ["src/**/*.ts"],
+	"exclude": [
+		"node_modules",
+		"dist",
+		"frontend",
+		"**/*.test.ts",
+		"**/*.spec.ts",
+		"**/*.js",
+		"**/*.jsx"
+	]
+}

@@ -33,13 +33,13 @@ Measured in one page, on one canvas context, with one font string
 (`20px Excalifont, Xiaolai, Segoe UI Emoji`), before and after adding
 Excalifont's seven `FontFace`s and awaiting `document.fonts.ready`:
 
-| String | Before the font is added | After | Pure JS | Diff |
-|---|---|---|---|---|
-| `a standalone caption` | 163.2715 | 203.6598 | 203.6600 | -0.0002 |
-| `AuthService` | 99.9707 | 114.4999 | 114.5000 | -0.0001 |
-| `Queue` | 52.1973 | 58.7599 | 58.7600 | -0.0001 |
-| `Gate` | 37.7539 | 48.9200 | 48.9200 | -0.0000 |
-| `gRPC` | 47.8027 | 52.3600 | 52.3600 | -0.0000 |
+| String                 | Before the font is added | After    | Pure JS  | Diff    |
+| ---------------------- | ------------------------ | -------- | -------- | ------- |
+| `a standalone caption` | 163.2715                 | 203.6598 | 203.6600 | -0.0002 |
+| `AuthService`          | 99.9707                  | 114.4999 | 114.5000 | -0.0001 |
+| `Queue`                | 52.1973                  | 58.7599  | 58.7600  | -0.0001 |
+| `Gate`                 | 37.7539                  | 48.9200  | 48.9200  | -0.0000 |
+| `gRPC`                 | 47.8027                  | 52.3600  | 52.3600  | -0.0000 |
 
 The left column is the Chrome column from `server-is-the-truth.md`, to four
 decimals. The right column is what fontkit said, and what my own woff2 reader
@@ -60,7 +60,7 @@ decimals, which reads as a direct refutation of the paragraph above. It is not.
 `document.fonts.check('20px Excalifont')` returned **true in my probe before I
 had added a single `FontFace`**, in a fresh tab, while the same context measured
 163.2715. That is the specified behaviour: `check()` asks whether every font in
-the set that *would* be used is loaded, and a family with no `FontFace` at all
+the set that _would_ be used is loaded, and a family with no `FontFace` at all
 is not in the set, so nothing is pending and the answer is true. The call
 cannot distinguish "Excalifont is loaded" from "Excalifont does not exist here".
 
@@ -78,7 +78,7 @@ and `BOUND_TEXT_PADDING` in Excalidraw is 5.
 
 **Placed, in stage 5.** It is Virgil at 20 px, which is what our converter wrote
 for a standalone text before this stage corrected it, and the measurer gives
-208.860 for it. Not padding, and not a third regime: a third *font*. It showed
+208.860 for it. Not padding, and not a third regime: a third _font_. It showed
 up the moment the fixed-point check's font gate was fixed and that check started
 rendering in the font the note names.
 
@@ -121,13 +121,13 @@ Each family loaded from its own shipped subsets with the exact `unicode-range`
 and `weight` descriptors Excalidraw registers, extracted from
 `dist/prod/chunk-FX7ZIABN.js` rather than retyped.
 
-| Test | Measurements | Worst disagreement |
-|---|---|---|
-| Every ASCII pair, 0x20-0x7e squared, at 100 px, all 7 families | 63,175 | none over 0.02 px |
-| Single codepoints 0x20-0x24F, 0x370-0x3FF, 0x400-0x45F, all 7 families | 5,600, of which 2,966 in-family | none over 0.02 px |
-| Latin and Latin-Ext pairs, U+0041-U+017F squared, Excalifont | 57,600 | none over 0.02 px |
-| A 607-string corpus at `fontSize` 20, Excalifont | 598 in-family | 0.00038 px |
-| The five reference strings at 12, 14, 16, 20, 28, 36 px | 30 | 0.0012 px |
+| Test                                                                   | Measurements                    | Worst disagreement |
+| ---------------------------------------------------------------------- | ------------------------------- | ------------------ |
+| Every ASCII pair, 0x20-0x7e squared, at 100 px, all 7 families         | 63,175                          | none over 0.02 px  |
+| Single codepoints 0x20-0x24F, 0x370-0x3FF, 0x400-0x45F, all 7 families | 5,600, of which 2,966 in-family | none over 0.02 px  |
+| Latin and Latin-Ext pairs, U+0041-U+017F squared, Excalifont           | 57,600                          | none over 0.02 px  |
+| A 607-string corpus at `fontSize` 20, Excalifont                       | 598 in-family                   | 0.00038 px         |
+| The five reference strings at 12, 14, 16, 20, 28, 36 px                | 30                              | 0.0012 px          |
 
 The corpus is 300 random ASCII strings of 1 to 30 characters, 60 Latin-Ext, 40
 Cyrillic, 40 Greek and 40 mixed-script, generated from a fixed seed, plus 23
@@ -171,11 +171,11 @@ seven subsets are 84 KB inside `@excalidraw/excalidraw`.
 
 Speed, on this box, same numbers under both runtimes:
 
-| | node 24.18.0 | bun 1.3.14 |
-|---|---|---|
-| Parse all seven Excalifont subsets, once per process | 4.4 ms | 15.9 ms |
-| Measure `AuthService` | 3.8 us | 4.2 us |
-| Measure a 38-character string | 20.4 us | 20.4 us |
+|                                                      | node 24.18.0 | bun 1.3.14 |
+| ---------------------------------------------------- | ------------ | ---------- |
+| Parse all seven Excalifont subsets, once per process | 4.4 ms       | 15.9 ms    |
+| Measure `AuthService`                                | 3.8 us       | 4.2 us     |
+| Measure a 38-character string                        | 20.4 us      | 20.4 us    |
 
 Against stage 8's budget of 6.21 ms to read, apply and write a 55-element note,
 a few microseconds per text element is nothing. The one-off parse belongs behind

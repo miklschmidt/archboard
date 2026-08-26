@@ -43,37 +43,37 @@ Every holder in the canvas server process, read out of the source rather than
 guessed. The `kept()` names are the registry keys in `src/core/hot.ts`, which
 is the complete list of things a hot reload deliberately preserves.
 
-| What | Where | Holds |
-|---|---|---|
-| `boards` | `src/core/board-store.ts:62` | Every board opened this session, keyed by address. |
-| `BoardState.elements` | `src/core/board-store.ts:35` | The elements. This is the authoritative copy, and the only one when the board is unsaved. |
-| `BoardState.identity` | `board-store.ts:34` | Board name, variant, level, display casing. Comes from the note and the address. |
-| `BoardState.vaultBacked`, `.file` | `board-store.ts:38,39` | Whether the board has a home, and where. |
-| `BoardState.note` | `board-store.ts:43` | The last note bytes. Written at `server.ts:2511` and `2707`, **read nowhere**. See finding F1. |
-| `BoardState.baseline` | `board-store.ts:54` | Path plus sha-256 plus timestamp. The ADR 0006 conflict check. |
-| `BoardState.loadedAt`, `.savedAt` | `board-store.ts:55,56` | Timestamps the shell's dirty indicator reads. |
-| scratch board | seeded at `board-store.ts:72,76` | A board with no file. Exists only in memory, by design. |
-| `snapshots` | `src/types.ts:362` | Named deep copies of a board, process-lifetime only. |
-| `selectionState.current` | `src/types.ts:375` | What the human last picked, canvas-wide. |
-| `selectionState.byClient` | `src/types.ts:375` | What each pane has picked. |
-| `BoardState.files` | `board-store.ts` | Image blobs as data URLs, per board since TASK-060. It was one process-global map when this was measured, which was finding F2. |
-| library `cache.state` | `src/core/library.ts:147` | The stencil palette. Already write-through to `<vault>/.archboard/library.excalidrawlib`. |
-| `injector` | `src/core/injection.ts:489` | Config, control socket, observed Codex threads, pending events, debounce timer, counters (`injection.ts:130-141`). |
-| `clients` | `src/server.ts:151` | Open WebSockets. |
-| `clientIds` | `src/server.ts:155` | Browser client id per socket. |
-| `panes` | `src/server.ts:161` | One registration per pane on screen: rect, viewport, focus, element count. |
-| `paneBoards` | `src/server.ts:173` | Which board each pane was pointed at. The authority, and it outlives the socket on purpose. |
-| `pendingPaneOpens` | `src/server.ts:1580` | In-flight request promises. |
-| `pendingPaneCloses` | `src/server.ts:1588` | In-flight request promises. |
-| `pendingExports` | `src/server.ts:1817` | In-flight image export promises. |
-| `pendingViewports` | `src/server.ts:1976` | In-flight camera-move promises. |
-| `changeFeed` | `src/core/change-feed.ts:339` | See the four rows below. |
-| `ChangeFeed.watches[].baseline` | `change-feed.ts:89` | The board as of the last emitted event. A deep copy. |
-| `ChangeFeed.events`, `.checkpoints` | `change-feed.ts:118,119` | Ring of 200 events and 24 past board states. |
-| `ChangeFeed.id`, `.nextCursor` | `change-feed.ts:116,120` | Feed identity and cursor. A hook holds a cursor across turns. |
-| `wiring` | `src/server.ts:120` | The bound port, the HTTP server, the WebSocket server. |
+| What                                | Where                            | Holds                                                                                                                           |
+| ----------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `boards`                            | `src/core/board-store.ts:62`     | Every board opened this session, keyed by address.                                                                              |
+| `BoardState.elements`               | `src/core/board-store.ts:35`     | The elements. This is the authoritative copy, and the only one when the board is unsaved.                                       |
+| `BoardState.identity`               | `board-store.ts:34`              | Board name, variant, level, display casing. Comes from the note and the address.                                                |
+| `BoardState.vaultBacked`, `.file`   | `board-store.ts:38,39`           | Whether the board has a home, and where.                                                                                        |
+| `BoardState.note`                   | `board-store.ts:43`              | The last note bytes. Written at `server.ts:2511` and `2707`, **read nowhere**. See finding F1.                                  |
+| `BoardState.baseline`               | `board-store.ts:54`              | Path plus sha-256 plus timestamp. The ADR 0006 conflict check.                                                                  |
+| `BoardState.loadedAt`, `.savedAt`   | `board-store.ts:55,56`           | Timestamps the shell's dirty indicator reads.                                                                                   |
+| scratch board                       | seeded at `board-store.ts:72,76` | A board with no file. Exists only in memory, by design.                                                                         |
+| `snapshots`                         | `src/types.ts:362`               | Named deep copies of a board, process-lifetime only.                                                                            |
+| `selectionState.current`            | `src/types.ts:375`               | What the human last picked, canvas-wide.                                                                                        |
+| `selectionState.byClient`           | `src/types.ts:375`               | What each pane has picked.                                                                                                      |
+| `BoardState.files`                  | `board-store.ts`                 | Image blobs as data URLs, per board since TASK-060. It was one process-global map when this was measured, which was finding F2. |
+| library `cache.state`               | `src/core/library.ts:147`        | The stencil palette. Already write-through to `<vault>/.archboard/library.excalidrawlib`.                                       |
+| `injector`                          | `src/core/injection.ts:489`      | Config, control socket, observed Codex threads, pending events, debounce timer, counters (`injection.ts:130-141`).              |
+| `clients`                           | `src/server.ts:151`              | Open WebSockets.                                                                                                                |
+| `clientIds`                         | `src/server.ts:155`              | Browser client id per socket.                                                                                                   |
+| `panes`                             | `src/server.ts:161`              | One registration per pane on screen: rect, viewport, focus, element count.                                                      |
+| `paneBoards`                        | `src/server.ts:173`              | Which board each pane was pointed at. The authority, and it outlives the socket on purpose.                                     |
+| `pendingPaneOpens`                  | `src/server.ts:1580`             | In-flight request promises.                                                                                                     |
+| `pendingPaneCloses`                 | `src/server.ts:1588`             | In-flight request promises.                                                                                                     |
+| `pendingExports`                    | `src/server.ts:1817`             | In-flight image export promises.                                                                                                |
+| `pendingViewports`                  | `src/server.ts:1976`             | In-flight camera-move promises.                                                                                                 |
+| `changeFeed`                        | `src/core/change-feed.ts:339`    | See the four rows below.                                                                                                        |
+| `ChangeFeed.watches[].baseline`     | `change-feed.ts:89`              | The board as of the last emitted event. A deep copy.                                                                            |
+| `ChangeFeed.events`, `.checkpoints` | `change-feed.ts:118,119`         | Ring of 200 events and 24 past board states.                                                                                    |
+| `ChangeFeed.id`, `.nextCursor`      | `change-feed.ts:116,120`         | Feed identity and cursor. A hook holds a cursor across turns.                                                                   |
+| `wiring`                            | `src/server.ts:120`              | The bound port, the HTTP server, the WebSocket server.                                                                          |
 
-One holder is worth naming because it is *not* in the canvas server:
+One holder is worth naming because it is _not_ in the canvas server:
 `sceneState` at `src/core/canvas-state.ts:19` lives in the MCP process, holds
 `theme`, `viewport` and a `groups` map, and is not behind `kept()`. Group
 membership recorded by `group_elements` is therefore lost when the MCP process
@@ -105,7 +105,7 @@ the library cache (already write-through), `.loadedAt` and `.savedAt`.
 
 **Derived state that is NOT rebuildable from the vault.** The change feed's
 `baseline`, `checkpoints`, `events` and `nextCursor`. The baseline is the board
-*as it stood at the last event*, and the disk holds the board as it stands now.
+_as it stood at the last event_, and the disk holds the board as it stands now.
 Making the server stateless does not move this to disk, because the disk never
 held it. Same for `snapshots`, whose whole point is to be a past state, and for
 the injector's thread observations. So a stateless server still keeps memory
@@ -113,7 +113,7 @@ that a restart destroys. It just moves the boundary.
 
 ### 3. What ADR 0004 actually says
 
-ADR 0004 is about *location*, not authority. Its sentence is "Boards are stored
+ADR 0004 is about _location_, not authority. Its sentence is "Boards are stored
 as `.excalidraw.md` notes in a single Obsidian vault that spans every repository
 we work on, rather than inside any one repo", and its reasoning is drill-down,
 backlinks and prose. It never says the vault is the live truth.
@@ -137,16 +137,16 @@ I pulled every human change report out of the canvas log
 (`~/.local/state/excalidraw-mcp/excalidraw.log`), 370 of them across 25 hours of
 real use.
 
-| | |
-|---|---|
-| Human change reports logged | 370 |
-| Median gap between reports | 3.87 s |
-| p10 gap | 0.43 s |
-| Gaps under 1 s | 121 (33%) |
-| Busiest 1-second window | 7 reports |
-| Busiest 10-second window | 22 reports |
-| Busiest 60-second window | 75 reports |
-| Explicit saves into the real vault, same period | **9** |
+|                                                 |            |
+| ----------------------------------------------- | ---------- |
+| Human change reports logged                     | 370        |
+| Median gap between reports                      | 3.87 s     |
+| p10 gap                                         | 0.43 s     |
+| Gaps under 1 s                                  | 121 (33%)  |
+| Busiest 1-second window                         | 7 reports  |
+| Busiest 10-second window                        | 22 reports |
+| Busiest 60-second window                        | 75 reports |
+| Explicit saves into the real vault, same period | **9**      |
 
 The last row is the problem stated as a number. The human touched the board 370
 times and the vault learned about it 9 times.
@@ -160,15 +160,15 @@ Then I replayed the change feed's own windowing over those 370 timestamps, at
 its real settings of `SETTLE_MS` 1200 and `MAX_PENDING_MS` 6000
 (`change-feed.ts:62,63`):
 
-| Window | Writes over the same 25 hours |
-|---|---|
-| 100 ms | 366 |
-| 250 ms | 363 |
-| 500 ms | 322 |
-| 1200 ms (the feed's setting today) | **208** |
-| 2000 ms | 202 |
-| 3000 ms | 200 |
-| 5000 ms | 189 |
+| Window                             | Writes over the same 25 hours |
+| ---------------------------------- | ----------------------------- |
+| 100 ms                             | 366                           |
+| 250 ms                             | 363                           |
+| 500 ms                             | 322                           |
+| 1200 ms (the feed's setting today) | **208**                       |
+| 2000 ms                            | 202                           |
+| 3000 ms                            | 200                           |
+| 5000 ms                            | 189                           |
 
 This surprised me, and it changes the shape of the answer. The feed's 1200 ms
 window removes 44% of the writes and nothing more, and raising it to 5 seconds
@@ -181,7 +181,7 @@ count, not by an order of magnitude. Whatever you think about 370 writes a day,
 you should think roughly the same about 208. If write count were the only thing
 separating the options, there would be nothing to choose between them.
 
-What a window *does* buy, at any size above about 10 ms, is collapsing an
+What a window _does_ buy, at any size above about 10 ms, is collapsing an
 agent's fan-out. Twenty concurrent `PUT`s from one `align` arrive inside 2.1 ms
 (measured below), so even a 100 ms window turns them into one write. That
 benefit is available without pushing the window anywhere near a second.
@@ -201,11 +201,11 @@ bytes I last saw".
 What does not survive is the menu. ADR 0006 offers three outcomes and refuses to
 pick between them:
 
-| Outcome | Needs |
-|---|---|
-| Reload, take the note | nothing |
+| Outcome                    | Needs                  |
+| -------------------------- | ---------------------- |
+| Reload, take the note      | nothing                |
 | Overwrite, keep the canvas | a canvas copy to write |
-| Save elsewhere, keep both | a canvas copy to write |
+| Save elsewhere, keep both  | a canvas copy to write |
 
 Two of the three need a second copy of the board to exist somewhere. A
 genuinely stateless server has none, so it can only offer reload. That is the
@@ -282,39 +282,39 @@ Medians over 100 to 300 iterations, ext4, i7-13700K.
 
 **Reading a note into live elements**
 
-| Step | 300 elements | 55 elements |
-|---|---|---|
-| `fs.readFileSync` | 0.02 ms | 0.02 ms |
-| sha-256 of the bytes | 0.11 ms | 0.02 ms |
-| utf-8 decode | 0.03 ms | 0.02 ms |
-| Locate the Drawing block (regex) | 0.70 ms | 0.15 ms |
-| `JSON.parse` | 0.40 ms | 0.09 ms |
-| **Whole read, file to element map** | **1.27 ms** | **0.25 ms** |
+| Step                                | 300 elements | 55 elements |
+| ----------------------------------- | ------------ | ----------- |
+| `fs.readFileSync`                   | 0.02 ms      | 0.02 ms     |
+| sha-256 of the bytes                | 0.11 ms      | 0.02 ms     |
+| utf-8 decode                        | 0.03 ms      | 0.02 ms     |
+| Locate the Drawing block (regex)    | 0.70 ms      | 0.15 ms     |
+| `JSON.parse`                        | 0.40 ms      | 0.09 ms     |
+| **Whole read, file to element map** | **1.27 ms**  | **0.25 ms** |
 
 **Writing a board back**
 
-| Step | 300 elements | 55 elements |
-|---|---|---|
-| `buildScene` (expand for export) | 0.61 ms | 0.12 ms |
-| `renderBoardNote` (clone, canonicalise, stringify) | 2.76 ms | 0.53 ms |
-| `fs.writeFileSync`, as today | 0.03 ms | 0.01 ms |
-| write + `fsync` | 6.22 ms | 6.19 ms |
-| tmp + `fsync` + rename | 6.62 ms | 6.28 ms |
+| Step                                               | 300 elements | 55 elements |
+| -------------------------------------------------- | ------------ | ----------- |
+| `buildScene` (expand for export)                   | 0.61 ms      | 0.12 ms     |
+| `renderBoardNote` (clone, canonicalise, stringify) | 2.76 ms      | 0.53 ms     |
+| `fs.writeFileSync`, as today                       | 0.03 ms      | 0.01 ms     |
+| write + `fsync`                                    | 6.22 ms      | 6.19 ms     |
+| tmp + `fsync` + rename                             | 6.62 ms      | 6.28 ms     |
 
 **End to end**
 
-| | 300 elements | 55 elements |
-|---|---|---|
-| Read-modify-write, one mutation, atomic + fsync | **11.89 ms** | **11.07 ms** |
-| Write only (memory authoritative), atomic + fsync | **11.70 ms** | **8.99 ms** |
+|                                                   | 300 elements | 55 elements  |
+| ------------------------------------------------- | ------------ | ------------ |
+| Read-modify-write, one mutation, atomic + fsync   | **11.89 ms** | **11.07 ms** |
+| Write only (memory authoritative), atomic + fsync | **11.70 ms** | **8.99 ms**  |
 
 **Over HTTP against a real server, as it behaves today**
 
-| | |
-|---|---|
-| `POST /api/elements/changes`, 1 upsert | 0.14 ms |
-| `PUT /api/elements/:id` | 0.14 ms |
-| `GET /api/elements` (300 elements) | 0.31 ms |
+|                                                  |         |
+| ------------------------------------------------ | ------- |
+| `POST /api/elements/changes`, 1 upsert           | 0.14 ms |
+| `PUT /api/elements/:id`                          | 0.14 ms |
+| `GET /api/elements` (300 elements)               | 0.31 ms |
 | `POST /api/boards/save` (300 elements, no fsync) | 5.12 ms |
 
 Three things fall out of this.
@@ -507,8 +507,8 @@ The reasoning, in order of weight:
 What C should include, all of it small:
 
 - Flush when a board goes quiet, on a timer of its own rather than the change
-  feed's. The feed's window answers "is there something worth *saying*", and
-  persistence answers "is there something worth *keeping*". Those are different
+  feed's. The feed's window answers "is there something worth _saying_", and
+  persistence answers "is there something worth _keeping_". Those are different
   questions and the second one wants a shorter window. I would start at 500 ms
   and treat the number as tunable.
 - Render, compare against the file, skip the write when the bytes match. Proved
@@ -525,7 +525,7 @@ What C should include, all of it small:
 - Change the dirty indicator to compare rendered bytes against the note, not
   timestamps against timestamps. The current version
   (`frontend/src/shell/Shell.tsx:202`) can only ever say "changed since save",
-  and it says nothing at all when the note is *ahead* of the canvas, which is
+  and it says nothing at all when the note is _ahead_ of the canvas, which is
   the direction the reported incident went.
 - Keep the handlers synchronous. Async `fs` would add a lost-update race that
   does not exist today.
@@ -566,7 +566,7 @@ filter by board, so a save of board A writes board B's images into A's note.
 And `ingestSceneElements` (`server.ts:2392`) never restores `scene.files` on
 open, so images do not survive a reopen at all.
 
-*Fixed, TASK-060.* The process-global map is gone. `BoardState.files` holds a
+_Fixed, TASK-060._ The process-global map is gone. `BoardState.files` holds a
 board's own images, `buildScene` narrows them to the ones the elements it is
 writing actually draw, and `ingestSceneElements` takes `scene.files` back off
 the note. `/api/files` is board-scoped like every other content route.
@@ -574,12 +574,12 @@ the note. `/api/files` is board-scoped like every other content route.
 **F3. The dirty indicator cannot see the case that prompted this.**
 `frontend/src/shell/Shell.tsx:202` compares `status.lastChangeAt` against
 `boardInfo.savedAt`. It reports "changed since save" and nothing else, so a note
-that is *ahead* of the canvas shows as clean.
+that is _ahead_ of the canvas shows as clean.
 
 **F4. The save is not atomic.** `server.ts:2690`. Low probability today at 9
 saves a day, and worth fixing regardless.
 
-*Fixed, TASK-061.* `src/core/atomic-write.ts`: temp file, fsync, rename, and a
+_Fixed, TASK-061._ `src/core/atomic-write.ts`: temp file, fsync, rename, and a
 best-effort fsync of the directory. Every writer of a vault note uses it, and so
 does the checkout registry, whose own rename it replaced.
 

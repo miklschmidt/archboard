@@ -1,62 +1,62 @@
 {
-  "skill_name": "archboard",
-  "grading": "Each eval says how it is graded. \"human\" means somebody reads the transcript and judges it; these are about drawing quality and layout, which no script can score. A path names a check script that runs in `bun run test` and asserts the objective part of the eval outright, leaving the transcript to answer only whether the agent chose the right path.",
-  "evals": [
-    {
-      "id": 0,
-      "graded_by": "human",
-      "prompt": "Draw a CI/CD pipeline architecture diagram on the Excalidraw canvas with these components: GitHub (source), GitHub Actions (CI), Docker Registry (artifact store), and Kubernetes Cluster (deployment target). Use arrows to show the flow from left to right. Make sure labels fit inside each box and nothing overlaps.",
-      "expected_output": "A clean diagram with 4 labeled boxes, left-to-right flow arrows connecting them, no overlapping elements, and all text fully visible inside shapes.",
-      "files": []
-    },
-    {
-      "id": 1,
-      "graded_by": "human",
-      "prompt": "Convert this Mermaid flowchart to an Excalidraw diagram:\n```\ngraph TD\n  A[User] -->|HTTP Request| B[Load Balancer]\n  B --> C[Web Server 1]\n  B --> D[Web Server 2]\n  C --> E[(Database)]\n  D --> E\n```\nAfter converting, take a screenshot and verify the layout looks clean.",
-      "expected_output": "A valid Excalidraw diagram with all 5 nodes and arrows matching the Mermaid structure, verified with a screenshot.",
-      "files": []
-    },
-    {
-      "id": 2,
-      "graded_by": "human",
-      "prompt": "Create a simple diagram on the Excalidraw canvas with two rectangles: 'Auth Service' and 'User DB', connected by an arrow labeled 'queries'. Then refine it: add a third box 'Redis Cache' positioned between the two services, connect Auth Service to Redis Cache with a 'cache hit' arrow. Verify visually that all labels are visible and no arrows cross awkwardly.",
-      "expected_output": "A 3-element diagram with Auth Service → Redis Cache → (and both connected back to) User DB, with clean arrows, visible labels, and a screenshot confirming the final state.",
-      "files": []
-    },
-    {
-      "id": 3,
-      "graded_by": "human",
-      "prompt": "Without using any MCP tools (assume none are configured), use only the CLI (`archboard <command>`) to: (1) build a three-tier diagram with boxes 'Frontend', 'API', and 'Postgres' connected by arrows, (2) query for all rectangles and confirm the count is 3, (3) save a snapshot named 'v1', (4) export the scene to /tmp/three-tier.excalidraw, and (5) report the canvas status including how many browser tabs are connected.",
-      "expected_output": "All five steps completed via CLI commands only: elements created with bound arrows (the canvas server auto-starts), a query result showing 3 rectangles, a saved snapshot 'v1', a valid .excalidraw file at /tmp/three-tier.excalidraw, and a status report with element and browser-client counts.",
-      "files": []
-    },
-    {
-      "id": 4,
-      "graded_by": "human",
-      "prompt": "Using only the CLI, draw two labeled boxes ('Client', 'Server') connected by an arrow, then save the diagram into an Obsidian vault at /tmp/vault/diagrams/flow.excalidraw.md (assume /tmp/vault/.obsidian exists; create the diagrams folder if needed). Clear the canvas and re-import the saved file. Confirm the saved file is in the Obsidian Excalidraw plugin's markdown format (frontmatter + '# Excalidraw Data' + a '## Drawing' code block) rather than raw JSON, and that both boxes are back on the canvas after the re-import.",
-      "expected_output": "flow.excalidraw.md written in the Obsidian new format (not raw .excalidraw JSON), format markers verified by reading the file, and the canvas restored with both labeled boxes and their arrow after `import --replace`.",
-      "files": []
-    },
-    {
-      "id": 5,
-      "graded_by": "scripts/check-branch-compare.mjs",
-      "prompt": "Using only the CLI, with ARCHBOARD_VAULT pointing at /tmp/eval-vault (assume /tmp/eval-vault/.obsidian exists): draw the payments architecture as it stands today on a board named `payments` at service level. It is three things in a row: 'API Gateway' calls 'Orders Service', which reads and writes 'Orders Postgres'. Promote each one (gateway, service, datastore) and save the board. Now I want to look at a proposal called option-a that puts a read cache, 'Orders Cache', beside Orders Service, written to by Orders Service. Leave `payments` itself exactly as it is. When the proposal is drawn, show me what it changes and nothing else.",
-      "expected_output": "The variant was branched from the source with `board save --board payments --variant option-a`, and the only edits made on `payments@option-a` were the added 'Orders Cache' node and the one arrow into it. `compare payments payments@option-a` then reports `summary.comparable` true, `sharedNodes` 3, `nodesAdded` 1, `nodesRemoved` 0, `edgesAdded` 1, `edgesRemoved` 0, `edgesUnchanged` 2, with `nodes.added` naming only 'Orders Cache' and `edges.unchanged` holding 'API Gateway' to 'Orders Service' and 'Orders Service' to 'Orders Postgres'. The narration is the one added cache and its one edge. FAILS if `payments@option-a` was drawn on a fresh board instead of branched: that gives `sharedNodes` below 3 and `nodesRemoved` above 0, up to `comparable` false with everything removed and everything added, because `compare` joins on node identity and independently drawn boards share none. Reporting the `variantAnomaly` field on the copied nodes as an architectural difference is also wrong; it is the branch's bookkeeping, not a change to the design. The numbers are asserted outright by scripts/check-branch-compare.mjs on the same fixture, so what this eval grades is the choice: did the agent branch the board it was given, or draw the proposal again from scratch.",
-      "files": []
-    },
-    {
-      "id": 6,
-      "graded_by": "human",
-      "prompt": "Using only the CLI, draw the public edge of our system on a board named `edge` at system level: users hit a CDN, the CDN goes to a load balancer, the load balancer goes to a 'Web' service, and Web publishes onto a message queue. Before you draw anything, tell me what ready-made shapes are already there, and use one wherever it fits rather than drawing another box.",
-      "expected_output": "`library list --text` ran before any element was created, and the answer names what is in the palette (111 stencils across seven source libraries). The recognisable furniture came from the library via `library insert`, not from hand-drawn rectangles: a users stencil, 'CDN', 'Load balancer' and 'Message queue' all exist. 'Load balancer' and 'Users' are each a name two libraries use, so an insert without `--source` is refused with both candidates named and the retry passes `--source` or `--id`; that refusal is the expected path, not an error to work around. Placed elements carry `customData.library` recording the stencil they came from. The 'Web' service stayed a labelled rectangle, which is the right shape for a service box. FAILS if the whole diagram is plain rectangles, or if the library was only listed after the drawing was already done.",
-      "files": []
-    },
-    {
-      "id": 7,
-      "graded_by": "scripts/check-side-by-side.mjs",
-      "prompt": "Using only the CLI, with ARCHBOARD_VAULT pointing at /tmp/eval-vault (assume /tmp/eval-vault/.obsidian exists) and one pane open in the browser: draw the payments architecture as it stands on a board named `payments` at service level, three things in a row: 'API Gateway' calls 'Orders Service', which reads and writes 'Orders Postgres'. Promote each one and save. Then branch it into a proposal called option-a that adds a read cache, 'Orders Cache', written to by Orders Service, and put the proposal up beside the current architecture so I can see both at once. Draw the cache on the proposal, promote and save it, show me a picture of the proposal, and tell me what it changes. I am reading `payments` while you work, so leave it where it is.",
-      "expected_output": "Both boards end up on screen at once, and `payments` is still in the pane it started in. The proposal reached the screen through `pane open --board payments@option-a`, which makes a second pane and cannot be aimed at an existing one. Every write after that named the board it meant (`--board payments@option-a`), and the picture named the pane it meant (`screenshot --pane right`). `compare payments payments@option-a` reports one node added and nothing removed. FAILS if the branch was put up with `board open payments@option-a`: with one pane on screen that needs no `--pane`, so it is accepted, and it re-points the pane the human is reading, so the source goes off screen and the request to leave it alone is broken without anything reporting an error. Also FAILS if the agent expects `board save --board payments --variant option-a` to have moved anything, or repairs a move it did not make: a save writes a file and moves no pane (ADR 0012), so `saveKind` is `branch` and `panes.moved` is empty, and putting the branch on screen is a separate act. The pane state and the compare numbers are asserted outright by scripts/check-side-by-side.mjs on the same trace, so what this eval grades is the choice: did the agent make a pane for the proposal, or reuse the one it had?",
-      "files": []
-    }
-  ]
+	"skill_name": "archboard",
+	"grading": "Each eval says how it is graded. \"human\" means somebody reads the transcript and judges it; these are about drawing quality and layout, which no script can score. A path names a check script that runs in `bun run test` and asserts the objective part of the eval outright, leaving the transcript to answer only whether the agent chose the right path.",
+	"evals": [
+		{
+			"id": 0,
+			"graded_by": "human",
+			"prompt": "Draw a CI/CD pipeline architecture diagram on the Excalidraw canvas with these components: GitHub (source), GitHub Actions (CI), Docker Registry (artifact store), and Kubernetes Cluster (deployment target). Use arrows to show the flow from left to right. Make sure labels fit inside each box and nothing overlaps.",
+			"expected_output": "A clean diagram with 4 labeled boxes, left-to-right flow arrows connecting them, no overlapping elements, and all text fully visible inside shapes.",
+			"files": []
+		},
+		{
+			"id": 1,
+			"graded_by": "human",
+			"prompt": "Convert this Mermaid flowchart to an Excalidraw diagram:\n```\ngraph TD\n  A[User] -->|HTTP Request| B[Load Balancer]\n  B --> C[Web Server 1]\n  B --> D[Web Server 2]\n  C --> E[(Database)]\n  D --> E\n```\nAfter converting, take a screenshot and verify the layout looks clean.",
+			"expected_output": "A valid Excalidraw diagram with all 5 nodes and arrows matching the Mermaid structure, verified with a screenshot.",
+			"files": []
+		},
+		{
+			"id": 2,
+			"graded_by": "human",
+			"prompt": "Create a simple diagram on the Excalidraw canvas with two rectangles: 'Auth Service' and 'User DB', connected by an arrow labeled 'queries'. Then refine it: add a third box 'Redis Cache' positioned between the two services, connect Auth Service to Redis Cache with a 'cache hit' arrow. Verify visually that all labels are visible and no arrows cross awkwardly.",
+			"expected_output": "A 3-element diagram with Auth Service → Redis Cache → (and both connected back to) User DB, with clean arrows, visible labels, and a screenshot confirming the final state.",
+			"files": []
+		},
+		{
+			"id": 3,
+			"graded_by": "human",
+			"prompt": "Use the Archboard CLI (`archboard <command>`) to: (1) build a three-tier diagram with boxes 'Frontend', 'API', and 'Postgres' connected by arrows, (2) query for all rectangles and confirm the count is 3, (3) save a snapshot named 'v1', (4) export the scene to /tmp/three-tier.excalidraw, and (5) report the canvas status including how many browser tabs are connected.",
+			"expected_output": "All five steps completed via CLI commands only: elements created with bound arrows (the canvas server auto-starts), a query result showing 3 rectangles, a saved snapshot 'v1', a valid .excalidraw file at /tmp/three-tier.excalidraw, and a status report with element and browser-client counts.",
+			"files": []
+		},
+		{
+			"id": 4,
+			"graded_by": "human",
+			"prompt": "Using only the CLI, draw two labeled boxes ('Client', 'Server') connected by an arrow, then save the diagram into an Obsidian vault at /tmp/vault/diagrams/flow.excalidraw.md (assume /tmp/vault/.obsidian exists; create the diagrams folder if needed). Clear the canvas and re-import the saved file. Confirm the saved file is in the Obsidian Excalidraw plugin's markdown format (frontmatter + '# Excalidraw Data' + a '## Drawing' code block) rather than raw JSON, and that both boxes are back on the canvas after the re-import.",
+			"expected_output": "flow.excalidraw.md written in the Obsidian new format (not raw .excalidraw JSON), format markers verified by reading the file, and the canvas restored with both labeled boxes and their arrow after `import --replace`.",
+			"files": []
+		},
+		{
+			"id": 5,
+			"graded_by": "scripts/check-branch-compare.mjs",
+			"prompt": "Using only the CLI, with ARCHBOARD_VAULT pointing at /tmp/eval-vault (assume /tmp/eval-vault/.obsidian exists): draw the payments architecture as it stands today on a board named `payments` at service level. It is three things in a row: 'API Gateway' calls 'Orders Service', which reads and writes 'Orders Postgres'. Promote each one (gateway, service, datastore) and save the board. Now I want to look at a proposal called option-a that puts a read cache, 'Orders Cache', beside Orders Service, written to by Orders Service. Leave `payments` itself exactly as it is. When the proposal is drawn, show me what it changes and nothing else.",
+			"expected_output": "The variant was branched from the source with `board save --board payments --variant option-a`, and the only edits made on `payments@option-a` were the added 'Orders Cache' node and the one arrow into it. `compare payments payments@option-a` then reports `summary.comparable` true, `sharedNodes` 3, `nodesAdded` 1, `nodesRemoved` 0, `edgesAdded` 1, `edgesRemoved` 0, `edgesUnchanged` 2, with `nodes.added` naming only 'Orders Cache' and `edges.unchanged` holding 'API Gateway' to 'Orders Service' and 'Orders Service' to 'Orders Postgres'. The narration is the one added cache and its one edge. FAILS if `payments@option-a` was drawn on a fresh board instead of branched: that gives `sharedNodes` below 3 and `nodesRemoved` above 0, up to `comparable` false with everything removed and everything added, because `compare` joins on node identity and independently drawn boards share none. Reporting the `variantAnomaly` field on the copied nodes as an architectural difference is also wrong; it is the branch's bookkeeping, not a change to the design. The numbers are asserted outright by scripts/check-branch-compare.mjs on the same fixture, so what this eval grades is the choice: did the agent branch the board it was given, or draw the proposal again from scratch.",
+			"files": []
+		},
+		{
+			"id": 6,
+			"graded_by": "human",
+			"prompt": "Using only the CLI, draw the public edge of our system on a board named `edge` at system level: users hit a CDN, the CDN goes to a load balancer, the load balancer goes to a 'Web' service, and Web publishes onto a message queue. Before you draw anything, tell me what ready-made shapes are already there, and use one wherever it fits rather than drawing another box.",
+			"expected_output": "`library list --text` ran before any element was created, and the answer names what is in the palette (111 stencils across seven source libraries). The recognisable furniture came from the library via `library insert`, not from hand-drawn rectangles: a users stencil, 'CDN', 'Load balancer' and 'Message queue' all exist. 'Load balancer' and 'Users' are each a name two libraries use, so an insert without `--source` is refused with both candidates named and the retry passes `--source` or `--id`; that refusal is the expected path, not an error to work around. Placed elements carry `customData.library` recording the stencil they came from. The 'Web' service stayed a labelled rectangle, which is the right shape for a service box. FAILS if the whole diagram is plain rectangles, or if the library was only listed after the drawing was already done.",
+			"files": []
+		},
+		{
+			"id": 7,
+			"graded_by": "scripts/check-side-by-side.mjs",
+			"prompt": "Using only the CLI, with ARCHBOARD_VAULT pointing at /tmp/eval-vault (assume /tmp/eval-vault/.obsidian exists) and one pane open in the browser: draw the payments architecture as it stands on a board named `payments` at service level, three things in a row: 'API Gateway' calls 'Orders Service', which reads and writes 'Orders Postgres'. Promote each one and save. Then branch it into a proposal called option-a that adds a read cache, 'Orders Cache', written to by Orders Service, and put the proposal up beside the current architecture so I can see both at once. Draw the cache on the proposal, promote and save it, show me a picture of the proposal, and tell me what it changes. I am reading `payments` while you work, so leave it where it is.",
+			"expected_output": "Both boards end up on screen at once, and `payments` is still in the pane it started in. The proposal reached the screen through `pane open --board payments@option-a`, which makes a second pane and cannot be aimed at an existing one. Every write after that named the board it meant (`--board payments@option-a`), and the picture named the pane it meant (`screenshot --pane right`). `compare payments payments@option-a` reports one node added and nothing removed. FAILS if the branch was put up with `board open payments@option-a`: with one pane on screen that needs no `--pane`, so it is accepted, and it re-points the pane the human is reading, so the source goes off screen and the request to leave it alone is broken without anything reporting an error. Also FAILS if the agent expects `board save --board payments --variant option-a` to have moved anything, or repairs a move it did not make: a save writes a file and moves no pane (ADR 0012), so `saveKind` is `branch` and `panes.moved` is empty, and putting the branch on screen is a separate act. The pane state and the compare numbers are asserted outright by scripts/check-side-by-side.mjs on the same trace, so what this eval grades is the choice: did the agent make a pane for the proposal, or reuse the one it had?",
+			"files": []
+		}
+	]
 }

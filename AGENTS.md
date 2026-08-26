@@ -11,6 +11,7 @@ Where things are written down:
 - Running it end to end with Codex: `TESTING.md`
 - Installing it for use in other repos: `INSTALL.md`
 - Domain language: `CONTEXT.md`
+- Deep-module directory and import rules: `docs/agents/boundaries.md`
 - Decisions: `docs/adr/` — read the ADR before touching what it decides
 - Measured investigations (write costs, text metrics, hot reload,
   statelessness): `docs/design/`
@@ -101,10 +102,10 @@ agent reads code  ->  draws the architecture  ->  you rearrange it on the Flip
 The read-back is the point. Moving a box is a statement about the design.
 
 **Creators need an immediate connection to what they are creating** (Bret
-Victor, *Inventing on Principle*). On this canvas the creator is both of you,
+Victor, _Inventing on Principle_). On this canvas the creator is both of you,
 so every change either of you makes is visible as it is made. Keeping somebody
-from *editing* while another writer holds the board is fine — that is what the
-lock is for (ADR 0016). Keeping them from *seeing* is not. An agent never
+from _editing_ while another writer holds the board is fine — that is what the
+lock is for (ADR 0016). Keeping them from _seeing_ is not. An agent never
 works out of sight and reveals the result: it claims the board, says what it
 is doing, and restructures in the open.
 
@@ -175,8 +176,8 @@ that changed on disk under another editor is refused, never overwritten
 
 ## Names on the wire
 
-`archboard` is the name everywhere a user reads: CLI help and errors, the MCP
-`serverInfo.name`, the `source` in exported scenes. Two internal identity
+`archboard` is the name everywhere a user reads: CLI help and errors, and the
+`source` in exported scenes. Two internal identity
 strings deliberately keep the old spelling — `mcp-excalidraw-canvas` in
 `/health` (how a client proves it is not talking to a foreign service on the
 port) and the `excalidraw-canvas` state directory (renaming it would orphan a
@@ -190,6 +191,7 @@ running server's pidfile). Neither is printed by any command.
 
 <!-- BACKLOG.MD GUIDELINES START -->
 <!-- backlog.md-instructions-version: 1.50.1 -->
+
 <CRITICAL_INSTRUCTION>
 
 ## Backlog.md Workflow
@@ -201,6 +203,7 @@ This project uses Backlog.md for task and project management.
 Use the overview to decide whether to search, read, create, or update Backlog tasks.
 
 Before task lifecycle actions, read the matching detailed guide:
+
 - `backlog instructions task-creation` before creating or splitting tasks
 - `backlog instructions task-execution` before planning, changing status or assignee, adding a plan or implementation notes, or implementing task work
 - `backlog instructions task-finalization` before checking acceptance criteria, writing final summaries, or moving tasks to terminal statuses

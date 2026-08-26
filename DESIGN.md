@@ -11,15 +11,16 @@ documentation.
 
 Archboard starts from [yctimlin/mcp_excalidraw](https://github.com/yctimlin/mcp_excalidraw)
 v2.0.0 because the expensive part — the Excalidraw element schema, bindings,
-rendering, mermaid conversion, and a 26-tool CLI/MCP surface — is already
-solved there. What it does not give us:
+rendering, mermaid conversion, and a command surface — was already solved
+there. Archboard retained the CLI and later deleted the duplicated MCP
+transport (ADR 0008). What the base does not give us:
 
-| Gap | Why it blocks us |
-|---|---|
-| `describe` ignores `customData`/`link` | The agent's primary read path is blind to the semantic model |
-| No persistence | In-memory; "current vs proposed" work cannot survive a restart |
-| No multi-document | One global canvas; no variants, no per-project boards |
-| No change-event feed | Nothing to react to when the human draws — **since TASK-018/019 there is one, and it can push to a live thread** |
+| Gap                                    | Why it blocks us                                                                                                 |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `describe` ignores `customData`/`link` | The agent's primary read path is blind to the semantic model                                                     |
+| No persistence                         | In-memory; "current vs proposed" work cannot survive a restart                                                   |
+| No multi-document                      | One global canvas; no variants, no per-project boards                                                            |
+| No change-event feed                   | Nothing to react to when the human draws — **since TASK-018/019 there is one, and it can push to a live thread** |
 
 **We are not staying mergeable.** Archboard diverges for our use case without
 regard for whether upstream would accept the change. Restructure freely: rename
@@ -36,8 +37,8 @@ it can go.
 **The GPT-Live voice model never sees tool calls or tool results.**
 
 Verified at `codex-rs/core/src/session/turn.rs:1732` (`realtime_text_for_event`).
-`McpToolCallBegin`, `McpToolCallEnd`, exec events, web search, patch apply —
-all return `None`. Only two things reach the voice layer:
+Tool-call events, exec events, web search, and patch application all return
+`None`. Only two things reach the voice layer:
 
 - `AgentMessage` prose
 - approval/elicitation prompts
@@ -92,10 +93,21 @@ hook **does** fire for voice.
 Config at `~/.codex/hooks.json` (or `[hooks.*]` in `config.toml`):
 
 ```json
-{"hooks":{"UserPromptSubmit":[{"hooks":[{
-  "type":"command",
-  "command":"/path/to/archboard/bin/canvas-hook",
-  "statusMessage":"reading archboard state"}]}]}}
+{
+	"hooks": {
+		"UserPromptSubmit": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "/path/to/archboard/bin/canvas-hook",
+						"statusMessage": "reading archboard state"
+					}
+				]
+			}
+		]
+	}
+}
 ```
 
 The hook writes `hookSpecificOutput.additionalContext` to stdout; Codex converts
@@ -130,8 +142,8 @@ an unlabelled box next to Postgres." Cheaper, and far better prose material.
 
 ### 2. Mid-conversation push — app-server injection
 
-**This is the unlock, and it does not go through MCP.** Because the live session
-rides on an ordinary thread, anything that can reach that thread can push to it.
+**This is the unlock.** Because the live session rides on an ordinary thread,
+anything that can reach that thread can push to it.
 
 The app-server exposes a JSON-RPC control socket at
 `$CODEX_HOME/app-server-control/app-server-control.sock` (mode 0600 in a 0700
@@ -141,11 +153,11 @@ the daemon is already there.
 
 Two distinct verbs, and the distinction is the whole design:
 
-| Verb | Effect | Use for |
-|---|---|---|
+| Verb                  | Effect                                                           | Use for                                                        |
+| --------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------- |
 | `thread/inject_items` | Appends raw items to thread history, **without starting a turn** | Quiet state updates — agent sees the board next time it speaks |
-| `turn/steer` | Injects input **into the running turn** (needs `expectedTurnId`) | Loud interruptions — agent reacts now |
-| `turn/start` | Starts a turn, or steers if one is live | Loud, when no turn is running |
+| `turn/steer`          | Injects input **into the running turn** (needs `expectedTurnId`) | Loud interruptions — agent reacts now                          |
+| `turn/start`          | Starts a turn, or steers if one is live                          | Loud, when no turn is running                                  |
 
 Verified: `thread/inject_items` → `thread.inject_response_items(items)`
 (`app-server/src/request_processors/turn_processor.rs:878`), and raw
@@ -157,7 +169,7 @@ And output from an externally-initiated turn **is pushed into the voice
 session**: the no-active-handoff branch emits
 `RealtimeOutbound::StandaloneHandoff` under the id `"codex"`
 (`realtime_conversation.rs:818-841`, verified). So a loud injection makes the
-agent *speak*, unprompted. That is the difference between a tool the agent
+agent _speak_, unprompted. That is the difference between a tool the agent
 queries and a colleague watching you draw.
 
 Default to quiet. Every loud injection makes the agent talk over you — debounce,
@@ -168,31 +180,17 @@ severed edge), never per drag tick.
 user turn from any process — polled via `PRAGMA data_version` every 10 s,
 between turns only. Reaches even a bare TUI. Cruder, but zero infrastructure.
 
-### 3. On-demand query — MCP tools
+### 3. On-demand query — CLI
 
-The existing 26 tools, plus architecture-shaped additions. The agent consumes
-these; the voice model never sees them.
+The agent pulls board state with `archboard describe`, `query`, `selection`,
+`panes`, `changes`, and `compare`. The CLI auto-starts the canvas server when a
+command needs it, while vault-direct commands remain usable without a browser.
 
-**MCP gives us no push whatsoever** — confirmed, and worth recording so nobody
-re-investigates:
-
-- Transports are **stdio and streamable-http only**. No SSE, no websocket.
-- Protocol defaults to **2025-06-18**; 2026-07-28 is opt-in and, for stdio
-  servers, additionally requires `CODEX_MCP_PROTOCOL_VERSION=2026-07-28`.
-- Declared client capabilities are **elicitation only** — no sampling, no roots.
-- Every standard notification (`progress`, `message`, `resources/updated`,
-  `resources/list_changed`, `tools/list_changed`, `prompts/list_changed`,
-  `cancelled`) is received and **discarded into tracing logs**
-  (`rmcp-client/src/logging_client_handler.rs`). None reaches the model, UI, or
-  thread.
-- `resources/subscribe` is **never called** anywhere in the codebase.
-- Resources *are* supported, but pull-only, as three model-invoked tools
-  (`list_mcp_resources`, `list_mcp_resource_templates`, `read_mcp_resource`).
-- The one in-protocol push that works is `elicitation/create`, and it prompts
-  **the human**, not the model. Not useful to us.
-
-So: MCP for pull, app-server for push. Don't waste time on resource
-subscriptions.
+Archboard once maintained an MCP tool catalogue and dispatcher beside the CLI.
+Nothing in current use required a shell-less transport, and the duplicate
+interface added schemas, dispatch arms, docs, dependencies, and parity tests to
+every capability. ADR 0008 records why it was retired. The loopback REST
+interface remains the application seam behind the CLI and browser.
 
 ## Security — read before wiring push
 
@@ -305,11 +303,24 @@ channel is `customData.archboard`; code bindings live there as portable
 metadata, not as stored local links.
 
 ```json
-{"type":"rectangle","label":{"text":"AuthService"},
- "customData":{"archboard":{"kind":"service","node":"auth-service",
-   "binding":{"repo":"github.com/acme/api","path":"src/auth/service.ts",
-     "branch":"main","commit":"62f0cef","confirmedAt":"2026-08-24T10:30:00Z"},
-   "variant":"current"}}}
+{
+	"type": "rectangle",
+	"label": { "text": "AuthService" },
+	"customData": {
+		"archboard": {
+			"kind": "service",
+			"node": "auth-service",
+			"binding": {
+				"repo": "github.com/acme/api",
+				"path": "src/auth/service.ts",
+				"branch": "main",
+				"commit": "62f0cef",
+				"confirmedAt": "2026-08-24T10:30:00Z"
+			},
+			"variant": "current"
+		}
+	}
+}
 ```
 
 When an element is presented to a browser or API caller, archboard may add a

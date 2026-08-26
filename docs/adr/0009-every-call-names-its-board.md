@@ -9,9 +9,9 @@ A pane is a slot holding its own canvas, and a canvas holds one board
 panes exist: current beside proposed, on one wall, while somebody talks about
 the difference.
 
-Until this decision the server held one *active* board, and every caller that
+Until this decision the server held one _active_ board, and every caller that
 said nothing about boards got that one — `add`, `describe`, `clear`, `promote`,
-`board save`, most of the REST surface, every CLI command and MCP tool. The
+`board save`, most of the REST interface, and every CLI command. The
 moment two panes can hold two boards, "the board" is a phrase with no referent
 for all of them.
 
@@ -53,8 +53,8 @@ not because the resolution is clever, but because there is no resolution.
 
 Boards and panes are addressed separately, and only one of them is strict.
 
-- **Board — authority.** Always explicit. `--board <key>` on the command line,
-  `?board=` on the API, a required `board` argument on an MCP tool.
+- **Board — authority.** Always explicit. `--board <key>` on the command line
+  and `?board=` on the API.
 - **Pane — display.** `board open X` with one pane on screen goes into that
   pane; with two it needs `--pane left|right|1|primary…`; with none the board is
   loaded and nothing shows it. Every answer names the pane the board landed in.
@@ -68,7 +68,7 @@ Operations addressed to the browser rather than to a board — `screenshot`,
 viewport control, the `panes` report — take no board, because the pane they run
 in already settles which board they concern. `mermaid` is the exception that
 proves it: conversion happens in the pane that answers for the browser, so it
-names a board *and* is refused when that is not the board the pane holds.
+names a board _and_ is refused when that is not the board the pane holds.
 
 ## Scratch
 
@@ -83,7 +83,7 @@ message that says "you must name a board" also says which boards there are.
 
 ## Consequences
 
-- Every board-touching REST route, CLI command and MCP tool changed. There was
+- Every board-touching REST route and CLI command changed. There was
   nobody to keep compatible: archboard is private and unpublished.
 - `board current` became `board info <name>`. "The current board" was the
   question the deleted pointer answered.

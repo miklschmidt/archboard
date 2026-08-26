@@ -27,9 +27,15 @@
 // it reads from its own registry. No canvas and no glyphs are involved, so
 // measuring one here would be inventing a second answer to a settled question.
 
-import { faceStack, lineHeightOf, loadFace, type FaceDescriptor, type LoadedFace } from './fonts.js';
+import {
+	faceStack,
+	lineHeightOf,
+	loadFace,
+	type FaceDescriptor,
+	type LoadedFace,
+} from "./fonts.js";
 
-export { canMeasure } from './fonts.js';
+export { canMeasure } from "./fonts.js";
 
 // Characters a browser lays out as zero width: soft hyphen, zero-width space,
 // the joiners, and the byte-order mark.
@@ -45,24 +51,24 @@ const SPACE = 0x20;
  * declares them.
  */
 function faceFor(
-  codepoint: number,
-  stack: readonly FaceDescriptor[][]
+	codepoint: number,
+	stack: readonly FaceDescriptor[][],
 ): { descriptor: FaceDescriptor; loaded: LoadedFace } | undefined {
-  for (const faces of stack) {
-    for (let i = faces.length - 1; i >= 0; i--) {
-      const descriptor = faces[i] as FaceDescriptor;
-      const ranges = descriptor.ranges;
-      if (ranges !== null && !ranges.some(([a, b]) => codepoint >= a && codepoint <= b)) continue;
-      let loaded: LoadedFace;
-      try {
-        loaded = loadFace(descriptor.file);
-      } catch {
-        continue;
-      }
-      if (loaded.font.cmap.has(codepoint)) return { descriptor, loaded };
-    }
-  }
-  return undefined;
+	for (const faces of stack) {
+		for (let i = faces.length - 1; i >= 0; i--) {
+			const descriptor = faces[i] as FaceDescriptor;
+			const ranges = descriptor.ranges;
+			if (ranges !== null && !ranges.some(([a, b]) => codepoint >= a && codepoint <= b)) continue;
+			let loaded: LoadedFace;
+			try {
+				loaded = loadFace(descriptor.file);
+			} catch {
+				continue;
+			}
+			if (loaded.font.cmap.has(codepoint)) return { descriptor, loaded };
+		}
+	}
+	return undefined;
 }
 
 /**
@@ -75,14 +81,14 @@ function faceFor(
  * tell the two rules apart and this can.
  */
 export function faceFileFor(codepoint: number, fontFamily: number): string | undefined {
-  return faceFor(codepoint, faceStack(fontFamily))?.descriptor.file;
+	return faceFor(codepoint, faceStack(fontFamily))?.descriptor.file;
 }
 
 export interface LineMeasurement {
-  /** Width in pixels, at the font size asked for. */
-  width: number;
-  /** Characters no shipped file covers, whose width is therefore not counted. */
-  missing: string[];
+	/** Width in pixels, at the font size asked for. */
+	width: number;
+	/** Characters no shipped file covers, whose width is therefore not counted. */
+	missing: string[];
 }
 
 /**
@@ -100,80 +106,83 @@ export interface LineMeasurement {
  * archboard writes — has no disagreement of this kind anywhere.
  */
 export function measureLine(text: string, fontSize: number, fontFamily: number): LineMeasurement {
-  const stack = faceStack(fontFamily);
-  if (stack.length === 0) return { width: 0, missing: [...text] };
+	const stack = faceStack(fontFamily);
+	if (stack.length === 0) return { width: 0, missing: [...text] };
 
-  interface Run { face: LoadedFace | undefined; chars: string[] }
-  const words: Array<{ runs: Run[] }> = [];
-  let word: { runs: Run[]; isSpace: boolean } | null = null;
+	interface Run {
+		face: LoadedFace | undefined;
+		chars: string[];
+	}
+	const words: Array<{ runs: Run[] }> = [];
+	let word: { runs: Run[]; isSpace: boolean } | null = null;
 
-  for (const ch of text) {
-    const codepoint = ch.codePointAt(0) as number;
-    if (IGNORABLE.has(codepoint)) continue;
-    const isSpace = codepoint === SPACE;
-    if (!word || isSpace || word.isSpace) {
-      word = { runs: [], isSpace };
-      words.push(word);
-    }
-    // The parsed face, not the descriptor, because runs are split on face
-    // identity and `loadFace` is what caches one object per file.
-    const face = faceFor(codepoint, stack)?.loaded;
-    let run = word.runs[word.runs.length - 1];
-    if (!run || run.face !== face) {
-      run = { face, chars: [] };
-      word.runs.push(run);
-    }
-    run.chars.push(ch);
-  }
+	for (const ch of text) {
+		const codepoint = ch.codePointAt(0) as number;
+		if (IGNORABLE.has(codepoint)) continue;
+		const isSpace = codepoint === SPACE;
+		if (!word || isSpace || word.isSpace) {
+			word = { runs: [], isSpace };
+			words.push(word);
+		}
+		// The parsed face, not the descriptor, because runs are split on face
+		// identity and `loadFace` is what caches one object per file.
+		const face = faceFor(codepoint, stack)?.loaded;
+		let run = word.runs[word.runs.length - 1];
+		if (!run || run.face !== face) {
+			run = { face, chars: [] };
+			word.runs.push(run);
+		}
+		run.chars.push(ch);
+	}
 
-  // Advances are integers in font units, so they are summed as integers and
-  // scaled once — `units * fontSize / unitsPerEm`, in that order, per distinct
-  // units-per-em rather than per run. Every other arrangement leaves an ulp
-  // behind: dividing as each advance is added gave `AuthService`
-  // 114.50000000000001 against the browser's 114.5, scaling an em figure
-  // afterwards gave `Queue` 58.760000000000005, and scaling per run gave
-  // `a standalone caption` 203.66000000000003 because it is three words. A
-  // note carrying a width one ulp off a browser's is a difference something
-  // downstream has to either notice or hide.
-  const unitsPer = new Map<number, number>();
-  const missing: string[] = [];
-  for (const { runs } of words) {
-    let previous: { face: LoadedFace; glyph: number } | null = null;
-    for (const run of runs) {
-      if (!run.face) {
-        missing.push(...run.chars);
-        previous = null;
-        continue;
-      }
-      const { font, gsub, gpos } = run.face;
-      let glyphs = run.chars.map((ch) => font.cmap.get(ch.codePointAt(0) as number) as number);
-      if (gsub) glyphs = gsub.substitute(glyphs);
-      let units = 0;
-      for (const glyph of glyphs) {
-        units += font.advances[glyph] ?? 0;
-        if (previous && previous.face === run.face && gpos) {
-          units += gpos.kern(previous.glyph, glyph);
-        }
-        previous = { face: run.face, glyph };
-      }
-      unitsPer.set(font.unitsPerEm, (unitsPer.get(font.unitsPerEm) ?? 0) + units);
-    }
-  }
-  let width = 0;
-  for (const [unitsPerEm, units] of unitsPer) width += units * fontSize / unitsPerEm;
-  return { width, missing };
+	// Advances are integers in font units, so they are summed as integers and
+	// scaled once — `units * fontSize / unitsPerEm`, in that order, per distinct
+	// units-per-em rather than per run. Every other arrangement leaves an ulp
+	// behind: dividing as each advance is added gave `AuthService`
+	// 114.50000000000001 against the browser's 114.5, scaling an em figure
+	// afterwards gave `Queue` 58.760000000000005, and scaling per run gave
+	// `a standalone caption` 203.66000000000003 because it is three words. A
+	// note carrying a width one ulp off a browser's is a difference something
+	// downstream has to either notice or hide.
+	const unitsPer = new Map<number, number>();
+	const missing: string[] = [];
+	for (const { runs } of words) {
+		let previous: { face: LoadedFace; glyph: number } | null = null;
+		for (const run of runs) {
+			if (!run.face) {
+				missing.push(...run.chars);
+				previous = null;
+				continue;
+			}
+			const { font, gsub, gpos } = run.face;
+			let glyphs = run.chars.map((ch) => font.cmap.get(ch.codePointAt(0) as number) as number);
+			if (gsub) glyphs = gsub.substitute(glyphs);
+			let units = 0;
+			for (const glyph of glyphs) {
+				units += font.advances[glyph] ?? 0;
+				if (previous && previous.face === run.face && gpos) {
+					units += gpos.kern(previous.glyph, glyph);
+				}
+				previous = { face: run.face, glyph };
+			}
+			unitsPer.set(font.unitsPerEm, (unitsPer.get(font.unitsPerEm) ?? 0) + units);
+		}
+	}
+	let width = 0;
+	for (const [unitsPerEm, units] of unitsPer) width += (units * fontSize) / unitsPerEm;
+	return { width, missing };
 }
 
 /** One line of text, in pixels at `fontSize`. */
 export function measureLineWidth(text: string, fontSize: number, fontFamily: number): number {
-  return measureLine(text, fontSize, fontFamily).width;
+	return measureLine(text, fontSize, fontFamily).width;
 }
 
 export interface TextSize {
-  width: number;
-  height: number;
-  /** Characters no shipped file covers. A caller may report them; nothing here does. */
-  missing: string[];
+	width: number;
+	height: number;
+	/** Characters no shipped file covers. A caller may report them; nothing here does. */
+	missing: string[];
 }
 
 /**
@@ -185,19 +194,19 @@ export interface TextSize {
  * element's own record is what that Excalidraw will render from.
  */
 export function measureText(
-  text: string,
-  fontSize: number,
-  fontFamily: number,
-  lineHeight?: number
+	text: string,
+	fontSize: number,
+	fontFamily: number,
+	lineHeight?: number,
 ): TextSize {
-  const lines = String(text ?? '').split('\n');
-  let width = 0;
-  const missing: string[] = [];
-  for (const line of lines) {
-    const measured = measureLine(line, fontSize, fontFamily);
-    width = Math.max(width, measured.width);
-    missing.push(...measured.missing);
-  }
-  const perLine = lineHeight ?? lineHeightOf(fontFamily);
-  return { width, height: fontSize * perLine * lines.length, missing };
+	const lines = String(text ?? "").split("\n");
+	let width = 0;
+	const missing: string[] = [];
+	for (const line of lines) {
+		const measured = measureLine(line, fontSize, fontFamily);
+		width = Math.max(width, measured.width);
+		missing.push(...measured.missing);
+	}
+	const perLine = lineHeight ?? lineHeightOf(fontFamily);
+	return { width, height: fontSize * perLine * lines.length, missing };
 }

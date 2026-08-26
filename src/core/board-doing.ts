@@ -30,9 +30,9 @@
 // worse. So the line is capped and the list is short, and both caps are here
 // rather than in the middleware, the pane and the injector separately.
 
-import { kept } from './hot.js';
-import { normalizeBoardKey } from './board.js';
-import type { HolderKind } from './board-lock.js';
+import { kept } from "./hot.js";
+import { normalizeBoardKey } from "./board.js";
+import type { HolderKind } from "./board-lock.js";
 
 /**
  * The longest line worth putting on a wall.
@@ -49,29 +49,30 @@ export const DOING_KEPT = 5;
 
 /** One thing somebody said they were doing, and who said it. */
 export interface DoingEntry {
-  /** The line itself, as it was written. */
-  doing: string;
-  /** ISO timestamp of the write it arrived with. */
-  at: string;
-  /**
-   * Whose it is: the lock holder id of the writer.
-   *
-   * Kept because "whose descriptions are whose" is the question ADR 0005 makes
-   * load-bearing, and because two agents on one board otherwise read as one.
-   */
-  by: string;
-  kind: HolderKind;
-  /** Was this write part of a claim — a step of a campaign, rather than a lone act? */
-  claimed?: boolean;
+	/** The line itself, as it was written. */
+	doing: string;
+	/** ISO timestamp of the write it arrived with. */
+	at: string;
+	/**
+	 * Whose it is: the lock holder id of the writer.
+	 *
+	 * Kept because "whose descriptions are whose" is the question ADR 0005 makes
+	 * load-bearing, and because two agents on one board otherwise read as one.
+	 */
+	by: string;
+	kind: HolderKind;
+	/** Was this write part of a claim — a step of a campaign, rather than a lone act? */
+	claimed?: boolean;
 }
 
 interface Store {
-  byBoard: Map<string, DoingEntry[]>;
+	byBoard: Map<string, DoingEntry[]>;
 }
 
 // Kept, so a hot reload does not wipe the last thing an agent said off a wall
 // somebody is reading (ADR 0014).
-const store = (): Store => kept('board-doing', () => ({ byBoard: new Map<string, DoingEntry[]>() }));
+const store = (): Store =>
+	kept("board-doing", () => ({ byBoard: new Map<string, DoingEntry[]>() }));
 
 /** A line as it must arrive, or the reason it is refused. */
 export type DoingCheck = { ok: true; doing: string } | { ok: false; problem: string };
@@ -84,17 +85,17 @@ export type DoingCheck = { ok: true; doing: string } | { ok: false; problem: str
  * both mean the caller has not actually said anything.
  */
 export function checkDoing(raw: unknown): DoingCheck {
-  if (typeof raw !== 'string' || !raw.trim()) {
-    return { ok: false, problem: 'nothing was said' };
-  }
-  const doing = raw.replace(/\s+/g, ' ').trim();
-  if (doing.length > DOING_MAX_CHARS) {
-    return {
-      ok: false,
-      problem: `${doing.length} characters, and the cap is ${DOING_MAX_CHARS} — this goes on a wall, not into a log`
-    };
-  }
-  return { ok: true, doing };
+	if (typeof raw !== "string" || !raw.trim()) {
+		return { ok: false, problem: "nothing was said" };
+	}
+	const doing = raw.replace(/\s+/g, " ").trim();
+	if (doing.length > DOING_MAX_CHARS) {
+		return {
+			ok: false,
+			problem: `${doing.length} characters, and the cap is ${DOING_MAX_CHARS} — this goes on a wall, not into a log`,
+		};
+	}
+	return { ok: true, doing };
 }
 
 /**
@@ -114,19 +115,19 @@ export function checkDoing(raw: unknown): DoingCheck {
  * is the same sentence five times, which is what this is for.
  */
 export function recordDoing(board: string, entry: DoingEntry): DoingEntry[] {
-  const key = normalizeBoardKey(board);
-  const { byBoard } = store();
-  const kept = byBoard.get(key) ?? [];
-  const last = kept[kept.length - 1];
-  const repeat = last !== undefined && last.doing === entry.doing;
-  const list = [...(repeat ? kept.slice(0, -1) : kept), entry].slice(-DOING_KEPT);
-  byBoard.set(key, list);
-  return list;
+	const key = normalizeBoardKey(board);
+	const { byBoard } = store();
+	const kept = byBoard.get(key) ?? [];
+	const last = kept[kept.length - 1];
+	const repeat = last !== undefined && last.doing === entry.doing;
+	const list = [...(repeat ? kept.slice(0, -1) : kept), entry].slice(-DOING_KEPT);
+	byBoard.set(key, list);
+	return list;
 }
 
 /** The last few things said about this board, oldest first. */
 export function recentDoing(board: string): DoingEntry[] {
-  return store().byBoard.get(normalizeBoardKey(board)) ?? [];
+	return store().byBoard.get(normalizeBoardKey(board)) ?? [];
 }
 
 /**
@@ -137,7 +138,7 @@ export function recentDoing(board: string): DoingEntry[] {
  * board. It exists for the checks, which run several boards through one canvas.
  */
 export function forgetDoing(board?: string): void {
-  const { byBoard } = store();
-  if (board === undefined) byBoard.clear();
-  else byBoard.delete(normalizeBoardKey(board));
+	const { byBoard } = store();
+	if (board === undefined) byBoard.clear();
+	else byBoard.delete(normalizeBoardKey(board));
 }

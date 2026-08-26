@@ -25,7 +25,7 @@ and then read what moved.
 archboard changes --board payments --since <cursor> --coalesce --text
 ```
 
-`changes` reports what the board *became*, in the same vocabulary `compare`
+`changes` reports what the board _became_, in the same vocabulary `compare`
 uses: nodes and edges added, removed, promoted, rerouted, clusters formed and
 split, containment, whereabouts. One drag is one event, or none at all if it
 changed nothing nameable. Keep the cursor from the last response and pass it as
@@ -78,7 +78,7 @@ the new box maps to, or to propose a binding.
 
 ## Drawing an architecture pass
 
-Author with `add` / `batch_create` rather than `mermaid`. Mermaid is converted
+Author with `add` or `apply` rather than `mermaid`. Mermaid is converted
 in the browser and reaches the board as a change report from that tab, so it
 needs a tab open and hands you no ids to work with.
 

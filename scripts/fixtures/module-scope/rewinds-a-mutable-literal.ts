@@ -4,10 +4,10 @@
 // defaults, with no error anywhere.
 
 export const sceneState = {
-  theme: 'light',
-  viewport: { x: 0, y: 0, zoom: 1 }
+	theme: "light",
+	viewport: { x: 0, y: 0, zoom: 1 },
 };
 
 export function setTheme(theme: string): void {
-  sceneState.theme = theme;
+	sceneState.theme = theme;
 }

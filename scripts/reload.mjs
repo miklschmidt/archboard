@@ -13,17 +13,17 @@
 // Several canvases can be up at once on different ports over different vaults,
 // so this names the one it reached rather than leaving you to assume.
 
-import { reloadCanvas } from '../src/core/canvas-client.ts';
-import { EXPRESS_SERVER_URL } from '../src/core/config.ts';
+import { reloadCanvas } from "../src/core/canvas-client.ts";
+import { EXPRESS_SERVER_URL } from "../src/core/config.ts";
 
 try {
-  const result = await reloadCanvas();
-  console.log(
-    `Asked the canvas at ${EXPRESS_SERVER_URL} to reload (generation ${result.generation}, pid ${result.pid}).\n` +
-    'Watch that dev terminal: it reports what the reload cost, and says so loudly if it cost anything.'
-  );
+	const result = await reloadCanvas();
+	console.log(
+		`Asked the canvas at ${EXPRESS_SERVER_URL} to reload (generation ${result.generation}, pid ${result.pid}).\n` +
+			"Watch that dev terminal: it reports what the reload cost, and says so loudly if it cost anything.",
+	);
 } catch (error) {
-  const message = error instanceof Error ? error.message : String(error);
-  console.error(`Could not reload the canvas at ${EXPRESS_SERVER_URL}: ${message}`);
-  process.exit(1);
+	const message = error instanceof Error ? error.message : String(error);
+	console.error(`Could not reload the canvas at ${EXPRESS_SERVER_URL}: ${message}`);
+	process.exit(1);
 }

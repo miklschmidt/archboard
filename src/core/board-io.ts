@@ -40,41 +40,38 @@
 // open exactly that window. Excluding a *second process* is a different problem
 // and belongs to the board mutex (ADR 0016), not here.
 
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
-import { ExcalidrawFile, ServerElement } from '../types.js';
-import { writeFileAtomic } from './atomic-write.js';
-import { holdOn } from './board-hold.js';
-import { BoardState, baselineForFile, recordBaseline } from './board-store.js';
+import { type ExcalidrawFile, type ServerElement } from "../types.js";
+import { writeFileAtomic } from "./atomic-write.js";
+import { holdOn } from "./board-hold.js";
+import { type BoardState, baselineForFile, recordBaseline } from "./board-store.js";
 import {
-  BoardIdentity,
-  boardKey,
-  hashBoardBytes,
-  identityFromFrontmatter,
-  identityFromVaultPath,
-  makeIdentity,
-  renderBoardNote,
-  requireVaultRoot,
-  sceneJsonWithEmbeddedImages,
-  vaultPathFor
-} from './board.js';
+	type BoardIdentity,
+	boardKey,
+	hashBoardBytes,
+	identityFromFrontmatter,
+	identityFromVaultPath,
+	makeIdentity,
+	renderBoardNote,
+	requireVaultRoot,
+	sceneJsonWithEmbeddedImages,
+	vaultPathFor,
+} from "./board.js";
 import {
-  BoardWriteConflict,
-  VersionMove,
-  describeWriteConflict,
-  stampBoardVersion,
-  versionMove,
-  versionNumber
-} from './board-version.js';
-import { validateRenderGeometry } from './geometry.js';
-import { derivedId, isBlockId, mintId } from './ids.js';
-import {
-  isObsidianExcalidrawMd,
-  renameElementId
-} from './obsidian-md.js';
-import { stripBindingPresentationLinks } from './presentation.js';
-import { buildScene } from './scene-document.js';
+	type BoardWriteConflict,
+	type VersionMove,
+	describeWriteConflict,
+	stampBoardVersion,
+	versionMove,
+	versionNumber,
+} from "./board-version.js";
+import { validateRenderGeometry } from "./geometry.js";
+import { derivedId, isBlockId, mintId } from "./ids.js";
+import { isObsidianExcalidrawMd, renameElementId } from "./obsidian-md.js";
+import { stripBindingPresentationLinks } from "./presentation.js";
+import { buildScene } from "./scene-document.js";
 
 /**
  * One board, as one request found it.
@@ -89,16 +86,16 @@ import { buildScene } from './scene-document.js';
  * just made, or a scratch board in a vault that has never held one.
  */
 export interface BoardContent {
-  elements: Map<string, ServerElement>;
-  files: Map<string, ExcalidrawFile>;
-  note?: string;
-  hash?: string;
-  /**
-   * Which edit of the board the note was, when it was read (TASK-091). Null for
-   * a note that carries no version archboard can read, absent for a board with
-   * no note behind it yet.
-   */
-  version?: number | null;
+	elements: Map<string, ServerElement>;
+	files: Map<string, ExcalidrawFile>;
+	note?: string;
+	hash?: string;
+	/**
+	 * Which edit of the board the note was, when it was read (TASK-091). Null for
+	 * a note that carries no version archboard can read, absent for a board with
+	 * no note behind it yet.
+	 */
+	version?: number | null;
 }
 
 /**
@@ -106,9 +103,11 @@ export interface BoardContent {
  * has none. Every whole-board frame needs these records or image elements
  * render as holes (TASK-060).
  */
-export function boardFilesMessage(content: BoardContent): { files?: Record<string, ExcalidrawFile> } {
-  if (content.files.size === 0) return {};
-  return { files: Object.fromEntries(content.files) };
+export function boardFilesMessage(content: BoardContent): {
+	files?: Record<string, ExcalidrawFile>;
+} {
+	if (content.files.size === 0) return {};
+	return { files: Object.fromEntries(content.files) };
 }
 
 /**
@@ -119,19 +118,19 @@ export function boardFilesMessage(content: BoardContent): { files?: Record<strin
  * out.
  */
 export interface LoadedBoard extends NoteFile {
-  identity: BoardIdentity;
-  // What the note's own frontmatter claims, when that is a different board
-  // than the one being opened — a note renamed or moved in Obsidian since it
-  // was last saved. The path is the address, so that is what the caller gets;
-  // the next save rewrites the frontmatter and the disagreement goes away.
-  // Surfaced rather than silently reconciled, because it usually means a human
-  // moved something and may not have meant to.
-  declaredKey?: string;
+	identity: BoardIdentity;
+	// What the note's own frontmatter claims, when that is a different board
+	// than the one being opened — a note renamed or moved in Obsidian since it
+	// was last saved. The path is the address, so that is what the caller gets;
+	// the next save rewrites the frontmatter and the disagreement goes away.
+	// Surfaced rather than silently reconciled, because it usually means a human
+	// moved something and may not have meant to.
+	declaredKey?: string;
 }
 
 /** A board with nothing in it, for a note that is not there yet. */
 export function emptyContent(): BoardContent {
-  return { elements: new Map(), files: new Map() };
+	return { elements: new Map(), files: new Map() };
 }
 
 /**
@@ -148,51 +147,51 @@ export function emptyContent(): BoardContent {
  * back is deleted on the next write (TASK-060).
  */
 export function ingestScene(
-  sceneElements: unknown[],
-  sceneFiles?: Record<string, unknown> | null
+	sceneElements: unknown[],
+	sceneFiles?: Record<string, unknown> | null,
 ): { elements: Map<string, ServerElement>; files: Map<string, ExcalidrawFile> } {
-  const elements = new Map<string, ServerElement>();
-  // Names the scene brings with it are the only ones a mint here has to avoid:
-  // the maps start empty and are filled from this scene alone.
-  const taken = new Set<string>(
-    sceneElements
-      .filter((raw): raw is { id: string } => !!raw && typeof (raw as any).id === 'string')
-      .map(raw => raw.id)
-  );
-  for (const raw of sceneElements) {
-    if (!raw || typeof raw !== 'object') continue;
-    const source = raw as Record<string, unknown>;
-    const element: ServerElement = {
-      ...(source as unknown as ServerElement),
-      id: (typeof source.id === 'string' && source.id) || mintId(taken),
-      createdAt: (source.createdAt as string) ?? new Date().toISOString(),
-      updatedAt: (source.updatedAt as string) ?? new Date().toISOString(),
-      version: (source.version as number) ?? 1
-    };
-    taken.add(element.id);
-    elements.set(element.id, element);
-  }
+	const elements = new Map<string, ServerElement>();
+	// Names the scene brings with it are the only ones a mint here has to avoid:
+	// the maps start empty and are filled from this scene alone.
+	const taken = new Set<string>(
+		sceneElements
+			.filter((raw): raw is { id: string } => !!raw && typeof (raw as any).id === "string")
+			.map((raw) => raw.id),
+	);
+	for (const raw of sceneElements) {
+		if (!raw || typeof raw !== "object") continue;
+		const source = raw as Record<string, unknown>;
+		const element: ServerElement = {
+			...(source as unknown as ServerElement),
+			id: (typeof source.id === "string" && source.id) || mintId(taken),
+			createdAt: (source.createdAt as string) ?? new Date().toISOString(),
+			updatedAt: (source.updatedAt as string) ?? new Date().toISOString(),
+			version: (source.version as number) ?? 1,
+		};
+		taken.add(element.id);
+		elements.set(element.id, element);
+	}
 
-  // A note already in the vault gets no silent repair. Refuse the whole scene
-  // here, before any caller can register it or send it to a pane, and let the
-  // existing board-open error path put the actionable geometry error on screen.
-  validateRenderGeometry(elements.values());
+	// A note already in the vault gets no silent repair. Refuse the whole scene
+	// here, before any caller can register it or send it to a pane, and let the
+	// existing board-open error path put the actionable geometry error on screen.
+	validateRenderGeometry(elements.values());
 
-  const files = new Map<string, ExcalidrawFile>();
-  if (sceneFiles && typeof sceneFiles === 'object') {
-    for (const [id, raw] of Object.entries(sceneFiles)) {
-      if (!raw || typeof raw !== 'object') continue;
-      const file = raw as Partial<ExcalidrawFile>;
-      if (typeof file.dataURL !== 'string') continue;
-      files.set(id, {
-        id,
-        dataURL: file.dataURL,
-        mimeType: typeof file.mimeType === 'string' ? file.mimeType : 'image/png',
-        created: typeof file.created === 'number' ? file.created : Date.now()
-      });
-    }
-  }
-  return { elements, files };
+	const files = new Map<string, ExcalidrawFile>();
+	if (sceneFiles && typeof sceneFiles === "object") {
+		for (const [id, raw] of Object.entries(sceneFiles)) {
+			if (!raw || typeof raw !== "object") continue;
+			const file = raw as Partial<ExcalidrawFile>;
+			if (typeof file.dataURL !== "string") continue;
+			files.set(id, {
+				id,
+				dataURL: file.dataURL,
+				mimeType: typeof file.mimeType === "string" ? file.mimeType : "image/png",
+				created: typeof file.created === "number" ? file.created : Date.now(),
+			});
+		}
+	}
+	return { elements, files };
 }
 
 /**
@@ -204,15 +203,15 @@ export function ingestScene(
  * files.
  */
 export interface NoteFile {
-  file: string;
-  /** The whole note, so a write can put its frontmatter and prose back verbatim. */
-  raw: string;
-  /** sha-256 of the bytes it was decoded from: the baseline operand (ADR 0006). */
-  hash: string;
-  /** Which edit of the board it was, or null when it carries no count (TASK-091). */
-  version: number | null;
-  /** The drawing, with any image the plugin moved out of it put back. */
-  sceneJson: string;
+	file: string;
+	/** The whole note, so a write can put its frontmatter and prose back verbatim. */
+	raw: string;
+	/** sha-256 of the bytes it was decoded from: the baseline operand (ADR 0006). */
+	hash: string;
+	/** Which edit of the board it was, or null when it carries no count (TASK-091). */
+	version: number | null;
+	/** The drawing, with any image the plugin moved out of it put back. */
+	sceneJson: string;
 }
 
 /**
@@ -233,33 +232,33 @@ export interface NoteFile {
  * file yet and that is not an error.
  */
 export function readNoteFile(file: string, root = requireVaultRoot()): NoteFile | null {
-  let bytes: Buffer;
-  try {
-    // Read bytes, then decode. The baseline hash has to be of what is on disk,
-    // so decoding is a separate step that cannot get between the two.
-    bytes = fs.readFileSync(file);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
-    throw error;
-  }
-  const raw = bytes.toString('utf-8');
-  if (!isObsidianExcalidrawMd(raw)) {
-    throw new Error(
-      `${file} exists but is not an Obsidian .excalidraw.md note — refusing to read it as a board.`
-    );
-  }
-  return {
-    file,
-    raw,
-    hash: hashBoardBytes(bytes),
-    version: versionNumber(raw),
-    // A picture the plugin moved out into a vault file is followed here
-    // (TASK-085, ADR 0017), which is what decides whether a migrated board
-    // draws or renders holes. It costs nothing on a note with no
-    // `## Embedded Files` section: the scene is reassembled only when one of
-    // its links resolved to a file.
-    sceneJson: sceneJsonWithEmbeddedImages(raw, file, root)
-  };
+	let bytes: Buffer;
+	try {
+		// Read bytes, then decode. The baseline hash has to be of what is on disk,
+		// so decoding is a separate step that cannot get between the two.
+		bytes = fs.readFileSync(file);
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+		throw error;
+	}
+	const raw = bytes.toString("utf-8");
+	if (!isObsidianExcalidrawMd(raw)) {
+		throw new Error(
+			`${file} exists but is not an Obsidian .excalidraw.md note — refusing to read it as a board.`,
+		);
+	}
+	return {
+		file,
+		raw,
+		hash: hashBoardBytes(bytes),
+		version: versionNumber(raw),
+		// A picture the plugin moved out into a vault file is followed here
+		// (TASK-085, ADR 0017), which is what decides whether a migrated board
+		// draws or renders holes. It costs nothing on a note with no
+		// `## Embedded Files` section: the scene is reassembled only when one of
+		// its links resolved to a file.
+		sceneJson: sceneJsonWithEmbeddedImages(raw, file, root),
+	};
 }
 
 /**
@@ -275,43 +274,45 @@ export function readNoteFile(file: string, root = requireVaultRoot()): NoteFile 
  * exactly as any other read gets them.
  */
 export function readBoardFile(
-  identity: Pick<BoardIdentity, 'board' | 'variant' | 'displayName'>,
-  root = requireVaultRoot()
+	identity: Pick<BoardIdentity, "board" | "variant" | "displayName">,
+	root = requireVaultRoot(),
 ): LoadedBoard | null {
-  const note = readNoteFile(vaultPathFor(identity, root), root);
-  if (!note) return null;
+	const note = readNoteFile(vaultPathFor(identity, root), root);
+	if (!note) return null;
 
-  const asked = makeIdentity({ board: identity.board, variant: identity.variant });
-  const declared = identityFromFrontmatter(note.raw);
-  // Casing comes from the note, not from whoever typed the address: the note
-  // is where a human chose it and the address is case-insensitive either way.
-  // Its own frontmatter first, then the filename, then the address.
-  const onDisk = identityFromVaultPath(note.file, root);
-  const displayName =
-    (declared && boardKey(declared) === boardKey(asked) ? declared.displayName : undefined)
-    ?? (onDisk && boardKey(onDisk) === boardKey(asked) ? onDisk.displayName : undefined)
-    ?? asked.displayName;
-  return {
-    ...note,
-    identity: {
-      ...asked,
-      ...(declared?.level ? { level: declared.level } : {}),
-      ...(displayName ? { displayName } : {})
-    },
-    ...(declared && boardKey(declared) !== boardKey(asked) ? { declaredKey: boardKey(declared) } : {})
-  };
+	const asked = makeIdentity({ board: identity.board, variant: identity.variant });
+	const declared = identityFromFrontmatter(note.raw);
+	// Casing comes from the note, not from whoever typed the address: the note
+	// is where a human chose it and the address is case-insensitive either way.
+	// Its own frontmatter first, then the filename, then the address.
+	const onDisk = identityFromVaultPath(note.file, root);
+	const displayName =
+		(declared && boardKey(declared) === boardKey(asked) ? declared.displayName : undefined) ??
+		(onDisk && boardKey(onDisk) === boardKey(asked) ? onDisk.displayName : undefined) ??
+		asked.displayName;
+	return {
+		...note,
+		identity: {
+			...asked,
+			...(declared?.level ? { level: declared.level } : {}),
+			...(displayName ? { displayName } : {}),
+		},
+		...(declared && boardKey(declared) !== boardKey(asked)
+			? { declaredKey: boardKey(declared) }
+			: {}),
+	};
 }
 
 /** The elements and images a note holds, plus the bytes they came out of. */
 export function readNote(file: string): BoardContent | null {
-  const note = readNoteFile(file);
-  if (!note) return null;
-  const scene = JSON.parse(note.sceneJson);
-  const { elements, files } = ingestScene(
-    Array.isArray(scene) ? scene : (scene.elements ?? []),
-    Array.isArray(scene) ? null : scene.files
-  );
-  return { elements, files, note: note.raw, hash: note.hash, version: note.version };
+	const note = readNoteFile(file);
+	if (!note) return null;
+	const scene = JSON.parse(note.sceneJson);
+	const { elements, files } = ingestScene(
+		Array.isArray(scene) ? scene : (scene.elements ?? []),
+		Array.isArray(scene) ? null : scene.files,
+	);
+	return { elements, files, note: note.raw, hash: note.hash, version: note.version };
 }
 
 /**
@@ -337,16 +338,16 @@ export function readNote(file: string): BoardContent | null {
  * is no worse here than on the note.
  */
 export function readBoardContent(board: BoardState): BoardContent {
-  const hold = holdOn(boardKey(board.identity));
-  if (hold) {
-    return {
-      ...hold.content,
-      elements: new Map(hold.content.elements),
-      files: new Map(hold.content.files)
-    };
-  }
-  if (!board.file) return emptyContent();
-  return readNote(board.file) ?? emptyContent();
+	const hold = holdOn(boardKey(board.identity));
+	if (hold) {
+		return {
+			...hold.content,
+			elements: new Map(hold.content.elements),
+			files: new Map(hold.content.files),
+		};
+	}
+	if (!board.file) return emptyContent();
+	return readNote(board.file) ?? emptyContent();
 }
 
 /**
@@ -360,21 +361,21 @@ export function readBoardContent(board: BoardState): BoardContent {
  * to.
  */
 export function renderContent(
-  identity: BoardState['identity'],
-  content: BoardContent,
-  existingNote: string | null | undefined = content.note
+	identity: BoardState["identity"],
+	content: BoardContent,
+	existingNote: string | null | undefined = content.note,
 ): { note: string; bytes: Buffer; elementCount: number } {
-  const files = boardFilesMessage(content).files ?? {};
-  const { scene, elementCount } = buildScene(
-    stripBindingPresentationLinks(content.elements.values()),
-    files as unknown as Record<string, any>,
-    { keepServerFields: true }
-  );
-  // expandElements normalizes a missing link to null, so apply the same
-  // portability rule once more to the normalized copies.
-  scene.elements = stripBindingPresentationLinks(scene.elements as ServerElement[]);
-  const note = renderBoardNote(scene, existingNote, identity);
-  return { note, bytes: Buffer.from(note, 'utf-8'), elementCount };
+	const files = boardFilesMessage(content).files ?? {};
+	const { scene, elementCount } = buildScene(
+		stripBindingPresentationLinks(content.elements.values()),
+		files as unknown as Record<string, any>,
+		{ keepServerFields: true },
+	);
+	// expandElements normalizes a missing link to null, so apply the same
+	// portability rule once more to the normalized copies.
+	scene.elements = stripBindingPresentationLinks(scene.elements as ServerElement[]);
+	const note = renderBoardNote(scene, existingNote, identity);
+	return { note, bytes: Buffer.from(note, "utf-8"), elementCount };
 }
 
 /**
@@ -419,27 +420,28 @@ export function renderContent(
  * it resolves to — and overwriting that would throw away the link.
  */
 function settleRawText(content: BoardContent): void {
-  for (const element of content.elements.values()) {
-    if (element.type !== 'text' || element.isDeleted) continue;
-    const held = element as ServerElement & { rawText?: string; originalText?: string };
-    if (typeof held.rawText === 'string' && held.rawText !== '') continue;
-    held.rawText = held.originalText ?? held.text ?? '';
-  }
+	for (const element of content.elements.values()) {
+		if (element.type !== "text" || element.isDeleted) continue;
+		const held = element as ServerElement & { rawText?: string; originalText?: string };
+		if (typeof held.rawText === "string" && held.rawText !== "") continue;
+		held.rawText = held.originalText ?? held.text ?? "";
+	}
 }
 
 function settleBlockIds(content: BoardContent): void {
-  const foreign = Array.from(content.elements.values())
-    .filter(element => element.type === 'text' && !element.isDeleted && !isBlockId(element.id));
-  if (foreign.length === 0) return;
-  const elements = Array.from(content.elements.values());
-  const taken = { has: (id: string) => content.elements.has(id) };
-  for (const element of foreign) {
-    const oldId = element.id;
-    const newId = derivedId(oldId, taken);
-    renameElementId(elements, oldId, newId);
-    content.elements.delete(oldId);
-    content.elements.set(newId, element);
-  }
+	const foreign = Array.from(content.elements.values()).filter(
+		(element) => element.type === "text" && !element.isDeleted && !isBlockId(element.id),
+	);
+	if (foreign.length === 0) return;
+	const elements = Array.from(content.elements.values());
+	const taken = { has: (id: string) => content.elements.has(id) };
+	for (const element of foreign) {
+		const oldId = element.id;
+		const newId = derivedId(oldId, taken);
+		renameElementId(elements, oldId, newId);
+		content.elements.delete(oldId);
+		content.elements.set(newId, element);
+	}
 }
 
 /**
@@ -459,29 +461,29 @@ function settleBlockIds(content: BoardContent): void {
  * are one document.
  */
 function settleBoundArrows(content: BoardContent): void {
-  for (const arrow of content.elements.values()) {
-    if (arrow.type !== 'arrow' && arrow.type !== 'line') continue;
-    const joins = arrow as {
-      startBinding?: { elementId?: string } | null;
-      endBinding?: { elementId?: string } | null;
-      start?: { id?: string };
-      end?: { id?: string };
-    };
-    const ends = [
-      joins.startBinding?.elementId,
-      joins.endBinding?.elementId,
-      joins.start?.id,
-      joins.end?.id
-    ];
-    for (const shapeId of ends) {
-      if (typeof shapeId !== 'string') continue;
-      const shape = content.elements.get(shapeId);
-      if (!shape || shape.id === arrow.id) continue;
-      const bound = Array.isArray(shape.boundElements) ? shape.boundElements : [];
-      if (bound.some(entry => entry?.id === arrow.id)) continue;
-      shape.boundElements = [...bound, { id: arrow.id, type: 'arrow' as const }];
-    }
-  }
+	for (const arrow of content.elements.values()) {
+		if (arrow.type !== "arrow" && arrow.type !== "line") continue;
+		const joins = arrow as {
+			startBinding?: { elementId?: string } | null;
+			endBinding?: { elementId?: string } | null;
+			start?: { id?: string };
+			end?: { id?: string };
+		};
+		const ends = [
+			joins.startBinding?.elementId,
+			joins.endBinding?.elementId,
+			joins.start?.id,
+			joins.end?.id,
+		];
+		for (const shapeId of ends) {
+			if (typeof shapeId !== "string") continue;
+			const shape = content.elements.get(shapeId);
+			if (!shape || shape.id === arrow.id) continue;
+			const bound = Array.isArray(shape.boundElements) ? shape.boundElements : [];
+			if (bound.some((entry) => entry?.id === arrow.id)) continue;
+			shape.boundElements = [...bound, { id: arrow.id, type: "arrow" as const }];
+		}
+	}
 }
 
 /**
@@ -490,10 +492,10 @@ function settleBoundArrows(content: BoardContent): void {
  * them proves the document a caller receives is the document persistence sees.
  */
 export function settleBoardContent(content: BoardContent): void {
-  settleBlockIds(content);
-  settleBoundArrows(content);
-  settleRawText(content);
-  validateRenderGeometry(content.elements.values());
+	settleBlockIds(content);
+	settleBoundArrows(content);
+	settleRawText(content);
+	validateRenderGeometry(content.elements.values());
 }
 
 /**
@@ -503,12 +505,12 @@ export function settleBoardContent(content: BoardContent): void {
  * so a surface can offer them rather than reword them (ADR 0006).
  */
 export class BoardWriteConflictError extends Error {
-  readonly conflict: BoardWriteConflict;
-  constructor(conflict: BoardWriteConflict) {
-    super(conflict.message);
-    this.name = 'BoardWriteConflictError';
-    this.conflict = conflict;
-  }
+	readonly conflict: BoardWriteConflict;
+	constructor(conflict: BoardWriteConflict) {
+		super(conflict.message);
+		this.name = "BoardWriteConflictError";
+		this.conflict = conflict;
+	}
 }
 
 /**
@@ -519,23 +521,23 @@ export class BoardWriteConflictError extends Error {
  * saying it.
  */
 export interface ForeignWrite {
-  file: string;
-  reason: 'changed' | 'unseen';
-  expectedHash?: string;
-  actualHash: string;
-  lastReadAt?: string;
-  fileModifiedAt: string;
-  /**
-   * Which way the note's version moved between archboard's last write here and
-   * now (TASK-091). The hash establishes that these are not archboard's bytes;
-   * this says who wrote them. `unchanged` is the foreign writer named — a
-   * version key is carried across a save verbatim by everything that does not
-   * maintain it — `behind` is a revert or a pull, `ahead` is another archboard.
-   */
-  versionMove: VersionMove;
-  /** What archboard last wrote there, and what the note says now. */
-  expectedVersion: number | null;
-  actualVersion: number | null;
+	file: string;
+	reason: "changed" | "unseen";
+	expectedHash?: string;
+	actualHash: string;
+	lastReadAt?: string;
+	fileModifiedAt: string;
+	/**
+	 * Which way the note's version moved between archboard's last write here and
+	 * now (TASK-091). The hash establishes that these are not archboard's bytes;
+	 * this says who wrote them. `unchanged` is the foreign writer named — a
+	 * version key is carried across a save verbatim by everything that does not
+	 * maintain it — `behind` is a revert or a pull, `ahead` is another archboard.
+	 */
+	versionMove: VersionMove;
+	/** What archboard last wrote there, and what the note says now. */
+	expectedVersion: number | null;
+	actualVersion: number | null;
 }
 
 /**
@@ -560,34 +562,34 @@ export interface ForeignWrite {
  * that is the `unseen` half of the same refusal.
  */
 export function foreignWriteTo(file: string, destination: Buffer | undefined): ForeignWrite | null {
-  if (!destination) return null;
-  const actualHash = hashBoardBytes(destination);
-  // Asked of the whole registry rather than of one board, because a baseline
-  // belongs to a path: `board save --as other` writes a file some other open
-  // board is the one that read.
-  const expected = baselineForFile(file);
-  if (expected && expected.hash === actualHash) return null;
-  // Read only once the bytes are already known to differ: the version answers
-  // "who wrote this", which is a question that only arises after the hash has
-  // said somebody did. The hash still decides, and this only ever describes.
-  const actualVersion = versionNumber(destination.toString('utf-8'));
-  return {
-    file,
-    reason: expected ? 'changed' : 'unseen',
-    ...(expected ? { expectedHash: expected.hash, lastReadAt: expected.at } : {}),
-    actualHash,
-    fileModifiedAt: fs.statSync(file).mtime.toISOString(),
-    versionMove: versionMove(expected?.version ?? null, actualVersion),
-    expectedVersion: expected?.version ?? null,
-    actualVersion
-  };
+	if (!destination) return null;
+	const actualHash = hashBoardBytes(destination);
+	// Asked of the whole registry rather than of one board, because a baseline
+	// belongs to a path: `board save --as other` writes a file some other open
+	// board is the one that read.
+	const expected = baselineForFile(file);
+	if (expected && expected.hash === actualHash) return null;
+	// Read only once the bytes are already known to differ: the version answers
+	// "who wrote this", which is a question that only arises after the hash has
+	// said somebody did. The hash still decides, and this only ever describes.
+	const actualVersion = versionNumber(destination.toString("utf-8"));
+	return {
+		file,
+		reason: expected ? "changed" : "unseen",
+		...(expected ? { expectedHash: expected.hash, lastReadAt: expected.at } : {}),
+		actualHash,
+		fileModifiedAt: fs.statSync(file).mtime.toISOString(),
+		versionMove: versionMove(expected?.version ?? null, actualVersion),
+		expectedVersion: expected?.version ?? null,
+		actualVersion,
+	};
 }
 
 export interface WriteOptions {
-  /** The human's "overwrite it anyway". Never set by archboard on its own behalf. */
-  force?: boolean;
-  /** What a refusal should tell the caller to type. */
-  saveCommand: string;
+	/** The human's "overwrite it anyway". Never set by archboard on its own behalf. */
+	force?: boolean;
+	/** What a refusal should tell the caller to type. */
+	saveCommand: string;
 }
 
 /**
@@ -614,62 +616,66 @@ export interface WriteOptions {
  * exactly as it found it, empty directories included.
  */
 export function writeBoardContent(
-  board: BoardState,
-  content: BoardContent,
-  options: WriteOptions
+	board: BoardState,
+	content: BoardContent,
+	options: WriteOptions,
 ): {
-  file: string;
-  hash: string;
-  note: string;
-  elementCount: number;
-  overwrote: boolean;
-  version: number | null;
+	file: string;
+	hash: string;
+	note: string;
+	elementCount: number;
+	overwrote: boolean;
+	version: number | null;
 } {
-  const file = board.file;
-  if (!file) {
-    throw new Error(`Board "${boardKey(board.identity)}" has no note to write to.`);
-  }
-  const identity = board.identity;
-  // Before anything is rendered or checked, so what the caller is holding and
-  // what the note will say are the same document.
-  settleBoardContent(content);
+	const file = board.file;
+	if (!file) {
+		throw new Error(`Board "${boardKey(board.identity)}" has no note to write to.`);
+	}
+	const identity = board.identity;
+	// Before anything is rendered or checked, so what the caller is holding and
+	// what the note will say are the same document.
+	settleBoardContent(content);
 
-  // The destination as it stands right now, not as this request found it.
-  let destination: Buffer | undefined;
-  try {
-    destination = fs.readFileSync(file);
-  } catch { /* nothing there: nothing to conflict with */ }
-  const overwrote = destination !== undefined;
+	// The destination as it stands right now, not as this request found it.
+	let destination: Buffer | undefined;
+	try {
+		destination = fs.readFileSync(file);
+	} catch {
+		/* nothing there: nothing to conflict with */
+	}
+	const overwrote = destination !== undefined;
 
-  const foreign = options.force ? null : foreignWriteTo(file, destination);
-  if (foreign) {
-    throw new BoardWriteConflictError(describeWriteConflict({
-      target: identity,
-      ...foreign,
-      saveCommand: options.saveCommand
-    }));
-  }
+	const foreign = options.force ? null : foreignWriteTo(file, destination);
+	if (foreign) {
+		throw new BoardWriteConflictError(
+			describeWriteConflict({
+				target: identity,
+				...foreign,
+				saveCommand: options.saveCommand,
+			}),
+		);
+	}
 
-  const rendered = renderContent(
-    identity,
-    content,
-    // The destination's own frontmatter and prose, not the source's: a save-as
-    // onto an existing note keeps what that note's author put there.
-    destination?.toString('utf-8')
-  );
-  const { note, bytes, version } = stampBoardVersion(rendered, destination);
-  const { elementCount } = rendered;
-  // The folder for a nested name, made after the check rather than before it,
-  // so a refused write leaves no directory behind.
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  // By rename, so a reader sees the old note or the new one and never a partial
-  // (TASK-061). The note is the only copy of the board now, so a torn write is
-  // the board rather than the last save.
-  writeFileAtomic(file, bytes);
+	const rendered = renderContent(
+		identity,
+		content,
+		// The destination's own frontmatter and prose, not the source's: a save-as
+		// onto an existing note keeps what that note's author put there.
+		destination?.toString("utf-8"),
+	);
+	const { note, bytes, version } = stampBoardVersion(rendered, destination);
+	const { elementCount } = rendered;
+	// The folder for a nested name, made after the check rather than before it,
+	// so a refused write leaves no directory behind.
+	fs.mkdirSync(path.dirname(file), { recursive: true });
+	// By rename, so a reader sees the old note or the new one and never a partial
+	// (TASK-061). The note is the only copy of the board now, so a torn write is
+	// the board rather than the last save.
+	writeFileAtomic(file, bytes);
 
-  const hash = hashBoardBytes(bytes);
-  // What archboard has now seen at this path is what it just wrote — the
-  // operand the *next* write's check compares against, both halves of it.
-  recordBaseline(board, file, hash, version);
-  return { file, hash, note, elementCount, overwrote, version };
+	const hash = hashBoardBytes(bytes);
+	// What archboard has now seen at this path is what it just wrote — the
+	// operand the *next* write's check compares against, both halves of it.
+	recordBaseline(board, file, hash, version);
+	return { file, hash, note, elementCount, overwrote, version };
 }

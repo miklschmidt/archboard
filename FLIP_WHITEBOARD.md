@@ -16,17 +16,17 @@ certificates, Tizen app signing) is avoided by not using it.
 
 From the official WMFX leaflet spec table:
 
-| Spec | WM75FX |
-|---|---|
-| Video in | Rear HDMI 1, Front HDMI 1, USB-C 65W PD |
-| Video out | HDMI 1 |
-| **Touch out** | **Rear 1 (USB upstream type), Front 1** |
-| Touch | IR, 20 points, passive pen w/ magnet, 6.7ms |
-| External control | RS232C via stereo jack, RJ45 for MDC |
-| Platform | Tizen 9.0, CA76 quad 1.7GHz, 8GB RAM, 64GB |
-| OPS slot | **None** (`Media Player Option Type: N/A`) |
-| Orientation | Landscape only (75"/85"; rotation is 55"/65" only) |
-| Mount / weight | VESA 400x400, 53.6 kg |
+| Spec             | WM75FX                                             |
+| ---------------- | -------------------------------------------------- |
+| Video in         | Rear HDMI 1, Front HDMI 1, USB-C 65W PD            |
+| Video out        | HDMI 1                                             |
+| **Touch out**    | **Rear 1 (USB upstream type), Front 1**            |
+| Touch            | IR, 20 points, passive pen w/ magnet, 6.7ms        |
+| External control | RS232C via stereo jack, RJ45 for MDC               |
+| Platform         | Tizen 9.0, CA76 quad 1.7GHz, 8GB RAM, 64GB         |
+| OPS slot         | **None** (`Media Player Option Type: N/A`)         |
+| Orientation      | Landscape only (75"/85"; rotation is 55"/65" only) |
+| Mount / weight   | VESA 400x400, 53.6 kg                              |
 
 A USB upstream cable is **included in the box**.
 
@@ -91,7 +91,7 @@ network. Tunnel over SSH or restrict to a trusted VLAN.
   rides the USB-C video link — test both, expect to need the upstream cable.
 - **Scaling:** 3840x2160 on 75" is tiny at arm's length. Set a deliberate
   display scale on the driving machine and lean on Excalidraw's own zoom.
-  Deliberately *not* an in-app concern: archboard has no large-display mode and
+  Deliberately _not_ an in-app concern: archboard has no large-display mode and
   does not need one yet.
 
 ## Not worth pursuing

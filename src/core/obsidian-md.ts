@@ -26,29 +26,29 @@
 // section inside the data region that the plugin owns outright: see
 // "embedded files".
 
-import { canonicalizeKeys } from './expand-elements.js';
-import { derivedId, isBlockId } from './ids.js';
+import { canonicalizeKeys } from "./expand-elements.js";
+import { derivedId, isBlockId } from "./ids.js";
 
 export function isObsidianExcalidrawMd(content: string): boolean {
-  // Raw scene JSON always starts with { or [ — never treat it as markdown,
-  // even when a text element happens to contain the marker strings.
-  const head = content.trimStart();
-  if (head.startsWith('{') || head.startsWith('[')) return false;
-  return content.includes('# Excalidraw Data') || /^---[\s\S]*?excalidraw-plugin:/m.test(content);
+	// Raw scene JSON always starts with { or [ — never treat it as markdown,
+	// even when a text element happens to contain the marker strings.
+	const head = content.trimStart();
+	if (head.startsWith("{") || head.startsWith("[")) return false;
+	return content.includes("# Excalidraw Data") || /^---[\s\S]*?excalidraw-plugin:/m.test(content);
 }
 
 export function renameElementId(elements: any[], oldId: string, newId: string): void {
-  for (const el of elements) {
-    if (el.id === oldId) el.id = newId;
-    if (Array.isArray(el.boundElements)) {
-      for (const bound of el.boundElements) {
-        if (bound.id === oldId) bound.id = newId;
-      }
-    }
-    if (el.startBinding?.elementId === oldId) el.startBinding.elementId = newId;
-    if (el.endBinding?.elementId === oldId) el.endBinding.elementId = newId;
-    if (el.containerId === oldId) el.containerId = newId;
-  }
+	for (const el of elements) {
+		if (el.id === oldId) el.id = newId;
+		if (Array.isArray(el.boundElements)) {
+			for (const bound of el.boundElements) {
+				if (bound.id === oldId) bound.id = newId;
+			}
+		}
+		if (el.startBinding?.elementId === oldId) el.startBinding.elementId = newId;
+		if (el.endBinding?.elementId === oldId) el.endBinding.elementId = newId;
+		if (el.containerId === oldId) el.containerId = newId;
+	}
 }
 
 // --- frontmatter -------------------------------------------------------
@@ -66,13 +66,13 @@ export function renameElementId(elements: any[], oldId: string, newId: string): 
 // Emitted when the destination has no frontmatter of its own. The blank lines
 // are the Obsidian Excalidraw plugin's own shape, kept so a fresh export is
 // byte-identical to what the plugin itself would write.
-const DEFAULT_FRONTMATTER_LINES = ['', 'excalidraw-plugin: parsed', 'tags: [excalidraw]', ''];
+const DEFAULT_FRONTMATTER_LINES = ["", "excalidraw-plugin: parsed", "tags: [excalidraw]", ""];
 
 // Keys the Obsidian Excalidraw plugin needs to open the note as a drawing.
 // Only added when absent — an existing value is the user's to control.
 const REQUIRED_FRONTMATTER: ReadonlyArray<[key: string, line: string]> = [
-  ['excalidraw-plugin', 'excalidraw-plugin: parsed'],
-  ['tags', 'tags: [excalidraw]']
+	["excalidraw-plugin", "excalidraw-plugin: parsed"],
+	["tags", "tags: [excalidraw]"],
 ];
 
 // Top-level `key:` — YAML allows a lot here, but a plain unquoted or quoted
@@ -80,14 +80,14 @@ const REQUIRED_FRONTMATTER: ReadonlyArray<[key: string, line: string]> = [
 const FRONTMATTER_KEY_RE = /^(?:(["'])(.*?)\1|([^:#\s][^:]*?))\s*:(?:\s|$)/;
 
 export type FrontmatterScan =
-  | { kind: 'none' }
-  | { kind: 'ok'; lines: string[] }
-  | { kind: 'malformed'; reason: string };
+	| { kind: "none" }
+	| { kind: "ok"; lines: string[] }
+	| { kind: "malformed"; reason: string };
 
 function frontmatterKey(line: string): string | null {
-  const m = FRONTMATTER_KEY_RE.exec(line);
-  if (!m) return null;
-  return (m[2] ?? m[3] ?? '').trim().toLowerCase();
+	const m = FRONTMATTER_KEY_RE.exec(line);
+	if (!m) return null;
+	return (m[2] ?? m[3] ?? "").trim().toLowerCase();
 }
 
 // The scalar after `key:`, unquoted. Anything that is not a plain scalar on
@@ -95,41 +95,41 @@ function frontmatterKey(line: string): string | null {
 // the caller's keys are always plain scalars, and misreading someone else's
 // structure would be worse than not reading it.
 function frontmatterScalar(line: string): string | undefined {
-  const colon = line.indexOf(':');
-  if (colon === -1) return undefined;
-  const raw = line.slice(colon + 1).trim();
-  if (raw === '') return undefined;
-  const quoted = /^(["'])([\s\S]*)\1$/.exec(raw);
-  if (quoted) return quoted[2];
-  return raw.replace(/\s+#.*$/, '').trim();
+	const colon = line.indexOf(":");
+	if (colon === -1) return undefined;
+	const raw = line.slice(colon + 1).trim();
+	if (raw === "") return undefined;
+	const quoted = /^(["'])([\s\S]*)\1$/.exec(raw);
+	if (quoted) return quoted[2];
+	return raw.replace(/\s+#.*$/, "").trim();
 }
 
 // Quote only when a bare scalar would be misread: YAML indicators at the
 // start, an embedded ": " or " #", or surrounding whitespace. Everything else
 // stays unquoted so the frontmatter reads the way a human would have typed it.
 function yamlScalar(value: string): string {
-  const needsQuotes =
-    value === '' ||
-    value !== value.trim() ||
-    /^[-?:,[\]{}#&*!|>'"%@`]/.test(value) ||
-    /:\s/.test(value) ||
-    /\s#/.test(value) ||
-    /[\r\n]/.test(value);
-  if (!needsQuotes) return value;
-  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+	const needsQuotes =
+		value === "" ||
+		value !== value.trim() ||
+		/^[-?:,[\]{}#&*!|>'"%@`]/.test(value) ||
+		/:\s/.test(value) ||
+		/\s#/.test(value) ||
+		/[\r\n]/.test(value);
+	if (!needsQuotes) return value;
+	return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 
 // Read one top-level frontmatter key from a note. Returns undefined when the
 // note has no readable frontmatter or the key is absent.
 export function readFrontmatterValue(content: string, key: string): string | undefined {
-  const scan = scanFrontmatter(content);
-  if (scan.kind !== 'ok') return undefined;
-  const wanted = key.toLowerCase();
-  for (const line of scan.lines) {
-    if (/^\s/.test(line)) continue;
-    if (frontmatterKey(line) === wanted) return frontmatterScalar(line);
-  }
-  return undefined;
+	const scan = scanFrontmatter(content);
+	if (scan.kind !== "ok") return undefined;
+	const wanted = key.toLowerCase();
+	for (const line of scan.lines) {
+		if (/^\s/.test(line)) continue;
+		if (frontmatterKey(line) === wanted) return frontmatterScalar(line);
+	}
+	return undefined;
 }
 
 // Set one top-level key on a note that already exists, leaving every other
@@ -147,28 +147,28 @@ export function readFrontmatterValue(content: string, key: string): string | und
 // other new key lands. Everything from the closing `---` down is carried
 // through as the bytes it already was.
 export function setFrontmatterValue(note: string, key: string, value: string): string {
-  const scan = scanFrontmatter(note);
-  if (scan.kind !== 'ok') return note;
-  // Where the block ends in the original text, so everything below it is
-  // spliced across as the bytes it already was rather than being split into
-  // lines and joined back up.
-  const close = closingDelimiterEnd(note);
-  if (close === null) return note;
-  return renderFrontmatter(upsertFrontmatterLines(scan.lines, [[key, value]])) + note.slice(close);
+	const scan = scanFrontmatter(note);
+	if (scan.kind !== "ok") return note;
+	// Where the block ends in the original text, so everything below it is
+	// spliced across as the bytes it already was rather than being split into
+	// lines and joined back up.
+	const close = closingDelimiterEnd(note);
+	if (close === null) return note;
+	return renderFrontmatter(upsertFrontmatterLines(scan.lines, [[key, value]])) + note.slice(close);
 }
 
 // The offset just past the newline that ends the frontmatter's closing `---`.
 function closingDelimiterEnd(note: string): number | null {
-  let at = note.indexOf('\n');
-  if (at === -1) return null;
-  while (at !== -1) {
-    const start = at + 1;
-    const next = note.indexOf('\n', start);
-    const line = note.slice(start, next === -1 ? undefined : next);
-    if (/^(---|\.\.\.)[ \t]*\r?$/.test(line)) return next === -1 ? note.length : next + 1;
-    at = next;
-  }
-  return null;
+	let at = note.indexOf("\n");
+	if (at === -1) return null;
+	while (at !== -1) {
+		const start = at + 1;
+		const next = note.indexOf("\n", start);
+		const line = note.slice(start, next === -1 ? undefined : next);
+		if (/^(---|\.\.\.)[ \t]*\r?$/.test(line)) return next === -1 ? note.length : next + 1;
+		at = next;
+	}
+	return null;
 }
 
 // Set frontmatter keys in place. Idempotent by construction: a key already
@@ -177,21 +177,24 @@ function closingDelimiterEnd(note: string): number | null {
 // rewrites only that line, keeping the key's position (and therefore the rest
 // of the block's ordering and formatting) intact. A new key is appended after
 // the last non-blank line, the same place REQUIRED_FRONTMATTER goes.
-function upsertFrontmatterLines(lines: string[], entries: ReadonlyArray<[string, string]>): string[] {
-  const out = [...lines];
-  for (const [key, value] of entries) {
-    const wanted = key.toLowerCase();
-    const rendered = `${key}: ${yamlScalar(value)}`;
-    const at = out.findIndex((line) => !/^\s/.test(line) && frontmatterKey(line) === wanted);
-    if (at !== -1) {
-      if (frontmatterScalar(out[at]!) !== value) out[at] = rendered;
-      continue;
-    }
-    let insertAt = out.length;
-    while (insertAt > 0 && out[insertAt - 1]!.trim() === '') insertAt--;
-    out.splice(insertAt, 0, rendered);
-  }
-  return out;
+function upsertFrontmatterLines(
+	lines: string[],
+	entries: ReadonlyArray<[string, string]>,
+): string[] {
+	const out = [...lines];
+	for (const [key, value] of entries) {
+		const wanted = key.toLowerCase();
+		const rendered = `${key}: ${yamlScalar(value)}`;
+		const at = out.findIndex((line) => !/^\s/.test(line) && frontmatterKey(line) === wanted);
+		if (at !== -1) {
+			if (frontmatterScalar(out[at]!) !== value) out[at] = rendered;
+			continue;
+		}
+		let insertAt = out.length;
+		while (insertAt > 0 && out[insertAt - 1]!.trim() === "") insertAt--;
+		out.splice(insertAt, 0, rendered);
+	}
+	return out;
 }
 
 // Reads the frontmatter block of an existing note. Deliberately conservative:
@@ -210,71 +213,77 @@ function upsertFrontmatterLines(lines: string[], entries: ReadonlyArray<[string,
 // document with nothing in it does not start with `---` either, so the check
 // below already answered it.
 export function scanFrontmatter(content: string): FrontmatterScan {
-  const text = content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
-  // Obsidian only honours frontmatter that starts on the very first line.
-  if (!/^---[ \t]*(\r?\n|$)/.test(text)) return { kind: 'none' };
+	const text = content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
+	// Obsidian only honours frontmatter that starts on the very first line.
+	if (!/^---[ \t]*(\r?\n|$)/.test(text)) return { kind: "none" };
 
-  const body: string[] = [];
-  let at = text.indexOf('\n');
-  let closed = false;
-  while (at !== -1) {
-    const start = at + 1;
-    const next = text.indexOf('\n', start);
-    const raw = text.slice(start, next === -1 ? undefined : next);
-    // `\r` belongs to the line ending rather than to the line, which is what
-    // the split by `/\r?\n/` this replaced was saying.
-    const line = raw.endsWith('\r') ? raw.slice(0, -1) : raw;
-    if (/^(---|\.\.\.)[ \t]*$/.test(line)) {
-      closed = true;
-      break;
-    }
-    body.push(line);
-    at = next;
-  }
-  if (!closed) {
-    return { kind: 'malformed', reason: 'frontmatter block is never closed by a "---" line' };
-  }
+	const body: string[] = [];
+	let at = text.indexOf("\n");
+	let closed = false;
+	while (at !== -1) {
+		const start = at + 1;
+		const next = text.indexOf("\n", start);
+		const raw = text.slice(start, next === -1 ? undefined : next);
+		// `\r` belongs to the line ending rather than to the line, which is what
+		// the split by `/\r?\n/` this replaced was saying.
+		const line = raw.endsWith("\r") ? raw.slice(0, -1) : raw;
+		if (/^(---|\.\.\.)[ \t]*$/.test(line)) {
+			closed = true;
+			break;
+		}
+		body.push(line);
+		at = next;
+	}
+	if (!closed) {
+		return { kind: "malformed", reason: 'frontmatter block is never closed by a "---" line' };
+	}
 
-  for (const line of body) {
-    if (line.trim() === '') continue;
-    if (/^\s/.test(line)) continue; // continuation / nested block / list item
-    if (line.startsWith('#')) continue; // comment
-    if (frontmatterKey(line) === null) {
-      return { kind: 'malformed', reason: `frontmatter line is not a "key: value" pair: ${JSON.stringify(line)}` };
-    }
-  }
-  return { kind: 'ok', lines: body };
+	for (const line of body) {
+		if (line.trim() === "") continue;
+		if (/^\s/.test(line)) continue; // continuation / nested block / list item
+		if (line.startsWith("#")) continue; // comment
+		if (frontmatterKey(line) === null) {
+			return {
+				kind: "malformed",
+				reason: `frontmatter line is not a "key: value" pair: ${JSON.stringify(line)}`,
+			};
+		}
+	}
+	return { kind: "ok", lines: body };
 }
 
 // The frontmatter body to write, given the destination's current content.
 // Existing lines survive untouched; required keys are appended after the last
 // non-blank line so the block keeps whatever trailing blank line it had.
 function frontmatterLinesFor(existing: string | undefined | null): string[] {
-  if (existing === undefined || existing === null) return [...DEFAULT_FRONTMATTER_LINES];
-  const scan = scanFrontmatter(existing);
-  if (scan.kind === 'malformed') {
-    throw new Error(
-      `Refusing to overwrite the destination: ${scan.reason}. ` +
-      'Fix or remove its frontmatter, then export again.'
-    );
-  }
-  if (scan.kind === 'none') return [...DEFAULT_FRONTMATTER_LINES];
+	if (existing === undefined || existing === null) return [...DEFAULT_FRONTMATTER_LINES];
+	const scan = scanFrontmatter(existing);
+	if (scan.kind === "malformed") {
+		throw new Error(
+			`Refusing to overwrite the destination: ${scan.reason}. ` +
+				"Fix or remove its frontmatter, then export again.",
+		);
+	}
+	if (scan.kind === "none") return [...DEFAULT_FRONTMATTER_LINES];
 
-  const lines = [...scan.lines];
-  const present = new Set(
-    lines.filter((l) => !/^\s/.test(l)).map(frontmatterKey).filter((k): k is string => k !== null)
-  );
-  const missing = REQUIRED_FRONTMATTER.filter(([key]) => !present.has(key)).map(([, line]) => line);
-  if (missing.length === 0) return lines;
+	const lines = [...scan.lines];
+	const present = new Set(
+		lines
+			.filter((l) => !/^\s/.test(l))
+			.map(frontmatterKey)
+			.filter((k): k is string => k !== null),
+	);
+	const missing = REQUIRED_FRONTMATTER.filter(([key]) => !present.has(key)).map(([, line]) => line);
+	if (missing.length === 0) return lines;
 
-  let insertAt = lines.length;
-  while (insertAt > 0 && lines[insertAt - 1]!.trim() === '') insertAt--;
-  lines.splice(insertAt, 0, ...missing);
-  return lines;
+	let insertAt = lines.length;
+	while (insertAt > 0 && lines[insertAt - 1]!.trim() === "") insertAt--;
+	lines.splice(insertAt, 0, ...missing);
+	return lines;
 }
 
 function renderFrontmatter(lines: string[]): string {
-  return `---\n${lines.join('\n')}\n---\n`;
+	return `---\n${lines.join("\n")}\n---\n`;
 }
 
 // --- note regions ------------------------------------------------------
@@ -299,43 +308,49 @@ function renderFrontmatter(lines: string[]): string {
 // loss on the human's own writing, and it lands on every save rather than
 // only on a forced one (TASK-017).
 
-const BANNER = '==⚠  Switch to EXCALIDRAW VIEW in the MORE OPTIONS menu of this document. ⚠==';
+const BANNER = "==⚠  Switch to EXCALIDRAW VIEW in the MORE OPTIONS menu of this document. ⚠==";
 // Enough of the banner to recognise one the plugin worded differently.
-const BANNER_MARKER = 'Switch to EXCALIDRAW VIEW';
+const BANNER_MARKER = "Switch to EXCALIDRAW VIEW";
 // The blank lines are the plugin's own shape, kept so a note archboard writes
 // from scratch is byte-identical to one the plugin would have written.
 const DEFAULT_BODY = `${BANNER}\n\n\n`;
-const DEFAULT_TRAILING = '\n%%';
+const DEFAULT_TRAILING = "\n%%";
 
 const DATA_HEADING_RE = /^# Excalidraw Data[ \t]*$/;
 const FENCE_RE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
 
-interface Line { start: number; text: string }
+interface Line {
+	start: number;
+	text: string;
+}
 
 function eachLine(text: string): Line[] {
-  const out: Line[] = [];
-  let i = 0;
-  for (;;) {
-    let nl = text.indexOf('\n', i);
-    const atEnd = nl === -1;
-    if (atEnd) nl = text.length;
-    let end = nl;
-    if (end > i && text[end - 1] === '\r') end--;
-    out.push({ start: i, text: text.slice(i, end) });
-    if (atEnd) return out;
-    i = nl + 1;
-  }
+	const out: Line[] = [];
+	let i = 0;
+	for (;;) {
+		let nl = text.indexOf("\n", i);
+		const atEnd = nl === -1;
+		if (atEnd) nl = text.length;
+		let end = nl;
+		if (end > i && text[end - 1] === "\r") end--;
+		out.push({ start: i, text: text.slice(i, end) });
+		if (atEnd) return out;
+		i = nl + 1;
+	}
 }
 
 function lineStartAt(text: string, offset: number): number {
-  return text.lastIndexOf('\n', offset - 1) + 1;
+	return text.lastIndexOf("\n", offset - 1) + 1;
 }
 
 // A `# Excalidraw Data` line that could be the start of the data region.
 // `structural` means it is shaped like the real one — the plugin (and this
 // module) always follow the heading with a `##` subsection or the `%%` that
 // opens the Drawing comment, and prose almost never does.
-interface HeadingCandidate { offset: number; structural: boolean }
+interface HeadingCandidate {
+	offset: number;
+	structural: boolean;
+}
 
 // Candidates in document order, skipping headings inside fenced code blocks:
 // a human documenting the format writes the plugin's headings in a fence, and
@@ -344,49 +359,60 @@ interface HeadingCandidate { offset: number; structural: boolean }
 // heading comes before the scene, so nothing in the serialised scene can
 // unbalance the scan that finds it.
 function dataHeadingCandidates(text: string): HeadingCandidate[] {
-  const lines = eachLine(text);
-  const out: HeadingCandidate[] = [];
-  let fence: string | null = null;
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!.text;
-    const fenced = FENCE_RE.exec(line);
-    if (fence !== null) {
-      // A closing fence is the same character, at least as long, info-free.
-      if (fenced && fenced[1]![0] === fence[0] && fenced[1]!.length >= fence.length && fenced[2]!.trim() === '') {
-        fence = null;
-      }
-      continue;
-    }
-    if (fenced) { fence = fenced[1]!; continue; }
-    if (!DATA_HEADING_RE.test(line)) continue;
-    let j = i + 1;
-    while (j < lines.length && lines[j]!.text.trim() === '') j++;
-    const next = j < lines.length ? lines[j]!.text : '';
-    out.push({ offset: lines[i]!.start, structural: next.startsWith('##') || next.trim() === '%%' });
-  }
-  return out;
+	const lines = eachLine(text);
+	const out: HeadingCandidate[] = [];
+	let fence: string | null = null;
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i]!.text;
+		const fenced = FENCE_RE.exec(line);
+		if (fence !== null) {
+			// A closing fence is the same character, at least as long, info-free.
+			if (
+				fenced &&
+				fenced[1]![0] === fence[0] &&
+				fenced[1]!.length >= fence.length &&
+				fenced[2]!.trim() === ""
+			) {
+				fence = null;
+			}
+			continue;
+		}
+		if (fenced) {
+			fence = fenced[1]!;
+			continue;
+		}
+		if (!DATA_HEADING_RE.test(line)) continue;
+		let j = i + 1;
+		while (j < lines.length && lines[j]!.text.trim() === "") j++;
+		const next = j < lines.length ? lines[j]!.text : "";
+		out.push({
+			offset: lines[i]!.start,
+			structural: next.startsWith("##") || next.trim() === "%%",
+		});
+	}
+	return out;
 }
 
 // Where the data region starts when the note has a Drawing block but no
 // heading archboard is willing to trust: the `%%` that opens the comment, or
 // the `## Drawing` line itself.
 function drawingRegionStart(text: string, block: DrawingBlock): number {
-  const drawingLine = block.start + (text.startsWith('\r\n', block.start) ? 2 : 1);
-  const previous = lineStartAt(text, block.start);
-  return text.slice(previous, block.start).trim() === '%%' ? previous : drawingLine;
+	const drawingLine = block.start + (text.startsWith("\r\n", block.start) ? 2 : 1);
+	const previous = lineStartAt(text, block.start);
+	return text.slice(previous, block.start).trim() === "%%" ? previous : drawingLine;
 }
 
 // The note text below the frontmatter, which is where every region above the
 // frontmatter's own ends.
 function contentAfterFrontmatter(content: string): string {
-  const text = content.replace(/^﻿/, '');
-  const open = /^---[ \t]*(?:\r?\n|$)/.exec(text);
-  if (!open) return text;
-  const closer = /^(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/gm;
-  closer.lastIndex = open[0].length;
-  const close = closer.exec(text);
-  if (!close) return text; // unclosed: frontmatterLinesFor refuses the write
-  return text.slice(close.index + close[0].length);
+	const text = content.replace(/^﻿/, "");
+	const open = /^---[ \t]*(?:\r?\n|$)/.exec(text);
+	if (!open) return text;
+	const closer = /^(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/gm;
+	closer.lastIndex = open[0].length;
+	const close = closer.exec(text);
+	if (!close) return text; // unclosed: frontmatterLinesFor refuses the write
+	return text.slice(close.index + close[0].length);
 }
 
 // The banner is the plugin's "this file is a drawing" affordance. It is added
@@ -394,10 +420,10 @@ function contentAfterFrontmatter(content: string): string {
 // into a note that already has one, because that would rewrite a note whose
 // human deleted the banner on purpose and break losslessness for it.
 function bodyWithBanner(text: string): string {
-  let body = text;
-  if (body !== '' && !body.endsWith('\n')) body += '\n';
-  if (body.includes(BANNER_MARKER)) return body;
-  return body === '' ? DEFAULT_BODY : `${body}\n${DEFAULT_BODY}`;
+	let body = text;
+	if (body !== "" && !body.endsWith("\n")) body += "\n";
+	if (body.includes(BANNER_MARKER)) return body;
+	return body === "" ? DEFAULT_BODY : `${body}\n${DEFAULT_BODY}`;
 }
 
 // --- embedded files ----------------------------------------------------
@@ -435,32 +461,32 @@ const EMBEDDED_ENTRY_RE = /^([\w\d]*):[ \t]+(.*)$/;
 const BLOCK_REF_RE = / \^\S+[ \t]*$/;
 
 export type EmbeddedFileEntry =
-  | { fileId: string; kind: 'wikilink'; target: string }
-  | { fileId: string; kind: 'hyperlink'; target: string }
-  | { fileId: string; kind: 'other'; target: string };
+	| { fileId: string; kind: "wikilink"; target: string }
+	| { fileId: string; kind: "hyperlink"; target: string }
+	| { fileId: string; kind: "other"; target: string };
 
 // The entries of an `## Embedded Files` section, in document order. `other`
 // covers the forms that do not name a file — an equation's `$$latex$$`, the
 // plugin's markdown-image token — which archboard carries but cannot resolve.
 function readEmbeddedFiles(section: string): EmbeddedFileEntry[] {
-  const out: EmbeddedFileEntry[] = [];
-  for (const { text } of eachLine(section)) {
-    const entry = EMBEDDED_ENTRY_RE.exec(text);
-    if (!entry || entry[1] === '') continue;
-    const fileId = entry[1]!;
-    const target = entry[2]!.trim();
-    const wikilink = /^!?\[\[([^\]]*)\]\]/.exec(target);
-    if (wikilink) {
-      out.push({ fileId, kind: 'wikilink', target: wikilink[1]! });
-      continue;
-    }
-    if (/^(?:https?|file|ftps?):\/\/\S+$/.test(target)) {
-      out.push({ fileId, kind: 'hyperlink', target });
-      continue;
-    }
-    out.push({ fileId, kind: 'other', target });
-  }
-  return out;
+	const out: EmbeddedFileEntry[] = [];
+	for (const { text } of eachLine(section)) {
+		const entry = EMBEDDED_ENTRY_RE.exec(text);
+		if (!entry || entry[1] === "") continue;
+		const fileId = entry[1]!;
+		const target = entry[2]!.trim();
+		const wikilink = /^!?\[\[([^\]]*)\]\]/.exec(target);
+		if (wikilink) {
+			out.push({ fileId, kind: "wikilink", target: wikilink[1]! });
+			continue;
+		}
+		if (/^(?:https?|file|ftps?):\/\/\S+$/.test(target)) {
+			out.push({ fileId, kind: "hyperlink", target });
+			continue;
+		}
+		out.push({ fileId, kind: "other", target });
+	}
+	return out;
 }
 
 // The section as it stands in the data region, or '' when there is none worth
@@ -476,67 +502,75 @@ function readEmbeddedFiles(section: string): EmbeddedFileEntry[] {
 // Without them a note would grow by one copy of the impostor's text on every
 // save, which is what the region model exists to prevent.
 function embeddedFilesSection(text: string, from: number, to: number): string {
-  const lines = eachLine(text.slice(from, to));
-  let first = 0;
-  for (let i = 0; i < lines.length; i++) {
-    if (BLOCK_REF_RE.test(lines[i]!.text)) first = i + 1;
-  }
-  const at = lines.findIndex((line, i) => i >= first && EMBEDDED_HEADING_RE.test(line.text));
-  if (at === -1) return '';
+	const lines = eachLine(text.slice(from, to));
+	let first = 0;
+	for (let i = 0; i < lines.length; i++) {
+		if (BLOCK_REF_RE.test(lines[i]!.text)) first = i + 1;
+	}
+	const at = lines.findIndex((line, i) => i >= first && EMBEDDED_HEADING_RE.test(line.text));
+	if (at === -1) return "";
 
-  let last = at;
-  let entries = 0;
-  let inEquation = false;
-  for (let i = at + 1; i < lines.length; i++) {
-    const line = lines[i]!.text;
-    if (inEquation) {
-      last = i;
-      if (line.includes('$$')) inEquation = false;
-      continue;
-    }
-    if (line.trim() === '') continue;
-    const entry = EMBEDDED_ENTRY_RE.exec(line);
-    if (!entry) break;
-    entries++;
-    last = i;
-    const dollars = (entry[2]!.match(/\$\$/g) ?? []).length;
-    if (dollars % 2 === 1) inEquation = true;
-  }
-  if (entries === 0) return '';
+	let last = at;
+	let entries = 0;
+	let inEquation = false;
+	for (let i = at + 1; i < lines.length; i++) {
+		const line = lines[i]!.text;
+		if (inEquation) {
+			last = i;
+			if (line.includes("$$")) inEquation = false;
+			continue;
+		}
+		if (line.trim() === "") continue;
+		const entry = EMBEDDED_ENTRY_RE.exec(line);
+		if (!entry) break;
+		entries++;
+		last = i;
+		const dollars = (entry[2]!.match(/\$\$/g) ?? []).length;
+		if (dollars % 2 === 1) inEquation = true;
+	}
+	if (entries === 0) return "";
 
-  const end = lines[last]!.start + lines[last]!.text.length;
-  return text.slice(from + lines[at]!.start, from + end) + '\n';
+	const end = lines[last]!.start + lines[last]!.text.length;
+	return text.slice(from + lines[at]!.start, from + end) + "\n";
 }
 
-interface PreservedRegions { body: string; embedded: string; trailing: string }
+interface PreservedRegions {
+	body: string;
+	embedded: string;
+	trailing: string;
+}
 
 // Split the destination into the regions a save must carry across untouched.
 function preservedRegions(existing: string | null | undefined): PreservedRegions {
-  if (existing === undefined || existing === null) {
-    return { body: DEFAULT_BODY, embedded: '', trailing: DEFAULT_TRAILING };
-  }
-  const text = contentAfterFrontmatter(existing);
-  if (text.trim() === '') return { body: DEFAULT_BODY, embedded: '', trailing: DEFAULT_TRAILING };
+	if (existing === undefined || existing === null) {
+		return { body: DEFAULT_BODY, embedded: "", trailing: DEFAULT_TRAILING };
+	}
+	const text = contentAfterFrontmatter(existing);
+	if (text.trim() === "") return { body: DEFAULT_BODY, embedded: "", trailing: DEFAULT_TRAILING };
 
-  const block = locateDrawingBlock(text);
-  const candidates = dataHeadingCandidates(text).filter((c) => block === null || c.offset < block.start);
-  // The first plugin-shaped heading is the data section. Falling back to the
-  // *last* candidate matters: with a Drawing block present, leaving any
-  // `# Excalidraw Data` line in the preserved body would duplicate the heading
-  // on write and duplicate it again on the next save.
-  const heading = candidates.find((c) => c.structural) ?? (block ? candidates[candidates.length - 1] : undefined);
+	const block = locateDrawingBlock(text);
+	const candidates = dataHeadingCandidates(text).filter(
+		(c) => block === null || c.offset < block.start,
+	);
+	// The first plugin-shaped heading is the data section. Falling back to the
+	// *last* candidate matters: with a Drawing block present, leaving any
+	// `# Excalidraw Data` line in the preserved body would duplicate the heading
+	// on write and duplicate it again on the next save.
+	const heading =
+		candidates.find((c) => c.structural) ?? (block ? candidates[candidates.length - 1] : undefined);
 
-  const start = heading ? heading.offset : block ? drawingRegionStart(text, block) : null;
-  if (start === null) return { body: bodyWithBanner(text), embedded: '', trailing: DEFAULT_TRAILING };
-  // The data region's markdown runs from its heading to the `%%` (or the
-  // `## Drawing` line) that opens the scene, which is where the section the
-  // plugin owns has to be looked for and nowhere else.
-  const markdownEnd = block ? drawingRegionStart(text, block) : text.length;
-  return {
-    body: text.slice(0, start),
-    embedded: start < markdownEnd ? embeddedFilesSection(text, start, markdownEnd) : '',
-    trailing: block ? text.slice(block.end) : DEFAULT_TRAILING
-  };
+	const start = heading ? heading.offset : block ? drawingRegionStart(text, block) : null;
+	if (start === null)
+		return { body: bodyWithBanner(text), embedded: "", trailing: DEFAULT_TRAILING };
+	// The data region's markdown runs from its heading to the `%%` (or the
+	// `## Drawing` line) that opens the scene, which is where the section the
+	// plugin owns has to be looked for and nowhere else.
+	const markdownEnd = block ? drawingRegionStart(text, block) : text.length;
+	return {
+		body: text.slice(0, start),
+		embedded: start < markdownEnd ? embeddedFilesSection(text, start, markdownEnd) : "",
+		trailing: block ? text.slice(block.end) : DEFAULT_TRAILING,
+	};
 }
 
 // What a whole note says about where its images went. Runs through the same
@@ -544,7 +578,7 @@ function preservedRegions(existing: string | null | undefined): PreservedRegions
 // across a save can never disagree about which bytes it is — the same reason
 // `locateDrawingBlock` is one locator for both directions.
 export function embeddedFilesIn(note: string): EmbeddedFileEntry[] {
-  return readEmbeddedFiles(preservedRegions(note).embedded);
+	return readEmbeddedFiles(preservedRegions(note).embedded);
 }
 
 // `existing` is the current content of the destination file, when there is
@@ -552,62 +586,62 @@ export function embeddedFilesIn(note: string): EmbeddedFileEntry[] {
 // destination's frontmatter cannot be read safely — callers must treat that as
 // "do not write" rather than falling back to a fresh header.
 export interface WrapOptions {
-  // Frontmatter keys to set on the note — board identity, in practice. Upsert
-  // semantics: unchanged values leave their lines untouched.
-  frontmatter?: ReadonlyArray<[key: string, value: string]>;
+	// Frontmatter keys to set on the note — board identity, in practice. Upsert
+	// semantics: unchanged values leave their lines untouched.
+	frontmatter?: ReadonlyArray<[key: string, value: string]>;
 }
 
 export function wrapSceneAsObsidianMd(
-  scene: Record<string, any>,
-  existing?: string | null,
-  options: WrapOptions = {}
+	scene: Record<string, any>,
+	existing?: string | null,
+	options: WrapOptions = {},
 ): string {
-  if (!Array.isArray(scene.elements)) {
-    throw new Error('Not an Excalidraw scene: missing elements array');
-  }
-  // Resolved first so an unreadable destination fails before any work.
-  const frontmatter = renderFrontmatter(
-    upsertFrontmatterLines(frontmatterLinesFor(existing), options.frontmatter ?? [])
-  );
-  const { body, embedded, trailing } = preservedRegions(existing);
-  const wrapped = structuredClone(scene);
-  wrapped.type = 'excalidraw';
-  wrapped.version = 2;
-  wrapped.files = wrapped.files ?? {};
+	if (!Array.isArray(scene.elements)) {
+		throw new Error("Not an Excalidraw scene: missing elements array");
+	}
+	// Resolved first so an unreadable destination fails before any work.
+	const frontmatter = renderFrontmatter(
+		upsertFrontmatterLines(frontmatterLinesFor(existing), options.frontmatter ?? []),
+	);
+	const { body, embedded, trailing } = preservedRegions(existing);
+	const wrapped = structuredClone(scene);
+	wrapped.type = "excalidraw";
+	wrapped.version = 2;
+	wrapped.files = wrapped.files ?? {};
 
-  // The note says where an image is once. An id the preserved section already
-  // names has its bytes in the vault, put there by the plugin, so writing
-  // base64 for it back into the Drawing block would make two records of one
-  // picture — the second of which nothing reads and nothing keeps in step.
-  for (const entry of readEmbeddedFiles(embedded)) delete wrapped.files[entry.fileId];
+	// The note says where an image is once. An id the preserved section already
+	// names has its bytes in the vault, put there by the plugin, so writing
+	// base64 for it back into the Drawing block would make two records of one
+	// picture — the second of which nothing reads and nothing keeps in step.
+	for (const entry of readEmbeddedFiles(embedded)) delete wrapped.files[entry.fileId];
 
-  const used = new Set<string>(wrapped.elements.map((el: any) => el.id));
-  const entries: string[] = [];
-  for (const el of wrapped.elements) {
-    if (el.type !== 'text' || el.isDeleted) continue;
-    // Nothing archboard minted lands here. An id that does came from
-    // elsewhere and cannot be written as a block reference as it stands.
-    if (!isBlockId(el.id)) {
-      const newId = derivedId(el.id, used);
-      used.add(newId);
-      renameElementId(wrapped.elements, el.id, newId);
-    }
-    el.rawText = el.rawText && el.rawText !== '' ? el.rawText : (el.originalText ?? el.text ?? '');
-    if (el.rawText !== '') entries.push(`${el.rawText} ^${el.id}`);
-  }
+	const used = new Set<string>(wrapped.elements.map((el: any) => el.id));
+	const entries: string[] = [];
+	for (const el of wrapped.elements) {
+		if (el.type !== "text" || el.isDeleted) continue;
+		// Nothing archboard minted lands here. An id that does came from
+		// elsewhere and cannot be written as a block reference as it stands.
+		if (!isBlockId(el.id)) {
+			const newId = derivedId(el.id, used);
+			used.add(newId);
+			renameElementId(wrapped.elements, el.id, newId);
+		}
+		el.rawText = el.rawText && el.rawText !== "" ? el.rawText : (el.originalText ?? el.text ?? "");
+		if (el.rawText !== "") entries.push(`${el.rawText} ^${el.id}`);
+	}
 
-  const textSection = entries.length ? entries.join('\n\n') + '\n' : '';
-  // The blank line after the section is the plugin's own: it writes every
-  // entry as `<id>: <target>\n\n`, so a note archboard re-saves is byte-for-
-  // byte the note the plugin wrote.
-  const embeddedSection = embedded === '' ? '' : `${embedded}\n`;
-  return `${frontmatter}${body}# Excalidraw Data
+	const textSection = entries.length ? entries.join("\n\n") + "\n" : "";
+	// The blank line after the section is the plugin's own: it writes every
+	// entry as `<id>: <target>\n\n`, so a note archboard re-saves is byte-for-
+	// byte the note the plugin wrote.
+	const embeddedSection = embedded === "" ? "" : `${embedded}\n`;
+	return `${frontmatter}${body}# Excalidraw Data
 ## Text Elements
 ${textSection}
 ${embeddedSection}%%
 ## Drawing
 \`\`\`json
-${JSON.stringify(canonicalizeKeys(wrapped), null, '\t')}
+${JSON.stringify(canonicalizeKeys(wrapped), null, "\t")}
 \`\`\`${trailing}`;
 }
 
@@ -621,128 +655,133 @@ ${JSON.stringify(canonicalizeKeys(wrapped), null, '\t')}
 const DRAWING_COMPRESSED_RE = /\r?\n##? Drawing\r?\n[^`]*```compressed-json\r?\n([\s\S]*?)\r?\n```/;
 const DRAWING_PLAIN_RE = /\r?\n##? Drawing\r?\n[^`]*```json\r?\n([\s\S]*?)\r?\n```/;
 
-interface DrawingBlock { start: number; end: number; compressed: boolean; payload: string }
+interface DrawingBlock {
+	start: number;
+	end: number;
+	compressed: boolean;
+	payload: string;
+}
 
 // One locator for both directions. Reading the scene and deciding which bytes
 // a save may regenerate must never disagree about which block is the drawing.
 function locateDrawingBlock(md: string): DrawingBlock | null {
-  const compressed = DRAWING_COMPRESSED_RE.exec(md);
-  const plain = compressed ? null : DRAWING_PLAIN_RE.exec(md);
-  const match = compressed ?? plain;
-  if (!match) return null;
-  return {
-    start: match.index,
-    end: match.index + match[0].length,
-    compressed: compressed !== null,
-    payload: match[1]!
-  };
+	const compressed = DRAWING_COMPRESSED_RE.exec(md);
+	const plain = compressed ? null : DRAWING_PLAIN_RE.exec(md);
+	const match = compressed ?? plain;
+	if (!match) return null;
+	return {
+		start: match.index,
+		end: match.index + match[0].length,
+		compressed: compressed !== null,
+		payload: match[1]!,
+	};
 }
 
 export function extractSceneJsonFromObsidianMd(md: string): string {
-  const block = locateDrawingBlock(md);
-  if (!block) throw new Error('No Drawing block found — not an .excalidraw.md file?');
-  if (!block.compressed) {
-    JSON.parse(block.payload);
-    return block.payload;
-  }
-  const json = decompressFromBase64(block.payload.replace(/\s/g, ''));
-  if (!json) throw new Error('Failed to decompress the Drawing block');
-  JSON.parse(json);
-  return json;
+	const block = locateDrawingBlock(md);
+	if (!block) throw new Error("No Drawing block found — not an .excalidraw.md file?");
+	if (!block.compressed) {
+		JSON.parse(block.payload);
+		return block.payload;
+	}
+	const json = decompressFromBase64(block.payload.replace(/\s/g, ""));
+	if (!json) throw new Error("Failed to decompress the Drawing block");
+	JSON.parse(json);
+	return json;
 }
 
 // lz-string decompressFromBase64 (pieroxy/lz-string, MIT), inlined to keep
 // the package dependency-free.
-const keyStrBase64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+const keyStrBase64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 const f = String.fromCharCode;
 
 function decompressFromBase64(input: string): string | null {
-  if (input === '') return null;
-  return _decompress(input.length, 32, (index) => keyStrBase64.indexOf(input.charAt(index)));
+	if (input === "") return null;
+	return _decompress(input.length, 32, (index) => keyStrBase64.indexOf(input.charAt(index)));
 }
 
 function _decompress(
-  length: number,
-  resetValue: number,
-  getNextValue: (index: number) => number
+	length: number,
+	resetValue: number,
+	getNextValue: (index: number) => number,
 ): string | null {
-  const dictionary: (string | number)[] = [];
-  let enlargeIn = 4;
-  let dictSize = 4;
-  let numBits = 3;
-  let entry: string;
-  let w: string;
-  let c: number;
-  const result: string[] = [];
-  const data = { val: getNextValue(0), position: resetValue, index: 1 };
+	const dictionary: (string | number)[] = [];
+	let enlargeIn = 4;
+	let dictSize = 4;
+	let numBits = 3;
+	let entry: string;
+	let w: string;
+	let c: number;
+	const result: string[] = [];
+	const data = { val: getNextValue(0), position: resetValue, index: 1 };
 
-  const readBits = (n: number): number => {
-    let bits = 0;
-    const maxpower = Math.pow(2, n);
-    let power = 1;
-    while (power !== maxpower) {
-      const resb = data.val & data.position;
-      data.position >>= 1;
-      if (data.position === 0) {
-        data.position = resetValue;
-        data.val = getNextValue(data.index++);
-      }
-      bits |= (resb > 0 ? 1 : 0) * power;
-      power <<= 1;
-    }
-    return bits;
-  };
+	const readBits = (n: number): number => {
+		let bits = 0;
+		const maxpower = Math.pow(2, n);
+		let power = 1;
+		while (power !== maxpower) {
+			const resb = data.val & data.position;
+			data.position >>= 1;
+			if (data.position === 0) {
+				data.position = resetValue;
+				data.val = getNextValue(data.index++);
+			}
+			bits |= (resb > 0 ? 1 : 0) * power;
+			power <<= 1;
+		}
+		return bits;
+	};
 
-  for (let i = 0; i < 3; i += 1) dictionary[i] = i;
+	for (let i = 0; i < 3; i += 1) dictionary[i] = i;
 
-  let first: string;
-  switch (readBits(2)) {
-    case 0:
-      first = f(readBits(8));
-      break;
-    case 1:
-      first = f(readBits(16));
-      break;
-    default:
-      return '';
-  }
-  dictionary[3] = first;
-  w = first;
-  result.push(first);
-  while (true) {
-    if (data.index > length) return '';
-    switch ((c = readBits(numBits))) {
-      case 0:
-        dictionary[dictSize++] = f(readBits(8));
-        c = dictSize - 1;
-        enlargeIn--;
-        break;
-      case 1:
-        dictionary[dictSize++] = f(readBits(16));
-        c = dictSize - 1;
-        enlargeIn--;
-        break;
-      case 2:
-        return result.join('');
-    }
-    if (enlargeIn === 0) {
-      enlargeIn = Math.pow(2, numBits);
-      numBits++;
-    }
-    if (dictionary[c] !== undefined) {
-      entry = dictionary[c] as string;
-    } else if (c === dictSize) {
-      entry = w + w.charAt(0);
-    } else {
-      return null;
-    }
-    result.push(entry);
-    dictionary[dictSize++] = w + entry.charAt(0);
-    enlargeIn--;
-    w = entry;
-    if (enlargeIn === 0) {
-      enlargeIn = Math.pow(2, numBits);
-      numBits++;
-    }
-  }
+	let first: string;
+	switch (readBits(2)) {
+		case 0:
+			first = f(readBits(8));
+			break;
+		case 1:
+			first = f(readBits(16));
+			break;
+		default:
+			return "";
+	}
+	dictionary[3] = first;
+	w = first;
+	result.push(first);
+	while (true) {
+		if (data.index > length) return "";
+		switch ((c = readBits(numBits))) {
+			case 0:
+				dictionary[dictSize++] = f(readBits(8));
+				c = dictSize - 1;
+				enlargeIn--;
+				break;
+			case 1:
+				dictionary[dictSize++] = f(readBits(16));
+				c = dictSize - 1;
+				enlargeIn--;
+				break;
+			case 2:
+				return result.join("");
+		}
+		if (enlargeIn === 0) {
+			enlargeIn = Math.pow(2, numBits);
+			numBits++;
+		}
+		if (dictionary[c] !== undefined) {
+			entry = dictionary[c] as string;
+		} else if (c === dictSize) {
+			entry = w + w.charAt(0);
+		} else {
+			return null;
+		}
+		result.push(entry);
+		dictionary[dictSize++] = w + entry.charAt(0);
+		enlargeIn--;
+		w = entry;
+		if (enlargeIn === 0) {
+			enlargeIn = Math.pow(2, numBits);
+			numBits++;
+		}
+	}
 }

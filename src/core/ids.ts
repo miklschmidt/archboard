@@ -33,7 +33,7 @@
 
 // No dash. It is legal in a block id, and an id like `a-1-b-2` reads as
 // structure that is not there.
-const ID_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const ID_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const ID_LENGTH = 8;
 
 // Obsidian block ids are alphanumeric-and-dash only — an id containing "_"
@@ -45,7 +45,7 @@ const BLOCK_ID_RE = /^[A-Za-z0-9-]{1,8}$/;
 
 /** Can this id be written as an Obsidian block reference as it stands? */
 export function isBlockId(id: unknown): boolean {
-  return typeof id === 'string' && BLOCK_ID_RE.test(id);
+	return typeof id === "string" && BLOCK_ID_RE.test(id);
 }
 
 /**
@@ -54,40 +54,40 @@ export function isBlockId(id: unknown): boolean {
  * building a copy of the keys.
  */
 export interface IdsInUse {
-  has(id: string): boolean;
+	has(id: string): boolean;
 }
 
 const NOTHING_IN_USE: IdsInUse = { has: () => false };
 
 function encode(bits: bigint): string {
-  let remaining = bits;
-  let id = '';
-  for (let i = 0; i < ID_LENGTH; i++) {
-    id += ID_ALPHABET[Number(remaining % BigInt(ID_ALPHABET.length))];
-    remaining /= BigInt(ID_ALPHABET.length);
-  }
-  return id;
+	let remaining = bits;
+	let id = "";
+	for (let i = 0; i < ID_LENGTH; i++) {
+		id += ID_ALPHABET[Number(remaining % BigInt(ID_ALPHABET.length))];
+		remaining /= BigInt(ID_ALPHABET.length);
+	}
+	return id;
 }
 
 /** A fresh id nobody is using. */
 export function mintId(inUse: IdsInUse = NOTHING_IN_USE): string {
-  for (;;) {
-    let id = '';
-    for (let i = 0; i < ID_LENGTH; i++) {
-      id += ID_ALPHABET[Math.floor(Math.random() * ID_ALPHABET.length)];
-    }
-    if (!inUse.has(id)) return id;
-  }
+	for (;;) {
+		let id = "";
+		for (let i = 0; i < ID_LENGTH; i++) {
+			id += ID_ALPHABET[Math.floor(Math.random() * ID_ALPHABET.length)];
+		}
+		if (!inUse.has(id)) return id;
+	}
 }
 
 // FNV-1a 32-bit — a stable positive int from a string.
 export function fnv1a(str: string): number {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 0x01000193);
-  }
-  return h >>> 0;
+	let h = 0x811c9dc5;
+	for (let i = 0; i < str.length; i++) {
+		h ^= str.charCodeAt(i);
+		h = Math.imul(h, 0x01000193);
+	}
+	return h >>> 0;
 }
 
 /**
@@ -101,10 +101,10 @@ export function fnv1a(str: string): number {
  * attempt.
  */
 export function derivedId(sourceKey: string, inUse: IdsInUse = NOTHING_IN_USE): string {
-  for (let attempt = 0; ; attempt++) {
-    const salted = attempt === 0 ? sourceKey : `${sourceKey}:${attempt}`;
-    const bits = (BigInt(fnv1a(salted)) << 32n) | BigInt(fnv1a(`${salted}#2`));
-    const id = encode(bits);
-    if (!inUse.has(id)) return id;
-  }
+	for (let attempt = 0; ; attempt++) {
+		const salted = attempt === 0 ? sourceKey : `${sourceKey}:${attempt}`;
+		const bits = (BigInt(fnv1a(salted)) << 32n) | BigInt(fnv1a(`${salted}#2`));
+		const id = encode(bits);
+		if (!inUse.has(id)) return id;
+	}
 }

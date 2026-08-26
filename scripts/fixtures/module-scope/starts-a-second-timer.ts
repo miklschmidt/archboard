@@ -3,7 +3,7 @@
 // ten times a tick.
 
 const tick = () => {
-  // whatever the timer does
+	// whatever the timer does
 };
 
 setInterval(tick, 1000);

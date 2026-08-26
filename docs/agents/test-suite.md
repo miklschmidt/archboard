@@ -12,9 +12,9 @@ without anybody touching the workflow. `bun run test:suites`
 chain nor its skip list. Keep that list empty.
 
 The whole chain's duration is machine-dependent. The four browser checks run
-sequentially; re-measure their contribution rather than trusting an old total. Of the rest,
-`test:mcp`, `test:boards` and `test:side-by-side` are two thirds. Re-measure
-rather than trust these.
+sequentially; re-measure their contribution rather than trusting an old total.
+Of the rest, `test:boards` and `test:side-by-side` have historically dominated.
+Re-measure rather than trust that split.
 
 ## The four browser checks
 
@@ -137,10 +137,32 @@ note archboard did not write. About fifteen seconds.
   touch — with one exception kept from TASK-079: a board that has stopped
   saving is the one board whose elements are in this process and in no note.
 
+## Source boundary check
+
+- `bun run test:boundaries` creates temporary deep modules under `src/` and
+  invokes Oxlint with the repository's real config and custom plugin. It proves
+  allowed module-root imports pass, while domain-to-transformer imports, flat
+  area files, extensionless directory deep imports and Vite resource-query deep
+  imports fail under the expected Archboard rules. It also proves static
+  `require()` deep imports fail both the built-in TypeScript rule and the custom
+  entrypoint rule, co-located test files are rejected, and test/spec files under
+  a module's `tests/` directory are accepted. The check removes every temporary
+  path before it exits.
+
 ## Wire and lock checks
 
+- `bun run test:cli` resolves `bin.archboard` from `package.json` and drives
+  that executable from outside the checkout. It covers no-argument help and
+  every command/subcommand topic exposed by production `cliSurface()` data. A
+  local HTTP double also pins the public write contract: `--document` on add,
+  update and delete, global board/`--doing` routing, clean success streams,
+  structured refusal and usage exits, and CLI-owned import path resolution.
 - `bun run test:one-write` counts writes on the wire through a proxy, so a
   loop cannot pass itself off as a batch (TASK-068).
+- `bun run test:changes` owns injection routing as well as the change feed. It
+  proves injection refuses a non-loopback canvas, stays off without its switch,
+  declines to arm without `ARCHBOARD_INJECT_THREAD`, and targets exactly the
+  configured task when it is set.
 - `bun run test:lock` proves the exclusion with two processes over one vault,
   which is the one thing an in-process mutex could not do (ADR 0016).
 - `scripts/check-repos.mjs` runs against a registry in a temp file via

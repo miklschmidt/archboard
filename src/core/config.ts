@@ -1,17 +1,14 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 
-// Load environment variables once for every entry point (MCP server, CLI, canvas server)
-dotenv.config();
+// Load environment variables once for every entry point (CLI and canvas server)
+dotenv.config({ quiet: true });
 
 // Express server configuration
-export const EXPRESS_SERVER_URL = process.env.EXPRESS_SERVER_URL || 'http://127.0.0.1:3000';
-export const ENABLE_CANVAS_SYNC = process.env.ENABLE_CANVAS_SYNC !== 'false'; // Default to true
+export const EXPRESS_SERVER_URL = process.env.EXPRESS_SERVER_URL || "http://127.0.0.1:3000";
+export const ENABLE_CANVAS_SYNC = process.env.ENABLE_CANVAS_SYNC !== "false"; // Default to true
 
-// Opt-out for auto-starting the canvas server from the CLI / MCP server
-export const EXCALIDRAW_NO_AUTOSTART = process.env.EXCALIDRAW_NO_AUTOSTART === '1';
-
-// Safe file path validation base directory (see sanitizeFilePath)
-export const ALLOWED_EXPORT_DIR = process.env.EXCALIDRAW_EXPORT_DIR || process.cwd();
+// Opt out of auto-starting the canvas server from the CLI.
+export const EXCALIDRAW_NO_AUTOSTART = process.env.EXCALIDRAW_NO_AUTOSTART === "1";
 
 // The Obsidian vault every board is persisted into (ADR 0004). Deliberately
 // has no default: the vault spans repositories, so guessing at the current
@@ -36,18 +33,18 @@ export const ARCHBOARD_VAULT = process.env.ARCHBOARD_VAULT || undefined;
  * it has not.
  */
 export function noVaultMessage(): string {
-  return [
-    'archboard has no vault, so there is nowhere to put a board and the canvas will not start.',
-    '',
-    'Boards are notes in an Obsidian vault, and choosing one is part of installing',
-    'archboard into a repository:',
-    '',
-    '  archboard install-skill',
-    '',
-    "That creates the vault and writes its path into the repo's CLAUDE.md or AGENTS.md.",
-    'Then start the canvas with it set:',
-    '',
-    '  export ARCHBOARD_VAULT=/path/to/vault',
-    '  archboard start'
-  ].join('\n');
+	return [
+		"archboard has no vault, so there is nowhere to put a board and the canvas will not start.",
+		"",
+		"Boards are notes in an Obsidian vault, and choosing one is part of installing",
+		"archboard into a repository:",
+		"",
+		"  archboard install-skill",
+		"",
+		"That creates the vault and writes its path into the repo's CLAUDE.md or AGENTS.md.",
+		"Then start the canvas with it set:",
+		"",
+		"  export ARCHBOARD_VAULT=/path/to/vault",
+		"  archboard start",
+	].join("\n");
 }

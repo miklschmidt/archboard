@@ -19,10 +19,9 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 **Every write goes against the version of the board its writer last saw, and is
 refused with `BOARD_VERSION_CONFLICT` if the board moved in between** — nothing
 written, both versions named, with the current `document` and `version` attached.
-Use those instead of reading the board again. You carry no number: the canvas remembers what it
-last told you, automatically for a claim and for an MCP session, because those
-are the two writers it can recognise across requests. A CLI process with no
-claim is anonymous, so there `--expect-version <n>` is how you state it (global,
+Use those instead of reading the board again. You carry no number under a claim:
+the canvas remembers what it last told that identified writer. A CLI process
+with no claim is anonymous, so there `--expect-version <n>` is how you state it (global,
 same commands as `--doing`); claiming the board is how you stop having to. A
 person at a pane is never checked. This orders archboard's own writers and no
 others: the note's sha-256 is what refuses a write over Obsidian's edit, and it
@@ -30,246 +29,117 @@ runs whatever else is true.
 
 ### Server
 
-| Command | Description |
-|---------|-------------|
-| `start` | Start the canvas server (detached); prints URL + pid |
-| `stop` | Stop the canvas server (identity-checked via `/health` — never signals foreign services) |
-| `status` | Health, element count, connected browser tabs |
+| Command  | Description                                                                              |
+| -------- | ---------------------------------------------------------------------------------------- |
+| `start`  | Start the canvas server (detached); prints URL + pid                                     |
+| `stop`   | Stop the canvas server (identity-checked via `/health` — never signals foreign services) |
+| `status` | Health, element count, connected browser tabs                                            |
 
 ### Elements
 
-| Command | Description |
-|---------|-------------|
-| `add [file\|-]` | Batch create from a JSON array (file, `-`, or piped stdin); `--one '{...}'` for a single element |
-| `apply [file\|-]` | Multi-op patch `{"create":[...],"update":[{"id":"a","set":{...}}],"delete":["id",...]}` in one call |
-| `get <id>` | Get one element |
-| `query` | `--type rectangle` `--bbox x0,y0,x1,y1` `--filter locked=true` (typed; nested keys like `label.text=API` work) `--filter-json '{...}'` |
-| `update <id> --set '{...}'` | Update one element |
-| `delete <id> [...]` | Delete elements |
+| Command                     | Description                                                                                                                            |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `add [file\|-]`             | Batch create from a JSON array (file, `-`, or piped stdin); `--one '{...}'` for a single element                                       |
+| `apply [file\|-]`           | Multi-op patch `{"create":[...],"update":[{"id":"a","set":{...}}],"delete":["id",...]}` in one call                                    |
+| `get <id>`                  | Get one element                                                                                                                        |
+| `query`                     | `--type rectangle` `--bbox x0,y0,x1,y1` `--filter locked=true` (typed; nested keys like `label.text=API` work) `--filter-json '{...}'` |
+| `update <id> --set '{...}'` | Update one element                                                                                                                     |
+| `delete <id> [...]`         | Delete elements                                                                                                                        |
 
 ### Scene
 
-| Command | Description |
-|---------|-------------|
-| `describe` | AI-readable scene summary (ids, positions, labels, connections) — plain text |
-| `screenshot` | PNG/SVG capture of one pane; `--out f.png`, `--format png\|svg`, `--no-background`, `--pane <spec>`; PNG without `--out` → temp file path in JSON, SVG without `--out` → raw SVG. With two panes open, name the one you drew in or you photograph the other (**browser tab required**) |
-| `export [--out f.excalidraw] [--format json\|obsidian]` | Scene as .excalidraw JSON (stdout without `--out`); a `.md` out path writes Obsidian's .excalidraw.md format |
-| `import [file\|-] [--replace]` | Import .excalidraw JSON or Obsidian .excalidraw.md (merge by default) |
-| `mermaid [file\|-]` | Render Mermaid onto the canvas (**browser tab required**) |
-| `share` | Encrypted upload → shareable excalidraw.com URL |
-| `clear --yes` | Wipe the canvas |
-| `snapshot save\|list\|restore [name] [--force]` | Named canvas snapshots; a snapshot belongs to the board it was taken on, and `--force` restores it onto a different one |
-| `changes [--since <cursor>] [--coalesce] [--detail] [--text]` | What the board became since a cursor, in `compare`'s vocabulary. One drag is one event; a nudge or a recolour is none. `--coalesce` gives one net diff since the cursor, which is what a once-per-turn read wants. Cursors belong to a canvas process, so watch `feedId`. No MCP equivalent |
-| `board list` | Boards in the vault, boards open in this session, and which board each pane is showing |
-| `board info --board <key>` | Identity and save state of one board |
-| `board new <name> [--variant v] [--level l] [--pane <spec>]` | Empty board; its note appears when you draw |
-| `board open <name[@variant]> [--reload] [--pane <spec>]` | Show a board in a pane. `--pane` takes `left`, `right`, `top`, `bottom`, a 1-based position, `primary`, or a pane id — required when more than one pane is open, since which half of the screen is not something to guess |
+| Command                                                                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `describe`                                                                   | AI-readable scene summary (ids, positions, labels, connections) — plain text                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `screenshot`                                                                 | PNG/SVG capture of one pane; `--out f.png`, `--format png\|svg`, `--no-background`, `--pane <spec>`; PNG without `--out` → temp file path in JSON, SVG without `--out` → raw SVG. With two panes open, name the one you drew in or you photograph the other (**browser tab required**)                                                                                                                                                                                                                                                                                                            |
+| `export [--out f.excalidraw] [--format json\|obsidian]`                      | Scene as .excalidraw JSON (stdout without `--out`); a `.md` out path writes Obsidian's .excalidraw.md format                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `import [file\|-] [--replace]`                                               | Import .excalidraw JSON or Obsidian .excalidraw.md (merge by default)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `mermaid [file\|-]`                                                          | Render Mermaid onto the canvas (**browser tab required**)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `share`                                                                      | Encrypted upload → shareable excalidraw.com URL                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `clear --yes`                                                                | Wipe the canvas                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `snapshot save\|list\|restore [name] [--force]`                              | Named canvas snapshots; a snapshot belongs to the board it was taken on, and `--force` restores it onto a different one                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `changes [--since <cursor>] [--coalesce] [--detail] [--text]`                | What the board became since a cursor, in `compare`'s vocabulary. One drag is one event; a nudge or a recolour is none. `--coalesce` gives one net diff since the cursor, which is what a once-per-turn read wants. Cursors belong to a canvas process, so watch `feedId`.                                                                                                                                                                                                                                                                                                                         |
+| `board list`                                                                 | Boards in the vault, boards open in this session, and which board each pane is showing                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `board info --board <key>`                                                   | Identity and save state of one board                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `board new <name> [--variant v] [--level l] [--pane <spec>]`                 | Empty board; its note appears when you draw                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `board open <name[@variant]> [--reload] [--pane <spec>]`                     | Show a board in a pane. `--pane` takes `left`, `right`, `top`, `bottom`, a 1-based position, `primary`, or a pane id — required when more than one pane is open, since which half of the screen is not something to guess                                                                                                                                                                                                                                                                                                                                                                         |
 | `board save --board <key> [--as <name>] [--variant v] [--level l] [--force]` | Write it to the vault; **refused (exit 5) if the note changed on disk** — `--force` overwrites anyway. `--variant v` is how a board is **branched** into a proposal: it writes `<key>@v` and carries the level across. `--as` branches the same way, level included. **A branch moves nothing on screen** (ADR 0012): the panes holding the source keep holding it, and the branch is not showing until `pane open --board <key>@v` or `board open`. The answer says which — `saveKind`, `savedFrom`, `panes.moved`, `panes.kept`. Naming the scratch board is the one save that does move a pane |
-| `compare <from> [to]` | Semantic diff between two variants, joined on node identity; opens nothing and leaves the canvas alone. One address finds the other variant itself |
+| `compare <from> [to]`                                                        | Semantic diff between two variants, joined on node identity; opens nothing and leaves the canvas alone. One address finds the other variant itself                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
 ### One writer at a time
 
 Every write takes the board and gives it back, and a write that lands inside somebody's gesture waits for them. These two are for work that does not fit one write. **When to reach for them is judgement, and SKILL.md's "One writer at a time" is where it lives.**
 
-| Command | Description |
-|---------|-------------|
+| Command                                                   | Description                                                                                                                                                                                                                                                                                                          |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `claim --board <key> --reason "..." [--for 90s\|10m\|1h]` | Hold a board across everything you are about to do to it. `--reason` is required and is what the person's pane shows them; `--for` needs a unit, and a bare number is refused. Carry nothing: every write naming this board goes under the claim. Claiming again extends it and updates the reason; a write does not |
-| `release --board <key>` | Give it back. A claim that expired, or that somebody took back, has already ended, so releasing it is not an error — it answers `released: false` |
+| `release --board <key>`                                   | Give it back. A claim that expired, or that somebody took back, has already ended, so releasing it is not an error — it answers `released: false`                                                                                                                                                                    |
 
 ### Panes and camera
 
 A pane is a slot holding one board, and two panes are how the architecture that exists sits beside a proposal. All four of these need a browser tab and exit 4 without one: a pane exists only while a tab renders it.
 
-| Command | Description |
-|---------|-------------|
-| `panes [--text]` | Read-only: which pane holds which board, where it sits, how much is in view, what is picked there |
-| `pane open [--board <key>]` | Make a **new** pane and open that board into it — the whole side-by-side move in one command. It cannot be aimed at an existing pane, so it cannot overwrite the board somebody is reading. Without `--board` the new pane shows whatever was already on screen. Two panes is the limit |
-| `pane close <spec>` | Close one pane. `spec` is `left`, `right`, `top`, `bottom`, a 1-based position, `primary`, `focused`, or a pane id, and is **always required** — which board comes off the screen is not something to guess. The board is untouched and stays open on the canvas; the last pane cannot be closed |
+| Command                                                       | Description                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `panes [--text]`                                              | Read-only: which pane holds which board, where it sits, how much is in view, what is picked there                                                                                                                                                                                                                                            |
+| `pane open [--board <key>]`                                   | Make a **new** pane and open that board into it — the whole side-by-side move in one command. It cannot be aimed at an existing pane, so it cannot overwrite the board somebody is reading. Without `--board` the new pane shows whatever was already on screen. Two panes is the limit                                                      |
+| `pane close <spec>`                                           | Close one pane. `spec` is `left`, `right`, `top`, `bottom`, a 1-based position, `primary`, `focused`, or a pane id, and is **always required** — which board comes off the screen is not something to guess. The board is untouched and stays open on the canvas; the last pane cannot be closed                                             |
 | `viewport --fit \| --ids a,b,c \| --element <id> \| --zoom n` | Point one pane's camera; exactly one of the four. `--fit` frames the whole board, `--ids` frames those elements, `--element` centres on one without changing zoom, `--zoom` with `--offset-x`/`--offset-y` sets it by hand. `--zoom-factor f` is the padding on a fit, so it needs `--fit` or `--ids`. `--pane <spec>` says which half moves |
 
 ### Stencil Library
 
-| Command | Description |
-|---------|-------------|
-| `library list [--text]` | The palette of ready-made shapes: name, source library, size, element count, and the words drawn inside each — enough to choose one without rendering it |
-| `library insert <name> --x <x> --y <y> [--source <lib>] [--id <itemId>]` | Copy a stencil onto the canvas with its top-left at `--x,--y`, as ordinary elements. A name several libraries use exits 2 with the candidates named |
+| Command                                                                  | Description                                                                                                                                              |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `library list [--text]`                                                  | The palette of ready-made shapes: name, source library, size, element count, and the words drawn inside each — enough to choose one without rendering it |
+| `library insert <name> --x <x> --y <y> [--source <lib>] [--id <itemId>]` | Copy a stencil onto the canvas with its top-left at `--x,--y`, as ordinary elements. A name several libraries use exits 2 with the candidates named      |
 
 ### Arrange
 
-| Command | Description |
-|---------|-------------|
-| `arrange align --ids a,b,c --to left\|center\|right\|top\|middle\|bottom` | Align (≥2 ids) |
-| `arrange distribute --ids a,b,c --to horizontal\|vertical` | Even spacing (≥3 ids) |
-| `arrange group --ids a,b` / `arrange ungroup --group <groupId>` | Group membership lives on element `groupIds` |
-| `arrange lock\|unlock --ids a,b` | Toggle edit lock |
-| `arrange duplicate --ids a,b [--offset 20,20]` | Clone with offset |
+| Command                                                                   | Description                                  |
+| ------------------------------------------------------------------------- | -------------------------------------------- |
+| `arrange align --ids a,b,c --to left\|center\|right\|top\|middle\|bottom` | Align (≥2 ids)                               |
+| `arrange distribute --ids a,b,c --to horizontal\|vertical`                | Even spacing (≥3 ids)                        |
+| `arrange group --ids a,b` / `arrange ungroup --group <groupId>`           | Group membership lives on element `groupIds` |
+| `arrange lock\|unlock --ids a,b`                                          | Toggle edit lock                             |
+| `arrange duplicate --ids a,b [--offset 20,20]`                            | Clone with offset                            |
 
 ### Meta
 
-| Command | Description |
-|---------|-------------|
-| `install-skill` | Install this skill into `~/.agents/skills` (replaces any existing copy); `--agent claude-code` or `--target claude` uses `~/.claude/skills`, and `--dir <skills-root>` names another root |
-| `help [command]`, `--version` | Usage and version |
-
-## MCP Tools
-
-The MCP surface for clients that cannot run the CLI. `scripts/check-surface-parity.mjs` in the archboard repo fails if a tool is missing from this table.
-
-`doing` is `--doing` on this surface, and it is required on every tool that changes a board, for the same reason and in the same words: one short line, present tense, shown on the canvas as the write lands, never written into the board. `expectVersion` is `--expect-version` and you will rarely pass it: an MCP server is one process for a whole session, so it remembers what the canvas last told it about each board and states the version for you. Pass one only to override that.
-
-### Element CRUD
-
-| Tool | Description | Required params |
-|------|-------------|-----------------|
-| `create_element` | Create shape/text/arrow/line | `doing`, `board`, `type`, `x`, `y` |
-| `get_element` | Get single element by ID | `board`, `id` |
-| `update_element` | Update element properties | `doing`, `board`, `id` |
-| `delete_element` | Delete element | `doing`, `board`, `id` |
-| `query_elements` | Query by type/filters | `board`, (optional) `type`, `filter`, `bbox` |
-| `batch_create_elements` | Create many at once | `doing`, `board`, `elements[]` |
-| `duplicate_elements` | Clone with offset | `doing`, `elementIds[]`, (optional) `offsetX`, `offsetY` |
-
-### Layout & Organization
-
-| Tool | Description | Required params |
-|------|-------------|-----------------|
-| `align_elements` | Align to left/center/right/top/middle/bottom | `doing`, `board`, `elementIds[]`, `alignment` |
-| `distribute_elements` | Even spacing horizontal/vertical | `doing`, `board`, `elementIds[]`, `direction` |
-| `group_elements` | Group elements | `doing`, `board`, `elementIds[]` |
-| `ungroup_elements` | Ungroup | `doing`, `board`, `groupId` |
-| `lock_elements` | Lock elements | `doing`, `board`, `elementIds[]` |
-| `unlock_elements` | Unlock elements | `doing`, `board`, `elementIds[]` |
-
-### Scene Awareness (Iterative Refinement)
-
-| Tool | Description | Required params |
-|------|-------------|-----------------|
-| `describe_scene` | AI-readable scene description (types, positions, labels, connections, bounding box) | `board` |
-| `get_canvas_screenshot` | Returns a PNG of one pane for visual verification; name the `pane` once two are open, or you photograph the first while your board sits in the second | (optional) `background`, `pane` |
-| `get_resource` | Get scene/library/theme/elements | `resource`, plus `board` for `scene` and `elements` |
-| `get_selection` | What the human has selected — the elements they mean by "this" / "these", with node kind and binding | (none) |
-| `get_panes` | What the human is looking at, pane by pane: position on screen, board + variant, how much is in view, what is picked there. View state only | (none) |
-
-### Nodes
-
-| Tool | Description | Required params |
-|------|-------------|-----------------|
-| `promote_selection` | Declare the selection an architecture node: kind, identity and binding in one act. `each: true` makes one node per selected shape | `doing`, `board`, `kind` |
-| `demote_selection` | Strip archboard metadata back off; touching one element demotes the whole node | `doing`, `board` |
-
-### File I/O & Export
-
-| Tool | Description | Required params |
-|------|-------------|-----------------|
-| `export_scene` | Export to .excalidraw JSON (a `.md` filePath → Obsidian .excalidraw.md) | `board`, (optional) `filePath` |
-| `import_scene` | Import from .excalidraw JSON or Obsidian .excalidraw.md | `board`, `mode` ("replace"\| `doing`,"merge"), `filePath` or `data` |
-| `export_to_image` | Export one pane to PNG/SVG, whatever board that pane holds | `format` ("png"\|"svg"), (optional) `filePath`, `background`, `pane` |
-| `export_to_excalidraw_url` | Upload & get shareable excalidraw.com URL | `board` |
-
-### State Management
-
-| Tool | Description | Required params |
-|------|-------------|-----------------|
-| `clear_canvas` | Remove all elements from one board | `doing`, `board` |
-| `snapshot_scene` | Save named snapshot | `board`, `name` |
-| `restore_snapshot` | Restore from snapshot onto a board | `doing`, `board`, `name` |
-
-### Boards
-
-Requires `ARCHBOARD_VAULT`. A pane holds exactly one board; two panes hold two. **`board` is a required parameter on every tool that touches one** — there is no default (ADR 0009).
-
-| Tool | Description | Required params |
-|------|-------------|-----------------|
-| `list_boards` | Vault boards, open boards, and what each pane is showing | (none) |
-| `open_board` | Show a board in a pane; `pane` (`left`, `right`, `1`…) is required when more than one is open | `board` (`name` or `name@variant`) |
-| `new_board` | Start an empty board and show it in a pane | `board` |
-| `save_board` | Write a board to the vault; **refused if the note changed on disk** (`force` overwrites anyway). `variant` branches the board into a proposal, which is what makes it comparable; a branch moves no pane, so `open_pane` it | `doing`, `board` |
-| `compare_boards` | Semantic diff between two variants, joined on node identity (`customData.archboard.node`). Complete and unsummarised — narrate it yourself. Reads both sides from their notes; `source` says which side is a board the canvas has open. The canvas is untouched. Check `summary.comparable` and `layout.cannotExpress` before making claims | `from` (`to` optional) |
-
-### One writer at a time
-
-A board has a mutex: an agent takes it to write, a person takes it by touching the canvas, nobody else writes while it is held. That happens by itself around every write. These two are for the case it does not fit. **When to reach for them is judgement, and SKILL.md's "One writer at a time" is where it lives.**
-
-| Tool | Description | Required params |
-|------|-------------|-----------------|
-| `claim_board` | Hold a board across everything you are about to do to it. Not for one box — an ordinary write already holds the board while it writes. Carry nothing: every write naming this board goes under the claim. Call again to extend | `board`, `reason` (shown on the person's pane), (optional) `forMs` |
-| `release_board` | Give it back. Do it as soon as the work is done | `board` |
-
-The person at the canvas can take a claimed board back at any moment. Your next call is refused once with `CLAIM_REVOKED` and says so; **nothing is rolled back**, because every write you made is already in the note. The refusal carries that partial board as `document` and `version`. What to do about it is in SKILL.md.
-
-### Panes
-
-A pane is a slot holding one board. Two panes are how the architecture that exists sits beside a proposal, and both of these need the canvas open in a browser.
-
-| Tool | Description | Required params |
-|------|-------------|-----------------|
-| `open_pane` | Split the canvas and open a board into the **new** pane, leaving the existing one alone. Cannot target an existing pane, so it cannot overwrite what is on screen. Two panes is the maximum | (optional) `board` |
-| `close_pane` | Close one pane; its board is untouched and stays open on the canvas. The last pane cannot be closed | `pane` (`left`, `right`, `1`…) |
-
-### Stencil Library
-
-| Tool | Description | Required params |
-|------|-------------|-----------------|
-| `list_library_items` | The palette of ready-made shapes, one line each: name, source library, size, element count, and the words drawn inside — enough to pick one without rendering it | (none) |
-| `insert_library_item` | Copy a stencil onto a board with its top-left at `x`, `y`, as ordinary elements. A name several libraries use is refused with the candidates named — retry with `source` or `itemId` | `doing`, `board`, `x`, `y`, and `name` or `itemId` |
-
-### Viewport & Camera
-
-| Tool | Description | Required params |
-|------|-------------|-----------------|
-| `set_viewport` | Control one pane's camera: zoom-to-fit all/selected elements, center one element without changing zoom, or manual zoom/scroll (needs browser); specify one mode per request. `pane` picks which half moves when two are open | (optional) `scrollToContent`, `scrollToElementIds`, `viewportZoomFactor` (0, 1], `scrollToElementId`, `zoom`, `offsetX`, `offsetY`, `pane` |
-
-### Design Guide
-
-| Tool | Description | Required params |
-|------|-------------|-----------------|
-| `read_diagram_guide` | Get design best practices (colors, sizing, layout, anti-patterns) | (none) |
-
-### Conversion
-
-| Tool | Description | Required params |
-|------|-------------|-----------------|
-| `create_from_mermaid` | Mermaid diagram to Excalidraw. Converts in the pane holding `board`, so there is no pane argument; refused, converting nothing, when no pane is holding it | `doing`, `board`, `mermaidDiagram` |
-
-Notes:
-- **CLI + MCP**: Set `text` on shapes to label them (auto-converts to `label.text`). Use `startElementId`/`endElementId` on arrows.
-- **CLI `apply.update`**: Update entries can use either direct fields (`{"id":"a","x":120}`) or a `set` object (`{"id":"a","set":{"x":120}}`). Do not mix both forms in one update entry.
-- **Raw REST**: Use `"label": {"text": "..."}` for shape labels. Use `"start": {"id": "..."}` / `"end": {"id": "..."}` for arrow binding. (Different format!)
-- `fontFamily` must be a string (e.g. `"1"`, `"helvetica"`) or omitted — do NOT pass a number.
-- `points` accepts both `[[x,y]]` tuples and `[{x,y}]` objects.
-- **Curved arrows**: Use `"roundness": {"type": 2}` with 3+ points for smooth curves. Use `"elbowed": true` for right-angle routing.
-- Prefer creating shapes first, then arrows, then alignment/grouping.
+| Command                       | Description                                                                                                                                                                               |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `install-skill`               | Install this skill into `~/.agents/skills` (replaces any existing copy); `--agent claude-code` or `--target claude` uses `~/.claude/skills`, and `--dir <skills-root>` names another root |
+| `help [command]`, `--version` | Usage and version                                                                                                                                                                         |
 
 ## Canvas REST API (HTTP)
 
 ### Elements
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/elements` | List all elements |
-| `GET` | `/api/elements/:id` | Get element by ID |
-| `POST` | `/api/elements` | Create element |
-| `PUT` | `/api/elements/:id` | Update element |
-| `DELETE` | `/api/elements/:id` | Delete element |
-| `DELETE` | `/api/elements/clear` | Clear all elements |
-| `GET` | `/api/elements/search?type=...` | Search with filters (exact string match + bbox) |
-| `POST` | `/api/elements/batch` | Batch create |
-| `POST` | `/api/elements/changes` | Browser change report: {upserts, deletes} merged into the board |
-| `POST` | `/api/elements/from-mermaid` | Mermaid conversion via frontend |
+| Method   | Endpoint                        | Description                                                     |
+| -------- | ------------------------------- | --------------------------------------------------------------- |
+| `GET`    | `/api/elements`                 | List all elements                                               |
+| `GET`    | `/api/elements/:id`             | Get element by ID                                               |
+| `POST`   | `/api/elements`                 | Create element                                                  |
+| `PUT`    | `/api/elements/:id`             | Update element                                                  |
+| `DELETE` | `/api/elements/:id`             | Delete element                                                  |
+| `DELETE` | `/api/elements/clear`           | Clear all elements                                              |
+| `GET`    | `/api/elements/search?type=...` | Search with filters (exact string match + bbox)                 |
+| `POST`   | `/api/elements/batch`           | Batch create                                                    |
+| `POST`   | `/api/elements/changes`         | Browser change report: {upserts, deletes} merged into the board |
+| `POST`   | `/api/elements/from-mermaid`    | Mermaid conversion via frontend                                 |
 
 ### Export
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/export/image` | Request image export (needs frontend) |
-| `POST` | `/api/export/image/result` | Frontend posts export result back |
+| Method | Endpoint                   | Description                           |
+| ------ | -------------------------- | ------------------------------------- |
+| `POST` | `/api/export/image`        | Request image export (needs frontend) |
+| `POST` | `/api/export/image/result` | Frontend posts export result back     |
 
 ### Viewport
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/viewport` | Set viewport/camera; body may include `scrollToContent`, `scrollToElementIds`, `viewportZoomFactor`, `scrollToElementId`, `zoom`, `offsetX`, `offsetY` (needs frontend) |
-| `POST` | `/api/viewport/result` | Frontend posts viewport result back |
+| Method | Endpoint               | Description                                                                                                                                                             |
+| ------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST` | `/api/viewport`        | Set viewport/camera; body may include `scrollToContent`, `scrollToElementIds`, `viewportZoomFactor`, `scrollToElementId`, `zoom`, `offsetX`, `offsetY` (needs frontend) |
+| `POST` | `/api/viewport/result` | Frontend posts viewport result back                                                                                                                                     |
 
 ### Boards
 
@@ -277,29 +147,29 @@ Every element endpoint **requires** `?board=<key>`; without it the answer is 400
 
 Any answer about a board whose note changed underneath carries `held`: the conflict, when the board stopped saving, how many changes are held on the canvas since, and the three commands that end it. Writes are taken while it is held; none of them reaches the vault.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/boards` | Vault listing + open boards + what each pane is showing |
-| `GET` | `/api/boards/info?board=` | Identity and save state of one board |
-| `POST` | `/api/boards/open` | `{board, variant?, level?, reload?, pane?}` — shows it in one pane, and answers with which |
-| `POST` | `/api/boards/new` | `{board, variant?, level?, pane?}` — empty, unsaved |
-| `POST` | `/api/boards/save` | `?board=` plus `{name?, variant?, level?, force?}` — writes the note; **409 + `conflict` if it changed on disk** |
-| `GET` | `/api/boards/compare?from=&to=` | Semantic diff between two boards; read-only, never opens or switches a board. `to` optional when the board has exactly one other variant |
+| Method | Endpoint                        | Description                                                                                                                              |
+| ------ | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/api/boards`                   | Vault listing + open boards + what each pane is showing                                                                                  |
+| `GET`  | `/api/boards/info?board=`       | Identity and save state of one board                                                                                                     |
+| `POST` | `/api/boards/open`              | `{board, variant?, level?, reload?, pane?}` — shows it in one pane, and answers with which                                               |
+| `POST` | `/api/boards/new`               | `{board, variant?, level?, pane?}` — empty, unsaved                                                                                      |
+| `POST` | `/api/boards/save`              | `?board=` plus `{name?, variant?, level?, force?}` — writes the note; **409 + `conflict` if it changed on disk**                         |
+| `GET`  | `/api/boards/compare?from=&to=` | Semantic diff between two boards; read-only, never opens or switches a board. `to` optional when the board has exactly one other variant |
 
 ### Snapshots
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/snapshots` | Save snapshot `{name}` |
-| `GET` | `/api/snapshots` | List snapshots |
-| `GET` | `/api/snapshots/:name` | Get snapshot by name |
+| Method | Endpoint               | Description            |
+| ------ | ---------------------- | ---------------------- |
+| `POST` | `/api/snapshots`       | Save snapshot `{name}` |
+| `GET`  | `/api/snapshots`       | List snapshots         |
+| `GET`  | `/api/snapshots/:name` | Get snapshot by name   |
 
 ### System
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/health` | Health check (`websocket_clients` = open browser tabs) |
-| `GET` | `/api/sync/status` | Memory/WebSocket stats |
+| Method | Endpoint           | Description                                            |
+| ------ | ------------------ | ------------------------------------------------------ |
+| `GET`  | `/health`          | Health check (`websocket_clients` = open browser tabs) |
+| `GET`  | `/api/sync/status` | Memory/WebSocket stats                                 |
 
 ## Design Guide (quick version)
 
@@ -308,4 +178,3 @@ Styling: `"fillStyle": "solid"` for crisp flat fills (default is sketchy hachure
 Fills: a rectangle/ellipse/diamond created without a `backgroundColor` gets a neutral white solid fill, because a transparent shape is only selectable on its stroke. Say `"backgroundColor": "transparent"` to opt out. `promote` repaints an uncoloured node in its kind's pastel.
 Sizing: shapes ≥ 120×60 with width ≥ `labelChars * 12`, fonts ≥ 16 (titles ≥ 20), gaps 40–80px (120px+ for labeled arrows), align to a 20px grid.
 Order of work: background zones → primary shapes (with `text`) → arrows (bound via ids) → annotations → refine (align/distribute/screenshot).
-MCP mode has the full guide behind the `read_diagram_guide` tool.

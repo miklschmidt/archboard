@@ -1,7 +1,7 @@
-import { parseArgs, CliUsageError } from '../args.js';
-import { printJson } from '../util.js';
-import { ensureCanvasRunning } from '../../core/spawn.js';
-import { getChanges } from '../../core/canvas-client.js';
+import { parseArgs, CliUsageError } from "../args.js";
+import { printJson } from "../util.js";
+import { ensureCanvasRunning } from "../../core/spawn.js";
+import { getChanges } from "../../core/canvas-client.js";
 
 // `changes` — what the board became, since a cursor.
 //
@@ -16,52 +16,54 @@ import { getChanges } from '../../core/canvas-client.js';
 //   --coalesce   ONE diff from the cursor to now — the net difference, which
 //                is what a hook that missed four turns actually wants
 export async function changes(argv: string[]): Promise<void> {
-  const { flags } = parseArgs(argv, {
-    since: { takesValue: true },
-    coalesce: { takesValue: false },
-    detail: { takesValue: false },
-    text: { takesValue: false }
-  });
+	const { flags } = parseArgs(argv, {
+		since: { takesValue: true },
+		coalesce: { takesValue: false },
+		detail: { takesValue: false },
+		text: { takesValue: false },
+	});
 
-  const since = flags.since === undefined ? 0 : Number(flags.since);
-  if (!Number.isFinite(since) || since < 0) {
-    throw new CliUsageError('--since takes a cursor from a previous `changes` response');
-  }
+	const since = flags.since === undefined ? 0 : Number(flags.since);
+	if (!Number.isFinite(since) || since < 0) {
+		throw new CliUsageError("--since takes a cursor from a previous `changes` response");
+	}
 
-  await ensureCanvasRunning();
-  const report = await getChanges({
-    since,
-    coalesce: Boolean(flags.coalesce),
-    detail: Boolean(flags.detail)
-  });
+	await ensureCanvasRunning();
+	const report = await getChanges({
+		since,
+		coalesce: Boolean(flags.coalesce),
+		detail: Boolean(flags.detail),
+	});
 
-  if (flags.text) {
-    const lines: string[] = [];
-    if (report.truncated) {
-      lines.push(report.message ?? 'The feed no longer reaches back that far.');
-    } else if (flags.coalesce) {
-      const net = report.coalesced;
-      if (!net || net.significance === 'none') {
-        lines.push(`Nothing has changed on "${report.board}" since then.`);
-      } else {
-        lines.push(`${report.board}: ${net.headline}`);
-        if (net.text) lines.push(net.text);
-      }
-    } else if (report.events.length === 0) {
-      lines.push(`Nothing has changed on "${report.board}" since then.`);
-    } else {
-      for (const event of report.events) {
-        lines.push(`[${event.cursor}] ${event.at} — ${event.origin} ${event.significance}: ${event.headline}`);
-        if (event.text) lines.push(event.text);
-      }
-    }
-    // The cursor is part of the answer in text mode too: without it the caller
-    // cannot ask the next question. The feed id goes with it, because a cursor
-    // only means anything within the canvas process that issued it.
-    lines.push(`(cursor ${report.cursor}${report.feedId ? `, feed ${report.feedId}` : ''})`);
-    process.stdout.write(lines.join('\n') + '\n');
-    return;
-  }
+	if (flags.text) {
+		const lines: string[] = [];
+		if (report.truncated) {
+			lines.push(report.message ?? "The feed no longer reaches back that far.");
+		} else if (flags.coalesce) {
+			const net = report.coalesced;
+			if (!net || net.significance === "none") {
+				lines.push(`Nothing has changed on "${report.board}" since then.`);
+			} else {
+				lines.push(`${report.board}: ${net.headline}`);
+				if (net.text) lines.push(net.text);
+			}
+		} else if (report.events.length === 0) {
+			lines.push(`Nothing has changed on "${report.board}" since then.`);
+		} else {
+			for (const event of report.events) {
+				lines.push(
+					`[${event.cursor}] ${event.at} — ${event.origin} ${event.significance}: ${event.headline}`,
+				);
+				if (event.text) lines.push(event.text);
+			}
+		}
+		// The cursor is part of the answer in text mode too: without it the caller
+		// cannot ask the next question. The feed id goes with it, because a cursor
+		// only means anything within the canvas process that issued it.
+		lines.push(`(cursor ${report.cursor}${report.feedId ? `, feed ${report.feedId}` : ""})`);
+		process.stdout.write(lines.join("\n") + "\n");
+		return;
+	}
 
-  printJson(report);
+	printJson(report);
 }

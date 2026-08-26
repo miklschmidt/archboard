@@ -41,11 +41,11 @@ change report, dumped again. And separately run through
 
 There are three shapes in play today, not two.
 
-| Path | What it holds |
-|---|---|
-| An agent wrote it, no browser open | Seeds. `label`, `start`, `end`, no bound text elements. |
-| A browser has rendered it | Excalidraw-native, **plus** the seeds, which are still there. |
-| It was saved and reopened | Our exporter's output. No seeds. `rawText` on every text element. |
+| Path                               | What it holds                                                     |
+| ---------------------------------- | ----------------------------------------------------------------- |
+| An agent wrote it, no browser open | Seeds. `label`, `start`, `end`, no bound text elements.           |
+| A browser has rendered it          | Excalidraw-native, **plus** the seeds, which are still there.     |
+| It was saved and reopened          | Our exporter's output. No seeds. `rawText` on every text element. |
 
 The middle row is the worst, because it is a mixture. After one human drag of one
 box, my nine-element board held four elements in seed form and five in native
@@ -94,23 +94,23 @@ This table is the acceptance specification for stage 1. Given the same nine
 elements, these are the fields on which `expandElementsForExport` and
 `convertToExcalidrawElements` produce different documents.
 
-| Field | Ours | Excalidraw's | Kind |
-|---|---|---|---|
-| `fontFamily` on any text | 1 (Virgil) | 5 (Excalifont) | constant |
-| `fontSize` of a shape's label | 16 | 20 | constant |
-| `fontSize` of an arrow's label | 14 | 20 | constant |
-| `strokeWidth` of a bound text | 1 | 2 | constant |
-| `textAlign` of standalone text | `center` | `left` | constant |
-| `verticalAlign` of standalone text | `middle` | `top` | constant |
-| `roundness` on a rectangle | `{type: 3}` | `null` | constant |
-| `strokeWidth` on freedraw | 2 | 1 | constant |
-| `strokeColor` on freedraw | `#1e1e1e` | absent | constant |
-| `elbowed` on a line | `false` | absent | constant |
-| `lastCommittedPoint` on freedraw | absent | `null` | constant |
-| Arrow `points` | `[[0,0],[84,0]]` | `[[0.5,0],[83.5,0]]` | constant (half the stroke width) |
-| Bound text id | `<container>-label` | a 21-character nanoid | see section 4 |
-| Text `width` | estimated | **measured** | section 3 |
-| Text `height` | estimated | **measured** | section 3 |
+| Field                              | Ours                | Excalidraw's          | Kind                             |
+| ---------------------------------- | ------------------- | --------------------- | -------------------------------- |
+| `fontFamily` on any text           | 1 (Virgil)          | 5 (Excalifont)        | constant                         |
+| `fontSize` of a shape's label      | 16                  | 20                    | constant                         |
+| `fontSize` of an arrow's label     | 14                  | 20                    | constant                         |
+| `strokeWidth` of a bound text      | 1                   | 2                     | constant                         |
+| `textAlign` of standalone text     | `center`            | `left`                | constant                         |
+| `verticalAlign` of standalone text | `middle`            | `top`                 | constant                         |
+| `roundness` on a rectangle         | `{type: 3}`         | `null`                | constant                         |
+| `strokeWidth` on freedraw          | 2                   | 1                     | constant                         |
+| `strokeColor` on freedraw          | `#1e1e1e`           | absent                | constant                         |
+| `elbowed` on a line                | `false`             | absent                | constant                         |
+| `lastCommittedPoint` on freedraw   | absent              | `null`                | constant                         |
+| Arrow `points`                     | `[[0,0],[84,0]]`    | `[[0.5,0],[83.5,0]]`  | constant (half the stroke width) |
+| Bound text id                      | `<container>-label` | a 21-character nanoid | see section 4                    |
+| Text `width`                       | estimated           | **measured**          | section 3                        |
+| Text `height`                      | estimated           | **measured**          | section 3                        |
 
 Twelve constants, an id scheme, and two measured fields. The constants are a
 morning's work. The measured fields are the whole problem.
@@ -138,11 +138,11 @@ The same test the other way round is why this is worth doing at all. I took a
 board already in Excalidraw's native form, handed it back through `updateScene`,
 and diffed.
 
-| Board | Elements | Elements Excalidraw changed | Fields |
-|---|---|---|---|
-| Real 13-element board | 13 | **0** | none |
-| Synthetic 55 | 55 | 42 | `index` only |
-| Synthetic 300 | 300 | 287 | `index` only |
+| Board                 | Elements | Elements Excalidraw changed | Fields       |
+| --------------------- | -------- | --------------------------- | ------------ |
+| Real 13-element board | 13       | **0**                       | none         |
+| Synthetic 55          | 55       | 42                          | `index` only |
+| Synthetic 300         | 300      | 287                         | `index` only |
 
 The synthetic boards are mine, built by cloning one scene 23 times, so 300
 elements shared 13 distinct `index` values and Excalidraw repaired the
@@ -202,13 +202,13 @@ ships Excalifont in its own package as seven woff2 subsets. I read them with
 fontkit, summed the advance widths, and compared against five strings whose
 widths I had read out of a live Excalidraw at fontSize 20.
 
-| String | Chrome | fontkit, best subset | Off by |
-|---|---|---|---|
-| `a standalone caption` | 163.271 | 203.660 | 40.4 |
-| `AuthService` | 99.971 | 114.500 | 14.5 |
-| `Queue` | 52.197 | 58.760 | 6.6 |
-| `Gate` | 37.754 | 48.920 | 11.2 |
-| `gRPC` | 47.803 | 52.360 | 4.6 |
+| String                 | Chrome  | fontkit, best subset | Off by |
+| ---------------------- | ------- | -------------------- | ------ |
+| `a standalone caption` | 163.271 | 203.660              | 40.4   |
+| `AuthService`          | 99.971  | 114.500              | 14.5   |
+| `Queue`                | 52.197  | 58.760               | 6.6    |
+| `Gate`                 | 37.754  | 48.920               | 11.2   |
+| `gRPC`                 | 47.803  | 52.360               | 4.6    |
 
 Six of the seven subsets do not carry the Latin glyphs at all and fall back to
 `.notdef`, which puts them out by up to 183 px. The 217-glyph subset is the right
@@ -234,8 +234,7 @@ measure the same five strings, and see whether Chrome's numbers move.
   can compute and the first browser corrects the text. That is section 2's
   behaviour made permanent rather than transitional, and it is a real second
   representation confined to two fields on one element type. I would take it over
-  shipping widths that are 76 px wrong, but I would not pretend it satisfies ADR
-  0015.
+  shipping widths that are 76 px wrong, but I would not pretend it satisfies ADR 0015.
 
 ---
 
@@ -322,20 +321,20 @@ Medians over 200 to 300 iterations for the server, 30 for the browser.
 
 **On the server, and over loopback from a node client.**
 
-| | 13 elements | 55 elements | 300 elements |
-|---|---|---|---|
-| Bytes of the elements array | 10,675 | 41,848 | 229,551 |
-| `JSON.stringify` the response | 0.01 ms | 0.04 ms | 0.16 ms |
-| Whole-board GET, round trip | 0.10 ms | 0.19 ms | 0.40 ms |
-| Today's one-element write, tiny response | 0.19 ms | 0.19 ms | 0.11 ms |
+|                                          | 13 elements | 55 elements | 300 elements |
+| ---------------------------------------- | ----------- | ----------- | ------------ |
+| Bytes of the elements array              | 10,675      | 41,848      | 229,551      |
+| `JSON.stringify` the response            | 0.01 ms     | 0.04 ms     | 0.16 ms      |
+| Whole-board GET, round trip              | 0.10 ms     | 0.19 ms     | 0.40 ms      |
+| Today's one-element write, tiny response | 0.19 ms     | 0.19 ms     | 0.11 ms      |
 
 **In the browser, through a real Excalidraw instance.**
 
-| | 13 elements | 55 elements | 300 elements |
-|---|---|---|---|
-| `fetch` of the whole board | 3.3 ms | 6.2 ms | 16.1 ms |
-| `JSON.parse` | 0.0 ms | 0.1 ms | 0.4 ms |
-| `updateScene` | 0.1 ms | 0.2 ms | 0.8 ms |
+|                            | 13 elements | 55 elements | 300 elements |
+| -------------------------- | ----------- | ----------- | ------------ |
+| `fetch` of the whole board | 3.3 ms      | 6.2 ms      | 16.1 ms      |
+| `JSON.parse`               | 0.0 ms      | 0.1 ms      | 0.4 ms       |
+| `updateScene`              | 0.1 ms      | 0.2 ms      | 0.8 ms       |
 
 The echo rides back on a response that is already being sent, so there is no
 extra round trip and the fixed cost is already paid. The marginal cost is the
@@ -410,8 +409,8 @@ braces rather than new machinery.
 
 **The echo must not undo an edit the server has not heard about.** A pane holding
 400 ms of undelivered drag that receives a document computed without it would
-lose the drag. Apply the full document only from the response to *this pane's
-own* write, and keep merging another writer's broadcast by id as
+lose the drag. Apply the full document only from the response to _this pane's
+own_ write, and keep merging another writer's broadcast by id as
 `applyServerElements` does today. That keeps "render the persisted document" for
 the pane that wrote, without letting a third party's echo overwrite local work in
 flight.
@@ -436,7 +435,7 @@ So the agent gets the same guarantee in a shape it can afford:
 - **The elements the write touched, in their resulting form.** Not the payload
   that was sent, the record as it now stands, including the ids the server
   minted, the bound text it expanded and the arrows it re-routed. `PUT
-  /api/elements/:id` already returns the updated element; this extends it to the
+/api/elements/:id` already returns the updated element; this extends it to the
   side effects, which today are only broadcast.
 - **A board fingerprint.** Element count plus the sha-256 of the note bytes,
   which costs 0.11 ms at 300 elements. An agent holding the previous fingerprint
@@ -473,10 +472,10 @@ and it is exactly the right shape.
 
 Measured, over 20 elements on a 300-element board:
 
-| | Time |
-|---|---|
+|                                           | Time    |
+| ----------------------------------------- | ------- |
 | 20 concurrent PUTs, as `align` does today | 2.87 ms |
-| The same intent as one batched write | 0.13 ms |
+| The same intent as one batched write      | 0.13 ms |
 
 Twenty times the requests for twenty-two times the latency is a nuisance today.
 Against a note that is the truth it is twenty read-modify-write cycles racing on
@@ -553,13 +552,13 @@ owns the timing constants, so this stage is the persistence half.
 Measured cost of a full read-modify-write against a note, with a
 tmp-write-fsync-rename:
 
-| | 55 elements | 300 elements |
-|---|---|---|
-| Note bytes | 47,240 | 257,825 |
-| Read and parse the note | 0.21 ms | 0.85 ms |
-| Render the note | 0.85 ms | 3.65 ms |
-| Write with fsync and rename | 5.15 ms | 5.25 ms |
-| **Whole cycle** | **6.21 ms** | **9.75 ms** |
+|                             | 55 elements | 300 elements |
+| --------------------------- | ----------- | ------------ |
+| Note bytes                  | 47,240      | 257,825      |
+| Read and parse the note     | 0.21 ms     | 0.85 ms      |
+| Render the note             | 0.85 ms     | 3.65 ms      |
+| Write with fsync and rename | 5.15 ms     | 5.25 ms      |
+| **Whole cycle**             | **6.21 ms** | **9.75 ms**  |
 
 Slightly cheaper than the 11.89 ms ADR 0015 quotes, on the same hardware, because
 that figure came from a different measurement path. Either way `fsync` is over
@@ -571,14 +570,14 @@ that second, on a board four times larger than anything real.
 **What it cost when it landed** (2026-08-21, TASK-078, same machine, medians
 over 200 cycles against a note in a tmpfile vault):
 
-| | 56 elements | 300 elements |
-|---|---|---|
-| Note bytes | 40,406 | 216,346 |
-| Read and parse the note | 0.23 ms | 1.10 ms |
-| Render the note | 0.78 ms | 3.80 ms |
-| Re-read the destination for the ADR 0006 check | 0.02 ms | 0.13 ms |
-| Write with fsync and rename | 9.7 to 12.6 ms | 9.7 ms |
-| **Whole cycle** | **15.6 ms** | **18 to 23 ms** |
+|                                                | 56 elements    | 300 elements    |
+| ---------------------------------------------- | -------------- | --------------- |
+| Note bytes                                     | 40,406         | 216,346         |
+| Read and parse the note                        | 0.23 ms        | 1.10 ms         |
+| Render the note                                | 0.78 ms        | 3.80 ms         |
+| Re-read the destination for the ADR 0006 check | 0.02 ms        | 0.13 ms         |
+| Write with fsync and rename                    | 9.7 to 12.6 ms | 9.7 ms          |
+| **Whole cycle**                                | **15.6 ms**    | **18 to 23 ms** |
 
 The parse and the render came in where they were predicted, which is the part
 that depends on the board and on our code. The estimate was low on the one part

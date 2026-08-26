@@ -26,7 +26,7 @@ out of board addressing, one level down.
 
 It failed in two different registers.
 
-On the command line it fails *quietly*. Stand in `acme/alpha`, promote a box
+On the command line it fails _quietly_. Stand in `acme/alpha`, promote a box
 meaning `acme/beta`, and `src/service.ts` binds to a real file, in a real repo,
 at a real commit. Everything about the answer looks right and the repository is
 the wrong one. The cross-repo case makes this the normal case rather than the
@@ -34,13 +34,10 @@ unlucky one: a system board whose boxes belong to five repositories is built in
 one session, and there is no directory to stand in that is right for more than
 one of them.
 
-Over MCP it fails *by construction*. That server is spawned by the client, so
-its working directory is whatever directory the client was started in. A
-shell-less client is exactly who MCP is for (ADR 0008), and such a client cannot
-express a working directory at all. There is no argument for it, no way to
-change it, no way to see it. A relative path there is not resolvable by intent,
-only by accident. MCP is therefore not an edge case of the CLI's cwd handling.
-It is the surface that proves an ambient directory was the wrong idea.
+A protocol-neutral application caller may have no working directory at all.
+A relative path there is not resolvable by intent, only by accident. That case
+proves an ambient process directory was the wrong interface even though the CLI
+has an explicit working-directory origin.
 
 ## The decision
 
@@ -49,12 +46,12 @@ an explicit origin and has no default, so every caller has to say what a
 relative path may be resolved against. Four ways, in order of how firmly the
 caller named the repository, and the answer always reports which one it used:
 
-| `resolvedFrom` | The caller gave | What happens |
-|---|---|---|
-| `path` | an absolute path | resolved, the identity read from git, and persisted as portable repo metadata |
-| `registry` | a repo identity plus a path inside it | resolved through the checkout registered here, then persisted as portable repo metadata |
-| `cwd` | a relative path, on a surface that has a working directory | resolved, **and the answer says which directory it used and which repository that turned out to be** |
-| `declared` | a repo nothing here can resolve | recorded as stated, no derived code link, and told how to register it |
+| `resolvedFrom` | The caller gave                                            | What happens                                                                                         |
+| -------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `path`         | an absolute path                                           | resolved, the identity read from git, and persisted as portable repo metadata                        |
+| `registry`     | a repo identity plus a path inside it                      | resolved through the checkout registered here, then persisted as portable repo metadata              |
+| `cwd`          | a relative path, on a surface that has a working directory | resolved, **and the answer says which directory it used and which repository that turned out to be** |
+| `declared`     | a repo nothing here can resolve                            | recorded as stated, no derived code link, and told how to register it                                |
 
 On a surface with no working directory, a bare relative path is refused, and
 the refusal names both ways out plus the repositories registered on this
@@ -69,10 +66,10 @@ what a person declares, and observation, because every binding that resolves
 through a real path records where that repository was found. Second promotion
 into a repo can name it from anywhere.
 
-The registry is host state, so it is maintained from the host: `repo list`,
-`repo add`, `repo forget` are CLI-only. Both surfaces *consume* it, because a
-repo identity plus a repo-relative path is how a shell-less client names code.
-A client that cannot see the filesystem cannot sensibly name directories in it.
+The registry is host state, so the CLI maintains it through `repo list`, `repo
+add`, and `repo forget`. The REST and domain modules consume it too. A caller
+that cannot see the filesystem cannot sensibly name directories in it, but it
+can still use a repository identity plus a repo-relative path.
 
 ## Why not one of the easier answers
 
@@ -100,7 +97,7 @@ traces back to something a person declared or something archboard actually
 resolved, and nothing else gets in.
 
 **Keep the cwd fallback silent on the CLI.** The shell's working directory is a
-real thing the caller chose and can see, unlike MCP's, so it stays. What it may
+real thing the caller chose and can see, so it stays. What it may
 not do is look like an answer the caller gave: the result says which directory
 it used and which repository that was, every time. Disclosure is the price of
 keeping the convenience.
@@ -113,8 +110,8 @@ keeping the convenience.
 - A promotion whose path resolved against the working directory now carries an
   extra sentence in its summary. That is intended: it is the sentence that makes
   a wrong binding visible at the moment it is made.
-- A relative path over MCP that used to "work" now fails. It was resolving
-  against a directory nobody chose, so the ones that worked did so by luck.
+- A relative path from a caller with no working directory is refused. Resolving
+  it against the server process would use a directory nobody chose.
 - The registry is machine-local, so a vault carried to another machine derives
   local code targets there or not at all. That is the same trade ADR 0004 made
   when it put boards outside the repositories they describe.

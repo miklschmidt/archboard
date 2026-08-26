@@ -20,14 +20,14 @@
 // miss. What does not: derived caches that cost nothing to rebuild, and
 // anything holding a reference to a class from a particular module version.
 
-const REGISTRY = Symbol.for('archboard.kept');
+const REGISTRY = Symbol.for("archboard.kept");
 
 type Registry = Map<string, unknown>;
 
 function registry(): Registry {
-  const host = globalThis as typeof globalThis & { [REGISTRY]?: Registry };
-  if (!host[REGISTRY]) host[REGISTRY] = new Map();
-  return host[REGISTRY];
+	const host = globalThis as typeof globalThis & { [REGISTRY]?: Registry };
+	if (!host[REGISTRY]) host[REGISTRY] = new Map();
+	return host[REGISTRY];
 }
 
 /**
@@ -38,7 +38,7 @@ function registry(): Registry {
  * a signal handler — belongs inside it, or behind a flag kept alongside it.
  */
 export function kept<T>(name: string, create: () => T): T {
-  const store = registry();
-  if (!store.has(name)) store.set(name, create());
-  return store.get(name) as T;
+	const store = registry();
+	if (!store.has(name)) store.set(name, create());
+	return store.get(name) as T;
 }

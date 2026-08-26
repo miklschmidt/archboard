@@ -30,61 +30,72 @@
 // to outlive it is in the kept registry on `globalThis`, which no module
 // reload can reach (src/core/hot.ts).
 
-import { kept } from './core/hot.js';
-import { armReloadToken } from './core/reload-token.js';
-import { readFacts, compareFacts, reportBrokenReload, ReloadFacts } from './core/reload-canary.js';
+import { kept } from "./core/hot.js";
+import { armReloadToken } from "./core/reload-token.js";
+import {
+	readFacts,
+	compareFacts,
+	reportBrokenReload,
+	type ReloadFacts,
+} from "./core/reload-canary.js";
 
-const PORT = parseInt(process.env.PORT || '3000', 10);
+const PORT = parseInt(process.env.PORT || "3000", 10);
 
 /** Which generation is loaded, and what the canvas held when it was. */
 interface Gate {
-  generation: number;
-  facts: ReloadFacts | null;
+	generation: number;
+	facts: ReloadFacts | null;
 }
 
-const gate = kept<Gate>('dev-gate', () => ({ generation: -1, facts: null }));
+const gate = kept<Gate>("dev-gate", () => ({ generation: -1, facts: null }));
 
 const token = armReloadToken(PORT);
 const { generation } = (await import(token)) as { generation: number };
 
 if (generation !== gate.generation) {
-  const first = gate.generation === -1;
-  gate.generation = generation;
+	const first = gate.generation === -1;
+	gate.generation = generation;
 
-  // Read before the re-evaluation, because afterwards there is nothing left to
-  // compare against except what was written down here.
-  const before = first ? null : readFacts();
+	// Read before the re-evaluation, because afterwards there is nothing left to
+	// compare against except what was written down here.
+	const before = first ? null : readFacts();
 
-  try {
-    // `startServer` is called rather than left to server.ts's own entry-point
-    // check, which looks at `process.argv[1]` and correctly says this file is
-    // the entry. It is idempotent: on a reload it finds the port already bound
-    // and returns.
-    const canvas = await import(`./server.js?reload=${generation}`) as { startServer: () => Promise<void> };
-    await canvas.startServer();
-  } catch (error) {
-    // The old code is still running and still serving. Say so, because the
-    // other reading of a stack trace on a live canvas is that it died.
-    console.error('\n  !! THE RELOAD FAILED TO EVALUATE. The canvas is still running the code it had.');
-    console.error(`     ${error instanceof Error ? error.stack : String(error)}\n`);
-  }
+	try {
+		// `startServer` is called rather than left to server.ts's own entry-point
+		// check, which looks at `process.argv[1]` and correctly says this file is
+		// the entry. It is idempotent: on a reload it finds the port already bound
+		// and returns.
+		const canvas = (await import(`./server.js?reload=${generation}`)) as {
+			startServer: () => Promise<void>;
+		};
+		await canvas.startServer();
+	} catch (error) {
+		// The old code is still running and still serving. Say so, because the
+		// other reading of a stack trace on a live canvas is that it died.
+		console.error(
+			"\n  !! THE RELOAD FAILED TO EVALUATE. The canvas is still running the code it had.",
+		);
+		console.error(`     ${error instanceof Error ? error.stack : String(error)}\n`);
+	}
 
-  const after = readFacts();
-  gate.facts = after;
+	const after = readFacts();
+	gate.facts = after;
 
-  if (before) {
-    const complaints = compareFacts(before, after);
-    if (complaints.length > 0) {
-      reportBrokenReload(complaints);
-    } else {
-      console.log(
-        `canvas reload ${generation} cost nothing: ` +
-        `${Object.keys(after.boards).length} board(s), ${Object.keys(after.panes).length} pane(s), ` +
-        `${after.sockets} socket(s), feed ${after.feedId} still at cursor ${after.cursor}.`
-      );
-    }
-  } else {
-    console.log('canvas running under dev-canvas. Saving a file changes nothing; ' +
-      'reload with `bun run reload`.');
-  }
+	if (before) {
+		const complaints = compareFacts(before, after);
+		if (complaints.length > 0) {
+			reportBrokenReload(complaints);
+		} else {
+			console.log(
+				`canvas reload ${generation} cost nothing: ` +
+					`${Object.keys(after.boards).length} board(s), ${Object.keys(after.panes).length} pane(s), ` +
+					`${after.sockets} socket(s), feed ${after.feedId} still at cursor ${after.cursor}.`,
+			);
+		}
+	} else {
+		console.log(
+			"canvas running under dev-canvas. Saving a file changes nothing; " +
+				"reload with `bun run reload`.",
+		);
+	}
 }

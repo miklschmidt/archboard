@@ -38,29 +38,20 @@ exporting it afterwards changes nothing, and with no vault at all the canvas
 refuses to start and tells you how to get one (ADR 0015). Open
 <http://127.0.0.1:3000>.
 
-## 3. Wire archboard into Codex
+## 3. Make the CLI available to Codex
 
-Archboard runs as an MCP stdio server when invoked with no arguments. In
-`~/.codex/config.toml`:
+Put the source-built binary on `PATH`, then install the tracked skill into the
+repository Codex will work on:
 
-```toml
-[mcp_servers.archboard]
-command = "bun"
-args = ["/path/to/archboard/src/bin.ts"]
-env = { ARCHBOARD_VAULT = "/path/to/vault" }
-startup_timeout_sec = 20
+```bash
+ln -s /path/to/archboard/bin/canvas ~/.local/bin/archboard
+cd /path/to/project
+archboard install-skill --vault /path/to/vault
 ```
 
-The client spawns this, so `bun` has to resolve on the PATH the client inherits.
-A launcher started from a desktop session often has a shorter PATH than your
-shell does; if the server never comes up, put the absolute path from
-`which bun` in `command`.
-
-Codex supports **stdio and streamable-http only** — no SSE, no websocket — and
-negotiates MCP `2025-06-18` by default.
-
-The tool prefix a client shows (`archboard/*`) comes from the key you chose
-above, not from the server's own name. Tool names themselves are flat.
+Running `archboard` with no command shows CLI help. Canvas-driving commands
+auto-start the Express and WebSocket server; they do not start another agent
+transport.
 
 ## 4. Enable the realtime voice feature
 
@@ -90,16 +81,16 @@ like any other and is named like one.
 Ask the agent to read a codebase and draw its architecture. Then, on the board:
 
 1. **Select a box by tapping its interior** and ask the agent what you have
-   selected — this is `selection`, and it is how "map *this* to X" works.
+   selected — this is `selection`, and it is how "map _this_ to X" works.
 2. **Promote it**: `./bin/canvas promote --kind service --name "Payments"
-   --path src/payments/index.ts --doing "calling this the payments service"`.
+--path src/payments/index.ts --doing "calling this the payments service"`.
    The binding resolves through git to repo, path, branch and commit. Every
    write says what it is doing and is refused without it, and the line shows up
    on the board as the write lands (TASK-095) — watch the top right of the pane
    while the agent works, which is the point of the whole thing.
 3. **Save**: `./bin/canvas board save --board payments --doing "writing it down"`.
 4. **Branch a variant**: `./bin/canvas board save --board payments --as payments@option-a
-   --doing "branching a proposal"`,
+--doing "branching a proposal"`,
    then rearrange it — move a box out of a cluster, cut an edge, add a node.
    The branch is written but not put on screen: whatever pane held `payments`
    still holds it, because branching is how you get something to compare
@@ -116,7 +107,7 @@ Ask the agent to read a codebase and draw its architecture. Then, on the board:
    `./bin/canvas pane close right` puts you back to one.
 7. **Draw into the half you mean**: pipe a Mermaid diagram at the variant,
    `... | ./bin/canvas mermaid --board payments@option-a --doing "sketching the
-   proposal from mermaid"`, and watch it appear
+proposal from mermaid"`, and watch it appear
    on the right while the left keeps the current architecture. `mermaid` takes
    no `--pane` and never will: it names a board, a board is in at most one
    pane, so the pane is already decided (TASK-046). Aim it at a board no pane
@@ -125,7 +116,7 @@ Ask the agent to read a codebase and draw its architecture. Then, on the board:
 
 Step 5 is the one worth watching closely. The tool returns structure; the agent
 narrates it. If the narration is wrong or thin, the question is usually whether
-the *data* was sufficient, not whether the model phrased it badly.
+the _data_ was sufficient, not whether the model phrased it badly.
 
 ## 6. Let the board push back (optional)
 
@@ -141,25 +132,17 @@ canvas is bound to anything but loopback (ADR 0005). On the thin-client path in
 
 ```bash
 export ARCHBOARD_VAULT=/path/to/vault
-ARCHBOARD_INJECT=1 ./bin/canvas start     # must be set before the server starts
+ARCHBOARD_INJECT=1 ARCHBOARD_INJECT_THREAD=<task-id> ./bin/canvas start
 ./bin/canvas inject status                # armed? connected? which thread?
 ```
 
 `inject status` answers the three questions that go wrong: whether it armed
 (and if not, why), whether the app-server control socket is there — it exists
 only while the daemon is running, which in practice means while a session is up
-— and **which thread it would tell**. That last one is decided, not guessed:
-
-1. `ARCHBOARD_INJECT_THREAD`, if you set it. Pins one thread; best for testing.
-2. Otherwise the thread that most recently called an archboard MCP tool — the
-   one actually working on this board. Needs no configuration.
-3. Otherwise the most recently active thread seen since the canvas connected.
-4. Otherwise, if exactly one thread is loaded, that one.
-5. Otherwise **nothing is injected**, and `status` says so. Interrupting a
-   thread that has nothing to do with the board is worse than silence.
-
-Threads are announced to a client as they are created or resumed, so start the
-canvas before the session — or pin the thread.
+— and **which thread it would tell**. `ARCHBOARD_INJECT_THREAD` is the only
+route. A board does not yet carry a Codex task identity, so recent activity and
+the number of loaded tasks do not prove ownership. Without an exact task id,
+injection declines to arm and `status` says why.
 
 Then rearrange something on the board. One drag produces **one** message, after
 the board settles, and only when the change means something: a node moved
@@ -183,7 +166,8 @@ loud channel (`turn/steer`) interrupts the running turn instead, which makes
 the agent **speak, unprompted, over you**. It ships off:
 
 ```bash
-ARCHBOARD_INJECT=1 ARCHBOARD_INJECT_LOUD=1 ./bin/canvas start
+ARCHBOARD_INJECT=1 ARCHBOARD_INJECT_THREAD=<task-id> \
+  ARCHBOARD_INJECT_LOUD=1 ./bin/canvas start
 ./bin/canvas inject test --loud     # one loud probe, without restarting
 ```
 
@@ -192,16 +176,15 @@ nothing to interrupt it falls back to quiet.
 
 ### Knobs
 
-| Variable | Default | What it does |
-|---|---|---|
-| `ARCHBOARD_INJECT` | unset (off) | Arms injection. Read at server start. |
-| `ARCHBOARD_INJECT_LOUD` | unset (off) | Allows `turn/steer`. Experimental. |
-| `ARCHBOARD_INJECT_THREAD` | unset | Pins the target thread. |
-| `ARCHBOARD_MCP_SERVER_NAME` | `archboard` | The key you gave this MCP server in `config.toml`; how tool calls are recognised. |
-| `ARCHBOARD_INJECT_DEBOUNCE_MS` | 4000 | Coalescing window for changes. |
-| `ARCHBOARD_INJECT_MIN_INTERVAL_MS` | 10000 | Floor between injections. |
-| `ARCHBOARD_SETTLE_MS` | 1200 | How long the board must be still before a change counts. |
-| `CODEX_HOME` | `~/.codex` | Where the control socket is found. |
+| Variable                           | Default     | What it does                                                |
+| ---------------------------------- | ----------- | ----------------------------------------------------------- |
+| `ARCHBOARD_INJECT`                 | unset (off) | Arms injection. Read at server start.                       |
+| `ARCHBOARD_INJECT_LOUD`            | unset (off) | Allows `turn/steer`. Experimental.                          |
+| `ARCHBOARD_INJECT_THREAD`          | unset       | Exact target task id; injection declines to arm without it. |
+| `ARCHBOARD_INJECT_DEBOUNCE_MS`     | 4000        | Coalescing window for changes.                              |
+| `ARCHBOARD_INJECT_MIN_INTERVAL_MS` | 10000       | Floor between injections.                                   |
+| `ARCHBOARD_SETTLE_MS`              | 1200        | How long the board must be still before a change counts.    |
+| `CODEX_HOME`                       | `~/.codex`  | Where the control socket is found.                          |
 
 Those three defaults are set in `src/core/timing.ts`, alongside the pane's
 fixed progress deadline, trailing idle deadline, and the change feed's settle
@@ -210,11 +193,9 @@ that file; the numbers here are a copy for reading.
 
 ## What to expect, and what not to
 
-**The voice model never sees tool results.** Verified in the Codex source:
-`realtime_text_for_event` returns `None` for `McpToolCallBegin` and
-`McpToolCallEnd`. Only the thread's own prose reaches the voice layer, prefixed
-`[BACKEND] ` and capped at 1,000 tokens. So the agent reads the structured diff
-and speaks about it; it is not reading the diff aloud.
+**The voice model never sees command output automatically.** The Codex thread
+runs the CLI, reads the structured diff, and narrates it. Only the thread's own
+prose reaches the voice layer, prefixed `[BACKEND] ` and capped at 1,000 tokens.
 
 **Saving refuses rather than resolving.** If a note changed on disk since
 archboard read it — Obsidian had it open, or a sync client wrote it — the save
@@ -237,6 +218,6 @@ asked for, and refuses to arm when the canvas is not on loopback.
 
 Read the "Things that will mislead you" section of
 `skills/archboard-dev/SKILL.md` first. It lists the traps that have already
-cost time — including that an *unlabelled* transparent shape cannot be clicked
+cost time — including that an _unlabelled_ transparent shape cannot be clicked
 in its interior, and that with `ARCHBOARD_VAULT` unset the canvas will not
 start at all, so what you meant to test never runs.
