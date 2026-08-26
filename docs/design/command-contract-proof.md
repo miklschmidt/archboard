@@ -938,6 +938,70 @@ Public result JSON Schema:
 }
 ```
 
+## selection
+
+Reads the server-cached browser selection without retransmitting the scene.
+
+Usage:
+
+```text
+archboard selection [--text]
+```
+
+Output: json (Structured view state); text (Human-readable view state).
+
+Prerequisites: server, board. Effects: read.
+
+REST relationships:
+
+- GET `/api/selection`, one. Read the current selection
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"anyOf": [
+		{},
+		{
+			"type": "string"
+		}
+	]
+}
+```
+
+## panes
+
+Reads pane layout and view state, including the valid no-pane state.
+
+Usage:
+
+```text
+archboard panes [--text]
+```
+
+Output: json (Structured view state); text (Human-readable view state).
+
+Prerequisites: server. Effects: read.
+
+REST relationships:
+
+- GET `/api/panes`, one. Read pane view state
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"anyOf": [
+		{},
+		{
+			"type": "string"
+		}
+	]
+}
+```
+
 ## viewport
 
 Moves the camera owned by a rendered browser pane.
@@ -1229,6 +1293,135 @@ Public result JSON Schema:
 			"additionalProperties": false
 		}
 	]
+}
+```
+
+## compare
+
+Returns the complete semantic comparison without opening either board.
+
+Usage:
+
+```text
+archboard compare <from> [to]
+```
+
+Output: json (Complete comparison).
+
+Prerequisites: server. Effects: read.
+
+REST relationships:
+
+- GET `/api/boards/compare`, one. Read the semantic comparison
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema"
+}
+```
+
+## changes
+
+Reads cursor-based semantic change events or their net coalesced difference.
+
+Usage:
+
+```text
+archboard changes --board <key> [--since <cursor>] [--coalesce] [--detail] [--text]
+```
+
+Output: json (Structured change feed); text (Human-readable change feed).
+
+Prerequisites: server, board. Effects: read.
+
+REST relationships:
+
+- GET `/api/changes`, one. Read semantic changes
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"anyOf": [
+		{
+			"type": "object",
+			"properties": {
+				"success": {
+					"type": "boolean"
+				},
+				"board": {
+					"type": "string"
+				},
+				"feedId": {
+					"type": "string"
+				},
+				"cursor": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"events": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"propertyNames": {
+							"type": "string"
+						},
+						"additionalProperties": {}
+					}
+				},
+				"held": {
+					"type": "object",
+					"properties": {
+						"board": {
+							"type": "string"
+						},
+						"message": {
+							"type": "string"
+						}
+					},
+					"required": ["board", "message"],
+					"additionalProperties": {}
+				}
+			},
+			"required": ["success", "board", "cursor", "events"],
+			"additionalProperties": {}
+		},
+		{
+			"type": "string"
+		}
+	]
+}
+```
+
+## describe
+
+Returns the complete human-readable description for the named board.
+
+Usage:
+
+```text
+archboard describe
+```
+
+Output: text (Scene description).
+
+Prerequisites: server, board. Effects: read.
+
+REST relationships:
+
+- GET `/api/elements`, one. Read scene elements
+- GET `/api/boards/info`, one. Read the board heading
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "string"
 }
 ```
 
