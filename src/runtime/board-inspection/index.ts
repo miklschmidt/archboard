@@ -9,6 +9,7 @@ import {
 } from "./schemas.js";
 import { decodeRecords } from "./lib/decode.js";
 import { BROAD_PHASE_COMPARISON_LIMIT, detectBoard } from "./lib/detectors.js";
+import { compareIdentity } from "./lib/ordering.js";
 
 export {
 	CheckResultSchema,
@@ -89,7 +90,7 @@ export function inspectBoard(
 				.filter((finding) => finding.affectsCoverage)
 				.map((finding) => `${finding.code}/${finding.reason}`),
 		),
-	].toSorted();
+	].toSorted(compareIdentity);
 	const coverage = coverageReasons.length > 0 ? ("indeterminate" as const) : ("complete" as const);
 	return InspectionReportSchema.parse({
 		schemaVersion: 1,

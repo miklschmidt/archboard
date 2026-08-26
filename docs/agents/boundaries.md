@@ -25,9 +25,10 @@ regardless of whether the folder is named `lib`, `tests`, or something else.
 
 `src/runtime/board-inspection/diagnostics.ts` is a pure development entrypoint. It runs the same
 inspection pipeline as `index.ts` and reports deterministic preprocessing work for performance
-regressions. Its bucket counters count active-bucket iteration and exact-string index operations;
-tests do not infer either from the public comparison count. Product callers and the `check` command
-use `index.ts`; diagnostic counters never enter schema-v1 report bytes.
+regressions. Its counters cover every active compatibility-group and compatible-bucket iteration,
+exact-string index operations, and the number of canonical compatibility profiles retained by a
+sweep. Tests do not infer that work from the public comparison count. Product callers and the
+`check` command use `index.ts`; diagnostic counters never enter schema-v1 report bytes.
 
 Root `src/` files are thin process entrypoints only. The existing entrypoints are `src/bin.ts`,
 `src/server.ts`, and `src/dev-canvas.ts`. Do not add implementation to these files.

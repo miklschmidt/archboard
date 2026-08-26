@@ -1,3 +1,5 @@
+import { compareIdentity } from "./ordering.js";
+
 export interface SweepInterval<T> {
 	id: string;
 	min: number;
@@ -18,6 +20,12 @@ export interface SweepWork {
 	partitionChecks: number;
 	bucketScans: number;
 	bucketIndexOperations: number;
+	compatibilityProfiles: number;
+}
+
+interface CompatibilityProfile {
+	exclusions: readonly string[];
+	excluded: ReadonlySet<string>;
 }
 
 interface ActiveNode<T> {
@@ -36,18 +44,29 @@ interface ActiveList<T> {
 	tail: ActiveNode<T> | null;
 	index: BucketIndex<T>;
 	partition: string;
-	exclusions: readonly string[];
-	path: readonly BucketNode<T>[];
+	profile: CompatibilityProfile;
+	group: ProfileGroup<T>;
 }
 
-interface BucketNode<T> {
-	children: Map<string, BucketNode<T>>;
-	list: ActiveList<T> | null;
+interface ProfileGroup<T> {
+	profile: CompatibilityProfile;
+	buckets: Map<string, ActiveList<T>>;
+	compatible: Map<CompatibilityProfile, Set<ActiveList<T>>>;
 }
 
 interface BucketIndex<T> {
-	roots: Map<string, BucketNode<T>>;
-	active: Set<ActiveList<T>>;
+	groups: Map<CompatibilityProfile, ProfileGroup<T>>;
+}
+
+interface ProfileNode {
+	children: Map<string, ProfileNode>;
+	profile: CompatibilityProfile | null;
+}
+
+interface ProfileIndex {
+	root: ProfileNode;
+	count: number;
+	bySet: Map<ReadonlySet<string>, CompatibilityProfile>;
 }
 
 function compareNode<T>(a: ActiveNode<T>, b: ActiveNode<T>): number {
@@ -93,21 +112,13 @@ function append<T>(list: ActiveList<T>, node: ActiveNode<T>): void {
 
 function retireEmptyList<T>(list: ActiveList<T>, work: SweepWork): void {
 	if (list.head) return;
-	list.index.active.delete(list);
+	list.group.buckets.delete(list.partition);
+	for (const compatible of list.group.compatible.values()) {
+		compatible.delete(list);
+		work.bucketIndexOperations += 1;
+	}
+	if (list.group.buckets.size === 0) list.index.groups.delete(list.profile);
 	work.bucketIndexOperations += 1;
-	const leaf = list.path.at(-1)!;
-	leaf.list = null;
-	for (let index = list.path.length - 1; index > 0; index -= 1) {
-		const child = list.path[index]!;
-		if (child.list || child.children.size > 0) break;
-		list.path[index - 1]!.children.delete(list.exclusions[index - 1]!);
-		work.bucketIndexOperations += 1;
-	}
-	const root = list.path[0]!;
-	if (!root.list && root.children.size === 0) {
-		list.index.roots.delete(list.partition);
-		work.bucketIndexOperations += 1;
-	}
 }
 
 function remove<T>(node: ActiveNode<T>, work: SweepWork): void {
@@ -121,50 +132,75 @@ function remove<T>(node: ActiveNode<T>, work: SweepWork): void {
 	retireEmptyList(list, work);
 }
 
-function pairAllowed(a: SweepPartition, b: SweepPartition): boolean {
-	return !a.excludedPartitions.has(b.partition) && !b.excludedPartitions.has(a.partition);
-}
-
 function bucketFor<T>(
 	index: BucketIndex<T>,
 	semantics: SweepPartition,
-	exclusions: readonly string[],
+	profile: CompatibilityProfile,
 	work: SweepWork,
 ): ActiveList<T> {
 	work.bucketIndexOperations += 1;
-	let root = index.roots.get(semantics.partition);
-	if (!root) {
-		root = { children: new Map(), list: null };
-		index.roots.set(semantics.partition, root);
+	let group = index.groups.get(profile);
+	if (!group) {
+		group = { profile, buckets: new Map(), compatible: new Map() };
+		index.groups.set(profile, group);
 		work.bucketIndexOperations += 1;
 	}
-	const path = [root];
-	let node = root;
-	for (const exclusion of exclusions) {
-		work.bucketIndexOperations += 1;
-		let child = node.children.get(exclusion);
-		if (!child) {
-			child = { children: new Map(), list: null };
-			node.children.set(exclusion, child);
-			work.bucketIndexOperations += 1;
-		}
-		node = child;
-		path.push(node);
-	}
-	if (node.list) return node.list;
+	const existing = group.buckets.get(semantics.partition);
+	if (existing) return existing;
 	const list: ActiveList<T> = {
 		semantics,
 		head: null,
 		tail: null,
 		index,
 		partition: semantics.partition,
-		exclusions,
-		path,
+		profile,
+		group,
 	};
-	node.list = list;
-	index.active.add(list);
+	group.buckets.set(list.partition, list);
+	for (const [eventProfile, compatible] of group.compatible) {
+		if (!eventProfile.excluded.has(list.partition)) compatible.add(list);
+		work.bucketIndexOperations += 1;
+	}
 	work.bucketIndexOperations += 1;
 	return list;
+}
+
+function canonicalProfile(index: ProfileIndex, semantics: SweepPartition): CompatibilityProfile {
+	const reused = index.bySet.get(semantics.excludedPartitions);
+	if (reused) return reused;
+	const exclusions = [...semantics.excludedPartitions].toSorted(compareIdentity);
+	let node = index.root;
+	for (const exclusion of exclusions) {
+		let child = node.children.get(exclusion);
+		if (!child) {
+			child = { children: new Map(), profile: null };
+			node.children.set(exclusion, child);
+		}
+		node = child;
+	}
+	if (!node.profile) {
+		node.profile = { exclusions, excluded: new Set(exclusions) };
+		index.count += 1;
+	}
+	index.bySet.set(semantics.excludedPartitions, node.profile);
+	return node.profile;
+}
+
+function compatibleBuckets<T>(
+	group: ProfileGroup<T>,
+	eventProfile: CompatibilityProfile,
+	work: SweepWork,
+): ReadonlySet<ActiveList<T>> {
+	const cached = group.compatible.get(eventProfile);
+	if (cached) return cached;
+	const buckets = new Set<ActiveList<T>>();
+	for (const [partition, bucket] of group.buckets) {
+		work.bucketIndexOperations += 1;
+		if (!eventProfile.excluded.has(partition)) buckets.add(bucket);
+	}
+	group.compatible.set(eventProfile, buckets);
+	work.bucketIndexOperations += 1;
+	return buckets;
 }
 
 /** Enumerate every semantically permitted closed x-overlap once in deterministic start-event order. */
@@ -175,30 +211,47 @@ export function sweepIntervalPairs<A, B>(
 	visit: (left: SweepInterval<A>, right: SweepInterval<B>) => boolean | void,
 ): SweepWork {
 	type Value = A | B;
-	const events: Array<{ interval: SweepInterval<Value>; set: 0 | 1; ordinal: number }> = [];
-	left.forEach((interval, ordinal) => events.push({ interval, set: 0, ordinal }));
-	if (!sameSet) right.forEach((interval, ordinal) => events.push({ interval, set: 1, ordinal }));
+	const profileIndex: ProfileIndex = {
+		root: { children: new Map(), profile: null },
+		count: 0,
+		bySet: new Map(),
+	};
+	const events: Array<{
+		interval: SweepInterval<Value>;
+		set: 0 | 1;
+		ordinal: number;
+		profile: CompatibilityProfile;
+	}> = [];
+	left.forEach((interval, ordinal) =>
+		events.push({
+			interval,
+			set: 0,
+			ordinal,
+			profile: canonicalProfile(profileIndex, interval.semantics),
+		}),
+	);
+	if (!sameSet)
+		right.forEach((interval, ordinal) =>
+			events.push({
+				interval,
+				set: 1,
+				ordinal,
+				profile: canonicalProfile(profileIndex, interval.semantics),
+			}),
+		);
 	events.sort(
 		(a, b) =>
 			a.interval.min - b.interval.min ||
 			a.interval.max - b.interval.max ||
 			a.set - b.set ||
-			a.interval.id.localeCompare(b.interval.id) ||
+			compareIdentity(a.interval.id, b.interval.id) ||
 			a.ordinal - b.ordinal,
 	);
 	const buckets: [BucketIndex<Value>, BucketIndex<Value>] = [
-		{ roots: new Map(), active: new Set() },
-		{ roots: new Map(), active: new Set() },
+		{ groups: new Map() },
+		{ groups: new Map() },
 	];
 	const heap: ActiveNode<Value>[] = [];
-	const exclusionsBySemantics = new Map<SweepPartition, readonly string[]>();
-	const sortedExclusions = (value: SweepPartition) => {
-		const existing = exclusionsBySemantics.get(value);
-		if (existing) return existing;
-		const exclusions = [...value.excludedPartitions].toSorted();
-		exclusionsBySemantics.set(value, exclusions);
-		return exclusions;
-	};
 	const work: SweepWork = {
 		events: 0,
 		activeVisits: 0,
@@ -206,6 +259,7 @@ export function sweepIntervalPairs<A, B>(
 		partitionChecks: 0,
 		bucketScans: 0,
 		bucketIndexOperations: 0,
+		compatibilityProfiles: profileIndex.count,
 	};
 	for (let order = 0; order < events.length; order += 1) {
 		const event = events[order]!;
@@ -216,26 +270,23 @@ export function sweepIntervalPairs<A, B>(
 			remove(expired, work);
 		}
 		const opposite = sameSet ? buckets[0] : buckets[event.set === 0 ? 1 : 0];
-		for (const bucket of opposite.active) {
+		for (const group of opposite.groups.values()) {
 			work.bucketScans += 1;
-			if (!bucket.head) continue;
 			work.partitionChecks += 1;
-			if (!pairAllowed(event.interval.semantics, bucket.semantics)) continue;
-			for (let active: ActiveNode<Value> | null = bucket.head; active; active = active.next) {
-				work.activeVisits += 1;
-				const shouldContinue =
-					event.set === 0
-						? visit(event.interval as SweepInterval<A>, active.interval as SweepInterval<B>)
-						: visit(active.interval as SweepInterval<A>, event.interval as SweepInterval<B>);
-				if (shouldContinue === false) return work;
+			if (group.profile.excluded.has(event.interval.semantics.partition)) continue;
+			for (const bucket of compatibleBuckets(group, event.profile, work)) {
+				work.bucketScans += 1;
+				for (let active: ActiveNode<Value> | null = bucket.head; active; active = active.next) {
+					work.activeVisits += 1;
+					const shouldContinue =
+						event.set === 0
+							? visit(event.interval as SweepInterval<A>, active.interval as SweepInterval<B>)
+							: visit(active.interval as SweepInterval<A>, event.interval as SweepInterval<B>);
+					if (shouldContinue === false) return work;
+				}
 			}
 		}
-		const list = bucketFor(
-			buckets[event.set],
-			event.interval.semantics,
-			sortedExclusions(event.interval.semantics),
-			work,
-		);
+		const list = bucketFor(buckets[event.set], event.interval.semantics, event.profile, work);
 		const node: ActiveNode<Value> = {
 			interval: event.interval,
 			set: event.set,

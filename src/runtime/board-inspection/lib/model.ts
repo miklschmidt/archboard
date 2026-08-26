@@ -2,6 +2,7 @@ import type { NodeRef, ObstacleRef } from "../schemas.js";
 import type { DecodedRecord } from "./decode.js";
 import { aggregateBoxes, contains, type ExactBox } from "./geometry.js";
 import { sweepIntervalPairs, type SweepWork } from "./interval-sweep.js";
+import { compareIdentity, encodeIdentityList } from "./ordering.js";
 
 export interface InspectionNode {
 	id: string;
@@ -232,10 +233,12 @@ function buildLabelClassifications(
 			(typeof rawContainer === "string" && duplicateIds.has(rawContainer));
 		const forwardOwnerId =
 			typeof rawContainer === "string" && rawContainer.length > 0 ? rawContainer : null;
-		const reverseOwnerIds = [...(reverseLabelOwners.get(record.id) ?? [])].toSorted();
+		const reverseOwnerIds = [...(reverseLabelOwners.get(record.id) ?? [])].toSorted(
+			compareIdentity,
+		);
 		const candidateOwnerIds = [
 			...new Set([...(forwardOwnerId ? [forwardOwnerId] : []), ...reverseOwnerIds]),
-		].toSorted();
+		].toSorted(compareIdentity);
 		let state: LabelOwnershipClassification["state"];
 		let resolvedOwnerId: string | null = null;
 		if (blocked) state = "blocked";
@@ -308,8 +311,8 @@ function buildNodes(
 		const aggregate = aggregateResult.kind === "representable" ? aggregateResult.box : null;
 		if (!aggregate)
 			aggregateFailures.push({ scope: "semantic-node-aggregate", subjectId: id, members });
-		const elementIds = bodies.map((record) => record.id!).toSorted();
-		const labelElementIds = labels.map((record) => record.id!).toSorted();
+		const elementIds = bodies.map((record) => record.id!).toSorted(compareIdentity);
+		const labelElementIds = labels.map((record) => record.id!).toSorted(compareIdentity);
 		nodes.set(id, {
 			id,
 			members,
@@ -387,20 +390,19 @@ function assignNodeHierarchy(nodes: Map<string, InspectionNode>): SweepWork {
 			min: child.body.x,
 			max: child.body.x + child.body.width,
 			value: child,
-			semantics: { partition: child.id, excludedPartitions: new Set<string>() },
+			semantics: { partition: child.id, excludedPartitions: new Set([child.id]) },
 		})),
 		boundaries.map(({ owner, boundary }) => ({
-			id: `${boundary.id!}\0${owner.id}`,
+			id: boundary.id!,
 			min: boundary.box!.x,
 			max: boundary.box!.x + boundary.box!.width,
 			value: { owner, boundary },
-			semantics: { partition: owner.id, excludedPartitions: new Set<string>() },
+			semantics: { partition: owner.id, excludedPartitions: new Set([owner.id]) },
 		})),
 		false,
 		(childInterval, boundaryInterval) => {
 			const child = childInterval.value;
 			const { owner, boundary } = boundaryInterval.value;
-			if (owner.id === child.id) return;
 			if (boundaryInterval.min > childInterval.min || boundaryInterval.max < childInterval.max)
 				return;
 			if (
@@ -417,14 +419,14 @@ function assignNodeHierarchy(nodes: Map<string, InspectionNode>): SweepWork {
 		const selected = (candidates.get(child.id) ?? []).toSorted(
 			(a, b) =>
 				compareAreaFactors(boundaryAreas.get(a.boundary)!, boundaryAreas.get(b.boundary)!) ||
-				a.boundary.id!.localeCompare(b.boundary.id!) ||
-				a.owner.id.localeCompare(b.owner.id),
+				compareIdentity(a.boundary.id!, b.boundary.id!) ||
+				compareIdentity(a.owner.id, b.owner.id),
 		)[0];
 		if (selected) child.parentId = selected.owner.id;
 	}
 	for (const node of nodes.values())
 		if (node.parentId) nodes.get(node.parentId)?.children.push(node.id);
-	for (const node of nodes.values()) node.children.sort();
+	for (const node of nodes.values()) node.children.sort(compareIdentity);
 	return work;
 }
 
@@ -541,10 +543,10 @@ function buildObstacles(
 		if (validLibrary.length === 0 && !sharedGroup) continue;
 		if (sharedGroup)
 			for (const member of members) qualifyingGroupedObstacleElementIds.add(member.id!);
-		const elementIds = members.map((record) => record.id!).toSorted();
+		const elementIds = members.map((record) => record.id!).toSorted(compareIdentity);
 		const groups = [
 			...new Set(members.flatMap((record) => groupsById.get(record.id!) ?? [])),
-		].toSorted();
+		].toSorted(compareIdentity);
 		const library = validLibrary
 			.map((record) => {
 				const attr = libraryAttribution(record)!;
@@ -554,11 +556,11 @@ function buildObstacles(
 					...(attr.source ? { source: attr.source } : {}),
 				};
 			})
-			.toSorted((a, b) => a.elementId.localeCompare(b.elementId));
+			.toSorted((a, b) => compareIdentity(a.elementId, b.elementId));
 		const obstacleResult = aggregateBoxes(members.map((record) => record.box!));
 		const kind =
 			validLibrary.length > 0 ? ("library-component" as const) : ("grouped-component" as const);
-		const id = `obstacle:${elementIds.join(",")}`;
+		const id = `obstacle:${encodeIdentityList(elementIds)}`;
 		if (obstacleResult.kind !== "representable") {
 			aggregateFailures.push({ scope: "obstacle-component", subjectId: id, members });
 			continue;
@@ -571,7 +573,7 @@ function buildObstacles(
 			ref: { id, kind, elementIds, groupIds: groups, library },
 		});
 	}
-	obstacles.sort((a, b) => a.id.localeCompare(b.id));
+	obstacles.sort((a, b) => compareIdentity(a.id, b.id));
 	return { obstacles, qualifyingGroupedObstacleElementIds, aggregateFailures };
 }
 

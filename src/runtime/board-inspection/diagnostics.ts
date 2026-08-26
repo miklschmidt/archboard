@@ -10,12 +10,14 @@ export interface InspectionWorkDiagnostics {
 	broadPhasePartitionChecks: number;
 	broadPhaseBucketScans: number;
 	broadPhaseBucketIndexOperations: number;
+	broadPhaseCompatibilityProfiles: number;
 	hierarchyEvents: number;
 	hierarchyCandidateVisits: number;
 	hierarchyExpiryPops: number;
 	hierarchyPartitionChecks: number;
 	hierarchyBucketScans: number;
 	hierarchyBucketIndexOperations: number;
+	hierarchyCompatibilityProfiles: number;
 	pathSegmentChecks: number;
 }
 
@@ -41,12 +43,14 @@ export function inspectBoardDiagnostics(
 			broadPhasePartitionChecks: work.broadPhasePartitionChecks,
 			broadPhaseBucketScans: work.broadPhaseBucketScans,
 			broadPhaseBucketIndexOperations: work.broadPhaseBucketIndexOperations,
+			broadPhaseCompatibilityProfiles: work.broadPhaseCompatibilityProfiles,
 			hierarchyEvents: work.hierarchyEvents,
 			hierarchyCandidateVisits: work.hierarchyCandidateVisits,
 			hierarchyExpiryPops: work.hierarchyExpiryPops,
 			hierarchyPartitionChecks: work.hierarchyPartitionChecks,
 			hierarchyBucketScans: work.hierarchyBucketScans,
 			hierarchyBucketIndexOperations: work.hierarchyBucketIndexOperations,
+			hierarchyCompatibilityProfiles: work.hierarchyCompatibilityProfiles,
 			pathSegmentChecks: work.pathSegmentChecks,
 		},
 	};

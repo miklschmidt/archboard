@@ -3750,7 +3750,7 @@ check(
 			diagnostics.work.broadPhaseBucketIndexOperations <= diagnostics.work.broadPhaseEvents * 6 &&
 			diagnostics.work.broadPhaseEvents === count * 6 &&
 			diagnostics.work.hierarchyEvents === count * 2 &&
-			diagnostics.work.hierarchyCandidateVisits === count &&
+			diagnostics.work.hierarchyCandidateVisits === 0 &&
 			diagnostics.work.hierarchyBucketScans === count &&
 			diagnostics.work.hierarchyBucketIndexOperations <= diagnostics.work.hierarchyEvents * 5 &&
 			diagnostics.work.hierarchyExpiryPops <= count * 2,
@@ -3779,6 +3779,8 @@ check(
 		({ segmentCount, diagnostics }) =>
 			diagnostics.report.broadPhaseComparisons === 0 &&
 			diagnostics.work.broadPhaseCompatibleVisits === 0 &&
+			diagnostics.work.broadPhaseBucketScans <= segmentCount * 2 &&
+			diagnostics.work.broadPhaseCompatibilityProfiles <= 3 &&
 			diagnostics.work.pathSegmentChecks === segmentCount &&
 			!diagnostics.report.findings.some(
 				(finding) => finding.code === "CONNECTOR_INTERSECTION_UNMARKED",
@@ -3859,6 +3861,64 @@ check(
 	sameOwnerDiagnostics.report.broadPhaseComparisons === 0 &&
 		sameOwnerDiagnostics.work.broadPhaseCompatibleVisits === 0 &&
 		!sameOwnerDiagnostics.report.findings.some((finding) => finding.code === "LABEL_OVERLAP"),
+);
+
+function nestedOwnerLabelBoard(height, labelCount) {
+	const labels = Array.from({ length: labelCount }, (_, index) => ({
+		id: `deep-label-${height}-${index}`,
+		type: "text",
+		x: height * 2 + 1,
+		y: height * 2 + 1,
+		width: 2,
+		height: 1,
+		angle: 0,
+		fontFamily: 5,
+		text: `${index}`,
+		containerId: `deep-owner-${height - 1}`,
+	}));
+	return [
+		...Array.from({ length: height }, (_, index) =>
+			semanticNode(`deep-owner-${index}`, {
+				x: index * 2,
+				y: index * 2,
+				width: (height - index) * 10,
+				height: (height - index) * 10,
+				...(index === height - 1
+					? { boundElements: labels.map((label) => ({ id: label.id, type: "text" })) }
+					: {}),
+			}),
+		),
+		...labels,
+	];
+}
+const nestedOwnerLabelDiagnostics = [
+	[8, 1_000],
+	[16, 2_000],
+	[32, 4_000],
+	[64, 8_000],
+].map(([height, labelCount]) => ({
+	height,
+	labelCount,
+	diagnostics: inspectBoardDiagnostics(nestedOwnerLabelBoard(height, labelCount)),
+}));
+check(
+	"own-plus-ancestor label exclusions reuse one compatibility profile with bounded A=0 work",
+	nestedOwnerLabelDiagnostics.every(
+		({ height, labelCount, diagnostics }) =>
+			diagnostics.report.broadPhaseComparisons === 0 &&
+			diagnostics.work.broadPhaseCompatibleVisits === 0 &&
+			diagnostics.work.broadPhaseBucketScans <= (height + labelCount) * 3 &&
+			diagnostics.work.broadPhaseBucketIndexOperations <= (height + labelCount) * 20 &&
+			diagnostics.work.broadPhaseCompatibilityProfiles <= 5 &&
+			!diagnostics.report.findings.some((finding) => finding.code === "LABEL_OVERLAP"),
+	),
+	JSON.stringify(
+		nestedOwnerLabelDiagnostics.map(({ height, labelCount, diagnostics }) => [
+			height,
+			labelCount,
+			diagnostics.work,
+		]),
+	),
 );
 
 const controlPartitionElements = [
@@ -4114,6 +4174,103 @@ check(
 		controlPartitionEvidence(controlPartitionReport),
 );
 
+const exactOrderIds = ["order-\ud800", "order-a", "order-\u0001", "order-\0"];
+const exactOrderElements = exactOrderIds.map((id, index) => ({
+	id,
+	type: "text",
+	x: index * 100,
+	y: 520,
+	width: 20,
+	height: 10,
+	angle: 0,
+	fontFamily: 1,
+	text: id,
+}));
+const exactOrderEvidence = (report) =>
+	report.findings
+		.filter(
+			(finding) =>
+				finding.code === "FONT_POLICY_VIOLATION" && finding.reason === "disallowed-font-family",
+		)
+		.map((finding) => finding.elements[0]?.id)
+		.join("|") === ["order-\0", "order-\u0001", "order-a", "order-\ud800"].join("|");
+const exactOrderForward = inspectBoard(exactOrderElements);
+const exactOrderReverse = inspectBoard(exactOrderElements.toReversed());
+check(
+	"exact UTF-16 identity ordering is input-order independent for controls, prefixes, and lone surrogates",
+	exactOrderEvidence(exactOrderForward) &&
+		exactOrderEvidence(exactOrderReverse) &&
+		JSON.stringify(inspectBoard(exactOrderElements)) === JSON.stringify(exactOrderForward),
+);
+const exactHierarchyElements = [
+	semanticNode("hier-owner-\ud800", {
+		id: "hier-body-\ud800",
+		x: 600,
+		y: 400,
+		width: 100,
+		height: 100,
+	}),
+	semanticNode("hier-owner-a", {
+		id: "hier-body-a",
+		x: 600,
+		y: 400,
+		width: 100,
+		height: 100,
+	}),
+	semanticNode("hier-owner-\u0001", {
+		id: "hier-body-\u0001",
+		x: 600,
+		y: 400,
+		width: 100,
+		height: 100,
+	}),
+	semanticNode("hier-owner-\0", {
+		id: "hier-body-\0",
+		x: 600,
+		y: 400,
+		width: 100,
+		height: 100,
+	}),
+	semanticNode("hier-child", {
+		id: "hier-child-body",
+		x: 630,
+		y: 430,
+		width: 10,
+		height: 10,
+		boundElements: [{ id: "hier-edge", type: "arrow" }],
+	}),
+	connector({
+		id: "hier-edge",
+		x: 620,
+		y: 435,
+		width: 70,
+		height: 0,
+		points: [
+			[0, 0],
+			[70, 0],
+		],
+		startBinding: { elementId: "hier-child-body", focus: 0, gap: 0 },
+	}),
+];
+const exactHierarchyEvidence = (report) => {
+	const penetrated = new Set(
+		report.findings
+			.filter((finding) => finding.code === "CONNECTOR_PENETRATES_NODE")
+			.map((finding) => finding.details.nodeId),
+	);
+	return (
+		!penetrated.has("hier-owner-\0") &&
+		penetrated.has("hier-owner-\u0001") &&
+		penetrated.has("hier-owner-a") &&
+		penetrated.has("hier-owner-\ud800")
+	);
+};
+check(
+	"equal-area hierarchy ties and ancestor exclusions use exact UTF-16 identity order",
+	exactHierarchyEvidence(inspectBoard(exactHierarchyElements)) &&
+		exactHierarchyEvidence(inspectBoard(exactHierarchyElements.toReversed())),
+);
+
 let sweepSeed = 0x119;
 const randomUnit = () => (sweepSeed = (sweepSeed * 1_664_525 + 1_013_904_223) >>> 0) / 2 ** 32;
 for (let sample = 0; sample < 8; sample += 1) {
@@ -4194,12 +4351,19 @@ const noteFor = (board, elements) =>
 const noteForEscapedControls = (board, elements) => {
 	const controls = new Set();
 	JSON.stringify(elements, (_key, value) => {
-		if (typeof value === "string" && value.includes("\0")) controls.add(value);
+		if (typeof value === "string")
+			for (let index = 0; index < value.length; index += 1) {
+				const codeUnit = value.charCodeAt(index);
+				if (codeUnit <= 0x1f || (codeUnit >= 0xd800 && codeUnit <= 0xdfff)) {
+					controls.add(value);
+					break;
+				}
+			}
 		return value;
 	});
 	const placeholders = new Map(
 		[...controls]
-			.toSorted((a, b) => a.localeCompare(b))
+			.toSorted((a, b) => (a < b ? -1 : a > b ? 1 : 0))
 			.map((value, index) => [value, `z${index.toString(36).padStart(7, "0")}`]),
 	);
 	const placeholderElements = JSON.parse(
@@ -4259,6 +4423,7 @@ noteFor("error", [
 	},
 ]);
 noteForEscapedControls("control-partitions", controlPartitionElements);
+noteForEscapedControls("exact-order-controls", [...exactOrderElements, ...exactHierarchyElements]);
 noteFor("limit-extreme", limitWithExtremeSpan);
 noteFor("unknown", [{ id: "edge", type: "arrow", x: 0, y: 0, width: 10, height: 0 }]);
 noteFor("malformed", [
@@ -4707,7 +4872,26 @@ check(
 		CheckResultSchema.safeParse(controlPartitionResult).success &&
 		controlPartitionEvidence(controlPartitionResult),
 	`status=${controlPartitionRun.status} stderr=${controlPartitionRun.stderr} findings=${controlPartitionResult?.findings
-		?.map((finding) => `${finding.reason}:${JSON.stringify(finding.details)}`)
+		?.map(
+			(finding) =>
+				`${finding.reason}:${JSON.stringify(finding.elements.map((element) => element.id))}:${JSON.stringify(finding.details)}`,
+		)
+		.join("|")}`,
+);
+const exactOrderRun = run("exact-order-controls");
+const exactOrderResult = exactOrderRun.stdout ? JSON.parse(exactOrderRun.stdout) : null;
+check(
+	"persisted package ordering is exact for controls, prefixes, and lone surrogates",
+	exactOrderRun.status === 0 &&
+		exactOrderRun.stderr === "" &&
+		CheckResultSchema.safeParse(exactOrderResult).success &&
+		exactOrderEvidence(exactOrderResult) &&
+		exactHierarchyEvidence(exactOrderResult),
+	`status=${exactOrderRun.status} stderr=${exactOrderRun.stderr} findings=${exactOrderResult?.findings
+		?.map(
+			(finding) =>
+				`${finding.reason}:${JSON.stringify(finding.elements.map((element) => element.id))}:${JSON.stringify(finding.details)}`,
+		)
 		.join("|")}`,
 );
 const textRun = run("clean", ["--text"]);

@@ -158,10 +158,11 @@ note archboard did not write. About fifteen seconds.
   2,000,001 limit attempt. Its package checks run with no canvas process, parse JSON through the
   exported schema, cover text and strict exits 6/7/8, and compare vault paths, bytes, and mtimes
   before and after every read. Performance cases import the module-root `diagnostics.ts` entrypoint
-  to count sweep events, eligible visits, every active-bucket scan, exact-string bucket-index
-  operations, expiry work, hierarchy candidates, and path checks. Sparse 1k/2k/4k/8k cases pin
-  bucket cleanup independently of the public comparison count. Those counters are development
-  evidence and do not appear in the product report or package CLI.
+  to count sweep events, eligible visits, every compatibility-group and compatible-bucket scan,
+  exact-string index operations, canonical compatibility profiles, expiry work, hierarchy
+  candidates, and path checks. Sparse and exclusion-heavy 1k/2k/4k/8k cases pin bucket cleanup,
+  bounded work, and profile reuse independently of the public comparison count. Those counters are
+  development evidence and do not appear in the product report or package CLI.
 
 ## Wire and lock checks
 
