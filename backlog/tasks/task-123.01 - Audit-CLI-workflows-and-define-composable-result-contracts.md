@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:53'
-updated_date: '2026-08-26 07:06'
+updated_date: '2026-08-26 07:10'
 labels: []
 dependencies:
   - TASK-124
@@ -76,6 +76,8 @@ In parallel, trace real workflows from tests, task history, and architecture-boa
 Checkpoint ac2b34b records the canonical 57-path CLI audit, generated Markdown view, approved command-contract design, Commander 15.0.0 Bun smoke evidence, and zod-commander evaluation. Workflow deletion-test candidates were sent to the parent for approval; no follow-up tasks were created.
 
 Follow-up disposition recorded: created standalone To Do tasks TASK-126 (replace import as one atomic board write) and TASK-127 (snapshot restore as one atomic board write). The device-trust stencil/insert/promote/group/arrange collapse was rejected because those operations can encode separate human intent and current evidence is one workflow, not repeated released use; reconsider only after TASK-119 through TASK-122 provide production-backed completion/evaluation evidence. Neither follow-up was started or given an implementation plan.
+
+Proof implementation checkpoint 1a0438d: introduced the CommandContract deep module, adopted Commander 15.0.0 only behind the private adapter after the Bun smoke, and migrated exactly query/update/viewport/export through run.ts. Removed their duplicate legacy handlers. Focused validation passed: type-check, 7 contract tests plus artifact freshness/ownership checks, and the real CLI surface/argv suite with 338 checks.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
