@@ -13,8 +13,8 @@ parts of the typed handler interface and remain Commander-free, but they are
 not emitted by introspection. `src/cli/commands/run.ts` is the production adapter at that seam and
 remains the sole registry. Its route tree gives every root and child its own
 contract, parser owner, handler owner, and parent. The same tree
-derives the 57-path surface, flattened generated registry, longest-path
-dispatch, default aliases, and namespace refusals. All 57 paths use contracts;
+derives the current 58-path surface, flattened generated registry, longest-path
+dispatch, default aliases, and namespace refusals. All 58 paths use contracts;
 there is no legacy dispatcher, raw-argv handler, or second subcommand catalogue.
 
 The private implementation uses one concrete Commander parser, the process and
@@ -116,13 +116,19 @@ foreign-service as stdout-only exit 3 results. Board save declares a conflict
 as exit 5 and presents the conflict diagnostic, validated structured result,
 held note, and continuation in that order.
 
+`check --strict` adds stdout-only computed outcomes. Complete warnings exit 6,
+complete errors exit 7, and indeterminate coverage exits 8 even when the report
+also contains errors. Non-strict reports always exit 0 after successful
+inspection. Usage and policy failures still exit 2 with empty stdout;
+vault, note, Drawing, schema, and I/O failures exit 1 with empty stdout.
+
 ## CLI-only compatibility
 
 `src/bin.ts` removes one `--url` before importing runtime configuration.
 `run.ts` retains existing help, version, globals, error mapping, and the
 route tree. The checker compares every flattened route's parent, parser owner,
 handler owner, and contract identity to the canonical audit. It requires exactly
-57 contracts, zero legacy routes, no family-owned subcommand catalogue, and no
+58 current contracts, zero legacy routes, no family-owned subcommand catalogue, and no
 obsolete parser, stream, or proof-monolith source. Introspection is an in-process generation interface and checked-in
 JSON. It is not a public command, REST route, MCP replacement, or second agent
 command surface.
@@ -131,6 +137,9 @@ The fixed-base compatibility records are executable package-binary cases, not
 scenario labels. Each one fixes argv, exact stdout and stderr bytes, any
 documented normalization, merged contact and stream order, exit, held state,
 prerequisite contacts, REST and local effects, and artifact commits. The CLI
-checker replays every record against HEAD. Help hashes cover all 57 paths; the
+checker replays every record against HEAD. The immutable migration record still covers its original
+57 paths. Current metadata covers 58, with `check` marked as introduced by TASK-119. General-help
+compatibility removes only the new `check` command line and its check-only exit line before hashing.
+Help hashes cover all 57 migration paths; the
 ordered records cover the approved status, board-save, immediate-diagnostic,
 binding-resolution, and late-validation cases.
