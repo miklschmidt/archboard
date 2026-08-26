@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 17:06'
+updated_date: '2026-08-26 17:15'
 labels:
   - ready-for-agent
 dependencies:
@@ -432,6 +432,14 @@ Decoded records now carry one local evidence box independent of model extent eli
 Hierarchy area order now compares exact binary significand products with BigInt and never constructs overflowing powers. Aggregate and point extrema are iterative. Limit findings retain one stable ref per locatable input so opposite-extreme span closure remains explicit. Obstacle grouping indexes group ids and unions only shared memberships; the 2,000-record public probe dropped from 4,002,000 group reads to exactly 4,000 while preserving library singletons and multi-group transitivity.
 
 The public production matrix has 583 checks. It covers MAX_VALUE mantissas, equal extreme products in both input orders, subnormals, focus failures from origins, points, aggregates and limits, exact normal deltas, extent-overflow interactions across independent producers, a 750,000-point cardinality case, the exact 2,000,001 limit with opposite extremes, and direct plus persisted/package strict evidence. Focused lint, both TypeScript projects, boundaries, module-scope, contracts, inspection, geometry, labels, branch, and CLI gates pass. Two final fixer passes were byte-stable at cac2514da69982c7766c57b47590afec40734c6d163f1427e8c0260e4c6800c4.
+
+### Numeric-domain closure validation
+
+Commit 3595883 closes numeric-domain and preprocessing bounds without changing the public inspection interface or protected runtime behavior. The public inspection matrix passes 583 checks. Focused lint, both TypeScript projects, boundaries, module-scope and self-test, 58-path contracts with 978 checks, CLI with 579 checks, geometry with 89 checks, labels with 183 checks, branch, persisted package cases, and git diff checks are green.
+
+Two final bun run fix passes both ran the distributable-skill validator and preserved the exact diff hash cac2514da69982c7766c57b47590afec40734c6d163f1427e8c0260e4c6800c4. Complete bun run check passed, followed by a separate complete bun run test. Each chain ran all four browser suites sequentially and headless. Fixed-point remained 0 of 13 changed, the 10,000-element human case stayed responsive, typed text survived both rename interactions, and live-session converged through all 42 mixed-write cycles.
+
+Two fresh on-demand contract generations were byte-identical: audit Markdown 33,383 bytes, proof JSON 660,919 bytes, and proof Markdown 459,580 bytes. The checkout contains no generated output, canonical docs/design/cli-command-audit.json remains tracked, and the worktree was clean before this Backlog note. TASK-119 remains In Progress with every acceptance criterion unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
