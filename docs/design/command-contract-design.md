@@ -1,0 +1,106 @@
+# Command contract proof design
+
+TASK-123.01 proves a schema-defined CLI without migrating the other commands.
+The fixed review base is `43d0b982ac39346ae3057edf3c9fdffe400b2853`.
+
+## Module and seam
+
+`src/cli/command-contract` is one deep module. Its interface is
+`CommandContract`, `runCommand`, bootstrap handling, and contract
+introspection. `src/cli/commands/run.ts` is the production adapter at that
+seam and remains the sole registry. The registry contains either a contract or
+a legacy handler. Query, update, viewport, and export use contracts in this
+proof. TASK-123.02 replaces the other entries and then deletes the legacy
+branch, raw parser helpers, and handler-owned output.
+
+The module has three internal seams. `ArgvParser` has the Commander adapter and
+a recording fake that returns a prepared invocation without parsing.
+`CommandHost` has process/filesystem and recording adapters.
+`PrerequisiteResolver` has server/browser and ordered recording adapters. The
+module keeps these seams private because callers need none of their mechanics.
+
+## Single semantic owner
+
+Parameter descriptors describe token grammar only:
+
+- spellings and aliases;
+- whether an occurrence consumes zero, one required, or one optional token;
+- last-wins or append occurrence behavior;
+- positional order and repeatability;
+- stdin/file routing and intentional pass-through.
+
+Zod owns types, coercion, defaults, enums, field optionality, and cross-field
+rules. The Commander adapter does not set defaults, choices, required options,
+or semantic argument parsers. Contract construction checks only token spelling,
+positional ordering, route/arity coherence, and descriptor-to-Zod-key mapping.
+
+Some compatibility rules run at different times. `CommandInput.stages` records
+those Zod checkpoints. The handler invokes them through `CommandContext.parse`
+at the declared phase. This keeps Zod as the semantic owner while retaining
+server, browser, and local-file refusal precedence.
+
+## Public result and private execution
+
+`CommandContract.result` is the schema for the value or content a successful
+caller receives. It is not an execution wrapper. The private execution record
+may contain `{ result, pendingArtifact }`. Output policy is separate and picks
+JSON, text, raw content, or a file receipt from parsed input.
+
+The runner applies the selected held policy, validates the resulting public
+value, validates a pending artifact independently, writes a file only after
+both validations pass, and then emits the validated public value. Contract
+introspection exposes the public schema and output mode. It removes artifact
+schemas and never exposes pending bytes, stdout keys, Commander objects, or
+test adapters.
+
+The proof results are:
+
+- query: a bare `ServerElement[]`;
+- update: the existing write object with element, touched elements,
+  fingerprint, optional document, and optional held report;
+- viewport: the existing success/message object;
+- export: a union of exact serialized string content and the existing file
+  receipt object.
+
+## Held presentation
+
+Held behavior belongs to each output case:
+
+- query leaves the array unchanged and writes the held message to stderr;
+- update adds the public held field and writes the message to stderr;
+- viewport declares object JSON behavior explicitly;
+- raw export bypasses held presentation;
+- file export adds the public held field and writes the message to stderr.
+
+There is no decorate-all rule.
+
+## Ordered execution
+
+Query starts the server before validating bbox and reads elements before
+validating client filters. Update reads and validates inline, file, or stdin
+JSON before starting the server and performs one PUT. Viewport validates mode
+selection before server/browser checks and parses numeric values after the
+browser check. Export validates format, reads existing frontmatter, and refuses
+an unsafe overwrite before starting the server. Its file branch validates the
+public receipt and private artifact before writing UTF-8 bytes.
+
+## Errors and streams
+
+Usage and board-required refusals exit 2. Canvas unreachable exits 3. Browser
+required exits 4. Held, revoked-claim, moved-version, and note conflicts exit 5.
+Other failures exit 1. Successful structured values use stdout. Diagnostics,
+usage, progress, and held notes use stderr. The existing `board save` conflict
+exception remains in the legacy branch: it writes the structured conflict to
+stdout, its explanation to stderr, and exits 5.
+
+## CLI-only compatibility
+
+`src/bin.ts` removes one `--url` before importing runtime configuration.
+`run.ts` retains existing help, version, globals, error mapping, and the mixed
+registry. Introspection is an in-process generation interface and checked-in
+JSON. It is not a public command, REST route, MCP replacement, or second agent
+command surface.
+
+The independent argv golden records legacy bytes at the fixed base. Tests run
+those cases through the package binary and real Commander adapter. The
+recording fake is for runner tests only.
