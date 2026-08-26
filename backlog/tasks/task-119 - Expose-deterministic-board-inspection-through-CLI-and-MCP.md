@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 21:48'
+updated_date: '2026-08-26 22:11'
 labels:
   - ready-for-agent
 dependencies:
@@ -350,6 +350,8 @@ Ordinary focus-safe affected boxes keep the exact 16 px expansion. When a finite
 ### Parent-approved schema-v1 obstacle identity amendment
 
 Legal element IDs may contain commas, so the former literal comma join is ambiguous and cannot serve as a deterministic obstacle identity. Schema version 1 now uses this exact grammar: sort constituent elementIds with the exact UTF-16 code-unit comparator; in each ID replace every backslash with two backslashes and every comma with backslash-comma; join the encoded IDs with a literal comma; prefix the result with the literal obstacle:. No other character is escaped. NUL, other controls, lone surrogates, and shared prefixes remain exact. The inspection schema verifies that obstacle id is precisely this encoding of elementIds. Model construction, schemas, formatter output, JSON/text documentation, and tests consume one owner for the grammar. Direct and persisted/package cases cover comma, backslash, combined backslash-comma, controls, empty-looking prefixes, reversed input, and pairs that collided under the raw join.
+
+27. Parent-approved preprocessing-ceiling amendment (2026-08-27). The xhigh architecture reviewer in thread 01a03e0f-61d1-78d3-af62-04cefac7760e returned PLAN_AMENDMENT_RECOMMENDED against fixed base 963c3f0c5dadd3687a30d5133437e822427da582 and rejected head 688d27ce5cf01c1a38c70a22f1ff57c67b16c24a; the parent approved the amendment. The arbitrary dynamic two-sided compatibility relation has no reasonable TASK-119-grade linear-space O(log N + output) implementation. Supersede the preprocessing O(N log N + A) guarantee with one deterministic schema-v1 preprocessing work budget of 25,000,000 logical units, separate from the unchanged 2,000,000 eligible broad-phase comparison ceiling. The shared budget spans model and pair preprocessing, charges once at each primitive owner for consumed interval/profile/exclusion/ancestor input, inspected identity UTF-16 code units, owned stable-order comparisons, index/heap/trie/list/bucket/cell reads and rewrites, Map/Set operations, candidate/intersection work, and hierarchy traversal, while A-attributed candidate delivery and downstream broad-phase/exact predicate work remain excluded. On attempted unit 25,000,001, do not execute that unit; abort remaining model/pair passes and emit exactly one closed warning coverage-affecting INSPECTION_LIMIT_EXCEEDED/broad-phase-preprocessing-ceiling finding. The first attempted preprocessing or comparison ceiling wins, never both. Reports publish both limit constants but no actual preprocessing count; development diagnostics retain detailed mechanics. Strict check exits 8 with the report and non-strict exits 0. Preserve completed structural findings and comparisons, exact deterministic evidence ownership, current focus/aggregate behavior, and all protected scope. Define semantic input size explicitly as I + E + H, where I is interval count, E is the total exact-exclusion entries across profiles, and H is the total ancestor-target entries. The retained-memory contract is O(I + E + H) references plus emitted findings; any plan use of N for this preprocessing contract means I + E + H, not interval count alone. Identity UTF-16 code units are logical-budget work when read or compared. Validate many-exclusion and many-ancestor families by gating peak retained references against I + E + H; the alternating counterexample remains linear semantic input because E = I.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -551,5 +553,11 @@ author: @codex
 created: 2026-08-26 13:02
 ---
 Independent plan reviewer thread 01a03e0f-61d1-78d3-af62-04cefac7760e returned PLAN_APPROVED. Fixed implementation/review base: 963c3f0c5dadd3687a30d5133437e822427da582. All fourteen decisions are approved exactly as recorded. Implementation has not started. One serialized gpt-5.6-sol/medium worker is authorized next.
+---
+
+author: @codex
+created: 2026-08-26 22:11
+---
+Parent approval recorded for plan step 27 before implementation. This amendment follows xhigh reviewer thread 01a03e0f-61d1-78d3-af62-04cefac7760e (PLAN_AMENDMENT_RECOMMENDED), fixed review base 963c3f0c5dadd3687a30d5133437e822427da582, and rejected head 688d27ce5cf01c1a38c70a22f1ff57c67b16c24a. It authorizes the separate deterministic 25,000,000 preprocessing ceiling and the explicit O(I + E + H) retained-memory contract. TASK-090 collision implementation, TASK-120 bridges, TASK-123.03 released reference work, server/UI/session/write paths, TASK-128, strict normal I/O, and generated-artifact ownership remain unchanged and protected.
 ---
 <!-- COMMENTS:END -->
