@@ -1,5 +1,5 @@
-import { parseArgs, CliUsageError } from "../args.js";
-import { printJson, readJsonInput } from "../util.js";
+import { parseArgs, CliUsageError } from "./args.js";
+import { printJson, readJsonInput } from "./util.js";
 import {
 	applyElementChanges,
 	batchCreateElementsStrict,
@@ -7,13 +7,13 @@ import {
 	getElementStrict,
 	getElements,
 	searchElements,
-} from "../../core/canvas-client.js";
-import { ensureCanvasRunning } from "../../core/spawn.js";
-import { type ServerElement } from "../../types.js";
+} from "../../runtime/engine/canvas-client.js";
+import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
+import { type ServerElement } from "../../runtime/engine/types.js";
 
 // apply: primary mutation command — {create:[], update:[], delete:[]} in one
 // invocation; a bare JSON array is shorthand for {create: [...]}.
-function normalizePatchUpdate(update: any): { id: string; updates: Record<string, unknown> } {
+function normalizePatchUpdate(update: any): { id: string; updates: Record<string, any> } {
 	if (!update || typeof update !== "object" || Array.isArray(update)) {
 		throw new CliUsageError('Every update entry must be an object with an "id"');
 	}
@@ -205,7 +205,7 @@ function coerce(value: string): unknown {
 	return value;
 }
 
-function lookupPath(obj: any, dotPath: string): unknown {
+function lookupPath(obj: any, dotPath: string): any {
 	return dotPath.split(".").reduce((acc, key) => (acc == null ? acc : acc[key]), obj);
 }
 

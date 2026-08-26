@@ -1,21 +1,21 @@
 import fs from "fs";
 import path from "path";
 import os from "os";
-import { parseArgs, CliUsageError, readStdin } from "../args.js";
-import { printJson, note, requireBrowserClient } from "../util.js";
-import { ensureCanvasRunning } from "../../core/spawn.js";
+import { parseArgs, CliUsageError, readStdin } from "./args.js";
+import { printJson, note, requireBrowserClient } from "./util.js";
+import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
 import {
 	getElements,
 	clearCanvas,
 	exportImage,
 	sendMermaid,
 	boardHeading,
-} from "../../core/canvas-client.js";
-import { buildSceneFile, importScene } from "../../core/scene-document.js";
-import { wrapSceneAsObsidianMd, isObsidianExcalidrawMd } from "../../core/obsidian-md.js";
-import { describeScene } from "../../core/describe.js";
-import { exportToExcalidrawUrl } from "../../core/share-url.js";
-import { EXPRESS_SERVER_URL } from "../../core/config.js";
+} from "../../runtime/engine/canvas-client.js";
+import { buildSceneFile, importScene } from "../../runtime/engine/scene-document.js";
+import { wrapSceneAsObsidianMd, isObsidianExcalidrawMd } from "../../runtime/engine/obsidian-md.js";
+import { describeScene } from "../../runtime/engine/describe.js";
+import { exportToExcalidrawUrl } from "../../runtime/engine/share-url.js";
+import { EXPRESS_SERVER_URL } from "../../runtime/engine/config.js";
 
 async function readTextFileOrStdin(inputPath: string | undefined): Promise<string> {
 	if (!inputPath || inputPath === "-") return await readStdin();

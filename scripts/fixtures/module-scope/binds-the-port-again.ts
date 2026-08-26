@@ -3,7 +3,7 @@
 // loopback guard reads as a second server and exits over.
 
 import { createServer } from "node:http";
-import { kept } from "../../../src/core/hot.js";
+import { kept } from "../../../src/runtime/engine/hot.js";
 
 const server = kept("fixture-server", () => createServer());
 

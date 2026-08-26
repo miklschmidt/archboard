@@ -17,7 +17,7 @@
 // bun gives no way to narrow what it watches, but it does not have to. The
 // only file it re-evaluates by itself is this one, and this one re-imports the
 // canvas only when the reload token's generation has moved
-// (src/core/reload-token.ts). An ordinary save therefore re-runs the few
+// (src/runtime/engine/reload-token.ts). An ordinary save therefore re-runs the few
 // statements below and stops. A reload happens when somebody asks for one, and
 // at no other time.
 //
@@ -28,16 +28,16 @@
 // The canvas is imported with a cache-busting query so that each reload gets a
 // fresh graph rather than the copy bun is still holding. Everything that has
 // to outlive it is in the kept registry on `globalThis`, which no module
-// reload can reach (src/core/hot.ts).
+// reload can reach (src/runtime/engine/hot.ts).
 
-import { kept } from "./core/hot.js";
-import { armReloadToken } from "./core/reload-token.js";
+import { kept } from "./runtime/engine/hot.js";
+import { armReloadToken } from "./runtime/engine/reload-token.js";
 import {
 	readFacts,
 	compareFacts,
 	reportBrokenReload,
 	type ReloadFacts,
-} from "./core/reload-canary.js";
+} from "./runtime/engine/reload-canary.js";
 
 const PORT = parseInt(process.env.PORT || "3000", 10);
 

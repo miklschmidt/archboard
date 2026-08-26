@@ -1,7 +1,7 @@
-import { parseArgs, CliUsageError } from "../args.js";
-import { printJson, note } from "../util.js";
-import { ensureCanvasRunning } from "../../core/spawn.js";
-import { repoIdentityAt, repoRootOf } from "../../core/git.js";
+import { parseArgs, CliUsageError } from "./args.js";
+import { printJson, note } from "./util.js";
+import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
+import { repoIdentityAt, repoRootOf } from "../../runtime/engine/git.js";
 import {
 	listBoardsOnCanvas,
 	getBoardInfo,
@@ -9,8 +9,8 @@ import {
 	newBoard,
 	saveBoard,
 	boardConflictOf,
-} from "../../core/canvas-client.js";
-import { paneWords, MAX_PANES } from "../../core/panes.js";
+} from "../../runtime/engine/canvas-client.js";
+import { paneWords, MAX_PANES } from "../../runtime/engine/panes.js";
 
 export const SUBCOMMANDS = ["list", "info", "new", "open", "save"] as const;
 

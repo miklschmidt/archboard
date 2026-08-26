@@ -1,7 +1,7 @@
-import { parseArgs } from "../args.js";
-import { printJson } from "../util.js";
-import { ensureCanvasRunning } from "../../core/spawn.js";
-import { getPanes, getSelection } from "../../core/canvas-client.js";
+import { parseArgs } from "./args.js";
+import { printJson } from "./util.js";
+import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
+import { getPanes, getSelection } from "../../runtime/engine/canvas-client.js";
 
 // Read what a human currently has picked on the board.
 //

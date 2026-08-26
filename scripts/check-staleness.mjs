@@ -75,7 +75,7 @@ function plantIndexIfMissing() {
 }
 
 function removePlanted() {
-	for (const entry of planted.reverse()) {
+	for (const entry of planted.toReversed()) {
 		try {
 			if (fs.statSync(entry).isDirectory()) fs.rmdirSync(entry);
 			else fs.unlinkSync(entry);
@@ -245,7 +245,7 @@ try {
 	);
 	check(
 		"  and the canvas names that file, not just the fact",
-		stale.source.newestFile === "src/core/compare.ts",
+		stale.source.newestFile === "src/runtime/engine/compare.ts",
 		String(stale.source.newestFile),
 	);
 	check(
@@ -257,7 +257,7 @@ try {
 	const loud = await cli(["status"]);
 	check(
 		"status reports it in the JSON, where a script reads it",
-		loud.json?.stale?.changedFile === "src/core/compare.ts",
+		loud.json?.stale?.changedFile === "src/runtime/engine/compare.ts",
 		JSON.stringify(loud.json?.stale ?? null).slice(0, 120),
 	);
 	check(
