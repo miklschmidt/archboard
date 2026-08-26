@@ -1242,7 +1242,7 @@ try {
 	const builders = sources.filter((file) => /['"`]locks['"`]/.test(fs.readFileSync(file, "utf-8")));
 	check(
 		"one file in src/ knows where a board's lock lives",
-		builders.length === 1 && builders[0].endsWith("core/board-lock.ts"),
+		builders.length === 1 && builders[0].endsWith("runtime/engine/board-lock.ts"),
 		builders.map((f) => f.replace(repoRoot, "")).join(", ") || "none",
 	);
 
@@ -1260,7 +1260,7 @@ try {
 	const sinks = sources.filter(
 		(file) =>
 			/onBoardLockChanged\(/.test(fs.readFileSync(file, "utf-8")) &&
-			!file.endsWith("core/board-lock.ts"),
+			!file.endsWith("runtime/engine/board-lock.ts"),
 	);
 	check(
 		"  through the one sink the module exposes, registered in one place",

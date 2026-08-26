@@ -2940,7 +2940,11 @@ try {
 		// Every writer of a vault note, not only the board save. A second idiom is
 		// how the first one goes stale, so the rule is that these modules do not
 		// call writeFileSync on a path at all.
-		for (const module of ["core/board-io.ts", "core/library.ts", "core/repo-registry.ts"]) {
+		for (const module of [
+			"runtime/engine/board-io.ts",
+			"runtime/engine/library.ts",
+			"runtime/engine/repo-registry.ts",
+		]) {
 			const source = fs.readFileSync(src(module), "utf-8");
 			check(
 				`  ${module} writes through the shared atomic write`,
