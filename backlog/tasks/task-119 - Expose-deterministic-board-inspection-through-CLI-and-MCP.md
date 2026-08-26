@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 16:37'
+updated_date: '2026-08-26 17:06'
 labels:
   - ready-for-agent
 dependencies:
@@ -334,6 +334,18 @@ PREREQUISITE-TOTALITY CLOSURE (2026-08-26)\n\nAfter rejected head a1a1b941e83b9d
 3. Compute unique usable IDs once and thread that eligibility through every identity-dependent model and detector producer.
 4. Centralize bound-element compatibility, including declared arrow to actual line, and replace hierarchy area multiplication with an overflow-safe finite-box comparison.
 5. Expand direct and persisted public cross-products, then run focused and complete validation without changing generated ownership or protected scope.
+
+### Numeric-domain amendment approved by parent
+
+Ordinary focus-safe affected boxes keep the exact 16 px expansion. When a finite affectedBBox cannot produce finite coordinates with exact 16 px deltas, inspection keeps affectedBBox, sets focusBBox to null, and emits a fixed-warning coverage-affecting AMBIGUOUS_GEOMETRY/unrepresentable-focus-padding finding. Coverage is indeterminate and strict check exits 8. This replaces only the former rule that affectedBBox and focusBBox became null together for unlocatable evidence.
+
+### Numeric-domain and preprocessing-bounds closure
+
+1. Add public red cases for focus padding, exact hierarchy area order, local evidence fallback, limit span closure, large-cardinality extrema, and linear obstacle grouping.
+2. Introduce shared internal classifications for local evidence boxes, aggregate boxes, and focus padding while keeping inspectBoard as the only inspection interface.
+3. Replace hierarchy multiplication and variadic extrema with total iterative arithmetic.
+4. Index obstacle candidates by group membership and union only records sharing a group.
+5. Expand direct and persisted/package cross-products, then run every focused and complete gate without changing generated ownership or protected scope.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -408,6 +420,18 @@ The public production suite now has 553 checks. New evidence includes a bounded 
 - Full `bun run check` passed, including four sequential headless browser suites. Separate full `bun run test` passed, including the same browser chain.
 - On-demand contract generation produced identical bytes in two fresh temporary output directories: audit Markdown 33,383 bytes, proof JSON 653,879 bytes, proof Markdown 453,379 bytes. `docs/design/generated` remains absent; canonical `docs/design/cli-command-audit.json` remains tracked.
 - `git diff --check` passed. TASK-119 remains In Progress with every acceptance criterion unchecked pending independent rereview.
+
+Numeric-domain remediation started from clean rejected head 0f0fa84 with fixed base 963c3f0. Public test seams remain inspectBoard over readonly unknown records and the real package CLI over persisted notes. TASK-119 remains In Progress with every acceptance criterion unchecked.
+
+### Numeric-domain and preprocessing-bounds implementation
+
+Added the parent-approved focus contract: ordinary findings retain exact 16 px focus expansion; an unrepresentable exact delta keeps affectedBBox, sets focusBBox to null, and adds the closed warning AMBIGUOUS_GEOMETRY/unrepresentable-focus-padding with literal padding and enumerated failed deltas.
+
+Decoded records now carry one local evidence box independent of model extent eligibility. Every finite x/y record keeps either its representable stored box or a zero-area origin fallback. Structural, identity, font, library, label, unsupported, reference, aggregate, and limit findings use that evidence without admitting unusable extents into collision modeling.
+
+Hierarchy area order now compares exact binary significand products with BigInt and never constructs overflowing powers. Aggregate and point extrema are iterative. Limit findings retain one stable ref per locatable input so opposite-extreme span closure remains explicit. Obstacle grouping indexes group ids and unions only shared memberships; the 2,000-record public probe dropped from 4,002,000 group reads to exactly 4,000 while preserving library singletons and multi-group transitivity.
+
+The public production matrix has 583 checks. It covers MAX_VALUE mantissas, equal extreme products in both input orders, subnormals, focus failures from origins, points, aggregates and limits, exact normal deltas, extent-overflow interactions across independent producers, a 750,000-point cardinality case, the exact 2,000,001 limit with opposite extremes, and direct plus persisted/package strict evidence. Focused lint, both TypeScript projects, boundaries, module-scope, contracts, inspection, geometry, labels, branch, and CLI gates pass. Two final fixer passes were byte-stable at cac2514da69982c7766c57b47590afec40734c6d163f1427e8c0260e4c6800c4.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
