@@ -20,43 +20,43 @@ export async function pane(argv: string[]): Promise<void> {
 		);
 	}
 	const rest = argv.slice(1);
+	if (sub === "open") return paneOpen(rest);
+	if (sub === "close") return paneClose(rest);
+	throw new CliUsageError(
+		"pane needs a subcommand: open, close. " +
+			"For what is on screen right now, without changing it, run `archboard panes`.",
+	);
+}
 
+export async function paneOpen(argv: string[]): Promise<void> {
 	await ensureCanvasRunning();
+	parseArgs(argv, {});
+	// A pane is a piece of browser: it exists while a tab renders it and not a
+	// moment longer, so there is nothing to make when nothing is open.
+	await requireBrowserClient("Opening a pane");
 
-	if (sub === "open") {
-		parseArgs(rest, {});
-		// A pane is a piece of browser: it exists while a tab renders it and not a
-		// moment longer, so there is nothing to make when nothing is open.
-		await requireBrowserClient("Opening a pane");
+	// `--board` is the global flag, as on every other command that names one.
+	// Optional here: a pane with no board named inherits what the other pane
+	// is showing, which is what a human clicking Split gets.
+	const wanted = currentRequestedBoard();
+	const result = await openPane(wanted ? { board: wanted } : {});
 
-		// `--board` is the global flag, as on every other command that names one.
-		// Optional here: a pane with no board named inherits what the other pane
-		// is showing, which is what a human clicking Split gets.
-		const wanted = currentRequestedBoard();
-		const result = await openPane(wanted ? { board: wanted } : {});
+	const place = result.pane?.place;
+	const where = place ? paneWords(place) : "a new pane";
+	note(
+		result.board
+			? `"${result.board.board}" is showing in ${where}. The other pane was not touched. ` +
+					`Commands still name the board: \`--board ${result.board.board}\`.`
+			: `Opened ${where}. It is showing what was already on screen — point it somewhere else ` +
+					`with \`board open <name> --pane ${place ?? "<spec>"}\`.`,
+	);
+	printJson(result);
+	return;
+}
 
-		const place = result.pane?.place;
-		const where = place ? paneWords(place) : "a new pane";
-		note(
-			result.board
-				? `"${result.board.board}" is showing in ${where}. The other pane was not touched. ` +
-						`Commands still name the board: \`--board ${result.board.board}\`.`
-				: `Opened ${where}. It is showing what was already on screen — point it somewhere else ` +
-						`with \`board open <name> --pane ${place ?? "<spec>"}\`.`,
-		);
-		printJson(result);
-		return;
-	}
-
-	if (sub !== "close") {
-		throw new CliUsageError(
-			"pane needs a subcommand: open, close. " +
-				"For what is on screen right now, without changing it, run `archboard panes`.",
-		);
-	}
-
-	// close
-	const { positionals } = parseArgs(rest, {});
+export async function paneClose(argv: string[]): Promise<void> {
+	await ensureCanvasRunning();
+	const { positionals } = parseArgs(argv, {});
 	const spec = positionals[0];
 	if (!spec) {
 		throw new CliUsageError(
