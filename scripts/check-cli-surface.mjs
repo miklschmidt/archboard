@@ -16,7 +16,9 @@ const declaredBin = pkg.bin?.archboard;
 if (typeof declaredBin !== "string") throw new Error("package.json must declare bin.archboard");
 const bin = resolve(repoRoot, declaredBin);
 const { cliSurface } = await import(join(repoRoot, "src", "cli", "commands", "run.ts"));
-const { CANVAS_SERVICE_NAME } = await import(join(repoRoot, "src", "runtime", "engine", "canvas-client.ts"));
+const { CANVAS_SERVICE_NAME } = await import(
+	join(repoRoot, "src", "runtime", "engine", "canvas-client.ts")
+);
 const outside = mkdtempSync(join(tmpdir(), "archboard-cli-contract-"));
 
 let failures = 0;

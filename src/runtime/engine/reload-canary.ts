@@ -99,8 +99,10 @@ export function readFacts(): ReloadFacts {
 	}
 
 	const held: Record<string, number> = {};
-	const holdMap =
-		keptValue("board-holds") as Map<string, { content: { elements: Map<string, unknown> } }> | null;
+	const holdMap = keptValue("board-holds") as Map<
+		string,
+		{ content: { elements: Map<string, unknown> } }
+	> | null;
 	if (holdMap) {
 		for (const [key, hold] of holdMap) held[key] = hold.content?.elements?.size ?? 0;
 	}
@@ -233,8 +235,10 @@ export function reportBrokenReload(complaints: string[]): void {
 	// must work even if the logger is one of the things the reload broke.
 	process.stderr.write(`${banner}\n`);
 
-	const sockets =
-		keptValue("ws-clients") as Set<{ readyState: number; send: (data: string) => void }> | null;
+	const sockets = keptValue("ws-clients") as Set<{
+		readyState: number;
+		send: (data: string) => void;
+	}> | null;
 	if (!sockets) return;
 	const message = JSON.stringify({ type: "reload_broken", complaints });
 	for (const socket of sockets) {

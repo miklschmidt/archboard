@@ -42,6 +42,15 @@ import { fileURLToPath } from "node:url";
 import { withDoing } from "./lib/doing.mjs";
 
 const moduleDir = dirname(fileURLToPath(import.meta.url));
+const shape = (elements) =>
+	JSON.stringify(
+		elements.map((el) =>
+			Object.fromEntries(
+				Object.entries(el).filter(([key]) => !["seed", "versionNonce", "updated"].includes(key)),
+			),
+		),
+	);
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const {
 	boundTextsByContainer,
 	planLabelRepair,
@@ -401,17 +410,9 @@ const CYCLES = 25;
 		new Map(),
 	);
 	const converted = expandElements(
-		written.map((el) => ({ ...el })),
+		written.map((el) => Object.assign({}, el)),
 		{ forStore: true },
 	);
-	const shape = (elements) =>
-		JSON.stringify(
-			elements.map((el) =>
-				Object.fromEntries(
-					Object.entries(el).filter(([key]) => !["seed", "versionNonce", "updated"].includes(key)),
-				),
-			),
-		);
 	assert(
 		shape(wrapped) === shape(converted),
 		"the two entry points into the one conversion gave different answers for the same elements, " +
@@ -1313,7 +1314,7 @@ const CYCLES = 25;
 // --- a label with no bound text becomes one ---------------------------------
 
 {
-	const seeded = expandForBoard(
+	const seededElements = expandForBoard(
 		[
 			{
 				id: "svc",
@@ -1327,9 +1328,12 @@ const CYCLES = 25;
 		],
 		new Map(),
 	);
-	assert(seeded.length === 2, `an unexpanded label produced ${seeded.length} elements, not two`);
 	assert(
-		seeded.find((el) => el.type === "text")?.text === "AuthService",
+		seededElements.length === 2,
+		`an unexpanded label produced ${seededElements.length} elements, not two`,
+	);
+	assert(
+		seededElements.find((el) => el.type === "text")?.text === "AuthService",
 		"an unexpanded label was dropped",
 	);
 
@@ -1375,7 +1379,9 @@ const CYCLES = 25;
 	const repaired = polluted
 		.filter((element) => !doomed.has(element.id))
 		.map((element) =>
-			rebind.has(element.id) ? { ...element, boundElements: rebind.get(element.id) } : element,
+			rebind.has(element.id)
+				? Object.assign({}, element, { boundElements: rebind.get(element.id) })
+				: element,
 		);
 
 	assert(repaired.length === 6, `repaired board has ${repaired.length} elements, expected 6`);
@@ -1385,7 +1391,7 @@ const CYCLES = 25;
 		repaired
 			.filter((el) => el.type === "text")
 			.map((t) => t.text)
-				.toSorted((a, b) => String(a).localeCompare(String(b)))
+			.toSorted((a, b) => String(a).localeCompare(String(b)))
 			.join("|") === "AuthService|Gateway|HTTP",
 		"repair dropped a label a human could read",
 	);
@@ -1444,10 +1450,10 @@ const placed = () => [
 ];
 
 {
-	const [shape, , arrow] = placed();
+	const [shapeElement, , arrow] = placed();
 	assert(
-		JSON.stringify(labelAnchorOf(shape)) === JSON.stringify({ x: 100, y: 40 }),
-		`a shape hangs its label from ${JSON.stringify(labelAnchorOf(shape))}, not its centre`,
+		JSON.stringify(labelAnchorOf(shapeElement)) === JSON.stringify({ x: 100, y: 40 }),
+		`a shape hangs its label from ${JSON.stringify(labelAnchorOf(shapeElement))}, not its centre`,
 	);
 	assert(
 		JSON.stringify(labelAnchorOf(arrow)) === JSON.stringify({ x: 300, y: 40 }),
@@ -1620,7 +1626,9 @@ const sceneBox = (elements) => ({
 	// Excalidraw parks a top-aligned label against the container's top edge, so
 	// the check has to allow half a container's worth of offset. It is looking
 	// for a label the board forgot, not a label with an opinion.
-	const topAligned = placed().map((el) => (el.id === "svc-label" ? { ...el, y: 5 } : el));
+	const topAligned = placed().map((el) =>
+		el.id === "svc-label" ? Object.assign({}, el, { y: 5 }) : el,
+	);
 	assert(boundTextDrift(topAligned).length === 0, "a top-aligned label was read as drift");
 
 	// A duplicate that is nowhere near its container is still drift: every one
@@ -1683,7 +1691,9 @@ const sceneBox = (elements) => ({
 
 	// What the converter actually did to a real arrow label: minted it more than
 	// a thousand pixels from the arrow, where nothing on screen shows it.
-	const lost = start.map((el) => (el.id === "wire-label" ? { ...el, x: 15, y: -82 } : el));
+	const lost = start.map((el) =>
+		el.id === "wire-label" ? Object.assign({}, el, { x: 15, y: -82 }) : el,
+	);
 	const rescue = rescueDriftedBoundTexts(lost);
 	assert(
 		rescue.length === 1 && rescue[0].id === "wire-label",
@@ -1694,7 +1704,7 @@ const sceneBox = (elements) => ({
 		`the rescued arrow label was sent to ${Math.round(rescue[0].x)},${Math.round(rescue[0].y)}`,
 	);
 	const rescued = lost.map((el) =>
-		el.id === "wire-label" ? { ...el, x: rescue[0].x, y: rescue[0].y } : el,
+		el.id === "wire-label" ? Object.assign({}, el, { x: rescue[0].x, y: rescue[0].y }) : el,
 	);
 	assert(
 		boundTextDrift(rescued).length === 0,
@@ -1760,7 +1770,6 @@ const sceneBox = (elements) => ({
 		},
 		stdio: ["ignore", "ignore", "ignore"],
 	});
-	const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 	const api = async (method, url, body) => {
 		// Every write says what it is doing, once for the whole check (TASK-095,
 		// scripts/lib/doing.mjs). The refusal itself is proved in check-doing.mjs.
@@ -1840,12 +1849,12 @@ const sceneBox = (elements) => ({
 		// and this check had to manufacture that report itself. Now the one
 		// converter runs at the write boundary and four labelled elements are
 		// eight elements on the board (ADR 0015).
-		const drawn = await elementsOn();
+		const drawnElements = await elementsOn();
 		assert(
-			drawn.length === 8,
-			`four labelled elements became ${drawn.length} on the board, not eight`,
+			drawnElements.length === 8,
+			`four labelled elements became ${drawnElements.length} on the board, not eight`,
 		);
-		const drawnLabels = boundTextsByContainer(drawn);
+		const drawnLabels = boundTextsByContainer(drawnElements);
 		for (const id of ["svc", "gw", "pg", "wire"]) {
 			assert(
 				drawnLabels.get(id)?.length === 1,

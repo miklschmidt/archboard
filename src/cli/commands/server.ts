@@ -11,6 +11,8 @@ import { getHealth, getSyncStatus } from "../../runtime/engine/canvas-client.js"
 import { EXPRESS_SERVER_URL } from "../../runtime/engine/config.js";
 import { readPidFile } from "../../runtime/engine/pidfile.js";
 
+const clock = (at: string): string => new Date(at).toLocaleTimeString();
+
 export async function start(argv: string[]): Promise<void> {
 	parseArgs(argv, {});
 
@@ -130,7 +132,6 @@ function staleSource(health: {
 	// Clock time, not the ISO stamps the JSON carries: the sentence is read by
 	// somebody who is looking at their own terminal wondering why their edit did
 	// nothing, and "14:02:11" is the thing they can place.
-	const clock = (at: string): string => new Date(at).toLocaleTimeString();
 	return {
 		startedAt: source.evaluatedAt,
 		changedFile: source.newestFile,

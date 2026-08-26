@@ -103,12 +103,13 @@ export function sameCentre(a: Box, b: Box, tolerance = 1): boolean {
 // every name inside it. `compare` therefore draws it round the nodes both
 // boards have, not round everything on each board, so that arriving and
 // departing nodes cannot rename their neighbours' whereabouts.
+const third = (v: number, lo: number, hi: number): number => {
+	if (hi - lo < 1) return 1;
+	const t = (v - lo) / (hi - lo);
+	return t < 0.34 ? 0 : t < 0.67 ? 1 : 2;
+};
+
 export function regionName(cx: number, cy: number, box: BoundingBox): string {
-	const third = (v: number, lo: number, hi: number) => {
-		if (hi - lo < 1) return 1;
-		const t = (v - lo) / (hi - lo);
-		return t < 0.34 ? 0 : t < 0.67 ? 1 : 2;
-	};
 	const rows = ["top", "middle", "bottom"];
 	const cols = ["left", "centre", "right"];
 	const r = third(cy, box.minY, box.maxY);

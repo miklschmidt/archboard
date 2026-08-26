@@ -32,7 +32,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import WebSocket from "ws";
+import { WebSocket } from "ws";
 import { withDoing } from "./lib/doing.mjs";
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -177,11 +177,11 @@ try {
 
 	const socket = new WebSocket(`ws://127.0.0.1:${PORT}/?clientId=p-hot-1`);
 	const seen = [];
-	/** @type {number | null} */
-	let closed = null;
+	const closeState = { closed: false, code: null };
 	socket.on("message", (data) => seen.push(JSON.parse(data.toString())));
 	socket.on("close", (code) => {
-		closed = code;
+		closeState.closed = true;
+		closeState.code = code;
 	});
 	await new Promise((resolve, reject) => {
 		socket.once("open", resolve);
@@ -330,8 +330,8 @@ try {
 
 	check(
 		"the pane is still connected",
-		closed === null && after.websocket_clients === sockets,
-		`close code ${closed}, ${after.websocket_clients} of ${sockets} sockets`,
+		!closeState.closed && after.websocket_clients === sockets,
+		`close code ${closeState.code}, ${after.websocket_clients} of ${sockets} sockets`,
 	);
 
 	const elementsAfter = (await api("GET", `/api/elements?board=${boardKey}`)).body;

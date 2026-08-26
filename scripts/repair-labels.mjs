@@ -45,7 +45,11 @@
 //   ./bin/canvas board save --board <name>
 
 import { readFileSync, writeFileSync } from "node:fs";
-import { boundTextDrift, planLabelRepair, recentreBoundTexts } from "../src/runtime/engine/labels.ts";
+import {
+	boundTextDrift,
+	planLabelRepair,
+	recentreBoundTexts,
+} from "../src/runtime/engine/labels.ts";
 import { remeasureLinear } from "../src/runtime/engine/geometry.ts";
 import { withDoing } from "./lib/doing.mjs";
 
@@ -144,14 +148,16 @@ if (file) {
 	const rebind = new Map(plan.rebind.map((entry) => [entry.id, entry.boundElements]));
 	const kept = elements
 		.filter((el) => !doomed.has(el.id))
-		.map((el) => (rebind.has(el.id) ? { ...el, boundElements: rebind.get(el.id) } : el));
+		.map((el) =>
+			rebind.has(el.id) ? Object.assign({}, el, { boundElements: rebind.get(el.id) }) : el,
+		);
 
 	// Re-centre after the duplicates are gone, so the label that stays is the one
 	// measured against its container.
 	const moves = new Map(recentreBoundTexts(kept).map((move) => [move.id, move]));
 	scene.elements = kept.map((el) => {
 		const move = moves.get(el.id);
-		return move ? { ...el, x: move.x, y: move.y } : el;
+		return move ? Object.assign({}, el, { x: move.x, y: move.y }) : el;
 	});
 	if (plan.removeIds.length === 0 && moves.size === 0) process.exit(0);
 	if (moves.size > 0)

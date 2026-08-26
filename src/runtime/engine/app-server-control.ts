@@ -38,7 +38,7 @@ import { EventEmitter } from "events";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import WebSocket from "ws";
+import { WebSocket } from "ws";
 import logger from "./logger.js";
 
 export const CONTROL_SOCKET_DIR = "app-server-control";
@@ -239,7 +239,10 @@ export class AppServerControl extends EventEmitter {
 				// A connect failure arrives as an AggregateError with an empty
 				// message, which is the least useful thing to log, so the code is
 				// pulled out when there is nothing else to say.
-				const reason = (error as Error).message || String((error as Error & { code?: unknown }).code ?? "") || String(error);
+				const reason =
+					(error as Error).message ||
+					String((error as Error & { code?: unknown }).code ?? "") ||
+					String(error);
 				logger.warn(`app-server control socket error: ${reason}`);
 				fail(new Error(String(reason)));
 			});
@@ -268,7 +271,9 @@ export class AppServerControl extends EventEmitter {
 			this.pending.delete(message.id as number);
 			if (message.error) {
 				const rpcError = message.error as RpcRecord;
-				const error = new Error(String(rpcError.message ?? "the app-server refused the call")) as Error & {
+				const error = new Error(
+					String(rpcError.message ?? "the app-server refused the call"),
+				) as Error & {
 					code?: unknown;
 					data?: unknown;
 				};
@@ -288,7 +293,7 @@ export class AppServerControl extends EventEmitter {
 			// own client declines methods it does not implement. Silence would be
 			// worse: a turn waiting on a reply that never comes is a hung session.
 			logger.info(
-					`app-server asked archboard to handle "${String(message.method)}"; declining — archboard is a listener on this socket`,
+				`app-server asked archboard to handle "${String(message.method)}"; declining — archboard is a listener on this socket`,
 			);
 			this.ws?.send(
 				JSON.stringify({

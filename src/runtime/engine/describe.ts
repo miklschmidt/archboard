@@ -72,7 +72,8 @@ function formatBinding(v: unknown): string | undefined {
 
 function bindingPathOf(v: unknown): string | undefined {
 	if (typeof v === "string") return v.trim() || undefined;
-	if (v && typeof v === "object" && typeof (v as Record<string, unknown>).path === "string") return (v as Record<string, unknown>).path as string;
+	if (v && typeof v === "object" && typeof (v as Record<string, unknown>).path === "string")
+		return (v as Record<string, unknown>).path as string;
 	return undefined;
 }
 
@@ -228,11 +229,13 @@ function foldNodes(items: Item[]): NodeFold {
 }
 
 function bindingOf(el: unknown, end: "start" | "end"): string | undefined {
-	const record = el && typeof el === "object" ? el as Record<string, unknown> : {};
+	const record = el && typeof el === "object" ? (el as Record<string, unknown>) : {};
 	const binding = end === "start" ? record.startBinding : record.endBinding;
-	const bindingRecord = binding && typeof binding === "object" ? binding as Record<string, unknown> : {};
+	const bindingRecord =
+		binding && typeof binding === "object" ? (binding as Record<string, unknown>) : {};
 	const fallback = end === "start" ? record.start : record.end;
-	const fallbackRecord = fallback && typeof fallback === "object" ? fallback as Record<string, unknown> : {};
+	const fallbackRecord =
+		fallback && typeof fallback === "object" ? (fallback as Record<string, unknown>) : {};
 	const id = bindingRecord.elementId ?? fallbackRecord.id;
 	return typeof id === "string" ? id : undefined;
 }
@@ -285,6 +288,134 @@ const NODE_DETAIL_LIMIT = 60; // above this, nodes lose their extras line
 const NODE_LIST_LIMIT = 120; // above this, nodes are counted, not listed
 const EDGE_LIST_LIMIT = 60;
 const OTHER_LIST_LIMIT = 40;
+
+interface SceneBox {
+	minX: number;
+	minY: number;
+	maxX: number;
+	maxY: number;
+}
+
+function appendStats(
+	lines: string[],
+	args: {
+		allElements: ServerElement[];
+		nodes: Item[];
+		edges: Edge[];
+		others: Item[];
+		folded: Folded;
+		nodeFold: NodeFold;
+		kindCounts: Record<string, number>;
+		variantCounts: Record<string, number>;
+		levelCounts: Record<string, number>;
+		typeCounts: Record<string, number>;
+		boundNodes: number;
+		fromBoard: number;
+		box: SceneBox;
+	},
+): void {
+	const {
+		allElements,
+		nodes,
+		edges,
+		others,
+		folded,
+		nodeFold,
+		kindCounts,
+		variantCounts,
+		levelCounts,
+		typeCounts,
+		boundNodes,
+		fromBoard,
+		box,
+	} = args;
+	const composition = [
+		`${nodes.length} node${nodes.length === 1 ? "" : "s"}`,
+		`${edges.length} edge${edges.length === 1 ? "" : "s"}`,
+		`${others.length} plain`,
+	];
+	if (folded.hidden.size > 0)
+		composition.push(
+			`${folded.hidden.size} bound label${folded.hidden.size === 1 ? "" : "s"} folded in`,
+		);
+	if (nodeFold.hidden > 0)
+		composition.push(`${nodeFold.hidden} node member${nodeFold.hidden === 1 ? "" : "s"} folded in`);
+	lines.push(`Total elements: ${allElements.length} (${composition.join(", ")})`);
+	if (nodes.length > 0) {
+		lines.push(`Kinds: ${renderCounts(kindCounts, KIND_ORDER)}`);
+		const semantic: string[] = [];
+		if (Object.keys(variantCounts).length > 0)
+			semantic.push(`Variants: ${renderCounts(variantCounts, ["current"])}`);
+		if (Object.keys(levelCounts).length > 0) semantic.push(`Levels: ${renderCounts(levelCounts)}`);
+		semantic.push(`Bindings: ${boundNodes}/${nodes.length} bound to code`);
+		lines.push(semantic.join(" | "));
+	}
+	if (fromBoard > 0)
+		lines.push(`From the board (human edits): ${fromBoard} of ${allElements.length} elements`);
+	lines.push(`Types: ${renderCounts(typeCounts)}`);
+	lines.push(
+		`Bounding box: (${Math.round(box.minX)}, ${Math.round(box.minY)}) to (${Math.round(box.maxX)}, ${Math.round(box.maxY)}) = ${Math.round(box.maxX - box.minX)}x${Math.round(box.maxY - box.minY)}`,
+	);
+}
+
+function appendGraphNotes(
+	lines: string[],
+	nodes: Item[],
+	edges: Edge[],
+	degree: Map<string, { in: number; out: number }>,
+): void {
+	if (edges.length >= 3 && nodes.length > 0) {
+		const ranked = nodes
+			.map((n) => ({ n, d: degree.get(n.el.id) ?? { in: 0, out: 0 } }))
+			.filter((r) => r.d.in + r.d.out >= 3)
+			.toSorted((a, b) => b.d.in + b.d.out - (a.d.in + a.d.out))
+			.slice(0, 3);
+		if (ranked.length > 0)
+			lines.push(
+				`Most connected: ${ranked.map((r) => `${r.n.name} (${r.d.in} in, ${r.d.out} out)`).join(", ")}`,
+			);
+	}
+	const isolated = nodes.filter((n) => !degree.has(n.el.id));
+	if (isolated.length > 0 && edges.length > 0) {
+		const shown = isolated
+			.slice(0, 8)
+			.map((n) => n.name)
+			.join(", ");
+		lines.push(
+			`Unconnected nodes (${isolated.length}): ${shown}${isolated.length > 8 ? ", …" : ""}`,
+		);
+	}
+}
+
+function appendClusters(
+	lines: string[],
+	realClusters: Item[][],
+	clusters: Item[][],
+	box: SceneBox,
+): void {
+	if (realClusters.length <= 1) return;
+	lines.push("", `### Clusters (nodes within ${CLUSTER_GAP}px of each other)`);
+	for (const cluster of realClusters.slice(0, 12)) {
+		const cx = cluster.reduce((sum, n) => sum + n.x + n.w / 2, 0) / cluster.length;
+		const cy = cluster.reduce((sum, n) => sum + n.y + n.h / 2, 0) / cluster.length;
+		const kinds = renderCounts(counts(cluster.map((n) => n.meta.kind ?? UNTYPED)), KIND_ORDER);
+		const names = cluster
+			.slice(0, 8)
+			.map((n) => n.name)
+			.join(", ");
+		lines.push(
+			`  ${regionName(cx, cy, box)} (${cluster.length}): ${names}${cluster.length > 8 ? ", …" : ""} — ${kinds}`,
+		);
+	}
+	const loose = clusters.filter((cluster) => cluster.length === 1);
+	if (loose.length > 0)
+		lines.push(
+			`  on their own (${loose.length}): ${loose
+				.slice(0, 8)
+				.map((cluster) => cluster[0]!.name)
+				.join(", ")}${loose.length > 8 ? ", …" : ""}`,
+		);
+}
 
 export function describeScene(allElements: ServerElement[]): string {
 	if (allElements.length === 0) {
@@ -391,86 +522,25 @@ export function describeScene(allElements: ServerElement[]): string {
 		})}`,
 	);
 
-	// --- stats ----------------------------------------------------------------
-	const composition = [
-		`${nodes.length} node${nodes.length === 1 ? "" : "s"}`,
-		`${edges.length} edge${edges.length === 1 ? "" : "s"}`,
-		`${others.length} plain`,
-	];
-	if (folded.hidden.size > 0)
-		composition.push(
-			`${folded.hidden.size} bound label${folded.hidden.size === 1 ? "" : "s"} folded in`,
-		);
-	if (nodeFold.hidden > 0)
-		composition.push(`${nodeFold.hidden} node member${nodeFold.hidden === 1 ? "" : "s"} folded in`);
-	lines.push(`Total elements: ${allElements.length} (${composition.join(", ")})`);
-	if (nodes.length > 0) {
-		lines.push(`Kinds: ${renderCounts(kindCounts, KIND_ORDER)}`);
-		const semantic: string[] = [];
-		if (Object.keys(variantCounts).length > 0)
-			semantic.push(`Variants: ${renderCounts(variantCounts, ["current"])}`);
-		if (Object.keys(levelCounts).length > 0) semantic.push(`Levels: ${renderCounts(levelCounts)}`);
-		semantic.push(`Bindings: ${boundNodes}/${nodes.length} bound to code`);
-		lines.push(semantic.join(" | "));
-	}
-	if (fromBoard > 0) {
-		lines.push(`From the board (human edits): ${fromBoard} of ${allElements.length} elements`);
-	}
-	lines.push(`Types: ${renderCounts(typeCounts)}`);
-	lines.push(
-		`Bounding box: (${Math.round(minX)}, ${Math.round(minY)}) to (${Math.round(maxX)}, ${Math.round(maxY)}) = ${Math.round(maxX - minX)}x${Math.round(maxY - minY)}`,
-	);
+	appendStats(lines, {
+		allElements,
+		nodes,
+		edges,
+		others,
+		folded,
+		nodeFold,
+		kindCounts,
+		variantCounts,
+		levelCounts,
+		typeCounts,
+		boundNodes,
+		fromBoard,
+		box,
+	});
 
-	// Hubs and orphans are the two things worth saying out loud about a graph.
-	if (edges.length >= 3 && nodes.length > 0) {
-		const ranked = nodes
-			.map((n) => ({ n, d: degree.get(n.el.id) ?? { in: 0, out: 0 } }))
-			.filter((r) => r.d.in + r.d.out >= 3)
-			.toSorted((a, b) => b.d.in + b.d.out - (a.d.in + a.d.out))
-			.slice(0, 3);
-		if (ranked.length > 0) {
-			lines.push(
-				`Most connected: ${ranked.map((r) => `${r.n.name} (${r.d.in} in, ${r.d.out} out)`).join(", ")}`,
-			);
-		}
-	}
-	const isolated = nodes.filter((n) => !degree.has(n.el.id));
-	if (isolated.length > 0 && edges.length > 0) {
-		const shown = isolated
-			.slice(0, 8)
-			.map((n) => n.name)
-			.join(", ");
-		lines.push(
-			`Unconnected nodes (${isolated.length}): ${shown}${isolated.length > 8 ? ", …" : ""}`,
-		);
-	}
+	appendGraphNotes(lines, nodes, edges, degree);
 
-	// --- clusters -------------------------------------------------------------
-	if (realClusters.length > 1) {
-		lines.push("");
-		lines.push(`### Clusters (nodes within ${CLUSTER_GAP}px of each other)`);
-		for (const cluster of realClusters.slice(0, 12)) {
-			const cx = cluster.reduce((s, n) => s + n.x + n.w / 2, 0) / cluster.length;
-			const cy = cluster.reduce((s, n) => s + n.y + n.h / 2, 0) / cluster.length;
-			const kinds = renderCounts(counts(cluster.map((n) => n.meta.kind ?? UNTYPED)), KIND_ORDER);
-			const names = cluster
-				.slice(0, 8)
-				.map((n) => n.name)
-				.join(", ");
-			lines.push(
-				`  ${regionName(cx, cy, box)} (${cluster.length}): ${names}${cluster.length > 8 ? ", …" : ""} — ${kinds}`,
-			);
-		}
-		const loose = clusters.filter((c) => c.length === 1);
-		if (loose.length > 0) {
-			lines.push(
-				`  on their own (${loose.length}): ${loose
-					.slice(0, 8)
-					.map((c) => c[0]!.name)
-					.join(", ")}${loose.length > 8 ? ", …" : ""}`,
-			);
-		}
-	}
+	appendClusters(lines, realClusters, clusters, box);
 
 	// --- nodes ----------------------------------------------------------------
 	if (nodes.length > 0) {
