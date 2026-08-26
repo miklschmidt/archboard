@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { obstacleIdentity } from "./lib/ordering.js";
+
 const finite = z.number().finite();
 const nonnegative = finite.nonnegative();
 
@@ -25,13 +27,22 @@ export const LibraryAttributionSchema = z.strictObject({
 	item: z.string().min(1),
 	source: z.string().optional(),
 });
-export const ObstacleRefSchema = z.strictObject({
-	id: z.string().startsWith("obstacle:"),
-	kind: z.enum(["library-component", "grouped-component"]),
-	elementIds: z.array(z.string().min(1)),
-	groupIds: z.array(z.string().min(1)),
-	library: z.array(LibraryAttributionSchema),
-});
+export const ObstacleRefSchema = z
+	.strictObject({
+		id: z.string().startsWith("obstacle:"),
+		kind: z.enum(["library-component", "grouped-component"]),
+		elementIds: z.array(z.string().min(1)).min(1),
+		groupIds: z.array(z.string().min(1)),
+		library: z.array(LibraryAttributionSchema),
+	})
+	.superRefine((obstacle, context) => {
+		if (obstacle.id === obstacleIdentity(obstacle.elementIds)) return;
+		context.addIssue({
+			code: "custom",
+			path: ["id"],
+			message: "Obstacle id must be the deterministic encoding of elementIds.",
+		});
+	});
 
 const common = {
 	message: z.string().min(1),

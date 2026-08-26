@@ -32,11 +32,15 @@ import {
 	classifyBoundElements,
 	groupIds,
 	libraryAttribution,
-	semanticParents,
 	type BlockingBindingIssue,
 	type InspectionModel,
 } from "./model.js";
-import { sweepIntervalPairs, type SweepPartition, type SweepWork } from "./interval-sweep.js";
+import {
+	buildSweepHierarchy,
+	sweepIntervalPairs,
+	type SweepPartition,
+	type SweepWork,
+} from "./interval-sweep.js";
 import { compareIdentity, compareIdentityLists } from "./ordering.js";
 
 export const BROAD_PHASE_COMPARISON_LIMIT = 2_000_000 as const;
@@ -51,7 +55,29 @@ interface DetectionResult {
 		broadPhasePartitionChecks: number;
 		broadPhaseBucketScans: number;
 		broadPhaseBucketIndexOperations: number;
+		broadPhaseBucketLookups: number;
+		broadPhaseBucketUpdates: number;
+		broadPhaseBucketDeletes: number;
+		broadPhaseCompatibilityIndexUpdates: number;
 		broadPhaseCompatibilityProfiles: number;
+		broadPhaseProfileSnapshotEntries: number;
+		broadPhaseProfileSortComparisons: number;
+		broadPhaseProfileTerminalLookups: number;
+		broadPhaseProfileCreations: number;
+		broadPhaseProfileTrieSteps: number;
+		broadPhaseCompatibilityQueries: number;
+		broadPhaseCompatibilityTests: number;
+		broadPhaseHierarchyPathQueries: number;
+		broadPhaseHierarchyPathSteps: number;
+		broadPhaseHierarchySubtreeQueries: number;
+		broadPhaseHierarchySubtreeSteps: number;
+		broadPhaseHierarchyIndexUpdateSteps: number;
+		broadPhasePeakRetainedBuckets: number;
+		broadPhasePeakRetainedProfiles: number;
+		broadPhasePeakRetainedProfileTrieNodes: number;
+		broadPhasePeakRetainedHierarchyIndexCells: number;
+		broadPhasePeakRetainedExclusionRefs: number;
+		broadPhasePeakRetainedIndexRefs: number;
 		hierarchyEvents: number;
 		hierarchyCandidateVisits: number;
 		hierarchyExpiryPops: number;
@@ -59,6 +85,12 @@ interface DetectionResult {
 		hierarchyBucketScans: number;
 		hierarchyBucketIndexOperations: number;
 		hierarchyCompatibilityProfiles: number;
+		hierarchyPeakRetainedSelections: number;
+		containerBoundaryEvents: number;
+		containerBoundaryCandidateVisits: number;
+		containerBoundaryBucketScans: number;
+		containerBoundaryPeakRetainedBuckets: number;
+		containerBoundaryPeakRetainedIndexRefs: number;
 		pathSegmentChecks: number;
 	};
 }
@@ -67,6 +99,39 @@ interface CollisionResult {
 	broadPhaseComparisons: number;
 	preprocessingWork: SweepWork;
 }
+
+const emptySweepWork = (): SweepWork => ({
+	events: 0,
+	activeVisits: 0,
+	expiryPops: 0,
+	partitionChecks: 0,
+	bucketScans: 0,
+	bucketIndexOperations: 0,
+	bucketLookups: 0,
+	bucketUpdates: 0,
+	bucketDeletes: 0,
+	compatibilityIndexUpdates: 0,
+	compatibilityProfiles: 0,
+	profileSnapshotEntries: 0,
+	profileSortComparisons: 0,
+	profileTerminalLookups: 0,
+	profileCreations: 0,
+	profileTrieSteps: 0,
+	compatibilityQueries: 0,
+	compatibilityTests: 0,
+	hierarchyPathQueries: 0,
+	hierarchyPathSteps: 0,
+	hierarchySubtreeQueries: 0,
+	hierarchySubtreeSteps: 0,
+	hierarchyIndexUpdateSteps: 0,
+	peakRetainedBuckets: 0,
+	peakRetainedProfiles: 0,
+	peakRetainedProfileTrieNodes: 1,
+	peakRetainedHierarchyIndexCells: 0,
+	peakRetainedExclusionRefs: 0,
+	peakRetainedIndexRefs: 0,
+	peakRetainedSelections: 0,
+});
 type FindingInput = InspectionFinding extends infer Finding
 	? Finding extends InspectionFinding
 		? Omit<
@@ -1549,30 +1614,6 @@ const unrestrictedPartition = (partition: string): SweepPartition => ({
 	excludedPartitions: NO_EXCLUSIONS,
 });
 
-interface StringSetNode {
-	children: Map<string, StringSetNode>;
-	value: ReadonlySet<string> | null;
-}
-
-function internStringSet(
-	root: StringSetNode,
-	keys: readonly string[],
-	build: (sortedKeys: readonly string[]) => ReadonlySet<string>,
-): ReadonlySet<string> {
-	const sortedKeys = [...new Set(keys)].toSorted(compareIdentity);
-	let node = root;
-	for (const key of sortedKeys) {
-		let child = node.children.get(key);
-		if (!child) {
-			child = { children: new Map(), value: null };
-			node.children.set(key, child);
-		}
-		node = child;
-	}
-	if (!node.value) node.value = build(sortedKeys);
-	return node.value;
-}
-
 function pairSweep<A, B>(
 	left: readonly PairItem<A>[],
 	right: readonly PairItem<B>[],
@@ -1617,7 +1658,42 @@ function pairSweep<A, B>(
 	work.partitionChecks += measured.partitionChecks;
 	work.bucketScans += measured.bucketScans;
 	work.bucketIndexOperations += measured.bucketIndexOperations;
+	work.bucketLookups += measured.bucketLookups;
+	work.bucketUpdates += measured.bucketUpdates;
+	work.bucketDeletes += measured.bucketDeletes;
+	work.compatibilityIndexUpdates += measured.compatibilityIndexUpdates;
 	work.compatibilityProfiles += measured.compatibilityProfiles;
+	work.profileSnapshotEntries += measured.profileSnapshotEntries;
+	work.profileSortComparisons += measured.profileSortComparisons;
+	work.profileTerminalLookups += measured.profileTerminalLookups;
+	work.profileCreations += measured.profileCreations;
+	work.profileTrieSteps += measured.profileTrieSteps;
+	work.compatibilityQueries += measured.compatibilityQueries;
+	work.compatibilityTests += measured.compatibilityTests;
+	work.hierarchyPathQueries += measured.hierarchyPathQueries;
+	work.hierarchyPathSteps += measured.hierarchyPathSteps;
+	work.hierarchySubtreeQueries += measured.hierarchySubtreeQueries;
+	work.hierarchySubtreeSteps += measured.hierarchySubtreeSteps;
+	work.hierarchyIndexUpdateSteps += measured.hierarchyIndexUpdateSteps;
+	work.peakRetainedBuckets = Math.max(work.peakRetainedBuckets, measured.peakRetainedBuckets);
+	work.peakRetainedProfiles = Math.max(work.peakRetainedProfiles, measured.peakRetainedProfiles);
+	work.peakRetainedProfileTrieNodes = Math.max(
+		work.peakRetainedProfileTrieNodes,
+		measured.peakRetainedProfileTrieNodes,
+	);
+	work.peakRetainedHierarchyIndexCells = Math.max(
+		work.peakRetainedHierarchyIndexCells,
+		measured.peakRetainedHierarchyIndexCells,
+	);
+	work.peakRetainedExclusionRefs = Math.max(
+		work.peakRetainedExclusionRefs,
+		measured.peakRetainedExclusionRefs,
+	);
+	work.peakRetainedIndexRefs = Math.max(work.peakRetainedIndexRefs, measured.peakRetainedIndexRefs);
+	work.peakRetainedSelections = Math.max(
+		work.peakRetainedSelections,
+		measured.peakRetainedSelections,
+	);
 }
 
 function collisionFindings(
@@ -1628,15 +1704,7 @@ function collisionFindings(
 ): CollisionResult {
 	const findings: InspectionFinding[] = [];
 	const counter = { value: 0, limited: false, pass: "" };
-	const sweepWork: SweepWork = {
-		events: 0,
-		activeVisits: 0,
-		expiryPops: 0,
-		partitionChecks: 0,
-		bucketScans: 0,
-		bucketIndexOperations: 0,
-		compatibilityProfiles: 0,
-	};
+	const sweepWork = emptySweepWork();
 	const byId = model.byId;
 	const segmentItems = segments.map((segment) => ({
 		id: `${segment.connectorId}:${segment.index}`,
@@ -1689,47 +1757,42 @@ function collisionFindings(
 			}
 		);
 	};
-	const leafNodeIds = new Set(leafNodeItems.map((item) => item.value.id));
+	const sweepHierarchy = buildSweepHierarchy(
+		new Map([...model.nodes.values()].map((node) => [node.id, node.parentId])),
+	);
 	const connectorNodePartitions = new Map<string, SweepPartition>();
 	for (const segment of segments) {
 		if (connectorNodePartitions.has(segment.connectorId)) continue;
 		const ends = connectorEnds(segment);
-		const excluded = ends.nodeAnalysisEligible
-			? new Set(
-					[
-						ends.startNode,
-						ends.endNode,
-						...semanticParents(model, ends.startNode),
-						...semanticParents(model, ends.endNode),
-					].filter((id): id is string => id !== undefined),
-				)
-			: leafNodeIds;
+		if (!ends.nodeAnalysisEligible) continue;
 		connectorNodePartitions.set(segment.connectorId, {
 			partition: `connector:${segment.connectorId}`,
-			excludedPartitions: excluded,
+			excludedPartitions: NO_EXCLUSIONS,
+			ancestorTargets: [ends.startNode, ends.endNode].filter(
+				(id): id is string => id !== undefined,
+			),
+			hierarchy: sweepHierarchy,
 		});
 	}
 	const labelNodePartitions = new Map<string, SweepPartition>();
-	const labelExclusionSets: StringSetNode = { children: new Map(), value: null };
 	for (const label of labelNodeRecords) {
 		const ownership = model.labelOwnership.get(label.id!);
 		const candidateNodes =
 			ownership?.candidateOwnerIds
 				.map((owner) => model.nodeOfElement.get(owner))
 				.filter((owner): owner is string => owner !== undefined) ?? [];
-		const excluded = internStringSet(labelExclusionSets, candidateNodes, (owners) => {
-			const exclusions = new Set(owners);
-			for (const owner of owners)
-				for (const ancestor of semanticParents(model, owner)) exclusions.add(ancestor);
-			return exclusions;
-		});
 		labelNodePartitions.set(label.id!, {
 			partition: `label:${label.id!}`,
-			excludedPartitions: excluded,
+			excludedPartitions: NO_EXCLUSIONS,
+			ancestorTargets: candidateNodes,
+			hierarchy: sweepHierarchy,
 		});
 	}
 	pairSweep(
-		partitioned(segmentItems, (segment) => connectorNodePartitions.get(segment.connectorId)!),
+		partitioned(
+			segmentItems.filter((item) => connectorEnds(item.value).nodeAnalysisEligible),
+			(segment) => connectorNodePartitions.get(segment.connectorId)!,
+		),
 		leafNodeItems,
 		false,
 		(segment, node) => {
@@ -2083,6 +2146,10 @@ export function detectBoard(
 			broadPhasePartitionChecks: collisions.preprocessingWork.partitionChecks,
 			broadPhaseBucketScans: collisions.preprocessingWork.bucketScans,
 			broadPhaseBucketIndexOperations: collisions.preprocessingWork.bucketIndexOperations,
+			broadPhaseBucketLookups: collisions.preprocessingWork.bucketLookups,
+			broadPhaseBucketUpdates: collisions.preprocessingWork.bucketUpdates,
+			broadPhaseBucketDeletes: collisions.preprocessingWork.bucketDeletes,
+			broadPhaseCompatibilityIndexUpdates: collisions.preprocessingWork.compatibilityIndexUpdates,
 			broadPhaseCompatibilityProfiles: collisions.preprocessingWork.compatibilityProfiles,
 			hierarchyEvents: model.hierarchyWork.events,
 			hierarchyCandidateVisits: model.hierarchyWork.activeVisits,
@@ -2091,6 +2158,32 @@ export function detectBoard(
 			hierarchyBucketScans: model.hierarchyWork.bucketScans,
 			hierarchyBucketIndexOperations: model.hierarchyWork.bucketIndexOperations,
 			hierarchyCompatibilityProfiles: model.hierarchyWork.compatibilityProfiles,
+			hierarchyPeakRetainedSelections: model.hierarchyWork.peakRetainedSelections,
+			containerBoundaryEvents: model.containerBoundaryWork.events,
+			containerBoundaryCandidateVisits: model.containerBoundaryWork.activeVisits,
+			containerBoundaryBucketScans: model.containerBoundaryWork.bucketScans,
+			containerBoundaryPeakRetainedBuckets: model.containerBoundaryWork.peakRetainedBuckets,
+			containerBoundaryPeakRetainedIndexRefs: model.containerBoundaryWork.peakRetainedIndexRefs,
+			broadPhaseProfileSnapshotEntries: collisions.preprocessingWork.profileSnapshotEntries,
+			broadPhaseProfileSortComparisons: collisions.preprocessingWork.profileSortComparisons,
+			broadPhaseProfileTerminalLookups: collisions.preprocessingWork.profileTerminalLookups,
+			broadPhaseProfileCreations: collisions.preprocessingWork.profileCreations,
+			broadPhaseProfileTrieSteps: collisions.preprocessingWork.profileTrieSteps,
+			broadPhaseCompatibilityQueries: collisions.preprocessingWork.compatibilityQueries,
+			broadPhaseCompatibilityTests: collisions.preprocessingWork.compatibilityTests,
+			broadPhaseHierarchyPathQueries: collisions.preprocessingWork.hierarchyPathQueries,
+			broadPhaseHierarchyPathSteps: collisions.preprocessingWork.hierarchyPathSteps,
+			broadPhaseHierarchySubtreeQueries: collisions.preprocessingWork.hierarchySubtreeQueries,
+			broadPhaseHierarchySubtreeSteps: collisions.preprocessingWork.hierarchySubtreeSteps,
+			broadPhaseHierarchyIndexUpdateSteps: collisions.preprocessingWork.hierarchyIndexUpdateSteps,
+			broadPhasePeakRetainedBuckets: collisions.preprocessingWork.peakRetainedBuckets,
+			broadPhasePeakRetainedProfiles: collisions.preprocessingWork.peakRetainedProfiles,
+			broadPhasePeakRetainedProfileTrieNodes:
+				collisions.preprocessingWork.peakRetainedProfileTrieNodes,
+			broadPhasePeakRetainedHierarchyIndexCells:
+				collisions.preprocessingWork.peakRetainedHierarchyIndexCells,
+			broadPhasePeakRetainedExclusionRefs: collisions.preprocessingWork.peakRetainedExclusionRefs,
+			broadPhasePeakRetainedIndexRefs: collisions.preprocessingWork.peakRetainedIndexRefs,
 			pathSegmentChecks: structural.pathSegmentChecks,
 		},
 	};
