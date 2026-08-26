@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-26 10:48'
+updated_date: '2026-08-26 10:52'
 labels: []
 dependencies:
   - TASK-123.01
@@ -126,6 +126,8 @@ Migration checkpoint 5 (pane/board) complete: pane root/open/close and board roo
 Migration checkpoint 6 (snapshot) complete: snapshot root/save/list/restore are typed contracts using one shared force option spec also consumed by route discovery. Missing names remain after server contact, option-leading restore remains compatible, and restore retains snapshot read -> board check -> clear -> batch order. Gates: stable fix, generation --check, 15 contract tests / 667 checks, 539 CLI checks, type-check, and boards suite.
 
 2026-08-26 migration checkpoint 7: migrated promote/demote, claim/release, library root/list/insert, and arrange root plus seven child routes to named CommandContracts. The arrange parser and option-leading child discovery remain mechanically derived from ARRANGE_FLAG_SPEC. Generated proof is fresh at 54 contracts / 3 legacy routes; generation --check, 664 contract checks, 539 CLI checks, type-check, one-write (76), library (49), repos, and lock (120) passed.
+
+2026-08-26 migration checkpoint 8: migrated screenshot, mermaid, and share. Screenshot now declares raw SVG versus validated file-artifact output; Mermaid preserves local-read before server/browser and diagnostic-before-result presentation; share retains elements-only read and URL result. Generated proof is fresh at 57 contracts / 0 legacy routes; generation --check, 667 contract checks, 539 CLI checks, type-check, side-by-side, and boards passed.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
