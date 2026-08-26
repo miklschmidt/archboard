@@ -5,6 +5,11 @@ implements: 0015, 0016
 
 # Getting to a server that is the truth
 
+> Historical measurement record (2026-08-20). Source paths below identify the
+> pre-deep-module tree that was measured and are not current navigation. The
+> staged implementation plan is complete. Archboard is now CLI-only; current
+> validation and suite names live in `docs/agents/test-suite.md`.
+
 ADR 0015 decided that the vault is the truth and the agent-friendly shape is an
 input format. ADR 0016 decided that a board has a mutex. This plans the work
 against those decisions and puts numbers on what it costs.
@@ -420,7 +425,7 @@ flight.
 ## 7. The agent path
 
 ADR 0015 settles the direction: reads return native, and `describe` is how an
-agent gets a summary. The remaining question is whether a CLI or MCP write should
+agent gets a summary. The remaining question is whether a CLI write should
 return the whole board, and the answer is no, for a reason that has nothing to do
 with correctness.
 
@@ -454,9 +459,9 @@ to diverge.
 
 Four stages. Each leaves the suite green and the tool usable.
 
-The suites are `type-check`, `module-scope`, `mcp`, `bind`, `obsidian`,
-`changes`, `geometry`, `labels`, `library`, `boards`, `branch`, `side-by-side`,
-`install`, `repos`, `parity`, `hot`.
+This was the suite inventory when the plan was written. MCP and parity suites
+were retired with the MCP transport; the CLI contract and surviving checks are
+documented in `docs/agents/test-suite.md` and all run through `bun run check`.
 
 ### Stage 0. One batched write
 
@@ -489,8 +494,8 @@ an origin parameter.
 Then `apply`, `align`, `distribute`, `lock`, `group` and `ungroup` route through
 it, and `apply` becomes the batch primitive it is already described as.
 
-Threatens: `geometry` (align and distribute are its subject), `parity` (both
-surfaces move), `mcp`, `changes`, `boards`.
+Historical risk inventory: `geometry`, `changes`, and `boards`, plus the
+now-retired `parity` and `mcp` suites that covered the former MCP surface.
 
 ### Stage 1. One converter, and it has to land in the fixed-point set
 
@@ -694,7 +699,7 @@ restated here.
 A throwaway canvas server on port 41537, checked free first, with a throwaway
 vault under the session scratchpad. The canvas on port 3000 was read for its
 health endpoint and never written, and its two panes were not touched. Browser
-work happened in a tab I created with `tabs_create_mcp` and closed afterwards.
+work happened in a temporary browser-automation tab that I closed afterwards.
 
 The divergence tables come from a nine-element board covering rectangle, ellipse,
 diamond, text, line, freedraw, a bound arrow and a labelled bound arrow, created

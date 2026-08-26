@@ -8,8 +8,8 @@
 // other fourteen were optional. They simply never ran on main (TASK-082).
 //
 // That is the same shape of problem as an invariant nothing enforces, so the
-// fix is not a longer workflow. `.github/workflows/ci.yml` runs `bun run test`
-// and nothing else, the chain in package.json is the list, and this check is
+// fix is not a longer workflow. `.github/workflows/ci.yml` runs `bun run check`,
+// whose final gate is the complete test chain, and this check is
 // what keeps the two honest:
 //
 //   every `test:*` script is in the chain, or it is named below with a reason
@@ -69,8 +69,10 @@ for (const suite of Object.keys(SKIPPED)) {
 
 // --- and what the workflow does with them -----------------------------------
 
-if (!/bun run test\b(?!:)/.test(workflow)) {
-	fail("the workflow does not run `bun run test`, so the chain is not what a push runs.");
+if (!/bun run check\b/.test(workflow)) {
+	fail(
+		"the workflow does not run `bun run check`, so lint, format, and the suite are not a push gate.",
+	);
 }
 
 for (const named of workflow.match(/bun run test:[\w-]+/g) ?? []) {

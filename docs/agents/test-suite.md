@@ -5,9 +5,10 @@ changing tests or CI, or when a browser check fails.
 
 `bun run test` is the whole suite: `bun run type-check` first — it is the only
 thing that type-checks, so a type error still fails the suite — then every
-check in `package.json`'s chain. `.github/workflows/ci.yml` runs `bun run test`
-and nothing else (TASK-082), so a check added to `package.json` runs on main
-without anybody touching the workflow. `bun run test:suites`
+check in `package.json`'s chain. `.github/workflows/ci.yml` runs `bun run check`,
+which enforces Oxlint (including the custom boundary rules), formatting, and
+then that complete test chain. A check added to `package.json` therefore runs
+on main without anybody touching the workflow. `bun run test:suites`
 (`scripts/check-ci-suites.mjs`) fails when a `test:*` script is in neither the
 chain nor its skip list. Keep that list empty.
 
@@ -128,7 +129,7 @@ note archboard did not write. About fifteen seconds.
   bind, or a write to long-lived state with no presence guard. Waive a false
   positive with `// hot-safe: <reason>`. Both TASK-057 bugs are fixtures under
   `scripts/fixtures/module-scope/`, so the check proves itself on every run.
-- Every reload in dev mode runs a canary (`src/core/reload-canary.ts`) that
+- Every reload in dev mode runs a canary (`src/runtime/engine/reload-canary.ts`) that
   compares which boards are open and where each one's note is, the pane
   registrations, the socket count and the feed's id and cursor across the
   reload, and shouts to the terminal **and** every open tab if anything moved.
@@ -141,7 +142,8 @@ note archboard did not write. About fifteen seconds.
 
 - `bun run test:boundaries` creates temporary deep modules under `src/` and
   invokes Oxlint with the repository's real config and custom plugin. It proves
-  allowed module-root imports pass, while domain-to-transformer imports, flat
+  allowed module-root imports and thin process entrypoints pass, while root
+  entrypoint implementation, domain-to-transformer imports, flat
   area files, extensionless directory deep imports and Vite resource-query deep
   imports fail under the expected Archboard rules. It also proves static
   `require()` deep imports fail both the built-in TypeScript rule and the custom

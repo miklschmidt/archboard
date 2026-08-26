@@ -5,6 +5,11 @@ implements: 0015, 0016
 
 # The plan
 
+> Superseded implementation plan. The stages are complete, and source paths
+> below deliberately preserve the pre-deep-module locations discussed at the
+> time; they are historical references, not current navigation. Archboard is
+> now CLI-only. See `docs/agents/test-suite.md` for the current validation chain.
+
 ADR 0015 decided that the vault is the truth and the agent-friendly shape is an
 input format. ADR 0016 decided that a board has a mutex, and that an agent may
 claim one for longer than a single write. This is the order the code moves in to
@@ -38,18 +43,11 @@ can stop at any boundary without leaving the canvas in a state nobody can use.
 Stages 1 to 4 have no dependencies and can run at the same time. Everything
 after stage 5 is a chain.
 
-The suites are `type-check`, `module-scope`, `mcp`, `bind`, `obsidian`,
-`changes`, `geometry`, `labels`, `library`, `boards`, `branch`, `side-by-side`,
-`install`, `repos`, `parity` and `hot`. The risk lines below name them. Stage 1
-added a sixteenth, `one-write`, which counts the writes an intent costs on the
-wire, and TASK-082 a seventeenth, `suites`, which fails when a check is in
-neither `bun run test` nor a written-down skip list. Stage 5 added `text`, which
-pins the measurer against Chrome's numbers, and moved `browser` into the chain,
-which makes nineteen.
-
-All of them run on a push now. Until TASK-082 the workflow ran two, so this
-plan's safety net was a net anybody could forget to hold. The chain takes 58
-seconds on a 13th-gen i7, plus the browser check.
+The risk lines below retain the suite names that existed while this plan was
+executed, including the retired MCP and parity checks. Today the CLI contract
+and every surviving suite are catalogued in `docs/agents/test-suite.md`; a push
+runs them with lint, custom boundaries, formatting, and type-checking through
+`bun run check`.
 
 ## Stage 1. Batch the fan-out
 
@@ -78,19 +76,18 @@ origin on the request, defaulting to today's behaviour so the frontend does not
 have to move in the same commit.
 
 TASK-064 follows immediately, because it becomes cheap the moment this lands.
-The MCP process holds its own `sceneState.groups` map at
-`src/core/canvas-state.ts:22`, outside `kept()`, so two MCP clients disagree
+At the time, the MCP process held its own `sceneState.groups` map at
+`src/core/canvas-state.ts:22`, outside `kept()`, so two MCP clients disagreed
 about what is grouped and a group dies with the client. Its one hard consumer is
-the `knownMemberIds` seed `ungroupElements` accepts for legacy MCP groups. Route
+the `knownMemberIds` seed `ungroupElements` accepted for legacy MCP groups. Route
 group and ungroup through the batched write and that seed has nothing to seed
 from, so the map is deleted rather than migrated. `groupIds` is a native
 Excalidraw field that already round-trips through the note, which is why the CLI
 never had this bug.
 
-**Risks:** `geometry` is the suite whose whole subject is align and distribute.
-`parity` moves because both surfaces change. `mcp` because grouping is an MCP
-tool. `changes` because the origin parameter changes what the feed is told.
-`boards` because every element write names a board.
+**Historical risks:** `geometry` covered align and distribute; the now-retired
+`parity` and `mcp` suites covered both agent surfaces and MCP grouping;
+`changes` covered origin classification; `boards` covered board routing.
 
 ## Stage 2. Mint every id once
 
@@ -447,7 +444,8 @@ byte-identical after every cycle rather than at the end. TASK-024 took many
 round-trips to reach 42 copies of one label, so a three-cycle check proves
 nothing.
 
-**Risks:** `boards`, `side-by-side`, `changes`, `labels`, `parity` for TASK-075.
+**Historical risks:** `boards`, `side-by-side`, `changes`, `labels`, and the
+now-retired `parity` suite for TASK-075.
 
 ## Stage 8. The vault is the truth
 
@@ -549,10 +547,10 @@ asked to distinguish stops existing. What survives is the other half and it gets
 more important: a note can still be ahead of what a pane holds, because the lock
 stops archboard processes and not Obsidian, a sync client, or a text editor.
 
-**Risks:** `side-by-side` and `boards`, because the lock broadcast is a new
+**Historical risks:** `side-by-side` and `boards`, because the lock broadcast was a new
 message on the same socket protocol panes use. `changes`, because the settle
-window and the report debounce end up in one module. `parity`, because claiming
-is a new agent-facing action on both surfaces. `install`, for the documentation.
+window and the report debounce ended up in one module. The now-retired `parity`
+suite covered claiming on both former agent surfaces. `install` covered the documentation.
 
 ## What has to be decided before a stage can start
 

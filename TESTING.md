@@ -186,7 +186,7 @@ nothing to interrupt it falls back to quiet.
 | `ARCHBOARD_SETTLE_MS`              | 1200        | How long the board must be still before a change counts.    |
 | `CODEX_HOME`                       | `~/.codex`  | Where the control socket is found.                          |
 
-Those three defaults are set in `src/core/timing.ts`, alongside the pane's
+Those three defaults are set in `src/shared/timing/timing.ts`, alongside the pane's
 fixed progress deadline, trailing idle deadline, and the change feed's settle
 window, because changing one of them moves the others. The reasoning is in
 that file; the numbers here are a copy for reading.
