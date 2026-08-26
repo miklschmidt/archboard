@@ -57,6 +57,7 @@ export async function executeCommand(
 		readTextFile: (file) => processCommandHost.readTextFile(file),
 		readOptionalTextFile: (file) => processCommandHost.readOptionalTextFile(file),
 		resolvePath: (file) => processCommandHost.resolvePath(file),
+		prompt: (question, fallback) => processCommandHost.prompt(question, fallback),
 		parse: <T>(schema: z.ZodType<T>, value: unknown) => parseInput(schema, value),
 		diagnostic: (message) => processCommandHost.writeStderr(message + "\n"),
 	};

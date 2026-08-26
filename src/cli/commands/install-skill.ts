@@ -1,11 +1,10 @@
 import fs from "fs";
 import path from "path";
 import os from "os";
-import readline from "readline/promises";
 import { execFileSync } from "child_process";
 import { fileURLToPath } from "url";
-import { parseArgs, CliUsageError } from "./args.js";
-import { printJson, note } from "./util.js";
+import { z } from "zod";
+import { CliUsageError, defineCommand, type CommandContext } from "../command-contract/contract.js";
 
 const SKILL_NAME = "archboard";
 const RETIRED_SKILL_NAMES = ["excalidraw-skill"];
@@ -240,17 +239,6 @@ export function applyBlock(existing: string, block: string): string {
 	return existing.replace(/\n*$/, "\n\n") + block;
 }
 
-async function ask(question: string, fallback: string): Promise<string> {
-	if (!process.stdin.isTTY) return fallback;
-	const rl = readline.createInterface({ input: process.stdin, output: process.stderr });
-	try {
-		const answer = (await rl.question(`${question}\n  [${fallback}]: `)).trim();
-		return answer || fallback;
-	} finally {
-		rl.close();
-	}
-}
-
 function gitIgnores(repo: string, target: string): boolean {
 	try {
 		execFileSync("git", ["-C", repo, "check-ignore", "-q", target], { stdio: "ignore" });
@@ -260,31 +248,68 @@ function gitIgnores(repo: string, target: string): boolean {
 	}
 }
 
-export async function installSkill(argv: string[]): Promise<void> {
-	const { flags } = parseArgs(argv, {
-		dir: { takesValue: true },
-		target: { takesValue: true },
-		agent: { takesValue: true },
-		"print-source": { takesValue: false },
-		repo: { takesValue: true },
-		vault: { takesValue: true },
-		doc: { takesValue: true },
-		"no-doc": { takesValue: false },
-		yes: { takesValue: false },
-	});
+export const InstallSkillInputSchema = z.object({
+	dir: z.string().optional(),
+	target: z.string().optional(),
+	agent: z.string().optional(),
+	printSource: z.boolean().default(false),
+	repo: z.string().optional(),
+	vault: z.string().optional(),
+	doc: z.string().optional(),
+	noDoc: z.boolean().default(false),
+	yes: z.boolean().default(false),
+	tail: z.array(z.string()).default([]),
+});
+export type InstallSkillInput = z.infer<typeof InstallSkillInputSchema>;
+
+export const InstallSkillSetupResultSchema = z.object({
+	repo: z.string(),
+	vault: z.string(),
+	vaultCreated: z.boolean(),
+	vaultIgnored: z.boolean(),
+	doc: z.string(),
+	docCreated: z.boolean(),
+	blockUpdated: z.boolean(),
+	command: z.string(),
+	onPath: z.boolean(),
+});
+export type InstallSkillSetupResult = z.infer<typeof InstallSkillSetupResultSchema>;
+
+export const InstallSkillResultSchema = z.union([
+	z.object({
+		success: z.literal(true),
+		skill: z.literal(SKILL_NAME),
+		source: z.string(),
+		files: z.number().int().nonnegative(),
+	}),
+	z.object({
+		success: z.literal(true),
+		skill: z.literal(SKILL_NAME),
+		mode: z.string(),
+		root: z.string(),
+		target: z.string(),
+		files: z.number().int().nonnegative(),
+		setup: InstallSkillSetupResultSchema.optional(),
+	}),
+]);
+export type InstallSkillResult = z.infer<typeof InstallSkillResultSchema>;
+
+async function executeInstallSkill(
+	input: InstallSkillInput,
+	context: CommandContext,
+): Promise<InstallSkillResult> {
 	const source = findSkillSource();
 
-	if (flags["print-source"] === true) {
-		printJson({
+	if (input.printSource) {
+		return {
 			success: true,
 			skill: SKILL_NAME,
 			source,
 			files: countFiles(source),
-		});
-		return;
+		};
 	}
 
-	const destinations = [flags.dir, flags.target, flags.agent].filter(
+	const destinations = [input.dir, input.target, input.agent].filter(
 		(value) => value !== undefined,
 	);
 	if (destinations.length > 1) {
@@ -292,13 +317,13 @@ export async function installSkill(argv: string[]): Promise<void> {
 			"Use only one of --dir <skills-root>, --agent <agent>, or --target claude",
 		);
 	}
-	if (flags["no-doc"] === true && flags.doc !== undefined) {
+	if (input.noDoc && input.doc !== undefined) {
 		throw new CliUsageError("Use either --doc <file> or --no-doc, not both");
 	}
 
-	const explicitDir = flags.dir as string | undefined;
-	const agentSpec = flags.agent as string | undefined;
-	const targetSpec = (flags.target as string | undefined) ?? "agents";
+	const explicitDir = input.dir;
+	const agentSpec = input.agent;
+	const targetSpec = input.target ?? "agents";
 	const explicitRoot = explicitDir ? path.resolve(expandHome(explicitDir)) : undefined;
 	const agentTarget = agentSpec ? resolveAgent(agentSpec) : undefined;
 	const resolved = explicitRoot
@@ -329,7 +354,7 @@ export async function installSkill(argv: string[]): Promise<void> {
 		fs.cpSync(source, staging, { recursive: true });
 		if (lstat) {
 			fs.rmSync(target, { recursive: true, force: true });
-			note(`Replaced existing install at ${target}`);
+			context.diagnostic(`Replaced existing install at ${target}`);
 		}
 		fs.renameSync(staging, target);
 
@@ -347,26 +372,26 @@ export async function installSkill(argv: string[]): Promise<void> {
 			}
 			if (retired === target || !retiredExists) continue;
 			fs.rmSync(retired, { recursive: true, force: true });
-			note(`Removed retired install at ${retired}`);
+			context.diagnostic(`Removed retired install at ${retired}`);
 		}
 	} catch (error) {
 		fs.rmSync(staging, { recursive: true, force: true });
 		throw error;
 	}
 
-	const setup =
-		flags["no-doc"] === true
-			? undefined
-			: await writeSetup({
-					repoSpec: flags.repo as string | undefined,
-					vaultSpec: flags.vault as string | undefined,
-					docSpec: flags.doc as string | undefined,
-					targetSpec: explicitRoot ? "dir" : (agentTarget?.targetSpec ?? targetSpec),
-					skill: target,
-					assumeYes: flags.yes === true,
-				});
+	const setup = input.noDoc
+		? undefined
+		: await writeSetup({
+				repoSpec: input.repo,
+				vaultSpec: input.vault,
+				docSpec: input.doc,
+				targetSpec: explicitRoot ? "dir" : (agentTarget?.targetSpec ?? targetSpec),
+				skill: target,
+				assumeYes: input.yes,
+				context,
+			});
 
-	printJson({
+	return {
 		success: true,
 		skill: SKILL_NAME,
 		mode,
@@ -374,7 +399,7 @@ export async function installSkill(argv: string[]): Promise<void> {
 		target,
 		files: countFiles(target),
 		...(setup ? { setup } : {}),
-	});
+	};
 }
 
 interface SetupResult {
@@ -404,6 +429,7 @@ async function writeSetup(options: {
 	targetSpec: string;
 	skill: string;
 	assumeYes: boolean;
+	context: CommandContext;
 }): Promise<SetupResult | undefined> {
 	const repo = options.repoSpec
 		? path.resolve(expandHome(options.repoSpec))
@@ -413,7 +439,7 @@ async function writeSetup(options: {
 	// the command, not a repo being set up. Its CLAUDE.md is authored, and a
 	// generated block does not belong in it.
 	if (path.resolve(repo) === path.resolve(packageRoot())) {
-		note(
+		options.context.diagnostic(
 			"This is the archboard checkout itself, so no setup block was written. Point --repo at the repository you want to set up.",
 		);
 		return undefined;
@@ -430,7 +456,7 @@ async function writeSetup(options: {
 			? suggested
 			: path.resolve(
 					expandHome(
-						await ask(
+						await options.context.prompt(
 							"Where should this repo keep its boards? (an Obsidian vault, shared or local)",
 							suggested,
 						),
@@ -464,14 +490,16 @@ async function writeSetup(options: {
 	const inRepo = vault.startsWith(repo + path.sep);
 	const ignored = gitIgnores(repo, vault);
 
-	note(`${blockUpdated ? "Updated" : "Wrote"} the archboard setup in ${chosen.file}`);
-	note(`Boards for this repo: ${vault}`);
+	options.context.diagnostic(
+		`${blockUpdated ? "Updated" : "Wrote"} the archboard setup in ${chosen.file}`,
+	);
+	options.context.diagnostic(`Boards for this repo: ${vault}`);
 	if (inRepo && !ignored) {
-		note(
+		options.context.diagnostic(
 			`That vault is inside the repo and not ignored, so boards will show up in git status. Commit them, or add ${path.relative(repo, vault)}/ to .gitignore.`,
 		);
 	}
-	note(
+	options.context.diagnostic(
 		`Now fill in "Boards for this repo" in ${path.basename(chosen.file)}: which board covers this code, and any gotcha an agent cannot read off the source.`,
 	);
 
@@ -487,3 +515,109 @@ async function writeSetup(options: {
 		onPath,
 	};
 }
+
+export const installSkillContract = defineCommand({
+	path: ["install-skill"],
+	summary: "Install the bundled agent skill and write the setup into this repo",
+	usage: [
+		"install-skill [--agent codex|claude-code] [--target claude] [--dir <skills-root>]",
+		"              [--print-source]",
+		"              [--repo <dir>] [--vault <path>] [--doc <file>] [--no-doc] [--yes]",
+	].join("\n"),
+	description: "Installs the bundled skill locally and optionally records repo-specific setup.",
+	examples: ["archboard install-skill --yes", "archboard install-skill --print-source"],
+	parameters: [
+		{
+			kind: "option",
+			key: "dir",
+			spellings: ["--dir"],
+			value: "required",
+			description: "Custom skills root",
+		},
+		{
+			kind: "option",
+			key: "target",
+			spellings: ["--target"],
+			value: "required",
+			description: "Legacy destination shortcut",
+		},
+		{
+			kind: "option",
+			key: "agent",
+			spellings: ["--agent"],
+			value: "required",
+			description: "Skills-compatible agent",
+		},
+		{
+			kind: "option",
+			key: "printSource",
+			spellings: ["--print-source"],
+			value: "none",
+			description: "Report the bundled source without installing",
+		},
+		{
+			kind: "option",
+			key: "repo",
+			spellings: ["--repo"],
+			value: "required",
+			description: "Repository to configure",
+		},
+		{
+			kind: "option",
+			key: "vault",
+			spellings: ["--vault"],
+			value: "required",
+			description: "Vault path to record",
+		},
+		{
+			kind: "option",
+			key: "doc",
+			spellings: ["--doc"],
+			value: "required",
+			description: "Agent document to update",
+		},
+		{
+			kind: "option",
+			key: "noDoc",
+			spellings: ["--no-doc"],
+			value: "none",
+			description: "Do not write repository setup",
+		},
+		{
+			kind: "option",
+			key: "yes",
+			spellings: ["--yes"],
+			value: "none",
+			description: "Accept the suggested vault",
+		},
+		{
+			kind: "positional",
+			key: "tail",
+			name: "ignored",
+			repeatable: true,
+			route: "pass-through",
+			description: "Legacy ignored positional content",
+		},
+	],
+	input: { ingress: InstallSkillInputSchema },
+	result: InstallSkillResultSchema,
+	output: {
+		cases: [
+			{
+				id: "json",
+				when: {},
+				mode: "json",
+				held: "none",
+				description: "Installed source or destination details",
+			},
+		],
+		select: () => "json",
+	},
+	prerequisites: [],
+	effects: ["local-read", "local-write"],
+	refusals: [],
+	relationships: [],
+	async handler(input, context) {
+		return { result: await executeInstallSkill(input, context) };
+	},
+});

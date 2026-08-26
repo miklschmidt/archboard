@@ -2,6 +2,120 @@
 
 # Command contract proof reference
 
+## start
+
+Explicitly starts the local canvas, overriding automatic-start opt-outs.
+
+Usage:
+
+```text
+archboard start
+```
+
+Output: json (Server startup state).
+
+Prerequisites: none. Effects: local-write.
+
+REST relationships:
+
+- GET `/health`, conditional. Identity probe before and after a possible local spawn
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"running": {
+			"type": "boolean",
+			"const": true
+		},
+		"url": {
+			"type": "string"
+		},
+		"spawned": {
+			"type": "boolean"
+		},
+		"pid": {
+			"type": "integer",
+			"exclusiveMinimum": 0,
+			"maximum": 9007199254740991
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["running", "url", "spawned"],
+	"additionalProperties": false
+}
+```
+
+## stop
+
+Stops only a live process that identifies itself as this canvas service.
+
+Usage:
+
+```text
+archboard stop
+```
+
+Output: json (Identity-safe stop result).
+
+Prerequisites: none. Effects: local-write.
+
+REST relationships:
+
+- GET `/health`, one. Identity check before signaling a local process
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"stopped": {
+			"type": "boolean"
+		},
+		"pid": {
+			"type": "integer",
+			"exclusiveMinimum": 0,
+			"maximum": 9007199254740991
+		},
+		"message": {
+			"type": "string"
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
+		}
+	},
+	"required": ["stopped", "message"],
+	"additionalProperties": false
+}
+```
+
 ## status
 
 Reports canvas availability, identity, source freshness, and synchronization state.
@@ -686,6 +800,130 @@ Public result JSON Schema:
 				}
 			},
 			"required": ["success", "file", "elements", "format"],
+			"additionalProperties": false
+		}
+	]
+}
+```
+
+## install-skill
+
+Installs the bundled skill locally and optionally records repo-specific setup.
+
+Usage:
+
+```text
+archboard install-skill [--agent codex|claude-code] [--target claude] [--dir <skills-root>]
+              [--print-source]
+              [--repo <dir>] [--vault <path>] [--doc <file>] [--no-doc] [--yes]
+```
+
+Output: json (Installed source or destination details).
+
+Prerequisites: none. Effects: local-read, local-write.
+
+REST relationships:
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"anyOf": [
+		{
+			"type": "object",
+			"properties": {
+				"success": {
+					"type": "boolean",
+					"const": true
+				},
+				"skill": {
+					"type": "string",
+					"const": "archboard"
+				},
+				"source": {
+					"type": "string"
+				},
+				"files": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				}
+			},
+			"required": ["success", "skill", "source", "files"],
+			"additionalProperties": false
+		},
+		{
+			"type": "object",
+			"properties": {
+				"success": {
+					"type": "boolean",
+					"const": true
+				},
+				"skill": {
+					"type": "string",
+					"const": "archboard"
+				},
+				"mode": {
+					"type": "string"
+				},
+				"root": {
+					"type": "string"
+				},
+				"target": {
+					"type": "string"
+				},
+				"files": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"setup": {
+					"type": "object",
+					"properties": {
+						"repo": {
+							"type": "string"
+						},
+						"vault": {
+							"type": "string"
+						},
+						"vaultCreated": {
+							"type": "boolean"
+						},
+						"vaultIgnored": {
+							"type": "boolean"
+						},
+						"doc": {
+							"type": "string"
+						},
+						"docCreated": {
+							"type": "boolean"
+						},
+						"blockUpdated": {
+							"type": "boolean"
+						},
+						"command": {
+							"type": "string"
+						},
+						"onPath": {
+							"type": "boolean"
+						}
+					},
+					"required": [
+						"repo",
+						"vault",
+						"vaultCreated",
+						"vaultIgnored",
+						"doc",
+						"docCreated",
+						"blockUpdated",
+						"command",
+						"onPath"
+					],
+					"additionalProperties": false
+				}
+			},
+			"required": ["success", "skill", "mode", "root", "target", "files"],
 			"additionalProperties": false
 		}
 	]

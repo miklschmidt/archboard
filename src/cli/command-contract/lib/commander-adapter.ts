@@ -96,6 +96,19 @@ export class CommanderArgvParser {
 		const args = [...command.args];
 		for (const parameter of contract.parameters) {
 			if (parameter.kind === "option") {
+				const present = argv.some((token) =>
+					parameter.spellings.some(
+						(spelling) => token === spelling || token.startsWith(`${spelling}=`),
+					),
+				);
+				if (parameter.value === "none") {
+					record[parameter.key] = present;
+					continue;
+				}
+				if (!present) {
+					record[parameter.key] = undefined;
+					continue;
+				}
 				const option = options.get(parameter.key);
 				if (!option) throw new Error(`Missing Commander option for ${parameter.key}`);
 				const value = command.getOptionValue(option.attributeName());

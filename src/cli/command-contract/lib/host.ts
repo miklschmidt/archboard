@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import readline from "readline/promises";
 import { boardHoldSeen } from "../../../runtime/engine/canvas-client.js";
 import type { PendingArtifact } from "../contract.js";
 
@@ -22,6 +23,16 @@ export const processCommandHost = {
 	},
 	resolvePath(file: string) {
 		return path.resolve(file);
+	},
+	async prompt(question: string, fallback: string) {
+		if (!process.stdin.isTTY) return fallback;
+		const rl = readline.createInterface({ input: process.stdin, output: process.stderr });
+		try {
+			const answer = (await rl.question(`${question}\n  [${fallback}]: `)).trim();
+			return answer || fallback;
+		} finally {
+			rl.close();
+		}
 	},
 	writeArtifact(artifact: PendingArtifact) {
 		if (artifact.encoding === "binary") {
