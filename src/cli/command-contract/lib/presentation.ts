@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { HeldPolicy, OutputCase, PendingArtifact } from "../contract.js";
-import type { CommandHost } from "./host.js";
+import { processCommandHost } from "./host.js";
 
 const heldMessage = (held: unknown): string | null => {
 	if (!held || typeof held !== "object") return null;
@@ -15,7 +15,6 @@ export function applyHeld(result: unknown, held: unknown, policy: HeldPolicy): u
 }
 
 export function emitResult(
-	host: CommandHost,
 	outputCase: OutputCase,
 	result: unknown,
 	artifact: PendingArtifact | undefined,
@@ -23,18 +22,18 @@ export function emitResult(
 ): void {
 	if (outputCase.mode === "file-receipt") {
 		if (!artifact) throw new Error("File output did not provide a pending artifact");
-		host.writeArtifact(artifact);
+		processCommandHost.writeArtifact(artifact);
 	}
 
 	if (outputCase.mode === "json" || outputCase.mode === "file-receipt") {
-		host.writeStdout(JSON.stringify(result, null, 2) + "\n");
+		processCommandHost.writeStdout(JSON.stringify(result, null, 2) + "\n");
 	} else {
 		const content = z.union([z.string(), z.instanceof(Uint8Array)]).parse(result);
-		host.writeStdout(typeof content === "string" ? content + "\n" : content);
+		processCommandHost.writeStdout(typeof content === "string" ? content + "\n" : content);
 	}
 
 	if (outputCase.held !== "none") {
 		const message = heldMessage(held);
-		if (message) host.writeStderr(message + "\n");
+		if (message) processCommandHost.writeStderr(message + "\n");
 	}
 }

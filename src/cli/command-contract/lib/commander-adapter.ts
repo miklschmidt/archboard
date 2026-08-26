@@ -2,10 +2,6 @@ import { Command, Option } from "commander";
 import type { AnyCommandContract, TokenRecord } from "../contract.js";
 import { CliUsageError } from "../contract.js";
 
-export interface ArgvParser {
-	parse(contract: AnyCommandContract, argv: readonly string[]): Promise<TokenRecord>;
-}
-
 function collect(value: string, previous: string[] = []): string[] {
 	return [...previous, value];
 }
@@ -46,7 +42,7 @@ function restoreToken(value: unknown, restored: ReadonlyMap<string, string>): un
 	return value;
 }
 
-export class CommanderArgvParser implements ArgvParser {
+export class CommanderArgvParser {
 	async parse(contract: AnyCommandContract, argv: readonly string[]): Promise<TokenRecord> {
 		if (argv.includes("--")) throw new CliUsageError("Unknown flag --");
 		for (const token of argv) {

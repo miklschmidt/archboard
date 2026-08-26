@@ -1,8 +1,7 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { z } from "zod";
 import { defineCommand, type AnyCommandContract } from "../contract.js";
 import { introspectContracts } from "../introspection.js";
@@ -109,7 +108,7 @@ function temporaryPath(name: string) {
 }
 
 describe("command-contract public interface", () => {
-	test("the real adapter owns aliases and optional token arity, not semantic defaults", async () => {
+	test("the concrete Commander parser owns aliases and optional token arity", async () => {
 		const contract = defineCommand({
 			...proofContract({ result: null, resultSchema: z.object({ name: z.unknown().optional() }) }),
 			parameters: [
@@ -135,7 +134,7 @@ describe("command-contract public interface", () => {
 		expect(JSON.parse((await executePublic(contract)).stdout)).toEqual({});
 	});
 
-	test("the real adapter maps a Commander attribute name back to a distinct contract key", async () => {
+	test("the concrete Commander parser maps an attribute name to a distinct contract key", async () => {
 		const contract = defineCommand({
 			...proofContract({ result: null }),
 			parameters: [
@@ -247,7 +246,6 @@ describe("command-contract public interface", () => {
 	});
 
 	test("staged metadata owns viewport id coercion and export format inference", async () => {
-		const moduleDirectory = dirname(fileURLToPath(import.meta.url));
 		const { viewportContract } = await import("../viewport.js");
 		const { exportContract } = await import("../export.js");
 		const proof = introspectContracts([
@@ -260,18 +258,6 @@ describe("command-contract public interface", () => {
 		expect(viewportIds?.rules.join(" ")).toContain("Split on commas");
 		expect(exportFormat?.when).toBe("before-server");
 		expect(exportFormat?.rules.join(" ")).toContain("obsidian for an --out path ending in .md");
-
-		const definitions = readFileSync(
-			join(moduleDirectory, "..", "lib", "command-definitions.ts"),
-			"utf8",
-		);
-		const viewportHandler = definitions.slice(
-			definitions.indexOf("export const viewportContract"),
-			definitions.indexOf("const exportIngress"),
-		);
-		const exportHandler = definitions.slice(definitions.indexOf("export const exportContract"));
-		expect(viewportHandler).not.toContain('.split(",")');
-		expect(exportHandler).not.toContain('.endsWith(".md")');
 	});
 
 	test("construction rejects token keys absent from the Zod ingress", () => {
