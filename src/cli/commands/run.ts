@@ -37,6 +37,7 @@ import {
 	boardOpenContract,
 } from "./board.js";
 import { compareContract } from "./compare.js";
+import { checkContract } from "./check.js";
 import { changesContract } from "./changes.js";
 import { claimContract, releaseContract } from "./claim.js";
 import { injectContract, injectStatusContract, injectTestContract } from "./inject.js";
@@ -314,6 +315,9 @@ const COMMANDS: Record<string, CommandRoute> = {
 			"  their notes; `source` says whether a side is a board this canvas has open, and so possibly on",
 			"  screen in front of somebody, or one that only exists in the vault.",
 		].join("\n"),
+	},
+	check: {
+		owner: contract(checkContract, "src/cli/commands/check.ts"),
 	},
 	changes: {
 		owner: contract(changesContract, "src/cli/commands/changes.ts"),
@@ -657,6 +661,7 @@ function printHelp(): void {
 		"  Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required,",
 		"               5 board write refused (held, claim revoked, version moved, or the",
 		"               note changed on disk).",
+		"               check only: 6 warnings, 7 errors, 8 indeterminate coverage.",
 		"  Canvas-driving commands auto-start the server (disable with EXCALIDRAW_NO_AUTOSTART=1).",
 		"  Canvas URL comes from EXPRESS_SERVER_URL (default http://127.0.0.1:3000) or --url.",
 		"",
