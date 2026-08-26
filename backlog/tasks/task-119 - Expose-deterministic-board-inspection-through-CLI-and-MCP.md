@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 22:11'
+updated_date: '2026-08-26 22:52'
 labels:
   - ready-for-agent
 dependencies:
@@ -516,6 +516,15 @@ Obstacle refs now reject nonmember library attribution, kind/library contradicti
 Complete `bun run check` passed. The first separate `bun run test` reached the human-performance browser gate and observed one scheduling-sensitive acknowledgement sample with replacement count 2 after two zero samples; the immediately preceding complete check had passed with `[0,0]`. Following `docs/agents/test-suite.md`, the isolated human-performance suite passed with `[0,0]`, then the required complete `bun run test` rerun passed. Both successful complete chains ran all four browser suites sequentially and headlessly: the 10,000-element board remained responsive, fixed-point returned 0 of 13 changed elements, typed text preserved both rename interactions, and live-session converged through 42 of 42 mixed-write cycles.
 
 Two fresh on-demand contract generations were byte-identical: `cli-command-audit.md` c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, `command-contract-proof.json` e6be922438f3d8dc9ce2a9bac33cfb68f5a5527492d9b7fbb7cd32d9441442c1, and `command-contract-proof.md` def3540846fa0854944805a959f2671ba943ffeb0d55c8a47aaa3ab538d949c2. Generated views remain absent/ignored; canonical `docs/design/cli-command-audit.json` remains tracked. `git diff --check` passed. TASK-119 remains In Progress with all nine acceptance criteria unchecked for independent rereview.
+
+### 2026-08-27 preprocessing-limit remediation
+
+- Committed the parent-approved amendment separately at `aa87665`, including the reviewer source, fixed base/rejected head, unchanged protected scope, and the explicit `N = I + E + H` retained-memory definition.
+- Implemented `BROAD_PHASE_PREPROCESSING_LIMIT = 25_000_000`, schema-v1 limits metadata, exhaustive text/schema support, and one closed `broad-phase-preprocessing-ceiling` finding. The attempted 25,000,001st unit is refused, the current and remaining model/pair passes stop, and whichever preprocessing/comparison ceiling is attempted first wins.
+- Replaced the estimated model preflight with charges at primitive collection, map/set, identity-code-unit, stable-order, hierarchy, component, and sweep owners. Detailed work remains available only through the pure diagnostics root; product JSON/text carries no actual preprocessing count.
+- Added alternating exact-exclusion evidence with the exact query/membership formulas, I+E+H many-exclusion and many-ancestor retained-state cases, 2,048 completion and 3,072 ceiling cases, package strict/non-strict/text/no-side-effect evidence, and preserved 1,516,200/2,000,001 comparison fixtures.
+- Closed adjacent correctness: rotated plain decorations do not affect coverage; applicable rotated participants still do; obstacle refs require nonempty library source and group evidence for every multi-element component.
+- Focused validation green before commit `81c9324`: type/lint; 671 inspection checks; boundaries/module-scope; 58 contract proofs and 978 contract checks; 579 CLI checks; geometry 89; labels 183; branch suite. Two `bun run fix` passes were byte-stable at diff SHA-256 `d015bade5a40fc4ec42846b9422666b0916532c752459eca89224f675c133686`. Full check/test chains remain to run after this checkpoint.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
