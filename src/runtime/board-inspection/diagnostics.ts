@@ -2,7 +2,7 @@ import { inspectBoard } from "./index.js";
 import type { InspectionPolicyInput, InspectionReport } from "./schemas.js";
 import { decodeRecords } from "./lib/decode.js";
 import { detectBoard } from "./lib/detectors.js";
-import { sweepIntervalPairs } from "./lib/interval-sweep.js";
+import { buildSweepHierarchy, sweepIntervalPairs, type SweepWork } from "./lib/interval-sweep.js";
 
 export interface InspectionWorkDiagnostics {
 	/** Start events processed across collision passes. */
@@ -30,7 +30,11 @@ export interface InspectionWorkDiagnostics {
 	/** Nested exact-string profile-index edges traversed during snapshot interning. */
 	broadPhaseProfileTrieSteps: number;
 	broadPhaseCompatibilityQueries: number;
+	/** Candidate additions and set membership probes performed by compatibility queries. */
+	broadPhaseCompatibilityQuerySteps: number;
 	broadPhaseCompatibilityTests: number;
+	/** Exact hierarchy ancestor predicates evaluated after indexed pruning. */
+	broadPhaseHierarchyMembershipTests: number;
 	broadPhaseHierarchyPathQueries: number;
 	/** Fenwick cells read plus heavy-light ranges visited. */
 	broadPhaseHierarchyPathSteps: number;
@@ -46,6 +50,9 @@ export interface InspectionWorkDiagnostics {
 	broadPhasePeakRetainedHierarchyIndexCells: number;
 	broadPhasePeakRetainedExclusionRefs: number;
 	broadPhasePeakRetainedIndexRefs: number;
+	broadPhasePeakRetainedQueryRefs: number;
+	/** Peak count of every reference retained by the sweep implementation. */
+	broadPhasePeakRetainedTotalStateRefs: number;
 	hierarchyEvents: number;
 	hierarchyCandidateVisits: number;
 	hierarchyExpiryPops: number;
@@ -72,6 +79,55 @@ export interface MutableProfileSnapshotDiagnostics {
 	includedPairCount: number;
 	restoredPairCount: number;
 	profileSnapshotEntries: readonly [number, number, number];
+}
+
+export interface SweepDiagnosticInterval {
+	id: string;
+	min: number;
+	max: number;
+	partition: string;
+	excludedPartitions?: readonly string[];
+	ancestorTargets?: readonly string[];
+}
+
+export interface SweepCompatibilityDiagnostics {
+	pairs: readonly (readonly [string, string])[];
+	work: SweepWork;
+}
+
+/** Pure development probe for semantic pair enumeration and its owned work. */
+export function diagnoseSweepCompatibility(input: {
+	left: readonly SweepDiagnosticInterval[];
+	right: readonly SweepDiagnosticInterval[];
+	sameSet: boolean;
+	hierarchyParents?: ReadonlyMap<string, string | null | undefined>;
+}): SweepCompatibilityDiagnostics {
+	const hierarchy = input.hierarchyParents
+		? buildSweepHierarchy(input.hierarchyParents)
+		: undefined;
+	const intervals = (items: readonly SweepDiagnosticInterval[]) =>
+		items.map((item) => ({
+			id: item.id,
+			min: item.min,
+			max: item.max,
+			value: item.id,
+			semantics: {
+				partition: item.partition,
+				excludedPartitions: new Set(item.excludedPartitions ?? []),
+				...(item.ancestorTargets ? { ancestorTargets: item.ancestorTargets } : {}),
+				...(hierarchy ? { hierarchy } : {}),
+			},
+		}));
+	const pairs: Array<readonly [string, string]> = [];
+	const work = sweepIntervalPairs(
+		intervals(input.left),
+		intervals(input.right),
+		input.sameSet,
+		(left, right) => {
+			pairs.push([left.value, right.value]);
+		},
+	);
+	return { pairs, work };
 }
 
 /** Prove that runtime-mutable ReadonlySet inputs are snapshotted by exact current content. */
@@ -150,7 +206,9 @@ export function inspectBoardDiagnostics(
 			broadPhaseProfileCreations: work.broadPhaseProfileCreations,
 			broadPhaseProfileTrieSteps: work.broadPhaseProfileTrieSteps,
 			broadPhaseCompatibilityQueries: work.broadPhaseCompatibilityQueries,
+			broadPhaseCompatibilityQuerySteps: work.broadPhaseCompatibilityQuerySteps,
 			broadPhaseCompatibilityTests: work.broadPhaseCompatibilityTests,
+			broadPhaseHierarchyMembershipTests: work.broadPhaseHierarchyMembershipTests,
 			broadPhaseHierarchyPathQueries: work.broadPhaseHierarchyPathQueries,
 			broadPhaseHierarchyPathSteps: work.broadPhaseHierarchyPathSteps,
 			broadPhaseHierarchySubtreeQueries: work.broadPhaseHierarchySubtreeQueries,
@@ -162,6 +220,8 @@ export function inspectBoardDiagnostics(
 			broadPhasePeakRetainedHierarchyIndexCells: work.broadPhasePeakRetainedHierarchyIndexCells,
 			broadPhasePeakRetainedExclusionRefs: work.broadPhasePeakRetainedExclusionRefs,
 			broadPhasePeakRetainedIndexRefs: work.broadPhasePeakRetainedIndexRefs,
+			broadPhasePeakRetainedQueryRefs: work.broadPhasePeakRetainedQueryRefs,
+			broadPhasePeakRetainedTotalStateRefs: work.broadPhasePeakRetainedTotalStateRefs,
 			hierarchyEvents: work.hierarchyEvents,
 			hierarchyCandidateVisits: work.hierarchyCandidateVisits,
 			hierarchyExpiryPops: work.hierarchyExpiryPops,
