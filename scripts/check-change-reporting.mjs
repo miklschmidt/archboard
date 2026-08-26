@@ -482,16 +482,16 @@ class Harness {
 		h.due();
 		h.edit(id, newerEdit);
 		h.accept({
-			upserts: [{ ...h.server.document.find((element) => element.id === id), ...correction }],
+			upserts: [Object.assign({}, h.server.document.find((element) => element.id === id), correction)],
 			deletes: [],
 		});
 		check(
-			`a canonical correction does not disrupt a newer local ${name}`,
+			`a canonical correction does not disrupt a newer local ${String(name)}`,
 			kept(h.scene.find((element) => element.id === id)),
 		);
 		h.due();
 		check(
-			`  and the next ${name} delta converges from the canonical baseline`,
+				`  and the next ${String(name)} delta converges from the canonical baseline`,
 			h.server.requests[0]?.report.upserts.some((element) => element.id === id),
 		);
 		h.accept();

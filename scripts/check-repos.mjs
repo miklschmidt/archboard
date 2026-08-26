@@ -86,7 +86,7 @@ check("and starts empty", listRepos().length === 0);
 const declared = declareRepo(alphaRoot);
 check("`repo add` takes the identity from git, not from the caller", declared.repo === ALPHA);
 check("  and remembers where the checkout is", checkoutFor(ALPHA) === alphaRoot);
-check("  as a declared entry, not a guess", listRepos()[0]?.source === "declared");
+check("  as a declared entry, not a guess", listRepos()[0].source === "declared");
 
 let refusedAdd = null;
 try {
