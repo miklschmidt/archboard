@@ -15,7 +15,7 @@ import {
 	setWriteDoing,
 } from "../../runtime/engine/canvas-client.js";
 import { packageVersion } from "../../runtime/engine/package-version.js";
-import * as server from "./server.js";
+import { startContract, stopContract } from "./server.js";
 import * as elements from "./elements.js";
 import * as scene from "./scene.js";
 import { panes, selection } from "./selection.js";
@@ -29,7 +29,7 @@ import { changes } from "./changes.js";
 import { claim, release } from "./claim.js";
 import * as injectCommands from "./inject.js";
 import * as arrangeCommands from "./arrange.js";
-import { installSkill } from "./install-skill.js";
+import { installSkillContract } from "./install-skill.js";
 import * as libraryCommands from "./library.js";
 import { childDiscoveryOptions } from "./args.js";
 
@@ -94,14 +94,10 @@ const child = (owner: RouteOwner): CommandRoute => ({ owner });
 
 const COMMANDS: Record<string, CommandRoute> = {
 	start: {
-		owner: legacy(server.start, "src/cli/commands/server.ts"),
-		summary: "Start the canvas server (detached)",
-		usage: "start",
+		owner: contract(startContract, "src/cli/commands/server.ts"),
 	},
 	stop: {
-		owner: legacy(server.stop, "src/cli/commands/server.ts"),
-		summary: "Stop the canvas server",
-		usage: "stop",
+		owner: contract(stopContract, "src/cli/commands/server.ts"),
 	},
 	status: {
 		owner: contract(statusContract, "src/cli/command-contract/status.ts"),
@@ -647,7 +643,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		usage: "clear --yes",
 	},
 	"install-skill": {
-		owner: legacy(installSkill, "src/cli/commands/install-skill.ts", "legacy custom parser"),
+		owner: contract(installSkillContract, "src/cli/commands/install-skill.ts"),
 		summary: "Install the bundled agent skill and write the setup into this repo",
 		usage: [
 			"install-skill [--agent codex|claude-code] [--target claude] [--dir <skills-root>]",

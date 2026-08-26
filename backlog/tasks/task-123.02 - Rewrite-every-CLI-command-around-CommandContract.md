@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-26 10:10'
+updated_date: '2026-08-26 10:21'
 labels: []
 dependencies:
   - TASK-123.01
@@ -110,6 +110,8 @@ Foundation review blockers remediated through 30da432 without additional family 
 Foundation route remediation (2026-08-26, commit 5a69353): every legacy child now owns an independently executable route-tail handler. The canonical run.ts tree also declares first-positional discovery and option arity for snapshot (--force) and arrange (--ids/--to/--group/--offset), so option-leading fixed-base forms select the child without a second catalogue. Generated proof schema v4 records handlerName, childDiscovery, parser ownership, and argv mode; checks require every legacy child to consume route-tail and differ from its family-root handler. Executable records now replay snapshot --force restore absent and arrange --ids shape1 --to left align with exact bytes, contacts, REST phases, held/effect/artifact state. No additional command family was migrated.
 
 Foundation standards remediation (2026-08-26, commit 08a0b8f): snapshot and arrange now each export one typed FlagSpecs grammar; every root/child parse uses that object and run.ts derives first-positional discovery arity with childDiscoveryOptions. The checker compares discovery metadata to the specs and proves full declared-option coverage. Registry/proof schema v5 omits handlerName for contract routes and records actual Function.name only for legacy callables, with live/generated reconciliation. Legacy children are checked pairwise per parent for unique handler references as well as route-tail and child-vs-parent ownership; a duplicate-sibling fixture proves the detector rejects shared sibling callables. Six contracts and all accepted route goldens remain unchanged.
+
+Migration checkpoint 1 (server/local control) complete at 2026-08-26: start, stop, and install-skill now execute as typed contracts alongside accepted status. Added a host-owned prompt boundary so install handlers do not write streams, preserved immediate replacement/removal/setup diagnostics and the fixed-base late-failure ordering, and kept stop identity safety. Gates: stable fix, generation --check, 15 contract tests / 665 checks, 539 CLI checks, type-check, and 106 install checks.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
