@@ -15,7 +15,7 @@ export interface OptionParameter {
 	value: "none" | "required" | "optional";
 	occurrences?: "last" | "append";
 	description: string;
-	route?: "value" | "stdin-or-file" | "pass-through";
+	route?: "value" | "stdin-or-file" | "pass-through" | "staged-tokens";
 }
 
 export interface PositionalParameter {
@@ -24,7 +24,7 @@ export interface PositionalParameter {
 	name: string;
 	repeatable?: boolean;
 	description: string;
-	route?: "value" | "stdin-or-file" | "pass-through";
+	route?: "value" | "stdin-or-file" | "pass-through" | "staged-tokens";
 }
 
 export interface InputStage {
@@ -72,6 +72,7 @@ export interface OutputCase {
 	mode: OutputMode;
 	held: HeldPolicy;
 	description: string;
+	presentation?: readonly [OutcomePresentationStep, ...OutcomePresentationStep[]];
 	artifact?: z.ZodType<PendingArtifact>;
 }
 

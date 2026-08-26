@@ -10,11 +10,12 @@ The fixed review base is `43d0b982ac39346ae3057edf3c9fdffe400b2853`.
 argv)`, bootstrap handling, and contract introspection.
 `CommandContext`, `CommandExecution`, and `PendingArtifact` are Archboard-owned
 parts of the typed handler interface and remain Commander-free, but they are
-not emitted by introspection. `src/cli/commands/run.ts` is the production adapter at that
-seam and remains the sole registry. The registry contains either a contract or
-a legacy handler. Query, update, viewport, and export use contracts in this
-proof. TASK-123.02 replaces the other entries and then deletes the legacy
-branch, raw parser helpers, and handler-owned output.
+not emitted by introspection. `src/cli/commands/run.ts` is the production adapter at that seam and
+remains the sole registry. During TASK-123.02 all 57 canonical paths are marked
+as contract or legacy, including default aliases and namespace refusals.
+Dispatch selects the longest registered path. Query, update, viewport, export,
+status, and board save use contracts at the foundation checkpoint. The other
+legacy paths stay usable until their family moves.
 
 The private implementation uses one concrete Commander parser, the process and
 filesystem host, and the production server/browser prerequisite checks. These
@@ -59,6 +60,21 @@ introspection exposes the public schema and output mode. It removes artifact
 schemas and never exposes pending bytes, stdout keys, Commander objects, or
 test adapters.
 
+Nonzero structured results are public `CommandOutcomeDeclaration` values. A
+declaration owns its id, exit, stream policy, held policy, and ordered
+presentation. A handler selects only the id and supplies diagnostic content.
+The runner selects the outcome and output case, applies held state, validates
+the complete public result, validates and commits an artifact, presents the
+declared events, and sets the exit last. `CommandContext.diagnostic` is the
+only immediate stream lane. It exists for fixed compatibility where a local
+diagnostic precedes a later failure.
+
+Small shared result concepts live in `command-contract/schemas.ts`. Command
+families keep named input, stage, and result schemas beside their contracts.
+Forwarded server payloads stay loose where the CLI does not own their fields;
+command-built result objects stay closed. There is no generic response
+envelope.
+
 The proof results are:
 
 - query: a bare `ServerElement[]`;
@@ -95,9 +111,10 @@ public receipt and private artifact before writing UTF-8 bytes.
 Usage and board-required refusals exit 2. Canvas unreachable exits 3. Browser
 required exits 4. Held, revoked-claim, moved-version, and note conflicts exit 5.
 Other failures exit 1. Successful structured values use stdout. Diagnostics,
-usage, progress, and held notes use stderr. The existing `board save` conflict
-exception remains in the legacy branch: it writes the structured conflict to
-stdout, its explanation to stderr, and exits 5.
+usage, progress, and held notes use stderr. Status declares unavailable and
+foreign-service as stdout-only exit 3 results. Board save declares a conflict
+as exit 5 and presents the conflict diagnostic, validated structured result,
+held note, and continuation in that order.
 
 ## CLI-only compatibility
 

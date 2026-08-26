@@ -92,8 +92,9 @@ check(
 	`${contracts.length} + ${legacy.length}`,
 );
 check(
-	"the proof migrates exactly four commands",
-	contracts.map((entry) => entry.name).join(",") === "update,query,viewport,export",
+	"the foundation registers exactly six contracts",
+	contracts.map((entry) => entry.name).join(",") ===
+		"status,update,query,viewport,board save,export",
 	contracts.map((entry) => entry.name).join(","),
 );
 
@@ -107,15 +108,19 @@ for (const entry of contracts) {
 	check(
 		`${entry.name} owner defines the registered contract`,
 		entry.contract?.path.join(" ") === entry.name &&
-			definition.includes(`export const ${entry.name}Contract = defineCommand`),
+			definition.includes(
+				`export const ${{ "board save": "boardSave" }[entry.name] ?? entry.name}Contract = defineCommand`,
+			),
 		owner ?? "missing audit entry",
 	);
 }
 const expectedPrerequisites = {
+	status: [],
 	query: ["server", "board"],
 	update: ["server", "board", "doing"],
 	viewport: ["server", "browser"],
 	export: ["server", "board"],
+	"board save": ["server", "board"],
 };
 for (const [name, expected] of Object.entries(expectedPrerequisites)) {
 	const actual = byName.get(name)?.prerequisites ?? [];
@@ -169,6 +174,43 @@ const contractSource = fs.readFileSync(
 	join(root, "src", "cli", "command-contract", "contract.ts"),
 	"utf8",
 );
+check(
+	"public contract declares nonzero outcomes",
+	/export interface CommandOutcomeDeclaration\b/.test(contractSource),
+);
+const executionBody =
+	contractSource.match(/export interface CommandExecution[^{]*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+for (const forbidden of ["exit:", "stream:", "presentation:", "description:", "held:"]) {
+	check(`private execution cannot carry ${forbidden}`, !executionBody.includes(forbidden));
+}
+const sharedSchemas = fs.readFileSync(
+	join(root, "src", "cli", "command-contract", "schemas.ts"),
+	"utf8",
+);
+for (const schema of [
+	"ElementIdSchema",
+	"ServerElementSchema",
+	"BoardAddressSchema",
+	"BoardFingerprintSchema",
+	"BoardRefusalSchema",
+	"HoldReportSchema",
+	"BoardWriteConflictSchema",
+	"PaneRefSchema",
+	"RepositoryIdentitySchema",
+	"CodeBindingSchema",
+	"SnapshotNameSchema",
+	"ChangeCursorSchema",
+	"LibraryItemIdSchema",
+	"ServerStateSchema",
+	"ClaimSchema",
+	"AffectedElementsSchema",
+	"BoardDocumentSchema",
+	"GeneratedHandlesSchema",
+	"WriteReceiptSchema",
+	"PendingArtifactSchema",
+]) {
+	check(`shared schemas export ${schema}`, sharedSchemas.includes(`export const ${schema}`));
+}
 for (const publicHandlerType of ["CommandContext", "CommandExecution", "PendingArtifact"]) {
 	check(
 		`handler interface retains ${publicHandlerType}`,

@@ -2,6 +2,114 @@
 
 # Command contract proof reference
 
+## status
+
+Reports canvas availability, identity, source freshness, and synchronization state.
+
+Usage:
+
+```text
+archboard status
+```
+
+Output: json (Canvas status).
+
+Prerequisites: none. Effects: read.
+
+REST relationships:
+
+- GET `/health`, one. Identity and health
+- GET `/api/sync/status`, conditional. Best-effort synchronization state after valid health
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"anyOf": [
+		{
+			"type": "object",
+			"properties": {
+				"running": {
+					"type": "boolean",
+					"const": false
+				},
+				"url": {
+					"type": "string"
+				}
+			},
+			"required": ["running", "url"],
+			"additionalProperties": {}
+		},
+		{
+			"type": "object",
+			"properties": {
+				"running": {
+					"type": "boolean",
+					"const": false
+				},
+				"url": {
+					"type": "string"
+				},
+				"conflict": {
+					"type": "string"
+				}
+			},
+			"required": ["running", "url", "conflict"],
+			"additionalProperties": {}
+		},
+		{
+			"type": "object",
+			"properties": {
+				"running": {
+					"type": "boolean",
+					"const": true
+				},
+				"url": {
+					"type": "string"
+				},
+				"pid": {
+					"type": "integer",
+					"minimum": -9007199254740991,
+					"maximum": 9007199254740991
+				},
+				"elements": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"browserClients": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"stale": {
+					"type": "object",
+					"properties": {
+						"startedAt": {
+							"type": "string"
+						},
+						"changedFile": {
+							"type": "string"
+						},
+						"changedAt": {
+							"type": "string"
+						},
+						"says": {
+							"type": "string"
+						}
+					},
+					"required": ["startedAt", "changedFile", "changedAt", "says"],
+					"additionalProperties": false
+				}
+			},
+			"required": ["running", "url", "elements", "browserClients"],
+			"additionalProperties": {}
+		}
+	]
+}
+```
+
 ## update
 
 Updates one element in one version-checked board write.
@@ -280,6 +388,238 @@ Public result JSON Schema:
 	},
 	"required": ["success"],
 	"additionalProperties": false
+}
+```
+
+## board save
+
+Writes or branches a board note and returns structured save or conflict state.
+
+Usage:
+
+```text
+archboard board save --board <key> [--as <name>] [--variant v] [--level l] [--force]
+```
+
+Output: json (Board save or structured conflict).
+
+Prerequisites: server, board. Effects: local-read, write.
+
+REST relationships:
+
+- POST `/api/boards/save`, one. One board-note save attempt
+
+Public result JSON Schema:
+
+```json
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"anyOf": [
+		{
+			"type": "object",
+			"properties": {
+				"success": {
+					"type": "boolean"
+				},
+				"board": {
+					"type": "string"
+				},
+				"identity": {
+					"type": "object",
+					"properties": {
+						"board": {
+							"type": "string"
+						},
+						"variant": {
+							"type": "string"
+						},
+						"level": {
+							"type": "string"
+						},
+						"displayName": {
+							"type": "string"
+						}
+					},
+					"required": ["board", "variant"],
+					"additionalProperties": false
+				},
+				"saveKind": {
+					"type": "string",
+					"enum": ["same-board", "named", "branch"]
+				},
+				"savedFrom": {
+					"type": "string"
+				},
+				"file": {
+					"type": "string"
+				},
+				"panes": {
+					"type": "object",
+					"properties": {
+						"moved": {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"properties": {
+									"paneId": {
+										"type": "string"
+									},
+									"clientId": {
+										"type": "string"
+									},
+									"place": {
+										"type": "string"
+									},
+									"position": {
+										"type": "integer",
+										"minimum": -9007199254740991,
+										"maximum": 9007199254740991
+									}
+								},
+								"required": ["paneId", "clientId", "place", "position"],
+								"additionalProperties": {}
+							}
+						},
+						"kept": {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"properties": {
+									"paneId": {
+										"type": "string"
+									},
+									"clientId": {
+										"type": "string"
+									},
+									"place": {
+										"type": "string"
+									},
+									"position": {
+										"type": "integer",
+										"minimum": -9007199254740991,
+										"maximum": 9007199254740991
+									}
+								},
+								"required": ["paneId", "clientId", "place", "position"],
+								"additionalProperties": {}
+							}
+						},
+						"onScreen": {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"properties": {
+									"paneId": {
+										"type": "string"
+									},
+									"place": {
+										"type": "string"
+									},
+									"board": {
+										"type": "string"
+									}
+								},
+								"required": ["paneId", "place", "board"],
+								"additionalProperties": {}
+							}
+						}
+					},
+					"required": ["moved", "kept"],
+					"additionalProperties": {}
+				},
+				"held": {
+					"type": "object",
+					"properties": {
+						"board": {
+							"type": "string"
+						},
+						"message": {
+							"type": "string"
+						}
+					},
+					"required": ["board", "message"],
+					"additionalProperties": {}
+				}
+			},
+			"required": ["success", "board", "identity"],
+			"additionalProperties": {}
+		},
+		{
+			"type": "object",
+			"properties": {
+				"success": {
+					"type": "boolean",
+					"const": false
+				},
+				"conflict": {
+					"type": "object",
+					"properties": {
+						"board": {
+							"type": "string"
+						},
+						"file": {
+							"type": "string"
+						},
+						"reason": {
+							"type": "string",
+							"enum": ["changed", "unseen"]
+						},
+						"actualHash": {
+							"type": "string"
+						},
+						"versionMove": {
+							"type": "string",
+							"enum": ["unchanged", "behind", "ahead", "unknown"]
+						},
+						"outcomes": {
+							"type": "object",
+							"properties": {
+								"reload": {
+									"type": "string"
+								},
+								"overwrite": {
+									"type": "string"
+								},
+								"saveAs": {
+									"type": "string"
+								}
+							},
+							"required": ["reload", "overwrite", "saveAs"],
+							"additionalProperties": false
+						},
+						"message": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"board",
+						"file",
+						"reason",
+						"actualHash",
+						"versionMove",
+						"outcomes",
+						"message"
+					],
+					"additionalProperties": {}
+				},
+				"held": {
+					"type": "object",
+					"properties": {
+						"board": {
+							"type": "string"
+						},
+						"message": {
+							"type": "string"
+						}
+					},
+					"required": ["board", "message"],
+					"additionalProperties": {}
+				}
+			},
+			"required": ["success", "conflict"],
+			"additionalProperties": false
+		}
+	]
 }
 ```
 

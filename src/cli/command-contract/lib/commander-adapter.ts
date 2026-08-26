@@ -61,6 +61,9 @@ export class CommanderArgvParser {
 			.helpOption(false)
 			.addHelpCommand(false)
 			.allowExcessArguments(true);
+		if (contract.parameters.some((parameter) => parameter.route === "staged-tokens")) {
+			command.allowUnknownOption(true).passThroughOptions();
+		}
 
 		const options = new Map<string, Option>();
 		for (const parameter of contract.parameters) {
