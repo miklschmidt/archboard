@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-26 09:43'
+updated_date: '2026-08-26 09:54'
 labels: []
 dependencies:
   - TASK-123.01
@@ -106,6 +106,8 @@ Foundation checkpoint validation complete at 02be79c. bun run fix, generated art
 Foundation remediation resumed at reviewed head 052ee5b. Scope is limited to the six review findings: executable fixed-base goldens, complete held and artifact validation, one independently owned route tree with generic reconciliation, and board-save success discrimination. The six current contracts and all protected scopes remain fixed.
 
 Foundation review blockers remediated through 30da432 without additional family migration. Executable fixed-base schema 2 now replays eight approved argv cases with exact or documented-normalized streams, merged event order, exits, held state, prerequisite contacts, REST/local effects, and observed artifact targets. Every consuming held policy validates HoldReportSchema; malformed object-field, stderr-note, and file-capable paths suppress structured output and writes. Non-file cases reject all pendingArtifact values. One independently owned route tree now derives the 57-path surface, parent/owner projection, longest dispatch, defaults, namespace refusals, and legacy argv slicing; the checker is generic and records 6 contracts plus 51 legacy paths. Board-save success is literal true and success:false without conflict is rejected. Validation passed: two stable bun run fix passes, generation --check, test:contracts (6 proofs / 57 paths / 590 checks), test:cli (517 checks), type-check, test:boundaries, test:boards, focused held/artifact/route/golden tests, and a complete bun run check. The first full check hit the existing browser human-performance reconciliation timing transient [0,0,2]; its isolated rerun passed [0,0], and the complete second full check passed. Stopped again for foundation review.
+
+Foundation route remediation (2026-08-26, commit 5a69353): every legacy child now owns an independently executable route-tail handler. The canonical run.ts tree also declares first-positional discovery and option arity for snapshot (--force) and arrange (--ids/--to/--group/--offset), so option-leading fixed-base forms select the child without a second catalogue. Generated proof schema v4 records handlerName, childDiscovery, parser ownership, and argv mode; checks require every legacy child to consume route-tail and differ from its family-root handler. Executable records now replay snapshot --force restore absent and arrange --ids shape1 --to left align with exact bytes, contacts, REST phases, held/effect/artifact state. No additional command family was migrated.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
