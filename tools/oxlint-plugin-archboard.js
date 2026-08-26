@@ -198,6 +198,10 @@ function isTestFile(relativePath) {
 	return /(^|\/)[^/]+\.(?:test|spec)\.[cm]?[jt]sx?$/.test(relativePath);
 }
 
+function isTopLevelDeclaration(node) {
+	return node.parent?.type === "Program" || node.parent?.type === "ExportNamedDeclaration";
+}
+
 function hasGenericBucket(relativePath) {
 	return relativePath.split("/").some((segment) => GENERIC_BUCKET_SEGMENTS.has(segment));
 }
@@ -246,9 +250,30 @@ const rootImplementationModules = createRule(
 	{
 		noRootImplementation:
 			"Root src files are reserved for thin package, binary, server, and development entrypoints.",
+		noEntrypointImplementation:
+			"Root src entrypoints may contain startup wiring, not function or class implementations.",
 	},
 	(context) => {
 		const relativePath = getRepoRelativePath(context);
+		if (ROOT_SOURCE_ENTRYPOINTS.has(relativePath)) {
+			return {
+				FunctionDeclaration(node) {
+					if (isTopLevelDeclaration(node)) report(context, node, "noEntrypointImplementation");
+				},
+				ClassDeclaration(node) {
+					if (isTopLevelDeclaration(node)) report(context, node, "noEntrypointImplementation");
+				},
+				VariableDeclarator(node) {
+					if (
+						(node.init?.type === "ArrowFunctionExpression" ||
+							node.init?.type === "FunctionExpression") &&
+						node.parent?.parent?.type === "Program"
+					) {
+						report(context, node, "noEntrypointImplementation");
+					}
+				},
+			};
+		}
 		if (
 			relativePath.startsWith("src/") &&
 			isSourceFile(relativePath) &&

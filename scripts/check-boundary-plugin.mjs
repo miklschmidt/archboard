@@ -59,6 +59,8 @@ const createdRoots = Object.values(moduleNames).map((name) =>
 			: path.join(repoRoot, "src/domain", name),
 );
 const flatFixture = path.join(repoRoot, `src/cli/freepass${suffix}.ts`);
+const serverEntrypoint = path.join(repoRoot, "src/server.ts");
+const originalServerEntrypoint = fs.readFileSync(serverEntrypoint, "utf-8");
 
 function lint(relativePaths) {
 	const result = Bun.spawnSync({
@@ -110,6 +112,16 @@ try {
 		`src/domain/${moduleNames.domainTarget}/index.ts`,
 		`src/shared/${moduleNames.shared}/index.ts`,
 	]);
+	fs.appendFileSync(
+		serverEntrypoint,
+		"\nexport function boundaryFixtureImplementation() { return 'not wiring'; }\n",
+	);
+	expectRule(
+		"root entrypoints reject implementation",
+		"src/server.ts",
+		"archboard(root-implementation-modules)",
+	);
+	fs.writeFileSync(serverEntrypoint, originalServerEntrypoint);
 	expectRule(
 		"domain cannot import transformers",
 		`src/domain/${moduleNames.forbiddenDomain}/index.ts`,
@@ -144,6 +156,7 @@ try {
 		`src/domain/${moduleNames.testModule}/tests/widget.spec.ts`,
 	]);
 } finally {
+	fs.writeFileSync(serverEntrypoint, originalServerEntrypoint);
 	for (const root of createdRoots) {
 		fs.rmSync(root, { recursive: true, force: true });
 	}

@@ -714,7 +714,7 @@ export function expandElements(
  * One agent write, converted against the board it lands on.
  *
  * This is the boundary ADR 0015 names, and the two callers that matter both go
- * through it — `src/server.ts` on every agent write, and `check-labels.mjs`,
+ * through it — the server application on every agent write, and `check-labels.mjs`,
  * which runs the label loop to exhaustion and would prove nothing about a copy
  * of this. What comes back is the elements handed in, now complete, followed
  * by any label the conversion had to expand.

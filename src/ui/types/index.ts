@@ -138,7 +138,7 @@ export interface BoardHold {
  * The state before a hold and not a smaller version of one. Nothing has been
  * refused, because nobody has written since; what is on screen is simply no
  * longer what the vault holds, and the person drawing on it has not been told.
- * Mirrors `NoteWrittenElsewhere` in `src/core/note-watch.ts`.
+ * Mirrors `NoteWrittenElsewhere` in `src/runtime/engine/note-watch.ts`.
  */
 export interface NoteWrittenElsewhere {
 	board: string;
@@ -234,7 +234,7 @@ export interface DoingEntry {
 }
 
 /**
- * Who holds a board's mutex. Mirrors `LockHolder` in `src/core/board-lock.ts`,
+ * Who holds a board's mutex. Mirrors `LockHolder` in `src/runtime/engine/board-lock.ts`,
  * which the pane cannot import: that module reads the vault off a filesystem a
  * browser has not got.
  */

@@ -195,7 +195,7 @@ export const DEFAULT_INJECT_MIN_INTERVAL_MS = 10_000;
 
 // ── One writer at a time (ADR 0016) ───────────────────────────────────────
 //
-// `src/core/board-lock.ts` is the only thing that reads these. It was built
+// `src/runtime/engine/board-lock.ts` is the only thing that reads these. It was built
 // against them rather than around them, and the three it added since — the
 // poll, the steal guard and the free linger — are here for the reason the
 // first three were: a number that governs the lock and lives next to the lock
