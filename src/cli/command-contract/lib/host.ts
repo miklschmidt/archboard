@@ -36,6 +36,9 @@ export const processCommandHost = {
 	writeStderr(value: string) {
 		process.stderr.write(value);
 	},
+	setExitCode(value: number) {
+		process.exitCode = value;
+	},
 	held() {
 		return boardHoldSeen();
 	},
