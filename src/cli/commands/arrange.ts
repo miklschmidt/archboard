@@ -1,4 +1,4 @@
-import { parseArgs, CliUsageError } from "./args.js";
+import { parseArgs, CliUsageError, type FlagSpecs } from "./args.js";
 import { printJson } from "./util.js";
 import { ensureCanvasRunning } from "../../runtime/engine/spawn.js";
 import {
@@ -14,6 +14,13 @@ import type { Alignment, Direction } from "../../runtime/engine/element-ops.js";
 const ALIGNMENTS = new Set(["left", "center", "right", "top", "middle", "bottom"]);
 const DIRECTIONS = new Set(["horizontal", "vertical"]);
 
+export const ARRANGE_FLAG_SPEC = {
+	ids: { takesValue: true },
+	to: { takesValue: true },
+	group: { takesValue: true },
+	offset: { takesValue: true },
+} as const satisfies FlagSpecs;
+
 function parseIds(value: unknown, usage: string): string[] {
 	if (typeof value !== "string" || !value.trim()) {
 		throw new CliUsageError(usage);
@@ -25,12 +32,7 @@ function parseIds(value: unknown, usage: string): string[] {
 }
 
 export async function arrange(argv: string[]): Promise<void> {
-	const { positionals, flags } = parseArgs(argv, {
-		ids: { takesValue: true },
-		to: { takesValue: true },
-		group: { takesValue: true },
-		offset: { takesValue: true },
-	});
+	const { positionals, flags } = parseArgs(argv, ARRANGE_FLAG_SPEC);
 
 	const op = positionals[0];
 	const tail = arrangeTail(flags);
@@ -56,13 +58,6 @@ export async function arrange(argv: string[]): Promise<void> {
 	}
 }
 
-const ARRANGE_FLAGS = {
-	ids: { takesValue: true },
-	to: { takesValue: true },
-	group: { takesValue: true },
-	offset: { takesValue: true },
-} as const;
-
 function arrangeTail(flags: Record<string, unknown>): string[] {
 	return Object.entries(flags).flatMap(([name, value]) =>
 		typeof value === "string" ? [`--${name}`, value] : value ? [`--${name}`] : [],
@@ -70,7 +65,7 @@ function arrangeTail(flags: Record<string, unknown>): string[] {
 }
 
 export async function arrangeAlign(argv: string[]): Promise<void> {
-	const { flags } = parseArgs(argv, ARRANGE_FLAGS);
+	const { flags } = parseArgs(argv, ARRANGE_FLAG_SPEC);
 	await ensureCanvasRunning();
 	const ids = parseIds(
 		flags.ids,
@@ -85,7 +80,7 @@ export async function arrangeAlign(argv: string[]): Promise<void> {
 }
 
 export async function arrangeDistribute(argv: string[]): Promise<void> {
-	const { flags } = parseArgs(argv, ARRANGE_FLAGS);
+	const { flags } = parseArgs(argv, ARRANGE_FLAG_SPEC);
 	await ensureCanvasRunning();
 	const ids = parseIds(flags.ids, "Usage: arrange distribute --ids a,b,c --to horizontal|vertical");
 	const to = flags.to as string | undefined;
@@ -97,7 +92,7 @@ export async function arrangeDistribute(argv: string[]): Promise<void> {
 }
 
 export async function arrangeGroup(argv: string[]): Promise<void> {
-	const { flags } = parseArgs(argv, ARRANGE_FLAGS);
+	const { flags } = parseArgs(argv, ARRANGE_FLAG_SPEC);
 	await ensureCanvasRunning();
 	const ids = parseIds(flags.ids, "Usage: arrange group --ids a,b,c");
 	printJson(await groupElements(ids));
@@ -105,7 +100,7 @@ export async function arrangeGroup(argv: string[]): Promise<void> {
 }
 
 export async function arrangeUngroup(argv: string[]): Promise<void> {
-	const { flags } = parseArgs(argv, ARRANGE_FLAGS);
+	const { flags } = parseArgs(argv, ARRANGE_FLAG_SPEC);
 	await ensureCanvasRunning();
 	const groupId = flags.group as string | undefined;
 	if (!groupId) throw new CliUsageError("Usage: arrange ungroup --group <groupId>");
@@ -114,7 +109,7 @@ export async function arrangeUngroup(argv: string[]): Promise<void> {
 }
 
 async function arrangeLockState(argv: string[], locked: boolean): Promise<void> {
-	const { flags } = parseArgs(argv, ARRANGE_FLAGS);
+	const { flags } = parseArgs(argv, ARRANGE_FLAG_SPEC);
 	await ensureCanvasRunning();
 	const ids = parseIds(flags.ids, `Usage: arrange ${locked ? "lock" : "unlock"} --ids a,b,c`);
 	const result = await setElementsLocked(ids, locked);
@@ -131,7 +126,7 @@ export async function arrangeUnlock(argv: string[]): Promise<void> {
 }
 
 export async function arrangeDuplicate(argv: string[]): Promise<void> {
-	const { flags } = parseArgs(argv, ARRANGE_FLAGS);
+	const { flags } = parseArgs(argv, ARRANGE_FLAG_SPEC);
 	await ensureCanvasRunning();
 	const ids = parseIds(flags.ids, "Usage: arrange duplicate --ids a,b,c [--offset 20,20]");
 	let offsetX = 20,
