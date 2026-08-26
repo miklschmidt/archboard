@@ -1,11 +1,7 @@
 import type { ServerElement } from "../engine/types.js";
 import { boundingBoxOf, boxOf, type Box } from "../engine/layout.js";
 import { labelOf } from "../engine/promote.js";
-import {
-	type ArchboardBlock,
-	nodeIdOf,
-	readElementMetadata,
-} from "../engine/metadata.js";
+import { type ArchboardBlock, nodeIdOf, readElementMetadata } from "../engine/metadata.js";
 
 export interface ArchitectureNode {
 	readonly node: string;
@@ -38,8 +34,7 @@ export interface ArchitectureFacts {
 
 const CONNECTOR_TYPES = new Set(["arrow", "line"]);
 
-export const isArchitectureConnectorType = (type: string): boolean =>
-	CONNECTOR_TYPES.has(type);
+export const isArchitectureConnectorType = (type: string): boolean => CONNECTOR_TYPES.has(type);
 
 export function architectureBindingTarget(
 	element: unknown,
@@ -105,12 +100,7 @@ export function architectureFacts(elements: readonly ServerElement[]): Architect
 	const confirmedBoundLabelIds = new Set<string>();
 	for (const element of all) {
 		const container = element.containerId;
-		if (
-			element.type === "text" &&
-			container &&
-			container !== element.id &&
-			byId.has(container)
-		) {
+		if (element.type === "text" && container && container !== element.id && byId.has(container)) {
 			confirmedBoundLabelIds.add(element.id);
 		}
 	}
@@ -136,9 +126,7 @@ export function architectureFacts(elements: readonly ServerElement[]): Architect
 
 	const nodes = new Map<string, ArchitectureNode>();
 	for (const [node, members] of grouped) {
-		const bodyElements = members.filter(
-			(element) => !confirmedBoundLabelIds.has(element.id),
-		);
+		const bodyElements = members.filter((element) => !confirmedBoundLabelIds.has(element.id));
 		const labelElements = members.filter((element) => confirmedBoundLabelIds.has(element.id));
 		const primary = primaryOf(members, confirmedBoundLabelIds);
 		nodes.set(node, {
@@ -156,22 +144,20 @@ export function architectureFacts(elements: readonly ServerElement[]): Architect
 	const connectors: ArchitectureConnector[] = [];
 	for (const element of all) {
 		if (!isArchitectureConnectorType(element.type)) continue;
-			const startTargetId = architectureBindingTarget(element, "start");
-			const endTargetId = architectureBindingTarget(element, "end");
-			connectors.push({
-				element,
-				...(nodeOfElement.get(element.id)
-					? { ownerNodeId: nodeOfElement.get(element.id)! }
-					: {}),
-				...(startTargetId ? { startTargetId } : {}),
-				...(endTargetId ? { endTargetId } : {}),
-				...(startTargetId && nodeOfElement.get(startTargetId)
-					? { startNodeId: nodeOfElement.get(startTargetId)! }
-					: {}),
-				...(endTargetId && nodeOfElement.get(endTargetId)
-					? { endNodeId: nodeOfElement.get(endTargetId)! }
-					: {}),
-			});
+		const startTargetId = architectureBindingTarget(element, "start");
+		const endTargetId = architectureBindingTarget(element, "end");
+		connectors.push({
+			element,
+			...(nodeOfElement.get(element.id) ? { ownerNodeId: nodeOfElement.get(element.id)! } : {}),
+			...(startTargetId ? { startTargetId } : {}),
+			...(endTargetId ? { endTargetId } : {}),
+			...(startTargetId && nodeOfElement.get(startTargetId)
+				? { startNodeId: nodeOfElement.get(startTargetId)! }
+				: {}),
+			...(endTargetId && nodeOfElement.get(endTargetId)
+				? { endNodeId: nodeOfElement.get(endTargetId)! }
+				: {}),
+		});
 	}
 
 	return {

@@ -734,8 +734,16 @@ try {
 	}
 
 	const surface = cliSurface();
-	check("current general help adds the check command once", (bare.stdout.match(/^  check\s/mg) ?? []).length === 1);
-	check("current general help adds the exact check-only exit line", bare.stdout.includes("               check only: 6 warnings, 7 errors, 8 indeterminate coverage.\n"));
+	check(
+		"current general help adds the check command once",
+		(bare.stdout.match(/^  check\s/gm) ?? []).length === 1,
+	);
+	check(
+		"current general help adds the exact check-only exit line",
+		bare.stdout.includes(
+			"               check only: 6 warnings, 7 errors, 8 indeterminate coverage.\n",
+		),
+	);
 	check("the CLI declares commands", surface.length > 0, `${surface.length} commands`);
 	let subcommandCount = 0;
 	for (const { name, subcommands } of surface) {

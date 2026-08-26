@@ -37,7 +37,8 @@ const OBSTACLE_BODY = new Set(["rectangle", "ellipse", "diamond"]);
 
 function object(value: unknown): Readonly<Record<string, unknown>> | null {
 	return value && typeof value === "object" && !Array.isArray(value)
-		? value as Readonly<Record<string, unknown>> : null;
+		? (value as Readonly<Record<string, unknown>>)
+		: null;
 }
 
 export function archboardMetadata(record: DecodedRecord): Readonly<Record<string, unknown>> | null {
@@ -51,7 +52,9 @@ export function nodeId(record: DecodedRecord): string | null {
 
 export function groupIds(record: DecodedRecord): string[] {
 	return Array.isArray(record.raw?.groupIds)
-		? record.raw.groupIds.filter((value): value is string => typeof value === "string" && value.length > 0)
+		? record.raw.groupIds.filter(
+				(value): value is string => typeof value === "string" && value.length > 0,
+			)
 		: [];
 }
 
@@ -65,12 +68,16 @@ export function libraryAttribution(record: DecodedRecord): {
 	if (!custom || !("library" in custom)) return null;
 	const library = object(custom.library);
 	if (!library) return { valid: false, issues: ["library must be an object"] };
-	const item = typeof library.itemId === "string" && library.itemId.length > 0
-		? library.itemId
-		: typeof library.item === "string" && library.item.length > 0 ? library.item : undefined;
+	const item =
+		typeof library.itemId === "string" && library.itemId.length > 0
+			? library.itemId
+			: typeof library.item === "string" && library.item.length > 0
+				? library.item
+				: undefined;
 	const issues: string[] = [];
 	if (!item) issues.push("itemId or item must be a nonempty string");
-	if (library.source !== undefined && typeof library.source !== "string") issues.push("source must be a string");
+	if (library.source !== undefined && typeof library.source !== "string")
+		issues.push("source must be a string");
 	return {
 		valid: issues.length === 0,
 		...(item ? { item } : {}),
@@ -81,8 +88,15 @@ export function libraryAttribution(record: DecodedRecord): {
 
 function validBoundary(record: DecodedRecord): boolean {
 	const angle = record.raw?.angle;
-	return !!record.id && !!record.box && record.box.width > 0 && record.box.height > 0 &&
-		!!record.type && CLOSED.has(record.type) && (angle === undefined || angle === 0);
+	return (
+		!!record.id &&
+		!!record.box &&
+		record.box.width > 0 &&
+		record.box.height > 0 &&
+		!!record.type &&
+		CLOSED.has(record.type) &&
+		(angle === undefined || angle === 0)
+	);
 }
 
 export function buildInspectionModel(records: readonly DecodedRecord[]): InspectionModel {
@@ -94,7 +108,12 @@ export function buildInspectionModel(records: readonly DecodedRecord[]): Inspect
 	for (const record of live) {
 		if (record.type !== "text" || !record.id) continue;
 		const container = record.raw?.containerId;
-		if (typeof container === "string" && container.length > 0 && container !== record.id && byId.has(container)) {
+		if (
+			typeof container === "string" &&
+			container.length > 0 &&
+			container !== record.id &&
+			byId.has(container)
+		) {
 			confirmedLabels.set(record.id, container);
 		}
 	}
@@ -127,8 +146,15 @@ export function buildInspectionModel(records: readonly DecodedRecord[]): Inspect
 		const elementIds = bodies.map((record) => record.id!).toSorted();
 		const labelElementIds = labels.map((record) => record.id!).toSorted();
 		nodes.set(id, {
-			id, members, bodies, labels, aggregate, body: bodyBox,
-			boundaries: bodies.filter(validBoundary), parentId: null, children: [],
+			id,
+			members,
+			bodies,
+			labels,
+			aggregate,
+			body: bodyBox,
+			boundaries: bodies.filter(validBoundary),
+			parentId: null,
+			children: [],
 			ref: { id, elementIds, labelElementIds },
 		});
 	}
@@ -144,25 +170,39 @@ export function buildInspectionModel(records: readonly DecodedRecord[]): Inspect
 				}
 			}
 		}
-		const selected = candidates.toSorted((a, b) =>
-			a.area - b.area || a.boundary.id!.localeCompare(b.boundary.id!) || a.owner.id.localeCompare(b.owner.id)
+		const selected = candidates.toSorted(
+			(a, b) =>
+				a.area - b.area ||
+				a.boundary.id!.localeCompare(b.boundary.id!) ||
+				a.owner.id.localeCompare(b.owner.id),
 		)[0];
 		if (selected) child.parentId = selected.owner.id;
 	}
-	for (const node of nodes.values()) if (node.parentId) nodes.get(node.parentId)?.children.push(node.id);
+	for (const node of nodes.values())
+		if (node.parentId) nodes.get(node.parentId)?.children.push(node.id);
 	for (const node of nodes.values()) node.children.sort();
 
 	const containerOnlyIds = new Set<string>();
 	for (const record of live) {
 		if (nodeOfElement.has(record.id ?? "") || !validBoundary(record)) continue;
-		if ([...nodes.values()].some((node) => contains(record.box!, node.body))) containerOnlyIds.add(record.id!);
+		if ([...nodes.values()].some((node) => contains(record.box!, node.body)))
+			containerOnlyIds.add(record.id!);
 	}
 
 	const eligible = live.filter((record) => {
 		const angle = record.raw?.angle;
-		return !!record.id && !!record.type && !!record.box && record.box.width > 0 && record.box.height > 0 &&
-			OBSTACLE_BODY.has(record.type) && (angle === undefined || angle === 0) &&
-			!nodeOfElement.has(record.id) && !confirmedLabels.has(record.id) && !containerOnlyIds.has(record.id);
+		return (
+			!!record.id &&
+			!!record.type &&
+			!!record.box &&
+			record.box.width > 0 &&
+			record.box.height > 0 &&
+			OBSTACLE_BODY.has(record.type) &&
+			(angle === undefined || angle === 0) &&
+			!nodeOfElement.has(record.id) &&
+			!confirmedLabels.has(record.id) &&
+			!containerOnlyIds.has(record.id)
+		);
 	});
 	const parent = new Map(eligible.map((record) => [record.id!, record.id!]));
 	const find = (id: string): string => {
@@ -171,13 +211,16 @@ export function buildInspectionModel(records: readonly DecodedRecord[]): Inspect
 		return current;
 	};
 	const join = (a: string, b: string) => {
-		const aa = find(a), bb = find(b);
+		const aa = find(a),
+			bb = find(b);
 		if (aa !== bb) parent.set(bb, aa < bb ? aa : bb);
 	};
-	for (let i = 0; i < eligible.length; i += 1) for (let j = i + 1; j < eligible.length; j += 1) {
-		const a = eligible[i]!, b = eligible[j]!;
-		if (groupIds(a).some((group) => groupIds(b).includes(group))) join(a.id!, b.id!);
-	}
+	for (let i = 0; i < eligible.length; i += 1)
+		for (let j = i + 1; j < eligible.length; j += 1) {
+			const a = eligible[i]!,
+				b = eligible[j]!;
+			if (groupIds(a).some((group) => groupIds(b).includes(group))) join(a.id!, b.id!);
+		}
 	const components = new Map<string, DecodedRecord[]>();
 	for (const record of eligible) {
 		const root = find(record.id!);
@@ -192,20 +235,36 @@ export function buildInspectionModel(records: readonly DecodedRecord[]): Inspect
 		if (validLibrary.length === 0 && !sharedGroup) continue;
 		const elementIds = members.map((record) => record.id!).toSorted();
 		const groups = [...new Set(members.flatMap(groupIds))].toSorted();
-		const library = validLibrary.map((record) => {
-			const attr = libraryAttribution(record)!;
-			return { elementId: record.id!, item: attr.item!, ...(attr.source ? { source: attr.source } : {}) };
-		}).toSorted((a, b) => a.elementId.localeCompare(b.elementId));
+		const library = validLibrary
+			.map((record) => {
+				const attr = libraryAttribution(record)!;
+				return {
+					elementId: record.id!,
+					item: attr.item!,
+					...(attr.source ? { source: attr.source } : {}),
+				};
+			})
+			.toSorted((a, b) => a.elementId.localeCompare(b.elementId));
 		const obstacleBox = unionBoxes(members.map((record) => record.box!))!;
-		const kind = validLibrary.length > 0 ? "library-component" as const : "grouped-component" as const;
+		const kind =
+			validLibrary.length > 0 ? ("library-component" as const) : ("grouped-component" as const);
 		const id = `obstacle:${elementIds.join(",")}`;
-		obstacles.push({ id, kind, members, box: obstacleBox, ref: { id, kind, elementIds, groupIds: groups, library } });
+		obstacles.push({
+			id,
+			kind,
+			members,
+			box: obstacleBox,
+			ref: { id, kind, elementIds, groupIds: groups, library },
+		});
 	}
 	obstacles.sort((a, b) => a.id.localeCompare(b.id));
 	return { byId, nodes, nodeOfElement, confirmedLabels, containerOnlyIds, obstacles };
 }
 
-export function semanticParents(model: InspectionModel, startingNodeId: string | undefined): Set<string> {
+export function semanticParents(
+	model: InspectionModel,
+	startingNodeId: string | undefined,
+): Set<string> {
 	const found = new Set<string>();
 	let current = startingNodeId ? model.nodes.get(startingNodeId)?.parentId : null;
 	while (current && !found.has(current)) {

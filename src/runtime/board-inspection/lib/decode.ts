@@ -21,14 +21,17 @@ export const kindOf = (value: unknown): string => {
 export function stableDescription(value: unknown): string {
 	const kind = kindOf(value);
 	if (kind === "string") return JSON.stringify(String(value).slice(0, 80));
-	if (kind === "number" || kind === "boolean" || kind === "bigint") return String(value).slice(0, 80);
+	if (kind === "number" || kind === "boolean" || kind === "bigint")
+		return String(value).slice(0, 80);
 	return kind;
 }
 
 export function decodeRecords(records: readonly unknown[]): DecodedRecord[] {
 	return records.map((value, sourceIndex) => {
-		const raw = value && typeof value === "object" && !Array.isArray(value)
-			? (value as Readonly<Record<string, unknown>>) : null;
+		const raw =
+			value && typeof value === "object" && !Array.isArray(value)
+				? (value as Readonly<Record<string, unknown>>)
+				: null;
 		const rawId = raw?.id;
 		const id = typeof rawId === "string" && rawId.length > 0 ? rawId : null;
 		const type = typeof raw?.type === "string" ? raw.type : null;
@@ -37,10 +40,16 @@ export function decodeRecords(records: readonly unknown[]): DecodedRecord[] {
 		const width = raw && finite(raw.width) ? raw.width : undefined;
 		const height = raw && finite(raw.height) ? raw.height : undefined;
 		return {
-			raw, sourceIndex, live: raw?.isDeleted !== true, id, type,
+			raw,
+			sourceIndex,
+			live: raw?.isDeleted !== true,
+			id,
+			type,
 			ref: { id, type, sourceIndex },
-			box: x !== undefined && y !== undefined && width !== undefined && height !== undefined
-				? { x, y, width: Math.max(0, width), height: Math.max(0, height) } : null,
+			box:
+				x !== undefined && y !== undefined && width !== undefined && height !== undefined
+					? { x, y, width: Math.max(0, width), height: Math.max(0, height) }
+					: null,
 		};
 	});
 }
@@ -52,7 +61,8 @@ export type PathDecode =
 
 export function decodePath(record: DecodedRecord): PathDecode {
 	const raw = record.raw;
-	if (!raw || !("points" in raw) || raw.points === undefined) return { ok: false, issue: "missing" };
+	if (!raw || !("points" in raw) || raw.points === undefined)
+		return { ok: false, issue: "missing" };
 	if (!Array.isArray(raw.points)) return { ok: false, issue: "non-array" };
 	if (raw.points.length === 0) return { ok: false, issue: "empty" };
 	const originX = finite(raw.x) ? raw.x : 0;
@@ -60,11 +70,14 @@ export function decodePath(record: DecodedRecord): PathDecode {
 	const points: ExactPoint[] = [];
 	for (let index = 0; index < raw.points.length; index += 1) {
 		const candidate = raw.points[index];
-		const object = candidate && typeof candidate === "object" && !Array.isArray(candidate)
-			? candidate as Record<string, unknown> : null;
+		const object =
+			candidate && typeof candidate === "object" && !Array.isArray(candidate)
+				? (candidate as Record<string, unknown>)
+				: null;
 		const x = Array.isArray(candidate) ? candidate[0] : object?.x;
 		const y = Array.isArray(candidate) ? candidate[1] : object?.y;
-		if (!finite(x) || !finite(y)) return { ok: false, issue: "malformed-point", pointIndex: index, points };
+		if (!finite(x) || !finite(y))
+			return { ok: false, issue: "malformed-point", pointIndex: index, points };
 		points.push({ x: originX + x, y: originY + y });
 	}
 	if (points.length === 1) return { ok: false, issue: "one-point", points };
