@@ -3,8 +3,7 @@ import type { AnyCommandContract } from "./contract.js";
 
 export interface RegistryContractEntry {
 	name: string;
-	kind: "contract" | "legacy";
-	contract?: AnyCommandContract;
+	contract: AnyCommandContract;
 }
 
 function jsonSchema(schema: z.ZodType): unknown {
@@ -16,12 +15,11 @@ function jsonSchema(schema: z.ZodType): unknown {
 }
 
 export function introspectContracts(entries: readonly RegistryContractEntry[]) {
-	return entries
-		.filter(
-			(entry): entry is RegistryContractEntry & { contract: AnyCommandContract } =>
-				entry.contract !== undefined,
-		)
-		.map(({ name, contract }) => ({
+	return entries.map(({ name, contract }) => {
+		if (!contract || !Array.isArray(contract.path) || typeof contract.handler !== "function") {
+			throw new Error(`${name}: registry entry has no executable command contract`);
+		}
+		return {
 			name,
 			path: contract.path,
 			summary: contract.summary,
@@ -46,5 +44,6 @@ export function introspectContracts(entries: readonly RegistryContractEntry[]) {
 			effects: contract.effects,
 			refusals: contract.refusals,
 			relationships: contract.relationships,
-		}));
+		};
+	});
 }

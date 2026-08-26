@@ -4,11 +4,9 @@ import {
 	catalogueText,
 	insertStencil,
 	readCatalogue,
-	type Catalogue,
-	type InsertResult,
 } from "../../runtime/engine/library-catalogue.js";
 import { CliUsageError, defineCommand } from "../command-contract/contract.js";
-import { HoldReportSchema, type HoldReport } from "../command-contract/schemas.js";
+import { HoldReportSchema, ServerElementSchema } from "../command-contract/schemas.js";
 
 const tail = z.array(z.string()).default([]);
 const refusals = [
@@ -72,18 +70,25 @@ export const libraryContract = defineCommand({
 
 export const LibraryListInputSchema = z.object({ text: z.boolean().default(false), tail });
 export type LibraryListInput = z.infer<typeof LibraryListInputSchema>;
-const CatalogueValidator = z.looseObject({
+export const LibraryListJsonResultSchema = z.looseObject({
 	count: z.number().int().nonnegative(),
 	seeded: z.array(z.string()),
 	file: z.string().nullable(),
 	vaultBacked: z.boolean(),
-	items: z.array(z.looseObject({ id: z.string() })),
+	items: z.array(
+		z.object({
+			id: z.string(),
+			name: z.string().nullable(),
+			source: z.string().nullable(),
+			elements: z.number().int().nonnegative(),
+			width: z.number().nonnegative(),
+			height: z.number().nonnegative(),
+			text: z.string().nullable(),
+		}),
+	),
 	held: HoldReportSchema.optional(),
 });
-export type LibraryListJsonResult = Catalogue & { held?: HoldReport };
-export const LibraryListJsonResultSchema = z.custom<LibraryListJsonResult>(
-	(value) => CatalogueValidator.safeParse(value).success,
-);
+export type LibraryListJsonResult = z.infer<typeof LibraryListJsonResultSchema>;
 export const LibraryListResultSchema = z.union([LibraryListJsonResultSchema, z.string()]);
 export type LibraryListResult = z.infer<typeof LibraryListResultSchema>;
 export const libraryListContract = defineCommand({
@@ -154,20 +159,17 @@ export const LibraryInsertInputSchema = z.object({
 	tail,
 });
 export type LibraryInsertInput = z.infer<typeof LibraryInsertInputSchema>;
-const InsertValidator = z.looseObject({
+export const LibraryInsertResultSchema = z.looseObject({
 	success: z.literal(true),
 	name: z.string().nullable(),
 	source: z.string().nullable(),
 	id: z.string(),
 	at: z.object({ x: z.number(), y: z.number() }),
 	count: z.number().int().nonnegative(),
-	elements: z.array(z.looseObject({ id: z.string() })),
+	elements: z.array(ServerElementSchema),
 	held: HoldReportSchema.optional(),
 });
-export type LibraryInsertResult = InsertResult & { held?: HoldReport };
-export const LibraryInsertResultSchema = z.custom<LibraryInsertResult>(
-	(value) => InsertValidator.safeParse(value).success,
-);
+export type LibraryInsertResult = z.infer<typeof LibraryInsertResultSchema>;
 export const libraryInsertContract = defineCommand({
 	path: ["library", "insert"],
 	summary: "Drop a stencil onto the board",
@@ -256,13 +258,15 @@ export const libraryInsertContract = defineCommand({
 		await context.require("server", "library insert");
 		try {
 			return {
-				result: await insertStencil({
-					name: input.name,
-					source: input.source,
-					itemId: input.id,
-					x,
-					y,
-				}),
+				result: LibraryInsertResultSchema.parse(
+					await insertStencil({
+						name: input.name,
+						source: input.source,
+						itemId: input.id,
+						x,
+						y,
+					}),
+				),
 			};
 		} catch (error) {
 			if (error instanceof AmbiguousStencilError)

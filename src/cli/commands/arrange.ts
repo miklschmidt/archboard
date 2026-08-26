@@ -346,7 +346,7 @@ export const arrangeUnlockContract = defineCommand({
 
 export const ArrangeDuplicateInputSchema = z.object(ArrangeInputShape);
 export type ArrangeDuplicateInput = z.infer<typeof ArrangeDuplicateInputSchema>;
-const ArrangeDuplicateResultValidator = z.looseObject({
+export const ArrangeDuplicateResultSchema = z.looseObject({
 	success: z.literal(true),
 	count: z.number().int().nonnegative(),
 	offsetX: z.number(),
@@ -354,17 +354,7 @@ const ArrangeDuplicateResultValidator = z.looseObject({
 	elements: z.array(z.looseObject({ id: z.string() })).nullable(),
 	held: HoldReportSchema.optional(),
 });
-export type ArrangeDuplicateResult = {
-	success: true;
-	count: number;
-	offsetX: number;
-	offsetY: number;
-	elements: Awaited<ReturnType<typeof duplicateElements>>["canvasElements"];
-	held?: z.infer<typeof HoldReportSchema>;
-};
-export const ArrangeDuplicateResultSchema = z.custom<ArrangeDuplicateResult>(
-	(value) => ArrangeDuplicateResultValidator.safeParse(value).success,
-);
+export type ArrangeDuplicateResult = z.infer<typeof ArrangeDuplicateResultSchema>;
 export const arrangeDuplicateContract = defineCommand({
 	path: ["arrange", "duplicate"],
 	summary: "Duplicate elements",
@@ -392,13 +382,13 @@ export const arrangeDuplicateContract = defineCommand({
 		}
 		const result = await duplicateElements(ids, offsetX, offsetY);
 		return {
-			result: {
+			result: ArrangeDuplicateResultSchema.parse({
 				success: true as const,
 				count: result.duplicates.length,
 				offsetX: result.offsetX,
 				offsetY: result.offsetY,
 				elements: result.canvasElements,
-			},
+			}),
 		};
 	},
 });
