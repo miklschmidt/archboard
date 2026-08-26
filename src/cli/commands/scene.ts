@@ -1,7 +1,6 @@
 import os from "os";
 import path from "path";
 import { z } from "zod";
-import { CliUsageError } from "../command-contract/contract.js";
 import {
 	getElements,
 	clearCanvas,
@@ -19,6 +18,12 @@ import {
 	PaneRefSchema,
 	PendingArtifactSchema,
 } from "../command-contract/schemas.js";
+import {
+	boardWriteRefusals,
+	commonRefusals,
+	doingRefusal,
+	serverBrowserRefusals,
+} from "../command-contract/common.js";
 
 export const DescribeInputSchema = z.object({ tail: z.array(z.string()).default([]) });
 export type DescribeInput = z.infer<typeof DescribeInputSchema>;
@@ -49,24 +54,16 @@ export const describeContract = defineCommand({
 				id: "text",
 				when: {},
 				mode: "text",
-				held: "stderr-note",
+				held: "none",
 				description: "Scene description",
-				presentation: ["result", "held-note"],
+				presentation: ["result"],
 			},
 		],
 		select: () => "text",
 	},
 	prerequisites: ["server", "board"],
 	effects: ["read"],
-	refusals: [
-		{ code: "BOARD_REQUIRED", exit: 2, stream: "stderr", description: "No board was named." },
-		{
-			code: "CANVAS_UNREACHABLE",
-			exit: 3,
-			stream: "stderr",
-			description: "The canvas could not be reached.",
-		},
-	],
+	refusals: commonRefusals,
 	relationships: [
 		{
 			method: "GET",
@@ -91,7 +88,7 @@ export const describeContract = defineCommand({
 
 export const ScreenshotInputSchema = z.object({
 	out: z.string().optional(),
-	format: z.string().optional(),
+	format: z.enum(["png", "svg"], { error: "--format must be png or svg" }).default("png"),
 	noBackground: z.boolean().default(false),
 	pane: z.string().optional(),
 	tail: z.array(z.string()).default([]),
@@ -101,15 +98,11 @@ export const ScreenshotReceiptSchema = z.object({
 	success: z.literal(true),
 	file: z.string(),
 	format: z.enum(["png", "svg"]),
+	held: HoldReportSchema.optional(),
 });
 export type ScreenshotReceipt = z.infer<typeof ScreenshotReceiptSchema>;
 export const ScreenshotResultSchema = z.union([z.string(), ScreenshotReceiptSchema]);
 export type ScreenshotResult = z.infer<typeof ScreenshotResultSchema>;
-function screenshotFormat(value: string | undefined): "png" | "svg" {
-	const format = value ?? "png";
-	if (format !== "png" && format !== "svg") throw new CliUsageError("--format must be png or svg");
-	return format;
-}
 export const screenshotContract = defineCommand({
 	path: ["screenshot"],
 	summary: "Capture one pane (needs an open browser tab)",
@@ -164,8 +157,9 @@ export const screenshotContract = defineCommand({
 				id: "file",
 				when: {},
 				mode: "file-receipt",
-				held: "none",
+				held: "object-field-and-stderr-note",
 				description: "Written image receipt",
+				presentation: ["result", "held-note"],
 				artifact: PendingArtifactSchema,
 			},
 		],
@@ -173,21 +167,7 @@ export const screenshotContract = defineCommand({
 	},
 	prerequisites: ["server", "browser"],
 	effects: ["browser", "local-write"],
-	refusals: [
-		{ code: "BOARD_REQUIRED", exit: 2, stream: "stderr", description: "No board was named." },
-		{
-			code: "CANVAS_UNREACHABLE",
-			exit: 3,
-			stream: "stderr",
-			description: "The canvas could not be reached.",
-		},
-		{
-			code: "BROWSER_REQUIRED",
-			exit: 4,
-			stream: "stderr",
-			description: "No browser tab was connected.",
-		},
-	],
+	refusals: serverBrowserRefusals,
 	relationships: [
 		{
 			method: "POST",
@@ -197,20 +177,19 @@ export const screenshotContract = defineCommand({
 		},
 	],
 	async handler(input, context) {
-		const format = screenshotFormat(input.format);
 		await context.require("server", "screenshot");
 		await context.require("browser", "screenshot");
-		const image = await exportImage(format, !input.noBackground, input.pane);
-		if (!input.out && format === "svg") return { result: image.data };
+		const image = await exportImage(input.format, !input.noBackground, input.pane);
+		if (!input.out && input.format === "svg") return { result: image.data };
 		const resolved = context.resolvePath(
 			input.out ?? path.join(os.tmpdir(), `excalidraw-screenshot-${Date.now()}.png`),
 		);
 		const artifact: PendingArtifact =
-			format === "svg"
+			input.format === "svg"
 				? { path: resolved, content: image.data, encoding: "utf8" }
 				: { path: resolved, content: Buffer.from(image.data, "base64"), encoding: "binary" };
 		return {
-			result: { success: true as const, file: resolved, format },
+			result: { success: true as const, file: resolved, format: input.format },
 			pendingArtifact: artifact,
 		};
 	},
@@ -222,6 +201,10 @@ export const ImportInputSchema = z.object({
 	tail: z.array(z.string()).default([]),
 });
 export type ImportInput = z.infer<typeof ImportInputSchema>;
+export const ImportDocumentStageSchema = z.string().refine((value) => value.trim().length > 0, {
+	message: "No scene provided (pass a .excalidraw / .excalidraw.md file or pipe JSON to stdin)",
+});
+export type ImportDocumentStage = z.infer<typeof ImportDocumentStageSchema>;
 
 export const ImportResultSchema = z.object({
 	success: z.literal(true),
@@ -263,7 +246,17 @@ export const importContract = defineCommand({
 			description: "Legacy ignored positional content",
 		},
 	],
-	input: { ingress: ImportInputSchema },
+	input: {
+		ingress: ImportInputSchema,
+		stages: [
+			{
+				name: "scene-document",
+				when: "before-server",
+				description: "Non-empty scene document read from file or stdin",
+				schema: ImportDocumentStageSchema,
+			},
+		],
+	},
 	result: ImportResultSchema,
 	output: {
 		cases: [
@@ -280,16 +273,7 @@ export const importContract = defineCommand({
 	},
 	prerequisites: ["server", "board", "doing"],
 	effects: ["write"],
-	refusals: [
-		{ code: "BOARD_REQUIRED", exit: 2, stream: "stderr", description: "No board was named." },
-		{
-			code: "CANVAS_UNREACHABLE",
-			exit: 3,
-			stream: "stderr",
-			description: "The canvas could not be reached.",
-		},
-		{ code: "BOARD_CONFLICT", exit: 5, stream: "stderr", description: "The write was refused." },
-	],
+	refusals: boardWriteRefusals,
 	relationships: [
 		{
 			method: "POST",
@@ -306,14 +290,12 @@ export const importContract = defineCommand({
 	],
 	async handler(input, context) {
 		await context.require("server", "import");
-		const data =
+		const data = context.parse(
+			ImportDocumentStageSchema,
 			input.file && input.file !== "-"
 				? context.readTextFile(context.resolvePath(input.file))
-				: await context.readStdin();
-		if (!data.trim())
-			throw new CliUsageError(
-				"No scene provided (pass a .excalidraw / .excalidraw.md file or pipe JSON to stdin)",
-			);
+				: await context.readStdin(),
+		);
 		const mode = input.replace ? ("replace" as const) : ("merge" as const);
 		const result = await importScene({ data, mode });
 		return {
@@ -332,6 +314,10 @@ export const MermaidInputSchema = z.object({
 	tail: z.array(z.string()).default([]),
 });
 export type MermaidInput = z.infer<typeof MermaidInputSchema>;
+export const MermaidDiagramStageSchema = z.string().refine((value) => value.trim().length > 0, {
+	message: "No Mermaid diagram provided (pass a file or pipe to stdin)",
+});
+export type MermaidDiagramStage = z.infer<typeof MermaidDiagramStageSchema>;
 export const MermaidResultSchema = z.looseObject({
 	success: z.boolean(),
 	board: z.string().optional(),
@@ -364,7 +350,17 @@ export const mermaidContract = defineCommand({
 			description: "Legacy ignored positional content",
 		},
 	],
-	input: { ingress: MermaidInputSchema },
+	input: {
+		ingress: MermaidInputSchema,
+		stages: [
+			{
+				name: "mermaid-diagram",
+				when: "before-server",
+				description: "Non-empty Mermaid source read from file or stdin",
+				schema: MermaidDiagramStageSchema,
+			},
+		],
+	},
 	result: MermaidResultSchema,
 	output: {
 		cases: [
@@ -381,22 +377,7 @@ export const mermaidContract = defineCommand({
 	},
 	prerequisites: ["server", "browser", "board", "doing"],
 	effects: ["local-read", "browser", "write"],
-	refusals: [
-		{ code: "BOARD_REQUIRED", exit: 2, stream: "stderr", description: "No board was named." },
-		{
-			code: "CANVAS_UNREACHABLE",
-			exit: 3,
-			stream: "stderr",
-			description: "The canvas could not be reached.",
-		},
-		{
-			code: "BROWSER_REQUIRED",
-			exit: 4,
-			stream: "stderr",
-			description: "No browser tab was connected.",
-		},
-		{ code: "BOARD_CONFLICT", exit: 5, stream: "stderr", description: "The write was refused." },
-	],
+	refusals: [...commonRefusals, ...serverBrowserRefusals.slice(1), doingRefusal],
 	relationships: [
 		{
 			method: "POST",
@@ -406,12 +387,12 @@ export const mermaidContract = defineCommand({
 		},
 	],
 	async handler(input, context) {
-		const diagram =
+		const diagram = context.parse(
+			MermaidDiagramStageSchema,
 			input.file && input.file !== "-"
 				? context.readTextFile(context.resolvePath(input.file))
-				: await context.readStdin();
-		if (!diagram.trim())
-			throw new CliUsageError("No Mermaid diagram provided (pass a file or pipe to stdin)");
+				: await context.readStdin(),
+		);
 		await context.require("server", "mermaid conversion");
 		await context.require("browser", "mermaid conversion");
 		const result = await sendMermaid(diagram);
@@ -434,7 +415,11 @@ export const mermaidContract = defineCommand({
 
 export const ShareInputSchema = z.object({ tail: z.array(z.string()).default([]) });
 export type ShareInput = z.infer<typeof ShareInputSchema>;
-export const ShareResultSchema = z.object({ success: z.literal(true), url: z.string() });
+export const ShareResultSchema = z.object({
+	success: z.literal(true),
+	url: z.string(),
+	held: HoldReportSchema.optional(),
+});
 export type ShareResult = z.infer<typeof ShareResultSchema>;
 export const shareContract = defineCommand({
 	path: ["share"],
@@ -455,20 +440,21 @@ export const shareContract = defineCommand({
 	input: { ingress: ShareInputSchema },
 	result: ShareResultSchema,
 	output: {
-		cases: [{ id: "json", when: {}, mode: "json", held: "none", description: "Share URL" }],
+		cases: [
+			{
+				id: "json",
+				when: {},
+				mode: "json",
+				held: "object-field-and-stderr-note",
+				description: "Share URL",
+				presentation: ["result", "held-note"],
+			},
+		],
 		select: () => "json",
 	},
 	prerequisites: ["server", "board"],
 	effects: ["read"],
-	refusals: [
-		{ code: "BOARD_REQUIRED", exit: 2, stream: "stderr", description: "No board was named." },
-		{
-			code: "CANVAS_UNREACHABLE",
-			exit: 3,
-			stream: "stderr",
-			description: "The canvas could not be reached.",
-		},
-	],
+	refusals: commonRefusals,
 	relationships: [
 		{
 			method: "GET",
@@ -536,16 +522,7 @@ export const clearContract = defineCommand({
 	},
 	prerequisites: ["server", "board", "doing"],
 	effects: ["write"],
-	refusals: [
-		{ code: "BOARD_REQUIRED", exit: 2, stream: "stderr", description: "No board was named." },
-		{
-			code: "CANVAS_UNREACHABLE",
-			exit: 3,
-			stream: "stderr",
-			description: "The canvas could not be reached.",
-		},
-		{ code: "BOARD_CONFLICT", exit: 5, stream: "stderr", description: "The clear was refused." },
-	],
+	refusals: boardWriteRefusals,
 	relationships: [
 		{
 			method: "DELETE",

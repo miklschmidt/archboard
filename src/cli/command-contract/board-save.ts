@@ -8,6 +8,7 @@ import {
 	HoldReportSchema,
 	PaneRefSchema,
 } from "./schemas.js";
+import { boardWriteRefusals } from "./lib/common.js";
 
 export const BoardSaveInputSchema = z.object({ tokens: z.array(z.string()).default([]) });
 export type BoardSaveInput = z.infer<typeof BoardSaveInputSchema>;
@@ -207,17 +208,9 @@ export const boardSaveContract = defineCommand({
 			presentation: ["diagnostics", "result", "held-note", "continuation"],
 		},
 	],
-	prerequisites: ["server", "board"],
+	prerequisites: ["server", "board", "doing"],
 	effects: ["local-read", "write"],
-	refusals: [
-		{ code: "BOARD_REQUIRED", exit: 2, stream: "stderr", description: "No board was named." },
-		{
-			code: "CANVAS_UNREACHABLE",
-			exit: 3,
-			stream: "stderr",
-			description: "The canvas could not be reached or started.",
-		},
-	],
+	refusals: boardWriteRefusals,
 	relationships: [
 		{
 			method: "POST",
@@ -236,12 +229,8 @@ export const boardSaveContract = defineCommand({
 				...(options.level ? { level: options.level } : {}),
 				...(options.force ? { force: true } : {}),
 			});
-			if (!result.success) {
-				// Keep an invalid server reply intact so the command boundary rejects it.
-				return { result: result as never };
-			}
 			return {
-				result: { ...result, success: true as const } as BoardSaveSuccessResult,
+				result: BoardSaveSuccessResultSchema.parse(result),
 				diagnostics: successDiagnostics(result),
 			};
 		} catch (error) {
@@ -252,7 +241,7 @@ export const boardSaveContract = defineCommand({
 					success: false as const,
 					conflict: { ...conflict },
 				},
-				outcome: "board-conflict" as const,
+				outcome: "board-conflict",
 				diagnostics: [conflict.message],
 			};
 		}

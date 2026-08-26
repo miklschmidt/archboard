@@ -261,6 +261,39 @@ export const InstallSkillInputSchema = z.object({
 	tail: z.array(z.string()).default([]),
 });
 export type InstallSkillInput = z.infer<typeof InstallSkillInputSchema>;
+export const InstallSkillRequestSchema = InstallSkillInputSchema.superRefine((input, context) => {
+	const destinations = [input.dir, input.target, input.agent].filter(
+		(value) => value !== undefined,
+	);
+	if (destinations.length > 1) {
+		context.addIssue({
+			code: "custom",
+			message: "Use only one of --dir <skills-root>, --agent <agent>, or --target claude",
+		});
+	}
+	if (input.noDoc && input.doc !== undefined) {
+		context.addIssue({ code: "custom", message: "Use either --doc <file> or --no-doc, not both" });
+	}
+	if (input.agent !== undefined && !["codex", "claude-code"].includes(input.agent)) {
+		context.addIssue({
+			code: "custom",
+			message: `Unknown --agent ${input.agent}. Supported agents: codex, claude-code.`,
+		});
+	}
+	if (input.target === "codex") {
+		context.addIssue({
+			code: "custom",
+			message:
+				"--target codex is obsolete. The default install root is ~/.agents/skills; use --dir <skills-root> for a custom location.",
+		});
+	} else if (input.target !== undefined && !["agents", "claude"].includes(input.target)) {
+		context.addIssue({
+			code: "custom",
+			message: `Unknown --target ${input.target}. Supported targets: claude. Omit --target for ~/.agents/skills, or use --dir <skills-root> for a custom location.`,
+		});
+	}
+});
+export type InstallSkillRequest = z.infer<typeof InstallSkillRequestSchema>;
 
 export const InstallSkillSetupResultSchema = z.object({
 	repo: z.string(),
@@ -308,18 +341,7 @@ async function executeInstallSkill(
 			files: countFiles(source),
 		};
 	}
-
-	const destinations = [input.dir, input.target, input.agent].filter(
-		(value) => value !== undefined,
-	);
-	if (destinations.length > 1) {
-		throw new CliUsageError(
-			"Use only one of --dir <skills-root>, --agent <agent>, or --target claude",
-		);
-	}
-	if (input.noDoc && input.doc !== undefined) {
-		throw new CliUsageError("Use either --doc <file> or --no-doc, not both");
-	}
+	input = context.parse(InstallSkillRequestSchema, input);
 
 	const explicitDir = input.dir;
 	const agentSpec = input.agent;
@@ -599,7 +621,22 @@ export const installSkillContract = defineCommand({
 			description: "Legacy ignored positional content",
 		},
 	],
-	input: { ingress: InstallSkillInputSchema },
+	input: {
+		ingress: InstallSkillInputSchema,
+		stages: [
+			{
+				name: "install-request",
+				when: "before-server",
+				description: "Exclusive destination, supported agent/target, and document policy",
+				rules: [
+					"Validate only after --print-source's fixed-base early return",
+					"Choose at most one destination spelling",
+					"Reject --doc with --no-doc",
+				],
+				schema: InstallSkillRequestSchema,
+			},
+		],
+	},
 	result: InstallSkillResultSchema,
 	output: {
 		cases: [

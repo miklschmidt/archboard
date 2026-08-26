@@ -2277,7 +2277,7 @@ archboard board new <name> [--variant v] [--level l] [--pane <spec>]
 
 Output: json (New board).
 
-Prerequisites: server. Effects: write.
+Prerequisites: server. Effects: server-state-write, browser.
 
 REST relationships:
 
@@ -2475,7 +2475,7 @@ archboard board save --board <key> [--as <name>] [--variant v] [--level l] [--fo
 
 Output: json (Board save or structured conflict).
 
-Prerequisites: server, board. Effects: local-read, write.
+Prerequisites: server, board, doing. Effects: local-read, write.
 
 REST relationships:
 
@@ -3205,7 +3205,7 @@ archboard claim --board <key> --reason <reason> [--for 10m]
 
 Output: json (Claim state).
 
-Prerequisites: server, board. Effects: write.
+Prerequisites: server, board. Effects: server-state-write.
 
 REST relationships:
 
@@ -3296,7 +3296,7 @@ archboard release --board <key>
 
 Output: json (Release state).
 
-Prerequisites: server, board. Effects: write.
+Prerequisites: server, board. Effects: server-state-write.
 
 REST relationships:
 
@@ -3462,7 +3462,7 @@ archboard inject test [--note "..."] [--loud]
 
 Output: json (Injection probe result).
 
-Prerequisites: server. Effects: write.
+Prerequisites: server. Effects: server-state-write.
 
 REST relationships:
 
@@ -3561,6 +3561,19 @@ Public result JSON Schema:
 				"format": {
 					"type": "string",
 					"enum": ["png", "svg"]
+				},
+				"held": {
+					"type": "object",
+					"properties": {
+						"board": {
+							"type": "string"
+						},
+						"message": {
+							"type": "string"
+						}
+					},
+					"required": ["board", "message"],
+					"additionalProperties": {}
 				}
 			},
 			"required": ["success", "file", "format"],
@@ -3819,7 +3832,7 @@ archboard snapshot save <name>
 
 Output: json (Saved snapshot).
 
-Prerequisites: server, board, doing. Effects: write.
+Prerequisites: server, board. Effects: server-state-write.
 
 REST relationships:
 
@@ -4754,6 +4767,19 @@ Public result JSON Schema:
 		},
 		"url": {
 			"type": "string"
+		},
+		"held": {
+			"type": "object",
+			"properties": {
+				"board": {
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				}
+			},
+			"required": ["board", "message"],
+			"additionalProperties": {}
 		}
 	},
 	"required": ["success", "url"],

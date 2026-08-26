@@ -205,7 +205,7 @@
 			"name": "inject",
 			"parent": null,
 			"handlerOwner": "src/cli/commands/inject.ts",
-			"parserOwner": "CommandContract concrete Commander parser",
+			"parserOwner": "CommandContract staged token parser",
 			"bare": {
 				"kind": "default",
 				"child": "status",
@@ -421,9 +421,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -522,9 +520,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -612,9 +608,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -798,11 +792,20 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["document", "tail"],
-					"additionalProperties": false
+					}
 				},
-				"stages": []
+				"stages": [
+					{
+						"name": "patch-payload",
+						"when": "before-server",
+						"description": "Non-empty JSON patch with normalized create, update, and delete operations",
+						"rules": [],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "string"
+						}
+					}
+				]
 			},
 			"result": {
 				"$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -953,19 +956,43 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1,
+					"stream": "stderr",
+					"description": "A board write did not declare what it was doing."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "Another writer currently holds the board lease."
 				},
 				{
 					"code": "BOARD_CONFLICT",
 					"exit": 5,
 					"stream": "stderr",
-					"description": "The board write was refused."
+					"description": "The note changed on disk outside Archboard."
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board advanced past expect-version."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
 				}
 			],
 			"relationships": [
@@ -1043,11 +1070,27 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["document", "tail"],
-					"additionalProperties": false
+					}
 				},
-				"stages": []
+				"stages": [
+					{
+						"name": "element-payload",
+						"when": "before-server",
+						"description": "Inline or file/stdin JSON normalized to an element array",
+						"rules": [],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"anyOf": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								}
+							]
+						}
+					}
+				]
 			},
 			"result": {
 				"$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -1188,19 +1231,43 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1,
+					"stream": "stderr",
+					"description": "A board write did not declare what it was doing."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "Another writer currently holds the board lease."
 				},
 				{
 					"code": "BOARD_CONFLICT",
 					"exit": 5,
 					"stream": "stderr",
-					"description": "The board write was refused."
+					"description": "The note changed on disk outside Archboard."
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board advanced past expect-version."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
 				}
 			],
 			"relationships": [
@@ -1284,9 +1351,7 @@
 							"default": false,
 							"type": "boolean"
 						}
-					},
-					"required": ["id", "tail", "document"],
-					"additionalProperties": false
+					}
 				},
 				"stages": [
 					{
@@ -1555,8 +1620,7 @@
 							"type": "boolean"
 						}
 					},
-					"required": ["ids", "document"],
-					"additionalProperties": false
+					"required": ["ids"]
 				},
 				"stages": []
 			},
@@ -1704,19 +1768,43 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1,
+					"stream": "stderr",
+					"description": "A board write did not declare what it was doing."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "Another writer currently holds the board lease."
 				},
 				{
 					"code": "BOARD_CONFLICT",
 					"exit": 5,
 					"stream": "stderr",
-					"description": "The board write was refused."
+					"description": "The note changed on disk outside Archboard."
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board advanced past expect-version."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
 				}
 			],
 			"relationships": [
@@ -1774,8 +1862,7 @@
 							}
 						}
 					},
-					"required": ["id", "tail"],
-					"additionalProperties": false
+					"required": ["id"]
 				},
 				"stages": []
 			},
@@ -1827,13 +1914,13 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
 				}
 			],
 			"relationships": [
@@ -1919,9 +2006,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["filter", "tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": [
 					{
@@ -1930,7 +2015,8 @@
 						"description": "Four finite comma-separated numbers",
 						"rules": [],
 						"schema": {
-							"$schema": "https://json-schema.org/draft/2020-12/schema"
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "string"
 						}
 					},
 					{
@@ -1940,7 +2026,14 @@
 						"rules": [],
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
-							"anyOf": [{}, {}]
+							"anyOf": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								}
+							]
 						}
 					}
 				]
@@ -2059,9 +2152,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["text", "tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -2185,9 +2276,9 @@
 						"present": true
 					},
 					"mode": "text",
-					"held": "stderr-note",
+					"held": "none",
 					"description": "Human-readable view state",
-					"presentation": ["result", "held-note"]
+					"presentation": ["result"]
 				}
 			],
 			"outcomes": [],
@@ -2198,13 +2289,13 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
 				}
 			],
 			"relationships": [
@@ -2256,9 +2347,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["text", "tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -2509,9 +2598,9 @@
 						"present": true
 					},
 					"mode": "text",
-					"held": "stderr-note",
+					"held": "none",
 					"description": "Human-readable view state",
-					"presentation": ["result", "held-note"]
+					"presentation": ["result"]
 				}
 			],
 			"outcomes": [],
@@ -2522,7 +2611,7 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
 				}
 			],
 			"relationships": [
@@ -2687,11 +2776,101 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["each", "text", "tail"],
-					"additionalProperties": false
+					}
 				},
-				"stages": []
+				"stages": [
+					{
+						"name": "node-declaration",
+						"when": "before-server",
+						"description": "Required normalized architecture kind and validated node id",
+						"rules": [],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "object",
+							"properties": {
+								"ids": {
+									"type": "string"
+								},
+								"kind": {
+									"type": "string"
+								},
+								"name": {
+									"type": "string"
+								},
+								"node": {
+									"type": "string"
+								},
+								"path": {
+									"type": "string"
+								},
+								"repo": {
+									"type": "string"
+								},
+								"branch": {
+									"type": "string"
+								},
+								"commit": {
+									"type": "string"
+								},
+								"variant": {
+									"type": "string"
+								},
+								"level": {
+									"type": "string"
+								},
+								"each": {
+									"default": false,
+									"type": "boolean"
+								},
+								"text": {
+									"default": false,
+									"type": "boolean"
+								},
+								"tail": {
+									"default": [],
+									"type": "array",
+									"items": {
+										"type": "string"
+									}
+								}
+							}
+						}
+					},
+					{
+						"name": "target-ids",
+						"when": "after-read",
+						"description": "Non-empty comma-separated target ids",
+						"rules": [],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "string"
+						}
+					},
+					{
+						"name": "binding-options",
+						"when": "after-read",
+						"description": "Repository binding options require a path",
+						"rules": [],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "object",
+							"properties": {
+								"path": {
+									"type": "string"
+								},
+								"repo": {
+									"type": "string"
+								},
+								"branch": {
+									"type": "string"
+								},
+								"commit": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				]
 			},
 			"result": {
 				"$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2756,9 +2935,9 @@
 						"present": true
 					},
 					"mode": "text",
-					"held": "stderr-note",
+					"held": "none",
 					"description": "Promotion summary",
-					"presentation": ["result", "held-note"]
+					"presentation": ["result"]
 				}
 			],
 			"outcomes": [],
@@ -2769,19 +2948,43 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1,
+					"stream": "stderr",
+					"description": "A board write did not declare what it was doing."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "Another writer currently holds the board lease."
 				},
 				{
 					"code": "BOARD_CONFLICT",
 					"exit": 5,
 					"stream": "stderr",
-					"description": "The write was refused."
+					"description": "The note changed on disk outside Archboard."
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board advanced past expect-version."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
 				}
 			],
 			"relationships": [
@@ -2840,9 +3043,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tokens"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -2894,9 +3095,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tokens"],
-					"additionalProperties": false
+					}
 				},
 				"stages": [
 					{
@@ -2905,7 +3104,11 @@
 						"description": "Legacy no-option grammar",
 						"rules": [],
 						"schema": {
-							"$schema": "https://json-schema.org/draft/2020-12/schema"
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
 						}
 					}
 				]
@@ -3062,13 +3265,13 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
 				},
 				{
 					"code": "BROWSER_REQUIRED",
 					"exit": 4,
 					"stream": "stderr",
-					"description": "No browser pane can be split."
+					"description": "The operation needs an open browser pane."
 				}
 			],
 			"relationships": [
@@ -3115,9 +3318,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tokens"],
-					"additionalProperties": false
+					}
 				},
 				"stages": [
 					{
@@ -3126,7 +3327,11 @@
 						"description": "Pane selector and legacy no-option grammar",
 						"rules": [],
 						"schema": {
-							"$schema": "https://json-schema.org/draft/2020-12/schema"
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
 						}
 					}
 				]
@@ -3283,13 +3488,13 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
 				},
 				{
 					"code": "BROWSER_REQUIRED",
 					"exit": 4,
 					"stream": "stderr",
-					"description": "No browser pane can be closed."
+					"description": "The operation needs an open browser pane."
 				}
 			],
 			"relationships": [
@@ -3411,9 +3616,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["fit", "tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": [
 					{
@@ -3423,7 +3626,8 @@
 						"rules": ["Split on commas, trim each id, and discard empty ids."],
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
-							"description": "Split comma-separated ids, trim whitespace, and discard empty ids."
+							"description": "Split comma-separated ids, trim whitespace, and discard empty ids.",
+							"type": "string"
 						}
 					},
 					{
@@ -3432,7 +3636,8 @@
 						"description": "Finite zoom and offset values",
 						"rules": [],
 						"schema": {
-							"$schema": "https://json-schema.org/draft/2020-12/schema"
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "string"
 						}
 					}
 				]
@@ -3549,11 +3754,20 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["text", "tail"],
-					"additionalProperties": false
+					}
 				},
-				"stages": []
+				"stages": [
+					{
+						"name": "target-ids",
+						"when": "after-read",
+						"description": "Non-empty comma-separated target ids",
+						"rules": [],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "string"
+						}
+					}
+				]
 			},
 			"result": {
 				"$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -3618,9 +3832,9 @@
 						"present": true
 					},
 					"mode": "text",
-					"held": "stderr-note",
+					"held": "none",
 					"description": "Promotion summary",
-					"presentation": ["result", "held-note"]
+					"presentation": ["result"]
 				}
 			],
 			"outcomes": [],
@@ -3631,19 +3845,43 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1,
+					"stream": "stderr",
+					"description": "A board write did not declare what it was doing."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "Another writer currently holds the board lease."
 				},
 				{
 					"code": "BOARD_CONFLICT",
 					"exit": 5,
 					"stream": "stderr",
-					"description": "The write was refused."
+					"description": "The note changed on disk outside Archboard."
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board advanced past expect-version."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
 				}
 			],
 			"relationships": [
@@ -3705,9 +3943,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -3770,9 +4006,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["text", "tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -3890,9 +4124,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -3980,8 +4212,7 @@
 							}
 						}
 					},
-					"required": ["identity", "tail"],
-					"additionalProperties": false
+					"required": ["identity"]
 				},
 				"stages": []
 			},
@@ -4051,9 +4282,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tokens"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -4105,9 +4334,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tokens"],
-					"additionalProperties": false
+					}
 				},
 				"stages": [
 					{
@@ -4116,7 +4343,11 @@
 						"description": "Repository and output selection",
 						"rules": [],
 						"schema": {
-							"$schema": "https://json-schema.org/draft/2020-12/schema"
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
 						}
 					}
 				]
@@ -4214,9 +4445,9 @@
 					"id": "text",
 					"when": {},
 					"mode": "text",
-					"held": "stderr-note",
+					"held": "none",
 					"description": "Human-readable board listing",
-					"presentation": ["diagnostics", "result", "held-note"]
+					"presentation": ["diagnostics", "result"]
 				}
 			],
 			"outcomes": [],
@@ -4227,7 +4458,7 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
 				}
 			],
 			"relationships": [
@@ -4268,9 +4499,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tokens"],
-					"additionalProperties": false
+					}
 				},
 				"stages": [
 					{
@@ -4279,7 +4508,11 @@
 						"description": "Legacy no-option grammar",
 						"rules": [],
 						"schema": {
-							"$schema": "https://json-schema.org/draft/2020-12/schema"
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
 						}
 					}
 				]
@@ -4378,13 +4611,13 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
 				}
 			],
 			"relationships": [
@@ -4425,9 +4658,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tokens"],
-					"additionalProperties": false
+					}
 				},
 				"stages": [
 					{
@@ -4436,7 +4667,11 @@
 						"description": "Board address and pane options",
 						"rules": [],
 						"schema": {
-							"$schema": "https://json-schema.org/draft/2020-12/schema"
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
 						}
 					}
 				]
@@ -4529,13 +4764,19 @@
 			],
 			"outcomes": [],
 			"prerequisites": ["server"],
-			"effects": ["write"],
+			"effects": ["server-state-write", "browser"],
 			"refusals": [
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "BROWSER_REQUIRED",
+					"exit": 4,
+					"stream": "stderr",
+					"description": "The operation needs an open browser pane."
 				}
 			],
 			"relationships": [
@@ -4576,9 +4817,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tokens"],
-					"additionalProperties": false
+					}
 				},
 				"stages": [
 					{
@@ -4587,7 +4826,11 @@
 						"description": "Board address, reload, and pane options",
 						"rules": [],
 						"schema": {
-							"$schema": "https://json-schema.org/draft/2020-12/schema"
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
 						}
 					}
 				]
@@ -4686,7 +4929,13 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "BROWSER_REQUIRED",
+					"exit": 4,
+					"stream": "stderr",
+					"description": "The operation needs an open browser pane."
 				}
 			],
 			"relationships": [
@@ -4727,9 +4976,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tokens"],
-					"additionalProperties": false
+					}
 				},
 				"stages": [
 					{
@@ -4738,7 +4985,11 @@
 						"description": "Save flags and their legacy last-wins behavior",
 						"rules": [],
 						"schema": {
-							"$schema": "https://json-schema.org/draft/2020-12/schema"
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
 						}
 					}
 				]
@@ -4973,20 +5224,50 @@
 					"presentation": ["diagnostics", "result", "held-note", "continuation"]
 				}
 			],
-			"prerequisites": ["server", "board"],
+			"prerequisites": ["server", "board", "doing"],
 			"effects": ["local-read", "write"],
 			"refusals": [
 				{
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached or started."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1,
+					"stream": "stderr",
+					"description": "A board write did not declare what it was doing."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "Another writer currently holds the board lease."
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The note changed on disk outside Archboard."
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board advanced past expect-version."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
 				}
 			],
 			"relationships": [
@@ -5064,11 +5345,41 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
-				"stages": []
+				"stages": [
+					{
+						"name": "board-pair",
+						"when": "before-server",
+						"description": "Required source board and optional comparison target",
+						"rules": ["Options override positionals", "Reject more than two positional boards"],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "object",
+							"properties": {
+								"fromOption": {
+									"type": "string"
+								},
+								"toOption": {
+									"type": "string"
+								},
+								"from": {
+									"type": "string"
+								},
+								"to": {
+									"type": "string"
+								},
+								"tail": {
+									"type": "array",
+									"items": {
+										"type": "string"
+									}
+								}
+							},
+							"required": ["tail"]
+						}
+					}
+				]
 			},
 			"result": {
 				"$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -5571,9 +5882,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["coalesce", "detail", "text", "tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -5648,9 +5957,9 @@
 						"present": true
 					},
 					"mode": "text",
-					"held": "stderr-note",
+					"held": "none",
 					"description": "Human-readable change feed",
-					"presentation": ["result", "held-note"]
+					"presentation": ["result"]
 				}
 			],
 			"outcomes": [],
@@ -5661,13 +5970,13 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
 				}
 			],
 			"relationships": [
@@ -5716,7 +6025,8 @@
 					"type": "object",
 					"properties": {
 						"reason": {
-							"type": "string"
+							"type": "string",
+							"minLength": 1
 						},
 						"for": {
 							"type": "string"
@@ -5729,8 +6039,7 @@
 							}
 						}
 					},
-					"required": ["tail"],
-					"additionalProperties": false
+					"required": ["reason"]
 				},
 				"stages": []
 			},
@@ -5814,19 +6123,31 @@
 			],
 			"outcomes": [],
 			"prerequisites": ["server", "board"],
-			"effects": ["write"],
+			"effects": ["server-state-write"],
 			"refusals": [
 				{
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "Another writer currently holds the board lease."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
 				}
 			],
 			"relationships": [
@@ -5867,9 +6188,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -5960,19 +6279,19 @@
 			],
 			"outcomes": [],
 			"prerequisites": ["server", "board"],
-			"effects": ["write"],
+			"effects": ["server-state-write"],
 			"refusals": [
 				{
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
 				}
 			],
 			"relationships": [
@@ -6003,7 +6322,7 @@
 					"key": "tail",
 					"name": "arguments",
 					"repeatable": true,
-					"route": "pass-through",
+					"route": "staged-tokens",
 					"description": "Subcommand arguments"
 				}
 			],
@@ -6022,9 +6341,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -6076,9 +6393,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -6192,11 +6507,38 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["loud", "quiet", "words"],
-					"additionalProperties": false
+					}
 				},
-				"stages": []
+				"stages": [
+					{
+						"name": "probe-request",
+						"when": "before-server",
+						"description": "Exclusive injection channel and composed note",
+						"rules": ["Reject loud and quiet together", "Prefer --note over positional words"],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "object",
+							"properties": {
+								"note": {
+									"type": "string"
+								},
+								"loud": {
+									"type": "boolean"
+								},
+								"quiet": {
+									"type": "boolean"
+								},
+								"words": {
+									"type": "array",
+									"items": {
+										"type": "string"
+									}
+								}
+							},
+							"required": ["loud", "quiet", "words"]
+						}
+					}
+				]
 			},
 			"result": {
 				"$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -6230,7 +6572,7 @@
 			],
 			"outcomes": [],
 			"prerequisites": ["server"],
-			"effects": ["write"],
+			"effects": ["server-state-write"],
 			"refusals": [
 				{
 					"code": "CANVAS_UNREACHABLE",
@@ -6277,9 +6619,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -6292,9 +6632,9 @@
 					"id": "text",
 					"when": {},
 					"mode": "text",
-					"held": "stderr-note",
+					"held": "none",
 					"description": "Scene description",
-					"presentation": ["result", "held-note"]
+					"presentation": ["result"]
 				}
 			],
 			"outcomes": [],
@@ -6305,13 +6645,13 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
 				}
 			],
 			"relationships": [
@@ -6384,7 +6724,9 @@
 							"type": "string"
 						},
 						"format": {
-							"type": "string"
+							"default": "png",
+							"type": "string",
+							"enum": ["png", "svg"]
 						},
 						"noBackground": {
 							"default": false,
@@ -6400,9 +6742,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["noBackground", "tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -6425,6 +6765,19 @@
 							"format": {
 								"type": "string",
 								"enum": ["png", "svg"]
+							},
+							"held": {
+								"type": "object",
+								"properties": {
+									"board": {
+										"type": "string"
+									},
+									"message": {
+										"type": "string"
+									}
+								},
+								"required": ["board", "message"],
+								"additionalProperties": {}
 							}
 						},
 						"required": ["success", "file", "format"],
@@ -6444,8 +6797,9 @@
 					"id": "file",
 					"when": {},
 					"mode": "file-receipt",
-					"held": "none",
-					"description": "Written image receipt"
+					"held": "object-field-and-stderr-note",
+					"description": "Written image receipt",
+					"presentation": ["result", "held-note"]
 				}
 			],
 			"outcomes": [],
@@ -6453,22 +6807,16 @@
 			"effects": ["browser", "local-write"],
 			"refusals": [
 				{
-					"code": "BOARD_REQUIRED",
-					"exit": 2,
-					"stream": "stderr",
-					"description": "No board was named."
-				},
-				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
 				},
 				{
 					"code": "BROWSER_REQUIRED",
 					"exit": 4,
 					"stream": "stderr",
-					"description": "No browser tab was connected."
+					"description": "The operation needs an open browser pane."
 				}
 			],
 			"relationships": [
@@ -6544,9 +6892,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["force", "tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": [
 					{
@@ -6560,8 +6906,15 @@
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
 							"description": "Use the explicit format, otherwise infer obsidian for .md output and json elsewhere.",
-							"type": "string",
-							"enum": ["json", "obsidian"]
+							"type": "object",
+							"properties": {
+								"format": {
+									"type": "string"
+								},
+								"out": {
+									"type": "string"
+								}
+							}
 						}
 					}
 				]
@@ -6714,11 +7067,20 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["replace", "tail"],
-					"additionalProperties": false
+					}
 				},
-				"stages": []
+				"stages": [
+					{
+						"name": "scene-document",
+						"when": "before-server",
+						"description": "Non-empty scene document read from file or stdin",
+						"rules": [],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "string"
+						}
+					}
+				]
 			},
 			"result": {
 				"$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -6777,19 +7139,43 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1,
+					"stream": "stderr",
+					"description": "A board write did not declare what it was doing."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "Another writer currently holds the board lease."
 				},
 				{
 					"code": "BOARD_CONFLICT",
 					"exit": 5,
 					"stream": "stderr",
-					"description": "The write was refused."
+					"description": "The note changed on disk outside Archboard."
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board advanced past expect-version."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
 				}
 			],
 			"relationships": [
@@ -6846,11 +7232,20 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
-				"stages": []
+				"stages": [
+					{
+						"name": "mermaid-diagram",
+						"when": "before-server",
+						"description": "Non-empty Mermaid source read from file or stdin",
+						"rules": [],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "string"
+						}
+					}
+				]
 			},
 			"result": {
 				"$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -6928,25 +7323,25 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
 				},
 				{
 					"code": "BROWSER_REQUIRED",
 					"exit": 4,
 					"stream": "stderr",
-					"description": "No browser tab was connected."
+					"description": "The operation needs an open browser pane."
 				},
 				{
-					"code": "BOARD_CONFLICT",
-					"exit": 5,
+					"code": "DOING_REQUIRED",
+					"exit": 1,
 					"stream": "stderr",
-					"description": "The write was refused."
+					"description": "A board write did not declare what it was doing."
 				}
 			],
 			"relationships": [
@@ -7016,9 +7411,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["force", "tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -7090,11 +7483,27 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["force", "tail"],
-					"additionalProperties": false
+					}
 				},
-				"stages": []
+				"stages": [
+					{
+						"name": "snapshot-name",
+						"when": "after-server",
+						"description": "Required snapshot name after the canvas contact",
+						"rules": ["Require one non-empty snapshot name"],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "object",
+							"properties": {
+								"name": {
+									"type": "string",
+									"minLength": 1
+								}
+							},
+							"required": ["name"]
+						}
+					}
+				]
 			},
 			"result": {
 				"$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -7143,26 +7552,20 @@
 				}
 			],
 			"outcomes": [],
-			"prerequisites": ["server", "board", "doing"],
-			"effects": ["write"],
+			"prerequisites": ["server", "board"],
+			"effects": ["server-state-write"],
 			"refusals": [
 				{
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
-				},
-				{
-					"code": "BOARD_CONFLICT",
-					"exit": 5,
-					"stream": "stderr",
-					"description": "The board write was refused."
+					"description": "The canvas server could not be reached or started."
 				}
 			],
 			"relationships": [
@@ -7214,9 +7617,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["force", "tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -7260,13 +7661,13 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
 				}
 			],
 			"relationships": [
@@ -7329,11 +7730,29 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["force", "tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": [
+					{
+						"name": "snapshot-request",
+						"when": "after-server",
+						"description": "Required snapshot name and force decision after the canvas contact",
+						"rules": ["Require one non-empty snapshot name", "Preserve explicit force"],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "object",
+							"properties": {
+								"name": {
+									"type": "string",
+									"minLength": 1
+								},
+								"force": {
+									"type": "boolean"
+								}
+							},
+							"required": ["name", "force"]
+						}
+					},
 					{
 						"name": "snapshot-document",
 						"when": "after-read",
@@ -7429,19 +7848,43 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1,
+					"stream": "stderr",
+					"description": "A board write did not declare what it was doing."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "Another writer currently holds the board lease."
 				},
 				{
 					"code": "BOARD_CONFLICT",
 					"exit": 5,
 					"stream": "stderr",
-					"description": "The board write was refused."
+					"description": "The note changed on disk outside Archboard."
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board advanced past expect-version."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
 				}
 			],
 			"relationships": [
@@ -7500,9 +7943,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -7565,9 +8006,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["text", "tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -7698,9 +8137,9 @@
 						"present": true
 					},
 					"mode": "text",
-					"held": "stderr-note",
+					"held": "none",
 					"description": "Human-readable catalogue",
-					"presentation": ["result", "held-note"]
+					"presentation": ["result"]
 				}
 			],
 			"outcomes": [],
@@ -7708,16 +8147,10 @@
 			"effects": ["read"],
 			"refusals": [
 				{
-					"code": "BOARD_REQUIRED",
-					"exit": 2,
-					"stream": "stderr",
-					"description": "No board was named."
-				},
-				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
 				}
 			],
 			"relationships": [
@@ -7809,11 +8242,40 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
-				"stages": []
+				"stages": [
+					{
+						"name": "insert-request",
+						"when": "before-server",
+						"description": "Stencil selector and finite insertion coordinates",
+						"rules": [
+							"Require either a stencil name or item id",
+							"Require x and y and coerce both to finite numbers"
+						],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "object",
+							"properties": {
+								"name": {
+									"type": "string"
+								},
+								"x": {
+									"type": "string"
+								},
+								"y": {
+									"type": "string"
+								},
+								"source": {
+									"type": "string"
+								},
+								"id": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				]
 			},
 			"result": {
 				"$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -7931,19 +8393,43 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1,
+					"stream": "stderr",
+					"description": "A board write did not declare what it was doing."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "Another writer currently holds the board lease."
 				},
 				{
 					"code": "BOARD_CONFLICT",
 					"exit": 5,
 					"stream": "stderr",
-					"description": "The board write was refused."
+					"description": "The note changed on disk outside Archboard."
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board advanced past expect-version."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
 				}
 			],
 			"relationships": [
@@ -8039,9 +8525,7 @@
 						"action": {
 							"type": "string"
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -8133,11 +8617,28 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
-				"stages": []
+				"stages": [
+					{
+						"name": "align-request",
+						"when": "after-server",
+						"description": "Validated arrangement arguments",
+						"rules": ["Parse comma-separated element ids and validate action-specific options"],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "object",
+							"properties": {
+								"ids": {
+									"type": "string"
+								},
+								"to": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				]
 			},
 			"result": {
 				"$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -8196,19 +8697,43 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1,
+					"stream": "stderr",
+					"description": "A board write did not declare what it was doing."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "Another writer currently holds the board lease."
 				},
 				{
 					"code": "BOARD_CONFLICT",
 					"exit": 5,
 					"stream": "stderr",
-					"description": "The board write was refused."
+					"description": "The note changed on disk outside Archboard."
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board advanced past expect-version."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
 				}
 			],
 			"relationships": [
@@ -8295,11 +8820,28 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
-				"stages": []
+				"stages": [
+					{
+						"name": "distribute-request",
+						"when": "after-server",
+						"description": "Validated arrangement arguments",
+						"rules": ["Parse comma-separated element ids and validate action-specific options"],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "object",
+							"properties": {
+								"ids": {
+									"type": "string"
+								},
+								"to": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				]
 			},
 			"result": {
 				"$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -8358,19 +8900,43 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1,
+					"stream": "stderr",
+					"description": "A board write did not declare what it was doing."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "Another writer currently holds the board lease."
 				},
 				{
 					"code": "BOARD_CONFLICT",
 					"exit": 5,
 					"stream": "stderr",
-					"description": "The board write was refused."
+					"description": "The note changed on disk outside Archboard."
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board advanced past expect-version."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
 				}
 			],
 			"relationships": [
@@ -8457,11 +9023,25 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
-				"stages": []
+				"stages": [
+					{
+						"name": "group-request",
+						"when": "after-server",
+						"description": "Validated arrangement arguments",
+						"rules": ["Parse comma-separated element ids and validate action-specific options"],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "object",
+							"properties": {
+								"ids": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				]
 			},
 			"result": {
 				"$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -8516,19 +9096,43 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1,
+					"stream": "stderr",
+					"description": "A board write did not declare what it was doing."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "Another writer currently holds the board lease."
 				},
 				{
 					"code": "BOARD_CONFLICT",
 					"exit": 5,
 					"stream": "stderr",
-					"description": "The board write was refused."
+					"description": "The note changed on disk outside Archboard."
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board advanced past expect-version."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
 				}
 			],
 			"relationships": [
@@ -8615,11 +9219,27 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
-				"stages": []
+				"stages": [
+					{
+						"name": "ungroup-request",
+						"when": "after-server",
+						"description": "Validated arrangement arguments",
+						"rules": ["Parse comma-separated element ids and validate action-specific options"],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "object",
+							"properties": {
+								"group": {
+									"type": "string",
+									"minLength": 1
+								}
+							},
+							"required": ["group"]
+						}
+					}
+				]
 			},
 			"result": {
 				"$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -8677,19 +9297,43 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1,
+					"stream": "stderr",
+					"description": "A board write did not declare what it was doing."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "Another writer currently holds the board lease."
 				},
 				{
 					"code": "BOARD_CONFLICT",
 					"exit": 5,
 					"stream": "stderr",
-					"description": "The board write was refused."
+					"description": "The note changed on disk outside Archboard."
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board advanced past expect-version."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
 				}
 			],
 			"relationships": [
@@ -8776,11 +9420,25 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
-				"stages": []
+				"stages": [
+					{
+						"name": "lock-request",
+						"when": "after-server",
+						"description": "Validated arrangement arguments",
+						"rules": ["Parse comma-separated element ids and validate action-specific options"],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "object",
+							"properties": {
+								"ids": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				]
 			},
 			"result": {
 				"$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -8836,19 +9494,43 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1,
+					"stream": "stderr",
+					"description": "A board write did not declare what it was doing."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "Another writer currently holds the board lease."
 				},
 				{
 					"code": "BOARD_CONFLICT",
 					"exit": 5,
 					"stream": "stderr",
-					"description": "The board write was refused."
+					"description": "The note changed on disk outside Archboard."
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board advanced past expect-version."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
 				}
 			],
 			"relationships": [
@@ -8935,11 +9617,25 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
-				"stages": []
+				"stages": [
+					{
+						"name": "unlock-request",
+						"when": "after-server",
+						"description": "Validated arrangement arguments",
+						"rules": ["Parse comma-separated element ids and validate action-specific options"],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "object",
+							"properties": {
+								"ids": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				]
 			},
 			"result": {
 				"$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -8995,19 +9691,43 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1,
+					"stream": "stderr",
+					"description": "A board write did not declare what it was doing."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "Another writer currently holds the board lease."
 				},
 				{
 					"code": "BOARD_CONFLICT",
 					"exit": 5,
 					"stream": "stderr",
-					"description": "The board write was refused."
+					"description": "The note changed on disk outside Archboard."
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board advanced past expect-version."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
 				}
 			],
 			"relationships": [
@@ -9094,11 +9814,28 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
-				"stages": []
+				"stages": [
+					{
+						"name": "duplicate-request",
+						"when": "after-server",
+						"description": "Validated arrangement arguments",
+						"rules": ["Parse comma-separated element ids and validate action-specific options"],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "object",
+							"properties": {
+								"ids": {
+									"type": "string"
+								},
+								"offset": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				]
 			},
 			"result": {
 				"$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -9174,19 +9911,43 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1,
+					"stream": "stderr",
+					"description": "A board write did not declare what it was doing."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "Another writer currently holds the board lease."
 				},
 				{
 					"code": "BOARD_CONFLICT",
 					"exit": 5,
 					"stream": "stderr",
-					"description": "The board write was refused."
+					"description": "The note changed on disk outside Archboard."
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board advanced past expect-version."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
 				}
 			],
 			"relationships": [
@@ -9233,9 +9994,7 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["tail"],
-					"additionalProperties": false
+					}
 				},
 				"stages": []
 			},
@@ -9249,6 +10008,19 @@
 					},
 					"url": {
 						"type": "string"
+					},
+					"held": {
+						"type": "object",
+						"properties": {
+							"board": {
+								"type": "string"
+							},
+							"message": {
+								"type": "string"
+							}
+						},
+						"required": ["board", "message"],
+						"additionalProperties": {}
 					}
 				},
 				"required": ["success", "url"],
@@ -9259,8 +10031,9 @@
 					"id": "json",
 					"when": {},
 					"mode": "json",
-					"held": "none",
-					"description": "Share URL"
+					"held": "object-field-and-stderr-note",
+					"description": "Share URL",
+					"presentation": ["result", "held-note"]
 				}
 			],
 			"outcomes": [],
@@ -9271,13 +10044,13 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
 				}
 			],
 			"relationships": [
@@ -9330,8 +10103,7 @@
 							}
 						}
 					},
-					"required": ["yes", "tail"],
-					"additionalProperties": false
+					"required": ["yes"]
 				},
 				"stages": []
 			},
@@ -9383,19 +10155,43 @@
 					"code": "BOARD_REQUIRED",
 					"exit": 2,
 					"stream": "stderr",
-					"description": "No board was named."
+					"description": "A board-sensitive request did not name a board."
 				},
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3,
 					"stream": "stderr",
-					"description": "The canvas could not be reached."
+					"description": "The canvas server could not be reached or started."
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1,
+					"stream": "stderr",
+					"description": "A board write did not declare what it was doing."
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "Another writer currently holds the board lease."
 				},
 				{
 					"code": "BOARD_CONFLICT",
 					"exit": 5,
 					"stream": "stderr",
-					"description": "The clear was refused."
+					"description": "The note changed on disk outside Archboard."
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The board advanced past expect-version."
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5,
+					"stream": "stderr",
+					"description": "The person took back the claim."
 				}
 			],
 			"relationships": [
@@ -9529,11 +10325,63 @@
 								"type": "string"
 							}
 						}
-					},
-					"required": ["printSource", "noDoc", "yes", "tail"],
-					"additionalProperties": false
+					}
 				},
-				"stages": []
+				"stages": [
+					{
+						"name": "install-request",
+						"when": "before-server",
+						"description": "Exclusive destination, supported agent/target, and document policy",
+						"rules": [
+							"Validate only after --print-source's fixed-base early return",
+							"Choose at most one destination spelling",
+							"Reject --doc with --no-doc"
+						],
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "object",
+							"properties": {
+								"dir": {
+									"type": "string"
+								},
+								"target": {
+									"type": "string"
+								},
+								"agent": {
+									"type": "string"
+								},
+								"printSource": {
+									"default": false,
+									"type": "boolean"
+								},
+								"repo": {
+									"type": "string"
+								},
+								"vault": {
+									"type": "string"
+								},
+								"doc": {
+									"type": "string"
+								},
+								"noDoc": {
+									"default": false,
+									"type": "boolean"
+								},
+								"yes": {
+									"default": false,
+									"type": "boolean"
+								},
+								"tail": {
+									"default": [],
+									"type": "array",
+									"items": {
+										"type": "string"
+									}
+								}
+							}
+						}
+					}
+				]
 			},
 			"result": {
 				"$schema": "https://json-schema.org/draft/2020-12/schema",

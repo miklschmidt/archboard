@@ -24,7 +24,7 @@ export const injectContract = defineCommand({
 			key: "tail",
 			name: "arguments",
 			repeatable: true,
-			route: "pass-through",
+			route: "staged-tokens",
 			description: "Subcommand arguments",
 		},
 	],
@@ -112,6 +112,22 @@ export const InjectTestInputSchema = z.object({
 	words: tail,
 });
 export type InjectTestInput = z.infer<typeof InjectTestInputSchema>;
+export const InjectTestStageSchema = z
+	.object({
+		note: z.string().optional(),
+		loud: z.boolean(),
+		quiet: z.boolean(),
+		words: z.array(z.string()),
+	})
+	.transform((input, context) => {
+		if (input.loud && input.quiet) {
+			context.addIssue({ code: "custom", message: "pass --loud or --quiet, not both" });
+			return z.NEVER;
+		}
+		const note = (input.note ?? input.words.join(" ")) || undefined;
+		return { note, loud: input.loud ? true : input.quiet ? false : undefined };
+	});
+export type InjectTestStage = z.infer<typeof InjectTestStageSchema>;
 export const InjectTestResultSchema = resultSchema;
 export type InjectTestResult = z.infer<typeof InjectTestResultSchema>;
 export const injectTestContract = defineCommand({
@@ -150,7 +166,18 @@ export const injectTestContract = defineCommand({
 			description: "Unquoted probe text",
 		},
 	],
-	input: { ingress: InjectTestInputSchema },
+	input: {
+		ingress: InjectTestInputSchema,
+		stages: [
+			{
+				name: "probe-request",
+				when: "before-server",
+				description: "Exclusive injection channel and composed note",
+				rules: ["Reject loud and quiet together", "Prefer --note over positional words"],
+				schema: InjectTestStageSchema,
+			},
+		],
+	},
 	result: InjectTestResultSchema,
 	output: {
 		cases: [
@@ -166,7 +193,7 @@ export const injectTestContract = defineCommand({
 		select: () => "json",
 	},
 	prerequisites: ["server"],
-	effects: ["write"],
+	effects: ["server-state-write"],
 	refusals: [
 		{
 			code: "CANVAS_UNREACHABLE",
@@ -184,13 +211,11 @@ export const injectTestContract = defineCommand({
 		},
 	],
 	async handler(input, context) {
-		if (input.loud && input.quiet) throw new CliUsageError("pass --loud or --quiet, not both");
+		const request = context.parse(InjectTestStageSchema, input);
 		await context.require("server", "inject test");
-		const note = (input.note ?? input.words.join(" ")) || undefined;
 		const { success: _success, ...body } = await postInjectionTest({
-			...(note ? { note } : {}),
-			...(input.loud ? { loud: true } : {}),
-			...(input.quiet ? { loud: false } : {}),
+			...(request.note ? { note: request.note } : {}),
+			...(request.loud !== undefined ? { loud: request.loud } : {}),
 		});
 		return { result: body };
 	},
