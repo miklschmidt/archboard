@@ -80,13 +80,12 @@ export function CanvasPane({
 		onLayoutRequest: layout,
 		onBoardError,
 	});
-	const paneElementRef = useRef<HTMLDivElement>(null);
 	const attachPaneElement = session.attachPaneElement;
 	const readOnly = session.readOnly;
-	useEffect(() => {
-		attachPaneElement(paneElementRef.current);
-		return () => attachPaneElement(null);
-	}, [attachPaneElement]);
+	const setPaneElement = useCallback(
+		(element: HTMLDivElement | null): void => attachPaneElement(element),
+		[attachPaneElement],
+	);
 
 	useEffect(() => {
 		onAgentState(paneId, session.heldBy, session.takeBack);
@@ -115,6 +114,11 @@ export function CanvasPane({
 		if (!api || api.getAppState().theme === theme) return;
 		api.updateScene({ appState: { theme } });
 	}, [api, theme]);
+
+	useEffect(() => {
+		if (!api || api.getAppState().viewModeEnabled === readOnly) return;
+		api.updateScene({ appState: { viewModeEnabled: readOnly } });
+	}, [api, readOnly]);
 
 	const interacted = useCallback((): void => {
 		session.markInteracted();
@@ -160,7 +164,7 @@ export function CanvasPane({
 			onKeyDownCapture={interacted}
 			aria-label={label ?? "canvas"}
 		>
-			<div className="pane-canvas" ref={paneElementRef}>
+			<div className="pane-canvas" ref={setPaneElement}>
 				<Excalidraw
 					// A disconnected pane fails closed because it cannot hear lock or
 					// board news. A connected pane stays locally editable while the
