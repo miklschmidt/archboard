@@ -137,7 +137,7 @@ export async function fetchLibraryFrom(candidate: string): Promise<FetchedLibrar
 	} catch {
 		throw new Error(`${url.hostname} did not return a library file.`);
 	}
-	const document = parsed && typeof parsed === "object" ? parsed as Record<string, unknown> : {};
+	const document = parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
 	if (document.type !== "excalidrawlib") {
 		throw new Error(`${url.pathname.split("/").pop()} is not an .excalidrawlib file.`);
 	}
@@ -146,7 +146,11 @@ export async function fetchLibraryFrom(candidate: string): Promise<FetchedLibrar
 	// element arrays, version 2 wraps each in an item. restoreLibraryItems reads
 	// both and is the only thing that touches the elements themselves.
 	const items = restoreLibraryItems(
-		Array.isArray(document.libraryItems) ? document.libraryItems : Array.isArray(document.library) ? document.library : [],
+		Array.isArray(document.libraryItems)
+			? document.libraryItems
+			: Array.isArray(document.library)
+				? document.library
+				: [],
 		"published",
 	);
 	if (items.length === 0) {

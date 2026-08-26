@@ -6,7 +6,7 @@
 // spinner, a last-sync clock) and an architecture surface's: which board, which
 // variant, which level, whether it is written down.
 
-import React from "react";
+import React, { useCallback } from "react";
 import type { BoardHold, BoardIdentity, NoteWrittenElsewhere } from "../types";
 import { Icon } from "./Icons";
 
@@ -104,7 +104,10 @@ export function BoardBar({
 	onThemeChange,
 	busy,
 }: BoardBarProps): React.JSX.Element {
-	const toggleTheme = (): void => onThemeChange(theme === "dark" ? "light" : "dark");
+	const toggleTheme = useCallback(
+		() => onThemeChange(theme === "dark" ? "light" : "dark"),
+		[onThemeChange, theme],
+	);
 	const boardTitle = identity
 		? `${identity.board}${identity.variant === "current" ? "" : ` / ${identity.variant}`}`
 		: (boardKey ?? "No board");

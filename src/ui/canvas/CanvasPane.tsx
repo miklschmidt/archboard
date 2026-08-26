@@ -7,7 +7,8 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Excalidraw, getLibraryItemsHash } from "@excalidraw/excalidraw";
-import type { ExcalidrawImperativeAPI, LibraryItems } from "@excalidraw/excalidraw/types";
+import type { ExcalidrawImperativeAPI, LibraryItems, AppState } from "@excalidraw/excalidraw/types";
+import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { useCanvasSession } from "./useCanvasSession";
 import type { LockHolder, PaneStatus } from "../types";
 // The one thing the browser half shares with the server half by import rather
@@ -79,6 +80,13 @@ export function CanvasPane({
 		onLayoutRequest: layout,
 		onBoardError,
 	});
+	const paneElementRef = useRef<HTMLDivElement>(null);
+	const attachPaneElement = session.attachPaneElement;
+	const readOnly = session.readOnly;
+	useEffect(() => {
+		attachPaneElement(paneElementRef.current);
+		return () => attachPaneElement(null);
+	}, [attachPaneElement]);
 
 	useEffect(() => {
 		onAgentState(paneId, session.heldBy, session.takeBack);
@@ -111,27 +119,39 @@ export function CanvasPane({
 	const interacted = useCallback((): void => {
 		session.markInteracted();
 		onFocus(paneId);
-	}, [onFocus, paneId, session.markInteracted]);
-	const setApiFromExcalidraw = useCallback((instance: ExcalidrawImperativeAPI): void => {
-		setApi(instance);
-		session.attachExcalidraw(instance);
-	}, [session.attachExcalidraw]);
-	const handleLibraryChange = useCallback((next: LibraryItems): void => {
-		appliedHashRef.current = getLibraryItemsHash(next);
-		onLibraryChange(next);
-	}, [onLibraryChange]);
-	const handleChange = useCallback((elements: readonly Partial<import("@excalidraw/excalidraw/element/types").ExcalidrawElement>[], appState: import("@excalidraw/excalidraw/types").AppState): void => {
-		if (appState.theme && appState.theme !== theme) onThemeChange(appState.theme);
-		session.handleChange(elements, appState);
-	}, [onThemeChange, session.handleChange, theme]);
-	const initialData = useMemo(() => ({
-		elements: [],
-		appState: {
-			theme,
-			currentItemBackgroundColor: DEFAULT_SHAPE_BACKGROUND,
-			currentItemFillStyle: DEFAULT_FILL_STYLE as "solid",
+	}, [onFocus, paneId, session]);
+	const setApiFromExcalidraw = useCallback(
+		(instance: ExcalidrawImperativeAPI): void => {
+			setApi(instance);
+			session.attachExcalidraw(instance);
 		},
-	}), [theme]);
+		[session],
+	);
+	const handleLibraryChange = useCallback(
+		(next: LibraryItems): void => {
+			appliedHashRef.current = getLibraryItemsHash(next);
+			onLibraryChange(next);
+		},
+		[onLibraryChange],
+	);
+	const handleChange = useCallback(
+		(elements: readonly Partial<ExcalidrawElement>[], appState: AppState): void => {
+			if (appState.theme && appState.theme !== theme) onThemeChange(appState.theme);
+			session.handleChange(elements, appState);
+		},
+		[onThemeChange, session, theme],
+	);
+	const initialData = useMemo(
+		() => ({
+			elements: [],
+			appState: {
+				theme,
+				currentItemBackgroundColor: DEFAULT_SHAPE_BACKGROUND,
+				currentItemFillStyle: DEFAULT_FILL_STYLE as "solid",
+			},
+		}),
+		[theme],
+	);
 
 	return (
 		<section
@@ -140,12 +160,12 @@ export function CanvasPane({
 			onKeyDownCapture={interacted}
 			aria-label={label ?? "canvas"}
 		>
-			<div className="pane-canvas" ref={session.attachPaneElement}>
+			<div className="pane-canvas" ref={paneElementRef}>
 				<Excalidraw
 					// A disconnected pane fails closed because it cannot hear lock or
 					// board news. A connected pane stays locally editable while the
 					// vault mutex orders persistence, even when an agent holds the board.
-					viewModeEnabled={session.readOnly}
+					viewModeEnabled={readOnly}
 					excalidrawAPI={setApiFromExcalidraw}
 					onLibraryChange={handleLibraryChange}
 					onChange={handleChange}
