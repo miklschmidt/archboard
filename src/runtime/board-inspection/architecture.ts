@@ -153,12 +153,12 @@ export function architectureFacts(elements: readonly ServerElement[]): Architect
 		});
 	}
 
-	const connectors = all
-		.filter((element) => isArchitectureConnectorType(element.type))
-		.map((element): ArchitectureConnector => {
+	const connectors: ArchitectureConnector[] = [];
+	for (const element of all) {
+		if (!isArchitectureConnectorType(element.type)) continue;
 			const startTargetId = architectureBindingTarget(element, "start");
 			const endTargetId = architectureBindingTarget(element, "end");
-			return {
+			connectors.push({
 				element,
 				...(nodeOfElement.get(element.id)
 					? { ownerNodeId: nodeOfElement.get(element.id)! }
@@ -171,8 +171,8 @@ export function architectureFacts(elements: readonly ServerElement[]): Architect
 				...(endTargetId && nodeOfElement.get(endTargetId)
 					? { endNodeId: nodeOfElement.get(endTargetId)! }
 					: {}),
-			};
-		});
+			});
+	}
 
 	return {
 		elements: all,
