@@ -3,6 +3,7 @@ import type { AnyCommandContract } from "./contract.js";
 
 export interface RegistryContractEntry {
 	name: string;
+	kind: "contract" | "legacy";
 	contract?: AnyCommandContract;
 }
 

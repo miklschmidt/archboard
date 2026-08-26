@@ -432,11 +432,24 @@ export function cliSurface(): { name: string; subcommands: readonly string[] }[]
 	}));
 }
 
-/** The one registry, projected for generated contract metadata. */
-export function cliContractRegistry(): Array<{ name: string; contract?: AnyCommandContract }> {
-	return Object.entries(COMMANDS).map(([name, command]) =>
-		command.kind === "contract" ? { name, contract: command.contract } : { name },
-	);
+/** The one registry projected as all 57 canonical paths during mixed migration. */
+export function cliContractRegistry(): Array<{
+	name: string;
+	kind: "contract" | "legacy";
+	contract?: AnyCommandContract;
+}> {
+	return Object.entries(COMMANDS).flatMap(([name, command]) => {
+		const root =
+			command.kind === "contract"
+				? { name, kind: "contract" as const, contract: command.contract }
+				: { name, kind: "legacy" as const };
+		return [root].concat(
+			(command.subcommands ?? []).map((subcommand) => ({
+				name: `${name} ${subcommand}`,
+				kind: "legacy" as const,
+			})),
+		);
+	});
 }
 
 function printHelp(): void {
