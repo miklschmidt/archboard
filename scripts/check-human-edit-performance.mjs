@@ -524,11 +524,21 @@ try {
 	// acknowledgement can land inside that acknowledgement's 120 ms sample;
 	// isolated ordinary responses have no legitimate replacement to observe.
 	const isolatedNoCorrectionResponses = finalProbe.responses.filter(
-		(response, index, responses) =>
-			response.corrections === 0 &&
-			response.replacementsAfter !== null &&
-			!(responses[index - 1]?.corrections > 0) &&
-			!(responses[index + 1]?.corrections > 0),
+		(response, index, responses) => {
+			const correctionOverlapsSample = responses.some(
+				(candidate) =>
+					candidate.corrections > 0 &&
+					candidate.returnedAt >= response.returnedAt &&
+					candidate.returnedAt <= response.returnedAt + 120,
+			);
+			return (
+				response.corrections === 0 &&
+				response.replacementsAfter !== null &&
+				!correctionOverlapsSample &&
+				!(responses[index - 1]?.corrections > 0) &&
+				!(responses[index + 1]?.corrections > 0)
+			);
+		},
 	);
 	check(
 		"ordinary human acknowledgements are compact and never carry the full document",
