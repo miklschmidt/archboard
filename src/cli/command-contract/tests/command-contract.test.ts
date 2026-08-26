@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { z } from "zod";
 import { defineCommand, type AnyCommandContract } from "../contract.js";
 import { introspectContracts } from "../introspection.js";
+import { processCommandHost } from "../lib/host.js";
 import { runCommand } from "../runner.js";
 
 const temporaryDirectories: string[] = [];
@@ -27,6 +28,7 @@ function proofContract(options: {
 	resultSchema?: z.ZodType;
 	file?: boolean;
 	artifact?: unknown;
+	held?: "none" | "stderr-note" | "object-field-and-stderr-note";
 }) {
 	return defineCommand({
 		path: ["proof"],
@@ -52,7 +54,7 @@ function proofContract(options: {
 							id: "file",
 							when: {},
 							mode: "file-receipt",
-							held: "none",
+							held: options.held ?? "none",
 							description: "file",
 							artifact: artifactSchema,
 						}
@@ -60,7 +62,7 @@ function proofContract(options: {
 							id: "json",
 							when: {},
 							mode: "json",
-							held: "none",
+							held: options.held ?? "none",
 							description: "json",
 						},
 			],
@@ -186,6 +188,78 @@ describe("command-contract public interface", () => {
 		expect(execution.error).toBeInstanceOf(z.ZodError);
 		expect(execution.stdout).toBe("");
 		expect(existsSync(path)).toBeFalse();
+	});
+
+	test("a JSON output rejects a stray private artifact before stdout", async () => {
+		const path = temporaryPath("stray.txt");
+		const execution = await executePublic(
+			proofContract({
+				result: { ok: true },
+				resultSchema: z.object({ ok: z.boolean() }),
+				artifact: { path, content: "must not write", encoding: "utf8" },
+			}),
+		);
+		expect(execution.error).toBeInstanceOf(z.ZodError);
+		expect(execution.stdout).toBe("");
+		expect(existsSync(path)).toBeFalse();
+	});
+
+	test("a JSON output rejects malformed private artifact data before stdout", async () => {
+		const execution = await executePublic(
+			proofContract({
+				result: { ok: true },
+				resultSchema: z.object({ ok: z.boolean() }),
+				artifact: { content: 42 },
+			}),
+		);
+		expect(execution.error).toBeInstanceOf(z.ZodError);
+		expect(execution.stdout).toBe("");
+	});
+
+	test("stderr-note validates held state before structured stdout", async () => {
+		const heldSpy = spyOn(processCommandHost, "held").mockReturnValue({
+			board: 7,
+			message: false,
+		} as never);
+		try {
+			const execution = await executePublic(
+				proofContract({
+					result: { ok: true },
+					resultSchema: z.object({ ok: z.boolean() }),
+					held: "stderr-note",
+				}),
+			);
+			expect(execution.error).toBeInstanceOf(z.ZodError);
+			expect(execution.stdout).toBe("");
+			expect(execution.stderr).toBe("");
+		} finally {
+			heldSpy.mockRestore();
+		}
+	});
+
+	test("file output validates held state before artifact commit or receipt", async () => {
+		const path = temporaryPath("held-file.txt");
+		const heldSpy = spyOn(processCommandHost, "held").mockReturnValue({
+			board: "proof",
+			message: 9,
+		} as never);
+		try {
+			const execution = await executePublic(
+				proofContract({
+					result: { ok: true },
+					resultSchema: z.object({ ok: z.boolean() }),
+					file: true,
+					held: "stderr-note",
+					artifact: { path, content: "must not write", encoding: "utf8" },
+				}),
+			);
+			expect(execution.error).toBeInstanceOf(z.ZodError);
+			expect(execution.stdout).toBe("");
+			expect(execution.stderr).toBe("");
+			expect(existsSync(path)).toBeFalse();
+		} finally {
+			heldSpy.mockRestore();
+		}
 	});
 
 	test("an undeclared outcome reaches no structured output", async () => {
