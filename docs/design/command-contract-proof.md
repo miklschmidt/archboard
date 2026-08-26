@@ -1597,7 +1597,7 @@ Public result JSON Schema:
 					"type": "boolean"
 				}
 			},
-			"required": ["success", "board", "identity", "elementCount", "vaultBacked"],
+			"required": ["success", "board", "identity", "elementCount"],
 			"additionalProperties": {}
 		},
 		"held": {
@@ -1754,7 +1754,7 @@ Public result JSON Schema:
 					"type": "boolean"
 				}
 			},
-			"required": ["success", "board", "identity", "elementCount", "vaultBacked"],
+			"required": ["success", "board", "identity", "elementCount"],
 			"additionalProperties": {}
 		},
 		"held": {
@@ -2331,7 +2331,7 @@ Public result JSON Schema:
 			"additionalProperties": {}
 		}
 	},
-	"required": ["success", "board", "identity", "elementCount", "vaultBacked"],
+	"required": ["success", "board", "identity", "elementCount"],
 	"additionalProperties": {}
 }
 ```
@@ -2430,7 +2430,7 @@ Public result JSON Schema:
 			"additionalProperties": {}
 		}
 	},
-	"required": ["success", "board", "identity", "elementCount", "vaultBacked"],
+	"required": ["success", "board", "identity", "elementCount"],
 	"additionalProperties": {}
 }
 ```
@@ -2529,7 +2529,7 @@ Public result JSON Schema:
 			"additionalProperties": {}
 		}
 	},
-	"required": ["success", "board", "identity", "elementCount", "vaultBacked"],
+	"required": ["success", "board", "identity", "elementCount"],
 	"additionalProperties": {}
 }
 ```
