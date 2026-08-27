@@ -131,7 +131,7 @@ export function inspectBoardDiagnostics(
 	});
 	if (snapshot.limit) return { report, work: empty() };
 	const detection = detectBoard(
-		decodeRecords(snapshot.records, snapshot.blockedSourceIndexes),
+		decodeRecords(snapshot.records, snapshot.blockedSourceIndexes, budget),
 		report.policy,
 		budget,
 	);

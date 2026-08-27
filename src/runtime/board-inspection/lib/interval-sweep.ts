@@ -86,15 +86,17 @@ export function buildSweepHierarchy(
 	const children = new Map<string, string[]>();
 	for (const id of parentById.keys()) children.set(id, []);
 	for (const [id, parent] of parentById) if (parent) children.get(parent)!.push(id);
-	for (const [parent, values] of children) children.set(parent, values.toSorted(compareIdentity));
-	const roots = [...parentById]
-		.filter(([, parent]) => parent === null)
-		.map(([id]) => id)
-		.toSorted(compareIdentity);
+	for (const [parent, values] of children) {
+		claimSort(options, values.length);
+		children.set(parent, values.toSorted(compareIdentity));
+	}
+	const roots = [...parentById].filter(([, parent]) => parent === null).map(([id]) => id);
+	claimSort(options, roots.length);
+	const orderedRoots = roots.toSorted(compareIdentity);
 	const positions = new Map<string, number>();
 	const ranges = new Map<string, readonly [number, number]>();
 	let cursor = 0;
-	for (const root of roots) {
+	for (const root of orderedRoots) {
 		const stack: Array<{ id: string; leaving: boolean }> = [{ id: root, leaving: false }];
 		while (stack.length > 0) {
 			const current = stack.pop()!;
@@ -209,8 +211,8 @@ export function sweepIntervalPairs<A, B>(
 		for (let set = 0; set < active.length; set += 1) {
 			const retained: Array<Event<Value>> = [];
 			for (const candidate of active[set]!) {
+				claim(options, "activate-or-expire");
 				if (candidate.interval.max < event.interval.min) {
-					claim(options, "activate-or-expire");
 					work.expiryPops += 1;
 					const profile = candidate.interval.semantics;
 					const remaining = activeProfiles.get(profile)! - 1;

@@ -48,6 +48,7 @@ const INSPECTION_FIELDS = [
 	"link",
 	"label",
 	"text",
+	"createdAt",
 ] as const;
 
 export type SnapshotField = (typeof INSPECTION_FIELDS)[number];

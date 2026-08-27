@@ -27,6 +27,7 @@ const { compareBoards } = await import(src("runtime/engine/compare.ts"));
 const { renderBoardNote } = await import(src("runtime/engine/board.ts"));
 const { ingestScene } = await import(src("runtime/engine/board-io.ts"));
 const { collectInvalidRenderGeometry } = await import(src("runtime/engine/geometry.ts"));
+const { planLabelRepair } = await import(src("runtime/engine/labels.ts"));
 let failures = 0,
 	checks = 0;
 const check = (label, condition, detail = "") => {
@@ -147,6 +148,62 @@ for (const [label, input] of unsafeInputs) {
 	);
 }
 check("inspection never invokes an input accessor", getterHits === 0);
+
+const duplicateLabelCreatedAtBoard = (reverse = false) => {
+	const labels = [
+		{
+			id: "newlbl",
+			type: "text",
+			x: 0,
+			y: 0,
+			width: 20,
+			height: 10,
+			fontFamily: 5,
+			text: "newer",
+			containerId: "owner",
+			createdAt: "2026-08-27T02:00:00.000Z",
+		},
+		{
+			id: "oldlbl",
+			type: "text",
+			x: 0,
+			y: 0,
+			width: 20,
+			height: 10,
+			fontFamily: 5,
+			text: "older",
+			containerId: "owner",
+			createdAt: "2026-08-27T01:00:00.000Z",
+		},
+	];
+	return [
+		{
+			id: "owner",
+			type: "rectangle",
+			x: 0,
+			y: 0,
+			width: 40,
+			height: 20,
+			angle: 0,
+		},
+		...(reverse ? labels.toReversed() : labels),
+	];
+};
+for (const reverse of [false, true]) {
+	const board = duplicateLabelCreatedAtBoard(reverse);
+	const report = inspectBoard(board);
+	const production = planLabelRepair(board);
+	const duplicate = report.findings.find(
+		(finding) => finding.code === "LABEL_CORRUPTION" && finding.reason === "duplicate",
+	);
+	check(
+		`duplicate label repair keeps the oldest createdAt in ${reverse ? "reverse" : "forward"} record order`,
+		production.duplicates[0]?.keep === "oldlbl" &&
+			duplicate?.details.keeperId === production.duplicates[0]?.keep &&
+			JSON.stringify(duplicate.details.duplicateIds) === JSON.stringify(["newlbl"]),
+		JSON.stringify(duplicate?.details),
+	);
+}
 const holeInput = [];
 holeInput.length = 3;
 const holeReport = inspectBoard(holeInput);
@@ -3903,6 +3960,82 @@ check(
 	limited.findings.some((finding) => finding.code === "INSPECTION_LIMIT_EXCEEDED") &&
 		limited.coverage === "indeterminate",
 );
+const comparisonLimitFinding = limited.findings.find(
+	(finding) => finding.reason === "broad-phase-comparison-ceiling",
+);
+for (const [label, details] of [
+	["wrong limit", { limit: 2_000_001 }],
+	["wrong attempt", { attempted: 2_000_002 }],
+	["unknown collision pass", { pass: "record-analysis" }],
+])
+	check(
+		`comparison limit schema rejects ${String(label)}`,
+		!!comparisonLimitFinding &&
+			!InspectionFindingSchema.safeParse({
+				...comparisonLimitFinding,
+				details: { ...comparisonLimitFinding.details, ...details },
+			}).success,
+	);
+
+const terminalComparisonPrecedenceBoard = () => {
+	const hierarchyCount = 1_420;
+	const hierarchy = Array.from({ length: hierarchyCount }, (_, index) => ({
+		id: `terminal-hierarchy-${index}`,
+		type: "rectangle",
+		x: 10_000 + index,
+		y: 10_000 + index,
+		width: (hierarchyCount - index) * 2,
+		height: (hierarchyCount - index) * 2,
+		angle: 0,
+		customData: { archboard: { node: `terminal-node-${index}` } },
+	}));
+	return [
+		...performanceBoard(500, 1_500, 500),
+		...hierarchy,
+		{
+			id: "terminal-zero-segments",
+			type: "arrow",
+			x: 20_000,
+			y: 0,
+			width: 0,
+			height: 0,
+			angle: 0,
+			points: Array.from({ length: 10_001 }, () => [0, 0]),
+		},
+	];
+};
+const terminalComparisonBoard = terminalComparisonPrecedenceBoard();
+const terminalComparisonDiagnostics = inspectBoardDiagnostics(terminalComparisonBoard);
+const terminalComparisonLimits = terminalComparisonDiagnostics.report.findings.filter(
+	(finding) => finding.code === "INSPECTION_LIMIT_EXCEEDED",
+);
+const terminalFindingMembers = terminalComparisonDiagnostics.report.findings.reduce(
+	(sum, finding) =>
+		sum + 1 + finding.elements.length + finding.nodes.length + finding.obstacles.length,
+	0,
+);
+const terminalFindingSortWork =
+	terminalComparisonDiagnostics.report.findings.length *
+	Math.ceil(Math.log2(terminalComparisonDiagnostics.report.findings.length));
+check(
+	"comparison ceiling is terminal even when ordinary finalization would exhaust analysis work",
+	terminalComparisonDiagnostics.report.broadPhaseComparisons === 2_000_001 &&
+		terminalComparisonLimits.length === 1 &&
+		terminalComparisonLimits[0]?.reason === "broad-phase-comparison-ceiling" &&
+		!terminalComparisonDiagnostics.report.findings.some(
+			(finding) => finding.reason === "analysis-work-ceiling",
+		) &&
+		terminalComparisonDiagnostics.work.analysisWorkItems < INSPECTION_ANALYSIS_WORK_LIMIT &&
+		terminalFindingMembers + terminalFindingSortWork >
+			INSPECTION_ANALYSIS_WORK_LIMIT - terminalComparisonDiagnostics.work.analysisWorkItems,
+	JSON.stringify({
+		work: terminalComparisonDiagnostics.work.analysisWorkItems,
+		remaining:
+			INSPECTION_ANALYSIS_WORK_LIMIT - terminalComparisonDiagnostics.work.analysisWorkItems,
+		ordinaryFinalization: terminalFindingMembers + terminalFindingSortWork,
+		limits: terminalComparisonLimits.map((finding) => finding.reason),
+	}),
+);
 const limitedWithUnrelatedExtremes = inspectBoard([
 	...performanceBoard(500, 1500, 500),
 	{
@@ -4046,8 +4179,8 @@ const assertLateCollisionLimit = (label, count) => {
 			report.coverage === "indeterminate" &&
 			report.broadPhaseComparisons >= 1 &&
 			penetration?.details.connectorId === "late-limit-edge" &&
-			limit?.details.pass === "connector-intersection" &&
-			limit?.details.phase === "compatibility-query" &&
+			limit?.details.pass === "connector-obstacle" &&
+			limit?.details.phase === "activate-or-expire" &&
 			limit?.details.completedBroadPhaseComparisons === report.broadPhaseComparisons &&
 			limit.elements.length === 2 &&
 			limit.elements.some((element) => element.id === "late-limit-node-body") &&
@@ -4066,9 +4199,9 @@ const assertLateCollisionLimit = (label, count) => {
 	);
 	return { board, report };
 };
-const lateCollisionActivation = assertLateCollisionLimit("late compatibility-query ceiling", 5_001);
+const lateCollisionActivation = assertLateCollisionLimit("late active-retention ceiling", 5_001);
 const lateCollisionPrepare = assertLateCollisionLimit(
-	"repeated late compatibility-query ceiling",
+	"repeated late active-retention ceiling",
 	5_100,
 );
 
@@ -4385,11 +4518,19 @@ const nestedOwnerLabelDiagnostics = [
 check(
 	"own-plus-ancestor label exclusions consume logical analysis work with A=0",
 	nestedOwnerLabelDiagnostics.every(
-		({ diagnostics }) =>
+		({ labelCount, diagnostics }) =>
 			diagnostics.report.broadPhaseComparisons === 0 &&
 			diagnostics.work.broadPhaseCompatibleVisits === 0 &&
 			diagnostics.work.broadPhaseBucketScans === 0 &&
-			diagnostics.work.analysisWorkItems < INSPECTION_ANALYSIS_WORK_LIMIT &&
+			(labelCount < 4_000
+				? diagnostics.work.analysisWorkItems < INSPECTION_ANALYSIS_WORK_LIMIT &&
+					!diagnostics.report.findings.some((finding) => finding.reason === "analysis-work-ceiling")
+				: diagnostics.work.analysisWorkItems === INSPECTION_ANALYSIS_WORK_LIMIT &&
+					diagnostics.report.findings.some(
+						(finding) =>
+							finding.reason === "analysis-work-ceiling" &&
+							finding.details.phase === "compatibility-query",
+					)) &&
 			!diagnostics.report.findings.some((finding) => finding.code === "LABEL_OVERLAP"),
 	),
 	JSON.stringify(
@@ -5170,7 +5311,7 @@ check(
 		alternatingBelowBudget.pairs.length === 0 &&
 		alternatingAtBudget.analysisWorkItems === INSPECTION_ANALYSIS_WORK_LIMIT &&
 		alternatingAtBudget.analysisLimit?.attempted === 25_000_001 &&
-		alternatingAtBudget.analysisLimit?.phase === "compatibility-query" &&
+		alternatingAtBudget.analysisLimit?.phase === "activate-or-expire" &&
 		alternatingAtBudget.pairs.length === 0,
 	JSON.stringify({
 		below: {
@@ -5182,6 +5323,55 @@ check(
 			limit: alternatingAtBudget.analysisLimit,
 		},
 	}),
+);
+const overlappingBoundaryRetention = diagnoseSweepCompatibility({
+	left: Array.from({ length: 16_000 }, (_, index) => ({
+		id: `retained-left-${index}`,
+		min: 0,
+		max: 1,
+		partition: `retained-left-${index}`,
+	})),
+	right: Array.from({ length: 16_000 }, (_, index) => ({
+		id: `retained-right-${index}`,
+		min: 2,
+		max: 3,
+		partition: `retained-right-${index}`,
+	})),
+	sameSet: false,
+	enforceAnalysisLimit: true,
+});
+check(
+	"32,000 overlapping active boundary events reach the analysis ceiling during retention",
+	overlappingBoundaryRetention.pairs.length === 0 &&
+		overlappingBoundaryRetention.analysisWorkItems === INSPECTION_ANALYSIS_WORK_LIMIT &&
+		overlappingBoundaryRetention.analysisLimit?.attempted === 25_000_001 &&
+		overlappingBoundaryRetention.analysisLimit?.phase === "activate-or-expire",
+	JSON.stringify({
+		work: overlappingBoundaryRetention.work,
+		analysisWorkItems: overlappingBoundaryRetention.analysisWorkItems,
+		limit: overlappingBoundaryRetention.analysisLimit,
+	}),
+);
+const hierarchyFanoutCount = 64;
+const hierarchyFanout = diagnoseSweepCompatibility({
+	left: [],
+	right: [],
+	sameSet: false,
+	hierarchyParents: new Map([
+		["fanout-root", null],
+		...Array.from({ length: hierarchyFanoutCount - 1 }, (_, index) => [
+			`fanout-child-${index}`,
+			"fanout-root",
+		]),
+	]),
+	enforceAnalysisLimit: true,
+});
+const hierarchyFanoutSortWork =
+	(hierarchyFanoutCount - 1) * Math.ceil(Math.log2(hierarchyFanoutCount - 1));
+check(
+	"hierarchy fanout ordering claims every member and native stable-sort unit",
+	hierarchyFanout.analysisWorkItems === hierarchyFanoutCount * 3 + hierarchyFanoutSortWork,
+	JSON.stringify(hierarchyFanout),
 );
 for (const [label, field] of [
 	["many-exclusion", "excludedPartitions"],
@@ -5496,6 +5686,67 @@ check(
 				JSON.stringify(finding.details.path) === JSON.stringify(["boundElements"]),
 		),
 );
+const boundEntryWorkBoard = (count) => [
+	{
+		id: "bound-entry-owner",
+		type: "rectangle",
+		x: 0,
+		y: 0,
+		width: 10,
+		height: 10,
+		angle: 0,
+		boundElements: Array.from({ length: count }, () => ({ id: "bound-entry-line", type: "arrow" })),
+	},
+	{
+		id: "bound-entry-line",
+		type: "line",
+		x: 20,
+		y: 20,
+		width: 10,
+		height: 0,
+		angle: 0,
+		points: [
+			[0, 0],
+			[10, 0],
+		],
+	},
+];
+const oneBoundEntry = inspectBoardDiagnostics(boundEntryWorkBoard(1));
+const thousandBoundEntries = inspectBoardDiagnostics(boundEntryWorkBoard(1_000));
+check(
+	"every boundElements traversal contributes its declared entry cardinality",
+	oneBoundEntry.report.clean &&
+		thousandBoundEntries.report.clean &&
+		thousandBoundEntries.work.analysisWorkItems - oneBoundEntry.work.analysisWorkItems === 4_995,
+	`${thousandBoundEntries.work.analysisWorkItems} against ${oneBoundEntry.work.analysisWorkItems}`,
+);
+const duplicateRefOrderBoard = (count) =>
+	Array.from({ length: count }, (_, index) => ({
+		id: "duplicate-ref-order",
+		type: "rectangle",
+		x: index * 20,
+		y: 0,
+		width: 10,
+		height: 10,
+		angle: 0,
+	}));
+const duplicateRefOrderSmall = inspectBoardDiagnostics(duplicateRefOrderBoard(2));
+const duplicateRefOrderLarge = inspectBoardDiagnostics(duplicateRefOrderBoard(32));
+const duplicateRefFinding = duplicateRefOrderLarge.report.findings.find(
+	(finding) => finding.reason === "duplicate-element-id",
+);
+check(
+	"finding and element-ref ordering contribute visible domain work and stable source order",
+	!!duplicateRefFinding &&
+		duplicateRefFinding.elements.every((element, index) => element.sourceIndex === index) &&
+		duplicateRefOrderLarge.work.analysisWorkItems >
+			duplicateRefOrderSmall.work.analysisWorkItems + 32 * 5,
+	JSON.stringify({
+		small: duplicateRefOrderSmall.work.analysisWorkItems,
+		large: duplicateRefOrderLarge.work.analysisWorkItems,
+		sources: duplicateRefFinding?.elements.map((element) => element.sourceIndex),
+	}),
+);
 const emptyGroupWork = inspectBoardDiagnostics([groupMeteringBody([])]).work.inputUnits;
 for (const count of [1, 7]) {
 	const diagnosed = inspectBoardDiagnostics([groupMeteringBody(Array(count).fill(null))]);
@@ -5638,8 +5889,11 @@ for (const [label, ids] of obstacleIdentityCases) {
 	);
 }
 noteFor("clean", []);
+noteFor("label-created-at-forward", duplicateLabelCreatedAtBoard(false));
+noteFor("label-created-at-reverse", duplicateLabelCreatedAtBoard(true));
 noteFor("late-collision-activation", lateCollisionActivation.board);
 noteFor("late-collision-prepare", lateCollisionPrepare.board);
+noteFor("terminal-comparison-precedence", terminalComparisonBoard);
 noteFor("long-library-identity", longLibraryBoard);
 noteFor(
 	"rotated-decoration",
@@ -6124,6 +6378,24 @@ const beforeVault = snapshot();
 const jsonRun = run("clean");
 const cleanPackageResult = JSON.parse(jsonRun.stdout);
 check("package CLI works with no canvas", jsonRun.status === 0 && jsonRun.stderr === "");
+for (const board of ["label-created-at-forward", "label-created-at-reverse"]) {
+	const persistedLabelRun = run(board, ["--strict"]);
+	const persistedLabelResult = persistedLabelRun.stdout
+		? JSON.parse(persistedLabelRun.stdout)
+		: null;
+	const duplicate = persistedLabelResult?.findings.find(
+		(finding) => finding.code === "LABEL_CORRUPTION" && finding.reason === "duplicate",
+	);
+	check(
+		`${board} preserves production createdAt duplicate-label selection through the package`,
+		persistedLabelRun.status === 7 &&
+			persistedLabelRun.stderr === "" &&
+			CheckResultSchema.safeParse(persistedLabelResult).success &&
+			duplicate?.details.keeperId === "oldlbl" &&
+			JSON.stringify(duplicate.details.duplicateIds) === JSON.stringify(["newlbl"]),
+		`status=${persistedLabelRun.status} stderr=${persistedLabelRun.stderr} duplicate=${JSON.stringify(duplicate?.details)}`,
+	);
+}
 check(
 	"package JSON parses through exported schema",
 	CheckResultSchema.safeParse(cleanPackageResult).success &&
@@ -6167,8 +6439,8 @@ for (const board of ["late-collision-activation", "late-collision-prepare"]) {
 			result.broadPhaseComparisons >= 1 &&
 			result.coverage === "indeterminate" &&
 			result.findings.some((finding) => finding.reason === "leaf-footprint-interior") &&
-			limit?.details.pass === "connector-intersection" &&
-			limit?.details.phase === "compatibility-query" &&
+			limit?.details.pass === "connector-obstacle" &&
+			limit?.details.phase === "activate-or-expire" &&
 			limit?.details.completedBroadPhaseComparisons === result.broadPhaseComparisons &&
 			limit?.elements.length === 2,
 		`statuses=${normal.status}/${strict.status} reasons=${result?.findings
@@ -6176,6 +6448,34 @@ for (const board of ["late-collision-activation", "late-collision-prepare"]) {
 			.join(",")} limit=${JSON.stringify(limit?.details)}`,
 	);
 }
+const terminalComparisonNormal = run("terminal-comparison-precedence");
+const terminalComparisonStrict = run("terminal-comparison-precedence", ["--strict"]);
+const terminalComparisonPackage = terminalComparisonNormal.stdout
+	? JSON.parse(terminalComparisonNormal.stdout)
+	: null;
+check(
+	"persisted comparison ceiling wins before an otherwise exhausting finalization",
+	terminalComparisonNormal.status === 0 &&
+		terminalComparisonStrict.status === 8 &&
+		terminalComparisonNormal.stderr === "" &&
+		terminalComparisonStrict.stderr === "" &&
+		terminalComparisonNormal.stdout === terminalComparisonStrict.stdout &&
+		CheckResultSchema.safeParse(terminalComparisonPackage).success &&
+		terminalComparisonPackage.broadPhaseComparisons === 2_000_001 &&
+		terminalComparisonPackage.findings.filter(
+			(finding) => finding.code === "INSPECTION_LIMIT_EXCEEDED",
+		).length === 1 &&
+		terminalComparisonPackage.findings.some(
+			(finding) => finding.reason === "broad-phase-comparison-ceiling",
+		) &&
+		!terminalComparisonPackage.findings.some(
+			(finding) => finding.reason === "analysis-work-ceiling",
+		),
+	`statuses=${terminalComparisonNormal.status}/${terminalComparisonStrict.status} comparisons=${terminalComparisonPackage?.broadPhaseComparisons} limits=${terminalComparisonPackage?.findings
+		?.filter((finding) => finding.code === "INSPECTION_LIMIT_EXCEEDED")
+		.map((finding) => finding.reason)
+		.join(",")}`,
+);
 const lateCollisionText = run("late-collision-activation", ["--text"]);
 const lateCollisionJson = run("late-collision-activation");
 check(

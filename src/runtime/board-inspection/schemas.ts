@@ -4,6 +4,15 @@ import { ANALYSIS_WORK_OWNERS, ANALYSIS_WORK_PHASES } from "./lib/inspection-bud
 
 import { compareIdentity, obstacleIdentity } from "./lib/ordering.js";
 
+export const COLLISION_PASSES = [
+	"connector-node",
+	"connector-obstacle",
+	"connector-intersection",
+	"node-overlap",
+	"label-node-overlap",
+	"label-label-overlap",
+] as const;
+
 const finite = z.number().finite();
 const nonnegative = finite.nonnegative();
 
@@ -509,9 +518,9 @@ const ambiguous = [
 
 const layoutFindings = [
 	variant("INSPECTION_LIMIT_EXCEEDED", "broad-phase-comparison-ceiling", true, {
-		limit: z.number().int().positive(),
-		attempted: z.number().int().positive(),
-		pass: z.string(),
+		limit: z.literal(2_000_000),
+		attempted: z.literal(2_000_001),
+		pass: z.enum(COLLISION_PASSES),
 		segmentCount: z.number().int().nonnegative(),
 		nodeCount: z.number().int().nonnegative(),
 		obstacleCount: z.number().int().nonnegative(),

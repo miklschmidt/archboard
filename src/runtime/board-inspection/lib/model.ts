@@ -260,9 +260,7 @@ function buildLabelClassifications(
 		const owner = live[ownerIndex]!;
 		if (!owner.id || owner.raw?.boundElements == null) continue;
 		if (Array.isArray(owner.raw.boundElements))
-			for (let entryIndex = 0; entryIndex < owner.raw.boundElements.length; entryIndex += 1) {
-				void owner.raw.boundElements[entryIndex];
-			}
+			budget.claimWork("node-hierarchy", "classify-records", owner.raw.boundElements.length);
 		const bounds = classifyBoundElements(owner.raw.boundElements);
 		for (
 			let referenceIndex = 0;
