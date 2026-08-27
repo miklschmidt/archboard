@@ -77,6 +77,42 @@ export function writeFileAtomic(file: string, data: string | Buffer): void {
 	}
 }
 
+/**
+ * Publish whole bytes atomically without replacing an existing destination.
+ *
+ * The hard link is the commit point: it either creates `file` as another name
+ * for the fully synced temp inode or fails with EEXIST. This is the narrow
+ * artifact-set counterpart to the replace-in-place note writer above.
+ */
+export function writeFileAtomicExclusive(file: string, data: string | Buffer): void {
+	const tmp = tempPathFor(file);
+	let handle: number | undefined;
+	try {
+		handle = fs.openSync(tmp, "w");
+		fs.writeFileSync(handle, data);
+		fs.fsyncSync(handle);
+		fs.closeSync(handle);
+		handle = undefined;
+		fs.linkSync(tmp, file);
+		fs.unlinkSync(tmp);
+		fsyncDir(path.dirname(file));
+	} catch (error) {
+		if (handle !== undefined) {
+			try {
+				fs.closeSync(handle);
+			} catch {
+				/* already gone */
+			}
+		}
+		try {
+			fs.unlinkSync(tmp);
+		} catch {
+			/* never created, or already unlinked */
+		}
+		throw error;
+	}
+}
+
 // The rename itself is a directory change, and it is durable only once the
 // directory has been synced. Best effort: opening a directory for reading is
 // not portable, and a platform that refuses gives up durability of the rename
