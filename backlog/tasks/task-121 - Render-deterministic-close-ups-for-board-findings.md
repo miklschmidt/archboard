@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:19'
-updated_date: '2026-08-27 11:38'
+updated_date: '2026-08-27 12:07'
 labels:
   - ready-for-agent
 dependencies:
@@ -73,6 +73,19 @@ This task does not add a generic RenderRegion or visual-closure system, a second
 
 7. Validate pure dimension/name/schema/PNG/artifact rules, server/socket correlation and timeouts, package streams/exits and check parity, and one existing sequential browser scenario for off-screen board rendering and visible-pane immutability. Then run focused gates, two stable fix passes, complete bun run check, separate bun run test, and independent fixed-range Standards and Spec reviews from 93997c125521d5c8ffc42bf2223930167124d637.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation checkpoints complete through 626d561.
+
+- dac7326 owns the fixed finding raster policy, closed manifest/result schema, PNG validation, shared inspection policy, and atomic ordered file-set commit with manifest last.
+- 86c53f8 adds the one-read raw note snapshot, strict non-repaired render projection, kept correlated browser callback, and pinned synthetic-frame PNG export without pane adoption or scene/viewport mutation.
+- 4873d71 registers standalone render-findings as current path 61 while keeping the immutable ordered 57-path subset unchanged; package evidence covers exact policy transport, exits 0/1/2/3/4, empty-directory precedence, relative output names, source-not-renderable, and zero stdout on artifact/response failure.
+- 626d561 extends the existing sequential headless fixed-point lane with an off-screen embedded-image board, valid bridge plus unmarked crossing, repeated viewport-independent PNG/manifest bytes, visible-pane immutability, and unchanged full-board screenshot.
+
+Focused green evidence before full validation: type-check, lint, boundaries, module-scope, 61-path contract gate, package CLI surface (36 commands/25 subcommands), server/socket board suite, and the extended fixed-point browser suite. TASK-121 remains In Progress with all acceptance criteria unchecked for independent review.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
