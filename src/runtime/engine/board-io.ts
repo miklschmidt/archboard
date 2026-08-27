@@ -381,18 +381,34 @@ function strictRenderScene(scene: unknown): BoardInspectionSnapshot["renderScene
 	return { elements: projected, files };
 }
 
-function renderSnapshotFingerprint(
-	noteHash: string,
-	renderScene: BoardInspectionSnapshot["renderScene"],
-): string {
-	const files = renderScene
-		? Object.keys(renderScene.files)
-				.toSorted((left, right) => (left < right ? -1 : left > right ? 1 : 0))
-				.map((id) => {
-					const file = renderScene.files[id]!;
-					return [id, file.id, file.mimeType, file.created, file.dataURL] as const;
-				})
-		: null;
+function hydratedFileFingerprintProjection(scene: unknown): readonly unknown[] {
+	if (Array.isArray(scene) || !scene || typeof scene !== "object") return [];
+	const sceneRecord = scene as Record<string, unknown>;
+	if (!Object.hasOwn(sceneRecord, "files")) return [];
+	const rawFiles = sceneRecord.files;
+	if (!rawFiles || typeof rawFiles !== "object" || Array.isArray(rawFiles))
+		return [["invalid-files-value", rawFiles]];
+	return Object.keys(rawFiles)
+		.toSorted((left, right) => (left < right ? -1 : left > right ? 1 : 0))
+		.map((id) => {
+			const raw = (rawFiles as Record<string, unknown>)[id];
+			if (!raw || typeof raw !== "object" || Array.isArray(raw))
+				return [id, ["invalid-file-value", raw]];
+			const file = raw as Record<string, unknown>;
+			const field = (name: string) =>
+				Object.hasOwn(file, name) ? ["present", file[name]] : ["missing"];
+			return [
+				id,
+				field("id"),
+				field("mimeType"),
+				field("created"),
+				field("dataURL"),
+			];
+		});
+}
+
+function renderSnapshotFingerprint(noteHash: string, scene: unknown): string {
+	const files = hydratedFileFingerprintProjection(scene);
 	return hashBoardBytes(
 		Buffer.from(`archboard-render-snapshot-v1\n${JSON.stringify([noteHash, files])}`, "utf8"),
 	);
@@ -410,7 +426,7 @@ export function readBoardInspectionSnapshot(key: string): BoardInspectionSnapsho
 		const renderScene = strictRenderScene(scene);
 		return {
 			elements: scene,
-			fingerprint: renderSnapshotFingerprint(note.hash, renderScene),
+			fingerprint: renderSnapshotFingerprint(note.hash, scene),
 			renderScene,
 		};
 	}
@@ -424,7 +440,7 @@ export function readBoardInspectionSnapshot(key: string): BoardInspectionSnapsho
 	const renderScene = strictRenderScene(scene);
 	return {
 		elements: (scene as { elements: unknown[] }).elements,
-		fingerprint: renderSnapshotFingerprint(note.hash, renderScene),
+		fingerprint: renderSnapshotFingerprint(note.hash, scene),
 		renderScene,
 	};
 }

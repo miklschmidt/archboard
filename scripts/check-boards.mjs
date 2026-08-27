@@ -3322,14 +3322,18 @@ try {
 
 		// A note in the plugin's own shape: an image element, an empty files map,
 		// and the section naming the vault file it moved the bytes to.
-		const pluginNote = (boardName, sectionLines) => {
+		const pluginNote = (
+			boardName,
+			sectionLines,
+			elements = [
+				{ id: "img-emb", type: "image", x: 0, y: 0, width: 40, height: 40, fileId: "emb12345" },
+			],
+		) => {
 			const bare = wrapSceneAsObsidianMd(
 				{
 					type: "excalidraw",
 					version: 2,
-					elements: [
-						{ id: "img-emb", type: "image", x: 0, y: 0, width: 40, height: 40, fileId: "emb12345" },
-					],
+					elements,
 					appState: { viewBackgroundColor: "#ffffff" },
 					files: {},
 				},
@@ -3433,10 +3437,20 @@ try {
 		// be true on both, and each of these is a property somebody has already
 		// got wrong on exactly one path.
 		{
+			const unrenderableHydratedFile = path.join(vault, "picsh.excalidraw.md");
+			fs.writeFileSync(
+				unrenderableHydratedFile,
+				pluginNote("picsh", "emb12345: [[attachments/logo.png]]\n", [
+					{ id: "img-emb", type: "image", x: 0, y: 0, width: 40, height: 40, fileId: "emb12345" },
+					{ id: "bad-box", type: "rectangle", x: 80, y: 0, width: null, height: 40 },
+				]),
+			);
 			const openedBoard = readBoardFile(parseBoardKey("picsd"), vault);
 			const perRequest = readNote(path.join(vault, "picsd.excalidraw.md"));
 			const noteBeforeImageChange = fs.readFileSync(path.join(vault, "picsd.excalidraw.md"));
 			const renderBeforeImageChange = readBoardInspectionSnapshot("picsd");
+			const unrenderableNoteBeforeImageChange = fs.readFileSync(unrenderableHydratedFile);
+			const unrenderableBeforeImageChange = readBoardInspectionSnapshot("picsh");
 			const wanted = `data:image/png;base64,${PNG_BASE64}`;
 			check(
 				"the open path and the per-request path read one note as the same bytes",
@@ -3454,10 +3468,18 @@ try {
 				Buffer.from(`${PNG_BASE64.slice(0, -4)}AAAA`, "base64"),
 			);
 			const renderAfterImageChange = readBoardInspectionSnapshot("picsd");
+			const unrenderableAfterImageChange = readBoardInspectionSnapshot("picsh");
 			check(
 				"  and an external image byte change changes the rendered snapshot fingerprint without changing the note",
 				fs.readFileSync(path.join(vault, "picsd.excalidraw.md")).equals(noteBeforeImageChange) &&
 					renderAfterImageChange.fingerprint !== renderBeforeImageChange.fingerprint,
+			);
+			check(
+				"  and hydrated bytes remain fingerprinted when strict render admission rejects another element",
+				unrenderableBeforeImageChange.renderScene === null &&
+					unrenderableAfterImageChange.renderScene === null &&
+					fs.readFileSync(unrenderableHydratedFile).equals(unrenderableNoteBeforeImageChange) &&
+					unrenderableAfterImageChange.fingerprint !== unrenderableBeforeImageChange.fingerprint,
 			);
 			fs.writeFileSync(
 				path.join(vault, "attachments", "logo.png"),
