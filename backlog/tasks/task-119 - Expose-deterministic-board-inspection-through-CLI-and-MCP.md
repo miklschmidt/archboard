@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-27 01:00'
+updated_date: '2026-08-27 01:17'
 labels:
   - ready-for-agent
 dependencies:
@@ -555,6 +555,12 @@ Correction to the immediately preceding validation note: the proof JSON SHA-256 
 - Partial collision findings and cumulative diagnostics survive prepare-events and activate-or-expire stops. Direct and package fixtures pin the earlier connector-node penetration, one completed comparison, strict/non-strict behavior, and participant evidence.
 - `test:inspection` now has 749 checks, including exact primitive arithmetic, 1,000,000 rejected group entries, the 4,999,891-code-unit boundary, long persisted identity, source-audit red fixtures, comparison-first precedence, and 1,516,200 completion.
 - Focused lint, type, boundary, module-scope, 58-path contract, inspection, geometry, label, branch, and CLI gates passed. Two `bun run fix` passes produced identical diff hash `41a642400b3d73f7b53eb369fc25148db938e74414f7893b7094031781acbf8a`. Full check/test and final generator hygiene remain.
+
+### 2026-08-27 primitive-metering final validation
+
+Source commit `a0a1697` and evidence checkpoint `11446c5` completed the primitive-owner migration and structural audit. Complete `bun run check` passed. The first separate `bun run test` encountered the documented scheduling-sensitive human-performance sample `[0,0,2]`; two isolated probes reproduced it, the third isolated probe passed at `[0,0]`, and the mandatory complete `bun run test` rerun then passed. Both successful full chains ran all four browser suites sequentially/headlessly: human performance `[0,0]`, fixed point 0 of 13 changed elements, both typed-text rename interactions preserved, and 42 of 42 live-session cycles converged.
+
+Two fresh on-demand contract generations were byte-identical: `cli-command-audit.md` c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, `command-contract-proof.json` 4757efc048d711c45093a249a2b5c819e30ed043cf84eaa2e642f6a2c40ac5fa, and `command-contract-proof.md` 70bcf2892140a4916b3ff51a5d51ec71a8b5b2e62dc884358bac70d2ace99bb7. The ignored views remain absent from the checkout and canonical `docs/design/cli-command-audit.json` remains tracked. `git diff --check` passed. TASK-119 remains In Progress with all nine acceptance criteria unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
