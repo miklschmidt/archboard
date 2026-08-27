@@ -1,9 +1,4 @@
-import {
-	boundTextDrift,
-	labelAnchorOf,
-	planLabelRepair,
-	type LabelTraversalClaims,
-} from "../../engine/labels.js";
+import { boundTextDrift, labelAnchorOf, planLabelRepair } from "../../engine/labels.js";
 import { measureLinear } from "../../engine/geometry.js";
 import type {
 	COLLISION_PASSES,
@@ -50,19 +45,13 @@ import {
 	type SweepWork,
 } from "./interval-sweep.js";
 import { compareIdentity, compareIdentityLists } from "./ordering.js";
-import {
-	AnalysisWorkCeilingReached,
-	InspectionBudget,
-	type AnalysisWorkOwner,
-} from "./inspection-budget.js";
 
 export const BROAD_PHASE_COMPARISON_LIMIT = 2_000_000 as const;
 
 interface DetectionResult {
 	findings: InspectionFinding[];
 	broadPhaseComparisons: number;
-	analysisWork: {
-		analysisWorkItems: number;
+	workDiagnostics: {
 		broadPhaseEvents: number;
 		broadPhaseActiveVisits: number;
 		broadPhaseExpiryPops: number;
@@ -178,7 +167,6 @@ const REASON_ORDER = [
 	"collinear-overlap",
 	"broad-phase-comparison-ceiling",
 	"input-complexity-ceiling",
-	"analysis-work-ceiling",
 	"leaf-footprint-interior",
 	"obstacle-footprint-interior",
 	"proper-interior-crossing",
@@ -238,7 +226,7 @@ type IntendedRole = Extract<
 	{ code: "BROKEN_REFERENCE"; reason: "invalid-element-identity" }
 >["details"]["intendedRoles"][number];
 
-function identityRoles(record: DecodedRecord, budget: InspectionBudget): IntendedRole[] {
+function identityRoles(record: DecodedRecord): IntendedRole[] {
 	const roles = new Set<IntendedRole>();
 	const type = record.type;
 	const metadata = archboardMetadata(record);
@@ -246,7 +234,7 @@ function identityRoles(record: DecodedRecord, budget: InspectionBudget): Intende
 	if (metadata && "node" in metadata) roles.add("semantic-node-member");
 	if (type === "rectangle" || type === "ellipse" || type === "diamond") {
 		if (libraryAttribution(record)?.valid) roles.add("valid-library-body");
-		if (groupIds(record, budget).length > 0) roles.add("qualifying-group-body");
+		if (groupIds(record).length > 0) roles.add("qualifying-group-body");
 		roles.add("node-overlap-body");
 	}
 	if (type === "text") {
@@ -257,21 +245,16 @@ function identityRoles(record: DecodedRecord, budget: InspectionBudget): Intende
 	if (record.raw?.boundElements !== undefined) roles.add("label-container");
 	if (["rectangle", "ellipse", "diamond", "frame"].includes(type ?? ""))
 		roles.add("closed-boundary");
-	budget.claimSort("record-analysis", "order-events", roles.size);
 	return [...roles].toSorted();
 }
 
-function identityFindings(
-	records: readonly DecodedRecord[],
-	budget: InspectionBudget,
-): InspectionFinding[] {
+function identityFindings(records: readonly DecodedRecord[]): InspectionFinding[] {
 	const findings: InspectionFinding[] = [];
 	const duplicate = new Map<string, DecodedRecord[]>();
-	budget.claimWork("record-analysis", "classify-records", records.length);
 	for (const record of records.filter((candidate) => candidate.live)) {
 		const rawId = record.raw?.id;
 		if (!record.id) {
-			const roles = identityRoles(record, budget);
+			const roles = identityRoles(record);
 			const missing = !record.raw || !("id" in record.raw) || rawId === undefined;
 			const issue: "missing-id" | "empty-string-id" | "non-string-id" = missing
 				? "missing-id"
@@ -309,7 +292,6 @@ function identityFindings(
 	}
 	for (const [id, matches] of duplicate)
 		if (matches.length > 1) {
-			budget.claimSort("finding-finalization", "finalize-findings", matches.length);
 			findings.push(
 				make({
 					code: "BROKEN_REFERENCE",
@@ -329,12 +311,8 @@ function identityFindings(
 	return findings;
 }
 
-function renderFindings(
-	records: readonly DecodedRecord[],
-	budget: InspectionBudget,
-): InspectionFinding[] {
+function renderFindings(records: readonly DecodedRecord[]): InspectionFinding[] {
 	const findings: InspectionFinding[] = [];
-	budget.claimWork("record-analysis", "classify-records", records.length);
 	for (const record of records.filter((candidate) => candidate.live)) {
 		const raw = record.raw;
 		const fields = record.invalidRenderFields;
@@ -391,17 +369,13 @@ function coordinateSpanFinding(
 	scope: CoordinateSpanScope,
 	subjectId: string | null,
 	members: readonly DecodedRecord[],
-	budget?: InspectionBudget,
 ): InspectionFinding {
-	budget?.claimWork("finding-finalization", "finalize-findings", members.length * 3);
 	const sourceInput = members.map((record) => record.sourceIndex);
-	budget?.claimSort("finding-finalization", "finalize-findings", sourceInput.length);
 	const sources = sourceInput.toSorted((a, b) => a - b);
 	const aggregate = aggregateBoxes(evidenceBoxesOf(members));
 	const originCandidates = members.filter(
 		(record) => record.raw && finite(record.raw.x) && finite(record.raw.y),
 	);
-	budget?.claimSort("finding-finalization", "finalize-findings", originCandidates.length);
 	const originEvidence = originCandidates.toSorted((a, b) => a.sourceIndex - b.sourceIndex)[0];
 	const affected =
 		aggregate.kind === "representable"
@@ -437,14 +411,8 @@ function coordinateSpanFindings(
 	records: readonly DecodedRecord[],
 	model: InspectionModel,
 	produced: readonly InspectionFinding[],
-	budget?: InspectionBudget,
 ): InspectionFinding[] {
 	const findings: InspectionFinding[] = [];
-	budget?.claimWork(
-		"finding-finalization",
-		"finalize-findings",
-		records.length + model.aggregateFailures.length + produced.length,
-	);
 	for (const record of records)
 		if (
 			record.live &&
@@ -452,9 +420,9 @@ function coordinateSpanFindings(
 			record.invalidRenderFields.length === 0 &&
 			!record.extentRepresentable
 		)
-			findings.push(coordinateSpanFinding("record-extent", record.id, [record], budget));
+			findings.push(coordinateSpanFinding("record-extent", record.id, [record]));
 	for (const failure of model.aggregateFailures)
-		findings.push(coordinateSpanFinding(failure.scope, failure.subjectId, failure.members, budget));
+		findings.push(coordinateSpanFinding(failure.scope, failure.subjectId, failure.members));
 	const bySource = new Map(records.map((record) => [record.sourceIndex, record]));
 	const seen = new Set<string>();
 	for (const finding of produced) {
@@ -464,20 +432,15 @@ function coordinateSpanFindings(
 		if (members.length < 2 || aggregateBoxes(evidenceBoxesOf(members)).kind !== "unrepresentable")
 			continue;
 		const keyMembers = members.map((record) => record.sourceIndex);
-		budget?.claimSort("finding-finalization", "finalize-findings", keyMembers.length);
 		const key = keyMembers.toSorted((a, b) => a - b).join(",");
 		if (seen.has(key)) continue;
 		seen.add(key);
-		findings.push(coordinateSpanFinding("finding-affected-union", null, members, budget));
+		findings.push(coordinateSpanFinding("finding-affected-union", null, members));
 	}
 	return findings;
 }
 
-function focusPaddingFindings(
-	produced: readonly InspectionFinding[],
-	budget?: InspectionBudget,
-): InspectionFinding[] {
-	budget?.claimWork("finding-finalization", "finalize-findings", produced.length);
+function focusPaddingFindings(produced: readonly InspectionFinding[]): InspectionFinding[] {
 	return produced.flatMap((finding) => {
 		if (
 			finding.affectedBBox === null ||
@@ -650,12 +613,9 @@ function connectorGeometryFindings(
 	policy: InspectionPolicy,
 	segments: Segment[],
 	work: { pathSegmentChecks: number },
-	budget: InspectionBudget,
 ): InspectionFinding[] {
 	const findings: InspectionFinding[] = [];
 	const refs = [record.ref];
-	if (Array.isArray(raw.points))
-		budget.claimWork("connector-intersection", "classify-records", raw.points.length * 2);
 	const decoded = decodePath(record);
 	const pathEvidence = decodedPathEvidence(record, raw, decoded.scenePoints);
 	const angle = raw.angle;
@@ -712,7 +672,6 @@ function connectorGeometryFindings(
 			}),
 		);
 	if (!decoded.ok) return [...findings, unusablePathFinding(record, raw)];
-	budget.claimWork("connector-intersection", "classify-records", decoded.zeroSegments.length);
 	for (const segmentIndex of decoded.zeroSegments)
 		findings.push(
 			make({
@@ -730,11 +689,6 @@ function connectorGeometryFindings(
 	const unsupported = unsupportedRotation || unsupportedCurve || unsupportedRounded;
 	if (unsupported || !record.usableId || !record.id || !decoded.scenePoints) return findings;
 	const zeroSegments = new Set(decoded.zeroSegments);
-	budget.claimWork(
-		"connector-intersection",
-		"classify-records",
-		Math.max(0, decoded.scenePoints.length - 1),
-	);
 	for (let index = 0; index < decoded.scenePoints.length - 1; index += 1) {
 		work.pathSegmentChecks += 1;
 		if (zeroSegments.has(index)) continue;
@@ -746,7 +700,6 @@ function connectorGeometryFindings(
 			b: decoded.scenePoints[index + 1]!,
 		});
 	}
-	budget.claimWork("connector-intersection", "classify-records", decoded.relativePoints.length);
 	const measured = measureLinear(raw.points);
 	if (
 		!measured ||
@@ -847,7 +800,6 @@ function connectorBindingFindings(
 	raw: RawRecord,
 	byId: RecordMap,
 	duplicateIds: ReadonlySet<string>,
-	budget: InspectionBudget,
 ): InspectionFinding[] {
 	const findings: InspectionFinding[] = [];
 	for (const end of ["start", "end"] as const) {
@@ -930,8 +882,6 @@ function connectorBindingFindings(
 			);
 		else {
 			const targetBounds = target.raw?.boundElements;
-			if (Array.isArray(targetBounds))
-				budget.claimWork("record-analysis", "classify-records", targetBounds.length);
 			if (
 				!Array.isArray(targetBounds) ||
 				!targetBounds.some(
@@ -1000,12 +950,10 @@ function boundElementFindings(
 	raw: RawRecord,
 	byId: RecordMap,
 	duplicateIds: ReadonlySet<string>,
-	budget: InspectionBudget,
 ): InspectionFinding[] {
 	const bounds = raw.boundElements;
 	if (bounds == null) return [];
 	const findings: InspectionFinding[] = [];
-	if (Array.isArray(bounds)) budget.claimWork("record-analysis", "classify-records", bounds.length);
 	const { readableEntries, problems } = classifyBoundElements(bounds);
 	for (const problem of problems)
 		findings.push(
@@ -1029,7 +977,6 @@ function boundElementFindings(
 			}),
 		);
 	if (!record.usableId || !record.id) return findings;
-	budget.claimWork("record-analysis", "classify-records", readableEntries.length);
 	for (const entry of readableEntries) {
 		if (duplicateIds.has(entry.id)) continue;
 		const target = byId.get(entry.id);
@@ -1292,11 +1239,7 @@ const KNOWN_ELEMENT_TYPES = new Set([
 	"freedraw",
 ]);
 
-function hasCoverageRoleEvidence(
-	record: DecodedRecord,
-	hasIncomingReference: boolean,
-	budget: InspectionBudget,
-): boolean {
+function hasCoverageRoleEvidence(record: DecodedRecord, hasIncomingReference: boolean): boolean {
 	const raw = record.raw;
 	const metadata = archboardMetadata(record);
 	const malformedClosedAngle =
@@ -1310,7 +1253,7 @@ function hasCoverageRoleEvidence(
 		record.type === "line" ||
 		record.type === "text" ||
 		libraryAttribution(record) !== null ||
-		groupIds(record, budget).length > 0 ||
+		groupIds(record).length > 0 ||
 		(metadata !== null && "node" in metadata) ||
 		raw?.boundElements !== undefined ||
 		raw?.containerId !== undefined ||
@@ -1324,7 +1267,6 @@ function unsupportedGeometryFindings(
 	record: DecodedRecord,
 	raw: RawRecord,
 	hasIncomingReference: boolean,
-	budget: InspectionBudget,
 ): InspectionFinding[] {
 	const findings: InspectionFinding[] = [];
 	if (
@@ -1332,7 +1274,7 @@ function unsupportedGeometryFindings(
 		record.type !== "line" &&
 		raw.angle !== undefined &&
 		raw.angle !== 0 &&
-		hasCoverageRoleEvidence(record, hasIncomingReference, budget)
+		hasCoverageRoleEvidence(record, hasIncomingReference)
 	)
 		findings.push(
 			make({
@@ -1355,7 +1297,7 @@ function unsupportedGeometryFindings(
 	const canonicalType = typeof rawType === "string" && rawType.length > 0;
 	if (
 		(!canonicalType || !KNOWN_ELEMENT_TYPES.has(typeof rawType === "string" ? rawType : "")) &&
-		hasCoverageRoleEvidence(record, hasIncomingReference, budget)
+		hasCoverageRoleEvidence(record, hasIncomingReference)
 	) {
 		const rawTypeDescription = typeof rawType === "string" ? rawType : stableDescription(rawType);
 		findings.push(
@@ -1374,15 +1316,11 @@ function unsupportedGeometryFindings(
 	return findings;
 }
 
-function incomingReferenceIds(
-	records: readonly DecodedRecord[],
-	budget: InspectionBudget,
-): ReadonlySet<string> {
+function incomingReferenceIds(records: readonly DecodedRecord[]): ReadonlySet<string> {
 	const ids = new Set<string>();
 	const add = (value: unknown) => {
 		if (typeof value === "string" && value.length > 0) ids.add(value);
 	};
-	budget.claimWork("record-analysis", "classify-records", records.length);
 	for (const record of records.filter((candidate) => candidate.live && candidate.raw)) {
 		const raw = record.raw!;
 		add(raw.containerId);
@@ -1392,7 +1330,6 @@ function incomingReferenceIds(
 				add((binding as RawRecord).elementId);
 		}
 		if (!Array.isArray(raw.boundElements)) continue;
-		budget.claimWork("record-analysis", "classify-records", raw.boundElements.length);
 		for (const entry of raw.boundElements)
 			if (entry && typeof entry === "object" && !Array.isArray(entry)) add((entry as RawRecord).id);
 	}
@@ -1403,54 +1340,43 @@ function structuralFindings(
 	records: readonly DecodedRecord[],
 	policy: InspectionPolicy,
 	model: InspectionModel,
-	budget: InspectionBudget,
 ): {
 	findings: InspectionFinding[];
 	segments: Segment[];
 	pathSegmentChecks: number;
-	limit: AnalysisWorkCeilingReached | null;
 } {
 	const findings: InspectionFinding[] = [];
 	const segments: Segment[] = [];
 	const work = { pathSegmentChecks: 0 };
 	const byId = model.byId;
-	budget.claimWork("record-analysis", "classify-records", records.length);
-	const incomingReferences = incomingReferenceIds(records, budget);
+	const incomingReferences = incomingReferenceIds(records);
 	for (const record of records.filter((candidate) => candidate.live && candidate.raw)) {
-		try {
-			const raw = record.raw!;
-			if (record.type === "arrow" || record.type === "line") {
-				findings.push(...connectorGeometryFindings(record, raw, policy, segments, work, budget));
-				findings.push(...connectorBindingFindings(record, raw, byId, model.duplicateIds, budget));
-				if (record.usableId) findings.push(...persistedEndpointFindings(record, raw));
-			}
-			findings.push(...boundElementFindings(record, raw, byId, model.duplicateIds, budget));
-			findings.push(...containerFindings(record, raw));
-			findings.push(...metadataFindings(record, raw));
-			if (record.usableId) findings.push(...libraryFindings(record, model));
-			findings.push(...fontFindings(record, raw, policy));
-			findings.push(
-				...unsupportedGeometryFindings(
-					record,
-					raw,
-					record.id !== null && incomingReferences.has(record.id),
-					budget,
-				),
-			);
-		} catch (error) {
-			if (!(error instanceof AnalysisWorkCeilingReached)) throw error;
-			return { findings, segments, pathSegmentChecks: work.pathSegmentChecks, limit: error };
+		const raw = record.raw!;
+		if (record.type === "arrow" || record.type === "line") {
+			findings.push(...connectorGeometryFindings(record, raw, policy, segments, work));
+			findings.push(...connectorBindingFindings(record, raw, byId, model.duplicateIds));
+			if (record.usableId) findings.push(...persistedEndpointFindings(record, raw));
 		}
+		findings.push(...boundElementFindings(record, raw, byId, model.duplicateIds));
+		findings.push(...containerFindings(record, raw));
+		findings.push(...metadataFindings(record, raw));
+		if (record.usableId) findings.push(...libraryFindings(record, model));
+		findings.push(...fontFindings(record, raw, policy));
+		findings.push(
+			...unsupportedGeometryFindings(
+				record,
+				raw,
+				record.id !== null && incomingReferences.has(record.id),
+			),
+		);
 	}
-	return { findings, segments, pathSegmentChecks: work.pathSegmentChecks, limit: null };
+	return { findings, segments, pathSegmentChecks: work.pathSegmentChecks };
 }
 
 function labelFindings(
 	records: readonly DecodedRecord[],
 	model: InspectionModel,
-	budget: InspectionBudget,
 ): InspectionFinding[] {
-	budget.claimWork("record-analysis", "classify-records", records.length);
 	const valid: Array<Record<string, unknown>> = [];
 	for (const record of records)
 		if (record.live && record.raw && record.usableId && record.id && record.type)
@@ -1458,23 +1384,10 @@ function labelFindings(
 	const findings: InspectionFinding[] = [];
 	const byId = model.byId;
 	const emit = (finding: InspectionFinding): void => {
-		budget.claimWork("record-analysis", "classify-records");
 		findings.push(finding);
 	};
-	const labelClaims: LabelTraversalClaims = {
-		claim(_collection, count) {
-			budget.claimWork("record-analysis", "classify-records", count);
-		},
-		claimSort(length) {
-			budget.claimSort("record-analysis", "order-events", length);
-		},
-	};
-	const plan = planLabelRepair(valid as never, labelClaims);
-	budget.claimWork("record-analysis", "classify-records", plan.duplicates.length);
-	for (const duplicate of plan.duplicates)
-		budget.claimSort("finding-finalization", "finalize-findings", duplicate.remove.length);
+	const plan = planLabelRepair(valid as never);
 	for (const duplicate of plan.duplicates) {
-		budget.claimWork("record-analysis", "classify-records", duplicate.remove.length);
 		const involved = [
 			byId.get(duplicate.containerId),
 			byId.get(duplicate.keep),
@@ -1497,7 +1410,6 @@ function labelFindings(
 			}),
 		);
 	}
-	budget.claimWork("record-analysis", "classify-records", plan.orphanIds.length);
 	for (const textId of plan.orphanIds) {
 		const text = byId.get(textId);
 		const containerId =
@@ -1516,8 +1428,7 @@ function labelFindings(
 				}),
 			);
 	}
-	const drifted = boundTextDrift(valid as never, labelClaims);
-	budget.claimWork("record-analysis", "classify-records", drifted.length);
+	const drifted = boundTextDrift(valid as never);
 	for (const drift of drifted) {
 		const text = byId.get(drift.textId),
 			container = byId.get(drift.containerId);
@@ -1545,7 +1456,6 @@ function labelFindings(
 			}),
 		);
 	}
-	budget.claimWork("record-analysis", "classify-records", records.length);
 	for (const record of records.filter((r) => r.live && r.raw && r.id)) {
 		if (record.type !== "text" && record.raw?.label && typeof record.raw.label === "object")
 			emit(
@@ -1574,7 +1484,6 @@ function labelFindings(
 				}),
 			);
 	}
-	budget.claimWork("record-analysis", "classify-records", model.labelOwnership.size);
 	for (const ownership of model.labelOwnership.values()) {
 		const textId = ownership.labelId;
 		const text = byId.get(textId);
@@ -1599,7 +1508,6 @@ function labelFindings(
 			ownership.state === "reverse-only" ||
 			(!ownership.forwardOwnerId && ownership.state === "conflicting")
 		) {
-			budget.claimWork("record-analysis", "classify-records", ownership.reverseOwnerIds.length);
 			for (const ownerId of ownership.reverseOwnerIds) {
 				const owner = byId.get(ownerId);
 				if (!owner) continue;
@@ -1620,7 +1528,6 @@ function labelFindings(
 		if (ownership.state !== "conflicting") continue;
 		const primaryOwnerId = ownership.forwardOwnerId ?? ownership.reverseOwnerIds[0];
 		if (!primaryOwnerId) continue;
-		budget.claimWork("record-analysis", "classify-records", ownership.candidateOwnerIds.length);
 		const other: string[] = [];
 		const involved: DecodedRecord[] = [text];
 		for (const ownerId of ownership.candidateOwnerIds) {
@@ -1672,12 +1579,7 @@ interface PairItem<T> {
 const partitioned = <T>(
 	items: readonly PairItem<T>[],
 	semantics: (value: T) => SweepPartition,
-	budget: InspectionBudget,
-	pass: AnalysisWorkOwner,
-): PairItem<T>[] => {
-	budget.claimWork(pass, "prepare-events", items.length);
-	return items.map((item) => ({ ...item, semantics: semantics(item.value) }));
-};
+): PairItem<T>[] => items.map((item) => ({ ...item, semantics: semantics(item.value) }));
 
 const NO_EXCLUSIONS: ReadonlySet<string> = new Set<string>();
 
@@ -1694,10 +1596,8 @@ function pairSweep<A, B>(
 	counter: { value: number; limited: boolean; pass: CollisionPass | null },
 	work: SweepWork,
 	pass: CollisionPass,
-	budget: InspectionBudget,
 ): void {
 	const materialize = <T>(items: readonly PairItem<T>[]) => {
-		budget.claimWork(pass, "prepare-events", items.length);
 		return items.map((item) => ({
 			id: item.id,
 			min: item.box.x,
@@ -1715,30 +1615,24 @@ function pairSweep<A, B>(
 	const leftIntervals = materialize(left);
 	const rightIntervals = materialize(right);
 	const measured = emptySweepWork();
-	try {
-		sweepIntervalPairs(
-			leftIntervals,
-			rightIntervals,
-			sameSet,
-			(aInterval, bInterval) => {
-				const a = aInterval.value;
-				const b = bInterval.value;
-				counter.value += 1;
-				budget.recordBroadPhaseComparisons(counter.value);
-				if (counter.value > BROAD_PHASE_COMPARISON_LIMIT) {
-					counter.limited = true;
-					counter.pass = pass;
-					return false;
-				}
-				if (b.box.y > a.box.y + a.box.height || b.box.y + b.box.height < a.box.y) return;
-				visit(a.value, b.value);
-			},
-			{ budget, pass, work: measured },
-		);
-	} catch (error) {
-		mergeSweepWork(work, measured);
-		throw error;
-	}
+	sweepIntervalPairs(
+		leftIntervals,
+		rightIntervals,
+		sameSet,
+		(aInterval, bInterval) => {
+			const a = aInterval.value;
+			const b = bInterval.value;
+			counter.value += 1;
+			if (counter.value > BROAD_PHASE_COMPARISON_LIMIT) {
+				counter.limited = true;
+				counter.pass = pass;
+				return false;
+			}
+			if (b.box.y > a.box.y + a.box.height || b.box.y + b.box.height < a.box.y) return;
+			visit(a.value, b.value);
+		},
+		{ work: measured },
+	);
 	mergeSweepWork(work, measured);
 }
 
@@ -1760,7 +1654,6 @@ function collisionFindings(
 	model: InspectionModel,
 	segments: readonly Segment[],
 	policy: InspectionPolicy,
-	budget: InspectionBudget,
 	result: CollisionResult,
 ): CollisionResult {
 	const findings = result.findings;
@@ -1771,23 +1664,7 @@ function collisionFindings(
 	};
 	const sweepWork = result.sweepWork;
 	const byId = model.byId;
-	const countedMap = <T, U>(
-		values: readonly T[],
-		pass: AnalysisWorkOwner,
-		mapValue: (value: T) => U,
-	): U[] => {
-		budget.claimWork(pass, "prepare-events", values.length);
-		return values.map(mapValue);
-	};
-	const countedFilter = <T>(
-		values: readonly T[],
-		pass: AnalysisWorkOwner,
-		keep: (value: T) => boolean,
-	): T[] => {
-		budget.claimWork(pass, "prepare-events", values.length);
-		return values.filter(keep);
-	};
-	const segmentItems = countedMap(segments, "connector-node", (segment) => {
+	const segmentItems = segments.map((segment) => {
 		const record = byId.get(segment.connectorId);
 		return {
 			id: `${segment.connectorId}:${segment.index}`,
@@ -1797,10 +1674,9 @@ function collisionFindings(
 			semantics: unrestrictedPartition(segment.connectorId),
 		};
 	});
-	budget.claimWork("connector-node", "prepare-events", model.nodes.size);
 	const nodeValues = [...model.nodes.values()];
-	const leaves = countedFilter(nodeValues, "connector-node", (node) => node.children.length === 0);
-	const leafNodeItems = countedMap(leaves, "connector-node", (node) => ({
+	const leaves = nodeValues.filter((node) => node.children.length === 0);
+	const leafNodeItems = leaves.map((node) => ({
 		id: node.id,
 		box: node.body,
 		value: node,
@@ -1822,16 +1698,11 @@ function collisionFindings(
 		);
 	};
 	const hierarchyParents = new Map<string, string | null>();
-	budget.claimWork("connector-node", "prepare-events", model.nodes.size);
 	for (const node of model.nodes.values()) {
 		hierarchyParents.set(node.id, node.parentId);
 	}
-	const sweepHierarchy = buildSweepHierarchy(hierarchyParents, {
-		budget,
-		pass: "connector-node",
-	});
+	const sweepHierarchy = buildSweepHierarchy(hierarchyParents);
 	const connectorNodePartitions = new Map<string, SweepPartition>();
-	budget.claimWork("connector-node", "prepare-events", segments.length);
 	for (const segment of segments) {
 		if (connectorNodePartitions.has(segment.connectorId)) continue;
 		const ends = connectorEnds(segment);
@@ -1851,17 +1722,12 @@ function collisionFindings(
 		});
 	}
 	const labelNodePartitions = new Map<string, SweepPartition>();
-	const nodeEligibleSegmentItems = countedFilter(
-		segmentItems,
-		"connector-node",
+	const nodeEligibleSegmentItems = segmentItems.filter(
 		(item) => connectorEnds(item.value).nodeAnalysisEligible,
 	);
 	pairSweep(
-		partitioned(
-			nodeEligibleSegmentItems,
-			(segment) => connectorNodePartitions.get(segment.connectorId)!,
-			budget,
-			"connector-node",
+		partitioned(nodeEligibleSegmentItems, (segment) =>
+			connectorNodePartitions.get(segment.connectorId)!,
 		),
 		leafNodeItems,
 		false,
@@ -1892,10 +1758,9 @@ function collisionFindings(
 		counter,
 		sweepWork,
 		"connector-node",
-		budget,
 	);
 	if (!counter.limited) {
-		obstacleItems = countedMap(model.obstacles, "connector-obstacle", (obstacle) => ({
+		obstacleItems = model.obstacles.map((obstacle) => ({
 			id: obstacle.id,
 			box: obstacle.box,
 			value: obstacle,
@@ -1935,12 +1800,10 @@ function collisionFindings(
 			counter,
 			sweepWork,
 			"connector-obstacle",
-			budget,
 		);
 	}
 	if (!counter.limited) {
 		const partitions = new Map<string, SweepPartition>();
-		budget.claimWork("connector-intersection", "prepare-events", segments.length);
 		for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex += 1) {
 			const segment = segments[segmentIndex]!;
 			if (!partitions.has(segment.connectorId)) {
@@ -1951,18 +1814,8 @@ function collisionFindings(
 			}
 		}
 		pairSweep(
-			partitioned(
-				segmentItems,
-				(segment) => partitions.get(segment.connectorId)!,
-				budget,
-				"connector-intersection",
-			),
-			partitioned(
-				segmentItems,
-				(segment) => partitions.get(segment.connectorId)!,
-				budget,
-				"connector-intersection",
-			),
+			partitioned(segmentItems, (segment) => partitions.get(segment.connectorId)!),
+			partitioned(segmentItems, (segment) => partitions.get(segment.connectorId)!),
 			true,
 			(a, b) => {
 				const hit = intersectSegments(a.a, a.b, b.a, b.b, policy.intersectionTolerance);
@@ -2013,12 +1866,10 @@ function collisionFindings(
 			counter,
 			sweepWork,
 			"connector-intersection",
-			budget,
 		);
 	}
 	if (!counter.limited) {
 		const partitions = new Map<string, SweepPartition>();
-		budget.claimWork("node-overlap", "prepare-events", leaves.length);
 		for (let nodeIndex = 0; nodeIndex < leaves.length; nodeIndex += 1) {
 			const node = leaves[nodeIndex]!;
 			const excludedPartitions = new Set<string>();
@@ -2028,8 +1879,8 @@ function collisionFindings(
 			partitions.set(node.id, { partition: node.id, excludedPartitions });
 		}
 		pairSweep(
-			partitioned(leafNodeItems, (node) => partitions.get(node.id)!, budget, "node-overlap"),
-			partitioned(leafNodeItems, (node) => partitions.get(node.id)!, budget, "node-overlap"),
+			partitioned(leafNodeItems, (node) => partitions.get(node.id)!),
+			partitioned(leafNodeItems, (node) => partitions.get(node.id)!),
 			true,
 			(a, b) => {
 				const hit = overlap(a.body, b.body);
@@ -2057,40 +1908,35 @@ function collisionFindings(
 			counter,
 			sweepWork,
 			"node-overlap",
-			budget,
 		);
 	}
 	if (!counter.limited) {
-		allNodeItems = countedMap(nodeValues, "label-node-overlap", (node) => ({
+		allNodeItems = nodeValues.map((node) => ({
 			id: node.id,
 			box: node.body,
 			value: node,
 			records: node.bodies,
 			semantics: unrestrictedPartition(node.id),
 		}));
-		labelNodeRecords = countedFilter(records, "label-node-overlap", (record) => {
+		labelNodeRecords = records.filter((record) => {
 			if (!record.live || !record.id || record.type !== "text" || !record.box) return false;
 			const state = model.labelOwnership.get(record.id)?.state;
 			return state !== undefined && state !== "none" && state !== "blocked";
 		});
-		labelNodeItems = countedMap(labelNodeRecords, "label-node-overlap", (label) => ({
+		labelNodeItems = labelNodeRecords.map((label) => ({
 			id: label.id!,
 			box: label.box!,
 			value: label,
 			records: [label],
 			semantics: unrestrictedPartition(label.id!),
 		}));
-		labelLabelItems = countedFilter(labelNodeItems, "label-label-overlap", (item) =>
-			model.confirmedLabels.has(item.id),
-		);
-		budget.claimWork("label-node-overlap", "prepare-events", labelNodeRecords.length);
+		labelLabelItems = labelNodeItems.filter((item) => model.confirmedLabels.has(item.id));
 		for (let labelIndex = 0; labelIndex < labelNodeRecords.length; labelIndex += 1) {
 			const label = labelNodeRecords[labelIndex]!;
 			const ownership = model.labelOwnership.get(label.id!);
 			const candidateNodes: string[] = [];
 			const ownerIds = ownership?.candidateOwnerIds ?? [];
 			for (let ownerIndex = 0; ownerIndex < ownerIds.length; ownerIndex += 1) {
-				budget.claimWork("label-node-overlap", "prepare-events");
 				const owner = ownerIds[ownerIndex]!;
 				const candidate = model.nodeOfElement.get(owner);
 				if (candidate !== undefined) {
@@ -2105,12 +1951,7 @@ function collisionFindings(
 			});
 		}
 		pairSweep(
-			partitioned(
-				labelNodeItems,
-				(label) => labelNodePartitions.get(label.id!)!,
-				budget,
-				"label-node-overlap",
-			),
+			partitioned(labelNodeItems, (label) => labelNodePartitions.get(label.id!)!),
 			allNodeItems,
 			false,
 			(label, node) => {
@@ -2139,12 +1980,10 @@ function collisionFindings(
 			counter,
 			sweepWork,
 			"label-node-overlap",
-			budget,
 		);
 	}
 	if (!counter.limited) {
 		const partitions = new Map<string, SweepPartition>();
-		budget.claimWork("label-label-overlap", "prepare-events", labelLabelItems.length);
 		for (let labelIndex = 0; labelIndex < labelLabelItems.length; labelIndex += 1) {
 			const label = labelLabelItems[labelIndex]!;
 			const owner = model.confirmedLabels.get(label.id!)!;
@@ -2156,24 +1995,14 @@ function collisionFindings(
 			}
 		}
 		pairSweep(
-			partitioned(
-				labelLabelItems,
-				(label) => {
-					const owner = model.confirmedLabels.get(label.id!)!;
-					return partitions.get(owner)!;
-				},
-				budget,
-				"label-label-overlap",
-			),
-			partitioned(
-				labelLabelItems,
-				(label) => {
-					const owner = model.confirmedLabels.get(label.id!)!;
-					return partitions.get(owner)!;
-				},
-				budget,
-				"label-label-overlap",
-			),
+			partitioned(labelLabelItems, (label) => {
+				const owner = model.confirmedLabels.get(label.id!)!;
+				return partitions.get(owner)!;
+			}),
+			partitioned(labelLabelItems, (label) => {
+				const owner = model.confirmedLabels.get(label.id!)!;
+				return partitions.get(owner)!;
+			}),
 			true,
 			(a, b) => {
 				const hit = overlap(a.box!, b.box!);
@@ -2200,7 +2029,6 @@ function collisionFindings(
 			counter,
 			sweepWork,
 			"label-label-overlap",
-			budget,
 		);
 	}
 	if (counter.limited) {
@@ -2244,101 +2072,6 @@ function collisionFindings(
 		sweepWork,
 		terminalLimit: counter.limited ? "comparison" : null,
 	};
-}
-
-function emptyInspectionModel(): InspectionModel {
-	return {
-		byId: new Map(),
-		duplicateIds: new Set(),
-		nodes: new Map(),
-		nodeOfElement: new Map(),
-		confirmedLabels: new Map(),
-		labelOwnership: new Map(),
-		connectorEndpoints: new Map(),
-		containerOnlyIds: new Set(),
-		qualifyingGroupedObstacleElementIds: new Set(),
-		obstacles: [],
-		aggregateFailures: [],
-		hierarchyWork: emptySweepWork(),
-		containerBoundaryWork: emptySweepWork(),
-	};
-}
-
-function preprocessingParticipants(
-	records: readonly DecodedRecord[],
-	model: InspectionModel | null,
-): DecodedRecord[] {
-	if (model) {
-		const sourceIndexes = new Set<number>();
-		for (const node of model.nodes.values())
-			for (const record of node.bodies) sourceIndexes.add(record.sourceIndex);
-		for (const obstacle of model.obstacles)
-			for (const record of obstacle.members) sourceIndexes.add(record.sourceIndex);
-		for (const record of records)
-			if (
-				record.live &&
-				record.evidenceBox &&
-				(record.type === "arrow" || record.type === "line" || record.type === "text")
-			)
-				sourceIndexes.add(record.sourceIndex);
-		return records.filter((record) => sourceIndexes.has(record.sourceIndex));
-	}
-	return records.filter((record) => {
-		if (!record.live || !record.evidenceBox) return false;
-		if (record.type === "arrow" || record.type === "line" || record.type === "text") return true;
-		const metadata = archboardMetadata(record);
-		return (
-			(metadata !== null && "node" in metadata) ||
-			libraryAttribution(record) !== null ||
-			(Array.isArray(record.raw?.groupIds) && record.raw.groupIds.length > 0) ||
-			record.raw?.boundElements !== undefined ||
-			record.raw?.containerId !== undefined ||
-			(["rectangle", "ellipse", "diamond", "frame"].includes(record.type ?? "") &&
-				(record.raw?.angle === undefined || record.raw.angle === 0))
-		);
-	});
-}
-
-function analysisLimitFinding(
-	records: readonly DecodedRecord[],
-	model: InspectionModel | null,
-	error: AnalysisWorkCeilingReached,
-	budget: InspectionBudget,
-	segmentCount: number,
-): InspectionFinding {
-	const participants = preprocessingParticipants(records, model);
-	return make({
-		code: "INSPECTION_LIMIT_EXCEEDED",
-		reason: "analysis-work-ceiling",
-		severity: "warning",
-		affectsCoverage: true,
-		details: {
-			limit: 25_000_000,
-			attempted: error.attempted,
-			pass: error.owner,
-			phase: error.phase,
-			completedInputUnits: budget.inputUnits,
-			completedBroadPhaseComparisons: budget.completedBroadPhaseComparisons,
-			processedRecordCount: budget.processedRecordCount,
-			segmentCount,
-			nodeCount: model
-				? [...model.nodes.values()].filter((node) => node.children.length === 0).length
-				: 0,
-			obstacleCount: model?.obstacles.length ?? 0,
-			labelCount: model
-				? records.filter(
-						(record) =>
-							record.live &&
-							record.id &&
-							record.type === "text" &&
-							model.labelOwnership.get(record.id)?.state !== "none",
-					).length
-				: 0,
-		},
-		message: `Inspection stopped analysis at ${error.owner}/${error.phase}.`,
-		elements: uniqueRefs(participants),
-		affected: affectedOf(participants),
-	});
 }
 
 function orderedFindings(findings: readonly InspectionFinding[]): InspectionFinding[] {
@@ -2397,139 +2130,30 @@ function terminalFinalizeFindings(findings: readonly InspectionFinding[]): Inspe
 	return orderedFindings(findings.map(canonicalFinding));
 }
 
-function finalizeFindings(
-	findings: readonly InspectionFinding[],
-	budget: InspectionBudget,
-): InspectionFinding[] {
-	budget.claimWork("finding-finalization", "finalize-findings", findings.length);
-	let members = findings.length;
-	for (const finding of findings)
-		members +=
-			finding.elements.length +
-			finding.nodes.length +
-			finding.obstacles.length +
-			finding.points.length;
-	budget.claimWork("finding-finalization", "finalize-findings", members);
-	for (const finding of findings) {
-		budget.claimSort("finding-finalization", "finalize-findings", finding.elements.length);
-		budget.claimSort("finding-finalization", "finalize-findings", finding.nodes.length);
-		budget.claimSort("finding-finalization", "finalize-findings", finding.obstacles.length);
-		budget.claimSort("finding-finalization", "finalize-findings", finding.points.length);
-	}
-	const coverageReasons = new Set(
-		findings
-			.filter((finding) => finding.affectsCoverage)
-			.map((finding) => `${finding.code}/${finding.reason}`),
-	);
-	budget.claimSort("finding-finalization", "finalize-findings", coverageReasons.size);
-	budget.claimSort("finding-finalization", "finalize-findings", findings.length);
-	return terminalFinalizeFindings(findings);
-}
-
 export function detectBoard(
 	records: readonly DecodedRecord[],
 	policy: InspectionPolicy,
-	budget: InspectionBudget = new InspectionBudget(),
 	initialFindings: readonly InspectionFinding[] = [],
 ): DetectionResult {
 	const findings = [...initialFindings];
-	let model = emptyInspectionModel();
-	let modelComplete = false;
-	let limit: AnalysisWorkCeilingReached | null = null;
-	try {
-		findings.push(...renderFindings(records, budget), ...identityFindings(records, budget));
-	} catch (error) {
-		if (!(error instanceof AnalysisWorkCeilingReached)) throw error;
-		limit = error;
-	}
-	if (!limit)
-		try {
-			model = buildInspectionModel(records, budget);
-			modelComplete = true;
-		} catch (error) {
-			if (!(error instanceof AnalysisWorkCeilingReached)) throw error;
-			limit = error;
-		}
-	const structural =
-		!limit && modelComplete
-			? structuralFindings(records, policy, model, budget)
-			: { findings: [], segments: [], pathSegmentChecks: 0, limit: null };
+	findings.push(...renderFindings(records), ...identityFindings(records));
+	const model = buildInspectionModel(records);
+	const structural = structuralFindings(records, policy, model);
 	findings.push(...structural.findings);
-	if (structural.limit) limit = structural.limit;
-	if (!limit && modelComplete)
-		try {
-			findings.push(...labelFindings(records, model, budget));
-		} catch (error) {
-			if (!(error instanceof AnalysisWorkCeilingReached)) throw error;
-			limit = error;
-		}
-	let collisions: CollisionResult = {
+	findings.push(...labelFindings(records, model));
+	const collisions = collisionFindings(records, model, structural.segments, policy, {
 		findings: [],
-		broadPhaseComparisons: budget.completedBroadPhaseComparisons,
+		broadPhaseComparisons: 0,
 		sweepWork: emptySweepWork(),
 		terminalLimit: null,
-	};
-	if (!limit && modelComplete)
-		try {
-			collisions = collisionFindings(
-				records,
-				model,
-				structural.segments,
-				policy,
-				budget,
-				collisions,
-			);
-		} catch (error) {
-			if (!(error instanceof AnalysisWorkCeilingReached)) throw error;
-			limit = error;
-			collisions.broadPhaseComparisons = budget.completedBroadPhaseComparisons;
-		}
+	});
 	findings.push(...collisions.findings);
-	if (limit)
-		findings.push(
-			analysisLimitFinding(
-				records,
-				modelComplete ? model : null,
-				limit,
-				budget,
-				structural.segments.length,
-			),
-		);
-	const terminalComparison = collisions.terminalLimit === "comparison";
-	findings.push(
-		...coordinateSpanFindings(
-			records,
-			model,
-			findings,
-			limit || terminalComparison ? undefined : budget,
-		),
-	);
-	findings.push(
-		...focusPaddingFindings(findings, limit || terminalComparison ? undefined : budget),
-	);
-	let finalized: InspectionFinding[];
-	if (limit || terminalComparison) finalized = terminalFinalizeFindings(findings);
-	else
-		try {
-			finalized = finalizeFindings(findings, budget);
-		} catch (error) {
-			if (!(error instanceof AnalysisWorkCeilingReached)) throw error;
-			const stopped = analysisLimitFinding(
-				records,
-				modelComplete ? model : null,
-				error,
-				budget,
-				structural.segments.length,
-			);
-			const closure = coordinateSpanFindings(records, model, [stopped]);
-			findings.push(stopped, ...closure, ...focusPaddingFindings([stopped, ...closure]));
-			finalized = terminalFinalizeFindings(findings);
-		}
+	findings.push(...coordinateSpanFindings(records, model, findings));
+	findings.push(...focusPaddingFindings(findings));
 	return {
-		findings: finalized,
+		findings: terminalFinalizeFindings(findings),
 		broadPhaseComparisons: collisions.broadPhaseComparisons,
-		analysisWork: {
-			analysisWorkItems: budget.analysisWorkItems,
+		workDiagnostics: {
 			broadPhaseEvents: collisions.sweepWork.events,
 			broadPhaseActiveVisits: collisions.sweepWork.activeVisits,
 			broadPhaseExpiryPops: collisions.sweepWork.expiryPops,

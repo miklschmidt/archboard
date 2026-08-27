@@ -2,11 +2,6 @@ import type { NodeRef, ObstacleRef } from "../schemas.js";
 import type { DecodedRecord } from "./decode.js";
 import { aggregateBoxes, contains, type ExactBox } from "./geometry.js";
 import { sweepIntervalPairs, type SweepWork } from "./interval-sweep.js";
-import type {
-	AnalysisWorkOwner,
-	AnalysisWorkPhase,
-	InspectionBudget,
-} from "./inspection-budget.js";
 import { compareIdentity, obstacleIdentity } from "./ordering.js";
 
 export interface InspectionNode {
@@ -96,34 +91,15 @@ export interface InspectionModel {
 const CLOSED = new Set(["rectangle", "ellipse", "diamond", "frame"]);
 const OBSTACLE_BODY = new Set(["rectangle", "ellipse", "diamond"]);
 
-type ModelPass = "node-hierarchy" | "container-boundary";
-
-function orderedIdentities(
-	values: readonly string[],
-	budget: InspectionBudget,
-	pass: ModelPass,
-): string[] {
-	budget.claimSort(pass, "order-events", values.length);
+function orderedIdentities(values: readonly string[]): string[] {
 	return [...values].toSorted(compareIdentity);
 }
 
-function collected<T, U>(
-	values: readonly T[],
-	budget: InspectionBudget,
-	pass: ModelPass,
-	mapValue: (value: T) => U,
-): U[] {
-	budget.claimWork(pass, "aggregate-model", values.length);
+function collected<T, U>(values: readonly T[], mapValue: (value: T) => U): U[] {
 	return values.map(mapValue);
 }
 
-function filteredValues<T>(
-	values: readonly T[],
-	budget: InspectionBudget,
-	pass: ModelPass,
-	keep: (value: T) => boolean,
-): T[] {
-	budget.claimWork(pass, "aggregate-model", values.length);
+function filteredValues<T>(values: readonly T[], keep: (value: T) => boolean): T[] {
 	return values.filter(keep);
 }
 
@@ -186,15 +162,9 @@ export function nodeId(record: DecodedRecord): string | null {
 	return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-export function groupIds(
-	record: DecodedRecord,
-	budget?: InspectionBudget,
-	owner: AnalysisWorkOwner = "record-analysis",
-	phase: AnalysisWorkPhase = "classify-records",
-): string[] {
+export function groupIds(record: DecodedRecord): string[] {
 	const raw = record.raw?.groupIds;
 	if (!Array.isArray(raw)) return [];
-	budget?.claimWork(owner, phase, raw.length);
 	return raw.filter((value): value is string => typeof value === "string" && value.length > 0);
 }
 
@@ -248,16 +218,12 @@ function buildLabelClassifications(
 	live: readonly DecodedRecord[],
 	byId: ReadonlyMap<string, DecodedRecord>,
 	duplicateIds: ReadonlySet<string>,
-	budget: InspectionBudget,
 ): Pick<InspectionModel, "labelOwnership" | "confirmedLabels"> {
-	budget.claimWork("node-hierarchy", "classify-records", live.length);
 	const reverseLabelOwners = new Map<string, Set<string>>();
 	const labelsWithBlockedReverseClassification = new Set<string>();
 	for (let ownerIndex = 0; ownerIndex < live.length; ownerIndex += 1) {
 		const owner = live[ownerIndex]!;
 		if (!owner.id || owner.raw?.boundElements == null) continue;
-		if (Array.isArray(owner.raw.boundElements))
-			budget.claimWork("node-hierarchy", "classify-records", owner.raw.boundElements.length);
 		const bounds = classifyBoundElements(owner.raw.boundElements);
 		for (
 			let referenceIndex = 0;
@@ -293,23 +259,14 @@ function buildLabelClassifications(
 		const forwardOwnerId =
 			typeof rawContainer === "string" && rawContainer.length > 0 ? rawContainer : null;
 		const reverseOwners = reverseLabelOwners.get(record.id);
-		budget.claimWork("node-hierarchy", "aggregate-model", reverseOwners?.size ?? 0);
 		const reverseOwnerInput = reverseOwners ? [...reverseOwners] : [];
-		budget.claimWork("node-hierarchy", "aggregate-model", reverseOwnerInput.length);
-		const reverseOwnerIds = orderedIdentities(reverseOwnerInput, budget, "node-hierarchy");
+		const reverseOwnerIds = orderedIdentities(reverseOwnerInput);
 		const candidateOwnerSet = new Set<string>();
-		budget.claimWork(
-			"node-hierarchy",
-			"aggregate-model",
-			reverseOwnerIds.length + (forwardOwnerId ? 1 : 0),
-		);
 		if (forwardOwnerId) candidateOwnerSet.add(forwardOwnerId);
 		for (let index = 0; index < reverseOwnerIds.length; index += 1)
 			candidateOwnerSet.add(reverseOwnerIds[index]!);
-		budget.claimWork("node-hierarchy", "aggregate-model", candidateOwnerSet.size);
 		const candidateOwnerInput = [...candidateOwnerSet];
-		budget.claimWork("node-hierarchy", "aggregate-model", candidateOwnerInput.length);
-		const candidateOwnerIds = orderedIdentities(candidateOwnerInput, budget, "node-hierarchy");
+		const candidateOwnerIds = orderedIdentities(candidateOwnerInput);
 		let state: LabelOwnershipClassification["state"];
 		let resolvedOwnerId: string | null = null;
 		if (blocked) state = "blocked";
@@ -348,9 +305,7 @@ function buildNodes(
 	live: readonly DecodedRecord[],
 	byId: ReadonlyMap<string, DecodedRecord>,
 	confirmedLabels: ReadonlyMap<string, string>,
-	budget: InspectionBudget,
 ): Pick<InspectionModel, "nodes" | "nodeOfElement" | "aggregateFailures"> {
-	budget.claimWork("node-hierarchy", "classify-records", live.length);
 	const grouped = new Map<string, DecodedRecord[]>();
 	const nodeOfElement = new Map<string, string>();
 	for (let recordIndex = 0; recordIndex < live.length; recordIndex += 1) {
@@ -362,7 +317,6 @@ function buildNodes(
 		grouped.set(node, members);
 		nodeOfElement.set(record.id, node);
 	}
-	budget.claimWork("node-hierarchy", "aggregate-model", confirmedLabels.size);
 	for (const [labelId, containerId] of confirmedLabels) {
 		const owner = nodeOfElement.get(containerId);
 		const label = byId.get(labelId);
@@ -373,31 +327,18 @@ function buildNodes(
 
 	const nodes = new Map<string, InspectionNode>();
 	const aggregateFailures: AggregateCoordinateFailure[] = [];
-	budget.claimWork("node-hierarchy", "aggregate-model", grouped.size);
 	for (const [id, members] of grouped) {
-		const labels = filteredValues(members, budget, "node-hierarchy", (record) =>
-			confirmedLabels.has(record.id ?? ""),
-		);
-		const bodies = filteredValues(
-			members,
-			budget,
-			"node-hierarchy",
-			(record) => !confirmedLabels.has(record.id ?? ""),
-		);
+		const labels = filteredValues(members, (record) => confirmedLabels.has(record.id ?? ""));
+		const bodies = filteredValues(members, (record) => !confirmedLabels.has(record.id ?? ""));
 		const bodyMembers = bodies.length > 0 ? bodies : members;
-		const bodyResult = aggregateBoxes(
-			collected(bodyMembers, budget, "node-hierarchy", (record) => record.box!),
-		);
-		const aggregateResult = aggregateBoxes(
-			collected(members, budget, "node-hierarchy", (record) => record.box!),
-		);
+		const bodyResult = aggregateBoxes(collected(bodyMembers, (record) => record.box!));
+		const aggregateResult = aggregateBoxes(collected(members, (record) => record.box!));
 		if (bodyResult.kind !== "representable") {
 			aggregateFailures.push({
 				scope: "semantic-node-body",
 				subjectId: id,
 				members: bodyMembers,
 			});
-			budget.claimWork("node-hierarchy", "aggregate-model", members.length);
 			for (let memberIndex = 0; memberIndex < members.length; memberIndex += 1) {
 				const member = members[memberIndex]!;
 				if (member.id) {
@@ -413,16 +354,8 @@ function buildNodes(
 				subjectId: id,
 				members,
 			});
-		const elementIds = orderedIdentities(
-			collected(bodies, budget, "node-hierarchy", (record) => record.id!),
-			budget,
-			"node-hierarchy",
-		);
-		const labelElementIds = orderedIdentities(
-			collected(labels, budget, "node-hierarchy", (record) => record.id!),
-			budget,
-			"node-hierarchy",
-		);
+		const elementIds = orderedIdentities(collected(bodies, (record) => record.id!));
+		const labelElementIds = orderedIdentities(collected(labels, (record) => record.id!));
 		nodes.set(id, {
 			id,
 			members,
@@ -430,7 +363,7 @@ function buildNodes(
 			labels,
 			aggregate,
 			body: bodyResult.box,
-			boundaries: filteredValues(bodies, budget, "node-hierarchy", validBoundary),
+			boundaries: filteredValues(bodies, validBoundary),
 			parentId: null,
 			children: [],
 			ref: { id, elementIds, labelElementIds },
@@ -484,28 +417,21 @@ function compareAreaFactors(aa: BinaryFactor, bb: BinaryFactor): number {
 	return alignedA === alignedB ? 0 : alignedA < alignedB ? -1 : 1;
 }
 
-function assignNodeHierarchy(
-	nodes: Map<string, InspectionNode>,
-	budget: InspectionBudget,
-): SweepWork {
-	budget.claimWork("node-hierarchy", "prepare-events", nodes.size);
+function assignNodeHierarchy(nodes: Map<string, InspectionNode>): SweepWork {
 	const children = [...nodes.values()];
 	const boundaries: Array<{ owner: InspectionNode; boundary: DecodedRecord }> = [];
 	for (let ownerIndex = 0; ownerIndex < children.length; ownerIndex += 1) {
 		const owner = children[ownerIndex]!;
-		budget.claimWork("node-hierarchy", "prepare-events", owner.boundaries.length);
 		for (let boundaryIndex = 0; boundaryIndex < owner.boundaries.length; boundaryIndex += 1) {
 			boundaries.push({ owner, boundary: owner.boundaries[boundaryIndex]! });
 		}
 	}
 	const childAreas = new Map<string, BinaryFactor>();
-	budget.claimWork("node-hierarchy", "aggregate-model", children.length);
 	for (let childIndex = 0; childIndex < children.length; childIndex += 1) {
 		const child = children[childIndex]!;
 		childAreas.set(child.id, areaFactor(child.body));
 	}
 	const boundaryAreas = new Map<DecodedRecord, BinaryFactor>();
-	budget.claimWork("node-hierarchy", "aggregate-model", boundaries.length);
 	for (let boundaryIndex = 0; boundaryIndex < boundaries.length; boundaryIndex += 1) {
 		const { boundary } = boundaries[boundaryIndex]!;
 		boundaryAreas.set(boundary, areaFactor(boundary.box!));
@@ -519,7 +445,7 @@ function assignNodeHierarchy(
 		compareIdentity(a.boundary.id!, b.boundary.id!) ||
 		compareIdentity(a.owner.id, b.owner.id);
 	const work = sweepIntervalPairs(
-		collected(children, budget, "node-hierarchy", (child) => ({
+		collected(children, (child) => ({
 			id: child.id,
 			min: child.body.x,
 			max: child.body.x + child.body.width,
@@ -529,7 +455,7 @@ function assignNodeHierarchy(
 				excludedPartitions: new Set([child.id]),
 			},
 		})),
-		collected(boundaries, budget, "node-hierarchy", ({ owner, boundary }) => ({
+		collected(boundaries, ({ owner, boundary }) => ({
 			id: boundary.id!,
 			min: boundary.box!.x,
 			max: boundary.box!.x + boundary.box!.width,
@@ -555,25 +481,20 @@ function assignNodeHierarchy(
 			if (!selected || candidateOrder(candidate, selected) < 0)
 				selectedByChild.set(child.id, candidate);
 		},
-		{ budget, pass: "node-hierarchy" },
 	);
-	budget.claimWork("node-hierarchy", "aggregate-model", children.length);
 	for (let childIndex = 0; childIndex < children.length; childIndex += 1) {
 		const child = children[childIndex]!;
 		const selected = selectedByChild.get(child.id);
 		if (selected) child.parentId = selected.owner.id;
 	}
 	work.peakSelections = selectedByChild.size;
-	budget.claimWork("node-hierarchy", "aggregate-model", nodes.size);
 	for (const node of nodes.values()) {
 		if (node.parentId) {
 			nodes.get(node.parentId)!.children.push(node.id);
 		}
 	}
-	budget.claimWork("node-hierarchy", "aggregate-model", nodes.size);
 	for (const node of nodes.values()) {
-		budget.claimWork("node-hierarchy", "aggregate-model", node.children.length);
-		node.children = orderedIdentities(node.children, budget, "node-hierarchy");
+		node.children = orderedIdentities(node.children);
 	}
 	return work;
 }
@@ -582,16 +503,13 @@ function buildConnectorEndpoints(
 	live: readonly DecodedRecord[],
 	nodeOfElement: ReadonlyMap<string, string>,
 	duplicateIds: ReadonlySet<string>,
-	budget: InspectionBudget,
 ): Map<string, ConnectorEndpointClassification> {
-	budget.claimWork("node-hierarchy", "classify-records", live.length);
 	const connectorEndpoints = new Map<string, ConnectorEndpointClassification>();
 	for (let recordIndex = 0; recordIndex < live.length; recordIndex += 1) {
 		const record = live[recordIndex]!;
 		if (!record.usableId || !record.id || (record.type !== "arrow" && record.type !== "line"))
 			continue;
 		const endpoint = (end: "start" | "end") => {
-			budget.claimWork("node-hierarchy", "classify-records");
 			const value = record.raw?.[`${end}Binding`];
 			if (value == null) return { blocked: false, node: undefined };
 			const target = classifyBindingTarget(value);
@@ -617,23 +535,21 @@ function findContainerOnlyIds(
 	live: readonly DecodedRecord[],
 	nodes: ReadonlyMap<string, InspectionNode>,
 	nodeOfElement: ReadonlyMap<string, string>,
-	budget: InspectionBudget,
 ): { ids: Set<string>; work: SweepWork } {
 	const containerOnlyIds = new Set<string>();
-	const boundaries = filteredValues(live, budget, "container-boundary", (record) => {
+	const boundaries = filteredValues(live, (record) => {
 		return !nodeOfElement.has(record.id ?? "") && validBoundary(record);
 	});
-	budget.claimWork("container-boundary", "aggregate-model", nodes.size);
 	const nodeValues = [...nodes.values()];
 	const work = sweepIntervalPairs(
-		collected(boundaries, budget, "container-boundary", (record) => ({
+		collected(boundaries, (record) => ({
 			id: record.id!,
 			min: record.box!.x,
 			max: record.box!.x + record.box!.width,
 			value: record,
 			semantics: { partition: record.id!, excludedPartitions: new Set<string>() },
 		})),
-		collected(nodeValues, budget, "container-boundary", (node) => ({
+		collected(nodeValues, (node) => ({
 			id: node.id,
 			min: node.body.x,
 			max: node.body.x + node.body.width,
@@ -643,11 +559,9 @@ function findContainerOnlyIds(
 		false,
 		(boundary, node) => {
 			if (contains(boundary.value.box!, node.value.body)) {
-				budget.claimWork("container-boundary", "hierarchy-query");
 				containerOnlyIds.add(boundary.value.id!);
 			}
 		},
-		{ budget, pass: "container-boundary" },
 	);
 	return { ids: containerOnlyIds, work };
 }
@@ -657,12 +571,11 @@ function buildObstacles(
 	nodeOfElement: ReadonlyMap<string, string>,
 	confirmedLabels: ReadonlyMap<string, string>,
 	containerOnlyIds: ReadonlySet<string>,
-	budget: InspectionBudget,
 ): Pick<
 	InspectionModel,
 	"obstacles" | "qualifyingGroupedObstacleElementIds" | "aggregateFailures"
 > {
-	const eligible = filteredValues(live, budget, "container-boundary", (record) => {
+	const eligible = filteredValues(live, (record) => {
 		const angle = record.raw?.angle;
 		return (
 			record.usableId &&
@@ -683,20 +596,18 @@ function buildObstacles(
 	for (let recordIndex = 0; recordIndex < eligible.length; recordIndex += 1) {
 		const record = eligible[recordIndex]!;
 		parent.set(record.id!, record.id!);
-		const groups = groupIds(record, budget, "container-boundary", "aggregate-model");
+		const groups = groupIds(record);
 		groupsById.set(record.id!, groups);
 	}
 	const find = (id: string): string => {
 		let current = id;
 		while (true) {
-			budget.claimWork("container-boundary", "hierarchy-query");
 			const next = parent.get(current);
 			if (next === current) break;
 			current = next!;
 		}
 		let next = id;
 		while (true) {
-			budget.claimWork("container-boundary", "hierarchy-query");
 			if (parent.get(next) === current) break;
 			const previous = parent.get(next)!;
 			parent.set(next, current);
@@ -716,7 +627,6 @@ function buildObstacles(
 		const record = eligible[recordIndex]!;
 		const groups = groupsById.get(record.id!) ?? [];
 		for (let groupIndex = 0; groupIndex < groups.length; groupIndex += 1) {
-			budget.claimWork("container-boundary", "aggregate-model");
 			const group = groups[groupIndex]!;
 			const first = firstByGroup.get(group);
 			if (first) join(first, record.id!);
@@ -734,37 +644,28 @@ function buildObstacles(
 	const obstacles: InspectionObstacle[] = [];
 	const qualifyingGroupedObstacleElementIds = new Set<string>();
 	const aggregateFailures: AggregateCoordinateFailure[] = [];
-	budget.claimWork("container-boundary", "aggregate-model", components.size);
 	for (const members of components.values()) {
-		const validLibrary = filteredValues(members, budget, "container-boundary", (record) =>
+		const validLibrary = filteredValues(members, (record) =>
 			Boolean(libraryAttribution(record)?.valid),
 		);
 		const sharedGroup = members.length >= 2;
 		if (validLibrary.length === 0 && !sharedGroup) continue;
 		if (sharedGroup) {
-			budget.claimWork("container-boundary", "aggregate-model", members.length);
 			for (let memberIndex = 0; memberIndex < members.length; memberIndex += 1) {
 				const member = members[memberIndex]!;
 				qualifyingGroupedObstacleElementIds.add(member.id!);
 			}
 		}
-		const elementIds = orderedIdentities(
-			collected(members, budget, "container-boundary", (record) => record.id!),
-			budget,
-			"container-boundary",
-		);
+		const elementIds = orderedIdentities(collected(members, (record) => record.id!));
 		const uniqueGroups = new Set<string>();
-		budget.claimWork("container-boundary", "aggregate-model", members.length);
 		for (let memberIndex = 0; memberIndex < members.length; memberIndex += 1) {
 			const member = members[memberIndex]!;
 			const memberGroups = groupsById.get(member.id!) ?? [];
-			budget.claimWork("container-boundary", "aggregate-model", memberGroups.length);
 			for (let groupIndex = 0; groupIndex < memberGroups.length; groupIndex += 1)
 				uniqueGroups.add(memberGroups[groupIndex]!);
 		}
-		budget.claimWork("container-boundary", "aggregate-model", uniqueGroups.size);
-		const groups = orderedIdentities([...uniqueGroups], budget, "container-boundary");
-		const library = collected(validLibrary, budget, "container-boundary", (record) => {
+		const groups = orderedIdentities([...uniqueGroups]);
+		const library = collected(validLibrary, (record) => {
 			const attr = libraryAttribution(record)!;
 			return {
 				elementId: record.id!,
@@ -772,11 +673,8 @@ function buildObstacles(
 				...(attr.source ? { source: attr.source } : {}),
 			};
 		});
-		budget.claimSort("container-boundary", "order-events", library.length);
 		const orderedLibrary = library.toSorted((a, b) => compareIdentity(a.elementId, b.elementId));
-		const obstacleResult = aggregateBoxes(
-			collected(members, budget, "container-boundary", (record) => record.box!),
-		);
+		const obstacleResult = aggregateBoxes(collected(members, (record) => record.box!));
 		const kind =
 			validLibrary.length > 0 ? ("library-component" as const) : ("grouped-component" as const);
 		const id = obstacleIdentity(elementIds);
@@ -792,7 +690,6 @@ function buildObstacles(
 			ref: { id, kind, elementIds, groupIds: groups, library: orderedLibrary },
 		});
 	}
-	budget.claimSort("container-boundary", "order-events", obstacles.length);
 	return {
 		obstacles: obstacles.toSorted((a, b) => compareIdentity(a.id, b.id)),
 		qualifyingGroupedObstacleElementIds,
@@ -800,54 +697,37 @@ function buildObstacles(
 	};
 }
 
-export function buildInspectionModel(
-	records: readonly DecodedRecord[],
-	budget: InspectionBudget,
-): InspectionModel {
-	budget.claimWork("record-analysis", "classify-records", records.length);
+export function buildInspectionModel(records: readonly DecodedRecord[]): InspectionModel {
 	const live = records.filter((record) => Boolean(record.live && record.raw));
-	budget.completeRecordAnalysis(records.length);
 	const byId = new Map<string, DecodedRecord>();
 	const duplicateIds = new Set<string>();
-	budget.claimWork("record-analysis", "classify-records", live.length);
 	for (let recordIndex = 0; recordIndex < live.length; recordIndex += 1) {
 		const record = live[recordIndex]!;
 		if (record.id && !record.usableId) {
 			duplicateIds.add(record.id);
 		}
 	}
-	budget.claimWork("record-analysis", "classify-records", live.length);
 	for (let recordIndex = 0; recordIndex < live.length; recordIndex += 1) {
 		const record = live[recordIndex]!;
 		if (record.usableId && record.id) {
 			byId.set(record.id, record);
 		}
 	}
-	const { labelOwnership, confirmedLabels } = buildLabelClassifications(
-		live,
-		byId,
-		duplicateIds,
-		budget,
-	);
+	const { labelOwnership, confirmedLabels } = buildLabelClassifications(live, byId, duplicateIds);
 	const {
 		nodes,
 		nodeOfElement,
 		aggregateFailures: nodeAggregateFailures,
-	} = buildNodes(live, byId, confirmedLabels, budget);
-	const hierarchyWork = assignNodeHierarchy(nodes, budget);
-	const connectorEndpoints = buildConnectorEndpoints(live, nodeOfElement, duplicateIds, budget);
-	const containerOnly = findContainerOnlyIds(live, nodes, nodeOfElement, budget);
+	} = buildNodes(live, byId, confirmedLabels);
+	const hierarchyWork = assignNodeHierarchy(nodes);
+	const connectorEndpoints = buildConnectorEndpoints(live, nodeOfElement, duplicateIds);
+	const containerOnly = findContainerOnlyIds(live, nodes, nodeOfElement);
 	const containerOnlyIds = containerOnly.ids;
 	const {
 		obstacles,
 		qualifyingGroupedObstacleElementIds,
 		aggregateFailures: obstacleAggregateFailures,
-	} = buildObstacles(live, nodeOfElement, confirmedLabels, containerOnlyIds, budget);
-	budget.claimWork(
-		"record-analysis",
-		"aggregate-model",
-		nodeAggregateFailures.length + obstacleAggregateFailures.length,
-	);
+	} = buildObstacles(live, nodeOfElement, confirmedLabels, containerOnlyIds);
 	const aggregateFailures = [...nodeAggregateFailures, ...obstacleAggregateFailures];
 	return {
 		byId,
