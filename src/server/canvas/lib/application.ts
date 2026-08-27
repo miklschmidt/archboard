@@ -142,6 +142,11 @@ import {
 	stripBindingPresentationLinks,
 } from "../../../runtime/engine/presentation.js";
 import { frontendState, sourceState } from "../../../runtime/engine/staleness.js";
+import {
+	BridgeRefusal,
+	planBridgeCreate,
+	planBridgeRemoval,
+} from "../../../runtime/board-inspection/bridge.js";
 
 // Load environment variables
 dotenv.config({ quiet: true });
@@ -687,6 +692,7 @@ function boardErrorBody(error: unknown): Record<string, unknown> {
 			...refusalDocument(error.board),
 		};
 	}
+	if (error instanceof BoardMutationError && error.code) return { ...base, code: error.code };
 	return base;
 }
 
@@ -1265,6 +1271,93 @@ app.post("/api/elements", (req: Request, res: Response) => {
 		});
 	} catch (error) {
 		answerBoardError(res, error, "Error creating element:");
+	}
+});
+
+// Mark one unavoidable proper connector crossing without changing either source.
+app.post("/api/bridges", (req: Request, res: Response) => {
+	try {
+		const source = boardTargetFromRequest(req, "Creating a connector bridge");
+		answerBoardWrite(res, {
+			source,
+			origin: "agent",
+			mutation: elementMutation<{
+				plan: ReturnType<typeof planBridgeCreate>;
+				generated: ServerElement[];
+			}>((content) => {
+				let plan: ReturnType<typeof planBridgeCreate>;
+				try {
+					const body = req.body && typeof req.body === "object" ? req.body : {};
+					plan = planBridgeCreate({
+						elements: [...content.elements.values()],
+						bridgeId: mintId(content.elements),
+						overConnectorId: String((body as Record<string, unknown>).over ?? ""),
+						underConnectorId: String((body as Record<string, unknown>).under ?? ""),
+						background: String((body as Record<string, unknown>).background ?? ""),
+						...((body as Record<string, unknown>).at &&
+						typeof (body as Record<string, unknown>).at === "object"
+							? { at: (body as Record<string, unknown>).at as { x: number; y: number } }
+							: {}),
+					});
+				} catch (error) {
+					if (error instanceof BridgeRefusal)
+						throw new BoardMutationError(400, error.message, error.code);
+					throw error;
+				}
+				return {
+					input: { upserts: [...plan.inputs], origin: "agent" },
+					value: (applied) => ({ plan, generated: applied.named }),
+				};
+			}),
+			answer: ({ content, value, written }) => ({
+				success: true,
+				board: source.key,
+				bridgeId: value.plan.bridgeId,
+				overConnectorId: value.plan.overConnectorId,
+				underConnectorId: value.plan.underConnectorId,
+				overSegmentIndex: value.plan.overSegmentIndex,
+				underSegmentIndex: value.plan.underSegmentIndex,
+				crossing: value.plan.crossing,
+				...agentWriteAnswer(source.board, content, value.generated, false, written),
+			}),
+		});
+	} catch (error) {
+		answerBoardError(res, error, "Error creating connector bridge:");
+	}
+});
+
+// Provenance owns removal: source connectors may have moved or disappeared.
+app.delete("/api/bridges/:id", (req: Request, res: Response) => {
+	try {
+		const source = boardTargetFromRequest(req, "Removing a connector bridge");
+		const bridgeId = typeof req.params.id === "string" ? req.params.id : "";
+		answerBoardWrite(res, {
+			source,
+			origin: "agent",
+			mutation: elementMutation<{ deleted: readonly [string, string] }>((content) => {
+				let deleted: readonly [string, string];
+				try {
+					deleted = planBridgeRemoval([...content.elements.values()], bridgeId);
+				} catch (error) {
+					if (error instanceof BridgeRefusal)
+						throw new BoardMutationError(400, error.message, error.code);
+					throw error;
+				}
+				return {
+					input: { deletes: [...deleted], origin: "agent" },
+					value: () => ({ deleted }),
+				};
+			}),
+			answer: ({ content, value, written }) => ({
+				success: true,
+				board: source.key,
+				bridgeId,
+				deleted: value.deleted,
+				...agentWriteAnswer(source.board, content, [], false, written),
+			}),
+		});
+	} catch (error) {
+		answerBoardError(res, error, "Error removing connector bridge:");
 	}
 });
 

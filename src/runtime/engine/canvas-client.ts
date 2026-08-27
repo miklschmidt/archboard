@@ -404,6 +404,45 @@ export async function clearCanvas(): Promise<ApiResponse> {
 	return requestJson<ApiResponse>("/api/elements/clear", { method: "DELETE" });
 }
 
+export interface BridgeWriteResponse extends WriteAnswer {
+	success: true;
+	board: string;
+	bridgeId: string;
+	overConnectorId: string;
+	underConnectorId: string;
+	overSegmentIndex: number;
+	underSegmentIndex: number;
+	crossing: { x: number; y: number };
+	elements: [ServerElement, ServerElement];
+}
+
+export interface BridgeRemovalResponse extends WriteAnswer {
+	success: true;
+	board: string;
+	bridgeId: string;
+	deleted: [string, string];
+	elements: [];
+}
+
+export async function createBridge(input: {
+	over: string;
+	under: string;
+	background: string;
+	at?: { x: number; y: number };
+}): Promise<BridgeWriteResponse> {
+	return requestJson<BridgeWriteResponse>("/api/bridges", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(input),
+	});
+}
+
+export async function removeBridge(bridgeId: string): Promise<BridgeRemovalResponse> {
+	return requestJson<BridgeRemovalResponse>(`/api/bridges/${encodeURIComponent(bridgeId)}`, {
+		method: "DELETE",
+	});
+}
+
 // Ask the canvas to re-evaluate its source, keeping everything on screen.
 // Refused unless it was started with `bun run dev:canvas` (ADR 0014).
 export async function reloadCanvas(): Promise<{

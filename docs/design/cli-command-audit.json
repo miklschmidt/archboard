@@ -1,10 +1,10 @@
 {
 	"schemaVersion": 1,
-	"reviewedBase": "6c42fca6c0d5b9ecaa5ad40fde14ede684722d5a",
+	"reviewedBase": "2c5a639ddb432447308f9dba557156aab1391c89",
 	"surface": {
-		"commands": 34,
-		"subcommands": 24,
-		"paths": 58
+		"commands": 35,
+		"subcommands": 25,
+		"paths": 60
 	},
 	"globalContract": {
 		"bootstrap": "src/bin.ts removes one --url before importing runtime configuration",
@@ -19,6 +19,60 @@
 		"stderr": "diagnostics, progress notes, held notices, and usage"
 	},
 	"entries": [
+		{
+			"path": "bridge",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/bridge.ts",
+			"stdout": "strict JSON bridge receipt",
+			"result": "board,bridgeId,source ids,segments,crossing,two generated elements,fingerprint",
+			"diagnostics": "usage/refusal on stderr",
+			"exits": [0, 1, 2, 3, 5],
+			"prerequisites": ["server", "board", "doing"],
+			"relationships": ["one POST /api/bridges"],
+			"semantics": "one explicit proper crossing becomes exactly two generated line parts",
+			"ordering": "plan inside the locked mutation; mask then redraw",
+			"nextFields": ["bridgeId", "elements", "fingerprint.version"],
+			"workflow": "necessary composition",
+			"effects": ["write"],
+			"refusals": [
+				{ "code": "BOARD_REQUIRED", "exit": 2 },
+				{ "code": "CANVAS_UNREACHABLE", "exit": 3 },
+				{ "code": "DOING_REQUIRED", "exit": 1 },
+				{ "code": "BOARD_HELD", "exit": 5 },
+				{ "code": "BOARD_CONFLICT", "exit": 5 },
+				{ "code": "BOARD_VERSION_CONFLICT", "exit": 5 },
+				{ "code": "CLAIM_REVOKED", "exit": 5 },
+				{ "code": "BRIDGE_REFUSED", "exit": 1 }
+			],
+			"introducedBy": "TASK-120"
+		},
+		{
+			"path": "bridge remove",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/bridge.ts",
+			"stdout": "strict JSON removal receipt",
+			"result": "board,bridgeId,two deleted ids,fingerprint",
+			"diagnostics": "usage/refusal on stderr",
+			"exits": [0, 1, 2, 3, 5],
+			"prerequisites": ["server", "board", "doing"],
+			"relationships": ["one DELETE /api/bridges/:id"],
+			"semantics": "remove exactly one strict provenance pair without consulting sources",
+			"ordering": "resolve provenance inside the locked mutation, then delete two ids",
+			"nextFields": ["bridgeId", "deleted", "fingerprint.version"],
+			"workflow": "necessary composition",
+			"effects": ["write"],
+			"refusals": [
+				{ "code": "BOARD_REQUIRED", "exit": 2 },
+				{ "code": "CANVAS_UNREACHABLE", "exit": 3 },
+				{ "code": "DOING_REQUIRED", "exit": 1 },
+				{ "code": "BOARD_HELD", "exit": 5 },
+				{ "code": "BOARD_CONFLICT", "exit": 5 },
+				{ "code": "BOARD_VERSION_CONFLICT", "exit": 5 },
+				{ "code": "CLAIM_REVOKED", "exit": 5 },
+				{ "code": "BRIDGE_REFUSED", "exit": 1 }
+			],
+			"introducedBy": "TASK-120"
+		},
 		{
 			"path": "start",
 			"parserOwner": "CommandContract concrete Commander parser",
@@ -803,7 +857,7 @@
 			"path": "check",
 			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/check.ts",
-			"stdout": "schema-v1 JSON report or deterministic text",
+			"stdout": "schema-v2 JSON report or deterministic text",
 			"result": "board plus closed inspection report",
 			"diagnostics": "usage and operational read errors only",
 			"exits": [0, 1, 2, 6, 7, 8],
