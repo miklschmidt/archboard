@@ -18,6 +18,7 @@
 // which is what makes this cheap enough to run on every build.
 
 import fs from "node:fs";
+import { createHash } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
@@ -70,6 +71,7 @@ const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-boards-"));
 process.env.ARCHBOARD_VAULT = vault;
 
 const { labelTextIdFor } = await import(src("runtime/engine/labels.ts"));
+const { inspectBoard } = await import(src("runtime/board-inspection/index.ts"));
 
 let failures = 0;
 const check = (label, cond, extra = "") => {
@@ -77,6 +79,14 @@ const check = (label, cond, extra = "") => {
 	console.log(`${cond ? "ok  " : "FAIL"} - ${label}${extra ? ` (${extra})` : ""}`);
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const waitForSeen = async (paneState, start, type) => {
+	for (let attempt = 0; attempt < 100; attempt += 1) {
+		const found = paneState.seen.slice(start).find((message) => message.type === type);
+		if (found) return found;
+		await sleep(20);
+	}
+	return null;
+};
 
 // ---------------------------------------------------------------------------
 // The rules, on their own
@@ -740,6 +750,80 @@ try {
 		!(afterLegacyRefusal.body?.open ?? []).some((board) => board.key === "legacy-geometry"),
 	);
 
+	const findingIdentity = makeIdentity({ board: "finding-source" });
+	const findingFile = vaultPathFor(findingIdentity);
+	const findingElements = [
+		{
+			id: "fone",
+			type: "text",
+			x: 20,
+			y: 40,
+			width: 100,
+			height: 20,
+			text: "First",
+			fontFamily: 99,
+			fontSize: 20,
+			isDeleted: false,
+		},
+		{
+			id: "ftwo",
+			type: "text",
+			x: 240,
+			y: 80,
+			width: 80,
+			height: 20,
+			text: "Second",
+			fontFamily: 99,
+			fontSize: 20,
+			isDeleted: false,
+		},
+		{
+			id: "fimage",
+			type: "image",
+			x: 500,
+			y: 600,
+			width: 32,
+			height: 32,
+			fileId: "finding-file",
+			isDeleted: false,
+		},
+	];
+	const findingNote = renderBoardNote(
+		{
+			type: "excalidraw",
+			version: 2,
+			elements: findingElements,
+			appState: {},
+			files: {
+				"finding-file": {
+					id: "finding-file",
+					mimeType: "image/png",
+					dataURL: "data:image/png;base64,UElYRUw=",
+					created: 1,
+				},
+			},
+		},
+		null,
+		findingIdentity,
+	);
+	fs.writeFileSync(findingFile, findingNote);
+	const unrenderableIdentity = makeIdentity({ board: "finding-unrenderable" });
+	const unrenderableFile = vaultPathFor(unrenderableIdentity);
+	const unrenderableNote = renderBoardNote(
+		{
+			type: "excalidraw",
+			version: 2,
+			elements: [
+				{ id: "safe", type: "rectangle", x: 10, y: 20, width: 40, height: 30, isDeleted: false },
+			],
+			appState: {},
+			files: {},
+		},
+		null,
+		unrenderableIdentity,
+	).replace(/"id"\s*:\s*"safe"/, '"id":""');
+	fs.writeFileSync(unrenderableFile, unrenderableNote);
+
 	// Two boards to compare, made before anything is on screen — which is
 	// allowed, and reported as such.
 	const madeCurrent = await api("POST", "/api/boards/new", { board: "payments", level: "system" });
@@ -1142,6 +1226,91 @@ try {
 		data: "aGk=",
 	});
 	check("  and the picture comes back", (await picture).status === 200);
+
+	const expectedFindingReport = inspectBoard(findingElements);
+	const paneBoardBeforeFindings = left.board();
+	const findingExportStart = left.since();
+	const findingExport = api("POST", "/api/export/findings?board=finding-source", { policy: {} });
+	const findingMessage = await waitForSeen(left, findingExportStart, "export_findings_request");
+	check(
+		"focused findings send one immutable persisted scene to the primary browser",
+		findingMessage?.sourceBoard === "finding-source" &&
+			findingMessage?.elements?.length === findingElements.length &&
+			findingMessage?.files?.["finding-file"]?.dataURL === "data:image/png;base64,UElYRUw=",
+		JSON.stringify(findingMessage).slice(0, 180),
+	);
+	check(
+		"  with report-order indexes and the exact inspection focus boxes",
+		JSON.stringify(findingMessage?.findings) ===
+			JSON.stringify(
+				expectedFindingReport.findings.map((finding, findingIndex) => ({
+					findingIndex,
+					focusBBox: finding.focusBBox,
+				})),
+			),
+	);
+	check(
+		"  without adopting the off-screen source board or sending scene mutations",
+		left.board() === paneBoardBeforeFindings &&
+			left.seen
+				.slice(findingExportStart)
+				.every(
+					(message) => message.type !== "initial_elements" && message.type !== "board_switched",
+				),
+	);
+	const firstFindingResult = await api("POST", "/api/export/findings/result", {
+		requestId: findingMessage?.requestId,
+		findingIndex: 0,
+		data: "Zmlyc3Q=",
+	});
+	const duplicateFindingResult = await api("POST", "/api/export/findings/result", {
+		requestId: findingMessage?.requestId,
+		findingIndex: 0,
+		data: "ZHVwbGljYXRl",
+	});
+	const unrelatedFindingResult = await api("POST", "/api/export/findings/result", {
+		requestId: findingMessage?.requestId,
+		findingIndex: 99,
+		data: "d3Jvbmc=",
+	});
+	await api("POST", "/api/export/findings/result", {
+		requestId: findingMessage?.requestId,
+		findingIndex: 1,
+		error: "synthetic failure",
+	});
+	const findingExported = await findingExport;
+	check("finding callbacks accept the first correlated result", firstFindingResult.status === 200);
+	check("  reject a duplicate before completing the set", duplicateFindingResult.status === 409);
+	check(
+		"  and reject an index outside the correlated request",
+		unrelatedFindingResult.status === 400,
+	);
+	check(
+		"the finding export returns ordered separate results and the exact note fingerprint",
+		findingExported.status === 200 &&
+			findingExported.body?.sourceFingerprint ===
+				createHash("sha256").update(fs.readFileSync(findingFile)).digest("hex") &&
+			JSON.stringify(findingExported.body?.results) ===
+				JSON.stringify([
+					{ findingIndex: 0, data: "Zmlyc3Q=" },
+					{ findingIndex: 1, failure: "browser-export-failed" },
+				]),
+	);
+	const unrenderableStart = left.since();
+	const unrenderableExport = await api("POST", "/api/export/findings?board=finding-unrenderable", {
+		policy: {},
+	});
+	check(
+		"an inspection-only malformed source is reported without asking the browser to repair it",
+		unrenderableExport.status === 200 &&
+			unrenderableExport.body?.sourceRenderable === false &&
+			unrenderableExport.body?.report?.coverage === "indeterminate" &&
+			unrenderableExport.body?.results?.length === 0 &&
+			left.seen
+				.slice(unrenderableStart)
+				.every((message) => message.type !== "export_findings_request"),
+		JSON.stringify(unrenderableExport.body),
+	);
 
 	// --- mermaid converts where its board is (TASK-046) --------------------
 	//

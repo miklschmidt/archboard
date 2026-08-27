@@ -21,6 +21,7 @@ export interface ServerElement {
 	createdAt?: string;
 	updatedAt?: string;
 	version?: number;
+	isDeleted?: boolean;
 	syncedAt?: string;
 	source?: string;
 	syncTimestamp?: string;
@@ -190,6 +191,11 @@ export interface WebSocketMessage {
 	requestId?: string;
 	format?: string;
 	background?: boolean;
+	sourceBoard?: string;
+	findings?: Array<{
+		findingIndex: number;
+		focusBBox: { x: number; y: number; width: number; height: number };
+	}>;
 	scrollToContent?: boolean;
 	scrollToElementId?: string;
 	scrollToElementIds?: string[];

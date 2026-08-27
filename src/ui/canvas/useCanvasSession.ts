@@ -19,7 +19,10 @@ import {
 	exportToSvg,
 } from "@excalidraw/excalidraw";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
-import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
+import type {
+	ExcalidrawElement,
+	ExcalidrawFrameLikeElement,
+} from "@excalidraw/excalidraw/element/types";
 import type { AppState, BinaryFileData, LibraryItems } from "@excalidraw/excalidraw/types";
 import { convertMermaidToExcalidraw, DEFAULT_MERMAID_CONFIG } from "./mermaidConverter";
 import type {
@@ -50,6 +53,7 @@ import {
 	type SceneUpdate,
 } from "./change-reporting";
 import { ownsHoldAttempt, type HoldAttempt } from "./hold-attempt";
+import { findingRasterDimensions } from "../../shared/finding-raster";
 import {
 	beaconChanges,
 	BoardConflictError,
@@ -58,6 +62,7 @@ import {
 	holdBoard,
 	loadedBundle,
 	postExportResult,
+	postFindingExportResult,
 	postViewportResult,
 	publishSelection,
 	releaseBoard,
@@ -80,6 +85,70 @@ const CONTENT_MESSAGES = new Set([
 	"canvas_cleared",
 	"files_added",
 ]);
+
+function findingFrame(
+	box: { x: number; y: number; width: number; height: number },
+	findingIndex: number,
+): ExcalidrawFrameLikeElement {
+	return {
+		id: `archboard-finding-${findingIndex}`,
+		type: "frame",
+		x: box.x,
+		y: box.y,
+		width: box.width,
+		height: box.height,
+		angle: 0,
+		strokeColor: "#000000",
+		backgroundColor: "transparent",
+		fillStyle: "solid",
+		strokeWidth: 1,
+		strokeStyle: "solid",
+		roughness: 0,
+		opacity: 100,
+		roundness: null,
+		seed: findingIndex + 1,
+		version: 1,
+		versionNonce: findingIndex + 1,
+		index: null,
+		isDeleted: false,
+		groupIds: [],
+		frameId: null,
+		boundElements: null,
+		updated: 1,
+		link: null,
+		locked: true,
+		name: null,
+	};
+}
+
+async function blobBase64(blob: Blob): Promise<string> {
+	return new Promise<string>((resolve, reject) => {
+		const reader = new FileReader();
+		reader.addEventListener("load", () => {
+			const encoded = (reader.result as string)?.split(",")[1];
+			if (encoded) resolve(encoded);
+			else reject(new Error("Could not extract base64 data from the export"));
+		});
+		reader.addEventListener("error", () => reject(reader.error ?? new Error("FileReader failed")));
+		reader.readAsDataURL(blob);
+	});
+}
+
+async function answerArtifactRequest(
+	data: WebSocketMessage,
+	answerExport: (message: WebSocketMessage) => Promise<void>,
+	answerFindingExport: (message: WebSocketMessage) => Promise<void>,
+): Promise<boolean> {
+	if (data.type === "export_image_request") {
+		await answerExport(data);
+		return true;
+	}
+	if (data.type === "export_findings_request") {
+		await answerFindingExport(data);
+		return true;
+	}
+	return false;
+}
 
 // Every duration this pane waits out. They are in src/shared/timing/timing.ts with the
 // server's and the change feed's, because they pull against each other and one
@@ -1096,22 +1165,45 @@ export function useCanvasSession({
 			}
 
 			const blob = await exportToBlob({ elements, appState, files, mimeType: "image/png" });
-			const base64 = await new Promise<string>((resolve, reject) => {
-				const reader = new FileReader();
-				reader.addEventListener("load", () => {
-					const encoded = (reader.result as string)?.split(",")[1];
-					if (encoded) resolve(encoded);
-					else reject(new Error("Could not extract base64 data from the export"));
-				});
-				reader.addEventListener("error", () =>
-					reject(reader.error ?? new Error("FileReader failed")),
-				);
-				reader.readAsDataURL(blob);
-			});
+			const base64 = await blobBase64(blob);
 			await respond({ format: "png", data: base64 });
 		} catch (error) {
 			void error;
 			await respond({ error: (error as Error).message });
+		}
+	}, []);
+
+	const answerFindingExport = useCallback(async (data: WebSocketMessage): Promise<void> => {
+		if (!data.requestId || !Array.isArray(data.findings) || !Array.isArray(data.elements)) return;
+		const elements = data.elements.filter(
+			(element) => element.isDeleted !== true,
+		) as unknown as ExcalidrawElement[];
+		const files = data.files ?? {};
+		for (const request of data.findings) {
+			const { findingIndex, focusBBox } = request;
+			try {
+				const dimensions = findingRasterDimensions(focusBBox);
+				const blob = await exportToBlob({
+					elements: elements as never,
+					files,
+					appState: {
+						exportBackground: true,
+						viewBackgroundColor: "#ffffff",
+						exportScale: dimensions.scale,
+					},
+					mimeType: "image/png",
+					exportPadding: 0,
+					exportingFrame: findingFrame(focusBBox, findingIndex),
+					getDimensions: () => dimensions,
+				});
+				await postFindingExportResult(data.requestId, findingIndex, {
+					data: await blobBase64(blob),
+				});
+			} catch (error) {
+				await postFindingExportResult(data.requestId, findingIndex, {
+					error: (error as Error).message,
+				}).catch(() => {});
+			}
 		}
 	}, []);
 
@@ -1239,6 +1331,7 @@ export function useCanvasSession({
 			// fraction of a second before the pane replaces it again. So board content
 			// waits for the full report; status from the server does not (TASK-079).
 			if (needsFullReport(reportingRef.current.state) && CONTENT_MESSAGES.has(data.type)) return;
+			if (await answerArtifactRequest(data, answerExport, answerFindingExport)) return;
 
 			switch (data.type) {
 				// The first frame, and every reconnection. If this pane is holding edits
@@ -1407,10 +1500,6 @@ export function useCanvasSession({
 				// impossible to photograph, to frame, or to convert into — an agent could
 				// draw a proposal beside the current architecture and never see it, and
 				// could not put a mermaid diagram there at all.
-				case "export_image_request":
-					await answerExport(data);
-					break;
-
 				case "set_viewport":
 					await answerViewport(data);
 					break;
@@ -1435,6 +1524,7 @@ export function useCanvasSession({
 		[
 			adoptBoard,
 			answerExport,
+			answerFindingExport,
 			answerMermaid,
 			answerViewport,
 			applyServerElements,
