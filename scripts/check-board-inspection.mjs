@@ -7390,11 +7390,7 @@ check(
 	"text mode matches production formatter",
 	textRun.stdout === formatInspectionText(cleanPackageResult) + "\n",
 );
-for (const option of [
-	"--dimension-tolerance",
-	"--intersection-tolerance",
-	"--overlap-tolerance",
-]) {
+for (const option of ["--dimension-tolerance", "--intersection-tolerance", "--overlap-tolerance"]) {
 	const blank = run("clean", [option, ""]);
 	const explicitZero = run("clean", [option, "0"]);
 	check(

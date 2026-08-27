@@ -1304,9 +1304,7 @@ try {
 		"  carries the exact persisted report order and complete rendered snapshot fingerprint",
 		JSON.stringify(firstManifest?.report) === JSON.stringify(expectedFindingReport) &&
 			firstManifest?.sourceFingerprint === findingSource.fingerprint &&
-			firstManifest?.entries?.every(
-				(entry, findingIndex) => entry.findingIndex === findingIndex,
-			),
+			firstManifest?.entries?.every((entry, findingIndex) => entry.findingIndex === findingIndex),
 	);
 	const crossingIndex = firstManifest?.report?.findings?.findIndex(
 		(finding) => finding.code === "CONNECTOR_INTERSECTION_UNMARKED",
