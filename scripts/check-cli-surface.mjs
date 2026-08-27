@@ -373,7 +373,8 @@ const server = Bun.serve({
 			return Response.json({ success: true, files: {}, ...(held ? { held } : {}) });
 		}
 		if (request.method === "POST" && url.pathname === "/api/bridges") {
-			const receiptOver = body?.over === "invalid-receipt" ? "wrong-over" : bridgeFacts.overConnectorId;
+			const receiptOver =
+				body?.over === "invalid-receipt" ? "wrong-over" : bridgeFacts.overConnectorId;
 			return Response.json({
 				success: true,
 				board: "contract",

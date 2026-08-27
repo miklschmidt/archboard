@@ -242,12 +242,12 @@ for (const [roleIndex, role] of ["mask", "redraw"].entries()) {
 				removalRefused = error instanceof BridgeRefusal;
 			}
 		check(
-				`${role} bridge part ${String(label)} is ${String(reason)} and suppresses nothing`,
-				removalRefused &&
+			`${role} bridge part ${String(label)} is ${String(reason)} and suppresses nothing`,
+			removalRefused &&
 				report.findings.some(
-				(finding) =>
-					finding.code === "BRIDGE_PROVENANCE_INVALID" && finding.reason === reason,
-			) && report.findings.some(({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED"),
+					(finding) => finding.code === "BRIDGE_PROVENANCE_INVALID" && finding.reason === reason,
+				) &&
+				report.findings.some(({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED"),
 		);
 	}
 	const duplicateIds = cloneBridgeParts();
@@ -288,9 +288,7 @@ check(
 			reason === "stale-decoration" &&
 			details.issue === "z-order-invalid",
 	) &&
-		interposedBridgeReport.findings.some(
-			({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED",
-		),
+		interposedBridgeReport.findings.some(({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED"),
 );
 
 const bridgeReceipt = {
@@ -305,7 +303,10 @@ const bridgeReceipt = {
 	elements: bridgeApplied.named,
 	fingerprint: { elements: bridgedElements.length, note: "receipt", version: 1 },
 };
-check("the exact bridge create receipt parses", BridgeResultSchema.safeParse(bridgeReceipt).success);
+check(
+	"the exact bridge create receipt parses",
+	BridgeResultSchema.safeParse(bridgeReceipt).success,
+);
 const inconsistentBridgeReceipts = [
 	{ ...bridgeReceipt, bridgeId: "OtherBridge" },
 	{ ...bridgeReceipt, underConnectorId: bridgeReceipt.overConnectorId },
@@ -314,17 +315,11 @@ const inconsistentBridgeReceipts = [
 	{ ...bridgeReceipt, crossing: { x: 51, y: 50 } },
 	{
 		...bridgeReceipt,
-		elements: [
-			{ ...bridgeApplied.named[0], id: "OtherMask" },
-			bridgeApplied.named[1],
-		],
+		elements: [{ ...bridgeApplied.named[0], id: "OtherMask" }, bridgeApplied.named[1]],
 	},
 	{
 		...bridgeReceipt,
-		elements: [
-			bridgeApplied.named[0],
-			{ ...bridgeApplied.named[1], id: bridgePlan.bridgeId },
-		],
+		elements: [bridgeApplied.named[0], { ...bridgeApplied.named[1], id: bridgePlan.bridgeId }],
 	},
 	{
 		...bridgeReceipt,
