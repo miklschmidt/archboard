@@ -1,11 +1,11 @@
 ---
 id: TASK-126
 title: Make replace import one atomic board write
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-26 07:06'
-updated_date: '2026-08-27 17:13'
+updated_date: '2026-08-27 17:17'
 labels:
   - enhancement
 dependencies: []
@@ -25,10 +25,10 @@ Make import --replace submit the staged scene—elements and embedded files—as
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every successful replace import enters exactly one BoardContent mutation and never calls /api/elements/clear or /api/files. Under normal saving that mutation calls the note persistence boundary once and advances the persisted board version once; under existing held/stopped-saving semantics it performs one held-content update, zero note writes, and leaves the persisted version null or unadvanced with the existing held result and diagnostic.
-- [ ] #2 The final board is the canonical converted imported scene: prior elements and stale file payloads are absent, while IDs, indices, labels, bindings, and insertion order remain owned by applyElementInput and settlement.
-- [ ] #3 Callers and panes receive no cleared intermediate state: one net elements_changed result replaces old with new, with imported files delivered from the same mutation; persistence occurs before broadcast when normal saving is active.
-- [ ] #4 Import spellings, result JSON, streams, exits, held behavior, and merge behavior stay compatible. A refused replace performs zero writes and preserves the old note under doing, claim/lock, version, and optimistic note-conflict refusals.
+- [x] #1 Every successful replace import enters exactly one BoardContent mutation and never calls /api/elements/clear or /api/files. Under normal saving that mutation calls the note persistence boundary once and advances the persisted board version once; under existing held/stopped-saving semantics it performs one held-content update, zero note writes, and leaves the persisted version null or unadvanced with the existing held result and diagnostic.
+- [x] #2 The final board is the canonical converted imported scene: prior elements and stale file payloads are absent, while IDs, indices, labels, bindings, and insertion order remain owned by applyElementInput and settlement.
+- [x] #3 Callers and panes receive no cleared intermediate state: one net elements_changed result replaces old with new, with imported files delivered from the same mutation; persistence occurs before broadcast when normal saving is active.
+- [x] #4 Import spellings, result JSON, streams, exits, held behavior, and merge behavior stay compatible. A refused replace performs zero writes and preserves the old note under doing, claim/lock, version, and optimistic note-conflict refusals.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -80,3 +80,9 @@ created: 2026-08-27 16:17
 Plan correction approved before source implementation: existing held-board semantics are part of compatibility. A held replace still performs one atomic BoardContent update but intentionally makes zero note writes and does not advance the persisted version; normal saving performs exactly one persistence/version advance.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Made import --replace one atomic board-content act using the existing batch route and write owner. Replacement now stages elements and embedded files together, clears only isolated request-local content, applies conversion once, settles once, derives exact drawn file membership, and emits one old-to-new element delta plus a replacement-only file frame. Normal saving performs one note persistence and version advance; held boards perform one held-content update with zero disk writes and unchanged persisted version. Open panes drop stale/orphan files and receive changed bytes for reused drawn IDs; merge import and additive file uploads remain unchanged. Verified by 106 one-write checks, 115 reporting checks, 635 CLI checks, 197 Obsidian checks, 61 proofs/61 paths/1011 contract checks plus 93 workflows, types/lint/boundaries/boards/refusal owners, stable fix passes, complete check and separate full test with serial headless browser lanes, deterministic generated ownership, and clean independent Standards and Spec reviews over 6e827498484772f9faf71ad55f1cccd8317fad78..553dfc08b2de345b88d03eaf34cde3e027406884.
+<!-- SECTION:FINAL_SUMMARY:END -->
