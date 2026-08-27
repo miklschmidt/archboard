@@ -2,9 +2,9 @@
 	"schemaVersion": 1,
 	"reviewedBase": "2c5a639ddb432447308f9dba557156aab1391c89",
 	"surface": {
-		"commands": 35,
+		"commands": 36,
 		"subcommands": 25,
-		"paths": 60
+		"paths": 61
 	},
 	"globalContract": {
 		"bootstrap": "src/bin.ts removes one --url before importing runtime configuration",
@@ -870,6 +870,28 @@
 			"effects": ["local-read"],
 			"refusals": [],
 			"introducedBy": "TASK-119"
+		},
+		{
+			"path": "render-findings",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/render-findings.ts",
+			"stdout": "schema-v1 JSON manifest after artifact commit",
+			"result": "source fingerprint, exact inspection report, ordered rendered or failed entries",
+			"diagnostics": "usage, server, browser, read, render, validation, and filesystem errors",
+			"exits": [0, 1, 2, 3, 4],
+			"prerequisites": ["server", "browser", "board"],
+			"relationships": ["one POST /api/export/findings"],
+			"semantics": "render exact TASK-119 focus boxes from one persisted snapshot",
+			"ordering": "validate policy and empty directory, render one snapshot, validate all artifacts, write PNGs, write manifest last, present stdout",
+			"nextFields": ["sourceFingerprint", "report", "complete", "entries"],
+			"workflow": "necessary composition",
+			"effects": ["read", "browser", "local-read", "local-write"],
+			"refusals": [
+				{ "code": "BOARD_REQUIRED", "exit": 2 },
+				{ "code": "CANVAS_UNREACHABLE", "exit": 3 },
+				{ "code": "BROWSER_REQUIRED", "exit": 4 }
+			],
+			"introducedBy": "TASK-121"
 		},
 		{
 			"path": "changes",

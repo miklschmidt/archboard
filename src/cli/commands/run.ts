@@ -55,6 +55,7 @@ import {
 import { installSkillContract } from "./install-skill.js";
 import { libraryContract, libraryInsertContract, libraryListContract } from "./library.js";
 import { bridgeContract, bridgeRemoveContract } from "./bridge.js";
+import { renderFindingsContract } from "./render-findings.js";
 import { childDiscoveryOptions } from "../command-contract/route-options.js";
 
 interface ContractCommand {
@@ -328,6 +329,9 @@ const COMMANDS: Record<string, CommandRoute> = {
 	},
 	check: {
 		owner: contract(checkContract, "src/cli/commands/check.ts"),
+	},
+	"render-findings": {
+		owner: contract(renderFindingsContract, "src/cli/commands/render-findings.ts"),
 	},
 	changes: {
 		owner: contract(changesContract, "src/cli/commands/changes.ts"),
