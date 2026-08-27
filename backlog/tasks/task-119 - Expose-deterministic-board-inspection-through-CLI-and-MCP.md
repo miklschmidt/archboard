@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-27 03:55'
+updated_date: '2026-08-27 04:26'
 labels:
   - ready-for-agent
 dependencies:
@@ -610,6 +610,13 @@ Final validation for the 2026-08-27 consolidated remediation:
 - The first separate bun run test reached the documented human-performance reconciliation flake at [0,0,2]; the isolated human-performance diagnosis immediately passed [0,0], and the required complete bun run test rerun then passed, including human performance [0,0], fixed point 0/13 changed, typed-text, and live session 42/42. No gate was waived.
 - Two on-demand contract generations were byte-identical: cli-command-audit.md c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, command-contract-proof.json 2269f2c96ab9db9ccca5390a09f1187f78f66b82fd4c3d0a40d1c7142670a895, command-contract-proof.md c578b4ba5740e392df1451ba8ca5a268e968d4cd8a058839b272496f92780bcd. Derived views are absent/ignored; canonical docs/design/cli-command-audit.json remains tracked.
 - git diff --check and clean-tree/task-state verification remain as final read-only checks. TASK-119 remains In Progress with all acceptance criteria unchecked.
+
+### 2026-08-27 step-28 domain inventory closure
+
+- Commit `1cfbba0` makes shared group qualification charge every supplied groupIds entry for invalid-identity role classification, unsupported applicable geometry, and obstacle construction. Direct diagnostics pin the 1-versus-1,000 delta at 999 for both classification paths; persisted package cases preserve the closed findings and strict exit 8.
+- Shared label repair now uses exact indexed text membership instead of repeated textIds.includes scans. Inspection supplies one domain-level traversal observer for records, bound entries, membership candidates, label/drift graph entries, path points, findings, and boundTextDrift ordering. The 600-by-600 control completes below the analysis limit; the 6,000-by-6,000 direct and persisted boards stop deterministically at analysis attempt 25,000,001 with exactly one limit finding.
+- The public inspection suite now contains an explicit eight-family step-28 owner inventory for records, groupIds, boundElements, paths/segments, label membership/drift, hierarchy/events/candidates, model aggregates, and refs/points/findings. It is scaling evidence, not a syntax or call-graph audit.
+- Focused validation is green: type-check, lint, boundaries, module-scope, 58 contract paths/978 checks, inspection 730 checks, and labels 183 checks. Two real bun run fix passes were byte-stable at diff SHA-256 `ae1eae362f8a96e93efc6ebedc2914485a5542647e3d4476d52cc45371fc1d7a`. Complete check/test validation remains pending.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
