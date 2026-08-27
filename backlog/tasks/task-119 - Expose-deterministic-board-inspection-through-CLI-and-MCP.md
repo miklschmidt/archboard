@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-26 23:52'
+updated_date: '2026-08-27 01:00'
 labels:
   - ready-for-agent
 dependencies:
@@ -547,6 +547,14 @@ Complete validation passed for source commit `e9a4976` and checkpoint note `e592
 On-demand CLI contract generation ran twice with identical bytes: audit Markdown `c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55`, proof JSON `4757efc048d711c45093a249a2b5c819e30ed043cf84eaa2b5c819e30ed043cf84eaa2e642f6a2c40ac5fa`, proof Markdown `70bcf2892140a4916b3ff51a5d51ec71a8b5b2e62dc884358bac70d2ace99bb7`.
 
 Correction to the immediately preceding validation note: the proof JSON SHA-256 is `4757efc048d711c45093a249a2b5c819e30ed043cf84eaa2e642f6a2c40ac5fa`.
+
+### Primitive metering remediation (2026-08-27)
+
+- Checkpoint `a0a1697` centralizes budget-owned array, map, set, identity-code-unit, and stable-comparison operations behind immediate-charge primitives. Model construction, pass materialization, hierarchy/range work, and sweep lifecycle now use those owners.
+- The exact compatibility tree stores one immutable logical summary cell per node. This makes cell accounting auditable, reduces retained references, completes the approved 2,048 alternating case, and stops the 3,072 case at attempted unit 25,000,001.
+- Partial collision findings and cumulative diagnostics survive prepare-events and activate-or-expire stops. Direct and package fixtures pin the earlier connector-node penetration, one completed comparison, strict/non-strict behavior, and participant evidence.
+- `test:inspection` now has 749 checks, including exact primitive arithmetic, 1,000,000 rejected group entries, the 4,999,891-code-unit boundary, long persisted identity, source-audit red fixtures, comparison-first precedence, and 1,516,200 completion.
+- Focused lint, type, boundary, module-scope, 58-path contract, inspection, geometry, label, branch, and CLI gates passed. Two `bun run fix` passes produced identical diff hash `41a642400b3d73f7b53eb369fc25148db938e74414f7893b7094031781acbf8a`. Full check/test and final generator hygiene remain.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
