@@ -2,7 +2,11 @@ import type { NodeRef, ObstacleRef } from "../schemas.js";
 import type { DecodedRecord } from "./decode.js";
 import { aggregateBoxes, contains, type ExactBox } from "./geometry.js";
 import { sweepIntervalPairs, type SweepWork } from "./interval-sweep.js";
-import type { InspectionBudget } from "./inspection-budget.js";
+import type {
+	AnalysisWorkOwner,
+	AnalysisWorkPhase,
+	InspectionBudget,
+} from "./inspection-budget.js";
 import { compareIdentity, obstacleIdentity } from "./ordering.js";
 
 export interface InspectionNode {
@@ -182,22 +186,15 @@ export function nodeId(record: DecodedRecord): string | null {
 	return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-export function groupIds(record: DecodedRecord): string[] {
-	return Array.isArray(record.raw?.groupIds)
-		? record.raw.groupIds.filter(
-				(value): value is string => typeof value === "string" && value.length > 0,
-			)
-		: [];
-}
-
-function budgetedGroupIds(
+export function groupIds(
 	record: DecodedRecord,
-	budget: InspectionBudget,
-	pass: ModelPass,
+	budget?: InspectionBudget,
+	owner: AnalysisWorkOwner = "record-analysis",
+	phase: AnalysisWorkPhase = "classify-records",
 ): string[] {
 	const raw = record.raw?.groupIds;
 	if (!Array.isArray(raw)) return [];
-	budget.claimWork(pass, "aggregate-model", raw.length);
+	budget?.claimWork(owner, phase, raw.length);
 	return raw.filter((value): value is string => typeof value === "string" && value.length > 0);
 }
 
@@ -670,7 +667,7 @@ function buildObstacles(
 	for (let recordIndex = 0; recordIndex < eligible.length; recordIndex += 1) {
 		const record = eligible[recordIndex]!;
 		parent.set(record.id!, record.id!);
-		const groups = budgetedGroupIds(record, budget, "container-boundary");
+		const groups = groupIds(record, budget, "container-boundary", "aggregate-model");
 		groupsById.set(record.id!, groups);
 	}
 	const find = (id: string): string => {
