@@ -148,6 +148,8 @@ The canvas URL comes from `EXPRESS_SERVER_URL` (default `http://127.0.0.1:3000`)
 
 Results are JSON on stdout — except `describe` (plain text) and raw-content output when `--out` is omitted (`export` scene JSON, `screenshot --format svg`). Diagnostics on stderr. Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required, 5 board write refused.
 
+For tested producer-to-consumer extractions, see `references/cli-workflows.md`.
+
 `--board <key>` is left out of the table for width and is still required on every row that touches board content. So is `--doing "..."`, on every row that changes it.
 
 | Task                                 | Command                                                                                                                                                             |

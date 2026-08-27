@@ -71,7 +71,7 @@ export const checkContract = defineCommand({
 				when: { key: "text", present: false },
 				mode: "json",
 				held: "none",
-				description: "Schema-v1 inspection report",
+				description: "Schema-v2 inspection report",
 				presentation: ["result"],
 			},
 			{
