@@ -5,6 +5,7 @@ import { sweepIntervalPairs, type SweepWork } from "./interval-sweep.js";
 import {
 	comparePreprocessingIdentity,
 	encodePreprocessingObstacleIdentity,
+	PreprocessingOperations,
 	stablePreprocessingSort,
 	type PreprocessingBudget,
 } from "./preprocessing-budget.js";
@@ -122,11 +123,11 @@ function collected<T, U>(
 	pass: ModelPass,
 	mapValue: (value: T) => U,
 ): U[] {
-	budget.charge(pass, "prepare-events");
-	const output: U[] = [];
-	for (const value of values) {
-		budget.charge(pass, "prepare-events", 2);
-		output.push(mapValue(value));
+	const operations = new PreprocessingOperations(budget, pass, "prepare-events");
+	const output = operations.array<U>();
+	for (let index = 0; index < values.length; index += 1) {
+		const value = operations.read(values, index)!;
+		operations.push(output, mapValue(value));
 	}
 	return output;
 }
@@ -137,13 +138,12 @@ function filteredValues<T>(
 	pass: ModelPass,
 	keep: (value: T) => boolean,
 ): T[] {
-	budget.charge(pass, "prepare-events");
-	const output: T[] = [];
-	for (const value of values) {
-		budget.charge(pass, "prepare-events");
+	const operations = new PreprocessingOperations(budget, pass, "prepare-events");
+	const output = operations.array<T>();
+	for (let index = 0; index < values.length; index += 1) {
+		const value = operations.read(values, index)!;
 		if (!keep(value)) continue;
-		budget.charge(pass, "prepare-events");
-		output.push(value);
+		operations.push(output, value);
 	}
 	return output;
 }
@@ -215,6 +215,23 @@ export function groupIds(record: DecodedRecord): string[] {
 		: [];
 }
 
+function budgetedGroupIds(
+	record: DecodedRecord,
+	budget: PreprocessingBudget,
+	pass: ModelPass,
+): string[] {
+	const operations = new PreprocessingOperations(budget, pass, "prepare-events");
+	const output = operations.array<string>();
+	const raw = record.raw?.groupIds;
+	if (!Array.isArray(raw)) return output;
+	for (let index = 0; index < raw.length; index += 1) {
+		const value = operations.read(raw, index);
+		if (typeof value !== "string" || value.length === 0) continue;
+		operations.push(output, value);
+	}
+	return output;
+}
+
 export function libraryAttribution(record: DecodedRecord): {
 	valid: boolean;
 	item?: string;
@@ -248,7 +265,7 @@ export function libraryAttribution(record: DecodedRecord): {
 	};
 }
 
-function validBoundary(record: DecodedRecord): boolean {
+function validBoundary(record: DecodedRecord, operations: PreprocessingOperations): boolean {
 	const angle = record.raw?.angle;
 	return (
 		!!record.id &&
@@ -256,7 +273,7 @@ function validBoundary(record: DecodedRecord): boolean {
 		record.box.width > 0 &&
 		record.box.height > 0 &&
 		!!record.type &&
-		CLOSED.has(record.type) &&
+		operations.setHas(CLOSED, record.type) &&
 		(angle === undefined || angle === 0)
 	);
 }
@@ -267,15 +284,16 @@ function buildLabelClassifications(
 	duplicateIds: ReadonlySet<string>,
 	budget: PreprocessingBudget,
 ): Pick<InspectionModel, "labelOwnership" | "confirmedLabels"> {
-	const reverseLabelOwners = new Map<string, Set<string>>();
-	const labelsWithBlockedReverseClassification = new Set<string>();
-	for (const owner of live) {
-		budget.charge("node-hierarchy", "prepare-events");
+	const operations = new PreprocessingOperations(budget, "node-hierarchy", "prepare-events");
+	const reverseLabelOwners = operations.map<string, Set<string>>();
+	const labelsWithBlockedReverseClassification = operations.set<string>();
+	for (let ownerIndex = 0; ownerIndex < live.length; ownerIndex += 1) {
+		const owner = operations.read(live, ownerIndex)!;
 		chargeIdentity(budget, "node-hierarchy", owner.id);
 		if (!owner.id || owner.raw?.boundElements == null) continue;
 		if (Array.isArray(owner.raw.boundElements))
-			for (const entry of owner.raw.boundElements) {
-				budget.charge("node-hierarchy", "prepare-events");
+			for (let entryIndex = 0; entryIndex < owner.raw.boundElements.length; entryIndex += 1) {
+				const entry = operations.read(owner.raw.boundElements, entryIndex);
 				if (entry && typeof entry === "object" && !Array.isArray(entry)) {
 					const candidate = entry as Readonly<Record<string, unknown>>;
 					chargeIdentity(
@@ -286,30 +304,31 @@ function buildLabelClassifications(
 				}
 			}
 		const bounds = classifyBoundElements(owner.raw.boundElements);
-		for (const reference of bounds.readableEntries) {
-			budget.charge("node-hierarchy", "prepare-events", 2);
-			if (reference.type !== "text" || byId.get(reference.id)?.type !== "text") continue;
+		for (
+			let referenceIndex = 0;
+			referenceIndex < bounds.readableEntries.length;
+			referenceIndex += 1
+		) {
+			const reference = operations.read(bounds.readableEntries, referenceIndex)!;
+			if (reference.type !== "text" || operations.mapGet(byId, reference.id)?.type !== "text")
+				continue;
 			if (!owner.usableId) {
-				budget.charge("node-hierarchy", "prepare-events");
-				labelsWithBlockedReverseClassification.add(reference.id);
+				operations.setAdd(labelsWithBlockedReverseClassification, reference.id);
 				continue;
 			}
-			budget.charge("node-hierarchy", "prepare-events");
-			const owners = reverseLabelOwners.get(reference.id) ?? new Set<string>();
-			budget.charge("node-hierarchy", "prepare-events");
-			owners.add(owner.id);
-			budget.charge("node-hierarchy", "prepare-events");
-			reverseLabelOwners.set(reference.id, owners);
+			const owners =
+				operations.mapGet(reverseLabelOwners, reference.id) ?? operations.set<string>();
+			operations.setAdd(owners, owner.id);
+			operations.mapSet(reverseLabelOwners, reference.id, owners);
 			if (bounds.problems.length > 0) {
-				budget.charge("node-hierarchy", "prepare-events");
-				labelsWithBlockedReverseClassification.add(reference.id);
+				operations.setAdd(labelsWithBlockedReverseClassification, reference.id);
 			}
 		}
 	}
-	const labelOwnership = new Map<string, LabelOwnershipClassification>();
-	const confirmedLabels = new Map<string, string>();
-	for (const record of live) {
-		budget.charge("node-hierarchy", "prepare-events");
+	const labelOwnership = operations.map<string, LabelOwnershipClassification>();
+	const confirmedLabels = operations.map<string, string>();
+	for (let recordIndex = 0; recordIndex < live.length; recordIndex += 1) {
+		const record = operations.read(live, recordIndex)!;
 		chargeIdentity(budget, "node-hierarchy", record.id);
 		if (record.type !== "text" || !record.usableId || !record.id) continue;
 		const rawContainer = record.raw?.containerId;
@@ -317,21 +336,24 @@ function buildLabelClassifications(
 			(rawContainer !== undefined &&
 				rawContainer !== null &&
 				(typeof rawContainer !== "string" || rawContainer.length === 0)) ||
-			labelsWithBlockedReverseClassification.has(record.id) ||
-			(typeof rawContainer === "string" && duplicateIds.has(rawContainer));
+			operations.setHas(labelsWithBlockedReverseClassification, record.id) ||
+			(typeof rawContainer === "string" && operations.setHas(duplicateIds, rawContainer));
 		const forwardOwnerId =
 			typeof rawContainer === "string" && rawContainer.length > 0 ? rawContainer : null;
-		budget.charge("node-hierarchy", "prepare-events", 3);
-		const reverseOwnerIds = orderedIdentities(
-			[...(reverseLabelOwners.get(record.id) ?? [])],
-			budget,
-			"node-hierarchy",
+		const reverseOwners = operations.mapGet(reverseLabelOwners, record.id);
+		const reverseOwnerInput = operations.array<string>();
+		if (reverseOwners)
+			operations.forEachSet(reverseOwners, (owner) => operations.push(reverseOwnerInput, owner));
+		const reverseOwnerIds = orderedIdentities(reverseOwnerInput, budget, "node-hierarchy");
+		const candidateOwnerSet = operations.set<string>();
+		if (forwardOwnerId) operations.setAdd(candidateOwnerSet, forwardOwnerId);
+		for (let index = 0; index < reverseOwnerIds.length; index += 1)
+			operations.setAdd(candidateOwnerSet, operations.read(reverseOwnerIds, index)!);
+		const candidateOwnerInput = operations.array<string>();
+		operations.forEachSet(candidateOwnerSet, (owner) =>
+			operations.push(candidateOwnerInput, owner),
 		);
-		const candidateOwnerIds = orderedIdentities(
-			[...new Set([...(forwardOwnerId ? [forwardOwnerId] : []), ...reverseOwnerIds])],
-			budget,
-			"node-hierarchy",
-		);
+		const candidateOwnerIds = orderedIdentities(candidateOwnerInput, budget, "node-hierarchy");
 		let state: LabelOwnershipClassification["state"];
 		let resolvedOwnerId: string | null = null;
 		if (blocked) state = "blocked";
@@ -340,11 +362,11 @@ function buildLabelClassifications(
 			resolvedOwnerId = forwardOwnerId;
 		} else if (!forwardOwnerId && reverseOwnerIds.length === 1) {
 			state = "reverse-only";
-			resolvedOwnerId = reverseOwnerIds[0]!;
+			resolvedOwnerId = operations.read(reverseOwnerIds, 0)!;
 		} else if (
 			forwardOwnerId &&
 			reverseOwnerIds.length === 1 &&
-			reverseOwnerIds[0] === forwardOwnerId
+			operations.read(reverseOwnerIds, 0) === forwardOwnerId
 		) {
 			state = "matching";
 			resolvedOwnerId = forwardOwnerId;
@@ -358,12 +380,13 @@ function buildLabelClassifications(
 			resolvedOwnerId,
 			state,
 		};
-		budget.charge("node-hierarchy", "prepare-events");
-		labelOwnership.set(record.id, classification);
-		budget.charge("node-hierarchy", "prepare-events");
-		if (resolvedOwnerId && resolvedOwnerId !== record.id && byId.has(resolvedOwnerId)) {
-			budget.charge("node-hierarchy", "prepare-events");
-			confirmedLabels.set(record.id, resolvedOwnerId);
+		operations.mapSet(labelOwnership, record.id, classification);
+		if (
+			resolvedOwnerId &&
+			resolvedOwnerId !== record.id &&
+			operations.mapHas(byId, resolvedOwnerId)
+		) {
+			operations.mapSet(confirmedLabels, record.id, resolvedOwnerId);
 		}
 	}
 	return { labelOwnership, confirmedLabels };
@@ -375,36 +398,39 @@ function buildNodes(
 	confirmedLabels: ReadonlyMap<string, string>,
 	budget: PreprocessingBudget,
 ): Pick<InspectionModel, "nodes" | "nodeOfElement" | "aggregateFailures"> {
-	const grouped = new Map<string, DecodedRecord[]>();
-	const nodeOfElement = new Map<string, string>();
-	for (const record of live) {
-		budget.charge("node-hierarchy", "prepare-events");
+	const operations = new PreprocessingOperations(budget, "node-hierarchy", "prepare-events");
+	const grouped = operations.map<string, DecodedRecord[]>();
+	const nodeOfElement = operations.map<string, string>();
+	for (let recordIndex = 0; recordIndex < live.length; recordIndex += 1) {
+		const record = operations.read(live, recordIndex)!;
 		const node = nodeId(record);
 		chargeIdentity(budget, "node-hierarchy", node);
 		if (!node || !record.usableId || !record.id || !record.box) continue;
-		budget.charge("node-hierarchy", "prepare-events");
-		const members = grouped.get(node) ?? [];
-		members.push(record);
-		budget.charge("node-hierarchy", "prepare-events", 2);
-		grouped.set(node, members);
-		nodeOfElement.set(record.id, node);
+		const members = operations.mapGet(grouped, node) ?? operations.array<DecodedRecord>();
+		operations.push(members, record);
+		operations.mapSet(grouped, node, members);
+		operations.mapSet(nodeOfElement, record.id, node);
 	}
-	for (const [labelId, containerId] of confirmedLabels) {
-		budget.charge("node-hierarchy", "prepare-events", 3);
-		const owner = nodeOfElement.get(containerId);
-		const label = byId.get(labelId);
-		if (!owner || !label || nodeOfElement.has(labelId) || !label.box) continue;
-		budget.charge("node-hierarchy", "prepare-events", 2);
-		grouped.get(owner)!.push(label);
-		nodeOfElement.set(labelId, owner);
-	}
+	operations.forEachMap(confirmedLabels, (containerId, labelId) => {
+		const owner = operations.mapGet(nodeOfElement, containerId);
+		const label = operations.mapGet(byId, labelId);
+		if (!owner || !label || operations.mapHas(nodeOfElement, labelId) || !label.box) return;
+		operations.push(operations.mapGet(grouped, owner)!, label);
+		operations.mapSet(nodeOfElement, labelId, owner);
+	});
 
-	const nodes = new Map<string, InspectionNode>();
-	const aggregateFailures: AggregateCoordinateFailure[] = [];
-	for (const [id, members] of grouped) {
-		budget.charge("node-hierarchy", "prepare-events", members.length * 3 + 1);
-		const labels = members.filter((record) => confirmedLabels.has(record.id ?? ""));
-		const bodies = members.filter((record) => !confirmedLabels.has(record.id ?? ""));
+	const nodes = operations.map<string, InspectionNode>();
+	const aggregateFailures = operations.array<AggregateCoordinateFailure>();
+	operations.forEachMap(grouped, (members, id) => {
+		const labels = filteredValues(members, budget, "node-hierarchy", (record) =>
+			operations.mapHas(confirmedLabels, record.id ?? ""),
+		);
+		const bodies = filteredValues(
+			members,
+			budget,
+			"node-hierarchy",
+			(record) => !operations.mapHas(confirmedLabels, record.id ?? ""),
+		);
 		const bodyMembers = bodies.length > 0 ? bodies : members;
 		const bodyResult = aggregateBoxes(
 			collected(bodyMembers, budget, "node-hierarchy", (record) => record.box!),
@@ -413,17 +439,26 @@ function buildNodes(
 			collected(members, budget, "node-hierarchy", (record) => record.box!),
 		);
 		if (bodyResult.kind !== "representable") {
-			aggregateFailures.push({ scope: "semantic-node-body", subjectId: id, members: bodyMembers });
-			for (const member of members)
+			operations.push(aggregateFailures, {
+				scope: "semantic-node-body",
+				subjectId: id,
+				members: bodyMembers,
+			});
+			for (let memberIndex = 0; memberIndex < members.length; memberIndex += 1) {
+				const member = operations.read(members, memberIndex)!;
 				if (member.id) {
-					budget.charge("node-hierarchy", "prepare-events");
-					nodeOfElement.delete(member.id);
+					operations.mapDelete(nodeOfElement, member.id);
 				}
-			continue;
+			}
+			return;
 		}
 		const aggregate = aggregateResult.kind === "representable" ? aggregateResult.box : null;
 		if (!aggregate)
-			aggregateFailures.push({ scope: "semantic-node-aggregate", subjectId: id, members });
+			operations.push(aggregateFailures, {
+				scope: "semantic-node-aggregate",
+				subjectId: id,
+				members,
+			});
 		const elementIds = orderedIdentities(
 			collected(bodies, budget, "node-hierarchy", (record) => record.id!),
 			budget,
@@ -434,20 +469,21 @@ function buildNodes(
 			budget,
 			"node-hierarchy",
 		);
-		budget.charge("node-hierarchy", "prepare-events");
-		nodes.set(id, {
+		operations.mapSet(nodes, id, {
 			id,
 			members,
 			bodies,
 			labels,
 			aggregate,
 			body: bodyResult.box,
-			boundaries: bodies.filter(validBoundary),
+			boundaries: filteredValues(bodies, budget, "node-hierarchy", (record) =>
+				validBoundary(record, operations),
+			),
 			parentId: null,
 			children: [],
 			ref: { id, elementIds, labelElementIds },
 		});
-	}
+	});
 	return { nodes, nodeOfElement, aggregateFailures };
 }
 
@@ -500,36 +536,37 @@ function assignNodeHierarchy(
 	nodes: Map<string, InspectionNode>,
 	budget: PreprocessingBudget,
 ): SweepWork {
-	budget.charge("node-hierarchy", "prepare-events");
-	const children: InspectionNode[] = [];
-	for (const node of nodes.values()) {
-		budget.charge("node-hierarchy", "prepare-events", 2);
-		children.push(node);
-	}
-	budget.charge("node-hierarchy", "prepare-events");
-	const boundaries: Array<{ owner: InspectionNode; boundary: DecodedRecord }> = [];
-	for (const owner of children)
-		for (const boundary of owner.boundaries) {
-			budget.charge("node-hierarchy", "prepare-events", 2);
-			boundaries.push({ owner, boundary });
+	const prepare = new PreprocessingOperations(budget, "node-hierarchy", "prepare-events");
+	const hierarchy = new PreprocessingOperations(budget, "node-hierarchy", "hierarchy-query");
+	const children = prepare.array<InspectionNode>();
+	prepare.forEachMap(nodes, (node) => prepare.push(children, node));
+	const boundaries = prepare.array<{ owner: InspectionNode; boundary: DecodedRecord }>();
+	for (let ownerIndex = 0; ownerIndex < children.length; ownerIndex += 1) {
+		const owner = prepare.read(children, ownerIndex)!;
+		for (let boundaryIndex = 0; boundaryIndex < owner.boundaries.length; boundaryIndex += 1) {
+			const boundary = prepare.read(owner.boundaries, boundaryIndex)!;
+			prepare.push(boundaries, { owner, boundary });
 		}
-	budget.charge("node-hierarchy", "prepare-events", 2);
-	const childAreas = new Map<string, BinaryFactor>();
-	for (const child of children) {
-		budget.charge("node-hierarchy", "prepare-events", 2);
-		childAreas.set(child.id, areaFactor(child.body));
 	}
-	const boundaryAreas = new Map<DecodedRecord, BinaryFactor>();
-	for (const { boundary } of boundaries) {
-		budget.charge("node-hierarchy", "prepare-events", 2);
-		boundaryAreas.set(boundary, areaFactor(boundary.box!));
+	const childAreas = prepare.map<string, BinaryFactor>();
+	for (let childIndex = 0; childIndex < children.length; childIndex += 1) {
+		const child = prepare.read(children, childIndex)!;
+		prepare.mapSet(childAreas, child.id, areaFactor(child.body));
 	}
-	const selectedByChild = new Map<string, { owner: InspectionNode; boundary: DecodedRecord }>();
+	const boundaryAreas = prepare.map<DecodedRecord, BinaryFactor>();
+	for (let boundaryIndex = 0; boundaryIndex < boundaries.length; boundaryIndex += 1) {
+		const { boundary } = prepare.read(boundaries, boundaryIndex)!;
+		prepare.mapSet(boundaryAreas, boundary, areaFactor(boundary.box!));
+	}
+	const selectedByChild = prepare.map<string, { owner: InspectionNode; boundary: DecodedRecord }>();
 	const candidateOrder = (
 		a: { owner: InspectionNode; boundary: DecodedRecord },
 		b: { owner: InspectionNode; boundary: DecodedRecord },
 	) =>
-		compareAreaFactors(boundaryAreas.get(a.boundary)!, boundaryAreas.get(b.boundary)!) ||
+		compareAreaFactors(
+			hierarchy.mapGet(boundaryAreas, a.boundary)!,
+			hierarchy.mapGet(boundaryAreas, b.boundary)!,
+		) ||
 		comparePreprocessingIdentity(
 			budget,
 			"node-hierarchy",
@@ -550,47 +587,64 @@ function assignNodeHierarchy(
 			min: child.body.x,
 			max: child.body.x + child.body.width,
 			value: child,
-			semantics: { partition: child.id, excludedPartitions: new Set([child.id]) },
+			semantics: {
+				partition: child.id,
+				excludedPartitions: (() => {
+					const excluded = prepare.set<string>();
+					prepare.setAdd(excluded, child.id);
+					return excluded;
+				})(),
+			},
 		})),
 		collected(boundaries, budget, "node-hierarchy", ({ owner, boundary }) => ({
 			id: boundary.id!,
 			min: boundary.box!.x,
 			max: boundary.box!.x + boundary.box!.width,
 			value: { owner, boundary },
-			semantics: { partition: owner.id, excludedPartitions: new Set([owner.id]) },
+			semantics: {
+				partition: owner.id,
+				excludedPartitions: (() => {
+					const excluded = prepare.set<string>();
+					prepare.setAdd(excluded, owner.id);
+					return excluded;
+				})(),
+			},
 		})),
 		false,
 		(childInterval, boundaryInterval) => {
-			budget.charge("node-hierarchy", "hierarchy-query", 4);
 			const child = childInterval.value;
 			const { owner, boundary } = boundaryInterval.value;
 			if (boundaryInterval.min > childInterval.min || boundaryInterval.max < childInterval.max)
 				return;
 			if (
-				compareAreaFactors(boundaryAreas.get(boundary)!, childAreas.get(child.id)!) <= 0 ||
+				compareAreaFactors(
+					hierarchy.mapGet(boundaryAreas, boundary)!,
+					hierarchy.mapGet(childAreas, child.id)!,
+				) <= 0 ||
 				!contains(boundary.box!, child.body)
 			)
 				return;
 			const candidate = { owner, boundary };
-			const selected = selectedByChild.get(child.id);
+			const selected = hierarchy.mapGet(selectedByChild, child.id);
 			if (!selected || candidateOrder(candidate, selected) < 0)
-				selectedByChild.set(child.id, candidate);
+				hierarchy.mapSet(selectedByChild, child.id, candidate);
 		},
 		{ budget, pass: "node-hierarchy" },
 	);
-	for (const child of children) {
-		budget.charge("node-hierarchy", "hierarchy-query");
-		const selected = selectedByChild.get(child.id);
+	for (let childIndex = 0; childIndex < children.length; childIndex += 1) {
+		const child = hierarchy.read(children, childIndex)!;
+		const selected = hierarchy.mapGet(selectedByChild, child.id);
 		if (selected) child.parentId = selected.owner.id;
 	}
 	work.peakRetainedSelections = selectedByChild.size;
-	for (const node of nodes.values())
+	hierarchy.forEachMap(nodes, (node) => {
 		if (node.parentId) {
-			budget.charge("node-hierarchy", "hierarchy-query");
-			nodes.get(node.parentId)?.children.push(node.id);
+			hierarchy.push(hierarchy.mapGet(nodes, node.parentId)!.children, node.id);
 		}
-	for (const node of nodes.values())
+	});
+	hierarchy.forEachMap(nodes, (node) => {
 		node.children = orderedIdentities(node.children, budget, "node-hierarchy");
+	});
 	return work;
 }
 
@@ -600,9 +654,10 @@ function buildConnectorEndpoints(
 	duplicateIds: ReadonlySet<string>,
 	budget: PreprocessingBudget,
 ): Map<string, ConnectorEndpointClassification> {
-	const connectorEndpoints = new Map<string, ConnectorEndpointClassification>();
-	for (const record of live) {
-		budget.charge("node-hierarchy", "prepare-events");
+	const operations = new PreprocessingOperations(budget, "node-hierarchy", "prepare-events");
+	const connectorEndpoints = operations.map<string, ConnectorEndpointClassification>();
+	for (let recordIndex = 0; recordIndex < live.length; recordIndex += 1) {
+		const record = operations.read(live, recordIndex)!;
 		if (!record.usableId || !record.id || (record.type !== "arrow" && record.type !== "line"))
 			continue;
 		const endpoint = (end: "start" | "end") => {
@@ -613,14 +668,16 @@ function buildConnectorEndpoints(
 			return {
 				blocked:
 					target.blockingIssue !== null ||
-					(target.readableTargetId !== null && duplicateIds.has(target.readableTargetId)),
-				node: target.readableTargetId ? nodeOfElement.get(target.readableTargetId) : undefined,
+					(target.readableTargetId !== null &&
+						operations.setHas(duplicateIds, target.readableTargetId)),
+				node: target.readableTargetId
+					? operations.mapGet(nodeOfElement, target.readableTargetId)
+					: undefined,
 			};
 		};
 		const start = endpoint("start");
 		const end = endpoint("end");
-		budget.charge("node-hierarchy", "prepare-events");
-		connectorEndpoints.set(record.id, {
+		operations.mapSet(connectorEndpoints, record.id, {
 			nodeAnalysisEligible: !start.blocked && !end.blocked,
 			startNode: start.node,
 			endNode: end.node,
@@ -635,31 +692,35 @@ function findContainerOnlyIds(
 	nodeOfElement: ReadonlyMap<string, string>,
 	budget: PreprocessingBudget,
 ): { ids: Set<string>; work: SweepWork } {
-	const containerOnlyIds = new Set<string>();
+	const operations = new PreprocessingOperations(budget, "container-boundary", "prepare-events");
+	const containerOnlyIds = operations.set<string>();
 	const boundaries = filteredValues(live, budget, "container-boundary", (record) => {
-		return !nodeOfElement.has(record.id ?? "") && validBoundary(record);
+		return !operations.mapHas(nodeOfElement, record.id ?? "") && validBoundary(record, operations);
 	});
+	const nodeValues = operations.array<InspectionNode>();
+	operations.forEachMap(nodes, (node) => operations.push(nodeValues, node));
 	const work = sweepIntervalPairs(
 		collected(boundaries, budget, "container-boundary", (record) => ({
 			id: record.id!,
 			min: record.box!.x,
 			max: record.box!.x + record.box!.width,
 			value: record,
-			semantics: { partition: record.id!, excludedPartitions: new Set<string>() },
+			semantics: { partition: record.id!, excludedPartitions: operations.set<string>() },
 		})),
-		collected([...nodes.values()], budget, "container-boundary", (node) => ({
+		collected(nodeValues, budget, "container-boundary", (node) => ({
 			id: node.id,
 			min: node.body.x,
 			max: node.body.x + node.body.width,
 			value: node,
-			semantics: { partition: node.id, excludedPartitions: new Set<string>() },
+			semantics: { partition: node.id, excludedPartitions: operations.set<string>() },
 		})),
 		false,
 		(boundary, node) => {
-			budget.charge("container-boundary", "hierarchy-query");
 			if (contains(boundary.value.box!, node.value.body)) {
-				budget.charge("container-boundary", "hierarchy-query");
-				containerOnlyIds.add(boundary.value.id!);
+				new PreprocessingOperations(budget, "container-boundary", "hierarchy-query").setAdd(
+					containerOnlyIds,
+					boundary.value.id!,
+				);
 			}
 		},
 		{ budget, pass: "container-boundary" },
@@ -677,6 +738,12 @@ function buildObstacles(
 	InspectionModel,
 	"obstacles" | "qualifyingGroupedObstacleElementIds" | "aggregateFailures"
 > {
+	const operations = new PreprocessingOperations(budget, "container-boundary", "prepare-events");
+	const hierarchyOperations = new PreprocessingOperations(
+		budget,
+		"container-boundary",
+		"hierarchy-query",
+	);
 	const eligible = filteredValues(live, budget, "container-boundary", (record) => {
 		const angle = record.raw?.angle;
 		return (
@@ -686,43 +753,37 @@ function buildObstacles(
 			!!record.box &&
 			record.box.width > 0 &&
 			record.box.height > 0 &&
-			OBSTACLE_BODY.has(record.type) &&
+			operations.setHas(OBSTACLE_BODY, record.type) &&
 			(angle === undefined || angle === 0) &&
-			!nodeOfElement.has(record.id) &&
-			!confirmedLabels.has(record.id) &&
-			!containerOnlyIds.has(record.id)
+			!operations.mapHas(nodeOfElement, record.id) &&
+			!operations.mapHas(confirmedLabels, record.id) &&
+			!operations.setHas(containerOnlyIds, record.id)
 		);
 	});
-	const parent = new Map(
-		collected(eligible, budget, "container-boundary", (record) => {
-			budget.charge("container-boundary", "prepare-events");
-			return [record.id!, record.id!];
-		}),
-	);
-	const groupsById = new Map(
-		collected(eligible, budget, "container-boundary", (record) => {
-			budget.charge("container-boundary", "prepare-events");
-			const groups = groupIds(record);
-			for (const group of groups) chargeIdentity(budget, "container-boundary", group);
-			return [record.id!, groups];
-		}),
-	);
+	const parent = operations.map<string, string>();
+	const groupsById = operations.map<string, string[]>();
+	for (let recordIndex = 0; recordIndex < eligible.length; recordIndex += 1) {
+		const record = operations.read(eligible, recordIndex)!;
+		operations.mapSet(parent, record.id!, record.id!);
+		const groups = budgetedGroupIds(record, budget, "container-boundary");
+		for (let groupIndex = 0; groupIndex < groups.length; groupIndex += 1)
+			chargeIdentity(budget, "container-boundary", operations.read(groups, groupIndex)!);
+		operations.mapSet(groupsById, record.id!, groups);
+	}
 	const find = (id: string): string => {
 		let current = id;
 		while (true) {
 			budget.charge("container-boundary", "hierarchy-query");
-			const next = parent.get(current);
+			const next = hierarchyOperations.mapGet(parent, current);
 			if (next === current) break;
 			current = next!;
 		}
 		let next = id;
 		while (true) {
 			budget.charge("container-boundary", "hierarchy-query");
-			if (parent.get(next) === current) break;
-			budget.charge("container-boundary", "hierarchy-query");
-			const previous = parent.get(next)!;
-			budget.charge("container-boundary", "hierarchy-query");
-			parent.set(next, current);
+			if (hierarchyOperations.mapGet(parent, next) === current) break;
+			const previous = hierarchyOperations.mapGet(parent, next)!;
+			hierarchyOperations.mapSet(parent, next, current);
 			next = previous;
 		}
 		return current;
@@ -738,62 +799,57 @@ function buildObstacles(
 			aa,
 			bb,
 		);
-		budget.charge("container-boundary", "hierarchy-query");
-		if (compared < 0) parent.set(bb, aa);
-		else parent.set(aa, bb);
+		if (compared < 0) hierarchyOperations.mapSet(parent, bb, aa);
+		else hierarchyOperations.mapSet(parent, aa, bb);
 	};
-	const firstByGroup = new Map<string, string>();
-	for (const record of eligible)
-		for (const group of groupsById.get(record.id!) ?? []) {
-			budget.charge("container-boundary", "prepare-events");
-			const first = firstByGroup.get(group);
+	const firstByGroup = operations.map<string, string>();
+	for (let recordIndex = 0; recordIndex < eligible.length; recordIndex += 1) {
+		const record = operations.read(eligible, recordIndex)!;
+		const groups = operations.mapGet(groupsById, record.id!) ?? [];
+		for (let groupIndex = 0; groupIndex < groups.length; groupIndex += 1) {
+			const group = operations.read(groups, groupIndex)!;
+			const first = operations.mapGet(firstByGroup, group);
 			if (first) join(first, record.id!);
-			else {
-				budget.charge("container-boundary", "prepare-events");
-				firstByGroup.set(group, record.id!);
-			}
+			else operations.mapSet(firstByGroup, group, record.id!);
 		}
-	const components = new Map<string, DecodedRecord[]>();
-	for (const record of eligible) {
-		budget.charge("container-boundary", "prepare-events", 2);
-		const root = find(record.id!);
-		const members = components.get(root) ?? [];
-		members.push(record);
-		budget.charge("container-boundary", "prepare-events");
-		components.set(root, members);
 	}
-	const obstacles: InspectionObstacle[] = [];
-	const qualifyingGroupedObstacleElementIds = new Set<string>();
-	const aggregateFailures: AggregateCoordinateFailure[] = [];
-	for (const members of components.values()) {
-		const validLibrary = members.filter((record) => {
-			budget.charge("container-boundary", "prepare-events");
-			return libraryAttribution(record)?.valid;
-		});
+	const components = operations.map<string, DecodedRecord[]>();
+	for (let recordIndex = 0; recordIndex < eligible.length; recordIndex += 1) {
+		const record = operations.read(eligible, recordIndex)!;
+		const root = find(record.id!);
+		const members = operations.mapGet(components, root) ?? operations.array<DecodedRecord>();
+		operations.push(members, record);
+		operations.mapSet(components, root, members);
+	}
+	const obstacles = operations.array<InspectionObstacle>();
+	const qualifyingGroupedObstacleElementIds = operations.set<string>();
+	const aggregateFailures = operations.array<AggregateCoordinateFailure>();
+	operations.forEachMap(components, (members) => {
+		const validLibrary = filteredValues(members, budget, "container-boundary", (record) =>
+			Boolean(libraryAttribution(record)?.valid),
+		);
 		const sharedGroup = members.length >= 2;
-		if (validLibrary.length === 0 && !sharedGroup) continue;
+		if (validLibrary.length === 0 && !sharedGroup) return;
 		if (sharedGroup)
-			for (const member of members) {
-				budget.charge("container-boundary", "prepare-events");
-				qualifyingGroupedObstacleElementIds.add(member.id!);
+			for (let memberIndex = 0; memberIndex < members.length; memberIndex += 1) {
+				const member = operations.read(members, memberIndex)!;
+				operations.setAdd(qualifyingGroupedObstacleElementIds, member.id!);
 			}
 		const elementIds = orderedIdentities(
 			collected(members, budget, "container-boundary", (record) => record.id!),
 			budget,
 			"container-boundary",
 		);
-		const groups = orderedIdentities(
-			[
-				...new Set(
-					members.flatMap((record) => {
-						budget.charge("container-boundary", "prepare-events");
-						return groupsById.get(record.id!) ?? [];
-					}),
-				),
-			],
-			budget,
-			"container-boundary",
-		);
+		const uniqueGroups = operations.set<string>();
+		for (let memberIndex = 0; memberIndex < members.length; memberIndex += 1) {
+			const member = operations.read(members, memberIndex)!;
+			const memberGroups = operations.mapGet(groupsById, member.id!) ?? [];
+			for (let groupIndex = 0; groupIndex < memberGroups.length; groupIndex += 1)
+				operations.setAdd(uniqueGroups, operations.read(memberGroups, groupIndex)!);
+		}
+		const groupInput = operations.array<string>();
+		operations.forEachSet(uniqueGroups, (group) => operations.push(groupInput, group));
+		const groups = orderedIdentities(groupInput, budget, "container-boundary");
 		const library = stablePreprocessingSort(
 			collected(validLibrary, budget, "container-boundary", (record) => {
 				budget.charge("container-boundary", "prepare-events");
@@ -823,17 +879,17 @@ function buildObstacles(
 			validLibrary.length > 0 ? ("library-component" as const) : ("grouped-component" as const);
 		const id = encodePreprocessingObstacleIdentity(elementIds, budget, "container-boundary");
 		if (obstacleResult.kind !== "representable") {
-			aggregateFailures.push({ scope: "obstacle-component", subjectId: id, members });
-			continue;
+			operations.push(aggregateFailures, { scope: "obstacle-component", subjectId: id, members });
+			return;
 		}
-		obstacles.push({
+		operations.push(obstacles, {
 			id,
 			kind,
 			members,
 			box: obstacleResult.box,
 			ref: { id, kind, elementIds, groupIds: groups, library },
 		});
-	}
+	});
 	const ordered = stablePreprocessingSort(
 		obstacles,
 		budget,
@@ -849,25 +905,23 @@ export function buildInspectionModel(
 	records: readonly DecodedRecord[],
 	budget: PreprocessingBudget,
 ): InspectionModel {
-	const live = records.filter((record) => {
-		budget.charge("node-hierarchy", "prepare-events");
-		return record.live && record.raw;
-	});
-	const byId = new Map<string, DecodedRecord>();
-	const duplicateIds = new Set<string>();
-	for (const record of live) {
-		budget.charge("node-hierarchy", "prepare-events");
+	const operations = new PreprocessingOperations(budget, "node-hierarchy", "prepare-events");
+	const live = filteredValues(records, budget, "node-hierarchy", (record) =>
+		Boolean(record.live && record.raw),
+	);
+	const byId = operations.map<string, DecodedRecord>();
+	const duplicateIds = operations.set<string>();
+	for (let recordIndex = 0; recordIndex < live.length; recordIndex += 1) {
+		const record = operations.read(live, recordIndex)!;
 		chargeIdentity(budget, "node-hierarchy", record.id);
 		if (record.id && !record.usableId) {
-			budget.charge("node-hierarchy", "prepare-events");
-			duplicateIds.add(record.id);
+			operations.setAdd(duplicateIds, record.id);
 		}
 	}
-	for (const record of live) {
-		budget.charge("node-hierarchy", "prepare-events");
+	for (let recordIndex = 0; recordIndex < live.length; recordIndex += 1) {
+		const record = operations.read(live, recordIndex)!;
 		if (record.usableId && record.id) {
-			budget.charge("node-hierarchy", "prepare-events");
-			byId.set(record.id, record);
+			operations.mapSet(byId, record.id, record);
 		}
 	}
 	const { labelOwnership, confirmedLabels } = buildLabelClassifications(
@@ -890,6 +944,11 @@ export function buildInspectionModel(
 		qualifyingGroupedObstacleElementIds,
 		aggregateFailures: obstacleAggregateFailures,
 	} = buildObstacles(live, nodeOfElement, confirmedLabels, containerOnlyIds, budget);
+	const aggregateFailures = operations.array<AggregateCoordinateFailure>();
+	for (let index = 0; index < nodeAggregateFailures.length; index += 1)
+		operations.push(aggregateFailures, operations.read(nodeAggregateFailures, index)!);
+	for (let index = 0; index < obstacleAggregateFailures.length; index += 1)
+		operations.push(aggregateFailures, operations.read(obstacleAggregateFailures, index)!);
 	return {
 		byId,
 		duplicateIds,
@@ -901,7 +960,7 @@ export function buildInspectionModel(
 		containerOnlyIds,
 		qualifyingGroupedObstacleElementIds,
 		obstacles,
-		aggregateFailures: [...nodeAggregateFailures, ...obstacleAggregateFailures],
+		aggregateFailures,
 		hierarchyWork,
 		containerBoundaryWork: containerOnly.work,
 	};

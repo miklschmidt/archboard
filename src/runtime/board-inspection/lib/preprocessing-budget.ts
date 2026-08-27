@@ -70,6 +70,202 @@ export class PreprocessingBudget {
 	}
 }
 
+/** Primitive collection and identity work, charged immediately before execution. */
+export class PreprocessingOperations {
+	readonly #charge: () => void;
+	readonly budget: PreprocessingBudget | undefined;
+	readonly pass: PreprocessingPass | undefined;
+	readonly phase: PreprocessingPhase | undefined;
+
+	constructor(charge: () => void);
+	constructor(budget: PreprocessingBudget, pass: PreprocessingPass, phase: PreprocessingPhase);
+	constructor(
+		budgetOrCharge: PreprocessingBudget | (() => void),
+		pass?: PreprocessingPass,
+		phase?: PreprocessingPhase,
+	) {
+		if (typeof budgetOrCharge === "function") {
+			this.#charge = budgetOrCharge;
+			this.budget = undefined;
+			this.pass = undefined;
+			this.phase = undefined;
+		} else {
+			if (!pass || !phase) throw new Error("A preprocessing budget needs a pass and phase.");
+			this.budget = budgetOrCharge;
+			this.pass = pass;
+			this.phase = phase;
+			this.#charge = () => budgetOrCharge.charge(pass, phase);
+		}
+	}
+
+	charge(): void {
+		this.#charge();
+	}
+
+	array<T>(): T[] {
+		this.#charge();
+		return [];
+	}
+
+	arrayWithLength<T>(length: number): T[] {
+		this.#charge();
+		const values: T[] = [];
+		for (let index = 0; index < length; index += 1) {
+			this.#charge();
+			values.push(undefined as T);
+		}
+		return values;
+	}
+
+	arrayFilled<T>(length: number, value: T): T[] {
+		this.#charge();
+		const values: T[] = [];
+		for (let index = 0; index < length; index += 1) {
+			this.#charge();
+			values.push(value);
+		}
+		return values;
+	}
+
+	read<T>(values: readonly T[], index: number): T | undefined {
+		this.#charge();
+		return values[index];
+	}
+
+	write<T>(values: T[], index: number, value: T): void {
+		this.#charge();
+		values[index] = value;
+	}
+
+	push<T>(values: T[], value: T): number {
+		this.#charge();
+		return values.push(value);
+	}
+
+	pop<T>(values: T[]): T | undefined {
+		this.#charge();
+		return values.pop();
+	}
+
+	spliceOne<T>(values: T[], index: number): T | undefined {
+		if (index < 0 || index >= values.length) return undefined;
+		const removed = this.read(values, index);
+		for (let cursor = index; cursor + 1 < values.length; cursor += 1) {
+			const next = this.read(values, cursor + 1)!;
+			this.write(values, cursor, next);
+		}
+		this.pop(values);
+		return removed;
+	}
+
+	copy<T>(values: readonly T[]): T[] {
+		const copied = this.array<T>();
+		for (let index = 0; index < values.length; index += 1)
+			this.push(copied, this.read(values, index)!);
+		return copied;
+	}
+
+	map<K, V>(): Map<K, V> {
+		this.#charge();
+		return new Map<K, V>();
+	}
+
+	mapHas<K, V>(values: ReadonlyMap<K, V>, key: K): boolean {
+		this.#charge();
+		return values.has(key);
+	}
+
+	mapGet<K, V>(values: ReadonlyMap<K, V>, key: K): V | undefined {
+		this.#charge();
+		return values.get(key);
+	}
+
+	mapSet<K, V>(values: Map<K, V>, key: K, value: V): void {
+		this.#charge();
+		values.set(key, value);
+	}
+
+	mapDelete<K, V>(values: Map<K, V>, key: K): boolean {
+		this.#charge();
+		return values.delete(key);
+	}
+
+	mapEntries<K, V>(values: ReadonlyMap<K, V>): Array<readonly [K, V]> {
+		const entries = this.array<readonly [K, V]>();
+		this.#charge();
+		const iterator = values.entries();
+		while (true) {
+			this.#charge();
+			const next = iterator.next();
+			if (next.done) return entries;
+			this.push(entries, next.value);
+		}
+	}
+
+	forEachMap<K, V>(values: ReadonlyMap<K, V>, visit: (value: V, key: K) => void): void {
+		this.#charge();
+		const iterator = values.entries();
+		while (true) {
+			this.#charge();
+			const next = iterator.next();
+			if (next.done) return;
+			visit(next.value[1], next.value[0]);
+		}
+	}
+
+	set<T>(): Set<T> {
+		this.#charge();
+		return new Set<T>();
+	}
+
+	setHas<T>(values: ReadonlySet<T>, value: T): boolean {
+		this.#charge();
+		return values.has(value);
+	}
+
+	setAdd<T>(values: Set<T>, value: T): void {
+		this.#charge();
+		values.add(value);
+	}
+
+	setDelete<T>(values: Set<T>, value: T): boolean {
+		this.#charge();
+		return values.delete(value);
+	}
+
+	setValues<T>(values: ReadonlySet<T>): T[] {
+		const copied = this.array<T>();
+		this.#charge();
+		const iterator = values.values();
+		while (true) {
+			this.#charge();
+			const next = iterator.next();
+			if (next.done) return copied;
+			this.push(copied, next.value);
+		}
+	}
+
+	forEachSet<T>(values: ReadonlySet<T>, visit: (value: T) => void): void {
+		this.#charge();
+		const iterator = values.values();
+		while (true) {
+			this.#charge();
+			const next = iterator.next();
+			if (next.done) return;
+			visit(next.value);
+		}
+	}
+
+	identityCodeUnit(value: string, index: number): number {
+		this.#charge();
+		return value.charCodeAt(index);
+	}
+
+	stableComparison(): void {
+		this.#charge();
+	}
+}
+
 export function comparePreprocessingIdentity(
 	budget: PreprocessingBudget,
 	pass: PreprocessingPass,
@@ -77,11 +273,11 @@ export function comparePreprocessingIdentity(
 	left: string,
 	right: string,
 ): number {
+	const operations = new PreprocessingOperations(budget, pass, phase);
 	const shared = Math.min(left.length, right.length);
 	for (let index = 0; index < shared; index += 1) {
-		budget.charge(pass, phase, 2);
-		const aa = left.charCodeAt(index),
-			bb = right.charCodeAt(index);
+		const aa = operations.identityCodeUnit(left, index),
+			bb = operations.identityCodeUnit(right, index);
 		if (aa !== bb) return aa < bb ? -1 : 1;
 	}
 	return left.length < right.length ? -1 : left.length > right.length ? 1 : 0;
@@ -122,11 +318,10 @@ export function stablePreprocessingSort<T>(
 	phase: PreprocessingPhase,
 	compare: (left: T, right: T) => number,
 ): T[] {
-	budget.charge(pass, phase, 1 + values.length * 2);
-	let source = [...values];
+	const operations = new PreprocessingOperations(budget, pass, phase);
+	let source = operations.copy(values);
 	if (values.length < 2) return source;
-	budget.charge(pass, phase, 1 + values.length);
-	let target = Array.from<T>({ length: values.length });
+	let target = operations.arrayWithLength<T>(values.length);
 	for (let width = 1; width < values.length; width *= 2) {
 		for (let start = 0; start < values.length; start += width * 2) {
 			const middle = Math.min(start + width, values.length),
@@ -135,22 +330,21 @@ export function stablePreprocessingSort<T>(
 				right = middle,
 				output = start;
 			while (left < middle && right < end) {
-				budget.charge(pass, phase, 2);
-				const leftValue = source[left]!,
-					rightValue = source[right]!;
+				const leftValue = operations.read(source, left)!,
+					rightValue = operations.read(source, right)!;
+				operations.stableComparison();
 				const takeLeft = compare(leftValue, rightValue) <= 0;
-				budget.charge(pass, phase);
-				target[output++] = takeLeft ? leftValue : rightValue;
+				operations.write(target, output++, takeLeft ? leftValue : rightValue);
 				if (takeLeft) left += 1;
 				else right += 1;
 			}
 			while (left < middle) {
-				budget.charge(pass, phase, 2);
-				target[output++] = source[left++]!;
+				const value = operations.read(source, left++)!;
+				operations.write(target, output++, value);
 			}
 			while (right < end) {
-				budget.charge(pass, phase, 2);
-				target[output++] = source[right++]!;
+				const value = operations.read(source, right++)!;
+				operations.write(target, output++, value);
 			}
 		}
 		[source, target] = [target, source];

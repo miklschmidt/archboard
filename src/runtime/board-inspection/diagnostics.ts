@@ -8,6 +8,7 @@ import {
 	encodePreprocessingObstacleIdentity,
 	PreprocessingBudget,
 	PreprocessingCeilingReached,
+	PreprocessingOperations,
 	stablePreprocessingSort,
 	type PreprocessingPass,
 	type PreprocessingPhase,
@@ -16,6 +17,8 @@ import {
 export interface StableSortDiagnostics {
 	ordered: readonly string[];
 	preprocessingSteps: number;
+	storageAndStableComparisonSteps: number;
+	identityCodeUnitSteps: number;
 }
 
 export interface ObstacleIdentityEncodingDiagnostics {
@@ -43,7 +46,99 @@ export function diagnoseStablePreprocessingSort(values: readonly string[]): Stab
 		(left, right) =>
 			comparePreprocessingIdentity(budget, "connector-intersection", "order-events", left, right),
 	);
-	return { ordered, preprocessingSteps: budget.used };
+	const structuralBudget = new PreprocessingBudget();
+	stablePreprocessingSort(
+		values,
+		structuralBudget,
+		"connector-intersection",
+		"order-events",
+		(left, right) => (left < right ? -1 : left > right ? 1 : 0),
+	);
+	return {
+		ordered,
+		preprocessingSteps: budget.used,
+		storageAndStableComparisonSteps: structuralBudget.used,
+		identityCodeUnitSteps: budget.used - structuralBudget.used,
+	};
+}
+
+export interface PrimitiveOperationDiagnostics {
+	arrayAllocation: number;
+	arrayRead: number;
+	arrayWrite: number;
+	arrayPush: number;
+	arraySplice: number;
+	arrayCopy: number;
+	mapConstruct: number;
+	mapMisses: number;
+	mapMutation: number;
+	mapEntries: number;
+	mapIteration: number;
+	setConstruct: number;
+	setMiss: number;
+	setMutation: number;
+	setValues: number;
+	setIteration: number;
+}
+
+function measurePrimitiveOperations(run: (operations: PreprocessingOperations) => void): number {
+	const budget = new PreprocessingBudget();
+	run(new PreprocessingOperations(budget, "node-hierarchy", "prepare-events"));
+	return budget.used;
+}
+
+/** Exact arithmetic for the primitive collection owner used by preprocessing. */
+export function diagnosePreprocessingPrimitives(): PrimitiveOperationDiagnostics {
+	return {
+		arrayAllocation: measurePrimitiveOperations((operations) => void operations.array()),
+		arrayRead: measurePrimitiveOperations((operations) => void operations.read(["a"], 0)),
+		arrayWrite: measurePrimitiveOperations((operations) => operations.write(["a"], 0, "b")),
+		arrayPush: measurePrimitiveOperations((operations) => operations.push([], "a")),
+		arraySplice: measurePrimitiveOperations((operations) =>
+			operations.spliceOne(["a", "b", "c"], 0),
+		),
+		arrayCopy: measurePrimitiveOperations((operations) => void operations.copy(["a", "b"])),
+		mapConstruct: measurePrimitiveOperations((operations) => void operations.map()),
+		mapMisses: measurePrimitiveOperations((operations) => {
+			const values = new Map<string, string>();
+			operations.mapHas(values, "missing");
+			operations.mapGet(values, "missing");
+		}),
+		mapMutation: measurePrimitiveOperations((operations) => {
+			const values = new Map<string, string>();
+			operations.mapSet(values, "a", "b");
+			operations.mapDelete(values, "a");
+		}),
+		mapEntries: measurePrimitiveOperations((operations) => {
+			const values = new Map<string, string>([
+				["a", "b"],
+				["c", "d"],
+			]);
+			operations.mapEntries(values);
+		}),
+		mapIteration: measurePrimitiveOperations((operations) => {
+			const values = new Map<string, string>([
+				["a", "b"],
+				["c", "d"],
+			]);
+			operations.forEachMap(values, () => undefined);
+		}),
+		setConstruct: measurePrimitiveOperations((operations) => void operations.set()),
+		setMiss: measurePrimitiveOperations((operations) =>
+			operations.setHas(new Set<string>(), "missing"),
+		),
+		setMutation: measurePrimitiveOperations((operations) => {
+			const values = new Set<string>();
+			operations.setAdd(values, "a");
+			operations.setDelete(values, "a");
+		}),
+		setValues: measurePrimitiveOperations((operations) =>
+			operations.setValues(new Set(["a", "b"])),
+		),
+		setIteration: measurePrimitiveOperations((operations) =>
+			operations.forEachSet(new Set(["a", "b"]), () => undefined),
+		),
+	};
 }
 
 export interface InspectionWorkDiagnostics {
