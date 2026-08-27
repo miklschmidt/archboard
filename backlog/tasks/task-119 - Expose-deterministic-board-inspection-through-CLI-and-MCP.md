@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-27 02:34'
+updated_date: '2026-08-27 02:49'
 labels:
   - ready-for-agent
 dependencies:
@@ -589,6 +589,14 @@ Step 28 remediation checkpoint (2026-08-27)
 - Focused validation green: lint, type-check, boundaries, module-scope, geometry, labels, branch compare, 701 inspection checks, and 978 command-contract checks across all 58 paths.
 - Two real `bun run fix` passes were byte-stable at diff SHA-256 b55b48405078055a3d479a8f9aa23508c778dcea284ca090ec616f012ef04eb3.
 - Full `bun run check`, separate `bun run test`, sequential browser gates, and final generator/diff checks remain before rereview.
+
+### 2026-08-27 step-28 final validation
+
+Source checkpoint `80af281` and evidence checkpoint `945847e` complete the approved auditable-budget replacement. `bun run check` passed. The first separate `bun run test` reached the scheduling-sensitive human-performance reconciliation sample `[0,0,2]`; the required isolated diagnosis passed at `[0,0]`, and the complete `bun run test` rerun then passed. Both successful full chains ran the four browser suites sequentially and headlessly: human performance `[0,0]`, fixed point 0 of 13 changed elements, both typed-text rename interactions preserved, and 42 of 42 live-session cycles converged.
+
+The focused matrix passed lint, type checking, boundaries, module scope, 701 inspection checks, 58 contract paths with 978 checks, CLI, geometry, labels, and branch comparison. Two real `bun run fix` passes were byte-stable at diff SHA-256 `b55b48405078055a3d479a8f9aa23508c778dcea284ca090ec616f012ef04eb3`. `git diff --check` passes.
+
+Two fresh on-demand contract generations were byte-identical: `cli-command-audit.md` c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, `command-contract-proof.json` 26082fd0db9308d804475a3689da6730d8cd0c3af4f53d8b9282123e6b44688a, and `command-contract-proof.md` 053ea2da3ce9c063984141778b549a4913cce14d4b7a2474706ccf328d2cd8fd. The ignored views remain absent from the checkout; canonical `docs/design/cli-command-audit.json` remains tracked. TASK-119 remains In Progress with all nine acceptance criteria unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
