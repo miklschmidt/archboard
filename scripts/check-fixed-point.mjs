@@ -88,6 +88,10 @@ import { withDoing } from "./lib/doing.mjs";
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const src = (p) => path.join(repoRoot, "src", p);
 const finiteTelemetry = (value) => typeof value === "number" && Number.isFinite(value);
+const nearPixel = (pixel, expected) =>
+	pixel?.length === 4 &&
+	expected.every((channel, index) => Math.abs(pixel[index] - channel) <= 8) &&
+	pixel[3] === 255;
 const roundedGeometry = (report) => ({
 	rect: {
 		x: Math.round(report?.rect?.x),
@@ -387,12 +391,15 @@ const freePort = () =>
 const PORT = Number(process.env.PORT) || (await freePort());
 const base = `http://127.0.0.1:${PORT}`;
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-fixedpoint-"));
+process.env.ARCHBOARD_VAULT = vault;
 
 // A note from before TASK-117, with the exact shape that blanked the board:
 // auto-resizing Helvetica text and no finite width or height. Build the valid
 // form through the same converter as a normal write, then remove only those
 // two fields. The correction later restores these original bytes.
 const { renderBoardNote } = await import(src("runtime/engine/board.ts"));
+const { readBoardInspectionSnapshot } = await import(src("runtime/engine/board-io.ts"));
+const { inspectBoard } = await import(src("runtime/board-inspection/index.ts"));
 const { expandElements } = await import(src("runtime/engine/expand-elements.ts"));
 const legacyIdentity = { board: "legacy-geometry", variant: "current" };
 const validLegacyScene = {
@@ -800,15 +807,61 @@ try {
 				height: 64,
 				fileId: "finding-pixel",
 			},
+			{
+				id: "nearimg",
+				type: "image",
+				x: 236,
+				y: 86,
+				width: 6,
+				height: 6,
+				fileId: "finding-pixel",
+			},
+			{
+				id: "redback",
+				type: "rectangle",
+				x: 238,
+				y: 102,
+				width: 16,
+				height: 10,
+				strokeColor: "#ff0000",
+				backgroundColor: "#ff0000",
+				fillStyle: "solid",
+				roughness: 0,
+			},
+			{
+				id: "greentop",
+				type: "rectangle",
+				x: 246,
+				y: 102,
+				width: 8,
+				height: 8,
+				strokeColor: "#00ff00",
+				backgroundColor: "#00ff00",
+				fillStyle: "solid",
+				roughness: 0,
+			},
+			{
+				id: "clipout",
+				type: "rectangle",
+				x: 267,
+				y: 108,
+				width: 8,
+				height: 8,
+				strokeColor: "#ff00ff",
+				backgroundColor: "#ff00ff",
+				fillStyle: "solid",
+				roughness: 0,
+			},
 		],
 	});
 	await api("POST", "/api/files?board=finding-render", {
 		files: [
 			{
 				id: "finding-pixel",
-				mimeType: "image/png",
-				dataURL:
-					"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+				mimeType: "image/svg+xml",
+				dataURL: `data:image/svg+xml;base64,${Buffer.from(
+					'<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><rect width="1" height="1" fill="#0000ff"/></svg>',
+				).toString("base64")}`,
 			},
 		],
 	});
@@ -1233,6 +1286,8 @@ try {
 		background: true,
 	});
 	const firstManifest = JSON.parse(firstFindingRender.stdout || "null");
+	const findingSource = readBoardInspectionSnapshot("finding-render");
+	const expectedFindingReport = inspectBoard(findingSource.elements);
 	check(
 		"render-findings renders an explicit off-screen board through the existing browser",
 		firstFindingRender.status === 0 &&
@@ -1244,6 +1299,66 @@ try {
 		"  suppresses only the valid bridge crossing and keeps the second crossing",
 		firstManifest?.report?.counts?.byCode?.CONNECTOR_INTERSECTION_UNMARKED === 1,
 		JSON.stringify(firstManifest?.report?.counts?.byCode),
+	);
+	check(
+		"  carries the exact persisted report order and complete rendered snapshot fingerprint",
+		JSON.stringify(firstManifest?.report) === JSON.stringify(expectedFindingReport) &&
+			firstManifest?.sourceFingerprint === findingSource.fingerprint &&
+			firstManifest?.entries?.every(
+				(entry, findingIndex) => entry.findingIndex === findingIndex,
+			),
+	);
+	const crossingIndex = firstManifest?.report?.findings?.findIndex(
+		(finding) => finding.code === "CONNECTOR_INTERSECTION_UNMARKED",
+	);
+	const crossingFinding = firstManifest?.report?.findings?.[crossingIndex];
+	const crossingEntry = firstManifest?.entries?.[crossingIndex];
+	const crossingBytes =
+		crossingEntry?.status === "rendered"
+			? fs.readFileSync(path.join(renderOne, crossingEntry.file)).toString("base64")
+			: null;
+	const focus = crossingFinding?.focusBBox;
+	const sampleScenePoints = [
+		[239, 89],
+		[241, 108],
+		[249, 105],
+		[265, 114],
+	];
+	const rasterSamples =
+		crossingBytes && focus && crossingEntry
+			? await evalInPage(`(async () => {
+      const image = new Image();
+      image.src = ${JSON.stringify(`data:image/png;base64,${crossingBytes}`)};
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext('2d', { willReadFrequently: true });
+      context.drawImage(image, 0, 0);
+      const focus = ${JSON.stringify(focus)};
+      const scenePoints = ${JSON.stringify(sampleScenePoints)};
+      const scaleX = canvas.width / focus.width;
+      const scaleY = canvas.height / focus.height;
+      return {
+        width: canvas.width,
+        height: canvas.height,
+        pixels: scenePoints.map(([x, y]) => {
+          const px = Math.floor((x - focus.x) * scaleX);
+          const py = Math.floor((y - focus.y) * scaleY);
+          return Array.from(context.getImageData(px, py, 1, 1).data);
+        }),
+      };
+    })()`)
+			: null;
+	check(
+		"  clips to the exact focus while preserving embedded pixels and topmost z-order",
+		rasterSamples?.width === crossingEntry?.width &&
+			rasterSamples?.height === crossingEntry?.height &&
+			nearPixel(rasterSamples?.pixels?.[0], [0, 0, 255]) &&
+			nearPixel(rasterSamples?.pixels?.[1], [255, 0, 0]) &&
+			nearPixel(rasterSamples?.pixels?.[2], [0, 255, 0]) &&
+			nearPixel(rasterSamples?.pixels?.[3], [255, 255, 255]),
+		JSON.stringify(rasterSamples),
 	);
 	check(
 		"  without changing the visible pane scene, board, selection or viewport",
