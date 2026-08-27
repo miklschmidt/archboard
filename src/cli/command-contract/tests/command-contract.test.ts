@@ -564,9 +564,7 @@ describe("command-contract public interface", () => {
 		expect(manifestTempAttempts).toBe(3);
 		expect(manifestDestinationAttempts).toBe(0);
 		const manifestStats = fs.statSync(join(directory, "manifest.json"));
-		const tempName = fs
-			.readdirSync(directory)
-			.find((name) => name.includes(".manifest.json."));
+		const tempName = fs.readdirSync(directory).find((name) => name.includes(".manifest.json."));
 		expect(tempName).toBeDefined();
 		const tempStats = fs.statSync(join(directory, tempName!));
 		expect([manifestStats.dev, manifestStats.ino]).toEqual([tempStats.dev, tempStats.ino]);
