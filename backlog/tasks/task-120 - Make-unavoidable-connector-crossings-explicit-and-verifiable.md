@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:18'
-updated_date: '2026-08-27 10:12'
+updated_date: '2026-08-27 10:29'
 labels:
   - ready-for-agent
 dependencies:
@@ -85,6 +85,8 @@ TASK-119 inspection schema v2 validates bridge provenance, suppresses only an ex
 2026-08-27 fixed-range remediation checkpoint: bridge provenance now requires exactly two distinct usable live line parts; the canonical generated-part comparison covers persisted geometry, style, binding/group/live fields and unsupported line discriminators; mask/redraw must be adjacent in the live index order above both sources. Removal remains structural and ignores stale source/geometry after pair validity. CLI --at rejects blank trimmed coordinates before coercion, and create/remove result schemas reject cross-field receipt disagreement before stdout. Focused evidence is green: inspection 768, CLI 604, contracts 1000, one-write 81, geometry 89, labels 183, branch compare, lint, and types. TASK remains In Progress with every AC unchecked.
 
 2026-08-27 remediation validation: both final bun run fix passes completed and pass two was byte-stable. Complete bun run check and the separately invoked complete bun run test passed, including all four browser suites sequentially/headless. On-demand contract generation --check passed; the three ignored derived views were removed and canonical audit JSON remains tracked. Final focused counts: inspection 768, CLI 604, contracts 60 paths/1000 checks, one-write 81, geometry 89, labels 183, doing 39, version 65, lock 120. git diff --check passed. TASK remains In Progress with every AC unchecked for fixed-range rereview.
+
+2026-08-27 second-rereview remediation checkpoint: BridgeResultSchema now rejects either generated part identity colliding with either source identity. Bridge provenance validates the complete fixed inspection snapshot vocabulary against the canonical bridgeLine projection, allowing only server/converter bookkeeping index, createdAt, and source; stale structural pairs remain removable. Direct two-role field coverage, parseable-note/package representatives, and fake-server malformed receipt cases are green: inspection 830, CLI 606, lint, and type-check. Full repository validation remains.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

@@ -3,7 +3,11 @@ import { z } from "zod";
 import type { ServerElement } from "../engine/types.js";
 import { decodePath, decodeRecords, type DecodedRecord } from "./lib/decode.js";
 import { intersectSegments, point, type ExactPoint, type Segment } from "./lib/geometry.js";
-import type { SnapshotRecord } from "./lib/input-snapshot.js";
+import {
+	INSPECTION_FIELDS,
+	type SnapshotField,
+	type SnapshotRecord,
+} from "./lib/input-snapshot.js";
 import { compareIdentity } from "./lib/ordering.js";
 import { type BridgeIncompleteIssue, type BridgeStaleIssue } from "./schemas.js";
 
@@ -175,17 +179,19 @@ function canonicalBridgeLine(
 	};
 }
 
+// These are written by the server or converter rather than bridgeLine. They do
+// not change the generated decoration's semantic projection.
+const BRIDGE_VOLATILE_FIELDS = new Set<SnapshotField>(["index", "createdAt", "source"]);
+
 function lineMatches(part: ServerElement, expectedInput: Record<string, unknown>): boolean {
 	const actual = part as unknown as Record<string, unknown>;
 	const expected = canonicalBridgeLine(part.id, expectedInput);
 	for (const [key, value] of Object.entries(expected))
 		if (JSON.stringify(actual[key]) !== JSON.stringify(value)) return false;
-	return (
-		actual.elbowed === undefined &&
-		actual.fixedSegments === undefined &&
-		actual.curve === undefined &&
-		actual.curveKind === undefined
-	);
+	for (const field of INSPECTION_FIELDS)
+		if (!own(expected, field) && !BRIDGE_VOLATILE_FIELDS.has(field) && actual[field] !== undefined)
+			return false;
+	return true;
 }
 
 const bridgeBlock = (metadata: BridgeMetadata) => ({ archboard: { bridge: metadata } });

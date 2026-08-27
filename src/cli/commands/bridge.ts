@@ -95,10 +95,13 @@ export const BridgeResultSchema = z
 		};
 		const maskMetadata = mask.customData.archboard.bridge;
 		const redrawMetadata = redraw.customData.archboard.bridge;
+		const sourceIds = new Set([result.overConnectorId, result.underConnectorId]);
 		if (
 			result.overConnectorId === result.underConnectorId ||
 			mask.id !== result.bridgeId ||
 			redraw.id === result.bridgeId ||
+			sourceIds.has(mask.id) ||
+			sourceIds.has(redraw.id) ||
 			JSON.stringify(bridgeFactsWithoutRole(maskMetadata)) !== JSON.stringify(expected) ||
 			JSON.stringify(bridgeFactsWithoutRole(redrawMetadata)) !== JSON.stringify(expected) ||
 			maskMetadata.background !== redrawMetadata.background
