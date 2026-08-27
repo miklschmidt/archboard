@@ -450,6 +450,67 @@ describe("command-contract public interface", () => {
 		expect(JSON.parse(execution.stdout)).toEqual({ ok: true });
 	});
 
+	test("ordered file sets commit their manifest last and before stdout", async () => {
+		const directory = temporaryPath("finding-set");
+		const { mkdirSync } = await import("node:fs");
+		mkdirSync(directory);
+		const contract = proofContract({
+			result: { complete: true },
+			resultSchema: z.object({ complete: z.literal(true) }),
+			file: true,
+			artifact: {
+				path: directory,
+				encoding: "files",
+				files: [
+					{ name: "0001-A.png", content: Uint8Array.from([1]) },
+					{ name: "0002-B.png", content: Uint8Array.from([2]) },
+				],
+				manifest: { name: "manifest.json", content: "{}\n" },
+			},
+		});
+		let committedAtOutput = false;
+		const stdout = spyOn(process.stdout, "write").mockImplementation(() => {
+			committedAtOutput =
+				existsSync(join(directory, "0001-A.png")) &&
+				existsSync(join(directory, "0002-B.png")) &&
+				readFileSync(join(directory, "manifest.json"), "utf8") === "{}\n";
+			return true;
+		});
+		try {
+			await runCommand(contract, []);
+		} finally {
+			stdout.mockRestore();
+		}
+		expect(committedAtOutput).toBeTrue();
+	});
+
+	test("a mid-set artifact failure leaves no manifest or stdout", async () => {
+		const directory = temporaryPath("partial-finding-set");
+		const { mkdirSync } = await import("node:fs");
+		mkdirSync(directory);
+		mkdirSync(join(directory, "0002-B.png"));
+		const execution = await executePublic(
+			proofContract({
+				result: { complete: true },
+				resultSchema: z.object({ complete: z.literal(true) }),
+				file: true,
+				artifact: {
+					path: directory,
+					encoding: "files",
+					files: [
+						{ name: "0001-A.png", content: Uint8Array.from([1]) },
+						{ name: "0002-B.png", content: Uint8Array.from([2]) },
+					],
+					manifest: { name: "manifest.json", content: "{}\n" },
+				},
+			}),
+		);
+		expect(execution.error).toBeDefined();
+		expect(execution.stdout).toBe("");
+		expect(existsSync(join(directory, "0001-A.png"))).toBeTrue();
+		expect(existsSync(join(directory, "manifest.json"))).toBeFalse();
+	});
+
 	test("a handler's network effect and result are observable through the two-argument runner", async () => {
 		const requests: string[] = [];
 		const server = Bun.serve({

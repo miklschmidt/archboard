@@ -155,5 +155,26 @@ export const PendingArtifactSchema = z.discriminatedUnion("encoding", [
 		content: z.instanceof(Uint8Array),
 		encoding: z.literal("binary"),
 	}),
+	z
+		.object({
+			path: z.string(),
+			encoding: z.literal("files"),
+			files: z.array(
+				z.strictObject({
+					name: z.string().regex(/^[^/\\]+$/),
+					content: z.instanceof(Uint8Array),
+				}),
+			),
+			manifest: z.strictObject({ name: z.literal("manifest.json"), content: z.string() }),
+		})
+		.superRefine((artifact, context) => {
+			const names = artifact.files.map(({ name }) => name);
+			if (new Set(names).size !== names.length)
+				context.addIssue({
+					code: "custom",
+					path: ["files"],
+					message: "Artifact file names must be unique.",
+				});
+		}),
 ]);
 export type PendingArtifactValue = z.infer<typeof PendingArtifactSchema>;
