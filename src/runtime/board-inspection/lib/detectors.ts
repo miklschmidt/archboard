@@ -2401,9 +2401,14 @@ function finalizeFindings(
 	findings: readonly InspectionFinding[],
 	budget: InspectionBudget,
 ): InspectionFinding[] {
+	budget.claimWork("finding-finalization", "finalize-findings", findings.length);
 	let members = findings.length;
 	for (const finding of findings)
-		members += finding.elements.length + finding.nodes.length + finding.obstacles.length;
+		members +=
+			finding.elements.length +
+			finding.nodes.length +
+			finding.obstacles.length +
+			finding.points.length;
 	budget.claimWork("finding-finalization", "finalize-findings", members);
 	for (const finding of findings) {
 		budget.claimSort("finding-finalization", "finalize-findings", finding.elements.length);

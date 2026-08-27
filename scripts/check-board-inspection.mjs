@@ -5827,7 +5827,7 @@ const labelMembershipThousand = inspectBoardDiagnostics(labelMembershipBoard(1_0
 check(
 	"label planning claims each bound entry and exact indexed membership candidate",
 	labelMembershipThousand.work.analysisWorkItems - labelMembershipOne.work.analysisWorkItems ===
-		21_996,
+		22_995,
 	JSON.stringify({
 		one: labelMembershipOne.work.analysisWorkItems,
 		thousand: labelMembershipThousand.work.analysisWorkItems,
@@ -5855,6 +5855,269 @@ check(
 		labelMembershipLimit.report.findings.some(
 			(finding) => finding.reason === "analysis-work-ceiling",
 		),
+);
+
+const labelPairIdentityCases = [
+	{
+		label: "spaces",
+		pairs: [
+			["a b", "c"],
+			["a", "b c"],
+		],
+	},
+	{
+		label: "controls",
+		pairs: [
+			["control\0owner", "text\u001fleft"],
+			["control\u001fowner", "text\0right"],
+		],
+	},
+	{
+		label: "shared-prefixes",
+		pairs: [
+			["prefix", "label"],
+			["prefix-long", "label-long"],
+		],
+	},
+];
+const labelPairBoard = (pairs, reverse = false) => {
+	const records = pairs.flatMap(([containerId, textId], index) => [
+		{
+			id: containerId,
+			type: "rectangle",
+			x: index * 100,
+			y: 0,
+			width: 20,
+			height: 20,
+			angle: 0,
+			boundElements: [{ id: textId, type: "text" }],
+		},
+		{
+			id: textId,
+			type: "text",
+			x: 500 + index * 100,
+			y: 500,
+			width: 20,
+			height: 10,
+			angle: 0,
+			fontFamily: 5,
+			text: textId,
+			containerId,
+		},
+	]);
+	return reverse ? records.toReversed() : records;
+};
+const driftIdentities = (report) =>
+	report.findings
+		.filter((finding) => finding.code === "LABEL_CORRUPTION" && finding.reason === "drift")
+		.map((finding) => `${finding.details.containerId}\0${finding.details.textId}`)
+		.toSorted();
+const labelPairDirectEvidence = [];
+for (const { label, pairs } of labelPairIdentityCases) {
+	const expected = pairs.map(([containerId, textId]) => `${containerId}\0${textId}`).toSorted();
+	const forward = inspectBoard(labelPairBoard(pairs));
+	const reversed = inspectBoard(labelPairBoard(pairs, true));
+	const valid =
+		JSON.stringify(driftIdentities(forward)) === JSON.stringify(expected) &&
+		JSON.stringify(driftIdentities(reversed)) === JSON.stringify(expected) &&
+		!forward.clean &&
+		!reversed.clean;
+	labelPairDirectEvidence.push(valid);
+	check(
+		`bound-label pair identity is injective for ${label} under input reversal`,
+		valid,
+		JSON.stringify({
+			expected,
+			forward: driftIdentities(forward),
+			reversed: driftIdentities(reversed),
+		}),
+	);
+}
+
+const reverseOwnerBoard = (ownerCount) => [
+	...Array.from({ length: ownerCount }, (_, index) => ({
+		id: `reverse-owner-${index}`,
+		type: "rectangle",
+		x: index * 30,
+		y: 0,
+		width: 20,
+		height: 20,
+		angle: 0,
+		boundElements: [{ id: "reverse-owned-label", type: "text" }],
+	})),
+	{
+		id: "reverse-owned-label",
+		type: "text",
+		x: 5,
+		y: 5,
+		width: 10,
+		height: 10,
+		angle: 0,
+		fontFamily: 5,
+		text: "label",
+	},
+];
+const reverseOwnerOne = inspectBoardDiagnostics(reverseOwnerBoard(1));
+const reverseOwnerMany = inspectBoardDiagnostics(reverseOwnerBoard(64));
+check(
+	"reverse label ownership claims materialization, candidate membership, and ordered traversal",
+	reverseOwnerMany.work.analysisWorkItems - reverseOwnerOne.work.analysisWorkItems === 7_921 &&
+		reverseOwnerMany.report.findings.some(
+			(finding) =>
+				finding.reason === "conflicting-owner" && finding.details.otherContainerIds.length === 63,
+		),
+	JSON.stringify({ one: reverseOwnerOne.work, many: reverseOwnerMany.work }),
+);
+
+const hierarchyInventoryBoard = (count) =>
+	Array.from({ length: count }, (_, index) => ({
+		id: `hierarchy-body-${index}`,
+		type: "rectangle",
+		x: index,
+		y: index,
+		width: (count - index) * 20,
+		height: (count - index) * 20,
+		angle: 0,
+		customData: { archboard: { node: `hierarchy-node-${index}` } },
+	}));
+const hierarchyTwo = inspectBoardDiagnostics(hierarchyInventoryBoard(2));
+const hierarchyEight = inspectBoardDiagnostics(hierarchyInventoryBoard(8));
+check(
+	"production hierarchy assignment claims area, selection, population, and child ordering passes",
+	hierarchyEight.work.analysisWorkItems - hierarchyTwo.work.analysisWorkItems === 820 &&
+		hierarchyEight.report.findings.every((finding) => finding.code !== "NODE_OVERLAP"),
+	JSON.stringify({ two: hierarchyTwo.work, eight: hierarchyEight.work }),
+);
+
+const failedAggregateBoard = (extraMembers) => [
+	semanticNode("inventory-overflow", {
+		id: "inventory-positive",
+		x: Number.MAX_VALUE,
+		width: 0,
+	}),
+	semanticNode("inventory-overflow", {
+		id: "inventory-negative",
+		x: -Number.MAX_VALUE,
+		width: 0,
+	}),
+	...Array.from({ length: extraMembers }, (_, index) =>
+		semanticNode("inventory-overflow", {
+			id: `inventory-local-${index}`,
+			x: index,
+			width: 1,
+			height: 1,
+		}),
+	),
+];
+const failedAggregateSmall = inspectBoardDiagnostics(failedAggregateBoard(0));
+const failedAggregateLarge = inspectBoardDiagnostics(failedAggregateBoard(64));
+check(
+	"failed node aggregate member cleanup claims every retraversed member",
+	failedAggregateLarge.work.analysisWorkItems - failedAggregateSmall.work.analysisWorkItems ===
+		5_165,
+	JSON.stringify({ small: failedAggregateSmall.work, large: failedAggregateLarge.work }),
+);
+
+const obstacleAttributionBoard = (extraGroupCount) => [
+	{
+		...validLibraryBody("inventory-obstacle-a", 0, [
+			"inventory-shared",
+			...Array.from({ length: extraGroupCount }, (_, index) => `inventory-group-${index}`),
+		]),
+		customData: undefined,
+	},
+	{
+		...validLibraryBody("inventory-obstacle-b", 20, [
+			"inventory-shared",
+			...Array.from({ length: extraGroupCount }, (_, index) => `inventory-group-${index}`),
+		]),
+		customData: undefined,
+	},
+];
+const obstacleAttributionSmall = inspectBoardDiagnostics(obstacleAttributionBoard(1));
+const obstacleAttributionLarge = inspectBoardDiagnostics(obstacleAttributionBoard(64));
+check(
+	"obstacle attribution claims qualifying members, filtered groups, and unique-group materialization",
+	obstacleAttributionLarge.work.analysisWorkItems -
+		obstacleAttributionSmall.work.analysisWorkItems ===
+		1_209,
+	JSON.stringify({ small: obstacleAttributionSmall.work, large: obstacleAttributionLarge.work }),
+);
+
+const pointFindingConnector = (pointCount) => [
+	connector({
+		id: `point-finding-${pointCount}`,
+		x: 0,
+		y: 0,
+		width: pointCount - 1,
+		height: 0,
+		curveKind: "bezier",
+		points: Array.from({ length: pointCount }, (_, index) => [index, 0]),
+	}),
+];
+const pointFindingOne = inspectBoardDiagnostics(pointFindingConnector(2));
+const pointFindingMany = inspectBoardDiagnostics(pointFindingConnector(5));
+const crossingFindingWork = inspectBoardDiagnostics([
+	connector({
+		id: "point-cross-a",
+		x: 0,
+		y: 5,
+		width: 20,
+		height: 0,
+		points: [
+			[0, 0],
+			[20, 0],
+		],
+	}),
+	connector({
+		id: "point-cross-b",
+		x: 10,
+		y: 0,
+		width: 0,
+		height: 20,
+		points: [
+			[0, 0],
+			[0, 20],
+		],
+	}),
+]);
+const parallelFindingWork = inspectBoardDiagnostics([
+	connector({
+		id: "point-parallel-a",
+		x: 0,
+		y: 5,
+		width: 20,
+		height: 0,
+		points: [
+			[0, 0],
+			[20, 0],
+		],
+	}),
+	connector({
+		id: "point-parallel-b",
+		x: 0,
+		y: 10,
+		width: 20,
+		height: 0,
+		points: [
+			[0, 0],
+			[20, 0],
+		],
+	}),
+]);
+check(
+	"finding finalization claims the first cardinality pass and every point member",
+	pointFindingMany.work.analysisWorkItems - pointFindingOne.work.analysisWorkItems === 22 &&
+		crossingFindingWork.work.analysisWorkItems - parallelFindingWork.work.analysisWorkItems === 9 &&
+		crossingFindingWork.report.findings.some(
+			(finding) => finding.reason === "proper-interior-crossing" && finding.points.length === 1,
+		),
+	JSON.stringify({
+		one: pointFindingOne.work,
+		many: pointFindingMany.work,
+		crossing: crossingFindingWork.work,
+		parallel: parallelFindingWork.work,
+	}),
 );
 {
 	const exactBoundaryId = "x".repeat(4_999_891);
@@ -5945,6 +6208,36 @@ const noteForEscapedControls = (board, elements) => {
 	);
 	fs.writeFileSync(path.join(vault, `${board}.excalidraw.md`), note);
 };
+const noteForExactLabelPairs = (board, pairs, reverse = false) => {
+	const placeholders = new Map(
+		pairs.flat().map((value, index) => [value, `q${index.toString(36).padStart(7, "0")}`]),
+	);
+	const placeholderElements = JSON.parse(
+		JSON.stringify(
+			labelPairBoard(pairs, reverse),
+			(_key, value) => placeholders.get(value) ?? value,
+		),
+	);
+	let note = renderBoardNote(
+		{
+			type: "excalidraw",
+			version: 2,
+			source: "archboard",
+			elements: placeholderElements,
+			appState: {},
+			files: {},
+		},
+		null,
+		{ board, variant: "current" },
+	);
+	for (const [exact, placeholder] of placeholders)
+		note = note.replaceAll(JSON.stringify(placeholder), JSON.stringify(exact));
+	fs.writeFileSync(path.join(vault, `${board}.excalidraw.md`), note);
+};
+for (const { label, pairs } of labelPairIdentityCases) {
+	noteForExactLabelPairs(`label-pair-${label}`, pairs);
+	noteForExactLabelPairs(`label-pair-${label}-reversed`, pairs, true);
+}
 for (const [label, ids] of obstacleIdentityCases) {
 	const writeObstacleNote =
 		label === "control" || label === "other-control" || label === "lone-surrogate"
@@ -6498,6 +6791,29 @@ for (const board of ["label-created-at-forward", "label-created-at-reverse"]) {
 		`status=${persistedLabelRun.status} stderr=${persistedLabelRun.stderr} duplicate=${JSON.stringify(duplicate?.details)}`,
 	);
 }
+for (const { label, pairs } of labelPairIdentityCases) {
+	const expected = pairs.map(([containerId, textId]) => `${containerId}\0${textId}`).toSorted();
+	const runs = [
+		run(`label-pair-${label}`, ["--strict"]),
+		run(`label-pair-${label}-reversed`, ["--strict"]),
+	];
+	const results = runs.map((result) => (result.stdout ? JSON.parse(result.stdout) : null));
+	check(
+		`persisted ${label} label-pair identities stay injective under reversal`,
+		runs.every((result) => result.status === 7 && result.stderr === "") &&
+			results.every(
+				(result) =>
+					CheckResultSchema.safeParse(result).success &&
+					JSON.stringify(driftIdentities(result)) === JSON.stringify(expected) &&
+					result.clean === false,
+			),
+		JSON.stringify({
+			expected,
+			statuses: runs.map((result) => result.status),
+			drifts: results.map((result) => driftIdentities(result)),
+		}),
+	);
+}
 for (const [board, reason] of [
 	["group-classification-identity", "invalid-element-identity"],
 	["group-classification-coverage", "rotation"],
@@ -6730,30 +7046,45 @@ for (const [label, , expected] of obstacleIdentityCases) {
 		},
 		{
 			family: "label membership and drift",
-			owner: "record-analysis/classify-records and record-analysis/order-events",
+			owner:
+				"record-analysis/classify-records, record-analysis/order-events, and node-hierarchy/aggregate-model",
 			evidence:
 				labelMembershipThousand.work.analysisWorkItems -
 					labelMembershipOne.work.analysisWorkItems ===
-				21_996,
+					22_995 &&
+				reverseOwnerMany.work.analysisWorkItems - reverseOwnerOne.work.analysisWorkItems ===
+					7_921 &&
+				labelPairDirectEvidence.every(Boolean),
 		},
 		{
 			family: "hierarchy, events, and candidates",
 			owner: "node-hierarchy and collision passes",
 			evidence:
 				hierarchyFanout.analysisWorkItems === hierarchyFanoutCount * 3 + hierarchyFanoutSortWork &&
-				overlappingBoundaryRetention.analysisLimit?.phase === "activate-or-expire",
+				overlappingBoundaryRetention.analysisLimit?.phase === "activate-or-expire" &&
+				hierarchyEight.work.analysisWorkItems - hierarchyTwo.work.analysisWorkItems === 820,
 		},
 		{
 			family: "model aggregates",
 			owner: "node-hierarchy and container-boundary/aggregate-model",
-			evidence: largeUngroupedDiagnostics.work.analysisWorkItems > 0,
+			evidence:
+				largeUngroupedDiagnostics.work.analysisWorkItems > 0 &&
+				failedAggregateLarge.work.analysisWorkItems -
+					failedAggregateSmall.work.analysisWorkItems ===
+					5_165 &&
+				obstacleAttributionLarge.work.analysisWorkItems -
+					obstacleAttributionSmall.work.analysisWorkItems ===
+					1_209,
 		},
 		{
 			family: "refs, points, and findings",
 			owner: "finding-finalization/finalize-findings",
 			evidence:
 				duplicateRefFinding?.elements.every((element, index) => element.sourceIndex === index) ===
-				true,
+					true &&
+				pointFindingMany.work.analysisWorkItems - pointFindingOne.work.analysisWorkItems === 22 &&
+				crossingFindingWork.work.analysisWorkItems - parallelFindingWork.work.analysisWorkItems ===
+					9,
 		},
 	];
 	check(

@@ -144,11 +144,12 @@ export function boundTextsByContainer(
 	}
 
 	const found = new Map<string, string[]>();
-	const seen = new Set<string>();
+	const seen = new Map<string, Set<string>>();
 	const record = (container: string, textId: string): void => {
-		const key = `${container} ${textId}`;
-		if (seen.has(key)) return;
-		seen.add(key);
+		const texts = seen.get(container) ?? new Set<string>();
+		if (texts.has(textId)) return;
+		texts.add(textId);
+		seen.set(container, texts);
 		const list = found.get(container);
 		if (list) list.push(textId);
 		else found.set(container, [textId]);
