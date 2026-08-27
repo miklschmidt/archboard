@@ -397,13 +397,7 @@ function hydratedFileFingerprintProjection(scene: unknown): readonly unknown[] {
 			const file = raw as Record<string, unknown>;
 			const field = (name: string) =>
 				Object.hasOwn(file, name) ? ["present", file[name]] : ["missing"];
-			return [
-				id,
-				field("id"),
-				field("mimeType"),
-				field("created"),
-				field("dataURL"),
-			];
+			return [id, field("id"), field("mimeType"), field("created"), field("dataURL")];
 		});
 }
 
