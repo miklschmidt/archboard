@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:18'
-updated_date: '2026-08-27 09:35'
+updated_date: '2026-08-27 09:59'
 labels:
   - ready-for-agent
 dependencies:
@@ -81,6 +81,8 @@ TASK-119 inspection schema v2 validates bridge provenance, suppresses only an ex
 2026-08-27 closure checkpoint: hardened candidate ownership so malformed same-ID markers and duplicate source/part identities cannot suppress a crossing; validated stored bridge path extents as well as style/order; added deterministic multi-crossing --at boundary tests, schema literal rejection, second-crossing evidence, real parseable-note package coverage, orphan-source removal through the real one-write server, and truthful schema-v2/60-path/fixed-point documentation. Focused reruns remain green: inspection 740, one-write 81, contracts 1000, CLI 596, type/lint/boundaries/module-scope/geometry/labels/branch/doing/version/lock.
 
 2026-08-27 validation checkpoint: completed both byte-stable bun run fix passes; bun run check and the separately invoked bun run test are green, with all four browser suites sequential/headless. A pre-existing human-performance sampling race reproduced only after the in-chain frontend rebuild; isolated diagnosis passed, and the harness now excludes legitimate correction delivery symmetrically across its existing 120 ms observation window without weakening the no-replacement assertion. Final evidence includes inspection 740, contracts 60 paths/1000 checks, CLI 35 commands/25 subcommands/596 checks, one-write 81, geometry 89, labels 183, fixed-point bridge round trip, strict package/no-side-effect cases, and generator --check. The three derived contract views were removed after on-demand generation; canonical audit JSON remains tracked. TASK remains In Progress with all acceptance criteria unchecked for independent fixed-range review.
+
+2026-08-27 fixed-range remediation checkpoint: bridge provenance now requires exactly two distinct usable live line parts; the canonical generated-part comparison covers persisted geometry, style, binding/group/live fields and unsupported line discriminators; mask/redraw must be adjacent in the live index order above both sources. Removal remains structural and ignores stale source/geometry after pair validity. CLI --at rejects blank trimmed coordinates before coercion, and create/remove result schemas reject cross-field receipt disagreement before stdout. Focused evidence is green: inspection 768, CLI 604, contracts 1000, one-write 81, geometry 89, labels 183, branch compare, lint, and types. TASK remains In Progress with every AC unchecked.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
