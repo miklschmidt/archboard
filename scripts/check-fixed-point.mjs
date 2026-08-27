@@ -478,6 +478,37 @@ const api = async (method, url, body) => {
 	return { status: response.status, body: await response.json().catch(() => null) };
 };
 
+const archboard = (args) =>
+	new Promise((resolve) => {
+		const child = spawn(path.join(repoRoot, "bin", "canvas"), args, {
+			cwd: repoRoot,
+			env: {
+				...process.env,
+				ARCHBOARD_VAULT: vault,
+				EXPRESS_SERVER_URL: base,
+				EXCALIDRAW_NO_AUTOSTART: "1",
+			},
+			stdio: ["ignore", "pipe", "pipe"],
+		});
+		let stdout = "";
+		let stderr = "";
+		child.stdout.on("data", (chunk) => {
+			stdout += chunk.toString();
+		});
+		child.stderr.on("data", (chunk) => {
+			stderr += chunk.toString();
+		});
+		child.on("close", (status) => resolve({ status, stdout, stderr }));
+	});
+
+const directoryBytes = (directory) =>
+	Object.fromEntries(
+		fs
+			.readdirSync(directory)
+			.toSorted()
+			.map((name) => [name, fs.readFileSync(path.join(directory, name)).toString("base64")]),
+	);
+
 // ---------------------------------------------------------------------------
 // The diff
 // ---------------------------------------------------------------------------
@@ -725,6 +756,72 @@ try {
 		"  and saved, so what is under test is the note we write",
 		saved.status === 200 && fs.existsSync(saved.body?.file ?? ""),
 		saved.body?.error ?? "",
+	);
+
+	await api("POST", "/api/boards/new", { board: "finding-render", level: "service" });
+	const findingBoard = await api("POST", "/api/elements/batch?board=finding-render", {
+		elements: [
+			{
+				id: "fover",
+				type: "line",
+				x: 100,
+				y: 100,
+				points: [
+					[0, 0],
+					[200, 0],
+				],
+			},
+			{
+				id: "funder",
+				type: "line",
+				x: 200,
+				y: 40,
+				points: [
+					[0, 0],
+					[0, 120],
+				],
+			},
+			{
+				id: "unmark",
+				type: "line",
+				x: 250,
+				y: 40,
+				points: [
+					[0, 0],
+					[0, 120],
+				],
+			},
+			{
+				id: "farimg",
+				type: "image",
+				x: 800,
+				y: 800,
+				width: 64,
+				height: 64,
+				fileId: "finding-pixel",
+			},
+		],
+	});
+	await api("POST", "/api/files?board=finding-render", {
+		files: [
+			{
+				id: "finding-pixel",
+				mimeType: "image/png",
+				dataURL:
+					"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+			},
+		],
+	});
+	const findingBridge = await api("POST", "/api/bridges?board=finding-render", {
+		over: "fover",
+		under: "funder",
+		background: "#ffffff",
+	});
+	const findingBoardSaved = await api("POST", "/api/boards/save?board=finding-render");
+	check(
+		"the off-screen finding fixture has an embedded image, one valid bridge and one unmarked crossing",
+		findingBoard.status === 200 && findingBridge.status === 200 && findingBoardSaved.status === 200,
+		findingBridge.body?.error ?? findingBoardSaved.body?.error ?? "",
 	);
 
 	// --- the browser ---------------------------------------------------------
@@ -1114,6 +1211,86 @@ try {
 			.filter(Boolean)
 			.join("; "),
 	);
+
+	const renderOne = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-findings-one-"));
+	const renderTwo = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-findings-two-"));
+	const visibleSceneBefore = JSON.stringify((await sceneWhenStill()).map(strip));
+	const visiblePaneBefore = (await api("GET", "/api/panes")).body?.panes?.[0];
+	const fullBoardBefore = await api("POST", "/api/export/image", {
+		format: "png",
+		background: true,
+	});
+	const firstFindingRender = await archboard([
+		"render-findings",
+		"--board",
+		"finding-render",
+		"--out",
+		renderOne,
+	]);
+	const visiblePaneAfterFirst = (await api("GET", "/api/panes")).body?.panes?.[0];
+	const fullBoardAfter = await api("POST", "/api/export/image", {
+		format: "png",
+		background: true,
+	});
+	const firstManifest = JSON.parse(firstFindingRender.stdout || "null");
+	check(
+		"render-findings renders an explicit off-screen board through the existing browser",
+		firstFindingRender.status === 0 &&
+			firstManifest?.board === "finding-render" &&
+			firstManifest?.entries?.some((entry) => entry.status === "rendered"),
+		firstFindingRender.stderr,
+	);
+	check(
+		"  suppresses only the valid bridge crossing and keeps the second crossing",
+		firstManifest?.report?.counts?.byCode?.CONNECTOR_INTERSECTION_UNMARKED === 1,
+		JSON.stringify(firstManifest?.report?.counts?.byCode),
+	);
+	check(
+		"  without changing the visible pane scene, board, selection or viewport",
+		JSON.stringify((await sceneWhenStill()).map(strip)) === visibleSceneBefore &&
+			visiblePaneAfterFirst?.board === visiblePaneBefore?.board &&
+			JSON.stringify(visiblePaneAfterFirst?.selection) ===
+				JSON.stringify(visiblePaneBefore?.selection) &&
+			JSON.stringify(visiblePaneAfterFirst?.viewport) ===
+				JSON.stringify(visiblePaneBefore?.viewport),
+	);
+	check(
+		"  and leaves the existing full-board screenshot byte-identical",
+		fullBoardBefore.status === 200 &&
+			fullBoardAfter.status === 200 &&
+			fullBoardBefore.body?.data === fullBoardAfter.body?.data,
+	);
+
+	const movedViewport = await api("POST", "/api/viewport", {
+		x: 777,
+		y: 555,
+		zoom: 1.25,
+	});
+	check(
+		"the visible viewport changes before the repeated finding render",
+		movedViewport.status === 200,
+	);
+	const paneBeforeSecond = (await api("GET", "/api/panes")).body?.panes?.[0];
+	const secondFindingRender = await archboard([
+		"render-findings",
+		"--board",
+		"finding-render",
+		"--out",
+		renderTwo,
+	]);
+	const paneAfterSecond = (await api("GET", "/api/panes")).body?.panes?.[0];
+	check(
+		"repeated focused exports are viewport-independent byte for byte",
+		secondFindingRender.status === 0 &&
+			JSON.stringify(directoryBytes(renderOne)) === JSON.stringify(directoryBytes(renderTwo)),
+		secondFindingRender.stderr,
+	);
+	check(
+		"  and the second render leaves the explicitly moved viewport alone",
+		JSON.stringify(paneAfterSecond?.viewport) === JSON.stringify(paneBeforeSecond?.viewport),
+	);
+	fs.rmSync(renderOne, { recursive: true, force: true });
+	fs.rmSync(renderTwo, { recursive: true, force: true });
 
 	// --- proof that a zero is real ------------------------------------------
 	//
