@@ -82,10 +82,7 @@ const proxy = http.createServer((req, res) => {
 	req.on("end", async () => {
 		const body = Buffer.concat(chunks);
 		const isWrite = req.method !== "GET" && req.method !== "HEAD";
-		if (
-			isWrite &&
-			(req.url.startsWith("/api/elements") || req.url.startsWith("/api/bridges"))
-		) {
+		if (isWrite && (req.url.startsWith("/api/elements") || req.url.startsWith("/api/bridges"))) {
 			writes.push(`${req.method} ${req.url.split("?")[0]}`);
 		}
 		try {
@@ -844,7 +841,10 @@ try {
 			y: 50,
 			width: 100,
 			height: 0,
-			points: [[0, 0], [100, 0]],
+			points: [
+				[0, 0],
+				[100, 0],
+			],
 		},
 		{
 			id: "bridge-under",
@@ -853,7 +853,10 @@ try {
 			y: 0,
 			width: 0,
 			height: 100,
-			points: [[0, 0], [0, 100]],
+			points: [
+				[0, 0],
+				[0, 100],
+			],
 		},
 	];
 	await api("POST", `/api/elements/batch${board}`, { elements: crossingSources });

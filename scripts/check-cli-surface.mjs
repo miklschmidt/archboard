@@ -879,9 +879,19 @@ try {
 	const bridgedAnswer = parseJson("bridge JSON", bridged.stdout);
 	const bridgeWrites = writesSince(bridgeBefore);
 	check("bridge package adapter exits normally", bridged.status === 0, bridged.stderr);
-	check("bridge package adapter performs exactly one POST", bridgeWrites.length === 1 && bridgeWrites[0]?.url.pathname === "/api/bridges");
-	check("bridge package adapter normalizes the explicit background", bridgeWrites[0]?.body?.background === "#ffffff");
-	check("bridge package result keeps the role-ordered pair", bridgedAnswer?.elements?.[0]?.customData?.archboard?.bridge?.role === "mask" && bridgedAnswer?.elements?.[1]?.customData?.archboard?.bridge?.role === "redraw");
+	check(
+		"bridge package adapter performs exactly one POST",
+		bridgeWrites.length === 1 && bridgeWrites[0]?.url.pathname === "/api/bridges",
+	);
+	check(
+		"bridge package adapter normalizes the explicit background",
+		bridgeWrites[0]?.body?.background === "#ffffff",
+	);
+	check(
+		"bridge package result keeps the role-ordered pair",
+		bridgedAnswer?.elements?.[0]?.customData?.archboard?.bridge?.role === "mask" &&
+			bridgedAnswer?.elements?.[1]?.customData?.archboard?.bridge?.role === "redraw",
+	);
 
 	const removeBefore = requests.length;
 	const removedBridge = await cli(
@@ -889,17 +899,45 @@ try {
 		{ url: canvasUrl },
 	);
 	const removeWrites = writesSince(removeBefore);
-	check("bridge remove package adapter exits normally", removedBridge.status === 0, removedBridge.stderr);
-	check("bridge remove performs exactly one DELETE and no pre-GET", removeWrites.length === 1 && removeWrites[0]?.method === "DELETE" && removeWrites[0]?.url.pathname === "/api/bridges/Bridge01");
-	check("bridge remove returns the exact provenance pair", JSON.stringify(parseJson("bridge remove JSON", removedBridge.stdout)?.deleted) === JSON.stringify(["Bridge01", "Redraw01"]));
+	check(
+		"bridge remove package adapter exits normally",
+		removedBridge.status === 0,
+		removedBridge.stderr,
+	);
+	check(
+		"bridge remove performs exactly one DELETE and no pre-GET",
+		removeWrites.length === 1 &&
+			removeWrites[0]?.method === "DELETE" &&
+			removeWrites[0]?.url.pathname === "/api/bridges/Bridge01",
+	);
+	check(
+		"bridge remove returns the exact provenance pair",
+		JSON.stringify(parseJson("bridge remove JSON", removedBridge.stdout)?.deleted) ===
+			JSON.stringify(["Bridge01", "Redraw01"]),
+	);
 
 	const invalidBackgroundBefore = requests.length;
 	const invalidBackground = await cli(
-		["bridge", "--over", "over", "--under", "under", "--background", "transparent", "--board", "contract", "--doing", "marking crossing"],
+		[
+			"bridge",
+			"--over",
+			"over",
+			"--under",
+			"under",
+			"--background",
+			"transparent",
+			"--board",
+			"contract",
+			"--doing",
+			"marking crossing",
+		],
 		{ url: canvasUrl },
 	);
 	check("invalid bridge background is usage exit 2", invalidBackground.status === 2);
-	check("invalid bridge background contacts no write route", requests.length === invalidBackgroundBefore);
+	check(
+		"invalid bridge background contacts no write route",
+		requests.length === invalidBackgroundBefore,
+	);
 
 	const queryBefore = requests.length;
 	const queried = await cli([
