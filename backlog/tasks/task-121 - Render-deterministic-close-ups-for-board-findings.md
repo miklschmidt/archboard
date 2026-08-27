@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:19'
-updated_date: '2026-08-27 13:09'
+updated_date: '2026-08-27 13:22'
 labels:
   - ready-for-agent
 dependencies:
@@ -97,6 +97,13 @@ Fixed-range remediation from rejected head 4eb434a:
 Focused evidence green: test:inspection (836 checks), test:boards, command-contract and finding-rendering unit suites, lint, type-check, boundaries, module-scope, and test:browser. Full final validation remains pending.
 
 Final validation green: two consecutive bun run fix passes produced identical diff bytes (895a47a0871aea4e387fdae9cc81dedde09dc81f2c9c4883a8ed4125575acd4d), deterministic on-demand contract generation matched across two owned temporary destinations, bun run check passed, and a separate complete bun run test passed. All browser lanes ran sequentially/headless through the repository chain. git diff --check and clean-tree confirmation follow in the final handoff. Generated views remain absent and ignored.
+
+Independent-review closure from HEAD 1be771e:
+
+- bea509d tracks the hard-link commit state. A transient manifest temp unlink retries and succeeds. A persistent cleanup failure removes manifest.json before rethrowing, while existing PNG partial-set, collision, no-replace, manifest-last, and stdout-last behavior stays intact.
+- 046c3b1 computes the canonical hydrated-file contribution before strict render admission. An ADR-0017 attachment byte change now moves sourceFingerprint even when invalid geometry keeps renderScene null and produces source-not-renderable entries.
+
+Focused owners green: command-contract public runner 27 tests and 161 expectations, lint, type-check, and the complete server/socket board suite including the unrenderable hydrated attachment case. Final repository validation remains pending.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
