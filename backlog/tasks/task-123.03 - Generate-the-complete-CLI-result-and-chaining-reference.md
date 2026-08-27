@@ -4,7 +4,7 @@ title: Generate the complete CLI result and chaining reference
 status: To Do
 assignee: []
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-26 00:04'
+updated_date: '2026-08-27 08:08'
 labels: []
 dependencies:
   - TASK-123.02
@@ -45,3 +45,13 @@ Update skill synchronization and validation so a released command or changed con
 - [ ] #5 TASK-119 through TASK-121 result contracts are included once released, and TASK-122 teaches the generated reference and efficient chains instead of speculative flags or output fields.
 - [ ] #6 Automated checks fail when any public command lacks reference coverage, generated reference content is stale, an example jq program does not work against fixture output, or a documented CLI-to-REST contract relationship drifts.
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @codex
+created: 2026-08-27 08:08
+---
+Parent contract decision (2026-08-27): CommandContract Zod schemas and inferred result types are the sole authority. TASK-123.03 must not copy result-field tables into SKILL.md, cheatsheet, or a second hand-maintained reference. The skill should reference the authoritative types/generated contract view. Any generated agent reference is limited to a thin navigational/workflow index and tested examples derived mechanically from the contracts; it must not become another schema copy requiring synchronization.
+---
+<!-- COMMENTS:END -->

@@ -1,10 +1,11 @@
 ---
 id: TASK-120
 title: Make unavoidable connector crossings explicit and verifiable
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-25 17:18'
-updated_date: '2026-08-26 01:26'
+updated_date: '2026-08-27 08:08'
 labels:
   - ready-for-agent
 dependencies:
@@ -81,5 +82,11 @@ TASK-124 removes the MCP surface. Bridge creation and removal are now CLI-only C
 created: 2026-08-26 01:26
 ---
 TASK-124 reconciliation: bridge creation and removal remain CLI-only CommandContracts. No equivalent secondary agent command is planned.
+---
+
+author: @codex
+created: 2026-08-27 08:08
+---
+Parent orchestration started after TASK-119 shipped at 75a7f52. Before implementation, the existing bridge plan must receive a current-source xhigh review against the released inspection and CommandContract seams. The review must apply a deletion test and reject speculative routing, broad semantic taxonomies, generalized background analysis, or defensive machinery beyond the narrow two-part bridge create/remove/verify contract.
 ---
 <!-- COMMENTS:END -->
