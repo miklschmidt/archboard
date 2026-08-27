@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-27 14:01'
+updated_date: '2026-08-27 14:15'
 labels: []
 dependencies:
   - TASK-123.02
@@ -30,22 +30,37 @@ ordinal: 128000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Generate the agent-facing CLI reference from the released CommandContract registry and integrate it into the tracked Archboard skill source. The reference must account for every command and subcommand, not merely list syntax. It explains each input and result schema, stdout mode, field meanings, stable ordering, prerequisites, effects, refusals, exits, and the next commands that can consume important fields.
+Add a compact agent-facing workflow guide to the tracked Archboard skill source. CommandContract result Zod schemas and their inferred types remain the sole authority for result shapes, refinements, streams, effects, refusals, exits, and REST relationships. The guide points agents to those source contracts and to the existing ignored on-demand command-contract proof, then documents only useful released producer-to-consumer mappings and tested jq extractions.
 
-Add tested jq examples for common chains and compact extraction patterns, including board fingerprints and optimistic writes, created and affected element IDs, stencil instance handles and bounds when released, query selection, promotion, grouping and arrangement, inspection findings, bridge decoration results, and focused-render artifacts. Generated material has one source of truth in CommandContract; hand-written guidance may explain workflows but must not restate schema tables that can drift.
-
-Update skill synchronization and validation so a released command or changed contract cannot leave installed agent documentation stale.
+No result-schema manual, per-command field table, fourth generated contract artifact, help-output change, or duplicated ordering catalogue is added. SKILL.md and the cheatsheet carry one discoverable pointer each; the existing recursive skill sync/install owners copy the tracked guide unchanged. TASK-122 remains responsible for broader completion and visual-evidence teaching.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A generated reference maps every public command and subcommand to its input schema, result schema or intentional non-JSON output mode, field meanings, prerequisites, effects, refusals, exit statuses, and stable-order guarantees.
-- [ ] #2 The reference identifies useful producer-to-consumer field mappings and contains tested jq examples for representative read, write, query, stencil, grouping, promotion, board-version, inspection, bridge, rendering, and file-artifact workflows that exist when the task is implemented.
-- [ ] #3 Generated schema material comes directly from CommandContract metadata; the skill adds human workflow guidance without maintaining a second hand-written copy of result shapes.
-- [ ] #4 The tracked skill source, derived skill installations, cheatsheet, and command help link consistently to the generated reference using the repository skill-sync process.
-- [ ] #5 TASK-119 through TASK-121 result contracts are included once released, and TASK-122 teaches the generated reference and efficient chains instead of speculative flags or output fields.
-- [ ] #6 Automated checks fail when any public command lacks reference coverage, generated reference content is stale, an example jq program does not work against fixture output, or a documented CLI-to-REST contract relationship drifts.
+- [ ] #1 CommandContract result Zod schemas and inferred types remain the sole result-shape authority. TASK-123.03 adds no schema manual and no new generated contract artifact; the existing on-demand command-contract-proof.json is linked only as a derived searchable projection whose source Zod contract wins.
+- [ ] #2 A compact tracked cli-workflows.md documents only useful released producer-to-consumer mappings and jq extractions for read/query, writes and board version, stencil insertion, promotion, grouping, inspection, bridge creation/removal, focused rendering, and file artifacts where a real chain exists. User choices and independent reinspection are labeled rather than presented as data pipes.
+- [ ] #3 Every documented jq program is executed by a focused check against data first validated by the exact producing ResultSchema or produced by a shipped pure owner and then parsed. Every named producer and consumer resolves to cliContractRegistry; the guide is not required to mention every public command.
+- [ ] #4 SKILL.md and cheatsheet.md contain one discoverable pointer to the workflow guide and no copied result schemas, result-field tables, or per-command shape descriptions. Generic sync and install paths copy the tracked reference byte-for-byte, and command help remains byte-compatible.
+- [ ] #5 The guide uses only released TASK-119 through TASK-121 contracts: schema-v2 check, bridge, bridge remove, and render-findings. TASK-122 remains the sole owner of the completion gate and broader inspection, bridge, and rendering teaching.
+- [ ] #6 Existing 61-path contract proof coverage, immutable fixed-57 compatibility, CLI-to-REST reconciliation, generated ownership, runtime schemas, registry paths, streams/exits, and server/UI behavior remain unchanged. The only contract metadata correction is check's stale Schema-v1 output description to Schema-v2.
+- [ ] #7 Focused validation proves workflow markers resolve to live contracts, jq examples produce expected bytes from schema-valid data, tracked/synchronized/installed guide copies match, existing generated artifact names remain unchanged, and no generated view is committed.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Add skills/archboard/references/cli-workflows.md with a short navigation route to command help, source CommandContract Zod schemas/inferred types, and the existing ignored command-contract-proof.json projection. Include only natural producer-to-consumer mappings and marked jq examples; keep field names only where a consumer uses them.
+
+2. Add one pointer from skills/archboard/SKILL.md and one from skills/archboard/references/cheatsheet.md. Do not rewrite completion teaching or command tables; TASK-122 owns that work.
+
+3. Correct src/cli/commands/check.ts output metadata from Schema-v1 to Schema-v2 without changing its schema, handler, streams, help bytes, or package behavior.
+
+4. Add scripts/check-command-workflows.mjs and run it from test:contracts. Validate marked fixtures through the exact producer ResultSchema or shipped pure owner, execute the real jq binary, compare exact output, and require named producer/consumer paths in cliContractRegistry. Add an install/sync byte-identity assertion for the tracked guide; do not change sync-skills.
+
+5. Preserve the three existing generated artifact names, the 61-path registry, immutable fixed-57 records, and ignored generated ownership. Do not add a public introspection command, new CommandContract metadata, workflow DSL, all-command matrix, schema descriptions, result fields, or browser scenario.
+
+6. Run the focused workflow check, lint:skills, test:contracts, test:install, test:cli, type-check, sync byte comparison, two stable fix passes, complete bun run check, separate bun run test, and independent fixed-range Standards and Spec reviews from 2c45d71ece3a31ccbb432da0b265f693bbd9fa81.
+<!-- SECTION:PLAN:END -->
 
 ## Comments
 
@@ -60,5 +75,11 @@ author: @codex
 created: 2026-08-27 14:01
 ---
 Parent orchestration started after TASK-121 shipped. Plan from current CommandContract registry and tracked skill source. The authoritative Zod schemas and inferred types remain the sole result-shape source; generated or hand-written skill material may provide navigation and executable chains, but must not copy result schemas or field tables.
+---
+
+author: @codex
+created: 2026-08-27 14:14
+---
+Parent approved the xhigh deletion-test amendment: one thin workflow guide, two skill pointers, schema-valid jq examples, no copied result shapes, no fourth generated artifact, and source Zod contracts as the sole authority.
 ---
 <!-- COMMENTS:END -->
