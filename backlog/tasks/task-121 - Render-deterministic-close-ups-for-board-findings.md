@@ -1,10 +1,11 @@
 ---
 id: TASK-121
 title: Render deterministic close-ups for board findings
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-25 17:19'
-updated_date: '2026-08-26 01:26'
+updated_date: '2026-08-27 11:14'
 labels:
   - ready-for-agent
 dependencies:
@@ -84,5 +85,11 @@ Plan review incorporated the originating viewport-versus-full-scene failure, uni
 created: 2026-08-26 01:26
 ---
 TASK-124 reconciliation: focused rendering remains a CLI-only CommandContract and documents only its REST application relationship where relevant.
+---
+
+author: @codex
+created: 2026-08-27 11:14
+---
+Parent orchestration started after TASK-120 shipped. Before implementation, run a current-source xhigh deletion-test plan review. Prefer the smallest deterministic close-up contract that solves finding evidence export; reject speculative renderer platforms, duplicated bounds engines, unnecessary server/session state, broad visual-closure taxonomies, or browser test matrices beyond the real product seam.
 ---
 <!-- COMMENTS:END -->
