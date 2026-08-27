@@ -12,6 +12,7 @@ import {
 import type { HoldReport } from "./board-hold.js";
 import type { Claim } from "./board-lock.js";
 import type { CompareResult } from "./compare.js";
+import type { InspectionPolicyInput, InspectionReport } from "../board-inspection/index.js";
 
 // API Response types
 export interface ApiResponse {
@@ -605,6 +606,28 @@ export async function exportImage(
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ format, background, ...(pane ? { pane } : {}) }),
+	});
+}
+
+export interface FindingExportResponse {
+	board: string;
+	sourceFingerprint: string;
+	report: InspectionReport;
+	sourceRenderable: boolean;
+	results: Array<{
+		findingIndex: number;
+		data?: string;
+		failure?: "browser-export-failed" | "browser-timeout";
+	}>;
+}
+
+export async function exportFindings(
+	policy: InspectionPolicyInput,
+): Promise<FindingExportResponse> {
+	return requestJson("/api/export/findings", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ policy }),
 	});
 }
 

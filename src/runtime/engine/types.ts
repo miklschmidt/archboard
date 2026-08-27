@@ -222,6 +222,7 @@ export type WebSocketMessageType =
 	| "mermaid_convert"
 	| "canvas_cleared"
 	| "export_image_request"
+	| "export_findings_request"
 	| "set_viewport"
 	| "files_added"
 	| "file_deleted"

@@ -43,7 +43,7 @@
 import fs from "fs";
 import path from "path";
 
-import { type ExcalidrawFile, type ServerElement } from "./types.js";
+import { EXCALIDRAW_ELEMENT_TYPES, type ExcalidrawFile, type ServerElement } from "./types.js";
 import { writeFileAtomic } from "./atomic-write.js";
 import { holdOn } from "./board-hold.js";
 import { type BoardState, baselineForFile, recordBaseline } from "./board-store.js";
@@ -327,13 +327,71 @@ export function readNote(file: string): BoardContent | null {
  * board, or establish a write baseline.
  */
 export function readRawBoardElementsForInspection(key: string): readonly unknown[] {
+	return readBoardInspectionSnapshot(key).elements;
+}
+
+export interface BoardInspectionSnapshot {
+	elements: readonly unknown[];
+	fingerprint: string;
+	renderScene: {
+		elements: readonly ServerElement[];
+		files: Readonly<Record<string, ExcalidrawFile>>;
+	} | null;
+}
+
+function strictRenderScene(scene: unknown): BoardInspectionSnapshot["renderScene"] {
+	const sceneRecord =
+		!Array.isArray(scene) && scene && typeof scene === "object"
+			? (scene as Record<string, unknown>)
+			: null;
+	const elements = Array.isArray(scene) ? scene : sceneRecord?.elements;
+	if (!Array.isArray(elements)) return null;
+	const acceptedTypes = new Set(Object.values(EXCALIDRAW_ELEMENT_TYPES));
+	const ids = new Set<string>();
+	const projected: ServerElement[] = [];
+	for (const raw of elements) {
+		if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+		const record = raw as Record<string, unknown>;
+		if (typeof record.id !== "string" || record.id.length === 0 || ids.has(record.id)) return null;
+		if (typeof record.type !== "string" || !acceptedTypes.has(record.type as never)) return null;
+		ids.add(record.id);
+		projected.push(record as unknown as ServerElement);
+	}
+	try {
+		validateRenderGeometry(projected);
+	} catch {
+		return null;
+	}
+	const rawFiles = sceneRecord?.files ?? {};
+	if (!rawFiles || typeof rawFiles !== "object" || Array.isArray(rawFiles)) return null;
+	const files: Record<string, ExcalidrawFile> = {};
+	for (const [id, raw] of Object.entries(rawFiles)) {
+		if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+		const file = raw as Record<string, unknown>;
+		if (
+			file.id !== id ||
+			typeof file.dataURL !== "string" ||
+			typeof file.mimeType !== "string" ||
+			typeof file.created !== "number" ||
+			!Number.isFinite(file.created)
+		)
+			return null;
+		files[id] = raw as unknown as ExcalidrawFile;
+	}
+	return { elements: projected, files };
+}
+
+/** One named note read shared by inspection and focused rendering. */
+export function readBoardInspectionSnapshot(key: string): BoardInspectionSnapshot {
 	const root = requireVaultRoot();
 	const identity = parseBoardKey(key);
 	const file = vaultPathFor(identity, root);
 	const note = readNoteFile(file, root);
 	if (!note) throw new Error(`Board note not found: ${file}`);
 	const scene: unknown = JSON.parse(note.sceneJson);
-	if (Array.isArray(scene)) return scene;
+	if (Array.isArray(scene)) {
+		return { elements: scene, fingerprint: note.hash, renderScene: strictRenderScene(scene) };
+	}
 	if (
 		!scene ||
 		typeof scene !== "object" ||
@@ -341,7 +399,11 @@ export function readRawBoardElementsForInspection(key: string): readonly unknown
 	) {
 		throw new Error(`${file} has no elements array in its Drawing payload.`);
 	}
-	return (scene as { elements: unknown[] }).elements;
+	return {
+		elements: (scene as { elements: unknown[] }).elements,
+		fingerprint: note.hash,
+		renderScene: strictRenderScene(scene),
+	};
 }
 
 /**
