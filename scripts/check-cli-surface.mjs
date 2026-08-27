@@ -1545,6 +1545,60 @@ try {
 	]);
 	check("import reads the CLI-owned path", imported.answer?.imported === 1);
 	check("import sends one batch write", imported.writes.length === 1);
+	const replaceScenePath = join(outside, "replace-contract.excalidraw");
+	const replaceFile = {
+		id: "replace-file",
+		dataURL: "data:image/png;base64,cmVwbGFjZQ==",
+		mimeType: "image/png",
+		created: 1,
+	};
+	writeFileSync(
+		replaceScenePath,
+		JSON.stringify({
+			type: "excalidraw",
+			version: 2,
+			elements: [
+				{
+					id: "replace-image",
+					type: "image",
+					x: 0,
+					y: 0,
+					width: 10,
+					height: 10,
+					fileId: replaceFile.id,
+				},
+			],
+			files: { [replaceFile.id]: replaceFile },
+		}),
+	);
+	const replaced = await expectSuccessfulJson("replace import from caller cwd", [
+		"import",
+		"replace-contract.excalidraw",
+		"--replace",
+		"--board",
+		"contract",
+		"--doing",
+		"replacing contract scene",
+	]);
+	check(
+		"replace import keeps its public receipt",
+		JSON.stringify(replaced.answer) ===
+			JSON.stringify({ success: true, imported: 1, files: 1, mode: "replace" }),
+		JSON.stringify(replaced.answer),
+	);
+	check(
+		"replace import sends one existing batch request",
+		replaced.writes.length === 1 &&
+			replaced.writes[0].method === "POST" &&
+			replaced.writes[0].url.pathname === "/api/elements/batch",
+		replaced.writes.map((write) => `${write.method} ${write.url.pathname}`).join(", "),
+	);
+	check(
+		"replace import marks the batch and carries embedded files",
+		replaced.writes[0]?.body?.mutation === "replace-scene" &&
+			JSON.stringify(replaced.writes[0]?.body?.files) === JSON.stringify([replaceFile]),
+		JSON.stringify(replaced.writes[0]?.body),
+	);
 
 	const missingDoing = await cli(["add", "--one", JSON.stringify(element), "--board", "contract"], {
 		url: canvasUrl,
