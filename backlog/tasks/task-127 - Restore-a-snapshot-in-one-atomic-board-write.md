@@ -1,9 +1,11 @@
 ---
 id: TASK-127
 title: Restore a snapshot in one atomic board write
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-26 07:06'
+updated_date: '2026-08-27 17:17'
 labels:
   - enhancement
 dependencies: []
@@ -30,3 +32,13 @@ Snapshot restore currently clears the target board and then batches the saved sc
 - [ ] #2 Restore keeps the exact existing board identity selection and force semantics, with no observable cleared-board gap.
 - [ ] #3 The atomic path preserves required doing narration, claims, board versions, optimistic note safety, and deep-copy isolation.
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @codex
+created: 2026-08-27 17:17
+---
+Parent orchestration started after TASK-126 shipped. Reuse the reviewed atomic scene-replacement owner for snapshot elements; preserve existing target-board, force, deep-copy, held, and refusal behavior without a second replacement framework.
+---
+<!-- COMMENTS:END -->
