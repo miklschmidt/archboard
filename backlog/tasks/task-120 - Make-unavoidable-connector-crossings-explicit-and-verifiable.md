@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:18'
-updated_date: '2026-08-27 10:29'
+updated_date: '2026-08-27 10:46'
 labels:
   - ready-for-agent
 dependencies:
@@ -87,6 +87,8 @@ TASK-119 inspection schema v2 validates bridge provenance, suppresses only an ex
 2026-08-27 remediation validation: both final bun run fix passes completed and pass two was byte-stable. Complete bun run check and the separately invoked complete bun run test passed, including all four browser suites sequentially/headless. On-demand contract generation --check passed; the three ignored derived views were removed and canonical audit JSON remains tracked. Final focused counts: inspection 768, CLI 604, contracts 60 paths/1000 checks, one-write 81, geometry 89, labels 183, doing 39, version 65, lock 120. git diff --check passed. TASK remains In Progress with every AC unchecked for fixed-range rereview.
 
 2026-08-27 second-rereview remediation checkpoint: BridgeResultSchema now rejects either generated part identity colliding with either source identity. Bridge provenance validates the complete fixed inspection snapshot vocabulary against the canonical bridgeLine projection, allowing only server/converter bookkeeping index, createdAt, and source; stale structural pairs remain removable. Direct two-role field coverage, parseable-note/package representatives, and fake-server malformed receipt cases are green: inspection 830, CLI 606, lint, and type-check. Full repository validation remains.
+
+2026-08-27 second-rereview validation: two final bun run fix passes were byte-stable. Focused inspection (830), CLI (606), contracts (60 paths/1000), one-write (81), geometry (89), labels (183), boundaries, module-scope, branch, doing, version, and lock passed. The first bun run check hit the documented human-performance sampling race; its isolated rerun passed without source changes, then the required complete bun run check rerun and separate complete bun run test both passed, including all four browser suites sequential/headless and the bridge fixed point. On-demand contract generation --check passed; the three ignored derived views were removed and canonical audit JSON remains tracked. TASK stays In Progress with all AC unchecked for fixed-base rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
