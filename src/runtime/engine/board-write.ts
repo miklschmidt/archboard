@@ -41,6 +41,7 @@ import { type BoardState, copyElements } from "./board-store.js";
 import { hashBoardBytes } from "./board.js";
 import { type ChangeOrigin, changeFeed } from "./change-feed.js";
 import { presentElements, stripBindingPresentationLinks } from "./presentation.js";
+import { usableDrawnFiles } from "./embedded-files.js";
 import logger from "./logger.js";
 
 export type WrittenNote = ReturnType<typeof writeBoardContent>;
@@ -56,6 +57,7 @@ export interface BoardWriteDelta {
 	deleted: string[];
 	filesAdded?: ExcalidrawFile[];
 	filesDeleted?: string[];
+	filesReplaced?: ExcalidrawFile[];
 }
 
 export interface BoardMutationResult<T> {
@@ -67,6 +69,8 @@ export interface BoardMutationResult<T> {
 	write?: boolean;
 	/** A pane supplied its whole scene rather than a delta. */
 	wholeScene?: boolean;
+	/** Supplied file candidates whose exact membership follows canonical settlement. */
+	replacementFiles?: readonly unknown[];
 }
 
 export type BoardMutation<T> = (
@@ -131,6 +135,7 @@ const completeDelta = (delta?: Partial<BoardWriteDelta>): BoardWriteDelta => ({
 	deleted: delta?.deleted ?? [],
 	...(delta?.filesAdded ? { filesAdded: delta.filesAdded } : {}),
 	...(delta?.filesDeleted ? { filesDeleted: delta.filesDeleted } : {}),
+	...(delta?.filesReplaced ? { filesReplaced: delta.filesReplaced } : {}),
 });
 
 function copyContent(content: BoardContent): BoardContent {
@@ -154,52 +159,25 @@ export function elementMutation<T>(
 ): BoardMutation<T> {
 	return (content) => {
 		const plan = prepare(content);
-		const replacedFileIds = plan.replaceScene ? [...content.files.keys()] : [];
 		if (plan.wholeScene || plan.replaceScene) content.elements.clear();
 		if (plan.replaceScene) content.files.clear();
 		const applied = applyElementInput(content.elements, {
 			...plan.input,
 			deletes: plan.wholeScene || plan.replaceScene ? [] : plan.input.deletes,
 		});
-		const filesAdded: ExcalidrawFile[] = [];
-		for (const raw of plan.replaceScene?.files ?? []) {
-			if (!raw || typeof raw !== "object" || Array.isArray(raw)) continue;
-			const file = raw as Record<string, unknown>;
-			if (
-				typeof file.id !== "string" ||
-				!file.id ||
-				typeof file.dataURL !== "string" ||
-				!file.dataURL
-			)
-				continue;
-			const accepted: ExcalidrawFile = {
-				id: file.id,
-				dataURL: file.dataURL,
-				mimeType: typeof file.mimeType === "string" && file.mimeType ? file.mimeType : "image/png",
-				created: typeof file.created === "number" && file.created ? file.created : Date.now(),
-			};
-			content.files.set(accepted.id, accepted);
-			filesAdded.push(accepted);
-		}
 		const changed =
 			applied.created.length > 0 ||
 			applied.updated.length > 0 ||
 			applied.deleted.length > 0 ||
-			filesAdded.length > 0 ||
-			replacedFileIds.some((id) => !content.files.has(id));
+			plan.replaceScene !== undefined;
 		return {
 			value: plan.value(applied, content),
 			delta: {
 				created: applied.created,
 				updated: applied.updated,
 				deleted: applied.deleted,
-				...(plan.replaceScene
-					? {
-							filesAdded,
-							filesDeleted: replacedFileIds.filter((id) => !content.files.has(id)),
-						}
-					: {}),
 			},
+			...(plan.replaceScene ? { replacementFiles: plan.replaceScene.files } : {}),
 			requestedElements: applied.requested,
 			// When wholeScene is present this is a pane report. Empty deltas do not
 			// write, while a full report must replace the held copy even when empty.
@@ -303,6 +281,9 @@ function tellPanesAboutWrite(
 	if (delta.filesAdded && delta.filesAdded.length > 0) {
 		tellPanes({ type: "files_added", files: delta.filesAdded }, target.key);
 	}
+	if (delta.filesReplaced) {
+		tellPanes({ type: "files_replaced", files: delta.filesReplaced }, target.key);
+	}
 	for (const fileId of delta.filesDeleted ?? []) {
 		tellPanes({ type: "file_deleted", fileId }, target.key);
 	}
@@ -326,6 +307,7 @@ function notificationDelta(
 		deleted: [...before.keys()].filter((id) => !after.has(id)),
 		...(files.filesAdded ? { filesAdded: files.filesAdded } : {}),
 		...(files.filesDeleted ? { filesDeleted: files.filesDeleted } : {}),
+		...(files.filesReplaced ? { filesReplaced: files.filesReplaced } : {}),
 	};
 }
 
@@ -355,6 +337,11 @@ export function writeBoard<T>(
 	// Final settlement belongs to board-io. Run it for every request, including
 	// a valid no-op, before this document can enter a hold or success answer.
 	settleBoardContent(content);
+	if (mutation.replacementFiles) {
+		const files = usableDrawnFiles(content.elements.values(), mutation.replacementFiles);
+		content.files = new Map(files.map((file) => [file.id, file]));
+		delta.filesReplaced = files;
+	}
 
 	let written: WrittenNote | null = null;
 	if (shouldWrite) {

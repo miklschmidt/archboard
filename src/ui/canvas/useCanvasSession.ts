@@ -52,6 +52,7 @@ import {
 	type SceneElement,
 	type SceneUpdate,
 } from "./change-reporting";
+import { replaceCanvasFiles } from "./files";
 import { ownsHoldAttempt, type HoldAttempt } from "./hold-attempt";
 import { findingRasterDimensions } from "../../shared/finding-raster";
 import {
@@ -84,6 +85,7 @@ const CONTENT_MESSAGES = new Set([
 	"elements_changed",
 	"canvas_cleared",
 	"files_added",
+	"files_replaced",
 ]);
 
 function findingFrame(
@@ -119,6 +121,19 @@ function findingFrame(
 		locked: true,
 		name: null,
 	};
+}
+
+function applyFileMessage(api: ExcalidrawImperativeAPI, data: WebSocketMessage): boolean {
+	switch (data.type) {
+		case "files_added":
+			if (Array.isArray(data.files)) api.addFiles(data.files);
+			return true;
+		case "files_replaced":
+			replaceCanvasFiles(api, Array.isArray(data.files) ? data.files : []);
+			return true;
+		default:
+			return false;
+	}
 }
 
 async function blobBase64(blob: Blob): Promise<string> {
@@ -1332,6 +1347,7 @@ export function useCanvasSession({
 			// waits for the full report; status from the server does not (TASK-079).
 			if (needsFullReport(reportingRef.current.state) && CONTENT_MESSAGES.has(data.type)) return;
 			if (await answerArtifactRequest(data, answerExport, answerFindingExport)) return;
+			if (applyFileMessage(api, data)) return;
 
 			switch (data.type) {
 				// The first frame, and every reconnection. If this pane is holding edits
@@ -1377,10 +1393,6 @@ export function useCanvasSession({
 					noteChange();
 					break;
 				}
-
-				case "files_added":
-					if (Array.isArray(data.files)) api.addFiles(data.files);
-					break;
 
 				case "element_created":
 				case "element_updated":
