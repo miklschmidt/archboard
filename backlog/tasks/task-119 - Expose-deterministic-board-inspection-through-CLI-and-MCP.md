@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-27 05:25'
+updated_date: '2026-08-27 05:39'
 labels:
   - ready-for-agent
 dependencies:
@@ -370,6 +370,8 @@ Delete primitive wrappers, primitive arithmetic tests, the regex audit, and exac
 Validate exact input string and array boundaries, sparse arrays, holes, controls, lone surrogates, revoked and nested proxies, zero-hit accessors, cycles, custom prototypes, unsafe scalar values, direct and persisted package paths, zero side effects, and strict normal I/O. Keep the 250,000-point supported control below input limit and turn the 750,000-point stress into an input-limit case. Keep 2,048 alternating exclusions below analysis limit, 3,072 at attempted 25,000,001 in both orientations, the dense 1,516,200 complete count, comparison-first attempt 2,000,001, and partial-result preservation when a later analysis limit follows a completed penetration or comparison. Diagnostics assert semantic bounds, not primitive arithmetic.
 
 Preserve contract 58 and immutable 57 records, vault-direct read and no side effects, compare bytes and dense reroute, generated views absent and ignored with canonical audit JSON tracked, strict normal read/write behavior, converter, lock, claim, version and ID behavior, TASK-128, released skills, and all TASK-090, TASK-120, and TASK-123.03 protected boundaries.
+
+29. Parent-approved removal of the failed universal analysis-work guarantee (2026-08-27). This step supersedes step 28 only where step 28 introduced INSPECTION_ANALYSIS_WORK_LIMIT, analysis-work-ceiling, universal analysis-work claims/counters, owner/phase enums, three-limit precedence, and complexity evidence. Retain the inert descriptor-based input snapshot and exact 1,000,000 input-complexity ceiling unchanged. Retain exact semantic broad-phase comparison counting and the 2,000,000 comparison ceiling unchanged. Public report limits become exactly inputComplexityUnits and broadPhaseComparisons. Delete the universal analysis budget, its finding variant, all claim plumbing, and contractual analysis-work diagnostics rather than replacing them with another budget, timer, counter, source audit, or runtime guarantee. Keep useful coarse development-only algorithm diagnostics. Document that the two retained ceilings are truthful capacity safeguards, not a general runtime, asymptotic, hang, or denial-of-service guarantee: valid capped input may still induce superlinear semantic work, and external termination emits no inspection report. Preserve every semantic correction established during remediation, contract 58 and the immutable ordered 57-path subset, direct vault reads, strict normal I/O, no-side-effect behavior, generated ownership, and all protected TASK-090/TASK-120/TASK-123.03/TASK-128 scope. Architecture source: xhigh plan review thread 01a03e0f-61d1-78d3-af62-04cefac7760e. Fixed base 963c3f0c5dadd3687a30d5133437e822427da582; rejected head a9b0fa3dd9c8f16ab80a99d45c77a8b64656282c; parent approval explicitly granted.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -682,5 +684,11 @@ author: Codex
 created: 2026-08-27 05:13
 ---
 Parent-routed final allowed step-28 inventory closure implemented at cd82ff7; TASK-119 intentionally remains In Progress with all acceptance criteria unchecked pending independent rereview.
+---
+
+author: Codex
+created: 2026-08-27 05:39
+---
+Parent approval recorded for TASK-119 plan step 29 before source edits. The analysis-work guarantee is removed rather than patched or renamed. The input snapshot ceiling and semantic broad-phase comparison ceiling remain the only public capacity safeguards; protected scope and task completion state are unchanged.
 ---
 <!-- COMMENTS:END -->
