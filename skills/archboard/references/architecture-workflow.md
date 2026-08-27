@@ -76,6 +76,46 @@ can derive for presentation. Elements the human drew come back tagged
 `"source": "frontend_sync"` with no `customData`: that is your cue to ask what
 the new box maps to, or to propose a binding.
 
+## Completion and routing semantics
+
+Inspection reads architecture identity, not visual resemblance. Several
+promoted elements carrying one node identity form one semantic node, including
+a multipart stencil promoted as one thing. `groupIds` never create a semantic
+node. They and library attribution can instead prove that unpromoted shapes are
+one visual obstacle. Preserve both the human's groups and the stencil's library
+metadata.
+
+A container boundary expresses ownership. It is not a routing obstacle. A
+connector also excludes its own endpoint nodes and their containing zones from
+unrelated-node penetration checks. These exclusions are why a line can cross a
+zone boundary cleanly while the same line crossing an unrelated service body is
+a finding.
+
+Inspection covers only its declared supported geometry. Unsupported or
+ambiguous records make coverage indeterminate; they never count as a clean
+board. Route supported straight polylines around node bodies and visual
+obstacles. A deliberate proper crossing is the one narrow exception: after the
+human chooses which connector is over, which is under, and the opaque
+background, `bridge` creates the exact marker inspection can verify. Hand-drawn
+masks have no such meaning.
+
+After every local geometry or routing batch, inspect the whole named board. A
+repair inside one close-up can create a crossing elsewhere. Completion requires
+a final strict report that is both complete and clean. Keep unrelated content,
+layout, groups, and stencil provenance byte-for-byte or field-for-field intact
+through the repair.
+
+The evidence tools answer different questions:
+
+- `check` decides whole-board structural and routing findings.
+- `render-findings` gives close-ups only while findings remain and a picture
+  helps explain them.
+- A full-scene `screenshot` records the rendered pane after confirming that it
+  holds the named board. The pane camera changes the view, not inspection.
+- `export` writes a portable scene.
+- `compare` describes semantic change between variants. It proves neither
+  routing nor rendered pixels.
+
 ## Drawing an architecture pass
 
 Author with `add` or `apply` rather than `mermaid`. Mermaid is converted
@@ -104,10 +144,9 @@ Guidance that holds up on a big screen:
   survives to the other variant, so `compare` can only call it
   "unlabelled-rectangle" and any statement about what moved in or out of it
   degrades with it.
-- **Check your own work.** `screenshot --pane <spec>` for the half you drew in,
-  and `viewport --fit --pane <spec>` first if the board has drifted out of
-  frame. `describe --board <key>` is the read when no browser is open. Overlaps
-  and truncated labels are invisible in JSON and obvious in a PNG.
+- **Finish the whole board.** Run the completion gate from `SKILL.md`. Keep
+  close-ups conditional on live findings and take one confirmed-board
+  full-scene overview only after the strict report is complete and clean.
 
 ## Refactor discussions
 
@@ -123,9 +162,8 @@ board.
 archboard snapshot save --board payments before-split
 ```
 
-When the shape is agreed, save the boards to the vault and export to
-`diagrams/`, then commit that with the code change so the architecture decision
-is reviewable in the diff.
+When the shape is agreed, export a portable scene to `diagrams/` and commit it
+with the code change when the architecture decision belongs in review.
 
 ## Anti-patterns
 
