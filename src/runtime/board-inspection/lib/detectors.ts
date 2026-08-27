@@ -45,126 +45,49 @@ import {
 } from "./interval-sweep.js";
 import { compareIdentity, compareIdentityLists } from "./ordering.js";
 import {
-	BROAD_PHASE_PREPROCESSING_LIMIT,
-	PreprocessingBudget,
-	PreprocessingCeilingReached,
-	PreprocessingOperations,
-	type PreprocessingPass,
-} from "./preprocessing-budget.js";
+	AnalysisWorkCeilingReached,
+	InspectionBudget,
+	type AnalysisWorkOwner,
+} from "./inspection-budget.js";
 
 export const BROAD_PHASE_COMPARISON_LIMIT = 2_000_000 as const;
 
 interface DetectionResult {
 	findings: InspectionFinding[];
 	broadPhaseComparisons: number;
-	preprocessingWork: {
-		preprocessingSteps: number;
+	analysisWork: {
+		analysisWorkItems: number;
 		broadPhaseEvents: number;
 		broadPhaseActiveVisits: number;
 		broadPhaseExpiryPops: number;
-		broadPhasePartitionChecks: number;
 		broadPhaseBucketScans: number;
-		broadPhaseBucketIndexOperations: number;
-		broadPhaseBucketLookups: number;
-		broadPhaseBucketUpdates: number;
-		broadPhaseBucketDeletes: number;
-		broadPhaseCompatibilityIndexUpdates: number;
-		broadPhaseCompatibilityProfiles: number;
-		broadPhaseProfileSnapshotEntries: number;
-		broadPhaseProfileSortComparisons: number;
-		broadPhaseProfileTerminalLookups: number;
-		broadPhaseProfileCreations: number;
-		broadPhaseProfileTrieSteps: number;
-		broadPhaseCompatibilityQueries: number;
-		broadPhaseCompatibilityQuerySteps: number;
-		broadPhaseExactIndexUpdates: number;
 		broadPhaseExactQuerySteps: number;
-		broadPhaseExactMembershipTests: number;
-		broadPhaseIdentityIntersectionComparisons: number;
-		broadPhaseSummaryMergeSteps: number;
-		broadPhaseHierarchySummarySteps: number;
-		broadPhaseCompatibilityTests: number;
-		broadPhaseHierarchyMembershipTests: number;
-		broadPhaseHierarchyPathQueries: number;
-		broadPhaseHierarchyPathSteps: number;
-		broadPhaseHierarchySubtreeQueries: number;
-		broadPhaseHierarchySubtreeSteps: number;
-		broadPhaseHierarchyIndexUpdateSteps: number;
-		broadPhasePeakRetainedBuckets: number;
-		broadPhasePeakRetainedProfiles: number;
-		broadPhasePeakRetainedProfileTrieNodes: number;
-		broadPhasePeakRetainedHierarchyIndexCells: number;
-		broadPhasePeakRetainedExclusionRefs: number;
-		broadPhasePeakRetainedIndexRefs: number;
-		broadPhasePeakRetainedQueryRefs: number;
-		broadPhasePeakRetainedExactIndexNodes: number;
-		broadPhasePeakRetainedExactSummaryRefs: number;
-		broadPhasePeakRetainedTotalStateRefs: number;
-		hierarchyEvents: number;
+		broadPhaseHierarchyNodeVisits: number;
+		broadPhasePeakActiveBuckets: number;
+		broadPhasePeakActiveProfiles: number;
+		broadPhasePeakIndexNodes: number;
 		hierarchyCandidateVisits: number;
-		hierarchyExpiryPops: number;
-		hierarchyPartitionChecks: number;
-		hierarchyBucketScans: number;
-		hierarchyBucketIndexOperations: number;
-		hierarchyCompatibilityProfiles: number;
-		hierarchyPeakRetainedSelections: number;
-		containerBoundaryEvents: number;
 		containerBoundaryCandidateVisits: number;
-		containerBoundaryBucketScans: number;
-		containerBoundaryPeakRetainedBuckets: number;
-		containerBoundaryPeakRetainedIndexRefs: number;
 		pathSegmentChecks: number;
 	};
 }
 interface CollisionResult {
 	findings: InspectionFinding[];
 	broadPhaseComparisons: number;
-	preprocessingWork: SweepWork;
+	sweepWork: SweepWork;
 }
 
 const emptySweepWork = (): SweepWork => ({
 	events: 0,
 	activeVisits: 0,
 	expiryPops: 0,
-	partitionChecks: 0,
 	bucketScans: 0,
-	bucketIndexOperations: 0,
-	bucketLookups: 0,
-	bucketUpdates: 0,
-	bucketDeletes: 0,
-	compatibilityIndexUpdates: 0,
-	compatibilityProfiles: 0,
-	profileSnapshotEntries: 0,
-	profileSortComparisons: 0,
-	profileTerminalLookups: 0,
-	profileCreations: 0,
-	profileTrieSteps: 0,
-	compatibilityQueries: 0,
-	compatibilityQuerySteps: 0,
-	exactIndexUpdates: 0,
 	exactQuerySteps: 0,
-	exactMembershipTests: 0,
-	identityIntersectionComparisons: 0,
-	summaryMergeSteps: 0,
-	hierarchySummarySteps: 0,
-	compatibilityTests: 0,
-	hierarchyMembershipTests: 0,
-	hierarchyPathQueries: 0,
-	hierarchyPathSteps: 0,
-	hierarchySubtreeQueries: 0,
-	hierarchySubtreeSteps: 0,
-	hierarchyIndexUpdateSteps: 0,
-	peakRetainedBuckets: 0,
-	peakRetainedProfiles: 0,
-	peakRetainedProfileTrieNodes: 1,
-	peakRetainedHierarchyIndexCells: 0,
-	peakRetainedExclusionRefs: 0,
-	peakRetainedIndexRefs: 0,
-	peakRetainedQueryRefs: 0,
-	peakRetainedExactIndexNodes: 0,
-	peakRetainedExactSummaryRefs: 0,
-	peakRetainedTotalStateRefs: 0,
-	peakRetainedSelections: 0,
+	hierarchyNodeVisits: 0,
+	peakActiveBuckets: 0,
+	peakActiveProfiles: 0,
+	peakIndexNodes: 0,
+	peakSelections: 0,
 });
 type FindingInput = InspectionFinding extends infer Finding
 	? Finding extends InspectionFinding
@@ -198,6 +121,7 @@ const CODE_ORDER = [
 ];
 
 const REASON_ORDER = [
+	"non-data-input",
 	"invalid-render-fields",
 	"unlocatable-record",
 	"width",
@@ -245,7 +169,8 @@ const REASON_ORDER = [
 	"zero-length",
 	"collinear-overlap",
 	"broad-phase-comparison-ceiling",
-	"broad-phase-preprocessing-ceiling",
+	"input-complexity-ceiling",
+	"analysis-work-ceiling",
 	"leaf-footprint-interior",
 	"obstacle-footprint-interior",
 	"proper-interior-crossing",
@@ -691,12 +616,12 @@ function connectorGeometryFindings(
 	policy: InspectionPolicy,
 	segments: Segment[],
 	work: { pathSegmentChecks: number },
-	budget: PreprocessingBudget,
+	budget: InspectionBudget,
 ): InspectionFinding[] {
 	const findings: InspectionFinding[] = [];
 	const refs = [record.ref];
 	if (Array.isArray(raw.points))
-		budget.charge("connector-intersection", "prepare-events", raw.points.length * 3);
+		budget.claimWork("connector-intersection", "classify-records", raw.points.length * 2);
 	const decoded = decodePath(record);
 	const pathEvidence = decodedPathEvidence(record, raw, decoded.scenePoints);
 	const angle = raw.angle;
@@ -1418,12 +1343,12 @@ function structuralFindings(
 	records: readonly DecodedRecord[],
 	policy: InspectionPolicy,
 	model: InspectionModel,
-	budget: PreprocessingBudget,
+	budget: InspectionBudget,
 ): {
 	findings: InspectionFinding[];
 	segments: Segment[];
 	pathSegmentChecks: number;
-	limit: PreprocessingCeilingReached | null;
+	limit: AnalysisWorkCeilingReached | null;
 } {
 	const findings: InspectionFinding[] = [];
 	const segments: Segment[] = [];
@@ -1436,7 +1361,7 @@ function structuralFindings(
 			try {
 				findings.push(...connectorGeometryFindings(record, raw, policy, segments, work, budget));
 			} catch (error) {
-				if (!(error instanceof PreprocessingCeilingReached)) throw error;
+				if (!(error instanceof AnalysisWorkCeilingReached)) throw error;
 				return { findings, segments, pathSegmentChecks: work.pathSegmentChecks, limit: error };
 			}
 			findings.push(...connectorBindingFindings(record, raw, byId, model.duplicateIds));
@@ -1657,16 +1582,11 @@ interface PairItem<T> {
 const partitioned = <T>(
 	items: readonly PairItem<T>[],
 	semantics: (value: T) => SweepPartition,
-	budget: PreprocessingBudget,
-	pass: PreprocessingPass,
+	budget: InspectionBudget,
+	pass: AnalysisWorkOwner,
 ): PairItem<T>[] => {
-	const operations = new PreprocessingOperations(budget, pass, "prepare-events");
-	const result = operations.array<PairItem<T>>();
-	for (let index = 0; index < items.length; index += 1) {
-		const item = operations.read(items, index)!;
-		operations.push(result, { ...item, semantics: semantics(item.value) });
-	}
-	return result;
+	budget.claimWork(pass, "prepare-events", items.length);
+	return items.map((item) => ({ ...item, semantics: semantics(item.value) }));
 };
 
 const NO_EXCLUSIONS: ReadonlySet<string> = new Set<string>();
@@ -1683,35 +1603,30 @@ function pairSweep<A, B>(
 	visit: (a: A, b: B) => void,
 	counter: { value: number; limited: boolean; pass: string },
 	work: SweepWork,
-	pass: PreprocessingPass,
-	budget: PreprocessingBudget,
+	pass: AnalysisWorkOwner,
+	budget: InspectionBudget,
 ): void {
 	const materialize = <T>(items: readonly PairItem<T>[]) => {
-		const operations = new PreprocessingOperations(budget, pass, "prepare-events");
-		const intervals = operations.array<{
+		budget.claimWork(pass, "prepare-events", items.length);
+		return items.map((item) => ({
+			id: item.id,
+			min: item.box.x,
+			max: item.box.x + item.box.width,
+			value: item,
+			semantics: item.semantics,
+		})) satisfies Array<{
 			id: string;
 			min: number;
 			max: number;
 			value: PairItem<T>;
 			semantics: SweepPartition;
-		}>();
-		for (let index = 0; index < items.length; index += 1) {
-			const item = operations.read(items, index)!;
-			operations.push(intervals, {
-				id: item.id,
-				min: item.box.x,
-				max: item.box.x + item.box.width,
-				value: item,
-				semantics: item.semantics,
-			});
-		}
-		return intervals;
+		}>;
 	};
 	const leftIntervals = materialize(left);
 	const rightIntervals = materialize(right);
-	let measured: SweepWork;
+	const measured = emptySweepWork();
 	try {
-		measured = sweepIntervalPairs(
+		sweepIntervalPairs(
 			leftIntervals,
 			rightIntervals,
 			sameSet,
@@ -1728,10 +1643,9 @@ function pairSweep<A, B>(
 				if (b.box.y > a.box.y + a.box.height || b.box.y + b.box.height < a.box.y) return;
 				visit(a.value, b.value);
 			},
-			{ budget, pass },
+			{ budget, pass, work: measured },
 		);
 	} catch (error) {
-		measured = budget.diagnosticState as SweepWork;
 		mergeSweepWork(work, measured);
 		throw error;
 	}
@@ -1742,66 +1656,13 @@ function mergeSweepWork(work: SweepWork, measured: SweepWork): void {
 	work.events += measured.events;
 	work.activeVisits += measured.activeVisits;
 	work.expiryPops += measured.expiryPops;
-	work.partitionChecks += measured.partitionChecks;
 	work.bucketScans += measured.bucketScans;
-	work.bucketIndexOperations += measured.bucketIndexOperations;
-	work.bucketLookups += measured.bucketLookups;
-	work.bucketUpdates += measured.bucketUpdates;
-	work.bucketDeletes += measured.bucketDeletes;
-	work.compatibilityIndexUpdates += measured.compatibilityIndexUpdates;
-	work.compatibilityProfiles += measured.compatibilityProfiles;
-	work.profileSnapshotEntries += measured.profileSnapshotEntries;
-	work.profileSortComparisons += measured.profileSortComparisons;
-	work.profileTerminalLookups += measured.profileTerminalLookups;
-	work.profileCreations += measured.profileCreations;
-	work.profileTrieSteps += measured.profileTrieSteps;
-	work.compatibilityQueries += measured.compatibilityQueries;
-	work.compatibilityQuerySteps += measured.compatibilityQuerySteps;
-	work.exactIndexUpdates += measured.exactIndexUpdates;
 	work.exactQuerySteps += measured.exactQuerySteps;
-	work.exactMembershipTests += measured.exactMembershipTests;
-	work.identityIntersectionComparisons += measured.identityIntersectionComparisons;
-	work.summaryMergeSteps += measured.summaryMergeSteps;
-	work.hierarchySummarySteps += measured.hierarchySummarySteps;
-	work.compatibilityTests += measured.compatibilityTests;
-	work.hierarchyMembershipTests += measured.hierarchyMembershipTests;
-	work.hierarchyPathQueries += measured.hierarchyPathQueries;
-	work.hierarchyPathSteps += measured.hierarchyPathSteps;
-	work.hierarchySubtreeQueries += measured.hierarchySubtreeQueries;
-	work.hierarchySubtreeSteps += measured.hierarchySubtreeSteps;
-	work.hierarchyIndexUpdateSteps += measured.hierarchyIndexUpdateSteps;
-	work.peakRetainedBuckets = Math.max(work.peakRetainedBuckets, measured.peakRetainedBuckets);
-	work.peakRetainedProfiles = Math.max(work.peakRetainedProfiles, measured.peakRetainedProfiles);
-	work.peakRetainedProfileTrieNodes = Math.max(
-		work.peakRetainedProfileTrieNodes,
-		measured.peakRetainedProfileTrieNodes,
-	);
-	work.peakRetainedHierarchyIndexCells = Math.max(
-		work.peakRetainedHierarchyIndexCells,
-		measured.peakRetainedHierarchyIndexCells,
-	);
-	work.peakRetainedExclusionRefs = Math.max(
-		work.peakRetainedExclusionRefs,
-		measured.peakRetainedExclusionRefs,
-	);
-	work.peakRetainedIndexRefs = Math.max(work.peakRetainedIndexRefs, measured.peakRetainedIndexRefs);
-	work.peakRetainedQueryRefs = Math.max(work.peakRetainedQueryRefs, measured.peakRetainedQueryRefs);
-	work.peakRetainedExactIndexNodes = Math.max(
-		work.peakRetainedExactIndexNodes,
-		measured.peakRetainedExactIndexNodes,
-	);
-	work.peakRetainedExactSummaryRefs = Math.max(
-		work.peakRetainedExactSummaryRefs,
-		measured.peakRetainedExactSummaryRefs,
-	);
-	work.peakRetainedTotalStateRefs = Math.max(
-		work.peakRetainedTotalStateRefs,
-		measured.peakRetainedTotalStateRefs,
-	);
-	work.peakRetainedSelections = Math.max(
-		work.peakRetainedSelections,
-		measured.peakRetainedSelections,
-	);
+	work.hierarchyNodeVisits += measured.hierarchyNodeVisits;
+	work.peakActiveBuckets = Math.max(work.peakActiveBuckets, measured.peakActiveBuckets);
+	work.peakActiveProfiles = Math.max(work.peakActiveProfiles, measured.peakActiveProfiles);
+	work.peakIndexNodes = Math.max(work.peakIndexNodes, measured.peakIndexNodes);
+	work.peakSelections = Math.max(work.peakSelections, measured.peakSelections);
 }
 
 function collisionFindings(
@@ -1809,42 +1670,30 @@ function collisionFindings(
 	model: InspectionModel,
 	segments: readonly Segment[],
 	policy: InspectionPolicy,
-	budget: PreprocessingBudget,
+	budget: InspectionBudget,
 	result: CollisionResult,
 ): CollisionResult {
 	const findings = result.findings;
 	const counter = { value: 0, limited: false, pass: "" };
-	const sweepWork = result.preprocessingWork;
+	const sweepWork = result.sweepWork;
 	const byId = model.byId;
 	const countedMap = <T, U>(
 		values: readonly T[],
-		pass: PreprocessingPass,
+		pass: AnalysisWorkOwner,
 		mapValue: (value: T) => U,
 	): U[] => {
-		const operations = new PreprocessingOperations(budget, pass, "prepare-events");
-		const mapped = operations.array<U>();
-		for (let index = 0; index < values.length; index += 1) {
-			const value = operations.read(values, index)!;
-			operations.push(mapped, mapValue(value));
-		}
-		return mapped;
+		budget.claimWork(pass, "prepare-events", values.length);
+		return values.map(mapValue);
 	};
 	const countedFilter = <T>(
 		values: readonly T[],
-		pass: PreprocessingPass,
+		pass: AnalysisWorkOwner,
 		keep: (value: T) => boolean,
 	): T[] => {
-		const operations = new PreprocessingOperations(budget, pass, "prepare-events");
-		const filtered = operations.array<T>();
-		for (let index = 0; index < values.length; index += 1) {
-			const value = operations.read(values, index)!;
-			if (!keep(value)) continue;
-			operations.push(filtered, value);
-		}
-		return filtered;
+		budget.claimWork(pass, "prepare-events", values.length);
+		return values.filter(keep);
 	};
 	const segmentItems = countedMap(segments, "connector-node", (segment) => {
-		budget.charge("connector-node", "prepare-events", 2);
 		const record = byId.get(segment.connectorId);
 		return {
 			id: `${segment.connectorId}:${segment.index}`,
@@ -1854,16 +1703,8 @@ function collisionFindings(
 			semantics: unrestrictedPartition(segment.connectorId),
 		};
 	});
-	const connectorNodeOperations = new PreprocessingOperations(
-		budget,
-		"connector-node",
-		"prepare-events",
-	);
-	const nodeValues = connectorNodeOperations.array<InspectionNode>();
-	for (const node of model.nodes.values()) {
-		budget.charge("connector-node", "prepare-events");
-		connectorNodeOperations.push(nodeValues, node);
-	}
+	budget.claimWork("connector-node", "prepare-events", model.nodes.size);
+	const nodeValues = [...model.nodes.values()];
 	const leaves = countedFilter(nodeValues, "connector-node", (node) => node.children.length === 0);
 	const leafNodeItems = countedMap(leaves, "connector-node", (node) => ({
 		id: node.id,
@@ -1886,48 +1727,36 @@ function collisionFindings(
 			}
 		);
 	};
-	budget.charge("connector-node", "prepare-events");
-	const hierarchyParents = connectorNodeOperations.map<string, string | null>();
+	const hierarchyParents = new Map<string, string | null>();
+	budget.claimWork("connector-node", "prepare-events", model.nodes.size);
 	for (const node of model.nodes.values()) {
-		budget.charge("connector-node", "prepare-events");
-		budget.charge("connector-node", "prepare-events", node.id.length);
-		connectorNodeOperations.mapSet(hierarchyParents, node.id, node.parentId);
+		hierarchyParents.set(node.id, node.parentId);
 	}
 	const sweepHierarchy = buildSweepHierarchy(hierarchyParents, {
 		budget,
 		pass: "connector-node",
 	});
-	budget.charge("connector-node", "prepare-events");
-	const connectorNodePartitions = connectorNodeOperations.map<string, SweepPartition>();
+	const connectorNodePartitions = new Map<string, SweepPartition>();
+	budget.claimWork("connector-node", "prepare-events", segments.length);
 	for (const segment of segments) {
-		budget.charge("connector-node", "prepare-events", 2 + segment.connectorId.length);
-		if (connectorNodeOperations.mapHas(connectorNodePartitions, segment.connectorId)) continue;
+		if (connectorNodePartitions.has(segment.connectorId)) continue;
 		const ends = connectorEnds(segment);
 		if (!ends.nodeAnalysisEligible) continue;
-		budget.charge("connector-node", "prepare-events");
 		const ancestorTargets: string[] = [];
 		if (ends.startNode !== undefined) {
-			budget.charge("connector-node", "prepare-events");
 			ancestorTargets.push(ends.startNode);
 		}
 		if (ends.endNode !== undefined) {
-			budget.charge("connector-node", "prepare-events");
 			ancestorTargets.push(ends.endNode);
 		}
-		budget.charge("connector-node", "prepare-events");
-		connectorNodeOperations.mapSet(connectorNodePartitions, segment.connectorId, {
+		connectorNodePartitions.set(segment.connectorId, {
 			partition: `connector:${segment.connectorId}`,
 			excludedPartitions: NO_EXCLUSIONS,
 			ancestorTargets,
 			hierarchy: sweepHierarchy,
 		});
 	}
-	const labelNodeOperations = new PreprocessingOperations(
-		budget,
-		"label-node-overlap",
-		"prepare-events",
-	);
-	const labelNodePartitions = labelNodeOperations.map<string, SweepPartition>();
+	const labelNodePartitions = new Map<string, SweepPartition>();
 	const nodeEligibleSegmentItems = countedFilter(
 		segmentItems,
 		"connector-node",
@@ -2016,34 +1845,27 @@ function collisionFindings(
 		);
 	}
 	if (!counter.limited) {
-		const operations = new PreprocessingOperations(
-			budget,
-			"connector-intersection",
-			"prepare-events",
-		);
-		const partitions = operations.map<string, SweepPartition>();
+		const partitions = new Map<string, SweepPartition>();
+		budget.claimWork("connector-intersection", "prepare-events", segments.length);
 		for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex += 1) {
-			const segment = operations.read(segments, segmentIndex)!;
-			budget.charge("connector-intersection", "prepare-events", segment.connectorId.length);
-			if (!operations.mapHas(partitions, segment.connectorId)) {
-				const excluded = operations.set<string>();
-				operations.setAdd(excluded, segment.connectorId);
-				operations.mapSet(partitions, segment.connectorId, {
+			const segment = segments[segmentIndex]!;
+			if (!partitions.has(segment.connectorId)) {
+				partitions.set(segment.connectorId, {
 					partition: segment.connectorId,
-					excludedPartitions: excluded,
+					excludedPartitions: new Set([segment.connectorId]),
 				});
 			}
 		}
 		pairSweep(
 			partitioned(
 				segmentItems,
-				(segment) => operations.mapGet(partitions, segment.connectorId)!,
+				(segment) => partitions.get(segment.connectorId)!,
 				budget,
 				"connector-intersection",
 			),
 			partitioned(
 				segmentItems,
-				(segment) => operations.mapGet(partitions, segment.connectorId)!,
+				(segment) => partitions.get(segment.connectorId)!,
 				budget,
 				"connector-intersection",
 			),
@@ -2101,31 +1923,19 @@ function collisionFindings(
 		);
 	}
 	if (!counter.limited) {
-		const operations = new PreprocessingOperations(budget, "node-overlap", "prepare-events");
-		const partitions = operations.map<string, SweepPartition>();
+		const partitions = new Map<string, SweepPartition>();
+		budget.claimWork("node-overlap", "prepare-events", leaves.length);
 		for (let nodeIndex = 0; nodeIndex < leaves.length; nodeIndex += 1) {
-			const node = operations.read(leaves, nodeIndex)!;
-			budget.charge("node-overlap", "prepare-events", node.id.length);
-			const excludedPartitions = operations.set<string>();
+			const node = leaves[nodeIndex]!;
+			const excludedPartitions = new Set<string>();
 			if (node.parentId) {
-				budget.charge("node-overlap", "prepare-events", node.parentId.length);
-				operations.setAdd(excludedPartitions, node.parentId);
+				excludedPartitions.add(node.parentId);
 			}
-			operations.mapSet(partitions, node.id, { partition: node.id, excludedPartitions });
+			partitions.set(node.id, { partition: node.id, excludedPartitions });
 		}
 		pairSweep(
-			partitioned(
-				leafNodeItems,
-				(node) => operations.mapGet(partitions, node.id)!,
-				budget,
-				"node-overlap",
-			),
-			partitioned(
-				leafNodeItems,
-				(node) => operations.mapGet(partitions, node.id)!,
-				budget,
-				"node-overlap",
-			),
+			partitioned(leafNodeItems, (node) => partitions.get(node.id)!, budget, "node-overlap"),
+			partitioned(leafNodeItems, (node) => partitions.get(node.id)!, budget, "node-overlap"),
 			true,
 			(a, b) => {
 				const hit = overlap(a.body, b.body);
@@ -2177,26 +1987,23 @@ function collisionFindings(
 			semantics: unrestrictedPartition(label.id!),
 		}));
 		labelLabelItems = countedFilter(labelNodeItems, "label-label-overlap", (item) =>
-			new PreprocessingOperations(budget, "label-label-overlap", "prepare-events").mapHas(
-				model.confirmedLabels,
-				item.id,
-			),
+			model.confirmedLabels.has(item.id),
 		);
+		budget.claimWork("label-node-overlap", "prepare-events", labelNodeRecords.length);
 		for (let labelIndex = 0; labelIndex < labelNodeRecords.length; labelIndex += 1) {
-			const label = labelNodeOperations.read(labelNodeRecords, labelIndex)!;
-			budget.charge("label-node-overlap", "prepare-events", label.id!.length);
-			const ownership = labelNodeOperations.mapGet(model.labelOwnership, label.id!);
-			const candidateNodes = labelNodeOperations.array<string>();
+			const label = labelNodeRecords[labelIndex]!;
+			const ownership = model.labelOwnership.get(label.id!);
+			const candidateNodes: string[] = [];
 			const ownerIds = ownership?.candidateOwnerIds ?? [];
 			for (let ownerIndex = 0; ownerIndex < ownerIds.length; ownerIndex += 1) {
-				const owner = labelNodeOperations.read(ownerIds, ownerIndex)!;
-				budget.charge("label-node-overlap", "prepare-events", owner.length);
-				const candidate = labelNodeOperations.mapGet(model.nodeOfElement, owner);
+				budget.claimWork("label-node-overlap", "prepare-events");
+				const owner = ownerIds[ownerIndex]!;
+				const candidate = model.nodeOfElement.get(owner);
 				if (candidate !== undefined) {
-					labelNodeOperations.push(candidateNodes, candidate);
+					candidateNodes.push(candidate);
 				}
 			}
-			labelNodeOperations.mapSet(labelNodePartitions, label.id!, {
+			labelNodePartitions.set(label.id!, {
 				partition: `label:${label.id!}`,
 				excludedPartitions: NO_EXCLUSIONS,
 				ancestorTargets: candidateNodes,
@@ -2242,17 +2049,15 @@ function collisionFindings(
 		);
 	}
 	if (!counter.limited) {
-		const operations = new PreprocessingOperations(budget, "label-label-overlap", "prepare-events");
-		const partitions = operations.map<string, SweepPartition>();
+		const partitions = new Map<string, SweepPartition>();
+		budget.claimWork("label-label-overlap", "prepare-events", labelLabelItems.length);
 		for (let labelIndex = 0; labelIndex < labelLabelItems.length; labelIndex += 1) {
-			const label = operations.read(labelLabelItems, labelIndex)!;
-			const owner = operations.mapGet(model.confirmedLabels, label.id!)!;
-			if (!operations.mapHas(partitions, owner)) {
-				const excluded = operations.set<string>();
-				operations.setAdd(excluded, owner);
-				operations.mapSet(partitions, owner, {
+			const label = labelLabelItems[labelIndex]!;
+			const owner = model.confirmedLabels.get(label.id!)!;
+			if (!partitions.has(owner)) {
+				partitions.set(owner, {
 					partition: owner,
-					excludedPartitions: excluded,
+					excludedPartitions: new Set([owner]),
 				});
 			}
 		}
@@ -2260,8 +2065,8 @@ function collisionFindings(
 			partitioned(
 				labelLabelItems,
 				(label) => {
-					const owner = operations.mapGet(model.confirmedLabels, label.id!)!;
-					return operations.mapGet(partitions, owner)!;
+					const owner = model.confirmedLabels.get(label.id!)!;
+					return partitions.get(owner)!;
 				},
 				budget,
 				"label-label-overlap",
@@ -2269,8 +2074,8 @@ function collisionFindings(
 			partitioned(
 				labelLabelItems,
 				(label) => {
-					const owner = operations.mapGet(model.confirmedLabels, label.id!)!;
-					return operations.mapGet(partitions, owner)!;
+					const owner = model.confirmedLabels.get(label.id!)!;
+					return partitions.get(owner)!;
 				},
 				budget,
 				"label-label-overlap",
@@ -2342,7 +2147,7 @@ function collisionFindings(
 	return {
 		findings,
 		broadPhaseComparisons: counter.value,
-		preprocessingWork: sweepWork,
+		sweepWork,
 	};
 }
 
@@ -2399,25 +2204,27 @@ function preprocessingParticipants(
 	});
 }
 
-function preprocessingLimitFinding(
+function analysisLimitFinding(
 	records: readonly DecodedRecord[],
 	model: InspectionModel | null,
-	error: PreprocessingCeilingReached,
-	budget: PreprocessingBudget,
+	error: AnalysisWorkCeilingReached,
+	budget: InspectionBudget,
 	segmentCount: number,
 ): InspectionFinding {
 	const participants = preprocessingParticipants(records, model);
 	return make({
 		code: "INSPECTION_LIMIT_EXCEEDED",
-		reason: "broad-phase-preprocessing-ceiling",
+		reason: "analysis-work-ceiling",
 		severity: "warning",
 		affectsCoverage: true,
 		details: {
-			limit: BROAD_PHASE_PREPROCESSING_LIMIT,
+			limit: 25_000_000,
 			attempted: error.attempted,
-			pass: error.pass,
+			pass: error.owner,
 			phase: error.phase,
+			completedInputUnits: budget.inputUnits,
 			completedBroadPhaseComparisons: budget.completedBroadPhaseComparisons,
+			processedRecordCount: budget.processedRecordCount,
 			segmentCount,
 			nodeCount: model
 				? [...model.nodes.values()].filter((node) => node.children.length === 0).length
@@ -2433,13 +2240,13 @@ function preprocessingLimitFinding(
 					).length
 				: 0,
 		},
-		message: `Inspection stopped preprocessing at ${error.pass}/${error.phase}.`,
+		message: `Inspection stopped analysis at ${error.owner}/${error.phase}.`,
 		elements: uniqueRefs(participants),
 		affected: affectedOf(participants),
 	});
 }
 
-function sortFindings(findings: readonly InspectionFinding[]): InspectionFinding[] {
+function orderedFindings(findings: readonly InspectionFinding[]): InspectionFinding[] {
 	return findings.toSorted((a, b) => {
 		const severity = (a.severity === "error" ? 0 : 1) - (b.severity === "error" ? 0 : 1);
 		if (severity) return severity;
@@ -2481,20 +2288,33 @@ function sortFindings(findings: readonly InspectionFinding[]): InspectionFinding
 	});
 }
 
+function finalizeFindings(
+	findings: readonly InspectionFinding[],
+	budget: InspectionBudget,
+): InspectionFinding[] {
+	let members = findings.length;
+	for (const finding of findings)
+		members += finding.elements.length + finding.nodes.length + finding.obstacles.length;
+	budget.claimWork("finding-finalization", "finalize-findings", members);
+	budget.claimSort("finding-finalization", "finalize-findings", findings.length);
+	return orderedFindings(findings);
+}
+
 export function detectBoard(
 	records: readonly DecodedRecord[],
 	policy: InspectionPolicy,
+	budget: InspectionBudget = new InspectionBudget(),
+	initialFindings: readonly InspectionFinding[] = [],
 ): DetectionResult {
-	const findings = [...renderFindings(records), ...identityFindings(records)];
-	const budget = new PreprocessingBudget();
+	const findings = [...initialFindings, ...renderFindings(records), ...identityFindings(records)];
 	let model = emptyInspectionModel();
 	let modelComplete = false;
-	let limit: PreprocessingCeilingReached | null = null;
+	let limit: AnalysisWorkCeilingReached | null = null;
 	try {
 		model = buildInspectionModel(records, budget);
 		modelComplete = true;
 	} catch (error) {
-		if (!(error instanceof PreprocessingCeilingReached)) throw error;
+		if (!(error instanceof AnalysisWorkCeilingReached)) throw error;
 		limit = error;
 	}
 	const structural = modelComplete
@@ -2506,7 +2326,7 @@ export function detectBoard(
 	let collisions: CollisionResult = {
 		findings: [],
 		broadPhaseComparisons: budget.completedBroadPhaseComparisons,
-		preprocessingWork: emptySweepWork(),
+		sweepWork: emptySweepWork(),
 	};
 	if (!limit && modelComplete)
 		try {
@@ -2519,14 +2339,14 @@ export function detectBoard(
 				collisions,
 			);
 		} catch (error) {
-			if (!(error instanceof PreprocessingCeilingReached)) throw error;
+			if (!(error instanceof AnalysisWorkCeilingReached)) throw error;
 			limit = error;
 			collisions.broadPhaseComparisons = budget.completedBroadPhaseComparisons;
 		}
 	findings.push(...collisions.findings);
 	if (limit)
 		findings.push(
-			preprocessingLimitFinding(
+			analysisLimitFinding(
 				records,
 				modelComplete ? model : null,
 				limit,
@@ -2536,70 +2356,40 @@ export function detectBoard(
 		);
 	findings.push(...coordinateSpanFindings(records, model, findings));
 	findings.push(...focusPaddingFindings(findings));
+	let finalized: InspectionFinding[];
+	if (limit) finalized = orderedFindings(findings);
+	else
+		try {
+			finalized = finalizeFindings(findings, budget);
+		} catch (error) {
+			if (!(error instanceof AnalysisWorkCeilingReached)) throw error;
+			const stopped = analysisLimitFinding(
+				records,
+				modelComplete ? model : null,
+				error,
+				budget,
+				structural.segments.length,
+			);
+			const closure = coordinateSpanFindings(records, model, [stopped]);
+			findings.push(stopped, ...closure, ...focusPaddingFindings([stopped, ...closure]));
+			finalized = orderedFindings(findings);
+		}
 	return {
-		findings: sortFindings(findings),
+		findings: finalized,
 		broadPhaseComparisons: collisions.broadPhaseComparisons,
-		preprocessingWork: {
-			preprocessingSteps: budget.used,
-			broadPhaseEvents: collisions.preprocessingWork.events,
-			broadPhaseActiveVisits: collisions.preprocessingWork.activeVisits,
-			broadPhaseExpiryPops: collisions.preprocessingWork.expiryPops,
-			broadPhasePartitionChecks: collisions.preprocessingWork.partitionChecks,
-			broadPhaseBucketScans: collisions.preprocessingWork.bucketScans,
-			broadPhaseBucketIndexOperations: collisions.preprocessingWork.bucketIndexOperations,
-			broadPhaseBucketLookups: collisions.preprocessingWork.bucketLookups,
-			broadPhaseBucketUpdates: collisions.preprocessingWork.bucketUpdates,
-			broadPhaseBucketDeletes: collisions.preprocessingWork.bucketDeletes,
-			broadPhaseCompatibilityIndexUpdates: collisions.preprocessingWork.compatibilityIndexUpdates,
-			broadPhaseCompatibilityProfiles: collisions.preprocessingWork.compatibilityProfiles,
-			hierarchyEvents: model.hierarchyWork.events,
+		analysisWork: {
+			analysisWorkItems: budget.analysisWorkItems,
+			broadPhaseEvents: collisions.sweepWork.events,
+			broadPhaseActiveVisits: collisions.sweepWork.activeVisits,
+			broadPhaseExpiryPops: collisions.sweepWork.expiryPops,
+			broadPhaseBucketScans: collisions.sweepWork.bucketScans,
+			broadPhaseExactQuerySteps: collisions.sweepWork.exactQuerySteps,
+			broadPhaseHierarchyNodeVisits: collisions.sweepWork.hierarchyNodeVisits,
+			broadPhasePeakActiveBuckets: collisions.sweepWork.peakActiveBuckets,
+			broadPhasePeakActiveProfiles: collisions.sweepWork.peakActiveProfiles,
+			broadPhasePeakIndexNodes: collisions.sweepWork.peakIndexNodes,
 			hierarchyCandidateVisits: model.hierarchyWork.activeVisits,
-			hierarchyExpiryPops: model.hierarchyWork.expiryPops,
-			hierarchyPartitionChecks: model.hierarchyWork.partitionChecks,
-			hierarchyBucketScans: model.hierarchyWork.bucketScans,
-			hierarchyBucketIndexOperations: model.hierarchyWork.bucketIndexOperations,
-			hierarchyCompatibilityProfiles: model.hierarchyWork.compatibilityProfiles,
-			hierarchyPeakRetainedSelections: model.hierarchyWork.peakRetainedSelections,
-			containerBoundaryEvents: model.containerBoundaryWork.events,
 			containerBoundaryCandidateVisits: model.containerBoundaryWork.activeVisits,
-			containerBoundaryBucketScans: model.containerBoundaryWork.bucketScans,
-			containerBoundaryPeakRetainedBuckets: model.containerBoundaryWork.peakRetainedBuckets,
-			containerBoundaryPeakRetainedIndexRefs: model.containerBoundaryWork.peakRetainedIndexRefs,
-			broadPhaseProfileSnapshotEntries: collisions.preprocessingWork.profileSnapshotEntries,
-			broadPhaseProfileSortComparisons: collisions.preprocessingWork.profileSortComparisons,
-			broadPhaseProfileTerminalLookups: collisions.preprocessingWork.profileTerminalLookups,
-			broadPhaseProfileCreations: collisions.preprocessingWork.profileCreations,
-			broadPhaseProfileTrieSteps: collisions.preprocessingWork.profileTrieSteps,
-			broadPhaseCompatibilityQueries: collisions.preprocessingWork.compatibilityQueries,
-			broadPhaseCompatibilityQuerySteps: collisions.preprocessingWork.compatibilityQuerySteps,
-			broadPhaseExactIndexUpdates: collisions.preprocessingWork.exactIndexUpdates,
-			broadPhaseExactQuerySteps: collisions.preprocessingWork.exactQuerySteps,
-			broadPhaseExactMembershipTests: collisions.preprocessingWork.exactMembershipTests,
-			broadPhaseIdentityIntersectionComparisons:
-				collisions.preprocessingWork.identityIntersectionComparisons,
-			broadPhaseSummaryMergeSteps: collisions.preprocessingWork.summaryMergeSteps,
-			broadPhaseHierarchySummarySteps: collisions.preprocessingWork.hierarchySummarySteps,
-			broadPhaseCompatibilityTests: collisions.preprocessingWork.compatibilityTests,
-			broadPhaseHierarchyMembershipTests: collisions.preprocessingWork.hierarchyMembershipTests,
-			broadPhaseHierarchyPathQueries: collisions.preprocessingWork.hierarchyPathQueries,
-			broadPhaseHierarchyPathSteps: collisions.preprocessingWork.hierarchyPathSteps,
-			broadPhaseHierarchySubtreeQueries: collisions.preprocessingWork.hierarchySubtreeQueries,
-			broadPhaseHierarchySubtreeSteps: collisions.preprocessingWork.hierarchySubtreeSteps,
-			broadPhaseHierarchyIndexUpdateSteps: collisions.preprocessingWork.hierarchyIndexUpdateSteps,
-			broadPhasePeakRetainedBuckets: collisions.preprocessingWork.peakRetainedBuckets,
-			broadPhasePeakRetainedProfiles: collisions.preprocessingWork.peakRetainedProfiles,
-			broadPhasePeakRetainedProfileTrieNodes:
-				collisions.preprocessingWork.peakRetainedProfileTrieNodes,
-			broadPhasePeakRetainedHierarchyIndexCells:
-				collisions.preprocessingWork.peakRetainedHierarchyIndexCells,
-			broadPhasePeakRetainedExclusionRefs: collisions.preprocessingWork.peakRetainedExclusionRefs,
-			broadPhasePeakRetainedIndexRefs: collisions.preprocessingWork.peakRetainedIndexRefs,
-			broadPhasePeakRetainedQueryRefs: collisions.preprocessingWork.peakRetainedQueryRefs,
-			broadPhasePeakRetainedExactIndexNodes:
-				collisions.preprocessingWork.peakRetainedExactIndexNodes,
-			broadPhasePeakRetainedExactSummaryRefs:
-				collisions.preprocessingWork.peakRetainedExactSummaryRefs,
-			broadPhasePeakRetainedTotalStateRefs: collisions.preprocessingWork.peakRetainedTotalStateRefs,
 			pathSegmentChecks: structural.pathSegmentChecks,
 		},
 	};

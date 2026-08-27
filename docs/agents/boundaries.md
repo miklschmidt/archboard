@@ -24,43 +24,19 @@ not hide a large implementation behind one catch-all barrel. Files in any subfol
 regardless of whether the folder is named `lib`, `tests`, or something else.
 
 `src/runtime/board-inspection/diagnostics.ts` is a pure development entrypoint. It runs the same
-inspection pipeline as `index.ts` and reports deterministic preprocessing work for performance
-regressions. The interface counts profile snapshot entries and trie steps; exact-index updates,
-tree-query steps, excluded-partition probes, identity-intersection comparisons, summary merges,
-bucket tests, and every remaining hierarchy membership
-predicate; bucket lookups, updates, and deletions; hierarchy path, subtree, summary, and index steps;
-eligible visits; and peak retained buckets, profiles, exclusions, exact-index nodes and summaries,
-query references, selected hierarchy parents, and total sweep-owned state. The total is sampled
-during a query and again after insertion, so it never combines references from different lifetimes.
-Cross-set peaks total both live indexes. `diagnoseSweepCompatibility` exercises the production
-enumerator with exact semantic inputs, while `diagnoseMutableProfileSnapshots` proves that a runtime-mutable `ReadonlySet`
-is read by exact current content rather than object identity. Tests do not infer this work from the
-public comparison count. Product callers and the `check` command use `index.ts`; diagnostic
-counters never enter schema-v1 report bytes.
+inspection pipeline as `index.ts` and reports coarse semantic work for performance regressions:
+input and analysis units, broad-phase events, eligible visits, expiry, bucket scans, exact-query and
+hierarchy-node visits, path checks, and active bucket/profile/index peaks. The counters are
+informative development evidence, not a promise about JavaScript engine primitives. Product callers
+and the `check` command use `index.ts`; diagnostic counters never enter schema-v1 report bytes.
 
-The diagnostics root also exposes the production stable-order and obstacle-identity encoders for
-exact storage and UTF-16 accounting checks. A stopped collision pass retains its completed work and
-findings in the same accumulator that a normal return uses. Diagnostics therefore report partial
-events and visits instead of resetting them when preprocessing reaches the ceiling.
-
-The production inspector owns one 25,000,000-unit preprocessing budget across
-model and pair sweeps. Its semantic input size is `I + E + H`: interval count,
-total exact-exclusion entries across profiles, and total ancestor-target
-entries. Retained sweep memory is `O(I + E + H)` references plus emitted
-findings. Arbitrary identity UTF-16 code units count as logical work when read,
-emitted during canonical encoding, compared, copied, or merged. Diagnostics expose the detailed mechanics and retained-state
-peaks; product reports expose only the fixed limit and a closed limit finding
-when the next logical unit is refused.
-
-`lib/preprocessing-budget.ts` owns the primitive charging boundary for budgeted
-arrays, maps, sets, identity reads, and stable comparisons. Charges occur
-immediately before the primitive. The exact compatibility index stores one
-immutable summary cell per tree node so one charged cell read cannot hide work
-across parallel arrays. `test:inspection` source-audits the named budget owners
-and index methods; raw collection construction, traversal, mutation,
-combinators, spreads, and indexed reads are rejected there. A deliberately
-unmetered read requires a local `preprocessing-unmetered` reason and must be
-diagnostic-only.
+`lib/input-snapshot.ts` is the only boundary that accepts `readonly unknown[]`. It copies the fixed
+inspection vocabulary into inert closed records without invoking caller-owned JavaScript. Decode,
+model, and detector code accept only those snapshot records. `lib/inspection-budget.ts` owns the
+1,000,000-unit input budget and the 25,000,000-item analysis budget. Owner-level bulk claims happen
+before native collection helpers; per-item claims happen before the corresponding domain item.
+Eligible pair delivery remains owned by the separate 2,000,000 comparison limit. A stopped pass
+retains completed findings, comparisons, and coarse diagnostic work.
 
 Root `src/` files are thin process entrypoints only. The existing entrypoints are `src/bin.ts`,
 `src/server.ts`, and `src/dev-canvas.ts`. Do not add implementation to these files.

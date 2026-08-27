@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { ANALYSIS_WORK_OWNERS, ANALYSIS_WORK_PHASES } from "./lib/inspection-budget.js";
+
 import { compareIdentity, obstacleIdentity } from "./lib/ordering.js";
 
 const finite = z.number().finite();
@@ -173,6 +175,20 @@ export const IntendedRoleSchema = z.enum([
 ]);
 
 const invalidRender = [
+	variant("INVALID_RENDER_GEOMETRY", "non-data-input", true, {
+		sourceIndex: z.number().int().nonnegative().nullable(),
+		path: z.array(z.union([z.string(), z.number().int().nonnegative()])),
+		issue: z.enum([
+			"proxy",
+			"accessor",
+			"active-path-cycle",
+			"function",
+			"symbol",
+			"bigint",
+			"non-plain-object",
+			"non-array-root",
+		]),
+	}),
 	variant("INVALID_RENDER_GEOMETRY", "invalid-render-fields", true, {
 		invalidFields: z.array(z.enum(["x", "y", "width", "height"])).min(1),
 		valueKinds: z.partialRecord(z.enum(["x", "y", "width", "height"]), z.string()),
@@ -501,28 +517,24 @@ const layoutFindings = [
 		obstacleCount: z.number().int().nonnegative(),
 		labelCount: z.number().int().nonnegative(),
 	}),
-	variant("INSPECTION_LIMIT_EXCEEDED", "broad-phase-preprocessing-ceiling", true, {
+	variant("INSPECTION_LIMIT_EXCEEDED", "input-complexity-ceiling", true, {
+		limit: z.literal(1_000_000),
+		attempted: z.literal(1_000_001),
+		pass: z.literal("input-scan"),
+		phase: z.literal("snapshot-input"),
+		completedRecordCount: z.number().int().nonnegative(),
+		sourceIndex: z.number().int().nonnegative().nullable(),
+		path: z.array(z.union([z.string(), z.number().int().nonnegative()])),
+		unitKind: z.enum(["record", "field", "array-entry", "string-code-unit"]),
+	}),
+	variant("INSPECTION_LIMIT_EXCEEDED", "analysis-work-ceiling", true, {
 		limit: z.literal(25_000_000),
 		attempted: z.literal(25_000_001),
-		pass: z.enum([
-			"node-hierarchy",
-			"container-boundary",
-			"connector-node",
-			"connector-obstacle",
-			"connector-intersection",
-			"node-overlap",
-			"label-node-overlap",
-			"label-label-overlap",
-		]),
-		phase: z.enum([
-			"prepare-events",
-			"order-events",
-			"activate-or-expire",
-			"compatibility-query",
-			"hierarchy-query",
-			"candidate-intersection",
-		]),
+		pass: z.enum(ANALYSIS_WORK_OWNERS),
+		phase: z.enum(ANALYSIS_WORK_PHASES),
+		completedInputUnits: z.number().int().nonnegative(),
 		completedBroadPhaseComparisons: z.number().int().nonnegative(),
+		processedRecordCount: z.number().int().nonnegative(),
 		segmentCount: z.number().int().nonnegative(),
 		nodeCount: z.number().int().nonnegative(),
 		obstacleCount: z.number().int().nonnegative(),
@@ -622,8 +634,9 @@ export const InspectionReportSchema = z.strictObject({
 	success: z.literal(true),
 	policy: InspectionPolicySchema,
 	limits: z.strictObject({
+		inputComplexityUnits: z.literal(1_000_000),
+		analysisWorkItems: z.literal(25_000_000),
 		broadPhaseComparisons: z.literal(2_000_000),
-		broadPhasePreprocessingSteps: z.literal(25_000_000),
 	}),
 	totalElementCount: z.number().int().nonnegative(),
 	liveElementCount: z.number().int().nonnegative(),
