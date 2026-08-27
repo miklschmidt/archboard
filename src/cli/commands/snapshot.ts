@@ -1,10 +1,9 @@
 import { z } from "zod";
 import {
-	batchCreateElementsStrict,
-	clearCanvas,
 	getBoardInfo,
 	getSnapshot,
 	listSnapshots,
+	replaceSceneOnCanvas,
 	saveSnapshot,
 } from "../../runtime/engine/canvas-client.js";
 import {
@@ -238,7 +237,7 @@ export const snapshotRestoreContract = defineCommand({
 	path: ["snapshot", "restore"],
 	summary: "Restore a named board snapshot",
 	usage: "snapshot restore <name> [--force]",
-	description: "Reads the snapshot and target before clearing and restoring the board.",
+	description: "Reads the snapshot and target before replacing the board in one write.",
 	examples: ['archboard snapshot restore before --board payments --doing "restoring checkpoint"'],
 	parameters: [
 		...snapshotFlagParameters(),
@@ -265,7 +264,7 @@ export const snapshotRestoreContract = defineCommand({
 			{
 				name: "snapshot-document",
 				when: "after-read",
-				description: "Server snapshot elements restored as one batch after clear",
+				description: "Server snapshot elements restored as one scene replacement",
 				schema: SnapshotRestoreDocumentSchema,
 			},
 		],
@@ -301,16 +300,10 @@ export const snapshotRestoreContract = defineCommand({
 			description: "Read the target board",
 		},
 		{
-			method: "DELETE",
-			path: "/api/elements/clear",
-			cardinality: "one",
-			description: "Clear the target",
-		},
-		{
 			method: "POST",
 			path: "/api/elements/batch",
 			cardinality: "one",
-			description: "Restore elements",
+			description: "Replace the target with the element-only snapshot",
 		},
 	],
 	async handler(input, context) {
@@ -327,8 +320,7 @@ export const snapshotRestoreContract = defineCommand({
 			throw new Error(
 				`Snapshot "${request.name}" was taken on board "${snap.board}", but you named "${current.board}". Restoring would replace "${current.board}" with it. Pass --board ${snap.board} to put it back where it came from, or --force to overwrite this one.`,
 			);
-		await clearCanvas();
-		await batchCreateElementsStrict(snap.elements);
+		await replaceSceneOnCanvas(snap.elements, []);
 		return {
 			result: {
 				success: true as const,
