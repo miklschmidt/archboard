@@ -1,10 +1,11 @@
 ---
 id: TASK-122
 title: Teach and enforce deterministic board completion in the Archboard skill
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-25 17:19'
-updated_date: '2026-08-26 01:26'
+updated_date: '2026-08-27 15:16'
 labels:
   - ready-for-agent
 dependencies:
@@ -82,5 +83,11 @@ Plan review incorporated the originating task report, production-consequence gra
 created: 2026-08-26 01:26
 ---
 TASK-124 reconciliation: the skill rewrite teaches CLI workflows only and removes the deleted transport table, aliases, and fallback instructions.
+---
+
+author: @codex
+created: 2026-08-27 15:16
+---
+Parent orchestration started after TASK-119, TASK-120, TASK-121, and TASK-123.03 shipped. Replan against the released type-authoritative CLI workflow guide: source CommandContract Zod schemas/inferred types remain authoritative; TASK-122 must not copy result fields or speculative command syntax.
 ---
 <!-- COMMENTS:END -->
