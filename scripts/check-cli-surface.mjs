@@ -12,6 +12,7 @@ import {
 	mkdirSync,
 	mkdtempSync,
 	openSync,
+	readdirSync,
 	readFileSync,
 	rmSync,
 	writeFileSync,
@@ -38,6 +39,9 @@ const compatibility = JSON.parse(
 	),
 );
 const { cliSurface } = await import(join(repoRoot, "src", "cli", "commands", "run.ts"));
+const { inspectBoard } = await import(
+	join(repoRoot, "src", "runtime", "board-inspection", "index.ts")
+);
 const { CANVAS_SERVICE_NAME } = await import(
 	join(repoRoot, "src", "runtime", "engine", "canvas-client.ts")
 );
@@ -67,6 +71,10 @@ const fixedBaseGeneralHelp = (value) =>
 	value
 		.replace(/^  bridge\s+Mark or remove a verified connector crossing\n/m, "")
 		.replace(/^  check\s+Inspect a persisted board for deterministic quality findings\n/m, "")
+		.replace(
+			/^  render-findings\s+Render deterministic PNG close-ups for persisted board findings\n/m,
+			"",
+		)
 		.replace(/^               check only: 6 warnings, 7 errors, 8 indeterminate coverage\.\n/m, "");
 
 let activeEvents = null;
@@ -141,6 +149,28 @@ function cliMerged(args, { url, cwd = outside } = {}) {
 
 const element = { id: "shape1", type: "rectangle", x: 0, y: 0, width: 100, height: 80 };
 const document = [element];
+const findingReport = inspectBoard([
+	{
+		id: "finding-text",
+		type: "text",
+		x: 0,
+		y: 0,
+		width: 100,
+		height: 20,
+		text: "Finding",
+		fontFamily: 99,
+		fontSize: 20,
+	},
+]);
+const findingPng = (() => {
+	const bytes = Buffer.alloc(24);
+	Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(bytes);
+	bytes.writeUInt32BE(13, 8);
+	bytes.write("IHDR", 12, "ascii");
+	bytes.writeUInt32BE(528, 16);
+	bytes.writeUInt32BE(208, 20);
+	return bytes.toString("base64");
+})();
 const fingerprint = { elements: 1, note: "contract-note", version: 7 };
 const bridgeFacts = {
 	bridgeId: "Bridge01",
@@ -343,6 +373,27 @@ const server = Bun.serve({
 				},
 				{ status: 409 },
 			);
+		}
+		if (request.method === "POST" && url.pathname === "/api/export/findings") {
+			if (url.searchParams.get("board") === "malformed-render") {
+				return Response.json({ board: 7, report: false });
+			}
+			if (url.searchParams.get("board") === "unrenderable") {
+				return Response.json({
+					board: "unrenderable",
+					sourceFingerprint: "b".repeat(64),
+					report: findingReport,
+					sourceRenderable: false,
+					results: [],
+				});
+			}
+			return Response.json({
+				board: "contract",
+				sourceFingerprint: "a".repeat(64),
+				report: findingReport,
+				sourceRenderable: true,
+				results: [{ findingIndex: 0, data: findingPng }],
+			});
 		}
 
 		if (request.method !== "GET" && !url.searchParams.get("doing")) {
@@ -805,6 +856,10 @@ try {
 		(bare.stdout.match(/^  bridge\s/gm) ?? []).length === 1,
 	);
 	check(
+		"current general help adds render-findings once",
+		(bare.stdout.match(/^  render-findings\s/gm) ?? []).length === 1,
+	);
+	check(
 		"current general help adds the exact check-only exit line",
 		bare.stdout.includes(
 			"               check only: 6 warnings, 7 errors, 8 indeterminate coverage.\n",
@@ -870,6 +925,147 @@ try {
 			);
 		}
 	}
+
+	const findingOut = join(outside, "finding-renders");
+	mkdirSync(findingOut);
+	const findingBefore = requests.length;
+	const renderedFindings = await cli(
+		[
+			"render-findings",
+			"--board",
+			"contract",
+			"--out",
+			findingOut,
+			"--font-family",
+			"5",
+			"--dimension-tolerance",
+			"0.75",
+			"--intersection-tolerance",
+			"0.25",
+			"--overlap-tolerance",
+			"1.5",
+		],
+		{ url: canvasUrl },
+	);
+	const renderedManifest = parseJson("render-findings stdout manifest", renderedFindings.stdout);
+	const findingRequests = requests.slice(findingBefore);
+	const findingPost = findingRequests.find(
+		(request) => request.method === "POST" && request.url.pathname === "/api/export/findings",
+	);
+	check("render-findings exits normally", renderedFindings.status === 0, renderedFindings.stderr);
+	check(
+		"render-findings keeps stderr clean",
+		renderedFindings.stderr === "",
+		renderedFindings.stderr,
+	);
+	check(
+		"render-findings performs one finding export POST",
+		findingRequests.filter((request) => request.url.pathname === "/api/export/findings").length ===
+			1,
+	);
+	check(
+		"render-findings names the explicit board",
+		findingPost?.url.searchParams.get("board") === "contract",
+	);
+	check(
+		"render-findings transports exactly the released inspection policy",
+		JSON.stringify(findingPost?.body) ===
+			JSON.stringify({
+				policy: {
+					allowedFontFamilies: [5],
+					dimensionTolerance: 0.75,
+					intersectionTolerance: 0.25,
+					overlapTolerance: 1.5,
+				},
+			}),
+		JSON.stringify(findingPost?.body),
+	);
+	check(
+		"render-findings commits the validated PNG before manifest receipt",
+		existsSync(join(findingOut, renderedManifest?.entries?.[0]?.file ?? "missing")) &&
+			existsSync(join(findingOut, "manifest.json")),
+	);
+	check(
+		"render-findings stdout and manifest expose relative artifact names only",
+		!renderedFindings.stdout.includes(findingOut) &&
+			readFileSync(join(findingOut, "manifest.json"), "utf8") === renderedFindings.stdout,
+	);
+
+	const nonEmptyBefore = requests.length;
+	const nonEmptyOut = join(outside, "non-empty-finding-renders");
+	mkdirSync(nonEmptyOut);
+	writeFileSync(join(nonEmptyOut, "owned.txt"), "keep");
+	const nonEmpty = await cli(["render-findings", "--board", "contract", "--out", nonEmptyOut], {
+		url: canvasUrl,
+	});
+	check("render-findings rejects a nonempty directory as usage", nonEmpty.status === 2);
+	check(
+		"the output-directory refusal precedes server contact and stdout",
+		requests.length === nonEmptyBefore && nonEmpty.stdout === "",
+	);
+
+	const missingOutBefore = requests.length;
+	const missingOut = await cli(
+		["render-findings", "--board", "contract", "--out", join(outside, "absent")],
+		{ url: canvasUrl },
+	);
+	check("render-findings rejects a missing directory as usage", missingOut.status === 2);
+	check("the missing-directory refusal performs no contact", requests.length === missingOutBefore);
+
+	const closedOut = join(outside, "closed-finding-renders");
+	mkdirSync(closedOut);
+	const closedRender = await cli(["render-findings", "--board", "contract", "--out", closedOut], {
+		url: closedUrl,
+	});
+	check("render-findings reports an unavailable server as exit 3", closedRender.status === 3);
+	check(
+		"unavailable render-findings emits no stdout or artifacts",
+		closedRender.stdout === "" && readdirSync(closedOut).length === 0,
+	);
+
+	const noBrowserOut = join(outside, "no-browser-finding-renders");
+	mkdirSync(noBrowserOut);
+	browserClients = 0;
+	const noBrowserRender = await cli(
+		["render-findings", "--board", "contract", "--out", noBrowserOut],
+		{ url: canvasUrl },
+	);
+	browserClients = 1;
+	check("render-findings reports no browser as exit 4", noBrowserRender.status === 4);
+	check("no-browser render-findings emits no stdout", noBrowserRender.stdout === "");
+
+	const malformedOut = join(outside, "malformed-finding-renders");
+	mkdirSync(malformedOut);
+	const malformedRender = await cli(
+		["render-findings", "--board", "malformed-render", "--out", malformedOut],
+		{ url: canvasUrl },
+	);
+	check("a malformed finding export response is operational exit 1", malformedRender.status === 1);
+	check(
+		"a malformed response reaches neither stdout nor an artifact",
+		malformedRender.stdout === "" && readdirSync(malformedOut).length === 0,
+	);
+
+	const unrenderableOut = join(outside, "unrenderable-finding-renders");
+	mkdirSync(unrenderableOut);
+	const unrenderableRender = await cli(
+		["render-findings", "--board", "unrenderable", "--out", unrenderableOut],
+		{ url: canvasUrl },
+	);
+	const unrenderableManifest = parseJson(
+		"unrenderable render-findings manifest",
+		unrenderableRender.stdout,
+	);
+	check(
+		"an inspection-only source still commits a truthful manifest",
+		unrenderableRender.status === 0,
+	);
+	check(
+		"the package records source-not-renderable without inventing a PNG",
+		unrenderableManifest?.complete === false &&
+			unrenderableManifest?.entries?.[0]?.failure === "source-not-renderable" &&
+			readdirSync(unrenderableOut).join(",") === "manifest.json",
+	);
 
 	const bridgeBefore = requests.length;
 	const bridged = await cli(
