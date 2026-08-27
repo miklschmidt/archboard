@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-27 01:48'
+updated_date: '2026-08-27 02:34'
 labels:
   - ready-for-agent
 dependencies:
@@ -579,6 +579,16 @@ Correction to the immediately preceding validation note: the proof JSON SHA-256 
 Source commit `a0a1697` and evidence checkpoint `11446c5` completed the primitive-owner migration and structural audit. Complete `bun run check` passed. The first separate `bun run test` encountered the documented scheduling-sensitive human-performance sample `[0,0,2]`; two isolated probes reproduced it, the third isolated probe passed at `[0,0]`, and the mandatory complete `bun run test` rerun then passed. Both successful full chains ran all four browser suites sequentially/headlessly: human performance `[0,0]`, fixed point 0 of 13 changed elements, both typed-text rename interactions preserved, and 42 of 42 live-session cycles converged.
 
 Two fresh on-demand contract generations were byte-identical: `cli-command-audit.md` c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, `command-contract-proof.json` 4757efc048d711c45093a249a2b5c819e30ed043cf84eaa2e642f6a2c40ac5fa, and `command-contract-proof.md` 70bcf2892140a4916b3ff51a5d51ec71a8b5b2e62dc884358bac70d2ace99bb7. The ignored views remain absent from the checkout and canonical `docs/design/cli-command-audit.json` remains tracked. `git diff --check` passed. TASK-119 remains In Progress with all nine acceptance criteria unchecked for independent rereview.
+
+Step 28 remediation checkpoint (2026-08-27)
+
+- Committed 80af281 (`refactor(inspection): replace primitive metering`).
+- Added the inert fixed-field input snapshot, closed unsafe-live-value and input-limit findings, 1,000,000 input-unit limit, 25,000,000 owner-level analysis-work limit, and unchanged 2,000,000 comparison limit.
+- Removed the step-27 primitive wrappers, preprocessing constant/reason, regex source audit, exact VM-operation diagnostics, and retained-reference equations.
+- Coarse diagnostics remain module-root development evidence only; product schemas and CLI bytes contain no work counters.
+- Focused validation green: lint, type-check, boundaries, module-scope, geometry, labels, branch compare, 701 inspection checks, and 978 command-contract checks across all 58 paths.
+- Two real `bun run fix` passes were byte-stable at diff SHA-256 b55b48405078055a3d479a8f9aa23508c778dcea284ca090ec616f012ef04eb3.
+- Full `bun run check`, separate `bun run test`, sequential browser gates, and final generator/diff checks remain before rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
