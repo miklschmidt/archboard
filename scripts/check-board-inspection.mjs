@@ -159,6 +159,10 @@ const bridgeCompareInput = (elements) => ({
 	elements,
 	source: "memory",
 });
+const canonicalBridgeCompareBytes = JSON.stringify(
+	compareBoards(bridgeCompareInput(bridgedElements), bridgeCompareInput(bridgedElements)),
+);
+const canonicalBridgeDescription = describeScene(bridgedElements);
 check(
 	"compare bytes are unchanged by a valid bridge decoration",
 	JSON.stringify(
@@ -166,9 +170,46 @@ check(
 			bridgeCompareInput([bridgeOver, bridgeUnder]),
 			bridgeCompareInput([bridgeOver, bridgeUnder]),
 		),
-	) ===
-		JSON.stringify(
-			compareBoards(bridgeCompareInput(bridgedElements), bridgeCompareInput(bridgedElements)),
+	) === canonicalBridgeCompareBytes,
+);
+for (const [roleIndex, role] of ["mask", "redraw"].entries()) {
+	const parts = structuredClone(bridgeApplied.named);
+	parts[roleIndex].customData.latex = `plugin-owned-${role}`;
+	const elements = [bridgeOver, bridgeUnder, ...parts];
+	const validated = validateBridgeDecorations(elements);
+	const report = inspectBoard(elements);
+	check(
+		`unrelated customData on the ${role} stays valid at every bridge seam`,
+		validated.valid.length === 1 &&
+			validated.invalid.length === 0 &&
+			!report.findings.some(
+				({ code }) =>
+					code === "BRIDGE_PROVENANCE_INVALID" || code === "CONNECTOR_INTERSECTION_UNMARKED",
+			) &&
+			architectureFacts(elements).elements.length === 2 &&
+			JSON.stringify(compareBoards(bridgeCompareInput(elements), bridgeCompareInput(elements))) ===
+				canonicalBridgeCompareBytes &&
+			describeScene(elements) === canonicalBridgeDescription,
+		JSON.stringify(report.findings.map(({ code, reason }) => [code, reason])),
+	);
+}
+const productOwnedCustomDataParts = structuredClone(bridgeApplied.named);
+productOwnedCustomDataParts[0].customData.archboard.node = "not-a-decoration-node";
+const productOwnedCustomDataElements = [bridgeOver, bridgeUnder, ...productOwnedCustomDataParts];
+const productOwnedCustomDataReport = inspectBoard(productOwnedCustomDataElements);
+check(
+	"extra product-owned customData remains provenance-invalid and suppresses nothing",
+	validateBridgeDecorations(productOwnedCustomDataElements).invalid.some(
+		({ reason, issue }) => reason === "stale-decoration" && issue === "geometry-mismatch",
+	) &&
+		productOwnedCustomDataReport.findings.some(
+			({ code }) => code === "BRIDGE_PROVENANCE_INVALID",
+		) &&
+		productOwnedCustomDataReport.findings.some(
+			({ code, details }) =>
+				code === "CONNECTOR_INTERSECTION_UNMARKED" &&
+				new Set([details.firstConnectorId, details.secondConnectorId]).has(bridgeOver.id) &&
+				new Set([details.firstConnectorId, details.secondConnectorId]).has(bridgeUnder.id),
 		),
 );
 const secondUnder = {
