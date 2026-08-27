@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:19'
-updated_date: '2026-08-27 15:52'
+updated_date: '2026-08-27 16:03'
 labels:
   - ready-for-agent
 dependencies:
@@ -75,6 +75,8 @@ Final implementation validation (2026-08-27):
 - Complete bun run check passed, followed by a separate complete bun run test. All four browser suites ran sequentially and headless in each chain without retry; the existing fixed-point lane remained unchanged.
 - Two on-demand contract generations in owned temporary directories produced byte-identical cli-command-audit.md, command-contract-proof.json, and command-contract-proof.md. The three ignored checkout views remain absent and canonical cli-command-audit.json remains tracked.
 - cli-workflows.md is byte-identical to the fixed base. Final fixed-range git diff --check passed; TASK-122 remains In Progress with all six acceptance criteria unchecked for independent review.
+
+Documentation remediation (2026-08-27): removed the copied promote invocation that omitted required --doing and routed readers to archboard help promote plus the source CommandContract/inferred type. Retargeted the stale Variants and comparison heading reference to the current Boards, panes, and variants heading. Focused skill lint/self-test, inspection (838 checks), install (136 checks), and git diff --check passed; TASK-122 remains In Progress with all acceptance criteria unchecked.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

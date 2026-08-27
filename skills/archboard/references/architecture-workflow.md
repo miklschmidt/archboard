@@ -52,12 +52,10 @@ auth cluster — should it become its own module, or just stop importing from
 
 ## Nodes carry the code binding
 
-A shape becomes architecture when it is promoted. `promote` gives it a kind, a
-node identity, and usually a binding to the code it stands for, all in one act:
-
-```bash
-archboard promote --board payments --kind service --path src/payments/service.ts --text
-```
+A shape becomes architecture when it is promoted. Use `archboard help promote`
+for the released invocation and options; the source CommandContract and
+inferred type remain authoritative. Conceptually, promotion gives it a kind, a
+node identity, and usually a binding to the code it stands for.
 
 The identity is what `compare` joins on and what survives redraws, drags and
 export/import. The binding resolves through git, so it records a repository, a
@@ -152,8 +150,8 @@ Guidance that holds up on a big screen:
 
 The proposal is a variant, not a snapshot and not a second diagram. Branch the
 current board, change what the refactor changes, and let `compare` say what the
-difference is. The full procedure is in `SKILL.md` under "Workflow: Variants and
-comparison".
+difference is. The full procedure is in `SKILL.md` under "Boards, panes, and
+variants".
 
 Snapshots are for the other job: a rollback point before a risky edit to one
 board.
