@@ -2,236 +2,40 @@ import { inspectBoard } from "./index.js";
 import type { InspectionPolicyInput, InspectionReport } from "./schemas.js";
 import { decodeRecords } from "./lib/decode.js";
 import { detectBoard } from "./lib/detectors.js";
-import { buildSweepHierarchy, sweepIntervalPairs, type SweepWork } from "./lib/interval-sweep.js";
 import {
-	comparePreprocessingIdentity,
-	encodePreprocessingObstacleIdentity,
-	PreprocessingBudget,
-	PreprocessingCeilingReached,
-	PreprocessingOperations,
-	stablePreprocessingSort,
-	type PreprocessingPass,
-	type PreprocessingPhase,
-} from "./lib/preprocessing-budget.js";
-
-export interface StableSortDiagnostics {
-	ordered: readonly string[];
-	preprocessingSteps: number;
-	storageAndStableComparisonSteps: number;
-	identityCodeUnitSteps: number;
-}
-
-export interface ObstacleIdentityEncodingDiagnostics {
-	id: string;
-	preprocessingSteps: number;
-}
-
-/** Count the production obstacle identity escaping and joining owner. */
-export function diagnoseObstacleIdentityEncoding(
-	canonicalElementIds: readonly string[],
-): ObstacleIdentityEncodingDiagnostics {
-	const budget = new PreprocessingBudget();
-	const id = encodePreprocessingObstacleIdentity(canonicalElementIds, budget, "container-boundary");
-	return { id, preprocessingSteps: budget.used };
-}
-
-/** Count the production stable-order owner's storage and identity work. */
-export function diagnoseStablePreprocessingSort(values: readonly string[]): StableSortDiagnostics {
-	const budget = new PreprocessingBudget();
-	const ordered = stablePreprocessingSort(
-		values,
-		budget,
-		"connector-intersection",
-		"order-events",
-		(left, right) =>
-			comparePreprocessingIdentity(budget, "connector-intersection", "order-events", left, right),
-	);
-	const structuralBudget = new PreprocessingBudget();
-	stablePreprocessingSort(
-		values,
-		structuralBudget,
-		"connector-intersection",
-		"order-events",
-		(left, right) => (left < right ? -1 : left > right ? 1 : 0),
-	);
-	return {
-		ordered,
-		preprocessingSteps: budget.used,
-		storageAndStableComparisonSteps: structuralBudget.used,
-		identityCodeUnitSteps: budget.used - structuralBudget.used,
-	};
-}
-
-export interface PrimitiveOperationDiagnostics {
-	arrayAllocation: number;
-	arrayRead: number;
-	arrayWrite: number;
-	arrayPush: number;
-	arraySplice: number;
-	arrayCopy: number;
-	mapConstruct: number;
-	mapMisses: number;
-	mapMutation: number;
-	mapEntries: number;
-	mapIteration: number;
-	setConstruct: number;
-	setMiss: number;
-	setMutation: number;
-	setValues: number;
-	setIteration: number;
-}
-
-function measurePrimitiveOperations(run: (operations: PreprocessingOperations) => void): number {
-	const budget = new PreprocessingBudget();
-	run(new PreprocessingOperations(budget, "node-hierarchy", "prepare-events"));
-	return budget.used;
-}
-
-/** Exact arithmetic for the primitive collection owner used by preprocessing. */
-export function diagnosePreprocessingPrimitives(): PrimitiveOperationDiagnostics {
-	return {
-		arrayAllocation: measurePrimitiveOperations((operations) => void operations.array()),
-		arrayRead: measurePrimitiveOperations((operations) => void operations.read(["a"], 0)),
-		arrayWrite: measurePrimitiveOperations((operations) => operations.write(["a"], 0, "b")),
-		arrayPush: measurePrimitiveOperations((operations) => operations.push([], "a")),
-		arraySplice: measurePrimitiveOperations((operations) =>
-			operations.spliceOne(["a", "b", "c"], 0),
-		),
-		arrayCopy: measurePrimitiveOperations((operations) => void operations.copy(["a", "b"])),
-		mapConstruct: measurePrimitiveOperations((operations) => void operations.map()),
-		mapMisses: measurePrimitiveOperations((operations) => {
-			const values = new Map<string, string>();
-			operations.mapHas(values, "missing");
-			operations.mapGet(values, "missing");
-		}),
-		mapMutation: measurePrimitiveOperations((operations) => {
-			const values = new Map<string, string>();
-			operations.mapSet(values, "a", "b");
-			operations.mapDelete(values, "a");
-		}),
-		mapEntries: measurePrimitiveOperations((operations) => {
-			const values = new Map<string, string>([
-				["a", "b"],
-				["c", "d"],
-			]);
-			operations.mapEntries(values);
-		}),
-		mapIteration: measurePrimitiveOperations((operations) => {
-			const values = new Map<string, string>([
-				["a", "b"],
-				["c", "d"],
-			]);
-			operations.forEachMap(values, () => undefined);
-		}),
-		setConstruct: measurePrimitiveOperations((operations) => void operations.set()),
-		setMiss: measurePrimitiveOperations((operations) =>
-			operations.setHas(new Set<string>(), "missing"),
-		),
-		setMutation: measurePrimitiveOperations((operations) => {
-			const values = new Set<string>();
-			operations.setAdd(values, "a");
-			operations.setDelete(values, "a");
-		}),
-		setValues: measurePrimitiveOperations((operations) =>
-			operations.setValues(new Set(["a", "b"])),
-		),
-		setIteration: measurePrimitiveOperations((operations) =>
-			operations.forEachSet(new Set(["a", "b"]), () => undefined),
-		),
-	};
-}
+	AnalysisWorkCeilingReached,
+	InspectionBudget,
+	type AnalysisWorkOwner,
+	type AnalysisWorkPhase,
+} from "./lib/inspection-budget.js";
+import { snapshotInspectionInput } from "./lib/input-snapshot.js";
+import {
+	buildSweepHierarchy,
+	emptySweepWork,
+	sweepIntervalPairs,
+	type SweepWork,
+} from "./lib/interval-sweep.js";
 
 export interface InspectionWorkDiagnostics {
-	/** Inspection-owned logical preprocessing units completed before any ceiling. */
-	preprocessingSteps: number;
-	/** Start events processed across collision passes. */
+	inputUnits: number;
+	analysisWorkItems: number;
 	broadPhaseEvents: number;
-	/** Semantically eligible interval items delivered to the public-comparison visitor. */
 	broadPhaseCompatibleVisits: number;
 	broadPhaseExpiryPops: number;
-	/** Active buckets inspected by the exact fallback; equal to compatibility tests. */
-	broadPhasePartitionChecks: number;
 	broadPhaseBucketScans: number;
-	/** Sum of the separately reported bucket lookups, updates, and deletions. */
-	broadPhaseBucketIndexOperations: number;
-	broadPhaseBucketLookups: number;
-	broadPhaseBucketUpdates: number;
-	broadPhaseBucketDeletes: number;
-	/** Adds/removes of active bucket references in exact exclusion indexes. */
-	broadPhaseCompatibilityIndexUpdates: number;
-	/** Canonical exact-content profiles built during event preprocessing. */
-	broadPhaseCompatibilityProfiles: number;
-	/** Exact exclusion/ancestor entries copied while snapshotting runtime inputs. */
-	broadPhaseProfileSnapshotEntries: number;
-	broadPhaseProfileSortComparisons: number;
-	broadPhaseProfileTerminalLookups: number;
-	broadPhaseProfileCreations: number;
-	/** Nested exact-string profile-index edges traversed during snapshot interning. */
-	broadPhaseProfileTrieSteps: number;
-	broadPhaseCompatibilityQueries: number;
-	/** Candidate additions and set membership probes performed by compatibility queries. */
-	broadPhaseCompatibilityQuerySteps: number;
-	/** Segment-tree nodes rewritten while exact compatibility buckets change. */
-	broadPhaseExactIndexUpdates: number;
-	/** Exact compatibility tree nodes examined by output-sensitive queries. */
 	broadPhaseExactQuerySteps: number;
-	/** Exact excluded-partition membership probes, including binary summary probes. */
-	broadPhaseExactMembershipTests: number;
-	/** Exact identity elements compared while reconciling segment summaries. */
-	broadPhaseIdentityIntersectionComparisons: number;
-	/** Summary values consumed while reducing and merging exact hierarchy coverage. */
-	broadPhaseSummaryMergeSteps: number;
-	/** Hierarchy-summary intersections performed while maintaining the exact index. */
-	broadPhaseHierarchySummarySteps: number;
-	broadPhaseCompatibilityTests: number;
-	/** Exact hierarchy ancestor predicates evaluated after indexed pruning. */
-	broadPhaseHierarchyMembershipTests: number;
-	broadPhaseHierarchyPathQueries: number;
-	/** Fenwick cells read plus heavy-light ranges visited. */
-	broadPhaseHierarchyPathSteps: number;
-	broadPhaseHierarchySubtreeQueries: number;
-	/** Segment-tree range-loop iterations. */
-	broadPhaseHierarchySubtreeSteps: number;
-	/** Fenwick and segment-tree cells rewritten by active bucket changes. */
-	broadPhaseHierarchyIndexUpdateSteps: number;
-	/** Peaks count active state only; preprocessed event records are counted above. */
-	broadPhasePeakRetainedBuckets: number;
-	broadPhasePeakRetainedProfiles: number;
-	broadPhasePeakRetainedProfileTrieNodes: number;
-	broadPhasePeakRetainedHierarchyIndexCells: number;
-	broadPhasePeakRetainedExclusionRefs: number;
-	broadPhasePeakRetainedIndexRefs: number;
-	broadPhasePeakRetainedQueryRefs: number;
-	broadPhasePeakRetainedExactIndexNodes: number;
-	broadPhasePeakRetainedExactSummaryRefs: number;
-	/** Peak count of every reference retained by the sweep implementation. */
-	broadPhasePeakRetainedTotalStateRefs: number;
-	hierarchyEvents: number;
+	broadPhaseHierarchyNodeVisits: number;
+	broadPhasePeakActiveBuckets: number;
+	broadPhasePeakActiveProfiles: number;
+	broadPhasePeakIndexNodes: number;
 	hierarchyCandidateVisits: number;
-	hierarchyExpiryPops: number;
-	hierarchyPartitionChecks: number;
-	hierarchyBucketScans: number;
-	hierarchyBucketIndexOperations: number;
-	hierarchyCompatibilityProfiles: number;
-	hierarchyPeakRetainedSelections: number;
-	containerBoundaryEvents: number;
 	containerBoundaryCandidateVisits: number;
-	containerBoundaryBucketScans: number;
-	containerBoundaryPeakRetainedBuckets: number;
-	containerBoundaryPeakRetainedIndexRefs: number;
 	pathSegmentChecks: number;
 }
 
 export interface BoardInspectionDiagnostics {
 	report: InspectionReport;
 	work: InspectionWorkDiagnostics;
-}
-
-export interface MutableProfileSnapshotDiagnostics {
-	excludedPairCount: number;
-	includedPairCount: number;
-	restoredPairCount: number;
-	profileSnapshotEntries: readonly [number, number, number];
 }
 
 export interface SweepDiagnosticInterval {
@@ -246,31 +50,28 @@ export interface SweepDiagnosticInterval {
 export interface SweepCompatibilityDiagnostics {
 	pairs: readonly (readonly [string, string])[];
 	work: SweepWork;
-	preprocessingSteps: number;
-	preprocessingLimit: {
-		pass: PreprocessingPass;
-		phase: PreprocessingPhase;
+	analysisWorkItems: number;
+	analysisLimit: {
+		pass: AnalysisWorkOwner;
+		phase: AnalysisWorkPhase;
 		attempted: 25_000_001;
 	} | null;
 }
 
-/** Pure development probe for semantic pair enumeration and its owned work. */
+/** Pure development probe for semantic pair enumeration and coarse work scaling. */
 export function diagnoseSweepCompatibility(input: {
 	left: readonly SweepDiagnosticInterval[];
 	right: readonly SweepDiagnosticInterval[];
 	sameSet: boolean;
 	hierarchyParents?: ReadonlyMap<string, string | null | undefined>;
-	/** Stop after this many emitted pairs to exercise production early-return accounting. */
 	stopAfterPairs?: number;
-	/** Run the production 25M logical preprocessing budget. */
-	enforcePreprocessingLimit?: boolean;
+	enforceAnalysisLimit?: boolean;
 }): SweepCompatibilityDiagnostics {
-	const budget = input.enforcePreprocessingLimit ? new PreprocessingBudget() : undefined;
+	const budget = input.enforceAnalysisLimit ? new InspectionBudget() : undefined;
+	const work = emptySweepWork();
+	let analysisLimit: SweepCompatibilityDiagnostics["analysisLimit"] = null;
 	const hierarchy = input.hierarchyParents
-		? buildSweepHierarchy(input.hierarchyParents, {
-				budget,
-				pass: "node-hierarchy",
-			})
+		? buildSweepHierarchy(input.hierarchyParents, { budget, pass: "node-hierarchy", work })
 		: undefined;
 	const intervals = (items: readonly SweepDiagnosticInterval[]) =>
 		items.map((item) => ({
@@ -286,10 +87,8 @@ export function diagnoseSweepCompatibility(input: {
 			},
 		}));
 	const pairs: Array<readonly [string, string]> = [];
-	let work: SweepWork;
-	let preprocessingLimit: SweepCompatibilityDiagnostics["preprocessingLimit"] = null;
 	try {
-		work = sweepIntervalPairs(
+		sweepIntervalPairs(
 			intervals(input.left),
 			intervals(input.right),
 			input.sameSet,
@@ -297,139 +96,62 @@ export function diagnoseSweepCompatibility(input: {
 				pairs.push([left.value, right.value]);
 				return input.stopAfterPairs === undefined || pairs.length < input.stopAfterPairs;
 			},
-			{ budget, pass: "connector-intersection" },
+			{ budget, pass: "connector-intersection", work },
 		);
 	} catch (error) {
-		if (!(error instanceof PreprocessingCeilingReached) || !budget) throw error;
-		work = budget.diagnosticState as SweepWork;
-		preprocessingLimit = {
-			pass: error.pass,
-			phase: error.phase,
-			attempted: error.attempted,
-		};
+		if (!(error instanceof AnalysisWorkCeilingReached) || !budget) throw error;
+		analysisLimit = { pass: error.owner, phase: error.phase, attempted: error.attempted };
 	}
-	return {
-		pairs,
-		work,
-		preprocessingSteps: budget?.used ?? 0,
-		preprocessingLimit,
-	};
+	return { pairs, work, analysisWorkItems: budget?.analysisWorkItems ?? 0, analysisLimit };
 }
 
-/** Prove that runtime-mutable ReadonlySet inputs are snapshotted by exact current content. */
-export function diagnoseMutableProfileSnapshots(): MutableProfileSnapshotDiagnostics {
-	const exclusions = new Set(["right"]);
-	const run = () => {
-		let pairCount = 0;
-		const work = sweepIntervalPairs(
-			[
-				{
-					id: "left",
-					min: 0,
-					max: 1,
-					value: null,
-					semantics: { partition: "left", excludedPartitions: exclusions },
-				},
-			],
-			[
-				{
-					id: "right",
-					min: 0,
-					max: 1,
-					value: null,
-					semantics: { partition: "right", excludedPartitions: new Set<string>() },
-				},
-			],
-			false,
-			() => {
-				pairCount += 1;
-			},
-		);
-		return { pairCount, snapshotEntries: work.profileSnapshotEntries };
-	};
-	const excluded = run();
-	exclusions.clear();
-	const included = run();
-	exclusions.add("right");
-	const restored = run();
-	return {
-		excludedPairCount: excluded.pairCount,
-		includedPairCount: included.pairCount,
-		restoredPairCount: restored.pairCount,
-		profileSnapshotEntries: [
-			excluded.snapshotEntries,
-			included.snapshotEntries,
-			restored.snapshotEntries,
-		],
-	};
-}
-
-/** Pure development evidence for the production inspector's preprocessing work. */
+/** Pure module-root development evidence; product report bytes contain no work counters. */
 export function inspectBoardDiagnostics(
 	records: readonly unknown[],
 	policyInput?: InspectionPolicyInput,
 ): BoardInspectionDiagnostics {
 	const report = inspectBoard(records, policyInput);
-	const detection = detectBoard(decodeRecords(records), report.policy);
-	const work = detection.preprocessingWork;
+	const budget = new InspectionBudget();
+	const snapshot = snapshotInspectionInput(records, budget);
+	const empty = (): InspectionWorkDiagnostics => ({
+		inputUnits: budget.inputUnits,
+		analysisWorkItems: 0,
+		broadPhaseEvents: 0,
+		broadPhaseCompatibleVisits: 0,
+		broadPhaseExpiryPops: 0,
+		broadPhaseBucketScans: 0,
+		broadPhaseExactQuerySteps: 0,
+		broadPhaseHierarchyNodeVisits: 0,
+		broadPhasePeakActiveBuckets: 0,
+		broadPhasePeakActiveProfiles: 0,
+		broadPhasePeakIndexNodes: 0,
+		hierarchyCandidateVisits: 0,
+		containerBoundaryCandidateVisits: 0,
+		pathSegmentChecks: 0,
+	});
+	if (snapshot.limit) return { report, work: empty() };
+	const detection = detectBoard(
+		decodeRecords(snapshot.records, snapshot.blockedSourceIndexes),
+		report.policy,
+		budget,
+	);
+	const work = detection.analysisWork;
 	return {
 		report,
 		work: {
-			preprocessingSteps: work.preprocessingSteps,
+			inputUnits: budget.inputUnits,
+			analysisWorkItems: work.analysisWorkItems,
 			broadPhaseEvents: work.broadPhaseEvents,
 			broadPhaseCompatibleVisits: work.broadPhaseActiveVisits,
 			broadPhaseExpiryPops: work.broadPhaseExpiryPops,
-			broadPhasePartitionChecks: work.broadPhasePartitionChecks,
 			broadPhaseBucketScans: work.broadPhaseBucketScans,
-			broadPhaseBucketIndexOperations: work.broadPhaseBucketIndexOperations,
-			broadPhaseBucketLookups: work.broadPhaseBucketLookups,
-			broadPhaseBucketUpdates: work.broadPhaseBucketUpdates,
-			broadPhaseBucketDeletes: work.broadPhaseBucketDeletes,
-			broadPhaseCompatibilityIndexUpdates: work.broadPhaseCompatibilityIndexUpdates,
-			broadPhaseCompatibilityProfiles: work.broadPhaseCompatibilityProfiles,
-			broadPhaseProfileSnapshotEntries: work.broadPhaseProfileSnapshotEntries,
-			broadPhaseProfileSortComparisons: work.broadPhaseProfileSortComparisons,
-			broadPhaseProfileTerminalLookups: work.broadPhaseProfileTerminalLookups,
-			broadPhaseProfileCreations: work.broadPhaseProfileCreations,
-			broadPhaseProfileTrieSteps: work.broadPhaseProfileTrieSteps,
-			broadPhaseCompatibilityQueries: work.broadPhaseCompatibilityQueries,
-			broadPhaseCompatibilityQuerySteps: work.broadPhaseCompatibilityQuerySteps,
-			broadPhaseExactIndexUpdates: work.broadPhaseExactIndexUpdates,
 			broadPhaseExactQuerySteps: work.broadPhaseExactQuerySteps,
-			broadPhaseExactMembershipTests: work.broadPhaseExactMembershipTests,
-			broadPhaseIdentityIntersectionComparisons: work.broadPhaseIdentityIntersectionComparisons,
-			broadPhaseSummaryMergeSteps: work.broadPhaseSummaryMergeSteps,
-			broadPhaseHierarchySummarySteps: work.broadPhaseHierarchySummarySteps,
-			broadPhaseCompatibilityTests: work.broadPhaseCompatibilityTests,
-			broadPhaseHierarchyMembershipTests: work.broadPhaseHierarchyMembershipTests,
-			broadPhaseHierarchyPathQueries: work.broadPhaseHierarchyPathQueries,
-			broadPhaseHierarchyPathSteps: work.broadPhaseHierarchyPathSteps,
-			broadPhaseHierarchySubtreeQueries: work.broadPhaseHierarchySubtreeQueries,
-			broadPhaseHierarchySubtreeSteps: work.broadPhaseHierarchySubtreeSteps,
-			broadPhaseHierarchyIndexUpdateSteps: work.broadPhaseHierarchyIndexUpdateSteps,
-			broadPhasePeakRetainedBuckets: work.broadPhasePeakRetainedBuckets,
-			broadPhasePeakRetainedProfiles: work.broadPhasePeakRetainedProfiles,
-			broadPhasePeakRetainedProfileTrieNodes: work.broadPhasePeakRetainedProfileTrieNodes,
-			broadPhasePeakRetainedHierarchyIndexCells: work.broadPhasePeakRetainedHierarchyIndexCells,
-			broadPhasePeakRetainedExclusionRefs: work.broadPhasePeakRetainedExclusionRefs,
-			broadPhasePeakRetainedIndexRefs: work.broadPhasePeakRetainedIndexRefs,
-			broadPhasePeakRetainedQueryRefs: work.broadPhasePeakRetainedQueryRefs,
-			broadPhasePeakRetainedExactIndexNodes: work.broadPhasePeakRetainedExactIndexNodes,
-			broadPhasePeakRetainedExactSummaryRefs: work.broadPhasePeakRetainedExactSummaryRefs,
-			broadPhasePeakRetainedTotalStateRefs: work.broadPhasePeakRetainedTotalStateRefs,
-			hierarchyEvents: work.hierarchyEvents,
+			broadPhaseHierarchyNodeVisits: work.broadPhaseHierarchyNodeVisits,
+			broadPhasePeakActiveBuckets: work.broadPhasePeakActiveBuckets,
+			broadPhasePeakActiveProfiles: work.broadPhasePeakActiveProfiles,
+			broadPhasePeakIndexNodes: work.broadPhasePeakIndexNodes,
 			hierarchyCandidateVisits: work.hierarchyCandidateVisits,
-			hierarchyExpiryPops: work.hierarchyExpiryPops,
-			hierarchyPartitionChecks: work.hierarchyPartitionChecks,
-			hierarchyBucketScans: work.hierarchyBucketScans,
-			hierarchyBucketIndexOperations: work.hierarchyBucketIndexOperations,
-			hierarchyCompatibilityProfiles: work.hierarchyCompatibilityProfiles,
-			hierarchyPeakRetainedSelections: work.hierarchyPeakRetainedSelections,
-			containerBoundaryEvents: work.containerBoundaryEvents,
 			containerBoundaryCandidateVisits: work.containerBoundaryCandidateVisits,
-			containerBoundaryBucketScans: work.containerBoundaryBucketScans,
-			containerBoundaryPeakRetainedBuckets: work.containerBoundaryPeakRetainedBuckets,
-			containerBoundaryPeakRetainedIndexRefs: work.containerBoundaryPeakRetainedIndexRefs,
 			pathSegmentChecks: work.pathSegmentChecks,
 		},
 	};

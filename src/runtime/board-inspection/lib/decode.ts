@@ -1,11 +1,12 @@
 import type { ElementRef } from "../schemas.js";
 import { collectInvalidRenderGeometry } from "../../engine/geometry.js";
 import { finite, type ExactBox, type ExactPoint } from "./geometry.js";
+import type { SnapshotRecord } from "./input-snapshot.js";
 
 const MAX_ANALYZABLE_SEGMENT_COMPONENT = Math.sqrt(Number.MAX_VALUE) / 2;
 
 export interface DecodedRecord {
-	readonly raw: Readonly<Record<string, unknown>> | null;
+	readonly raw: SnapshotRecord | null;
 	readonly sourceIndex: number;
 	readonly live: boolean;
 	readonly id: string | null;
@@ -45,7 +46,10 @@ export function stableDescription(value: unknown): string {
 	return kind;
 }
 
-export function decodeRecords(records: readonly unknown[]): DecodedRecord[] {
+export function decodeRecords(
+	records: readonly (SnapshotRecord | null)[],
+	blockedSourceIndexes: ReadonlySet<number> = new Set(),
+): DecodedRecord[] {
 	const idCounts = new Map<string, number>();
 	for (const value of records) {
 		const raw =
@@ -56,10 +60,21 @@ export function decodeRecords(records: readonly unknown[]): DecodedRecord[] {
 		idCounts.set(raw.id, (idCounts.get(raw.id) ?? 0) + 1);
 	}
 	return records.map((value, sourceIndex) => {
-		const raw =
-			value && typeof value === "object" && !Array.isArray(value)
-				? (value as Readonly<Record<string, unknown>>)
-				: null;
+		const raw = value;
+		if (blockedSourceIndexes.has(sourceIndex))
+			return {
+				raw: null,
+				sourceIndex,
+				live: false,
+				id: null,
+				usableId: false,
+				type: null,
+				ref: { id: null, type: null, sourceIndex },
+				box: null,
+				evidenceBox: null,
+				invalidRenderFields: [],
+				extentRepresentable: false,
+			};
 		const rawId = raw?.id;
 		const id = typeof rawId === "string" && rawId.length > 0 ? rawId : null;
 		const type = typeof raw?.type === "string" ? raw.type : null;
