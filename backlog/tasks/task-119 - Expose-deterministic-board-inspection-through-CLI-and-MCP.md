@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-27 05:39'
+updated_date: '2026-08-27 06:04'
 labels:
   - ready-for-agent
 dependencies:
@@ -629,6 +629,8 @@ Two fresh on-demand contract generations were byte-identical: `cli-command-audit
 2026-08-27 final step-28 semantic inventory closure (checkpoint cd82ff7): replaced delimiter-composed bound-label pair identity with a nested exact-string Map/Set; direct and real persisted checks cover spaces, NUL/control characters, shared prefixes, and reversed record order. Closed the remaining named domain-pass claims for reverse-label ownership candidates, production node-hierarchy assignment, failed aggregate cleanup, obstacle attribution/group materialization, and finding finalization including point members. Extended the public diagnostic inventory with exact scaling deltas (label membership 22,995; reverse ownership 7,921; hierarchy 820; failed aggregate 5,165; obstacle attribution 1,209; point cardinality 22; crossing-point family 9). Manually reviewed every loop/materialization in the eight approved families—records; groupIds; boundElements; paths/segments; label membership/drift; hierarchy/events/candidates; model aggregates; refs/points/findings—and found no further scalable unclaimed domain pass. Focused evidence green: type-check, lint, boundaries, module scope, contracts (58 paths/978 checks), geometry (89), labels (183), branch, CLI (579), inspection (741), git diff check, and two byte-stable fix passes (diff SHA-256 dd018955440c88b52d5f4027c862e1b9e31422d82628338b04a2e6345b03f209). Full check/test validation remains pending.
 
 2026-08-27 final semantic-inventory validation: source checkpoint cd82ff7 and evidence checkpoint 094093f passed complete bun run check and a separate complete bun run test without retries or waivers. Each chain ran all four browser suites sequentially/headlessly: human-performance reconciliation [0,0], fixed point 0 of 13 changed elements, both typed-text rename interactions preserved, and live-session convergence 42 of 42 cycles. Two on-demand contract generations were byte-identical: cli-command-audit.md c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, command-contract-proof.json 2269f2c96ab9db9ccca5390a09f1187f78f66b82fd4c3d0a40d1c7142670a895, command-contract-proof.md c578b4ba5740e392df1451ba8ca5a268e968d4cd8a058839b272496f92780bcd. The three views remain absent under docs/design/generated and precisely ignored; canonical docs/design/cli-command-audit.json remains tracked. git diff --check passes. TASK-119 remains In Progress with all nine acceptance criteria unchecked for independent rereview.
+
+Step 29 implementation (2026-08-27): committed 3a1c0ec after the separate approved-plan record 317622f. Removed the failed universal analysis-work guarantee and its schema, formatter, diagnostics, detector/model/sweep/label claim plumbing, tests, and documentation. Input accounting now belongs solely to the inert snapshot owner; public schema-v1 limits are exactly inputComplexityUnits=1,000,000 and broadPhaseComparisons=2,000,000. Preserved snapshot safety/fidelity, deterministic semantic algorithms, exact comparison counting, partial findings at the comparison stop, structural label-pair identity, createdAt label selection, hierarchy/obstacle/geometry fixes, and coarse development diagnostics. Focused evidence green: type-check, lint, boundaries, module-scope, contracts (58 proofs/58 audited paths/978 checks), inspection (722 checks), geometry (89), labels (183), branch, and CLI (34 commands/579 checks). Two on-demand generation runs were byte-identical, contained no removed schema token, left ignored views absent, and retained canonical docs/design/cli-command-audit.json. Two stable fix passes were proven before the final focused assertion; full validation remains to run. Residual risk is now explicit: the retained limits are capacity safeguards, not a general runtime/asymptotic/hang/DoS guarantee.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -690,5 +692,11 @@ author: Codex
 created: 2026-08-27 05:39
 ---
 Parent approval recorded for TASK-119 plan step 29 before source edits. The analysis-work guarantee is removed rather than patched or renamed. The input snapshot ceiling and semantic broad-phase comparison ceiling remain the only public capacity safeguards; protected scope and task completion state are unchanged.
+---
+
+author: codex
+created: 2026-08-27 06:04
+---
+Step 29 source migration is implemented at 3a1c0ec. TASK-119 remains In Progress with all acceptance criteria unchecked pending full validation and independent rereview.
 ---
 <!-- COMMENTS:END -->
