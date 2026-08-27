@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-26 07:06'
-updated_date: '2026-08-27 16:56'
+updated_date: '2026-08-27 17:13'
 labels:
   - enhancement
 dependencies: []
@@ -55,6 +55,8 @@ Make import --replace submit the staged scene—elements and embedded files—as
 Implementation checkpoint (2026-08-27): replace import now stages the scene and sends one marked POST /api/elements/batch through replaceSceneOnCanvas. The existing elementMutation owner clears request-local elements/files, applies input once, ingests usable embedded files, and produces one persisted or held net result; merge and ordinary batch creation remain append-only. The batch route reuses whole-board selection cleanup. Focused evidence is green: type-check, lint, one-write 105 checks, CLI 635 checks, contracts 61 paths/1011 plus workflows 93, and Obsidian 197. The image-bearing Obsidian replacement proves one request, one version advance, stale element/file removal, canonical label/binding/id/index handling, post-persistence net delta, and unchanged receipt. The held replacement proves one held update, zero note byte/mtime changes, an unadvanced persisted version, and the existing held receipt/diagnostic. TASK-126 remains In Progress with every AC unchecked.
 
 Validation checkpoint (2026-08-27): both byte-stability passes of `bun run fix` were clean. The complete `bun run check` and a separate complete `bun run test` passed, including all four browser suites sequentially/headlessly. During validation, the human-performance lane twice produced its documented timing-sensitive no-correction reconciliation failure after earlier suites were green; each isolated `bun run test:human-performance` diagnosis passed, and the required complete chain was rerun to green rather than waived. Contract generation into two owned temporary directories produced byte-identical `cli-command-audit.md`, `command-contract-proof.json`, and `command-contract-proof.md`; the three derived checkout views remain absent and ignored while canonical `docs/design/cli-command-audit.json` remains tracked. `git diff --check` is clean. TASK-126 remains In Progress with all AC unchecked for independent fixed-range review.
+
+Review remediation checkpoint (2026-08-27): replacement file membership now follows the settled scene. One shared owner validates supplied file records and derives the IDs drawn by resulting elements; buildScene and /api/files use the same drawn-ID classification. A replacement keeps and broadcasts only usable supplied files that the settled elements reference. The pane receives one replacement-only file frame, clears its current file map, then invokes pinned Excalidraw addFiles, so a reused ID loads changed bytes instead of being skipped. Additive /api/files and merge import remain unchanged. The normal and held one-write fixtures each cover a drawn reused ID with changed data, an unreferenced supplied file, and stale prior membership. Normal server/note delivery and held content retain only the drawn new payload; the receipt still counts both supplied records. Focused validation passed: lint, type-check, boundaries, CLI 635, contracts 61 paths/1011 plus workflows 93, Obsidian 197, boards, reporting 115, and one-write 106. Two bun run fix passes were stable and git diff --check passed. Per the remediation request, the prior complete check/test/browser evidence remains contextual and was not rerun. TASK-126 stays In Progress with all AC unchecked.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
