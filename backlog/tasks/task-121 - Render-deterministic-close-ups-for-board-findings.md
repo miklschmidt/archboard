@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:19'
-updated_date: '2026-08-27 13:35'
+updated_date: '2026-08-27 13:44'
 labels:
   - ready-for-agent
 dependencies:
@@ -111,6 +111,11 @@ Final remediation validation:
 - On-demand contract views generated twice into separate owned temporary directories with identical bytes; the three derived checkout views remain absent and ignored, while the canonical audit JSON remains tracked.
 - Focused evidence remains green: 27 command-contract tests / 161 expectations, `test:boards`, type-check, lint, 836 inspection checks, 61 contract proofs, and the fixed-point focused-rendering pixel/immutability evidence.
 - Final repository hygiene pending only the committed note, `git diff --check`, task-state confirmation, and clean-tree confirmation.
+
+AC7 ownership remediation from HEAD dbc0ac8:
+- a95d5cf removes destination unlink from post-link temp cleanup. writeFileAtomicExclusive retains the synced temp device/inode, retries only the temp unlink, and accepts persistent cleanup failure only when lstat proves the destination still names the committed inode. A missing or replaced destination fails with no stdout; a foreign replacement remains untouched.
+- Public-runner evidence covers transient cleanup success, persistent cleanup with an identity-matching destination, destination disappearance, and foreign replacement. Existing EEXIST collision, unexpected-member refusal, mid-set partial PNG, manifest-last, and stdout-last cases remain green.
+- Focused checkpoint: 29 command-contract tests / 172 expectations, type-check, lint, and git diff --check passed. Full validation remains pending.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
