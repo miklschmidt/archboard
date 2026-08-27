@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-27 04:48'
+updated_date: '2026-08-27 05:13'
 labels:
   - ready-for-agent
 dependencies:
@@ -623,6 +623,8 @@ Final validation for the 2026-08-27 consolidated remediation:
 Source checkpoint `1cfbba0` and evidence checkpoint `ed44bf8` close the two remaining step-28 domain loops. Complete `bun run check` passed after the documented human-performance diagnosis sequence: two full attempts observed the scheduling-sensitive `[0,0,2]` sample, each isolated diagnosis passed `[0,0]`, and the required complete rerun passed. A separate complete `bun run test` then passed. The successful full chains ran all four browser suites sequentially and headlessly: human performance `[0,0]`, fixed point 0 of 13 changed elements, both typed-text interactions preserved, and live session 42 of 42 cycles converged. No gate was waived.
 
 Two fresh on-demand contract generations were byte-identical: `cli-command-audit.md` c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, `command-contract-proof.json` 2269f2c96ab9db9ccca5390a09f1187f78f66b82fd4c3d0a40d1c7142670a895, and `command-contract-proof.md` c578b4ba5740e392df1451ba8ca5a268e968d4cd8a058839b272496f92780bcd. Generated views remain absent and ignored; canonical `docs/design/cli-command-audit.json` remains tracked. `git diff --check` passed. TASK-119 remains In Progress with all nine acceptance criteria unchecked for independent rereview.
+
+2026-08-27 final step-28 semantic inventory closure (checkpoint cd82ff7): replaced delimiter-composed bound-label pair identity with a nested exact-string Map/Set; direct and real persisted checks cover spaces, NUL/control characters, shared prefixes, and reversed record order. Closed the remaining named domain-pass claims for reverse-label ownership candidates, production node-hierarchy assignment, failed aggregate cleanup, obstacle attribution/group materialization, and finding finalization including point members. Extended the public diagnostic inventory with exact scaling deltas (label membership 22,995; reverse ownership 7,921; hierarchy 820; failed aggregate 5,165; obstacle attribution 1,209; point cardinality 22; crossing-point family 9). Manually reviewed every loop/materialization in the eight approved families—records; groupIds; boundElements; paths/segments; label membership/drift; hierarchy/events/candidates; model aggregates; refs/points/findings—and found no further scalable unclaimed domain pass. Focused evidence green: type-check, lint, boundaries, module scope, contracts (58 paths/978 checks), geometry (89), labels (183), branch, CLI (579), inspection (741), git diff check, and two byte-stable fix passes (diff SHA-256 dd018955440c88b52d5f4027c862e1b9e31422d82628338b04a2e6345b03f209). Full check/test validation remains pending.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -672,5 +674,11 @@ author: @codex
 created: 2026-08-27 01:48
 ---
 Parent approval recorded for plan step 28 before source implementation. This replaces step 27 micro-metering after xhigh reviewer thread 01a03e0f-61d1-78d3-af62-04cefac7760e returned PLAN_AMENDMENT_RECOMMENDED against fixed base 963c3f0c5dadd3687a30d5133437e822427da582 and rejected head ff2a3bbb7516633606c6ec3e6e79d729f40fec87. The parent approved the inert input snapshot, 1,000,000 input-unit ceiling, 25,000,000 owner-level analysis budget, removal of primitive wrappers and regex auditing, and development-only semantic diagnostics. Contract compatibility, generated ownership, strict I/O, TASK-128, and all TASK-090, TASK-120, and TASK-123.03 protected scope remain unchanged.
+---
+
+author: Codex
+created: 2026-08-27 05:13
+---
+Parent-routed final allowed step-28 inventory closure implemented at cd82ff7; TASK-119 intentionally remains In Progress with all acceptance criteria unchecked pending independent rereview.
 ---
 <!-- COMMENTS:END -->
