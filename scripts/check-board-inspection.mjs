@@ -27,6 +27,16 @@ const { renderBoardNote } = await import(src("runtime/engine/board.ts"));
 const { ingestScene } = await import(src("runtime/engine/board-io.ts"));
 const { collectInvalidRenderGeometry } = await import(src("runtime/engine/geometry.ts"));
 const { planLabelRepair } = await import(src("runtime/engine/labels.ts"));
+const { applyElementInput } = await import(src("runtime/engine/apply-element-input.ts"));
+const { describeScene } = await import(src("runtime/engine/describe.ts"));
+const { architectureFacts } = await import(src("runtime/board-inspection/architecture.ts"));
+const {
+	BridgeMetadataSchema,
+	BridgeRefusal,
+	planBridgeCreate,
+	planBridgeRemoval,
+	validateBridgeDecorations,
+} = await import(src("runtime/board-inspection/bridge.ts"));
 let failures = 0,
 	checks = 0;
 const check = (label, condition, detail = "") => {
@@ -41,18 +51,176 @@ const frozen = Object.freeze([]);
 const clean = inspectBoard(frozen);
 check("empty board is clean", clean.clean && clean.coverage === "complete");
 check(
-	"schema-v1 publishes only input and comparison ceilings",
+	"schema-v2 publishes only input and comparison ceilings",
 	INSPECTION_INPUT_COMPLEXITY_LIMIT === 1_000_000 &&
 		BROAD_PHASE_COMPARISON_LIMIT === 2_000_000 &&
+		clean.schemaVersion === 2 &&
 		JSON.stringify(clean.limits) ===
 			JSON.stringify({ inputComplexityUnits: 1_000_000, broadPhaseComparisons: 2_000_000 }),
 );
 check("report parses through the public schema", InspectionReportSchema.safeParse(clean).success);
 check(
-	"schema-v1 report omits private analysis mechanics",
+	"schema-v2 report omits private analysis mechanics",
 	!("preprocessingWork" in clean) &&
 		!InspectionReportSchema.safeParse({ ...clean, preprocessingWork: {} }).success,
 );
+
+const bridgeOver = {
+	id: "bridge-over",
+	type: "line",
+	x: 0,
+	y: 50,
+	width: 100,
+	height: 0,
+	points: [
+		[0, 0],
+		[100, 0],
+	],
+	index: "a0",
+};
+const bridgeUnder = {
+	id: "bridge-under",
+	type: "arrow",
+	x: 50,
+	y: 0,
+	width: 0,
+	height: 100,
+	points: [
+		[0, 0],
+		[0, 100],
+	],
+	index: "a1",
+};
+const unmarkedBridgeReport = inspectBoard([bridgeOver, bridgeUnder]);
+check(
+	"a supported proper crossing is unmarked before bridge creation",
+	unmarkedBridgeReport.findings.some(({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED"),
+);
+const bridgePlan = planBridgeCreate({
+	elements: [bridgeOver, bridgeUnder],
+	bridgeId: "Bridge01",
+	overConnectorId: bridgeOver.id,
+	underConnectorId: bridgeUnder.id,
+	background: "#FfFfFf",
+});
+const bridgedBoard = new Map([
+	[bridgeOver.id, bridgeOver],
+	[bridgeUnder.id, bridgeUnder],
+]);
+const bridgeApplied = applyElementInput(bridgedBoard, {
+	upserts: [...bridgePlan.inputs],
+	origin: "agent",
+});
+const bridgedElements = [...bridgedBoard.values()];
+check(
+	"bridge creation names exactly two role-ordered unbound and ungrouped lines",
+	bridgeApplied.named.length === 2 &&
+		bridgeApplied.named[0].id === "Bridge01" &&
+		bridgeApplied.named.every(
+			(element) =>
+				element.type === "line" &&
+				element.groupIds?.length === 0 &&
+				element.startBinding === null &&
+				element.endBinding === null,
+		),
+);
+check(
+	"bridge metadata is strict, normalized, and differs only by role",
+	bridgeApplied.named.every((element, index) => {
+		const metadata = element.customData?.archboard?.bridge;
+		return (
+			BridgeMetadataSchema.safeParse(metadata).success &&
+			metadata.background === "#ffffff" &&
+			metadata.role === (index === 0 ? "mask" : "redraw")
+		);
+	}),
+);
+const validatedBridge = validateBridgeDecorations(bridgedElements);
+check(
+	"the exact persisted pair validates and suppresses only its crossing",
+	validatedBridge.valid.length === 1 &&
+		validatedBridge.invalid.length === 0 &&
+		!inspectBoard(bridgedElements).findings.some(
+			({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED",
+		),
+);
+check(
+	"valid bridge parts are absent from architecture and describe entry seams",
+	architectureFacts(bridgedElements).elements.length === 2 &&
+		describeScene(bridgedElements) === describeScene([bridgeOver, bridgeUnder]),
+);
+const bridgeCompareInput = (elements) => ({
+	key: "bridge-fixture",
+	identity: { board: "bridge-fixture", variant: "current" },
+	elements,
+	source: "memory",
+});
+check(
+	"compare bytes are unchanged by a valid bridge decoration",
+	JSON.stringify(compareBoards(bridgeCompareInput([bridgeOver, bridgeUnder]), bridgeCompareInput([bridgeOver, bridgeUnder]))) ===
+		JSON.stringify(compareBoards(bridgeCompareInput(bridgedElements), bridgeCompareInput(bridgedElements))),
+);
+const secondUnder = {
+	...bridgeUnder,
+	id: "bridge-second-under",
+	x: 70,
+};
+const secondCrossingReport = inspectBoard([...bridgedElements, secondUnder]);
+check(
+	"a valid bridge suppresses only its recorded crossing",
+	secondCrossingReport.findings.filter(
+		({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED",
+	).length === 1,
+);
+const staleBridgeElements = bridgedElements.map((element) =>
+	element.id === bridgeUnder.id ? Object.assign({}, element, { x: element.x + 10 }) : element,
+);
+const staleBridgeReport = inspectBoard(staleBridgeElements);
+check(
+	"stale provenance suppresses nothing and reports one closed stale finding",
+	staleBridgeReport.findings.some(
+		({ code, reason }) => code === "BRIDGE_PROVENANCE_INVALID" && reason === "stale-decoration",
+	) &&
+		staleBridgeReport.findings.some(({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED"),
+);
+const incompleteBridgeReport = inspectBoard([
+	bridgeOver,
+	bridgeUnder,
+	bridgeApplied.named[0],
+]);
+check(
+	"an incomplete candidate reports provenance and suppresses nothing",
+	incompleteBridgeReport.findings.some(
+		({ code, reason }) =>
+			code === "BRIDGE_PROVENANCE_INVALID" && reason === "incomplete-decoration",
+	) &&
+		incompleteBridgeReport.findings.some(({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED"),
+);
+check(
+	"removal is provenance-only and remains safe after both sources disappear",
+	JSON.stringify(planBridgeRemoval(bridgeApplied.named, "Bridge01")) ===
+		JSON.stringify(bridgeApplied.named.map(({ id }) => id)),
+);
+check(
+	"bridge metadata rejects extra fields",
+	!BridgeMetadataSchema.safeParse({
+		...bridgeApplied.named[0].customData.archboard.bridge,
+		extra: true,
+	}).success,
+);
+let identicalRefused = false;
+try {
+	planBridgeCreate({
+		elements: [bridgeOver],
+		bridgeId: "Refused1",
+		overConnectorId: bridgeOver.id,
+		underConnectorId: bridgeOver.id,
+		background: "#ffffff",
+	});
+} catch (error) {
+	identicalRefused = error instanceof BridgeRefusal;
+}
+check("bridge planning gives a bounded refusal for identical sources", identicalRefused);
 check(
 	"repeated inspection is byte deterministic",
 	JSON.stringify(clean) === JSON.stringify(inspectBoard(frozen)),

@@ -3,6 +3,7 @@ import { DEFAULT_SHAPE_BACKGROUND } from "../../shared/appearance/appearance.js"
 import { CLUSTER_GAP, boxOf, clusterBoxes, regionName } from "./layout.js";
 import { readElementMetadata } from "./metadata.js";
 import type { ArchboardBlock } from "./metadata.js";
+import { withoutValidBridgeDecorations } from "../board-inspection/bridge.js";
 
 // Build an AI-readable description of the current canvas.
 //
@@ -418,6 +419,7 @@ function appendClusters(
 }
 
 export function describeScene(allElements: ServerElement[]): string {
+	allElements = withoutValidBridgeDecorations(allElements);
 	if (allElements.length === 0) {
 		return "The canvas is empty. No elements to describe.";
 	}

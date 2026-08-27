@@ -132,6 +132,7 @@ import {
 	isArchitectureConnectorType,
 	type ArchitectureFacts,
 } from "../board-inspection/architecture.js";
+import { withoutValidBridgeDecorations } from "../board-inspection/bridge.js";
 import {
 	type Box,
 	type BoundingBox,
@@ -1284,6 +1285,8 @@ export function compareBoards(
 	fromInput: CompareSideInput,
 	toInput: CompareSideInput,
 ): CompareResult {
+	fromInput = { ...fromInput, elements: withoutValidBridgeDecorations(fromInput.elements) };
+	toInput = { ...toInput, elements: withoutValidBridgeDecorations(toInput.elements) };
 	const A = buildBoard(fromInput);
 	const B = buildBoard(toInput);
 	const warnings = [...A.warnings, ...B.warnings];
