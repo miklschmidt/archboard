@@ -4364,6 +4364,16 @@ const compareInput = (elements) => ({
 });
 const semantic = compareBoards(compareInput(before), compareInput(after));
 check("route-only fixture edit is semantically identical", semantic.summary.identical === true);
+const beforeById = new Map(before.map((element) => [element.id, element]));
+check(
+	"dense route repair preserves every unrelated grouped, stencil, and decoration record",
+	before.length === after.length &&
+		after.every(
+			(element) =>
+				element.id === "v" ||
+				JSON.stringify(element) === JSON.stringify(beforeById.get(element.id)),
+		),
+);
 check(
 	"dense compare JSON is byte-pinned",
 	JSON.stringify(semantic, null, 2) + "\n" ===
@@ -4371,6 +4381,20 @@ check(
 			path.join(root, "scripts/fixtures/board-inspection/dense-compare.json"),
 			"utf8",
 		),
+);
+const completionEvals = JSON.parse(
+	fs.readFileSync(path.join(root, "skills/archboard/evals/evals.json"), "utf8"),
+).evals.filter((entry) => entry.graded_by === "scripts/check-board-inspection.mjs");
+check(
+	"one composite completion eval links the existing production consequence owners",
+	completionEvals.length === 1 &&
+		JSON.stringify(completionEvals[0].files) ===
+			JSON.stringify([
+				"scripts/check-board-inspection.mjs",
+				"scripts/check-branch-compare.mjs",
+				"scripts/check-side-by-side.mjs",
+			]),
+	JSON.stringify(completionEvals),
 );
 
 function performanceBoard(nodeCount, connectorCount, labelCount) {
