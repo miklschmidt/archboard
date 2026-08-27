@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-27 02:49'
+updated_date: '2026-08-27 03:38'
 labels:
   - ready-for-agent
 dependencies:
@@ -597,6 +597,13 @@ Source checkpoint `80af281` and evidence checkpoint `945847e` complete the appro
 The focused matrix passed lint, type checking, boundaries, module scope, 701 inspection checks, 58 contract paths with 978 checks, CLI, geometry, labels, and branch comparison. Two real `bun run fix` passes were byte-stable at diff SHA-256 `b55b48405078055a3d479a8f9aa23508c778dcea284ca090ec616f012ef04eb3`. `git diff --check` passes.
 
 Two fresh on-demand contract generations were byte-identical: `cli-command-audit.md` c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, `command-contract-proof.json` 26082fd0db9308d804475a3689da6730d8cd0c3af4f53d8b9282123e6b44688a, and `command-contract-proof.md` 053ea2da3ce9c063984141778b549a4913cce14d4b7a2474706ccf328d2cd8fd. The ignored views remain absent from the checkout; canonical `docs/design/cli-command-audit.json` remains tracked. TASK-119 remains In Progress with all nine acceptance criteria unchecked for independent rereview.
+
+2026-08-27 consolidated auditable-budget remediation checkpoint:
+- Snapshot vocabulary now admits createdAt through the inert descriptor reader; direct and real package cases in both record orders match planLabelRepair oldest-createdAt keeper.
+- Domain-work inventory now charges each active interval retention examination, every declared boundElements traversal, hierarchy/event/model/finding/ref stable ordering, path/segment traversal, and final coordinate/focus aggregation.
+- Collision analysis carries an explicit comparison-terminal state. After comparison 2,000,001 wins, only non-budgeted deterministic report closure runs, so a later finalization workload cannot emit an analysis ceiling.
+- The comparison-limit schema fixes limit=2,000,000, attempted=2,000,001, and the closed collision-pass vocabulary.
+- Focused evidence: test:inspection 714/714, type-check, lint, boundaries, module-scope, contracts 58 paths/978 checks, geometry 89, labels 183, branch, and CLI 579 are green. Two fix passes were byte-stable at diff SHA-256 50ac7a5c55a98636f27cc84dd591dd397b990628d4a07e561c22503e791c3358. Full check/test validation remains pending.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
