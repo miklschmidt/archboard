@@ -46,7 +46,6 @@ export const inspectionOptionParameters: readonly TokenParameter[] = [
 
 const finiteNonnegative = (name: string, value: string | undefined): number | undefined => {
 	if (value === undefined) return undefined;
-	if (value.trim() === "") throw new CliUsageError(`${name} takes a finite nonnegative number`);
 	const parsed = Number(value);
 	if (!Number.isFinite(parsed) || parsed < 0)
 		throw new CliUsageError(`${name} takes a finite nonnegative number`);

@@ -7390,6 +7390,21 @@ check(
 	"text mode matches production formatter",
 	textRun.stdout === formatInspectionText(cleanPackageResult) + "\n",
 );
+for (const option of [
+	"--dimension-tolerance",
+	"--intersection-tolerance",
+	"--overlap-tolerance",
+]) {
+	const blank = run("clean", [option, ""]);
+	const explicitZero = run("clean", [option, "0"]);
+	check(
+		`${option} preserves fixed-base blank-token coercion`,
+		blank.status === explicitZero.status &&
+			blank.stdout === explicitZero.stdout &&
+			blank.stderr === explicitZero.stderr,
+		`blank=${blank.status}/${JSON.stringify(blank.stdout)}/${JSON.stringify(blank.stderr)} zero=${explicitZero.status}/${JSON.stringify(explicitZero.stdout)}/${JSON.stringify(explicitZero.stderr)}`,
+	);
+}
 for (const [board, exit] of [
 	["warning", 6],
 	["error", 7],

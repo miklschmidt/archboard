@@ -47,6 +47,38 @@ describe("finding rendering", () => {
 		);
 	});
 
+	test("finding ordinals keep four digits as a minimum across 9,999 and 10,000 entries", () => {
+		const findingCount = 10_000;
+		const findings = Array.from({ length: findingCount }, () => finding);
+		const manyFindingReport = {
+			...report,
+			counts: {
+				bySeverity: { ...report.counts.bySeverity, error: findingCount },
+				byCode: { ...report.counts.byCode, INVALID_RENDER_GEOMETRY: findingCount },
+			},
+			findings,
+		};
+		const bytes = png(128, 128);
+		const data = Buffer.from(bytes).toString("base64");
+		const results = findings.map((_, findingIndex) => ({ findingIndex, data }));
+		const assembled = assembleFindingArtifacts(
+			{
+				board: "ordinal-boundary",
+				sourceFingerprint: "9".repeat(64),
+				report: manyFindingReport,
+				sourceRenderable: true,
+				results,
+			},
+			"/tmp/findings",
+		);
+		expect(assembled.manifest.entries).toHaveLength(findingCount);
+		expect(assembled.manifest.entries[9_998]?.file).toBe(findingFileName(9_998, finding));
+		expect(assembled.manifest.entries[9_999]?.file).toBe(findingFileName(9_999, finding));
+		expect(assembled.manifest.entries[9_998]?.file).toStartWith("9999-");
+		expect(assembled.manifest.entries[9_999]?.file).toStartWith("10000-");
+		expect(FindingRenderManifestSchema.parse(assembled.manifest)).toEqual(assembled.manifest);
+	});
+
 	test("PNG validation owns signature, IHDR, and positive dimensions", () => {
 		expect(readPngDimensions(png(32, 64))).toEqual({ width: 32, height: 64 });
 		expect(readPngDimensions(new Uint8Array(24))).toBeNull();
