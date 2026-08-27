@@ -2,6 +2,7 @@ import type { ElementRef } from "../schemas.js";
 import { collectInvalidRenderGeometry } from "../../engine/geometry.js";
 import { finite, type ExactBox, type ExactPoint } from "./geometry.js";
 import type { SnapshotRecord } from "./input-snapshot.js";
+import type { InspectionBudget } from "./inspection-budget.js";
 
 const MAX_ANALYZABLE_SEGMENT_COMPONENT = Math.sqrt(Number.MAX_VALUE) / 2;
 
@@ -49,8 +50,10 @@ export function stableDescription(value: unknown): string {
 export function decodeRecords(
 	records: readonly (SnapshotRecord | null)[],
 	blockedSourceIndexes: ReadonlySet<number> = new Set(),
+	budget?: InspectionBudget,
 ): DecodedRecord[] {
 	const idCounts = new Map<string, number>();
+	budget?.claimWork("record-analysis", "classify-records", records.length);
 	for (const value of records) {
 		const raw =
 			value && typeof value === "object" && !Array.isArray(value)
@@ -59,6 +62,7 @@ export function decodeRecords(
 		if (raw?.isDeleted === true || typeof raw?.id !== "string" || raw.id.length === 0) continue;
 		idCounts.set(raw.id, (idCounts.get(raw.id) ?? 0) + 1);
 	}
+	budget?.claimWork("record-analysis", "classify-records", records.length);
 	return records.map((value, sourceIndex) => {
 		const raw = value;
 		if (blockedSourceIndexes.has(sourceIndex))

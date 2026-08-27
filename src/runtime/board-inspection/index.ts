@@ -239,7 +239,7 @@ export function inspectBoard(
 			broadPhaseComparisons: 0,
 		});
 	}
-	const decoded = decodeRecords(snapshot.records, snapshot.blockedSourceIndexes);
+	const decoded = decodeRecords(snapshot.records, snapshot.blockedSourceIndexes, budget);
 	const detection = detectBoard(decoded, policy, budget, inputFindings);
 	return assembleReport({
 		policy,
