@@ -18,7 +18,6 @@
 // which is what makes this cheap enough to run on every build.
 
 import fs from "node:fs";
-import { createHash } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
@@ -117,7 +116,9 @@ const {
 } = await import(src("runtime/engine/board.ts"));
 // `board open`'s reader lives with the per-request one now, on top of the same
 // `readNoteFile` (TASK-089).
-const { readBoardFile, readNote } = await import(src("runtime/engine/board-io.ts"));
+const { readBoardFile, readBoardInspectionSnapshot, readNote } = await import(
+	src("runtime/engine/board-io.ts")
+);
 
 // Board addresses are case-insensitive and unicode-normalised (ADR 0010).
 // Boards get named out loud, and a human cannot pronounce casing, so two
@@ -1285,11 +1286,11 @@ try {
 		"  and reject an index outside the correlated request",
 		unrelatedFindingResult.status === 400,
 	);
+	const expectedFindingSnapshot = readBoardInspectionSnapshot("finding-source");
 	check(
-		"the finding export returns ordered separate results and the exact note fingerprint",
+		"the finding export returns ordered separate results and the exact rendered snapshot fingerprint",
 		findingExported.status === 200 &&
-			findingExported.body?.sourceFingerprint ===
-				createHash("sha256").update(fs.readFileSync(findingFile)).digest("hex") &&
+			findingExported.body?.sourceFingerprint === expectedFindingSnapshot.fingerprint &&
 			JSON.stringify(findingExported.body?.results) ===
 				JSON.stringify([
 					{ findingIndex: 0, data: "Zmlyc3Q=" },
@@ -3434,6 +3435,8 @@ try {
 		{
 			const openedBoard = readBoardFile(parseBoardKey("picsd"), vault);
 			const perRequest = readNote(path.join(vault, "picsd.excalidraw.md"));
+			const noteBeforeImageChange = fs.readFileSync(path.join(vault, "picsd.excalidraw.md"));
+			const renderBeforeImageChange = readBoardInspectionSnapshot("picsd");
 			const wanted = `data:image/png;base64,${PNG_BASE64}`;
 			check(
 				"the open path and the per-request path read one note as the same bytes",
@@ -3445,6 +3448,20 @@ try {
 				"  and both follow the picture the plugin moved into the vault",
 				openHasIt && requestHasIt,
 				openHasIt && requestHasIt ? "" : `open ${openHasIt}, per-request ${requestHasIt}`,
+			);
+			fs.writeFileSync(
+				path.join(vault, "attachments", "logo.png"),
+				Buffer.from(`${PNG_BASE64.slice(0, -4)}AAAA`, "base64"),
+			);
+			const renderAfterImageChange = readBoardInspectionSnapshot("picsd");
+			check(
+				"  and an external image byte change changes the rendered snapshot fingerprint without changing the note",
+				fs.readFileSync(path.join(vault, "picsd.excalidraw.md")).equals(noteBeforeImageChange) &&
+					renderAfterImageChange.fingerprint !== renderBeforeImageChange.fingerprint,
+			);
+			fs.writeFileSync(
+				path.join(vault, "attachments", "logo.png"),
+				Buffer.from(PNG_BASE64, "base64"),
 			);
 
 			// A file at a board's path that is not a note is refused, in the same

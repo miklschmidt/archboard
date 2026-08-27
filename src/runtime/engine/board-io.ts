@@ -381,6 +381,23 @@ function strictRenderScene(scene: unknown): BoardInspectionSnapshot["renderScene
 	return { elements: projected, files };
 }
 
+function renderSnapshotFingerprint(
+	noteHash: string,
+	renderScene: BoardInspectionSnapshot["renderScene"],
+): string {
+	const files = renderScene
+		? Object.keys(renderScene.files)
+				.toSorted((left, right) => (left < right ? -1 : left > right ? 1 : 0))
+				.map((id) => {
+					const file = renderScene.files[id]!;
+					return [id, file.id, file.mimeType, file.created, file.dataURL] as const;
+				})
+		: null;
+	return hashBoardBytes(
+		Buffer.from(`archboard-render-snapshot-v1\n${JSON.stringify([noteHash, files])}`, "utf8"),
+	);
+}
+
 /** One named note read shared by inspection and focused rendering. */
 export function readBoardInspectionSnapshot(key: string): BoardInspectionSnapshot {
 	const root = requireVaultRoot();
@@ -390,7 +407,12 @@ export function readBoardInspectionSnapshot(key: string): BoardInspectionSnapsho
 	if (!note) throw new Error(`Board note not found: ${file}`);
 	const scene: unknown = JSON.parse(note.sceneJson);
 	if (Array.isArray(scene)) {
-		return { elements: scene, fingerprint: note.hash, renderScene: strictRenderScene(scene) };
+		const renderScene = strictRenderScene(scene);
+		return {
+			elements: scene,
+			fingerprint: renderSnapshotFingerprint(note.hash, renderScene),
+			renderScene,
+		};
 	}
 	if (
 		!scene ||
@@ -399,10 +421,11 @@ export function readBoardInspectionSnapshot(key: string): BoardInspectionSnapsho
 	) {
 		throw new Error(`${file} has no elements array in its Drawing payload.`);
 	}
+	const renderScene = strictRenderScene(scene);
 	return {
 		elements: (scene as { elements: unknown[] }).elements,
-		fingerprint: note.hash,
-		renderScene: strictRenderScene(scene),
+		fingerprint: renderSnapshotFingerprint(note.hash, renderScene),
+		renderScene,
 	};
 }
 
