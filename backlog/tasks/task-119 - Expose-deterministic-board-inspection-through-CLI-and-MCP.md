@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-27 04:26'
+updated_date: '2026-08-27 04:48'
 labels:
   - ready-for-agent
 dependencies:
@@ -617,6 +617,12 @@ Final validation for the 2026-08-27 consolidated remediation:
 - Shared label repair now uses exact indexed text membership instead of repeated textIds.includes scans. Inspection supplies one domain-level traversal observer for records, bound entries, membership candidates, label/drift graph entries, path points, findings, and boundTextDrift ordering. The 600-by-600 control completes below the analysis limit; the 6,000-by-6,000 direct and persisted boards stop deterministically at analysis attempt 25,000,001 with exactly one limit finding.
 - The public inspection suite now contains an explicit eight-family step-28 owner inventory for records, groupIds, boundElements, paths/segments, label membership/drift, hierarchy/events/candidates, model aggregates, and refs/points/findings. It is scaling evidence, not a syntax or call-graph audit.
 - Focused validation is green: type-check, lint, boundaries, module-scope, 58 contract paths/978 checks, inspection 730 checks, and labels 183 checks. Two real bun run fix passes were byte-stable at diff SHA-256 `ae1eae362f8a96e93efc6ebedc2914485a5542647e3d4476d52cc45371fc1d7a`. Complete check/test validation remains pending.
+
+### 2026-08-27 domain inventory final validation
+
+Source checkpoint `1cfbba0` and evidence checkpoint `ed44bf8` close the two remaining step-28 domain loops. Complete `bun run check` passed after the documented human-performance diagnosis sequence: two full attempts observed the scheduling-sensitive `[0,0,2]` sample, each isolated diagnosis passed `[0,0]`, and the required complete rerun passed. A separate complete `bun run test` then passed. The successful full chains ran all four browser suites sequentially and headlessly: human performance `[0,0]`, fixed point 0 of 13 changed elements, both typed-text interactions preserved, and live session 42 of 42 cycles converged. No gate was waived.
+
+Two fresh on-demand contract generations were byte-identical: `cli-command-audit.md` c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, `command-contract-proof.json` 2269f2c96ab9db9ccca5390a09f1187f78f66b82fd4c3d0a40d1c7142670a895, and `command-contract-proof.md` c578b4ba5740e392df1451ba8ca5a268e968d4cd8a058839b272496f92780bcd. Generated views remain absent and ignored; canonical `docs/design/cli-command-audit.json` remains tracked. `git diff --check` passed. TASK-119 remains In Progress with all nine acceptance criteria unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
