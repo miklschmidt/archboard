@@ -1,11 +1,11 @@
 ---
 id: TASK-123.03
 title: Generate the complete CLI result and chaining reference
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-27 15:11'
+updated_date: '2026-08-27 15:16'
 labels: []
 dependencies:
   - TASK-123.02
@@ -37,13 +37,13 @@ No result-schema manual, per-command field table, fourth generated contract arti
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 CommandContract result Zod schemas and inferred types remain the sole result-shape authority. TASK-123.03 adds no schema manual and no new generated contract artifact; the existing on-demand command-contract-proof.json is linked only as a derived searchable projection whose source Zod contract wins.
-- [ ] #2 A compact tracked cli-workflows.md documents only useful released producer-to-consumer mappings and jq extractions for read/query, writes and board version, stencil insertion, promotion, grouping, inspection, bridge creation/removal, focused rendering, and file artifacts where a real chain exists. User choices and independent reinspection are labeled rather than presented as data pipes.
-- [ ] #3 Every documented jq program is executed by a focused check against data first validated by the exact producing ResultSchema or produced by a shipped pure owner and then parsed. Every named producer and consumer resolves to cliContractRegistry; the guide is not required to mention every public command.
-- [ ] #4 SKILL.md and cheatsheet.md contain one discoverable pointer to the workflow guide and no copied result schemas, result-field tables, or per-command shape descriptions. Generic sync and install paths copy the tracked reference byte-for-byte, and command help remains byte-compatible.
-- [ ] #5 The guide uses only released TASK-119 through TASK-121 contracts: schema-v2 check, bridge, bridge remove, and render-findings. TASK-122 remains the sole owner of the completion gate and broader inspection, bridge, and rendering teaching.
-- [ ] #6 Existing 61-path contract proof coverage, immutable fixed-57 compatibility, CLI-to-REST reconciliation, generated ownership, runtime schemas, registry paths, streams/exits, and server/UI behavior remain unchanged. The only contract metadata correction is check's stale Schema-v1 output description to Schema-v2.
-- [ ] #7 Focused validation proves workflow markers resolve to live contracts, jq examples produce expected bytes from schema-valid data, tracked/synchronized/installed guide copies match, existing generated artifact names remain unchanged, and no generated view is committed.
+- [x] #1 CommandContract result Zod schemas and inferred types remain the sole result-shape authority. TASK-123.03 adds no schema manual and no new generated contract artifact; the existing on-demand command-contract-proof.json is linked only as a derived searchable projection whose source Zod contract wins.
+- [x] #2 A compact tracked cli-workflows.md documents only useful released producer-to-consumer mappings and jq extractions for read/query, writes and board version, stencil insertion, promotion, grouping, inspection, bridge creation/removal, focused rendering, and file artifacts where a real chain exists. User choices and independent reinspection are labeled rather than presented as data pipes.
+- [x] #3 Every documented jq program is executed by a focused check against data first validated by the exact producing ResultSchema or produced by a shipped pure owner and then parsed. Every named producer and consumer resolves to cliContractRegistry; the guide is not required to mention every public command.
+- [x] #4 SKILL.md and cheatsheet.md contain one discoverable pointer to the workflow guide and no copied result schemas, result-field tables, or per-command shape descriptions. Generic sync and install paths copy the tracked reference byte-for-byte, and command help remains byte-compatible.
+- [x] #5 The guide uses only released TASK-119 through TASK-121 contracts: schema-v2 check, bridge, bridge remove, and render-findings. TASK-122 remains the sole owner of the completion gate and broader inspection, bridge, and rendering teaching.
+- [x] #6 Existing 61-path contract proof coverage, immutable fixed-57 compatibility, CLI-to-REST reconciliation, generated ownership, runtime schemas, registry paths, streams/exits, and server/UI behavior remain unchanged. The only contract metadata correction is check's stale Schema-v1 output description to Schema-v2.
+- [x] #7 Focused validation proves workflow markers resolve to live contracts, jq examples produce expected bytes from schema-valid data, tracked/synchronized/installed guide copies match, existing generated artifact names remain unchanged, and no generated view is committed.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -111,3 +111,9 @@ created: 2026-08-27 14:14
 Parent approved the xhigh deletion-test amendment: one thin workflow guide, two skill pointers, schema-valid jq examples, no copied result shapes, no fourth generated artifact, and source Zod contracts as the sole authority.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added a compact type-authoritative CLI workflow guide and two skill pointers without duplicating result schemas. All ten documented jq chains are validated through live ResultSchemas or shipped pure owners and executed with exact-byte assertions; sync and install copies match, check metadata correctly says schema-v2, the registry remains 61 paths with immutable 57 compatibility, and only the existing three ignored contract views are generated. Verified by 93 workflow checks, 61 proofs/61 audited paths/1011 contract checks, 112 install checks, 36-command/25-subcommand/630 CLI checks, stable fix passes, complete check, separate complete test, serial headless browser lanes, and clean independent Standards and Spec reviews over 2c45d71ece3a31ccbb432da0b265f693bbd9fa81..994652560614267d7d03ecb3e46d55c344572bb8.
+<!-- SECTION:FINAL_SUMMARY:END -->
