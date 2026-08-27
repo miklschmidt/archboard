@@ -2,12 +2,6 @@ import { inspectBoard } from "./index.js";
 import type { InspectionPolicyInput, InspectionReport } from "./schemas.js";
 import { decodeRecords } from "./lib/decode.js";
 import { detectBoard } from "./lib/detectors.js";
-import {
-	AnalysisWorkCeilingReached,
-	InspectionBudget,
-	type AnalysisWorkOwner,
-	type AnalysisWorkPhase,
-} from "./lib/inspection-budget.js";
 import { snapshotInspectionInput } from "./lib/input-snapshot.js";
 import {
 	buildSweepHierarchy,
@@ -18,7 +12,6 @@ import {
 
 export interface InspectionWorkDiagnostics {
 	inputUnits: number;
-	analysisWorkItems: number;
 	broadPhaseEvents: number;
 	broadPhaseCompatibleVisits: number;
 	broadPhaseExpiryPops: number;
@@ -50,12 +43,6 @@ export interface SweepDiagnosticInterval {
 export interface SweepCompatibilityDiagnostics {
 	pairs: readonly (readonly [string, string])[];
 	work: SweepWork;
-	analysisWorkItems: number;
-	analysisLimit: {
-		pass: AnalysisWorkOwner;
-		phase: AnalysisWorkPhase;
-		attempted: 25_000_001;
-	} | null;
 }
 
 /** Pure development probe for semantic pair enumeration and coarse work scaling. */
@@ -65,13 +52,10 @@ export function diagnoseSweepCompatibility(input: {
 	sameSet: boolean;
 	hierarchyParents?: ReadonlyMap<string, string | null | undefined>;
 	stopAfterPairs?: number;
-	enforceAnalysisLimit?: boolean;
 }): SweepCompatibilityDiagnostics {
-	const budget = input.enforceAnalysisLimit ? new InspectionBudget() : undefined;
 	const work = emptySweepWork();
-	let analysisLimit: SweepCompatibilityDiagnostics["analysisLimit"] = null;
 	const hierarchy = input.hierarchyParents
-		? buildSweepHierarchy(input.hierarchyParents, { budget, pass: "node-hierarchy", work })
+		? buildSweepHierarchy(input.hierarchyParents)
 		: undefined;
 	const intervals = (items: readonly SweepDiagnosticInterval[]) =>
 		items.map((item) => ({
@@ -87,22 +71,17 @@ export function diagnoseSweepCompatibility(input: {
 			},
 		}));
 	const pairs: Array<readonly [string, string]> = [];
-	try {
-		sweepIntervalPairs(
-			intervals(input.left),
-			intervals(input.right),
-			input.sameSet,
-			(left, right) => {
-				pairs.push([left.value, right.value]);
-				return input.stopAfterPairs === undefined || pairs.length < input.stopAfterPairs;
-			},
-			{ budget, pass: "connector-intersection", work },
-		);
-	} catch (error) {
-		if (!(error instanceof AnalysisWorkCeilingReached) || !budget) throw error;
-		analysisLimit = { pass: error.owner, phase: error.phase, attempted: error.attempted };
-	}
-	return { pairs, work, analysisWorkItems: budget?.analysisWorkItems ?? 0, analysisLimit };
+	sweepIntervalPairs(
+		intervals(input.left),
+		intervals(input.right),
+		input.sameSet,
+		(left, right) => {
+			pairs.push([left.value, right.value]);
+			return input.stopAfterPairs === undefined || pairs.length < input.stopAfterPairs;
+		},
+		{ work },
+	);
+	return { pairs, work };
 }
 
 /** Pure module-root development evidence; product report bytes contain no work counters. */
@@ -111,11 +90,9 @@ export function inspectBoardDiagnostics(
 	policyInput?: InspectionPolicyInput,
 ): BoardInspectionDiagnostics {
 	const report = inspectBoard(records, policyInput);
-	const budget = new InspectionBudget();
-	const snapshot = snapshotInspectionInput(records, budget);
+	const snapshot = snapshotInspectionInput(records);
 	const empty = (): InspectionWorkDiagnostics => ({
-		inputUnits: budget.inputUnits,
-		analysisWorkItems: 0,
+		inputUnits: snapshot.inputUnits,
 		broadPhaseEvents: 0,
 		broadPhaseCompatibleVisits: 0,
 		broadPhaseExpiryPops: 0,
@@ -131,16 +108,14 @@ export function inspectBoardDiagnostics(
 	});
 	if (snapshot.limit) return { report, work: empty() };
 	const detection = detectBoard(
-		decodeRecords(snapshot.records, snapshot.blockedSourceIndexes, budget),
+		decodeRecords(snapshot.records, snapshot.blockedSourceIndexes),
 		report.policy,
-		budget,
 	);
-	const work = detection.analysisWork;
+	const work = detection.workDiagnostics;
 	return {
 		report,
 		work: {
-			inputUnits: budget.inputUnits,
-			analysisWorkItems: work.analysisWorkItems,
+			inputUnits: snapshot.inputUnits,
 			broadPhaseEvents: work.broadPhaseEvents,
 			broadPhaseCompatibleVisits: work.broadPhaseActiveVisits,
 			broadPhaseExpiryPops: work.broadPhaseExpiryPops,

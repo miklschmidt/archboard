@@ -159,13 +159,13 @@ note archboard did not write. About fifteen seconds.
   exported schema, cover text and strict exits 6/7/8, and compare vault paths, bytes, and mtimes
   before and after every read. The inert input snapshot matrix covers proxies, revoked proxies,
   accessors, cycles, custom prototypes, unsafe scalar values, holes, sparse arrays, exact string and
-  array boundaries, and large supported paths. Analysis cases use the module-root `diagnostics.ts`
-  entrypoint for semantic counts and scaling, not VM-level collection arithmetic.
-  Alternating exact exclusions complete at 2,048 intervals per side and stop at analysis item
-  25,000,001 at 3,072, while the established dense board still reaches comparison 2,000,001 first.
-  Late connector-intersection fixtures preserve earlier penetrations and comparisons when analysis
-  stops. Direct and persisted package cases prove both closed limit findings, strict/non-strict
-  exits, deterministic rendering, and the absence of diagnostic counters from product output.
+  array boundaries, and large supported paths. The module-root `diagnostics.ts` entrypoint supplies
+  coarse noncontractual algorithm counters for focused regressions. Alternating exact-exclusion and
+  hierarchy fixtures retain their pair-set, ordering, and semantic-exclusion checks without claiming
+  a general complexity bound. Direct and persisted package cases prove the input and broad-phase
+  comparison limit findings, strict/non-strict exits, deterministic rendering, preservation of
+  completed findings at the comparison stop, and the absence of diagnostic counters from product
+  output.
 
 ## Wire and lock checks
 

@@ -122,16 +122,19 @@ also contains errors. Non-strict reports always exit 0 after successful
 inspection. Usage and policy failures still exit 2 with empty stdout;
 vault, note, Drawing, schema, and I/O failures exit 1 with empty stdout.
 
-Schema-v1 reports publish three limits: `inputComplexityUnits` is 1,000,000,
-`analysisWorkItems` is 25,000,000, and `broadPhaseComparisons` is 2,000,000.
-The product report exposes the completed eligible comparison count, but not the completed input or
-analysis counts. Input is snapshotted before decode; attempting input unit 1,000,001 emits
-`INSPECTION_LIMIT_EXCEEDED/input-complexity-ceiling` and runs no semantic analysis. Attempting
-analysis item 25,000,001 emits `INSPECTION_LIMIT_EXCEEDED/analysis-work-ceiling`. Attempting
-comparison 2,000,001 emits `INSPECTION_LIMIT_EXCEEDED/broad-phase-comparison-ceiling`. The refused
-unit is not executed, current and later passes stop, and whichever ceiling is attempted first is the
-only limit finding. All three findings make coverage indeterminate. Findings and comparisons from
-completed earlier items remain in the report; an unfinished item contributes nothing.
+Schema-v1 reports publish two limits: `inputComplexityUnits` is 1,000,000 and
+`broadPhaseComparisons` is 2,000,000. The product report exposes the completed eligible comparison
+count, but not the completed input count. Input is snapshotted before decode; attempting input unit
+1,000,001 emits `INSPECTION_LIMIT_EXCEEDED/input-complexity-ceiling` and runs no semantic analysis.
+Attempting comparison 2,000,001 emits
+`INSPECTION_LIMIT_EXCEEDED/broad-phase-comparison-ceiling`, stops the remaining pair passes, and
+preserves findings and comparisons from completed earlier work. Both limit findings make coverage
+indeterminate.
+
+These are truthful capacity safeguards for input admission and eligible broad-phase comparisons,
+not a general runtime, asymptotic, hang, or denial-of-service guarantee. Valid input within both
+caps may still induce superlinear semantic work. If an external supervisor terminates inspection,
+there is no report to return.
 
 Inspection accepts live JavaScript values only through an inert fixed-field snapshot. Proxies,
 accessors, active-path cycles, functions, symbols, bigints, and non-plain objects are never invoked

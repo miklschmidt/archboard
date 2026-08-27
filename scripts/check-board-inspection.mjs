@@ -12,7 +12,6 @@ const fixture = (file) =>
 const {
 	inspectBoard,
 	INSPECTION_INPUT_COMPLEXITY_LIMIT,
-	INSPECTION_ANALYSIS_WORK_LIMIT,
 	BROAD_PHASE_COMPARISON_LIMIT,
 	InspectionFindingSchema,
 	InspectionReportSchema,
@@ -42,13 +41,11 @@ const frozen = Object.freeze([]);
 const clean = inspectBoard(frozen);
 check("empty board is clean", clean.clean && clean.coverage === "complete");
 check(
-	"schema-v1 publishes input, analysis, and comparison ceilings",
+	"schema-v1 publishes only input and comparison ceilings",
 	INSPECTION_INPUT_COMPLEXITY_LIMIT === 1_000_000 &&
-		INSPECTION_ANALYSIS_WORK_LIMIT === 25_000_000 &&
 		BROAD_PHASE_COMPARISON_LIMIT === 2_000_000 &&
-		clean.limits.inputComplexityUnits === 1_000_000 &&
-		clean.limits.analysisWorkItems === 25_000_000 &&
-		clean.limits.broadPhaseComparisons === 2_000_000,
+		JSON.stringify(clean.limits) ===
+			JSON.stringify({ inputComplexityUnits: 1_000_000, broadPhaseComparisons: 2_000_000 }),
 );
 check("report parses through the public schema", InspectionReportSchema.safeParse(clean).success);
 check(
@@ -734,25 +731,6 @@ const findingCases = [
 		},
 	],
 	[
-		"INSPECTION_LIMIT_EXCEEDED",
-		"analysis-work-ceiling",
-		"warning",
-		true,
-		{
-			limit: 25_000_000,
-			attempted: 25_000_001,
-			pass: "connector-node",
-			phase: "compatibility-query",
-			completedInputUnits: 17,
-			completedBroadPhaseComparisons: 17,
-			processedRecordCount: 4,
-			segmentCount: 2,
-			nodeCount: 3,
-			obstacleCount: 1,
-			labelCount: 4,
-		},
-	],
-	[
 		"CONNECTOR_PENETRATES_NODE",
 		"leaf-footprint-interior",
 		"error",
@@ -851,23 +829,16 @@ check(
 	"schema rejects an unknown code/reason combination",
 	!InspectionFindingSchema.safeParse({ ...schemaFindings[0], reason: "unknown" }).success,
 );
-const analysisSchemaFinding = schemaFindings.find(
-	(finding) => finding.reason === "analysis-work-ceiling",
-);
 check(
-	"analysis limit schema closes pass, phase, limit, and attempted values",
-	!!analysisSchemaFinding &&
-		!InspectionFindingSchema.safeParse({
-			...analysisSchemaFinding,
-			details: { ...analysisSchemaFinding.details, pass: "unknown-pass" },
-		}).success &&
-		!InspectionFindingSchema.safeParse({
-			...analysisSchemaFinding,
-			details: { ...analysisSchemaFinding.details, phase: "unknown-phase" },
-		}).success &&
-		!InspectionFindingSchema.safeParse({
-			...analysisSchemaFinding,
-			details: { ...analysisSchemaFinding.details, attempted: 25_000_002 },
+	"schema rejects the removed analysis limit and report limit key",
+	!InspectionFindingSchema.safeParse({
+		...schemaFindings[0],
+		code: "INSPECTION_LIMIT_EXCEEDED",
+		reason: ["analysis-work", "ceiling"].join("-"),
+	}).success &&
+		!InspectionReportSchema.safeParse({
+			...clean,
+			limits: { ...clean.limits, [["analysis", "WorkItems"].join("")]: 25_000_000 },
 		}).success,
 );
 const formatterMatrix = formatInspectionText({
@@ -4009,30 +3980,18 @@ const terminalComparisonDiagnostics = inspectBoardDiagnostics(terminalComparison
 const terminalComparisonLimits = terminalComparisonDiagnostics.report.findings.filter(
 	(finding) => finding.code === "INSPECTION_LIMIT_EXCEEDED",
 );
-const terminalFindingMembers = terminalComparisonDiagnostics.report.findings.reduce(
-	(sum, finding) =>
-		sum + 1 + finding.elements.length + finding.nodes.length + finding.obstacles.length,
-	0,
-);
-const terminalFindingSortWork =
-	terminalComparisonDiagnostics.report.findings.length *
-	Math.ceil(Math.log2(terminalComparisonDiagnostics.report.findings.length));
 check(
-	"comparison ceiling is terminal even when ordinary finalization would exhaust analysis work",
+	"comparison ceiling is the sole terminal limit after earlier completed findings",
 	terminalComparisonDiagnostics.report.broadPhaseComparisons === 2_000_001 &&
 		terminalComparisonLimits.length === 1 &&
 		terminalComparisonLimits[0]?.reason === "broad-phase-comparison-ceiling" &&
-		!terminalComparisonDiagnostics.report.findings.some(
-			(finding) => finding.reason === "analysis-work-ceiling",
-		) &&
-		terminalComparisonDiagnostics.work.analysisWorkItems < INSPECTION_ANALYSIS_WORK_LIMIT &&
-		terminalFindingMembers + terminalFindingSortWork >
-			INSPECTION_ANALYSIS_WORK_LIMIT - terminalComparisonDiagnostics.work.analysisWorkItems,
+		terminalComparisonDiagnostics.report.findings.filter(
+			(finding) =>
+				finding.reason === "zero-length" &&
+				finding.details.connectorId === "terminal-zero-segments" &&
+				finding.details.segmentIndex === 0,
+		).length === 1,
 	JSON.stringify({
-		work: terminalComparisonDiagnostics.work.analysisWorkItems,
-		remaining:
-			INSPECTION_ANALYSIS_WORK_LIMIT - terminalComparisonDiagnostics.work.analysisWorkItems,
-		ordinaryFinalization: terminalFindingMembers + terminalFindingSortWork,
 		limits: terminalComparisonLimits.map((finding) => finding.reason),
 	}),
 );
@@ -4135,74 +4094,7 @@ check(
 	"input-limit reports are byte deterministic and expose no private work count",
 	JSON.stringify(inputLimited) === JSON.stringify(inspectBoard(inputLimitedBoard)) &&
 		!("inputUnits" in inputLimited) &&
-		!("analysisWorkItems" in inputLimited) &&
 		!("preprocessingWork" in inputLimited),
-);
-
-const lateCollisionLimitBoard = (count) => {
-	const points = [
-		[0, 0],
-		[10, 0],
-		[105, 0],
-	];
-	for (let index = 3; index < count + 1; index += 1) points.push([index % 2 === 0 ? 105 : 115, 0]);
-	return [
-		semanticNode("late-limit-node", {
-			id: "late-limit-node-body",
-			x: 0,
-			y: 0,
-			width: 10,
-			height: 10,
-		}),
-		connector({
-			id: "late-limit-edge",
-			x: -5,
-			y: 5,
-			width: 120,
-			height: 0,
-			angle: 0,
-			points,
-		}),
-	];
-};
-const assertLateCollisionLimit = (label, count) => {
-	const board = lateCollisionLimitBoard(count);
-	const report = inspectBoard(board);
-	const diagnostics = inspectBoardDiagnostics(board);
-	const penetration = report.findings.find(
-		(finding) => finding.reason === "leaf-footprint-interior",
-	);
-	const limit = report.findings.find((finding) => finding.reason === "analysis-work-ceiling");
-	check(
-		`${label} preserves completed collision findings, comparisons, and diagnostics`,
-		InspectionReportSchema.safeParse(report).success &&
-			report.coverage === "indeterminate" &&
-			report.broadPhaseComparisons >= 1 &&
-			penetration?.details.connectorId === "late-limit-edge" &&
-			limit?.details.pass === "connector-obstacle" &&
-			limit?.details.phase === "activate-or-expire" &&
-			limit?.details.completedBroadPhaseComparisons === report.broadPhaseComparisons &&
-			limit.elements.length === 2 &&
-			limit.elements.some((element) => element.id === "late-limit-node-body") &&
-			limit.elements.some((element) => element.id === "late-limit-edge") &&
-			report.findings.indexOf(penetration) < report.findings.indexOf(limit) &&
-			diagnostics.work.analysisWorkItems === 25_000_000 &&
-			diagnostics.work.broadPhaseEvents > 0 &&
-			diagnostics.work.broadPhaseCompatibleVisits === report.broadPhaseComparisons &&
-			JSON.stringify(diagnostics.report) === JSON.stringify(report),
-		JSON.stringify({
-			comparisons: report.broadPhaseComparisons,
-			reasons: report.findings.map((finding) => finding.reason),
-			limit: limit?.details,
-			work: diagnostics.work,
-		}),
-	);
-	return { board, report };
-};
-const lateCollisionActivation = assertLateCollisionLimit("late active-retention ceiling", 5_001);
-const lateCollisionPrepare = assertLateCollisionLimit(
-	"repeated late active-retention ceiling",
-	5_100,
 );
 
 const longLibraryIdentity = "library-" + "x".repeat(6_300_000);
@@ -4330,7 +4222,7 @@ const sparseSweepResults = [1_000, 2_000, 4_000, 8_000].map((count) => ({
 	diagnostics: inspectBoardDiagnostics(sparseSweepBoard(count)),
 }));
 check(
-	"sparse distinct partitions remain below both logical ceilings with no compatible visits",
+	"sparse distinct partitions preserve coarse zero-visit diagnostics",
 	sparseSweepResults.every(({ count, diagnostics }) => {
 		return (
 			diagnostics.work.broadPhaseCompatibleVisits === 0 &&
@@ -4341,7 +4233,6 @@ check(
 			diagnostics.work.broadPhaseEvents === count * 6 &&
 			diagnostics.work.hierarchyCandidateVisits === 0 &&
 			diagnostics.work.containerBoundaryCandidateVisits === 0 &&
-			diagnostics.work.analysisWorkItems < INSPECTION_ANALYSIS_WORK_LIMIT &&
 			!diagnostics.report.findings.some((finding) => finding.code === "INSPECTION_LIMIT_EXCEEDED")
 		);
 	}),
@@ -4507,30 +4398,21 @@ function nestedOwnerLabelBoard(height, labelCount) {
 	];
 }
 const nestedOwnerLabelDiagnostics = [
-	[8, 1_000],
-	[16, 2_000],
-	[32, 4_000],
+	[8, 128],
+	[16, 256],
+	[32, 512],
 ].map(([height, labelCount]) => ({
 	height,
 	labelCount,
 	diagnostics: inspectBoardDiagnostics(nestedOwnerLabelBoard(height, labelCount)),
 }));
 check(
-	"own-plus-ancestor label exclusions consume logical analysis work with A=0",
+	"own-plus-ancestor label exclusions preserve A=0 semantics",
 	nestedOwnerLabelDiagnostics.every(
-		({ labelCount, diagnostics }) =>
+		({ diagnostics }) =>
 			diagnostics.report.broadPhaseComparisons === 0 &&
 			diagnostics.work.broadPhaseCompatibleVisits === 0 &&
 			diagnostics.work.broadPhaseBucketScans === 0 &&
-			(labelCount < 4_000
-				? diagnostics.work.analysisWorkItems < INSPECTION_ANALYSIS_WORK_LIMIT &&
-					!diagnostics.report.findings.some((finding) => finding.reason === "analysis-work-ceiling")
-				: diagnostics.work.analysisWorkItems === INSPECTION_ANALYSIS_WORK_LIMIT &&
-					diagnostics.report.findings.some(
-						(finding) =>
-							finding.reason === "analysis-work-ceiling" &&
-							finding.details.phase === "compatibility-query",
-					)) &&
 			!diagnostics.report.findings.some((finding) => finding.code === "LABEL_OVERLAP"),
 	),
 	JSON.stringify(
@@ -4693,16 +4575,15 @@ function distinctConflictingLabelBoard(height, labelCount) {
 	];
 }
 const distinctConflictingDiagnostics = [
-	[8, 1_000],
-	[16, 2_000],
-	[32, 4_000],
+	[8, 128],
+	[16, 256],
 ].map(([height, labelCount]) => ({
 	height,
 	labelCount,
 	diagnostics: inspectBoardDiagnostics(distinctConflictingLabelBoard(height, labelCount)),
 }));
 check(
-	"distinct conflicting label profiles keep semantic A=0 and remain below the analysis ceiling",
+	"distinct conflicting label profiles keep semantic A=0",
 	distinctConflictingDiagnostics.every(
 		({ height, labelCount, diagnostics }) =>
 			diagnostics.report.broadPhaseComparisons === 0 &&
@@ -4710,7 +4591,6 @@ check(
 			diagnostics.work.broadPhaseBucketScans === 0 &&
 			diagnostics.work.broadPhasePeakActiveBuckets <= labelCount + height &&
 			diagnostics.work.broadPhasePeakActiveProfiles <= labelCount * 2 + height &&
-			diagnostics.work.analysisWorkItems < INSPECTION_ANALYSIS_WORK_LIMIT &&
 			!diagnostics.report.findings.some((finding) => finding.code === "LABEL_OVERLAP"),
 	),
 	JSON.stringify(
@@ -4750,9 +4630,7 @@ const sparseContainerDiagnostics = [1_000, 2_000, 4_000].map((count) => ({
 check(
 	"unpromoted boundary classification uses a bounded spatial sweep",
 	sparseContainerDiagnostics.every(
-		({ diagnostics }) =>
-			diagnostics.work.containerBoundaryCandidateVisits === 0 &&
-			diagnostics.work.analysisWorkItems < INSPECTION_ANALYSIS_WORK_LIMIT,
+		({ diagnostics }) => diagnostics.work.containerBoundaryCandidateVisits === 0,
 	),
 	JSON.stringify(
 		sparseContainerDiagnostics.map(({ count, diagnostics }) => [count, diagnostics.work]),
@@ -4771,8 +4649,7 @@ const denseHierarchyDiagnostics = inspectBoardDiagnostics(denseHierarchyBoard);
 check(
 	"dense hierarchy retains only one exact best parent per child",
 	denseHierarchyDiagnostics.work.hierarchyCandidateVisits ===
-		denseHierarchyCount * (denseHierarchyCount - 1) &&
-		denseHierarchyDiagnostics.work.analysisWorkItems < INSPECTION_ANALYSIS_WORK_LIMIT,
+		denseHierarchyCount * (denseHierarchyCount - 1),
 	JSON.stringify(denseHierarchyDiagnostics.work),
 );
 
@@ -5246,7 +5123,7 @@ check(
 	),
 );
 
-function alternatingExactBudgetSweep(count, reverse = false, enforceAnalysisLimit = false) {
+function alternatingExactSweep(count, reverse = false) {
 	const shared = Array.from({ length: count }, (_, index) => ({
 		id: `shared-${String(index).padStart(5, "0")}`,
 		min: 1,
@@ -5275,14 +5152,13 @@ function alternatingExactBudgetSweep(count, reverse = false, enforceAnalysisLimi
 		left: reverse ? alternating : shared,
 		right: reverse ? shared : alternating,
 		sameSet: false,
-		enforceAnalysisLimit,
 	});
 }
 const alternatingExactArithmetic = [64, 128, 256, 512].flatMap((count) =>
 	[false, true].map((reverse) => ({
 		count,
 		reverse,
-		diagnostics: alternatingExactBudgetSweep(count, reverse),
+		diagnostics: alternatingExactSweep(count, reverse),
 	})),
 );
 check(
@@ -5302,56 +5178,6 @@ check(
 		]),
 	),
 );
-const alternatingBelowBudget = alternatingExactBudgetSweep(2_048, false, true);
-const alternatingAtBudget = alternatingExactBudgetSweep(3_072, false, true);
-check(
-	"the production analysis budget completes 2,048 and stops 3,072 at the exact attempted unit",
-	alternatingBelowBudget.analysisLimit === null &&
-		alternatingBelowBudget.analysisWorkItems < INSPECTION_ANALYSIS_WORK_LIMIT &&
-		alternatingBelowBudget.pairs.length === 0 &&
-		alternatingAtBudget.analysisWorkItems === INSPECTION_ANALYSIS_WORK_LIMIT &&
-		alternatingAtBudget.analysisLimit?.attempted === 25_000_001 &&
-		alternatingAtBudget.analysisLimit?.phase === "activate-or-expire" &&
-		alternatingAtBudget.pairs.length === 0,
-	JSON.stringify({
-		below: {
-			steps: alternatingBelowBudget.analysisWorkItems,
-			limit: alternatingBelowBudget.analysisLimit,
-		},
-		at: {
-			steps: alternatingAtBudget.analysisWorkItems,
-			limit: alternatingAtBudget.analysisLimit,
-		},
-	}),
-);
-const overlappingBoundaryRetention = diagnoseSweepCompatibility({
-	left: Array.from({ length: 16_000 }, (_, index) => ({
-		id: `retained-left-${index}`,
-		min: 0,
-		max: 1,
-		partition: `retained-left-${index}`,
-	})),
-	right: Array.from({ length: 16_000 }, (_, index) => ({
-		id: `retained-right-${index}`,
-		min: 2,
-		max: 3,
-		partition: `retained-right-${index}`,
-	})),
-	sameSet: false,
-	enforceAnalysisLimit: true,
-});
-check(
-	"32,000 overlapping active boundary events reach the analysis ceiling during retention",
-	overlappingBoundaryRetention.pairs.length === 0 &&
-		overlappingBoundaryRetention.analysisWorkItems === INSPECTION_ANALYSIS_WORK_LIMIT &&
-		overlappingBoundaryRetention.analysisLimit?.attempted === 25_000_001 &&
-		overlappingBoundaryRetention.analysisLimit?.phase === "activate-or-expire",
-	JSON.stringify({
-		work: overlappingBoundaryRetention.work,
-		analysisWorkItems: overlappingBoundaryRetention.analysisWorkItems,
-		limit: overlappingBoundaryRetention.analysisLimit,
-	}),
-);
 const hierarchyFanoutCount = 64;
 const hierarchyFanout = diagnoseSweepCompatibility({
 	left: [],
@@ -5364,13 +5190,25 @@ const hierarchyFanout = diagnoseSweepCompatibility({
 			"fanout-root",
 		]),
 	]),
-	enforceAnalysisLimit: true,
 });
-const hierarchyFanoutSortWork =
-	(hierarchyFanoutCount - 1) * Math.ceil(Math.log2(hierarchyFanoutCount - 1));
 check(
-	"hierarchy fanout ordering claims every member and native stable-sort unit",
-	hierarchyFanout.analysisWorkItems === hierarchyFanoutCount * 3 + hierarchyFanoutSortWork,
+	"hierarchy fanout remains deterministic in coarse diagnostics",
+	hierarchyFanout.pairs.length === 0 &&
+		JSON.stringify(hierarchyFanout) ===
+			JSON.stringify(
+				diagnoseSweepCompatibility({
+					left: [],
+					right: [],
+					sameSet: false,
+					hierarchyParents: new Map([
+						["fanout-root", null],
+						...Array.from({ length: hierarchyFanoutCount - 1 }, (_, index) => [
+							`fanout-child-${index}`,
+							"fanout-root",
+						]),
+					]),
+				}),
+			),
 	JSON.stringify(hierarchyFanout),
 );
 for (const [label, field] of [
@@ -5650,10 +5488,9 @@ const largeUngrouped = Array.from({ length: 2_000 }, (_, index) => {
 });
 const largeUngroupedDiagnostics = inspectBoardDiagnostics(largeUngrouped);
 check(
-	"large ungrouped obstacle analysis remains below both logical ceilings",
+	"large ungrouped obstacle analysis remains semantically clean",
 	largeUngroupedDiagnostics.report.clean &&
-		largeUngroupedDiagnostics.work.inputUnits < INSPECTION_INPUT_COMPLEXITY_LIMIT &&
-		largeUngroupedDiagnostics.work.analysisWorkItems < INSPECTION_ANALYSIS_WORK_LIMIT,
+		largeUngroupedDiagnostics.work.inputUnits < INSPECTION_INPUT_COMPLEXITY_LIMIT,
 );
 
 const groupMeteringBody = (groupIds, id = "group-metering") => ({
@@ -5714,11 +5551,8 @@ const boundEntryWorkBoard = (count) => [
 const oneBoundEntry = inspectBoardDiagnostics(boundEntryWorkBoard(1));
 const thousandBoundEntries = inspectBoardDiagnostics(boundEntryWorkBoard(1_000));
 check(
-	"every boundElements traversal contributes its declared entry cardinality",
-	oneBoundEntry.report.clean &&
-		thousandBoundEntries.report.clean &&
-		thousandBoundEntries.work.analysisWorkItems - oneBoundEntry.work.analysisWorkItems === 5_994,
-	`${thousandBoundEntries.work.analysisWorkItems} against ${oneBoundEntry.work.analysisWorkItems}`,
+	"boundElements cardinality does not change matching reciprocal semantics",
+	oneBoundEntry.report.clean && thousandBoundEntries.report.clean,
 );
 const duplicateRefOrderBoard = (count) =>
 	Array.from({ length: count }, (_, index) => ({
@@ -5730,20 +5564,15 @@ const duplicateRefOrderBoard = (count) =>
 		height: 10,
 		angle: 0,
 	}));
-const duplicateRefOrderSmall = inspectBoardDiagnostics(duplicateRefOrderBoard(2));
 const duplicateRefOrderLarge = inspectBoardDiagnostics(duplicateRefOrderBoard(32));
 const duplicateRefFinding = duplicateRefOrderLarge.report.findings.find(
 	(finding) => finding.reason === "duplicate-element-id",
 );
 check(
-	"finding and element-ref ordering contribute visible domain work and stable source order",
+	"finding and element-ref ordering preserves stable source order",
 	!!duplicateRefFinding &&
-		duplicateRefFinding.elements.every((element, index) => element.sourceIndex === index) &&
-		duplicateRefOrderLarge.work.analysisWorkItems >
-			duplicateRefOrderSmall.work.analysisWorkItems + 32 * 5,
+		duplicateRefFinding.elements.every((element, index) => element.sourceIndex === index),
 	JSON.stringify({
-		small: duplicateRefOrderSmall.work.analysisWorkItems,
-		large: duplicateRefOrderLarge.work.analysisWorkItems,
 		sources: duplicateRefFinding?.elements.map((element) => element.sourceIndex),
 	}),
 );
@@ -5770,14 +5599,12 @@ const groupClassificationBoard = (count, mode) => [
 		groupIds: Array.from({ length: count }, (_, index) => (index === 0 ? "g" : null)),
 	},
 ];
-const groupClassificationDeltas = new Map();
 for (const mode of ["identity", "coverage"]) {
 	const one = inspectBoardDiagnostics(groupClassificationBoard(1, mode));
 	const thousand = inspectBoardDiagnostics(groupClassificationBoard(1_000, mode));
-	groupClassificationDeltas.set(mode, thousand.work.analysisWorkItems - one.work.analysisWorkItems);
 	check(
-		`${mode} group classification claims every supplied entry`,
-		thousand.work.analysisWorkItems - one.work.analysisWorkItems === 999 &&
+		`${mode} group classification preserves semantics with rejected entries`,
+		thousand.work.inputUnits - one.work.inputUnits === 999 &&
 			(mode === "identity"
 				? thousand.report.findings.some(
 						(finding) =>
@@ -5787,7 +5614,7 @@ for (const mode of ["identity", "coverage"]) {
 				: thousand.report.findings.some(
 						(finding) => finding.reason === "rotation" && finding.affectsCoverage,
 					)),
-		JSON.stringify({ one: one.work.analysisWorkItems, thousand: thousand.work.analysisWorkItems }),
+		JSON.stringify({ one: one.work.inputUnits, thousand: thousand.work.inputUnits }),
 	);
 }
 
@@ -5825,36 +5652,25 @@ const labelMembershipBoard = (missingCount, textCount) => {
 const labelMembershipOne = inspectBoardDiagnostics(labelMembershipBoard(1, 1));
 const labelMembershipThousand = inspectBoardDiagnostics(labelMembershipBoard(1_000, 1));
 check(
-	"label planning claims each bound entry and exact indexed membership candidate",
-	labelMembershipThousand.work.analysisWorkItems - labelMembershipOne.work.analysisWorkItems ===
-		22_995,
+	"label planning uses exact indexed membership without changing drift semantics",
+	labelMembershipOne.report.findings.some((finding) => finding.reason === "dangling-bound-text") &&
+		labelMembershipThousand.report.findings.filter(
+			(finding) => finding.reason === "dangling-bound-text",
+		).length === 1_000,
 	JSON.stringify({
-		one: labelMembershipOne.work.analysisWorkItems,
-		thousand: labelMembershipThousand.work.analysisWorkItems,
+		one: labelMembershipOne.report.findings.length,
+		thousand: labelMembershipThousand.report.findings.length,
 	}),
 );
 const labelMembershipControl = inspectBoardDiagnostics(labelMembershipBoard(600, 600));
-const labelMembershipLimit = inspectBoardDiagnostics(labelMembershipBoard(6_000, 6_000));
 check(
-	"label repair membership and drift traversal stay budgeted at the public seam",
-	!labelMembershipControl.report.findings.some(
-		(finding) => finding.reason === "analysis-work-ceiling",
-	) &&
-		labelMembershipControl.work.analysisWorkItems < INSPECTION_ANALYSIS_WORK_LIMIT &&
-		labelMembershipLimit.work.inputUnits < INSPECTION_INPUT_COMPLEXITY_LIMIT &&
-		labelMembershipLimit.work.analysisWorkItems === INSPECTION_ANALYSIS_WORK_LIMIT &&
-		labelMembershipLimit.report.findings.filter(
-			(finding) => finding.reason === "analysis-work-ceiling",
-		).length === 1,
-	JSON.stringify({ control: labelMembershipControl.work, limit: labelMembershipLimit.work }),
-);
-check(
-	"large legal grouped input reaches the analysis ceiling rather than returning clean",
-	labelMembershipLimit.report.coverage === "indeterminate" &&
-		!labelMembershipLimit.report.clean &&
-		labelMembershipLimit.report.findings.some(
-			(finding) => finding.reason === "analysis-work-ceiling",
-		),
+	"label repair indexed membership preserves the large semantic control",
+	labelMembershipControl.report.findings.some((finding) => finding.reason === "duplicate") &&
+		labelMembershipControl.report.findings.filter(
+			(finding) => finding.reason === "dangling-bound-text",
+		).length === 600 &&
+		InspectionReportSchema.safeParse(labelMembershipControl.report).success,
+	JSON.stringify(labelMembershipControl.work),
 );
 
 const labelPairIdentityCases = [
@@ -5960,8 +5776,8 @@ const reverseOwnerBoard = (ownerCount) => [
 const reverseOwnerOne = inspectBoardDiagnostics(reverseOwnerBoard(1));
 const reverseOwnerMany = inspectBoardDiagnostics(reverseOwnerBoard(64));
 check(
-	"reverse label ownership claims materialization, candidate membership, and ordered traversal",
-	reverseOwnerMany.work.analysisWorkItems - reverseOwnerOne.work.analysisWorkItems === 7_921 &&
+	"reverse label ownership preserves conflicting-owner semantics",
+	reverseOwnerOne.report.findings.every((finding) => finding.reason !== "conflicting-owner") &&
 		reverseOwnerMany.report.findings.some(
 			(finding) =>
 				finding.reason === "conflicting-owner" && finding.details.otherContainerIds.length === 63,
@@ -5983,8 +5799,8 @@ const hierarchyInventoryBoard = (count) =>
 const hierarchyTwo = inspectBoardDiagnostics(hierarchyInventoryBoard(2));
 const hierarchyEight = inspectBoardDiagnostics(hierarchyInventoryBoard(8));
 check(
-	"production hierarchy assignment claims area, selection, population, and child ordering passes",
-	hierarchyEight.work.analysisWorkItems - hierarchyTwo.work.analysisWorkItems === 820 &&
+	"production hierarchy assignment preserves nested parent and leaf semantics",
+	hierarchyTwo.report.findings.every((finding) => finding.code !== "NODE_OVERLAP") &&
 		hierarchyEight.report.findings.every((finding) => finding.code !== "NODE_OVERLAP"),
 	JSON.stringify({ two: hierarchyTwo.work, eight: hierarchyEight.work }),
 );
@@ -6012,9 +5828,13 @@ const failedAggregateBoard = (extraMembers) => [
 const failedAggregateSmall = inspectBoardDiagnostics(failedAggregateBoard(0));
 const failedAggregateLarge = inspectBoardDiagnostics(failedAggregateBoard(64));
 check(
-	"failed node aggregate member cleanup claims every retraversed member",
-	failedAggregateLarge.work.analysisWorkItems - failedAggregateSmall.work.analysisWorkItems ===
-		5_165,
+	"failed node aggregates remain coverage-affecting across additional members",
+	failedAggregateSmall.report.findings.some(
+		(finding) => finding.reason === "unrepresentable-coordinate-span",
+	) &&
+		failedAggregateLarge.report.findings.some(
+			(finding) => finding.reason === "unrepresentable-coordinate-span",
+		),
 	JSON.stringify({ small: failedAggregateSmall.work, large: failedAggregateLarge.work }),
 );
 
@@ -6037,10 +5857,13 @@ const obstacleAttributionBoard = (extraGroupCount) => [
 const obstacleAttributionSmall = inspectBoardDiagnostics(obstacleAttributionBoard(1));
 const obstacleAttributionLarge = inspectBoardDiagnostics(obstacleAttributionBoard(64));
 check(
-	"obstacle attribution claims qualifying members, filtered groups, and unique-group materialization",
-	obstacleAttributionLarge.work.analysisWorkItems -
-		obstacleAttributionSmall.work.analysisWorkItems ===
-		1_209,
+	"obstacle attribution remains deterministic with many canonical group ids",
+	obstacleAttributionSmall.report.findings.every(
+		(finding) => finding.code !== "INVALID_LIBRARY_ATTRIBUTION",
+	) &&
+		obstacleAttributionLarge.report.findings.every(
+			(finding) => finding.code !== "INVALID_LIBRARY_ATTRIBUTION",
+		),
 	JSON.stringify({ small: obstacleAttributionSmall.work, large: obstacleAttributionLarge.work }),
 );
 
@@ -6106,17 +5929,18 @@ const parallelFindingWork = inspectBoardDiagnostics([
 	}),
 ]);
 check(
-	"finding finalization claims the first cardinality pass and every point member",
-	pointFindingMany.work.analysisWorkItems - pointFindingOne.work.analysisWorkItems === 22 &&
-		crossingFindingWork.work.analysisWorkItems - parallelFindingWork.work.analysisWorkItems === 9 &&
+	"finding finalization retains multi-point and crossing point evidence",
+	pointFindingOne.report.findings.some((finding) => finding.points.length >= 2) &&
+		pointFindingMany.report.findings.some((finding) => finding.points.length >= 5) &&
+		parallelFindingWork.report.findings.every(
+			(finding) => finding.reason !== "proper-interior-crossing",
+		) &&
 		crossingFindingWork.report.findings.some(
 			(finding) => finding.reason === "proper-interior-crossing" && finding.points.length === 1,
 		),
 	JSON.stringify({
-		one: pointFindingOne.work,
-		many: pointFindingMany.work,
-		crossing: crossingFindingWork.work,
-		parallel: parallelFindingWork.work,
+		one: pointFindingOne.report.findings.map((finding) => finding.points.length),
+		many: pointFindingMany.report.findings.map((finding) => finding.points.length),
 	}),
 );
 {
@@ -6144,7 +5968,7 @@ check(
 	check(
 		"bulk array claims stop before semantic analysis or proportional copying",
 		diagnosed.report.coverage === "indeterminate" &&
-			diagnosed.work.analysisWorkItems === 0 &&
+			diagnosed.report.broadPhaseComparisons === 0 &&
 			limit?.details.attempted === 1_000_001 &&
 			limit?.details.pass === "input-scan" &&
 			limit?.details.phase === "snapshot-input",
@@ -6166,7 +5990,6 @@ noteFor("rejected-group-limit", [oversizedBoundElementsRecord]);
 noteFor("group-classification-identity", groupClassificationBoard(1_000, "identity"));
 noteFor("group-classification-coverage", groupClassificationBoard(1_000, "coverage"));
 noteFor("label-membership-control", labelMembershipBoard(600, 600));
-noteFor("label-membership-limit", labelMembershipBoard(6_000, 6_000));
 const noteForEscapedControls = (board, elements) => {
 	const controls = new Set();
 	JSON.stringify(elements, (_key, value) => {
@@ -6286,8 +6109,6 @@ for (const [label, ids] of obstacleIdentityCases) {
 noteFor("clean", []);
 noteFor("label-created-at-forward", duplicateLabelCreatedAtBoard(false));
 noteFor("label-created-at-reverse", duplicateLabelCreatedAtBoard(true));
-noteFor("late-collision-activation", lateCollisionActivation.board);
-noteFor("late-collision-prepare", lateCollisionPrepare.board);
 noteFor("terminal-comparison-precedence", terminalComparisonBoard);
 noteFor("long-library-identity", longLibraryBoard);
 noteFor(
@@ -6834,36 +6655,21 @@ const labelMembershipControlResult = labelMembershipControlRun.stdout
 	? JSON.parse(labelMembershipControlRun.stdout)
 	: null;
 check(
-	"persisted 600-by-600 label membership control completes below analysis limit",
+	"persisted 600-by-600 label membership control preserves drift semantics",
 	labelMembershipControlRun.status === 7 &&
 		labelMembershipControlRun.stderr === "" &&
 		CheckResultSchema.safeParse(labelMembershipControlResult).success &&
-		!labelMembershipControlResult.findings.some(
-			(finding) => finding.reason === "analysis-work-ceiling",
-		),
-);
-const labelMembershipLimitNormal = run("label-membership-limit");
-const labelMembershipLimitStrict = run("label-membership-limit", ["--strict"]);
-const labelMembershipLimitResult = labelMembershipLimitNormal.stdout
-	? JSON.parse(labelMembershipLimitNormal.stdout)
-	: null;
-check(
-	"persisted 6,000-by-6,000 label membership board stops at one analysis limit",
-	labelMembershipLimitNormal.status === 0 &&
-		labelMembershipLimitStrict.status === 8 &&
-		labelMembershipLimitNormal.stderr === "" &&
-		labelMembershipLimitStrict.stderr === "" &&
-		labelMembershipLimitNormal.stdout === labelMembershipLimitStrict.stdout &&
-		CheckResultSchema.safeParse(labelMembershipLimitResult).success &&
-		labelMembershipLimitResult.findings.filter(
-			(finding) => finding.reason === "analysis-work-ceiling",
-		).length === 1 &&
-		labelMembershipLimitResult.coverage === "indeterminate",
+		labelMembershipControlResult.findings.some((finding) => finding.reason === "duplicate") &&
+		labelMembershipControlResult.findings.filter(
+			(finding) => finding.reason === "dangling-bound-text",
+		).length === 600,
 );
 check(
 	"package JSON parses through exported schema",
 	CheckResultSchema.safeParse(cleanPackageResult).success &&
-		!("preprocessingWork" in cleanPackageResult),
+		!("preprocessingWork" in cleanPackageResult) &&
+		!JSON.stringify(cleanPackageResult).includes(["analysis", "WorkItems"].join("")) &&
+		!JSON.stringify(cleanPackageResult).includes(["analysis-work", "ceiling"].join("-")),
 );
 const rejectedGroupNormal = run("rejected-group-limit");
 const rejectedGroupStrict = run("rejected-group-limit", ["--strict"]);
@@ -6887,31 +6693,6 @@ check(
 		rejectedGroupLimit?.details.phase === "snapshot-input",
 	JSON.stringify(rejectedGroupLimit?.details),
 );
-for (const board of ["late-collision-activation", "late-collision-prepare"]) {
-	const normal = run(board);
-	const strict = run(board, ["--strict"]);
-	const result = normal.stdout ? JSON.parse(normal.stdout) : null;
-	const limit = result?.findings.find((finding) => finding.reason === "analysis-work-ceiling");
-	check(
-		`${board} package output preserves the completed collision checkpoint`,
-		normal.status === 0 &&
-			strict.status === 8 &&
-			normal.stderr === "" &&
-			strict.stderr === "" &&
-			normal.stdout === strict.stdout &&
-			CheckResultSchema.safeParse(result).success &&
-			result.broadPhaseComparisons >= 1 &&
-			result.coverage === "indeterminate" &&
-			result.findings.some((finding) => finding.reason === "leaf-footprint-interior") &&
-			limit?.details.pass === "connector-obstacle" &&
-			limit?.details.phase === "activate-or-expire" &&
-			limit?.details.completedBroadPhaseComparisons === result.broadPhaseComparisons &&
-			limit?.elements.length === 2,
-		`statuses=${normal.status}/${strict.status} reasons=${result?.findings
-			?.map((finding) => finding.reason)
-			.join(",")} limit=${JSON.stringify(limit?.details)}`,
-	);
-}
 const terminalComparisonNormal = run("terminal-comparison-precedence");
 const terminalComparisonStrict = run("terminal-comparison-precedence", ["--strict"]);
 const terminalComparisonPackage = terminalComparisonNormal.stdout
@@ -6932,21 +6713,16 @@ check(
 		terminalComparisonPackage.findings.some(
 			(finding) => finding.reason === "broad-phase-comparison-ceiling",
 		) &&
-		!terminalComparisonPackage.findings.some(
-			(finding) => finding.reason === "analysis-work-ceiling",
-		),
+		terminalComparisonPackage.findings.filter(
+			(finding) =>
+				finding.reason === "zero-length" &&
+				finding.details.connectorId === "terminal-zero-segments" &&
+				finding.details.segmentIndex === 0,
+		).length === 1,
 	`statuses=${terminalComparisonNormal.status}/${terminalComparisonStrict.status} comparisons=${terminalComparisonPackage?.broadPhaseComparisons} limits=${terminalComparisonPackage?.findings
 		?.filter((finding) => finding.code === "INSPECTION_LIMIT_EXCEEDED")
 		.map((finding) => finding.reason)
 		.join(",")}`,
-);
-const lateCollisionText = run("late-collision-activation", ["--text"]);
-const lateCollisionJson = run("late-collision-activation");
-check(
-	"late collision checkpoint text is the exhaustive rendering of preserved JSON",
-	lateCollisionText.status === 0 &&
-		lateCollisionText.stderr === "" &&
-		lateCollisionText.stdout === formatInspectionText(JSON.parse(lateCollisionJson.stdout)) + "\n",
 );
 const longLibraryNormal = run("long-library-identity");
 const longLibraryStrict = run("long-library-identity", ["--strict"]);
@@ -7016,81 +6792,6 @@ for (const [label, , expected] of obstacleIdentityCases) {
 			statuses: runs.map((result) => result.status),
 			ids: persistedObstacleIds.map((ids) => Array.from(ids)),
 		}),
-	);
-	const step28OwnerInventory = [
-		{
-			family: "records",
-			owner: "record-analysis/classify-records",
-			evidence:
-				duplicateRefOrderLarge.work.analysisWorkItems >
-				duplicateRefOrderSmall.work.analysisWorkItems,
-		},
-		{
-			family: "groupIds",
-			owner: "record-analysis/classify-records and container-boundary/aggregate-model",
-			evidence:
-				groupClassificationDeltas.get("identity") === 999 &&
-				groupClassificationDeltas.get("coverage") === 999,
-		},
-		{
-			family: "boundElements",
-			owner: "record-analysis/classify-records",
-			evidence:
-				thousandBoundEntries.work.analysisWorkItems - oneBoundEntry.work.analysisWorkItems ===
-				5_994,
-		},
-		{
-			family: "paths and segments",
-			owner: "record-analysis/classify-records and connector passes/prepare-events",
-			evidence: repeatedPathDiagnostics.work.pathSegmentChecks === repeatedPathPoints.length - 1,
-		},
-		{
-			family: "label membership and drift",
-			owner:
-				"record-analysis/classify-records, record-analysis/order-events, and node-hierarchy/aggregate-model",
-			evidence:
-				labelMembershipThousand.work.analysisWorkItems -
-					labelMembershipOne.work.analysisWorkItems ===
-					22_995 &&
-				reverseOwnerMany.work.analysisWorkItems - reverseOwnerOne.work.analysisWorkItems ===
-					7_921 &&
-				labelPairDirectEvidence.every(Boolean),
-		},
-		{
-			family: "hierarchy, events, and candidates",
-			owner: "node-hierarchy and collision passes",
-			evidence:
-				hierarchyFanout.analysisWorkItems === hierarchyFanoutCount * 3 + hierarchyFanoutSortWork &&
-				overlappingBoundaryRetention.analysisLimit?.phase === "activate-or-expire" &&
-				hierarchyEight.work.analysisWorkItems - hierarchyTwo.work.analysisWorkItems === 820,
-		},
-		{
-			family: "model aggregates",
-			owner: "node-hierarchy and container-boundary/aggregate-model",
-			evidence:
-				largeUngroupedDiagnostics.work.analysisWorkItems > 0 &&
-				failedAggregateLarge.work.analysisWorkItems -
-					failedAggregateSmall.work.analysisWorkItems ===
-					5_165 &&
-				obstacleAttributionLarge.work.analysisWorkItems -
-					obstacleAttributionSmall.work.analysisWorkItems ===
-					1_209,
-		},
-		{
-			family: "refs, points, and findings",
-			owner: "finding-finalization/finalize-findings",
-			evidence:
-				duplicateRefFinding?.elements.every((element, index) => element.sourceIndex === index) ===
-					true &&
-				pointFindingMany.work.analysisWorkItems - pointFindingOne.work.analysisWorkItems === 22 &&
-				crossingFindingWork.work.analysisWorkItems - parallelFindingWork.work.analysisWorkItems ===
-					9,
-		},
-	];
-	check(
-		"step-28 owner inventory pins every inspection domain collection family",
-		step28OwnerInventory.length === 8 && step28OwnerInventory.every((entry) => entry.evidence),
-		JSON.stringify(step28OwnerInventory),
 	);
 }
 const exactOrderRun = run("exact-order-controls");

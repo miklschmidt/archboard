@@ -12,11 +12,7 @@ import { decodeRecords } from "./lib/decode.js";
 import { BROAD_PHASE_COMPARISON_LIMIT, detectBoard } from "./lib/detectors.js";
 import { box, finite, focusBox, point } from "./lib/geometry.js";
 import {
-	INSPECTION_ANALYSIS_WORK_LIMIT,
 	INSPECTION_INPUT_COMPLEXITY_LIMIT,
-	InspectionBudget,
-} from "./lib/inspection-budget.js";
-import {
 	snapshotInspectionInput,
 	type SnapshotIssue,
 	type SnapshotRecord,
@@ -53,10 +49,7 @@ export type {
 } from "./schemas.js";
 export { formatInspectionText } from "./lib/format-text.js";
 export { BROAD_PHASE_COMPARISON_LIMIT } from "./lib/detectors.js";
-export {
-	INSPECTION_ANALYSIS_WORK_LIMIT,
-	INSPECTION_INPUT_COMPLEXITY_LIMIT,
-} from "./lib/inspection-budget.js";
+export { INSPECTION_INPUT_COMPLEXITY_LIMIT } from "./lib/input-snapshot.js";
 
 export const DEFAULT_INSPECTION_POLICY: InspectionPolicy = Object.freeze({
 	allowedFontFamilies: Object.freeze([5]) as unknown as [5],
@@ -202,7 +195,6 @@ function assembleReport(input: {
 		policy: input.policy,
 		limits: {
 			inputComplexityUnits: INSPECTION_INPUT_COMPLEXITY_LIMIT,
-			analysisWorkItems: INSPECTION_ANALYSIS_WORK_LIMIT,
 			broadPhaseComparisons: BROAD_PHASE_COMPARISON_LIMIT,
 		},
 		totalElementCount: input.totalElementCount,
@@ -223,8 +215,7 @@ export function inspectBoard(
 	records: readonly unknown[],
 	policyInput?: InspectionPolicyInput,
 ): InspectionReport {
-	const budget = new InspectionBudget();
-	const snapshot = snapshotInspectionInput(records, budget);
+	const snapshot = snapshotInspectionInput(records);
 	const policy = normalizedPolicy(policyInput);
 	const inputFindings = snapshot.issues.map(unsafeInputFinding);
 	if (snapshot.limit) {
@@ -239,8 +230,8 @@ export function inspectBoard(
 			broadPhaseComparisons: 0,
 		});
 	}
-	const decoded = decodeRecords(snapshot.records, snapshot.blockedSourceIndexes, budget);
-	const detection = detectBoard(decoded, policy, budget, inputFindings);
+	const decoded = decodeRecords(snapshot.records, snapshot.blockedSourceIndexes);
+	const detection = detectBoard(decoded, policy, inputFindings);
 	return assembleReport({
 		policy,
 		findings: detection.findings,

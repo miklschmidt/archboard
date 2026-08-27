@@ -25,18 +25,17 @@ regardless of whether the folder is named `lib`, `tests`, or something else.
 
 `src/runtime/board-inspection/diagnostics.ts` is a pure development entrypoint. It runs the same
 inspection pipeline as `index.ts` and reports coarse semantic work for performance regressions:
-input and analysis units, broad-phase events, eligible visits, expiry, bucket scans, exact-query and
+input units, broad-phase events, eligible visits, expiry, bucket scans, exact-query and
 hierarchy-node visits, path checks, and active bucket/profile/index peaks. The counters are
 informative development evidence, not a promise about JavaScript engine primitives. Product callers
 and the `check` command use `index.ts`; diagnostic counters never enter schema-v1 report bytes.
 
 `lib/input-snapshot.ts` is the only boundary that accepts `readonly unknown[]`. It copies the fixed
 inspection vocabulary into inert closed records without invoking caller-owned JavaScript. Decode,
-model, and detector code accept only those snapshot records. `lib/inspection-budget.ts` owns the
-1,000,000-unit input budget and the 25,000,000-item analysis budget. Owner-level bulk claims happen
-before native collection helpers; per-item claims happen before the corresponding domain item.
-Eligible pair delivery remains owned by the separate 2,000,000 comparison limit. A stopped pass
-retains completed findings, comparisons, and coarse diagnostic work.
+model, and detector code accept only those snapshot records. The snapshot owner enforces the
+1,000,000-unit input limit before semantic analysis. Eligible broad-phase pair delivery has a
+separate 2,000,000-comparison limit; a stopped pair pass retains completed findings and comparisons.
+The two limits are capacity safeguards, not a general runtime or asymptotic guarantee.
 
 Root `src/` files are thin process entrypoints only. The existing entrypoints are `src/bin.ts`,
 `src/server.ts`, and `src/dev-canvas.ts`. Do not add implementation to these files.

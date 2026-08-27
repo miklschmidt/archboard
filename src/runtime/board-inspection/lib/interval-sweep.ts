@@ -1,4 +1,3 @@
-import type { AnalysisWorkOwner, InspectionBudget } from "./inspection-budget.js";
 import { compareIdentity } from "./ordering.js";
 
 export interface SweepInterval<T> {
@@ -30,27 +29,9 @@ export interface SweepWork {
 }
 
 export interface SweepOptions {
-	budget?: InspectionBudget;
-	pass?: AnalysisWorkOwner;
-	/** Caller-owned development counters survive a logical-budget stop. */
+	/** Caller-owned development counters. */
 	work?: SweepWork;
 }
-
-const claim = (
-	options: SweepOptions | undefined,
-	phase: Parameters<InspectionBudget["claimWork"]>[1],
-	items = 1,
-): void => {
-	if (!options?.budget) return;
-	const owner = options.pass ?? "connector-intersection";
-	options.budget.claimWork(owner, phase, items);
-};
-
-const claimSort = (options: SweepOptions | undefined, length: number): void => {
-	if (!options?.budget || length < 2) return;
-	const owner = options.pass ?? "connector-intersection";
-	options.budget.claimSort(owner, "order-events", length);
-};
 
 export const emptySweepWork = (): SweepWork => ({
 	events: 0,
@@ -74,12 +55,10 @@ export interface SweepHierarchy {
 	lca(left: string, right: string, step?: () => void): string | null;
 }
 
-/** Build deterministic hierarchy coordinates with one claim per supplied relation and visit. */
+/** Build deterministic hierarchy coordinates for semantic exclusion queries. */
 export function buildSweepHierarchy(
 	parents: ReadonlyMap<string, string | null | undefined>,
-	options?: SweepOptions,
 ): SweepHierarchy {
-	claim(options, "prepare-events", parents.size);
 	const parentById = new Map<string, string | null>();
 	for (const [id, parent] of parents)
 		parentById.set(id, parent && parents.has(parent) ? parent : null);
@@ -87,11 +66,9 @@ export function buildSweepHierarchy(
 	for (const id of parentById.keys()) children.set(id, []);
 	for (const [id, parent] of parentById) if (parent) children.get(parent)!.push(id);
 	for (const [parent, values] of children) {
-		claimSort(options, values.length);
 		children.set(parent, values.toSorted(compareIdentity));
 	}
 	const roots = [...parentById].filter(([, parent]) => parent === null).map(([id]) => id);
-	claimSort(options, roots.length);
 	const orderedRoots = roots.toSorted(compareIdentity);
 	const positions = new Map<string, number>();
 	const ranges = new Map<string, readonly [number, number]>();
@@ -100,7 +77,6 @@ export function buildSweepHierarchy(
 		const stack: Array<{ id: string; leaving: boolean }> = [{ id: root, leaving: false }];
 		while (stack.length > 0) {
 			const current = stack.pop()!;
-			claim(options, "hierarchy-query");
 			if (current.leaving) {
 				ranges.set(current.id, [positions.get(current.id)!, cursor - 1]);
 				continue;
@@ -165,16 +141,10 @@ const eventOrder = (left: Event<unknown>, right: Event<unknown>): number =>
 	compareIdentity(left.interval.id, right.interval.id) ||
 	left.ordinal - right.ordinal;
 
-function partitionExcluded(
-	profile: SweepPartition,
-	partition: string,
-	work: SweepWork,
-	options: SweepOptions | undefined,
-): boolean {
+function partitionExcluded(profile: SweepPartition, partition: string, work: SweepWork): boolean {
 	if (profile.excludedPartitions.has(partition)) return true;
 	if (!profile.hierarchy) return false;
 	const targets = profile.ancestorTargets ?? [];
-	claim(options, "hierarchy-query", targets.length);
 	for (const target of targets) {
 		work.hierarchyNodeVisits += 1;
 		if (profile.hierarchy.isAncestor(partition, target)) return true;
@@ -192,26 +162,21 @@ export function sweepIntervalPairs<A, B>(
 ): SweepWork {
 	type Value = A | B;
 	const work = options?.work ?? emptySweepWork();
-	const eventCount = left.length + (sameSet ? 0 : right.length);
-	claim(options, "prepare-events", eventCount);
 	const events: Event<Value>[] = [];
 	for (let ordinal = 0; ordinal < left.length; ordinal += 1)
 		events.push({ interval: left[ordinal]!, set: 0, ordinal });
 	if (!sameSet)
 		for (let ordinal = 0; ordinal < right.length; ordinal += 1)
 			events.push({ interval: right[ordinal]!, set: 1, ordinal });
-	claimSort(options, events.length);
 	const orderedEvents = events.toSorted(eventOrder);
 
 	const active: [Array<Event<Value>>, Array<Event<Value>>] = [[], []];
 	const activeProfiles = new Map<SweepPartition, number>();
 	for (const event of orderedEvents) {
-		claim(options, "activate-or-expire");
 		work.events += 1;
 		for (let set = 0; set < active.length; set += 1) {
 			const retained: Array<Event<Value>> = [];
 			for (const candidate of active[set]!) {
-				claim(options, "activate-or-expire");
 				if (candidate.interval.max < event.interval.min) {
 					work.expiryPops += 1;
 					const profile = candidate.interval.semantics;
@@ -224,19 +189,16 @@ export function sweepIntervalPairs<A, B>(
 		}
 		const oppositeSet = sameSet ? 0 : event.set === 0 ? 1 : 0;
 		for (const candidate of active[oppositeSet]) {
-			claim(options, "compatibility-query", 3);
 			work.exactQuerySteps += 2;
 			const eventExcludes = partitionExcluded(
 				event.interval.semantics,
 				candidate.interval.semantics.partition,
 				work,
-				options,
 			);
 			const activeExcludes = partitionExcluded(
 				candidate.interval.semantics,
 				event.interval.semantics.partition,
 				work,
-				options,
 			);
 			if (eventExcludes || activeExcludes) continue;
 			work.bucketScans += 1;

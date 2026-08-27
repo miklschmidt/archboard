@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-import { ANALYSIS_WORK_OWNERS, ANALYSIS_WORK_PHASES } from "./lib/inspection-budget.js";
-
 import { compareIdentity, obstacleIdentity } from "./lib/ordering.js";
 
 export const COLLISION_PASSES = [
@@ -536,19 +534,6 @@ const layoutFindings = [
 		path: z.array(z.union([z.string(), z.number().int().nonnegative()])),
 		unitKind: z.enum(["record", "field", "array-entry", "string-code-unit"]),
 	}),
-	variant("INSPECTION_LIMIT_EXCEEDED", "analysis-work-ceiling", true, {
-		limit: z.literal(25_000_000),
-		attempted: z.literal(25_000_001),
-		pass: z.enum(ANALYSIS_WORK_OWNERS),
-		phase: z.enum(ANALYSIS_WORK_PHASES),
-		completedInputUnits: z.number().int().nonnegative(),
-		completedBroadPhaseComparisons: z.number().int().nonnegative(),
-		processedRecordCount: z.number().int().nonnegative(),
-		segmentCount: z.number().int().nonnegative(),
-		nodeCount: z.number().int().nonnegative(),
-		obstacleCount: z.number().int().nonnegative(),
-		labelCount: z.number().int().nonnegative(),
-	}),
 	variant("CONNECTOR_PENETRATES_NODE", "leaf-footprint-interior", false, {
 		connectorId: z.string().min(1),
 		segmentIndex: z.number().int().nonnegative(),
@@ -644,7 +629,6 @@ export const InspectionReportSchema = z.strictObject({
 	policy: InspectionPolicySchema,
 	limits: z.strictObject({
 		inputComplexityUnits: z.literal(1_000_000),
-		analysisWorkItems: z.literal(25_000_000),
 		broadPhaseComparisons: z.literal(2_000_000),
 	}),
 	totalElementCount: z.number().int().nonnegative(),

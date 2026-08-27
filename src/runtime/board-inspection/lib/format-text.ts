@@ -124,7 +124,6 @@ function verifyInspectionLimit(finding: FindingFor<"INSPECTION_LIMIT_EXCEEDED">)
 	switch (reason) {
 		case "broad-phase-comparison-ceiling":
 		case "input-complexity-ceiling":
-		case "analysis-work-ceiling":
 			return;
 		default:
 			return assertNever(reason);
@@ -228,7 +227,7 @@ export function formatInspectionText(result: CheckResult): string {
 		`coverage: ${result.coverage}`,
 		`clean: ${result.clean}`,
 		`severity: error=${result.counts.bySeverity.error} warning=${result.counts.bySeverity.warning}`,
-		`limits: input=${result.limits.inputComplexityUnits} analysis=${result.limits.analysisWorkItems} broad-phase=${result.broadPhaseComparisons}/${result.limits.broadPhaseComparisons}`,
+		`limits: input=${result.limits.inputComplexityUnits} broad-phase=${result.broadPhaseComparisons}/${result.limits.broadPhaseComparisons}`,
 		`policy: fonts=${allowed} dimension=${result.policy.dimensionTolerance} intersection=${result.policy.intersectionTolerance} overlap=${result.policy.overlapTolerance}`,
 	];
 	for (const finding of result.findings) {

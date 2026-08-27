@@ -1,11 +1,44 @@
 import { types as nodeTypes } from "node:util";
 
-import {
-	InputComplexityCeilingReached,
-	type InputStopContext,
-	type InspectionPathToken,
-	type InspectionBudget,
-} from "./inspection-budget.js";
+export const INSPECTION_INPUT_COMPLEXITY_LIMIT = 1_000_000 as const;
+
+export type InputUnitKind = "record" | "field" | "array-entry" | "string-code-unit";
+export type InspectionPathToken = string | number;
+
+export interface InputStopContext {
+	readonly completedRecordCount: number;
+	readonly sourceIndex: number | null;
+	readonly path: readonly InspectionPathToken[];
+	readonly unitKind: InputUnitKind;
+}
+
+export class InputComplexityCeilingReached extends Error {
+	readonly limit = INSPECTION_INPUT_COMPLEXITY_LIMIT;
+	readonly attempted = 1_000_001 as const;
+
+	constructor(readonly context: InputStopContext) {
+		super("Inspection input stopped at the input complexity ceiling.");
+		this.name = "InputComplexityCeilingReached";
+	}
+}
+
+const validUnits = (units: number): boolean => Number.isSafeInteger(units) && units >= 0;
+
+class InputComplexityAccumulator {
+	#inputUnits = 0;
+
+	get inputUnits(): number {
+		return this.#inputUnits;
+	}
+
+	claim(units: number, context: InputStopContext): void {
+		if (!validUnits(units)) throw new Error(`Invalid input complexity claim: ${units}`);
+		if (units === 0) return;
+		if (units > INSPECTION_INPUT_COMPLEXITY_LIMIT - this.#inputUnits)
+			throw new InputComplexityCeilingReached(context);
+		this.#inputUnits += units;
+	}
+}
 
 const INSPECTION_FIELDS = [
 	"id",
@@ -114,10 +147,8 @@ const stopContext = (
 ): InputStopContext => ({ completedRecordCount, sourceIndex, path, unitKind });
 
 /** Copy the fixed inspection vocabulary without executing caller-owned JavaScript. */
-export function snapshotInspectionInput(
-	input: readonly unknown[],
-	budget: InspectionBudget,
-): InspectionInputSnapshot {
+export function snapshotInspectionInput(input: readonly unknown[]): InspectionInputSnapshot {
+	const budget = new InputComplexityAccumulator();
 	const records: Array<SnapshotRecord | null> = [];
 	const issues: SnapshotIssue[] = [];
 	const blockedSourceIndexes = new Set<number>();
@@ -152,7 +183,7 @@ export function snapshotInspectionInput(
 	const totalRecordCount = input.length;
 	for (let sourceIndex = 0; sourceIndex < totalRecordCount; sourceIndex += 1) {
 		try {
-			budget.claimInput(1, stopContext(completedRecordCount, sourceIndex, [], "record"));
+			budget.claim(1, stopContext(completedRecordCount, sourceIndex, [], "record"));
 		} catch (error) {
 			if (!(error instanceof InputComplexityCeilingReached)) throw error;
 			limit = error;
@@ -206,7 +237,7 @@ export function snapshotInspectionInput(
 					continue;
 				}
 				if (scalarType === "string") {
-					budget.claimInput(
+					budget.claim(
 						(value as string).length,
 						stopContext(completedRecordCount, sourceIndex, path, "string-code-unit"),
 					);
@@ -236,10 +267,7 @@ export function snapshotInspectionInput(
 
 				if (Array.isArray(objectValue)) {
 					const length = objectValue.length;
-					budget.claimInput(
-						length,
-						stopContext(completedRecordCount, sourceIndex, path, "array-entry"),
-					);
+					budget.claim(length, stopContext(completedRecordCount, sourceIndex, path, "array-entry"));
 					const output: unknown[] = [];
 					output.length = length;
 					output.fill(undefined);
@@ -290,7 +318,7 @@ export function snapshotInspectionInput(
 						recordIssues.push({ sourceIndex, path: [...path, field], issue: "accessor" });
 						continue;
 					}
-					budget.claimInput(
+					budget.claim(
 						1,
 						stopContext(completedRecordCount, sourceIndex, [...path, field], "field"),
 					);
