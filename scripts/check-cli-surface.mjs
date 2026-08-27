@@ -151,20 +151,22 @@ const bridgeFacts = {
 	crossing: { x: 50, y: 50 },
 	background: "#ffffff",
 };
-const bridgeParts = ["mask", "redraw"].map((role, index) => ({
-	id: index === 0 ? bridgeFacts.bridgeId : "Redraw01",
-	type: "line",
-	x: 44,
-	y: 50,
-	points: [
-		[0, 0],
-		[12, 0],
-	],
-	groupIds: [],
-	startBinding: null,
-	endBinding: null,
-	customData: { archboard: { bridge: { ...bridgeFacts, role } } },
-}));
+const bridgePartsFor = (facts) =>
+	["mask", "redraw"].map((role, index) => ({
+		id: index === 0 ? facts.bridgeId : "Redraw01",
+		type: "line",
+		x: 44,
+		y: 50,
+		points: [
+			[0, 0],
+			[12, 0],
+		],
+		groupIds: [],
+		startBinding: null,
+		endBinding: null,
+		customData: { archboard: { bridge: { ...facts, role } } },
+	}));
+const bridgeParts = bridgePartsFor(bridgeFacts);
 const boardIdentity = {
 	board: "contract",
 	variant: "current",
@@ -373,18 +375,27 @@ const server = Bun.serve({
 			return Response.json({ success: true, files: {}, ...(held ? { held } : {}) });
 		}
 		if (request.method === "POST" && url.pathname === "/api/bridges") {
-			const receiptOver =
-				body?.over === "invalid-receipt" ? "wrong-over" : bridgeFacts.overConnectorId;
+			const receiptFacts = {
+				...bridgeFacts,
+				overConnectorId:
+					body?.over === "invalid-receipt"
+						? "wrong-over"
+						: body?.over === "mask-source-collision"
+							? bridgeFacts.bridgeId
+							: body?.over === "redraw-source-collision"
+								? "Redraw01"
+								: bridgeFacts.overConnectorId,
+			};
 			return Response.json({
 				success: true,
 				board: "contract",
-				bridgeId: bridgeFacts.bridgeId,
-				overConnectorId: receiptOver,
-				underConnectorId: bridgeFacts.underConnectorId,
-				overSegmentIndex: bridgeFacts.overSegmentIndex,
-				underSegmentIndex: bridgeFacts.underSegmentIndex,
-				crossing: bridgeFacts.crossing,
-				elements: bridgeParts,
+				bridgeId: receiptFacts.bridgeId,
+				overConnectorId: receiptFacts.overConnectorId,
+				underConnectorId: receiptFacts.underConnectorId,
+				overSegmentIndex: receiptFacts.overSegmentIndex,
+				underSegmentIndex: receiptFacts.underSegmentIndex,
+				crossing: receiptFacts.crossing,
+				elements: body?.over === "invalid-receipt" ? bridgeParts : bridgePartsFor(receiptFacts),
 				fingerprint,
 			});
 		}
@@ -944,6 +955,38 @@ try {
 		invalidCreateReceipt.status !== 0 && invalidCreateReceipt.stdout === "",
 		invalidCreateReceipt.stderr,
 	);
+	for (const [source, role] of [
+		["mask-source-collision", "mask"],
+		["redraw-source-collision", "redraw"],
+	]) {
+		const before = requests.length;
+		const collisionReceipt = await cli(
+			[
+				"bridge",
+				"--over",
+				source,
+				"--under",
+				"under",
+				"--background",
+				"#ffffff",
+				"--board",
+				"contract",
+				"--doing",
+				"checking bridge receipt identity",
+			],
+			{ url: canvasUrl },
+		);
+		const contacts = requests.slice(before);
+		check(
+			`bridge rejects a receipt whose ${role} identity collides with a source`,
+			collisionReceipt.status !== 0 &&
+				collisionReceipt.stdout === "" &&
+				contacts.length === 1 &&
+				contacts[0].method === "POST" &&
+				contacts[0].url.pathname === "/api/bridges",
+			collisionReceipt.stderr,
+		);
+	}
 
 	const removeBefore = requests.length;
 	const removedBridge = await cli(

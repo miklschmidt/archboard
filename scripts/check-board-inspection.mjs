@@ -269,6 +269,65 @@ for (const [roleIndex, role] of ["mask", "redraw"].entries()) {
 			duplicateReport.findings.some(({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED"),
 	);
 }
+const forbiddenBridgeSemanticFields = [
+	["archboard", { marker: true }],
+	["library", { itemId: "library-item" }],
+	["node", "semantic-node"],
+	["kind", "semantic-kind"],
+	["bridge", { marker: true }],
+	["bridgeId", "other-bridge"],
+	["role", "mask"],
+	["overConnectorId", bridgeOver.id],
+	["underConnectorId", bridgeUnder.id],
+	["overSegmentIndex", 0],
+	["underSegmentIndex", 0],
+	["crossing", { x: 50, y: 50 }],
+	["background", "#ffffff"],
+	["binding", { path: "src/bridge.ts" }],
+	["path", "src/bridge.ts"],
+	["repo", "archboard"],
+	["itemId", "library-item"],
+	["item", "library-item"],
+	["start", { id: bridgeOver.id }],
+	["end", { id: bridgeUnder.id }],
+	["elementId", bridgeOver.id],
+	["focus", 0],
+	["gap", 0],
+	["fixedPoint", [0.5, 0.5]],
+	["containerId", "foreign-container"],
+	["fontFamily", 1],
+	["label", { text: "unexpected label" }],
+	["text", "unexpected text"],
+];
+for (const [roleIndex, role] of ["mask", "redraw"].entries())
+	for (const [field, value] of forbiddenBridgeSemanticFields) {
+		const parts = cloneBridgeParts();
+		parts[roleIndex][field] = structuredClone(value);
+		const elements = [bridgeOver, bridgeUnder, ...parts];
+		const validated = validateBridgeDecorations(elements);
+		const report = inspectBoard(elements);
+		const originalCrossing = report.findings.some(
+			({ code, details }) =>
+				code === "CONNECTOR_INTERSECTION_UNMARKED" &&
+				new Set([details.firstConnectorId, details.secondConnectorId]).has(bridgeOver.id) &&
+				new Set([details.firstConnectorId, details.secondConnectorId]).has(bridgeUnder.id),
+		);
+		check(
+			`${role} bridge part rejects non-generated semantic field ${String(field)}`,
+			validated.valid.length === 0 &&
+				validated.invalid.some(
+					({ reason, issue }) =>
+						reason === "stale-decoration" &&
+						issue === (role === "mask" ? "geometry-mismatch" : "style-mismatch"),
+				) &&
+				architectureFacts(elements).elements.some(({ id }) => id === parts[roleIndex].id) &&
+				InspectionReportSchema.safeParse(report).success &&
+				originalCrossing &&
+				JSON.stringify(planBridgeRemoval(parts, "Bridge01")) ===
+					JSON.stringify(parts.map(({ id }) => id)),
+			JSON.stringify(report.findings.map(({ code, reason }) => [code, reason])),
+		);
+	}
 const interposedBridgeElement = {
 	id: "bridge-interposed",
 	type: "rectangle",
@@ -339,9 +398,23 @@ const inconsistentBridgeReceipts = [
 		],
 	},
 ];
+const receiptWithSourceId = (sourceId) => ({
+	...bridgeReceipt,
+	overConnectorId: sourceId,
+	elements: bridgeReceipt.elements.map((element) => ({
+		...element,
+		customData: {
+			archboard: {
+				bridge: { ...element.customData.archboard.bridge, overConnectorId: sourceId },
+			},
+		},
+	})),
+});
 check(
 	"bridge create receipt rejects every cross-field disagreement",
-	inconsistentBridgeReceipts.every((receipt) => !BridgeResultSchema.safeParse(receipt).success),
+	inconsistentBridgeReceipts.every((receipt) => !BridgeResultSchema.safeParse(receipt).success) &&
+		!BridgeResultSchema.safeParse(receiptWithSourceId(bridgeReceipt.elements[0].id)).success &&
+		!BridgeResultSchema.safeParse(receiptWithSourceId(bridgeReceipt.elements[1].id)).success,
 );
 const removalReceipt = {
 	success: true,
@@ -6518,6 +6591,19 @@ noteFor("bridge-deleted-redraw", [bridgeOver, bridgeUnder, ...persistedDeletedRe
 const persistedWrongTypeParts = cloneBridgeParts();
 persistedWrongTypeParts[1].type = "rectangle";
 noteFor("bridge-wrong-type", [bridgeOver, bridgeUnder, ...persistedWrongTypeParts]);
+const persistedBridgeSemanticCases = [
+	["container", 0, "containerId", "foreign-container"],
+	["text", 1, "text", "unexpected text"],
+	["label", 0, "label", { text: "unexpected label" }],
+	["start", 1, "start", { id: bridgeOver.id }],
+	["end", 0, "end", { id: bridgeUnder.id }],
+	["font", 1, "fontFamily", 1],
+];
+for (const [label, roleIndex, field, value] of persistedBridgeSemanticCases) {
+	const parts = cloneBridgeParts();
+	parts[roleIndex][field] = structuredClone(value);
+	noteFor(`bridge-semantic-${String(label)}`, [bridgeOver, bridgeUnder, ...parts]);
+}
 noteFor("bridge-interposed", interposedBridgeBoard);
 noteFor("label-created-at-forward", duplicateLabelCreatedAtBoard(false));
 noteFor("label-created-at-reverse", duplicateLabelCreatedAtBoard(true));
@@ -7023,6 +7109,10 @@ for (const [board, reason] of [
 	["bridge-deleted-redraw", "incomplete-decoration"],
 	["bridge-wrong-type", "incomplete-decoration"],
 	["bridge-interposed", "stale-decoration"],
+	...persistedBridgeSemanticCases.map(([label]) => [
+		`bridge-semantic-${String(label)}`,
+		"stale-decoration",
+	]),
 ]) {
 	const packageRun = run(board, ["--strict"]);
 	const packageReport = JSON.parse(packageRun.stdout);
