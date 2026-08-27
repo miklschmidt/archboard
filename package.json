@@ -60,7 +60,7 @@
 		"test:install": "bun scripts/check-install-doc.mjs",
 		"test:repos": "bun scripts/check-repos.mjs",
 		"test:module-scope": "bun scripts/check-module-scope.mjs && bun scripts/check-module-scope.mjs --self-test",
-		"test:contracts": "bun test src/cli/command-contract/tests src/cli/finding-rendering/tests && bun scripts/check-command-contract.mjs",
+		"test:contracts": "bun test src/cli/command-contract/tests src/cli/finding-rendering/tests && bun scripts/check-command-contract.mjs && bun scripts/check-command-workflows.mjs",
 		"generate:cli-contract": "bun scripts/generate-cli-contract.mjs",
 		"test:inspection": "bun scripts/check-board-inspection.mjs",
 		"test:staleness": "bun scripts/check-staleness.mjs",

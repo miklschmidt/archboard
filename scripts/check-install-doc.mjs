@@ -18,6 +18,9 @@ import { fileURLToPath } from "node:url";
 const moduleDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(moduleDir, "..");
 const bin = join(repoRoot, "src", "bin.ts");
+const workflowGuide = fs.readFileSync(
+	join(repoRoot, "skills", "archboard", "references", "cli-workflows.md"),
+);
 
 let failures = 0;
 let checks = 0;
@@ -27,6 +30,16 @@ function assert(condition, message) {
 	if (condition) return;
 	failures++;
 	console.error(`FAIL: ${message}`);
+}
+
+function assertWorkflowGuide(target, label) {
+	const installed = join(target, "references", "cli-workflows.md");
+	assert(fs.existsSync(installed), `${label} did not install cli-workflows.md`);
+	if (fs.existsSync(installed))
+		assert(
+			fs.readFileSync(installed).equals(workflowGuide),
+			`${label} did not preserve cli-workflows.md bytes`,
+		);
 }
 
 const scratch = fs.mkdtempSync(join(os.tmpdir(), "archboard-install-"));
@@ -245,6 +258,7 @@ for (const relativePath of liveDocs) {
 		fs.existsSync(join(home, ".agents", "skills", "archboard", "SKILL.md")),
 		"default install did not copy the skill under ~/.agents/skills",
 	);
+	assertWorkflowGuide(join(home, ".agents", "skills", "archboard"), "default install");
 	assert(
 		result.setup.doc === doc,
 		`default install should write AGENTS.md, wrote ${result.setup.doc}`,
@@ -276,6 +290,7 @@ for (const relativePath of liveDocs) {
 		fs.existsSync(join(home, ".claude", "skills", "archboard", "SKILL.md")),
 		"claude install did not copy the skill under ~/.claude/skills",
 	);
+	assertWorkflowGuide(join(home, ".claude", "skills", "archboard"), "claude install");
 	assert(
 		result.setup.doc === doc,
 		`claude install should write CLAUDE.md, wrote ${result.setup.doc}`,
@@ -440,6 +455,7 @@ for (const relativePath of liveDocs) {
 		"--dir should create agent-neutral docs when neither exists",
 	);
 	assert(fs.existsSync(join(custom, "archboard", "SKILL.md")), "--dir did not install the skill");
+	assertWorkflowGuide(join(custom, "archboard"), "--dir install");
 }
 
 // ─── Existing symlink installs are refused, not overwritten ──
