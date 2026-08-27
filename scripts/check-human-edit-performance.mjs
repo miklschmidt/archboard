@@ -528,7 +528,7 @@ try {
 			const correctionOverlapsSample = responses.some(
 				(candidate) =>
 					candidate.corrections > 0 &&
-					candidate.returnedAt >= response.returnedAt &&
+					candidate.returnedAt >= response.returnedAt - 120 &&
 					candidate.returnedAt <= response.returnedAt + 120,
 			);
 			return (
