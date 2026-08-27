@@ -5717,7 +5717,7 @@ check(
 	"every boundElements traversal contributes its declared entry cardinality",
 	oneBoundEntry.report.clean &&
 		thousandBoundEntries.report.clean &&
-		thousandBoundEntries.work.analysisWorkItems - oneBoundEntry.work.analysisWorkItems === 4_995,
+		thousandBoundEntries.work.analysisWorkItems - oneBoundEntry.work.analysisWorkItems === 5_994,
 	`${thousandBoundEntries.work.analysisWorkItems} against ${oneBoundEntry.work.analysisWorkItems}`,
 );
 const duplicateRefOrderBoard = (count) =>
@@ -5758,6 +5758,104 @@ for (const count of [1, 7]) {
 		`${diagnosed.work.inputUnits} against ${emptyGroupWork}`,
 	);
 }
+const groupClassificationBoard = (count, mode) => [
+	{
+		...(mode === "coverage" ? { id: "group-coverage" } : {}),
+		type: "rectangle",
+		x: 0,
+		y: 0,
+		width: 10,
+		height: 10,
+		angle: mode === "coverage" ? 0.5 : 0,
+		groupIds: Array.from({ length: count }, (_, index) => (index === 0 ? "g" : null)),
+	},
+];
+const groupClassificationDeltas = new Map();
+for (const mode of ["identity", "coverage"]) {
+	const one = inspectBoardDiagnostics(groupClassificationBoard(1, mode));
+	const thousand = inspectBoardDiagnostics(groupClassificationBoard(1_000, mode));
+	groupClassificationDeltas.set(mode, thousand.work.analysisWorkItems - one.work.analysisWorkItems);
+	check(
+		`${mode} group classification claims every supplied entry`,
+		thousand.work.analysisWorkItems - one.work.analysisWorkItems === 999 &&
+			(mode === "identity"
+				? thousand.report.findings.some(
+						(finding) =>
+							finding.reason === "invalid-element-identity" &&
+							finding.details.intendedRoles.includes("qualifying-group-body"),
+					)
+				: thousand.report.findings.some(
+						(finding) => finding.reason === "rotation" && finding.affectsCoverage,
+					)),
+		JSON.stringify({ one: one.work.analysisWorkItems, thousand: thousand.work.analysisWorkItems }),
+	);
+}
+
+const labelMembershipBoard = (missingCount, textCount) => {
+	const missing = Array.from({ length: missingCount }, (_, index) => ({
+		id: `m${index.toString(36)}`,
+		type: "text",
+	}));
+	return [
+		{
+			id: "o",
+			type: "rectangle",
+			x: 0,
+			y: 0,
+			width: 20,
+			height: 20,
+			angle: 0,
+			groupIds: ["label-membership"],
+			boundElements: missing,
+		},
+		...Array.from({ length: textCount }, (_, index) => ({
+			id: `t${index.toString(36)}`,
+			type: "text",
+			x: 9,
+			y: 9,
+			width: 2,
+			height: 2,
+			angle: 0,
+			fontFamily: 5,
+			text: "x",
+			containerId: "o",
+		})),
+	];
+};
+const labelMembershipOne = inspectBoardDiagnostics(labelMembershipBoard(1, 1));
+const labelMembershipThousand = inspectBoardDiagnostics(labelMembershipBoard(1_000, 1));
+check(
+	"label planning claims each bound entry and exact indexed membership candidate",
+	labelMembershipThousand.work.analysisWorkItems - labelMembershipOne.work.analysisWorkItems ===
+		21_996,
+	JSON.stringify({
+		one: labelMembershipOne.work.analysisWorkItems,
+		thousand: labelMembershipThousand.work.analysisWorkItems,
+	}),
+);
+const labelMembershipControl = inspectBoardDiagnostics(labelMembershipBoard(600, 600));
+const labelMembershipLimit = inspectBoardDiagnostics(labelMembershipBoard(6_000, 6_000));
+check(
+	"label repair membership and drift traversal stay budgeted at the public seam",
+	!labelMembershipControl.report.findings.some(
+		(finding) => finding.reason === "analysis-work-ceiling",
+	) &&
+		labelMembershipControl.work.analysisWorkItems < INSPECTION_ANALYSIS_WORK_LIMIT &&
+		labelMembershipLimit.work.inputUnits < INSPECTION_INPUT_COMPLEXITY_LIMIT &&
+		labelMembershipLimit.work.analysisWorkItems === INSPECTION_ANALYSIS_WORK_LIMIT &&
+		labelMembershipLimit.report.findings.filter(
+			(finding) => finding.reason === "analysis-work-ceiling",
+		).length === 1,
+	JSON.stringify({ control: labelMembershipControl.work, limit: labelMembershipLimit.work }),
+);
+check(
+	"large legal grouped input reaches the analysis ceiling rather than returning clean",
+	labelMembershipLimit.report.coverage === "indeterminate" &&
+		!labelMembershipLimit.report.clean &&
+		labelMembershipLimit.report.findings.some(
+			(finding) => finding.reason === "analysis-work-ceiling",
+		),
+);
 {
 	const exactBoundaryId = "x".repeat(4_999_891);
 	const diagnosed = inspectBoardDiagnostics([groupMeteringBody([], exactBoundaryId)]);
@@ -5802,6 +5900,10 @@ const noteFor = (board, elements) =>
 		),
 	);
 noteFor("rejected-group-limit", [oversizedBoundElementsRecord]);
+noteFor("group-classification-identity", groupClassificationBoard(1_000, "identity"));
+noteFor("group-classification-coverage", groupClassificationBoard(1_000, "coverage"));
+noteFor("label-membership-control", labelMembershipBoard(600, 600));
+noteFor("label-membership-limit", labelMembershipBoard(6_000, 6_000));
 const noteForEscapedControls = (board, elements) => {
 	const controls = new Set();
 	JSON.stringify(elements, (_key, value) => {
@@ -6396,6 +6498,52 @@ for (const board of ["label-created-at-forward", "label-created-at-reverse"]) {
 		`status=${persistedLabelRun.status} stderr=${persistedLabelRun.stderr} duplicate=${JSON.stringify(duplicate?.details)}`,
 	);
 }
+for (const [board, reason] of [
+	["group-classification-identity", "invalid-element-identity"],
+	["group-classification-coverage", "rotation"],
+]) {
+	const result = run(board, ["--strict"]);
+	const parsed = result.stdout ? JSON.parse(result.stdout) : null;
+	check(
+		`${board} preserves budget-aware group applicability through the package`,
+		result.status === 8 &&
+			result.stderr === "" &&
+			CheckResultSchema.safeParse(parsed).success &&
+			parsed.findings.some((finding) => finding.reason === reason),
+		`status=${result.status} stderr=${result.stderr}`,
+	);
+}
+const labelMembershipControlRun = run("label-membership-control", ["--strict"]);
+const labelMembershipControlResult = labelMembershipControlRun.stdout
+	? JSON.parse(labelMembershipControlRun.stdout)
+	: null;
+check(
+	"persisted 600-by-600 label membership control completes below analysis limit",
+	labelMembershipControlRun.status === 7 &&
+		labelMembershipControlRun.stderr === "" &&
+		CheckResultSchema.safeParse(labelMembershipControlResult).success &&
+		!labelMembershipControlResult.findings.some(
+			(finding) => finding.reason === "analysis-work-ceiling",
+		),
+);
+const labelMembershipLimitNormal = run("label-membership-limit");
+const labelMembershipLimitStrict = run("label-membership-limit", ["--strict"]);
+const labelMembershipLimitResult = labelMembershipLimitNormal.stdout
+	? JSON.parse(labelMembershipLimitNormal.stdout)
+	: null;
+check(
+	"persisted 6,000-by-6,000 label membership board stops at one analysis limit",
+	labelMembershipLimitNormal.status === 0 &&
+		labelMembershipLimitStrict.status === 8 &&
+		labelMembershipLimitNormal.stderr === "" &&
+		labelMembershipLimitStrict.stderr === "" &&
+		labelMembershipLimitNormal.stdout === labelMembershipLimitStrict.stdout &&
+		CheckResultSchema.safeParse(labelMembershipLimitResult).success &&
+		labelMembershipLimitResult.findings.filter(
+			(finding) => finding.reason === "analysis-work-ceiling",
+		).length === 1 &&
+		labelMembershipLimitResult.coverage === "indeterminate",
+);
 check(
 	"package JSON parses through exported schema",
 	CheckResultSchema.safeParse(cleanPackageResult).success &&
@@ -6552,6 +6700,66 @@ for (const [label, , expected] of obstacleIdentityCases) {
 			statuses: runs.map((result) => result.status),
 			ids: persistedObstacleIds.map((ids) => Array.from(ids)),
 		}),
+	);
+	const step28OwnerInventory = [
+		{
+			family: "records",
+			owner: "record-analysis/classify-records",
+			evidence:
+				duplicateRefOrderLarge.work.analysisWorkItems >
+				duplicateRefOrderSmall.work.analysisWorkItems,
+		},
+		{
+			family: "groupIds",
+			owner: "record-analysis/classify-records and container-boundary/aggregate-model",
+			evidence:
+				groupClassificationDeltas.get("identity") === 999 &&
+				groupClassificationDeltas.get("coverage") === 999,
+		},
+		{
+			family: "boundElements",
+			owner: "record-analysis/classify-records",
+			evidence:
+				thousandBoundEntries.work.analysisWorkItems - oneBoundEntry.work.analysisWorkItems ===
+				5_994,
+		},
+		{
+			family: "paths and segments",
+			owner: "record-analysis/classify-records and connector passes/prepare-events",
+			evidence: repeatedPathDiagnostics.work.pathSegmentChecks === repeatedPathPoints.length - 1,
+		},
+		{
+			family: "label membership and drift",
+			owner: "record-analysis/classify-records and record-analysis/order-events",
+			evidence:
+				labelMembershipThousand.work.analysisWorkItems -
+					labelMembershipOne.work.analysisWorkItems ===
+				21_996,
+		},
+		{
+			family: "hierarchy, events, and candidates",
+			owner: "node-hierarchy and collision passes",
+			evidence:
+				hierarchyFanout.analysisWorkItems === hierarchyFanoutCount * 3 + hierarchyFanoutSortWork &&
+				overlappingBoundaryRetention.analysisLimit?.phase === "activate-or-expire",
+		},
+		{
+			family: "model aggregates",
+			owner: "node-hierarchy and container-boundary/aggregate-model",
+			evidence: largeUngroupedDiagnostics.work.analysisWorkItems > 0,
+		},
+		{
+			family: "refs, points, and findings",
+			owner: "finding-finalization/finalize-findings",
+			evidence:
+				duplicateRefFinding?.elements.every((element, index) => element.sourceIndex === index) ===
+				true,
+		},
+	];
+	check(
+		"step-28 owner inventory pins every inspection domain collection family",
+		step28OwnerInventory.length === 8 && step28OwnerInventory.every((entry) => entry.evidence),
+		JSON.stringify(step28OwnerInventory),
 	);
 }
 const exactOrderRun = run("exact-order-controls");

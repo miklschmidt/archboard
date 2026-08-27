@@ -1,4 +1,9 @@
-import { boundTextDrift, labelAnchorOf, planLabelRepair } from "../../engine/labels.js";
+import {
+	boundTextDrift,
+	labelAnchorOf,
+	planLabelRepair,
+	type LabelTraversalClaims,
+} from "../../engine/labels.js";
 import { measureLinear } from "../../engine/geometry.js";
 import type {
 	COLLISION_PASSES,
@@ -241,7 +246,7 @@ function identityRoles(record: DecodedRecord, budget: InspectionBudget): Intende
 	if (metadata && "node" in metadata) roles.add("semantic-node-member");
 	if (type === "rectangle" || type === "ellipse" || type === "diamond") {
 		if (libraryAttribution(record)?.valid) roles.add("valid-library-body");
-		if (groupIds(record).length > 0) roles.add("qualifying-group-body");
+		if (groupIds(record, budget).length > 0) roles.add("qualifying-group-body");
 		roles.add("node-overlap-body");
 	}
 	if (type === "text") {
@@ -1287,7 +1292,11 @@ const KNOWN_ELEMENT_TYPES = new Set([
 	"freedraw",
 ]);
 
-function hasCoverageRoleEvidence(record: DecodedRecord, hasIncomingReference: boolean): boolean {
+function hasCoverageRoleEvidence(
+	record: DecodedRecord,
+	hasIncomingReference: boolean,
+	budget: InspectionBudget,
+): boolean {
 	const raw = record.raw;
 	const metadata = archboardMetadata(record);
 	const malformedClosedAngle =
@@ -1301,7 +1310,7 @@ function hasCoverageRoleEvidence(record: DecodedRecord, hasIncomingReference: bo
 		record.type === "line" ||
 		record.type === "text" ||
 		libraryAttribution(record) !== null ||
-		groupIds(record).length > 0 ||
+		groupIds(record, budget).length > 0 ||
 		(metadata !== null && "node" in metadata) ||
 		raw?.boundElements !== undefined ||
 		raw?.containerId !== undefined ||
@@ -1315,6 +1324,7 @@ function unsupportedGeometryFindings(
 	record: DecodedRecord,
 	raw: RawRecord,
 	hasIncomingReference: boolean,
+	budget: InspectionBudget,
 ): InspectionFinding[] {
 	const findings: InspectionFinding[] = [];
 	if (
@@ -1322,7 +1332,7 @@ function unsupportedGeometryFindings(
 		record.type !== "line" &&
 		raw.angle !== undefined &&
 		raw.angle !== 0 &&
-		hasCoverageRoleEvidence(record, hasIncomingReference)
+		hasCoverageRoleEvidence(record, hasIncomingReference, budget)
 	)
 		findings.push(
 			make({
@@ -1345,7 +1355,7 @@ function unsupportedGeometryFindings(
 	const canonicalType = typeof rawType === "string" && rawType.length > 0;
 	if (
 		(!canonicalType || !KNOWN_ELEMENT_TYPES.has(typeof rawType === "string" ? rawType : "")) &&
-		hasCoverageRoleEvidence(record, hasIncomingReference)
+		hasCoverageRoleEvidence(record, hasIncomingReference, budget)
 	) {
 		const rawTypeDescription = typeof rawType === "string" ? rawType : stableDescription(rawType);
 		findings.push(
@@ -1424,6 +1434,7 @@ function structuralFindings(
 					record,
 					raw,
 					record.id !== null && incomingReferences.has(record.id),
+					budget,
 				),
 			);
 		} catch (error) {
@@ -1439,26 +1450,37 @@ function labelFindings(
 	model: InspectionModel,
 	budget: InspectionBudget,
 ): InspectionFinding[] {
-	budget.claimWork("record-analysis", "classify-records", records.length * 2);
-	const valid = records
-		.filter((r) => r.live && r.raw && r.usableId && r.id && r.type)
-		.map((r) => r.raw!) as unknown as Array<Record<string, unknown>>;
+	budget.claimWork("record-analysis", "classify-records", records.length);
+	const valid: Array<Record<string, unknown>> = [];
+	for (const record of records)
+		if (record.live && record.raw && record.usableId && record.id && record.type)
+			valid.push(record.raw);
 	const findings: InspectionFinding[] = [];
 	const byId = model.byId;
-	let boundEntryCount = 0;
-	for (const record of valid)
-		if (Array.isArray(record.boundElements)) boundEntryCount += record.boundElements.length;
-	budget.claimWork("record-analysis", "classify-records", boundEntryCount);
-	const plan = planLabelRepair(valid as never);
+	const emit = (finding: InspectionFinding): void => {
+		budget.claimWork("record-analysis", "classify-records");
+		findings.push(finding);
+	};
+	const labelClaims: LabelTraversalClaims = {
+		claim(_collection, count) {
+			budget.claimWork("record-analysis", "classify-records", count);
+		},
+		claimSort(length) {
+			budget.claimSort("record-analysis", "order-events", length);
+		},
+	};
+	const plan = planLabelRepair(valid as never, labelClaims);
+	budget.claimWork("record-analysis", "classify-records", plan.duplicates.length);
 	for (const duplicate of plan.duplicates)
 		budget.claimSort("finding-finalization", "finalize-findings", duplicate.remove.length);
 	for (const duplicate of plan.duplicates) {
+		budget.claimWork("record-analysis", "classify-records", duplicate.remove.length);
 		const involved = [
 			byId.get(duplicate.containerId),
 			byId.get(duplicate.keep),
 			...duplicate.remove.map((id) => byId.get(id)),
 		].filter((r): r is DecodedRecord => !!r);
-		findings.push(
+		emit(
 			make({
 				code: "LABEL_CORRUPTION",
 				reason: "duplicate",
@@ -1475,12 +1497,13 @@ function labelFindings(
 			}),
 		);
 	}
+	budget.claimWork("record-analysis", "classify-records", plan.orphanIds.length);
 	for (const textId of plan.orphanIds) {
 		const text = byId.get(textId);
 		const containerId =
 			typeof text?.raw?.containerId === "string" ? text.raw.containerId : "unknown";
 		if (text)
-			findings.push(
+			emit(
 				make({
 					code: "LABEL_CORRUPTION",
 					reason: "orphan",
@@ -1493,7 +1516,9 @@ function labelFindings(
 				}),
 			);
 	}
-	for (const drift of boundTextDrift(valid as never)) {
+	const drifted = boundTextDrift(valid as never, labelClaims);
+	budget.claimWork("record-analysis", "classify-records", drifted.length);
+	for (const drift of drifted) {
 		const text = byId.get(drift.textId),
 			container = byId.get(drift.containerId);
 		if (!text || !container) continue;
@@ -1501,7 +1526,7 @@ function labelFindings(
 		const centre = text.box
 			? { x: text.box.x + text.box.width / 2, y: text.box.y + text.box.height / 2 }
 			: null;
-		findings.push(
+		emit(
 			make({
 				code: "LABEL_CORRUPTION",
 				reason: "drift",
@@ -1520,9 +1545,10 @@ function labelFindings(
 			}),
 		);
 	}
+	budget.claimWork("record-analysis", "classify-records", records.length);
 	for (const record of records.filter((r) => r.live && r.raw && r.id)) {
 		if (record.type !== "text" && record.raw?.label && typeof record.raw.label === "object")
-			findings.push(
+			emit(
 				make({
 					code: "LABEL_CORRUPTION",
 					reason: "persisted-seed",
@@ -1535,7 +1561,7 @@ function labelFindings(
 				}),
 			);
 		if (record.type !== "text" && typeof record.raw?.text === "string")
-			findings.push(
+			emit(
 				make({
 					code: "LABEL_CORRUPTION",
 					reason: "persisted-seed",
@@ -1548,6 +1574,7 @@ function labelFindings(
 				}),
 			);
 	}
+	budget.claimWork("record-analysis", "classify-records", model.labelOwnership.size);
 	for (const ownership of model.labelOwnership.values()) {
 		const textId = ownership.labelId;
 		const text = byId.get(textId);
@@ -1555,7 +1582,7 @@ function labelFindings(
 		if (ownership.state === "forward-only" && ownership.forwardOwnerId) {
 			const owner = byId.get(ownership.forwardOwnerId);
 			if (owner)
-				findings.push(
+				emit(
 					make({
 						code: "LABEL_CORRUPTION",
 						reason: "missing-reciprocal",
@@ -1571,11 +1598,12 @@ function labelFindings(
 		if (
 			ownership.state === "reverse-only" ||
 			(!ownership.forwardOwnerId && ownership.state === "conflicting")
-		)
+		) {
+			budget.claimWork("record-analysis", "classify-records", ownership.reverseOwnerIds.length);
 			for (const ownerId of ownership.reverseOwnerIds) {
 				const owner = byId.get(ownerId);
 				if (!owner) continue;
-				findings.push(
+				emit(
 					make({
 						code: "LABEL_CORRUPTION",
 						reason: "missing-reciprocal",
@@ -1588,15 +1616,20 @@ function labelFindings(
 					}),
 				);
 			}
+		}
 		if (ownership.state !== "conflicting") continue;
 		const primaryOwnerId = ownership.forwardOwnerId ?? ownership.reverseOwnerIds[0];
 		if (!primaryOwnerId) continue;
-		const other = ownership.candidateOwnerIds.filter((owner) => owner !== primaryOwnerId);
-		const involved = [text, ...ownership.candidateOwnerIds.map((id) => byId.get(id))].filter(
-			(record): record is DecodedRecord => !!record,
-		);
+		budget.claimWork("record-analysis", "classify-records", ownership.candidateOwnerIds.length);
+		const other: string[] = [];
+		const involved: DecodedRecord[] = [text];
+		for (const ownerId of ownership.candidateOwnerIds) {
+			if (ownerId !== primaryOwnerId) other.push(ownerId);
+			const owner = byId.get(ownerId);
+			if (owner) involved.push(owner);
+		}
 		if (ownership.forwardOwnerId)
-			findings.push(
+			emit(
 				make({
 					code: "BROKEN_REFERENCE",
 					reason: "conflicting-bound-label-owner",
@@ -1612,7 +1645,7 @@ function labelFindings(
 					affected: affectedOf(involved),
 				}),
 			);
-		findings.push(
+		emit(
 			make({
 				code: "LABEL_CORRUPTION",
 				reason: "conflicting-owner",

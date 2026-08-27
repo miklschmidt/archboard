@@ -93,6 +93,19 @@ export interface LabelledElement {
 	points?: readonly (readonly number[])[] | null;
 }
 
+export type LabelTraversalCollection =
+	| "records"
+	| "bound-elements"
+	| "forward-membership"
+	| "label-graph"
+	| "path-points";
+
+/** Optional domain-level claims used by inspection; production callers need no adapter. */
+export interface LabelTraversalClaims {
+	claim(collection: LabelTraversalCollection, count: number): void;
+	claimSort(length: number): void;
+}
+
 function isText(element: LabelledElement | undefined): boolean {
 	return !!element && element.type === "text";
 }
@@ -120,7 +133,11 @@ export function labelSeedOf(element: LabelledElement): string | undefined {
  * leftover. The container's own list is consulted first, so the first id in
  * each group is the text Excalidraw actually draws.
  */
-export function boundTextsByContainer(elements: readonly LabelledElement[]): Map<string, string[]> {
+export function boundTextsByContainer(
+	elements: readonly LabelledElement[],
+	claims?: LabelTraversalClaims,
+): Map<string, string[]> {
+	claims?.claim("records", elements.length);
 	const byId = new Map<string, LabelledElement>();
 	for (const element of elements) {
 		if (element && typeof element.id === "string" && live(element)) byId.set(element.id, element);
@@ -137,8 +154,10 @@ export function boundTextsByContainer(elements: readonly LabelledElement[]): Map
 		else found.set(container, [textId]);
 	};
 
+	claims?.claim("records", elements.length);
 	for (const element of elements) {
 		if (!live(element) || !Array.isArray(element.boundElements)) continue;
+		claims?.claim("bound-elements", element.boundElements.length);
 		for (const ref of element.boundElements) {
 			if (ref?.type !== "text" || typeof ref.id !== "string") continue;
 			if (!isText(byId.get(ref.id))) continue;
@@ -146,6 +165,7 @@ export function boundTextsByContainer(elements: readonly LabelledElement[]): Map
 		}
 	}
 
+	claims?.claim("records", elements.length);
 	for (const element of elements) {
 		if (!live(element) || !isText(element)) continue;
 		const container = element.containerId;
@@ -359,18 +379,25 @@ export interface BoundTextDrift {
  * pixels off. It is a label the board left behind entirely, hundreds of pixels
  * from the thing it names, dragging the scene's bounding box with it.
  */
-export function boundTextDrift(elements: readonly LabelledElement[]): BoundTextDrift[] {
+export function boundTextDrift(
+	elements: readonly LabelledElement[],
+	claims?: LabelTraversalClaims,
+): BoundTextDrift[] {
+	claims?.claim("records", elements.length);
 	const byId = new Map<string, LabelledElement>();
 	for (const element of elements) {
 		if (element && typeof element.id === "string") byId.set(element.id, element);
 	}
 
 	const drifted: BoundTextDrift[] = [];
-	for (const [containerId, textIds] of boundTextsByContainer(elements)) {
+	const labelled = boundTextsByContainer(elements, claims);
+	claims?.claim("label-graph", labelled.size);
+	for (const [containerId, textIds] of labelled) {
 		const container = byId.get(containerId);
 		if (!container) continue;
 		const anchor = labelAnchorOf(container);
 		if (!anchor) continue;
+		claims?.claim("label-graph", textIds.length);
 		for (const textId of textIds) {
 			const text = byId.get(textId);
 			if (!text) continue;
@@ -380,6 +407,8 @@ export function boundTextDrift(elements: readonly LabelledElement[]): BoundTextD
 			const centreX = x + (num(text.width) ?? 0) / 2;
 			const centreY = y + (num(text.height) ?? 0) / 2;
 			const distance = Math.hypot(centreX - anchor.x, centreY - anchor.y);
+			if (isLinear(container) && Array.isArray(container.points))
+				claims?.claim("path-points", container.points.length);
 			const allowed = anchorSlack(container);
 			if (distance <= allowed) continue;
 			drifted.push({
@@ -392,6 +421,7 @@ export function boundTextDrift(elements: readonly LabelledElement[]): BoundTextD
 			});
 		}
 	}
+	claims?.claimSort(drifted.length);
 	return drifted.toSorted((a, b) => b.distance - a.distance);
 }
 
@@ -429,25 +459,40 @@ export interface LabelRepairPlan {
  * was lost in a sync), the oldest text wins: it is the original, and the copies
  * are what the loop added.
  */
-export function planLabelRepair(elements: readonly LabelledElement[]): LabelRepairPlan {
+export function planLabelRepair(
+	elements: readonly LabelledElement[],
+	claims?: LabelTraversalClaims,
+): LabelRepairPlan {
+	claims?.claim("records", elements.length);
 	const byId = new Map<string, LabelledElement>();
 	for (const element of elements) {
 		if (element && typeof element.id === "string") byId.set(element.id, element);
 	}
 
-	const labelled = boundTextsByContainer(elements);
+	const labelled = boundTextsByContainer(elements, claims);
 	const duplicates: DuplicateLabel[] = [];
 	const removeIds: string[] = [];
 	const rebind: Array<{ id: string; boundElements: BoundRef[] }> = [];
 
+	claims?.claim("label-graph", labelled.size);
 	for (const [containerId, textIds] of labelled) {
 		const container = byId.get(containerId);
 		if (!container) continue;
 
-		const named = Array.isArray(container.boundElements)
-			? container.boundElements.find((ref) => ref?.type === "text" && textIds.includes(ref.id))
-			: undefined;
+		claims?.claim("label-graph", textIds.length);
+		const textIdSet = new Set(textIds);
+		let named: Readonly<BoundRef> | undefined;
+		if (Array.isArray(container.boundElements))
+			for (const ref of container.boundElements) {
+				claims?.claim("forward-membership", 1);
+				if (ref?.type === "text" && textIdSet.has(ref.id)) {
+					named = ref;
+					break;
+				}
+			}
+		if (!named) claims?.claim("label-graph", textIds.length);
 		const keep = named?.id ?? oldest(textIds, byId);
+		claims?.claim("label-graph", textIds.length);
 		const remove = textIds.filter((id) => id !== keep);
 
 		if (remove.length > 0) {
@@ -464,20 +509,30 @@ export function planLabelRepair(elements: readonly LabelledElement[]): LabelRepa
 		// Rewrite the container's list whenever it names a doomed text or fails to
 		// name the keeper. Arrow bindings in the same list are left alone.
 		const current = Array.isArray(container.boundElements) ? container.boundElements : [];
+		claims?.claim("label-graph", remove.length);
 		const gone = new Set(remove);
-		const wanted: BoundRef[] = [
-			...current.filter((ref) => ref && ref.type !== "text"),
-			{ id: keep, type: "text" },
-		];
-		const namesDoomed = current.some((ref) => ref && gone.has(ref.id));
-		const namesKeeper = current.some((ref) => ref?.type === "text" && ref.id === keep);
-		const extraTexts = current.filter((ref) => ref?.type === "text").length > 1;
+		claims?.claim("bound-elements", current.length);
+		const wanted: BoundRef[] = [];
+		let namesDoomed = false,
+			namesKeeper = false,
+			textCount = 0;
+		for (const ref of current) {
+			if (!ref) continue;
+			if (gone.has(ref.id)) namesDoomed = true;
+			if (ref.type === "text") {
+				textCount += 1;
+				if (ref.id === keep) namesKeeper = true;
+			} else wanted.push(ref);
+		}
+		wanted.push({ id: keep, type: "text" });
+		const extraTexts = textCount > 1;
 		if (namesDoomed || !namesKeeper || extraTexts) {
 			rebind.push({ id: containerId, boundElements: wanted });
 		}
 	}
 
 	const orphanIds: string[] = [];
+	claims?.claim("records", elements.length);
 	for (const element of elements) {
 		if (!isText(element) || !live(element)) continue;
 		const container = element.containerId;
