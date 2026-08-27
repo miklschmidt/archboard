@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-27 06:04'
+updated_date: '2026-08-27 06:16'
 labels:
   - ready-for-agent
 dependencies:
@@ -631,6 +631,14 @@ Two fresh on-demand contract generations were byte-identical: `cli-command-audit
 2026-08-27 final semantic-inventory validation: source checkpoint cd82ff7 and evidence checkpoint 094093f passed complete bun run check and a separate complete bun run test without retries or waivers. Each chain ran all four browser suites sequentially/headlessly: human-performance reconciliation [0,0], fixed point 0 of 13 changed elements, both typed-text rename interactions preserved, and live-session convergence 42 of 42 cycles. Two on-demand contract generations were byte-identical: cli-command-audit.md c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, command-contract-proof.json 2269f2c96ab9db9ccca5390a09f1187f78f66b82fd4c3d0a40d1c7142670a895, command-contract-proof.md c578b4ba5740e392df1451ba8ca5a268e968d4cd8a058839b272496f92780bcd. The three views remain absent under docs/design/generated and precisely ignored; canonical docs/design/cli-command-audit.json remains tracked. git diff --check passes. TASK-119 remains In Progress with all nine acceptance criteria unchecked for independent rereview.
 
 Step 29 implementation (2026-08-27): committed 3a1c0ec after the separate approved-plan record 317622f. Removed the failed universal analysis-work guarantee and its schema, formatter, diagnostics, detector/model/sweep/label claim plumbing, tests, and documentation. Input accounting now belongs solely to the inert snapshot owner; public schema-v1 limits are exactly inputComplexityUnits=1,000,000 and broadPhaseComparisons=2,000,000. Preserved snapshot safety/fidelity, deterministic semantic algorithms, exact comparison counting, partial findings at the comparison stop, structural label-pair identity, createdAt label selection, hierarchy/obstacle/geometry fixes, and coarse development diagnostics. Focused evidence green: type-check, lint, boundaries, module-scope, contracts (58 proofs/58 audited paths/978 checks), inspection (722 checks), geometry (89), labels (183), branch, and CLI (34 commands/579 checks). Two on-demand generation runs were byte-identical, contained no removed schema token, left ignored views absent, and retained canonical docs/design/cli-command-audit.json. Two stable fix passes were proven before the final focused assertion; full validation remains to run. Residual risk is now explicit: the retained limits are capacity safeguards, not a general runtime/asymptotic/hang/DoS guarantee.
+
+### 2026-08-27 step-29 final validation
+
+Approved-plan commit `317622f`, source/docs/test checkpoint `3a1c0ec`, and focused evidence checkpoint `d42b5cd` complete the removal of the failed analysis-work guarantee. Two final `bun run fix` passes left the committed tree unchanged (empty-status SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`). Complete `bun run check` passed, followed by a separate complete `bun run test`; both chains ran all four browser suites sequentially/headlessly without retry or waiver: human-performance reconciliation `[0,0]`, fixed point 0 of 13 changed elements, both typed-text rename interactions preserved, and live-session convergence 42 of 42 cycles.
+
+Focused retained evidence passed: inspection 722 checks, contracts 58 proofs/58 audited paths/978 checks, CLI 34 commands/579 checks, geometry 89, labels 183, boundaries, module scope, branch compare, input snapshot safety/boundaries, exact 1,516,200 comparison completion, attempt 2,000,001 stop, and preservation of an earlier finding exactly once. The comparison schema rejects wrong fixed values and unknown passes; schemas reject the removed limit key/reason.
+
+Two fresh on-demand generations were byte-identical and excluded every removed token: `cli-command-audit.md` c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, `command-contract-proof.json` 8b442bf53937bbccfa475213eb16a40ed6b07c0c1a4b72b441102d5e36bf0adc, and `command-contract-proof.md` 64e9849f609a4d00a64ef7c3cba41aa6044592ccbb20331e78cbdbd109c5a7e5. The ignored derived views remain absent; canonical `docs/design/cli-command-audit.json` remains tracked. All deleted analysis symbols are absent outside Backlog history, `git diff --check` passes, and the worktree was clean before this CLI-authored note. TASK-119 remains In Progress with all nine acceptance criteria unchecked for independent rereview. Residual risk is the approved step-29 truth: valid capped input can still induce superlinear semantic work, and external termination produces no report.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -698,5 +706,11 @@ author: codex
 created: 2026-08-27 06:04
 ---
 Step 29 source migration is implemented at 3a1c0ec. TASK-119 remains In Progress with all acceptance criteria unchecked pending full validation and independent rereview.
+---
+
+author: codex
+created: 2026-08-27 06:16
+---
+Step 29 complete validation passed. TASK-119 remains intentionally In Progress with every acceptance criterion unchecked for fixed-base rereview.
 ---
 <!-- COMMENTS:END -->
