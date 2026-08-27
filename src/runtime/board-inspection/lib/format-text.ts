@@ -181,6 +181,17 @@ function verifyLabelOverlap(finding: FindingFor<"LABEL_OVERLAP">): void {
 	}
 }
 
+function verifyBridgeProvenance(finding: FindingFor<"BRIDGE_PROVENANCE_INVALID">): void {
+	const { reason } = finding;
+	switch (reason) {
+		case "incomplete-decoration":
+		case "stale-decoration":
+			return;
+		default:
+			return assertNever(reason);
+	}
+}
+
 function verifyClosedFinding(finding: InspectionFinding): void {
 	switch (finding.code) {
 		case "INVALID_RENDER_GEOMETRY":
@@ -209,6 +220,8 @@ function verifyClosedFinding(finding: InspectionFinding): void {
 			return verifyNodeOverlap(finding);
 		case "LABEL_OVERLAP":
 			return verifyLabelOverlap(finding);
+		case "BRIDGE_PROVENANCE_INVALID":
+			return verifyBridgeProvenance(finding);
 		default:
 			return assertNever(finding);
 	}

@@ -2,6 +2,27 @@ import { z } from "zod";
 
 import { compareIdentity, obstacleIdentity } from "./lib/ordering.js";
 
+export const BridgeIncompleteIssueSchema = z.enum([
+	"malformed-metadata",
+	"missing-mask",
+	"missing-redraw",
+	"duplicate-mask",
+	"duplicate-redraw",
+	"conflicting-facts",
+	"mask-id-mismatch",
+	"non-line-part",
+]);
+export const BridgeStaleIssueSchema = z.enum([
+	"missing-source",
+	"unsupported-source",
+	"crossing-moved",
+	"style-mismatch",
+	"geometry-mismatch",
+	"z-order-invalid",
+]);
+export type BridgeIncompleteIssue = z.infer<typeof BridgeIncompleteIssueSchema>;
+export type BridgeStaleIssue = z.infer<typeof BridgeStaleIssueSchema>;
+
 export const COLLISION_PASSES = [
 	"connector-node",
 	"connector-obstacle",
@@ -133,6 +154,7 @@ const severityByCode = {
 	CONNECTOR_INTERSECTION_UNMARKED: "error",
 	NODE_OVERLAP: "error",
 	LABEL_OVERLAP: "error",
+	BRIDGE_PROVENANCE_INVALID: "error",
 } as const;
 
 const variant = <
@@ -515,6 +537,14 @@ const ambiguous = [
 ] as const;
 
 const layoutFindings = [
+	variant("BRIDGE_PROVENANCE_INVALID", "incomplete-decoration", false, {
+		bridgeId: z.string().min(1).nullable(),
+		issue: BridgeIncompleteIssueSchema,
+	}),
+	variant("BRIDGE_PROVENANCE_INVALID", "stale-decoration", false, {
+		bridgeId: z.string().min(1),
+		issue: BridgeStaleIssueSchema,
+	}),
 	variant("INSPECTION_LIMIT_EXCEEDED", "broad-phase-comparison-ceiling", true, {
 		limit: z.literal(2_000_000),
 		attempted: z.literal(2_000_001),
@@ -622,9 +652,10 @@ export const FindingCodeSchema = z.enum([
 	"CONNECTOR_INTERSECTION_UNMARKED",
 	"NODE_OVERLAP",
 	"LABEL_OVERLAP",
+	"BRIDGE_PROVENANCE_INVALID",
 ]);
 export const InspectionReportSchema = z.strictObject({
-	schemaVersion: z.literal(1),
+	schemaVersion: z.literal(2),
 	success: z.literal(true),
 	policy: InspectionPolicySchema,
 	limits: z.strictObject({
