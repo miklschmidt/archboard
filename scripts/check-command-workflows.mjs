@@ -30,6 +30,12 @@ function check(condition, message, detail = "") {
 
 const fingerprint = { elements: 2, note: "a".repeat(64), version: 17 };
 const element = (id, type = "rectangle", x = 0, y = 0) => ({ id, type, x, y });
+const addElementsFixture = {
+	success: true,
+	count: 2,
+	elements: [element("node-a"), element("node-b", "ellipse", 20, 0)],
+	fingerprint,
+};
 const crossingReport = inspectBoard([
 	{
 		...element("cross-a", "line"),
@@ -113,12 +119,7 @@ const cases = {
 	"add-element-ids": {
 		producer: "add",
 		consumers: ["promote", "arrange align"],
-		fixture: {
-			success: true,
-			count: 2,
-			elements: [element("node-a"), element("node-b", "ellipse", 20, 0)],
-			fingerprint,
-		},
+		fixture: addElementsFixture,
 		jq: ["-c"],
 		expected: '["node-a","node-b"]\n',
 	},
@@ -128,6 +129,13 @@ const cases = {
 		fixture: [element("query-a"), element("query-b", "diamond", 40, 0)],
 		jq: ["-c"],
 		expected: '["query-a","query-b"]\n',
+	},
+	"comma-separated-add-element-ids": {
+		producer: "add",
+		consumers: ["promote", "arrange align"],
+		fixture: addElementsFixture,
+		jq: ["-r"],
+		expected: "node-a,node-b\n",
 	},
 	"library-element-ids": {
 		producer: "library insert",
@@ -217,6 +225,10 @@ check(
 	jqBlocks.size === Object.keys(cases).length,
 	"guide has exactly the tested jq examples",
 	String(jqBlocks.size),
+);
+check(
+	!/(?:^|[^\w-])jq(?:\s|$)/m.test(guide.replace(jqPattern, "")),
+	"guide has no jq invocation outside a marked tested example",
 );
 
 for (const [id, testCase] of Object.entries(cases)) {
