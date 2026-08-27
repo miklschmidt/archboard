@@ -135,6 +135,7 @@ import {
 	humanWriteAnswer,
 	BoardMutationError,
 	elementMutation,
+	SCENE_REPLACEMENT_MARKER,
 	writeBoard,
 } from "../../../runtime/engine/board-write.js";
 import type { BoardWriteRequest, BoardWriteTarget } from "../../../runtime/engine/board-write.js";
@@ -1411,6 +1412,17 @@ app.put("/api/elements/:id", (req: Request, res: Response) => {
 	}
 });
 
+function clearSelectionForBoard(boardKeyToClear: string): void {
+	for (const [clientId] of selectionState.byClient) {
+		if (paneBoards.get(clientId) === boardKeyToClear) selectionState.byClient.delete(clientId);
+	}
+	const owner = selectionState.current?.clientId;
+	if (owner && paneBoards.get(owner) === boardKeyToClear) {
+		selectionState.current = null;
+		broadcastSelection();
+	}
+}
+
 // Clear all elements (must be before /:id route)
 app.delete("/api/elements/clear", (req: Request, res: Response) => {
 	try {
@@ -1429,14 +1441,7 @@ app.delete("/api/elements/clear", (req: Request, res: Response) => {
 			afterPersist: ({ value }) => {
 				// Nothing is on this board, so nothing on it can be selected in any
 				// pane showing it. A pane on another board keeps its pick.
-				for (const [clientId] of selectionState.byClient) {
-					if (paneBoards.get(clientId) === source.key) selectionState.byClient.delete(clientId);
-				}
-				const owner = selectionState.current?.clientId;
-				if (owner && paneBoards.get(owner) === source.key) {
-					selectionState.current = null;
-					broadcastSelection();
-				}
+				clearSelectionForBoard(source.key);
 				logger.info(`Canvas cleared: ${value.count} elements removed from board "${source.key}"`);
 			},
 			answer: ({ value }) => ({
@@ -1569,7 +1574,8 @@ app.get("/api/elements/:id", (req: Request, res: Response) => {
 app.post("/api/elements/batch", (req: Request, res: Response) => {
 	try {
 		const source = boardTargetFromRequest(req, "Creating elements");
-		const { elements: elementsToCreate } = req.body;
+		const { elements: elementsToCreate, files: replacementFiles, mutation } = req.body ?? {};
+		const replacesScene = mutation === SCENE_REPLACEMENT_MARKER;
 
 		if (!Array.isArray(elementsToCreate)) {
 			return res.status(400).json({
@@ -1577,14 +1583,23 @@ app.post("/api/elements/batch", (req: Request, res: Response) => {
 				error: "Expected an array of elements",
 			});
 		}
+		if (replacesScene && !Array.isArray(replacementFiles)) {
+			return res.status(400).json({
+				success: false,
+				error: "Expected an array of files for scene replacement",
+			});
+		}
+		const replacementFileList = Array.isArray(replacementFiles) ? replacementFiles : [];
 
 		answerBoardWrite(res, {
 			source,
 			origin: "agent",
 			mutation: elementMutation<{ count: number }>(() => ({
 				input: { upserts: elementsToCreate, origin: "agent" },
+				...(replacesScene ? { replaceScene: { files: replacementFileList } } : {}),
 				value: (applied) => ({ count: applied.created.length }),
 			})),
+			...(replacesScene ? { afterPersist: () => clearSelectionForBoard(source.key) } : {}),
 			answer: ({ content, value, delta, written }) => ({
 				success: true,
 				board: source.key,

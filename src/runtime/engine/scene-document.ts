@@ -64,7 +64,7 @@ export async function importScene(options: {
 	data: string;
 	mode: "replace" | "merge";
 }): Promise<ImportResult> {
-	const { batchCreateElementsOnCanvas, clearCanvas, postFiles } =
+	const { batchCreateElementsOnCanvas, postFiles, replaceSceneOnCanvas } =
 		await import("./canvas-client.js");
 	let raw = options.data;
 	if (isObsidianExcalidrawMd(raw)) raw = extractSceneJsonFromObsidianMd(raw);
@@ -79,22 +79,22 @@ export async function importScene(options: {
 			: [];
 	if (elements.length === 0) throw new Error("No elements found in the import data");
 
-	if (options.mode === "replace") await clearCanvas();
-	const created = await batchCreateElementsOnCanvas(elements);
+	const importFiles = sceneRecord.files;
+	const files = importFiles && typeof importFiles === "object" ? Object.values(importFiles) : [];
+	const created =
+		options.mode === "replace"
+			? await replaceSceneOnCanvas(elements, files)
+			: await batchCreateElementsOnCanvas(elements);
 	if (!created)
 		throw new Error("Import failed: canvas rejected the batch create (elements were not restored)");
 
-	let fileCount = 0;
-	const importFiles = sceneRecord.files;
-	if (importFiles && typeof importFiles === "object") {
-		const files = Object.values(importFiles);
-		if (files.length > 0) {
-			try {
-				await postFiles(files);
-				fileCount = files.length;
-			} catch {
-				/* best effort */
-			}
+	let fileCount = options.mode === "replace" ? files.length : 0;
+	if (options.mode === "merge" && files.length > 0) {
+		try {
+			await postFiles(files);
+			fileCount = files.length;
+		} catch {
+			/* best effort */
 		}
 	}
 	return { count: elements.length, fileCount, mode: options.mode };

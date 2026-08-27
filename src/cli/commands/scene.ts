@@ -279,13 +279,13 @@ export const importContract = defineCommand({
 			method: "POST",
 			path: "/api/elements/batch",
 			cardinality: "one",
-			description: "Merge imported elements",
+			description: "Append a merge or atomically replace imported elements and files",
 		},
 		{
-			method: "DELETE",
-			path: "/api/elements/clear",
+			method: "POST",
+			path: "/api/files",
 			cardinality: "conditional",
-			description: "Clear before replace import",
+			description: "Best-effort embedded files after a merge import",
 		},
 	],
 	async handler(input, context) {
