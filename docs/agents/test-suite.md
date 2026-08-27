@@ -57,6 +57,10 @@ every element and field Excalidraw changed. **It reports zero, and zero is
 asserted** (TASK-072): what archboard writes is a document Excalidraw does not
 change. About eleven seconds plus the build.
 
+The same fixed-point document includes one bridge created through the product route. Its mask and
+redraw metadata, unbound line geometry, styling, and z-order therefore make the same single
+sequential headless renderer round trip; TASK-120 adds no pixel or two-pane browser suite.
+
 It also owns the renderer half of malformed-geometry recovery (TASK-117). The
 check starts with malformed auto-resizing Helvetica text in the persisted
 scratch note. It proves the server still listens, the shell shows the board
@@ -165,7 +169,9 @@ note archboard did not write. About fifteen seconds.
   a general complexity bound. Direct and persisted package cases prove the input and broad-phase
   comparison limit findings, strict/non-strict exits, deterministic rendering, preservation of
   completed findings at the comparison stop, and the absence of diagnostic counters from product
-  output.
+  output. TASK-120 adds the schema-v2 bridge matrix: strict metadata, incomplete/stale provenance,
+  exact one-crossing suppression, a second unmarked crossing, and unchanged architecture/compare/
+  describe bytes for valid decoration parts.
 
 ## Wire and lock checks
 

@@ -151,7 +151,7 @@ each side. If IEEE-754 arithmetic cannot represent all four exact deltas,
 coverage, so strict mode exits 8. A null `affectedBBox` still means the record
 has no finite x/y location.
 
-Schema-v1 obstacle references derive `id` from `elementIds`; callers cannot choose it. The schema
+Schema-v2 obstacle references derive `id` from `elementIds`; callers cannot choose it. The schema
 requires `elementIds` and `groupIds` to be unique and exactly sorted, and requires library entries
 to have unique element IDs in the same order. Sort the
 constituent IDs by exact ECMAScript UTF-16 code-unit order, replace each backslash with `\\` and
@@ -170,6 +170,17 @@ the number of semantically eligible x-overlapping pairs tested before the
 y-axis and exact predicates. Heap, event, expiry, compatibility-index, hierarchy-index, and
 path-filter work are private implementation mechanics. They do not enter the check contract or its
 JSON and text results.
+
+Schema v2 also owns bridge provenance. A valid bridge is exactly one unbound, ungrouped mask line
+whose element ID equals `bridgeId` and one redraw line carrying identical eight-field facts except
+for `role`. Inspection validates the recorded source IDs, segment indexes, canonical crossing,
+derived geometry and style, and z-order before suppressing that one proper crossing. Incomplete and
+stale candidates produce the closed `BRIDGE_PROVENANCE_INVALID` finding and suppress nothing.
+
+`bridge` and `bridge remove` each have one REST relationship and enter the ordinary locked write
+boundary once. Creation requires an explicit opaque `#RRGGBB` background and plans the two generated
+parts inside the mutation; removal resolves the strict provenance pair there and deliberately does
+not require its sources to remain present or unchanged.
 
 ## CLI-only compatibility
 
@@ -205,7 +216,8 @@ prerequisite contacts, REST and local effects, and artifact commits. The CLI
 checker replays every record against HEAD. The immutable migration record still covers its original
 57 paths. Current metadata covers 60, with `check` marked as introduced by TASK-119 and both
 bridge paths marked as introduced by TASK-120. General-help
-compatibility removes only the new `check` command line and its check-only exit line before hashing.
+compatibility removes the new `check` and `bridge` command lines and the check-only exit line before
+hashing.
 Help hashes cover all 57 migration paths; the
 ordered records cover the approved status, board-save, immediate-diagnostic,
 binding-resolution, and late-validation cases.

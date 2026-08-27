@@ -2,6 +2,7 @@ import {
 	FindingCodeSchema,
 	InspectionPolicyInputSchema,
 	InspectionPolicySchema,
+	InspectionFindingSchema,
 	InspectionReportSchema,
 	type InspectionPolicy,
 	type InspectionPolicyInput,
@@ -234,12 +235,7 @@ function bridgeInvalidFinding(
 	});
 	const evidence = invalid.elements.map((element) => snapshotEvidence(element as unknown as SnapshotRecord)).find(Boolean) ?? null;
 	const focus = focusBox(evidence);
-	return {
-		code: "BRIDGE_PROVENANCE_INVALID",
-		reason: invalid.reason,
-		severity: "error",
-		affectsCoverage: false,
-		details: { bridgeId: invalid.bridgeId, issue: invalid.issue } as never,
+	const shared = {
 		message: `Bridge ${invalid.bridgeId ?? "candidate"} has ${invalid.reason.replace("-", " ")} (${invalid.issue}).`,
 		elements,
 		nodes: [],
@@ -247,7 +243,26 @@ function bridgeInvalidFinding(
 		points: [],
 		affectedBBox: evidence,
 		focusBBox: focus.kind === "representable" ? focus.box : null,
-	} as InspectionFinding;
+	};
+	return InspectionFindingSchema.parse(
+		invalid.reason === "incomplete-decoration"
+			? {
+					code: "BRIDGE_PROVENANCE_INVALID",
+					reason: invalid.reason,
+					severity: "error",
+					affectsCoverage: false,
+					details: { bridgeId: invalid.bridgeId, issue: invalid.issue },
+					...shared,
+				}
+			: {
+					code: "BRIDGE_PROVENANCE_INVALID",
+					reason: invalid.reason,
+					severity: "error",
+					affectsCoverage: false,
+					details: { bridgeId: invalid.bridgeId, issue: invalid.issue },
+					...shared,
+				},
+	);
 }
 
 /** Inspect a persisted board as raw records. This function has no side effects. */

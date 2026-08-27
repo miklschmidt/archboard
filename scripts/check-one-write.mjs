@@ -872,6 +872,18 @@ try {
 	);
 	assert(createdBridge.code === 0, `bridge create failed: ${createdBridge.err}`);
 	const bridgeId = JSON.parse(createdBridge.out).bridgeId;
+	await api("POST", `/api/elements/changes${board}`, {
+		upserts: [],
+		deletes: ["bridge-over", "bridge-under"],
+		origin: "agent",
+	});
+	const orphanedBridge = await byId();
+	assert(
+		!orphanedBridge.has("bridge-over") &&
+			!orphanedBridge.has("bridge-under") &&
+			orphanedBridge.has(bridgeId),
+		"the bridge fixture did not become orphaned before removal",
+	);
 	const removedBridge = await counting("removing both bridge parts", () =>
 		cli(["bridge", "remove", bridgeId, "--board", "scratch"]),
 	);
