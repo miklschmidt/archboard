@@ -18,6 +18,11 @@ import {
 	type SnapshotRecord,
 } from "./lib/input-snapshot.js";
 import { compareIdentity } from "./lib/ordering.js";
+import {
+	validateBridgeDecorations,
+	type InvalidBridgeDecoration,
+} from "./bridge.js";
+import type { ServerElement } from "../engine/types.js";
 
 export {
 	CheckResultSchema,
@@ -50,6 +55,15 @@ export type {
 export { formatInspectionText } from "./lib/format-text.js";
 export { BROAD_PHASE_COMPARISON_LIMIT } from "./lib/detectors.js";
 export { INSPECTION_INPUT_COMPLEXITY_LIMIT } from "./lib/input-snapshot.js";
+export {
+	BridgeIncompleteIssueSchema,
+	BridgeMetadataSchema,
+	BridgeRoleSchema,
+	BridgeStaleIssueSchema,
+	planBridgeCreate,
+	planBridgeRemoval,
+	validateBridgeDecorations,
+} from "./bridge.js";
 
 export const DEFAULT_INSPECTION_POLICY: InspectionPolicy = Object.freeze({
 	allowedFontFamilies: Object.freeze([5]) as unknown as [5],
@@ -190,7 +204,7 @@ function assembleReport(input: {
 	].toSorted(compareIdentity);
 	const coverage = coverageReasons.length > 0 ? ("indeterminate" as const) : ("complete" as const);
 	return InspectionReportSchema.parse({
-		schemaVersion: 1,
+		schemaVersion: 2,
 		success: true,
 		policy: input.policy,
 		limits: {
@@ -208,6 +222,32 @@ function assembleReport(input: {
 		coverageReasons,
 		findings: input.findings,
 	});
+}
+
+function bridgeInvalidFinding(
+	invalid: InvalidBridgeDecoration,
+	sourceIndexOf: ReadonlyMap<ServerElement, number>,
+): InspectionFinding {
+	const elements = invalid.elements.map((element) => {
+		const sourceIndex = sourceIndexOf.get(element) ?? 0;
+		return { id: element.id || null, type: element.type || null, sourceIndex };
+	});
+	const evidence = invalid.elements.map((element) => snapshotEvidence(element as unknown as SnapshotRecord)).find(Boolean) ?? null;
+	const focus = focusBox(evidence);
+	return {
+		code: "BRIDGE_PROVENANCE_INVALID",
+		reason: invalid.reason,
+		severity: "error",
+		affectsCoverage: false,
+		details: { bridgeId: invalid.bridgeId, issue: invalid.issue } as never,
+		message: `Bridge ${invalid.bridgeId ?? "candidate"} has ${invalid.reason.replace("-", " ")} (${invalid.issue}).`,
+		elements,
+		nodes: [],
+		obstacles: [],
+		points: [],
+		affectedBBox: evidence,
+		focusBBox: focus.kind === "representable" ? focus.box : null,
+	} as InspectionFinding;
 }
 
 /** Inspect a persisted board as raw records. This function has no side effects. */
@@ -230,8 +270,24 @@ export function inspectBoard(
 			broadPhaseComparisons: 0,
 		});
 	}
-	const decoded = decodeRecords(snapshot.records, snapshot.blockedSourceIndexes);
-	const detection = detectBoard(decoded, policy, inputFindings);
+	const candidates: ServerElement[] = [];
+	const sourceIndexOf = new Map<ServerElement, number>();
+	for (const [sourceIndex, record] of snapshot.records.entries()) {
+		if (!record || snapshot.blockedSourceIndexes.has(sourceIndex)) continue;
+		const element = record as unknown as ServerElement;
+		candidates.push(element);
+		sourceIndexOf.set(element, sourceIndex);
+	}
+	const bridges = validateBridgeDecorations(candidates);
+	const decorationIndexes = new Set(snapshot.blockedSourceIndexes);
+	for (const pair of bridges.valid)
+		for (const part of [pair.mask.element, pair.redraw.element]) {
+			const sourceIndex = sourceIndexOf.get(part);
+			if (sourceIndex !== undefined) decorationIndexes.add(sourceIndex);
+		}
+	const bridgeFindings = bridges.invalid.map((invalid) => bridgeInvalidFinding(invalid, sourceIndexOf));
+	const decoded = decodeRecords(snapshot.records, decorationIndexes);
+	const detection = detectBoard(decoded, policy, [...inputFindings, ...bridgeFindings], bridges.valid);
 	return assembleReport({
 		policy,
 		findings: detection.findings,

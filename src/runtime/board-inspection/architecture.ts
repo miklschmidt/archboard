@@ -2,6 +2,7 @@ import type { ServerElement } from "../engine/types.js";
 import { boundingBoxOf, boxOf, type Box } from "../engine/layout.js";
 import { labelOf } from "../engine/promote.js";
 import { type ArchboardBlock, nodeIdOf, readElementMetadata } from "../engine/metadata.js";
+import { withoutValidBridgeDecorations } from "./bridge.js";
 
 export interface ArchitectureNode {
 	readonly node: string;
@@ -95,7 +96,7 @@ function mergedMetadata(
  * labels, connectors, footprints, and endpoint resolution.
  */
 export function architectureFacts(elements: readonly ServerElement[]): ArchitectureFacts {
-	const all = [...elements];
+	const all = withoutValidBridgeDecorations(elements);
 	const byId = new Map(all.map((element) => [element.id, element]));
 	const confirmedBoundLabelIds = new Set<string>();
 	for (const element of all) {

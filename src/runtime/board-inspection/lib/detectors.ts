@@ -45,6 +45,7 @@ import {
 	type SweepWork,
 } from "./interval-sweep.js";
 import { compareIdentity, compareIdentityLists } from "./ordering.js";
+import type { ValidBridgeDecoration } from "../bridge.js";
 
 export const BROAD_PHASE_COMPARISON_LIMIT = 2_000_000 as const;
 
@@ -115,6 +116,7 @@ const CODE_ORDER = [
 	"CONNECTOR_INTERSECTION_UNMARKED",
 	"NODE_OVERLAP",
 	"LABEL_OVERLAP",
+	"BRIDGE_PROVENANCE_INVALID",
 ];
 
 const REASON_ORDER = [
@@ -173,6 +175,8 @@ const REASON_ORDER = [
 	"leaf-footprint-overlap",
 	"label-node-overlap",
 	"label-label-overlap",
+	"incomplete-decoration",
+	"stale-decoration",
 ] as const;
 
 function make(input: FindingInput): InspectionFinding {
@@ -1655,6 +1659,7 @@ function collisionFindings(
 	segments: readonly Segment[],
 	policy: InspectionPolicy,
 	result: CollisionResult,
+	validBridges: readonly ValidBridgeDecoration[],
 ): CollisionResult {
 	const findings = result.findings;
 	const counter: { value: number; limited: boolean; pass: CollisionPass | null } = {
@@ -1819,7 +1824,28 @@ function collisionFindings(
 			true,
 			(a, b) => {
 				const hit = intersectSegments(a.a, a.b, b.a, b.b, policy.intersectionTolerance);
-				if (hit.kind === "proper")
+				const suppressed =
+					hit.kind === "proper" &&
+					validBridges.some(({ mask }) => {
+						const bridge = mask.metadata;
+						const direct =
+							a.connectorId === bridge.overConnectorId &&
+							a.index === bridge.overSegmentIndex &&
+							b.connectorId === bridge.underConnectorId &&
+							b.index === bridge.underSegmentIndex;
+						const reverse =
+							b.connectorId === bridge.overConnectorId &&
+							b.index === bridge.overSegmentIndex &&
+							a.connectorId === bridge.underConnectorId &&
+							a.index === bridge.underSegmentIndex;
+						const canonical = point(hit.point);
+						return (
+							(direct || reverse) &&
+							canonical.x === bridge.crossing.x &&
+							canonical.y === bridge.crossing.y
+						);
+					});
+				if (hit.kind === "proper" && !suppressed)
 					findings.push(
 						make({
 							code: "CONNECTOR_INTERSECTION_UNMARKED",
@@ -2134,6 +2160,7 @@ export function detectBoard(
 	records: readonly DecodedRecord[],
 	policy: InspectionPolicy,
 	initialFindings: readonly InspectionFinding[] = [],
+	validBridges: readonly ValidBridgeDecoration[] = [],
 ): DetectionResult {
 	const findings = [...initialFindings];
 	findings.push(...renderFindings(records), ...identityFindings(records));
@@ -2146,7 +2173,7 @@ export function detectBoard(
 		broadPhaseComparisons: 0,
 		sweepWork: emptySweepWork(),
 		terminalLimit: null,
-	});
+	}, validBridges);
 	findings.push(...collisions.findings);
 	findings.push(...coordinateSpanFindings(records, model, findings));
 	findings.push(...focusPaddingFindings(findings));
