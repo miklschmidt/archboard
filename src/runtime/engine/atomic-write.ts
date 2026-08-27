@@ -88,10 +88,13 @@ export function writeFileAtomicExclusive(file: string, data: string | Buffer): v
 	const tmp = tempPathFor(file);
 	let handle: number | undefined;
 	let committed = false;
+	let committedIdentity: { dev: number; ino: number } | undefined;
 	try {
 		handle = fs.openSync(tmp, "w");
 		fs.writeFileSync(handle, data);
 		fs.fsyncSync(handle);
+		const tempStats = fs.fstatSync(handle);
+		committedIdentity = { dev: tempStats.dev, ino: tempStats.ino };
 		fs.closeSync(handle);
 		handle = undefined;
 		fs.linkSync(tmp, file);
@@ -100,7 +103,7 @@ export function writeFileAtomicExclusive(file: string, data: string | Buffer): v
 			fs.unlinkSync(tmp);
 		} catch {
 			// A transient cleanup failure after the hard-link commit is not a
-			// publication failure. Retry once before deciding whether to undo it.
+			// publication failure. Retry once before verifying the committed name.
 			fs.unlinkSync(tmp);
 		}
 		fsyncDir(path.dirname(file));
@@ -113,22 +116,26 @@ export function writeFileAtomicExclusive(file: string, data: string | Buffer): v
 			}
 		}
 		if (committed) {
+			let destinationStillOwnsCommit = false;
 			try {
-				fs.unlinkSync(file);
-				committed = false;
+				const destinationStats = fs.lstatSync(file);
+				destinationStillOwnsCommit =
+					committedIdentity !== undefined &&
+					destinationStats.dev === committedIdentity.dev &&
+					destinationStats.ino === committedIdentity.ino;
 			} catch {
-				// The complete destination is already public and could not be
-				// removed. Reporting failure would leave a valid manifest without
-				// stdout, so this publication is success. Temp cleanup stays best
-				// effort in this exceptional branch.
-				try {
-					fs.unlinkSync(tmp);
-				} catch {
-					/* destination is the authoritative committed name */
-				}
+				/* missing or no longer the inode this call committed */
+			}
+			try {
+				fs.unlinkSync(tmp);
+			} catch {
+				/* cleanup remains best effort after the committed link */
+			}
+			if (destinationStillOwnsCommit) {
 				fsyncDir(path.dirname(file));
 				return;
 			}
+			throw error;
 		}
 		try {
 			fs.unlinkSync(tmp);
