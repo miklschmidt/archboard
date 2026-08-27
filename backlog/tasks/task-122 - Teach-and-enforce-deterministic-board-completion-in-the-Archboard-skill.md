@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:19'
-updated_date: '2026-08-27 15:40'
+updated_date: '2026-08-27 15:52'
 labels:
   - ready-for-agent
 dependencies:
@@ -69,6 +69,12 @@ Implementation checkpoint (2026-08-27):
 - architecture-workflow now owns the concise conceptual model for multipart promoted nodes, grouped/library obstacles, container and endpoint/zone exclusions, unsupported coverage, intentional bridges, whole-board rechecks, human-state preservation, and distinct evidence tools.
 - 46abc2f adds exactly one composite consequence eval linked to the existing inspection, branch, and side-by-side graders. The dense fixture now proves all unrelated grouped, stencil, and decoration records remain byte-identical across the route-only change; install evidence compares every modified tracked skill file byte-for-byte.
 - Focused gates green: skill lint, code lint, type-check, inspection 838, branch, side-by-side, contracts 61 paths/1011 plus workflows 93, install 136, CLI 630, one-write 81, doing 39, lock 120, version 65, sync byte identity, and git diff --check. TASK-122 remains In Progress with every acceptance criterion unchecked.
+
+Final implementation validation (2026-08-27):
+- Two consecutive bun run fix passes were byte-stable and left an empty diff; skill lint ran inside both.
+- Complete bun run check passed, followed by a separate complete bun run test. All four browser suites ran sequentially and headless in each chain without retry; the existing fixed-point lane remained unchanged.
+- Two on-demand contract generations in owned temporary directories produced byte-identical cli-command-audit.md, command-contract-proof.json, and command-contract-proof.md. The three ignored checkout views remain absent and canonical cli-command-audit.json remains tracked.
+- cli-workflows.md is byte-identical to the fixed base. Final fixed-range git diff --check passed; TASK-122 remains In Progress with all six acceptance criteria unchecked for independent review.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
