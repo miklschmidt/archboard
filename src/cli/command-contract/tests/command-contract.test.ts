@@ -522,15 +522,70 @@ describe("command-contract public interface", () => {
 		expect(fs.readdirSync(directory)).toEqual(["manifest.json"]);
 	});
 
-	test("a persistent manifest temp cleanup failure removes the committed manifest before error", async () => {
-		const directory = temporaryPath("manifest-cleanup-rollback");
+	test("persistent manifest temp cleanup succeeds only while the destination keeps its inode", async () => {
+		const directory = temporaryPath("manifest-cleanup-owned");
 		const { mkdirSync } = await import("node:fs");
 		mkdirSync(directory);
 		const nativeUnlink = fs.unlinkSync.bind(fs);
 		let manifestTempAttempts = 0;
+		let manifestDestinationAttempts = 0;
 		const unlink = spyOn(fs, "unlinkSync").mockImplementation((file) => {
-			if (String(file).includes(".manifest.json.") && manifestTempAttempts++ < 2)
+			if (String(file).endsWith("manifest.json")) {
+				manifestDestinationAttempts++;
+				throw new Error("the committed destination must not be cleanup");
+			}
+			if (String(file).includes(".manifest.json.")) {
+				manifestTempAttempts++;
 				throw new Error("synthetic persistent post-link cleanup failure");
+			}
+			return nativeUnlink(file);
+		});
+		let execution;
+		try {
+			execution = await executePublic(
+				proofContract({
+					result: { complete: true },
+					resultSchema: z.object({ complete: z.literal(true) }),
+					file: true,
+					artifact: {
+						path: directory,
+						encoding: "files",
+						files: [],
+						manifest: { name: "manifest.json", content: "{}\n" },
+					},
+				}),
+			);
+		} finally {
+			unlink.mockRestore();
+		}
+		expect(execution?.error).toBeUndefined();
+		expect(execution?.stdout).toBe('{\n  "complete": true\n}\n');
+		expect(readFileSync(join(directory, "manifest.json"), "utf8")).toBe("{}\n");
+		expect(manifestTempAttempts).toBe(3);
+		expect(manifestDestinationAttempts).toBe(0);
+		const manifestStats = fs.statSync(join(directory, "manifest.json"));
+		const tempName = fs
+			.readdirSync(directory)
+			.find((name) => name.includes(".manifest.json."));
+		expect(tempName).toBeDefined();
+		const tempStats = fs.statSync(join(directory, tempName!));
+		expect([manifestStats.dev, manifestStats.ino]).toEqual([tempStats.dev, tempStats.ino]);
+	});
+
+	test("a vanished manifest destination fails after persistent temp cleanup", async () => {
+		const directory = temporaryPath("manifest-cleanup-vanished");
+		const { mkdirSync } = await import("node:fs");
+		mkdirSync(directory);
+		const destination = join(directory, "manifest.json");
+		const nativeUnlink = fs.unlinkSync.bind(fs);
+		let manifestTempAttempts = 0;
+		const unlink = spyOn(fs, "unlinkSync").mockImplementation((file) => {
+			if (String(file).includes(".manifest.json.")) {
+				manifestTempAttempts++;
+				if (manifestTempAttempts === 2) nativeUnlink(destination);
+				if (manifestTempAttempts <= 2)
+					throw new Error("synthetic persistent post-link cleanup failure");
+			}
 			return nativeUnlink(file);
 		});
 		let execution;
@@ -553,8 +608,51 @@ describe("command-contract public interface", () => {
 		}
 		expect(execution?.error).toBeDefined();
 		expect(execution?.stdout).toBe("");
-		expect(existsSync(join(directory, "manifest.json"))).toBeFalse();
+		expect(existsSync(destination)).toBeFalse();
 		expect(fs.readdirSync(directory)).toEqual([]);
+	});
+
+	test("a foreign manifest replacement survives persistent temp cleanup failure", async () => {
+		const directory = temporaryPath("manifest-cleanup-replaced");
+		const { mkdirSync } = await import("node:fs");
+		mkdirSync(directory);
+		const destination = join(directory, "manifest.json");
+		const nativeUnlink = fs.unlinkSync.bind(fs);
+		let manifestTempAttempts = 0;
+		const unlink = spyOn(fs, "unlinkSync").mockImplementation((file) => {
+			if (String(file).includes(".manifest.json.")) {
+				manifestTempAttempts++;
+				if (manifestTempAttempts === 2) {
+					nativeUnlink(destination);
+					writeFileSync(destination, "foreign\n");
+				}
+				if (manifestTempAttempts <= 2)
+					throw new Error("synthetic persistent post-link cleanup failure");
+			}
+			return nativeUnlink(file);
+		});
+		let execution;
+		try {
+			execution = await executePublic(
+				proofContract({
+					result: { complete: true },
+					resultSchema: z.object({ complete: z.literal(true) }),
+					file: true,
+					artifact: {
+						path: directory,
+						encoding: "files",
+						files: [],
+						manifest: { name: "manifest.json", content: "{}\n" },
+					},
+				}),
+			);
+		} finally {
+			unlink.mockRestore();
+		}
+		expect(execution?.error).toBeDefined();
+		expect(execution?.stdout).toBe("");
+		expect(readFileSync(destination, "utf8")).toBe("foreign\n");
+		expect(fs.readdirSync(directory)).toEqual(["manifest.json"]);
 	});
 
 	test("a mid-set artifact failure leaves no manifest or stdout", async () => {
