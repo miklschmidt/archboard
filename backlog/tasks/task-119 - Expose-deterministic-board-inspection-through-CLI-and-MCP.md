@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-27 03:38'
+updated_date: '2026-08-27 03:55'
 labels:
   - ready-for-agent
 dependencies:
@@ -604,6 +604,12 @@ Two fresh on-demand contract generations were byte-identical: `cli-command-audit
 - Collision analysis carries an explicit comparison-terminal state. After comparison 2,000,001 wins, only non-budgeted deterministic report closure runs, so a later finalization workload cannot emit an analysis ceiling.
 - The comparison-limit schema fixes limit=2,000,000, attempted=2,000,001, and the closed collision-pass vocabulary.
 - Focused evidence: test:inspection 714/714, type-check, lint, boundaries, module-scope, contracts 58 paths/978 checks, geometry 89, labels 183, branch, and CLI 579 are green. Two fix passes were byte-stable at diff SHA-256 50ac7a5c55a98636f27cc84dd591dd397b990628d4a07e561c22503e791c3358. Full check/test validation remains pending.
+
+Final validation for the 2026-08-27 consolidated remediation:
+- bun run check passed the complete chain, including four sequential headless browser suites.
+- The first separate bun run test reached the documented human-performance reconciliation flake at [0,0,2]; the isolated human-performance diagnosis immediately passed [0,0], and the required complete bun run test rerun then passed, including human performance [0,0], fixed point 0/13 changed, typed-text, and live session 42/42. No gate was waived.
+- Two on-demand contract generations were byte-identical: cli-command-audit.md c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, command-contract-proof.json 2269f2c96ab9db9ccca5390a09f1187f78f66b82fd4c3d0a40d1c7142670a895, command-contract-proof.md c578b4ba5740e392df1451ba8ca5a268e968d4cd8a058839b272496f92780bcd. Derived views are absent/ignored; canonical docs/design/cli-command-audit.json remains tracked.
+- git diff --check and clean-tree/task-state verification remain as final read-only checks. TASK-119 remains In Progress with all acceptance criteria unchecked.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
