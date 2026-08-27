@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:19'
-updated_date: '2026-08-27 13:22'
+updated_date: '2026-08-27 13:35'
 labels:
   - ready-for-agent
 dependencies:
@@ -104,6 +104,13 @@ Independent-review closure from HEAD 1be771e:
 - 046c3b1 computes the canonical hydrated-file contribution before strict render admission. An ADR-0017 attachment byte change now moves sourceFingerprint even when invalid geometry keeps renderScene null and produces source-not-renderable entries.
 
 Focused owners green: command-contract public runner 27 tests and 161 expectations, lint, type-check, and the complete server/socket board suite including the unrenderable hydrated attachment case. Final repository validation remains pending.
+
+Final remediation validation:
+- Two consecutive `bun run fix` passes were byte-stable after committing the formatter-only projection layout; the distributable skill validator passed inside both commands.
+- `bun run check` passed completely. `bun run test` then passed separately and completely. All four browser suites ran sequentially and headless in each chain without a retry.
+- On-demand contract views generated twice into separate owned temporary directories with identical bytes; the three derived checkout views remain absent and ignored, while the canonical audit JSON remains tracked.
+- Focused evidence remains green: 27 command-contract tests / 161 expectations, `test:boards`, type-check, lint, 836 inspection checks, 61 contract proofs, and the fixed-point focused-rendering pixel/immutability evidence.
+- Final repository hygiene pending only the committed note, `git diff --check`, task-state confirmation, and clean-tree confirmation.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
