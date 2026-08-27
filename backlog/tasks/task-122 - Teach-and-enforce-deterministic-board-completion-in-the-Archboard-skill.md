@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:19'
-updated_date: '2026-08-27 15:27'
+updated_date: '2026-08-27 15:40'
 labels:
   - ready-for-agent
 dependencies:
@@ -60,6 +60,16 @@ Delete stale cached command, result, exit, REST, and MCP documentation from the 
 
 5. Run sync:skills; skill lint; inspection, branch, side-by-side, contracts, install, one-write, doing, lock, and version gates; type-check and generated-ownership checks; two stable fix passes; bun run check; a separate bun run test with browser lanes serial/headless; then independent fixed-range Standards and Spec review.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation checkpoint (2026-08-27):
+- baed511 replaces the 846-line skill entry with a 196-line main path and completion gate, and reduces the cheatsheet from 182 lines to 47 stable visual defaults. Removed cached command/result/exit/order/REST documentation, ordinary same-board save rituals, per-write screenshot checks, viewport-as-crop claims, and curved/elbow routing guidance. cli-workflows.md is unchanged and remains the tested chain owner.
+- architecture-workflow now owns the concise conceptual model for multipart promoted nodes, grouped/library obstacles, container and endpoint/zone exclusions, unsupported coverage, intentional bridges, whole-board rechecks, human-state preservation, and distinct evidence tools.
+- 46abc2f adds exactly one composite consequence eval linked to the existing inspection, branch, and side-by-side graders. The dense fixture now proves all unrelated grouped, stencil, and decoration records remain byte-identical across the route-only change; install evidence compares every modified tracked skill file byte-for-byte.
+- Focused gates green: skill lint, code lint, type-check, inspection 838, branch, side-by-side, contracts 61 paths/1011 plus workflows 93, install 136, CLI 630, one-write 81, doing 39, lock 120, version 65, sync byte identity, and git diff --check. TASK-122 remains In Progress with every acceptance criterion unchecked.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
