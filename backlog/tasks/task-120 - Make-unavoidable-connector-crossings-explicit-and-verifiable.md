@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:18'
-updated_date: '2026-08-27 10:58'
+updated_date: '2026-08-27 11:10'
 labels:
   - ready-for-agent
 dependencies:
@@ -91,6 +91,8 @@ TASK-119 inspection schema v2 validates bridge provenance, suppresses only an ex
 2026-08-27 second-rereview validation: two final bun run fix passes were byte-stable. Focused inspection (830), CLI (606), contracts (60 paths/1000), one-write (81), geometry (89), labels (183), boundaries, module-scope, branch, doing, version, and lock passed. The first bun run check hit the documented human-performance sampling race; its isolated rerun passed without source changes, then the required complete bun run check rerun and separate complete bun run test both passed, including all four browser suites sequential/headless and the bridge fixed point. On-demand contract generation --check passed; the three ignored derived views were removed and canonical audit JSON remains tracked. TASK stays In Progress with all AC unchecked for fixed-base rereview.
 
 2026-08-27 final Standards remediation checkpoint: bridge line matching now compares the strict customData.archboard projection while ignoring unrelated top-level plugin customData as required by ADR 0003. Direct raw-record tests cover latex on mask and redraw across validateBridgeDecorations, inspectBoard, architectureFacts, compare, and describe, with a product-owned archboard.node control remaining stale and suppressing nothing. Focused lint, type-check, inspection (833), and branch compare are green. Full repository validation remains.
+
+2026-08-27 final Standards remediation validation: unrelated top-level customData is ignored by canonical bridge-part validation while customData.archboard remains a closed product-owned projection. Direct raw-record coverage proves mask and redraw variants stay valid and are filtered consistently by validateBridgeDecorations, inspectBoard, architectureFacts, compare, and describe, with compare and describe bytes matching the canonical case. A nearby customData.archboard.node control remains stale provenance and suppresses nothing. Focused lint, type-check, inspection (833 checks), and branch gates passed. bun run fix passed twice with a byte-stable clean second pass. Complete bun run check and a separate complete bun run test passed, including all four browser suites sequentially and headless; CLI reports 606 checks and contract generation reports 60 current paths with the immutable 57-path subset. On-demand contract generation check passed; its three ignored views were removed afterward. TASK-120 remains In Progress with acceptance criteria unchecked for independent review.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
