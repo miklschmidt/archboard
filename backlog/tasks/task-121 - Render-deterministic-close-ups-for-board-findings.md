@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:19'
-updated_date: '2026-08-27 13:44'
+updated_date: '2026-08-27 13:56'
 labels:
   - ready-for-agent
 dependencies:
@@ -116,6 +116,12 @@ AC7 ownership remediation from HEAD dbc0ac8:
 - a95d5cf removes destination unlink from post-link temp cleanup. writeFileAtomicExclusive retains the synced temp device/inode, retries only the temp unlink, and accepts persistent cleanup failure only when lstat proves the destination still names the committed inode. A missing or replaced destination fails with no stdout; a foreign replacement remains untouched.
 - Public-runner evidence covers transient cleanup success, persistent cleanup with an identity-matching destination, destination disappearance, and foreign replacement. Existing EEXIST collision, unexpected-member refusal, mid-set partial PNG, manifest-last, and stdout-last cases remain green.
 - Focused checkpoint: 29 command-contract tests / 172 expectations, type-check, lint, and git diff --check passed. Full validation remains pending.
+
+AC7 ownership remediation final validation:
+- Two consecutive `bun run fix` passes produced the same diff hash after the formatter-only checkpoint; the distributable skill validator passed inside both commands.
+- On-demand contract generation matched byte-for-byte across two owned temporary destinations. The three derived checkout views remain absent and ignored; canonical audit JSON remains tracked.
+- `bun run check` passed completely. A separate complete `bun run test` then passed. All four browser suites ran sequentially and headless in each chain without retry.
+- Final focused totals remain 29 command-contract tests / 172 expectations in the direct owner and 37 contract/rendering tests / 199 expectations in the repository chain, plus 836 inspection checks, 61 contract proofs, and unchanged fixed-point focused-rendering evidence.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
