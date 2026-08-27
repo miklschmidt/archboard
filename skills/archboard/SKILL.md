@@ -3,844 +3,194 @@ name: archboard
 description: >-
   Architecture canvas for comparing a system as it is against a proposed
   change, drawn as Excalidraw boards a human and an agent edit together on a
-  live canvas. Use when an agent needs to (1) draw a system's current
-  architecture on a named board, (2) branch it into a proposal variant and
-  diff the two, (3) read back what a human rearranged and treat the
-  rearrangement as design intent, (4) place stencils from the shared shape
-  library, (5) promote shapes into architecture nodes bound to code, or (6)
-  draw and refine any diagram: element CRUD, alignment, grouping, Mermaid
-  conversion, PNG/SVG and .excalidraw export, snapshots. The bundled CLI
-  (archboard <command>) is the agent interface and auto-starts the canvas
-  server; a REST API remains for application code.
+  live canvas. Use when an agent needs to draw or refine a named board, branch
+  a proposal and compare it with its source, read a human rearrangement as
+  design intent, place stencils, promote architecture nodes bound to code, or
+  export a diagram. The bundled archboard CLI is the agent interface.
 ---
 
 # archboard
 
-archboard is a canvas for **comparing architectures**. The architecture that
-exists is one board. A proposal is a second board, a _variant_ of the first.
-The two sit side by side in two panes on one screen, a human rearranges either
-of them by hand, and `compare` diffs them. Drawing is the means. The comparison
-is the point.
-
-Four things decide whether the work comes out usable, and each of them is
-expensive to fix afterwards. Read them before the first command.
-
-1. **Name the board on every call.** `--board <key>` is required on everything
-   that touches board content. There is no default and no active board, because
-   two panes hold two boards and "the board" would be a guess (ADR 0009). A
-   call that names none is refused, and the refusal lists what is open.
-2. **Say what you are doing on every write.** `--doing "adding the payment
-queue"` is required on everything that _changes_ board content, and the
-   write is refused without it. Somebody is standing at the board watching
-   boxes move, and this is the only thing that tells them why. One short line,
-   present tense, in their words. It goes up on the canvas as the write lands
-   and is never written into the board.
-3. **A variant starts as a copy of its source.** Branch the source board, then
-   change only what the proposal changes. A proposal redrawn from a blank
-   canvas cannot be diffed against anything, for reasons under
-   [Variants and comparison](#workflow-variants-and-comparison).
-4. **Look in the library before drawing a rectangle.** 111 curated stencils sit
-   on the canvas server. `library list --text` costs one call and is the
-   difference between a diagram of grey boxes and one somebody can read across
-   a room.
-
-## The main path: current beside a proposal
-
-Putting the two side by side is one command: **`pane open --board <key>` makes
-a new pane and opens that board into it.** It cannot be aimed at an existing
-pane, so it can never overwrite the board somebody is reading — which is what
-makes it the safe way to say "show me the current one beside the proposal". Two
-panes is the most the canvas lays out, and a pane exists only while a browser
-tab renders it, so this exits 4 when nothing is open.
-
-```bash
-archboard panes --text                            # which pane is which, and what each holds
-archboard board list                              # what the vault has, what is open
-
-# 1. the architecture that exists
-archboard board new payments --level service      # one pane on screen, so it goes there
-archboard library list --text                     # before drawing anything
-archboard add --board payments --doing "drawing the payment path from src/payments" elements.json
-archboard promote --board payments --doing "calling the front door a gateway" --ids gw --kind gateway --name "API Gateway"
-archboard board save --board payments --doing "writing the current path down"
-
-# 2. branch it: this is what makes the proposal comparable
-archboard board save --board payments --variant option-a \
-  --doing "branching a proposal off the current path"   # writes payments@option-a; nothing moves
-archboard pane open --board payments@option-a              # the branch, in a NEW pane beside it
-
-# 3. change only what the proposal changes
-archboard add --board payments@option-a --doing "adding the orders cache" cache.json
-archboard promote --board payments@option-a --doing "calling the cache a datastore" --ids cache --kind datastore
-archboard board save --board payments@option-a --doing "writing the proposal down"
-
-# 4. look at what you drew, then read the difference
-archboard screenshot --pane right --out /tmp/proposal.png
-archboard compare payments payments@option-a
-```
-
-**Step 2 moves nothing on screen** (ADR 0012). A save writes a file; `board
-open` and `pane open` are what choose what is showing. So the pane holding
-`payments` keeps holding it, the branch is not on screen anywhere until you put
-it there, and there is no repair step. The save says so: `saveKind` is
-`branch`, `panes.kept` names the panes left on the source, `panes.moved` is
-empty. The one save that does move a pane is giving the scratch board a name
-(`board save --board scratch --as payments`), where the placeholder and the
-named board hold the same drawing and there is nothing to stay behind for.
-
-`--pane` names a place that exists, so it is `left` and `right` only once there
-are two panes; with one pane its place is "the only pane" and every board
-command can leave `--pane` out.
-
-## Boards, panes, and what a command targets
-
-**A board is what a command writes to. A pane is where a board is on screen.**
-The two are addressed separately and only one of them is strict.
-
-- `add`, `update`, `delete`, `promote`, `clear`, `describe`, `query`, `export`,
-  `board save` and the rest of the content surface target a **board**, named
-  with `--board`. None of them takes a pane, and none of them cares whether the
-  board is on screen at all. Writing to a board no pane holds works, silently
-  and correctly.
-- `board open` and `board new` put a board into a pane that already exists.
-  `--pane` takes `left`, `right`, `top`, `bottom`, a position (`1`, `2`),
-  `focused`, `primary`, or a pane id. One pane on screen and the board goes
-  there; two and `--pane` is required; none and the board is loaded without
-  being shown. Every answer names the pane it landed in.
-- `pane open [--board <key>]` makes a pane. It always makes a **new** one and
-  cannot be aimed at an existing pane, so it cannot overwrite what is on
-  screen. With no `--board` the new pane shows whatever was already there, the
-  same as a human pressing Split. A third pane is refused.
-- `pane close <spec>` unmakes one, and the spec is always required — which
-  board comes off the screen is not something to guess at. The board itself is
-  untouched and stays open on the canvas. The last pane cannot be closed.
-- `screenshot` and `viewport` take `--pane <spec>`, because a pane holds one
-  board and that settles which is meant. Leave it out and the pane that answers
-  for the browser is photographed or moved, which with two on screen is the one
-  you may not have drawn in. **Name the pane once two are open.**
-- `pane open`, `pane close`, `screenshot` and `viewport` all need a browser tab
-  and exit 4 without one. Nothing here invents a pane on a headless canvas.
-
-`mermaid` is the other way round: it names a board and takes no `--pane`.
-Conversion runs in the pane holding that board, and there is at most one, so a
-diagram appears beside the current architecture rather than on top of it. It is
-refused, converting nothing, only when no pane holds that board at all, and the
-refusal names the panes on screen and the command that puts the board on one.
-
-Two panes disagreeing is the normal state, not a problem to resolve. Run
-`panes --text` at the start of a turn to see who is holding what.
-
-## Interfaces
-
-Two interfaces drive the same live canvas. Agents use the CLI; application code may use REST.
-
-1. **CLI** — use it whenever you can run a shell. Capabilities land here first, so it is the fullest surface.
-   ```bash
-   ./bin/canvas <command>   # inside the archboard checkout — runs the CLI from source
-   archboard <command>      # anywhere else, if the bin is on your PATH
-   ```
-   No setup needed — any canvas-touching command **auto-starts the canvas server** on `http://127.0.0.1:3000`. The package is private and never published, so there is nothing to install from npm: run it from a checkout, which needs bun on PATH. Inside the checkout, `bin/canvas` resolves from any cwd and always runs the current source, so prefer it there. Examples below say `archboard`; substitute `./bin/canvas` when you are in the repo.
-2. **REST API** (application code only): HTTP endpoints on `http://127.0.0.1:3000` — see `references/cheatsheet.md` for payloads. The server must already be running. Do not rebuild CLI workflows by hand from REST calls.
-
-The canvas URL comes from `EXPRESS_SERVER_URL` (default `http://127.0.0.1:3000`). Remind the user to open that URL in a browser — screenshots, image export, mermaid conversion, viewport control, and making or closing a pane all need an open tab (CLI exits with code 4 when it's missing).
-
-### CLI Quick Reference
-
-Results are JSON on stdout — except `describe` (plain text) and raw-content output when `--out` is omitted (`export` scene JSON, `screenshot --format svg`). Diagnostics on stderr. Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required, 5 board write refused.
-
-For tested producer-to-consumer extractions, see `references/cli-workflows.md`.
-
-`--board <key>` is left out of the table for width and is still required on every row that touches board content. So is `--doing "..."`, on every row that changes it.
-
-| Task                                 | Command                                                                                                                                                             |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Start / stop / inspect server        | `start`, `stop`, `status`                                                                                                                                           |
-| Create elements (batch)              | `add elements.json` or `echo '[...]' \| add` or `add --one '{...}'`                                                                                                 |
-| Multi-op patch in one call           | `apply patch.json` — `{"create":[...],"update":[{"id":"a","set":{...}}],"delete":[...]}`                                                                            |
-| Read one / query many                | `get <id>`, `query [--type t] [--bbox x0,y0,x1,y1] [--filter k=v] [--filter-json '{...}']`                                                                          |
-| Update / delete                      | `update <id> --set '{...}'`, `delete <id> [...]`                                                                                                                    |
-| Understand the scene                 | `describe` (plain-text summary: ids, positions, labels, connections)                                                                                                |
-| What the human has picked            | `selection [--text]` — the elements they mean by "this" / "these"                                                                                                   |
-| What the human is looking at         | `panes [--text]` — pane by pane: where it sits, which board, what is in view, what is picked there                                                                  |
-| Put a board beside the one on screen | `pane open [--board <key>]` — always a **new** pane, never an existing one, so it cannot overwrite what somebody is reading                                         |
-| Take a board off the screen          | `pane close <left\|right\|1\|2\|primary\|focused\|pane id>` — spec always required; the board is untouched                                                          |
-| Point a pane's camera                | `viewport --fit \| --ids a,b,c \| --element <id> \| --zoom n [--offset-x n] [--offset-y n] [--zoom-factor f] [--pane <spec>]` — exactly one of the four             |
-| Make the selection a node            | `promote --kind service [--path src/x.ts] [--name "X"]` — kind, identity and binding in one act; `demote` undoes it                                                 |
-| See the scene                        | `screenshot [--out f.png] [--pane <spec>]` (PNG without `--out` → temp file path in JSON; SVG without `--out` → raw SVG)                                            |
-| Layout operations                    | `arrange align\|distribute\|group\|ungroup\|lock\|unlock\|duplicate --ids a,b,c [--to left\|horizontal\|...]`                                                       |
-| Scene files                          | `export [--out scene.excalidraw]`, `import [scene.excalidraw\|-] [--replace]` — an `.excalidraw.md` output path writes Obsidian's format (see File I/O)             |
-| Mermaid → canvas                     | `mermaid [diagram.mmd\|-]` (or stdin)                                                                                                                               |
-| Ready-made shapes                    | `library list [--text]`, `library insert <name> --x <x> --y <y> [--source <lib>]` — see Stencils                                                                    |
-| Boards (named, persisted)            | `board list\|info\|new <name>\|open <name[@variant]>\|save` — see Boards                                                                                            |
-| Branch a board into a variant        | `board save --board <src> --variant <v>` — the copy the proposal is drawn on; it moves no pane, so put it up with `pane open --board <src>@<v>`                     |
-| Diff two variants                    | `compare <from> [to]` — semantic diff keyed on node identity; see Variants and comparison                                                                           |
-| What changed since last turn         | `changes [--since <cursor>] [--coalesce] [--text]` — the human's edits, named as architecture                                                                       |
-| Say what a write is doing            | `--doing "adding the payment queue"` — global, required on every write, shown on the canvas as it lands; see [One writer at a time](#workflow-one-writer-at-a-time) |
-| Write against the board you last saw | automatic under a claim; `--expect-version 7` states it where the canvas cannot know you; see [One writer at a time](#workflow-one-writer-at-a-time)                |
-| Take a board for a stretch of work   | `claim --reason "..." [--for 10m]`, `release` — for a redraw or a restructure, never for one box; see [One writer at a time](#workflow-one-writer-at-a-time)        |
-| Snapshots                            | `snapshot save\|list\|restore <name>`                                                                                                                               |
-| Share link                           | `share` (encrypted upload → excalidraw.com URL)                                                                                                                     |
-| Wipe canvas                          | `clear --yes`                                                                                                                                                       |
-| Install / upgrade this skill         | `install-skill` (defaults to `~/.agents/skills`); `--agent claude-code` or `--target claude` uses `~/.claude/skills`, `--dir <skills-root>` names another root      |
-
-### Element format
-
-CLI and raw REST writes reach the same server entry and accept the same input format:
-
-- **Labels**: use `"label": {"text": "My Label"}`. The older `"text": "My Label"` shape spelling remains accepted; standalone text elements keep `text` as their content.
-- **Arrow binding**: use `"start": {"id": "a"}` and `"end": {"id": "b"}`. The legacy aliases `startElementId` and `endElementId` remain accepted. The server spends either spelling and routes the arrow to the element edges.
-- **Ids**: omit `id` on a new element unless another element in the same write must refer to it. The server mints an Obsidian-safe id before the board holds the element.
-- **fontFamily**: pass a string name (`"helvetica"`, `"cascadia"`, `"excalifont"`, ...) or string number `"1"`–`"8"`.
-- **points**: both `[[x,y], ...]` tuples and `[{"x":..,"y":..}]` objects are accepted.
-- **Patch updates**: in `apply`, update entries can use either direct fields (`{"id":"a","x":120}`) or a `set` object (`{"id":"a","set":{"x":120}}`). Do not mix both forms in one update entry.
-
----
-
-## Coordinate System
-
-The canvas uses a 2D coordinate grid: **(0, 0) is the origin**, **x increases rightward**, **y increases downward**. Plan your layout before writing any JSON.
-
-**General spacing guidelines:**
-
-- Vertical spacing between tiers: 80–120px (enough that arrows don't crowd labels)
-- Horizontal spacing between siblings: 40–60px minimum; give labeled arrows 120px+
-- Shape width: `max(160, labelCharCount * 12)` to keep the label on one line
-- Shape height: 60px single-line, 80px two-line labels
-- Background/zone padding: 50px on all sides around contained elements
-
-**Styling for a professional look:**
-
-- `"fillStyle": "solid"` on shapes gives crisp flat fills — the default is a sketchy hachure pattern
-- Pair pastel `backgroundColor` fills with their darker `strokeColor` (palette in the cheatsheet)
-- `"strokeStyle": "dashed"` on zone borders and async arrows reads as "boundary / background"
-
-**Shapes come filled, and that is load-bearing.** A rectangle, ellipse or diamond you create without a `backgroundColor` gets a neutral white fill and `fillStyle: solid`, because a shape with a transparent background is only selectable on its ~2px stroke — a human cannot tap it in the middle to pick it. State a colour to override, or `"backgroundColor": "transparent"` to opt out deliberately (a see-through zone that must not hide what it overlaps). Note that a fill hides anything beneath it, so draw background zones before the shapes that sit inside them.
-
----
-
-## Layout Anti-Patterns (Critical for Complex Diagrams)
-
-These are the most common mistakes that produce unreadable diagrams. Avoid all of them.
-
-### 1. Do NOT use `label.text` (or `text`) on large background zone rectangles
-
-When you put a label on a background rectangle, Excalidraw creates a bound text element centered in the middle of that shape — right where your service boxes will be placed. The text overlaps everything inside the zone and cannot be repositioned.
-
-**Wrong:**
-
-```json
-{
-	"id": "vpc-zone",
-	"type": "rectangle",
-	"x": 50,
-	"y": 50,
-	"width": 800,
-	"height": 400,
-	"text": "VPC (10.0.0.0/16)"
-}
-```
-
-**Right — use a free-standing text element anchored at the top of the zone:**
-
-```json
-{"id": "vpc-zone", "type": "rectangle", "x": 50, "y": 50, "width": 800, "height": 400, "backgroundColor": "#e3f2fd"},
-{"id": "vpc-label", "type": "text", "x": 70, "y": 60, "width": 300, "height": 30, "text": "VPC (10.0.0.0/16)", "fontSize": 18}
-```
-
-The free-standing text element sits at the top corner of the zone and doesn't interfere with elements placed inside.
-
-### 2. Avoid cross-zone arrows in complex diagrams
-
-An arrow from an element in one layout zone to an element in a distant zone will draw a long diagonal line crossing through everything in between. In a multi-zone infra diagram this produces an unreadable tangle of spaghetti.
-
-**Design rule:** Keep arrows within the same zone or tier. To show cross-zone relationships, use annotation text or separate the zones so their edges are adjacent (no elements between them), and route the arrow along the edge.
-
-If you must connect across zones, use an elbowed arrow that travels along the perimeter — never through the middle of another zone.
-
-### 3. Use arrow labels sparingly
-
-Arrow labels are placed at the midpoint of the arrow. On short arrows, they overlap the shapes at both ends. On crowded diagrams, they collide with nearby elements.
-
-- Only add an arrow label when the relationship name is genuinely essential (e.g., protocol, port number, data direction).
-- If you're adding a label to every arrow, reconsider — it usually adds visual noise, not clarity.
-- Keep arrow labels to ≤ 12 characters. Prefer omitting them entirely on dense diagrams.
-
----
-
-## Quality: Why It Matters (and How to Check)
-
-Excalidraw diagrams are visual communication. If text is cut off, elements overlap, or arrows cross through unrelated shapes, the diagram becomes confusing and unprofessional — it defeats the whole purpose of drawing it. So after every batch of elements, verify before adding more.
-
-### Quality Checklist
-
-After each `add` or `apply`, take a screenshot and check:
-
-1. **Text truncation** — Is all label text fully visible? Truncated text means the shape is too small. Increase `width` and/or `height`.
-2. **Overlap** — Do any shapes share the same space? Background zones must fully contain children with padding.
-3. **Arrow crossing** — Do arrows cut through unrelated elements? If yes, route them around using curved or elbowed arrows (see Arrow Routing below).
-4. **Arrow-label overlap** — Arrow labels sit at the midpoint. If they overlap a shape, shorten the label or adjust the arrow path.
-5. **Spacing** — At least 40px gap between elements. Cramped layouts are hard to read.
-6. **Readability** — Font size ≥ 16 for body text, ≥ 20 for titles.
-7. **Zone label placement** — If you used `text`/`label.text` on a background zone rectangle, the zone label will be centered in the middle of the zone, overlapping everything inside. Fix: delete the bound text element and add a free-standing text element at the top of the zone instead (see Layout Anti-Patterns above).
-
-If you find any issue: **stop, fix it, re-screenshot, then continue.** Say "I see [issue], fixing it" rather than glossing over problems. Only proceed once all checks pass.
-
----
-
-## Workflow: Drawing a New Diagram
-
-### Mermaid vs. Direct Creation — Which to Use?
-
-**Use `mermaid`** when: the user already has a Mermaid diagram, or the structure maps cleanly to a flowchart/sequence/ER diagram with standard Mermaid syntax. It's fast and handles conversion automatically, though you get less control over exact layout.
-
-**Create elements directly** when: you need precise layout control, the diagram type doesn't map to Mermaid well (e.g., custom architecture, annotated cloud diagrams), or you want elements positioned in a specific coordinate grid.
-
-### Steps
-
-1. Plan your coordinate grid — map out tiers and x-positions before writing JSON. The color and sizing guidance lives in `references/cheatsheet.md`.
-2. `archboard library list --text` — see what already exists before you draw it. A queue, a CDN, a database drum, a browser, a person: the library has all of them, and a stencil reads at a glance where a labelled rectangle does not. Plain rectangles are for services and anything the library has no picture of.
-3. Optional fresh start: `archboard clear --board <key> --yes`
-4. Create shapes and arrows in one call. Custom `id` fields (e.g. `"id": "auth-svc"`) make later updates easy:
-   ```bash
-   archboard add --board payments - <<'EOF'
-   [
-     {"id": "lb", "type": "rectangle", "x": 300, "y": 50, "width": 180, "height": 60, "text": "Load Balancer"},
-     {"id": "svc-a", "type": "rectangle", "x": 100, "y": 200, "width": 160, "height": 60, "text": "Web Server 1"},
-     {"id": "svc-b", "type": "rectangle", "x": 450, "y": 200, "width": 160, "height": 60, "text": "Web Server 2"},
-     {"id": "db", "type": "rectangle", "x": 275, "y": 350, "width": 210, "height": 60, "text": "PostgreSQL"},
-     {"type": "arrow", "x": 0, "y": 0, "startElementId": "lb", "endElementId": "svc-a"},
-     {"type": "arrow", "x": 0, "y": 0, "startElementId": "lb", "endElementId": "svc-b"},
-     {"type": "arrow", "x": 0, "y": 0, "startElementId": "svc-a", "endElementId": "db"},
-     {"type": "arrow", "x": 0, "y": 0, "startElementId": "svc-b", "endElementId": "db"}
-   ]
-   EOF
-   ```
-   (The `-` positional is optional — with no file argument, `add` reads stdin.)
-5. Set shape widths using `max(160, labelLength * 12)`.
-6. `screenshot` → view the file → run the Quality Checklist → fix issues before the next batch. With two panes open, say which one you drew in: `screenshot --pane right`. With no browser open at all, `describe --board <key>` is the read.
-
----
-
-## Arrow Routing — Avoid Overlaps
-
-Straight arrows can cross through elements in complex diagrams. Use curved or elbowed arrows when needed:
-
-**Curved arrows** (smooth arc over obstacles):
-
-```json
-{
-	"type": "arrow",
-	"x": 100,
-	"y": 100,
-	"points": [
-		[0, 0],
-		[50, -40],
-		[200, 0]
-	],
-	"roundness": { "type": 2 }
-}
-```
-
-The intermediate waypoint `[50, -40]` lifts the arrow upward. `roundness: {type: 2}` makes it smooth.
-
-**Elbowed arrows** (right-angle / L-shaped routing):
-
-```json
-{
-	"type": "arrow",
-	"x": 100,
-	"y": 100,
-	"points": [
-		[0, 0],
-		[0, -50],
-		[200, -50],
-		[200, 0]
-	],
-	"elbowed": true
-}
-```
-
-**When to use which:**
-
-- Fan-out (one source → many targets): curved arrows with waypoints spread to avoid overlapping
-- Cross-lane (connecting to side panels): elbowed arrows that go up, then across, then down
-- Long horizontal connections: curved arrows with a slight vertical offset
-
-**Rule:** If an arrow would pass through an unrelated shape, add a waypoint to route around it.
-
----
-
-## Workflow: Iterative Refinement
-
-Pairing `describe` with `screenshot` is what makes this skill powerful.
-
-- **`describe`** → structured text: element IDs, types, positions, labels, connections. Use it to know _what's on the canvas_ before making programmatic updates (find IDs, understand bounding boxes).
-- **`screenshot`** → PNG of the actual rendered canvas. Use it for _visual quality verification_ — it shows exactly what the user sees, including truncation, overlap, and arrow routing. The CLI prints the saved file path as JSON; read/view that file.
-
-**Feedback loop:**
-
-```
-add elements
-  → screenshot → view → "text truncated on auth-svc"
-  → update auth-svc --set '{"width": 220}' → screenshot → "overlap between auth-svc and rate-limiter"
-  → update rate-limiter --set '{"x": 520}' → screenshot → "all checks pass"
-  → proceed
-```
-
-## Workflow: Act on What the Human Selected
-
-When someone says "make **these** two a group" or "map **this** to the payments
-service", read the selection instead of guessing at ids:
-
-```bash
-archboard selection --text
-# 2 elements selected: 2 nodes (service(2)) — "AuthService" and "Payments".
-#   [id1] "AuthService" | bound src/auth/service.ts | at (100, 100) | ...
-```
-
-The browser pushes the selection as it changes, so this is a plain server read —
-no browser round-trip and no scene transfer. Without `--text` it prints JSON with
-`elementIds` plus each element's label, whether it is a node, its kind and
-binding.
-
-One canvas, one selection: with several tabs open the one that reported last
-owns it (`clientId` and `at` say which and when), and closing a tab drops the
-selection it left behind.
-
-## Workflow: Resolve "the Left One" — What Is on Screen
-
-`selection` says what the human means by _this_. `panes` says what is in front
-of them, which is what "the left one", "that pane", and "move that box over
-there" need:
+Archboard is a canvas for comparing architectures. The architecture that
+exists is one board. A proposal is a variant branched from it. Put the two
+boards side by side, let the human rearrange either one, and read the result
+back as design intent. Drawing is the means. The comparison is the point.
+
+Four rules decide whether the board stays usable:
+
+1. Name the board on every content call. There is no active-board fallback.
+2. Give every write a short present-tense `--doing` line that says what changes
+   in the architecture.
+3. Branch a proposal from its source. A redraw has no shared identity to diff.
+4. Check the library before drawing a generic shape. Keep stencil provenance
+   and human grouping intact.
+
+## Command authority
+
+Use `archboard help <command>` for released syntax and options. Inside the
+Archboard checkout, use `./bin/canvas` in place of `archboard`.
+
+For result shapes and refinements, follow `src/cli/commands/run.ts` to the
+command's `ResultSchema` and inferred type. Those Zod contracts are the source
+of truth. For tested producer-to-consumer chains, read
+[`references/cli-workflows.md`](references/cli-workflows.md). Do not reconstruct
+either contract from this skill.
+
+## The main path
+
+Start by finding the named board and the pane that holds it. If the work is a
+proposal, branch the current board, then put the proposal in a new pane so the
+source stays where the human is reading it.
 
 ```bash
 archboard panes --text
-# 2 panes, side by side, showing payments (current, system) and payments@option-a (option-a, system).
-# The panes disagree, so commands that name no board are refused until one is named — `--board payments`, or `--board payments@option-a`.
-#   1. left · payments (current, system) · 20 elements · view (0,0) 1568x1576 @1.00x · selected: 1 node — "API Gateway" · answers screenshots
-#   2. right · payments@option-a (option-a, system) · 30 elements · view (71,72) 1426x1432 @1.10x · selected: 1 node — "Ledger" · focused
-```
+archboard board list
+archboard library list --text
 
-Per pane: its place in reading order, the board and variant it holds, how many
-elements are on it, the part of the board in view (scene coordinates, so it
-compares directly with element positions), and what is picked there. `focused`
-is the pane the human last touched; `answers screenshots` is the one a
-`screenshot` or `viewport` that names no `--pane` lands on, not the only one
-they can reach.
+archboard board new payments --level service
+archboard add --board payments --doing "drawing the payment path" elements.json
+archboard promote --board payments --doing "calling the front door a gateway" \
+  --ids gw --kind gateway --name "API Gateway"
 
-**This is view state, never board contents** — that is what keeps it cheap
-enough to read on every turn. Use `describe` for what is on a board.
-
-A pane is reported only while its tab is open, so `pane close`, unsplitting, or
-closing a tab removes it with no cleanup, and **no pane at all is normal**: it
-means nobody has a browser open, not that anything is wrong. Everything except
-`screenshot`, `mermaid`, image export, `viewport` and `pane open` / `pane close`
-works headless.
-
-## Workflow: Promotion — Turn the Selection Into a Node
-
-"Map this to the payments service" is a **promotion**: declaring the selected
-elements to be a node, giving it a kind and usually a binding in the same act.
-It works off the live selection, so no element ids are ever spoken.
-
-```bash
-archboard promote --board payments --kind service --path src/payments/service.ts --text
-# Promoted 2 elements to the service "Payments API" (node payments-api),
-# bound to github.com/acme/api:src/payments/service.ts@main (62f0cef).
-```
-
-- **`--kind`** is required, from a controlled vocabulary: `service`, `queue`,
-  `datastore`, `gateway`, `external`. Anything else is refused — the vocabulary
-  grows deliberately, not per diagram.
-- **One call makes one node** out of everything selected: one kind, one name,
-  one binding is one node's worth of meaning. Use **`--each`** for "these are
-  all queues" — one node per selected shape, named from its own label, kind
-  only. A shape and its bound label are one thing either way.
-- **`--path`** binds the node to code. Repo identity, branch and commit come
-  from git so history can trace a file that later moves. The note persists only
-  `customData.archboard.binding` with the repository identity and repo-relative
-  path plus branch/commit/confirmed-at details when available. Do not supply a
-  `file://` link for a code binding: tappable code targets are derived on
-  outbound presentation from the binding and this machine's checkout registry,
-  then stripped before any note write. `--repo/--branch/--commit` override the
-  resolution.
-- **Node identity** is a slug of the name (`payments-api`), unique on the
-  board, stored as `customData.archboard.node`. It survives redraws, drags and
-  export/import, and is the join key when two variants are compared — quote it
-  rather than the element id. `--node <id>` forces one; re-promoting an
-  existing node keeps its id.
-- **`--ids a,b,c`** overrides the selection, for elements you just drew.
-- **`--variant <v>`** overrides the variant a node records. It defaults to
-  the variant of the board named on the call, so promoting on
-  `payments@option-a` stamps `option-a` with nothing passed.
-- **`--level <tier>`** is not inferred, and should usually be left off. A node
-  records a level only to say it sits at a different tier than its board, which
-  is what a drill-down board looks like. A node that says nothing is at its
-  board's level (ADR 0013).
-- **A node is repainted in its kind's colour** — service purple, queue orange,
-  datastore cyan, gateway blue, external gray — so a node reads as one at a
-  glance and a hollow shape someone drew before this becomes tappable in its
-  middle. Only shapes nobody has coloured are touched; a chosen colour stands.
-- **`demote`** puts nodes back: touching any element of a node demotes the
-  whole node, strips only the `archboard` block, and leaves other tools'
-  `customData` alone. The fill stays — taking it away would make the shape
-  untappable in its interior again.
-
-## Workflow: Refine an Existing Diagram
-
-1. `describe` to understand current state — note element IDs and positions.
-2. Identify elements by `id` or label text (not by x/y coordinates — they change).
-3. `update <id> --set '{...}'` to resize/recolor/move; `delete <id>` to remove; or bundle everything in one `apply` patch. **Bound arrows re-route automatically when you move or resize their endpoints** — no need to delete and recreate them.
-4. `screenshot` to confirm the change looks right.
-5. If updates fail: check the ID exists with `get <id>`; unlock with `arrange unlock --ids <id>` if locked.
-
-## Workflow: Stencils
-
-The library is a palette of ready-made shapes — cloud icons, servers, database drums, browsers, people — that a human drags onto a board. It lives on the canvas server, so you can place one by name with no browser open, and 111 of them ship with archboard across seven libraries.
-
-**List it before you draw.** An agent that skips this step draws grey rectangles for things the library already has a picture of, and nobody standing in front of the board can tell a queue from a cache.
-
-```bash
-archboard library list --text                                         # what exists (no board: the palette is one per server)
-archboard library insert "Load balancer" --board payments --x 200 --y 120 --source system-design \
-  --doing "putting the load balancer in front of the services"
-```
-
-The listing is built to be chosen from without rendering anything: name, **size**, element count, source library, id, and in quotes what the stencil says when that is not just its name. Size does real work here — one library's "Docker" is 73x95 and another's is 1224x509.
-
-`--x`/`--y` place the **top-left corner** and the stencil keeps its own size, so read `width`/`height` off the listing and leave room for it.
-
-A name is unique only within the library it came from — four of them ship a "Database" — so an ambiguous name is **refused** with every candidate named. Retry with `--source`, or with `--id` from the listing.
-
-What lands is ordinary elements: move, restyle, label, bind arrows to them, `promote` them. They carry `customData.library` recording where they came from, and nothing else about them is special.
-
-A stencil is several elements, so promote all of them in one call and they become one node. Pass `--name`: a stencil drawn out of lines carries no label to derive a node id from, and promotion refuses rather than guess.
-
-Reach for a stencil when the thing is recognisable furniture — a queue, a CDN, a user. A labelled rectangle is still the right shape for a service box.
-
-## Workflow: Mermaid Conversion
-
-```bash
-echo 'graph TD
-  A[Client] --> B[API]
-  B --> C[(DB)]' | archboard mermaid --board payments
-```
-
-Requires an open browser tab (conversion runs in the frontend; exit code 4 tells you to open the canvas URL). Conversion happens in the pane holding the board you name, so there is no --pane to pass. If no pane is holding that board the call is refused and nothing is converted. Afterwards `screenshot` to verify layout. If the auto-layout is poor (nodes crowded, edges crossing), find problem elements with `describe` and reposition them with `update`.
-
-## Workflow: Boards
-
-A **board** is a named diagram persisted as one `.excalidraw.md` note in an Obsidian vault. It is the unit of saving, of comparison, and of the `--board` flag. The pane model is at the top of this file; this section is the operating detail.
-
-Boards need a vault: set `ARCHBOARD_VAULT` to its path. There is no default — the vault deliberately spans repositories — and the canvas refuses to start without one, since every board is a note and there would be nowhere to put one. The refusal says how to choose a vault.
-
-```bash
-archboard board list                          # the vault, what is open, what is on screen
-archboard board new payments --level service  # empty board; its note appears when you draw
-archboard board save --board payments --doing "writing it down"   # to <vault>/payments.excalidraw.md
-archboard board open payments@option-a        # show it in the pane on screen
-archboard board open payments@option-a --pane right   # once two panes are open
-archboard pane open --board payments@option-a # or make the second pane and show it there
-archboard board info --board payments         # identity and save state of one board
-```
-
-`board new` refuses a name the vault already holds; open that board instead, or pick another variant. `--level` (`system`, `service`, `module`) says which abstraction tier it sits at.
-
-**There is no unsaved board.** A board is a note in the vault, and every write goes to it, so `board save` is for writing a board _somewhere else_ — branching with `--as name@variant`, or giving the scratch board a name. Nothing is lost if the canvas stops, and you never have to save before restarting it.
-
-Opening a board disturbs no other pane: the switch reaches that pane's socket alone, the other pane keeps its board, its scene and its selection, and each board is saved against its own baseline.
-
-**A save writes a file and does not choose what is on screen** (ADR 0012), and it says so: `saveKind` is `same-board`, `named` or `branch`, `savedFrom` names the board it was saved from, and `panes` splits into `moved` and `kept`. A branch keeps every pane on the source, so `moved` is empty. The one save that moves a pane is naming the scratch board, where the placeholder and the named board hold the same drawing.
-
-**Addressing.** `current` is the privileged variant — the architecture that exists — so it owns the bare name (`payments`). Every other variant is a proposal, addressed `name@variant` and stored as `name@variant.excalidraw.md`. Variant is an open set, so comparing three options is just three boards: `payments@option-a`, `payments@option-b`, `payments@option-c`. A name may contain `/` to nest the note in vault folders.
-
-**Identity** — `board`, `variant`, `level` — lives in the note's frontmatter and round-trips. Everything else in the frontmatter is preserved verbatim across a save, so a note's aliases, tags and prose properties survive.
-
-**A write can be refused.** archboard verifies that a note still holds the bytes it last wrote there, so a note that changed underneath — Obsidian, a sync client, another editor — is never overwritten: nothing is written, and the CLI exits 5 with the conflict attached. Excalidraw scenes do not merge, so somebody has to choose which copy survives, and it is not you. Report the refusal and offer the three ways out:
-
-| Outcome        | Command                                  | What it costs                   |
-| -------------- | ---------------------------------------- | ------------------------------- |
-| Reload         | `board open <name> --reload`             | the pane as it stands now       |
-| Overwrite      | `board save --board <name> --force`      | whatever the note on disk holds |
-| Save elsewhere | `board save --board <name> --as <other>` | nothing — both copies are kept  |
-
-Never pass `--force` / `force: true` unless the human has said to overwrite.
-
-**After that refusal the board stops saving, and says so on every answer about it.** It is not refused again: the next write is taken into a copy the canvas keeps, so a human at the board can carry on drawing while they decide. Every answer about that board — a write, a read, or `board list` — carries a `held` block with the conflict, when it stopped saving, how many changes are riding on it, and those same three commands. Say it out loud when you see it. The board is being drawn on and none of it is in the vault, and only the human can end that.
-
-What the three outcomes do with the held changes: reload discards them, overwrite writes them, save elsewhere writes them to the other note and moves the panes to it. Nothing merges the two versions, and archboard picks none of them.
-
-Nothing is locked, and the check reads the file, not another app's memory: a board open in Obsidian can still write its own copy back afterwards. Keep a board open in one editor at a time.
-
-A pane opened with nothing else on screen holds `scratch`: a board like any other, named like any other (`--board scratch`). Its note is `<vault>/.archboard/scratch.excalidraw.md`, out of the way of the vault's real boards and picked up again when the canvas restarts, so a sketch is not lost by accident. What it has not got is a name somebody chose, and `board save --board scratch --as <name>` gives it one — the one save that takes the pane with it.
-
-## Workflow: Variants and comparison
-
-**A variant is a modification of a source board, not a second drawing of the
-same subject.** Asked for a proposal, branch the board that holds the
-architecture as it is, then change only what the proposal changes. Everything
-the proposal leaves alone must stay byte-for-byte what it was.
-
-```bash
-archboard board save --board payments --doing "writing it down"   # the source, on disk
 archboard board save --board payments --variant option-a \
-  --doing "branching the proposal"                         # writes payments@option-a
-archboard pane open --board payments@option-a              # the proposal, in a new pane beside it
+  --doing "branching the cache proposal"
+archboard pane open --board payments@option-a
+archboard add --board payments@option-a --doing "adding the orders cache" cache.json
 ```
 
-Branching writes a second note and changes nothing on screen (ADR 0012), so the
-source is still where it was and `pane open` is the whole side-by-side move.
-`--variant option-a` and `--as payments@option-a` both branch, and both carry
-the source's `level` across.
+Every content write already persists the named board. `board save` belongs in
+this path only when it branches or renames a board.
 
-**Why this is not a style preference.** `compare` joins the two boards on
-**node identity**, `customData.archboard.node`, the id `promote` assigns,
-because two notes drawn independently have nothing else in common: element ids,
-coordinates and creation order all differ. Node identity is a slug of the
-node's name, so a proposal drawn from scratch matches its source only where the
-labels happen to be identical, word for word. Rename "API Gateway" to "Gateway"
-in the redraw and that node comes back as one removed plus one added, along
-with every edge touching it. Redraw the whole board and the diff degenerates
-into "everything removed, everything added", which says nothing about the
-architecture and buries the one change anybody cares about.
+## Completion gate
 
-Branching makes the ids match by construction. There is nothing to remember and
-nothing to keep in sync.
+Finish work against an explicit board. Preserve the human's groups, layout,
+stencils, and unrelated content throughout.
 
-If a variant already exists that was drawn from scratch, do not redraw it
-again: re-promote the nodes that should match with `--node <id>` taken from the
-other side, and the join comes back.
+1. Claim the board only when a known substantial campaign needs several
+   writes. Every write still names the board and carries its own `--doing`.
+2. After each geometry or routing batch, run a strict whole-board `check`.
+3. If findings remain and a close-up would help diagnosis or reporting, run
+   `render-findings`. Its images explain findings; they do not replace the
+   report.
+4. Use `bridge` only for a deliberate supported proper crossing after the
+   human chooses the over-connector, under-connector, and opaque background.
+   Use `bridge remove` to remove that marker. Never draw masks by hand.
+5. Recheck the whole board after every local repair. A route fixed here may
+   create a crossing elsewhere.
+6. Completion means the final strict report is complete and clean. An
+   unsupported or indeterminate report is not clean.
+7. Release the claim when writes end. If the final report demands another
+   substantial repair campaign, claim again for that campaign and repeat the
+   gate.
+8. Confirm which pane holds the named board, then capture one full-scene
+   overview. The pane camera only chooses what a person sees; inspection still
+   covers the whole named board.
 
-```bash
-archboard compare payments payments@option-a   # what the proposal changes
-archboard compare payments                     # finds the other variant itself
-```
+Run `compare` only when the work concerns variants. It describes semantic
+change between boards. It proves neither connector routing nor rendered pixels.
 
-Nodes that were never promoted have no id and therefore cannot be compared: they come back in a per-side inventory instead, and `summary.comparable` is false when the join found nothing at all. That is the fix to reach for when a diff looks empty but the boards obviously differ: promote both sides. Read `warnings` before narrating anything. It says when one side has no promoted nodes, when the two share no node ids, when node names match across boards whose ids do not, and when an unlabelled container makes a boundary uncomparable.
+## Boards, panes, and variants
 
-Neither board is opened and the canvas is not disturbed. Both sides are read from their notes; `source` says whether a side is a board the canvas has open, and so possibly on screen, or one that only exists in the vault.
+A board is the persisted drawing that content commands read and write. A pane
+is a browser view of one board. A board can be edited with no pane open. Camera,
+selection, and visible bounds belong to a pane, not to the board.
 
-**The output is deliberately complete and unsummarised.** Nodes and edges added, removed, changed (with the before and after of every field) and unchanged, plus the whole layout model. It is data for you to narrate — read it and compose the explanation yourself; do not ask for a shorter version.
+`pane open --board <key>` creates a new pane and cannot replace the board the
+human is already reading. A third pane is refused. Read `panes --text` before
+using words such as "left", "right", or "this one".
 
-**Layout is reported as relative structure, never coordinates**: which nodes sit together (`cluster`), what shape contains them (`container`), what is explicitly grouped (`group`), whereabouts on the board (`region`), the coarse direction between related nodes (`relation`), and size against the board's median node (`prominence`). Every one of those survives the board being panned, zoomed or tidied — which is the point, because a 12px nudge means nothing and a rearranged subsystem means a lot.
+A variant is a modification of its source, not a fresh drawing of the same
+subject. Branch first, then change only what the proposal changes. Promoted node
+identity gives `compare` its join. Plain shapes drawn independently have no
+shared architecture identity.
 
-Read `layout.cannotExpress` in the result before saying anything about layout. It lists what this model is blind to by design — absolute position, tidiness, edge routing, movement below the thresholds — and those are claims you must not make on its behalf.
+`compare` reports semantic architecture differences. Absolute tidiness,
+connector routing, camera position, and rendered pixels belong to other owners.
 
-## Workflow: One writer at a time
+## Work with the human
 
-A board has one writer at a time. An ordinary write takes the board, writes,
-and gives it back inside about twenty milliseconds; a person takes it by
-touching the canvas. That happens around every write you make and asks nothing
-of you.
+The canvas is shared. A moved box, a new group, or a node pulled out of a zone
+may be a design decision. Begin a turn on an existing board by reading its pane
+and recent changes. Use the live selection when the human says "this" or
+"these". State your interpretation before turning their rearrangement into a
+larger edit.
 
-**Waiting is normal.** A write that lands inside somebody's gesture waits for
-them rather than failing, because a gesture is short. If the wait runs out, the
-answer names who has the board and since when. Say that out loud instead of
-going quiet. "The board is yours at the moment, I'll add the queue when you put
-it down" is the thing to say; then try once more. Do not loop on it.
+Keep each write meaningful on screen. Add a replacement path before removing
+the old one. Move a subsystem in one patch instead of leaving a trail of
+half-moves. A claim prevents competing writes during a substantial campaign;
+it must never hide the work from the person at the board.
 
-### Claim before substantial work you already know is coming
+Read [`references/architecture-workflow.md`](references/architecture-workflow.md)
+when building or refactoring codebase architecture with a human at the canvas.
 
-|                  |                                                                                                                                                       |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Claim**        | redrawing a board from code, restructuring a subsystem, working down a list of elements. Anything whose half-finished state would be wrong to look at |
-| **Do not claim** | one box, a colour, a label, a promotion, a mermaid conversion, anything you only read                                                                 |
+## Architecture identity and stencils
 
-An ordinary write already holds the board for as long as it writes, so there is
-nothing to claim for moving one box. What a claim buys is the gaps between
-twenty writes: taking the board and giving it back twenty times leaves nineteen
-moments for somebody else to write into, and a board that is never once in the
-state you meant it to be in.
+Promotion turns one or several selected elements into one architecture node.
+The shared node identity survives moves, browser round trips, and branching;
+the optional code binding remains portable repository metadata. A multipart
+stencil should usually be promoted as one node, not one node per visible part.
 
-```bash
-archboard claim --board payments --reason "redrawing the payment path from src/payments" --for 10m
-# ... every write naming payments now goes under the claim ...
-archboard release --board payments
-```
+The library is for recognizable furniture such as queues, users, CDNs, and
+database drums. Inserted stencil elements become ordinary editable elements but
+retain their library attribution. Keep that attribution, grouping, and relative
+layout unless the human asks for a change. A labelled rectangle remains the
+right shape for a service with no useful stencil.
 
-**The reason is shown to whoever is standing at the board**, on the pane that
-has just stopped responding to them. "Redrawing the payments board from
-src/payments" says what is happening and roughly how long. "Working" says the
-wall is broken. Write it in their words.
+## Layout
 
-Nothing travels between the two commands but the board name, which every call
-carries anyway. Release the moment the work is done, and do not hold a claim
-across a pause while you wait for somebody to answer a question: ask first,
-then claim.
+Use left-to-right geometry for flow, top-to-bottom geometry for layers, and
+containment for ownership. Keep labels short enough to fit at viewing distance.
+Draw background zones before their contents so their fill cannot cover later
+elements. Put a zone title in a separate text element near its edge rather than
+binding a label into the middle of the zone.
 
-### Say what each write is doing
+Route supported straight polylines around unrelated nodes and visual obstacles.
+Do not treat a container boundary as an obstacle. Inspection owns the exact
+supported routing judgment; the detailed model is in
+`references/architecture-workflow.md`.
 
-`--doing "..."` is required on every write, and the write is refused without
-it. The line goes up on the canvas as the write lands, so the person at the
-board sees what you are up to while you do it rather than working it out from
-boxes moving.
+## One writer at a time
 
-```bash
-archboard add --board payments --doing "adding the payment queue" queue.json
-archboard promote --board payments --doing "calling the new queue a queue" --ids q1 --kind queue
-archboard board save --board payments --doing "writing the new path down"
-```
+An ordinary write holds the board only while it writes. Claim before a known
+substantial multi-write campaign whose half-finished state would be misleading.
+Do not claim for one box, one label, one promotion, or a read. Ask questions
+before claiming, and release as soon as writes end.
 
-**The claim's reason is the campaign. This is the step.** One line each, and
-they read as one story on the wall:
+The claim reason names the campaign. Each `--doing` line names the current
+step. The person can take a claimed board back. If that happens, stop and say
+what is complete and what partial state remains.
 
-```
-An agent has this board: redrawing the payment path
-  · adding the payment queue
-  · rerouting orders through it
-  · removing the direct write
-```
+A version refusal means another Archboard writer changed the board first. Use
+the refusal's current document when deciding the next write. A note conflict
+means an outside editor changed the persisted bytes; never choose which copy
+wins without the human.
 
-So do not repeat the reason on every write, and do not narrate the mechanics.
-"Adding the payment queue" is the sentence. "Creating rectangle at 300,200",
-"adding elements", and "working" are not: the first two say what the command
-did, which they can see, and the third says the wall is broken.
+## Evidence has distinct jobs
 
-Present tense, under 140 characters, and refused if it is empty or longer. Say
-it in the words the person would use about their own architecture.
+- `check` inspects the whole persisted board deterministically.
+- `render-findings` renders close-ups for current findings from one named board
+  snapshot.
+- `screenshot` captures one pane's rendered view. Confirm that pane holds the
+  named board and use a full-scene overview for completion evidence.
+- `viewport` changes a pane's camera. It does not crop inspection or prove what
+  exists outside the visible area.
+- `export` writes a portable scene file. It does not prove the browser view or
+  semantic difference.
+- `compare` describes semantic change between variants. It does not inspect
+  routing or render pixels.
 
-Two things it is not. It is never written into the board, so it is not a
-comment or a label: it lives as long as the canvas is up and no longer. And it
-is what you _said_, not what changed. A move that changes nothing visible still
-has an intent, and the board reports what it became separately (`changes`).
+## Files and rollback
 
-Only an agent says it. A person dragging a box says nothing, and nothing asks
-them to.
-
-### A board has a version, and your write is checked against the one you saw
-
-Every note carries a version, and every write answers with the one it produced:
-`fingerprint.version`. Your next write is checked against it, and refused if
-somebody wrote the board in between.
-
-**You carry nothing.** The canvas remembers what it last told you, so there is
-no number to thread from one command into the next — as long as it knows who
-you are through a claim:
-
-| You are                     | Checked?                                 |
-| --------------------------- | ---------------------------------------- |
-| holding a claim             | yes, every write under it, automatically |
-| a CLI process with no claim | only if you pass `--expect-version <n>`  |
-
-A CLI command is a fresh process with no memory and no name, so the canvas
-cannot tell your second command from another agent's first. **Claim the board
-and it can.** That is one more reason to claim before substantial work, on top
-of the ones above.
-
-```bash
-archboard claim --board payments --reason "redrawing the payment path"
-# -> version: 7 — what the canvas will check your first write against
-archboard add --board payments --doing "adding the queue" queue.json
-# -> fingerprint: { elements: 12, note: "9f3c...", version: 8 }
-```
-
-**When you are refused**, the board moved under you and nothing was written:
-
-```
-Refusing to write "payments": you were working from version 8, and the board is at 9.
-Another writer has been here 1 time(s) since the version you were working from.
-```
-
-**Use the `document` and `version` in the refusal before writing again.** That
-is the current board, already read after the refusal was decided. Do not spend
-another call on `describe` or `changes`. You are told once, so your next write
-goes against the version the refusal named. Repeating the same write will land,
-and landing is not the same as being right. Inspect the attached document and
-decide again because somebody moved something you were reasoning about.
-
-**This is not what protects you from Obsidian.** That is the sha-256 of the
-note's bytes, it runs on every write whatever else is true, and it refuses a
-write over a note somebody else changed. A version only orders writers who keep
-it, which is archboard and nobody else. `BOARD_VERSION_CONFLICT` means another
-archboard writer got there first and nothing is wrong with the board; a
-`conflict` with `reason: "changed"` means an editor that has never heard of any
-of this wrote the note, and that one stops the board saving.
-
-### Work where they can see it
-
-**Every change you make is visible as you make it.** Somebody is standing at the
-canvas watching the architecture take shape, and that immediacy is the whole
-point of drawing here rather than handing over a file. Keeping them from editing
-while you write is fine — that is what the claim is for. Keeping them from
-_seeing_ is not.
-
-So **leave the board sensible after every write.** Draw the new path before
-deleting the old one, and move a subsystem in one `apply` patch rather than a
-box at a time. Not because you might be interrupted — the claim handles that —
-but because each write is something they are looking at.
-
-**Do not do the work on a variant and swap it in when it is done.** It hides the
-change until there is nothing left to react to, and the swap replaces the board,
-so anything they drew while you worked is gone. Variants are for putting a
-proposal _beside_ the current architecture, both on screen, so the two can be
-compared (see Variants and comparison) — the opposite of a private workspace.
-
-**Revoking is not undoing**, so a claim taken back leaves the board part way
-through and nothing puts it back. That is not a hazard to design around: they
-watched you get there and the banner said why you had it, so taking it back is a
-decision made with the board in front of them. Stop when told.
-
-### Losing the board is normal
-
-The person at the canvas can take a claimed board back with one deliberate tap,
-and it is not an error when they do. You are told once, on your next write or
-claim, and the board is ordinary again after that.
-
-Stop there. Say what you finished, what you did not, and what state that leaves
-the board in, because you are the only one who knows what the half you drew was
-going to become. Do not claim it again to finish: they took it because they
-wanted it.
-
-## Workflow: File I/O
-
-- Export scene: `export --out diagram.excalidraw` (no `--out` → JSON to stdout)
-- Import scene: `import diagram.excalidraw` (append) or `import diagram.excalidraw --replace`
-- Image: `screenshot --out diagram.png` / `screenshot --format svg --out diagram.svg` (browser tab required)
-- Share link: `share` — encrypts the scene and returns a shareable excalidraw.com URL
-
-This is how diagrams live in a repo: commit the `.excalidraw` file, and re-`import` + edit + `export` it when the architecture changes.
-
-### Obsidian vaults: use `.excalidraw.md`
-
-Check the destination before writing: if any ancestor directory contains `.obsidian/`, it is an Obsidian vault. A raw `.excalidraw` file there opens in the Excalidraw plugin only in **compatibility mode** ("Convert to new format" warning), gets no block references or vault-wide search, and default Obsidian Sync skips non-`.md` files. Give the export a `.excalidraw.md` extension and the CLI writes the plugin's native format automatically:
-
-```bash
-archboard export --board payments --out "$VAULT/diagrams/system-map.excalidraw.md"   # .md → Obsidian format
-archboard import --board payments --doing "restoring the system map from the export" \
-  "$VAULT/diagrams/system-map.excalidraw.md" --replace   # reads plain and compressed Drawing blocks
-```
-
-Round-trips are safe: text-element block references follow the plugin's own id rules, so re-importing, editing, and re-exporting the same file keeps links from other notes intact.
-
-## Workflow: Snapshots
-
-1. `snapshot save --board <key> <name>` before risky changes.
-2. Make changes, evaluate with `describe` / `screenshot`.
-3. `snapshot restore --board <key> <name>` to roll back if needed. `snapshot list` shows what's saved.
-
-A snapshot belongs to the board it was taken on, and `--force` is what restores it onto a different one. It is a rollback point, not a proposal: a change somebody is meant to look at and argue with is a variant.
-
-## Workflow: Duplication
-
-`arrange duplicate --ids a,b --offset 40,40` (default offset 20,20). Useful for repeated patterns or copying layouts.
-
-## Error Recovery
-
-- **Exit code 3 (canvas unreachable)?** Auto-start is disabled (`EXCALIDRAW_NO_AUTOSTART=1`) or a non-loopback `EXPRESS_SERVER_URL` is set. Run `start` explicitly or fix the env.
-- **Exit code 4 (browser required)?** Open `http://127.0.0.1:3000` in a browser, then retry — screenshots, image export, viewport, mermaid conversion, and making or closing a pane all happen in the frontend.
-- **`BOARD_HELD`?** Somebody else has the board and the wait for them ran out. The answer names the holder and how long they have had it, then carries the current board as `document` and `version`. Use that document if you need to reconsider the write; do not read the board again. Say who holds it rather than going quiet, and try once more in a moment: a person's hold is a gesture and clears on its own. Retrying in a loop does not make the board come free any sooner.
-- **`DOING_REQUIRED`?** The write said nothing about what it was doing and nothing was written. Add `--doing "..."` and run it again. Do not reach for the last claim reason: that is the campaign, and this is the step. See [One writer at a time](#workflow-one-writer-at-a-time).
-- **`BOARD_VERSION_CONFLICT`?** The board moved between the last time you were told what it was and this write, so nothing was written. Another archboard writer — an agent, or the person at the canvas — got there first, and the refusal says by how many writes. It also carries the current `document` and `version`; inspect those instead of calling `describe` or `changes`. You are told once and your next write will land, so landing proves nothing: decide again from the attached document because somebody moved something you were reasoning about. See [One writer at a time](#workflow-one-writer-at-a-time).
-- **`CLAIM_REVOKED`?** The person at the canvas took a board you had claimed. You are told once, and nothing you wrote was undone, so the board sits part way through whatever you were doing. The refusal's `document` and `version` are that partial board; use them rather than reading it again. Stop, say what you finished and what state that leaves it in, and leave the board alone rather than claiming it again. Your next write is an ordinary write and takes the board only for as long as it writes. See [One writer at a time](#workflow-one-writer-at-a-time).
-- **Elements not appearing?** Check `describe` — they may be off-screen. `viewport --fit --pane <spec>` frames everything on that pane's board, and `viewport --ids a,b,c` frames a subgraph.
-- **Arrow not connecting?** Verify element IDs with `get <id>`. Make sure `startElementId`/`endElementId` match existing element IDs.
-- **Canvas in a bad state?** `snapshot save` first, then `clear --yes` and rebuild. Or `snapshot restore` to go back.
-- **Element won't update?** It may be locked — `arrange unlock --ids <id>` first.
-- **Duplicate text elements / element count climbing on its own?** A label is stored on its shape as `label`, and the browser expands it into a bound text element. Expanding it more than once used to mint a _new_ text element each time, so labels bred on every sync until arrows collapsed under the stack. Fixed: a label that already has a text element keeps that element. On a board polluted before the fix, `query --type text` shows the copies — several texts sharing one `containerId` — and `delete` removes all but one; the arrows they were bound to may also need their geometry restored by nudging the shapes they connect. Labelling shapes, including background zones, is safe.
-
----
+Use portable scene export when the drawing belongs in a repository. In an
+Obsidian vault, an `.excalidraw.md` destination preserves the plugin's native
+note format. A snapshot is a rollback point for risky edits to one board; a
+proposal belongs on a branched variant instead.
 
 ## References
 
-- `references/cheatsheet.md`: full CLI reference, REST API endpoints and payload shapes, and the diagram design guide (colors, sizing).
-- `references/architecture-workflow.md`: **read this when a human is at the board with you.** Covers the read-back loop (`changes`, `selection`), binding nodes to code, what to draw on a board somebody stands in front of, and reading a human's rearrangement as design intent.
+- [`references/architecture-workflow.md`](references/architecture-workflow.md)
+  covers the human read-back loop and the architecture inspection model.
+- [`references/cli-workflows.md`](references/cli-workflows.md) contains tested
+  CLI value chains without copying result schemas.
+- [`references/cheatsheet.md`](references/cheatsheet.md) keeps only stable visual
+  defaults and points back to the live command and result authorities.
