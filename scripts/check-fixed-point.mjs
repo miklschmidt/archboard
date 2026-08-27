@@ -684,14 +684,38 @@ try {
 					[-120, -90],
 				],
 			},
+			{
+				id: "bridge-under",
+				type: "line",
+				x: 200,
+				y: 300,
+				points: [
+					[0, 0],
+					[0, 80],
+				],
+			},
 		],
 	});
-	// Thirteen, not nine: four of those elements carry a label, and a label is a
+	// Fourteen, not ten: four of those elements carry a label, and a label is a
 	// text element from the moment it is written (ADR 0015).
 	check(
 		"a board is drawn covering every type an agent can create and a negative path",
-		made.status === 200 && made.body?.elements?.length === 13,
+		made.status === 200 && made.body?.elements?.length === 14,
 		`status ${made.status}, ${made.body?.elements?.length} elements`,
+	);
+	const bridge = await api("POST", "/api/bridges?board=fixedpoint", {
+		over: "line1",
+		under: "bridge-under",
+		background: "#ffffff",
+	});
+	check(
+		"the fixed-point board includes one product bridge pair",
+		bridge.status === 200 &&
+			bridge.body?.elements?.length === 2 &&
+			bridge.body?.elements?.[0]?.id === bridge.body?.bridgeId &&
+			bridge.body?.elements?.[0]?.customData?.archboard?.bridge?.role === "mask" &&
+			bridge.body?.elements?.[1]?.customData?.archboard?.bridge?.role === "redraw",
+		bridge.body?.error ?? "",
 	);
 
 	// Saved and read back, so the document under test is the note our exporter

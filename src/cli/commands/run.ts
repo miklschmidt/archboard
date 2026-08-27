@@ -54,6 +54,7 @@ import {
 } from "./arrange.js";
 import { installSkillContract } from "./install-skill.js";
 import { libraryContract, libraryInsertContract, libraryListContract } from "./library.js";
+import { bridgeContract, bridgeRemoveContract } from "./bridge.js";
 import { childDiscoveryOptions } from "../command-contract/route-options.js";
 
 interface ContractCommand {
@@ -88,6 +89,14 @@ const contract = (value: AnyCommandContract, handlerOwner: string): ContractComm
 const child = (owner: RouteOwner): CommandRoute => ({ owner });
 
 const COMMANDS: Record<string, CommandRoute> = {
+	bridge: {
+		owner: contract(bridgeContract, "src/cli/commands/bridge.ts"),
+		children: {
+			remove: child(contract(bridgeRemoveContract, "src/cli/commands/bridge.ts")),
+		},
+		summary: "Mark or remove a verified connector crossing",
+		usage: "bridge --over <id> --under <id> --background <#RRGGBB> [--at <x,y>] | bridge remove <bridge-id>",
+	},
 	start: {
 		owner: contract(startContract, "src/cli/commands/server.ts"),
 	},

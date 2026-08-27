@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:18'
-updated_date: '2026-08-27 08:29'
+updated_date: '2026-08-27 08:55'
 labels:
   - ready-for-agent
 dependencies:
@@ -72,6 +72,12 @@ TASK-119 inspection schema v2 validates bridge provenance, suppresses only an ex
 
 10. Validate through existing owners: focused inspection/geometry/branch/one-write/contracts/CLI checks, representative planner/provenance/removal cases, unchanged compare/describe bytes, and one addition to the sequential fixed-point fixture. Then run two stable fix passes, complete `bun run check`, and a separate complete `bun run test`. Review the fixed range `2c5a639ddb432447308f9dba557156aab1391c89..HEAD` independently on Standards and Spec before finalization.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-08-27 implementation checkpoint: added the pure board-inspection bridge contract and strict eight-field provenance, reused TASK-119 decode/intersection owners, integrated schema-v2 provenance findings and exact crossing suppression, filtered valid decorations at inspection/architecture/compare/describe, and added one-write POST/DELETE adapters plus CommandContracts. Current focused evidence: type-check, lint, boundaries, module-scope, inspection (734), contracts (60 paths/1000 checks), CLI package (35 commands/25 subcommands/596), and one-write (80) green. TASK remains In Progress with AC unchecked; fixed-point/full validation remains.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
