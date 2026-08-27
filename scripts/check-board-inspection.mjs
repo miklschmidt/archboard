@@ -37,6 +37,10 @@ const {
 	planBridgeRemoval,
 	validateBridgeDecorations,
 } = await import(src("runtime/board-inspection/bridge.ts"));
+const { BridgeResultSchema, BridgeRemoveResultSchema } = await import(
+	src("cli/commands/bridge.ts")
+);
+const { generateKeyBetween } = await import("fractional-indexing");
 let failures = 0,
 	checks = 0;
 const check = (label, condition, detail = "") => {
@@ -212,6 +216,158 @@ check(
 	"removal is provenance-only and remains safe after both sources disappear",
 	JSON.stringify(planBridgeRemoval(bridgeApplied.named, "Bridge01")) ===
 		JSON.stringify(bridgeApplied.named.map(({ id }) => id)),
+);
+const cloneBridgeParts = () => structuredClone(bridgeApplied.named);
+const partMutations = [
+	["deleted", { isDeleted: true }, "incomplete-decoration"],
+	["wrong type", { type: "rectangle" }, "incomplete-decoration"],
+	["empty id", { id: "" }, "incomplete-decoration"],
+	["angle", { angle: 0.25 }, "stale-decoration"],
+	["roundness", { roundness: { type: 2 } }, "stale-decoration"],
+	["elbowed", { elbowed: true }, "stale-decoration"],
+	["fixed segments", { fixedSegments: [{ index: 0 }] }, "stale-decoration"],
+	["curve", { curve: true }, "stale-decoration"],
+	["curve kind", { curveKind: "bezier" }, "stale-decoration"],
+];
+for (const [roleIndex, role] of ["mask", "redraw"].entries()) {
+	for (const [label, mutation, reason] of partMutations) {
+		const parts = cloneBridgeParts();
+		Object.assign(parts[roleIndex], mutation);
+		const report = inspectBoard([bridgeOver, bridgeUnder, ...parts]);
+		let removalRefused = reason !== "incomplete-decoration";
+		if (!removalRefused)
+			try {
+				planBridgeRemoval(parts, "Bridge01");
+			} catch (error) {
+				removalRefused = error instanceof BridgeRefusal;
+			}
+		check(
+				`${role} bridge part ${String(label)} is ${String(reason)} and suppresses nothing`,
+				removalRefused &&
+				report.findings.some(
+				(finding) =>
+					finding.code === "BRIDGE_PROVENANCE_INVALID" && finding.reason === reason,
+			) && report.findings.some(({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED"),
+		);
+	}
+	const duplicateIds = cloneBridgeParts();
+	duplicateIds[roleIndex].id = duplicateIds[1 - roleIndex].id;
+	const duplicateReport = inspectBoard([bridgeOver, bridgeUnder, ...duplicateIds]);
+	let duplicateRemovalRefused = false;
+	try {
+		planBridgeRemoval(duplicateIds, "Bridge01");
+	} catch (error) {
+		duplicateRemovalRefused = error instanceof BridgeRefusal;
+	}
+	check(
+		`${role} bridge part duplicate identity is incomplete and removal refuses it`,
+		duplicateRemovalRefused &&
+			duplicateReport.findings.some(
+				({ code, reason }) =>
+					code === "BRIDGE_PROVENANCE_INVALID" && reason === "incomplete-decoration",
+			) &&
+			duplicateReport.findings.some(({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED"),
+	);
+}
+const interposedBridgeElement = {
+	id: "bridge-interposed",
+	type: "rectangle",
+	x: 200,
+	y: 200,
+	width: 10,
+	height: 10,
+	index: generateKeyBetween(bridgeApplied.named[0].index, bridgeApplied.named[1].index),
+};
+const interposedBridgeBoard = [...bridgedElements, interposedBridgeElement];
+const interposedBridgeReport = inspectBoard(interposedBridgeBoard);
+check(
+	"an unrelated live element between mask and redraw makes provenance stale",
+	interposedBridgeReport.findings.some(
+		({ code, reason, details }) =>
+			code === "BRIDGE_PROVENANCE_INVALID" &&
+			reason === "stale-decoration" &&
+			details.issue === "z-order-invalid",
+	) &&
+		interposedBridgeReport.findings.some(
+			({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED",
+		),
+);
+
+const bridgeReceipt = {
+	success: true,
+	board: "bridge-fixture",
+	bridgeId: bridgePlan.bridgeId,
+	overConnectorId: bridgePlan.overConnectorId,
+	underConnectorId: bridgePlan.underConnectorId,
+	overSegmentIndex: bridgePlan.overSegmentIndex,
+	underSegmentIndex: bridgePlan.underSegmentIndex,
+	crossing: bridgePlan.crossing,
+	elements: bridgeApplied.named,
+	fingerprint: { elements: bridgedElements.length, note: "receipt", version: 1 },
+};
+check("the exact bridge create receipt parses", BridgeResultSchema.safeParse(bridgeReceipt).success);
+const inconsistentBridgeReceipts = [
+	{ ...bridgeReceipt, bridgeId: "OtherBridge" },
+	{ ...bridgeReceipt, underConnectorId: bridgeReceipt.overConnectorId },
+	{ ...bridgeReceipt, overConnectorId: "other-over" },
+	{ ...bridgeReceipt, underSegmentIndex: 1 },
+	{ ...bridgeReceipt, crossing: { x: 51, y: 50 } },
+	{
+		...bridgeReceipt,
+		elements: [
+			{ ...bridgeApplied.named[0], id: "OtherMask" },
+			bridgeApplied.named[1],
+		],
+	},
+	{
+		...bridgeReceipt,
+		elements: [
+			bridgeApplied.named[0],
+			{ ...bridgeApplied.named[1], id: bridgePlan.bridgeId },
+		],
+	},
+	{
+		...bridgeReceipt,
+		elements: [
+			bridgeApplied.named[0],
+			{
+				...bridgeApplied.named[1],
+				customData: {
+					archboard: {
+						bridge: {
+							...bridgeApplied.named[1].customData.archboard.bridge,
+							background: "#000000",
+						},
+					},
+				},
+			},
+		],
+	},
+];
+check(
+	"bridge create receipt rejects every cross-field disagreement",
+	inconsistentBridgeReceipts.every((receipt) => !BridgeResultSchema.safeParse(receipt).success),
+);
+const removalReceipt = {
+	success: true,
+	board: "bridge-fixture",
+	bridgeId: bridgePlan.bridgeId,
+	deleted: bridgeApplied.named.map(({ id }) => id),
+	elements: [],
+	fingerprint: { elements: 2, note: "receipt", version: 2 },
+};
+check(
+	"bridge removal receipt owns mask/redraw identity and order",
+	BridgeRemoveResultSchema.safeParse(removalReceipt).success &&
+		!BridgeRemoveResultSchema.safeParse({ ...removalReceipt, bridgeId: "OtherBridge" }).success &&
+		!BridgeRemoveResultSchema.safeParse({
+			...removalReceipt,
+			deleted: [bridgeApplied.named[1].id, bridgeApplied.named[0].id],
+		}).success &&
+		!BridgeRemoveResultSchema.safeParse({
+			...removalReceipt,
+			deleted: [bridgePlan.bridgeId, bridgePlan.bridgeId],
+		}).success,
 );
 check(
 	"bridge metadata rejects extra fields",
@@ -6358,6 +6514,16 @@ noteFor("clean", []);
 noteFor("bridge-valid", bridgedElements);
 noteFor("bridge-stale", staleBridgeElements);
 noteFor("bridge-incomplete", [bridgeOver, bridgeUnder, bridgeApplied.named[0]]);
+const persistedDeletedMaskParts = cloneBridgeParts();
+persistedDeletedMaskParts[0].isDeleted = true;
+noteFor("bridge-deleted-mask", [bridgeOver, bridgeUnder, ...persistedDeletedMaskParts]);
+const persistedDeletedRedrawParts = cloneBridgeParts();
+persistedDeletedRedrawParts[1].isDeleted = true;
+noteFor("bridge-deleted-redraw", [bridgeOver, bridgeUnder, ...persistedDeletedRedrawParts]);
+const persistedWrongTypeParts = cloneBridgeParts();
+persistedWrongTypeParts[1].type = "rectangle";
+noteFor("bridge-wrong-type", [bridgeOver, bridgeUnder, ...persistedWrongTypeParts]);
+noteFor("bridge-interposed", interposedBridgeBoard);
 noteFor("label-created-at-forward", duplicateLabelCreatedAtBoard(false));
 noteFor("label-created-at-reverse", duplicateLabelCreatedAtBoard(true));
 noteFor("terminal-comparison-precedence", terminalComparisonBoard);
@@ -6858,6 +7024,10 @@ check(
 for (const [board, reason] of [
 	["bridge-stale", "stale-decoration"],
 	["bridge-incomplete", "incomplete-decoration"],
+	["bridge-deleted-mask", "incomplete-decoration"],
+	["bridge-deleted-redraw", "incomplete-decoration"],
+	["bridge-wrong-type", "incomplete-decoration"],
+	["bridge-interposed", "stale-decoration"],
 ]) {
 	const packageRun = run(board, ["--strict"]);
 	const packageReport = JSON.parse(packageRun.stdout);

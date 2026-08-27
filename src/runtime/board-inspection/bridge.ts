@@ -162,19 +162,53 @@ const sameFacts = (a: BridgeMetadata, b: BridgeMetadata): boolean =>
 	a.crossing.y === b.crossing.y &&
 	a.background === b.background;
 
-function lineMatches(part: ServerElement, expectedInput: Record<string, unknown>): boolean {
+function canonicalBridgeLine(
+	partId: string,
+	expectedInput: Record<string, unknown>,
+): Record<string, unknown> {
 	const points = expectedInput.points as [[number, number], [number, number]];
+	return {
+		id: partId,
+		type: expectedInput.type,
+		x: expectedInput.x,
+		y: expectedInput.y,
+		width: Math.abs(points[1][0] - points[0][0]),
+		height: Math.abs(points[1][1] - points[0][1]),
+		points,
+		angle: expectedInput.angle,
+		strokeColor: expectedInput.strokeColor,
+		strokeWidth: expectedInput.strokeWidth,
+		strokeStyle: expectedInput.strokeStyle,
+		roughness: expectedInput.roughness,
+		opacity: expectedInput.opacity,
+		backgroundColor: "transparent",
+		fillStyle: "solid",
+		groupIds: expectedInput.groupIds,
+		startBinding: expectedInput.startBinding,
+		endBinding: expectedInput.endBinding,
+		boundElements: null,
+		frameId: null,
+		roundness: null,
+		isDeleted: false,
+		link: null,
+		locked: false,
+		lastCommittedPoint: null,
+		startArrowhead: null,
+		endArrowhead: null,
+		customData: expectedInput.customData,
+	};
+}
+
+function lineMatches(part: ServerElement, expectedInput: Record<string, unknown>): boolean {
+	const actual = part as unknown as Record<string, unknown>;
+	const expected = canonicalBridgeLine(part.id, expectedInput);
+	for (const [key, value] of Object.entries(expected))
+		if (JSON.stringify(actual[key]) !== JSON.stringify(value)) return false;
 	return (
-		part.x === expectedInput.x &&
-		part.y === expectedInput.y &&
-		part.width === Math.abs(points[1][0] - points[0][0]) &&
-		part.height === Math.abs(points[1][1] - points[0][1]) &&
-		JSON.stringify(part.points) === JSON.stringify(points) &&
-		part.strokeColor === expectedInput.strokeColor &&
-		part.strokeWidth === expectedInput.strokeWidth &&
-		part.strokeStyle === expectedInput.strokeStyle &&
-		part.roughness === expectedInput.roughness &&
-		part.opacity === expectedInput.opacity
+		actual.elbowed === undefined &&
+		actual.fixedSegments === undefined &&
+		actual.curve === undefined &&
+		actual.curveKind === undefined
 	);
 }
 
@@ -355,15 +389,6 @@ function structuralPairs(elements: readonly ServerElement[]): {
 			});
 			continue;
 		}
-		if (element.type !== "line") {
-			invalid.push({
-				bridgeId: parsed.data.bridgeId,
-				reason: "incomplete-decoration",
-				issue: "non-line-part",
-				elements: [element],
-			});
-			continue;
-		}
 		const group = grouped.get(parsed.data.bridgeId) ?? [];
 		group.push({ element, metadata: parsed.data });
 		grouped.set(parsed.data.bridgeId, group);
@@ -373,11 +398,22 @@ function structuralPairs(elements: readonly ServerElement[]): {
 		const masks = parts.filter((part) => part.metadata.role === "mask");
 		const redraws = parts.filter((part) => part.metadata.role === "redraw");
 		let issue: BridgeIncompleteIssue | null = null;
-		if (masks.length === 0) issue = "missing-mask";
+		if (parts.some((part) => part.element.type !== "line")) issue = "non-line-part";
+		else if (
+			parts.some(
+				(part) =>
+					part.element.isDeleted === true ||
+					typeof part.element.id !== "string" ||
+					part.element.id.length === 0,
+			)
+		)
+			issue = "malformed-metadata";
+		else if (masks.length === 0) issue = "missing-mask";
 		else if (redraws.length === 0) issue = "missing-redraw";
 		else if (masks.length > 1) issue = "duplicate-mask";
 		else if (redraws.length > 1) issue = "duplicate-redraw";
 		else if (masks[0]!.element.id !== bridgeId) issue = "mask-id-mismatch";
+		else if (masks[0]!.element.id === redraws[0]!.element.id) issue = "conflicting-facts";
 		else if (!sameFacts(masks[0]!.metadata, redraws[0]!.metadata)) issue = "conflicting-facts";
 		if (issue)
 			invalid.push({
@@ -440,16 +476,37 @@ function staleIssue(
 	}
 	if (!lineMatches(pair.redraw.element, expected.inputs[1])) return "style-mismatch";
 	if (!lineMatches(pair.mask.element, expected.inputs[0])) return "geometry-mismatch";
-	const maskIndex = pair.mask.element.index;
-	const redrawIndex = pair.redraw.element.index;
+	const liveOrder = elements
+		.map((element, position) => ({ element, position }))
+		.filter(({ element }) => element.isDeleted !== true)
+		.toSorted(
+			(a, b) =>
+				(typeof a.element.index === "string" && typeof b.element.index === "string"
+					? compareIdentity(a.element.index, b.element.index)
+					: 0) || a.position - b.position,
+		);
+	const maskPosition = liveOrder.findIndex(({ element }) => element === pair.mask.element);
+	const redrawPosition = liveOrder.findIndex(({ element }) => element === pair.redraw.element);
+	const overPosition = liveOrder.findIndex(({ element }) => element === overElement);
+	const underPosition = liveOrder.findIndex(({ element }) => element === underElement);
+	const duplicatePartIndex = liveOrder.some(
+		({ element }) =>
+			element !== pair.mask.element &&
+			element !== pair.redraw.element &&
+			(element.index === pair.mask.element.index || element.index === pair.redraw.element.index),
+	);
 	if (
-		typeof maskIndex !== "string" ||
-		typeof redrawIndex !== "string" ||
+		typeof pair.mask.element.index !== "string" ||
+		typeof pair.redraw.element.index !== "string" ||
 		typeof overElement.index !== "string" ||
 		typeof underElement.index !== "string" ||
-		compareIdentity(maskIndex, overElement.index) <= 0 ||
-		compareIdentity(maskIndex, underElement.index) <= 0 ||
-		compareIdentity(redrawIndex, maskIndex) <= 0
+		overPosition < 0 ||
+		underPosition < 0 ||
+		duplicatePartIndex ||
+		compareIdentity(pair.mask.element.index, pair.redraw.element.index) >= 0 ||
+		maskPosition <= overPosition ||
+		maskPosition <= underPosition ||
+		redrawPosition !== maskPosition + 1
 	)
 		return "z-order-invalid";
 	return null;
