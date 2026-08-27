@@ -40,7 +40,7 @@ class InputComplexityAccumulator {
 	}
 }
 
-const INSPECTION_FIELDS = [
+export const INSPECTION_FIELDS = [
 	"id",
 	"type",
 	"isDeleted",
