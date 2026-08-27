@@ -1,11 +1,11 @@
 ---
 id: TASK-122
 title: Teach and enforce deterministic board completion in the Archboard skill
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:19'
-updated_date: '2026-08-27 16:03'
+updated_date: '2026-08-27 16:06'
 labels:
   - ready-for-agent
 dependencies:
@@ -39,12 +39,12 @@ Delete stale cached command, result, exit, REST, and MCP documentation from the 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 SKILL.md has a short ordered completion gate: use an explicit board and preserve human state; claim only for a substantial multi-write campaign; after each routing batch run strict whole-board check; render close-ups only for still-present findings; use released bridge/remove only for deliberate supported crossings; require a final complete clean strict report; release when writes end; capture one confirmed-board full-scene overview; and run compare only for variant work. It includes no ordinary same-board save ritual.
-- [ ] #2 Guidance accurately distinguishes deterministic check, conditional render-findings close-ups, a full-scene screenshot, visible pane and camera state, portable scene export, and semantic compare; none is presented as proof of another.
-- [ ] #3 architecture-workflow.md concisely teaches promoted multi-part node identity, grouped or library visual-obstacle evidence, non-obstacle container boundaries, endpoint and containing-zone exclusions, exact intentional bridges, unsupported or indeterminate handling, whole-board recheck after local batches, and preservation of human grouping, layout, stencil provenance, and unrelated content.
-- [ ] #4 SKILL.md and cheatsheet.md point to archboard help, source CommandContracts and inferred types, and cli-workflows.md. They contain no copied result shapes or fields, syntax tables, exit or ordering contracts, or REST/MCP catalogue. Stale save, screenshot, viewport-crop, and curved or elbowed routing guidance is absent; cli-workflows.md is unchanged.
-- [ ] #5 Exactly one composite eval covers the dense reroute regression plus one declared unavoidable crossing. It grades final production consequences: complete clean inspection, exact valid bridge suppression, semantic compare truth, explicit board identity, and byte or field preservation of unrelated grouped and stencil elements. It requires no exact prose, general command trace, or post-clean render manifest.
-- [ ] #6 Existing production owners remain authoritative: inspection tests cover dense reroute, bridges, and package behavior; branch and side-by-side tests cover compare and pane consequences; contract tests cover the registry and workflow chains; install tests cover tracked, synchronized, and installed skill identity; and the unchanged fixed-point browser lane owns focused and full-scene pixels. No runtime, CommandContract, registry, generated-artifact, sync, UI/MCP, TASK-090, or TASK-123.03 behavior changes.
+- [x] #1 SKILL.md has a short ordered completion gate: use an explicit board and preserve human state; claim only for a substantial multi-write campaign; after each routing batch run strict whole-board check; render close-ups only for still-present findings; use released bridge/remove only for deliberate supported crossings; require a final complete clean strict report; release when writes end; capture one confirmed-board full-scene overview; and run compare only for variant work. It includes no ordinary same-board save ritual.
+- [x] #2 Guidance accurately distinguishes deterministic check, conditional render-findings close-ups, a full-scene screenshot, visible pane and camera state, portable scene export, and semantic compare; none is presented as proof of another.
+- [x] #3 architecture-workflow.md concisely teaches promoted multi-part node identity, grouped or library visual-obstacle evidence, non-obstacle container boundaries, endpoint and containing-zone exclusions, exact intentional bridges, unsupported or indeterminate handling, whole-board recheck after local batches, and preservation of human grouping, layout, stencil provenance, and unrelated content.
+- [x] #4 SKILL.md and cheatsheet.md point to archboard help, source CommandContracts and inferred types, and cli-workflows.md. They contain no copied result shapes or fields, syntax tables, exit or ordering contracts, or REST/MCP catalogue. Stale save, screenshot, viewport-crop, and curved or elbowed routing guidance is absent; cli-workflows.md is unchanged.
+- [x] #5 Exactly one composite eval covers the dense reroute regression plus one declared unavoidable crossing. It grades final production consequences: complete clean inspection, exact valid bridge suppression, semantic compare truth, explicit board identity, and byte or field preservation of unrelated grouped and stencil elements. It requires no exact prose, general command trace, or post-clean render manifest.
+- [x] #6 Existing production owners remain authoritative: inspection tests cover dense reroute, bridges, and package behavior; branch and side-by-side tests cover compare and pane consequences; contract tests cover the registry and workflow chains; install tests cover tracked, synchronized, and installed skill identity; and the unchanged fixed-point browser lane owns focused and full-scene pixels. No runtime, CommandContract, registry, generated-artifact, sync, UI/MCP, TASK-090, or TASK-123.03 behavior changes.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -110,3 +110,9 @@ created: 2026-08-27 15:27
 Parent approved the xhigh deletion-test amendment. Render close-ups are conditional on still-present findings; a clean final check has no findings and therefore no mandatory render-findings evidence. Implementation is limited to one main-path gate, one focused conceptual section, one composite consequence eval, aggressive cached-reference deletion, and existing test owners.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replaced the stale 846-line skill command cache with a concise 196-line workflow guide and reduced the cheatsheet to maintained navigation. The main path now requires explicit-board, human-preserving, whole-board completion with conditional finding close-ups, product-owned intentional bridges, a final complete clean strict report, timely release, a confirmed-board full-scene overview, and variant-only semantic compare. Added one focused routing/inspection model and exactly one composite consequence eval using existing inspection, branch, and side-by-side owners; dense repair now proves unrelated grouped, stencil, and decoration records remain byte-identical. No runtime, contract, registry, sync, UI/MCP, browser topology, or generated-ownership behavior changed. Verified by 838 inspection checks, 136 install checks, 61/61/1011 contract checks, 93 workflow checks, branch/side-by-side/one-write/doing/lock/version gates, stable fix passes, complete check, separate complete test, serial headless browser lanes, focused remediation checks, and clean independent Standards and Spec reviews over f69eb6f72191097f44cc4393bab570823d8ff5d0..5b3a19c8c45b596f7257d4f6d6bd37c3aa3cdead.
+<!-- SECTION:FINAL_SUMMARY:END -->
