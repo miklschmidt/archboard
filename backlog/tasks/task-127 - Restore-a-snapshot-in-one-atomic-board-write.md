@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-26 07:06'
-updated_date: '2026-08-27 17:25'
+updated_date: '2026-08-27 17:31'
 labels:
   - enhancement
 dependencies: []
@@ -47,6 +47,16 @@ Replace snapshot restore's clear-then-batch sequence with the existing atomic sc
 
 5. Run focused type/lint/boundary, contracts, CLI, one-write, boards, Obsidian, doing, lock, version, and reporting gates, then stable fix/check/separate-test validation and independent fixed-range review. Add no browser or concurrency suite.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation checkpoint (2026-08-27):
+- Replaced snapshot restore’s DELETE clear + strict batch pair with replaceSceneOnCanvas(snapshot.elements, []) after the unchanged server, snapshot, target-board, and cross-board force checks. Snapshot storage remains element-only and --force is not forwarded to note persistence.
+- Updated only the snapshot restore CommandContract relationship/description metadata and canonical authored CLI audit; registry paths, fixed help/argv bytes, and immutable 57-path compatibility remain unchanged.
+- Extended existing package and one-write owners. Real-server evidence covers a variant target, no-force zero-write refusal, one marked POST, canonical elements, empty files despite image fileId, one version advance, one net elements_changed plus files_replaced [], selection cleanup, repeat nested deep-copy isolation, and held restore with unchanged note bytes/mtime/version.
+- Focused validation green: type-check, test:one-write (127 checks), test:cli (639 checks), test:contracts (61 proofs/61 audited paths/1011 checks plus workflow checks), test:boards, test:obsidian, test:reporting, and git diff --check.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
