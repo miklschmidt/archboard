@@ -65,6 +65,7 @@ function parseJson(label, value) {
 
 const fixedBaseGeneralHelp = (value) =>
 	value
+		.replace(/^  bridge\s+Mark or remove a verified connector crossing\n/m, "")
 		.replace(/^  check\s+Inspect a persisted board for deterministic quality findings\n/m, "")
 		.replace(/^               check only: 6 warnings, 7 errors, 8 indeterminate coverage\.\n/m, "");
 
@@ -141,6 +142,29 @@ function cliMerged(args, { url, cwd = outside } = {}) {
 const element = { id: "shape1", type: "rectangle", x: 0, y: 0, width: 100, height: 80 };
 const document = [element];
 const fingerprint = { elements: 1, note: "contract-note", version: 7 };
+const bridgeFacts = {
+	bridgeId: "Bridge01",
+	overConnectorId: "over",
+	underConnectorId: "under",
+	overSegmentIndex: 0,
+	underSegmentIndex: 0,
+	crossing: { x: 50, y: 50 },
+	background: "#ffffff",
+};
+const bridgeParts = ["mask", "redraw"].map((role, index) => ({
+	id: index === 0 ? bridgeFacts.bridgeId : "Redraw01",
+	type: "line",
+	x: 44,
+	y: 50,
+	points: [
+		[0, 0],
+		[12, 0],
+	],
+	groupIds: [],
+	startBinding: null,
+	endBinding: null,
+	customData: { archboard: { bridge: { ...bridgeFacts, role } } },
+}));
 const boardIdentity = {
 	board: "contract",
 	variant: "current",
@@ -347,6 +371,30 @@ const server = Bun.serve({
 		}
 		if (request.method === "GET" && url.pathname === "/api/files") {
 			return Response.json({ success: true, files: {}, ...(held ? { held } : {}) });
+		}
+		if (request.method === "POST" && url.pathname === "/api/bridges") {
+			return Response.json({
+				success: true,
+				board: "contract",
+				bridgeId: bridgeFacts.bridgeId,
+				overConnectorId: bridgeFacts.overConnectorId,
+				underConnectorId: bridgeFacts.underConnectorId,
+				overSegmentIndex: bridgeFacts.overSegmentIndex,
+				underSegmentIndex: bridgeFacts.underSegmentIndex,
+				crossing: bridgeFacts.crossing,
+				elements: bridgeParts,
+				fingerprint,
+			});
+		}
+		if (request.method === "DELETE" && url.pathname === "/api/bridges/Bridge01") {
+			return Response.json({
+				success: true,
+				board: "contract",
+				bridgeId: "Bridge01",
+				deleted: ["Bridge01", "Redraw01"],
+				elements: [],
+				fingerprint,
+			});
 		}
 
 		const askedForDocument = url.searchParams.get("document") === "1" || body?.document === true;
@@ -739,6 +787,10 @@ try {
 		(bare.stdout.match(/^  check\s/gm) ?? []).length === 1,
 	);
 	check(
+		"current general help adds the bridge command once",
+		(bare.stdout.match(/^  bridge\s/gm) ?? []).length === 1,
+	);
+	check(
 		"current general help adds the exact check-only exit line",
 		bare.stdout.includes(
 			"               check only: 6 warnings, 7 errors, 8 indeterminate coverage.\n",
@@ -804,6 +856,50 @@ try {
 			);
 		}
 	}
+
+	const bridgeBefore = requests.length;
+	const bridged = await cli(
+		[
+			"bridge",
+			"--over",
+			"over",
+			"--under",
+			"under",
+			"--background",
+			"#FFFFFF",
+			"--at",
+			"50,50",
+			"--board",
+			"contract",
+			"--doing",
+			"marking crossing",
+		],
+		{ url: canvasUrl },
+	);
+	const bridgedAnswer = parseJson("bridge JSON", bridged.stdout);
+	const bridgeWrites = writesSince(bridgeBefore);
+	check("bridge package adapter exits normally", bridged.status === 0, bridged.stderr);
+	check("bridge package adapter performs exactly one POST", bridgeWrites.length === 1 && bridgeWrites[0]?.url.pathname === "/api/bridges");
+	check("bridge package adapter normalizes the explicit background", bridgeWrites[0]?.body?.background === "#ffffff");
+	check("bridge package result keeps the role-ordered pair", bridgedAnswer?.elements?.[0]?.customData?.archboard?.bridge?.role === "mask" && bridgedAnswer?.elements?.[1]?.customData?.archboard?.bridge?.role === "redraw");
+
+	const removeBefore = requests.length;
+	const removedBridge = await cli(
+		["bridge", "remove", "Bridge01", "--board", "contract", "--doing", "removing crossing"],
+		{ url: canvasUrl },
+	);
+	const removeWrites = writesSince(removeBefore);
+	check("bridge remove package adapter exits normally", removedBridge.status === 0, removedBridge.stderr);
+	check("bridge remove performs exactly one DELETE and no pre-GET", removeWrites.length === 1 && removeWrites[0]?.method === "DELETE" && removeWrites[0]?.url.pathname === "/api/bridges/Bridge01");
+	check("bridge remove returns the exact provenance pair", JSON.stringify(parseJson("bridge remove JSON", removedBridge.stdout)?.deleted) === JSON.stringify(["Bridge01", "Redraw01"]));
+
+	const invalidBackgroundBefore = requests.length;
+	const invalidBackground = await cli(
+		["bridge", "--over", "over", "--under", "under", "--background", "transparent", "--board", "contract", "--doing", "marking crossing"],
+		{ url: canvasUrl },
+	);
+	check("invalid bridge background is usage exit 2", invalidBackground.status === 2);
+	check("invalid bridge background contacts no write route", requests.length === invalidBackgroundBefore);
 
 	const queryBefore = requests.length;
 	const queried = await cli([

@@ -82,7 +82,10 @@ const proxy = http.createServer((req, res) => {
 	req.on("end", async () => {
 		const body = Buffer.concat(chunks);
 		const isWrite = req.method !== "GET" && req.method !== "HEAD";
-		if (isWrite && req.url.startsWith("/api/elements")) {
+		if (
+			isWrite &&
+			(req.url.startsWith("/api/elements") || req.url.startsWith("/api/bridges"))
+		) {
 			writes.push(`${req.method} ${req.url.split("?")[0]}`);
 		}
 		try {
@@ -833,13 +836,54 @@ try {
 		"the refused delete removed the first id anyway, which is the half-applied write this exists to stop",
 	);
 
+	const crossingSources = [
+		{
+			id: "bridge-over",
+			type: "line",
+			x: 0,
+			y: 50,
+			width: 100,
+			height: 0,
+			points: [[0, 0], [100, 0]],
+		},
+		{
+			id: "bridge-under",
+			type: "arrow",
+			x: 50,
+			y: 0,
+			width: 0,
+			height: 100,
+			points: [[0, 0], [0, 100]],
+		},
+	];
+	await api("POST", `/api/elements/batch${board}`, { elements: crossingSources });
+	const createdBridge = await counting("creating both bridge parts", () =>
+		cli([
+			"bridge",
+			"--board",
+			"scratch",
+			"--over",
+			"bridge-over",
+			"--under",
+			"bridge-under",
+			"--background",
+			"#ffffff",
+		]),
+	);
+	assert(createdBridge.code === 0, `bridge create failed: ${createdBridge.err}`);
+	const bridgeId = JSON.parse(createdBridge.out).bridgeId;
+	const removedBridge = await counting("removing both bridge parts", () =>
+		cli(["bridge", "remove", bridgeId, "--board", "scratch"]),
+	);
+	assert(removedBridge.code === 0, `bridge remove failed: ${removedBridge.err}`);
+
 	// ─── One route-level door ────────────────────────────────────
 
 	const serverSource = fs.readFileSync(src("server/canvas/lib/application.ts"), "utf-8");
 	const doorSource = fs.readFileSync(src("runtime/engine/board-write.ts"), "utf-8");
 	assert(
-		(serverSource.match(/answerBoardWrite\(res, \{/g) ?? []).length === 9,
-		"the server application should route all nine board-writing routes through the response wrapper",
+		(serverSource.match(/answerBoardWrite\(res, \{/g) ?? []).length === 11,
+		"the server application should route all eleven board-writing routes through the response wrapper",
 	);
 	assert(
 		(serverSource.match(/writeBoard\s*\(\s*\{/g) ?? []).length === 1,

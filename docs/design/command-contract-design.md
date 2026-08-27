@@ -13,8 +13,8 @@ parts of the typed handler interface and remain Commander-free, but they are
 not emitted by introspection. `src/cli/commands/run.ts` is the production adapter at that seam and
 remains the sole registry. Its route tree gives every root and child its own
 contract, parser owner, handler owner, and parent. The same tree
-derives the current 58-path surface, flattened registry view, longest-path
-dispatch, default aliases, and namespace refusals. All 58 paths use contracts;
+derives the current 60-path surface, flattened registry view, longest-path
+dispatch, default aliases, and namespace refusals. All 60 paths use contracts;
 there is no legacy dispatcher, raw-argv handler, or second subcommand catalogue.
 
 The private implementation uses one concrete Commander parser, the process and
@@ -165,7 +165,7 @@ least two constituent elements, and qualifying group evidence. Every multi-eleme
 including a library component, requires qualifying group evidence. An optional library `source`
 is a nonempty string.
 
-The schema-v1 report exposes `broadPhaseComparisons`, whose public meaning is
+The schema-v2 report exposes `broadPhaseComparisons`, whose public meaning is
 the number of semantically eligible x-overlapping pairs tested before the
 y-axis and exact predicates. Heap, event, expiry, compatibility-index, hierarchy-index, and
 path-filter work are private implementation mechanics. They do not enter the check contract or its
@@ -178,7 +178,7 @@ JSON and text results.
 route tree. The checker compares every flattened route's parent, parser owner,
 handler owner, and contract identity to the canonical authored audit at
 `docs/design/cli-command-audit.json`. It requires exactly
-58 current contracts, zero legacy routes, no family-owned subcommand catalogue, and no
+60 current contracts, zero legacy routes, no family-owned subcommand catalogue, and no
 obsolete parser, stream, or proof-monolith source. Introspection is an
 in-process generation interface. It is not a public command, REST route, MCP
 replacement, or second agent command surface.
@@ -192,7 +192,7 @@ cannot be reconstructed from introspection without losing those judgments.
 The audit Markdown and the JSON and Markdown contract proofs are reproducible
 views, not sources of truth. Run `bun run generate:cli-contract` to render them
 under the ignored `docs/design/generated/` directory. The contract gate builds
-the same projection in memory, reconciles all 58 paths and the immutable
+the same projection in memory, reconciles all 60 paths and the immutable
 57-path compatibility subset, validates both renderings, and generates twice
 in fresh temporary directories to prove deterministic bytes without changing
 the checkout. A fresh clone therefore needs no generated files to run the
@@ -203,7 +203,8 @@ scenario labels. Each one fixes argv, exact stdout and stderr bytes, any
 documented normalization, merged contact and stream order, exit, held state,
 prerequisite contacts, REST and local effects, and artifact commits. The CLI
 checker replays every record against HEAD. The immutable migration record still covers its original
-57 paths. Current metadata covers 58, with `check` marked as introduced by TASK-119. General-help
+57 paths. Current metadata covers 60, with `check` marked as introduced by TASK-119 and both
+bridge paths marked as introduced by TASK-120. General-help
 compatibility removes only the new `check` command line and its check-only exit line before hashing.
 Help hashes cover all 57 migration paths; the
 ordered records cover the approved status, board-save, immediate-diagnostic,
