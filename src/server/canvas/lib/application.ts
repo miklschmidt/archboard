@@ -63,6 +63,7 @@ import {
 	ingestScene,
 	readBoardContent,
 	readBoardFile,
+	readBoardInspectionSnapshot,
 } from "../../../runtime/engine/board-io.js";
 import type { BoardContent, LoadedBoard } from "../../../runtime/engine/board-io.js";
 import {
@@ -119,6 +120,7 @@ import type { CompareSideInput } from "../../../runtime/engine/compare.js";
 import { changeFeed } from "../../../runtime/engine/change-feed.js";
 import type { ChangeEvent } from "../../../runtime/engine/change-feed.js";
 import {
+	BROWSER_EXPORT_TIMEOUT_MS,
 	PANE_LAYOUT_TIMEOUT_MS,
 	PANE_SETTLE_CAP_MS,
 	REPORT_PROGRESS_MS,
@@ -147,6 +149,10 @@ import {
 	planBridgeCreate,
 	planBridgeRemoval,
 } from "../../../runtime/board-inspection/bridge.js";
+import {
+	InspectionPolicyInputSchema,
+	inspectBoard,
+} from "../../../runtime/board-inspection/index.js";
 
 // Load environment variables
 dotenv.config({ quiet: true });
@@ -2448,6 +2454,141 @@ app.delete("/api/files/:id", (req: Request, res: Response) => {
 	}
 });
 
+interface PendingFindingExport {
+	expected: ReadonlySet<number>;
+	results: Map<number, { findingIndex: number; data?: string; failure?: "browser-export-failed" }>;
+	resolve: (
+		results: Array<{
+			findingIndex: number;
+			data?: string;
+			failure?: "browser-export-failed" | "browser-timeout";
+		}>,
+	) => void;
+	timeout: ReturnType<typeof setTimeout>;
+}
+const pendingFindingExports = kept(
+	"pending-finding-exports",
+	() => new Map<string, PendingFindingExport>(),
+);
+
+// Focused finding export: one persisted snapshot, one immutable browser payload.
+app.post("/api/export/findings", (req: Request, res: Response) => {
+	try {
+		const key = boardOfRequest(req);
+		if (!key) {
+			return res
+				.status(400)
+				.json({ success: false, error: "Rendering findings requires a board." });
+		}
+		const policy = InspectionPolicyInputSchema.parse(req.body?.policy ?? {});
+		const snapshot = readBoardInspectionSnapshot(key);
+		const report = inspectBoard(snapshot.elements, policy);
+		const requests = report.findings.flatMap((finding, findingIndex) =>
+			finding.focusBBox ? [{ findingIndex, focusBBox: finding.focusBBox }] : [],
+		);
+		const base = {
+			board: key,
+			sourceFingerprint: snapshot.fingerprint,
+			report,
+			sourceRenderable: snapshot.renderScene !== null,
+		};
+		if (!snapshot.renderScene || requests.length === 0) return res.json({ ...base, results: [] });
+
+		const answering = primaryPane();
+		if (!answering) return res.status(503).json(noBrowserBody("Rendering board findings"));
+		const requestId = mintId(pendingFindingExports);
+		const expected = new Set(requests.map(({ findingIndex }) => findingIndex));
+		const completed = new Promise<
+			Array<{
+				findingIndex: number;
+				data?: string;
+				failure?: "browser-export-failed" | "browser-timeout";
+			}>
+		>((resolve) => {
+			const timeout = setTimeout(() => {
+				const pending = pendingFindingExports.get(requestId);
+				if (!pending) return;
+				pendingFindingExports.delete(requestId);
+				resolve(
+					[...pending.expected]
+						.map(
+							(findingIndex) =>
+								pending.results.get(findingIndex) ?? {
+									findingIndex,
+									failure: "browser-timeout" as const,
+								},
+						)
+						.toSorted((left, right) => left.findingIndex - right.findingIndex),
+				);
+			}, BROWSER_EXPORT_TIMEOUT_MS);
+			pendingFindingExports.set(requestId, {
+				expected,
+				results: new Map(),
+				resolve,
+				timeout,
+			});
+		});
+
+		const paneBoard = paneBoardKey(answering);
+		const delivered = sendToPane(
+			answering.clientId,
+			{
+				type: "export_findings_request",
+				requestId,
+				sourceBoard: key,
+				elements: snapshot.renderScene.elements,
+				files: snapshot.renderScene.files,
+				findings: requests,
+			},
+			paneBoard,
+		);
+		if (!delivered) {
+			const pending = pendingFindingExports.get(requestId);
+			if (pending) clearTimeout(pending.timeout);
+			pendingFindingExports.delete(requestId);
+			return res.status(503).json(noBrowserBody("Rendering board findings"));
+		}
+		void completed.then((results) => res.json({ ...base, results }));
+	} catch (error) {
+		answerBoardError(res, error, "Error rendering board findings");
+	}
+});
+
+app.post("/api/export/findings/result", (req: Request, res: Response) => {
+	try {
+		const { requestId, findingIndex, data, error } = req.body ?? {};
+		if (typeof requestId !== "string" || !requestId || !Number.isInteger(findingIndex)) {
+			return res
+				.status(400)
+				.json({ success: false, error: "requestId and findingIndex are required" });
+		}
+		const pending = pendingFindingExports.get(requestId);
+		if (!pending) return res.json({ success: true });
+		if (!pending.expected.has(findingIndex))
+			return res
+				.status(400)
+				.json({ success: false, error: "findingIndex is not part of this export" });
+		if (pending.results.has(findingIndex))
+			return res.status(409).json({ success: false, error: "findingIndex was already answered" });
+		pending.results.set(
+			findingIndex,
+			typeof data === "string" && !error
+				? { findingIndex, data }
+				: { findingIndex, failure: "browser-export-failed" },
+		);
+		if (pending.results.size === pending.expected.size) {
+			clearTimeout(pending.timeout);
+			pendingFindingExports.delete(requestId);
+			pending.resolve(
+				[...pending.results.values()].toSorted((a, b) => a.findingIndex - b.findingIndex),
+			);
+		}
+		res.json({ success: true });
+	} catch (error) {
+		res.status(500).json({ success: false, error: (error as Error).message });
+	}
+});
+
 // Image export: request (CLI -> Express -> WebSocket -> Frontend)
 interface PendingExport {
 	resolve: (data: { format: string; data: string }) => void;
@@ -2497,7 +2638,7 @@ app.post("/api/export/image", (req: Request, res: Response) => {
 				} else {
 					reject(new Error("Export timed out after 30 seconds"));
 				}
-			}, 30000);
+			}, BROWSER_EXPORT_TIMEOUT_MS);
 
 			pendingExports.set(requestId, {
 				resolve,

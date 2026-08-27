@@ -197,6 +197,18 @@ export function postExportResult(requestId: string, payload: Record<string, unkn
 	return post<{ success: true }>("/api/export/image/result", { requestId, ...payload });
 }
 
+export function postFindingExportResult(
+	requestId: string,
+	findingIndex: number,
+	payload: Record<string, unknown>,
+) {
+	return post<{ success: true }>("/api/export/findings/result", {
+		requestId,
+		findingIndex,
+		...payload,
+	});
+}
+
 export function postViewportResult(requestId: string, payload: Record<string, unknown>) {
 	return post<{ success: true }>("/api/viewport/result", { requestId, ...payload });
 }

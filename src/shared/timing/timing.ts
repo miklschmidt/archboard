@@ -137,6 +137,9 @@ export const PANE_SETTLE_CAP_MS = 1500;
  */
 export const PANE_LAYOUT_TIMEOUT_MS = 10000;
 
+/** Outer cap for any browser-owned export request. The wait ends on correlation, not delay. */
+export const BROWSER_EXPORT_TIMEOUT_MS = 30000;
+
 // ── When a board is considered still ──────────────────────────────────────
 
 /**
