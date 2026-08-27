@@ -1,9 +1,11 @@
 ---
 id: TASK-126
 title: Make replace import one atomic board write
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-26 07:06'
+updated_date: '2026-08-27 16:07'
 labels:
   - enhancement
 dependencies: []
@@ -27,3 +29,13 @@ Replace import currently performs a clear followed by a batch insert through the
 - [ ] #2 No caller or connected browser can observe a cleared-board gap between replacement phases.
 - [ ] #3 The atomic path preserves input conversion, required doing narration, claim enforcement, board-version conflicts, optimistic note-conflict refusal, and the one-requested-act/one-write rule.
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @codex
+created: 2026-08-27 16:07
+---
+Parent orchestration started after TASK-123 finalized. Plan against the shipped CommandContract and one-write boundary; prefer one existing atomic replacement owner over new abstractions, retries, or compatibility layers.
+---
+<!-- COMMENTS:END -->
