@@ -425,6 +425,17 @@ const server = Bun.serve({
 		if (request.method === "GET" && url.pathname === "/api/files") {
 			return Response.json({ success: true, files: {}, ...(held ? { held } : {}) });
 		}
+		if (request.method === "GET" && url.pathname === "/api/snapshots/package-scene") {
+			return Response.json({
+				success: true,
+				snapshot: {
+					name: "package-scene",
+					board: "contract",
+					elements: document,
+					createdAt: "2026-08-27T00:00:00.000Z",
+				},
+			});
+		}
 		if (request.method === "POST" && url.pathname === "/api/bridges") {
 			const receiptFacts = {
 				...bridgeFacts,
@@ -1598,6 +1609,30 @@ try {
 		replaced.writes[0]?.body?.mutation === "replace-scene" &&
 			JSON.stringify(replaced.writes[0]?.body?.files) === JSON.stringify([replaceFile]),
 		JSON.stringify(replaced.writes[0]?.body),
+	);
+	const restored = await expectSuccessfulJson("snapshot restore uses scene replacement", [
+		"snapshot",
+		"restore",
+		"package-scene",
+		"--board",
+		"contract",
+		"--doing",
+		"restoring package snapshot",
+	]);
+	check(
+		"snapshot restore keeps its public receipt",
+		JSON.stringify(restored.answer) ===
+			JSON.stringify({ success: true, name: "package-scene", board: "contract", restored: 1 }),
+		JSON.stringify(restored.answer),
+	);
+	check(
+		"snapshot restore sends one marked element-only replacement batch",
+		restored.writes.length === 1 &&
+			restored.writes[0].method === "POST" &&
+			restored.writes[0].url.pathname === "/api/elements/batch" &&
+			restored.writes[0].body?.mutation === "replace-scene" &&
+			JSON.stringify(restored.writes[0].body?.files) === "[]",
+		JSON.stringify(restored.writes),
 	);
 
 	const missingDoing = await cli(["add", "--one", JSON.stringify(element), "--board", "contract"], {

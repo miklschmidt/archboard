@@ -1300,6 +1300,286 @@ try {
 		"held replace import advanced the persisted version",
 	);
 
+	// ─── Restoring an element-only snapshot ──────────────────────
+	//
+	// A snapshot deliberately stores no embedded files. Restoring it is still a
+	// whole-scene replacement: old target files disappear, image elements keep
+	// their fileId, and the one batch notification carries the exact empty file
+	// membership. The source/target refusal must happen before that write.
+	const snapshotSource = "snapshot-source";
+	const snapshotTarget = "snapshot-target@option-a";
+	const snapshotName = "element-only-scene";
+	await api("POST", "/api/boards/new", { board: snapshotSource });
+	await api("POST", `/api/elements/batch?board=${snapshotSource}`, {
+		elements: [
+			{
+				id: "snap-node",
+				type: "rectangle",
+				x: 20,
+				y: 30,
+				width: 160,
+				height: 90,
+				customData: {
+					archboard: {
+						node: "snapshot-node",
+						kind: "service",
+						binding: { repository: "archboard", path: "src/snapshot/original.ts" },
+					},
+				},
+			},
+			{
+				id: "snap-image",
+				type: "image",
+				x: 220,
+				y: 30,
+				width: 64,
+				height: 64,
+				fileId: "snapshot-file",
+			},
+		],
+	});
+	await api("POST", `/api/files?board=${snapshotSource}`, [
+		{
+			id: "snapshot-file",
+			dataURL: "data:image/png;base64,c25hcHNob3Q=",
+			mimeType: "image/png",
+			created: 1,
+		},
+	]);
+	const savedSnapshot = await api("POST", `/api/snapshots?board=${snapshotSource}`, {
+		name: snapshotName,
+	});
+	assert(
+		savedSnapshot?.success === true && savedSnapshot?.elementCount === 2,
+		`the element-only snapshot fixture was not saved: ${JSON.stringify(savedSnapshot)}`,
+	);
+
+	await api("POST", "/api/boards/new", {
+		board: "snapshot-target",
+		variant: "option-a",
+	});
+	await api("POST", `/api/elements/batch?board=${snapshotTarget}`, {
+		elements: [
+			{ id: "target-old", type: "ellipse", x: 0, y: 0, width: 40, height: 40 },
+			{
+				id: "target-old-image",
+				type: "image",
+				x: 50,
+				y: 0,
+				width: 40,
+				height: 40,
+				fileId: "target-old-file",
+			},
+		],
+	});
+	await api("POST", `/api/files?board=${snapshotTarget}`, [
+		{
+			id: "target-old-file",
+			dataURL: "data:image/png;base64,b2xkLXRhcmdldA==",
+			mimeType: "image/png",
+			created: 1,
+		},
+	]);
+	const snapshotInfoBefore = await api("GET", `/api/boards/info?board=${snapshotTarget}`);
+	const snapshotVersionBefore = snapshotInfoBefore?.version;
+	const snapshotSocket = new WebSocket(`ws://127.0.0.1:${PORT}/?clientId=snapshot-restore-pane`);
+	const snapshotMessages = [];
+	snapshotSocket.on("message", (data) => snapshotMessages.push(JSON.parse(data.toString())));
+	await new Promise((resolve, reject) => {
+		snapshotSocket.once("open", resolve);
+		snapshotSocket.once("error", reject);
+	});
+	await api("POST", "/api/panes", {
+		clientId: "snapshot-restore-pane",
+		paneId: "snapshot-restore-pane",
+		primary: true,
+		focused: true,
+		elementCount: 2,
+		board: snapshotTarget,
+		rect: { x: 0, y: 0, width: 640, height: 800 },
+		viewport: { x: 0, y: 0, width: 640, height: 800, zoom: 1 },
+	});
+	await api("POST", "/api/boards/open", {
+		board: "snapshot-target",
+		variant: "option-a",
+		pane: "snapshot-restore-pane",
+	});
+	await api("POST", "/api/selection", {
+		clientId: "snapshot-restore-pane",
+		elementIds: ["target-old"],
+	});
+	await sleep(80);
+
+	const refusedRestore = await spending("a cross-board snapshot refusal", 0, () =>
+		cli(["snapshot", "restore", snapshotName, "--board", snapshotTarget]),
+	);
+	assert(
+		refusedRestore.code === 1 &&
+			refusedRestore.out === "" &&
+			/Pass --board snapshot-source/.test(refusedRestore.err),
+		`cross-board restore changed its refusal: ${JSON.stringify(refusedRestore)}`,
+	);
+	assert(
+		(await api("GET", `/api/elements?board=${snapshotTarget}`))?.elements?.some(
+			(element) => element.id === "target-old",
+		),
+		"the cross-board refusal changed the target",
+	);
+
+	const snapshotMessageStart = snapshotMessages.length;
+	const restoredSnapshot = await counting("restoring an element-only snapshot", () =>
+		cli(["snapshot", "restore", snapshotName, "--force", "--board", snapshotTarget]),
+	);
+	await sleep(80);
+	assert(
+		restoredSnapshot.code === 0 &&
+			isDeepStrictEqual(JSON.parse(restoredSnapshot.out), {
+				success: true,
+				name: snapshotName,
+				board: snapshotTarget,
+				restored: 2,
+			}),
+		`snapshot restore changed its receipt: ${restoredSnapshot.code} ${restoredSnapshot.out} ${restoredSnapshot.err}`,
+	);
+	assert(
+		writes.length === 1 && writes[0] === "POST /api/elements/batch",
+		`snapshot restore should use one marked batch request: ${writes.join(", ")}`,
+	);
+	const restoredElements =
+		(await api("GET", `/api/elements?board=${snapshotTarget}`))?.elements ?? [];
+	const restoredNode = restoredElements.find((element) => element.id === "snap-node");
+	const restoredImage = restoredElements.find((element) => element.id === "snap-image");
+	assert(
+		restoredElements.length === 2 &&
+			restoredNode?.customData?.archboard?.binding?.path === "src/snapshot/original.ts" &&
+			restoredImage?.fileId === "snapshot-file" &&
+			!restoredElements.some((element) => element.id === "target-old"),
+		`snapshot restore did not replace the target with canonical snapshot elements: ${JSON.stringify(restoredElements)}`,
+	);
+	assert(
+		isDeepStrictEqual(
+			Object.keys((await api("GET", `/api/files?board=${snapshotTarget}`))?.files ?? {}),
+			[],
+		),
+		"snapshot restore retained target files or invented snapshot files",
+	);
+	assert(
+		(await api("GET", `/api/boards/info?board=${snapshotTarget}`))?.version ===
+			snapshotVersionBefore + 1,
+		"snapshot restore did not advance exactly one persisted version",
+	);
+	const snapshotFrames = snapshotMessages.slice(snapshotMessageStart);
+	const snapshotDeltas = snapshotFrames.filter(
+		(message) => message.type === "elements_changed" && message.board === snapshotTarget,
+	);
+	const snapshotFileFrames = snapshotFrames.filter(
+		(message) => message.type === "files_replaced" && message.board === snapshotTarget,
+	);
+	assert(
+		snapshotDeltas.length === 1 &&
+			snapshotDeltas[0].deleted.includes("target-old") &&
+			snapshotDeltas[0].created.some((element) => element.id === "snap-node") &&
+			snapshotFileFrames.length === 1 &&
+			isDeepStrictEqual(snapshotFileFrames[0].files, []),
+		`snapshot restore did not publish one net element delta and files_replaced []: ${JSON.stringify(snapshotFrames)}`,
+	);
+	assert(
+		(await api("GET", "/api/panes"))?.panes?.find((pane) => pane.paneId === "snapshot-restore-pane")
+			?.selection?.count === 0,
+		"snapshot restore did not reuse whole-scene selection cleanup",
+	);
+
+	await api("PUT", `/api/elements/snap-node?board=${snapshotTarget}`, {
+		customData: {
+			archboard: {
+				node: "snapshot-node",
+				kind: "service",
+				binding: { repository: "archboard", path: "src/snapshot/changed.ts" },
+			},
+		},
+	});
+	const repeatedRestore = await counting("restoring the same snapshot again", () =>
+		cli(["snapshot", "restore", snapshotName, "--force", "--board", snapshotTarget]),
+	);
+	assert(repeatedRestore.code === 0, `repeat snapshot restore failed: ${repeatedRestore.err}`);
+	const repeatedNode = (
+		(await api("GET", `/api/elements?board=${snapshotTarget}`))?.elements ?? []
+	).find((element) => element.id === "snap-node");
+	assert(
+		repeatedNode?.customData?.archboard?.binding?.path === "src/snapshot/original.ts",
+		"a restored nested object mutated the kept snapshot",
+	);
+	snapshotSocket.close();
+
+	const snapshotHeld = "snapshot-held";
+	await api("POST", "/api/boards/new", { board: snapshotHeld });
+	await api("POST", `/api/elements/batch?board=${snapshotHeld}`, {
+		elements: [
+			{ id: "snapshot-held-old", type: "rectangle", x: 0, y: 0, width: 40, height: 40 },
+			{
+				id: "snapshot-held-image",
+				type: "image",
+				x: 50,
+				y: 0,
+				width: 40,
+				height: 40,
+				fileId: "snapshot-held-file",
+			},
+		],
+	});
+	await api("POST", `/api/files?board=${snapshotHeld}`, [
+		{
+			id: "snapshot-held-file",
+			dataURL: "data:image/png;base64,aGVsZC1zbmFwc2hvdA==",
+			mimeType: "image/png",
+			created: 1,
+		},
+	]);
+	const snapshotHeldInfo = await api("GET", `/api/boards/info?board=${snapshotHeld}`);
+	const snapshotHeldVersion = snapshotHeldInfo?.version;
+	const snapshotHeldNote = snapshotHeldInfo?.file;
+	fs.appendFileSync(snapshotHeldNote, "\nexternal snapshot edit\n");
+	const snapshotHold = await api("POST", `/api/elements/batch?board=${snapshotHeld}`, {
+		elements: [{ id: "snapshot-held-refused", type: "ellipse", x: 1, y: 1, width: 5, height: 5 }],
+	});
+	assert(
+		snapshotHold?.success === false && snapshotHold?.held?.board === snapshotHeld,
+		`the held snapshot fixture did not stop saving: ${JSON.stringify(snapshotHold)}`,
+	);
+	const snapshotHeldBytes = fs.readFileSync(snapshotHeldNote);
+	const snapshotHeldMtime = fs.statSync(snapshotHeldNote).mtimeMs;
+	const heldSnapshotRestore = await counting("restoring an element-only snapshot while held", () =>
+		cli(["snapshot", "restore", snapshotName, "--force", "--board", snapshotHeld]),
+	);
+	assert(
+		heldSnapshotRestore.code === 0 &&
+			JSON.parse(heldSnapshotRestore.out)?.held?.board === snapshotHeld &&
+			/stopped saving/.test(heldSnapshotRestore.err),
+		`held snapshot restore lost its result or diagnostic: ${heldSnapshotRestore.code} ${heldSnapshotRestore.out} ${heldSnapshotRestore.err}`,
+	);
+	assert(
+		writes.length === 1 && writes[0] === "POST /api/elements/batch",
+		`held snapshot restore should use one marked batch request: ${writes.join(", ")}`,
+	);
+	const heldSnapshotElements =
+		(await api("GET", `/api/elements?board=${snapshotHeld}`))?.elements ?? [];
+	assert(
+		heldSnapshotElements.length === 2 &&
+			heldSnapshotElements.some((element) => element.id === "snap-image") &&
+			!heldSnapshotElements.some((element) => element.id === "snapshot-held-old") &&
+			isDeepStrictEqual(
+				Object.keys((await api("GET", `/api/files?board=${snapshotHeld}`))?.files ?? {}),
+				[],
+			),
+		"held snapshot restore did not replace elements and files together",
+	);
+	assert(
+		fs.readFileSync(snapshotHeldNote).equals(snapshotHeldBytes) &&
+			fs.statSync(snapshotHeldNote).mtimeMs === snapshotHeldMtime &&
+			(await api("GET", `/api/boards/info?board=${snapshotHeld}`))?.version === snapshotHeldVersion,
+		"held snapshot restore wrote the note or advanced its persisted version",
+	);
+
 	// ─── One route-level door ────────────────────────────────────
 
 	const serverSource = fs.readFileSync(src("server/canvas/lib/application.ts"), "utf-8");
