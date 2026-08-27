@@ -48,6 +48,7 @@ function proofContract(options: {
 	resultSchema?: z.ZodType;
 	file?: boolean;
 	artifact?: unknown;
+	artifactSchema?: z.ZodType;
 }) {
 	return defineCommand({
 		path: ["proof"],
@@ -75,7 +76,7 @@ function proofContract(options: {
 							mode: "file-receipt",
 							held: "none",
 							description: "file",
-							artifact: PendingArtifactSchema,
+							artifact: options.artifactSchema ?? PendingArtifactSchema,
 						}
 					: {
 							id: "json",
@@ -508,6 +509,67 @@ describe("command-contract public interface", () => {
 		expect(execution.error).toBeDefined();
 		expect(execution.stdout).toBe("");
 		expect(existsSync(join(directory, "0001-A.png"))).toBeTrue();
+		expect(existsSync(join(directory, "manifest.json"))).toBeFalse();
+	});
+
+	test("a publish-time collision never replaces the raced destination", async () => {
+		const directory = temporaryPath("raced-finding-set");
+		const { mkdirSync } = await import("node:fs");
+		mkdirSync(directory);
+		const artifact = {
+			path: directory,
+			encoding: "files",
+			files: [
+				{ name: "0001-A.png", content: Uint8Array.from([1]) },
+				{ name: "0002-B.png", content: Uint8Array.from([2]) },
+			],
+			manifest: { name: "manifest.json", content: "{}\n" },
+		};
+		const execution = await executePublic(
+			proofContract({
+				result: { complete: true },
+				resultSchema: z.object({ complete: z.literal(true) }),
+				file: true,
+				artifact,
+				artifactSchema: PendingArtifactSchema.transform((validated) => {
+					writeFileSync(join(directory, "0002-B.png"), Uint8Array.from([9, 9]));
+					return validated;
+				}),
+			}),
+		);
+		expect(execution.error).toBeDefined();
+		expect(execution.stdout).toBe("");
+		expect(readFileSync(join(directory, "0002-B.png"))).toEqual(Buffer.from([9, 9]));
+		expect(existsSync(join(directory, "0001-A.png"))).toBeTrue();
+		expect(existsSync(join(directory, "manifest.json"))).toBeFalse();
+	});
+
+	test("an unexpected directory member appearing before publish refuses the set", async () => {
+		const directory = temporaryPath("unexpected-finding-member");
+		const { mkdirSync } = await import("node:fs");
+		mkdirSync(directory);
+		const artifact = {
+			path: directory,
+			encoding: "files",
+			files: [{ name: "0001-A.png", content: Uint8Array.from([1]) }],
+			manifest: { name: "manifest.json", content: "{}\n" },
+		};
+		const execution = await executePublic(
+			proofContract({
+				result: { complete: true },
+				resultSchema: z.object({ complete: z.literal(true) }),
+				file: true,
+				artifact,
+				artifactSchema: PendingArtifactSchema.transform((validated) => {
+					writeFileSync(join(directory, "surprise.txt"), "keep");
+					return validated;
+				}),
+			}),
+		);
+		expect(execution.error).toBeDefined();
+		expect(execution.stdout).toBe("");
+		expect(readFileSync(join(directory, "surprise.txt"), "utf8")).toBe("keep");
+		expect(existsSync(join(directory, "0001-A.png"))).toBeFalse();
 		expect(existsSync(join(directory, "manifest.json"))).toBeFalse();
 	});
 

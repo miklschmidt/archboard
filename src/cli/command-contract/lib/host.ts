@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import readline from "readline/promises";
 import { boardHoldSeen } from "../../../runtime/engine/canvas-client.js";
-import { writeFileAtomic } from "../../../runtime/engine/atomic-write.js";
+import { writeFileAtomicExclusive } from "../../../runtime/engine/atomic-write.js";
 import type { PendingArtifact } from "../contract.js";
 
 export const processCommandHost = {
@@ -37,10 +37,20 @@ export const processCommandHost = {
 	},
 	writeArtifact(artifact: PendingArtifact) {
 		if (artifact.encoding === "files") {
+			const expected = new Set([
+				...artifact.files.map((file) => file.name),
+				artifact.manifest.name,
+			]);
+			const unexpected = fs.readdirSync(artifact.path).filter((name) => !expected.has(name));
+			if (unexpected.length > 0)
+				throw new Error(`Artifact directory changed before commit: ${unexpected.join(", ")}`);
 			for (const file of artifact.files) {
-				writeFileAtomic(path.join(artifact.path, file.name), Buffer.from(file.content));
+				writeFileAtomicExclusive(path.join(artifact.path, file.name), Buffer.from(file.content));
 			}
-			writeFileAtomic(path.join(artifact.path, artifact.manifest.name), artifact.manifest.content);
+			writeFileAtomicExclusive(
+				path.join(artifact.path, artifact.manifest.name),
+				artifact.manifest.content,
+			);
 			return;
 		}
 		if (artifact.encoding === "binary") {
