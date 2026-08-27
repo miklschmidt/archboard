@@ -1,7 +1,8 @@
-import type {
-	PreprocessingBudget,
-	PreprocessingPass,
-	PreprocessingPhase,
+import {
+	PreprocessingOperations,
+	type PreprocessingBudget,
+	type PreprocessingPass,
+	type PreprocessingPhase,
 } from "./preprocessing-budget.js";
 
 export interface SweepInterval<T> {
@@ -90,9 +91,10 @@ function spendOptions(
 function comparedIdentity(left: string, right: string, charge: (units: number) => void): number {
 	const shared = Math.min(left.length, right.length);
 	for (let index = 0; index < shared; index += 1) {
-		charge(2);
-		const aa = left.charCodeAt(index),
-			bb = right.charCodeAt(index);
+		charge(1);
+		const aa = left.charCodeAt(index);
+		charge(1);
+		const bb = right.charCodeAt(index);
 		if (aa !== bb) return aa < bb ? -1 : 1;
 	}
 	return left.length < right.length ? -1 : left.length > right.length ? 1 : 0;
@@ -103,11 +105,10 @@ function stableSorted<T>(
 	compare: (left: T, right: T) => number,
 	charge: (units: number) => void,
 ): T[] {
-	charge(1 + values.length * 2);
-	let source = [...values];
+	const operations = new PreprocessingOperations(() => charge(1));
+	let source = operations.copy(values);
 	if (values.length < 2) return source;
-	charge(1 + values.length);
-	let target = Array.from<T>({ length: values.length });
+	let target = operations.arrayWithLength<T>(values.length);
 	for (let width = 1; width < values.length; width *= 2) {
 		for (let start = 0; start < values.length; start += width * 2) {
 			const middle = Math.min(start + width, values.length),
@@ -116,22 +117,21 @@ function stableSorted<T>(
 				right = middle,
 				output = start;
 			while (left < middle && right < end) {
-				charge(2);
-				const leftValue = source[left]!,
-					rightValue = source[right]!;
+				const leftValue = operations.read(source, left)!,
+					rightValue = operations.read(source, right)!;
+				operations.stableComparison();
 				const takeLeft = compare(leftValue, rightValue) <= 0;
-				charge(1);
-				target[output++] = takeLeft ? leftValue : rightValue;
+				operations.write(target, output++, takeLeft ? leftValue : rightValue);
 				if (takeLeft) left += 1;
 				else right += 1;
 			}
 			while (left < middle) {
-				charge(2);
-				target[output++] = source[left++]!;
+				const value = operations.read(source, left++)!;
+				operations.write(target, output++, value);
 			}
 			while (right < end) {
-				charge(2);
-				target[output++] = source[right++]!;
+				const value = operations.read(source, right++)!;
+				operations.write(target, output++, value);
 			}
 		}
 		[source, target] = [target, source];
@@ -152,8 +152,8 @@ interface HierarchyNode {
 /** Immutable hierarchy coordinates shared by compatibility profiles in one inspection. */
 export interface SweepHierarchy {
 	readonly size: number;
-	position(id: string): number | undefined;
-	subtree(id: string): readonly [number, number] | null;
+	position(id: string, step?: () => void): number | undefined;
+	subtree(id: string, step?: () => void): readonly [number, number] | null;
 	pathToRoot(id: string, step?: () => void): readonly (readonly [number, number])[];
 	isAncestor(ancestor: string, descendant: string, step?: () => void): boolean;
 	lca(left: string, right: string, step?: () => void): string | null;
@@ -164,72 +164,67 @@ export function buildSweepHierarchy(
 	parents: ReadonlyMap<string, string | null | undefined>,
 	options?: SweepOptions,
 ): SweepHierarchy {
-	const nodes = new Map<string, HierarchyNode>();
-	for (const id of parents.keys()) {
-		spendOptions(options, "prepare-events", 2 + id.length);
-		nodes.set(id, {
+	const prepare = new PreprocessingOperations(() => spendOptions(options, "prepare-events"));
+	const hierarchyWork = new PreprocessingOperations(() => spendOptions(options, "hierarchy-query"));
+	const nodes = prepare.map<string, HierarchyNode>();
+	prepare.forEachMap(parents, (_parent, id) => {
+		spendOptions(options, "prepare-events", id.length);
+		prepare.mapSet(nodes, id, {
 			id,
 			parent: null,
-			children: [],
+			children: prepare.array<string>(),
 			size: 1,
 			heavy: null,
 			head: id,
 			position: -1,
 		});
-	}
-	for (const [id, parent] of parents) {
-		spendOptions(options, "prepare-events", 2);
-		if (!parent || !nodes.has(parent) || parent === id) continue;
-		nodes.get(id)!.parent = parent;
-		nodes.get(parent)!.children.push(id);
-	}
-	for (const node of nodes.values())
+	});
+	prepare.forEachMap(parents, (parent, id) => {
+		if (!parent || !prepare.mapHas(nodes, parent) || parent === id) return;
+		prepare.mapGet(nodes, id)!.parent = parent;
+		prepare.push(prepare.mapGet(nodes, parent)!.children, id);
+	});
+	prepare.forEachMap(nodes, (node) => {
 		node.children = stableSorted(
 			node.children,
 			(left, right) => {
-				spendOptions(options, "order-events");
 				return comparedIdentity(left, right, (units) =>
 					spendOptions(options, "order-events", units),
 				);
 			},
 			(units) => spendOptions(options, "order-events", units),
 		);
-	spendOptions(options, "prepare-events");
-	const rootIds: string[] = [];
-	for (const node of nodes.values()) {
-		spendOptions(options, "prepare-events");
-		if (node.parent !== null) continue;
-		spendOptions(options, "prepare-events");
-		rootIds.push(node.id);
-	}
+	});
+	const rootIds = prepare.array<string>();
+	prepare.forEachMap(nodes, (node) => {
+		if (node.parent !== null) return;
+		prepare.push(rootIds, node.id);
+	});
 	const roots = stableSorted(
 		rootIds,
 		(left, right) => {
-			spendOptions(options, "order-events");
 			return comparedIdentity(left, right, (units) => spendOptions(options, "order-events", units));
 		},
 		(units) => spendOptions(options, "order-events", units),
 	);
-	const order: string[] = [];
-	spendOptions(options, "hierarchy-query");
-	const stack: string[] = [];
+	const order = hierarchyWork.array<string>();
+	const stack = hierarchyWork.array<string>();
 	for (let index = roots.length - 1; index >= 0; index -= 1) {
-		spendOptions(options, "hierarchy-query", 2);
-		stack.push(roots[index]!);
+		hierarchyWork.push(stack, hierarchyWork.read(roots, index)!);
 	}
 	while (stack.length > 0) {
-		spendOptions(options, "hierarchy-query");
-		const id = stack.pop()!;
-		order.push(id);
-		const children = nodes.get(id)!.children;
-		for (let index = children.length - 1; index >= 0; index -= 1) stack.push(children[index]!);
+		const id = hierarchyWork.pop(stack)!;
+		hierarchyWork.push(order, id);
+		const children = hierarchyWork.mapGet(nodes, id)!.children;
+		for (let index = children.length - 1; index >= 0; index -= 1)
+			hierarchyWork.push(stack, hierarchyWork.read(children, index)!);
 	}
 	for (let index = order.length - 1; index >= 0; index -= 1) {
-		spendOptions(options, "hierarchy-query");
-		const node = nodes.get(order[index]!)!;
+		const node = hierarchyWork.mapGet(nodes, hierarchyWork.read(order, index)!)!;
 		let heavy: HierarchyNode | null = null;
-		for (const childId of node.children) {
-			const child = nodes.get(childId)!;
+		for (let childIndex = 0; childIndex < node.children.length; childIndex += 1) {
+			const childId = hierarchyWork.read(node.children, childIndex)!;
+			const child = hierarchyWork.mapGet(nodes, childId)!;
 			node.size += child.size;
 			if (
 				!heavy ||
@@ -244,24 +239,21 @@ export function buildSweepHierarchy(
 		node.heavy = heavy?.id ?? null;
 	}
 	let nextPosition = 0;
-	spendOptions(options, "hierarchy-query");
-	const chains: Array<{ id: string; head: string }> = [];
+	const chains = hierarchyWork.array<{ id: string; head: string }>();
 	for (let index = roots.length - 1; index >= 0; index -= 1) {
-		spendOptions(options, "hierarchy-query", 2);
-		const id = roots[index]!;
-		chains.push({ id, head: id });
+		const id = hierarchyWork.read(roots, index)!;
+		hierarchyWork.push(chains, { id, head: id });
 	}
 	while (chains.length > 0) {
-		spendOptions(options, "hierarchy-query");
-		let { id, head } = chains.pop()!;
+		let { id, head } = hierarchyWork.pop(chains)!;
 		while (true) {
-			const node = nodes.get(id)!;
+			const node = hierarchyWork.mapGet(nodes, id)!;
 			node.head = head;
 			node.position = nextPosition;
 			nextPosition += 1;
 			for (let index = node.children.length - 1; index >= 0; index -= 1) {
-				const child = node.children[index]!;
-				if (child !== node.heavy) chains.push({ id: child, head: child });
+				const child = hierarchyWork.read(node.children, index)!;
+				if (child !== node.heavy) hierarchyWork.push(chains, { id: child, head: child });
 			}
 			if (!node.heavy) break;
 			id = node.heavy;
@@ -269,27 +261,28 @@ export function buildSweepHierarchy(
 	}
 	return {
 		size: nodes.size,
-		position: (id) => nodes.get(id)?.position,
-		subtree: (id) => {
-			const node = nodes.get(id);
+		position: (id, step) => {
+			return new PreprocessingOperations(() => step?.()).mapGet(nodes, id)?.position;
+		},
+		subtree: (id, step) => {
+			const node = new PreprocessingOperations(() => step?.()).mapGet(nodes, id);
 			return node ? [node.position, node.position + node.size - 1] : null;
 		},
 		pathToRoot: (id, step) => {
-			const ranges: Array<readonly [number, number]> = [];
-			let node = nodes.get(id);
+			const operations = new PreprocessingOperations(() => step?.());
+			const ranges = operations.array<readonly [number, number]>();
+			let node = operations.mapGet(nodes, id);
 			while (node) {
-				step?.();
-				const head = nodes.get(node.head)!;
-				ranges.push([head.position, node.position]);
-				node = head.parent ? nodes.get(head.parent) : undefined;
+				const head = operations.mapGet(nodes, node.head)!;
+				operations.push(ranges, [head.position, node.position]);
+				node = head.parent ? operations.mapGet(nodes, head.parent) : undefined;
 			}
 			return ranges;
 		},
 		isAncestor: (ancestor, descendant, step) => {
-			step?.();
-			step?.();
-			const aa = nodes.get(ancestor);
-			const dd = nodes.get(descendant);
+			const operations = new PreprocessingOperations(() => step?.());
+			const aa = operations.mapGet(nodes, ancestor);
+			const dd = operations.mapGet(nodes, descendant);
 			return (
 				aa !== undefined &&
 				dd !== undefined &&
@@ -298,21 +291,19 @@ export function buildSweepHierarchy(
 			);
 		},
 		lca: (left, right, step) => {
-			step?.();
-			step?.();
-			let aa = nodes.get(left),
-				bb = nodes.get(right);
+			const operations = new PreprocessingOperations(() => step?.());
+			let aa = operations.mapGet(nodes, left),
+				bb = operations.mapGet(nodes, right);
 			if (!aa || !bb) return null;
 			while (aa.head !== bb.head) {
-				step?.();
-				const aHead: HierarchyNode = nodes.get(aa.head)!,
-					bHead: HierarchyNode = nodes.get(bb.head)!;
+				const aHead: HierarchyNode = operations.mapGet(nodes, aa.head)!,
+					bHead: HierarchyNode = operations.mapGet(nodes, bb.head)!;
 				if (aHead.position > bHead.position) {
 					if (!aHead.parent) return null;
-					aa = nodes.get(aHead.parent)!;
+					aa = operations.mapGet(nodes, aHead.parent)!;
 				} else {
 					if (!bHead.parent) return null;
-					bb = nodes.get(bHead.parent)!;
+					bb = operations.mapGet(nodes, bHead.parent)!;
 				}
 			}
 			return aa.position <= bb.position ? aa.id : bb.id;
@@ -379,17 +370,20 @@ function identityIntersection(
 	work: SweepWork,
 ): readonly string[] {
 	if (left === right) return left;
-	const intersection: string[] = [];
+	const operations = new PreprocessingOperations(() => spend(work, "compatibility-query"));
+	const intersection = operations.array<string>();
 	let aa = 0,
 		bb = 0;
 	while (aa < left.length && bb < right.length) {
 		spend(work, "compatibility-query");
 		work.identityIntersectionComparisons += 1;
-		const compared = comparedIdentity(left[aa]!, right[bb]!, (units) =>
+		const leftValue = operations.read(left, aa)!;
+		const rightValue = operations.read(right, bb)!;
+		const compared = comparedIdentity(leftValue, rightValue, (units) =>
 			spend(work, "compatibility-query", units),
 		);
 		if (compared === 0) {
-			intersection.push(left[aa]!);
+			operations.push(intersection, leftValue);
 			aa += 1;
 			bb += 1;
 		} else if (compared < 0) aa += 1;
@@ -401,13 +395,13 @@ function identityIntersection(
 }
 
 function includesIdentity(values: readonly string[], wanted: string, work: SweepWork): boolean {
+	const query = new PreprocessingOperations(() => spend(work, "compatibility-query"));
 	let min = 0,
 		max = values.length - 1;
 	while (min <= max) {
-		spend(work, "compatibility-query");
 		work.exactMembershipTests += 1;
 		const middle = Math.floor((min + max) / 2);
-		const compared = comparedIdentity(values[middle]!, wanted, (units) =>
+		const compared = comparedIdentity(query.read(values, middle)!, wanted, (units) =>
 			spend(work, "compatibility-query", units),
 		);
 		if (compared === 0) return true;
@@ -417,13 +411,17 @@ function includesIdentity(values: readonly string[], wanted: string, work: Sweep
 	return false;
 }
 
+interface ExactSummary<T> {
+	count: number;
+	list: ActiveList<T> | null;
+	partition: string | null;
+	commonExclusions: readonly string[] | null;
+	commonTargetCoverage: readonly string[] | null;
+}
+
 class ExactCompatibilityIndex<T> {
 	readonly size: number;
-	readonly counts: number[];
-	readonly lists: Array<ActiveList<T> | null>;
-	readonly partitions: Array<string | null>;
-	readonly commonExclusions: Array<readonly string[] | null>;
-	readonly commonTargetCoverage: Array<readonly string[] | null>;
+	readonly summaries: Array<ExactSummary<T>>;
 	readonly hierarchy: SweepHierarchy | undefined;
 	retainedSummaryRefs = 0;
 
@@ -431,32 +429,41 @@ class ExactCompatibilityIndex<T> {
 		let size = 1;
 		while (size < Math.max(1, length)) size *= 2;
 		this.size = size;
-		spend(work, "prepare-events", size * 2 * 5);
-		this.counts = Array.from({ length: size * 2 }, () => 0);
-		this.lists = Array.from({ length: size * 2 }, () => null);
-		this.partitions = Array.from({ length: size * 2 }, () => null);
-		this.commonExclusions = Array.from({ length: size * 2 }, () => null);
-		this.commonTargetCoverage = Array.from({ length: size * 2 }, () => null);
+		const operations = new PreprocessingOperations(() => spend(work, "prepare-events"));
+		const empty: ExactSummary<T> = {
+			count: 0,
+			list: null,
+			partition: null,
+			commonExclusions: null,
+			commonTargetCoverage: null,
+		};
+		this.summaries = operations.arrayFilled(size * 2, empty);
 		this.hierarchy = hierarchy;
 	}
 
-	private summaryRefs(node: number): number {
-		if (this.counts[node] === 0) return 0;
+	/** Diagnostic-only observer: these reads do not participate in preprocessing decisions. */
+	private diagnosticSummaryRefs(node: number): number {
+		// preprocessing-unmetered: retained-state observation must not change the product ceiling.
+		const summary = this.summaries[node]!;
+		if (summary.count === 0) return 0;
 		return (
-			(this.lists[node] ? 1 : 0) +
-			(this.partitions[node] === null ? 0 : 1) +
-			(this.commonExclusions[node]?.length ?? 0) +
-			(this.commonTargetCoverage[node]?.length ?? 0)
+			(summary.list ? 1 : 0) +
+			(summary.partition === null ? 0 : 1) +
+			(summary.commonExclusions?.length ?? 0) +
+			(summary.commonTargetCoverage?.length ?? 0)
 		);
 	}
 
 	private reducedCoverage(values: readonly string[], work: SweepWork): readonly string[] {
 		if (!this.hierarchy || values.length < 2) return values;
-		const kept: string[] = [];
-		for (const value of values) {
+		const operations = new PreprocessingOperations(() => spend(work, "hierarchy-query"));
+		const kept = operations.array<string>();
+		for (let valueIndex = 0; valueIndex < values.length; valueIndex += 1) {
+			const value = operations.read(values, valueIndex)!;
 			work.summaryMergeSteps += 1;
 			let redundant = false;
-			for (const candidate of kept) {
+			for (let candidateIndex = 0; candidateIndex < kept.length; candidateIndex += 1) {
+				const candidate = operations.read(kept, candidateIndex)!;
 				work.hierarchyMembershipTests += 1;
 				if (this.hierarchy.isAncestor(value, candidate, () => spend(work, "hierarchy-query"))) {
 					redundant = true;
@@ -466,15 +473,18 @@ class ExactCompatibilityIndex<T> {
 			if (redundant) continue;
 			for (let index = kept.length - 1; index >= 0; index -= 1) {
 				work.hierarchyMembershipTests += 1;
-				if (this.hierarchy.isAncestor(kept[index]!, value, () => spend(work, "hierarchy-query")))
-					kept.splice(index, 1);
+				if (
+					this.hierarchy.isAncestor(operations.read(kept, index)!, value, () =>
+						spend(work, "hierarchy-query"),
+					)
+				)
+					operations.spliceOne(kept, index);
 			}
-			kept.push(value);
+			operations.push(kept, value);
 		}
 		return stableSorted(
 			kept,
 			(left, right) => {
-				spend(work, "order-events");
 				return comparedIdentity(left, right, (units) => spend(work, "order-events", units));
 			},
 			(units) => spend(work, "order-events", units),
@@ -488,66 +498,84 @@ class ExactCompatibilityIndex<T> {
 	): readonly string[] {
 		if (left === right) return left;
 		if (!this.hierarchy || left.length === 0 || right.length === 0) return EMPTY_IDENTITIES;
-		const lcas = new Set<string>();
-		for (const aa of left)
-			for (const bb of right) {
-				spend(work, "hierarchy-query");
+		const operations = new PreprocessingOperations(() => spend(work, "hierarchy-query"));
+		const lcas = operations.set<string>();
+		for (let aaIndex = 0; aaIndex < left.length; aaIndex += 1) {
+			const aa = operations.read(left, aaIndex)!;
+			for (let bbIndex = 0; bbIndex < right.length; bbIndex += 1) {
+				const bb = operations.read(right, bbIndex)!;
 				work.summaryMergeSteps += 1;
 				work.hierarchySummarySteps += 1;
 				const lca = this.hierarchy.lca(aa, bb, () => spend(work, "hierarchy-query"));
-				if (lca) lcas.add(lca);
+				if (lca) operations.setAdd(lcas, lca);
 			}
-		return this.reducedCoverage([...lcas], work);
+		}
+		const lcaValues = operations.array<string>();
+		const retainedLcas = operations.setValues(lcas);
+		for (let index = 0; index < retainedLcas.length; index += 1)
+			operations.push(lcaValues, operations.read(retainedLcas, index)!);
+		return this.reducedCoverage(lcaValues, work);
 	}
 
-	set(rank: number, list: ActiveList<T> | null, work: SweepWork): void {
-		spend(work, "activate-or-expire", 5);
+	updateRank(rank: number, list: ActiveList<T> | null, work: SweepWork): void {
+		const operations = new PreprocessingOperations(() => spend(work, "activate-or-expire"));
 		let node = this.size + rank;
-		this.retainedSummaryRefs -= this.summaryRefs(node);
-		this.lists[node] = list;
-		this.counts[node] = list ? 1 : 0;
-		this.partitions[node] = list?.partition ?? null;
-		this.commonExclusions[node] = list?.profile.exclusions ?? null;
-		this.commonTargetCoverage[node] = list
-			? this.reducedCoverage(list.profile.ancestorTargets, work)
-			: null;
-		this.retainedSummaryRefs += this.summaryRefs(node);
+		this.retainedSummaryRefs -= this.diagnosticSummaryRefs(node);
+		operations.write(this.summaries, node, {
+			count: list ? 1 : 0,
+			list,
+			partition: list?.partition ?? null,
+			commonExclusions: list?.profile.exclusions ?? null,
+			commonTargetCoverage: list ? this.reducedCoverage(list.profile.ancestorTargets, work) : null,
+		});
+		this.retainedSummaryRefs += this.diagnosticSummaryRefs(node);
 		work.exactIndexUpdates += 1;
 		while (node > 1) {
-			spend(work, "activate-or-expire", 5);
 			node = Math.floor(node / 2);
-			this.retainedSummaryRefs -= this.summaryRefs(node);
+			this.retainedSummaryRefs -= this.diagnosticSummaryRefs(node);
 			const left = node * 2,
 				right = left + 1,
-				leftCount = this.counts[left]!,
-				rightCount = this.counts[right]!;
-			this.counts[node] = leftCount + rightCount;
-			this.lists[node] = null;
-			if (leftCount === 0) {
-				this.partitions[node] = this.partitions[right] ?? null;
-				this.commonExclusions[node] = this.commonExclusions[right] ?? null;
-				this.commonTargetCoverage[node] = this.commonTargetCoverage[right] ?? null;
-			} else if (rightCount === 0) {
-				this.partitions[node] = this.partitions[left] ?? null;
-				this.commonExclusions[node] = this.commonExclusions[left] ?? null;
-				this.commonTargetCoverage[node] = this.commonTargetCoverage[left] ?? null;
+				leftSummary = operations.read(this.summaries, left)!,
+				rightSummary = operations.read(this.summaries, right)!;
+			let next: ExactSummary<T>;
+			if (leftSummary.count === 0) {
+				next = {
+					count: rightSummary.count,
+					list: null,
+					partition: rightSummary.partition,
+					commonExclusions: rightSummary.commonExclusions,
+					commonTargetCoverage: rightSummary.commonTargetCoverage,
+				};
+			} else if (rightSummary.count === 0) {
+				next = {
+					count: leftSummary.count,
+					list: null,
+					partition: leftSummary.partition,
+					commonExclusions: leftSummary.commonExclusions,
+					commonTargetCoverage: leftSummary.commonTargetCoverage,
+				};
 			} else {
-				this.partitions[node] =
-					this.partitions[left] !== null && this.partitions[left] === this.partitions[right]
-						? (this.partitions[left] ?? null)
-						: null;
-				this.commonExclusions[node] = identityIntersection(
-					this.commonExclusions[left] ?? EMPTY_IDENTITIES,
-					this.commonExclusions[right] ?? EMPTY_IDENTITIES,
-					work,
-				);
-				this.commonTargetCoverage[node] = this.intersectCoverage(
-					this.commonTargetCoverage[left] ?? EMPTY_IDENTITIES,
-					this.commonTargetCoverage[right] ?? EMPTY_IDENTITIES,
-					work,
-				);
+				next = {
+					count: leftSummary.count + rightSummary.count,
+					list: null,
+					partition:
+						leftSummary.partition !== null && leftSummary.partition === rightSummary.partition
+							? leftSummary.partition
+							: null,
+					commonExclusions: identityIntersection(
+						leftSummary.commonExclusions ?? EMPTY_IDENTITIES,
+						rightSummary.commonExclusions ?? EMPTY_IDENTITIES,
+						work,
+					),
+					commonTargetCoverage: this.intersectCoverage(
+						leftSummary.commonTargetCoverage ?? EMPTY_IDENTITIES,
+						rightSummary.commonTargetCoverage ?? EMPTY_IDENTITIES,
+						work,
+					),
+				};
 			}
-			this.retainedSummaryRefs += this.summaryRefs(node);
+			operations.write(this.summaries, node, next);
+			this.retainedSummaryRefs += this.diagnosticSummaryRefs(node);
 			work.exactIndexUpdates += 1;
 		}
 	}
@@ -557,18 +585,21 @@ class ExactCompatibilityIndex<T> {
 		eventPartition: string,
 		work: SweepWork,
 	): Set<ActiveList<T>> {
-		const candidates = new Set<ActiveList<T>>();
+		const operations = new PreprocessingOperations(() => spend(work, "compatibility-query"));
+		const candidates = operations.set<ActiveList<T>>();
 		const walk = (node: number): void => {
-			spend(work, "compatibility-query");
+			const query = new PreprocessingOperations(() => spend(work, "compatibility-query"));
 			work.exactQuerySteps += 1;
-			if (this.counts[node] === 0) return;
-			const partition = this.partitions[node];
+			const summary = query.read(this.summaries, node)!;
+			if (summary.count === 0) return;
+			const partition = summary.partition;
 			if (partition != null && partitionExcluded(eventProfile, partition, work)) return;
-			const common = this.commonExclusions[node];
+			const common = summary.commonExclusions;
 			if (common && includesIdentity(common, eventPartition, work)) return;
-			const commonTargets = this.commonTargetCoverage[node];
+			const commonTargets = summary.commonTargetCoverage;
 			if (this.hierarchy && commonTargets)
-				for (const target of commonTargets) {
+				for (let targetIndex = 0; targetIndex < commonTargets.length; targetIndex += 1) {
+					const target = query.read(commonTargets, targetIndex)!;
 					work.hierarchyMembershipTests += 1;
 					if (
 						this.hierarchy.isAncestor(eventPartition, target, () => spend(work, "hierarchy-query"))
@@ -576,10 +607,12 @@ class ExactCompatibilityIndex<T> {
 						return;
 				}
 			if (node >= this.size) {
-				const list = this.lists[node]!;
+				const list = summary.list!;
 				work.compatibilityQuerySteps += 1;
-				spend(work, "candidate-intersection");
-				candidates.add(list);
+				new PreprocessingOperations(() => spend(work, "candidate-intersection")).setAdd(
+					candidates,
+					list,
+				);
 				return;
 			}
 			walk(node * 2);
@@ -594,25 +627,30 @@ function mergedRanges(
 	ranges: readonly (readonly [number, number])[],
 	work: SweepWork,
 ): Array<[number, number]> {
-	spend(work, "prepare-events");
-	const copied: Array<[number, number]> = [];
-	for (const [min, max] of ranges) {
-		spend(work, "prepare-events", 2);
-		copied.push([min, max]);
+	const prepare = new PreprocessingOperations(() => spend(work, "prepare-events"));
+	const copied = prepare.array<[number, number]>();
+	for (let index = 0; index < ranges.length; index += 1) {
+		const [min, max] = prepare.read(ranges, index)!;
+		prepare.push(copied, [min, max]);
 	}
+	const order = new PreprocessingOperations(() => spend(work, "order-events"));
 	const ordered = stableSorted(
 		copied,
 		(a, b) => {
-			spend(work, "order-events");
-			return a[0] - b[0] || a[1] - b[1];
+			return order.read(a, 0)! - order.read(b, 0)! || order.read(a, 1)! - order.read(b, 1)!;
 		},
 		(units) => spend(work, "order-events", units),
 	);
-	const merged: Array<[number, number]> = [];
-	for (const range of ordered) {
-		const previous = merged.at(-1);
-		if (!previous || range[0] > previous[1] + 1) merged.push(range);
-		else previous[1] = Math.max(previous[1], range[1]);
+	const merged = prepare.array<[number, number]>();
+	for (let index = 0; index < ordered.length; index += 1) {
+		const range = prepare.read(ordered, index)!;
+		const previous = merged.length === 0 ? undefined : prepare.read(merged, merged.length - 1);
+		const rangeMin = prepare.read(range, 0)!;
+		const rangeMax = prepare.read(range, 1)!;
+		if (!previous || rangeMin > prepare.read(previous, 1)! + 1) prepare.push(merged, range);
+		else {
+			prepare.write(previous, 1, Math.max(prepare.read(previous, 1)!, rangeMax));
+		}
 	}
 	return merged;
 }
@@ -624,14 +662,16 @@ class RangeCount {
 		let treeSize = 1;
 		while (treeSize < Math.max(1, size)) treeSize *= 2;
 		this.size = treeSize;
-		spend(work, "prepare-events", treeSize * 2);
-		this.values = Array.from({ length: treeSize * 2 }, () => 0);
+		this.values = new PreprocessingOperations(() => spend(work, "prepare-events")).arrayFilled(
+			treeSize * 2,
+			0,
+		);
 	}
-	add(position: number, delta: number, work: SweepWork): number {
+	adjust(position: number, delta: number, work: SweepWork): number {
+		const operations = new PreprocessingOperations(() => spend(work, "activate-or-expire"));
 		let steps = 0;
 		for (let index = this.size + position; index > 0; index = Math.floor(index / 2)) {
-			spend(work, "activate-or-expire");
-			this.values[index]! += delta;
+			operations.write(this.values, index, operations.read(this.values, index)! + delta);
 			steps += 1;
 		}
 		return steps;
@@ -641,11 +681,11 @@ class RangeCount {
 			right = max + this.size,
 			value = 0,
 			steps = 0;
+		const operations = new PreprocessingOperations(() => spend(work, "hierarchy-query"));
 		while (left <= right) {
-			spend(work, "hierarchy-query");
 			steps += 1;
-			if (left % 2 === 1) value += this.values[left++]!;
-			if (right % 2 === 0) value += this.values[right--]!;
+			if (left % 2 === 1) value += operations.read(this.values, left++)!;
+			if (right % 2 === 0) value += operations.read(this.values, right--)!;
 			left = Math.floor(left / 2);
 			right = Math.floor(right / 2);
 		}
@@ -653,10 +693,10 @@ class RangeCount {
 	}
 	positive(min: number, max: number, visit: (position: number) => void, work: SweepWork): number {
 		let steps = 0;
+		const operations = new PreprocessingOperations(() => spend(work, "hierarchy-query"));
 		const walk = (node: number, nodeMin: number, nodeMax: number): void => {
-			spend(work, "hierarchy-query");
 			steps += 1;
-			if (this.values[node] === 0 || nodeMax < min || nodeMin > max) return;
+			if (operations.read(this.values, node) === 0 || nodeMax < min || nodeMin > max) return;
 			if (nodeMin === nodeMax) {
 				visit(nodeMin);
 				return;
@@ -677,18 +717,26 @@ class RangeMaximum {
 		let size = 1;
 		while (size < Math.max(1, length)) size *= 2;
 		this.size = size;
-		spend(work, "prepare-events", size * 2);
-		this.values = Array.from({ length: size * 2 }, () => 0);
+		this.values = new PreprocessingOperations(() => spend(work, "prepare-events")).arrayFilled(
+			size * 2,
+			0,
+		);
 	}
-	add(position: number, delta: number, work: SweepWork): number {
+	adjust(position: number, delta: number, work: SweepWork): number {
+		const operations = new PreprocessingOperations(() => spend(work, "activate-or-expire"));
 		let index = this.size + position;
-		spend(work, "activate-or-expire");
-		this.values[index]! += delta;
+		operations.write(this.values, index, operations.read(this.values, index)! + delta);
 		let steps = 1;
 		while (index > 1) {
-			spend(work, "activate-or-expire");
 			index = Math.floor(index / 2);
-			this.values[index] = Math.max(this.values[index * 2]!, this.values[index * 2 + 1]!);
+			operations.write(
+				this.values,
+				index,
+				Math.max(
+					operations.read(this.values, index * 2)!,
+					operations.read(this.values, index * 2 + 1)!,
+				),
+			);
 			steps += 1;
 		}
 		return steps;
@@ -698,11 +746,11 @@ class RangeMaximum {
 			right = max + this.size,
 			value = 0,
 			steps = 0;
+		const operations = new PreprocessingOperations(() => spend(work, "hierarchy-query"));
 		while (left <= right) {
-			spend(work, "hierarchy-query");
 			steps += 1;
-			if (left % 2 === 1) value = Math.max(value, this.values[left++]!);
-			if (right % 2 === 0) value = Math.max(value, this.values[right--]!);
+			if (left % 2 === 1) value = Math.max(value, operations.read(this.values, left++)!);
+			if (right % 2 === 0) value = Math.max(value, operations.read(this.values, right--)!);
 			left = Math.floor(left / 2);
 			right = Math.floor(right / 2);
 		}
@@ -764,59 +812,59 @@ function emptyWork(options?: SweepOptions): SweepWork {
 }
 
 function compareNode<T>(a: ActiveNode<T>, b: ActiveNode<T>, work: SweepWork): number {
-	spend(work, "activate-or-expire", 2);
+	new PreprocessingOperations(() => spend(work, "activate-or-expire")).stableComparison();
 	return a.interval.max - b.interval.max || a.order - b.order;
 }
 
 function heapPush<T>(heap: ActiveNode<T>[], node: ActiveNode<T>, work: SweepWork): void {
-	spend(work, "activate-or-expire");
-	heap.push(node);
+	const operations = new PreprocessingOperations(() => spend(work, "activate-or-expire"));
+	operations.push(heap, node);
 	let index = heap.length - 1;
 	while (index > 0) {
 		const parent = Math.floor((index - 1) / 2);
-		if (compareNode(heap[parent]!, node, work) <= 0) break;
-		spend(work, "activate-or-expire");
-		heap[index] = heap[parent]!;
+		const parentNode = operations.read(heap, parent)!;
+		if (compareNode(parentNode, node, work) <= 0) break;
+		operations.write(heap, index, parentNode);
 		index = parent;
 	}
-	heap[index] = node;
+	operations.write(heap, index, node);
 }
 
 function heapPop<T>(heap: ActiveNode<T>[], work: SweepWork): ActiveNode<T> | undefined {
-	spend(work, "activate-or-expire");
-	const first = heap[0];
-	const last = heap.pop();
+	const operations = new PreprocessingOperations(() => spend(work, "activate-or-expire"));
+	const first = operations.read(heap, 0);
+	const last = operations.pop(heap);
 	if (!first || !last || heap.length === 0) return first;
 	let index = 0;
 	while (true) {
 		const left = index * 2 + 1;
 		if (left >= heap.length) break;
 		const right = left + 1;
+		const leftNode = operations.read(heap, left)!;
 		const child =
-			right < heap.length && compareNode(heap[right]!, heap[left]!, work) < 0 ? right : left;
-		if (compareNode(last, heap[child]!, work) <= 0) break;
-		spend(work, "activate-or-expire");
-		heap[index] = heap[child]!;
+			right < heap.length && compareNode(operations.read(heap, right)!, leftNode, work) < 0
+				? right
+				: left;
+		const childNode = child === left ? leftNode : operations.read(heap, child)!;
+		if (compareNode(last, childNode, work) <= 0) break;
+		operations.write(heap, index, childNode);
 		index = child;
 	}
-	heap[index] = last;
+	operations.write(heap, index, last);
 	return first;
 }
 
 function lookup(work: SweepWork, count = 1): void {
-	spend(work, "activate-or-expire", count);
 	work.bucketLookups += count;
 	work.bucketIndexOperations += count;
 }
 
 function update(work: SweepWork, count = 1): void {
-	spend(work, "activate-or-expire", count);
 	work.bucketUpdates += count;
 	work.bucketIndexOperations += count;
 }
 
 function deleted(work: SweepWork, count = 1): void {
-	spend(work, "activate-or-expire", count);
 	work.bucketDeletes += count;
 	work.bucketIndexOperations += count;
 }
@@ -834,25 +882,24 @@ function append<T>(list: ActiveList<T>, node: ActiveNode<T>, work: SweepWork): v
 
 function indexRefDelta<T>(list: ActiveList<T>, delta: 1 | -1, work: SweepWork): void {
 	const index = list.index;
+	const operations = new PreprocessingOperations(() => spend(work, "activate-or-expire"));
 	for (const exclusion of list.profile.exclusions) {
 		lookup(work);
-		let lists = index.excludedByPartition.get(exclusion);
+		let lists = operations.mapGet(index.excludedByPartition, exclusion);
 		if (delta === 1) {
 			if (!lists) {
-				lists = new Set();
+				lists = operations.set();
 				update(work);
-				index.excludedByPartition.set(exclusion, lists);
+				operations.mapSet(index.excludedByPartition, exclusion, lists);
 			}
-			spend(work, "activate-or-expire");
-			lists.add(list);
+			operations.setAdd(lists, list);
 			work.compatibilityIndexUpdates += 1;
 		} else {
-			spend(work, "activate-or-expire");
-			lists?.delete(list);
+			if (lists) operations.setDelete(lists, list);
 			work.compatibilityIndexUpdates += 1;
 			if (lists?.size === 0) {
 				deleted(work);
-				index.excludedByPartition.delete(exclusion);
+				operations.mapDelete(index.excludedByPartition, exclusion);
 			}
 		}
 	}
@@ -862,105 +909,109 @@ function indexRefDelta<T>(list: ActiveList<T>, delta: 1 | -1, work: SweepWork): 
 		delta * (3 + list.profile.exclusions.length + Math.max(1, list.profile.ancestorTargets.length));
 	const hierarchy = index.hierarchy;
 	if (!hierarchy) return;
-	const position = hierarchy.position(list.partition);
+	const position = hierarchy.position(list.partition, () => spend(work, "activate-or-expire"));
 	if (position !== undefined) {
-		work.hierarchyIndexUpdateSteps += index.partitionCounts.add(position, delta, work);
+		work.hierarchyIndexUpdateSteps += index.partitionCounts.adjust(position, delta, work);
 		lookup(work);
-		let lists = index.partitionLists.get(position);
+		let lists = operations.mapGet(index.partitionLists, position);
 		if (delta === 1) {
 			if (!lists) {
-				lists = new Set();
+				lists = operations.set();
 				update(work);
-				index.partitionLists.set(position, lists);
+				operations.mapSet(index.partitionLists, position, lists);
 			}
-			spend(work, "activate-or-expire");
-			lists.add(list);
+			operations.setAdd(lists, list);
 			work.compatibilityIndexUpdates += 1;
 		} else {
-			spend(work, "activate-or-expire");
-			lists?.delete(list);
+			if (lists) operations.setDelete(lists, list);
 			work.compatibilityIndexUpdates += 1;
 			if (lists?.size === 0) {
 				deleted(work);
-				index.partitionLists.delete(position);
+				operations.mapDelete(index.partitionLists, position);
 			}
 		}
 	} else {
-		spend(work, "activate-or-expire");
-		if (delta === 1) index.unpositionedLists.add(list);
-		else index.unpositionedLists.delete(list);
+		if (delta === 1) operations.setAdd(index.unpositionedLists, list);
+		else operations.setDelete(index.unpositionedLists, list);
 		work.compatibilityIndexUpdates += 1;
 	}
 	for (const target of list.profile.ancestorTargets) {
-		const targetPosition = hierarchy.position(target);
+		const targetPosition = hierarchy.position(target, () => spend(work, "activate-or-expire"));
 		if (targetPosition !== undefined) {
-			work.hierarchyIndexUpdateSteps += index.targetCounts.add(targetPosition, delta, work);
-			work.hierarchyIndexUpdateSteps += index.targetPositionCounts.add(targetPosition, delta, work);
+			work.hierarchyIndexUpdateSteps += index.targetCounts.adjust(targetPosition, delta, work);
+			work.hierarchyIndexUpdateSteps += index.targetPositionCounts.adjust(
+				targetPosition,
+				delta,
+				work,
+			);
 			lookup(work);
-			let lists = index.targetLists.get(targetPosition);
+			let lists = operations.mapGet(index.targetLists, targetPosition);
 			if (delta === 1) {
 				if (!lists) {
-					lists = new Set();
+					lists = operations.set();
 					update(work);
-					index.targetLists.set(targetPosition, lists);
+					operations.mapSet(index.targetLists, targetPosition, lists);
 				}
-				spend(work, "activate-or-expire");
-				lists.add(list);
+				operations.setAdd(lists, list);
 				work.compatibilityIndexUpdates += 1;
 			} else {
-				spend(work, "activate-or-expire");
-				lists?.delete(list);
+				if (lists) operations.setDelete(lists, list);
 				work.compatibilityIndexUpdates += 1;
 				if (lists?.size === 0) {
 					deleted(work);
-					index.targetLists.delete(targetPosition);
+					operations.mapDelete(index.targetLists, targetPosition);
 				}
 			}
 		}
 	}
 	if (list.profile.ancestorTargets.length === 0) {
-		spend(work, "activate-or-expire");
-		if (delta === 1) index.untargetedLists.add(list);
-		else index.untargetedLists.delete(list);
+		if (delta === 1) operations.setAdd(index.untargetedLists, list);
+		else operations.setDelete(index.untargetedLists, list);
 		work.compatibilityIndexUpdates += 1;
 	}
 }
 
 function activateList<T>(list: ActiveList<T>, work: SweepWork): void {
+	const operations = new PreprocessingOperations(() => spend(work, "activate-or-expire"));
 	update(work);
-	list.index.activeLists.add(list);
+	operations.setAdd(list.index.activeLists, list);
 	list.index.totalBuckets += 1;
 	lookup(work);
 	update(work);
-	list.index.profileCounts.set(list.profile, (list.index.profileCounts.get(list.profile) ?? 0) + 1);
+	operations.mapSet(
+		list.index.profileCounts,
+		list.profile,
+		(operations.mapGet(list.index.profileCounts, list.profile) ?? 0) + 1,
+	);
 	indexRefDelta(list, 1, work);
-	list.index.exact.set(list.exactRank, list, work);
+	list.index.exact.updateRank(list.exactRank, list, work);
 }
 
 function retireEmptyList<T>(list: ActiveList<T>, work: SweepWork): void {
 	if (list.head) return;
+	const operations = new PreprocessingOperations(() => spend(work, "activate-or-expire"));
 	lookup(work);
-	const profiles = list.index.buckets.get(list.partition)!;
+	const profiles = operations.mapGet(list.index.buckets, list.partition)!;
 	deleted(work);
-	profiles.delete(list.profile);
+	operations.mapDelete(profiles, list.profile);
 	if (profiles.size === 0) {
 		deleted(work);
-		list.index.buckets.delete(list.partition);
+		operations.mapDelete(list.index.buckets, list.partition);
 	}
 	deleted(work);
-	list.index.activeLists.delete(list);
+	operations.setDelete(list.index.activeLists, list);
 	list.index.totalBuckets -= 1;
 	lookup(work);
-	const profileCount = list.index.profileCounts.get(list.profile)! - 1;
+	const profileCount = operations.mapGet(list.index.profileCounts, list.profile)! - 1;
 	if (profileCount === 0) {
 		deleted(work);
-		list.index.profileCounts.delete(list.profile);
+		operations.mapDelete(list.index.profileCounts, list.profile);
 	} else {
 		update(work);
-		list.index.profileCounts.set(list.profile, profileCount);
+		operations.mapSet(list.index.profileCounts, list.profile, profileCount);
 	}
 	indexRefDelta(list, -1, work);
-	list.index.exact.set(list.exactRank, null, work);
+	list.index.exact.updateRank(list.exactRank, null, work);
 }
 
 function remove<T>(node: ActiveNode<T>, work: SweepWork): void {
@@ -983,15 +1034,16 @@ function bucketFor<T>(
 	exactRank: number,
 	work: SweepWork,
 ): ActiveList<T> {
+	const operations = new PreprocessingOperations(() => spend(work, "activate-or-expire"));
 	lookup(work);
-	let profiles = index.buckets.get(partition);
+	let profiles = operations.mapGet(index.buckets, partition);
 	if (!profiles) {
-		profiles = new Map();
+		profiles = operations.map();
 		update(work);
-		index.buckets.set(partition, profiles);
+		operations.mapSet(index.buckets, partition, profiles);
 	}
 	lookup(work);
-	const existing = profiles.get(profile);
+	const existing = operations.mapGet(profiles, profile);
 	if (existing) return existing;
 	const list: ActiveList<T> = {
 		partition,
@@ -1002,7 +1054,7 @@ function bucketFor<T>(
 		exactRank,
 	};
 	update(work);
-	profiles.set(profile, list);
+	operations.mapSet(profiles, profile, list);
 	return list;
 }
 
@@ -1011,29 +1063,26 @@ function canonicalProfile(
 	semantics: SweepPartition,
 	work: SweepWork,
 ): CompatibilityProfile {
+	const prepare = new PreprocessingOperations(() => spend(work, "prepare-events"));
 	const profileOrder = (a: string, b: string) => {
-		spend(work, "order-events");
 		work.profileSortComparisons += 1;
 		return comparedIdentity(a, b, (units) => spend(work, "order-events", units));
 	};
-	spend(work, "prepare-events");
-	const exclusionInput: string[] = [];
+	const exclusionInput = prepare.array<string>();
 	for (const exclusion of semantics.excludedPartitions) {
-		spend(work, "prepare-events", 2 + exclusion.length);
-		exclusionInput.push(exclusion);
+		spend(work, "prepare-events", 1 + exclusion.length);
+		prepare.push(exclusionInput, exclusion);
 	}
 	const exclusions = stableSorted(exclusionInput, profileOrder, (units) =>
 		spend(work, "order-events", units),
 	);
-	spend(work, "prepare-events", 2);
-	const ancestorInput: string[] = [];
-	const seenAncestors = new Set<string>();
+	const ancestorInput = prepare.array<string>();
+	const seenAncestors = prepare.set<string>();
 	for (const target of semantics.ancestorTargets ?? []) {
-		spend(work, "prepare-events", 1 + target.length);
-		if (seenAncestors.has(target)) continue;
-		spend(work, "prepare-events", 2);
-		seenAncestors.add(target);
-		ancestorInput.push(target);
+		spend(work, "prepare-events", target.length);
+		if (prepare.setHas(seenAncestors, target)) continue;
+		prepare.setAdd(seenAncestors, target);
+		prepare.push(ancestorInput, target);
 	}
 	const ancestorTargets = stableSorted(ancestorInput, profileOrder, (units) =>
 		spend(work, "order-events", units),
@@ -1041,47 +1090,43 @@ function canonicalProfile(
 	work.profileSnapshotEntries += exclusions.length + ancestorTargets.length;
 	let node = root;
 	for (const exclusion of exclusions) {
-		spend(work, "prepare-events", 2);
-		work.profileTrieSteps += 1;
 		spend(work, "prepare-events");
-		let child = node.children.get(exclusion);
+		work.profileTrieSteps += 1;
+		let child = prepare.mapGet(node.children, exclusion);
 		if (!child) {
-			child = { children: new Map(), profiles: new Map(), profile: null };
-			spend(work, "prepare-events");
-			node.children.set(exclusion, child);
+			child = { children: prepare.map(), profiles: prepare.map(), profile: null };
+			prepare.mapSet(node.children, exclusion, child);
 			work.peakRetainedProfileTrieNodes += 1;
 		}
 		node = child;
 	}
 	const hierarchyKey = semantics.hierarchy ?? null;
-	spend(work, "prepare-events");
-	let hierarchyNode = node.profiles.get(hierarchyKey);
+	let hierarchyNode = prepare.mapGet(node.profiles, hierarchyKey);
 	if (!hierarchyNode) {
-		hierarchyNode = { children: new Map(), profiles: new Map(), profile: null };
-		spend(work, "prepare-events");
-		node.profiles.set(hierarchyKey, hierarchyNode);
+		hierarchyNode = { children: prepare.map(), profiles: prepare.map(), profile: null };
+		prepare.mapSet(node.profiles, hierarchyKey, hierarchyNode);
 		work.peakRetainedProfileTrieNodes += 1;
 	}
 	let targetNode = hierarchyNode;
 	for (const target of ancestorTargets) {
-		spend(work, "prepare-events", 2);
-		work.profileTrieSteps += 1;
 		spend(work, "prepare-events");
-		let child = targetNode.children.get(target);
+		work.profileTrieSteps += 1;
+		let child = prepare.mapGet(targetNode.children, target);
 		if (!child) {
-			child = { children: new Map(), profiles: new Map(), profile: null };
-			spend(work, "prepare-events");
-			targetNode.children.set(target, child);
+			child = { children: prepare.map(), profiles: prepare.map(), profile: null };
+			prepare.mapSet(targetNode.children, target, child);
 			work.peakRetainedProfileTrieNodes += 1;
 		}
 		targetNode = child;
 	}
 	work.profileTerminalLookups += 1;
 	if (!targetNode.profile) {
-		spend(work, "prepare-events", exclusions.length + 1);
+		const excluded = prepare.set<string>();
+		for (let index = 0; index < exclusions.length; index += 1)
+			prepare.setAdd(excluded, prepare.read(exclusions, index)!);
 		targetNode.profile = {
 			exclusions,
-			excluded: new Set(exclusions),
+			excluded,
 			ancestorTargets,
 			hierarchy: semantics.hierarchy,
 		};
@@ -1097,15 +1142,18 @@ function partitionExcluded(
 	work?: SweepWork,
 	chargeBudget = true,
 ): boolean {
-	if (work) {
-		if (chargeBudget) spend(work, "compatibility-query");
-		work.exactMembershipTests += 1;
-	}
-	if (profile.excluded.has(partition)) return true;
+	if (work) work.exactMembershipTests += 1;
+	const excluded = new PreprocessingOperations(() => {
+		if (chargeBudget && work) spend(work, "compatibility-query");
+	}).setHas(profile.excluded, partition);
+	if (excluded) return true;
 	if (!profile.hierarchy) return false;
-	for (const target of profile.ancestorTargets) {
+	const hierarchyOperations = new PreprocessingOperations(() => {
+		if (chargeBudget && work) spend(work, "hierarchy-query");
+	});
+	for (let index = 0; index < profile.ancestorTargets.length; index += 1) {
+		const target = hierarchyOperations.read(profile.ancestorTargets, index)!;
 		if (work) {
-			if (chargeBudget) spend(work, "hierarchy-query");
 			work.hierarchyMembershipTests += 1;
 		}
 		if (
@@ -1124,12 +1172,14 @@ function hierarchyEventExcludesAll<T>(
 	work: SweepWork,
 ): boolean {
 	if (!index.hierarchy || profile.hierarchy !== index.hierarchy) return false;
-	for (const target of profile.ancestorTargets) {
+	const hierarchyOperations = new PreprocessingOperations(() => spend(work, "hierarchy-query"));
+	for (let targetIndex = 0; targetIndex < profile.ancestorTargets.length; targetIndex += 1) {
+		const target = hierarchyOperations.read(profile.ancestorTargets, targetIndex)!;
 		work.hierarchyPathQueries += 1;
 		let count = 0;
-		for (const [min, max] of index.hierarchy.pathToRoot(target, () =>
-			spend(work, "hierarchy-query"),
-		)) {
+		const path = index.hierarchy.pathToRoot(target, () => spend(work, "hierarchy-query"));
+		for (let pathIndex = 0; pathIndex < path.length; pathIndex += 1) {
+			const [min, max] = hierarchyOperations.read(path, pathIndex)!;
 			const measured = index.partitionCounts.range(min, max, work);
 			count += measured.value;
 			work.hierarchyPathSteps += measured.steps + 1;
@@ -1161,19 +1211,24 @@ function hierarchyCandidates<T>(
 	const hierarchy = index.hierarchy;
 	if (!hierarchy || profile.hierarchy !== hierarchy || profile.ancestorTargets.length === 0)
 		return null;
-	const ranges: Array<readonly [number, number]> = [];
-	for (const target of profile.ancestorTargets) {
+	const hierarchyOperations = new PreprocessingOperations(() => spend(work, "hierarchy-query"));
+	const queryOperations = new PreprocessingOperations(() => spend(work, "compatibility-query"));
+	const ranges = hierarchyOperations.array<readonly [number, number]>();
+	for (let targetIndex = 0; targetIndex < profile.ancestorTargets.length; targetIndex += 1) {
+		const target = hierarchyOperations.read(profile.ancestorTargets, targetIndex)!;
 		work.hierarchyPathQueries += 1;
 		const path = hierarchy.pathToRoot(target, () => spend(work, "hierarchy-query"));
 		work.hierarchyPathSteps += path.length;
-		ranges.push(...path);
+		for (let pathIndex = 0; pathIndex < path.length; pathIndex += 1)
+			hierarchyOperations.push(ranges, hierarchyOperations.read(path, pathIndex)!);
 	}
-	for (const exclusion of profile.exclusions) {
-		const position = hierarchy.position(exclusion);
-		if (position !== undefined) ranges.push([position, position]);
+	for (let exclusionIndex = 0; exclusionIndex < profile.exclusions.length; exclusionIndex += 1) {
+		const exclusion = hierarchyOperations.read(profile.exclusions, exclusionIndex)!;
+		const position = hierarchy.position(exclusion, () => spend(work, "hierarchy-query"));
+		if (position !== undefined) hierarchyOperations.push(ranges, [position, position]);
 	}
 	const excluded = mergedRanges(ranges, work);
-	const candidates = new Set<ActiveList<T>>();
+	const candidates = queryOperations.set<ActiveList<T>>();
 	let cursor = 0;
 	const collect = (min: number, max: number) => {
 		if (min > max) return;
@@ -1182,17 +1237,19 @@ function hierarchyCandidates<T>(
 			min,
 			max,
 			(position) => {
-				lookup(work);
-				const lists = index.partitionLists.get(position)!;
+				work.bucketLookups += 1;
+				work.bucketIndexOperations += 1;
+				const lists = queryOperations.mapGet(index.partitionLists, position)!;
 				for (const list of lists) {
 					work.compatibilityQuerySteps += 1;
-					candidates.add(list);
+					queryOperations.setAdd(candidates, list);
 				}
 			},
 			work,
 		);
 	};
-	for (const [min, max] of excluded) {
+	for (let rangeIndex = 0; rangeIndex < excluded.length; rangeIndex += 1) {
+		const [min, max] = hierarchyOperations.read(excluded, rangeIndex)!;
 		collect(cursor, min - 1);
 		cursor = Math.max(cursor, max + 1);
 	}
@@ -1200,7 +1257,7 @@ function hierarchyCandidates<T>(
 	// Partitions outside the hierarchy cannot be excluded by ancestor paths.
 	for (const list of index.unpositionedLists) {
 		work.compatibilityQuerySteps += 1;
-		candidates.add(list);
+		queryOperations.setAdd(candidates, list);
 	}
 	return candidates;
 }
@@ -1216,26 +1273,27 @@ export function sweepIntervalPairs<A, B>(
 	type Value = A | B;
 	const work = emptyWork(options);
 	options?.budget?.attachDiagnosticState(work);
-	spend(work, "prepare-events", 6);
-	const profileRoot: ProfileNode = { children: new Map(), profiles: new Map(), profile: null };
-	const profileBySemantics = new Map<SweepPartition, CompatibilityProfile>();
-	let events: Array<{
+	const prepare = new PreprocessingOperations(() => spend(work, "prepare-events"));
+	const profileRoot: ProfileNode = {
+		children: prepare.map(),
+		profiles: prepare.map(),
+		profile: null,
+	};
+	const profileBySemantics = prepare.map<SweepPartition, CompatibilityProfile>();
+	let events = prepare.array<{
 		interval: SweepInterval<Value>;
 		set: 0 | 1;
 		ordinal: number;
 		profile: CompatibilityProfile;
-	}> = [];
+	}>();
 	let retainedCanonicalProfileRefs = 0;
 	const addEvent = (interval: SweepInterval<Value>, set: 0 | 1, ordinal: number) => {
-		spend(work, "prepare-events", 2);
-		let profile = profileBySemantics.get(interval.semantics);
+		let profile = prepare.mapGet(profileBySemantics, interval.semantics);
 		if (!profile) {
 			profile = canonicalProfile(profileRoot, interval.semantics, work);
-			spend(work, "prepare-events");
-			profileBySemantics.set(interval.semantics, profile);
+			prepare.mapSet(profileBySemantics, interval.semantics, profile);
 		}
-		spend(work, "prepare-events");
-		events.push({
+		prepare.push(events, {
 			interval,
 			set,
 			ordinal,
@@ -1243,21 +1301,17 @@ export function sweepIntervalPairs<A, B>(
 		});
 	};
 	for (let ordinal = 0; ordinal < left.length; ordinal += 1) {
-		spend(work, "prepare-events");
-		addEvent(left[ordinal]!, 0, ordinal);
+		addEvent(prepare.read(left, ordinal)!, 0, ordinal);
 	}
 	if (!sameSet)
 		for (let ordinal = 0; ordinal < right.length; ordinal += 1) {
-			spend(work, "prepare-events");
-			addEvent(right[ordinal]!, 1, ordinal);
+			addEvent(prepare.read(right, ordinal)!, 1, ordinal);
 		}
-	spend(work, "prepare-events");
-	const retainedProfiles = new Set<CompatibilityProfile>();
-	for (const event of events) {
-		spend(work, "prepare-events");
-		if (retainedProfiles.has(event.profile)) continue;
-		spend(work, "prepare-events");
-		retainedProfiles.add(event.profile);
+	const retainedProfiles = prepare.set<CompatibilityProfile>();
+	for (let eventIndex = 0; eventIndex < events.length; eventIndex += 1) {
+		const event = prepare.read(events, eventIndex)!;
+		if (prepare.setHas(retainedProfiles, event.profile)) continue;
+		prepare.setAdd(retainedProfiles, event.profile);
 		// Arrays and the exact Set retain their entries separately.
 		retainedCanonicalProfileRefs +=
 			1 + event.profile.exclusions.length * 2 + event.profile.ancestorTargets.length;
@@ -1265,7 +1319,7 @@ export function sweepIntervalPairs<A, B>(
 	const orderedEvents = stableSorted(
 		events,
 		(a, b) => {
-			spend(work, "order-events");
+			const order = new PreprocessingOperations(() => spend(work, "order-events"));
 			const numeric =
 				a.interval.min - b.interval.min || a.interval.max - b.interval.max || a.set - b.set;
 			if (numeric) return numeric;
@@ -1275,8 +1329,10 @@ export function sweepIntervalPairs<A, B>(
 			if (identity) return identity;
 			const compareLists = (first: readonly string[], second: readonly string[]) => {
 				for (let index = 0; index < Math.min(first.length, second.length); index += 1) {
-					const compared = comparedIdentity(first[index]!, second[index]!, (units) =>
-						spend(work, "order-events", units),
+					const compared = comparedIdentity(
+						order.read(first, index)!,
+						order.read(second, index)!,
+						(units) => spend(work, "order-events", units),
 					);
 					if (compared) return compared;
 				}
@@ -1292,56 +1348,43 @@ export function sweepIntervalPairs<A, B>(
 	);
 	events = orderedEvents;
 	let hierarchy: SweepHierarchy | undefined;
-	for (const event of events) {
-		spend(work, "prepare-events");
+	for (let eventIndex = 0; eventIndex < events.length; eventIndex += 1) {
+		const event = prepare.read(events, eventIndex)!;
 		if (!event.profile.hierarchy) continue;
 		hierarchy = event.profile.hierarchy;
 		break;
 	}
 	spend(work, "prepare-events", 3);
-	const rankSpecs: Array<{ partition: string; profile: CompatibilityProfile }> = [];
-	const seenRanks = new Map<string, Set<CompatibilityProfile>>();
-	for (const event of events) {
+	const rankSpecs = prepare.array<{ partition: string; profile: CompatibilityProfile }>();
+	const seenRanks = prepare.map<string, Set<CompatibilityProfile>>();
+	for (let eventIndex = 0; eventIndex < events.length; eventIndex += 1) {
+		const event = prepare.read(events, eventIndex)!;
 		const partition = event.interval.semantics.partition;
-		spend(work, "prepare-events");
-		let profiles = seenRanks.get(partition);
+		let profiles = prepare.mapGet(seenRanks, partition);
 		if (!profiles) {
-			profiles = new Set();
-			spend(work, "prepare-events");
-			seenRanks.set(partition, profiles);
+			profiles = prepare.set();
+			prepare.mapSet(seenRanks, partition, profiles);
 		}
-		spend(work, "prepare-events");
-		if (!profiles.has(event.profile)) {
-			spend(work, "prepare-events");
-			profiles.add(event.profile);
-			rankSpecs.push({ partition, profile: event.profile });
+		if (!prepare.setHas(profiles, event.profile)) {
+			prepare.setAdd(profiles, event.profile);
+			prepare.push(rankSpecs, { partition, profile: event.profile });
 		}
 	}
 	// Events are already in the public stable enumeration order. Ranking buckets by
 	// first occurrence lets an in-order index query preserve that order without a
 	// per-query sort.
-	const ranks = new Map<string, Map<CompatibilityProfile, number>>();
-	for (const [rank, spec] of rankSpecs.entries()) {
-		spend(work, "prepare-events");
-		let profiles = ranks.get(spec.partition);
+	const ranks = prepare.map<string, Map<CompatibilityProfile, number>>();
+	for (let rank = 0; rank < rankSpecs.length; rank += 1) {
+		const spec = prepare.read(rankSpecs, rank)!;
+		let profiles = prepare.mapGet(ranks, spec.partition);
 		if (!profiles) {
-			profiles = new Map();
-			spend(work, "prepare-events");
-			ranks.set(spec.partition, profiles);
+			profiles = prepare.map();
+			prepare.mapSet(ranks, spec.partition, profiles);
 		}
-		spend(work, "prepare-events");
-		profiles.set(spec.profile, rank);
+		prepare.mapSet(profiles, spec.profile, rank);
 	}
-	let seenRankProfiles = 0;
-	for (const profiles of seenRanks.values()) {
-		spend(work, "prepare-events");
-		seenRankProfiles += profiles.size;
-	}
-	let retainedRanks = 0;
-	for (const profiles of ranks.values()) {
-		spend(work, "prepare-events");
-		retainedRanks += profiles.size;
-	}
+	const seenRankProfiles = rankSpecs.length;
+	const retainedRanks = rankSpecs.length;
 	const retainedRankAndProfileIndexRefs =
 		profileBySemantics.size * 2 +
 		retainedProfiles.size +
@@ -1351,61 +1394,60 @@ export function sweepIntervalPairs<A, B>(
 		ranks.size +
 		retainedRanks;
 	const makeIndex = (): BucketIndex<Value> => ({
-		buckets: new Map(),
-		activeLists: new Set(),
-		profileCounts: new Map(),
-		excludedByPartition: new Map(),
+		buckets: prepare.map(),
+		activeLists: prepare.set(),
+		profileCounts: prepare.map(),
+		excludedByPartition: prepare.map(),
 		hierarchy,
 		partitionCounts: new RangeCount(hierarchy?.size ?? 0, work),
 		targetCounts: new RangeMaximum(hierarchy?.size ?? 0, work),
 		targetPositionCounts: new RangeCount(hierarchy?.size ?? 0, work),
-		partitionLists: new Map(),
-		targetLists: new Map(),
-		unpositionedLists: new Set(),
-		untargetedLists: new Set(),
+		partitionLists: prepare.map(),
+		targetLists: prepare.map(),
+		unpositionedLists: prepare.set(),
+		untargetedLists: prepare.set(),
 		exact: new ExactCompatibilityIndex(rankSpecs.length, hierarchy, work),
 		totalBuckets: 0,
 		retainedExclusionRefs: 0,
 		retainedIndexRefs: 0,
 		activeNodes: 0,
 	});
-	const indexes: [BucketIndex<Value>, BucketIndex<Value>] = [makeIndex(), makeIndex()];
-	work.peakRetainedHierarchyIndexCells = indexes.reduce(
-		(total, index) =>
-			total +
-			index.partitionCounts.values.length +
-			index.targetCounts.values.length +
-			index.targetPositionCounts.values.length,
-		0,
-	);
-	const heap: ActiveNode<Value>[] = [];
+	const indexValues = prepare.array<BucketIndex<Value>>();
+	prepare.push(indexValues, makeIndex());
+	prepare.push(indexValues, makeIndex());
+	const indexes = indexValues as [BucketIndex<Value>, BucketIndex<Value>];
+	const leftIndex = prepare.read(indexes, 0)!;
+	const rightIndex = prepare.read(indexes, 1)!;
+	work.peakRetainedHierarchyIndexCells = 0;
+	for (let index = 0; index < indexes.length; index += 1) {
+		const owned = prepare.read(indexes, index)!;
+		work.peakRetainedHierarchyIndexCells +=
+			owned.partitionCounts.values.length +
+			owned.targetCounts.values.length +
+			owned.targetPositionCounts.values.length;
+	}
+	const heap = prepare.array<ActiveNode<Value>>();
 	const sampleRetainedState = (queryRefs: number): void => {
-		const buckets = indexes[0].totalBuckets + indexes[1].totalBuckets;
-		const exclusionRefs = indexes[0].retainedExclusionRefs + indexes[1].retainedExclusionRefs;
-		const indexRefs = indexes[0].retainedIndexRefs + indexes[1].retainedIndexRefs;
-		const profiles = indexes[0].profileCounts.size + indexes[1].profileCounts.size;
-		const hierarchyCells = indexes.reduce(
-			(total, index) =>
-				total +
-				index.partitionCounts.values.length +
-				index.targetCounts.values.length +
-				index.targetPositionCounts.values.length,
-			0,
-		);
-		const exactNodes = indexes.reduce((total, index) => total + index.exact.counts.length, 0);
-		const exactSummaryRefs = indexes.reduce(
-			(total, index) => total + index.exact.retainedSummaryRefs,
-			0,
-		);
-		const activeState = indexes.reduce(
-			(total, index) =>
-				total +
-				index.activeNodes +
-				index.totalBuckets +
-				index.profileCounts.size +
-				index.retainedIndexRefs,
-			0,
-		);
+		const buckets = leftIndex.totalBuckets + rightIndex.totalBuckets;
+		const exclusionRefs = leftIndex.retainedExclusionRefs + rightIndex.retainedExclusionRefs;
+		const indexRefs = leftIndex.retainedIndexRefs + rightIndex.retainedIndexRefs;
+		const profiles = leftIndex.profileCounts.size + rightIndex.profileCounts.size;
+		let hierarchyCells = 0,
+			exactNodes = 0,
+			exactSummaryRefs = 0,
+			activeState = 0;
+		const includeOwnedState = (owned: BucketIndex<Value>) => {
+			hierarchyCells +=
+				owned.partitionCounts.values.length +
+				owned.targetCounts.values.length +
+				owned.targetPositionCounts.values.length;
+			exactNodes += owned.exact.summaries.length;
+			exactSummaryRefs += owned.exact.retainedSummaryRefs;
+			activeState +=
+				owned.activeNodes + owned.totalBuckets + owned.profileCounts.size + owned.retainedIndexRefs;
+		};
+		includeOwnedState(leftIndex);
+		includeOwnedState(rightIndex);
 		work.peakRetainedBuckets = Math.max(work.peakRetainedBuckets, buckets);
 		work.peakRetainedExclusionRefs = Math.max(work.peakRetainedExclusionRefs, exclusionRefs);
 		work.peakRetainedIndexRefs = Math.max(work.peakRetainedIndexRefs, indexRefs);
@@ -1423,67 +1465,83 @@ export function sweepIntervalPairs<A, B>(
 				retainedCanonicalProfileRefs +
 				retainedRankAndProfileIndexRefs +
 				hierarchyCells +
-				exactNodes * 4 +
+				exactNodes +
 				exactSummaryRefs +
 				activeState +
 				queryRefs,
 		);
 	};
 	for (let order = 0; order < events.length; order += 1) {
-		spend(work, "activate-or-expire");
-		const event = events[order]!;
+		const lifecycle = new PreprocessingOperations(() => spend(work, "activate-or-expire"));
+		const event = lifecycle.read(events, order)!;
 		work.events += 1;
-		while (heap[0] && heap[0].interval.max < event.interval.min) {
+		let nextExpiry = lifecycle.read(heap, 0);
+		while (nextExpiry && nextExpiry.interval.max < event.interval.min) {
 			remove(heapPop(heap, work)!, work);
 			work.expiryPops += 1;
+			nextExpiry = lifecycle.read(heap, 0);
 		}
-		const opposite = sameSet ? indexes[0] : indexes[event.set === 0 ? 1 : 0];
+		const opposite = sameSet ? leftIndex : event.set === 0 ? rightIndex : leftIndex;
 		work.compatibilityQueries += 1;
 		if (opposite.totalBuckets > 0 && !hierarchyEventExcludesAll(opposite, event.profile, work)) {
+			const query = new PreprocessingOperations(() => spend(work, "compatibility-query"));
 			const eventCandidates = hierarchyCandidates(opposite, event.profile, work);
 			let activeHierarchyExclusions = false;
-			const subtree = opposite.hierarchy?.subtree(event.interval.semantics.partition);
+			const subtree = opposite.hierarchy?.subtree(event.interval.semantics.partition, () =>
+				spend(work, "hierarchy-query"),
+			);
 			if (subtree) {
 				work.hierarchySubtreeQueries += 1;
-				const measured = opposite.targetPositionCounts.range(subtree[0], subtree[1], work);
+				const measured = opposite.targetPositionCounts.range(
+					query.read(subtree, 0)!,
+					query.read(subtree, 1)!,
+					work,
+				);
 				work.hierarchySubtreeSteps += measured.steps;
 				activeHierarchyExclusions = measured.value > 0;
 			}
 			let eventExcludesActivePartition = false;
-			for (const exclusion of event.profile.exclusions) {
-				spend(work, "compatibility-query");
+			for (
+				let exclusionIndex = 0;
+				exclusionIndex < event.profile.exclusions.length;
+				exclusionIndex += 1
+			) {
+				const exclusion = query.read(event.profile.exclusions, exclusionIndex)!;
 				work.bucketLookups += 1;
 				work.bucketIndexOperations += 1;
 				work.exactQuerySteps += 1;
 				work.exactMembershipTests += 1;
-				if (opposite.buckets.has(exclusion)) {
+				if (query.mapHas(opposite.buckets, exclusion)) {
 					eventExcludesActivePartition = true;
 					break;
 				}
 			}
-			spend(work, "compatibility-query");
 			work.bucketLookups += 1;
 			work.bucketIndexOperations += 1;
 			work.exactQuerySteps += 1;
 			work.exactMembershipTests += 1;
 			const needsExactQuery =
 				eventExcludesActivePartition ||
-				(opposite.excludedByPartition.get(event.interval.semantics.partition)?.size ?? 0) > 0 ||
+				(query.mapGet(opposite.excludedByPartition, event.interval.semantics.partition)?.size ??
+					0) > 0 ||
 				activeHierarchyExclusions;
 			const activeCandidates = needsExactQuery
 				? opposite.exact.query(event.profile, event.interval.semantics.partition, work)
 				: null;
 			let intersection: Set<ActiveList<Value>> | null = null;
 			if (eventCandidates && activeCandidates) {
-				intersection = new Set();
+				const candidateOperations = new PreprocessingOperations(() =>
+					spend(work, "candidate-intersection"),
+				);
+				intersection = candidateOperations.set();
 				const [smaller, larger] =
 					eventCandidates.size <= activeCandidates.size
 						? [eventCandidates, activeCandidates]
 						: [activeCandidates, eventCandidates];
 				for (const candidate of smaller) {
-					spend(work, "candidate-intersection", 2);
 					work.compatibilityQuerySteps += 1;
-					if (larger.has(candidate)) intersection.add(candidate);
+					if (candidateOperations.setHas(larger, candidate))
+						candidateOperations.setAdd(intersection, candidate);
 				}
 			}
 			const currentQueryRefs =
@@ -1510,11 +1568,13 @@ export function sweepIntervalPairs<A, B>(
 				}
 			}
 		}
+		const eventIndex = event.set === 0 ? leftIndex : rightIndex;
+		const partitionRanks = prepare.mapGet(ranks, event.interval.semantics.partition)!;
 		const list = bucketFor(
-			indexes[event.set],
+			eventIndex,
 			event.interval.semantics.partition,
 			event.profile,
-			ranks.get(event.interval.semantics.partition)!.get(event.profile)!,
+			prepare.mapGet(partitionRanks, event.profile)!,
 			work,
 		);
 		const node: ActiveNode<Value> = {

@@ -182,6 +182,11 @@ note archboard did not write. About fifteen seconds.
   completed sweep work. Merge-tail tables pin storage accounting for empty,
   singleton, odd, and even stable sorts. Escaped obstacle identities and a
   6,300,000-code-unit persisted library id pin canonical encoding work.
+  Primitive-owner arithmetic covers array, map, set, identity, and stable-order
+  operations, including misses and rejected raw entries. A structural source
+  audit guards the declared model, pass-construction, sweep-lifecycle, range,
+  heap, and exact-index owners against unmetered collection work; red fixtures
+  prove every forbidden syntax class is detected.
 
 ## Wire and lock checks
 
