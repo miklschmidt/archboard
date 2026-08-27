@@ -157,8 +157,15 @@ const bridgeCompareInput = (elements) => ({
 });
 check(
 	"compare bytes are unchanged by a valid bridge decoration",
-	JSON.stringify(compareBoards(bridgeCompareInput([bridgeOver, bridgeUnder]), bridgeCompareInput([bridgeOver, bridgeUnder]))) ===
-		JSON.stringify(compareBoards(bridgeCompareInput(bridgedElements), bridgeCompareInput(bridgedElements))),
+	JSON.stringify(
+		compareBoards(
+			bridgeCompareInput([bridgeOver, bridgeUnder]),
+			bridgeCompareInput([bridgeOver, bridgeUnder]),
+		),
+	) ===
+		JSON.stringify(
+			compareBoards(bridgeCompareInput(bridgedElements), bridgeCompareInput(bridgedElements)),
+		),
 );
 const secondUnder = {
 	...bridgeUnder,
@@ -168,9 +175,8 @@ const secondUnder = {
 const secondCrossingReport = inspectBoard([...bridgedElements, secondUnder]);
 check(
 	"a valid bridge suppresses only its recorded crossing",
-	secondCrossingReport.findings.filter(
-		({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED",
-	).length === 1,
+	secondCrossingReport.findings.filter(({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED")
+		.length === 1,
 );
 const staleBridgeElements = bridgedElements.map((element) =>
 	element.id === bridgeUnder.id ? Object.assign({}, element, { x: element.x + 10 }) : element,
@@ -180,8 +186,7 @@ check(
 	"stale provenance suppresses nothing and reports one closed stale finding",
 	staleBridgeReport.findings.some(
 		({ code, reason }) => code === "BRIDGE_PROVENANCE_INVALID" && reason === "stale-decoration",
-	) &&
-		staleBridgeReport.findings.some(({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED"),
+	) && staleBridgeReport.findings.some(({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED"),
 );
 const staleProvenanceFinding = staleBridgeReport.findings.find(
 	({ code }) => code === "BRIDGE_PROVENANCE_INVALID",
@@ -189,14 +194,12 @@ const staleProvenanceFinding = staleBridgeReport.findings.find(
 check(
 	"bridge provenance schema fixes severity and coverage literals",
 	staleProvenanceFinding &&
-		!InspectionFindingSchema.safeParse({ ...staleProvenanceFinding, severity: "warning" }).success &&
-		!InspectionFindingSchema.safeParse({ ...staleProvenanceFinding, affectsCoverage: true }).success,
+		!InspectionFindingSchema.safeParse({ ...staleProvenanceFinding, severity: "warning" })
+			.success &&
+		!InspectionFindingSchema.safeParse({ ...staleProvenanceFinding, affectsCoverage: true })
+			.success,
 );
-const incompleteBridgeReport = inspectBoard([
-	bridgeOver,
-	bridgeUnder,
-	bridgeApplied.named[0],
-]);
+const incompleteBridgeReport = inspectBoard([bridgeOver, bridgeUnder, bridgeApplied.named[0]]);
 check(
 	"an incomplete candidate reports provenance and suppresses nothing",
 	incompleteBridgeReport.findings.some(
@@ -6864,12 +6867,9 @@ for (const [board, reason] of [
 			packageRun.stderr === "" &&
 			CheckResultSchema.safeParse(packageReport).success &&
 			packageReport.findings.some(
-				(finding) =>
-					finding.code === "BRIDGE_PROVENANCE_INVALID" && finding.reason === reason,
+				(finding) => finding.code === "BRIDGE_PROVENANCE_INVALID" && finding.reason === reason,
 			) &&
-			packageReport.findings.some(
-				(finding) => finding.code === "CONNECTOR_INTERSECTION_UNMARKED",
-			),
+			packageReport.findings.some((finding) => finding.code === "CONNECTOR_INTERSECTION_UNMARKED"),
 		`status=${packageRun.status} stderr=${packageRun.stderr} findings=${JSON.stringify(packageReport.findings?.map(({ code, reason: foundReason }) => [code, foundReason]))}`,
 	);
 }
