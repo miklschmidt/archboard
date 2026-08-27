@@ -1,11 +1,11 @@
 ---
 id: TASK-120
 title: Make unavoidable connector crossings explicit and verifiable
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:18'
-updated_date: '2026-08-27 11:10'
+updated_date: '2026-08-27 11:14'
 labels:
   - ready-for-agent
 dependencies:
@@ -39,14 +39,14 @@ TASK-119 inspection schema v2 validates bridge provenance, suppresses only an ex
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A CommandContract-backed `archboard bridge` create command requires explicit `--over`, `--under`, and opaque six-digit `--background`, accepts optional `--at`, supports only deterministic proper intersections from TASK-119 connector geometry, and returns a strict JSON result with board, bridge ID, source IDs, selected segments/point, exactly two role-ordered generated elements, and the ordinary fingerprint.
-- [ ] #2 Exactly two unbound, ungrouped generated line elements are created without changing either source connector. The mask element ID is the bridge ID; both parts carry strict product-owned `customData.archboard.bridge` containing only bridgeId, role, overConnectorId, underConnectorId, overSegmentIndex, underSegmentIndex, canonical crossing, and normalized background.
-- [ ] #3 Create and `bridge remove <bridge-id>` each perform exactly one mutation and one board content write through the normal doing/claim/version/note-conflict boundary, mint IDs only through the shared owner, repair indexes normally, and never read or edit the vault note directly.
-- [ ] #4 Creation deterministically enumerates proper intersections, requires a unique `--at` match within inclusive 0.5 px when multiple intersections exist, and refuses missing/identical/unsupported connectors, no match, ambiguity, endpoint contact, collinear overlap, malformed or zero-length paths, unusable styles, insufficient over-segment span, and invalid background with actionable existing-boundary diagnostics.
-- [ ] #5 The mask is ordered above both sources and the redraw immediately above the mask. Geometry derives from the selected over segment; the mask uses the explicit opaque background and the redraw copies only the supported over-connector stroke style. Valid bridge decorations are excluded only from inspection semantic modeling, architecture/compare, and describe, with before/after compare and describe output unchanged.
-- [ ] #6 TASK-119 report schema v2 adds one closed `BRIDGE_PROVENANCE_INVALID` finding with incomplete-decoration and stale-decoration reasons. Inspection suppresses only the exact proper source pair/segments/crossing when both parts, source-derived geometry/style, and z-order validate; invalid or unseen candidates suppress nothing, and an existing comparison ceiling remains the sole capacity stop.
-- [ ] #7 Removal resolves exactly one strict mask/redraw metadata pair by bridge ID, verifies mask identity and identical stored facts except role, deletes only those two IDs, intentionally tolerates missing/moved sources and stale part geometry/style/order, and refuses incomplete, duplicate, or conflicting provenance without writing.
-- [ ] #8 Pure and public tests cover representative supported/refused geometry, deterministic `--at` tolerance, explicit color normalization, metadata parsing, valid suppression plus a second unmarked crossing, incomplete/stale provenance, stale-or-orphan-safe removal, unchanged compare/describe bytes, package stdout/stderr/exits, one-write/doing/version behavior, 60 current CommandContract paths with the immutable 57 subset, and one sequential headless fixed-point round trip without new pixel or two-pane requirements.
+- [x] #1 A CommandContract-backed `archboard bridge` create command requires explicit `--over`, `--under`, and opaque six-digit `--background`, accepts optional `--at`, supports only deterministic proper intersections from TASK-119 connector geometry, and returns a strict JSON result with board, bridge ID, source IDs, selected segments/point, exactly two role-ordered generated elements, and the ordinary fingerprint.
+- [x] #2 Exactly two unbound, ungrouped generated line elements are created without changing either source connector. The mask element ID is the bridge ID; both parts carry strict product-owned `customData.archboard.bridge` containing only bridgeId, role, overConnectorId, underConnectorId, overSegmentIndex, underSegmentIndex, canonical crossing, and normalized background.
+- [x] #3 Create and `bridge remove <bridge-id>` each perform exactly one mutation and one board content write through the normal doing/claim/version/note-conflict boundary, mint IDs only through the shared owner, repair indexes normally, and never read or edit the vault note directly.
+- [x] #4 Creation deterministically enumerates proper intersections, requires a unique `--at` match within inclusive 0.5 px when multiple intersections exist, and refuses missing/identical/unsupported connectors, no match, ambiguity, endpoint contact, collinear overlap, malformed or zero-length paths, unusable styles, insufficient over-segment span, and invalid background with actionable existing-boundary diagnostics.
+- [x] #5 The mask is ordered above both sources and the redraw immediately above the mask. Geometry derives from the selected over segment; the mask uses the explicit opaque background and the redraw copies only the supported over-connector stroke style. Valid bridge decorations are excluded only from inspection semantic modeling, architecture/compare, and describe, with before/after compare and describe output unchanged.
+- [x] #6 TASK-119 report schema v2 adds one closed `BRIDGE_PROVENANCE_INVALID` finding with incomplete-decoration and stale-decoration reasons. Inspection suppresses only the exact proper source pair/segments/crossing when both parts, source-derived geometry/style, and z-order validate; invalid or unseen candidates suppress nothing, and an existing comparison ceiling remains the sole capacity stop.
+- [x] #7 Removal resolves exactly one strict mask/redraw metadata pair by bridge ID, verifies mask identity and identical stored facts except role, deletes only those two IDs, intentionally tolerates missing/moved sources and stale part geometry/style/order, and refuses incomplete, duplicate, or conflicting provenance without writing.
+- [x] #8 Pure and public tests cover representative supported/refused geometry, deterministic `--at` tolerance, explicit color normalization, metadata parsing, valid suppression plus a second unmarked crossing, incomplete/stale provenance, stale-or-orphan-safe removal, unchanged compare/describe bytes, package stdout/stderr/exits, one-write/doing/version behavior, 60 current CommandContract paths with the immutable 57 subset, and one sequential headless fixed-point round trip without new pixel or two-pane requirements.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -93,6 +93,8 @@ TASK-119 inspection schema v2 validates bridge provenance, suppresses only an ex
 2026-08-27 final Standards remediation checkpoint: bridge line matching now compares the strict customData.archboard projection while ignoring unrelated top-level plugin customData as required by ADR 0003. Direct raw-record tests cover latex on mask and redraw across validateBridgeDecorations, inspectBoard, architectureFacts, compare, and describe, with a product-owned archboard.node control remaining stale and suppressing nothing. Focused lint, type-check, inspection (833), and branch compare are green. Full repository validation remains.
 
 2026-08-27 final Standards remediation validation: unrelated top-level customData is ignored by canonical bridge-part validation while customData.archboard remains a closed product-owned projection. Direct raw-record coverage proves mask and redraw variants stay valid and are filtered consistently by validateBridgeDecorations, inspectBoard, architectureFacts, compare, and describe, with compare and describe bytes matching the canonical case. A nearby customData.archboard.node control remains stale provenance and suppresses nothing. Focused lint, type-check, inspection (833 checks), and branch gates passed. bun run fix passed twice with a byte-stable clean second pass. Complete bun run check and a separate complete bun run test passed, including all four browser suites sequentially and headless; CLI reports 606 checks and contract generation reports 60 current paths with the immutable 57-path subset. On-demand contract generation check passed; its three ignored views were removed afterward. TASK-120 remains In Progress with acceptance criteria unchecked for independent review.
+
+Parent finalization evidence: Spec REVIEW_CLEAN at 705740e and Standards REVIEW_CLEAN at final head 81dc031 over fixed base 2c5a639. Current-head validation passed inspection 833, CLI 606, contracts 60 paths/1000 checks with immutable ordered 57 subset, one-write 81, complete bun run check, separate complete bun run test, all four browser suites sequential/headless, fixed-point 0/16, generator check, and git diff --check. Worktree was clean and reproducible generated views remained absent/ignored.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -132,3 +134,9 @@ created: 2026-08-27 08:29
 Parent approved the xhigh deletion-test amendment. Mandatory explicit background, minimal eight-field metadata, mask-id bridge identity, stale/orphan-safe removal, one schema-v2 provenance code, two one-write adapters, 58-to-60 registry growth, and the protected-scope/test deletions are the implementation contract.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Delivered the deliberately narrow CLI bridge create/remove contract: two canonical mask/redraw lines, exact TASK-119 crossing selection, one-write mutation adapters, schema-v2 provenance validation and suppression, stale/orphan-safe structural removal, and filtering only at inspection/architecture-compare/describe seams. Hardened receipts, generated/source identity partitioning, canonical part projection, z-order, live-state, and unrelated customData preservation through independent fixed-range review. Verified with 833 inspection checks, 606 CLI checks, 60 contract paths/1000 checks, one-write 81, complete check and separate test chains, four sequential headless browser suites, fixed-point 0/16, and clean generated-artifact hygiene.
+<!-- SECTION:FINAL_SUMMARY:END -->
