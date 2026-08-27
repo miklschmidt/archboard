@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:19'
-updated_date: '2026-08-27 12:07'
+updated_date: '2026-08-27 12:55'
 labels:
   - ready-for-agent
 dependencies:
@@ -85,6 +85,16 @@ Implementation checkpoints complete through 626d561.
 - 626d561 extends the existing sequential headless fixed-point lane with an off-screen embedded-image board, valid bridge plus unmarked crossing, repeated viewport-independent PNG/manifest bytes, visible-pane immutability, and unchanged full-board screenshot.
 
 Focused green evidence before full validation: type-check, lint, boundaries, module-scope, 61-path contract gate, package CLI surface (36 commands/25 subcommands), server/socket board suite, and the extended fixed-point browser suite. TASK-121 remains In Progress with all acceptance criteria unchecked for independent review.
+
+Fixed-range remediation from rejected head 4eb434a:
+
+- Restored fixed-base blank tolerance coercion for dimension/intersection/overlap while retaining finite nonnegative validation.
+- Made finding ordinals four digits minimum and proved 9,999/10,000 manifest totality with one entry per finding.
+- Replaced note-only manifest identity with a deterministic render-snapshot fingerprint over the note hash and ID-sorted hydrated file id/mime/created/dataURL records; ADR-0017 external image byte changes now move the fingerprint without changing note bytes.
+- Added exclusive atomic artifact publication: unexpected directory members are refused, expected-name races cannot replace existing bytes, PNGs remain before manifest and stdout remains after commit.
+- Extended the existing fixed-point browser lane with exact report/fingerprint/order equality and decoded PNG samples proving focus clipping, embedded image contribution, and topmost z-order while preserving pane/viewport/full-screenshot and repeated-byte invariants.
+
+Focused evidence green: test:inspection (836 checks), test:boards, command-contract and finding-rendering unit suites, lint, type-check, boundaries, module-scope, and test:browser. Full final validation remains pending.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
