@@ -157,36 +157,15 @@ note archboard did not write. About fifteen seconds.
   the dense whole-board reroute, the exact 1,516,200 below-limit comparison count, and the
   2,000,001 limit attempt. Its package checks run with no canvas process, parse JSON through the
   exported schema, cover text and strict exits 6/7/8, and compare vault paths, bytes, and mtimes
-  before and after every read. Performance cases import the module-root `diagnostics.ts` entrypoint
-  to count every profile snapshot/trie step, exact-index update/tree-query/exclusion probe, bucket
-  test, hierarchy predicate, bucket lookup/update/delete, hierarchy path/subtree/summary/index step,
-  eligible visit, expiry, and path check. Peak counters total both live cross-set indexes and pin
-  retained buckets, profiles, exclusions, exact-index nodes and summaries, query and index
-  references, all simultaneously live sweep-owned state, and selected hierarchy parents. Sparse,
-  partial-complement, distinct-profile, shared-ancestor, and dense 1k/2k/4k/8k cases pin
-  cleanup, time, and memory independently of the public comparison count. Separate boundary-node
-  and dense hierarchy matrices cover model preprocessing. Mutable-set reuse proves snapshots use
-  exact current content. These counters are development evidence and do not appear in the product
-  report or package CLI.
-  The suite also pins the separate 25,000,000 logical preprocessing ceiling:
-  alternating exact-exclusion inputs complete at 2,048 intervals per side and
-  stop before unit 25,000,001 at 3,072, while the established dense board still
-  reaches the public comparison ceiling first. Exact arithmetic is checked at
-  64/128/256/512, and many-exclusion and many-ancestor families gate retained
-  references against `I + E + H`. Direct and persisted package cases prove the
-  closed finding, strict/non-strict exits, deterministic rendering, and absence
-  of product preprocessing counters.
-  Late connector-intersection fixtures stop in both event preparation and
-  activation after connector-node has completed a penetration. The direct,
-  diagnostic, and package results retain that finding, its comparison, and the
-  completed sweep work. Merge-tail tables pin storage accounting for empty,
-  singleton, odd, and even stable sorts. Escaped obstacle identities and a
-  6,300,000-code-unit persisted library id pin canonical encoding work.
-  Primitive-owner arithmetic covers array, map, set, identity, and stable-order
-  operations, including misses and rejected raw entries. A structural source
-  audit guards the declared model, pass-construction, sweep-lifecycle, range,
-  heap, and exact-index owners against unmetered collection work; red fixtures
-  prove every forbidden syntax class is detected.
+  before and after every read. The inert input snapshot matrix covers proxies, revoked proxies,
+  accessors, cycles, custom prototypes, unsafe scalar values, holes, sparse arrays, exact string and
+  array boundaries, and large supported paths. Analysis cases use the module-root `diagnostics.ts`
+  entrypoint for semantic counts and scaling, not VM-level collection arithmetic.
+  Alternating exact exclusions complete at 2,048 intervals per side and stop at analysis item
+  25,000,001 at 3,072, while the established dense board still reaches comparison 2,000,001 first.
+  Late connector-intersection fixtures preserve earlier penetrations and comparisons when analysis
+  stops. Direct and persisted package cases prove both closed limit findings, strict/non-strict
+  exits, deterministic rendering, and the absence of diagnostic counters from product output.
 
 ## Wire and lock checks
 
