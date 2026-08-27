@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-27 14:45'
+updated_date: '2026-08-27 15:11'
 labels: []
 dependencies:
   - TASK-123.02
@@ -82,6 +82,12 @@ Review remediation checkpoint (2026-08-27):
 - The displayed Bash chain now consumes the captured value without containing another jq program.
 - The focused checker removes every marked jq block and rejects any remaining jq invocation in the guide. Workflow coverage is now 93 checks.
 - Focused lint:skills, contracts, install, CLI, type-check, and git diff --check are green.
+
+Review remediation final validation (2026-08-27):
+- bun run fix passed twice with byte-stable, clean output.
+- Complete bun run check passed, followed by a separate complete bun run test; all four browser lanes ran sequentially and headless. The first complete-check attempt hit an isolated human-performance reconciliation flake and the next hit an isolated staleness port collision; each owner passed in isolation, then the required complete chain passed.
+- On-demand contract generation ran twice in owned temporary directories; cli-command-audit.md, command-contract-proof.json, and command-contract-proof.md were byte-identical between runs. No generated view exists in the checkout.
+- Final git diff --check is clean. TASK-123.03 remains In Progress with all seven acceptance criteria unchecked.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
