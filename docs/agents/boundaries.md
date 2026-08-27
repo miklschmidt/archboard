@@ -28,7 +28,7 @@ inspection pipeline as `index.ts` and reports coarse semantic work for performan
 input units, broad-phase events, eligible visits, expiry, bucket scans, exact-query and
 hierarchy-node visits, path checks, and active bucket/profile/index peaks. The counters are
 informative development evidence, not a promise about JavaScript engine primitives. Product callers
-and the `check` command use `index.ts`; diagnostic counters never enter schema-v1 report bytes.
+and the `check` command use `index.ts`; diagnostic counters never enter schema-v2 report bytes.
 
 `lib/input-snapshot.ts` is the only boundary that accepts `readonly unknown[]`. It copies the fixed
 inspection vocabulary into inert closed records without invoking caller-owned JavaScript. Decode,

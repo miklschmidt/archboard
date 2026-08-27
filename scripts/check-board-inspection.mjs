@@ -183,6 +183,15 @@ check(
 	) &&
 		staleBridgeReport.findings.some(({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED"),
 );
+const staleProvenanceFinding = staleBridgeReport.findings.find(
+	({ code }) => code === "BRIDGE_PROVENANCE_INVALID",
+);
+check(
+	"bridge provenance schema fixes severity and coverage literals",
+	staleProvenanceFinding &&
+		!InspectionFindingSchema.safeParse({ ...staleProvenanceFinding, severity: "warning" }).success &&
+		!InspectionFindingSchema.safeParse({ ...staleProvenanceFinding, affectsCoverage: true }).success,
+);
 const incompleteBridgeReport = inspectBoard([
 	bridgeOver,
 	bridgeUnder,
@@ -221,6 +230,74 @@ try {
 	identicalRefused = error instanceof BridgeRefusal;
 }
 check("bridge planning gives a bounded refusal for identical sources", identicalRefused);
+const multiOver = {
+	...bridgeOver,
+	id: "multi-over",
+	x: 0,
+	y: 0,
+	width: 100,
+	height: 100,
+	points: [
+		[0, 0],
+		[100, 0],
+		[100, 100],
+		[0, 100],
+	],
+};
+const multiUnder = {
+	...bridgeUnder,
+	id: "multi-under",
+	x: 50,
+	y: -10,
+	width: 0,
+	height: 120,
+	points: [
+		[0, 0],
+		[0, 120],
+	],
+};
+let missingAtRefused = false;
+try {
+	planBridgeCreate({
+		elements: [multiOver, multiUnder],
+		bridgeId: "Multi001",
+		overConnectorId: multiOver.id,
+		underConnectorId: multiUnder.id,
+		background: "#ffffff",
+	});
+} catch (error) {
+	missingAtRefused = error instanceof BridgeRefusal;
+}
+const selectedAtBoundary = planBridgeCreate({
+	elements: [multiUnder, multiOver],
+	bridgeId: "Multi001",
+	overConnectorId: multiOver.id,
+	underConnectorId: multiUnder.id,
+	background: "#ffffff",
+	at: { x: 50, y: 0.5 },
+});
+check(
+	"multiple crossings require --at and inclusive 0.5 selection is deterministic under reversal",
+	missingAtRefused &&
+		selectedAtBoundary.overSegmentIndex === 0 &&
+		selectedAtBoundary.underSegmentIndex === 0 &&
+		selectedAtBoundary.crossing.x === 50 &&
+		selectedAtBoundary.crossing.y === 0,
+);
+let outsideAtRefused = false;
+try {
+	planBridgeCreate({
+		elements: [multiOver, multiUnder],
+		bridgeId: "Multi002",
+		overConnectorId: multiOver.id,
+		underConnectorId: multiUnder.id,
+		background: "#ffffff",
+		at: { x: 50, y: 0.500_001 },
+	});
+} catch (error) {
+	outsideAtRefused = error instanceof BridgeRefusal;
+}
+check("--at just outside 0.5 is refused", outsideAtRefused);
 check(
 	"repeated inspection is byte deterministic",
 	JSON.stringify(clean) === JSON.stringify(inspectBoard(frozen)),
@@ -3386,7 +3463,7 @@ for (const [label, ids, expected] of obstacleIdentityCases) {
 		),
 	)[0]?.obstacles[0];
 	check(
-		`obstacle identity ${label} obeys the schema-v1 escaping grammar`,
+		`obstacle identity ${label} obeys the schema-v2 escaping grammar`,
 		forward?.id === expected &&
 			reversed?.id === expected &&
 			ObstacleRefSchema.safeParse(forward).success,
@@ -6275,6 +6352,9 @@ for (const [label, ids] of obstacleIdentityCases) {
 	);
 }
 noteFor("clean", []);
+noteFor("bridge-valid", bridgedElements);
+noteFor("bridge-stale", staleBridgeElements);
+noteFor("bridge-incomplete", [bridgeOver, bridgeUnder, bridgeApplied.named[0]]);
 noteFor("label-created-at-forward", duplicateLabelCreatedAtBoard(false));
 noteFor("label-created-at-reverse", duplicateLabelCreatedAtBoard(true));
 noteFor("terminal-comparison-precedence", terminalComparisonBoard);
@@ -6762,6 +6842,37 @@ const beforeVault = snapshot();
 const jsonRun = run("clean");
 const cleanPackageResult = JSON.parse(jsonRun.stdout);
 check("package CLI works with no canvas", jsonRun.status === 0 && jsonRun.stderr === "");
+const validBridgePackageRun = run("bridge-valid", ["--strict"]);
+const validBridgePackage = JSON.parse(validBridgePackageRun.stdout);
+check(
+	"persisted valid bridge suppresses its exact crossing through the package",
+	validBridgePackageRun.status === 0 &&
+		validBridgePackageRun.stderr === "" &&
+		CheckResultSchema.safeParse(validBridgePackage).success &&
+		validBridgePackage.schemaVersion === 2 &&
+		validBridgePackage.clean === true,
+);
+for (const [board, reason] of [
+	["bridge-stale", "stale-decoration"],
+	["bridge-incomplete", "incomplete-decoration"],
+]) {
+	const packageRun = run(board, ["--strict"]);
+	const packageReport = JSON.parse(packageRun.stdout);
+	check(
+		`persisted ${reason} bridge reports and suppresses nothing through the package`,
+		packageRun.status === 8 &&
+			packageRun.stderr === "" &&
+			CheckResultSchema.safeParse(packageReport).success &&
+			packageReport.findings.some(
+				(finding) =>
+					finding.code === "BRIDGE_PROVENANCE_INVALID" && finding.reason === reason,
+			) &&
+			packageReport.findings.some(
+				(finding) => finding.code === "CONNECTOR_INTERSECTION_UNMARKED",
+			),
+		`status=${packageRun.status} stderr=${packageRun.stderr} findings=${JSON.stringify(packageReport.findings?.map(({ code, reason: foundReason }) => [code, foundReason]))}`,
+	);
+}
 for (const board of ["label-created-at-forward", "label-created-at-reverse"]) {
 	const persistedLabelRun = run(board, ["--strict"]);
 	const persistedLabelResult = persistedLabelRun.stdout
