@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-27 14:15'
+updated_date: '2026-08-27 14:24'
 labels: []
 dependencies:
   - TASK-123.02
@@ -61,6 +61,16 @@ No result-schema manual, per-command field table, fourth generated contract arti
 
 6. Run the focused workflow check, lint:skills, test:contracts, test:install, test:cli, type-check, sync byte comparison, two stable fix passes, complete bun run check, separate bun run test, and independent fixed-range Standards and Spec reviews from 2c45d71ece3a31ccbb432da0b265f693bbd9fa81.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation checkpoint (2026-08-27):
+- ed97235 adds the tracked thin CLI workflow guide, one SKILL.md pointer, one cheatsheet pointer, and the sole Schema-v2 metadata correction. Source CommandContract ResultSchemas/inferred types remain authoritative; no result tables or generated artifact were added.
+- bfdc87d adds the marked-example checker, real jq execution against schema-valid/pure-owner fixtures, strict 6/7/8 stdout capture evidence, registry resolution, sync byte identity, and install byte identity.
+- Focused gates green: workflow 84 checks, skill lint, contracts 61 proofs/1011 checks, install 112 checks, CLI 36 commands/25 subcommands/630 checks, lint, type-check, and git diff --check.
+- Generated ownership remains three ignored on-demand views; registry remains 61 paths and the immutable 57-path subset is unchanged.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
