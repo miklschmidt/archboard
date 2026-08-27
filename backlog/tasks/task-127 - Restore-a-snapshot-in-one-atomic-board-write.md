@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-26 07:06'
-updated_date: '2026-08-27 17:31'
+updated_date: '2026-08-27 17:44'
 labels:
   - enhancement
 dependencies: []
@@ -56,6 +56,12 @@ Implementation checkpoint (2026-08-27):
 - Updated only the snapshot restore CommandContract relationship/description metadata and canonical authored CLI audit; registry paths, fixed help/argv bytes, and immutable 57-path compatibility remain unchanged.
 - Extended existing package and one-write owners. Real-server evidence covers a variant target, no-force zero-write refusal, one marked POST, canonical elements, empty files despite image fileId, one version advance, one net elements_changed plus files_replaced [], selection cleanup, repeat nested deep-copy isolation, and held restore with unchanged note bytes/mtime/version.
 - Focused validation green: type-check, test:one-write (127 checks), test:cli (639 checks), test:contracts (61 proofs/61 audited paths/1011 checks plus workflow checks), test:boards, test:obsidian, test:reporting, and git diff --check.
+
+Final implementation validation (2026-08-27):
+- bun run fix passed twice with identical empty-diff SHA-256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855.
+- bun run check passed completely, including the four sequential headless browser suites. A separate complete bun run test also passed.
+- On-demand contract generation produced byte-identical artifacts in two owned temporary directories; the three ignored derived views were removed afterward.
+- git diff --check passed; TASK-127 remains In Progress with all four acceptance criteria unchecked; committed worktree is clean.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
