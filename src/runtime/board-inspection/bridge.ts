@@ -41,12 +41,19 @@ export interface ValidBridgeDecoration {
 	readonly redraw: BridgePart;
 }
 
-export interface InvalidBridgeDecoration {
-	readonly bridgeId: string | null;
-	readonly reason: "incomplete-decoration" | "stale-decoration";
-	readonly issue: BridgeIncompleteIssue | BridgeStaleIssue;
-	readonly elements: readonly ServerElement[];
-}
+export type InvalidBridgeDecoration =
+	| {
+			readonly bridgeId: string | null;
+			readonly reason: "incomplete-decoration";
+			readonly issue: BridgeIncompleteIssue;
+			readonly elements: readonly ServerElement[];
+	  }
+	| {
+			readonly bridgeId: string;
+			readonly reason: "stale-decoration";
+			readonly issue: BridgeStaleIssue;
+			readonly elements: readonly ServerElement[];
+	  };
 
 export class BridgeRefusal extends Error {
 	readonly code = "BRIDGE_REFUSED";
@@ -116,11 +123,11 @@ function supportedConnector(element: ServerElement, sourceIndex: number): {
 }
 
 const StrokeStyleSchema = z.strictObject({
-	strokeColor: z.string().min(1),
+	strokeColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
 	strokeWidth: finite.positive(),
 	strokeStyle: z.enum(["solid", "dashed", "dotted"]),
-	roughness: finite.nonnegative(),
-	opacity: finite.min(0).max(100),
+	roughness: finite.min(0).max(2),
+	opacity: finite.positive().max(100),
 });
 type StrokeStyle = z.infer<typeof StrokeStyleSchema>;
 
@@ -155,15 +162,21 @@ const sameFacts = (a: BridgeMetadata, b: BridgeMetadata): boolean =>
 	a.crossing.y === b.crossing.y &&
 	a.background === b.background;
 
-const lineMatches = (part: ServerElement, expectedInput: Record<string, unknown>): boolean =>
-	part.x === expectedInput.x &&
-	part.y === expectedInput.y &&
-	JSON.stringify(part.points) === JSON.stringify(expectedInput.points) &&
-	part.strokeColor === expectedInput.strokeColor &&
-	part.strokeWidth === expectedInput.strokeWidth &&
-	part.strokeStyle === expectedInput.strokeStyle &&
-	part.roughness === expectedInput.roughness &&
-	part.opacity === expectedInput.opacity;
+function lineMatches(part: ServerElement, expectedInput: Record<string, unknown>): boolean {
+	const points = expectedInput.points as [[number, number], [number, number]];
+	return (
+		part.x === expectedInput.x &&
+		part.y === expectedInput.y &&
+		part.width === Math.abs(points[1][0] - points[0][0]) &&
+		part.height === Math.abs(points[1][1] - points[0][1]) &&
+		JSON.stringify(part.points) === JSON.stringify(points) &&
+		part.strokeColor === expectedInput.strokeColor &&
+		part.strokeWidth === expectedInput.strokeWidth &&
+		part.strokeStyle === expectedInput.strokeStyle &&
+		part.roughness === expectedInput.roughness &&
+		part.opacity === expectedInput.opacity
+	);
+}
 
 const bridgeBlock = (metadata: BridgeMetadata) => ({ archboard: { bridge: metadata } });
 
@@ -318,7 +331,19 @@ function structuralPairs(elements: readonly ServerElement[]): {
 		if (!marker.present) continue;
 		const parsed = BridgeMetadataSchema.safeParse(marker.value);
 		if (!parsed.success) {
-			invalid.push({ bridgeId: null, reason: "incomplete-decoration", issue: "malformed-metadata", elements: [element] });
+			const partial =
+				marker.value && typeof marker.value === "object" && !Array.isArray(marker.value)
+					? (marker.value as Record<string, unknown>)
+					: null;
+			invalid.push({
+				bridgeId:
+					typeof partial?.bridgeId === "string" && partial.bridgeId.length > 0
+						? partial.bridgeId
+						: null,
+				reason: "incomplete-decoration",
+				issue: "malformed-metadata",
+				elements: [element],
+			});
 			continue;
 		}
 		if (element.type !== "line") {
@@ -357,6 +382,17 @@ function staleIssue(pair: ValidBridgeDecoration, elements: readonly ServerElemen
 	}
 	const byId = new Map(elements.map((element) => [element.id, element]));
 	const facts = pair.mask.metadata;
+	const occurrences = (id: string) => elements.filter((element) => element.id === id);
+	const overMatches = occurrences(facts.overConnectorId);
+	const underMatches = occurrences(facts.underConnectorId);
+	if (overMatches.length === 0 || underMatches.length === 0) return "missing-source";
+	if (
+		overMatches.length !== 1 ||
+		underMatches.length !== 1 ||
+		occurrences(pair.mask.element.id).length !== 1 ||
+		occurrences(pair.redraw.element.id).length !== 1
+	)
+		return "unsupported-source";
 	const overElement = byId.get(facts.overConnectorId);
 	const underElement = byId.get(facts.underConnectorId);
 	if (!overElement || !underElement) return "missing-source";
@@ -408,6 +444,7 @@ export function validateBridgeDecorations(elements: readonly ServerElement[]): {
 	const valid: ValidBridgeDecoration[] = [];
 	const invalid = [...structural.invalid];
 	for (const pair of structural.valid) {
+		if (invalid.some((candidate) => candidate.bridgeId === pair.bridgeId)) continue;
 		const issue = staleIssue(pair, elements);
 		if (issue) invalid.push({ bridgeId: pair.bridgeId, reason: "stale-decoration", issue, elements: [pair.mask.element, pair.redraw.element] });
 		else valid.push(pair);
