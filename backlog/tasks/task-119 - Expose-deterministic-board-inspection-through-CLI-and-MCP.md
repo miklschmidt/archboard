@@ -1,11 +1,11 @@
 ---
 id: TASK-119
 title: Expose deterministic board inspection through the CLI
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:17'
-updated_date: '2026-08-27 06:16'
+updated_date: '2026-08-27 06:23'
 labels:
   - ready-for-agent
 dependencies:
@@ -41,15 +41,15 @@ Normal board reads and every write retain strict render-geometry validation. Ins
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A pure inspectBoard(elements, policy?)-style module returns a deterministic report without browser, filesystem, canvas, or mutation dependencies.
-- [ ] #2 archboard check --board <key> is declared through CommandContract, reads the named persisted board directly, works without a running canvas server or browser, emits its schema-validated result plus an optional concise text mode, and performs no board write, claim, open, save, repair, or rewrite.
-- [ ] #3 The command contract declares inspection inputs, stable result schema, prerequisites, read-only effect, text mode, strict refusal and exit semantics, examples, and all metadata required by generated help and the TASK-123.03 result reference.
-- [ ] #4 A narrowly scoped inspection decode reports invalid render geometry, stale linear dimensions, broken bindings or references, bound-label corruption, configured font-policy violations, and unsupported geometry without weakening validation on normal reads or any write.
-- [ ] #5 Layout findings cover unrelated leaf-node penetration, unmarked connector intersections, node overlap, and label overlap with stable element IDs, node IDs, coordinates, and bounding boxes.
-- [ ] #6 Containment-aware modeling aggregates semantic nodes only from elements sharing customData.archboard.node, models grouped unpromoted stencil geometry separately as visual obstacles when needed, preserves groups containing several promoted nodes, excludes endpoint nodes and containing zones, and does not report a connector merely for crossing a container boundary.
-- [ ] #7 Reports state whether coverage is complete or indeterminate. Strict mode has documented deterministic exit semantics by severity and never reports clean when a case was skipped, unsupported, or indeterminate.
-- [ ] #8 Public-interface regression fixtures include a dense, human-grouped architecture board where semantic compare is clean and a locally improved route creates a second crossing elsewhere; a whole-board recheck catches the regression.
-- [ ] #9 Tests cover negative relative points, stale dimensions, endpoint and zone exclusions, promoted multi-element nodes, grouped unpromoted stencil obstacles, groups containing multiple promoted nodes, tolerance boundaries, unsupported curves or rotation, stable report ordering, contract validation, and clean stdout and stderr separation.
+- [x] #1 A pure inspectBoard(elements, policy?)-style module returns a deterministic report without browser, filesystem, canvas, or mutation dependencies.
+- [x] #2 archboard check --board <key> is declared through CommandContract, reads the named persisted board directly, works without a running canvas server or browser, emits its schema-validated result plus an optional concise text mode, and performs no board write, claim, open, save, repair, or rewrite.
+- [x] #3 The command contract declares inspection inputs, stable result schema, prerequisites, read-only effect, text mode, strict refusal and exit semantics, examples, and all metadata required by generated help and the TASK-123.03 result reference.
+- [x] #4 A narrowly scoped inspection decode reports invalid render geometry, stale linear dimensions, broken bindings or references, bound-label corruption, configured font-policy violations, and unsupported geometry without weakening validation on normal reads or any write.
+- [x] #5 Layout findings cover unrelated leaf-node penetration, unmarked connector intersections, node overlap, and label overlap with stable element IDs, node IDs, coordinates, and bounding boxes.
+- [x] #6 Containment-aware modeling aggregates semantic nodes only from elements sharing customData.archboard.node, models grouped unpromoted stencil geometry separately as visual obstacles when needed, preserves groups containing several promoted nodes, excludes endpoint nodes and containing zones, and does not report a connector merely for crossing a container boundary.
+- [x] #7 Reports state whether coverage is complete or indeterminate. Strict mode has documented deterministic exit semantics by severity and never reports clean when a case was skipped, unsupported, or indeterminate.
+- [x] #8 Public-interface regression fixtures include a dense, human-grouped architecture board where semantic compare is clean and a locally improved route creates a second crossing elsewhere; a whole-board recheck catches the regression.
+- [x] #9 Tests cover negative relative points, stale dimensions, endpoint and zone exclusions, promoted multi-element nodes, grouped unpromoted stencil obstacles, groups containing multiple promoted nodes, tolerance boundaries, unsupported curves or rotation, stable report ordering, contract validation, and clean stdout and stderr separation.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -639,6 +639,8 @@ Approved-plan commit `317622f`, source/docs/test checkpoint `3a1c0ec`, and focus
 Focused retained evidence passed: inspection 722 checks, contracts 58 proofs/58 audited paths/978 checks, CLI 34 commands/579 checks, geometry 89, labels 183, boundaries, module scope, branch compare, input snapshot safety/boundaries, exact 1,516,200 comparison completion, attempt 2,000,001 stop, and preservation of an earlier finding exactly once. The comparison schema rejects wrong fixed values and unknown passes; schemas reject the removed limit key/reason.
 
 Two fresh on-demand generations were byte-identical and excluded every removed token: `cli-command-audit.md` c586e0954f0a912d5e62bca0a30d46909dad2968a9b3bc639e2418f77901fe55, `command-contract-proof.json` 8b442bf53937bbccfa475213eb16a40ed6b07c0c1a4b72b441102d5e36bf0adc, and `command-contract-proof.md` 64e9849f609a4d00a64ef7c3cba41aa6044592ccbb20331e78cbdbd109c5a7e5. The ignored derived views remain absent; canonical `docs/design/cli-command-audit.json` remains tracked. All deleted analysis symbols are absent outside Backlog history, `git diff --check` passes, and the worktree was clean before this CLI-authored note. TASK-119 remains In Progress with all nine acceptance criteria unchecked for independent rereview. Residual risk is the approved step-29 truth: valid capped input can still induce superlinear semantic work, and external termination produces no report.
+
+Final parent verification (2026-08-27): independent Standards and Spec rereviews both returned REVIEW_CLEAN for 963c3f0c5dadd3687a30d5133437e822427da582..022f1248c1b29e9075b065dae130f5c05fb14c19. Objective evidence: test:inspection 722; contracts 58 proofs/58 audited paths/978 checks; CLI 34 commands/24 subcommands/579 checks; labels 183; geometry 89; type, lint, boundaries, module-scope, branch, changes and one-write green; complete bun run check and separate bun run test green with all four browser suites sequential/headless. Generated views remained absent/ignored and deterministic; worktree was clean before finalization.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -714,3 +716,9 @@ created: 2026-08-27 06:16
 Step 29 complete validation passed. TASK-119 remains intentionally In Progress with every acceptance criterion unchecked for fixed-base rereview.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented deterministic read-only board inspection and the vault-direct `archboard check --board <key>` command. The final schema-v1 contract truthfully bounds inert input capture at 1,000,000 units and eligible broad-phase comparisons at 2,000,000, preserves completed findings at comparison cutoff, and explicitly makes no universal runtime guarantee. Verified by 722 inspection checks, 58 command-contract proofs/978 assertions, 579 CLI checks, geometry/label/boundary/module/branch gates, complete `bun run check`, a separate complete `bun run test`, deterministic on-demand contract generation, and clean independent Standards and Spec fixed-range reviews.
+<!-- SECTION:FINAL_SUMMARY:END -->
