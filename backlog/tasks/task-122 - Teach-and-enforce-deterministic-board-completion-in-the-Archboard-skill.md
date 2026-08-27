@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:19'
-updated_date: '2026-08-27 15:16'
+updated_date: '2026-08-27 15:27'
 labels:
   - ready-for-agent
 dependencies:
@@ -32,38 +32,33 @@ ordinal: 124000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-The Archboard skill teaches board naming, claims, variants, promoted library items, screenshots, and semantic compare, but it does not give agents a mechanically verifiable exit gate for visual routing quality. The device-trust branch exposed the consequence: an agent could inspect raw note geometry incorrectly, mistake grouped unpromoted stencil parts for independent obstacles or architectural nodes, trust a clean compare that cannot model edge routing, zoom a pane even though screenshot export renders the full scene, or fix one route locally while creating another crossing elsewhere.
+Teach the released Archboard completion composition contract without adding product behavior. Put one concise completion gate on the SKILL.md main path and one focused architecture-workflow section explaining semantic node identity versus grouped visual obstacles, containment and routing exclusions, supported versus indeterminate inspection, intentional bridges, whole-board rechecks, and the distinct roles of inspection and visual evidence.
 
-Revise the Archboard skill only after TASK-119 through TASK-121 settle their CLI contracts and TASK-123.03 generates the complete result reference. Put a compact completion sequence on the main path: inspect the explicit board; preserve human groups and stencil choices; claim before substantial multi-write work; make writes against the named board with --doing; after each routing batch run strict whole-board inspection and resolve or report every unsupported result; use bridges only for supported unavoidable crossings; run a final strict check; release as soon as no more writes are needed; then render focused evidence plus one full-board overview and run semantic compare. If visual evidence reveals another defect, reclaim and repeat. Ordinary same-board save is not part of the gate because writes already persist.
-
-The skill must state the boundaries that caused rediscovery. Compare reports semantic layout and cannot prove connector clearance. Full-scene screenshot export is not a camera crop. Promotion stamps every constituent with one node ID; grouping alone never creates a node. Grouped unpromoted geometry may be aggregated only as a visual obstacle. Container boundaries are not routing obstacles. A local fix is incomplete until the whole board is rechecked. Unsupported geometry is not clean. Browser focus, recent activity, or a sole loaded task never substitutes for an explicit board key. Do not teach agents to write temporary geometry parsers, edit note JSON, or hand-assemble bridge masks once product commands exist.
-
-Keep SKILL.md concise and procedural. Detailed syntax, result fields, prerequisites, exits, and jq chains come from the generated CLI reference. Correct conceptual guidance immediately, but never publish speculative command spellings before predecessor contracts ship.
+Delete stale cached command, result, exit, REST, and MCP documentation from the skill source. CommandContract Zod schemas and inferred types remain the sole authority, archboard help owns syntax, and cli-workflows.md owns tested producer-to-consumer chains. Add one consequence-focused eval that reuses existing production test owners; do not create a new grader framework, command trace, or browser lane.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The main SKILL.md contains a short ordered completion gate using released CLI behavior for check, focused finding render, full-board overview, bridge, compare, claim, and release without ordinary same-board save or duplicated command-reference tables.
-- [ ] #2 The skill accurately distinguishes semantic compare, deterministic inspection, full-scene export, focused finding renders, and browser viewport inspection; none is presented as proof of another.
-- [ ] #3 A focused reference explains promoted multi-element identity, group-only visual closure, obstacle and containment semantics, endpoint and zone exclusions, clear connector separation, marked unavoidable crossings, unsupported geometry, and whole-board recheck after local routing batches.
-- [ ] #4 The workflow preserves human grouping, layout, stencil choices, and unrelated edits, and prohibits raw note rewriting, one-off geometry parsers, implicit board selection, hand-built bridge decorations, and speculative commands.
-- [ ] #5 One eval presents a dense human-grouped board where semantic compare is clean but a connector crosses a node and a local reroute creates a second crossing; an agent cannot pass by stopping at compare, a local check, or a fit-to-board screenshot.
-- [ ] #6 Production-backed graders assert final board state, strict inspection report, bridge provenance, explicit board identity, and focused-render manifest consequences. They do not grade prose or require general shell-command tracing; a narrow protocol trace is used only where persistent state cannot distinguish materially different operations.
-- [ ] #7 A second eval covers an unavoidable crossing and requires the released bridge operation plus clean follow-up inspection, while rejecting undocumented masks, foreign metadata, and unsupported geometry.
-- [ ] #8 Structural graders run without a browser where pixels are irrelevant; clipping, embedded-image, and z-order evidence extends the existing sequential headless browser suite rather than introducing parallel browser execution.
-- [ ] #9 The skill references only implemented CLI surfaces and generated result contracts. The tracked source, synchronized copies, eval fixtures and graders, command reference, and applicable public-surface tests remain consistent and pass.
+- [ ] #1 SKILL.md has a short ordered completion gate: use an explicit board and preserve human state; claim only for a substantial multi-write campaign; after each routing batch run strict whole-board check; render close-ups only for still-present findings; use released bridge/remove only for deliberate supported crossings; require a final complete clean strict report; release when writes end; capture one confirmed-board full-scene overview; and run compare only for variant work. It includes no ordinary same-board save ritual.
+- [ ] #2 Guidance accurately distinguishes deterministic check, conditional render-findings close-ups, a full-scene screenshot, visible pane and camera state, portable scene export, and semantic compare; none is presented as proof of another.
+- [ ] #3 architecture-workflow.md concisely teaches promoted multi-part node identity, grouped or library visual-obstacle evidence, non-obstacle container boundaries, endpoint and containing-zone exclusions, exact intentional bridges, unsupported or indeterminate handling, whole-board recheck after local batches, and preservation of human grouping, layout, stencil provenance, and unrelated content.
+- [ ] #4 SKILL.md and cheatsheet.md point to archboard help, source CommandContracts and inferred types, and cli-workflows.md. They contain no copied result shapes or fields, syntax tables, exit or ordering contracts, or REST/MCP catalogue. Stale save, screenshot, viewport-crop, and curved or elbowed routing guidance is absent; cli-workflows.md is unchanged.
+- [ ] #5 Exactly one composite eval covers the dense reroute regression plus one declared unavoidable crossing. It grades final production consequences: complete clean inspection, exact valid bridge suppression, semantic compare truth, explicit board identity, and byte or field preservation of unrelated grouped and stencil elements. It requires no exact prose, general command trace, or post-clean render manifest.
+- [ ] #6 Existing production owners remain authoritative: inspection tests cover dense reroute, bridges, and package behavior; branch and side-by-side tests cover compare and pane consequences; contract tests cover the registry and workflow chains; install tests cover tracked, synchronized, and installed skill identity; and the unchanged fixed-point browser lane owns focused and full-scene pixels. No runtime, CommandContract, registry, generated-artifact, sync, UI/MCP, TASK-090, or TASK-123.03 behavior changes.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Start only after TASK-119, TASK-120, TASK-121, and TASK-123.03 ship. Inventory released CommandContracts, generated result and jq reference, current SKILL.md main path, architecture workflow, cheatsheet, eval format, sync behavior, and existing production-backed graders. Correct only released behavior.
-2. Add a compact completion gate where an agent decides work is finished: inspect the explicit board; preserve human groups and stencil choices; claim before substantial multi-write work; make every write against the named board with --doing; after each routing batch run strict whole-board inspection and resolve or explicitly report every unsupported result; use the bridge operation only for supported unavoidable crossings; run a final strict check; release as soon as no more writes are needed; then render focused evidence for affected regions plus one full-board overview and run semantic compare. If visual evidence reveals another defect, reclaim and repeat. Do not include ordinary same-board save.
-3. Expand skills/archboard/references/architecture-workflow.md with the routing and visual-QA model: promoted node identity versus grouped visual closure, containers versus obstacles, endpoint exclusions, clear connector lanes, local-fix and whole-board recheck, unsupported or indeterminate results, intentional bridge semantics, and separate evidence roles for check, compare, full export, close-up export, and a visible browser pane. Correct save wording: normal writes already persist; board save names scratch or creates a branch.
-4. Link the main skill and workflow guidance to the generated TASK-123.03 reference for exact syntax, result fields, exits, prerequisites, and jq chains. Remove MCP tables and claims, viewport-fit-as-screenshot-crop guidance, screenshot-after-every-add guidance, shows-exactly-what-the-user-sees wording, and speculative command syntax.
-5. Add two eval scenarios: a dense grouped board where compare is clean but route quality is not, and an unavoidable crossing requiring the product bridge. Build production-backed fixtures and graders in the style of check-branch-compare.mjs and check-side-by-side.mjs. Assert final board findings, metadata, board identity, manifest completeness, and command consequences; use a narrow protocol trace only when final state cannot distinguish the required act.
-6. Make graders fail attractive shortcuts: stopping after compare, relying only on a full-scene screenshot, fixing one route without a whole-board recheck, dissolving human groups, treating grouped stencil strokes as nodes, marking unsupported geometry clean, creating undocumented decoration metadata, using an implicit board, or performing an unnecessary same-board save. Extend the existing sequential browser suite only for pixel fidelity, embedded images, clipping, and z-order.
-7. Run bun run sync:skills, generated-reference freshness and jq checks, skill and eval consistency checks, new production graders, CLI contract coverage, install documentation, type-check, the existing sequential browser suite, and the complete test chain. Read the synchronized installed copy and execute both eval prompts against fresh temporary vaults to verify early discoverability and consequence-based grading.
+1. Freeze scope to the tracked skills/archboard source, eval metadata, and the smallest necessary assertion additions inside existing inspection/eval owners. Do not change runtime product behavior, CommandContracts, the registry, generated artifacts, sync implementation, UI/MCP, or browser-suite topology.
+
+2. Prune SKILL.md and cheatsheet.md cached command, result, exit, ordering, REST, and MCP documentation plus completion contradictions: same-board save rituals, screenshot-after-every-write, viewport-fit-as-screenshot-crop, exact-user-view claims, and curved or elbowed routing advice. Preserve unrelated domain teaching unless it conflicts with released behavior.
+
+3. Add the concise completion gate to SKILL.md and one focused completion/routing section to architecture-workflow.md. Route exact syntax to archboard help, exact result authority to source CommandContract Zod schemas and inferred types, and tested chains to cli-workflows.md. Do not modify cli-workflows.md.
+
+4. Add one composite consequence eval. Reuse check-board-inspection dense and bridge fixtures plus existing branch/side-by-side consequences. Add only the smallest missing end-state preservation assertion and minimal eval-to-existing-grader linkage; do not add a grader framework, transcript matcher, protocol trace, or browser case.
+
+5. Run sync:skills; skill lint; inspection, branch, side-by-side, contracts, install, one-write, doing, lock, and version gates; type-check and generated-ownership checks; two stable fix passes; bun run check; a separate bun run test with browser lanes serial/headless; then independent fixed-range Standards and Spec review.
 <!-- SECTION:PLAN:END -->
 
 ## Comments
@@ -89,5 +84,11 @@ author: @codex
 created: 2026-08-27 15:16
 ---
 Parent orchestration started after TASK-119, TASK-120, TASK-121, and TASK-123.03 shipped. Replan against the released type-authoritative CLI workflow guide: source CommandContract Zod schemas/inferred types remain authoritative; TASK-122 must not copy result fields or speculative command syntax.
+---
+
+author: @codex
+created: 2026-08-27 15:27
+---
+Parent approved the xhigh deletion-test amendment. Render close-ups are conditional on still-present findings; a clean final check has no findings and therefore no mandatory render-findings evidence. Implementation is limited to one main-path gate, one focused conceptual section, one composite consequence eval, aggressive cached-reference deletion, and existing test owners.
 ---
 <!-- COMMENTS:END -->
