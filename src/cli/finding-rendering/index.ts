@@ -12,7 +12,7 @@ import {
 import { findingRasterDimensions } from "../../shared/finding-raster/index.js";
 
 const HEX_SHA256 = /^[0-9a-f]{64}$/;
-const FILE_NAME = /^\d{4}-[A-Z_]+-[0-9a-f]{12}\.png$/;
+const FILE_NAME = /^\d{4,}-[A-Z_]+-[0-9a-f]{12}\.png$/;
 
 export const FindingRenderFailureSchema = z.enum([
 	"focus-unavailable",
