@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:19'
-updated_date: '2026-08-27 12:55'
+updated_date: '2026-08-27 13:09'
 labels:
   - ready-for-agent
 dependencies:
@@ -95,6 +95,8 @@ Fixed-range remediation from rejected head 4eb434a:
 - Extended the existing fixed-point browser lane with exact report/fingerprint/order equality and decoded PNG samples proving focus clipping, embedded image contribution, and topmost z-order while preserving pane/viewport/full-screenshot and repeated-byte invariants.
 
 Focused evidence green: test:inspection (836 checks), test:boards, command-contract and finding-rendering unit suites, lint, type-check, boundaries, module-scope, and test:browser. Full final validation remains pending.
+
+Final validation green: two consecutive bun run fix passes produced identical diff bytes (895a47a0871aea4e387fdae9cc81dedde09dc81f2c9c4883a8ed4125575acd4d), deterministic on-demand contract generation matched across two owned temporary destinations, bun run check passed, and a separate complete bun run test passed. All browser lanes ran sequentially/headless through the repository chain. git diff --check and clean-tree confirmation follow in the final handoff. Generated views remain absent and ignored.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
