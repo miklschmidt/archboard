@@ -1,11 +1,11 @@
 ---
 id: TASK-121
 title: Render deterministic close-ups for board findings
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-25 17:19'
-updated_date: '2026-08-27 13:56'
+updated_date: '2026-08-27 14:00'
 labels:
   - ready-for-agent
 dependencies:
@@ -44,16 +44,16 @@ This task does not add a generic RenderRegion or visual-closure system, a second
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A standalone CommandContract-backed archboard render-findings command requires explicit --board and --out, supports only the four released inspection policy options, declares server/browser/local-read/read/local-write effects and one POST relationship, and leaves plain check byte-compatible, browser-free, server-free, and zero-HTTP.
-- [ ] #2 One authoritative Zod result/manifest schema returns schemaVersion 1, board, source fingerprint, the exact InspectionReportSchema report, complete, and exactly one ordered rendered-or-failed entry per finding. Cross-field validation owns entry order/count, complete, digest/name derivation, dimensions, and hashes.
-- [ ] #3 The server reads the explicitly named persisted bytes once, runs inspection and fingerprints that snapshot, and renders only a strict non-repaired projection of the same bytes. Malformed or duplicate identities and strict render-geometry refusal produce source-not-renderable entries rather than repaired or misleading images.
-- [ ] #4 Each non-null TASK-119 focusBBox is the only crop request. Pinned Excalidraw receives the full immutable elements/files plus a synthetic non-persisted exporting frame for that exact box; Archboard adds no ID closure, bounds union, padding policy, or second geometry implementation.
-- [ ] #5 Raster semantics are fixed to PNG, opaque #ffffff, scale min(4, 1024 divided by the longest focus-box edge), positive deterministic dimensions, and export padding 0. Output is independent of pane board, viewport, zoom, selection, focus, and recent activity, and browser rendering mutates no visible state.
-- [ ] #6 Stable report order and collision-resistant names NNNN-FINDING_CODE-first12FindingDigest.png are enforced. PNG signature/IHDR/dimensions and SHA-256 are validated, every finding has one manifest entry, and null focus, unrenderable source, browser export failure, timeout, or invalid PNG is explicit and makes complete false.
-- [ ] #7 All successful PNGs and the manifest are validated before writes. The output directory must already exist and be empty; each image is written atomically, manifest.json is committed last, and stdout follows commit. A mid-set filesystem failure emits no stdout or manifest and may leave only unclaimed atomically complete PNGs, without adding a generic rollback transaction.
-- [ ] #8 Existing full-board PNG/SVG screenshot behavior, normal read/write/converter/lock/claim/version routes, server/UI session semantics, TASK-119 inspection, TASK-120 bridges, released skills, package engines, and generated ownership remain unchanged.
-- [ ] #9 The current CommandContract audit grows from 35 commands, 25 subcommands, and 60 paths to 36 commands, 25 subcommands, and 61 paths. The immutable ordered fixed-57 compatibility subset remains byte-identical and the new path is introducedBy TASK-121.
-- [ ] #10 Focused pure/module/package tests and one existing sequential headless browser lane prove exact check parity, off-screen explicit-board isolation, embedded files, z-order and clipping, deterministic repeated bytes across viewport changes, truthful partial manifests, atomic manifest-last behavior, and unchanged full-board screenshot behavior without a new browser suite or two-pane matrix.
+- [x] #1 A standalone CommandContract-backed archboard render-findings command requires explicit --board and --out, supports only the four released inspection policy options, declares server/browser/local-read/read/local-write effects and one POST relationship, and leaves plain check byte-compatible, browser-free, server-free, and zero-HTTP.
+- [x] #2 One authoritative Zod result/manifest schema returns schemaVersion 1, board, source fingerprint, the exact InspectionReportSchema report, complete, and exactly one ordered rendered-or-failed entry per finding. Cross-field validation owns entry order/count, complete, digest/name derivation, dimensions, and hashes.
+- [x] #3 The server reads the explicitly named persisted bytes once, runs inspection and fingerprints that snapshot, and renders only a strict non-repaired projection of the same bytes. Malformed or duplicate identities and strict render-geometry refusal produce source-not-renderable entries rather than repaired or misleading images.
+- [x] #4 Each non-null TASK-119 focusBBox is the only crop request. Pinned Excalidraw receives the full immutable elements/files plus a synthetic non-persisted exporting frame for that exact box; Archboard adds no ID closure, bounds union, padding policy, or second geometry implementation.
+- [x] #5 Raster semantics are fixed to PNG, opaque #ffffff, scale min(4, 1024 divided by the longest focus-box edge), positive deterministic dimensions, and export padding 0. Output is independent of pane board, viewport, zoom, selection, focus, and recent activity, and browser rendering mutates no visible state.
+- [x] #6 Stable report order and collision-resistant names NNNN-FINDING_CODE-first12FindingDigest.png are enforced. PNG signature/IHDR/dimensions and SHA-256 are validated, every finding has one manifest entry, and null focus, unrenderable source, browser export failure, timeout, or invalid PNG is explicit and makes complete false.
+- [x] #7 All successful PNGs and the manifest are validated before writes. The output directory must already exist and be empty; each image is written atomically, manifest.json is committed last, and stdout follows commit. A mid-set filesystem failure emits no stdout or manifest and may leave only unclaimed atomically complete PNGs, without adding a generic rollback transaction.
+- [x] #8 Existing full-board PNG/SVG screenshot behavior, normal read/write/converter/lock/claim/version routes, server/UI session semantics, TASK-119 inspection, TASK-120 bridges, released skills, package engines, and generated ownership remain unchanged.
+- [x] #9 The current CommandContract audit grows from 35 commands, 25 subcommands, and 60 paths to 36 commands, 25 subcommands, and 61 paths. The immutable ordered fixed-57 compatibility subset remains byte-identical and the new path is introducedBy TASK-121.
+- [x] #10 Focused pure/module/package tests and one existing sequential headless browser lane prove exact check parity, off-screen explicit-board isolation, embedded files, z-order and clipping, deterministic repeated bytes across viewport changes, truthful partial manifests, atomic manifest-last behavior, and unchanged full-board screenshot behavior without a new browser suite or two-pane matrix.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -155,3 +155,9 @@ created: 2026-08-27 11:38
 Parent approved the current-source xhigh deletion-test amendment. The standalone render-findings command, direct reuse of TASK-119 focusBBox, pinned Excalidraw synthetic-frame export, fixed raster semantics, manifest-last artifact set, 60-to-61 registry growth, and explicit deletion of RenderRegion, Bun.Image, runtime-bump, closure-taxonomy, check-mode, and two-pane machinery are the implementation contract.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented standalone deterministic finding close-ups without changing plain check or full-board export: one-read inspection/render snapshots, exact TASK-119 focus-box crops through pinned Excalidraw, strict non-repaired source handling, hydrated-source fingerprints, a closed manifest/result schema, validated PNG hashes and dimensions, and exclusive manifest-last artifact publication. Verified by 37 focused rendering/contract tests (199 expectations), 836 inspection checks, 61 CommandContract proofs/1011 checks with the immutable 57-path subset, two byte-stable fix passes, deterministic generated proofs, complete bun run check, a separate complete bun run test, all four browser lanes serial/headless in both chains, clean diff/worktree, and independent Standards and Spec REVIEW_CLEAN over 93997c125521d5c8ffc42bf2223930167124d637..21139941e79416ba295cead5061669d7f81e5a2c.
+<!-- SECTION:FINAL_SUMMARY:END -->
