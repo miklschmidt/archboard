@@ -13,8 +13,8 @@ parts of the typed handler interface and remain Commander-free, but they are
 not emitted by introspection. `src/cli/commands/run.ts` is the production adapter at that seam and
 remains the sole registry. Its route tree gives every root and child its own
 contract, parser owner, handler owner, and parent. The same tree
-derives the current 60-path surface, flattened registry view, longest-path
-dispatch, default aliases, and namespace refusals. All 60 paths use contracts;
+derives the current 61-path surface, flattened registry view, longest-path
+dispatch, default aliases, and namespace refusals. All 61 paths use contracts;
 there is no legacy dispatcher, raw-argv handler, or second subcommand catalogue.
 
 The private implementation uses one concrete Commander parser, the process and
@@ -182,6 +182,21 @@ boundary once. Creation requires an explicit opaque `#RRGGBB` background and pla
 parts inside the mutation; removal resolves the strict provenance pair there and deliberately does
 not require its sources to remain present or unchanged.
 
+`render-findings` is a standalone root contract. It accepts an explicit board, an existing empty
+directory, and only the four released inspection policy options. One server request reads and
+fingerprints the named note once, inspects those exact raw records, and sends one immutable strict
+render projection to the browser. Each finding reuses its schema-v2 `focusBBox`; the browser exports
+a synthetic non-persisted frame with white PNG background, zero export padding, and fixed scale
+`min(4, 1024 / longest edge)`. The command validates PNG signature, IHDR dimensions, report order,
+finding digests, file names, hashes, and manifest completeness before committing ordered PNGs and
+then `manifest.json`. Stdout is the validated manifest and appears only after that commit.
+
+This path does not adopt the requested board into a pane, update a scene, add files, move a camera,
+or change selection. A source that inspection can describe but the strict renderer cannot consume
+produces ordered `source-not-renderable` manifest entries instead of repairing the note. This is a
+focused finding renderer, not a second bounds engine or a configurable screenshot surface; public
+IDs, boxes, padding, scale, background, format, and pixel limits remain deliberately absent.
+
 ## CLI-only compatibility
 
 `src/bin.ts` removes one `--url` before importing runtime configuration.
@@ -189,7 +204,7 @@ not require its sources to remain present or unchanged.
 route tree. The checker compares every flattened route's parent, parser owner,
 handler owner, and contract identity to the canonical authored audit at
 `docs/design/cli-command-audit.json`. It requires exactly
-60 current contracts, zero legacy routes, no family-owned subcommand catalogue, and no
+61 current contracts, zero legacy routes, no family-owned subcommand catalogue, and no
 obsolete parser, stream, or proof-monolith source. Introspection is an
 in-process generation interface. It is not a public command, REST route, MCP
 replacement, or second agent command surface.
@@ -203,7 +218,7 @@ cannot be reconstructed from introspection without losing those judgments.
 The audit Markdown and the JSON and Markdown contract proofs are reproducible
 views, not sources of truth. Run `bun run generate:cli-contract` to render them
 under the ignored `docs/design/generated/` directory. The contract gate builds
-the same projection in memory, reconciles all 60 paths and the immutable
+the same projection in memory, reconciles all 61 paths and the immutable
 57-path compatibility subset, validates both renderings, and generates twice
 in fresh temporary directories to prove deterministic bytes without changing
 the checkout. A fresh clone therefore needs no generated files to run the
@@ -214,8 +229,9 @@ scenario labels. Each one fixes argv, exact stdout and stderr bytes, any
 documented normalization, merged contact and stream order, exit, held state,
 prerequisite contacts, REST and local effects, and artifact commits. The CLI
 checker replays every record against HEAD. The immutable migration record still covers its original
-57 paths. Current metadata covers 60, with `check` marked as introduced by TASK-119 and both
-bridge paths marked as introduced by TASK-120. General-help
+57 paths. Current metadata covers 61, with `check` marked as introduced by TASK-119, both
+bridge paths marked as introduced by TASK-120, and `render-findings` marked as introduced by
+TASK-121. General-help
 compatibility removes the new `check` and `bridge` command lines and the check-only exit line before
 hashing.
 Help hashes cover all 57 migration paths; the
