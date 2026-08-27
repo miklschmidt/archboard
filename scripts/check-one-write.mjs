@@ -916,11 +916,26 @@ try {
 				y: 0,
 				width: 40,
 				height: 40,
+				fileId: "reused-file",
+			},
+			{
+				id: "old-stale-image",
+				type: "image",
+				x: 150,
+				y: 0,
+				width: 40,
+				height: 40,
 				fileId: "stale-file",
 			},
 		],
 	});
 	await api("POST", `/api/files?board=${replacementBoard}`, [
+		{
+			id: "reused-file",
+			dataURL: "data:image/png;base64,b2xkLXJldXNlZA==",
+			mimeType: "image/png",
+			created: 1,
+		},
 		{
 			id: "stale-file",
 			dataURL: "data:image/png;base64,b2xk",
@@ -955,7 +970,7 @@ try {
 		paneId: "replace-import-pane",
 		primary: true,
 		focused: true,
-		elementCount: 2,
+		elementCount: 3,
 		board: replacementBoard,
 		rect: { x: 0, y: 0, width: 640, height: 800 },
 		viewport: { x: 0, y: 0, width: 640, height: 800, zoom: 1 },
@@ -999,7 +1014,7 @@ try {
 				width: 64,
 				height: 64,
 				index: "same-index",
-				fileId: "new-file",
+				fileId: "reused-file",
 			},
 			{
 				id: "replacement-arrow-id-too-long",
@@ -1025,11 +1040,17 @@ try {
 			},
 		],
 		files: {
-			"new-file": {
-				id: "new-file",
+			"reused-file": {
+				id: "reused-file",
 				dataURL: "data:image/png;base64,bmV3",
 				mimeType: "image/png",
 				created: 2,
+			},
+			"orphan-file": {
+				id: "orphan-file",
+				dataURL: "data:image/png;base64,b3JwaGFu",
+				mimeType: "image/png",
+				created: 3,
 			},
 		},
 	};
@@ -1047,7 +1068,7 @@ try {
 		isDeepStrictEqual(replacementReceipt, {
 			success: true,
 			imported: 4,
-			files: 1,
+			files: 2,
 			mode: "replace",
 		}),
 		`replace import changed its receipt: ${replacement.out.trim()}`,
@@ -1068,7 +1089,9 @@ try {
 	const importedArrow = replacedElements.find((element) => element.type === "arrow");
 	const mintedEllipse = replacedElements.find((element) => element.type === "ellipse");
 	assert(
-		!replacedById.has("old-shape") && !replacedById.has("old-image"),
+		!replacedById.has("old-shape") &&
+			!replacedById.has("old-image") &&
+			!replacedById.has("old-stale-image"),
 		"replace import retained elements from the old scene",
 	);
 	assert(
@@ -1087,8 +1110,8 @@ try {
 	);
 	const replacedFiles = (await api("GET", `/api/files?board=${replacementBoard}`))?.files ?? {};
 	assert(
-		isDeepStrictEqual(Object.keys(replacedFiles), ["new-file"]) &&
-			replacedFiles["new-file"]?.dataURL === "data:image/png;base64,bmV3",
+		isDeepStrictEqual(Object.keys(replacedFiles), ["reused-file"]) &&
+			replacedFiles["reused-file"]?.dataURL === "data:image/png;base64,bmV3",
 		`replace import retained stale files or lost the imported file: ${JSON.stringify(replacedFiles)}`,
 	);
 	const versionAfterReplacement = (await api("GET", `/api/boards/info?board=${replacementBoard}`))
@@ -1110,15 +1133,20 @@ try {
 	assert(
 		typeof noteAtReplacementDelta === "string" &&
 			noteAtReplacementDelta.includes("data:image/png;base64,bmV3") &&
+			!noteAtReplacementDelta.includes("data:image/png;base64,b3JwaGFu") &&
+			!noteAtReplacementDelta.includes("data:image/png;base64,b2xkLXJldXNlZA==") &&
 			!noteAtReplacementDelta.includes("old-shape"),
-		"the replacement delta became observable before the new note was persisted",
+		"the replacement delta preceded persistence or the note kept stale/orphan files",
 	);
+	const replacementFileFrames = replacementMessages
+		.slice(replacementMessageStart)
+		.filter((message) => message.type === "files_replaced" && message.board === replacementBoard);
 	assert(
-		replacementMessages
-			.slice(replacementMessageStart)
-			.filter((message) => message.type === "files_added" && message.board === replacementBoard)
-			.length === 1,
-		"the imported files were not delivered from the replacement mutation",
+		replacementFileFrames.length === 1 &&
+			replacementFileFrames[0].files?.length === 1 &&
+			replacementFileFrames[0].files[0]?.id === "reused-file" &&
+			replacementFileFrames[0].files[0]?.dataURL === "data:image/png;base64,bmV3",
+		`the replacement file frame was not exact: ${JSON.stringify(replacementFileFrames)}`,
 	);
 	const panesAfterReplacement = await api("GET", "/api/panes");
 	assert(
@@ -1151,8 +1179,42 @@ try {
 	const heldBoard = "replace-held";
 	await api("POST", "/api/boards/new", { board: heldBoard });
 	await api("POST", `/api/elements/batch?board=${heldBoard}`, {
-		elements: [{ id: "held-old", type: "rectangle", x: 0, y: 0, width: 50, height: 50 }],
+		elements: [
+			{ id: "held-old", type: "rectangle", x: 0, y: 0, width: 50, height: 50 },
+			{
+				id: "held-reused-image",
+				type: "image",
+				x: 60,
+				y: 0,
+				width: 40,
+				height: 40,
+				fileId: "held-reused-file",
+			},
+			{
+				id: "held-stale-image",
+				type: "image",
+				x: 110,
+				y: 0,
+				width: 40,
+				height: 40,
+				fileId: "held-stale-file",
+			},
+		],
 	});
+	await api("POST", `/api/files?board=${heldBoard}`, [
+		{
+			id: "held-reused-file",
+			dataURL: "data:image/png;base64,aGVsZC1vbGQ=",
+			mimeType: "image/png",
+			created: 1,
+		},
+		{
+			id: "held-stale-file",
+			dataURL: "data:image/png;base64,aGVsZC1zdGFsZQ==",
+			mimeType: "image/png",
+			created: 1,
+		},
+	]);
 	const heldInfoBefore = await api("GET", `/api/boards/info?board=${heldBoard}`);
 	const heldVersionBefore = heldInfoBefore?.version;
 	const heldNote = heldInfoBefore?.file;
@@ -1172,8 +1234,32 @@ try {
 		JSON.stringify({
 			type: "excalidraw",
 			version: 2,
-			elements: [{ id: "held-new", type: "diamond", x: 90, y: 90, width: 70, height: 70 }],
-			files: {},
+			elements: [
+				{ id: "held-new", type: "diamond", x: 90, y: 90, width: 70, height: 70 },
+				{
+					id: "held-new-image",
+					type: "image",
+					x: 180,
+					y: 90,
+					width: 40,
+					height: 40,
+					fileId: "held-reused-file",
+				},
+			],
+			files: {
+				"held-reused-file": {
+					id: "held-reused-file",
+					dataURL: "data:image/png;base64,aGVsZC1uZXc=",
+					mimeType: "image/png",
+					created: 2,
+				},
+				"held-orphan-file": {
+					id: "held-orphan-file",
+					dataURL: "data:image/png;base64,aGVsZC1vcnBoYW4=",
+					mimeType: "image/png",
+					created: 2,
+				},
+			},
 		}),
 	);
 	const heldReplacement = await counting("a held replace import", () =>
@@ -1202,6 +1288,12 @@ try {
 			!heldAfter?.elements?.some((element) => element.id === "held-old") &&
 			heldAfter?.held?.writes === 1,
 		`held replace import did not atomically replace the held copy: ${JSON.stringify(heldAfter)}`,
+	);
+	const heldFiles = (await api("GET", `/api/files?board=${heldBoard}`))?.files ?? {};
+	assert(
+		isDeepStrictEqual(Object.keys(heldFiles), ["held-reused-file"]) &&
+			heldFiles["held-reused-file"]?.dataURL === "data:image/png;base64,aGVsZC1uZXc=",
+		`held replacement membership diverged from the drawn scene: ${JSON.stringify(heldFiles)}`,
 	);
 	assert(
 		(await api("GET", `/api/boards/info?board=${heldBoard}`))?.version === heldVersionBefore,

@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const reporting = await import(join(repoRoot, "src", "ui", "canvas", "change-reporting.ts"));
 const { ownsHoldAttempt } = await import(join(repoRoot, "src", "ui", "canvas", "hold-attempt.ts"));
+const { replaceCanvasFiles } = await import(join(repoRoot, "src", "ui", "canvas", "files.ts"));
 const {
 	hasPendingEdits,
 	initialState,
@@ -47,6 +48,38 @@ check(
 	unexpectedRuntimeExports.length === 0,
 	unexpectedRuntimeExports.join(", "),
 );
+
+{
+	const files = {
+		"same-id": { id: "same-id", dataURL: "data:image/png;base64,b2xk" },
+		stale: { id: "stale", dataURL: "data:image/png;base64,c3RhbGU=" },
+	};
+	let additiveCalls = 0;
+	const owner = {
+		getFiles: () => files,
+		addFiles: (incoming) => {
+			additiveCalls += 1;
+			for (const file of incoming) {
+				// Pinned Excalidraw addFiles deliberately skips an id it already has.
+				if (!files[file.id]) files[file.id] = file;
+			}
+		},
+	};
+	replaceCanvasFiles(owner, [
+		{ id: "same-id", dataURL: "data:image/png;base64,bmV3" },
+		{ id: "drawn", dataURL: "data:image/png;base64,ZHJhd24=" },
+	]);
+	check(
+		"a replacement file frame removes stale membership and replaces reused-id bytes before additive addFiles",
+		additiveCalls === 1 &&
+			JSON.stringify(files) ===
+				JSON.stringify({
+					"same-id": { id: "same-id", dataURL: "data:image/png;base64,bmV3" },
+					drawn: { id: "drawn", dataURL: "data:image/png;base64,ZHJhd24=" },
+				}),
+		JSON.stringify(files),
+	);
+}
 
 // A board name can repeat after an away-and-back cycle. Completion ownership
 // therefore belongs to the exact attempt and generation, not that name.
