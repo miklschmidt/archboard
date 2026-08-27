@@ -138,6 +138,7 @@ import {
 	SCENE_REPLACEMENT_MARKER,
 	writeBoard,
 } from "../../../runtime/engine/board-write.js";
+import { drawnFileIds, usableEmbeddedFile } from "../../../runtime/engine/embedded-files.js";
 import type { BoardWriteRequest, BoardWriteTarget } from "../../../runtime/engine/board-write.js";
 import {
 	presentElement,
@@ -2401,28 +2402,16 @@ app.post("/api/files", (req: Request, res: Response) => {
 			source,
 			origin: "agent",
 			mutation: (content) => {
-				for (const file of fileList) {
-					if (file.id && file.dataURL) {
-						content.files.set(file.id, {
-							id: file.id,
-							dataURL: file.dataURL,
-							mimeType: file.mimeType || "image/png",
-							created: file.created || Date.now(),
-						});
-					}
-				}
+				const accepted = fileList
+					.map((file) => usableEmbeddedFile(file))
+					.filter((file): file is ExcalidrawFile => file !== null);
+				for (const file of accepted) content.files.set(file.id, file);
 				// A note keeps only images an element on this board draws (TASK-060).
-				const drawn = new Set(
-					Array.from(content.elements.values())
-						.map((element) => element.fileId)
-						.filter((id): id is string => typeof id === "string"),
-				);
-				const orphaned = fileList
-					.filter((file) => file.id && file.dataURL && !drawn.has(file.id))
-					.map((file) => file.id);
+				const drawn = drawnFileIds(content.elements.values());
+				const orphaned = accepted.filter((file) => !drawn.has(file.id)).map((file) => file.id);
 				return {
 					value: { orphaned },
-					delta: { filesAdded: fileList },
+					delta: { filesAdded: accepted },
 				};
 			},
 			answer: ({ value }) => ({

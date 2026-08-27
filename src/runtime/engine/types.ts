@@ -225,6 +225,7 @@ export type WebSocketMessageType =
 	| "export_findings_request"
 	| "set_viewport"
 	| "files_added"
+	| "files_replaced"
 	| "file_deleted"
 	| "selection_changed"
 	| "board_switched"

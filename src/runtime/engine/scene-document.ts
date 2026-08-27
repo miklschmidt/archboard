@@ -1,5 +1,6 @@
 import { type ServerElement } from "./types.js";
 import { expandElements } from "./expand-elements.js";
+import { drawnFileIds } from "./embedded-files.js";
 import { extractSceneJsonFromObsidianMd, isObsidianExcalidrawMd } from "./obsidian-md.js";
 
 export interface ExportedScene {
@@ -24,9 +25,8 @@ export function buildScene(
 	// keyed by the `fileId` an image element carries, so the elements decide
 	// what belongs in it (TASK-060).
 	const used: Record<string, unknown> = {};
-	for (const element of exportElements as Array<{ fileId?: unknown }>) {
-		const id = element.fileId;
-		if (typeof id === "string" && sceneFiles[id]) used[id] = sceneFiles[id];
+	for (const id of drawnFileIds(exportElements)) {
+		if (sceneFiles[id]) used[id] = sceneFiles[id];
 	}
 
 	const scene: Record<string, unknown> = {
