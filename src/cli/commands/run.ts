@@ -95,7 +95,8 @@ const COMMANDS: Record<string, CommandRoute> = {
 			remove: child(contract(bridgeRemoveContract, "src/cli/commands/bridge.ts")),
 		},
 		summary: "Mark or remove a verified connector crossing",
-		usage: "bridge --over <id> --under <id> --background <#RRGGBB> [--at <x,y>] | bridge remove <bridge-id>",
+		usage:
+			"bridge --over <id> --under <id> --background <#RRGGBB> [--at <x,y>] | bridge remove <bridge-id>",
 	},
 	start: {
 		owner: contract(startContract, "src/cli/commands/server.ts"),

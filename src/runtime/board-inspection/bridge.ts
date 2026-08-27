@@ -5,10 +5,7 @@ import { decodePath, decodeRecords, type DecodedRecord } from "./lib/decode.js";
 import { intersectSegments, point, type ExactPoint, type Segment } from "./lib/geometry.js";
 import type { SnapshotRecord } from "./lib/input-snapshot.js";
 import { compareIdentity } from "./lib/ordering.js";
-import {
-	type BridgeIncompleteIssue,
-	type BridgeStaleIssue,
-} from "./schemas.js";
+import { type BridgeIncompleteIssue, type BridgeStaleIssue } from "./schemas.js";
 
 export { BridgeIncompleteIssueSchema, BridgeStaleIssueSchema } from "./schemas.js";
 
@@ -92,7 +89,10 @@ export function bridgeMetadataOf(element: ServerElement): BridgeMetadata | null 
 const supportedAngle = (value: unknown): boolean => value === undefined || value === 0;
 const absentOrFalse = (value: unknown): boolean => value === undefined || value === false;
 
-function supportedConnector(element: ServerElement, sourceIndex: number): {
+function supportedConnector(
+	element: ServerElement,
+	sourceIndex: number,
+): {
 	record: DecodedRecord;
 	segments: Segment[];
 } | null {
@@ -215,7 +215,10 @@ interface CrossingCandidate {
 	point: ExactPoint;
 }
 
-function crossingCandidates(over: readonly Segment[], under: readonly Segment[]): CrossingCandidate[] {
+function crossingCandidates(
+	over: readonly Segment[],
+	under: readonly Segment[],
+): CrossingCandidate[] {
 	const candidates: CrossingCandidate[] = [];
 	for (const overSegment of over)
 		for (const underSegment of under) {
@@ -226,7 +229,8 @@ function crossingCandidates(over: readonly Segment[], under: readonly Segment[])
 				underSegment.b,
 				0.5,
 			);
-			if (hit.kind === "proper") candidates.push({ over: overSegment, under: underSegment, point: hit.point });
+			if (hit.kind === "proper")
+				candidates.push({ over: overSegment, under: underSegment, point: hit.point });
 		}
 	return candidates.toSorted(
 		(a, b) =>
@@ -263,7 +267,8 @@ export function planBridgeCreate(input: PlanBridgeCreateInput): BridgeCreatePlan
 	const byId = new Map(input.elements.map((element) => [element.id, element]));
 	const overElement = byId.get(input.overConnectorId);
 	const underElement = byId.get(input.underConnectorId);
-	if (!overElement) throw new BridgeRefusal(`Over-connector ${input.overConnectorId} was not found.`);
+	if (!overElement)
+		throw new BridgeRefusal(`Over-connector ${input.overConnectorId} was not found.`);
 	if (!underElement)
 		throw new BridgeRefusal(`Under-connector ${input.underConnectorId} was not found.`);
 	const over = supportedConnector(overElement, input.elements.indexOf(overElement));
@@ -276,7 +281,10 @@ export function planBridgeCreate(input: PlanBridgeCreateInput): BridgeCreatePlan
 	if (candidates.length === 0)
 		throw new BridgeRefusal("The named connectors have no proper interior intersection.");
 	const matches = input.at
-		? candidates.filter((candidate) => Math.hypot(candidate.point.x - input.at!.x, candidate.point.y - input.at!.y) <= 0.5)
+		? candidates.filter(
+				(candidate) =>
+					Math.hypot(candidate.point.x - input.at!.x, candidate.point.y - input.at!.y) <= 0.5,
+			)
 		: candidates;
 	if (matches.length !== 1)
 		throw new BridgeRefusal(
@@ -292,7 +300,8 @@ export function planBridgeCreate(input: PlanBridgeCreateInput): BridgeCreatePlan
 		throw new BridgeRefusal("The selected over-segment is too short for a bridge.");
 	const ux = dx / length;
 	const uy = dy / length;
-	const along = (selected.point.x - selected.over.a.x) * ux + (selected.point.y - selected.over.a.y) * uy;
+	const along =
+		(selected.point.x - selected.over.a.x) * ux + (selected.point.y - selected.over.a.y) * uy;
 	const halfSpan = Math.max(6, style.strokeWidth * 2 + 2);
 	if (along < halfSpan || length - along < halfSpan)
 		throw new BridgeRefusal("The selected crossing lacks enough over-segment span for a bridge.");
@@ -347,7 +356,12 @@ function structuralPairs(elements: readonly ServerElement[]): {
 			continue;
 		}
 		if (element.type !== "line") {
-			invalid.push({ bridgeId: parsed.data.bridgeId, reason: "incomplete-decoration", issue: "non-line-part", elements: [element] });
+			invalid.push({
+				bridgeId: parsed.data.bridgeId,
+				reason: "incomplete-decoration",
+				issue: "non-line-part",
+				elements: [element],
+			});
 			continue;
 		}
 		const group = grouped.get(parsed.data.bridgeId) ?? [];
@@ -365,19 +379,24 @@ function structuralPairs(elements: readonly ServerElement[]): {
 		else if (redraws.length > 1) issue = "duplicate-redraw";
 		else if (masks[0]!.element.id !== bridgeId) issue = "mask-id-mismatch";
 		else if (!sameFacts(masks[0]!.metadata, redraws[0]!.metadata)) issue = "conflicting-facts";
-		if (issue) invalid.push({ bridgeId, reason: "incomplete-decoration", issue, elements: parts.map((part) => part.element) });
+		if (issue)
+			invalid.push({
+				bridgeId,
+				reason: "incomplete-decoration",
+				issue,
+				elements: parts.map((part) => part.element),
+			});
 		else valid.push({ bridgeId, mask: masks[0]!, redraw: redraws[0]! });
 	}
 	return { valid: valid.toSorted((a, b) => compareIdentity(a.bridgeId, b.bridgeId)), invalid };
 }
 
-function staleIssue(pair: ValidBridgeDecoration, elements: readonly ServerElement[]): BridgeStaleIssue | null {
+function staleIssue(
+	pair: ValidBridgeDecoration,
+	elements: readonly ServerElement[],
+): BridgeStaleIssue | null {
 	for (const part of [pair.mask.element, pair.redraw.element]) {
-		if (
-			(part.groupIds?.length ?? 0) !== 0 ||
-			part.startBinding != null ||
-			part.endBinding != null
-		)
+		if ((part.groupIds?.length ?? 0) !== 0 || part.startBinding != null || part.endBinding != null)
 			return "geometry-mismatch";
 	}
 	const byId = new Map(elements.map((element) => [element.id, element]));
@@ -446,13 +465,22 @@ export function validateBridgeDecorations(elements: readonly ServerElement[]): {
 	for (const pair of structural.valid) {
 		if (invalid.some((candidate) => candidate.bridgeId === pair.bridgeId)) continue;
 		const issue = staleIssue(pair, elements);
-		if (issue) invalid.push({ bridgeId: pair.bridgeId, reason: "stale-decoration", issue, elements: [pair.mask.element, pair.redraw.element] });
+		if (issue)
+			invalid.push({
+				bridgeId: pair.bridgeId,
+				reason: "stale-decoration",
+				issue,
+				elements: [pair.mask.element, pair.redraw.element],
+			});
 		else valid.push(pair);
 	}
 	return { valid, invalid };
 }
 
-export function isBridgeDecoration(element: ServerElement, elements: readonly ServerElement[]): boolean {
+export function isBridgeDecoration(
+	element: ServerElement,
+	elements: readonly ServerElement[],
+): boolean {
 	return validateBridgeDecorations(elements).valid.some(
 		(pair) => pair.mask.element.id === element.id || pair.redraw.element.id === element.id,
 	);
@@ -460,16 +488,24 @@ export function isBridgeDecoration(element: ServerElement, elements: readonly Se
 
 export function withoutValidBridgeDecorations(elements: readonly ServerElement[]): ServerElement[] {
 	const ids = new Set(
-		validateBridgeDecorations(elements).valid.flatMap((pair) => [pair.mask.element.id, pair.redraw.element.id]),
+		validateBridgeDecorations(elements).valid.flatMap((pair) => [
+			pair.mask.element.id,
+			pair.redraw.element.id,
+		]),
 	);
 	return elements.filter((element) => !ids.has(element.id));
 }
 
-export function planBridgeRemoval(elements: readonly ServerElement[], bridgeId: string): readonly [string, string] {
+export function planBridgeRemoval(
+	elements: readonly ServerElement[],
+	bridgeId: string,
+): readonly [string, string] {
 	const structural = structuralPairs(elements);
 	const pair = structural.valid.find((candidate) => candidate.bridgeId === bridgeId);
 	const conflicting = structural.invalid.find((candidate) => candidate.bridgeId === bridgeId);
 	if (!pair || conflicting)
-		throw new BridgeRefusal(`Bridge ${bridgeId} does not have exactly one complete mask/redraw provenance pair.`);
+		throw new BridgeRefusal(
+			`Bridge ${bridgeId} does not have exactly one complete mask/redraw provenance pair.`,
+		);
 	return [pair.mask.element.id, pair.redraw.element.id];
 }

@@ -2168,12 +2168,19 @@ export function detectBoard(
 	const structural = structuralFindings(records, policy, model);
 	findings.push(...structural.findings);
 	findings.push(...labelFindings(records, model));
-	const collisions = collisionFindings(records, model, structural.segments, policy, {
-		findings: [],
-		broadPhaseComparisons: 0,
-		sweepWork: emptySweepWork(),
-		terminalLimit: null,
-	}, validBridges);
+	const collisions = collisionFindings(
+		records,
+		model,
+		structural.segments,
+		policy,
+		{
+			findings: [],
+			broadPhaseComparisons: 0,
+			sweepWork: emptySweepWork(),
+			terminalLimit: null,
+		},
+		validBridges,
+	);
 	findings.push(...collisions.findings);
 	findings.push(...coordinateSpanFindings(records, model, findings));
 	findings.push(...focusPaddingFindings(findings));
