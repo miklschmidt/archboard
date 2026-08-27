@@ -76,10 +76,14 @@ export type BoardMutation<T> = (
 
 export interface ElementMutationPlan<T> {
 	input: ElementInputRequest;
+	/** Replace the complete scene, including embedded-file membership. */
+	replaceScene?: { files: readonly unknown[] };
 	/** Present for a pane change report; true means its input is the whole scene. */
 	wholeScene?: boolean;
 	value: (applied: AppliedElementInput, content: BoardContent) => T;
 }
+
+export const SCENE_REPLACEMENT_MARKER = "replace-scene" as const;
 
 export interface BoardWriteAnswerContext<T> {
 	source: BoardWriteTarget;
@@ -150,19 +154,51 @@ export function elementMutation<T>(
 ): BoardMutation<T> {
 	return (content) => {
 		const plan = prepare(content);
-		if (plan.wholeScene) content.elements.clear();
+		const replacedFileIds = plan.replaceScene ? [...content.files.keys()] : [];
+		if (plan.wholeScene || plan.replaceScene) content.elements.clear();
+		if (plan.replaceScene) content.files.clear();
 		const applied = applyElementInput(content.elements, {
 			...plan.input,
-			deletes: plan.wholeScene ? [] : plan.input.deletes,
+			deletes: plan.wholeScene || plan.replaceScene ? [] : plan.input.deletes,
 		});
+		const filesAdded: ExcalidrawFile[] = [];
+		for (const raw of plan.replaceScene?.files ?? []) {
+			if (!raw || typeof raw !== "object" || Array.isArray(raw)) continue;
+			const file = raw as Record<string, unknown>;
+			if (
+				typeof file.id !== "string" ||
+				!file.id ||
+				typeof file.dataURL !== "string" ||
+				!file.dataURL
+			)
+				continue;
+			const accepted: ExcalidrawFile = {
+				id: file.id,
+				dataURL: file.dataURL,
+				mimeType: typeof file.mimeType === "string" && file.mimeType ? file.mimeType : "image/png",
+				created: typeof file.created === "number" && file.created ? file.created : Date.now(),
+			};
+			content.files.set(accepted.id, accepted);
+			filesAdded.push(accepted);
+		}
 		const changed =
-			applied.created.length > 0 || applied.updated.length > 0 || applied.deleted.length > 0;
+			applied.created.length > 0 ||
+			applied.updated.length > 0 ||
+			applied.deleted.length > 0 ||
+			filesAdded.length > 0 ||
+			replacedFileIds.some((id) => !content.files.has(id));
 		return {
 			value: plan.value(applied, content),
 			delta: {
 				created: applied.created,
 				updated: applied.updated,
 				deleted: applied.deleted,
+				...(plan.replaceScene
+					? {
+							filesAdded,
+							filesDeleted: replacedFileIds.filter((id) => !content.files.has(id)),
+						}
+					: {}),
 			},
 			requestedElements: applied.requested,
 			// When wholeScene is present this is a pane report. Empty deltas do not

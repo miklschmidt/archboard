@@ -13,6 +13,7 @@ import type { HoldReport } from "./board-hold.js";
 import type { Claim } from "./board-lock.js";
 import type { CompareResult } from "./compare.js";
 import type { InspectionPolicyInput, InspectionReport } from "../board-inspection/index.js";
+import { SCENE_REPLACEMENT_MARKER } from "./board-write.js";
 
 // API Response types
 export interface ApiResponse {
@@ -308,6 +309,26 @@ export async function batchCreateElementsOnCanvas(
 	}
 	const result = await syncBatchToCanvas(elementsData, options);
 	return result?.elements ? (result as unknown as WriteAnswer) : null;
+}
+
+/** Replace one board scene through the existing atomic batch write. */
+export async function replaceSceneOnCanvas(
+	elementsData: Array<ElementInput | ServerElement>,
+	filesData: readonly unknown[],
+): Promise<WriteAnswer | null> {
+	if (!ENABLE_CANVAS_SYNC) {
+		return { elements: elementsData.map((element) => Object.assign({} as ServerElement, element)) };
+	}
+	const result = await requestJson<WriteAnswer>("/api/elements/batch", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			elements: elementsData,
+			files: filesData,
+			mutation: SCENE_REPLACEMENT_MARKER,
+		}),
+	});
+	return result.elements ? result : null;
 }
 
 // ---- Typed REST wrappers used by the CLI ----

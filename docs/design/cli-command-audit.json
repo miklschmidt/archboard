@@ -1130,9 +1130,9 @@
 			"exits": [0, 1, 2, 3, 5],
 			"prerequisites": ["server", "board", "doing"],
 			"relationships": [
-				"merge: POST batch and optional files; replace: DELETE clear then POST batch"
+				"merge: POST batch then optional POST files; replace: one POST batch carrying the complete scene"
 			],
-			"semantics": "merge is one content write; replace currently spans two content writes",
+			"semantics": "merge remains append-only; replace is one atomic BoardContent write for elements and files",
 			"ordering": "server currently precedes local file read",
 			"nextFields": ["imported", "files", "mode"],
 			"workflow": "candidate single act",
