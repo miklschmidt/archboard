@@ -48,6 +48,7 @@ import {
 	BROAD_PHASE_PREPROCESSING_LIMIT,
 	PreprocessingBudget,
 	PreprocessingCeilingReached,
+	PreprocessingOperations,
 	type PreprocessingPass,
 } from "./preprocessing-budget.js";
 
@@ -1659,11 +1660,11 @@ const partitioned = <T>(
 	budget: PreprocessingBudget,
 	pass: PreprocessingPass,
 ): PairItem<T>[] => {
-	budget.charge(pass, "prepare-events");
-	const result: PairItem<T>[] = [];
-	for (const item of items) {
-		budget.charge(pass, "prepare-events", 2);
-		result.push({ ...item, semantics: semantics(item.value) });
+	const operations = new PreprocessingOperations(budget, pass, "prepare-events");
+	const result = operations.array<PairItem<T>>();
+	for (let index = 0; index < items.length; index += 1) {
+		const item = operations.read(items, index)!;
+		operations.push(result, { ...item, semantics: semantics(item.value) });
 	}
 	return result;
 };
@@ -1686,17 +1687,17 @@ function pairSweep<A, B>(
 	budget: PreprocessingBudget,
 ): void {
 	const materialize = <T>(items: readonly PairItem<T>[]) => {
-		budget.charge(pass, "prepare-events");
-		const intervals: Array<{
+		const operations = new PreprocessingOperations(budget, pass, "prepare-events");
+		const intervals = operations.array<{
 			id: string;
 			min: number;
 			max: number;
 			value: PairItem<T>;
 			semantics: SweepPartition;
-		}> = [];
-		for (const item of items) {
-			budget.charge(pass, "prepare-events", 2);
-			intervals.push({
+		}>();
+		for (let index = 0; index < items.length; index += 1) {
+			const item = operations.read(items, index)!;
+			operations.push(intervals, {
 				id: item.id,
 				min: item.box.x,
 				max: item.box.x + item.box.width,
@@ -1820,11 +1821,11 @@ function collisionFindings(
 		pass: PreprocessingPass,
 		mapValue: (value: T) => U,
 	): U[] => {
-		budget.charge(pass, "prepare-events");
-		const mapped: U[] = [];
-		for (const value of values) {
-			budget.charge(pass, "prepare-events", 2);
-			mapped.push(mapValue(value));
+		const operations = new PreprocessingOperations(budget, pass, "prepare-events");
+		const mapped = operations.array<U>();
+		for (let index = 0; index < values.length; index += 1) {
+			const value = operations.read(values, index)!;
+			operations.push(mapped, mapValue(value));
 		}
 		return mapped;
 	};
@@ -1833,13 +1834,12 @@ function collisionFindings(
 		pass: PreprocessingPass,
 		keep: (value: T) => boolean,
 	): T[] => {
-		budget.charge(pass, "prepare-events");
-		const filtered: T[] = [];
-		for (const value of values) {
-			budget.charge(pass, "prepare-events");
+		const operations = new PreprocessingOperations(budget, pass, "prepare-events");
+		const filtered = operations.array<T>();
+		for (let index = 0; index < values.length; index += 1) {
+			const value = operations.read(values, index)!;
 			if (!keep(value)) continue;
-			budget.charge(pass, "prepare-events");
-			filtered.push(value);
+			operations.push(filtered, value);
 		}
 		return filtered;
 	};
@@ -1854,8 +1854,16 @@ function collisionFindings(
 			semantics: unrestrictedPartition(segment.connectorId),
 		};
 	});
-	const nodeValues = [...model.nodes.values()];
-	budget.charge("connector-node", "prepare-events", 1 + nodeValues.length * 2);
+	const connectorNodeOperations = new PreprocessingOperations(
+		budget,
+		"connector-node",
+		"prepare-events",
+	);
+	const nodeValues = connectorNodeOperations.array<InspectionNode>();
+	for (const node of model.nodes.values()) {
+		budget.charge("connector-node", "prepare-events");
+		connectorNodeOperations.push(nodeValues, node);
+	}
 	const leaves = countedFilter(nodeValues, "connector-node", (node) => node.children.length === 0);
 	const leafNodeItems = countedMap(leaves, "connector-node", (node) => ({
 		id: node.id,
@@ -1879,20 +1887,21 @@ function collisionFindings(
 		);
 	};
 	budget.charge("connector-node", "prepare-events");
-	const hierarchyParents = new Map<string, string | null>();
+	const hierarchyParents = connectorNodeOperations.map<string, string | null>();
 	for (const node of model.nodes.values()) {
-		budget.charge("connector-node", "prepare-events", 2 + node.id.length);
-		hierarchyParents.set(node.id, node.parentId);
+		budget.charge("connector-node", "prepare-events");
+		budget.charge("connector-node", "prepare-events", node.id.length);
+		connectorNodeOperations.mapSet(hierarchyParents, node.id, node.parentId);
 	}
 	const sweepHierarchy = buildSweepHierarchy(hierarchyParents, {
 		budget,
 		pass: "connector-node",
 	});
 	budget.charge("connector-node", "prepare-events");
-	const connectorNodePartitions = new Map<string, SweepPartition>();
+	const connectorNodePartitions = connectorNodeOperations.map<string, SweepPartition>();
 	for (const segment of segments) {
 		budget.charge("connector-node", "prepare-events", 2 + segment.connectorId.length);
-		if (connectorNodePartitions.has(segment.connectorId)) continue;
+		if (connectorNodeOperations.mapHas(connectorNodePartitions, segment.connectorId)) continue;
 		const ends = connectorEnds(segment);
 		if (!ends.nodeAnalysisEligible) continue;
 		budget.charge("connector-node", "prepare-events");
@@ -1906,14 +1915,19 @@ function collisionFindings(
 			ancestorTargets.push(ends.endNode);
 		}
 		budget.charge("connector-node", "prepare-events");
-		connectorNodePartitions.set(segment.connectorId, {
+		connectorNodeOperations.mapSet(connectorNodePartitions, segment.connectorId, {
 			partition: `connector:${segment.connectorId}`,
 			excludedPartitions: NO_EXCLUSIONS,
 			ancestorTargets,
 			hierarchy: sweepHierarchy,
 		});
 	}
-	const labelNodePartitions = new Map<string, SweepPartition>();
+	const labelNodeOperations = new PreprocessingOperations(
+		budget,
+		"label-node-overlap",
+		"prepare-events",
+	);
+	const labelNodePartitions = labelNodeOperations.map<string, SweepPartition>();
 	const nodeEligibleSegmentItems = countedFilter(
 		segmentItems,
 		"connector-node",
@@ -2002,28 +2016,34 @@ function collisionFindings(
 		);
 	}
 	if (!counter.limited) {
-		budget.charge("connector-intersection", "prepare-events");
-		const partitions = new Map<string, SweepPartition>();
-		for (const segment of segments) {
-			budget.charge("connector-intersection", "prepare-events", 2 + segment.connectorId.length);
-			if (!partitions.has(segment.connectorId)) {
-				budget.charge("connector-intersection", "prepare-events", 2);
-				partitions.set(segment.connectorId, {
+		const operations = new PreprocessingOperations(
+			budget,
+			"connector-intersection",
+			"prepare-events",
+		);
+		const partitions = operations.map<string, SweepPartition>();
+		for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex += 1) {
+			const segment = operations.read(segments, segmentIndex)!;
+			budget.charge("connector-intersection", "prepare-events", segment.connectorId.length);
+			if (!operations.mapHas(partitions, segment.connectorId)) {
+				const excluded = operations.set<string>();
+				operations.setAdd(excluded, segment.connectorId);
+				operations.mapSet(partitions, segment.connectorId, {
 					partition: segment.connectorId,
-					excludedPartitions: new Set([segment.connectorId]),
+					excludedPartitions: excluded,
 				});
 			}
 		}
 		pairSweep(
 			partitioned(
 				segmentItems,
-				(segment) => partitions.get(segment.connectorId)!,
+				(segment) => operations.mapGet(partitions, segment.connectorId)!,
 				budget,
 				"connector-intersection",
 			),
 			partitioned(
 				segmentItems,
-				(segment) => partitions.get(segment.connectorId)!,
+				(segment) => operations.mapGet(partitions, segment.connectorId)!,
 				budget,
 				"connector-intersection",
 			),
@@ -2081,21 +2101,31 @@ function collisionFindings(
 		);
 	}
 	if (!counter.limited) {
-		budget.charge("node-overlap", "prepare-events");
-		const partitions = new Map<string, SweepPartition>();
-		for (const node of leaves) {
-			budget.charge("node-overlap", "prepare-events", 2 + node.id.length);
-			const excludedPartitions = new Set<string>();
+		const operations = new PreprocessingOperations(budget, "node-overlap", "prepare-events");
+		const partitions = operations.map<string, SweepPartition>();
+		for (let nodeIndex = 0; nodeIndex < leaves.length; nodeIndex += 1) {
+			const node = operations.read(leaves, nodeIndex)!;
+			budget.charge("node-overlap", "prepare-events", node.id.length);
+			const excludedPartitions = operations.set<string>();
 			if (node.parentId) {
-				budget.charge("node-overlap", "prepare-events", 1 + node.parentId.length);
-				excludedPartitions.add(node.parentId);
+				budget.charge("node-overlap", "prepare-events", node.parentId.length);
+				operations.setAdd(excludedPartitions, node.parentId);
 			}
-			budget.charge("node-overlap", "prepare-events");
-			partitions.set(node.id, { partition: node.id, excludedPartitions });
+			operations.mapSet(partitions, node.id, { partition: node.id, excludedPartitions });
 		}
 		pairSweep(
-			partitioned(leafNodeItems, (node) => partitions.get(node.id)!, budget, "node-overlap"),
-			partitioned(leafNodeItems, (node) => partitions.get(node.id)!, budget, "node-overlap"),
+			partitioned(
+				leafNodeItems,
+				(node) => operations.mapGet(partitions, node.id)!,
+				budget,
+				"node-overlap",
+			),
+			partitioned(
+				leafNodeItems,
+				(node) => operations.mapGet(partitions, node.id)!,
+				budget,
+				"node-overlap",
+			),
 			true,
 			(a, b) => {
 				const hit = overlap(a.body, b.body);
@@ -2147,23 +2177,26 @@ function collisionFindings(
 			semantics: unrestrictedPartition(label.id!),
 		}));
 		labelLabelItems = countedFilter(labelNodeItems, "label-label-overlap", (item) =>
-			model.confirmedLabels.has(item.id),
+			new PreprocessingOperations(budget, "label-label-overlap", "prepare-events").mapHas(
+				model.confirmedLabels,
+				item.id,
+			),
 		);
-		budget.charge("label-node-overlap", "prepare-events");
-		for (const label of labelNodeRecords) {
-			budget.charge("label-node-overlap", "prepare-events", 2 + label.id!.length);
-			const ownership = model.labelOwnership.get(label.id!);
-			const candidateNodes: string[] = [];
-			for (const owner of ownership?.candidateOwnerIds ?? []) {
-				budget.charge("label-node-overlap", "prepare-events", 2 + owner.length);
-				const candidate = model.nodeOfElement.get(owner);
+		for (let labelIndex = 0; labelIndex < labelNodeRecords.length; labelIndex += 1) {
+			const label = labelNodeOperations.read(labelNodeRecords, labelIndex)!;
+			budget.charge("label-node-overlap", "prepare-events", label.id!.length);
+			const ownership = labelNodeOperations.mapGet(model.labelOwnership, label.id!);
+			const candidateNodes = labelNodeOperations.array<string>();
+			const ownerIds = ownership?.candidateOwnerIds ?? [];
+			for (let ownerIndex = 0; ownerIndex < ownerIds.length; ownerIndex += 1) {
+				const owner = labelNodeOperations.read(ownerIds, ownerIndex)!;
+				budget.charge("label-node-overlap", "prepare-events", owner.length);
+				const candidate = labelNodeOperations.mapGet(model.nodeOfElement, owner);
 				if (candidate !== undefined) {
-					budget.charge("label-node-overlap", "prepare-events");
-					candidateNodes.push(candidate);
+					labelNodeOperations.push(candidateNodes, candidate);
 				}
 			}
-			budget.charge("label-node-overlap", "prepare-events");
-			labelNodePartitions.set(label.id!, {
+			labelNodeOperations.mapSet(labelNodePartitions, label.id!, {
 				partition: `label:${label.id!}`,
 				excludedPartitions: NO_EXCLUSIONS,
 				ancestorTargets: candidateNodes,
@@ -2209,18 +2242,26 @@ function collisionFindings(
 		);
 	}
 	if (!counter.limited) {
-		const partitions = new Map<string, SweepPartition>();
-		for (const label of labelLabelItems) {
-			const owner = model.confirmedLabels.get(label.id!)!;
-			if (!partitions.has(owner))
-				partitions.set(owner, { partition: owner, excludedPartitions: new Set([owner]) });
+		const operations = new PreprocessingOperations(budget, "label-label-overlap", "prepare-events");
+		const partitions = operations.map<string, SweepPartition>();
+		for (let labelIndex = 0; labelIndex < labelLabelItems.length; labelIndex += 1) {
+			const label = operations.read(labelLabelItems, labelIndex)!;
+			const owner = operations.mapGet(model.confirmedLabels, label.id!)!;
+			if (!operations.mapHas(partitions, owner)) {
+				const excluded = operations.set<string>();
+				operations.setAdd(excluded, owner);
+				operations.mapSet(partitions, owner, {
+					partition: owner,
+					excludedPartitions: excluded,
+				});
+			}
 		}
 		pairSweep(
 			partitioned(
 				labelLabelItems,
 				(label) => {
-					const owner = model.confirmedLabels.get(label.id!)!;
-					return partitions.get(owner)!;
+					const owner = operations.mapGet(model.confirmedLabels, label.id!)!;
+					return operations.mapGet(partitions, owner)!;
 				},
 				budget,
 				"label-label-overlap",
@@ -2228,8 +2269,8 @@ function collisionFindings(
 			partitioned(
 				labelLabelItems,
 				(label) => {
-					const owner = model.confirmedLabels.get(label.id!)!;
-					return partitions.get(owner)!;
+					const owner = operations.mapGet(model.confirmedLabels, label.id!)!;
+					return operations.mapGet(partitions, owner)!;
 				},
 				budget,
 				"label-label-overlap",

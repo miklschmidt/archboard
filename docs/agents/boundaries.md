@@ -52,6 +52,16 @@ emitted during canonical encoding, compared, copied, or merged. Diagnostics expo
 peaks; product reports expose only the fixed limit and a closed limit finding
 when the next logical unit is refused.
 
+`lib/preprocessing-budget.ts` owns the primitive charging boundary for budgeted
+arrays, maps, sets, identity reads, and stable comparisons. Charges occur
+immediately before the primitive. The exact compatibility index stores one
+immutable summary cell per tree node so one charged cell read cannot hide work
+across parallel arrays. `test:inspection` source-audits the named budget owners
+and index methods; raw collection construction, traversal, mutation,
+combinators, spreads, and indexed reads are rejected there. A deliberately
+unmetered read requires a local `preprocessing-unmetered` reason and must be
+diagnostic-only.
+
 Root `src/` files are thin process entrypoints only. The existing entrypoints are `src/bin.ts`,
 `src/server.ts`, and `src/dev-canvas.ts`. Do not add implementation to these files.
 

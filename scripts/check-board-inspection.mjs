@@ -22,6 +22,7 @@ const {
 	inspectBoardDiagnostics,
 	diagnoseMutableProfileSnapshots,
 	diagnoseObstacleIdentityEncoding,
+	diagnosePreprocessingPrimitives,
 	diagnoseStablePreprocessingSort,
 	diagnoseSweepCompatibility,
 } = await import(src("runtime/board-inspection/diagnostics.ts"));
@@ -38,6 +39,152 @@ const check = (label, condition, detail = "") => {
 		console.error(`FAIL - ${label}${detail ? ` (${detail})` : ""}`);
 	}
 };
+
+const preprocessingSourceViolations = (sourceText) => {
+	const audited = sourceText.replaceAll(
+		/\b(?:[A-Za-z]+Operations|operations|prepare|hierarchy|hierarchyWork|query|lifecycle|order)\.(?:array|arrayFilled|arrayWithLength|copy|read|write|push|pop|spliceOne|map|mapHas|mapGet|mapSet|mapDelete|mapEntries|forEachMap|set|setHas|setAdd|setDelete|setValues|forEachSet|identityCodeUnit|stableComparison)\b/gu,
+		"chargedOperation",
+	);
+	const forbidden = [
+		[/\bnew\s+Map\s*[<(]/u, "raw Map construction"],
+		[/\bnew\s+Set\s*[<(]/u, "raw Set construction"],
+		[/\bnew\s+Array\s*[<(]|\bArray\.from\s*\(/u, "raw array construction"],
+		[/\.(?:filter|map|flatMap)\s*\(/u, "raw collection combinator"],
+		[/\.(?:sort|toSorted)\s*\(/u, "raw ordering"],
+		[/\.(?:push|splice)\s*\(/u, "raw list mutation"],
+		[/\.(?:has|get|set|add|delete)\s*\(/u, "raw Map/Set operation"],
+		[/\.(?:entries|keys|values)\s*\(/u, "raw Map/Set iteration"],
+		[/\[\s*\.\.\./u, "raw spread materialization"],
+		[
+			/\b[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)?\[(?:[A-Za-z_$]|\d)/u,
+			"raw indexed collection access",
+		],
+	];
+	return forbidden.flatMap(([pattern, label]) => (pattern.test(audited) ? [label] : []));
+};
+const functionSource = (sourceText, name) => {
+	const declaration = new RegExp(`(?:function\\s+${name}\\b|const\\s+${name}\\s*=)`, "u").exec(
+		sourceText,
+	);
+	if (!declaration) throw new Error(`Missing preprocessing audit owner ${name}`);
+	const start = sourceText.indexOf("{", declaration.index);
+	let depth = 0;
+	for (let index = start; index < sourceText.length; index += 1) {
+		if (sourceText[index] === "{") depth += 1;
+		else if (sourceText[index] === "}") {
+			depth -= 1;
+			if (depth === 0) return sourceText.slice(declaration.index, index + 1);
+		}
+	}
+	throw new Error(`Unclosed preprocessing audit owner ${name}`);
+};
+const bracedSource = (sourceText, declarationIndex, label) => {
+	const start = sourceText.indexOf("{", declarationIndex);
+	let depth = 0;
+	for (let index = start; index < sourceText.length; index += 1) {
+		if (sourceText[index] === "{") depth += 1;
+		else if (sourceText[index] === "}") {
+			depth -= 1;
+			if (depth === 0) return sourceText.slice(declarationIndex, index + 1);
+		}
+	}
+	throw new Error(`Unclosed preprocessing audit owner ${label}`);
+};
+const classSource = (sourceText, name) => {
+	const declaration = new RegExp(`class\\s+${name}\\b`, "u").exec(sourceText);
+	if (!declaration) throw new Error(`Missing preprocessing audit class ${name}`);
+	return bracedSource(sourceText, declaration.index, name);
+};
+const methodSource = (sourceText, name) => {
+	const declaration = new RegExp(`(?:private\\s+)?${name}\\s*\\(`, "u").exec(sourceText);
+	if (!declaration) throw new Error(`Missing preprocessing audit method ${name}`);
+	return bracedSource(sourceText, declaration.index, name);
+};
+for (const [fixtureLabel, fixtureText] of [
+	["Map construction", "new Map()"],
+	["Set construction", "new Set()"],
+	["array construction", "Array.from(values)"],
+	["filter", "values.filter(Boolean)"],
+	["map", "values.map(String)"],
+	["flatMap", "values.flatMap(String)"],
+	["ordering", "values.toSorted()"],
+	["push", "values.push(value)"],
+	["splice", "values.splice(0, 1)"],
+	["Map/Set lookup", "values.get(key)"],
+	["Map/Set iteration", "values.entries()"],
+	["spread", "[...values]"],
+	["indexed read", "values[index]"],
+])
+	check(
+		`preprocessing source audit rejects ${fixtureLabel}`,
+		preprocessingSourceViolations(fixtureText).length === 1,
+	);
+const budgetedSourceOwners = {
+	"src/runtime/board-inspection/lib/model.ts": [
+		"collected",
+		"filteredValues",
+		"budgetedGroupIds",
+		"buildLabelClassifications",
+		"buildNodes",
+		"assignNodeHierarchy",
+		"buildConnectorEndpoints",
+		"findContainerOnlyIds",
+		"buildObstacles",
+		"buildInspectionModel",
+	],
+	"src/runtime/board-inspection/lib/interval-sweep.ts": [
+		"stableSorted",
+		"buildSweepHierarchy",
+		"identityIntersection",
+		"includesIdentity",
+		"mergedRanges",
+		"heapPush",
+		"heapPop",
+		"indexRefDelta",
+		"activateList",
+		"retireEmptyList",
+		"remove",
+		"bucketFor",
+		"canonicalProfile",
+		"hierarchyEventExcludesAll",
+		"hierarchyCandidates",
+		"sweepIntervalPairs",
+	],
+	"src/runtime/board-inspection/lib/detectors.ts": ["partitioned", "pairSweep"],
+};
+for (const [relativePath, owners] of Object.entries(budgetedSourceOwners)) {
+	const sourceText = fs.readFileSync(path.join(root, relativePath), "utf8");
+	for (const owner of owners) {
+		const violations = preprocessingSourceViolations(functionSource(sourceText, owner));
+		check(
+			`preprocessing owner ${owner} uses only charged collection operations`,
+			violations.length === 0,
+			violations.join(", "),
+		);
+	}
+}
+const intervalSweepSource = fs.readFileSync(
+	path.join(root, "src/runtime/board-inspection/lib/interval-sweep.ts"),
+	"utf8",
+);
+for (const { className, methods } of [
+	{
+		className: "ExactCompatibilityIndex",
+		methods: ["constructor", "reducedCoverage", "intersectCoverage", "updateRank", "query"],
+	},
+	{ className: "RangeCount", methods: ["constructor", "adjust", "range", "positive"] },
+	{ className: "RangeMaximum", methods: ["constructor", "adjust", "max"] },
+]) {
+	const owner = classSource(intervalSweepSource, className);
+	for (const method of methods) {
+		const violations = preprocessingSourceViolations(methodSource(owner, method));
+		check(
+			`preprocessing owner ${className}.${method} uses only charged collection operations`,
+			violations.length === 0,
+			violations.join(", "),
+		);
+	}
+}
 
 const frozen = Object.freeze([]);
 const clean = inspectBoard(frozen);
@@ -64,19 +211,45 @@ check(
 for (const [label, input, ordered, preprocessingSteps] of [
 	["empty", [], [], 1],
 	["singleton", ["a"], ["a"], 3],
-	["even tail", ["b", "a"], ["a", "b"], 15],
-	["odd uneven tails", ["c", "a", "b"], ["a", "b", "c"], 32],
-	["even merge levels", ["d", "b", "a", "c"], ["a", "b", "c", "d"], 45],
-	["control prefixes", ["a\\,", "a,", "a\\", "a\0"], ["a\0", "a,", "a\\", "a\\,"], 55],
+	["even tail", ["b", "a"], ["a", "b"], 16],
+	["odd uneven tails", ["c", "a", "b"], ["a", "b", "c"], 35],
+	["even merge levels", ["d", "b", "a", "c"], ["a", "b", "c", "d"], 50],
+	["control prefixes", ["a\\,", "a,", "a\\", "a\0"], ["a\0", "a,", "a\\", "a\\,"], 60],
 ]) {
 	const diagnosed = diagnoseStablePreprocessingSort(input);
 	check(
 		`counted stable ordering owns ${String(label)} storage and comparison work`,
 		JSON.stringify(diagnosed.ordered) === JSON.stringify(ordered) &&
-			diagnosed.preprocessingSteps === preprocessingSteps,
+			diagnosed.preprocessingSteps === preprocessingSteps &&
+			diagnosed.preprocessingSteps ===
+				diagnosed.storageAndStableComparisonSteps + diagnosed.identityCodeUnitSteps,
 		JSON.stringify(diagnosed),
 	);
 }
+const primitiveArithmetic = diagnosePreprocessingPrimitives();
+check(
+	"preprocessing primitive owners charge every small collection operation exactly",
+	JSON.stringify(primitiveArithmetic) ===
+		JSON.stringify({
+			arrayAllocation: 1,
+			arrayRead: 1,
+			arrayWrite: 1,
+			arrayPush: 1,
+			arraySplice: 6,
+			arrayCopy: 5,
+			mapConstruct: 1,
+			mapMisses: 2,
+			mapMutation: 2,
+			mapEntries: 7,
+			mapIteration: 4,
+			setConstruct: 1,
+			setMiss: 1,
+			setMutation: 2,
+			setValues: 7,
+			setIteration: 4,
+		}),
+	JSON.stringify(primitiveArithmetic),
+);
 for (const [label, input, id, preprocessingSteps] of [
 	["empty", [], "obstacle:", 9],
 	["single", ["a"], "obstacle:a", 12],
@@ -3986,12 +4159,12 @@ const assertLateCollisionLimit = (label, count, phase) => {
 };
 const lateCollisionActivation = assertLateCollisionLimit(
 	"late activate-or-expire ceiling",
-	30_000,
+	36_000,
 	"activate-or-expire",
 );
 const lateCollisionPrepare = assertLateCollisionLimit(
 	"late prepare-events ceiling",
-	35_000,
+	44_000,
 	"prepare-events",
 );
 
@@ -4105,8 +4278,11 @@ const sparseSweepResults = [1_000, 2_000, 4_000, 8_000].map((count) => ({
 }));
 check(
 	"sparse distinct partitions remove expired buckets and keep every indexed operation bounded",
-	sparseSweepResults.every(
-		({ count, diagnostics }) =>
+	sparseSweepResults.every(({ count, diagnostics }) => {
+		const preprocessingStopped = diagnostics.report.findings.some(
+			(finding) => finding.reason === "broad-phase-preprocessing-ceiling",
+		);
+		return (
 			diagnostics.work.broadPhaseCompatibleVisits === 0 &&
 			diagnostics.work.broadPhaseBucketScans === 0 &&
 			diagnostics.work.broadPhaseBucketLookups === count * 34 - 11 &&
@@ -4131,8 +4307,10 @@ check(
 			diagnostics.work.hierarchyExpiryPops <= count * 2 &&
 			diagnostics.work.containerBoundaryCandidateVisits === 0 &&
 			diagnostics.work.containerBoundaryBucketScans === 0 &&
-			diagnostics.work.containerBoundaryPeakRetainedBuckets <= 1,
-	),
+			diagnostics.work.containerBoundaryPeakRetainedBuckets <= 1 &&
+			!preprocessingStopped
+		);
+	}),
 	JSON.stringify(sparseSweepResults.map(({ count, diagnostics }) => [count, diagnostics.work])),
 );
 
@@ -5279,11 +5457,11 @@ check(
 	"retained-state peaks sample query and post-insert phases without combining them",
 	retainedPeakComplete.work.peakRetainedBuckets === 4 &&
 		retainedPeakComplete.work.peakRetainedQueryRefs === 0 &&
-		retainedPeakComplete.work.peakRetainedTotalStateRefs === 163 &&
+		retainedPeakComplete.work.peakRetainedTotalStateRefs === 115 &&
 		retainedPeakEarly.pairs.length === 1 &&
 		retainedPeakEarly.work.peakRetainedBuckets === 3 &&
 		retainedPeakEarly.work.peakRetainedQueryRefs === 0 &&
-		retainedPeakEarly.work.peakRetainedTotalStateRefs === 148,
+		retainedPeakEarly.work.peakRetainedTotalStateRefs === 100,
 	JSON.stringify({ complete: retainedPeakComplete.work, early: retainedPeakEarly.work }),
 );
 const exactReinsertion = diagnoseSweepCompatibility({
@@ -5447,9 +5625,66 @@ const largeUngrouped = Array.from({ length: 2_000 }, (_, index) => {
 const largeUngroupedReport = inspectBoard(largeUngrouped);
 check(
 	"large ungrouped obstacle preprocessing reads group membership linearly",
-	largeUngroupedReport.clean && ungroupedGroupReads === largeUngrouped.length * 2,
+	largeUngroupedReport.clean && ungroupedGroupReads === largeUngrouped.length,
 	`${ungroupedGroupReads} reads for ${largeUngrouped.length} records`,
 );
+
+const groupMeteringBody = (groupIds, id = "group-metering") => ({
+	id,
+	type: "rectangle",
+	x: 0,
+	y: 60_000,
+	width: 10,
+	height: 10,
+	angle: 0,
+	groupIds,
+	customData: { library: { itemId: "group-metering", source: "catalogue" } },
+});
+const emptyGroupWork = inspectBoardDiagnostics([groupMeteringBody([])]).work.preprocessingSteps;
+for (const count of [1, 7, 1_000_000]) {
+	const diagnosed = inspectBoardDiagnostics([groupMeteringBody(Array(count).fill(null))]);
+	check(
+		`every one of ${count} rejected group entries is metered before inspection continues`,
+		diagnosed.report.clean &&
+			diagnosed.report.coverage === "complete" &&
+			diagnosed.work.preprocessingSteps - emptyGroupWork === count,
+		`${diagnosed.work.preprocessingSteps} against ${emptyGroupWork}`,
+	);
+}
+{
+	const exactBoundaryId = "x".repeat(4_999_891);
+	const diagnosed = inspectBoardDiagnostics([groupMeteringBody([], exactBoundaryId)]);
+	const limit = diagnosed.report.findings.find(
+		(finding) => finding.reason === "broad-phase-preprocessing-ceiling",
+	);
+	check(
+		"collection work after exact-boundary obstacle identity cannot escape the ceiling",
+		diagnosed.report.coverage === "indeterminate" &&
+			diagnosed.work.preprocessingSteps === 25_000_000 &&
+			limit?.details.attempted === 25_000_001 &&
+			limit?.details.pass === "connector-intersection" &&
+			limit?.details.phase === "prepare-events",
+		JSON.stringify(limit?.details),
+	);
+}
+{
+	const rejectedGroups = Array(1_000_000).fill(null);
+	const diagnosed = inspectBoardDiagnostics([
+		groupMeteringBody(rejectedGroups, "x".repeat(4_800_000)),
+	]);
+	const limit = diagnosed.report.findings.find(
+		(finding) => finding.reason === "broad-phase-preprocessing-ceiling",
+	);
+	check(
+		"rejected group entry reads stop at the first refused preprocessing unit",
+		diagnosed.report.coverage === "indeterminate" &&
+			diagnosed.work.preprocessingSteps === 25_000_000 &&
+			limit?.details.attempted === 25_000_001 &&
+			limit?.details.pass === "container-boundary" &&
+			limit?.details.phase === "prepare-events",
+		JSON.stringify(limit?.details),
+	);
+}
 
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-inspection-"));
 const noteFor = (board, elements) =>
@@ -5461,6 +5696,9 @@ const noteFor = (board, elements) =>
 			{ board, variant: "current" },
 		),
 	);
+noteFor("rejected-group-limit", [
+	groupMeteringBody(Array(1_000_000).fill(null), "x".repeat(4_800_000)),
+]);
 const noteForEscapedControls = (board, elements) => {
 	const controls = new Set();
 	JSON.stringify(elements, (_key, value) => {
@@ -6039,9 +6277,31 @@ check(
 	CheckResultSchema.safeParse(cleanPackageResult).success &&
 		!("preprocessingWork" in cleanPackageResult),
 );
+const rejectedGroupNormal = run("rejected-group-limit");
+const rejectedGroupStrict = run("rejected-group-limit", ["--strict"]);
+const rejectedGroupPackage = rejectedGroupNormal.stdout
+	? JSON.parse(rejectedGroupNormal.stdout)
+	: null;
+const rejectedGroupLimit = rejectedGroupPackage?.findings.find(
+	(finding) => finding.reason === "broad-phase-preprocessing-ceiling",
+);
+check(
+	"parseable-note package inspection meters rejected group entries to the exact ceiling",
+	rejectedGroupNormal.status === 0 &&
+		rejectedGroupStrict.status === 8 &&
+		rejectedGroupNormal.stderr === "" &&
+		rejectedGroupStrict.stderr === "" &&
+		rejectedGroupNormal.stdout === rejectedGroupStrict.stdout &&
+		CheckResultSchema.safeParse(rejectedGroupPackage).success &&
+		rejectedGroupPackage.coverage === "indeterminate" &&
+		rejectedGroupLimit?.details.attempted === 25_000_001 &&
+		rejectedGroupLimit?.details.pass === "container-boundary" &&
+		rejectedGroupLimit?.details.phase === "prepare-events",
+	JSON.stringify(rejectedGroupLimit?.details),
+);
 for (const [board, expectedPhase, expectedElements] of [
-	["late-collision-activation", "activate-or-expire", 30_001],
-	["late-collision-prepare", "prepare-events", 35_001],
+	["late-collision-activation", "activate-or-expire", 36_001],
+	["late-collision-prepare", "prepare-events", 44_001],
 ]) {
 	const normal = run(board);
 	const strict = run(board, ["--strict"]);
