@@ -29,6 +29,7 @@ import { spawn } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
+import { WebSocket } from "ws";
 import { withDoing } from "./lib/doing.mjs";
 
 const moduleDir = dirname(fileURLToPath(import.meta.url));
@@ -71,9 +72,9 @@ const server = spawn(process.execPath, [src("server.ts")], {
 // ─── The counter ─────────────────────────────────────────────
 //
 // Everything the client sends passes through here on its way to the canvas. A
-// write is a POST, PUT or DELETE against an element route; reads are forwarded
-// and ignored, because this is about how many times an intent touches the
-// board, not how many times it looks at it.
+// write is a POST, PUT or DELETE against an element, file or bridge route;
+// reads are forwarded and ignored, because this is about how many times an
+// intent touches the board, not how many times it looks at it.
 
 let writes = [];
 const proxy = http.createServer((req, res) => {
@@ -82,7 +83,12 @@ const proxy = http.createServer((req, res) => {
 	req.on("end", async () => {
 		const body = Buffer.concat(chunks);
 		const isWrite = req.method !== "GET" && req.method !== "HEAD";
-		if (isWrite && (req.url.startsWith("/api/elements") || req.url.startsWith("/api/bridges"))) {
+		if (
+			isWrite &&
+			(req.url.startsWith("/api/elements") ||
+				req.url.startsWith("/api/files") ||
+				req.url.startsWith("/api/bridges"))
+		) {
 			writes.push(`${req.method} ${req.url.split("?")[0]}`);
 		}
 		try {
@@ -115,6 +121,7 @@ const { setRequestedBoard, setWriteDoing } = client;
 setWriteDoing("checking that one intent is one write");
 const ops = await import(src("runtime/engine/element-ops.ts"));
 const { boundTextPlacement } = await import(src("runtime/engine/labels.ts"));
+const { wrapSceneAsObsidianMd } = await import(src("runtime/engine/obsidian-md.ts"));
 
 const api = async (method, url, body) => {
 	// Every write says what it is doing, once for the whole check (TASK-095,
@@ -891,6 +898,315 @@ try {
 		cli(["bridge", "remove", bridgeId, "--board", "scratch"]),
 	);
 	assert(removedBridge.code === 0, `bridge remove failed: ${removedBridge.err}`);
+
+	// ─── Replacing an imported scene ──────────────────────────────
+	//
+	// Elements and embedded files are one board document. Replacing them through
+	// clear, batch and files used to expose an empty board and advance the note
+	// once per request. The package command below must cross the wire once.
+	const replacementBoard = "replace-one";
+	await api("POST", "/api/boards/new", { board: replacementBoard });
+	await api("POST", `/api/elements/batch?board=${replacementBoard}`, {
+		elements: [
+			{ id: "old-shape", type: "rectangle", x: 0, y: 0, width: 80, height: 50 },
+			{
+				id: "old-image",
+				type: "image",
+				x: 100,
+				y: 0,
+				width: 40,
+				height: 40,
+				fileId: "stale-file",
+			},
+		],
+	});
+	await api("POST", `/api/files?board=${replacementBoard}`, [
+		{
+			id: "stale-file",
+			dataURL: "data:image/png;base64,b2xk",
+			mimeType: "image/png",
+			created: 1,
+		},
+	]);
+	const replacementInfoBefore = await api("GET", `/api/boards/info?board=${replacementBoard}`);
+	const versionBeforeReplacement = replacementInfoBefore?.version;
+	const replacementNote = replacementInfoBefore?.file;
+	const replacementSocket = new WebSocket(`ws://127.0.0.1:${PORT}/?clientId=replace-import-pane`);
+	const replacementMessages = [];
+	let noteAtReplacementDelta = null;
+	let observeReplacement = false;
+	replacementSocket.on("message", (data) => {
+		const message = JSON.parse(data.toString());
+		replacementMessages.push(message);
+		if (
+			observeReplacement &&
+			message.type === "elements_changed" &&
+			message.board === replacementBoard
+		) {
+			noteAtReplacementDelta = fs.readFileSync(replacementNote, "utf8");
+		}
+	});
+	await new Promise((resolve, reject) => {
+		replacementSocket.once("open", resolve);
+		replacementSocket.once("error", reject);
+	});
+	await api("POST", "/api/panes", {
+		clientId: "replace-import-pane",
+		paneId: "replace-import-pane",
+		primary: true,
+		focused: true,
+		elementCount: 2,
+		board: replacementBoard,
+		rect: { x: 0, y: 0, width: 640, height: 800 },
+		viewport: { x: 0, y: 0, width: 640, height: 800, zoom: 1 },
+	});
+	await api("POST", "/api/boards/open", {
+		board: replacementBoard,
+		pane: "replace-import-pane",
+	});
+	await api("POST", "/api/selection", {
+		clientId: "replace-import-pane",
+		elementIds: ["old-shape"],
+	});
+	await sleep(80);
+	const replacementMessageStart = replacementMessages.length;
+	const importedScene = {
+		type: "excalidraw",
+		version: 2,
+		elements: [
+			{
+				id: "replacement-container-id-too-long",
+				type: "rectangle",
+				x: 200,
+				y: 300,
+				width: 180,
+				height: 90,
+				index: "same-index",
+				label: { text: "Imported service" },
+				customData: {
+					archboard: {
+						node: "replacement-node",
+						kind: "service",
+						binding: { repository: "archboard", path: "src/runtime/engine/scene-document.ts" },
+					},
+				},
+			},
+			{
+				id: "replacement-image-id-too-long",
+				type: "image",
+				x: 450,
+				y: 300,
+				width: 64,
+				height: 64,
+				index: "same-index",
+				fileId: "new-file",
+			},
+			{
+				id: "replacement-arrow-id-too-long",
+				type: "arrow",
+				x: 380,
+				y: 345,
+				width: 70,
+				height: 0,
+				points: [
+					[0, 0],
+					[70, 0],
+				],
+				start: { id: "replacement-container-id-too-long" },
+				end: { id: "replacement-image-id-too-long" },
+			},
+			{
+				type: "ellipse",
+				x: 560,
+				y: 300,
+				width: 50,
+				height: 50,
+				index: "same-index",
+			},
+		],
+		files: {
+			"new-file": {
+				id: "new-file",
+				dataURL: "data:image/png;base64,bmV3",
+				mimeType: "image/png",
+				created: 2,
+			},
+		},
+	};
+	const obsidianImport = join(vault, "replace-fixture.excalidraw.md");
+	fs.writeFileSync(obsidianImport, wrapSceneAsObsidianMd(importedScene));
+	observeReplacement = true;
+	const replacement = await counting("an image-bearing replace import", () =>
+		cli(["import", obsidianImport, "--replace", "--board", replacementBoard]),
+	);
+	observeReplacement = false;
+	await sleep(80);
+	assert(replacement.code === 0, `replace import exited ${replacement.code}: ${replacement.err}`);
+	const replacementReceipt = JSON.parse(replacement.out);
+	assert(
+		isDeepStrictEqual(replacementReceipt, {
+			success: true,
+			imported: 4,
+			files: 1,
+			mode: "replace",
+		}),
+		`replace import changed its receipt: ${replacement.out.trim()}`,
+	);
+	assert(
+		writes.length === 1 && writes[0] === "POST /api/elements/batch",
+		`replace import should use one marked batch request, not ${writes.join(", ")}`,
+	);
+	const replacedElements =
+		(await api("GET", `/api/elements?board=${replacementBoard}`))?.elements ?? [];
+	const replacedById = new Map(replacedElements.map((element) => [element.id, element]));
+	const importedContainer = replacedElements.find(
+		(element) => nodeIdOf(element) === "replacement-node",
+	);
+	const importedLabel = replacedElements.find(
+		(element) => element.type === "text" && element.containerId === importedContainer?.id,
+	);
+	const importedArrow = replacedElements.find((element) => element.type === "arrow");
+	const mintedEllipse = replacedElements.find((element) => element.type === "ellipse");
+	assert(
+		!replacedById.has("old-shape") && !replacedById.has("old-image"),
+		"replace import retained elements from the old scene",
+	);
+	assert(
+		importedContainer?.id === "replacement-container-id-too-long" &&
+			importedContainer?.customData?.archboard?.binding?.path ===
+				"src/runtime/engine/scene-document.ts" &&
+			importedLabel?.text === "Imported service" &&
+			importedArrow?.startBinding?.elementId === importedContainer.id &&
+			mintedEllipse?.id?.length > 0 &&
+			mintedEllipse.id.length <= 8,
+		`replace import bypassed canonical id, label or binding conversion: ${JSON.stringify(replacedElements)}`,
+	);
+	assert(
+		new Set(replacedElements.map((element) => element.index)).size === replacedElements.length,
+		"replace import did not repair duplicate or missing indices",
+	);
+	const replacedFiles = (await api("GET", `/api/files?board=${replacementBoard}`))?.files ?? {};
+	assert(
+		isDeepStrictEqual(Object.keys(replacedFiles), ["new-file"]) &&
+			replacedFiles["new-file"]?.dataURL === "data:image/png;base64,bmV3",
+		`replace import retained stale files or lost the imported file: ${JSON.stringify(replacedFiles)}`,
+	);
+	const versionAfterReplacement = (await api("GET", `/api/boards/info?board=${replacementBoard}`))
+		?.version;
+	assert(
+		versionAfterReplacement === versionBeforeReplacement + 1,
+		`replace import should advance one persisted version, ${versionBeforeReplacement} -> ${versionAfterReplacement}`,
+	);
+	const replacementDeltas = replacementMessages
+		.slice(replacementMessageStart)
+		.filter((message) => message.type === "elements_changed" && message.board === replacementBoard);
+	assert(
+		replacementDeltas.length === 1 &&
+			replacementDeltas[0].deleted.includes("old-shape") &&
+			replacementDeltas[0].deleted.includes("old-image") &&
+			replacementDeltas[0].created.length > 0,
+		`replace import should broadcast one old-to-new delta: ${JSON.stringify(replacementDeltas)}`,
+	);
+	assert(
+		typeof noteAtReplacementDelta === "string" &&
+			noteAtReplacementDelta.includes("data:image/png;base64,bmV3") &&
+			!noteAtReplacementDelta.includes("old-shape"),
+		"the replacement delta became observable before the new note was persisted",
+	);
+	assert(
+		replacementMessages
+			.slice(replacementMessageStart)
+			.filter((message) => message.type === "files_added" && message.board === replacementBoard)
+			.length === 1,
+		"the imported files were not delivered from the replacement mutation",
+	);
+	const panesAfterReplacement = await api("GET", "/api/panes");
+	assert(
+		panesAfterReplacement?.panes?.find((pane) => pane.paneId === "replace-import-pane")?.selection
+			?.count === 0,
+		`replace import did not reuse whole-board selection cleanup: ${JSON.stringify(panesAfterReplacement)}`,
+	);
+	replacementSocket.close();
+
+	const mergeFixture = join(vault, "merge-fixture.excalidraw");
+	fs.writeFileSync(
+		mergeFixture,
+		JSON.stringify({
+			type: "excalidraw",
+			version: 2,
+			elements: [{ id: "merge-addition", type: "ellipse", x: 700, y: 300, width: 60, height: 60 }],
+		}),
+	);
+	const merged = await counting("a merge import", () =>
+		cli(["import", mergeFixture, "--board", replacementBoard]),
+	);
+	assert(merged.code === 0, `merge import exited ${merged.code}: ${merged.err}`);
+	const afterMerge = (await api("GET", `/api/elements?board=${replacementBoard}`))?.elements ?? [];
+	assert(
+		afterMerge.some((element) => nodeIdOf(element) === "replacement-node") &&
+			afterMerge.some((element) => element.id === "merge-addition"),
+		"merge import replaced the prior scene instead of appending",
+	);
+
+	const heldBoard = "replace-held";
+	await api("POST", "/api/boards/new", { board: heldBoard });
+	await api("POST", `/api/elements/batch?board=${heldBoard}`, {
+		elements: [{ id: "held-old", type: "rectangle", x: 0, y: 0, width: 50, height: 50 }],
+	});
+	const heldInfoBefore = await api("GET", `/api/boards/info?board=${heldBoard}`);
+	const heldVersionBefore = heldInfoBefore?.version;
+	const heldNote = heldInfoBefore?.file;
+	fs.appendFileSync(heldNote, "\nexternal edit\n");
+	const refusedHeldWrite = await api("POST", `/api/elements/batch?board=${heldBoard}`, {
+		elements: [{ id: "refused", type: "rectangle", x: 10, y: 10, width: 20, height: 20 }],
+	});
+	assert(
+		refusedHeldWrite?.success === false && refusedHeldWrite?.held?.board === heldBoard,
+		`the held replacement fixture did not stop saving: ${JSON.stringify(refusedHeldWrite)}`,
+	);
+	const heldBytesBefore = fs.readFileSync(heldNote);
+	const heldMtimeBefore = fs.statSync(heldNote).mtimeMs;
+	const heldFixture = join(vault, "held-replace.excalidraw");
+	fs.writeFileSync(
+		heldFixture,
+		JSON.stringify({
+			type: "excalidraw",
+			version: 2,
+			elements: [{ id: "held-new", type: "diamond", x: 90, y: 90, width: 70, height: 70 }],
+			files: {},
+		}),
+	);
+	const heldReplacement = await counting("a held replace import", () =>
+		cli(["import", heldFixture, "--replace", "--board", heldBoard]),
+	);
+	assert(
+		heldReplacement.code === 0 && JSON.parse(heldReplacement.out).held?.board === heldBoard,
+		`held replace import lost its receipt: ${heldReplacement.code} ${heldReplacement.out} ${heldReplacement.err}`,
+	);
+	assert(
+		/stopped saving/.test(heldReplacement.err),
+		`held replace import lost its diagnostic: ${heldReplacement.err}`,
+	);
+	assert(
+		writes.length === 1 && writes[0] === "POST /api/elements/batch",
+		`held replace import should still be one content update: ${writes.join(", ")}`,
+	);
+	assert(
+		fs.readFileSync(heldNote).equals(heldBytesBefore) &&
+			fs.statSync(heldNote).mtimeMs === heldMtimeBefore,
+		"held replace import wrote the note instead of updating only held content",
+	);
+	const heldAfter = await api("GET", `/api/elements?board=${heldBoard}`);
+	assert(
+		heldAfter?.elements?.some((element) => element.id === "held-new") &&
+			!heldAfter?.elements?.some((element) => element.id === "held-old") &&
+			heldAfter?.held?.writes === 1,
+		`held replace import did not atomically replace the held copy: ${JSON.stringify(heldAfter)}`,
+	);
+	assert(
+		(await api("GET", `/api/boards/info?board=${heldBoard}`))?.version === heldVersionBefore,
+		"held replace import advanced the persisted version",
+	);
 
 	// ─── One route-level door ────────────────────────────────────
 

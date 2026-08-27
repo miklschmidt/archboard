@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-26 07:06'
-updated_date: '2026-08-27 16:17'
+updated_date: '2026-08-27 16:33'
 labels:
   - enhancement
 dependencies: []
@@ -48,6 +48,12 @@ Make import --replace submit the staged scene—elements and embedded files—as
 
 7. Run focused one-write, CLI, contract, Obsidian, type, doing, lock, version, and board gates, then normal stable fix/check/separate-test validation and independent fixed-range review.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation checkpoint (2026-08-27): replace import now stages the scene and sends one marked POST /api/elements/batch through replaceSceneOnCanvas. The existing elementMutation owner clears request-local elements/files, applies input once, ingests usable embedded files, and produces one persisted or held net result; merge and ordinary batch creation remain append-only. The batch route reuses whole-board selection cleanup. Focused evidence is green: type-check, lint, one-write 105 checks, CLI 635 checks, contracts 61 paths/1011 plus workflows 93, and Obsidian 197. The image-bearing Obsidian replacement proves one request, one version advance, stale element/file removal, canonical label/binding/id/index handling, post-persistence net delta, and unchanged receipt. The held replacement proves one held update, zero note byte/mtime changes, an unadvanced persisted version, and the existing held receipt/diagnostic. TASK-126 remains In Progress with every AC unchecked.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
