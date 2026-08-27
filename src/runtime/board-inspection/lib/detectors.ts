@@ -1,6 +1,7 @@
 import { boundTextDrift, labelAnchorOf, planLabelRepair } from "../../engine/labels.js";
 import { measureLinear } from "../../engine/geometry.js";
 import type {
+	COLLISION_PASSES,
 	ElementRef,
 	InspectionFinding,
 	InspectionPolicy,
@@ -75,7 +76,9 @@ interface CollisionResult {
 	findings: InspectionFinding[];
 	broadPhaseComparisons: number;
 	sweepWork: SweepWork;
+	terminalLimit: "comparison" | null;
 }
+type CollisionPass = (typeof COLLISION_PASSES)[number];
 
 const emptySweepWork = (): SweepWork => ({
 	events: 0,
@@ -191,10 +194,10 @@ function make(input: FindingInput): InspectionFinding {
 		severity: input.severity,
 		affectsCoverage: input.affectsCoverage,
 		message: input.message,
-		elements: [...(input.elements ?? [])].toSorted(refOrder),
-		nodes: [...(input.nodes ?? [])].toSorted((a, b) => compareIdentity(a.id, b.id)),
-		obstacles: [...(input.obstacles ?? [])].toSorted((a, b) => compareIdentity(a.id, b.id)),
-		points: [...(input.points ?? [])].map(point).toSorted(pointOrder),
+		elements: [...(input.elements ?? [])],
+		nodes: [...(input.nodes ?? [])],
+		obstacles: [...(input.obstacles ?? [])],
+		points: [...(input.points ?? [])].map(point),
 		affectedBBox,
 		focusBBox: focusResult.kind === "representable" ? focusResult.box : null,
 		details: input.details,
@@ -230,7 +233,7 @@ type IntendedRole = Extract<
 	{ code: "BROKEN_REFERENCE"; reason: "invalid-element-identity" }
 >["details"]["intendedRoles"][number];
 
-function identityRoles(record: DecodedRecord): IntendedRole[] {
+function identityRoles(record: DecodedRecord, budget: InspectionBudget): IntendedRole[] {
 	const roles = new Set<IntendedRole>();
 	const type = record.type;
 	const metadata = archboardMetadata(record);
@@ -249,16 +252,21 @@ function identityRoles(record: DecodedRecord): IntendedRole[] {
 	if (record.raw?.boundElements !== undefined) roles.add("label-container");
 	if (["rectangle", "ellipse", "diamond", "frame"].includes(type ?? ""))
 		roles.add("closed-boundary");
+	budget.claimSort("record-analysis", "order-events", roles.size);
 	return [...roles].toSorted();
 }
 
-function identityFindings(records: readonly DecodedRecord[]): InspectionFinding[] {
+function identityFindings(
+	records: readonly DecodedRecord[],
+	budget: InspectionBudget,
+): InspectionFinding[] {
 	const findings: InspectionFinding[] = [];
 	const duplicate = new Map<string, DecodedRecord[]>();
+	budget.claimWork("record-analysis", "classify-records", records.length);
 	for (const record of records.filter((candidate) => candidate.live)) {
 		const rawId = record.raw?.id;
 		if (!record.id) {
-			const roles = identityRoles(record);
+			const roles = identityRoles(record, budget);
 			const missing = !record.raw || !("id" in record.raw) || rawId === undefined;
 			const issue: "missing-id" | "empty-string-id" | "non-string-id" = missing
 				? "missing-id"
@@ -295,7 +303,8 @@ function identityFindings(records: readonly DecodedRecord[]): InspectionFinding[
 		}
 	}
 	for (const [id, matches] of duplicate)
-		if (matches.length > 1)
+		if (matches.length > 1) {
+			budget.claimSort("finding-finalization", "finalize-findings", matches.length);
 			findings.push(
 				make({
 					code: "BROKEN_REFERENCE",
@@ -311,11 +320,16 @@ function identityFindings(records: readonly DecodedRecord[]): InspectionFinding[
 					affected: affectedOf(matches),
 				}),
 			);
+		}
 	return findings;
 }
 
-function renderFindings(records: readonly DecodedRecord[]): InspectionFinding[] {
+function renderFindings(
+	records: readonly DecodedRecord[],
+	budget: InspectionBudget,
+): InspectionFinding[] {
 	const findings: InspectionFinding[] = [];
+	budget.claimWork("record-analysis", "classify-records", records.length);
 	for (const record of records.filter((candidate) => candidate.live)) {
 		const raw = record.raw;
 		const fields = record.invalidRenderFields;
@@ -372,12 +386,18 @@ function coordinateSpanFinding(
 	scope: CoordinateSpanScope,
 	subjectId: string | null,
 	members: readonly DecodedRecord[],
+	budget?: InspectionBudget,
 ): InspectionFinding {
-	const sources = members.map((record) => record.sourceIndex).toSorted((a, b) => a - b);
+	budget?.claimWork("finding-finalization", "finalize-findings", members.length * 3);
+	const sourceInput = members.map((record) => record.sourceIndex);
+	budget?.claimSort("finding-finalization", "finalize-findings", sourceInput.length);
+	const sources = sourceInput.toSorted((a, b) => a - b);
 	const aggregate = aggregateBoxes(evidenceBoxesOf(members));
-	const originEvidence = members
-		.filter((record) => record.raw && finite(record.raw.x) && finite(record.raw.y))
-		.toSorted((a, b) => a.sourceIndex - b.sourceIndex)[0];
+	const originCandidates = members.filter(
+		(record) => record.raw && finite(record.raw.x) && finite(record.raw.y),
+	);
+	budget?.claimSort("finding-finalization", "finalize-findings", originCandidates.length);
+	const originEvidence = originCandidates.toSorted((a, b) => a.sourceIndex - b.sourceIndex)[0];
 	const affected =
 		aggregate.kind === "representable"
 			? aggregate.box
@@ -412,8 +432,14 @@ function coordinateSpanFindings(
 	records: readonly DecodedRecord[],
 	model: InspectionModel,
 	produced: readonly InspectionFinding[],
+	budget?: InspectionBudget,
 ): InspectionFinding[] {
 	const findings: InspectionFinding[] = [];
+	budget?.claimWork(
+		"finding-finalization",
+		"finalize-findings",
+		records.length + model.aggregateFailures.length + produced.length,
+	);
 	for (const record of records)
 		if (
 			record.live &&
@@ -421,9 +447,9 @@ function coordinateSpanFindings(
 			record.invalidRenderFields.length === 0 &&
 			!record.extentRepresentable
 		)
-			findings.push(coordinateSpanFinding("record-extent", record.id, [record]));
+			findings.push(coordinateSpanFinding("record-extent", record.id, [record], budget));
 	for (const failure of model.aggregateFailures)
-		findings.push(coordinateSpanFinding(failure.scope, failure.subjectId, failure.members));
+		findings.push(coordinateSpanFinding(failure.scope, failure.subjectId, failure.members, budget));
 	const bySource = new Map(records.map((record) => [record.sourceIndex, record]));
 	const seen = new Set<string>();
 	for (const finding of produced) {
@@ -432,18 +458,21 @@ function coordinateSpanFindings(
 			.filter((record): record is DecodedRecord => !!record && !!record.evidenceBox);
 		if (members.length < 2 || aggregateBoxes(evidenceBoxesOf(members)).kind !== "unrepresentable")
 			continue;
-		const key = members
-			.map((record) => record.sourceIndex)
-			.toSorted((a, b) => a - b)
-			.join(",");
+		const keyMembers = members.map((record) => record.sourceIndex);
+		budget?.claimSort("finding-finalization", "finalize-findings", keyMembers.length);
+		const key = keyMembers.toSorted((a, b) => a - b).join(",");
 		if (seen.has(key)) continue;
 		seen.add(key);
-		findings.push(coordinateSpanFinding("finding-affected-union", null, members));
+		findings.push(coordinateSpanFinding("finding-affected-union", null, members, budget));
 	}
 	return findings;
 }
 
-function focusPaddingFindings(produced: readonly InspectionFinding[]): InspectionFinding[] {
+function focusPaddingFindings(
+	produced: readonly InspectionFinding[],
+	budget?: InspectionBudget,
+): InspectionFinding[] {
+	budget?.claimWork("finding-finalization", "finalize-findings", produced.length);
 	return produced.flatMap((finding) => {
 		if (
 			finding.affectedBBox === null ||
@@ -678,6 +707,7 @@ function connectorGeometryFindings(
 			}),
 		);
 	if (!decoded.ok) return [...findings, unusablePathFinding(record, raw)];
+	budget.claimWork("connector-intersection", "classify-records", decoded.zeroSegments.length);
 	for (const segmentIndex of decoded.zeroSegments)
 		findings.push(
 			make({
@@ -695,6 +725,11 @@ function connectorGeometryFindings(
 	const unsupported = unsupportedRotation || unsupportedCurve || unsupportedRounded;
 	if (unsupported || !record.usableId || !record.id || !decoded.scenePoints) return findings;
 	const zeroSegments = new Set(decoded.zeroSegments);
+	budget.claimWork(
+		"connector-intersection",
+		"classify-records",
+		Math.max(0, decoded.scenePoints.length - 1),
+	);
 	for (let index = 0; index < decoded.scenePoints.length - 1; index += 1) {
 		work.pathSegmentChecks += 1;
 		if (zeroSegments.has(index)) continue;
@@ -706,6 +741,7 @@ function connectorGeometryFindings(
 			b: decoded.scenePoints[index + 1]!,
 		});
 	}
+	budget.claimWork("connector-intersection", "classify-records", decoded.relativePoints.length);
 	const measured = measureLinear(raw.points);
 	if (
 		!measured ||
@@ -806,6 +842,7 @@ function connectorBindingFindings(
 	raw: RawRecord,
 	byId: RecordMap,
 	duplicateIds: ReadonlySet<string>,
+	budget: InspectionBudget,
 ): InspectionFinding[] {
 	const findings: InspectionFinding[] = [];
 	for (const end of ["start", "end"] as const) {
@@ -886,29 +923,34 @@ function connectorBindingFindings(
 					affected: affectedOf([record, target]),
 				}),
 			);
-		else if (
-			!Array.isArray(target.raw?.boundElements) ||
-			!target.raw.boundElements.some(
-				(entry) =>
-					entry &&
-					typeof entry === "object" &&
-					!Array.isArray(entry) &&
-					(entry as Record<string, unknown>).id === record.id &&
-					(entry as Record<string, unknown>).type === "arrow",
+		else {
+			const targetBounds = target.raw?.boundElements;
+			if (Array.isArray(targetBounds))
+				budget.claimWork("record-analysis", "classify-records", targetBounds.length);
+			if (
+				!Array.isArray(targetBounds) ||
+				!targetBounds.some(
+					(entry) =>
+						entry &&
+						typeof entry === "object" &&
+						!Array.isArray(entry) &&
+						(entry as Record<string, unknown>).id === record.id &&
+						(entry as Record<string, unknown>).type === "arrow",
+				)
 			)
-		)
-			findings.push(
-				make({
-					code: "BROKEN_REFERENCE",
-					reason: "missing-binding-reciprocal",
-					severity: "error",
-					affectsCoverage: false,
-					details: { connectorId: record.id!, end, targetId: readableTargetId },
-					message: `Target ${readableTargetId} does not name connector ${record.id}.`,
-					elements: [record.ref, target.ref],
-					affected: affectedOf([record, target]),
-				}),
-			);
+				findings.push(
+					make({
+						code: "BROKEN_REFERENCE",
+						reason: "missing-binding-reciprocal",
+						severity: "error",
+						affectsCoverage: false,
+						details: { connectorId: record.id!, end, targetId: readableTargetId },
+						message: `Target ${readableTargetId} does not name connector ${record.id}.`,
+						elements: [record.ref, target.ref],
+						affected: affectedOf([record, target]),
+					}),
+				);
+		}
 	}
 	return findings;
 }
@@ -953,10 +995,12 @@ function boundElementFindings(
 	raw: RawRecord,
 	byId: RecordMap,
 	duplicateIds: ReadonlySet<string>,
+	budget: InspectionBudget,
 ): InspectionFinding[] {
 	const bounds = raw.boundElements;
 	if (bounds == null) return [];
 	const findings: InspectionFinding[] = [];
+	if (Array.isArray(bounds)) budget.claimWork("record-analysis", "classify-records", bounds.length);
 	const { readableEntries, problems } = classifyBoundElements(bounds);
 	for (const problem of problems)
 		findings.push(
@@ -980,6 +1024,7 @@ function boundElementFindings(
 			}),
 		);
 	if (!record.usableId || !record.id) return findings;
+	budget.claimWork("record-analysis", "classify-records", readableEntries.length);
 	for (const entry of readableEntries) {
 		if (duplicateIds.has(entry.id)) continue;
 		const target = byId.get(entry.id);
@@ -1319,11 +1364,15 @@ function unsupportedGeometryFindings(
 	return findings;
 }
 
-function incomingReferenceIds(records: readonly DecodedRecord[]): ReadonlySet<string> {
+function incomingReferenceIds(
+	records: readonly DecodedRecord[],
+	budget: InspectionBudget,
+): ReadonlySet<string> {
 	const ids = new Set<string>();
 	const add = (value: unknown) => {
 		if (typeof value === "string" && value.length > 0) ids.add(value);
 	};
+	budget.claimWork("record-analysis", "classify-records", records.length);
 	for (const record of records.filter((candidate) => candidate.live && candidate.raw)) {
 		const raw = record.raw!;
 		add(raw.containerId);
@@ -1333,6 +1382,7 @@ function incomingReferenceIds(records: readonly DecodedRecord[]): ReadonlySet<st
 				add((binding as RawRecord).elementId);
 		}
 		if (!Array.isArray(raw.boundElements)) continue;
+		budget.claimWork("record-analysis", "classify-records", raw.boundElements.length);
 		for (const entry of raw.boundElements)
 			if (entry && typeof entry === "object" && !Array.isArray(entry)) add((entry as RawRecord).id);
 	}
@@ -1354,33 +1404,32 @@ function structuralFindings(
 	const segments: Segment[] = [];
 	const work = { pathSegmentChecks: 0 };
 	const byId = model.byId;
-	const incomingReferences = incomingReferenceIds(records);
+	budget.claimWork("record-analysis", "classify-records", records.length);
+	const incomingReferences = incomingReferenceIds(records, budget);
 	for (const record of records.filter((candidate) => candidate.live && candidate.raw)) {
-		const raw = record.raw!;
-		if (record.type === "arrow" || record.type === "line") {
-			try {
+		try {
+			const raw = record.raw!;
+			if (record.type === "arrow" || record.type === "line") {
 				findings.push(...connectorGeometryFindings(record, raw, policy, segments, work, budget));
-			} catch (error) {
-				if (!(error instanceof AnalysisWorkCeilingReached)) throw error;
-				return { findings, segments, pathSegmentChecks: work.pathSegmentChecks, limit: error };
+				findings.push(...connectorBindingFindings(record, raw, byId, model.duplicateIds, budget));
+				if (record.usableId) findings.push(...persistedEndpointFindings(record, raw));
 			}
-			findings.push(...connectorBindingFindings(record, raw, byId, model.duplicateIds));
-			if (record.usableId) {
-				findings.push(...persistedEndpointFindings(record, raw));
-			}
+			findings.push(...boundElementFindings(record, raw, byId, model.duplicateIds, budget));
+			findings.push(...containerFindings(record, raw));
+			findings.push(...metadataFindings(record, raw));
+			if (record.usableId) findings.push(...libraryFindings(record, model));
+			findings.push(...fontFindings(record, raw, policy));
+			findings.push(
+				...unsupportedGeometryFindings(
+					record,
+					raw,
+					record.id !== null && incomingReferences.has(record.id),
+				),
+			);
+		} catch (error) {
+			if (!(error instanceof AnalysisWorkCeilingReached)) throw error;
+			return { findings, segments, pathSegmentChecks: work.pathSegmentChecks, limit: error };
 		}
-		findings.push(...boundElementFindings(record, raw, byId, model.duplicateIds));
-		findings.push(...containerFindings(record, raw));
-		findings.push(...metadataFindings(record, raw));
-		if (record.usableId) findings.push(...libraryFindings(record, model));
-		findings.push(...fontFindings(record, raw, policy));
-		findings.push(
-			...unsupportedGeometryFindings(
-				record,
-				raw,
-				record.id !== null && incomingReferences.has(record.id),
-			),
-		);
 	}
 	return { findings, segments, pathSegmentChecks: work.pathSegmentChecks, limit: null };
 }
@@ -1388,13 +1437,21 @@ function structuralFindings(
 function labelFindings(
 	records: readonly DecodedRecord[],
 	model: InspectionModel,
+	budget: InspectionBudget,
 ): InspectionFinding[] {
+	budget.claimWork("record-analysis", "classify-records", records.length * 2);
 	const valid = records
 		.filter((r) => r.live && r.raw && r.usableId && r.id && r.type)
 		.map((r) => r.raw!) as unknown as Array<Record<string, unknown>>;
 	const findings: InspectionFinding[] = [];
 	const byId = model.byId;
+	let boundEntryCount = 0;
+	for (const record of valid)
+		if (Array.isArray(record.boundElements)) boundEntryCount += record.boundElements.length;
+	budget.claimWork("record-analysis", "classify-records", boundEntryCount);
 	const plan = planLabelRepair(valid as never);
+	for (const duplicate of plan.duplicates)
+		budget.claimSort("finding-finalization", "finalize-findings", duplicate.remove.length);
 	for (const duplicate of plan.duplicates) {
 		const involved = [
 			byId.get(duplicate.containerId),
@@ -1410,7 +1467,7 @@ function labelFindings(
 				details: {
 					containerId: duplicate.containerId,
 					keeperId: duplicate.keep,
-					duplicateIds: duplicate.remove.toSorted(compareIdentity),
+					duplicateIds: [...duplicate.remove].toSorted(compareIdentity),
 				},
 				message: `Container ${duplicate.containerId} has duplicate labels.`,
 				elements: uniqueRefs(involved),
@@ -1601,9 +1658,9 @@ function pairSweep<A, B>(
 	right: readonly PairItem<B>[],
 	sameSet: boolean,
 	visit: (a: A, b: B) => void,
-	counter: { value: number; limited: boolean; pass: string },
+	counter: { value: number; limited: boolean; pass: CollisionPass | null },
 	work: SweepWork,
-	pass: AnalysisWorkOwner,
+	pass: CollisionPass,
 	budget: InspectionBudget,
 ): void {
 	const materialize = <T>(items: readonly PairItem<T>[]) => {
@@ -1674,7 +1731,11 @@ function collisionFindings(
 	result: CollisionResult,
 ): CollisionResult {
 	const findings = result.findings;
-	const counter = { value: 0, limited: false, pass: "" };
+	const counter: { value: number; limited: boolean; pass: CollisionPass | null } = {
+		value: 0,
+		limited: false,
+		pass: null,
+	};
 	const sweepWork = result.sweepWork;
 	const byId = model.byId;
 	const countedMap = <T, U>(
@@ -2122,8 +2183,8 @@ function collisionFindings(
 				affectsCoverage: true,
 				details: {
 					limit: BROAD_PHASE_COMPARISON_LIMIT,
-					attempted: counter.value,
-					pass: counter.pass,
+					attempted: 2_000_001,
+					pass: counter.pass!,
 					segmentCount: segments.length,
 					nodeCount: leaves.length,
 					obstacleCount: model.obstacles.length,
@@ -2148,6 +2209,7 @@ function collisionFindings(
 		findings,
 		broadPhaseComparisons: counter.value,
 		sweepWork,
+		terminalLimit: counter.limited ? "comparison" : null,
 	};
 }
 
@@ -2288,6 +2350,20 @@ function orderedFindings(findings: readonly InspectionFinding[]): InspectionFind
 	});
 }
 
+function canonicalFinding(finding: InspectionFinding): InspectionFinding {
+	return InspectionFindingSchema.parse({
+		...finding,
+		elements: [...finding.elements].toSorted(refOrder),
+		nodes: [...finding.nodes].toSorted((a, b) => compareIdentity(a.id, b.id)),
+		obstacles: [...finding.obstacles].toSorted((a, b) => compareIdentity(a.id, b.id)),
+		points: [...finding.points].toSorted(pointOrder),
+	});
+}
+
+function terminalFinalizeFindings(findings: readonly InspectionFinding[]): InspectionFinding[] {
+	return orderedFindings(findings.map(canonicalFinding));
+}
+
 function finalizeFindings(
 	findings: readonly InspectionFinding[],
 	budget: InspectionBudget,
@@ -2296,8 +2372,20 @@ function finalizeFindings(
 	for (const finding of findings)
 		members += finding.elements.length + finding.nodes.length + finding.obstacles.length;
 	budget.claimWork("finding-finalization", "finalize-findings", members);
+	for (const finding of findings) {
+		budget.claimSort("finding-finalization", "finalize-findings", finding.elements.length);
+		budget.claimSort("finding-finalization", "finalize-findings", finding.nodes.length);
+		budget.claimSort("finding-finalization", "finalize-findings", finding.obstacles.length);
+		budget.claimSort("finding-finalization", "finalize-findings", finding.points.length);
+	}
+	const coverageReasons = new Set(
+		findings
+			.filter((finding) => finding.affectsCoverage)
+			.map((finding) => `${finding.code}/${finding.reason}`),
+	);
+	budget.claimSort("finding-finalization", "finalize-findings", coverageReasons.size);
 	budget.claimSort("finding-finalization", "finalize-findings", findings.length);
-	return orderedFindings(findings);
+	return terminalFinalizeFindings(findings);
 }
 
 export function detectBoard(
@@ -2306,27 +2394,42 @@ export function detectBoard(
 	budget: InspectionBudget = new InspectionBudget(),
 	initialFindings: readonly InspectionFinding[] = [],
 ): DetectionResult {
-	const findings = [...initialFindings, ...renderFindings(records), ...identityFindings(records)];
+	const findings = [...initialFindings];
 	let model = emptyInspectionModel();
 	let modelComplete = false;
 	let limit: AnalysisWorkCeilingReached | null = null;
 	try {
-		model = buildInspectionModel(records, budget);
-		modelComplete = true;
+		findings.push(...renderFindings(records, budget), ...identityFindings(records, budget));
 	} catch (error) {
 		if (!(error instanceof AnalysisWorkCeilingReached)) throw error;
 		limit = error;
 	}
-	const structural = modelComplete
-		? structuralFindings(records, policy, model, budget)
-		: { findings: [], segments: [], pathSegmentChecks: 0, limit: null };
+	if (!limit)
+		try {
+			model = buildInspectionModel(records, budget);
+			modelComplete = true;
+		} catch (error) {
+			if (!(error instanceof AnalysisWorkCeilingReached)) throw error;
+			limit = error;
+		}
+	const structural =
+		!limit && modelComplete
+			? structuralFindings(records, policy, model, budget)
+			: { findings: [], segments: [], pathSegmentChecks: 0, limit: null };
 	findings.push(...structural.findings);
 	if (structural.limit) limit = structural.limit;
-	if (modelComplete) findings.push(...labelFindings(records, model));
+	if (!limit && modelComplete)
+		try {
+			findings.push(...labelFindings(records, model, budget));
+		} catch (error) {
+			if (!(error instanceof AnalysisWorkCeilingReached)) throw error;
+			limit = error;
+		}
 	let collisions: CollisionResult = {
 		findings: [],
 		broadPhaseComparisons: budget.completedBroadPhaseComparisons,
 		sweepWork: emptySweepWork(),
+		terminalLimit: null,
 	};
 	if (!limit && modelComplete)
 		try {
@@ -2354,10 +2457,20 @@ export function detectBoard(
 				structural.segments.length,
 			),
 		);
-	findings.push(...coordinateSpanFindings(records, model, findings));
-	findings.push(...focusPaddingFindings(findings));
+	const terminalComparison = collisions.terminalLimit === "comparison";
+	findings.push(
+		...coordinateSpanFindings(
+			records,
+			model,
+			findings,
+			limit || terminalComparison ? undefined : budget,
+		),
+	);
+	findings.push(
+		...focusPaddingFindings(findings, limit || terminalComparison ? undefined : budget),
+	);
 	let finalized: InspectionFinding[];
-	if (limit) finalized = orderedFindings(findings);
+	if (limit || terminalComparison) finalized = terminalFinalizeFindings(findings);
 	else
 		try {
 			finalized = finalizeFindings(findings, budget);
@@ -2372,7 +2485,7 @@ export function detectBoard(
 			);
 			const closure = coordinateSpanFindings(records, model, [stopped]);
 			findings.push(stopped, ...closure, ...focusPaddingFindings([stopped, ...closure]));
-			finalized = orderedFindings(findings);
+			finalized = terminalFinalizeFindings(findings);
 		}
 	return {
 		findings: finalized,

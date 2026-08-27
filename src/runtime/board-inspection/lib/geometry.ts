@@ -91,9 +91,12 @@ export function aggregateBoxes(values: readonly ExactBox[]): AggregateBoxResult 
 	}
 	const width = maxX - minX;
 	const height = maxY - minY;
-	return finite(minX) && finite(minY) && finite(width) && finite(height)
-		? { kind: "representable", box: { x: minX, y: minY, width, height } }
-		: { kind: "unrepresentable", representative: values.toSorted(boxOrder)[0]! };
+	if (finite(minX) && finite(minY) && finite(width) && finite(height))
+		return { kind: "representable", box: { x: minX, y: minY, width, height } };
+	let representative = values[0]!;
+	for (let index = 1; index < values.length; index += 1)
+		if (boxOrder(values[index]!, representative) < 0) representative = values[index]!;
+	return { kind: "unrepresentable", representative };
 }
 
 export function pointBox(points: readonly ExactPoint[]): ExactBox | null {
