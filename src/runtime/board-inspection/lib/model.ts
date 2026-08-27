@@ -293,13 +293,22 @@ function buildLabelClassifications(
 		const forwardOwnerId =
 			typeof rawContainer === "string" && rawContainer.length > 0 ? rawContainer : null;
 		const reverseOwners = reverseLabelOwners.get(record.id);
+		budget.claimWork("node-hierarchy", "aggregate-model", reverseOwners?.size ?? 0);
 		const reverseOwnerInput = reverseOwners ? [...reverseOwners] : [];
+		budget.claimWork("node-hierarchy", "aggregate-model", reverseOwnerInput.length);
 		const reverseOwnerIds = orderedIdentities(reverseOwnerInput, budget, "node-hierarchy");
 		const candidateOwnerSet = new Set<string>();
+		budget.claimWork(
+			"node-hierarchy",
+			"aggregate-model",
+			reverseOwnerIds.length + (forwardOwnerId ? 1 : 0),
+		);
 		if (forwardOwnerId) candidateOwnerSet.add(forwardOwnerId);
 		for (let index = 0; index < reverseOwnerIds.length; index += 1)
 			candidateOwnerSet.add(reverseOwnerIds[index]!);
+		budget.claimWork("node-hierarchy", "aggregate-model", candidateOwnerSet.size);
 		const candidateOwnerInput = [...candidateOwnerSet];
+		budget.claimWork("node-hierarchy", "aggregate-model", candidateOwnerInput.length);
 		const candidateOwnerIds = orderedIdentities(candidateOwnerInput, budget, "node-hierarchy");
 		let state: LabelOwnershipClassification["state"];
 		let resolvedOwnerId: string | null = null;
@@ -388,6 +397,7 @@ function buildNodes(
 				subjectId: id,
 				members: bodyMembers,
 			});
+			budget.claimWork("node-hierarchy", "aggregate-model", members.length);
 			for (let memberIndex = 0; memberIndex < members.length; memberIndex += 1) {
 				const member = members[memberIndex]!;
 				if (member.id) {
@@ -489,11 +499,13 @@ function assignNodeHierarchy(
 		}
 	}
 	const childAreas = new Map<string, BinaryFactor>();
+	budget.claimWork("node-hierarchy", "aggregate-model", children.length);
 	for (let childIndex = 0; childIndex < children.length; childIndex += 1) {
 		const child = children[childIndex]!;
 		childAreas.set(child.id, areaFactor(child.body));
 	}
 	const boundaryAreas = new Map<DecodedRecord, BinaryFactor>();
+	budget.claimWork("node-hierarchy", "aggregate-model", boundaries.length);
 	for (let boundaryIndex = 0; boundaryIndex < boundaries.length; boundaryIndex += 1) {
 		const { boundary } = boundaries[boundaryIndex]!;
 		boundaryAreas.set(boundary, areaFactor(boundary.box!));
@@ -545,18 +557,22 @@ function assignNodeHierarchy(
 		},
 		{ budget, pass: "node-hierarchy" },
 	);
+	budget.claimWork("node-hierarchy", "aggregate-model", children.length);
 	for (let childIndex = 0; childIndex < children.length; childIndex += 1) {
 		const child = children[childIndex]!;
 		const selected = selectedByChild.get(child.id);
 		if (selected) child.parentId = selected.owner.id;
 	}
 	work.peakSelections = selectedByChild.size;
+	budget.claimWork("node-hierarchy", "aggregate-model", nodes.size);
 	for (const node of nodes.values()) {
 		if (node.parentId) {
 			nodes.get(node.parentId)!.children.push(node.id);
 		}
 	}
+	budget.claimWork("node-hierarchy", "aggregate-model", nodes.size);
 	for (const node of nodes.values()) {
+		budget.claimWork("node-hierarchy", "aggregate-model", node.children.length);
 		node.children = orderedIdentities(node.children, budget, "node-hierarchy");
 	}
 	return work;
@@ -725,23 +741,28 @@ function buildObstacles(
 		);
 		const sharedGroup = members.length >= 2;
 		if (validLibrary.length === 0 && !sharedGroup) continue;
-		if (sharedGroup)
+		if (sharedGroup) {
+			budget.claimWork("container-boundary", "aggregate-model", members.length);
 			for (let memberIndex = 0; memberIndex < members.length; memberIndex += 1) {
 				const member = members[memberIndex]!;
 				qualifyingGroupedObstacleElementIds.add(member.id!);
 			}
+		}
 		const elementIds = orderedIdentities(
 			collected(members, budget, "container-boundary", (record) => record.id!),
 			budget,
 			"container-boundary",
 		);
 		const uniqueGroups = new Set<string>();
+		budget.claimWork("container-boundary", "aggregate-model", members.length);
 		for (let memberIndex = 0; memberIndex < members.length; memberIndex += 1) {
 			const member = members[memberIndex]!;
 			const memberGroups = groupsById.get(member.id!) ?? [];
+			budget.claimWork("container-boundary", "aggregate-model", memberGroups.length);
 			for (let groupIndex = 0; groupIndex < memberGroups.length; groupIndex += 1)
 				uniqueGroups.add(memberGroups[groupIndex]!);
 		}
+		budget.claimWork("container-boundary", "aggregate-model", uniqueGroups.size);
 		const groups = orderedIdentities([...uniqueGroups], budget, "container-boundary");
 		const library = collected(validLibrary, budget, "container-boundary", (record) => {
 			const attr = libraryAttribution(record)!;
