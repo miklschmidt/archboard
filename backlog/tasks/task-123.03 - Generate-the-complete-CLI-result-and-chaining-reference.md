@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-27 14:36'
+updated_date: '2026-08-27 14:45'
 labels: []
 dependencies:
   - TASK-123.02
@@ -76,6 +76,12 @@ Final implementation validation (2026-08-27):
 - Complete bun run check passed, followed by a separate complete bun run test; all four browser suites ran sequentially/headless in each chain.
 - On-demand contract generation succeeded twice into owned temporary directories and all three artifact byte streams matched; ignored checkout views were removed afterward.
 - Final git diff --check is clean. TASK-123.03 remains In Progress with all seven acceptance criteria unchecked for independent fixed-range review.
+
+Review remediation checkpoint (2026-08-27):
+- 24149ba replaces the unexecuted inline join invocation with a marked [.elements[].id] | join(",") example that reuses the existing schema-valid add fixture and pins raw stdout as node-a,node-b plus newline.
+- The displayed Bash chain now consumes the captured value without containing another jq program.
+- The focused checker removes every marked jq block and rejects any remaining jq invocation in the guide. Workflow coverage is now 93 checks.
+- Focused lint:skills, contracts, install, CLI, type-check, and git diff --check are green.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
