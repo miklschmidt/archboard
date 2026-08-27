@@ -30,11 +30,17 @@ Take element IDs from `add` or `query`, then choose the IDs needed by
 [.[].id]
 ```
 
-For example, turn the selected JSON array into the comma-separated argument
-expected by a later command:
+To pass every ID from one `add` result to a later command, run this marked
+extraction and capture its stdout as `comma_separated_ids`:
+
+<!-- tested-jq: comma-separated-add-element-ids -->
+
+```jq
+[.elements[].id] | join(",")
+```
 
 ```bash
-ids="$(jq -r 'join(",")' <<<"$selected_ids")"
+ids="$comma_separated_ids"
 archboard promote --board "$board" --doing "promoting selected elements" --ids "$ids" --kind service
 archboard arrange align --board "$board" --doing "aligning selected elements" --ids "$ids" --to left
 ```
