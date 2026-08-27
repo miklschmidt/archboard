@@ -186,8 +186,37 @@ const BRIDGE_VOLATILE_FIELDS = new Set<SnapshotField>(["index", "createdAt", "so
 function lineMatches(part: ServerElement, expectedInput: Record<string, unknown>): boolean {
 	const actual = part as unknown as Record<string, unknown>;
 	const expected = canonicalBridgeLine(part.id, expectedInput);
-	for (const [key, value] of Object.entries(expected))
+	for (const [key, value] of Object.entries(expected)) {
+		if (key === "customData") {
+			const actualCustomData = actual.customData;
+			const expectedCustomData = value as { archboard: { bridge: BridgeMetadata } };
+			if (
+				!actualCustomData ||
+				typeof actualCustomData !== "object" ||
+				Array.isArray(actualCustomData)
+			)
+				return false;
+			const actualArchboard = (actualCustomData as Record<string, unknown>).archboard;
+			if (
+				!actualArchboard ||
+				typeof actualArchboard !== "object" ||
+				Array.isArray(actualArchboard) ||
+				Object.keys(actualArchboard).length !== 1 ||
+				!own(actualArchboard, "bridge")
+			)
+				return false;
+			const actualBridge = BridgeMetadataSchema.safeParse(
+				(actualArchboard as Record<string, unknown>).bridge,
+			);
+			if (
+				!actualBridge.success ||
+				JSON.stringify(actualBridge.data) !== JSON.stringify(expectedCustomData.archboard.bridge)
+			)
+				return false;
+			continue;
+		}
 		if (JSON.stringify(actual[key]) !== JSON.stringify(value)) return false;
+	}
 	for (const field of INSPECTION_FIELDS)
 		if (!own(expected, field) && !BRIDGE_VOLATILE_FIELDS.has(field) && actual[field] !== undefined)
 			return false;
