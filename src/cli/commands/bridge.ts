@@ -1,6 +1,9 @@
 import { z } from "zod";
 
-import { BridgeMetadataSchema } from "../../runtime/board-inspection/bridge.js";
+import {
+	BridgeMetadataSchema,
+	type BridgeMetadata,
+} from "../../runtime/board-inspection/bridge.js";
 import { createBridge, removeBridge } from "../../runtime/engine/canvas-client.js";
 import { defineCommand } from "../command-contract/contract.js";
 import {
@@ -18,9 +21,17 @@ const opaqueBackground = z
 
 const atPoint = z.string().transform((value, context) => {
 	const pieces = value.split(",");
-	const x = Number(pieces[0]);
-	const y = Number(pieces[1]);
-	if (pieces.length !== 2 || !Number.isFinite(x) || !Number.isFinite(y)) {
+	const xToken = pieces[0]?.trim() ?? "";
+	const yToken = pieces[1]?.trim() ?? "";
+	const x = Number(xToken);
+	const y = Number(yToken);
+	if (
+		pieces.length !== 2 ||
+		xToken.length === 0 ||
+		yToken.length === 0 ||
+		!Number.isFinite(x) ||
+		!Number.isFinite(y)
+	) {
 		context.addIssue({ code: "custom", message: "--at must be finite x,y coordinates" });
 		return z.NEVER;
 	}
@@ -46,25 +57,54 @@ const bridgePart = (role: "mask" | "redraw") =>
 		}),
 	});
 
+const bridgeFactsWithoutRole = ({
+	role: _role,
+	background: _background,
+	...facts
+}: BridgeMetadata) => facts;
+
 export const BridgeInputSchema = z.object({
 	over: z.string().min(1, "--over is required"),
 	under: z.string().min(1, "--under is required"),
 	background: opaqueBackground,
 	at: atPoint.optional(),
 });
-export const BridgeResultSchema = z.strictObject({
-	success: z.literal(true),
-	board: z.string().min(1),
-	bridgeId: z.string().min(1),
-	overConnectorId: z.string().min(1),
-	underConnectorId: z.string().min(1),
-	overSegmentIndex: z.number().int().nonnegative(),
-	underSegmentIndex: z.number().int().nonnegative(),
-	crossing: z.strictObject({ x: z.number().finite(), y: z.number().finite() }),
-	elements: z.tuple([bridgePart("mask"), bridgePart("redraw")]),
-	fingerprint: BoardFingerprintSchema,
-	held: HoldReportSchema.optional(),
-});
+export const BridgeResultSchema = z
+	.strictObject({
+		success: z.literal(true),
+		board: z.string().min(1),
+		bridgeId: z.string().min(1),
+		overConnectorId: z.string().min(1),
+		underConnectorId: z.string().min(1),
+		overSegmentIndex: z.number().int().nonnegative(),
+		underSegmentIndex: z.number().int().nonnegative(),
+		crossing: z.strictObject({ x: z.number().finite(), y: z.number().finite() }),
+		elements: z.tuple([bridgePart("mask"), bridgePart("redraw")]),
+		fingerprint: BoardFingerprintSchema,
+		held: HoldReportSchema.optional(),
+	})
+	.superRefine((result, context) => {
+		const [mask, redraw] = result.elements;
+		const expected = {
+			bridgeId: result.bridgeId,
+			overConnectorId: result.overConnectorId,
+			underConnectorId: result.underConnectorId,
+			overSegmentIndex: result.overSegmentIndex,
+			underSegmentIndex: result.underSegmentIndex,
+			crossing: result.crossing,
+		};
+		const maskMetadata = mask.customData.archboard.bridge;
+		const redrawMetadata = redraw.customData.archboard.bridge;
+		if (
+			result.overConnectorId === result.underConnectorId ||
+			mask.id !== result.bridgeId ||
+			redraw.id === result.bridgeId ||
+			JSON.stringify(bridgeFactsWithoutRole(maskMetadata)) !== JSON.stringify(expected) ||
+			JSON.stringify(bridgeFactsWithoutRole(redrawMetadata)) !== JSON.stringify(expected) ||
+			maskMetadata.background !== redrawMetadata.background
+		)
+			context.addIssue({ code: "custom", message: "Bridge receipt facts do not agree." });
+	});
 
 export const bridgeContract = defineCommand({
 	path: ["bridge"],
@@ -137,15 +177,20 @@ export const bridgeContract = defineCommand({
 });
 
 export const BridgeRemoveInputSchema = z.object({ bridgeId: z.string().min(1) });
-export const BridgeRemoveResultSchema = z.strictObject({
-	success: z.literal(true),
-	board: z.string().min(1),
-	bridgeId: z.string().min(1),
-	deleted: z.tuple([z.string().min(1), z.string().min(1)]),
-	elements: z.array(ServerElementSchema).length(0),
-	fingerprint: BoardFingerprintSchema,
-	held: HoldReportSchema.optional(),
-});
+export const BridgeRemoveResultSchema = z
+	.strictObject({
+		success: z.literal(true),
+		board: z.string().min(1),
+		bridgeId: z.string().min(1),
+		deleted: z.tuple([z.string().min(1), z.string().min(1)]),
+		elements: z.array(ServerElementSchema).length(0),
+		fingerprint: BoardFingerprintSchema,
+		held: HoldReportSchema.optional(),
+	})
+	.superRefine((result, context) => {
+		if (result.deleted[0] !== result.bridgeId || result.deleted[1] === result.bridgeId)
+			context.addIssue({ code: "custom", message: "Bridge removal receipt IDs do not agree." });
+	});
 
 export const bridgeRemoveContract = defineCommand({
 	path: ["bridge", "remove"],

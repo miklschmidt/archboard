@@ -373,11 +373,12 @@ const server = Bun.serve({
 			return Response.json({ success: true, files: {}, ...(held ? { held } : {}) });
 		}
 		if (request.method === "POST" && url.pathname === "/api/bridges") {
+			const receiptOver = body?.over === "invalid-receipt" ? "wrong-over" : bridgeFacts.overConnectorId;
 			return Response.json({
 				success: true,
 				board: "contract",
 				bridgeId: bridgeFacts.bridgeId,
-				overConnectorId: bridgeFacts.overConnectorId,
+				overConnectorId: receiptOver,
 				underConnectorId: bridgeFacts.underConnectorId,
 				overSegmentIndex: bridgeFacts.overSegmentIndex,
 				underSegmentIndex: bridgeFacts.underSegmentIndex,
@@ -386,11 +387,12 @@ const server = Bun.serve({
 				fingerprint,
 			});
 		}
-		if (request.method === "DELETE" && url.pathname === "/api/bridges/Bridge01") {
+		if (request.method === "DELETE" && url.pathname.startsWith("/api/bridges/")) {
+			const requestedBridge = decodeURIComponent(url.pathname.slice("/api/bridges/".length));
 			return Response.json({
 				success: true,
 				board: "contract",
-				bridgeId: "Bridge01",
+				bridgeId: requestedBridge,
 				deleted: ["Bridge01", "Redraw01"],
 				elements: [],
 				fingerprint,
@@ -893,6 +895,55 @@ try {
 			bridgedAnswer?.elements?.[1]?.customData?.archboard?.bridge?.role === "redraw",
 	);
 
+	for (const at of ["1,", ",2", " , "]) {
+		const before = requests.length;
+		const invalidAt = await cli(
+			[
+				"bridge",
+				"--over",
+				"over",
+				"--under",
+				"under",
+				"--background",
+				"#ffffff",
+				"--at",
+				at,
+				"--board",
+				"contract",
+				"--doing",
+				"marking crossing",
+			],
+			{ url: canvasUrl },
+		);
+		check(`blank --at coordinate ${JSON.stringify(at)} is usage exit 2`, invalidAt.status === 2);
+		check(
+			`blank --at coordinate ${JSON.stringify(at)} contacts no server or write route`,
+			requests.length === before && invalidAt.stdout === "",
+		);
+	}
+
+	const invalidCreateReceipt = await cli(
+		[
+			"bridge",
+			"--over",
+			"invalid-receipt",
+			"--under",
+			"under",
+			"--background",
+			"#ffffff",
+			"--board",
+			"contract",
+			"--doing",
+			"checking bridge receipt",
+		],
+		{ url: canvasUrl },
+	);
+	check(
+		"bridge rejects a server receipt whose top-level facts disagree with its parts",
+		invalidCreateReceipt.status !== 0 && invalidCreateReceipt.stdout === "",
+		invalidCreateReceipt.stderr,
+	);
+
 	const removeBefore = requests.length;
 	const removedBridge = await cli(
 		["bridge", "remove", "Bridge01", "--board", "contract", "--doing", "removing crossing"],
@@ -914,6 +965,23 @@ try {
 		"bridge remove returns the exact provenance pair",
 		JSON.stringify(parseJson("bridge remove JSON", removedBridge.stdout)?.deleted) ===
 			JSON.stringify(["Bridge01", "Redraw01"]),
+	);
+	const invalidRemoveReceipt = await cli(
+		[
+			"bridge",
+			"remove",
+			"InvalidReceipt",
+			"--board",
+			"contract",
+			"--doing",
+			"checking removal receipt",
+		],
+		{ url: canvasUrl },
+	);
+	check(
+		"bridge remove rejects a server receipt whose mask ID disagrees with bridgeId",
+		invalidRemoveReceipt.status !== 0 && invalidRemoveReceipt.stdout === "",
+		invalidRemoveReceipt.stderr,
 	);
 
 	const invalidBackgroundBefore = requests.length;
