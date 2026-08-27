@@ -1,10 +1,11 @@
 ---
 id: TASK-123.03
 title: Generate the complete CLI result and chaining reference
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-25 23:58'
-updated_date: '2026-08-27 08:08'
+updated_date: '2026-08-27 14:01'
 labels: []
 dependencies:
   - TASK-123.02
@@ -53,5 +54,11 @@ author: @codex
 created: 2026-08-27 08:08
 ---
 Parent contract decision (2026-08-27): CommandContract Zod schemas and inferred result types are the sole authority. TASK-123.03 must not copy result-field tables into SKILL.md, cheatsheet, or a second hand-maintained reference. The skill should reference the authoritative types/generated contract view. Any generated agent reference is limited to a thin navigational/workflow index and tested examples derived mechanically from the contracts; it must not become another schema copy requiring synchronization.
+---
+
+author: @codex
+created: 2026-08-27 14:01
+---
+Parent orchestration started after TASK-121 shipped. Plan from current CommandContract registry and tracked skill source. The authoritative Zod schemas and inferred types remain the sole result-shape source; generated or hand-written skill material may provide navigation and executable chains, but must not copy result schemas or field tables.
 ---
 <!-- COMMENTS:END -->
