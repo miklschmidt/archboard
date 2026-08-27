@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import readline from "readline/promises";
 import { boardHoldSeen } from "../../../runtime/engine/canvas-client.js";
+import { writeFileAtomic } from "../../../runtime/engine/atomic-write.js";
 import type { PendingArtifact } from "../contract.js";
 
 export const processCommandHost = {
@@ -35,6 +36,13 @@ export const processCommandHost = {
 		}
 	},
 	writeArtifact(artifact: PendingArtifact) {
+		if (artifact.encoding === "files") {
+			for (const file of artifact.files) {
+				writeFileAtomic(path.join(artifact.path, file.name), Buffer.from(file.content));
+			}
+			writeFileAtomic(path.join(artifact.path, artifact.manifest.name), artifact.manifest.content);
+			return;
+		}
 		if (artifact.encoding === "binary") {
 			fs.writeFileSync(artifact.path, artifact.content);
 			return;

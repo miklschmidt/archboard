@@ -102,7 +102,13 @@ export interface CommandOutcomeDeclaration {
 
 export type PendingArtifact =
 	| { path: string; content: string; encoding: "utf8" }
-	| { path: string; content: Uint8Array; encoding: "binary" };
+	| { path: string; content: Uint8Array; encoding: "binary" }
+	| {
+			path: string;
+			encoding: "files";
+			files: Array<{ name: string; content: Uint8Array }>;
+			manifest: { name: "manifest.json"; content: string };
+	  };
 
 export interface CommandExecution<Result> {
 	result: Result;
