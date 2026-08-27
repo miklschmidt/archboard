@@ -87,6 +87,7 @@ export function writeFileAtomic(file: string, data: string | Buffer): void {
 export function writeFileAtomicExclusive(file: string, data: string | Buffer): void {
 	const tmp = tempPathFor(file);
 	let handle: number | undefined;
+	let committed = false;
 	try {
 		handle = fs.openSync(tmp, "w");
 		fs.writeFileSync(handle, data);
@@ -94,7 +95,14 @@ export function writeFileAtomicExclusive(file: string, data: string | Buffer): v
 		fs.closeSync(handle);
 		handle = undefined;
 		fs.linkSync(tmp, file);
-		fs.unlinkSync(tmp);
+		committed = true;
+		try {
+			fs.unlinkSync(tmp);
+		} catch {
+			// A transient cleanup failure after the hard-link commit is not a
+			// publication failure. Retry once before deciding whether to undo it.
+			fs.unlinkSync(tmp);
+		}
 		fsyncDir(path.dirname(file));
 	} catch (error) {
 		if (handle !== undefined) {
@@ -102,6 +110,24 @@ export function writeFileAtomicExclusive(file: string, data: string | Buffer): v
 				fs.closeSync(handle);
 			} catch {
 				/* already gone */
+			}
+		}
+		if (committed) {
+			try {
+				fs.unlinkSync(file);
+				committed = false;
+			} catch {
+				// The complete destination is already public and could not be
+				// removed. Reporting failure would leave a valid manifest without
+				// stdout, so this publication is success. Temp cleanup stays best
+				// effort in this exceptional branch.
+				try {
+					fs.unlinkSync(tmp);
+				} catch {
+					/* destination is the authoritative committed name */
+				}
+				fsyncDir(path.dirname(file));
+				return;
 			}
 		}
 		try {
