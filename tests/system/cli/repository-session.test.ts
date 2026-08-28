@@ -276,6 +276,10 @@ describe("two-repository board session", () => {
 			expect(namedBeta.status, namedBetaDiagnostic).toBe(0);
 			const parsedBeta = parseBoardList(namedBeta);
 			expect(parsedBeta.repo, namedBetaDiagnostic).toBe(betaIdentity);
+			expect(
+				parsedBeta.boards.some((entry) => entry.key === "systems"),
+				namedBetaDiagnostic,
+			).toBeTrue();
 		}
 	}, 30_000);
 });

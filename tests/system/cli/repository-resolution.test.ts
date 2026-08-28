@@ -1,12 +1,31 @@
 import { describe, expect, test } from "bun:test";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
+import type { ZodType } from "zod";
 import {
 	RepoAddResultSchema,
 	RepoForgetResultSchema,
 	RepoListJsonResultSchema,
 } from "../../../src/cli/commands/repo.ts";
-import { createRepositoryFixture, repositoryFailure } from "./support/repository-fixture.ts";
+import {
+	createRepositoryFixture,
+	repositoryFailure,
+	type RepositorySpawn,
+} from "./support/repository-fixture.ts";
+
+function decodeRepository<T>(result: RepositorySpawn, schema: ZodType<T>): T {
+	const diagnostic = repositoryFailure(result);
+	let decoded: unknown;
+	try {
+		decoded = JSON.parse(result.stdout);
+	} catch (error) {
+		throw new Error(`${diagnostic}\nJSON decode: ${(error as Error).message}`, { cause: error });
+	}
+	const parsed = schema.safeParse(decoded);
+	if (!parsed.success)
+		throw new Error(`${diagnostic}\nschema: ${parsed.error.message}`, { cause: parsed.error });
+	return parsed.data;
+}
 
 const alphaIdentity = "github.com/acme/alpha";
 const betaIdentity = "github.com/acme/beta";
@@ -18,24 +37,24 @@ describe("repository registry package behavior", () => {
 		let diagnostic = repositoryFailure(added);
 		expect(added.status, diagnostic).toBe(0);
 		expect(added.signal, diagnostic).toBeNull();
-		expect(RepoAddResultSchema.parse(JSON.parse(added.stdout)), diagnostic).toMatchObject({
+		expect(decodeRepository(added, RepoAddResultSchema), diagnostic).toMatchObject({
 			repo: alphaIdentity,
 			root: alpha,
 		});
 		const listed = fixture.run(["repo", "list"]);
 		diagnostic = repositoryFailure(listed);
 		expect(listed.status, diagnostic).toBe(0);
-		expect(RepoListJsonResultSchema.parse(JSON.parse(listed.stdout)).repos, diagnostic).toEqual([
+		expect(decodeRepository(listed, RepoListJsonResultSchema).repos, diagnostic).toEqual([
 			expect.objectContaining({ repo: alphaIdentity, root: alpha, source: "declared" }),
 		]);
 		const forgotten = fixture.run(["repo", "forget", alphaIdentity]);
 		diagnostic = repositoryFailure(forgotten);
 		expect(forgotten.status, diagnostic).toBe(0);
-		expect(RepoForgetResultSchema.parse(JSON.parse(forgotten.stdout)), diagnostic).toBeDefined();
+		expect(decodeRepository(forgotten, RepoForgetResultSchema), diagnostic).toBeDefined();
 		const empty = fixture.run(["repo", "list"]);
 		diagnostic = repositoryFailure(empty);
 		expect(empty.status, diagnostic).toBe(0);
-		expect(RepoListJsonResultSchema.parse(JSON.parse(empty.stdout)).repos, diagnostic).toEqual([]);
+		expect(decodeRepository(empty, RepoListJsonResultSchema).repos, diagnostic).toEqual([]);
 	});
 
 	test("refuses a directory that is not a repository", () => {

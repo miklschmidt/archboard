@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:04'
-updated_date: '2026-08-28 19:31'
+updated_date: '2026-08-28 19:44'
 labels: []
 dependencies:
   - TASK-130.01
@@ -159,4 +159,14 @@ Focused complete-range remediation after review (2026-08-28):
 - Validation: test:install 11 tests/91 expectations; test:repos 6/84; owned-canvas lifecycle 13/85; live inventory 11/11; type-check, lint, fmt:check, and git diff --check passed. Lint initially required caught parse errors to preserve cause; the corrected error paths passed the rerun.
 - No browser or full check was rerun. This follow-up changes only tests and their install support, exposed no broader failure, and preserves the successful single full check at bdbd102.
 - Final formatted lines: repository-resolution 188, repository-session 281, install-targets 214, install-fixture 176. No authored TypeScript reaches 500. Resource audit found no checkout-owned child, listener, new install/repository/owned-canvas root, or worktree artifact; older unrelated temporary roots remain untouched.
+
+Fourth complete-range remediation after review (2026-08-28):
+- Tightened the canvas forced-failure proof: the verified-running flag is set only after assertRunning succeeds; the caught value is proven to be the deliberately triggered assertion failure before listener, child, and root cleanup checks.
+- Added narrow owner-local subprocess decode/schema boundaries in repository-resolution, package-board-commands, package-io-refusals, and package-render-bridge. Each preserves JSON or Zod failure as cause and reports command, cwd, status, signal, stdout, and stderr through repositoryFailure or packageFailure. All subprocess-derived parsed output in those owners uses the boundary.
+- command-workflows now captures typed, diagnosed git status bytes before and after disposable skill-sync activity and proves exact stdout equality. repository-session now proves the named beta result contains the systems board with repositoryFailure attached.
+- Red evidence: deliberate wrong cleanup-message, board-key, schema-sentinel, and git-status sentinels failed through the intended diagnostic boundaries. Green owner results: cleanup 4 tests/26 expectations; resolution 5/38; board commands 5/107; IO refusals 7/58; render and bridge 6/81; workflows 4/95; repository session 1/47.
+- Grouped validation: test:cli 39 tests/815 expectations; test:contracts 52/1160; test:repos 6/85; TASK-130.06 owned-canvas lifecycle 13/85; live inventory 11/11. Type-check, lint, fmt:check, and git diff --check passed. Lint first exposed a value import used only as a type; the corrected type-only import passed its rerun.
+- No browser or full check was rerun: this follow-up changes only seven test owners, exposed no broader failure, and retains the prior successful single complete headless/serial run at bdbd102.
+- Final formatted lines: resource-cleanup 159; repository-resolution 207; package-board-commands 377; package-io-refusals 287; package-render-bridge 311; command-workflows 352; repository-session 285. Every authored TypeScript file remains below 500.
+- Cleanup audit found no checkout-owned child or listener, new package/repository/owned-canvas/skill-sync temporary root, mutation worktree, registry, vault, state, or log artifact. The worktree contained only the seven intended owner-test edits before this task note.
 <!-- SECTION:NOTES:END -->
