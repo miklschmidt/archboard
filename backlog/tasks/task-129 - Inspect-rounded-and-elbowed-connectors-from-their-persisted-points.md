@@ -4,9 +4,11 @@ title: Inspect rounded and elbowed connectors from their persisted points
 status: To Do
 assignee: []
 created_date: '2026-08-28 00:50'
+updated_date: '2026-08-28 01:03'
 labels:
   - ready-for-agent
-dependencies: []
+dependencies:
+  - TASK-130
 references:
   - src/runtime/board-inspection/lib/detectors.ts
   - src/runtime/board-inspection/bridge.ts
