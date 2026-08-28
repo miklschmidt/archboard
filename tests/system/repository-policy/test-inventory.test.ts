@@ -33,7 +33,7 @@ function input(overrides: Partial<InventoryInput> = {}): InventoryInput {
 describe("test inventory policy", () => {
 	test("accepts a mixed native and legacy checkout", () => {
 		const fixture = input();
-		fixture.scripts["test:legacy"] = "bun scripts/check-cli-surface.mjs";
+		fixture.scripts["test:legacy"] = "bun scripts/check-fixed-point.mjs";
 		expect(inspectTestInventory(fixture).errors).toEqual([]);
 	});
 
