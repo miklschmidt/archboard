@@ -25,24 +25,47 @@ import { fileURLToPath } from "node:url";
 import { WebSocket } from "ws";
 import { startCanvasTestProcess } from "./lib/canvas-test-process.mjs";
 import { withDoing } from "./lib/doing.mjs";
+import {
+	TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
+	TEST_CANVAS_EARLY_DEATH_DELAY_MS,
+	TEST_CANVAS_LISTENER_PROBE_TIMEOUT_MS,
+} from "../src/shared/timing/timing.ts";
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const src = (p) => path.join(repoRoot, "src", p);
 
+const readOwnedJsonResponse = async (canvas, responsePromise) => {
+	await canvas.assertRunning();
+	try {
+		const response = await responsePromise;
+		await canvas.assertRunning();
+		const body = await response.json();
+		await canvas.assertRunning();
+		return { status: response.status, body };
+	} catch (error) {
+		await canvas.assertRunning(error);
+		throw error;
+	}
+};
+
 if (process.env.ARCHBOARD_LIFECYCLE_SERVER === "early-death") {
-	let answered = false;
 	Bun.serve({
 		hostname: "127.0.0.1",
 		port: Number(process.env.PORT),
 		fetch(request) {
-			if (new URL(request.url).pathname !== "/health")
-				return new Response("not found", { status: 404 });
-			if (!answered) {
-				answered = true;
-				console.error("intentional early canvas death");
-				setTimeout(() => process.exit(23), 25);
+			const pathname = new URL(request.url).pathname;
+			if (pathname === "/health") return Response.json({ pid: process.pid });
+			if (pathname === "/die-after-headers") {
+				const body = new ReadableStream({
+					start(controller) {
+						controller.enqueue(new TextEncoder().encode('{"unfinished":'));
+						console.error("intentional early canvas death after response headers");
+						setTimeout(() => process.exit(23), TEST_CANVAS_EARLY_DEATH_DELAY_MS);
+					},
+				});
+				return new Response(body, { headers: { "Content-Type": "application/json" } });
 			}
-			return Response.json({ pid: process.pid });
+			return new Response("not found", { status: 404 });
 		},
 	});
 	await new Promise(() => {});
@@ -75,6 +98,42 @@ if (lifecycleChildMode) {
 
 		if (lifecycleChildMode === "interrupt") await new Promise(() => {});
 		if (lifecycleChildMode === "normal") await Promise.all([owned.dispose(), owned.dispose()]);
+		if (lifecycleChildMode === "restart-dispose-race") {
+			let releaseRestart;
+			let reachedStopped;
+			const stopped = new Promise((resolve) => {
+				reachedStopped = resolve;
+			});
+			const restartGate = new Promise((resolve) => {
+				releaseRestart = resolve;
+			});
+			const restart = owned.restart({
+				whileStopped: () => {
+					reachedStopped();
+					return restartGate;
+				},
+			});
+			await stopped;
+			const disposal = owned.dispose();
+			releaseRestart();
+			let restartError = null;
+			try {
+				await restart;
+			} catch (error) {
+				restartError = error;
+			}
+			await disposal;
+			if (!/disposed canvas process/.test(restartError?.message ?? "")) {
+				const replacementPid = owned.pid;
+				console.log(JSON.stringify({ marker: "restart-race", replacementPid }));
+				if (replacementPid) process.kill(replacementPid, "SIGKILL");
+				fs.rmSync(childVault, { recursive: true, force: true });
+				throw new Error(
+					`Restart escaped concurrent disposal as pid ${replacementPid ?? "unknown"}.`,
+				);
+			}
+			console.log(JSON.stringify({ marker: "restart-race", restartRejected: true }));
+		}
 		if (lifecycleChildMode === "failure") {
 			let failed = false;
 			try {
@@ -87,16 +146,15 @@ if (lifecycleChildMode) {
 			if (!failed) throw new Error("The lifecycle failure probe did not fail its fetch.");
 		}
 		if (lifecycleChildMode === "early-death") {
-			await new Promise((resolve) => setTimeout(resolve, 100));
 			let reported = "";
 			try {
-				owned.assertRunning();
+				await readOwnedJsonResponse(owned, fetch(`${owned.base}/die-after-headers`));
 			} catch (error) {
 				reported = error.message;
 			}
 			if (
 				!/CANVAS_PROCESS_DIED|died/.test(reported) ||
-				!/intentional early canvas death/.test(reported)
+				!/intentional early canvas death after response headers/.test(reported)
 			) {
 				throw new Error(`Early death was not reported with stderr: ${reported}`);
 			}
@@ -173,12 +231,27 @@ const pidExists = (pid) => {
 
 const listenerAnswers = async (base) => {
 	try {
-		await fetch(`${base}/health`, { signal: AbortSignal.timeout(250) });
+		await fetch(`${base}/health`, {
+			signal: AbortSignal.timeout(TEST_CANVAS_LISTENER_PROBE_TIMEOUT_MS),
+		});
 		return true;
 	} catch {
 		return false;
 	}
 };
+
+const lifecycleRecords = (stdout) =>
+	stdout
+		.trim()
+		.split("\n")
+		.filter(Boolean)
+		.flatMap((line) => {
+			try {
+				return [JSON.parse(line)];
+			} catch {
+				return [];
+			}
+		});
 
 const runLifecycleChild = async (mode) => {
 	const port = 37000 + Math.floor(Math.random() * 12000);
@@ -203,12 +276,47 @@ const runLifecycleChild = async (mode) => {
 	child.stderr.on("data", (chunk) => {
 		stderr += chunk.toString();
 	});
-	const code = await new Promise((resolve) => child.once("exit", resolve));
-	const records = stdout
-		.trim()
-		.split("\n")
-		.filter(Boolean)
-		.map((line) => JSON.parse(line));
+	const exit = new Promise((resolve) => child.once("exit", resolve));
+	let timeout;
+	let code;
+	try {
+		code = await Promise.race([
+			exit,
+			new Promise((_, reject) => {
+				timeout = setTimeout(() => {
+					const records = lifecycleRecords(stdout);
+					const owned = records.find((record) => record.marker === "owned-canvas");
+					reject(
+						new Error(
+							`Lifecycle child mode "${mode}" pid ${child.pid} did not exit within ${TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS}ms` +
+								`; owned canvas pid ${owned?.pid ?? "not yet reported"}.`,
+						),
+					);
+				}, TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS);
+			}),
+		]);
+	} catch (error) {
+		const records = lifecycleRecords(stdout);
+		child.kill("SIGKILL");
+		for (const pid of records.flatMap((record) =>
+			record.marker === "owned-canvas"
+				? [record.pid]
+				: record.marker === "restart-race" && record.replacementPid
+					? [record.replacementPid]
+					: [],
+		)) {
+			if (pidExists(pid)) process.kill(pid, "SIGKILL");
+		}
+		for (const vault of records
+			.filter((record) => record.marker === "owned-canvas")
+			.map((record) => record.vault)) {
+			fs.rmSync(vault, { recursive: true, force: true });
+		}
+		throw error;
+	} finally {
+		clearTimeout(timeout);
+	}
+	const records = lifecycleRecords(stdout);
 	return {
 		code,
 		stderr,
@@ -217,7 +325,7 @@ const runLifecycleChild = async (mode) => {
 	};
 };
 
-for (const mode of ["normal", "failure", "interrupt", "early-death"]) {
+for (const mode of ["normal", "failure", "interrupt", "early-death", "restart-dispose-race"]) {
 	const result = await runLifecycleChild(mode);
 	const expectedCode = mode === "interrupt" ? 130 : 0;
 	check(
@@ -240,7 +348,16 @@ for (const mode of ["normal", "failure", "interrupt", "early-death"]) {
 				(record) =>
 					record.marker === "early-death" &&
 					/died/.test(record.reported) &&
-					/intentional early canvas death/.test(record.reported),
+					/intentional early canvas death after response headers/.test(record.reported),
+			),
+			result.stderr.trim(),
+		);
+	}
+	if (mode === "restart-dispose-race") {
+		check(
+			"  and disposal rejects the stopped restart before it can spawn",
+			result.records.some(
+				(record) => record.marker === "restart-race" && record.restartRejected === true,
 			),
 			result.stderr.trim(),
 		);
@@ -760,9 +877,9 @@ const api = async (method, url, body) => {
 	// Every write says what it is doing, once for the whole check (TASK-095,
 	// scripts/lib/doing.mjs). The refusal itself is proved in check-doing.mjs.
 	url = withDoing(url, method, "checking that every call names its board");
-	serverCanvas?.assertRunning();
-	try {
-		const response = await fetch(`${base}${url}`, {
+	return readOwnedJsonResponse(
+		serverCanvas,
+		fetch(`${base}${url}`, {
 			method,
 			...(body === undefined
 				? {}
@@ -770,13 +887,8 @@ const api = async (method, url, body) => {
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify(body),
 					}),
-		});
-		serverCanvas?.assertRunning();
-		return { status: response.status, body: await response.json().catch(() => null) };
-	} catch (error) {
-		serverCanvas?.assertRunning(error);
-		throw error;
-	}
+		}),
+	);
 };
 
 // The shell, in miniature.
@@ -1946,6 +2058,19 @@ try {
 	const replacementById = new Map(
 		(persistedReplacement.body?.elements ?? []).map((element) => [element.id, element]),
 	);
+	// A message on the destination socket says nothing about how far the source
+	// socket has drained. Send the existing correlated viewport request to the
+	// source after the save and wait for its result. Any earlier switch on that
+	// socket must arrive before this barrier does.
+	const sourceBarrierStart = one.since();
+	const sourceBarrier = await api("POST", "/api/viewport", {
+		scrollToContent: true,
+		pane: "left",
+	});
+	const sourceBarrierMessage = one.seen
+		.slice(sourceBarrierStart)
+		.find((message) => message.type === "set_viewport");
+	const panesAfterReplacement = await api("GET", "/api/panes");
 	check(
 		"save-as refreshes a pane already holding the destination through elements_changed",
 		replaced.status === 200 && replacement?.board === "save-destination",
@@ -1964,15 +2089,26 @@ try {
 	);
 	check(
 		"  while the source pane stays on the source board",
-		one.board() === "save-source" &&
+		sourceBarrier.status === 200 &&
+			Boolean(sourceBarrierMessage) &&
+			one.board() === "save-source" &&
 			one.seen
 				.slice(sourceBeforeReplacement)
 				.every((message) => message.type !== "board_switched") &&
-			replaced.body?.panes?.moved?.length === 0,
+			replaced.body?.panes?.moved?.length === 0 &&
+			panesAfterReplacement.body?.panes?.find((entry) => entry.clientId === "p-one")?.board ===
+				"save-source" &&
+			panesAfterReplacement.body?.panes?.find((entry) => entry.clientId === "p-two")?.board ===
+				"save-destination",
 		JSON.stringify({
 			board: one.board(),
+			barrier: sourceBarrier.status,
 			messages: one.seen.slice(sourceBeforeReplacement).map((message) => message.type),
 			panes: replaced.body?.panes,
+			authoritative: panesAfterReplacement.body?.panes?.map((entry) => ({
+				clientId: entry.clientId,
+				board: entry.board,
+			})),
 		}),
 	);
 
@@ -2531,20 +2667,15 @@ try {
 	let scratchCanvas;
 	const scratchApi = async (method, url, body) => {
 		url = withDoing(url, method, "checking what happens to the board nobody named");
-		scratchCanvas?.assertRunning();
-		try {
-			const response = await fetch(`${scratchBase}${url}`, {
+		return readOwnedJsonResponse(
+			scratchCanvas,
+			fetch(`${scratchBase}${url}`, {
 				method,
 				...(body === undefined
 					? {}
 					: { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
-			});
-			scratchCanvas?.assertRunning();
-			return { status: response.status, body: await response.json().catch(() => null) };
-		} catch (error) {
-			scratchCanvas?.assertRunning(error);
-			throw error;
-		}
+			}),
+		);
 	};
 
 	try {

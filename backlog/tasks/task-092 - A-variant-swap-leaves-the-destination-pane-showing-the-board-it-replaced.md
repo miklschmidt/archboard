@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-22 15:40'
-updated_date: '2026-08-28 00:50'
+updated_date: '2026-08-28 01:07'
 labels: []
 dependencies: []
 references:
@@ -46,4 +46,6 @@ Keep one narrow regression proof, then close the task. A socket pane holds the d
 
 <!-- SECTION:NOTES:BEGIN -->
 Added the approved WebSocket regression proof in scripts/check-boards.mjs. A source pane and an already-populated destination pane receive a save-as whose fixed-ID fixture produces exactly created=[created], updated=[same], and deleted=[deleted]. The destination receives that exact persisted replacement through elements_changed while the source pane stays on save-source and no pane moves. test:boards passes, so no production board-write file was changed.
+
+Independent-review remediation: the source-pane no-switch assertion now crosses the source socket through the existing correlated viewport request after the save, with no fixed delay. It then reads GET /api/panes and proves p-one authoritatively remains on save-source while p-two remains on save-destination. The exact created/updated/deleted elements_changed proof remains unchanged and passes.
 <!-- SECTION:NOTES:END -->
