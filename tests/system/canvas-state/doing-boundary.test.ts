@@ -56,6 +56,42 @@ describe.serial("doing write boundary", () => {
 		expect(silent.body.error).toMatch(/step/);
 		expect((await request<Refusal>("/api/elements?board=payments")).body.count).toBe(0);
 
+		const initialSave = await request("/api/boards/save?board=payments", {
+			method: "POST",
+			doing: "saving the empty board before claiming it",
+			body: {},
+		});
+		expect(initialSave.status).toBe(200);
+		const noteFile = join(vault, "payments.excalidraw.md");
+		const beforeClaimedWrite = readFileSync(noteFile);
+		const beforeClaimedElements = await request<Refusal>("/api/elements?board=payments");
+		const claim = await request<{ claim?: { holder?: { reason?: string } } }>(
+			"/api/boards/claim?board=payments",
+			{
+				method: "POST",
+				doing: false,
+				body: { reason: "reworking the payment path" },
+			},
+		);
+		expect(claim.status).toBe(200);
+		expect(claim.body.claim?.holder?.reason).toBe("reworking the payment path");
+		const claimedWithoutDoing = await request<Refusal>("/api/elements?board=payments", {
+			method: "POST",
+			doing: false,
+			body: box("claimed-without-doing"),
+		});
+		expect(claimedWithoutDoing.status).toBe(400);
+		expect(claimedWithoutDoing.body.code).toBe("DOING_REQUIRED");
+		expect(claimedWithoutDoing.body.error).toMatch(/overall reason/);
+		expect((await request<Refusal>("/api/elements?board=payments")).body).toEqual(
+			beforeClaimedElements.body,
+		);
+		expect(readFileSync(noteFile)).toEqual(beforeClaimedWrite);
+		await request("/api/boards/claim/release?board=payments", {
+			method: "POST",
+			doing: false,
+		});
+
 		const whitespace = await request<Refusal>("/api/elements?board=payments&doing=%20%20%20", {
 			method: "POST",
 			doing: false,
