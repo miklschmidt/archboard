@@ -1,0 +1,189 @@
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+import { makeIdentity, renderBoardNote, vaultPathFor } from "../../../src/runtime/engine/board.ts";
+import { readBoardContent, writeBoardContent } from "../../../src/runtime/engine/board-io.ts";
+import type { BoardState } from "../../../src/runtime/engine/board-store.ts";
+import type { ServerElement } from "../../../src/runtime/engine/types.ts";
+import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
+import { createJsonRequester } from "./support/http.ts";
+
+interface ErrorBody {
+	error?: string;
+}
+
+interface BoardBody {
+	file: string;
+}
+
+interface ElementsBody {
+	count: number;
+	elements: Array<{ id: string }>;
+}
+
+const repoRoot = path.resolve(import.meta.dir, "../../..");
+const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-malformed-input-"));
+const port = 47_000 + Math.floor(Math.random() * 2_000);
+let canvas: OwnedCanvas;
+let request: ReturnType<typeof createJsonRequester>;
+
+beforeAll(async () => {
+	canvas = await startOwnedCanvas({
+		serverPath: path.join(repoRoot, "src/server.ts"),
+		port,
+		vault,
+	});
+	request = createJsonRequester(canvas);
+});
+
+afterAll(async () => {
+	await canvas?.dispose();
+});
+
+describe("malformed input", () => {
+	test("names the exact non-finite pane telemetry field", async () => {
+		const response = await request<ErrorBody>("/api/panes", {
+			method: "POST",
+			body: {
+				clientId: "invalid-pane",
+				paneId: "invalid-pane",
+				board: "scratch",
+				primary: true,
+				focused: true,
+				elementCount: 0,
+				rect: { x: 0, y: 0, width: 640, height: 800 },
+				viewport: { x: Number.NaN, y: 0, width: 640, height: 800, zoom: 1 },
+			},
+		});
+		expect(response.status).toBe(400);
+		expect(response.body.error).toContain("viewport.x");
+	});
+
+	test("refuses a malformed legacy note without rewriting or registering it", async () => {
+		const identity = makeIdentity({ board: "legacy-geometry" });
+		const file = vaultPathFor(identity, vault);
+		const note = renderBoardNote(
+			{
+				type: "excalidraw",
+				version: 2,
+				elements: [
+					{
+						id: "helv",
+						type: "text",
+						x: 40,
+						y: 60,
+						text: "legacy",
+						fontFamily: 2,
+						autoResize: true,
+						isDeleted: false,
+					},
+				],
+				appState: {},
+				files: {},
+			},
+			null,
+			identity,
+		);
+		fs.writeFileSync(file, note);
+		const opened = await request<ErrorBody>("/api/boards/open", {
+			method: "POST",
+			body: { board: "legacy-geometry" },
+		});
+		expect(opened.status).toBe(400);
+		expect(opened.body.error).toMatch(/helv \(text\): width, height/);
+		expect(fs.readFileSync(file, "utf8")).toBe(note);
+		const boards = await request<{ open: Array<{ key: string }> }>("/api/boards");
+		expect(boards.body.open.some((board) => board.key === "legacy-geometry")).toBeFalse();
+	});
+
+	test("refuses an entire mixed agent batch and preserves exact note bytes", async () => {
+		await request("/api/boards/new", { method: "POST", body: { board: "geometry-write" } });
+		await request("/api/elements?board=geometry-write", {
+			method: "POST",
+			body: { id: "seed", type: "rectangle", x: 0, y: 0, width: 120, height: 60 },
+		});
+		const file = (await request<BoardBody>("/api/boards/info?board=geometry-write")).body.file;
+		const before = fs.readFileSync(file);
+		const response = await request<ErrorBody>("/api/elements/batch?board=geometry-write", {
+			method: "POST",
+			body: {
+				elements: [
+					{ id: "would-have-landed", type: "rectangle", x: 200, y: 0, width: 120, height: 60 },
+					{ id: "helvetica", type: "text", x: 20, y: 120, text: "unmeasurable", fontFamily: 2 },
+				],
+			},
+		});
+		expect(response.status).toBe(400);
+		expect(response.body.error).toMatch(/helvetica \(text\): width, height/);
+		expect(fs.readFileSync(file).equals(before)).toBeTrue();
+		const after = await request<ElementsBody>("/api/elements?board=geometry-write");
+		expect(after.body).toMatchObject({ count: 1, elements: [{ id: "seed" }] });
+	});
+
+	test("settles a foreign id before geometry refusal and changes no byte", async () => {
+		const identity = makeIdentity({ board: "final-geometry-guard" });
+		const file = vaultPathFor(identity, vault);
+		const board: BoardState = { identity, file };
+		const valid = readBoardContent(board);
+		valid.elements.set("seed", {
+			id: "seed",
+			type: "rectangle",
+			x: 0,
+			y: 0,
+			width: 100,
+			height: 50,
+		} as ServerElement);
+		writeBoardContent(board, valid, { saveCommand: "board save" });
+		const before = fs.readFileSync(file);
+		const foreignId = "foreign-text-id-needing-settlement";
+		const malformed = readBoardContent(board);
+		malformed.elements.set(foreignId, {
+			id: foreignId,
+			type: "text",
+			x: 20,
+			y: 80,
+			text: "legacy Helvetica",
+			fontFamily: 2,
+			autoResize: true,
+		} as ServerElement);
+		let error: Error | undefined;
+		try {
+			writeBoardContent(board, malformed, { saveCommand: "board save" });
+		} catch (cause) {
+			error = cause as Error;
+		}
+		expect(error?.message).toMatch(
+			/Invalid render geometry: [A-Za-z0-9_-]{1,8} \(text\): width, height/,
+		);
+		expect(error?.message).not.toContain(foreignId);
+		expect(fs.readFileSync(file).equals(before)).toBeTrue();
+	});
+
+	test("refuses the same malformed geometry on the human change route", async () => {
+		const file = (await request<BoardBody>("/api/boards/info?board=geometry-write")).body.file;
+		const before = fs.readFileSync(file);
+		const response = await request<ErrorBody>("/api/elements/changes?board=geometry-write", {
+			method: "POST",
+			body: {
+				upserts: [
+					{
+						id: "browser-text",
+						type: "text",
+						x: 40,
+						y: 160,
+						text: "browser",
+						fontFamily: 2,
+						autoResize: true,
+					},
+				],
+				deletes: [],
+				clientId: "a-browser",
+			},
+		});
+		expect(response.status).toBe(400);
+		expect(response.body.error).toMatch(/browser-text \(text\): width, height/);
+		expect(fs.readFileSync(file).equals(before)).toBeTrue();
+	});
+});
