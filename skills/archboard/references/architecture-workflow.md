@@ -103,13 +103,40 @@ a final strict report that is both complete and clean. Keep unrelated content,
 layout, groups, and stencil provenance byte-for-byte or field-for-field intact
 through the repair.
 
+### When a finding points back to the board
+
+An edge passing through an unrelated node is geometric evidence, not a verdict
+about the board or the codebase. First confirm that the board accurately shows
+the relevant architecture: one concern at one level, only edges that constrain
+the discussion, and placement that consistently expresses flow, layers, and
+ownership. When the composition is yours and still new, revise it before
+working around it with bends.
+
+That is not permission to tidy a person's layout or widen a routing-only task.
+If somebody else arranged the nodes, or the requested repair promised to
+preserve their placement, show the finding and explain the scope or placement
+change that would make the edge easier to follow. Wait for agreement before
+making that broader change.
+
+Once those composition choices hold, use the simplest supported polyline that
+goes around each real obstacle. Every bend should make the edge easier to trace
+at a useful working zoom. If the relevant coupling still makes the board dense,
+keep that coupling visible and say that the topology causes the clutter. One
+crossing alone does not prove that the codebase is badly designed. Split the
+subject only when each resulting board still has one coherent concern at one
+level; use a bridge only for a deliberate proper edge crossing, never for an
+edge passing through a node.
+
 The evidence tools answer different questions:
 
 - `check` decides whole-board structural and routing findings.
 - `render-findings` gives close-ups only while findings remain and a picture
   helps explain them.
-- A full-scene `screenshot` records the rendered pane after confirming that it
-  holds the named board. The pane camera changes the view, not inspection.
+- A fitted full-scene `screenshot` records the board's extent after confirming
+  that the pane holds it. It is an index, not proof that labels and paths read
+  well at working zoom. For a pannable board, capture enough working-zoom views
+  to verify the important paths and labels. The pane camera changes the view,
+  not inspection.
 - `export` writes a portable scene.
 - `compare` describes semantic change between variants. It proves neither
   routing nor rendered pixels.
@@ -123,6 +150,40 @@ needs a tab open and hands you no ids to work with.
 A whole pass is the shape of work a claim is for, and the human standing at the
 board is who it takes the board from: `SKILL.md`, "One writer at a time".
 
+### Spatial canvas
+
+A pane is a camera over the board, not a page the board must fit inside. Choose
+a working zoom at which the person can read labels and trace edges, give the
+architecture enough space, and expect to pan. A fitted overview is useful as an
+index of the whole board, but its labels may be too small to read. The board's
+scope still stays at one concern and one level; more space is not a reason to
+mix subjects.
+
+Extra canvas buys separation, not prose. Keep node and edge labels terse.
+Nearby free text or a short bullet list may name a constraint, exception,
+responsibility, or the meaning of a path. Keep annotations subordinate to the
+architecture. They should not repeat labels or turn a dependency that belongs
+in an edge into prose.
+
+### Visual grammar
+
+Start with what each mark needs to communicate, not with a rectangle:
+
+- Use a library stencil when recognizable infrastructure matters at a glance.
+- Use a background zone and its title for ownership or containment.
+- Use a labelled box for an architectural unit with no more useful familiar
+  form.
+- Use arrows for architecture edges. Use ordinary lines for separators or
+  callouts, not as an unrecorded spelling of a dependency.
+- Use free text and short bullets for nearby annotations. Ellipses, diamonds,
+  images, and freehand marks are available when their familiar meaning fits the
+  subject.
+
+Variety is not the goal. Give one visual treatment one meaning within a board,
+and reuse it consistently. Familiar notation should explain itself. Add a small
+legend only when a local color, form, or line convention would otherwise make
+the person guess.
+
 Guidance that holds up on a big screen:
 
 - **Look in the library first.** `library list --text`. A stencil of a queue or
@@ -134,8 +195,8 @@ Guidance that holds up on a big screen:
 - **Layout carries meaning.** Left-to-right for flow, top-to-bottom for layers,
   containment for ownership. Be consistent — the human will read the geometry
   before the labels.
-- **Boxes big, labels short.** A 75" panel viewed from two metres is not a
-  laptop screen. Two words plus a path.
+- **Labels short.** A 75" panel viewed from two metres is not a laptop screen.
+  Two words plus a path.
 - **Draw the edges that matter.** Every call is not an arrow. Show the couplings
   that constrain the refactor.
 - **Label your containers.** A boundary box with no label has no identity that
@@ -143,8 +204,10 @@ Guidance that holds up on a big screen:
   "unlabelled-rectangle" and any statement about what moved in or out of it
   degrades with it.
 - **Finish the whole board.** Run the completion gate from `SKILL.md`. Keep
-  close-ups conditional on live findings and take one confirmed-board
-  full-scene overview only after the strict report is complete and clean.
+  finding close-ups conditional on live findings. After the strict report is
+  complete and clean, take one confirmed-board fitted overview and, for a
+  pannable board, enough working-zoom views to show its important paths and
+  labels.
 
 ## Refactor discussions
 

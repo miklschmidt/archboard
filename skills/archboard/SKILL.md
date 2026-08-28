@@ -82,8 +82,10 @@ stencils, and unrelated content throughout.
 7. Release the claim when writes end. If the final report demands another
    substantial repair campaign, claim again for that campaign and repeat the
    gate.
-8. Confirm which pane holds the named board, then capture one full-scene
-   overview. The pane camera only chooses what a person sees; inspection still
+8. Confirm which pane holds the named board, then capture one fitted full-scene
+   overview as an index of the board's extent. When the board requires panning,
+   also capture enough working-zoom views to show its important paths and
+   labels. The pane camera only chooses what a person sees; inspection still
    covers the whole named board.
 
 Run `compare` only when the work concerns variants. It describes semantic
@@ -139,10 +141,30 @@ right shape for a service with no useful stencil.
 ## Layout
 
 Use left-to-right geometry for flow, top-to-bottom geometry for layers, and
-containment for ownership. Keep labels short enough to fit at viewing distance.
+containment for ownership. A pane is a camera, not a page boundary. Space the
+board for reading at a useful working zoom and let the person pan instead of
+compressing the architecture into one view. More canvas gives the structure
+room; labels still stay short enough to read at viewing distance.
+
+Choose visual form by meaning rather than putting every fact in a rectangle.
+Use the available visual vocabulary, keep each treatment consistent within the
+board, and add a small legend only for a convention that is not otherwise
+obvious. Read
+[`references/architecture-workflow.md`](references/architecture-workflow.md)
+for when a stencil, zone, edge, line, annotation, or other shape earns its
+place.
+
 Draw background zones before their contents so their fill cannot cover later
 elements. Put a zone title in a separate text element near its edge rather than
 binding a label into the middle of the zone.
+
+Compose for important edges that are easy to trace at working zoom. When
+`check` reports an edge through an unrelated node, revisit the decisions above
+the route in this order: one concern at one level, only edges that matter, then
+node placement. Every bend should help a person trace a simple route around a
+real obstacle; clearing inspection alone does not justify a detour. Read
+[`references/architecture-workflow.md`](references/architecture-workflow.md)
+when a finding points to board scope or to a layout you did not create.
 
 Route supported straight polylines around unrelated nodes and visual obstacles.
 Do not treat a container boundary as an obstacle. Inspection owns the exact
@@ -171,7 +193,8 @@ wins without the human.
 - `render-findings` renders close-ups for current findings from one named board
   snapshot.
 - `screenshot` captures one pane's rendered view. Confirm that pane holds the
-  named board and use a full-scene overview for completion evidence.
+  named board. A fitted full-scene overview indexes the board's extent; readable
+  working-zoom views prove the important paths and labels on a pannable board.
 - `viewport` changes a pane's camera. It does not crop inspection or prove what
   exists outside the visible area.
 - `export` writes a portable scene file. It does not prove the browser view or

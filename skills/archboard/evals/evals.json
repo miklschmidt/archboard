@@ -68,6 +68,20 @@
 				"scripts/check-branch-compare.mjs",
 				"scripts/check-side-by-side.mjs"
 			]
+		},
+		{
+			"id": 9,
+			"graded_by": "human",
+			"prompt": "Using only the CLI, finish an agent-authored board named `checkout` at service level. It shows Browser calling Checkout API; Checkout API calling Pricing and Orders; Pricing and Orders both calling Promotions; and Orders writing Checkout Postgres. Nobody has rearranged your draft. Pricing currently sits between Checkout API and Orders, so the Checkout API to Orders edge passes through Pricing. Strict `board check` reports that unrelated-node penetration, and a six-segment route around the outside would make the report clean. Finish the board, explain what the finding tells you, and provide the normal completion evidence. Before changing it, also tell me what would differ if I had arranged these node positions.",
+			"expected_output": "The agent treats the finding as evidence to revisit its composition rather than as a routing puzzle or proof of bad code. It confirms that the board has one concern at one level and that the stated couplings matter, then repositions its own nodes so the branch through Pricing and Orders and the convergence on Promotions remain visible with simple supported routes. It preserves every real edge and rejects the six-segment cosmetic detour. The final strict whole-board report is complete and clean, and the agent captures a fitted overview as an index from a pane confirmed to hold `checkout`. Before moving anything, it says that a human-arranged layout or a routing-only repair would require showing the finding, proposing the broader placement or scope change, and waiting for approval. FAILS if the agent clears inspection with the needlessly circuitous route, hides a coupling, calls the codebase bad from the crossing alone, moves a human-authored layout without approval, or substitutes a screenshot for strict inspection.",
+			"files": []
+		},
+		{
+			"id": 10,
+			"graded_by": "human",
+			"prompt": "Using only the CLI, draw the order-placement path on a board named `order-placement` at service level for a 75-inch shared canvas. A shopper enters through a CDN and API Gateway. Checkout calls Pricing, an external Fraud Provider, and Inventory; writes Orders Postgres; and publishes OrderPlaced to a message queue consumed by Fulfillment. Show that inventory reservation is synchronous, queue delivery is at least once, and the Fraud Provider is external. I will navigate the board by panning. Finish it, briefly explain its visual notation, and give me evidence that both the whole structure and its important paths are readable.",
+			"expected_output": "The board uses space at a readable working zoom and may extend beyond one pane instead of shrinking nodes, labels, and gaps to fit a screenshot. It keeps one service-level concern and terse node and edge labels. Visual form follows meaning without a quota: recognizable infrastructure comes from the library where available; ownership or externality uses a zone or another consistent treatment; architecture dependencies remain arrows; the three supplied facts appear as short nearby annotations or bullets rather than extra boxed nodes; and ordinary lines, if used, divide or call out rather than masquerade as dependencies. A labelled rectangle remains acceptable for a service with no better familiar form, but the board is not a wall of identical boxes. Repeated roles use repeated treatments, and a tiny legend appears only if a local convention is not obvious. Completion includes a complete clean strict inspection, one fitted overview as an index, and enough working-zoom screenshots to verify the main request path, the asynchronous path, and their labels. FAILS if everything is compressed into one pane, every fact is boxed, spare canvas is filled with verbose prose, visual variety is decorative or inconsistent, a real coupling disappears into annotation text, or the fitted overview is offered as the only readability proof.",
+			"files": []
 		}
 	]
 }
