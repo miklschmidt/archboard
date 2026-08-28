@@ -38,9 +38,12 @@ describe("refusal and retry", () => {
 		const harness = new ReportingHarness();
 		harness.edit("a", { x: 25 });
 		harness.due();
+		expect(harness.pendingIsReachable()).toBe(true);
 		harness.refuse();
+		expect(harness.pendingIsReachable()).toBe(true);
 		expect(needsFullReport(harness.state)).toBe(true);
 		harness.clock.advance(0);
+		expect(harness.pendingIsReachable()).toBe(true);
 
 		const retry = harness.server.requests[0];
 		expect(retry?.fullReport).toBe(true);
@@ -69,6 +72,7 @@ describe("board adoption", () => {
 	test("adopting another board cancels the old generation's scheduled report", () => {
 		const harness = new ReportingHarness();
 		harness.edit("a", { x: 9 });
+		expect(harness.pendingIsReachable()).toBe(true);
 		harness.dispatch({ type: "board_adopted" });
 		const next = [box("c", 400)];
 		harness.scene = copy(next);
@@ -79,6 +83,7 @@ describe("board adoption", () => {
 			baselineUpdate: { type: "replace", withheldIds: [] },
 		});
 		harness.clock.advance(20_000);
+		expect(harness.pendingIsReachable()).toBe(true);
 		expect(harness.server.requests).toHaveLength(0);
 	});
 });

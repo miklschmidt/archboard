@@ -66,6 +66,7 @@ describe("public reporting state", () => {
 
 	test("settled state excludes scheduled, in-flight, and queued delivery", () => {
 		const harness = new ReportingHarness();
+		expect(harness.pendingIsReachable()).toBe(true);
 		expect(reportsSettled(harness.state)).toBe(true);
 		harness.edit("a", { x: 30 });
 		expect(reportsSettled(harness.state)).toBe(false);
@@ -184,6 +185,7 @@ describe("file and incoming server frames", () => {
 		harness.clock.advance(0);
 		expect(harness.state.applyingServerUpdateCount).toBe(0);
 		expect(harness.state.serverUpdateStamps).toHaveLength(0);
+		expect(harness.pendingIsReachable()).toBe(true);
 	});
 
 	test("text ids normalize before the reducer sends their report", () => {
@@ -193,7 +195,9 @@ describe("file and incoming server frames", () => {
 			{ id: longId, type: "text", text: "Name", x: 0, y: 100, version: 1 },
 		]);
 		harness.edit(longId, { text: "Changed" });
+		expect(harness.pendingIsReachable()).toBe(true);
 		harness.due();
+		expect(harness.pendingIsReachable()).toBe(true);
 		expect(harness.server.requests[0]?.report.upserts).toContainEqual(
 			expect.objectContaining({ type: "text", id: expect.not.stringMatching(longId) }),
 		);
