@@ -5,7 +5,25 @@ import { z } from "zod";
 import { BridgeRemoveResultSchema, BridgeResultSchema } from "../../../src/cli/commands/bridge.ts";
 import { FindingRenderManifestSchema } from "../../../src/cli/finding-rendering/index.ts";
 import { createCliHttpDouble } from "./support/cli-http-double.ts";
-import { createPackageCliOwner, packageFailure } from "./support/package-cli.ts";
+import {
+	createPackageCliOwner,
+	packageFailure,
+	type PackageRunResult,
+} from "./support/package-cli.ts";
+
+function decodePackage<T>(result: PackageRunResult, schema: z.ZodType<T>): T {
+	const diagnostic = packageFailure(result);
+	let decoded: unknown;
+	try {
+		decoded = JSON.parse(result.stdout);
+	} catch (error) {
+		throw new Error(`${diagnostic}\nJSON decode: ${(error as Error).message}`, { cause: error });
+	}
+	const parsed = schema.safeParse(decoded);
+	if (!parsed.success)
+		throw new Error(`${diagnostic}\nschema: ${parsed.error.message}`, { cause: parsed.error });
+	return parsed.data;
+}
 
 const requestBodySchema = z.record(z.string(), z.unknown());
 const bodyOf = (body: unknown) => requestBodySchema.parse(body);
@@ -47,7 +65,7 @@ describe("package finding rendering", () => {
 		expect(result.status, diagnostic).toBe(0);
 		expect(result.signal, diagnostic).toBeNull();
 		expect(result.stderr, diagnostic).toBe("");
-		const manifest = FindingRenderManifestSchema.parse(JSON.parse(result.stdout));
+		const manifest = decodePackage(result, FindingRenderManifestSchema);
 		expect(manifest.complete, diagnostic).toBeTrue();
 		expect(manifest.entries, diagnostic).toHaveLength(1);
 		const rendered = manifest.entries[0];
@@ -161,7 +179,7 @@ describe("package finding rendering", () => {
 			http.requests.slice(before).map((r) => `${r.method} ${r.url.pathname}`),
 			diagnostic,
 		).toEqual(["POST /api/export/findings"]);
-		const manifest = FindingRenderManifestSchema.parse(JSON.parse(partial.stdout));
+		const manifest = decodePackage(partial, FindingRenderManifestSchema);
 		expect(manifest.complete, diagnostic).toBeFalse();
 		const failed = manifest.entries[0];
 		expect(failed?.status, diagnostic).toBe("failed");
@@ -196,7 +214,7 @@ describe("package bridge commands", () => {
 		let diagnostic = packageFailure(created);
 		expect(created.status, diagnostic).toBe(0);
 		expect(created.stderr, diagnostic).toBe("");
-		const result = BridgeResultSchema.parse(JSON.parse(created.stdout));
+		const result = decodePackage(created, BridgeResultSchema);
 		expect(
 			result.elements.map((part) => part.customData?.archboard?.bridge?.role),
 			diagnostic,
@@ -215,7 +233,7 @@ describe("package bridge commands", () => {
 		diagnostic = packageFailure(removed);
 		expect(removed.status, diagnostic).toBe(0);
 		expect(removed.stderr, diagnostic).toBe("");
-		expect(BridgeRemoveResultSchema.parse(JSON.parse(removed.stdout)).deleted, diagnostic).toEqual([
+		expect(decodePackage(removed, BridgeRemoveResultSchema).deleted, diagnostic).toEqual([
 			"Bridge01",
 			"Redraw01",
 		]);
