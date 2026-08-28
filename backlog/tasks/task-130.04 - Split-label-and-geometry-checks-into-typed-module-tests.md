@@ -1,11 +1,11 @@
 ---
 id: TASK-130.04
 title: Split label and geometry checks into typed module tests
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:03'
-updated_date: '2026-08-28 12:04'
+updated_date: '2026-08-28 12:11'
 labels: []
 dependencies:
   - TASK-130.01
@@ -31,12 +31,12 @@ Keep public-entrypoint tests with the owning module. Route and persisted-note ca
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 check-labels and check-geometry are replaced by typed native tests grouped by public label conversion, geometry validation, malformed recovery, and route behavior.
-- [ ] #2 Every current label binding, ID, normalization, z-order, malformed-geometry, finite-number, and exact-output assertion is represented by a named test through the relevant public interface.
-- [ ] #3 Pure tests do not start a server; route tests use the real route boundary and prove the note or board remains unchanged on refusal.
-- [ ] #4 Fixtures have explicit types or schema parsing at their input boundary, and no test relies on computed imports that erase module types.
-- [ ] #5 Every test file is at most 500 lines and no replacement file receives a complexity, explicit-any, unsafe-assertion, or console exemption.
-- [ ] #6 Focused parity checks demonstrate a known label and geometry regression fails both the old and new coverage before the legacy scripts are deleted.
+- [x] #1 check-labels and check-geometry are replaced by typed native tests grouped by public label conversion, geometry validation, malformed recovery, and route behavior.
+- [x] #2 Every current label binding, ID, normalization, z-order, malformed-geometry, finite-number, and exact-output assertion is represented by a named test through the relevant public interface.
+- [x] #3 Pure tests do not start a server; route tests use the real route boundary and prove the note or board remains unchanged on refusal.
+- [x] #4 Fixtures have explicit types or schema parsing at their input boundary, and no test relies on computed imports that erase module types.
+- [x] #5 Every test file is at most 500 lines and no replacement file receives a complexity, explicit-any, unsafe-assertion, or console exemption.
+- [x] #6 Focused parity checks demonstrate a known label and geometry regression fails both the old and new coverage before the legacy scripts are deleted.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -99,6 +99,8 @@ The focused negative proof now covers four refusals: misspelled discriminator re
 Regenerated worksheet remains at /tmp/TASK-130.04-assertion-ledger-rereview.tsv with SHA-256 720e7cc5b0ca53445fb6689d7424475275c0d456fd6fcad7da41bbf71816b120. Counts are exactly 244 exact-text, 9 moved-pure, 4 helper-spelling, semantic fallback 0, unmapped 0, unclaimed 0, duplicate owner 0.
 
 Validation: label-route alone 2 tests/45 expects; geometry-route alone 2/66; exact module lane 7/150; exact system lane 6/185; test:labels 7/205; test:geometry 6/130; lifecycle 13/85; inventory 11/11; type-check, lint, fmt:check, and git diff --check pass. The requested prior browser/full-check evidence remains preserved without rerun. route-cases.ts is 337 lines and label-route.test.ts is 226. Package mapping, deletion scope, production scope, task status, assignee, and all six unchecked AC remain unchanged.
+
+Final independent fixed-range rereview is clean on Standards and Spec at 19c04512fd0157aedb9ee90ab44988702c18d53e..f3eb0c837d3ddf0b62b6c87f92a067001971bdfd. The 257-row ledger SHA-256 is 720e7cc5b0ca53445fb6689d7424475275c0d456fd6fcad7da41bbf71816b120: 244 exact-text, 9 moved-pure, 4 helper-spelling, with no unmapped, unclaimed, or duplicate citations. Reconciliation on main passed test:labels (7 tests/205 expects), test:geometry (6/130), the TASK-130.06 lifecycle lane (13/85), live inventory (11/11), type-check, lint, fmt:check, and git diff --check. The earlier complete bun run check passed with browser checks headless and serial; the final test-only schema correction was independently validated without rerunning browsers.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -128,3 +130,9 @@ created: 2026-08-28 12:04
 Applied the second review finding only: strict authored request schemas, literal-success acknowledgement, and two added negative cases. Updated rereview worksheet is retained in /tmp.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replaced the label and geometry self-running checks with typed module and system tests, strict schema-parsed route fixtures, exact package mappings, and preserved regression parity. Independent fixed-range review was clean; focused lanes, lifecycle, inventory, type, lint, formatting, and diff validation pass, with prior full serial/headless check evidence preserved.
+<!-- SECTION:FINAL_SUMMARY:END -->
