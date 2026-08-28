@@ -1,10 +1,11 @@
 ---
 id: TASK-130.04
 title: Split label and geometry checks into typed module tests
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-28 01:03'
-updated_date: '2026-08-28 05:05'
+updated_date: '2026-08-28 12:04'
 labels: []
 dependencies:
   - TASK-130.01
@@ -71,3 +72,59 @@ bun test src/runtime/engine/tests/label-input.test.ts src/runtime/engine/tests/l
 bun test tests/system/label-geometry/label-human-round-trip.test.ts tests/system/label-geometry/label-route.test.ts tests/system/label-geometry/geometry-route.test.ts
 Then run bun run type-check, bun run lint, bun run fmt:check, bun run check, and git diff --check sequentially after integration. Do not parallelize broad validation. Acceptance requires both package keys to reach every mapped file exactly once, both predecessor scripts to be absent, the TASK-130.06 lifecycle tests to remain green, and the real inventory to pass.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation completed through READY_FOR_REVIEW at fixed base 19c04512fd0157aedb9ee90ab44988702c18d53e. Added the reviewed seven public-root runtime tests, two typed same-owner fixture files, three system route/round-trip tests, and their two owner-local support/fixture files. Pure tests start no server; route tests import TASK-130.06 owned-canvas directly. The native malformed geometry batch refusal asserts status/body plus byte-identical note, unchanged board version, and byte-identical element JSON.
+
+Assertion audit: a disposable TSV mapped all 257 static predecessor assert calls one-to-one to 257 native assert calls, with unmapped 0, duplicate owners 0, and unclaimed 0; SHA-256 e83dd94de5939b19c31ae90e0fdec0572f932a80cb5571181beb6be05811ee3e. The four non-literal mappings are only typed lookup/helper spellings, with the same predicates and messages. IDs, bytes, ordering, coordinates, normalization, binding repair, z-order, malformed cases, finite fields, 0.001/0.5 tolerances, pinned solver bits, 25/50 cycles, exact route refusal, and note/board/element nonmutation were source-audited.
+
+Disposable mutation parity before cutover: restoring outbound label seeds made scripts/check-labels.mjs exit 1 (12/183 failed) and the native label command exit 1 (4 failures, including the write-boundary seed assertion). Clamping negative path minima to zero made scripts/check-geometry.mjs exit 1 (19/92 failed) and the native geometry command exit 1 (3 failures, led by exact negative-coordinate extent). The checkout was removed afterward.
+
+Serialized cutover: package test:labels and test:geometry now contain the exact reviewed commands; deleted exactly scripts/check-labels.mjs and scripts/check-geometry.mjs. Live inventory passes and reaches every native test exactly once. Focused module command: 7 tests / 135 expects. Focused system command: 5 tests / 211 expects. Package lanes: labels 6 tests / 201 expects; geometry 6 tests / 145 expects. Every ten owner test files passes alone. TASK-130.06 lifecycle lane: 13 tests / 85 expects. Type-check, lint, fmt:check, git diff --check, and the single full bun run check all pass; browser checks ran headlessly and serially inside check only. All authored TypeScript files are 499 lines or fewer. Acceptance criteria intentionally remain unchecked for review.
+
+Fixed-range review remediation against 5c17b31, with base 19c04512 unchanged. Route fixtures no longer export generic Record<string, unknown> data. route-cases.ts now parses each authored rectangle, arrow, text, coordinate, error-string, and captured request fixture through narrow owner-local Zod schemas. Both route owners request unknown JSON and parse acknowledgement, element, board-info, success, or refusal bodies before assertions. A focused negative test rejects a misspelled request type and a response element with a nonnumeric coordinate. No general response helper or production schema was added.
+
+Moved the nine static describe, bounding-box, layout-region, clustering, and selection predicates out of geometry-route.test.ts into geometry-consumers.test.ts. They now run through public runtime/engine roots against typed captured post-transition geometry in geometry-cases.ts. geometry-route.test.ts retains HTTP-dependent remeasurement, rerouting, region query, binding, nudge, restore, and malformed-refusal behavior only.
+
+Rereview worksheet: /tmp/TASK-130.04-assertion-ledger-rereview.tsv, SHA-256 1ddbb89467ed717eb46dd0fd1db20eafa37750e4711d5ffef0886c1a93413f12. It maps 257 predecessor assert calls to 257 native assert calls, unmapped 0, duplicate owner 0, unclaimed 0. It records exact old/new path, line, condition, and assertion text for all rows; four helper-spelling rows are explicitly tagged, and nine pure predicates are tagged moved-pure at geometry-consumers.test.ts lines 63-143. The worksheet remains available for rereview and no parity framework is committed.
+
+Remediation validation: focused malformed-schema proof 1 test/2 expects; geometry-consumers alone 1/22; exact seven-module lane 7/150; exact three-system lane 6/183; label-route alone 2/43; geometry-route alone 2/66; test:labels 7/203; test:geometry 6/130; TASK-130.06 lifecycle lane 13/85; live inventory 11/11. type-check, lint, fmt:check, and git diff --check pass. Prior successful full bun run check and serial headless browser evidence remain applicable; rereview explicitly did not require a rerun. All authored TypeScript files remain <=500 lines, maximum 490. Package mapping, predecessor deletion, production scope, status, assignee, and all six unchecked AC are unchanged.
+
+Second fixed-range remediation against f06e18c, base 19c04512 unchanged. Replaced every authored request object schema in route-cases.ts with z.strictObject, including coordinate, label, binding, metadata/archboard, rectangle/roundness, arrow/start/end, and text shapes. Response schemas retain loose top-level passthrough only where intentional. AcknowledgementRouteResponseSchema now requires success: z.literal(true). No request coercion, passthrough, unsafe cast, production schema, or response framework was added.
+
+The focused negative proof now covers four refusals: misspelled discriminator rectangel, an otherwise valid rectangle carrying unknown key widht, acknowledgement {success:false,error:"no"}, and a response element with string x. It passes 1 test/4 expects.
+
+Regenerated worksheet remains at /tmp/TASK-130.04-assertion-ledger-rereview.tsv with SHA-256 720e7cc5b0ca53445fb6689d7424475275c0d456fd6fcad7da41bbf71816b120. Counts are exactly 244 exact-text, 9 moved-pure, 4 helper-spelling, semantic fallback 0, unmapped 0, unclaimed 0, duplicate owner 0.
+
+Validation: label-route alone 2 tests/45 expects; geometry-route alone 2/66; exact module lane 7/150; exact system lane 6/185; test:labels 7/205; test:geometry 6/130; lifecycle 13/85; inventory 11/11; type-check, lint, fmt:check, and git diff --check pass. The requested prior browser/full-check evidence remains preserved without rerun. route-cases.ts is 337 lines and label-route.test.ts is 226. Package mapping, deletion scope, production scope, task status, assignee, and all six unchecked AC remain unchanged.
+<!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @codex
+created: 2026-08-28 10:59
+---
+Implementation started at fixed base 19c04512fd0157aedb9ee90ab44988702c18d53e using the already reviewed plan; acceptance criteria remain unchecked pending review.
+---
+
+author: @codex
+created: 2026-08-28 11:38
+---
+Implementation and serialized cutover are complete and fully validated. TASK remains In Progress with all acceptance criteria unchecked for independent review.
+---
+
+author: @codex
+created: 2026-08-28 11:57
+---
+Applied exactly the two requested review remediations. The fixed-range worksheet is available at /tmp/TASK-130.04-assertion-ledger-rereview.tsv for independent rereview.
+---
+
+author: @codex
+created: 2026-08-28 12:04
+---
+Applied the second review finding only: strict authored request schemas, literal-success acknowledgement, and two added negative cases. Updated rereview worksheet is retained in /tmp.
+---
+<!-- COMMENTS:END -->
