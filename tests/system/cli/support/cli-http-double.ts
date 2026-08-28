@@ -24,10 +24,12 @@ export interface RecordedRequest {
 export interface CliHttpDouble {
 	readonly url: string;
 	readonly requests: readonly RecordedRequest[];
+	readonly contacts: readonly string[];
 	setBrowserClients(count: number): void;
 	setCompatibilityRecord(name: string | null): void;
 	writesSince(offset: number): readonly RecordedRequest[];
-	dispose(): void;
+	dispose(): Promise<void>;
+	[Symbol.asyncDispose](): Promise<void>;
 }
 
 const element = { id: "shape1", type: "rectangle", x: 0, y: 0, width: 100, height: 80 };
@@ -140,8 +142,9 @@ function preflightResponse(
 	return null;
 }
 
-export function createCliHttpDouble(): CliHttpDouble {
+export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 	const requests: RecordedRequest[] = [];
+	const contacts: string[] = [];
 	let browserClients = 1;
 	let compatibilityRecord: string | null = null;
 	const server = Bun.serve({
@@ -149,6 +152,9 @@ export function createCliHttpDouble(): CliHttpDouble {
 		port: 0,
 		async fetch(request) {
 			const url = new URL(request.url);
+			const contact = `${request.method} ${url.pathname}`;
+			contacts.push(contact);
+			observed.push(contact);
 			if (url.pathname === "/health")
 				return Response.json({
 					service: CANVAS_SERVICE_NAME,
@@ -367,9 +373,13 @@ export function createCliHttpDouble(): CliHttpDouble {
 			);
 		},
 	});
+	const dispose = async () => {
+		await server.stop(true);
+	};
 	return {
 		url: `http://127.0.0.1:${server.port}`,
 		requests,
+		contacts,
 		setBrowserClients(count) {
 			browserClients = count;
 		},
@@ -381,8 +391,7 @@ export function createCliHttpDouble(): CliHttpDouble {
 				.slice(offset)
 				.filter((entry) => entry.method !== "GET" && entry.url.pathname.startsWith("/api/"));
 		},
-		dispose() {
-			void server.stop(true);
-		},
+		dispose,
+		[Symbol.asyncDispose]: dispose,
 	};
 }

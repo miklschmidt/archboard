@@ -43,7 +43,7 @@
 		"test:boundaries": "bun test tests/system/repository-policy/boundaries.test.ts",
 		"test:bind": "bun scripts/check-local-bind.mjs",
 		"test:obsidian": "bun test src/runtime/engine/tests/obsidian-note-round-trip.test.ts src/runtime/engine/tests/obsidian-embedded-files.test.ts src/runtime/engine/tests/obsidian-id-stability.test.ts",
-		"test:cli": "bun test tests/system/cli/package-help-argv.test.ts tests/system/cli/package-board-commands.test.ts tests/system/cli/package-io-refusals.test.ts",
+		"test:cli": "bun test tests/system/cli/package-help-argv.test.ts tests/system/cli/package-board-commands.test.ts tests/system/cli/package-io-refusals.test.ts tests/system/cli/package-fixed-base-compatibility.test.ts tests/system/cli/package-render-bridge.test.ts tests/system/cli/resource-cleanup.test.ts",
 		"test:changes": "bun scripts/check-changes.mjs",
 		"test:reporting": "bun test src/ui/canvas/tests/change-reporting-state.test.ts src/ui/canvas/tests/change-reporting-acknowledgement.test.ts src/ui/canvas/tests/change-reporting-scheduling.test.ts src/ui/canvas/tests/change-reporting-holds-and-adoption.test.ts",
 		"test:one-write": "bun scripts/check-one-write.mjs",

@@ -46,7 +46,8 @@ const doingUrl = (path: string, method: string) => {
 
 describe("two-repository board session", () => {
 	test("keeps portable bindings and machine-local links separate", async () => {
-		const fixture = createRepositoryFixture();
+		await using resources = new AsyncDisposableStack();
+		const fixture = resources.use(createRepositoryFixture());
 		const alpha = fixture.repository("alpha", "git@github.com:acme/alpha.git");
 		const beta = fixture.repository("beta", "https://github.com/acme/beta.git");
 		const alphaIdentity = "github.com/acme/alpha";
@@ -54,8 +55,9 @@ describe("two-repository board session", () => {
 		const canvas = await startOwnedCanvas({
 			serverPath: join(checkoutRoot, "src/server.ts"),
 			vault: fixture.vault,
-			env: { ARCHBOARD_REPOS: fixture.registry },
+			env: fixture.serverEnvironment,
 		});
+		resources.defer(() => canvas.dispose());
 		const api = async (method: string, path: string, body?: unknown) => {
 			const response = await fetch(`${canvas.base}${doingUrl(path, method)}`, {
 				method,
@@ -65,7 +67,7 @@ describe("two-repository board session", () => {
 			});
 			return apiResultSchema.parse({ status: response.status, body: await response.json() });
 		};
-		try {
+		{
 			for (const checkout of [alpha, beta]) {
 				const added = fixture.run(["repo", "add", checkout], { url: canvas.base });
 				expect(added.status, repositoryFailure(added)).toBe(0);
@@ -108,8 +110,8 @@ describe("two-repository board session", () => {
 			const second = promote(betaId, betaIdentity);
 			expect(first.status, repositoryFailure(first)).toBe(0);
 			expect(second.status, repositoryFailure(second)).toBe(0);
-			expect(first.stdout).not.toContain(fixture.nowhere);
-			expect(second.stdout).not.toContain(fixture.nowhere);
+			expect(first.stdout, repositoryFailure(first)).not.toContain(fixture.nowhere);
+			expect(second.stdout, repositoryFailure(second)).not.toContain(fixture.nowhere);
 			expect(
 				(
 					await api("PUT", `/api/elements/${alphaId}?board=${board}`, {
@@ -146,8 +148,9 @@ describe("two-repository board session", () => {
 				{ url: canvas.base },
 			);
 			expect(blind.status, repositoryFailure(blind)).toBe(0);
-			expect(blind.stdout).toContain("does not resolve on this machine");
-			expect(promote(betaId, betaIdentity).status).toBe(0);
+			expect(blind.stdout, repositoryFailure(blind)).toContain("does not resolve on this machine");
+			const restoredBinding = promote(betaId, betaIdentity);
+			expect(restoredBinding.status, repositoryFailure(restoredBinding)).toBe(0);
 
 			const notePath = join(fixture.vault, "systems.excalidraw.md");
 			const rawNote = readFileSync(notePath, "utf8");
@@ -170,19 +173,24 @@ describe("two-repository board session", () => {
 			const fromBeta = fixture.run(["board", "list", "--repo", betaIdentity, "--text"], {
 				url: canvas.base,
 			});
-			expect(fromAlpha.stdout).toContain("systems");
-			expect(fromAlpha.stdout).toMatch(/Alpha \[service\] -> src\/service\.ts/);
-			expect(fromAlpha.stdout).not.toMatch(/Beta \[/);
-			expect(fromBeta.stdout).toContain("systems");
+			expect(fromAlpha.status, repositoryFailure(fromAlpha)).toBe(0);
+			expect(fromAlpha.stdout, repositoryFailure(fromAlpha)).toContain("systems");
+			expect(fromAlpha.stdout, repositoryFailure(fromAlpha)).toMatch(
+				/Alpha \[service\] -> src\/service\.ts/,
+			);
+			expect(fromAlpha.stdout, repositoryFailure(fromAlpha)).not.toMatch(/Beta \[/);
+			expect(fromBeta.status, repositoryFailure(fromBeta)).toBe(0);
+			expect(fromBeta.stdout, repositoryFailure(fromBeta)).toContain("systems");
 			const here = fixture.run(["board", "list", "--here", "--text"], {
 				cwd: alpha,
 				url: canvas.base,
 			});
-			expect(here.stdout).toContain("systems");
-			expect(here.stderr).toContain(alphaIdentity);
+			expect(here.status, repositoryFailure(here)).toBe(0);
+			expect(here.stdout, repositoryFailure(here)).toContain("systems");
+			expect(here.stderr, repositoryFailure(here)).toContain(alphaIdentity);
 			const nowhere = fixture.run(["board", "list", "--here", "--text"], { url: canvas.base });
-			expect(nowhere.status).not.toBe(0);
-			expect(nowhere.stderr).toContain("not inside a git repository");
+			expect(nowhere.status, repositoryFailure(nowhere)).not.toBe(0);
+			expect(nowhere.stderr, repositoryFailure(nowhere)).toContain("not inside a git repository");
 
 			await api("POST", "/api/boards/new", { board: "drafts" });
 			const draft = await api("POST", "/api/elements?board=drafts", {
@@ -195,37 +203,33 @@ describe("two-repository board session", () => {
 			});
 			const draftId = z.object({ element: z.object({ id: z.string() }) }).parse(draft.body)
 				.element.id;
-			expect(
-				fixture.run(
-					[
-						"promote",
-						"--board",
-						"drafts",
-						"--ids",
-						draftId,
-						"--kind",
-						"service",
-						"--repo",
-						alphaIdentity,
-						"--path",
-						"src/service.ts",
-					],
-					{ url: canvas.base },
-				).status,
-			).toBe(0);
-			const withDraft = boardListSchema.parse(
-				JSON.parse(
-					fixture.run(["board", "list", "--repo", alphaIdentity], { url: canvas.base }).stdout,
-				),
+			const draftPromotion = fixture.run(
+				[
+					"promote",
+					"--board",
+					"drafts",
+					"--ids",
+					draftId,
+					"--kind",
+					"service",
+					"--repo",
+					alphaIdentity,
+					"--path",
+					"src/service.ts",
+				],
+				{ url: canvas.base },
 			);
+			expect(draftPromotion.status, repositoryFailure(draftPromotion)).toBe(0);
+			const draftList = fixture.run(["board", "list", "--repo", alphaIdentity], {
+				url: canvas.base,
+			});
+			expect(draftList.status, repositoryFailure(draftList)).toBe(0);
+			const withDraft = boardListSchema.parse(JSON.parse(draftList.stdout));
 			expect(withDraft.boards.find((entry) => entry.key === "drafts")?.source).toBe("memory");
 			const fromVault = boardsForRepo(alphaIdentity, [], fixture.vault);
 			expect(fromVault.boards).toContainEqual(
 				expect.objectContaining({ key: "systems", source: "vault" }),
 			);
-		} finally {
-			await canvas.dispose();
-			fixture.dispose();
 		}
 	}, 30_000);
 });

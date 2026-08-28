@@ -1,226 +1,274 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
+import { ExportReceiptSchema } from "../../../src/cli/command-contract/export.ts";
+import { QueryResultSchema } from "../../../src/cli/command-contract/query.ts";
+import { UpdateResultSchema } from "../../../src/cli/command-contract/update.ts";
+import { ImportResultSchema } from "../../../src/cli/commands/scene.ts";
+import { SnapshotRestoreResultSchema } from "../../../src/cli/commands/snapshot.ts";
 import { createCliHttpDouble } from "./support/cli-http-double.ts";
 import { createPackageCliOwner, packageFailure } from "./support/package-cli.ts";
 
-const objectSchema = z.record(z.string(), z.unknown());
-const parse = (text: string) => objectSchema.parse(JSON.parse(text));
+const rawExportSchema = z.object({
+	type: z.literal("excalidraw"),
+	version: z.number(),
+	source: z.literal("archboard"),
+	elements: z.array(z.unknown()),
+});
+const unavailableStatusSchema = z.object({ running: z.literal(false) }).passthrough();
 const element = { id: "shape1", type: "rectangle", x: 0, y: 0, width: 100, height: 80 };
+
+async function closedUrl(): Promise<string> {
+	const server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Response() });
+	const url = server.url.origin;
+	await server.stop(true);
+	return url;
+}
 
 describe("package import and replacement", () => {
 	test("resolves imports from the caller cwd and writes once", async () => {
-		const owner = createPackageCliOwner();
-		const http = createCliHttpDouble();
-		try {
-			writeFileSync(
-				join(owner.outside, "contract.excalidraw"),
-				JSON.stringify({ type: "excalidraw", version: 2, elements: [element] }),
-			);
-			const before = http.requests.length;
-			const result = await owner.run(
-				["import", "contract.excalidraw", "--board", "contract", "--doing", "importing scene"],
-				{ url: http.url },
-			);
-			expect(result, packageFailure(result)).toMatchObject({ status: 0, stderr: "" });
-			expect(parse(result.stdout).imported).toBe(1);
-			expect(http.writesSince(before)).toHaveLength(1);
-		} finally {
-			http.dispose();
-			await owner.dispose();
-		}
+		await using resources = new AsyncDisposableStack();
+		const http = resources.use(createCliHttpDouble());
+		const owner = resources.use(createPackageCliOwner());
+		writeFileSync(
+			join(owner.outside, "contract.excalidraw"),
+			JSON.stringify({ type: "excalidraw", version: 2, elements: [element] }),
+		);
+		const before = http.requests.length;
+		const result = await owner.run(
+			["import", "contract.excalidraw", "--board", "contract", "--doing", "importing scene"],
+			{ url: http.url },
+		);
+		const diagnostic = packageFailure(result);
+		expect(result.status, diagnostic).toBe(0);
+		expect(result.stderr, diagnostic).toBe("");
+		expect(ImportResultSchema.parse(JSON.parse(result.stdout)), diagnostic).toMatchObject({
+			imported: 1,
+		});
+		expect(http.writesSince(before), diagnostic).toHaveLength(1);
 	});
 
 	test("marks replace imports and snapshot restores as one replacement batch", async () => {
-		const owner = createPackageCliOwner();
-		const http = createCliHttpDouble();
-		try {
-			const file = {
-				id: "replace-file",
-				dataURL: "data:image/png;base64,cmVwbGFjZQ==",
-				mimeType: "image/png",
-				created: 1,
-			};
-			writeFileSync(
-				join(owner.outside, "replace.excalidraw"),
-				JSON.stringify({
-					type: "excalidraw",
-					version: 2,
-					elements: [{ ...element, id: "replace-image", type: "image", fileId: file.id }],
-					files: { [file.id]: file },
-				}),
-			);
-			const before = http.requests.length;
-			const replaced = await owner.run(
-				[
-					"import",
-					"replace.excalidraw",
-					"--replace",
-					"--board",
-					"contract",
-					"--doing",
-					"replacing scene",
-				],
-				{ url: http.url },
-			);
-			expect(replaced.status).toBe(0);
-			expect(parse(replaced.stdout)).toEqual({
-				success: true,
-				imported: 1,
-				files: 1,
-				mode: "replace",
-			});
-			const write = http.writesSince(before)[0];
-			expect(write?.url.pathname).toBe("/api/elements/batch");
-			expect(write?.body).toMatchObject({ mutation: "replace-scene", files: [file] });
-			const restoreBefore = http.requests.length;
-			const restored = await owner.run(
-				[
-					"snapshot",
-					"restore",
-					"package-scene",
-					"--board",
-					"contract",
-					"--doing",
-					"restoring snapshot",
-				],
-				{ url: http.url },
-			);
-			expect(restored.status).toBe(0);
-			expect(http.writesSince(restoreBefore)[0]?.body).toMatchObject({
-				mutation: "replace-scene",
-				files: [],
-			});
-		} finally {
-			http.dispose();
-			await owner.dispose();
-		}
+		await using resources = new AsyncDisposableStack();
+		const http = resources.use(createCliHttpDouble());
+		const owner = resources.use(createPackageCliOwner());
+		const file = {
+			id: "replace-file",
+			dataURL: "data:image/png;base64,cmVwbGFjZQ==",
+			mimeType: "image/png",
+			created: 1,
+		};
+		writeFileSync(
+			join(owner.outside, "replace.excalidraw"),
+			JSON.stringify({
+				type: "excalidraw",
+				version: 2,
+				elements: [{ ...element, id: "replace-image", type: "image", fileId: file.id }],
+				files: { [file.id]: file },
+			}),
+		);
+		let before = http.requests.length;
+		const replaced = await owner.run(
+			[
+				"import",
+				"replace.excalidraw",
+				"--replace",
+				"--board",
+				"contract",
+				"--doing",
+				"replacing scene",
+			],
+			{ url: http.url },
+		);
+		let diagnostic = packageFailure(replaced);
+		expect(replaced.status, diagnostic).toBe(0);
+		expect(ImportResultSchema.parse(JSON.parse(replaced.stdout)), diagnostic).toEqual({
+			success: true,
+			imported: 1,
+			files: 1,
+			mode: "replace",
+		});
+		const write = http.writesSince(before)[0];
+		expect(write?.url.pathname, diagnostic).toBe("/api/elements/batch");
+		expect(write?.body, diagnostic).toMatchObject({ mutation: "replace-scene", files: [file] });
+		before = http.requests.length;
+		const restored = await owner.run(
+			[
+				"snapshot",
+				"restore",
+				"package-scene",
+				"--board",
+				"contract",
+				"--doing",
+				"restoring snapshot",
+			],
+			{ url: http.url },
+		);
+		diagnostic = packageFailure(restored);
+		expect(restored.status, diagnostic).toBe(0);
+		expect(
+			SnapshotRestoreResultSchema.parse(JSON.parse(restored.stdout)),
+			diagnostic,
+		).toBeDefined();
+		expect(http.writesSince(before)[0]?.body, diagnostic).toMatchObject({
+			mutation: "replace-scene",
+			files: [],
+		});
 	});
 });
 
 describe("package output and refusals", () => {
-	test("keeps held presentation on the declared streams", async () => {
-		const owner = createPackageCliOwner();
-		const http = createCliHttpDouble();
-		try {
-			const query = await owner.run(["query", "--board", "held"], { url: http.url });
-			expect(Array.isArray(JSON.parse(query.stdout))).toBe(true);
-			expect(query.stderr).toBe("held board diagnostic\n");
-			const update = await owner.run(
-				["update", "shape1", "--set", '{"x":3}', "--board", "held", "--doing", "held update"],
-				{ url: http.url },
-			);
-			expect(parse(update.stdout).held).toMatchObject({ board: "held" });
-			expect(update.stderr).toBe("held board diagnostic\n");
-			const raw = await owner.run(["export", "--board", "held"], { url: http.url });
-			expect(raw.stderr).toBe("");
-			expect(parse(raw.stdout).source).toBe("archboard");
-		} finally {
-			http.dispose();
-			await owner.dispose();
-		}
+	test("keeps held presentation on declared streams", async () => {
+		await using resources = new AsyncDisposableStack();
+		const http = resources.use(createCliHttpDouble());
+		const owner = resources.use(createPackageCliOwner());
+		const query = await owner.run(["query", "--board", "held"], { url: http.url });
+		let diagnostic = packageFailure(query);
+		expect(query.status, diagnostic).toBe(0);
+		expect(QueryResultSchema.parse(JSON.parse(query.stdout)), diagnostic).toBeArray();
+		expect(query.stderr, diagnostic).toBe("held board diagnostic\n");
+		const update = await owner.run(
+			["update", "shape1", "--set", '{"x":3}', "--board", "held", "--doing", "held update"],
+			{ url: http.url },
+		);
+		diagnostic = packageFailure(update);
+		expect(update.status, diagnostic).toBe(0);
+		expect(UpdateResultSchema.parse(JSON.parse(update.stdout)).held, diagnostic).toMatchObject({
+			board: "held",
+		});
+		expect(update.stderr, diagnostic).toBe("held board diagnostic\n");
+		const raw = await owner.run(["export", "--board", "held"], { url: http.url });
+		diagnostic = packageFailure(raw);
+		expect(raw.status, diagnostic).toBe(0);
+		expect(raw.stderr, diagnostic).toBe("");
+		expect(rawExportSchema.parse(JSON.parse(raw.stdout)).source, diagnostic).toBe("archboard");
+		const file = await owner.run(["export", "--out", "held.excalidraw", "--board", "held"], {
+			url: http.url,
+		});
+		diagnostic = packageFailure(file);
+		expect(file.status, diagnostic).toBe(0);
+		expect(ExportReceiptSchema.parse(JSON.parse(file.stdout)).held, diagnostic).toMatchObject({
+			board: "held",
+		});
+		expect(file.stderr, diagnostic).toBe("held board diagnostic\n");
 	});
 
-	test("commits no partial artifact after malformed responses or prerequisites", async () => {
-		const owner = createPackageCliOwner();
-		const http = createCliHttpDouble();
-		try {
-			const malformedHeld = join(owner.outside, "malformed.excalidraw");
-			const held = await owner.run(
-				["export", "--board", "invalid-held-read", "--out", malformedHeld],
-				{ url: http.url },
-			);
-			expect(held.status).toBe(1);
-			expect(held.stdout).toBe("");
-			expect(existsSync(malformedHeld)).toBe(false);
-			const malformedOut = join(owner.outside, "malformed-findings");
-			mkdirSync(malformedOut);
-			const malformed = await owner.run(
-				["render-findings", "--board", "malformed-render", "--out", malformedOut],
-				{ url: http.url },
-			);
-			expect(malformed.status).toBe(1);
-			expect(malformed.stdout).toBe("");
-			expect(readdirSync(malformedOut)).toEqual([]);
-			const nonEmpty = join(owner.outside, "non-empty");
-			mkdirSync(nonEmpty);
-			writeFileSync(join(nonEmpty, "owned.txt"), "keep");
-			const before = http.requests.length;
-			const refused = await owner.run(
-				["render-findings", "--board", "contract", "--out", nonEmpty],
-				{ url: http.url },
-			);
-			expect(refused.status).toBe(2);
-			expect(http.requests).toHaveLength(before);
-		} finally {
-			http.dispose();
-			await owner.dispose();
-		}
+	test("rejects malformed held state before stdout or artifact presentation", async () => {
+		await using resources = new AsyncDisposableStack();
+		const http = resources.use(createCliHttpDouble());
+		const owner = resources.use(createPackageCliOwner());
+		const malformedRead = await owner.run(["query", "--board", "invalid-held-read"], {
+			url: http.url,
+		});
+		let diagnostic = packageFailure(malformedRead);
+		expect(malformedRead.status, diagnostic).toBe(1);
+		expect(malformedRead.stdout, diagnostic).toBe("");
+		expect(malformedRead.stderr.includes("held board diagnostic"), diagnostic).toBeFalse();
+		const target = join(owner.outside, "malformed.excalidraw");
+		const malformedFile = await owner.run(
+			["export", "--board", "invalid-held-read", "--out", target],
+			{ url: http.url },
+		);
+		diagnostic = packageFailure(malformedFile);
+		expect(malformedFile.status, diagnostic).toBe(1);
+		expect(malformedFile.stdout, diagnostic).toBe("");
+		expect(malformedFile.stderr.includes("held board diagnostic"), diagnostic).toBeFalse();
+		expect(existsSync(target), diagnostic).toBeFalse();
 	});
 
-	test("preserves usage, missing-doing, unavailable, and version refusal exits", async () => {
-		const owner = createPackageCliOwner();
-		const http = createCliHttpDouble();
-		try {
-			const doing = await owner.run(
-				["add", "--one", JSON.stringify(element), "--board", "contract"],
-				{ url: http.url },
-			);
-			expect(doing.status).toBe(1);
-			expect(doing.stdout).toBe("");
-			expect(doing.stderr).toMatch(/Error: doing required/);
-			const version = await owner.run(
-				[
-					"update",
-					"refuse",
-					"--set",
-					'{"x":10}',
-					"--document",
-					"--board",
-					"contract",
-					"--doing",
-					"version refusal",
-				],
-				{ url: http.url },
-			);
-			expect(version.status).toBe(5);
-			expect(version.stdout).toBe("");
-			expect(version.stderr).toContain('"code": "BOARD_VERSION_CONFLICT"');
-			const usage = await owner.run(["delete", "--board", "contract", "--doing", "invalid"], {
-				url: http.url,
-			});
-			expect(usage.status).toBe(2);
-			expect(usage.stdout).toBe("");
-			expect(usage.stderr).toMatch(/Error:.*\nUsage: archboard delete/s);
-			const unavailable = await owner.run(["status"], { url: "http://127.0.0.1:1" });
-			expect(unavailable.status).toBe(3);
-			expect(unavailable.stderr).toBe("");
-			expect(parse(unavailable.stdout).running).toBe(false);
-		} finally {
-			http.dispose();
-			await owner.dispose();
-		}
+	test("preserves usage, doing, unavailable, and version refusal exits", async () => {
+		await using resources = new AsyncDisposableStack();
+		const http = resources.use(createCliHttpDouble());
+		const owner = resources.use(createPackageCliOwner());
+		const doing = await owner.run(
+			["add", "--one", JSON.stringify(element), "--board", "contract"],
+			{ url: http.url },
+		);
+		let diagnostic = packageFailure(doing);
+		expect(doing.status, diagnostic).toBe(1);
+		expect(doing.stdout, diagnostic).toBe("");
+		expect(doing.stderr, diagnostic).toMatch(/Error: doing required/);
+		const version = await owner.run(
+			[
+				"update",
+				"refuse",
+				"--set",
+				'{"x":10}',
+				"--document",
+				"--board",
+				"contract",
+				"--doing",
+				"version refusal",
+			],
+			{ url: http.url },
+		);
+		diagnostic = packageFailure(version);
+		expect(version.status, diagnostic).toBe(5);
+		expect(version.stdout, diagnostic).toBe("");
+		expect(version.stderr, diagnostic).toContain('"code": "BOARD_VERSION_CONFLICT"');
+		const usage = await owner.run(["delete", "--board", "contract", "--doing", "invalid"], {
+			url: http.url,
+		});
+		diagnostic = packageFailure(usage);
+		expect(usage.status, diagnostic).toBe(2);
+		expect(usage.stdout, diagnostic).toBe("");
+		expect(usage.stderr, diagnostic).toMatch(/Error:.*\nUsage: archboard delete/s);
+		const unavailable = await owner.run(["status"], { url: await closedUrl() });
+		diagnostic = packageFailure(unavailable);
+		expect(unavailable.status, diagnostic).toBe(3);
+		expect(unavailable.stderr, diagnostic).toBe("");
+		expect(unavailableStatusSchema.parse(JSON.parse(unavailable.stdout)), diagnostic).toBeDefined();
 	});
 
-	test("keeps local export validation before server contact", async () => {
-		const owner = createPackageCliOwner();
-		try {
-			const raw = await owner.run(["export", "ignored", "--board", "contract"], {
-				url: "http://127.0.0.1:1",
-			});
-			expect(raw.status).toBe(3);
-			const invalid = await owner.run(["export", "--format", "invalid"], {
-				url: "http://127.0.0.1:1",
-			});
-			expect(invalid.status).toBe(2);
-			const target = join(owner.outside, "unsafe.excalidraw.md");
-			writeFileSync(target, "ordinary note");
-			const overwrite = await owner.run(["export", "--out", target], { url: "http://127.0.0.1:1" });
-			expect(overwrite.status).toBe(2);
-			expect(readFileSync(target, "utf8")).toBe("ordinary note");
-		} finally {
-			await owner.dispose();
-		}
+	test("exports raw, literal, and inferred destinations through their public contracts", async () => {
+		await using resources = new AsyncDisposableStack();
+		const http = resources.use(createCliHttpDouble());
+		const owner = resources.use(createPackageCliOwner());
+		const raw = await owner.run(["export", "ignored", "--board", "contract"], { url: http.url });
+		let diagnostic = packageFailure(raw);
+		expect(raw.status, diagnostic).toBe(0);
+		expect(raw.stderr, diagnostic).toBe("");
+		expect(rawExportSchema.parse(JSON.parse(raw.stdout)).source, diagnostic).toBe("archboard");
+		const literal = await owner.run(["export", "--out=-", "--board", "contract"], {
+			url: http.url,
+		});
+		diagnostic = packageFailure(literal);
+		expect(literal.status, diagnostic).toBe(0);
+		expect(literal.stderr, diagnostic).toBe("");
+		expect(ExportReceiptSchema.parse(JSON.parse(literal.stdout)).file, diagnostic).toBe(
+			join(owner.outside, "-"),
+		);
+		const inferredPath = join(owner.outside, "inferred.excalidraw.md");
+		const inferred = await owner.run(["export", "--out", inferredPath, "--board", "contract"], {
+			url: http.url,
+		});
+		diagnostic = packageFailure(inferred);
+		expect(inferred.status, diagnostic).toBe(0);
+		expect(ExportReceiptSchema.parse(JSON.parse(inferred.stdout)).format, diagnostic).toBe(
+			"obsidian",
+		);
+		expect(readFileSync(inferredPath, "utf8"), diagnostic).toMatch(/^---\n.*excalidraw-plugin:/s);
+	});
+
+	test("keeps format and overwrite refusals local and leaves targets unchanged", async () => {
+		await using resources = new AsyncDisposableStack();
+		const http = resources.use(createCliHttpDouble());
+		const owner = resources.use(createPackageCliOwner());
+		let before = http.contacts.length;
+		const invalid = await owner.run(["export", "--format", "invalid"], { url: http.url });
+		let diagnostic = packageFailure(invalid);
+		expect(invalid.status, diagnostic).toBe(2);
+		expect(invalid.stdout, diagnostic).toBe("");
+		expect(http.contacts.slice(before), diagnostic).toEqual([]);
+		const target = join(owner.outside, "unsafe.excalidraw.md");
+		writeFileSync(target, "ordinary note");
+		before = http.contacts.length;
+		const overwrite = await owner.run(["export", "--out", target], { url: http.url });
+		diagnostic = packageFailure(overwrite);
+		expect(overwrite.status, diagnostic).toBe(2);
+		expect(overwrite.stdout, diagnostic).toBe("");
+		expect(http.contacts.slice(before), diagnostic).toEqual([]);
+		expect(readFileSync(target, "utf8"), diagnostic).toBe("ordinary note");
 	});
 });
