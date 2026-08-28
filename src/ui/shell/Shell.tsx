@@ -146,22 +146,21 @@ function saveNotice(saved: BoardSaveResult, paneCount: number): Notice {
 }
 
 function samePaneStatus(existing: PaneStatus, status: PaneStatus): boolean {
-	return (
-		existing.connected === status.connected &&
-		existing.clientId === status.clientId &&
-		existing.boardKey === status.boardKey &&
-		existing.elementCount === status.elementCount &&
-		existing.lastChangeAt === status.lastChangeAt &&
-		existing.hold?.since === status.hold?.since &&
-		existing.hold?.writes === status.hold?.writes &&
-		existing.writtenElsewhere?.writtenAt === status.writtenElsewhere?.writtenAt &&
-		existing.writtenElsewhere?.reason === status.writtenElsewhere?.reason &&
-		existing.writtenElsewhere?.version === status.writtenElsewhere?.version &&
-		existing.doing.at(-1)?.at === status.doing.at(-1)?.at &&
-		existing.doing.length === status.doing.length &&
-		existing.board?.variant === status.board?.variant &&
-		existing.board?.level === status.board?.level
-	);
+	// These nested values are replaced at their publication sites, never mutated
+	// in place. Reference equality therefore includes every field they carry.
+	const same = {
+		paneId: existing.paneId === status.paneId,
+		clientId: existing.clientId === status.clientId,
+		connected: existing.connected === status.connected,
+		board: existing.board === status.board,
+		boardKey: existing.boardKey === status.boardKey,
+		elementCount: existing.elementCount === status.elementCount,
+		lastChangeAt: existing.lastChangeAt === status.lastChangeAt,
+		hold: existing.hold === status.hold,
+		writtenElsewhere: existing.writtenElsewhere === status.writtenElsewhere,
+		doing: existing.doing === status.doing,
+	} satisfies Record<keyof PaneStatus, boolean>;
+	return Object.values(same).every(Boolean);
 }
 
 function createAttemptSave(args: {
@@ -280,9 +279,7 @@ export function Shell(): React.JSX.Element {
 	const onStatus = useCallback((status: PaneStatus) => {
 		setStatuses((previous) => {
 			const existing = previous[status.paneId];
-			if (existing && samePaneStatus(existing, status)) {
-				return previous;
-			}
+			if (existing && samePaneStatus(existing, status)) return previous;
 			return { ...previous, [status.paneId]: status };
 		});
 	}, []);
