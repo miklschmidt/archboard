@@ -1,7 +1,7 @@
 // What a reload is not allowed to change, checked every time one happens.
 //
-// The static check (`scripts/check-module-scope.mjs`) reads the source and
-// refuses the shapes that only work the first time a module is evaluated. It
+// The static repository-policy module-scope test reads the source and refuses
+// the shapes that only work the first time a module is evaluated. It
 // will miss things: it knows nothing about types, matches receivers by name,
 // and does not follow a dynamic import. This is the other net, and it works
 // from the opposite end. It does not read anything. It looks at the live

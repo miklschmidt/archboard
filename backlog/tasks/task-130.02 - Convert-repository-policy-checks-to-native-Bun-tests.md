@@ -1,10 +1,11 @@
 ---
 id: TASK-130.02
 title: Convert repository policy checks to native Bun tests
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-28 01:02'
-updated_date: '2026-08-28 05:03'
+updated_date: '2026-08-28 05:56'
 labels: []
 dependencies:
   - TASK-130.01
@@ -14,6 +15,24 @@ references:
   - scripts/check-module-scope.mjs
   - scripts/check-skills.mjs
   - docs/agents/test-suite.md
+modified_files:
+  - package.json
+  - tests/system/repository-policy/test-inventory.test.ts
+  - tests/system/repository-policy/support/test-inventory.ts
+  - tests/system/repository-policy/boundaries.test.ts
+  - tests/system/repository-policy/module-scope-policy.test.ts
+  - tests/system/repository-policy/support/module-scope-analysis.ts
+  - tests/system/repository-policy/skills.test.ts
+  - tests/system/repository-policy/fixtures/module-scope
+  - scripts/check-ci-suites.mjs
+  - scripts/check-boundary-plugin.mjs
+  - scripts/check-module-scope.mjs
+  - scripts/check-skills.mjs
+  - scripts/fixtures/module-scope
+  - docs/agents/test-suite.md
+  - src/dev-canvas.ts
+  - src/runtime/engine/reload-canary.ts
+  - scripts/check-hot-reload.mjs
 parent_task_id: TASK-130
 priority: medium
 type: chore
@@ -67,3 +86,35 @@ Do not mutate authored files during test execution. Temporary projects and dispo
 bun test tests/system/repository-policy/test-inventory.test.ts tests/system/repository-policy/boundaries.test.ts tests/system/repository-policy/module-scope-policy.test.ts tests/system/repository-policy/skills.test.ts
 Then run bun run type-check, bun run lint, bun run fmt:check, bun run check, and git diff --check sequentially. Do not parallelize broad validation. Integrate this task before any later native test task. Once its inventory is live, every later native test integration must include its package mapping and legacy deletion so the real inventory remains green at every merge point.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented the approved first serialized cutover. The four preserved package keys now run native Bun tests under tests/system/repository-policy. The mixed inventory follows package-script reachability from check, accepts remaining legacy lanes, and rejects missing, unowned, and multiply owned native tests. Boundary assertions use fresh disposable projects and real Oxlint or TypeScript subprocesses. Module-scope fixtures are byte-identical parser data copied to temporary .ts files and removed after the suite.
+
+Parity before deletion: in a disposable checkout, both old and new implementations rejected an omitted push lane, a relaxed root-entrypoint refusal, disabled timer detection, and an unescaped skill-table pipe. cmp proved all six replacement fixture byte streams identical before the old paths were removed. The disposable checkout was removed.
+
+Validation: focused repository-policy suite 28 pass, 0 fail, 97 expectations; bun run type-check; bun run lint; bun run fmt:check; bun run test:suites 6 pass; git diff --check; full sequential bun run check passed, including all four headless browser lanes, fixed-point 0 of 18 changed, and live-session 42 of 42 cycles agreed. No browser lane failed.
+
+Independent-review remediation completed without changing the fixed base. Restored named CI workflow-policy tests against the real .github/workflows/ci.yml: the workflow must run bun run check and must not directly name test:* lanes, with predecessor diagnostics preserved. Inventory ownership now sums push-reachable invocation counts across every matching owner lane, including non-test scripts; named negatives prove an unreachable verify owner is zero-run and a reachable non-test owner invoked twice is duplicate. Boundary tests now copy the repository-owned tsconfig.json byte-for-byte and adapt only the Oxlint plugin path in repository-owned .oxlintrc.jsonc. Restored the documented public-runner-fixture.mjs allowance and the cross-module private deep-import refusal.
+
+TDD evidence: the first focused run failed because disposable boundary projects lacked .oxlintrc.jsonc. After adding only the workflow inspector, the focused inventory run had exactly three intended failures: the prior duplicate diagnostic lacked execution counts, an unreachable verify owner was not zero-run, and a twice-invoked reachable non-test owner was not duplicate. Green focused inventory plus boundaries: 19 pass, 86 expectations. Final exact four-file suite: 34 pass, 107 expectations.
+
+Remediation validation: bun run type-check; bun run lint; bun run fmt:check; bun run test:suites (11 pass); git diff --check; full sequential bun run check passed, including all four headless browser lanes and live-session 42/42 cycles. SHA-256 comparisons prove all six moved module-scope fixture byte streams still match fixed BASE 071b56e4b9ded18ba81e52b27f6e1171fa1df490.
+<!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @codex
+created: 2026-08-28 05:38
+---
+Implementation and validation are complete. TASK-130.02 remains In Progress with acceptance criteria unchecked for independent fixed-range review.
+---
+
+author: @codex
+created: 2026-08-28 05:55
+---
+Independent-review remediation is implemented and validated. TASK-130.02 remains In Progress with all acceptance criteria unchecked for fixed-range rereview.
+---
+<!-- COMMENTS:END -->

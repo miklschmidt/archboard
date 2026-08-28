@@ -22,8 +22,8 @@
 // at no other time.
 //
 // NOTHING AT MODULE SCOPE HERE MAY HOLD STATE, for the same reason: it runs on
-// every save. The gate is in kept(), and `scripts/check-module-scope.mjs`
-// checks this file along with the rest of the graph.
+// every save. The gate is in kept(), and the repository-policy module-scope
+// test checks this file along with the rest of the graph.
 //
 // The canvas is imported with a cache-busting query so that each reload gets a
 // fresh graph rather than the copy bun is still holding. Everything that has
