@@ -1,11 +1,11 @@
 ---
 id: TASK-086
 title: Own canvas test processes from verified startup through cleanup
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-21 09:01'
-updated_date: '2026-08-28 01:07'
+updated_date: '2026-08-28 02:05'
 labels: []
 dependencies: []
 references:
@@ -29,11 +29,11 @@ TASK-097 is folded into this task only where condition-based startup and teardow
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Both canvases spawned by check-boards verify that health.pid is their own child before any board assertion; a foreign or stale responder can never satisfy startup.
-- [ ] #2 One small lifecycle interface owns child startup, stderr, early-death reporting, bounded graceful shutdown with owned-child escalation, exit waiting, and temporary-vault cleanup.
-- [ ] #3 Success, an assertion or fetch failure, and an interrupted run leave no owned listener, child process, or temporary vault; automated checks prove the cleanup paths.
-- [ ] #4 A canvas that dies during the check is reported as process death with its stderr, not as a run of unrelated board assertion failures.
-- [ ] #5 Only identical lifecycle duplication is migrated. Fixed waits unrelated to process startup or teardown remain outside this task.
+- [x] #1 Both canvases spawned by check-boards verify that health.pid is their own child before any board assertion; a foreign or stale responder can never satisfy startup.
+- [x] #2 One small lifecycle interface owns child startup, stderr, early-death reporting, bounded graceful shutdown with owned-child escalation, exit waiting, and temporary-vault cleanup.
+- [x] #3 Success, an assertion or fetch failure, and an interrupted run leave no owned listener, child process, or temporary vault; automated checks prove the cleanup paths.
+- [x] #4 A canvas that dies during the check is reported as process death with its stderr, not as a run of unrelated board assertion failures.
+- [x] #5 Only identical lifecycle duplication is migrated. Fixed waits unrelated to process startup or teardown remain outside this task.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -61,4 +61,12 @@ Raised to high: CI now runs all 23 suites on every push (TASK-082), on a shared 
 Implemented the approved owned-canvas lifecycle in scripts/lib/canvas-test-process.mjs and migrated both check-boards canvases. The helper now verifies health.pid against the spawned child, retains stderr and early-exit state, waits through graceful or forced restarts, escalates only its recorded child, shares concurrent disposal, and cleans up on SIGINT/SIGTERM. The narrow check-boards child modes prove normal completion, forced fetch failure, SIGINT, and early death with stderr. Focused lifecycle validation and test:boards pass; post-run PID, listener, and recent temporary-vault audits are clean.
 
 Independent-review remediation: serialized restart/dispose behind one operation chain while disposal marks the handle closed immediately. Restart now re-checks that state after its stopped callback and directly before spawn. A focused race proof pauses there, starts disposal, and proves no replacement PID or listener survives. Lifecycle child waits now have a canonical 20-second cap with mode, child PID, and owned PID diagnostics plus forced cleanup. JSON response handling preserves body errors, checks liveness after body consumption, and the early-death fixture now exits after headers so captured stderr is proved on that seam. All new lifecycle durations moved to src/shared/timing/timing.ts with their pull-against relationships.
+
+Final verification: independent fixed-range rereview found no Standards or Spec findings. The integrated main checkout passed bun run test:boards, including all five lifecycle modes, exact owned-PID checks, restart/dispose cleanup, response-body process-death reporting, and the leak audit.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replaced check-boards' duplicated canvas lifecycle code with one narrow owned-process helper. Verified exact PID ownership, bounded shutdown, cleanup after success/failure/SIGINT, restart/dispose serialization, and useful process-death errors through focused lifecycle checks, test:suites, test:boards, type-check, lint, format, and an independent clean review.
+<!-- SECTION:FINAL_SUMMARY:END -->

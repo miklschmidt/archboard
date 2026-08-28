@@ -1,11 +1,11 @@
 ---
 id: TASK-092
 title: Prove a save-as refreshes a pane holding the destination
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-22 15:40'
-updated_date: '2026-08-28 01:07'
+updated_date: '2026-08-28 02:05'
 labels: []
 dependencies: []
 references:
@@ -28,9 +28,9 @@ Keep one narrow regression proof, then close the task. A socket pane holds the d
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A check opens a pane on the destination, saves a different source to that address, and proves the destination pane receives the exact created, updated, and deleted replacement through elements_changed.
-- [ ] #2 The source pane is not repointed and ADR 0012 remains unchanged; a save still does not choose what a source pane shows.
-- [ ] #3 The check uses the centralized write notification path. No special variant-swap route or second pane-refresh mechanism is added.
+- [x] #1 A check opens a pane on the destination, saves a different source to that address, and proves the destination pane receives the exact created, updated, and deleted replacement through elements_changed.
+- [x] #2 The source pane is not repointed and ADR 0012 remains unchanged; a save still does not choose what a source pane shows.
+- [x] #3 The check uses the centralized write notification path. No special variant-swap route or second pane-refresh mechanism is added.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -48,4 +48,12 @@ Keep one narrow regression proof, then close the task. A socket pane holds the d
 Added the approved WebSocket regression proof in scripts/check-boards.mjs. A source pane and an already-populated destination pane receive a save-as whose fixed-ID fixture produces exactly created=[created], updated=[same], and deleted=[deleted]. The destination receives that exact persisted replacement through elements_changed while the source pane stays on save-source and no pane moves. test:boards passes, so no production board-write file was changed.
 
 Independent-review remediation: the source-pane no-switch assertion now crosses the source socket through the existing correlated viewport request after the save, with no fixed delay. It then reads GET /api/panes and proves p-one authoritatively remains on save-source while p-two remains on save-destination. The exact created/updated/deleted elements_changed proof remains unchanged and passes.
+
+Final verification: independent fixed-range rereview found no Standards or Spec findings. The integrated main checkout passed bun run test:boards with the exact destination delta, source-socket barrier, and authoritative pane-state assertions.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added a focused save-as regression proving the destination pane receives exact created, updated, and deleted elements through the ordinary elements_changed path while the source pane stays put. No production route or second refresh mechanism was added. Verified with test:boards and an independent clean review.
+<!-- SECTION:FINAL_SUMMARY:END -->
