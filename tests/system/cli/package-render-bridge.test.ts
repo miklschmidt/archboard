@@ -266,6 +266,10 @@ describe("package bridge commands", () => {
 		expect(background.status, diagnostic).toBe(2);
 		expect(background.stdout, diagnostic).toBe("");
 		expect(http.contacts.slice(before), diagnostic).toEqual([]);
+		expect(
+			readdirSync(owner.outside).filter((name) => name.startsWith("bridge")),
+			diagnostic,
+		).toEqual([]);
 	});
 
 	test("rejects invalid and source-colliding receipts after the exact route", async () => {
@@ -307,5 +311,9 @@ describe("package bridge commands", () => {
 			http.requests.slice(before).map((r) => `${r.method} ${r.url.pathname}`),
 			diagnostic,
 		).toEqual(["DELETE /api/bridges/InvalidReceipt"]);
+		expect(
+			readdirSync(owner.outside).filter((name) => name.startsWith("bridge")),
+			diagnostic,
+		).toEqual([]);
 	});
 });

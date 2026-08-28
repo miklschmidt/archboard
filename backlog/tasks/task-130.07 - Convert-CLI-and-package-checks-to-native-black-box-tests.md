@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:04'
-updated_date: '2026-08-28 19:44'
+updated_date: '2026-08-28 19:52'
 labels: []
 dependencies:
   - TASK-130.01
@@ -169,4 +169,12 @@ Fourth complete-range remediation after review (2026-08-28):
 - No browser or full check was rerun: this follow-up changes only seven test owners, exposed no broader failure, and retains the prior successful single complete headless/serial run at bdbd102.
 - Final formatted lines: resource-cleanup 159; repository-resolution 207; package-board-commands 377; package-io-refusals 287; package-render-bridge 311; command-workflows 352; repository-session 285. Every authored TypeScript file remains below 500.
 - Cleanup audit found no checkout-owned child or listener, new package/repository/owned-canvas/skill-sync temporary root, mutation worktree, registry, vault, state, or log artifact. The worktree contained only the seven intended owner-test edits before this task note.
+
+Fifth complete-range remediation after review (2026-08-28):
+- Updated only docs/agents/test-suite.md lines 231-232 to replace the deleted scripts/check-repos.mjs command with bun run test:repos and document RepositoryFixture-owned HOME, XDG state, log, registry, and vault isolation.
+- Added owner.outside bridge artifact inventory assertions after the invalid-background and invalid-remove-receipt branches. Both now prove that the shipped CLI leaves no bridge-prefixed artifact.
+- Red evidence: the documentation predicate failed on the stale deleted command. Deliberate bridge-red-sentinel expectations failed in both requested refusal branches, with diagnosed subprocess output and an observed empty inventory. Replacing them with the specified empty inventory made the owner green.
+- Validation: package-render-bridge owner 6 tests/83 expectations; test:cli 39/817; live inventory 11/11; type-check, lint, fmt:check, and git diff --check passed. The deleted repository script is absent from the edited documentation and bun run test:repos is present.
+- No browser or full check was rerun. This follow-up changes one test owner and two documentation lines, exposed no broader failure, and retains the prior successful single complete headless/serial run at bdbd102.
+- package-render-bridge.test.ts is 319 formatted lines, below the 500-line cap. Scope before the task note was exactly docs/agents/test-suite.md and tests/system/cli/package-render-bridge.test.ts.
 <!-- SECTION:NOTES:END -->

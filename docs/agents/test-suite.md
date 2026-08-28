@@ -228,8 +228,8 @@ note archboard did not write. About fifteen seconds.
   configured task when it is set.
 - `bun run test:lock` proves the exclusion with two processes over one vault,
   which is the one thing an in-process mutex could not do (ADR 0016).
-- `scripts/check-repos.mjs` runs against a registry in a temp file via
-  `ARCHBOARD_REPOS`, which is how the tests keep off the real one.
+- `bun run test:repos` uses RepositoryFixture-owned HOME, XDG state, log,
+  registry, and vault paths, isolated from the caller's user configuration.
 - `check-obsidian-md` pins the four historical id renames measured in
   `docs/design/server-is-the-truth.md` as golden values, so a board already in
   the vault keeps the ids it has.
