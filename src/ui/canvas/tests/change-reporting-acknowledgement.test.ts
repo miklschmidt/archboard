@@ -12,13 +12,17 @@ describe("report acknowledgement ordering", () => {
 		harness.edit("a", { x: 10 });
 		expect(harness.pendingIsReachable()).toBe(true);
 		harness.due();
+		expect(harness.pendingIsReachable()).toBe(true);
 		harness.edit("a", { x: 20 });
+		expect(harness.pendingIsReachable()).toBe(true);
 		harness.accept();
 		expect(harness.scene.find((element) => element.id === "a")?.x).toBe(20);
 		expect(harness.pendingIsReachable()).toBe(true);
 
 		harness.due();
+		expect(harness.pendingIsReachable()).toBe(true);
 		harness.accept();
+		expect(harness.pendingIsReachable()).toBe(true);
 		expect(harness.server.document.find((element) => element.id === "a")?.x).toBe(20);
 		expect(reportsSettled(harness.state)).toBe(true);
 	});
@@ -159,6 +163,7 @@ describe("acknowledgements across server updates", () => {
 		const harness = new ReportingHarness();
 		harness.edit("a", { x: 10 });
 		harness.due();
+		expect(harness.pendingIsReachable()).toBe(true);
 		harness.server.document = harness.server.document.map((element) =>
 			element.id === "b" ? { ...element, y: 40 } : element,
 		);
@@ -166,7 +171,9 @@ describe("acknowledgements across server updates", () => {
 			{ ...harness.scene.find((element) => element.id === "b")!, y: 40 },
 		]);
 		harness.clock.advance(0);
+		expect(harness.pendingIsReachable()).toBe(true);
 		harness.accept();
+		expect(harness.pendingIsReachable()).toBe(true);
 		expect(harness.scene.find((element) => element.id === "a")?.x).toBe(10);
 		expect(harness.scene.find((element) => element.id === "b")?.y).toBe(40);
 	});
