@@ -1,11 +1,11 @@
 ---
 id: TASK-130.06
 title: Split board API coverage into native system tests
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:04'
-updated_date: '2026-08-28 10:42'
+updated_date: '2026-08-28 10:48'
 labels: []
 dependencies:
   - TASK-130.01
@@ -54,13 +54,13 @@ Split by endpoint and state transition. Keep one owned canvas per group only whe
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 check-boards is replaced by typed native system tests grouped by board lifecycle, element writes, pane state, conversion, malformed input, scratch-board behavior, and public HTTP refusals.
-- [ ] #2 Every canvas started by the tests uses the TASK-086 lifecycle, verifies health.pid before assertions, retains stderr, reports early death, and leaves no child, listener, or vault on success or failure.
-- [ ] #3 Tests preserve exact response statuses and bodies, note bytes, version behavior, frontend-sync tagging, conversion semantics, and malformed-telemetry diagnostics asserted by the legacy script.
-- [ ] #4 No test depends on another test having run first; any intentionally shared canvas state is owned by one describe scope with explicit setup and teardown.
-- [ ] #5 Every test source file is at most 500 lines and endpoint fixtures expose typed inputs rather than loose objects or computed module imports.
-- [ ] #6 Representative route, conversion, scratch-board, and process-death mutations fail the native coverage before check-boards is deleted.
-- [ ] #7 The native board system lane passes repeatedly without leaked processes, occupied ports, or changed authored vault files.
+- [x] #1 check-boards is replaced by typed native system tests grouped by board lifecycle, element writes, pane state, conversion, malformed input, scratch-board behavior, and public HTTP refusals.
+- [x] #2 Every canvas started by the tests uses the TASK-086 lifecycle, verifies health.pid before assertions, retains stderr, reports early death, and leaves no child, listener, or vault on success or failure.
+- [x] #3 Tests preserve exact response statuses and bodies, note bytes, version behavior, frontend-sync tagging, conversion semantics, and malformed-telemetry diagnostics asserted by the legacy script.
+- [x] #4 No test depends on another test having run first; any intentionally shared canvas state is owned by one describe scope with explicit setup and teardown.
+- [x] #5 Every test source file is at most 500 lines and endpoint fixtures expose typed inputs rather than loose objects or computed module imports.
+- [x] #6 Representative route, conversion, scratch-board, and process-death mutations fail the native coverage before check-boards is deleted.
+- [x] #7 The native board system lane passes repeatedly without leaked processes, occupied ports, or changed authored vault files.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -335,4 +335,12 @@ Final narrow semantic remediation at HEAD pending amend, fixed base 7e6be4293114
 The disposable final ledger was regenerated from the fixed-base 347 checks / 479 leaves. L1289.C093.A01 now cites tests/system/boards/public-http-refusals.test.ts:73 and exact executing text expect(Array.isArray(unnamed.body.open)).toBeTrue();. Totals remain already-proved 402, restored 75, predecessor-only 2, preserved/restored 477, unmapped 0, duplicate-owner 0. Payload SHA-256 88ead727b725f7f681b94c11d20ff2b91aa9c9fedf725e40a2115581d10078cc; full SHA-256 95d550d338847c555dc79ac631ad3a441930badcd5a8f4646d2177f957d237ad. The ledger remains disposable and uncommitted.
 
 Focused public-http-refusals passed 5 tests / 53 expectations. The exact sixteen-file test:boards lane passed 74 tests / 574 expectations. type-check, lint, fmt:check, live inventory, and git diff --check passed; live inventory proves every native test is reached exactly once. Per the narrow rereview instruction, bun run check/browser was not rerun; the prior successful single full-check evidence remains the applicable browser/headless/serial proof. Final resource and line audits are recorded in the callback after the coherent amend. TASK remains In Progress, @codex, and all seven acceptance criteria remain unchecked.
+
+Integrated reviewed commits e94c448 and 08dc03e on main. Reconciliation validation passed: test:boards 74 tests/574 expectations across 16 explicit files; test:suites 11 tests; type-check, lint, fmt:check, and git diff --check. The frozen install restored the pinned @types/bun@1.4.0 missing from this checkout's node_modules before type validation. Independent fixed-range review at f607a95 was clean on Standards and Spec. The final ledger records 347 predecessor checks, 479 leaves, 477 preserved/restored, exactly two justified predecessor-only predicates, zero unmapped, and zero duplicate owners. Prior full-check evidence passed all browser lanes headlessly and serially; final resource audits found no owned process, group, listener, vault, or temporary file.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replaced the 3,894-line board check and lifecycle helper with typed owner-local Bun system tests and one owned-canvas lifecycle module. The explicit 16-file board lane preserves 477 observable predecessor predicates, documents two implementation-only exclusions, passes 74 tests/574 expectations, and is independently review-clean. Reconciliation type, lint, format, inventory, diff, and resource checks passed.
+<!-- SECTION:FINAL_SUMMARY:END -->
