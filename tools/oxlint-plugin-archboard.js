@@ -14,6 +14,8 @@ const SIDE_EFFECT_IMPORTS = new Set([
 
 const ROOT_SOURCE_ENTRYPOINTS = new Set(["src/bin.ts", "src/dev-canvas.ts", "src/server.ts"]);
 
+const TEMPORARY_UNTYPED_TEST_SOURCE = "src/cli/command-contract/tests/public-runner-fixture.mjs";
+
 const MODULE_AREAS = new Set([
 	"cli",
 	"domain",
@@ -195,7 +197,36 @@ function isModuleTest(module) {
 }
 
 function isTestFile(relativePath) {
-	return /(^|\/)[^/]+\.(?:test|spec)\.[cm]?[jt]sx?$/.test(relativePath);
+	return /(^|\/)[^/]+(?:\.|_)(?:test|spec)\.[jt]sx?$/.test(relativePath);
+}
+
+function testOwnerAt(relativePath) {
+	const module = moduleAt(relativePath);
+	if (module && isModuleTest(module)) {
+		return {
+			kind: "module",
+			root: `${module.root}/tests`,
+			moduleRoot: module.root,
+		};
+	}
+
+	if (relativePath === "tests/system" || relativePath.startsWith("tests/system/")) {
+		return { kind: "system", root: "tests/system", moduleRoot: undefined };
+	}
+
+	return undefined;
+}
+
+function sameTestOwner(left, right) {
+	return left?.root === right?.root;
+}
+
+function isJavaScriptLikeSource(relativePath) {
+	return /\.[cm]?[jt]sx?$/.test(relativePath);
+}
+
+function isTypedTestSource(relativePath) {
+	return relativePath.endsWith(".ts");
 }
 
 function isTopLevelDeclaration(node) {
@@ -358,27 +389,38 @@ const moduleEntrypoints = createRule(
 			"Code outside a module may import only that module's root entrypoint files, never implementation subfolders.",
 		noDeepImportAcrossModules:
 			"Import another module through one of its root entrypoint files, not through its implementation subfolders.",
-		noTestFixtureImport: "A module's tests folder is private to tests in that same module.",
-		noTestOutsideTestsDirectory: "Test and spec files must live in a module's tests directory.",
+		noProductTestImport:
+			"Product, scripts, and tools must not import test-owned source. Move shared behavior behind a product module root entrypoint.",
+		noCrossOwnerTestImport:
+			"Test-owned source may import helpers only from its own module tests folder or the tests/system owner.",
+		noTestOutsideTestsDirectory:
+			"Bun test files must live under src/<area>/<module>/tests or tests/system.",
 		testsThroughEntrypoints:
-			"Tests must exercise modules through root entrypoint files; only fixtures in their own tests folder are private imports.",
+			"Tests must import product modules through module-root entrypoint files; implementation subfolders are private.",
+		untypedTestSource:
+			"Test-owned JavaScript-like source must be a .ts file. Convert it to TypeScript so the root tsconfig checks it.",
 	},
 	(context) => {
 		const relativePath = getRepoRelativePath(context);
 		const importer = moduleAt(relativePath);
-		const coLocatedTest = isTestFile(relativePath);
+		const importerOwner = testOwnerAt(relativePath);
+		const runnableTest = isTestFile(relativePath);
 
 		const visitors = sourceImportVisitors((source, node) => {
 			const importedPath = resolveSourcePath(context, relativePath, source);
+			const importedOwner = importedPath ? testOwnerAt(importedPath) : undefined;
 			const imported = importedPath ? moduleAt(importedPath) : undefined;
-			if (!imported) {
+
+			if (importedOwner) {
+				if (!importerOwner) {
+					report(context, node, "noProductTestImport");
+				} else if (!sameTestOwner(importerOwner, importedOwner)) {
+					report(context, node, "noCrossOwnerTestImport");
+				}
 				return;
 			}
 
-			const importerIsTest = importer ? isModuleTest(importer) : false;
-			const importedIsTest = isModuleTest(imported);
-			if (importedIsTest && (!importerIsTest || !sameModule(importer, imported))) {
-				report(context, node, "noTestFixtureImport");
+			if (!imported) {
 				return;
 			}
 
@@ -386,10 +428,8 @@ const moduleEntrypoints = createRule(
 				return;
 			}
 
-			if (importerIsTest) {
-				if (!sameModule(importer, imported) || !importedIsTest) {
-					report(context, node, "testsThroughEntrypoints");
-				}
+			if (importerOwner) {
+				report(context, node, "testsThroughEntrypoints");
 				return;
 			}
 
@@ -400,11 +440,19 @@ const moduleEntrypoints = createRule(
 			}
 		});
 
-		if (coLocatedTest && (!importer || !isModuleTest(importer))) {
-			const programVisitor = visitors.Program;
+		const placementMessage =
+			runnableTest && !importerOwner ? "noTestOutsideTestsDirectory" : undefined;
+		const untypedMessage =
+			importerOwner &&
+			isJavaScriptLikeSource(relativePath) &&
+			!isTypedTestSource(relativePath) &&
+			relativePath !== TEMPORARY_UNTYPED_TEST_SOURCE
+				? "untypedTestSource"
+				: undefined;
+		if (placementMessage || untypedMessage) {
 			visitors.Program = (node) => {
-				report(context, node, "noTestOutsideTestsDirectory");
-				programVisitor?.(node);
+				if (placementMessage) report(context, node, placementMessage);
+				if (untypedMessage) report(context, node, untypedMessage);
 			};
 		}
 
