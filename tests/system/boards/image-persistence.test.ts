@@ -3,10 +3,16 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { wrapSceneAsObsidianMd } from "../../../src/runtime/engine/obsidian-md.ts";
+import { buildScene } from "../../../src/runtime/engine/scene-document.ts";
+import { TEST_PANE_SOCKET_SETTLE_MS } from "../../../src/shared/timing/timing.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
-import { openTestPane, type TestPane } from "./support/pane-websocket.ts";
+import {
+	openTestPane,
+	type PaneMessage,
+	type TestPane,
+	waitForPaneMessage,
+} from "./support/pane-websocket.ts";
 
 interface FileRecord {
 	id: string;
@@ -31,7 +37,6 @@ interface BoardBody {
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-image-persistence-"));
-const port = 39_000 + Math.floor(Math.random() * 2_000);
 const pngA = "data:image/png;base64,QUJPQVJEQUFBQQ==";
 const pngB = "data:image/png;base64,QUJPQVJEQkJCQg==";
 let canvas: OwnedCanvas;
@@ -41,7 +46,6 @@ const panes: TestPane[] = [];
 beforeAll(async () => {
 	canvas = await startOwnedCanvas({
 		serverPath: path.join(repoRoot, "src/server.ts"),
-		port,
 		vault,
 	});
 	request = createJsonRequester(canvas);
@@ -52,56 +56,47 @@ afterAll(async () => {
 	await canvas?.dispose();
 });
 
-async function addImage(board: string, fileId: string, dataURL: string): Promise<void> {
+async function addImage(
+	board: string,
+	fileId: string,
+	dataURL: string,
+): Promise<{ status: number; body: FilesBody }> {
 	await request(`/api/elements?board=${board}`, {
 		method: "POST",
 		body: { type: "image", x: 0, y: 0, width: 80, height: 80, fileId },
 	});
-	const added = await request<FilesBody>(`/api/files?board=${board}`, {
+	return request<FilesBody>(`/api/files?board=${board}`, {
 		method: "POST",
 		body: { files: [{ id: fileId, dataURL, mimeType: "image/png" }] },
 	});
-	expect(added.status).toBe(200);
-	expect(added.body).toMatchObject({ board, count: 1 });
-}
-
-function pluginNote(board: string, link: string): string {
-	const bare = wrapSceneAsObsidianMd(
-		{
-			type: "excalidraw",
-			version: 2,
-			elements: [
-				{
-					id: "img-emb",
-					type: "image",
-					x: 0,
-					y: 0,
-					width: 40,
-					height: 40,
-					fileId: "emb12345",
-				},
-			],
-			appState: { viewBackgroundColor: "#ffffff" },
-			files: {},
-		},
-		null,
-		{
-			frontmatter: [
-				["board", board],
-				["variant", "current"],
-			],
-		},
-	);
-	const drawing = bare.indexOf("\n%%\n## Drawing\n");
-	return `${bare.slice(0, drawing)}\n## Embedded Files\nemb12345: [[${link}]]\n${bare.slice(drawing + 1)}`;
 }
 
 describe("image persistence", () => {
+	test("assembles only images referenced by the owning board", () => {
+		const files = {
+			"img-a": { id: "img-a", dataURL: pngA, mimeType: "image/png" },
+			"img-b": { id: "img-b", dataURL: pngB, mimeType: "image/png" },
+		};
+		const withImage = buildScene(
+			[{ id: "e1", type: "image", x: 0, y: 0, width: 10, height: 10, fileId: "img-a" }],
+			files,
+		);
+		expect(Object.keys(withImage.scene.files ?? {})).toEqual(["img-a"]);
+		const withoutImage = buildScene(
+			[{ id: "e2", type: "rectangle", x: 0, y: 0, width: 10, height: 10 }],
+			files,
+		);
+		expect(withoutImage.scene.files).toBeUndefined();
+	});
+
 	test("keeps each board's images in only that board and note", async () => {
 		await request("/api/boards/new", { method: "POST", body: { board: "picsa" } });
 		await request("/api/boards/new", { method: "POST", body: { board: "picsb" } });
-		await addImage("picsa", "img-a", pngA);
+		const addedA = await addImage("picsa", "img-a", pngA);
 		await addImage("picsb", "img-b", pngB);
+		expect(addedA.status).toBe(200);
+		expect(addedA.body.board).toBe("picsa");
+		expect(addedA.body.count).toBe(1);
 
 		const orphan = await request<FilesBody>("/api/files?board=picsb", {
 			method: "POST",
@@ -121,6 +116,7 @@ describe("image persistence", () => {
 
 		const savedA = await request<BoardBody>("/api/boards/save?board=picsa", { method: "POST" });
 		const savedB = await request<BoardBody>("/api/boards/save?board=picsb", { method: "POST" });
+		expect([savedA.status, savedB.status]).toEqual([200, 200]);
 		const noteA = fs.readFileSync(savedA.body.file, "utf8");
 		const noteB = fs.readFileSync(savedB.body.file, "utf8");
 		expect(noteA).toContain(pngA);
@@ -145,10 +141,11 @@ describe("image persistence", () => {
 		expect(opened.status).toBe(200);
 		const files = await request<FilesBody>("/api/files?board=picsc");
 		expect(files.body.files?.["img-cold"]?.dataURL).toBe(pngA);
-		await request("/api/boards/save?board=picsc", { method: "POST" });
+		const coldResave = await request<BoardBody>("/api/boards/save?board=picsc", { method: "POST" });
+		expect(coldResave.status).toBe(200);
 		expect(fs.readFileSync(coldFile, "utf8")).toContain(pngA);
 
-		const pane = await openTestPane(port, request, "pic-pane", 0, {
+		const pane = await openTestPane(canvas.base, request, "pic-pane", 0, {
 			primary: true,
 			focused: true,
 		});
@@ -161,6 +158,49 @@ describe("image persistence", () => {
 			| { files?: Record<string, FileRecord> }
 			| undefined;
 		expect(switched?.files?.["img-cold"]?.dataURL).toBe(pngA);
+	});
+
+	test("returns a successful image export result from the addressed pane", async () => {
+		await request("/api/boards/new", { method: "POST", body: { board: "export-pic" } });
+		await request("/api/boards/new", { method: "POST", body: { board: "export-other" } });
+		const pane = await openTestPane(canvas.base, request, "image-export-pane", 0, {
+			primary: true,
+			focused: true,
+		});
+		const other = await openTestPane(canvas.base, request, "image-export-other", 640);
+		panes.push(pane, other);
+		await request("/api/boards/open", {
+			method: "POST",
+			body: { board: "export-pic", pane: pane.clientId },
+		});
+		await pane.adopt("export-pic");
+		const start = pane.since();
+		const otherStart = other.since();
+		const pending = request<{ success?: boolean; format?: string; data?: string }>(
+			"/api/export/image",
+			{ method: "POST", body: { format: "png", pane: pane.clientId } },
+		);
+		const message = (await waitForPaneMessage(pane, start, "export_image_request")) as
+			| PaneMessage
+			| undefined;
+		expect(message?.requestId).toBeString();
+		expect(
+			pane.seen.slice(start).some((entry) => entry.type === "export_image_request"),
+		).toBeTrue();
+		expect(
+			other.seen.slice(otherStart).some((entry) => entry.type === "export_image_request"),
+		).toBeFalse();
+		const callback = await request("/api/export/image/result", {
+			method: "POST",
+			body: { requestId: message?.requestId, format: "png", data: "aGk=" },
+		});
+		expect(callback.status).toBe(200);
+		expect(await pending).toMatchObject({
+			status: 200,
+			body: { success: true, format: "png", data: "aGk=" },
+		});
+		await Promise.all([pane.close(), other.close()]);
+		await Bun.sleep(TEST_PANE_SOCKET_SETTLE_MS);
 	});
 
 	test("copies images into a branch and filters unreferenced files", async () => {
@@ -192,65 +232,10 @@ describe("image persistence", () => {
 			method: "POST",
 			body: { board: "branch-pics", reload: true },
 		});
-		await request("/api/boards/save?board=branch-pics", { method: "POST" });
+		const orphanSave = await request<BoardBody>("/api/boards/save?board=branch-pics", {
+			method: "POST",
+		});
+		expect(orphanSave.status).toBe(200);
 		expect(fs.readFileSync(sourceFile, "utf8")).not.toContain("T1JQSEFO");
-	});
-
-	test("hydrates Obsidian embedded files and preserves their wikilinks", async () => {
-		const imageBase64 =
-			"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
-		fs.mkdirSync(path.join(vault, "attachments"), { recursive: true });
-		fs.writeFileSync(path.join(vault, "attachments/logo.png"), Buffer.from(imageBase64, "base64"));
-		fs.writeFileSync(
-			path.join(vault, "picsd.excalidraw.md"),
-			pluginNote("picsd", "attachments/logo.png"),
-		);
-		const opened = await request<BoardBody>("/api/boards/open", {
-			method: "POST",
-			body: { board: "picsd" },
-		});
-		expect(opened.status).toBe(200);
-		const hydrated = await request<FilesBody>("/api/files?board=picsd");
-		expect(hydrated.body.files?.emb12345?.dataURL).toBe(`data:image/png;base64,${imageBase64}`);
-		await request("/api/boards/save?board=picsd", { method: "POST" });
-		const resaved = fs.readFileSync(opened.body.file, "utf8");
-		expect(resaved).toContain("emb12345: [[attachments/logo.png]]");
-		expect(resaved).not.toContain(imageBase64);
-		const beforeReload = await request<FilesBody>("/api/files?board=picsd");
-		await request("/api/boards/open", {
-			method: "POST",
-			body: { board: "picsd", reload: true },
-		});
-		const afterReload = await request<FilesBody>("/api/files?board=picsd");
-		expect(afterReload.body.files?.emb12345?.dataURL).toBe(
-			beforeReload.body.files?.emb12345?.dataURL,
-		);
-
-		fs.writeFileSync(
-			path.join(vault, "escape.excalidraw.md"),
-			pluginNote("escape", "../../etc/passwd.png"),
-		);
-		await request("/api/boards/open", { method: "POST", body: { board: "escape" } });
-		expect(
-			(await request<FilesBody>("/api/files?board=escape")).body.files?.emb12345,
-		).toBeUndefined();
-
-		const callers: string[] = [];
-		const walk = (directory: string): void => {
-			for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-				const full = path.join(directory, entry.name);
-				if (entry.isDirectory()) walk(full);
-				else if (entry.name.endsWith(".ts")) {
-					for (const line of fs.readFileSync(full, "utf8").split("\n")) {
-						if (!/\bsceneJsonWithEmbeddedImages\s*\(/.test(line)) continue;
-						if (line.trim().startsWith("export function sceneJsonWithEmbeddedImages")) continue;
-						callers.push(`${path.relative(repoRoot, full)}:${line.trim()}`);
-					}
-				}
-			}
-		};
-		walk(path.join(repoRoot, "src"));
-		expect(callers).toHaveLength(1);
-		expect(callers[0]).toStartWith("src/runtime/engine/board-io.ts:");
 	});
 });

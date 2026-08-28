@@ -1,5 +1,10 @@
 import { WebSocket } from "ws";
 
+import {
+	TEST_PANE_MESSAGE_POLL_MS,
+	TEST_PANE_MESSAGE_TIMEOUT_MS,
+	TEST_PANE_SOCKET_SETTLE_MS,
+} from "../../../../src/shared/timing/timing.ts";
 import type { JsonResponse } from "./http.ts";
 
 export interface PaneMessage {
@@ -39,20 +44,23 @@ export interface TestPane {
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function openTestPane(
-	port: number,
+	base: string,
 	request: Request,
 	clientId: string,
 	x: number,
 	options: { primary?: boolean; focused?: boolean; board?: string } = {},
 ): Promise<TestPane> {
-	const socket = new WebSocket(`ws://127.0.0.1:${port}/?clientId=${clientId}`);
+	const endpoint = new URL(base);
+	endpoint.protocol = "ws:";
+	endpoint.searchParams.set("clientId", clientId);
+	const socket = new WebSocket(endpoint);
 	const seen: PaneMessage[] = [];
 	socket.on("message", (data) => seen.push(JSON.parse(data.toString()) as PaneMessage));
 	await new Promise<void>((resolve, reject) => {
 		socket.once("open", () => resolve());
 		socket.once("error", reject);
 	});
-	await sleep(80);
+	await sleep(TEST_PANE_SOCKET_SETTLE_MS);
 	const registration: PaneRegistration = {
 		clientId,
 		paneId: clientId,
@@ -96,13 +104,13 @@ export async function waitForPaneMessage(
 	pane: TestPane,
 	start: number,
 	type: string,
-	timeoutMs = 2_000,
+	timeoutMs = TEST_PANE_MESSAGE_TIMEOUT_MS,
 ): Promise<PaneMessage | undefined> {
 	const deadline = Date.now() + timeoutMs;
 	while (Date.now() < deadline) {
 		const found = pane.seen.slice(start).find((message) => message.type === type);
 		if (found) return found;
-		await sleep(20);
+		await sleep(TEST_PANE_MESSAGE_POLL_MS);
 	}
 	return undefined;
 }

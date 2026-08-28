@@ -13,6 +13,8 @@ import {
 	parseBoardKey,
 	vaultPathFor,
 } from "../../../src/runtime/engine/board.ts";
+import { readBoardFile } from "../../../src/runtime/engine/board-io.ts";
+import { boards as boardStore, getOrCreateBoard } from "../../../src/runtime/engine/board-store.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
 
@@ -47,7 +49,11 @@ interface BoardBody extends BoardSummary {
 
 interface ElementsBody {
 	count: number;
-	elements: Array<{ id: string; x?: number }>;
+	elements: Array<{
+		id: string;
+		x?: number;
+		customData?: { archboard?: { kind?: string } };
+	}>;
 }
 
 interface SnapshotBody {
@@ -57,14 +63,12 @@ interface SnapshotBody {
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-board-lifecycle-"));
-const port = 33_000 + Math.floor(Math.random() * 2_000);
 let canvas: OwnedCanvas;
 let request: ReturnType<typeof createJsonRequester>;
 
 beforeAll(async () => {
 	canvas = await startOwnedCanvas({
 		serverPath: path.join(repoRoot, "src/server.ts"),
-		port,
 		vault,
 	});
 	request = createJsonRequester(canvas);
@@ -83,6 +87,7 @@ describe("board lifecycle", () => {
 		expect(boardKey(parseBoardKey("payments@Option-A"))).toBe("payments@option-a");
 		expect(boardKey(parseBoardKey("Billing/Ledger"))).toBe("billing/ledger");
 		expect(normalizeBoardKey("café")).toBe(normalizeBoardKey("café"));
+		expect(boardKey(parseBoardKey("café"))).toBe(boardKey(parseBoardKey("café")));
 		expect(
 			identityFrontmatter(makeIdentity({ board: "Payments" })).find(
 				([key]) => key === "board",
@@ -99,8 +104,19 @@ describe("board lifecycle", () => {
 			expect(vaultPathFor(parseBoardKey("payments"), caseVault)).toBe(
 				path.join(caseVault, "Payments.excalidraw.md"),
 			);
+			const readWithLowercaseAddress = readBoardFile(parseBoardKey("payments"), caseVault);
+			expect(readWithLowercaseAddress?.identity.displayName).toBe("Payments");
+			expect(readWithLowercaseAddress?.declaredKey).toBeUndefined();
 			expect(vaultPathFor(parseBoardKey("NewBoard"), caseVault)).toBe(
 				path.join(caseVault, "NewBoard.excalidraw.md"),
+			);
+			const decomposed = "café";
+			fs.writeFileSync(
+				path.join(caseVault, `${decomposed}.excalidraw.md`),
+				note.replace("Payments", "café"),
+			);
+			expect(vaultPathFor(parseBoardKey("café"), caseVault)).toBe(
+				path.join(caseVault, `${decomposed}.excalidraw.md`),
 			);
 			fs.writeFileSync(
 				path.join(caseVault, "payments.excalidraw.md"),
@@ -130,12 +146,20 @@ describe("board lifecycle", () => {
 		});
 		expect(path.basename(created.body.file ?? "")).toBe("CaseTest.excalidraw.md");
 
-		await request("/api/elements?board=casetest", {
+		const otherSpelling = await request("/api/elements?board=casetest", {
 			method: "POST",
 			body: { id: "shape", type: "rectangle", x: 0, y: 0, width: 40, height: 40 },
 		});
+		expect([200, 201]).toContain(otherSpelling.status);
 		const underAnotherSpelling = await request<ElementsBody>("/api/elements?board=CASETEST");
 		expect(underAnotherSpelling.body).toMatchObject({ count: 1 });
+
+		const saved = await request<BoardBody>("/api/boards/save?board=CaseTest", { method: "POST" });
+		expect(saved.status).toBe(200);
+		expect(
+			fs.readdirSync(vault).filter((file) => /^casetest\.excalidraw\.md$/i.test(file)),
+		).toHaveLength(1);
+		expect(fs.readFileSync(saved.body.file ?? "", "utf8")).toMatch(/^board: CaseTest$/m);
 
 		const listing = await request<BoardsBody>("/api/boards");
 		expect(listing.body.open.some((board) => board.key === "casetest")).toBeTrue();
@@ -148,6 +172,24 @@ describe("board lifecycle", () => {
 		expect(duplicate.status).toBe(409);
 		expect(duplicate.body.error).toMatch(/already open|already exists/);
 
+		fs.writeFileSync(
+			path.join(vault, "Handover.excalidraw.md"),
+			'---\nboard: Handover\nvariant: current\n---\n\n# Excalidraw Data\n\n%%\n## Drawing\n```json\n{"type":"excalidraw","version":2,"elements":[],"appState":{}}\n```\n%%\n',
+		);
+		const startedOver = await request<BoardBody>("/api/boards/new", {
+			method: "POST",
+			body: { board: "handover" },
+		});
+		expect(startedOver.status).toBe(409);
+		expect(startedOver.body.error).toMatch(/Handover\.excalidraw\.md/);
+		const openedLower = await request<BoardBody>("/api/boards/open", {
+			method: "POST",
+			body: { board: "handover" },
+		});
+		expect(openedLower.status).toBe(200);
+		expect(path.basename(openedLower.body.file ?? "")).toBe("Handover.excalidraw.md");
+		expect(openedLower.body.declaredKey).toBeUndefined();
+
 		const notePath = created.body.file!;
 		const note = fs.readFileSync(notePath, "utf8");
 		fs.writeFileSync(notePath, note.replace('"width": 40', '"width": 72'));
@@ -159,6 +201,22 @@ describe("board lifecycle", () => {
 			body: { board: "casetest", reload: true },
 		});
 		expect(reloaded.status).toBe(200);
+	});
+
+	test("keeps registry entries free of board content", () => {
+		const { board } = getOrCreateBoard(
+			makeIdentity({ board: "registry-entry-shape", level: "service" }),
+		);
+		const fields = Object.keys(board).toSorted();
+		expect("elements" in board).toBeFalse();
+		expect("files" in board).toBeFalse();
+		expect("note" in board).toBeFalse();
+		expect(
+			fields.every((field) =>
+				["identity", "file", "baseline", "loadedAt", "savedAt"].includes(field),
+			),
+		).toBeTrue();
+		boardStore.delete("registry-entry-shape");
 	});
 
 	test("keeps the registry content-free by reading note changes per request", async () => {
@@ -197,6 +255,13 @@ describe("board lifecycle", () => {
 			body: { name: "before-the-split" },
 		});
 		expect(taken.status).toBe(200);
+		const beforeUpdate = await request<{
+			snapshot: { elements: ElementsBody["elements"] };
+		}>("/api/snapshots/before-the-split");
+		expect(
+			beforeUpdate.body.snapshot.elements.find((element) => element.id === "s1")?.customData
+				?.archboard?.kind,
+		).toBe("gateway");
 		await request("/api/elements/s1?board=snapshot-sharing", {
 			method: "PUT",
 			body: {
@@ -209,9 +274,13 @@ describe("board lifecycle", () => {
 				customData: { archboard: { node: "api", kind: "datastore", variant: "current" } },
 			},
 		});
-		const snapshot = await request<{ snapshot: { elements: Array<{ id: string; x: number }> } }>(
+		const snapshot = await request<{ snapshot: { elements: ElementsBody["elements"] } }>(
 			"/api/snapshots/before-the-split",
 		);
-		expect(snapshot.body.snapshot.elements.find((element) => element.id === "s1")?.x).toBe(0);
+		const snapshotElement = snapshot.body.snapshot.elements.find((element) => element.id === "s1");
+		expect(snapshotElement?.x).toBe(0);
+		expect(snapshotElement?.customData?.archboard?.kind).toBe("gateway");
+		const changedBoard = await request<ElementsBody>("/api/elements?board=snapshot-sharing");
+		expect(changedBoard.body.elements.find((element) => element.id === "s1")?.x).toBe(999);
 	});
 });

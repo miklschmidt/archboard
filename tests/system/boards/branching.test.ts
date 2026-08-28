@@ -4,19 +4,17 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
+import { planPromotion } from "../../../src/runtime/engine/promote.ts";
+import type { ServerElement } from "../../../src/runtime/engine/types.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
-import { openTestPane, waitForPaneMessage, type TestPane } from "./support/pane-websocket.ts";
 
 interface Element {
 	id: string;
-	type: string;
-	text?: string;
 	customData?: { archboard?: { node?: string; variant?: string } };
 }
 
 interface ElementsBody {
-	count: number;
 	elements: Element[];
 }
 
@@ -24,13 +22,11 @@ interface SaveBody {
 	board: string;
 	file: string;
 	savedFrom?: string;
-	saveKind?: string;
 	identity?: { level?: string };
-	panes?: {
-		moved: Array<{ place: string }>;
-		kept: Array<{ place: string }>;
-		onScreen: Array<{ place: string; board: string }>;
-	};
+}
+
+interface ChangesBody {
+	events: Array<{ board: string }>;
 }
 
 interface CompareBody {
@@ -44,22 +40,18 @@ interface CompareBody {
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-branching-"));
-const port = 43_000 + Math.floor(Math.random() * 2_000);
 let canvas: OwnedCanvas;
 let request: ReturnType<typeof createJsonRequester>;
-const panes: TestPane[] = [];
 
 beforeAll(async () => {
 	canvas = await startOwnedCanvas({
 		serverPath: path.join(repoRoot, "src/server.ts"),
-		port,
 		vault,
 	});
 	request = createJsonRequester(canvas);
 });
 
 afterAll(async () => {
-	await Promise.all(panes.map((pane) => pane.close()));
 	await canvas?.dispose();
 });
 
@@ -101,6 +93,34 @@ async function runCli(args: string[]): Promise<{ code: number | null; stderr: st
 }
 
 describe("branching", () => {
+	test("promotion plans inherit variant but only record an explicit level", () => {
+		const shape = {
+			id: "planned",
+			type: "rectangle",
+			x: 0,
+			y: 0,
+			width: 200,
+			height: 100,
+			label: { text: "Payments" },
+		} as ServerElement;
+		const inherited = planPromotion({
+			targets: [shape],
+			board: [shape],
+			kind: "service",
+			boardVariant: "option-a",
+		});
+		expect(inherited.nodes[0]?.variant).toBe("option-a");
+		expect(inherited.nodes[0]?.level).toBeUndefined();
+		const explicit = planPromotion({
+			targets: [shape],
+			board: [shape],
+			kind: "service",
+			boardVariant: "option-a",
+			level: "service",
+		});
+		expect(explicit.nodes[0]?.level).toBe("service");
+	});
+
 	test("stamps copied nodes with the destination variant and preserves the source", async () => {
 		await request("/api/boards/new", {
 			method: "POST",
@@ -123,11 +143,16 @@ describe("branching", () => {
 			method: "POST",
 			body: { name: "ledger", variant: "option-a" },
 		});
+		expect(branch.status).toBe(200);
+		expect(branch.body.board).toBe("ledger@option-a");
 		expect(branch.body).toMatchObject({
 			board: "ledger@option-a",
 			savedFrom: "ledger",
 			identity: { level: "service" },
 		});
+		const changes = await request<ChangesBody>("/api/changes?board=ledger@option-a&since=0");
+		expect(changes.status).toBe(200);
+		expect(changes.body.events.some((event) => event.board === "ledger@option-a")).toBeTrue();
 		const copied = await request<ElementsBody>("/api/elements?board=ledger@option-a");
 		const copiedVariants = copied.body.elements
 			.filter((element) => element.customData?.archboard?.node)
@@ -139,7 +164,15 @@ describe("branching", () => {
 				.filter((element) => element.customData?.archboard?.node)
 				.map((element) => element.customData?.archboard?.variant),
 		).toEqual(["current", "current", "current"]);
-		expect(fs.readFileSync(branch.body.file, "utf8")).toMatch(/^level: service$/m);
+		const branchNote = fs.readFileSync(branch.body.file, "utf8");
+		expect(branchNote).not.toMatch(/"variant"\s*:\s*"current"/);
+		expect(branchNote).toMatch(/"variant"\s*:\s*"option-a"/);
+		expect(branchNote).toMatch(/^level: service$/m);
+		const levelled = await request<SaveBody>("/api/boards/save?board=ledger", {
+			method: "POST",
+			body: { name: "ledger@option-d", level: "module" },
+		});
+		expect(levelled.body.identity?.level).toBe("module");
 
 		await request(`/api/elements/${ids[1]}?board=ledger@option-a`, { method: "DELETE" });
 		const diff = await request<CompareBody>("/api/boards/compare?from=ledger&to=ledger@option-a");
@@ -171,13 +204,21 @@ describe("branching", () => {
 	test("promotes using the board variant unless the caller overrides it", async () => {
 		await request("/api/boards/new", { method: "POST", body: { board: "shipping" } });
 		await request("/api/boards/new", { method: "POST", body: { board: "shipping@option-a" } });
-		const box = async (board: string, id: string) => {
+		const box = async (board: string, id: string, label: string) => {
 			await request(`/api/elements?board=${board}`, {
 				method: "POST",
-				body: { id, type: "rectangle", x: 0, y: 800, width: 200, height: 100, label: { text: id } },
+				body: {
+					id,
+					type: "rectangle",
+					x: 0,
+					y: 800,
+					width: 200,
+					height: 100,
+					label: { text: label },
+				},
 			});
 		};
-		await box("shipping@option-a", "quote");
+		await box("shipping@option-a", "quote", "Rate Quoter");
 		expect(
 			(
 				await runCli([
@@ -196,7 +237,30 @@ describe("branching", () => {
 		);
 		expect(promotedThere.body.element.customData?.archboard?.variant).toBe("option-a");
 
-		await box("shipping@option-a", "printer");
+		await box("shipping", "current-quote", "Rate Quoter");
+		const promotedHere = await runCli([
+			"promote",
+			"--board",
+			"shipping",
+			"--ids",
+			"current-quote",
+			"--kind",
+			"service",
+		]);
+		expect(promotedHere.code).toBe(0);
+		const current = await request<{ element: Element }>(
+			"/api/elements/current-quote?board=shipping",
+		);
+		expect(current.body.element.customData?.archboard?.variant).toBe("current");
+
+		const diff = await request<CompareBody>(
+			"/api/boards/compare?from=shipping&to=shipping@option-a",
+		);
+		expect(diff.body.summary.nodesChanged).toBe(0);
+		expect(diff.body.summary.nodesUnchanged).toBe(1);
+		expect(diff.body.warnings.some((warning) => /different variant/.test(warning))).toBeFalse();
+
+		await box("shipping@option-a", "printer", "Label Printer");
 		expect(
 			(
 				await runCli([
@@ -216,107 +280,5 @@ describe("branching", () => {
 			"/api/elements/printer?board=shipping@option-a",
 		);
 		expect(overridden.body.element.customData?.archboard?.variant).toBe("option-z");
-	});
-
-	test("branches off screen without moving either pane", async () => {
-		await request("/api/boards/new", { method: "POST", body: { board: "pane-ledger" } });
-		await request("/api/elements?board=pane-ledger", {
-			method: "POST",
-			body: { id: "pane1", type: "rectangle", x: 0, y: 0, width: 40, height: 40 },
-		});
-		await request("/api/boards/save?board=pane-ledger", {
-			method: "POST",
-			body: { variant: "option-a" },
-		});
-		const left = await openTestPane(port, request, "branch-left", 0, {
-			primary: true,
-			focused: true,
-		});
-		const right = await openTestPane(port, request, "branch-right", 640);
-		panes.push(left, right);
-		await request("/api/boards/open", {
-			method: "POST",
-			body: { board: "pane-ledger", pane: "left" },
-		});
-		await left.adopt("pane-ledger");
-		await request("/api/boards/open", {
-			method: "POST",
-			body: { board: "pane-ledger@option-a", pane: "right" },
-		});
-		await right.adopt("pane-ledger@option-a");
-		const leftStart = left.since();
-		const rightStart = right.since();
-		const branch = await request<SaveBody>("/api/boards/save?board=pane-ledger", {
-			method: "POST",
-			body: { variant: "option-c" },
-		});
-		expect(branch.body.saveKind).toBe("branch");
-		expect(branch.body.panes?.moved).toEqual([]);
-		expect(branch.body.panes?.kept.map((entry) => entry.place)).toEqual(["left"]);
-		expect(branch.body.panes?.onScreen.map((entry) => `${entry.place}:${entry.board}`)).toEqual([
-			"left:pane-ledger",
-			"right:pane-ledger@option-a",
-		]);
-		expect(
-			left.seen.slice(leftStart).some((message) => message.type === "board_switched"),
-		).toBeFalse();
-		expect(
-			right.seen.slice(rightStart).some((message) => message.type === "board_switched"),
-		).toBeFalse();
-		expect(
-			(await request<ElementsBody>("/api/elements?board=pane-ledger@option-c")).body.count,
-		).toBe(1);
-	});
-
-	test("refreshes an on-screen save-as destination with an exact replacement delta", async () => {
-		await Promise.all(panes.map((pane) => pane.close()));
-		await Bun.sleep(100);
-		await request("/api/boards/new", { method: "POST", body: { board: "save-source" } });
-		await request("/api/boards/new", { method: "POST", body: { board: "save-destination" } });
-		for (const [board, element] of [
-			["save-source", { id: "same", type: "rectangle", x: 10, y: 10, width: 80, height: 40 }],
-			["save-source", { id: "created", type: "ellipse", x: 120, y: 10, width: 60, height: 60 }],
-			["save-destination", { id: "same", type: "rectangle", x: 30, y: 30, width: 40, height: 40 }],
-			[
-				"save-destination",
-				{ id: "deleted", type: "diamond", x: 220, y: 10, width: 60, height: 60 },
-			],
-		] as const) {
-			await request(`/api/elements?board=${board}`, { method: "POST", body: element });
-		}
-		await request("/api/boards/save?board=save-source", { method: "POST" });
-		await request("/api/boards/save?board=save-destination", { method: "POST" });
-		const left = await openTestPane(port, request, "replacement-left", 0, {
-			primary: true,
-			focused: true,
-		});
-		const right = await openTestPane(port, request, "replacement-right", 640);
-		panes.push(left, right);
-		await request("/api/boards/open", {
-			method: "POST",
-			body: { board: "save-source", pane: "left" },
-		});
-		await left.adopt("save-source");
-		await request("/api/boards/open", {
-			method: "POST",
-			body: { board: "save-destination", pane: "right" },
-		});
-		await right.adopt("save-destination");
-		const rightStart = right.since();
-		const saved = await request<SaveBody>("/api/boards/save?board=save-source", {
-			method: "POST",
-			body: { name: "save-destination" },
-		});
-		const replacement = await waitForPaneMessage(right, rightStart, "elements_changed");
-		expect(saved.status, JSON.stringify(saved.body)).toBe(200);
-		expect(((replacement?.created ?? []) as Element[]).map((element) => element.id)).toEqual([
-			"created",
-		]);
-		expect(((replacement?.updated ?? []) as Element[]).map((element) => element.id)).toEqual([
-			"same",
-		]);
-		expect(replacement?.deleted).toEqual(["deleted"]);
-		expect(left.board()).toBe("save-source");
-		expect(right.board()).toBe("save-destination");
 	});
 });

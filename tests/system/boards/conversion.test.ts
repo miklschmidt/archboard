@@ -29,7 +29,6 @@ interface MermaidBody {
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-conversion-"));
-const port = 45_000 + Math.floor(Math.random() * 2_000);
 let canvas: OwnedCanvas;
 let request: ReturnType<typeof createJsonRequester>;
 const panes: TestPane[] = [];
@@ -37,7 +36,6 @@ const panes: TestPane[] = [];
 beforeAll(async () => {
 	canvas = await startOwnedCanvas({
 		serverPath: path.join(repoRoot, "src/server.ts"),
-		port,
 		vault,
 	});
 	request = createJsonRequester(canvas);
@@ -112,11 +110,11 @@ describe("write-boundary conversion", () => {
 	test("routes Mermaid conversion to the pane holding the named board", async () => {
 		await request("/api/boards/new", { method: "POST", body: { board: "payments" } });
 		await request("/api/boards/new", { method: "POST", body: { board: "payments@option-a" } });
-		const left = await openTestPane(port, request, "convert-left", 0, {
+		const left = await openTestPane(canvas.base, request, "convert-left", 0, {
 			primary: true,
 			focused: true,
 		});
-		const right = await openTestPane(port, request, "convert-right", 640);
+		const right = await openTestPane(canvas.base, request, "convert-right", 640);
 		panes.push(left, right);
 		await request("/api/boards/open", {
 			method: "POST",
@@ -151,6 +149,7 @@ describe("write-boundary conversion", () => {
 			method: "POST",
 			body: diagram,
 		});
+		expect(onLeft.status).toBe(200);
 		expect(onLeft.body.pane?.place).toBe("left");
 		expect(await waitForPaneMessage(left, otherLeftStart, "mermaid_convert")).toBeDefined();
 		expect(
@@ -162,11 +161,11 @@ describe("write-boundary conversion", () => {
 	test("refuses conversion for an off-screen board without sending it elsewhere", async () => {
 		await request("/api/boards/new", { method: "POST", body: { board: "visible-left" } });
 		await request("/api/boards/new", { method: "POST", body: { board: "visible-right" } });
-		const left = await openTestPane(port, request, "offscreen-left", 0, {
+		const left = await openTestPane(canvas.base, request, "offscreen-left", 0, {
 			primary: true,
 			focused: true,
 		});
-		const right = await openTestPane(port, request, "offscreen-right", 640);
+		const right = await openTestPane(canvas.base, request, "offscreen-right", 640);
 		panes.push(left, right);
 		await request("/api/boards/open", {
 			method: "POST",
@@ -194,5 +193,45 @@ describe("write-boundary conversion", () => {
 		expect(
 			right.seen.slice(rightStart).some((message) => message.type === "mermaid_convert"),
 		).toBeFalse();
+		await Promise.all([left.close(), right.close()]);
+	});
+
+	test("offers a free pane and reports the exact no-browser conversion refusal", async () => {
+		await request("/api/boards/new", { method: "POST", body: { board: "mermaid-visible" } });
+		await request("/api/boards/new", {
+			method: "POST",
+			body: { board: "payments@option-a" },
+		});
+		const only = await openTestPane(canvas.base, request, "mermaid-only", 0, {
+			primary: true,
+			focused: true,
+		});
+		panes.push(only);
+		await request("/api/boards/open", {
+			method: "POST",
+			body: { board: "mermaid-visible" },
+		});
+		await only.adopt("mermaid-visible");
+		const diagram = { mermaidDiagram: "graph TD; A --> B;" };
+		const roomForOne = await request<MermaidBody>(
+			"/api/elements/from-mermaid?board=payments@option-a",
+			{ method: "POST", body: diagram },
+		);
+		expect(roomForOne.status).toBe(409);
+		expect(roomForOne.body.error).toContain("archboard pane open --board payments@option-a");
+		expect(roomForOne.body.error).not.toContain("board open");
+
+		await only.close();
+		const headless = await request<MermaidBody & { success?: boolean }>(
+			"/api/elements/from-mermaid?board=payments@option-a",
+			{ method: "POST", body: diagram },
+		);
+		expect(headless.status).toBe(503);
+		expect(headless.body).toEqual({
+			success: false,
+			code: "BROWSER_REQUIRED",
+			error:
+				"No browser is open, and mermaid conversion happens in the browser. Open the canvas first.",
+		});
 	});
 });
