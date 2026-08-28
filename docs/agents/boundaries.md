@@ -76,6 +76,37 @@ lines. Put large test data in a named non-TypeScript fixture instead of bypassin
 Oxlint also rejects generic `core`, `utils`, `misc`, `migration`, and `compatibility` buckets. Name
 the module for the behavior it owns.
 
+## Vendor-owned data
+
+When a dependency owns a data structure and publishes its TypeScript type, that exported type is
+authoritative. Derive every local view of the structure from the vendor type with type aliases and
+operations such as `Extract`, `Pick`, `Omit`, `Partial`, and intersections. Do not redeclare the
+vendor's fields in a local interface, transport type, or lookalike base type. Copying a vendor type
+does not insulate Archboard from dependency changes. It prevents the compiler from naming the code
+that an upgrade made incompatible.
+
+Local additions stay visibly local. Attach Archboard metadata by intersecting it with the derived
+vendor type rather than copying the vendor fields into a larger interface. If an input spelling or
+internal model genuinely differs from the vendor structure, give it its own domain name and convert
+it through one adapter at a named seam. The different model must not masquerade as the vendor type
+or flow past that adapter without conversion.
+
+Prefer a vendor's runtime schema when it publishes one. When it publishes only TypeScript types, a
+handwritten runtime parser is allowed where untrusted data enters, but its accepted and produced
+values must have a compile-time conformance check against the vendor type. Infer local TypeScript
+types from local runtime schemas instead of maintaining a second handwritten type beside them.
+
+If a dependency publishes no usable type, keep one local definition at one module interface. Record
+why the vendor cannot be the source, pin the external version or format it describes, and enforce
+the contract with the narrowest stable runtime or fixture test available. Recheck that exception on
+every dependency upgrade. Convenience, shorter imports, and avoiding upgrade errors are not valid
+exceptions.
+
+Enforce this rule with type checks, lint, or a repository-policy test whenever the relationship is
+machine-observable. An upgrade should fail at type-check time at each incompatible assumption.
+TASK-134 tracks the existing handwritten Excalidraw element types; they are migration debt, not a
+precedent or waiver.
+
 ## Area directions
 
 These directions keep transport and I/O details out of domain modules:
