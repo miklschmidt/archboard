@@ -55,6 +55,7 @@ const capturedFocusedNode = {
 };
 const capturedArrowStart = { x: 1400, y: 1120 };
 const capturedBrowserEndpoint = { x: 1279.2940245092134, y: 1150.128871410794 };
+const pinnedSolverEndpoint = { x: 1279.2940245092384, y: 1150.1288714106531 };
 
 const { extentOf, measureLinear, remeasureLinear, isPathElement, validateRenderGeometry } =
 	await import(src("runtime/engine/geometry.ts"));
@@ -407,6 +408,15 @@ for (const [name, arrow] of Object.entries(arrows)) {
 		pointDistance(captured, capturedBrowserEndpoint) <= 0.001,
 		`the captured rounded focus 0.9 endpoint was ${captured.x},${captured.y}, ` +
 			`${pointDistance(captured, capturedBrowserEndpoint)}px from Excalidraw`,
+	);
+	const capturedAgain = roundedEndpoint(0.9);
+	assert(
+		captured.x === pinnedSolverEndpoint.x &&
+			captured.y === pinnedSolverEndpoint.y &&
+			JSON.stringify(capturedAgain) === JSON.stringify(captured),
+		`the pinned rounded focus 0.9 endpoint was ${captured.x},${captured.y} first and ` +
+			`${capturedAgain.x},${capturedAgain.y} when repeated, not ` +
+			`${pinnedSolverEndpoint.x},${pinnedSolverEndpoint.y} bit for bit`,
 	);
 	const neighboring = roundedEndpoint(0.8);
 	const neighboringExpected = { x: 1279.8589442886187, y: 1144.108983723157 };

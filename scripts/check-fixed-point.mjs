@@ -961,6 +961,15 @@ try {
 		findingBoard.status === 200 && findingBridge.status === 200 && findingBoardSaved.status === 200,
 		findingBridge.body?.error ?? findingBoardSaved.body?.error ?? "",
 	);
+	const comparisonBoardCreated = await api("POST", "/api/boards/new", {
+		board: "binding-differential",
+		level: "service",
+	});
+	check(
+		"the binding comparison board is opened while no browser pane can adopt it",
+		comparisonBoardCreated.status === 200,
+		comparisonBoardCreated.body?.error ?? `status ${comparisonBoardCreated.status}`,
+	);
 
 	// --- the browser ---------------------------------------------------------
 
@@ -1367,10 +1376,6 @@ try {
 		JSON.stringify(initialBrowserArrow?.endBinding ?? null),
 	);
 
-	await api("POST", "/api/boards/new", {
-		board: "binding-differential",
-		level: "service",
-	});
 	const comparisonNodeInput = initialBrowserNode ? strip(initialBrowserNode) : {};
 	delete comparisonNodeInput.boundElements;
 	const comparisonNodeSeed = await api("POST", "/api/elements/batch?board=binding-differential", {
@@ -1421,7 +1426,8 @@ try {
 		: null;
 	check(
 		"the unopened server fixture starts from the browser's exact node and arrow geometry",
-		comparisonNodeSeed.status === 200 &&
+		comparisonBoardCreated.status === 200 &&
+			comparisonNodeSeed.status === 200 &&
 			comparisonArrowSeed.status === 200 &&
 			JSON.stringify(initialServerGeometry) === JSON.stringify(initialBrowserGeometry) &&
 			JSON.stringify(initialServerStart) === JSON.stringify(initialBrowserStart) &&
@@ -1441,6 +1447,23 @@ try {
 				end: initialServerEnd,
 				binding: initialServerArrow?.endBinding ?? null,
 			},
+		}),
+	);
+	const paneBeforeHumanDrag = await waitFor(
+		async () => (await api("GET", "/api/panes")).body?.panes?.[0] ?? null,
+		(pane) => pane?.board === "fixedpoint",
+		PANE_SETTLE_CAP_MS,
+	);
+	const sceneBeforeHumanDrag = await evalInPage(READ_SCENE);
+	check(
+		"the server-only comparison fixture leaves the browser on fixedpoint with text1",
+		paneBeforeHumanDrag?.board === "fixedpoint" &&
+			sceneBeforeHumanDrag.elements?.some(
+				(element) => element.id === "text1" && element.isDeleted !== true,
+			),
+		JSON.stringify({
+			pane: paneBeforeHumanDrag?.board ?? null,
+			elementIds: sceneBeforeHumanDrag.elements?.map((element) => element.id) ?? [],
 		}),
 	);
 
