@@ -58,12 +58,20 @@ describe("CLI resource cleanup", () => {
 			intended = error;
 		}
 
-		expect(intended).toBeDefined();
-		const result = await runPromise!;
+		expect(intended).toBeInstanceOf(Error);
+		const intendedError = intended as Error;
+		expect(intendedError.message).toContain('Expected: "intended assertion failure"');
+		expect(intendedError.message).toContain('Received: "observed in flight"');
+		expect(runPromise).toBeDefined();
+		if (!runPromise) throw new Error("The in-flight package run was not retained.");
+		const result = await runPromise;
 		expect(result.status !== null || result.signal !== null, packageFailure(result)).toBeTrue();
-		for (const path of [outside, home, state, log, registry, vault])
+		for (const path of [outside, home, state, log, registry, vault]) {
+			expect(path.length).toBeGreaterThan(0);
 			expect(existsSync(path)).toBeFalse();
+		}
 		for (const url of [heldUrl, doubleUrl]) {
+			expect(url.length).toBeGreaterThan(0);
 			let unreachable = false;
 			try {
 				await fetch(`${url}/health`);
@@ -77,36 +85,82 @@ describe("CLI resource cleanup", () => {
 	test("removes install and repository roots after assertion failures", () => {
 		let installRoot = "";
 		let repositoryRoot = "";
+		let installFixture: ReturnType<typeof createInstallFixture> | undefined;
+		let repositoryFixture: ReturnType<typeof createRepositoryFixture> | undefined;
+		let installRegistered = false;
+		let repositoryRegistered = false;
+		let installError: unknown;
+		let repositoryError: unknown;
 		try {
 			using fixture = createInstallFixture();
+			installFixture = fixture;
 			installRoot = fixture.root;
-			expect(join(installRoot, "missing")).toBe(installRoot);
-		} catch {}
+			installRegistered = true;
+			expect("install fixture acquired").toBe("intended install assertion failure");
+		} catch (error) {
+			installError = error;
+		}
 		try {
 			using fixture = createRepositoryFixture();
+			repositoryFixture = fixture;
 			repositoryRoot = fixture.root;
-			expect(join(repositoryRoot, "missing")).toBe(repositoryRoot);
-		} catch {}
+			repositoryRegistered = true;
+			expect("repository fixture acquired").toBe("intended repository assertion failure");
+		} catch (error) {
+			repositoryError = error;
+		}
+		expect(installRegistered).toBeTrue();
+		expect(repositoryRegistered).toBeTrue();
+		if (!installFixture) throw new Error("The registered install fixture was not retained.");
+		if (!repositoryFixture) throw new Error("The registered repository fixture was not retained.");
+		expect(installRoot.length).toBeGreaterThan(0);
+		expect(repositoryRoot.length).toBeGreaterThan(0);
+		expect(installRoot).toBe(installFixture.root);
+		expect(repositoryRoot).toBe(repositoryFixture.root);
+		expect(installError).toBeInstanceOf(Error);
+		expect(repositoryError).toBeInstanceOf(Error);
+		expect((installError as Error).message).toContain(
+			'Expected: "intended install assertion failure"',
+		);
+		expect((installError as Error).message).toContain('Received: "install fixture acquired"');
+		expect((repositoryError as Error).message).toContain(
+			'Expected: "intended repository assertion failure"',
+		);
+		expect((repositoryError as Error).message).toContain('Received: "repository fixture acquired"');
 		expect(existsSync(installRoot)).toBeFalse();
 		expect(existsSync(repositoryRoot)).toBeFalse();
 	});
 
 	test("removes a registered repository fixture when canvas startup rejects", async () => {
 		let root = "";
+		let missingServer = "";
+		let retainedFixture: ReturnType<typeof createRepositoryFixture> | undefined;
+		let fixtureRegistered = false;
 		let startupError: unknown;
 		try {
 			await using resources = new AsyncDisposableStack();
 			const fixture = resources.use(createRepositoryFixture());
+			retainedFixture = fixture;
 			root = fixture.root;
+			missingServer = join(root, "missing-server.ts");
+			fixtureRegistered = true;
 			await startOwnedCanvas({
-				serverPath: join(fixture.root, "missing-server.ts"),
+				serverPath: missingServer,
 				vault: fixture.vault,
 				env: fixture.serverEnvironment,
 			});
 		} catch (error) {
 			startupError = error;
 		}
-		expect(startupError).toBeDefined();
+		expect(fixtureRegistered).toBeTrue();
+		if (!retainedFixture) throw new Error("The registered repository fixture was not retained.");
+		expect(root.length).toBeGreaterThan(0);
+		expect(root).toBe(retainedFixture.root);
+		expect(missingServer).toBe(join(root, "missing-server.ts"));
+		expect(startupError).toBeInstanceOf(Error);
+		const startupMessage = (startupError as Error).message;
+		expect(startupMessage).toContain("died (exit 1).");
+		expect(startupMessage).toContain(`error: Module not found "${missingServer}"`);
 		expect(existsSync(root)).toBeFalse();
 	});
 

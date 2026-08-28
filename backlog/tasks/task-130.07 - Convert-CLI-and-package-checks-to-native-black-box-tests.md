@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:04'
-updated_date: '2026-08-28 19:52'
+updated_date: '2026-08-28 20:01'
 labels: []
 dependencies:
   - TASK-130.01
@@ -177,4 +177,12 @@ Fifth complete-range remediation after review (2026-08-28):
 - Validation: package-render-bridge owner 6 tests/83 expectations; test:cli 39/817; live inventory 11/11; type-check, lint, fmt:check, and git diff --check passed. The deleted repository script is absent from the edited documentation and bun run test:repos is present.
 - No browser or full check was rerun. This follow-up changes one test owner and two documentation lines, exposed no broader failure, and retains the prior successful single complete headless/serial run at bdbd102.
 - package-render-bridge.test.ts is 319 formatted lines, below the 500-line cap. Scope before the task note was exactly docs/agents/test-suite.md and tests/system/cli/package-render-bridge.test.ts.
+
+Sixth complete-range remediation after Standards rereview (2026-08-28):
+- package-fixed-base-compatibility now requires exactly one declared merged exit event, derives expectedExit from that event, and compares both merged.status and the terminal shared observed event against it. The first-pass record.exit assertion remains separate.
+- resource-cleanup now proves the shipped-bin catch is the deliberate assertion before awaiting the retained run or checking cleanup. Install and repository assertion-failure cases retain fixture handles and nonempty root identities, set registration flags only after acquisition, and prove exact intended Expected and Received error identities before checking removed roots. The startup-rejection case likewise retains its registered fixture/root and proves the missing-server exit-1 rejection, including its exact missing module path, before checking cleanup. Empty catches and empty-root success paths are gone.
+- Red evidence: shifting every declared merged exit by one failed all 11 compatibility records at merged.status. Wrong shipped/startup error identities failed with the actual deliberate assertion and missing-module rejection. Deliberately false acquisition flags failed because the fixtures had registered successfully. Corrected owners passed: compatibility 11 tests/165 expectations and resource cleanup 4/55.
+- Validation: test:cli 39 tests/857 expectations; TASK-130.06 owned-canvas lifecycle 13/85; live inventory 11/11; type-check and lint passed. fmt:check first found the expanded cleanup owner, the repository formatter corrected it, and the owner plus final fmt:check and git diff --check passed.
+- No browser or full check was rerun. These changes affect only two test owners, exposed no broader failure, and retain the prior successful single complete headless/serial run at bdbd102.
+- Final formatted lines: package-fixed-base-compatibility 243; resource-cleanup 213. Both remain below 500.
 <!-- SECTION:NOTES:END -->
