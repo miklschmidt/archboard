@@ -446,7 +446,13 @@ class Harness {
 		rawText: "canonical",
 	};
 	const correctedB = { ...h.scene.find((element) => element.id === "b"), y: 9 };
+	const updatesBeforeCorrection = h.sceneUpdates;
 	h.accept({ upserts: [correctedA, correctedB], deletes: [] });
+	check(
+		"an applicable canonical correction uses exactly one scene update",
+		h.sceneUpdates === updatesBeforeCorrection + 1,
+		`${updatesBeforeCorrection} -> ${h.sceneUpdates}`,
+	);
 	check(
 		"canonical corrections include and apply an element outside the submitted delta",
 		h.scene.find((element) => element.id === "b").y === 9,
