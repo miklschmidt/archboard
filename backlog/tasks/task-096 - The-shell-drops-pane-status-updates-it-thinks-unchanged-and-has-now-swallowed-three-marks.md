@@ -1,11 +1,11 @@
 ---
 id: TASK-096
 title: Suppress only complete duplicate pane status publications
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-22 17:47'
-updated_date: '2026-08-28 01:57'
+updated_date: '2026-08-28 02:05'
 labels: []
 dependencies: []
 references:
@@ -27,9 +27,9 @@ Replace the partial field comparison with an exhaustive, type-checked comparison
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Shell suppresses only complete duplicate PaneStatus publications through an exhaustive type-checked comparison and replaces the stored pane status for every material publication.
-- [ ] #2 Held state, note-written-elsewhere state, board identity, element count, connection state, and all doing entries still reach the visible shell in the browser checks.
-- [ ] #3 The change adds no generic deep equality, generated comparator, schema reflection, or replacement state framework.
+- [x] #1 Shell suppresses only complete duplicate PaneStatus publications through an exhaustive type-checked comparison and replaces the stored pane status for every material publication.
+- [x] #2 Held state, note-written-elsewhere state, board identity, element count, connection state, and all doing entries still reach the visible shell in the browser checks.
+- [x] #3 The change adds no generic deep equality, generated comparator, schema reflection, or replacement state framework.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -50,4 +50,12 @@ Audited the full PaneStatus publication contract. The previous guard compared on
 Implemented a shell-local guard that names all ten PaneStatus keys in a boolean object checked with satisfies Record<keyof PaneStatus, boolean>. Scalar values compare by value. The audited board, hold, writtenElsewhere, and doing publishers replace their immutable nested values, so the guard compares those values by reference. Shell state now suppresses only a publication whose complete current shape is unchanged.
 
 The earlier live-session failures in this dot-prefixed Codex worktree were not evidence that Shell status updates broke human-edit persistence. Exact-base and candidate Shell bundles failed at the same first hold/report boundary. TASK-131 identified and fixed the validation prerequisite: Excalidraw CSS was not served from dot-prefixed repository paths. TASK-096 validation must run with reviewed prerequisite 646fe3b78f05af183cae82e6f5ef9390c247925e applied separately.
+
+Final verification: the corrected fixed-range rereview found no findings. Browser validation with the reviewed TASK-131 prerequisite passed test:browser and test:live-session, including all 42 mixed-write cycles and every required shell status.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replaced Shell's partial PaneStatus comparison with an exhaustive type-checked ten-key duplicate guard. Every material publication replaces stored status while true duplicates avoid status-only CanvasPane rerenders. Verified with build, type-check, lint, format, browser rendering, live-session persistence, and an independent clean rereview.
+<!-- SECTION:FINAL_SUMMARY:END -->
