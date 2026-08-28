@@ -42,11 +42,19 @@ const staleBox = (el) => ({ x: el.x, y: el.y, w: el.width || 0, h: el.height || 
 const centreOf = (box) => ({ cx: box.x + box.w / 2, cy: box.y + box.h / 2 });
 const path = (el) => JSON.stringify(el.points);
 const at = (el, index) => ({ x: el.x + el.points[index][0], y: el.y + el.points[index][1] });
-const onOutline = (end, box) =>
-	Math.max(
-		Math.abs(end.x - (box.x + box.width / 2)) / (box.width / 2 + 15),
-		Math.abs(end.y - (box.y + box.height / 2)) / (box.height / 2 + 15),
-	);
+const pointDistance = (actual, expected) =>
+	Math.hypot(actual.x - expected.x, actual.y - expected.y);
+const capturedFocusedNode = {
+	type: "rectangle",
+	x: 1066.8104451025551,
+	y: 1060.7409025475235,
+	width: 200,
+	height: 100,
+	angle: 0,
+	roundness: { type: 3 },
+};
+const capturedArrowStart = { x: 1400, y: 1120 };
+const capturedBrowserEndpoint = { x: 1279.2940245092134, y: 1150.128871410794 };
 
 const { extentOf, measureLinear, remeasureLinear, isPathElement, validateRenderGeometry } =
 	await import(src("runtime/engine/geometry.ts"));
@@ -384,6 +392,28 @@ for (const [name, arrow] of Object.entries(arrows)) {
 	assert(
 		focused.y > 50,
 		`focus 1 was routed to y=${focused.y}, which is the centre line rather than the corner it aims at`,
+	);
+
+	// A person's ordinary rebind lands on a rounded corner, not the sharp box
+	// around it. This is the exact geometry captured from Excalidraw after the
+	// person moved the bound node in TASK-090's independent browser fixture.
+	const roundedEndpoint = (focus) =>
+		boundEndpoint(capturedFocusedNode, binding({ focus, gap: 15 }), capturedArrowStart, {
+			x: 0,
+			y: 0,
+		});
+	const captured = roundedEndpoint(0.9);
+	assert(
+		pointDistance(captured, capturedBrowserEndpoint) <= 0.001,
+		`the captured rounded focus 0.9 endpoint was ${captured.x},${captured.y}, ` +
+			`${pointDistance(captured, capturedBrowserEndpoint)}px from Excalidraw`,
+	);
+	const neighboring = roundedEndpoint(0.8);
+	const neighboringExpected = { x: 1279.8589442886187, y: 1144.108983723157 };
+	assert(
+		pointDistance(neighboring, neighboringExpected) <= 0.001,
+		`the neighboring rounded focus 0.8 endpoint was ${neighboring.x},${neighboring.y}, ` +
+			`${pointDistance(neighboring, neighboringExpected)}px from Excalidraw`,
 	);
 
 	// Rotation is the shape's, so the ray is turned rather than the shape. A box
@@ -1157,20 +1187,23 @@ for (const [name, arrow] of Object.entries(arrows)) {
 		// makes re-routing one safe at all. This one attaches low on box D and
 		// further out than archboard's own arrows do.
 		await api("POST", `/api/elements/batch${wires}`, {
-			elements: [{ id: "d", type: "rectangle", x: 1000, y: 1000, width: 200, height: 100 }],
+			elements: [{ id: "d", ...capturedFocusedNode }],
 		});
 		await api("POST", `/api/elements/changes${wires}`, {
 			upserts: [
 				{
 					id: "user-arrow",
 					type: "arrow",
-					x: 1400,
-					y: 1120,
+					x: capturedArrowStart.x,
+					y: capturedArrowStart.y,
 					width: 179,
 					height: 50,
 					points: [
 						[0, 0],
-						[-179, -50],
+						[
+							capturedBrowserEndpoint.x - capturedArrowStart.x,
+							capturedBrowserEndpoint.y - capturedArrowStart.y,
+						],
 					],
 					startBinding: null,
 					endBinding: { elementId: "d", focus: 0.9, gap: 15, fixedPoint: null },
@@ -1190,19 +1223,24 @@ for (const [name, arrow] of Object.entries(arrows)) {
 		// this point by Excalidraw; the report above is a fixture, so one write
 		// settles it there first and everything after compares against that.
 		const asDropped = at(userDrawn, 1);
-		await api("PUT", `/api/elements/d${wires}`, { x: 1000, y: 1000 });
+		await api("PUT", `/api/elements/d${wires}`, {
+			x: capturedFocusedNode.x,
+			y: capturedFocusedNode.y,
+		});
 		const settledEnd = at(await wire("user-arrow"), 1);
 		assert(
-			near(onOutline(settledEnd, { x: 1000, y: 1000, width: 200, height: 100 }), 1, 0.02),
-			`the end sits at ${onOutline(settledEnd, { x: 1000, y: 1000, width: 200, height: 100 }).toFixed(2)} ` +
-				"of the outline the binding's own gap of 15 draws, not on it",
+			Math.hypot(
+				settledEnd.x - capturedBrowserEndpoint.x,
+				settledEnd.y - capturedBrowserEndpoint.y,
+			) <= 0.001,
+			`the server settled the captured browser end at ${settledEnd.x},${settledEnd.y}`,
 		);
 		// Against where a centred binding would have put the same end, which is
 		// the only thing the old routing could say and is 30px away from where
 		// this person attached theirs.
 		const settledArrow = await wire("user-arrow");
 		const centred = boundEndpoint(
-			{ type: "rectangle", x: 1000, y: 1000, width: 200, height: 100 },
+			capturedFocusedNode,
 			{ elementId: "d", focus: 0, gap: 15, fixedPoint: null },
 			at(settledArrow, 0),
 			settledEnd,
@@ -1221,18 +1259,33 @@ for (const [name, arrow] of Object.entries(arrows)) {
 		// routed from its binding lands exactly where it was — which is the whole
 		// claim, that re-routing an arrow a person drew leaves it where they drew
 		// it.
-		await api("PUT", `/api/elements/d${wires}`, { x: 1040, y: 1030 });
+		const nudgedNode = {
+			...capturedFocusedNode,
+			x: capturedFocusedNode.x + 40,
+			y: capturedFocusedNode.y + 30,
+		};
+		await api("PUT", `/api/elements/d${wires}`, { x: nudgedNode.x, y: nudgedNode.y });
 		const nudged = at(await wire("user-arrow"), 1);
 		assert(
 			!near(nudged.x, settledEnd.x, 1) || !near(nudged.y, settledEnd.y, 1),
 			"moving the box did not re-route the arrow bound to it",
 		);
+		const expectedNudged = boundEndpoint(
+			nudgedNode,
+			{ elementId: "d", focus: 0.9, gap: 15, fixedPoint: null },
+			capturedArrowStart,
+			nudged,
+		);
 		assert(
-			near(onOutline(nudged, { x: 1040, y: 1030, width: 200, height: 100 }), 1, 0.02),
-			"the re-routed end left the outline the binding describes",
+			near(nudged.x, expectedNudged.x, 0.001) && near(nudged.y, expectedNudged.y, 0.001),
+			`the server routed the nudged end to ${nudged.x},${nudged.y}, not ` +
+				`${expectedNudged.x},${expectedNudged.y}`,
 		);
 
-		await api("PUT", `/api/elements/d${wires}`, { x: 1000, y: 1000 });
+		await api("PUT", `/api/elements/d${wires}`, {
+			x: capturedFocusedNode.x,
+			y: capturedFocusedNode.y,
+		});
 		const restored = at(await wire("user-arrow"), 1);
 		assert(
 			near(restored.x, settledEnd.x, 0.5) && near(restored.y, settledEnd.y, 0.5),

@@ -11,23 +11,15 @@
 // written said was 4.
 //
 // So this is the routing, expressed in the binding's own numbers. It is a port
-// of `determineFocusPoint` and `updateBoundPoint` from Excalidraw's
-// `element/binding.ts`, read from the source maps its dev build ships, rather
-// than an interpretation of what `focus` might mean.
+// of `determineFocusPoint` and `updateBoundPoint` from the pinned Excalidraw
+// 0.18.1 build, rather than an interpretation of what `focus` might mean.
 //
 // Pure and dependency-free, like `geometry.ts` and `labels.ts`, because the
 // browser imports the modules that need it.
 //
-// **One approximation, deliberate.** Excalidraw expands a shape's outline by
-// `gap` corner by corner: each rounded corner's bezier is pushed out along its
-// own diagonal and the straight sides are re-hung between the moved corners.
-// Here the outline is expanded analytically — half-extents plus `gap` for a
-// rectangle and a diamond, semi-axes plus `gap` for an ellipse — and a rounded
-// corner is treated as a square one. The two differ only within a corner
-// radius of a corner, by at most `gap`, which at the 4px this repo binds with
-// is a distance nobody can see and no reader measures. The alternative is
-// cubic-bezier/segment intersection and Excalidraw's corner-radius rules, for
-// four pixels.
+// Rounded rectangles use that build's corner-radius, diagonal gap offsets,
+// cubic corners, and re-hung sides. The sharp rectangle, diamond, and ellipse
+// branches remain the small analytic forms that already match their outlines.
 
 /** As much of a shape as routing an arrow to it requires. */
 export interface Bindable {
@@ -37,6 +29,7 @@ export interface Bindable {
 	width?: number;
 	height?: number;
 	angle?: number;
+	roundness?: { type?: number; value?: number } | null;
 }
 
 /** Excalidraw's own record of an arrow end that touches a shape. */
@@ -186,6 +179,174 @@ function halfExtents(shape: Bindable, gap: number): { a: number; b: number } {
 	};
 }
 
+const PROPORTIONAL_CORNER_RADIUS = 0.25;
+const ADAPTIVE_CORNER_RADIUS = 32;
+
+/** The radius rules used by Excalidraw's three rectangle roundness records. */
+function rectangleCornerRadius(shape: Bindable): number {
+	const size = Math.min(Math.abs(num(shape.width)), Math.abs(num(shape.height)));
+	const type = shape.roundness?.type;
+	if (type === 1 || type === 2) return size * PROPORTIONAL_CORNER_RADIUS;
+	if (type !== 3) return 0;
+	const fixed = num(shape.roundness?.value, ADAPTIVE_CORNER_RADIUS);
+	return size <= fixed / PROPORTIONAL_CORNER_RADIUS ? size * PROPORTIONAL_CORNER_RADIUS : fixed;
+}
+
+type Cubic = readonly [Point, Point, Point, Point];
+
+function shifted(point: Point, offset: Point): Point {
+	return { x: point.x + offset.x, y: point.y + offset.y };
+}
+
+/** Move one rounded corner out along its own diagonal by the binding gap. */
+function cornerOffset(corner: Point, gap: number): Point {
+	const length = Math.hypot(corner.x, corner.y);
+	if (length === 0) return { x: 0, y: 0 };
+	return { x: (corner.x / length) * gap, y: (corner.y / length) * gap };
+}
+
+function pointOnCubic(curve: Cubic, t: number): Point {
+	const [p0, p1, p2, p3] = curve;
+	const u = 1 - t;
+	return {
+		x: u ** 3 * p0.x + 3 * u ** 2 * t * p1.x + 3 * u * t ** 2 * p2.x + t ** 3 * p3.x,
+		y: u ** 3 * p0.y + 3 * u ** 2 * t * p1.y + 3 * u * t ** 2 * p2.y + t ** 3 * p3.y,
+	};
+}
+
+/** Ray distances where one rounded corner crosses the ray's supporting line. */
+function roundedCornerCrossings(curve: Cubic, origin: Point, direction: Point): number[] {
+	const [p0, p1, p2, p3] = curve;
+	const coefficients = [
+		cross(minus(p0, origin), direction),
+		cross({ x: 3 * (p1.x - p0.x), y: 3 * (p1.y - p0.y) }, direction),
+		cross({ x: 3 * (p2.x - 2 * p1.x + p0.x), y: 3 * (p2.y - 2 * p1.y + p0.y) }, direction),
+		cross(
+			{
+				x: p3.x - 3 * p2.x + 3 * p1.x - p0.x,
+				y: p3.y - 3 * p2.y + 3 * p1.y - p0.y,
+			},
+			direction,
+		),
+	] as const;
+	const valueAt = (t: number): number =>
+		coefficients[0] + t * (coefficients[1] + t * (coefficients[2] + t * coefficients[3]));
+
+	// The derivative partitions the cubic into monotone intervals. Every root
+	// is therefore either a stationary zero or the sole sign change in one
+	// interval, which a short bisection resolves deterministically.
+	const stops = [0, 1];
+	const qa = 3 * coefficients[3];
+	const qb = 2 * coefficients[2];
+	const qc = coefficients[1];
+	if (Math.abs(qa) < 1e-12) {
+		if (Math.abs(qb) >= 1e-12) stops.push(-qc / qb);
+	} else {
+		const discriminant = qb * qb - 4 * qa * qc;
+		if (discriminant >= 0) {
+			const root = Math.sqrt(discriminant);
+			stops.push((-qb - root) / (2 * qa), (-qb + root) / (2 * qa));
+		}
+	}
+	const intervals = stops.filter((t) => t >= 0 && t <= 1).toSorted((a, b) => a - b);
+	const curveParameters: number[] = [];
+	const keepParameter = (t: number) => {
+		if (!curveParameters.some((known) => Math.abs(known - t) <= 1e-10)) curveParameters.push(t);
+	};
+	for (const t of intervals) {
+		if (Math.abs(valueAt(t)) <= 1e-9) keepParameter(t);
+	}
+	for (let index = 0; index < intervals.length - 1; index++) {
+		let low = intervals[index]!;
+		let high = intervals[index + 1]!;
+		let lowValue = valueAt(low);
+		const highValue = valueAt(high);
+		if (lowValue === 0 || highValue === 0 || Math.sign(lowValue) === Math.sign(highValue)) continue;
+		for (let step = 0; step < 60; step++) {
+			const middle = (low + high) / 2;
+			const middleValue = valueAt(middle);
+			if (middleValue === 0) {
+				low = middle;
+				high = middle;
+				break;
+			}
+			if (Math.sign(lowValue) === Math.sign(middleValue)) {
+				low = middle;
+				lowValue = middleValue;
+			} else {
+				high = middle;
+			}
+		}
+		keepParameter((low + high) / 2);
+	}
+
+	return curveParameters
+		.map((t) => pointOnCubic(curve, t))
+		.map((point) =>
+			Math.abs(direction.x) >= Math.abs(direction.y)
+				? (point.x - origin.x) / direction.x
+				: (point.y - origin.y) / direction.y,
+		)
+		.filter((t) => Number.isFinite(t) && t >= 0);
+}
+
+/** Crossings of Excalidraw's rounded rectangle outline, in its local frame. */
+function roundedRectangleCrossings(
+	shape: Bindable,
+	origin: Point,
+	direction: Point,
+	gap: number,
+): number[] {
+	const halfWidth = Math.abs(num(shape.width)) / 2;
+	const halfHeight = Math.abs(num(shape.height)) / 2;
+	const radius = rectangleCornerRadius(shape);
+	const x0 = -halfWidth;
+	const y0 = -halfHeight;
+	const x1 = halfWidth;
+	const y1 = halfHeight;
+	const offsets = [
+		cornerOffset({ x: x0 - gap, y: y0 - gap }, gap),
+		cornerOffset({ x: x1 + gap, y: y0 - gap }, gap),
+		cornerOffset({ x: x1 + gap, y: y1 + gap }, gap),
+		cornerOffset({ x: x0 - gap, y: y1 + gap }, gap),
+	] as const;
+	const corners: Cubic[] = [
+		[
+			shifted({ x: x0, y: y0 + radius }, offsets[0]),
+			shifted({ x: x0, y: y0 + radius / 3 }, offsets[0]),
+			shifted({ x: x0 + radius / 3, y: y0 }, offsets[0]),
+			shifted({ x: x0 + radius, y: y0 }, offsets[0]),
+		],
+		[
+			shifted({ x: x1 - radius, y: y0 }, offsets[1]),
+			shifted({ x: x1 - radius / 3, y: y0 }, offsets[1]),
+			shifted({ x: x1, y: y0 + radius / 3 }, offsets[1]),
+			shifted({ x: x1, y: y0 + radius }, offsets[1]),
+		],
+		[
+			shifted({ x: x1, y: y1 - radius }, offsets[2]),
+			shifted({ x: x1, y: y1 - radius / 3 }, offsets[2]),
+			shifted({ x: x1 - radius / 3, y: y1 }, offsets[2]),
+			shifted({ x: x1 - radius, y: y1 }, offsets[2]),
+		],
+		[
+			shifted({ x: x0 + radius, y: y1 }, offsets[3]),
+			shifted({ x: x0 + radius / 3, y: y1 }, offsets[3]),
+			shifted({ x: x0, y: y1 - radius / 3 }, offsets[3]),
+			shifted({ x: x0, y: y1 - radius }, offsets[3]),
+		],
+	];
+	const sides = corners.map(
+		(corner, index) => [corner[3], corners[(index + 1) % corners.length]![0]] as const,
+	);
+	return [
+		...sides
+			.map(([from, to]) => alongSegment(origin, direction, from, to))
+			.filter((t) => t !== null),
+		...corners.flatMap((corner) => roundedCornerCrossings(corner, origin, direction)),
+	];
+}
+
 /** Is this point inside the shape's outline, grown by `gap`? */
 function inside(shape: Bindable, local: Point, gap: number): boolean {
 	const { a, b } = halfExtents(shape, gap);
@@ -213,7 +374,9 @@ function crossings(shape: Bindable, origin: Point, direction: Point, gap: number
 		if (Number.isFinite(t) && t >= 0) found.push(t);
 	};
 
-	if (shape.type === "ellipse") {
+	if (shape.type === "rectangle" && rectangleCornerRadius(shape) > 0) {
+		for (const t of roundedRectangleCrossings(shape, origin, direction, gap)) keep(t);
+	} else if (shape.type === "ellipse") {
 		// (ox + t·dx)² / a² + (oy + t·dy)² / b² = 1
 		const qa = (direction.x / a) ** 2 + (direction.y / b) ** 2;
 		const qb = 2 * ((origin.x * direction.x) / a ** 2 + (origin.y * direction.y) / b ** 2);
