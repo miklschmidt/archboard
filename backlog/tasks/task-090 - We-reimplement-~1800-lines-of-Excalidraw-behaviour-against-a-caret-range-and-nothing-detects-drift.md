@@ -1,11 +1,11 @@
 ---
 id: TASK-090
 title: Differential-check human arrow bindings against pinned Excalidraw
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-21 13:36'
-updated_date: '2026-08-28 02:40'
+updated_date: '2026-08-28 04:18'
 labels: []
 dependencies: []
 references:
@@ -28,11 +28,11 @@ One important gap remains. The browser fixture covers agent-created centered bin
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The pinned Excalidraw version and the decision to keep the local arrow-binding port are recorded with the browser differential that guards the decision.
-- [ ] #2 A real browser creates or adopts an arrow end with nonzero focus and gap, an agent moves the bound node, and the check compares the server result with the endpoint Excalidraw settles on.
-- [ ] #3 The fixture includes the existing human-shaped case of focus 0.9 and gap 15 on a normal architecture node, with a stated visible tolerance and actionable mismatch output.
-- [ ] #4 The upgrade note names the focused geometry and fixed-point checks to run when @excalidraw/excalidraw changes.
-- [ ] #5 No vendored Excalidraw geometry, source-map extractor, or second binding implementation is added unless the differential first proves the current implementation visibly wrong.
+- [x] #1 The pinned Excalidraw version and the decision to keep the local arrow-binding port are recorded with the browser differential that guards the decision.
+- [x] #2 A real browser creates or adopts an arrow end with nonzero focus and gap, an agent moves the bound node, and the check compares the server result with the endpoint Excalidraw settles on.
+- [x] #3 The fixture includes the existing human-shaped case of focus 0.9 and gap 15 on a normal architecture node, with a stated visible tolerance and actionable mismatch output.
+- [x] #4 The upgrade note names the focused geometry and fixed-point checks to run when @excalidraw/excalidraw changes.
+- [x] #5 No vendored Excalidraw geometry, source-map extractor, or second binding implementation is added unless the differential first proves the current implementation visibly wrong.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -100,4 +100,12 @@ Red-green arithmetic evidence: before the solver replacement, the new bit-stable
 The comparison board is now created before any pane exists and seeded later as before. A pre-drag browser assertion requires the sole pane to remain on fixedpoint with live text1, so the fixture cannot silently switch to binding-differential again. Non-browser validation passed: bun run type-check; bun run test:geometry with 92 checks; bun run test:reporting with 115 checks; focused formatting, lint on changed production and geometry files, and git diff --check. Browser build and test remain gated on explicit serialized-lane release.
 
 Independent rereview remediation: changed the negative-control assertion from a boolean literal comparison to direct negation so the enabled no-unnecessary-boolean-literal-compare rule passes. The separation===2 condition is unchanged, so the assertion is not weakened. The reviewer withdrew the rounded-corner-cutout finding as pre-existing and outside TASK-090; arrow-binding.ts and check-geometry.mjs remain untouched. Validation passed: bun run lint:code; bun run type-check; bun run test:geometry (92 checks); bun run test:reporting (115 checks); focused oxfmt check; git diff --check. The prior green browser evidence remains applicable because this rewrite is behavior-identical, so no serialized browser rerun was requested.
+
+Finalization evidence: the complete TASK-090 change set received an independent REVIEW_CLEAN. The final trusted-pointer browser run returned 0 of 18 fixed-point changes, a genuine independently computed endpoint separation of 6.5623997623614794e-12 scene pixels within the 1.0 gate, rejection of the exact 2 px negative control, a fixedpoint pane with text1, and successful duplicate-index repair. The later integrated sequential bun run check also passed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added a genuine browser-versus-server differential for focused human arrow bindings, corrected the measured rounded-rectangle mismatch with the narrow pinned intersection math, and fixed the comparison-board fixture. Verified with geometry/reporting checks, exact zero-diff browser rendering, a 6.56e-12 px independent endpoint match, rejection of the 2 px negative control, full bun run check, and independent review.
+<!-- SECTION:FINAL_SUMMARY:END -->
