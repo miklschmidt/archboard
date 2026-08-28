@@ -1,10 +1,11 @@
 ---
 id: TASK-130.06
 title: Split board API coverage into native system tests
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-28 01:04'
-updated_date: '2026-08-28 05:15'
+updated_date: '2026-08-28 05:48'
 labels: []
 dependencies:
   - TASK-130.01
@@ -13,6 +14,21 @@ references:
   - scripts/check-boards.mjs
   - TASK-086
   - docs/agents/test-suite.md
+modified_files:
+  - tests/system/support/owned-canvas.ts
+  - tests/system/support/owned-canvas.test.ts
+  - tests/system/boards/support/http.ts
+  - tests/system/boards/support/pane-websocket.ts
+  - tests/system/boards/board-lifecycle.test.ts
+  - tests/system/boards/element-writes.test.ts
+  - tests/system/boards/image-persistence.test.ts
+  - tests/system/boards/pane-addressing.test.ts
+  - tests/system/boards/branching.test.ts
+  - tests/system/boards/conversion.test.ts
+  - tests/system/boards/malformed-input.test.ts
+  - tests/system/boards/scratch-board.test.ts
+  - tests/system/boards/held-board-recovery.test.ts
+  - tests/system/boards/public-http-refusals.test.ts
 parent_task_id: TASK-130
 priority: high
 type: task
@@ -76,3 +92,15 @@ bun test tests/system/support/owned-canvas.test.ts tests/system/boards/board-lif
 
 Run that identical command as focused validation before bun run type-check, bun run lint, bun run fmt:check, bun run check, and git diff --check. Every listed test, tests/system/support/owned-canvas.ts, owned-canvas.test.ts, both tests/system/boards/support files, and any later approved authored TypeScript fixture must stay at or below 500 physical lines. The repository max-lines rule must enforce the limit. A fixture extraction or contract move that changes this exclusive map requires plan rereview before dispatch or implementation.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Authoring checkpoint from base 071b56e. Added the sole typed owned-canvas lifecycle and its native lifecycle proof, the two permitted mechanics helpers, and exactly the ten reviewed tests/system/boards owner files. No production file, package.json, legacy oracle, or legacy lifecycle helper changed.
+
+Parity evidence: the exact reviewed native command passes 51 tests / 301 expectations; the unchanged `bun scripts/check-boards.mjs` oracle passes immediately after the native lane. Every native file also passes alone in reverse owner order, so no file needs a predecessor test. `bun run type-check`, `bun run lint`, `bun run fmt:check`, and `git diff --check` pass. No browser check ran because these migrated contracts use HTTP and WebSocket panes and the legacy oracle records no renderer requirement.
+
+Lifecycle and leak evidence: native proofs cover normal completion, forced fetch failure, SIGINT, death after response headers with retained stderr, restart/dispose serialization, foreign health.pid refusal, idempotent disposal, bounded shutdown, listener exit, and vault removal. Post-run process and recent temp-vault audits found no server from this worktree and no owned vault. Every authored TypeScript file is 322 lines or fewer.
+
+Remaining serialized cutover owned by reconciliation: update package.json test:boards to the exact reviewed eleven-file `bun test` command; delete scripts/check-boards.mjs and scripts/lib/canvas-test-process.mjs; run the live TASK-130.02 inventory; rerun the exact native lane, type-check, lint, fmt:check, full sequential check, line-count/leak audit, and git diff --check. Acceptance criteria intentionally remain unchecked and TASK-130.06 remains In Progress.
+<!-- SECTION:NOTES:END -->
