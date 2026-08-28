@@ -2,8 +2,10 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { spawn } from "node:child_process";
 
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
+import { TEST_PANE_SOCKET_SETTLE_MS } from "../../../src/shared/timing/timing.ts";
 import { createJsonRequester } from "./support/http.ts";
 import { openTestPane, type TestPane } from "./support/pane-websocket.ts";
 
@@ -19,15 +21,35 @@ interface BoardsBody {
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-public-refusals-"));
-const port = 53_000 + Math.floor(Math.random() * 2_000);
 let canvas: OwnedCanvas;
 let request: ReturnType<typeof createJsonRequester>;
 const panes: TestPane[] = [];
 
+async function runCli(args: string[]): Promise<{ code: number | null; stderr: string }> {
+	return new Promise((resolve) => {
+		const child = spawn(
+			process.execPath,
+			[path.join(repoRoot, "src/bin.ts"), ...args, "--doing", "checking browser-required refusals"],
+			{
+				env: {
+					...process.env,
+					EXPRESS_SERVER_URL: canvas.base,
+					EXCALIDRAW_NO_AUTOSTART: "1",
+					ARCHBOARD_VAULT: vault,
+					LOG_LEVEL: "error",
+				},
+				stdio: ["ignore", "ignore", "pipe"],
+			},
+		);
+		let stderr = "";
+		child.stderr.on("data", (chunk: Buffer) => (stderr += chunk.toString()));
+		child.once("exit", (code) => resolve({ code, stderr }));
+	});
+}
+
 beforeAll(async () => {
 	canvas = await startOwnedCanvas({
 		serverPath: path.join(repoRoot, "src/server.ts"),
-		port,
 		vault,
 	});
 	request = createJsonRequester(canvas);
@@ -48,6 +70,7 @@ describe("public HTTP refusals", () => {
 		expect(unnamed.body.code).toBe("BOARD_REQUIRED");
 		expect(unnamed.body.error).toContain("Nothing was done");
 		expect(unnamed.body.error).toContain("--board <key>");
+		expect(Array.isArray(unnamed.body.open)).toBeTrue();
 		expect(unnamed.body.open).toContain("scratch");
 
 		const unopened = await request<Refusal>("/api/elements?board=nope");
@@ -84,11 +107,11 @@ describe("public HTTP refusals", () => {
 	test("refuses ambiguous board placement before creating or opening anything", async () => {
 		await request("/api/boards/new", { method: "POST", body: { board: "payments" } });
 		await request("/api/boards/new", { method: "POST", body: { board: "payments@option-a" } });
-		const left = await openTestPane(port, request, "refusal-left", 0, {
+		const left = await openTestPane(canvas.base, request, "refusal-left", 0, {
 			primary: true,
 			focused: true,
 		});
-		const right = await openTestPane(port, request, "refusal-right", 640);
+		const right = await openTestPane(canvas.base, request, "refusal-right", 640);
 		panes.push(left, right);
 		await request("/api/boards/open", {
 			method: "POST",
@@ -128,29 +151,31 @@ describe("public HTTP refusals", () => {
 		expect(missing.status).toBe(404);
 		expect(missing.body.error).toContain('No board "never-made"');
 		await Promise.all([left.close(), right.close()]);
-		await Bun.sleep(100);
+		await Bun.sleep(TEST_PANE_SOCKET_SETTLE_MS);
 	});
 
 	test("refuses unknown, unnamed, missing and over-capacity pane operations", async () => {
-		const left = await openTestPane(port, request, "pane-refusal-left", 0, {
+		await request("/api/boards/new", { method: "POST", body: { board: "pane-base" } });
+		await request("/api/boards/new", { method: "POST", body: { board: "pane-base@option-a" } });
+		const left = await openTestPane(canvas.base, request, "pane-refusal-left", 0, {
 			primary: true,
 			focused: true,
 		});
-		const right = await openTestPane(port, request, "pane-refusal-right", 640);
+		const right = await openTestPane(canvas.base, request, "pane-refusal-right", 640);
 		panes.push(left, right);
 		await request("/api/boards/open", {
 			method: "POST",
-			body: { board: "payments", pane: "left" },
+			body: { board: "pane-base", pane: "left" },
 		});
-		await left.adopt("payments");
-		await right.adopt("payments");
+		await left.adopt("pane-base");
+		await right.adopt("pane-base");
 		const unknownOpen = await request<Refusal>("/api/boards/open", {
 			method: "POST",
-			body: { board: "payments@option-a", pane: "middle" },
+			body: { board: "pane-base@option-a", pane: "middle" },
 		});
 		expect(unknownOpen.status).toBe(400);
 		expect(unknownOpen.body.error).toContain('No pane called "middle"');
-		expect(unknownOpen.body.error).toContain("payments");
+		expect(unknownOpen.body.error).toContain("pane-base");
 
 		const unnamedClose = await request<Refusal>("/api/panes/close", {
 			method: "POST",
@@ -162,14 +187,14 @@ describe("public HTTP refusals", () => {
 
 		const full = await request<Refusal>("/api/panes/open", { method: "POST" });
 		expect(full.status).toBe(409);
-		expect(full.body.error).toContain("payments");
+		expect(full.body.error).toContain("pane-base");
 		expect(full.body.error).toContain("pane close");
 
 		await right.close();
-		await Bun.sleep(100);
+		await Bun.sleep(TEST_PANE_SOCKET_SETTLE_MS);
 		const missingPane = await request<Refusal>("/api/boards/open", {
 			method: "POST",
-			body: { board: "payments@option-a", pane: "right" },
+			body: { board: "pane-base@option-a", pane: "right" },
 		});
 		expect(missingPane.status).toBe(400);
 		expect(missingPane.body.error).toContain("archboard pane open");
@@ -184,7 +209,7 @@ describe("public HTTP refusals", () => {
 
 	test("reports browser-required when no pane exists", async () => {
 		await Promise.all(panes.map((pane) => pane.close()));
-		await Bun.sleep(100);
+		await Bun.sleep(TEST_PANE_SOCKET_SETTLE_MS);
 		const open = await request<Refusal>("/api/panes/open", { method: "POST" });
 		const close = await request<Refusal>("/api/panes/close", {
 			method: "POST",
@@ -201,6 +226,16 @@ describe("public HTTP refusals", () => {
 		for (const refusal of [open, close, viewport, image]) {
 			expect(refusal.status).toBe(503);
 			expect(refusal.body.code).toBe("BROWSER_REQUIRED");
+		}
+		for (const args of [
+			["pane", "open"],
+			["pane", "close", "right"],
+			["viewport", "--fit"],
+			["screenshot"],
+		]) {
+			const result = await runCli(args);
+			expect(result.code, `${args.join(" ")}: ${result.stderr}`).toBe(4);
+			expect(result.stderr).toMatch(/browser/i);
 		}
 	});
 });

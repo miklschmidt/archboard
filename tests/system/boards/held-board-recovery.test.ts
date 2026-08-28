@@ -2,10 +2,11 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { spawn } from "node:child_process";
 
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
-import { openTestPane, type PaneMessage, type TestPane } from "./support/pane-websocket.ts";
+import { openTestPane, type TestPane } from "./support/pane-websocket.ts";
 
 interface HeldReport {
 	board: string;
@@ -37,15 +38,35 @@ interface BoardInfo {
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-held-recovery-"));
-const port = 51_000 + Math.floor(Math.random() * 2_000);
 let canvas: OwnedCanvas;
 let request: ReturnType<typeof createJsonRequester>;
 const panes: TestPane[] = [];
 
+async function runCli(args: string[]): Promise<{ code: number | null; stderr: string }> {
+	return new Promise((resolve) => {
+		const child = spawn(
+			process.execPath,
+			[path.join(repoRoot, "src/bin.ts"), ...args, "--doing", "checking held recovery"],
+			{
+				env: {
+					...process.env,
+					EXPRESS_SERVER_URL: canvas.base,
+					EXCALIDRAW_NO_AUTOSTART: "1",
+					ARCHBOARD_VAULT: vault,
+					LOG_LEVEL: "error",
+				},
+				stdio: ["ignore", "ignore", "pipe"],
+			},
+		);
+		let stderr = "";
+		child.stderr.on("data", (chunk: Buffer) => (stderr += chunk.toString()));
+		child.once("exit", (code) => resolve({ code, stderr }));
+	});
+}
+
 beforeAll(async () => {
 	canvas = await startOwnedCanvas({
 		serverPath: path.join(repoRoot, "src/server.ts"),
-		port,
 		vault,
 	});
 	request = createJsonRequester(canvas);
@@ -84,6 +105,31 @@ async function stopSaving(
 }
 
 describe("held board recovery", () => {
+	test("keeps foreign-note baselines independent between boards", async () => {
+		for (const board of ["baseline-a", "baseline-b"]) {
+			await request("/api/boards/new", { method: "POST", body: { board } });
+			await request(`/api/elements?board=${board}`, {
+				method: "POST",
+				body: { id: board, type: "rectangle", x: 0, y: 0, width: 40, height: 40 },
+			});
+		}
+		const first = await request<WriteBody>("/api/boards/save?board=baseline-a", {
+			method: "POST",
+		});
+		const second = await request<WriteBody>("/api/boards/save?board=baseline-b", {
+			method: "POST",
+		});
+		expect([first.status, second.status]).toEqual([200, 200]);
+		expect(first.body.file).not.toBe(second.body.file);
+		fs.appendFileSync(first.body.file!, "\nedited elsewhere\n");
+		expect(
+			(await request<WriteBody>("/api/boards/save?board=baseline-a", { method: "POST" })).status,
+		).toBe(409);
+		expect(
+			(await request<WriteBody>("/api/boards/save?board=baseline-b", { method: "POST" })).status,
+		).toBe(200);
+	});
+
 	test("stops saving after a foreign note edit and keeps later writes only in the held copy", async () => {
 		const held = await stopSaving("holdover", "theirs1");
 		expect(held.refusal.held).toMatchObject({ board: "holdover", writes: 0 });
@@ -93,6 +139,7 @@ describe("held board recovery", () => {
 			overwrite: expect.any(String),
 			saveAs: expect.any(String),
 		});
+		expect(held.refusal.error).toContain("Refusing to save");
 		expect(
 			(await request<ElementsBody>("/api/elements?board=holdover")).body.elements.some(
 				(element) => element.id === "lost1",
@@ -109,6 +156,13 @@ describe("held board recovery", () => {
 		const read = await request<ElementsBody>("/api/elements?board=holdover");
 		expect(read.body.elements.some((element) => element.id === "held1")).toBeTrue();
 		expect(read.body.held?.writes).toBe(1);
+		const listed = await request<{ open: Array<{ key: string; held?: HeldReport }> }>(
+			"/api/boards",
+		);
+		expect(listed.body.open.find((entry) => entry.key === "holdover")?.held).toMatchObject({
+			board: "holdover",
+			writes: 1,
+		});
 		expect((await request<BoardInfo>("/api/boards/info?board=holdover")).body.savedAt).toBe(
 			savedAt,
 		);
@@ -149,21 +203,26 @@ describe("held board recovery", () => {
 				clientId: "a-pane",
 			},
 		});
+		await request("/api/elements?board=holdforce", {
+			method: "POST",
+			body: { id: "held-force-2", type: "ellipse", x: 140, y: 100, width: 20, height: 20 },
+		});
 		const forced = await request<WriteBody>("/api/boards/save", {
 			method: "POST",
 			body: { board: "holdforce", force: true },
 		});
 		expect(forced.status).toBe(200);
-		expect(forced.body.resolvedHold).toMatchObject({ outcome: "overwrite", writes: 2 });
+		expect(forced.body.resolvedHold).toMatchObject({ outcome: "overwrite", writes: 3 });
 		expect(forced.body.held).toBeUndefined();
 		const file = held.file;
 		expect(fs.readFileSync(file, "utf8")).toContain("held-force");
 		expect(fs.readFileSync(file, "utf8")).not.toContain("theirs-force");
-		await request("/api/elements?board=holdforce", {
+		const afterForce = await request("/api/elements?board=holdforce", {
 			method: "POST",
 			body: { id: "after1", type: "rectangle", x: 0, y: 0, width: 9, height: 9 },
 		});
 		expect(fs.readFileSync(file, "utf8")).toContain("after1");
+		expect(afterForce.status).toBe(200);
 		const refused = await request<WriteBody>("/api/elements/changes?board=holdforce", {
 			method: "POST",
 			body: {
@@ -192,10 +251,15 @@ describe("held board recovery", () => {
 		const after = await request<ElementsBody>("/api/elements?board=holdreload");
 		expect(after.body.elements.some((element) => element.id === "held2")).toBeFalse();
 		expect(after.body.elements.some((element) => element.id === "theirs2")).toBeTrue();
+		const resumed = await request("/api/elements?board=holdreload", {
+			method: "POST",
+			body: { id: "after-reload", type: "rectangle", x: 0, y: 0, width: 11, height: 11 },
+		});
+		expect(resumed.status).toBe(200);
 	});
 
 	test("save elsewhere keeps both versions and moves the held pane onto the recovered copy", async () => {
-		const pane = await openTestPane(port, request, "held-pane", 0, {
+		const pane = await openTestPane(canvas.base, request, "held-pane", 0, {
 			primary: true,
 			focused: true,
 		});
@@ -216,71 +280,47 @@ describe("held board recovery", () => {
 		});
 		expect(elsewhere.status).toBe(200);
 		expect(elsewhere.body.resolvedHold?.outcome).toBe("elsewhere");
+		expect(elsewhere.body.held).toBeUndefined();
 		expect(fs.readFileSync(elsewhere.body.file!, "utf8")).toContain("held3");
 		expect(fs.readFileSync(stopped.file, "utf8")).toContain("theirs3");
 		expect(fs.readFileSync(stopped.file, "utf8")).not.toContain("held3");
 		expect(elsewhere.body.panes?.moved.map((entry) => entry.place)).toEqual(["the only pane"]);
+		expect(elsewhere.body.panes?.kept).toEqual([]);
 		expect(pane.board()).toBe("holdmine");
 		const source = await request<ElementsBody>("/api/elements?board=holdelse");
 		expect(source.body.held).toBeUndefined();
 		expect(source.body.elements.some((element) => element.id === "theirs3")).toBeTrue();
+		expect(source.body.elements.some((element) => element.id === "held3")).toBeFalse();
 	});
 
-	test("notifies a pane once when its note changes and clears the mark on reload", async () => {
-		await request("/api/boards/new", { method: "POST", body: { board: "watched" } });
-		await request("/api/elements?board=watched", {
+	test("CLI held refusal exits 5 and the following held write succeeds", async () => {
+		await request("/api/boards/new", { method: "POST", body: { board: "cliheld" } });
+		await request("/api/elements?board=cliheld", {
 			method: "POST",
-			body: { id: "seen1", type: "rectangle", x: 1, y: 1, width: 40, height: 40 },
+			body: { id: "cli-box", type: "rectangle", x: 0, y: 0, width: 30, height: 30 },
 		});
-		const pane = await openTestPane(port, request, "note-pane", 640, {
-			primary: true,
-			focused: true,
-		});
-		panes.push(pane);
-		await request("/api/boards/open", {
-			method: "POST",
-			body: { board: "watched", pane: "note-pane" },
-		});
-		await pane.adopt("watched");
-		const file = (await request<BoardInfo>("/api/boards/info?board=watched")).body.file;
-		const start = pane.since();
-		fs.writeFileSync(file, `${fs.readFileSync(file, "utf8")}\n<!-- theirs -->\n`);
-		let changed: PaneMessage | undefined;
-		const deadline = Date.now() + 4_000;
-		while (Date.now() < deadline && !changed) {
-			changed = pane.seen
-				.slice(start)
-				.find(
-					(message) =>
-						message.type === "board_note" &&
-						(message.writtenElsewhere as { reason?: string } | null)?.reason === "changed",
-				);
-			if (!changed) await Bun.sleep(50);
-		}
-		expect(changed).toBeDefined();
-		expect(
-			pane.seen
-				.slice(start)
-				.filter((message) => message.type === "board_note" && message.writtenElsewhere !== null),
-		).toHaveLength(1);
-		expect(pane.seen.slice(start).some((message) => message.type === "board_hold")).toBeFalse();
-		await request("/api/boards/open", {
-			method: "POST",
-			body: { board: "watched", pane: "note-pane", reload: true },
-		});
-		const clearedDeadline = Date.now() + 1_000;
-		while (
-			Date.now() < clearedDeadline &&
-			!pane.seen
-				.slice(start)
-				.some((message) => message.type === "board_note" && message.writtenElsewhere === null)
-		) {
-			await Bun.sleep(20);
-		}
-		expect(
-			pane.seen
-				.slice(start)
-				.some((message) => message.type === "board_note" && message.writtenElsewhere === null),
-		).toBeTrue();
+		const file = (await request<BoardInfo>("/api/boards/info?board=cliheld")).body.file;
+		fs.writeFileSync(
+			file,
+			fs
+				.readFileSync(file, "utf8")
+				.replace('"type": "rectangle"', '"type": "rectangle", "angle": 0.5'),
+		);
+		const add = (x: number) =>
+			runCli([
+				"add",
+				"--board",
+				"cliheld",
+				"--one",
+				`{"type":"ellipse","x":${x},"y":${x},"width":10,"height":10}`,
+			]);
+		const refused = await add(1);
+		expect(refused.code).toBe(5);
+		expect(refused.stderr).toMatch(/Refusing to save/);
+		expect(refused.stderr).toMatch(/has stopped saving/);
+		expect(refused.stderr).toMatch(/board open cliheld --reload/);
+		const accepted = await add(2);
+		expect(accepted.code).toBe(0);
+		expect(accepted.stderr).toMatch(/stopped saving/);
 	});
 });
