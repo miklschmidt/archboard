@@ -8,7 +8,25 @@ import { UpdateResultSchema } from "../../../src/cli/command-contract/update.ts"
 import { ImportResultSchema } from "../../../src/cli/commands/scene.ts";
 import { SnapshotRestoreResultSchema } from "../../../src/cli/commands/snapshot.ts";
 import { createCliHttpDouble } from "./support/cli-http-double.ts";
-import { createPackageCliOwner, packageFailure } from "./support/package-cli.ts";
+import {
+	createPackageCliOwner,
+	packageFailure,
+	type PackageRunResult,
+} from "./support/package-cli.ts";
+
+function decodePackage<T>(result: PackageRunResult, schema: z.ZodType<T>): T {
+	const diagnostic = packageFailure(result);
+	let decoded: unknown;
+	try {
+		decoded = JSON.parse(result.stdout);
+	} catch (error) {
+		throw new Error(`${diagnostic}\nJSON decode: ${(error as Error).message}`, { cause: error });
+	}
+	const parsed = schema.safeParse(decoded);
+	if (!parsed.success)
+		throw new Error(`${diagnostic}\nschema: ${parsed.error.message}`, { cause: parsed.error });
+	return parsed.data;
+}
 
 const rawExportSchema = z.object({
 	type: z.literal("excalidraw"),
@@ -43,7 +61,7 @@ describe("package import and replacement", () => {
 		const diagnostic = packageFailure(result);
 		expect(result.status, diagnostic).toBe(0);
 		expect(result.stderr, diagnostic).toBe("");
-		expect(ImportResultSchema.parse(JSON.parse(result.stdout)), diagnostic).toMatchObject({
+		expect(decodePackage(result, ImportResultSchema), diagnostic).toMatchObject({
 			imported: 1,
 		});
 		expect(http.writesSince(before), diagnostic).toHaveLength(1);
@@ -83,7 +101,7 @@ describe("package import and replacement", () => {
 		);
 		let diagnostic = packageFailure(replaced);
 		expect(replaced.status, diagnostic).toBe(0);
-		expect(ImportResultSchema.parse(JSON.parse(replaced.stdout)), diagnostic).toEqual({
+		expect(decodePackage(replaced, ImportResultSchema), diagnostic).toEqual({
 			success: true,
 			imported: 1,
 			files: 1,
@@ -107,10 +125,7 @@ describe("package import and replacement", () => {
 		);
 		diagnostic = packageFailure(restored);
 		expect(restored.status, diagnostic).toBe(0);
-		expect(
-			SnapshotRestoreResultSchema.parse(JSON.parse(restored.stdout)),
-			diagnostic,
-		).toBeDefined();
+		expect(decodePackage(restored, SnapshotRestoreResultSchema), diagnostic).toBeDefined();
 		expect(http.writesSince(before)[0]?.body, diagnostic).toMatchObject({
 			mutation: "replace-scene",
 			files: [],
@@ -126,7 +141,7 @@ describe("package output and refusals", () => {
 		const query = await owner.run(["query", "--board", "held"], { url: http.url });
 		let diagnostic = packageFailure(query);
 		expect(query.status, diagnostic).toBe(0);
-		expect(QueryResultSchema.parse(JSON.parse(query.stdout)), diagnostic).toBeArray();
+		expect(decodePackage(query, QueryResultSchema), diagnostic).toBeArray();
 		expect(query.stderr, diagnostic).toBe("held board diagnostic\n");
 		const update = await owner.run(
 			["update", "shape1", "--set", '{"x":3}', "--board", "held", "--doing", "held update"],
@@ -134,7 +149,7 @@ describe("package output and refusals", () => {
 		);
 		diagnostic = packageFailure(update);
 		expect(update.status, diagnostic).toBe(0);
-		expect(UpdateResultSchema.parse(JSON.parse(update.stdout)).held, diagnostic).toMatchObject({
+		expect(decodePackage(update, UpdateResultSchema).held, diagnostic).toMatchObject({
 			board: "held",
 		});
 		expect(update.stderr, diagnostic).toBe("held board diagnostic\n");
@@ -142,13 +157,13 @@ describe("package output and refusals", () => {
 		diagnostic = packageFailure(raw);
 		expect(raw.status, diagnostic).toBe(0);
 		expect(raw.stderr, diagnostic).toBe("");
-		expect(rawExportSchema.parse(JSON.parse(raw.stdout)).source, diagnostic).toBe("archboard");
+		expect(decodePackage(raw, rawExportSchema).source, diagnostic).toBe("archboard");
 		const file = await owner.run(["export", "--out", "held.excalidraw", "--board", "held"], {
 			url: http.url,
 		});
 		diagnostic = packageFailure(file);
 		expect(file.status, diagnostic).toBe(0);
-		expect(ExportReceiptSchema.parse(JSON.parse(file.stdout)).held, diagnostic).toMatchObject({
+		expect(decodePackage(file, ExportReceiptSchema).held, diagnostic).toMatchObject({
 			board: "held",
 		});
 		expect(file.stderr, diagnostic).toBe("held board diagnostic\n");
@@ -218,7 +233,7 @@ describe("package output and refusals", () => {
 		diagnostic = packageFailure(unavailable);
 		expect(unavailable.status, diagnostic).toBe(3);
 		expect(unavailable.stderr, diagnostic).toBe("");
-		expect(unavailableStatusSchema.parse(JSON.parse(unavailable.stdout)), diagnostic).toBeDefined();
+		expect(decodePackage(unavailable, unavailableStatusSchema), diagnostic).toBeDefined();
 	});
 
 	test("exports raw, literal, and inferred destinations through their public contracts", async () => {
@@ -229,14 +244,14 @@ describe("package output and refusals", () => {
 		let diagnostic = packageFailure(raw);
 		expect(raw.status, diagnostic).toBe(0);
 		expect(raw.stderr, diagnostic).toBe("");
-		expect(rawExportSchema.parse(JSON.parse(raw.stdout)).source, diagnostic).toBe("archboard");
+		expect(decodePackage(raw, rawExportSchema).source, diagnostic).toBe("archboard");
 		const literal = await owner.run(["export", "--out=-", "--board", "contract"], {
 			url: http.url,
 		});
 		diagnostic = packageFailure(literal);
 		expect(literal.status, diagnostic).toBe(0);
 		expect(literal.stderr, diagnostic).toBe("");
-		expect(ExportReceiptSchema.parse(JSON.parse(literal.stdout)).file, diagnostic).toBe(
+		expect(decodePackage(literal, ExportReceiptSchema).file, diagnostic).toBe(
 			join(owner.outside, "-"),
 		);
 		const inferredPath = join(owner.outside, "inferred.excalidraw.md");
@@ -245,9 +260,7 @@ describe("package output and refusals", () => {
 		});
 		diagnostic = packageFailure(inferred);
 		expect(inferred.status, diagnostic).toBe(0);
-		expect(ExportReceiptSchema.parse(JSON.parse(inferred.stdout)).format, diagnostic).toBe(
-			"obsidian",
-		);
+		expect(decodePackage(inferred, ExportReceiptSchema).format, diagnostic).toBe("obsidian");
 		expect(readFileSync(inferredPath, "utf8"), diagnostic).toMatch(/^---\n.*excalidraw-plugin:/s);
 	});
 

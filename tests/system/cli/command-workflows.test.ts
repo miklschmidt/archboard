@@ -305,6 +305,13 @@ describe("documented CLI workflows", () => {
 	});
 
 	test("syncs the authored workflow guide in a disposable repository", () => {
+		const statusBefore = runSync(["git", "status", "--porcelain", "--untracked-files=all"], {
+			cwd: checkoutRoot,
+		});
+		let diagnostic = workflowFailure(statusBefore);
+		expect(statusBefore.status, diagnostic).toBe(0);
+		expect(statusBefore.signal, diagnostic).toBeNull();
+		expect(statusBefore.stderr, diagnostic).toBe("");
 		const scratch = mkdtempSync(join(tmpdir(), "archboard-skill-sync-"));
 		try {
 			cpSync(join(checkoutRoot, "skills"), join(scratch, "skills"), { recursive: true });
@@ -321,6 +328,14 @@ describe("documented CLI workflows", () => {
 				join(scratch, ".claude/skills/archboard/references/cli-workflows.md"),
 			])
 				expect(readFileSync(target)).toEqual(readFileSync(guidePath));
+			const statusAfter = runSync(["git", "status", "--porcelain", "--untracked-files=all"], {
+				cwd: checkoutRoot,
+			});
+			diagnostic = workflowFailure(statusAfter);
+			expect(statusAfter.status, diagnostic).toBe(0);
+			expect(statusAfter.signal, diagnostic).toBeNull();
+			expect(statusAfter.stderr, diagnostic).toBe("");
+			expect(statusAfter.stdout, diagnostic).toBe(statusBefore.stdout);
 		} finally {
 			rmSync(scratch, { recursive: true, force: true });
 		}

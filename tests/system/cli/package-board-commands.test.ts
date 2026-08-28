@@ -14,7 +14,25 @@ import { QueryResultSchema } from "../../../src/cli/command-contract/query.ts";
 import { UpdateResultSchema } from "../../../src/cli/command-contract/update.ts";
 import { AddResultSchema, DeleteResultSchema } from "../../../src/cli/commands/elements.ts";
 import { createCliHttpDouble, type RecordedRequest } from "./support/cli-http-double.ts";
-import { createPackageCliOwner, packageFailure } from "./support/package-cli.ts";
+import {
+	createPackageCliOwner,
+	packageFailure,
+	type PackageRunResult,
+} from "./support/package-cli.ts";
+
+function decodePackage<T>(result: PackageRunResult, schema: z.ZodType<T>): T {
+	const diagnostic = packageFailure(result);
+	let decoded: unknown;
+	try {
+		decoded = JSON.parse(result.stdout);
+	} catch (error) {
+		throw new Error(`${diagnostic}\nJSON decode: ${(error as Error).message}`, { cause: error });
+	}
+	const parsed = schema.safeParse(decoded);
+	if (!parsed.success)
+		throw new Error(`${diagnostic}\nschema: ${parsed.error.message}`, { cause: parsed.error });
+	return parsed.data;
+}
 
 const jsonObjectSchema = z.record(z.string(), z.unknown());
 const bodyOf = (request: RecordedRequest | undefined) =>
@@ -66,7 +84,7 @@ describe("package board commands", () => {
 		let diagnostic = packageFailure(info);
 		expect(info.status, diagnostic).toBe(0);
 		expect(info.stderr, diagnostic).toBe("");
-		const infoBody = BoardInfoResultSchema.parse(JSON.parse(info.stdout));
+		const infoBody = decodePackage(info, BoardInfoResultSchema);
 		expect(infoBody, diagnostic).toMatchObject({
 			board: "contract",
 			identity: { board: "contract", variant: "current", level: "system", displayName: "Contract" },
@@ -79,7 +97,7 @@ describe("package board commands", () => {
 		const created = await owner.run(["board", "new", "contract-new"], { url: http.url });
 		diagnostic = packageFailure(created);
 		expect(created.status, diagnostic).toBe(0);
-		const createdBody = BoardNewResultSchema.parse(JSON.parse(created.stdout));
+		const createdBody = decodePackage(created, BoardNewResultSchema);
 		expect(createdBody, diagnostic).toMatchObject({
 			created: true,
 			saved: false,
@@ -92,7 +110,7 @@ describe("package board commands", () => {
 		const opened = await owner.run(["board", "open", "contract"], { url: http.url });
 		diagnostic = packageFailure(opened);
 		expect(opened.status, diagnostic).toBe(0);
-		const openedBody = BoardOpenResultSchema.parse(JSON.parse(opened.stdout));
+		const openedBody = decodePackage(opened, BoardOpenResultSchema);
 		expect(openedBody, diagnostic).toMatchObject({
 			source: "vault",
 			version: 7,
@@ -103,7 +121,7 @@ describe("package board commands", () => {
 		const pane = await owner.run(["pane", "open", "--board", "contract"], { url: http.url });
 		diagnostic = packageFailure(pane);
 		expect(pane.status, diagnostic).toBe(0);
-		expect(PaneOpenResultSchema.parse(JSON.parse(pane.stdout)), diagnostic).toMatchObject({
+		expect(decodePackage(pane, PaneOpenResultSchema), diagnostic).toMatchObject({
 			pane: { paneId: "pane-right", clientId: "client-right", place: "right", position: 2 },
 			paneCount: 2,
 			board: { source: "vault", version: 7, placeholder: false },
@@ -113,7 +131,7 @@ describe("package board commands", () => {
 		diagnostic = packageFailure(status);
 		expect(status.status, diagnostic).toBe(0);
 		expect(status.stderr, diagnostic).toBe("");
-		expect(InjectStatusResultSchema.parse(JSON.parse(status.stdout)), diagnostic).toMatchObject({
+		expect(decodePackage(status, InjectStatusResultSchema), diagnostic).toMatchObject({
 			enabled: true,
 			armed: true,
 			connected: true,
@@ -125,7 +143,7 @@ describe("package board commands", () => {
 		diagnostic = packageFailure(injected);
 		expect(injected.status, diagnostic).toBe(0);
 		expect(injected.stderr, diagnostic).toBe("");
-		expect(InjectTestResultSchema.parse(JSON.parse(injected.stdout)), diagnostic).toEqual({
+		expect(decodePackage(injected, InjectTestResultSchema), diagnostic).toEqual({
 			channel: "quiet",
 			threadId: "thread-fixture",
 			text: "fixture injection text",
@@ -168,10 +186,10 @@ describe("package board commands", () => {
 				expect(transportedDocument, diagnostic).toBe(document);
 				const answer =
 					write.name === "add"
-						? AddResultSchema.parse(JSON.parse(result.stdout))
+						? decodePackage(result, AddResultSchema)
 						: write.name === "update"
-							? UpdateResultSchema.parse(JSON.parse(result.stdout))
-							: DeleteResultSchema.parse(JSON.parse(result.stdout));
+							? decodePackage(result, UpdateResultSchema)
+							: decodePackage(result, DeleteResultSchema);
 				expect("document" in answer, diagnostic).toBe(document);
 			}
 	});
@@ -257,7 +275,7 @@ describe("package board commands", () => {
 		let diagnostic = packageFailure(query);
 		expect(query.status, diagnostic).toBe(0);
 		expect(query.stderr, diagnostic).toBe("");
-		expect(Array.isArray(QueryResultSchema.parse(JSON.parse(query.stdout))), diagnostic).toBeTrue();
+		expect(Array.isArray(decodePackage(query, QueryResultSchema)), diagnostic).toBeTrue();
 		expect(
 			http.requests
 				.slice(queryBefore)

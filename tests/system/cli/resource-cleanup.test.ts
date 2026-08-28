@@ -114,6 +114,7 @@ describe("CLI resource cleanup", () => {
 		let root = "";
 		let base = "";
 		let canvas: OwnedCanvas | undefined;
+		let verifiedRunning = false;
 		let intended: unknown;
 		try {
 			await using resources = new AsyncDisposableStack();
@@ -127,11 +128,18 @@ describe("CLI resource cleanup", () => {
 			resources.defer(() => canvas!.dispose());
 			base = canvas.base;
 			await canvas.assertRunning();
+			verifiedRunning = true;
 			expect("running canvas").toBe("intended assertion failure");
 		} catch (error) {
 			intended = error;
 		}
-		expect(intended).toBeDefined();
+		expect(verifiedRunning).toBeTrue();
+		expect(intended).toBeInstanceOf(Error);
+		const intendedError = intended as Error;
+		expect(intendedError.message).toContain('Expected: "intended assertion failure"');
+		expect(intendedError.message).toContain('Received: "running canvas"');
+		if (!canvas) throw new Error("Verified canvas handle was not retained.");
+		expect(base).toBe(canvas.base);
 		expect(existsSync(root)).toBeFalse();
 		let listenerStopped = false;
 		try {
@@ -142,7 +150,7 @@ describe("CLI resource cleanup", () => {
 		expect(listenerStopped).toBeTrue();
 		let childStopped = false;
 		try {
-			await canvas!.assertRunning();
+			await canvas.assertRunning();
 		} catch {
 			childStopped = true;
 		}
