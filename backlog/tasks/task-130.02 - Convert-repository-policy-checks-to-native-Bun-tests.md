@@ -1,11 +1,11 @@
 ---
 id: TASK-130.02
 title: Convert repository policy checks to native Bun tests
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:02'
-updated_date: '2026-08-28 05:56'
+updated_date: '2026-08-28 06:03'
 labels: []
 dependencies:
   - TASK-130.01
@@ -49,12 +49,12 @@ This task owns the evolving test inventory rule. During migration it must unders
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 check-ci-suites, check-boundary-plugin, check-module-scope, and check-skills are replaced by typed bun:test files under the repository-policy system-test ownership defined by TASK-130.01.
-- [ ] #2 The boundary and module-scope tests still run their real Oxlint or TypeScript parser paths against temporary fixtures and assert the exact allowed and refused classes documented today.
-- [ ] #3 Every temporary fixture is removed after success and assertion failure, and no test mutates authored repository files.
-- [ ] #4 A native inventory test fails when a package test lane is absent from the push chain, a native test belongs to no lane, or a native test can run through more than one lane.
-- [ ] #5 The existing negative self-tests remain executable through named native assertions rather than a command-line self-test mode.
-- [ ] #6 The legacy scripts are deleted only after focused parity runs prove the native tests catch their documented failure fixtures.
+- [x] #1 check-ci-suites, check-boundary-plugin, check-module-scope, and check-skills are replaced by typed bun:test files under the repository-policy system-test ownership defined by TASK-130.01.
+- [x] #2 The boundary and module-scope tests still run their real Oxlint or TypeScript parser paths against temporary fixtures and assert the exact allowed and refused classes documented today.
+- [x] #3 Every temporary fixture is removed after success and assertion failure, and no test mutates authored repository files.
+- [x] #4 A native inventory test fails when a package test lane is absent from the push chain, a native test belongs to no lane, or a native test can run through more than one lane.
+- [x] #5 The existing negative self-tests remain executable through named native assertions rather than a command-line self-test mode.
+- [x] #6 The legacy scripts are deleted only after focused parity runs prove the native tests catch their documented failure fixtures.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -118,3 +118,9 @@ created: 2026-08-28 05:55
 Independent-review remediation is implemented and validated. TASK-130.02 remains In Progress with all acceptance criteria unchecked for fixed-range rereview.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replaced four self-running repository-policy checks with typed native Bun tests, preserved real Oxlint/TypeScript/workflow boundaries and negative fixtures, activated a mixed-checkout exactly-once inventory, and removed only the parity-proven predecessor scripts and byte-identically moved fixtures. Verified with 34 focused tests/107 expectations, type-check, lint, format, test inventory, the complete sequential headless browser chain, fixture hashes, cleanup audits, and an independent clean fixed-range rereview.
+<!-- SECTION:FINAL_SUMMARY:END -->
