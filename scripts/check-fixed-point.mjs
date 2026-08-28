@@ -278,6 +278,23 @@ const pointAt = (element, index) => {
 	return { x: element.x + point[0], y: element.y + point[1] };
 };
 
+const ENDPOINT_TOLERANCE = 1;
+
+/** The one visible comparison TASK-090 makes, shared with its negative control. */
+const compareEndpoints = (serverEndpoint, browserEndpoint) => {
+	const dx = serverEndpoint && browserEndpoint ? browserEndpoint.x - serverEndpoint.x : Number.NaN;
+	const dy = serverEndpoint && browserEndpoint ? browserEndpoint.y - serverEndpoint.y : Number.NaN;
+	const separation = Math.hypot(dx, dy);
+	return {
+		serverEndpoint,
+		browserEndpoint,
+		dx: Number.isFinite(dx) ? dx : null,
+		dy: Number.isFinite(dy) ? dy : null,
+		separation: Number.isFinite(separation) ? separation : null,
+		agrees: Number.isFinite(separation) && separation <= ENDPOINT_TOLERANCE,
+	};
+};
+
 // ---------------------------------------------------------------------------
 // The font gate
 // ---------------------------------------------------------------------------
@@ -1333,70 +1350,355 @@ try {
 			.join("; "),
 	);
 
-	// --- a human binding after an agent moves its node ----------------------
+	// --- Excalidraw and the local binding port, independently ----------------
 	//
-	// The zero-diff board above proves Excalidraw adopted the human binding.
-	// Now the agent route moves its node. Archboard and the pinned Excalidraw
-	// independently settle the bound end, and this compares their visible
-	// answers rather than another copy of either implementation.
-	const adoptedHumanArrow = rendered.find((element) => element.id === "human-arrow");
+	// The zero-diff board above proves Excalidraw adopted the human binding. A
+	// trusted pointer drag now moves only its node in the page. Its change report
+	// is held before it reaches the server, so the endpoint read immediately
+	// after mouse-up can only be Excalidraw's answer. A second, unopened board
+	// starts from the same canonical geometry and supplies the server answer.
+	const initialBrowserNode = rendered.find((element) => element.id === "human-node");
+	const initialBrowserArrow = rendered.find((element) => element.id === "human-arrow");
 	check(
 		"the real browser adopts the human arrow end at focus 0.9 and gap 15",
-		adoptedHumanArrow?.endBinding?.elementId === "human-node" &&
-			adoptedHumanArrow?.endBinding?.focus === 0.9 &&
-			adoptedHumanArrow?.endBinding?.gap === 15,
-		JSON.stringify(adoptedHumanArrow?.endBinding ?? null),
+		initialBrowserArrow?.endBinding?.elementId === "human-node" &&
+			initialBrowserArrow?.endBinding?.focus === 0.9 &&
+			initialBrowserArrow?.endBinding?.gap === 15,
+		JSON.stringify(initialBrowserArrow?.endBinding ?? null),
 	);
 
-	const agentMove = await api("PUT", "/api/elements/human-node?board=fixedpoint", {
-		x: 1040,
-		y: 1030,
+	await api("POST", "/api/boards/new", {
+		board: "binding-differential",
+		level: "service",
 	});
-	const serverAfterMove = (await api("GET", "/api/elements?board=fixedpoint")).body?.elements ?? [];
-	const serverNode = serverAfterMove.find((element) => element.id === "human-node");
-	const serverArrow = serverAfterMove.find((element) => element.id === "human-arrow");
-	const movedInBrowser = await waitFor(
-		() => evalInPage(READ_SCENE),
-		(scene) =>
-			scene?.elements?.some(
-				(element) => element.id === "human-node" && element.x === 1040 && element.y === 1030,
-			),
+	const comparisonNodeInput = initialBrowserNode ? strip(initialBrowserNode) : {};
+	delete comparisonNodeInput.boundElements;
+	const comparisonNodeSeed = await api("POST", "/api/elements/batch?board=binding-differential", {
+		elements: [comparisonNodeInput],
+	});
+	const comparisonArrowSeed = await api(
+		"POST",
+		"/api/elements/changes?board=binding-differential",
+		{
+			upserts: initialBrowserArrow ? [strip(initialBrowserArrow)] : [],
+			deletes: [],
+			clientId: "fixed-point-person",
+		},
+	);
+	const comparisonBefore =
+		(await api("GET", "/api/elements?board=binding-differential")).body?.elements ?? [];
+	const initialServerNode = comparisonBefore.find((element) => element.id === "human-node");
+	const initialServerArrow = comparisonBefore.find((element) => element.id === "human-arrow");
+	const initialBrowserStart = pointAt(initialBrowserArrow, 0);
+	const initialBrowserEnd = pointAt(
+		initialBrowserArrow,
+		(initialBrowserArrow?.points?.length ?? 0) - 1,
+	);
+	const initialServerStart = pointAt(initialServerArrow, 0);
+	const initialServerEnd = pointAt(
+		initialServerArrow,
+		(initialServerArrow?.points?.length ?? 0) - 1,
+	);
+	const initialBrowserGeometry = initialBrowserNode
+		? {
+				type: initialBrowserNode.type,
+				x: initialBrowserNode.x,
+				y: initialBrowserNode.y,
+				width: initialBrowserNode.width,
+				height: initialBrowserNode.height,
+				angle: initialBrowserNode.angle,
+			}
+		: null;
+	const initialServerGeometry = initialServerNode
+		? {
+				type: initialServerNode.type,
+				x: initialServerNode.x,
+				y: initialServerNode.y,
+				width: initialServerNode.width,
+				height: initialServerNode.height,
+				angle: initialServerNode.angle,
+			}
+		: null;
+	check(
+		"the unopened server fixture starts from the browser's exact node and arrow geometry",
+		comparisonNodeSeed.status === 200 &&
+			comparisonArrowSeed.status === 200 &&
+			JSON.stringify(initialServerGeometry) === JSON.stringify(initialBrowserGeometry) &&
+			JSON.stringify(initialServerStart) === JSON.stringify(initialBrowserStart) &&
+			JSON.stringify(initialServerEnd) === JSON.stringify(initialBrowserEnd) &&
+			JSON.stringify(initialServerArrow?.endBinding) ===
+				JSON.stringify(initialBrowserArrow?.endBinding),
+		JSON.stringify({
+			browser: {
+				node: initialBrowserGeometry,
+				start: initialBrowserStart,
+				end: initialBrowserEnd,
+				binding: initialBrowserArrow?.endBinding ?? null,
+			},
+			server: {
+				node: initialServerGeometry,
+				start: initialServerStart,
+				end: initialServerEnd,
+				binding: initialServerArrow?.endBinding ?? null,
+			},
+		}),
+	);
+
+	const framedHumanNode = await api("POST", "/api/viewport", {
+		scrollToElementIds: ["human-node"],
+		viewportZoomFactor: 0.5,
+	});
+	const humanNodeScreenPoint = await waitFor(
+		() =>
+			evalInPage(`(() => {
+    const node = document.querySelector('.excalidraw');
+    const key = node && Object.keys(node).find(k => k.startsWith('__reactFiber$'));
+    let fiber = key ? node[key] : null;
+    for (let depth = 0; fiber && depth < 60; depth++) {
+      const app = fiber.stateNode;
+      if (app && typeof app === 'object' && app.scene && app.state) {
+        const element = app.scene.getElementsIncludingDeleted()
+          .find(candidate => candidate.id === 'human-node');
+        if (!element) return { error: 'human-node is missing' };
+        const zoom = app.state.zoom?.value ?? 1;
+        return {
+          x: Math.round((element.x + element.width / 2 + app.state.scrollX) * zoom + app.state.offsetLeft),
+          y: Math.round((element.y + element.height / 2 + app.state.scrollY) * zoom + app.state.offsetTop),
+          zoom
+        };
+      }
+      fiber = fiber.return;
+    }
+    return { error: 'no Excalidraw app instance' };
+  })()`),
+		(point) =>
+			Number.isFinite(point?.x) && Number.isFinite(point?.y) && point.x >= 0 && point.y >= 0,
 		PANE_SETTLE_CAP_MS,
 	);
-	const browserAfterMove = await sceneWhenStill();
-	const browserNode = browserAfterMove.find((element) => element.id === "human-node");
-	const browserArrow = browserAfterMove.find((element) => element.id === "human-arrow");
-	const serverEndpoint = pointAt(serverArrow, (serverArrow?.points?.length ?? 0) - 1);
+	const reportGateInstalled = await evalInPage(`(() => {
+    if (window.__task090ReportGate) return { error: 'report gate already exists' };
+    const gate = window.__task090ReportGate = {
+      original: window.fetch,
+      intercepted: 0,
+      pending: null,
+      released: false,
+      settled: false
+    };
+    window.fetch = function(input, init) {
+      const url = typeof input === 'string' ? input : input?.url ?? '';
+      const method = init?.method ?? input?.method ?? 'GET';
+      if (method !== 'POST' || !url.includes('/api/elements/changes')) {
+        return gate.original.apply(this, arguments);
+      }
+      if (gate.pending) throw new Error('TASK-090 received a second change report while one was held');
+      const receiver = this;
+      const args = [...arguments];
+      gate.intercepted += 1;
+      return new Promise((resolve, reject) => {
+        gate.pending = {
+          release: () => {
+            gate.released = true;
+            gate.original.apply(receiver, args).then(
+              response => { gate.settled = true; resolve(response); },
+              error => { gate.settled = true; reject(error); }
+            );
+          }
+        };
+      });
+    };
+    return { installed: true };
+  })()`);
+	check(
+		"the human node is framed and its one change report is held before the server",
+		framedHumanNode.status === 200 &&
+			reportGateInstalled?.installed === true &&
+			Number.isFinite(humanNodeScreenPoint?.x) &&
+			Number.isFinite(humanNodeScreenPoint?.y),
+		JSON.stringify({ framedHumanNode, reportGateInstalled, humanNodeScreenPoint }),
+	);
+
+	if (Number.isFinite(humanNodeScreenPoint?.x) && Number.isFinite(humanNodeScreenPoint?.y)) {
+		await browser([
+			"mouse",
+			"move",
+			String(humanNodeScreenPoint.x),
+			String(humanNodeScreenPoint.y),
+		]);
+		await browser(["mouse", "down"]);
+		for (let step = 1; step <= 4; step++) {
+			await browser([
+				"mouse",
+				"move",
+				String(humanNodeScreenPoint.x + step * 10),
+				String(Math.round(humanNodeScreenPoint.y + step * 7.5)),
+			]);
+		}
+		await browser(["mouse", "up"]);
+	}
+
+	const browserOracle = await evalInPage(`(() => {
+    const read = ${READ_SCENE};
+    const gate = window.__task090ReportGate;
+    return {
+      ...read,
+      gate: gate ? { intercepted: gate.intercepted, held: gate.pending !== null,
+        released: gate.released, settled: gate.settled } : null
+    };
+  })()`);
+	const browserNode = browserOracle.elements?.find((element) => element.id === "human-node");
+	const browserArrow = browserOracle.elements?.find((element) => element.id === "human-arrow");
+	const browserStart = pointAt(browserArrow, 0);
 	const browserEndpoint = pointAt(browserArrow, (browserArrow?.points?.length ?? 0) - 1);
-	const dx = serverEndpoint && browserEndpoint ? browserEndpoint.x - serverEndpoint.x : Number.NaN;
-	const dy = serverEndpoint && browserEndpoint ? browserEndpoint.y - serverEndpoint.y : Number.NaN;
-	const separation = Math.hypot(dx, dy);
-	const endpointEvidence = {
-		serverEndpoint,
-		browserEndpoint,
-		dx: Number.isFinite(dx) ? dx : null,
-		dy: Number.isFinite(dy) ? dy : null,
-		separation: Number.isFinite(separation) ? separation : null,
-		focus: serverArrow?.endBinding?.focus ?? null,
-		gap: serverArrow?.endBinding?.gap ?? null,
-		serverNode: serverNode
-			? { x: serverNode.x, y: serverNode.y, width: serverNode.width, height: serverNode.height }
-			: null,
-		browserNode: browserNode
-			? { x: browserNode.x, y: browserNode.y, width: browserNode.width, height: browserNode.height }
-			: null,
-	};
+	const fixedpointBeforeRelease =
+		(await api("GET", "/api/elements?board=fixedpoint")).body?.elements ?? [];
+	const serverStillNode = fixedpointBeforeRelease.find((element) => element.id === "human-node");
+	const serverStillArrow = fixedpointBeforeRelease.find((element) => element.id === "human-arrow");
+	const serverStillEnd = pointAt(serverStillArrow, (serverStillArrow?.points?.length ?? 0) - 1);
+	check(
+		"trusted pointer input moves only the node while Excalidraw computes the bound end",
+		browserNode &&
+			initialBrowserNode &&
+			(browserNode.x !== initialBrowserNode.x || browserNode.y !== initialBrowserNode.y) &&
+			JSON.stringify(browserStart) === JSON.stringify(initialBrowserStart) &&
+			JSON.stringify(browserEndpoint) !== JSON.stringify(initialBrowserEnd) &&
+			browserArrow?.endBinding?.focus === 0.9 &&
+			browserArrow?.endBinding?.gap === 15,
+		JSON.stringify({
+			initialNode: initialBrowserGeometry,
+			browserNode,
+			initialStart: initialBrowserStart,
+			browserStart,
+			initialEnd: initialBrowserEnd,
+			browserEndpoint,
+			binding: browserArrow?.endBinding ?? null,
+			gate: browserOracle.gate,
+		}),
+	);
+	check(
+		"the browser oracle is captured before any node or arrow change reaches the server",
+		serverStillNode?.x === initialBrowserNode?.x &&
+			serverStillNode?.y === initialBrowserNode?.y &&
+			JSON.stringify(serverStillEnd) === JSON.stringify(initialBrowserEnd) &&
+			browserOracle.gate?.released === false &&
+			browserOracle.gate?.settled === false,
+		JSON.stringify({
+			serverNode: serverStillNode ? { x: serverStillNode.x, y: serverStillNode.y } : null,
+			serverEnd: serverStillEnd,
+			browserNode: browserNode ? { x: browserNode.x, y: browserNode.y } : null,
+			browserEndpoint,
+			gate: browserOracle.gate,
+		}),
+	);
+
+	const heldHumanReport = await waitFor(
+		() =>
+			evalInPage(`(() => {
+      const gate = window.__task090ReportGate;
+      return gate ? { intercepted: gate.intercepted, held: gate.pending !== null } : null;
+    })()`),
+		(state) => state?.held === true,
+		PANE_SETTLE_CAP_MS,
+	);
+	const releasedHumanReport = await evalInPage(`(() => {
+    const gate = window.__task090ReportGate;
+    if (!gate) return { error: 'report gate is missing' };
+    window.fetch = gate.original;
+    gate.pending?.release();
+    return { intercepted: gate.intercepted, released: gate.released };
+  })()`);
+	const settledHumanReport = await waitFor(
+		() =>
+			evalInPage(`(() => {
+      const gate = window.__task090ReportGate;
+      return gate ? { settled: gate.settled } : null;
+    })()`),
+		(state) => state?.settled === true,
+		PANE_SETTLE_CAP_MS,
+	);
+	await evalInPage(`(() => { delete window.__task090ReportGate; return true; })()`);
+	check(
+		"the held human report is released and settles through the normal path",
+		heldHumanReport?.held === true &&
+			releasedHumanReport?.released === true &&
+			settledHumanReport?.settled === true,
+		JSON.stringify({ heldHumanReport, releasedHumanReport, settledHumanReport }),
+	);
+
+	const targetX = Number.isFinite(browserNode?.x) ? browserNode.x : initialServerNode?.x;
+	const targetY = Number.isFinite(browserNode?.y) ? browserNode.y : initialServerNode?.y;
+	const agentMove = await api("PUT", "/api/elements/human-node?board=binding-differential", {
+		x: targetX,
+		y: targetY,
+	});
+	const serverAfterMove =
+		(await api("GET", "/api/elements?board=binding-differential")).body?.elements ?? [];
+	const serverNode = serverAfterMove.find((element) => element.id === "human-node");
+	const serverArrow = serverAfterMove.find((element) => element.id === "human-arrow");
+	const serverStart = pointAt(serverArrow, 0);
+	const serverEndpoint = pointAt(serverArrow, (serverArrow?.points?.length ?? 0) - 1);
+	const browserTargetGeometry = browserNode
+		? {
+				type: browserNode.type,
+				x: browserNode.x,
+				y: browserNode.y,
+				width: browserNode.width,
+				height: browserNode.height,
+				angle: browserNode.angle,
+			}
+		: null;
+	const serverTargetGeometry = serverNode
+		? {
+				type: serverNode.type,
+				x: serverNode.x,
+				y: serverNode.y,
+				width: serverNode.width,
+				height: serverNode.height,
+				angle: serverNode.angle,
+			}
+		: null;
+	const sameTargetGeometry =
+		agentMove.status === 200 &&
+		JSON.stringify(serverTargetGeometry) === JSON.stringify(browserTargetGeometry) &&
+		JSON.stringify(serverStart) === JSON.stringify(browserStart) &&
+		JSON.stringify(serverArrow?.endBinding) === JSON.stringify(browserArrow?.endBinding);
+	check(
+		"the agent route starts and ends from the browser oracle's exact geometry",
+		sameTargetGeometry,
+		JSON.stringify({
+			browser: {
+				node: browserTargetGeometry,
+				start: browserStart,
+				binding: browserArrow?.endBinding ?? null,
+			},
+			server: {
+				node: serverTargetGeometry,
+				start: serverStart,
+				binding: serverArrow?.endBinding ?? null,
+			},
+		}),
+	);
+
+	const endpointComparison = compareEndpoints(serverEndpoint, browserEndpoint);
 	check(
 		"after an agent moves the bound node, the local port and Excalidraw settle within the 1.0 scene-pixel visible tolerance",
-		agentMove.status === 200 &&
-			movedInBrowser?.elements?.some(
-				(element) => element.id === "human-node" && element.x === 1040 && element.y === 1030,
-			) === true &&
-			browserArrow?.endBinding?.focus === 0.9 &&
-			browserArrow?.endBinding?.gap === 15 &&
-			Number.isFinite(separation) &&
-			separation <= 1,
-		JSON.stringify(endpointEvidence),
+		sameTargetGeometry && endpointComparison.agrees,
+		JSON.stringify({
+			...endpointComparison,
+			focus: serverArrow?.endBinding?.focus ?? null,
+			gap: serverArrow?.endBinding?.gap ?? null,
+			serverNode: serverTargetGeometry,
+			browserNode: browserTargetGeometry,
+		}),
+	);
+
+	const deliberatelyWrongServerEndpoint = browserEndpoint
+		? { x: browserEndpoint.x + 2, y: browserEndpoint.y }
+		: null;
+	const negativeControl = compareEndpoints(deliberatelyWrongServerEndpoint, browserEndpoint);
+	check(
+		"the same 1.0 scene-pixel comparison rejects a server endpoint that is two pixels wrong",
+		negativeControl.agrees === false && negativeControl.separation === 2,
+		JSON.stringify(negativeControl),
 	);
 
 	const renderOne = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-findings-one-"));
