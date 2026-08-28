@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:04'
-updated_date: '2026-08-28 20:01'
+updated_date: '2026-08-28 20:08'
 labels: []
 dependencies:
   - TASK-130.01
@@ -185,4 +185,13 @@ Sixth complete-range remediation after Standards rereview (2026-08-28):
 - Validation: test:cli 39 tests/857 expectations; TASK-130.06 owned-canvas lifecycle 13/85; live inventory 11/11; type-check and lint passed. fmt:check first found the expanded cleanup owner, the repository formatter corrected it, and the owner plus final fmt:check and git diff --check passed.
 - No browser or full check was rerun. These changes affect only two test owners, exposed no broader failure, and retain the prior successful single complete headless/serial run at bdbd102.
 - Final formatted lines: package-fixed-base-compatibility 243; resource-cleanup 213. Both remain below 500.
+
+Seventh complete-range remediation after Standards rereview (2026-08-28):
+- Strengthened only the verified-canvas forced-assertion case in resource-cleanup.test.ts. It retains the RepositoryFixture handle plus nonempty root, vault, and registry identities; retains the canvas handle and disposer-registration flag; and sets fixture and canvas registration flags only after the corresponding acquisition and stack registration succeed.
+- After the caught deliberate assertion, the test proves the exact Expected and Received assertion identity, verified-running and registration flags, nonempty captured identities, fixture field equality, and canvas/base/vault identity before any cleanup assertion.
+- Cleanup now proves root, vault, and registry absence. It retains the listener fetch error and requires TypeError, code ConnectionRefused, errno 0, the exact loopback health path, and the exact connection message. It retains the disposed-canvas error and requires code CANVAS_PROCESS_DIED, the exact no-live-generation message, and the deliberate assertion as its cause. Generic catch-to-boolean cleanup success paths are gone.
+- Red evidence: false fixture/disposer registration sentinels failed after registration; a wrong listener error-code sentinel failed with ConnectionRefused; a wrong child error-code sentinel failed with CANVAS_PROCESS_DIED. The corrected cleanup owner passed 4 tests/74 expectations.
+- Validation: test:cli 39 tests/876 expectations; TASK-130.06 owned-canvas lifecycle 13/85; live inventory 11/11; type-check, lint, fmt:check, and git diff --check passed.
+- No browser or full check was rerun. This is one cleanup-owner test change, exposed no broader failure, and retains the prior successful complete headless/serial run at bdbd102.
+- resource-cleanup.test.ts is 245 formatted lines, below 500.
 <!-- SECTION:NOTES:END -->
