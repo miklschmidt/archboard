@@ -227,6 +227,7 @@ const pageState = () =>
   const perf = window.__abHumanPerf;
   return {
     perf,
+    tool: app.state.activeTool.type,
     editing: app?.state.editingTextElement?.id ?? null,
     typing: document.querySelector('textarea.excalidraw-wysiwyg')?.value ?? null,
     elements: app?.scene.getElementsIncludingDeleted().filter(element => !element.isDeleted)
@@ -410,6 +411,68 @@ try {
 	await sleep(300);
 	const fsyncBefore = fsyncCount();
 
+	// Isolate one ordinary acknowledgement before the delayed drag, resize, or
+	// text workflows can overlap it. After mouse-up, issue no browser command
+	// until the acknowledgement and its replacement sample have both closed.
+	await frameElement("drag");
+	const isolatedDragPoint = await pointOf("drag");
+	const isolatedBeforeState = await pageState();
+	const isolatedBefore = isolatedBeforeState.perf;
+	const isolatedDragXBefore = isolatedBeforeState.elements.find(
+		(element) => element.id === "drag",
+	)?.x;
+	check(
+		"the reporter starts clean at the isolated response boundary",
+		isolatedBeforeState.tool === "selection" &&
+			isolatedBeforeState.editing === null &&
+			isolatedBefore.reports === 0 &&
+			isolatedBefore.responses.length === 0 &&
+			isolatedBefore.inflight === 0 &&
+			Number.isFinite(isolatedDragXBefore),
+		`tool ${isolatedBeforeState.tool}, ` +
+			`editing ${isolatedBeforeState.editing ?? "none"}, ` +
+			`${isolatedBefore.responses.length}/${isolatedBefore.reports} responses, ` +
+			`inflight ${isolatedBefore.inflight}`,
+	);
+	const isolatedResponseBoundary = isolatedBefore.responses.length;
+	const isolatedReportBoundary = isolatedBefore.reports;
+	await dragFrom(isolatedDragPoint, 20, 0);
+	await sleep(REPORT_IDLE_SETTLE_MS + RESPONSE_DELAY_MS * 2);
+
+	const isolatedAfterState = await pageState();
+	const isolatedAfter = isolatedAfterState.perf;
+	const isolatedDrag = isolatedAfterState.elements.find((element) => element.id === "drag");
+	const isolatedResponses = isolatedAfter.responses.slice(isolatedResponseBoundary);
+	const isolatedResponse = isolatedResponses[0];
+	check(
+		"the isolated trusted drag moves the ordinary rectangle locally",
+		Number.isFinite(isolatedDragXBefore) && isolatedDrag?.x > isolatedDragXBefore + 10,
+		`x ${isolatedDragXBefore ?? "missing"} -> ${isolatedDrag?.x ?? "missing"}`,
+	);
+	check(
+		"the isolated no-correction acknowledgement performs no full-scene reconciliation",
+		isolatedAfter.reports === isolatedReportBoundary + 1 &&
+			isolatedResponses.length === 1 &&
+			isolatedResponse?.requestFullReport === false &&
+			isolatedResponse.hasDocument === false &&
+			isolatedResponse.corrections === 0 &&
+			isolatedResponse.correctionUpserts === 0 &&
+			isolatedResponse.correctionDeletes === 0 &&
+			isolatedResponse.bytes * 20 < fullDocumentBytes &&
+			isolatedResponse.replacementsAfter === 0,
+		`${isolatedAfter.reports - isolatedReportBoundary} report(s), ` +
+			`${isolatedResponses.length} response(s), ` +
+			JSON.stringify(
+				isolatedResponse && {
+					full: isolatedResponse.requestFullReport,
+					document: isolatedResponse.hasDocument,
+					corrections: isolatedResponse.corrections,
+					bytes: isolatedResponse.bytes,
+					replacementsAfter: isolatedResponse.replacementsAfter,
+				},
+			),
+	);
+
 	// Drag once to start a report, then again while its response is deliberately
 	// withheld from the client. Both movements are trusted pointer input.
 	await frameElement("drag");
@@ -520,39 +583,15 @@ try {
 	await sleep(180);
 	const finalProbe = (await pageState()).perf;
 	const fsyncs = fsyncCount() - fsyncBefore;
-	// Responses are deliberately overlapped. A correction next to an ordinary
-	// acknowledgement can land inside that acknowledgement's 120 ms sample;
-	// isolated ordinary responses have no legitimate replacement to observe.
-	const isolatedNoCorrectionResponses = finalProbe.responses.filter(
-		(response, index, responses) => {
-			const correctionOverlapsSample = responses.some(
-				(candidate) =>
-					candidate.corrections > 0 &&
-					candidate.returnedAt >= response.returnedAt - 120 &&
-					candidate.returnedAt <= response.returnedAt + 120,
-			);
-			return (
-				response.corrections === 0 &&
-				response.replacementsAfter !== null &&
-				!correctionOverlapsSample &&
-				!(responses[index - 1]?.corrections > 0) &&
-				!(responses[index + 1]?.corrections > 0)
-			);
-		},
-	);
 	check(
 		"ordinary human acknowledgements are compact and never carry the full document",
 		finalProbe.responses.length >= 3 &&
-			finalProbe.responses.every((response) => !response.hasDocument) &&
+			finalProbe.responses.every(
+				(response) => !response.requestFullReport && !response.hasDocument,
+			) &&
 			Math.max(...finalProbe.responses.map((response) => response.bytes)) * 20 < fullDocumentBytes,
 		`${finalProbe.responses.length} responses, max ${Math.max(...finalProbe.responses.map((r) => r.bytes))} B ` +
 			`against ${fullDocumentBytes} B document`,
-	);
-	check(
-		"a no-correction acknowledgement performs no full-scene reconciliation",
-		isolatedNoCorrectionResponses.length > 0 &&
-			isolatedNoCorrectionResponses.every((response) => response.replacementsAfter === 0),
-		JSON.stringify(isolatedNoCorrectionResponses.map((response) => response.replacementsAfter)),
 	);
 	check(
 		"the _measured window contains human reports and no agent-origin write",
@@ -601,6 +640,8 @@ try {
 				)
 				.join("/")}; ` +
 			`sample ${JSON.stringify(finalProbe.responses.find((response) => response.correctionDiff.length)?.correctionDiff ?? [])}; ` +
+			`replacement samples ${finalProbe.responses.map((response) => response.replacementsAfter).join("/")}; ` +
+			`${finalProbe.replacements} total replacements; ` +
 			`JSON ${finalProbe.responses.map((response) => response.parseMs.toFixed(2)).join("/")} ms; ` +
 			`${fsyncs} fsyncs; frame median ${median.toFixed(1)} ms`,
 	);
