@@ -10,11 +10,19 @@ import { fileURLToPath } from "node:url";
 const moduleFile = fileURLToPath(import.meta.url);
 const moduleDir = dirname(moduleFile);
 const repoRoot = join(moduleDir, "..");
-const serverPath = join(repoRoot, "src", "server.ts");
+const excalidrawCssPath = join(
+	repoRoot,
+	"node_modules",
+	"@excalidraw",
+	"excalidraw",
+	"dist",
+	"prod",
+	"index.css",
+);
 // The bun running this file, which is also what `canvas start` spawns (ADR 0014).
 const runtime = process.execPath;
 const runtimeName = basename(runtime).toLowerCase();
-const runtimeArgs = [serverPath];
+let runtimeArgs;
 const port = Number(process.env.PORT || 32000 + Math.floor(Math.random() * 2000));
 const startupTimeoutMs = 5000;
 const duplicateExitTimeoutMs = 2500;
@@ -22,6 +30,7 @@ const duplicateExitTimeoutMs = 2500;
 // control in the bundle the canvas is meant to serve (TASK-058).
 const staleProbe = "check-local-bind-stale-server.js";
 const frontendProbe = "check-local-bind-frontend.js";
+const hiddenFrontendProbe = ".check-local-bind-hidden.js";
 
 // A vault of its own, never the one on this machine: a canvas writes into the
 // vault it is given, and these ones are started to be killed.
@@ -83,10 +92,27 @@ async function fetchStatus(url, timeoutMs = 1000) {
 	}
 }
 
-// Plant one file in dist/ and one in dist/frontend/, so the next two requests
+async function assertExcalidrawStylesheet() {
+	const response = await fetch(`http://127.0.0.1:${port}/assets/excalidraw.css`);
+	const actual = Buffer.from(await response.arrayBuffer());
+	const expected = fs.readFileSync(excalidrawCssPath);
+	const contentType = response.headers.get("content-type") ?? "";
+	const isCss = /^text\/css(?:;|$)/i.test(contentType);
+
+	if (response.status !== 200 || !isCss || !actual.equals(expected)) {
+		throw new Error(
+			"Excalidraw stylesheet did not survive a dot-prefixed checkout path: " +
+				`wanted status 200, text/css, and ${expected.length} installed bytes; got ` +
+				`${response.status}, ${contentType || "no content type"}, and ${actual.length} bytes.`,
+		);
+	}
+}
+
+// Plant one file in dist/ and two in dist/frontend/, so the next three requests
 // tell apart "the canvas serves the frontend bundle" from "the canvas serves
-// whatever is in dist". Returns what to delete afterwards, deepest first, which
-// includes any directory this had to make.
+// whatever is in dist", and prove the frontend mount still denies dotfiles.
+// Returns what to delete afterwards, deepest first, which includes any directory
+// this had to make.
 function plantStaticProbes() {
 	const planted = [];
 	const makeDir = (dir) => {
@@ -107,6 +133,7 @@ function plantStaticProbes() {
 	const dist = join(repoRoot, "dist");
 	write(dist, staleProbe);
 	write(join(dist, "frontend"), frontendProbe);
+	write(join(dist, "frontend"), hiddenFrontendProbe);
 
 	return () => {
 		for (const entry of planted) {
@@ -165,6 +192,7 @@ async function killChild(child) {
 	}
 }
 
+let checkoutAliasRoot;
 let first;
 let second;
 let bindAll;
@@ -172,10 +200,19 @@ let removeStaticProbes;
 let noVault;
 
 try {
+	checkoutAliasRoot = mkdtempSync(join(tmpdir(), "archboard-bind-checkout-"));
+	const hiddenCheckoutParent = join(checkoutAliasRoot, ".checkout");
+	const hiddenRepoRoot = join(hiddenCheckoutParent, "archboard");
+	fs.mkdirSync(hiddenCheckoutParent);
+	fs.symlinkSync(repoRoot, hiddenRepoRoot, "dir");
+	const serverPath = join(hiddenRepoRoot, "src", "server.ts");
+	runtimeArgs = ["--preserve-symlinks", "--preserve-symlinks-main", serverPath];
+
 	first = spawnCanvas();
 	const firstOutput = collectOutput(first);
 
 	await waitForHealth(`http://127.0.0.1:${port}/health`, startupTimeoutMs, first, firstOutput);
+	await assertExcalidrawStylesheet();
 
 	if (await endpointResponds(`http://[::1]:${port}/health`)) {
 		throw new Error("Default canvas server should not listen on IPv6 loopback.");
@@ -200,8 +237,13 @@ try {
 		);
 	}
 
-	removeStaticProbes();
-	removeStaticProbes = undefined;
+	const hiddenStatus = await fetchStatus(`http://127.0.0.1:${port}/${hiddenFrontendProbe}`);
+	if (hiddenStatus !== 404) {
+		throw new Error(
+			`A dotfile in dist/frontend answered ${hiddenStatus}, not 404. ` +
+				"The canvas is exposing hidden files from the frontend bundle.",
+		);
+	}
 
 	second = spawnCanvas();
 	const secondOutput = collectOutput(second);
@@ -289,9 +331,9 @@ try {
 
 	console.log(
 		`Local bind check passed on port ${port} using ${runtimeName}: ` +
-			"default bind is IPv4 loopback only, only dist/frontend is served, duplicate startup " +
-			"fails, HOST=:: is guarded, and with no vault both the server and the CLI refuse " +
-			"and say how to get one.",
+			"default bind is IPv4 loopback only, only non-hidden files in dist/frontend are served, " +
+			"duplicate startup fails, HOST=:: is guarded, and with no vault both the server and the " +
+			"CLI refuse and say how to get one.",
 	);
 
 	await killChild(first);
@@ -305,11 +347,13 @@ try {
 		console.error(bindAllOutput());
 	}
 } catch (error) {
-	if (removeStaticProbes) removeStaticProbes();
 	if (noVault) await killChild(noVault);
 	if (bindAll) await killChild(bindAll);
 	if (second) await killChild(second);
 	if (first) await killChild(first);
 	console.error(error instanceof Error ? error.message : String(error));
-	process.exit(1);
+	process.exitCode = 1;
+} finally {
+	if (removeStaticProbes) removeStaticProbes();
+	if (checkoutAliasRoot) fs.rmSync(checkoutAliasRoot, { recursive: true, force: true });
 }
