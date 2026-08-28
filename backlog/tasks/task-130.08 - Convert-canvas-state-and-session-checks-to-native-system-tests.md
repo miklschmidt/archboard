@@ -1,11 +1,11 @@
 ---
 id: TASK-130.08
 title: Convert canvas state and session checks to native system tests
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:04'
-updated_date: '2026-08-28 22:37'
+updated_date: '2026-08-28 22:43'
 labels: []
 dependencies:
   - TASK-130.01
@@ -36,13 +36,13 @@ Reuse the completed TASK-086 lifecycle only where a test owns the same canvas pr
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 check-branch-compare, check-changes, check-doing, check-hot-reload, check-side-by-side, check-staleness, and check-version are replaced by typed native system tests grouped by public behavior.
-- [ ] #2 Change-feed tests preserve ordering, cursor behavior, injection opt-in, loopback refusal, configured task routing, and the rule that an agent never receives its own injected drawing.
-- [ ] #3 Doing and version tests preserve write-boundary narration requirements, real board versions, single stale refusal, actionable conflict output, and unchanged note bytes on refusal.
-- [ ] #4 Hot-reload tests preserve kept state, deliberate canary failure, terminal and tab reporting, pane registrations, socket count, feed cursor, and the one unsaved-board exception.
-- [ ] #5 Branch and side-by-side tests preserve board identity, variant routing, pane identity, operation order, exact compare results, and unchanged unrelated boards.
-- [ ] #6 Owned canvas processes use the TASK-086 lifecycle; every test restores environment state and leaves no process, listener, socket, port, vault, or temporary branch on success or failure.
-- [ ] #7 Every test source file is at most 500 lines and representative state-ordering, reload, stale-write, injection, and variant-routing regressions fail the native coverage before legacy deletion.
+- [x] #1 check-branch-compare, check-changes, check-doing, check-hot-reload, check-side-by-side, check-staleness, and check-version are replaced by typed native system tests grouped by public behavior.
+- [x] #2 Change-feed tests preserve ordering, cursor behavior, injection opt-in, loopback refusal, configured task routing, and the rule that an agent never receives its own injected drawing.
+- [x] #3 Doing and version tests preserve write-boundary narration requirements, real board versions, single stale refusal, actionable conflict output, and unchanged note bytes on refusal.
+- [x] #4 Hot-reload tests preserve kept state, deliberate canary failure, terminal and tab reporting, pane registrations, socket count, feed cursor, and the one unsaved-board exception.
+- [x] #5 Branch and side-by-side tests preserve board identity, variant routing, pane identity, operation order, exact compare results, and unchanged unrelated boards.
+- [x] #6 Owned canvas processes use the TASK-086 lifecycle; every test restores environment state and leaves no process, listener, socket, port, vault, or temporary branch on success or failure.
+- [x] #7 Every test source file is at most 500 lines and representative state-ordering, reload, stale-write, injection, and variant-routing regressions fail the native coverage before legacy deletion.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -161,4 +161,12 @@ Step 12a final hot cleanup remediation on reviewed HEAD 549f6ab36ff63aae5726bbaf
 TDD cleanup evidence: the deliberate pre-parse red changed only the expected start status to 1. The owner ran 3 pass/1 fail/61 expectations, failing on received status 0 before JSON parsing; afterward there were zero archboard-plain-reload roots and zero checkout canvas processes, proving stop could not be bypassed before plainPid assignment. Restoring the expected status to 0 produced the green owner. The focused non-mutating startup cleanup cases passed 2/0/10. Final full hot passed 4/0/67. Independent outer audits matched all three source SHA-256 hashes and bigint mtimes exactly before/after: server ebfb043e287f2cc6991d2ec065eb69b6fcdc4678fe68d46d8012968dbaca3d50 at 2026-08-28 22:23:21.106713096 +0200; board-store c87932b696f40356c3f5021be1ff6a11494b61620e133fa25a7530835a3c3cbe at .103595295; application ebfbaeb584b49e8ab0e6949f424f6309057dce2f4ac820a955f2e572f55c67c7 at .107165248. No new hot/plain root or canvas process remained; two untouched archboard-hot roots predate the run at 2026-08-21 and are unrelated retained residue.
 
 Exact Step 8 non-browser sequence passed: five module owners 23/0/92 under an empty owned sentinel; combined system owners 12/0/269; injection alone 4/0/41; board-version-client alone 1/0/23; hot alone 4/0/67 with exact byte/mtime audit. Real inventory passed 11/0/11 and reaches every native test once. type-check, lint, fmt:check, and git diff --check pass. The initial final type-check exposed callback narrowing of optional plainPid; the already-guarded one-line dead-PID assertion now uses a TypeScript non-null assertion with no runtime change. No browser/full lane ran. Product, dependencies, package, eval, completion contract, and deletion scope are unchanged. Task remains In Progress, @codex, 0/7 AC checked, finalSummary null.
+
+Parent integration at main commits 25abeef, 9388ba5, 2c2aa8e, and 950ef5f. Final main verification passed test:changes (21 tests/103 expectations across isolated processes), test:doing (2/64), test:branch (3/104), test:side-by-side (1/44), test:staleness (2/27), test:version (11/83 across isolated processes), test:hot alone (4/67), inventory (11/11), type-check, lint, fmt:check, git diff --check, and an empty owned sentinel audit. Independent fixed-range Standards and Spec review was REVIEW_CLEAN. Preserve the browser evidence accurately: the sole full run passed every TASK-130.08/static/native lane and the first three serial headless browser lanes, then had one late pre-existing test:live-session 200 after Take back control; an independently authorized clean-BASE isolated test:live-session run passed all 42 cycles and returned exact 409 CLAIM_REVOKED. No relevant source changed, no second browser/full run was required by final review, and no defect task was created from the single non-reproduction.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replaced seven canvas-state/session predecessor scripts with typed module and black-box system owners, including isolated injection/version-client processes, exact eval/package cutover, failure-safe owned-canvas and hot-reload cleanup, byte/nanosecond restoration, and representative paired mutation parity. Verified on main with every remapped native lane, hot 4/67, exactly-once inventory 11/11, type-check, lint, formatting, diff checks, and independent REVIEW_CLEAN; the unrelated live-session anomaly and clean isolated 42-cycle diagnosis are retained in notes.
+<!-- SECTION:FINAL_SUMMARY:END -->
