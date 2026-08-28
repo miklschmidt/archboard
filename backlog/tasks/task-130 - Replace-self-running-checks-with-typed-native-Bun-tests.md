@@ -1,9 +1,11 @@
 ---
 id: TASK-130
 title: Replace self-running checks with typed native Bun tests
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-28 01:01'
+updated_date: '2026-08-28 04:19'
 labels: []
 dependencies: []
 references:
@@ -38,3 +40,9 @@ This parent tracks the complete migration. Child tasks are independently reviewa
 - [ ] #7 No existing byte, JSON, PNG, stdout, stderr, exit-status, timing-diagnostic, one-write, fixed-point, or human-edit contract is weakened to complete the migration.
 - [ ] #8 bun run check passes from a clean checkout, and docs/agents/test-suite.md describes the resulting native test lanes and their constraints.
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Execution started after the preceding backlog batch completed. Work will follow the recorded dependency graph: TASK-130.01 first; independent migration waves after its enforcement foundation; TASK-130.05 after geometry migration; TASK-130.10 after board/state/process migrations; TASK-130.11 last. TASK-129 remains separate from the migration and follows the native board-inspection coverage so product behavior is not mixed into a test-framework conversion.
+<!-- SECTION:NOTES:END -->
