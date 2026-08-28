@@ -166,20 +166,30 @@ describe("CLI resource cleanup", () => {
 
 	test("awaits a verified canvas after an assertion failure", async () => {
 		let root = "";
+		let vault = "";
+		let registry = "";
 		let base = "";
+		let fixture: ReturnType<typeof createRepositoryFixture> | undefined;
 		let canvas: OwnedCanvas | undefined;
+		let fixtureRegistered = false;
+		let canvasDisposerRegistered = false;
 		let verifiedRunning = false;
 		let intended: unknown;
 		try {
 			await using resources = new AsyncDisposableStack();
-			const fixture = resources.use(createRepositoryFixture());
-			root = fixture.root;
+			const acquiredFixture = resources.use(createRepositoryFixture());
+			fixture = acquiredFixture;
+			root = acquiredFixture.root;
+			vault = acquiredFixture.vault;
+			registry = acquiredFixture.registry;
+			fixtureRegistered = true;
 			canvas = await startOwnedCanvas({
 				serverPath: join(checkoutRoot, "src/server.ts"),
-				vault: fixture.vault,
-				env: fixture.serverEnvironment,
+				vault: acquiredFixture.vault,
+				env: acquiredFixture.serverEnvironment,
 			});
 			resources.defer(() => canvas!.dispose());
+			canvasDisposerRegistered = true;
 			base = canvas.base;
 			await canvas.assertRunning();
 			verifiedRunning = true;
@@ -187,27 +197,49 @@ describe("CLI resource cleanup", () => {
 		} catch (error) {
 			intended = error;
 		}
-		expect(verifiedRunning).toBeTrue();
 		expect(intended).toBeInstanceOf(Error);
 		const intendedError = intended as Error;
 		expect(intendedError.message).toContain('Expected: "intended assertion failure"');
 		expect(intendedError.message).toContain('Received: "running canvas"');
+		expect(verifiedRunning).toBeTrue();
+		expect(fixtureRegistered).toBeTrue();
+		expect(canvasDisposerRegistered).toBeTrue();
+		if (!fixture) throw new Error("Verified canvas fixture was not retained.");
 		if (!canvas) throw new Error("Verified canvas handle was not retained.");
+		expect(root.length).toBeGreaterThan(0);
+		expect(vault.length).toBeGreaterThan(0);
+		expect(registry.length).toBeGreaterThan(0);
+		expect(base.length).toBeGreaterThan(0);
+		expect(root).toBe(fixture.root);
+		expect(vault).toBe(fixture.vault);
+		expect(registry).toBe(fixture.registry);
 		expect(base).toBe(canvas.base);
+		expect(canvas.vault).toBe(vault);
 		expect(existsSync(root)).toBeFalse();
-		let listenerStopped = false;
+		expect(existsSync(vault)).toBeFalse();
+		expect(existsSync(registry)).toBeFalse();
+		let listenerError: unknown;
 		try {
 			await fetch(`${base}/health`);
-		} catch {
-			listenerStopped = true;
+		} catch (error) {
+			listenerError = error;
 		}
-		expect(listenerStopped).toBeTrue();
-		let childStopped = false;
+		expect(listenerError).toBeInstanceOf(TypeError);
+		const refusal = listenerError as Error & { code?: string; errno?: number; path?: string };
+		expect(refusal.code).toBe("ConnectionRefused");
+		expect(refusal.errno).toBe(0);
+		expect(refusal.path).toBe(`${base}/health`);
+		expect(refusal.message).toBe("Unable to connect. Is the computer able to access the url?");
+		let childError: unknown;
 		try {
-			await canvas.assertRunning();
-		} catch {
-			childStopped = true;
+			await canvas.assertRunning(intendedError);
+		} catch (error) {
+			childError = error;
 		}
-		expect(childStopped).toBeTrue();
+		expect(childError).toBeInstanceOf(Error);
+		const death = childError as Error & { code?: string };
+		expect(death.code).toBe("CANVAS_PROCESS_DIED");
+		expect(death.message).toBe("Owned canvas pid unknown died (has no live generation).");
+		expect(death.cause).toBe(intendedError);
 	}, 30_000);
 });
