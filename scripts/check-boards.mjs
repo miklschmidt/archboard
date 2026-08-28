@@ -23,10 +23,94 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { WebSocket } from "ws";
+import { startCanvasTestProcess } from "./lib/canvas-test-process.mjs";
 import { withDoing } from "./lib/doing.mjs";
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const src = (p) => path.join(repoRoot, "src", p);
+
+if (process.env.ARCHBOARD_LIFECYCLE_SERVER === "early-death") {
+	let answered = false;
+	Bun.serve({
+		hostname: "127.0.0.1",
+		port: Number(process.env.PORT),
+		fetch(request) {
+			if (new URL(request.url).pathname !== "/health")
+				return new Response("not found", { status: 404 });
+			if (!answered) {
+				answered = true;
+				console.error("intentional early canvas death");
+				setTimeout(() => process.exit(23), 25);
+			}
+			return Response.json({ pid: process.pid });
+		},
+	});
+	await new Promise(() => {});
+}
+
+const lifecycleChildMode = process.env.ARCHBOARD_LIFECYCLE_CHILD;
+if (lifecycleChildMode) {
+	const childVault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-"));
+	const childPort = Number(process.env.ARCHBOARD_LIFECYCLE_PORT);
+	let owned;
+	try {
+		owned = await startCanvasTestProcess({
+			serverPath:
+				lifecycleChildMode === "early-death" ? fileURLToPath(import.meta.url) : src("server.ts"),
+			port: childPort,
+			vault: childVault,
+			...(lifecycleChildMode === "early-death"
+				? { env: { ARCHBOARD_LIFECYCLE_SERVER: "early-death" } }
+				: {}),
+		});
+		console.log(
+			JSON.stringify({
+				marker: "owned-canvas",
+				mode: lifecycleChildMode,
+				pid: owned.pid,
+				vault: childVault,
+				base: owned.base,
+			}),
+		);
+
+		if (lifecycleChildMode === "interrupt") await new Promise(() => {});
+		if (lifecycleChildMode === "normal") await Promise.all([owned.dispose(), owned.dispose()]);
+		if (lifecycleChildMode === "failure") {
+			let failed = false;
+			try {
+				await fetch("http://127.0.0.1:1/forced-fetch-failure");
+			} catch {
+				failed = true;
+			} finally {
+				await owned.dispose();
+			}
+			if (!failed) throw new Error("The lifecycle failure probe did not fail its fetch.");
+		}
+		if (lifecycleChildMode === "early-death") {
+			await new Promise((resolve) => setTimeout(resolve, 100));
+			let reported = "";
+			try {
+				owned.assertRunning();
+			} catch (error) {
+				reported = error.message;
+			}
+			if (
+				!/CANVAS_PROCESS_DIED|died/.test(reported) ||
+				!/intentional early canvas death/.test(reported)
+			) {
+				throw new Error(`Early death was not reported with stderr: ${reported}`);
+			}
+			console.log(JSON.stringify({ marker: "early-death", reported }));
+		}
+		await owned.dispose();
+		process.exit(0);
+	} catch (error) {
+		if (owned) await owned.dispose();
+		else fs.rmSync(childVault, { recursive: true, force: true });
+		console.error(error.stack ?? error.message);
+		process.exit(1);
+	}
+}
 
 const pane = (clientId, x, board, extra = {}) => ({
 	clientId,
@@ -63,15 +147,6 @@ const refusal = (read) => {
 	}
 };
 
-// The throwaway vault, made before anything is imported: a board is a note now
-// (ADR 0015), so even the in-process checks below need somewhere for one to be,
-// and `src/runtime/engine/config.ts` reads ARCHBOARD_VAULT once, at import.
-const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-boards-"));
-process.env.ARCHBOARD_VAULT = vault;
-
-const { labelTextIdFor } = await import(src("runtime/engine/labels.ts"));
-const { inspectBoard } = await import(src("runtime/board-inspection/index.ts"));
-
 let failures = 0;
 const check = (label, cond, extra = "") => {
 	if (!cond) failures += 1;
@@ -86,6 +161,106 @@ const waitForSeen = async (paneState, start, type) => {
 	}
 	return null;
 };
+
+const pidExists = (pid) => {
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch {
+		return false;
+	}
+};
+
+const listenerAnswers = async (base) => {
+	try {
+		await fetch(`${base}/health`, { signal: AbortSignal.timeout(250) });
+		return true;
+	} catch {
+		return false;
+	}
+};
+
+const runLifecycleChild = async (mode) => {
+	const port = 37000 + Math.floor(Math.random() * 12000);
+	const child = spawn(process.execPath, [fileURLToPath(import.meta.url)], {
+		env: {
+			...process.env,
+			ARCHBOARD_LIFECYCLE_CHILD: mode,
+			ARCHBOARD_LIFECYCLE_PORT: String(port),
+		},
+		stdio: ["ignore", "pipe", "pipe"],
+	});
+	let stdout = "";
+	let stderr = "";
+	let interrupted = false;
+	child.stdout.on("data", (chunk) => {
+		stdout += chunk.toString();
+		if (mode === "interrupt" && !interrupted && stdout.includes('"marker":"owned-canvas"')) {
+			interrupted = true;
+			child.kill("SIGINT");
+		}
+	});
+	child.stderr.on("data", (chunk) => {
+		stderr += chunk.toString();
+	});
+	const code = await new Promise((resolve) => child.once("exit", resolve));
+	const records = stdout
+		.trim()
+		.split("\n")
+		.filter(Boolean)
+		.map((line) => JSON.parse(line));
+	return {
+		code,
+		stderr,
+		records,
+		owned: records.find((record) => record.marker === "owned-canvas"),
+	};
+};
+
+for (const mode of ["normal", "failure", "interrupt", "early-death"]) {
+	const result = await runLifecycleChild(mode);
+	const expectedCode = mode === "interrupt" ? 130 : 0;
+	check(
+		`owned canvas cleanup survives ${mode}`,
+		result.code === expectedCode && Boolean(result.owned),
+		`exit ${result.code}; ${result.stderr.trim()}`,
+	);
+	check(
+		"  leaving no child, listener or temporary vault",
+		Boolean(result.owned) &&
+			!pidExists(result.owned.pid) &&
+			!(await listenerAnswers(result.owned.base)) &&
+			!fs.existsSync(result.owned.vault),
+		JSON.stringify(result.owned),
+	);
+	if (mode === "early-death") {
+		check(
+			"  and early death is named with the canvas stderr",
+			result.records.some(
+				(record) =>
+					record.marker === "early-death" &&
+					/died/.test(record.reported) &&
+					/intentional early canvas death/.test(record.reported),
+			),
+			result.stderr.trim(),
+		);
+	}
+}
+
+if (process.argv.includes("--lifecycle-only")) {
+	if (failures > 0) process.exit(1);
+	console.log("\ncanvas lifecycle: all checks passed.");
+	process.exit(0);
+}
+
+// The throwaway vault, made before anything is imported: a board is a note now
+// (ADR 0015), so even the in-process checks below need somewhere for one to be,
+// and `src/runtime/engine/config.ts` reads ARCHBOARD_VAULT once, at import.
+const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-boards-"));
+process.env.ARCHBOARD_VAULT = vault;
+
+const { labelTextIdFor } = await import(src("runtime/engine/labels.ts"));
+const { inspectBoard } = await import(src("runtime/board-inspection/index.ts"));
 
 // ---------------------------------------------------------------------------
 // The rules, on their own
@@ -579,36 +754,29 @@ const { readBoardFile, readBoardInspectionSnapshot, readNote } = await import(
 // A fixed port made every agent working on this repo serialise on it.
 const PORT = Number(process.env.PORT || 33000 + Math.floor(Math.random() * 2000));
 const base = `http://127.0.0.1:${PORT}`;
-
-const server = spawn(process.execPath, [src("server.ts")], {
-	env: {
-		...process.env,
-		PORT: String(PORT),
-		HOST: "127.0.0.1",
-		ARCHBOARD_VAULT: vault,
-		LOG_LEVEL: "error",
-	},
-	stdio: ["ignore", "ignore", "pipe"],
-});
-let serverStderr = "";
-server.stderr.on("data", (chunk) => {
-	serverStderr += chunk.toString();
-});
+let serverCanvas;
 
 const api = async (method, url, body) => {
 	// Every write says what it is doing, once for the whole check (TASK-095,
 	// scripts/lib/doing.mjs). The refusal itself is proved in check-doing.mjs.
 	url = withDoing(url, method, "checking that every call names its board");
-	const response = await fetch(`${base}${url}`, {
-		method,
-		...(body === undefined
-			? {}
-			: {
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(body),
-				}),
-	});
-	return { status: response.status, body: await response.json().catch(() => null) };
+	serverCanvas?.assertRunning();
+	try {
+		const response = await fetch(`${base}${url}`, {
+			method,
+			...(body === undefined
+				? {}
+				: {
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify(body),
+					}),
+		});
+		serverCanvas?.assertRunning();
+		return { status: response.status, body: await response.json().catch(() => null) };
+	} catch (error) {
+		serverCanvas?.assertRunning(error);
+		throw error;
+	}
 };
 
 // The shell, in miniature.
@@ -674,14 +842,7 @@ async function shellClose(paneToClose) {
 }
 
 try {
-	for (let i = 0; i < 100; i++) {
-		try {
-			await fetch(`${base}/health`);
-			break;
-		} catch {
-			await sleep(100);
-		}
-	}
+	serverCanvas = await startCanvasTestProcess({ serverPath: src("server.ts"), port: PORT, vault });
 
 	// Zod receives null here because that is exactly what JSON.stringify does
 	// to a non-finite number. The server must name the field, not merely say the
@@ -1730,8 +1891,91 @@ try {
 	// the branch took current off screen at the exact moment it became worth
 	// looking at, and the skill had to teach a line that put it back.
 
+	await api("POST", "/api/boards/new", { board: "save-source" });
+	await api("POST", "/api/elements?board=save-source", {
+		id: "same",
+		type: "rectangle",
+		x: 10,
+		y: 10,
+		width: 80,
+		height: 40,
+	});
+	await api("POST", "/api/elements?board=save-source", {
+		id: "created",
+		type: "ellipse",
+		x: 120,
+		y: 10,
+		width: 60,
+		height: 60,
+	});
+	await api("POST", "/api/boards/save?board=save-source");
+	await api("POST", "/api/boards/new", { board: "save-destination" });
+	await api("POST", "/api/elements?board=save-destination", {
+		id: "same",
+		type: "rectangle",
+		x: 30,
+		y: 30,
+		width: 40,
+		height: 40,
+	});
+	await api("POST", "/api/elements?board=save-destination", {
+		id: "deleted",
+		type: "diamond",
+		x: 220,
+		y: 10,
+		width: 60,
+		height: 60,
+	});
+	await api("POST", "/api/boards/save?board=save-destination");
+
 	const one = await openPane("p-one", 0, { primary: true, focused: true });
 	const two = await openPane("p-two", 640);
+	await api("POST", "/api/boards/open", { board: "save-source", pane: "left" });
+	await sleep(80);
+	await one.adopt("save-source");
+	await api("POST", "/api/boards/open", { board: "save-destination", pane: "right" });
+	await sleep(80);
+	await two.adopt("save-destination");
+	const sourceBeforeReplacement = one.since();
+	const destinationBeforeReplacement = two.since();
+	const replaced = await api("POST", "/api/boards/save?board=save-source", {
+		name: "save-destination",
+	});
+	const replacement = await waitForSeen(two, destinationBeforeReplacement, "elements_changed");
+	const persistedReplacement = await api("GET", "/api/elements?board=save-destination");
+	const replacementById = new Map(
+		(persistedReplacement.body?.elements ?? []).map((element) => [element.id, element]),
+	);
+	check(
+		"save-as refreshes a pane already holding the destination through elements_changed",
+		replaced.status === 200 && replacement?.board === "save-destination",
+		JSON.stringify({ status: replaced.status, message: replacement }),
+	);
+	check(
+		"  with the exact created, updated and deleted replacement",
+		JSON.stringify(replacement?.created) === JSON.stringify([replacementById.get("created")]) &&
+			JSON.stringify(replacement?.updated) === JSON.stringify([replacementById.get("same")]) &&
+			JSON.stringify(replacement?.deleted) === JSON.stringify(["deleted"]),
+		JSON.stringify({
+			created: replacement?.created?.map((element) => element.id),
+			updated: replacement?.updated?.map((element) => element.id),
+			deleted: replacement?.deleted,
+		}),
+	);
+	check(
+		"  while the source pane stays on the source board",
+		one.board() === "save-source" &&
+			one.seen
+				.slice(sourceBeforeReplacement)
+				.every((message) => message.type !== "board_switched") &&
+			replaced.body?.panes?.moved?.length === 0,
+		JSON.stringify({
+			board: one.board(),
+			messages: one.seen.slice(sourceBeforeReplacement).map((message) => message.type),
+			panes: replaced.body?.panes,
+		}),
+	);
+
 	await api("POST", "/api/boards/open", { board: "ledger", pane: "left" });
 	await sleep(80);
 	await one.adopt("ledger");
@@ -2281,98 +2525,74 @@ try {
 	// what a restart does and the canvas above is holding the rest of the file.
 
 	const scratchVault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-scratch-"));
-	let scratchPort = PORT + 137;
-	let scratchBase = `http://127.0.0.1:${scratchPort}`;
+	const scratchPort = PORT + 137;
+	const scratchBase = `http://127.0.0.1:${scratchPort}`;
 	const scratchNote = path.join(scratchVault, ".archboard", "scratch.excalidraw.md");
-
-	// Started twice, so "is it up" has to mean "is OUR canvas up". A port this
-	// did not pick is a port something else may be holding, and a canvas that
-	// answers with somebody else's pid would make every check below read as a
-	// scratch bug. The port moves rather than the check failing.
-	const startScratchCanvas = async () => {
-		for (let attempt = 0; attempt < 5; attempt++) {
-			const child = spawn(process.execPath, [src("server.ts")], {
-				env: {
-					...process.env,
-					PORT: String(scratchPort),
-					HOST: "127.0.0.1",
-					ARCHBOARD_VAULT: scratchVault,
-					LOG_LEVEL: "error",
-				},
-				stdio: ["ignore", "ignore", "ignore"],
-			});
-			for (let i = 0; i < 150; i++) {
-				try {
-					const health = await (await fetch(`${scratchBase}/health`)).json();
-					if (health?.pid === child.pid) return child;
-					break;
-				} catch {
-					await sleep(100);
-				}
-			}
-			child.kill("SIGKILL");
-			scratchPort += 1;
-			scratchBase = `http://127.0.0.1:${scratchPort}`;
-		}
-		throw new Error(
-			`no canvas of ours came up for the scratch checks (last port ${scratchPort - 1})`,
-		);
-	};
+	let scratchCanvas;
 	const scratchApi = async (method, url, body) => {
 		url = withDoing(url, method, "checking what happens to the board nobody named");
-		const response = await fetch(`${scratchBase}${url}`, {
-			method,
-			...(body === undefined
-				? {}
-				: { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
-		});
-		return { status: response.status, body: await response.json().catch(() => null) };
+		scratchCanvas?.assertRunning();
+		try {
+			const response = await fetch(`${scratchBase}${url}`, {
+				method,
+				...(body === undefined
+					? {}
+					: { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+			});
+			scratchCanvas?.assertRunning();
+			return { status: response.status, body: await response.json().catch(() => null) };
+		} catch (error) {
+			scratchCanvas?.assertRunning(error);
+			throw error;
+		}
 	};
 
-	fs.mkdirSync(path.dirname(scratchNote), { recursive: true });
-	const malformedScratch = renderBoardNote(
-		{
-			type: "excalidraw",
-			version: 2,
-			elements: [
-				{
-					id: "shlv",
-					type: "text",
-					x: 20,
-					y: 30,
-					text: "malformed scratch",
-					fontFamily: 2,
-					autoResize: true,
-				},
-			],
-			appState: {},
-			files: {},
-		},
-		null,
-		makeIdentity({ board: "scratch" }),
-	);
-	fs.writeFileSync(scratchNote, malformedScratch);
-	let scratchCanvas = await startScratchCanvas();
-	const malformedScratchRead = await scratchApi("GET", "/api/elements?board=scratch");
-	check(
-		"a malformed persisted scratch note does not prevent server startup",
-		malformedScratchRead.status === 400,
-		malformedScratchRead.body?.error,
-	);
-	check(
-		"  and the refusal names the malformed scratch element and fields",
-		/shlv \(text\): width, height/.test(malformedScratchRead.body?.error ?? ""),
-		malformedScratchRead.body?.error,
-	);
-	check(
-		"  without replacing or repairing the scratch note",
-		fs.readFileSync(scratchNote, "utf8") === malformedScratch,
-	);
-	scratchCanvas.kill("SIGTERM");
-	await new Promise((resolve) => scratchCanvas.once("exit", resolve));
-	fs.rmSync(scratchNote);
-	scratchCanvas = await startScratchCanvas();
 	try {
+		fs.mkdirSync(path.dirname(scratchNote), { recursive: true });
+		const malformedScratch = renderBoardNote(
+			{
+				type: "excalidraw",
+				version: 2,
+				elements: [
+					{
+						id: "shlv",
+						type: "text",
+						x: 20,
+						y: 30,
+						text: "malformed scratch",
+						fontFamily: 2,
+						autoResize: true,
+					},
+				],
+				appState: {},
+				files: {},
+			},
+			null,
+			makeIdentity({ board: "scratch" }),
+		);
+		fs.writeFileSync(scratchNote, malformedScratch);
+		scratchCanvas = await startCanvasTestProcess({
+			serverPath: src("server.ts"),
+			port: scratchPort,
+			vault: scratchVault,
+		});
+		const malformedScratchRead = await scratchApi("GET", "/api/elements?board=scratch");
+		check(
+			"a malformed persisted scratch note does not prevent server startup",
+			malformedScratchRead.status === 400,
+			malformedScratchRead.body?.error,
+		);
+		check(
+			"  and the refusal names the malformed scratch element and fields",
+			/shlv \(text\): width, height/.test(malformedScratchRead.body?.error ?? ""),
+			malformedScratchRead.body?.error,
+		);
+		check(
+			"  without replacing or repairing the scratch note",
+			fs.readFileSync(scratchNote, "utf8") === malformedScratch,
+		);
+		await scratchCanvas.restart({ whileStopped: () => fs.rmSync(scratchNote) });
+
 		const firstInfo = await scratchApi("GET", "/api/boards/info?board=scratch");
 		check(
 			"scratch keeps its own name and says where its note goes",
@@ -2416,9 +2636,7 @@ try {
 			JSON.stringify((listed.body?.open ?? []).map((b) => b.key)),
 		);
 
-		scratchCanvas.kill("SIGTERM");
-		await sleep(300);
-		scratchCanvas = await startScratchCanvas();
+		await scratchCanvas.restart();
 
 		const restartedContent = await scratchApi("GET", "/api/elements?board=scratch");
 		const restartedDrawing = (restartedContent.body?.elements ?? []).find(
@@ -2465,9 +2683,7 @@ try {
 		});
 		const beforeKill = await scratchApi("GET", "/api/elements?board=scratch");
 
-		scratchCanvas.kill("SIGKILL");
-		await sleep(300);
-		scratchCanvas = await startScratchCanvas();
+		await scratchCanvas.restart({ signal: "SIGKILL" });
 
 		const survivedScratch = await scratchApi("GET", "/api/elements?board=scratch");
 		check(
@@ -2911,9 +3127,7 @@ try {
 			await sleep(100);
 		}
 	} finally {
-		scratchCanvas.kill("SIGTERM");
-		await sleep(200);
-		fs.rmSync(scratchVault, { recursive: true, force: true });
+		await scratchCanvas?.dispose();
 	}
 
 	// --- the answer names the id the board holds (TASK-069, TASK-078) -------
@@ -3536,14 +3750,14 @@ try {
 		}
 	}
 } finally {
-	server.kill("SIGTERM");
-	await sleep(200);
-	fs.rmSync(vault, { recursive: true, force: true });
+	await serverCanvas?.dispose();
 }
 
 if (failures > 0) {
 	console.error(`\nboards: ${failures} check(s) failed.`);
-	if (serverStderr.trim()) console.error(serverStderr.trim().split("\n").slice(-10).join("\n"));
+	if (serverCanvas.stderr.trim()) {
+		console.error(serverCanvas.stderr.trim().split("\n").slice(-10).join("\n"));
+	}
 	process.exit(1);
 }
 console.log("\nboards: all checks passed.");

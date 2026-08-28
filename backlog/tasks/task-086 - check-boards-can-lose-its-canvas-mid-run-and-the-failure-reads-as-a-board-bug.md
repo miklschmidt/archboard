@@ -1,10 +1,11 @@
 ---
 id: TASK-086
 title: Own canvas test processes from verified startup through cleanup
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-21 09:01'
-updated_date: '2026-08-28 00:35'
+updated_date: '2026-08-28 00:50'
 labels: []
 dependencies: []
 references:
@@ -35,6 +36,15 @@ TASK-097 is folded into this task only where condition-based startup and teardow
 - [ ] #5 Only identical lifecycle duplication is migrated. Fixed waits unrelated to process startup or teardown remain outside this task.
 <!-- AC:END -->
 
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Add scripts/lib/canvas-test-process.mjs with one owned-canvas constructor. It takes ownership of a caller-seeded temporary vault and the child it spawns, verifies /health reports that child PID, captures stderr, records early exit, and exposes only the canvas address plus restart, liveness-check, and idempotent dispose operations. Restart and dispose wait for exit, use bounded SIGTERM then SIGKILL escalation against the recorded child only, and dispose removes the owned vault. Scoped SIGINT/SIGTERM and process-exit cleanup protect interrupted runs without introducing a general test framework.
+2. Replace both ad hoc server lifecycles in scripts/check-boards.mjs with that handle. Keep the scratch test's deliberate graceful and forced restarts, but route them through the owned handle. Make the existing HTTP helpers turn a recorded child exit into one process-death error containing stderr, instead of continuing with board assertions. Leave non-lifecycle waits and every other test process unchanged.
+3. Add a focused lifecycle proof inside check-boards.mjs, using a narrow child mode of the same script, that observes the owned PID and vault and then proves cleanup after normal completion, a forced request/assertion failure, and SIGINT interruption. Also prove a deliberately dead canvas reports its exit and stderr. The proof must verify the listener no longer answers and the vault path is gone.
+4. Run the lifecycle-only proof and bun run test:boards. Audit live PIDs/listeners and archboard test-vault paths after both success and an intentionally interrupted proof. Do not run the browser chain.
+<!-- SECTION:PLAN:END -->
+
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
@@ -47,4 +57,6 @@ That is a worse failure than two runs colliding. An orphan **answers `/health`**
 Whatever leaves them behind is the thing to find: a `finally` that does not run on an early throw, a SIGTERM the server does not act on, or a child not killed when the parent exits. Note that `check-boards` starts a *second* canvas for the scratch section, so one script can leak more than one.
 
 Raised to high: CI now runs all 23 suites on every push (TASK-082), on a shared runner, and an orphan that answers `/health` produces a red main nobody can reproduce locally.
+
+Implemented the approved owned-canvas lifecycle in scripts/lib/canvas-test-process.mjs and migrated both check-boards canvases. The helper now verifies health.pid against the spawned child, retains stderr and early-exit state, waits through graceful or forced restarts, escalates only its recorded child, shares concurrent disposal, and cleans up on SIGINT/SIGTERM. The narrow check-boards child modes prove normal completion, forced fetch failure, SIGINT, and early death with stderr. Focused lifecycle validation and test:boards pass; post-run PID, listener, and recent temporary-vault audits are clean.
 <!-- SECTION:NOTES:END -->
