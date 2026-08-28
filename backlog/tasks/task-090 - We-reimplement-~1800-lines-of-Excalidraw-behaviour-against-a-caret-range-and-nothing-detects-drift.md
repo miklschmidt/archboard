@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-21 13:36'
-updated_date: '2026-08-28 01:12'
+updated_date: '2026-08-28 01:21'
 labels: []
 dependencies: []
 references:
@@ -45,6 +45,10 @@ One important gap remains. The browser fixture covers agent-created centered bin
 5. Use one focused endpoint-comparison function for the real assertion and a pure negative control. Feed that same function a deliberately wrong server point two scene pixels to the right of the captured browser point and assert that it fails the 1.0 pixel gate. The negative control performs no API call, scene update, or note write.
 6. Correct docs/agents/test-suite.md to say that trusted browser pointer input computes the oracle while its report is held, and that a separate server-only agent move from identical geometry is the value compared. Retain the Excalidraw 0.18.1 pin, the 1.0 pixel policy, mismatch evidence, and the test:geometry then test:browser upgrade sequence.
 7. Keep src/runtime/engine/arrow-binding.ts and scripts/check-geometry.mjs unchanged. Validate with bun run type-check and bun run test:geometry, then request the serialized browser lane for bun run test:browser. Commit only scripts/check-fixed-point.mjs, docs/agents/test-suite.md, and the TASK-090 Backlog update. Leave TASK-090 In Progress with acceptance criteria unchecked for rereview.
+
+8. Correct only the fixture setup in scripts/check-fixed-point.mjs. After POST /api/viewport returns 200, mirror the proven check-human-edit-performance sequence by allowing the animated scrollToContent call to settle for 650 ms before reading Excalidraw app state. Keep the existing scene-to-screen calculation because it already matches pointOf: screenX = (sceneX + scrollX) * zoom + offsetLeft and screenY = (sceneY + scrollY) * zoom + offsetTop. Return the actual .excalidraw DOM rect with the point, and make the wait predicate require the drag start and its 40 by 30 pixel destination to fall inside that rect. Add a pre-drag check with the point, destination, rect, zoom, and framing response as failure evidence. Do not install the fetch gate or issue pointer input unless that check passes. Make no production, geometry-check, UI, or documentation change unless the resulting browser evidence requires another approved plan.
+
+9. Approved amendment to step 8: do not add the legacy 650 ms sleep or any timing constant. The existing waitFor poll directly observes settlement and returns only when the start and destination fit inside the live .excalidraw rectangle. The formula, pre-drag diagnostic, protected scope, and validation remain as recorded.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -55,4 +59,8 @@ Implemented the approved single-browser differential in scripts/check-fixed-poin
 Independent review rejected the first browser assertion at commit 96b8cb9. The agent PUT rerouted both human-node and human-arrow on the server, notificationDelta sent both, and Excalidraw updateScene installed that already-rerouted arrow. The observed zero-pixel separation therefore did not provide an independent browser calculation and does not satisfy AC #2. No production binding code changed. The revised plan gates the browser change-report request before it reaches the server, captures the endpoint produced by trusted Excalidraw pointer input, and compares it with an agent PUT on a separate server-only board seeded from identical pre-move geometry.
 
 Implemented the approved remediation: the fixed-point browser check now gates the human change report before the server, captures the endpoint produced by a trusted Excalidraw pointer drag, and compares it with an agent-only node move on an unopened board seeded from the same canonical geometry. The same 1.0 scene-pixel comparator rejects a purely in-memory endpoint shifted by 2 pixels. Production arrow binding, the geometry check, and UI remain unchanged. Non-browser validation passed at this revision: bun run type-check; bun run test:geometry (89 checks). test:browser is pending release of the serialized browser lane from TASK-096.
+
+Browser diagnosis at 2887c39: check-human-edit-performance frameElement waits 650 ms after the viewport response, then pointOf reads the app state. TASK-090 read immediately and its waitFor predicate accepted any finite nonnegative point. It therefore accepted stale point (1390,1184), outside the registered 650 by 529 canvas at (290,117). The coordinate formula is already identical to the proven helper. The smallest repair is to restore the 650 ms animation wait and require the computed drag path to be inside the actual .excalidraw DOM rect before installing the report gate or moving the pointer. No browser rerun or implementation edit has been made pending approval.
+
+Implemented the approved fixture-only correction without a sleep. The viewport poll now keeps observing Excalidraw app state until the existing 40 by 30 pixel drag fits inside the live .excalidraw DOM rectangle. A separate pre-drag assertion prints the viewport response, start, destination, rectangle, and zoom, and the fetch gate plus pointer input are conditional on that assertion. Non-browser validation passed: bun run type-check; bun run test:geometry (89 checks). Browser validation remains pending release of the serialized lane.
 <!-- SECTION:NOTES:END -->

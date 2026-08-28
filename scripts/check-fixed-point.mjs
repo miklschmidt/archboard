@@ -1461,10 +1461,13 @@ try {
           .find(candidate => candidate.id === 'human-node');
         if (!element) return { error: 'human-node is missing' };
         const zoom = app.state.zoom?.value ?? 1;
+        const rect = node.getBoundingClientRect();
         return {
           x: Math.round((element.x + element.width / 2 + app.state.scrollX) * zoom + app.state.offsetLeft),
           y: Math.round((element.y + element.height / 2 + app.state.scrollY) * zoom + app.state.offsetTop),
-          zoom
+          zoom,
+          rect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom,
+            width: rect.width, height: rect.height }
         };
       }
       fiber = fiber.return;
@@ -1472,10 +1475,37 @@ try {
     return { error: 'no Excalidraw app instance' };
   })()`),
 		(point) =>
-			Number.isFinite(point?.x) && Number.isFinite(point?.y) && point.x >= 0 && point.y >= 0,
+			Number.isFinite(point?.x) &&
+			Number.isFinite(point?.y) &&
+			point.x >= point?.rect?.left &&
+			point.y >= point?.rect?.top &&
+			point.x + 40 <= point?.rect?.right &&
+			point.y + 30 <= point?.rect?.bottom,
 		PANE_SETTLE_CAP_MS,
 	);
-	const reportGateInstalled = await evalInPage(`(() => {
+	const humanDragDestination = Number.isFinite(humanNodeScreenPoint?.x)
+		? { x: humanNodeScreenPoint.x + 40, y: humanNodeScreenPoint.y + 30 }
+		: null;
+	const humanDragInsideCanvas =
+		Number.isFinite(humanNodeScreenPoint?.x) &&
+		Number.isFinite(humanNodeScreenPoint?.y) &&
+		humanNodeScreenPoint.x >= humanNodeScreenPoint?.rect?.left &&
+		humanNodeScreenPoint.y >= humanNodeScreenPoint?.rect?.top &&
+		humanDragDestination.x <= humanNodeScreenPoint?.rect?.right &&
+		humanDragDestination.y <= humanNodeScreenPoint?.rect?.bottom;
+	check(
+		"the framed human-node drag stays inside the live Excalidraw canvas",
+		framedHumanNode.status === 200 && humanDragInsideCanvas,
+		JSON.stringify({
+			framedHumanNode,
+			start: humanNodeScreenPoint ? { x: humanNodeScreenPoint.x, y: humanNodeScreenPoint.y } : null,
+			destination: humanDragDestination,
+			rect: humanNodeScreenPoint?.rect ?? null,
+			zoom: humanNodeScreenPoint?.zoom ?? null,
+		}),
+	);
+	const reportGateInstalled = humanDragInsideCanvas
+		? await evalInPage(`(() => {
     if (window.__task090ReportGate) return { error: 'report gate already exists' };
     const gate = window.__task090ReportGate = {
       original: window.fetch,
@@ -1507,17 +1537,17 @@ try {
       });
     };
     return { installed: true };
-  })()`);
+	  })()`)
+		: { error: "the drag path is outside the Excalidraw canvas" };
 	check(
 		"the human node is framed and its one change report is held before the server",
 		framedHumanNode.status === 200 &&
 			reportGateInstalled?.installed === true &&
-			Number.isFinite(humanNodeScreenPoint?.x) &&
-			Number.isFinite(humanNodeScreenPoint?.y),
+			humanDragInsideCanvas,
 		JSON.stringify({ framedHumanNode, reportGateInstalled, humanNodeScreenPoint }),
 	);
 
-	if (Number.isFinite(humanNodeScreenPoint?.x) && Number.isFinite(humanNodeScreenPoint?.y)) {
+	if (humanDragInsideCanvas && reportGateInstalled?.installed === true) {
 		await browser([
 			"mouse",
 			"move",
