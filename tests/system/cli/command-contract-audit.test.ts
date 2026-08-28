@@ -67,6 +67,21 @@ const unconstrained = (schema: unknown): boolean => {
 	);
 };
 
+const bookkeepingFields = new Set(["success", "held"]);
+const meaningfulObjectBranches = (schema: unknown): boolean => {
+	if (!schema || typeof schema !== "object" || Array.isArray(schema)) return true;
+	const value = schema as Record<string, unknown>;
+	for (const keyword of ["anyOf", "oneOf"]) {
+		const branches = value[keyword];
+		if (Array.isArray(branches)) return branches.every(meaningfulObjectBranches);
+	}
+	if (Array.isArray(value.allOf)) return value.allOf.every(meaningfulObjectBranches);
+	if (value.type !== "object") return true;
+	return ((value.required as readonly string[] | undefined) ?? []).some(
+		(field) => !bookkeepingFields.has(field),
+	);
+};
+
 const visitTs = (directory: string): string[] =>
 	readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
 		const path = join(directory, entry.name);
@@ -170,6 +185,13 @@ describe("command contract audit", () => {
 	});
 
 	test("publishes constrained result and stage schemas", () => {
+		expect(
+			meaningfulObjectBranches({
+				type: "object",
+				properties: { held: { type: "object" } },
+				additionalProperties: {},
+			}),
+		).toBeFalse();
 		for (const contract of contracts) {
 			for (const stage of contract.input.stages) {
 				expect(stage.description.length, `${contract.name}:${stage.name}`).toBeGreaterThan(0);
@@ -178,9 +200,47 @@ describe("command contract audit", () => {
 			expect(new Set(contract.input.stages.map((stage) => stage.name)).size).toBe(
 				contract.input.stages.length,
 			);
+			const structured = contract.output.some((output) =>
+				["json", "file-receipt"].includes(output.mode),
+			);
+			const namespace = contract.output.every((output) =>
+				output.description.toLowerCase().includes("namespace refusal"),
+			);
+			if (structured && !namespace) {
+				expect(unconstrained(contract.result), contract.name).toBeFalse();
+				expect(meaningfulObjectBranches(contract.result), contract.name).toBeTrue();
+			} else expect(!structured || namespace, contract.name).toBeTrue();
 		}
 		for (const [path, fields] of [
 			["board info", ["success", "board", "identity", "elementCount", "version", "placeholder"]],
+			[
+				"board new",
+				[
+					"success",
+					"board",
+					"identity",
+					"elementCount",
+					"version",
+					"placeholder",
+					"created",
+					"saved",
+					"pane",
+				],
+			],
+			[
+				"board open",
+				[
+					"success",
+					"board",
+					"identity",
+					"elementCount",
+					"version",
+					"placeholder",
+					"source",
+					"pane",
+				],
+			],
+			["inject status", ["enabled", "armed", "socket", "target", "injected", "lastInjection"]],
 			["inject test", ["channel", "threadId", "text"]],
 		] as const) {
 			const schema = contracts.find((contract) => contract.name === path)?.result as
@@ -191,6 +251,47 @@ describe("command contract audit", () => {
 				path,
 			).toBe(true);
 		}
+		for (const path of ["board info", "board new", "board open"]) {
+			const schema = contracts.find((contract) => contract.name === path)?.result as
+				| { properties?: Readonly<Record<string, unknown>> }
+				| undefined;
+			expect(schema?.properties && "vaultBacked" in schema.properties, path).toBeFalse();
+		}
+		const paneBoard = (
+			contracts.find((contract) => contract.name === "pane open")?.result as
+				| { properties?: { board?: { required?: readonly string[] } } }
+				| undefined
+		)?.properties?.board;
+		expect(
+			["source", "version", "placeholder"].every((field) => paneBoard?.required?.includes(field)),
+		).toBeTrue();
+	});
+
+	test("retains update, viewport, and check asymmetries", () => {
+		const byName = new Map(registry.map((entry) => [entry.name, entry.contract]));
+		const update = new Map(
+			(byName.get("update")?.refusals ?? []).map((refusal) => [refusal.code, refusal.exit]),
+		);
+		expect(Object.fromEntries(update)).toEqual({
+			DOING_REQUIRED: 1,
+			BOARD_REQUIRED: 2,
+			CANVAS_UNREACHABLE: 3,
+			BOARD_HELD: 5,
+			BOARD_CONFLICT: 5,
+			BOARD_VERSION_CONFLICT: 5,
+			CLAIM_REVOKED: 5,
+		});
+		expect(
+			byName.get("viewport")?.refusals.some((refusal) => refusal.code === "BOARD_REQUIRED"),
+		).toBeFalse();
+		const check = byName.get("check");
+		expect(check?.prerequisites).toEqual(["board"]);
+		expect(check?.effects).toEqual(["local-read"]);
+		expect(check?.relationships).toEqual([]);
+		expect(check?.output.cases.map((output) => output.mode)).toEqual(["json", "text"]);
+		expect(check?.outcomes?.map(({ exit, stream }) => ({ exit, stream }))).toEqual(
+			[6, 7, 8].map((exit) => ({ exit, stream: "stdout-only" })),
+		);
 	});
 
 	test("keeps contract implementation and private artifact policy narrow", () => {
@@ -205,6 +306,53 @@ describe("command contract audit", () => {
 		for (const forbidden of ["exit:", "stream:", "presentation:", "description:", "held:"])
 			expect(execution).not.toContain(forbidden);
 		const sourceFiles = visitTs(join(checkoutRoot, "src"));
+		const familySources = sourceFiles
+			.filter(
+				(file) =>
+					relative(checkoutRoot, file).startsWith("src/cli/commands/") &&
+					relative(checkoutRoot, file) !== "src/cli/commands/run.ts",
+			)
+			.map((file) => [relative(checkoutRoot, file), readFileSync(file, "utf8")] as const);
+		expect(
+			familySources
+				.filter(([, source]) => /switch\s*\(\s*(?:action|op|command|subcommand)\s*\)/.test(source))
+				.map(([file]) => file),
+		).toEqual([]);
+		expect(
+			readdirSync(join(checkoutRoot, "src/cli/command-contract"), { withFileTypes: true })
+				.filter((entry) => entry.isFile() && /(?:test|testing|fixture)/i.test(entry.name))
+				.map((entry) => entry.name),
+		).toEqual([]);
+		expect(
+			sourceFiles
+				.filter((file) =>
+					relative(checkoutRoot, file).startsWith("src/cli/command-contract/tests/"),
+				)
+				.filter((file) =>
+					/processCommandHost|commandContractTestHost|\/lib\/host\.js/.test(
+						readFileSync(file, "utf8"),
+					),
+				)
+				.map((file) => relative(checkoutRoot, file)),
+		).toEqual([]);
+		expect(
+			familySources
+				.filter(([, source]) =>
+					/\b(?:parseArgs|printJson|requireBrowserClient)\s*\(|process\.(?:stdout|stderr)|argv\s*:\s*string\[\]/.test(
+						source,
+					),
+				)
+				.map(([file]) => file),
+		).toEqual([]);
+		expect(
+			sourceFiles
+				.filter((file) =>
+					/LegacyCommand|command-definitions|commands\/(?:args|util)\.js/.test(
+						readFileSync(file, "utf8"),
+					),
+				)
+				.map((file) => relative(checkoutRoot, file)),
+		).toEqual([]);
 		const commander = sourceFiles.filter((file) =>
 			/from ["']commander["']/.test(readFileSync(file, "utf8")),
 		);
@@ -218,5 +366,38 @@ describe("command contract audit", () => {
 			"src/cli/command-contract/testing.ts",
 		])
 			expect(existsSync(join(checkoutRoot, deleted)), deleted).toBe(false);
+		const sharedSchemas = readFileSync(
+			join(checkoutRoot, "src/cli/command-contract/schemas.ts"),
+			"utf8",
+		);
+		for (const schema of [
+			"ElementIdSchema",
+			"ServerElementSchema",
+			"BoardAddressSchema",
+			"BoardIdentityStateSchema",
+			"BoardFingerprintSchema",
+			"BoardRefusalSchema",
+			"HoldReportSchema",
+			"BoardWriteConflictSchema",
+			"PaneRefSchema",
+			"RepositoryIdentitySchema",
+			"CodeBindingSchema",
+			"SnapshotNameSchema",
+			"ChangeCursorSchema",
+			"LibraryItemIdSchema",
+			"ServerStateSchema",
+			"ClaimSchema",
+			"AffectedElementsSchema",
+			"BoardDocumentSchema",
+			"GeneratedHandlesSchema",
+			"WriteReceiptSchema",
+			"PendingArtifactSchema",
+		])
+			expect(sharedSchemas.includes(`export const ${schema}`), schema).toBeTrue();
+		for (const type of ["CommandContext", "CommandExecution", "PendingArtifact"])
+			expect(
+				new RegExp(`export (?:interface|type) ${type}\\b`).test(contractSource),
+				type,
+			).toBeTrue();
 	});
 });

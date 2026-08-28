@@ -36,27 +36,43 @@ export interface ArtifactFixture {
 	readonly root: string;
 	readonly first: string;
 	readonly second: string;
-	status(): string;
+	status(): ArtifactSpawn;
+	git(args: readonly string[]): ArtifactSpawn;
 	generate(output: string, extra?: readonly string[]): ArtifactSpawn;
 	files(output: string): readonly string[];
 	bytes(output: string, name: (typeof artifactNames)[number]): Buffer;
 	dispose(): void;
+	[Symbol.dispose](): void;
 }
 
 export function createArtifactFixture(): ArtifactFixture {
 	const root = mkdtempSync(join(tmpdir(), "archboard-contract-artifacts-"));
 	const first = join(root, "first");
 	const second = join(root, "second");
+	const git = (args: readonly string[]): ArtifactSpawn => {
+		const command = ["git", ...args];
+		const result = spawnSync(command[0]!, command.slice(1), {
+			cwd: checkoutRoot,
+			encoding: "utf8",
+		});
+		return spawnSchema.parse({
+			command,
+			cwd: checkoutRoot,
+			status: result.status,
+			signal: result.signal,
+			stdout: result.stdout,
+			stderr: result.stderr,
+		});
+	};
+	const dispose = () => rmSync(root, { recursive: true, force: true });
 	return {
 		root,
 		first,
 		second,
 		status() {
-			return spawnSync("git", ["status", "--porcelain", "--untracked-files=all"], {
-				cwd: checkoutRoot,
-				encoding: "utf8",
-			}).stdout;
+			return git(["status", "--porcelain", "--untracked-files=all"]);
 		},
+		git,
 		generate(output, extra = []) {
 			const command = [
 				"bun",
@@ -86,8 +102,7 @@ export function createArtifactFixture(): ArtifactFixture {
 		bytes(output, name) {
 			return readFileSync(join(output, name));
 		},
-		dispose() {
-			rmSync(root, { recursive: true, force: true });
-		},
+		dispose,
+		[Symbol.dispose]: dispose,
 	};
 }

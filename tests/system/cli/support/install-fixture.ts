@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { z } from "zod";
 import { checkoutRoot, packageBin } from "./package-cli.ts";
 
@@ -34,20 +34,17 @@ export interface InstallSpawn {
 export interface InstallFixture {
 	readonly root: string;
 	readonly home: string;
+	readonly state: string;
+	readonly log: string;
+	readonly registry: string;
+	readonly vault: string;
 	readonly skillRoot: string;
 	repo(name: string, files?: Readonly<Record<string, string>>): string;
-	run(
-		repo: string,
-		args?: readonly string[],
-		options?: { home?: boolean; vault?: string },
-	): InstallSpawn;
-	install(
-		repo: string,
-		args?: readonly string[],
-		options?: { home?: boolean; vault?: string },
-	): InstallResult;
+	run(repo: string, args?: readonly string[], options?: { home?: boolean }): InstallSpawn;
+	install(repo: string, args?: readonly string[], options?: { home?: boolean }): InstallResult;
 	assertSkillBytes(target: string): void;
 	dispose(): void;
+	[Symbol.dispose](): void;
 }
 
 export function installFailure(result: InstallSpawn): string {
@@ -72,8 +69,13 @@ const trackedSkillFiles = [
 export function createInstallFixture(): InstallFixture {
 	const root = mkdtempSync(join(tmpdir(), "archboard-install-"));
 	const home = join(root, "home");
+	const state = join(root, "state");
+	const log = join(root, "logs", "archboard.log");
+	const registry = join(root, "repos.json");
+	const vault = join(root, "vault");
 	const skillRoot = join(root, "skills");
-	mkdirSync(home, { recursive: true });
+	for (const directory of [home, state, dirname(log), vault])
+		mkdirSync(directory, { recursive: true });
 	const repo = (name: string, files: Readonly<Record<string, string>> = {}) => {
 		const path = join(root, name);
 		mkdirSync(path, { recursive: true });
@@ -86,7 +88,7 @@ export function createInstallFixture(): InstallFixture {
 	const run = (
 		repository: string,
 		args: readonly string[] = [],
-		options: { home?: boolean; vault?: string } = {},
+		options: { home?: boolean } = {},
 	): InstallSpawn => {
 		const namesDestination = args.some((arg) => ["--dir", "--target", "--agent"].includes(arg));
 		const command = [
@@ -102,8 +104,22 @@ export function createInstallFixture(): InstallFixture {
 			encoding: "utf8",
 			env: {
 				...process.env,
-				...(options.home ? { HOME: home } : {}),
-				ARCHBOARD_VAULT: options.vault ?? "",
+				CODEX_HOME: undefined,
+				LOCALAPPDATA: undefined,
+				EXPRESS_SERVER_URL: undefined,
+				ENABLE_CANVAS_SYNC: undefined,
+				ARCHBOARD_INJECT: undefined,
+				ARCHBOARD_INJECT_LOUD: undefined,
+				ARCHBOARD_INJECT_THREAD: undefined,
+				ARCHBOARD_INJECT_DEBOUNCE_MS: undefined,
+				ARCHBOARD_INJECT_MIN_INTERVAL_MS: undefined,
+				ARCHBOARD_SETTLE_MS: undefined,
+				ARCHBOARD_SETTLE_MAX_MS: undefined,
+				HOME: home,
+				XDG_STATE_HOME: state,
+				LOG_FILE_PATH: log,
+				ARCHBOARD_REPOS: registry,
+				ARCHBOARD_VAULT: vault,
 				EXCALIDRAW_NO_AUTOSTART: "1",
 			},
 		});
@@ -116,9 +132,14 @@ export function createInstallFixture(): InstallFixture {
 			stderr: result.stderr,
 		};
 	};
+	const dispose = () => rmSync(root, { recursive: true, force: true });
 	return {
 		root,
 		home,
+		state,
+		log,
+		registry,
+		vault,
 		skillRoot,
 		repo,
 		run,
@@ -136,8 +157,7 @@ export function createInstallFixture(): InstallFixture {
 					throw new Error(`Installed skill bytes differ: ${relative}`);
 			}
 		},
-		dispose() {
-			rmSync(root, { recursive: true, force: true });
-		},
+		dispose,
+		[Symbol.dispose]: dispose,
 	};
 }
