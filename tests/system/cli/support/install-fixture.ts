@@ -31,6 +31,8 @@ export interface InstallSpawn {
 	stderr: string;
 }
 
+export type InstalledResult = InstallResult & { readonly spawn: InstallSpawn };
+
 export interface InstallFixture {
 	readonly root: string;
 	readonly home: string;
@@ -41,7 +43,7 @@ export interface InstallFixture {
 	readonly skillRoot: string;
 	repo(name: string, files?: Readonly<Record<string, string>>): string;
 	run(repo: string, args?: readonly string[], options?: { home?: boolean }): InstallSpawn;
-	install(repo: string, args?: readonly string[], options?: { home?: boolean }): InstallResult;
+	install(repo: string, args?: readonly string[], options?: { home?: boolean }): InstalledResult;
 	assertSkillBytes(target: string): void;
 	dispose(): void;
 	[Symbol.dispose](): void;
@@ -146,7 +148,18 @@ export function createInstallFixture(): InstallFixture {
 		install(repository, args = [], options = {}) {
 			const result = run(repository, args, options);
 			if (result.status !== 0) throw new Error(installFailure(result));
-			return installResultSchema.parse(JSON.parse(result.stdout));
+			let decoded: unknown;
+			try {
+				decoded = JSON.parse(result.stdout);
+			} catch (error) {
+				throw new Error(`${installFailure(result)}\nparse: ${(error as Error).message}`, {
+					cause: error,
+				});
+			}
+			const parsed = installResultSchema.safeParse(decoded);
+			if (!parsed.success)
+				throw new Error(`${installFailure(result)}\nparse: ${parsed.error.message}`);
+			return { ...parsed.data, spawn: result };
 		},
 		assertSkillBytes(target) {
 			for (const relative of trackedSkillFiles) {

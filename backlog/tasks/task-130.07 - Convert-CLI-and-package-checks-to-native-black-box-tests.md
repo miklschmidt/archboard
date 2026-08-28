@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:04'
-updated_date: '2026-08-28 19:18'
+updated_date: '2026-08-28 19:31'
 labels: []
 dependencies:
   - TASK-130.01
@@ -150,4 +150,13 @@ Remediation implementation evidence (2026-08-28):
 - Fixed-base raw-byte checks: argv 9,649 bytes, equal, SHA-256 93d7f3037a12945432056b1b27a8decf42187f943335b153dc341a03ed6409e6; compatibility 15,404 bytes, equal, SHA-256 7ef7c5a38e165b7cf37c1a774618841766cdf35b917239d95399c4a127f763de; preserved held output 3,000 bytes, equal, SHA-256 4abb6814b2218e19fe6d5602dc9864f4b6cd236171887e26288afc534f0dcf9b.
 - Focused validation: every changed owner passed alone (71 tests); grouped CLI 39 tests/811 expectations, contracts 15/954, install 11/74, repositories 6/63; TASK-130.06 lifecycle 13/85; live inventory 11/11. Post-mutation type-check, lint, fmt:check, and git diff --check passed. Exactly one complete bun run check passed, including all four browser lanes headless and serial.
 - Cleanup audit: no checkout-owned child/process group, Bun/Archboard listener, mutation worktree, parity artifact, or newly retained task HOME/state/log/registry/vault remains. Three task-created pre-remediation temporary roots were removed; older unrelated temporary roots were left untouched.
+
+Focused complete-range remediation after review (2026-08-28):
+- Restored repository-resolution coverage for PromotionError and actionable no-CWD guidance, portable nonexistent-file addresses without links, searched-directory reporting outside a repository, and explicit repository precedence over a different ambient checkout.
+- Restored repository-session text and JSON coverage for general repository listings, board-open guidance, unrelated-repository scan reporting, vault-only node paths, and named-beta identity. Parsed subprocess assertions now retain repositoryFailure diagnostics.
+- Install results now retain their InstallSpawn. Decode and schema failures include installFailure diagnostics. Restored refusal remedies, exact generated setup-document byte fragments, AGENTS-only selection, named vault creation, and independent no-doc skill installation. Every derived install assertion carries installFailure.
+- Red evidence: each affected owner first failed on an owner-local wrong literal. Resolution printed the exact no-CWD actionable message, session printed board open systems, and install printed the exact selected vault and invocation command. The corrected owners passed alone: resolution 5 tests/38 expectations, session 1/46, install targets 8/60.
+- Validation: test:install 11 tests/91 expectations; test:repos 6/84; owned-canvas lifecycle 13/85; live inventory 11/11; type-check, lint, fmt:check, and git diff --check passed. Lint initially required caught parse errors to preserve cause; the corrected error paths passed the rerun.
+- No browser or full check was rerun. This follow-up changes only tests and their install support, exposed no broader failure, and preserves the successful single full check at bdbd102.
+- Final formatted lines: repository-resolution 188, repository-session 281, install-targets 214, install-fixture 176. No authored TypeScript reaches 500. Resource audit found no checkout-owned child, listener, new install/repository/owned-canvas root, or worktree artifact; older unrelated temporary roots remain untouched.
 <!-- SECTION:NOTES:END -->
