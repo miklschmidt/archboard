@@ -215,6 +215,9 @@ describe("fixed-base package CLI compatibility", () => {
 					mergedObserved,
 				);
 				const mergedDiagnostic = packageFailure(merged);
+				const exitEvents = record.mergedEvents.filter((event) => event.kind === "exit");
+				expect(exitEvents, mergedDiagnostic).toHaveLength(1);
+				const expectedExit = exitEvents[0]!.value;
 				const expectedContacts = record.mergedEvents.flatMap((event) =>
 					event.kind === "contact" ? [event.value] : [],
 				);
@@ -231,8 +234,8 @@ describe("fixed-base package CLI compatibility", () => {
 				expect(normalize(merged.merged, record, mergedContext.runtime), mergedDiagnostic).toBe(
 					expectedBytes,
 				);
-				expect(merged.status, mergedDiagnostic).toBe(record.exit);
-				expect(mergedObserved.at(-1), mergedDiagnostic).toBe(`exit:${record.exit}`);
+				expect(merged.status, mergedDiagnostic).toBe(expectedExit);
+				expect(mergedObserved.at(-1), mergedDiagnostic).toBe(`exit:${expectedExit}`);
 			},
 			30_000,
 		);
