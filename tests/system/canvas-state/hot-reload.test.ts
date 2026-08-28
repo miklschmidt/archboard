@@ -460,7 +460,6 @@ describe.serial("hot reload", () => {
 		expect(broken).toBeDefined();
 		expect(broken?.complaints?.join("\n")).toMatch(/board "scratch".*now has it at nowhere/);
 		edit.restore();
-
 		const plainRoot = mkdtempSync(join(tmpdir(), "archboard-plain-reload-"));
 		resources.defer(() => rmSync(plainRoot, { recursive: true, force: true }));
 		const plainPort = await freePort();
@@ -473,14 +472,15 @@ describe.serial("hot reload", () => {
 			LOG_LEVEL: "error",
 			LOG_FILE_PATH: join(plainRoot, "canvas.log"),
 		};
-		const started = spawnSync(executable, ["start"], {
-			cwd: repoRoot,
-			encoding: "utf8",
-			env: plainEnv,
-		});
-		expect(started.status, started.stderr).toBe(0);
-		const plainPid = (JSON.parse(started.stdout) as { pid: number }).pid;
+		let plainPid: number | undefined;
 		try {
+			const started = spawnSync(executable, ["start"], {
+				cwd: repoRoot,
+				encoding: "utf8",
+				env: plainEnv,
+			});
+			expect(started.status, started.stderr).toBe(0);
+			plainPid = (JSON.parse(started.stdout) as { pid: number }).pid;
 			const argv = spawnSync("ps", ["-o", "args=", "-p", String(plainPid)], {
 				encoding: "utf8",
 			}).stdout.trim();
@@ -493,6 +493,7 @@ describe.serial("hot reload", () => {
 			expect(((await refused.json()) as { error: string }).error).toMatch(/dev:canvas/);
 		} finally {
 			spawnSync(executable, ["stop"], { cwd: repoRoot, encoding: "utf8", env: plainEnv });
+			if (plainPid !== undefined) expect(() => process.kill(plainPid!, 0)).toThrow();
 		}
 	}, 60_000);
 });
