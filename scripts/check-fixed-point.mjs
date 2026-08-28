@@ -265,6 +265,19 @@ const strip = (element) => {
 	return kept;
 };
 
+/** One linear point in board coordinates, or null when the fixture is malformed. */
+const pointAt = (element, index) => {
+	const point = element?.points?.[index];
+	if (
+		!point ||
+		![element?.x, element?.y, point[0], point[1]].every(
+			(value) => typeof value === "number" && Number.isFinite(value),
+		)
+	)
+		return null;
+	return { x: element.x + point[0], y: element.y + point[1] };
+};
+
 // ---------------------------------------------------------------------------
 // The font gate
 // ---------------------------------------------------------------------------
@@ -656,6 +669,14 @@ try {
 				label: { text: "Gate" },
 			},
 			{
+				id: "human-node",
+				type: "rectangle",
+				x: 1000,
+				y: 1000,
+				width: 200,
+				height: 100,
+			},
+			{
 				id: "text1",
 				type: "text",
 				x: 100,
@@ -734,12 +755,59 @@ try {
 			},
 		],
 	});
-	// Fourteen, not ten: four of those elements carry a label, and a label is a
+	// Fifteen, not eleven: four of those elements carry a label, and a label is a
 	// text element from the moment it is written (ADR 0015).
 	check(
 		"a board is drawn covering every type an agent can create and a negative path",
-		made.status === 200 && made.body?.elements?.length === 14,
+		made.status === 200 && made.body?.elements?.length === 15,
 		`status ${made.status}, ${made.body?.elements?.length} elements`,
+	);
+
+	// This is the ordinary human-shaped case from test:geometry. A person has
+	// attached one end low on a normal architecture rectangle and farther out
+	// than an agent-created binding. The change-report route is how that binding
+	// enters the board. A no-distance move settles the supplied point through
+	// archboard before the browser adopts it, so the later node move is a clean
+	// differential between the local port and Excalidraw.
+	const humanReported = await api("POST", "/api/elements/changes?board=fixedpoint", {
+		upserts: [
+			{
+				id: "human-arrow",
+				type: "arrow",
+				x: 1400,
+				y: 1120,
+				width: 179,
+				height: 50,
+				points: [
+					[0, 0],
+					[-179, -50],
+				],
+				startBinding: null,
+				endBinding: {
+					elementId: "human-node",
+					focus: 0.9,
+					gap: 15,
+					fixedPoint: null,
+				},
+			},
+		],
+		deletes: [],
+		clientId: "fixed-point-person",
+	});
+	const humanSettled = await api("PUT", "/api/elements/human-node?board=fixedpoint", {
+		x: 1000,
+		y: 1000,
+	});
+	const humanFixture = (await api("GET", "/api/elements?board=fixedpoint")).body?.elements ?? [];
+	const humanFixtureArrow = humanFixture.find((element) => element.id === "human-arrow");
+	check(
+		"the fixed-point board includes one human-rebound arrow end at focus 0.9 and gap 15",
+		humanReported.status === 200 &&
+			humanSettled.status === 200 &&
+			humanFixtureArrow?.endBinding?.elementId === "human-node" &&
+			humanFixtureArrow?.endBinding?.focus === 0.9 &&
+			humanFixtureArrow?.endBinding?.gap === 15,
+		humanReported.body?.error ?? humanSettled.body?.error ?? JSON.stringify(humanFixtureArrow),
 	);
 	const bridge = await api("POST", "/api/bridges?board=fixedpoint", {
 		over: "line1",
@@ -1098,7 +1166,7 @@ try {
 	const opened = await api("POST", "/api/boards/open", { board: "fixedpoint", reload: true });
 	check(
 		"  and the note is re-read into it, with the fonts already there",
-		opened.status === 200 && opened.body?.source === "vault" && opened.body?.elementCount === 16,
+		opened.status === 200 && opened.body?.source === "vault" && opened.body?.elementCount === 18,
 		`${opened.body?.source} / ${opened.body?.elementCount} elements`,
 	);
 
@@ -1107,7 +1175,7 @@ try {
 	// the page if the invalid branch forgot that key.
 	const publishedPane = await waitFor(
 		async () => (await api("GET", "/api/panes")).body?.panes?.[0] ?? null,
-		(pane) => pane?.board === "fixedpoint" && pane?.elementCount === 16,
+		(pane) => pane?.board === "fixedpoint" && pane?.elementCount === 18,
 		PANE_SETTLE_CAP_MS,
 	);
 	const expectedPublishedGeometry = roundedGeometry(publishedPane);
@@ -1263,6 +1331,72 @@ try {
 		]
 			.filter(Boolean)
 			.join("; "),
+	);
+
+	// --- a human binding after an agent moves its node ----------------------
+	//
+	// The zero-diff board above proves Excalidraw adopted the human binding.
+	// Now the agent route moves its node. Archboard and the pinned Excalidraw
+	// independently settle the bound end, and this compares their visible
+	// answers rather than another copy of either implementation.
+	const adoptedHumanArrow = rendered.find((element) => element.id === "human-arrow");
+	check(
+		"the real browser adopts the human arrow end at focus 0.9 and gap 15",
+		adoptedHumanArrow?.endBinding?.elementId === "human-node" &&
+			adoptedHumanArrow?.endBinding?.focus === 0.9 &&
+			adoptedHumanArrow?.endBinding?.gap === 15,
+		JSON.stringify(adoptedHumanArrow?.endBinding ?? null),
+	);
+
+	const agentMove = await api("PUT", "/api/elements/human-node?board=fixedpoint", {
+		x: 1040,
+		y: 1030,
+	});
+	const serverAfterMove = (await api("GET", "/api/elements?board=fixedpoint")).body?.elements ?? [];
+	const serverNode = serverAfterMove.find((element) => element.id === "human-node");
+	const serverArrow = serverAfterMove.find((element) => element.id === "human-arrow");
+	const movedInBrowser = await waitFor(
+		() => evalInPage(READ_SCENE),
+		(scene) =>
+			scene?.elements?.some(
+				(element) => element.id === "human-node" && element.x === 1040 && element.y === 1030,
+			),
+		PANE_SETTLE_CAP_MS,
+	);
+	const browserAfterMove = await sceneWhenStill();
+	const browserNode = browserAfterMove.find((element) => element.id === "human-node");
+	const browserArrow = browserAfterMove.find((element) => element.id === "human-arrow");
+	const serverEndpoint = pointAt(serverArrow, (serverArrow?.points?.length ?? 0) - 1);
+	const browserEndpoint = pointAt(browserArrow, (browserArrow?.points?.length ?? 0) - 1);
+	const dx = serverEndpoint && browserEndpoint ? browserEndpoint.x - serverEndpoint.x : Number.NaN;
+	const dy = serverEndpoint && browserEndpoint ? browserEndpoint.y - serverEndpoint.y : Number.NaN;
+	const separation = Math.hypot(dx, dy);
+	const endpointEvidence = {
+		serverEndpoint,
+		browserEndpoint,
+		dx: Number.isFinite(dx) ? dx : null,
+		dy: Number.isFinite(dy) ? dy : null,
+		separation: Number.isFinite(separation) ? separation : null,
+		focus: serverArrow?.endBinding?.focus ?? null,
+		gap: serverArrow?.endBinding?.gap ?? null,
+		serverNode: serverNode
+			? { x: serverNode.x, y: serverNode.y, width: serverNode.width, height: serverNode.height }
+			: null,
+		browserNode: browserNode
+			? { x: browserNode.x, y: browserNode.y, width: browserNode.width, height: browserNode.height }
+			: null,
+	};
+	check(
+		"after an agent moves the bound node, the local port and Excalidraw settle within the 1.0 scene-pixel visible tolerance",
+		agentMove.status === 200 &&
+			movedInBrowser?.elements?.some(
+				(element) => element.id === "human-node" && element.x === 1040 && element.y === 1030,
+			) === true &&
+			browserArrow?.endBinding?.focus === 0.9 &&
+			browserArrow?.endBinding?.gap === 15 &&
+			Number.isFinite(separation) &&
+			separation <= 1,
+		JSON.stringify(endpointEvidence),
 	);
 
 	const renderOne = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-findings-one-"));
