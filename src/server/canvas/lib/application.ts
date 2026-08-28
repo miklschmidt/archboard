@@ -256,7 +256,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // `scripts/check-local-bind.mjs` plants a file in `dist/` and checks it 404s.
 app.use(express.static(path.join(moduleDir, "../dist/frontend")));
 app.get("/assets/excalidraw.css", (_req, res) => {
-	res.sendFile(path.join(moduleDir, "../node_modules/@excalidraw/excalidraw/dist/prod/index.css"));
+	res.sendFile("index.css", {
+		root: path.join(moduleDir, "../node_modules/@excalidraw/excalidraw/dist/prod"),
+	});
 });
 // Serve Excalidraw fonts so the font subsetting worker can fetch them for export
 app.use(
