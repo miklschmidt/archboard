@@ -78,6 +78,14 @@ function rotate(point: Point, about: Point, angle: number): Point {
 	};
 }
 
+/** Excalidraw's rotation arithmetic, including the angle-zero round trip. */
+function rotatePinned(point: Point, about: Point, angle: number): Point {
+	return {
+		x: (point.x - about.x) * Math.cos(angle) - (point.y - about.y) * Math.sin(angle) + about.x,
+		y: (point.x - about.x) * Math.sin(angle) + (point.y - about.y) * Math.cos(angle) + about.y,
+	};
+}
+
 const cross = (a: Point, b: Point): number => a.x * b.y - a.y * b.x;
 const minus = (a: Point, b: Point): Point => ({ x: a.x - b.x, y: a.y - b.y });
 
@@ -198,153 +206,231 @@ function shifted(point: Point, offset: Point): Point {
 	return { x: point.x + offset.x, y: point.y + offset.y };
 }
 
+function roundedCorner(from: Point, corner: Point, to: Point, offset: Point): Cubic {
+	const toward = (point: Point): Point => ({
+		x: point.x + (2 / 3) * (corner.x - point.x),
+		y: point.y + (2 / 3) * (corner.y - point.y),
+	});
+	return [
+		shifted(from, offset),
+		shifted(toward(from), offset),
+		shifted(toward(to), offset),
+		shifted(to, offset),
+	];
+}
+
 /** Move one rounded corner out along its own diagonal by the binding gap. */
-function cornerOffset(corner: Point, gap: number): Point {
-	const length = Math.hypot(corner.x, corner.y);
+function cornerOffset(corner: Point, centre: Point, gap: number): Point {
+	const x = corner.x - centre.x;
+	const y = corner.y - centre.y;
+	const length = Math.sqrt(x * x + y * y);
 	if (length === 0) return { x: 0, y: 0 };
-	return { x: (corner.x / length) * gap, y: (corner.y / length) * gap };
+	return { x: (x / length) * gap, y: (y / length) * gap };
 }
 
 function pointOnCubic(curve: Cubic, t: number): Point {
 	const [p0, p1, p2, p3] = curve;
-	const u = 1 - t;
 	return {
-		x: u ** 3 * p0.x + 3 * u ** 2 * t * p1.x + 3 * u * t ** 2 * p2.x + t ** 3 * p3.x,
-		y: u ** 3 * p0.y + 3 * u ** 2 * t * p1.y + 3 * u * t ** 2 * p2.y + t ** 3 * p3.y,
+		x:
+			(1 - t) ** 3 * p0.x +
+			3 * (1 - t) ** 2 * t * p1.x +
+			3 * (1 - t) * t ** 2 * p2.x +
+			t ** 3 * p3.x,
+		y:
+			(1 - t) ** 3 * p0.y +
+			3 * (1 - t) ** 2 * t * p1.y +
+			3 * (1 - t) * t ** 2 * p2.y +
+			t ** 3 * p3.y,
 	};
 }
 
-/** Ray distances where one rounded corner crosses the ray's supporting line. */
-function roundedCornerCrossings(curve: Cubic, origin: Point, direction: Point): number[] {
-	const [p0, p1, p2, p3] = curve;
-	const coefficients = [
-		cross(minus(p0, origin), direction),
-		cross({ x: 3 * (p1.x - p0.x), y: 3 * (p1.y - p0.y) }, direction),
-		cross({ x: 3 * (p2.x - 2 * p1.x + p0.x), y: 3 * (p2.y - 2 * p1.y + p0.y) }, direction),
-		cross(
-			{
-				x: p3.x - 3 * p2.x + 3 * p1.x - p0.x,
-				y: p3.y - 3 * p2.y + 3 * p1.y - p0.y,
-			},
-			direction,
-		),
-	] as const;
-	const valueAt = (t: number): number =>
-		coefficients[0] + t * (coefficients[1] + t * (coefficients[2] + t * coefficients[3]));
+type Segment = readonly [Point, Point];
 
-	// The derivative partitions the cubic into monotone intervals. Every root
-	// is therefore either a stationary zero or the sole sign change in one
-	// interval, which a short bisection resolves deterministically.
-	const stops = [0, 1];
-	const qa = 3 * coefficients[3];
-	const qb = 2 * coefficients[2];
-	const qc = coefficients[1];
-	if (Math.abs(qa) < 1e-12) {
-		if (Math.abs(qb) >= 1e-12) stops.push(-qc / qb);
-	} else {
-		const discriminant = qb * qb - 4 * qa * qc;
-		if (discriminant >= 0) {
-			const root = Math.sqrt(discriminant);
-			stops.push((-qb - root) / (2 * qa), (-qb + root) / (2 * qa));
-		}
-	}
-	const intervals = stops.filter((t) => t >= 0 && t <= 1).toSorted((a, b) => a - b);
-	const curveParameters: number[] = [];
-	const keepParameter = (t: number) => {
-		if (!curveParameters.some((known) => Math.abs(known - t) <= 1e-10)) curveParameters.push(t);
-	};
-	for (const t of intervals) {
-		if (Math.abs(valueAt(t)) <= 1e-9) keepParameter(t);
-	}
-	for (let index = 0; index < intervals.length - 1; index++) {
-		let low = intervals[index]!;
-		let high = intervals[index + 1]!;
-		let lowValue = valueAt(low);
-		const highValue = valueAt(high);
-		if (lowValue === 0 || highValue === 0 || Math.sign(lowValue) === Math.sign(highValue)) continue;
-		for (let step = 0; step < 60; step++) {
-			const middle = (low + high) / 2;
-			const middleValue = valueAt(middle);
-			if (middleValue === 0) {
-				low = middle;
-				high = middle;
-				break;
-			}
-			if (Math.sign(lowValue) === Math.sign(middleValue)) {
-				low = middle;
-				lowValue = middleValue;
-			} else {
-				high = middle;
-			}
-		}
-		keepParameter((low + high) / 2);
-	}
+const INTERSECTION_PRECISION = 1e-4;
 
-	return curveParameters
-		.map((t) => pointOnCubic(curve, t))
-		.map((point) =>
-			Math.abs(direction.x) >= Math.abs(direction.y)
-				? (point.x - origin.x) / direction.x
-				: (point.y - origin.y) / direction.y,
-		)
-		.filter((t) => Number.isFinite(t) && t >= 0);
+function distanceToSegment(point: Point, [from, to]: Segment): number {
+	const x = point.x - from.x;
+	const y = point.y - from.y;
+	const dx = to.x - from.x;
+	const dy = to.y - from.y;
+	const lengthSquared = dx * dx + dy * dy;
+	const along = lengthSquared === 0 ? -1 : (x * dx + y * dy) / lengthSquared;
+	const nearest =
+		along < 0 ? from : along > 1 ? to : { x: from.x + along * dx, y: from.y + along * dy };
+	const awayX = point.x - nearest.x;
+	const awayY = point.y - nearest.y;
+	return Math.sqrt(awayX * awayX + awayY * awayY);
 }
 
-/** Crossings of Excalidraw's rounded rectangle outline, in its local frame. */
-function roundedRectangleCrossings(
-	shape: Bindable,
-	origin: Point,
-	direction: Point,
-	gap: number,
-): number[] {
-	const halfWidth = Math.abs(num(shape.width)) / 2;
-	const halfHeight = Math.abs(num(shape.height)) / 2;
+function segmentIntersection(first: Segment, second: Segment): Point | null {
+	const a1 = first[1].y - first[0].y;
+	const b1 = first[0].x - first[1].x;
+	const a2 = second[1].y - second[0].y;
+	const b2 = second[0].x - second[1].x;
+	const determinant = a1 * b2 - a2 * b1;
+	if (determinant === 0) return null;
+	const c1 = a1 * first[0].x + b1 * first[0].y;
+	const c2 = a2 * second[0].x + b2 * second[0].y;
+	const candidate = {
+		x: (c1 * b2 - c2 * b1) / determinant,
+		y: (a1 * c2 - a2 * c1) / determinant,
+	};
+	return distanceToSegment(candidate, first) < INTERSECTION_PRECISION &&
+		distanceToSegment(candidate, second) < INTERSECTION_PRECISION
+		? candidate
+		: null;
+}
+
+function curveIntersectsBounds(curve: Cubic, line: Segment): boolean {
+	const xs = curve.map((point) => point.x);
+	const ys = curve.map((point) => point.y);
+	const left = Math.min(...xs);
+	const top = Math.min(...ys);
+	const right = Math.max(...xs);
+	const bottom = Math.max(...ys);
+	const edges: Segment[] = [
+		[
+			{ x: left, y: top },
+			{ x: right, y: top },
+		],
+		[
+			{ x: right, y: top },
+			{ x: right, y: bottom },
+		],
+		[
+			{ x: right, y: bottom },
+			{ x: left, y: bottom },
+		],
+		[
+			{ x: left, y: bottom },
+			{ x: left, y: top },
+		],
+	];
+	return edges.some((edge) => segmentIntersection(line, edge) !== null);
+}
+
+/** The pinned two-variable Newton solve for one cubic and one finite segment. */
+function curveSegmentIntersection(curve: Cubic, line: Segment): Point | null {
+	if (!curveIntersectsBounds(curve, line)) return null;
+	const valueAt = (t: number, s: number): Point => {
+		const onCurve = pointOnCubic(curve, t);
+		return {
+			x: onCurve.x - (line[0].x + s * (line[1].x - line[0].x)),
+			y: onCurve.y - (line[0].y + s * (line[1].y - line[0].y)),
+		};
+	};
+	const gradient = (
+		component: (value: Point) => number,
+		t: number,
+		s: number,
+	): readonly [number, number] => {
+		const delta = 1e-6;
+		return [
+			(component(valueAt(t + delta, s)) - component(valueAt(t - delta, s))) / (2 * delta),
+			(component(valueAt(t, s + delta)) - component(valueAt(t, s - delta))) / (2 * delta),
+		];
+	};
+	const solve = (initialT: number, initialS: number): readonly [number, number] | null => {
+		let t = initialT;
+		let s = initialS;
+		let error = Infinity;
+		let iteration = 0;
+		while (error >= 1e-3) {
+			if (iteration >= 10) return null;
+			const value = valueAt(t, s);
+			const jacobian = [
+				gradient((point) => point.x, t, s),
+				gradient((point) => point.y, t, s),
+			] as const;
+			const determinant = jacobian[0][0] * jacobian[1][1] - jacobian[0][1] * jacobian[1][0];
+			if (determinant === 0) return null;
+			const inverse = [
+				[jacobian[1][1] / determinant, -jacobian[0][1] / determinant],
+				[-jacobian[1][0] / determinant, jacobian[0][0] / determinant],
+			] as const;
+			const stepT = inverse[0][0] * -value.x + inverse[0][1] * -value.y;
+			const stepS = inverse[1][0] * -value.x + inverse[1][1] * -value.y;
+			t += stepT;
+			s += stepS;
+			const residual = valueAt(t, s);
+			error = Math.max(Math.abs(residual.x), Math.abs(residual.y));
+			iteration += 1;
+		}
+		return [t, s];
+	};
+
+	for (const [initialT, initialS] of [
+		[0.5, 0],
+		[0.2, 0],
+		[0.8, 0],
+	] as const) {
+		const solution = solve(initialT, initialS);
+		if (!solution) continue;
+		const [t, s] = solution;
+		if (t >= 0 && t <= 1 && s >= 0 && s <= 1) return pointOnCubic(curve, t);
+	}
+	return null;
+}
+
+/** Intersections with Excalidraw's rounded rectangle outline. */
+function roundedRectangleIntersections(shape: Bindable, line: Segment, gap: number): Point[] {
+	const x0 = num(shape.x);
+	const y0 = num(shape.y);
+	const x1 = x0 + num(shape.width);
+	const y1 = y0 + num(shape.height);
+	const centre = centreOf(shape);
 	const radius = rectangleCornerRadius(shape);
-	const x0 = -halfWidth;
-	const y0 = -halfHeight;
-	const x1 = halfWidth;
-	const y1 = halfHeight;
+	const top: Segment = [
+		{ x: x0 + radius, y: y0 },
+		{ x: x1 - radius, y: y0 },
+	];
+	const right: Segment = [
+		{ x: x1, y: y0 + radius },
+		{ x: x1, y: y1 - radius },
+	];
+	const bottom: Segment = [
+		{ x: x0 + radius, y: y1 },
+		{ x: x1 - radius, y: y1 },
+	];
+	const left: Segment = [
+		{ x: x0, y: y1 - radius },
+		{ x: x0, y: y0 + radius },
+	];
 	const offsets = [
-		cornerOffset({ x: x0 - gap, y: y0 - gap }, gap),
-		cornerOffset({ x: x1 + gap, y: y0 - gap }, gap),
-		cornerOffset({ x: x1 + gap, y: y1 + gap }, gap),
-		cornerOffset({ x: x0 - gap, y: y1 + gap }, gap),
+		cornerOffset({ x: x0 - gap, y: y0 - gap }, centre, gap),
+		cornerOffset({ x: x1 + gap, y: y0 - gap }, centre, gap),
+		cornerOffset({ x: x1 + gap, y: y1 + gap }, centre, gap),
+		cornerOffset({ x: x0 - gap, y: y1 + gap }, centre, gap),
 	] as const;
 	const corners: Cubic[] = [
-		[
-			shifted({ x: x0, y: y0 + radius }, offsets[0]),
-			shifted({ x: x0, y: y0 + radius / 3 }, offsets[0]),
-			shifted({ x: x0 + radius / 3, y: y0 }, offsets[0]),
-			shifted({ x: x0 + radius, y: y0 }, offsets[0]),
-		],
-		[
-			shifted({ x: x1 - radius, y: y0 }, offsets[1]),
-			shifted({ x: x1 - radius / 3, y: y0 }, offsets[1]),
-			shifted({ x: x1, y: y0 + radius / 3 }, offsets[1]),
-			shifted({ x: x1, y: y0 + radius }, offsets[1]),
-		],
-		[
-			shifted({ x: x1, y: y1 - radius }, offsets[2]),
-			shifted({ x: x1, y: y1 - radius / 3 }, offsets[2]),
-			shifted({ x: x1 - radius / 3, y: y1 }, offsets[2]),
-			shifted({ x: x1 - radius, y: y1 }, offsets[2]),
-		],
-		[
-			shifted({ x: x0 + radius, y: y1 }, offsets[3]),
-			shifted({ x: x0 + radius / 3, y: y1 }, offsets[3]),
-			shifted({ x: x0, y: y1 - radius / 3 }, offsets[3]),
-			shifted({ x: x0, y: y1 - radius }, offsets[3]),
-		],
+		roundedCorner(left[1], { x: x0, y: y0 }, top[0], offsets[0]),
+		roundedCorner(top[1], { x: x1, y: y0 }, right[0], offsets[1]),
+		roundedCorner(right[1], { x: x1, y: y1 }, bottom[1], offsets[2]),
+		roundedCorner(bottom[0], { x: x0, y: y1 }, left[0], offsets[3]),
 	];
 	const sides = corners.map(
 		(corner, index) => [corner[3], corners[(index + 1) % corners.length]![0]] as const,
 	);
-	return [
+	const rotatedLine = [
+		rotatePinned(line[0], centre, -num(shape.angle)),
+		rotatePinned(line[1], centre, -num(shape.angle)),
+	] as const;
+	const intersections = [
 		...sides
-			.map(([from, to]) => alongSegment(origin, direction, from, to))
-			.filter((t) => t !== null),
-		...corners.flatMap((corner) => roundedCornerCrossings(corner, origin, direction)),
-	];
+			.map((side) => segmentIntersection(rotatedLine, side))
+			.filter((point) => point !== null),
+		...corners
+			.map((corner) => curveSegmentIntersection(corner, rotatedLine))
+			.filter((point) => point !== null),
+	].map((point) => rotatePinned(point, centre, num(shape.angle)));
+	return intersections.filter(
+		(point, index) =>
+			intersections.findIndex(
+				(other) =>
+					Math.abs(point.x - other.x) < INTERSECTION_PRECISION &&
+					Math.abs(point.y - other.y) < INTERSECTION_PRECISION,
+			) === index,
+	);
 }
 
 /** Is this point inside the shape's outline, grown by `gap`? */
@@ -374,9 +460,7 @@ function crossings(shape: Bindable, origin: Point, direction: Point, gap: number
 		if (Number.isFinite(t) && t >= 0) found.push(t);
 	};
 
-	if (shape.type === "rectangle" && rectangleCornerRadius(shape) > 0) {
-		for (const t of roundedRectangleCrossings(shape, origin, direction, gap)) keep(t);
-	} else if (shape.type === "ellipse") {
+	if (shape.type === "ellipse") {
 		// (ox + t·dx)² / a² + (oy + t·dy)² / b² = 1
 		const qa = (direction.x / a) ** 2 + (direction.y / b) ** 2;
 		const qb = 2 * ((origin.x * direction.x) / a ** 2 + (origin.y * direction.y) / b ** 2);
@@ -462,6 +546,33 @@ export function boundEndpoint(
 	// The path starts inside the shape, so there is no outline between the two
 	// and Excalidraw puts the end on the aim itself.
 	if (inside(shape, localFrom, binding.gap)) return aim;
+	if (shape.type === "rectangle" && rectangleCornerRadius(shape) > 0) {
+		const towardAim = minus(aim, adjacent);
+		const magnitude = Math.sqrt(towardAim.x * towardAim.x + towardAim.y * towardAim.y);
+		const interceptorLength =
+			Math.hypot(current.x - adjacent.x, current.y - adjacent.y) +
+			Math.hypot(centre.x - adjacent.x, centre.y - adjacent.y) +
+			Math.max(num(shape.width), num(shape.height)) * 2;
+		const interceptor: Segment = [
+			adjacent,
+			{
+				x: adjacent.x + (towardAim.x / magnitude) * interceptorLength,
+				y: adjacent.y + (towardAim.y / magnitude) * interceptorLength,
+			},
+		];
+		const intersections = roundedRectangleIntersections(shape, interceptor, binding.gap).toSorted(
+			(left, right) => {
+				const leftX = left.x - adjacent.x;
+				const leftY = left.y - adjacent.y;
+				const rightX = right.x - adjacent.x;
+				const rightY = right.y - adjacent.y;
+				return leftX * leftX + leftY * leftY - (rightX * rightX + rightY * rightY);
+			},
+		);
+		if (intersections.length > 1) return intersections[0]!;
+		if (intersections.length === 1) return aim;
+		return current;
+	}
 
 	const hits = crossings(shape, localFrom, direction, binding.gap);
 	const nearest = hits[0];
