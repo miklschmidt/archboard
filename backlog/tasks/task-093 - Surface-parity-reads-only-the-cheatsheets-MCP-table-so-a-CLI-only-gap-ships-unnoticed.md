@@ -1,37 +1,46 @@
 ---
 id: TASK-093
-title: >-
-  Surface parity reads only the cheatsheet's MCP table, so a CLI-only gap ships
-  unnoticed
-status: To Do
+title: Superseded by the CLI-only command contracts
+status: Done
 assignee: []
 created_date: '2026-08-22 15:40'
+updated_date: '2026-08-28 00:35'
 labels: []
-dependencies:
-  - TASK-080
+dependencies: []
 references:
   - scripts/check-surface-parity.mjs
   - skills/excalidraw-skill/references/cheatsheet.md
 priority: medium
-type: bug
+type: chore
 ordinal: 93000
 ---
 
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Found by TASK-081 while adding the CLI half of the claim documentation.
-
-`check-surface-parity` is the check that keeps the MCP surface and the CLI honest against each other. When it reads the cheatsheet, it reads the MCP table and nothing else.
-
-That is not hypothetical: TASK-080 shipped `claim` and `release` documented on one surface, its notes recorded 'both in the cheatsheet', and the check agreed — because the sentence was true of the MCP table alone. Nothing noticed the CLI half was missing until a human-written task went looking.
-
-A parity check that reads one side is a parity check in name. It should read both tables, or read neither and compare against something that is not prose.
+This task guarded parity between MCP and CLI documentation. TASK-124 removed MCP, check-surface-parity no longer exists, and the generated CommandContract registry plus CLI contract checks now own the one remaining command interface. There is no second command interface to compare.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The parity check reads the CLI table as well as the MCP one
-- [ ] #2 A command documented on one surface and not the other fails the check
-- [ ] #3 Proved by removing one surface's entry for a command and watching it fail
+- [x] #1 The MCP command interface and check-surface-parity are absent after TASK-124.
+- [x] #2 The generated CLI command contracts and their checks own every released command path.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Verify the MCP interface and old parity check are absent. 2. Run the command-contract proof. 3. Close the superseded task.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Verified on 2026-08-28: scripts/check-surface-parity.mjs is absent, package scripts contain no MCP parity gate, and bun scripts/check-command-contract.mjs passed 61 proofs over 61 audited paths with 1011 checks.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Closed as superseded by TASK-124 and TASK-123. Archboard is CLI-only, the MCP parity check is gone, and the schema-defined CommandContract registry now owns all 61 released command paths. Verified with 61 contract proofs and 1011 checks.
+<!-- SECTION:FINAL_SUMMARY:END -->

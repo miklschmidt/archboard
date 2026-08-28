@@ -1,16 +1,16 @@
 ---
 id: TASK-096
-title: >-
-  The shell drops pane status updates it thinks unchanged, and has now swallowed
-  three marks
+title: Stop filtering pane status through a hand-maintained field list
 status: To Do
 assignee: []
 created_date: '2026-08-22 17:47'
+updated_date: '2026-08-28 00:35'
 labels: []
 dependencies: []
 references:
-  - frontend/src/shell/Shell.tsx
-  - frontend/src/shell/BoardBar.tsx
+  - src/ui/shell/Shell.tsx
+  - src/ui/canvas/useCanvasSession.ts
+  - scripts/check-fixed-point.mjs
 priority: high
 type: bug
 ordinal: 96000
@@ -19,26 +19,14 @@ ordinal: 96000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Three separate features have hit this, each finding it only because a real browser check caught the mark that never appeared.
+The shell still drops a PaneStatus when samePaneStatus decides that selected fields are unchanged. Three visible marks have already been omitted from that list and swallowed until browser checks caught them. publishStatus runs on discrete session events, so this filter is not protecting a render-rate path.
 
-The shell compares an arriving pane status against the one it holds and discards the update when nothing it compares has moved. The comparison does not know about marks added since it was written, so each new one is invisible until somebody extends it.
-
-Casualties so far:
-
-- TASK-079's held-board mark. Its own comment records the first sighting.
-- TASK-062's note-written-elsewhere mark. The server detected the foreign write, the pane set its ref, the bar never changed. Its author noted a note somebody else wrote is the only thing that moves about a pane when it happens.
-- TASK-095's doing line. The bar showed the line before last.
-
-Three times is a design fault rather than three oversights. Every one was caught by a browser check and none by a socket check, because the bug is between the pane's state and what is painted.
-
-The fix is not a fourth field in the comparison. It is either comparing the whole status, or a rule that makes forgetting impossible — the middleware pattern TASK-095 used at the write boundary is the same shape of answer: one place that cannot be bypassed by whatever is added next.
-
-Worth checking whether the same comparison guards anything else.
+Remove the hand-maintained equality decision. Every published PaneStatus replaces the stored status for its pane. Keep the existing event-driven publication points and browser coverage for held state, external-note state, and agent doing lines. Do not replace the list with a generic deep-equality module, schema reflection, generated comparator, or new state framework.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A pane status that differs in any field reaches the bar, including fields added after the comparison was written
-- [ ] #2 Adding a new mark to the bar requires no change to the comparison, or fails loudly if it does
-- [ ] #3 A check covers the general property rather than the three known marks
+- [ ] #1 Every PaneStatus passed to the shell becomes the current status for that pane; no hand-maintained field list decides whether it is significant.
+- [ ] #2 Held state, note-written-elsewhere state, board identity, element count, connection state, and all doing entries still reach the visible shell in the browser checks.
+- [ ] #3 The change adds no generic deep equality, generated comparator, schema reflection, or replacement state framework.
 <!-- AC:END -->
