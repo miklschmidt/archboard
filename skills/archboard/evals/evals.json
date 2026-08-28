@@ -1,6 +1,6 @@
 {
 	"skill_name": "archboard",
-	"grading": "Each eval says how it is graded. \"human\" means somebody reads the transcript and judges it; these are about drawing quality and layout, which no script can score. A path names a check script that runs in `bun run test` and asserts the objective part of the eval outright, leaving the transcript to answer only whether the agent chose the right path.",
+	"grading": "Each eval says how it is graded. \"human\" means somebody reads the transcript and judges it; these are about drawing quality and layout, which no automated test can score. A path names a native test or check script that runs in `bun run test` and asserts the objective part of the eval outright, leaving the transcript to answer only whether the agent chose the right path.",
 	"evals": [
 		{
 			"id": 0,
@@ -60,11 +60,11 @@
 		},
 		{
 			"id": 8,
-			"graded_by": "scripts/check-board-inspection.mjs",
+			"graded_by": "src/runtime/board-inspection/tests/completion-contract.test.ts",
 			"prompt": "Using only the CLI, finish the explicitly named dense architecture board in /tmp/eval-vault. It already contains promoted multipart nodes, a human group spanning two services, a grouped library stencil, unrelated decoration, and dense connector routing. Repair every avoidable whole-board finding without tidying or rebuilding unrelated content. One supported proper connector crossing is declared unavoidable; ask the human which connector should pass over, which should pass under, and what opaque board background to use, then mark exactly that crossing with the released bridge command. If this is variant work, report the semantic comparison as well. Finish only when strict whole-board inspection is complete and clean, release any campaign claim, and capture one full-scene overview from a pane confirmed to hold this board.",
 			"expected_output": "The final production consequences are a complete clean strict inspection report, suppression of exactly the declared bridged crossing, and no suppression of any other crossing. A route-only change remains semantically identical under compare, and compare is not offered as routing or rendering proof. Every operation identifies the intended board. The human group, library stencil attribution, unrelated decoration, node identity, and layout outside the repaired route remain unchanged. Focused rendering is used only if a live finding needs a close-up; a clean final report does not require a post-clean render manifest. The objective halves are the existing inspection dense-reroute and bridge fixtures, branch compare fixture, and side-by-side pane fixture named in files. The transcript is graded only on the agent choosing this completion composition rather than hand-drawing a mask, treating an indeterminate report as clean, or replacing unrelated human state.",
 			"files": [
-				"scripts/check-board-inspection.mjs",
+				"src/runtime/board-inspection/tests/completion-contract.test.ts",
 				"scripts/check-branch-compare.mjs",
 				"scripts/check-side-by-side.mjs"
 			]

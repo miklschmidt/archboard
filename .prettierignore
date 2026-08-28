@@ -1,2 +1,2 @@
 # This fixture pins the two-space JSON emitted by the command presentation seam.
-scripts/fixtures/board-inspection/dense-compare.json
+src/runtime/board-inspection/tests/fixtures/dense-compare.json
