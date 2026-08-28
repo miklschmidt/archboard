@@ -1,11 +1,10 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
-import { hashBoardBytes } from "../../../src/runtime/engine/board.ts";
-import { versionOfNoteAt } from "../../../src/runtime/engine/board-version.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createRequester } from "./support/http.ts";
 
@@ -38,6 +37,18 @@ const box = (id: string, x: number) => ({
 	height: 40,
 });
 
+const sha256 = (bytes: Buffer): string => createHash("sha256").update(bytes).digest("hex");
+
+const versionInOwnedNote = (bytes: Buffer): number => {
+	const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(bytes.toString("utf8"));
+	if (!frontmatter) throw new Error("Owned board note has no literal frontmatter block.");
+	const versions = frontmatter[1]!.match(/^version:\s*(\d+)\s*$/gm) ?? [];
+	if (versions.length !== 1) {
+		throw new Error(`Owned board note has ${versions.length} literal version fields.`);
+	}
+	return Number(versions[0]!.slice(versions[0]!.indexOf(":") + 1).trim());
+};
+
 const cli = (args: string[]) =>
 	spawnSync(executable, args, {
 		encoding: "utf8",
@@ -69,8 +80,8 @@ describe.serial("board version write boundary", () => {
 		});
 		const noteFile = join(vault, "payments.excalidraw.md");
 		expect(first.body.fingerprint?.version).toBe(1);
-		expect(versionOfNoteAt(noteFile)).toBe(1);
-		expect(first.body.fingerprint?.note).toBe(hashBoardBytes(readFileSync(noteFile)));
+		expect(versionInOwnedNote(readFileSync(noteFile))).toBe(1);
+		expect(first.body.fingerprint?.note).toBe(sha256(readFileSync(noteFile)));
 
 		const second = await request<VersionBody>("/api/elements?board=payments", {
 			method: "POST",
@@ -135,8 +146,7 @@ describe.serial("board version write boundary", () => {
 
 	test("the package CLI distinguishes stale refusal from usage error", () => {
 		const noteFile = join(vault, "payments.excalidraw.md");
-		const at = versionOfNoteAt(noteFile);
-		expect(at).not.toBeNull();
+		const at = versionInOwnedNote(readFileSync(noteFile));
 		const common = ["add", "--board", "payments", "--one"];
 		const said = ["--doing", "adding a box against a version"];
 		const ok = cli([
@@ -161,7 +171,7 @@ describe.serial("board version write boundary", () => {
 		expect(refused.stderr.indexOf("Refusing to write")).toBeLessThan(
 			refused.stderr.indexOf('"document"'),
 		);
-		expect(refused.stderr).toContain(`"version": ${Number(at) + 1}`);
+		expect(refused.stderr).toContain(`"version": ${at + 1}`);
 
 		const mistyped = cli([
 			...common,
