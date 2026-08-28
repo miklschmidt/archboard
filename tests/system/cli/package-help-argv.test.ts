@@ -102,97 +102,97 @@ describe("package bin and help", () => {
 	});
 
 	test("resolves bin.archboard and shows no-argument help outside the checkout", async () => {
-		const owner = createPackageCliOwner();
-		try {
-			expect(packageRecord.bin.archboard).toBe("bin/canvas");
-			expect(existsSync(packageBin)).toBe(true);
-			expect(owner.outside).not.toBe(checkoutRoot);
-			expect(existsSync(join(owner.outside, ".git"))).toBe(false);
-			const result = await owner.run([]);
-			expect(result, packageFailure(result)).toMatchObject({ status: 0, stderr: "" });
-			expect(result.stdout).toMatch(/^archboard .*\n\nUsage:/m);
-			expect(result.stdout).not.toMatch(/model context protocol|json-rpc|stdio server/i);
-		} finally {
-			await owner.dispose();
-		}
+		await using resources = new AsyncDisposableStack();
+		const owner = resources.use(createPackageCliOwner());
+		expect(packageRecord.bin.archboard).toBe("bin/canvas");
+		expect(existsSync(packageBin)).toBe(true);
+		expect(owner.outside).not.toBe(checkoutRoot);
+		expect(existsSync(join(owner.outside, ".git"))).toBe(false);
+		const result = await owner.run([]);
+		const diagnostic = packageFailure(result);
+		expect(result.status, diagnostic).toBe(0);
+		expect(result.stderr, diagnostic).toBe("");
+		expect(result.stdout, diagnostic).toMatch(/^archboard .*\n\nUsage:/m);
+		expect(result.stdout, diagnostic).not.toMatch(/model context protocol|json-rpc|stdio server/i);
+		expect(result.stdout.match(/^  check\s/gm), diagnostic).toHaveLength(1);
+		expect(result.stdout.match(/^  bridge\s/gm), diagnostic).toHaveLength(1);
+		expect(result.stdout.match(/^  render-findings\s/gm), diagnostic).toHaveLength(1);
+		expect(result.stdout, diagnostic).toContain(
+			"               check only: 6 warnings, 7 errors, 8 indeterminate coverage.",
+		);
 	});
 
 	test("every declared command and subcommand has clean help", async () => {
-		const owner = createPackageCliOwner();
-		try {
-			const bare = await owner.run([]);
-			for (const { name, subcommands } of cliSurface()) {
-				expect(bare.stdout).toMatch(new RegExp(`^  ${name}\\s`, "m"));
-				const command = await owner.run(["help", name]);
-				expect(command, packageFailure(command)).toMatchObject({ status: 0, stderr: "" });
-				expect(command.stdout).toStartWith("Usage: archboard ");
-				for (const subcommand of subcommands) {
-					const topic = await owner.run(["help", name, subcommand]);
-					expect(topic, packageFailure(topic)).toMatchObject({ status: 0, stderr: "" });
-					expect(topic.stdout).toMatch(
-						new RegExp(`(^|[^a-z0-9-])${subcommand}([^a-z0-9-]|$)`, "i"),
-					);
-				}
+		await using resources = new AsyncDisposableStack();
+		const owner = resources.use(createPackageCliOwner());
+		const bare = await owner.run([]);
+		for (const { name, subcommands } of cliSurface()) {
+			expect(bare.stdout, packageFailure(bare)).toMatch(new RegExp(`^  ${name}\\s`, "m"));
+			const command = await owner.run(["help", name]);
+			expect(command, packageFailure(command)).toMatchObject({ status: 0, stderr: "" });
+			expect(command.stdout, packageFailure(command)).toStartWith("Usage: archboard ");
+			for (const subcommand of subcommands) {
+				const topic = await owner.run(["help", name, subcommand]);
+				expect(topic, packageFailure(topic)).toMatchObject({ status: 0, stderr: "" });
+				expect(topic.stdout, packageFailure(topic)).toMatch(
+					new RegExp(`(^|[^a-z0-9-])${subcommand}([^a-z0-9-]|$)`, "i"),
+				);
 			}
-			for (const alias of [["-h"], ["--help"], ["help", "unknown-topic"]]) {
-				const result = await owner.run(alias);
-				expect(result, packageFailure(result)).toMatchObject({ status: 0, stderr: "" });
-				expect(sha256(fixedBaseGeneralHelp(result.stdout))).toBe(argvGolden.generalHelpSha256);
-			}
-		} finally {
-			await owner.dispose();
+		}
+		for (const alias of [["-h"], ["--help"], ["help", "unknown-topic"]]) {
+			const result = await owner.run(alias);
+			expect(result, packageFailure(result)).toMatchObject({ status: 0, stderr: "" });
+			expect(sha256(fixedBaseGeneralHelp(result.stdout)), packageFailure(result)).toBe(
+				argvGolden.generalHelpSha256,
+			);
 		}
 	}, 30_000);
 });
 
 describe("package argv compatibility", () => {
 	test("preserves every released argv golden", async () => {
-		const owner = createPackageCliOwner();
-		const http = createCliHttpDouble();
-		try {
-			for (const golden of argvGolden.cases) {
-				http.setBrowserClients(golden.server === "no-browser" ? 0 : 1);
-				const result = await owner.run(
-					golden.argv,
-					golden.server === "mock" || golden.server === "no-browser"
-						? { url: http.url }
-						: golden.server === "closed"
-							? { url: "http://127.0.0.1:1" }
-							: {},
-				);
-				expect(result.status, packageFailure(result)).toBe(golden.status);
-				for (const stream of ["stdout", "stderr"] as const) {
-					const actual = result[stream]
-						.replaceAll(owner.outside, "{{OUTSIDE}}")
-						.replaceAll(http.url, "{{CANVAS_URL}}");
-					const expected = golden[stream]?.replaceAll("{{VERSION}}", packageRecord.version);
-					if (expected === undefined) expect(sha256(actual)).toBe(golden[`${stream}Sha256`]!);
-					else expect(actual).toBe(expected);
-				}
+		await using resources = new AsyncDisposableStack();
+		const http = resources.use(createCliHttpDouble());
+		const owner = resources.use(createPackageCliOwner());
+		for (const golden of argvGolden.cases) {
+			http.setBrowserClients(golden.server === "no-browser" ? 0 : 1);
+			const result = await owner.run(
+				golden.argv,
+				golden.server === "mock" || golden.server === "no-browser"
+					? { url: http.url }
+					: golden.server === "closed"
+						? { url: "http://127.0.0.1:1" }
+						: {},
+			);
+			expect(result.status, packageFailure(result)).toBe(golden.status);
+			for (const stream of ["stdout", "stderr"] as const) {
+				const actual = result[stream]
+					.replaceAll(owner.outside, "{{OUTSIDE}}")
+					.replaceAll(http.url, "{{CANVAS_URL}}");
+				const expected = golden[stream]?.replaceAll("{{VERSION}}", packageRecord.version);
+				if (expected === undefined)
+					expect(sha256(actual), packageFailure(result)).toBe(golden[`${stream}Sha256`]!);
+				else expect(actual, packageFailure(result)).toBe(expected);
 			}
-		} finally {
-			http.dispose();
-			await owner.dispose();
 		}
 	}, 30_000);
 
 	test("preserves fixed-base help bytes and executable record order", async () => {
-		const owner = createPackageCliOwner();
-		try {
-			expect(compatibility.schemaVersion).toBe(2);
-			expect(compatibility.fixedBase).toBe("6c42fca6c0d5b9ecaa5ad40fde14ede684722d5a");
-			for (const path of compatibility.publicPaths) {
-				const [command, ...tail] = path.split(" ");
-				const result = await owner.run(["help", command!, ...tail]);
-				expect(result, packageFailure(result)).toMatchObject({ status: 0, stderr: "" });
-				expect(sha256(result.stdout)).toBe(compatibility.helpStdoutSha256ByCommand[command!]!);
-			}
-			expect(new Set(compatibility.orderedCases.map((record) => record.name)).size).toBe(
-				compatibility.orderedCases.length,
+		await using resources = new AsyncDisposableStack();
+		const owner = resources.use(createPackageCliOwner());
+		expect(compatibility.schemaVersion).toBe(2);
+		expect(compatibility.fixedBase).toBe("6c42fca6c0d5b9ecaa5ad40fde14ede684722d5a");
+		for (const path of compatibility.publicPaths) {
+			const [command, ...tail] = path.split(" ");
+			const result = await owner.run(["help", command!, ...tail]);
+			expect(result, packageFailure(result)).toMatchObject({ status: 0, stderr: "" });
+			expect(sha256(result.stdout), packageFailure(result)).toBe(
+				compatibility.helpStdoutSha256ByCommand[command!]!,
 			);
-		} finally {
-			await owner.dispose();
 		}
+		expect(new Set(compatibility.orderedCases.map((record) => record.name)).size).toBe(
+			compatibility.orderedCases.length,
+		);
 	}, 30_000);
 
 	test("detects an altered argv golden", () => {

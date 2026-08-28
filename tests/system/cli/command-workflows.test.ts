@@ -20,6 +20,37 @@ import { checkoutRoot } from "./support/package-cli.ts";
 const guidePath = join(checkoutRoot, "skills/archboard/references/cli-workflows.md");
 const guide = readFileSync(guidePath, "utf8");
 const contracts = new Map(cliContractRegistry().map((entry) => [entry.name, entry.contract]));
+interface WorkflowSpawn {
+	command: readonly string[];
+	cwd: string;
+	status: number;
+	signal: string | null;
+	stdout: string;
+	stderr: string;
+}
+const workflowFailure = (result: WorkflowSpawn) =>
+	[
+		`command: ${result.command.join(" ")}`,
+		`cwd: ${result.cwd}`,
+		`status: ${result.status}`,
+		`signal: ${result.signal ?? "null"}`,
+		`stdout:\n${result.stdout}`,
+		`stderr:\n${result.stderr}`,
+	].join("\n");
+const runSync = (
+	command: readonly string[],
+	options: { cwd?: string; stdin?: Uint8Array; env?: NodeJS.ProcessEnv } = {},
+): WorkflowSpawn => {
+	const result = Bun.spawnSync([...command], options);
+	return {
+		command,
+		cwd: options.cwd ?? process.cwd(),
+		status: result.exitCode,
+		signal: result.signalCode ?? null,
+		stdout: result.stdout.toString(),
+		stderr: result.stderr.toString(),
+	};
+};
 const element = (id: string, type = "rectangle", x = 0, y = 0) => ({ id, type, x, y });
 const fingerprint = { elements: 2, note: "a".repeat(64), version: 17 };
 const bridgeFacts = {
@@ -211,12 +242,14 @@ describe("documented CLI workflows", () => {
 			expect(contract, id).toBeDefined();
 			for (const consumer of workflow.consumers) expect(contracts.has(consumer), id).toBe(true);
 			const parsed = contract!.result.parse(workflow.fixture);
-			const result = Bun.spawnSync(["jq", ...workflow.jq, blocks.get(id)!], {
+			const result = runSync(["jq", ...workflow.jq, blocks.get(id)!], {
 				stdin: new TextEncoder().encode(JSON.stringify(parsed)),
 			});
-			expect(result.exitCode, id).toBe(0);
-			expect(result.stderr.toString(), id).toBe("");
-			expect(result.stdout.toString(), id).toBe(workflow.expected);
+			const diagnostic = `${id}\n${workflowFailure(result)}`;
+			expect(result.status, diagnostic).toBe(0);
+			expect(result.signal, diagnostic).toBeNull();
+			expect(result.stderr, diagnostic).toBe("");
+			expect(result.stdout, diagnostic).toBe(workflow.expected);
 		}
 	});
 
@@ -235,7 +268,7 @@ describe("documented CLI workflows", () => {
 			chmodSync(fake, 0o755);
 			for (const exit of [6, 7, 8]) {
 				const stdout = `{"strictExit":${exit}}\n`;
-				const result = Bun.spawnSync(["bash", "-eu", "-o", "pipefail", "-c", match![1]!], {
+				const result = runSync(["bash", "-eu", "-o", "pipefail", "-c", match![1]!], {
 					env: {
 						...process.env,
 						PATH: `${scratch}:${process.env.PATH}`,
@@ -245,11 +278,13 @@ describe("documented CLI workflows", () => {
 						FAKE_STDERR: "",
 					},
 				});
-				expect(result.exitCode).toBe(0);
-				expect(result.stdout.toString()).toBe(stdout);
-				expect(result.stderr.toString()).toBe("");
+				const diagnostic = workflowFailure(result);
+				expect(result.status, diagnostic).toBe(0);
+				expect(result.signal, diagnostic).toBeNull();
+				expect(result.stdout, diagnostic).toBe(stdout);
+				expect(result.stderr, diagnostic).toBe("");
 			}
-			const failure = Bun.spawnSync(["bash", "-eu", "-o", "pipefail", "-c", match![1]!], {
+			const failure = runSync(["bash", "-eu", "-o", "pipefail", "-c", match![1]!], {
 				env: {
 					...process.env,
 					PATH: `${scratch}:${process.env.PATH}`,
@@ -259,9 +294,11 @@ describe("documented CLI workflows", () => {
 					FAKE_STDERR: "operational failure\n",
 				},
 			});
-			expect(failure.exitCode).toBe(1);
-			expect(failure.stdout.toString()).toBe("");
-			expect(failure.stderr.toString()).toBe("operational failure\n");
+			const diagnostic = workflowFailure(failure);
+			expect(failure.status, diagnostic).toBe(1);
+			expect(failure.signal, diagnostic).toBeNull();
+			expect(failure.stdout, diagnostic).toBe("");
+			expect(failure.stderr, diagnostic).toBe("operational failure\n");
 		} finally {
 			rmSync(scratch, { recursive: true, force: true });
 		}
@@ -276,8 +313,9 @@ describe("documented CLI workflows", () => {
 				join(checkoutRoot, "scripts/sync-skills.mjs"),
 				join(scratch, "scripts/sync-skills.mjs"),
 			);
-			const result = Bun.spawnSync(["bun", "scripts/sync-skills.mjs"], { cwd: scratch });
-			expect(result.exitCode).toBe(0);
+			const result = runSync(["bun", "scripts/sync-skills.mjs"], { cwd: scratch });
+			expect(result.status, workflowFailure(result)).toBe(0);
+			expect(result.signal, workflowFailure(result)).toBeNull();
 			for (const target of [
 				join(scratch, ".agents/skills/archboard/references/cli-workflows.md"),
 				join(scratch, ".claude/skills/archboard/references/cli-workflows.md"),

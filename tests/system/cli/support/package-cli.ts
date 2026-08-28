@@ -1,5 +1,13 @@
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { closeSync, existsSync, mkdtempSync, openSync, readFileSync, rmSync } from "node:fs";
+import { spawn, type ChildProcess, type ChildProcessWithoutNullStreams } from "node:child_process";
+import {
+	closeSync,
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	openSync,
+	readFileSync,
+	rmSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,7 +28,6 @@ export interface PackageRunOptions {
 	url?: string;
 	input?: string;
 	cwd?: string;
-	env?: Readonly<Record<string, string | undefined>>;
 }
 
 export interface PackageRunResult {
@@ -56,18 +63,57 @@ export function packageFailure(result: PackageRunResult): string {
 
 export interface PackageCliOwner {
 	readonly outside: string;
+	readonly home: string;
+	readonly state: string;
+	readonly log: string;
+	readonly registry: string;
+	readonly vault: string;
 	run(args: readonly string[], options?: PackageRunOptions): Promise<PackageRunResult>;
 	runMerged(
 		args: readonly string[],
 		options?: PackageRunOptions,
+		observed?: string[],
 	): Promise<PackageRunResult & { merged: string }>;
 	dispose(): Promise<void>;
+	[Symbol.asyncDispose](): Promise<void>;
 }
+
+const clearedEnvironment = {
+	CODEX_HOME: undefined,
+	LOCALAPPDATA: undefined,
+	EXPRESS_SERVER_URL: undefined,
+	ENABLE_CANVAS_SYNC: undefined,
+	ARCHBOARD_INJECT: undefined,
+	ARCHBOARD_INJECT_LOUD: undefined,
+	ARCHBOARD_INJECT_THREAD: undefined,
+	ARCHBOARD_INJECT_DEBOUNCE_MS: undefined,
+	ARCHBOARD_INJECT_MIN_INTERVAL_MS: undefined,
+	ARCHBOARD_SETTLE_MS: undefined,
+	ARCHBOARD_SETTLE_MAX_MS: undefined,
+} as const;
 
 export function createPackageCliOwner(): PackageCliOwner {
 	const outside = mkdtempSync(join(tmpdir(), "archboard-package-cli-"));
-	const children = new Set<ChildProcessWithoutNullStreams>();
+	const home = join(outside, "home");
+	const state = join(outside, "state");
+	const log = join(outside, "logs", "archboard.log");
+	const registry = join(outside, "repos.json");
+	const vault = join(outside, "vault");
+	for (const directory of [home, state, dirname(log), vault])
+		mkdirSync(directory, { recursive: true });
+	const children = new Set<ChildProcess>();
 	let disposed = false;
+	const environment = (url?: string): NodeJS.ProcessEnv => ({
+		...process.env,
+		...clearedEnvironment,
+		HOME: home,
+		XDG_STATE_HOME: state,
+		LOG_FILE_PATH: log,
+		ARCHBOARD_REPOS: registry,
+		ARCHBOARD_VAULT: vault,
+		EXCALIDRAW_NO_AUTOSTART: "1",
+		...(url ? { EXPRESS_SERVER_URL: url } : {}),
+	});
 
 	const baseSpawn = (
 		args: readonly string[],
@@ -78,12 +124,7 @@ export function createPackageCliOwner(): PackageCliOwner {
 		const cwd = options.cwd ?? outside;
 		const child = spawn(packageBin, [...args], {
 			cwd,
-			env: {
-				...process.env,
-				EXCALIDRAW_NO_AUTOSTART: "1",
-				...(options.url ? { EXPRESS_SERVER_URL: options.url } : {}),
-				...options.env,
-			},
+			env: environment(options.url),
 			stdio,
 		});
 		return { child, cwd, command: [packageBin, ...args] };
@@ -121,46 +162,59 @@ export function createPackageCliOwner(): PackageCliOwner {
 			child.stdin.end(options.input);
 		});
 
-	const runMerged = (args: readonly string[], options: PackageRunOptions = {}) =>
+	const runMerged = (
+		args: readonly string[],
+		options: PackageRunOptions = {},
+		observed: string[] = [],
+	) =>
 		new Promise<PackageRunResult & { merged: string }>((resolveRun) => {
 			const mergedPath = join(outside, `merged-${Date.now()}-${Math.random()}.log`);
 			const descriptor = openSync(mergedPath, "w+");
 			const launched = baseSpawn(args, options, ["ignore", descriptor, descriptor]);
 			const child = launched.child;
-			children.add(child as ChildProcessWithoutNullStreams);
+			children.add(child);
 			const timeout = setTimeout(() => child.kill("SIGKILL"), 20_000);
 			child.once("close", (status, signal) => {
 				clearTimeout(timeout);
-				children.delete(child as ChildProcessWithoutNullStreams);
+				children.delete(child);
 				closeSync(descriptor);
+				observed.push(`exit:${status}`);
 				const result = resultSchema.parse({
 					...launched,
 					status,
 					signal,
 					stdout: "",
 					stderr: "",
-					events: [`exit:${status}`],
+					events: observed,
 				});
 				resolveRun({ ...result, merged: readFileSync(mergedPath, "utf8") });
 			});
 		});
 
+	const dispose = async () => {
+		if (disposed) return;
+		disposed = true;
+		const exits = [...children].map(
+			(child) =>
+				new Promise<void>((resolveExit) => {
+					if (child.exitCode !== null || child.signalCode !== null) return resolveExit();
+					child.once("close", () => resolveExit());
+					child.kill("SIGKILL");
+				}),
+		);
+		await Promise.allSettled(exits);
+		if (existsSync(outside)) rmSync(outside, { recursive: true, force: true });
+	};
 	return {
 		outside,
+		home,
+		state,
+		log,
+		registry,
+		vault,
 		run,
 		runMerged,
-		async dispose() {
-			if (disposed) return;
-			disposed = true;
-			const exits = [...children].map(
-				(child) =>
-					new Promise<void>((resolveExit) => {
-						child.once("close", () => resolveExit());
-						child.kill("SIGKILL");
-					}),
-			);
-			await Promise.allSettled(exits);
-			if (existsSync(outside)) rmSync(outside, { recursive: true, force: true });
-		},
+		dispose,
+		[Symbol.asyncDispose]: dispose,
 	};
 }
