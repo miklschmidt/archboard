@@ -1750,7 +1750,7 @@ try {
 	const negativeControl = compareEndpoints(deliberatelyWrongServerEndpoint, browserEndpoint);
 	check(
 		"the same 1.0 scene-pixel comparison rejects a server endpoint that is two pixels wrong",
-		negativeControl.agrees === false && negativeControl.separation === 2,
+		!negativeControl.agrees && negativeControl.separation === 2,
 		JSON.stringify(negativeControl),
 	);
 
