@@ -1,11 +1,11 @@
 ---
 id: TASK-130.01
 title: 'Put native tests under TypeScript, lint, and boundary enforcement'
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:02'
-updated_date: '2026-08-28 05:00'
+updated_date: '2026-08-28 05:03'
 labels: []
 dependencies: []
 references:
@@ -46,13 +46,13 @@ The resulting structure must support co-located module contract tests and one ex
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A pinned Bun type declaration dependency and a strict no-emit test/tools TypeScript configuration cover every existing native test and test-only support file through bun run type-check.
-- [ ] #2 The boundary documentation and custom Oxlint rule define and enforce co-located module tests plus one explicit system-test location; system tests import product modules only through root entrypoints, and product code cannot import test code or fixtures.
-- [ ] #3 The blanket *.test.ts and *.spec.ts lint exemption is removed. Any remaining test-specific rule exception is path-scoped, documented, and proven necessary by reachable behavior.
-- [ ] #4 Oxlint enforces a 500-line maximum for test source files. Authored large fixtures live in named fixture files rather than bypass comments.
-- [ ] #5 The existing 965-line command-contract native test is split by contract so all pre-existing native tests satisfy the new type, lint, boundary, and file-size gates.
-- [ ] #6 Focused negative tests prove test type-check coverage, forbidden deep imports, product-to-test imports, invalid test placement, and oversized test files fail with actionable diagnostics.
-- [ ] #7 bun run lint, bun run fmt:check, bun run type-check, and the existing full test chain pass without weakening any product or browser check.
+- [x] #1 A pinned Bun type declaration dependency and a strict no-emit test/tools TypeScript configuration cover every existing native test and test-only support file through bun run type-check.
+- [x] #2 The boundary documentation and custom Oxlint rule define and enforce co-located module tests plus one explicit system-test location; system tests import product modules only through root entrypoints, and product code cannot import test code or fixtures.
+- [x] #3 The blanket *.test.ts and *.spec.ts lint exemption is removed. Any remaining test-specific rule exception is path-scoped, documented, and proven necessary by reachable behavior.
+- [x] #4 Oxlint enforces a 500-line maximum for test source files. Authored large fixtures live in named fixture files rather than bypass comments.
+- [x] #5 The existing 965-line command-contract native test is split by contract so all pre-existing native tests satisfy the new type, lint, boundary, and file-size gates.
+- [x] #6 Focused negative tests prove test type-check coverage, forbidden deep imports, product-to-test imports, invalid test placement, and oversized test files fail with actionable diagnostics.
+- [x] #7 bun run lint, bun run fmt:check, bun run type-check, and the existing full test chain pass without weakening any product or browser check.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -116,3 +116,9 @@ created: 2026-08-28 04:59
 Applied the independent review remediation. The task remains In Progress with acceptance criteria unchecked pending rereview.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Established one strict typed native-test boundary: Bun 1.4 is pinned, the root TypeScript project and Oxlint cover module/system tests plus support, ownership and placement rules reject deep/cross/product-to-test imports, test sources are capped at 500 physical lines, and the command-contract suite is split without losing its 27 cases or golden/process contracts. Verified by the owner matrix and type-negative probes, 37 native tests with 199 expectations, lint, format, type-check, the complete sequential test chain including all headless browser checks, and an independent clean fixed-range review.
+<!-- SECTION:FINAL_SUMMARY:END -->
