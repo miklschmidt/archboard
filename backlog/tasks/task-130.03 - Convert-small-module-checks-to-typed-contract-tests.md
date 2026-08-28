@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:03'
-updated_date: '2026-08-28 05:45'
+updated_date: '2026-08-28 06:33'
 labels: []
 dependencies:
   - TASK-130.01
@@ -17,6 +17,7 @@ references:
   - docs/design/measuring-text-outside-a-browser.md
   - docs/design/server-is-the-truth.md
 modified_files:
+  - package.json
   - src/runtime/engine/tests/library.test.ts
   - src/runtime/engine/tests/text-metrics.test.ts
   - src/runtime/engine/tests/obsidian-note-round-trip.test.ts
@@ -28,6 +29,10 @@ modified_files:
   - src/ui/canvas/tests/change-reporting-scheduling.test.ts
   - src/ui/canvas/tests/change-reporting-holds-and-adoption.test.ts
   - src/ui/canvas/tests/support/change-reporting-harness.ts
+  - scripts/check-library.mjs
+  - scripts/check-text-metrics.mjs
+  - scripts/check-obsidian-md.mjs
+  - scripts/check-change-reporting.mjs
 parent_task_id: TASK-130
 priority: medium
 type: task
@@ -144,4 +149,22 @@ Safety incident and recovery, 2026-08-28:
 - The earlier note claiming the combined engine command proved fresh-process safety is withdrawn. Do not run that combined command.
 - library.test.ts now assigns its owned temporary vault before importing the library module and immediately asserts that libraryFilePath() resolves exactly to <owned-temp>/.archboard/library.excalidrawlib before any read or write.
 - Validation now runs library, text, Obsidian, and reporting as separate Bun invocations. The library process passed 10 tests and a post-run check confirmed the configured vault remained absent. Text passed 54 tests, Obsidian passed 29, and reporting passed 33. Type-check, lint, fmt:check, unstaged diff check, and staged diff check pass.
+
+Serialized cutover on fixed base b533d271793e69e2b2c8b685c7c186e2622b3de2:
+- Rebased authoring commit e7c8009 cleanly; its rewritten commit is 112810710ae70aadc902fbe95c89570eabf2fe66.
+- package.json now maps test:library, test:text, test:obsidian, and test:reporting to the approved native commands. test:library remains one standalone Bun process.
+- Deleted only scripts/check-library.mjs, scripts/check-text-metrics.mjs, scripts/check-obsidian-md.mjs, and scripts/check-change-reporting.mjs.
+- Focused package results: library 10 tests and 48 expect calls plus two fail-closed path assertions; text 54 tests and 75 expectations; Obsidian 29 tests and 153 expectations; reporting 33 tests and 103 expectations.
+- Before and after the focused library lane, both configured user-vault paths were absent. Full bun run check used a task-owned temporary ARCHBOARD_VAULT; its before and after checks also found the configured paths absent. The validation vault was removed afterward.
+- TASK-130.02 real inventory passed its live-checkout contract. A final package audit found each of the nine native test files exactly once across package scripts and all four predecessors absent.
+- Sequential validation passed: four package lanes, bun run test:suites, bun run type-check, bun run lint, bun run fmt:check, git diff --check, and the complete headless bun run check. Browser results included human-performance, fixed-point with zero element drift, typed-text, and live-session with 42 of 42 convergence cycles.
+- No Bun or task-owned process and no task validation directory remained after the run. The work stays In Progress with acceptance criteria unchecked for independent review.
+
+Independent review parity remediation:
+- Reviewer corrected the predecessor inventory to 19 explicit step transitions plus the constructor initial-state assertion. The replacement now has 20 explicit pendingIsReachable assertions, kept beside the named transition in its owning test.
+- Exact mapping: change-reporting-state owns initial state, overlapping server updates finishing, text edit scheduling, and text-ID rename delivery. change-reporting-acknowledgement owns all six earlier/later reply transitions and the three in-flight report/server-update overlap transitions. change-reporting-scheduling owns both user-edit-during-server-application transitions. change-reporting-holds-and-adoption owns the three delta refusal and immediate retry transitions plus the two board-adoption transitions.
+- Red evidence: a focused structural parity check failed at 2 explicit assertions against the corrected expected 20. Green evidence: the same check passes at exactly 20.
+- bun run test:reporting passes 33 tests with 121 expectations, up from 103 before remediation. The assertions add no timing relaxation, helper loop, production change, or executable behavior change.
+- Sequential follow-up validation passes bun run test:suites, bun run type-check, bun run lint, bun run fmt:check, bun run test:boundaries, and git diff --check. Full bun run check was not repeated because this remediation changes assertions only; the complete headless serial check already passed for the cutover range.
+- External vault absence checks passed before and after focused reporting and before and after the remaining validation. TASK-130.03 remains In Progress with every acceptance criterion unchecked.
 <!-- SECTION:NOTES:END -->

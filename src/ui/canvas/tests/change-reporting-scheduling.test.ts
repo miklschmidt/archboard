@@ -151,8 +151,10 @@ describe("delivery around server scene application", () => {
 		);
 		harness.dispatch({ type: "scene_changed", scene: copy(harness.scene) });
 		harness.clock.advance(0);
+		expect(harness.pendingIsReachable()).toBe(true);
 		expect(harness.state.localEditCount).toBe(1);
 		harness.due();
+		expect(harness.pendingIsReachable()).toBe(true);
 		expect(harness.server.requests[0]?.report.upserts).toContainEqual(
 			expect.objectContaining({ id: "a", x: 15 }),
 		);
