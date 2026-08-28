@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:04'
-updated_date: '2026-08-28 20:08'
+updated_date: '2026-08-28 20:16'
 labels: []
 dependencies:
   - TASK-130.01
@@ -194,4 +194,12 @@ Seventh complete-range remediation after Standards rereview (2026-08-28):
 - Validation: test:cli 39 tests/876 expectations; TASK-130.06 owned-canvas lifecycle 13/85; live inventory 11/11; type-check, lint, fmt:check, and git diff --check passed.
 - No browser or full check was rerun. This is one cleanup-owner test change, exposed no broader failure, and retains the prior successful complete headless/serial run at bdbd102.
 - resource-cleanup.test.ts is 245 formatted lines, below 500.
+
+Eighth complete-range remediation after Spec rereview (2026-08-28):
+- Changed only resource-cleanup.test.ts. The shipped-bin and verified-canvas deliberate assertion errors now use exact toBe equality against the complete stable Bun messages, including both blank lines and the trailing newline.
+- Replaced both shipped-bin listener catch-to-boolean checks. Each retained error must be a TypeError with code ConnectionRefused, errno 0, path exactly the listener health URL, and the exact connection-refusal message.
+- Red evidence: wrong complete-message sentinels failed for both deliberate assertion cases and printed the complete five-line messages. A wrong shipped listener code failed with ConnectionRefused. The corrected cleanup owner passed 4 tests/80 expectations.
+- Validation: test:cli 39 tests/882 expectations; TASK-130.06 owned-canvas lifecycle 13/85; live inventory 11/11; type-check, lint, fmt:check, and git diff --check passed.
+- No browser or full check was rerun. This single test-owner change exposed no broader failure and retains the prior successful complete headless/serial run at bdbd102.
+- resource-cleanup.test.ts is 252 formatted lines, below 500.
 <!-- SECTION:NOTES:END -->

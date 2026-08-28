@@ -60,8 +60,9 @@ describe("CLI resource cleanup", () => {
 
 		expect(intended).toBeInstanceOf(Error);
 		const intendedError = intended as Error;
-		expect(intendedError.message).toContain('Expected: "intended assertion failure"');
-		expect(intendedError.message).toContain('Received: "observed in flight"');
+		expect(intendedError.message).toBe(
+			'expect(received).toBe(expected)\n\nExpected: "intended assertion failure"\nReceived: "observed in flight"\n',
+		);
 		expect(runPromise).toBeDefined();
 		if (!runPromise) throw new Error("The in-flight package run was not retained.");
 		const result = await runPromise;
@@ -72,13 +73,18 @@ describe("CLI resource cleanup", () => {
 		}
 		for (const url of [heldUrl, doubleUrl]) {
 			expect(url.length).toBeGreaterThan(0);
-			let unreachable = false;
+			let listenerError: unknown;
 			try {
 				await fetch(`${url}/health`);
-			} catch {
-				unreachable = true;
+			} catch (error) {
+				listenerError = error;
 			}
-			expect(unreachable).toBeTrue();
+			expect(listenerError).toBeInstanceOf(TypeError);
+			const refusal = listenerError as Error & { code?: string; errno?: number; path?: string };
+			expect(refusal.code).toBe("ConnectionRefused");
+			expect(refusal.errno).toBe(0);
+			expect(refusal.path).toBe(`${url}/health`);
+			expect(refusal.message).toBe("Unable to connect. Is the computer able to access the url?");
 		}
 	});
 
@@ -199,8 +205,9 @@ describe("CLI resource cleanup", () => {
 		}
 		expect(intended).toBeInstanceOf(Error);
 		const intendedError = intended as Error;
-		expect(intendedError.message).toContain('Expected: "intended assertion failure"');
-		expect(intendedError.message).toContain('Received: "running canvas"');
+		expect(intendedError.message).toBe(
+			'expect(received).toBe(expected)\n\nExpected: "intended assertion failure"\nReceived: "running canvas"\n',
+		);
 		expect(verifiedRunning).toBeTrue();
 		expect(fixtureRegistered).toBeTrue();
 		expect(canvasDisposerRegistered).toBeTrue();
