@@ -1,6 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	statSync,
+	writeFileSync,
+} from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -62,7 +70,19 @@ async function freePort(): Promise<number> {
 	return address.port;
 }
 
-async function startHotCanvas(): Promise<HotCanvas> {
+async function startHotCanvas(
+	readiness: (canvas: HotCanvas) => Promise<void> = async (canvas) => {
+		await waitFor(async () => {
+			try {
+				const current = await canvas.health();
+				return current.pid === canvas.pid ? current : undefined;
+			} catch {
+				await canvas.assertRunning();
+				return undefined;
+			}
+		}, "owned hot canvas to answer health");
+	},
+): Promise<HotCanvas> {
 	const root = mkdtempSync(join(tmpdir(), "archboard-hot-reload-"));
 	const vault = join(root, "vault");
 	const state = join(root, "state");
@@ -134,19 +154,92 @@ async function startHotCanvas(): Promise<HotCanvas> {
 			return disposal;
 		},
 	};
-	await waitFor(async () => {
+	try {
+		await readiness(canvas);
+	} catch (cause) {
 		try {
-			const current = await health();
-			return current.pid === child.pid ? current : undefined;
-		} catch {
-			await canvas.assertRunning();
-			return undefined;
+			await canvas.dispose();
+		} catch (disposalFailure) {
+			throw new AggregateError(
+				[cause, disposalFailure],
+				"Hot canvas readiness failed and disposal also failed.",
+				{ cause: disposalFailure },
+			);
 		}
-	}, "owned hot canvas to answer health");
+		throw cause;
+	}
 	return canvas;
 }
 
 describe.serial("hot reload", () => {
+	test("cleans a canvas whose readiness check fails", async () => {
+		const readinessFailure = new Error("forced hot readiness failure");
+		let started: HotCanvas | undefined;
+		let rejected: unknown;
+		try {
+			const unexpected = await startHotCanvas(async (canvas: HotCanvas) => {
+				started = canvas;
+				throw readinessFailure;
+			});
+			await unexpected.dispose();
+		} catch (error) {
+			rejected = error;
+		}
+		expect(rejected).toBe(readinessFailure);
+		expect(started).toBeDefined();
+		expect(existsSync(resolve(started!.vault, ".."))).toBeFalse();
+		expect(() => process.kill(started!.pid, 0)).toThrow();
+	});
+
+	test("restores later snapshots and reports checkout state after an earlier failure", () => {
+		const root = mkdtempSync(join(tmpdir(), "archboard-hot-restore-failure-"));
+		try {
+			const paths = ["first.ts", "second.ts", "third.ts"].map((name) => join(root, name));
+			for (const [index, path] of paths.entries()) writeFileSync(path, `before-${index}\n`);
+			for (const args of [
+				["init", "-q"],
+				["add", "."],
+			]) {
+				const git = spawnSync("git", args, { cwd: root, encoding: "utf8" });
+				expect(git.status, git.stderr).toBe(0);
+			}
+			const snapshots = paths.map((path) => ({
+				path,
+				bytes: readFileSync(path),
+				mtimeNs: statSync(path, { bigint: true }).mtimeNs,
+			}));
+			const edit = reversibleCheckoutEdit(root, paths);
+			for (const path of paths) edit.edit(path, (source) => `${source}changed\n`);
+			rmSync(paths[0]!);
+			mkdirSync(paths[0]!);
+			writeFileSync(join(paths[0]!, "blocking-entry"), "blocks restoration\n");
+
+			let failure: unknown;
+			try {
+				edit.restore();
+			} catch (error) {
+				failure = error;
+			}
+			expect(failure).toBeInstanceOf(AggregateError);
+			expect((failure as Error).message).toContain("checkout restoration failed");
+			expect((failure as AggregateError).errors.join("\n")).toContain("Checkout status changed");
+			for (const snapshot of snapshots.slice(1)) {
+				expect(readFileSync(snapshot.path)).toEqual(snapshot.bytes);
+				expect(statSync(snapshot.path, { bigint: true }).mtimeNs).toBe(snapshot.mtimeNs);
+			}
+			rmSync(paths[0]!, { recursive: true });
+			writeFileSync(paths[0]!, "retry target\n");
+			edit.restore();
+			for (const snapshot of snapshots) {
+				expect(readFileSync(snapshot.path)).toEqual(snapshot.bytes);
+				expect(statSync(snapshot.path, { bigint: true }).mtimeNs).toBe(snapshot.mtimeNs);
+			}
+			edit.restore();
+		} finally {
+			rmSync(root, { recursive: true, force: true });
+		}
+	});
+
 	test("reloads only on request and preserves every live public state boundary", async () => {
 		await using resources = new AsyncDisposableStack();
 		const canvas = await startHotCanvas();
