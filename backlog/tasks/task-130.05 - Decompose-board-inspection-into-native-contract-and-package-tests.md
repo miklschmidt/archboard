@@ -1,11 +1,11 @@
 ---
 id: TASK-130.05
 title: Decompose board inspection into native contract and package tests
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:03'
-updated_date: '2026-08-28 17:02'
+updated_date: '2026-08-28 17:14'
 labels: []
 dependencies:
   - TASK-130.01
@@ -30,14 +30,14 @@ Split the coverage along the existing board-inspection entrypoints. Preserve aut
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 check-board-inspection is replaced by typed native tests for input snapshotting, schemas, detectors, architecture facts, bridge validation, diagnostic counters, complexity ceilings, package execution, CLI output, and read-only behavior.
-- [ ] #2 Tests preserve the exact 1,000,000 input-unit and 2,000,000 comparison ceilings, the 1,516,200 below-limit comparison count, deterministic finding order, strict and non-strict exits, and completed findings at the comparison stop.
-- [ ] #3 Proxy, revoked-proxy, accessor, cycle, custom-prototype, sparse-array, unsafe-scalar, and large supported input cases prove the public inspector does not execute caller-owned JavaScript or mutate input.
-- [ ] #4 Bridge schema-v2 cases preserve provenance validation, exact crossing suppression, unchanged architecture, compare and describe bytes, and the renderer-facing focus contract.
-- [ ] #5 Package tests invoke the shipped binary with no canvas process, prove zero HTTP contacts and unchanged vault paths, bytes, and mtimes, and validate stdout through the exported schemas.
-- [ ] #6 Diagnostic counters remain test-only noncontractual evidence and never enter product output.
-- [ ] #7 Every test file is at most 500 lines, imports public entrypoints, and can run independently with deterministic cleanup and no shared mutable fixture state.
-- [ ] #8 A focused parity matrix proves the native tests catch representative snapshot, detector, limit, bridge, CLI, and mutation regressions before the legacy script is deleted.
+- [x] #1 check-board-inspection is replaced by typed native tests for input snapshotting, schemas, detectors, architecture facts, bridge validation, diagnostic counters, complexity ceilings, package execution, CLI output, and read-only behavior.
+- [x] #2 Tests preserve the exact 1,000,000 input-unit and 2,000,000 comparison ceilings, the 1,516,200 below-limit comparison count, deterministic finding order, strict and non-strict exits, and completed findings at the comparison stop.
+- [x] #3 Proxy, revoked-proxy, accessor, cycle, custom-prototype, sparse-array, unsafe-scalar, and large supported input cases prove the public inspector does not execute caller-owned JavaScript or mutate input.
+- [x] #4 Bridge schema-v2 cases preserve provenance validation, exact crossing suppression, unchanged architecture, compare and describe bytes, and the renderer-facing focus contract.
+- [x] #5 Package tests invoke the shipped binary with no canvas process, prove zero HTTP contacts and unchanged vault paths, bytes, and mtimes, and validate stdout through the exported schemas.
+- [x] #6 Diagnostic counters remain test-only noncontractual evidence and never enter product output.
+- [x] #7 Every test file is at most 500 lines, imports public entrypoints, and can run independently with deterministic cleanup and no shared mutable fixture state.
+- [x] #8 A focused parity matrix proves the native tests catch representative snapshot, detector, limit, bridge, CLI, and mutation regressions before the legacy script is deleted.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -138,4 +138,12 @@ Final input-snapshot rereview remediation restores the exact predecessor snapsho
 Final Standards remediation restores BASE 4315-4329 nonmutation depth in input-snapshot. The owner imports the complete moved dense-after.excalidraw.json fixture, structured-clones it into fresh caller input, recursively freezes every nested object and array through a private generic deepFreeze, records exact JSON bytes, runs inspectBoard without throwing, validates the report through InspectionReportSchema, and compares the complete input bytes after both inspections. It retains returned-finding details/message mutation and proves the next report remains independent. Deliberate red evidence removed the recursive freeze and changed h.points[0][0] from 0 to 999; the exact byte assertion failed with the nested difference. Restoring recursive freeze made the focused owner pass at 7 tests/44 assertions and 207 formatted lines. Exact module lane: 90/1,557; exact system lane: 19/191; test:inspection: 109/1,748; live inventory: 11/11. Type-check, lint, fmt:check, git diff --check, and one sequential bun run check passed, including all four headless serial browser lanes. No production or accepted mutant contract changed. Cleanup found no task-owned process, listener, browser, sentinel, vault, checkout, or inspection temp state; one empty check-local-bind directory was inspected and removed.
 
 Final direct report-copy remediation captures a structured clone of the pristine first finding.details before caller mutation. After mutating first.details.testMutation and first.message, the owner now directly requires the second finding.details to equal the pristine details, directly requires testMutation to be absent, and independently retains the exact second.message assertion. Whole-report inequality is no longer used as details-isolation evidence. Deliberate red forced the second report to share the mutated first details object; the new exact assertion failed on the literal added testMutation: true field. Focused green: input-snapshot 7 tests/45 assertions, 209 formatted lines. Exact module lane: 90/1,558; exact system lane: 19/191; test:inspection: 109/1,749; live inventory: 11/11. Type-check, lint, fmt:check, git diff --check, and one sequential bun run check passed with all four browser lanes headless and serial. No production or prior accepted contract changed. Cleanup found no task-owned process, listener, browser, sentinel, vault, checkout, or temp state; one empty check-local-bind directory was inspected and removed.
+
+Final integration on main: independent complete fixed-range review was clean on Standards and Spec. Cherry-picked as 9a72f33. A fresh task-owned ARCHBOARD_VAULT passed test:inspection at 109 tests / 1,749 assertions and one complete sequential bun run check, including all four browser lanes headless and serially. Inventory, boundaries, module-scope, type-check, lint, format, CLI/package/system lanes, fixture hashes, line limits, and cleanup all remained green; the temporary vault was removed and no task-owned process or listener remained.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replaced the 7,752-line board-inspection runner with 18 typed module owners and 7 shipped-binary system owners, retaining exact snapshot, detector, bridge, ordering, ceiling, package, read-only, cleanup, and TASK-129 compatibility contracts. Moved the three dense fixtures byte-for-byte, rewired the inspection lane and eval reference, and deleted only the superseded runner and fixture copies. Verified by an 11-mutant paired parity matrix, independent complete-range Standards/Spec review, focused test:inspection (109 tests / 1,749 assertions), live inventory, static gates, and one complete sequential headless bun run check on integrated main.
+<!-- SECTION:FINAL_SUMMARY:END -->
