@@ -6,7 +6,11 @@ import { boardsForRepo } from "../../../src/runtime/engine/repo-boards.ts";
 import { extractSceneJsonFromObsidianMd } from "../../../src/runtime/engine/obsidian-md.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { checkoutRoot } from "./support/package-cli.ts";
-import { createRepositoryFixture, repositoryFailure } from "./support/repository-fixture.ts";
+import {
+	createRepositoryFixture,
+	repositoryFailure,
+	type RepositorySpawn,
+} from "./support/repository-fixture.ts";
 
 const objectSchema = z.record(z.string(), z.unknown());
 const elementSchema = z
@@ -26,17 +30,31 @@ const elementSchema = z
 const apiResultSchema = z.object({ status: z.number(), body: objectSchema });
 const boardListSchema = z
 	.object({
+		repo: z.string().optional(),
 		boards: z.array(
 			z
 				.object({
 					key: z.string(),
 					source: z.enum(["memory", "vault"]),
-					nodes: z.array(z.unknown()),
+					nodes: z.array(z.object({ path: z.string() }).passthrough()),
 				})
 				.passthrough(),
 		),
 	})
 	.passthrough();
+
+function parseBoardList(result: RepositorySpawn): z.infer<typeof boardListSchema> {
+	const diagnostic = repositoryFailure(result);
+	let decoded: unknown;
+	try {
+		decoded = JSON.parse(result.stdout);
+	} catch (error) {
+		throw new Error(`${diagnostic}\nparse: ${(error as Error).message}`, { cause: error });
+	}
+	const parsed = boardListSchema.safeParse(decoded);
+	if (!parsed.success) throw new Error(`${diagnostic}\nparse: ${parsed.error.message}`);
+	return parsed.data;
+}
 
 const doingUrl = (path: string, method: string) => {
 	if (method === "GET") return path;
@@ -72,6 +90,11 @@ describe("two-repository board session", () => {
 				const added = fixture.run(["repo", "add", checkout], { url: canvas.base });
 				expect(added.status, repositoryFailure(added)).toBe(0);
 			}
+			const repositories = fixture.run(["repo", "list", "--text"], { url: canvas.base });
+			const repositoriesDiagnostic = repositoryFailure(repositories);
+			expect(repositories.status, repositoriesDiagnostic).toBe(0);
+			expect(repositories.stdout, repositoriesDiagnostic).toContain(alphaIdentity);
+			expect(repositories.stdout, repositoriesDiagnostic).toContain(betaIdentity);
 			const board = "systems";
 			expect((await api("POST", "/api/boards/new", { board, level: "system" })).status).toBe(200);
 			const addNode = async (x: number, label: string, link?: string) => {
@@ -179,8 +202,17 @@ describe("two-repository board session", () => {
 				/Alpha \[service\] -> src\/service\.ts/,
 			);
 			expect(fromAlpha.stdout, repositoryFailure(fromAlpha)).not.toMatch(/Beta \[/);
+			expect(fromAlpha.stdout, repositoryFailure(fromAlpha)).toContain("board open systems");
 			expect(fromBeta.status, repositoryFailure(fromBeta)).toBe(0);
 			expect(fromBeta.stdout, repositoryFailure(fromBeta)).toContain("systems");
+			const stranger = fixture.run(
+				["board", "list", "--repo", "github.com/acme/stranger", "--text"],
+				{ url: canvas.base },
+			);
+			const strangerDiagnostic = repositoryFailure(stranger);
+			expect(stranger.status, strangerDiagnostic).toBe(0);
+			expect(stranger.stdout, strangerDiagnostic).toContain("No board");
+			expect(stranger.stdout, strangerDiagnostic).toContain("board(s) read");
 			const here = fixture.run(["board", "list", "--here", "--text"], {
 				cwd: alpha,
 				url: canvas.base,
@@ -223,13 +255,27 @@ describe("two-repository board session", () => {
 			const draftList = fixture.run(["board", "list", "--repo", alphaIdentity], {
 				url: canvas.base,
 			});
-			expect(draftList.status, repositoryFailure(draftList)).toBe(0);
-			const withDraft = boardListSchema.parse(JSON.parse(draftList.stdout));
-			expect(withDraft.boards.find((entry) => entry.key === "drafts")?.source).toBe("memory");
+			const draftDiagnostic = repositoryFailure(draftList);
+			expect(draftList.status, draftDiagnostic).toBe(0);
+			const withDraft = parseBoardList(draftList);
+			expect(
+				withDraft.boards.find((entry) => entry.key === "drafts")?.source,
+				draftDiagnostic,
+			).toBe("memory");
 			const fromVault = boardsForRepo(alphaIdentity, [], fixture.vault);
 			expect(fromVault.boards).toContainEqual(
 				expect.objectContaining({ key: "systems", source: "vault" }),
 			);
+			expect(fromVault.boards.find((entry) => entry.key === "systems")?.nodes[0]?.path).toBe(
+				"src/service.ts",
+			);
+			const namedBeta = fixture.run(["board", "list", "--repo", betaIdentity], {
+				url: canvas.base,
+			});
+			const namedBetaDiagnostic = repositoryFailure(namedBeta);
+			expect(namedBeta.status, namedBetaDiagnostic).toBe(0);
+			const parsedBeta = parseBoardList(namedBeta);
+			expect(parsedBeta.repo, namedBetaDiagnostic).toBe(betaIdentity);
 		}
 	}, 30_000);
 });
