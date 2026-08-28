@@ -58,6 +58,16 @@ _Avoid_: type, category, role, class
 The association between a node and the code it stands for.
 _Avoid_: link, mapping, reference, pointer, association
 
+**Code target**:
+The action offered when a person activates a binding. It is derived anew for
+this machine and is never part of the board.
+_Avoid_: binding, persisted link, file URL, local binding, remote binding
+
+**Opener**:
+The machine-wide choice of application used to open a code target that resolves
+inside a registered checkout.
+_Avoid_: editor, file handler, command
+
 **Logical address**:
 A machine-independent way of naming code: a repository identity, a path within
 it, and the branch and commit at which the binding was last confirmed.
