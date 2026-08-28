@@ -56,10 +56,23 @@ describe("repository binding resolution", () => {
 		try {
 			const alpha = fixture.repository("alpha", "git@github.com:acme/alpha.git");
 			const beta = fixture.repository("beta", "https://github.com/acme/beta.git");
-			const { resolveBinding } = await import("../../../src/runtime/engine/promote.ts");
+			const { PromotionError, resolveBinding } =
+				await import("../../../src/runtime/engine/promote.ts");
 			const { declareRepo, checkoutFor, listRepos } =
 				await import("../../../src/runtime/engine/repo-registry.ts");
 			declareRepo(alpha);
+			let refused: unknown;
+			try {
+				resolveBinding({ path: "src/service.ts" }, { kind: "none", surface: "this caller" });
+			} catch (error) {
+				refused = error;
+			}
+			expect(refused).toBeInstanceOf(PromotionError);
+			const refusal = (refused as Error).message;
+			expect(refusal).toContain("no working directory to resolve it against");
+			expect(refusal).toContain("absolute path");
+			expect(refusal).toContain("repository");
+			expect(refusal).toContain(alphaIdentity);
 			const absolute = resolveBinding(
 				{ path: join(beta, "src/service.ts") },
 				{ kind: "none", surface: "this caller" },
@@ -85,6 +98,30 @@ describe("repository binding resolution", () => {
 				address: { repo: alphaIdentity },
 			});
 			expect(ambient.note).toContain("You named no repository");
+			const namedOverAmbient = resolveBinding(
+				{ path: "src/service.ts", repo: betaIdentity },
+				{ kind: "cwd", dir: alpha },
+			);
+			expect(namedOverAmbient).toMatchObject({
+				resolved: true,
+				resolvedFrom: "registry",
+				address: { repo: betaIdentity, path: "src/service.ts" },
+			});
+			expect(namedOverAmbient.link).toBe(`file://${beta}/src/service.ts`);
+
+			const missing = resolveBinding({ path: "src/nope.ts" }, { kind: "cwd", dir: alpha });
+			expect(missing).toMatchObject({
+				resolved: true,
+				address: { repo: alphaIdentity, path: "src/nope.ts" },
+			});
+			expect(missing.link).toBeUndefined();
+
+			const outside = resolveBinding(
+				{ path: "src/service.ts" },
+				{ kind: "cwd", dir: fixture.nowhere },
+			);
+			expect(outside.resolved).toBe(false);
+			expect(outside.note).toContain(fixture.nowhere);
 		} finally {
 			if (previous === undefined) delete process.env.ARCHBOARD_REPOS;
 			else process.env.ARCHBOARD_REPOS = previous;
