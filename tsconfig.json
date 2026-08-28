@@ -35,16 +35,8 @@
 		"noEmitOnError": false,
 		"preserveConstEnums": true,
 		"removeComments": false,
-		"types": ["node"]
+		"types": ["node", "bun"]
 	},
-	"include": ["src/**/*.ts"],
-	"exclude": [
-		"node_modules",
-		"dist",
-		"frontend",
-		"**/*.test.ts",
-		"**/*.spec.ts",
-		"**/*.js",
-		"**/*.jsx"
-	]
+	"include": ["src/**/*.ts", "tests/system/**/*.ts", "scripts/**/*.ts", "tools/**/*.ts"],
+	"exclude": ["node_modules", "dist", "frontend", "**/*.js", "**/*.jsx"]
 }

@@ -59,6 +59,20 @@ Tests follow the same interface as production callers. A file under a module's `
 import that folder's fixtures, but it may not import its own module's implementation or another
 module's implementation. Non-test code may not import any `tests/` folder. Cycles are errors.
 
+There are exactly two test owners:
+
+- `src/<area>/<module>/tests/` owns contract tests and private test support for one module.
+- `tests/system/` owns cross-module repository, package, process, browser, and full-product tests.
+
+Test-owned source may import support only from the same owner. It imports product behavior through
+module-root entrypoint files, never an implementation subfolder. Product source, scripts, and tools
+never import test-owned source. Bun-discoverable tests outside the two owners are refused.
+
+All JavaScript-like source inside either test owner is TypeScript. The sole temporary exception is
+`src/cli/command-contract/tests/public-runner-fixture.mjs`, which TASK-130.11 converts during the
+final MJS cutover. Oxlint limits every authored TypeScript source file in both owners to 500 physical
+lines. Put large test data in a named non-TypeScript fixture instead of bypassing the limit.
+
 Oxlint also rejects generic `core`, `utils`, `misc`, `migration`, and `compatibility` buckets. Name
 the module for the behavior it owns.
 

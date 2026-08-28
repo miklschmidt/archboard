@@ -72,10 +72,15 @@ describe("finding rendering", () => {
 			"/tmp/findings",
 		);
 		expect(assembled.manifest.entries).toHaveLength(findingCount);
-		expect(assembled.manifest.entries[9_998]?.file).toBe(findingFileName(9_998, finding));
-		expect(assembled.manifest.entries[9_999]?.file).toBe(findingFileName(9_999, finding));
-		expect(assembled.manifest.entries[9_998]?.file).toStartWith("9999-");
-		expect(assembled.manifest.entries[9_999]?.file).toStartWith("10000-");
+		const entry9_999 = assembled.manifest.entries[9_998];
+		const entry10_000 = assembled.manifest.entries[9_999];
+		if (entry9_999?.status !== "rendered" || entry10_000?.status !== "rendered") {
+			throw new Error("ordinal boundary fixtures must render");
+		}
+		expect(entry9_999.file).toBe(findingFileName(9_998, finding));
+		expect(entry10_000.file).toBe(findingFileName(9_999, finding));
+		expect(entry9_999.file).toStartWith("9999-");
+		expect(entry10_000.file).toStartWith("10000-");
 		expect(FindingRenderManifestSchema.parse(assembled.manifest)).toEqual(assembled.manifest);
 	});
 
