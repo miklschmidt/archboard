@@ -59,14 +59,18 @@ change. About eleven seconds plus the build.
 
 `@excalidraw/excalidraw` is pinned at 0.18.1 in `package.json` and `bun.lock`.
 TASK-090 keeps the local arrow-binding port while one browser differential
-agrees within 1.0 scene pixel: the real canvas adopts a human arrow end with
-`focus: 0.9` and `gap: 15`, an agent moves the bound node, and the check compares
-the endpoint the server wrote with the endpoint Excalidraw settles on. A
-failure prints both endpoints, the coordinate deltas and total separation, the
-binding numbers, and the moved node geometry. When the Excalidraw package
-changes, run `bun run test:geometry` and then `bun run test:browser`; do not
-replace the local port or copy more Excalidraw internals before that differential
-shows a visible mismatch.
+agrees within 1.0 scene pixel. The real canvas adopts a human arrow end with
+`focus: 0.9` and `gap: 15`, then trusted pointer input moves only its node while
+the browser's change report is held before it reaches the server. That scene
+read is Excalidraw's endpoint. A separate unopened board starts from the same
+node and arrow geometry; an agent moves its node to the browser's exact target,
+and the check compares the server endpoint with the captured browser endpoint.
+The same comparison rejects an in-memory endpoint two pixels away. A failure
+prints both endpoints, the coordinate deltas and total separation, the binding
+numbers, and both node geometries. When the Excalidraw package changes, run
+`bun run test:geometry` and then `bun run test:browser`; do not replace the local
+port or copy more Excalidraw internals before that differential shows a visible
+mismatch.
 
 The same fixed-point document includes one bridge created through the product route. Its mask and
 redraw metadata, unbound line geometry, styling, and z-order therefore make the same single
