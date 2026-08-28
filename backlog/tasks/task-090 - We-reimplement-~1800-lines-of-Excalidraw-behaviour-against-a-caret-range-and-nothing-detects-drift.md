@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-21 13:36'
-updated_date: '2026-08-28 02:25'
+updated_date: '2026-08-28 02:40'
 labels: []
 dependencies: []
 references:
@@ -98,4 +98,6 @@ The later text1 failure is now explained exactly. POST /api/boards/new for bindi
 Implemented the approved exact-solver and fixture correction. src/runtime/engine/arrow-binding.ts now removes the old scalar cubic bisection entirely and uses the pinned 0.18.1 finite interceptor, exact rounded side containment, absolute-coordinate cubic construction, three-seed two-variable Newton solve, and pinned intersection count choice only for rounded rectangles. No comparator, tolerance, focus, fixed-point, ellipse, diamond, UI, server, reporting, or documentation code changed.
 Red-green arithmetic evidence: before the solver replacement, the new bit-stable focus 0.9 check returned (1279.2940234377415,1150.1288774052355) twice and failed against the pinned procedure result. After replacement, the same current-point fixture returns (1279.2940245092384,1150.1288714106531) bit for bit on repeated calls. The existing browser-captured numerical check, focus 0.8 neighbor, and unrounded controls remain green.
 The comparison board is now created before any pane exists and seeded later as before. A pre-drag browser assertion requires the sole pane to remain on fixedpoint with live text1, so the fixture cannot silently switch to binding-differential again. Non-browser validation passed: bun run type-check; bun run test:geometry with 92 checks; bun run test:reporting with 115 checks; focused formatting, lint on changed production and geometry files, and git diff --check. Browser build and test remain gated on explicit serialized-lane release.
+
+Independent rereview remediation: changed the negative-control assertion from a boolean literal comparison to direct negation so the enabled no-unnecessary-boolean-literal-compare rule passes. The separation===2 condition is unchanged, so the assertion is not weakened. The reviewer withdrew the rounded-corner-cutout finding as pre-existing and outside TASK-090; arrow-binding.ts and check-geometry.mjs remain untouched. Validation passed: bun run lint:code; bun run type-check; bun run test:geometry (92 checks); bun run test:reporting (115 checks); focused oxfmt check; git diff --check. The prior green browser evidence remains applicable because this rewrite is behavior-identical, so no serialized browser rerun was requested.
 <!-- SECTION:NOTES:END -->
