@@ -372,3 +372,70 @@ export const CLAIM_LEASE_MS = LOCK_LEASE_MS;
  * is no pane to be wrong.
  */
 export const LOCK_WATCH_MS = LOCK_RENEW_MS;
+
+// ── Canvas subprocesses owned by checks (TASK-086) ───────────────────────
+
+/**
+ * How long an owned test canvas gets to prove its identity through `/health`.
+ *
+ * This is an outer startup cap, not a sleep. It must stay below
+ * TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS after leaving room for bounded shutdown,
+ * or the parent proof could declare its child stuck while that child is still
+ * inside the startup contract it was given.
+ */
+export const TEST_CANVAS_STARTUP_TIMEOUT_MS = 15_000;
+
+/**
+ * How long one health request may wait inside the startup cap.
+ *
+ * It is ten TEST_CANVAS_HEALTH_POLL_MS intervals. A dead listener therefore
+ * costs at most half a second per attempt, while a connection refusal returns
+ * immediately and follows the shorter poll cadence.
+ */
+export const TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS = 500;
+
+/**
+ * How long startup waits between refused health connections.
+ *
+ * This pulls against the server's ordinary sub-second startup. Shorter would
+ * spin on a closed port; longer would make identity verification noticeably
+ * lag behind a child that is already listening.
+ */
+export const TEST_CANVAS_HEALTH_POLL_MS = 50;
+
+/**
+ * How long graceful shutdown gets before the owner escalates its exact child
+ * to SIGKILL, and how long that forced exit gets to be observed.
+ *
+ * Two of these intervals plus TEST_CANVAS_STARTUP_TIMEOUT_MS must fit inside
+ * TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS so the parent proof outlives the complete
+ * child-owned cleanup path.
+ */
+export const TEST_CANVAS_SHUTDOWN_TIMEOUT_MS = 1_000;
+
+/**
+ * Outer cap for one lifecycle proof subprocess, from spawn through cleanup.
+ *
+ * It clears startup plus both graceful and forced shutdown observations with
+ * three seconds left for the proof itself. A regression therefore fails with
+ * the stuck proof PID and mode instead of hanging the whole board suite.
+ */
+export const TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS = 20_000;
+
+/**
+ * Cap for the post-cleanup health probe.
+ *
+ * Five health-poll intervals are enough to distinguish a listener that still
+ * answers from a refused connection without making four cleanup cases cost a
+ * second each when a platform delays refusal.
+ */
+export const TEST_CANVAS_LISTENER_PROBE_TIMEOUT_MS = 250;
+
+/**
+ * Delay between the early-death fixture sending response headers and exiting.
+ *
+ * Half one health-poll interval lets `fetch` expose the response before the
+ * body is cut off, while the public liveness check still observes the exit
+ * inside the same TEST_CANVAS_HEALTH_POLL_MS window.
+ */
+export const TEST_CANVAS_EARLY_DEATH_DELAY_MS = 25;

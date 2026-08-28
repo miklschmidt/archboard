@@ -1,9 +1,12 @@
 import fs from "node:fs";
 import { spawn } from "node:child_process";
 
-const STARTUP_TIMEOUT_MS = 15_000;
-const SHUTDOWN_TIMEOUT_MS = 1_000;
-const HEALTH_POLL_MS = 50;
+import {
+	TEST_CANVAS_HEALTH_POLL_MS,
+	TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS,
+	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
+	TEST_CANVAS_STARTUP_TIMEOUT_MS,
+} from "../../src/shared/timing/timing.ts";
 
 const activeCanvases = new Set();
 let handlersInstalled = false;
@@ -67,8 +70,17 @@ export async function startCanvasTestProcess({ serverPath, port, vault, env = {}
 	let expectedStop = false;
 	let disposed = false;
 	let disposalPromise = null;
+	let operation = Promise.resolve();
 	let stderr = "";
 	let registration;
+	const enqueue = (work) => {
+		const result = operation.then(work);
+		operation = result.catch(() => {});
+		return result;
+	};
+	const refuseDisposed = () => {
+		if (disposed) throw new Error("Cannot restart a disposed canvas process.");
+	};
 
 	const deathError = (cause) => {
 		const detail = childExit ? exitDescription(childExit) : "is no longer running";
@@ -82,10 +94,23 @@ export async function startCanvasTestProcess({ serverPath, port, vault, env = {}
 		return error;
 	};
 
-	const assertRunning = (cause) => {
+	const assertRunningNow = (cause) => {
 		if (childExit || !child || child.exitCode !== null || child.signalCode !== null) {
 			throw deathError(cause);
 		}
+	};
+	const assertRunning = async (cause) => {
+		if (
+			cause &&
+			child &&
+			!childExit &&
+			child.exitCode === null &&
+			child.signalCode === null &&
+			exitPromise
+		) {
+			await Promise.race([exitPromise, sleep(TEST_CANVAS_HEALTH_POLL_MS)]);
+		}
+		assertRunningNow(cause);
 	};
 
 	const waitForExit = async (timeoutMs) => {
@@ -97,9 +122,9 @@ export async function startCanvasTestProcess({ serverPath, port, vault, env = {}
 		if (!child || childExit) return;
 		expectedStop = true;
 		child.kill(signal);
-		if (!(await waitForExit(SHUTDOWN_TIMEOUT_MS)) && processExists(child.pid)) {
+		if (!(await waitForExit(TEST_CANVAS_SHUTDOWN_TIMEOUT_MS)) && processExists(child.pid)) {
 			child.kill("SIGKILL");
-			await waitForExit(SHUTDOWN_TIMEOUT_MS);
+			await waitForExit(TEST_CANVAS_SHUTDOWN_TIMEOUT_MS);
 		}
 		if (!childExit && processExists(child.pid)) {
 			throw new Error(`Owned canvas pid ${child.pid} did not exit after SIGKILL.`);
@@ -107,6 +132,7 @@ export async function startCanvasTestProcess({ serverPath, port, vault, env = {}
 	};
 
 	const start = async () => {
+		refuseDisposed();
 		childExit = null;
 		expectedStop = false;
 		child = spawn(process.execPath, [serverPath], {
@@ -131,11 +157,13 @@ export async function startCanvasTestProcess({ serverPath, port, vault, env = {}
 			});
 		});
 
-		const deadline = Date.now() + STARTUP_TIMEOUT_MS;
+		const deadline = Date.now() + TEST_CANVAS_STARTUP_TIMEOUT_MS;
 		while (Date.now() < deadline) {
-			assertRunning();
+			assertRunningNow();
 			try {
-				const response = await fetch(`${base}/health`, { signal: AbortSignal.timeout(500) });
+				const response = await fetch(`${base}/health`, {
+					signal: AbortSignal.timeout(TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS),
+				});
 				const health = await response.json();
 				if (health?.pid === child.pid) return;
 				throw new Error(
@@ -143,12 +171,12 @@ export async function startCanvasTestProcess({ serverPath, port, vault, env = {}
 				);
 			} catch (error) {
 				if (/answered for pid/.test(error?.message ?? "")) throw error;
-				assertRunning(error);
-				await sleep(HEALTH_POLL_MS);
+				assertRunningNow(error);
+				await sleep(TEST_CANVAS_HEALTH_POLL_MS);
 			}
 		}
 		throw new Error(
-			`Owned canvas pid ${child.pid} did not answer /health within ${STARTUP_TIMEOUT_MS}ms.` +
+			`Owned canvas pid ${child.pid} did not answer /health within ${TEST_CANVAS_STARTUP_TIMEOUT_MS}ms.` +
 				(stderr.trim() ? `\nCanvas stderr:\n${stderr.trim()}` : ""),
 		);
 	};
@@ -170,16 +198,20 @@ export async function startCanvasTestProcess({ serverPath, port, vault, env = {}
 			return stderr;
 		},
 		assertRunning,
-		async restart({ signal = "SIGTERM", whileStopped } = {}) {
-			if (disposed) throw new Error("Cannot restart a disposed canvas process.");
-			await stopCurrent(signal);
-			await whileStopped?.();
-			await start();
+		restart({ signal = "SIGTERM", whileStopped } = {}) {
+			refuseDisposed();
+			return enqueue(async () => {
+				refuseDisposed();
+				await stopCurrent(signal);
+				await whileStopped?.();
+				refuseDisposed();
+				await start();
+			});
 		},
 		dispose() {
 			if (disposalPromise) return disposalPromise;
-			disposalPromise = (async () => {
-				disposed = true;
+			disposed = true;
+			disposalPromise = enqueue(async () => {
 				try {
 					await stopCurrent();
 				} finally {
@@ -187,7 +219,7 @@ export async function startCanvasTestProcess({ serverPath, port, vault, env = {}
 					activeCanvases.delete(registration);
 					uninstallHandlers();
 				}
-			})();
+			});
 			return disposalPromise;
 		},
 	};
@@ -196,7 +228,7 @@ export async function startCanvasTestProcess({ serverPath, port, vault, env = {}
 	activeCanvases.add(registration);
 	installHandlers();
 	try {
-		await start();
+		await enqueue(start);
 		return handle;
 	} catch (error) {
 		await handle.dispose();
