@@ -1,11 +1,11 @@
 ---
 id: TASK-130.03
 title: Convert small module checks to typed contract tests
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:03'
-updated_date: '2026-08-28 06:33'
+updated_date: '2026-08-28 06:36'
 labels: []
 dependencies:
   - TASK-130.01
@@ -49,12 +49,12 @@ The conversion must delete local failure counters and process exits. Tests shoul
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 check-library, check-text-metrics, check-obsidian-md, and check-change-reporting are replaced by co-located typed Bun tests that import only module-root entrypoints.
-- [ ] #2 Text metrics retain their measured tolerances and fixtures; Obsidian Markdown retains the four historical ID rename golden values and exact serialized bytes.
-- [ ] #3 Change-reporting tests preserve source tagging, human-edit ordering, held/released behavior, and every currently asserted reachable state.
-- [ ] #4 Each test file is at most 500 lines, test names identify one observable contract, and shared setup reduces duplicated mechanics without hiding expected values.
-- [ ] #5 The old scripts fail when run against an intentionally broken focused fixture before deletion, and the replacement native tests fail on the same behavior.
-- [ ] #6 The focused native lane plus bun run type-check, bun run lint, and bun run fmt:check pass after the legacy scripts are removed.
+- [x] #1 check-library, check-text-metrics, check-obsidian-md, and check-change-reporting are replaced by co-located typed Bun tests that import only module-root entrypoints.
+- [x] #2 Text metrics retain their measured tolerances and fixtures; Obsidian Markdown retains the four historical ID rename golden values and exact serialized bytes.
+- [x] #3 Change-reporting tests preserve source tagging, human-edit ordering, held/released behavior, and every currently asserted reachable state.
+- [x] #4 Each test file is at most 500 lines, test names identify one observable contract, and shared setup reduces duplicated mechanics without hiding expected values.
+- [x] #5 The old scripts fail when run against an intentionally broken focused fixture before deletion, and the replacement native tests fail on the same behavior.
+- [x] #6 The focused native lane plus bun run type-check, bun run lint, and bun run fmt:check pass after the legacy scripts are removed.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -168,3 +168,9 @@ Independent review parity remediation:
 - Sequential follow-up validation passes bun run test:suites, bun run type-check, bun run lint, bun run fmt:check, bun run test:boundaries, and git diff --check. Full bun run check was not repeated because this remediation changes assertions only; the complete headless serial check already passed for the cutover range.
 - External vault absence checks passed before and after focused reporting and before and after the remaining validation. TASK-130.03 remains In Progress with every acceptance criterion unchecked.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Converted the library, text metrics, Obsidian Markdown, and change-reporting checks into typed module-owned Bun contracts, preserving measured tolerances, exact bytes and historical IDs, all 20 pending-edit reachability boundaries, and focused negative parity. The four package lanes now reach each native test exactly once and their predecessor scripts are removed. Verified with 126 focused contracts, 121 reporting expectations after remediation, the live inventory, type/lint/format/boundary gates, the full sequential headless browser chain, independent review, and an absent-path vault regression proving the package lane cannot touch the inherited user vault.
+<!-- SECTION:FINAL_SUMMARY:END -->
