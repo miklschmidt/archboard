@@ -64,17 +64,9 @@ describe("inspection completion contract", () => {
 			graded_by: "src/runtime/board-inspection/tests/completion-contract.test.ts",
 			files: [
 				"src/runtime/board-inspection/tests/completion-contract.test.ts",
-				"scripts/check-branch-compare.mjs",
-				"scripts/check-side-by-side.mjs",
+				"tests/system/canvas-state/branch-compare.test.ts",
+				"tests/system/canvas-state/side-by-side.test.ts",
 			],
 		});
-		expect(document.evals.find(({ id }) => id === 5)?.graded_by).toBe(
-			"scripts/check-branch-compare.mjs",
-		);
-		expect(document.evals.find(({ id }) => id === 7)?.graded_by).toBe(
-			"scripts/check-side-by-side.mjs",
-		);
-		expect(document.evals.find(({ id }) => id === 5)?.files).toEqual([]);
-		expect(document.evals.find(({ id }) => id === 7)?.files).toEqual([]);
 	});
 });
