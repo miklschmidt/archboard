@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-21 09:01'
-updated_date: '2026-08-28 00:50'
+updated_date: '2026-08-28 01:07'
 labels: []
 dependencies: []
 references:
@@ -59,4 +59,6 @@ Whatever leaves them behind is the thing to find: a `finally` that does not run 
 Raised to high: CI now runs all 23 suites on every push (TASK-082), on a shared runner, and an orphan that answers `/health` produces a red main nobody can reproduce locally.
 
 Implemented the approved owned-canvas lifecycle in scripts/lib/canvas-test-process.mjs and migrated both check-boards canvases. The helper now verifies health.pid against the spawned child, retains stderr and early-exit state, waits through graceful or forced restarts, escalates only its recorded child, shares concurrent disposal, and cleans up on SIGINT/SIGTERM. The narrow check-boards child modes prove normal completion, forced fetch failure, SIGINT, and early death with stderr. Focused lifecycle validation and test:boards pass; post-run PID, listener, and recent temporary-vault audits are clean.
+
+Independent-review remediation: serialized restart/dispose behind one operation chain while disposal marks the handle closed immediately. Restart now re-checks that state after its stopped callback and directly before spawn. A focused race proof pauses there, starts disposal, and proves no replacement PID or listener survives. Lifecycle child waits now have a canonical 20-second cap with mode, child PID, and owned PID diagnostics plus forced cleanup. JSON response handling preserves body errors, checks liveness after body consumption, and the early-death fixture now exits after headers so captured stderr is proved on that seam. All new lifecycle durations moved to src/shared/timing/timing.ts with their pull-against relationships.
 <!-- SECTION:NOTES:END -->
