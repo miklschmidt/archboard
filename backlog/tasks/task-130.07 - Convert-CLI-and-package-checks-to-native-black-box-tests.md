@@ -1,10 +1,11 @@
 ---
 id: TASK-130.07
 title: Convert CLI and package checks to native black-box tests
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-28 01:04'
-updated_date: '2026-08-28 05:06'
+updated_date: '2026-08-28 18:02'
 labels: []
 dependencies:
   - TASK-130.01
@@ -82,4 +83,20 @@ bun test tests/system/cli/command-contract-audit.test.ts tests/system/cli/comman
 bun test tests/system/cli/install-source-policy.test.ts tests/system/cli/install-targets.test.ts
 bun test tests/system/cli/repository-resolution.test.ts tests/system/cli/repository-session.test.ts
 Then run bun run type-check, bun run lint, bun run fmt:check, bun run check, and git diff --check sequentially after integration. Do not parallelize broad validation. Acceptance requires all four package keys to reach every mapped test exactly once, five predecessor scripts and two old goldens to be absent, held-output-compatibility.json to remain byte-identical, the TASK-130.06 lifecycle tests to pass, and the real inventory to pass.
+
+8. After the approved TASK-130.07 deletion, change only the passing mixed-checkout fixture assignment in tests/system/repository-policy/test-inventory.test.ts from fixture.scripts["test:legacy"] = "bun scripts/check-cli-surface.mjs" to fixture.scripts["test:legacy"] = "bun scripts/check-fixed-point.mjs". Keep the synthetic check -> test -> test:legacy reachability and the exact empty-error assertion unchanged. scripts/check-fixed-point.mjs is the real surviving test:browser predecessor, is not deleted or remapped by this task, and remains the transitional legacy sentinel through TASK-130.08 and TASK-130.09. Do not edit support/test-inventory.ts, inventory behavior, or any package selector. TASK-130.10, which deletes the final legacy checks, must replace or retire this mixed-checkout fixture in its same atomic cutover so the repository-policy lane stays green at every integration point.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Parity before cutover (2026-08-28): baseline predecessors passed: CLI 639 checks; contract module 37 tests plus contract 1,011 checks and workflows 93 checks; install 137 checks; repos all checks. Disposable-copy mutations failed both predecessor and native selectors: altered argv golden old/new exit 1; reordered artifact old/new exit 1; changed generated proof byte old/new exit 1; redirected default install target old/new exit 1; stale checkout registry fallback old/new exit 1. Raw fixture equality before deletion: argv old/new SHA-256 93d7f3037a12945432056b1b27a8decf42187f943335b153dc341a03ed6409e6; fixed-base compatibility old/new SHA-256 7ef7c5a38e165b7cf37c1a774618841766cdf35b917239d95399c4a127f763de. held-output-compatibility.json preserved at SHA-256 4abb6814b2218e19fe6d5602dc9864f4b6cd236171887e26288afc534f0dcf9b.
+
+Post-cutover inventory gate: the real-checkout inventory assertion passes, but the unit fixture "accepts a mixed native and legacy checkout" fails because it hardcodes deleted scripts/check-cli-surface.mjs. No inventory source was edited. Awaiting plan approval for the one-line fixture substitution.
+
+Implementation resumed after step 8 plan approval. Updated only the passing mixed-checkout inventory fixture to scripts/check-fixed-point.mjs, preserving the synthetic check -> test -> test:legacy chain and exact empty-error assertion. Added an explicit recursive JsonValue Zod type annotation in the TASK-130.07-owned CLI HTTP double after the strict type gate exposed the unannotated self-reference; no runtime seam or behavior changed.
+
+Final validation: inventory fixture 11/11; ten CLI owners alone 48 tests / 1,373 expectations; the four recorded grouped commands 48 tests / 1,373 expectations; TASK-130.06 owned-canvas lifecycle 13 tests / 85 expectations; live inventory 1/1; type-check, lint, fmt:check, and git diff --check passed. Exactly one complete bun run check passed, including all four browser checks headlessly and serially.
+
+Cutover audit: all ten test owners and five supports are below 500 physical lines. The four package mappings are exact; five predecessor checks and two superseded goldens are absent. Fixed-base and native raw bytes match: argv SHA-256 93d7f3037a12945432056b1b27a8decf42187f943335b153dc341a03ed6409e6 and compatibility SHA-256 7ef7c5a38e165b7cf37c1a774618841766cdf35b917239d95399c4a127f763de. held-output-compatibility remains byte-identical at SHA-256 4abb6814b2218e19fe6d5602dc9864f4b6cd236171887e26288afc534f0dcf9b. Final cleanup found no checkout child or process group, Bun/Archboard listener, newly created temporary HOME, registry, vault, contract output, lifecycle directory, or repository atomic temp.
+<!-- SECTION:NOTES:END -->
