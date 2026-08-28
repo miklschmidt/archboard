@@ -1,11 +1,11 @@
 ---
 id: TASK-131
 title: Serve Excalidraw CSS from dot-prefixed repository paths
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:33'
-updated_date: '2026-08-28 01:44'
+updated_date: '2026-08-28 02:05'
 labels: []
 dependencies: []
 references:
@@ -27,9 +27,9 @@ Independent prerequisite bug blocking TASK-096 live-session verification. Expres
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 /assets/excalidraw.css returns the installed stylesheet bytes and text/css when the repository path contains a dot-prefixed component.
-- [ ] #2 Excalidraw renders within its pane and the original live-session interaction reaches the existing first hold assertion.
-- [ ] #3 Existing static exposure and dotfile denial remain intact.
+- [x] #1 /assets/excalidraw.css returns the installed stylesheet bytes and text/css when the repository path contains a dot-prefixed component.
+- [x] #2 Excalidraw renders within its pane and the original live-session interaction reaches the existing first hold assertion.
+- [x] #3 Existing static exposure and dotfile denial remain intact.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -55,4 +55,12 @@ Validation: bun run test:bind, bun run build, bun run type-check, bun run lint:c
 Independent review corrections: moved creation and population of the dot-prefixed checkout alias inside the protected try block. Child shutdown now completes before the finally block removes the alias. Added a hidden file beside the existing dist/frontend probe, asserted its public URL returns 404, and let the same finally cleanup remove all static probes.
 
 Rereview validation: bun run test:bind, bun run build, bun run type-check, bun run lint:code, bun run fmt:check, and git diff --check passed. The cleanup audit found 0 checkout aliases and 0 planted static probes. The production route did not change, so the browser lane was not run again.
+
+Final verification: the independent rereview found no Standards or Spec findings. The reviewed production route is the same code that passed the serialized one-cycle live-session run; test:bind also proves public dotfile denial and cleanup.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Changed the explicit Excalidraw CSS route to serve index.css relative to its installed directory, so Express accepts dot-prefixed checkout paths without enabling dotfile access. Added deterministic hidden-path, exact-byte, MIME, denial, and cleanup coverage. Verified with test:bind, build, type-check, lint, format, live-session, and an independent clean rereview.
+<!-- SECTION:FINAL_SUMMARY:END -->

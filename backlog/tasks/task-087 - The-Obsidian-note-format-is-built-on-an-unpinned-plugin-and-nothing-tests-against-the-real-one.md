@@ -1,11 +1,11 @@
 ---
 id: TASK-087
 title: Pin and test the Obsidian plugin format Archboard depends on
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-21 12:18'
-updated_date: '2026-08-28 01:04'
+updated_date: '2026-08-28 02:05'
 labels: []
 dependencies: []
 references:
@@ -30,10 +30,10 @@ No exact plugin-authored .excalidraw.md note from plugin version 2.26.4 was foun
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 docs/design/vendor/README.md records the exact upstream repository, commit 36a32940bac50fd60fb379b18a9f38668f941108, manifest version 2.26.4, and source path src/shared/ExcalidrawData.ts, with links to the pinned source and ADR 0017.
-- [ ] #2 The vendor README and ADR 0017 name the pinned upstream methods or source regions for every plugin behavior Archboard relies on, including Embedded Files parsing, generation of the complete Drawing payload, file syncing, scene.files clearing, and the bidirectional Element Links lifecycle: loadData applies persisted links, findNewElementLinksInScene adds only missing links, syncElements/updateElementLinksFromScene reconcile links during sync and save, and generateMDBase emits the map.
-- [ ] #3 The documentation states that scripts/check-obsidian-md.mjs uses Archboard-authored/synthetic examples that protect Archboard's parser and round-trip behavior but do not detect drift in real plugin-emitted bytes.
-- [ ] #4 The documentation states that no exact plugin-authored note from version 2.26.4 was found and that this task adds no fixture, v2.19 issue attachment, Obsidian automation, plugin runner, or second format implementation. TASK-087 remains In Progress with these criteria unchecked for independent review.
+- [x] #1 docs/design/vendor/README.md records the exact upstream repository, commit 36a32940bac50fd60fb379b18a9f38668f941108, manifest version 2.26.4, and source path src/shared/ExcalidrawData.ts, with links to the pinned source and ADR 0017.
+- [x] #2 The vendor README and ADR 0017 name the pinned upstream methods or source regions for every plugin behavior Archboard relies on, including Embedded Files parsing, generation of the complete Drawing payload, file syncing, scene.files clearing, and the bidirectional Element Links lifecycle: loadData applies persisted links, findNewElementLinksInScene adds only missing links, syncElements/updateElementLinksFromScene reconcile links during sync and save, and generateMDBase emits the map.
+- [x] #3 The documentation states that scripts/check-obsidian-md.mjs uses Archboard-authored/synthetic examples that protect Archboard's parser and round-trip behavior but do not detect drift in real plugin-emitted bytes.
+- [x] #4 The documentation states that no exact plugin-authored note from version 2.26.4 was found and that this task adds no fixture, v2.19 issue attachment, Obsidian automation, plugin runner, or second format implementation. TASK-087 remains In Progress with these criteria unchecked for independent review.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -60,4 +60,12 @@ Validation: bun run test:obsidian passed 197 checks; bun run fmt:check passed; g
 Applied the independent-review corrections. Extended the Drawing provenance through generateMDBase's return and through generateMDAsync/generateMDSync lines 1470-1495. Corrected the Element Links description to cover load-time application, missing-link discovery, sync/save reconciliation, and current-map emission. No fixture or script/runtime change was added.
 
 Validation: bun install --frozen-lockfile passed with no changes; bun run test:obsidian passed 197 checks; bun run fmt:check passed; git diff --check passed. Acceptance criteria remain unchecked and TASK-087 remains In Progress.
+
+Final verification: the independent rereview found no Standards or Spec findings. The integrated main checkout passed bun run test:obsidian with 197 checks.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Pinned the Obsidian Excalidraw plugin format claims to repository commit 36a32940bac50fd60fb379b18a9f38668f941108 and documented each relied-on source region. Kept the evidence honest: existing cases are synthetic and no exact 2.26.4 plugin-authored fixture was found. Verified with 197 Obsidian-format checks, formatting, diff checks, and an independent clean review.
+<!-- SECTION:FINAL_SUMMARY:END -->
