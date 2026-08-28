@@ -415,8 +415,8 @@ try {
 
 	// ── A reload broken on purpose ─────────────────────────────
 	//
-	// The static check refuses this shape in source
-	// (`scripts/check-module-scope.mjs`), and this is the other net: what
+	// The static repository-policy module-scope test refuses this shape in
+	// source, and this is the other net: what
 	// happens when something it cannot see gets through. The board store's
 	// presence guard is removed, so re-evaluating it replaces the open board with
 	// a fresh one that has no note behind it. That is the exact TASK-057 bug,

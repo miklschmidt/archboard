@@ -8,9 +8,10 @@ thing that type-checks, so a type error still fails the suite — then every
 check in `package.json`'s chain. `.github/workflows/ci.yml` runs `bun run check`,
 which enforces Oxlint (including the custom boundary rules), formatting, and
 then that complete test chain. A check added to `package.json` therefore runs
-on main without anybody touching the workflow. `bun run test:suites`
-(`scripts/check-ci-suites.mjs`) fails when a `test:*` script is in neither the
-chain nor its skip list. Keep that list empty.
+on main without anybody touching the workflow. `bun run test:suites` runs the
+native repository inventory. It fails when a package test lane is outside the
+push chain, a native test has no package lane or more than one, or a remaining
+legacy check path is missing.
 
 The whole chain's duration is machine-dependent. The four browser checks run
 sequentially; re-measure their contribution rather than trusting an old total.
@@ -153,8 +154,9 @@ note archboard did not write. About fifteen seconds.
   module-scope state: a `new` that is not a frozen lookup table, a literal
   something writes to, a timer, a listener added without a paired removal, a
   bind, or a write to long-lived state with no presence guard. Waive a false
-  positive with `// hot-safe: <reason>`. Both TASK-057 bugs are fixtures under
-  `scripts/fixtures/module-scope/`, so the check proves itself on every run.
+  positive with `// hot-safe: <reason>`. Both TASK-057 bugs are parser fixtures
+  under `tests/system/repository-policy/fixtures/module-scope/`, so the test
+  proves itself on every run.
 - Every reload in dev mode runs a canary (`src/runtime/engine/reload-canary.ts`) that
   compares which boards are open and where each one's note is, the pane
   registrations, the socket count and the feed's id and cursor across the
@@ -166,16 +168,16 @@ note archboard did not write. About fifteen seconds.
 
 ## Source boundary check
 
-- `bun run test:boundaries` creates temporary deep modules under `src/` and
-  invokes Oxlint with the repository's real config and custom plugin. It proves
+- `bun run test:boundaries` creates disposable projects outside the checkout and
+  invokes real Oxlint subprocesses with the repository's custom plugin. It proves
   allowed module-root imports and thin process entrypoints pass, while root
   entrypoint implementation, domain-to-transformer imports, flat
   area files, extensionless directory deep imports and Vite resource-query deep
   imports fail under the expected Archboard rules. It also proves static
   `require()` deep imports fail both the built-in TypeScript rule and the custom
   entrypoint rule, co-located test files are rejected, and test/spec files under
-  a module's `tests/` directory are accepted. The check removes every temporary
-  path before it exits.
+  a module's `tests/` directory are accepted. Each assertion removes its
+  temporary project even when the assertion fails.
 
 ## Board inspection check
 
