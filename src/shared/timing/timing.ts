@@ -422,6 +422,15 @@ export const TEST_CANVAS_SHUTDOWN_TIMEOUT_MS = 1_000;
  */
 export const TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS = 20_000;
 
+/** One shutdown interval keeps concurrent children live until every verified base is reported. */
+export const TEST_CANVAS_CONCURRENT_RELEASE_DELAY_MS = TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
+
+/**
+ * Two shutdown intervals beyond TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS let the Bun
+ * case receive rejection, assert it, and dispose a retained generation.
+ */
+export const TEST_CANVAS_CASE_TIMEOUT_MARGIN_MS = 2 * TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
+
 /**
  * Cap for the post-cleanup health probe.
  *
@@ -439,3 +448,44 @@ export const TEST_CANVAS_LISTENER_PROBE_TIMEOUT_MS = 250;
  * inside the same TEST_CANVAS_HEALTH_POLL_MS window.
  */
 export const TEST_CANVAS_EARLY_DEATH_DELAY_MS = 25;
+
+/**
+ * How long a synthetic pane lets the server's initial socket frames arrive
+ * before registering the pane it stands in for.
+ *
+ * This clears one TEST_PANE_MESSAGE_POLL_MS interval plus ordinary loopback
+ * delivery. It is mechanics only: owner tests wait on named messages when a
+ * message itself is the contract.
+ */
+export const TEST_PANE_SOCKET_SETTLE_MS = 80;
+
+/**
+ * How often synthetic pane mechanics inspect their captured socket frames.
+ *
+ * Four polls fit inside TEST_PANE_SOCKET_SETTLE_MS. The interval stays short
+ * enough to observe an already-delivered loopback frame without turning the
+ * wait into a busy spin.
+ */
+export const TEST_PANE_MESSAGE_POLL_MS = 20;
+
+/**
+ * Outer cap for a synthetic pane waiting on one named socket frame.
+ *
+ * This is longer than PANE_SETTLE_CAP_MS, so a server waiting for pane
+ * geometry gets its full cap before the test declares the expected frame
+ * missing. It remains far below BROWSER_EXPORT_TIMEOUT_MS because these
+ * panes acknowledge callbacks directly and never render.
+ */
+export const TEST_PANE_MESSAGE_TIMEOUT_MS = 2_000;
+
+/** Four LOCK_WATCH_MS sweeps cover a timestamp boundary and board_note delivery. */
+export const TEST_NOTE_WATCH_MESSAGE_TIMEOUT_MS = 4 * LOCK_WATCH_MS;
+
+/**
+ * LOCK_POLL_MS observes a delivered note-watch frame without polling faster
+ * than the lock-file machinery that carries the notification.
+ */
+export const TEST_NOTE_WATCH_MESSAGE_POLL_MS = LOCK_POLL_MS;
+
+/** One LOCK_WATCH_MS bounds the board_note clearing frame after reload. */
+export const TEST_NOTE_WATCH_CLEAR_TIMEOUT_MS = LOCK_WATCH_MS;

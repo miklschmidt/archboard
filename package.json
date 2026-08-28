@@ -54,7 +54,7 @@
 		"test:text": "bun test src/runtime/engine/tests/text-metrics.test.ts",
 		"test:labels": "bun scripts/check-labels.mjs",
 		"test:library": "bun test src/runtime/engine/tests/library.test.ts",
-		"test:boards": "bun scripts/check-boards.mjs",
+		"test:boards": "bun test tests/system/support/owned-canvas.test.ts tests/system/support/owned-canvas-process-group.test.ts tests/system/boards/board-lifecycle.test.ts tests/system/boards/element-writes.test.ts tests/system/boards/image-persistence.test.ts tests/system/boards/image-persistence-hydration.test.ts tests/system/boards/pane-addressing.test.ts tests/system/boards/pane-addressing-findings.test.ts tests/system/boards/branching.test.ts tests/system/boards/branching-pane-effects.test.ts tests/system/boards/conversion.test.ts tests/system/boards/malformed-input.test.ts tests/system/boards/scratch-board.test.ts tests/system/boards/held-board-recovery.test.ts tests/system/boards/held-board-note-watch.test.ts tests/system/boards/public-http-refusals.test.ts",
 		"test:branch": "bun scripts/check-branch-compare.mjs",
 		"test:side-by-side": "bun scripts/check-side-by-side.mjs",
 		"test:install": "bun scripts/check-install-doc.mjs",

@@ -25,14 +25,12 @@ interface ElementsBody {
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-malformed-input-"));
-const port = 47_000 + Math.floor(Math.random() * 2_000);
 let canvas: OwnedCanvas;
 let request: ReturnType<typeof createJsonRequester>;
 
 beforeAll(async () => {
 	canvas = await startOwnedCanvas({
 		serverPath: path.join(repoRoot, "src/server.ts"),
-		port,
 		vault,
 	});
 	request = createJsonRequester(canvas);
@@ -100,10 +98,11 @@ describe("malformed input", () => {
 
 	test("refuses an entire mixed agent batch and preserves exact note bytes", async () => {
 		await request("/api/boards/new", { method: "POST", body: { board: "geometry-write" } });
-		await request("/api/elements?board=geometry-write", {
+		const seeded = await request("/api/elements?board=geometry-write", {
 			method: "POST",
 			body: { id: "seed", type: "rectangle", x: 0, y: 0, width: 120, height: 60 },
 		});
+		expect(seeded.status).toBe(200);
 		const file = (await request<BoardBody>("/api/boards/info?board=geometry-write")).body.file;
 		const before = fs.readFileSync(file);
 		const response = await request<ErrorBody>("/api/elements/batch?board=geometry-write", {
@@ -154,6 +153,7 @@ describe("malformed input", () => {
 		} catch (cause) {
 			error = cause as Error;
 		}
+		expect(error).toBeInstanceOf(Error);
 		expect(error?.message).toMatch(
 			/Invalid render geometry: [A-Za-z0-9_-]{1,8} \(text\): width, height/,
 		);
@@ -162,9 +162,14 @@ describe("malformed input", () => {
 	});
 
 	test("refuses the same malformed geometry on the human change route", async () => {
-		const file = (await request<BoardBody>("/api/boards/info?board=geometry-write")).body.file;
+		await request("/api/boards/new", { method: "POST", body: { board: "human-geometry" } });
+		await request("/api/elements?board=human-geometry", {
+			method: "POST",
+			body: { id: "seed", type: "rectangle", x: 0, y: 0, width: 120, height: 60 },
+		});
+		const file = (await request<BoardBody>("/api/boards/info?board=human-geometry")).body.file;
 		const before = fs.readFileSync(file);
-		const response = await request<ErrorBody>("/api/elements/changes?board=geometry-write", {
+		const response = await request<ErrorBody>("/api/elements/changes?board=human-geometry", {
 			method: "POST",
 			body: {
 				upserts: [

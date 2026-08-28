@@ -26,14 +26,12 @@ interface ElementsBody {
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-scratch-board-"));
 const scratchNote = path.join(vault, ".archboard", "scratch.excalidraw.md");
-const port = 49_000 + Math.floor(Math.random() * 2_000);
 let canvas: OwnedCanvas;
 let request: ReturnType<typeof createJsonRequester>;
 
 beforeAll(async () => {
 	canvas = await startOwnedCanvas({
 		serverPath: path.join(repoRoot, "src/server.ts"),
-		port,
 		vault,
 	});
 	request = createJsonRequester(canvas);
@@ -83,7 +81,6 @@ describe("scratch board", () => {
 		fs.writeFileSync(malformedNote, malformed);
 		const malformedCanvas = await startOwnedCanvas({
 			serverPath: path.join(repoRoot, "src/server.ts"),
-			port: port + 1,
 			vault: malformedVault,
 		});
 		const malformedRequest = createJsonRequester(malformedCanvas);
@@ -152,6 +149,7 @@ describe("scratch board", () => {
 			method: "POST",
 			body: { board: "unsaved" },
 		});
+		expect(reopened.status).toBe(200);
 		expect(reopened.body.source).toBe("vault");
 		const unsaved = await request<ElementsBody>("/api/elements?board=unsaved");
 		expect(unsaved.body.elements?.some((element) => element.width === 123)).toBeTrue();
