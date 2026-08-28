@@ -1,14 +1,15 @@
 ---
 id: TASK-086
-title: 'check-boards can lose its canvas mid-run, and the failure reads as a board bug'
+title: Own canvas test processes from verified startup through cleanup
 status: To Do
 assignee: []
 created_date: '2026-08-21 09:01'
-updated_date: '2026-08-21 15:30'
+updated_date: '2026-08-28 00:35'
 labels: []
 dependencies: []
 references:
   - scripts/check-boards.mjs
+  - scripts/lib
   - .github/workflows/ci.yml
 priority: high
 type: bug
@@ -18,33 +19,20 @@ ordinal: 86000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Observed once on main at 0c28d6a, during a full `bun run test` immediately after stage 6 landed. Four checks failed in the pane-and-board section and then fetch threw:
+Canvas-spawning checks duplicate child startup, health polling, stderr capture, shutdown and temporary-vault cleanup. check-boards has leaked a child and vault after an interrupted or failed run, and an unrelated server on a recycled port can satisfy its current health wait.
 
-```
-FAIL - a board can be started with no pane open
-FAIL -   and it says nothing is showing it
-FAIL - a fresh pane holds the scratch board, so there is something to name
-FAIL - a second pane starts on what the first is showing
-error: The socket connection was closed unexpectedly
-  path: "http://127.0.0.1:33005/api/boards/new", code: "ECONNRESET"
-```
+Fix the concrete lifecycle failure. Build one small test-process module whose interface starts an owned canvas and disposes it. It must verify health.pid matches the spawned child, retain stderr, notice early death, wait for exit, escalate shutdown only for its own child, and remove its owned vault. Use it for both canvases in check-boards and only migrate another check when its lifecycle is genuinely the same.
 
-The canvas the check spawned was gone. Two runs of `bun run test:boards` on their own and a second full-suite run all passed with zero failures, so it is intermittent rather than a regression — stage 6 did not cause it.
-
-Two things make it worth fixing rather than shrugging at. The failure presents as four substantive board bugs, so the next person to see it will go looking for one; nothing in the output says the server died rather than misbehaved. And CI now runs all 21 suites on every push (TASK-082), on a slower machine, so an intermittent canvas death becomes an intermittent red main.
-
-TASK-077's agent independently reported a flake in the same file — something else holding the port it picked — and guarded the *scratch* canvas by checking `/health` returns its own child's pid before proceeding, moving the port if not. The canvas that died here is the main one at the top of the file, which has no such guard. That is the obvious first hypothesis and it is not confirmed: the crash left no stderr in the output, and the check's failure path is what should have printed it.
-
-Worth checking whether `serverStderr` is being dropped on this path, because a check that loses the dying process's own account of why is the reason this is a guess.
+TASK-097 is folded into this task only where condition-based startup and teardown are part of that lifecycle. Do not audit every sleep in scripts, create a general timing framework, or rewrite checks whose subject is elapsed time.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A check's canvas cannot outlive the check, including when the check throws early or is interrupted
-- [ ] #2 Every check that spawns a canvas verifies /health reports its own child's pid before asserting anything, the way the scratch canvas already does
-- [ ] #3 A canvas that dies mid-run is reported as the canvas dying, not as the checks that were in flight failing
-- [ ] #4 The dying process's stderr reaches the output on every failure path
-- [ ] #5 A run leaves no listening server and no temp vault behind, proved rather than assumed
+- [ ] #1 Both canvases spawned by check-boards verify that health.pid is their own child before any board assertion; a foreign or stale responder can never satisfy startup.
+- [ ] #2 One small lifecycle interface owns child startup, stderr, early-death reporting, bounded graceful shutdown with owned-child escalation, exit waiting, and temporary-vault cleanup.
+- [ ] #3 Success, an assertion or fetch failure, and an interrupted run leave no owned listener, child process, or temporary vault; automated checks prove the cleanup paths.
+- [ ] #4 A canvas that dies during the check is reported as process death with its stderr, not as a run of unrelated board assertion failures.
+- [ ] #5 Only identical lifecycle duplication is migrated. Fixed waits unrelated to process startup or teardown remain outside this task.
 <!-- AC:END -->
 
 ## Implementation Notes
