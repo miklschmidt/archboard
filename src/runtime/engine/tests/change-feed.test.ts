@@ -1,9 +1,10 @@
-import { beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import type { BoardIdentity } from "../board.js";
 import type * as ChangeFeedModule from "../change-feed.js";
 import type * as StoreModule from "../board-store.js";
 import type { ServerElement } from "../types.js";
 
+const priorSettleMs = process.env.ARCHBOARD_SETTLE_MS;
 process.env.ARCHBOARD_SETTLE_MS = "60000";
 
 let changeFeed: typeof ChangeFeedModule.changeFeed;
@@ -70,6 +71,12 @@ const flatMetadataBox = () =>
 beforeAll(async () => {
 	({ changeFeed } = await import("../change-feed.js"));
 	({ copyElements } = await import("../board-store.js"));
+});
+
+afterAll(() => {
+	if (priorSettleMs === undefined) delete process.env.ARCHBOARD_SETTLE_MS;
+	else process.env.ARCHBOARD_SETTLE_MS = priorSettleMs;
+	expect(process.env.ARCHBOARD_SETTLE_MS).toBe(priorSettleMs);
 });
 
 describe("change feed", () => {

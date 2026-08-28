@@ -174,21 +174,39 @@ async function startHotCanvas(
 describe.serial("hot reload", () => {
 	test("cleans a canvas whose readiness check fails", async () => {
 		const readinessFailure = new Error("forced hot readiness failure");
-		let started: HotCanvas | undefined;
+		let started!: HotCanvas;
 		let rejected: unknown;
-		try {
-			const unexpected = await startHotCanvas(async (canvas: HotCanvas) => {
-				started = canvas;
-				throw readinessFailure;
-			});
-			await unexpected.dispose();
-		} catch (error) {
-			rejected = error;
-		}
+		const unexpected = await startHotCanvas(async (canvas) => {
+			started = canvas;
+			throw readinessFailure;
+		}).catch((error: unknown) => void (rejected = error));
+		await unexpected?.dispose();
 		expect(rejected).toBe(readinessFailure);
-		expect(started).toBeDefined();
-		expect(existsSync(resolve(started!.vault, ".."))).toBeFalse();
-		expect(() => process.kill(started!.pid, 0)).toThrow();
+		expect(existsSync(resolve(started.vault, ".."))).toBeFalse();
+		expect(() => process.kill(started.pid, 0)).toThrow();
+	});
+
+	test("reports readiness and disposal failures after real cleanup", async () => {
+		const readinessFailure = new Error("forced hot readiness failure");
+		const disposalFailure = new Error("forced hot disposal failure");
+		let started!: HotCanvas;
+		const rejected = await startHotCanvas(async (canvas) => {
+			started = canvas;
+			const dispose = canvas.dispose.bind(canvas);
+			canvas.dispose = async () => {
+				await dispose();
+				throw disposalFailure;
+			};
+			throw readinessFailure;
+		}).catch((error: unknown) => error);
+		expect(rejected).toBeInstanceOf(AggregateError);
+		const aggregate = rejected as AggregateError;
+		expect(aggregate.message).toBe("Hot canvas readiness failed and disposal also failed.");
+		expect(aggregate.errors[0]).toBe(readinessFailure);
+		expect(aggregate.errors[1]).toBe(disposalFailure);
+		expect(aggregate.cause).toBe(disposalFailure);
+		expect(existsSync(resolve(started.vault, ".."))).toBeFalse();
+		expect(() => process.kill(started.pid, 0)).toThrow();
 	});
 
 	test("restores later snapshots and reports checkout state after an earlier failure", () => {
@@ -199,7 +217,7 @@ describe.serial("hot reload", () => {
 			for (const args of [
 				["init", "-q"],
 				["add", "."],
-			]) {
+			] as const) {
 				const git = spawnSync("git", args, { cwd: root, encoding: "utf8" });
 				expect(git.status, git.stderr).toBe(0);
 			}
