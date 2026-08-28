@@ -10,6 +10,31 @@ under an "Embedded Files" heading which file each image now lives in, and
 leaves the drawing carrying no picture bytes at all. Bytes in a drawing are an
 input format it accepts and migrates away from.
 
+## Pinned source for this decision
+
+The source read for this decision is the Obsidian Excalidraw plugin at
+`https://github.com/zsviczian/obsidian-excalidraw-plugin`, commit
+`36a32940bac50fd60fb379b18a9f38668f941108`. Its pinned manifest reports
+version `2.26.4`. The reading copy and its source links are recorded in the
+[vendor provenance note](../design/vendor/README.md).
+
+The relied-on source regions are:
+
+- `loadData`, [lines 539-925](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L539-L925), reads the data region and the `## Embedded Files` records.
+- `generateMDBase`, [lines 1379-1467](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L1379-L1467), writes Embedded Files entries and builds the scene JSON for the Drawing payload. `generateMDAsync` and `generateMDSync`, [lines 1470-1495](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L1470-L1495), wrap that JSON in the Drawing section and return the note data.
+- `syncFiles`, [lines 1599-1745](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L1599-L1745), cleans file records and writes new scene files to the vault.
+- `syncElements`, [lines 1747-1766](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L1747-L1766), clears `scene.files` after syncing.
+- Element Links have a bidirectional lifecycle. `loadData` parses the persisted section and applies entries to matching scene elements at [lines 772-856](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L772-L856). `findNewElementLinksInScene` only adds missing links at [lines 1034-1058](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L1034-L1058). During sync and save, `syncElements` runs `updateElementLinksFromScene` and then `findNewElementLinksInScene` at [lines 1747-1766](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L1747-L1766); `updateElementLinksFromScene` reconciles existing entries at [lines 1114-1127](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L1114-L1127); and `generateMDBase` emits the current map at [lines 1407-1415](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L1407-L1415).
+
+No exact plugin-authored `.excalidraw.md` note from version 2.26.4 was found in
+the pinned upstream tree or available local material. The public
+[v2.19.0 issue attachment](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2594)
+is not evidence for this pinned version and is not used. The existing
+`scripts/check-obsidian-md.mjs` examples are Archboard-authored and synthetic.
+They protect Archboard's parser and round-trip behavior, but they do not detect
+drift in real plugin-emitted bytes. This ADR records a source-based contract,
+not captured-note coverage.
+
 ## Why that is a problem
 
 A save regenerates the drawing and the sections the plugin serialises around
@@ -71,9 +96,11 @@ Fetching the web link is the plugin's job.
 
 **One neighbouring section is deliberately not preserved**, the one recording
 which element links where. It is not a sole record: the links live on the
-elements in the drawing, and the plugin rebuilds the section from them every
-time it opens a note. Keeping a stale copy would put back a link somebody had
-deleted here, which is the shape of TASK-028 and TASK-029.
+elements in the drawing. On load, `loadData` applies persisted Element Links to
+matching elements. During sync and save, `syncElements` reconciles existing
+links with the scene, adds missing links, and `generateMDBase` emits the current
+map. Keeping a stale copy would put back a link somebody had deleted here,
+which is the shape of TASK-028 and TASK-029.
 
 The formats stay independent. archboard writes what it writes, the plugin
 writes what it writes, and each keeps the other's record rather than converting
