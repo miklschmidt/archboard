@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/archboard-banner-dark.png">
+  <img alt="Archboard: a human and coding agent rearrange a shared software architecture canvas" src="docs/assets/archboard-banner.png">
+</picture>
+
 # archboard
 
 Archboard is a live [Excalidraw](https://excalidraw.com) canvas where a coding
