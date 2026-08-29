@@ -15,6 +15,7 @@ import { join, resolve } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { WebSocket } from "ws";
 
+import { waitForProcessExit } from "../support/owned-canvas.ts";
 import { createRequester, sleep, waitFor } from "./support/http.ts";
 import { reversibleCheckoutEdit } from "./support/reversible-checkout-edit.ts";
 
@@ -493,7 +494,7 @@ describe.serial("hot reload", () => {
 			expect(((await refused.json()) as { error: string }).error).toMatch(/dev:canvas/);
 		} finally {
 			spawnSync(executable, ["stop"], { cwd: repoRoot, encoding: "utf8", env: plainEnv });
-			if (plainPid !== undefined) expect(() => process.kill(plainPid!, 0)).toThrow();
+			if (plainPid !== undefined) await waitForProcessExit(plainPid);
 		}
 	}, 60_000);
 });

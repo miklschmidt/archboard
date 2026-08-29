@@ -4,6 +4,7 @@ import { createServer } from "node:net";
 import type { Readable } from "node:stream";
 
 import {
+	TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
 	TEST_CANVAS_HEALTH_POLL_MS,
 	TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS,
 	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
@@ -83,10 +84,31 @@ export const processExists = (pid: number): boolean => {
 	try {
 		process.kill(pid, 0);
 		return true;
-	} catch {
-		return false;
+	} catch (error) {
+		const failure = error as NodeJS.ErrnoException;
+		if (failure.code === "ESRCH") return false;
+		throw new Error(
+			`Process ${pid} observation failed (${failure.code ?? "unknown"}): ${failure.message}`,
+			{ cause: error },
+		);
 	}
 };
+
+export async function waitForProcessExit(
+	pid: number,
+	timeoutMs = TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
+): Promise<void> {
+	const deadline = Date.now() + timeoutMs;
+	// Signal zero only observes; PID reuse may prolong this audit but never authorizes cleanup.
+	while (processExists(pid)) {
+		if (Date.now() >= deadline) {
+			throw new Error(
+				`Process ${pid} remained observable after ${timeoutMs.toLocaleString("en-US")}ms; it may be live, zombie, or recycled.`,
+			);
+		}
+		await sleep(TEST_CANVAS_HEALTH_POLL_MS);
+	}
+}
 
 async function automaticPort(): Promise<number> {
 	const probe = createServer();

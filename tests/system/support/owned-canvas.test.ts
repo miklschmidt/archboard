@@ -6,6 +6,8 @@ import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
 
+import { TEST_CANVAS_HEALTH_POLL_MS } from "../../../src/shared/timing/timing.ts";
+
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const serverPath = path.join(repoRoot, "src/server.ts");
 const thisFile = import.meta.path;
@@ -94,12 +96,50 @@ if (process.env.ARCHBOARD_FAILED_REAP_CHILD === "1") {
 	process.exit(0);
 }
 
-const { startOwnedCanvas } = await import("./owned-canvas.ts");
+const { processExists, startOwnedCanvas, waitForProcessExit } = await import("./owned-canvas.ts");
 
 describe("owned canvas direct lifecycle", () => {
 	const emergencyVaults = new Set<string>();
 	afterAll(() => {
 		for (const vault of emergencyVaults) fs.rmSync(vault, { recursive: true, force: true });
+	});
+
+	test("observes a retained short-lived child until delayed disappearance", async () => {
+		const child = Bun.spawn(
+			[process.execPath, "-e", `await Bun.sleep(${TEST_CANVAS_HEALTH_POLL_MS * 10})`],
+			{ stdout: "ignore", stderr: "ignore" },
+		);
+		try {
+			expect(processExists(child.pid)).toBeTrue();
+			await waitForProcessExit(child.pid);
+			expect(await child.exited).toBe(0);
+		} finally {
+			if (child.exitCode === null) child.kill("SIGKILL");
+			await child.exited;
+		}
+	});
+
+	test("reports a retained live child before its handle reaps it", async () => {
+		const child = Bun.spawn([process.execPath, "-e", "await Bun.sleep(60_000)"], {
+			stdout: "ignore",
+			stderr: "ignore",
+		});
+		const timeoutMs = TEST_CANVAS_HEALTH_POLL_MS * 2;
+		try {
+			let failure: unknown;
+			try {
+				await waitForProcessExit(child.pid, timeoutMs);
+			} catch (error) {
+				failure = error;
+			}
+			expect(failure).toBeInstanceOf(Error);
+			expect((failure as Error).message).toBe(
+				`Process ${child.pid} remained observable after ${timeoutMs}ms; it may be live, zombie, or recycled.`,
+			);
+		} finally {
+			child.kill("SIGKILL");
+			await child.exited;
+		}
 	});
 
 	test("allocates and verifies a port when the caller names none", async () => {

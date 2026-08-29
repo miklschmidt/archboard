@@ -10,6 +10,7 @@ import type {
 	LegacyElementIngress,
 	RuntimeBoardElement,
 } from "../../../src/shared/board-elements/index.js";
+import { TEST_BOARD_INSPECTION_TOTALITY_CASE_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
 import { connector, type PackageElement } from "./fixtures/package-cases.js";
 import { createPackageInspectionOwner } from "./support/package-inspection.js";
 
@@ -380,106 +381,110 @@ describe("package inspection totality", () => {
 		}
 	});
 
-	test("persists injective label pairs and canonical obstacle identities under reversal", async () => {
-		const owner = createPackageInspectionOwner();
-		try {
-			owner.startVault();
-			const pairCases = [
-				[
-					"spaces",
+	test(
+		"persists injective label pairs and canonical obstacle identities under reversal",
+		async () => {
+			const owner = createPackageInspectionOwner();
+			try {
+				owner.startVault();
+				const pairCases = [
 					[
-						["a b", "c"],
-						["a", "b c"],
-					],
-				],
-				[
-					"controls",
-					[
-						["control\0owner", "text\u001fleft"],
-						["control\u001fowner", "text\0right"],
-					],
-				],
-				[
-					"prefixes",
-					[
-						["prefix", "label"],
-						["prefix-long", "label-long"],
-					],
-				],
-			] as const;
-			for (const [label, pairs] of pairCases) {
-				const expected = pairs
-					.map(([containerId, textId]) => `${containerId}\0${textId}`)
-					.toSorted();
-				for (const reverse of [false, true]) {
-					const board = `label-pair-${label}-${reverse}`;
-					writeExactBoard(owner, board, labelPairBoard(pairs, reverse), pairs.flat());
-					const result = owner.runInspection(board, ["--strict"]);
-					expect(result).toMatchObject({ status: 7, stderr: "" });
-					const report = CheckResultSchema.parse(JSON.parse(result.stdout));
-					expect(
-						report.findings
-							.filter(
-								(finding) => finding.code === "LABEL_CORRUPTION" && finding.reason === "drift",
-							)
-							.map((finding) => `${finding.details.containerId}\0${finding.details.textId}`)
-							.toSorted(),
-					).toEqual(expected);
-				}
-			}
-			const obstacleCases = [
-				["comma", ["id,part", "plain"], "obstacle:id\\,part,plain"],
-				["backslash", ["id\\part", "plain"], "obstacle:id\\\\part,plain"],
-				["combined", ["id\\,part", "plain"], "obstacle:id\\\\\\,part,plain"],
-				["control", ["id\0part", "plain"], "obstacle:id\0part,plain"],
-				["other-control", ["id\u001fpart", "plain"], "obstacle:id\u001fpart,plain"],
-				["lone-surrogate", ["\ud800", "plain"], "obstacle:plain,\ud800"],
-				["empty-looking-prefix", [",", "\\"], "obstacle:\\,,\\\\"],
-			] as const;
-			for (const [label, ids, expected] of obstacleCases)
-				for (const reverse of [false, true]) {
-					const ordered = reverse ? ids.toReversed() : [...ids];
-					const board = `obstacle-${label}-${reverse}`;
-					writeExactBoard(
-						owner,
-						board,
+						"spaces",
 						[
-							connector({
-								id: `through-${label}-${reverse}`,
-								x: -10,
-								y: 5,
-								width: 60,
-								points: [
-									[0, 0],
-									[60, 0],
-								],
-							}),
-							...ordered.map((id, index) => ({
-								id,
-								type: "rectangle",
-								x: index * 20,
-								y: 0,
-								width: 10,
-								height: 10,
-								angle: 0,
-								groupIds: [`persisted-${label}`],
-							})),
+							["a b", "c"],
+							["a", "b c"],
 						],
-						[...ids],
-					);
-					const result = owner.runInspection(board);
-					expect(result).toMatchObject({ status: 0, stderr: "" });
-					const report = CheckResultSchema.parse(JSON.parse(result.stdout));
-					expect(
-						new Set(
-							report.findings.flatMap((finding) =>
-								finding.obstacles.map((obstacle) => obstacle.id),
-							),
-						).has(expected),
-					).toBe(true);
+					],
+					[
+						"controls",
+						[
+							["control\0owner", "text\u001fleft"],
+							["control\u001fowner", "text\0right"],
+						],
+					],
+					[
+						"prefixes",
+						[
+							["prefix", "label"],
+							["prefix-long", "label-long"],
+						],
+					],
+				] as const;
+				for (const [label, pairs] of pairCases) {
+					const expected = pairs
+						.map(([containerId, textId]) => `${containerId}\0${textId}`)
+						.toSorted();
+					for (const reverse of [false, true]) {
+						const board = `label-pair-${label}-${reverse}`;
+						writeExactBoard(owner, board, labelPairBoard(pairs, reverse), pairs.flat());
+						const result = owner.runInspection(board, ["--strict"]);
+						expect(result).toMatchObject({ status: 7, stderr: "" });
+						const report = CheckResultSchema.parse(JSON.parse(result.stdout));
+						expect(
+							report.findings
+								.filter(
+									(finding) => finding.code === "LABEL_CORRUPTION" && finding.reason === "drift",
+								)
+								.map((finding) => `${finding.details.containerId}\0${finding.details.textId}`)
+								.toSorted(),
+						).toEqual(expected);
+					}
 				}
-		} finally {
-			await owner.dispose();
-		}
-	});
+				const obstacleCases = [
+					["comma", ["id,part", "plain"], "obstacle:id\\,part,plain"],
+					["backslash", ["id\\part", "plain"], "obstacle:id\\\\part,plain"],
+					["combined", ["id\\,part", "plain"], "obstacle:id\\\\\\,part,plain"],
+					["control", ["id\0part", "plain"], "obstacle:id\0part,plain"],
+					["other-control", ["id\u001fpart", "plain"], "obstacle:id\u001fpart,plain"],
+					["lone-surrogate", ["\ud800", "plain"], "obstacle:plain,\ud800"],
+					["empty-looking-prefix", [",", "\\"], "obstacle:\\,,\\\\"],
+				] as const;
+				for (const [label, ids, expected] of obstacleCases)
+					for (const reverse of [false, true]) {
+						const ordered = reverse ? ids.toReversed() : [...ids];
+						const board = `obstacle-${label}-${reverse}`;
+						writeExactBoard(
+							owner,
+							board,
+							[
+								connector({
+									id: `through-${label}-${reverse}`,
+									x: -10,
+									y: 5,
+									width: 60,
+									points: [
+										[0, 0],
+										[60, 0],
+									],
+								}),
+								...ordered.map((id, index) => ({
+									id,
+									type: "rectangle",
+									x: index * 20,
+									y: 0,
+									width: 10,
+									height: 10,
+									angle: 0,
+									groupIds: [`persisted-${label}`],
+								})),
+							],
+							[...ids],
+						);
+						const result = owner.runInspection(board);
+						expect(result).toMatchObject({ status: 0, stderr: "" });
+						const report = CheckResultSchema.parse(JSON.parse(result.stdout));
+						expect(
+							new Set(
+								report.findings.flatMap((finding) =>
+									finding.obstacles.map((obstacle) => obstacle.id),
+								),
+							).has(expected),
+						).toBe(true);
+					}
+			} finally {
+				await owner.dispose();
+			}
+		},
+		TEST_BOARD_INSPECTION_TOTALITY_CASE_TIMEOUT_MS,
+	);
 });
