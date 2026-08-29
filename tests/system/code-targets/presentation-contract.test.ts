@@ -140,6 +140,17 @@ test("every public presentation is fresh, portable, and board-addressed", async 
 		expect(response.status).toBe(200);
 		return new Map(response.body.elements.map((element) => [element.id, element]));
 	};
+	const expectTransitionLeavesNoteUntouched = async (
+		transition: () => void,
+		observe: () => Promise<void>,
+	) => {
+		const beforeBytes = readFileSync(note);
+		const beforeMtime = statSync(note, { bigint: true }).mtimeNs;
+		transition();
+		await observe();
+		expect(readFileSync(note)).toEqual(beforeBytes);
+		expect(statSync(note, { bigint: true }).mtimeNs).toBe(beforeMtime);
+	};
 
 	let presented = await read();
 	expect(presented.get("local-file")?.link).toBe(
@@ -167,25 +178,49 @@ test("every public presentation is fresh, portable, and board-addressed", async 
 	expect(presented.get("bound-human")?.link).toBe("https://human.example/bound");
 	expect(presented.get("unbound-human")?.link).toBe("file:///human-authored.ts");
 
-	writeFileSync(registry, "[]\n");
-	presented = await read();
-	expect(presented.get("local-file")?.link).toBe(
-		"https://github.com/acme/local/tree/HEAD/src/index.ts",
+	await expectTransitionLeavesNoteUntouched(
+		() => writeFileSync(registry, "[]\n"),
+		async () =>
+			expect((await read()).get("local-file")?.link).toBe(
+				"https://github.com/acme/local/tree/HEAD/src/index.ts",
+			),
 	);
-	writeFileSync(registry, JSON.stringify([{ ...registryEntry, root: join(root, "moved") }]));
-	expect((await read()).get("local-directory")?.link).toBe(
-		"https://github.com/acme/local/tree/HEAD/src/directory",
+	await expectTransitionLeavesNoteUntouched(
+		() =>
+			writeFileSync(registry, JSON.stringify([{ ...registryEntry, root: join(root, "moved") }])),
+		async () =>
+			expect((await read()).get("local-directory")?.link).toBe(
+				"https://github.com/acme/local/tree/HEAD/src/directory",
+			),
 	);
-	writeFileSync(registry, JSON.stringify([registryEntry]));
-	writeFileSync(join(checkout, "src", "later.ts"), "later\n");
-	expect((await read()).get("missing")?.link).toBe(
-		"/api/code-targets/open?board=targets&element=missing",
+	await expectTransitionLeavesNoteUntouched(
+		() => writeFileSync(registry, JSON.stringify([registryEntry])),
+		async () =>
+			expect((await read()).get("local-file")?.link).toBe(
+				"/api/code-targets/open?board=targets&element=local-file",
+			),
 	);
-	git(checkout, "remote", "set-url", "origin", "https://github.com/other/repo.git");
-	expect((await read()).get("local-file")?.link).toBe(
-		"https://github.com/acme/local/tree/HEAD/src/index.ts",
+	await expectTransitionLeavesNoteUntouched(
+		() => writeFileSync(join(checkout, "src", "later.ts"), "later\n"),
+		async () =>
+			expect((await read()).get("missing")?.link).toBe(
+				"/api/code-targets/open?board=targets&element=missing",
+			),
 	);
-	git(checkout, "remote", "set-url", "origin", `https://${localRepository}.git`);
+	await expectTransitionLeavesNoteUntouched(
+		() => git(checkout, "remote", "set-url", "origin", "https://github.com/other/repo.git"),
+		async () =>
+			expect((await read()).get("local-file")?.link).toBe(
+				"https://github.com/acme/local/tree/HEAD/src/index.ts",
+			),
+	);
+	await expectTransitionLeavesNoteUntouched(
+		() => git(checkout, "remote", "set-url", "origin", `https://${localRepository}.git`),
+		async () =>
+			expect((await read()).get("local-file")?.link).toBe(
+				"/api/code-targets/open?board=targets&element=local-file",
+			),
+	);
 
 	const exactInternal = "/api/code-targets/open?board=targets&element=local-file";
 	const exactCommit = "https://github.com/acme/remote/tree/deadbeef/src/a%20b%23%25/caf%C3%A9.ts";
