@@ -8,6 +8,49 @@ import { BridgeMetadataSchema, BridgeRefusal, planBridgeCreate } from "../bridge
 import { crossingConnectors } from "./fixtures/elements.js";
 
 const freshSources = () => crossingConnectors() as unknown as ServerElement[];
+const modeSources = (
+	overMarker: Record<string, unknown> = {},
+	underMarker: Record<string, unknown> = {},
+) => {
+	const [over, under] = crossingConnectors();
+	return [
+		{ ...over, ...overMarker },
+		{ ...under, ...underMarker },
+	] as unknown as ServerElement[];
+};
+
+const boundarySources = (coordinate: number) => {
+	const elements = modeSources(
+		{},
+		{
+			type: "arrow",
+			x: 10,
+			y: 50,
+			width: Math.abs(coordinate),
+			height: 0,
+			points: [
+				[0, 0],
+				[coordinate, 0],
+			],
+			elbowed: true,
+			fixedSegments: [],
+		},
+	);
+	Object.assign(elements[0]!, {
+		x: 10 + coordinate / 2,
+		y: 0,
+		width: 0,
+		height: 100,
+		points: [
+			[0, 0],
+			[0, 100],
+		],
+	});
+	return elements;
+};
+
+const unsupportedSourceMessage =
+	"Both sources must be live arrow/line connectors at zero rotation, without explicit curve fields, with finite non-zero point-chain segments; elbow coordinates must stay within ±1,000,000.";
 
 describe("bridge creation", () => {
 	test("plans a deterministic role-ordered decoration", () => {
@@ -127,5 +170,74 @@ describe("bridge creation", () => {
 		expect(
 			inspectBoard(sources).findings.some((f) => f.reason === "proper-interior-crossing"),
 		).toBe(true);
+	});
+
+	test("plans bridges for rounded, elbowed, special, and boundary point chains", () => {
+		for (const [name, overMarker, underMarker] of [
+			["rounded", { roundness: { type: 2 } }, {}],
+			["elbowed", {}, { elbowed: true, fixedSegments: [] }],
+		] as const) {
+			const plan = planBridgeCreate({
+				elements: modeSources(overMarker, underMarker),
+				bridgeId: `Bridge-${name}`,
+				overConnectorId: "over",
+				underConnectorId: "under",
+				background: "#ffffff",
+			});
+			expect(plan.overSegmentIndex).toBe(0);
+			expect(plan.underSegmentIndex).toBe(0);
+			expect(plan.crossing).toEqual({ x: 50, y: 50 });
+		}
+		for (const startIsSpecial of [true, false, null] as const)
+			for (const endIsSpecial of [true, false, null] as const)
+				expect(() =>
+					planBridgeCreate({
+						elements: modeSources(
+							{},
+							{ elbowed: true, fixedSegments: [], startIsSpecial, endIsSpecial },
+						),
+						bridgeId: `Bridge-${String(startIsSpecial)}-${String(endIsSpecial)}`,
+						overConnectorId: "over",
+						underConnectorId: "under",
+						background: "#ffffff",
+					}),
+				).not.toThrow();
+		for (const coordinate of [1_000_000, -1_000_000] as const)
+			expect(() =>
+				planBridgeCreate({
+					elements: boundarySources(coordinate),
+					bridgeId: `Bridge-boundary-${coordinate}`,
+					overConnectorId: "under",
+					underConnectorId: "over",
+					background: "#ffffff",
+				}),
+			).not.toThrow();
+		for (const coordinate of [1_000_001, -1_000_001] as const)
+			for (const marker of [
+				{
+					elbowed: true,
+					fixedSegments: [],
+					points: [
+						[0, 0],
+						[coordinate, 0],
+					],
+				},
+				{ elbowed: "bad" },
+				{ fixedSegments: [] },
+			] as const) {
+				const elements =
+					"elbowed" in marker && marker.elbowed === true && "points" in marker
+						? boundarySources(coordinate)
+						: modeSources({}, marker);
+				expect(() =>
+					planBridgeCreate({
+						elements,
+						bridgeId: "Bridge-refused",
+						overConnectorId: "over",
+						underConnectorId: "under",
+						background: "#ffffff",
+					}),
+				).toThrow(unsupportedSourceMessage);
+			}
 	});
 });
