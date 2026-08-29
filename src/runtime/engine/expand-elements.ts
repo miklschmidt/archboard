@@ -734,12 +734,10 @@ export function expandElements(
 		cleanedExportElements.push(...order);
 	}
 
-	const output = deterministic
-		? (canonicalizeKeys(cleanedExportElements) as Record<string, unknown>[])
-		: cleanedExportElements;
-	return output.map((element) =>
+	const validated = cleanedExportElements.map((element) =>
 		validatePersistedBoardElement(element, `write ingress element ${String(element.id ?? "")}`),
 	);
+	return deterministic ? (canonicalizeKeys(validated) as RuntimeBoardElement[]) : validated;
 }
 
 /**
