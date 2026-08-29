@@ -8,6 +8,11 @@ import {
 	BROWSER_TEST_PATHS,
 	validateBrowserSelection,
 } from "../browser/run-browser-lane.ts";
+import { browserCleanupObservationMs, pollUntil } from "../browser/support/agent-browser.ts";
+import {
+	TEST_BROWSER_COMMAND_TIMEOUT_MS,
+	TEST_BROWSER_POLL_MS,
+} from "../../../src/shared/timing/timing.ts";
 import {
 	discoverNativeTests,
 	inspectTestInventory,
@@ -294,6 +299,97 @@ describe("browser adapter prerequisite outcomes", () => {
 
 	test("missing strace exits 2 before the human owner acquires anything", () => {
 		runPrerequisiteNegative(true);
+	});
+});
+
+function processExists(pid: number): boolean {
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+describe("browser adapter interruption and cleanup timing", () => {
+	for (const [signal, exitCode] of [
+		["SIGINT", 130],
+		["SIGTERM", 143],
+	] as const) {
+		test(
+			`handles ${signal} while a retained pre-owner build is blocked`,
+			async () => {
+				const fixture = prerequisiteFixture(true);
+				const blocker = path.join(fixture.root, "blocked-build.ts");
+				const pidsFile = path.join(fixture.root, "build-pids.json");
+				const termMarker = path.join(fixture.root, "build-term");
+				fs.writeFileSync(
+					blocker,
+					`import { writeFileSync } from "node:fs";
+process.on("SIGTERM", () => writeFileSync(${JSON.stringify(termMarker)}, "TERM"));
+writeFileSync(${JSON.stringify(pidsFile)}, JSON.stringify([process.pid]));
+setInterval(() => {}, ${TEST_BROWSER_POLL_MS});
+`,
+				);
+				const adapter = Bun.spawn({
+					cmd: ["bun", BROWSER_ADAPTER_PATH, "--focus", BROWSER_TEST_PATHS[1]],
+					cwd: repoRoot,
+					env: {
+						PATH: fixture.bin,
+						TMPDIR: fixture.temporary,
+						LANG: "C.UTF-8",
+						LC_ALL: "C.UTF-8",
+						NO_COLOR: "1",
+						ARCHBOARD_TEST_BROWSER_BUILD_FIXTURE: blocker,
+					},
+					stdout: "ignore",
+					stderr: "pipe",
+				});
+				let ownedPids: number[] = [];
+				try {
+					await pollUntil(
+						() => fs.existsSync(pidsFile),
+						Boolean,
+						"blocked frontend build to publish its pids",
+					);
+					ownedPids = JSON.parse(fs.readFileSync(pidsFile, "utf8")) as number[];
+					process.kill(adapter.pid, signal);
+					expect(await adapter.exited).toBe(exitCode);
+					const stderr = await new Response(adapter.stderr).text();
+					expect(stderr).toContain(`Browser lane interrupted by ${signal}.`);
+					expect(fs.readFileSync(termMarker, "utf8")).toBe("TERM");
+					const runnerSource = fs.readFileSync(path.join(repoRoot, BROWSER_ADAPTER_PATH), "utf8");
+					expect(runnerSource).toContain('process.kill(-child.pid, "SIGKILL")');
+					await pollUntil(
+						() => ownedPids.filter(processExists),
+						(alive) => alive.length === 0,
+						"interrupted frontend build process group to disappear",
+					);
+					expect(fs.readdirSync(fixture.temporary)).toEqual([]);
+					expect(fs.existsSync(fixture.unexpectedMarker)).toBeFalse();
+				} finally {
+					if (adapter.exitCode === null) adapter.kill("SIGKILL");
+					await adapter.exited;
+					for (const pid of ownedPids) if (processExists(pid)) process.kill(pid, "SIGKILL");
+					fs.rmSync(fixture.root, { recursive: true, force: true });
+				}
+			},
+			TEST_BROWSER_COMMAND_TIMEOUT_MS,
+		);
+	}
+
+	test("observes through idle expiry and samples once at the deadline", async () => {
+		expect(browserCleanupObservationMs(String(TEST_BROWSER_COMMAND_TIMEOUT_MS))).toBe(
+			TEST_BROWSER_COMMAND_TIMEOUT_MS + TEST_BROWSER_POLL_MS,
+		);
+		let samples = 0;
+		const accepted = await pollUntil(
+			() => ++samples,
+			(value) => value === 2,
+			"deadline sample",
+			{ timeoutMs: TEST_BROWSER_POLL_MS, intervalMs: TEST_BROWSER_POLL_MS * 2 },
+		);
+		expect(accepted).toBe(2);
 	});
 });
 

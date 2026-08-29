@@ -2,6 +2,8 @@ import { expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 
+import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
+
 import {
 	REPORT_IDLE_SETTLE_MS,
 	REPORT_PROGRESS_MS,
@@ -52,18 +54,14 @@ interface PerformanceProbe {
 	replacements: number;
 }
 
+type PageElement = Pick<ExcalidrawElement, "id" | "x" | "y" | "width" | "height">;
+
 interface PageState {
 	perf: PerformanceProbe;
 	tool: string;
 	editing: string | null;
 	typing: string | null;
-	elements: Array<{
-		id: string;
-		x: number;
-		y: number;
-		width: number;
-		height: number;
-	}>;
+	elements: PageElement[];
 }
 
 interface Point {
