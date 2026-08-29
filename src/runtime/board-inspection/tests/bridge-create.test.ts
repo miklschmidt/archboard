@@ -57,7 +57,12 @@ describe("bridge creation", () => {
 		expect(applied.named.map((part) => part.type)).toEqual(["line", "line"]);
 		expect(applied.named.every((part) => part.groupIds?.length === 0)).toBe(true);
 		expect(
-			applied.named.every((part) => part.startBinding === null && part.endBinding === null),
+			applied.named.every(
+				(part) =>
+					(part.type === "arrow" || part.type === "line") &&
+					part.startBinding === null &&
+					part.endBinding === null,
+			),
 		).toBe(true);
 		const receipt = {
 			success: true as const,

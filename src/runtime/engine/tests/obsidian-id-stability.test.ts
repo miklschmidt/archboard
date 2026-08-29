@@ -54,7 +54,7 @@ describe("server-minted ids", () => {
 		expect(idsInNote(note)).toEqual(minted);
 		for (const element of JSON.parse(extractSceneJsonFromObsidianMd(note))
 			.elements as ServerElement[]) {
-			if (!element.containerId) continue;
+			if (element.type !== "text" || !element.containerId) continue;
 			expect(minted).toContain(element.containerId);
 			expect(note).toContain(`^${element.id}`);
 		}

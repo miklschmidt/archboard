@@ -1,13 +1,6 @@
-import { z } from "zod";
-
-import { EXCALIDRAW_ELEMENT_TYPES, normalizeFontFamily } from "./types.js";
-import type { ExcalidrawElementType, ServerElement } from "./types.js";
-import {
-	DEFAULT_FILL_STYLE,
-	DEFAULT_SHAPE_BACKGROUND,
-	FILLABLE_TYPES,
-} from "../../shared/appearance/appearance.js";
-import { bindingFromRef, bindingOf, boundEndpoint, centreOf } from "./arrow-binding.js";
+import { normalizeFontFamily } from "./types.js";
+import type { ServerElement } from "./types.js";
+import { bindingOf, boundEndpoint, centreOf } from "./arrow-binding.js";
 import {
 	expandForBoard,
 	relabelBoundTexts,
@@ -23,88 +16,23 @@ import {
 import { copyElements } from "./board-store.js";
 import { mintId } from "../../shared/ids/ids.js";
 import { recentreBoundTexts } from "./labels.js";
-
-export const PointSchema = z.union([
-	z.tuple([z.number(), z.number()]),
-	z.object({ x: z.number(), y: z.number() }),
-]);
-
-const BindingSchema = z
-	.object({
-		elementId: z.string(),
-		focus: z.number().optional(),
-		gap: z.number().optional(),
-		fixedPoint: z.tuple([z.number(), z.number()]).nullable().optional(),
-		mode: z.string().optional(),
-	})
-	.nullable();
-
-const ElementFields = {
-	type: z.enum(
-		Object.values(EXCALIDRAW_ELEMENT_TYPES) as [ExcalidrawElementType, ...ExcalidrawElementType[]],
-	),
-	x: z.number(),
-	y: z.number(),
-	width: z.number().optional(),
-	height: z.number().optional(),
-	backgroundColor: z.string().optional(),
-	strokeColor: z.string().optional(),
-	strokeWidth: z.number().optional(),
-	strokeStyle: z.string().optional(),
-	roughness: z.number().optional(),
-	opacity: z.number().optional(),
-	text: z.string().optional(),
-	originalText: z.string().optional(),
-	label: z.object({ text: z.string() }).optional(),
-	fontSize: z.number().optional(),
-	fontFamily: z.union([z.string(), z.number()]).optional(),
-	containerId: z.string().nullable().optional(),
-	index: z.string().nullable().optional(),
-	seed: z.number().optional(),
-	versionNonce: z.number().optional(),
-	updated: z.number().optional(),
-	groupIds: z.array(z.string()).optional(),
-	locked: z.boolean().optional(),
-	roundness: z.object({ type: z.number(), value: z.number().optional() }).nullable().optional(),
-	fillStyle: z.string().optional(),
-	points: z.array(PointSchema).optional(),
-	start: z.object({ id: z.string() }).nullable().optional(),
-	end: z.object({ id: z.string() }).nullable().optional(),
-	startElementId: z.string().optional(),
-	endElementId: z.string().optional(),
-	startArrowhead: z.string().nullable().optional(),
-	endArrowhead: z.string().nullable().optional(),
-	elbowed: z.boolean().optional(),
-	startBinding: BindingSchema.optional(),
-	endBinding: BindingSchema.optional(),
-	boundElements: z
-		.array(
-			z.object({
-				id: z.string(),
-				type: z.enum(["arrow", "text"]),
-			}),
-		)
-		.nullable()
-		.optional(),
-	fileId: z.string().optional(),
-	status: z.string().optional(),
-	scale: z.tuple([z.number(), z.number()]).optional(),
-};
-
-export const CreateElementSchema = z.looseObject({
-	id: z.string().optional(),
-	...ElementFields,
-});
-
-export const UpdateElementSchema = z.looseObject({
-	id: z.string(),
-	...Object.fromEntries(
-		Object.entries(ElementFields).map(([name, schema]) => [name, schema.optional()]),
-	),
-});
-
-export const CREATE_ELEMENT_JSON_SCHEMA = z.toJSONSchema(CreateElementSchema);
-export const UPDATE_ELEMENT_JSON_SCHEMA = z.toJSONSchema(UpdateElementSchema);
+import type { LegacyElementIngress } from "../../shared/board-elements/index.js";
+import { validatePersistedBoardElement } from "./lib/native-element.js";
+import { canonicalLinkAfterPresentationEcho } from "./presentation.js";
+import { stripTrackingClaims } from "./metadata.js";
+export {
+	CREATE_ELEMENT_JSON_SCHEMA,
+	CreateElementSchema,
+	PointSchema,
+	UPDATE_ELEMENT_JSON_SCHEMA,
+	UpdateElementSchema,
+} from "./lib/element-input-schema.js";
+import { UpdateElementSchema } from "./lib/element-input-schema.js";
+import {
+	buildAgentElement,
+	spendArrowRefs,
+	wellFormAgentStatement,
+} from "./lib/agent-element-input.js";
 
 export interface ElementInputRequest {
 	upserts?: Record<string, unknown>[];
@@ -121,14 +49,6 @@ export interface AppliedElementInput {
 	created: ServerElement[];
 	updated: ServerElement[];
 	deleted: string[];
-}
-
-function normalizePoints(points: unknown): unknown {
-	if (!Array.isArray(points)) return points;
-	const normalized = pointsOf(points);
-	return normalized && normalized.length === points.length
-		? normalized.map((point) => [point.x, point.y])
-		: points;
 }
 
 const hasOwn = (value: object, key: PropertyKey): boolean =>
@@ -148,127 +68,69 @@ function bumpVersion(
  * It spends client aliases here so CLI, library and direct HTTP writes
  * all reach the converter as the same statement.
  */
-function wellFormStatement(
-	raw: Record<string, unknown>,
-	existingType?: string,
-): Record<string, unknown> {
-	const statement = { ...raw };
-	if (hasOwn(statement, "points")) {
-		statement.points = normalizePoints(statement.points);
-	}
-
-	for (const [alias, ref] of [
-		["startElementId", "start"],
-		["endElementId", "end"],
-	] as const) {
-		if (hasOwn(statement, alias)) {
-			const id = statement[alias];
-			statement[ref] = typeof id === "string" && id ? { id } : null;
-		}
-		delete statement[alias];
-	}
-
-	const type = typeof statement.type === "string" ? statement.type : existingType;
-	if (type !== EXCALIDRAW_ELEMENT_TYPES.TEXT && hasOwn(statement, "text")) {
-		const text = statement.text;
-		delete statement.text;
-		if (typeof text === "string") statement.label = { text };
-	}
-	return statement;
-}
-
-function applyDefaultFill(element: ServerElement): void {
-	if (!FILLABLE_TYPES.has(element.type) || element.backgroundColor !== undefined) return;
-	element.backgroundColor = DEFAULT_SHAPE_BACKGROUND;
-	const dynamic = element as unknown as Record<string, unknown>;
-	if (dynamic.fillStyle === undefined) dynamic.fillStyle = DEFAULT_FILL_STYLE;
-}
-
-function spendArrowRefs(element: Record<string, unknown>, stated: Record<string, unknown>): void {
-	if (element.type !== "arrow" && element.type !== "line") return;
-	for (const [ref, binding] of [
-		["start", "startBinding"],
-		["end", "endBinding"],
-	] as const) {
-		const said = hasOwn(stated, ref);
-		const value = element[ref];
-		delete element[ref];
-		if (said) element[binding] = bindingFromRef(value);
-	}
-}
-
-function wellFormNewElement(
-	raw: Record<string, unknown>,
-	inUse: { has(id: string): boolean },
-): ServerElement {
-	const statement = wellFormStatement(raw);
-	const params = CreateElementSchema.parse(statement);
-	const { board: _boardField, ...elementParams } = params as typeof params & { board?: string };
-	const now = new Date().toISOString();
-	const element = {
-		id: params.id || mintId(inUse),
-		...elementParams,
-		fontFamily: normalizeFontFamily(params.fontFamily),
-		createdAt: now,
-		updatedAt: now,
-		version: 1,
-	} as ServerElement;
-
-	if (
-		(element.type === "arrow" || element.type === "line") &&
-		((element as unknown as Record<string, unknown>).start !== undefined ||
-			(element as unknown as Record<string, unknown>).end !== undefined) &&
-		!Array.isArray(element.points)
-	) {
-		(element as unknown as Record<string, unknown>).points = DEFAULT_LINEAR_POINTS.map((point) => [
-			...point,
-		]);
-	}
-	applyDefaultFill(element);
-	spendArrowRefs(
-		element as unknown as Record<string, unknown>,
-		elementParams as Record<string, unknown>,
-	);
-	return element;
-}
-
 function normalizeLineBreakMarkup(text: string): string {
 	return text.replace(/<\s*b\s*r\s*\/?\s*>/gi, "\n").replace(/\n{3,}/g, "\n\n");
 }
 
 interface ElementMerge {
 	element: ServerElement;
+	statement: LegacyElementIngress;
 	geometryChanged: boolean;
 	reboundArrow: boolean;
 }
 
 function mergeElementUpdate(existing: ServerElement, raw: Record<string, unknown>): ElementMerge {
-	const statement = wellFormStatement(raw, existing.type);
+	const statement = wellFormAgentStatement(raw, existing.type);
+	if (statement.type !== undefined && statement.type !== existing.type) {
+		throw new Error(`Element ${existing.id} cannot change type from ${existing.type}`);
+	}
 	const { board: _boardField, ...updates } = UpdateElementSchema.parse({
 		...statement,
 		id: existing.id,
 	}) as Record<string, unknown>;
-	const element: ServerElement = {
+	const candidate: Record<string, unknown> = {
 		...existing,
 		...updates,
-		fontFamily:
-			updates.fontFamily !== undefined
-				? normalizeFontFamily(
-						typeof updates.fontFamily === "string" || typeof updates.fontFamily === "number"
-							? updates.fontFamily
-							: undefined,
-					)
-				: existing.fontFamily,
+		...(existing.type === "text"
+			? {
+					fontFamily:
+						updates.fontFamily !== undefined
+							? normalizeFontFamily(
+									typeof updates.fontFamily === "string" || typeof updates.fontFamily === "number"
+										? updates.fontFamily
+										: undefined,
+								)
+							: existing.fontFamily,
+				}
+			: {}),
 	};
+	delete candidate.label;
+	delete candidate.start;
+	delete candidate.end;
+	spendArrowRefs(candidate, statement);
+	if (existing.type !== "text") {
+		for (const key of [
+			"text",
+			"originalText",
+			"fontSize",
+			"fontFamily",
+			"textAlign",
+			"verticalAlign",
+			"autoResize",
+			"lineHeight",
+			"containerId",
+		])
+			delete candidate[key];
+	}
+	const element = validatePersistedBoardElement(candidate, `element update ${existing.id}`);
 	bumpVersion(element, existing);
 
 	const hasTextUpdate = hasOwn(statement, "text");
 	const hasOriginalTextUpdate = hasOwn(statement, "originalText");
-	if (element.type === EXCALIDRAW_ELEMENT_TYPES.TEXT && hasTextUpdate && !hasOriginalTextUpdate) {
+	if (element.type === "text" && hasTextUpdate && !hasOriginalTextUpdate) {
 		const incomingText = updates.text ?? "";
-		const existingText = typeof existing.text === "string" ? existing.text : "";
-		const existingOriginalText =
-			typeof existing.originalText === "string" ? existing.originalText : "";
+		const existingText = existing.type === "text" ? existing.text : "";
+		const existingOriginalText = existing.type === "text" ? existing.originalText : "";
 		const existingOriginalHasBr = /<\s*b\s*r\s*\/?\s*>/i.test(existingOriginalText);
 		const normalizedExistingText = normalizeLineBreakMarkup(existingText);
 		const normalizedExistingOriginalText = normalizeLineBreakMarkup(existingOriginalText);
@@ -284,15 +146,12 @@ function mergeElementUpdate(existing: ServerElement, raw: Record<string, unknown
 		}
 	}
 
-	spendArrowRefs(
-		element as unknown as Record<string, unknown>,
-		statement as Record<string, unknown>,
-	);
 	const changed = (key: string) => hasOwn(statement, key);
 	if (changed("points")) sizeFromPath(element);
 	const isLinear = element.type === "arrow" || element.type === "line";
 	return {
 		element,
+		statement: { ...element, ...statement, type: existing.type } as LegacyElementIngress,
 		geometryChanged: ["x", "y", "width", "height", "points", "angle"].some(changed),
 		reboundArrow: isLinear && ["start", "end", "startBinding", "endBinding"].some(changed),
 	};
@@ -306,7 +165,9 @@ function sizeFromPath(element: ServerElement): boolean {
 	return true;
 }
 
-function pathOf(element: ServerElement): { x: number; y: number }[] {
+function pathOf(
+	element: Extract<ServerElement, { type: "arrow" | "line" }>,
+): { x: number; y: number }[] {
 	const measured = pointsOf(element.points);
 	const points =
 		measured && measured.length >= 2 ? measured : DEFAULT_LINEAR_POINTS.map(([x, y]) => ({ x, y }));
@@ -317,6 +178,7 @@ function resolveArrowBindings(
 	written: ServerElement[],
 	board: Map<string, ServerElement>,
 	newlyDrawn = false,
+	inputSquareIds: ReadonlySet<string> = new Set(),
 ): void {
 	const available = new Map(board);
 	for (const element of written) available.set(element.id, element);
@@ -327,8 +189,12 @@ function resolveArrowBindings(
 		if (dynamic.elbowed === true) continue;
 		const startBinding = bindingOf(dynamic.startBinding);
 		const endBinding = bindingOf(dynamic.endBinding);
-		const startElement = startBinding ? available.get(startBinding.elementId) : undefined;
-		const endElement = endBinding ? available.get(endBinding.elementId) : undefined;
+		const inputGeometry = (target: ServerElement | undefined): ServerElement | undefined =>
+			target && inputSquareIds.has(target.id) ? { ...target, roundness: null } : target;
+		const startElement = inputGeometry(
+			startBinding ? available.get(startBinding.elementId) : undefined,
+		);
+		const endElement = inputGeometry(endBinding ? available.get(endBinding.elementId) : undefined);
 		if (!startElement && !endElement) continue;
 
 		const points = pathOf(element);
@@ -382,7 +248,7 @@ function settleBoundTexts(
 }
 
 function restateLabels(
-	written: ServerElement[],
+	written: LegacyElementIngress[],
 	board: Map<string, ServerElement>,
 ): ServerElement[] {
 	const restated = relabelBoundTexts(written, board);
@@ -400,7 +266,7 @@ function settleAfterWrite(movedIds: string[], board: Map<string, ServerElement>)
 		const element = board.get(id);
 		if (!element) continue;
 		containers.push(id);
-		if (typeof element.containerId === "string" && element.containerId) {
+		if (element.type === "text" && element.containerId) {
 			containers.push(element.containerId);
 		}
 		if (element.type !== "arrow" && element.type !== "line") {
@@ -453,6 +319,8 @@ function applyAgentInput(
 	const updated = new Map<string, ServerElement>();
 	const moved: string[] = [];
 	const written: ServerElement[] = [];
+	const statements: LegacyElementIngress[] = [];
+	const newStatements: LegacyElementIngress[] = [];
 	const namedIds: string[] = [];
 	const statedIds = new Set(
 		upserts
@@ -460,6 +328,7 @@ function applyAgentInput(
 			.filter((id): id is string => typeof id === "string" && id.length > 0),
 	);
 	const minted = new Set<string>();
+	const inputSquareIds = new Set<string>();
 	const taken = { has: (id: string) => board.has(id) || statedIds.has(id) || minted.has(id) };
 
 	for (const raw of upserts) {
@@ -467,44 +336,54 @@ function applyAgentInput(
 		const existing = rawId ? board.get(rawId) : undefined;
 		if (existing) {
 			const merge = mergeElementUpdate(existing, raw);
-			board.set(existing.id, merge.element);
-			if (merge.reboundArrow) resolveArrowBindings([merge.element], board);
+			const expanded = expandForBoard([merge.statement], board);
+			const element = expanded.find((candidate) => candidate.id === existing.id);
+			if (!element) throw new Error(`Write ingress did not produce element ${existing.id}`);
+			for (const completed of expanded) board.set(completed.id, completed);
+			if (merge.reboundArrow) resolveArrowBindings([element], board);
 			if (merge.geometryChanged || merge.reboundArrow) moved.push(existing.id);
-			updated.set(existing.id, merge.element);
-			written.push(merge.element);
+			updated.set(existing.id, element);
+			written.push(element);
+			statements.push(merge.statement);
 			namedIds.push(existing.id);
 			continue;
 		}
 
-		const element = wellFormNewElement(raw, taken);
-		minted.add(element.id);
-		board.set(element.id, element);
-		created.push(element);
-		written.push(element);
-		namedIds.push(element.id);
+		const statement = buildAgentElement(raw, taken);
+		if (
+			(statement.type === "rectangle" ||
+				statement.type === "ellipse" ||
+				statement.type === "diamond") &&
+			!hasOwn(raw, "roundness")
+		)
+			inputSquareIds.add(statement.id);
+		minted.add(statement.id);
+		statements.push(statement);
+		newStatements.push(statement);
+		namedIds.push(statement.id);
 	}
-
-	if (created.length > 0) {
-		resolveArrowBindings(created, board, true);
-		created.forEach(sizeFromPath);
-	}
-
-	for (const label of restateLabels(written, board)) {
-		updated.set(label.id, label);
-		moved.push(label.id);
-	}
-	const directIds = new Set(written.map((element) => element.id));
-	for (const element of expandForBoard(written, board)) {
-		board.set(element.id, element);
-		if (directIds.has(element.id)) {
-			if (updated.has(element.id)) updated.set(element.id, element);
-			const position = created.findIndex((candidate) => candidate.id === element.id);
-			if (position !== -1) created[position] = element;
-		} else {
-			created.push(element);
+	if (newStatements.length > 0) {
+		const expanded = expandForBoard(newStatements, board);
+		for (const completed of expanded) {
+			board.set(completed.id, completed);
+			created.push(completed);
+		}
+		for (const statement of newStatements) {
+			const element = board.get(statement.id);
+			if (!element) throw new Error(`Write ingress did not produce element ${statement.id}`);
+			written.push(element);
 		}
 	}
 
+	if (created.length > 0) {
+		resolveArrowBindings(created, board, true, inputSquareIds);
+		created.forEach(sizeFromPath);
+	}
+
+	for (const label of restateLabels(statements, board)) {
+		updated.set(label.id, label);
+		moved.push(label.id);
+	}
 	return { created, updated, namedIds, moved };
 }
 
@@ -531,20 +410,48 @@ function applyHumanInput(
 		} = raw;
 		const id = typeof rawId === "string" && rawId.length > 0 ? rawId : mintId(board);
 		const existing = board.get(id);
-		const element = {
+		const canonicalLink = canonicalLinkAfterPresentationEcho(existing, incoming.link);
+		if ("customData" in incoming) incoming.customData = stripTrackingClaims(incoming.customData);
+		for (const alias of ["label", "start", "end", "startElementId", "endElementId"]) {
+			if (hasOwn(incoming, alias))
+				throw new Error(`Human element ${id} contains input-only ${alias}`);
+		}
+		if (!existing) {
+			const statement = {
+				...incoming,
+				...(canonicalLink !== undefined ? { link: canonicalLink } : {}),
+				id,
+				createdAt: now,
+				updatedAt: now,
+				source: "frontend_sync",
+				syncedAt: now,
+				...(timestamp ? { syncTimestamp: timestamp } : {}),
+			} as unknown as LegacyElementIngress;
+			const expanded = expandForBoard([statement], board);
+			const element = expanded.find((candidate) => candidate.id === id);
+			if (!element) throw new Error(`Write ingress did not produce human element ${id}`);
+			for (const completed of expanded) {
+				board.set(completed.id, completed);
+				created.push(completed);
+			}
+			namedIds.push(id);
+			continue;
+		}
+		const candidate = {
 			...existing,
 			...incoming,
+			...(canonicalLink !== undefined ? { link: canonicalLink } : {}),
 			id,
-			createdAt: existing?.createdAt ?? now,
+			createdAt: existing.createdAt ?? now,
 			source: "frontend_sync",
 			syncedAt: now,
 			...(timestamp ? { syncTimestamp: timestamp } : {}),
-		} as ServerElement;
+		};
+		const element = validatePersistedBoardElement(candidate, `human write ${id}`);
 		bumpVersion(element, existing, now);
 		board.set(id, element);
 		namedIds.push(id);
-		if (existing) updated.set(id, element);
-		else created.push(element);
+		updated.set(id, element);
 	}
 	return { created, updated, namedIds };
 }

@@ -3,8 +3,13 @@ import { applyElementInput } from "../apply-element-input.ts";
 import { expandElements, expandForBoard, repairIndices } from "../expand-elements.ts";
 import { labelTextIdFor } from "../labels.ts";
 import type { ServerElement } from "../types.ts";
+import type {
+	BoardElementType,
+	LegacyElementIngress,
+} from "../../../shared/board-elements/index.ts";
 import { isBlockId } from "../../../shared/ids/ids.ts";
 import { ExpandedElementSchema, type ExpandedElement } from "./fixtures/label-cases.ts";
+import { completeElement } from "./support/elements.ts";
 
 const shape = (elements: readonly object[]): string =>
 	JSON.stringify(
@@ -22,9 +27,9 @@ const required = <T>(value: T | undefined, message: string): T => {
 	if (value === undefined) throw new Error(message);
 	return value;
 };
-const expandOne = (element: ServerElement): ExpandedElement[] =>
+const expandOne = (element: LegacyElementIngress): ExpandedElement[] =>
 	ExpandedElementSchema.array().parse(expandElements([element], { deterministic: true }));
-const onlyExpanded = (element: ServerElement, type: ServerElement["type"]): ExpandedElement =>
+const onlyExpanded = (element: LegacyElementIngress, type: BoardElementType): ExpandedElement =>
 	required(
 		expandOne(element).find((candidate) => candidate.type === type),
 		`missing ${type}`,
@@ -49,7 +54,10 @@ test("applies label input, preserves order, and pins converter output", () => {
 		});
 		const box = required(applied.named[0], "the box input was not returned");
 		const note = required(applied.named[1], "the note input was not returned");
-		const label = [...board.values()].find((element) => element.containerId === box.id);
+		const label = [...board.values()].find(
+			(element) => element.type === "text" && element.containerId === box.id,
+		);
+		if (label?.type !== "text") throw new Error("the spent label is not text");
 
 		assert(
 			applied.named.length === 2,
@@ -68,7 +76,7 @@ test("applies label input, preserves order, and pins converter output", () => {
 			"the entry did not spend and measure the shape label",
 		);
 		assert(
-			typeof note.width === "number" && note.width > 0 && typeof note.height === "number",
+			note.type === "text" && note.width > 0 && typeof note.height === "number",
 			"the entry did not measure an unsized standalone text element",
 		);
 
@@ -79,9 +87,12 @@ test("applies label input, preserves order, and pins converter output", () => {
 		});
 		const heldBox = required(board.get(box.id), "the renamed box is missing");
 		const heldLabel = required(
-			[...board.values()].find((element) => element.containerId === box.id),
+			[...board.values()].find(
+				(element) => element.type === "text" && element.containerId === box.id,
+			),
 			"the renamed label is missing",
 		);
+		if (heldLabel.type !== "text") throw new Error("the renamed label is not text");
 		assert(
 			heldBox.version === beforeVersion + 1 && typeof heldBox.updatedAt === "string",
 			"the entry did not bump the updated element version and updatedAt",
@@ -93,13 +104,15 @@ test("applies label input, preserves order, and pins converter output", () => {
 	}
 
 	{
-		const ordered = new Map<string, ServerElement>([
-			["zero", { id: "zero", type: "rectangle", x: 0, y: 0, index: "a0" }],
-			["one", { id: "one", type: "rectangle", x: 0, y: 0, index: "a1" }],
-			["two", { id: "two", type: "rectangle", x: 0, y: 0, index: "a2" }],
-			["inserted", { id: "inserted", type: "rectangle", x: 0, y: 0, index: "a2V" }],
-			["three", { id: "three", type: "rectangle", x: 0, y: 0, index: "a3" }],
-		]);
+		const ordered = new Map<string, ServerElement>(
+			["a0", "a1", "a2", "a2V", "a3"].map((index, position) => {
+				const id = ["zero", "one", "two", "inserted", "three"][position]!;
+				return [
+					id,
+					completeElement({ id, type: "rectangle", x: 0, y: 0, width: 1, height: 1, index }),
+				] as const;
+			}),
+		);
 		const repaired = repairIndices(ordered);
 		assert(
 			repaired.length === 0 &&
@@ -108,7 +121,7 @@ test("applies label input, preserves order, and pins converter output", () => {
 		);
 	}
 	{
-		const written: ServerElement[] = [
+		const written: LegacyElementIngress[] = [
 			{
 				id: "svc",
 				type: "rectangle",
@@ -147,7 +160,7 @@ test("applies label input, preserves order, and pins converter output", () => {
 
 	{
 		const only = onlyExpanded;
-		const box: ServerElement = {
+		const box: LegacyElementIngress = {
 			id: "r1",
 			type: "rectangle",
 			x: 0,

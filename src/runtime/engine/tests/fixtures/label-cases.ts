@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 import type { LabelledElement } from "../../labels.ts";
-import type { ServerElement } from "../../types.ts";
+import type { LegacyElementIngress } from "../../../../shared/board-elements/index.ts";
 
 export const ExpandedElementSchema = z.looseObject({
 	id: z.string(),
-	type: z.string(),
+	type: z.enum(["rectangle", "ellipse", "diamond", "arrow", "text", "line", "freedraw", "image"]),
 	x: z.number(),
 	y: z.number(),
 	width: z.number().optional(),
@@ -22,7 +22,7 @@ export const ExpandedElementSchema = z.looseObject({
 	lastCommittedPoint: z.unknown().optional(),
 	pressures: z.array(z.number()).optional(),
 	simulatePressure: z.boolean().optional(),
-	points: z.array(z.array(z.number())).optional(),
+	points: z.array(z.tuple([z.number(), z.number()])).optional(),
 	index: z.string().nullable().optional(),
 	containerId: z.string().nullable().optional(),
 });
@@ -39,7 +39,7 @@ export type PlacedLabelElement = LabelElement & {
 
 export const CYCLE_COUNT = 25;
 
-export function drawnLabels(): ServerElement[] {
+export function drawnLabels(): LegacyElementIngress[] {
 	return [
 		{
 			id: "svc",
@@ -115,7 +115,7 @@ export function placedLabels(): PlacedLabelElement[] {
 	];
 }
 
-export function pollutedLabels(): ServerElement[] {
+export function pollutedLabels(): LegacyElementIngress[] {
 	const containers = [
 		{ id: "svc", text: "AuthService", x: 0 },
 		{ id: "gw", text: "Gateway", x: 400 },

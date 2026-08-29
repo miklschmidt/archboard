@@ -3,6 +3,7 @@ import type { BoardIdentity } from "../board.js";
 import type * as ChangeFeedModule from "../change-feed.js";
 import type * as StoreModule from "../board-store.js";
 import type { ServerElement } from "../types.js";
+import { completeElement } from "./support/elements.ts";
 
 const priorSettleMs = process.env.ARCHBOARD_SETTLE_MS;
 process.env.ARCHBOARD_SETTLE_MS = "60000";
@@ -12,7 +13,7 @@ let copyElements: typeof StoreModule.copyElements;
 
 const identity: BoardIdentity = { board: "payments", variant: "current", level: "service" };
 const box = (id: string, x: number, y: number, node?: string, kind = "service") =>
-	({
+	completeElement({
 		id,
 		type: "rectangle",
 		x,
@@ -20,9 +21,9 @@ const box = (id: string, x: number, y: number, node?: string, kind = "service") 
 		width: 200,
 		height: 100,
 		...(node ? { customData: { archboard: { node, kind, name: node } } } : {}),
-	}) as ServerElement;
+	});
 const label = (id: string, containerId: string, text: string, x: number, y: number) =>
-	({
+	completeElement({
 		id,
 		type: "text",
 		x: x + 20,
@@ -31,9 +32,9 @@ const label = (id: string, containerId: string, text: string, x: number, y: numb
 		height: 20,
 		text,
 		containerId,
-	}) as ServerElement;
+	});
 const arrow = (id: string, from: string, to: string) =>
-	({
+	completeElement({
 		id,
 		type: "arrow",
 		x: 0,
@@ -46,7 +47,7 @@ const arrow = (id: string, from: string, to: string) =>
 		],
 		startBinding: { elementId: from, focus: 0, gap: 0 },
 		endBinding: { elementId: to, focus: 0, gap: 0 },
-	}) as ServerElement;
+	});
 const scene = (): ServerElement[] => [
 	box("a", 0, 0, "gateway", "gateway"),
 	label("al", "a", "Gateway", 0, 0),
@@ -58,7 +59,7 @@ const scene = (): ServerElement[] => [
 	arrow("e2", "b", "c"),
 ];
 const flatMetadataBox = () =>
-	({
+	completeElement({
 		id: "flat",
 		type: "rectangle",
 		x: 0,
@@ -66,7 +67,7 @@ const flatMetadataBox = () =>
 		width: 200,
 		height: 100,
 		customData: { kind: "service", binding: { path: "src/flat.ts" }, path: "src/flat.ts" },
-	}) as ServerElement;
+	});
 
 beforeAll(async () => {
 	({ changeFeed } = await import("../change-feed.js"));
@@ -181,5 +182,22 @@ describe("change feed", () => {
 		const elements = scene();
 		changeFeed.reset("loaded", identity, () => elements);
 		expect(changeFeed.settle("loaded")).toBeNull();
+	});
+
+	test("tracking-only changes emit no event or tracking value", () => {
+		let elements = [box("tracked", 0, 0, "tracked")];
+		const read = () => elements;
+		changeFeed.reset("tracking-only", identity, read);
+		elements = elements.map((element) =>
+			Object.assign(structuredClone(element), {
+				createdAt: "created",
+				updatedAt: "updated",
+				syncedAt: "synced",
+				source: "frontend_sync",
+				syncTimestamp: "sync",
+			}),
+		);
+		changeFeed.record("tracking-only", identity, read, "human");
+		expect(changeFeed.settle("tracking-only")).toBeNull();
 	});
 });

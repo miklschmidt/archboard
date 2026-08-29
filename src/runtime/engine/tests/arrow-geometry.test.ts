@@ -7,7 +7,7 @@ import {
 } from "../arrow-binding.ts";
 import { expandElements } from "../expand-elements.ts";
 import { labelAnchorOf } from "../labels.ts";
-import type { ServerElement } from "../types.ts";
+import type { LegacyElementIngress } from "../../../shared/board-elements/index.ts";
 import {
 	capturedArrowStart,
 	capturedBrowserEndpoint,
@@ -156,7 +156,7 @@ test("pins bound arrow endpoints, focus, gap, rotations, bends, and label anchor
 				[300, 200],
 			],
 			label: { text: "routes via" },
-		} satisfies ServerElement;
+		} satisfies LegacyElementIngress;
 		const expanded = ExpandedElementSchema.array().parse(
 			expandElements([bent], { deterministic: true }),
 		);
@@ -194,7 +194,7 @@ test("pins bound arrow endpoints, focus, gap, rotations, bends, and label anchor
 				[200, 100],
 			],
 			label: { text: "calls" },
-		} satisfies ServerElement;
+		} satisfies LegacyElementIngress;
 		const straightText = required(
 			ExpandedElementSchema.array()
 				.parse(expandElements([straight], { deterministic: true }))

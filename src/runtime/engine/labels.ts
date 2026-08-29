@@ -45,6 +45,11 @@
 
 import { measureLinear } from "./geometry.js";
 import { derivedId, type IdsInUse } from "../../shared/ids/ids.js";
+import type {
+	LegacyElementIngress,
+	RuntimeBoardElement,
+	WritableVendorElement,
+} from "../../shared/board-elements/index.js";
 
 /**
  * The name the text element for a container's label answers to.
@@ -64,34 +69,29 @@ export function labelTextIdFor(containerId: string, inUse?: IdsInUse): string {
 }
 
 /** A `boundElements` entry: a shape's forward reference to a text or arrow. */
-export interface BoundRef {
-	id: string;
-	type: string;
-}
+export type BoundRef = RuntimeBoardElement["boundElements"] extends readonly (infer Ref)[] | null
+	? Ref
+	: never;
 
 /**
  * The subset of an element this module reasons about. Deliberately structural
  * — server elements, Excalidraw elements and elements parsed out of a saved
  * `.excalidraw` file all satisfy it, and none of them need converting first.
  */
-export interface LabelledElement {
-	id: string;
-	type?: string;
-	containerId?: string | null;
-	boundElements?: readonly Readonly<BoundRef>[] | null;
-	label?: { text?: string } | null;
-	text?: string | null;
-	isDeleted?: boolean;
-	createdAt?: string;
-	// Geometry, for the placement rule below. Optional because most of this
-	// module never looks at it, and a container that has none is simply one
-	// whose label cannot be placed.
-	x?: number | null;
-	y?: number | null;
-	width?: number | null;
-	height?: number | null;
-	points?: readonly (readonly number[])[] | null;
-}
+type LabelCommon = Pick<WritableVendorElement, "id" | "type"> &
+	Partial<Pick<WritableVendorElement, "isDeleted" | "x" | "y" | "width" | "height">> & {
+		createdAt?: RuntimeBoardElement["createdAt"];
+		boundElements?: readonly Readonly<BoundRef>[] | null;
+	};
+type LabelTextFields = Partial<
+	Pick<Extract<WritableVendorElement, { type: "text" }>, "containerId" | "text">
+>;
+type LabelPoint = Extract<
+	WritableVendorElement,
+	{ type: "arrow" | "line" | "freedraw" }
+>["points"][number];
+type LabelPathFields = { points?: readonly Readonly<LabelPoint>[] };
+export type LabelledElement = LabelCommon & LabelTextFields & LabelPathFields;
 
 function isText(element: LabelledElement | undefined): boolean {
 	return !!element && element.type === "text";
@@ -102,8 +102,8 @@ function live(element: LabelledElement): boolean {
 }
 
 /** What an element's `label`/`text` says its label should read, if anything. */
-export function labelSeedOf(element: LabelledElement): string | undefined {
-	if (isText(element)) return undefined;
+export function labelSeedOf(element: LegacyElementIngress): string | undefined {
+	if (element.type === "text") return undefined;
 	if (typeof element.label?.text === "string") return element.label.text;
 	if (typeof element.text === "string") return element.text;
 	return undefined;

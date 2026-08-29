@@ -29,6 +29,7 @@ import {
 import type { PaneRegistration } from "../../../runtime/engine/panes.js";
 import { BoardRequiredError } from "../../../runtime/engine/board-target.js";
 import { RenderGeometryError } from "../../../runtime/engine/geometry.js";
+import { NativeElementValidationError } from "../../../runtime/engine/native-element.js";
 import { z } from "zod";
 import { WebSocket } from "ws";
 import { kept } from "../../../runtime/engine/hot.js";
@@ -570,7 +571,8 @@ function boardElementCount(board: BoardState): number {
 	} catch (error) {
 		// A malformed persisted scratch note is still an open board address. Keep
 		// board listings and health usable while its pane carries the actual error.
-		if (error instanceof RenderGeometryError) return 0;
+		if (error instanceof RenderGeometryError || error instanceof NativeElementValidationError)
+			return 0;
 		throw error;
 	}
 }
@@ -652,6 +654,7 @@ function boardErrorStatus(error: unknown): number {
 	if (error instanceof BoardRequiredError) return error.status;
 	if (error instanceof BoardMutationError) return error.status;
 	if (error instanceof RenderGeometryError) return 400;
+	if (error instanceof NativeElementValidationError) return 400;
 	// A refused write is not a fault, it is the other outcome the write always
 	// had (ADR 0006). Every route that writes can now produce it, because every
 	// write goes to the note (ADR 0015), so it is answered here once rather than
@@ -773,11 +776,12 @@ wss.on("connection", (ws: WebSocket, req) => {
 	// malformed, start with no scene rather than sending any of those elements
 	// to Excalidraw, then put the refusal on screen. The note stays untouched.
 	let content: BoardContent;
-	let renderError: RenderGeometryError | null = null;
+	let renderError: RenderGeometryError | NativeElementValidationError | null = null;
 	try {
 		content = readBoardContent(board);
 	} catch (error) {
-		if (!(error instanceof RenderGeometryError)) throw error;
+		if (!(error instanceof RenderGeometryError || error instanceof NativeElementValidationError))
+			throw error;
 		content = emptyContent();
 		renderError = error;
 	}
@@ -4012,7 +4016,8 @@ function adoptScratchBoard(): void {
 			`Scratch board picked up where it was left: ${count} element(s) from ${loaded.file}`,
 		);
 	} catch (error) {
-		if (!(error instanceof RenderGeometryError)) throw error;
+		if (!(error instanceof RenderGeometryError || error instanceof NativeElementValidationError))
+			throw error;
 		logger.warn(
 			`Scratch note cannot be rendered and was left unchanged: ${error.message} ` +
 				"The canvas will start so the pane can show this error.",
