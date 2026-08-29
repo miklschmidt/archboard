@@ -87,10 +87,22 @@ const CheckoutChoiceSchema = z
 		identityMatches: z.boolean(),
 	})
 	.strict();
+export const OpenerAvailabilitySchema = z.discriminatedUnion("available", [
+	z.object({ available: z.literal(true) }).strict(),
+	z
+		.object({
+			available: z.literal(false),
+			code: z.enum(["OPENER_CONFIG_INVALID", "OPENER_PLATFORM_UNSUPPORTED", "OPENER_UNAVAILABLE"]),
+			error: NonemptyString,
+		})
+		.strict(),
+]);
 export const OpenerSettingsReplySchema = z
 	.object({
 		success: z.literal(true),
 		selection: OpenerSelectionSchema,
+		effectiveCommand: OpenerCommandSchema.nullable(),
+		availability: OpenerAvailabilitySchema,
 		platformDefault: OpenerCommandSchema.nullable(),
 		presets: z.array(
 			z
@@ -187,7 +199,13 @@ export function buildInternalCodeTargetUrl(request: CodeTargetOpenRequest): stri
 }
 
 export function parseInternalCodeTargetUrl(value: string): CodeTargetOpenRequest | null {
-	if (!value.startsWith("/") || value.startsWith("//") || value.includes("#")) return null;
+	if (
+		!value.startsWith("/") ||
+		value.startsWith("//") ||
+		value.includes("#") ||
+		value.includes("\\")
+	)
+		return null;
 	let url: URL;
 	try {
 		url = new URL(value, "http://archboard.invalid");

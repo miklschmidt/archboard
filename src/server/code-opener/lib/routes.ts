@@ -1,6 +1,7 @@
 import {
 	Router,
 	json,
+	type ErrorRequestHandler,
 	type NextFunction,
 	type Request,
 	type RequestHandler,
@@ -27,7 +28,7 @@ import { readElementMetadata } from "../../../runtime/engine/metadata.js";
 import { listRepos } from "../../../runtime/engine/repo-registry.js";
 import { checkBrowserCsrf, type BrowserCsrfKind } from "./browser-csrf.js";
 import { readOpenerSelection, resetOpenerSelection, saveOpenerSelection } from "./configuration.js";
-import { launchOpener, type LaunchResult } from "./launch.js";
+import { launchOpener, resolveOpenerCommand, type LaunchResult } from "./launch.js";
 import { planOpenerCommand, validateOpenerSelection, type OpenerPlan } from "./planning.js";
 
 type BindingLookup =
@@ -139,6 +140,10 @@ export function createCodeOpenerRouter(
 	router.get("/api/settings/opener", guard("settings-read"), (_request, response) => {
 		const current = readOpenerSelection();
 		if (!current.ok) return sendFailure(response, current);
+		const plannedCurrent = planOpenerCommand(current.selection, "{path}");
+		const effective = plannedCurrent.ok
+			? resolveOpenerCommand(plannedCurrent.command)
+			: plannedCurrent;
 		const native = planOpenerCommand({ version: 1, kind: "platform" }, "{path}");
 		const presets = (["vscode", "cursor", "zed"] as const).map((preset) => {
 			const planned = planOpenerCommand({ version: 1, kind: "preset", preset }, "{path}");
@@ -157,6 +162,10 @@ export function createCodeOpenerRouter(
 		response.json({
 			success: true,
 			selection: current.selection,
+			effectiveCommand: effective.ok ? effective.command : null,
+			availability: effective.ok
+				? { available: true }
+				: { available: false, code: effective.code, error: effective.error },
 			platformDefault: native.ok ? native.command : null,
 			presets,
 			repositories,
@@ -164,6 +173,8 @@ export function createCodeOpenerRouter(
 	});
 
 	router.put("/api/settings/opener", guard("mutation"), body, (request, response) => {
+		const current = readOpenerSelection();
+		if (!current.ok) return sendFailure(response, current);
 		const parsed = OpenerSelectionSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return sendFailure(
@@ -190,6 +201,8 @@ export function createCodeOpenerRouter(
 		guard("mutation"),
 		body,
 		asyncEndpoint(async (request, response) => {
+			const current = readOpenerSelection();
+			if (!current.ok) return sendFailure(response, current);
 			const parsed = OpenerSettingsTestRequestSchema.safeParse(request.body);
 			if (!parsed.success) {
 				return sendFailure(
@@ -247,6 +260,19 @@ export function createCodeOpenerRouter(
 			});
 		}),
 	);
+
+	router.use(((error: unknown, _request: Request, response: Response, next: NextFunction) => {
+		const kind =
+			typeof error === "object" && error !== null && "type" in error
+				? (error as { type?: unknown }).type
+				: undefined;
+		if (kind !== "entity.parse.failed") return next(error);
+		sendFailure(
+			response,
+			{ code: "REQUEST_INVALID", error: "The request body is not valid JSON." },
+			400,
+		);
+	}) as ErrorRequestHandler);
 
 	return router;
 }

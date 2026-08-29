@@ -3,7 +3,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { planOpenerCommand } from "../../../src/server/code-opener/index.ts";
-import { createOpenerFixture, jsonBody } from "./support/opener-fixture.ts";
+import { createOpenerFixture, jsonBody, processExistsEvidence } from "./support/opener-fixture.ts";
 
 const LAUNCHER_OWNER = join(import.meta.dir, "fixtures/launcher-owner.ts");
 
@@ -39,10 +39,12 @@ describe("shell-free launcher lifecycle", () => {
 			body: jsonBody({ board: "system/payments", element: "node" }),
 		});
 		expect(response.status).toBe(200);
-		await invocation.waitForCapture();
+		const capture = await invocation.waitForCapture();
+		expect(processExistsEvidence(capture.pid)).toBeTrue();
 		expect(readdirSync(invocation.exitDirectory)).toEqual([]);
 		await invocation.releaseAndWait();
 		expect(readdirSync(invocation.exitDirectory)).toHaveLength(1);
+		expect(processExistsEvidence(capture.pid)).toBeFalse();
 	});
 
 	test("the launcher owner exits while the detached fake remains held", async () => {
@@ -70,6 +72,7 @@ describe("shell-free launcher lifecycle", () => {
 
 		await invocation.releaseAndWait();
 		expect(readdirSync(invocation.exitDirectory)).toHaveLength(1);
+		expect(processExistsEvidence(capture.pid)).toBeFalse();
 		if (process.platform === "linux") expect(existsSync(`/proc/${capture.pid}`)).toBeFalse();
 	});
 });

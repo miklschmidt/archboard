@@ -52,9 +52,18 @@ function realDirectory(candidate: string): string | null {
 	}
 }
 
-function isWithin(root: string, candidate: string): boolean {
-	const relative = path.relative(root, candidate);
-	return relative === "" || (!relative.startsWith(`..${path.sep}`) && relative !== "..");
+type PathContainment = Pick<typeof path, "relative" | "isAbsolute" | "sep">;
+
+export function isPathWithin(
+	root: string,
+	candidate: string,
+	paths: PathContainment = path,
+): boolean {
+	const relative = paths.relative(root, candidate);
+	return (
+		!paths.isAbsolute(relative) &&
+		(relative === "" || (!relative.startsWith(`..${paths.sep}`) && relative !== ".."))
+	);
 }
 
 export function resolveRegisteredCheckout(repository: string): RegisteredCheckoutResult {
@@ -112,7 +121,7 @@ export function resolveLocalCodeTarget(binding: CodeBinding): LocalCodeTargetRes
 		return failure("TARGET_OUTSIDE_CHECKOUT", "A code binding path must be repository-relative.");
 	}
 	const lexicalTarget = path.resolve(checkout.root, parsed.data.path);
-	if (!isWithin(checkout.root, lexicalTarget)) {
+	if (!isPathWithin(checkout.root, lexicalTarget)) {
 		return failure("TARGET_OUTSIDE_CHECKOUT", "The code binding leaves its registered checkout.");
 	}
 	let target: string;
@@ -126,7 +135,7 @@ export function resolveLocalCodeTarget(binding: CodeBinding): LocalCodeTargetRes
 			"The bound file or directory does not exist on this machine.",
 		);
 	}
-	if (!isWithin(checkout.root, target)) {
+	if (!isPathWithin(checkout.root, target)) {
 		return failure("TARGET_OUTSIDE_CHECKOUT", "The bound target resolves outside its checkout.");
 	}
 	if (!stats.isFile() && !stats.isDirectory()) {
