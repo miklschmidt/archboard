@@ -26,7 +26,7 @@ const ApplySchema = z.object({
 });
 
 test("apply is atomic, compact by default, and one real proxy write", async () => {
-	const resources = new AsyncDisposableStack();
+	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-apply-one-write-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
@@ -81,6 +81,8 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 		expect(applied.elements.map((element) => element.id)).toEqual(
 			expect.arrayContaining(["made", "box-1", "box-2"]),
 		);
+		expect(applied.elements.some((element) => element.id === "gone")).toBeFalse();
+		expect(applied.fingerprint.elements).toBe(4);
 		expect(
 			applied.elements.some(
 				(element) => element.id.length <= 8 && !["made", "box-1", "box-2"].includes(element.id),
@@ -104,6 +106,15 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 				origin: "agent",
 			}),
 		);
+		const persisted = await request<{
+			elements: Array<{ id: string; x?: number; backgroundColor?: string }>;
+		}>("/api/elements?board=scratch");
+		expect(persisted.body.elements).toHaveLength(applied.fingerprint.elements);
+		expect(persisted.body.elements.some((element) => element.id === "gone")).toBeFalse();
+		expect(persisted.body.elements.find((element) => element.id === "box-1")?.backgroundColor).toBe(
+			"#ffc9c9",
+		);
+		expect(persisted.body.elements.find((element) => element.id === "box-2")?.x).toBe(400);
 
 		await proxy.reset();
 		const full = runCli({
@@ -114,7 +125,9 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 			args: ["apply", "--board", "scratch", "--doing", "applying a patch", "--document", "-"],
 			stdin: JSON.stringify({ update: [{ id: "box-1", set: { backgroundColor: "#b2f2bb" } }] }),
 		});
-		expect(parseCliJson(full, ApplySchema).document?.length).toBeGreaterThan(0);
+		const fullApplied = parseCliJson(full, ApplySchema);
+		expect(fullApplied.document?.length).toBeGreaterThan(fullApplied.elements.length);
+		expect(fullApplied.document?.length).toBe(fullApplied.fingerprint.elements);
 		const fullWrites = nonReadRecords(await proxy.snapshot());
 		expect(fullWrites).toHaveLength(1);
 		expect(fullWrites[0]).toMatchObject({
@@ -158,6 +171,11 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 			[
 				{ id: "box-1", x: 700 },
 				{ id: "missing", customData: { archboard: { node: "bad" } } },
+			],
+			[
+				{ id: "box-1", x: 700 },
+				{ id: "missing", customData: { archboard: { node: "bad" } } },
+				{ id: "box-2", x: 800 },
 			],
 		]) {
 			const prior = await request("/api/elements?board=scratch");

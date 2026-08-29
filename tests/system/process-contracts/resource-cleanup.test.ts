@@ -1,18 +1,24 @@
 import { expect, test } from "bun:test";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { ResourceReadySchema, registerResourceSet } from "./fixtures/process-resource-owner.ts";
+import { LOCK_LEASE_MS } from "../../../src/shared/timing/timing.ts";
+import {
+	RawLockReadySchema,
+	ResourceReadySchema,
+	registerResourceSet,
+} from "./fixtures/process-resource-owner.ts";
 import { runOwnedPeerToExit, startOwnedPeer } from "./support/owned-peer-process.ts";
 import { availablePort, portIsReusable, sanitizedEnvironment } from "./support/process-http.ts";
+import { plantStaticProbes } from "./support/static-probes.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const fixture = join(import.meta.dir, "fixtures/process-resource-owner.ts");
 const lockFileFor = (vault: string) => join(vault, ".archboard/locks/resource-cleanup.lock");
 
 test("direct assertion cleanup reaps every registered resource", async () => {
-	const resources = new AsyncDisposableStack();
+	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-process-cleanup-direct-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
@@ -46,7 +52,7 @@ test("direct assertion cleanup reaps every registered resource", async () => {
 }, 20_000);
 
 test("later acquisition failure disposes earlier listener and lease before readiness", async () => {
-	const resources = new AsyncDisposableStack();
+	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-process-cleanup-failure-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
@@ -78,7 +84,7 @@ test("later acquisition failure disposes earlier listener and lease before readi
 }, 20_000);
 
 test("outer SIGTERM serializes setup and cleans its retained resources", async () => {
-	const resources = new AsyncDisposableStack();
+	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-process-cleanup-outer-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
@@ -110,7 +116,7 @@ test("outer SIGTERM serializes setup and cleans its retained resources", async (
 }, 20_000);
 
 test("outer pre-readiness failure and peer startup failure retain diagnostics and cleanup", async () => {
-	const resources = new AsyncDisposableStack();
+	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-process-cleanup-preready-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
@@ -162,3 +168,115 @@ test("sanitized child environments remove both settle overrides", () => {
 	expect(env.ARCHBOARD_SETTLE_MS).toBeUndefined();
 	expect(env.ARCHBOARD_SETTLE_MAX_MS).toBeUndefined();
 });
+
+test("every dynamic owner establishes lexical disposal before its first acquisition", () => {
+	for (const name of [
+		"local-bind",
+		"board-lock-api",
+		"cross-process-lock",
+		"element-ops-one-write",
+		"apply-one-write",
+		"promotion-delete-bridge-one-write",
+		"import-replace-one-write",
+		"import-merge-held-one-write",
+		"snapshot-one-write",
+	]) {
+		const source = readFileSync(join(import.meta.dir, `${name}.test.ts`), "utf8");
+		for (const match of source.matchAll(/mkdtempSync\(/g)) {
+			const root = match.index;
+			const owner = source.lastIndexOf("test(", root);
+			const disposal = source.indexOf("await using resources = new AsyncDisposableStack()", owner);
+			expect(disposal, `${name} has no lexical disposal before root at ${root}`).toBeGreaterThan(
+				owner,
+			);
+			expect(disposal, `${name} starts disposal after root at ${root}`).toBeLessThan(root);
+		}
+	}
+});
+
+test("static probes roll back earlier exclusive creates after a later collision", () => {
+	const root = mkdtempSync(join(tmpdir(), "archboard-static-probe-failure-"));
+	try {
+		mkdirSync(join(root, "dist/frontend"), { recursive: true });
+		const first = join(root, "dist/frontend/task-130-09-frontend-probe.js");
+		const collision = join(root, "dist/task-130-09-stale-probe.js");
+		const last = join(root, "dist/frontend/.task-130-09-hidden-probe.js");
+		writeFileSync(last, "preflight bytes", { flag: "wx" });
+		expect(() => plantStaticProbes(root)).toThrow(`Static probe target already exists: ${last}.`);
+		expect(existsSync(first)).toBeFalse();
+		expect(existsSync(collision)).toBeFalse();
+		expect(readFileSync(last, "utf8")).toBe("preflight bytes");
+		rmSync(last);
+		let failure: unknown;
+		try {
+			plantStaticProbes(root, {
+				beforeCreate(path, index) {
+					if (index === 1) writeFileSync(path, "foreign bytes", { flag: "wx" });
+				},
+			});
+		} catch (error) {
+			failure = error;
+		}
+		expect(failure).toBeInstanceOf(Error);
+		expect(existsSync(first)).toBeFalse();
+		expect(readFileSync(collision, "utf8")).toBe("foreign bytes");
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("TERM-resistant peer is killed through its handle and its lease is recoverable", async () => {
+	await using resources = new AsyncDisposableStack();
+	let root = "";
+	let port = 0;
+	try {
+		root = mkdtempSync(join(tmpdir(), "archboard-process-cleanup-stubborn-"));
+		resources.defer(() => rmSync(root, { recursive: true, force: true }));
+		const vault = join(root, "vault");
+		port = await availablePort();
+		const env = sanitizedEnvironment(root, vault);
+		const stubborn = await startOwnedPeer({
+			argv: [process.execPath, fixture],
+			env: {
+				...env,
+				ARCHBOARD_TEST_RESOURCE_MODE: "lock",
+				ARCHBOARD_TEST_REPO_ROOT: repoRoot,
+				ARCHBOARD_TEST_LOCK_BOARD: "stubborn-resource",
+				ARCHBOARD_TEST_LOCK_HOLDER: "stubborn-owner",
+				ARCHBOARD_TEST_IGNORE_TERM: "1",
+				ARCHBOARD_TEST_STUBBORN_PORT: String(port),
+			},
+			readySchema: RawLockReadySchema,
+		});
+		resources.defer(() => stubborn.dispose());
+		expect(stubborn.ready.port).toBe(port);
+		expect(existsSync(stubborn.ready.lockFile)).toBeTrue();
+		const started = Date.now();
+		await stubborn.dispose();
+		expect(Date.now() - started).toBeGreaterThanOrEqual(1_900);
+		expect(Date.now() - started).toBeLessThan(4_000);
+		expect(await stubborn.exit).toEqual({ code: null, signal: "SIGKILL" });
+		expect(await portIsReusable(port)).toBeTrue();
+		await Bun.sleep(LOCK_LEASE_MS + 100);
+
+		const recovery = await startOwnedPeer({
+			argv: [process.execPath, fixture],
+			env: {
+				...env,
+				ARCHBOARD_TEST_RESOURCE_MODE: "lock",
+				ARCHBOARD_TEST_REPO_ROOT: repoRoot,
+				ARCHBOARD_TEST_LOCK_BOARD: "stubborn-resource",
+				ARCHBOARD_TEST_LOCK_HOLDER: "recovery-owner",
+			},
+			readySchema: RawLockReadySchema,
+		});
+		resources.defer(() => recovery.dispose());
+		expect(recovery.ready.process).not.toBe(stubborn.ready.process);
+		await recovery.dispose();
+		expect(existsSync(recovery.ready.lockFile)).toBeFalse();
+	} finally {
+		await resources.disposeAsync();
+	}
+	expect(existsSync(root)).toBeFalse();
+	expect(await portIsReusable(port)).toBeTrue();
+}, 20_000);
