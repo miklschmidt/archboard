@@ -489,3 +489,9 @@ export const TEST_NOTE_WATCH_MESSAGE_POLL_MS = LOCK_POLL_MS;
 
 /** One LOCK_WATCH_MS bounds the board_note clearing frame after reload. */
 export const TEST_NOTE_WATCH_CLEAR_TIMEOUT_MS = LOCK_WATCH_MS;
+/** Clears one slow browser CLI round trip while still bounding retained-child cleanup. */
+export const TEST_BROWSER_COMMAND_TIMEOUT_MS = BROWSER_EXPORT_TIMEOUT_MS;
+/** Matches the existing loopback and lock polling cadence without busy-waiting. */
+export const TEST_BROWSER_POLL_MS = LOCK_POLL_MS;
+/** Extends the negative pane window past one debounce without reaching its settle cap. */
+export const TEST_PANE_DEBOUNCE_MARGIN_MS = 2 * TEST_BROWSER_POLL_MS;
