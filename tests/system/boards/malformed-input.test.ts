@@ -3,8 +3,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { makeIdentity, renderBoardNote, vaultPathFor } from "../../../src/runtime/engine/board.ts";
-import { readBoardContent, writeBoardContent } from "../../../src/runtime/engine/board-io.ts";
+import type * as BoardModule from "../../../src/runtime/engine/board.ts";
+import type * as IoModule from "../../../src/runtime/engine/board-io.ts";
 import type { BoardState } from "../../../src/runtime/engine/board-store.ts";
 import type { ServerElement } from "../../../src/runtime/engine/types.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
@@ -24,11 +24,26 @@ interface ElementsBody {
 }
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
+const callerVault = process.env.ARCHBOARD_VAULT;
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-malformed-input-"));
+// The direct engine calls below share this test process. Configure their vault
+// before config.ts is first evaluated; the canvas child still receives it explicitly.
+process.env.ARCHBOARD_VAULT = vault;
 let canvas: OwnedCanvas;
 let request: ReturnType<typeof createJsonRequester>;
+let configuredVault: string | undefined;
+let makeIdentity: typeof BoardModule.makeIdentity;
+let renderBoardNote: typeof BoardModule.renderBoardNote;
+let vaultPathFor: typeof BoardModule.vaultPathFor;
+let readBoardContent: typeof IoModule.readBoardContent;
+let writeBoardContent: typeof IoModule.writeBoardContent;
 
 beforeAll(async () => {
+	({ makeIdentity, renderBoardNote, vaultPathFor } =
+		await import("../../../src/runtime/engine/board.ts"));
+	({ readBoardContent, writeBoardContent } =
+		await import("../../../src/runtime/engine/board-io.ts"));
+	configuredVault = (await import("../../../src/runtime/engine/config.ts")).ARCHBOARD_VAULT;
 	canvas = await startOwnedCanvas({
 		serverPath: path.join(repoRoot, "src/server.ts"),
 		vault,
@@ -37,10 +52,24 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-	await canvas?.dispose();
+	try {
+		await canvas?.dispose();
+	} finally {
+		try {
+			fs.rmSync(vault, { recursive: true, force: true });
+		} finally {
+			if (callerVault === undefined) delete process.env.ARCHBOARD_VAULT;
+			else process.env.ARCHBOARD_VAULT = callerVault;
+		}
+	}
 });
 
 describe("malformed input", () => {
+	test("uses its owned vault for same-process engine calls", () => {
+		expect(process.env.ARCHBOARD_VAULT).toBe(vault);
+		expect(configuredVault).toBe(vault);
+	});
+
 	test("names the exact non-finite pane telemetry field", async () => {
 		const response = await request<ErrorBody>("/api/panes", {
 			method: "POST",

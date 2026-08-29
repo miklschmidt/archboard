@@ -1,26 +1,57 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import {
 	chmodSync,
 	existsSync,
+	mkdtempSync,
 	mkdirSync,
 	readFileSync,
 	readdirSync,
+	rmSync,
 	statSync,
 	symlinkSync,
 	writeFileSync,
 } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { makeIdentity, renderBoardNote } from "../../../src/runtime/engine/board.ts";
-import { boards, getOrCreateBoard } from "../../../src/runtime/engine/board-store.ts";
+import type * as BoardModule from "../../../src/runtime/engine/board.ts";
+import type * as StoreModule from "../../../src/runtime/engine/board-store.ts";
 import { CodeTargetOpenReplySchema } from "../../../src/shared/code-target/index.ts";
-import { completeElement } from "./support/elements.ts";
-import {
-	createOpenerFixture,
-	jsonBody,
-	type Invocation,
-	type OpenerFixture,
-} from "./support/opener-fixture.ts";
+import type * as ElementSupport from "./support/elements.ts";
+import type * as OpenerSupport from "./support/opener-fixture.ts";
+import type { Invocation, OpenerFixture } from "./support/opener-fixture.ts";
+
+const callerVault = process.env.ARCHBOARD_VAULT;
+const ownerVault = mkdtempSync(join(tmpdir(), "archboard-code-target-owner-"));
+// The default route dependency reads canonical board notes in this process.
+// Set its vault before importing either the route fixture or the board graph.
+process.env.ARCHBOARD_VAULT = ownerVault;
+
+let configuredVault: string | undefined;
+let makeIdentity: typeof BoardModule.makeIdentity;
+let renderBoardNote: typeof BoardModule.renderBoardNote;
+let boards: typeof StoreModule.boards;
+let getOrCreateBoard: typeof StoreModule.getOrCreateBoard;
+let completeElement: typeof ElementSupport.completeElement;
+let createOpenerFixture: typeof OpenerSupport.createOpenerFixture;
+let jsonBody: typeof OpenerSupport.jsonBody;
+
+beforeAll(async () => {
+	({ createOpenerFixture, jsonBody } = await import("./support/opener-fixture.ts"));
+	({ makeIdentity, renderBoardNote } = await import("../../../src/runtime/engine/board.ts"));
+	({ boards, getOrCreateBoard } = await import("../../../src/runtime/engine/board-store.ts"));
+	({ completeElement } = await import("./support/elements.ts"));
+	configuredVault = (await import("../../../src/runtime/engine/config.ts")).ARCHBOARD_VAULT;
+});
+
+afterAll(() => {
+	try {
+		rmSync(ownerVault, { recursive: true, force: true });
+	} finally {
+		if (callerVault === undefined) delete process.env.ARCHBOARD_VAULT;
+		else process.env.ARCHBOARD_VAULT = callerVault;
+	}
+});
 
 async function saveSelection(fixture: OpenerFixture, invocation: Invocation): Promise<void> {
 	const saved = await fixture.request("/api/settings/opener", {
@@ -38,6 +69,11 @@ async function activate(
 }
 
 describe("public code-target activation contract", () => {
+	test("uses its owned vault for default route dependencies", () => {
+		expect(process.env.ARCHBOARD_VAULT).toBe(ownerVault);
+		expect(configuredVault).toBe(ownerVault);
+	});
+
 	test.each([
 		["src/index.ts", "file"],
 		["src/directory", "directory"],
