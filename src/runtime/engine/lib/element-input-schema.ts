@@ -93,9 +93,14 @@ export type AgentElementInput = z.input<typeof AgentElementInputSchema>;
 
 export const HumanElementChangeSchema = z.looseObject({
 	id: z.string(),
-	type: z.enum(
-		Object.values(EXCALIDRAW_ELEMENT_TYPES) as [ExcalidrawElementType, ...ExcalidrawElementType[]],
-	).optional(),
+	type: z
+		.enum(
+			Object.values(EXCALIDRAW_ELEMENT_TYPES) as [
+				ExcalidrawElementType,
+				...ExcalidrawElementType[],
+			],
+		)
+		.optional(),
 });
 export type HumanElementChangeInput = z.input<typeof HumanElementChangeSchema>;
 

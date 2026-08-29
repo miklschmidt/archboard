@@ -93,9 +93,9 @@ function completeBinding(value: unknown): Record<string, unknown> | null {
 	const record = value as Record<string, unknown>;
 	return {
 		elementId: record.elementId,
+		fixedPoint: record.fixedPoint ?? null,
 		focus: record.focus ?? 0,
 		gap: record.gap ?? BOUND_ARROW_GAP,
-		fixedPoint: record.fixedPoint ?? null,
 	};
 }
 

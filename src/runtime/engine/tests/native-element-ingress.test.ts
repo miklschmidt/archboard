@@ -128,10 +128,10 @@ test("binding input extensions are spent and trusted reads reject them at either
 	if (joined?.type !== "arrow") throw new Error("fixture did not create an arrow");
 	expect(joined.startBinding).toMatchObject({ elementId: "left", focus: 0, gap: 4 });
 	expect(Reflect.get(joined.startBinding!, "fixedPoint")).toBeNull();
-	expect(Object.keys(joined.startBinding!)).toEqual(["elementId", "focus", "gap", "fixedPoint"]);
+	expect(Object.keys(joined.startBinding!)).toEqual(["elementId", "fixedPoint", "focus", "gap"]);
 	expect(joined.endBinding).toMatchObject({ elementId: "right", focus: 0.5, gap: 6 });
 	expect(Reflect.get(joined.endBinding!, "fixedPoint")).toEqual([1, 0]);
-	expect(Object.keys(joined.endBinding!)).toEqual(["elementId", "focus", "gap", "fixedPoint"]);
+	expect(Object.keys(joined.endBinding!)).toEqual(["elementId", "fixedPoint", "focus", "gap"]);
 	for (const end of ["startBinding", "endBinding"] as const) {
 		expect(() =>
 			validatePersistedBoardElement(
