@@ -7,6 +7,9 @@ import type { OpenerCommand } from "../../../shared/code-target/index.js";
 export type LaunchResult =
 	| { ok: true }
 	| { ok: false; code: "OPENER_UNAVAILABLE" | "OPENER_SPAWN_FAILED"; error: string };
+export type ResolvedOpenerCommand =
+	| { ok: true; command: OpenerCommand }
+	| { ok: false; code: "OPENER_UNAVAILABLE"; error: string };
 
 function executableFile(candidate: string): boolean {
 	try {
@@ -25,15 +28,20 @@ function resolveExecutable(executable: string): string | null {
 	return Bun.which(executable) ?? null;
 }
 
-export async function launchOpener(command: OpenerCommand): Promise<LaunchResult> {
+export function resolveOpenerCommand(command: OpenerCommand): ResolvedOpenerCommand {
 	const executable = resolveExecutable(command.executable);
-	if (!executable) {
-		return {
-			ok: false,
-			code: "OPENER_UNAVAILABLE",
-			error: `The opener executable ${command.executable} was not found. Open opener settings.`,
-		};
-	}
+	return executable
+		? { ok: true, command: { executable, argv: command.argv } }
+		: {
+				ok: false,
+				code: "OPENER_UNAVAILABLE",
+				error: `The opener executable ${command.executable} was not found. Open opener settings.`,
+			};
+}
+
+export async function launchOpener(command: OpenerCommand): Promise<LaunchResult> {
+	const resolved = resolveOpenerCommand(command);
+	if (!resolved.ok) return resolved;
 	return new Promise((resolve) => {
 		let settled = false;
 		let child: ReturnType<typeof spawn>;
@@ -56,7 +64,7 @@ export async function launchOpener(command: OpenerCommand): Promise<LaunchResult
 			});
 		};
 		try {
-			child = spawn(executable, command.argv, {
+			child = spawn(resolved.command.executable, resolved.command.argv, {
 				shell: false,
 				detached: true,
 				stdio: "ignore",

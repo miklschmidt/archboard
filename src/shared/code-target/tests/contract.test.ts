@@ -21,6 +21,7 @@ describe("internal code-target URLs", () => {
 		"https://example.test/api/code-targets/open?board=b&element=e",
 		"api/code-targets/open?board=b&element=e",
 		"/api/code-targets/open?board=b&element=e#fragment",
+		"/api\\code-targets\\open?board=b&element=e",
 		"/api/code-targets/open?board=b&element=e&path=/tmp/file",
 		"/api/code-targets/open?board=b&board=c&element=e",
 		"/api/code-targets/open?board=&element=e",

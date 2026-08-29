@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 
 import {
+	CodeTargetOpenFailureSchema,
 	OpenerSelectionReplySchema,
 	OpenerSettingsReplySchema,
 	OpenerTestReplySchema,
@@ -19,6 +20,7 @@ describe("public opener settings contract", () => {
 		expect(OpenerSettingsReplySchema.parse(result.body)).toMatchObject({
 			success: true,
 			selection: { version: 1, kind: "platform" },
+			availability: { available: expect.any(Boolean) },
 			repositories: [
 				{
 					repository: fixture.repository,
@@ -30,6 +32,56 @@ describe("public opener settings contract", () => {
 		});
 		expect(result.headers.get("access-control-allow-origin")).toBeNull();
 		expect(existsSync(fixture.configFile)).toBeFalse();
+	});
+
+	test("reports the effective resolved command without spawning", async () => {
+		await using resources = new AsyncDisposableStack();
+		const fixture = await createOpenerFixture();
+		resources.defer(() => fixture.dispose());
+		const available = fixture.invocation("immediate");
+		resources.defer(() => available.releaseAndWait());
+
+		expect(
+			(
+				await fixture.request("/api/settings/opener", {
+					method: "PUT",
+					body: jsonBody(available.selection),
+				})
+			).status,
+		).toBe(200);
+		const current = OpenerSettingsReplySchema.parse(
+			(await fixture.request("/api/settings/opener")).body,
+		);
+		expect(current.effectiveCommand).toEqual({
+			executable: process.execPath,
+			argv: available.selection.kind === "custom" ? available.selection.argv : [],
+		});
+		expect(current.availability).toEqual({ available: true });
+		expect(readdirSync(available.captureDirectory)).toEqual([]);
+
+		const missing = {
+			version: 1,
+			kind: "custom",
+			executable: `${fixture.root}/missing-opener`,
+			argv: ["{path}"],
+		} as const;
+		expect(
+			(
+				await fixture.request("/api/settings/opener", {
+					method: "PUT",
+					body: jsonBody(missing),
+				})
+			).status,
+		).toBe(200);
+		const unavailable = OpenerSettingsReplySchema.parse(
+			(await fixture.request("/api/settings/opener")).body,
+		);
+		expect(unavailable.effectiveCommand).toBeNull();
+		expect(unavailable.availability).toMatchObject({
+			available: false,
+			code: "OPENER_UNAVAILABLE",
+		});
+		expect(readdirSync(available.captureDirectory)).toEqual([]);
 	});
 
 	test("strictly saves and resets one machine-wide selection", async () => {
@@ -98,6 +150,79 @@ describe("public opener settings contract", () => {
 		});
 		expect(await invocation.waitForCapture()).toMatchObject({ target: fixture.checkout });
 		expect(existsSync(fixture.configFile)).toBeFalse();
+	});
+
+	test("only reset recovers corrupt state; PUT and test preserve its exact bytes", async () => {
+		await using resources = new AsyncDisposableStack();
+		const fixture = await createOpenerFixture();
+		resources.defer(() => fixture.dispose());
+		const invocation = fixture.invocation("immediate");
+		resources.defer(() => invocation.releaseAndWait());
+		expect(
+			(
+				await fixture.request("/api/settings/opener", {
+					method: "PUT",
+					body: jsonBody({ version: 1, kind: "platform" }),
+				})
+			).status,
+		).toBe(200);
+		const corrupt = Buffer.from("{not opener state}\n");
+		writeFileSync(fixture.configFile, corrupt);
+
+		for (const [path, body] of [
+			["/api/settings/opener", invocation.selection],
+			[
+				"/api/settings/opener/test",
+				{ selection: invocation.selection, repository: fixture.repository },
+			],
+		] as const) {
+			const result = await fixture.request(path, {
+				method: path.endsWith("test") ? "POST" : "PUT",
+				body: jsonBody(body),
+			});
+			expect(result.status).toBe(500);
+			expect(CodeTargetOpenFailureSchema.parse(result.body)).toMatchObject({
+				success: false,
+				code: "OPENER_CONFIG_INVALID",
+			});
+			expect(readFileSync(fixture.configFile)).toEqual(corrupt);
+		}
+		expect(readdirSync(invocation.captureDirectory)).toEqual([]);
+		expect((await fixture.request("/api/settings/opener", { method: "DELETE" })).status).toBe(200);
+	});
+
+	test.each(["/api/settings/opener", "/api/settings/opener/test", "/api/code-targets/open"])(
+		"returns the shared REQUEST_INVALID contract for malformed JSON at %s",
+		async (path) => {
+			await using resources = new AsyncDisposableStack();
+			const fixture = await createOpenerFixture();
+			resources.defer(() => fixture.dispose());
+			const result = await fixture.request(path, {
+				method: path.endsWith("opener") ? "PUT" : "POST",
+				body: "{",
+			});
+			expect(result.status).toBe(400);
+			expect(CodeTargetOpenFailureSchema.parse(result.body)).toMatchObject({
+				success: false,
+				code: "REQUEST_INVALID",
+			});
+		},
+	);
+
+	test("rejects unsafe headers before attempting to parse malformed JSON", async () => {
+		await using resources = new AsyncDisposableStack();
+		const fixture = await createOpenerFixture();
+		resources.defer(() => fixture.dispose());
+		const result = await fixture.request("/api/code-targets/open", {
+			method: "POST",
+			headers: { Origin: "null", "Sec-Fetch-Site": "same-origin" },
+			body: "{",
+		});
+		expect(result.status).toBe(403);
+		expect(CodeTargetOpenFailureSchema.parse(result.body)).toMatchObject({
+			success: false,
+			code: "CROSS_ORIGIN_REFUSED",
+		});
 	});
 
 	test.each([

@@ -57,36 +57,60 @@ export interface OpenerFixture {
 	dispose(): Promise<void>;
 }
 
+export interface OpenerFixtureOptions {
+	defaultDependencies?: boolean;
+}
+
 function git(cwd: string, ...args: string[]): void {
 	const result = Bun.spawnSync(["git", ...args], { cwd, stdout: "ignore", stderr: "pipe" });
 	if (result.exitCode !== 0) throw new Error(result.stderr.toString());
 }
 
-async function waitForFile(file: string): Promise<void> {
-	const started = Date.now();
+function assertBefore(deadline: number, description: string): void {
+	if (Date.now() >= deadline) throw new Error(`Timed out waiting for ${description}`);
+}
+
+async function waitForFile(file: string, deadline: number): Promise<void> {
 	while (!existsSync(file)) {
-		if (Date.now() - started >= TEST_OPENER_LIFECYCLE.timeoutMs) {
-			throw new Error(`Timed out waiting for ${file}`);
-		}
+		assertBefore(deadline, file);
 		await Bun.sleep(TEST_OPENER_LIFECYCLE.pollMs);
 	}
 }
 
-async function waitForCount(directory: string, count: number): Promise<string[]> {
-	const started = Date.now();
+async function waitForCount(directory: string, count: number, deadline: number): Promise<string[]> {
 	while (true) {
 		const files = readdirSync(directory)
 			.filter((file) => file.endsWith(".json"))
 			.toSorted();
 		if (files.length >= count) return files;
-		if (Date.now() - started >= TEST_OPENER_LIFECYCLE.timeoutMs) {
-			throw new Error(`Timed out waiting for ${count} records in ${directory}`);
-		}
+		assertBefore(deadline, `${count} records in ${directory}`);
 		await Bun.sleep(TEST_OPENER_LIFECYCLE.pollMs);
 	}
 }
 
-export async function createOpenerFixture(): Promise<OpenerFixture> {
+export function processExistsEvidence(pid: number): boolean {
+	try {
+		// Signal 0 is an existence probe only. Captured PIDs are never cleanup authority.
+		process.kill(pid, 0);
+		return true;
+	} catch (error) {
+		const code = (error as NodeJS.ErrnoException).code;
+		if (code === "ESRCH") return false;
+		if (code === "EPERM") return true;
+		throw error;
+	}
+}
+
+async function waitForDeath(pid: number, deadline: number): Promise<void> {
+	while (processExistsEvidence(pid)) {
+		assertBefore(deadline, `process ${pid} to exit`);
+		await Bun.sleep(TEST_OPENER_LIFECYCLE.pollMs);
+	}
+}
+
+export async function createOpenerFixture(
+	options: OpenerFixtureOptions = {},
+): Promise<OpenerFixture> {
 	const root = mkdtempSync(join(tmpdir(), "archboard-opener-system-"));
 	const checkout = join(root, "checkout");
 	const state = join(root, "state");
@@ -119,20 +143,24 @@ export async function createOpenerFixture(): Promise<OpenerFixture> {
 		const app = express();
 		app.use(cors());
 		app.use(
-			createCodeOpenerRouter({
-				bindingForElement(board, element) {
-					if (board !== "system/payments") {
-						return { ok: false, code: "BOARD_NOT_FOUND", error: "Board is not open." };
-					}
-					if (element !== "node") {
-						return { ok: false, code: "ELEMENT_NOT_FOUND", error: "Element is missing." };
-					}
-					const parsed = CodeBindingSchema.safeParse(JSON.parse(readFileSync(bindingFile, "utf8")));
-					return parsed.success
-						? { ok: true, binding: parsed.data }
-						: { ok: false, code: "BINDING_UNAVAILABLE", error: "Binding is unavailable." };
-				},
-			}),
+			options.defaultDependencies
+				? createCodeOpenerRouter()
+				: createCodeOpenerRouter({
+						bindingForElement(board, element) {
+							if (board !== "system/payments") {
+								return { ok: false, code: "BOARD_NOT_FOUND", error: "Board is not open." };
+							}
+							if (element !== "node") {
+								return { ok: false, code: "ELEMENT_NOT_FOUND", error: "Element is missing." };
+							}
+							const parsed = CodeBindingSchema.safeParse(
+								JSON.parse(readFileSync(bindingFile, "utf8")),
+							);
+							return parsed.success
+								? { ok: true, binding: parsed.data }
+								: { ok: false, code: "BINDING_UNAVAILABLE", error: "Binding is unavailable." };
+						},
+					}),
 		);
 		app.use((_request, response) =>
 			response.status(404).json({ success: false, code: "NOT_FOUND" }),
@@ -184,6 +212,7 @@ export async function createOpenerFixture(): Promise<OpenerFixture> {
 		},
 		caller,
 		invocation(mode, extra = []) {
+			const deadline = Date.now() + TEST_OPENER_LIFECYCLE.timeoutMs;
 			const id = ++invocationNumber;
 			const captureDirectory = join(root, `captures-${id}`);
 			const releaseFile = join(root, `release-${id}`);
@@ -212,7 +241,7 @@ export async function createOpenerFixture(): Promise<OpenerFixture> {
 					return (await this.waitForCaptures(1))[0]!;
 				},
 				async waitForCaptures(count) {
-					const files = await waitForCount(captureDirectory, count);
+					const files = await waitForCount(captureDirectory, count, deadline);
 					return files
 						.slice(0, count)
 						.map((file) => JSON.parse(readFileSync(join(captureDirectory, file), "utf8")));
@@ -223,7 +252,11 @@ export async function createOpenerFixture(): Promise<OpenerFixture> {
 						closeSync(openSync(releaseFile, "wx"));
 					}
 					const captures = readdirSync(captureDirectory).filter((file) => file.endsWith(".json"));
-					for (const capture of captures) await waitForFile(join(exitDirectory, capture));
+					for (const capture of captures) {
+						await waitForFile(join(exitDirectory, capture), deadline);
+						const record = JSON.parse(readFileSync(join(captureDirectory, capture), "utf8"));
+						await waitForDeath(record.pid, deadline);
+					}
 				},
 			};
 		},

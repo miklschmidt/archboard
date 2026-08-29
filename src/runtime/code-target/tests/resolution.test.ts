@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { join } from "node:path";
+import { join, win32 } from "node:path";
 
-import { resolveLocalCodeTarget, resolveRegisteredCheckout } from "../index.ts";
+import { isPathWithin, resolveLocalCodeTarget, resolveRegisteredCheckout } from "../index.ts";
 import { createResolverFixture, type ResolverFixture } from "./support.ts";
 
 let fixture: ResolverFixture;
@@ -40,6 +40,11 @@ describe("registered checkout", () => {
 });
 
 describe("local code target containment", () => {
+	test("rejects a Windows cross-drive relative result", () => {
+		expect(isPathWithin("C:\\repo", "D:\\escape", win32)).toBeFalse();
+		expect(isPathWithin("C:\\repo", "C:\\repo\\src", win32)).toBeTrue();
+	});
+
 	test.each([
 		["", "directory", fixturePath("")],
 		["src/index.ts", "file", fixturePath("src/index.ts")],
