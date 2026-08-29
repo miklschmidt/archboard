@@ -22,6 +22,7 @@ import {
 	resolveRegisteredCheckout,
 	type LocalCodeTargetResult,
 } from "../../../runtime/code-target/index.js";
+import { githubUrlForBinding } from "../../../runtime/code-target/presentation.js";
 import { readBoardContent } from "../../../runtime/engine/board-io.js";
 import { resolveBoard } from "../../../runtime/engine/board-store.js";
 import { readElementMetadata } from "../../../runtime/engine/metadata.js";
@@ -122,15 +123,20 @@ function sendFailure(
 	response: Response,
 	failure: { code: CodeTargetFailureCode; error: string },
 	status = statusFor(failure.code),
+	binding?: CodeBinding,
 ): void {
-	const actions = failure.code.startsWith("OPENER_")
-		? [{ kind: "settings" as const, label: "Opener settings" as const }]
-		: undefined;
+	const github = binding ? githubUrlForBinding(binding) : undefined;
+	const actions = [
+		...(failure.code.startsWith("OPENER_")
+			? [{ kind: "settings" as const, label: "Opener settings" as const }]
+			: []),
+		...(github ? [{ kind: "github" as const, label: "Open on GitHub", href: github }] : []),
+	];
 	response.status(status).json({
 		success: false,
 		code: failure.code,
 		error: failure.error,
-		...(actions ? { actions } : {}),
+		...(actions.length > 0 ? { actions } : {}),
 	});
 }
 
@@ -285,11 +291,13 @@ export function createCodeOpenerRouter(
 			const found = dependencies.bindingForElement(parsed.data.board, parsed.data.element);
 			if (!found.ok) return sendFailure(response, found);
 			const target = dependencies.resolveTarget(found.binding);
-			if (!target.ok) return sendFailure(response, target);
+			if (!target.ok) return sendFailure(response, target, statusFor(target.code), found.binding);
 			const current = readOpenerSelection();
-			if (!current.ok) return sendFailure(response, current);
+			if (!current.ok)
+				return sendFailure(response, current, statusFor(current.code), found.binding);
 			const launched = await planAndLaunch(current.selection, target.target, dependencies.launch);
-			if (!launched.ok) return sendFailure(response, launched);
+			if (!launched.ok)
+				return sendFailure(response, launched, statusFor(launched.code), found.binding);
 			response.json({
 				success: true,
 				code: "CODE_TARGET_OPENED",

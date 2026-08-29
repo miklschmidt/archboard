@@ -480,6 +480,7 @@ export function renderContent(
 	const { scene, elementCount } = buildScene(
 		stripBindingPresentationLinks(
 			Array.from(content.elements.values(), (element) => packElementTracking(element)),
+			{ boardKey: boardKey(identity) },
 		),
 		files as unknown as Record<string, unknown>,
 		{ keepServerFields: true },
@@ -488,6 +489,7 @@ export function renderContent(
 	// portability rule once more to the normalized copies.
 	scene.elements = stripBindingPresentationLinks(
 		(scene.elements as ServerElement[]).map(packElementTracking),
+		{ boardKey: boardKey(identity) },
 	);
 	const note = renderBoardNote(scene, existingNote, identity);
 	return { note, bytes: Buffer.from(note, "utf-8"), elementCount };

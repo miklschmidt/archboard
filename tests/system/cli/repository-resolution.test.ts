@@ -109,7 +109,7 @@ describe("repository binding resolution", () => {
 				{ kind: "none", surface: "this caller" },
 			);
 			expect(named).toMatchObject({ resolved: true, resolvedFrom: "registry" });
-			expect(named.link).toBe(`file://${beta}/src/service.ts`);
+			expect(named).not.toHaveProperty("link");
 			const ambient = resolveBinding({ path: "src/service.ts" }, { kind: "cwd", dir: alpha });
 			expect(ambient).toMatchObject({
 				resolved: true,
@@ -126,14 +126,14 @@ describe("repository binding resolution", () => {
 				resolvedFrom: "registry",
 				address: { repo: betaIdentity, path: "src/service.ts" },
 			});
-			expect(namedOverAmbient.link).toBe(`file://${beta}/src/service.ts`);
+			expect(namedOverAmbient).not.toHaveProperty("link");
 
 			const missing = resolveBinding({ path: "src/nope.ts" }, { kind: "cwd", dir: alpha });
 			expect(missing).toMatchObject({
 				resolved: true,
 				address: { repo: alphaIdentity, path: "src/nope.ts" },
 			});
-			expect(missing.link).toBeUndefined();
+			expect(missing).not.toHaveProperty("link");
 
 			const outside = resolveBinding(
 				{ path: "src/service.ts" },
@@ -161,7 +161,7 @@ describe("repository binding resolution", () => {
 				resolved: false,
 				address: { repo: "github.com/acme/never-cloned", path: "src/service.ts" },
 			});
-			expect(unknown.link).toBeUndefined();
+			expect(unknown).not.toHaveProperty("link");
 			expect(unknown.note).toContain("repo add");
 		} finally {
 			if (previous === undefined) delete process.env.ARCHBOARD_REPOS;
@@ -196,7 +196,7 @@ describe("repository binding resolution", () => {
 				{ kind: "none", surface: "this caller" },
 			);
 			expect(stale.resolved).toBe(false);
-			expect(stale.link).toBeUndefined();
+			expect(stale).not.toHaveProperty("link");
 			expect(stale.note).toContain(betaIdentity);
 			expect(stale.note).not.toContain(`file://${beta}/src/service.ts`);
 		} finally {

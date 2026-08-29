@@ -1,71 +1,134 @@
-import fs from "fs";
-import path from "path";
-import { pathToFileURL } from "url";
+import { pathToFileURL } from "node:url";
 
-import { type ServerElement } from "./types.js";
+import {
+	CodeBindingSchema,
+	parseInternalCodeTargetUrl,
+	type CodeBinding,
+} from "../../shared/code-target/index.js";
+import {
+	resolveLocalCodeTarget,
+	resolveLocalCodeTargets,
+	type LocalCodeTargetResult,
+} from "../code-target/index.js";
+import { githubUrlForBinding, presentationTargetForBinding } from "../code-target/presentation.js";
 import { readElementMetadata } from "./metadata.js";
-import type { LogicalAddress } from "./metadata.js";
-import { checkoutFor } from "./repo-registry.js";
+import { type ServerElement } from "./types.js";
 
-function inside(root: string, target: string): boolean {
-	const relative = path.relative(root, target);
-	return relative !== "" && !relative.startsWith("..") && !path.isAbsolute(relative);
+export interface PresentationContext {
+	boardKey: string;
+	opaqueTarget?: string;
 }
 
-function existingFile(file: string): boolean {
-	try {
-		return fs.statSync(file).isFile();
-	} catch {
-		return false;
-	}
+function withLink(element: ServerElement, link: string | null): ServerElement {
+	return { ...element, link };
 }
 
-/** Resolve the machine-local link for a portable binding, when this checkout has it. */
-export function linkForBinding(binding: LogicalAddress | undefined): string | undefined {
-	if (!binding?.repo || !binding.path || path.isAbsolute(binding.path)) return undefined;
-	const root = checkoutFor(binding.repo);
-	if (!root) return undefined;
-	const file = path.resolve(root, binding.path);
-	if (!inside(root, file) || !existingFile(file)) return undefined;
-	return pathToFileURL(file).href;
+function bindingOf(element: ServerElement): CodeBinding | undefined {
+	const parsed = CodeBindingSchema.safeParse(readElementMetadata(element).archboard?.binding);
+	return parsed.success ? parsed.data : undefined;
 }
 
-/** Strip every stored link from bound elements before the board is serialized. */
+function exactInternalTarget(
+	value: string,
+	element: ServerElement,
+	context: PresentationContext,
+): boolean {
+	const parsed = parseInternalCodeTargetUrl(value);
+	return parsed?.board === context.boardKey && parsed.element === element.id;
+}
+
+function isDerivedTarget(
+	element: ServerElement,
+	incoming: unknown,
+	context: PresentationContext,
+	local?: LocalCodeTargetResult,
+): boolean {
+	if (typeof incoming !== "string") return false;
+	const binding = bindingOf(element);
+	if (!binding) return false;
+	if (exactInternalTarget(incoming, element, context)) return true;
+	if (incoming === githubUrlForBinding(binding)) return true;
+	if (context.opaqueTarget !== undefined && incoming === context.opaqueTarget) return true;
+	const current = local ?? resolveLocalCodeTarget(binding);
+	return current.ok && incoming === pathToFileURL(current.target).href;
+}
+
 export function stripBindingPresentationLink(
 	element: ServerElement,
-	derivedTarget?: string,
+	context: PresentationContext,
 ): ServerElement {
-	const binding = readElementMetadata(element).archboard?.binding;
+	return isDerivedTarget(element, element.link, context) ? withLink(element, null) : element;
+}
+
+export function stripBindingPresentationLinks(
+	elements: Iterable<ServerElement>,
+	context: PresentationContext,
+): ServerElement[] {
+	const values = Array.from(elements);
+	const bindings = values.flatMap((element) => {
+		const binding = bindingOf(element);
+		return binding ? [binding] : [];
+	});
+	if (bindings.length === 0) return values;
+	const locals = resolveLocalCodeTargets(bindings);
+	let index = 0;
+	return values.map((element) => {
+		const binding = bindingOf(element);
+		if (!binding) return element;
+		return isDerivedTarget(element, element.link, context, locals[index++])
+			? withLink(element, null)
+			: element;
+	});
+}
+
+export function presentElement(
+	element: ServerElement,
+	context: PresentationContext,
+): ServerElement {
+	const binding = bindingOf(element);
 	if (!binding) return element;
-	const derived = derivedTarget ?? linkForBinding(binding);
-	return derived && element.link === derived ? { ...element, link: null } : element;
+	if (context.opaqueTarget !== undefined) return withLink(element, context.opaqueTarget);
+	const target = presentationTargetForBinding(
+		binding,
+		{ board: context.boardKey, element: element.id },
+		resolveLocalCodeTarget(binding),
+	);
+	return target ? withLink(element, target) : element;
 }
 
-export function stripBindingPresentationLinks(elements: Iterable<ServerElement>): ServerElement[] {
-	return Array.from(elements, (element) => stripBindingPresentationLink(element));
+export function presentElements(
+	elements: Iterable<ServerElement>,
+	context: PresentationContext,
+): ServerElement[] {
+	const values = Array.from(elements);
+	const bindings = values.flatMap((element) => {
+		const binding = bindingOf(element);
+		return binding ? [binding] : [];
+	});
+	if (bindings.length === 0) return values;
+	const locals = resolveLocalCodeTargets(bindings);
+	let index = 0;
+	return values.map((element) => {
+		const binding = bindingOf(element);
+		if (!binding) return element;
+		const local = locals[index++]!;
+		const target =
+			context.opaqueTarget ??
+			presentationTargetForBinding(
+				binding,
+				{ board: context.boardKey, element: element.id },
+				local,
+			);
+		return target ? withLink(element, target) : element;
+	});
 }
 
-/** Add or remove the local presentation link for a bound element without mutating it. */
-export function presentElement(element: ServerElement, derivedTarget?: string): ServerElement {
-	const binding = readElementMetadata(element).archboard?.binding;
-	if (!binding) return element;
-	const link = derivedTarget ?? linkForBinding(binding);
-	return link ? { ...element, link } : element;
-}
-
-export function presentElements(elements: Iterable<ServerElement>): ServerElement[] {
-	return Array.from(elements, (element) => presentElement(element));
-}
-
-/** Restore the board's canonical link when a browser echoes its presentation copy. */
 export function canonicalLinkAfterPresentationEcho(
 	existing: ServerElement | undefined,
 	incoming: unknown,
-	derivedTarget?: string,
+	context: PresentationContext,
 ): string | null | undefined {
 	if (!existing) return typeof incoming === "string" || incoming === null ? incoming : undefined;
-	const binding = readElementMetadata(existing).archboard?.binding;
-	const derived = derivedTarget ?? linkForBinding(binding);
-	if (derived && incoming === derived) return existing.link;
+	if (isDerivedTarget(existing, incoming, context)) return existing.link;
 	return typeof incoming === "string" || incoming === null ? incoming : existing.link;
 }
