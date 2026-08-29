@@ -176,6 +176,13 @@ describe("CI executable workflow steps", () => {
 		]);
 	});
 
+	test("rejects executable substitution content after a commented parenthesis", () => {
+		const command = 'echo "$(echo ok # )\nbun run test\n)"';
+		expect(inspectWorkflow(workflowWith(command, "bun run check"))).toEqual([
+			"the workflow invokes package script `test` directly; `bun run check` must be its only package-script invocation.",
+		]);
+	});
+
 	test("rejects dollar-parenthesis execution inside a double-quoted assignment", () => {
 		expect(inspectWorkflow(workflowWith('x="$(bun run test)"', "bun run check"))).toEqual([
 			"the workflow invokes package script `test` directly; `bun run check` must be its only package-script invocation.",
