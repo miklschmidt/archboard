@@ -10,7 +10,13 @@ import type {
 	ScenePoint,
 } from "../schemas.js";
 import { InspectionFindingSchema } from "../schemas.js";
-import { decodePath, kindOf, stableDescription, type DecodedRecord } from "./decode.js";
+import {
+	decodePath,
+	kindOf,
+	persistedConnectorPointChainEligibility,
+	stableDescription,
+	type DecodedRecord,
+} from "./decode.js";
 import {
 	box,
 	aggregateBoxes,
@@ -654,11 +660,8 @@ function connectorGeometryFindings(
 				...pathEvidence,
 			}),
 		);
-	const unsupportedRounded =
-		raw.roundness != null ||
-		(raw.elbowed !== undefined && raw.elbowed !== null && raw.elbowed !== false) ||
-		raw.fixedSegments != null;
-	if (unsupportedRounded)
+	const eligibility = decoded.ok ? persistedConnectorPointChainEligibility(record, decoded) : null;
+	if (eligibility && !eligibility.eligible)
 		findings.push(
 			make({
 				code: "UNSUPPORTED_GEOMETRY",
@@ -670,7 +673,12 @@ function connectorGeometryFindings(
 					elbowed: raw.elbowed === true,
 					fixedSegments: raw.fixedSegments != null,
 				},
-				message: `Connector ${record.id ?? record.sourceIndex} uses rounded or elbowed geometry.`,
+				message:
+					eligibility.issue === "elbow-coordinate-limit"
+						? `Connector ${record.id ?? record.sourceIndex} has elbow point ${eligibility.pointIndex} ${eligibility.axis} coordinate ${eligibility.coordinate} exceeding ±1,000,000.`
+						: eligibility.issue === "malformed-elbowed"
+							? `Connector ${record.id ?? record.sourceIndex} has malformed elbowed metadata.`
+							: `Connector ${record.id ?? record.sourceIndex} has fixedSegments metadata without elbowed geometry.`,
 				elements: refs,
 				...pathEvidence,
 			}),
@@ -690,7 +698,7 @@ function connectorGeometryFindings(
 				affected: decoded.scenePoints ? pointBox([decoded.scenePoints[segmentIndex]!]) : null,
 			}),
 		);
-	const unsupported = unsupportedRotation || unsupportedCurve || unsupportedRounded;
+	const unsupported = unsupportedRotation || unsupportedCurve || eligibility?.eligible === false;
 	if (unsupported || !record.usableId || !record.id || !decoded.scenePoints) return findings;
 	const zeroSegments = new Set(decoded.zeroSegments);
 	for (let index = 0; index < decoded.scenePoints.length - 1; index += 1) {
