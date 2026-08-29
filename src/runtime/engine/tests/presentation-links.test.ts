@@ -101,6 +101,7 @@ test("near misses and ordinary links remain byte-for-byte", () => {
 		"/api/code-targets/open?board=other&element=bound",
 		"/api/code-targets/open?board=system%2Farchboard&element=other",
 		"https://github.com/acme/payments/tree/main/src/index.ts",
+		"https://github.com/acme/payments/tree/HEAD/src/other.ts",
 		"https://github.com/acme/other/tree/HEAD/src/index.ts",
 		"https://human.example/other",
 		"file:///tmp/human-authored.ts",
@@ -112,6 +113,14 @@ test("near misses and ordinary links remain byte-for-byte", () => {
 			incoming,
 		);
 	}
+});
+
+test("a legacy file value is human-authored when its checkout is unavailable", () => {
+	const canonical = bound(humanLink);
+	const legacy = pathToFileURL(`${fixture.checkout}/src/index.ts`).href;
+	writeFileSync(fixture.registry, "[]\n");
+	expect(canonicalLinkAfterPresentationEcho(canonical, legacy, context)).toBe(legacy);
+	expect(stripBindingPresentationLink({ ...canonical, link: legacy }, context).link).toBe(legacy);
 });
 
 test("opaque presentation is explicit and never mutates the canonical element", () => {

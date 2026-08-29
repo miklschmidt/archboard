@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
@@ -200,6 +200,9 @@ test(
 		const firstExits = join(ownerRoot, "exits-first");
 		const secondCaptures = join(ownerRoot, "captures-second");
 		const secondExits = join(ownerRoot, "exits-second");
+		const firstMarker = join(ownerRoot, "release-first");
+		const secondMarker = join(ownerRoot, "release-second");
+		const humanFileHref = "file:///human-rendered.ts";
 		for (const directory of [
 			vault,
 			join(checkout, "src", "directory"),
@@ -219,10 +222,7 @@ test(
 				{ repo: repository, root: checkout, source: "declared", addedAt: "2026-01-01" },
 			]),
 		);
-		writeFileSync(
-			config,
-			JSON.stringify(openerSelection(firstCaptures, firstExits, join(ownerRoot, "release-first"))),
-		);
+		writeFileSync(config, JSON.stringify(openerSelection(firstCaptures, firstExits, firstMarker)));
 
 		const canvas = await startOwnedCanvas({
 			serverPath,
@@ -280,6 +280,23 @@ test(
 								},
 							},
 						},
+					},
+				})
+			).status,
+		).toBe(200);
+		expect(
+			(
+				await api("/api/elements?board=directory-board", {
+					method: "POST",
+					body: {
+						id: "human-file-target",
+						type: "rectangle",
+						x: 380,
+						y: 280,
+						width: 180,
+						height: 100,
+						backgroundColor: "#fff3e0",
+						link: humanFileHref,
 					},
 				})
 			).status,
@@ -356,12 +373,7 @@ test(
 			},
 		]);
 
-		await changeOpenerCaptureThroughSettings(
-			browser,
-			secondCaptures,
-			join(ownerRoot, "release-second"),
-			secondExits,
-		);
+		await changeOpenerCaptureThroughSettings(browser, secondCaptures, secondMarker, secondExits);
 		await activateLink(browser, "file-target", fileHref);
 		await activateLink(browser, "directory-target", directoryHref);
 		const second = await captures(secondCaptures, 2);
@@ -377,15 +389,6 @@ test(
 			(value) => typeof value === "number" && value > 120,
 			"the human drag to persist",
 		);
-		const rawNote = readFileSync(join(vault, "file-board.excalidraw.md"), "utf8");
-		expect(rawNote).toContain(`"repo": "${repository}"`);
-		expect(rawNote).toContain('"path": "src/index.ts"');
-		expect(rawNote).not.toContain("/api/code-targets/open");
-		expect(rawNote).not.toContain("https://github.com/acme/remote/tree/");
-		expect(rawNote).not.toContain(checkout);
-		expect(rawNote).not.toContain(process.execPath);
-		expect(rawNote).not.toContain(firstCaptures);
-		expect(rawNote).not.toContain(firstExits);
 		const remoteHref = "https://github.com/acme/remote/tree/feature%2Flinks/src/a%20b.ts";
 		await activatePopup(browser, "remote-target", remoteHref, canvas.base);
 		await dragElement(browser, "remote-target", 28);
@@ -408,9 +411,6 @@ test(
 		);
 		const humanHref = "https://example.com/human?x=1";
 		expect(
-			(await api("/api/elements/remote-target?board=file-board", { method: "DELETE" })).status,
-		).toBe(200);
-		expect(
 			(
 				await api("/api/elements?board=file-board", {
 					method: "POST",
@@ -429,6 +429,44 @@ test(
 		).toBe(200);
 		await activatePopup(browser, "human-target", humanHref, canvas.base);
 		expect(await requestLog(browser)).toHaveLength(4);
+		const rawNotes = ["file-board", "directory-board"].map((board) =>
+			readFileSync(join(vault, `${board}.excalidraw.md`), "utf8"),
+		);
+		const derivedCandidates = [
+			"/api/code-targets/open?board=file-board&element=file-target",
+			"/api/code-targets/open?board=file-board&element=remote-target",
+			"/api/code-targets/open?board=directory-board&element=directory-target",
+			"/api/code-targets/open?board=directory-board&element=remote-directory",
+			"https://github.com/acme/rendered/tree/HEAD/src/index.ts",
+			"https://github.com/acme/rendered/tree/HEAD/src/directory",
+			"https://github.com/acme/remote/tree/feature%2Flinks/src/a%20b.ts",
+			"https://github.com/acme/remote/tree/abc123/docs",
+			pathToFileURL(join(checkout, "src", "index.ts")).href,
+			pathToFileURL(join(checkout, "src", "directory")).href,
+		];
+		const machineValues = [
+			checkout,
+			registry,
+			config,
+			process.execPath,
+			fakeOpener,
+			"immediate",
+			firstCaptures,
+			firstExits,
+			firstMarker,
+			secondCaptures,
+			secondExits,
+			secondMarker,
+			"{path}",
+		];
+		for (const raw of rawNotes)
+			for (const privateValue of [...derivedCandidates, ...machineValues])
+				expect(raw).not.toContain(privateValue);
+		expect(rawNotes[0]).toContain(`"repo": "${repository}"`);
+		expect(rawNotes[0]).toContain('"path": "src/index.ts"');
+		expect(rawNotes[1]).toContain('"path": "src/directory"');
+		expect(rawNotes[0]).toContain(humanHref);
+		expect(rawNotes[1]).toContain(humanFileHref);
 		expect(await browser.eval<boolean>("Boolean(document.querySelector('.excalidraw'))")).toBe(
 			true,
 		);

@@ -10,8 +10,14 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 
-import { makeIdentity, renderBoardNote, vaultPathFor } from "../../../src/runtime/engine/board.ts";
+import {
+	extractSceneElements,
+	makeIdentity,
+	renderBoardNote,
+	vaultPathFor,
+} from "../../../src/runtime/engine/board.ts";
 import { expandElements } from "../../../src/runtime/engine/expand-elements.ts";
 import type { ServerElement } from "../../../src/runtime/engine/types.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
@@ -54,6 +60,9 @@ test("every public presentation is fresh, portable, and board-addressed", async 
 	const checkout = join(root, "checkout");
 	const outside = join(root, "outside");
 	const registry = join(root, "state", "repos.json");
+	const openerConfig = join(root, "state", "opener.json");
+	const openerExecutable = join(root, "machine", "opener");
+	const openerArgv = ["--machine-session", join(root, "machine", "captures"), "{path}"];
 	mkdirSync(join(checkout, "src", "directory"), { recursive: true });
 	mkdirSync(outside);
 	mkdirSync(vault);
@@ -70,6 +79,10 @@ test("every public presentation is fresh, portable, and board-addressed", async 
 		addedAt: "2026-01-01",
 	};
 	writeFileSync(registry, JSON.stringify([registryEntry]));
+	writeFileSync(
+		openerConfig,
+		JSON.stringify({ version: 1, kind: "custom", executable: openerExecutable, argv: openerArgv }),
+	);
 
 	const identity = makeIdentity({ board: "targets" });
 	const elements = [
@@ -113,9 +126,11 @@ test("every public presentation is fresh, portable, and board-addressed", async 
 			identity,
 		),
 	);
-	const beforeBytes = readFileSync(note);
-	const beforeMtime = statSync(note, { bigint: true }).mtimeNs;
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: { ARCHBOARD_REPOS: registry } });
+	const canvas = await startOwnedCanvas({
+		serverPath,
+		vault,
+		env: { ARCHBOARD_REPOS: registry, ARCHBOARD_OPENER_CONFIG: openerConfig },
+	});
 	resources.defer(() => canvas.dispose());
 	const api = createJsonRequester(canvas);
 	const opened = await api("/api/boards/open", { method: "POST", body: { board: "targets" } });
@@ -172,6 +187,42 @@ test("every public presentation is fresh, portable, and board-addressed", async 
 	);
 	git(checkout, "remote", "set-url", "origin", `https://${localRepository}.git`);
 
+	const exactInternal = "/api/code-targets/open?board=targets&element=local-file";
+	const exactCommit = "https://github.com/acme/remote/tree/deadbeef/src/a%20b%23%25/caf%C3%A9.ts";
+	const exactLegacyDirectory = pathToFileURL(join(checkout, "src", "directory")).href;
+	const preservedEchoes = {
+		branch: "https://github.com/acme/remote/tree/feature%2Flinks/other",
+		head: "https://github.com/acme/remote/tree/main/src",
+		"root-empty": "https://github.com/acme/other/tree/main",
+		"root-dot": "opaque:not-a-public-presentation",
+		missing: "/api/code-targets/open?board=other&element=missing",
+		escape: "/api/code-targets/open?board=targets&element=other",
+		"bound-human": "https://human.example/bound",
+		"unbound-human": "file:///human-authored.ts",
+	} as const;
+	const echoCases = [
+		["local-file", exactInternal],
+		["commit", exactCommit],
+		["local-directory", exactLegacyDirectory],
+		...Object.entries(preservedEchoes),
+	] as const;
+	for (const [index, [id, link]] of echoCases.entries()) {
+		const changed = await api(`/api/elements/changes?board=targets`, {
+			method: "POST",
+			body: { clientId: "echo-matrix", upserts: [{ id, link, x: 30 + index }], deletes: [] },
+		});
+		expect(changed.status, `${id}: ${JSON.stringify(changed.body)}`).toBe(200);
+	}
+	let raw = readFileSync(note, "utf8");
+	const stored = new Map(extractSceneElements(raw).map((element) => [element.id, element]));
+	for (const id of ["local-file", "commit", "local-directory"])
+		expect(stored.get(id)?.link, id).toBeNull();
+	for (const [id, link] of Object.entries(preservedEchoes))
+		expect(stored.get(id)?.link, id).toBe(link);
+
+	const beforeExportBytes = readFileSync(note);
+	const beforeExportMtime = statSync(note, { bigint: true }).mtimeNs;
+
 	const pane = await openTestPane(canvas.base, api, "presentation-observer", 0, {
 		primary: true,
 		focused: true,
@@ -198,16 +249,41 @@ test("every public presentation is fresh, portable, and board-addressed", async 
 		});
 	}
 	await pending;
-	expect(readFileSync(note)).toEqual(beforeBytes);
-	expect(statSync(note, { bigint: true }).mtimeNs).toBe(beforeMtime);
-	const raw = beforeBytes.toString("utf8");
-	for (const derived of [
-		"/api/code-targets/open?board=targets&element=local-file",
-		"https://github.com/acme/remote/tree/deadbeef/src/a%20b%23%25/caf%C3%A9.ts",
-		`file://${checkout}/src/index.ts`,
-		checkout,
-	])
-		expect(raw).not.toContain(derived);
-	expect(raw).toContain("https://human.example/bound");
-	expect(raw).toContain("file:///human-authored.ts");
+	expect(readFileSync(note)).toEqual(beforeExportBytes);
+	expect(statSync(note, { bigint: true }).mtimeNs).toBe(beforeExportMtime);
+	raw = beforeExportBytes.toString("utf8");
+	const internalCandidates = [
+		"local-file",
+		"local-directory",
+		"missing",
+		"escape",
+		"commit",
+		"branch",
+		"head",
+		"root-empty",
+		"root-dot",
+		"other-host",
+		"bound-human",
+	].map((id) => `/api/code-targets/open?board=targets&element=${id}`);
+	const githubCandidates = [
+		"https://github.com/acme/local/tree/HEAD/src/index.ts",
+		"https://github.com/acme/local/tree/HEAD/src/directory",
+		"https://github.com/acme/local/tree/HEAD/src/later.ts",
+		"https://github.com/acme/local/tree/HEAD/src/escape.ts",
+		exactCommit,
+		"https://github.com/acme/remote/tree/feature%2Flinks/docs",
+		"https://github.com/acme/remote/tree/HEAD/src",
+		"https://github.com/acme/remote/tree/main",
+		"https://github.com/acme/remote/tree/HEAD",
+	];
+	const legacyCandidates = [
+		pathToFileURL(join(checkout, "src", "index.ts")).href,
+		exactLegacyDirectory,
+		pathToFileURL(join(checkout, "src", "later.ts")).href,
+	];
+	for (const derived of [...internalCandidates, ...githubCandidates, ...legacyCandidates])
+		expect(raw).not.toContain(`"link": ${JSON.stringify(derived)}`);
+	for (const machineValue of [checkout, registry, openerConfig, openerExecutable, ...openerArgv])
+		expect(raw).not.toContain(machineValue);
+	for (const human of Object.values(preservedEchoes)) expect(raw).toContain(human);
 });
