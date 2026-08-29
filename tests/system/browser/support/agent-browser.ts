@@ -23,6 +23,7 @@ export const BROWSER_TEST_PATHS = [
 	"tests/system/browser/hold-generation.test.ts",
 	"tests/system/browser/human-hold-persistence.test.ts",
 	"tests/system/browser/claim-interaction.test.ts",
+	"tests/system/browser/opener-settings.test.ts",
 ] as const;
 
 export type BrowserTestPath = (typeof BROWSER_TEST_PATHS)[number];
@@ -62,6 +63,7 @@ const CLEARED_CANVAS_ENV = [
 	"ARCHBOARD_INJECT_MIN_INTERVAL_MS",
 	"ARCHBOARD_SETTLE_MS",
 	"ARCHBOARD_SETTLE_MAX_MS",
+	"ARCHBOARD_OPENER_CONFIG",
 	"CYCLES",
 	"HOST",
 	"PORT",
@@ -109,7 +111,7 @@ export function validateBrowserSelection(argv: readonly string[]): BrowserSelect
 		(selected.length !== BROWSER_TEST_PATHS.length ||
 			selected.some((file, index) => file !== BROWSER_TEST_PATHS[index]))
 	) {
-		selectionError("Package browser lane must name all 13 canonical paths in order.");
+		selectionError("Package browser lane must name all 14 canonical paths in order.");
 	}
 	return { mode, files: selected as BrowserTestPath[] };
 }
