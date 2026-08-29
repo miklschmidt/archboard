@@ -8,7 +8,12 @@ import { z } from "zod";
 
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { runOwnedPeerToExit, startOwnedPeer } from "./support/owned-peer-process.ts";
-import { availablePort, ReadySchema, sanitizedEnvironment } from "./support/process-http.ts";
+import {
+	availablePort,
+	HealthSchema,
+	ReadySchema,
+	sanitizedEnvironment,
+} from "./support/process-http.ts";
 import { plantStaticProbes } from "./support/static-probes.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
@@ -44,7 +49,7 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 	resources.defer(() => canvas.dispose());
 	try {
 		const healthPayload: unknown = await (await fetch(`${canvas.base}/health`)).json();
-		const health = ReadySchema.parse(healthPayload);
+		const health = HealthSchema.parse(healthPayload);
 		expect(health.pid).toBe(canvas.pid!);
 		const ipv6 = await fetch(canvas.base.replace("127.0.0.1", "[::1]") + "/health").catch(
 			(error: unknown) => error,
