@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { z } from "zod";
+import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
 import { createJsonRequester } from "../boards/support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
@@ -16,13 +17,26 @@ import {
 } from "./support/process-http.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
-const ApplySchema = z.object({
+type ElementIdView = Pick<ExcalidrawElement, "id">;
+type ApplyElementView = ElementIdView &
+	Partial<Pick<ExcalidrawElement, "type" | "x" | "backgroundColor" | "boundElements">> &
+	Partial<Pick<Extract<ExcalidrawElement, { type: "text" }>, "text">> & { rawText?: string };
+type ApplyReceiptView = {
+	created: number;
+	updated: number;
+	deleted: number;
+	elements: ElementIdView[];
+	fingerprint: { note: string; elements: number };
+	document?: ElementIdView[];
+};
+const ElementIdViewSchema: z.ZodType<ElementIdView> = z.object({ id: z.string() }).passthrough();
+const ApplySchema: z.ZodType<ApplyReceiptView> = z.object({
 	created: z.number(),
 	updated: z.number(),
 	deleted: z.number(),
-	elements: z.array(z.object({ id: z.string() }).passthrough()),
+	elements: z.array(ElementIdViewSchema),
 	fingerprint: z.object({ note: z.string().length(64), elements: z.number() }).passthrough(),
-	document: z.array(z.unknown()).optional(),
+	document: z.array(ElementIdViewSchema).optional(),
 });
 
 test("apply is atomic, compact by default, and one real proxy write", async () => {
@@ -106,9 +120,9 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 				origin: "agent",
 			}),
 		);
-		const persisted = await request<{
-			elements: Array<{ id: string; x?: number; backgroundColor?: string }>;
-		}>("/api/elements?board=scratch");
+		const persisted = await request<{ elements: ApplyElementView[] }>(
+			"/api/elements?board=scratch",
+		);
 		expect(persisted.body.elements).toHaveLength(applied.fingerprint.elements);
 		expect(persisted.body.elements.some((element) => element.id === "gone")).toBeFalse();
 		expect(persisted.body.elements.find((element) => element.id === "box-1")?.backgroundColor).toBe(
@@ -199,7 +213,7 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 		expect(human.body.corrections).toBeDefined();
 		const compact = await request<{
 			document?: unknown;
-			corrections: { upserts: unknown[]; deletes: string[] };
+			corrections: { upserts: ElementIdView[]; deletes: string[] };
 			fingerprint: { note: string; version: number };
 		}>("/api/elements/changes?board=scratch", {
 			method: "POST",
@@ -213,7 +227,7 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 		const foreignTextId = "text-element-minted-by-a-browser";
 		const canonical = await request<{
 			document?: unknown;
-			corrections: { upserts: Array<Record<string, unknown>>; deletes: string[] };
+			corrections: { upserts: ApplyElementView[]; deletes: string[] };
 		}>("/api/elements/changes?board=scratch", {
 			method: "POST",
 			body: {
@@ -242,7 +256,7 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 		expect(String(correctedText.id).length).toBeGreaterThan(0);
 		expect(String(correctedText.id).length).toBeLessThanOrEqual(8);
 		expect(correctedText.rawText).toBe("Canonical");
-		const canonicalScene = await request<{ elements: Array<Record<string, unknown>> }>(
+		const canonicalScene = await request<{ elements: ApplyElementView[] }>(
 			"/api/elements?board=scratch",
 		);
 		expect(canonicalScene.body.elements.find((element) => element.id === correctedText.id)).toEqual(
@@ -278,7 +292,7 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 			},
 		});
 		const outside = await request<{
-			corrections: { upserts: Array<Record<string, unknown>> };
+			corrections: { upserts: ApplyElementView[] };
 		}>("/api/elements/changes?board=ack-corrections", {
 			method: "POST",
 			body: {
@@ -293,7 +307,7 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 		expect(correctedBox.boundElements).toEqual(
 			expect.arrayContaining([expect.objectContaining({ id: "ack-arrow" })]),
 		);
-		const repaired = await request<{ elements: Array<Record<string, unknown>> }>(
+		const repaired = await request<{ elements: ApplyElementView[] }>(
 			"/api/elements?board=ack-corrections",
 		);
 		expect(repaired.body.elements.find((element) => element.id === "ack-box")).toEqual(

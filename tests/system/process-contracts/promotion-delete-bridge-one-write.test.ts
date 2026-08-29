@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { z } from "zod";
+import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
 import { createJsonRequester } from "../boards/support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
@@ -16,6 +17,54 @@ import {
 } from "./support/process-http.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
+type ElementIdView = Pick<ExcalidrawElement, "id">;
+type ArchboardElementView = Pick<ExcalidrawElement, "id" | "customData"> & {
+	customData?: { archboard?: { node?: string } };
+};
+type BridgeFactsView = {
+	background: string;
+	bridgeId: string;
+	crossing: { x: number; y: number };
+	overConnectorId: string;
+	overSegmentIndex: number;
+	underConnectorId: string;
+	underSegmentIndex: number;
+};
+type BridgePartView<Role extends "mask" | "redraw"> = Pick<
+	Extract<ExcalidrawElement, { type: "arrow" | "line" }>,
+	"id" | "type" | "customData"
+> & {
+	type: "line";
+	customData: { archboard: { bridge: BridgeFactsView & { role: Role } } };
+};
+type FingerprintView = { note: string; elements: number; version: number | null };
+type DeleteReceiptView = {
+	success: true;
+	deleted: number;
+	count: number;
+	elements: ElementIdView[];
+	fingerprint: FingerprintView;
+};
+type BridgeReceiptView = {
+	success: true;
+	board: string;
+	bridgeId: string;
+	overConnectorId: string;
+	underConnectorId: string;
+	overSegmentIndex: number;
+	underSegmentIndex: number;
+	crossing: { x: number; y: number };
+	elements: [BridgePartView<"mask">, BridgePartView<"redraw">];
+	fingerprint: FingerprintView;
+};
+type BridgeRemovalReceiptView = {
+	success: true;
+	board: string;
+	bridgeId: string;
+	deleted: [string, string];
+	elements: never[];
+	fingerprint: FingerprintView;
+};
 const FingerprintSchema = z.object({
 	note: z.string().length(64),
 	elements: z.number().int().nonnegative(),
@@ -47,11 +96,12 @@ const DemotionReceiptSchema = z.object({
 	),
 	elementsUpdated: z.number().int().nonnegative(),
 });
-const DeleteReceiptSchema = z.object({
+const ElementIdSchema: z.ZodType<ElementIdView> = z.object({ id: z.string() }).passthrough();
+const DeleteReceiptSchema: z.ZodType<DeleteReceiptView> = z.object({
 	success: z.literal(true),
 	deleted: z.number().int().nonnegative(),
 	count: z.number().int().nonnegative(),
-	elements: z.array(z.object({ id: z.string() }).passthrough()),
+	elements: z.array(ElementIdSchema),
 	fingerprint: FingerprintSchema,
 });
 const BridgeFactsSchema = z.object({
@@ -63,7 +113,9 @@ const BridgeFactsSchema = z.object({
 	underConnectorId: z.string(),
 	underSegmentIndex: z.number().int().nonnegative(),
 });
-const BridgePartSchema = (role: "mask" | "redraw") =>
+const BridgePartSchema = <Role extends "mask" | "redraw">(
+	role: Role,
+): z.ZodType<BridgePartView<Role>> =>
 	z
 		.object({
 			id: z.string(),
@@ -73,7 +125,7 @@ const BridgePartSchema = (role: "mask" | "redraw") =>
 			}),
 		})
 		.passthrough();
-const BridgeReceiptSchema = z.object({
+const BridgeReceiptSchema: z.ZodType<BridgeReceiptView> = z.object({
 	success: z.literal(true),
 	board: z.string(),
 	bridgeId: z.string().min(1),
@@ -85,7 +137,7 @@ const BridgeReceiptSchema = z.object({
 	elements: z.tuple([BridgePartSchema("mask"), BridgePartSchema("redraw")]),
 	fingerprint: FingerprintSchema,
 });
-const BridgeRemovalReceiptSchema = z.object({
+const BridgeRemovalReceiptSchema: z.ZodType<BridgeRemovalReceiptView> = z.object({
 	success: z.literal(true),
 	board: z.string(),
 	bridgeId: z.string().min(1),
@@ -203,11 +255,11 @@ test("promotion, deletion, and bridge intents each use one request", async () =>
 			origin: "agent",
 		});
 		let elements = (
-			await request<{ elements: Array<Record<string, unknown>> }>("/api/elements?board=scratch")
+			await request<{ elements: ArchboardElementView[] }>("/api/elements?board=scratch")
 		).body.elements;
 		const nodes = elements
 			.filter((element) => String(element.id).startsWith("pg-"))
-			.map((element) => (element.customData as { archboard?: { node?: string } })?.archboard?.node);
+			.map((element) => element.customData?.archboard?.node);
 		expect(new Set(nodes).size).toBe(1);
 		const demoted = await run(["demote", "--ids", ids], DemotionReceiptSchema);
 		expect(demoted.parsed).toEqual({
@@ -221,17 +273,12 @@ test("promotion, deletion, and bridge intents each use one request", async () =>
 			deletes: [],
 			origin: "agent",
 		});
-		elements = (
-			await request<{ elements: Array<Record<string, unknown>> }>("/api/elements?board=scratch")
-		).body.elements;
+		elements = (await request<{ elements: ArchboardElementView[] }>("/api/elements?board=scratch"))
+			.body.elements;
 		expect(
 			elements
 				.filter((element) => String(element.id).startsWith("pg-"))
-				.every(
-					(element) =>
-						(element.customData as { archboard?: { node?: string } })?.archboard?.node ===
-						undefined,
-				),
+				.every((element) => element.customData?.archboard?.node === undefined),
 		).toBeTrue();
 		await proxy.reset();
 		const badPromotion = runCli({
@@ -255,17 +302,12 @@ test("promotion, deletion, and bridge intents each use one request", async () =>
 		});
 		expect(badPromotion.status).not.toBe(0);
 		expect(nonReadRecords(await proxy.snapshot())).toHaveLength(0);
-		elements = (
-			await request<{ elements: Array<Record<string, unknown>> }>("/api/elements?board=scratch")
-		).body.elements;
+		elements = (await request<{ elements: ArchboardElementView[] }>("/api/elements?board=scratch"))
+			.body.elements;
 		expect(
 			elements
 				.filter((element) => String(element.id).startsWith("pg-"))
-				.every(
-					(element) =>
-						(element.customData as { archboard?: { node?: string } })?.archboard?.node ===
-						undefined,
-				),
+				.every((element) => element.customData?.archboard?.node === undefined),
 		).toBeTrue();
 
 		await request("/api/elements/batch?board=scratch", {
@@ -298,9 +340,8 @@ test("promotion, deletion, and bridge intents each use one request", async () =>
 			deletes: ["gone-a", "gone-b", "gone-c"],
 			origin: "agent",
 		});
-		elements = (
-			await request<{ elements: Array<Record<string, unknown>> }>("/api/elements?board=scratch")
-		).body.elements;
+		elements = (await request<{ elements: ArchboardElementView[] }>("/api/elements?board=scratch"))
+			.body.elements;
 		expect(
 			elements.some((element) => ["gone-a", "gone-b", "gone-c"].includes(String(element.id))),
 		).toBeFalse();
@@ -317,7 +358,7 @@ test("promotion, deletion, and bridge intents each use one request", async () =>
 		expect(nonReadRecords(await proxy.snapshot())).toHaveLength(0);
 		expect(
 			(
-				await request<{ elements: Array<Record<string, unknown>> }>("/api/elements?board=scratch")
+				await request<{ elements: ArchboardElementView[] }>("/api/elements?board=scratch")
 			).body.elements.some((element) => element.id === "stays"),
 		).toBeTrue();
 
@@ -391,9 +432,8 @@ test("promotion, deletion, and bridge intents each use one request", async () =>
 			method: "POST",
 			body: { origin: "agent", upserts: [], deletes: ["over", "under"] },
 		});
-		elements = (
-			await request<{ elements: Array<Record<string, unknown>> }>("/api/elements?board=scratch")
-		).body.elements;
+		elements = (await request<{ elements: ArchboardElementView[] }>("/api/elements?board=scratch"))
+			.body.elements;
 		expect(elements.some((element) => element.id === "over")).toBeFalse();
 		expect(elements.some((element) => element.id === "under")).toBeFalse();
 		expect(elements.some((element) => element.id === bridgeId)).toBeTrue();
@@ -412,9 +452,8 @@ test("promotion, deletion, and bridge intents each use one request", async () =>
 		});
 		expect(removed.body).toBeUndefined();
 		expect(removed.method).toBe("DELETE");
-		elements = (
-			await request<{ elements: Array<Record<string, unknown>> }>("/api/elements?board=scratch")
-		).body.elements;
+		elements = (await request<{ elements: ArchboardElementView[] }>("/api/elements?board=scratch"))
+			.body.elements;
 		expect(elements.some((element) => element.id === bridgeId)).toBeFalse();
 	} finally {
 		await resources.disposeAsync();

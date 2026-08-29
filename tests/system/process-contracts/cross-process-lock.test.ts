@@ -71,6 +71,8 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 		});
 		resources.defer(() => second.dispose());
 		const requestSecond = createJsonRequester(second);
+		const localPane = await openTestPane(first.base, requestFirst, "first-local-pane", 0);
+		resources.defer(() => localPane.close());
 		await requestFirst("/api/boards/hold?board=scratch", {
 			method: "POST",
 			body: { clientId: "first-pane" },
@@ -107,7 +109,12 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 
 		const pane = await openTestPane(second.base, requestSecond, "second-pane", 0);
 		resources.defer(() => pane.close());
+		expect(pane.seen.find((message) => message.type === "board_lock")).toMatchObject({
+			board: "scratch",
+			held: false,
+		});
 		await sleep(1_200);
+		const localBeforeClaim = localPane.since();
 		const beforeClaim = pane.since();
 		expect(
 			(
@@ -117,6 +124,12 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 				})
 			).status,
 		).toBe(200);
+		expect(
+			await waitForPaneMessage(localPane, localBeforeClaim, "board_lock", 2_000),
+		).toMatchObject({
+			held: true,
+			holder: { claimed: true, reason: "restructuring the queues" },
+		});
 		const remoteNews = await waitForPaneMessage(
 			pane,
 			beforeClaim,

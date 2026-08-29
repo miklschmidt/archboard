@@ -240,6 +240,8 @@ test("arrange intents each cross the real proxy once and preserve related elemen
 		).toBeTrue();
 		expect(elements.find((element) => element.id === "box-0")?.groupIds).toContain("existing");
 
+		await Bun.sleep(1_000);
+		const beforeHuman = await request<ChangeFeed>("/api/changes?board=scratch&since=0");
 		await request("/api/elements/changes?board=scratch", {
 			method: "POST",
 			body: {
@@ -258,7 +260,11 @@ test("arrange intents each cross the real proxy once and preserve related elemen
 			},
 		});
 		await Bun.sleep(1_000);
-		const beforeAgent = await request<ChangeFeed>("/api/changes?board=scratch&since=0");
+		const beforeAgent = await request<ChangeFeed>(
+			`/api/changes?board=scratch&since=${beforeHuman.body.cursor}`,
+		);
+		expect(beforeAgent.body.events.length).toBeGreaterThan(0);
+		expect(beforeAgent.body.events.every((event) => event.origin === "human")).toBeTrue();
 		const humanAligned = await cli(
 			["arrange", "align", "--ids", "human-box,box-0", "--to", "top"],
 			AlignReceiptSchema,
