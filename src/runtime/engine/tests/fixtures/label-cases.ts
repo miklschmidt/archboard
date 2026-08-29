@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { LabelledElement } from "../../labels.ts";
 import type { LegacyElementIngress } from "../../../../shared/board-elements/index.ts";
+import { agentStatement } from "../support/elements.ts";
 
 export const ExpandedElementSchema = z.looseObject({
 	id: z.string(),
@@ -48,7 +49,7 @@ export function drawnLabels(): LegacyElementIngress[] {
 			y: 0,
 			width: 200,
 			height: 80,
-			labelText: "AuthService",
+			label: { text: "AuthService" },
 		},
 		{
 			id: "gw",
@@ -57,7 +58,7 @@ export function drawnLabels(): LegacyElementIngress[] {
 			y: 0,
 			width: 200,
 			height: 80,
-			labelText: "Gateway",
+			label: { text: "Gateway" },
 		},
 		{
 			id: "wire",
@@ -72,9 +73,9 @@ export function drawnLabels(): LegacyElementIngress[] {
 			],
 			startBinding: { elementId: "svc", focus: 0, gap: 4 },
 			endBinding: { elementId: "gw", focus: 0, gap: 4 },
-			labelText: "HTTP",
+			label: { text: "HTTP" },
 		},
-	];
+	].map((element) => agentStatement(element as LegacyElementIngress));
 }
 
 export function placedLabels(): PlacedLabelElement[] {

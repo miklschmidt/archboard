@@ -119,4 +119,4 @@ type PartialNativeArm<Element extends NativeBoardElement> = Element extends unkn
  */
 export type LegacyElementIngress = PartialNativeArm<NativeBoardElement> &
 	InputAliases &
-	RuntimeElementTracking & { id: string; labelText?: string };
+	RuntimeElementTracking & { id: string };

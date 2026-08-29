@@ -4,7 +4,8 @@ import { boundTextsByContainer, labelTextIdFor, planLabelRepair } from "../label
 import { isBlockId } from "../../../shared/ids/ids.ts";
 import { ExpandedElementSchema, pollutedLabels } from "./fixtures/label-cases.ts";
 import type { ServerElement } from "../types.ts";
-import { completeElements } from "./support/elements.ts";
+import { agentStatement, completeElements } from "./support/elements.ts";
+import type { LegacyElementIngress } from "../../../shared/board-elements/index.ts";
 
 const assert = (condition: unknown, message: string): void =>
 	expect(Boolean(condition), message).toBeTrue();
@@ -25,7 +26,7 @@ test("repairs absent, dangling, one-way, duplicate, and polluted label bindings"
 						y: 0,
 						width: 200,
 						height: 80,
-						labelText: "AuthService",
+						label: { text: "AuthService" },
 					},
 					{
 						id: labelTextIdFor("svc"),
@@ -38,7 +39,7 @@ test("repairs absent, dangling, one-way, duplicate, and polluted label bindings"
 						text: "",
 						isDeleted: true,
 					},
-				],
+				].map((element) => agentStatement(element as LegacyElementIngress)),
 				{ forStore: true },
 			),
 		);
@@ -84,7 +85,10 @@ test("repairs absent, dangling, one-way, duplicate, and polluted label bindings"
 		const board = new Map<string, ServerElement>(completed.map((element) => [element.id, element]));
 		const svc = board.get("svc");
 		if (!svc) throw new Error("The one-way binding fixture lost svc.");
-		const written = expandForBoard([{ ...svc, labelText: "IdentityService" }], board);
+		const written = expandForBoard(
+			[agentStatement({ ...svc, label: { text: "IdentityService" } })],
+			board,
+		);
 		const container = written.find((element) => element.id === "svc");
 		assert(
 			(container?.boundElements ?? []).some((ref) => ref.type === "text" && ref.id === "svclabel"),
@@ -114,9 +118,9 @@ test("repairs absent, dangling, one-way, duplicate, and polluted label bindings"
 					y: 0,
 					width: 200,
 					height: 80,
-					labelText: "AuthService",
+					label: { text: "AuthService" },
 				},
-			],
+			].map((element) => agentStatement(element as LegacyElementIngress)),
 			new Map(),
 		);
 		assert(
@@ -137,10 +141,10 @@ test("repairs absent, dangling, one-way, duplicate, and polluted label bindings"
 					y: 0,
 					width: 200,
 					height: 80,
-					labelText: "AuthService",
+					label: { text: "AuthService" },
 					boundElements: [{ id: "gone", type: "text" }],
 				},
-			],
+			].map((element) => agentStatement(element as LegacyElementIngress)),
 			new Map(),
 		);
 		assert(

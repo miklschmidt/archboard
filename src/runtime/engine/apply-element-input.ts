@@ -30,15 +30,18 @@ export {
 	UpdateElementSchema,
 } from "./lib/element-input-schema.js";
 export type { AgentElementInput, HumanElementChangeInput } from "./lib/element-input-schema.js";
+export { wellFormAgentStatement } from "./lib/agent-element-input.js";
 import {
 	type AgentElementInput,
 	type HumanElementChangeInput,
 	UpdateElementSchema,
 } from "./lib/element-input-schema.js";
 import {
+	agentLabelIntentOf,
 	buildAgentElement,
 	spendArrowRefs,
 	wellFormAgentStatement,
+	withAgentLabelIntent,
 } from "./lib/agent-element-input.js";
 
 export type ElementInputRequest =
@@ -180,14 +183,18 @@ function mergeElementUpdate(existing: ServerElement, raw: AgentElementInput): El
 	const changed = (key: string) => hasOwn(statement, key);
 	if (changed("points")) sizeFromPath(element);
 	const isLinear = element.type === "arrow" || element.type === "line";
-	return {
-		element,
-		statement: {
+	const mergedStatement = withAgentLabelIntent(
+		{
 			...element,
 			...statement,
 			type: existing.type,
 			...(element.customData === undefined ? {} : { customData: element.customData }),
 		} as LegacyElementIngress,
+		agentLabelIntentOf(statement),
+	);
+	return {
+		element,
+		statement: mergedStatement,
 		geometryChanged: ["x", "y", "width", "height", "points", "angle"].some(changed),
 		reboundArrow: isLinear && ["start", "end", "startBinding", "endBinding"].some(changed),
 	};

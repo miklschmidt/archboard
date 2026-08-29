@@ -95,7 +95,7 @@ function aliasReadViolations(file: string, source: string): Violation[] {
 	const patterns = [
 		{
 			reason: "runtime input alias read",
-			re: /(?<!\.)\b(?:element|el|input|raw|rest|source|statement)\s*(?:\?\.|\.)\s*(?:label|start|end|startElementId|endElementId)\b/,
+			re: /(?<!\.)\b(?:element|el|input|raw|rest|source|statement)\s*(?:\?\.|\.)\s*(?:label|labelText|start|end|startElementId|endElementId)\b/,
 		},
 		{
 			reason: "runtime input alias indexed read",
@@ -159,6 +159,8 @@ describe("vendor-derived board element policy", () => {
 			`const value = element
 				?.label
 				?.text;`,
+			`const value = statement
+				?.labelText;`,
 			`const value = raw["start"];`,
 			`const value = input.endElementId;`,
 			`const point = Array.isArray(entry) ? entry : [entry.x, entry.y];`,
