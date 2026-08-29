@@ -25,6 +25,7 @@ import type { ServerElement } from "./types.js";
 import { LIBRARY_NAME_OVERLAY } from "./library-names.js";
 import { extentOf } from "./geometry.js";
 import { mintId } from "../../shared/ids/ids.js";
+import type { RuntimeBoardElement } from "../../shared/board-elements/index.js";
 
 /** One stencil, described well enough to be picked without being drawn. */
 export interface CatalogueEntry {
@@ -47,24 +48,26 @@ export interface Catalogue {
 	items: CatalogueEntry[];
 }
 
-interface RawElement {
-	id?: string;
-	type?: string;
-	x?: number;
-	y?: number;
-	width?: number;
-	height?: number;
-	text?: unknown;
-	groupIds?: string[];
+type NativeKeys<Element> = Element extends Element ? keyof Element : never;
+type NativeValue<Key extends PropertyKey> = RuntimeBoardElement extends infer Element
+	? Element extends RuntimeBoardElement
+		? Key extends keyof Element
+			? Element[Key]
+			: never
+		: never
+	: never;
+
+/** Partial library JSON, projected from native fields plus its legacy reference metadata. */
+export type RawElement = {
+	[
+		Key in Exclude<NativeKeys<RuntimeBoardElement>, "type" | "startBinding" | "endBinding">
+	]?: NativeValue<Key>;
+} & {
+	type?: NativeValue<"type"> | "draw";
+	startBinding?: Partial<NonNullable<NativeValue<"startBinding">>> | null;
+	endBinding?: Partial<NonNullable<NativeValue<"endBinding">>> | null;
 	boundElementIds?: string[];
-	boundElements?: Array<{ id: string; type: string }>;
-	startBinding?: { elementId: string; [k: string]: unknown } | null;
-	endBinding?: { elementId: string; [k: string]: unknown } | null;
-	containerId?: string | null;
-	frameId?: string | null;
-	customData?: Record<string, unknown> | null;
-	[key: string]: unknown;
-}
+};
 
 interface StoredItem {
 	id: string;
@@ -259,8 +262,22 @@ export function chooseStencil(items: CatalogueEntry[], query: StencilQuery): Cat
 // The library site still serves items in Excalidraw's pre-split format,
 // where what is now "arrow" (a connector, with bindings and arrowheads) was
 // still called "draw". Nothing downstream understands that type name.
-function normalizeType(type: string | undefined): string {
-	return type === "draw" ? "arrow" : (type ?? "rectangle");
+function normalizeType(type: string | undefined): NativeValue<"type"> {
+	switch (type) {
+		case "draw":
+			return "arrow";
+		case "rectangle":
+		case "ellipse":
+		case "diamond":
+		case "arrow":
+		case "text":
+		case "line":
+		case "freedraw":
+		case "image":
+			return type;
+		default:
+			return "rectangle";
+	}
 }
 
 export function remapElements(

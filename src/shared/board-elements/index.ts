@@ -118,10 +118,3 @@ type PartialNativeArm<Element extends NativeBoardElement> = Element extends unkn
 export type LegacyElementIngress = PartialNativeArm<NativeBoardElement> &
 	InputAliases &
 	RuntimeElementTracking & { id: string };
-
-export type AgentElementInput = Omit<LegacyElementIngress, "id"> & { id?: string };
-
-export type HumanElementChangeInput = Record<string, unknown> & {
-	id: string;
-	type: BoardElementType;
-};

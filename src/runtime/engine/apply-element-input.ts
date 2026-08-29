@@ -19,27 +19,42 @@ import { recentreBoundTexts } from "./labels.js";
 import type { LegacyElementIngress } from "../../shared/board-elements/index.js";
 import { validatePersistedBoardElement } from "./lib/native-element.js";
 import { canonicalLinkAfterPresentationEcho } from "./presentation.js";
-import { stripTrackingClaims } from "./metadata.js";
+import { stripUntrustedTrackingClaims } from "./metadata.js";
 export {
+	AgentElementInputSchema,
 	CREATE_ELEMENT_JSON_SCHEMA,
 	CreateElementSchema,
+	HumanElementChangeSchema,
 	PointSchema,
 	UPDATE_ELEMENT_JSON_SCHEMA,
 	UpdateElementSchema,
 } from "./lib/element-input-schema.js";
-import { UpdateElementSchema } from "./lib/element-input-schema.js";
+export type { AgentElementInput, HumanElementChangeInput } from "./lib/element-input-schema.js";
+import {
+	type AgentElementInput,
+	type HumanElementChangeInput,
+	UpdateElementSchema,
+} from "./lib/element-input-schema.js";
 import {
 	buildAgentElement,
 	spendArrowRefs,
 	wellFormAgentStatement,
 } from "./lib/agent-element-input.js";
 
-export interface ElementInputRequest {
-	upserts?: Record<string, unknown>[];
-	deletes?: string[];
-	origin: "agent" | "human";
-	timestamp?: string;
-}
+export type ElementInputRequest =
+	| {
+			origin: "agent";
+			upserts?: AgentElementInput[];
+			deletes?: string[];
+	  }
+	| {
+			origin: "human";
+			upserts?: HumanElementChangeInput[];
+			deletes?: string[];
+			timestamp?: string;
+			/** Opaque outbound presentation values, supplied by the current presenter. */
+			presentationLinks?: ReadonlyMap<string, string>;
+	  };
 
 export interface AppliedElementInput {
 	/** The board-shape elements corresponding to `upserts`, in input order. */
@@ -53,6 +68,28 @@ export interface AppliedElementInput {
 
 const hasOwn = (value: object, key: PropertyKey): boolean =>
 	Object.prototype.hasOwnProperty.call(value, key);
+
+function mergeCustomData(existing: unknown, incoming: unknown): unknown {
+	if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return incoming;
+	const current =
+		existing && typeof existing === "object" && !Array.isArray(existing)
+			? (existing as Record<string, unknown>)
+			: {};
+	const next = incoming as Record<string, unknown>;
+	const currentArchboard =
+		current.archboard && typeof current.archboard === "object" && !Array.isArray(current.archboard)
+			? (current.archboard as Record<string, unknown>)
+			: {};
+	const nextArchboard =
+		next.archboard && typeof next.archboard === "object" && !Array.isArray(next.archboard)
+			? (next.archboard as Record<string, unknown>)
+			: undefined;
+	return {
+		...current,
+		...next,
+		...(nextArchboard ? { archboard: { ...currentArchboard, ...nextArchboard } } : {}),
+	};
+}
 
 function bumpVersion(
 	element: ServerElement,
@@ -79,7 +116,7 @@ interface ElementMerge {
 	reboundArrow: boolean;
 }
 
-function mergeElementUpdate(existing: ServerElement, raw: Record<string, unknown>): ElementMerge {
+function mergeElementUpdate(existing: ServerElement, raw: AgentElementInput): ElementMerge {
 	const statement = wellFormAgentStatement(raw, existing.type);
 	if (statement.type !== undefined && statement.type !== existing.type) {
 		throw new Error(`Element ${existing.id} cannot change type from ${existing.type}`);
@@ -104,6 +141,8 @@ function mergeElementUpdate(existing: ServerElement, raw: Record<string, unknown
 				}
 			: {}),
 	};
+	if (hasOwn(updates, "customData"))
+		candidate.customData = mergeCustomData(existing.customData, updates.customData);
 	delete candidate.label;
 	delete candidate.start;
 	delete candidate.end;
@@ -151,7 +190,12 @@ function mergeElementUpdate(existing: ServerElement, raw: Record<string, unknown
 	const isLinear = element.type === "arrow" || element.type === "line";
 	return {
 		element,
-		statement: { ...element, ...statement, type: existing.type } as LegacyElementIngress,
+		statement: {
+			...element,
+			...statement,
+			type: existing.type,
+			...(element.customData === undefined ? {} : { customData: element.customData }),
+		} as LegacyElementIngress,
 		geometryChanged: ["x", "y", "width", "height", "points", "angle"].some(changed),
 		reboundArrow: isLinear && ["start", "end", "startBinding", "endBinding"].some(changed),
 	};
@@ -313,7 +357,7 @@ interface PreparedElementInput {
 
 function applyAgentInput(
 	board: Map<string, ServerElement>,
-	upserts: Record<string, unknown>[],
+	upserts: AgentElementInput[],
 ): PreparedElementInput {
 	const created: ServerElement[] = [];
 	const updated = new Map<string, ServerElement>();
@@ -389,8 +433,9 @@ function applyAgentInput(
 
 function applyHumanInput(
 	board: Map<string, ServerElement>,
-	upserts: Record<string, unknown>[],
+	upserts: HumanElementChangeInput[],
 	timestamp?: string,
+	presentationLinks: ReadonlyMap<string, string> = new Map(),
 ): PreparedElementInput {
 	const created: ServerElement[] = [];
 	const updated = new Map<string, ServerElement>();
@@ -398,6 +443,7 @@ function applyHumanInput(
 	const newStatements: LegacyElementIngress[] = [];
 	const now = new Date().toISOString();
 	for (const raw of upserts) {
+		const sanitized = stripUntrustedTrackingClaims(raw);
 		const {
 			board: _board,
 			id: rawId,
@@ -408,11 +454,14 @@ function applyHumanInput(
 			source: _source,
 			syncTimestamp: _syncTimestamp,
 			...incoming
-		} = raw;
+		} = sanitized;
 		const id = typeof rawId === "string" && rawId.length > 0 ? rawId : mintId(board);
 		const existing = board.get(id);
-		const canonicalLink = canonicalLinkAfterPresentationEcho(existing, incoming.link);
-		if ("customData" in incoming) incoming.customData = stripTrackingClaims(incoming.customData);
+		const canonicalLink = canonicalLinkAfterPresentationEcho(
+			existing,
+			incoming.link,
+			presentationLinks.get(id),
+		);
 		for (const alias of ["label", "start", "end", "startElementId", "endElementId"]) {
 			if (hasOwn(incoming, alias))
 				throw new Error(`Human element ${id} contains input-only ${alias}`);
@@ -432,7 +481,7 @@ function applyHumanInput(
 			namedIds.push(id);
 			continue;
 		}
-		const candidate = {
+		const candidate: Record<string, unknown> = {
 			...existing,
 			...incoming,
 			...(canonicalLink !== undefined ? { link: canonicalLink } : {}),
@@ -442,6 +491,8 @@ function applyHumanInput(
 			syncedAt: now,
 			...(timestamp ? { syncTimestamp: timestamp } : {}),
 		};
+		if (hasOwn(incoming, "customData"))
+			candidate.customData = mergeCustomData(existing.customData, incoming.customData);
 		const element = validatePersistedBoardElement(candidate, `human write ${id}`);
 		bumpVersion(element, existing, now);
 		board.set(id, element);
@@ -475,12 +526,16 @@ export function applyElementInput(
 	// the whole conversion against an isolated document, then replace the
 	// caller's map only after well-forming and validation both succeed.
 	const working = new Map(copyElements(board.values()).map((element) => [element.id, element]));
-	const upserts = request.upserts ?? [];
 	const deletes = request.deletes ?? [];
 	const prepared =
 		request.origin === "agent"
-			? applyAgentInput(working, upserts)
-			: applyHumanInput(working, upserts, request.timestamp);
+			? applyAgentInput(working, request.upserts ?? [])
+			: applyHumanInput(
+					working,
+					request.upserts ?? [],
+					request.timestamp,
+					request.presentationLinks,
+				);
 	const deleted: string[] = [];
 	for (const id of deletes) {
 		if (working.delete(id)) deleted.push(id);

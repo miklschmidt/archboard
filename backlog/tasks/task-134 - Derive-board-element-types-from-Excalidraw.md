@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 14:02'
-updated_date: '2026-08-29 05:10'
+updated_date: '2026-08-29 06:53'
 labels: []
 dependencies: []
 references:
@@ -340,4 +340,9 @@ tests/system/label-geometry/support/label-cycle.ts:256:62 TS2339 Property 'label
 tests/system/label-geometry/support/label-cycle.ts:257:21 TS2339 Property 'text' does not exist on type 'LabelStatement | (Omit<{ id: string; x: number; y: number; strokeColor: string; backgroundColor: string; fillStyle: FillStyle; strokeWidth: number; strokeStyle: StrokeStyle; ... 18 more ...; type: "rectangle"; }, "customData"> & { ...; } & RuntimeElementTracking) | ... 6 more ... | (Omit<...> & ... 2 more ... & Runt...'.
 tests/system/label-geometry/support/label-cycle.ts:257:55 TS2339 Property 'text' does not exist on type 'LabelStatement | (Omit<{ id: string; x: number; y: number; strokeColor: string; backgroundColor: string; fillStyle: FillStyle; strokeWidth: number; strokeStyle: StrokeStyle; ... 18 more ...; type: "rectangle"; }, "customData"> & { ...; } & RuntimeElementTracking) | ... 6 more ... | (Omit<...> & ... 2 more ... & Runt...'.
 tests/system/label-geometry/support/label-cycle.ts:312:27 TS2345 Argument of type 'LabelElement[]' is not assignable to parameter of type 'readonly LabelInput[]'.
+
+Review-driven scope addition for remediation after complete-range review aea77fa..59c4f94:
+- src/ui/canvas/change-reporting.ts: replace its handwritten element copy with a vendor-derived projection.
+- src/runtime/engine/library-catalogue.ts: replace its handwritten element copy with a vendor-derived projection plus the visible Archboard metadata intersection it consumes.
+These two files are added only to close the reviewer-identified authoritative-type gap; TASK-136/TASK-137, package, inventory, boundary policy, and browser ownership remain protected.
 <!-- SECTION:NOTES:END -->

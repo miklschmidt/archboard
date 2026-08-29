@@ -132,6 +132,11 @@ import { readLibrary, writeLibrary } from "../../../runtime/engine/library.js";
 import type { LibraryItem } from "../../../runtime/engine/library.js";
 import { overlapsRegion } from "../../../runtime/engine/geometry.js";
 import {
+	AgentElementInputSchema,
+	HumanElementChangeSchema,
+	type ElementInputRequest,
+} from "../../../runtime/engine/apply-element-input.js";
+import {
 	agentWriteAnswer,
 	humanWriteAnswer,
 	BoardMutationError,
@@ -1749,7 +1754,7 @@ app.post("/api/elements/from-mermaid", (req: Request, res: Response) => {
 // rather than twenty (ADR 0015, TASK-068). Who is writing decides two things
 // and nothing else — see `origin`.
 const ElementChangesSchema = z.object({
-	upserts: z.array(z.record(z.string(), z.any())).default([]),
+	upserts: z.array(z.record(z.string(), z.unknown())).default([]),
 	deletes: z.array(z.string()).default([]),
 	/**
 	 * Who is writing. Absent means the browser, which was this route's only
@@ -1796,6 +1801,19 @@ app.post("/api/elements/changes", (req: Request, res: Response) => {
 		const source = boardTargetFromRequest(req, "A change report");
 		const { upserts, deletes, origin, clientId, timestamp, fullReport } =
 			ElementChangesSchema.parse(req.body ?? {});
+		const input: ElementInputRequest =
+			origin === "agent"
+				? {
+						origin,
+						upserts: upserts.map((upsert) => AgentElementInputSchema.parse(upsert)),
+						deletes,
+					}
+				: {
+						origin,
+						upserts: upserts.map((upsert) => HumanElementChangeSchema.parse(upsert)),
+						deletes,
+						...(timestamp === undefined ? {} : { timestamp }),
+					};
 		const writerKind = res.locals.boardWriterKind as "human" | "agent";
 		answerBoardWrite(res, {
 			source,
@@ -1818,8 +1836,24 @@ app.post("/api/elements/changes", (req: Request, res: Response) => {
 							"Report a delta against what this pane has been sent.",
 					);
 				}
+				const writeInput: ElementInputRequest =
+					input.origin === "human"
+						? {
+								...input,
+								presentationLinks: new Map(
+									input.upserts?.flatMap((upsert) => {
+										const existing = _content.elements.get(upsert.id);
+										if (!existing) return [];
+										const outbound = presentElement(existing).link;
+										return outbound && outbound !== existing.link
+											? [[upsert.id, outbound] as const]
+											: [];
+									}),
+								),
+							}
+						: input;
 				return {
-					input: { upserts, deletes, origin, timestamp },
+					input: writeInput,
 					wholeScene: fullReport,
 					value: () => null,
 				};
