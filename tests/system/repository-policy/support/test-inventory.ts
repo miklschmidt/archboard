@@ -164,6 +164,106 @@ function unquotedShellText(command: string): string {
 	return result;
 }
 
+function dollarSubstitutionAt(
+	text: string,
+	start: number,
+): { body: string; end: number } | undefined {
+	if (text[start] !== "$" || text[start + 1] !== "(") return undefined;
+	let depth = 1;
+	let quote: "'" | '"' | "`" | undefined;
+	let escaped = false;
+	for (let index = start + 2; index < text.length; index += 1) {
+		const character = text[index];
+		if (escaped) {
+			escaped = false;
+			continue;
+		}
+		if (character === "\\" && quote !== "'") {
+			escaped = true;
+			continue;
+		}
+		if (quote) {
+			if (character === quote) quote = undefined;
+			continue;
+		}
+		if (character === "'" || character === '"' || character === "`") {
+			quote = character;
+			continue;
+		}
+		if (character === "(") depth += 1;
+		if (character !== ")") continue;
+		depth -= 1;
+		if (depth === 0) return { body: text.slice(start + 2, index), end: index };
+	}
+	return { body: text.slice(start + 2), end: text.length - 1 };
+}
+
+function backtickSubstitutionAt(
+	text: string,
+	start: number,
+): { body: string; end: number } | undefined {
+	if (text[start] !== "`") return undefined;
+	let escaped = false;
+	for (let index = start + 1; index < text.length; index += 1) {
+		const character = text[index];
+		if (escaped) {
+			escaped = false;
+			continue;
+		}
+		if (character === "\\") {
+			escaped = true;
+			continue;
+		}
+		if (character === "`") return { body: text.slice(start + 1, index), end: index };
+	}
+	return { body: text.slice(start + 1), end: text.length - 1 };
+}
+
+function doubleQuotedSubstitutionBodies(command: string): string[] {
+	const bodies: string[] = [];
+	let quote: "'" | '"' | undefined;
+	let escaped = false;
+	let comment = false;
+	for (let index = 0; index < command.length; index += 1) {
+		const character = command[index];
+		if (comment) {
+			if (character === "\n") comment = false;
+			continue;
+		}
+		if (escaped) {
+			escaped = false;
+			continue;
+		}
+		if (character === "\\" && quote !== "'") {
+			escaped = true;
+			continue;
+		}
+		if (quote === "'") {
+			if (character === "'") quote = undefined;
+			continue;
+		}
+		if (quote === '"') {
+			if (character === '"') {
+				quote = undefined;
+				continue;
+			}
+			const substitution =
+				dollarSubstitutionAt(command, index) ?? backtickSubstitutionAt(command, index);
+			if (substitution) {
+				bodies.push(substitution.body);
+				index = substitution.end;
+			}
+			continue;
+		}
+		if (character === "'") quote = "'";
+		else if (character === '"') quote = '"';
+		else if (character === "#" && (index === 0 || /[\s;&|(){}`]/.test(command[index - 1] ?? ""))) {
+			comment = true;
+		}
+	}
+	return bodies;
+}
+
 function echoOnly(text: string, invocationIndex: number): boolean {
 	let boundary = invocationIndex - 1;
 	while (boundary >= 0 && !/[\n;&|(){}`]/.test(text[boundary] ?? "")) boundary -= 1;
@@ -171,11 +271,22 @@ function echoOnly(text: string, invocationIndex: number): boolean {
 }
 
 function executableRunScripts(command: string): string[] {
-	const text = unquotedShellText(command);
-	return [...text.matchAll(EXECUTABLE_RUN_SCRIPT)]
-		.filter((match) => !echoOnly(text, match.index))
-		.map((match) => match[1])
-		.filter((script): script is string => script !== undefined);
+	const texts = [unquotedShellText(command)];
+	const pending = doubleQuotedSubstitutionBodies(command);
+	for (const body of pending) {
+		texts.push(unquotedShellText(body));
+		pending.push(...doubleQuotedSubstitutionBodies(body));
+	}
+	return [
+		...new Set(
+			texts.flatMap((text) =>
+				[...text.matchAll(EXECUTABLE_RUN_SCRIPT)]
+					.filter((match) => !echoOnly(text, match.index))
+					.map((match) => match[1])
+					.filter((script): script is string => script !== undefined),
+			),
+		),
+	];
 }
 
 export function inspectWorkflow(workflow: string): string[] {
