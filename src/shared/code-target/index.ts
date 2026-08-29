@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const PATH_TOKEN = "{path}";
+export const PATH_TOKEN = "{path}";
 const MAX_ARGV = 32;
 const MAX_ARG_BYTES = 16 * 1024;
 const NonemptyString = z.string().trim().min(1);
@@ -112,6 +112,7 @@ export type OpenerSettingsReply = z.infer<typeof OpenerSettingsReplySchema>;
 export const OpenerSelectionReplySchema = z
 	.object({ success: z.literal(true), selection: OpenerSelectionSchema })
 	.strict();
+export type OpenerSelectionReply = z.infer<typeof OpenerSelectionReplySchema>;
 export const OpenerTestReplySchema = z
 	.object({
 		success: z.literal(true),
@@ -119,6 +120,7 @@ export const OpenerTestReplySchema = z
 		repository: NonemptyString,
 	})
 	.strict();
+export type OpenerTestReply = z.infer<typeof OpenerTestReplySchema>;
 
 export const CodeTargetFailureCodeSchema = z.enum([
 	"CROSS_ORIGIN_REFUSED",
@@ -216,5 +218,3 @@ export function parseInternalCodeTargetUrl(value: string): CodeTargetOpenRequest
 	});
 	return result.success ? result.data : null;
 }
-
-export { PATH_TOKEN };
