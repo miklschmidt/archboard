@@ -25,7 +25,7 @@ test("repairs absent, dangling, one-way, duplicate, and polluted label bindings"
 						y: 0,
 						width: 200,
 						height: 80,
-						label: { text: "AuthService" },
+						labelText: "AuthService",
 					},
 					{
 						id: labelTextIdFor("svc"),
@@ -84,7 +84,7 @@ test("repairs absent, dangling, one-way, duplicate, and polluted label bindings"
 		const board = new Map<string, ServerElement>(completed.map((element) => [element.id, element]));
 		const svc = board.get("svc");
 		if (!svc) throw new Error("The one-way binding fixture lost svc.");
-		const written = expandForBoard([{ ...svc, label: { text: "IdentityService" } }], board);
+		const written = expandForBoard([{ ...svc, labelText: "IdentityService" }], board);
 		const container = written.find((element) => element.id === "svc");
 		assert(
 			(container?.boundElements ?? []).some((ref) => ref.type === "text" && ref.id === "svclabel"),
@@ -114,7 +114,7 @@ test("repairs absent, dangling, one-way, duplicate, and polluted label bindings"
 					y: 0,
 					width: 200,
 					height: 80,
-					label: { text: "AuthService" },
+					labelText: "AuthService",
 				},
 			],
 			new Map(),
@@ -137,7 +137,7 @@ test("repairs absent, dangling, one-way, duplicate, and polluted label bindings"
 					y: 0,
 					width: 200,
 					height: 80,
-					label: { text: "AuthService" },
+					labelText: "AuthService",
 					boundElements: [{ id: "gone", type: "text" }],
 				},
 			],

@@ -2,10 +2,12 @@ import { expect, test } from "bun:test";
 import type {
 	ArrowElement,
 	DiamondElement,
+	ElbowArrowElement,
 	EllipseElement,
 	FreeDrawElement,
 	ImageElement,
 	LineElement,
+	NonElbowArrowElement,
 	PersistedBoardElement,
 	RectangleElement,
 	TextElement,
@@ -46,6 +48,14 @@ type _ProjectedScalars = [
 	AssertFalse<{ elbowed: false } extends LineElement ? true : false>,
 	Assert<Equal<ArrowElement["elbowed"], boolean>>,
 	AssertFalse<Omit<ArrowElement, "elbowed"> extends ArrowElement ? true : false>,
+	Assert<Equal<NonElbowArrowElement["elbowed"], false>>,
+	Assert<Equal<ElbowArrowElement["elbowed"], true>>,
+	AssertFalse<
+		"fixedPoint" extends keyof NonNullable<NonElbowArrowElement["startBinding"]> ? true : false
+	>,
+	Assert<"fixedPoint" extends keyof NonNullable<ElbowArrowElement["startBinding"]> ? true : false>,
+	Assert<"fixedSegments" extends keyof ElbowArrowElement ? true : false>,
+	AssertFalse<"fixedSegments" extends keyof NonElbowArrowElement ? true : false>,
 ];
 
 type RawTextOutsideText<T> = T extends { type: "text" }
