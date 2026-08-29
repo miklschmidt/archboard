@@ -3,6 +3,7 @@ import { expect, test } from "bun:test";
 import { applyElementInput } from "../apply-element-input.js";
 import { expandElements } from "../expand-elements.js";
 import { validatePersistedBoardElement } from "../native-element.js";
+import { completeElement } from "./support/elements.js";
 
 test("the named write boundary completes all eight native arms and image defaults", () => {
 	const elements = expandElements(
@@ -99,4 +100,154 @@ test("a human whole-scene ingress preserves cross-element native bindings", () =
 	});
 	const box = board.get("box");
 	expect(box?.boundElements).toContainEqual({ id: "label", type: "text" });
+});
+
+test("binding input extensions are spent and trusted reads reject them at either end", () => {
+	const board = new Map([
+		["left", completeElement({ id: "left", type: "rectangle", x: 0, y: 0, width: 20, height: 20 })],
+		[
+			"right",
+			completeElement({ id: "right", type: "rectangle", x: 100, y: 0, width: 20, height: 20 }),
+		],
+	]);
+	applyElementInput(board, {
+		origin: "agent",
+		upserts: [
+			{
+				id: "joined",
+				type: "arrow",
+				x: 20,
+				y: 10,
+				startBinding: { elementId: "left", focus: 0, gap: 4, fixedPoint: null, mode: "inside" },
+				endBinding: { elementId: "right", focus: 0.5, gap: 6, fixedPoint: [1, 0], mode: "outside" },
+			},
+		],
+	});
+	const joined = board.get("joined");
+	expect(joined?.type).toBe("arrow");
+	if (joined?.type !== "arrow") throw new Error("fixture did not create an arrow");
+	expect(joined.startBinding).toMatchObject({ elementId: "left", focus: 0, gap: 4 });
+	expect(Reflect.get(joined.startBinding!, "fixedPoint")).toBeNull();
+	expect(Object.keys(joined.startBinding!)).toEqual(["elementId", "focus", "gap", "fixedPoint"]);
+	expect(joined.endBinding).toMatchObject({ elementId: "right", focus: 0.5, gap: 6 });
+	expect(Reflect.get(joined.endBinding!, "fixedPoint")).toEqual([1, 0]);
+	expect(Object.keys(joined.endBinding!)).toEqual(["elementId", "focus", "gap", "fixedPoint"]);
+	for (const end of ["startBinding", "endBinding"] as const) {
+		expect(() =>
+			validatePersistedBoardElement(
+				{ ...joined, [end]: { ...joined[end], mode: "inside" } },
+				"note /vault/binding.excalidraw.md",
+			),
+		).toThrow(
+			`note /vault/binding.excalidraw.md: invalid element joined (arrow) at element.${end}.mode`,
+		);
+	}
+});
+
+test("agent and human create and update cannot spoof runtime or nested tracking", () => {
+	const board = new Map();
+	applyElementInput(board, {
+		origin: "agent",
+		upserts: [
+			{
+				id: "agent",
+				type: "rectangle",
+				x: 0,
+				y: 0,
+				width: 20,
+				height: 20,
+				createdAt: "spoofed-create",
+				customData: { archboard: { node: "agent", source: "spoofed-nested" }, foreign: true },
+			},
+		],
+	});
+	const agentCreated = board.get("agent")!;
+	expect(agentCreated.createdAt).not.toBe("spoofed-create");
+	expect(agentCreated.customData).toEqual({ archboard: { node: "agent" }, foreign: true });
+	applyElementInput(board, {
+		origin: "agent",
+		upserts: [
+			{
+				id: "agent",
+				updatedAt: "spoofed-update",
+				customData: { archboard: { node: "updated", syncTimestamp: "spoofed-nested" } },
+			},
+		],
+	});
+	const agentUpdated = board.get("agent")!;
+	expect(agentUpdated.updatedAt).not.toBe("spoofed-update");
+	expect(agentUpdated.customData).toEqual({ archboard: { node: "updated" }, foreign: true });
+
+	const humanSeed = completeElement({
+		id: "human",
+		type: "rectangle",
+		x: 20,
+		y: 20,
+		width: 20,
+		height: 20,
+	});
+	applyElementInput(board, {
+		origin: "human",
+		upserts: [
+			{
+				...humanSeed,
+				createdAt: "spoofed-human-create",
+				customData: {
+					archboard: { node: "human", syncedAt: "spoofed-nested" },
+					foreignHuman: true,
+				},
+			},
+		],
+	});
+	const humanCreated = board.get("human")!;
+	expect(humanCreated.createdAt).not.toBe("spoofed-human-create");
+	expect(humanCreated.source).toBe("frontend_sync");
+	expect(humanCreated.customData).toEqual({ archboard: { node: "human" }, foreignHuman: true });
+	applyElementInput(board, {
+		origin: "human",
+		upserts: [
+			{
+				...humanCreated,
+				x: 40,
+				source: "spoofed-human-update",
+				customData: { archboard: { node: "human-updated", updatedAt: "spoofed-nested" } },
+			},
+		],
+	});
+	const humanUpdated = board.get("human")!;
+	expect(humanUpdated.source).toBe("frontend_sync");
+	expect(humanUpdated.customData).toEqual({
+		archboard: { node: "human-updated" },
+		foreignHuman: true,
+	});
+});
+
+test("trusted reads validate customData and confine rawText to text", () => {
+	const text = completeElement({ id: "text", type: "text", x: 0, y: 0, text: "native" });
+	expect(
+		validatePersistedBoardElement({ ...text, rawText: "plugin" }, "note /vault/raw.excalidraw.md"),
+	).toMatchObject({ rawText: "plugin" });
+	expect(() =>
+		validatePersistedBoardElement({ ...text, rawText: 4 }, "note /vault/raw.excalidraw.md"),
+	).toThrow("note /vault/raw.excalidraw.md: invalid element text (text) at element.rawText");
+	const box = completeElement({ id: "box", type: "rectangle", x: 0, y: 0, width: 10, height: 10 });
+	expect(() =>
+		validatePersistedBoardElement(
+			{ ...box, rawText: "forbidden" },
+			"note /vault/raw.excalidraw.md",
+		),
+	).toThrow("note /vault/raw.excalidraw.md: invalid element box (rectangle) at element.rawText");
+	expect(() =>
+		validatePersistedBoardElement({ ...box, customData: [] }, "note /vault/custom.excalidraw.md"),
+	).toThrow(
+		"note /vault/custom.excalidraw.md: invalid element box (rectangle) at element.customData",
+	);
+	expect(() =>
+		validatePersistedBoardElement(
+			{ ...box, customData: { archboard: { createdAt: 5 } } },
+			"note /vault/custom.excalidraw.md",
+		),
+	).toThrow(
+		"note /vault/custom.excalidraw.md: invalid element box (rectangle) at element.customData.archboard.createdAt",
+	);
 });
