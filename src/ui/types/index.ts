@@ -1,45 +1,8 @@
 // Shapes shared between the shell and the canvases it hosts.
 
 import type { BinaryFileData } from "@excalidraw/excalidraw/types";
-
-export interface ServerElement {
-	id: string;
-	type: string;
-	x: number;
-	y: number;
-	width?: number;
-	height?: number;
-	backgroundColor?: string;
-	strokeColor?: string;
-	strokeWidth?: number;
-	roughness?: number;
-	opacity?: number;
-	text?: string;
-	fontSize?: number;
-	fontFamily?: string | number;
-	label?: { text: string };
-	createdAt?: string;
-	updatedAt?: string;
-	version?: number;
-	isDeleted?: boolean;
-	syncedAt?: string;
-	source?: string;
-	syncTimestamp?: string;
-	boundElements?: Array<{ id: string; type: string }> | null;
-	containerId?: string | null;
-	locked?: boolean;
-	start?: { id: string };
-	end?: { id: string };
-	strokeStyle?: string;
-	endArrowhead?: string;
-	startArrowhead?: string;
-	fileId?: string;
-	status?: string;
-	scale?: [number, number];
-	angle?: number;
-	link?: string | null;
-	customData?: Record<string, unknown> | null;
-}
+export type { RuntimeBoardElement as ServerElement } from "../../shared/board-elements/index.js";
+import type { RuntimeBoardElement as ServerElement } from "../../shared/board-elements/index.js";
 
 /** A board's address: what it is called, which variant, and at what level. */
 export interface BoardIdentity {
