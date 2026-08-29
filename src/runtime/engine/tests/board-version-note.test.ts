@@ -272,7 +272,6 @@ describe.serial("board versions in notes", () => {
 		for (const end of ["startBinding", "endBinding"] as const)
 			expect(Object.keys(persisted[end] as object).toSorted()).toEqual([
 				"elementId",
-				"fixedPoint",
 				"focus",
 				"gap",
 			]);

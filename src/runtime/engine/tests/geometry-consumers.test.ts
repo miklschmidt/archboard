@@ -159,7 +159,7 @@ test("feeds measured geometry to compare, promotion, describe, layout, and selec
 				y: 250,
 				width: 200,
 				height: 100,
-				label: { text: "Hub" },
+				labelText: "Hub",
 				customData: node("hub", "Hub"),
 			},
 			{
@@ -182,7 +182,7 @@ test("feeds measured geometry to compare, promotion, describe, layout, and selec
 				y: 3000,
 				width: 300,
 				height: 120,
-				label: { text: "Payments" },
+				labelText: "Payments",
 				customData: node("stale", "Payments"),
 			},
 			{
@@ -205,7 +205,7 @@ test("feeds measured geometry to compare, promotion, describe, layout, and selec
 				y: 5000,
 				width: 200,
 				height: 100,
-				label: { text: "Far" },
+				labelText: "Far",
 				customData: node("far", "Far"),
 			},
 			{
@@ -219,7 +219,7 @@ test("feeds measured geometry to compare, promotion, describe, layout, and selec
 					[0, 0],
 					[-4500, -4400],
 				],
-				label: { text: "note" },
+				labelText: "note",
 			},
 		]);
 		const identity = { board: "geometry", variant: "current" };
@@ -270,7 +270,7 @@ test("feeds measured geometry to compare, promotion, describe, layout, and selec
 				y: 0,
 				width: 300,
 				height: 120,
-				label: { text: "Payments" },
+				labelText: "Payments",
 			},
 			{
 				id: "arrow",
@@ -283,7 +283,7 @@ test("feeds measured geometry to compare, promotion, describe, layout, and selec
 					[0, 0],
 					[-40, -30],
 				],
-				label: { text: "calls" },
+				labelText: "calls",
 			},
 		]);
 		const plan = planPromotion({
