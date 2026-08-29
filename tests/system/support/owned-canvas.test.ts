@@ -1,4 +1,4 @@
-import { afterAll, describe, expect, mock, test } from "bun:test";
+import { afterAll, describe, expect, mock, spyOn, test } from "bun:test";
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import { createServer } from "node:net";
@@ -116,6 +116,30 @@ describe("owned canvas direct lifecycle", () => {
 		} finally {
 			if (child.exitCode === null) child.kill("SIGKILL");
 			await child.exited;
+		}
+	});
+
+	test("fails closed when process observation is not permitted", () => {
+		const expectedPid = 42_424;
+		const denied = Object.assign(new Error("operation not permitted"), { code: "EPERM" });
+		const kill = spyOn(process, "kill").mockImplementation(() => {
+			throw denied;
+		});
+		try {
+			let failure: unknown;
+			try {
+				processExists(expectedPid);
+			} catch (error) {
+				failure = error;
+			}
+			expect(kill).toHaveBeenCalledWith(expectedPid, 0);
+			expect(failure).toBeInstanceOf(Error);
+			expect((failure as Error).message).toBe(
+				`Process ${expectedPid} observation failed (EPERM): operation not permitted`,
+			);
+			expect((failure as Error).cause).toBe(denied);
+		} finally {
+			kill.mockRestore();
 		}
 	});
 
