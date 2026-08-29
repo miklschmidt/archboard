@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-29 16:14'
-updated_date: '2026-08-29 17:58'
+updated_date: '2026-08-29 18:04'
 labels: []
 dependencies: []
 references:
@@ -54,6 +54,8 @@ GitHub Actions is failing on the current repository state and is expected to fai
 8. Review remediation. Keep AGENT_BROWSER_EXECUTABLE_PATH optional for documented local PATH-based use, but validate and normalize it strictly before build when configured. Delete every owner argv substitution hook; test the exported environment seam and canonical adapter behavior without changing owner selection. Parse workflow run steps so only one executable step equal to bun run check is accepted, while comments and quoted output cannot satisfy policy. Preserve independent mutation cases under the 500-line owner cap. Re-run focused policy/browser coverage and one clean complete check, then commit for rereview without pushing or finalizing.
 
 9. Second review remediation. Replace the partial command-start scanner with fail-closed detection over YAML run scalars after quoted text and shell comments are removed. Reject unquoted bun run tokens behind env/command wrappers, grouping, conditionals, and pipelines while ignoring echo-only text. Split each predecessor inventory mutation family into its own Bun test, keep every owner below 500 lines, and run repository-policy plus type, lint, format, and diff checks. Do not rerun browser or the full gate unless these focused checks expose wider impact.
+
+10. Quoted command-substitution amendment. Keep single-quoted shell text inert, but retain the bodies of dollar-parenthesis and backtick command substitutions inside double quotes so executable bun run tokens cannot hide there. Add separate negatives for echo with dollar-parenthesis, assignment with dollar-parenthesis, and double-quoted backticks while retaining the inert quoted and echo controls. Run the two focused policy owners and static checks only, then commit for rereview without pushing or finalizing.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -98,4 +100,11 @@ Second review remediation evidence, 2026-08-29:
 - The predecessor inventory diagnostics no longer share grouped test bodies. test-inventory.test.ts now reports 38 independent tests. Missing lane, orphan, cross-lane ownership, unreachable lane, duplicate reachability, transitional lane, system/browser drift, and each adapter mutation have separate Bun tests or test.each cases. No expectation was removed or folded into one aggregate assertion.
 - Complete repository policy: 94 tests, 268 assertions, exit 0. Log: /tmp/task138-rereview2-repository-green.log. TypeScript, Oxlint, formatting, and git diff checks also pass; logs use the /tmp/task138-rereview2-* prefix. Physical lines: inventory support 360, inventory owner 408, CI/browser owner 273.
 - Per second review direction, no browser or complete gate rerun was performed. This follow-up changes only the repository-policy scanner, its focused tests, and TASK evidence; the prior clean full acceptance remains /tmp/task138-review-full-check-retry.log.
+
+Quoted command-substitution remediation evidence, 2026-08-29:
+
+- TDD RED: echo with double-quoted dollar-parenthesis, a double-quoted assignment using dollar-parenthesis, and double-quoted backticks all hid executable bun run tokens from the scanner. All three independent negatives failed in /tmp/task138-rereview3-red.log.
+- The scanner still blanks ordinary double-quoted text and every single-quoted span. It now extracts balanced dollar-parenthesis and backtick bodies only when they occur inside double quotes, sanitizes each body with the same quote/comment rules, and scans nested quoted substitutions recursively. Unquoted backticks remain covered. Separate controls retain inert plain double-quoted text, single-quoted substitution text, comments, and echo-only text.
+- Focused policy owners passed 65 tests and 118 assertions: test-inventory.test.ts 38 tests; ci-browser-gate.test.ts 27 tests, comprising 19 workflow-policy cases and 8 browser-boundary cases. Log: /tmp/task138-rereview3-focused-green.log. TypeScript, Oxlint, formatting, and git diff checks pass; logs use the /tmp/task138-rereview3-* prefix.
+- Physical lines: inventory support 471, inventory owner 408, CI/browser policy owner 295. Per review direction, no browser or complete gate rerun was performed because only repository-policy scanner/tests and TASK evidence changed.
 <!-- SECTION:NOTES:END -->

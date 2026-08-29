@@ -104,6 +104,10 @@ describe("CI executable workflow steps", () => {
 		expect(inspectWorkflow(workflowWith("echo bun run test", "bun run check"))).toEqual([]);
 	});
 
+	test("keeps single-quoted command-substitution text inert", () => {
+		expect(inspectWorkflow(workflowWith("echo '$(bun run test)'", "bun run check"))).toEqual([]);
+	});
+
 	test("ignores a shell comment inside a run scalar", () => {
 		expect(inspectWorkflow(workflowWith("echo ok;# bun run test", "bun run check"))).toEqual([]);
 	});
@@ -162,6 +166,24 @@ describe("CI executable workflow steps", () => {
 
 	test("rejects a package script in backtick command substitution", () => {
 		expect(inspectWorkflow(workflowWith("echo `bun run build`", "bun run check"))).toEqual([
+			"the workflow invokes package script `build` directly; `bun run check` must be its only package-script invocation.",
+		]);
+	});
+
+	test("rejects dollar-parenthesis execution inside a double-quoted echo argument", () => {
+		expect(inspectWorkflow(workflowWith('echo "$(bun run build)"', "bun run check"))).toEqual([
+			"the workflow invokes package script `build` directly; `bun run check` must be its only package-script invocation.",
+		]);
+	});
+
+	test("rejects dollar-parenthesis execution inside a double-quoted assignment", () => {
+		expect(inspectWorkflow(workflowWith('x="$(bun run test)"', "bun run check"))).toEqual([
+			"the workflow invokes package script `test` directly; `bun run check` must be its only package-script invocation.",
+		]);
+	});
+
+	test("rejects backtick execution inside a double-quoted argument", () => {
+		expect(inspectWorkflow(workflowWith('echo "`bun run build`"', "bun run check"))).toEqual([
 			"the workflow invokes package script `build` directly; `bun run check` must be its only package-script invocation.",
 		]);
 	});
