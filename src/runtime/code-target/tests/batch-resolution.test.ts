@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import fs from "node:fs";
+import { join } from "node:path";
 
 import { resolveLocalCodeTargets } from "../index.ts";
 import { resolveLocalCodeTargetsForDiagnostics, type ResolverDiagnostics } from "../diagnostics.ts";
@@ -41,7 +42,31 @@ test("batch resolution returns one ordered result for every binding", () => {
 	]);
 });
 
-test("each batch validates repositories once and every target independently", () => {
+test("one change-report batch validates each repository once and every target independently", () => {
+	const secondCheckout = join(fixture.root, "second-checkout");
+	const secondRepository = "github.com/acme/ledger";
+	fs.mkdirSync(join(secondCheckout, "lib"), { recursive: true });
+	fs.writeFileSync(join(secondCheckout, "lib", "worker.ts"), "export {};\n");
+	for (const args of [
+		["init", "-q"],
+		["remote", "add", "origin", `https://${secondRepository}.git`],
+	]) {
+		const result = Bun.spawnSync(["git", ...args], { cwd: secondCheckout, stderr: "pipe" });
+		if (result.exitCode !== 0) throw new Error(result.stderr.toString());
+	}
+	const registered = JSON.parse(fs.readFileSync(fixture.registry, "utf8")) as unknown[];
+	fs.writeFileSync(
+		fixture.registry,
+		JSON.stringify([
+			...registered,
+			{
+				repo: secondRepository,
+				root: secondCheckout,
+				source: "declared",
+				addedAt: "2026-01-01",
+			},
+		]),
+	);
 	const counts = { registry: 0, root: 0, identity: 0, realpath: 0, stat: 0 };
 	const diagnostics: ResolverDiagnostics = {
 		readRegistry: () => {
@@ -68,11 +93,13 @@ test("each batch validates repositories once and every target independently", ()
 	const bindings = [
 		{ repo: fixture.repository, path: "src/index.ts" },
 		{ repo: fixture.repository, path: "src/index.ts" },
+		{ repo: secondRepository, path: "lib/worker.ts" },
+		{ repo: secondRepository, path: "lib" },
 		{ repo: "github.com/acme/missing", path: "src/index.ts" },
 	] as const;
 
 	resolveLocalCodeTargetsForDiagnostics(bindings, diagnostics);
-	expect(counts).toEqual({ registry: 1, root: 1, identity: 1, realpath: 4, stat: 3 });
+	expect(counts).toEqual({ registry: 1, root: 2, identity: 2, realpath: 8, stat: 6 });
 	resolveLocalCodeTargetsForDiagnostics(bindings, diagnostics);
-	expect(counts).toEqual({ registry: 2, root: 2, identity: 2, realpath: 8, stat: 6 });
+	expect(counts).toEqual({ registry: 2, root: 4, identity: 4, realpath: 16, stat: 12 });
 });

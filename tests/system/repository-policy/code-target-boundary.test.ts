@@ -38,3 +38,18 @@ test("code-target diagnostics and resolver core stay behind their module roots",
 			.map(({ path }) => path),
 	).toEqual([]);
 });
+
+test("resolver filesystem views stay derived from Node and change reports keep one batch", () => {
+	const core = readFileSync(join(repoRoot, "src/runtime/code-target/lib/resolver-core.ts"), "utf8");
+	expect(core).toMatch(/import type \{ Stats \} from "node:fs";/);
+	expect(core).toMatch(/stat\(candidate: string\): Pick<Stats, "isDirectory" \| "isFile">;/);
+
+	const application = readFileSync(join(repoRoot, "src/server/canvas/lib/application.ts"), "utf8");
+	const routeStart = application.indexOf('app.post("/api/elements/changes"');
+	const nextRoute = application.indexOf("\napp.", routeStart + 1);
+	expect(routeStart).toBeGreaterThanOrEqual(0);
+	expect(nextRoute).toBeGreaterThan(routeStart);
+	const changeReportRoute = application.slice(routeStart, nextRoute);
+	expect(changeReportRoute).not.toMatch(/\bpresentElement\s*\(/);
+	expect(changeReportRoute.match(/\bpresentElements\s*\(/g)).toHaveLength(1);
+});
