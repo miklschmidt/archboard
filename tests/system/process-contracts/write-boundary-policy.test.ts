@@ -30,9 +30,21 @@ test("exempts activation from the board-write lock for its approved reason", () 
 		exemptionsAt,
 	);
 	const exemptions = application.slice(exemptionsAt, middleware);
+	const route = exemptions.indexOf("/^\\/api\\/code-targets\\/open$/");
+	const reason = exemptions.indexOf(
+		'"reads canonical board state and launches a process but writes no note"',
+		route,
+	);
+	const tuple = exemptions.slice(
+		exemptions.lastIndexOf("[", route),
+		exemptions.indexOf("]", reason) + 1,
+	);
 
-	expect(exemptions).toContain(
-		'[/^\\/api\\/code-targets\\/open$/, "reads canonical board state and launches a process but writes no note"],',
+	expect(route).toBeGreaterThanOrEqual(0);
+	expect(reason).toBeGreaterThan(route);
+	expect(tuple).toContain("/^\\/api\\/code-targets\\/open$/");
+	expect(tuple).toContain(
+		'"reads canonical board state and launches a process but writes no note"',
 	);
 });
 
