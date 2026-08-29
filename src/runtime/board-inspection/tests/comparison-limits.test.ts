@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { TEST_BOARD_INSPECTION_TERMINAL_CASE_TIMEOUT_MS } from "../../../shared/timing/timing.js";
 import { inspectBoardDiagnostics } from "../diagnostics.js";
 import { InspectionFindingSchema, inspectBoard } from "../index.js";
 import { performanceBoard, terminalComparisonBoard } from "./fixtures/limit-cases.js";
@@ -27,14 +28,18 @@ describe("comparison limits", () => {
 			).toBe(false);
 	});
 
-	test("retains completed findings before the terminal stop", () => {
-		const report = inspectBoardDiagnostics(terminalComparisonBoard()).report;
-		expect(report.broadPhaseComparisons).toBe(2_000_001);
-		expect(report.findings.filter((f) => f.code === "INSPECTION_LIMIT_EXCEEDED")).toHaveLength(1);
-		expect(
-			report.findings.some(
-				(f) => f.reason === "zero-length" && f.details.connectorId === "terminal-zero-segments",
-			),
-		).toBe(true);
-	}, 20_000);
+	test(
+		"retains completed findings before the terminal stop",
+		() => {
+			const report = inspectBoardDiagnostics(terminalComparisonBoard()).report;
+			expect(report.broadPhaseComparisons).toBe(2_000_001);
+			expect(report.findings.filter((f) => f.code === "INSPECTION_LIMIT_EXCEEDED")).toHaveLength(1);
+			expect(
+				report.findings.some(
+					(f) => f.reason === "zero-length" && f.details.connectorId === "terminal-zero-segments",
+				),
+			).toBe(true);
+		},
+		TEST_BOARD_INSPECTION_TERMINAL_CASE_TIMEOUT_MS,
+	);
 });
