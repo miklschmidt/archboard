@@ -10,7 +10,6 @@ const lock = await import("../board-lock.ts");
 const logger = (await import("../logger.ts")).default;
 const { LOCK_FREE_LINGER_MS, LOCK_WATCH_MS } = await import("../../../shared/timing/timing.ts");
 const originalWarn = logger.warn;
-const timers = new Set<ReturnType<typeof setTimeout>>();
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 test("announcements isolate passenger failure and coalesce free news", async () => {
@@ -69,7 +68,6 @@ test("announcements isolate passenger failure and coalesce free news", async () 
 		expect(flips).toBe(1);
 		expect(sequence.at(-1)?.held).toBeFalse();
 	} finally {
-		for (const timer of timers) clearTimeout(timer);
 		lock.watchBoardLocks(null);
 		lock.onBoardSweep(null);
 		lock.onBoardLockChanged(null);
