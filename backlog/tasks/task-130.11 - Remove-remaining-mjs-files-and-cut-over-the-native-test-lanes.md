@@ -1,11 +1,11 @@
 ---
 id: TASK-130.11
 title: Remove remaining mjs files and cut over the native test lanes
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:06'
-updated_date: '2026-08-29 05:01'
+updated_date: '2026-08-29 05:04'
 labels: []
 dependencies:
   - TASK-130.01
@@ -47,15 +47,15 @@ Keep authored inputs. Delete stale operational or repair scripts when no real wo
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every non-check .mjs file is either deleted with a repository reference audit proving no reachable workflow needs it, or converted to a type-checked .ts file with unchanged public command behavior.
-- [ ] #2 The final repository has no tracked or untracked non-ignored .mjs path and no .mjs-specific lint or formatter exception.
-- [ ] #3 A native repository-policy test scans git ls-files --cached --others --exclude-standard, lists every forbidden path, suggests TypeScript conversion, and has a negative self-test with no repository mutation.
-- [ ] #4 package.json exposes a small set of explicit module, system, repository, and serial-browser lanes; every native test belongs to exactly one lane and browser tests cannot enter recursive or parallel discovery.
-- [ ] #5 Bun file isolation is used where it improves independence. Parallel execution is enabled only for a measured lane whose resource-ownership checks prove it safe; no task adds parallelism merely because Bun 1.4 supports it.
-- [ ] #6 The old check scripts, obsolete local failure-counter helpers, redundant package scripts, and empty script directories are removed rather than retained as compatibility paths.
-- [ ] #7 docs/agents/test-suite.md and package command help name the new lanes, prerequisites, ordering, timeouts, could-not-run behavior, and focused commands for one test file or name.
-- [ ] #8 bun install --frozen-lockfile, bun run lint, bun run fmt:check, bun run type-check, every focused lane, the complete bun run test chain, bun run check, and git diff --check pass from a clean checkout.
-- [ ] #9 A final inventory maps every former check to native test files and proves all legacy observable contracts still run once on a push.
+- [x] #1 Every non-check .mjs file is either deleted with a repository reference audit proving no reachable workflow needs it, or converted to a type-checked .ts file with unchanged public command behavior.
+- [x] #2 The final repository has no tracked or untracked non-ignored .mjs path and no .mjs-specific lint or formatter exception.
+- [x] #3 A native repository-policy test scans git ls-files --cached --others --exclude-standard, lists every forbidden path, suggests TypeScript conversion, and has a negative self-test with no repository mutation.
+- [x] #4 package.json exposes a small set of explicit module, system, repository, and serial-browser lanes; every native test belongs to exactly one lane and browser tests cannot enter recursive or parallel discovery.
+- [x] #5 Bun file isolation is used where it improves independence. Parallel execution is enabled only for a measured lane whose resource-ownership checks prove it safe; no task adds parallelism merely because Bun 1.4 supports it.
+- [x] #6 The old check scripts, obsolete local failure-counter helpers, redundant package scripts, and empty script directories are removed rather than retained as compatibility paths.
+- [x] #7 docs/agents/test-suite.md and package command help name the new lanes, prerequisites, ordering, timeouts, could-not-run behavior, and focused commands for one test file or name.
+- [x] #8 bun install --frozen-lockfile, bun run lint, bun run fmt:check, bun run type-check, every focused lane, the complete bun run test chain, bun run check, and git diff --check pass from a clean checkout.
+- [x] #9 A final inventory maps every former check to native test files and proves all legacy observable contracts still run once on a push.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -134,4 +134,12 @@ PLAN_REVIEW_APPROVED for the pre-cutover inventory sequencing seam. The 63-pass 
 Implementation complete and ready for independent range review. Pre-deletion parity: generator default/relative/absolute/missing-argument status, streams, file order, bytes and hashes; reload success/refusal status, streams, URL and PID; sync copied bytes, retired cleanup, relative links, exact readdirSync enumeration-order stdout, idempotence, source preservation and no-skills refusal; public runner all 11 held-output records and cleanup. Dead doing/probe/repair references had no reachable caller, and the named TASK-130.04/.08/.09/.10 successor proofs passed. Atomic cutover deleted exactly the eight planned .mjs paths, installed four final lanes, removed the lint bypass, and added the fully diagnosed git-backed no-MJS policy. Immediate post-cutover inventory/no-MJS/boundaries passed; git inventory reports no .mjs path. Frozen install, lint, fmt check, type check, modules (286 tests/2492 expectations), system (211/3817), repository (54/183), all 13 serial browser owners (610 expectations), aggregate test (564/7102), check (564/7102), and diff check passed sequentially. Inventory owns 127 native tests exactly once: modules 47, system 62, repository 5, serial-browser 13. All task-authored/converted TypeScript stays <=500 lines (largest touched inventory test 447). A first aggregate run was terminated after terminal-output backpressure stalled unrelated subprocesses; forced termination left three known hot-test source appends and four temp roots, all identified and removed. Clean off-terminal reruns passed aggregate test and check; final audits show no task-owned process, listener, vault or temporary root. Metadata intentionally remains In Progress/@codex, 0-of-9, finalSummary null for parent review/finalization.
 
 Independent complete-range review remediation applied. The approved scope now includes comment-only edits to .github/workflows/ci.yml: inventory ownership names test:repository and the browser comment names test:serial-browser, with no workflow command change. docs/agents/test-suite.md now assigns the historical Obsidian id proof to src/runtime/engine/tests/obsidian-id-stability.test.ts and says 'They prove'. Removed the empty scripts/lib checkout directory; find scripts -type d -empty -print returns nothing. The exact eight deleted paths have zero active-reference matches. Exact removed package-key matches are limited to the documented former-key ownership table and the deliberate test:browser inventory negative. Focused validation passed sequentially: inventory 28 tests/67 expectations, no-MJS 3/20, boundaries 8/75, lint, fmt check over 383 files, both TypeScript checks, and git diff check. Git inventory contains no .mjs; all line budgets remain <=500, with the largest touched test at 447 lines. Residue audit found no task process, listener, recent temp root, empty scripts directory, or vault. No browser, full, aggregate test, or aggregate check lane was rerun. Metadata remains In Progress/@codex, 0-of-9, finalSummary null.
+
+Both independent complete-range review axes returned REVIEW_CLEAN at 15bbbc98b3707426ea36d33da8e6f2a11a02a72f. The narrow remediation passed 39 tests and 162 expectations. Under the exact review policy, it did not rerun browser, full, or aggregate lanes a second time.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Converted or deleted the eight remaining .mjs paths, added the typed no-.mjs policy, and cut package validation to the four exact native lanes. Inventory reaches modules/system/repository/serial-browser once each at 47/62/5/13 files. Recorded parity, focused, static, and full validation passed. Active references and empty script directories were cleaned with no product or dependency behavior change.
+<!-- SECTION:FINAL_SUMMARY:END -->
