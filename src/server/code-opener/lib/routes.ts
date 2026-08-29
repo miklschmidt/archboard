@@ -50,6 +50,7 @@ const BODY_PARSER_FAILURES: ReadonlySet<string> = new Set([
 	"stream.encoding.set",
 	"stream.not.readable",
 ]);
+const pass: RequestHandler = (_request, _response, next) => next();
 
 export interface CodeOpenerRouteDependencies {
 	bindingForElement(board: string, element: string): BindingLookup;
@@ -133,6 +134,37 @@ function sendFailure(
 	});
 }
 
+function bodyFailure(): ErrorRequestHandler {
+	return (error, _request, response, next) => {
+		const kind =
+			typeof error === "object" && error !== null && "type" in error
+				? (error as { type?: unknown }).type
+				: undefined;
+		if (typeof kind !== "string" || !BODY_PARSER_FAILURES.has(kind)) return next(error);
+		sendFailure(response, { code: "REQUEST_INVALID", error: "The request body is invalid." }, 400);
+	};
+}
+
+export function isCodeOpenerBodyRoute(method: string, pathname: string): boolean {
+	return (
+		(method === "PUT" && pathname === "/api/settings/opener") ||
+		(method === "POST" &&
+			(pathname === "/api/settings/opener/test" || pathname === "/api/code-targets/open"))
+	);
+}
+
+export function createCodeOpenerPreguard(): Router {
+	const router = Router();
+	const body = json({ limit: "32kb" });
+	router.get("/api/settings/opener", guard("settings-read"), pass);
+	router.put("/api/settings/opener", guard("mutation"), body, pass);
+	router.delete("/api/settings/opener", guard("mutation"), pass);
+	router.post("/api/settings/opener/test", guard("mutation"), body, pass);
+	router.post("/api/code-targets/open", guard("mutation"), body, pass);
+	router.use(bodyFailure());
+	return router;
+}
+
 async function planAndLaunch(
 	selection: OpenerSelection,
 	target: string,
@@ -147,9 +179,8 @@ export function createCodeOpenerRouter(
 ): Router {
 	const dependencies = { ...DEFAULT_DEPENDENCIES, ...overrides };
 	const router = Router();
-	const body = json({ limit: "32kb" });
 
-	router.get("/api/settings/opener", guard("settings-read"), (_request, response) => {
+	router.get("/api/settings/opener", (_request, response) => {
 		const current = readOpenerSelection();
 		if (!current.ok) return sendFailure(response, current);
 		const plannedCurrent = planOpenerCommand(current.selection, "{path}");
@@ -184,7 +215,7 @@ export function createCodeOpenerRouter(
 		});
 	});
 
-	router.put("/api/settings/opener", guard("mutation"), body, (request, response) => {
+	router.put("/api/settings/opener", (request, response) => {
 		const current = readOpenerSelection();
 		if (!current.ok) return sendFailure(response, current);
 		const parsed = OpenerSelectionSchema.safeParse(request.body);
@@ -202,7 +233,7 @@ export function createCodeOpenerRouter(
 		response.json({ success: true, selection: saved.selection });
 	});
 
-	router.delete("/api/settings/opener", guard("mutation"), (_request, response) => {
+	router.delete("/api/settings/opener", (_request, response) => {
 		const reset = resetOpenerSelection();
 		if (!reset.ok) return sendFailure(response, reset);
 		response.json({ success: true, selection: reset.selection });
@@ -210,8 +241,6 @@ export function createCodeOpenerRouter(
 
 	router.post(
 		"/api/settings/opener/test",
-		guard("mutation"),
-		body,
 		asyncEndpoint(async (request, response) => {
 			const current = readOpenerSelection();
 			if (!current.ok) return sendFailure(response, current);
@@ -237,8 +266,6 @@ export function createCodeOpenerRouter(
 
 	router.post(
 		"/api/code-targets/open",
-		guard("mutation"),
-		body,
 		asyncEndpoint(async (request, response) => {
 			if (request.url.includes("?")) {
 				return sendFailure(
@@ -272,15 +299,6 @@ export function createCodeOpenerRouter(
 			});
 		}),
 	);
-
-	router.use(((error: unknown, _request: Request, response: Response, next: NextFunction) => {
-		const kind =
-			typeof error === "object" && error !== null && "type" in error
-				? (error as { type?: unknown }).type
-				: undefined;
-		if (typeof kind !== "string" || !BODY_PARSER_FAILURES.has(kind)) return next(error);
-		sendFailure(response, { code: "REQUEST_INVALID", error: "The request body is invalid." }, 400);
-	}) as ErrorRequestHandler);
 
 	return router;
 }

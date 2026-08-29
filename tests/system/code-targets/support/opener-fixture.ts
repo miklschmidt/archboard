@@ -16,6 +16,7 @@ import { dirname, join } from "node:path";
 import type { Server } from "node:http";
 
 import {
+	createCodeOpenerPreguard,
 	createCodeOpenerRouter,
 	type CodeOpenerRouteDependencies,
 } from "../../../../src/server/code-opener/index.ts";
@@ -147,6 +148,7 @@ export async function createOpenerFixture(
 	const start = async (): Promise<void> => {
 		const app = express();
 		app.use(cors());
+		app.use(createCodeOpenerPreguard());
 		const bindingForElement: CodeOpenerRouteDependencies["bindingForElement"] = (
 			board,
 			element,

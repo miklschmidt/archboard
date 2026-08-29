@@ -15,7 +15,7 @@ import type {
 import type { ChangeReport } from "./changes";
 import {
 	CodeTargetOpenFailureSchema,
-	CodeTargetOpenReplySchema,
+	CodeTargetOpenSuccessSchema,
 	OpenerSelectionReplySchema,
 	OpenerSettingsReplySchema,
 	OpenerTestReplySchema,
@@ -107,7 +107,7 @@ export function openCodeTarget(request: CodeTargetOpenRequest): Promise<CodeTarg
 	return strictReply(
 		"/api/code-targets/open",
 		mutation("POST", request),
-		CodeTargetOpenReplySchema,
+		CodeTargetOpenSuccessSchema,
 	);
 }
 

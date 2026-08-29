@@ -4,6 +4,7 @@ import {
 	CodeTargetOpenReplySchema,
 	OpenerSelectionSchema,
 	buildInternalCodeTargetUrl,
+	isAbsoluteOrBareOpenerExecutable,
 	parseInternalCodeTargetUrl,
 } from "../index.ts";
 
@@ -33,6 +34,14 @@ describe("internal code-target URLs", () => {
 });
 
 describe("opener selection", () => {
+	test("shares the absolute-or-bare executable rule with browser validation", () => {
+		expect(isAbsoluteOrBareOpenerExecutable("code")).toBeTrue();
+		expect(isAbsoluteOrBareOpenerExecutable("/opt/editor/bin/editor")).toBeTrue();
+		expect(isAbsoluteOrBareOpenerExecutable("C:\\Editor\\editor.exe")).toBeTrue();
+		expect(isAbsoluteOrBareOpenerExecutable("./editor")).toBeFalse();
+		expect(isAbsoluteOrBareOpenerExecutable("bin/editor")).toBeFalse();
+	});
+
 	const supportedSelections: unknown[] = [
 		{ version: 1, kind: "platform" },
 		{ version: 1, kind: "preset", preset: "vscode" },

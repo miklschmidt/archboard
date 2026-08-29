@@ -267,6 +267,17 @@ test("global opener settings validate, test, reset, and save through the rendere
 		{ method: "GET", path: "/api/settings/opener", body: null },
 	]);
 
+	await fill(browser, ".opener-custom .field input", "./editor");
+	const relativeExecutable = await pollUntil(
+		() => validationSnapshot(browser),
+		(value) => value.saveDisabled && value.testDisabled,
+		"the client-side relative executable validation",
+	);
+	expect(relativeExecutable.message).toBe(
+		"A custom executable must be absolute or a bare PATH name.",
+	);
+	await fill(browser, ".opener-custom .field input", "/opt/acme/bin/editor");
+
 	await fill(browser, '.opener-argument input[aria-label="Argument 2"]', "--without-path");
 	const invalid = await pollUntil(
 		() => validationSnapshot(browser),

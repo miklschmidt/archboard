@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
 	OpenerSelectionSchema,
+	isAbsoluteOrBareOpenerExecutable,
 	type CodeTargetNotice,
 	type CodeTargetOpenFailure,
 	type OpenerCommand,
@@ -118,11 +119,14 @@ export function OpenerSettingsDialog({
 		return { version: 1, kind: "preset", preset: choice };
 	}, [choice, custom]);
 	const parsed = useMemo(() => OpenerSelectionSchema.safeParse(draft), [draft]);
-	const validation = parsed.success
-		? null
-		: (parsed.error.issues[0]?.message ?? "The opener selection is invalid.");
+	const validation = !parsed.success
+		? (parsed.error.issues[0]?.message ?? "The opener selection is invalid.")
+		: parsed.data.kind === "custom" && !isAbsoluteOrBareOpenerExecutable(parsed.data.executable)
+			? "A custom executable must be absolute or a bare PATH name."
+			: null;
 	const selectedCheckout = settings?.repositories.find((entry) => entry.repository === repository);
 	const testable = Boolean(selectedCheckout?.exists && selectedCheckout.identityMatches);
+	const valid = parsed.success && validation === null;
 
 	const choose = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
 		setChoice(event.target.value as Choice);
@@ -167,16 +171,16 @@ export function OpenerSettingsDialog({
 		[onFailure],
 	);
 	const testDraft = useCallback(async (): Promise<void> => {
-		if (!parsed.success || !repository || !testable) return;
+		if (!parsed.success || validation || !repository || !testable) return;
 		setWorking("test");
 		setServerError(null);
 		const result = await testOpenerSettings(parsed.data, repository);
 		setWorking(null);
 		if (!result.success) return fail(result);
 		onSuccess(`Test opener launched for ${result.repository}.`);
-	}, [fail, onSuccess, parsed, repository, testable]);
+	}, [fail, onSuccess, parsed, repository, testable, validation]);
 	const saveDraft = useCallback(async (): Promise<void> => {
-		if (!parsed.success) return;
+		if (!parsed.success || validation) return;
 		setWorking("save");
 		setServerError(null);
 		const result = await saveOpenerSettings(parsed.data);
@@ -184,7 +188,7 @@ export function OpenerSettingsDialog({
 		if (!result.success) return fail(result);
 		onSuccess("Saved. Every pane and caller uses this opener on the next activation.");
 		onCancel();
-	}, [fail, onCancel, onSuccess, parsed]);
+	}, [fail, onCancel, onSuccess, parsed, validation]);
 	const reset = useCallback(async (): Promise<void> => {
 		setWorking("reset");
 		setServerError(null);
@@ -214,18 +218,14 @@ export function OpenerSettingsDialog({
 					<button
 						className="btn btn-secondary"
 						onClick={testDraft}
-						disabled={busy || !parsed.success || !testable}
+						disabled={busy || !valid || !testable}
 					>
 						{working === "test" ? "Testing…" : "Test"}
 					</button>
 					<button className="btn btn-quiet" data-autofocus onClick={onCancel} disabled={busy}>
 						Cancel
 					</button>
-					<button
-						className="btn btn-primary"
-						onClick={saveDraft}
-						disabled={busy || !parsed.success}
-					>
+					<button className="btn btn-primary" onClick={saveDraft} disabled={busy || !valid}>
 						{working === "save" ? "Saving…" : "Save"}
 					</button>
 				</>
