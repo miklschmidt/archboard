@@ -4,6 +4,7 @@ import { BridgeRemoveResultSchema } from "../../../cli/commands/bridge.js";
 import { applyElementInput } from "../../engine/apply-element-input.js";
 import { compareBoards } from "../../engine/compare.js";
 import { describeScene } from "../../engine/describe.js";
+import { expandElements } from "../../engine/expand-elements.js";
 import type { ServerElement } from "../../engine/types.js";
 import { architectureFacts } from "../architecture.js";
 import {
@@ -13,10 +14,77 @@ import {
 	validateBridgeDecorations,
 } from "../bridge.js";
 import { inspectBoard, type InspectionReport } from "../index.js";
-import { connector, crossingConnectors } from "./fixtures/elements.js";
+import type { LegacyElementIngress } from "../../../shared/board-elements/index.js";
 
-const prepared = () => {
-	const sources = crossingConnectors() as unknown as ServerElement[];
+const completeElement = (input: LegacyElementIngress): ServerElement => {
+	const [element] = expandElements([input], { deterministic: true, forStore: true });
+	if (!element) throw new Error(`Fixture did not produce ${input.id}`);
+	return element;
+};
+
+const negativeBridgePartWithForeignField = (
+	part: ServerElement,
+	field: string,
+	value: unknown,
+): ServerElement => Object.assign(structuredClone(part), { [field]: structuredClone(value) });
+
+const multiSegmentSources = (mode: "rounded" | "elbowed" = "rounded") => {
+	const over =
+		mode === "rounded"
+			? completeElement({
+					id: "over",
+					type: "arrow",
+					x: 0,
+					y: 40,
+					width: 100,
+					height: 30,
+					points: [
+						[0, 0],
+						[40, 0],
+						[40, 30],
+						[100, 30],
+					],
+					index: "a0",
+					roundness: { type: 2 },
+				} satisfies LegacyElementIngress)
+			: completeElement({
+					id: "over",
+					type: "arrow",
+					x: 0,
+					y: 40,
+					width: 100,
+					height: 30,
+					points: [
+						[0, 0],
+						[40, 0],
+						[40, 30],
+						[100, 30],
+					],
+					index: "a0",
+					elbowed: true,
+					fixedSegments: [],
+					startIsSpecial: true,
+					endIsSpecial: false,
+				} satisfies LegacyElementIngress);
+	const under = completeElement({
+		id: "under",
+		type: "line",
+		x: 60,
+		y: 0,
+		width: 0,
+		height: 100,
+		points: [
+			[0, 0],
+			[0, 45],
+			[0, 100],
+		],
+		index: "a1",
+	} satisfies LegacyElementIngress);
+	return [over, under];
+};
+
+const prepared = (mode: "rounded" | "elbowed" = "rounded") => {
+	const sources = multiSegmentSources(mode);
 	const plan = planBridgeCreate({
 		elements: sources,
 		bridgeId: "Bridge01",
@@ -24,7 +92,7 @@ const prepared = () => {
 		underConnectorId: "under",
 		background: "#ffffff",
 	});
-	const crossing = inspectBoard(sources).findings.find(
+	const crossings = inspectBoard(sources).findings.filter(
 		(
 			finding,
 		): finding is Extract<
@@ -38,6 +106,8 @@ const prepared = () => {
 			new Set([finding.details.firstConnectorId, finding.details.secondConnectorId]).has("over") &&
 			new Set([finding.details.firstConnectorId, finding.details.secondConnectorId]).has("under"),
 	);
+	const crossing = crossings[0];
+	expect(crossings).toHaveLength(1);
 	expect(crossing).toBeDefined();
 	if (crossing) {
 		const segmentIndexFor = (connectorId: string) =>
@@ -90,21 +160,23 @@ describe("bridge validation", () => {
 						},
 					}
 				: element.customData,
-		})) as ServerElement[];
+		}));
 		expect(validateBridgeDecorations(tracked).invalid).toEqual([]);
 		expect(
 			inspectBoard(tracked).findings.some((f) => f.reason === "proper-interior-crossing"),
 		).toBe(false);
-		const secondUnder = connector({
+		const secondUnder = completeElement({
 			id: "second-under",
+			type: "line",
 			x: 75,
+			y: 0,
 			width: 0,
 			height: 100,
 			points: [
 				[0, 0],
 				[0, 100],
 			],
-		});
+		} satisfies LegacyElementIngress);
 		const crossings = inspectBoard([...elements, secondUnder]).findings.filter(
 			(finding) => finding.code === "CONNECTOR_INTERSECTION_UNMARKED",
 		);
@@ -112,6 +184,19 @@ describe("bridge validation", () => {
 		expect(
 			new Set([crossings[0]!.details.firstConnectorId, crossings[0]!.details.secondConnectorId]),
 		).toEqual(new Set(["over", "second-under"]));
+	});
+
+	test("validates an elbowed multi-segment decoration", () => {
+		const { elements } = prepared("elbowed");
+		expect(validateBridgeDecorations(elements)).toMatchObject({
+			valid: [{ bridgeId: "Bridge01" }],
+			invalid: [],
+		});
+		expect(
+			inspectBoard(elements).findings.some(
+				(finding) => finding.reason === "proper-interior-crossing",
+			),
+		).toBe(false);
 	});
 
 	test("invalid provenance suppresses nothing", () => {
@@ -141,9 +226,9 @@ describe("bridge validation", () => {
 			["role", "mask"],
 			["overConnectorId", "over"],
 			["underConnectorId", "under"],
-			["overSegmentIndex", 0],
-			["underSegmentIndex", 0],
-			["crossing", { x: 50, y: 50 }],
+			["overSegmentIndex", 2],
+			["underSegmentIndex", 1],
+			["crossing", { x: 60, y: 70 }],
 			["background", "#ffffff"],
 			["binding", { path: "src/bridge.ts" }],
 			["path", "src/bridge.ts"],
@@ -165,7 +250,7 @@ describe("bridge validation", () => {
 			for (const [field, value] of fields) {
 				const { sources, parts } = prepared();
 				const mutated = structuredClone(parts);
-				(mutated[roleIndex] as unknown as Record<string, unknown>)[field] = structuredClone(value);
+				mutated[roleIndex] = negativeBridgePartWithForeignField(mutated[roleIndex]!, field, value);
 				const elements = [...sources, ...mutated];
 				const validated = validateBridgeDecorations(elements);
 				const report = inspectBoard(elements);
