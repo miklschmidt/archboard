@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 15:35'
-updated_date: '2026-08-29 14:29'
+updated_date: '2026-08-29 15:10'
 labels: []
 dependencies:
   - TASK-136
@@ -227,4 +227,37 @@ Validation evidence
 - Lane cleanup audits pass. No task-owned browser, popup, canvas, fake opener, capture, release, registry, config, vault, socket, or generated proof artifact remains.
 
 Review state intentionally unchanged: TASK-137 remains In Progress, all acceptance criteria unchecked, and finalSummary null pending independent complete-range review.
+
+Complete-range review remediation (2026-08-29)
+
+Closed findings
+
+- ResolverDependencies.stat now derives its narrow view from Node's Stats type with Pick<Stats, "isDirectory" | "isFile">. The repository contract rejects a handwritten replacement.
+- The real /api/elements/changes owner now exercises exact internal, GitHub, and live legacy echoes plus wrong board, element, repository, ref, same-repository path, opaque-like, bound-human, and unbound-human values. The module owner separately proves an old file value remains human-authored when the checkout is unavailable.
+- The public owner enumerates every fixture internal target and every exact commit, branch, HEAD, root, and live legacy candidate. It asserts none appears as a persisted link, while all negative and human-authored HTTPS/file values remain. It also excludes the exact checkout, registry, opener config, executable, and argv values from raw note bytes.
+- The rendered owner now audits both file-board and directory-board notes after real pointer actions. It retains both remote bindings, preserves a human HTTPS link and a human file link, and excludes every local, GitHub, legacy, checkout, config, executable, and first/second opener argv value from both notes.
+- The diagnostics owner now models one request with duplicate bindings across two valid repositories plus a missing repository. It proves one registry read, one root/Git identity validation per distinct repository, and one target realpath/stat per bound input on each call.
+- Repository policy isolates the /api/elements/changes route, forbids singular presentElement calls there, and requires exactly one plural presentElements batch. It does not pin formatting or line numbers.
+
+Red and mutation evidence
+
+- Natural red: the new Node-derived filesystem contract failed on the handwritten method bag.
+- Load-bearing mutation: replacing the route's plural batch with existing.map(presentElement) failed the repository policy owner.
+- Load-bearing mutation: removing the request-local repository Map changed the first-call diagnostic counts from root/identity 2/2 and realpath/stat 8/6 to 4/4 and 12/8. The strengthened diagnostics owner failed. Both mutations were reverted.
+
+Validation
+
+- Focused module gate: 67 pass.
+- Focused serialized CLI/code-target system gate: 42 pass.
+- Focused repository gate: 40 pass.
+- Focused rendered owner: 1 pass, 78 assertions.
+- Complete 15-owner serial browser lane: green.
+- bun run test: green (397 module, 250 system, 63 repository, 15 browser owners).
+- bun run check: green on the clean retry, including lint, format, both type checks, all test lanes, and all 15 browser owners.
+- The first check attempt hit machine process-spawn pressure after the immediately preceding bun run test passed: unrelated child processes returned status null and timed out. The affected board-inspection and hot-reload owners all passed alone at normal timings, the task-owned stalled gate processes were terminated, and the clean complete check retry passed without code or timeout changes.
+- git diff --check: green.
+- Caps remain within plan: resolver core 155/220, batch owner 105/280, presentation-links 133/300, public owner 289/480, rendered owner 476/480, boundary owner 55, inventory 490/500, board-write 464/500, routes 312/360, application net +28/+55.
+- Cleanup audit found no TASK-137 browser, popup, canvas, fake opener, serial lane, or server process.
+
+Review state intentionally unchanged: TASK-137 remains In Progress, all acceptance criteria unchecked, and finalSummary null pending rereview.
 <!-- SECTION:NOTES:END -->
