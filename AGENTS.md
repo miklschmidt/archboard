@@ -66,7 +66,7 @@ with `// hot-safe: <reason>`. Mechanics and costs:
 `docs/design/hot-reload-under-bun.md` and the archboard-dev skill.
 
 **Running the suite needs `agent-browser` on PATH**: one typed serial browser
-lane drives 13 real-browser owners and exits 2 when prerequisites are absent.
+lane drives 15 real-browser owners and exits 2 when prerequisites are absent.
 It stays headless because a window that maps steals focus under Hyprland, and
 it runs one owner at a time. A push runs `bun run check`, which enforces lint,
 formatting, type checking, and the complete test chain. `bun run test:repository`

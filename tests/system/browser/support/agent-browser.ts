@@ -24,6 +24,7 @@ export const BROWSER_TEST_PATHS = [
 	"tests/system/browser/human-hold-persistence.test.ts",
 	"tests/system/browser/claim-interaction.test.ts",
 	"tests/system/browser/opener-settings.test.ts",
+	"tests/system/browser/code-target-activation.test.ts",
 ] as const;
 
 export type BrowserTestPath = (typeof BROWSER_TEST_PATHS)[number];
@@ -111,7 +112,7 @@ export function validateBrowserSelection(argv: readonly string[]): BrowserSelect
 		(selected.length !== BROWSER_TEST_PATHS.length ||
 			selected.some((file, index) => file !== BROWSER_TEST_PATHS[index]))
 	) {
-		selectionError("Package browser lane must name all 14 canonical paths in order.");
+		selectionError("Package browser lane must name all 15 canonical paths in order.");
 	}
 	return { mode, files: selected as BrowserTestPath[] };
 }
