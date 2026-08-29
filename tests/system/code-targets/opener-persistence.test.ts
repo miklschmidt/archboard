@@ -35,8 +35,7 @@ describe("machine-wide opener persistence", () => {
 			});
 			const { makeIdentity, renderBoardNote } =
 				await import("../../../src/runtime/engine/board.ts");
-			const { completeElement } =
-				await import("../../../src/runtime/engine/tests/support/elements.ts");
+			const { completeElement } = await import("./support/elements.ts");
 			const { createOpenerFixture } = await import("./support/opener-fixture.ts");
 			const fixture = await createOpenerFixture();
 			resources.defer(() => fixture.dispose());

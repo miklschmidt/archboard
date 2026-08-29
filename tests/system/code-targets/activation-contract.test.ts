@@ -13,8 +13,8 @@ import { join } from "node:path";
 
 import { makeIdentity, renderBoardNote } from "../../../src/runtime/engine/board.ts";
 import { boards, getOrCreateBoard } from "../../../src/runtime/engine/board-store.ts";
-import { completeElement } from "../../../src/runtime/engine/tests/support/elements.ts";
 import { CodeTargetOpenReplySchema } from "../../../src/shared/code-target/index.ts";
+import { completeElement } from "./support/elements.ts";
 import {
 	createOpenerFixture,
 	jsonBody,

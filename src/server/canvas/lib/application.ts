@@ -888,7 +888,10 @@ const NOT_A_BOARD_WRITE: Array<[RegExp, string]> = [
 	[/^\/api\/snapshots/, "reads a board into a snapshot and writes no note"],
 	[/^\/api\/boards\/open$/, "reads a note and points a pane at it"],
 	[/^\/api\/boards\/new$/, "creates no note"],
-	[/^\/api\/code-targets\/open$/, "reads canonical board state and launches a process but writes no note"],
+	[
+		/^\/api\/code-targets\/open$/,
+		"reads canonical board state and launches a process but writes no note",
+	],
 	[/^\/api\/injection/, "not about a board"],
 	[/^\/api\/reload$/, "not about a board"],
 ];
