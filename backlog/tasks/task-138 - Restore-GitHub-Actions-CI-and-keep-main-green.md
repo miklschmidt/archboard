@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-29 16:14'
-updated_date: '2026-08-29 18:04'
+updated_date: '2026-08-29 18:08'
 labels: []
 dependencies: []
 references:
@@ -56,6 +56,8 @@ GitHub Actions is failing on the current repository state and is expected to fai
 9. Second review remediation. Replace the partial command-start scanner with fail-closed detection over YAML run scalars after quoted text and shell comments are removed. Reject unquoted bun run tokens behind env/command wrappers, grouping, conditionals, and pipelines while ignoring echo-only text. Split each predecessor inventory mutation family into its own Bun test, keep every owner below 500 lines, and run repository-policy plus type, lint, format, and diff checks. Do not rerun browser or the full gate unless these focused checks expose wider impact.
 
 10. Quoted command-substitution amendment. Keep single-quoted shell text inert, but retain the bodies of dollar-parenthesis and backtick command substitutions inside double quotes so executable bun run tokens cannot hide there. Add separate negatives for echo with dollar-parenthesis, assignment with dollar-parenthesis, and double-quoted backticks while retaining the inert quoted and echo controls. Run the two focused policy owners and static checks only, then commit for rereview without pushing or finalizing.
+
+11. Dollar-substitution comment amendment. Add shell-comment state to dollarSubstitutionAt using the scanner boundary rule so quotes and parentheses inside a comment cannot close the substitution before newline. Keep the unterminated-body fail-closed fallback. Add the valid multiline Bash form with a commented closing parenthesis as its own negative, run both focused policy owners and static checks, then commit without browser/full validation, push, or finalization.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -107,4 +109,11 @@ Quoted command-substitution remediation evidence, 2026-08-29:
 - The scanner still blanks ordinary double-quoted text and every single-quoted span. It now extracts balanced dollar-parenthesis and backtick bodies only when they occur inside double quotes, sanitizes each body with the same quote/comment rules, and scans nested quoted substitutions recursively. Unquoted backticks remain covered. Separate controls retain inert plain double-quoted text, single-quoted substitution text, comments, and echo-only text.
 - Focused policy owners passed 65 tests and 118 assertions: test-inventory.test.ts 38 tests; ci-browser-gate.test.ts 27 tests, comprising 19 workflow-policy cases and 8 browser-boundary cases. Log: /tmp/task138-rereview3-focused-green.log. TypeScript, Oxlint, formatting, and git diff checks pass; logs use the /tmp/task138-rereview3-* prefix.
 - Physical lines: inventory support 471, inventory owner 408, CI/browser policy owner 295. Per review direction, no browser or complete gate rerun was performed because only repository-policy scanner/tests and TASK evidence changed.
+
+Dollar-substitution comment-state remediation evidence, 2026-08-29:
+
+- TDD RED: valid Bash echo with a double-quoted substitution, a commented closing parenthesis, then bun run test on the next line returned no policy error. The independent negative failed in /tmp/task138-rereview4-red.log.
+- dollarSubstitutionAt now uses the shared shell-comment boundary check. Once a comment starts, quotes and parentheses are ignored until newline; scanning then resumes at the existing substitution depth. If no real closing parenthesis follows, the existing fail-closed fallback still returns the remaining body for executable-token inspection.
+- Focused policy owners passed 66 tests and 119 assertions: inventory owner 38; CI/browser owner 28, comprising 20 workflow-policy and 8 browser-boundary cases. Log: /tmp/task138-rereview4-focused-green.log. TypeScript, Oxlint, formatting, and git diff checks pass; logs use the /tmp/task138-rereview4-* prefix.
+- Physical lines: inventory support 484, inventory owner 408, CI/browser policy owner 302. Per direction, no browser or complete gate rerun was performed because only the repository-policy scanner, its focused test, and TASK evidence changed.
 <!-- SECTION:NOTES:END -->

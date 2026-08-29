@@ -120,6 +120,10 @@ function workflowRunCommands(workflow: string): { commands: string[]; error?: st
 	return { commands };
 }
 
+function startsShellComment(text: string, index: number, first = 0): boolean {
+	return text[index] === "#" && (index === first || /[\s;&|(){}`]/.test(text[index - 1] ?? ""));
+}
+
 function unquotedShellText(command: string): string {
 	let result = "";
 	let quote: "'" | '"' | undefined;
@@ -155,7 +159,7 @@ function unquotedShellText(command: string): string {
 			result += " ";
 			continue;
 		}
-		if (character === "#" && (index === 0 || /[\s;&|(){}`]/.test(command[index - 1] ?? ""))) {
+		if (startsShellComment(command, index)) {
 			comment = true;
 			continue;
 		}
@@ -172,8 +176,13 @@ function dollarSubstitutionAt(
 	let depth = 1;
 	let quote: "'" | '"' | "`" | undefined;
 	let escaped = false;
+	let comment = false;
 	for (let index = start + 2; index < text.length; index += 1) {
 		const character = text[index];
+		if (comment) {
+			if (character === "\n") comment = false;
+			continue;
+		}
 		if (escaped) {
 			escaped = false;
 			continue;
@@ -184,6 +193,10 @@ function dollarSubstitutionAt(
 		}
 		if (quote) {
 			if (character === quote) quote = undefined;
+			continue;
+		}
+		if (startsShellComment(text, index, start + 2)) {
+			comment = true;
 			continue;
 		}
 		if (character === "'" || character === '"' || character === "`") {
@@ -257,7 +270,7 @@ function doubleQuotedSubstitutionBodies(command: string): string[] {
 		}
 		if (character === "'") quote = "'";
 		else if (character === '"') quote = '"';
-		else if (character === "#" && (index === 0 || /[\s;&|(){}`]/.test(command[index - 1] ?? ""))) {
+		else if (startsShellComment(command, index)) {
 			comment = true;
 		}
 	}
