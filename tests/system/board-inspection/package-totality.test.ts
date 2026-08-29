@@ -5,7 +5,11 @@ import {
 	type InspectionReport,
 } from "../../../src/runtime/board-inspection/index.js";
 import { expandElements } from "../../../src/runtime/engine/expand-elements.js";
-import type { LegacyElementIngress } from "../../../src/shared/board-elements/index.js";
+import type {
+	ElbowArrowElement,
+	LegacyElementIngress,
+	RuntimeBoardElement,
+} from "../../../src/shared/board-elements/index.js";
 import { connector, type PackageElement } from "./fixtures/package-cases.js";
 import { createPackageInspectionOwner } from "./support/package-inspection.js";
 
@@ -52,13 +56,32 @@ const findingUses = (finding: InspectionReport["findings"][number], id: string) 
 	("firstConnectorId" in finding.details && finding.details.firstConnectorId === id) ||
 	("secondConnectorId" in finding.details && finding.details.secondConnectorId === id);
 
-const persistedConnector = (input: PackageElement): PackageElement =>
-	expandElements([input as unknown as LegacyElementIngress], {
-		deterministic: true,
-		forStore: true,
-	})[0]! as unknown as PackageElement;
+const completeElement = (input: LegacyElementIngress): RuntimeBoardElement => {
+	const [element] = expandElements([input], { deterministic: true, forStore: true });
+	if (!element) throw new Error(`Fixture did not produce ${input.id}`);
+	return element;
+};
 
-const unsupportedInteractionScene = (id: string, marker: PackageElement = {}): PackageElement[] => [
+type ConnectorOverrides = Partial<Omit<ElbowArrowElement, "id" | "type">>;
+
+const connectorInput = (id: string, overrides: ConnectorOverrides = {}): LegacyElementIngress => ({
+	id,
+	type: "arrow",
+	x: 0,
+	y: 0,
+	width: 100,
+	height: 0,
+	points: [
+		[0, 0],
+		[100, 0],
+	],
+	...overrides,
+});
+
+const persistedConnector = (input: LegacyElementIngress): RuntimeBoardElement =>
+	completeElement(input);
+
+const negativeInteractionScene = (id: string, marker: PackageElement = {}): PackageElement[] => [
 	connector({ id, x: 0, y: 50, width: 100, height: 0, ...marker }),
 	semanticNode("colliding-node", { x: 40, y: 40, width: 20, height: 20 }),
 	{
@@ -85,10 +108,40 @@ const unsupportedInteractionScene = (id: string, marker: PackageElement = {}): P
 	connector({ id: "supported-horizontal", x: 0, y: 25, width: 100, height: 0 }),
 ];
 
-const persistedInteractionScene = (id: string, marker: PackageElement = {}): PackageElement[] => {
-	const [candidate, ...rest] = unsupportedInteractionScene(id, marker);
-	return [persistedConnector(candidate!), ...rest];
-};
+const persistedInteractionScene = (candidate: LegacyElementIngress, side = 1): unknown[] => [
+	persistedConnector(candidate),
+	semanticNode("colliding-node", { x: side < 0 ? -60 : 40, y: 40, width: 20, height: 20 }),
+	{
+		id: "library-obstacle",
+		type: "rectangle",
+		x: side < 0 ? -80 : 70,
+		y: 45,
+		width: 10,
+		height: 10,
+		angle: 0,
+		customData: { library: { itemId: "obstacle", source: "catalogue" } },
+	},
+	persistedConnector(
+		connectorInput("supported-vertical", {
+			x: side < 0 ? -35 : 35,
+			y: 0,
+			width: 0,
+			height: 100,
+			points: [
+				[0, 0],
+				[0, 100],
+			],
+		}),
+	),
+	persistedConnector(
+		connectorInput("supported-horizontal", {
+			x: 0,
+			y: 25,
+			width: 100,
+			height: 0,
+		}),
+	),
+];
 
 const labelPairBoard = (pairs: readonly (readonly [string, string])[], reverse = false) => {
 	const elements = pairs.flatMap(([containerId, textId], index) => [
@@ -174,18 +227,20 @@ describe("package inspection totality", () => {
 		const owner = createPackageInspectionOwner();
 		try {
 			owner.startVault();
-			for (const [name, marker] of [
+			const modeCases: readonly (readonly [string, ConnectorOverrides])[] = [
 				["rounded", { roundness: { type: 2 } }],
 				["elbowed", { elbowed: true, fixedSegments: [] }],
-			] as const) {
-				owner.writeBoard(`${name}-clean`, [persistedConnector(connector({ id: name, ...marker }))]);
+			];
+			for (const [name, marker] of modeCases) {
+				owner.writeBoard(`${name}-clean`, [persistedConnector(connectorInput(name, marker))]);
 				const clean = parse(owner, `${name}-clean`, 0);
 				expect(clean.coverage).toBe("complete");
 				expect(clean.clean).toBe(true);
 				expect(clean.findings.some((finding) => finding.reason === "rounded-or-elbowed")).toBe(
 					false,
 				);
-				owner.writeBoard(`${name}-collision`, persistedInteractionScene(name, marker));
+				const collisionInput = connectorInput(name, { ...marker, y: 50 });
+				owner.writeBoard(`${name}-collision`, persistedInteractionScene(collisionInput));
 				const collision = parse(owner, `${name}-collision`, 7);
 				expect(collision.coverage).toBe("complete");
 				for (const code of [
@@ -202,8 +257,7 @@ describe("package inspection totality", () => {
 			const endpointElements = [true, false, null].flatMap((startIsSpecial, row) =>
 				[true, false, null].map((endIsSpecial, column) =>
 					persistedConnector(
-						connector({
-							id: `special-${String(startIsSpecial)}-${String(endIsSpecial)}`,
+						connectorInput(`special-${String(startIsSpecial)}-${String(endIsSpecial)}`, {
 							x: column * 200,
 							y: row * 50,
 							elbowed: true,
@@ -221,8 +275,7 @@ describe("package inspection totality", () => {
 			for (const coordinate of [1_000_000, -1_000_000] as const) {
 				owner.writeBoard(`boundary-${coordinate}`, [
 					persistedConnector(
-						connector({
-							id: `boundary-${coordinate}`,
+						connectorInput(`boundary-${coordinate}`, {
 							x: 31,
 							width: Math.abs(coordinate),
 							points: [
@@ -242,21 +295,18 @@ describe("package inspection totality", () => {
 			}
 			for (const coordinate of [1_000_001, -1_000_001] as const) {
 				const id = `over-limit-${coordinate}`;
-				owner.writeBoard(id, [
-					persistedConnector(
-						connector({
-							id,
-							x: 31,
-							width: Math.abs(coordinate),
-							points: [
-								[0, 0],
-								[coordinate, 0],
-							],
-							elbowed: true,
-							fixedSegments: [],
-						}),
-					),
-				]);
+				const rejectedInput = connectorInput(id, {
+					x: coordinate < 0 ? -31 : 31,
+					width: Math.abs(coordinate),
+					points: [
+						[0, 0],
+						[coordinate, 0],
+					],
+					elbowed: true,
+					fixedSegments: [],
+					y: 50,
+				});
+				owner.writeBoard(id, persistedInteractionScene(rejectedInput, coordinate < 0 ? -1 : 1));
 				const report = parse(owner, id, 8);
 				expect(report.coverage).toBe("indeterminate");
 				const refusal = report.findings.find(
@@ -266,15 +316,47 @@ describe("package inspection totality", () => {
 				expect(refusal?.message).toContain(
 					`point 1 x coordinate ${coordinate} exceeding ±1,000,000`,
 				);
-				expect(
-					report.findings.some((finding) => finding.code === "CONNECTOR_PENETRATES_NODE"),
-				).toBe(false);
+				for (const code of [
+					"CONNECTOR_PENETRATES_NODE",
+					"CONNECTOR_PENETRATES_OBSTACLE",
+					"CONNECTOR_INTERSECTION_UNMARKED",
+				] as const)
+					expect(
+						report.findings.some((finding) => finding.code === code && findingUses(finding, id)),
+					).toBe(false);
+				const controlId = `${id}-control`;
+				owner.writeBoard(
+					controlId,
+					persistedInteractionScene(
+						connectorInput(controlId, {
+							x: coordinate < 0 ? -31 : 31,
+							width: Math.abs(coordinate),
+							points: [
+								[0, 0],
+								[coordinate, 0],
+							],
+							y: 50,
+						}),
+						coordinate < 0 ? -1 : 1,
+					),
+				);
+				const control = parse(owner, controlId, 7);
+				for (const code of [
+					"CONNECTOR_PENETRATES_NODE",
+					"CONNECTOR_PENETRATES_OBSTACLE",
+					"CONNECTOR_INTERSECTION_UNMARKED",
+				] as const)
+					expect(
+						control.findings.some(
+							(finding) => finding.code === code && findingUses(finding, controlId),
+						),
+					).toBe(true);
 			}
 			for (const [name, marker] of [
 				["malformed-elbowed", { elbowed: "bad" }],
 				["fixed", { fixedSegments: [] }],
 			] as const) {
-				owner.writeBoard(name, unsupportedInteractionScene(name, marker));
+				owner.writeBoard(name, negativeInteractionScene(name, marker));
 				const report = parse(owner, name, 8);
 				expect(
 					report.findings.some(

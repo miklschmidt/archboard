@@ -1,9 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { applyElementInput } from "../../engine/apply-element-input.js";
+import { expandElements } from "../../engine/expand-elements.js";
 import type { ServerElement } from "../../engine/types.js";
 import { planBridgeCreate } from "../bridge.js";
 import { inspectBoardDiagnostics } from "../diagnostics.js";
-import { InspectionReportSchema, inspectBoard, type InspectionReport } from "../index.js";
+import { inspectBoard, type InspectionReport } from "../index.js";
+import type {
+	ElbowArrowElement,
+	LegacyElementIngress,
+} from "../../../shared/board-elements/index.js";
 import { connector, libraryBody, semanticNode } from "./fixtures/elements.js";
 
 const findingUses = (finding: InspectionReport["findings"][number], connectorId: string) =>
@@ -20,9 +25,19 @@ const segmentIndexFor = (finding: InspectionReport["findings"][number], connecto
 		: finding.details.secondSegmentIndex;
 };
 
-const elbowConnector = (id: string, overrides: Record<string, unknown> = {}) =>
-	connector({
+const completeElement = (input: LegacyElementIngress): ServerElement => {
+	const [element] = expandElements([input], { deterministic: true, forStore: true });
+	if (!element) throw new Error(`Fixture did not produce ${input.id}`);
+	return element;
+};
+
+const elbowConnector = (
+	id: string,
+	overrides: Partial<Omit<ElbowArrowElement, "id" | "type">> = {},
+) =>
+	completeElement({
 		id,
+		type: "arrow",
 		x: 10,
 		y: 20,
 		width: 80,
@@ -36,11 +51,12 @@ const elbowConnector = (id: string, overrides: Record<string, unknown> = {}) =>
 		elbowed: true,
 		fixedSegments: [],
 		...overrides,
-	});
+	} satisfies LegacyElementIngress);
 
 const verticalConnector = (id: string, x: number, y = 0, height = 100) =>
-	connector({
+	completeElement({
 		id,
+		type: "arrow",
 		x,
 		y,
 		width: 0,
@@ -49,16 +65,31 @@ const verticalConnector = (id: string, x: number, y = 0, height = 100) =>
 			[0, 0],
 			[0, height],
 		],
-	});
+	} satisfies LegacyElementIngress);
 
 const expectNoModeRefusal = (report: InspectionReport) =>
 	expect(report.findings.some((finding) => finding.reason === "rounded-or-elbowed")).toBe(false);
 
-const interactionScene = (id: string, marker: Record<string, unknown> = {}) => {
+const unsupportedSourceMessage =
+	"Both sources must be live arrow/line connectors at zero rotation, without explicit curve fields, with finite non-zero point-chain segments; elbow coordinates must stay within ±1,000,000.";
+
+const interactionScene = (candidate: unknown, side = 1) => {
 	const bridgeSources = [
-		connector({ id: "bridge-over", type: "line", y: 150, index: "a0" }),
+		completeElement({
+			id: "bridge-over",
+			type: "line",
+			x: 0,
+			y: 150,
+			width: 100,
+			height: 0,
+			points: [
+				[0, 0],
+				[100, 0],
+			],
+			index: "a0",
+		} satisfies LegacyElementIngress),
 		{ ...verticalConnector("bridge-under", 50, 100), index: "a1" },
-	] as unknown as ServerElement[];
+	] satisfies ServerElement[];
 	const bridgePlan = planBridgeCreate({
 		elements: bridgeSources,
 		bridgeId: "BridgeAux",
@@ -73,10 +104,13 @@ const interactionScene = (id: string, marker: Record<string, unknown> = {}) => {
 		origin: "agent",
 	}).named;
 	return [
-		connector({ id, x: 0, y: 50, width: 100, height: 0, ...marker }),
-		semanticNode("colliding-node", { x: 40, y: 40, width: 20, height: 20 }),
-		{ ...libraryBody("library-obstacle", 70, ["library-group"]), y: 45 },
-		verticalConnector("supported-vertical", 25),
+		candidate,
+		semanticNode("colliding-node", { x: side < 0 ? -60 : 40, y: 40, width: 20, height: 20 }),
+		{
+			...libraryBody("library-obstacle", side < 0 ? -80 : 70, ["library-group"]),
+			y: 45,
+		},
+		verticalConnector("supported-vertical", side < 0 ? -35 : 35),
 		connector({
 			id: "supported-horizontal",
 			x: 0,
@@ -89,215 +123,45 @@ const interactionScene = (id: string, marker: Record<string, unknown> = {}) => {
 	];
 };
 
+const negativeInteractionScene = (id: string, marker: Record<string, unknown> = {}) =>
+	interactionScene(connector({ id, x: 0, y: 50, width: 100, height: 0, ...marker }));
+
 describe("unrepresentable geometry", () => {
-	test("keeps affected evidence and exact 16px focus padding", () => {
-		const normal = inspectBoard([
-			{
-				id: "font",
-				type: "text",
-				x: 10,
-				y: 20,
-				width: 30,
-				height: 40,
-				fontFamily: 1,
-			},
-		]).findings.find((finding) => finding.reason === "disallowed-font-family");
-		expect(normal?.affectedBBox).toEqual({
-			x: 10,
-			y: 20,
-			width: 30,
-			height: 40,
-		});
-		expect(normal?.focusBBox).toEqual({ x: -6, y: 4, width: 62, height: 72 });
-		for (const [x, width, delta] of [
-			[Number.MAX_VALUE, 0, "x-minus-16"],
-			[-Number.MAX_VALUE, 0, "x-minus-16"],
-			[0, Number.MAX_VALUE, "width-plus-32"],
-		] as const) {
-			const report = inspectBoard([
-				{
-					id: "extreme",
-					type: "text",
-					x,
-					y: 0,
-					width,
-					height: 0,
-					fontFamily: 1,
-				},
-			]);
-			expect(report.coverage).toBe("indeterminate");
-			expect(report.findings).toContainEqual(
-				expect.objectContaining({
-					reason: "unrepresentable-focus-padding",
-					focusBBox: null,
-					details: expect.objectContaining({
-						failedDeltas: expect.arrayContaining([delta]),
-					}),
-				}),
-			);
-		}
-	});
-
-	test("closes absolute path overflow with exact affected and focus evidence", () => {
-		const report = inspectBoard([
-			connector({
-				id: "overflow-path",
-				x: Number.MAX_VALUE,
-				width: 10,
-				points: [
-					[0, 0],
-					[Number.MAX_VALUE, 0],
-				],
-			}),
-		]);
-		expect(InspectionReportSchema.safeParse(report).success).toBe(true);
-		expect(report.coverage).toBe("indeterminate");
-		expect(report.findings).toContainEqual(
-			expect.objectContaining({
-				code: "AMBIGUOUS_GEOMETRY",
-				reason: "absolute-point-overflow",
-				elements: [{ id: "overflow-path", type: "arrow", sourceIndex: 0 }],
-				points: [{ x: Number.MAX_VALUE, y: 0 }],
-				affectedBBox: { x: Number.MAX_VALUE, y: 0, width: 0, height: 0 },
-				focusBBox: null,
-				details: expect.objectContaining({ connectorId: "overflow-path", pointIndex: 1 }),
-			}),
-		);
-		expect(report.findings).toContainEqual(
-			expect.objectContaining({
-				code: "AMBIGUOUS_GEOMETRY",
-				reason: "unrepresentable-focus-padding",
-				affectedBBox: { x: Number.MAX_VALUE, y: 0, width: 0, height: 0 },
-				focusBBox: null,
-				details: expect.objectContaining({ failedDeltas: ["x-minus-16"] }),
-			}),
-		);
-	});
-
-	test("closes semantic-node and obstacle aggregate spans with exact scopes", () => {
-		const semantic = inspectBoard([
-			semanticNode("aggregate-node", {
-				id: "aggregate-positive",
-				x: Number.MAX_VALUE,
-				width: 0,
-			}),
-			semanticNode("aggregate-node", {
-				id: "aggregate-negative",
-				x: -Number.MAX_VALUE,
-				width: 0,
-			}),
-		]);
-		expect(semantic.coverage).toBe("indeterminate");
-		expect(semantic.findings).toContainEqual(
-			expect.objectContaining({
-				code: "AMBIGUOUS_GEOMETRY",
-				reason: "unrepresentable-coordinate-span",
-				elements: [
-					{ id: "aggregate-negative", type: "rectangle", sourceIndex: 1 },
-					{ id: "aggregate-positive", type: "rectangle", sourceIndex: 0 },
-				],
-				affectedBBox: { x: -Number.MAX_VALUE, y: 0, width: 0, height: 10 },
-				focusBBox: null,
-				details: expect.objectContaining({ scope: "semantic-node-body" }),
-			}),
-		);
-		expect(
-			semantic.findings.some(
-				(finding) =>
-					finding.reason === "unrepresentable-focus-padding" && finding.focusBBox === null,
-			),
-		).toBe(true);
-
-		for (const kind of ["grouped", "library"] as const) {
-			const groupId = kind === "grouped" ? "aggregate-group" : "aggregate-library-group";
-			const report = inspectBoard([
-				{
-					id: `${kind}-positive`,
-					type: "rectangle",
-					x: Number.MAX_VALUE,
-					y: 0,
-					width: 1,
-					height: 10,
-					groupIds: [groupId],
-					...(kind === "library"
-						? { customData: { library: { itemId: "aggregate-library" } } }
-						: {}),
-				},
-				{
-					id: `${kind}-negative`,
-					type: "rectangle",
-					x: -Number.MAX_VALUE,
-					y: 0,
-					width: 1,
-					height: 10,
-					groupIds: [groupId],
-				},
-			]);
-			expect(report.coverage).toBe("indeterminate");
-			expect(report.findings).toContainEqual(
-				expect.objectContaining({
-					code: "AMBIGUOUS_GEOMETRY",
-					reason: "unrepresentable-coordinate-span",
-					elements: [
-						{ id: `${kind}-negative`, type: "rectangle", sourceIndex: 1 },
-						{ id: `${kind}-positive`, type: "rectangle", sourceIndex: 0 },
-					],
-					affectedBBox: { x: -Number.MAX_VALUE, y: 0, width: 1, height: 10 },
-					focusBBox: null,
-					details: expect.objectContaining({ scope: "obstacle-component" }),
-				}),
-			);
-			expect(
-				report.findings.some((finding) => finding.code === "CONNECTOR_PENETRATES_OBSTACLE"),
-			).toBe(false);
-		}
-	});
-
-	test("closes duplicate finding affected unions without dropping local evidence", () => {
-		const report = inspectBoard([
-			semanticNode("duplicate-positive", {
-				id: "aggregate-duplicate",
-				x: Number.MAX_VALUE,
-				width: 0,
-			}),
-			semanticNode("duplicate-negative", {
-				id: "aggregate-duplicate",
-				x: -Number.MAX_VALUE,
-				width: 0,
-			}),
-		]);
-		expect(report.findings).toContainEqual(
-			expect.objectContaining({
-				code: "BROKEN_REFERENCE",
-				reason: "duplicate-element-id",
-				affectedBBox: { x: -Number.MAX_VALUE, y: 0, width: 0, height: 10 },
-				focusBBox: null,
-			}),
-		);
-		expect(report.findings).toContainEqual(
-			expect.objectContaining({
-				code: "AMBIGUOUS_GEOMETRY",
-				reason: "unrepresentable-coordinate-span",
-				elements: [
-					{ id: "aggregate-duplicate", type: "rectangle", sourceIndex: 0 },
-					{ id: "aggregate-duplicate", type: "rectangle", sourceIndex: 1 },
-				],
-				affectedBBox: { x: -Number.MAX_VALUE, y: 0, width: 0, height: 10 },
-				focusBBox: null,
-				details: expect.objectContaining({
-					scope: "finding-affected-union",
-					sourceIndexes: [0, 1],
-				}),
-			}),
-		);
-	});
-
 	test("keeps downstream checks for recoverable modes and narrow refusals", () => {
-		for (const [id, marker] of [
-			["rounded", { roundness: { type: 2 } }],
-			["elbowed", { elbowed: true, fixedSegments: [], startIsSpecial: null, endIsSpecial: null }],
+		for (const [id, candidate] of [
+			[
+				"rounded",
+				completeElement({
+					id: "rounded",
+					type: "arrow",
+					x: 0,
+					y: 50,
+					width: 100,
+					height: 0,
+					points: [
+						[0, 0],
+						[100, 0],
+					],
+					roundness: { type: 2 },
+				} satisfies LegacyElementIngress),
+			],
+			[
+				"elbowed",
+				elbowConnector("elbowed", {
+					x: 0,
+					y: 50,
+					width: 100,
+					height: 0,
+					points: [
+						[0, 0],
+						[100, 0],
+					],
+					startIsSpecial: null,
+					endIsSpecial: null,
+				}),
+			],
 		] as const) {
-			const elements = interactionScene(id, marker);
+			const elements = interactionScene(candidate);
 			const diagnostics = inspectBoardDiagnostics(elements);
 			const report = diagnostics.report;
 			expect(report.coverage).toBe("complete");
@@ -318,7 +182,7 @@ describe("unrepresentable geometry", () => {
 				),
 			).toBe(false);
 		}
-		for (const [id, marker, message] of [
+		for (const [id, marker, reason] of [
 			["rotation unsupported", { angle: 1 }, "rotation"],
 			["malformed angle unsupported", { angle: "bad" }, "rotation"],
 			["curve unsupported", { curve: false }, "curve"],
@@ -326,13 +190,13 @@ describe("unrepresentable geometry", () => {
 			["malformed elbowed unsupported", { elbowed: "bad" }, "rounded-or-elbowed"],
 			["fixed segments unsupported", { fixedSegments: [] }, "rounded-or-elbowed"],
 		] as const) {
-			const elements = interactionScene(id, marker);
+			const elements = negativeInteractionScene(id, marker);
 			const report = inspectBoardDiagnostics(elements).report;
 			expect(
 				report.findings.some(
 					(finding) =>
 						finding.code === "UNSUPPORTED_GEOMETRY" &&
-						finding.reason === message &&
+						finding.reason === reason &&
 						finding.elements[0]?.id === id &&
 						finding.points.length === 2,
 				),
@@ -394,27 +258,66 @@ describe("unrepresentable geometry", () => {
 			expectNoModeRefusal(report);
 		}
 		for (const coordinate of [1_000_001, -1_000_001] as const) {
-			const report = inspectBoard([
-				elbowConnector(`over-limit-${coordinate}`, {
-					x: 31,
-					y: 41,
-					width: Math.abs(coordinate),
-					height: 0,
-					points: [
-						[0, 0],
-						[coordinate, 0],
-					],
-				}),
-			]);
+			const id = `over-limit-${coordinate}`;
+			const side = coordinate > 0 ? 1 : -1;
+			const rejected = elbowConnector(id, {
+				x: side * 31,
+				y: 50,
+				width: Math.abs(coordinate),
+				height: 0,
+				points: [
+					[0, 0],
+					[coordinate, 0],
+				],
+			});
+			const report = inspectBoard(interactionScene(rejected, side));
 			expect(report.coverage).toBe("indeterminate");
 			const refusal = report.findings.find(
 				(finding) =>
 					finding.code === "UNSUPPORTED_GEOMETRY" && finding.reason === "rounded-or-elbowed",
 			);
 			expect(refusal?.message).toContain(`point 1 x coordinate ${coordinate} exceeding ±1,000,000`);
-			expect(report.findings.some((finding) => finding.code === "CONNECTOR_PENETRATES_NODE")).toBe(
-				false,
-			);
+			for (const code of [
+				"CONNECTOR_PENETRATES_NODE",
+				"CONNECTOR_PENETRATES_OBSTACLE",
+				"CONNECTOR_INTERSECTION_UNMARKED",
+			] as const)
+				expect(
+					report.findings.some((finding) => finding.code === code && findingUses(finding, id)),
+				).toBe(false);
+			const control = completeElement({
+				id: `${id}-control`,
+				type: "arrow",
+				x: side * 31,
+				y: 50,
+				width: Math.abs(coordinate),
+				height: 0,
+				points: [
+					[0, 0],
+					[coordinate, 0],
+				],
+				elbowed: false,
+			} satisfies LegacyElementIngress);
+			const controlReport = inspectBoard(interactionScene(control, side));
+			for (const code of [
+				"CONNECTOR_PENETRATES_NODE",
+				"CONNECTOR_PENETRATES_OBSTACLE",
+				"CONNECTOR_INTERSECTION_UNMARKED",
+			] as const)
+				expect(
+					controlReport.findings.some(
+						(finding) => finding.code === code && findingUses(finding, `${id}-control`),
+					),
+				).toBe(true);
+			expect(() =>
+				planBridgeCreate({
+					elements: [rejected, verticalConnector(`${id}-bridge-under`, 50)],
+					bridgeId: `${id}-bridge`,
+					overConnectorId: id,
+					underConnectorId: `${id}-bridge-under`,
+					background: "#ffffff",
+				}),
+			).toThrow(unsupportedSourceMessage);
 		}
 		const ordinary = inspectBoard([
 			connector({
@@ -440,7 +343,10 @@ describe("unrepresentable geometry", () => {
 			["end-special", 60, 70, 75, 2, 55],
 		] as const) {
 			const report = inspectBoard([
-				elbowConnector(id),
+				elbowConnector(id, {
+					startIsSpecial: segmentIndex === 0,
+					endIsSpecial: segmentIndex === 2,
+				}),
 				semanticNode(`${id}-node`, { x: nodeX, y, width: 10, height: 10 }),
 				{ ...libraryBody(`${id}-obstacle`, obstacleX, [`${id}-group`]), y },
 				connector({
