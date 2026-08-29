@@ -1,65 +1,70 @@
 import { describe, expect, test } from "bun:test";
+import { TEST_BOARD_INSPECTION_SWEEP_CASE_TIMEOUT_MS } from "../../../shared/timing/timing.js";
 import { diagnoseSweepCompatibility, inspectBoardDiagnostics } from "../diagnostics.js";
 import { connector, semanticNode } from "./fixtures/elements.js";
 import { interval } from "./fixtures/sweep-cases.js";
 
 describe("sweep filtering", () => {
-	test("zero-segment filtering keeps only supported segments", () => {
-		const points = Array.from({ length: 4_097 }, (_, index) => [Math.floor(index / 2), 0]);
-		const diagnostics = inspectBoardDiagnostics([
-			connector({ id: "repeated", width: 2_048, points }),
-		]);
-		const zeroSegments = diagnostics.report.findings
-			.filter(
-				(finding) => finding.code === "AMBIGUOUS_GEOMETRY" && finding.reason === "zero-length",
-			)
-			.map((finding) => finding.details.segmentIndex);
-		expect(zeroSegments).toEqual(Array.from({ length: 2_048 }, (_, index) => index * 2));
-		expect(diagnostics.work.pathSegmentChecks).toBe(4_096);
-		expect(diagnostics.report.broadPhaseComparisons).toBe(0);
-		expect(diagnostics.work.broadPhaseCompatibleVisits).toBe(0);
+	test(
+		"zero-segment filtering keeps only supported segments",
+		() => {
+			const points = Array.from({ length: 4_097 }, (_, index) => [Math.floor(index / 2), 0]);
+			const diagnostics = inspectBoardDiagnostics([
+				connector({ id: "repeated", width: 2_048, points }),
+			]);
+			const zeroSegments = diagnostics.report.findings
+				.filter(
+					(finding) => finding.code === "AMBIGUOUS_GEOMETRY" && finding.reason === "zero-length",
+				)
+				.map((finding) => finding.details.segmentIndex);
+			expect(zeroSegments).toEqual(Array.from({ length: 2_048 }, (_, index) => index * 2));
+			expect(diagnostics.work.pathSegmentChecks).toBe(4_096);
+			expect(diagnostics.report.broadPhaseComparisons).toBe(0);
+			expect(diagnostics.work.broadPhaseCompatibleVisits).toBe(0);
 
-		const pairDiagnostics = inspectBoardDiagnostics(
-			[
-				connector({
-					id: "zero-and-supported",
-					width: 2,
-					points: [
-						[0, 0],
-						[0, 0],
-						[2, 0],
-					],
-				}),
-				connector({
-					id: "zero-control",
-					x: 1,
-					y: -1,
-					width: 0,
-					height: 2,
-					points: [
-						[0, 0],
-						[0, 2],
-					],
-				}),
-			],
-			{ intersectionTolerance: 0 },
-		);
-		expect(
-			pairDiagnostics.report.findings
-				.filter((finding) => finding.code === "CONNECTOR_INTERSECTION_UNMARKED")
-				.map((finding) => finding.details),
-		).toEqual([
-			{
-				firstConnectorId: "zero-control",
-				firstSegmentIndex: 0,
-				secondConnectorId: "zero-and-supported",
-				secondSegmentIndex: 1,
-				point: { x: 1, y: 0 },
-			},
-		]);
-		expect(pairDiagnostics.report.broadPhaseComparisons).toBe(1);
-		expect(pairDiagnostics.work.broadPhaseCompatibleVisits).toBe(1);
-	});
+			const pairDiagnostics = inspectBoardDiagnostics(
+				[
+					connector({
+						id: "zero-and-supported",
+						width: 2,
+						points: [
+							[0, 0],
+							[0, 0],
+							[2, 0],
+						],
+					}),
+					connector({
+						id: "zero-control",
+						x: 1,
+						y: -1,
+						width: 0,
+						height: 2,
+						points: [
+							[0, 0],
+							[0, 2],
+						],
+					}),
+				],
+				{ intersectionTolerance: 0 },
+			);
+			expect(
+				pairDiagnostics.report.findings
+					.filter((finding) => finding.code === "CONNECTOR_INTERSECTION_UNMARKED")
+					.map((finding) => finding.details),
+			).toEqual([
+				{
+					firstConnectorId: "zero-control",
+					firstSegmentIndex: 0,
+					secondConnectorId: "zero-and-supported",
+					secondSegmentIndex: 1,
+					point: { x: 1, y: 0 },
+				},
+			]);
+			expect(pairDiagnostics.report.broadPhaseComparisons).toBe(1);
+			expect(pairDiagnostics.work.broadPhaseCompatibleVisits).toBe(1);
+		},
+		TEST_BOARD_INSPECTION_SWEEP_CASE_TIMEOUT_MS,
+	);
 
 	test("same-connector filtering preserves only cross-connector pairs", () => {
 		const exact = diagnoseSweepCompatibility({

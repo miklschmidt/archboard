@@ -373,15 +373,16 @@ export const CLAIM_LEASE_MS = LOCK_LEASE_MS;
  */
 export const LOCK_WATCH_MS = LOCK_RENEW_MS;
 
+/** Synchronous Bun failure thresholds for runner variance, not kill timers or product SLAs. */
+export const TEST_BOARD_INSPECTION_SWEEP_CASE_TIMEOUT_MS = 15_000;
+export const TEST_BOARD_INSPECTION_TERMINAL_CASE_TIMEOUT_MS = 40_000;
+export const TEST_BOARD_INSPECTION_PACKAGE_CASE_TIMEOUT_MS =
+	2 * TEST_BOARD_INSPECTION_TERMINAL_CASE_TIMEOUT_MS + 10_000;
+
 // ── Canvas subprocesses owned by checks (TASK-086) ───────────────────────
 
-/**
- * How long an owned test canvas gets to prove its identity through `/health`.
- *
- * This is an outer startup cap, not a sleep. It must stay below
- * TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS after leaving room for bounded shutdown,
- * or the parent proof could declare its child stuck while that child is still
- * inside the startup contract it was given.
+/** Outer threshold for an owned canvas to prove `/health` identity. It stays
+ * below TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS with room for bounded shutdown.
  */
 export const TEST_CANVAS_STARTUP_TIMEOUT_MS = 15_000;
 

@@ -5,16 +5,21 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-29 16:14'
-updated_date: '2026-08-29 18:39'
+updated_date: '2026-08-29 19:10'
 labels: []
 dependencies: []
 references:
   - 'https://github.com/miklschmidt/archboard/actions/runs/33100307429'
   - .github/workflows/ci.yml
   - docs/agents/test-suite.md
+  - 'https://github.com/miklschmidt/archboard/actions/runs/33268988057'
 modified_files:
   - .github/workflows/ci.yml
+  - src/runtime/board-inspection/tests/comparison-limits.test.ts
+  - src/runtime/board-inspection/tests/sweep-filtering.test.ts
   - src/runtime/engine/tests/board-version-note.test.ts
+  - src/shared/timing/timing.ts
+  - tests/system/board-inspection/package-limits.test.ts
   - tests/system/boards/malformed-input.test.ts
   - tests/system/browser/run-browser-lane.ts
   - tests/system/browser/support/agent-browser.ts
@@ -65,6 +70,10 @@ GitHub Actions is failing on the current repository state and is expected to fai
 12. Clean-runner module-owner remediation. Reproduce the exact pushed CI failure with ARCHBOARD_VAULT absent, then make board-version-note.test.ts own a temporary vault before the first config-sensitive dynamic import. Preserve and restore a caller-provided sentinel exactly, delete an originally absent variable, remove the owned root, and retain Bun module isolation. Verify unset and sentinel-focused runs, the module lane and proportional static gates, then run one clean bun run check with ARCHBOARD_VAULT explicitly unset. Commit for integration review without pushing or finalizing.
 
 13. Unset-vault system-owner amendment. The complete unset full gate exposed three additional same-process test-owner failures after the module repair: one boards case and two code-target default-dependency cases. Give each owner a temporary vault before its first config-sensitive import, assert the imported config uses that owned root, dispose its canvas/server/fixture resources before removing the root, and restore or delete the caller environment exactly. Verify the two owners with both absent and caller-sentinel environments, then run the full unset system lane, static gates, and the clean complete gate; do not change production, default missing-vault behavior, or workflow environment.
+
+14. Hosted-runner lifecycle-ceiling amendment. Preserve the exact 4,096 path-segment/2,048 zero-segment assertions and the exact attempted comparison 2,000,001 plus retained-finding assertions; these are the product/resource contracts. Move only the Bun test lifecycle caps into src/shared/timing/timing.ts: a focused sweep cap sized above the measured 5.274-second hosted case, a terminal module cap sized above the measured 27.094-second hosted case, and a package cap derived for its two sequential terminal CLI executions plus below-limit setup. Apply them to sweep-filtering.test.ts, comparison-limits.test.ts, and package-limits.test.ts without changing fixtures, counts, assertions, algorithms, production code, or workflow. After approval, run the two focused module owners and package limit owner with ARCHBOARD_VAULT unset, module/system lanes as proportionate, static gates, then a clean unset bun run check before commit and CI reintegration.
+
+15. Terminology clarification for item 14: these values are synchronous Bun lifecycle failure thresholds that accommodate measured runner variance. They are neither true hang-kill ceilings nor product performance SLAs; synchronous work may complete after the threshold and Bun then reports the case failed.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -134,4 +143,24 @@ Clean-runner CI remediation evidence, pushed SHA c98a229, 2026-08-29:
 - Final clean acceptance from absent dist/frontend and with ARCHBOARD_VAULT explicitly removed passes bun run check: lint, formatting, both TypeScript projects, 400 module tests, 252 system tests, 99 repository-policy tests, and all 15 sequential headless browser owners. Log: /tmp/task138-ci2-final-full-check.log. Final cleanup removed the generated dist, found no new vault/browser fixture roots, and found no surviving TASK-138 check, canvas, browser, or owner process.
 
 Evidence correction after final formatting: tests/system/boards/malformed-input.test.ts is 223 physical lines (not the pre-format 225); every stated line cap remains satisfied.
+
+Hosted-runner timing diagnosis, pushed SHA 9028035, 2026-08-29:
+
+- GitHub Actions run 33268988057/job 99143955951 cleared the vault-isolation failures and failed exactly two synchronous module cases: zero-segment filtering completed in 5,274.07 ms after Bun's default 5,000 ms synchronous lifecycle failure threshold; retained terminal findings completed in 27,093.94 ms after its explicit 20,000 ms synchronous lifecycle failure threshold. All 398 other module tests passed. Full log: /tmp/task138-ci3-job.log.
+- Current worktree content matches pushed 9028035 for both owners, fixtures, package owner, and shared timing. Four local isolated repeats were stable: zero filtering 2,256.66-2,307.44 ms (median about 2,276 ms), terminal retention 11,598.71-11,670.20 ms (median about 11,624 ms). Hosted/local ratios are independently 2.32x and 2.33x, identifying runner throughput rather than test drift. Logs: /tmp/task138-ci3-zero-focused-1.log, /tmp/task138-ci3-zero-focused-repeat.log, /tmp/task138-ci3-terminal-focused-1.log, and /tmp/task138-ci3-terminal-focused-repeat.log.
+- Neither case asserts elapsed time. The sweep owner asserts the complete 4,096-segment traversal, exact 2,048 zero-segment indexes, zero broad-phase comparisons, and the supported-pair control. The terminal owner asserts attempted comparison 2,000,001, exactly one terminal finding, and preservation of a completed zero-length finding. Production separately fixes input complexity at 1,000,000 and broad-phase comparisons at 2,000,000; no public wall-clock SLA exists.
+- Component measurement on the current host attributes cost to deterministic output volume: exact 2,000,001 comparisons over 2,500 elements took 492.73 ms; canonicalizing all-zero connector findings took 2,652.80 ms for 2,048 segments, 4,938.85 ms for 4,096, and 13,792.64 ms for 10,000. The terminal fixture intentionally combines 10,000 completed findings with the exact comparison ceiling. Log: /tmp/task138-ci3-component-benchmark.log.
+- The package owner executes the terminal workload twice, normal and strict, after a below-limit case. Its focused local case took 26,787.44 ms under the existing 40,000 ms synchronous Bun lifecycle failure threshold; applying the observed 2.33x hosted factor predicts about 62.4 seconds. Earlier honest local full attempts already crossed that 40-second lifecycle failure threshold under contention, while clean retries passed around 26.6-26.8 seconds. A shared derived package lifecycle cap is therefore part of the same repair, not a dataset or assertion reduction. Log: /tmp/task138-ci3-package-limit-focused.log.
+- Proposed evidence-based synchronous Bun lifecycle failure thresholds are 15,000 ms for the sweep owner, 40,000 ms for the terminal module owner, and 90,000 ms for the package owner (two 40-second terminal allowances plus 10 seconds for below-limit/setup). They accommodate runner variance; they neither kill synchronous work at the threshold nor define performance assertions or product SLAs; exact work limits and all fixtures remain unchanged. No production optimization or follow-up task is justified by this deterministic, bounded workload.
+
+Timing terminology correction: references in the preceding diagnosis to outer caps or hang ceilings mean synchronous Bun lifecycle failure thresholds only. They accommodate measured runner variance; they do not kill synchronous work at the threshold and do not establish product performance SLAs.
+
+Hosted-runner lifecycle-threshold remediation evidence, 2026-08-29:
+
+- Approved item 14 is implemented without changing inspection fixtures, datasets, work counts, assertions, algorithms, production behavior, workflow, or gate composition. Shared timing now defines 15,000 ms for the complete sweep case, 40,000 ms for the terminal module case, and the package threshold exactly as 2 * TEST_BOARD_INSPECTION_TERMINAL_CASE_TIMEOUT_MS + 10,000. These are synchronous Bun lifecycle failure thresholds for measured runner variance, not kill timers or product performance SLAs.
+- RED evidence is the exact pushed GitHub run 33268988057/job 99143955951: the unchanged sweep completed at 5,274.07 ms after the default 5,000 ms threshold and terminal retention completed at 27,093.94 ms after the explicit 20,000 ms threshold, while their exact structural assertions remained intact. Full log: /tmp/task138-ci3-job.log.
+- Focused green with ARCHBOARD_VAULT unset: sweep-filtering plus comparison-limits passed 13 tests / 83 assertions; package-limits passed 2 tests / 8 assertions. Logs: /tmp/task138-ci3-focused-modules-green.log and /tmp/task138-ci3-focused-package-green.log.
+- Proportionate lanes with ARCHBOARD_VAULT unset: modules passed 400 tests / 3,144 assertions; serial system passed 252 tests / 4,130 assertions, including the package terminal case at 26,644.03 ms. Logs: /tmp/task138-ci3-module-lane-green.log and /tmp/task138-ci3-system-lane-green.log. Oxlint, formatting, both TypeScript projects, and git diff checks passed; logs use /tmp/task138-ci3-lint.log, -format.log, -type-check.log, and -diff-check.log.
+- One clean sequential acceptance run started with ARCHBOARD_VAULT unset, AGENT_BROWSER_EXECUTABLE_PATH unset, dist/frontend absent, and no active owner process. bun run check passed all gates: lint, formatting, both TypeScript projects, 400 module tests, 252 serial system tests, 99 repository-policy tests, and all 15 serial headless browser owners. The log contains 766 passing cases and no failures: /tmp/task138-ci3-final-full-check.log.
+- Physical lines after formatting: timing.ts 500; sweep-filtering.test.ts 454; comparison-limits.test.ts 45; package-limits.test.ts 66. The generated ignored dist bundle was removed after acceptance. Final audit found no surviving check, browser, canvas, or inspection owner and no fresh TASK-138 temp root; node_modules remains the pre-existing ignored dependency tree.
 <!-- SECTION:NOTES:END -->
