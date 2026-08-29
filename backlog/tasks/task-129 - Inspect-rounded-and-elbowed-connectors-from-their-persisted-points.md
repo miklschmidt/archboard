@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 00:50'
-updated_date: '2026-08-29 14:40'
+updated_date: '2026-08-29 15:19'
 labels:
   - ready-for-agent
 dependencies:
@@ -19,6 +19,7 @@ references:
   - src/runtime/board-inspection/tests/bridge-validation.test.ts
   - tests/system/board-inspection/package-totality.test.ts
   - src/runtime/board-inspection/lib/decode.ts
+  - src/runtime/board-inspection/tests/finding-evidence.test.ts
 modified_files:
   - src/runtime/board-inspection/lib/decode.ts
   - src/runtime/board-inspection/lib/detectors.ts
@@ -86,6 +87,8 @@ BASE: ce6b1a2c0398fbfe021bd69863acb5c88826a9ff
    - retain `elbowed: "bad"` and fixedSegments on the wrong union arm as narrow unsupported cases.
    First run must be naturally red under the current broad exclusion.
 
+   **Capacity split (review remediation).** Move the pre-existing finding evidence and serialization assertions losslessly from `src/runtime/board-inspection/tests/unrepresentable-geometry.test.ts` into `src/runtime/board-inspection/tests/finding-evidence.test.ts`. That is the new file's sole responsibility: it owns no new product behavior. Keeping those assertions beside the endpoint-special cross-product and threshold matrix would breach the repository's 500-line test cap. Do not compact or weaken the expectations and do not introduce a helper/abstraction to force both responsibilities into one owner.
+
 2. **Shared eligibility and minimal detector green.**
    - In `src/runtime/board-inspection/lib/decode.ts`, define the single `1_000_000` constant and `persistedConnectorPointChainEligibility` contract above. The coordinate comparison is over decoded relative points, applies only to arrow + truthy elbowed, and returns the first offending point/axis deterministically.
    - In `src/runtime/board-inspection/lib/detectors.ts`, replace `unsupportedRounded` with that result. Valid rounded/elbowed/fixed/special states flow to the existing segment builder. For the coordinate ceiling, retain `UNSUPPORTED_GEOMETRY/rounded-or-elbowed`; emit a limit-specific message naming point index, axis, value, and `±1,000,000`, while the existing finding `points` and `affected` bbox provide geometric evidence. Use the same closed details shape and public reason/schema. Give malformed-elbowed and wrong-arm fixedSegments equally narrow issue-specific messages under the same compatible reason.
@@ -123,11 +126,12 @@ Production owners:
 
 Test owners:
 - `src/runtime/board-inspection/tests/unrepresentable-geometry.test.ts`
+- `src/runtime/board-inspection/tests/finding-evidence.test.ts` — lossless pre-existing evidence/serialization assertions only
 - `src/runtime/board-inspection/tests/bridge-create.test.ts`
 - `src/runtime/board-inspection/tests/bridge-validation.test.ts`
 - `tests/system/board-inspection/package-totality.test.ts`
 
-Keep each edited test below the repository's 500-physical-line cap, targeting at most 475 by replacing obsolete tables with compact matrices instead of appending parallel suites. Add no lint/type/test waiver.
+Keep each edited test below the repository's 500-physical-line cap, targeting at most 475. The finding-evidence split is the sole responsibility split required to fit the endpoint/threshold matrix without compacting expectations; do not introduce any other owner or abstraction. The new file remains in `test:modules` by automatic `src` discovery, requires no package script or repository-inventory key, and owns no new product behavior. Add no lint/type/test waiver.
 
 Protected: `src/shared/board-elements/**` and TASK-134's correlated types; engine converters, `applyElementInput`, persisted validators, and write paths; `lib/input-snapshot.ts`; report reason/details schemas and formatter vocabulary; bridge metadata and generated-line contract; frontend/browser owners; package.json, bun.lock, tsconfig, lint/format config, test inventory, ADRs, and docs. No dependency, manifest, browser/UI, frontend-build, conversion, or documentation change.
 
@@ -137,11 +141,12 @@ Protected: `src/shared/board-elements/**` and TASK-134's correlated types; engin
    - `bun test src/runtime/board-inspection/tests/unrepresentable-geometry.test.ts`
    - `bun test src/runtime/board-inspection/tests/bridge-create.test.ts src/runtime/board-inspection/tests/bridge-validation.test.ts`
    - `bun test tests/system/board-inspection/package-totality.test.ts`
-2. After each smallest green, rerun its focused owner; then execute and revert all mutations above and rerun all focused owners together.
-3. Run `bun run type-check`, `bun run lint`, and `bun run fmt:check`.
-4. Run `bun run test:modules`, `bun run test:system`, and `bun run test:repository`.
-5. Run `bun run check`, including the unchanged serial-browser lane required by the repository. No browser test/source edit or manual rendered workflow is warranted because the public verification surfaces are inspection reports, bridge plans, and the shipped check command.
-6. Confirm package owners dispose isolated vaults in `finally`; remove no user data. Revert every deliberate mutation, remove probes/logging, run `git diff --check`, inspect `git status --short`, and verify no generated, dependency, frontend, or unrelated file changed.
+2. Immediately after the lossless move, run `bun test src/runtime/board-inspection/tests/finding-evidence.test.ts`; it must pass alone before and after production changes.
+3. After each smallest green, rerun its focused owner; then execute and revert all mutations above and rerun all focused owners together.
+4. Run `bun run type-check`, `bun run lint`, and `bun run fmt:check`.
+5. Run `bun run test:modules`, `bun run test:system`, and `bun run test:repository`.
+6. Run `bun run check`, including the unchanged serial-browser lane required by the repository. No browser test/source edit or manual rendered workflow is warranted because the public verification surfaces are inspection reports, bridge plans, and the shipped check command.
+7. Confirm package owners dispose isolated vaults in `finally`; remove no user data. Revert every deliberate mutation, remove probes/logging, run `git diff --check`, inspect `git status --short`, and verify no generated, dependency, frontend, or unrelated file changed.
 
 Implementation remains paused for rereview. Acceptance criteria remain unchecked and finalSummary remains null.
 <!-- SECTION:PLAN:END -->
@@ -175,4 +180,8 @@ Review remediation after complete-range CHANGES_REQUESTED:
 - Deliberate routed-final-segment mutation failed both bridge owners and was reverted. Earlier approved mutations remain recorded: boundary strictness, over-limit admission, relative-versus-scene coordinates, bridge seam bypass, broad eligibility gates, malformed/wrong-arm exclusions, and endpoint segment dropping each produced targeted reds.
 - Full bun run check was attempted as required; static and module portions passed, but package/canvas subprocesses hit existing per-test timeouts under severe host contention from pre-existing node_repl/MCP processes. No browser source was changed.
 - New finding-evidence owner remains under the 500-line cap; all edited TypeScript files are <=485 lines.
+
+Review remediation: add finding-evidence.test.ts as the sole capacity split, moving the existing finding evidence/serialization assertions losslessly from unrepresentable-geometry.test.ts because retaining them beside the endpoint/threshold matrix would breach 500 lines. It adds no behavior, abstraction, package/inventory key, or lane; automatic test:modules discovery applies and the owner must pass alone.
+
+Final broad validation after approved review amendment: exactly one `bun run check` ran from the TASK-129 worktree and exited 0. Lint and fmt:check passed; type-check passed; test:modules passed 379/0 with 3,102 expect() calls; test:system passed 248/0 with 4,023 expect() calls; test:repository passed 61/0 with 218 expect() calls; the serial browser lane passed all 14 owners (14/0), including the frontend build. Post-check hot-source audit matches the restored pre-run bytes and bigint mtimes: src/server.ts SHA256 ebfb043e287f2cc6991d2ec065eb69b6fcdc4678fe68d46d8012968dbaca3d50 mtimeNs 1788007234474913584; src/runtime/engine/board-store.ts SHA256 c87932b696f40356c3f5021be1ff6a11494b61620e133fa25a7530835a3c3cbe mtimeNs 1788007234472186078; src/server/canvas/lib/application.ts SHA256 0f58c69f997c3e6f2809f3f83629610f930d60b6a09410b67ea6761c9a5701f9 mtimeNs 1788007234475019147. No TASK-129 process remains. The exact stale disposable roots /tmp/archboard-staleness-source-qi2rtb and /tmp/archboard-hot-reload-aRrztD were removed after owner and realpath validation and verified absent. No source, generated, dependency, or frontend file changed; only this approved TASK-129 plan/evidence amendment remains to commit. Task remains In Progress, acceptance criteria unchecked, finalSummary null.
 <!-- SECTION:NOTES:END -->
