@@ -29,6 +29,13 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 			claimed: true,
 			reason: "redrawing the payment path",
 		});
+		const claimedRefusal = await lock
+			.holdBoard({ board, holder: agent("claimed-rival"), waitMs: 0 })
+			.catch((error: unknown) => error);
+		expect(claimedRefusal).toBeInstanceOf(lock.BoardHeldError);
+		expect((claimedRefusal as Error).message).toContain(
+			"held by an agent that has claimed it (redrawing the payment path)",
+		);
 		const since = first.claim.holder.since;
 		let gaps = 0;
 		for (let index = 0; index < 20; index += 1) {
