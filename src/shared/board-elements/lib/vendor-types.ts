@@ -1,6 +1,7 @@
 import type {
 	BoundElement as VendorBoundElement,
 	ExcalidrawArrowElement as VendorArrowElement,
+	ExcalidrawElbowArrowElement as VendorElbowArrowElement,
 	ExcalidrawElement as VendorElement,
 	ExcalidrawFreeDrawElement as VendorFreeDrawElement,
 	ExcalidrawImageElement as VendorImageElement,
@@ -47,7 +48,11 @@ export type DiamondElement = DirectArm<"diamond">;
 export type TextElement = JsonWritable<VendorTextElement>;
 export type FreeDrawElement = JsonWritable<VendorFreeDrawElement>;
 export type ImageElement = JsonWritable<VendorImageElement>;
-export type ArrowElement = JsonWritable<VendorArrowElement>;
+export type NonElbowArrowElement = JsonWritable<
+	Omit<VendorArrowElement, "elbowed"> & { readonly elbowed: false }
+>;
+export type ElbowArrowElement = JsonWritable<VendorElbowArrowElement>;
+export type ArrowElement = NonElbowArrowElement | ElbowArrowElement;
 
 /** The vendor combines line and arrow in one arm, so only line is normalized. */
 export type LineElement = JsonWritable<

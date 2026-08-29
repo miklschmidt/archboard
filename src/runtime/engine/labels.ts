@@ -101,12 +101,10 @@ function live(element: LabelledElement): boolean {
 	return element.isDeleted !== true;
 }
 
-/** What an element's `label`/`text` says its label should read, if anything. */
+/** The label intent already normalized by the named agent ingress. */
 export function labelSeedOf(element: LegacyElementIngress): string | undefined {
 	if (element.type === "text") return undefined;
-	if (typeof element.label?.text === "string") return element.label.text;
-	if (typeof element.text === "string") return element.text;
-	return undefined;
+	return typeof element.labelText === "string" ? element.labelText : undefined;
 }
 
 /**

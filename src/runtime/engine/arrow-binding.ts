@@ -32,13 +32,10 @@ export interface Bindable {
 	roundness?: { type?: number; value?: number } | null;
 }
 
-/** Excalidraw's own record of an arrow end that touches a shape. */
-export interface ArrowBinding {
-	elementId: string;
-	focus: number;
-	gap: number;
-	fixedPoint: [number, number] | null;
-}
+import type { ElementBinding } from "../../shared/board-elements/index.js";
+
+/** Excalidraw's ordinary point binding, used by the non-elbow router. */
+export type ArrowBinding = ElementBinding;
 
 export interface Point {
 	x: number;
@@ -99,7 +96,7 @@ const minus = (a: Point, b: Point): Point => ({ x: a.x - b.x, y: a.y - b.y });
 export function bindingFromRef(ref: unknown): ArrowBinding | null {
 	const id = (ref as { id?: unknown } | null)?.id;
 	if (typeof id !== "string" || id.length === 0) return null;
-	return { elementId: id, fixedPoint: null, focus: 0, gap: BOUND_ARROW_GAP };
+	return { elementId: id, focus: 0, gap: BOUND_ARROW_GAP };
 }
 
 /** A stored binding, or null for an end that touches nothing. */
@@ -108,10 +105,6 @@ export function bindingOf(value: unknown): ArrowBinding | null {
 	if (!raw || typeof raw.elementId !== "string" || raw.elementId.length === 0) return null;
 	return {
 		elementId: raw.elementId,
-		fixedPoint:
-			Array.isArray(raw.fixedPoint) && raw.fixedPoint.length === 2
-				? [num(raw.fixedPoint[0]), num(raw.fixedPoint[1])]
-				: null,
 		focus: num(raw.focus, 0),
 		gap: num(raw.gap, BOUND_ARROW_GAP),
 	};

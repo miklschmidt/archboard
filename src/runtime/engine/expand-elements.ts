@@ -11,7 +11,7 @@ import {
 	labelSeedOf,
 	labelTextIdFor,
 } from "./labels.js";
-import { BOUND_ARROW_GAP, bindingFromRef } from "./arrow-binding.js";
+import { BOUND_ARROW_GAP } from "./arrow-binding.js";
 import { fnv1a, type IdsInUse } from "../../shared/ids/ids.js";
 import { lineHeightOf } from "./fonts.js";
 import { canMeasure, measureText } from "./measure-text.js";
@@ -87,16 +87,49 @@ export interface ExpandOptions {
 }
 
 /** Complete one input binding without carrying input-only or unknown keys into the board. */
-function completeBinding(value: unknown): Record<string, unknown> | null {
+function completeBinding(value: unknown, elbowed: boolean): Record<string, unknown> | null {
 	if (value === null || value === undefined) return null;
 	if (!value || typeof value !== "object" || Array.isArray(value)) return { value };
 	const record = value as Record<string, unknown>;
-	return {
-		elementId: record.elementId,
-		fixedPoint: record.fixedPoint ?? null,
-		focus: record.focus ?? 0,
-		gap: record.gap ?? BOUND_ARROW_GAP,
-	};
+	return elbowed
+		? {
+				elementId: record.elementId,
+				fixedPoint: record.fixedPoint,
+				focus: record.focus ?? 0,
+				gap: record.gap ?? BOUND_ARROW_GAP,
+			}
+		: {
+				elementId: record.elementId,
+				focus: record.focus ?? 0,
+				gap: record.gap ?? BOUND_ARROW_GAP,
+			};
+}
+
+function completeLinearFields(
+	base: Record<string, unknown>,
+	rest: Record<string, unknown>,
+	type: "arrow" | "line",
+): void {
+	const elbowed = type === "arrow" && rest.elbowed === true;
+	base.points = rest.points ?? DEFAULT_LINEAR_POINTS.map((point) => point.slice());
+	const measured = measureLinear(base.points);
+	if (measured) {
+		base.width = measured.width;
+		base.height = measured.height;
+	}
+	base.lastCommittedPoint = null;
+	base.startBinding =
+		rest.startBinding !== undefined ? completeBinding(rest.startBinding, elbowed) : null;
+	base.endBinding =
+		rest.endBinding !== undefined ? completeBinding(rest.endBinding, elbowed) : null;
+	base.startArrowhead = rest.startArrowhead ?? null;
+	base.endArrowhead = rest.endArrowhead ?? (type === "arrow" ? "arrow" : null);
+	if (type !== "arrow") return;
+	base.elbowed = elbowed;
+	if (!elbowed) return;
+	base.fixedSegments = rest.fixedSegments ?? null;
+	base.startIsSpecial = rest.startIsSpecial ?? null;
+	base.endIsSpecial = rest.endIsSpecial ?? null;
 }
 
 // Excalidraw's defaults, from its own bundle rather than from anything's
@@ -458,15 +491,8 @@ export function expandElements(
 		el: LegacyElementIngress,
 		base: Record<string, unknown>,
 		rest: Record<string, unknown>,
-		label: unknown,
-		text: unknown,
+		labelText: unknown,
 	): void {
-		const labelText =
-			(label &&
-			typeof label === "object" &&
-			typeof (label as Record<string, unknown>).text === "string"
-				? (label as Record<string, unknown>).text
-				: undefined) || (typeof text === "string" ? text : undefined);
 		const hasBoundText =
 			Array.isArray(base.boundElements) &&
 			base.boundElements.some((binding: unknown) => {
@@ -555,10 +581,7 @@ export function expandElements(
 			syncedAt,
 			source: keptSource,
 			syncTimestamp,
-			label,
-			start,
-			end,
-			text,
+			labelText,
 			version: serverVersion,
 			...rest
 		} = el as unknown as Record<string, unknown>;
@@ -585,7 +608,7 @@ export function expandElements(
 
 		// Standalone text elements: keep text directly
 		if (el.type === "text") {
-			base.text = text ?? rest.text ?? "";
+			base.text = rest.text ?? "";
 			base.originalText = rest.originalText ?? base.text;
 			base.fontSize = rest.fontSize ?? DEFAULT_FONT_SIZE;
 			base.fontFamily =
@@ -615,24 +638,7 @@ export function expandElements(
 		// conversion `arrow-binding.ts` holds. From here on the binding is all
 		// anything reads, including the server's own routing (TASK-088).
 		if (el.type === "arrow" || el.type === "line") {
-			base.points = rest.points ?? DEFAULT_LINEAR_POINTS.map((point) => point.slice());
-			const measured = measureLinear(base.points);
-			if (measured) {
-				base.width = measured.width;
-				base.height = measured.height;
-			}
-			base.lastCommittedPoint = null;
-			base.startBinding =
-				rest.startBinding !== undefined
-					? completeBinding(rest.startBinding)
-					: bindingFromRef(start);
-			base.endBinding =
-				rest.endBinding !== undefined ? completeBinding(rest.endBinding) : bindingFromRef(end);
-			base.startArrowhead = rest.startArrowhead ?? null;
-			base.endArrowhead = rest.endArrowhead ?? (el.type === "arrow" ? "arrow" : null);
-			// Only an arrow can be elbowed. A line carrying `elbowed: false` is a
-			// field Excalidraw's line type does not have.
-			if (el.type === "arrow") base.elbowed = rest.elbowed ?? false;
+			completeLinearFields(base, rest, el.type);
 		}
 
 		// Freedraw carries a stroke's own record of how it was drawn. A user-drawn
@@ -657,7 +663,7 @@ export function expandElements(
 			base.crop = rest.crop ?? null;
 		}
 
-		appendLabel(el, base, rest, label, text);
+		appendLabel(el, base, rest, labelText);
 
 		cleanedExportElements.push(restoreServerFields(base));
 	}

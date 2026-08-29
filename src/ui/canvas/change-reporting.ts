@@ -225,9 +225,8 @@ function stampScene(scene: readonly SceneElement[]): string {
 		const points = element.points;
 		if (Array.isArray(points)) {
 			hash = fold(hash, points.length);
-			const last = points[points.length - 1] as number[] | { x: number; y: number } | undefined;
+			const last = points[points.length - 1];
 			if (Array.isArray(last)) hash = fold(fold(hash, last[0]), last[1]);
-			else if (last) hash = fold(fold(hash, last.x), last.y);
 		}
 		hash = fold(hash, Array.isArray(element.groupIds) ? element.groupIds.length : 0);
 	}

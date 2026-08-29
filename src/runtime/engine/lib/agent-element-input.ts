@@ -6,7 +6,7 @@ import {
 import { mintId } from "../../../shared/ids/ids.js";
 import type { LegacyElementIngress } from "../../../shared/board-elements/index.js";
 import { bindingFromRef } from "../arrow-binding.js";
-import { DEFAULT_LINEAR_POINTS, pointsOf } from "../geometry.js";
+import { DEFAULT_LINEAR_POINTS } from "../geometry.js";
 import { EXCALIDRAW_ELEMENT_TYPES, normalizeFontFamily } from "../types.js";
 import { stripUntrustedTrackingClaims } from "../metadata.js";
 import { CreateElementSchema } from "./element-input-schema.js";
@@ -17,10 +17,19 @@ const hasOwn = (value: object, key: PropertyKey): boolean =>
 
 function normalizePoints(points: unknown): unknown {
 	if (!Array.isArray(points)) return points;
-	const normalized = pointsOf(points);
-	return normalized && normalized.length === points.length
-		? normalized.map((point) => [point.x, point.y])
-		: points;
+	const normalized: [number, number][] = [];
+	for (const point of points) {
+		const record =
+			point && typeof point === "object" && !Array.isArray(point)
+				? (point as Record<string, unknown>)
+				: null;
+		const x = Array.isArray(point) ? point[0] : record?.x;
+		const y = Array.isArray(point) ? point[1] : record?.y;
+		if (typeof x !== "number" || !Number.isFinite(x)) return points;
+		if (typeof y !== "number" || !Number.isFinite(y)) return points;
+		normalized.push([x, y]);
+	}
+	return normalized;
 }
 
 /** Spend public aliases before the native completion boundary. */
@@ -41,10 +50,17 @@ export function wellFormAgentStatement(
 		delete statement[alias];
 	}
 	const type = typeof statement.type === "string" ? statement.type : existingType;
-	if (type !== EXCALIDRAW_ELEMENT_TYPES.TEXT && hasOwn(statement, "text")) {
+	if (type !== EXCALIDRAW_ELEMENT_TYPES.TEXT) {
+		const label = statement.label;
+		const labelText =
+			label && typeof label === "object" && !Array.isArray(label)
+				? (label as Record<string, unknown>).text
+				: undefined;
 		const text = statement.text;
+		delete statement.label;
 		delete statement.text;
-		if (typeof text === "string") statement.label = { text };
+		if (typeof labelText === "string") statement.labelText = labelText;
+		else if (typeof text === "string") statement.labelText = text;
 	}
 	for (const key of ["startBinding", "endBinding"] as const) {
 		if (!hasOwn(statement, key)) continue;
@@ -71,9 +87,14 @@ export function spendArrowRefs(
 		["end", "endBinding"],
 	] as const) {
 		const said = hasOwn(stated, ref);
-		const value = element[ref];
+		const value = stated[ref];
 		delete element[ref];
-		if (said) element[binding] = bindingFromRef(value);
+		delete stated[ref];
+		if (said) {
+			const normalized = bindingFromRef(value);
+			element[binding] = normalized;
+			stated[binding] = normalized;
+		}
 	}
 }
 

@@ -4,6 +4,7 @@ export type {
 	ArrowElement,
 	BoundElement,
 	DiamondElement,
+	ElbowArrowElement,
 	ElementBinding,
 	EllipseElement,
 	FreeDrawElement,
@@ -11,6 +12,7 @@ export type {
 	JsonWritable,
 	LineElement,
 	NativeBoardElement,
+	NonElbowArrowElement,
 	RectangleElement,
 	TextElement,
 	WritableVendorElement,
@@ -117,4 +119,4 @@ type PartialNativeArm<Element extends NativeBoardElement> = Element extends unkn
  */
 export type LegacyElementIngress = PartialNativeArm<NativeBoardElement> &
 	InputAliases &
-	RuntimeElementTracking & { id: string };
+	RuntimeElementTracking & { id: string; labelText?: string };
