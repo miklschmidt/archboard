@@ -7,6 +7,29 @@ import type { ChildEnvironment } from "./process-http.ts";
 
 type Child = ChildProcessByStdio<null, Readable, Readable>;
 type Exit = { code: number | null; signal: NodeJS.Signals | null };
+type Terminal = Exit | { error: Error };
+
+function observeChild(child: Child, onError: (error: Error) => void) {
+	let terminated = false;
+	let exited = false;
+	let resolveExit!: (exit: Exit) => void;
+	const exit = new Promise<Exit>((resolve) => (resolveExit = resolve));
+	const terminal = new Promise<Terminal>((resolve) => {
+		child.once("error", (error) => {
+			terminated = true;
+			onError(error);
+			resolve({ error });
+		});
+		child.once("exit", (code, signal) => {
+			const result = { code, signal };
+			terminated = true;
+			exited = true;
+			resolveExit(result);
+			resolve(result);
+		});
+	});
+	return { terminal, exit, isTerminated: () => terminated, isExited: () => exited };
+}
 
 export interface OwnedPeer<T> {
 	readonly child: Child;
@@ -33,27 +56,48 @@ export async function runOwnedPeerToExit(options: {
 		env: options.env,
 		stdio: ["ignore", "pipe", "pipe"],
 	});
-	if (!child.pid) throw new Error("Owned peer has no PID.");
 	let stdout = "";
 	let stderr = "";
 	child.stdout.on("data", (chunk: Buffer) => (stdout += chunk.toString()));
 	child.stderr.on("data", (chunk: Buffer) => (stderr += chunk.toString()));
-	const exit = new Promise<Exit>((resolve, reject) => {
-		child.once("error", reject);
-		child.once("exit", (code, signal) => resolve({ code, signal }));
-	});
-	const result = await Promise.race([exit, delay(options.timeoutMs ?? 5_000).then(() => null)]);
+	const lifecycle = observeChild(child, (error) => (stderr += `\nspawn error: ${error.message}`));
+	const pid = child.pid;
+	if (!pid) {
+		await stopChild(child, lifecycle);
+		throw new Error(`Owned peer has no PID. stdout=${stdout}\nstderr=${stderr}`);
+	}
+	const result = await Promise.race([
+		lifecycle.terminal,
+		delay(options.timeoutMs ?? 5_000).then(() => null),
+	]);
 	if (!result) {
-		child.kill("SIGTERM");
-		if (!(await Promise.race([exit.then(() => true), delay(2_000).then(() => false)])))
-			child.kill("SIGKILL");
-		await exit;
+		await stopChild(child, lifecycle);
 		throw new Error(`Owned peer did not exit. stdout=${stdout}\nstderr=${stderr}`);
 	}
-	return { ...result, stdout, stderr, pid: child.pid };
+	if ("error" in result) {
+		await stopChild(child, lifecycle);
+		throw new Error(`Owned peer failed. stdout=${stdout}\nstderr=${stderr}`, {
+			cause: result.error,
+		});
+	}
+	return { ...result, stdout, stderr, pid };
 }
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function stopChild(child: Child, lifecycle: ReturnType<typeof observeChild>): Promise<void> {
+	if (!child.pid) {
+		await lifecycle.terminal;
+		return;
+	}
+	if (!lifecycle.isExited()) child.kill("SIGTERM");
+	if (
+		!lifecycle.isExited() &&
+		!(await Promise.race([lifecycle.exit.then(() => true), delay(2_000).then(() => false)]))
+	)
+		child.kill("SIGKILL");
+	if (!lifecycle.isExited()) await lifecycle.exit;
+}
 
 export async function startOwnedPeer<T>({
 	argv,
@@ -65,32 +109,22 @@ export async function startOwnedPeer<T>({
 		env,
 		stdio: ["ignore", "pipe", "pipe"],
 	});
-	if (!child.pid) throw new Error("Owned peer has no PID.");
 	let stderr = "";
 	let stdout = "";
-	let settled = false;
-	let resolveExit!: (exit: Exit) => void;
-	const exit = new Promise<Exit>((resolve) => (resolveExit = resolve));
 	child.stderr.on("data", (chunk: Buffer) => (stderr += chunk.toString()));
 	child.stdout.on("data", (chunk: Buffer) => (stdout += chunk.toString()));
-	child.once("error", (error) => {
-		stderr += `\nspawn error: ${error.message}`;
-	});
-	child.once("exit", (code, signal) => {
-		settled = true;
-		resolveExit({ code, signal });
-	});
+	const lifecycle = observeChild(child, (error) => (stderr += `\nspawn error: ${error.message}`));
+	const pid = child.pid;
+	if (!pid) {
+		await stopChild(child, lifecycle);
+		throw new Error(`Owned peer has no PID. stdout=${stdout}\nPeer stderr:\n${stderr}`);
+	}
+	const exit = lifecycle.exit;
 
 	let disposal: Promise<void> | undefined;
 	const dispose = (): Promise<void> => {
 		disposal ??= (async () => {
-			if (!settled) child.kill("SIGTERM");
-			if (
-				!settled &&
-				!(await Promise.race([exit.then(() => true), delay(2_000).then(() => false)]))
-			)
-				child.kill("SIGKILL");
-			if (!settled) await exit;
+			await stopChild(child, lifecycle);
 		})();
 		return disposal;
 	};
@@ -128,8 +162,12 @@ export async function startOwnedPeer<T>({
 					dispose,
 				};
 			}
-			if (settled)
-				throw new Error(`Peer died before readiness. stdout=${stdout}\nPeer stderr:\n${stderr}`);
+			if (lifecycle.isTerminated()) {
+				const result = await lifecycle.terminal;
+				throw new Error(`Peer died before readiness. stdout=${stdout}\nPeer stderr:\n${stderr}`, {
+					cause: "error" in result ? result.error : undefined,
+				});
+			}
 			await delay(20);
 		}
 		throw new Error(`Peer readiness timed out. stdout=${stdout}\nPeer stderr:\n${stderr}`);

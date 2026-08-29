@@ -18,7 +18,9 @@ const RawLockReadySchema = ReadySchema.extend({ lockFile: z.string() });
 const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
 
 test("raw lock peer and two canvases exclude and recover through one vault", async () => {
+	const resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-cross-process-lock-"));
+	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
 	const env = sanitizedEnvironment(root, vault);
 	const raw = await startOwnedPeer({
@@ -31,14 +33,14 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 		},
 		readySchema: RawLockReadySchema,
 	});
+	resources.defer(() => raw.dispose());
 	const first = await startOwnedCanvas({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
 		env,
 	});
+	resources.defer(() => first.dispose());
 	const requestFirst = createJsonRequester(first);
-	let second: Awaited<ReturnType<typeof startOwnedCanvas>> | undefined;
-	let pane: Awaited<ReturnType<typeof openTestPane>> | undefined;
 	try {
 		expect(existsSync(raw.ready.lockFile)).toBeTrue();
 		const blocked = await requestFirst<{
@@ -64,11 +66,12 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 			).status,
 		).toBe(200);
 
-		second = await startOwnedCanvas({
+		const second = await startOwnedCanvas({
 			serverPath: join(repoRoot, "src/server.ts"),
 			vault,
 			env,
 		});
+		resources.defer(() => second.dispose());
 		const requestSecond = createJsonRequester(second);
 		await requestFirst("/api/boards/hold?board=scratch", {
 			method: "POST",
@@ -80,6 +83,7 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 				body: { clientId: "first-pane" },
 			});
 		}, 800);
+		resources.defer(() => clearInterval(firstRenewal));
 		const denied = await requestSecond<{ code: string; holder: { id: string } }>(
 			"/api/elements?board=scratch",
 			{
@@ -103,7 +107,8 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 			).status,
 		).toBe(200);
 
-		pane = await openTestPane(second.base, requestSecond, "second-pane", 0);
+		const pane = await openTestPane(second.base, requestSecond, "second-pane", 0);
+		resources.defer(() => pane.close());
 		await sleep(1_200);
 		const beforeClaim = pane.since();
 		expect(
@@ -147,10 +152,6 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 			held: false,
 		});
 	} finally {
-		await raw.dispose();
-		if (pane) await pane.close();
-		if (second) await second.dispose();
-		await first.dispose();
-		rmSync(root, { recursive: true, force: true });
+		await resources.disposeAsync();
 	}
 }, 30_000);
