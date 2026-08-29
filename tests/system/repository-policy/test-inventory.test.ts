@@ -32,13 +32,16 @@ function input(overrides: Partial<InventoryInput> = {}): InventoryInput {
 			check: "bun run lint && bun run fmt:check && bun run test",
 			test: "bun run test:modules && bun run test:system && bun run test:repository && bun run test:serial-browser",
 			"test:modules": "bun test --isolate src",
-			"test:system": "bun test --isolate --max-concurrency=1 tests/system/support",
+			"test:system":
+				"bun test --isolate --max-concurrency=1 tests/system/support tests/system/boards tests/system/label-geometry tests/system/cli tests/system/board-inspection tests/system/canvas-state tests/system/process-contracts tests/system/code-targets",
 			"test:repository": "bun test --isolate tests/system/repository-policy",
 			"test:serial-browser": packageAdapter,
 		},
 		nativeTests: [
 			"tests/system/repository-policy/skills.test.ts",
 			"tests/system/repository-policy/test-inventory.test.ts",
+			"tests/system/code-targets/activation-contract.test.ts",
+			"tests/system/browser/opener-settings.test.ts",
 		],
 		...overrides,
 	};
@@ -116,6 +119,46 @@ describe("test inventory policy", () => {
 				.toSorted(),
 		).toEqual(["test:modules", "test:repository", "test:serial-browser", "test:system"]);
 	});
+
+	test("keeps the code-target system directory and opener browser owner once", () => {
+		const fixture = input();
+		const system = fixture.scripts["test:system"]!;
+		const browser = fixture.scripts["test:serial-browser"]!;
+		expect(system.match(/tests\/system\/code-targets/g)).toHaveLength(1);
+		expect(browser.match(/tests\/system\/browser\/opener-settings\.test\.ts/g)).toHaveLength(1);
+		expect(inspectTestInventory(fixture).errors).toEqual([]);
+	});
+	test("rejects missing, duplicate, reordered, and wrong-lane new owners", () => {
+		const missing = input();
+		missing.scripts["test:system"] = missing.scripts["test:system"]!.replace(
+			" tests/system/code-targets",
+			"",
+		);
+		expect(inspectTestInventory(missing).errors).toContain(
+			"native test `tests/system/code-targets/activation-contract.test.ts` belongs to no package lane",
+		);
+
+		const duplicate = input();
+		duplicate.scripts["test:modules"] += " tests/system/code-targets";
+		expect(inspectTestInventory(duplicate).errors).toContain(
+			"native test `tests/system/code-targets/activation-contract.test.ts` runs 2 times from `check` through package lanes: test:modules (1), test:system (1)",
+		);
+
+		const reordered = input();
+		reordered.scripts["test:serial-browser"] = packageAdapter.replace(
+			"tests/system/browser/claim-interaction.test.ts tests/system/browser/opener-settings.test.ts",
+			"tests/system/browser/opener-settings.test.ts tests/system/browser/claim-interaction.test.ts",
+		);
+		expect(inspectTestInventory(reordered).errors[0]).toContain(
+			"Focused browser paths are not in canonical relative order.",
+		);
+
+		const wrongLane = input();
+		wrongLane.scripts["test:system"] += " tests/system/browser/opener-settings.test.ts";
+		expect(inspectTestInventory(wrongLane).errors).toContain(
+			"native test `tests/system/browser/opener-settings.test.ts` runs 2 times from `check` through package lanes: test:system (1), test:serial-browser (1)",
+		);
+	});
 });
 
 function adapterInput(
@@ -186,7 +229,7 @@ describe("typed serial browser adapter selection", () => {
 	test("inventory rejects a missing package owner", () => {
 		const command = `bun ${BROWSER_ADAPTER_PATH} ${BROWSER_TEST_PATHS.slice(0, -1).join(" ")}`;
 		expect(inspectTestInventory(adapterInput(command)).errors).toContain(
-			"browser adapter lane `test:serial-browser` is invalid: Package browser lane must name all 13 canonical paths in order.",
+			"browser adapter lane `test:serial-browser` is invalid: Package browser lane must name all 14 canonical paths in order.",
 		);
 	});
 
