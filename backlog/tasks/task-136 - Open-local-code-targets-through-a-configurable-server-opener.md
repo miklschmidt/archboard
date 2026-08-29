@@ -1,11 +1,11 @@
 ---
 id: TASK-136
 title: Open local code targets through a configurable server opener
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-28 15:35'
-updated_date: '2026-08-29 10:21'
+updated_date: '2026-08-29 10:27'
 labels: []
 dependencies:
   - TASK-130.11
@@ -26,13 +26,13 @@ A person activating code that exists in a registered checkout can open its file 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The frontend has a global opener settings panel with the platform-native default, editor presets, custom executable and argv fields containing {path}, validation, reset, and a test against a chosen registered checkout root
-- [ ] #2 Opener configuration is stored as machine state outside the vault, survives a server restart, and a saved change applies to every pane on the next activation without reloading
-- [ ] #3 A local code-target activation sends board and element identity through a same-origin POST; GET, cross-origin requests, browser-supplied absolute paths, and elements without a resolvable binding open nothing
-- [ ] #4 Before launching, the server re-reads the canonical binding, verifies the registered checkout still has the recorded repository identity, accepts existing files and directories, and rejects real paths that escape through a symlink
-- [ ] #5 The server launches the configured executable with an argument array and no shell; the platform-native default works on each supported host or returns an actionable unavailable error
-- [ ] #6 A successful activation leaves the canvas open, while launch failure names what failed, links to opener settings, and offers an explicit GitHub action when runtime presentation can derive one
-- [ ] #7 Automated checks exercise the public settings and activation contracts, process launch with a controlled fake opener, file and directory targets, refusals, persistence, and immediate cross-pane application
+- [x] #1 The frontend has a global opener settings panel with the platform-native default, editor presets, custom executable and argv fields containing {path}, validation, reset, and a test against a chosen registered checkout root
+- [x] #2 Opener configuration is stored as machine state outside the vault, survives a server restart, and a saved change applies to every pane on the next activation without reloading
+- [x] #3 A local code-target activation sends board and element identity through a same-origin POST; GET, cross-origin requests, browser-supplied absolute paths, and elements without a resolvable binding open nothing
+- [x] #4 Before launching, the server re-reads the canonical binding, verifies the registered checkout still has the recorded repository identity, accepts existing files and directories, and rejects real paths that escape through a symlink
+- [x] #5 The server launches the configured executable with an argument array and no shell; the platform-native default works on each supported host or returns an actionable unavailable error
+- [x] #6 A successful activation leaves the canvas open, while launch failure names what failed, links to opener settings, and offers an explicit GitHub action when runtime presentation can derive one
+- [x] #7 Automated checks exercise the public settings and activation contracts, process launch with a controlled fake opener, file and directory targets, refusals, persistence, and immediate cross-pane application
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -221,3 +221,9 @@ Validation:
 
 TASK-137 handoff is unchanged: it alone replaces eligible file presentation URLs and owns real binding file/directory clicks, ordinary-link coexistence, GitHub action derivation, and two-pane activation. It consumes the exact shared schemas/parser/builder, canonical resolver, board/element-only POST, and typed notice boundary without broadening the URL, accepting client paths, duplicating policy, or caching opener state. TASK-136 remains In Progress for independent rereview; all seven acceptance criteria and finalSummary remain untouched.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented the machine-wide configurable local code opener so a person can open canonical targets from registered checkouts without persisting machine paths or commands in board notes. The finished contract includes guarded identity-only activation through the sole write boundary, canonical containment and repository re-read, durable outside-vault settings, shell-free launching, and rendered settings and typed notice UX. Verified through the public settings, activation, persistence, and launcher system owners in tests/system/code-targets (34 tests, 175 expectations), the rendered opener owner and all 14 serial browser owners (647 expectations), bun run test, bun run check, git diff --check, and independent clean Standards and Spec reviews of the complete fixed-base range.
+<!-- SECTION:FINAL_SUMMARY:END -->
