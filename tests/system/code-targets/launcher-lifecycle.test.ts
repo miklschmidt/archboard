@@ -1,5 +1,15 @@
 import { describe, expect, test } from "bun:test";
-import { readdirSync } from "node:fs";
+import {
+	closeSync,
+	mkdtempSync,
+	openSync,
+	readdirSync,
+	rmSync,
+	statSync,
+	writeFileSync,
+} from "node:fs";
+import { spawn } from "node:child_process";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { planOpenerCommand } from "../../../src/server/code-opener/index.ts";
@@ -8,8 +18,11 @@ import {
 	createOpenerFixture,
 	jsonBody,
 	parseLinuxProcessStat,
+	processCompletionObserved,
 	processExistsEvidence,
+	readCompleteCapture,
 	readLinuxProcessStatEvidence,
+	waitForProcessAbsence,
 } from "./support/opener-fixture.ts";
 
 const LAUNCHER_OWNER = join(import.meta.dir, "fixtures/launcher-owner.ts");
@@ -54,6 +67,68 @@ function processDiagnostic(pid: number): string {
 }
 
 describe("Linux opener process evidence", () => {
+	test("waits for complete capture JSON without replacing its exclusive file", async () => {
+		const root = mkdtempSync(join(tmpdir(), "archboard-opener-capture-read-"));
+		const file = join(root, "capture.json");
+		let descriptor = openSync(file, "wx");
+		try {
+			writeFileSync(descriptor, '{"pid":');
+			const inode = statSync(file).ino;
+			const capture = readCompleteCapture(file, 4 * TEST_OPENER_LIFECYCLE.pollMs);
+			await Bun.sleep(TEST_OPENER_LIFECYCLE.pollMs);
+			writeFileSync(
+				descriptor,
+				'81,"target":"/repo/src/index.ts","extra":["literal"],"argv":["hold"]}',
+			);
+			closeSync(descriptor);
+			descriptor = -1;
+			expect(await capture).toEqual({
+				pid: 81,
+				target: "/repo/src/index.ts",
+				extra: ["literal"],
+				argv: ["hold"],
+			});
+			expect(statSync(file).ino).toBe(inode);
+		} finally {
+			if (descriptor !== -1) closeSync(descriptor);
+			rmSync(root, { recursive: true });
+		}
+	});
+
+	test("reports a stalled malformed capture with its raw content and cause", async () => {
+		const root = mkdtempSync(join(tmpdir(), "archboard-opener-capture-stalled-"));
+		const file = join(root, "capture.json");
+		const raw = '{"pid":0,"target":"x","extra":[],"argv":[]}';
+		try {
+			writeFileSync(file, raw, { flag: "wx" });
+			const failure = await readCompleteCapture(file, TEST_OPENER_LIFECYCLE.pollMs).then(
+				() => null,
+				(error: unknown) => error,
+			);
+			expect(failure).toBeInstanceOf(Error);
+			if (!(failure instanceof Error)) throw new Error("Expected capture readiness to fail.");
+			expect(failure.message).toBe(
+				`Timed out waiting for schema-valid opener capture JSON in ${file}; latest raw=${JSON.stringify(raw)}; latest cause=capture.pid must be a positive safe integer.`,
+			);
+			expect(failure.cause).toBeInstanceOf(Error);
+			expect((failure.cause as Error).message).toBe("capture.pid must be a positive safe integer.");
+		} finally {
+			rmSync(root, { recursive: true });
+		}
+	});
+
+	test("distinguishes exact absence from semantic nonrunning evidence", () => {
+		const live = parseLinuxProcessStat(80, syntheticStat(80, "opener", "S"));
+		const zombie = parseLinuxProcessStat(80, syntheticStat(80, "opener", "Z"));
+		const observations = [live, zombie, null];
+		expect(
+			observations.findIndex((evidence) => processCompletionObserved(evidence, "absent")),
+		).toBe(2);
+		expect(
+			observations.findIndex((evidence) => processCompletionObserved(evidence, "nonrunning")),
+		).toBe(1);
+	});
+
 	test("parses a live process whose comm contains spaces and closing parentheses", () => {
 		expect(parseLinuxProcessStat(42_424, syntheticStat(42_424, "fake ) opener", "R"))).toEqual({
 			pid: 42_424,
@@ -114,6 +189,43 @@ describe("Linux opener process evidence", () => {
 		expect(readLinuxProcessStatEvidence(child.pid)).toBeNull();
 	});
 
+	test("waits past a direct zombie until its retained parent handle reaps it", async () => {
+		if (process.platform !== "linux") return;
+		const child = spawn(process.execPath, ["-e", "process.exit(0)"], {
+			detached: true,
+			stdio: "ignore",
+		});
+		const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>(
+			(resolve, reject) => {
+				child.once("exit", (code, signal) => resolve({ code, signal }));
+				child.once("error", reject);
+			},
+		);
+		try {
+			await new Promise<void>((resolve, reject) => {
+				child.once("spawn", resolve);
+				child.once("error", reject);
+			});
+			const pid = child.pid;
+			if (pid === undefined) throw new Error("Direct child has no PID after spawn.");
+			const zombieDeadline = Date.now() + TEST_OPENER_LIFECYCLE.timeoutMs;
+			let evidence = readLinuxProcessStatEvidence(pid);
+			while (evidence?.state !== "Z" && Date.now() < zombieDeadline) {
+				evidence = readLinuxProcessStatEvidence(pid);
+			}
+			expect(evidence).toMatchObject({ state: "Z", running: false });
+			expect(child.exitCode).toBeNull();
+			expect(processExistsEvidence(pid)).toBeFalse();
+			await waitForProcessAbsence(pid);
+			expect(child.exitCode).toBe(0);
+			expect(readLinuxProcessStatEvidence(pid)).toBeNull();
+			expect(await exited).toEqual({ code: 0, signal: null });
+		} finally {
+			if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+			await exited;
+		}
+	});
+
 	test("treats a missing Linux stat entry as absent", () => {
 		if (process.platform !== "linux") return;
 		expect(readLinuxProcessStatEvidence(Number.MAX_SAFE_INTEGER)).toBeNull();
@@ -154,7 +266,7 @@ describe("shell-free launcher lifecycle", () => {
 		const fixture = await createOpenerFixture();
 		resources.defer(() => fixture.dispose());
 		const invocation = fixture.invocation("hold");
-		resources.defer(() => invocation.releaseAndWait());
+		resources.defer(() => invocation.releaseAndWaitForNonrunning());
 		const plan = planOpenerCommand(invocation.selection, fixture.checkout, process.platform);
 		if (!plan.ok) throw new Error(`${plan.code}: ${plan.error}`);
 
@@ -239,7 +351,7 @@ describe("shell-free launcher lifecycle", () => {
 			});
 		}
 
-		await invocation.releaseAndWait();
+		await invocation.releaseAndWaitForNonrunning();
 		expect(readdirSync(invocation.exitDirectory)).toHaveLength(1);
 		expect(processExistsEvidence(capture.pid)).toBeFalse();
 	});
