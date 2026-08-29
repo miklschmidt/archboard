@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 15:35'
-updated_date: '2026-08-29 09:49'
+updated_date: '2026-08-29 10:21'
 labels: []
 dependencies:
   - TASK-130.11
@@ -200,4 +200,24 @@ Caps and cleanup:
 TASK-137 handoff remains unchanged: consume the exact shared builder/parser/Zod schemas, canonical runtime resolver, board/element-only protected POST, and typed CanvasPane notice boundary. TASK-137 alone replaces eligible file:// presentation, produces validated GitHub actions, and proves real file/directory binding clicks, ordinary-link coexistence, and changed-setting behavior in two browser panes. It must not accept client paths, duplicate containment/identity policy, cache opener state, or broaden the reserved URL shape.
 
 Review checkpoint before this Backlog evidence commit: af07fe23b8a174e2d644ffd0dbe130feb2301953. Implementation remains In Progress for independent complete-range review; acceptance criteria and finalSummary remain untouched.
+
+Complete-range review remediation (fixed base 569a384eabbcef8c57b5eb199420caed90bae794; implementation commit 79c676a):
+- Split the code-opener route into an early CSRF and owned-body preguard plus response handlers mounted after the sole deny-by-default write boundary. The exact POST /api/code-targets/open request now crosses the boundary through only its documented NOT_A_BOARD_WRITE exemption. The global parser bypass is exact to owned opener body routes; Host, Sec-Fetch-Site, and Origin refusal remains before parsing, state, note, and spawn. Malformed and oversized owned JSON still returns shared-schema REQUEST_INVALID HTTP 400.
+- Activation clients parse 2xx bodies only as CodeTargetOpenSuccess. A schema-valid failure body sent with HTTP 200 becomes RESPONSE_INVALID and cannot enter the normal server-failure callback path; non-2xx bodies retain CodeTargetOpenFailure parsing.
+- Added one shared browser-safe absolute-or-bare executable validator and reused it in production planning and rendered settings validation. A custom ./editor draft renders inline invalidity and disables both Test and Save while server-side semantic refusal remains unchanged.
+- Documented the exact CSRF limitation beside checkBrowserCsrf and added a named executable case: forged but valid loopback browser headers are accepted because this is browser CSRF protection, not authentication against a local header-forging process.
+
+TDD evidence:
+- Boundary red: the static owner could not find the split preguard, and the old response router sorted before the write boundary. A deliberate mutation deleting only the activation exemption made the public production-app request cross the boundary and fail with the board-write refusal before the opener handler; the mutation was restored.
+- Reply red: HTTP 200 with success:false invoked the normal failure path instead of RESPONSE_INVALID.
+- Executable reds: the shared contract initially lacked the semantic validator; after wiring inline text, the rendered owner still caught enabled Test and Save controls until semantic validity gated both actions.
+- CSRF limitation red: the explicit source-adjacent limitation assertion failed before the comment and named forged-loopback acceptance case were added.
+
+Validation:
+- Focused affected module, UI, server, boundary, and inventory owners: 91 pass, 235 expectations. Focused opener browser: 1 pass, 37 expectations. tests/system/code-targets: 34 pass, 175 expectations. Full test:system: 248 pass, 3995 expectations. Full test:repository: 61 pass, 218 expectations.
+- Standalone all-14 serial browser lane passed sequentially with 647 expectations. bun run test passed type-check plus 376 module tests and 2738 expectations, 248 system tests and 3995 expectations, 61 repository tests and 218 expectations, and all 14 browser owners. bun run check independently passed lint, formatting across 428 files, type-check, the same four lanes, and all 14 serial browser owners. No product flake occurred.
+- git diff --check passed. Caps: shared index 220/220, helper 9, routes 304/360, canvas API 445/460, settings dialog 371/380, link owner 208/260, boundary owner 147/500, browser owner 379/460, timing 499/499; legacy fixed-base application, session, and Shell projections remain within +18, +12, and +70.
+- Final process audit found no fake opener, launcher owner, opener process, canvas server, or browser-lane process. No task-owned opener/code-target/browser temporary root remains. The unrelated pre-existing /tmp/archboard-browser-7ds9lJ dated 2026-08-26 remains untouched.
+
+TASK-137 handoff is unchanged: it alone replaces eligible file presentation URLs and owns real binding file/directory clicks, ordinary-link coexistence, GitHub action derivation, and two-pane activation. It consumes the exact shared schemas/parser/builder, canonical resolver, board/element-only POST, and typed notice boundary without broadening the URL, accepting client paths, duplicating policy, or caching opener state. TASK-136 remains In Progress for independent rereview; all seven acceptance criteria and finalSummary remain untouched.
 <!-- SECTION:NOTES:END -->
