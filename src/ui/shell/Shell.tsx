@@ -16,6 +16,7 @@ import { BoardDialog, type BoardDialogMode } from "./BoardDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { ConflictDialog } from "./ConflictDialog";
 import { InstallLibraryDialog } from "./InstallLibraryDialog";
+import { OpenerSettingsDialog } from "../opener-settings";
 import { Icon } from "./Icons";
 import { useLibrary } from "./useLibrary";
 import {
@@ -28,6 +29,11 @@ import {
 	saveBoard,
 } from "../canvas/api";
 import type { SaveRequest } from "../canvas/api";
+import {
+	GitHubHttpsUrlSchema,
+	type CodeTargetNotice,
+	type CodeTargetNoticeAction,
+} from "../../shared/code-target";
 import type {
 	BoardHold,
 	BoardInfo,
@@ -64,6 +70,7 @@ interface Notice {
 	kind: "info" | "error";
 	text: string;
 	hold?: boolean;
+	actions?: readonly CodeTargetNoticeAction[];
 }
 interface AgentState {
 	heldBy: LockHolder | null;
@@ -247,6 +254,7 @@ export function Shell(): React.JSX.Element {
 	const [dialog, setDialog] = useState<BoardDialogMode | null>(null);
 	const [dialogError, setDialogError] = useState<string | null>(null);
 	const [confirmingClear, setConfirmingClear] = useState(false);
+	const [openerSettingsOpen, setOpenerSettingsOpen] = useState(false);
 	// The human has clicked the mark saying somebody else wrote this board's note
 	// (TASK-062). Not the mark going up: that is a state of the board and it puts
 	// nothing in front of anybody.
@@ -570,6 +578,14 @@ export function Shell(): React.JSX.Element {
 	const handleBoardError = useCallback((error: string) => {
 		setNotice({ kind: "error", text: error, hold: true });
 	}, []);
+	const handleCodeTargetNotice = useCallback((next: CodeTargetNotice) => {
+		setNotice({ kind: "error", text: next.message, hold: true, actions: next.actions });
+	}, []);
+	const handleOpenerSuccess = useCallback((message: string) => {
+		setNotice({ kind: "info", text: message });
+	}, []);
+	const openOpenerSettings = useCallback(() => setOpenerSettingsOpen(true), []);
+	const closeOpenerSettings = useCallback(() => setOpenerSettingsOpen(false), []);
 	const handleDismissNotice = useCallback(() => setNotice(null), []);
 	const handleCancelDialog = useCallback(() => {
 		setDialog(null);
@@ -781,6 +797,7 @@ export function Shell(): React.JSX.Element {
 				onOpen={handleOpenDialog}
 				onNew={handleNewDialog}
 				onClear={handleClearDialog}
+				onOpenOpenerSettings={openOpenerSettings}
 				onAddPane={addPane}
 				// The button names no pane, so it drops the last one and keeps the
 				// one the human started in. `pane close <spec>` is how a caller says
@@ -847,6 +864,7 @@ export function Shell(): React.JSX.Element {
 								onLibraryChangedElsewhere={library.applyFromServer}
 								onLayoutRequest={handleLayoutRequest}
 								onBoardError={handleBoardError}
+								onCodeTargetNotice={handleCodeTargetNotice}
 							/>
 						))}
 					</div>
@@ -859,7 +877,38 @@ export function Shell(): React.JSX.Element {
 							<span className="notice-icon">
 								<Icon name={notice.kind === "error" ? "close" : "check"} size={16} />
 							</span>
-							<span className="notice-text">{notice.text}</span>
+							<span className="notice-text">
+								{notice.text}
+								{notice.actions && (
+									<span className="notice-actions">
+										{notice.actions.map((action) => {
+											if (action.kind === "settings") {
+												return (
+													<button
+														key="settings"
+														className="btn btn-quiet"
+														onClick={openOpenerSettings}
+													>
+														{action.label}
+													</button>
+												);
+											}
+											const href = GitHubHttpsUrlSchema.safeParse(action.href);
+											return href.success ? (
+												<a
+													key={action.href}
+													className="btn btn-quiet"
+													href={href.data}
+													target="_blank"
+													rel="noopener noreferrer"
+												>
+													{action.label}
+												</a>
+											) : null;
+										})}
+									</span>
+								)}
+							</span>
 							<button
 								className="notice-dismiss"
 								type="button"
@@ -898,6 +947,13 @@ export function Shell(): React.JSX.Element {
 			</footer>
 
 			{dialogContent}
+			{openerSettingsOpen && (
+				<OpenerSettingsDialog
+					onCancel={closeOpenerSettings}
+					onSuccess={handleOpenerSuccess}
+					onFailure={handleCodeTargetNotice}
+				/>
+			)}
 		</div>
 	);
 }

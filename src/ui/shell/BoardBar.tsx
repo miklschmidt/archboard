@@ -30,6 +30,7 @@ interface BoardBarProps {
 	onOpen: () => void;
 	onNew: () => void;
 	onClear: () => void;
+	onOpenOpenerSettings: () => void;
 	onAddPane: () => void;
 	onClosePane: () => void;
 	theme: "light" | "dark";
@@ -98,6 +99,7 @@ export function BoardBar({
 	onOpen,
 	onNew,
 	onClear,
+	onOpenOpenerSettings,
 	onAddPane,
 	onClosePane,
 	theme,
@@ -207,6 +209,14 @@ export function BoardBar({
 					aria-label="Clear board"
 				>
 					<Icon name="trash" />
+				</button>
+				<button
+					className="btn btn-icon"
+					onClick={onOpenOpenerSettings}
+					title="Opener settings"
+					aria-label="Opener settings"
+				>
+					<Icon name="settings" />
 				</button>
 				<button
 					className="btn btn-icon"

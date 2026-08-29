@@ -11,6 +11,8 @@ import type { ExcalidrawImperativeAPI, LibraryItems, AppState } from "@excalidra
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { useCanvasSession } from "./useCanvasSession";
 import type { LockHolder, PaneStatus } from "../types";
+import type { CodeTargetNotice } from "../../shared/code-target";
+import { createCodeTargetLinkHandler } from "../code-target";
 // The one thing the browser half shares with the server half by import rather
 // than by copy: the two defaults have to be the same colour, or a box the user
 // draws and a box the agent draws stop matching.
@@ -49,6 +51,7 @@ interface CanvasPaneProps {
 	 */
 	onLayoutRequest: (paneId: string, request: "open" | "close") => void;
 	onBoardError: (error: string) => void;
+	onCodeTargetNotice: (notice: CodeTargetNotice) => void;
 }
 
 export function CanvasPane({
@@ -66,6 +69,7 @@ export function CanvasPane({
 	onLibraryChangedElsewhere,
 	onLayoutRequest,
 	onBoardError,
+	onCodeTargetNotice,
 }: CanvasPaneProps): React.JSX.Element {
 	const layout = useCallback(
 		(request: "open" | "close") => onLayoutRequest(paneId, request),
@@ -156,6 +160,15 @@ export function CanvasPane({
 		}),
 		[theme],
 	);
+	const handleLinkOpen = useMemo(
+		() =>
+			createCodeTargetLinkHandler({
+				boardKey: session.boardKey,
+				onSuccess: () => undefined,
+				onFailure: onCodeTargetNotice,
+			}),
+		[onCodeTargetNotice, session.boardKey],
+	);
 
 	return (
 		<section
@@ -170,6 +183,7 @@ export function CanvasPane({
 					// board news. A connected pane stays locally editable while the
 					// vault mutex orders persistence, even when an agent holds the board.
 					viewModeEnabled={readOnly}
+					onLinkOpen={handleLinkOpen}
 					excalidrawAPI={setApiFromExcalidraw}
 					onLibraryChange={handleLibraryChange}
 					onChange={handleChange}
