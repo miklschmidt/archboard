@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-29 16:14'
-updated_date: '2026-08-29 22:38'
+updated_date: '2026-08-29 22:43'
 labels: []
 dependencies: []
 references:
@@ -290,7 +290,7 @@ Item-23 review correction: the earlier 540/540 SyntaxError-only WIP run is diagn
 CI7 direct-child and capture-readiness remediation evidence, 2026-08-30:
 
 - TDD RED first proved the approved seams were absent (`/tmp/task138-ci7-tdd-red.log`). The required predecessor semantic-Z mutant then made exact-absence completion return on Z: the pure live→Z→null sequence expected index 2 but got 1, and the retained direct-child case returned with `exitCode === null` (`/tmp/task138-ci7-semantic-z-mutant-red.log`). Restoring topology-specific completion passed the two direct cases (`/tmp/task138-ci7-semantic-split-green.log`).
-- Capture-readiness TDD RED failed because the reviewed complete-capture reader was absent (`/tmp/task138-ci7-capture-direct-red.log`). Direct GREEN proves a partially written O_EXCL capture becomes readable without inode replacement and a stalled schema-invalid capture times out with the exact file, JSON-stringified raw content, latest validation message, and preserved Error cause: 2 tests / 10 assertions (`/tmp/task138-ci7-capture-direct-green.log`).
+- Capture-readiness TDD RED failed because the reviewed complete-capture reader was absent (`/tmp/task138-ci7-capture-direct-red.log`). Direct GREEN proves a partially written O_EXCL capture becomes readable without inode replacement and a stalled schema-invalid capture times out with the exact file, JSON-stringified raw content, latest validation message, and preserved Error cause: 2 tests / 6 assertions (`/tmp/task138-ci7-capture-direct-green.log`).
 - Fresh acceptance repetitions after the reviewed implementation passed with `ARCHBOARD_VAULT` absent: 20 isolated route runs, 580 tests / 1,700 assertions, 10.58 s (`/tmp/task138-ci7-final-unset-repeat.log`). The caller-sentinel repetition also passed 580 / 580 tests and left the sentinel vault path absent (`/tmp/task138-ci7-final-sentinel-repeat.log`). The earlier 539 / 540 EOF failure and SyntaxError-only WIP run remain diagnosis evidence only.
 - Complete affected lanes passed with `ARCHBOARD_VAULT` absent: code-targets 63 tests / 320 assertions (`/tmp/task138-ci7-code-targets-green.log`) and the complete sequential system lane 281 tests / 4,177 assertions in 164.99 s (`/tmp/task138-ci7-system-green.log`). TypeScript, Oxlint, formatting, and diff checks passed (`/tmp/task138-ci7-type-final.log`, `/tmp/task138-ci7-lint-final.log`, `/tmp/task138-ci7-fmt-final.log`).
 - One clean sequential `ARCHBOARD_VAULT`-unset `bun run check` passed lint, formatting, both TypeScript projects, 400 module tests / 3,144 assertions, 281 system tests / 4,177 assertions, 100 repository-policy tests / 274 assertions, and all 15 serial headless browser owners. Log: `/tmp/task138-ci7-full-check.log`. There were no dangling-process warnings.
