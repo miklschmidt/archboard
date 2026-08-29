@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 15:35'
-updated_date: '2026-08-29 05:51'
+updated_date: '2026-08-29 05:59'
 labels: []
 dependencies:
   - TASK-130.11
@@ -156,4 +156,10 @@ Complete-range checkpoint closure (source commit 203d9e1):
 - Activation owns an injected OPENER_SPAWN_FAILED branch with exact shared-schema HTTP 500/settings action, no fake capture, and byte/mtime-stable state.
 - Persistence now creates and inspects a valid note in an isolated vault, proves config containment outside that vault, and preserves exact note bytes/bigint mtime across both saves, independent callers, and restart with no opener/executable/argv/absolute/internal URL leakage.
 Validation: affected owners alone 64/64; combined module owners 58/58; tests/system/code-targets 34/34; type-check, lint, repository fmt:check, and git diff --check pass. Focused red/mutations caught oversized-body mapping removal, module-level corrupt save overwrite, and spawn-failure status removal. Owner caps: shared 220/220, routes 286/360, settings 275/480, activation 319/480, support 293/360, persistence 105/340, lifecycle 78/400. No process.kill references, opener/code-target temp roots, fake opener, or launcher-owner processes remain. Serialized CanvasPane/Shell/application/package/browser/docs/TASK-137 integration remains paused.
+
+Final Spec closures (source commit cbe028c):
+- opener-persistence now captures the prior ARCHBOARD_VAULT, creates an isolated owned vault, sets the env before the first dynamic board/router import and server creation, disposes callers/process fixtures, restores or deletes the env exactly, then removes the vault. The test proves restoration after the registered cleanup block. Its valid note keeps exact bytes and bigint mtime across both saves, independent callers, and restart; config is outside that exact vault; process.execPath, checkout, config, every configured argv value, and /api/code-targets/open are absent from note bytes.
+- activation-contract replaces the injected high-level spawn failure with a real X_OK executable whose shebang names a missing interpreter. Public activation traverses launchOpener and the ChildProcess error event, schema-parses exact HTTP 500/OPENER_SPAWN_FAILED/settings action, names the executable, creates no fake capture, and preserves exact note/config bytes and bigint mtimes.
+- src/shared/code-target exports OpenerSelectionReply and OpenerTestReply as z.infer aliases while remaining 220/220 lines.
+Validation: affected owners alone 38/38; combined module owners 58/58; tests/system/code-targets 34/34 with 175 expectations; type-check, lint, repository fmt:check, and git diff --check pass. Deliberate reds proved removal of the isolated-vault assignment inherited /home/msc/Work/Platform-Architecture/architecture-vault, and changing the real launcher error-event code changed the public response from 500 to 422. Final caps: shared 220/220, activation 368/480, persistence 117/340. Env restoration assertion passed. No opener/code-target temp roots, fake opener, launcher-owner, or broken-opener processes remain. Serialized CanvasPane/Shell/application/package/browser/docs/TASK-137 integration remains paused.
 <!-- SECTION:NOTES:END -->
