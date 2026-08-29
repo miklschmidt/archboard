@@ -14,8 +14,6 @@ const SIDE_EFFECT_IMPORTS = new Set([
 
 const ROOT_SOURCE_ENTRYPOINTS = new Set(["src/bin.ts", "src/dev-canvas.ts", "src/server.ts"]);
 
-const TEMPORARY_UNTYPED_TEST_SOURCE = "src/cli/command-contract/tests/public-runner-fixture.mjs";
-
 const MODULE_AREAS = new Set([
 	"cli",
 	"domain",
@@ -443,10 +441,7 @@ const moduleEntrypoints = createRule(
 		const placementMessage =
 			runnableTest && !importerOwner ? "noTestOutsideTestsDirectory" : undefined;
 		const untypedMessage =
-			importerOwner &&
-			isJavaScriptLikeSource(relativePath) &&
-			!isTypedTestSource(relativePath) &&
-			relativePath !== TEMPORARY_UNTYPED_TEST_SOURCE
+			importerOwner && isJavaScriptLikeSource(relativePath) && !isTypedTestSource(relativePath)
 				? "untypedTestSource"
 				: undefined;
 		if (placementMessage || untypedMessage) {

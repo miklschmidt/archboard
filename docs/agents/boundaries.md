@@ -68,10 +68,9 @@ Test-owned source may import support only from the same owner. It imports produc
 module-root entrypoint files, never an implementation subfolder. Product source, scripts, and tools
 never import test-owned source. Bun-discoverable tests outside the two owners are refused.
 
-All JavaScript-like source inside either test owner is TypeScript. The sole temporary exception is
-`src/cli/command-contract/tests/public-runner-fixture.mjs`, which TASK-130.11 converts during the
-final MJS cutover. Oxlint limits every authored TypeScript source file in both owners to 500 physical
-lines. Put large test data in a named non-TypeScript fixture instead of bypassing the limit.
+All JavaScript-like source inside either test owner is TypeScript. Oxlint limits every authored
+TypeScript source file in both owners to 500 physical lines. Put large test data in a named
+non-TypeScript fixture instead of bypassing the limit.
 
 Oxlint also rejects generic `core`, `utils`, `misc`, `migration`, and `compatibility` buckets. Name
 the module for the behavior it owns.
@@ -129,6 +128,6 @@ still goes through a root entrypoint.
 
 ## Validation
 
-Run `bun run lint` to validate distributable skill frontmatter and Markdown tables before the code
-lint. Run `bun run check` for lint, formatting, type checking, and the existing test suite. `bun run
-fix` applies safe oxlint fixes, formats the repository, then validates the distributable skills.
+Run `bun run lint` for code and boundary lint. Run `bun run check` for lint, formatting, type
+checking, and all four native test lanes. `bun run fix` applies safe Oxlint fixes, formats the
+repository, then validates the distributable skills.

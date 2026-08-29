@@ -56,9 +56,9 @@ describe("command contract artifact generation", () => {
 		const second = fixture.generate(fixture.second);
 		expect(first.status, artifactFailure(first)).toBe(0);
 		expect(second.status, artifactFailure(second)).toBe(0);
-		expect(first.stderr, artifactFailure(first)).toContain("bun scripts/generate-cli-contract.mjs");
+		expect(first.stderr, artifactFailure(first)).toContain("bun scripts/generate-cli-contract.ts");
 		expect(second.stderr, artifactFailure(second)).toContain(
-			"bun scripts/generate-cli-contract.mjs",
+			"bun scripts/generate-cli-contract.ts",
 		);
 		expect(fixture.files(fixture.first)).toEqual(artifactNames.toSorted());
 		expect(fixture.files(fixture.second)).toEqual(artifactNames.toSorted());

@@ -21,17 +21,20 @@ import {
 } from "./support/test-inventory.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+const packageAdapter = `bun ${BROWSER_ADAPTER_PATH} ${BROWSER_TEST_PATHS.join(" ")}`;
+const focusAdapter = (files: readonly string[]): string =>
+	`bun ${BROWSER_ADAPTER_PATH} --focus ${files.join(" ")}`;
 
 function input(overrides: Partial<InventoryInput> = {}): InventoryInput {
 	return {
 		repoRoot,
 		scripts: {
-			check: "bun run lint && bun run test",
-			lint: "bun run lint:skills",
-			"lint:skills": "bun test tests/system/repository-policy/skills.test.ts",
-			test: "bun run test:inventory && bun run test:legacy",
-			"test:inventory": "bun test tests/system/repository-policy/test-inventory.test.ts",
-			"test:legacy": "bun scripts/check-example.mjs",
+			check: "bun run lint && bun run fmt:check && bun run test",
+			test: "bun run test:modules && bun run test:system && bun run test:repository && bun run test:serial-browser",
+			"test:modules": "bun test --isolate src",
+			"test:system": "bun test --isolate --max-concurrency=1 tests/system/support",
+			"test:repository": "bun test --isolate tests/system/repository-policy",
+			"test:serial-browser": packageAdapter,
 		},
 		nativeTests: [
 			"tests/system/repository-policy/skills.test.ts",
@@ -42,17 +45,17 @@ function input(overrides: Partial<InventoryInput> = {}): InventoryInput {
 }
 
 describe("test inventory policy", () => {
-	test("accepts ordinary native lanes alongside non-native commands", () => {
-		const fixture = input();
-		fixture.scripts["test:legacy"] = "bun scripts/non-native-command.mjs";
-		expect(inspectTestInventory(fixture).errors).toEqual([]);
+	test("accepts the four final native lanes", () => {
+		expect(inspectTestInventory(input()).errors).toEqual([]);
 	});
 
 	test("rejects a package test lane absent from the push chain", () => {
 		const fixture = input();
-		fixture.scripts.test = "bun run test:inventory";
+		const testChain = fixture.scripts.test;
+		if (!testChain) throw new Error("fixture test chain is missing");
+		fixture.scripts.test = testChain.replace(" && bun run test:system", "");
 		expect(inspectTestInventory(fixture).errors).toContain(
-			"package test lane `test:legacy` is absent from `check`",
+			"package test lane `test:system` is absent from `check`",
 		);
 	});
 
@@ -65,11 +68,9 @@ describe("test inventory policy", () => {
 
 	test("rejects a native test reachable through multiple lanes", () => {
 		const fixture = input();
-		fixture.scripts["test:duplicate"] =
-			"bun test tests/system/repository-policy/test-inventory.test.ts";
-		fixture.scripts.test += " && bun run test:duplicate";
+		fixture.scripts["test:system"] += " tests/system/repository-policy/test-inventory.test.ts";
 		expect(inspectTestInventory(fixture).errors).toContain(
-			"native test `tests/system/repository-policy/test-inventory.test.ts` runs 2 times from `check` through package lanes: test:inventory (1), test:duplicate (1)",
+			"native test `tests/system/repository-policy/test-inventory.test.ts` runs 2 times from `check` through package lanes: test:system (1), test:repository (1)",
 		);
 	});
 
@@ -83,10 +84,19 @@ describe("test inventory policy", () => {
 
 	test("rejects a reachable non-test owner invoked twice", () => {
 		const fixture = input({ nativeTests: ["tests/system/verify.test.ts"] });
-		fixture.scripts.check = "bun run verify:native && bun run verify:native";
-		fixture.scripts["verify:native"] = "bun test tests/system/verify.test.ts";
+		fixture.scripts["test:system"] = "bun test tests/system/verify.test.ts";
+		fixture.scripts.test += " && bun run test:system";
 		expect(inspectTestInventory(fixture).errors).toContain(
-			"native test `tests/system/verify.test.ts` runs 2 times from `check` through package lanes: verify:native (2)",
+			"native test `tests/system/verify.test.ts` runs 2 times from `check` through package lanes: test:system (2)",
+		);
+	});
+
+	test("rejects an extra transitional test key", () => {
+		const fixture = input();
+		fixture.scripts["test:legacy"] = "bun scripts/non-native-command.ts";
+		fixture.scripts.test += " && bun run test:legacy";
+		expect(inspectTestInventory(fixture).errors).toContain(
+			"package test lane `test:legacy` is transitional; only test:modules, test:system, test:repository, and test:serial-browser are allowed",
 		);
 	});
 
@@ -100,12 +110,13 @@ describe("test inventory policy", () => {
 			nativeTests: discoverNativeTests(repoRoot),
 		});
 		expect(result.errors).toEqual([]);
+		expect(
+			Object.keys(pkg.scripts)
+				.filter((name) => name.startsWith("test:"))
+				.toSorted(),
+		).toEqual(["test:modules", "test:repository", "test:serial-browser", "test:system"]);
 	});
 });
-
-const packageAdapter = `bun ${BROWSER_ADAPTER_PATH} ${BROWSER_TEST_PATHS.join(" ")}`;
-const focusAdapter = (files: readonly string[]): string =>
-	`bun ${BROWSER_ADAPTER_PATH} --focus ${files.join(" ")}`;
 
 function adapterInput(
 	command: string,
@@ -115,8 +126,8 @@ function adapterInput(
 		repoRoot,
 		scripts: {
 			check: "bun run test",
-			test: "bun run test:browser",
-			"test:browser": command,
+			test: "bun run test:serial-browser",
+			"test:serial-browser": command,
 		},
 		nativeTests,
 	};
@@ -169,20 +180,20 @@ describe("typed serial browser adapter selection", () => {
 	test("inventory accepts every package adapter occurrence exactly once", () => {
 		const result = inspectTestInventory(adapterInput(packageAdapter));
 		expect(result.errors).toEqual([]);
-		expect(result.nativeLanes.get("test:browser")).toEqual([...BROWSER_TEST_PATHS]);
+		expect(result.nativeLanes.get("test:serial-browser")).toEqual([...BROWSER_TEST_PATHS]);
 	});
 
 	test("inventory rejects a missing package owner", () => {
 		const command = `bun ${BROWSER_ADAPTER_PATH} ${BROWSER_TEST_PATHS.slice(0, -1).join(" ")}`;
 		expect(inspectTestInventory(adapterInput(command)).errors).toContain(
-			"browser adapter lane `test:browser` is invalid: Package browser lane must name all 13 canonical paths in order.",
+			"browser adapter lane `test:serial-browser` is invalid: Package browser lane must name all 13 canonical paths in order.",
 		);
 	});
 
 	test("inventory rejects a duplicate adapter argument instead of collapsing it", () => {
 		const command = focusAdapter([BROWSER_TEST_PATHS[0], BROWSER_TEST_PATHS[0]]);
 		expect(inspectTestInventory(adapterInput(command, [BROWSER_TEST_PATHS[0]])).errors).toContain(
-			`browser adapter lane \`test:browser\` is invalid: Browser lane repeats \`${BROWSER_TEST_PATHS[0]}\`.`,
+			`browser adapter lane \`test:serial-browser\` is invalid: Browser lane repeats \`${BROWSER_TEST_PATHS[0]}\`.`,
 		);
 	});
 
@@ -209,9 +220,9 @@ describe("typed serial browser adapter selection", () => {
 	test("inventory rejects one focused adapter reached twice", () => {
 		const file = BROWSER_TEST_PATHS[3];
 		const fixture = adapterInput(focusAdapter([file]), [file]);
-		fixture.scripts.test = "bun run test:browser && bun run test:browser";
+		fixture.scripts.test = "bun run test:serial-browser && bun run test:serial-browser";
 		expect(inspectTestInventory(fixture).errors).toContain(
-			`native test \`${file}\` runs 2 times from \`check\` through package lanes: test:browser (2)`,
+			`native test \`${file}\` runs 2 times from \`check\` through package lanes: test:serial-browser (2)`,
 		);
 	});
 
@@ -219,7 +230,7 @@ describe("typed serial browser adapter selection", () => {
 		const file = "tests/system/example.test.ts";
 		const fixture = adapterInput(`bun test ${file} ${file}`, [file]);
 		expect(inspectTestInventory(fixture).errors).toContain(
-			`native test \`${file}\` runs 2 times from \`check\` through package lanes: test:browser (2)`,
+			`native test \`${file}\` runs 2 times from \`check\` through package lanes: test:serial-browser (2)`,
 		);
 	});
 });

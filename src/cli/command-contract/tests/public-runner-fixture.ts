@@ -3,9 +3,17 @@
 import { readFileSync } from "node:fs";
 import { z } from "zod";
 
+const recordSchema = z.object({
+	path: z.string(),
+	outputCase: z.string(),
+	held: z.unknown(),
+	result: z.unknown(),
+	artifact: z.unknown().optional(),
+});
+
 const fixturePath = process.argv[2];
 if (!fixturePath) throw new Error("public runner fixture needs a record path");
-const record = JSON.parse(readFileSync(fixturePath, "utf8"));
+const record = recordSchema.parse(JSON.parse(readFileSync(fixturePath, "utf8")));
 
 const server = Bun.serve({
 	hostname: "127.0.0.1",
@@ -58,5 +66,5 @@ try {
 		[],
 	);
 } finally {
-	server.stop(true);
+	await server.stop(true);
 }

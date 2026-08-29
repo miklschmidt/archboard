@@ -227,7 +227,7 @@ export interface NoteFile {
  * `readBoardFile` for `board open` — and TASK-085 taught only one of them to
  * follow a migrated picture. The two merged with no conflict, and a board the
  * plugin had been through rendered holes on every read until `256369d`
- * repaired it with a targeted change. `scripts/check-boards.mjs` guards both
+ * repaired it with a targeted change. `tests/system/boards/image-persistence.test.ts` guards both
  * callers: it reads one migrated note through each caller below and asserts they agree on
  * the bytes, the hash, the picture and the refusal, and it asserts that exactly
  * one line in `src/` calls `sceneJsonWithEmbeddedImages`.

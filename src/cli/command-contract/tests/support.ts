@@ -147,7 +147,7 @@ export function runPublicFixture(
 	return new Promise((resolve) => {
 		const child = spawn(
 			process.execPath,
-			[join(import.meta.dir, "public-runner-fixture.mjs"), fixturePath],
+			[join(import.meta.dir, "public-runner-fixture.ts"), fixturePath],
 			{
 				cwd: process.cwd(),
 				env: { ...process.env, EXCALIDRAW_NO_AUTOSTART: "1" },

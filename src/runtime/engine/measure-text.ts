@@ -20,7 +20,7 @@
 //   U+00AD and the other default-ignorables lay out as nothing
 //
 // With those it agreed with Chrome across 130,000 measurements to within
-// 0.0012 px, and `scripts/check-text-metrics.mjs` pins the numbers.
+// 0.0012 px, and `src/runtime/engine/tests/text-metrics.test.ts` pins the numbers.
 //
 // HEIGHT IS NOT MEASURED, by anybody. Excalidraw's `getTextHeight` is
 // `fontSize * lineHeight * lineCount`, with `lineHeight` a per-family constant

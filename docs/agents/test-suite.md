@@ -3,23 +3,63 @@
 What each check proves, and the constraints on running them. Read this when
 changing tests or CI, or when a browser check fails.
 
-`bun run test` is the whole suite: `bun run type-check` first — it is the only
-thing that type-checks, so a type error still fails the suite — then every
-check in `package.json`'s chain. `.github/workflows/ci.yml` runs `bun run check`,
-which enforces Oxlint (including the custom boundary rules), formatting, and
-then that complete test chain. A check added to `package.json` therefore runs
-on main without anybody touching the workflow. `bun run test:suites` runs the
-native repository inventory. It fails when a package test lane is outside the
-push chain or a native test has no package lane or more than one. It recognizes
-the browser lane only through the exact typed adapter forms and counts every
-literal owner-path occurrence instead of collapsing duplicates.
+`bun run test` type-checks first, then runs four native lanes in this order:
 
-The whole chain's duration is machine-dependent. The browser owners run
-sequentially; re-measure their contribution rather than trusting an old total.
-Of the rest, `test:boards` and `test:side-by-side` have historically dominated.
-Re-measure rather than trust that split.
+- `test:modules`: isolated module-owned tests discovered under `src/`;
+- `test:system`: system owners under the seven explicit non-browser directories,
+  with `--max-concurrency=1` because they own real processes and hot-reload source edits;
+- `test:repository`: isolated repository-policy tests, including inventory and no-MJS policy;
+- `test:serial-browser`: the 13 canonical browser owners through the strict adapter.
 
-## The browser lane
+`.github/workflows/ci.yml` runs `bun run check`, which runs lint, formatting, and
+that complete test chain. The repository inventory rejects a native test with
+no lane, more than one lane, no push path, a browser owner outside the serial
+adapter, recursive browser discovery, or any transitional `test:*` key.
+
+The whole chain's duration is machine-dependent. Browser owners run one at a
+time. Re-measure before making a timing claim.
+
+## Focused commands
+
+Run one module, system, or repository file with:
+
+```bash
+bun test path/to/owner.test.ts
+bun test path/to/owner.test.ts --test-name-pattern "part of the test name"
+```
+
+Run browser diagnosis only through the adapter:
+
+```bash
+bun tests/system/browser/run-browser-lane.ts --focus tests/system/browser/<canonical-owner>.test.ts
+```
+
+The module-scope owner mutates source fixtures only inside its repository-policy
+test. The hot-reload owner temporarily edits real source and restores bytes and
+mtimes in `finally`; keep both isolated from formatter, type checker, browser,
+and other hot-reload processes. System and browser owners must reap children,
+listeners, sockets, vaults, and temporary roots on success, failure, or signal.
+
+## Former check inventory
+
+Every transitional package check now has one final owner lane:
+
+| Former key                                                                     | Final lane         | Native owner selector                                                                                                |
+| ------------------------------------------------------------------------------ | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `test:suites`, `test:boundaries`, `test:module-scope`                          | repository         | `tests/system/repository-policy/`                                                                                    |
+| `test:contracts`                                                               | modules and system | `src/cli/command-contract/tests/`, `src/cli/finding-rendering/tests/`, `tests/system/cli/`                           |
+| `test:inspection`                                                              | modules and system | `src/runtime/board-inspection/tests/`, `tests/system/board-inspection/`                                              |
+| `test:bind`                                                                    | system             | `tests/system/process-contracts/`                                                                                    |
+| `test:obsidian`, `test:changes`, `test:reporting`, `test:lock`, `test:version` | modules and system | `src/runtime/engine/tests/`, `src/ui/canvas/tests/`, `tests/system/canvas-state/`, `tests/system/process-contracts/` |
+| `test:cli`, `test:install`, `test:repos`                                       | system             | `tests/system/cli/`                                                                                                  |
+| `test:one-write`                                                               | system             | `tests/system/process-contracts/*one-write.test.ts`, `write-boundary-policy.test.ts`                                 |
+| `test:doing`, `test:branch`, `test:side-by-side`, `test:staleness`, `test:hot` | system             | `tests/system/canvas-state/`                                                                                         |
+| `test:geometry`, `test:labels`                                                 | modules and system | `src/runtime/engine/tests/`, `tests/system/label-geometry/`                                                          |
+| `test:text`, `test:library`                                                    | modules            | `src/runtime/engine/tests/`                                                                                          |
+| `test:boards`                                                                  | system             | `tests/system/support/`, `tests/system/boards/`                                                                      |
+| `test:browser`                                                                 | serial-browser     | the 13 literal owners below                                                                                          |
+
+## The serial browser lane
 
 Everything else in `scripts/` stands a WebSocket in for a pane, which cannot
 catch a renderer disagreeing with us: a socket holds whatever it was sent. The
@@ -36,6 +76,9 @@ adapter instead. The lane:
   stretches request and frame observations that the checks probe on purpose;
 - checks frontend freshness once and builds at most once before the first
   owner;
+- bounds retained browser and build children with `TEST_BROWSER_COMMAND_TIMEOUT_MS`,
+  polls cleanup with `TEST_BROWSER_POLL_MS`, and treats spawn errors, signals,
+  prerequisite failures, and nonzero preflight statuses as could-not-run exit 2;
 - gives every owner an isolated home, vault, temporary directory, browser
   namespace, socket, session, canvas listener, and headless allowlisted
   environment, and audits all of them during cleanup.
@@ -93,7 +136,7 @@ and the check compares the server endpoint with the captured browser endpoint.
 The same comparison rejects an in-memory endpoint two pixels away. A failure
 prints both endpoints, the coordinate deltas and total separation, the binding
 numbers, and both node geometries. When the Excalidraw package changes, run
-`bun run test:geometry` and then `bun run test:browser`; do not replace the local
+the focused arrow-geometry module test and then `bun run test:serial-browser`; do not replace the local
 port or copy more Excalidraw internals before that differential shows a visible
 mismatch.
 
@@ -123,7 +166,7 @@ left the browser. It then restores the exact rounded rectangle and viewport
 that were already published and requires the same payload to be posted and
 recorded again. That same-key retry is the proof that the invalid branch clears
 its publication key. The server's pathful 400 for invalid telemetry stays in
-`test:boards`; this browser check does not send malformed telemetry just to test
+`test:system`; this browser owner does not send malformed telemetry just to test
 the server again.
 
 ### Live-session contracts (TASK-076)
@@ -174,7 +217,7 @@ note archboard did not write. About fifteen seconds.
 
 ## Hot reload checks
 
-- `bun run test:module-scope` parses the canvas's import graph and fails on
+- `bun test tests/system/repository-policy/module-scope-policy.test.ts` parses the canvas's import graph and fails on
   module-scope state: a `new` that is not a frozen lookup table, a literal
   something writes to, a timer, a listener added without a paired removal, a
   bind, or a write to long-lived state with no presence guard. Waive a false
@@ -185,14 +228,14 @@ note archboard did not write. About fifteen seconds.
   compares which boards are open and where each one's note is, the pane
   registrations, the socket count and the feed's id and cursor across the
   reload, and shouts to the terminal **and** every open tab if anything moved.
-  `bun run test:hot` breaks a reload on purpose to prove it fires. It does not
+  `bun test tests/system/canvas-state/hot-reload.test.ts` breaks a reload on purpose to prove it fires. It does not
   count elements — a count is a fact about the vault, which a reload cannot
   touch — with one exception kept from TASK-079: a board that has stopped
   saving is the one board whose elements are in this process and in no note.
 
 ## Source boundary check
 
-- `bun run test:boundaries` creates disposable projects outside the checkout and
+- `bun test tests/system/repository-policy/boundaries.test.ts` creates disposable projects outside the checkout and
   invokes real Oxlint subprocesses with the repository's custom plugin. It proves
   allowed module-root imports and thin process entrypoints pass, while root
   entrypoint implementation, domain-to-transformer imports, flat
@@ -205,7 +248,8 @@ note archboard did not write. About fifteen seconds.
 
 ## Board inspection check
 
-- `bun run test:inspection` drives the pure raw-record inspector and the real package binary. It pins
+- The board-inspection owners under `src/runtime/board-inspection/tests/` and
+  `tests/system/board-inspection/` drive the pure raw-record inspector and the real package binary. They pin
   the dense whole-board reroute, the exact 1,516,200 below-limit comparison count, and the
   2,000,001 limit attempt. Its package checks run with no canvas process, parse JSON through the
   exported schema, cover text and strict exits 6/7/8, and compare vault paths, bytes, and mtimes
@@ -223,7 +267,8 @@ note archboard did not write. About fifteen seconds.
 
 ## Wire and lock checks
 
-- `bun run test:contracts` tests the Archboard-owned command-contract interface.
+- The command-contract owners under `src/cli/command-contract/tests/` and
+  `tests/system/cli/` test the Archboard-owned command-contract interface.
   Its parser fake returns a prepared invocation and contains no parsing logic.
   The tests reject malformed public results and private file artifacts before
   stdout or a local write, pin command-specific held presentation, and prove
@@ -236,23 +281,23 @@ note archboard did not write. About fifteen seconds.
   the temporary outputs and proves the checkout status is unchanged. For a
   local readable copy, `bun run generate:cli-contract` writes the three views
   to ignored `docs/design/generated/`. The
-  black-box argv cases in `test:cli` continue through the real Commander
+  black-box argv cases in `test:system` continue through the real Commander
   adapter and the package binary.
-- `bun run test:cli` resolves `bin.archboard` from `package.json` and drives
+- The CLI owners in `test:system` resolve `bin.archboard` from `package.json` and drive
   that executable from outside the checkout. It covers no-argument help and
   every command/subcommand topic exposed by production `cliSurface()` data. A
   local HTTP double also pins the public write contract: `--document` on add,
   update and delete, global board/`--doing` routing, clean success streams,
   structured refusal and usage exits, and CLI-owned import path resolution.
-- `bun run test:one-write` counts writes on the wire through a proxy, so a
+- The one-write owners in `test:system` count writes on the wire through a proxy, so a
   loop cannot pass itself off as a batch (TASK-068).
-- `bun run test:changes` owns injection routing as well as the change feed. It
+- The change owners in `test:modules` and `test:system` own injection routing as well as the change feed. They
   proves injection refuses a non-loopback canvas, stays off without its switch,
   declines to arm without `ARCHBOARD_INJECT_THREAD`, and targets exactly the
   configured task when it is set.
-- `bun run test:lock` proves the exclusion with two processes over one vault,
+- The lock owners in `test:modules` and `test:system` prove exclusion with two processes over one vault,
   which is the one thing an in-process mutex could not do (ADR 0016).
-- `bun run test:repos` uses RepositoryFixture-owned HOME, XDG state, log,
+- The repository-session owners in `test:system` use RepositoryFixture-owned HOME, XDG state, log,
   registry, and vault paths, isolated from the caller's user configuration.
 - `check-obsidian-md` pins the four historical id renames measured in
   `docs/design/server-is-the-truth.md` as golden values, so a board already in

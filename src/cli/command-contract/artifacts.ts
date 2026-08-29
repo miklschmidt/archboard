@@ -1,18 +1,49 @@
 import fs from "node:fs";
 import { join } from "node:path";
+import { cliContractRegistry } from "../commands/run.js";
+import { introspectContracts } from "./introspection.js";
 
 export const CLI_CONTRACT_ARTIFACT_NAMES = [
 	"cli-command-audit.md",
 	"command-contract-proof.json",
 	"command-contract-proof.md",
-];
+] as const;
 
-const cell = (value) =>
+interface AuditEntry {
+	path: unknown;
+	parserOwner: unknown;
+	stdout: unknown;
+	result: unknown;
+	prerequisites: unknown;
+	relationships: unknown;
+	semantics: unknown;
+	ordering: unknown;
+	nextFields: unknown;
+	workflow: unknown;
+}
+
+interface AuditWorkflow {
+	name: string;
+	classification: string;
+	decision: string;
+	evidence: string;
+	commands: string[];
+	followUpTask?: string;
+}
+
+interface CliAudit {
+	reviewedBase: string;
+	surface: { commands: number; subcommands: number; paths: number };
+	entries: AuditEntry[];
+	workflows: AuditWorkflow[];
+}
+
+const cell = (value: unknown): string =>
 	(Array.isArray(value) ? value.join("; ") : String(value ?? ""))
 		.replaceAll("|", "\\|")
 		.replaceAll("\n", " ");
 
-const format = (root, name, content) => {
+function format(root: string, name: string, content: string): string {
 	const formatted = Bun.spawnSync(
 		["bunx", "oxfmt", "--stdin-filepath", join(root, "docs", "design", "generated", name)],
 		{
@@ -26,25 +57,23 @@ const format = (root, name, content) => {
 		throw new Error(`Could not format ${name}: ${formatted.stderr.toString()}`);
 	}
 	return formatted.stdout.toString();
-};
+}
 
-export const renderCliContractArtifacts = async (root) => {
+export async function renderCliContractArtifacts(root: string) {
 	const audit = JSON.parse(
 		fs.readFileSync(join(root, "docs", "design", "cli-command-audit.json"), "utf8"),
-	);
-	const { cliContractRegistry } = await import(join(root, "src", "cli", "commands", "run.ts"));
-	const { introspectContracts } = await import(
-		join(root, "src", "cli", "command-contract", "introspection.ts")
-	);
+	) as CliAudit;
 	const registry = cliContractRegistry();
 	const proof = introspectContracts(registry);
 	const routes = registry.map(
-		({ name, parent, handlerOwner, parserOwner, bare, childDiscovery }) => {
-			const route = { name, parent, handlerOwner, parserOwner };
-			if (bare) route.bare = bare;
-			if (childDiscovery) route.childDiscovery = childDiscovery;
-			return route;
-		},
+		({ name, parent, handlerOwner, parserOwner, bare, childDiscovery }) => ({
+			name,
+			parent,
+			handlerOwner,
+			parserOwner,
+			...(bare ? { bare } : {}),
+			...(childDiscovery ? { childDiscovery } : {}),
+		}),
 	);
 
 	const auditMarkdown = [
@@ -125,7 +154,7 @@ export const renderCliContractArtifacts = async (root) => {
 		);
 	}
 
-	const rawArtifacts = new Map([
+	const rawArtifacts = new Map<string, string>([
 		["cli-command-audit.md", auditMarkdown + "\n"],
 		["command-contract-proof.json", proofJson],
 		["command-contract-proof.md", proofMarkdown.join("\n") + "\n"],
@@ -134,4 +163,4 @@ export const renderCliContractArtifacts = async (root) => {
 		[...rawArtifacts].map(([name, content]) => [name, format(root, name, content)]),
 	);
 	return { artifacts, audit, proof, registry, routes };
-};
+}

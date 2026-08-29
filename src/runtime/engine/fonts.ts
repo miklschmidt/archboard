@@ -14,7 +14,7 @@
 // file. The filenames carry content hashes, so a copy would go stale on the
 // next upgrade and the failure would be a silently wrong width. Reading them
 // means an upgrade that moves them either keeps working or fails loudly, and
-// `scripts/check-text-metrics.mjs` is what makes it loud.
+// `src/runtime/engine/tests/text-metrics.test.ts` is what makes it loud.
 //
 // Face selection follows the `@font-face` `unicode-range` descriptor, last
 // declaration wins, which is what CSS says and what Blink does. Choosing by

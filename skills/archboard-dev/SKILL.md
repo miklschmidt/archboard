@@ -51,11 +51,11 @@ Anything long-lived you add to the server has to go through `kept()` in
 `src/runtime/engine/hot.ts`, or a reload will quietly replace it while the tabs stay
 connected. Two things catch that so you do not have to remember it:
 
-- `bun run test:module-scope` refuses module-scope state in the canvas's import
+- `bun test tests/system/repository-policy/module-scope-policy.test.ts` refuses module-scope state in the canvas's import
   graph. Waive a false positive with `// hot-safe: <reason>`.
 - Every reload compares boards, panes, sockets and the feed cursor across it,
   and shouts to the terminal and to every open tab if anything moved.
-  `bun run test:hot` breaks a reload on purpose to prove that works.
+  `bun test tests/system/canvas-state/hot-reload.test.ts` breaks a reload on purpose to prove that works.
 
 This box has node + bun but **no npm/npx**. The `package.json` scripts shell out
 to bun, so use `bun run <script>` — never `npm run`. `bun install` intermittently
@@ -130,7 +130,7 @@ structure wholesale.
 ## Syncing skills
 
 ```bash
-bun scripts/sync-skills.mjs      # skills/ -> .agents/skills/ -> .claude/skills/
+bun scripts/sync-skills.ts       # skills/ -> .agents/skills/ -> .claude/skills/
 skills experimental_install       # third-party, from skills-lock.json
 ```
 

@@ -1,6 +1,6 @@
 // What a reload is not allowed to change, checked every time one happens.
 //
-// The static repository-policy module-scope test reads the source and refuses
+// tests/system/repository-policy/module-scope-policy.test.ts reads the source and refuses
 // the shapes that only work the first time a module is evaluated. It
 // will miss things: it knows nothing about types, matches receivers by name,
 // and does not follow a dynamic import. This is the other net, and it works

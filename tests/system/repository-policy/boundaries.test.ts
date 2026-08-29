@@ -100,7 +100,7 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 				"tests/system/policy/support.ts": "export const support = 1;\n",
 				"tests/system/policy/system.test.ts":
 					'import { moduleValue } from "../../../src/domain/tested/index.js";\nimport { support } from "./support.js";\nexport const value = moduleValue + support;\n',
-				"src/cli/command-contract/tests/public-runner-fixture.mjs":
+				"src/cli/command-contract/tests/public-runner-fixture.ts":
 					"export const publicRunnerFixture = true;\n",
 			},
 			(root) =>
@@ -109,7 +109,7 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 						"src/domain/allowed/index.ts",
 						"src/domain/tested/tests/widget.spec.ts",
 						"tests/system/policy/system.test.ts",
-						"src/cli/command-contract/tests/public-runner-fixture.mjs",
+						"src/cli/command-contract/tests/public-runner-fixture.ts",
 					]),
 				),
 		);
