@@ -82,7 +82,9 @@ export function processExists(pid: number): boolean {
 }
 
 const RUN_SCRIPT = /\bbun run ([\w:-]+)/g;
-const DIRECT_RUN_SCRIPT = /^(?:[A-Za-z_][A-Za-z0-9_]*=\S+\s+)*bun\s+run\s+([\w:-]+)(?:\s|$)/;
+const EXECUTABLE_RUN_SCRIPT = /\bbun\s+run\s+([\w:-]+)(?=\s|$|[;&|(){}`])/g;
+const ECHO_ONLY_PREFIX =
+	/^(?:(?:if|elif|while|until|then|else|do)\s+)?(?:(?:env\s+)?(?:[A-Za-z_][A-Za-z0-9_]*=\S+\s+)*|command\s+)?(?:echo|printf)\b/;
 const BUN_TEST = /\bbun test\b([^&;|]*)/g;
 const FINAL_TEST_LANES = new Set([
 	"test:modules",
@@ -118,55 +120,62 @@ function workflowRunCommands(workflow: string): { commands: string[]; error?: st
 	return { commands };
 }
 
-function shellSegments(command: string): string[] {
-	const segments: string[] = [];
-	let start = 0;
+function unquotedShellText(command: string): string {
+	let result = "";
 	let quote: "'" | '"' | undefined;
 	let escaped = false;
 	let comment = false;
-	const finish = (end: number): void => {
-		const segment = command.slice(start, end).trim();
-		if (segment) segments.push(segment);
-	};
 	for (let index = 0; index < command.length; index += 1) {
 		const character = command[index];
 		if (comment) {
 			if (character === "\n") {
 				comment = false;
-				start = index + 1;
+				result += "\n";
 			}
 			continue;
 		}
 		if (escaped) {
 			escaped = false;
+			result += character;
 			continue;
 		}
 		if (quote) {
 			if (character === "\\" && quote === '"') escaped = true;
 			else if (character === quote) quote = undefined;
+			result += character === "\n" ? "\n" : " ";
+			continue;
+		}
+		if (character === "\\") {
+			escaped = true;
+			result += character;
 			continue;
 		}
 		if (character === "'" || character === '"') {
 			quote = character;
+			result += " ";
 			continue;
 		}
-		if (character === "#" && (index === start || /\s/.test(command[index - 1] ?? ""))) {
-			finish(index);
+		if (character === "#" && (index === 0 || /[\s;&|(){}`]/.test(command[index - 1] ?? ""))) {
 			comment = true;
 			continue;
 		}
-		const operator =
-			character === "\n" ||
-			character === ";" ||
-			((character === "&" || character === "|") && command[index + 1] === character);
-		if (operator) {
-			finish(index);
-			if (character === "&" || character === "|") index += 1;
-			start = index + 1;
-		}
+		result += character;
 	}
-	if (!comment) finish(command.length);
-	return segments;
+	return result;
+}
+
+function echoOnly(text: string, invocationIndex: number): boolean {
+	let boundary = invocationIndex - 1;
+	while (boundary >= 0 && !/[\n;&|(){}`]/.test(text[boundary] ?? "")) boundary -= 1;
+	return ECHO_ONLY_PREFIX.test(text.slice(boundary + 1, invocationIndex).trim());
+}
+
+function executableRunScripts(command: string): string[] {
+	const text = unquotedShellText(command);
+	return [...text.matchAll(EXECUTABLE_RUN_SCRIPT)]
+		.filter((match) => !echoOnly(text, match.index))
+		.map((match) => match[1])
+		.filter((script): script is string => script !== undefined);
 }
 
 export function inspectWorkflow(workflow: string): string[] {
@@ -180,9 +189,7 @@ export function inspectWorkflow(workflow: string): string[] {
 		);
 	}
 	for (const command of parsed.commands) {
-		for (const segment of shellSegments(command)) {
-			const script = segment.match(DIRECT_RUN_SCRIPT)?.[1];
-			if (!script) continue;
+		for (const script of executableRunScripts(command)) {
 			if (script === "check") {
 				if (command !== "bun run check") {
 					errors.push(

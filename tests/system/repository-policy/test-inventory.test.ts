@@ -53,32 +53,43 @@ function expectInventoryError(fixture: InventoryInput, message: string): void {
 }
 
 describe("test inventory policy", () => {
-	test("accepts the final lanes and rejects ownership drift", () => {
+	test("accepts the final lanes", () => {
 		expect(inspectTestInventory(input()).errors).toEqual([]);
+	});
+
+	test("rejects a missing final lane", () => {
 		const fixture = input();
 		fixture.scripts.test = fixture.scripts.test!.replace(" && bun run test:system", "");
 		expectInventoryError(fixture, "package test lane `test:system` is absent from `check`");
+	});
 
+	test("rejects an orphaned native test", () => {
 		const orphan = input({ nativeTests: ["tests/system/orphan.test.ts"] });
 		expectInventoryError(
 			orphan,
 			"native test `tests/system/orphan.test.ts` belongs to no package lane",
 		);
+	});
 
+	test("rejects one native test selected by two lanes", () => {
 		const multiple = input();
 		multiple.scripts["test:system"] += " tests/system/repository-policy/test-inventory.test.ts";
 		expectInventoryError(
 			multiple,
 			"native test `tests/system/repository-policy/test-inventory.test.ts` runs 2 times from `check` through package lanes: test:system (1), test:repository (1)",
 		);
+	});
 
+	test("rejects an unreachable matching lane", () => {
 		const unreachable = input({ nativeTests: ["tests/system/orphan.test.ts"] });
 		unreachable.scripts["verify:orphan"] = "bun test tests/system/orphan.test.ts";
 		expectInventoryError(
 			unreachable,
 			"native test `tests/system/orphan.test.ts` runs zero times from `check`; matching package lanes: verify:orphan",
 		);
+	});
 
+	test("rejects a lane reached twice from check", () => {
 		const duplicate = input({ nativeTests: ["tests/system/verify.test.ts"] });
 		duplicate.scripts["test:system"] = "bun test tests/system/verify.test.ts";
 		duplicate.scripts.test += " && bun run test:system";
@@ -86,7 +97,9 @@ describe("test inventory policy", () => {
 			duplicate,
 			"native test `tests/system/verify.test.ts` runs 2 times from `check` through package lanes: test:system (2)",
 		);
+	});
 
+	test("rejects a transitional package lane", () => {
 		const legacy = input();
 		legacy.scripts["test:legacy"] = "bun scripts/non-native-command.ts";
 		legacy.scripts.test += " && bun run test:legacy";
@@ -113,13 +126,16 @@ describe("test inventory policy", () => {
 		).toEqual(["test:modules", "test:repository", "test:serial-browser", "test:system"]);
 	});
 
-	test("keeps new system and browser owners once and rejects their drift", () => {
+	test("keeps the system and browser owners once", () => {
 		const fixture = input();
 		const system = fixture.scripts["test:system"]!;
 		const browser = fixture.scripts["test:serial-browser"]!;
 		expect(system.match(/tests\/system\/code-targets/g)).toHaveLength(1);
 		expect(browser.match(/tests\/system\/browser\/opener-settings\.test\.ts/g)).toHaveLength(1);
 		expect(inspectTestInventory(fixture).errors).toEqual([]);
+	});
+
+	test("rejects a missing system owner", () => {
 		const missing = input();
 		missing.scripts["test:system"] = missing.scripts["test:system"]!.replace(
 			" tests/system/code-targets",
@@ -129,14 +145,18 @@ describe("test inventory policy", () => {
 			missing,
 			"native test `tests/system/code-targets/activation-contract.test.ts` belongs to no package lane",
 		);
+	});
 
+	test("rejects a system owner copied into another lane", () => {
 		const duplicate = input();
 		duplicate.scripts["test:modules"] += " tests/system/code-targets";
 		expectInventoryError(
 			duplicate,
 			"native test `tests/system/code-targets/activation-contract.test.ts` runs 2 times from `check` through package lanes: test:modules (1), test:system (1)",
 		);
+	});
 
+	test("rejects a reordered browser owner", () => {
 		const reordered = input();
 		reordered.scripts["test:serial-browser"] = packageAdapter.replace(
 			"tests/system/browser/claim-interaction.test.ts tests/system/browser/opener-settings.test.ts",
@@ -145,7 +165,9 @@ describe("test inventory policy", () => {
 		expect(inspectTestInventory(reordered).errors[0]).toContain(
 			"Focused browser paths are not in canonical relative order.",
 		);
+	});
 
+	test("rejects a browser owner copied into the system lane", () => {
 		const wrongLane = input();
 		wrongLane.scripts["test:system"] += " tests/system/browser/opener-settings.test.ts";
 		expectInventoryError(
@@ -188,23 +210,27 @@ describe("typed serial browser adapter selection", () => {
 		});
 	});
 
-	test("rejects incomplete, reordered, unknown, recursive, and extra argument forms", () => {
-		const invalid = [
+	test.each([
+		[
+			"an incomplete package selection",
 			`bun ${BROWSER_ADAPTER_PATH} ${BROWSER_TEST_PATHS.slice(0, -1).join(" ")}`,
-			focusAdapter([BROWSER_TEST_PATHS[0], BROWSER_TEST_PATHS[0]]),
-			focusAdapter([BROWSER_TEST_PATHS[2], BROWSER_TEST_PATHS[1]]),
-			focusAdapter(["tests/system/browser/not-an-owner.test.ts"]),
-			focusAdapter(["tests/system/browser"]),
-			focusAdapter(["tests/system/browser/**/*.test.ts"]),
-			`bun ${BROWSER_ADAPTER_PATH} --focus`,
-			focusAdapter([BROWSER_TEST_PATHS[0]]) + " --changed",
-			focusAdapter([BROWSER_TEST_PATHS[0]]) + " --randomize",
-			focusAdapter([BROWSER_TEST_PATHS[0]]) + " --shard=1/2",
-			focusAdapter([BROWSER_TEST_PATHS[0]]) + " extra",
+		],
+		["a repeated owner", focusAdapter([BROWSER_TEST_PATHS[0], BROWSER_TEST_PATHS[0]])],
+		["a reordered owner", focusAdapter([BROWSER_TEST_PATHS[2], BROWSER_TEST_PATHS[1]])],
+		["an unknown owner", focusAdapter(["tests/system/browser/not-an-owner.test.ts"])],
+		["a directory selector", focusAdapter(["tests/system/browser"])],
+		["a glob selector", focusAdapter(["tests/system/browser/**/*.test.ts"])],
+		["an empty focused selection", `bun ${BROWSER_ADAPTER_PATH} --focus`],
+		["a changed flag", focusAdapter([BROWSER_TEST_PATHS[0]]) + " --changed"],
+		["a randomize flag", focusAdapter([BROWSER_TEST_PATHS[0]]) + " --randomize"],
+		["a shard flag", focusAdapter([BROWSER_TEST_PATHS[0]]) + " --shard=1/2"],
+		["an extra positional argument", focusAdapter([BROWSER_TEST_PATHS[0]]) + " extra"],
+		[
+			"a package-mode flag",
 			`bun ${BROWSER_ADAPTER_PATH} --changed ${BROWSER_TEST_PATHS.join(" ")}`,
-		];
-		for (const command of invalid)
-			expect(() => validateBrowserSelection(command.split(" "))).toThrow();
+		],
+	])("rejects %s", (_name, command) => {
+		expect(() => validateBrowserSelection(command.split(" "))).toThrow();
 	});
 
 	test("inventory accepts every package adapter occurrence exactly once", () => {
@@ -213,30 +239,37 @@ describe("typed serial browser adapter selection", () => {
 		expect(result.nativeLanes.get("test:serial-browser")).toEqual([...BROWSER_TEST_PATHS]);
 	});
 
-	test("inventory rejects missing, duplicate, reordered, and unknown adapter arguments", () => {
+	test("inventory rejects a missing package adapter argument", () => {
 		const command = `bun ${BROWSER_ADAPTER_PATH} ${BROWSER_TEST_PATHS.slice(0, -1).join(" ")}`;
 		expectInventoryError(
 			adapterInput(command),
 			"browser adapter lane `test:serial-browser` is invalid: Package browser lane must name all 15 canonical paths in order.",
 		);
+	});
 
+	test("inventory rejects a repeated focused adapter argument", () => {
 		const duplicate = focusAdapter([BROWSER_TEST_PATHS[0], BROWSER_TEST_PATHS[0]]);
 		expectInventoryError(
 			adapterInput(duplicate, [BROWSER_TEST_PATHS[0]]),
 			`browser adapter lane \`test:serial-browser\` is invalid: Browser lane repeats \`${BROWSER_TEST_PATHS[0]}\`.`,
 		);
+	});
 
+	test("inventory rejects reordered focused adapter arguments", () => {
 		const reordered = focusAdapter([BROWSER_TEST_PATHS[1], BROWSER_TEST_PATHS[0]]);
-		const unknown = focusAdapter(["tests/system/browser/unknown.test.ts"]);
 		expect(inspectTestInventory(adapterInput(reordered)).errors[0]).toContain(
 			"Focused browser paths are not in canonical relative order.",
 		);
+	});
+
+	test("inventory rejects an unknown focused adapter argument", () => {
+		const unknown = focusAdapter(["tests/system/browser/unknown.test.ts"]);
 		expect(inspectTestInventory(adapterInput(unknown)).errors[0]).toContain(
 			"Browser lane names unknown path `tests/system/browser/unknown.test.ts`.",
 		);
 	});
 
-	test("inventory counts focused, duplicated, and ordinary selectors", () => {
+	test("inventory rejects an unreachable focused owner", () => {
 		const file = BROWSER_TEST_PATHS[3];
 		const fixture = adapterInput("bun scripts/non-native.mjs", [file]);
 		fixture.scripts["verify:browser"] = focusAdapter([file]);
@@ -244,14 +277,19 @@ describe("typed serial browser adapter selection", () => {
 			fixture,
 			`native test \`${file}\` runs zero times from \`check\`; matching package lanes: verify:browser`,
 		);
+	});
 
+	test("inventory rejects a focused lane reached twice", () => {
+		const file = BROWSER_TEST_PATHS[3];
 		const duplicate = adapterInput(focusAdapter([file]), [file]);
 		duplicate.scripts.test = "bun run test:serial-browser && bun run test:serial-browser";
 		expectInventoryError(
 			duplicate,
 			`native test \`${file}\` runs 2 times from \`check\` through package lanes: test:serial-browser (2)`,
 		);
+	});
 
+	test("inventory rejects an ordinary selector repeated in one lane", () => {
 		const ordinary = "tests/system/example.test.ts";
 		expectInventoryError(
 			adapterInput(`bun test ${ordinary} ${ordinary}`, [ordinary]),

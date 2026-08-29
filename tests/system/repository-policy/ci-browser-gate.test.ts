@@ -100,6 +100,14 @@ describe("CI executable workflow steps", () => {
 		]);
 	});
 
+	test("ignores an unquoted echo-only package-script spelling", () => {
+		expect(inspectWorkflow(workflowWith("echo bun run test", "bun run check"))).toEqual([]);
+	});
+
+	test("ignores a shell comment inside a run scalar", () => {
+		expect(inspectWorkflow(workflowWith("echo ok;# bun run test", "bun run check"))).toEqual([]);
+	});
+
 	test("rejects duplicate canonical check steps", () => {
 		expect(inspectWorkflow(workflowWith("bun run check", "bun run check"))).toEqual([
 			"the workflow must contain exactly one standalone `bun run check` step; found 2.",
@@ -117,6 +125,44 @@ describe("CI executable workflow steps", () => {
 			"jobs:\n  suite:\n    steps:\n      - run: |\n          bun run test\n      - run: bun run check\n";
 		expect(inspectWorkflow(workflow)).toEqual([
 			"the workflow invokes package script `test` directly; `bun run check` must be its only package-script invocation.",
+		]);
+	});
+
+	test("rejects a package script behind an env wrapper", () => {
+		expect(inspectWorkflow(workflowWith("env FOO=1 bun run test", "bun run check"))).toEqual([
+			"the workflow invokes package script `test` directly; `bun run check` must be its only package-script invocation.",
+		]);
+	});
+
+	test("rejects a package script behind a command wrapper", () => {
+		expect(inspectWorkflow(workflowWith("command bun run build", "bun run check"))).toEqual([
+			"the workflow invokes package script `build` directly; `bun run check` must be its only package-script invocation.",
+		]);
+	});
+
+	test("rejects a package script inside a command group", () => {
+		expect(inspectWorkflow(workflowWith("(bun run test)", "bun run check"))).toEqual([
+			"the workflow invokes package script `test` directly; `bun run check` must be its only package-script invocation.",
+		]);
+	});
+
+	test("rejects a package script inside a conditional", () => {
+		expect(
+			inspectWorkflow(workflowWith("if true; then bun run test; fi", "bun run check")),
+		).toEqual([
+			"the workflow invokes package script `test` directly; `bun run check` must be its only package-script invocation.",
+		]);
+	});
+
+	test("rejects a package script on the right side of a pipeline", () => {
+		expect(inspectWorkflow(workflowWith("echo ok | bun run build", "bun run check"))).toEqual([
+			"the workflow invokes package script `build` directly; `bun run check` must be its only package-script invocation.",
+		]);
+	});
+
+	test("rejects a package script in backtick command substitution", () => {
+		expect(inspectWorkflow(workflowWith("echo `bun run build`", "bun run check"))).toEqual([
+			"the workflow invokes package script `build` directly; `bun run check` must be its only package-script invocation.",
 		]);
 	});
 
