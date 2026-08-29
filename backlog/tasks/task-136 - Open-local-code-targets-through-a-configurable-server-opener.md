@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 15:35'
-updated_date: '2026-08-29 05:59'
+updated_date: '2026-08-29 09:11'
 labels: []
 dependencies:
   - TASK-130.11
@@ -162,4 +162,20 @@ Final Spec closures (source commit cbe028c):
 - activation-contract replaces the injected high-level spawn failure with a real X_OK executable whose shebang names a missing interpreter. Public activation traverses launchOpener and the ChildProcess error event, schema-parses exact HTTP 500/OPENER_SPAWN_FAILED/settings action, names the executable, creates no fake capture, and preserves exact note/config bytes and bigint mtimes.
 - src/shared/code-target exports OpenerSelectionReply and OpenerTestReply as z.infer aliases while remaining 220/220 lines.
 Validation: affected owners alone 38/38; combined module owners 58/58; tests/system/code-targets 34/34 with 175 expectations; type-check, lint, repository fmt:check, and git diff --check pass. Deliberate reds proved removal of the isolated-vault assignment inherited /home/msc/Work/Platform-Architecture/architecture-vault, and changing the real launcher error-event code changed the public response from 500 to 422. Final caps: shared 220/220, activation 368/480, persistence 117/340. Env restoration assertion passed. No opener/code-target temp roots, fake opener, launcher-owner, or broken-opener processes remain. Serialized CanvasPane/Shell/application/package/browser/docs/TASK-137 integration remains paused.
+
+Serialized reconciliation released after TASK-134 integration.
+
+Rebased fixed base: 569a384eabbcef8c57b5eb199420caed90bae794 (TASK-134 review-clean and integrated).
+Accepted checkpoint mapping:
+- 0566040a5597d4c357b6f5b86d835f4e6f9b7684 -> 628b1defbd38a408fce9653797bea4199af963ae
+- 946cfdbc3d7d029b0d716e3f8f4ac63bb2f66828 -> e88c4a5baf31fc1b69ecde9c5bc8df068b905f16
+- 201db0fa098bcde0c8bc1eac49bf8253e1a30e59 was empty against the new base and dropped
+- 890547e8050bd3bc661d761c94568a27e5c8d953 -> 80cfb33c3d5e42c109d8910f94a15dabfdfc66dd
+- 4137227db92c86d63eaccf35b4d6694524696c08 -> 775c35741c3b719d087603381bb0f5a25fd92bcf
+- 203d9e130fe41ecd8c1c500c4c181f4eb30db1a8 -> faccb2381c82a0d395fd1b518d8d42b48a3fd0d9
+- 1b3fed98f22fd11176791a066c08797b2afd8ec3 -> ac4c34f33455b4fa4ff7babe08681267ca15ed33
+- cbe028cb333a74dcff20024c7dd48c6e11259ff9 -> 18e6f0a37dda40ae110b290560517b94179037d4
+- 6697803f93d355bd1f348c9c124bade5fd6db736 -> a0252a34d651626548d6c1b46f8959bda32ca0a8
+
+The replay completed without conflicts. Remaining serialized application/UI/package/browser/docs integration may now proceed while preserving TASK-134 vendor-derived RuntimeBoardElement/PersistedBoardElement, canonical presentation overlay, CanvasPane/Shell contracts, and strict ingress.
 <!-- SECTION:NOTES:END -->
