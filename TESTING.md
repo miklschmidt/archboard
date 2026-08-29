@@ -19,7 +19,7 @@ Restore skills if this is a fresh clone — `.agents/skills/` and
 
 ```bash
 skills experimental_install
-bun scripts/sync-skills.mjs
+bun scripts/sync-skills.ts
 ```
 
 ## 2. Pick a vault

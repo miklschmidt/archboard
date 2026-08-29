@@ -714,7 +714,8 @@ export function expandElements(
  * One agent write, converted against the board it lands on.
  *
  * This is the boundary ADR 0015 names, and the two callers that matter both go
- * through it — the server application on every agent write, and `check-labels.mjs`,
+ * through it — the server application on every agent write, and
+ * `src/runtime/engine/tests/label-input.test.ts`,
  * which runs the label loop to exhaustion and would prove nothing about a copy
  * of this. What comes back is the elements handed in, now complete, followed
  * by any label the conversion had to expand.
@@ -729,7 +730,8 @@ export function expandElements(
  *
  * TASK-089 went looking for two implementations meant to agree and this pair
  * was on the list. They are not two: one calls the other, so no input can get
- * two answers out of them, and `check-labels` asserts it rather than leaving
+ * two answers out of them, and `src/runtime/engine/tests/label-input.test.ts`
+ * asserts it rather than leaving
  * this paragraph to hold the line on its own.
  */
 export function expandForBoard(
@@ -753,7 +755,7 @@ export function expandForBoard(
 	// Deleting the seed narrowed this without removing it. The write that trips
 	// it is now always one carrying a label of its own, which means a rename —
 	// the board's own copy of a container no longer carries anything to expand.
-	// Taking it out fails three checks in `check-labels` (TASK-073).
+	// Taking it out fails three checks in `src/runtime/engine/tests/label-input.test.ts` (TASK-073).
 	const labelled = boundTextsByContainer([...board.values()]);
 	const mended = written.map((element) => {
 		const textIds = labelled.get(element.id) ?? [];

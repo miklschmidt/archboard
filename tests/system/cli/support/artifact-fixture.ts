@@ -3,13 +3,10 @@ import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
+import { CLI_CONTRACT_ARTIFACT_NAMES } from "../../../../src/cli/command-contract/artifacts.js";
 import { checkoutRoot } from "./package-cli.ts";
 
-export const artifactNames = [
-	"cli-command-audit.md",
-	"command-contract-proof.json",
-	"command-contract-proof.md",
-] as const;
+export const artifactNames = CLI_CONTRACT_ARTIFACT_NAMES;
 
 const spawnSchema = z.object({
 	command: z.array(z.string()),

@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
 	CLI_CONTRACT_ARTIFACT_NAMES,
 	renderCliContractArtifacts,
-} from "./lib/cli-contract-artifacts.mjs";
+} from "../src/cli/command-contract/artifacts.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const outputFlag = process.argv.indexOf("--output-dir");
@@ -24,6 +24,8 @@ const { artifacts } = await renderCliContractArtifacts(root);
 
 fs.mkdirSync(outputDirectory, { recursive: true });
 for (const name of CLI_CONTRACT_ARTIFACT_NAMES) {
-	fs.writeFileSync(join(outputDirectory, name), artifacts.get(name));
+	const content = artifacts.get(name);
+	if (content === undefined) throw new Error(`Missing rendered CLI contract artifact: ${name}`);
+	fs.writeFileSync(join(outputDirectory, name), content);
 	console.log(`generated ${join(outputDirectory, name)}`);
 }

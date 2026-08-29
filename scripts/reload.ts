@@ -13,8 +13,8 @@
 // Several canvases can be up at once on different ports over different vaults,
 // so this names the one it reached rather than leaving you to assume.
 
-import { reloadCanvas } from "../src/runtime/engine/canvas-client.ts";
-import { EXPRESS_SERVER_URL } from "../src/runtime/engine/config.ts";
+import { reloadCanvas } from "../src/runtime/engine/canvas-client.js";
+import { EXPRESS_SERVER_URL } from "../src/runtime/engine/config.js";
 
 try {
 	const result = await reloadCanvas();

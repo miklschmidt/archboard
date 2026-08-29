@@ -316,11 +316,8 @@ describe("documented CLI workflows", () => {
 		try {
 			cpSync(join(checkoutRoot, "skills"), join(scratch, "skills"), { recursive: true });
 			mkdirSync(join(scratch, "scripts"));
-			cpSync(
-				join(checkoutRoot, "scripts/sync-skills.mjs"),
-				join(scratch, "scripts/sync-skills.mjs"),
-			);
-			const result = runSync(["bun", "scripts/sync-skills.mjs"], { cwd: scratch });
+			cpSync(join(checkoutRoot, "scripts/sync-skills.ts"), join(scratch, "scripts/sync-skills.ts"));
+			const result = runSync(["bun", "scripts/sync-skills.ts"], { cwd: scratch });
 			expect(result.status, workflowFailure(result)).toBe(0);
 			expect(result.signal, workflowFailure(result)).toBeNull();
 			for (const target of [
