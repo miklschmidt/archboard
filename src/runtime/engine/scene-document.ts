@@ -1,4 +1,5 @@
 import { type ServerElement } from "./types.js";
+import type { LegacyElementIngress } from "../../shared/board-elements/index.js";
 import { expandElements } from "./expand-elements.js";
 import { drawnFileIds } from "./embedded-files.js";
 import { extractSceneJsonFromObsidianMd, isObsidianExcalidrawMd } from "./obsidian-md.js";
@@ -10,7 +11,7 @@ export interface ExportedScene {
 
 /** Build one Excalidraw document from the supplied board-shape elements. */
 export function buildScene(
-	sceneElements: ServerElement[],
+	sceneElements: LegacyElementIngress[],
 	sceneFiles: Record<string, unknown> = {},
 	// A board's own note keeps archboard's bookkeeping, because the note is the
 	// board (ADR 0015). A file written for another tool does not.

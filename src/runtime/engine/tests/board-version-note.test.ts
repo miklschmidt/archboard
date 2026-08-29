@@ -1,5 +1,5 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { afterAll, beforeAll, describe, expect, spyOn, test } from "bun:test";
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as BoardModule from "../board.js";
@@ -8,6 +8,7 @@ import type * as StoreModule from "../board-store.js";
 import type * as IoModule from "../board-io.js";
 import type * as WatchModule from "../note-watch.js";
 import type { ServerElement } from "../types.js";
+import { extractSceneJsonFromObsidianMd } from "../obsidian-md.js";
 
 const root = mkdtempSync(join(tmpdir(), "archboard-version-note-"));
 const ownedKeys = new Set<string>();
@@ -17,6 +18,7 @@ let versionModule: typeof VersionModule;
 let storeModule: typeof StoreModule;
 let ioModule: typeof IoModule;
 let watchModule: typeof WatchModule;
+let atomicWriteSpy: { mockClear(): void; mock: { calls: unknown[][] } };
 
 const box = (id: string, x: number) =>
 	({
@@ -36,6 +38,8 @@ const contentOf = (...elements: ServerElement[]) => ({
 });
 
 beforeAll(async () => {
+	const atomic = await import("../atomic-write.js");
+	atomicWriteSpy = spyOn(atomic, "writeFileAtomic") as unknown as typeof atomicWriteSpy;
 	boardModule = await import("../board.js");
 	versionModule = await import("../board-version.js");
 	storeModule = await import("../board-store.js");
@@ -155,5 +159,80 @@ describe.serial("board versions in notes", () => {
 		expect(written.version).toBeNull();
 		expect(versionModule.versionNumber(note)).toBeNull();
 		expect(note).toContain('"id": "ddd"');
+	});
+
+	test("legacy tracking migrates only inside the next one-write mutation", () => {
+		const identity = boardModule.makeIdentity({ board: "tracking-migration" });
+		const { board } = ownBoard(identity, "tracking-migration.excalidraw.md");
+		ioModule.writeBoardContent(board, contentOf(box("legacy", 10)), { saveCommand: "board save" });
+		const note = readFileSync(board.file, "utf8");
+		const scene = JSON.parse(extractSceneJsonFromObsidianMd(note)) as {
+			elements: Array<Record<string, unknown>>;
+		};
+		const legacy = scene.elements[0]!;
+		const custom = legacy.customData as { archboard: Record<string, unknown> };
+		for (const key of ["createdAt", "updatedAt", "syncedAt", "source", "syncTimestamp"]) {
+			if (custom.archboard[key] !== undefined) legacy[key] = custom.archboard[key];
+			delete custom.archboard[key];
+		}
+		if (Object.keys(custom.archboard).length === 0) delete legacy.customData;
+		const legacyNote = boardModule.renderBoardNote(scene, note, identity);
+		writeFileSync(board.file, legacyNote);
+		storeModule.recordBaseline(
+			board,
+			board.file,
+			boardModule.hashBoardBytes(readFileSync(board.file)),
+			1,
+		);
+
+		const before = readFileSync(board.file);
+		const beforeMtime = statSync(board.file).mtimeMs;
+		const read = ioModule.readNote(board.file)!;
+		expect(read.elements.get("legacy")?.createdAt).toBe("2026-01-01T00:00:00.000Z");
+		expect(readFileSync(board.file)).toEqual(before);
+		expect(statSync(board.file).mtimeMs).toBe(beforeMtime);
+		expect(read.version).toBe(1);
+
+		read.elements.set("requested", box("requested", 200));
+		atomicWriteSpy.mockClear();
+		const written = ioModule.writeBoardContent(board, read, { saveCommand: "board save" });
+		expect(atomicWriteSpy.mock.calls).toHaveLength(1);
+		expect(written.version).toBe(2);
+		const reread = ioModule.readNote(board.file)!;
+		expect(reread.version).toBe(2);
+		expect(reread.elements.has("requested")).toBeTrue();
+		const migrated = reread.elements.get("legacy")!;
+		expect(migrated.createdAt).toBe("2026-01-01T00:00:00.000Z");
+		const persistedScene = JSON.parse(
+			extractSceneJsonFromObsidianMd(readFileSync(board.file, "utf8")),
+		);
+		const persisted = persistedScene.elements.find(
+			(element: { id: string }) => element.id === "legacy",
+		);
+		expect(persisted).not.toHaveProperty("createdAt");
+		expect(persisted.customData.archboard.createdAt).toBe("2026-01-01T00:00:00.000Z");
+	});
+
+	test("an incomplete trusted note refuses without repair, version, or atomic write", () => {
+		const identity = boardModule.makeIdentity({ board: "strict-read" });
+		const { board } = ownBoard(identity, "strict-read.excalidraw.md");
+		ioModule.writeBoardContent(board, contentOf(box("strict", 10)), { saveCommand: "board save" });
+		const note = readFileSync(board.file, "utf8");
+		const scene = JSON.parse(extractSceneJsonFromObsidianMd(note)) as {
+			elements: Array<Record<string, unknown>>;
+		};
+		delete scene.elements[0]!.angle;
+		const malformed = boardModule.renderBoardNote(scene, note, identity);
+		writeFileSync(board.file, malformed);
+		const before = readFileSync(board.file);
+		const beforeMtime = statSync(board.file).mtimeMs;
+		atomicWriteSpy.mockClear();
+		expect(() => ioModule.readNote(board.file)).toThrow(
+			`${board.file}: invalid element strict (rectangle) at element.angle`,
+		);
+		expect(atomicWriteSpy.mock.calls).toHaveLength(0);
+		expect(readFileSync(board.file)).toEqual(before);
+		expect(statSync(board.file).mtimeMs).toBe(beforeMtime);
+		expect(versionModule.versionNumber(readFileSync(board.file, "utf8"))).toBe(1);
 	});
 });

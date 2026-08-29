@@ -93,7 +93,7 @@ export function withSyntheticNodeIds(elements: ServerElement[]): ServerElement[]
 		if (CONNECTOR_TYPES.has(el.type)) return el;
 		// A bound label belongs to its container and compare folds it in there;
 		// giving it its own node would double-count the shape it labels.
-		if (el.containerId) return el;
+		if (el.type === "text" && el.containerId) return el;
 		const custom = (el.customData ?? {}) as Record<string, unknown>;
 		const block = {
 			...readElementMetadata(el).archboard,

@@ -63,7 +63,7 @@ test("places labels on containers and follows geometry changes", () => {
 				[100, 0],
 				[100, 100],
 			],
-		};
+		} as const;
 		assert(
 			JSON.stringify(labelAnchorOf(elbow)) === JSON.stringify({ x: 100, y: 0 }),
 			`an odd-length path anchors at ${JSON.stringify(labelAnchorOf(elbow))}, not its middle vertex`,
@@ -80,7 +80,7 @@ test("places labels on containers and follows geometry changes", () => {
 				[0, 0],
 				[200, 0],
 			],
-		};
+		} as const;
 		assert(
 			labelAnchorOf(stale)?.x === 100,
 			"an arrow trusted its stale width instead of its points",
@@ -165,7 +165,7 @@ test("places labels on containers and follows geometry changes", () => {
 						points: [
 							[0, 0],
 							[300, 400],
-						],
+						] as [number, number][],
 					}
 				: el,
 		);
@@ -211,7 +211,7 @@ test("places labels on containers and follows geometry changes", () => {
 				width: 100,
 				height: 26,
 				text: "AuthService",
-			},
+			} as const,
 		];
 		assert(
 			boundTextDrift(twinned).some((entry) => entry.textId === "svc-copy"),
@@ -220,8 +220,8 @@ test("places labels on containers and follows geometry changes", () => {
 
 		assert(
 			boundTextDrift([
-				{ id: "c", type: "rectangle" },
-				{ id: "c-l", type: "text", containerId: "c", text: "x" },
+				{ id: "c", type: "rectangle" as const },
+				{ id: "c-l", type: "text" as const, containerId: "c", text: "x" },
 			]).length === 0,
 			"a container with no coordinates was reported as drifted",
 		);

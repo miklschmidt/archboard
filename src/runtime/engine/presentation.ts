@@ -31,29 +31,41 @@ export function linkForBinding(binding: LogicalAddress | undefined): string | un
 }
 
 /** Strip every stored link from bound elements before the board is serialized. */
-export function stripBindingPresentationLink(element: ServerElement): ServerElement {
+export function stripBindingPresentationLink(
+	element: ServerElement,
+	derivedTarget?: string,
+): ServerElement {
 	const binding = readElementMetadata(element).archboard?.binding;
-	if (!binding || !("link" in element)) return element;
-	const copy = { ...element };
-	delete copy.link;
-	return copy;
+	if (!binding) return element;
+	const derived = derivedTarget ?? linkForBinding(binding);
+	return derived && element.link === derived ? { ...element, link: null } : element;
 }
 
 export function stripBindingPresentationLinks(elements: Iterable<ServerElement>): ServerElement[] {
-	return Array.from(elements, stripBindingPresentationLink);
+	return Array.from(elements, (element) => stripBindingPresentationLink(element));
 }
 
 /** Add or remove the local presentation link for a bound element without mutating it. */
-export function presentElement(element: ServerElement): ServerElement {
+export function presentElement(element: ServerElement, derivedTarget?: string): ServerElement {
 	const binding = readElementMetadata(element).archboard?.binding;
 	if (!binding) return element;
-	const link = linkForBinding(binding);
-	const copy = { ...element };
-	if (link) copy.link = link;
-	else delete copy.link;
-	return copy;
+	const link = derivedTarget ?? linkForBinding(binding);
+	return link ? { ...element, link } : element;
 }
 
 export function presentElements(elements: Iterable<ServerElement>): ServerElement[] {
-	return Array.from(elements, presentElement);
+	return Array.from(elements, (element) => presentElement(element));
+}
+
+/** Restore the board's canonical link when a browser echoes its presentation copy. */
+export function canonicalLinkAfterPresentationEcho(
+	existing: ServerElement | undefined,
+	incoming: unknown,
+	derivedTarget?: string,
+): string | null | undefined {
+	if (!existing) return typeof incoming === "string" || incoming === null ? incoming : undefined;
+	const binding = readElementMetadata(existing).archboard?.binding;
+	const derived = derivedTarget ?? linkForBinding(binding);
+	if (derived && incoming === derived) return existing.link;
+	return typeof incoming === "string" || incoming === null ? incoming : existing.link;
 }

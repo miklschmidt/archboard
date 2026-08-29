@@ -4,11 +4,12 @@ import { compareBoards } from "../compare.js";
 import { describeScene } from "../describe.js";
 import type { BoardIdentity } from "../board.js";
 import type { ServerElement } from "../types.js";
+import { completeElement, completeElements } from "./support/elements.ts";
 
 const identity: BoardIdentity = { board: "payments", variant: "current", level: "service" };
 
 const box = (id: string, x: number, y: number, node?: string, kind = "service") =>
-	({
+	completeElement({
 		id,
 		type: "rectangle",
 		x,
@@ -16,10 +17,10 @@ const box = (id: string, x: number, y: number, node?: string, kind = "service") 
 		width: 200,
 		height: 100,
 		...(node ? { customData: { archboard: { node, kind, name: node } } } : {}),
-	}) as ServerElement;
+	});
 
 const label = (id: string, containerId: string, text: string, x: number, y: number) =>
-	({
+	completeElement({
 		id,
 		type: "text",
 		x: x + 20,
@@ -28,10 +29,10 @@ const label = (id: string, containerId: string, text: string, x: number, y: numb
 		height: 20,
 		text,
 		containerId,
-	}) as ServerElement;
+	});
 
 const arrow = (id: string, from: string, to: string) =>
-	({
+	completeElement({
 		id,
 		type: "arrow",
 		x: 0,
@@ -44,7 +45,7 @@ const arrow = (id: string, from: string, to: string) =>
 		],
 		startBinding: { elementId: from, focus: 0, gap: 0 },
 		endBinding: { elementId: to, focus: 0, gap: 0 },
-	}) as ServerElement;
+	});
 
 const scene = (): ServerElement[] => [
 	box("a", 0, 0, "gateway", "gateway"),
@@ -58,22 +59,24 @@ const scene = (): ServerElement[] => [
 ];
 
 const flatMetadataBox = () =>
-	({
-		id: "flat",
-		type: "rectangle",
-		x: 0,
-		y: 0,
-		width: 200,
-		height: 100,
-		label: { text: "Flat metadata" },
-		customData: {
-			kind: "service",
-			binding: { path: "src/flat.ts" },
-			path: "src/flat.ts",
-			variant: "current",
-			level: "service",
+	completeElements([
+		{
+			id: "flat",
+			type: "rectangle",
+			x: 0,
+			y: 0,
+			width: 200,
+			height: 100,
+			label: { text: "Flat metadata" },
+			customData: {
+				kind: "service",
+				binding: { path: "src/flat.ts" },
+				path: "src/flat.ts",
+				variant: "current",
+				level: "service",
+			},
 		},
-	}) as ServerElement;
+	]);
 
 const diff = (before: ServerElement[], after: ServerElement[]) =>
 	diffBoardStates(before, after, identity, "payments");
@@ -81,21 +84,21 @@ const diff = (before: ServerElement[], after: ServerElement[]) =>
 describe("semantic board changes", () => {
 	test("flat foreign metadata remains anonymous", () => {
 		const flat = flatMetadataBox();
-		const description = describeScene([flat]);
+		const description = describeScene(flat);
 		expect(description).toMatch(/0 nodes/);
 		expect(description).toMatch(/1 plain/);
-		expect(description).toMatch(/customData: kind=service/);
+		expect(description).toMatch(/customData: .*kind=service/);
 
 		const comparison = compareBoards(
 			{ key: "payments", identity, elements: [], source: "memory" },
-			{ key: "payments", identity, elements: [flat], source: "memory" },
+			{ key: "payments", identity, elements: flat, source: "memory" },
 		);
 		expect(comparison.to.nodeCount).toBe(0);
 		expect(comparison.to.plainCount).toBe(1);
 		expect(comparison.plain.to.unidentified).toHaveLength(0);
 		expect(comparison.plain.to.labelled[0]?.foreignCustomData?.kind).toBe("service");
 
-		const change = diff([], [flat]);
+		const change = diff([], flat);
 		expect(change.nodes.added[0]).toMatchObject({ anonymous: true });
 		expect(change.nodes.added[0]?.kind).toBeUndefined();
 	});
@@ -162,10 +165,7 @@ describe("semantic board changes", () => {
 	});
 
 	test("first bound-label sync and recolouring stay silent", () => {
-		const labelled = {
-			...box("a", 0, 0, "gateway", "gateway"),
-			label: { text: "Gateway" },
-		} as ServerElement;
+		const labelled = box("a", 0, 0, "gateway", "gateway");
 		expect(
 			diff([labelled], [labelled, label("al", "a", "Gateway", 0, 0)]).counts.nodesChanged,
 		).toBe(0);

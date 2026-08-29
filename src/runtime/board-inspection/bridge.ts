@@ -103,7 +103,7 @@ function supportedConnector(
 	const dynamic = element as unknown as Record<string, unknown>;
 	if (
 		(element.type !== "arrow" && element.type !== "line") ||
-		element.isDeleted === true ||
+		element.isDeleted ||
 		!supportedAngle(element.angle) ||
 		element.roundness != null ||
 		!absentOrFalse(dynamic.elbowed) ||
@@ -424,7 +424,7 @@ function structuralPairs(elements: readonly ServerElement[]): {
 		else if (
 			parts.some(
 				(part) =>
-					part.element.isDeleted === true ||
+					part.element.isDeleted ||
 					typeof part.element.id !== "string" ||
 					part.element.id.length === 0,
 			)
@@ -454,7 +454,11 @@ function staleIssue(
 	elements: readonly ServerElement[],
 ): BridgeStaleIssue | null {
 	for (const part of [pair.mask.element, pair.redraw.element]) {
-		if ((part.groupIds?.length ?? 0) !== 0 || part.startBinding != null || part.endBinding != null)
+		if (
+			(part.groupIds?.length ?? 0) !== 0 ||
+			((part.type === "arrow" || part.type === "line") &&
+				(part.startBinding != null || part.endBinding != null))
+		)
 			return "geometry-mismatch";
 	}
 	const byId = new Map(elements.map((element) => [element.id, element]));
@@ -500,7 +504,7 @@ function staleIssue(
 	if (!lineMatches(pair.mask.element, expected.inputs[0])) return "geometry-mismatch";
 	const liveOrder = elements
 		.map((element, position) => ({ element, position }))
-		.filter(({ element }) => element.isDeleted !== true)
+		.filter(({ element }) => !element.isDeleted)
 		.toSorted(
 			(a, b) =>
 				(typeof a.element.index === "string" && typeof b.element.index === "string"
