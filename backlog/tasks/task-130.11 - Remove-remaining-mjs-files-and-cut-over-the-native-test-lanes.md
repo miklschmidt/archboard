@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:06'
-updated_date: '2026-08-29 03:51'
+updated_date: '2026-08-29 04:52'
 labels: []
 dependencies:
   - TASK-130.01
@@ -70,7 +70,7 @@ Keep authored inputs. Delete stale operational or repair scripts when no real wo
 - scripts/probe-arrow-refs.mjs -> delete after a repository reference audit. TASK-130.04 native human rebind/reroute coverage owns the reachable stale-ref product proof; the unreferenced exploratory console probe is not retained.
 - scripts/reload.mjs -> scripts/reload.ts with byte-equivalent success/failure stdout/stderr and exit behavior through the public canvas-client/config entrypoints.
 - scripts/repair-labels.mjs -> delete after a repository reference audit. TASK-130.04 owns label repair, drift, stale-ref, file-byte, and real-route coverage; no package, instruction, or current workflow invokes this historical repair.
-- scripts/sync-skills.mjs -> scripts/sync-skills.ts with identical skill discovery, byte copying, retired-name cleanup, relative symlinks, sorted output, no-skills exit 1, and derived-directory behavior.
+- scripts/sync-skills.mjs -> scripts/sync-skills.ts with identical skill discovery, byte copying, retired-name cleanup, relative symlinks, directory-enumeration order and resulting stdout, no-skills exit 1, and derived-directory behavior. Preserve the order returned by readdirSync without lexical sorting.
 - src/cli/command-contract/tests/public-runner-fixture.mjs -> src/cli/command-contract/tests/public-runner-fixture.ts with the same argv record, loopback routes, public runner invocation, exact streams/status, and forced server cleanup.
 Delete all eight old .mjs paths in the same serialized integration as their replacements/reference updates. Do not preserve compatibility wrappers.
 
@@ -81,7 +81,7 @@ Delete all eight old .mjs paths in the same serialized integration as their repl
 5. Conversion parity before deletion. While old/new files coexist in a disposable checkout:
 - Run both generator entrypoints for missing --output-dir, default output, relative output, and absolute output; compare status, stdout/stderr, exact filename order, raw bytes, and SHA-256 across all three artifacts, twice from absent directories.
 - Run old/new reload entrypoints against the same owned loopback success and refusal doubles; compare exact generation/PID message, URL, stderr, and exit.
-- Run old/new sync entrypoints against identical temporary skill roots; compare copied bytes, retired removal, symlink targets, sorted stdout, idempotence, real source preservation, and no-skills refusal.
+- Run old/new sync entrypoints against identical temporary skill roots; compare copied bytes, retired removal, symlink targets, exact stdout including directory-enumeration order, idempotence, real source preservation, and no-skills refusal. Do not add a separate lexical-order assertion.
 - Run old/new public-runner fixtures over every held-output compatibility record and compare exact public stdout/stderr/status and cleanup.
 For doing, probe-arrow-refs, and repair-labels, record rg and package/docs/eval audits showing no reachable caller after predecessor cutovers, and run the named TASK-130.04/.08/.09/.10 native proofs that supersede their test mechanics. No behavior is moved into a broad helper merely to retain dead files.
 
@@ -98,8 +98,9 @@ Set test exactly to bun run type-check && bun run test:modules && bun run test:s
 
 9. Exact focused and full validation. Before deletion run the parity matrix in step 5 and only the named synthetic no-MJS negative:
 bun test tests/system/repository-policy/no-mjs.test.ts --test-name-pattern "lists every forbidden .mjs path and suggests TypeScript conversion"
-bun test src/cli/command-contract/tests/runner.test.ts tests/system/cli/command-contract-artifacts.test.ts tests/system/cli/command-workflows.test.ts tests/system/repository-policy/boundaries.test.ts tests/system/repository-policy/skills.test.ts tests/system/repository-policy/test-inventory.test.ts
-After atomic deletion/cutover run the complete real-checkout policy:
+bun test src/cli/command-contract/tests/runner.test.ts tests/system/cli/command-contract-artifacts.test.ts tests/system/cli/command-workflows.test.ts tests/system/repository-policy/boundaries.test.ts tests/system/repository-policy/skills.test.ts
+Do not add no-mjs.test.ts to a transitional package key and do not add an inventory exception. Once no-mjs.test.ts exists before cutover, its real-checkout inventory failure is expected because the final policy file joins test:repository only in the atomic package cutover. Immediately after atomic deletion/cutover, run these commands sequentially and require all three to pass:
+bun test tests/system/repository-policy/test-inventory.test.ts
 bun test tests/system/repository-policy/no-mjs.test.ts
 bun test tests/system/repository-policy/boundaries.test.ts
 Then run git ls-files --cached --others --exclude-standard and require no .mjs result, followed by:
@@ -118,3 +119,15 @@ Run all commands sequentially from a clean checkout. The browser lane and hot-re
 
 10. Overlap, ownership, and integration order. This task deliberately revisits only these predecessor-owned native files for final path/lane references: command-contract-artifacts.test.ts, command-workflows.test.ts, and artifact-fixture.ts from TASK-130.07; boundaries.test.ts and the oxlint plugin from TASK-130.01; skills.test.ts and test-inventory.test.ts from TASK-130.02; and support.ts plus the public-runner fixture inside the CLI command-contract module. runner.test.ts remains a focused validation owner but is not edited unless its observable assertions genuinely need correction. It does not change any predecessor observable expectation. tests/system/repository-policy/no-mjs.test.ts is a disjoint new file; no-mjs policy is owned only here. package.json is the shared integration choke point and this task edits it only after all predecessor package cutovers. Required integration order is TASK-130.02, then one predecessor at a time with full validation (recommended TASK-130.03, TASK-130.06, TASK-130.04, TASK-130.05, TASK-130.07, TASK-130.08, TASK-130.09, TASK-130.10), then TASK-130.11. Only disjoint native authoring may overlap; package edits, eval edits, legacy deletion, and integration never do. TASK-130.10 reconciliation is final: consume its landed 13-file serial-browser list and comment ownership exactly, and do not create human-edit-acknowledgement.test.ts, typed-text-element.test.ts, or typed-label.test.ts.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+PLAN_REVIEW_APPROVED for the sync-skills ordering seam. Disposable old/new runs showed that scripts/sync-skills.mjs preserves readdirSync directory-enumeration order and emitted archboard-dev before archboard on this filesystem. The typed replacement produced byte-identical stdout, copied bytes, retired-name cleanup, relative symlinks, idempotent derived trees, and preserved authored sources. The approved plan now requires exact directory-enumeration-order parity and forbids a separate lexical-order assertion.
+
+New pre-deletion gate contradiction found after the approved sync-order amendment: the required synthetic no-MJS test must exist at tests/system/repository-policy/no-mjs.test.ts before deletion, but the required focused command also runs the real test inventory. Inventory correctly discovers that file and reports it belongs to no package lane. Mapping it before deletion would split the required atomic package cutover and would expose the real checkout assertion while eight .mjs files still exist; special-casing inventory would weaken exact ownership. The focused run produced 63 passing tests and this one expected ownership failure. No atomic cutover was started.
+
+PLAN_REVIEW_APPROVED for the pre-cutover inventory sequencing seam. The 63-pass pre-cutover focused run proved every selected owner except the deliberately excluded real inventory. no-mjs.test.ts remains unmapped before cutover, with no transitional package key and no inventory exception. The amended gate moves its exact ownership proof to the first immediate post-cutover command, followed by the real no-MJS policy and boundaries.
+
+Implementation complete and ready for independent range review. Pre-deletion parity: generator default/relative/absolute/missing-argument status, streams, file order, bytes and hashes; reload success/refusal status, streams, URL and PID; sync copied bytes, retired cleanup, relative links, exact readdirSync enumeration-order stdout, idempotence, source preservation and no-skills refusal; public runner all 11 held-output records and cleanup. Dead doing/probe/repair references had no reachable caller, and the named TASK-130.04/.08/.09/.10 successor proofs passed. Atomic cutover deleted exactly the eight planned .mjs paths, installed four final lanes, removed the lint bypass, and added the fully diagnosed git-backed no-MJS policy. Immediate post-cutover inventory/no-MJS/boundaries passed; git inventory reports no .mjs path. Frozen install, lint, fmt check, type check, modules (286 tests/2492 expectations), system (211/3817), repository (54/183), all 13 serial browser owners (610 expectations), aggregate test (564/7102), check (564/7102), and diff check passed sequentially. Inventory owns 127 native tests exactly once: modules 47, system 62, repository 5, serial-browser 13. All task-authored/converted TypeScript stays <=500 lines (largest touched inventory test 447). A first aggregate run was terminated after terminal-output backpressure stalled unrelated subprocesses; forced termination left three known hot-test source appends and four temp roots, all identified and removed. Clean off-terminal reruns passed aggregate test and check; final audits show no task-owned process, listener, vault or temporary root. Metadata intentionally remains In Progress/@codex, 0-of-9, finalSummary null for parent review/finalization.
+<!-- SECTION:NOTES:END -->

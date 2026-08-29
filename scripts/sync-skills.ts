@@ -10,25 +10,24 @@
 // `skills experimental_install` from skills-lock.json; this script leaves them
 // alone and only replaces the skills it owns.
 //
-// Run: node scripts/sync-skills.mjs
+// Run: bun scripts/sync-skills.ts
 
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const repoRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const source = path.join(repoRoot, "skills");
 const agentSkills = path.join(repoRoot, ".agents", "skills");
 const claudeSkills = path.join(repoRoot, ".claude", "skills");
 
-/** Skill dirs are those containing a SKILL.md. */
-function discover(sourceDir) {
+function discover(sourceDir: string): string[] {
 	if (!fs.existsSync(sourceDir)) return [];
 	return fs
 		.readdirSync(sourceDir, { withFileTypes: true })
-		.filter((e) => e.isDirectory())
-		.filter((e) => fs.existsSync(path.join(sourceDir, e.name, "SKILL.md")))
-		.map((e) => e.name);
+		.filter((entry) => entry.isDirectory())
+		.filter((entry) => fs.existsSync(path.join(sourceDir, entry.name, "SKILL.md")))
+		.map((entry) => entry.name);
 }
 
 fs.mkdirSync(agentSkills, { recursive: true });
@@ -36,9 +35,6 @@ fs.mkdirSync(claudeSkills, { recursive: true });
 
 const names = discover(source);
 
-// Retired authored names must be removed explicitly: discovery cannot see a
-// directory after it has been renamed, and leaving the old copy behind would
-// make agents discover both names for the same skill.
 const retiredNames = ["excalidraw-skill"];
 for (const name of retiredNames) {
 	if (names.includes(name)) continue;
@@ -50,11 +46,9 @@ for (const name of names) {
 	const from = path.join(source, name);
 	const to = path.join(agentSkills, name);
 
-	// Replace rather than overlay, so deleted files don't linger.
 	fs.rmSync(to, { recursive: true, force: true });
 	fs.cpSync(from, to, { recursive: true });
 
-	// .claude/skills/<name> must be a symlink into .agents/skills/<name>.
 	const link = path.join(claudeSkills, name);
 	const wanted = path.join("..", "..", ".agents", "skills", name);
 	let ok = false;

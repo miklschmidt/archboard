@@ -61,18 +61,17 @@ bun run reload        # reloads it in place, keeping tabs, panes and the feed
 Saving a file reloads nothing; the command is the trigger, and a canvas from
 `canvas start` cannot reload at all. **State that must survive a reload lives
 in `kept()`** (`src/runtime/engine/hot.ts`), never in module scope, which a reload
-rebuilds — `bun run test:module-scope` enforces it; waive a false positive
+rebuilds — `bun test tests/system/repository-policy/module-scope-policy.test.ts` enforces it; waive a false positive
 with `// hot-safe: <reason>`. Mechanics and costs:
 `docs/design/hot-reload-under-bun.md` and the archboard-dev skill.
 
-**Running the suite needs `agent-browser` on PATH**: four checks drive a real
-browser and exit 2 without one. They must stay headless — a window that maps
-steals focus under Hyprland — and run one after another, never at once. A push
-runs `bun run check`, which enforces lint, custom boundaries, formatting,
-type-checking, and the complete test chain. `test:suites` fails when a `test:*`
-script is missing from that chain. Changing tests or CI, or a browser check
-failing → `docs/agents/test-suite.md`: what each check proves, the
-constraints, the timings.
+**Running the suite needs `agent-browser` on PATH**: one typed serial browser
+lane drives 13 real-browser owners and exits 2 when prerequisites are absent.
+It stays headless because a window that maps steals focus under Hyprland, and
+it runs one owner at a time. A push runs `bun run check`, which enforces lint,
+formatting, type checking, and the complete test chain. `bun run test:repository`
+includes the inventory that rejects missing, duplicate, or unreachable tests.
+Changing tests or CI, or a browser owner failing → `docs/agents/test-suite.md`.
 
 Open <http://127.0.0.1:3000>. A browser tab is required for `screenshot`,
 `mermaid`, image export, and viewport control; pure JSON ops work headless.
@@ -84,7 +83,7 @@ clone has no skills until you restore them:
 
 ```bash
 skills experimental_install     # third-party, pinned in skills-lock.json
-bun scripts/sync-skills.mjs     # ours, from skills/ (creates the symlinks)
+bun scripts/sync-skills.ts      # ours, from skills/ (creates the symlinks)
 ```
 
 `skills/` is our single tracked source, deliberately absent from
@@ -139,7 +138,7 @@ that changed on disk under another editor is refused, never overwritten
   way out** (ADR 0015). `label: {text}` and arrow `start`/`end` are input
   spellings, spent at the write boundary; the board holds the result — a
   labelled box is two elements from the moment it is written — and Excalidraw
-  does not change it (`test:browser` asserts a zero diff). A second converter,
+  does not change it (`test:serial-browser` asserts a zero diff). A second converter,
   or a conversion on the read path, is how one board becomes two documents.
   The exception-looking thing is not an exception: binding-derived code links
   are a noncanonical presentation overlay, added to copies returned to a
@@ -147,7 +146,7 @@ that changed on disk under another editor is refused, never overwritten
   board document and never persist in the note.
 - **One thing somebody asked for is one write** (TASK-068). Align, patch,
   promote, import: each reaches the note as one read-modify-write under one
-  lock acquisition, and `test:one-write` counts writes on the wire.
+  lock acquisition, and the `test:system` process-contract owners count writes on the wire.
 - **Renaming an element id is the most dangerous thing in the system.** Every
   id archboard mints comes from `src/shared/ids/ids.ts`: one to eight characters of
   Obsidian's block-id alphabet, so the note writer has nothing to rename. No

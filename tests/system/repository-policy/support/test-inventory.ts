@@ -21,6 +21,12 @@ export interface InventoryResult {
 
 const RUN_SCRIPT = /\bbun run ([\w:-]+)/g;
 const BUN_TEST = /\bbun test\b([^&;|]*)/g;
+const FINAL_TEST_LANES = new Set([
+	"test:modules",
+	"test:system",
+	"test:repository",
+	"test:serial-browser",
+]);
 
 export function inspectWorkflow(workflow: string): string[] {
 	const errors: string[] = [];
@@ -139,6 +145,11 @@ export function inspectTestInventory(input: InventoryInput): InventoryResult {
 	for (const suiteName of Object.keys(input.scripts).filter((candidate) =>
 		candidate.startsWith("test:"),
 	)) {
+		if (!FINAL_TEST_LANES.has(suiteName)) {
+			errors.push(
+				`package test lane \`${suiteName}\` is transitional; only test:modules, test:system, test:repository, and test:serial-browser are allowed`,
+			);
+		}
 		const count = reachability.counts.get(suiteName) ?? 0;
 		if (count === 0)
 			errors.push(`package test lane \`${suiteName}\` is absent from \`${pushScript}\``);
