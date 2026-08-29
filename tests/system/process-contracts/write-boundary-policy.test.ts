@@ -4,6 +4,36 @@ import { join, resolve } from "node:path";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 
+test("mounts the code opener once before global request middleware", () => {
+	const application = readFileSync(join(repoRoot, "src/server/canvas/lib/application.ts"), "utf8");
+	const cors = application.indexOf("app.use(cors());");
+	const openerMounts = [...application.matchAll(/app\.use\(createCodeOpenerRouter\(\)\);/g)];
+	const globalJson = application.indexOf('app.use(express.json({ limit: "10mb" }));');
+	const heldBoard = application.indexOf("// A board that has stopped saving says so in every answer about it.");
+
+	expect(cors).toBeGreaterThanOrEqual(0);
+	expect(openerMounts).toHaveLength(1);
+	expect(globalJson).toBeGreaterThan(cors);
+	expect(heldBoard).toBeGreaterThan(globalJson);
+	expect(openerMounts[0]?.index).toBeGreaterThan(cors);
+	expect(openerMounts[0]?.index).toBeLessThan(globalJson);
+	expect(openerMounts[0]?.index).toBeLessThan(heldBoard);
+});
+
+test("exempts activation from the board-write lock for its approved reason", () => {
+	const application = readFileSync(join(repoRoot, "src/server/canvas/lib/application.ts"), "utf8");
+	const exemptionsAt = application.indexOf("const NOT_A_BOARD_WRITE");
+	const middleware = application.indexOf(
+		"app.use((req: Request, res: Response, next: NextFunction) => {",
+		exemptionsAt,
+	);
+	const exemptions = application.slice(exemptionsAt, middleware);
+
+	expect(exemptions).toContain(
+		'[/^\\/api\\/code-targets\\/open$/, "reads canonical board state and launches a process but writes no note"],',
+	);
+});
+
 test("all note-changing routes cross the sole lock and write boundary", () => {
 	const application = readFileSync(join(repoRoot, "src/server/canvas/lib/application.ts"), "utf8");
 	const boardWrite = readFileSync(join(repoRoot, "src/runtime/engine/board-write.ts"), "utf8");

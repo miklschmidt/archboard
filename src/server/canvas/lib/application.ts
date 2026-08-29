@@ -161,6 +161,7 @@ import {
 	InspectionPolicyInputSchema,
 	inspectBoard,
 } from "../../../runtime/board-inspection/index.js";
+import { createCodeOpenerRouter } from "../../code-opener/index.js";
 
 // Load environment variables
 dotenv.config({ quiet: true });
@@ -217,6 +218,7 @@ const wss = wiring.wss;
 
 // Middleware
 app.use(cors());
+app.use(createCodeOpenerRouter());
 app.use(express.json({ limit: "10mb" }));
 
 // A board that has stopped saving says so in every answer about it.
@@ -886,6 +888,7 @@ const NOT_A_BOARD_WRITE: Array<[RegExp, string]> = [
 	[/^\/api\/snapshots/, "reads a board into a snapshot and writes no note"],
 	[/^\/api\/boards\/open$/, "reads a note and points a pane at it"],
 	[/^\/api\/boards\/new$/, "creates no note"],
+	[/^\/api\/code-targets\/open$/, "reads canonical board state and launches a process but writes no note"],
 	[/^\/api\/injection/, "not about a board"],
 	[/^\/api\/reload$/, "not about a board"],
 ];
