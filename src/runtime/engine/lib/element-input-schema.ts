@@ -8,7 +8,7 @@ export const PointSchema = z.union([
 	z.object({ x: z.number(), y: z.number() }),
 ]);
 
-const BindingSchema = z
+export const BindingInputSchema = z
 	.object({
 		elementId: z.string(),
 		focus: z.number().optional(),
@@ -54,8 +54,8 @@ const ElementFields = {
 	startArrowhead: z.string().nullable().optional(),
 	endArrowhead: z.string().nullable().optional(),
 	elbowed: z.boolean().optional(),
-	startBinding: BindingSchema.optional(),
-	endBinding: BindingSchema.optional(),
+	startBinding: BindingInputSchema.optional(),
+	endBinding: BindingInputSchema.optional(),
 	boundElements: z
 		.array(z.object({ id: z.string(), type: z.enum(["arrow", "text"]) }))
 		.nullable()
@@ -88,6 +88,16 @@ export const UpdateElementSchema = z.looseObject({
 
 export type AgentCreateElementInput = z.input<typeof CreateElementSchema>;
 export type AgentUpdateElementInput = z.input<typeof UpdateElementSchema>;
+export const AgentElementInputSchema = z.union([CreateElementSchema, UpdateElementSchema]);
+export type AgentElementInput = z.input<typeof AgentElementInputSchema>;
+
+export const HumanElementChangeSchema = z.looseObject({
+	id: z.string(),
+	type: z.enum(
+		Object.values(EXCALIDRAW_ELEMENT_TYPES) as [ExcalidrawElementType, ...ExcalidrawElementType[]],
+	).optional(),
+});
+export type HumanElementChangeInput = z.input<typeof HumanElementChangeSchema>;
 
 export const CREATE_ELEMENT_JSON_SCHEMA = z.toJSONSchema(CreateElementSchema);
 export const UPDATE_ELEMENT_JSON_SCHEMA = z.toJSONSchema(UpdateElementSchema);

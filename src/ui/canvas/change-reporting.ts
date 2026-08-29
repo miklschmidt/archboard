@@ -12,16 +12,21 @@ import {
 	type Baseline,
 	type ChangeReport,
 } from "./changes";
+import type { RuntimeBoardElement } from "../../shared/board-elements/index.js";
 
-export type SceneElement = Record<string, unknown> & {
-	id: string;
-	type?: string;
-	isDeleted?: boolean;
-	containerId?: string | null;
-	boundElements?: Array<{ id: string; type: string }> | null;
-	startBinding?: { elementId: string } | null;
-	endBinding?: { elementId: string } | null;
-};
+type NativeKeys<Element> = Element extends Element ? keyof Element : never;
+type NativeValue<Key extends PropertyKey> = RuntimeBoardElement extends infer Element
+	? Element extends RuntimeBoardElement
+		? Key extends keyof Element
+			? Element[Key]
+			: never
+		: never
+	: never;
+
+/** The browser's visible projection of the vendor-derived runtime element. */
+export type SceneElement = {
+	[Key in NativeKeys<RuntimeBoardElement>]?: NativeValue<Key>;
+} & Pick<RuntimeBoardElement, "id" | "type">;
 
 type BaselineUpdate =
 	| { type: "replace"; withheldIds: readonly string[] }
@@ -257,11 +262,9 @@ function renameTextIds(
 		const next: SceneElement = { ...element };
 		next.id = renamed(next.id) ?? next.id;
 		if (Array.isArray(next.boundElements)) {
-			next.boundElements = next.boundElements.map((bound: unknown) =>
-				bound && typeof bound === "object" && renamed((bound as { id?: unknown }).id)
-					? { ...bound, id: renames.get((bound as { id: string }).id) }
-					: bound,
-			) as Array<{ id: string; type: string }>;
+			next.boundElements = next.boundElements.map((bound) =>
+				renamed(bound.id) ? { ...bound, id: renames.get(bound.id)! } : bound,
+			);
 		}
 		const containerId = renamed(next.containerId);
 		if (containerId) next.containerId = containerId;

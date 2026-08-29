@@ -11,7 +11,7 @@ import {
 	labelSeedOf,
 	labelTextIdFor,
 } from "./labels.js";
-import { bindingFromRef } from "./arrow-binding.js";
+import { BOUND_ARROW_GAP, bindingFromRef } from "./arrow-binding.js";
 import { fnv1a, type IdsInUse } from "../../shared/ids/ids.js";
 import { lineHeightOf } from "./fonts.js";
 import { canMeasure, measureText } from "./measure-text.js";
@@ -84,6 +84,19 @@ export interface ExpandOptions {
 	keepServerFields?: boolean;
 	/** Ids already spoken for elsewhere, so an expanded label cannot take one. */
 	inUse?: IdsInUse;
+}
+
+/** Complete one input binding without carrying input-only or unknown keys into the board. */
+function completeBinding(value: unknown): Record<string, unknown> | null {
+	if (value === null || value === undefined) return null;
+	if (!value || typeof value !== "object" || Array.isArray(value)) return { value };
+	const record = value as Record<string, unknown>;
+	return {
+		elementId: record.elementId,
+		focus: record.focus ?? 0,
+		gap: record.gap ?? BOUND_ARROW_GAP,
+		fixedPoint: record.fixedPoint ?? null,
+	};
 }
 
 // Excalidraw's defaults, from its own bundle rather than from anything's
@@ -376,7 +389,6 @@ export function canonicalizeKeys(v: unknown): unknown {
  * ADR 0015 asks for and the reason `readBoardFile` and `readNote` were a real
  * problem while this pair was not.
  */
-// oxlint-disable-next-line eslint/complexity -- this is ADR 0015's sole default-completion boundary for all eight arms
 export function expandElements(
 	sourceElements: LegacyElementIngress[],
 	options: ExpandOptions = {},
@@ -610,20 +622,12 @@ export function expandElements(
 				base.height = measured.height;
 			}
 			base.lastCommittedPoint = null;
-			const startRecord =
-				rest.startBinding && typeof rest.startBinding === "object"
-					? (rest.startBinding as Record<string, unknown>)
-					: null;
-			const endRecord =
-				rest.endBinding && typeof rest.endBinding === "object"
-					? (rest.endBinding as Record<string, unknown>)
-					: null;
-			base.startBinding = startRecord
-				? { ...startRecord, fixedPoint: startRecord.fixedPoint ?? null }
-				: bindingFromRef(start);
-			base.endBinding = endRecord
-				? { ...endRecord, fixedPoint: endRecord.fixedPoint ?? null }
-				: bindingFromRef(end);
+			base.startBinding =
+				rest.startBinding !== undefined
+					? completeBinding(rest.startBinding)
+					: bindingFromRef(start);
+			base.endBinding =
+				rest.endBinding !== undefined ? completeBinding(rest.endBinding) : bindingFromRef(end);
 			base.startArrowhead = rest.startArrowhead ?? null;
 			base.endArrowhead = rest.endArrowhead ?? (el.type === "arrow" ? "arrow" : null);
 			// Only an arrow can be elbowed. A line carrying `elbowed: false` is a
