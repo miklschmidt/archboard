@@ -130,11 +130,11 @@ test(
             };
           `),
 				),
-			(state) => state.text?.includes("helv (text): width, height") === true,
+			(state) => state.text?.includes("invalid element helv (text) at element.width") === true,
 			"the malformed scratch error to appear",
 			{ timeoutMs: PANE_LAYOUT_TIMEOUT_MS },
 		);
-		expect(scratchFailure.text).toContain("helv (text): width, height"); // check-fixed-point.mjs:1026
+		expect(scratchFailure.text).toContain("invalid element helv (text) at element.width"); // check-fixed-point.mjs:1026
 		expect(scratchFailure.elementIds).not.toContain("helv"); // check-fixed-point.mjs:1031
 		expect(scratchFailure.finiteZoom).toBe(true); // check-fixed-point.mjs:1031
 		expect(scratchFailure.hasNaNZoom).toBe(false); // check-fixed-point.mjs:1031
@@ -180,11 +180,11 @@ test(
             };
           `),
 				),
-			(state) => state.text?.includes("helv (text): width, height") === true,
+			(state) => state.text?.includes("invalid element helv (text) at element.width") === true,
 			"the malformed legacy-board error to appear",
 			{ timeoutMs: PANE_LAYOUT_TIMEOUT_MS },
 		);
-		expect(legacyFailure.text).toContain("helv (text): width, height"); // check-fixed-point.mjs:1101
+		expect(legacyFailure.text).toContain("invalid element helv (text) at element.width"); // check-fixed-point.mjs:1101
 		expect(legacyFailure.finiteZoom).toBe(true); // check-fixed-point.mjs:1108
 		expect(legacyFailure.hasNaNZoom).toBe(false); // check-fixed-point.mjs:1108
 		expect(fs.readFileSync(legacyFile, "utf8")).toBe(legacy.malformed); // check-fixed-point.mjs:1113
