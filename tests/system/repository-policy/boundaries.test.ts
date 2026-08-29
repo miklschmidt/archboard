@@ -59,8 +59,12 @@ async function withProject<T>(
 	}
 }
 
+function lintCommand(relativePaths: string[], extra: string[] = []): string[] {
+	return [oxlint, "--config=.oxlintrc.jsonc", "--format=default", ...extra, ...relativePaths];
+}
+
 function lint(root: string, relativePaths: string[], extra: string[] = []): CommandResult {
-	return run(root, [oxlint, "--config=.oxlintrc.jsonc", ...extra, ...relativePaths]);
+	return run(root, lintCommand(relativePaths, extra));
 }
 
 function expectPass(result: CommandResult): void {
@@ -74,6 +78,16 @@ function expectRule(result: CommandResult, rule: string, guidance?: string): voi
 }
 
 describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
+	test("pins the diagnostic formatter in the owned Oxlint argv", () => {
+		expect(lintCommand(["src/domain/widget/index.ts"], ["--type-aware"])).toEqual([
+			oxlint,
+			"--config=.oxlintrc.jsonc",
+			"--format=default",
+			"--type-aware",
+			"src/domain/widget/index.ts",
+		]);
+	});
+
 	test("uses the repository-owned Oxlint and TypeScript configurations", async () => {
 		await withProject({}, (root) => {
 			const actualOxlint = fs
