@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -15,8 +14,12 @@ import {
 } from "../../../src/shared/timing/timing.ts";
 import {
 	discoverNativeTests,
+	browserBundleSnapshot,
+	createBrowserPreflightFixture,
 	inspectTestInventory,
 	inspectWorkflow,
+	installFakeAgentBrowser,
+	processExists,
 	type InventoryInput,
 } from "./support/test-inventory.js";
 
@@ -47,58 +50,50 @@ function input(overrides: Partial<InventoryInput> = {}): InventoryInput {
 	};
 }
 
+function expectInventoryError(fixture: InventoryInput, message: string): void {
+	expect(inspectTestInventory(fixture).errors).toContain(message);
+}
+
 describe("test inventory policy", () => {
-	test("accepts the four final native lanes", () => {
+	test("accepts the final lanes and rejects ownership drift", () => {
 		expect(inspectTestInventory(input()).errors).toEqual([]);
-	});
-
-	test("rejects a package test lane absent from the push chain", () => {
 		const fixture = input();
-		const testChain = fixture.scripts.test;
-		if (!testChain) throw new Error("fixture test chain is missing");
-		fixture.scripts.test = testChain.replace(" && bun run test:system", "");
-		expect(inspectTestInventory(fixture).errors).toContain(
-			"package test lane `test:system` is absent from `check`",
-		);
-	});
+		fixture.scripts.test = fixture.scripts.test!.replace(" && bun run test:system", "");
+		expectInventoryError(fixture, "package test lane `test:system` is absent from `check`");
 
-	test("rejects a native test owned by no lane", () => {
-		const fixture = input({ nativeTests: ["tests/system/orphan.test.ts"] });
-		expect(inspectTestInventory(fixture).errors).toContain(
+		const orphan = input({ nativeTests: ["tests/system/orphan.test.ts"] });
+		expectInventoryError(
+			orphan,
 			"native test `tests/system/orphan.test.ts` belongs to no package lane",
 		);
-	});
 
-	test("rejects a native test reachable through multiple lanes", () => {
-		const fixture = input();
-		fixture.scripts["test:system"] += " tests/system/repository-policy/test-inventory.test.ts";
-		expect(inspectTestInventory(fixture).errors).toContain(
+		const multiple = input();
+		multiple.scripts["test:system"] += " tests/system/repository-policy/test-inventory.test.ts";
+		expectInventoryError(
+			multiple,
 			"native test `tests/system/repository-policy/test-inventory.test.ts` runs 2 times from `check` through package lanes: test:system (1), test:repository (1)",
 		);
-	});
 
-	test("rejects a native test selected only by an unreachable verify script", () => {
-		const fixture = input({ nativeTests: ["tests/system/orphan.test.ts"] });
-		fixture.scripts["verify:orphan"] = "bun test tests/system/orphan.test.ts";
-		expect(inspectTestInventory(fixture).errors).toContain(
+		const unreachable = input({ nativeTests: ["tests/system/orphan.test.ts"] });
+		unreachable.scripts["verify:orphan"] = "bun test tests/system/orphan.test.ts";
+		expectInventoryError(
+			unreachable,
 			"native test `tests/system/orphan.test.ts` runs zero times from `check`; matching package lanes: verify:orphan",
 		);
-	});
 
-	test("rejects a reachable non-test owner invoked twice", () => {
-		const fixture = input({ nativeTests: ["tests/system/verify.test.ts"] });
-		fixture.scripts["test:system"] = "bun test tests/system/verify.test.ts";
-		fixture.scripts.test += " && bun run test:system";
-		expect(inspectTestInventory(fixture).errors).toContain(
+		const duplicate = input({ nativeTests: ["tests/system/verify.test.ts"] });
+		duplicate.scripts["test:system"] = "bun test tests/system/verify.test.ts";
+		duplicate.scripts.test += " && bun run test:system";
+		expectInventoryError(
+			duplicate,
 			"native test `tests/system/verify.test.ts` runs 2 times from `check` through package lanes: test:system (2)",
 		);
-	});
 
-	test("rejects an extra transitional test key", () => {
-		const fixture = input();
-		fixture.scripts["test:legacy"] = "bun scripts/non-native-command.ts";
-		fixture.scripts.test += " && bun run test:legacy";
-		expect(inspectTestInventory(fixture).errors).toContain(
+		const legacy = input();
+		legacy.scripts["test:legacy"] = "bun scripts/non-native-command.ts";
+		legacy.scripts.test += " && bun run test:legacy";
+		expectInventoryError(
+			legacy,
 			"package test lane `test:legacy` is transitional; only test:modules, test:system, test:repository, and test:serial-browser are allowed",
 		);
 	});
@@ -120,27 +115,27 @@ describe("test inventory policy", () => {
 		).toEqual(["test:modules", "test:repository", "test:serial-browser", "test:system"]);
 	});
 
-	test("keeps the code-target system directory and opener browser owner once", () => {
+	test("keeps new system and browser owners once and rejects their drift", () => {
 		const fixture = input();
 		const system = fixture.scripts["test:system"]!;
 		const browser = fixture.scripts["test:serial-browser"]!;
 		expect(system.match(/tests\/system\/code-targets/g)).toHaveLength(1);
 		expect(browser.match(/tests\/system\/browser\/opener-settings\.test\.ts/g)).toHaveLength(1);
 		expect(inspectTestInventory(fixture).errors).toEqual([]);
-	});
-	test("rejects missing, duplicate, reordered, and wrong-lane new owners", () => {
 		const missing = input();
 		missing.scripts["test:system"] = missing.scripts["test:system"]!.replace(
 			" tests/system/code-targets",
 			"",
 		);
-		expect(inspectTestInventory(missing).errors).toContain(
+		expectInventoryError(
+			missing,
 			"native test `tests/system/code-targets/activation-contract.test.ts` belongs to no package lane",
 		);
 
 		const duplicate = input();
 		duplicate.scripts["test:modules"] += " tests/system/code-targets";
-		expect(inspectTestInventory(duplicate).errors).toContain(
+		expectInventoryError(
+			duplicate,
 			"native test `tests/system/code-targets/activation-contract.test.ts` runs 2 times from `check` through package lanes: test:modules (1), test:system (1)",
 		);
 
@@ -155,7 +150,8 @@ describe("test inventory policy", () => {
 
 		const wrongLane = input();
 		wrongLane.scripts["test:system"] += " tests/system/browser/opener-settings.test.ts";
-		expect(inspectTestInventory(wrongLane).errors).toContain(
+		expectInventoryError(
+			wrongLane,
 			"native test `tests/system/browser/opener-settings.test.ts` runs 2 times from `check` through package lanes: test:system (1), test:serial-browser (1)",
 		);
 	});
@@ -194,7 +190,7 @@ describe("typed serial browser adapter selection", () => {
 		});
 	});
 
-	test("rejects missing, duplicate, reordered, unknown, directory, and recursive selectors", () => {
+	test("rejects incomplete, reordered, unknown, recursive, and extra argument forms", () => {
 		const invalid = [
 			`bun ${BROWSER_ADAPTER_PATH} ${BROWSER_TEST_PATHS.slice(0, -1).join(" ")}`,
 			focusAdapter([BROWSER_TEST_PATHS[0], BROWSER_TEST_PATHS[0]]),
@@ -202,13 +198,6 @@ describe("typed serial browser adapter selection", () => {
 			focusAdapter(["tests/system/browser/not-an-owner.test.ts"]),
 			focusAdapter(["tests/system/browser"]),
 			focusAdapter(["tests/system/browser/**/*.test.ts"]),
-		];
-		for (const command of invalid)
-			expect(() => validateBrowserSelection(command.split(" "))).toThrow();
-	});
-
-	test("rejects changed, random, shard, missing-focus, and every extra argument form", () => {
-		const invalid = [
 			`bun ${BROWSER_ADAPTER_PATH} --focus`,
 			focusAdapter([BROWSER_TEST_PATHS[0]]) + " --changed",
 			focusAdapter([BROWSER_TEST_PATHS[0]]) + " --randomize",
@@ -226,21 +215,19 @@ describe("typed serial browser adapter selection", () => {
 		expect(result.nativeLanes.get("test:serial-browser")).toEqual([...BROWSER_TEST_PATHS]);
 	});
 
-	test("inventory rejects a missing package owner", () => {
+	test("inventory rejects missing, duplicate, reordered, and unknown adapter arguments", () => {
 		const command = `bun ${BROWSER_ADAPTER_PATH} ${BROWSER_TEST_PATHS.slice(0, -1).join(" ")}`;
-		expect(inspectTestInventory(adapterInput(command)).errors).toContain(
+		expectInventoryError(
+			adapterInput(command),
 			"browser adapter lane `test:serial-browser` is invalid: Package browser lane must name all 15 canonical paths in order.",
 		);
-	});
 
-	test("inventory rejects a duplicate adapter argument instead of collapsing it", () => {
-		const command = focusAdapter([BROWSER_TEST_PATHS[0], BROWSER_TEST_PATHS[0]]);
-		expect(inspectTestInventory(adapterInput(command, [BROWSER_TEST_PATHS[0]])).errors).toContain(
+		const duplicate = focusAdapter([BROWSER_TEST_PATHS[0], BROWSER_TEST_PATHS[0]]);
+		expectInventoryError(
+			adapterInput(duplicate, [BROWSER_TEST_PATHS[0]]),
 			`browser adapter lane \`test:serial-browser\` is invalid: Browser lane repeats \`${BROWSER_TEST_PATHS[0]}\`.`,
 		);
-	});
 
-	test("inventory rejects reordered and unknown adapter arguments", () => {
 		const reordered = focusAdapter([BROWSER_TEST_PATHS[1], BROWSER_TEST_PATHS[0]]);
 		const unknown = focusAdapter(["tests/system/browser/unknown.test.ts"]);
 		expect(inspectTestInventory(adapterInput(reordered)).errors[0]).toContain(
@@ -251,75 +238,39 @@ describe("typed serial browser adapter selection", () => {
 		);
 	});
 
-	test("inventory rejects an unreachable valid focused adapter", () => {
+	test("inventory counts focused, duplicated, and ordinary selectors", () => {
 		const file = BROWSER_TEST_PATHS[3];
 		const fixture = adapterInput("bun scripts/non-native.mjs", [file]);
 		fixture.scripts["verify:browser"] = focusAdapter([file]);
-		expect(inspectTestInventory(fixture).errors).toContain(
+		expectInventoryError(
+			fixture,
 			`native test \`${file}\` runs zero times from \`check\`; matching package lanes: verify:browser`,
 		);
-	});
 
-	test("inventory rejects one focused adapter reached twice", () => {
-		const file = BROWSER_TEST_PATHS[3];
-		const fixture = adapterInput(focusAdapter([file]), [file]);
-		fixture.scripts.test = "bun run test:serial-browser && bun run test:serial-browser";
-		expect(inspectTestInventory(fixture).errors).toContain(
+		const duplicate = adapterInput(focusAdapter([file]), [file]);
+		duplicate.scripts.test = "bun run test:serial-browser && bun run test:serial-browser";
+		expectInventoryError(
+			duplicate,
 			`native test \`${file}\` runs 2 times from \`check\` through package lanes: test:serial-browser (2)`,
 		);
-	});
 
-	test("ordinary selector occurrences remain countable", () => {
-		const file = "tests/system/example.test.ts";
-		const fixture = adapterInput(`bun test ${file} ${file}`, [file]);
-		expect(inspectTestInventory(fixture).errors).toContain(
-			`native test \`${file}\` runs 2 times from \`check\` through package lanes: test:serial-browser (2)`,
+		const ordinary = "tests/system/example.test.ts";
+		expectInventoryError(
+			adapterInput(`bun test ${ordinary} ${ordinary}`, [ordinary]),
+			`native test \`${ordinary}\` runs 2 times from \`check\` through package lanes: test:serial-browser (2)`,
 		);
 	});
 });
 
-interface BundleSnapshot {
-	exists: boolean;
-	mtimeMs?: number;
-	size?: number;
+function prerequisiteFixture(withAgentBrowser: boolean) {
+	const fixture = createBrowserPreflightFixture();
+	if (withAgentBrowser) installFakeAgentBrowser(fixture);
+	return fixture;
 }
 
-function bundleSnapshot(): BundleSnapshot {
-	const bundle = path.join(repoRoot, "dist/frontend/index.html");
-	if (!fs.existsSync(bundle)) return { exists: false };
-	const stat = fs.statSync(bundle);
-	return { exists: true, mtimeMs: stat.mtimeMs, size: stat.size };
-}
-
-function prerequisiteFixture(withAgentBrowser: boolean): {
-	root: string;
-	bin: string;
-	temporary: string;
-	versionMarker: string;
-	unexpectedMarker: string;
-} {
-	const root = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-browser-preflight-"));
-	const bin = path.join(root, "bin");
-	const temporary = path.join(root, "tmp");
-	fs.mkdirSync(bin);
-	fs.mkdirSync(temporary);
-	fs.symlinkSync(process.execPath, path.join(bin, "bun"));
-	const versionMarker = path.join(root, "agent-browser-version");
-	const unexpectedMarker = path.join(root, "agent-browser-unexpected");
-	if (withAgentBrowser) {
-		const executable = path.join(bin, "agent-browser");
-		fs.writeFileSync(
-			executable,
-			`#!/bin/sh\nif [ "$1" = "--version" ]; then : > "${versionMarker}"; exit 0; fi\n: > "${unexpectedMarker}"\nexit 97\n`,
-		);
-		fs.chmodSync(executable, 0o755);
-	}
-	return { root, bin, temporary, versionMarker, unexpectedMarker };
-}
-
-function runPrerequisiteNegative(withAgentBrowser: boolean): void {
+function runPrerequisiteNegative(withAgentBrowser: boolean, executablePath?: string): void {
 	const fixture = prerequisiteFixture(withAgentBrowser);
-	const beforeBundle = bundleSnapshot();
+	const beforeBundle = browserBundleSnapshot(repoRoot);
 	try {
 		const file = withAgentBrowser ? BROWSER_TEST_PATHS[0] : BROWSER_TEST_PATHS[1];
 		const result = Bun.spawnSync({
@@ -331,6 +282,7 @@ function runPrerequisiteNegative(withAgentBrowser: boolean): void {
 				LANG: "C.UTF-8",
 				LC_ALL: "C.UTF-8",
 				NO_COLOR: "1",
+				AGENT_BROWSER_EXECUTABLE_PATH: executablePath ?? fixture.browserExecutable,
 			},
 			stdout: "pipe",
 			stderr: "pipe",
@@ -339,31 +291,86 @@ function runPrerequisiteNegative(withAgentBrowser: boolean): void {
 		expect(result.signalCode).toBeUndefined();
 		expect(fs.readdirSync(fixture.temporary)).toEqual([]);
 		expect(fs.existsSync(fixture.unexpectedMarker)).toBeFalse();
-		expect(bundleSnapshot()).toEqual(beforeBundle);
+		expect(browserBundleSnapshot(repoRoot)).toEqual(beforeBundle);
 		if (withAgentBrowser) expect(fs.existsSync(fixture.versionMarker)).toBeTrue();
 	} finally {
 		fs.rmSync(fixture.root, { recursive: true, force: true });
 	}
 }
 
-describe("browser adapter prerequisite outcomes", () => {
-	test("missing agent-browser exits 2 before build or owner acquisition", () => {
-		runPrerequisiteNegative(false);
-	});
-
-	test("missing strace exits 2 before the human owner acquires anything", () => {
-		runPrerequisiteNegative(true);
-	});
-});
-
-function processExists(pid: number): boolean {
+function runBrowserExecutableNegative(
+	setup: (fixture: ReturnType<typeof prerequisiteFixture>) => string | undefined,
+	diagnostic: string,
+): void {
+	const fixture = prerequisiteFixture(true);
+	const beforeBundle = browserBundleSnapshot(repoRoot);
 	try {
-		process.kill(pid, 0);
-		return true;
-	} catch {
-		return false;
+		const configured = setup(fixture);
+		const result = Bun.spawnSync({
+			cmd: ["bun", BROWSER_ADAPTER_PATH, "--focus", BROWSER_TEST_PATHS[1]],
+			cwd: repoRoot,
+			env: {
+				PATH: fixture.bin,
+				TMPDIR: fixture.temporary,
+				...(configured === undefined ? {} : { AGENT_BROWSER_EXECUTABLE_PATH: configured }),
+			},
+			stdout: "pipe",
+			stderr: "pipe",
+		});
+		expect(result.exitCode).toBe(2);
+		expect(new TextDecoder().decode(result.stderr)).toContain(diagnostic);
+		expect(fs.existsSync(fixture.versionMarker)).toBeFalse();
+		expect(fs.readdirSync(fixture.temporary)).toEqual([]);
+		expect(browserBundleSnapshot(repoRoot)).toEqual(beforeBundle);
+	} finally {
+		fs.rmSync(fixture.root, { recursive: true, force: true });
 	}
 }
+
+describe("browser adapter prerequisite outcomes", () => {
+	test("missing command prerequisites exit 2 before build or owner acquisition", () => {
+		runPrerequisiteNegative(false);
+		runPrerequisiteNegative(true);
+	});
+
+	test("unusable configured browser executables exit 2 before build or owner acquisition", () => {
+		runBrowserExecutableNegative(() => undefined, "AGENT_BROWSER_EXECUTABLE_PATH is missing");
+		runBrowserExecutableNegative(() => "relative/chrome", "must be absolute");
+		runBrowserExecutableNegative(() => "/missing/chrome", "does not exist");
+		runBrowserExecutableNegative((fixture) => fixture.root, "is not a file");
+		runBrowserExecutableNegative((fixture) => {
+			fs.chmodSync(fixture.browserExecutable, 0o644);
+			return fixture.browserExecutable;
+		}, "is not executable");
+	});
+
+	test("forwards the exact absolute browser executable to an isolated owner", () => {
+		const fixture = prerequisiteFixture(true);
+		try {
+			const ownerFixture = path.join(fixture.root, "owner.ts");
+			fs.writeFileSync(
+				ownerFixture,
+				`Bun.write(${JSON.stringify(fixture.ownerPathMarker)}, process.env.AGENT_BROWSER_EXECUTABLE_PATH ?? "missing");`,
+			);
+			const result = Bun.spawnSync({
+				cmd: ["bun", BROWSER_ADAPTER_PATH, "--focus", BROWSER_TEST_PATHS[1]],
+				cwd: repoRoot,
+				env: {
+					PATH: fixture.bin,
+					TMPDIR: fixture.temporary,
+					AGENT_BROWSER_EXECUTABLE_PATH: fixture.browserExecutable,
+					ARCHBOARD_TEST_BROWSER_OWNER_FIXTURE: ownerFixture,
+				},
+				stdout: "ignore",
+				stderr: "pipe",
+			});
+			expect(result.exitCode).toBe(0);
+			expect(fs.readFileSync(fixture.ownerPathMarker, "utf8")).toBe(fixture.browserExecutable);
+		} finally {
+			fs.rmSync(fixture.root, { recursive: true, force: true });
+		}
+	});
+});
 
 describe("browser adapter interruption and cleanup timing", () => {
 	for (const [signal, exitCode] of [
@@ -391,6 +398,7 @@ setInterval(() => {}, ${TEST_BROWSER_POLL_MS});
 					env: {
 						PATH: fixture.bin,
 						TMPDIR: fixture.temporary,
+						AGENT_BROWSER_EXECUTABLE_PATH: fixture.browserExecutable,
 						LANG: "C.UTF-8",
 						LC_ALL: "C.UTF-8",
 						NO_COLOR: "1",
@@ -448,43 +456,43 @@ setInterval(() => {}, ${TEST_BROWSER_POLL_MS});
 });
 
 describe("browser predecessor oracle guards", () => {
-	test("keeps the same-run relative performance diagnostic", () => {
-		const source = fs.readFileSync(
+	test("keeps the performance and typed-text predecessor oracles", () => {
+		const performance = fs.readFileSync(
 			path.join(repoRoot, "tests/system/browser/human-edit-performance.test.ts"),
 			"utf8",
 		);
-		expect(source).toContain("expect(worstReportGap).toBeLessThanOrEqual(median * 8);");
-		expect(source).not.toMatch(/worstReportGap\)\.toBeLessThanOrEqual\(\d+/);
-	});
-
-	test("keeps the typed recorder and both final-note leaves together", () => {
-		const source = fs.readFileSync(
+		expect(performance).toContain("expect(worstReportGap).toBeLessThanOrEqual(median * 8);");
+		expect(performance).not.toMatch(/worstReportGap\)\.toBeLessThanOrEqual\(\d+/);
+		const typed = fs.readFileSync(
 			path.join(repoRoot, "tests/system/browser/typed-text.test.ts"),
 			"utf8",
 		);
-		expect(source).toContain("expect(renameable).toHaveLength(0);");
-		expect(source).toContain("expect(postedTextIds.has(drawnText!.id)).toBe(true);");
-		expect(source).toContain("expect(postedTextIds.has(label!.id)).toBe(true);");
-		expect(source).toContain("expect(note.includes(`hello world ^${drawnText!.id}`)).toBe(true);");
-		expect(source).toContain("expect(note.includes(`ABCDEFGHIJ ^${label!.id}`)).toBe(true);");
+		expect(typed).toContain("expect(renameable).toHaveLength(0);");
+		expect(typed).toContain("expect(postedTextIds.has(drawnText!.id)).toBe(true);");
+		expect(typed).toContain("expect(postedTextIds.has(label!.id)).toBe(true);");
+		expect(typed).toContain("expect(note.includes(`hello world ^${drawnText!.id}`)).toBe(true);");
+		expect(typed).toContain("expect(note.includes(`ABCDEFGHIJ ^${label!.id}`)).toBe(true);");
 	});
 });
 
 describe("CI workflow policy", () => {
 	const workflow = fs.readFileSync(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
 
-	test("the real workflow runs the complete check gate", () => {
-		expect(inspectWorkflow(workflow).filter((error) => error.includes("does not run"))).toEqual([]);
+	test("the real workflow invokes only the complete check gate, exactly once", () => {
+		expect(inspectWorkflow(workflow)).toEqual([]);
 	});
 
-	test("the real workflow does not name test lanes directly", () => {
-		expect(inspectWorkflow(workflow).filter((error) => error.includes("by name"))).toEqual([]);
-	});
-
-	test("reports the predecessor workflow diagnostics exactly", () => {
-		expect(inspectWorkflow("run: bun run test:browser\n")).toEqual([
-			"the workflow does not run `bun run check`, so lint, format, and the suite are not a push gate.",
-			"the workflow runs `test:browser` by name, and the chain already runs it. Naming suites one at a time in the workflow is how it fell behind before.",
+	test("rejects missing, duplicate, build, and test package-script invocations", () => {
+		expect(inspectWorkflow("run: true\n")).toEqual([
+			"the workflow must invoke `bun run check` exactly once; found 0 invocations.",
 		]);
+		expect(inspectWorkflow("run: bun run check && bun run check\n")).toEqual([
+			"the workflow must invoke `bun run check` exactly once; found 2 invocations.",
+		]);
+		for (const script of ["build", "test"]) {
+			expect(inspectWorkflow(`run: bun run ${script}\nrun: bun run check\n`)).toEqual([
+				`the workflow invokes package script \`${script}\` directly; \`bun run check\` must be its only package-script invocation.`,
+			]);
+		}
 	});
 });
