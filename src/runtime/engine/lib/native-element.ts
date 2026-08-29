@@ -109,9 +109,9 @@ function binding(
 			: nullablePoint(record.fixedPoint, context, id, type, `${path}.fixedPoint`);
 	return {
 		elementId: record.elementId,
+		...(fixedPoint !== undefined ? { fixedPoint } : {}),
 		focus: finite(record.focus, context, id, type, `${path}.focus`),
 		gap: finite(record.gap, context, id, type, `${path}.gap`),
-		...(fixedPoint !== undefined ? { fixedPoint } : {}),
 	};
 }
 
