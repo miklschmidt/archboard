@@ -7,8 +7,13 @@ import { z } from "zod";
 
 import { createJsonRequester } from "../boards/support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
-import { startCountingProxy } from "./support/counting-proxy.ts";
-import { availablePort, runCli, sanitizedEnvironment } from "./support/process-http.ts";
+import { nonReadRecords, startCountingProxy } from "./support/counting-proxy.ts";
+import {
+	availablePort,
+	parseCliJson,
+	runCli,
+	sanitizedEnvironment,
+} from "./support/process-http.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const ApplySchema = z.object({
@@ -21,18 +26,22 @@ const ApplySchema = z.object({
 });
 
 test("apply is atomic, compact by default, and one real proxy write", async () => {
+	const resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-apply-one-write-"));
+	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
 	const canvas = await startOwnedCanvas({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
 		env: sanitizedEnvironment(root, vault),
 	});
+	resources.defer(() => canvas.dispose());
 	const proxy = await startCountingProxy({
 		port: await availablePort(),
 		upstream: canvas.base,
 		env: sanitizedEnvironment(root, vault),
 	});
+	resources.defer(() => proxy.dispose());
 	const request = createJsonRequester(canvas);
 	try {
 		await request("/api/elements/batch?board=scratch", {
@@ -66,7 +75,7 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 			stdin: JSON.stringify(patch),
 		});
 		expect(result.status).toBe(0);
-		const applied = ApplySchema.parse(JSON.parse(result.stdout));
+		const applied = parseCliJson(result, ApplySchema);
 		expect(applied).toMatchObject({ created: 2, updated: 2, deleted: 1 });
 		expect(applied.document).toBeUndefined();
 		expect(applied.elements.map((element) => element.id)).toEqual(
@@ -77,13 +86,24 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 				(element) => element.id.length <= 8 && !["made", "box-1", "box-2"].includes(element.id),
 			),
 		).toBeTrue();
-		const writes = (await proxy.snapshot()).filter(
-			(record) => record.method === "POST" && record.pathname === "/api/elements/changes",
-		);
+		const writes = nonReadRecords(await proxy.snapshot());
 		expect(writes).toHaveLength(1);
-		expect(JSON.parse(Buffer.from(writes[0]!.bodyBase64, "base64").toString())).toMatchObject({
-			deletes: ["gone"],
+		expect(writes[0]).toMatchObject({
+			method: "POST",
+			pathname: "/api/elements/changes",
+			query: "?board=scratch&doing=applying%20a%20patch",
 		});
+		expect(Buffer.from(writes[0]!.bodyBase64, "base64").toString()).toBe(
+			JSON.stringify({
+				upserts: [
+					...patch.create,
+					{ backgroundColor: "#ffc9c9", id: "box-1" },
+					{ x: 400, id: "box-2" },
+				],
+				deletes: ["gone"],
+				origin: "agent",
+			}),
+		);
 
 		await proxy.reset();
 		const full = runCli({
@@ -94,12 +114,22 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 			args: ["apply", "--board", "scratch", "--doing", "applying a patch", "--document", "-"],
 			stdin: JSON.stringify({ update: [{ id: "box-1", set: { backgroundColor: "#b2f2bb" } }] }),
 		});
-		expect(ApplySchema.parse(JSON.parse(full.stdout)).document?.length).toBeGreaterThan(0);
-		expect(
-			(await proxy.snapshot()).filter(
-				(record) => record.method === "POST" && record.pathname === "/api/elements/changes",
-			),
-		).toHaveLength(1);
+		expect(parseCliJson(full, ApplySchema).document?.length).toBeGreaterThan(0);
+		const fullWrites = nonReadRecords(await proxy.snapshot());
+		expect(fullWrites).toHaveLength(1);
+		expect(fullWrites[0]).toMatchObject({
+			method: "POST",
+			pathname: "/api/elements/changes",
+			query: "?board=scratch&doing=applying%20a%20patch",
+		});
+		expect(Buffer.from(fullWrites[0]!.bodyBase64, "base64").toString()).toBe(
+			JSON.stringify({
+				upserts: [{ backgroundColor: "#b2f2bb", id: "box-1" }],
+				deletes: [],
+				origin: "agent",
+				document: true,
+			}),
+		);
 
 		const before = await request("/api/elements?board=scratch");
 		await proxy.reset();
@@ -117,11 +147,7 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 			}),
 		});
 		expect(refused.status).not.toBe(0);
-		expect(
-			(await proxy.snapshot()).filter(
-				(record) => record.method !== "GET" && record.pathname.startsWith("/api/elements"),
-			),
-		).toHaveLength(0);
+		expect(nonReadRecords(await proxy.snapshot())).toHaveLength(0);
 		expect((await request("/api/elements?board=scratch")).body).toEqual(before.body);
 
 		for (const upserts of [
@@ -284,8 +310,6 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 		expect(agent.elements).toBeDefined();
 		expect(agent.corrections).toBeUndefined();
 	} finally {
-		await proxy.dispose();
-		await canvas.dispose();
-		rmSync(root, { recursive: true, force: true });
+		await resources.disposeAsync();
 	}
 }, 30_000);

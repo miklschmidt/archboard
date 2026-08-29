@@ -16,13 +16,18 @@ const CLEARED = new Set([
 	"ENABLE_CANVAS_SYNC",
 	"ARCHBOARD_REPOS",
 	"ARCHBOARD_SETTLE_MS",
+	"ARCHBOARD_SETTLE_MAX_MS",
 	"HOST",
 	"PORT",
 	"EXCALIDRAW_NO_AUTOSTART",
 ]);
 
-export function sanitizedEnvironment(root: string, vault: string): ChildEnvironment {
-	const env: ChildEnvironment = { ...process.env };
+export function sanitizedEnvironment(
+	root: string,
+	vault: string,
+	inherited: ChildEnvironment = process.env,
+): ChildEnvironment {
+	const env: ChildEnvironment = { ...inherited };
 	for (const key of Object.keys(env)) {
 		if (CLEARED.has(key) || key.startsWith("ARCHBOARD_INJECT")) delete env[key];
 	}
@@ -66,6 +71,47 @@ export async function portIsReusable(port: number): Promise<boolean> {
 	}
 }
 
+export interface CliProcessResult {
+	argv: string[];
+	cwd: string;
+	status: number | null;
+	signal: NodeJS.Signals | null;
+	error?: Error;
+	stdout: string;
+	stderr: string;
+}
+
+function cliDiagnostics(result: CliProcessResult): string {
+	return JSON.stringify(
+		{
+			argv: result.argv,
+			cwd: result.cwd,
+			status: result.status,
+			signal: result.signal,
+			error: result.error?.message,
+			stdout: result.stdout,
+			stderr: result.stderr,
+		},
+		null,
+		2,
+	);
+}
+
+export function parseCliJson<T>(result: CliProcessResult, schema: z.ZodType<T>): T {
+	let payload: unknown;
+	try {
+		payload = JSON.parse(result.stdout);
+	} catch (error) {
+		throw new Error(`CLI stdout was not JSON.\n${cliDiagnostics(result)}`, { cause: error });
+	}
+	const parsed = schema.safeParse(payload);
+	if (!parsed.success)
+		throw new Error(`CLI JSON failed schema validation.\n${cliDiagnostics(result)}`, {
+			cause: parsed.error,
+		});
+	return parsed.data;
+}
+
 export function runCli(options: {
 	repoRoot: string;
 	root: string;
@@ -73,14 +119,24 @@ export function runCli(options: {
 	base: string;
 	args: string[];
 	stdin?: string;
-}): { status: number | null; stdout: string; stderr: string } {
+}): CliProcessResult {
 	const env = sanitizedEnvironment(options.root, options.vault);
 	env.EXPRESS_SERVER_URL = options.base;
 	env.EXCALIDRAW_NO_AUTOSTART = "1";
-	return spawnSync(process.execPath, [join(options.repoRoot, "src/bin.ts"), ...options.args], {
+	const argv = [process.execPath, join(options.repoRoot, "src/bin.ts"), ...options.args];
+	const result = spawnSync(argv[0]!, argv.slice(1), {
 		cwd: options.repoRoot,
 		env,
 		input: options.stdin ?? "",
 		encoding: "utf8",
 	});
+	return {
+		argv,
+		cwd: options.repoRoot,
+		status: result.status,
+		signal: result.signal,
+		error: result.error,
+		stdout: result.stdout,
+		stderr: result.stderr,
+	};
 }

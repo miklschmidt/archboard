@@ -15,6 +15,9 @@ export const ProxySnapshotSchema = z.object({ records: z.array(ProxyRecordSchema
 const ProxyReadySchema = ReadySchema.extend({ port: z.number().int().positive() });
 export type ProxyRecord = z.infer<typeof ProxyRecordSchema>;
 
+export const nonReadRecords = (records: ProxyRecord[]): ProxyRecord[] =>
+	records.filter((record) => !["GET", "HEAD"].includes(record.method));
+
 export interface CountingProxy {
 	readonly base: string;
 	readonly peer: OwnedPeer<z.infer<typeof ProxyReadySchema>>;

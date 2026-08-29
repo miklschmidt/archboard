@@ -7,8 +7,13 @@ import { createJsonRequester } from "../boards/support/http.ts";
 import { openTestPane } from "../boards/support/pane-websocket.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { replaceScene } from "./fixtures/import-scenes.ts";
-import { startCountingProxy } from "./support/counting-proxy.ts";
-import { availablePort, runCli, sanitizedEnvironment } from "./support/process-http.ts";
+import { nonReadRecords, startCountingProxy } from "./support/counting-proxy.ts";
+import {
+	availablePort,
+	parseCliJson,
+	runCli,
+	sanitizedEnvironment,
+} from "./support/process-http.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const ReceiptSchema = z.object({
@@ -27,20 +32,25 @@ interface ImportedElement {
 }
 
 test("image replace persists one canonical batch before its frames", async () => {
+	const resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-import-replace-"));
+	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
 	const canvas = await startOwnedCanvas({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
 		env: sanitizedEnvironment(root, vault),
 	});
+	resources.defer(() => canvas.dispose());
 	const proxy = await startCountingProxy({
 		port: await availablePort(),
 		upstream: canvas.base,
 		env: sanitizedEnvironment(root, vault),
 	});
+	resources.defer(() => proxy.dispose());
 	const request = createJsonRequester(canvas);
 	const pane = await openTestPane(canvas.base, request, "import-pane", 0, { board: "replace" });
+	resources.defer(() => pane.close());
 	try {
 		await request("/api/boards/new", { method: "POST", body: { board: "replace" } });
 		await pane.adopt("replace");
@@ -101,26 +111,26 @@ test("image replace persists one canonical batch before its frames", async () =>
 		await Bun.sleep(80);
 		observe = false;
 		expect(result.status).toBe(0);
-		expect(ReceiptSchema.parse(JSON.parse(result.stdout))).toEqual({
+		expect(parseCliJson(result, ReceiptSchema)).toEqual({
 			success: true,
 			imported: 4,
 			files: 2,
 			mode: "replace",
 		});
-		const records = (await proxy.snapshot()).filter(
-			(record) => record.method === "POST" && record.pathname === "/api/elements/batch",
-		);
+		const records = nonReadRecords(await proxy.snapshot());
 		expect(records).toHaveLength(1);
 		expect(records[0]).toMatchObject({
 			method: "POST",
 			pathname: "/api/elements/batch",
 			query: "?board=replace&doing=replacing%20scene",
 		});
-		expect(JSON.parse(Buffer.from(records[0]!.bodyBase64, "base64").toString())).toEqual({
-			elements: replaceScene.elements,
-			files: Object.values(replaceScene.files),
-			mutation: "replace-scene",
-		});
+		expect(Buffer.from(records[0]!.bodyBase64, "base64").toString()).toBe(
+			JSON.stringify({
+				elements: replaceScene.elements,
+				files: Object.values(replaceScene.files),
+				mutation: "replace-scene",
+			}),
+		);
 		const elements = (await request<{ elements: ImportedElement[] }>("/api/elements?board=replace"))
 			.body.elements;
 		const container = elements.find(
@@ -173,9 +183,6 @@ test("image replace persists one canonical batch before its frames", async () =>
 			0,
 		);
 	} finally {
-		await pane.close();
-		await proxy.dispose();
-		await canvas.dispose();
-		rmSync(root, { recursive: true, force: true });
+		await resources.disposeAsync();
 	}
 }, 20_000);
