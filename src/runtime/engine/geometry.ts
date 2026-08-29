@@ -110,17 +110,14 @@ export const DEFAULT_LINEAR_POINTS = [
 	[100, 0],
 ] as const;
 
-/** Valid point tuples or objects, in one normalized shape. */
+/** Valid native point tuples, in the shape used by geometry consumers. */
 export function pointsOf(points: unknown): { x: number; y: number }[] | undefined {
 	if (!Array.isArray(points) || points.length === 0) return undefined;
 	const normalized: { x: number; y: number }[] = [];
 	for (const point of points) {
-		const pointRecord =
-			point && typeof point === "object" && !Array.isArray(point)
-				? (point as Record<string, unknown>)
-				: null;
-		const x = finite(Array.isArray(point) ? point[0] : pointRecord?.x);
-		const y = finite(Array.isArray(point) ? point[1] : pointRecord?.y);
+		if (!Array.isArray(point) || point.length !== 2) continue;
+		const x = finite(point[0]);
+		const y = finite(point[1]);
 		if (x !== undefined && y !== undefined) normalized.push({ x, y });
 	}
 	return normalized.length === 0 ? undefined : normalized;

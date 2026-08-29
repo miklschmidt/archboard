@@ -158,12 +158,8 @@ export function decodePath(record: DecodedRecord): PathDecode {
 	const scenePoints: ExactPoint[] | null = origin ? [] : null;
 	for (let index = 0; index < raw.points.length; index += 1) {
 		const candidate = raw.points[index];
-		const object =
-			candidate && typeof candidate === "object" && !Array.isArray(candidate)
-				? (candidate as Record<string, unknown>)
-				: null;
-		const x = Array.isArray(candidate) ? candidate[0] : object?.x;
-		const y = Array.isArray(candidate) ? candidate[1] : object?.y;
+		const x = Array.isArray(candidate) ? candidate[0] : undefined;
+		const y = Array.isArray(candidate) ? candidate[1] : undefined;
 		if (!finite(x) || !finite(y))
 			return {
 				ok: false,
