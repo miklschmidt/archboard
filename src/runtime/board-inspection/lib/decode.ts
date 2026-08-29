@@ -4,6 +4,7 @@ import { finite, type ExactBox, type ExactPoint } from "./geometry.js";
 import type { SnapshotRecord } from "./input-snapshot.js";
 
 const MAX_ANALYZABLE_SEGMENT_COMPONENT = Math.sqrt(Number.MAX_VALUE) / 2;
+export const ELBOW_POINT_COMPONENT_LIMIT = 1_000_000 as const;
 
 export interface DecodedRecord {
 	readonly raw: SnapshotRecord | null;
@@ -147,6 +148,19 @@ export type PathDecode =
 			scenePoints: ExactPoint[];
 	  };
 
+export type PersistedConnectorPointChainEligibility =
+	| { readonly eligible: true }
+	| {
+			readonly eligible: false;
+			readonly issue: "elbow-coordinate-limit";
+			readonly pointIndex: number;
+			readonly axis: "x" | "y";
+			readonly coordinate: number;
+			readonly limit: typeof ELBOW_POINT_COMPONENT_LIMIT;
+	  }
+	| { readonly eligible: false; readonly issue: "malformed-elbowed" }
+	| { readonly eligible: false; readonly issue: "fixed-segments-without-elbow" };
+
 export function decodePath(record: DecodedRecord): PathDecode {
 	const raw = record.raw;
 	if (!raw || !("points" in raw) || raw.points === undefined)
@@ -204,4 +218,33 @@ export function decodePath(record: DecodedRecord): PathDecode {
 		if (a.x === b.x && a.y === b.y) zeroSegments.push(index);
 	}
 	return { ok: true, relativePoints, scenePoints, zeroSegments };
+}
+
+export function persistedConnectorPointChainEligibility(
+	record: DecodedRecord,
+	decoded: Extract<PathDecode, { ok: true }>,
+): PersistedConnectorPointChainEligibility {
+	const raw = record.raw;
+	if (!raw) return { eligible: false, issue: "malformed-elbowed" };
+	if (record.type === "arrow" && Boolean(raw.elbowed))
+		for (const [pointIndex, candidate] of decoded.relativePoints.entries())
+			for (const [axis, coordinate] of [
+				["x", candidate.x],
+				["y", candidate.y],
+			] as const)
+				if (Math.abs(coordinate) > ELBOW_POINT_COMPONENT_LIMIT)
+					return {
+						eligible: false,
+						issue: "elbow-coordinate-limit",
+						pointIndex,
+						axis,
+						coordinate,
+						limit: ELBOW_POINT_COMPONENT_LIMIT,
+					};
+	const elbowed = raw.elbowed;
+	if (elbowed !== undefined && elbowed !== null && elbowed !== false && elbowed !== true)
+		return { eligible: false, issue: "malformed-elbowed" };
+	if (raw.fixedSegments != null && !(record.type === "arrow" && elbowed === true))
+		return { eligible: false, issue: "fixed-segments-without-elbow" };
+	return { eligible: true };
 }

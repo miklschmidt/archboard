@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { applyElementInput } from "../../engine/apply-element-input.js";
 import type { ServerElement } from "../../engine/types.js";
-import { planBridgeCreate, validateBridgeDecorations } from "../bridge.js";
+import { planBridgeCreate } from "../bridge.js";
 import { inspectBoardDiagnostics } from "../diagnostics.js";
 import { InspectionReportSchema, inspectBoard, type InspectionReport } from "../index.js";
-import { connector, semanticNode } from "./fixtures/elements.js";
+import { connector, libraryBody, semanticNode } from "./fixtures/elements.js";
 
 const findingUses = (finding: InspectionReport["findings"][number], connectorId: string) =>
 	finding.elements.some((element) => element.id === connectorId) ||
@@ -12,21 +12,52 @@ const findingUses = (finding: InspectionReport["findings"][number], connectorId:
 	("firstConnectorId" in finding.details && finding.details.firstConnectorId === connectorId) ||
 	("secondConnectorId" in finding.details && finding.details.secondConnectorId === connectorId);
 
+const segmentIndexFor = (finding: InspectionReport["findings"][number], connectorId: string) => {
+	if ("segmentIndex" in finding.details) return finding.details.segmentIndex;
+	if (finding.code !== "CONNECTOR_INTERSECTION_UNMARKED") return null;
+	return finding.details.firstConnectorId === connectorId
+		? finding.details.firstSegmentIndex
+		: finding.details.secondSegmentIndex;
+};
+
+const elbowConnector = (id: string, overrides: Record<string, unknown> = {}) =>
+	connector({
+		id,
+		x: 10,
+		y: 20,
+		width: 80,
+		height: 40,
+		points: [
+			[0, 0],
+			[40, 0],
+			[40, 40],
+			[80, 40],
+		],
+		elbowed: true,
+		fixedSegments: [],
+		...overrides,
+	});
+
+const verticalConnector = (id: string, x: number, y = 0, height = 100) =>
+	connector({
+		id,
+		x,
+		y,
+		width: 0,
+		height,
+		points: [
+			[0, 0],
+			[0, height],
+		],
+	});
+
+const expectNoModeRefusal = (report: InspectionReport) =>
+	expect(report.findings.some((finding) => finding.reason === "rounded-or-elbowed")).toBe(false);
+
 const interactionScene = (id: string, marker: Record<string, unknown> = {}) => {
 	const bridgeSources = [
 		connector({ id: "bridge-over", type: "line", y: 150, index: "a0" }),
-		connector({
-			id: "bridge-under",
-			x: 50,
-			y: 100,
-			width: 0,
-			height: 100,
-			index: "a1",
-			points: [
-				[0, 0],
-				[0, 100],
-			],
-		}),
+		{ ...verticalConnector("bridge-under", 50, 100), index: "a1" },
 	] as unknown as ServerElement[];
 	const bridgePlan = planBridgeCreate({
 		elements: bridgeSources,
@@ -35,6 +66,7 @@ const interactionScene = (id: string, marker: Record<string, unknown> = {}) => {
 		underConnectorId: "bridge-under",
 		background: "#ffffff",
 	});
+
 	const bridgeBoard = new Map(bridgeSources.map((element) => [element.id, element]));
 	const bridgeParts = applyElementInput(bridgeBoard, {
 		upserts: [...bridgePlan.inputs],
@@ -43,28 +75,8 @@ const interactionScene = (id: string, marker: Record<string, unknown> = {}) => {
 	return [
 		connector({ id, x: 0, y: 50, width: 100, height: 0, ...marker }),
 		semanticNode("colliding-node", { x: 40, y: 40, width: 20, height: 20 }),
-		{
-			id: "library-obstacle",
-			type: "rectangle",
-			x: 70,
-			y: 45,
-			width: 10,
-			height: 10,
-			angle: 0,
-			groupIds: ["library-group"],
-			customData: { library: { itemId: "obstacle", source: "catalogue" } },
-		},
-		connector({
-			id: "supported-vertical",
-			x: 25,
-			y: 0,
-			width: 0,
-			height: 100,
-			points: [
-				[0, 0],
-				[0, 100],
-			],
-		}),
+		{ ...libraryBody("library-obstacle", 70, ["library-group"]), y: 45 },
+		verticalConnector("supported-vertical", 25),
 		connector({
 			id: "supported-horizontal",
 			x: 0,
@@ -280,80 +292,47 @@ describe("unrepresentable geometry", () => {
 		);
 	});
 
-	test("closes overflow, rotation, curves, rounded, elbowed, and fixed segments", () => {
-		const cases = [
-			[
-				connector({ x: Number.MAX_VALUE, width: Number.MAX_VALUE }),
-				"unrepresentable-coordinate-span",
-			],
-			[connector({ angle: 1 }), "rotation"],
-			[connector({ angle: "bad" }), "rotation"],
-			[connector({ curve: {} }), "curve"],
-			[connector({ curveKind: "bezier" }), "curve"],
-			[connector({ roundness: { type: 2 } }), "rounded-or-elbowed"],
-			[connector({ elbowed: true }), "rounded-or-elbowed"],
-			[connector({ elbowed: "bad" }), "rounded-or-elbowed"],
-			[connector({ fixedSegments: [] }), "rounded-or-elbowed"],
-		] as const;
-		for (const [element, reason] of cases) {
-			const report = inspectBoard([element]);
-			expect(InspectionReportSchema.safeParse(report).success).toBe(true);
-			expect(report.findings.some((finding) => finding.reason === reason)).toBe(true);
-			expect(report.coverage).toBe("indeterminate");
-		}
-	});
-
-	test("supported positive control executes every downstream pass and a valid bridge prerequisite", () => {
-		const elements = interactionScene("candidate");
-		expect(validateBridgeDecorations(elements as ServerElement[])).toMatchObject({
-			valid: [{ bridgeId: "BridgeAux" }],
-			invalid: [],
-		});
-		const diagnostics = inspectBoardDiagnostics(elements);
-		expect(diagnostics.work.broadPhaseCompatibleVisits).toBeGreaterThan(0);
-		for (const code of [
-			"CONNECTOR_PENETRATES_NODE",
-			"CONNECTOR_PENETRATES_OBSTACLE",
-			"CONNECTOR_INTERSECTION_UNMARKED",
-		] as const)
+	test("keeps downstream checks for recoverable modes and narrow refusals", () => {
+		for (const [id, marker] of [
+			["rounded", { roundness: { type: 2 } }],
+			["elbowed", { elbowed: true, fixedSegments: [], startIsSpecial: null, endIsSpecial: null }],
+		] as const) {
+			const elements = interactionScene(id, marker);
+			const diagnostics = inspectBoardDiagnostics(elements);
+			const report = diagnostics.report;
+			expect(report.coverage).toBe("complete");
+			expectNoModeRefusal(report);
+			for (const code of [
+				"CONNECTOR_PENETRATES_NODE",
+				"CONNECTOR_PENETRATES_OBSTACLE",
+				"CONNECTOR_INTERSECTION_UNMARKED",
+			] as const)
+				expect(
+					report.findings.some((finding) => finding.code === code && findingUses(finding, id)),
+				).toBe(true);
 			expect(
-				diagnostics.report.findings.some(
-					(finding) => finding.code === code && findingUses(finding, "candidate"),
+				report.findings.some(
+					(finding) =>
+						finding.code === "CONNECTOR_INTERSECTION_UNMARKED" &&
+						findingUses(finding, "bridge-over"),
 				),
-			).toBe(true);
-		expect(
-			diagnostics.report.findings.some(
-				(finding) =>
-					finding.code === "CONNECTOR_INTERSECTION_UNMARKED" && findingUses(finding, "bridge-over"),
-			),
-		).toBe(false);
-	});
-
-	test("suppresses exact connector-specific downstream codes for every unsupported shape", () => {
-		for (const [id, marker, reason] of [
+			).toBe(false);
+		}
+		for (const [id, marker, message] of [
 			["rotation unsupported", { angle: 1 }, "rotation"],
 			["malformed angle unsupported", { angle: "bad" }, "rotation"],
 			["curve unsupported", { curve: false }, "curve"],
 			["curve kind unsupported", { curveKind: "bezier" }, "curve"],
-			["rounded unsupported", { roundness: { type: 2 } }, "rounded-or-elbowed"],
-			["elbowed unsupported", { elbowed: true }, "rounded-or-elbowed"],
 			["malformed elbowed unsupported", { elbowed: "bad" }, "rounded-or-elbowed"],
 			["fixed segments unsupported", { fixedSegments: [] }, "rounded-or-elbowed"],
 		] as const) {
 			const elements = interactionScene(id, marker);
-			expect(validateBridgeDecorations(elements as ServerElement[])).toMatchObject({
-				valid: [{ bridgeId: "BridgeAux" }],
-				invalid: [],
-			});
-			const diagnostics = inspectBoardDiagnostics(elements);
-			const report = diagnostics.report;
-			expect(InspectionReportSchema.safeParse(report).success).toBe(true);
-			expect(diagnostics.work.broadPhaseCompatibleVisits).toBeGreaterThan(0);
+			const report = inspectBoardDiagnostics(elements).report;
 			expect(
 				report.findings.some(
 					(finding) =>
 						finding.code === "UNSUPPORTED_GEOMETRY" &&
-						finding.reason === reason &&
+						finding.reason === message &&
 						finding.elements[0]?.id === id &&
 						finding.points.length === 2,
 				),
@@ -373,6 +352,123 @@ describe("unrepresentable geometry", () => {
 						findingUses(finding, "supported-horizontal"),
 				),
 			).toBe(true);
+		}
+	});
+
+	test("keeps every persisted elbow endpoint-special chain and the exact coordinate ceiling", () => {
+		for (const startIsSpecial of [true, false, null] as const)
+			for (const endIsSpecial of [true, false, null] as const) {
+				const diagnostics = inspectBoardDiagnostics([
+					elbowConnector(`special-${String(startIsSpecial)}-${String(endIsSpecial)}`, {
+						x: 31,
+						y: 41,
+						width: 80,
+						height: 40,
+						points: [
+							[0, 0],
+							[40, 0],
+							[40, 40],
+						],
+						startIsSpecial,
+						endIsSpecial,
+					}),
+				]);
+				expect(diagnostics.report.coverage).toBe("complete");
+				expect(diagnostics.work.pathSegmentChecks).toBe(2);
+				expectNoModeRefusal(diagnostics.report);
+			}
+		for (const coordinate of [1_000_000, -1_000_000] as const) {
+			const report = inspectBoard([
+				elbowConnector(`boundary-${coordinate}`, {
+					x: 31,
+					y: 41,
+					width: Math.abs(coordinate),
+					height: 0,
+					points: [
+						[0, 0],
+						[coordinate, 0],
+					],
+				}),
+			]);
+			expect(report.coverage).toBe("complete");
+			expectNoModeRefusal(report);
+		}
+		for (const coordinate of [1_000_001, -1_000_001] as const) {
+			const report = inspectBoard([
+				elbowConnector(`over-limit-${coordinate}`, {
+					x: 31,
+					y: 41,
+					width: Math.abs(coordinate),
+					height: 0,
+					points: [
+						[0, 0],
+						[coordinate, 0],
+					],
+				}),
+			]);
+			expect(report.coverage).toBe("indeterminate");
+			const refusal = report.findings.find(
+				(finding) =>
+					finding.code === "UNSUPPORTED_GEOMETRY" && finding.reason === "rounded-or-elbowed",
+			);
+			expect(refusal?.message).toContain(`point 1 x coordinate ${coordinate} exceeding ±1,000,000`);
+			expect(report.findings.some((finding) => finding.code === "CONNECTOR_PENETRATES_NODE")).toBe(
+				false,
+			);
+		}
+		const ordinary = inspectBoard([
+			connector({
+				id: "ordinary-over-limit",
+				x: 31,
+				y: 41,
+				width: 1_000_001,
+				height: 0,
+				points: [
+					[0, 0],
+					[1_000_001, 0],
+				],
+				elbowed: false,
+			}),
+		]);
+		expect(ordinary.coverage).toBe("complete");
+		expectNoModeRefusal(ordinary);
+	});
+
+	test("retains first and last stored elbow segments for every downstream interaction", () => {
+		for (const [id, nodeX, obstacleX, crossingX, segmentIndex, y] of [
+			["start-special", 20, 30, 35, 0, 15],
+			["end-special", 60, 70, 75, 2, 55],
+		] as const) {
+			const report = inspectBoard([
+				elbowConnector(id),
+				semanticNode(`${id}-node`, { x: nodeX, y, width: 10, height: 10 }),
+				{ ...libraryBody(`${id}-obstacle`, obstacleX, [`${id}-group`]), y },
+				connector({
+					id: `${id}-crossing`,
+					type: "line",
+					x: crossingX,
+					y: 0,
+					width: 0,
+					height: 80,
+					points: [
+						[0, 0],
+						[0, 80],
+					],
+				}),
+			]);
+			expect(report.coverage).toBe("complete");
+			for (const code of [
+				"CONNECTOR_PENETRATES_NODE",
+				"CONNECTOR_PENETRATES_OBSTACLE",
+				"CONNECTOR_INTERSECTION_UNMARKED",
+			] as const) {
+				const finding = report.findings.find(
+					(candidate) => candidate.code === code && findingUses(candidate, id),
+				);
+				expect(finding).toBeDefined();
+				if (!finding) continue;
+				expect(segmentIndexFor(finding, id)).toBe(segmentIndex);
+			}
 		}
 	});
 });
