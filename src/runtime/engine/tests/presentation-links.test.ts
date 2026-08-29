@@ -68,6 +68,12 @@ function bound(link: string | null, binding = { repo: fixture.repository, path: 
 	});
 }
 
+function boardIdentityIsRequired() {
+	// @ts-expect-error A presentation without its board identity is not a public operation.
+	presentElement(bound(null));
+}
+void boardIdentityIsRequired;
+
 test("local and GitHub presentations use exact current targets", () => {
 	expect(presentElement(bound(humanLink), context).link).toBe(
 		"/api/code-targets/open?board=system%2Farchboard&element=bound",
