@@ -6,6 +6,7 @@ import path from "node:path";
 import { inspectBoard } from "../../../src/runtime/board-inspection/index.ts";
 import { makeIdentity, renderBoardNote, vaultPathFor } from "../../../src/runtime/engine/board.ts";
 import type { ServerElement } from "../../../src/runtime/engine/types.ts";
+import { expandElements } from "../../../src/runtime/engine/expand-elements.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
 import {
@@ -35,42 +36,45 @@ let canvas: OwnedCanvas;
 let request: ReturnType<typeof createJsonRequester>;
 let left: TestPane;
 let right: TestPane;
-const findingElements = [
-	{
-		id: "fone",
-		type: "text",
-		x: 20,
-		y: 40,
-		width: 100,
-		height: 20,
-		text: "First",
-		fontFamily: 99,
-		fontSize: 20,
-		isDeleted: false,
-	},
-	{
-		id: "ftwo",
-		type: "text",
-		x: 240,
-		y: 80,
-		width: 80,
-		height: 20,
-		text: "Second",
-		fontFamily: 99,
-		fontSize: 20,
-		isDeleted: false,
-	},
-	{
-		id: "fimage",
-		type: "image",
-		x: 500,
-		y: 600,
-		width: 32,
-		height: 32,
-		fileId: "finding-file",
-		isDeleted: false,
-	},
-] as unknown as ServerElement[];
+const findingElements = expandElements(
+	[
+		{
+			id: "fone",
+			type: "text",
+			x: 20,
+			y: 40,
+			width: 100,
+			height: 20,
+			text: "First",
+			fontFamily: 99,
+			fontSize: 20,
+			isDeleted: false,
+		},
+		{
+			id: "ftwo",
+			type: "text",
+			x: 240,
+			y: 80,
+			width: 80,
+			height: 20,
+			text: "Second",
+			fontFamily: 99,
+			fontSize: 20,
+			isDeleted: false,
+		},
+		{
+			id: "fimage",
+			type: "image",
+			x: 500,
+			y: 600,
+			width: 32,
+			height: 32,
+			fileId: "finding-file",
+			isDeleted: false,
+		},
+	],
+	{ forStore: true },
+) as ServerElement[];
 
 beforeAll(async () => {
 	canvas = await startOwnedCanvas({
@@ -105,7 +109,10 @@ beforeAll(async () => {
 		{
 			type: "excalidraw",
 			version: 2,
-			elements: [{ id: "safe", type: "rectangle", x: 10, y: 20, width: 40, height: 30 }],
+			elements: expandElements(
+				[{ id: "safe", type: "rectangle", x: 10, y: 20, width: 40, height: 30 }],
+				{ forStore: true },
+			),
 			appState: {},
 			files: {},
 		},

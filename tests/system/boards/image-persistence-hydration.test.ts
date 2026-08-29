@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { wrapSceneAsObsidianMd } from "../../../src/runtime/engine/obsidian-md.ts";
+import { expandElements } from "../../../src/runtime/engine/expand-elements.ts";
 import type { ServerElement } from "../../../src/runtime/engine/types.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
@@ -56,17 +57,20 @@ afterAll(async () => {
 function pluginNote(
 	board: string,
 	link: string,
-	elements: ServerElement[] = [
-		{
-			id: "img-emb",
-			type: "image",
-			x: 0,
-			y: 0,
-			width: 40,
-			height: 40,
-			fileId: "emb12345",
-		} as ServerElement,
-	],
+	elements: ServerElement[] = expandElements(
+		[
+			{
+				id: "img-emb",
+				type: "image",
+				x: 0,
+				y: 0,
+				width: 40,
+				height: 40,
+				fileId: "emb12345",
+			},
+		],
+		{ forStore: true },
+	),
 ): string {
 	const bare = wrapSceneAsObsidianMd(
 		{

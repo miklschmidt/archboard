@@ -90,7 +90,7 @@ describe("malformed input", () => {
 			body: { board: "legacy-geometry" },
 		});
 		expect(opened.status).toBe(400);
-		expect(opened.body.error).toMatch(/helv \(text\): width, height/);
+		expect(opened.body.error).toContain("invalid element helv (text) at element.width");
 		expect(fs.readFileSync(file, "utf8")).toBe(note);
 		const boards = await request<{ open: Array<{ key: string }> }>("/api/boards");
 		expect(boards.body.open.some((board) => board.key === "legacy-geometry")).toBeFalse();
@@ -115,7 +115,7 @@ describe("malformed input", () => {
 			},
 		});
 		expect(response.status).toBe(400);
-		expect(response.body.error).toMatch(/helvetica \(text\): width, height/);
+		expect(response.body.error).toContain("invalid element helvetica (text) at element.width");
 		expect(fs.readFileSync(file).equals(before)).toBeTrue();
 		const after = await request<ElementsBody>("/api/elements?board=geometry-write");
 		expect(after.body).toMatchObject({ count: 1, elements: [{ id: "seed" }] });
@@ -188,7 +188,7 @@ describe("malformed input", () => {
 			},
 		});
 		expect(response.status).toBe(400);
-		expect(response.body.error).toMatch(/browser-text \(text\): width, height/);
+		expect(response.body.error).toContain("invalid element browser-text (text) at element.width");
 		expect(fs.readFileSync(file).equals(before)).toBeTrue();
 	});
 });

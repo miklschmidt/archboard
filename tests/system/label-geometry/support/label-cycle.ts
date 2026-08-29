@@ -1,16 +1,21 @@
 import { applyElementInput } from "../../../../src/runtime/engine/apply-element-input.ts";
 import { boundTextsByContainer, planLabelRepair } from "../../../../src/runtime/engine/labels.ts";
 import type { ServerElement } from "../../../../src/runtime/engine/types.ts";
+import type { LegacyElementIngress } from "../../../../src/shared/board-elements/index.ts";
+import { expandElements } from "../../../../src/runtime/engine/expand-elements.ts";
+import { validatePersistedBoardElement } from "../../../../src/runtime/engine/native-element.ts";
 import { diffAgainstBaseline, fingerprint } from "../../../../src/ui/canvas/changes.ts";
 import type { Baseline } from "../../../../src/ui/canvas/changes.ts";
 
-export interface LabelElement extends ServerElement {
-	[key: string]: unknown;
-}
+export type LabelElement = ServerElement &
+	Record<string, unknown> & {
+		label?: { text?: string };
+		text?: string;
+	};
 
 export type LabelScene = LabelElement[];
-export class LabelStore extends Map<string, ServerElement> {
-	override get(id: string): ServerElement {
+export class LabelStore extends Map<string, LabelElement> {
+	override get(id: string): LabelElement {
 		const element = super.get(id);
 		if (!element) throw new Error(`Missing label-cycle element ${id}.`);
 		return element;
@@ -39,14 +44,20 @@ interface LabelStatement extends Record<string, unknown> {
 	text?: string;
 	label?: { text?: string };
 }
-type LabelInput = LabelStatement | ServerElement;
+type LabelInput = LabelStatement | LegacyElementIngress;
 
-const copyElement = (element: ServerElement): LabelElement => ({ ...element });
+const copyElement = (element: LabelElement): LabelElement => ({ ...element });
 const isServerElement = (value: Record<string, unknown>): value is LabelElement =>
-	typeof value.id === "string" &&
-	typeof value.type === "string" &&
-	typeof value.x === "number" &&
-	typeof value.y === "number";
+	(() => {
+		try {
+			const { label: _label, start: _start, end: _end, ...native } = value;
+			if (native.type !== "text") delete native.text;
+			validatePersistedBoardElement(native, "label-cycle element");
+			return true;
+		} catch {
+			return false;
+		}
+	})();
 
 export const shape = (elements: readonly ServerElement[]): string =>
 	JSON.stringify(
@@ -62,7 +73,7 @@ export const shape = (elements: readonly ServerElement[]): string =>
 const NANOID_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-";
 const freshId = () =>
 	Array.from(
-		{ length: 21 },
+		{ length: 8 },
 		() => NANOID_ALPHABET[Math.floor(Math.random() * NANOID_ALPHABET.length)],
 	).join("");
 
@@ -72,7 +83,7 @@ const freshId = () =>
  * an id it invents, and the container gains a reference to it. It does not
  * look at whether the container already has one — that is the whole bug.
  */
-export function expand(elements: readonly ServerElement[]): LabelScene {
+export function expand(elements: readonly LabelElement[]): LabelScene {
 	const out: LabelScene = [];
 	for (const element of elements) {
 		const seed = element.type === "text" ? undefined : (element.label?.text ?? element.text);
@@ -87,19 +98,11 @@ export function expand(elements: readonly ServerElement[]): LabelScene {
 			...element,
 			boundElements: [...(element.boundElements ?? []), { id, type: "text" }],
 		});
-		out.push({
-			id,
-			type: "text",
-			x: 0,
-			y: 0,
-			containerId: element.id,
-			text: seed,
-			// The real converter measures and seeds what it mints; both are fresh
-			// every call, which is what makes an unnecessary re-expansion visible as
-			// churn rather than as nothing.
-			seed: Math.floor(Math.random() * 1e6),
-			width: seed.length * 10,
-		});
+		const text = expandElements(
+			[{ id, type: "text", x: 0, y: 0, text: seed, containerId: element.id }],
+			{ forStore: true },
+		)[0]!;
+		out.push({ ...text, seed: Math.floor(Math.random() * 1e6), width: seed.length * 10 });
 	}
 	return out;
 }
@@ -111,7 +114,7 @@ export function expand(elements: readonly ServerElement[]): LabelScene {
  * reported straight back and the loop would be a different loop than the one
  * TASK-024 was.
  */
-export function dropSpentSeeds(scene: readonly ServerElement[]): LabelScene {
+export function dropSpentSeeds(scene: readonly LabelElement[]): LabelScene {
 	const labelled = boundTextsByContainer(scene);
 	return scene.map((element) => {
 		if (!labelled.has(element.id) || !("label" in element)) return copyElement(element);
@@ -128,7 +131,7 @@ export function dropSpentSeeds(scene: readonly ServerElement[]): LabelScene {
  * board has neither the text nor the binding.
  */
 export function blank(
-	scene: readonly ServerElement[],
+	scene: readonly LabelElement[],
 	empties: Readonly<Record<string, boolean>> = {},
 ): LabelScene {
 	const doomed = new Set();
@@ -157,7 +160,15 @@ export function applyUpserts(store: LabelStore, upserts: readonly Record<string,
 	for (const upsert of upserts) {
 		if (typeof upsert.id !== "string") continue;
 		const previous = store.has(upsert.id) ? store.get(upsert.id) : undefined;
-		const merged = previous ? { ...previous, ...upsert } : upsert;
+		if (!previous) {
+			try {
+				applyElementInput(store, { upserts: [upsert], origin: "human" });
+			} catch {
+				// The hostile model ignores a browser element the real boundary rejects.
+			}
+			continue;
+		}
+		const merged = { ...previous, ...upsert };
 		if (isServerElement(merged)) store.set(upsert.id, merged);
 	}
 }
@@ -230,16 +241,25 @@ export function write(
 	statements: readonly LabelInput[],
 	{ keepSeed = false }: WriteOptions = {},
 ): LabelStore {
+	const priorSeeds = new Map(
+		statements.map((statement) => [
+			statement.id,
+			store.has(statement.id) ? seedOf(store.get(statement.id)) : undefined,
+		]),
+	);
 	applyElementInput(store, {
 		upserts: statements.map((statement) => ({ ...statement })),
 		origin: "agent",
 	});
 	if (keepSeed) {
 		for (const statement of statements) {
-			const seed = seedOf(statement);
-			const stored = store.get(statement.id);
-			if (seed !== undefined && stored) {
-				store.set(statement.id, { ...stored, label: { text: seed } });
+			const seed = seedOf(statement) ?? priorSeeds.get(statement.id);
+			if (seed !== undefined && store.has(statement.id)) {
+				applyElementInput(store, {
+					upserts: [{ id: statement.id, label: { text: seed } }],
+					origin: "agent",
+				});
+				store.set(statement.id, { ...store.get(statement.id), label: { text: seed } });
 			}
 		}
 	}
@@ -251,7 +271,9 @@ export function boardOf(elements: readonly LabelInput[], options?: WriteOptions)
 }
 
 /** What an element's `label`/`text` claims its label reads, if anything. */
-export function seedOf(element: LabelStatement | ServerElement): string | undefined {
+export function seedOf(
+	element: LabelStatement | LabelElement | LegacyElementIngress,
+): string | undefined {
 	if (element.type === "text") return undefined;
 	if (typeof element.label?.text === "string") return element.label.text;
 	if (typeof element.text === "string") return element.text;
@@ -265,12 +287,12 @@ export function seeded(store: LabelStore): string[] {
 		.map((element) => element.id);
 }
 
-export function worstLabelCount(elements: readonly ServerElement[]): number {
+export function worstLabelCount(elements: readonly LabelElement[]): number {
 	const counts = [...boundTextsByContainer(elements).values()].map((ids) => ids.length);
 	return counts.length === 0 ? 0 : Math.max(...counts);
 }
 
-export const drawn = (): LabelElement[] => [
+export const drawn = (): LegacyElementIngress[] => [
 	{
 		id: "svc",
 		type: "rectangle",
@@ -315,7 +337,18 @@ export function reopenedRepairedBoard(): LabelStore {
 		cycle(polluted, pollutedBaseline, { contain: false });
 	const plan = planLabelRepair([...polluted.values()]);
 	const doomed = new Set(plan.removeIds);
-	const reopened = boardOf([...polluted.values()].filter((element) => !doomed.has(element.id)));
+	const rebind = new Map(plan.rebind.map((update) => [update.id, update.boundElements]));
+	const reopened = new LabelStore();
+	for (const element of polluted.values()) {
+		if (doomed.has(element.id)) continue;
+		const { label: _label, ...native } = element;
+		reopened.set(
+			element.id,
+			(rebind.has(element.id)
+				? { ...native, boundElements: rebind.get(element.id) }
+				: native) as LabelElement,
+		);
+	}
 	const baseline = new Map<string, string>();
 	for (let index = 0; index < CYCLES; index += 1) cycle(reopened, baseline, { contain: true });
 	return reopened;
