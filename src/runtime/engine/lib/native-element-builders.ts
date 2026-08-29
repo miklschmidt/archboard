@@ -135,6 +135,11 @@ export function buildValidatedElement(
 			} satisfies PersistedArm<"line">);
 		case "arrow": {
 			const elbowed = booleanAt(initial.elbowed, context, id, type, "element.elbowed");
+			if (!elbowed) {
+				for (const field of ["fixedSegments", "startIsSpecial", "endIsSpecial"] as const) {
+					if (field in initial) fail(context, id, type, `element.${field}`);
+				}
+			}
 			const linear = {
 				id: baseId,
 				type: "arrow" as const,

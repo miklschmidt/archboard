@@ -5,6 +5,7 @@ import { expandElements } from "../expand-elements.js";
 import { pointsOf } from "../geometry.js";
 import { validatePersistedBoardElement } from "../native-element.js";
 import { completeElement } from "./support/elements.js";
+import type { LegacyElementIngress } from "../../../shared/board-elements/index.js";
 
 function ordinaryArrow() {
 	return completeElement({ id: "ordinary", type: "arrow", x: 0, y: 0 });
@@ -55,6 +56,14 @@ test("trusted reads enforce the vendor arrow and binding correlation", () => {
 			validatePersistedBoardElement(incomplete, "note /vault/arrows.excalidraw.md"),
 		).toThrow(`element.${field}`);
 	}
+	for (const field of ["fixedSegments", "startIsSpecial", "endIsSpecial"] as const) {
+		expect(() =>
+			validatePersistedBoardElement(
+				{ ...ordinary, [field]: elbow[field] },
+				"note /vault/arrows.excalidraw.md",
+			),
+		).toThrow(`element.${field}`);
+	}
 });
 
 test("write ingress builds both vendor-derived arrow arms in canonical field order", () => {
@@ -78,7 +87,7 @@ test("write ingress builds both vendor-derived arrow arms in canonical field ord
 				fixedSegments: [{ start: [0, 0], end: [40, 0], index: 0 }],
 				startIsSpecial: null,
 				endIsSpecial: false,
-			} as never,
+			} satisfies LegacyElementIngress,
 		],
 		{ deterministic: true, forStore: true },
 	);
@@ -98,6 +107,13 @@ test("write ingress builds both vendor-derived arrow arms in canonical field ord
 		gap: 4,
 		fixedPoint: [0, 1],
 	});
+	expect(Object.keys(elbow.startBinding ?? {})).toEqual([
+		"elementId",
+		"focus",
+		"gap",
+		"fixedPoint",
+	]);
+	expect(Object.keys(elbow.endBinding ?? {})).toEqual(["elementId", "focus", "gap", "fixedPoint"]);
 	expect(
 		Object.keys(elbow).filter((key) =>
 			[

@@ -7,7 +7,6 @@ import {
 	boundTextDrift,
 	boundTextPlacement,
 	boundTextsByContainer,
-	labelSeedOf,
 } from "../../../src/runtime/engine/labels.ts";
 import type { ServerElement } from "../../../src/runtime/engine/types.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
@@ -44,7 +43,13 @@ const required = <T>(value: T | null | undefined, message: string): T => {
 	if (value === null || value === undefined) throw new Error(message);
 	return value;
 };
-const seedOf = labelSeedOf;
+const seedOf = (element: ServerElement): true | undefined =>
+	element.type !== "text" &&
+	(Reflect.has(element, "label") ||
+		Reflect.has(element, "labelText") ||
+		Reflect.has(element, "text"))
+		? true
+		: undefined;
 const textOf = (element: ServerElement | undefined): string | undefined =>
 	element?.type === "text" ? element.text : undefined;
 

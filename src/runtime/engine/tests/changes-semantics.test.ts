@@ -67,7 +67,7 @@ const flatMetadataBox = () =>
 			y: 0,
 			width: 200,
 			height: 100,
-			labelText: "Flat metadata",
+			label: { text: "Flat metadata" },
 			customData: {
 				kind: "service",
 				binding: { path: "src/flat.ts" },

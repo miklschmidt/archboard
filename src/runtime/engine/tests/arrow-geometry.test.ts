@@ -15,6 +15,7 @@ import {
 	pinnedSolverEndpoint,
 } from "./fixtures/geometry-cases.ts";
 import { ExpandedElementSchema } from "./fixtures/label-cases.ts";
+import { agentStatement } from "./support/elements.ts";
 
 const assert = (condition: unknown, message: string): void =>
 	expect(Boolean(condition), message).toBeTrue();
@@ -142,7 +143,7 @@ test("pins bound arrow endpoints, focus, gap, rotations, bends, and label anchor
 	}
 
 	{
-		const bent = {
+		const bent = agentStatement({
 			id: "bent",
 			type: "arrow",
 			x: 100,
@@ -154,8 +155,8 @@ test("pins bound arrow endpoints, focus, gap, rotations, bends, and label anchor
 				[300, 0],
 				[300, 200],
 			],
-			labelText: "routes via",
-		} satisfies LegacyElementIngress;
+			label: { text: "routes via" },
+		} satisfies LegacyElementIngress);
 		const expanded = ExpandedElementSchema.array().parse(
 			expandElements([bent], { deterministic: true }),
 		);
@@ -181,7 +182,7 @@ test("pins bound arrow endpoints, focus, gap, rotations, bends, and label anchor
 			"the exported label and the placement rule the server enforces should agree",
 		);
 
-		const straight = {
+		const straight = agentStatement({
 			id: "straight",
 			type: "arrow",
 			x: 0,
@@ -192,8 +193,8 @@ test("pins bound arrow endpoints, focus, gap, rotations, bends, and label anchor
 				[0, 0],
 				[200, 100],
 			],
-			labelText: "calls",
-		} satisfies LegacyElementIngress;
+			label: { text: "calls" },
+		} satisfies LegacyElementIngress);
 		const straightText = required(
 			ExpandedElementSchema.array()
 				.parse(expandElements([straight], { deterministic: true }))

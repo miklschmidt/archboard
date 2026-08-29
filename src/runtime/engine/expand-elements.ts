@@ -8,7 +8,6 @@ import {
 	type LabelledElement,
 	boundTextPlacement,
 	boundTextsByContainer,
-	labelSeedOf,
 	labelTextIdFor,
 } from "./labels.js";
 import { BOUND_ARROW_GAP } from "./arrow-binding.js";
@@ -17,6 +16,7 @@ import { lineHeightOf } from "./fonts.js";
 import { canMeasure, measureText } from "./measure-text.js";
 import { DEFAULT_LINEAR_POINTS, measureLinear } from "./geometry.js";
 import { validatePersistedBoardElement } from "./lib/native-element.js";
+import { agentLabelIntentOf, withAgentLabelIntent } from "./lib/agent-element-input.js";
 
 // The one conversion, in one direction, at one boundary (ADR 0015).
 //
@@ -380,10 +380,21 @@ export function repairIndices(board: Map<string, ServerElement>): ServerElement[
 	return changed;
 }
 
-// Canonical key order for exported elements: identity/geometry first, the
-// rest alphabetical — so a no-op import→export cycle is byte-identical and
-// committed .excalidraw files produce minimal git diffs.
-const KEY_ORDER = ["id", "type", "x", "y", "width", "height"];
+// Canonical key order for exported elements: identity/geometry first and the
+// pinned vendor binding order next, then the rest alphabetically. This keeps
+// no-op import→export cycles byte-identical and committed scenes diff-small.
+const KEY_ORDER = [
+	"id",
+	"type",
+	"x",
+	"y",
+	"width",
+	"height",
+	"elementId",
+	"focus",
+	"gap",
+	"fixedPoint",
+];
 export function canonicalizeKeys(v: unknown): unknown {
 	if (Array.isArray(v)) return v.map(canonicalizeKeys);
 	if (v && typeof v === "object") {
@@ -572,6 +583,7 @@ export function expandElements(
 	}
 
 	for (const el of sourceElements) {
+		const labelText = el.type === "text" ? undefined : agentLabelIntentOf(el);
 		// Strip server-only fields. They come back at the end of the loop when
 		// these elements are going to the board's own map rather than to a file,
 		// because there that bookkeeping is the point.
@@ -581,7 +593,6 @@ export function expandElements(
 			syncedAt,
 			source: keptSource,
 			syncTimestamp,
-			labelText,
 			version: serverVersion,
 			...rest
 		} = el as unknown as Record<string, unknown>;
@@ -797,6 +808,8 @@ export function expandForBoard(
 		written.filter((element) => element.type === "text").map((element) => element.id),
 	);
 	const mended = written.map((element) => {
+		const replace = (value: LegacyElementIngress): LegacyElementIngress =>
+			withAgentLabelIntent(value, agentLabelIntentOf(element));
 		const textIds = labelled.get(element.id) ?? [];
 		const refs = Array.isArray(element.boundElements) ? element.boundElements : [];
 		// A reference to a text element the board does not hold is not a label,
@@ -812,12 +825,12 @@ export function expandForBoard(
 		if (named || textIds.length === 0) {
 			return live.length === refs.length
 				? element
-				: ({ ...element, boundElements: live.length > 0 ? live : null } as ServerElement);
+				: replace({ ...element, boundElements: live.length > 0 ? live : null });
 		}
-		return {
+		return replace({
 			...element,
 			boundElements: [...live, { id: textIds[0] as string, type: "text" }],
-		} as ServerElement;
+		});
 	});
 
 	return expandElements(mended, {
@@ -842,7 +855,7 @@ export function relabelBoundTexts(
 	const labelled = boundTextsByContainer([...board.values()]);
 	const relabelled: ServerElement[] = [];
 	for (const container of written) {
-		const wanted = labelSeedOf(container);
+		const wanted = container.type === "text" ? undefined : agentLabelIntentOf(container);
 		if (wanted === undefined) continue;
 		const textId = labelled.get(container.id)?.[0];
 		if (!textId) continue;

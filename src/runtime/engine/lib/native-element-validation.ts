@@ -145,9 +145,9 @@ export function fixedPointBindingAt(
 	if (!record) return null;
 	return {
 		elementId: record.elementId as string,
-		fixedPoint: point(record.fixedPoint, context, id, type, `${path}.fixedPoint`),
 		focus: finite(record.focus, context, id, type, `${path}.focus`),
 		gap: finite(record.gap, context, id, type, `${path}.gap`),
+		fixedPoint: point(record.fixedPoint, context, id, type, `${path}.fixedPoint`),
 	} satisfies FixedPointBinding;
 }
 

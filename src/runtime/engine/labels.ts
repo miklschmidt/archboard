@@ -46,7 +46,6 @@
 import { measureLinear } from "./geometry.js";
 import { derivedId, type IdsInUse } from "../../shared/ids/ids.js";
 import type {
-	LegacyElementIngress,
 	RuntimeBoardElement,
 	WritableVendorElement,
 } from "../../shared/board-elements/index.js";
@@ -99,12 +98,6 @@ function isText(element: LabelledElement | undefined): boolean {
 
 function live(element: LabelledElement): boolean {
 	return element.isDeleted !== true;
-}
-
-/** The label intent already normalized by the named agent ingress. */
-export function labelSeedOf(element: LegacyElementIngress): string | undefined {
-	if (element.type === "text") return undefined;
-	return typeof element.labelText === "string" ? element.labelText : undefined;
 }
 
 /**
