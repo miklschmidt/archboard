@@ -38,7 +38,9 @@ export const cleanElementForExcalidraw = (element: ServerElement): Partial<Excal
 		syncTimestamp: _syncTimestamp,
 		...cleanElement
 	} = element;
-	return cleanElement as Partial<ExcalidrawElement>;
+	// Excalidraw brands JSON numbers and strings at compile time. The wire has
+	// already been validated by the server; this is the one UI brand boundary.
+	return cleanElement as unknown as Partial<ExcalidrawElement>;
 };
 
 /**

@@ -67,6 +67,17 @@ The remaining uncertainty is version drift: Excalidraw may add a formal schema
 in a future commit or package release. Recheck the upstream tree and the
 version pinned by Archboard when upgrading the dependency.
 
+## Pinned 0.18.1 declaration exception
+
+The published 0.18.1 element declaration imports `LocalPoint` and `Radians`
+from `@excalidraw/math`, but that module is absent from the package. With
+`skipLibCheck`, those two fields otherwise project as `any`. Archboard's
+`src/shared/board-elements/vendor-math-0.18.1.d.ts` supplies only the two exact
+0.18.1 branded spellings. The JSON-writable projection removes their brands;
+the repository-policy owner rejects any additional ambient export or spelling
+drift. Remove or revise this exception only as part of a pinned dependency
+upgrade that makes the public declarations self-contained.
+
 [doc]: https://github.com/excalidraw/excalidraw/blob/master/dev-docs/docs/codebase/json-schema.mdx
 [commit]: https://github.com/excalidraw/excalidraw/tree/e1bb9ff8f8931e783c11d104abb8967ac6605c9a
 [types]: https://github.com/excalidraw/excalidraw/blob/master/packages/excalidraw/data/types.ts

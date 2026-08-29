@@ -1,129 +1,31 @@
 import { kept } from "../../runtime/engine/hot.js";
+import {
+	type ArrowElement,
+	type BoardElementType,
+	type BoundElement,
+	type DiamondElement,
+	type ElementBinding,
+	type EllipseElement,
+	type FreeDrawElement,
+	type LineElement,
+	type PersistedBoardElement,
+	type RectangleElement,
+	type RuntimeBoardElement,
+	type TextElement,
+} from "../../shared/board-elements/index.js";
 
-export interface ExcalidrawElementBase {
-	id: string;
-	type: ExcalidrawElementType;
-	x: number;
-	y: number;
-	width?: number;
-	height?: number;
-	angle?: number;
-	strokeColor?: string;
-	backgroundColor?: string;
-	fillStyle?: string;
-	strokeWidth?: number;
-	strokeStyle?: string;
-	roughness?: number;
-	opacity?: number;
-	groupIds?: string[];
-	frameId?: string | null;
-	roundness?: {
-		type: number;
-		value?: number;
-	} | null;
-	seed?: number;
-	versionNonce?: number;
-	isDeleted?: boolean;
-	locked?: boolean;
-	link?: string | null;
-	customData?: Record<string, unknown> | null;
-	boundElements?: readonly ExcalidrawBoundElement[] | null;
-	updated?: number;
-	containerId?: string | null;
-	/**
-	 * z-order, as a fractional index. Excalidraw's own field, and a field of the
-	 * note like any other: an element without one is a document the renderer has
-	 * to repair, which under ADR 0015 is a board with two answers. Issued and
-	 * kept valid by `repairIndices` (TASK-074).
-	 */
-	index?: string | null;
-}
-
-export interface ExcalidrawTextElement extends ExcalidrawElementBase {
-	type: "text";
-	text: string;
-	fontSize?: number;
-	fontFamily?: number;
-	textAlign?: string;
-	verticalAlign?: string;
-	baseline?: number;
-	lineHeight?: number;
-}
-
-export interface ExcalidrawRectangleElement extends ExcalidrawElementBase {
-	type: "rectangle";
-	width: number;
-	height: number;
-}
-
-export interface ExcalidrawEllipseElement extends ExcalidrawElementBase {
-	type: "ellipse";
-	width: number;
-	height: number;
-}
-
-export interface ExcalidrawDiamondElement extends ExcalidrawElementBase {
-	type: "diamond";
-	width: number;
-	height: number;
-}
-
-export interface ExcalidrawArrowElement extends ExcalidrawElementBase {
-	type: "arrow";
-	points: readonly [number, number][];
-	lastCommittedPoint?: readonly [number, number] | null;
-	startBinding?: ExcalidrawBinding | null;
-	endBinding?: ExcalidrawBinding | null;
-	startArrowhead?: string | null;
-	endArrowhead?: string | null;
-}
-
-export interface ExcalidrawLineElement extends ExcalidrawElementBase {
-	type: "line";
-	points: readonly [number, number][];
-	lastCommittedPoint?: readonly [number, number] | null;
-	startBinding?: ExcalidrawBinding | null;
-	endBinding?: ExcalidrawBinding | null;
-}
-
-export interface ExcalidrawFreedrawElement extends ExcalidrawElementBase {
-	type: "freedraw";
-	points: readonly [number, number][];
-	pressures?: readonly number[];
-	simulatePressure?: boolean;
-	lastCommittedPoint?: readonly [number, number] | null;
-}
-
-export type ExcalidrawElement =
-	| ExcalidrawTextElement
-	| ExcalidrawRectangleElement
-	| ExcalidrawEllipseElement
-	| ExcalidrawDiamondElement
-	| ExcalidrawArrowElement
-	| ExcalidrawLineElement
-	| ExcalidrawFreedrawElement;
-
-export interface ExcalidrawBoundElement {
-	id: string;
-	type: "text" | "arrow";
-}
-
-export interface ExcalidrawBinding {
-	elementId: string;
-	focus: number;
-	gap: number;
-	fixedPoint?: readonly [number, number] | null;
-}
-
-export type ExcalidrawElementType =
-	| "rectangle"
-	| "ellipse"
-	| "diamond"
-	| "arrow"
-	| "text"
-	| "line"
-	| "freedraw"
-	| "image";
+export type ExcalidrawElement = PersistedBoardElement;
+export type ExcalidrawTextElement = TextElement;
+export type ExcalidrawRectangleElement = RectangleElement;
+export type ExcalidrawEllipseElement = EllipseElement;
+export type ExcalidrawDiamondElement = DiamondElement;
+export type ExcalidrawArrowElement = ArrowElement;
+export type ExcalidrawLineElement = LineElement;
+export type ExcalidrawFreedrawElement = FreeDrawElement;
+export type ExcalidrawBoundElement = BoundElement;
+export type ExcalidrawBinding = ElementBinding;
+export type ExcalidrawElementType = BoardElementType;
+export type ServerElement = RuntimeBoardElement;
 
 // Excalidraw element types
 export const EXCALIDRAW_ELEMENT_TYPES: Record<string, ExcalidrawElementType> = {
@@ -136,45 +38,6 @@ export const EXCALIDRAW_ELEMENT_TYPES: Record<string, ExcalidrawElementType> = {
 	LINE: "line",
 	IMAGE: "image",
 } as const;
-
-// Server-side element with metadata
-export interface ServerElement extends Omit<ExcalidrawElementBase, "id"> {
-	id: string;
-	type: ExcalidrawElementType;
-	createdAt?: string;
-	updatedAt?: string;
-	version?: number;
-	syncedAt?: string;
-	source?: string;
-	syncTimestamp?: string;
-	text?: string;
-	originalText?: string;
-	fontSize?: number;
-	fontFamily?: string | number;
-	label?: {
-		text: string;
-	};
-	points?: readonly (readonly number[])[] | null;
-	// An image element names the picture it draws. It is the only thing in the
-	// format that says which board an image belongs to, which is why a board's
-	// images are read off its elements rather than out of a map (TASK-060).
-	fileId?: string;
-	// What an arrow touches, and Excalidraw's own record of it: which shape, how
-	// far round it (`focus`), and how far short of its outline the path stops
-	// (`gap`). Everything that routes or reads a connection reads these.
-	startBinding?: ExcalidrawBinding | null;
-	endBinding?: ExcalidrawBinding | null;
-	/**
-	 * The agent's spelling of the same thing, and an input format only: `start`
-	 * and `end` are converted to bindings at the write boundary and never stored,
-	 * exactly as `label` stopped being stored in TASK-073. Storing them made the
-	 * board hold two answers to what an arrow touched, and a human who dragged
-	 * an end onto a different shape had their edit undone by the stale one the
-	 * next time anything moved (TASK-088, ADR 0015).
-	 */
-	start?: { id: string } | null;
-	end?: { id: string } | null;
-}
 
 // API Response types
 export interface ApiResponse<T = unknown> {
