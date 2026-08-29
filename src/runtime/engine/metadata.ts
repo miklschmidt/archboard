@@ -39,6 +39,16 @@ export function stripTrackingClaims(value: unknown): unknown {
 	return cleaned;
 }
 
+/** Remove both untrusted runtime-overlay and persisted-envelope tracking claims. */
+export function stripUntrustedTrackingClaims(
+	value: Record<string, unknown>,
+): Record<string, unknown> {
+	const cleaned = { ...value };
+	for (const key of TRACKING_KEYS) delete cleaned[key];
+	if ("customData" in cleaned) cleaned.customData = stripTrackingClaims(cleaned.customData);
+	return cleaned;
+}
+
 function customDataOf(element: RuntimeBoardElement): Record<string, unknown> {
 	const custom = element.customData;
 	return custom && typeof custom === "object" && !Array.isArray(custom) ? custom : {};

@@ -8,8 +8,9 @@ import type { LegacyElementIngress } from "../../../shared/board-elements/index.
 import { bindingFromRef } from "../arrow-binding.js";
 import { DEFAULT_LINEAR_POINTS, pointsOf } from "../geometry.js";
 import { EXCALIDRAW_ELEMENT_TYPES, normalizeFontFamily } from "../types.js";
-import { stripTrackingClaims } from "../metadata.js";
+import { stripUntrustedTrackingClaims } from "../metadata.js";
 import { CreateElementSchema } from "./element-input-schema.js";
+import type { AgentElementInput } from "./element-input-schema.js";
 
 const hasOwn = (value: object, key: PropertyKey): boolean =>
 	Object.prototype.hasOwnProperty.call(value, key);
@@ -27,7 +28,7 @@ export function wellFormAgentStatement(
 	raw: Record<string, unknown>,
 	existingType?: string,
 ): Record<string, unknown> {
-	const statement = { ...raw };
+	const statement = stripUntrustedTrackingClaims(raw);
 	if (hasOwn(statement, "points")) statement.points = normalizePoints(statement.points);
 	for (const [alias, ref] of [
 		["startElementId", "start"],
@@ -44,6 +45,18 @@ export function wellFormAgentStatement(
 		const text = statement.text;
 		delete statement.text;
 		if (typeof text === "string") statement.label = { text };
+	}
+	for (const key of ["startBinding", "endBinding"] as const) {
+		if (!hasOwn(statement, key)) continue;
+		const value = statement[key];
+		if (value === null || !value || typeof value !== "object" || Array.isArray(value)) continue;
+		const record = value as Record<string, unknown>;
+		statement[key] = {
+			elementId: record.elementId,
+			focus: record.focus,
+			gap: record.gap,
+			...(hasOwn(record, "fixedPoint") ? { fixedPoint: record.fixedPoint } : {}),
+		};
 	}
 	return statement;
 }
@@ -65,18 +78,12 @@ export function spendArrowRefs(
 }
 
 export function buildAgentElement(
-	raw: Record<string, unknown>,
+	raw: AgentElementInput,
 	inUse: { has(id: string): boolean },
 ): LegacyElementIngress {
 	const statement = wellFormAgentStatement(raw);
 	const params = CreateElementSchema.parse(statement);
 	const { board: _boardField, ...elementParams } = params as typeof params & { board?: string };
-	for (const key of ["createdAt", "updatedAt", "syncedAt", "source", "syncTimestamp"])
-		delete (elementParams as Record<string, unknown>)[key];
-	if ("customData" in elementParams)
-		(elementParams as Record<string, unknown>).customData = stripTrackingClaims(
-			(elementParams as Record<string, unknown>).customData,
-		);
 	const now = new Date().toISOString();
 	const element = {
 		id: params.id || mintId(inUse),

@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import type { AgentElementInput } from "../engine/apply-element-input.js";
 import type { ServerElement } from "../engine/types.js";
 import { readElementMetadata } from "../engine/metadata.js";
 import { decodePath, decodeRecords, type DecodedRecord } from "./lib/decode.js";
@@ -223,7 +224,7 @@ function bridgeLine(
 	b: ExactPoint,
 	style: StrokeStyle,
 	mask: boolean,
-): Record<string, unknown> {
+): AgentElementInput {
 	return {
 		...(mask ? { id: metadata.bridgeId } : {}),
 		type: "line",
@@ -254,7 +255,7 @@ function bridgeLine(
 		startArrowhead: null,
 		endArrowhead: null,
 		customData: bridgeBlock(metadata),
-	};
+	} satisfies AgentElementInput;
 }
 
 interface CrossingCandidate {
@@ -305,7 +306,7 @@ export interface BridgeCreatePlan {
 	readonly overSegmentIndex: number;
 	readonly underSegmentIndex: number;
 	readonly crossing: ExactPoint;
-	readonly inputs: readonly [Record<string, unknown>, Record<string, unknown>];
+	readonly inputs: readonly [AgentElementInput, AgentElementInput];
 }
 
 export function planBridgeCreate(input: PlanBridgeCreateInput): BridgeCreatePlan {
