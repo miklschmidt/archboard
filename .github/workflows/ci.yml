@@ -15,8 +15,8 @@ jobs:
   # scripts of its own while the suite grew to seventeen around it, so the list
   # now lives in package.json where it is already maintained. `check` enforces
   # Oxlint (including Archboard's boundary plugin), formatting, type-checking,
-  # and the complete sequential test chain. `test:suites` fails when a suite is
-  # in neither that chain nor the skip list (TASK-082).
+  # and the complete sequential test chain. `test:repository` verifies that
+  # every native test has exactly one owner in that chain.
   suite:
     name: Lint, format, type check, build, and the whole suite
     runs-on: ubuntu-latest
@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # `test:browser` renders a board in a real browser and is in the chain
+      # `test:serial-browser` renders a board in a real browser and is in the chain
       # since TASK-072, so the chain needs one. Pinned to the version the check
       # was written against: it reads the scene back through the React fiber and
       # drives the browser through `open` and `eval`, which is 0.34.0's
