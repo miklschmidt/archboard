@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:05'
-updated_date: '2026-08-29 03:16'
+updated_date: '2026-08-29 03:36'
 labels: []
 dependencies:
   - TASK-130.01
@@ -122,4 +122,13 @@ Implementation evidence (2026-08-29):
 - Both complete pre-deletion package-form lanes passed consecutively. After the atomic package/deletion/inventory/docs/comment cutover, test:suites, type-check, lint, fmt:check, git diff --check, line/ledger/reference/resource audits, exactly one bun run test:browser, and exactly one bun run check passed.
 - Formatted capacity: human-edit-performance 470 lines; every other new or expanded TypeScript file <=441 except timing.ts, exactly 497 with exactly the three approved two-line aliases.
 - All owned resources were absent after both post-cutover lanes. No push performed. Parent still owns complete-range review, acceptance checks, final summary, terminal status, and TASK-130.11 reconciliation.
+
+Review remediation (2026-08-29, follow-up to 809e5b0):
+- Derived typed-text and human-performance vendor element projections from the authoritative exported ExcalidrawElement type; behavioral assertions are unchanged.
+- Extracted only the duplicated ignored-field and canonical snapshot mechanics from live-session-convergence and server-update-ordering into browser-owned page-scene support; scenario expectations and diagnostics remain local.
+- Retained frontend builds as detached owned children. SIGINT/SIGTERM now perform bounded handle TERM, retained negative-PGID KILL if needed, awaited exit, outer-root cleanup, and exact 130/143 outcomes. Fake blocked-build subprocess proofs pass for both signals without starting a browser or canvas.
+- Cleanup observation is AGENT_BROWSER_IDLE_TIMEOUT_MS plus TEST_BROWSER_POLL_MS, and pollUntil takes a final deadline sample. The timing proof covers both the extra margin and deadline acceptance.
+- Corrected test-suite documentation to describe the exact typed adapter/occurrence inventory actually enforced.
+- Follow-up validation: test:suites 27 pass (including prerequisite, build-interruption, and cleanup-timing subprocess proofs); test:boundaries 8 pass; type-check, lint, fmt:check, and git diff --check pass. All owned TypeScript files remain <=468 except timing.ts exactly 497. Resource audit found no owned browser/canvas/build/process/root residue.
+- Per parent instruction, no second bun run test:browser or bun run check was run.
 <!-- SECTION:NOTES:END -->

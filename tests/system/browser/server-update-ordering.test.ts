@@ -22,7 +22,10 @@ import {
 import {
 	applyPageEdit,
 	armServerUpdateEdit,
+	canonicalise,
 	delayNextReport,
+	elementFields,
+	IGNORED_FIELDS,
 	inExcalidrawApp,
 	injectedPageEditCount,
 	installLiveEditSupport,
@@ -30,66 +33,17 @@ import {
 	installServerUpdateInjector,
 	readReportStats,
 	type PageEdit,
+	snapshotOf,
+	type SnapshotElement,
 } from "./support/page-scene.js";
 
 setDefaultTimeout(TEST_BROWSER_COMMAND_TIMEOUT_MS);
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const MEASURER_EPSILON = 0.0012;
-const IGNORED_FIELDS = [
-	"version",
-	"versionNonce",
-	"updated",
-	"createdAt",
-	"updatedAt",
-	"syncedAt",
-	"source",
-	"syncTimestamp",
-] as const;
-
-interface SnapshotElement {
-	id: string;
-	type: string;
-	text?: string;
-	fields: Record<string, string | undefined>;
-}
 
 type Upsert = { id: string } & Record<string, unknown>;
 type ReadField = (element: ServerElement | undefined) => string | number | undefined;
-
-function canonicalise(value: unknown): unknown {
-	if (Array.isArray(value)) return value.map(canonicalise);
-	if (value && typeof value === "object") {
-		const sorted: Record<string, unknown> = {};
-		for (const key of Object.keys(value).toSorted()) {
-			sorted[key] = canonicalise((value as Record<string, unknown>)[key]);
-		}
-		return sorted;
-	}
-	return value;
-}
-
-function elementFields(
-	element: Record<string, unknown>,
-	ignored: readonly string[],
-): SnapshotElement {
-	const fields: Record<string, string | undefined> = {};
-	for (const key of Object.keys(element).toSorted()) {
-		if (!ignored.includes(key)) fields[key] = JSON.stringify(canonicalise(element[key]));
-	}
-	return {
-		id: String(element.id),
-		type: String(element.type),
-		...(typeof element.text === "string" ? { text: element.text } : {}),
-		fields,
-	};
-}
-
-const snapshotOf = (elements: readonly ServerElement[]): SnapshotElement[] =>
-	elements
-		.filter((element) => !element.isDeleted)
-		.toSorted((left, right) => (left.id < right.id ? -1 : 1))
-		.map((element) => elementFields(element as unknown as Record<string, unknown>, IGNORED_FIELDS));
 
 function elementName(element: SnapshotElement): string {
 	return element.type === "text"

@@ -181,12 +181,22 @@ export async function pollUntil<T>(
 	const intervalMs = options.intervalMs ?? TEST_BROWSER_POLL_MS;
 	const deadline = Date.now() + timeoutMs;
 	let last!: T;
-	do {
+	for (;;) {
 		last = await read();
 		if (accepts(last)) return last;
-		await Bun.sleep(intervalMs);
-	} while (Date.now() < deadline);
+		const remainingMs = deadline - Date.now();
+		if (remainingMs <= 0) break;
+		await Bun.sleep(Math.min(intervalMs, remainingMs));
+	}
 	throw new Error(`Timed out waiting for ${description}; last value: ${valueForDiagnostic(last)}`);
+}
+
+export function browserCleanupObservationMs(idleTimeout: string): number {
+	const idleTimeoutMs = Number(idleTimeout);
+	if (!Number.isFinite(idleTimeoutMs) || idleTimeoutMs < 0) {
+		throw new Error(`Invalid owned agent-browser idle timeout: ${idleTimeout}`);
+	}
+	return idleTimeoutMs + TEST_BROWSER_POLL_MS;
 }
 
 export function registerCanvasBase(base: string): void {
@@ -245,6 +255,9 @@ export async function createAgentBrowser(): Promise<AgentBrowserSession> {
 	const session = requiredEnvironment("AGENT_BROWSER_SESSION");
 	const namespace = requiredEnvironment("AGENT_BROWSER_NAMESPACE");
 	const socketDir = requiredEnvironment("AGENT_BROWSER_SOCKET_DIR");
+	const cleanupObservationMs = browserCleanupObservationMs(
+		requiredEnvironment("AGENT_BROWSER_IDLE_TIMEOUT_MS"),
+	);
 	const directories = [
 		requiredEnvironment("HOME"),
 		requiredEnvironment("XDG_CONFIG_HOME"),
@@ -338,6 +351,7 @@ export async function createAgentBrowser(): Promise<AgentBrowserSession> {
 				}),
 				(state) => state.processes.length === 0 && state.sockets.length === 0,
 				`agent-browser session ${session} and daemon namespace ${namespace} to disappear`,
+				{ timeoutMs: cleanupObservationMs },
 			);
 			rmSync(socketDir, { recursive: true, force: true });
 			if (closeFailure) throw closeFailure;

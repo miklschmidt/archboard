@@ -1,8 +1,16 @@
 import { existsSync, readdirSync, statSync } from "node:fs";
-import { spawn } from "node:child_process";
-import { join } from "node:path";
+import { isAbsolute, join } from "node:path";
 
 export type FrontendFreshness = "built" | "current";
+
+export interface FrontendBuildRequest {
+	executable: "bun";
+	argv: string[];
+	cwd: string;
+	env: Record<string, string | undefined>;
+}
+
+export type RunFrontendBuild = (request: FrontendBuildRequest) => Promise<void>;
 
 const INPUT_DIRECTORIES = ["frontend", "src"] as const;
 const INPUT_FILES = [
@@ -35,41 +43,37 @@ function sourceFiles(repoRoot: string): string[] {
 	return files;
 }
 
-function runBuild(repoRoot: string): Promise<void> {
-	return new Promise((resolve, reject) => {
-		const child = spawn(process.execPath, ["run", "build"], {
-			cwd: repoRoot,
-			env: {
-				PATH: process.env.PATH,
-				LANG: "C.UTF-8",
-				LC_ALL: "C.UTF-8",
-				NO_COLOR: "1",
-			},
-			stdio: "inherit",
-		});
-		child.once("error", (error) =>
-			reject(new Error("Could not start the frontend build.", { cause: error })),
-		);
-		child.once("exit", (code, signal) => {
-			if (code === 0) resolve();
-			else {
-				const exit = signal ? `signal ${signal}` : `exit ${code ?? "unknown"}`;
-				reject(new Error(`Frontend build ended with ${exit}.`));
-			}
-		});
-	});
+function buildRequest(repoRoot: string): FrontendBuildRequest {
+	const fixture = process.env.ARCHBOARD_TEST_BROWSER_BUILD_FIXTURE;
+	if (fixture && (!isAbsolute(fixture) || !existsSync(fixture))) {
+		throw new Error("ARCHBOARD_TEST_BROWSER_BUILD_FIXTURE must name an existing absolute file.");
+	}
+	return {
+		executable: "bun",
+		argv: fixture ? [fixture] : ["run", "build"],
+		cwd: repoRoot,
+		env: {
+			PATH: process.env.PATH,
+			LANG: "C.UTF-8",
+			LC_ALL: "C.UTF-8",
+			NO_COLOR: "1",
+		},
+	};
 }
 
-export async function ensureFreshFrontend(repoRoot: string): Promise<FrontendFreshness> {
+export async function ensureFreshFrontend(
+	repoRoot: string,
+	runBuild: RunFrontendBuild,
+): Promise<FrontendFreshness> {
 	const bundle = join(repoRoot, "dist/frontend/index.html");
 	const inputs = sourceFiles(repoRoot);
 	const newestInput = inputs.reduce((newest, file) => Math.max(newest, statSync(file).mtimeMs), 0);
 	const builtAt = existsSync(bundle) ? statSync(bundle).mtimeMs : 0;
 	let decision: FrontendFreshness = "current";
-	if (builtAt < newestInput) {
+	if (builtAt < newestInput || process.env.ARCHBOARD_TEST_BROWSER_BUILD_FIXTURE) {
 		decision = "built";
 		process.stdout.write("# building frontend once for the serial browser lane\n");
-		await runBuild(repoRoot);
+		await runBuild(buildRequest(repoRoot));
 	} else {
 		process.stdout.write("# dist/frontend is current for the serial browser lane\n");
 	}

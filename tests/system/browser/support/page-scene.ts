@@ -1,6 +1,60 @@
+import type { ServerElement } from "../../../../src/runtime/engine/types.ts";
+
 import type { AgentBrowserSession } from "./agent-browser.ts";
 
 type PageEvaluator = Pick<AgentBrowserSession, "eval">;
+
+export const IGNORED_FIELDS = [
+	"version",
+	"versionNonce",
+	"updated",
+	"createdAt",
+	"updatedAt",
+	"syncedAt",
+	"source",
+	"syncTimestamp",
+] as const;
+
+export interface SnapshotElement {
+	id: string;
+	type: string;
+	text?: string;
+	fields: Record<string, string | undefined>;
+}
+
+export function canonicalise(value: unknown): unknown {
+	if (Array.isArray(value)) return value.map(canonicalise);
+	if (value && typeof value === "object") {
+		const sorted: Record<string, unknown> = {};
+		for (const key of Object.keys(value).toSorted()) {
+			sorted[key] = canonicalise((value as Record<string, unknown>)[key]);
+		}
+		return sorted;
+	}
+	return value;
+}
+
+export function elementFields(
+	element: Record<string, unknown>,
+	ignored: readonly string[],
+): SnapshotElement {
+	const fields: Record<string, string | undefined> = {};
+	for (const key of Object.keys(element).toSorted()) {
+		if (!ignored.includes(key)) fields[key] = JSON.stringify(canonicalise(element[key]));
+	}
+	return {
+		id: String(element.id),
+		type: String(element.type),
+		...(typeof element.text === "string" ? { text: element.text } : {}),
+		fields,
+	};
+}
+
+export const snapshotOf = (elements: readonly ServerElement[]): SnapshotElement[] =>
+	elements
+		.filter((element) => !element.isDeleted)
+		.toSorted((left, right) => (left.id < right.id ? -1 : 1))
+		.map((element) => elementFields(element as unknown as Record<string, unknown>, IGNORED_FIELDS));
 
 export type PageEdit =
 	| { kind: "delete"; id: string }

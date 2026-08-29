@@ -2,6 +2,8 @@ import { expect, setDefaultTimeout, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
+import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
+
 import { derivedId, isBlockId } from "../../../src/shared/ids/ids.ts";
 import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
@@ -21,31 +23,25 @@ setDefaultTimeout(TEST_BROWSER_COMMAND_TIMEOUT_MS);
 const repoRoot = resolve(import.meta.dir, "../../..");
 const BOARD = "typed";
 
-interface ElementView {
-	id: string;
-	type: string;
-	x: number;
-	text?: string;
-	containerId?: string | null;
-	boundElements?: Array<{ id: string }>;
-}
+type TextElement = Extract<ExcalidrawElement, { type: "text" }>;
+type ElementView = Pick<ExcalidrawElement, "id" | "type" | "x" | "boundElements"> &
+	Partial<Pick<TextElement, "text" | "containerId">>;
+type PaneElementView = Pick<ExcalidrawElement, "id" | "type" | "x"> & {
+	text: TextElement["text"] | null;
+	containerId: TextElement["containerId"];
+	boundElements: Array<NonNullable<ExcalidrawElement["boundElements"]>[number]["id"]>;
+};
+type PostedElementView = Pick<ExcalidrawElement, "id" | "type">;
 
 interface PaneState {
 	editing: string | null;
 	typing: string | null;
-	elements: Array<{
-		id: string;
-		type: string;
-		text: string | null;
-		containerId: string | null;
-		boundElements: string[];
-		x: number;
-	}>;
+	elements: PaneElementView[];
 }
 
 interface PostedState {
 	reports: number;
-	upserts: Array<{ id: string; type: string }>;
+	upserts: PostedElementView[];
 }
 
 const paneNow = (browser: AgentBrowserSession): Promise<PaneState> =>

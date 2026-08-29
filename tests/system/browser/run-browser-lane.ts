@@ -19,11 +19,13 @@ import {
 } from "../../../src/shared/timing/timing.ts";
 import {
 	BROWSER_ADAPTER_PATH,
+	browserCleanupObservationMs,
+	pollUntil,
 	type BrowserSelection,
 	type BrowserTestPath,
 	validateBrowserSelection,
 } from "./support/agent-browser.ts";
-import { ensureFreshFrontend } from "./support/frontend-build.ts";
+import { ensureFreshFrontend, type FrontendBuildRequest } from "./support/frontend-build.ts";
 
 export {
 	BROWSER_ADAPTER_PATH,
@@ -37,14 +39,18 @@ const HUMAN_PERFORMANCE = "tests/system/browser/human-edit-performance.test.ts";
 
 class CouldNotRunError extends Error {}
 class InterruptedError extends Error {
-	constructor(readonly signal: "SIGINT" | "SIGTERM") {
-		super(`Browser lane interrupted by ${signal}.`);
+	constructor(
+		readonly signal: "SIGINT" | "SIGTERM",
+		cause?: unknown,
+	) {
+		super(`Browser lane interrupted by ${signal}.`, { cause });
 	}
 }
 
 interface OwnedChild {
 	child: ChildProcess;
 	pid: number;
+	termGraceMs: number;
 	exit: Promise<{ code: number | null; signal: NodeJS.Signals | null }>;
 }
 
@@ -53,6 +59,22 @@ interface OwnerContext {
 	root: string;
 	processGroup: number;
 	env: Record<string, string>;
+}
+
+interface OwnerAuditSample {
+	groupAlive: boolean;
+	processes: number[];
+	sockets: string[];
+	listeners: string[];
+}
+
+function ownerIsClean(state: OwnerAuditSample): boolean {
+	return (
+		!state.groupAlive &&
+		state.processes.length === 0 &&
+		state.sockets.length === 0 &&
+		state.listeners.length === 0
+	);
 }
 
 function preflightEnvironment(): Record<string, string> {
@@ -126,7 +148,28 @@ function spawnOwner(file: BrowserTestPath, env: Record<string, string>): OwnedCh
 			child.once("exit", (code, signal) => resolveExit({ code, signal }));
 		},
 	);
-	return { child, pid, exit };
+	return { child, pid, termGraceMs: TEST_BROWSER_COMMAND_TIMEOUT_MS, exit };
+}
+
+function spawnFrontendBuild(request: FrontendBuildRequest): OwnedChild {
+	const child = spawn(request.executable, request.argv, {
+		cwd: request.cwd,
+		detached: true,
+		env: request.env,
+		stdio: "inherit",
+	});
+	if (child.pid === undefined)
+		throw new CouldNotRunError("Bun did not return a frontend build pid.");
+	const pid = child.pid;
+	const exit = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>(
+		(resolveExit, rejectExit) => {
+			child.once("error", (error) =>
+				rejectExit(new CouldNotRunError("Could not start the frontend build.", { cause: error })),
+			);
+			child.once("exit", (code, signal) => resolveExit({ code, signal }));
+		},
+	);
+	return { child, pid, termGraceMs: TEST_BROWSER_POLL_MS, exit };
 }
 
 function processGroupExists(processGroup: number): boolean {
@@ -192,34 +235,39 @@ function registeredCanvasBases(ownerRoot: string): string[] {
 
 async function auditOwner(context: OwnerContext): Promise<void> {
 	const bases = registeredCanvasBases(context.root);
-	const deadline = Date.now() + TEST_BROWSER_COMMAND_TIMEOUT_MS;
-	let groupAlive: boolean;
-	let processes: number[];
-	let sockets: string[];
-	let listeners: string[];
-	do {
-		groupAlive = processGroupExists(context.processGroup);
-		processes = markedProcesses(
-			context.root,
-			context.env.AGENT_BROWSER_NAMESPACE!,
-			context.env.AGENT_BROWSER_SESSION!,
-		).filter((pid) => pid !== process.pid);
-		sockets = namespaceArtifacts(context.env.AGENT_BROWSER_SOCKET_DIR!).filter((entry) =>
-			entry.endsWith(".sock"),
-		);
-		listeners = [];
+	const sample = async (): Promise<OwnerAuditSample> => {
+		const listeners: string[] = [];
 		for (const base of bases) {
 			if (!(await canvasListenerIsClosed(base))) listeners.push(base);
 		}
-		if (!groupAlive && processes.length === 0 && sockets.length === 0 && listeners.length === 0)
-			break;
-		await Bun.sleep(TEST_BROWSER_POLL_MS);
-	} while (Date.now() < deadline);
+		return {
+			groupAlive: processGroupExists(context.processGroup),
+			processes: markedProcesses(
+				context.root,
+				context.env.AGENT_BROWSER_NAMESPACE!,
+				context.env.AGENT_BROWSER_SESSION!,
+			).filter((pid) => pid !== process.pid),
+			sockets: namespaceArtifacts(context.env.AGENT_BROWSER_SOCKET_DIR!).filter((entry) =>
+				entry.endsWith(".sock"),
+			),
+			listeners,
+		};
+	};
+	let state: Awaited<ReturnType<typeof sample>>;
+	try {
+		state = await pollUntil(sample, ownerIsClean, `browser owner ${context.file} cleanup`, {
+			timeoutMs: browserCleanupObservationMs(context.env.AGENT_BROWSER_IDLE_TIMEOUT_MS!),
+		});
+	} catch {
+		state = await sample();
+	}
 	const failures: string[] = [];
-	if (groupAlive) failures.push(`process group ${context.processGroup} remains`);
-	if (processes.length > 0) failures.push(`owned processes remain: ${processes.join(", ")}`);
-	if (sockets.length > 0) failures.push(`agent-browser sockets remain: ${sockets.join(", ")}`);
-	for (const base of listeners) failures.push(`canvas listener remains at ${base}`);
+	if (state.groupAlive) failures.push(`process group ${context.processGroup} remains`);
+	if (state.processes.length > 0)
+		failures.push(`owned processes remain: ${state.processes.join(", ")}`);
+	if (state.sockets.length > 0)
+		failures.push(`agent-browser sockets remain: ${state.sockets.join(", ")}`);
+	for (const base of state.listeners) failures.push(`canvas listener remains at ${base}`);
 	rmSync(context.root, { recursive: true, force: true });
 	if (existsSync(context.root)) failures.push("file-specific owner directory remains");
 	if (failures.length > 0) {
@@ -228,7 +276,19 @@ async function auditOwner(context: OwnerContext): Promise<void> {
 }
 
 async function waitForExit(child: OwnedChild, timeoutMs: number): Promise<boolean> {
-	return Promise.race([child.exit.then(() => true), Bun.sleep(timeoutMs).then(() => false)]);
+	return new Promise((resolveExit, rejectExit) => {
+		const timeout = setTimeout(() => resolveExit(false), timeoutMs);
+		child.exit.then(
+			() => {
+				clearTimeout(timeout);
+				return resolveExit(true);
+			},
+			(error: unknown) => {
+				clearTimeout(timeout);
+				return rejectExit(error);
+			},
+		);
+	});
 }
 
 async function waitForProcessGroup(processGroup: number, timeoutMs: number): Promise<boolean> {
@@ -239,9 +299,9 @@ async function waitForProcessGroup(processGroup: number, timeoutMs: number): Pro
 	return !processGroupExists(processGroup);
 }
 
-async function stopOwnedChild(child: OwnedChild, signal: NodeJS.Signals): Promise<void> {
-	if (child.child.exitCode === null && child.child.signalCode === null) child.child.kill(signal);
-	if (!(await waitForExit(child, TEST_BROWSER_COMMAND_TIMEOUT_MS))) {
+async function stopOwnedChild(child: OwnedChild): Promise<void> {
+	if (child.child.exitCode === null && child.child.signalCode === null) child.child.kill("SIGTERM");
+	if (!(await waitForExit(child, child.termGraceMs))) {
 		if (processGroupExists(child.pid)) process.kill(-child.pid, "SIGKILL");
 	}
 	if (!(await waitForExit(child, TEST_BROWSER_COMMAND_TIMEOUT_MS))) {
@@ -273,21 +333,57 @@ async function runSelection(selection: BrowserSelection): Promise<number> {
 	const interrupt = (signal: "SIGINT" | "SIGTERM"): void => {
 		interrupted ??= signal;
 		if (!interruption) {
-			interruption = current ? stopOwnedChild(current, signal) : Promise.resolve();
+			interruption = current ? stopOwnedChild(current) : Promise.resolve();
 		}
 	};
 	const onSigint = (): void => interrupt("SIGINT");
 	const onSigterm = (): void => interrupt("SIGTERM");
 	const pendingInterruption = (): Promise<void> | null => interruption;
+	const interruptionSignal = (): "SIGINT" | "SIGTERM" | null => interrupted;
+	const raiseInterruption = async (): Promise<never> => {
+		const signal = interruptionSignal();
+		if (!signal) throw new Error("Interruption cleanup ran without a signal.");
+		let cause: unknown;
+		try {
+			await (pendingInterruption() ?? Promise.resolve());
+		} catch (error) {
+			cause = error;
+		}
+		throw new InterruptedError(signal, cause);
+	};
+	const finishChild = async (child: OwnedChild, label: string): Promise<void> => {
+		const outcome = await child.exit;
+		if (interruptionSignal()) await raiseInterruption();
+		await reapExitedOwner(child);
+		if (outcome.signal || outcome.code !== 0) {
+			const exit = outcome.signal
+				? `signal ${outcome.signal}`
+				: `exit ${outcome.code ?? "unknown"}`;
+			throw new Error(`${label} ended with ${exit}.`);
+		}
+	};
 	process.on("SIGINT", onSigint);
 	process.on("SIGTERM", onSigterm);
 
 	await using resources = new AsyncDisposableStack();
 	let laneRoot = "";
+	let result: number | undefined;
+	let runFailure: unknown;
 	try {
 		laneRoot = mkdtempSync(join(tmpdir(), "ab-lane-"));
 		resources.defer(() => rmSync(laneRoot, { recursive: true, force: true }));
-		await ensureFreshFrontend(repoRoot);
+		if (interruptionSignal()) await raiseInterruption();
+		await ensureFreshFrontend(repoRoot, async (request) => {
+			if (interruptionSignal()) await raiseInterruption();
+			const build = spawnFrontendBuild(request);
+			current = build;
+			try {
+				await finishChild(build, "Frontend build");
+			} finally {
+				current = null;
+			}
+		});
+		if (interruptionSignal()) await raiseInterruption();
 		for (const [index, file] of selection.files.entries()) {
 			if (interrupted) throw new InterruptedError(interrupted);
 			const name = childName(index);
@@ -296,32 +392,34 @@ async function runSelection(selection: BrowserSelection): Promise<number> {
 			const env = ownerEnvironment(laneRoot, ownerRoot);
 			current = spawnOwner(file, env);
 			const processGroup = current.pid;
-			let outcome: { code: number | null; signal: NodeJS.Signals | null };
 			try {
-				outcome = await current.exit;
-				const pending = pendingInterruption();
-				if (pending) await pending;
-				else await reapExitedOwner(current);
+				await finishChild(current, `Browser owner ${file}`);
 			} finally {
 				current = null;
 				await auditOwner({ file, root: ownerRoot, processGroup, env });
 			}
-			if (interrupted) throw new InterruptedError(interrupted);
-			if (outcome.signal || outcome.code !== 0) {
-				const exit = outcome.signal
-					? `signal ${outcome.signal}`
-					: `exit ${outcome.code ?? "unknown"}`;
-				throw new Error(`Browser owner ${file} ended with ${exit}.`);
-			}
+			if (interruptionSignal()) await raiseInterruption();
 		}
-		return 0;
-	} finally {
-		if (current) await stopOwnedChild(current, interrupted ?? "SIGTERM");
+		result = 0;
+	} catch (error) {
+		runFailure = error;
+	}
+	let cleanupFailure: unknown;
+	try {
+		if (current) await stopOwnedChild(current);
 		const pending = pendingInterruption();
 		if (pending) await pending;
-		process.off("SIGINT", onSigint);
-		process.off("SIGTERM", onSigterm);
+	} catch (error) {
+		cleanupFailure = error;
 	}
+	process.off("SIGINT", onSigint);
+	process.off("SIGTERM", onSigterm);
+	const signal = interruptionSignal();
+	if (signal) throw new InterruptedError(signal, cleanupFailure ?? runFailure);
+	if (cleanupFailure) throw cleanupFailure;
+	if (runFailure) throw runFailure;
+	if (result === undefined) throw new Error("Browser lane ended without a result.");
+	return result;
 }
 
 async function main(): Promise<number> {
