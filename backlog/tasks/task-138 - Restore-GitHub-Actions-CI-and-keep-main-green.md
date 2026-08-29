@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-29 16:14'
-updated_date: '2026-08-29 19:58'
+updated_date: '2026-08-29 20:18'
 labels: []
 dependencies: []
 references:
@@ -27,6 +27,7 @@ modified_files:
   - tests/system/browser/support/agent-browser.ts
   - tests/system/canvas-state/hot-reload.test.ts
   - tests/system/code-targets/activation-contract.test.ts
+  - tests/system/repository-policy/boundaries.test.ts
   - tests/system/repository-policy/ci-browser-gate.test.ts
   - tests/system/repository-policy/support/test-inventory.ts
   - tests/system/repository-policy/test-inventory.test.ts
@@ -85,6 +86,8 @@ GitHub Actions is failing on the current repository state and is expected to fai
 17. CI4 plan-review amendments, superseding item 16 where more specific. In tests/system/support/owned-canvas.ts, make processExists return false only for an error whose code is ESRCH; wrap and rethrow EPERM or any other kill-zero error with the observed PID. Add waitForProcessExit(pid, timeoutMs = TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS): it sends no signal, polls processExists at TEST_CANVAS_HEALTH_POLL_MS, treats zombies as observable, and on timeout names the PID, the exact timeout in milliseconds, and that the identity may be live, zombie, or recycled. PID reuse may prolong observation but never hides the PID or authorizes signaling. Use this observer only after archboard stop as a hot-reload test audit; stopCanvas retains its listener-based production semantics and cleanup ownership stays with hot-reload. In tests/system/support/owned-canvas.test.ts, directly prove a retained short-lived child is observed until delayed disappearance, and prove a retained live child yields the exact diagnostic using a test-only short timeout before that child is reaped through its handle. Update TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS documentation to retain its lifecycle-subprocess relationship while also naming post-stop PID observation and the server's 2,000 ms forced-exit fallback. Format and recount before changing hot-reload; hot-reload.test.ts must remain at most 500 physical lines. Add exactly TEST_BOARD_INSPECTION_TOTALITY_CASE_TIMEOUT_MS = 15_000 and apply it only to the final package-totality case: six label-pair reversal inspections plus fourteen obstacle reversal inspections. Document that 15,000 ms is about three times the observed hosted 5,003.69 ms and is a synchronous Bun lifecycle failure threshold for the observed child-lifecycle failure mode, not a hang ceiling. Validation order is the complete tests/system/support slice sequentially, then focused/full canvas-state and board-inspection slices with ARCHBOARD_VAULT unset, static gates, and one clean unset bun run check; preserve every behavioral dataset, status, output, identity assertion, and dead-PID proof.
 
 18. Narrow CI4 Standards amendment. Add one isolated owned-canvas support test that spies process.kill, proves processExists calls the expected PID with signal zero, injects an EPERM-coded Error, and requires the exact PID-bearing diagnostic with the original cause preserved. Restore the spy in finally. Prove the case fails against an all-errors-mean-absent mutant, restore the strict ESRCH-only implementation, then run direct and complete sequential support plus TypeScript, Oxlint, formatting, and diff checks. Do not rerun browser or the complete gate because production behavior and the affected owner were already accepted.
+
+19. CI5 deterministic lint-diagnostic remediation. In tests/system/repository-policy/boundaries.test.ts, make the owned Oxlint subprocess helper pass exactly --format=default so public diagnostic assertions retain the rule name and actionable guidance across local terminals and GitHub Actions, where Oxlint otherwise auto-selects the annotation formatter and omits help text. Keep the existing rule and Maximum allowed is 500 guidance assertions, and add direct enforcement that the helper argv contains the exact formatter selection. Do not change workflow, Oxlint configuration, boundary limits, rules, lint/test composition, skips, or allow-failure behavior. After approval, run the focused boundary owner, complete repository-policy lane, TypeScript, Oxlint, formatting, and diff checks, then one clean sequential bun run check before commit, push, and exact-SHA CI monitoring.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -205,4 +208,15 @@ Narrow CI4 Standards remediation evidence, 2026-08-29:
 - Mutant RED: temporarily treating every process.kill error as absence made the new case fail with no Error after the kill-zero call was observed. Log: /tmp/task138-ci4-standards-mutant-red.log. The reviewed ESRCH-only implementation was then restored byte-for-byte.
 - Direct support passed 8 tests / 34 assertions; the complete sequential support slice passed 16 tests / 93 assertions. Logs: /tmp/task138-ci4-standards-direct-green.log and /tmp/task138-ci4-standards-support-green.log. TypeScript, Oxlint, formatting, and git diff checks passed; logs use /tmp/task138-ci4-standards-{type,lint,fmt}.log.
 - owned-canvas.test.ts is 301 physical lines and owned-canvas.ts remains 432. No support/canvas process survived. Per narrow review direction, no browser or second complete gate ran; the prior clean unset acceptance remains /tmp/task138-ci4-full-check.log. Test commit: 39decf1.
+
+CI5 diagnosis, 2026-08-29:
+
+- Hosted Oxlint auto-selected its GitHub annotation formatter, which preserved the boundary violation annotation but omitted the help text asserted by boundaries.test.ts. Local oxlint --format=github reproduces the exact hosted diagnostic shape; oxlint --format=default preserves both the rule identifier and actionable Maximum allowed is 500 guidance. The smallest deterministic repair belongs in the test-owned lint subprocess helper, not workflow or shared lint configuration. Source remains paused pending plan review.
+
+CI5 deterministic lint-diagnostic remediation evidence, 2026-08-29:
+
+- TDD RED: the new direct argv contract failed because lintCommand did not exist, while all eight predecessor boundary cases passed. Log: /tmp/task138-ci5-boundary-red.log. The boundary owner now constructs every Oxlint subprocess argv with exact --format=default after its owned config argument; this prevents host auto-detection from changing public diagnostic bytes.
+- Focused boundary green passed 9 tests / 76 assertions, including the unchanged archboard/eslint rule-name checks and Maximum allowed is 500 guidance check. Complete repository policy passed 100 tests / 274 assertions. Logs: /tmp/task138-ci5-boundary-green.log and /tmp/task138-ci5-repository-green.log. TypeScript, Oxlint, formatting, and git diff checks passed; logs use /tmp/task138-ci5-{type,lint,fmt}.log.
+- One clean sequential acceptance run started with ARCHBOARD_VAULT unset, no active owner process, and dist absent. bun run check passed lint, formatting, both TypeScript projects, 400 module tests / 3,144 assertions, 255 serial system tests / 4,137 assertions, 100 repository-policy tests / 274 assertions, and all 15 serial headless browser owners. Log: /tmp/task138-ci5-full-check.log.
+- boundaries.test.ts is 309 physical lines. No workflow, Oxlint configuration, boundary rule/limit, assertion, gate, skip, or allow-failure behavior changed. The generated ignored dist bundle was removed after acceptance; no check, browser, canvas, or inspection process survived. Implementation commit: cdca08b.
 <!-- SECTION:NOTES:END -->
