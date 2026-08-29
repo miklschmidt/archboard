@@ -93,8 +93,99 @@ async function waitForCount(directory: string, count: number, deadline: number):
 	}
 }
 
+export interface LinuxProcessStatEvidence {
+	pid: number;
+	state: string;
+	processGroup: number;
+	running: boolean;
+}
+
+function linuxProcessStatPath(pid: number): string {
+	if (!Number.isSafeInteger(pid) || pid <= 0) {
+		throw new Error(`Invalid Linux process PID ${pid}: expected a positive safe integer.`);
+	}
+	return `/proc/${pid}/stat`;
+}
+
+function invalidLinuxProcessStat(pid: number, diagnostic: string): Error {
+	return new Error(
+		`Invalid Linux process stat for PID ${pid} at /proc/${pid}/stat: ${diagnostic}.`,
+	);
+}
+
+export function parseLinuxProcessStat(pid: number, stat: string): LinuxProcessStatEvidence {
+	linuxProcessStatPath(pid);
+	const delimiter = stat.lastIndexOf(") ");
+	const opening = stat.indexOf(" (");
+	if (opening <= 0 || delimiter <= opening + 1) {
+		throw invalidLinuxProcessStat(pid, "missing the final command delimiter");
+	}
+	const recordPidToken = stat.slice(0, opening);
+	if (!/^\d+$/.test(recordPidToken)) {
+		throw invalidLinuxProcessStat(
+			pid,
+			`record PID ${JSON.stringify(recordPidToken)} is not numeric`,
+		);
+	}
+	const recordPid = Number(recordPidToken);
+	if (!Number.isSafeInteger(recordPid) || recordPid !== pid) {
+		throw invalidLinuxProcessStat(
+			pid,
+			`record PID ${recordPidToken} does not match expected PID ${pid}`,
+		);
+	}
+	const fields = stat
+		.slice(delimiter + 2)
+		.trim()
+		.split(/\s+/);
+	if (fields.length < 3) {
+		throw invalidLinuxProcessStat(pid, "expected state, parent PID, and process group fields");
+	}
+	const state = fields[0]!;
+	const processGroupToken = fields[2]!;
+	if (state.length !== 1) {
+		throw invalidLinuxProcessStat(pid, `process state ${JSON.stringify(state)} is not one token`);
+	}
+	if (!/^\d+$/.test(processGroupToken)) {
+		throw invalidLinuxProcessStat(
+			pid,
+			`process group ${JSON.stringify(processGroupToken)} is not a positive safe integer`,
+		);
+	}
+	const processGroup = Number(processGroupToken);
+	if (!Number.isSafeInteger(processGroup) || processGroup <= 0) {
+		throw invalidLinuxProcessStat(
+			pid,
+			`process group ${JSON.stringify(processGroupToken)} is not a positive safe integer`,
+		);
+	}
+	if (["Z", "X", "x"].includes(state)) {
+		return { pid, state, processGroup, running: false };
+	}
+	if (!["R", "S", "D", "T", "t", "W", "K", "P", "I"].includes(state)) {
+		throw invalidLinuxProcessStat(pid, `unknown process state ${JSON.stringify(state)}`);
+	}
+	return { pid, state, processGroup, running: true };
+}
+
+export function readLinuxProcessStatEvidence(pid: number): LinuxProcessStatEvidence | null {
+	const statPath = linuxProcessStatPath(pid);
+	let stat: string;
+	try {
+		stat = readFileSync(statPath, "utf8");
+	} catch (error) {
+		const failure = error as NodeJS.ErrnoException;
+		if (failure.code === "ENOENT" || failure.code === "ESRCH") return null;
+		throw new Error(
+			`Could not read Linux process stat for PID ${pid} at ${statPath}: ${failure.message}`,
+			{ cause: error },
+		);
+	}
+	return parseLinuxProcessStat(pid, stat);
+}
+
 export function processExistsEvidence(pid: number): boolean {
-	if (process.platform === "linux") return existsSync(`/proc/${pid}`);
+	if (process.platform === "linux") return readLinuxProcessStatEvidence(pid)?.running ?? false;
 	const command =
 		process.platform === "win32"
 			? ["tasklist", "/FI", `PID eq ${pid}`, "/FO", "CSV", "/NH"]
@@ -222,7 +313,6 @@ export async function createOpenerFixture(
 		},
 		caller,
 		invocation(mode, extra = []) {
-			const deadline = Date.now() + TEST_OPENER_LIFECYCLE.timeoutMs;
 			const id = ++invocationNumber;
 			const captureDirectory = join(root, `captures-${id}`);
 			const releaseFile = join(root, `release-${id}`);
@@ -251,6 +341,7 @@ export async function createOpenerFixture(
 					return (await this.waitForCaptures(1))[0]!;
 				},
 				async waitForCaptures(count) {
+					const deadline = Date.now() + TEST_OPENER_LIFECYCLE.timeoutMs;
 					const files = await waitForCount(captureDirectory, count, deadline);
 					return files
 						.slice(0, count)
@@ -261,6 +352,7 @@ export async function createOpenerFixture(
 						mkdirSync(dirname(releaseFile), { recursive: true });
 						closeSync(openSync(releaseFile, "wx"));
 					}
+					const deadline = Date.now() + TEST_OPENER_LIFECYCLE.timeoutMs;
 					const captures = readdirSync(captureDirectory).filter((file) => file.endsWith(".json"));
 					for (const capture of captures) {
 						await waitForFile(join(exitDirectory, capture), deadline);
