@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+	chmodSync,
 	existsSync,
 	mkdirSync,
 	readFileSync,
@@ -286,33 +287,81 @@ describe("public code-target activation contract", () => {
 		});
 	});
 
-	test("returns a typed spawn failure without changing state or spawning the fake", async () => {
+	test("returns a typed real spawn error without changing note or state", async () => {
 		await using resources = new AsyncDisposableStack();
-		const fixture = await createOpenerFixture({
-			routeDependencies: {
-				launch: async () => ({
-					ok: false,
-					code: "OPENER_SPAWN_FAILED",
-					error: "Controlled opener spawn failure.",
-				}),
-			},
-		});
+		const fixture = await createOpenerFixture({ defaultDependencies: true });
 		resources.defer(() => fixture.dispose());
 		const invocation = fixture.invocation("immediate");
 		resources.defer(() => invocation.releaseAndWait());
-		await saveSelection(fixture, invocation);
+		const identity = makeIdentity({ board: "system/payments" });
+		const { key, board } = getOrCreateBoard(identity);
+		resources.defer(() => {
+			boards.delete(key);
+		});
+		const note = join(fixture.root, "spawn-failure.excalidraw.md");
+		board.file = note;
+		writeFileSync(
+			note,
+			renderBoardNote(
+				{
+					type: "excalidraw",
+					version: 2,
+					elements: [
+						{
+							id: "node",
+							type: "rectangle",
+							x: 0,
+							y: 0,
+							width: 100,
+							height: 60,
+							customData: {
+								archboard: {
+									binding: { repo: fixture.repository, path: "src/index.ts" },
+								},
+							},
+						},
+					],
+					appState: {},
+					files: {},
+				},
+				null,
+				identity,
+			),
+		);
+		const brokenExecutable = join(fixture.root, "broken-opener");
+		writeFileSync(brokenExecutable, `#!${join(fixture.root, "missing-interpreter")}\n`);
+		chmodSync(brokenExecutable, 0o755);
+		expect(
+			(
+				await fixture.request("/api/settings/opener", {
+					method: "PUT",
+					body: jsonBody({
+						version: 1,
+						kind: "custom",
+						executable: brokenExecutable,
+						argv: ["{path}"],
+					}),
+				})
+			).status,
+		).toBe(200);
+		const noteBytes = readFileSync(note);
+		const noteMtime = statSync(note, { bigint: true }).mtimeNs;
 		const stateBytes = readFileSync(fixture.configFile);
 		const stateMtime = statSync(fixture.configFile, { bigint: true }).mtimeNs;
 
-		const result = await activate(fixture);
+		const result = await activate(fixture, { board: key, element: "node" });
 		expect(result.status).toBe(500);
-		expect(CodeTargetOpenReplySchema.parse(result.body)).toEqual({
+		const reply = CodeTargetOpenReplySchema.parse(result.body);
+		expect(reply).toMatchObject({
 			success: false,
 			code: "OPENER_SPAWN_FAILED",
-			error: "Controlled opener spawn failure.",
 			actions: [{ kind: "settings", label: "Opener settings" }],
 		});
+		if (reply.success) throw new Error("Expected spawn failure.");
+		expect(reply.error).toContain(brokenExecutable);
 		expect(readdirSync(invocation.captureDirectory)).toEqual([]);
+		expect(readFileSync(note)).toEqual(noteBytes);
+		expect(statSync(note, { bigint: true }).mtimeNs).toBe(noteMtime);
 		expect(readFileSync(fixture.configFile)).toEqual(stateBytes);
 		expect(statSync(fixture.configFile, { bigint: true }).mtimeNs).toBe(stateMtime);
 	});
