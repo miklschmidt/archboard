@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ServerElement } from "../engine/types.js";
+import { readElementMetadata } from "../engine/metadata.js";
 import { decodePath, decodeRecords, type DecodedRecord } from "./lib/decode.js";
 import { intersectSegments, point, type ExactPoint, type Segment } from "./lib/geometry.js";
 import {
@@ -188,19 +189,10 @@ function lineMatches(part: ServerElement, expectedInput: Record<string, unknown>
 	const expected = canonicalBridgeLine(part.id, expectedInput);
 	for (const [key, value] of Object.entries(expected)) {
 		if (key === "customData") {
-			const actualCustomData = actual.customData;
 			const expectedCustomData = value as { archboard: { bridge: BridgeMetadata } };
-			if (
-				!actualCustomData ||
-				typeof actualCustomData !== "object" ||
-				Array.isArray(actualCustomData)
-			)
-				return false;
-			const actualArchboard = (actualCustomData as Record<string, unknown>).archboard;
+			const actualArchboard = readElementMetadata(part).archboard;
 			if (
 				!actualArchboard ||
-				typeof actualArchboard !== "object" ||
-				Array.isArray(actualArchboard) ||
 				Object.keys(actualArchboard).length !== 1 ||
 				!own(actualArchboard, "bridge")
 			)
