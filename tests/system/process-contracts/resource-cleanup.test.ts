@@ -1,5 +1,13 @@
 import { expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	readdirSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -201,6 +209,12 @@ test("static probes roll back earlier exclusive creates after a later collision"
 		probes.restore();
 		expect(existsSync(join(root, "dist/frontend"))).toBeFalse();
 		expect(existsSync(join(root, "dist"))).toBeFalse();
+		mkdirSync(join(root, "dist/frontend"), { recursive: true });
+		const preserved = plantStaticProbes(root);
+		preserved.restore();
+		expect(readdirSync(join(root, "dist/frontend"))).toEqual([]);
+		expect(readdirSync(join(root, "dist"))).toEqual(["frontend"]);
+		rmSync(join(root, "dist"), { recursive: true });
 		const first = join(root, "dist/frontend/task-130-09-frontend-probe.js");
 		const collision = join(root, "dist/task-130-09-stale-probe.js");
 		let failure: unknown;

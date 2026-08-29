@@ -253,7 +253,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // checkout from before ADR 0014 still has a compiled server, CLI and every core
 // module sitting in `dist/`, and the broad mount served all of it. What is
 // reachable is now this line's decision rather than a build tool's.
-// `scripts/check-local-bind.mjs` plants a file in `dist/` and checks it 404s.
+// `tests/system/process-contracts/local-bind.test.ts` plants a file in `dist/`
+// and checks it 404s.
 app.use(express.static(path.join(moduleDir, "../dist/frontend")));
 app.get("/assets/excalidraw.css", (_req, res) => {
 	res.sendFile("index.css", {
