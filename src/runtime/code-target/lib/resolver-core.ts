@@ -1,3 +1,4 @@
+import type { Stats } from "node:fs";
 import path from "node:path";
 
 import {
@@ -35,7 +36,7 @@ export type LocalCodeTargetResult = LocalCodeTarget | ResolutionFailure;
 export interface ResolverDependencies {
 	readRegistry(): RegisteredRepo[];
 	realpath(candidate: string): string;
-	stat(candidate: string): { isDirectory(): boolean; isFile(): boolean };
+	stat(candidate: string): Pick<Stats, "isDirectory" | "isFile">;
 	repoRoot(candidate: string): string | undefined;
 	repoIdentity(candidate: string): string;
 }
