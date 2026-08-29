@@ -395,6 +395,7 @@ function applyHumanInput(
 	const created: ServerElement[] = [];
 	const updated = new Map<string, ServerElement>();
 	const namedIds: string[] = [];
+	const newStatements: LegacyElementIngress[] = [];
 	const now = new Date().toISOString();
 	for (const raw of upserts) {
 		const {
@@ -427,13 +428,7 @@ function applyHumanInput(
 				syncedAt: now,
 				...(timestamp ? { syncTimestamp: timestamp } : {}),
 			} as unknown as LegacyElementIngress;
-			const expanded = expandForBoard([statement], board);
-			const element = expanded.find((candidate) => candidate.id === id);
-			if (!element) throw new Error(`Write ingress did not produce human element ${id}`);
-			for (const completed of expanded) {
-				board.set(completed.id, completed);
-				created.push(completed);
-			}
+			newStatements.push(statement);
 			namedIds.push(id);
 			continue;
 		}
@@ -452,6 +447,17 @@ function applyHumanInput(
 		board.set(id, element);
 		namedIds.push(id);
 		updated.set(id, element);
+	}
+	if (newStatements.length > 0) {
+		const expanded = expandForBoard(newStatements, board);
+		for (const completed of expanded) {
+			board.set(completed.id, completed);
+			created.push(completed);
+		}
+		for (const statement of newStatements) {
+			if (!board.has(statement.id))
+				throw new Error(`Write ingress did not produce human element ${statement.id}`);
+		}
 	}
 	return { created, updated, namedIds };
 }

@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 
+import { applyElementInput } from "../apply-element-input.js";
 import { expandElements } from "../expand-elements.js";
 import { validatePersistedBoardElement } from "../native-element.js";
 
@@ -73,4 +74,29 @@ test("line and arrow keep distinct native contracts", () => {
 	expect(() =>
 		validatePersistedBoardElement({ ...arrow, points: [[0, 0]] }, "arrow ingress"),
 	).toThrow("element.points");
+});
+
+test("a human whole-scene ingress preserves cross-element native bindings", () => {
+	const source = expandElements(
+		[
+			{
+				id: "box",
+				type: "rectangle",
+				x: 0,
+				y: 0,
+				width: 100,
+				height: 50,
+				boundElements: [{ id: "label", type: "text" }],
+			},
+			{ id: "label", type: "text", x: 10, y: 10, text: "Label", containerId: "box" },
+		],
+		{ deterministic: true, forStore: true },
+	);
+	const board = new Map();
+	applyElementInput(board, {
+		origin: "human",
+		upserts: Array.from(source, (element) => Object.assign({} as Record<string, unknown>, element)),
+	});
+	const box = board.get("box");
+	expect(box?.boundElements).toContainEqual({ id: "label", type: "text" });
 });
