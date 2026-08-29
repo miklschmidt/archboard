@@ -373,7 +373,7 @@ export const CLAIM_LEASE_MS = LOCK_LEASE_MS;
  */
 export const LOCK_WATCH_MS = LOCK_RENEW_MS;
 
-/** Synchronous Bun failure thresholds for runner variance, not kill timers or product SLAs. */
+/** Bun failure thresholds—not SLAs—clear hosted sweep 5.274s and terminal 27.094s; package +10_000 ms covers below-limit/setup. */
 export const TEST_BOARD_INSPECTION_SWEEP_CASE_TIMEOUT_MS = 15_000;
 export const TEST_BOARD_INSPECTION_TERMINAL_CASE_TIMEOUT_MS = 40_000;
 export const TEST_BOARD_INSPECTION_PACKAGE_CASE_TIMEOUT_MS =
