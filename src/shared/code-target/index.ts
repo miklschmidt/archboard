@@ -24,7 +24,7 @@ const CustomSelectionSchema = z
 	})
 	.strict()
 	.superRefine(({ argv }, context) => {
-		const bytes = argv.reduce((total, argument) => total + Buffer.byteLength(argument), 0);
+		const bytes = new TextEncoder().encode(argv.join("")).byteLength;
 		if (bytes > MAX_ARG_BYTES) {
 			context.addIssue({
 				code: "custom",

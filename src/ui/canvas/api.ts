@@ -13,6 +13,20 @@ import type {
 	ServerElement,
 } from "../types";
 import type { ChangeReport } from "./changes";
+import {
+	CodeTargetOpenFailureSchema,
+	CodeTargetOpenReplySchema,
+	OpenerSelectionReplySchema,
+	OpenerSettingsReplySchema,
+	OpenerTestReplySchema,
+	type CodeTargetOpenFailure,
+	type CodeTargetOpenReply,
+	type CodeTargetOpenRequest,
+	type OpenerSelection,
+	type OpenerSelectionReply,
+	type OpenerSettingsReply,
+	type OpenerTestReply,
+} from "../../shared/code-target";
 
 /**
  * A refused board write. Distinct from a plain Error because the shell has to
@@ -51,6 +65,79 @@ function post<T>(url: string, payload: unknown): Promise<T> {
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(payload),
 	});
+}
+
+interface ReplySchema<T> {
+	safeParse(value: unknown): { success: true; data: T } | { success: false };
+}
+
+function invalidReply(error?: unknown): CodeTargetOpenFailure {
+	const detail = error instanceof Error ? ` ${error.message}` : "";
+	return {
+		success: false,
+		code: "RESPONSE_INVALID",
+		error: `RESPONSE_INVALID: The canvas server returned an invalid reply.${detail}`,
+	};
+}
+
+async function strictReply<T>(
+	url: string,
+	init: RequestInit | undefined,
+	successSchema: ReplySchema<T>,
+): Promise<T | CodeTargetOpenFailure> {
+	try {
+		const response = await fetch(url, init);
+		const body: unknown = await response.json();
+		const parsed = response.ok
+			? successSchema.safeParse(body)
+			: CodeTargetOpenFailureSchema.safeParse(body);
+		return parsed.success ? parsed.data : invalidReply();
+	} catch (error) {
+		return invalidReply(error);
+	}
+}
+
+const mutation = (method: "POST" | "PUT", payload: unknown): RequestInit => ({
+	method,
+	headers: { "Content-Type": "application/json" },
+	body: JSON.stringify(payload),
+});
+
+export function openCodeTarget(request: CodeTargetOpenRequest): Promise<CodeTargetOpenReply> {
+	return strictReply(
+		"/api/code-targets/open",
+		mutation("POST", request),
+		CodeTargetOpenReplySchema,
+	);
+}
+
+export function fetchOpenerSettings(): Promise<OpenerSettingsReply | CodeTargetOpenFailure> {
+	return strictReply("/api/settings/opener", undefined, OpenerSettingsReplySchema);
+}
+
+export function saveOpenerSettings(
+	selection: OpenerSelection,
+): Promise<OpenerSelectionReply | CodeTargetOpenFailure> {
+	return strictReply(
+		"/api/settings/opener",
+		mutation("PUT", selection),
+		OpenerSelectionReplySchema,
+	);
+}
+
+export function resetOpenerSettings(): Promise<OpenerSelectionReply | CodeTargetOpenFailure> {
+	return strictReply("/api/settings/opener", { method: "DELETE" }, OpenerSelectionReplySchema);
+}
+
+export function testOpenerSettings(
+	selection: OpenerSelection,
+	repository: string,
+): Promise<OpenerTestReply | CodeTargetOpenFailure> {
+	return strictReply(
+		"/api/settings/opener/test",
+		mutation("POST", { selection, repository }),
+		OpenerTestReplySchema,
+	);
 }
 
 const boardQuery = (board: string | null): string =>

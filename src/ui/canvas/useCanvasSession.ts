@@ -292,6 +292,8 @@ export interface CanvasSessionOptions {
 
 export interface CanvasSession {
 	attachExcalidraw: (api: ExcalidrawImperativeAPI) => void;
+	/** Exact identity used for board-scoped requests from this pane. */
+	boardKey: string | null;
 	/**
 	 * The element the canvas fills. Watched for resize, because splitting the
 	 * shell halves a pane without anything on the canvas changing — and a pane
@@ -370,6 +372,7 @@ export function useCanvasSession({
 	// is about, so the pane has to know its own to tell "an element was added to
 	// what I am looking at" from "an element was added to some other board".
 	const [board, setBoard] = useState<BoardIdentity | null>(null);
+	const [currentBoardKey, setCurrentBoardKey] = useState<string | null>(null);
 	const boardKeyRef = useRef<string | null>(null);
 
 	const reportingRef = useRef<ReportingRuntime>({
@@ -1145,6 +1148,7 @@ export function useCanvasSession({
 				publishedSelectionRef.current = "";
 			}
 			boardKeyRef.current = key;
+			setCurrentBoardKey(key);
 			setBoardIdentity(identity ?? { board: key, variant: "current" });
 			publishStatus();
 			// Immediately, not on the debounce: `panes` is read every turn and a pane
@@ -1666,6 +1670,7 @@ export function useCanvasSession({
 	return {
 		attachExcalidraw,
 		attachPaneElement,
+		boardKey: currentBoardKey,
 		connected,
 		board,
 		handleChange,
