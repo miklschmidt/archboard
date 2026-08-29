@@ -45,6 +45,8 @@ const required = <T>(value: T | null | undefined, message: string): T => {
 	return value;
 };
 const seedOf = labelSeedOf;
+const textOf = (element: ServerElement | undefined): string | undefined =>
+	element?.type === "text" ? element.text : undefined;
 
 describe("label routes", () => {
 	test("rejects misspelled request fixtures and malformed response elements", () => {
@@ -147,6 +149,7 @@ describe("label routes", () => {
 			(await elementsOn()).find((element) => element.id === "wire"),
 			"the wire was not persisted",
 		);
+		if (wire.type !== "arrow" && wire.type !== "line") throw new Error("wire is not linear");
 		assert(
 			JSON.stringify(wire.points) !==
 				JSON.stringify([
@@ -170,7 +173,7 @@ describe("label routes", () => {
 			);
 			assert(
 				Math.abs(text.x - wanted.x) < 0.5 && Math.abs(text.y - wanted.y) < 0.5,
-				`${JSON.stringify(text.text)} is stored at ${Math.round(text.x)},${Math.round(text.y)} ` +
+				`${JSON.stringify(textOf(text))} is stored at ${Math.round(text.x)},${Math.round(text.y)} ` +
 					`where its container draws it at ${Math.round(wanted.x)},${Math.round(wanted.y)}`,
 			);
 		}
@@ -185,7 +188,7 @@ describe("label routes", () => {
 			`renaming over PUT left svc with ${svcLabels.length} bound texts`,
 		);
 		assert(
-			renamed.find((element) => element.id === svcLabels[0])?.text === "IdentityService",
+			textOf(renamed.find((element) => element.id === svcLabels[0])) === "IdentityService",
 			"the rename did not reach the text element that is the label",
 		);
 		assert(

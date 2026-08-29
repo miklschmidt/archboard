@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { ServerElement } from "../../../../src/runtime/engine/types.ts";
+import { validatePersistedBoardElement } from "../../../../src/runtime/engine/native-element.ts";
 
 const PointSchema = z.tuple([z.number(), z.number()]);
 const CoordinateSchema = z.strictObject({ x: z.number(), y: z.number() });
@@ -68,26 +68,28 @@ const ElementTypeSchema = z.enum([
 	"freedraw",
 	"image",
 ]);
-const ServerElementRouteSchema: z.ZodType<ServerElement> = z.looseObject({
-	id: z.string(),
-	type: ElementTypeSchema,
-	x: z.number(),
-	y: z.number(),
-	width: z.number().optional(),
-	height: z.number().optional(),
-	text: z.string().optional(),
-	label: LabelSchema.optional(),
-	points: z.array(z.array(z.number())).nullable().optional(),
-	containerId: z.string().nullable().optional(),
-	boundElements: z
-		.array(z.object({ id: z.string(), type: z.enum(["text", "arrow"]) }))
-		.nullable()
-		.optional(),
-	start: z.object({ id: z.string() }).nullable().optional(),
-	end: z.object({ id: z.string() }).nullable().optional(),
-	startBinding: BindingSchema.optional(),
-	endBinding: BindingSchema.optional(),
-});
+const ServerElementRouteSchema = z
+	.looseObject({
+		id: z.string(),
+		type: ElementTypeSchema,
+		x: z.number(),
+		y: z.number(),
+		width: z.number().optional(),
+		height: z.number().optional(),
+		text: z.string().optional(),
+		label: LabelSchema.optional(),
+		points: z.array(z.array(z.number())).nullable().optional(),
+		containerId: z.string().nullable().optional(),
+		boundElements: z
+			.array(z.object({ id: z.string(), type: z.enum(["text", "arrow"]) }))
+			.nullable()
+			.optional(),
+		start: z.object({ id: z.string() }).nullable().optional(),
+		end: z.object({ id: z.string() }).nullable().optional(),
+		startBinding: BindingSchema.optional(),
+		endBinding: BindingSchema.optional(),
+	})
+	.transform((element) => validatePersistedBoardElement(element, "label-geometry response"));
 
 export const ElementsRouteResponseSchema = z.looseObject({
 	elements: z.array(ServerElementRouteSchema),
@@ -313,9 +315,7 @@ export const malformedGeometryElements = (): RouteElementRequest[] =>
 
 export const malformedGeometryError = z
 	.string()
-	.parse(
-		"Invalid render geometry: helvetica (text): width, height. Every live element needs finite x, y, width and height. Correct the element geometry and try again.",
-	);
+	.parse("write ingress element helvetica: invalid element helvetica (text) at element.width");
 
 export const capturedUserArrow = (): RouteElementRequest =>
 	ArrowRouteRequestSchema.parse({

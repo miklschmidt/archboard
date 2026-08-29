@@ -87,7 +87,7 @@ describe("scratch board", () => {
 		try {
 			const response = await malformedRequest<ElementsBody>("/api/elements?board=scratch");
 			expect(response.status).toBe(400);
-			expect(response.body.error).toMatch(/shlv \(text\): width, height/);
+			expect(response.body.error).toContain("invalid element shlv (text) at element.width");
 			expect(fs.readFileSync(malformedNote, "utf8")).toBe(malformed);
 		} finally {
 			await malformedCanvas.dispose();

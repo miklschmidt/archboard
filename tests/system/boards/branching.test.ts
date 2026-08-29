@@ -5,7 +5,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 
 import { planPromotion } from "../../../src/runtime/engine/promote.ts";
-import type { ServerElement } from "../../../src/runtime/engine/types.ts";
+import { expandElements } from "../../../src/runtime/engine/expand-elements.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
 
@@ -94,19 +94,24 @@ async function runCli(args: string[]): Promise<{ code: number | null; stderr: st
 
 describe("branching", () => {
 	test("promotion plans inherit variant but only record an explicit level", () => {
-		const shape = {
-			id: "planned",
-			type: "rectangle",
-			x: 0,
-			y: 0,
-			width: 200,
-			height: 100,
-			label: { text: "Payments" },
-		} as ServerElement;
+		const shape = expandElements(
+			[
+				{
+					id: "planned",
+					type: "rectangle",
+					x: 0,
+					y: 0,
+					width: 200,
+					height: 100,
+				} as const,
+			],
+			{ deterministic: true, forStore: true },
+		)[0]!;
 		const inherited = planPromotion({
 			targets: [shape],
 			board: [shape],
 			kind: "service",
+			name: "Planned",
 			boardVariant: "option-a",
 		});
 		expect(inherited.nodes[0]?.variant).toBe("option-a");
@@ -115,6 +120,7 @@ describe("branching", () => {
 			targets: [shape],
 			board: [shape],
 			kind: "service",
+			name: "Planned",
 			boardVariant: "option-a",
 			level: "service",
 		});
