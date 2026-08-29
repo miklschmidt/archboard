@@ -1,11 +1,11 @@
 ---
 id: TASK-130.09
 title: 'Convert bind, lock, and one-write proofs to native process tests'
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:05'
-updated_date: '2026-08-29 01:23'
+updated_date: '2026-08-29 01:30'
 labels: []
 dependencies:
   - TASK-130.01
@@ -33,13 +33,13 @@ TASK-086 owns generic canvas startup and cleanup. This task owns only the bind, 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 check-local-bind, check-lock, and check-one-write are replaced by typed native system tests with no in-process substitute for their competing-process or wire observations.
-- [ ] #2 Bind tests distinguish the owned child from a foreign or stale responder and preserve the public refusal and recovery behavior on loopback ports.
-- [ ] #3 Lock tests run at least two real processes against one vault and preserve lease acquisition, denial, expiry or recovery, claim interaction, content revocation, and camera non-revocation behavior asserted today.
-- [ ] #4 One-write tests count real note-changing requests through the proxy and prove each requested align, patch, promote, import, or batch action reaches the note as exactly one write under one lock acquisition.
-- [ ] #5 Owned canvas processes use TASK-086 lifecycle behavior; proxy and competitor processes add equivalent typed ownership, bounded shutdown, stderr retention, exit waiting, and cleanup proof.
-- [ ] #6 Assertion failure and interrupted-process fixtures leave no owned child, listener, proxy, lease, port, or vault and identify process death separately from a product assertion.
-- [ ] #7 Every test source file is at most 500 lines and representative foreign-bind, double-writer, stale-lease, and accidental multi-write mutations fail before the legacy scripts are deleted.
+- [x] #1 check-local-bind, check-lock, and check-one-write are replaced by typed native system tests with no in-process substitute for their competing-process or wire observations.
+- [x] #2 Bind tests distinguish the owned child from a foreign or stale responder and preserve the public refusal and recovery behavior on loopback ports.
+- [x] #3 Lock tests run at least two real processes against one vault and preserve lease acquisition, denial, expiry or recovery, claim interaction, content revocation, and camera non-revocation behavior asserted today.
+- [x] #4 One-write tests count real note-changing requests through the proxy and prove each requested align, patch, promote, import, or batch action reaches the note as exactly one write under one lock acquisition.
+- [x] #5 Owned canvas processes use TASK-086 lifecycle behavior; proxy and competitor processes add equivalent typed ownership, bounded shutdown, stderr retention, exit waiting, and cleanup proof.
+- [x] #6 Assertion failure and interrupted-process fixtures leave no owned child, listener, proxy, lease, port, or vault and identify process death separately from a product assertion.
+- [x] #7 Every test source file is at most 500 lines and representative foreign-bind, double-writer, stale-lease, and accidental multi-write mutations fail before the legacy scripts are deleted.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -104,4 +104,12 @@ Final remediation validation: each affected owner passed alone; isolated lock mo
 2026-08-29 fourth fixed-range review remediation at code commit 4233733. resource-cleanup now creates pre-existing empty dist and dist/frontend directories before planting probes, restores, and proves both caller-owned directories remain empty. The existing owned-empty restore still proves invocation-created dist/frontend and dist disappear, and the later wx collision still proves the earlier probe and owned empty frontend directory are removed while foreign bytes and their non-empty parent remain. The stale frontend exposure comment in src/server/canvas/lib/application.ts now points to tests/system/process-contracts/local-bind.test.ts; this is a comment-only production-source reference repair with no behavior change.\n\nValidation: resource-cleanup passed alone at 8 tests/67 expectations; test:bind passed 10/86. Inventory passed 11/11 exactly once; boundaries passed 8/75; module-scope passed 8/11; type-check, lint, fmt:check, and git diff --check passed. resource-cleanup is 293 lines and every prior line-budget closure remains intact. No second complete check ran. No package, deletion, product behavior, dependency, eval, CI, browser, owned-canvas, mutation, or health-PID scope changed.
 
 2026-08-29 narrow Standards cleanup at code commit ff9ff34. tests/system/process-contracts/local-bind.test.ts imports HealthSchema and parses the public /health response with it at line 52; ReadySchema remains only in HealthResponderReadySchema for child readiness at line 23. src/runtime/engine/tests/board-lock-announcements.test.ts removes the never-populated timers Set and no-op finally loop; all sleeps remain awaited and no replacement timer ownership was added.\n\nValidation: local-bind passed alone at 2 tests/19 expectations; board-lock-announcements passed alone at 1/7; test:bind passed 10/86; test:lock passed isolated modules 3/100 then system owners 3/74. Type-check, lint, fmt:check, inventory 11/11 exactly once, and git diff --check passed. local-bind is 148 lines and board-lock-announcements is 82. No complete or browser check ran. All prior scope, package/deletion, mutation, health-PID, metadata, and cleanup closures remain unchanged.
+
+Parent finalization on integrated main at 71dea43 and reviewed HEAD a907e52: test:bind 10/86; isolated lock modules 3/100 and system owners 3/74; test:one-write 7/288; inventory 11/11 exactly once; boundaries 8/75; module-scope 8/11; type-check, lint, fmt:check, and git diff --check passed. Independent final review was REVIEW_CLEAN on Standards and Spec. The task-authorized complete serial/headless check remained the single earlier passing run; no second complete/browser run was started. Final process and worktree audit was clean.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replaced the legacy bind, lock, and one-write scripts with typed native Bun owners that preserve real process competition, shared-vault lease/claim behavior, exact one-write proxy evidence, typed lifecycle cleanup, strict receipts, and transactional fixture restoration. Cut over exactly test:bind, test:lock, and test:one-write and deleted only their three predecessors. Verified on integrated main with focused bind/lock/one-write lanes, exactly-once inventory, boundaries, module-scope, type, lint, formatting, diff checks, the recorded paired mutation matrix, the accepted wrong-health-PID coverage uplift, one successful serial/headless complete check, and independent clean Standards/Spec review.
+<!-- SECTION:FINAL_SUMMARY:END -->
