@@ -35,16 +35,22 @@ export interface JsonResult {
 	headers: Headers;
 }
 
+export interface OpenerCapture {
+	pid: number;
+	target: string;
+	extra: string[];
+	argv: string[];
+}
+
 export interface Invocation {
 	selection: OpenerSelection;
 	captureDirectory: string;
 	releaseFile: string;
 	exitDirectory: string;
-	waitForCapture(): Promise<{ pid: number; target: string; extra: string[]; argv: string[] }>;
-	waitForCaptures(
-		count: number,
-	): Promise<Array<{ pid: number; target: string; extra: string[]; argv: string[] }>>;
+	waitForCapture(): Promise<OpenerCapture>;
+	waitForCaptures(count: number): Promise<OpenerCapture[]>;
 	releaseAndWait(): Promise<void>;
+	releaseAndWaitForNonrunning(): Promise<void>;
 }
 
 export interface OpenerFixture {
@@ -93,11 +99,68 @@ async function waitForCount(directory: string, count: number, deadline: number):
 	}
 }
 
+function captureRecord(value: unknown): OpenerCapture {
+	if (typeof value !== "object" || value === null || Array.isArray(value)) {
+		throw new Error("capture must be an object.");
+	}
+	const record = value as Record<string, unknown>;
+	if (!Number.isSafeInteger(record.pid) || (record.pid as number) <= 0) {
+		throw new Error("capture.pid must be a positive safe integer.");
+	}
+	if (typeof record.target !== "string") throw new Error("capture.target must be a string.");
+	if (!Array.isArray(record.extra) || !record.extra.every((item) => typeof item === "string")) {
+		throw new Error("capture.extra must be an array of strings.");
+	}
+	if (!Array.isArray(record.argv) || !record.argv.every((item) => typeof item === "string")) {
+		throw new Error("capture.argv must be an array of strings.");
+	}
+	return {
+		pid: record.pid as number,
+		target: record.target,
+		extra: record.extra,
+		argv: record.argv,
+	};
+}
+
+async function readCompleteCaptureBefore(file: string, deadline: number): Promise<OpenerCapture> {
+	while (true) {
+		const latestRaw = readFileSync(file, "utf8");
+		try {
+			return captureRecord(JSON.parse(latestRaw));
+		} catch (error) {
+			if (!(error instanceof Error)) throw error;
+			if (Date.now() >= deadline) {
+				throw new Error(
+					`Timed out waiting for schema-valid opener capture JSON in ${file}; latest raw=${JSON.stringify(latestRaw)}; latest cause=${error.message}`,
+					{ cause: error },
+				);
+			}
+			await Bun.sleep(TEST_OPENER_LIFECYCLE.pollMs);
+		}
+	}
+}
+
+export async function readCompleteCapture(
+	file: string,
+	timeoutMs: number = TEST_OPENER_LIFECYCLE.timeoutMs,
+): Promise<OpenerCapture> {
+	return readCompleteCaptureBefore(file, Date.now() + timeoutMs);
+}
+
 export interface LinuxProcessStatEvidence {
 	pid: number;
 	state: string;
 	processGroup: number;
 	running: boolean;
+}
+
+export type ProcessCompletion = "absent" | "nonrunning";
+
+export function processCompletionObserved(
+	evidence: LinuxProcessStatEvidence | null,
+	completion: ProcessCompletion,
+): boolean {
+	return evidence === null || (completion === "nonrunning" && !evidence.running);
 }
 
 function linuxProcessStatPath(pid: number): string {
@@ -198,11 +261,32 @@ export function processExistsEvidence(pid: number): boolean {
 		: output.trim() === String(pid);
 }
 
-async function waitForDeath(pid: number, deadline: number): Promise<void> {
-	while (processExistsEvidence(pid)) {
-		assertBefore(deadline, `process ${pid} to exit`);
+async function waitForProcessCompletion(
+	pid: number,
+	deadline: number,
+	completion: ProcessCompletion,
+): Promise<void> {
+	while (true) {
+		const completed =
+			process.platform === "linux"
+				? processCompletionObserved(readLinuxProcessStatEvidence(pid), completion)
+				: !processExistsEvidence(pid);
+		if (completed) return;
+		assertBefore(
+			deadline,
+			completion === "absent"
+				? `direct process ${pid} to be reaped and disappear`
+				: `detached process ${pid} to stop running`,
+		);
 		await Bun.sleep(TEST_OPENER_LIFECYCLE.pollMs);
 	}
+}
+
+export async function waitForProcessAbsence(
+	pid: number,
+	timeoutMs: number = TEST_OPENER_LIFECYCLE.timeoutMs,
+): Promise<void> {
+	await waitForProcessCompletion(pid, Date.now() + timeoutMs, "absent");
 }
 
 export async function createOpenerFixture(
@@ -319,6 +403,19 @@ export async function createOpenerFixture(
 			const exitDirectory = join(root, `exits-${id}`);
 			mkdirSync(captureDirectory);
 			mkdirSync(exitDirectory);
+			const releaseAndWait = async (completion: ProcessCompletion): Promise<void> => {
+				if (!existsSync(releaseFile)) {
+					mkdirSync(dirname(releaseFile), { recursive: true });
+					closeSync(openSync(releaseFile, "wx"));
+				}
+				const deadline = Date.now() + TEST_OPENER_LIFECYCLE.timeoutMs;
+				const captures = readdirSync(captureDirectory).filter((file) => file.endsWith(".json"));
+				for (const capture of captures) {
+					await waitForFile(join(exitDirectory, capture), deadline);
+					const record = JSON.parse(readFileSync(join(captureDirectory, capture), "utf8"));
+					await waitForProcessCompletion(record.pid, deadline, completion);
+				}
+			};
 			return {
 				selection: {
 					version: 1,
@@ -343,22 +440,17 @@ export async function createOpenerFixture(
 				async waitForCaptures(count) {
 					const deadline = Date.now() + TEST_OPENER_LIFECYCLE.timeoutMs;
 					const files = await waitForCount(captureDirectory, count, deadline);
-					return files
-						.slice(0, count)
-						.map((file) => JSON.parse(readFileSync(join(captureDirectory, file), "utf8")));
+					return Promise.all(
+						files
+							.slice(0, count)
+							.map((file) => readCompleteCaptureBefore(join(captureDirectory, file), deadline)),
+					);
 				},
-				async releaseAndWait() {
-					if (!existsSync(releaseFile)) {
-						mkdirSync(dirname(releaseFile), { recursive: true });
-						closeSync(openSync(releaseFile, "wx"));
-					}
-					const deadline = Date.now() + TEST_OPENER_LIFECYCLE.timeoutMs;
-					const captures = readdirSync(captureDirectory).filter((file) => file.endsWith(".json"));
-					for (const capture of captures) {
-						await waitForFile(join(exitDirectory, capture), deadline);
-						const record = JSON.parse(readFileSync(join(captureDirectory, capture), "utf8"));
-						await waitForDeath(record.pid, deadline);
-					}
+				releaseAndWait() {
+					return releaseAndWait("absent");
+				},
+				releaseAndWaitForNonrunning() {
+					return releaseAndWait("nonrunning");
 				},
 			};
 		},
