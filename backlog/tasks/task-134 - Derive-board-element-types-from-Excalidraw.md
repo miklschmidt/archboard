@@ -1,11 +1,11 @@
 ---
 id: TASK-134
 title: Derive board element types from Excalidraw
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-28 14:02'
-updated_date: '2026-08-29 07:54'
+updated_date: '2026-08-29 09:02'
 labels: []
 dependencies: []
 references:
@@ -27,11 +27,11 @@ Replace Archboard's handwritten copies of Excalidraw element structures with typ
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The canonical persisted board element type derives from the pinned Excalidraw element union, narrowed only to the element kinds Archboard supports.
-- [ ] #2 Agent input spellings and Archboard metadata have separate local types and cannot appear in persisted board elements unless they are also native Excalidraw fields.
-- [ ] #3 The UI and runtime no longer maintain separate handwritten copies of native Excalidraw element fields.
-- [ ] #4 A stable type or repository-policy check fails when a handwritten native Excalidraw element structure is reintroduced.
-- [ ] #5 Type-checking and the complete fixed-point, browser, and board test chain pass against the pinned Excalidraw version.
+- [x] #1 The canonical persisted board element type derives from the pinned Excalidraw element union, narrowed only to the element kinds Archboard supports.
+- [x] #2 Agent input spellings and Archboard metadata have separate local types and cannot appear in persisted board elements unless they are also native Excalidraw fields.
+- [x] #3 The UI and runtime no longer maintain separate handwritten copies of native Excalidraw element fields.
+- [x] #4 A stable type or repository-policy check fails when a handwritten native Excalidraw element structure is reintroduced.
+- [x] #5 Type-checking and the complete fixed-point, browser, and board test chain pass against the pinned Excalidraw version.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -354,4 +354,12 @@ Review-driven scope addition for remediation after complete-range review aea77fa
 - src/ui/canvas/change-reporting.ts: replace its handwritten element copy with a vendor-derived projection.
 - src/runtime/engine/library-catalogue.ts: replace its handwritten element copy with a vendor-derived projection plus the visible Archboard metadata intersection it consumes.
 These two files are added only to close the reviewer-identified authoritative-type gap; TASK-136/TASK-137, package, inventory, boundary policy, and browser ownership remain protected.
+
+Final review: Standards REVIEW_CLEAN and Spec REVIEW_CLEAN accepted the complete range and approved remediation. The final browser-inclusive bun run test and bun run check gates passed cleanly. The earlier recorded spawnSync timeout cluster remains part of the history; every affected owner passed unchanged alone before both complete gates passed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replaced handwritten board element shapes with the pinned Excalidraw-derived eight-arm persisted union, including correlated non-elbow and elbow arrow arms with vendor binding types. Enforced strict trusted-note reads and one default-completing write ingress; separated semantic metadata from five tracking fields with lazy one-write migration; kept opaque derived links out of canonical persistence while preserving human links. Added compiler and repository-policy enforcement against vendor copies and closed the compiler diagnostic manifest to zero. Verified 305 module tests, 211 system tests, 59 repository tests, all 13 serial browser owners, then clean full bun run test and bun run check gates. No dependency or package change was made, and TASK-136/TASK-137 opener and resolver behavior did not change.
+<!-- SECTION:FINAL_SUMMARY:END -->
