@@ -9,6 +9,9 @@ import type * as IoModule from "../board-io.js";
 import type * as WatchModule from "../note-watch.js";
 import type { ServerElement } from "../types.js";
 import { extractSceneJsonFromObsidianMd } from "../obsidian-md.js";
+import { applyElementInput, HumanElementChangeSchema } from "../apply-element-input.js";
+import { presentElement } from "../presentation.js";
+import { completeElement } from "./support/elements.js";
 
 const root = mkdtempSync(join(tmpdir(), "archboard-version-note-"));
 const ownedKeys = new Set<string>();
@@ -234,5 +237,88 @@ describe.serial("board versions in notes", () => {
 		expect(readFileSync(board.file)).toEqual(before);
 		expect(statSync(board.file).mtimeMs).toBe(beforeMtime);
 		expect(versionModule.versionNumber(readFileSync(board.file, "utf8"))).toBe(1);
+	});
+
+	test("binding aliases and extensions are spent before one real write and trusted reread", () => {
+		const identity = boardModule.makeIdentity({ board: "binding-ingress" });
+		const { board } = ownBoard(identity, "binding-ingress.excalidraw.md");
+		const content = contentOf(
+			completeElement({ id: "left", type: "rectangle", x: 0, y: 0, width: 40, height: 40 }),
+			completeElement({ id: "right", type: "rectangle", x: 200, y: 0, width: 40, height: 40 }),
+		);
+		applyElementInput(content.elements, {
+			origin: "agent",
+			upserts: [
+				{
+					id: "joined",
+					type: "arrow",
+					x: 40,
+					y: 20,
+					startBinding: { elementId: "left", focus: 0, gap: 4, mode: "inside" },
+					endBinding: { elementId: "right", focus: 0.5, gap: 8, mode: "outside" },
+				},
+			],
+		});
+		atomicWriteSpy.mockClear();
+		ioModule.writeBoardContent(board, content, { saveCommand: "board save" });
+		expect(atomicWriteSpy.mock.calls).toHaveLength(1);
+		const note = readFileSync(board.file, "utf8");
+		expect(note).not.toContain('"mode"');
+		const persisted = (
+			JSON.parse(extractSceneJsonFromObsidianMd(note)) as {
+				elements: Array<Record<string, unknown>>;
+			}
+		).elements.find((element) => element.id === "joined")!;
+		for (const end of ["startBinding", "endBinding"] as const)
+			expect(Object.keys(persisted[end] as object).toSorted()).toEqual([
+				"elementId",
+				"fixedPoint",
+				"focus",
+				"gap",
+			]);
+		const reread = ioModule.readNote(board.file)!.elements.get("joined")!;
+		expect(reread.type).toBe("arrow");
+		if (reread.type !== "arrow") throw new Error("reread did not retain the arrow");
+		expect(reread.startBinding).toMatchObject({ elementId: "left", focus: 0, gap: 4 });
+		expect(reread.endBinding).toMatchObject({ elementId: "right", focus: 0.5, gap: 8 });
+	});
+
+	test("an opaque presentation link never enters canonical note bytes", () => {
+		const identity = boardModule.makeIdentity({ board: "opaque-link" });
+		const { board } = ownBoard(identity, "opaque-link.excalidraw.md");
+		const humanLink = "https://human.example/architecture-note";
+		const opaqueTarget = "opaque:resolver-owned-target";
+		const canonical = completeElement({
+			id: "bound",
+			type: "rectangle",
+			x: 0,
+			y: 0,
+			width: 100,
+			height: 50,
+			link: humanLink,
+			customData: { archboard: { binding: { repo: "opaque", path: "opaque" } } },
+		});
+		ioModule.writeBoardContent(board, contentOf(canonical), { saveCommand: "board save" });
+		const loaded = ioModule.readNote(board.file)!;
+		const presented = presentElement(loaded.elements.get("bound")!, opaqueTarget);
+		applyElementInput(loaded.elements, {
+			origin: "human",
+			upserts: [HumanElementChangeSchema.parse(presented)],
+			presentationLinks: new Map([["bound", opaqueTarget]]),
+		});
+		ioModule.writeBoardContent(board, loaded, { saveCommand: "board save" });
+		const note = readFileSync(board.file, "utf8");
+		expect(note).not.toContain(opaqueTarget);
+		expect(note).toContain(humanLink);
+		const persisted = (
+			JSON.parse(extractSceneJsonFromObsidianMd(note)) as {
+				elements: Array<{ id: string; link: string | null }>;
+			}
+		).elements.find((element) => element.id === "bound")!;
+		expect(persisted.link).toBe(humanLink);
+		expect(ioModule.readNote(board.file)!.elements.get("bound")?.link).toBe(humanLink);
+		const beforeIdempotentWrite = readFileSync(board.file);
+		ioModule.writeBoardContent(board, loaded, { saveCommand: "board save" });
+		expect(readFileSync(board.file)).toEqual(beforeIdempotentWrite);
 	});
 });
