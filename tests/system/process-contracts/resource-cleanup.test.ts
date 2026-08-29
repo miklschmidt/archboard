@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -197,16 +197,12 @@ test("every dynamic owner establishes lexical disposal before its first acquisit
 test("static probes roll back earlier exclusive creates after a later collision", () => {
 	const root = mkdtempSync(join(tmpdir(), "archboard-static-probe-failure-"));
 	try {
-		mkdirSync(join(root, "dist/frontend"), { recursive: true });
+		const probes = plantStaticProbes(root);
+		probes.restore();
+		expect(existsSync(join(root, "dist/frontend"))).toBeFalse();
+		expect(existsSync(join(root, "dist"))).toBeFalse();
 		const first = join(root, "dist/frontend/task-130-09-frontend-probe.js");
 		const collision = join(root, "dist/task-130-09-stale-probe.js");
-		const last = join(root, "dist/frontend/.task-130-09-hidden-probe.js");
-		writeFileSync(last, "preflight bytes", { flag: "wx" });
-		expect(() => plantStaticProbes(root)).toThrow(`Static probe target already exists: ${last}.`);
-		expect(existsSync(first)).toBeFalse();
-		expect(existsSync(collision)).toBeFalse();
-		expect(readFileSync(last, "utf8")).toBe("preflight bytes");
-		rmSync(last);
 		let failure: unknown;
 		try {
 			plantStaticProbes(root, {
@@ -219,6 +215,7 @@ test("static probes roll back earlier exclusive creates after a later collision"
 		}
 		expect(failure).toBeInstanceOf(Error);
 		expect(existsSync(first)).toBeFalse();
+		expect(existsSync(join(root, "dist/frontend"))).toBeFalse();
 		expect(readFileSync(collision, "utf8")).toBe("foreign bytes");
 	} finally {
 		rmSync(root, { recursive: true, force: true });

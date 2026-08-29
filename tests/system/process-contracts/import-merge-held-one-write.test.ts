@@ -10,6 +10,7 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { z } from "zod";
+import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { heldReplaceScene, mergeScene } from "./fixtures/import-scenes.ts";
@@ -22,9 +23,50 @@ import {
 } from "./support/process-http.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
-const ReceiptSchema = z
-	.object({ success: z.literal(true), imported: z.number(), mode: z.string() })
-	.passthrough();
+type ElementIdView = Pick<ExcalidrawElement, "id">;
+const ConflictSchema = z
+	.object({
+		board: z.string(),
+		file: z.string(),
+		reason: z.enum(["changed", "unseen"]),
+		expectedHash: z.string().optional(),
+		actualHash: z.string(),
+		lastReadAt: z.string().optional(),
+		fileModifiedAt: z.string().optional(),
+		versionMove: z.enum(["unchanged", "behind", "ahead", "unknown"]),
+		expectedVersion: z.number().optional(),
+		actualVersion: z.number().optional(),
+		outcomes: z.object({ reload: z.string(), overwrite: z.string(), saveAs: z.string() }).strict(),
+		message: z.string(),
+	})
+	.strict();
+const HeldSchema = z
+	.object({
+		board: z.string(),
+		since: z.string(),
+		writes: z.number().int().nonnegative(),
+		fromScreen: z.boolean(),
+		conflict: ConflictSchema,
+		message: z.string(),
+	})
+	.strict();
+const MergeReceiptSchema = z
+	.object({
+		success: z.literal(true),
+		imported: z.number().int().nonnegative(),
+		files: z.number().int().nonnegative(),
+		mode: z.literal("merge"),
+	})
+	.strict();
+const HeldReplaceReceiptSchema = z
+	.object({
+		success: z.literal(true),
+		imported: z.number().int().nonnegative(),
+		files: z.number().int().nonnegative(),
+		mode: z.literal("replace"),
+		held: HeldSchema,
+	})
+	.strict();
 
 test("merge and held replace each use one batch without advancing held persistence", async () => {
 	await using resources = new AsyncDisposableStack();
@@ -61,9 +103,10 @@ test("merge and held replace each use one batch without advancing held persisten
 			args: ["import", mergeFile, "--board", "held", "--doing", "merging scene"],
 		});
 		expect(merged.status).toBe(0);
-		expect(parseCliJson(merged, ReceiptSchema)).toMatchObject({
+		expect(parseCliJson(merged, MergeReceiptSchema)).toEqual({
 			success: true,
 			imported: 1,
+			files: 0,
 			mode: "merge",
 		});
 		const mergeWrites = nonReadRecords(await proxy.snapshot());
@@ -76,6 +119,11 @@ test("merge and held replace each use one batch without advancing held persisten
 		expect(Buffer.from(mergeWrites[0]!.bodyBase64, "base64").toString()).toBe(
 			JSON.stringify({ elements: mergeScene.elements }),
 		);
+		const afterMerge = await request<{ elements: ElementIdView[] }>("/api/elements?board=held");
+		expect(afterMerge.body.elements.map((element) => element.id).toSorted()).toEqual([
+			"merge-addition",
+			"old",
+		]);
 		await request("/api/elements/batch?board=held", {
 			method: "POST",
 			body: {
@@ -132,9 +180,25 @@ test("merge and held replace each use one batch without advancing held persisten
 		});
 		expect(replaced.status).toBe(0);
 		expect(replaced.stderr).toContain("stopped saving");
-		expect(parseCliJson(replaced, ReceiptSchema)).toMatchObject({
+		const replacedReceipt = parseCliJson(replaced, HeldReplaceReceiptSchema);
+		expect(replacedReceipt).toEqual({
 			success: true,
+			imported: 2,
+			files: 2,
 			mode: "replace",
+			held: {
+				...replacedReceipt.held,
+				board: "held",
+				writes: 1,
+				fromScreen: false,
+				conflict: {
+					...replacedReceipt.held.conflict,
+					board: "held",
+					file: info.body.file,
+					reason: "changed",
+					versionMove: "unchanged",
+				},
+			},
 		});
 		const replaceWrites = nonReadRecords(await proxy.snapshot());
 		expect(replaceWrites).toHaveLength(1);
@@ -155,7 +219,7 @@ test("merge and held replace each use one batch without advancing held persisten
 		expect((await request<{ version: number }>("/api/boards/info?board=held")).body.version).toBe(
 			info.body.version,
 		);
-		const held = await request<{ elements: Array<{ id: string }>; held: { writes: number } }>(
+		const held = await request<{ elements: ElementIdView[]; held: { writes: number } }>(
 			"/api/elements?board=held",
 		);
 		expect(held.body.elements.map((element) => element.id)).toEqual(["held-new", "held-new-image"]);

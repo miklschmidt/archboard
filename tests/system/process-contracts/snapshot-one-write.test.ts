@@ -17,15 +17,42 @@ import {
 } from "./support/process-http.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
-const RestoreSchema = z.object({
-	success: z.literal(true),
-	name: z.string(),
-	board: z.string(),
-	restored: z.number(),
-});
+const RestoreSchema = z
+	.object({
+		success: z.literal(true),
+		name: z.string(),
+		board: z.string(),
+		restored: z.number(),
+	})
+	.strict();
+const HeldConflictSchema = z
+	.object({
+		board: z.string(),
+		file: z.string(),
+		reason: z.enum(["changed", "unseen"]),
+		expectedHash: z.string().optional(),
+		actualHash: z.string(),
+		lastReadAt: z.string().optional(),
+		fileModifiedAt: z.string().optional(),
+		versionMove: z.enum(["unchanged", "behind", "ahead", "unknown"]),
+		expectedVersion: z.number().optional(),
+		actualVersion: z.number().optional(),
+		outcomes: z.object({ reload: z.string(), overwrite: z.string(), saveAs: z.string() }).strict(),
+		message: z.string(),
+	})
+	.strict();
 const HeldRestoreSchema = RestoreSchema.extend({
-	held: z.object({ board: z.string() }).passthrough(),
-});
+	held: z
+		.object({
+			board: z.string(),
+			since: z.string(),
+			writes: z.number().int().nonnegative(),
+			fromScreen: z.boolean(),
+			conflict: HeldConflictSchema,
+			message: z.string(),
+		})
+		.strict(),
+}).strict();
 type SnapshotElement = ExcalidrawElement & {
 	customData?: { archboard?: { binding?: { path?: string } } };
 };
@@ -280,12 +307,25 @@ test("snapshot refusal is zero writes and restore replaces scene once", async ()
 		});
 		expect(heldRestore.status).toBe(0);
 		expect(heldRestore.stderr).toContain("stopped saving");
-		expect(parseCliJson(heldRestore, HeldRestoreSchema)).toMatchObject({
+		const heldReceipt = parseCliJson(heldRestore, HeldRestoreSchema);
+		expect(heldReceipt).toEqual({
 			success: true,
 			name: "scene",
 			board: "held-target",
 			restored: 2,
-			held: { board: "held-target" },
+			held: {
+				...heldReceipt.held,
+				board: "held-target",
+				writes: 1,
+				fromScreen: false,
+				conflict: {
+					...heldReceipt.held.conflict,
+					board: "held-target",
+					file: heldInfo.body.file,
+					reason: "changed",
+					versionMove: "unchanged",
+				},
+			},
 		});
 		const heldRecords = nonReadRecords(await proxy.snapshot());
 		expect(heldRecords).toHaveLength(1);

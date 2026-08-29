@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
@@ -9,6 +10,7 @@ import { openTestPane, waitForPaneMessage } from "../boards/support/pane-websock
 import { sanitizedEnvironment } from "./support/process-http.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
+type LockElementView = Pick<ExcalidrawElement, "id">;
 const box = (id: string, x = 0) => ({ id, type: "rectangle", x, y: 0, width: 20, height: 20 });
 
 test("public lock API preserves holds, claims, refusals, and told-once recovery", async () => {
@@ -64,7 +66,7 @@ test("public lock API preserves holds, claims, refusals, and told-once recovery"
 			code: string;
 			error: string;
 			holder: { id: string };
-			document: unknown[];
+			document: LockElementView[];
 			version: number;
 		}>("/api/elements?board=scratch", { method: "POST", body: box("denied") });
 		clearInterval(timer);
@@ -73,7 +75,7 @@ test("public lock API preserves holds, claims, refusals, and told-once recovery"
 		expect(denied.body.holder.id).toBe(pane.clientId);
 		expect(denied.body.error).toMatch(/held by the person at the canvas, since/);
 		expect(Date.now() - started).toBeGreaterThanOrEqual(4_800);
-		const read = await request<{ elements: unknown[] }>("/api/elements?board=scratch");
+		const read = await request<{ elements: LockElementView[] }>("/api/elements?board=scratch");
 		const info = await request<{ version: number }>("/api/boards/info?board=scratch");
 		expect(denied.body.document).toEqual(read.body.elements);
 		expect(denied.body.version).toBe(info.body.version);
@@ -154,7 +156,7 @@ test("public lock API preserves holds, claims, refusals, and told-once recovery"
 		const revoked = await request<{
 			code: string;
 			error: string;
-			document: Array<{ id: string }>;
+			document: LockElementView[];
 			version: number;
 		}>("/api/boards/claim?board=scratch", {
 			method: "POST",
@@ -163,9 +165,7 @@ test("public lock API preserves holds, claims, refusals, and told-once recovery"
 		expect(revoked.status).toBe(409);
 		expect(revoked.body.code).toBe("CLAIM_REVOKED");
 		expect(revoked.body.error).toContain("nothing was undone");
-		const afterRead = await request<{ elements: Array<{ id: string }> }>(
-			"/api/elements?board=scratch",
-		);
+		const afterRead = await request<{ elements: LockElementView[] }>("/api/elements?board=scratch");
 		const afterInfo = await request<{ version: number }>("/api/boards/info?board=scratch");
 		expect(revoked.body.document).toEqual(afterRead.body.elements);
 		expect(revoked.body.version).toBe(afterInfo.body.version);
