@@ -76,18 +76,10 @@ function mergeCustomData(existing: unknown, incoming: unknown): unknown {
 			? (existing as Record<string, unknown>)
 			: {};
 	const next = incoming as Record<string, unknown>;
-	const currentArchboard =
-		current.archboard && typeof current.archboard === "object" && !Array.isArray(current.archboard)
-			? (current.archboard as Record<string, unknown>)
-			: {};
-	const nextArchboard =
-		next.archboard && typeof next.archboard === "object" && !Array.isArray(next.archboard)
-			? (next.archboard as Record<string, unknown>)
-			: undefined;
+	const { archboard: _currentSemantic, ...currentForeign } = current;
 	return {
-		...current,
+		...currentForeign,
 		...next,
-		...(nextArchboard ? { archboard: { ...currentArchboard, ...nextArchboard } } : {}),
 	};
 }
 

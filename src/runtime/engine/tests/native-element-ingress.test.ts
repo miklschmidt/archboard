@@ -177,6 +177,11 @@ test("agent and human create and update cannot spoof runtime or nested tracking"
 	const agentUpdated = board.get("agent")!;
 	expect(agentUpdated.updatedAt).not.toBe("spoofed-update");
 	expect(agentUpdated.customData).toEqual({ archboard: { node: "updated" }, foreign: true });
+	applyElementInput(board, {
+		origin: "agent",
+		upserts: [{ id: "agent", customData: {} }],
+	});
+	expect(board.get("agent")!.customData).toEqual({ foreign: true });
 
 	const humanSeed = completeElement({
 		id: "human",

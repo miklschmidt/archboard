@@ -369,20 +369,34 @@ function buildValidatedElement(
 	type: PersistedBoardElement["type"],
 ): RuntimeBoardElement {
 	const base = persistedBase(initial, context, id, type);
+	const { id: baseId, ...baseFields } = base;
 	const tracking = runtimeTrackingAt(initial, context, id, type);
 	const finish = (element: PersistedBoardElement): RuntimeBoardElement =>
 		hydrateElementTracking({ ...element, ...tracking });
 	switch (type) {
 		case "rectangle":
-			return finish({ ...base, type: "rectangle" } satisfies PersistedArm<"rectangle">);
+			return finish({
+				id: baseId,
+				type: "rectangle",
+				...baseFields,
+			} satisfies PersistedArm<"rectangle">);
 		case "ellipse":
-			return finish({ ...base, type: "ellipse" } satisfies PersistedArm<"ellipse">);
+			return finish({
+				id: baseId,
+				type: "ellipse",
+				...baseFields,
+			} satisfies PersistedArm<"ellipse">);
 		case "diamond":
-			return finish({ ...base, type: "diamond" } satisfies PersistedArm<"diamond">);
+			return finish({
+				id: baseId,
+				type: "diamond",
+				...baseFields,
+			} satisfies PersistedArm<"diamond">);
 		case "text":
 			return finish({
-				...base,
+				id: baseId,
 				type: "text",
+				...baseFields,
 				fontSize: finite(initial.fontSize, context, id, type, "element.fontSize"),
 				fontFamily: finite(initial.fontFamily, context, id, type, "element.fontFamily"),
 				text: stringAt(initial.text, context, id, type, "element.text"),
@@ -404,8 +418,9 @@ function buildValidatedElement(
 			} satisfies PersistedArm<"text">);
 		case "line":
 			return finish({
-				...base,
+				id: baseId,
 				type: "line",
+				...baseFields,
 				points: points(initial.points, 2, context, id, type, "element.points"),
 				lastCommittedPoint: nullablePoint(
 					initial.lastCommittedPoint,
@@ -427,8 +442,9 @@ function buildValidatedElement(
 			} satisfies PersistedArm<"line">);
 		case "arrow":
 			return finish({
-				...base,
+				id: baseId,
 				type: "arrow",
+				...baseFields,
 				points: points(initial.points, 2, context, id, type, "element.points"),
 				lastCommittedPoint: nullablePoint(
 					initial.lastCommittedPoint,
@@ -451,8 +467,9 @@ function buildValidatedElement(
 			} satisfies PersistedArm<"arrow">);
 		case "freedraw":
 			return finish({
-				...base,
+				id: baseId,
 				type: "freedraw",
+				...baseFields,
 				points: points(initial.points, 1, context, id, type, "element.points"),
 				pressures: Array.isArray(initial.pressures)
 					? initial.pressures.map((entry, at) =>
@@ -507,8 +524,9 @@ function buildValidatedElement(
 					if (crop[key] < 0) fail(context, id, type, `element.crop.${key}`);
 			}
 			return finish({
-				...base,
+				id: baseId,
 				type: "image",
+				...baseFields,
 				fileId,
 				status,
 				scale,
