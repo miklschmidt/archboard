@@ -4,14 +4,16 @@ import {
 	CheckResultSchema,
 	type InspectionReport,
 } from "../../../src/runtime/board-inspection/index.js";
+import { expandElements } from "../../../src/runtime/engine/expand-elements.js";
+import type { LegacyElementIngress } from "../../../src/shared/board-elements/index.js";
 import { connector, type PackageElement } from "./fixtures/package-cases.js";
 import { createPackageInspectionOwner } from "./support/package-inspection.js";
 
 type Owner = ReturnType<typeof createPackageInspectionOwner>;
 
-const parse = (owner: Owner, board: string) => {
+const parse = (owner: Owner, board: string, status = 8) => {
 	const result = owner.runInspection(board, ["--strict"]);
-	expect(result).toMatchObject({ status: 8, stderr: "" });
+	expect(result).toMatchObject({ status, stderr: "" });
 	return CheckResultSchema.parse(JSON.parse(result.stdout));
 };
 
@@ -50,6 +52,12 @@ const findingUses = (finding: InspectionReport["findings"][number], id: string) 
 	("firstConnectorId" in finding.details && finding.details.firstConnectorId === id) ||
 	("secondConnectorId" in finding.details && finding.details.secondConnectorId === id);
 
+const persistedConnector = (input: PackageElement): PackageElement =>
+	expandElements([input as unknown as LegacyElementIngress], {
+		deterministic: true,
+		forStore: true,
+	})[0]! as unknown as PackageElement;
+
 const unsupportedInteractionScene = (id: string, marker: PackageElement = {}): PackageElement[] => [
 	connector({ id, x: 0, y: 50, width: 100, height: 0, ...marker }),
 	semanticNode("colliding-node", { x: 40, y: 40, width: 20, height: 20 }),
@@ -76,6 +84,11 @@ const unsupportedInteractionScene = (id: string, marker: PackageElement = {}): P
 	}),
 	connector({ id: "supported-horizontal", x: 0, y: 25, width: 100, height: 0 }),
 ];
+
+const persistedInteractionScene = (id: string, marker: PackageElement = {}): PackageElement[] => {
+	const [candidate, ...rest] = unsupportedInteractionScene(id, marker);
+	return [persistedConnector(candidate!), ...rest];
+};
 
 const labelPairBoard = (pairs: readonly (readonly [string, string])[], reverse = false) => {
 	const elements = pairs.flatMap(([containerId, textId], index) => [
@@ -157,39 +170,112 @@ describe("package inspection totality", () => {
 		}
 	});
 
-	test("keeps unsupported connector suppression non-vacuous", async () => {
+	test("persists recoverable connector modes and narrow geometry refusals", async () => {
 		const owner = createPackageInspectionOwner();
 		try {
 			owner.startVault();
-			owner.writeBoard("supported-control", unsupportedInteractionScene("candidate"));
-			const controlRun = owner.runInspection("supported-control");
-			expect(controlRun).toMatchObject({ status: 0, stderr: "" });
-			const control = CheckResultSchema.parse(JSON.parse(controlRun.stdout));
-			for (const code of [
-				"CONNECTOR_PENETRATES_NODE",
-				"CONNECTOR_PENETRATES_OBSTACLE",
-				"CONNECTOR_INTERSECTION_UNMARKED",
-			])
-				expect(
-					control.findings.some(
-						(finding) => finding.code === code && findingUses(finding, "candidate"),
-					),
-				).toBe(true);
-			expect(
-				control.findings.some(
-					(finding) =>
-						finding.code === "CONNECTOR_INTERSECTION_UNMARKED" &&
-						!findingUses(finding, "candidate"),
-				),
-			).toBe(true);
 			for (const [name, marker] of [
 				["rounded", { roundness: { type: 2 } }],
-				["elbowed", { elbowed: true }],
+				["elbowed", { elbowed: true, fixedSegments: [] }],
+			] as const) {
+				owner.writeBoard(`${name}-clean`, [persistedConnector(connector({ id: name, ...marker }))]);
+				const clean = parse(owner, `${name}-clean`, 0);
+				expect(clean.coverage).toBe("complete");
+				expect(clean.clean).toBe(true);
+				expect(clean.findings.some((finding) => finding.reason === "rounded-or-elbowed")).toBe(
+					false,
+				);
+				owner.writeBoard(`${name}-collision`, persistedInteractionScene(name, marker));
+				const collision = parse(owner, `${name}-collision`, 7);
+				expect(collision.coverage).toBe("complete");
+				for (const code of [
+					"CONNECTOR_PENETRATES_NODE",
+					"CONNECTOR_PENETRATES_OBSTACLE",
+					"CONNECTOR_INTERSECTION_UNMARKED",
+				] as const)
+					expect(
+						collision.findings.some(
+							(finding) => finding.code === code && findingUses(finding, name),
+						),
+					).toBe(true);
+			}
+			const endpointElements = [true, false, null].flatMap((startIsSpecial, row) =>
+				[true, false, null].map((endIsSpecial, column) =>
+					persistedConnector(
+						connector({
+							id: `special-${String(startIsSpecial)}-${String(endIsSpecial)}`,
+							x: column * 200,
+							y: row * 50,
+							elbowed: true,
+							fixedSegments: [],
+							startIsSpecial,
+							endIsSpecial,
+						}),
+					),
+				),
+			);
+			owner.writeBoard("endpoint-specials", endpointElements);
+			const endpointReport = parse(owner, "endpoint-specials", 0);
+			expect(endpointReport.coverage).toBe("complete");
+			expect(endpointReport.clean).toBe(true);
+			for (const coordinate of [1_000_000, -1_000_000] as const) {
+				owner.writeBoard(`boundary-${coordinate}`, [
+					persistedConnector(
+						connector({
+							id: `boundary-${coordinate}`,
+							x: 31,
+							width: Math.abs(coordinate),
+							points: [
+								[0, 0],
+								[coordinate, 0],
+							],
+							elbowed: true,
+							fixedSegments: [],
+						}),
+					),
+				]);
+				const report = parse(owner, `boundary-${coordinate}`, 0);
+				expect(report.coverage).toBe("complete");
+				expect(report.findings.some((finding) => finding.reason === "rounded-or-elbowed")).toBe(
+					false,
+				);
+			}
+			for (const coordinate of [1_000_001, -1_000_001] as const) {
+				const id = `over-limit-${coordinate}`;
+				owner.writeBoard(id, [
+					persistedConnector(
+						connector({
+							id,
+							x: 31,
+							width: Math.abs(coordinate),
+							points: [
+								[0, 0],
+								[coordinate, 0],
+							],
+							elbowed: true,
+							fixedSegments: [],
+						}),
+					),
+				]);
+				const report = parse(owner, id, 8);
+				expect(report.coverage).toBe("indeterminate");
+				const refusal = report.findings.find(
+					(finding) =>
+						finding.code === "UNSUPPORTED_GEOMETRY" && finding.reason === "rounded-or-elbowed",
+				);
+				expect(refusal?.message).toContain(
+					`point 1 x coordinate ${coordinate} exceeding ±1,000,000`,
+				);
+				expect(
+					report.findings.some((finding) => finding.code === "CONNECTOR_PENETRATES_NODE"),
+				).toBe(false);
+			}
+			for (const [name, marker] of [
 				["malformed-elbowed", { elbowed: "bad" }],
 				["fixed", { fixedSegments: [] }],
 			] as const) {
 				owner.writeBoard(name, unsupportedInteractionScene(name, marker));
-				const report = parse(owner, name);
+				const report = parse(owner, name, 8);
 				expect(
 					report.findings.some(
 						(finding) =>
@@ -202,16 +288,10 @@ describe("package inspection totality", () => {
 					"CONNECTOR_PENETRATES_NODE",
 					"CONNECTOR_PENETRATES_OBSTACLE",
 					"CONNECTOR_INTERSECTION_UNMARKED",
-				])
+				] as const)
 					expect(
 						report.findings.some((finding) => finding.code === code && findingUses(finding, name)),
 					).toBe(false);
-				expect(
-					report.findings.some(
-						(finding) =>
-							finding.code === "CONNECTOR_INTERSECTION_UNMARKED" && !findingUses(finding, name),
-					),
-				).toBe(true);
 			}
 		} finally {
 			await owner.dispose();
