@@ -1,8 +1,7 @@
-import path from "node:path";
-
 import {
 	OpenerSelectionSchema,
 	PATH_TOKEN,
+	isAbsoluteOrBareOpenerExecutable,
 	type CodeTargetFailureCode,
 	type OpenerCommand,
 	type OpenerSelection,
@@ -33,17 +32,12 @@ function invalid(error: string): OpenerSelectionInvalid {
 	return { ok: false, code: "OPENER_CONFIG_INVALID", error };
 }
 
-function validExecutable(value: string): boolean {
-	const hasSeparator = value.includes("/") || value.includes("\\");
-	return !hasSeparator || path.posix.isAbsolute(value) || path.win32.isAbsolute(value);
-}
-
 export function validateOpenerSelection(
 	selection: unknown,
 ): OpenerSelection | OpenerSelectionInvalid {
 	const parsed = OpenerSelectionSchema.safeParse(selection);
 	if (!parsed.success) return invalid("The opener selection is invalid.");
-	if (parsed.data.kind === "custom" && !validExecutable(parsed.data.executable)) {
+	if (parsed.data.kind === "custom" && !isAbsoluteOrBareOpenerExecutable(parsed.data.executable)) {
 		return invalid("A custom executable must be absolute or a bare PATH name.");
 	}
 	return parsed.data;

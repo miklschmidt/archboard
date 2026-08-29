@@ -161,7 +161,11 @@ import {
 	InspectionPolicyInputSchema,
 	inspectBoard,
 } from "../../../runtime/board-inspection/index.js";
-import { createCodeOpenerRouter } from "../../code-opener/index.js";
+import {
+	createCodeOpenerPreguard,
+	createCodeOpenerRouter,
+	isCodeOpenerBodyRoute,
+} from "../../code-opener/index.js";
 
 // Load environment variables
 dotenv.config({ quiet: true });
@@ -218,8 +222,12 @@ const wss = wiring.wss;
 
 // Middleware
 app.use(cors());
-app.use(createCodeOpenerRouter());
-app.use(express.json({ limit: "10mb" }));
+app.use(createCodeOpenerPreguard());
+const globalJson = express.json({ limit: "10mb" });
+app.use((req: Request, res: Response, next: NextFunction) => {
+	if (isCodeOpenerBodyRoute(req.method, req.path)) return next();
+	globalJson(req, res, next);
+});
 
 // A board that has stopped saving says so in every answer about it.
 //
@@ -1093,6 +1101,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 		answerBoardError(res, error);
 	});
 });
+
+app.use(createCodeOpenerRouter());
 
 /**
  * A person has started changing this board, and wants it.
