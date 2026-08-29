@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 15:35'
-updated_date: '2026-08-29 15:10'
+updated_date: '2026-08-29 15:48'
 labels: []
 dependencies:
   - TASK-136
@@ -260,4 +260,34 @@ Validation
 - Cleanup audit found no TASK-137 browser, popup, canvas, fake opener, serial lane, or server process.
 
 Review state intentionally unchanged: TASK-137 remains In Progress, all acceptance criteria unchecked, and finalSummary null pending rereview.
+
+Second complete-range rereview remediation (2026-08-29)
+
+Closures
+
+- The public registry-transition owner now snapshots the exact raw note bytes and bigint mtime immediately before checkout forget, move, registry restore, target creation, identity invalidation, and identity restore. Each transition observes the newly derived public target and then proves both note values are unchanged before any human echo write.
+- The rendered owner now polls the first and second opener exit directories as part of the existing bounded capture poll. Every captured fake-opener PID must have its matching exit record before the owner continues, proving each invocation dies after both settings generations.
+- A compile-time negative rejects a board-blind presentElement call, so an optional/default overload fails type checking.
+
+Required mutation matrix, executed and reverted
+
+- Removing the Windows cross-drive absolute-relative guard failed resolution.test.ts.
+- Removing presentation from export_findings_request failed the public WebSocket owner on the missing internal link.
+- Adding a board-blind default to presentElement failed type-check on the unused expected error; this mutation was rerun after the lint-compliant probe wrapper was installed.
+- Accepting an extra GitHub repository identity segment and accepting empty/dot/dotdot path segments each failed presentation.test.ts.
+- Broadening the internal, GitHub, opaque, and legacy-file echo arms one at a time each failed presentation-links.test.ts on its corresponding near miss or unavailable-checkout case.
+- Removing rendered pointer selection timed out waiting for the Excalidraw link; corrupting the protected POST payload failed the rendered activation flow; removing popup close/refocus left the active URL on GitHub and failed the canvas-return assertion.
+
+Validation
+
+- Affected owners alone: resolution 14 pass, GitHub grammar 15 pass, presentation links 5 pass with 29 assertions, public presentation 1 pass with 101 assertions, repository boundary 2 pass, inventory 30 pass.
+- Focused rendered owner: 1 pass with 78 assertions.
+- Exact lanes: 397 module, 250 system, and 63 repository tests passed.
+- Complete 15-owner serial browser lane passed.
+- bun run test passed on the clean retry with all four lanes. Its first aggregate browser attempt encountered an unrelated claim-interaction timing mismatch at expected 409 versus received 200; that owner repeated once alone, then passed alone and in both subsequent complete aggregate gates without code or timeout changes.
+- bun run check passed, including lint, format, both type checks, 397 module, 250 system, 63 repository, and all 15 browser owners. The first check invocation stopped before tests on a constant-condition lint error in the new compile probe; the probe was rewritten as an uncalled typed function, then lint, type-check, its owner, and the complete check all passed.
+- git diff --check passed. Caps: presentation-links 139/300, public owner 324/480, rendered owner 477/480.
+- Final residue audit found no task-owned browser session, popup, serial lane, canvas server, fake opener, or mutation.
+
+Review state intentionally unchanged: TASK-137 remains In Progress, all acceptance criteria unchecked, and finalSummary null pending independent rereview.
 <!-- SECTION:NOTES:END -->
