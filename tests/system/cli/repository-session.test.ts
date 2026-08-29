@@ -185,10 +185,11 @@ describe("two-repository board session", () => {
 				repo: alphaIdentity,
 				path: "src/service.ts",
 			});
-			expect(persisted.get(alphaId)?.link).toBeUndefined();
-			expect(persisted.get(betaId)?.link).toBeUndefined();
+			expect(persisted.get(alphaId)?.link).toBe("https://example.com/wrong-local-link");
+			expect(persisted.get(betaId)?.link).toBeNull();
 			expect(persisted.get(docsId)?.link).toBe("https://example.com/docs");
 			expect(rawNote).not.toContain(`file://${alpha}/src/service.ts`);
+			expect(rawNote).toContain("https://example.com/wrong-local-link");
 
 			const fromAlpha = fixture.run(["board", "list", "--repo", alphaIdentity, "--text"], {
 				url: canvas.base,

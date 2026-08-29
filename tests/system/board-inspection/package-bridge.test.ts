@@ -7,9 +7,51 @@ import { planBridgeCreate } from "../../../src/runtime/board-inspection/bridge.j
 import { CheckResultSchema } from "../../../src/runtime/board-inspection/index.js";
 import { unmarkedBridgeScene } from "./fixtures/package-cases.js";
 import { createPackageInspectionOwner } from "./support/package-inspection.js";
+import { expandElements } from "../../../src/runtime/engine/expand-elements.js";
+import type { LegacyElementIngress } from "../../../src/shared/board-elements/index.js";
+
+const complete = (input: LegacyElementIngress): ServerElement =>
+	expandElements([input], { deterministic: true, forStore: true })[0]!;
+
+const bridgeInput = (
+	raw: Record<string, unknown>,
+	type: "line" | "arrow",
+): LegacyElementIngress => {
+	const number = (key: "x" | "y" | "width" | "height") => {
+		const value = raw[key];
+		if (typeof value !== "number") throw new Error(`bridge fixture has no numeric ${key}`);
+		return value;
+	};
+	if (typeof raw.id !== "string" || typeof raw.index !== "string" || !Array.isArray(raw.points))
+		throw new Error("bridge fixture is incomplete");
+	const points = raw.points.map((point) => {
+		if (
+			!Array.isArray(point) ||
+			point.length !== 2 ||
+			typeof point[0] !== "number" ||
+			typeof point[1] !== "number"
+		)
+			throw new Error("bridge fixture has an invalid point");
+		return [point[0], point[1]] as [number, number];
+	});
+	const common = {
+		id: raw.id,
+		x: number("x"),
+		y: number("y"),
+		width: number("width"),
+		height: number("height"),
+		index: raw.index,
+		points,
+	};
+	return type === "line" ? { ...common, type: "line" } : { ...common, type: "arrow" };
+};
 
 const bridged = () => {
-	const sources = unmarkedBridgeScene() as unknown as ServerElement[];
+	const raw = unmarkedBridgeScene();
+	const sources = expandElements([bridgeInput(raw[0]!, "line"), bridgeInput(raw[1]!, "arrow")], {
+		deterministic: true,
+		forStore: true,
+	});
 	const plan = planBridgeCreate({
 		elements: sources,
 		bridgeId: "Bridge01",
@@ -78,7 +120,7 @@ describe("package bridge inspection", () => {
 					[
 						...sources,
 						parts[0]!,
-						{
+						complete({
 							id: "between",
 							type: "rectangle",
 							x: 200,
@@ -86,7 +128,7 @@ describe("package bridge inspection", () => {
 							width: 10,
 							height: 10,
 							index: generateKeyBetween(parts[0]!.index, parts[1]!.index),
-						},
+						}),
 						parts[1]!,
 					],
 				],

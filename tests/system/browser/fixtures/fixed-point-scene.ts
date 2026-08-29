@@ -1,33 +1,8 @@
-import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import type { BinaryFileData } from "@excalidraw/excalidraw/types";
-
-type RequiredPosition = "type" | "x" | "y";
-type PartialVendorElement = ExcalidrawElement extends infer Element
-	? Element extends ExcalidrawElement
-		? Pick<Element, RequiredPosition> & Partial<Omit<Element, RequiredPosition>>
-		: never
-	: never;
-type AuthoredVendorElement = PartialVendorElement extends infer Element
-	? Element extends PartialVendorElement
-		? Omit<Element, "startBinding" | "endBinding" | "fileId">
-		: never
-	: never;
-type AuthoredBinding = {
-	elementId: string;
-	focus: number;
-	gap: number;
-	fixedPoint?: readonly [number, number] | null;
-};
+import type { LegacyElementIngress } from "../../../../src/shared/board-elements/index.ts";
 
 /** Archboard's input-only spellings, consumed at the write boundary. */
-export type AuthoredElementInput = AuthoredVendorElement & {
-	label?: { text: string };
-	start?: { id: string };
-	end?: { id: string };
-	startBinding?: AuthoredBinding | null;
-	endBinding?: AuthoredBinding | null;
-	fileId?: BinaryFileData["id"];
-};
+export type AuthoredElementInput = LegacyElementIngress;
 
 export const fixedPointElements = [
 	{

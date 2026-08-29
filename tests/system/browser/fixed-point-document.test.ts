@@ -283,11 +283,13 @@ test(
 			);
 		}
 		const negativePath = held.find((element) => element.id === "negative-path");
-		expect(negativePath?.points).toEqual([
+		if (negativePath?.type !== "arrow") throw new Error("negative path is not an arrow");
+		expect(negativePath.points.map(([x, y]) => [x, y])).toEqual([
 			[0, 0],
 			[-120, -90],
 		]);
 		const boundArrow = held.find((element) => element.id === "arr1");
+		if (boundArrow?.type !== "arrow") throw new Error("bound arrow is not an arrow");
 		const rect = held.find((element) => element.id === "rect1")!;
 		expect(rect.x).toBe(100);
 		expect(rect.y).toBe(100);
@@ -295,12 +297,12 @@ test(
 		expect(rect.height).toBe(90);
 		expect(boundArrow?.x).toBe(324);
 		expect(boundArrow?.y).toBe(145);
-		expect(boundArrow?.points).toEqual([
+		expect(boundArrow.points.map(([x, y]) => [x, y])).toEqual([
 			[0, 0],
 			[91.99999999999989, 0],
 		]);
-		expect(boundArrow?.startBinding?.elementId).toBe("rect1");
-		expect(boundArrow?.endBinding?.elementId).toBe("ell1");
+		expect(boundArrow.startBinding?.elementId).toBe("rect1");
+		expect(boundArrow.endBinding?.elementId).toBe("ell1");
 
 		const text = held.find((element) => element.id === "text1")!;
 		await api("/api/elements/changes?board=fixedpoint", {

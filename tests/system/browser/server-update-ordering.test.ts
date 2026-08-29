@@ -227,12 +227,13 @@ test("server updates cannot absorb ordered user edits or queued reports", async 
 	const storeLabel = (await held()).find(
 		(element) => element.type === "text" && element.containerId === "store",
 	);
+	if (storeLabel?.type !== "text") throw new Error("store label is not text");
 	expect(typeof storeLabel?.id).toBe("string");
 	await duringServerUpdate(
 		"an agent relabels the box a user is typing in",
 		[{ id: "store", label: { text: "written by the agent" } }],
 		{ kind: "retype", id: storeLabel!.id, text: "typed by the person" },
-		(element) => element?.text,
+		(element) => (element?.type === "text" ? element.text : undefined),
 		() => "typed by the person",
 	);
 	await request(`/api/elements/changes?board=${LIVE_SESSION_BOARD}`, {

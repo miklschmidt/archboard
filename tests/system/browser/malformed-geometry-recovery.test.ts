@@ -65,7 +65,7 @@ function makeLegacyNotes(): {
 	};
 	const identity = { board: "legacy-geometry", variant: "current" };
 	const valid = renderBoardNote(scene, null, identity);
-	const malformedElements = structuredClone(elements);
+	const malformedElements = structuredClone(elements) as unknown as Array<Record<string, unknown>>;
 	delete malformedElements[0]!.width;
 	delete malformedElements[0]!.height;
 	const malformedScene = { ...scene, elements: malformedElements };

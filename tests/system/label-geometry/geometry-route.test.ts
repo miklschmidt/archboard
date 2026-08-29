@@ -27,9 +27,10 @@ interface Point {
 	x: number;
 	y: number;
 }
+type LinearElement = Extract<ServerElement, { type: "arrow" | "line" }>;
 
-const pathOf = (element: ServerElement) => JSON.stringify(element.points);
-const at = (element: ServerElement, index: number): Point => ({
+const pathOf = (element: LinearElement) => JSON.stringify(element.points);
+const at = (element: LinearElement, index: number): Point => ({
 	x: element.x + (element.points?.[index]?.[0] ?? 0),
 	y: element.y + (element.points?.[index]?.[1] ?? 0),
 });
@@ -46,8 +47,12 @@ const elementById = (elements: readonly ServerElement[], id: string): ServerElem
 		elements.find((element) => element.id === id),
 		`Missing fixture element ${id}.`,
 	);
-const pointsOf = (element: ServerElement): readonly (readonly number[])[] =>
-	required(element.points, `Missing points on ${element.id}.`);
+const linearById = (elements: readonly ServerElement[], id: string): LinearElement => {
+	const element = elementById(elements, id);
+	if (element.type !== "arrow" && element.type !== "line") throw new Error(`${id} is not linear`);
+	return element;
+};
+const pointsOf = (element: LinearElement): readonly (readonly number[])[] => element.points;
 const badlySized = (linearElements: readonly ServerElement[]): ServerElement[] =>
 	linearElements.filter((element) => remeasureLinear(element) !== undefined);
 
@@ -123,8 +128,10 @@ describe("geometry routes", () => {
 		await write("POST", `/api/elements/batch${board}`, {
 			elements: geometryBoardElements(),
 		});
-		const linearsOn = async (): Promise<ServerElement[]> =>
-			(await elementsOn()).filter((el) => el.type === "arrow" || el.type === "line");
+		const linearsOn = async (): Promise<LinearElement[]> =>
+			(await elementsOn()).filter(
+				(element): element is LinearElement => element.type === "arrow" || element.type === "line",
+			);
 		const drawn = await linearsOn();
 		assert(drawn.length === 4, `the board should hold four arrows, not ${drawn.length}`);
 		assert(
@@ -132,7 +139,7 @@ describe("geometry routes", () => {
 			"the check is not exercising the bug: every arrow here should run leftwards or upwards",
 		);
 		assert(
-			pointsOf(elementById(drawn, "to-northwest")).some(
+			pointsOf(linearById(drawn, "to-northwest")).some(
 				([px, py]) => (px ?? 0) < 0 && (py ?? 0) < 0,
 			),
 			"the up-and-left arrow should be negative in both axes",
@@ -149,7 +156,7 @@ describe("geometry routes", () => {
 		const bound = rerouted.filter((el) => el.id !== "stray");
 		assert(
 			bound.every((el) => {
-				const was = elementById(drawn, el.id);
+				const was = linearById(drawn, el.id);
 				return JSON.stringify(pointsOf(was)) !== JSON.stringify(pointsOf(el));
 			}),
 			"moving the hub should have re-routed all three arrows bound to it",
@@ -203,7 +210,7 @@ describe("geometry routes", () => {
 		await write("POST", "/api/boards/new", { board: "wires" });
 		const wires = "?board=wires";
 		const wiresOn = async () => elementsOn("wires");
-		const wire = async (id: string): Promise<ServerElement> => elementById(await wiresOn(), id);
+		const wire = async (id: string): Promise<LinearElement> => linearById(await wiresOn(), id);
 
 		await write("POST", `/api/elements/batch${wires}`, {
 			elements: geometryWireElements(),
@@ -211,7 +218,7 @@ describe("geometry routes", () => {
 
 		const drawnArr = await wire("arr");
 		assert(
-			drawnArr.start === undefined && drawnArr.end === undefined,
+			!("start" in drawnArr) && !("end" in drawnArr),
 			"an arrow's `start`/`end` refs were stored, so the board holds two answers to what it touches",
 		);
 		assert(

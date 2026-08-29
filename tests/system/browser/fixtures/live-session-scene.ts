@@ -1,4 +1,4 @@
-import type { ServerElement } from "../../../../src/runtime/engine/types.ts";
+import type { LegacyElementIngress } from "../../../../src/shared/board-elements/index.ts";
 
 export const LIVE_SESSION_BOARD = "session";
 export const LIVE_SESSION_CYCLES = 42;
@@ -50,7 +50,7 @@ export const LIVE_SESSION_SEED = [
 		y: 480,
 		text: "drawn by the agent",
 	},
-] as const satisfies readonly ServerElement[];
+] as const satisfies readonly LegacyElementIngress[];
 
 export const LIVE_AGENT_MOVES = [
 	"create-labelled",

@@ -5,6 +5,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
+import { expandElements } from "../../../src/runtime/engine/expand-elements.ts";
 import { createJsonRequester } from "./support/http.ts";
 import { openTestPane, type TestPane } from "./support/pane-websocket.ts";
 
@@ -88,13 +89,13 @@ async function stopSaving(
 	});
 	const file = (await request<BoardInfo>(`/api/boards/info?board=${board}`)).body.file;
 	const note = fs.readFileSync(file, "utf8");
+	const foreign = expandElements(
+		[{ id: theirId, type: "rectangle", x: 800, y: 800, width: 999, height: 40 }],
+		{ forStore: true },
+	)[0]!;
 	fs.writeFileSync(
 		file,
-		note.replace(
-			'"id": "ours1"',
-			`"id": "${theirId}", "type": "rectangle", "x": 800, "y": 800, ` +
-				'"width": 999, "height": 40}, {"id": "ours1"',
-		),
+		note.replace('"id": "ours1"', `${JSON.stringify(foreign).slice(1, -1)}}, {"id": "ours1"`),
 	);
 	const refused = await request<WriteBody>(`/api/elements?board=${board}`, {
 		method: "POST",

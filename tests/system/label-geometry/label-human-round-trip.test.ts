@@ -66,6 +66,7 @@ test("contains hostile pane cycles and preserves human and agent label edits", (
 			`a settled board kept reporting changes on ${reports} of ${CYCLES} cycles`,
 		);
 		const arrow = store.get("wire");
+		if (arrow.type !== "arrow" && arrow.type !== "line") throw new Error("wire is not linear");
 		assert(
 			JSON.stringify(arrow.points) === "[[0,0],[192,0]]",
 			`the input refs did not route the arrow to the two shapes: ${JSON.stringify(arrow.points)}`,
@@ -429,10 +430,8 @@ test("preserves human clear, retype, and later agent precedence", () => {
 				boundElements: [],
 			},
 		]);
-		const nudged = expandForBoard(
-			[{ ...required(cleared.get("gw"), "Cleared gw missing."), x: 40 }],
-			cleared,
-		);
+		const { label: _label, ...clearedGw } = required(cleared.get("gw"), "Cleared gw missing.");
+		const nudged = expandForBoard([{ ...clearedGw, x: 40 }], cleared);
 		assert(nudged.length === 1, `moving a cleared box grew ${nudged.length - 1} labels`);
 	}
 	{
