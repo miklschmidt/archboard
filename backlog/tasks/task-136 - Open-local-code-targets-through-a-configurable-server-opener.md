@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 15:35'
-updated_date: '2026-08-29 05:26'
+updated_date: '2026-08-29 05:40'
 labels: []
 dependencies:
   - TASK-130.11
@@ -139,4 +139,12 @@ Disjoint tranche checkpoint:
 - Completed shared Zod/URL contracts, registry-backed realpath resolver, machine config, pure platform/custom planning, no-shell launcher, exact CSRF helper, isolated HTTP router, controlled fake opener, settings/activation/persistence/lifecycle owners.
 - Focused owners, type-check, full test:modules, focused code-target system directory, full lint, and repository-wide format check pass. Realpath, same-site CSRF, and shell mutations each failed their owner and were reverted.
 - Remaining serialized work: production application mount/write exemption, package and once-only inventory registration, browser adapter/list/docs, UI handler/settings/notice integration, TASK-134 reconciliation, browser/full lanes, and TASK-137 presentation handoff. No protected file was edited in this tranche.
+
+Checkpoint review remediation (fixed base aea77fac92c35c960e66e8aadc26e47a12c81a6d; source commit 890547e):
+- Settings GET now returns strict current selection, effective resolved command, and typed availability using the same resolver used by launch; available and unavailable selections are proved without spawn.
+- A default-dependency public HTTP owner reads a canonical binding from a real isolated board note and proves exact note bytes and mtime remain unchanged.
+- Reserved URLs reject backslashes before WHATWG parsing; Windows containment rejects absolute cross-drive relative results.
+- PUT and settings test pre-read machine state and preserve corrupt bytes; DELETE remains the sole recovery. Owned malformed JSON replies are shared-schema REQUEST_INVALID 400 responses, while the CSRF guard still rejects before parsing or state/note/spawn work.
+- Fake opener capture/release/death uses one retained deadline; every lifecycle owner observes child death, with Linux detached process-group evidence and no PID kill authority.
+Validation: affected owners alone 48/48; modules 344/344; tests/system/code-targets 32/32; type-check, lint, fmt:check, and git diff --check pass. Focused mutations were killed for backslash interception, cross-drive containment, and corrupt-state PUT overwrite. All changed owners are <=285 lines (hard stop 480). Cleanup audit found no archboard-opener-system temporary roots or fake-opener processes. Serialized CanvasPane/Shell/application.ts/package/browser/docs integration remains paused.
 <!-- SECTION:NOTES:END -->
