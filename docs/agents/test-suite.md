@@ -10,8 +10,9 @@ which enforces Oxlint (including the custom boundary rules), formatting, and
 then that complete test chain. A check added to `package.json` therefore runs
 on main without anybody touching the workflow. `bun run test:suites` runs the
 native repository inventory. It fails when a package test lane is outside the
-push chain, a native test has no package lane or more than one, or a remaining
-legacy check path is missing.
+push chain or a native test has no package lane or more than one. It recognizes
+the browser lane only through the exact typed adapter forms and counts every
+literal owner-path occurrence instead of collapsing duplicates.
 
 The whole chain's duration is machine-dependent. The browser owners run
 sequentially; re-measure their contribution rather than trusting an old total.
