@@ -1,11 +1,11 @@
 ---
 id: TASK-129
 title: Inspect rounded and elbowed connectors from their persisted points
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-28 00:50'
-updated_date: '2026-08-29 15:19'
+updated_date: '2026-08-29 15:22'
 labels:
   - ready-for-agent
 dependencies:
@@ -42,12 +42,12 @@ Board inspection currently classifies every connector carrying roundness, elbowe
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A valid elbowed connector participates in segment-based board inspection and does not emit UNSUPPORTED_GEOMETRY solely because elbowed is true.
-- [ ] #2 A valid connector with fixedSegments participates in segment-based board inspection; fixed-segment editing metadata alone does not make coverage indeterminate.
-- [ ] #3 A valid rounded connector is inspected from its persisted point chain without emitting UNSUPPORTED_GEOMETRY solely because roundness is present.
-- [ ] #4 Reachable Excalidraw endpoint-special states use the visible segment chain when it can be recovered; any remaining unsupported finding is limited to the specific state that cannot be inspected safely.
-- [ ] #5 Penetration, obstacle, unmarked-crossing, and bridge analysis exercise the same connector eligibility and produce findings for rounded and elbowed connectors.
-- [ ] #6 Automated checks demonstrate that the old blanket exclusion fails and that clean rounded or elbowed boards retain complete coverage.
+- [x] #1 A valid elbowed connector participates in segment-based board inspection and does not emit UNSUPPORTED_GEOMETRY solely because elbowed is true.
+- [x] #2 A valid connector with fixedSegments participates in segment-based board inspection; fixed-segment editing metadata alone does not make coverage indeterminate.
+- [x] #3 A valid rounded connector is inspected from its persisted point chain without emitting UNSUPPORTED_GEOMETRY solely because roundness is present.
+- [x] #4 Reachable Excalidraw endpoint-special states use the visible segment chain when it can be recovered; any remaining unsupported finding is limited to the specific state that cannot be inspected safely.
+- [x] #5 Penetration, obstacle, unmarked-crossing, and bridge analysis exercise the same connector eligibility and produce findings for rounded and elbowed connectors.
+- [x] #6 Automated checks demonstrate that the old blanket exclusion fails and that clean rounded or elbowed boards retain complete coverage.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -185,3 +185,9 @@ Review remediation: add finding-evidence.test.ts as the sole capacity split, mov
 
 Final broad validation after approved review amendment: exactly one `bun run check` ran from the TASK-129 worktree and exited 0. Lint and fmt:check passed; type-check passed; test:modules passed 379/0 with 3,102 expect() calls; test:system passed 248/0 with 4,023 expect() calls; test:repository passed 61/0 with 218 expect() calls; the serial browser lane passed all 14 owners (14/0), including the frontend build. Post-check hot-source audit matches the restored pre-run bytes and bigint mtimes: src/server.ts SHA256 ebfb043e287f2cc6991d2ec065eb69b6fcdc4678fe68d46d8012968dbaca3d50 mtimeNs 1788007234474913584; src/runtime/engine/board-store.ts SHA256 c87932b696f40356c3f5021be1ff6a11494b61620e133fa25a7530835a3c3cbe mtimeNs 1788007234472186078; src/server/canvas/lib/application.ts SHA256 0f58c69f997c3e6f2809f3f83629610f930d60b6a09410b67ea6761c9a5701f9 mtimeNs 1788007234475019147. No TASK-129 process remains. The exact stale disposable roots /tmp/archboard-staleness-source-qi2rtb and /tmp/archboard-hot-reload-aRrztD were removed after owner and realpath validation and verified absent. No source, generated, dependency, or frontend file changed; only this approved TASK-129 plan/evidence amendment remains to commit. Task remains In Progress, acceptance criteria unchecked, finalSummary null.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented one shared persisted connector point-chain eligibility seam for rounded, valid elbowed/fixed-segment, and endpoint-special connectors, retaining narrow malformed, wrong-arm, and over-limit refusals. AC1–2 are proven by the focused module/package recoverable-mode owners; AC3 by rounded point-chain coverage; AC4 by the nine endpoint-special states and first/last segment checks; AC5 by penetration, obstacle, unmarked-crossing, and correlated bridge create/validation owners; AC6 by natural-red/mutation evidence and complete public reports. Focused validation passed: unrepresentable 3/107, finding-evidence 4/23, bridge-create 5/67, bridge-validation 6/614, package-totality 3/100; public board-inspection 19/219. The single full `bun run check` passed: modules 379/0, system 248/0, repository 61/0, serial browser 14/0, with lint, format, type-check, and frontend build green. Rounded/elbowed analysis intentionally uses a sharp persisted point-chain approximation, so rendered curve-vs-corner false positives/negatives remain the documented risk.
+<!-- SECTION:FINAL_SUMMARY:END -->
