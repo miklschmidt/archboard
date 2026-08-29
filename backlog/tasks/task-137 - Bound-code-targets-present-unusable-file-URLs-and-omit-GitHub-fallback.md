@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 15:35'
-updated_date: '2026-08-29 15:48'
+updated_date: '2026-08-29 15:51'
 labels: []
 dependencies:
   - TASK-136
@@ -290,4 +290,15 @@ Validation
 - Final residue audit found no task-owned browser session, popup, serial lane, canvas server, fake opener, or mutation.
 
 Review state intentionally unchanged: TASK-137 remains In Progress, all acceptance criteria unchecked, and finalSummary null pending independent rereview.
+
+Final absolute-path mutation evidence (2026-08-29)
+
+- Pre-mutation source checksum: 8ac6ad83e09fd5230a1c6dba665925d2f12f286886547f3e29c48ffb8f672702 for src/runtime/code-target/presentation.ts.
+- Deliberate mutation normalized both leading POSIX slashes and a Windows drive-plus-backslash prefix before the existing absolute-path guards. This made both forbidden absolute inputs pass the complete grammar and final URL schema while leaving the relative backslash negative intact.
+- Exact red command: bun test src/runtime/code-target/tests/presentation.test.ts. It exited 1 with 13 pass and 2 fail. Negative case 5 accepted path /absolute and returned https://github.com/acme/repo/tree/HEAD/absolute. Negative case 6 accepted path C:\absolute and returned https://github.com/acme/repo/tree/HEAD/absolute. Both failed the literal toBeUndefined assertion at presentation.test.ts:36.
+- The mutation was reverted with no source commit. Post-revert checksum is the same 8ac6ad83e09fd5230a1c6dba665925d2f12f286886547f3e29c48ffb8f672702.
+- Exact green commands: bun test src/runtime/code-target/tests/presentation.test.ts passed 15 tests and 15 assertions; bun run type-check passed both TypeScript projects; git diff --check passed.
+- Cleanup: git showed no source diff, agent-browser reported no active sessions, and no task browser, canvas, lane, or fake-opener process remained. No broad or browser lane was rerun because the final production source is byte-identical.
+
+Review state remains unchanged: TASK-137 is In Progress, every acceptance criterion is unchecked, and finalSummary is null pending independent rereview.
 <!-- SECTION:NOTES:END -->
