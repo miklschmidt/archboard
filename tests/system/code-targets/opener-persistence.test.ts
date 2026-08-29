@@ -35,6 +35,8 @@ describe("machine-wide opener persistence", () => {
 			});
 			const { makeIdentity, renderBoardNote } =
 				await import("../../../src/runtime/engine/board.ts");
+			const { completeElement } =
+				await import("../../../src/runtime/engine/tests/support/elements.ts");
 			const { createOpenerFixture } = await import("./support/opener-fixture.ts");
 			const fixture = await createOpenerFixture();
 			resources.defer(() => fixture.dispose());
@@ -48,7 +50,7 @@ describe("machine-wide opener persistence", () => {
 						type: "excalidraw",
 						version: 2,
 						elements: [
-							{
+							completeElement({
 								id: "node",
 								type: "rectangle",
 								x: 0,
@@ -60,7 +62,7 @@ describe("machine-wide opener persistence", () => {
 										binding: { repo: fixture.repository, path: "src/index.ts" },
 									},
 								},
-							},
+							}),
 						],
 						appState: {},
 						files: {},
