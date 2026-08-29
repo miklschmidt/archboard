@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 15:35'
-updated_date: '2026-08-29 05:40'
+updated_date: '2026-08-29 05:51'
 labels: []
 dependencies:
   - TASK-130.11
@@ -147,4 +147,13 @@ Checkpoint review remediation (fixed base aea77fac92c35c960e66e8aadc26e47a12c81a
 - PUT and settings test pre-read machine state and preserve corrupt bytes; DELETE remains the sole recovery. Owned malformed JSON replies are shared-schema REQUEST_INVALID 400 responses, while the CSRF guard still rejects before parsing or state/note/spawn work.
 - Fake opener capture/release/death uses one retained deadline; every lifecycle owner observes child death, with Linux detached process-group evidence and no PID kill authority.
 Validation: affected owners alone 48/48; modules 344/344; tests/system/code-targets 32/32; type-check, lint, fmt:check, and git diff --check pass. Focused mutations were killed for backslash interception, cross-drive containment, and corrupt-state PUT overwrite. All changed owners are <=285 lines (hard stop 480). Cleanup audit found no archboard-opener-system temporary roots or fake-opener processes. Serialized CanvasPane/Shell/application.ts/package/browser/docs integration remains paused.
+
+Complete-range checkpoint closure (source commit 203d9e1):
+- Reduced src/shared/code-target/index.ts to its approved 220-line cap without changing its public schema/URL responsibility. Moved the real-note/default-dependency case into activation-contract.test.ts and deleted the unapproved canonical-activation owner; activation-contract is 319/480 lines.
+- Owned JSON parser failures now map charset/encoding, parse, size, verify, abort, content-length, and stream failures to shared-schema REQUEST_INVALID HTTP 400. Guarded oversized JSON and an unsafe oversized request prove response typing and guard-first ordering.
+- saveOpenerSelection now refuses corrupt existing machine state at the exported module boundary; exact bytes survive save and reset remains the sole recovery.
+- Lifecycle liveness/death evidence no longer calls process.kill. Linux reads /proc, Windows uses tasklist, and other supported hosts use ps under the one retained deadline; Linux keeps detached process-group evidence.
+- Activation owns an injected OPENER_SPAWN_FAILED branch with exact shared-schema HTTP 500/settings action, no fake capture, and byte/mtime-stable state.
+- Persistence now creates and inspects a valid note in an isolated vault, proves config containment outside that vault, and preserves exact note bytes/bigint mtime across both saves, independent callers, and restart with no opener/executable/argv/absolute/internal URL leakage.
+Validation: affected owners alone 64/64; combined module owners 58/58; tests/system/code-targets 34/34; type-check, lint, repository fmt:check, and git diff --check pass. Focused red/mutations caught oversized-body mapping removal, module-level corrupt save overwrite, and spawn-failure status removal. Owner caps: shared 220/220, routes 286/360, settings 275/480, activation 319/480, support 293/360, persistence 105/340, lifecycle 78/400. No process.kill references, opener/code-target temp roots, fake opener, or launcher-owner processes remain. Serialized CanvasPane/Shell/application/package/browser/docs/TASK-137 integration remains paused.
 <!-- SECTION:NOTES:END -->
