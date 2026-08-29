@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-29 16:14'
-updated_date: '2026-08-29 20:18'
+updated_date: '2026-08-29 21:28'
 labels: []
 dependencies: []
 references:
@@ -14,6 +14,7 @@ references:
   - docs/agents/test-suite.md
   - 'https://github.com/miklschmidt/archboard/actions/runs/33268988057'
   - 'https://github.com/miklschmidt/archboard/actions/runs/33270430736'
+  - 'https://github.com/miklschmidt/archboard/actions/runs/33273256248'
 modified_files:
   - .github/workflows/ci.yml
   - src/runtime/board-inspection/tests/comparison-limits.test.ts
@@ -27,6 +28,8 @@ modified_files:
   - tests/system/browser/support/agent-browser.ts
   - tests/system/canvas-state/hot-reload.test.ts
   - tests/system/code-targets/activation-contract.test.ts
+  - tests/system/code-targets/launcher-lifecycle.test.ts
+  - tests/system/code-targets/support/opener-fixture.ts
   - tests/system/repository-policy/boundaries.test.ts
   - tests/system/repository-policy/ci-browser-gate.test.ts
   - tests/system/repository-policy/support/test-inventory.ts
@@ -88,6 +91,14 @@ GitHub Actions is failing on the current repository state and is expected to fai
 18. Narrow CI4 Standards amendment. Add one isolated owned-canvas support test that spies process.kill, proves processExists calls the expected PID with signal zero, injects an EPERM-coded Error, and requires the exact PID-bearing diagnostic with the original cause preserved. Restore the spy in finally. Prove the case fails against an all-errors-mean-absent mutant, restore the strict ESRCH-only implementation, then run direct and complete sequential support plus TypeScript, Oxlint, formatting, and diff checks. Do not rerun browser or the complete gate because production behavior and the affected owner were already accepted.
 
 19. CI5 deterministic lint-diagnostic remediation. In tests/system/repository-policy/boundaries.test.ts, make the owned Oxlint subprocess helper pass exactly --format=default so public diagnostic assertions retain the rule name and actionable guidance across local terminals and GitHub Actions, where Oxlint otherwise auto-selects the annotation formatter and omits help text. Keep the existing rule and Maximum allowed is 500 guidance assertions, and add direct enforcement that the helper argv contains the exact formatter selection. Do not change workflow, Oxlint configuration, boundary limits, rules, lint/test composition, skips, or allow-failure behavior. After approval, run the focused boundary owner, complete repository-policy lane, TypeScript, Oxlint, formatting, and diff checks, then one clean sequential bun run check before commit, push, and exact-SHA CI monitoring.
+
+20. CI6 launcher-lifecycle observation remediation. The public five-second post-first-case log localizes the observed hang to the second case's unbounded await of owner.exited; its later two-second waits were never reached. Zombie-aware fake-process observation is a separate semantic hardening required by the owner contract, not a demonstrated root cause. Keep the complete suite and do not add --no-orphans.
+
+Use one exact Linux /proc/<pid>/stat parser shared by processExistsEvidence and the detached-PGID proof, deleting the duplicate loose parser. Validate a positive safe-integer expected PID, the matching leading PID, the final `) ` delimiter so comm may contain spaces or `)`, a recognized state token, and a numeric process-group field. Only ENOENT or ESRCH means absent. Every other read error, malformed record, or PID mismatch must throw an actionable error naming the expected PID and stat path and preserving the cause where available. States Z, X, and x mean nonrunning; recognized live or stopped states mean running; an unknown state fails closed. Add synthetic launcher-owner coverage for comm containing spaces and closing parentheses, live states, zombie/dead states, PID mismatch, truncation, and invalid fields, plus a retained real child proved live and then killed and reaped only through its handle.
+
+Immediately after Bun.spawn, register retained-handle cleanup and begin draining stderr. Race natural owner.exited against TEST_OPENER_LIFECYCLE.timeoutMs. A timeout remains a test failure naming PID, exit code, signal, process-state evidence, and captured stderr. Cleanup may signal only through owner.kill, then performs a separately bounded second await of the same exited promise while continuing to drain stderr; aggregate cleanup failure with the original timeout rather than hiding either. Never use numeric kill and never unref the test owner. Give cleanup and release a fresh ordered deadline computed from the same TEST_OPENER_LIFECYCLE.timeoutMs so an expired invocation deadline cannot race fixture-root removal. Preserve and assert capture, owner exit before the exit receipt, fake running before release, detached Linux PGID, release receipt, and fake nonrunning afterward. Do not add explicit process.exit to the fixture. Prove a mutant red by removing only production child.unref, then restore it before repetitions.
+
+After approval, run focused repetitions, the complete code-targets slice, the complete sequential system lane, TypeScript, Oxlint, formatting, and diff checks, then one clean unset bun run check. Obtain independent review before push and monitor the exact pushed SHA. Do not change workflow, gates, skips, allow-failure behavior, or fixture datasets. If review finds owner.exited bounding inconsistent, follow its exact amendment.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -219,4 +230,24 @@ CI5 deterministic lint-diagnostic remediation evidence, 2026-08-29:
 - Focused boundary green passed 9 tests / 76 assertions, including the unchanged archboard/eslint rule-name checks and Maximum allowed is 500 guidance check. Complete repository policy passed 100 tests / 274 assertions. Logs: /tmp/task138-ci5-boundary-green.log and /tmp/task138-ci5-repository-green.log. TypeScript, Oxlint, formatting, and git diff checks passed; logs use /tmp/task138-ci5-{type,lint,fmt}.log.
 - One clean sequential acceptance run started with ARCHBOARD_VAULT unset, no active owner process, and dist absent. bun run check passed lint, formatting, both TypeScript projects, 400 module tests / 3,144 assertions, 255 serial system tests / 4,137 assertions, 100 repository-policy tests / 274 assertions, and all 15 serial headless browser owners. Log: /tmp/task138-ci5-full-check.log.
 - boundaries.test.ts is 309 physical lines. No workflow, Oxlint configuration, boundary rule/limit, assertion, gate, skip, or allow-failure behavior changed. The generated ignored dist bundle was removed after acceptance; no check, browser, canvas, or inspection process survived. Implementation commit: cdca08b.
+
+CI6 diagnosis, public run 33273256248, 2026-08-29:
+
+- The exact pushed SHA passed all 400 module tests and entered the sequential system lane. The first launcher-lifecycle case passed; about five seconds later Bun reported killed 1 dangling process, then the job produced no further progress and was canceled at the 30-minute workflow limit.
+- Program order localizes the observed hang to the second case's unbounded await of owner.exited. Its later two-second process-observation waits were never reached, so raw /proc zombie observation is not the demonstrated cause.
+- Exact local and CI-shaped environment runs plus more than twenty focused repetitions are green, so there is no tight local reproduction. The hosted exact-SHA run remains the reproduction.
+- Zombie-aware fake-process evidence is still required semantic hardening: an exited non-executing process may remain as a zombie until PID 1 reaps it. This is separate from the demonstrated owner.exited hang and must use the one strict shared /proc stat parser defined in item 20.
+- The repair must bound natural owner exit and retained-handle cleanup with TEST_OPENER_LIFECYCLE.timeoutMs, compute a fresh ordered cleanup/release deadline from that same shared value, preserve every launcher lifecycle and child.unref regression proof, and retain actionable stderr and process diagnostics. It must not suppress orphan detection, skip an owner, weaken the complete suite, use numeric kill, or force fixture exit. Source remains paused pending plan rereview.
+
+CI6 launcher-lifecycle remediation evidence, 2026-08-29:
+
+- TDD RED: before the shared parser existed, the new focused owner failed at import with `parseLinuxProcessStat` missing (0 pass / 1 fail). Log: `/tmp/task138-ci6-parser-red.log`. Parser GREEN covered command names containing spaces and `)`, every recognized live/stopped and dead state, PID mismatch, truncation, invalid fields, invalid expected PIDs, a retained live child reaped only through its handle, and a missing stat record.
+- Required lifecycle mutant: removing only production `child.unref()` made the bounded owner fail in 2,044 ms with PID, null exit/signal, live `S` state, process group, and captured stderr; retained-handle cleanup completed instead of hanging. Log: `/tmp/task138-ci6-unref-mutant-red.log`. The production line was restored byte-for-byte and has no final diff.
+- The fixture now has one strict Linux stat parser shared by process existence and detached-PGID evidence. It validates the positive safe PID, matching record PID, final command delimiter, state, and numeric process group. Only ENOENT/ESRCH means absent; malformed, mismatched, unknown-state, and other read errors are actionable. Z/X/x are semantically nonrunning.
+- The launcher owner starts stderr drainage and registers retained-handle cleanup immediately after spawn. Natural exit and the second cleanup await are independently bounded by `TEST_OPENER_LIFECYCLE.timeoutMs`; cleanup signals only through `owner.kill`, uses the same exited promise, and aggregates cleanup failure with the original timeout. Capture, response-before-exit, owner-exit-before-receipt, fake-running, detached PGID, release receipt, and fake-nonrunning assertions remain. Invocation capture and ordered release each receive a fresh deadline from the same shared timeout.
+- Focused GREEN passed 20 isolated repetitions: 480 tests / 700 assertions in 4.96 s. Complete code-targets passed 59 tests / 302 assertions. Complete sequential system passed 277 tests / 4,159 assertions in 165.71 s, including the repaired owner with no dangling-process warning. Logs: `/tmp/task138-ci6-launcher-repeat-green.log`, `/tmp/task138-ci6-code-targets-green.log`, and `/tmp/task138-ci6-system-green.log`.
+- TypeScript, Oxlint, formatting, and diff checks passed; logs: `/tmp/task138-ci6-type.log`, `/tmp/task138-ci6-lint.log`, and `/tmp/task138-ci6-fmt.log`. One clean sequential `ARCHBOARD_VAULT`-unset `bun run check` passed lint, formatting, both TypeScript projects, 400 module tests / 3,144 assertions, 277 system tests / 4,159 assertions, 100 repository-policy tests / 274 assertions, and all 15 serial headless browser owners. Log: `/tmp/task138-ci6-full-check.log`.
+- Physical lines after formatting: `launcher-lifecycle.test.ts` 246; `opener-fixture.ts` 387; shared `timing.ts` remains 499. The generated ignored `dist` tree was removed after acceptance. Final cleanup found no new opener fixture root or surviving check, launcher-owner, or fake-opener process; only the pre-existing ignored dependency tree remains.
+
+Implementation commit for CI6 item 20: `bb21422`.
 <!-- SECTION:NOTES:END -->
