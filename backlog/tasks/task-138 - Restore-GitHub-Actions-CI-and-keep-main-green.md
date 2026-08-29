@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-29 16:14'
-updated_date: '2026-08-29 18:08'
+updated_date: '2026-08-29 18:39'
 labels: []
 dependencies: []
 references:
@@ -14,11 +14,14 @@ references:
   - docs/agents/test-suite.md
 modified_files:
   - .github/workflows/ci.yml
+  - src/runtime/engine/tests/board-version-note.test.ts
+  - tests/system/boards/malformed-input.test.ts
   - tests/system/browser/run-browser-lane.ts
   - tests/system/browser/support/agent-browser.ts
+  - tests/system/code-targets/activation-contract.test.ts
+  - tests/system/repository-policy/ci-browser-gate.test.ts
   - tests/system/repository-policy/support/test-inventory.ts
   - tests/system/repository-policy/test-inventory.test.ts
-  - tests/system/repository-policy/ci-browser-gate.test.ts
 priority: high
 type: bug
 ordinal: 154000
@@ -58,6 +61,10 @@ GitHub Actions is failing on the current repository state and is expected to fai
 10. Quoted command-substitution amendment. Keep single-quoted shell text inert, but retain the bodies of dollar-parenthesis and backtick command substitutions inside double quotes so executable bun run tokens cannot hide there. Add separate negatives for echo with dollar-parenthesis, assignment with dollar-parenthesis, and double-quoted backticks while retaining the inert quoted and echo controls. Run the two focused policy owners and static checks only, then commit for rereview without pushing or finalizing.
 
 11. Dollar-substitution comment amendment. Add shell-comment state to dollarSubstitutionAt using the scanner boundary rule so quotes and parentheses inside a comment cannot close the substitution before newline. Keep the unterminated-body fail-closed fallback. Add the valid multiline Bash form with a commented closing parenthesis as its own negative, run both focused policy owners and static checks, then commit without browser/full validation, push, or finalization.
+
+12. Clean-runner module-owner remediation. Reproduce the exact pushed CI failure with ARCHBOARD_VAULT absent, then make board-version-note.test.ts own a temporary vault before the first config-sensitive dynamic import. Preserve and restore a caller-provided sentinel exactly, delete an originally absent variable, remove the owned root, and retain Bun module isolation. Verify unset and sentinel-focused runs, the module lane and proportional static gates, then run one clean bun run check with ARCHBOARD_VAULT explicitly unset. Commit for integration review without pushing or finalizing.
+
+13. Unset-vault system-owner amendment. The complete unset full gate exposed three additional same-process test-owner failures after the module repair: one boards case and two code-target default-dependency cases. Give each owner a temporary vault before its first config-sensitive import, assert the imported config uses that owned root, dispose its canvas/server/fixture resources before removing the root, and restore or delete the caller environment exactly. Verify the two owners with both absent and caller-sentinel environments, then run the full unset system lane, static gates, and the clean complete gate; do not change production, default missing-vault behavior, or workflow environment.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -116,4 +123,15 @@ Dollar-substitution comment-state remediation evidence, 2026-08-29:
 - dollarSubstitutionAt now uses the shared shell-comment boundary check. Once a comment starts, quotes and parentheses are ignored until newline; scanning then resumes at the existing substitution depth. If no real closing parenthesis follows, the existing fail-closed fallback still returns the remaining body for executable-token inspection.
 - Focused policy owners passed 66 tests and 119 assertions: inventory owner 38; CI/browser owner 28, comprising 20 workflow-policy and 8 browser-boundary cases. Log: /tmp/task138-rereview4-focused-green.log. TypeScript, Oxlint, formatting, and git diff checks pass; logs use the /tmp/task138-rereview4-* prefix.
 - Physical lines: inventory support 484, inventory owner 408, CI/browser policy owner 302. Per direction, no browser or complete gate rerun was performed because only the repository-policy scanner, its focused test, and TASK evidence changed.
+
+Clean-runner CI remediation evidence, pushed SHA c98a229, 2026-08-29:
+
+- GitHub Actions run 33267557636, job 99140225454 failed in src/runtime/engine/tests/board-version-note.test.ts because the clean runner had no ARCHBOARD_VAULT. config.ts snapshots the environment at module import; the test created a temporary directory but never made it the process vault, while the prior local shell inherited a vault and masked the isolation defect. Full job log: /tmp/task138-ci2-job.log.
+- Focused TDD RED with ARCHBOARD_VAULT removed: board-version-note 3 passed / 5 failed, all through requireVaultRoot before their intended note assertions. Log: /tmp/task138-ci2-focused-unset-red.log. The owner now exports its temporary root before any config-sensitive import and, after module cleanup, removes that exact root and restores the caller value or deletes an originally absent variable. Unset and caller-sentinel focused runs each pass 8 tests / 47 assertions; the sentinel remains empty and no owner root remains. Logs: /tmp/task138-ci2-focused-unset-green.log and /tmp/task138-ci2-focused-sentinel-green.log. The complete unset module lane passes 400 tests / 3,144 assertions: /tmp/task138-ci2-modules-green.log.
+- The first complete unset check passed static gates and 400 modules, then unrelated board-inspection subprocesses exceeded existing 5-second and 40-second limits and Bun hung after the source-staleness timeout. The owned process group alone was killed after TERM was ignored, and its one staleness root was removed. Honest log: /tmp/task138-ci2-full-check.log. A clean retry cleared every timeout and enumerated exactly three further inherited-vault defects: one direct boards engine call and two code-target default-dependency reads; 247 of 250 system tests passed. Honest log: /tmp/task138-ci2-full-check-retry.log.
+- Focused system-owner TDD RED reproduced those exact three failures: 21 passed / 3 failed. The boards and code-target owners now each establish an owned vault before the first config-sensitive import, assert the imported config sees it, dispose canvases/servers/fixtures first, remove the exact root, and restore or delete caller state. No production route, resolver, config, or workflow-wide environment changed. Unset and caller-sentinel focused runs each pass 26 tests / 96 assertions, retain the existing note/config byte and mtime checks, leave the sentinel empty, and leave no owner or fixture root. Logs: /tmp/task138-ci2-system-owners-red.log, /tmp/task138-ci2-system-owners-unset-green.log, and /tmp/task138-ci2-system-owners-sentinel-green.log.
+- Complete unset system lane passes 252 tests / 4,130 assertions: /tmp/task138-ci2-system-lane-green.log. TypeScript, Oxlint, formatting, and diff checks pass. Physical lines remain below 500: board-version-note 345; malformed-input 225; activation-contract 446; run-browser-lane 486; agent-browser support 387; CI/browser policy 302; inventory support 484; inventory owner 408.
+- Final clean acceptance from absent dist/frontend and with ARCHBOARD_VAULT explicitly removed passes bun run check: lint, formatting, both TypeScript projects, 400 module tests, 252 system tests, 99 repository-policy tests, and all 15 sequential headless browser owners. Log: /tmp/task138-ci2-final-full-check.log. Final cleanup removed the generated dist, found no new vault/browser fixture roots, and found no surviving TASK-138 check, canvas, browser, or owner process.
+
+Evidence correction after final formatting: tests/system/boards/malformed-input.test.ts is 223 physical lines (not the pre-format 225); every stated line cap remains satisfied.
 <!-- SECTION:NOTES:END -->
