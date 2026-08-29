@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
+import { expandElements } from "../../../src/runtime/engine/expand-elements.ts";
 
 import {
 	LOCK_FREE_LINGER_MS,
@@ -283,12 +284,15 @@ test(
 		expect(saving.metas.some((text) => /unsaved/.test(text ?? ""))).toBe(false);
 
 		const noteFile = (await request<{ file: string }>(`/api/boards/info?board=${BOARD}`)).body.file;
+		const foreign = expandElements(
+			[{ id: "theirs", type: "rectangle", x: 20, y: 20, width: 40, height: 40 }],
+			{ forStore: true },
+		)[0]!;
 		writeFileSync(
 			noteFile,
 			readFileSync(noteFile, "utf8").replace(
 				'"id": "auth"',
-				'"id": "theirs", "type": "rectangle", "x": 20, "y": 20, ' +
-					'"width": 40, "height": 40}, {"id": "auth"',
+				`${JSON.stringify(foreign).slice(1, -1)}}, {"id": "auth"`,
 			),
 		);
 		const noticed = await pollUntil(

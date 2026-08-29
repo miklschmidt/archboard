@@ -785,13 +785,20 @@ export function expandForBoard(
 	// the board's own copy of a container no longer carries anything to expand.
 	// Taking it out fails three checks in `src/runtime/engine/tests/label-input.test.ts` (TASK-073).
 	const labelled = boundTextsByContainer([...board.values()]);
+	const writtenTextIds = new Set(
+		written.filter((element) => element.type === "text").map((element) => element.id),
+	);
 	const mended = written.map((element) => {
 		const textIds = labelled.get(element.id) ?? [];
 		const refs = Array.isArray(element.boundElements) ? element.boundElements : [];
 		// A reference to a text element the board does not hold is not a label,
 		// and leaving it would suppress the real one.
 		const live = refs.filter(
-			(ref) => ref?.type !== "text" || textIds.includes(ref.id) || board.has(ref.id),
+			(ref) =>
+				ref?.type !== "text" ||
+				textIds.includes(ref.id) ||
+				board.has(ref.id) ||
+				writtenTextIds.has(ref.id),
 		);
 		const named = live.some((ref) => ref?.type === "text" && textIds.includes(ref.id));
 		if (named || textIds.length === 0) {
