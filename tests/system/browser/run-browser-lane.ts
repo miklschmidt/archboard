@@ -1,16 +1,19 @@
 import {
+	accessSync,
+	constants,
 	existsSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
 	readdirSync,
 	rmSync,
+	statSync,
 	unlinkSync,
 } from "node:fs";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
@@ -100,16 +103,54 @@ function probe(command: string, argv: readonly string[], label: string): void {
 	}
 }
 
-function verifyPrerequisites(selection: BrowserSelection): void {
+function configuredBrowserExecutable(): string {
+	const configured = process.env.AGENT_BROWSER_EXECUTABLE_PATH;
+	if (!configured) {
+		throw new CouldNotRunError(
+			"AGENT_BROWSER_EXECUTABLE_PATH is missing; set it to the absolute Chrome executable installed for this lane.",
+		);
+	}
+	if (!isAbsolute(configured)) {
+		throw new CouldNotRunError(`AGENT_BROWSER_EXECUTABLE_PATH must be absolute: ${configured}`);
+	}
+	const executable = resolve(configured);
+	let stat: ReturnType<typeof statSync>;
+	try {
+		stat = statSync(executable);
+	} catch (error) {
+		throw new CouldNotRunError(`AGENT_BROWSER_EXECUTABLE_PATH does not exist: ${executable}`, {
+			cause: error,
+		});
+	}
+	if (!stat.isFile()) {
+		throw new CouldNotRunError(`AGENT_BROWSER_EXECUTABLE_PATH is not a file: ${executable}`);
+	}
+	try {
+		accessSync(executable, constants.X_OK);
+	} catch (error) {
+		throw new CouldNotRunError(`AGENT_BROWSER_EXECUTABLE_PATH is not executable: ${executable}`, {
+			cause: error,
+		});
+	}
+	return executable;
+}
+
+function verifyPrerequisites(selection: BrowserSelection): string {
+	const browserExecutable = configuredBrowserExecutable();
 	probe("agent-browser", ["--version"], "agent-browser");
 	if (selection.files.includes(HUMAN_PERFORMANCE)) probe("strace", ["--version"], "strace");
+	return browserExecutable;
 }
 
 function childName(index: number): string {
 	return String(index + 1).padStart(2, "0");
 }
 
-function ownerEnvironment(laneRoot: string, ownerRoot: string): Record<string, string> {
+function ownerEnvironment(
+	laneRoot: string,
+	ownerRoot: string,
+	browserExecutable: string,
+): Record<string, string> {
 	const selectedPath = process.env.PATH;
 	if (!selectedPath) throw new CouldNotRunError("Browser lane has no PATH for its Bun child.");
 	const identity = randomUUID().slice(0, 8);
@@ -126,13 +167,23 @@ function ownerEnvironment(laneRoot: string, ownerRoot: string): Record<string, s
 		AGENT_BROWSER_SESSION: `s-${identity}`,
 		AGENT_BROWSER_NAMESPACE: `n-${identity}`,
 		AGENT_BROWSER_IDLE_TIMEOUT_MS: String(TEST_BROWSER_COMMAND_TIMEOUT_MS),
+		AGENT_BROWSER_EXECUTABLE_PATH: browserExecutable,
 		ARCHBOARD_TEST_BROWSER_LANE_ROOT: laneRoot,
 		ARCHBOARD_TEST_BROWSER_OWNER_ROOT: ownerRoot,
 	};
 }
 
 function spawnOwner(file: BrowserTestPath, env: Record<string, string>): OwnedChild {
-	const child = spawn("bun", ["test", "--no-orphans", "--isolate", "--max-concurrency=1", file], {
+	const fixture = process.env.ARCHBOARD_TEST_BROWSER_OWNER_FIXTURE;
+	if (fixture && (!isAbsolute(fixture) || !existsSync(fixture))) {
+		throw new CouldNotRunError(
+			"ARCHBOARD_TEST_BROWSER_OWNER_FIXTURE must name an existing absolute file.",
+		);
+	}
+	const argv = fixture
+		? [fixture]
+		: ["test", "--no-orphans", "--isolate", "--max-concurrency=1", file];
+	const child = spawn("bun", argv, {
 		cwd: repoRoot,
 		detached: true,
 		env,
@@ -326,7 +377,10 @@ async function reapExitedOwner(child: OwnedChild): Promise<void> {
 	}
 }
 
-async function runSelection(selection: BrowserSelection): Promise<number> {
+async function runSelection(
+	selection: BrowserSelection,
+	browserExecutable: string,
+): Promise<number> {
 	let current: OwnedChild | null = null;
 	let interrupted: "SIGINT" | "SIGTERM" | null = null;
 	let interruption: Promise<void> | null = null;
@@ -389,7 +443,7 @@ async function runSelection(selection: BrowserSelection): Promise<number> {
 			const name = childName(index);
 			const ownerRoot = join(laneRoot, name);
 			mkdirSync(ownerRoot);
-			const env = ownerEnvironment(laneRoot, ownerRoot);
+			const env = ownerEnvironment(laneRoot, ownerRoot, browserExecutable);
 			current = spawnOwner(file, env);
 			const processGroup = current.pid;
 			try {
@@ -431,8 +485,8 @@ async function main(): Promise<number> {
 		return 1;
 	}
 	try {
-		verifyPrerequisites(selection);
-		return await runSelection(selection);
+		const browserExecutable = verifyPrerequisites(selection);
+		return await runSelection(selection, browserExecutable);
 	} catch (error) {
 		process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
 		if (error instanceof CouldNotRunError) return 2;

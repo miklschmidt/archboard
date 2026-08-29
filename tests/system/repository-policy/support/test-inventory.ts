@@ -19,6 +19,68 @@ export interface InventoryResult {
 	reachableScripts: Map<string, number>;
 }
 
+export function browserBundleSnapshot(repoRoot: string): {
+	exists: boolean;
+	mtimeMs?: number;
+	size?: number;
+} {
+	const bundle = path.join(repoRoot, "dist/frontend/index.html");
+	if (!fs.existsSync(bundle)) return { exists: false };
+	const stat = fs.statSync(bundle);
+	return { exists: true, mtimeMs: stat.mtimeMs, size: stat.size };
+}
+
+export function createBrowserPreflightFixture(): {
+	root: string;
+	bin: string;
+	temporary: string;
+	browserExecutable: string;
+	versionMarker: string;
+	ownerPathMarker: string;
+	unexpectedMarker: string;
+} {
+	const root = fs.mkdtempSync(
+		path.join(process.env.TMPDIR ?? "/tmp", "archboard-browser-preflight-"),
+	);
+	const bin = path.join(root, "bin");
+	const temporary = path.join(root, "tmp");
+	fs.mkdirSync(bin);
+	fs.mkdirSync(temporary);
+	fs.symlinkSync(process.execPath, path.join(bin, "bun"));
+	fs.symlinkSync(process.execPath, path.join(bin, "bunx"));
+	const browserExecutable = path.join(root, "chrome");
+	fs.writeFileSync(browserExecutable, "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+	return {
+		root,
+		bin,
+		temporary,
+		browserExecutable,
+		versionMarker: path.join(root, "agent-browser-version"),
+		ownerPathMarker: path.join(root, "owner-browser-path"),
+		unexpectedMarker: path.join(root, "agent-browser-unexpected"),
+	};
+}
+
+export function installFakeAgentBrowser(
+	fixture: ReturnType<typeof createBrowserPreflightFixture>,
+): void {
+	const executable = path.join(fixture.bin, "agent-browser");
+	fs.writeFileSync(
+		executable,
+		`#!/bin/sh\nif [ "$1" = "--version" ]; then : > "${fixture.versionMarker}"; exit 0; fi\nprintf '%s' "$AGENT_BROWSER_EXECUTABLE_PATH" > "${fixture.ownerPathMarker}"\n: > "${fixture.unexpectedMarker}"\nexit 97\n`,
+		{ mode: 0o755 },
+	);
+}
+
+export function processExists(pid: number): boolean {
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 const RUN_SCRIPT = /\bbun run ([\w:-]+)/g;
 const BUN_TEST = /\bbun test\b([^&;|]*)/g;
 const FINAL_TEST_LANES = new Set([
@@ -30,16 +92,17 @@ const FINAL_TEST_LANES = new Set([
 
 export function inspectWorkflow(workflow: string): string[] {
 	const errors: string[] = [];
-	if (!/bun run check\b/.test(workflow)) {
+	const invocations = [...workflow.matchAll(RUN_SCRIPT)].map((match) => match[1]);
+	const checkCount = invocations.filter((script) => script === "check").length;
+	if (checkCount !== 1) {
 		errors.push(
-			"the workflow does not run `bun run check`, so lint, format, and the suite are not a push gate.",
+			`the workflow must invoke \`bun run check\` exactly once; found ${checkCount} invocations.`,
 		);
 	}
-	for (const named of workflow.match(/bun run test:[\w-]+/g) ?? []) {
-		const suite = named.replace("bun run ", "");
+	for (const script of invocations.filter((name) => name !== "check")) {
 		errors.push(
-			`the workflow runs \`${suite}\` by name, and the chain already runs it. ` +
-				"Naming suites one at a time in the workflow is how it fell behind before.",
+			`the workflow invokes package script \`${script}\` directly; ` +
+				"`bun run check` must be its only package-script invocation.",
 		);
 	}
 	return errors;

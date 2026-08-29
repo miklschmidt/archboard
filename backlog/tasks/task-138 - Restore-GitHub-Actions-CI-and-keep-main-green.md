@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-29 16:14'
-updated_date: '2026-08-29 16:48'
+updated_date: '2026-08-29 17:20'
 labels: []
 dependencies: []
 references:
@@ -65,4 +65,14 @@ Diagnosis and complete-workflow audit, 2026-08-29:
 - Frontend build: separate `bun run build` and `test -d dist/frontend` are stale duplicate ownership. The serial browser adapter checks freshness and builds at most once; removing these steps makes CI exercise the same clean-checkout path as `bun run check`.
 - Public gate: `bun run check` is correct and expands to lint, formatting, both TypeScript checks, modules, the eight serial system directories, repository policy/inventory, and the 15 literal serial headless browser owners. No lane is split, sharded, skipped, allowed to fail, or invoked separately.
 - Timeout/resource risk: keep the 30-minute job limit. The browser lane is serial by contract and may dominate runtime; Chrome download and apt/network setup are the main CI-only risks. All prerequisites fail closed, and the push monitor loop owns remediation. No impractical lane has been found, so no follow-up omission task is justified.
+
+Implementation evidence, fixed base ee31c07, 2026-08-29:
+
+- TDD red: workflow mutation tests failed against the predecessor diagnostics; browser forwarding fake failed because the isolated owner did not receive AGENT_BROWSER_EXECUTABLE_PATH. Green focused repository-policy owner: 17 tests, 103 assertions.
+- Focused fixed-base package compatibility: 11 tests, 165 assertions. Focused real browser recovery after an intentionally removed derived bundle: fixed-point 1/1 and human-performance 1/1, with the latter measuring 10,000 elements headlessly.
+- Preflight residue proof: missing, relative, absent, directory, and non-executable configured paths exit 2 before agent-browser probing, frontend build, or owner acquisition. The focused refusal test left the full dist/frontend hash unchanged at ddf89d3782ba25e3e6b106c655514be0f55325eab9a9a1d6acd3f9a9b8d9f8f7.
+- Honest failed full-check evidence is retained in /tmp/task138-full-check.log and /tmp/task138-final-full-check.log. The first used a malformed ignored bundle produced before the frozen install; the second caught a stray test assertion that rejected legitimate Vite stderr during a clean build. Neither was a product gate weakening, and both causes were removed before acceptance.
+- Clean acceptance from absent dist/frontend: AGENT_BROWSER_EXECUTABLE_PATH=$(realpath ~/.agent-browser/browsers/chrome-150.0.7871.46/chrome) bun run check, exit 0. It passed lint, formatting, both TypeScript projects, 400 module tests, 250 serial system tests, 50 repository tests, and all 15 serial headless browser owners. Log: /tmp/task138-acceptance-full-check.log.
+- Modified TypeScript physical lines: run-browser-lane.ts 498; browser support 385; inventory support 261; inventory owner 498. All remain below the enforced 500-line cap.
+- Workflow contract: top-level contents:read; checkout@v7; setup-bun@v2; frozen install; explicit strace; pinned agent-browser@0.34.0; install --with-deps; exactly one downloaded executable named chrome resolved with realpath and exported through GITHUB_ENV; one bun run check; 30-minute timeout. No skip, shard, allow-failure, or continue-on-error path was added.
 <!-- SECTION:NOTES:END -->
