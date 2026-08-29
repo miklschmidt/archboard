@@ -103,13 +103,9 @@ function probe(command: string, argv: readonly string[], label: string): void {
 	}
 }
 
-function configuredBrowserExecutable(): string {
+function configuredBrowserExecutable(): string | undefined {
 	const configured = process.env.AGENT_BROWSER_EXECUTABLE_PATH;
-	if (!configured) {
-		throw new CouldNotRunError(
-			"AGENT_BROWSER_EXECUTABLE_PATH is missing; set it to the absolute Chrome executable installed for this lane.",
-		);
-	}
+	if (!configured) return undefined;
 	if (!isAbsolute(configured)) {
 		throw new CouldNotRunError(`AGENT_BROWSER_EXECUTABLE_PATH must be absolute: ${configured}`);
 	}
@@ -135,7 +131,7 @@ function configuredBrowserExecutable(): string {
 	return executable;
 }
 
-function verifyPrerequisites(selection: BrowserSelection): string {
+function verifyPrerequisites(selection: BrowserSelection): string | undefined {
 	const browserExecutable = configuredBrowserExecutable();
 	probe("agent-browser", ["--version"], "agent-browser");
 	if (selection.files.includes(HUMAN_PERFORMANCE)) probe("strace", ["--version"], "strace");
@@ -149,12 +145,12 @@ function childName(index: number): string {
 function ownerEnvironment(
 	laneRoot: string,
 	ownerRoot: string,
-	browserExecutable: string,
+	browserExecutable: string | undefined,
 ): Record<string, string> {
 	const selectedPath = process.env.PATH;
 	if (!selectedPath) throw new CouldNotRunError("Browser lane has no PATH for its Bun child.");
 	const identity = randomUUID().slice(0, 8);
-	return {
+	const env: Record<string, string> = {
 		PATH: selectedPath,
 		LANG: "C.UTF-8",
 		LC_ALL: "C.UTF-8",
@@ -167,23 +163,15 @@ function ownerEnvironment(
 		AGENT_BROWSER_SESSION: `s-${identity}`,
 		AGENT_BROWSER_NAMESPACE: `n-${identity}`,
 		AGENT_BROWSER_IDLE_TIMEOUT_MS: String(TEST_BROWSER_COMMAND_TIMEOUT_MS),
-		AGENT_BROWSER_EXECUTABLE_PATH: browserExecutable,
 		ARCHBOARD_TEST_BROWSER_LANE_ROOT: laneRoot,
 		ARCHBOARD_TEST_BROWSER_OWNER_ROOT: ownerRoot,
 	};
+	if (browserExecutable) env.AGENT_BROWSER_EXECUTABLE_PATH = browserExecutable;
+	return env;
 }
 
 function spawnOwner(file: BrowserTestPath, env: Record<string, string>): OwnedChild {
-	const fixture = process.env.ARCHBOARD_TEST_BROWSER_OWNER_FIXTURE;
-	if (fixture && (!isAbsolute(fixture) || !existsSync(fixture))) {
-		throw new CouldNotRunError(
-			"ARCHBOARD_TEST_BROWSER_OWNER_FIXTURE must name an existing absolute file.",
-		);
-	}
-	const argv = fixture
-		? [fixture]
-		: ["test", "--no-orphans", "--isolate", "--max-concurrency=1", file];
-	const child = spawn("bun", argv, {
+	const child = spawn("bun", ["test", "--no-orphans", "--isolate", "--max-concurrency=1", file], {
 		cwd: repoRoot,
 		detached: true,
 		env,
@@ -379,7 +367,7 @@ async function reapExitedOwner(child: OwnedChild): Promise<void> {
 
 async function runSelection(
 	selection: BrowserSelection,
-	browserExecutable: string,
+	browserExecutable: string | undefined,
 ): Promise<number> {
 	let current: OwnedChild | null = null;
 	let interrupted: "SIGINT" | "SIGTERM" | null = null;

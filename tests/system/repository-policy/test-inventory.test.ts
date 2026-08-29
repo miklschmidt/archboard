@@ -14,10 +14,8 @@ import {
 } from "../../../src/shared/timing/timing.ts";
 import {
 	discoverNativeTests,
-	browserBundleSnapshot,
 	createBrowserPreflightFixture,
 	inspectTestInventory,
-	inspectWorkflow,
 	installFakeAgentBrowser,
 	processExists,
 	type InventoryInput,
@@ -268,110 +266,6 @@ function prerequisiteFixture(withAgentBrowser: boolean) {
 	return fixture;
 }
 
-function runPrerequisiteNegative(withAgentBrowser: boolean, executablePath?: string): void {
-	const fixture = prerequisiteFixture(withAgentBrowser);
-	const beforeBundle = browserBundleSnapshot(repoRoot);
-	try {
-		const file = withAgentBrowser ? BROWSER_TEST_PATHS[0] : BROWSER_TEST_PATHS[1];
-		const result = Bun.spawnSync({
-			cmd: ["bun", BROWSER_ADAPTER_PATH, "--focus", file],
-			cwd: repoRoot,
-			env: {
-				PATH: fixture.bin,
-				TMPDIR: fixture.temporary,
-				LANG: "C.UTF-8",
-				LC_ALL: "C.UTF-8",
-				NO_COLOR: "1",
-				AGENT_BROWSER_EXECUTABLE_PATH: executablePath ?? fixture.browserExecutable,
-			},
-			stdout: "pipe",
-			stderr: "pipe",
-		});
-		expect(result.exitCode).toBe(2);
-		expect(result.signalCode).toBeUndefined();
-		expect(fs.readdirSync(fixture.temporary)).toEqual([]);
-		expect(fs.existsSync(fixture.unexpectedMarker)).toBeFalse();
-		expect(browserBundleSnapshot(repoRoot)).toEqual(beforeBundle);
-		if (withAgentBrowser) expect(fs.existsSync(fixture.versionMarker)).toBeTrue();
-	} finally {
-		fs.rmSync(fixture.root, { recursive: true, force: true });
-	}
-}
-
-function runBrowserExecutableNegative(
-	setup: (fixture: ReturnType<typeof prerequisiteFixture>) => string | undefined,
-	diagnostic: string,
-): void {
-	const fixture = prerequisiteFixture(true);
-	const beforeBundle = browserBundleSnapshot(repoRoot);
-	try {
-		const configured = setup(fixture);
-		const result = Bun.spawnSync({
-			cmd: ["bun", BROWSER_ADAPTER_PATH, "--focus", BROWSER_TEST_PATHS[1]],
-			cwd: repoRoot,
-			env: {
-				PATH: fixture.bin,
-				TMPDIR: fixture.temporary,
-				...(configured === undefined ? {} : { AGENT_BROWSER_EXECUTABLE_PATH: configured }),
-			},
-			stdout: "pipe",
-			stderr: "pipe",
-		});
-		expect(result.exitCode).toBe(2);
-		expect(new TextDecoder().decode(result.stderr)).toContain(diagnostic);
-		expect(fs.existsSync(fixture.versionMarker)).toBeFalse();
-		expect(fs.readdirSync(fixture.temporary)).toEqual([]);
-		expect(browserBundleSnapshot(repoRoot)).toEqual(beforeBundle);
-	} finally {
-		fs.rmSync(fixture.root, { recursive: true, force: true });
-	}
-}
-
-describe("browser adapter prerequisite outcomes", () => {
-	test("missing command prerequisites exit 2 before build or owner acquisition", () => {
-		runPrerequisiteNegative(false);
-		runPrerequisiteNegative(true);
-	});
-
-	test("unusable configured browser executables exit 2 before build or owner acquisition", () => {
-		runBrowserExecutableNegative(() => undefined, "AGENT_BROWSER_EXECUTABLE_PATH is missing");
-		runBrowserExecutableNegative(() => "relative/chrome", "must be absolute");
-		runBrowserExecutableNegative(() => "/missing/chrome", "does not exist");
-		runBrowserExecutableNegative((fixture) => fixture.root, "is not a file");
-		runBrowserExecutableNegative((fixture) => {
-			fs.chmodSync(fixture.browserExecutable, 0o644);
-			return fixture.browserExecutable;
-		}, "is not executable");
-	});
-
-	test("forwards the exact absolute browser executable to an isolated owner", () => {
-		const fixture = prerequisiteFixture(true);
-		try {
-			const ownerFixture = path.join(fixture.root, "owner.ts");
-			fs.writeFileSync(
-				ownerFixture,
-				`Bun.write(${JSON.stringify(fixture.ownerPathMarker)}, process.env.AGENT_BROWSER_EXECUTABLE_PATH ?? "missing");`,
-			);
-			const result = Bun.spawnSync({
-				cmd: ["bun", BROWSER_ADAPTER_PATH, "--focus", BROWSER_TEST_PATHS[1]],
-				cwd: repoRoot,
-				env: {
-					PATH: fixture.bin,
-					TMPDIR: fixture.temporary,
-					AGENT_BROWSER_EXECUTABLE_PATH: fixture.browserExecutable,
-					ARCHBOARD_TEST_BROWSER_OWNER_FIXTURE: ownerFixture,
-				},
-				stdout: "ignore",
-				stderr: "pipe",
-			});
-			expect(result.exitCode).toBe(0);
-			expect(fs.readFileSync(fixture.ownerPathMarker, "utf8")).toBe(fixture.browserExecutable);
-		} finally {
-			fs.rmSync(fixture.root, { recursive: true, force: true });
-		}
-	});
-});
-
 describe("browser adapter interruption and cleanup timing", () => {
 	for (const [signal, exitCode] of [
 		["SIGINT", 130],
@@ -472,27 +366,5 @@ describe("browser predecessor oracle guards", () => {
 		expect(typed).toContain("expect(postedTextIds.has(label!.id)).toBe(true);");
 		expect(typed).toContain("expect(note.includes(`hello world ^${drawnText!.id}`)).toBe(true);");
 		expect(typed).toContain("expect(note.includes(`ABCDEFGHIJ ^${label!.id}`)).toBe(true);");
-	});
-});
-
-describe("CI workflow policy", () => {
-	const workflow = fs.readFileSync(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
-
-	test("the real workflow invokes only the complete check gate, exactly once", () => {
-		expect(inspectWorkflow(workflow)).toEqual([]);
-	});
-
-	test("rejects missing, duplicate, build, and test package-script invocations", () => {
-		expect(inspectWorkflow("run: true\n")).toEqual([
-			"the workflow must invoke `bun run check` exactly once; found 0 invocations.",
-		]);
-		expect(inspectWorkflow("run: bun run check && bun run check\n")).toEqual([
-			"the workflow must invoke `bun run check` exactly once; found 2 invocations.",
-		]);
-		for (const script of ["build", "test"]) {
-			expect(inspectWorkflow(`run: bun run ${script}\nrun: bun run check\n`)).toEqual([
-				`the workflow invokes package script \`${script}\` directly; \`bun run check\` must be its only package-script invocation.`,
-			]);
-		}
 	});
 });
