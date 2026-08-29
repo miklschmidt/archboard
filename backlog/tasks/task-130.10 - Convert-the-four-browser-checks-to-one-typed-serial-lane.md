@@ -1,11 +1,11 @@
 ---
 id: TASK-130.10
 title: Convert the four browser checks to one typed serial lane
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-28 01:05'
-updated_date: '2026-08-29 03:36'
+updated_date: '2026-08-29 03:38'
 labels: []
 dependencies:
   - TASK-130.01
@@ -38,15 +38,15 @@ Use native Bun assertions inside the browser tests, with one small typed command
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 check-fixed-point, check-human-edit-performance, check-live-session, and check-typed-text are replaced by typed Bun tests reached only through one explicitly sequential browser lane.
-- [ ] #2 The lane refuses to claim a pass without agent-browser, returns the documented could-not-run outcome, asserts a headless user agent, and never maps a browser window.
-- [ ] #3 Frontend freshness is checked once per lane so unchanged sources build at most once, and each browser process and canvas uses verified ownership and bounded cleanup.
-- [ ] #4 Fixed-point coverage preserves zero document diff, malformed-geometry recovery, off-screen inspection export, exact PNG and manifest bytes, bridge suppression, clipping, and unchanged visible pane state.
-- [ ] #5 Live-session coverage preserves all 42 cycles, equality after every cycle, server-update ordering, user-edit scheduling, held-board behavior, and hold-generation recovery.
-- [ ] #6 Typed-text coverage still lets Excalidraw mint IDs, exercises open editors across writes, and proves every character and rename reaches the board and note.
-- [ ] #7 Human-edit performance preserves the 10,000-element human-only reproduction, compact acknowledgement, no scene replacement, structural response checks, same-run relative frame diagnostics, and the rule against fixed millisecond product gates.
-- [ ] #8 Every test source file is at most 500 lines; browser tests use condition polling and named timing margins, and no test enters a parallel, random, changed-only, or generic recursive lane by accident.
-- [ ] #9 Representative fixed-point, typing, report-order, renderer, and human-response regressions fail before the old scripts are deleted, and the complete browser lane passes repeatedly in documented order.
+- [x] #1 check-fixed-point, check-human-edit-performance, check-live-session, and check-typed-text are replaced by typed Bun tests reached only through one explicitly sequential browser lane.
+- [x] #2 The lane refuses to claim a pass without agent-browser, returns the documented could-not-run outcome, asserts a headless user agent, and never maps a browser window.
+- [x] #3 Frontend freshness is checked once per lane so unchanged sources build at most once, and each browser process and canvas uses verified ownership and bounded cleanup.
+- [x] #4 Fixed-point coverage preserves zero document diff, malformed-geometry recovery, off-screen inspection export, exact PNG and manifest bytes, bridge suppression, clipping, and unchanged visible pane state.
+- [x] #5 Live-session coverage preserves all 42 cycles, equality after every cycle, server-update ordering, user-edit scheduling, held-board behavior, and hold-generation recovery.
+- [x] #6 Typed-text coverage still lets Excalidraw mint IDs, exercises open editors across writes, and proves every character and rename reaches the board and note.
+- [x] #7 Human-edit performance preserves the 10,000-element human-only reproduction, compact acknowledgement, no scene replacement, structural response checks, same-run relative frame diagnostics, and the rule against fixed millisecond product gates.
+- [x] #8 Every test source file is at most 500 lines; browser tests use condition polling and named timing margins, and no test enters a parallel, random, changed-only, or generic recursive lane by accident.
+- [x] #9 Representative fixed-point, typing, report-order, renderer, and human-response regressions fail before the old scripts are deleted, and the complete browser lane passes repeatedly in documented order.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -132,3 +132,11 @@ Review remediation (2026-08-29, follow-up to 809e5b0):
 - Follow-up validation: test:suites 27 pass (including prerequisite, build-interruption, and cleanup-timing subprocess proofs); test:boundaries 8 pass; type-check, lint, fmt:check, and git diff --check pass. All owned TypeScript files remain <=468 except timing.ts exactly 497. Resource audit found no owned browser/canvas/build/process/root residue.
 - Per parent instruction, no second bun run test:browser or bun run check was run.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replaced the four legacy browser scripts with one strict typed serial adapter and 13 native Bun browser owners. The lane now owns prerequisite checks, frontend freshness, allowlisted headless environments, retained process-group and agent-browser cleanup, exact inventory, and failure/interruption proofs. Preserved fixed-point, renderer/export, typed-text, human-performance, and all live-session/claim contracts with source-line ledger and mutation evidence.
+
+Validation: all focused owners passed; two consecutive pre-cutover native lanes passed; post-cutover inventory and static gates passed; exactly one bun run test:browser and exactly one bun run check passed; final review remediation passed inventory, boundaries, type-check, lint, formatting, diff, and fake build-interruption proofs without another browser/full run. Independent Standards and Spec rereviews are REVIEW_CLEAN. No push performed. TASK-130.11 must be reconciled to this landed 13-file selector before dispatch.
+<!-- SECTION:FINAL_SUMMARY:END -->
