@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 
 import type { Invocation, OpenerFixture } from "./support/opener-fixture.ts";
+import { readLinuxProcessStatEvidence } from "./support/opener-fixture.ts";
 
 async function save(fixture: OpenerFixture, invocation: Invocation): Promise<void> {
 	const result = await fixture.request("/api/settings/opener", {
@@ -77,7 +78,8 @@ describe("machine-wide opener persistence", () => {
 			resources.defer(() => selectionA.releaseAndWait());
 			await save(fixture, selectionA);
 			await activate(fixture.caller());
-			expect(await selectionA.waitForCapture()).toMatchObject({ extra: ["selection-A"] });
+			const captureA = await selectionA.waitForCapture();
+			expect(captureA).toMatchObject({ extra: ["selection-A"] });
 
 			const selectionB = fixture.invocation("immediate", ["selection-B"]);
 			resources.defer(() => selectionB.releaseAndWait());
@@ -86,7 +88,8 @@ describe("machine-wide opener persistence", () => {
 			const callerTwo = fixture.caller();
 			await activate(callerOne);
 			await activate(callerTwo);
-			expect(await selectionB.waitForCaptures(2)).toEqual([
+			const capturesB = await selectionB.waitForCaptures(2);
+			expect(capturesB).toEqual([
 				expect.objectContaining({ extra: ["selection-B"] }),
 				expect.objectContaining({ extra: ["selection-B"] }),
 			]);
@@ -94,7 +97,15 @@ describe("machine-wide opener persistence", () => {
 			await fixture.restart();
 			const restartedCaller = fixture.caller();
 			await activate(restartedCaller);
-			expect(await selectionB.waitForCaptures(3)).toHaveLength(3);
+			const capturesAfterRestart = await selectionB.waitForCaptures(3);
+			expect(capturesAfterRestart).toHaveLength(3);
+			await selectionB.releaseAndWait();
+			await selectionA.releaseAndWait();
+			if (process.platform === "linux") {
+				for (const capture of [captureA, ...capturesAfterRestart]) {
+					expect(readLinuxProcessStatEvidence(capture.pid)).toBeNull();
+				}
+			}
 			expect(relative(vault, fixture.configFile).startsWith("..")).toBeTrue();
 			expect(readFileSync(note)).toEqual(noteBytes);
 			expect(statSync(note, { bigint: true }).mtimeNs).toBe(noteMtime);
