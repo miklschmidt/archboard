@@ -1,150 +1,35 @@
 import fs from "node:fs";
-import path from "node:path";
-
-import {
-	CodeBindingSchema,
-	type CodeBinding,
-	type CodeTargetFailureCode,
-} from "../../shared/code-target/index.js";
+import type { CodeBinding } from "../../shared/code-target/index.js";
 import { repoIdentityAt, repoRootOf } from "../engine/git.js";
 import { readRegistry } from "../engine/repo-registry.js";
-
-type ResolutionFailureCode = Extract<
-	CodeTargetFailureCode,
-	| "BINDING_UNAVAILABLE"
-	| "CHECKOUT_UNAVAILABLE"
-	| "CHECKOUT_IDENTITY_CHANGED"
-	| "TARGET_UNAVAILABLE"
-	| "TARGET_OUTSIDE_CHECKOUT"
->;
-
-export interface ResolutionFailure {
-	ok: false;
-	code: ResolutionFailureCode;
-	error: string;
-}
-
-export interface RegisteredCheckout {
-	ok: true;
-	repository: string;
-	root: string;
-}
-
-export interface LocalCodeTarget extends RegisteredCheckout {
-	target: string;
-	path: string;
-	kind: "file" | "directory";
-}
-
-export type RegisteredCheckoutResult = RegisteredCheckout | ResolutionFailure;
-export type LocalCodeTargetResult = LocalCodeTarget | ResolutionFailure;
-
-function failure(code: ResolutionFailureCode, error: string): ResolutionFailure {
-	return { ok: false, code, error };
-}
-
-function realDirectory(candidate: string): string | null {
-	try {
-		const real = fs.realpathSync.native(candidate);
-		return fs.statSync(real).isDirectory() ? real : null;
-	} catch {
-		return null;
-	}
-}
-
-type PathContainment = Pick<typeof path, "relative" | "isAbsolute" | "sep">;
-
-export function isPathWithin(
-	root: string,
-	candidate: string,
-	paths: PathContainment = path,
-): boolean {
-	const relative = paths.relative(root, candidate);
-	return (
-		!paths.isAbsolute(relative) &&
-		(relative === "" || (!relative.startsWith(`..${paths.sep}`) && relative !== ".."))
-	);
-}
-
+import {
+	isPathWithin,
+	resolveLocalCodeTargetsWith,
+	resolveRegisteredCheckoutWith,
+	type LocalCodeTargetResult,
+	type RegisteredCheckoutResult,
+} from "./lib/resolver-core.js";
+export type {
+	LocalCodeTarget,
+	LocalCodeTargetResult,
+	RegisteredCheckout,
+	RegisteredCheckoutResult,
+	ResolutionFailure,
+} from "./lib/resolver-core.js";
+export { isPathWithin };
+const dependencies = {
+	readRegistry,
+	realpath: fs.realpathSync.native,
+	stat: fs.statSync,
+	repoRoot: repoRootOf,
+	repoIdentity: repoIdentityAt,
+};
 export function resolveRegisteredCheckout(repository: string): RegisteredCheckoutResult {
-	const entry = readRegistry().find((candidate) => candidate.repo === repository);
-	if (!entry) {
-		return failure(
-			"CHECKOUT_UNAVAILABLE",
-			`No registered checkout exists for ${repository}. Add it with archboard repo add <dir>.`,
-		);
-	}
-	const root = realDirectory(entry.root);
-	if (!root) {
-		return failure(
-			"CHECKOUT_UNAVAILABLE",
-			`The registered checkout for ${repository} is unavailable.`,
-		);
-	}
-	const discoveredRoot = repoRootOf(root);
-	if (!discoveredRoot) {
-		return failure("CHECKOUT_UNAVAILABLE", `${root} is no longer a Git checkout.`);
-	}
-	let canonicalDiscoveredRoot: string;
-	try {
-		canonicalDiscoveredRoot = fs.realpathSync.native(discoveredRoot);
-	} catch {
-		return failure("CHECKOUT_UNAVAILABLE", `The Git root for ${repository} is unavailable.`);
-	}
-	if (canonicalDiscoveredRoot !== root) {
-		return failure(
-			"CHECKOUT_UNAVAILABLE",
-			`The registered root for ${repository} no longer names the checkout root.`,
-		);
-	}
-	if (repoIdentityAt(root) !== repository) {
-		return failure(
-			"CHECKOUT_IDENTITY_CHANGED",
-			`The checkout at ${root} no longer identifies as ${repository}. Re-register the checkout.`,
-		);
-	}
-	return { ok: true, repository, root };
+	return resolveRegisteredCheckoutWith(repository, dependencies);
 }
-
-function isAbsoluteOnAnyPlatform(value: string): boolean {
-	return path.posix.isAbsolute(value) || path.win32.isAbsolute(value);
+export function resolveLocalCodeTargets(bindings: readonly CodeBinding[]): LocalCodeTargetResult[] {
+	return resolveLocalCodeTargetsWith(bindings, dependencies);
 }
-
 export function resolveLocalCodeTarget(binding: CodeBinding): LocalCodeTargetResult {
-	const parsed = CodeBindingSchema.safeParse(binding);
-	if (!parsed.success) {
-		return failure("BINDING_UNAVAILABLE", "The element has no complete code binding.");
-	}
-	const checkout = resolveRegisteredCheckout(parsed.data.repo);
-	if (!checkout.ok) return checkout;
-	if (isAbsoluteOnAnyPlatform(parsed.data.path)) {
-		return failure("TARGET_OUTSIDE_CHECKOUT", "A code binding path must be repository-relative.");
-	}
-	const lexicalTarget = path.resolve(checkout.root, parsed.data.path);
-	if (!isPathWithin(checkout.root, lexicalTarget)) {
-		return failure("TARGET_OUTSIDE_CHECKOUT", "The code binding leaves its registered checkout.");
-	}
-	let target: string;
-	let stats: fs.Stats;
-	try {
-		target = fs.realpathSync.native(lexicalTarget);
-		stats = fs.statSync(target);
-	} catch {
-		return failure(
-			"TARGET_UNAVAILABLE",
-			"The bound file or directory does not exist on this machine.",
-		);
-	}
-	if (!isPathWithin(checkout.root, target)) {
-		return failure("TARGET_OUTSIDE_CHECKOUT", "The bound target resolves outside its checkout.");
-	}
-	if (!stats.isFile() && !stats.isDirectory()) {
-		return failure("TARGET_UNAVAILABLE", "The bound target is neither a file nor a directory.");
-	}
-	return {
-		...checkout,
-		target,
-		path: parsed.data.path,
-		kind: stats.isFile() ? "file" : "directory",
-	};
+	return resolveLocalCodeTargets([binding])[0]!;
 }

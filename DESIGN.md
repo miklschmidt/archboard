@@ -323,10 +323,18 @@ metadata, not as stored local links.
 }
 ```
 
-When an element is presented to a browser or API caller, archboard may add a
-derived tappable target such as a local `file://` URL by resolving the binding
-through this machine's checkout registry. That overlay is added to a copy and
-stripped before the note is written, so the same persisted board can later
-present GitHub links or another target without a schema change.
+When an element is presented to a browser or API caller, archboard resolves the
+binding through this machine's checkout registry. A valid local file or
+directory gets an internal target addressed by board and element. If no local
+target exists, an exact `github.com/owner/repository` identity gets a validated
+GitHub HTTPS target at the recorded commit, branch, or `HEAD`. Other hosts get
+no invented target. The overlay exists only on an outbound copy and is stripped
+before the note is written.
+
+New presentations never emit `file://`. One upgrade edge remains deliberate: a
+pane may echo an old `file://` overlay after its checkout disappears. Without
+retaining presentation history, archboard cannot distinguish that value from a
+human-authored file link, so it preserves the value. While the canonical local
+target still resolves, the exact old overlay is recognized and removed.
 Elements synced from the browser are tagged `"source": "frontend_sync"`,
 distinguishing human edits from agent-authored elements.

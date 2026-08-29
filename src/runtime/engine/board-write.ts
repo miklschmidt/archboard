@@ -206,7 +206,9 @@ function persist<T>(
 	// The write boundary owns the canonical document, including held writes
 	// that cannot reach their note yet. A browser may have returned the derived
 	// link it was shown; keep only the portable binding in live state.
-	const portable = stripBindingPresentationLinks(content.elements.values());
+	const portable = stripBindingPresentationLinks(content.elements.values(), {
+		boardKey: target.key,
+	});
 	content.elements = new Map(portable.map((element) => [element.id, element]));
 	settleBoardContent(content);
 
@@ -270,8 +272,8 @@ function tellPanesAboutWrite(
 ): void {
 	const message: ElementsChangedMessage = {
 		type: "elements_changed",
-		created: presentElements(delta.created),
-		updated: presentElements(delta.updated),
+		created: presentElements(delta.created, { boardKey: target.key }),
+		updated: presentElements(delta.updated, { boardKey: target.key }),
 		deleted: delta.deleted,
 		origin: clientId,
 		timestamp,
@@ -388,9 +390,14 @@ export interface CanonicalCorrections {
 export function canonicalCorrections(
 	submitted: Iterable<ServerElement>,
 	canonical: Iterable<ServerElement>,
+	boardKey: string,
 ): CanonicalCorrections {
-	const before = new Map(presentElements(submitted).map((element) => [element.id, element]));
-	const after = new Map(presentElements(canonical).map((element) => [element.id, element]));
+	const before = new Map(
+		presentElements(submitted, { boardKey }).map((element) => [element.id, element]),
+	);
+	const after = new Map(
+		presentElements(canonical, { boardKey }).map((element) => [element.id, element]),
+	);
 	const deletes = [...before.keys()].filter((id) => !after.has(id));
 	const upserts: ServerElement[] = [];
 	for (const [id, element] of after) {
@@ -407,14 +414,17 @@ export function humanWriteAnswer(
 ): Record<string, unknown> {
 	const { source, content, submittedElements, written } = context;
 	return {
-		corrections: canonicalCorrections(submittedElements, content.elements.values()),
+		corrections: canonicalCorrections(submittedElements, content.elements.values(), source.key),
 		fingerprint: boardFingerprint(source.board, content, written),
-		...(wantsFullDocument ? { document: presentElements(content.elements.values()) } : {}),
+		...(wantsFullDocument
+			? { document: presentElements(content.elements.values(), { boardKey: source.key }) }
+			: {}),
 	};
 }
 
 /** What an agent gets after a write, small unless it asked for the document. */
 export function agentWriteAnswer(
+	boardKey: string,
 	board: BoardState,
 	content: BoardContent,
 	touched: ServerElement[],
@@ -422,9 +432,11 @@ export function agentWriteAnswer(
 	written?: WrittenNote | null,
 ): Record<string, unknown> {
 	return {
-		elements: presentElements(touched),
+		elements: presentElements(touched, { boardKey }),
 		fingerprint: boardFingerprint(board, content, written),
-		...(wantsDocument ? { document: presentElements(content.elements.values()) } : {}),
+		...(wantsDocument
+			? { document: presentElements(content.elements.values(), { boardKey }) }
+			: {}),
 	};
 }
 

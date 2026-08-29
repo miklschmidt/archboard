@@ -692,7 +692,7 @@ function refusalDocument(board: string): { document: ServerElement[]; version: n
 	if (!state) throw new Error(`Board "${board}" is not open`);
 	const content = readBoardContent(state);
 	return {
-		document: presentElements(content.elements.values()),
+		document: presentElements(content.elements.values(), { boardKey: board }),
 		version: content.version ?? null,
 	};
 }
@@ -807,7 +807,7 @@ wss.on("connection", (ws: WebSocket, req) => {
 		type: "initial_elements",
 		board: startingKey,
 		identity: board.identity,
-		elements: presentElements(content.elements.values()),
+		elements: presentElements(content.elements.values(), { boardKey: startingKey }),
 		...boardFilesMessage(content),
 	};
 	ws.send(JSON.stringify(initialMessage));
@@ -1264,7 +1264,7 @@ app.post("/api/boards/claim/release", (req: Request, res: Response) => {
 app.get("/api/elements", (req: Request, res: Response) => {
 	try {
 		const { key, content } = boardFromRequest(req, "Listing elements");
-		const elementsArray = presentElements(content.elements.values());
+		const elementsArray = presentElements(content.elements.values(), { boardKey: key });
 		res.json({
 			success: true,
 			board: key,
@@ -1293,10 +1293,11 @@ app.post("/api/elements", (req: Request, res: Response) => {
 			answer: ({ content, value, delta, written }) => ({
 				success: true,
 				board: source.key,
-				element: presentElement(value.stored),
+				element: presentElement(value.stored, { boardKey: source.key }),
 				// `element` is what the caller asked for; `elements` is what the board
 				// became, label and z-order included (TASK-075).
 				...agentWriteAnswer(
+					source.key,
 					source.board,
 					content,
 					[...delta.created, ...delta.updated],
@@ -1354,7 +1355,7 @@ app.post("/api/bridges", (req: Request, res: Response) => {
 				overSegmentIndex: value.plan.overSegmentIndex,
 				underSegmentIndex: value.plan.underSegmentIndex,
 				crossing: value.plan.crossing,
-				...agentWriteAnswer(source.board, content, value.generated, false, written),
+				...agentWriteAnswer(source.key, source.board, content, value.generated, false, written),
 			}),
 		});
 	} catch (error) {
@@ -1389,7 +1390,7 @@ app.delete("/api/bridges/:id", (req: Request, res: Response) => {
 				board: source.key,
 				bridgeId,
 				deleted: value.deleted,
-				...agentWriteAnswer(source.board, content, [], false, written),
+				...agentWriteAnswer(source.key, source.board, content, [], false, written),
 			}),
 		});
 	} catch (error) {
@@ -1432,8 +1433,17 @@ app.put("/api/elements/:id", (req: Request, res: Response) => {
 			answer: ({ content, value, written }) => ({
 				success: true,
 				board: source.key,
-				element: presentElement(content.elements.get(id) as ServerElement),
-				...agentWriteAnswer(source.board, content, value.touched, wantsDocument(req), written),
+				element: presentElement(content.elements.get(id) as ServerElement, {
+					boardKey: source.key,
+				}),
+				...agentWriteAnswer(
+					source.key,
+					source.board,
+					content,
+					value.touched,
+					wantsDocument(req),
+					written,
+				),
 			}),
 		});
 	} catch (error) {
@@ -1515,7 +1525,14 @@ app.delete("/api/elements/:id", (req: Request, res: Response) => {
 				board: source.key,
 				message: `Element ${id} deleted successfully`,
 				...(value.deleted.length > 1 ? { alsoDeleted: value.deleted.slice(1) } : {}),
-				...agentWriteAnswer(source.board, content, delta.updated, wantsDocument(req), written),
+				...agentWriteAnswer(
+					source.key,
+					source.board,
+					content,
+					delta.updated,
+					wantsDocument(req),
+					written,
+				),
 			}),
 		});
 	} catch (error) {
@@ -1526,7 +1543,7 @@ app.delete("/api/elements/:id", (req: Request, res: Response) => {
 // Query elements with filters
 app.get("/api/elements/search", (req: Request, res: Response) => {
 	try {
-		const { content } = boardFromRequest(req, "Querying elements");
+		const { key, content } = boardFromRequest(req, "Querying elements");
 		const { type, x_min, x_max, y_min, y_max, board: _boardParam, ...filters } = req.query;
 		let results = Array.from(content.elements.values());
 
@@ -1551,15 +1568,15 @@ app.get("/api/elements/search", (req: Request, res: Response) => {
 		// Apply additional exact-match filters
 		if (Object.keys(filters).length > 0) {
 			results = results.filter((element) => {
-				return Object.entries(filters).every(([key, value]) => {
-					return (element as unknown as Record<string, unknown>)[key] === value;
+				return Object.entries(filters).every(([field, value]) => {
+					return (element as unknown as Record<string, unknown>)[field] === value;
 				});
 			});
 		}
 
 		res.json({
 			success: true,
-			elements: presentElements(results),
+			elements: presentElements(results, { boardKey: key }),
 			count: results.length,
 		});
 	} catch (error) {
@@ -1570,7 +1587,7 @@ app.get("/api/elements/search", (req: Request, res: Response) => {
 // Get element by ID
 app.get("/api/elements/:id", (req: Request, res: Response) => {
 	try {
-		const { content } = boardFromRequest(req, "Getting an element");
+		const { key, content } = boardFromRequest(req, "Getting an element");
 		const elements = content.elements;
 		const { id } = req.params;
 
@@ -1592,7 +1609,7 @@ app.get("/api/elements/:id", (req: Request, res: Response) => {
 
 		res.json({
 			success: true,
-			element: presentElement(element),
+			element: presentElement(element, { boardKey: key }),
 		});
 	} catch (error) {
 		answerBoardError(res, error, "Error fetching element:");
@@ -1636,6 +1653,7 @@ app.post("/api/elements/batch", (req: Request, res: Response) => {
 				// `elements` here has always been what the write produced; the
 				// fingerprint and the opt-in document are what TASK-075 adds.
 				...agentWriteAnswer(
+					source.key,
 					source.board,
 					content,
 					[...delta.created, ...delta.updated],
@@ -1852,19 +1870,23 @@ app.post("/api/elements/changes", (req: Request, res: Response) => {
 							"Report a delta against what this pane has been sent.",
 					);
 				}
+				const existing =
+					input.upserts?.flatMap((upsert) => {
+						if (typeof upsert.id !== "string") return [];
+						const element = _content.elements.get(upsert.id);
+						return element ? [element] : [];
+					}) ?? [];
+				const presented = presentElements(existing, { boardKey: source.key });
 				const writeInput: ElementInputRequest =
 					input.origin === "human"
 						? {
 								...input,
 								presentationLinks: new Map(
-									input.upserts?.flatMap((upsert) => {
-										const existing = _content.elements.get(upsert.id);
-										if (!existing) return [];
-										const outbound = presentElement(existing).link;
-										return outbound && outbound !== existing.link
-											? [[upsert.id, outbound] as const]
-											: [];
-									}),
+									existing.flatMap((element, index) =>
+										presented[index]?.link !== element.link
+											? [[element.id, { boardKey: source.key }] as const]
+											: [],
+									),
 								),
 							}
 						: input;
@@ -1897,6 +1919,7 @@ app.post("/api/elements/changes", (req: Request, res: Response) => {
 					// held-board full-report recovery path (TASK-074/075/118).
 					...(writerKind === "agent"
 						? agentWriteAnswer(
+								source.key,
 								source.board,
 								content,
 								[...delta.created, ...delta.updated],
@@ -2107,7 +2130,7 @@ app.get("/api/selection", (_req: Request, res: Response) => {
 	const board = boards.get(key);
 	const report = buildSelectionReport(
 		selectionState.current,
-		board ? presentElements(boardElements(board)) : [],
+		board ? presentElements(boardElements(board), { boardKey: key }) : [],
 		clients.size,
 	);
 	res.json({ success: true, board: key, ...report });
@@ -2190,7 +2213,7 @@ app.get("/api/panes", (_req: Request, res: Response) => {
 		identity: (key) => boards.get(key)?.identity ?? null,
 		elements: (key) => {
 			const board = boards.get(key);
-			return board ? presentElements(boardElements(board)) : [];
+			return board ? presentElements(boardElements(board), { boardKey: key }) : [];
 		},
 		selection: (clientId) => selectionState.byClient.get(clientId) ?? null,
 		canvasUrl: `http://${formatHostForUrl(HOST)}:${PORT}`,
@@ -2597,7 +2620,7 @@ app.post("/api/export/findings", (req: Request, res: Response) => {
 				type: "export_findings_request",
 				requestId,
 				sourceBoard: key,
-				elements: snapshot.renderScene.elements,
+				elements: presentElements(snapshot.renderScene.elements, { boardKey: key }),
 				files: snapshot.renderScene.files,
 				findings: requests,
 			},
@@ -2730,7 +2753,7 @@ app.post("/api/export/image", (req: Request, res: Response) => {
 				type: "initial_elements",
 				board: exportKey,
 				identity: exportBoard.identity,
-				elements: presentElements(exportContent.elements.values()),
+				elements: presentElements(exportContent.elements.values(), { boardKey: exportKey }),
 				...boardFilesMessage(exportContent),
 			} as InitialElementsMessage & { files?: Record<string, ExcalidrawFile> },
 			exportKey,
@@ -3011,7 +3034,9 @@ app.post("/api/snapshots", (req: Request, res: Response) => {
 		const snapshot: Snapshot = {
 			name,
 			board: boardKeyForRequest,
-			elements: copyElements(stripBindingPresentationLinks(content.elements.values())),
+			elements: copyElements(
+				stripBindingPresentationLinks(content.elements.values(), { boardKey: boardKeyForRequest }),
+			),
 			createdAt: new Date().toISOString(),
 		};
 
@@ -3074,7 +3099,10 @@ app.get("/api/snapshots/:name", (req: Request, res: Response) => {
 
 		res.json({
 			success: true,
-			snapshot: { ...snapshot, elements: presentElements(snapshot.elements) },
+			snapshot: {
+				...snapshot,
+				elements: presentElements(snapshot.elements, { boardKey: snapshot.board }),
+			},
 		});
 	} catch (error) {
 		logger.error("Error fetching snapshot:", error);
@@ -3197,7 +3225,7 @@ function switchPaneTo(
 		{
 			type: "board_switched",
 			identity: board.identity,
-			elements: presentElements(content.elements.values()),
+			elements: presentElements(content.elements.values(), { boardKey: key }),
 			...boardFilesMessage(content),
 			timestamp: new Date().toISOString(),
 		},

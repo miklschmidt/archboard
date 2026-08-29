@@ -28,8 +28,8 @@ const proofSchema = z.object({
 });
 const expectedHashes: Readonly<Record<(typeof artifactNames)[number], string>> = {
 	"cli-command-audit.md": "2f43d928290d6ef3e65e94989204facdfb71c84b8e4fa5952dd218ee3829555c",
-	"command-contract-proof.json": "287c70c8a755773865ac4fecd6a08e51d10aa430b1a0229f8ed85fb3a7eef542",
-	"command-contract-proof.md": "5eae34c89b28ed24b9f2291a0394120c5ca0b55812b60424d05bef43b3557f8e",
+	"command-contract-proof.json": "7c9ef85583ed857484ffc32b349dd0f827d0ccf783c0153b6f1ee16a128c3c15",
+	"command-contract-proof.md": "50f0868e0dc2ace741832aa5a3a10b33bbc6a63c61a229e7ef2c4d87bfe40f07",
 };
 const auditSchema = z.object({
 	entries: z.array(z.object({ path: z.string() }).passthrough()),
