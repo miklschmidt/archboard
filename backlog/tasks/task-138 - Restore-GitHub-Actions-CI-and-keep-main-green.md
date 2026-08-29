@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-29 16:14'
-updated_date: '2026-08-29 19:10'
+updated_date: '2026-08-29 19:53'
 labels: []
 dependencies: []
 references:
@@ -13,6 +13,7 @@ references:
   - .github/workflows/ci.yml
   - docs/agents/test-suite.md
   - 'https://github.com/miklschmidt/archboard/actions/runs/33268988057'
+  - 'https://github.com/miklschmidt/archboard/actions/runs/33270430736'
 modified_files:
   - .github/workflows/ci.yml
   - src/runtime/board-inspection/tests/comparison-limits.test.ts
@@ -20,13 +21,17 @@ modified_files:
   - src/runtime/engine/tests/board-version-note.test.ts
   - src/shared/timing/timing.ts
   - tests/system/board-inspection/package-limits.test.ts
+  - tests/system/board-inspection/package-totality.test.ts
   - tests/system/boards/malformed-input.test.ts
   - tests/system/browser/run-browser-lane.ts
   - tests/system/browser/support/agent-browser.ts
+  - tests/system/canvas-state/hot-reload.test.ts
   - tests/system/code-targets/activation-contract.test.ts
   - tests/system/repository-policy/ci-browser-gate.test.ts
   - tests/system/repository-policy/support/test-inventory.ts
   - tests/system/repository-policy/test-inventory.test.ts
+  - tests/system/support/owned-canvas.test.ts
+  - tests/system/support/owned-canvas.ts
 priority: high
 type: bug
 ordinal: 154000
@@ -74,6 +79,10 @@ GitHub Actions is failing on the current repository state and is expected to fai
 14. Hosted-runner lifecycle-ceiling amendment. Preserve the exact 4,096 path-segment/2,048 zero-segment assertions and the exact attempted comparison 2,000,001 plus retained-finding assertions; these are the product/resource contracts. Move only the Bun test lifecycle caps into src/shared/timing/timing.ts: a focused sweep cap sized above the measured 5.274-second hosted case, a terminal module cap sized above the measured 27.094-second hosted case, and a package cap derived for its two sequential terminal CLI executions plus below-limit setup. Apply them to sweep-filtering.test.ts, comparison-limits.test.ts, and package-limits.test.ts without changing fixtures, counts, assertions, algorithms, production code, or workflow. After approval, run the two focused module owners and package limit owner with ARCHBOARD_VAULT unset, module/system lanes as proportionate, static gates, then a clean unset bun run check before commit and CI reintegration.
 
 15. Terminology clarification for item 14: these values are synchronous Bun lifecycle failure thresholds that accommodate measured runner variance. They are neither true hang-kill ceilings nor product performance SLAs; synchronous work may complete after the threshold and Bun then reports the case failed.
+
+16. Hosted system-owner remediation. Preserve the hot-reload owner's exact plain-server argv/refusal/dead-PID proof, but replace its immediate post-stop PID assertion with a condition-driven wait for that exact PID to become unobservable. Put the reusable bounded wait beside processExists in tests/system/support/owned-canvas.ts, polling at TEST_CANVAS_HEALTH_POLL_MS and failing after TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS; the owner remains at or below 500 lines and production stop semantics stay unchanged. Preserve all 20 shipped-bin totality inspections, reversal datasets, exact statuses, output parsing, and identity assertions; add a dedicated 15,000 ms synchronous Bun lifecycle failure threshold in src/shared/timing/timing.ts and apply it only to the totality case. Extend the compact timing rationale with the measured hosted 5.004-second totality relationship and recover line room by compacting the adjacent canvas identity-threshold comment without changing any value. After approval, run the hot owner repeatedly, the package-totality owner with absent vault, the complete canvas-state and board-inspection system slices, static gates, then one clean unset bun run check before commit; no production, workflow, dataset, assertion, browser selection, skip, or allow-failure change.
+
+17. CI4 plan-review amendments, superseding item 16 where more specific. In tests/system/support/owned-canvas.ts, make processExists return false only for an error whose code is ESRCH; wrap and rethrow EPERM or any other kill-zero error with the observed PID. Add waitForProcessExit(pid, timeoutMs = TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS): it sends no signal, polls processExists at TEST_CANVAS_HEALTH_POLL_MS, treats zombies as observable, and on timeout names the PID, the exact timeout in milliseconds, and that the identity may be live, zombie, or recycled. PID reuse may prolong observation but never hides the PID or authorizes signaling. Use this observer only after archboard stop as a hot-reload test audit; stopCanvas retains its listener-based production semantics and cleanup ownership stays with hot-reload. In tests/system/support/owned-canvas.test.ts, directly prove a retained short-lived child is observed until delayed disappearance, and prove a retained live child yields the exact diagnostic using a test-only short timeout before that child is reaped through its handle. Update TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS documentation to retain its lifecycle-subprocess relationship while also naming post-stop PID observation and the server's 2,000 ms forced-exit fallback. Format and recount before changing hot-reload; hot-reload.test.ts must remain at most 500 physical lines. Add exactly TEST_BOARD_INSPECTION_TOTALITY_CASE_TIMEOUT_MS = 15_000 and apply it only to the final package-totality case: six label-pair reversal inspections plus fourteen obstacle reversal inspections. Document that 15,000 ms is about three times the observed hosted 5,003.69 ms and is a synchronous Bun lifecycle failure threshold for the observed child-lifecycle failure mode, not a hang ceiling. Validation order is the complete tests/system/support slice sequentially, then focused/full canvas-state and board-inspection slices with ARCHBOARD_VAULT unset, static gates, and one clean unset bun run check; preserve every behavioral dataset, status, output, identity assertion, and dead-PID proof.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -163,4 +172,28 @@ Hosted-runner lifecycle-threshold remediation evidence, 2026-08-29:
 - Proportionate lanes with ARCHBOARD_VAULT unset: modules passed 400 tests / 3,144 assertions; serial system passed 252 tests / 4,130 assertions, including the package terminal case at 26,644.03 ms. Logs: /tmp/task138-ci3-module-lane-green.log and /tmp/task138-ci3-system-lane-green.log. Oxlint, formatting, both TypeScript projects, and git diff checks passed; logs use /tmp/task138-ci3-lint.log, -format.log, -type-check.log, and -diff-check.log.
 - One clean sequential acceptance run started with ARCHBOARD_VAULT unset, AGENT_BROWSER_EXECUTABLE_PATH unset, dist/frontend absent, and no active owner process. bun run check passed all gates: lint, formatting, both TypeScript projects, 400 module tests, 252 serial system tests, 99 repository-policy tests, and all 15 serial headless browser owners. The log contains 766 passing cases and no failures: /tmp/task138-ci3-final-full-check.log.
 - Physical lines after formatting: timing.ts 500; sweep-filtering.test.ts 454; comparison-limits.test.ts 45; package-limits.test.ts 66. The generated ignored dist bundle was removed after acceptance. Final audit found no surviving check, browser, canvas, or inspection owner and no fresh TASK-138 temp root; node_modules remains the pre-existing ignored dependency tree.
+
+Hosted system-owner diagnosis, pushed SHA f054120, 2026-08-29:
+
+- GitHub Actions run 33270430736/job 99147819889 passed both repaired module thresholds, then completed the serial system lane with 250 pass / 2 fail. package-totality failed at 5,003.69 ms with one dangling process killed, child status null, and empty stdout/stderr. hot-reload failed after plain canvas stop because an immediate process.kill(pid, 0) did not throw. Full log: /tmp/task138-ci4-job.log.
+- Exact focused owners with ARCHBOARD_VAULT unset pass locally: hot reload 7,324.32 ms; totality 2,455.13 ms. Repeats are stable: hot 7,495.87-7,517.43 ms; totality 2,453.17-2,479.88 ms. Logs: /tmp/task138-ci4-hot-focused-1.log, /tmp/task138-ci4-hot-focused-repeat.log, /tmp/task138-ci4-totality-focused-1.log, and /tmp/task138-ci4-totality-focused-repeat.log.
+- Hot stop is an owner observation race, not a retained canvas. A minimal 20-iteration exact start/health/reload-refusal/stop probe reproduced the immediate kill-zero success twice, with the PID disappearing without intervention in 1-2 ms. A resource-identity probe captured stop status 0 and the same PID in the stopped receipt; immediately afterward health was connection-refused, the exact state pidfile was absent, process.kill(pid, 0) briefly succeeded, and the PID disappeared after 1.13 ms before /proc status or argv could still be read. Logs: /tmp/task138-ci4-hot-stop-probe.log and /tmp/task138-ci4-hot-identity-probe.log. Production shutdown removes the pidfile, closes the listener, and force-exits after two seconds; there is no evidence of an actual leak. The test currently gives the OS no observation interval after the health-based stop command returns.
+- Totality is a synchronous Bun lifecycle threshold, not a product performance contract or a timeout configured by readOnlyRun. The case performs 20 sequential shipped-bin inspections: six label-pair reversals and fourteen obstacle-identity reversals, checking exact exit statuses, schema output, injective pairs, and canonical obstacle identities. Locally it is stable around 2.47 seconds; hosted 5.004 seconds is 2.03x. The newly green package-limit case independently measured the same runner factor: hosted 54.289 seconds versus local 26.782 seconds.
+- A deterministic local threshold probe ran the unchanged totality owner with Bun timeout 2,000 ms and reproduced the CI bytes exactly: killed 1 dangling process, status null, empty stdout/stderr, and failure at 2,000.74 ms. Log: /tmp/task138-ci4-totality-threshold-red.log. A dedicated 15,000 ms test threshold leaves three times the observed hosted duration while keeping every behavioral dataset/assertion and a bounded stuck-case failure.
+
+CI4 plan-review amendments recorded before implementation:
+
+- The shared observer is strict: only ESRCH means absent. EPERM and every other kill-zero error remain failures with PID context. It never signals and cannot turn PID reuse into cleanup authority; a live, zombie, or recycled identity stays observable until disappearance or an actionable 20,000 ms failure.
+- Direct support tests own both reachable observer states: delayed disappearance of a retained short-lived child, and an exact short-timeout diagnostic for a retained live child followed by handle-owned reap. The complete sequential tests/system/support slice runs before the affected canvas-state and board-inspection slices.
+- TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS documentation will cover both its existing lifecycle-subprocess relationship and the post-archboard-stop PID observation that must outlive the server's 2,000 ms forced-exit fallback. Formatting and physical-line recount precede the hot owner edit; hot-reload remains at most 500 lines.
+- The totality threshold name is exactly TEST_BOARD_INSPECTION_TOTALITY_CASE_TIMEOUT_MS. Its only consumer is the final six-plus-fourteen reversal case. 15,000 ms is about three times hosted 5,003.69 ms and addresses Bun's observed synchronous child-lifecycle failure mode; it is not a hang ceiling or product performance SLA.
+
+CI4 hosted system-owner remediation evidence, 2026-08-29:
+
+- TDD RED at the approved shared observer seam: the two new direct support cases failed because waitForProcessExit was undefined while all five predecessor lifecycle cases remained green (5 pass / 2 fail). Log: /tmp/task138-ci4-support-red.log. The strict implementation returns absent only for ESRCH, wraps every other observation error with PID context, polls signal-zero observations without cleanup authority, and reports the exact timeout plus live/zombie/recycled possibilities. Direct green passed 7 tests / 30 assertions: /tmp/task138-ci4-support-green-final.log.
+- Focused repetitions with ARCHBOARD_VAULT unset passed unchanged behavior: hot-reload three runs (12 tests / 198 assertions; 7,442.24-7,509.65 ms for the full case) and final package-totality four runs (2,435.86-2,453.29 ms). Logs: /tmp/task138-ci4-hot-green-repeat.log and /tmp/task138-ci4-totality-green-repeat.log.
+- Complete sequential affected slices passed in the required order with ARCHBOARD_VAULT unset: support 15 tests / 88 assertions, canvas-state 21 / 399, and board-inspection 19 / 219. Logs: /tmp/task138-ci4-support-slice.log, /tmp/task138-ci4-canvas-state-slice.log, and /tmp/task138-ci4-board-inspection-slice.log. The final totality case alone uses TEST_BOARD_INSPECTION_TOTALITY_CASE_TIMEOUT_MS = 15,000; every six label-pair and fourteen obstacle reversal inspection, status, parse, and identity assertion is unchanged.
+- TypeScript, Oxlint, formatting, and git diff checks passed. One lint-only RED identified an invalid await on Bun rejects; the direct test now awaits the observer explicitly and compares the exact captured Error before handle-owned reap, with no production semantic change.
+- One clean sequential acceptance run with ARCHBOARD_VAULT explicitly unset passed bun run check: 400 module tests / 3,144 assertions, 254 serial system tests / 4,133 assertions, 99 repository-policy tests / 273 assertions, and all 15 serial headless browser owners. Log: /tmp/task138-ci4-full-check.log. No test, dataset, assertion, production shutdown behavior, workflow lane, skip, or allow-failure path changed.
+- Final physical lines: timing.ts 499; owned-canvas.ts 432; owned-canvas.test.ts 277; hot-reload.test.ts exactly 500; package-totality.test.ts 490. The generated ignored dist bundle was removed after acceptance. No check, browser, canvas, or inspection process survived, and no fresh support/hot/inspection root remained; four listed hot roots predated this run and were left untouched. Implementation commit: 335b67c.
 <!-- SECTION:NOTES:END -->
