@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 15:35'
-updated_date: '2026-08-29 09:11'
+updated_date: '2026-08-29 09:49'
 labels: []
 dependencies:
   - TASK-130.11
@@ -178,4 +178,26 @@ Accepted checkpoint mapping:
 - 6697803f93d355bd1f348c9c124bade5fd6db736 -> a0252a34d651626548d6c1b46f8959bda32ca0a8
 
 The replay completed without conflicts. Remaining serialized application/UI/package/browser/docs integration may now proceed while preserving TASK-134 vendor-derived RuntimeBoardElement/PersistedBoardElement, canonical presentation overlay, CanvasPane/Shell contracts, and strict ingress.
+
+Serialized reconciliation implementation (fixed base 569a384eabbcef8c57b5eb199420caed90bae794):
+
+- Mounted createCodeOpenerRouter after CORS and before global JSON parsing, with the exact activation-only NOT_A_BOARD_WRITE exemption. Guard-first router behavior, strict shared Zod replies, canonical note and registry re-read, machine state, resolver containment, and shell-free launcher semantics remain intact.
+- Integrated the exact reserved-link CanvasPane handler and typed CanvasPane-to-Shell CodeTargetNotice boundary. Shell now owns schema-controlled success/failure notices, settings actions, and validated GitHub actions. Ordinary or non-exact links remain untouched. TASK-136 does not create reserved presentation URLs or implement real binding clicks.
+- Added the global opener settings UI with fresh GET on each open, effective command and availability, platform/preset/custom choices, ordered argv validation, registered checkout testing, save, reset, and explicit next-activation machine-wide copy.
+- Registered tests/system/code-targets once after process-contracts and opener-settings once after claim-interaction; updated the 14-owner adapter, once-only inventory mutations, docs, and environment isolation.
+- TASK-134 reconciliation reused final vendor-derived ingress and canonical presentation contracts. Two strict-ingress fixtures were moved through a code-target-owned support seam that executes production completion; no handwritten vendor projection, persisted derived target, second converter, or TASK-134 type/presentation owner was added.
+
+TDD and integration evidence:
+- Initial reds proved the missing production mount/exemption and missing UI handler; the focused owners then passed. The TASK-134 strict-ingress integration red rejected partial handwritten note elements and was repaired through canonical production ingress.
+- Final check first rejected two forbidden imports from another module private test support. The imports were relocated without weakening lint. Formatting then exposed a one-line-only exemption assertion; its exact regex/reason proof is now formatter-stable. The deliberately interrupted doomed run produced teardown-only WebSocket noise and was not counted as a product flake.
+- Focused contracts: shared/runtime/server/UI 68 tests and 115 expectations; code-target system 34 and 175; inventory 30 and 74; boundary/refusal/registry 13 and 134; repaired integration owners 19 and 104; exemption owner 3 and 46.
+- Final lanes: modules 373 tests and 2,727 expectations; system 247 and 3,988; repository 61 and 218; all 14 serial browser owners passed sequentially with 644 expectations, including opener-settings 34. Focused opener browser, standalone serial browser, bun run test, and final bun run check all passed. Type-check, build, lint, fmt:check, and git diff --check passed.
+
+Caps and cleanup:
+- Shared contract 220/220; timing 499/499; routes 286/360; settings UI 371/380 and CSS 230/230; browser owner 368/460; settings 275/480; activation 369/480; lifecycle 78/400; persistence 118/340; inventory 490/490. application +6, session +5, and Shell +57 stay within diff caps.
+- Once-only selector and reference audits passed. No changed TASK-134 board-element, presentation, expansion, or ingress owner exists. No fake opener, launcher owner, opener process, canvas server, capture/release residue, or task-owned temporary root remains. One unrelated pre-existing /tmp/archboard-browser-7ds9lJ root is dated 2026-08-26 and was left untouched.
+
+TASK-137 handoff remains unchanged: consume the exact shared builder/parser/Zod schemas, canonical runtime resolver, board/element-only protected POST, and typed CanvasPane notice boundary. TASK-137 alone replaces eligible file:// presentation, produces validated GitHub actions, and proves real file/directory binding clicks, ordinary-link coexistence, and changed-setting behavior in two browser panes. It must not accept client paths, duplicate containment/identity policy, cache opener state, or broaden the reserved URL shape.
+
+Review checkpoint before this Backlog evidence commit: af07fe23b8a174e2d644ffd0dbe130feb2301953. Implementation remains In Progress for independent complete-range review; acceptance criteria and finalSummary remain untouched.
 <!-- SECTION:NOTES:END -->
