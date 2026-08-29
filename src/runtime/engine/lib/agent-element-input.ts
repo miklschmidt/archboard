@@ -15,6 +15,23 @@ import type { AgentElementInput } from "./element-input-schema.js";
 const hasOwn = (value: object, key: PropertyKey): boolean =>
 	Object.prototype.hasOwnProperty.call(value, key);
 
+const agentLabelIntent = Symbol("archboard.agent-label-intent");
+
+export type AgentElementStatement = LegacyElementIngress & {
+	readonly [agentLabelIntent]?: string;
+};
+
+export function withAgentLabelIntent<T extends object>(value: T, label: unknown): T {
+	if (typeof label === "string")
+		Object.defineProperty(value, agentLabelIntent, { value: label, enumerable: false });
+	return value;
+}
+
+/** Read the private label intent spent and owned by this named ingress. */
+export function agentLabelIntentOf(value: object): string | undefined {
+	return (value as AgentElementStatement)[agentLabelIntent];
+}
+
 function normalizePoints(points: unknown): unknown {
 	if (!Array.isArray(points)) return points;
 	const normalized: [number, number][] = [];
@@ -59,8 +76,7 @@ export function wellFormAgentStatement(
 		const text = statement.text;
 		delete statement.label;
 		delete statement.text;
-		if (typeof labelText === "string") statement.labelText = labelText;
-		else if (typeof text === "string") statement.labelText = text;
+		withAgentLabelIntent(statement, typeof labelText === "string" ? labelText : text);
 	}
 	for (const key of ["startBinding", "endBinding"] as const) {
 		if (!hasOwn(statement, key)) continue;
@@ -101,7 +117,7 @@ export function spendArrowRefs(
 export function buildAgentElement(
 	raw: AgentElementInput,
 	inUse: { has(id: string): boolean },
-): LegacyElementIngress {
+): AgentElementStatement {
 	const statement = wellFormAgentStatement(raw);
 	const params = CreateElementSchema.parse(statement);
 	const { board: _boardField, ...elementParams } = params as typeof params & { board?: string };
@@ -132,5 +148,5 @@ export function buildAgentElement(
 		element as unknown as Record<string, unknown>,
 		elementParams as Record<string, unknown>,
 	);
-	return element;
+	return withAgentLabelIntent(element, agentLabelIntentOf(statement));
 }

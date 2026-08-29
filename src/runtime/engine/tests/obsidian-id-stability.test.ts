@@ -26,7 +26,7 @@ describe("server-minted ids", () => {
 					y: 0,
 					width: 200,
 					height: 100,
-					labelText: "AuthService",
+					label: { text: "AuthService" },
 				},
 				{
 					type: "arrow",
@@ -36,7 +36,7 @@ describe("server-minted ids", () => {
 						[0, 0],
 						[220, 0],
 					],
-					labelText: "HTTP",
+					label: { text: "HTTP" },
 				},
 				{ type: "text", x: 0, y: 200, text: "a note somebody left" },
 			],

@@ -9,7 +9,7 @@ import type {
 } from "../../../shared/board-elements/index.ts";
 import { isBlockId } from "../../../shared/ids/ids.ts";
 import { ExpandedElementSchema, type ExpandedElement } from "./fixtures/label-cases.ts";
-import { completeElement } from "./support/elements.ts";
+import { agentStatement, completeElement } from "./support/elements.ts";
 
 const shape = (elements: readonly object[]): string =>
 	JSON.stringify(
@@ -28,7 +28,9 @@ const required = <T>(value: T | undefined, message: string): T => {
 	return value;
 };
 const expandOne = (element: LegacyElementIngress): ExpandedElement[] =>
-	ExpandedElementSchema.array().parse(expandElements([element], { deterministic: true }));
+	ExpandedElementSchema.array().parse(
+		expandElements([agentStatement(element)], { deterministic: true }),
+	);
 const onlyExpanded = (element: LegacyElementIngress, type: BoardElementType): ExpandedElement =>
 	required(
 		expandOne(element).find((candidate) => candidate.type === type),
@@ -129,7 +131,7 @@ test("applies label input, preserves order, and pins converter output", () => {
 				y: 0,
 				width: 200,
 				height: 80,
-				labelText: "AuthService",
+				label: { text: "AuthService" },
 			},
 			{
 				id: "wire",
@@ -140,15 +142,15 @@ test("applies label input, preserves order, and pins converter output", () => {
 					[0, 0],
 					[300, 0],
 				],
-				labelText: "HTTP",
+				label: { text: "HTTP" },
 			},
 		];
 		const wrapped = expandForBoard(
-			written.map((el) => ({ ...el })),
+			written.map((el) => agentStatement({ ...el })),
 			new Map(),
 		);
 		const converted = expandElements(
-			written.map((el) => Object.assign({}, el)),
+			written.map((el) => agentStatement(Object.assign({}, el))),
 			{ forStore: true },
 		);
 		assert(
@@ -178,7 +180,7 @@ test("applies label input, preserves order, and pins converter output", () => {
 			standalone.fontSize === 20,
 			`a standalone text is fontSize ${standalone.fontSize}, not 20`,
 		);
-		const shapeLabel = only({ ...box, labelText: "AuthService" }, "text");
+		const shapeLabel = only({ ...box, label: { text: "AuthService" } }, "text");
 		assert(
 			shapeLabel.fontFamily === 5,
 			`a shape's label is fontFamily ${shapeLabel.fontFamily}, not Excalifont`,
@@ -197,7 +199,7 @@ test("applies label input, preserves order, and pins converter output", () => {
 					[0, 0],
 					[100, 0],
 				],
-				labelText: "gRPC",
+				label: { text: "gRPC" },
 			},
 			"text",
 		);
