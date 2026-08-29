@@ -9,7 +9,9 @@ test("mounts the code opener once before global request middleware", () => {
 	const cors = application.indexOf("app.use(cors());");
 	const openerMounts = [...application.matchAll(/app\.use\(createCodeOpenerRouter\(\)\);/g)];
 	const globalJson = application.indexOf('app.use(express.json({ limit: "10mb" }));');
-	const heldBoard = application.indexOf("// A board that has stopped saving says so in every answer about it.");
+	const heldBoard = application.indexOf(
+		"// A board that has stopped saving says so in every answer about it.",
+	);
 
 	expect(cors).toBeGreaterThanOrEqual(0);
 	expect(openerMounts).toHaveLength(1);
