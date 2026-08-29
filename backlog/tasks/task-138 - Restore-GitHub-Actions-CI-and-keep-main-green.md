@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-29 16:14'
-updated_date: '2026-08-29 17:48'
+updated_date: '2026-08-29 17:58'
 labels: []
 dependencies: []
 references:
@@ -52,6 +52,8 @@ GitHub Actions is failing on the current repository state and is expected to fai
 7. Browser executable isolation amendment. After agent-browser install --with-deps, CI resolves the exact downloaded Chrome executable and exports it as AGENT_BROWSER_EXECUTABLE_PATH for the one bun run check process. tests/system/browser/run-browser-lane.ts validates that configured path before any frontend build or owner acquisition and returns could-not-run exit 2 with an actionable diagnostic when it is missing, not a file, or not executable. The adapter passes that exact path through browserTestEnvironment into each isolated owner while retaining the per-owner HOME/XDG/socket/session/namespace contract; canvas and other child environments continue to strip browser configuration. A focused fake/preflight regression proves the executable reaches an isolated owner and that missing/non-executable configured paths stop before build/owner acquisition. The workflow also declares top-level permissions: contents: read and retains the 30-minute timeout.
 
 8. Review remediation. Keep AGENT_BROWSER_EXECUTABLE_PATH optional for documented local PATH-based use, but validate and normalize it strictly before build when configured. Delete every owner argv substitution hook; test the exported environment seam and canonical adapter behavior without changing owner selection. Parse workflow run steps so only one executable step equal to bun run check is accepted, while comments and quoted output cannot satisfy policy. Preserve independent mutation cases under the 500-line owner cap. Re-run focused policy/browser coverage and one clean complete check, then commit for rereview without pushing or finalizing.
+
+9. Second review remediation. Replace the partial command-start scanner with fail-closed detection over YAML run scalars after quoted text and shell comments are removed. Reject unquoted bun run tokens behind env/command wrappers, grouping, conditionals, and pipelines while ignoring echo-only text. Split each predecessor inventory mutation family into its own Bun test, keep every owner below 500 lines, and run repository-policy plus type, lint, format, and diff checks. Do not rerun browser or the full gate unless these focused checks expose wider impact.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -88,4 +90,12 @@ Review remediation evidence, 2026-08-29:
 - First clean post-review full-check attempt is retained honestly in /tmp/task138-review-full-check.log. Lint, formatting, TypeScript, and 400 module tests passed, then unrelated board-inspection subprocess owners repeatedly exceeded existing 5-second and 40-second limits. Bun later hung at one core after the 30-second source-staleness timeout; only the owned check process group was stopped, for exit 143. No TASK-138 owner failed and no gate was changed. Its one source-staleness temp directory and derived bundle were removed before retry.
 - Clean retry with AGENT_BROWSER_EXECUTABLE_PATH explicitly unset passed bun run check: 400 module tests, 250 serial system tests, 60 repository-policy tests, and all 15 serial headless browser owners. Log: /tmp/task138-review-full-check-retry.log. This directly verifies the reviewed local PATH interface.
 - Final physical lines: run-browser-lane.ts 486; agent-browser.ts 387; inventory support 353; inventory owner 370; CI/browser policy owner 227. Final cleanup removed dist, found no browser lane or preflight roots, and found no surviving check, browser, or owner process.
+
+Second review remediation evidence, 2026-08-29:
+
+- Workflow RED: the five requested executable mutations all passed through the reviewed scanner: env FOO=1 bun run test, command bun run build, a grouped bun run test, a conditional bun run test, and a pipeline into bun run build. Log: /tmp/task138-rereview2-workflow-red.log. Two self-review slices also went red before their fixes: executable backtick substitution in /tmp/task138-rereview2-backtick-red.log and a shell comment following a command separator in /tmp/task138-rereview2-comment-red.log.
+- inspectWorkflow still gets run scalars from Bun.YAML. It now blanks quoted content and shell comments, finds every remaining bun run token sequence regardless of wrapper, grouping, control prefix, command substitution, or pipeline position, and exempts only an echo/printf simple command. The one accepted gate remains a scalar exactly equal to bun run check. Fifteen independent workflow-policy tests cover acceptance, comments/echo text, canonical count, direct scripts, every reviewed wrapper/control form, command substitution, whitespace, and multiline drift.
+- The predecessor inventory diagnostics no longer share grouped test bodies. test-inventory.test.ts now reports 38 independent tests. Missing lane, orphan, cross-lane ownership, unreachable lane, duplicate reachability, transitional lane, system/browser drift, and each adapter mutation have separate Bun tests or test.each cases. No expectation was removed or folded into one aggregate assertion.
+- Complete repository policy: 94 tests, 268 assertions, exit 0. Log: /tmp/task138-rereview2-repository-green.log. TypeScript, Oxlint, formatting, and git diff checks also pass; logs use the /tmp/task138-rereview2-* prefix. Physical lines: inventory support 360, inventory owner 408, CI/browser owner 273.
+- Per second review direction, no browser or complete gate rerun was performed. This follow-up changes only the repository-policy scanner, its focused tests, and TASK evidence; the prior clean full acceptance remains /tmp/task138-review-full-check-retry.log.
 <!-- SECTION:NOTES:END -->
