@@ -14,7 +14,7 @@
 //
 // Measured, with this file doing no conversion: a twelve-element board written
 // by the one converter and rendered in a real browser came back with **nothing
-// changed** (`scripts/check-fixed-point.mjs`). Every difference that check used
+// changed** (`tests/system/browser/fixed-point-document.test.ts`). Every difference that check used
 // to report — re-measured text, dropped `rawText`, rewritten `index`, arrows
 // inset by half a stroke, freedraw handed `pressures` — was this file, not
 // Excalidraw.

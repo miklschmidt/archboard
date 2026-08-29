@@ -537,7 +537,7 @@ export function renderContent(
  * element's own text when there is none. That used to happen on a copy on its
  * way into a file, so the board never had it — and a text element an agent
  * created came back from its own note carrying a field the pane had never been
- * sent (`scripts/check-live-session.mjs` caught it on cycle 15).
+ * sent (`tests/system/browser/live-session-convergence.test.ts` catches it).
  *
  * Filled rather than restated: a note the plugin wrote can hold a `rawText`
  * that is genuinely different from its `text` — a `[[wikilink]]` against what
@@ -577,8 +577,8 @@ function settleBlockIds(content: BoardContent): void {
  * it — which was survivable while the note and the store were different
  * documents, and is not now that they are one. The pane was handed a shape with
  * no reference to the arrow, the note was written with one, and the next read
- * brought back a document the pane did not have (`check-live-session.mjs`
- * caught it on the first cycle).
+ * brought back a document the pane did not have
+ * (`tests/system/browser/live-session-convergence.test.ts` catches it).
  *
  * So the board gets it too, before the write, in the same pass as the block
  * ids: what the caller is told, what the panes are sent and what the note holds

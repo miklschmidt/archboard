@@ -1,6 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import {
+	BROWSER_ADAPTER_PATH,
+	validateBrowserSelection,
+} from "../../browser/support/agent-browser.ts";
+
 export interface InventoryInput {
 	repoRoot: string;
 	scripts: Record<string, string>;
@@ -16,7 +21,6 @@ export interface InventoryResult {
 
 const RUN_SCRIPT = /\bbun run ([\w:-]+)/g;
 const BUN_TEST = /\bbun test\b([^&;|]*)/g;
-const LEGACY_CHECK = /\bbun (scripts\/check-[\w-]+\.mjs)\b/g;
 
 export function inspectWorkflow(workflow: string): string[] {
 	const errors: string[] = [];
@@ -83,6 +87,19 @@ function selectors(command: string): string[] {
 	return found;
 }
 
+function adapterFiles(command: string): { files: string[]; error?: string } {
+	const trimmed = command.trim();
+	if (!trimmed.startsWith(`bun ${BROWSER_ADAPTER_PATH}`)) return { files: [] };
+	try {
+		return { files: [...validateBrowserSelection(trimmed.split(/\s+/)).files] };
+	} catch (error) {
+		return {
+			files: [],
+			error: error instanceof Error ? error.message.split("\n")[0] : String(error),
+		};
+	}
+}
+
 function selected(testFile: string, selector: string): boolean {
 	const normalizedTest = normalize(testFile);
 	const normalizedSelector = normalize(selector).replace(/\/$/, "");
@@ -131,28 +148,31 @@ export function inspectTestInventory(input: InventoryInput): InventoryResult {
 	const nativeLanes = new Map<string, string[]>();
 	for (const [name, command] of Object.entries(input.scripts)) {
 		const laneSelectors = selectors(command);
-		if (laneSelectors.length === 0) continue;
-		nativeLanes.set(
-			name,
-			input.nativeTests.filter((file) =>
-				laneSelectors.some((selector) => selected(file, selector)),
-			),
-		);
+		const adapter = adapterFiles(command);
+		if (adapter.error) errors.push(`browser adapter lane \`${name}\` is invalid: ${adapter.error}`);
+		const occurrences = [...adapter.files];
+		for (const selector of laneSelectors) {
+			for (const file of input.nativeTests) if (selected(file, selector)) occurrences.push(file);
+		}
+		if (occurrences.length > 0) nativeLanes.set(name, occurrences);
 	}
 
 	for (const file of input.nativeTests) {
 		const owners = [...nativeLanes]
-			.filter(([, files]) => files.includes(file))
-			.map(([laneName]) => laneName);
+			.map(([name, files]) => ({
+				name,
+				occurrences: files.filter((owned) => owned === file).length,
+			}))
+			.filter((owner) => owner.occurrences > 0);
 		if (owners.length === 0) errors.push(`native test \`${file}\` belongs to no package lane`);
 		const ownerRuns = owners.map((name) => ({
-			name,
-			count: reachability.counts.get(name) ?? 0,
+			name: name.name,
+			count: (reachability.counts.get(name.name) ?? 0) * name.occurrences,
 		}));
 		const totalRuns = ownerRuns.reduce((total, owner) => total + owner.count, 0);
 		if (owners.length > 0 && totalRuns === 0) {
 			errors.push(
-				`native test \`${file}\` runs zero times from \`${pushScript}\`; matching package lanes: ${owners.join(", ")}`,
+				`native test \`${file}\` runs zero times from \`${pushScript}\`; matching package lanes: ${owners.map((owner) => owner.name).join(", ")}`,
 			);
 		}
 		if (totalRuns > 1) {
@@ -160,15 +180,6 @@ export function inspectTestInventory(input: InventoryInput): InventoryResult {
 				`native test \`${file}\` runs ${totalRuns} times from \`${pushScript}\` through package lanes: ` +
 					ownerRuns.map((owner) => `${owner.name} (${owner.count})`).join(", "),
 			);
-		}
-	}
-
-	for (const [name, command] of Object.entries(input.scripts)) {
-		for (const match of command.matchAll(LEGACY_CHECK)) {
-			const relative = match[1];
-			if (relative && !fs.existsSync(path.join(input.repoRoot, relative))) {
-				errors.push(`legacy package lane \`${name}\` names missing \`${relative}\``);
-			}
 		}
 	}
 

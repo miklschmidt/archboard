@@ -13,28 +13,51 @@ native repository inventory. It fails when a package test lane is outside the
 push chain, a native test has no package lane or more than one, or a remaining
 legacy check path is missing.
 
-The whole chain's duration is machine-dependent. The four browser checks run
+The whole chain's duration is machine-dependent. The browser owners run
 sequentially; re-measure their contribution rather than trusting an old total.
 Of the rest, `test:boards` and `test:side-by-side` have historically dominated.
 Re-measure rather than trust that split.
 
-## The four browser checks
+## The browser lane
 
 Everything else in `scripts/` stands a WebSocket in for a pane, which cannot
-catch a renderer disagreeing with us: a socket holds whatever it was sent.
-Four checks drive a real browser instead, and all four:
+catch a renderer disagreeing with us: a socket holds whatever it was sent. The
+13 owners under `tests/system/browser/` drive a real browser through one strict
+adapter instead. The lane:
 
-- refuse to claim a pass without `agent-browser` on PATH — they exit 2,
-  "I could not run";
+- refuses to claim a pass without `agent-browser` on PATH, or without `strace`
+  when human-edit performance is selected — it exits 2 before building or
+  starting an owner;
 - assert `navigator.userAgent` says headless, because a window that maps
   steals focus under Hyprland and these run on every push;
-- run one after another, never at once. TASK-097 records that two of them
+- runs one literal file child at a time, never concurrently. TASK-097 records that two owners
   sharing the machine is how one of them fails for no reason: contention
   stretches request and frame observations that the checks probe on purpose;
-- skip the frontend build when `dist/frontend` is already newer than every
-  source, so the four build once between them.
+- checks frontend freshness once and builds at most once before the first
+  owner;
+- gives every owner an isolated home, vault, temporary directory, browser
+  namespace, socket, session, canvas listener, and headless allowlisted
+  environment, and audits all of them during cleanup.
 
-### `bun run test:human-performance` (`scripts/check-human-edit-performance.mjs`, TASK-118)
+The package command is the canonical full lane. Focused diagnosis accepts only:
+
+```bash
+bun tests/system/browser/run-browser-lane.ts --focus tests/system/browser/<canonical-owner>.test.ts
+```
+
+One `--focus` may name multiple canonical owners in canonical order. Missing,
+duplicate, reordered, unknown, recursive, changed-only, random, shard, and
+extra arguments are rejected before prerequisites or build. Do not invoke an
+owner directly: the adapter is what makes browser work serial, headless, and
+clean after failures or interruption.
+
+The full order is human edit performance; fixed-point document; malformed
+geometry recovery; pane telemetry recovery; arrow-binding differential;
+finding export; shell layout; typed text; live-session convergence; server
+update ordering; hold generation; human-hold persistence; and claim
+interaction.
+
+### Human edit performance (TASK-118)
 
 Keeps the measured 10,000-element human-only reproduction that attributed the
 stall to a multi-megabyte normal response and its whole-document browser
@@ -51,7 +74,7 @@ loose. Do not replace it with a fixed millisecond gate: browser and runner speed
 are not the contract. The structural response/reconciliation assertions and
 the locally visible edits are the gate; timings remain diagnostic evidence.
 
-### `bun run test:browser` (`scripts/check-fixed-point.mjs`, TASK-071)
+### Fixed-point and renderer contracts (TASK-071)
 
 Writes a board, renders it, reads back what the pane is holding, and reports
 every element and field Excalidraw changed. **It reports zero, and zero is
@@ -102,7 +125,7 @@ its publication key. The server's pathful 400 for invalid telemetry stays in
 `test:boards`; this browser check does not send malformed telemetry just to test
 the server again.
 
-### `bun run test:live-session` (`scripts/check-live-session.mjs`, TASK-076)
+### Live-session contracts (TASK-076)
 
 Drives 42 cycles of interleaved agent and human writes against one board and
 asserts the pane's document and the server's stay identical **after every
@@ -134,7 +157,7 @@ leave A2 owned, schedule no stale retry, and persist A2's edit. This is the
 browser-level guard that board adoption advances the hold generation and that
 late promise completion cannot clear a newer same-board attempt.
 
-### `bun run test:typing` (`scripts/check-typed-text.mjs`, TASK-098)
+### Typed-text contracts (TASK-098)
 
 Draws a text element with the text tool and adds a label to a box with a
 double-click, so **Excalidraw mints the ids**, types into both across a write

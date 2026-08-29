@@ -38,7 +38,7 @@ import { DEFAULT_LINEAR_POINTS } from "./geometry.js";
 // differences turned out to describe its own fallbacks rather than anything
 // Excalidraw insists on. The property is that a document we write is a fixed
 // point: rendered in a real browser, nothing comes back changed.
-// `scripts/check-fixed-point.mjs` is that check and it is the arbiter.
+// `tests/system/browser/fixed-point-document.test.ts` is that check and it is the arbiter.
 //
 // Measured with that check, against this version of Excalidraw, the only
 // thing a render rewrites is `index` — so the defaults below come from
@@ -181,7 +181,7 @@ function inZOrder<T extends { index?: string | null }>(elements: T[]): T[] {
  * it has to, because Excalidraw dereferences them as it renders and a pointer at
  * nothing is the one shape it will not survive. So a store that leaves them is
  * a store holding a document the renderer rewrites, which under ADR 0015 is a
- * board with two answers, and `scripts/check-live-session.mjs` catches it as
+ * board with two answers, and `tests/system/browser/live-session-convergence.test.ts` catches it as
  * one: delete a labelled box and the server keeps the words pointing at a shape
  * that is not there while the pane shows them loose.
  *
@@ -258,7 +258,7 @@ export function settleDeletions(
  * a board were two documents: the note said `a0, a1, a2` and the board said
  * `a0, a1, aB` and nobody compared them. The note is the board now (ADR 0015),
  * so two rules is two answers, and the second one arrives on the next read
- * having told nobody (`scripts/check-live-session.mjs` caught it on cycle 7).
+ * having told nobody (`tests/system/browser/live-session-convergence.test.ts` catches it).
  */
 export function settledIndices(
 	ordered: ReadonlyArray<{ index?: string | null }>,
@@ -294,7 +294,7 @@ export function settledIndices(
  * existed the store simply had none: an element an agent created carried no
  * index at all, Excalidraw assigned one the moment it rendered, and the pane
  * and the server then held two different documents for the rest of the session
- * (found by `scripts/check-live-session.mjs`). Under ADR 0015 that is a board
+ * (guarded by `tests/system/browser/live-session-convergence.test.ts`). Under ADR 0015 that is a board
  * with two answers, and a write cannot return a document the renderer has to
  * repair.
  *
