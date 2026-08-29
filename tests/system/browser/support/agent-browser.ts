@@ -53,7 +53,6 @@ const REQUIRED_BROWSER_ENV = [
 	"AGENT_BROWSER_SESSION",
 	"AGENT_BROWSER_NAMESPACE",
 	"AGENT_BROWSER_IDLE_TIMEOUT_MS",
-	"AGENT_BROWSER_EXECUTABLE_PATH",
 ] as const;
 const CLEARED_CANVAS_ENV = [
 	"ARCHBOARD_VAULT",
@@ -150,6 +149,9 @@ export function browserTestEnvironment(): Record<string, string> {
 		NO_COLOR: "1",
 	};
 	for (const name of REQUIRED_BROWSER_ENV) env[name] = requiredEnvironment(name);
+	if (process.env.AGENT_BROWSER_EXECUTABLE_PATH) {
+		env.AGENT_BROWSER_EXECUTABLE_PATH = process.env.AGENT_BROWSER_EXECUTABLE_PATH;
+	}
 	return env;
 }
 

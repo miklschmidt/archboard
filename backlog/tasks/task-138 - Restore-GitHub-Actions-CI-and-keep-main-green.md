@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-29 16:14'
-updated_date: '2026-08-29 17:20'
+updated_date: '2026-08-29 17:48'
 labels: []
 dependencies: []
 references:
@@ -18,6 +18,7 @@ modified_files:
   - tests/system/browser/support/agent-browser.ts
   - tests/system/repository-policy/support/test-inventory.ts
   - tests/system/repository-policy/test-inventory.test.ts
+  - tests/system/repository-policy/ci-browser-gate.test.ts
 priority: high
 type: bug
 ordinal: 154000
@@ -49,6 +50,8 @@ GitHub Actions is failing on the current repository state and is expected to fai
 6. After a green pushed repair, read the finalization guide, verify each acceptance criterion from objective evidence, finalize TASK-138, commit and push that metadata, and monitor the final pushed SHA to green.
 
 7. Browser executable isolation amendment. After agent-browser install --with-deps, CI resolves the exact downloaded Chrome executable and exports it as AGENT_BROWSER_EXECUTABLE_PATH for the one bun run check process. tests/system/browser/run-browser-lane.ts validates that configured path before any frontend build or owner acquisition and returns could-not-run exit 2 with an actionable diagnostic when it is missing, not a file, or not executable. The adapter passes that exact path through browserTestEnvironment into each isolated owner while retaining the per-owner HOME/XDG/socket/session/namespace contract; canvas and other child environments continue to strip browser configuration. A focused fake/preflight regression proves the executable reaches an isolated owner and that missing/non-executable configured paths stop before build/owner acquisition. The workflow also declares top-level permissions: contents: read and retains the 30-minute timeout.
+
+8. Review remediation. Keep AGENT_BROWSER_EXECUTABLE_PATH optional for documented local PATH-based use, but validate and normalize it strictly before build when configured. Delete every owner argv substitution hook; test the exported environment seam and canonical adapter behavior without changing owner selection. Parse workflow run steps so only one executable step equal to bun run check is accepted, while comments and quoted output cannot satisfy policy. Preserve independent mutation cases under the 500-line owner cap. Re-run focused policy/browser coverage and one clean complete check, then commit for rereview without pushing or finalizing.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -75,4 +78,14 @@ Implementation evidence, fixed base ee31c07, 2026-08-29:
 - Clean acceptance from absent dist/frontend: AGENT_BROWSER_EXECUTABLE_PATH=$(realpath ~/.agent-browser/browsers/chrome-150.0.7871.46/chrome) bun run check, exit 0. It passed lint, formatting, both TypeScript projects, 400 module tests, 250 serial system tests, 50 repository tests, and all 15 serial headless browser owners. Log: /tmp/task138-acceptance-full-check.log.
 - Modified TypeScript physical lines: run-browser-lane.ts 498; browser support 385; inventory support 261; inventory owner 498. All remain below the enforced 500-line cap.
 - Workflow contract: top-level contents:read; checkout@v7; setup-bun@v2; frozen install; explicit strace; pinned agent-browser@0.34.0; install --with-deps; exactly one downloaded executable named chrome resolved with realpath and exported through GITHUB_ENV; one bun run check; 30-minute timeout. No skip, shard, allow-failure, or continue-on-error path was added.
+
+Review remediation evidence, 2026-08-29:
+
+- Independent review RED: tests/system/repository-policy/ci-browser-gate.test.ts produced 6 expected failures against a680db7. Raw workflow text let comments and quoted echo text count, local execution rejected an unset AGENT_BROWSER_EXECUTABLE_PATH, and ARCHBOARD_TEST_BROWSER_OWNER_FIXTURE replaced the canonical owner argv. Log: /tmp/task138-review-red.log.
+- The adapter now treats AGENT_BROWSER_EXECUTABLE_PATH as an optional local override. When set, it normalizes and validates the absolute file and execute bit before agent-browser probing, frontend build, or owner acquisition. When unset, agent-browser keeps its documented PATH and Nix/system browser discovery. The canonical Bun owner argv is literal and immutable. A real adapter boundary with a fake agent-browser proves that a normalized path reaches the canonical isolated owner and that the former substitution input is ignored. Canvas subprocesses retain the existing AGENT_BROWSER_* stripping.
+- CI policy now parses YAML jobs and run steps. It requires one executable step exactly equal to bun run check, ignores comments and quoted echo output, and rejects missing, duplicate, direct build/test, whitespace, and multiline drift as separate Bun tests in ci-browser-gate.test.ts. The original inventory/cleanup owner remains independent.
+- Focused green: ci-browser-gate.test.ts 15 tests and 46 assertions; combined inventory and CI/browser owners passed before the final run. Type-check, Oxlint, formatting, and diff checks passed.
+- First clean post-review full-check attempt is retained honestly in /tmp/task138-review-full-check.log. Lint, formatting, TypeScript, and 400 module tests passed, then unrelated board-inspection subprocess owners repeatedly exceeded existing 5-second and 40-second limits. Bun later hung at one core after the 30-second source-staleness timeout; only the owned check process group was stopped, for exit 143. No TASK-138 owner failed and no gate was changed. Its one source-staleness temp directory and derived bundle were removed before retry.
+- Clean retry with AGENT_BROWSER_EXECUTABLE_PATH explicitly unset passed bun run check: 400 module tests, 250 serial system tests, 60 repository-policy tests, and all 15 serial headless browser owners. Log: /tmp/task138-review-full-check-retry.log. This directly verifies the reviewed local PATH interface.
+- Final physical lines: run-browser-lane.ts 486; agent-browser.ts 387; inventory support 353; inventory owner 370; CI/browser policy owner 227. Final cleanup removed dist, found no browser lane or preflight roots, and found no surviving check, browser, or owner process.
 <!-- SECTION:NOTES:END -->
