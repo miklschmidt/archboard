@@ -1,11 +1,11 @@
 ---
 id: TASK-137
 title: Bound code targets present unusable file URLs and omit GitHub fallback
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-28 15:35'
-updated_date: '2026-08-29 15:51'
+updated_date: '2026-08-29 15:53'
 labels: []
 dependencies:
   - TASK-136
@@ -26,17 +26,14 @@ Current outbound presentation emits browser-unusable file:// URLs for existing f
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
-
 <!-- AC:BEGIN -->
-
-- [ ] #1 Every outbound browser and caller presentation recomputes the code target from the canonical binding and current checkout registry; no local-versus-remote classification, absolute path, internal target, or GitHub URL is persisted
-- [ ] #2 When a matching registered checkout contains the bound real path, both files and directories receive an internal Archboard code target addressed by board and element identity
-- [ ] #3 When the local target is unavailable and the repository identity is on github.com, presentation derives an HTTPS target for the bound path using the recorded commit when present, otherwise the recorded branch, otherwise HEAD; file and directory paths both open correctly
-- [ ] #4 A registered checkout whose repository identity changed, a missing local path, or a symlink escaping the checkout is not presented as local; a missing local path falls back to GitHub when possible
-- [ ] #5 Repository identities on other hosts receive no invented remote target, and unrelated human-authored Excalidraw links retain their stored value and browser behavior
-- [ ] #6 Adding, moving, forgetting, or invalidating a checkout changes the next presented target without changing the board note
-- [ ] #7 Regression checks fail on the current behavior and prove browser-visible local file and directory actions, GitHub fallback with no checkout, commit then branch then HEAD precedence, survival after a human edit, and absence of all derived targets in the raw note
-
+- [x] #1 Every outbound browser and caller presentation recomputes the code target from the canonical binding and current checkout registry; no local-versus-remote classification, absolute path, internal target, or GitHub URL is persisted
+- [x] #2 When a matching registered checkout contains the bound real path, both files and directories receive an internal Archboard code target addressed by board and element identity
+- [x] #3 When the local target is unavailable and the repository identity is on github.com, presentation derives an HTTPS target for the bound path using the recorded commit when present, otherwise the recorded branch, otherwise HEAD; file and directory paths both open correctly
+- [x] #4 A registered checkout whose repository identity changed, a missing local path, or a symlink escaping the checkout is not presented as local; a missing local path falls back to GitHub when possible
+- [x] #5 Repository identities on other hosts receive no invented remote target, and unrelated human-authored Excalidraw links retain their stored value and browser behavior
+- [x] #6 Adding, moving, forgetting, or invalidating a checkout changes the next presented target without changing the board note
+- [x] #7 Regression checks fail on the current behavior and prove browser-visible local file and directory actions, GitHub fallback with no checkout, commit then branch then HEAD precedence, survival after a human edit, and absence of all derived targets in the raw note
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -301,4 +298,20 @@ Final absolute-path mutation evidence (2026-08-29)
 - Cleanup: git showed no source diff, agent-browser reported no active sessions, and no task browser, canvas, lane, or fake-opener process remained. No broad or browser lane was rerun because the final production source is byte-identical.
 
 Review state remains unchanged: TASK-137 is In Progress, every acceptance criterion is unchecked, and finalSummary is null pending independent rereview.
+
+Final acceptance evidence after clean complete-range review (2026-08-29)
+
+- AC1: the public HTTP/WebSocket owner recomputed targets after registry and filesystem changes, audited every derived internal, GitHub, legacy, checkout, config, executable, and argv value out of raw notes, and preserved exact note bytes and mtime around read-only presentation and export. Repository policy also enforces one request-local presentation batch and the canonical resolver boundaries.
+- AC2: the public owner returned exact board-and-element internal targets for a registered file and directory. The rendered two-pane owner activated both through the protected POST and captured each canonical real target in the controlled opener.
+- AC3: module grammar literals proved commit, branch, and HEAD precedence, encoded refs and paths, roots, and file/directory paths. Public and rendered owners proved exact GitHub fallbacks and popup URLs when local activation was unavailable.
+- AC4: resolver and public owners rejected changed checkout identity, missing targets, lexical escape, realpath escape, POSIX absolute paths, Windows absolute paths, and cross-drive containment. Eligible missing targets fell back to exact GitHub URLs.
+- AC5: public negatives proved other hosts receive no invented target. Module, public echo, raw-note, and rendered popup checks preserved unrelated bound and unbound HTTPS and file links.
+- AC6: the public owner captured raw bytes and bigint mtime before forget, move, registry restore, target creation, identity invalidation, and identity restore. Each next presentation changed as expected while the note stayed exact.
+- AC7: natural reds and the complete reverted mutation matrix killed the named module, public, repository, type, and rendered owners. Final verification passed 67 focused module tests, 42 serialized public/system tests, 40 repository tests, the public owner with 101 assertions, the rendered owner with 78 assertions, all 15 serial browser owners, bun run test, and bun run check. Independent Standards and Spec reviews both returned REVIEW_CLEAN.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Bound code targets now derive fresh presentation-only actions from one portable binding. Verified local files and directories use exact board-and-element activation, unavailable GitHub targets use validated commit, branch, or HEAD URLs, and human links plus raw note bytes remain portable. Public HTTP/WebSocket checks, rendered two-pane pointer activation, all 15 browser owners, bun run test, bun run check, and independent Standards and Spec reviews passed. GitHub file handling after the exact /tree/ URL remains external behavior. A legacy file:// echo received after its checkout disappears stays preserved as a human link because Archboard keeps no historical presentation cache.
+<!-- SECTION:FINAL_SUMMARY:END -->
