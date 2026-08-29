@@ -160,6 +160,32 @@ describe("code-target link handler", () => {
 		});
 	});
 
+	test("treats a schema-valid failure sent with HTTP 200 as an invalid response", async () => {
+		globalThis.fetch = mock(async () =>
+			reply({
+				success: false,
+				code: "OPENER_UNAVAILABLE",
+				error: "This must not use the normal failure path.",
+			}),
+		) as unknown as typeof fetch;
+		const opened = handler("board-a");
+
+		opened.value(
+			element("box-1", "/api/code-targets/open?board=board-a&element=box-1"),
+			event().value,
+		);
+		await settle();
+
+		expect(opened.onSuccess).not.toHaveBeenCalled();
+		expect(opened.onFailure).toHaveBeenCalledTimes(1);
+		expect(opened.onFailure.mock.calls[0]?.[0]).toMatchObject({
+			message: expect.stringContaining("RESPONSE_INVALID"),
+		});
+		expect(opened.onFailure.mock.calls[0]?.[0]).not.toMatchObject({
+			message: "This must not use the normal failure path.",
+		});
+	});
+
 	test.each([200, 500])("converts an invalid %i reply to RESPONSE_INVALID", async (status) => {
 		globalThis.fetch = mock(async () =>
 			reply({ success: true, path: "/tmp/private" }, status),

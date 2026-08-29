@@ -1,5 +1,5 @@
 import { z } from "zod";
-
+export { isAbsoluteOrBareOpenerExecutable } from "./executable.js";
 export const PATH_TOKEN = "{path}";
 const MAX_ARGV = 32;
 const MAX_ARG_BYTES = 16 * 1024;

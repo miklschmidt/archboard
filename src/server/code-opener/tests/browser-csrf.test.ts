@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 
 import { checkBrowserCsrf } from "../index.ts";
 
@@ -10,6 +11,19 @@ const accepted = (overrides: Record<string, string | undefined> = {}) => ({
 });
 
 describe("browser CSRF guard", () => {
+	test("accepts forged loopback headers because this guard is browser CSRF, not authentication", () => {
+		const source = readFileSync(new URL("../lib/browser-csrf.ts", import.meta.url), "utf8");
+		expect(source).toContain(
+			"This protects browsers against CSRF. It does not authenticate a local process",
+		);
+		expect(
+			checkBrowserCsrf("mutation", {
+				host: "127.0.0.1:3000",
+				origin: "http://localhost:5173",
+				secFetchSite: "same-origin",
+			}),
+		).toEqual({ ok: true });
+	});
 	test.each([
 		accepted(),
 		accepted({ origin: "http://127.0.0.1:5173" }),

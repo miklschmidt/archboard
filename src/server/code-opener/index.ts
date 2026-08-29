@@ -18,4 +18,9 @@ export {
 	type BrowserCsrfResult,
 } from "./lib/browser-csrf.js";
 export { launchOpener, type LaunchResult } from "./lib/launch.js";
-export { createCodeOpenerRouter, type CodeOpenerRouteDependencies } from "./lib/routes.js";
+export {
+	createCodeOpenerPreguard,
+	createCodeOpenerRouter,
+	isCodeOpenerBodyRoute,
+	type CodeOpenerRouteDependencies,
+} from "./lib/routes.js";

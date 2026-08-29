@@ -50,6 +50,8 @@ export function checkBrowserCsrf(
 	kind: BrowserCsrfKind,
 	headers: BrowserCsrfHeaders,
 ): BrowserCsrfResult {
+	// This protects browsers against CSRF. It does not authenticate a local process
+	// that can forge the accepted loopback headers.
 	const host = authorityHostname(headers.host);
 	if (!host || !LOOPBACK_HOSTS.has(host)) return refused("The request Host is not loopback.");
 	if (headers.secFetchSite !== "same-origin") {
