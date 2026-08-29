@@ -229,7 +229,7 @@ describe("typed serial browser adapter selection", () => {
 	test("inventory rejects a missing package owner", () => {
 		const command = `bun ${BROWSER_ADAPTER_PATH} ${BROWSER_TEST_PATHS.slice(0, -1).join(" ")}`;
 		expect(inspectTestInventory(adapterInput(command)).errors).toContain(
-			"browser adapter lane `test:serial-browser` is invalid: Package browser lane must name all 14 canonical paths in order.",
+			"browser adapter lane `test:serial-browser` is invalid: Package browser lane must name all 15 canonical paths in order.",
 		);
 	});
 
