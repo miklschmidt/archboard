@@ -13,8 +13,13 @@ import { z } from "zod";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { heldReplaceScene, mergeScene } from "./fixtures/import-scenes.ts";
-import { startCountingProxy } from "./support/counting-proxy.ts";
-import { availablePort, runCli, sanitizedEnvironment } from "./support/process-http.ts";
+import { nonReadRecords, startCountingProxy } from "./support/counting-proxy.ts";
+import {
+	availablePort,
+	parseCliJson,
+	runCli,
+	sanitizedEnvironment,
+} from "./support/process-http.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const ReceiptSchema = z
@@ -22,18 +27,22 @@ const ReceiptSchema = z
 	.passthrough();
 
 test("merge and held replace each use one batch without advancing held persistence", async () => {
+	const resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-import-held-"));
+	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
 	const canvas = await startOwnedCanvas({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
 		env: sanitizedEnvironment(root, vault),
 	});
+	resources.defer(() => canvas.dispose());
 	const proxy = await startCountingProxy({
 		port: await availablePort(),
 		upstream: canvas.base,
 		env: sanitizedEnvironment(root, vault),
 	});
+	resources.defer(() => proxy.dispose());
 	const request = createJsonRequester(canvas);
 	try {
 		await request("/api/boards/new", { method: "POST", body: { board: "held" } });
@@ -52,16 +61,21 @@ test("merge and held replace each use one batch without advancing held persisten
 			args: ["import", mergeFile, "--board", "held", "--doing", "merging scene"],
 		});
 		expect(merged.status).toBe(0);
-		expect(ReceiptSchema.parse(JSON.parse(merged.stdout))).toMatchObject({
+		expect(parseCliJson(merged, ReceiptSchema)).toMatchObject({
 			success: true,
 			imported: 1,
 			mode: "merge",
 		});
-		expect(
-			(await proxy.snapshot()).filter(
-				(record) => record.method === "POST" && record.pathname === "/api/elements/batch",
-			),
-		).toHaveLength(1);
+		const mergeWrites = nonReadRecords(await proxy.snapshot());
+		expect(mergeWrites).toHaveLength(1);
+		expect(mergeWrites[0]).toMatchObject({
+			method: "POST",
+			pathname: "/api/elements/batch",
+			query: "?board=held&doing=merging%20scene",
+		});
+		expect(Buffer.from(mergeWrites[0]!.bodyBase64, "base64").toString()).toBe(
+			JSON.stringify({ elements: mergeScene.elements }),
+		);
 
 		const info = await request<{ file: string; version: number }>("/api/boards/info?board=held");
 		appendFileSync(info.body.file, "\nexternal edit\n");
@@ -83,15 +97,24 @@ test("merge and held replace each use one batch without advancing held persisten
 		});
 		expect(replaced.status).toBe(0);
 		expect(replaced.stderr).toContain("stopped saving");
-		expect(ReceiptSchema.parse(JSON.parse(replaced.stdout))).toMatchObject({
+		expect(parseCliJson(replaced, ReceiptSchema)).toMatchObject({
 			success: true,
 			mode: "replace",
 		});
-		expect(
-			(await proxy.snapshot()).filter(
-				(record) => record.method === "POST" && record.pathname === "/api/elements/batch",
-			),
-		).toHaveLength(1);
+		const replaceWrites = nonReadRecords(await proxy.snapshot());
+		expect(replaceWrites).toHaveLength(1);
+		expect(replaceWrites[0]).toMatchObject({
+			method: "POST",
+			pathname: "/api/elements/batch",
+			query: "?board=held&doing=held%20replace",
+		});
+		expect(Buffer.from(replaceWrites[0]!.bodyBase64, "base64").toString()).toBe(
+			JSON.stringify({
+				elements: heldReplaceScene.elements,
+				files: Object.values(heldReplaceScene.files),
+				mutation: "replace-scene",
+			}),
+		);
 		expect(readFileSync(info.body.file)).toEqual(bytes);
 		expect(statSync(info.body.file).mtimeMs).toBe(mtime);
 		expect((await request<{ version: number }>("/api/boards/info?board=held")).body.version).toBe(
@@ -105,8 +128,6 @@ test("merge and held replace each use one batch without advancing held persisten
 		const files = await request<{ files: Record<string, unknown> }>("/api/files?board=held");
 		expect(Object.keys(files.body.files)).toEqual(["reused-file"]);
 	} finally {
-		await proxy.dispose();
-		await canvas.dispose();
-		rmSync(root, { recursive: true, force: true });
+		await resources.disposeAsync();
 	}
 }, 20_000);

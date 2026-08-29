@@ -12,15 +12,19 @@ const repoRoot = resolve(import.meta.dir, "../../..");
 const box = (id: string, x = 0) => ({ id, type: "rectangle", x, y: 0, width: 20, height: 20 });
 
 test("public lock API preserves holds, claims, refusals, and told-once recovery", async () => {
+	const resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-lock-api-"));
+	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
 	const canvas = await startOwnedCanvas({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
 		env: sanitizedEnvironment(root, vault),
 	});
+	resources.defer(() => canvas.dispose());
 	const request = createJsonRequester(canvas);
 	const pane = await openTestPane(canvas.base, request, "pane-lock-owner", 0);
+	resources.defer(() => pane.close());
 	try {
 		expect(pane.seen.find((message) => message.type === "board_lock")).toMatchObject({
 			board: "scratch",
@@ -54,6 +58,7 @@ test("public lock API preserves holds, claims, refusals, and told-once recovery"
 				body: { clientId: pane.clientId },
 			});
 		}, 800);
+		resources.defer(() => clearInterval(timer));
 		const started = Date.now();
 		const denied = await request<{
 			code: string;
@@ -104,6 +109,7 @@ test("public lock API preserves holds, claims, refusals, and told-once recovery"
 				body: { clientId: "other-pane" },
 			});
 		}, 800);
+		resources.defer(() => clearInterval(otherRenewal));
 		const otherDenied = await request<{ holder: { id: string } }>(
 			"/api/elements/changes?board=scratch",
 			{ method: "POST", body: { clientId: pane.clientId, upserts: [box("other")], deletes: [] } },
@@ -189,8 +195,6 @@ test("public lock API preserves holds, claims, refusals, and told-once recovery"
 		] as const)
 			expect((await request(path, { method: "POST", body })).status).toBe(400);
 	} finally {
-		await pane.close();
-		await canvas.dispose();
-		rmSync(root, { recursive: true, force: true });
+		await resources.disposeAsync();
 	}
 }, 30_000);

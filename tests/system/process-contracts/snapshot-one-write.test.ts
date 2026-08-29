@@ -7,8 +7,13 @@ import { createJsonRequester } from "../boards/support/http.ts";
 import { openTestPane } from "../boards/support/pane-websocket.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { snapshotElements } from "./fixtures/snapshot-scenes.ts";
-import { startCountingProxy } from "./support/counting-proxy.ts";
-import { availablePort, runCli, sanitizedEnvironment } from "./support/process-http.ts";
+import { nonReadRecords, startCountingProxy } from "./support/counting-proxy.ts";
+import {
+	availablePort,
+	parseCliJson,
+	runCli,
+	sanitizedEnvironment,
+} from "./support/process-http.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const RestoreSchema = z.object({
@@ -26,20 +31,25 @@ interface SnapshotElement {
 }
 
 test("snapshot refusal is zero writes and restore replaces scene once", async () => {
+	const resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-snapshot-one-write-"));
+	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
 	const canvas = await startOwnedCanvas({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
 		env: sanitizedEnvironment(root, vault),
 	});
+	resources.defer(() => canvas.dispose());
 	const proxy = await startCountingProxy({
 		port: await availablePort(),
 		upstream: canvas.base,
 		env: sanitizedEnvironment(root, vault),
 	});
+	resources.defer(() => proxy.dispose());
 	const request = createJsonRequester(canvas);
 	const pane = await openTestPane(canvas.base, request, "snapshot-pane", 0, { board: "target" });
+	resources.defer(() => pane.close());
 	try {
 		await request("/api/boards/new", { method: "POST", body: { board: "source" } });
 		await request("/api/elements/batch?board=source", {
@@ -58,6 +68,9 @@ test("snapshot refusal is zero writes and restore replaces scene once", async ()
 			],
 		});
 		await request("/api/snapshots?board=source", { method: "POST", body: { name: "scene" } });
+		const sourceDocument = await request<{ elements: SnapshotElement[] }>(
+			"/api/elements?board=source",
+		);
 		await request("/api/boards/new", { method: "POST", body: { board: "target" } });
 		await pane.adopt("target");
 		await request("/api/elements/batch?board=target", {
@@ -78,11 +91,7 @@ test("snapshot refusal is zero writes and restore replaces scene once", async ()
 		});
 		expect(refused.status).toBe(1);
 		expect(refused.stderr).toContain("Pass --board source");
-		expect(
-			(await proxy.snapshot()).filter(
-				(record) => record.method !== "GET" && record.pathname.startsWith("/api/elements"),
-			),
-		).toHaveLength(0);
+		expect(nonReadRecords(await proxy.snapshot())).toHaveLength(0);
 		const before = await request<{ version: number }>("/api/boards/info?board=target");
 		await proxy.reset();
 		const frameStart = pane.since();
@@ -104,26 +113,24 @@ test("snapshot refusal is zero writes and restore replaces scene once", async ()
 		});
 		await Bun.sleep(80);
 		expect(restored.status).toBe(0);
-		expect(RestoreSchema.parse(JSON.parse(restored.stdout))).toEqual({
+		expect(parseCliJson(restored, RestoreSchema)).toEqual({
 			success: true,
 			name: "scene",
 			board: "target",
 			restored: 2,
 		});
-		expect(
-			(await proxy.snapshot()).filter(
-				(record) => record.method === "POST" && record.pathname === "/api/elements/batch",
-			),
-		).toHaveLength(1);
-		const restoreRecord = (await proxy.snapshot()).find(
-			(record) => record.method === "POST" && record.pathname === "/api/elements/batch",
-		)!;
+		const restoreRecords = nonReadRecords(await proxy.snapshot());
+		expect(restoreRecords).toHaveLength(1);
+		const restoreRecord = restoreRecords[0]!;
+		expect(restoreRecord).toMatchObject({ method: "POST", pathname: "/api/elements/batch" });
 		expect(restoreRecord.query).toBe("?board=target&doing=restore%20snapshot&expectVersion=1");
-		const restoreBody = JSON.parse(
-			Buffer.from(restoreRecord.bodyBase64, "base64").toString(),
-		) as Record<string, unknown>;
-		expect(restoreBody).toMatchObject({ elements: snapshotElements, files: [] });
-		expect(restoreBody.mutation).toBe("replace-scene");
+		expect(Buffer.from(restoreRecord.bodyBase64, "base64").toString()).toBe(
+			JSON.stringify({
+				elements: sourceDocument.body.elements,
+				files: [],
+				mutation: "replace-scene",
+			}),
+		);
 		const elements = await request<{ elements: SnapshotElement[] }>("/api/elements?board=target");
 		expect(elements.body.elements.map((element) => element.id)).toEqual([
 			"snap-node",
@@ -185,11 +192,20 @@ test("snapshot refusal is zero writes and restore replaces scene once", async ()
 			],
 		});
 		expect(repeated.status).toBe(0);
-		expect(
-			(await proxy.snapshot()).filter(
-				(record) => record.method === "POST" && record.pathname === "/api/elements/batch",
-			),
-		).toHaveLength(1);
+		const repeatedRecords = nonReadRecords(await proxy.snapshot());
+		expect(repeatedRecords).toHaveLength(1);
+		expect(repeatedRecords[0]).toMatchObject({
+			method: "POST",
+			pathname: "/api/elements/batch",
+			query: "?board=target&doing=repeat%20restore&expectVersion=3",
+		});
+		expect(Buffer.from(repeatedRecords[0]!.bodyBase64, "base64").toString()).toBe(
+			JSON.stringify({
+				elements: sourceDocument.body.elements,
+				files: [],
+				mutation: "replace-scene",
+			}),
+		);
 		const node = (
 			await request<{ elements: SnapshotElement[] }>("/api/elements?board=target")
 		).body.elements.find((element) => element.id === "snap-node");
@@ -264,22 +280,27 @@ test("snapshot refusal is zero writes and restore replaces scene once", async ()
 		});
 		expect(heldRestore.status).toBe(0);
 		expect(heldRestore.stderr).toContain("stopped saving");
-		expect(HeldRestoreSchema.parse(JSON.parse(heldRestore.stdout))).toMatchObject({
+		expect(parseCliJson(heldRestore, HeldRestoreSchema)).toMatchObject({
 			success: true,
 			name: "scene",
 			board: "held-target",
 			restored: 2,
 			held: { board: "held-target" },
 		});
-		const heldRecords = (await proxy.snapshot()).filter(
-			(record) => record.method === "POST" && record.pathname === "/api/elements/batch",
-		);
+		const heldRecords = nonReadRecords(await proxy.snapshot());
 		expect(heldRecords).toHaveLength(1);
-		expect(JSON.parse(Buffer.from(heldRecords[0]!.bodyBase64, "base64").toString())).toMatchObject({
-			elements: snapshotElements,
-			files: [],
-			mutation: "replace-scene",
+		expect(heldRecords[0]).toMatchObject({
+			method: "POST",
+			pathname: "/api/elements/batch",
+			query: "?board=held-target&doing=held%20snapshot%20restore&expectVersion=2",
 		});
+		expect(Buffer.from(heldRecords[0]!.bodyBase64, "base64").toString()).toBe(
+			JSON.stringify({
+				elements: sourceDocument.body.elements,
+				files: [],
+				mutation: "replace-scene",
+			}),
+		);
 		const heldElements = await request<{
 			elements: SnapshotElement[];
 			held: { writes: number };
@@ -301,9 +322,6 @@ test("snapshot refusal is zero writes and restore replaces scene once", async ()
 			(await request<{ version: number }>("/api/boards/info?board=held-target")).body.version,
 		).toBe(heldInfo.body.version);
 	} finally {
-		await pane.close();
-		await proxy.dispose();
-		await canvas.dispose();
-		rmSync(root, { recursive: true, force: true });
+		await resources.disposeAsync();
 	}
 }, 20_000);

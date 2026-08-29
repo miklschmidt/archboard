@@ -24,7 +24,9 @@ const fixtureEnv = (root: string, vault: string, mode: "default" | "broad" | "no
 });
 
 test("default bind owns its PID and exposes only the frontend bundle", async () => {
+	const resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-local-bind-"));
+	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const hiddenParent = join(root, ".checkout");
 	const hiddenRepo = join(hiddenParent, "archboard");
 	const { mkdirSync, symlinkSync } = await import("node:fs");
@@ -39,6 +41,7 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 			ARCHBOARD_TEST_SERVER_ENTRY: join(hiddenRepo, "src/server.ts"),
 		},
 	});
+	resources.defer(() => canvas.dispose());
 	try {
 		const healthPayload: unknown = await (await fetch(`${canvas.base}/health`)).json();
 		const health = ReadySchema.parse(healthPayload);
@@ -56,16 +59,13 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 		);
 
 		const probes = plantStaticProbes(repoRoot);
-		try {
-			const statuses = await Promise.all([
-				fetch(`${canvas.base}/${probes.frontend}`).then((response) => response.status),
-				fetch(`${canvas.base}/${probes.stale}`).then((response) => response.status),
-				fetch(`${canvas.base}/${probes.hidden}`).then((response) => response.status),
-			]);
-			expect(statuses).toEqual([200, 404, 404]);
-		} finally {
-			probes.restore();
-		}
+		resources.defer(() => probes.restore());
+		const statuses = await Promise.all([
+			fetch(`${canvas.base}/${probes.frontend}`).then((response) => response.status),
+			fetch(`${canvas.base}/${probes.stale}`).then((response) => response.status),
+			fetch(`${canvas.base}/${probes.hidden}`).then((response) => response.status),
+		]);
+		expect(statuses).toEqual([200, 404, 404]);
 
 		const port = Number(new URL(canvas.base).port);
 		for (const mode of ["default", "broad"] as const) {
@@ -77,13 +77,14 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 			expect(`${failed.stdout}${failed.stderr}`).toMatch(/EADDRINUSE|already.*(?:use|listen)/i);
 		}
 	} finally {
-		await canvas.dispose();
-		rmSync(root, { recursive: true, force: true });
+		await resources.disposeAsync();
 	}
 }, 20_000);
 
 test("rejects foreign health, recovers the port, and refuses no-vault startup", async () => {
+	const resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-local-bind-refusal-"));
+	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
 	const port = await availablePort();
 	const foreign = await startOwnedPeer({
@@ -95,6 +96,7 @@ test("rejects foreign health, recovers the port, and refuses no-vault startup", 
 		},
 		readySchema: HealthResponderReadySchema,
 	});
+	resources.defer(() => foreign.dispose());
 	try {
 		const collision = await startOwnedCanvas({
 			serverPath: fixture,
@@ -104,37 +106,38 @@ test("rejects foreign health, recovers the port, and refuses no-vault startup", 
 		}).catch((error: unknown) => error);
 		expect(collision).toBeInstanceOf(Error);
 		expect((collision as Error).message).toMatch(/not owned pid|answered for pid/i);
-	} finally {
 		await foreign.dispose();
+		const recovered = await startOwnedCanvas({
+			serverPath: fixture,
+			port,
+			vault,
+			env: fixtureEnv(root, vault, "default"),
+		});
+		resources.defer(() => recovered.dispose());
+		expect(recovered.pid).toBeNumber();
+		await recovered.dispose();
+
+		const noVaultPort = await availablePort();
+		const noVault = await runOwnedPeerToExit({
+			argv: [process.execPath, fixture],
+			env: { ...fixtureEnv(root, vault, "no-vault"), PORT: String(noVaultPort) },
+		});
+		expect(noVault.code).not.toBe(0);
+		for (const text of ["no vault", "install-skill", "ARCHBOARD_VAULT"])
+			expect(`${noVault.stdout}${noVault.stderr}`).toContain(text);
+
+		const cliEnv = sanitizedEnvironment(root, vault);
+		delete cliEnv.ARCHBOARD_VAULT;
+		delete cliEnv.EXCALIDRAW_NO_AUTOSTART;
+		cliEnv.EXPRESS_SERVER_URL = `http://127.0.0.1:${await availablePort()}`;
+		const cli = spawnSync(process.execPath, [join(repoRoot, "src/bin.ts"), "board", "list"], {
+			cwd: repoRoot,
+			env: cliEnv,
+			encoding: "utf8",
+		});
+		expect(cli.status).toBe(3);
+		expect(cli.stderr).toContain("install-skill");
+	} finally {
+		await resources.disposeAsync();
 	}
-	const recovered = await startOwnedCanvas({
-		serverPath: fixture,
-		port,
-		vault,
-		env: fixtureEnv(root, vault, "default"),
-	});
-	expect(recovered.pid).toBeNumber();
-	await recovered.dispose();
-
-	const noVaultPort = await availablePort();
-	const noVault = await runOwnedPeerToExit({
-		argv: [process.execPath, fixture],
-		env: { ...fixtureEnv(root, vault, "no-vault"), PORT: String(noVaultPort) },
-	});
-	expect(noVault.code).not.toBe(0);
-	for (const text of ["no vault", "install-skill", "ARCHBOARD_VAULT"])
-		expect(`${noVault.stdout}${noVault.stderr}`).toContain(text);
-
-	const cliEnv = sanitizedEnvironment(root, vault);
-	delete cliEnv.ARCHBOARD_VAULT;
-	delete cliEnv.EXCALIDRAW_NO_AUTOSTART;
-	cliEnv.EXPRESS_SERVER_URL = `http://127.0.0.1:${await availablePort()}`;
-	const cli = spawnSync(process.execPath, [join(repoRoot, "src/bin.ts"), "board", "list"], {
-		cwd: repoRoot,
-		env: cliEnv,
-		encoding: "utf8",
-	});
-	expect(cli.status).toBe(3);
-	expect(cli.stderr).toContain("install-skill");
-	rmSync(root, { recursive: true, force: true });
 }, 20_000);
