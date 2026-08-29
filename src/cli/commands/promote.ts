@@ -174,7 +174,6 @@ const PromotionNodeSchema = z.object({
 			confirmedAt: z.string().optional(),
 		})
 		.optional(),
-	link: z.string().optional(),
 	variant: z.string(),
 	level: z.string().optional(),
 });

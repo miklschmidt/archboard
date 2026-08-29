@@ -112,8 +112,7 @@ export function uniqueNodeId(base: string, taken: Set<string>): string {
 // The vault spans repositories and is not co-located with any of them (ADR
 // 0004), so a binding names code as repo identity + path, plus the branch and
 // commit at which it was last confirmed — that pair is what lets git history
-// trace a file that later moves. `link` is a convenience for this machine and
-// is reported in answers, not stored in the note.
+// trace a file that later moves. Machine-specific code targets are presentation.
 
 export interface BindingRequest {
 	path: string;
@@ -140,7 +139,6 @@ export type BindingOrigin = { kind: "cwd"; dir: string } | { kind: "none"; surfa
 
 export interface ResolvedBinding {
 	address: LogicalAddress;
-	link?: string; // file:// URL, only when the path resolves on this machine
 	resolved: boolean; // did we find a real repo?
 	resolvedFrom: BindingSource; // what the address was resolved against, always reported
 	note?: string; // said out loud whenever the answer is not simply what the caller named
@@ -278,11 +276,8 @@ export function resolveBinding(request: BindingRequest, origin: BindingOrigin): 
 		confirmedAt,
 	};
 
-	// Only link to something that is actually here. A bogus file:// URL renders
-	// as a link on the board that opens nothing.
 	return {
 		address,
-		...(exists ? { link: `file://${absolute}` } : {}),
 		resolved: true,
 		resolvedFrom,
 		...(notes.length ? { note: notes.join(" ") } : {}),
@@ -333,7 +328,6 @@ export interface PlannedNode {
 	name: string;
 	elementIds: string[];
 	binding?: LogicalAddress;
-	link?: string;
 	variant: string;
 	level?: string;
 }
@@ -575,10 +569,6 @@ export function planPromotion(request: PromotionRequest): PromotionPlan {
 			updates.push({
 				id: el.id,
 				customData: mergedCustomData(el, block),
-				// A bound element's link is a read-time presentation of its binding.
-				// Clear anything the element carried before; the note writer also
-				// strips it as the final portability boundary.
-				...(binding ? { link: null } : {}),
 				...fillFor(el, kind),
 			});
 		}
@@ -589,7 +579,6 @@ export function planPromotion(request: PromotionRequest): PromotionPlan {
 			name: group.name,
 			elementIds: group.elements.map((el) => el.id),
 			...(binding ? { binding: binding.address } : {}),
-			...(binding?.link ? { link: binding.link } : {}),
 			variant,
 			...(request.level ? { level: request.level } : {}),
 		});

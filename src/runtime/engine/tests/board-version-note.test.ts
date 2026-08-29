@@ -299,11 +299,12 @@ describe.serial("board versions in notes", () => {
 		});
 		ioModule.writeBoardContent(board, contentOf(canonical), { saveCommand: "board save" });
 		const loaded = ioModule.readNote(board.file)!;
-		const presented = presentElement(loaded.elements.get("bound")!, opaqueTarget);
+		const presentation = { boardKey: "module/board", opaqueTarget };
+		const presented = presentElement(loaded.elements.get("bound")!, presentation);
 		applyElementInput(loaded.elements, {
 			origin: "human",
 			upserts: [HumanElementChangeSchema.parse(presented)],
-			presentationLinks: new Map([["bound", opaqueTarget]]),
+			presentationLinks: new Map([["bound", presentation]]),
 		});
 		ioModule.writeBoardContent(board, loaded, { saveCommand: "board save" });
 		const note = readFileSync(board.file, "utf8");

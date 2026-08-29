@@ -43,6 +43,7 @@ import {
 	wellFormAgentStatement,
 	withAgentLabelIntent,
 } from "./lib/agent-element-input.js";
+import type { PresentationContext } from "./presentation.js";
 
 export type ElementInputRequest =
 	| {
@@ -56,7 +57,7 @@ export type ElementInputRequest =
 			deletes?: string[];
 			timestamp?: string;
 			/** Opaque outbound presentation values, supplied by the current presenter. */
-			presentationLinks?: ReadonlyMap<string, string>;
+			presentationLinks?: ReadonlyMap<string, PresentationContext>;
 	  };
 
 export interface AppliedElementInput {
@@ -434,7 +435,7 @@ function applyHumanInput(
 	board: Map<string, ServerElement>,
 	upserts: HumanElementChangeInput[],
 	timestamp?: string,
-	presentationLinks: ReadonlyMap<string, string> = new Map(),
+	presentationLinks: ReadonlyMap<string, PresentationContext> = new Map(),
 ): PreparedElementInput {
 	const created: ServerElement[] = [];
 	const updated = new Map<string, ServerElement>();
@@ -456,11 +457,12 @@ function applyHumanInput(
 		} = sanitized;
 		const id = typeof rawId === "string" && rawId.length > 0 ? rawId : mintId(board);
 		const existing = board.get(id);
-		const canonicalLink = canonicalLinkAfterPresentationEcho(
-			existing,
-			incoming.link,
-			presentationLinks.get(id),
-		);
+		const presentation = presentationLinks.get(id);
+		const canonicalLink = presentation
+			? canonicalLinkAfterPresentationEcho(existing, incoming.link, presentation)
+			: typeof incoming.link === "string" || incoming.link === null
+				? incoming.link
+				: existing?.link;
 		for (const alias of ["label", "start", "end", "startElementId", "endElementId"]) {
 			if (hasOwn(incoming, alias))
 				throw new Error(`Human element ${id} contains input-only ${alias}`);

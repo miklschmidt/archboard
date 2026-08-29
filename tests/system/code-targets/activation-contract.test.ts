@@ -118,6 +118,33 @@ describe("public code-target activation contract", () => {
 		});
 	});
 
+	test("offers the exact canonical GitHub fallback when local activation is unavailable", async () => {
+		await using resources = new AsyncDisposableStack();
+		const fixture = await createOpenerFixture();
+		resources.defer(() => fixture.dispose());
+		fixture.writeBinding({
+			repo: fixture.repository,
+			path: "src/a b.ts",
+			branch: "feature/links",
+		});
+		Bun.spawnSync(["git", "remote", "set-url", "origin", "https://github.com/other/repo.git"], {
+			cwd: fixture.checkout,
+		});
+		const result = await activate(fixture);
+		expect(result.status).toBe(409);
+		expect(CodeTargetOpenReplySchema.parse(result.body)).toMatchObject({
+			success: false,
+			code: "CHECKOUT_IDENTITY_CHANGED",
+			actions: [
+				{
+					kind: "github",
+					label: "Open on GitHub",
+					href: "https://github.com/acme/payments/tree/feature%2Flinks/src/a%20b.ts",
+				},
+			],
+		});
+	});
+
 	test("re-reads a real note binding without changing note bytes or mtime", async () => {
 		await using resources = new AsyncDisposableStack();
 		const fixture = await createOpenerFixture({ defaultDependencies: true });
@@ -284,7 +311,14 @@ describe("public code-target activation contract", () => {
 		expect(CodeTargetOpenReplySchema.parse(result.body)).toMatchObject({
 			success: false,
 			code: "OPENER_UNAVAILABLE",
-			actions: [{ kind: "settings", label: "Opener settings" }],
+			actions: [
+				{ kind: "settings", label: "Opener settings" },
+				{
+					kind: "github",
+					label: "Open on GitHub",
+					href: "https://github.com/acme/payments/tree/HEAD/src/index.ts",
+				},
+			],
 		});
 	});
 
@@ -356,7 +390,14 @@ describe("public code-target activation contract", () => {
 		expect(reply).toMatchObject({
 			success: false,
 			code: "OPENER_SPAWN_FAILED",
-			actions: [{ kind: "settings", label: "Opener settings" }],
+			actions: [
+				{ kind: "settings", label: "Opener settings" },
+				{
+					kind: "github",
+					label: "Open on GitHub",
+					href: "https://github.com/acme/payments/tree/HEAD/src/index.ts",
+				},
+			],
 		});
 		if (reply.success) throw new Error("Expected spawn failure.");
 		expect(reply.error).toContain(brokenExecutable);

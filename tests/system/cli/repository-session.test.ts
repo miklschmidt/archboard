@@ -152,8 +152,10 @@ describe("two-repository board session", () => {
 				path: "src/service.ts",
 			});
 			expect(byId.get(betaId)?.customData?.archboard.binding?.repo).toBe(betaIdentity);
-			expect(byId.get(alphaId)?.link).toBe(`file://${alpha}/src/service.ts`);
-			expect(byId.get(betaId)?.link).toBe(`file://${beta}/src/service.ts`);
+			expect(byId.get(alphaId)?.link).toBe(
+				`/api/code-targets/open?board=systems&element=${alphaId}`,
+			);
+			expect(byId.get(betaId)?.link).toBe(`/api/code-targets/open?board=systems&element=${betaId}`);
 			expect(byId.get(docsId)?.link).toBe("https://example.com/docs");
 
 			const blind = fixture.run(
