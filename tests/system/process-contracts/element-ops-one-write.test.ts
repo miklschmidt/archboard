@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { z } from "zod";
+import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
 import { boundTextPlacement } from "../../../src/runtime/engine/labels.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
@@ -17,24 +18,39 @@ import {
 } from "./support/process-http.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
-interface SceneElement {
-	id: string;
-	type: string;
-	x: number;
-	y: number;
-	width: number;
-	height: number;
-	locked?: boolean;
-	containerId?: string;
-	groupIds?: string[];
-	points?: number[][];
+type SceneElement = ExcalidrawElement & {
 	source?: string;
-}
+	customData?: { archboard?: Record<string, unknown> };
+};
+type SceneArrow = Extract<ExcalidrawElement, { type: "arrow" }> & SceneElement;
+type SceneText = Extract<ExcalidrawElement, { type: "text" }> & SceneElement;
 interface ChangeFeed {
 	cursor: number;
 	events: Array<{ origin: string }>;
 }
-const CliObjectSchema = z.object({}).passthrough();
+const ElementIdsReceipt = {
+	elementIds: z.array(z.string()),
+	successCount: z.number().int().nonnegative(),
+};
+const AlignReceiptSchema = z.object({
+	aligned: z.literal(true),
+	...ElementIdsReceipt,
+	alignment: z.enum(["left", "center", "right", "top", "middle", "bottom"]),
+});
+const DistributeReceiptSchema = z.object({
+	distributed: z.literal(true),
+	elementIds: z.array(z.string()),
+	direction: z.enum(["horizontal", "vertical"]),
+	count: z.number().int().nonnegative(),
+});
+const LockReceiptSchema = z.object({ locked: z.literal(true), ...ElementIdsReceipt });
+const UnlockReceiptSchema = z.object({ unlocked: z.literal(true), ...ElementIdsReceipt });
+const GroupReceiptSchema = z.object({ groupId: z.string().min(1), ...ElementIdsReceipt });
+const UngroupReceiptSchema = z.object({
+	groupId: z.string().min(1),
+	ungrouped: z.literal(true),
+	...ElementIdsReceipt,
+});
 const ChangeBodySchema = z.object({
 	upserts: z.array(z.object({ id: z.string() }).passthrough()),
 	deletes: z.array(z.string()),
@@ -42,7 +58,7 @@ const ChangeBodySchema = z.object({
 });
 
 test("arrange intents each cross the real proxy once and preserve related elements", async () => {
-	const resources = new AsyncDisposableStack();
+	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-element-ops-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
@@ -73,7 +89,7 @@ test("arrange intents each cross the real proxy once and preserve related elemen
 			body: { elements: boxes },
 		});
 		const ids = boxes.map((box) => box.id).join(",");
-		const cli = async (args: string[]) => {
+		const cli = async <T>(args: string[], schema: z.ZodType<T>) => {
 			await proxy.reset();
 			const result = runCli({
 				repoRoot,
@@ -83,7 +99,7 @@ test("arrange intents each cross the real proxy once and preserve related elemen
 				args: [...args, "--board", "scratch", "--doing", "checking one write"],
 			});
 			expect(result.status).toBe(0);
-			const output = parseCliJson(result, CliObjectSchema);
+			const output = parseCliJson(result, schema);
 			const records = nonReadRecords(await proxy.snapshot());
 			expect(records).toHaveLength(1);
 			expect(records[0]).toMatchObject({
@@ -97,7 +113,16 @@ test("arrange intents each cross the real proxy once and preserve related elemen
 			return { output, body };
 		};
 
-		const aligned = await cli(["arrange", "align", "--ids", ids, "--to", "left"]);
+		const aligned = await cli(
+			["arrange", "align", "--ids", ids, "--to", "left"],
+			AlignReceiptSchema,
+		);
+		expect(aligned.output).toEqual({
+			aligned: true,
+			elementIds: boxes.map((box) => box.id),
+			alignment: "left",
+			successCount: 20,
+		});
 		expect(aligned.body).toEqual({
 			upserts: boxes.map((box) => ({ id: box.id, x: 100 })),
 			deletes: [],
@@ -108,7 +133,16 @@ test("arrange intents each cross the real proxy once and preserve related elemen
 		expect(
 			new Set(elements.filter((element) => element.id.startsWith("box-")).map((e) => e.x)).size,
 		).toBe(1);
-		const distributed = await cli(["arrange", "distribute", "--ids", ids, "--to", "vertical"]);
+		const distributed = await cli(
+			["arrange", "distribute", "--ids", ids, "--to", "vertical"],
+			DistributeReceiptSchema,
+		);
+		expect(distributed.output).toEqual({
+			distributed: true,
+			elementIds: boxes.map((box) => box.id),
+			direction: "vertical",
+			count: 20,
+		});
 		expect(distributed.body).toEqual({
 			upserts: boxes.map((box) => ({ id: box.id, y: box.y })),
 			deletes: [],
@@ -122,7 +156,12 @@ test("arrange intents each cross the real proxy once and preserve related elemen
 			.toSorted((left, right) => left - right);
 		const gaps = tops.slice(1).map((top, index) => top - tops[index]!);
 		expect(gaps.every((gap) => Math.abs(gap - gaps[0]!) <= 0.01)).toBeTrue();
-		const locked = await cli(["arrange", "lock", "--ids", ids]);
+		const locked = await cli(["arrange", "lock", "--ids", ids], LockReceiptSchema);
+		expect(locked.output).toEqual({
+			locked: true,
+			elementIds: boxes.map((box) => box.id),
+			successCount: 20,
+		});
 		expect(locked.body).toEqual({
 			upserts: boxes.map((box) => ({ id: box.id, locked: true })),
 			deletes: [],
@@ -133,7 +172,12 @@ test("arrange intents each cross the real proxy once and preserve related elemen
 		expect(
 			elements.filter((element) => element.id.startsWith("box-")).every((e) => e.locked),
 		).toBeTrue();
-		const unlocked = await cli(["arrange", "unlock", "--ids", ids]);
+		const unlocked = await cli(["arrange", "unlock", "--ids", ids], UnlockReceiptSchema);
+		expect(unlocked.output).toEqual({
+			unlocked: true,
+			elementIds: boxes.map((box) => box.id),
+			successCount: 20,
+		});
 		expect(unlocked.body).toEqual({
 			upserts: boxes.map((box) => ({ id: box.id, locked: false })),
 			deletes: [],
@@ -148,9 +192,14 @@ test("arrange intents each cross the real proxy once and preserve related elemen
 			method: "PUT",
 			body: { groupIds: ["existing"] },
 		});
-		const grouped = await cli(["arrange", "group", "--ids", ids]);
-		const groupId = String(grouped.output.groupId);
+		const grouped = await cli(["arrange", "group", "--ids", ids], GroupReceiptSchema);
+		const groupId = grouped.output.groupId;
 		expect(groupId.length).toBeGreaterThan(0);
+		expect(grouped.output).toEqual({
+			groupId,
+			elementIds: boxes.map((box) => box.id),
+			successCount: 20,
+		});
 		expect(grouped.body).toEqual({
 			upserts: boxes.map((box) => ({
 				id: box.id,
@@ -167,7 +216,13 @@ test("arrange intents each cross the real proxy once and preserve related elemen
 				.every((element) => element.groupIds?.includes(groupId)),
 		).toBeTrue();
 		expect(elements.find((element) => element.id === "box-0")?.groupIds).toContain("existing");
-		const ungrouped = await cli(["arrange", "ungroup", "--group", groupId]);
+		const ungrouped = await cli(["arrange", "ungroup", "--group", groupId], UngroupReceiptSchema);
+		expect(ungrouped.output).toEqual({
+			groupId,
+			ungrouped: true,
+			elementIds: boxes.map((box) => box.id),
+			successCount: 20,
+		});
 		expect(ungrouped.body).toEqual({
 			upserts: boxes.map((box) => ({
 				id: box.id,
@@ -204,7 +259,16 @@ test("arrange intents each cross the real proxy once and preserve related elemen
 		});
 		await Bun.sleep(1_000);
 		const beforeAgent = await request<ChangeFeed>("/api/changes?board=scratch&since=0");
-		const humanAligned = await cli(["arrange", "align", "--ids", "human-box,box-0", "--to", "top"]);
+		const humanAligned = await cli(
+			["arrange", "align", "--ids", "human-box,box-0", "--to", "top"],
+			AlignReceiptSchema,
+		);
+		expect(humanAligned.output).toEqual({
+			aligned: true,
+			elementIds: ["human-box", "box-0"],
+			alignment: "top",
+			successCount: 2,
+		});
 		expect(humanAligned.body).toEqual({
 			upserts: [
 				{ id: "human-box", y: 100 },
@@ -263,8 +327,21 @@ test("arrange intents each cross the real proxy once and preserve related elemen
 		});
 		const before = (await request<{ elements: SceneElement[] }>("/api/elements?board=scratch")).body
 			.elements;
-		const wireBefore = JSON.stringify(before.find((element) => element.id === "wire")?.points);
-		const related = await cli(["arrange", "align", "--ids", "svc,db", "--to", "bottom"]);
+		const wireBefore = JSON.stringify(
+			before.find(
+				(element): element is SceneArrow => element.id === "wire" && element.type === "arrow",
+			)?.points,
+		);
+		const related = await cli(
+			["arrange", "align", "--ids", "svc,db", "--to", "bottom"],
+			AlignReceiptSchema,
+		);
+		expect(related.output).toEqual({
+			aligned: true,
+			elementIds: ["svc", "db"],
+			alignment: "bottom",
+			successCount: 2,
+		});
 		expect(related.body).toEqual({
 			upserts: [
 				{ id: "svc", y: 8160 },
@@ -277,16 +354,22 @@ test("arrange intents each cross the real proxy once and preserve related elemen
 			.elements;
 		const svc = elements.find((element) => element.id === "svc")!;
 		const db = elements.find((element) => element.id === "db")!;
-		const label = elements.find((element) => element.id === "label")!;
+		const label = elements.find(
+			(element): element is SceneText => element.id === "label" && element.type === "text",
+		)!;
 		expect(Math.abs(svc.y + svc.height - db.y - db.height)).toBeLessThanOrEqual(0.5);
 		expect(label.containerId).toBe("svc");
 		expect(svc.y).not.toBe(before.find((element) => element.id === "svc")?.y);
 		const wanted = boundTextPlacement(svc, label)!;
 		expect(Math.abs(label.x - wanted.x)).toBeLessThanOrEqual(0.5);
 		expect(Math.abs(label.y - wanted.y)).toBeLessThanOrEqual(0.5);
-		expect(JSON.stringify(elements.find((element) => element.id === "wire")?.points)).not.toBe(
-			wireBefore,
-		);
+		expect(
+			JSON.stringify(
+				elements.find(
+					(element): element is SceneArrow => element.id === "wire" && element.type === "arrow",
+				)?.points,
+			),
+		).not.toBe(wireBefore);
 	} finally {
 		await resources.disposeAsync();
 	}

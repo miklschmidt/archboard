@@ -3,6 +3,7 @@ import { appendFileSync, mkdtempSync, readFileSync, rmSync, statSync } from "nod
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { z } from "zod";
+import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { openTestPane } from "../boards/support/pane-websocket.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
@@ -25,13 +26,12 @@ const RestoreSchema = z.object({
 const HeldRestoreSchema = RestoreSchema.extend({
 	held: z.object({ board: z.string() }).passthrough(),
 });
-interface SnapshotElement {
-	id: string;
+type SnapshotElement = ExcalidrawElement & {
 	customData?: { archboard?: { binding?: { path?: string } } };
-}
+};
 
 test("snapshot refusal is zero writes and restore replaces scene once", async () => {
-	const resources = new AsyncDisposableStack();
+	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-snapshot-one-write-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");

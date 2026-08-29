@@ -27,7 +27,7 @@ const ReceiptSchema = z
 	.passthrough();
 
 test("merge and held replace each use one batch without advancing held persistence", async () => {
-	const resources = new AsyncDisposableStack();
+	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-import-held-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
@@ -76,6 +76,41 @@ test("merge and held replace each use one batch without advancing held persisten
 		expect(Buffer.from(mergeWrites[0]!.bodyBase64, "base64").toString()).toBe(
 			JSON.stringify({ elements: mergeScene.elements }),
 		);
+		await request("/api/elements/batch?board=held", {
+			method: "POST",
+			body: {
+				elements: [
+					{ id: "held-new", type: "rectangle", x: 1, y: 2, width: 3, height: 4 },
+					{ id: "held-stale", type: "diamond", x: 5, y: 6, width: 7, height: 8 },
+					{
+						id: "held-stale-image",
+						type: "image",
+						x: 9,
+						y: 10,
+						width: 11,
+						height: 12,
+						fileId: "stale-file",
+					},
+				],
+			},
+		});
+		await request("/api/files?board=held", {
+			method: "POST",
+			body: [
+				{
+					id: "reused-file",
+					dataURL: "data:image/png;base64,b2xkLXJldXNlZA==",
+					mimeType: "image/png",
+					created: 1,
+				},
+				{
+					id: "stale-file",
+					dataURL: "data:image/png;base64,c3RhbGU=",
+					mimeType: "image/png",
+					created: 1,
+				},
+			],
+		});
 
 		const info = await request<{ file: string; version: number }>("/api/boards/info?board=held");
 		appendFileSync(info.body.file, "\nexternal edit\n");
@@ -123,10 +158,19 @@ test("merge and held replace each use one batch without advancing held persisten
 		const held = await request<{ elements: Array<{ id: string }>; held: { writes: number } }>(
 			"/api/elements?board=held",
 		);
-		expect(held.body.elements.some((element) => element.id === "held-new")).toBeTrue();
+		expect(held.body.elements.map((element) => element.id)).toEqual(["held-new", "held-new-image"]);
 		expect(held.body.held.writes).toBe(1);
-		const files = await request<{ files: Record<string, unknown> }>("/api/files?board=held");
-		expect(Object.keys(files.body.files)).toEqual(["reused-file"]);
+		const files = await request<{
+			files: Record<string, { id: string; dataURL: string; mimeType: string; created: number }>;
+		}>("/api/files?board=held");
+		expect(files.body.files).toEqual({
+			"reused-file": {
+				id: "reused-file",
+				dataURL: "data:image/png;base64,bmV3",
+				mimeType: "image/png",
+				created: 2,
+			},
+		});
 	} finally {
 		await resources.disposeAsync();
 	}

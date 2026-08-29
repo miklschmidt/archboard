@@ -16,10 +16,86 @@ import {
 } from "./support/process-http.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
-const JsonSchema = z.object({}).passthrough();
+const FingerprintSchema = z.object({
+	note: z.string().length(64),
+	elements: z.number().int().nonnegative(),
+	version: z.number().int().nullable(),
+});
+const PromotionReceiptSchema = z.object({
+	success: z.literal(true),
+	summary: z.string(),
+	nodes: z.array(
+		z.object({
+			node: z.string(),
+			kind: z.string(),
+			name: z.string(),
+			elementIds: z.array(z.string()),
+			variant: z.string(),
+		}),
+	),
+	elementsUpdated: z.number().int().nonnegative(),
+});
+const DemotionReceiptSchema = z.object({
+	success: z.literal(true),
+	summary: z.string(),
+	nodes: z.array(
+		z.object({
+			node: z.string().optional(),
+			name: z.string().optional(),
+			elementIds: z.array(z.string()),
+		}),
+	),
+	elementsUpdated: z.number().int().nonnegative(),
+});
+const DeleteReceiptSchema = z.object({
+	success: z.literal(true),
+	deleted: z.number().int().nonnegative(),
+	count: z.number().int().nonnegative(),
+	elements: z.array(z.object({ id: z.string() }).passthrough()),
+	fingerprint: FingerprintSchema,
+});
+const BridgeFactsSchema = z.object({
+	background: z.string(),
+	bridgeId: z.string(),
+	crossing: z.object({ x: z.number(), y: z.number() }),
+	overConnectorId: z.string(),
+	overSegmentIndex: z.number().int().nonnegative(),
+	underConnectorId: z.string(),
+	underSegmentIndex: z.number().int().nonnegative(),
+});
+const BridgePartSchema = (role: "mask" | "redraw") =>
+	z
+		.object({
+			id: z.string(),
+			type: z.literal("line"),
+			customData: z.object({
+				archboard: z.object({ bridge: BridgeFactsSchema.extend({ role: z.literal(role) }) }),
+			}),
+		})
+		.passthrough();
+const BridgeReceiptSchema = z.object({
+	success: z.literal(true),
+	board: z.string(),
+	bridgeId: z.string().min(1),
+	overConnectorId: z.string(),
+	underConnectorId: z.string(),
+	overSegmentIndex: z.number().int().nonnegative(),
+	underSegmentIndex: z.number().int().nonnegative(),
+	crossing: z.object({ x: z.number(), y: z.number() }),
+	elements: z.tuple([BridgePartSchema("mask"), BridgePartSchema("redraw")]),
+	fingerprint: FingerprintSchema,
+});
+const BridgeRemovalReceiptSchema = z.object({
+	success: z.literal(true),
+	board: z.string(),
+	bridgeId: z.string().min(1),
+	deleted: z.tuple([z.string(), z.string()]),
+	elements: z.array(z.never()).length(0),
+	fingerprint: FingerprintSchema,
+});
 
 test("promotion, deletion, and bridge intents each use one request", async () => {
-	const resources = new AsyncDisposableStack();
+	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-promote-one-write-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
@@ -53,8 +129,9 @@ test("promotion, deletion, and bridge intents each use one request", async () =>
 			method: "POST",
 			body: { elements: lines },
 		});
-		const run = async (
+		const run = async <T>(
 			args: string[],
+			schema: z.ZodType<T>,
 			expectedPath = "/api/elements/changes",
 			expectsVersion = false,
 		) => {
@@ -70,7 +147,7 @@ test("promotion, deletion, and bridge intents each use one request", async () =>
 				args: [...args, "--board", "scratch", "--doing", "checking one write"],
 			});
 			expect(result.status).toBe(0);
-			const parsed = parseCliJson(result, JsonSchema);
+			const parsed = parseCliJson(result, schema);
 			const records = nonReadRecords(await proxy.snapshot());
 			expect(records).toHaveLength(1);
 			const expectedMethod = expectedPath.startsWith("/api/bridges/") ? "DELETE" : "POST";
@@ -92,9 +169,24 @@ test("promotion, deletion, and bridge intents each use one request", async () =>
 		const ids = lines.map((line) => line.id).join(",");
 		const promoted = await run(
 			["promote", "--ids", ids, "--kind", "datastore", "--name", "PostgreSQL"],
+			PromotionReceiptSchema,
 			"/api/elements/changes",
 			true,
 		);
+		expect(promoted.parsed).toEqual({
+			success: true,
+			summary: 'Promoted 7 elements to the datastore "PostgreSQL" (node postgresql), unbound.',
+			nodes: [
+				{
+					node: "postgresql",
+					kind: "datastore",
+					name: "PostgreSQL",
+					elementIds: lines.map((line) => line.id),
+					variant: "current",
+				},
+			],
+			elementsUpdated: 7,
+		});
 		expect(promoted.body).toEqual({
 			upserts: lines.map((line) => ({
 				id: line.id,
@@ -117,7 +209,13 @@ test("promotion, deletion, and bridge intents each use one request", async () =>
 			.filter((element) => String(element.id).startsWith("pg-"))
 			.map((element) => (element.customData as { archboard?: { node?: string } })?.archboard?.node);
 		expect(new Set(nodes).size).toBe(1);
-		const demoted = await run(["demote", "--ids", ids]);
+		const demoted = await run(["demote", "--ids", ids], DemotionReceiptSchema);
+		expect(demoted.parsed).toEqual({
+			success: true,
+			summary: 'Demoted the node "PostgreSQL" back to 7 plain elements.',
+			nodes: [{ node: "postgresql", name: "PostgreSQL", elementIds: lines.map((line) => line.id) }],
+			elementsUpdated: 7,
+		});
 		expect(demoted.body).toEqual({
 			upserts: lines.map((line) => ({ id: line.id, customData: {} })),
 			deletes: [],
@@ -183,7 +281,18 @@ test("promotion, deletion, and bridge intents each use one request", async () =>
 				})),
 			},
 		});
-		const deleted = await run(["delete", "gone-a", "gone-b", "gone-c"]);
+		const deleted = await run(["delete", "gone-a", "gone-b", "gone-c"], DeleteReceiptSchema);
+		expect(deleted.parsed).toEqual({
+			success: true,
+			deleted: 3,
+			count: 3,
+			elements: [],
+			fingerprint: {
+				note: deleted.parsed.fingerprint.note,
+				elements: 8,
+				version: 5,
+			},
+		});
 		expect(deleted.body).toEqual({
 			upserts: [],
 			deletes: ["gone-a", "gone-b", "gone-c"],
@@ -245,8 +354,36 @@ test("promotion, deletion, and bridge intents each use one request", async () =>
 		});
 		const bridge = await run(
 			["bridge", "--over", "over", "--under", "under", "--background", "#ffffff"],
+			BridgeReceiptSchema,
 			"/api/bridges",
 		);
+		const [mask, redraw] = bridge.parsed.elements;
+		expect(bridge.parsed).toEqual({
+			success: true,
+			board: "scratch",
+			bridgeId: mask.id,
+			overConnectorId: "over",
+			underConnectorId: "under",
+			overSegmentIndex: 0,
+			underSegmentIndex: 0,
+			crossing: { x: 50, y: 400 },
+			elements: [mask, redraw],
+			fingerprint: { note: bridge.parsed.fingerprint.note, elements: 12, version: 7 },
+		});
+		expect(mask.customData.archboard.bridge).toEqual({
+			background: "#ffffff",
+			bridgeId: mask.id,
+			crossing: { x: 50, y: 400 },
+			overConnectorId: "over",
+			overSegmentIndex: 0,
+			role: "mask",
+			underConnectorId: "under",
+			underSegmentIndex: 0,
+		});
+		expect(redraw.customData.archboard.bridge).toEqual({
+			...mask.customData.archboard.bridge,
+			role: "redraw",
+		});
 		expect(bridge.body).toEqual({ over: "over", under: "under", background: "#ffffff" });
 		const bridgeId = String(bridge.parsed.bridgeId);
 		expect(bridgeId.length).toBeGreaterThan(0);
@@ -260,7 +397,19 @@ test("promotion, deletion, and bridge intents each use one request", async () =>
 		expect(elements.some((element) => element.id === "over")).toBeFalse();
 		expect(elements.some((element) => element.id === "under")).toBeFalse();
 		expect(elements.some((element) => element.id === bridgeId)).toBeTrue();
-		const removed = await run(["bridge", "remove", bridgeId], `/api/bridges/${bridgeId}`);
+		const removed = await run(
+			["bridge", "remove", bridgeId],
+			BridgeRemovalReceiptSchema,
+			`/api/bridges/${bridgeId}`,
+		);
+		expect(removed.parsed).toEqual({
+			success: true,
+			board: "scratch",
+			bridgeId,
+			deleted: [bridgeId, redraw.id],
+			elements: [],
+			fingerprint: { note: removed.parsed.fingerprint.note, elements: 8, version: 9 },
+		});
 		expect(removed.body).toBeUndefined();
 		expect(removed.method).toBe("DELETE");
 		elements = (
