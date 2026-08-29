@@ -24,7 +24,7 @@ const fixtureEnv = (root: string, vault: string, mode: "default" | "broad" | "no
 });
 
 test("default bind owns its PID and exposes only the frontend bundle", async () => {
-	const resources = new AsyncDisposableStack();
+	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-local-bind-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const hiddenParent = join(root, ".checkout");
@@ -82,7 +82,7 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 }, 20_000);
 
 test("rejects foreign health, recovers the port, and refuses no-vault startup", async () => {
-	const resources = new AsyncDisposableStack();
+	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-local-bind-refusal-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");

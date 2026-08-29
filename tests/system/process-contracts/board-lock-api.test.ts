@@ -12,7 +12,7 @@ const repoRoot = resolve(import.meta.dir, "../../..");
 const box = (id: string, x = 0) => ({ id, type: "rectangle", x, y: 0, width: 20, height: 20 });
 
 test("public lock API preserves holds, claims, refusals, and told-once recovery", async () => {
-	const resources = new AsyncDisposableStack();
+	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-lock-api-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");

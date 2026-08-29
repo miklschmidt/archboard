@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { z } from "zod";
+import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { openTestPane } from "../boards/support/pane-websocket.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
@@ -22,17 +23,13 @@ const ReceiptSchema = z.object({
 	files: z.number(),
 	mode: z.literal("replace"),
 });
-interface ImportedElement {
-	id: string;
-	type: string;
-	index: string;
-	containerId?: string;
-	startBinding?: { elementId: string };
+type ImportedElement = ExcalidrawElement & {
 	customData?: { archboard?: { node?: string; binding?: { path?: string } } };
-}
+};
+type ImportedArrow = Extract<ExcalidrawElement, { type: "arrow" }> & ImportedElement;
 
 test("image replace persists one canonical batch before its frames", async () => {
-	const resources = new AsyncDisposableStack();
+	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-import-replace-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
@@ -133,6 +130,7 @@ test("image replace persists one canonical batch before its frames", async () =>
 		);
 		const elements = (await request<{ elements: ImportedElement[] }>("/api/elements?board=replace"))
 			.body.elements;
+		expect(elements.some((element) => ["old", "old-image"].includes(element.id))).toBeFalse();
 		const container = elements.find(
 			(element) => element.customData?.archboard?.node === "replacement-node",
 		)!;
@@ -143,9 +141,10 @@ test("image replace persists one canonical batch before its frames", async () =>
 		expect(
 			elements.some((element) => element.type === "text" && element.containerId === container.id),
 		).toBeTrue();
-		expect(elements.find((element) => element.type === "arrow")?.startBinding?.elementId).toBe(
-			container.id,
-		);
+		expect(
+			elements.find((element): element is ImportedArrow => element.type === "arrow")?.startBinding
+				?.elementId,
+		).toBe(container.id);
 		expect(elements.find((element) => element.type === "ellipse")?.id.length).toBeLessThanOrEqual(
 			8,
 		);
@@ -166,6 +165,7 @@ test("image replace persists one canonical batch before its frames", async () =>
 		expect(noteAtDelta).toContain("data:image/png;base64,bmV3");
 		expect(noteAtDelta).not.toContain("data:image/png;base64,b2xk");
 		expect(noteAtDelta).not.toContain("data:image/png;base64,b3JwaGFu");
+		expect(noteAtDelta).not.toMatch(/\^(?:old|old-image)\b/);
 		const fileFrames = frames.filter((frame) => frame.type === "files_replaced");
 		expect(fileFrames).toHaveLength(1);
 		expect(fileFrames[0]?.files).toEqual([

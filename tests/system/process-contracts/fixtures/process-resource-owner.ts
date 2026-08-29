@@ -1,4 +1,5 @@
 import { mkdirSync, rmSync } from "node:fs";
+import { createServer } from "node:net";
 import { join } from "node:path";
 
 import { z } from "zod";
@@ -11,10 +12,14 @@ export const ResourceReadySchema = ReadySchema.extend({
 	upstreamPort: z.number().int().positive(),
 	proxyPort: z.number().int().positive(),
 	lockFile: z.string(),
+	lockProcess: z.string(),
 });
 const HealthResponderReadySchema = ReadySchema.extend({ port: z.number().int().positive() });
-const RawLockReadySchema = ReadySchema.extend({ lockFile: z.string() });
-export type ResourceReady = z.infer<typeof ResourceReadySchema>;
+export const RawLockReadySchema = ReadySchema.extend({
+	lockFile: z.string(),
+	process: z.string(),
+	port: z.number().int().positive().optional(),
+});
 
 export async function registerResourceSet(
 	resources: AsyncDisposableStack,
@@ -26,7 +31,7 @@ export async function registerResourceSet(
 		repoRoot: string;
 		failAfterLock?: boolean;
 	},
-): Promise<ResourceReady> {
+): Promise<z.infer<typeof ResourceReadySchema>> {
 	mkdirSync(input.vault, { recursive: true });
 	const env = sanitizedEnvironment(input.root, input.vault);
 	const acquired = new AsyncDisposableStack();
@@ -60,6 +65,7 @@ export async function registerResourceSet(
 			upstreamPort: input.upstreamPort,
 			proxyPort: input.proxyPort,
 			lockFile: (lock.ready as { lockFile: string }).lockFile,
+			lockProcess: lock.ready.process,
 		};
 	} catch (error) {
 		await acquired.disposeAsync();
@@ -74,36 +80,44 @@ async function lockMode(): Promise<void> {
 		join(repoRoot, "src/runtime/engine/board-lock.ts")
 	);
 	const board = process.env.ARCHBOARD_TEST_LOCK_BOARD ?? "resource-cleanup";
-	await holdBoard({
+	const holderId = process.env.ARCHBOARD_TEST_LOCK_HOLDER ?? "resource-owner";
+	const hold = await holdBoard({
 		board,
-		holder: { id: "resource-owner", kind: "agent" },
+		holder: { id: holderId, kind: "agent" },
 		waitMs: 0,
 	});
 	const lockFile = join(process.env.ARCHBOARD_VAULT!, ".archboard/locks", `${board}.lock`);
+	const port = Number(process.env.ARCHBOARD_TEST_STUBBORN_PORT) || undefined;
+	const server = port ? createServer((socket) => socket.end()) : undefined;
+	if (server)
+		await new Promise<void>((resolve, reject) => {
+			server.once("error", reject);
+			server.listen(port, "127.0.0.1", resolve);
+		});
 	// eslint-disable-next-line no-console -- stdout is the peer readiness protocol.
-	console.log(JSON.stringify({ pid: process.pid, lockFile }));
+	console.log(JSON.stringify({ pid: process.pid, lockFile, process: hold.holder.process, port }));
 	const renewal = setInterval(() => {
 		void holdBoard({
 			board,
-			holder: { id: "resource-owner", kind: "agent" },
+			holder: { id: holderId, kind: "agent" },
 			waitMs: 0,
 		});
 	}, 800);
 	const stop = () => {
 		clearInterval(renewal);
-		releaseHold(board, "resource-owner");
-		process.exit(0);
+		releaseHold(board, holderId);
+		if (server) server.close(() => process.exit(0));
+		else process.exit(0);
 	};
-	process.on("SIGTERM", stop);
+	process.on("SIGTERM", process.env.ARCHBOARD_TEST_IGNORE_TERM === "1" ? () => {} : stop);
 	process.on("SIGINT", stop);
 }
 
 async function outerMode(): Promise<void> {
 	const root = process.env.ARCHBOARD_TEST_ROOT!;
-	const vault = join(root, "vault");
 	const resources = new AsyncDisposableStack();
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
-	let setup: Promise<ResourceReady> | undefined;
+	let setup: Promise<z.infer<typeof ResourceReadySchema>> | undefined;
 	let stopping: Promise<void> | undefined;
 	let disposal: Promise<void> | undefined;
 	let signalRequested = false;
@@ -121,12 +135,11 @@ async function outerMode(): Promise<void> {
 		})();
 		return stopping;
 	};
-	process.on("SIGTERM", () => void stop());
-	process.on("SIGINT", () => void stop());
+	for (const signal of ["SIGTERM", "SIGINT"] as const) process.on(signal, () => void stop());
 	try {
 		setup = registerResourceSet(resources, {
 			root,
-			vault,
+			vault: join(root, "vault"),
 			upstreamPort: Number(process.env.ARCHBOARD_TEST_UPSTREAM_PORT),
 			proxyPort: Number(process.env.ARCHBOARD_TEST_PROXY_PORT),
 			repoRoot: process.env.ARCHBOARD_TEST_REPO_ROOT!,
@@ -142,7 +155,5 @@ async function outerMode(): Promise<void> {
 	}
 }
 
-if (import.meta.main) {
-	if (process.env.ARCHBOARD_TEST_RESOURCE_MODE === "lock") await lockMode();
-	else await outerMode();
-}
+if (import.meta.main)
+	await (process.env.ARCHBOARD_TEST_RESOURCE_MODE === "lock" ? lockMode() : outerMode());

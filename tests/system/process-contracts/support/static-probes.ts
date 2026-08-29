@@ -1,13 +1,14 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-interface Snapshot {
-	path: string;
-	existed: boolean;
-	bytes?: Buffer;
+export interface StaticProbeHooks {
+	beforeCreate?(path: string, index: number): void;
 }
 
-export function plantStaticProbes(repoRoot: string): {
+export function plantStaticProbes(
+	repoRoot: string,
+	hooks: StaticProbeHooks = {},
+): {
 	frontend: string;
 	stale: string;
 	hidden: string;
@@ -18,27 +19,29 @@ export function plantStaticProbes(repoRoot: string): {
 		stale: "task-130-09-stale-probe.js",
 		hidden: ".task-130-09-hidden-probe.js",
 	};
-	const paths = {
-		frontend: join(repoRoot, "dist/frontend", names.frontend),
-		stale: join(repoRoot, "dist", names.stale),
-		hidden: join(repoRoot, "dist/frontend", names.hidden),
-	};
-	const snapshots: Snapshot[] = Object.values(paths).map((path) => {
-		const existed = existsSync(path);
-		return { path, existed, bytes: existed ? readFileSync(path) : undefined };
-	});
-	for (const snapshot of snapshots) {
-		mkdirSync(dirname(snapshot.path), { recursive: true });
-		if (snapshot.existed) throw new Error(`Static probe would overwrite ${snapshot.path}.`);
-		writeFileSync(snapshot.path, "// TASK-130.09 static probe\n");
+	const paths = [
+		join(repoRoot, "dist/frontend", names.frontend),
+		join(repoRoot, "dist", names.stale),
+		join(repoRoot, "dist/frontend", names.hidden),
+	];
+	for (const path of paths)
+		if (existsSync(path)) throw new Error(`Static probe target already exists: ${path}.`);
+	const created: string[] = [];
+	try {
+		for (const [index, path] of paths.entries()) {
+			mkdirSync(dirname(path), { recursive: true });
+			hooks.beforeCreate?.(path, index);
+			writeFileSync(path, "// TASK-130.09 static probe\n", { flag: "wx" });
+			created.push(path);
+		}
+	} catch (error) {
+		for (const path of created.toReversed()) rmSync(path, { force: true });
+		throw error;
 	}
 	return {
 		...names,
 		restore() {
-			for (const snapshot of snapshots.toReversed()) {
-				if (snapshot.existed) writeFileSync(snapshot.path, snapshot.bytes!);
-				else rmSync(snapshot.path, { force: true });
-			}
+			for (const path of created.toReversed()) rmSync(path, { force: true });
 		},
 	};
 }
