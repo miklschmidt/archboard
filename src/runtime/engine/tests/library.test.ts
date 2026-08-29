@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import { join, resolve } from "node:path";
+import type { RawElement } from "../library-catalogue.ts";
 
 const previousVault = process.env.ARCHBOARD_VAULT;
 const vault = fs.mkdtempSync(join(os.tmpdir(), "archboard-library-"));
@@ -206,7 +207,7 @@ describe("stencil placement", () => {
 				containerId: "a",
 				groupIds: [],
 			},
-		];
+		] satisfies RawElement[];
 		const placed = remapElements(stencil, 0, 0, { library: { item: "Fixture" } }) as Array<
 			Record<string, unknown>
 		>;

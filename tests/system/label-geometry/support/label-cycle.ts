@@ -1,4 +1,7 @@
-import { applyElementInput } from "../../../../src/runtime/engine/apply-element-input.ts";
+import {
+	applyElementInput,
+	HumanElementChangeSchema,
+} from "../../../../src/runtime/engine/apply-element-input.ts";
 import { boundTextsByContainer, planLabelRepair } from "../../../../src/runtime/engine/labels.ts";
 import type { ServerElement } from "../../../../src/runtime/engine/types.ts";
 import type { LegacyElementIngress } from "../../../../src/shared/board-elements/index.ts";
@@ -162,7 +165,10 @@ export function applyUpserts(store: LabelStore, upserts: readonly Record<string,
 		const previous = store.has(upsert.id) ? store.get(upsert.id) : undefined;
 		if (!previous) {
 			try {
-				applyElementInput(store, { upserts: [upsert], origin: "human" });
+				applyElementInput(store, {
+					upserts: [HumanElementChangeSchema.parse(upsert)],
+					origin: "human",
+				});
 			} catch {
 				// The hostile model ignores a browser element the real boundary rejects.
 			}
