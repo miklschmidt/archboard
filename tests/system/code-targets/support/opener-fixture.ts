@@ -15,7 +15,10 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import type { Server } from "node:http";
 
-import { createCodeOpenerRouter } from "../../../../src/server/code-opener/index.ts";
+import {
+	createCodeOpenerRouter,
+	type CodeOpenerRouteDependencies,
+} from "../../../../src/server/code-opener/index.ts";
 import {
 	CodeBindingSchema,
 	type CodeBinding,
@@ -59,6 +62,7 @@ export interface OpenerFixture {
 
 export interface OpenerFixtureOptions {
 	defaultDependencies?: boolean;
+	routeDependencies?: Partial<CodeOpenerRouteDependencies>;
 }
 
 function git(cwd: string, ...args: string[]): void {
@@ -89,16 +93,17 @@ async function waitForCount(directory: string, count: number, deadline: number):
 }
 
 export function processExistsEvidence(pid: number): boolean {
-	try {
-		// Signal 0 is an existence probe only. Captured PIDs are never cleanup authority.
-		process.kill(pid, 0);
-		return true;
-	} catch (error) {
-		const code = (error as NodeJS.ErrnoException).code;
-		if (code === "ESRCH") return false;
-		if (code === "EPERM") return true;
-		throw error;
-	}
+	if (process.platform === "linux") return existsSync(`/proc/${pid}`);
+	const command =
+		process.platform === "win32"
+			? ["tasklist", "/FI", `PID eq ${pid}`, "/FO", "CSV", "/NH"]
+			: ["ps", "-p", String(pid), "-o", "pid="];
+	const result = Bun.spawnSync(command, { stdout: "pipe", stderr: "ignore" });
+	if (result.exitCode !== 0) return false;
+	const output = result.stdout.toString();
+	return process.platform === "win32"
+		? output.includes(`,"${pid}",`)
+		: output.trim() === String(pid);
 }
 
 async function waitForDeath(pid: number, deadline: number): Promise<void> {
@@ -142,26 +147,29 @@ export async function createOpenerFixture(
 	const start = async (): Promise<void> => {
 		const app = express();
 		app.use(cors());
-		app.use(
+		const bindingForElement: CodeOpenerRouteDependencies["bindingForElement"] = (
+			board,
+			element,
+		) => {
+			if (board !== "system/payments") {
+				return { ok: false, code: "BOARD_NOT_FOUND", error: "Board is not open." };
+			}
+			if (element !== "node") {
+				return { ok: false, code: "ELEMENT_NOT_FOUND", error: "Element is missing." };
+			}
+			const parsed = CodeBindingSchema.safeParse(JSON.parse(readFileSync(bindingFile, "utf8")));
+			return parsed.success
+				? { ok: true, binding: parsed.data }
+				: { ok: false, code: "BINDING_UNAVAILABLE", error: "Binding is unavailable." };
+		};
+		const routeDependencies: Partial<CodeOpenerRouteDependencies> | undefined =
 			options.defaultDependencies
-				? createCodeOpenerRouter()
-				: createCodeOpenerRouter({
-						bindingForElement(board, element) {
-							if (board !== "system/payments") {
-								return { ok: false, code: "BOARD_NOT_FOUND", error: "Board is not open." };
-							}
-							if (element !== "node") {
-								return { ok: false, code: "ELEMENT_NOT_FOUND", error: "Element is missing." };
-							}
-							const parsed = CodeBindingSchema.safeParse(
-								JSON.parse(readFileSync(bindingFile, "utf8")),
-							);
-							return parsed.success
-								? { ok: true, binding: parsed.data }
-								: { ok: false, code: "BINDING_UNAVAILABLE", error: "Binding is unavailable." };
-						},
-					}),
-		);
+				? options.routeDependencies
+				: {
+						bindingForElement,
+						...options.routeDependencies,
+					};
+		app.use(createCodeOpenerRouter(routeDependencies));
 		app.use((_request, response) =>
 			response.status(404).json({ success: false, code: "NOT_FOUND" }),
 		);

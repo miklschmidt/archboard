@@ -225,6 +225,32 @@ describe("public opener settings contract", () => {
 		});
 	});
 
+	test("returns shared REQUEST_INVALID JSON for a guarded oversized body", async () => {
+		await using resources = new AsyncDisposableStack();
+		const fixture = await createOpenerFixture();
+		resources.defer(() => fixture.dispose());
+		const oversized = JSON.stringify({ padding: "x".repeat(40 * 1024) });
+		const result = await fixture.request("/api/code-targets/open", {
+			method: "POST",
+			body: oversized,
+		});
+		expect(result.status).toBe(400);
+		expect(CodeTargetOpenFailureSchema.parse(result.body)).toMatchObject({
+			success: false,
+			code: "REQUEST_INVALID",
+		});
+
+		const refused = await fixture.request("/api/code-targets/open", {
+			method: "POST",
+			headers: { Origin: "null", "Sec-Fetch-Site": "same-origin" },
+			body: oversized,
+		});
+		expect(refused.status).toBe(403);
+		expect(CodeTargetOpenFailureSchema.parse(refused.body)).toMatchObject({
+			code: "CROSS_ORIGIN_REFUSED",
+		});
+	});
+
 	test.each([
 		{ Host: "evil.test:3000", Origin: "http://127.0.0.1:3000", "Sec-Fetch-Site": "same-origin" },
 		{ Host: "127.0.0.1:3000", Origin: "null", "Sec-Fetch-Site": "same-origin" },

@@ -62,6 +62,8 @@ function writeSelection(selection: unknown): OpenerConfigurationResult {
 }
 
 export function saveOpenerSelection(selection: unknown): OpenerConfigurationResult {
+	const current = readOpenerSelection();
+	if (!current.ok) return current;
 	return writeSelection(selection);
 }
 
