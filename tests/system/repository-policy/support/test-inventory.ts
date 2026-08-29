@@ -82,6 +82,7 @@ export function processExists(pid: number): boolean {
 }
 
 const RUN_SCRIPT = /\bbun run ([\w:-]+)/g;
+const DIRECT_RUN_SCRIPT = /^(?:[A-Za-z_][A-Za-z0-9_]*=\S+\s+)*bun\s+run\s+([\w:-]+)(?:\s|$)/;
 const BUN_TEST = /\bbun test\b([^&;|]*)/g;
 const FINAL_TEST_LANES = new Set([
 	"test:modules",
@@ -90,20 +91,111 @@ const FINAL_TEST_LANES = new Set([
 	"test:serial-browser",
 ]);
 
+function workflowRunCommands(workflow: string): { commands: string[]; error?: string } {
+	let document: unknown;
+	try {
+		document = Bun.YAML.parse(workflow);
+	} catch (error) {
+		return {
+			commands: [],
+			error: `the workflow is not valid YAML: ${error instanceof Error ? error.message : String(error)}`,
+		};
+	}
+	if (typeof document !== "object" || document === null) return { commands: [] };
+	const jobs = (document as { jobs?: unknown }).jobs;
+	if (typeof jobs !== "object" || jobs === null) return { commands: [] };
+	const commands: string[] = [];
+	for (const job of Object.values(jobs)) {
+		if (typeof job !== "object" || job === null) continue;
+		const steps = (job as { steps?: unknown }).steps;
+		if (!Array.isArray(steps)) continue;
+		for (const step of steps) {
+			if (typeof step !== "object" || step === null) continue;
+			const run = (step as { run?: unknown }).run;
+			if (typeof run === "string") commands.push(run);
+		}
+	}
+	return { commands };
+}
+
+function shellSegments(command: string): string[] {
+	const segments: string[] = [];
+	let start = 0;
+	let quote: "'" | '"' | undefined;
+	let escaped = false;
+	let comment = false;
+	const finish = (end: number): void => {
+		const segment = command.slice(start, end).trim();
+		if (segment) segments.push(segment);
+	};
+	for (let index = 0; index < command.length; index += 1) {
+		const character = command[index];
+		if (comment) {
+			if (character === "\n") {
+				comment = false;
+				start = index + 1;
+			}
+			continue;
+		}
+		if (escaped) {
+			escaped = false;
+			continue;
+		}
+		if (quote) {
+			if (character === "\\" && quote === '"') escaped = true;
+			else if (character === quote) quote = undefined;
+			continue;
+		}
+		if (character === "'" || character === '"') {
+			quote = character;
+			continue;
+		}
+		if (character === "#" && (index === start || /\s/.test(command[index - 1] ?? ""))) {
+			finish(index);
+			comment = true;
+			continue;
+		}
+		const operator =
+			character === "\n" ||
+			character === ";" ||
+			((character === "&" || character === "|") && command[index + 1] === character);
+		if (operator) {
+			finish(index);
+			if (character === "&" || character === "|") index += 1;
+			start = index + 1;
+		}
+	}
+	if (!comment) finish(command.length);
+	return segments;
+}
+
 export function inspectWorkflow(workflow: string): string[] {
+	const parsed = workflowRunCommands(workflow);
+	if (parsed.error) return [parsed.error];
 	const errors: string[] = [];
-	const invocations = [...workflow.matchAll(RUN_SCRIPT)].map((match) => match[1]);
-	const checkCount = invocations.filter((script) => script === "check").length;
-	if (checkCount !== 1) {
+	const canonicalCount = parsed.commands.filter((command) => command === "bun run check").length;
+	if (canonicalCount !== 1) {
 		errors.push(
-			`the workflow must invoke \`bun run check\` exactly once; found ${checkCount} invocations.`,
+			`the workflow must contain exactly one standalone \`bun run check\` step; found ${canonicalCount}.`,
 		);
 	}
-	for (const script of invocations.filter((name) => name !== "check")) {
-		errors.push(
-			`the workflow invokes package script \`${script}\` directly; ` +
-				"`bun run check` must be its only package-script invocation.",
-		);
+	for (const command of parsed.commands) {
+		for (const segment of shellSegments(command)) {
+			const script = segment.match(DIRECT_RUN_SCRIPT)?.[1];
+			if (!script) continue;
+			if (script === "check") {
+				if (command !== "bun run check") {
+					errors.push(
+						"the workflow invokes `bun run check` outside the canonical standalone step.",
+					);
+				}
+				continue;
+			}
+			errors.push(
+				`the workflow invokes package script \`${script}\` directly; ` +
+					"`bun run check` must be its only package-script invocation.",
+			);
+		}
 	}
 	return errors;
 }
