@@ -7,13 +7,20 @@ import type * as VersionModule from "../board-version.js";
 import type * as StoreModule from "../board-store.js";
 import type * as IoModule from "../board-io.js";
 import type * as WatchModule from "../note-watch.js";
+import type {
+	HumanElementChangeSchema as HumanElementChangeSchemaType,
+	applyElementInput as ApplyElementInput,
+} from "../apply-element-input.js";
+import type { extractSceneJsonFromObsidianMd as ExtractSceneJsonFromObsidianMd } from "../obsidian-md.js";
+import type { presentElement as PresentElement } from "../presentation.js";
 import type { ServerElement } from "../types.js";
-import { extractSceneJsonFromObsidianMd } from "../obsidian-md.js";
-import { applyElementInput, HumanElementChangeSchema } from "../apply-element-input.js";
-import { presentElement } from "../presentation.js";
-import { completeElement } from "./support/elements.js";
+import type { completeElement as CompleteElement } from "./support/elements.js";
 
+const callerVault = process.env.ARCHBOARD_VAULT;
 const root = mkdtempSync(join(tmpdir(), "archboard-version-note-"));
+// config.ts snapshots the environment at import time. Give this isolated owner
+// its own vault before any production module in the board graph is evaluated.
+process.env.ARCHBOARD_VAULT = root;
 const ownedKeys = new Set<string>();
 
 let boardModule: typeof BoardModule;
@@ -22,6 +29,11 @@ let storeModule: typeof StoreModule;
 let ioModule: typeof IoModule;
 let watchModule: typeof WatchModule;
 let atomicWriteSpy: { mockClear(): void; mock: { calls: unknown[][] } };
+let extractSceneJsonFromObsidianMd: typeof ExtractSceneJsonFromObsidianMd;
+let applyElementInput: typeof ApplyElementInput;
+let HumanElementChangeSchema: typeof HumanElementChangeSchemaType;
+let presentElement: typeof PresentElement;
+let completeElement: typeof CompleteElement;
 
 const box = (id: string, x: number) =>
 	({
@@ -43,6 +55,10 @@ const contentOf = (...elements: ServerElement[]) => ({
 beforeAll(async () => {
 	const atomic = await import("../atomic-write.js");
 	atomicWriteSpy = spyOn(atomic, "writeFileAtomic") as unknown as typeof atomicWriteSpy;
+	({ extractSceneJsonFromObsidianMd } = await import("../obsidian-md.js"));
+	({ applyElementInput, HumanElementChangeSchema } = await import("../apply-element-input.js"));
+	({ presentElement } = await import("../presentation.js"));
+	({ completeElement } = await import("./support/elements.js"));
 	boardModule = await import("../board.js");
 	versionModule = await import("../board-version.js");
 	storeModule = await import("../board-store.js");
@@ -57,7 +73,12 @@ afterAll(() => {
 		ownedKeys.clear();
 		watchModule?.forgetNoteWatch();
 	} finally {
-		rmSync(root, { recursive: true, force: true });
+		try {
+			rmSync(root, { recursive: true, force: true });
+		} finally {
+			if (callerVault === undefined) delete process.env.ARCHBOARD_VAULT;
+			else process.env.ARCHBOARD_VAULT = callerVault;
+		}
 	}
 });
 
