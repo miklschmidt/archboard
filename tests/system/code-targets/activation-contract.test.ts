@@ -13,6 +13,7 @@ import { join } from "node:path";
 
 import { makeIdentity, renderBoardNote } from "../../../src/runtime/engine/board.ts";
 import { boards, getOrCreateBoard } from "../../../src/runtime/engine/board-store.ts";
+import { completeElement } from "../../../src/runtime/engine/tests/support/elements.ts";
 import { CodeTargetOpenReplySchema } from "../../../src/shared/code-target/index.ts";
 import {
 	createOpenerFixture,
@@ -137,7 +138,7 @@ describe("public code-target activation contract", () => {
 					type: "excalidraw",
 					version: 2,
 					elements: [
-						{
+						completeElement({
 							id: "node",
 							type: "rectangle",
 							x: 0,
@@ -149,7 +150,7 @@ describe("public code-target activation contract", () => {
 									binding: { repo: fixture.repository, path: "src/index.ts" },
 								},
 							},
-						},
+						}),
 					],
 					appState: {},
 					files: {},
@@ -307,7 +308,7 @@ describe("public code-target activation contract", () => {
 					type: "excalidraw",
 					version: 2,
 					elements: [
-						{
+						completeElement({
 							id: "node",
 							type: "rectangle",
 							x: 0,
@@ -319,7 +320,7 @@ describe("public code-target activation contract", () => {
 									binding: { repo: fixture.repository, path: "src/index.ts" },
 								},
 							},
-						},
+						}),
 					],
 					appState: {},
 					files: {},
