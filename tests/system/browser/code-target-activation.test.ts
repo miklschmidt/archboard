@@ -133,14 +133,15 @@ function openerSelection(capture: string, exits: string, marker: string) {
 	} as const;
 }
 
-async function captures(directory: string, count: number): Promise<Capture[]> {
+async function captures(directory: string, exits: string, count: number): Promise<Capture[]> {
 	return pollUntil(
 		() =>
 			readdirSync(directory)
 				.filter((file) => file.endsWith(".json"))
 				.toSorted()
 				.map((file) => JSON.parse(readFileSync(join(directory, file), "utf8")) as Capture),
-		(value) => value.length >= count,
+		(value) =>
+			value.length >= count && value.every(({ pid }) => readdirSync(exits).includes(`${pid}.json`)),
 		`${count} controlled opener captures`,
 	);
 }
@@ -356,7 +357,7 @@ test(
 		const directoryHref = "/api/code-targets/open?board=directory-board&element=directory-target";
 		await activateLink(browser, "file-target", fileHref);
 		await activateLink(browser, "directory-target", directoryHref);
-		const first = await captures(firstCaptures, 2);
+		const first = await captures(firstCaptures, firstExits, 2);
 		expect(first.map((capture) => capture.target).toSorted()).toEqual(
 			[join(checkout, "src", "directory"), join(checkout, "src", "index.ts")].toSorted(),
 		);
@@ -376,7 +377,7 @@ test(
 		await changeOpenerCaptureThroughSettings(browser, secondCaptures, secondMarker, secondExits);
 		await activateLink(browser, "file-target", fileHref);
 		await activateLink(browser, "directory-target", directoryHref);
-		const second = await captures(secondCaptures, 2);
+		const second = await captures(secondCaptures, secondExits, 2);
 		expect(second.map((capture) => capture.target).toSorted()).toEqual(
 			first.map((capture) => capture.target).toSorted(),
 		);
