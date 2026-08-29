@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-28 00:50'
-updated_date: '2026-08-29 13:56'
+updated_date: '2026-08-29 14:40'
 labels:
   - ready-for-agent
 dependencies:
@@ -24,6 +24,7 @@ modified_files:
   - src/runtime/board-inspection/lib/detectors.ts
   - src/runtime/board-inspection/bridge.ts
   - src/runtime/board-inspection/tests/unrepresentable-geometry.test.ts
+  - src/runtime/board-inspection/tests/finding-evidence.test.ts
   - src/runtime/board-inspection/tests/bridge-create.test.ts
   - src/runtime/board-inspection/tests/bridge-validation.test.ts
   - tests/system/board-inspection/package-totality.test.ts
@@ -163,4 +164,15 @@ Implementation: added one board-inspection-local persisted connector point-chain
 Bridge: bridge planning now reuses the same eligibility seam and correlates exact crossing point and segment indices through inspection findings. The public refusal names live connector, rotation, curve, finite non-zero chain, and elbow-coordinate requirements.
 
 Verification: focused owners pass independently (7/118, 4/43, 5/547, and 3/88); board-inspection system lane 19/207; modules 377/2,999; system 248/4,011; repository 61/218; full check including serial browser lane passed. Planned mutations each produced targeted reds and were reverted; test owners remain below 500 lines (474/243/224/403).
+
+Review remediation after complete-range CHANGES_REQUESTED:
+
+- Endpoint-special interaction fixtures now set the relevant startIsSpecial/endIsSpecial flag true while preserving exact first/last segment indices and interaction assertions.
+- Bridge create and validation use converter-built multi-segment rounded and elbowed crossing fixtures. Each derives exactly one public crossing finding, correlates IDs, point, and segment indices, applies that plan, proves marked suppression plus one second unmarked crossing, and validates the resulting decoration.
+- Module and shipped package over-limit boards now contain real node, obstacle, and crossing candidates. Rejected chains retain exact limit-specific unsupported evidence and no candidate-attributed penetration, obstacle, or crossing findings; ordinary controls prove those findings are reachable.
+- Positive fixtures use vendor-derived LegacyElementIngress inputs through expandElements; malformed mutations are isolated in narrowly named negative helpers. Expected finding tuple field is named reason.
+- Focused green owners: unrepresentable 3/107, finding-evidence 4/23, bridge-create 5/67, bridge-validation 6/614, package-totality 3/100. Exact board-inspection 19/219, modules 379/3102, system 248/4023, repository 61/218, type-check/lint/fmt/diff all green.
+- Deliberate routed-final-segment mutation failed both bridge owners and was reverted. Earlier approved mutations remain recorded: boundary strictness, over-limit admission, relative-versus-scene coordinates, bridge seam bypass, broad eligibility gates, malformed/wrong-arm exclusions, and endpoint segment dropping each produced targeted reds.
+- Full bun run check was attempted as required; static and module portions passed, but package/canvas subprocesses hit existing per-test timeouts under severe host contention from pre-existing node_repl/MCP processes. No browser source was changed.
+- New finding-evidence owner remains under the 500-line cap; all edited TypeScript files are <=485 lines.
 <!-- SECTION:NOTES:END -->
