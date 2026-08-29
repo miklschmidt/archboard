@@ -536,8 +536,7 @@
           "id": "decor1",
           "type": "text",
           "label": "heading",
-          "region": "bottom-centre",
-          "humanDrawn": false
+          "region": "bottom-centre"
         }
       ],
       "unlabelled": {
@@ -560,8 +559,7 @@
           "id": "decor1",
           "type": "text",
           "label": "heading",
-          "region": "bottom-centre",
-          "humanDrawn": false
+          "region": "bottom-centre"
         }
       ],
       "unlabelled": {

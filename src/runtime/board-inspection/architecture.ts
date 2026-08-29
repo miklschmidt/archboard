@@ -1,7 +1,12 @@
 import type { ServerElement } from "../engine/types.js";
 import { boundingBoxOf, boxOf, type Box } from "../engine/layout.js";
 import { labelOf } from "../engine/promote.js";
-import { type ArchboardBlock, nodeIdOf, readElementMetadata } from "../engine/metadata.js";
+import {
+	type ArchboardBlock,
+	nodeIdOf,
+	readElementMetadata,
+	semanticElementProjection,
+} from "../engine/metadata.js";
 import { withoutValidBridgeDecorations } from "./bridge.js";
 
 export interface ArchitectureNode {
@@ -45,10 +50,7 @@ export function architectureBindingTarget(
 	const binding = end === "start" ? record.startBinding : record.endBinding;
 	const bindingRecord =
 		binding && typeof binding === "object" ? (binding as Record<string, unknown>) : {};
-	const fallback = end === "start" ? record.start : record.end;
-	const fallbackRecord =
-		fallback && typeof fallback === "object" ? (fallback as Record<string, unknown>) : {};
-	const id = bindingRecord.elementId ?? fallbackRecord.id;
+	const id = bindingRecord.elementId;
 	return typeof id === "string" ? id : undefined;
 }
 
@@ -96,12 +98,16 @@ function mergedMetadata(
  * labels, connectors, footprints, and endpoint resolution.
  */
 export function architectureFacts(elements: readonly ServerElement[]): ArchitectureFacts {
-	const all = withoutValidBridgeDecorations(elements);
+	const all = withoutValidBridgeDecorations(elements.map(semanticElementProjection));
 	const byId = new Map(all.map((element) => [element.id, element]));
 	const confirmedBoundLabelIds = new Set<string>();
 	for (const element of all) {
-		const container = element.containerId;
-		if (element.type === "text" && container && container !== element.id && byId.has(container)) {
+		if (
+			element.type === "text" &&
+			element.containerId &&
+			element.containerId !== element.id &&
+			byId.has(element.containerId)
+		) {
 			confirmedBoundLabelIds.add(element.id);
 		}
 	}
@@ -117,7 +123,7 @@ export function architectureFacts(elements: readonly ServerElement[]): Architect
 		nodeOfElement.set(element.id, node);
 	}
 	for (const element of all) {
-		const container = element.containerId;
+		const container = element.type === "text" ? element.containerId : null;
 		if (!confirmedBoundLabelIds.has(element.id) || !container) continue;
 		const node = nodeOfElement.get(container);
 		if (!node || nodeOfElement.has(element.id)) continue;

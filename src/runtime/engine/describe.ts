@@ -1,7 +1,7 @@
 import { type ServerElement } from "./types.js";
 import { DEFAULT_SHAPE_BACKGROUND } from "../../shared/appearance/appearance.js";
 import { CLUSTER_GAP, boxOf, clusterBoxes, regionName } from "./layout.js";
-import { readElementMetadata } from "./metadata.js";
+import { readElementMetadata, semanticElementProjection } from "./metadata.js";
 import type { ArchboardBlock } from "./metadata.js";
 import { withoutValidBridgeDecorations } from "../board-inspection/bridge.js";
 
@@ -127,7 +127,6 @@ interface Item {
 	name: string; // what to call it out loud
 	labelText?: string; // label / text / folded bound text
 	isNode: boolean;
-	fromBoard: boolean; // synced back from the browser: a human touched it
 	members: number; // elements making up this node (1 unless folded, below)
 	x: number;
 	y: number;
@@ -142,7 +141,6 @@ interface Edge {
 	fromName: string;
 	toName: string;
 	label?: string;
-	fromBoard: boolean;
 }
 
 // A connector is an arrow or a line that nobody promoted. Promotion is an
@@ -165,11 +163,15 @@ function foldBoundText(all: ServerElement[], byId: Map<string, ServerElement>): 
 	const hidden = new Set<string>();
 	const labelOf = new Map<string, string>();
 	for (const el of all) {
-		const container = el.containerId;
-		if (el.type === "text" && container && byId.has(container) && container !== el.id) {
+		if (
+			el.type === "text" &&
+			el.containerId &&
+			byId.has(el.containerId) &&
+			el.containerId !== el.id
+		) {
 			hidden.add(el.id);
-			const text = el.text ?? (el as unknown as Record<string, unknown>).originalText;
-			if (text) labelOf.set(container, String(text));
+			const text = el.text || el.originalText;
+			if (text) labelOf.set(el.containerId, text);
 		}
 	}
 	return { hidden, labelOf };
@@ -178,14 +180,13 @@ function foldBoundText(all: ServerElement[], byId: Map<string, ServerElement>): 
 function toItem(el: ServerElement, folded: Folded): Item {
 	const metadata = readElementMetadata(el);
 	const meta = formatMeta(metadata.archboard, metadata.foreign);
-	const labelText = el.label?.text ?? el.text ?? folded.labelOf.get(el.id);
+	const labelText = (el.type === "text" ? el.text : undefined) ?? folded.labelOf.get(el.id);
 	return {
 		el,
 		meta,
 		labelText,
 		name: labelText || meta.name || el.id,
 		isNode: meta.isNode,
-		fromBoard: el.source === "frontend_sync",
 		members: 1,
 		// Measured rather than read straight off the element: an arrow keeps its
 		// size in its points, and its stored `x, y` is its first point, not its
@@ -234,10 +235,7 @@ function bindingOf(el: unknown, end: "start" | "end"): string | undefined {
 	const binding = end === "start" ? record.startBinding : record.endBinding;
 	const bindingRecord =
 		binding && typeof binding === "object" ? (binding as Record<string, unknown>) : {};
-	const fallback = end === "start" ? record.start : record.end;
-	const fallbackRecord =
-		fallback && typeof fallback === "object" ? (fallback as Record<string, unknown>) : {};
-	const id = bindingRecord.elementId ?? fallbackRecord.id;
+	const id = bindingRecord.elementId;
 	return typeof id === "string" ? id : undefined;
 }
 
@@ -311,7 +309,6 @@ function appendStats(
 		levelCounts: Record<string, number>;
 		typeCounts: Record<string, number>;
 		boundNodes: number;
-		fromBoard: number;
 		box: SceneBox;
 	},
 ): void {
@@ -327,7 +324,6 @@ function appendStats(
 		levelCounts,
 		typeCounts,
 		boundNodes,
-		fromBoard,
 		box,
 	} = args;
 	const composition = [
@@ -351,8 +347,6 @@ function appendStats(
 		semantic.push(`Bindings: ${boundNodes}/${nodes.length} bound to code`);
 		lines.push(semantic.join(" | "));
 	}
-	if (fromBoard > 0)
-		lines.push(`From the board (human edits): ${fromBoard} of ${allElements.length} elements`);
 	lines.push(`Types: ${renderCounts(typeCounts)}`);
 	lines.push(
 		`Bounding box: (${Math.round(box.minX)}, ${Math.round(box.minY)}) to (${Math.round(box.maxX)}, ${Math.round(box.maxY)}) = ${Math.round(box.maxX - box.minX)}x${Math.round(box.maxY - box.minY)}`,
@@ -419,7 +413,7 @@ function appendClusters(
 }
 
 export function describeScene(allElements: ServerElement[]): string {
-	allElements = withoutValidBridgeDecorations(allElements);
+	allElements = withoutValidBridgeDecorations(allElements.map(semanticElementProjection));
 	if (allElements.length === 0) {
 		return "The canvas is empty. No elements to describe.";
 	}
@@ -470,8 +464,6 @@ export function describeScene(allElements: ServerElement[]): string {
 	const variantCounts = counts(nodes.map((n) => n.meta.variant));
 	const levelCounts = counts(nodes.map((n) => n.meta.level));
 	const boundNodes = nodes.filter((n) => n.meta.binding).length;
-	const fromBoard = allItems.filter((i) => i.fromBoard).length + folded.hidden.size;
-
 	// Edges: arrows resolved to node names. Ids stay so callers that parse them
 	// keep working.
 	const edges: Edge[] = [];
@@ -487,7 +479,6 @@ export function describeScene(allElements: ServerElement[]): string {
 			fromName: (fromId && nameOf.get(fromId)) || "?",
 			toName: (toId && nameOf.get(toId)) || "?",
 			label: item.labelText || item.meta.kind,
-			fromBoard: item.fromBoard,
 		});
 	}
 
@@ -519,7 +510,6 @@ export function describeScene(allElements: ServerElement[]): string {
 			typeCounts,
 			clusters: realClusters.length,
 			boundNodes,
-			fromBoard,
 			total: allElements.length,
 		})}`,
 	);
@@ -536,7 +526,6 @@ export function describeScene(allElements: ServerElement[]): string {
 		levelCounts,
 		typeCounts,
 		boundNodes,
-		fromBoard,
 		box,
 	});
 
@@ -590,9 +579,8 @@ export function describeScene(allElements: ServerElement[]): string {
 		lines.push(`### Edges (${edges.length})`);
 		for (const e of edges.slice(0, EDGE_LIST_LIMIT)) {
 			const arrow = e.label ? `--"${e.label}"-->` : "-->";
-			const origin = e.fromBoard ? " (from board)" : "";
 			lines.push(
-				`  "${e.fromName}" ${arrow} "${e.toName}"   (${e.fromId ?? "?"} --> ${e.toId ?? "?"}, arrow: ${e.arrow.id})${origin}`,
+				`  "${e.fromName}" ${arrow} "${e.toName}"   (${e.fromId ?? "?"} --> ${e.toId ?? "?"}, arrow: ${e.arrow.id})`,
 			);
 		}
 		if (edges.length > EDGE_LIST_LIMIT) {
@@ -609,18 +597,7 @@ export function describeScene(allElements: ServerElement[]): string {
 	if (others.length > 0) {
 		lines.push("");
 		lines.push(`### Other elements (${others.length}) — no archboard metadata`);
-		// A labelled shape a human drew is the interesting case: it is usually a
-		// proposal waiting for a kind and a binding.
-		const proposals = others.filter((o) => o.fromBoard && o.labelText);
-		if (proposals.length > 0) {
-			lines.push(
-				`  Drawn on the board with a label — candidates for promotion (${proposals.length}):`,
-			);
-			for (const o of proposals.slice(0, OTHER_LIST_LIMIT)) lines.push(`    ${plainLine(o)}`);
-			if (proposals.length > OTHER_LIST_LIMIT)
-				lines.push(`    … and ${proposals.length - OTHER_LIST_LIMIT} more`);
-		}
-		const rest = others.filter((o) => !(o.fromBoard && o.labelText));
+		const rest = others;
 		const notable = rest.filter(
 			(o) => o.labelText || o.el.link || Object.keys(o.meta.foreign).length > 0,
 		);
@@ -634,15 +611,8 @@ export function describeScene(allElements: ServerElement[]): string {
 		if (omitted > 0) {
 			const omittedItems = listAll ? [] : [...notable.slice(OTHER_LIST_LIMIT), ...dull];
 			const byType = renderCounts(counts(omittedItems.map((o) => o.el.type)));
-			const boardCount = omittedItems.filter((o) => o.fromBoard).length;
-			const origin =
-				boardCount === 0
-					? ""
-					: boardCount === omitted
-						? " (all from the board)"
-						: ` (${boardCount} from the board)`;
-			const lead = listed.length > 0 || proposals.length > 0 ? `… ${omitted} more` : `${omitted}`;
-			lines.push(`  ${lead} unlabelled, not listed: ${byType}${origin}`);
+			const lead = listed.length > 0 ? `… ${omitted} more` : `${omitted}`;
+			lines.push(`  ${lead} unlabelled, not listed: ${byType}`);
 		}
 	}
 
@@ -691,7 +661,6 @@ function nodeLine(n: Item, showLevel: boolean): string {
 	if (showLevel && n.meta.level) parts.push(`level ${n.meta.level}`);
 	parts.push(geometry(n));
 	parts.push(n.el.type);
-	if (n.fromBoard) parts.push("from board");
 	if (n.el.locked) parts.push("(locked)");
 	return parts.join(" | ");
 }
@@ -718,9 +687,8 @@ function nodeExtras(n: Item): string {
 function plainLine(o: Item): string {
 	const el = o.el;
 	const parts = [`[${el.id}] ${el.type}`, geometry(o)];
-	if (el.text) parts.push(`text: "${el.text}"`);
-	if (el.label?.text) parts.push(`label: "${el.label.text}"`);
-	else if (o.labelText && !el.text) parts.push(`label: "${o.labelText}"`);
+	if (el.type === "text" && el.text) parts.push(`text: "${el.text}"`);
+	else if (o.labelText) parts.push(`label: "${o.labelText}"`);
 	// A colour is worth a word only when someone chose it. The default fill is
 	// on nearly every shape now (it is what makes them tappable), so printing it
 	// would add a column of noise to the agent's main read path.
@@ -733,7 +701,6 @@ function plainLine(o: Item): string {
 	if (el.strokeColor && el.strokeColor !== "#000000") parts.push(`stroke: ${el.strokeColor}`);
 	if (el.link) parts.push(`link: ${el.link}`);
 	if (Object.keys(o.meta.foreign).length > 0) parts.push(`customData: ${pairs(o.meta.foreign)}`);
-	if (o.fromBoard) parts.push("from board");
 	if (el.locked) parts.push("(locked)");
 	if (el.groupIds && el.groupIds.length > 0) parts.push(`groups: [${el.groupIds.join(", ")}]`);
 	return parts.join(" | ");
@@ -762,13 +729,11 @@ function summarise(s: {
 	typeCounts: Record<string, number>;
 	clusters: number;
 	boundNodes: number;
-	fromBoard: number;
 	total: number;
 }): string {
 	if (s.nodes.length === 0) {
 		const kinds = renderCounts(s.typeCounts);
-		const tail = s.fromBoard > 0 ? `; ${s.fromBoard} came from the board` : "";
-		return `no nodes yet — ${s.total} elements (${kinds})${tail}. Nothing on this canvas carries archboard metadata.`;
+		return `no nodes yet — ${s.total} elements (${kinds}). Nothing on this canvas carries archboard metadata.`;
 	}
 
 	const kindOrder = Object.keys(s.kindCounts).toSorted((a, b) => {
@@ -790,7 +755,6 @@ function summarise(s: {
 	const notes: string[] = [];
 	const unbound = s.nodes.length - s.boundNodes;
 	if (unbound > 0) notes.push(`${unbound} unbound`);
-	if (s.fromBoard > 0) notes.push(`${s.fromBoard} touched on the board`);
 	if (s.others.length > 0) notes.push(`${plural(s.others.length, "plain element")} alongside`);
 
 	return `${clauses.join(" ")}${notes.length ? `; ${joinList(notes)}` : ""}.`;
@@ -816,7 +780,6 @@ export interface SelectedElement {
 	variant?: string;
 	level?: string;
 	link?: string | null;
-	fromBoard: boolean; // last written by a human on the board, not by an agent
 	x: number;
 	y: number;
 	width: number;
@@ -848,7 +811,6 @@ function selectedElement(item: Item): SelectedElement {
 		...(item.meta.variant ? { variant: item.meta.variant } : {}),
 		...(item.meta.level ? { level: item.meta.level } : {}),
 		...(item.el.link ? { link: item.el.link } : {}),
-		fromBoard: item.fromBoard,
 		x: item.x,
 		y: item.y,
 		width: item.w,
@@ -892,6 +854,7 @@ export function buildSelectionReport(
 	allElements: ServerElement[],
 	browserClients: number,
 ): SelectionReport {
+	allElements = allElements.map(semanticElementProjection);
 	const byId = new Map<string, ServerElement>();
 	for (const el of allElements) byId.set(el.id, el);
 	const folded = foldBoundText(allElements, byId);

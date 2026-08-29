@@ -99,7 +99,7 @@ function findingFrame(
 		y: box.y,
 		width: box.width,
 		height: box.height,
-		angle: 0,
+		angle: 0 as ExcalidrawFrameLikeElement["angle"],
 		strokeColor: "#000000",
 		backgroundColor: "transparent",
 		fillStyle: "solid",
@@ -1191,7 +1191,7 @@ export function useCanvasSession({
 	const answerFindingExport = useCallback(async (data: WebSocketMessage): Promise<void> => {
 		if (!data.requestId || !Array.isArray(data.findings) || !Array.isArray(data.elements)) return;
 		const elements = data.elements.filter(
-			(element) => element.isDeleted !== true,
+			(element) => !element.isDeleted,
 		) as unknown as ExcalidrawElement[];
 		const files = data.files ?? {};
 		for (const request of data.findings) {

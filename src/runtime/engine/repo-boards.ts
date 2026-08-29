@@ -60,7 +60,7 @@ export interface OpenBoard {
 }
 
 function labelOf(el: ServerElement, elements: ServerElement[]): string | undefined {
-	const direct = el.label?.text ?? el.text;
+	const direct = el.type === "text" ? el.text : undefined;
 	if (direct) return String(direct);
 	for (const other of elements) {
 		if (other.type === "text" && other.containerId === el.id) {

@@ -4,6 +4,7 @@ import { boundTextsByContainer, labelTextIdFor, planLabelRepair } from "../label
 import { isBlockId } from "../../../shared/ids/ids.ts";
 import { ExpandedElementSchema, pollutedLabels } from "./fixtures/label-cases.ts";
 import type { ServerElement } from "../types.ts";
+import { completeElements } from "./support/elements.ts";
 
 const assert = (condition: unknown, message: string): void =>
 	expect(Boolean(condition), message).toBeTrue();
@@ -67,22 +68,20 @@ test("repairs absent, dangling, one-way, duplicate, and polluted label bindings"
 	}
 
 	{
-		const board = new Map<string, ServerElement>([
-			["svc", { id: "svc", type: "rectangle", x: 0, y: 0, width: 200, height: 80 }],
-			[
-				"svclabel",
-				{
-					id: "svclabel",
-					type: "text",
-					x: 50,
-					y: 20,
-					width: 100,
-					height: 25,
-					containerId: "svc",
-					text: "AuthService",
-				},
-			],
+		const completed = completeElements([
+			{ id: "svc", type: "rectangle", x: 0, y: 0, width: 200, height: 80 },
+			{
+				id: "svclabel",
+				type: "text",
+				x: 50,
+				y: 20,
+				width: 100,
+				height: 25,
+				containerId: "svc",
+				text: "AuthService",
+			},
 		]);
+		const board = new Map<string, ServerElement>(completed.map((element) => [element.id, element]));
 		const svc = board.get("svc");
 		if (!svc) throw new Error("The one-way binding fixture lost svc.");
 		const written = expandForBoard([{ ...svc, label: { text: "IdentityService" } }], board);
@@ -100,7 +99,7 @@ test("repairs absent, dangling, one-way, duplicate, and polluted label bindings"
 			new Map(),
 		);
 		assert(
-			written.length === 1 && written[0]?.text === "a note to self",
+			written.length === 1 && written[0]?.type === "text" && written[0].text === "a note to self",
 			"a standalone text element lost its content or grew a label",
 		);
 	}

@@ -1,3 +1,7 @@
+import type {
+	LegacyElementIngress,
+	RuntimeBoardElement,
+} from "../../shared/board-elements/index.js";
 import { type ServerElement, normalizeFontFamily } from "./types.js";
 import { generateKeyBetween } from "fractional-indexing";
 import {
@@ -11,7 +15,8 @@ import { bindingFromRef } from "./arrow-binding.js";
 import { fnv1a, type IdsInUse } from "../../shared/ids/ids.js";
 import { lineHeightOf } from "./fonts.js";
 import { canMeasure, measureText } from "./measure-text.js";
-import { DEFAULT_LINEAR_POINTS } from "./geometry.js";
+import { DEFAULT_LINEAR_POINTS, measureLinear } from "./geometry.js";
+import { validatePersistedBoardElement } from "./lib/native-element.js";
 
 // The one conversion, in one direction, at one boundary (ADR 0015).
 //
@@ -202,7 +207,7 @@ export function settleDeletions(
 	// A label belongs to its container, so it goes too.
 	const alsoDeleted: string[] = [];
 	for (const element of board.values()) {
-		const container = element.containerId;
+		const container = element.type === "text" ? element.containerId : null;
 		if (typeof container === "string" && gone.has(container)) {
 			alsoDeleted.push(element.id);
 			gone.add(element.id);
@@ -371,10 +376,11 @@ export function canonicalizeKeys(v: unknown): unknown {
  * ADR 0015 asks for and the reason `readBoardFile` and `readNote` were a real
  * problem while this pair was not.
  */
+// oxlint-disable-next-line eslint/complexity -- this is ADR 0015's sole default-completion boundary for all eight arms
 export function expandElements(
-	sourceElements: ServerElement[],
+	sourceElements: LegacyElementIngress[],
 	options: ExpandOptions = {},
-): Record<string, unknown>[] {
+): RuntimeBoardElement[] {
 	const { deterministic = false, forStore = false, keepServerFields = forStore } = options;
 	const seedFor = (key: string): number =>
 		deterministic ? (fnv1a(key) % 2147483646) + 1 : Math.floor(Math.random() * 2147483647);
@@ -427,6 +433,7 @@ export function expandElements(
 			seed: rest.seed ?? seedFor(`${String(el.id)}:seed`),
 			version: rest.version ?? 1,
 			versionNonce: rest.versionNonce ?? seedFor(`${String(el.id)}:nonce`),
+			index: rest.index ?? null,
 			isDeleted: rest.isDeleted ?? false,
 			boundElements: rest.boundElements ?? null,
 			updated: updatedFor(el),
@@ -436,7 +443,7 @@ export function expandElements(
 	}
 
 	function appendLabel(
-		el: ServerElement,
+		el: LegacyElementIngress,
 		base: Record<string, unknown>,
 		rest: Record<string, unknown>,
 		label: unknown,
@@ -498,6 +505,7 @@ export function expandElements(
 			seed: seedFor(`${textId}:seed`),
 			version: 1,
 			versionNonce: seedFor(`${textId}:nonce`),
+			index: null,
 			isDeleted: false,
 			boundElements: null,
 			updated: updatedFor(el as unknown as Record<string, unknown>),
@@ -596,6 +604,11 @@ export function expandElements(
 		// anything reads, including the server's own routing (TASK-088).
 		if (el.type === "arrow" || el.type === "line") {
 			base.points = rest.points ?? DEFAULT_LINEAR_POINTS.map((point) => point.slice());
+			const measured = measureLinear(base.points);
+			if (measured) {
+				base.width = measured.width;
+				base.height = measured.height;
+			}
 			base.lastCommittedPoint = null;
 			const startRecord =
 				rest.startBinding && typeof rest.startBinding === "object"
@@ -623,9 +636,21 @@ export function expandElements(
 		// them in on a server update and the note never learned.
 		if (el.type === "freedraw") {
 			base.points = rest.points ?? [];
+			const measured = measureLinear(base.points);
+			if (measured) {
+				base.width = measured.width;
+				base.height = measured.height;
+			}
 			base.pressures = rest.pressures ?? [];
 			base.simulatePressure = rest.simulatePressure ?? true;
 			base.lastCommittedPoint = rest.lastCommittedPoint ?? null;
+		}
+
+		if (el.type === "image") {
+			base.fileId = rest.fileId ?? null;
+			base.status = rest.status ?? "pending";
+			base.scale = rest.scale ?? [1, 1];
+			base.crop = rest.crop ?? null;
 		}
 
 		appendLabel(el, base, rest, label, text);
@@ -705,9 +730,12 @@ export function expandElements(
 		cleanedExportElements.push(...order);
 	}
 
-	return deterministic
+	const output = deterministic
 		? (canonicalizeKeys(cleanedExportElements) as Record<string, unknown>[])
 		: cleanedExportElements;
+	return output.map((element) =>
+		validatePersistedBoardElement(element, `write ingress element ${String(element.id ?? "")}`),
+	);
 }
 
 /**
@@ -735,7 +763,7 @@ export function expandElements(
  * this paragraph to hold the line on its own.
  */
 export function expandForBoard(
-	written: ServerElement[],
+	written: LegacyElementIngress[],
 	board: ReadonlyMap<string, ServerElement>,
 ): ServerElement[] {
 	if (written.length === 0) return [];
@@ -780,7 +808,7 @@ export function expandForBoard(
 	return expandElements(mended, {
 		forStore: true,
 		inUse: { has: (id: string) => board.has(id) },
-	}) as unknown as ServerElement[];
+	});
 }
 
 /**
@@ -793,18 +821,18 @@ export function expandForBoard(
  * way through. Nothing is stored here; the caller owns the board.
  */
 export function relabelBoundTexts(
-	written: readonly ServerElement[],
+	written: readonly LegacyElementIngress[],
 	board: ReadonlyMap<string, ServerElement>,
 ): ServerElement[] {
 	const labelled = boundTextsByContainer([...board.values()]);
 	const relabelled: ServerElement[] = [];
 	for (const container of written) {
-		const wanted = labelSeedOf(container as LabelledElement);
+		const wanted = labelSeedOf(container);
 		if (wanted === undefined) continue;
 		const textId = labelled.get(container.id)?.[0];
 		if (!textId) continue;
 		const existing = board.get(textId);
-		if (!existing || existing.text === wanted) continue;
+		if (existing?.type !== "text" || existing.text === wanted) continue;
 		const [remeasured] = expandForBoard(
 			[{ ...existing, text: wanted, originalText: wanted } as ServerElement],
 			board,

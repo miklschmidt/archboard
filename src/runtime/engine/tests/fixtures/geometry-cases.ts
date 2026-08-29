@@ -1,6 +1,7 @@
 import type { Bindable, Point } from "../../arrow-binding.ts";
 import type { Measurable } from "../../geometry.ts";
-import type { ServerElement } from "../../types.ts";
+import type { LegacyElementIngress } from "../../../../shared/board-elements/index.ts";
+import { expandElements } from "../../expand-elements.ts";
 
 export const directionalArrows = {
 	"right and down": {
@@ -61,7 +62,7 @@ export const pinnedSolverEndpoint = {
 	y: 1150.1288714106531,
 } satisfies Point;
 
-export const geometryConsumerScene: ServerElement[] = [
+const geometryConsumerInputs = [
 	{
 		id: "hub",
 		type: "rectangle",
@@ -146,4 +147,9 @@ export const geometryConsumerScene: ServerElement[] = [
 			[-400, -300],
 		],
 	},
-];
+] satisfies LegacyElementIngress[];
+
+export const geometryConsumerScene = expandElements(geometryConsumerInputs, {
+	deterministic: true,
+	forStore: true,
+});

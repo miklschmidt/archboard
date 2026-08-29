@@ -6,6 +6,7 @@ import { labelAnchorOf } from "../labels.ts";
 import { planPromotion } from "../promote.ts";
 import type { ServerElement } from "../types.ts";
 import { geometryConsumerScene } from "./fixtures/geometry-cases.ts";
+import { completeElements } from "./support/elements.ts";
 
 const assert = (condition: unknown, message: string): void =>
 	expect(Boolean(condition), message).toBeTrue();
@@ -30,14 +31,14 @@ const elementById = (elements: readonly ServerElement[], id: string): ServerElem
 		`Missing fixture element ${id}.`,
 	);
 const trueEdges = (element: ServerElement) => {
-	if (!Array.isArray(element.points) || element.points.length === 0)
+	if (element.type !== "arrow" && element.type !== "line" && element.type !== "freedraw")
 		return {
 			x0: element.x,
 			y0: element.y,
 			x1: element.x + (element.width || 0),
 			y1: element.y + (element.height || 0),
 		};
-	const xs = element.points.map(([x]) => element.x + (x ?? 0));
+	const xs = element.points.map(([x]) => element.x + x);
 	const ys = element.points.map(([, y]) => element.y + (y ?? 0));
 	return {
 		x0: Math.min(...xs),
@@ -68,7 +69,8 @@ test("feeds measured geometry to compare, promotion, describe, layout, and selec
 		const maxY = Number(required(captures[4], "missing maximum y"));
 		const outside = [];
 		for (const element of scene) {
-			if (!Array.isArray(element.points)) continue;
+			if (element.type !== "arrow" && element.type !== "line" && element.type !== "freedraw")
+				continue;
 			for (const [pointX, pointY] of element.points) {
 				const x = element.x + pointX;
 				const y = element.y + pointY;
@@ -149,7 +151,7 @@ test("feeds measured geometry to compare, promotion, describe, layout, and selec
 	}
 
 	{
-		const elements: ServerElement[] = [
+		const elements = completeElements([
 			{
 				id: "hub-box",
 				type: "rectangle",
@@ -219,7 +221,7 @@ test("feeds measured geometry to compare, promotion, describe, layout, and selec
 				],
 				label: { text: "note" },
 			},
-		];
+		]);
 		const identity = { board: "geometry", variant: "current" };
 		const side: CompareSideInput = {
 			key: "geometry",
@@ -260,29 +262,30 @@ test("feeds measured geometry to compare, promotion, describe, layout, and selec
 	}
 
 	{
-		const box: ServerElement = {
-			id: "box",
-			type: "rectangle",
-			x: 0,
-			y: 0,
-			width: 300,
-			height: 120,
-			label: { text: "Payments" },
-		};
-		const arrow: ServerElement = {
-			id: "arrow",
-			type: "arrow",
-			x: 400,
-			y: 300,
-			width: 5000,
-			height: 5000,
-			points: [
-				[0, 0],
-				[-40, -30],
-			],
-			label: { text: "calls" },
-		};
-		const board = [box, arrow];
+		const board = completeElements([
+			{
+				id: "box",
+				type: "rectangle",
+				x: 0,
+				y: 0,
+				width: 300,
+				height: 120,
+				label: { text: "Payments" },
+			},
+			{
+				id: "arrow",
+				type: "arrow",
+				x: 400,
+				y: 300,
+				width: 5000,
+				height: 5000,
+				points: [
+					[0, 0],
+					[-40, -30],
+				],
+				label: { text: "calls" },
+			},
+		]);
 		const plan = planPromotion({
 			targets: board,
 			board,

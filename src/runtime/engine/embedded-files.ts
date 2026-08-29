@@ -13,16 +13,16 @@ export function usableEmbeddedFile(raw: unknown): ExcalidrawFile | null {
 	};
 }
 
-export function drawnFileIds(elements: Iterable<Pick<ServerElement, "fileId">>): Set<string> {
+export function drawnFileIds(elements: Iterable<ServerElement>): Set<string> {
 	const ids = new Set<string>();
 	for (const element of elements) {
-		if (typeof element.fileId === "string") ids.add(element.fileId);
+		if (element.type === "image" && typeof element.fileId === "string") ids.add(element.fileId);
 	}
 	return ids;
 }
 
 export function usableDrawnFiles(
-	elements: Iterable<Pick<ServerElement, "fileId">>,
+	elements: Iterable<ServerElement>,
 	rawFiles: readonly unknown[],
 ): ExcalidrawFile[] {
 	const drawn = drawnFileIds(elements);

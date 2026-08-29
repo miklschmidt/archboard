@@ -43,7 +43,7 @@
 import fs from "fs";
 import path from "path";
 
-import { EXCALIDRAW_ELEMENT_TYPES, type ExcalidrawFile, type ServerElement } from "./types.js";
+import { type ExcalidrawFile, type ServerElement } from "./types.js";
 import { writeFileAtomic } from "./atomic-write.js";
 import { holdOn } from "./board-hold.js";
 import { type BoardState, baselineForFile, recordBaseline } from "./board-store.js";
@@ -69,10 +69,12 @@ import {
 	versionNumber,
 } from "./board-version.js";
 import { validateRenderGeometry } from "./geometry.js";
-import { derivedId, isBlockId, mintId } from "../../shared/ids/ids.js";
+import { derivedId, isBlockId } from "../../shared/ids/ids.js";
 import { isObsidianExcalidrawMd, renameElementId } from "./obsidian-md.js";
 import { stripBindingPresentationLinks } from "./presentation.js";
 import { buildScene } from "./scene-document.js";
+import { packElementTracking } from "./metadata.js";
+import { validatePersistedBoardElement } from "./lib/native-element.js";
 
 /**
  * One board, as one request found it.
@@ -150,29 +152,12 @@ export function emptyContent(): BoardContent {
 export function ingestScene(
 	sceneElements: unknown[],
 	sceneFiles?: Record<string, unknown> | null,
+	context = "scene",
 ): { elements: Map<string, ServerElement>; files: Map<string, ExcalidrawFile> } {
 	const elements = new Map<string, ServerElement>();
-	// Names the scene brings with it are the only ones a mint here has to avoid:
-	// the maps start empty and are filled from this scene alone.
-	const taken = new Set<string>(
-		sceneElements
-			.filter(
-				(raw): raw is { id: string } =>
-					!!raw && typeof (raw as Record<string, unknown>).id === "string",
-			)
-			.map((raw) => raw.id),
-	);
 	for (const raw of sceneElements) {
-		if (!raw || typeof raw !== "object") continue;
-		const source = raw as Record<string, unknown>;
-		const element: ServerElement = {
-			...(source as unknown as ServerElement),
-			id: (typeof source.id === "string" && source.id) || mintId(taken),
-			createdAt: (source.createdAt as string) ?? new Date().toISOString(),
-			updatedAt: (source.updatedAt as string) ?? new Date().toISOString(),
-			version: (source.version as number) ?? 1,
-		};
-		taken.add(element.id);
+		const element = validatePersistedBoardElement(raw, context);
+		if (elements.has(element.id)) throw new Error(`${context}: duplicate element id ${element.id}`);
 		elements.set(element.id, element);
 	}
 
@@ -315,6 +300,7 @@ export function readNote(file: string): BoardContent | null {
 	const { elements, files } = ingestScene(
 		Array.isArray(scene) ? scene : (scene.elements ?? []),
 		Array.isArray(scene) ? null : scene.files,
+		file,
 	);
 	return { elements, files, note: note.raw, hash: note.hash, version: note.version };
 }
@@ -346,16 +332,17 @@ function strictRenderScene(scene: unknown): BoardInspectionSnapshot["renderScene
 			: null;
 	const elements = Array.isArray(scene) ? scene : sceneRecord?.elements;
 	if (!Array.isArray(elements)) return null;
-	const acceptedTypes = new Set(Object.values(EXCALIDRAW_ELEMENT_TYPES));
 	const ids = new Set<string>();
 	const projected: ServerElement[] = [];
 	for (const raw of elements) {
-		if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-		const record = raw as Record<string, unknown>;
-		if (typeof record.id !== "string" || record.id.length === 0 || ids.has(record.id)) return null;
-		if (typeof record.type !== "string" || !acceptedTypes.has(record.type as never)) return null;
-		ids.add(record.id);
-		projected.push(record as unknown as ServerElement);
+		try {
+			const element = validatePersistedBoardElement(raw, "inspection scene");
+			if (ids.has(element.id)) return null;
+			ids.add(element.id);
+			projected.push(element);
+		} catch {
+			return null;
+		}
 	}
 	try {
 		validateRenderGeometry(projected);
@@ -491,13 +478,17 @@ export function renderContent(
 ): { note: string; bytes: Buffer; elementCount: number } {
 	const files = boardFilesMessage(content).files ?? {};
 	const { scene, elementCount } = buildScene(
-		stripBindingPresentationLinks(content.elements.values()),
+		stripBindingPresentationLinks(
+			Array.from(content.elements.values(), (element) => packElementTracking(element)),
+		),
 		files as unknown as Record<string, unknown>,
 		{ keepServerFields: true },
 	);
 	// expandElements normalizes a missing link to null, so apply the same
 	// portability rule once more to the normalized copies.
-	scene.elements = stripBindingPresentationLinks(scene.elements as ServerElement[]);
+	scene.elements = stripBindingPresentationLinks(
+		(scene.elements as ServerElement[]).map(packElementTracking),
+	);
 	const note = renderBoardNote(scene, existingNote, identity);
 	return { note, bytes: Buffer.from(note, "utf-8"), elementCount };
 }
@@ -546,9 +537,8 @@ export function renderContent(
 function settleRawText(content: BoardContent): void {
 	for (const element of content.elements.values()) {
 		if (element.type !== "text" || element.isDeleted) continue;
-		const held = element as ServerElement & { rawText?: string; originalText?: string };
-		if (typeof held.rawText === "string" && held.rawText !== "") continue;
-		held.rawText = held.originalText ?? held.text ?? "";
+		if (typeof element.rawText === "string" && element.rawText !== "") continue;
+		element.rawText = element.originalText || element.text;
 	}
 }
 
@@ -587,18 +577,7 @@ function settleBlockIds(content: BoardContent): void {
 function settleBoundArrows(content: BoardContent): void {
 	for (const arrow of content.elements.values()) {
 		if (arrow.type !== "arrow" && arrow.type !== "line") continue;
-		const joins = arrow as {
-			startBinding?: { elementId?: string } | null;
-			endBinding?: { elementId?: string } | null;
-			start?: { id?: string };
-			end?: { id?: string };
-		};
-		const ends = [
-			joins.startBinding?.elementId,
-			joins.endBinding?.elementId,
-			joins.start?.id,
-			joins.end?.id,
-		];
+		const ends = [arrow.startBinding?.elementId, arrow.endBinding?.elementId];
 		for (const shapeId of ends) {
 			if (typeof shapeId !== "string") continue;
 			const shape = content.elements.get(shapeId);

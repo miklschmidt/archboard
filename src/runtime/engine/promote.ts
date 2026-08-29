@@ -352,7 +352,7 @@ export interface PromotionPlan {
 }
 
 export function labelOf(el: ServerElement, board: ServerElement[]): string | undefined {
-	const direct = el.label?.text ?? el.text;
+	const direct = el.type === "text" ? el.text : undefined;
 	if (direct) return String(direct);
 	// A labelled shape that came back through a frontend sync carries its label
 	// as a separate bound text element.
@@ -379,16 +379,20 @@ function partition(
 	const targetIds = new Set(targets.map((t) => t.id));
 	const labelsByContainer = new Map<string, ServerElement[]>();
 	for (const el of board) {
-		const container = el.containerId;
-		if (el.type === "text" && container && container !== el.id && targetIds.has(container)) {
+		if (
+			el.type === "text" &&
+			el.containerId &&
+			el.containerId !== el.id &&
+			targetIds.has(el.containerId)
+		) {
+			const container = el.containerId;
 			const list = labelsByContainer.get(container) ?? [];
 			list.push(el);
 			labelsByContainer.set(container, list);
 		}
 	}
 	const isFoldedLabel = (el: ServerElement) => {
-		const container = el.containerId;
-		return el.type === "text" && container && targetIds.has(container);
+		return el.type === "text" && !!el.containerId && targetIds.has(el.containerId);
 	};
 	return { shapes: targets.filter((el) => !isFoldedLabel(el)), labelsByContainer };
 }

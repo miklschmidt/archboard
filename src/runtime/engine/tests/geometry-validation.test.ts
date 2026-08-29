@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { applyElementInput } from "../apply-element-input.ts";
 import { validateRenderGeometry, type RenderGeometryElement } from "../geometry.ts";
 import type { ServerElement } from "../types.ts";
+import { completeElement } from "./support/elements.ts";
 
 const assert = (condition: unknown, message: string): void =>
 	expect(Boolean(condition), message).toBeTrue();
@@ -57,7 +58,10 @@ test("refuses every malformed live render field without mutating caller state", 
 		assert(valid, "finite zero and negative geometry should remain valid");
 
 		const publicBoard = new Map<string, ServerElement>([
-			["seed", { id: "seed", type: "rectangle", x: 0, y: 0, width: 80, height: 40 }],
+			[
+				"seed",
+				completeElement({ id: "seed", type: "rectangle", x: 0, y: 0, width: 80, height: 40 }),
+			],
 		]);
 		let publicError: Error | undefined;
 		try {
@@ -79,7 +83,9 @@ test("refuses every malformed live render field without mutating caller state", 
 			if (caught instanceof Error) publicError = caught;
 		}
 		assert(
-			publicError?.message.includes("public-helvetica (text): width, height"),
+			publicError?.message.includes(
+				"write ingress element public-helvetica: invalid element public-helvetica (text) at element.width",
+			),
 			`applyElementInput returned malformed public output: ${publicError?.message ?? "no refusal"}`,
 		);
 		assert(

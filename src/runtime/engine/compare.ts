@@ -289,7 +289,6 @@ export interface PlainElement {
 	type: string;
 	label?: string;
 	region: string;
-	humanDrawn: boolean;
 	link?: string;
 	foreignCustomData?: Record<string, unknown>;
 }
@@ -605,8 +604,8 @@ function buildEdges(
 }
 
 function buildBoard(input: CompareSideInput): BoardModel {
-	const all = input.elements;
-	const facts = architectureFacts(all);
+	const facts = architectureFacts(input.elements);
+	const all = [...facts.elements];
 	const warnings: string[] = [];
 	const boundLabelOf = facts.confirmedBoundLabelIds;
 
@@ -831,7 +830,6 @@ function buildBoard(input: CompareSideInput): BoardModel {
 				type: el.type,
 				label,
 				region: nodeBox ? regionName(b.x + b.w / 2, b.y + b.h / 2, nodeBox) : "centre",
-				humanDrawn: el.source === "frontend_sync",
 				...(el.link ? { link: el.link } : {}),
 				...(Object.keys(foreign).length ? { foreignCustomData: foreign } : {}),
 			});
@@ -965,8 +963,12 @@ function diffFields(
 }
 
 function semanticFields(m: NodeModel, boardVariant: string): Record<string, unknown> {
+	const label =
+		m.label && m.label.toLocaleLowerCase() !== m.declaredName?.toLocaleLowerCase()
+			? m.label
+			: undefined;
 	return {
-		label: m.label,
+		label,
 		declaredName: m.declaredName,
 		kind: m.kind,
 		level: m.level,
