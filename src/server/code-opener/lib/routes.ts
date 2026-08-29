@@ -39,6 +39,18 @@ type BindingLookup =
 			error: string;
 	  };
 
+const BODY_PARSER_FAILURES: ReadonlySet<string> = new Set([
+	"charset.unsupported",
+	"encoding.unsupported",
+	"entity.parse.failed",
+	"entity.too.large",
+	"entity.verify.failed",
+	"request.aborted",
+	"request.size.invalid",
+	"stream.encoding.set",
+	"stream.not.readable",
+]);
+
 export interface CodeOpenerRouteDependencies {
 	bindingForElement(board: string, element: string): BindingLookup;
 	resolveTarget(binding: CodeBinding): LocalCodeTargetResult;
@@ -266,12 +278,8 @@ export function createCodeOpenerRouter(
 			typeof error === "object" && error !== null && "type" in error
 				? (error as { type?: unknown }).type
 				: undefined;
-		if (kind !== "entity.parse.failed") return next(error);
-		sendFailure(
-			response,
-			{ code: "REQUEST_INVALID", error: "The request body is not valid JSON." },
-			400,
-		);
+		if (typeof kind !== "string" || !BODY_PARSER_FAILURES.has(kind)) return next(error);
+		sendFailure(response, { code: "REQUEST_INVALID", error: "The request body is invalid." }, 400);
 	}) as ErrorRequestHandler);
 
 	return router;

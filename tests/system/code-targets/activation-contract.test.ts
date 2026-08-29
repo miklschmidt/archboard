@@ -1,7 +1,17 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, readdirSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	readdirSync,
+	statSync,
+	symlinkSync,
+	writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 
+import { makeIdentity, renderBoardNote } from "../../../src/runtime/engine/board.ts";
+import { boards, getOrCreateBoard } from "../../../src/runtime/engine/board-store.ts";
 import { CodeTargetOpenReplySchema } from "../../../src/shared/code-target/index.ts";
 import {
 	createOpenerFixture,
@@ -104,6 +114,65 @@ describe("public code-target activation contract", () => {
 		expect(await invocation.waitForCapture()).toMatchObject({
 			target: join(fixture.checkout, "src/directory"),
 		});
+	});
+
+	test("re-reads a real note binding without changing note bytes or mtime", async () => {
+		await using resources = new AsyncDisposableStack();
+		const fixture = await createOpenerFixture({ defaultDependencies: true });
+		resources.defer(() => fixture.dispose());
+		const invocation = fixture.invocation("immediate");
+		resources.defer(() => invocation.releaseAndWait());
+		const identity = makeIdentity({ board: "system/payments" });
+		const { key, board } = getOrCreateBoard(identity);
+		resources.defer(() => {
+			boards.delete(key);
+		});
+		const note = join(fixture.root, "system-payments.excalidraw.md");
+		board.file = note;
+		writeFileSync(
+			note,
+			renderBoardNote(
+				{
+					type: "excalidraw",
+					version: 2,
+					elements: [
+						{
+							id: "node",
+							type: "rectangle",
+							x: 0,
+							y: 0,
+							width: 100,
+							height: 60,
+							customData: {
+								archboard: {
+									binding: { repo: fixture.repository, path: "src/index.ts" },
+								},
+							},
+						},
+					],
+					appState: {},
+					files: {},
+				},
+				null,
+				identity,
+			),
+		);
+		const beforeBytes = readFileSync(note);
+		const beforeMtime = statSync(note, { bigint: true }).mtimeNs;
+		await saveSelection(fixture, invocation);
+
+		const result = await activate(fixture, { board: key, element: "node" });
+		expect(result.status).toBe(200);
+		expect(CodeTargetOpenReplySchema.parse(result.body)).toMatchObject({
+			success: true,
+			repository: fixture.repository,
+			path: "src/index.ts",
+		});
+		expect(await invocation.waitForCapture()).toMatchObject({
+			target: join(fixture.checkout, "src/index.ts"),
+		});
+		expect(readFileSync(note)).toEqual(beforeBytes);
+		expect(statSync(note, { bigint: true }).mtimeNs).toBe(beforeMtime);
 	});
 
 	test("refuses changed checkout identity before spawn", async () => {
@@ -215,5 +284,36 @@ describe("public code-target activation contract", () => {
 			code: "OPENER_UNAVAILABLE",
 			actions: [{ kind: "settings", label: "Opener settings" }],
 		});
+	});
+
+	test("returns a typed spawn failure without changing state or spawning the fake", async () => {
+		await using resources = new AsyncDisposableStack();
+		const fixture = await createOpenerFixture({
+			routeDependencies: {
+				launch: async () => ({
+					ok: false,
+					code: "OPENER_SPAWN_FAILED",
+					error: "Controlled opener spawn failure.",
+				}),
+			},
+		});
+		resources.defer(() => fixture.dispose());
+		const invocation = fixture.invocation("immediate");
+		resources.defer(() => invocation.releaseAndWait());
+		await saveSelection(fixture, invocation);
+		const stateBytes = readFileSync(fixture.configFile);
+		const stateMtime = statSync(fixture.configFile, { bigint: true }).mtimeNs;
+
+		const result = await activate(fixture);
+		expect(result.status).toBe(500);
+		expect(CodeTargetOpenReplySchema.parse(result.body)).toEqual({
+			success: false,
+			code: "OPENER_SPAWN_FAILED",
+			error: "Controlled opener spawn failure.",
+			actions: [{ kind: "settings", label: "Opener settings" }],
+		});
+		expect(readdirSync(invocation.captureDirectory)).toEqual([]);
+		expect(readFileSync(fixture.configFile)).toEqual(stateBytes);
+		expect(statSync(fixture.configFile, { bigint: true }).mtimeNs).toBe(stateMtime);
 	});
 });

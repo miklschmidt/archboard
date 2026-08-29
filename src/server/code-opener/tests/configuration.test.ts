@@ -47,8 +47,14 @@ describe("machine opener state", () => {
 
 	test("reports corrupt state and reset atomically recovers it", () => {
 		saveOpenerSelection({ version: 1, kind: "platform" });
-		writeFileSync(config, "not-json");
+		const corrupt = Buffer.from("not-json\n");
+		writeFileSync(config, corrupt);
 		expect(readOpenerSelection()).toMatchObject({ ok: false, code: "OPENER_CONFIG_INVALID" });
+		expect(saveOpenerSelection({ version: 1, kind: "preset", preset: "zed" })).toMatchObject({
+			ok: false,
+			code: "OPENER_CONFIG_INVALID",
+		});
+		expect(readFileSync(config)).toEqual(corrupt);
 		expect(resetOpenerSelection()).toEqual({
 			ok: true,
 			selection: { version: 1, kind: "platform" },

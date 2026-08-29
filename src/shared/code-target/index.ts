@@ -5,7 +5,6 @@ const MAX_ARGV = 32;
 const MAX_ARG_BYTES = 16 * 1024;
 const NonemptyString = z.string().trim().min(1);
 const SafeString = z.string().refine((value) => !value.includes("\0"), "NUL is not allowed");
-
 const PlatformSelectionSchema = z
 	.object({ version: z.literal(1), kind: z.literal("platform") })
 	.strict();
@@ -45,19 +44,16 @@ const CustomSelectionSchema = z
 			});
 		}
 	});
-
 export const OpenerSelectionSchema = z.discriminatedUnion("kind", [
 	PlatformSelectionSchema,
 	PresetSelectionSchema,
 	CustomSelectionSchema,
 ]);
 export type OpenerSelection = z.infer<typeof OpenerSelectionSchema>;
-
 export const OpenerCommandSchema = z
 	.object({ executable: NonemptyString, argv: z.array(z.string()).max(MAX_ARGV) })
 	.strict();
 export type OpenerCommand = z.infer<typeof OpenerCommandSchema>;
-
 export const CodeBindingSchema = z
 	.object({
 		repo: NonemptyString,
@@ -68,7 +64,6 @@ export const CodeBindingSchema = z
 	})
 	.strict();
 export type CodeBinding = z.infer<typeof CodeBindingSchema>;
-
 export const CodeTargetOpenRequestSchema = z
 	.object({ board: NonemptyString, element: NonemptyString })
 	.strict();
