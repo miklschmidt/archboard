@@ -3,7 +3,12 @@ import { z } from "zod";
 import type { AgentElementInput } from "../engine/apply-element-input.js";
 import type { ServerElement } from "../engine/types.js";
 import { readElementMetadata } from "../engine/metadata.js";
-import { decodePath, decodeRecords, type DecodedRecord } from "./lib/decode.js";
+import {
+	decodePath,
+	decodeRecords,
+	persistedConnectorPointChainEligibility,
+	type DecodedRecord,
+} from "./lib/decode.js";
 import { intersectSegments, point, type ExactPoint, type Segment } from "./lib/geometry.js";
 import {
 	INSPECTION_FIELDS,
@@ -93,7 +98,6 @@ export function bridgeMetadataOf(element: ServerElement): BridgeMetadata | null 
 }
 
 const supportedAngle = (value: unknown): boolean => value === undefined || value === 0;
-const absentOrFalse = (value: unknown): boolean => value === undefined || value === false;
 
 function supportedConnector(
 	element: ServerElement,
@@ -107,9 +111,6 @@ function supportedConnector(
 		(element.type !== "arrow" && element.type !== "line") ||
 		element.isDeleted ||
 		!supportedAngle(element.angle) ||
-		element.roundness != null ||
-		!absentOrFalse(dynamic.elbowed) ||
-		!absentOrFalse(dynamic.fixedSegments) ||
 		dynamic.curve !== undefined ||
 		dynamic.curveKind !== undefined
 	)
@@ -118,6 +119,7 @@ function supportedConnector(
 	if (!record?.live || !record.usableId) return null;
 	const decoded = decodePath(record);
 	if (!decoded.ok || !decoded.scenePoints || decoded.zeroSegments.length > 0) return null;
+	if (!persistedConnectorPointChainEligibility(record, decoded).eligible) return null;
 	const segments = decoded.scenePoints.slice(0, -1).map((a, index) => ({
 		connectorId: element.id,
 		sourceIndex,
@@ -323,7 +325,9 @@ export function planBridgeCreate(input: PlanBridgeCreateInput): BridgeCreatePlan
 	const over = supportedConnector(overElement, input.elements.indexOf(overElement));
 	const under = supportedConnector(underElement, input.elements.indexOf(underElement));
 	if (!over || !under)
-		throw new BridgeRefusal("Both sources must be supported straight arrow/line connectors.");
+		throw new BridgeRefusal(
+			"Both sources must be live arrow/line connectors at zero rotation, without explicit curve fields, with finite non-zero point-chain segments; elbow coordinates must stay within ±1,000,000.",
+		);
 	const style = strokeStyleOf(overElement);
 	if (!style) throw new BridgeRefusal("The over-connector has an unusable stroke style.");
 	const candidates = crossingCandidates(over.segments, under.segments);

@@ -12,7 +12,7 @@ import {
 	planBridgeRemoval,
 	validateBridgeDecorations,
 } from "../bridge.js";
-import { inspectBoard } from "../index.js";
+import { inspectBoard, type InspectionReport } from "../index.js";
 import { connector, crossingConnectors } from "./fixtures/elements.js";
 
 const prepared = () => {
@@ -24,6 +24,30 @@ const prepared = () => {
 		underConnectorId: "under",
 		background: "#ffffff",
 	});
+	const crossing = inspectBoard(sources).findings.find(
+		(
+			finding,
+		): finding is Extract<
+			InspectionReport["findings"][number],
+			{
+				code: "CONNECTOR_INTERSECTION_UNMARKED";
+			}
+		> =>
+			finding.code === "CONNECTOR_INTERSECTION_UNMARKED" &&
+			new Set([finding.details.firstConnectorId, finding.details.secondConnectorId]).size === 2 &&
+			new Set([finding.details.firstConnectorId, finding.details.secondConnectorId]).has("over") &&
+			new Set([finding.details.firstConnectorId, finding.details.secondConnectorId]).has("under"),
+	);
+	expect(crossing).toBeDefined();
+	if (crossing) {
+		const segmentIndexFor = (connectorId: string) =>
+			crossing.details.firstConnectorId === connectorId
+				? crossing.details.firstSegmentIndex
+				: crossing.details.secondSegmentIndex;
+		expect(plan.overSegmentIndex).toBe(segmentIndexFor(plan.overConnectorId));
+		expect(plan.underSegmentIndex).toBe(segmentIndexFor(plan.underConnectorId));
+		expect(plan.crossing).toEqual(crossing.details.point);
+	}
 	const board = new Map(sources.map((element) => [element.id, element]));
 	const parts = applyElementInput(board, {
 		upserts: [...plan.inputs],
