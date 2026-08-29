@@ -129,7 +129,7 @@ test("applies label input, preserves order, and pins converter output", () => {
 				y: 0,
 				width: 200,
 				height: 80,
-				label: { text: "AuthService" },
+				labelText: "AuthService",
 			},
 			{
 				id: "wire",
@@ -140,7 +140,7 @@ test("applies label input, preserves order, and pins converter output", () => {
 					[0, 0],
 					[300, 0],
 				],
-				label: { text: "HTTP" },
+				labelText: "HTTP",
 			},
 		];
 		const wrapped = expandForBoard(
@@ -178,7 +178,7 @@ test("applies label input, preserves order, and pins converter output", () => {
 			standalone.fontSize === 20,
 			`a standalone text is fontSize ${standalone.fontSize}, not 20`,
 		);
-		const shapeLabel = only({ ...box, label: { text: "AuthService" } }, "text");
+		const shapeLabel = only({ ...box, labelText: "AuthService" }, "text");
 		assert(
 			shapeLabel.fontFamily === 5,
 			`a shape's label is fontFamily ${shapeLabel.fontFamily}, not Excalifont`,
@@ -197,7 +197,7 @@ test("applies label input, preserves order, and pins converter output", () => {
 					[0, 0],
 					[100, 0],
 				],
-				label: { text: "gRPC" },
+				labelText: "gRPC",
 			},
 			"text",
 		);

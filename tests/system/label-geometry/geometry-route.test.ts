@@ -256,7 +256,6 @@ describe("geometry routes", () => {
 				elementId: "c",
 				focus: 0,
 				gap: BOUND_ARROW_GAP,
-				fixedPoint: null,
 			},
 			points: [
 				[0, 0],
@@ -330,7 +329,7 @@ describe("geometry routes", () => {
 		const settledArrow = await wire("user-arrow");
 		const centred = boundEndpoint(
 			capturedFocusedNode,
-			{ elementId: "d", focus: 0, gap: 15, fixedPoint: null },
+			{ elementId: "d", focus: 0, gap: 15 },
 			at(settledArrow, 0),
 			settledEnd,
 		);
@@ -360,7 +359,7 @@ describe("geometry routes", () => {
 		);
 		const expectedNudged = boundEndpoint(
 			nudgedNode,
-			{ elementId: "d", focus: 0.9, gap: 15, fixedPoint: null },
+			{ elementId: "d", focus: 0.9, gap: 15 },
 			capturedArrowStart,
 			nudged,
 		);

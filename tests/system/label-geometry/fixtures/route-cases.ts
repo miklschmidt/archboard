@@ -10,7 +10,7 @@ const BindingSchema = z
 		elementId: z.string(),
 		focus: z.number(),
 		gap: z.number(),
-		fixedPoint: PointSchema.nullable(),
+		fixedPoint: PointSchema.optional(),
 	})
 	.nullable();
 const MetadataSchema = z.strictObject({
@@ -333,5 +333,5 @@ export const capturedUserArrow = (): RouteElementRequest =>
 			],
 		],
 		startBinding: null,
-		endBinding: { elementId: "d", focus: 0.9, gap: 15, fixedPoint: null },
+		endBinding: { elementId: "d", focus: 0.9, gap: 15 },
 	});

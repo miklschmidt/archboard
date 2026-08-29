@@ -88,6 +88,8 @@ describe("label routes", () => {
 				body,
 				doing: "checking that a label goes where its shape goes",
 			});
+			if ((response.body as { success?: unknown }).success !== true)
+				throw new Error(`${method} ${url} failed: ${JSON.stringify(response.body)}`);
 			AcknowledgementRouteResponseSchema.parse(response.body);
 		};
 		const board = "?board=scratch";
@@ -207,6 +209,8 @@ describe("label routes", () => {
 			body: { name: "labelled" },
 			doing: "checking that a label goes where its shape goes",
 		});
+		if ((savedResponse.body as { success?: unknown }).success !== true)
+			throw new Error(`Saving labelled failed: ${JSON.stringify(savedResponse.body)}`);
 		const saved = SuccessfulRouteResponseSchema.parse(savedResponse.body);
 		assert(saved.success, `saving the board failed: ${JSON.stringify(saved?.error ?? saved)}`);
 		const reopenedResponse = await request<unknown>("/api/boards/open", {
@@ -214,6 +218,8 @@ describe("label routes", () => {
 			body: { board: "labelled" },
 			doing: "checking that a label goes where its shape goes",
 		});
+		if ((reopenedResponse.body as { success?: unknown }).success !== true)
+			throw new Error(`Reopening labelled failed: ${JSON.stringify(reopenedResponse.body)}`);
 		const reopened = SuccessfulRouteResponseSchema.parse(reopenedResponse.body);
 		assert(
 			reopened.success,

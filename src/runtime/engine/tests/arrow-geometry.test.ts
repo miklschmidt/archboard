@@ -31,7 +31,6 @@ const binding = (over: Partial<ArrowBinding> = {}): ArrowBinding => ({
 	elementId: "box",
 	focus: 0,
 	gap: BOUND_ARROW_GAP,
-	fixedPoint: null,
 	...over,
 });
 
@@ -155,7 +154,7 @@ test("pins bound arrow endpoints, focus, gap, rotations, bends, and label anchor
 				[300, 0],
 				[300, 200],
 			],
-			label: { text: "routes via" },
+			labelText: "routes via",
 		} satisfies LegacyElementIngress;
 		const expanded = ExpandedElementSchema.array().parse(
 			expandElements([bent], { deterministic: true }),
@@ -193,7 +192,7 @@ test("pins bound arrow endpoints, focus, gap, rotations, bends, and label anchor
 				[0, 0],
 				[200, 100],
 			],
-			label: { text: "calls" },
+			labelText: "calls",
 		} satisfies LegacyElementIngress;
 		const straightText = required(
 			ExpandedElementSchema.array()

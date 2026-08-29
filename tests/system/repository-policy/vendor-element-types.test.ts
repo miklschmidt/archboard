@@ -30,7 +30,6 @@ interface Violation {
 const inputIngressAllowlist = new Set([
 	"src/runtime/engine/apply-element-input.ts",
 	"src/runtime/engine/expand-elements.ts",
-	"src/runtime/engine/labels.ts",
 	"src/runtime/engine/lib/agent-element-input.ts",
 	"src/runtime/engine/lib/element-input-schema.ts",
 ]);
@@ -96,7 +95,7 @@ function aliasReadViolations(file: string, source: string): Violation[] {
 	const patterns = [
 		{
 			reason: "runtime input alias read",
-			re: /(?<!\.)\b(?:element|el|input|raw|rest|source|statement)\s*\.\s*(?:label|start|end|startElementId|endElementId)\b/,
+			re: /(?<!\.)\b(?:element|el|input|raw|rest|source|statement)\s*(?:\?\.|\.)\s*(?:label|start|end|startElementId|endElementId)\b/,
 		},
 		{
 			reason: "runtime input alias indexed read",
@@ -104,7 +103,7 @@ function aliasReadViolations(file: string, source: string): Violation[] {
 		},
 		{
 			reason: "runtime object-point input read",
-			re: /Array\.isArray\([^\n]*(?:point|entry)[^\n]*\)[^\n]*\?[^\n]*:[^\n]*(?:point|entry)\s*\.\s*[xy]\b/,
+			re: /Array\.isArray\(\s*(?:point|entry|candidate|last)\s*\)[\s\S]{0,240}\b(point|entry|candidate|last|pointRecord|object)\s*(?:\?\.|\.)\s*x\b[\s\S]{0,160}\b\1\s*(?:\?\.|\.)\s*y\b/,
 		},
 		{
 			reason: "runtime string-font input read",
@@ -157,16 +156,42 @@ describe("vendor-derived board element policy", () => {
 	test("rejects runtime input-alias reads outside the named ingress owners", () => {
 		for (const source of [
 			`const value = element.label;`,
+			`const value = element
+				?.label
+				?.text;`,
 			`const value = raw["start"];`,
 			`const value = input.endElementId;`,
 			`const point = Array.isArray(entry) ? entry : [entry.x, entry.y];`,
+			`const pointRecord =
+				point && typeof point === "object" && !Array.isArray(point)
+					? (point as Record<string, unknown>)
+					: null;
+			const x = finite(Array.isArray(point) ? point[0] : pointRecord?.x);
+			const y = finite(Array.isArray(point) ? point[1] : pointRecord?.y);`,
+			`const object =
+				candidate && typeof candidate === "object" && !Array.isArray(candidate)
+					? (candidate as Record<string, unknown>)
+					: null;
+			const x = Array.isArray(candidate) ? candidate[0] : object?.x;
+			const y = Array.isArray(candidate) ? candidate[1] : object?.y;`,
+			`if (Array.isArray(last)) {
+				hash = fold(fold(hash, last[0]), last[1]);
+			} else if (last) {
+				hash = fold(fold(hash, last.x), last.y);
+			}`,
 			`const family = typeof raw.fontFamily === "string" ? raw.fontFamily : 5;`,
 			`const binding = { ...startBinding, elementId };`,
 			`const mode = binding.mode;`,
 		])
 			expect(aliasReadViolations("src/runtime/engine/consumer.ts", source)).not.toEqual([]);
 		expect(
-			aliasReadViolations("src/runtime/engine/lib/agent-element-input.ts", `raw.start; raw.label`),
+			aliasReadViolations(
+				"src/runtime/engine/lib/agent-element-input.ts",
+				`raw.start;
+				raw.label;
+				const x = Array.isArray(point) ? point[0] : pointRecord?.x;
+				const y = Array.isArray(point) ? point[1] : pointRecord?.y;`,
+			),
 		).toEqual([]);
 		expect(
 			aliasReadViolations(

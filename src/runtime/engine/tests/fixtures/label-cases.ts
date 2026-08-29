@@ -48,7 +48,7 @@ export function drawnLabels(): LegacyElementIngress[] {
 			y: 0,
 			width: 200,
 			height: 80,
-			label: { text: "AuthService" },
+			labelText: "AuthService",
 		},
 		{
 			id: "gw",
@@ -57,7 +57,7 @@ export function drawnLabels(): LegacyElementIngress[] {
 			y: 0,
 			width: 200,
 			height: 80,
-			label: { text: "Gateway" },
+			labelText: "Gateway",
 		},
 		{
 			id: "wire",
@@ -70,9 +70,9 @@ export function drawnLabels(): LegacyElementIngress[] {
 				[0, 0],
 				[200, 0],
 			],
-			start: { id: "svc" },
-			end: { id: "gw" },
-			label: { text: "HTTP" },
+			startBinding: { elementId: "svc", focus: 0, gap: 4 },
+			endBinding: { elementId: "gw", focus: 0, gap: 4 },
+			labelText: "HTTP",
 		},
 	];
 }

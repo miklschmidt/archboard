@@ -124,7 +124,7 @@ export const humanArrowInput = {
 		[-179, -50],
 	],
 	startBinding: null,
-	endBinding: { elementId: "human-node", focus: 0.9, gap: 15, fixedPoint: null },
+	endBinding: { elementId: "human-node", focus: 0.9, gap: 15 },
 } as const satisfies AuthoredElementInput;
 
 export const legacyTextInput = {

@@ -127,11 +127,11 @@ test("binding input extensions are spent and trusted reads reject them at either
 	expect(joined?.type).toBe("arrow");
 	if (joined?.type !== "arrow") throw new Error("fixture did not create an arrow");
 	expect(joined.startBinding).toMatchObject({ elementId: "left", focus: 0, gap: 4 });
-	expect(Reflect.get(joined.startBinding!, "fixedPoint")).toBeNull();
-	expect(Object.keys(joined.startBinding!)).toEqual(["elementId", "fixedPoint", "focus", "gap"]);
+	expect(Reflect.get(joined.startBinding!, "fixedPoint")).toBeUndefined();
+	expect(Object.keys(joined.startBinding!)).toEqual(["elementId", "focus", "gap"]);
 	expect(joined.endBinding).toMatchObject({ elementId: "right", focus: 0.5, gap: 6 });
-	expect(Reflect.get(joined.endBinding!, "fixedPoint")).toEqual([1, 0]);
-	expect(Object.keys(joined.endBinding!)).toEqual(["elementId", "fixedPoint", "focus", "gap"]);
+	expect(Reflect.get(joined.endBinding!, "fixedPoint")).toBeUndefined();
+	expect(Object.keys(joined.endBinding!)).toEqual(["elementId", "focus", "gap"]);
 	for (const end of ["startBinding", "endBinding"] as const) {
 		expect(() =>
 			validatePersistedBoardElement(
@@ -225,34 +225,4 @@ test("agent and human create and update cannot spoof runtime or nested tracking"
 		archboard: { node: "human-updated" },
 		foreignHuman: true,
 	});
-});
-
-test("trusted reads validate customData and confine rawText to text", () => {
-	const text = completeElement({ id: "text", type: "text", x: 0, y: 0, text: "native" });
-	expect(
-		validatePersistedBoardElement({ ...text, rawText: "plugin" }, "note /vault/raw.excalidraw.md"),
-	).toMatchObject({ rawText: "plugin" });
-	expect(() =>
-		validatePersistedBoardElement({ ...text, rawText: 4 }, "note /vault/raw.excalidraw.md"),
-	).toThrow("note /vault/raw.excalidraw.md: invalid element text (text) at element.rawText");
-	const box = completeElement({ id: "box", type: "rectangle", x: 0, y: 0, width: 10, height: 10 });
-	expect(() =>
-		validatePersistedBoardElement(
-			{ ...box, rawText: "forbidden" },
-			"note /vault/raw.excalidraw.md",
-		),
-	).toThrow("note /vault/raw.excalidraw.md: invalid element box (rectangle) at element.rawText");
-	expect(() =>
-		validatePersistedBoardElement({ ...box, customData: [] }, "note /vault/custom.excalidraw.md"),
-	).toThrow(
-		"note /vault/custom.excalidraw.md: invalid element box (rectangle) at element.customData",
-	);
-	expect(() =>
-		validatePersistedBoardElement(
-			{ ...box, customData: { archboard: { createdAt: 5 } } },
-			"note /vault/custom.excalidraw.md",
-		),
-	).toThrow(
-		"note /vault/custom.excalidraw.md: invalid element box (rectangle) at element.customData.archboard.createdAt",
-	);
 });

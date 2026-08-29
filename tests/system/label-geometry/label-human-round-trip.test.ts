@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { expandForBoard } from "../../../src/runtime/engine/expand-elements.ts";
+import { wellFormAgentStatement } from "../../../src/runtime/engine/lib/agent-element-input.ts";
 import { boundTextsByContainer, labelTextIdFor } from "../../../src/runtime/engine/labels.ts";
 import { isBlockId } from "../../../src/shared/ids/ids.ts";
 import {
@@ -406,7 +407,10 @@ test("preserves human clear, retype, and later agent precedence", () => {
 		);
 	}
 	{
-		const fresh = expandForBoard(drawn().slice(0, 1), new Map());
+		const freshInput = wellFormAgentStatement(
+			drawn()[0] as unknown as Record<string, unknown>,
+		) as ReturnType<typeof drawn>[number];
+		const fresh = expandForBoard([freshInput], new Map());
 		assert(
 			fresh.length === 2,
 			`an agent's label produced ${fresh.length} elements, not a box and its text`,
