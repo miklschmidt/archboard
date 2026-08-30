@@ -16,12 +16,10 @@ import {
 	decodeServerNotification,
 	decodeServerRequest,
 } from "../index.js";
+import { CODEX_PROTOCOL_GENERATED_NOTIFICATION_UNION_PATHS } from "../generated-notification-inventory.js";
 import { clientNotificationFixtures, responseFixtures, serverRequestFixtures } from "./fixtures.js";
 import { notificationFixture, serverNotificationFixtures } from "./notification-fixtures.js";
-import {
-	GENERATED_UNION_BEARING_NOTIFICATION_METHODS,
-	SERVER_NOTIFICATION_UNION_CHALLENGES,
-} from "./union-challenges.js";
+import { SERVER_NOTIFICATION_UNION_CHALLENGES } from "./union-challenges.js";
 
 describe("public response boundary", () => {
 	for (const method of RESPONSE_METHODS)
@@ -81,12 +79,17 @@ describe("generated closed-union challenges", () => {
 		expect(Object.keys(SERVER_NOTIFICATION_UNION_CHALLENGES).toSorted()).toEqual(
 			[...SERVER_NOTIFICATION_METHODS].toSorted(),
 		);
-		const challengedMethods = SERVER_NOTIFICATION_METHODS.filter(
-			(method) => SERVER_NOTIFICATION_UNION_CHALLENGES[method].length > 0,
-		).toSorted();
-		expect(challengedMethods).toEqual([...GENERATED_UNION_BEARING_NOTIFICATION_METHODS].toSorted());
-		for (const method of GENERATED_UNION_BEARING_NOTIFICATION_METHODS)
-			expect(SERVER_NOTIFICATION_UNION_CHALLENGES[method].length).toBeGreaterThan(0);
+		const challengePaths = SERVER_NOTIFICATION_METHODS.flatMap((method) =>
+			SERVER_NOTIFICATION_UNION_CHALLENGES[method].map(
+				(challenge) => `${method}:${challenge.name}`,
+			),
+		);
+		const canonicalPaths = CODEX_PROTOCOL_GENERATED_NOTIFICATION_UNION_PATHS.map(
+			({ method, path }) => `${method}:${path}`,
+		);
+		expect(new Set(challengePaths).size).toBe(challengePaths.length);
+		expect(new Set(canonicalPaths).size).toBe(canonicalPaths.length);
+		expect(challengePaths.toSorted()).toEqual(canonicalPaths.toSorted());
 	});
 
 	for (const method of SERVER_NOTIFICATION_METHODS)
@@ -95,6 +98,34 @@ describe("generated closed-union challenges", () => {
 				const params = challenge.mutate(notificationFixture(method));
 				expect(() => decodeServerNotification({ method, params })).toThrow(ProtocolDecodeError);
 			});
+
+	test("keeps generated JsonValue extension points open", () => {
+		const params = {
+			...(notificationFixture("item/started") as Record<string, unknown>),
+			item: {
+				type: "mcpToolCall",
+				id: "item-1",
+				server: "fixture",
+				tool: "fixture",
+				status: "completed",
+				arguments: { nested: ["future", { value: true }] },
+				appContext: null,
+				pluginId: null,
+				readOnlyHint: null,
+				result: {
+					content: [{ providerDefined: true }],
+					structuredContent: { nested: ["future"] },
+					_meta: ["future", { providerDefined: true }],
+				},
+				error: null,
+				durationMs: 1,
+			},
+		};
+		expect(decodeServerNotification({ method: "item/started", params }) as unknown).toEqual({
+			method: "item/started",
+			params,
+		});
+	});
 });
 
 describe("reverse request boundary", () => {

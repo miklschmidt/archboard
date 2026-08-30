@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -12,6 +12,54 @@ import {
 	digestGeneratedTree,
 	runCodexProtocolConformance,
 } from "../index.js";
+import { runCodexProtocolConformanceForTest } from "../conformance.js";
+import { deriveGeneratedNotificationUnionPaths } from "../generated-notification-inventory.js";
+
+function temporaryGenerationDirectories(): string[] {
+	return readdirSync(tmpdir())
+		.filter((entry) => entry.startsWith("archboard-codex-generated-"))
+		.toSorted();
+}
+
+function shellQuote(value: string): string {
+	return `'${value.replaceAll("'", "'\\''")}'`;
+}
+
+function fakeCodexExecutable(root: string, action: string): string {
+	const executablePath = join(root, "fake-codex");
+	const script = [
+		"#!/bin/sh",
+		"set -eu",
+		'if [ "${1-}" = "--version" ]; then',
+		`printf '%s\\n' '${CODEX_PROTOCOL_BINARY_VERSION}'`,
+		"exit 0",
+		"fi",
+		'if [ "${1-}" = "app-server" ]; then',
+		action,
+		"fi",
+		"exit 64",
+	].join("\n");
+	writeFileSync(executablePath, script);
+	chmodSync(executablePath, 0o755);
+	return executablePath;
+}
+
+function copyGeneratedFixtureAction(fixtureRoot: string): string {
+	return [
+		'out=""',
+		'while [ "$#" -gt 0 ]; do',
+		'if [ "$1" = "--out" ]; then out="$2"; fi',
+		"shift",
+		"done",
+		'mkdir -p "$out"',
+		`cp -R ${shellQuote(fixtureRoot)}/. "$out"/`,
+		"exit 0",
+	].join("\n");
+}
+
+function expectTemporaryGenerationDirectoriesToBe(before: readonly string[]): void {
+	expect(temporaryGenerationDirectories()).toEqual([...before]);
+}
 
 describe("portable Codex protocol conformance", () => {
 	test("digests the same TypeScript tree independent of creation order", () => {
@@ -78,6 +126,153 @@ describe("portable Codex protocol conformance", () => {
 		expect(thrown).toBeInstanceOf(CodexProtocolConformanceError);
 		expect(thrown).toMatchObject({ phase: "version", executablePath: process.execPath });
 		expect((thrown as Error).message).toContain(`expected ${CODEX_PROTOCOL_BINARY_VERSION}`);
+	});
+
+	test("reports generator command failures as generation failures and cleans up", () => {
+		const root = mkdtempSync(join(tmpdir(), "archboard-generator-failure-"));
+		const executablePath = fakeCodexExecutable(root, "exit 23");
+		const before = temporaryGenerationDirectories();
+		try {
+			let thrown: unknown;
+			try {
+				runCodexProtocolConformance(executablePath);
+			} catch (error) {
+				thrown = error;
+			}
+			expect(thrown).toBeInstanceOf(CodexProtocolConformanceError);
+			expect(thrown).toMatchObject({ phase: "generation", executablePath });
+			expect((thrown as Error).message).toContain("could not generate the experimental tree");
+			expect((thrown as Error).message).toContain(CODEX_PROTOCOL_BINARY_VERSION);
+			expectTemporaryGenerationDirectoriesToBe(before);
+		} finally {
+			rmSync(root, { recursive: true, force: true });
+		}
+	});
+
+	test("reports generated file-count mismatches with digest details and cleans up", () => {
+		const root = mkdtempSync(join(tmpdir(), "archboard-generator-count-"));
+		const fixtureRoot = join(root, "fixture");
+		mkdirSync(fixtureRoot);
+		writeFileSync(join(fixtureRoot, "only.ts"), "export type Only = string;\n");
+		const executablePath = fakeCodexExecutable(root, copyGeneratedFixtureAction(fixtureRoot));
+		const received = digestGeneratedTree(fixtureRoot);
+		const before = temporaryGenerationDirectories();
+		try {
+			let thrown: unknown;
+			try {
+				runCodexProtocolConformance(executablePath);
+			} catch (error) {
+				thrown = error;
+			}
+			expect(thrown).toBeInstanceOf(CodexProtocolConformanceError);
+			expect(thrown).toMatchObject({ phase: "digest", executablePath });
+			expect((thrown as Error).message).toContain(
+				`expected ${CODEX_PROTOCOL_GENERATED_FILE_COUNT} files and ${CODEX_PROTOCOL_GENERATED_TREE_SHA256}`,
+			);
+			expect((thrown as Error).message).toContain(
+				`received ${received.fileCount} files and ${received.sha256}`,
+			);
+			expectTemporaryGenerationDirectoriesToBe(before);
+		} finally {
+			rmSync(root, { recursive: true, force: true });
+		}
+	});
+
+	test("reports same-count byte mismatches with the received digest and cleans up", () => {
+		const root = mkdtempSync(join(tmpdir(), "archboard-generator-bytes-"));
+		const fixtureRoot = join(root, "fixture");
+		mkdirSync(fixtureRoot);
+		for (let index = 0; index < CODEX_PROTOCOL_GENERATED_FILE_COUNT; index += 1)
+			writeFileSync(
+				join(fixtureRoot, `fixture-${index}.ts`),
+				`export type Fixture${index} = string;\n`,
+			);
+		const executablePath = fakeCodexExecutable(root, copyGeneratedFixtureAction(fixtureRoot));
+		const received = digestGeneratedTree(fixtureRoot);
+		expect(received.fileCount).toBe(CODEX_PROTOCOL_GENERATED_FILE_COUNT);
+		const before = temporaryGenerationDirectories();
+		try {
+			let thrown: unknown;
+			try {
+				runCodexProtocolConformance(executablePath);
+			} catch (error) {
+				thrown = error;
+			}
+			expect(thrown).toBeInstanceOf(CodexProtocolConformanceError);
+			expect(thrown).toMatchObject({ phase: "digest", executablePath });
+			expect((thrown as Error).message).toContain(
+				`received ${CODEX_PROTOCOL_GENERATED_FILE_COUNT} files and ${received.sha256}`,
+			);
+			expectTemporaryGenerationDirectoriesToBe(before);
+		} finally {
+			rmSync(root, { recursive: true, force: true });
+		}
+	});
+
+	test("accepts a generated fixture through the narrow test-only manifest helper", () => {
+		const root = mkdtempSync(join(tmpdir(), "archboard-generator-success-"));
+		const fixtureRoot = join(root, "fixture");
+		mkdirSync(fixtureRoot);
+		writeFileSync(
+			join(fixtureRoot, "ServerNotification.ts"),
+			'export type ServerNotification = { "method": "fixture", "params": FixtureParams };\nexport type FixtureParams = { item: FixtureItem };\nexport type FixtureItem = { "type": "first" } | { "type": "second" };\n',
+		);
+		const digest = digestGeneratedTree(fixtureRoot);
+		const notificationUnionPaths = deriveGeneratedNotificationUnionPaths(fixtureRoot);
+		const executablePath = fakeCodexExecutable(root, copyGeneratedFixtureAction(fixtureRoot));
+		const before = temporaryGenerationDirectories();
+		try {
+			const result = runCodexProtocolConformanceForTest(executablePath, {
+				binaryVersion: CODEX_PROTOCOL_BINARY_VERSION,
+				generatedFileCount: digest.fileCount,
+				generatedTreeSha256: digest.sha256,
+				notificationUnionPaths,
+			});
+			expect(result).toEqual({
+				executablePath,
+				version: CODEX_PROTOCOL_BINARY_VERSION,
+				fileCount: digest.fileCount,
+				sha256: digest.sha256,
+			});
+			expectTemporaryGenerationDirectoriesToBe(before);
+		} finally {
+			rmSync(root, { recursive: true, force: true });
+		}
+	});
+
+	test("reports generated notification inventory mismatches and cleans up", () => {
+		const root = mkdtempSync(join(tmpdir(), "archboard-generator-inventory-"));
+		const fixtureRoot = join(root, "fixture");
+		mkdirSync(fixtureRoot);
+		writeFileSync(
+			join(fixtureRoot, "ServerNotification.ts"),
+			'export type ServerNotification = { "method": "fixture", "params": FixtureParams };\nexport type FixtureParams = { item: FixtureItem };\nexport type FixtureItem = { "type": "first" } | { "type": "second" };\n',
+		);
+		const digest = digestGeneratedTree(fixtureRoot);
+		const executablePath = fakeCodexExecutable(root, copyGeneratedFixtureAction(fixtureRoot));
+		const before = temporaryGenerationDirectories();
+		try {
+			let thrown: unknown;
+			try {
+				runCodexProtocolConformanceForTest(executablePath, {
+					binaryVersion: CODEX_PROTOCOL_BINARY_VERSION,
+					generatedFileCount: digest.fileCount,
+					generatedTreeSha256: digest.sha256,
+					notificationUnionPaths: [{ method: "fixture", path: "item.future" }],
+				});
+			} catch (error) {
+				thrown = error;
+			}
+			expect(thrown).toBeInstanceOf(CodexProtocolConformanceError);
+			expect(thrown).toMatchObject({ phase: "inventory", executablePath });
+			expect((thrown as Error).message).toContain(
+				"generated notification-union inventory mismatch",
+			);
+			expect((thrown as Error).message).toContain("expected 1 paths, received 1");
+			expectTemporaryGenerationDirectoriesToBe(before);
+		} finally {
+			rmSync(root, { recursive: true, force: true });
+		}
 	});
 
 	test("keeps the manifest expectations explicit for manual conformance", () => {
