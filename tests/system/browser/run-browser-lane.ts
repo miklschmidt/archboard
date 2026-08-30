@@ -19,6 +19,7 @@ import { fileURLToPath } from "node:url";
 import {
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
 	TEST_BROWSER_POLL_MS,
+	TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS,
 } from "../../../src/shared/timing/timing.ts";
 import {
 	BROWSER_ADAPTER_PATH,
@@ -143,6 +144,7 @@ function childName(index: number): string {
 }
 
 function ownerEnvironment(
+	file: BrowserTestPath,
 	laneRoot: string,
 	ownerRoot: string,
 	browserExecutable: string | undefined,
@@ -167,6 +169,9 @@ function ownerEnvironment(
 		ARCHBOARD_TEST_BROWSER_OWNER_ROOT: ownerRoot,
 	};
 	if (browserExecutable) env.AGENT_BROWSER_EXECUTABLE_PATH = browserExecutable;
+	if (file === HUMAN_PERFORMANCE) {
+		env.AGENT_BROWSER_DEFAULT_TIMEOUT = String(TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS);
+	}
 	return env;
 }
 
@@ -431,7 +436,7 @@ async function runSelection(
 			const name = childName(index);
 			const ownerRoot = join(laneRoot, name);
 			mkdirSync(ownerRoot);
-			const env = ownerEnvironment(laneRoot, ownerRoot, browserExecutable);
+			const env = ownerEnvironment(file, laneRoot, ownerRoot, browserExecutable);
 			current = spawnOwner(file, env);
 			const processGroup = current.pid;
 			try {

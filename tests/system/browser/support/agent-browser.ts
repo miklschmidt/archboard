@@ -152,6 +152,9 @@ export function browserTestEnvironment(): Record<string, string> {
 	if (process.env.AGENT_BROWSER_EXECUTABLE_PATH) {
 		env.AGENT_BROWSER_EXECUTABLE_PATH = process.env.AGENT_BROWSER_EXECUTABLE_PATH;
 	}
+	if (process.env.AGENT_BROWSER_DEFAULT_TIMEOUT) {
+		env.AGENT_BROWSER_DEFAULT_TIMEOUT = process.env.AGENT_BROWSER_DEFAULT_TIMEOUT;
+	}
 	return env;
 }
 
