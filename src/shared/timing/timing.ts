@@ -379,7 +379,6 @@ export const TEST_BOARD_INSPECTION_TOTALITY_CASE_TIMEOUT_MS = 15_000;
 export const TEST_BOARD_INSPECTION_TERMINAL_CASE_TIMEOUT_MS = 40_000;
 export const TEST_BOARD_INSPECTION_PACKAGE_CASE_TIMEOUT_MS =
 	2 * TEST_BOARD_INSPECTION_TERMINAL_CASE_TIMEOUT_MS + 10_000;
-
 // ── Canvas subprocesses owned by checks (TASK-086) ───────────────────────
 
 /** Canvas identity startup stays below TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS with bounded shutdown room. */
@@ -495,6 +494,7 @@ export const TEST_BROWSER_COMMAND_TIMEOUT_MS = BROWSER_EXPORT_TIMEOUT_MS;
 export const TEST_BROWSER_POLL_MS = LOCK_POLL_MS;
 /** Extends the negative pane window past one debounce without reaching its settle cap. */
 export const TEST_PANE_DEBOUNCE_MARGIN_MS = 2 * TEST_BROWSER_POLL_MS;
-/** Fake opener poll/self-exit is 2s; owner case is five windows + 5s work: 3x implicit/~2.97x hosted, +4,313.41ms stress. */
+/** Aggregate Bun cases, not operation caps/SLAs: opener 15s clears 10,686.59ms stress; presentation 20s clears hosted 5,034ms / stressed 14,815.78ms. */
 export const TEST_OPENER_LIFECYCLE = { pollMs: 20, timeoutMs: 2_000 } as const;
 export const TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS = 15_000;
+export const TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS = 20_000;
