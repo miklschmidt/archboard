@@ -70,9 +70,7 @@ function replaceGeneratedAt(
 			return replaceGeneratedAt(value, tail, fieldName, actualPath, containingUnionPath);
 		if (Object.hasOwn(value, head!)) {
 			const nextContainingUnionPath =
-				tail.length && (head === "codexErrorInfo" || head === "output" || head === "source")
-					? [...actualPath, head]
-					: containingUnionPath;
+				tail.length && head === "output" ? [...actualPath, head] : containingUnionPath;
 			const replacement = replaceGeneratedAt(
 				value[head!],
 				tail,
