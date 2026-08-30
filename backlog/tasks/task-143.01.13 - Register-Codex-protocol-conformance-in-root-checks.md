@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-08-30 22:18'
+updated_date: '2026-08-30 22:32'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -18,6 +18,8 @@ modified_files:
   - src/runtime/codex-protocol/conformance.ts
   - src/runtime/codex-protocol/generated-method-inventory.ts
   - src/runtime/codex-protocol/tests/conformance.test.ts
+  - src/runtime/codex-protocol/index.ts
+  - src/runtime/codex-protocol/tests/method-inventory.test.ts
 parent_task_id: TASK-143.01
 priority: high
 type: task
@@ -47,6 +49,10 @@ Delegation profile: gpt-5.6-luna, high.
 2. Pin @openai/codex exactly 0.151.0 in package.json and bun.lock, prove frozen installation, and resolve the project-local executable rather than PATH or a global binary.
 3. Add the repository-policy conformance owner that runs exact experimental generation in a disposable directory, verifies version/file count/digest/API inventory, keeps the checkout unchanged, and emits actionable regeneration/review failures.
 4. Register the owner through the existing repository suite and root check path only, then run focused negative/positive owners, frozen install, type/lint/format, repository/module gates, and git diff/status checks.
+
+5. Close the response coverage gap with an explicitly authored 0.151.0 ClientRequest exclusion inventory, exact used-plus-excluded accounting, disjointness/order/drift checks, and independent challenge fixtures.
+
+6. Move all root executable resolution behind the unified actionable boundary, inject stable paths into synthetic cases, and cover resolver throws, escapes, mutation, and primary failure combinations.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -61,4 +67,8 @@ Validation: bun install --frozen-lockfile passed; focused root owner 3 pass / 14
 Remediation commit 6d582cd: derived response/client-notification/server-request/server-notification method inventories once from the generated temp tree; compared authored decoder coverage with exact sets for the non-superset directions and the known currentTime/read response alias; added fail-first missing-generated and missing-authored decoder regressions for every direction. Hardened the root owner to resolve/run/status through one boundary, always capture post-status in finally, preserve the primary generation failure, and report checkout mutation separately with pinned-binary regeneration plus decoder/generated-inventory review recovery.
 
 Remediation validation: bun test --isolate src/runtime/codex-protocol/tests/conformance.test.ts tests/system/repository-policy/codex-protocol-conformance.test.ts passed 25 tests / 96 expect; bun run test:repository passed 125 tests / 391 expect; bun run test:modules passed 1001 tests / 7007 expect; bun run type-check, bun run lint, bun run fmt:check, git diff --check, and bun install --frozen-lockfile passed. Real project-local Codex 0.151.0 generation matched 820 files and the pinned digest.
+
+Remediation commit 9bbfabe: the pinned Codex 0.151.0 ClientRequest tree has 157 generated methods, partitioned into 32 supported response methods plus the explicit currentTime/read ServerRequest response alias and 125 reviewed exclusions. Production conformance now requires the generated ClientRequest set to equal the 32 supported methods plus the exact fixed exclusion inventory, checks duplicate-free/disjoint/stable metadata, exact exhaustiveness, and verifies currentTime/read separately in ServerRequest. Independent challenge probes delete thread/start or currentTime/read from both response and decoder inventories, add/remove/drift/overlap/duplicate/reorder exclusions, and all fail. Root resolution has no direct package lookup outside the unified boundary; synthetic tests inject stable in-checkout paths and cover resolver throw/escape, post-status, mutation, and combined generation failure evidence.
+
+Final validation: focused conformance/root/inventory owners passed 35 tests / 129 expect; bun run test:repository passed 126 tests / 397 expect; bun run test:modules passed 1010 tests / 7034 expect; bun run type-check, bun run lint, bun run fmt:check, git diff --check, and bun install --frozen-lockfile passed. Real project-local Codex 0.151.0 generation matched 820 files and the pinned digest. Task remains In Progress with acceptance criteria unchecked.
 <!-- SECTION:NOTES:END -->
