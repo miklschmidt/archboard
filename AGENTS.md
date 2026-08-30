@@ -21,6 +21,12 @@ Where things are written down:
 - Work, open and closed: Backlog.md via the `backlog` CLI; never hand-edit
   files under `backlog/`
 
+## Shell platform contract
+
+Archboard's shell is desktop-only. Do not plan, implement, or gate phone/narrow
+responsive layouts unless the user explicitly reverses this decision.
+Desktop-sized touch interaction for the Samsung Flip remains supported.
+
 ## Upstream
 
 `main` is based on [yctimlin/mcp_excalidraw](https://github.com/yctimlin/mcp_excalidraw)
