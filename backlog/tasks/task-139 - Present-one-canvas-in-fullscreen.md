@@ -1,11 +1,11 @@
 ---
 id: TASK-139
 title: Present one canvas in fullscreen
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-29 16:19'
-updated_date: '2026-08-30 06:49'
+updated_date: '2026-08-30 07:01'
 labels: []
 dependencies: []
 priority: medium
@@ -21,12 +21,12 @@ A person presenting an architecture board needs a distraction-free view of one c
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A person can enter fullscreen presentation mode for the currently chosen canvas through a clear frontend control.
-- [ ] #2 Presentation mode hides the shell, navigation, controls, and every non-selected canvas while the selected canvas fills the available display.
-- [ ] #3 At most one canvas is presented at a time; choosing another canvas transfers presentation instead of creating a second fullscreen canvas.
-- [ ] #4 Exiting presentation restores the prior shell and pane layout without losing the open boards, live connection, selection, or unsaved held state.
-- [ ] #5 Keyboard and visible controls provide an accessible exit, and fullscreen refusal or loss returns to an accurate non-presenting state.
-- [ ] #6 Rendered browser coverage proves enter, single-canvas exclusivity, transfer, exit, and state restoration through the user interface.
+- [x] #1 A person can enter fullscreen presentation mode for the currently chosen canvas through a clear frontend control.
+- [x] #2 Presentation mode hides the shell, navigation, controls, and every non-selected canvas while the selected canvas fills the available display.
+- [x] #3 At most one canvas is presented at a time; choosing another canvas transfers presentation instead of creating a second fullscreen canvas.
+- [x] #4 Exiting presentation restores the prior shell and pane layout without losing the open boards, live connection, selection, or unsaved held state.
+- [x] #5 Keyboard and visible controls provide an accessible exit, and fullscreen refusal or loss returns to an accurate non-presenting state.
+- [x] #6 Rendered browser coverage proves enter, single-canvas exclusivity, transfer, exit, and state restoration through the user interface.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -73,6 +73,8 @@ TASK-138 release reconciliation: fetched exact signed origin/main 0f2b38a and an
 Post-TASK-138 focused acceptance on rebased HEAD: coordinator 11 tests / 37 assertions; rendered fullscreen owner 1 / 37 through native Fullscreen API; inventory plus CI browser policy 81 tests / 164 assertions; type-check, Oxlint, formatting, and diff checks green. The complete exclusion-free serial lane passed all 16 owners in canonical order with 762 assertions. bun run test then passed 411 module tests / 3,181 assertions, 281 serialized system tests / 4,163 assertions, 115 repository-policy tests / 319 assertions, and all 16 browser owners / 762 assertions. The first bun run check reached its browser lane but arrow-binding-differential timed out at its unchanged 1,500 ms held-report boundary after 35 assertions; both prior complete lanes had passed it. The failed lane cleaned all owned processes and roots. The unchanged owner immediately passed focused with all 65 assertions, then one complete exclusion-free bun run check retry passed lint, formatting, both TypeScript projects, 411 modules / 3,181, 281 system / 4,163, 115 repository / 319, and all 16 browser owners / 762. No wait, assertion, timeout, owner, product code, or test code changed for the retry.
 
 Line and scope audit after reconciliation: new fullscreen-presentation.ts 173 lines, its module owner 284, rendered owner 400, and rendered support 141; all are below 500. Modified agent-browser support is 429, CI policy owner 495, and inventory owner 499. The fullscreen owner appears exactly once in package.json and once in BROWSER_TEST_PATHS. .github/workflows/ci.yml is byte-identical to green main, the CI-only all-browser sentinel remains fail-closed, TASK-141 remains untouched, and TASK-142 now owns restoring all 16 hosted owners. TASK-140 and b7be932 remain outside this lineage.
+
+Final acceptance at exact signed implementation HEAD 8f7291ef1c46f99f8f87c97196804f7e3be63c57: with CI, ARCHBOARD_CI_EXCLUDED_BROWSER_OWNERS, and ARCHBOARD_CI_EXCLUDED_SYSTEM_OWNER unset, bun run check passed lint, formatting, both TypeScript projects, 411 module tests / 3,181 assertions, 281 serialized system tests / 4,163 assertions, 115 repository-policy tests / 319 assertions, and all 16 canonical browser owners / 767 assertions. The native fullscreen rendered owner passed 42 assertions proving the clear focused-pane Present control; shell and non-selected-pane hiding with one viewport-filling live canvas; transfer exclusivity; visible Exit and real browser loss; refusal recovery; external close during pending entry; exact DOM, pane registration, board, focus, selection, held-state, and layout restoration; and ordinary actionable notice preservation. Coordinator coverage passed 11 cases / 37 assertions. Specification and Standards reviewers both returned REVIEW_CLEAN for exact green-main range 0f2b38a30a5f29b5618a9e3b1989b6fbb7a9408a..8f7291ef1c46f99f8f87c97196804f7e3be63c57. Final residue audit found no ab-lane roots, no TASK-139 or agent-browser process, and a clean worktree.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -100,3 +102,9 @@ created: 2026-08-30 06:49
 Focused notice-ownership TDD at exact pre-remediation HEAD 37249e8: the expanded rendered owner failed after native fullscreen entry because the persistent actionable notice had been erased (received null text/action after 20 assertions). After removing the eager Shell notice clear and making dismissal select the visible owner, the same owner passed 1/1 with 42 assertions. Coordinator passed 11/11 with 37 assertions; inventory and CI policy passed 81/81 with 164 assertions; type-check, lint, fmt:check, and git diff --check passed. New browser owner/support files are 426/170 lines. Ordinary notice state now survives successful enter/exit and entry refusal; dismissing the refusal reveals it, and its own dismissal still removes it. Active exit-refusal behavior is unchanged.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added native fullscreen presentation for one existing live canvas, with accessible transfer and exit controls, browser-truth refusal/loss recovery, and exact shell, pane, session, selection, held-state, notice, and layout restoration. Verified by the 42-assertion rendered owner, 37-assertion coordinator owner, both independent clean reviews, and an exclusion-free bun run check covering all 16 browser owners and the complete public suite.
+<!-- SECTION:FINAL_SUMMARY:END -->
