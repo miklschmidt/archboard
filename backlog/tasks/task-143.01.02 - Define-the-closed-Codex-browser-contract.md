@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-08-30 20:06'
+updated_date: '2026-08-30 20:13'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -58,4 +58,8 @@ Remediation validation: bun test --isolate src/shared/codex-browser-model (8 pas
 Second remediation applied: coordinator thread/turn identity is independent from the linked workhorse timeline and semantic thread; coordinator-local state is validated separately. Inspect-only thread links preserve the generated custom, subAgent, and unknown source families while executable links remain limited to the four authored source strings. Dynamic item/tool/call results now require exactly one non-empty inputText tuple. Host-generated server-request strings use NUL-safe wireText without undocumented size caps; authored dynamic-tool output retains its reviewed bounded text policy. Added fixtures for distinct coordinator identities, unissued coordinator IDs, inspect-only source families/unknown members, media/arity rejection, and >16K add/delete/unified-diff patch text round-trips.
 
 Second remediation validation: bun test --isolate src/shared/codex-browser-model (9 tests, 145 expectations); bun run type-check; bun run lint; bun run fmt:check; bun run test:modules (450 tests, 0 failures); bun run test:repository (118 tests, 0 failures); git diff --check (pass). Task remains In Progress for parent review.
+
+Third remediation applied: reverse-wire server request schemas now use ordinary z.string() fields without NUL rejection, including reason, cwd, command, MCP labels/defaults, and FileChange content. The reviewed browser-authored bounded projections and dynamic-tool envelope retain their existing safety checks. Added a JSON serialize/parse regression containing an actual U+0000 via String.fromCodePoint(0) in patch reason and FileChange content, and verified it round-trips.
+
+Third remediation validation: bun test --isolate src/shared/codex-browser-model (9 tests, 147 expectations); bun run type-check; bun run lint; bun run fmt:check; bun run test:modules (450 tests, 0 failures); bun run test:repository (118 tests, 0 failures); git diff --check (pass). Task remains In Progress for parent review.
 <!-- SECTION:NOTES:END -->

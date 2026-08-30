@@ -43,9 +43,6 @@ export const boundedWireText = (maximum: number) =>
 			`text exceeds ${maximum} UTF-8 bytes`,
 		);
 
-export const wireText = () =>
-	z.string().refine((value) => !value.includes("\0"), "NUL is not allowed");
-
 export const nullableText = (maximum: number) => boundedText(maximum).nullable();
 
 export const optionalNullableText = (maximum: number) => boundedText(maximum).nullable().optional();

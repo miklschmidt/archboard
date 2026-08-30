@@ -17,4 +17,18 @@ test("round-trips unrestricted generated file-change text", () => {
 	const parsed = ids.model.ServerRequestSchema.safeParse(value as unknown);
 	expect(parsed.success).toBeTrue();
 	if (parsed.success) expect(parsed.data).toEqual(value);
+	const nulText = `patch${String.fromCodePoint(0)}content`;
+	const nulValue = {
+		...request,
+		params: {
+			...request.params,
+			reason: nulText,
+			fileChanges: { added: { type: "add", content: nulText } } as const,
+		},
+	};
+	const reparsed = ids.model.ServerRequestSchema.safeParse(
+		JSON.parse(JSON.stringify(nulValue)) as unknown,
+	);
+	expect(reparsed.success).toBeTrue();
+	if (reparsed.success) expect(reparsed.data).toEqual(nulValue);
 });
