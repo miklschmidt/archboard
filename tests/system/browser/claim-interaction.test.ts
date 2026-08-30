@@ -20,10 +20,13 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
+import {
+	WORKBENCH_SNAPSHOT_EXPRESSION,
+	type WorkbenchSnapshot,
+} from "./support/workbench-metrics.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const BOARD = LIVE_SESSION_BOARD;
-
 interface ElementsBody {
 	elements: ExcalidrawElement[];
 }
@@ -31,7 +34,6 @@ interface PaneList {
 	paneCount: number;
 	panes: Array<{ board: string; clientId: string }>;
 }
-
 interface WriteBody {
 	code?: string;
 	element?: ExcalidrawElement;
@@ -41,27 +43,13 @@ interface WriteBody {
 interface ClaimBody {
 	claim: { holder: { id?: string; kind?: string; reason?: string; claimed?: boolean } };
 }
-
 interface ClaimCounts {
 	holds: number;
 	pending: number;
 	sent: number;
 }
-
-interface ClaimBanner {
-	bar: string | null;
-	beacon: string | null;
-	copy: string | null;
-	heading: string | null;
-	holder: string | null;
-	live: string | null;
-	pane: string | null;
-	reason: string | null;
-	state: string | null;
-	steps: string[];
-	take: string | null;
+interface ClaimBanner extends WorkbenchSnapshot {
 	view: boolean | null;
-	what: string | null;
 	headerClaim: {
 		beacon: string;
 		label: string;
@@ -71,9 +59,7 @@ interface ClaimBanner {
 		height: number;
 	} | null;
 }
-
 type Request = ReturnType<typeof createJsonRequester>;
-
 async function openSeededBoard(resources: AsyncDisposableStack): Promise<{
 	browser: AgentBrowserSession;
 	canvas: Awaited<ReturnType<typeof startOwnedCanvas>>;
@@ -104,7 +90,6 @@ async function openSeededBoard(resources: AsyncDisposableStack): Promise<{
 	expect(
 		(await request("/api/boards/save", { method: "POST", body: { board: BOARD } })).status,
 	).toBe(200);
-
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", canvas.base]);
 	expect(await browser.eval<string>("navigator.userAgent")).toMatch(/Headless/i);
@@ -129,7 +114,6 @@ async function openSeededBoard(resources: AsyncDisposableStack): Promise<{
 	await browser.run(["click", ".excalidraw"]);
 	return { browser, canvas, clientId: panes.panes[0]!.clientId, request };
 }
-
 const installClaimRecorder = (browser: AgentBrowserSession): Promise<unknown> =>
 	browser.eval(`(() => {
 		window.__claimRecorder = { holds: 0, sent: 0, delay: false, pending: [] };
@@ -156,38 +140,23 @@ const installClaimRecorder = (browser: AgentBrowserSession): Promise<unknown> =>
 				window.__claimRecorder.pending.push({ release: () => invoke().then(resolve, reject) });
 			});
 		};
-		return { installed: true };
-	})()`);
-
+			return { installed: true };
+		})()`);
 const claimCounts = (browser: AgentBrowserSession): Promise<ClaimCounts> =>
 	browser.eval(`(() => ({
 		holds: window.__claimRecorder.holds,
 		sent: window.__claimRecorder.sent,
-		pending: window.__claimRecorder.pending.length,
-	}))()`);
-
+			pending: window.__claimRecorder.pending.length,
+		}))()`);
 const readBanner = (browser: AgentBrowserSession): Promise<ClaimBanner> =>
 	browser.eval(`(() => {
 		const app = ${EXCALIDRAW_APP_EXPRESSION};
-		const what = document.querySelector(".pane-claim-what");
 		const headerClaim = document.querySelector(".bar-claim");
 		const headerLabel = headerClaim?.querySelector(".claim-label");
 		const headerId = headerClaim?.querySelector(".claim-id");
 		return {
-			beacon: document.querySelector(".claim-beacon span")?.textContent?.trim() ?? null,
-			holder: document.querySelector(".claim-kicker")?.textContent?.trim() ?? null,
-			live: document.querySelector(".workbench-overview")?.getAttribute("aria-live") ?? null,
-			pane: document.querySelector(".workbench-pane")?.lastChild?.textContent?.trim() ?? null,
-			heading: what?.querySelector("small")?.textContent?.trim() ?? null,
-			reason: what?.lastChild?.textContent?.trim() ?? null,
-			copy: document.querySelector(".claim-copy")?.textContent?.replace(/\\s+/g, " ").trim() ?? null,
-			take: document.querySelector(".pane-claim-take")?.textContent?.trim() ?? null,
-			state: document.querySelector(".agent-workbench")?.getAttribute("data-state") ?? null,
-			steps: [...document.querySelectorAll(".pane-doing-text")]
-				.map(line => line.textContent?.trim() ?? ""),
-			bar: document.querySelector(".doing-now")?.textContent?.trim() ?? null,
+			...${WORKBENCH_SNAPSHOT_EXPRESSION},
 			view: app ? app.state.viewModeEnabled === true : null,
-			what: what?.textContent?.replace(/\\s+/g, " ").trim() ?? null,
 			headerClaim: headerClaim && headerLabel && headerId ? {
 				beacon: getComputedStyle(headerClaim.querySelector(".dot")).backgroundColor,
 				label: headerLabel.textContent?.trim() ?? "",
@@ -200,17 +169,15 @@ const readBanner = (browser: AgentBrowserSession): Promise<ClaimBanner> =>
 					parseFloat(getComputedStyle(headerId).lineHeight)],
 				height: headerClaim.getBoundingClientRect().height,
 			} : null,
-		};
-	})()`);
-
+			};
+		})()`);
 const pageElement = (browser: AgentBrowserSession, id: string): Promise<ExcalidrawElement | null> =>
 	browser.eval(`(() => {
 		const app = ${EXCALIDRAW_APP_EXPRESSION};
 		const element = app?.scene.getElementsIncludingDeleted()
 			.find(candidate => candidate.id === ${JSON.stringify(id)});
-		return element ? { ...element } : null;
-	})()`);
-
+			return element ? { ...element } : null;
+		})()`);
 test(
 	"claims remain readable and camera-safe while content and take-back revoke them",
 	async () => {
@@ -246,6 +213,29 @@ test(
 		expect(claimed.copy).toBe(
 			"Agent edits are serialized while this claim is active. You can return control at any time.",
 		);
+		expect(claimed.workbench).toMatchObject({
+			agentTileCount: 0,
+			beacon: "rgb(163, 230, 53)",
+			bodyHeight: 184,
+			claimCopyType: [expect.stringContaining("inter"), 12, 18, 400],
+			claimReasonType: [expect.stringContaining("inter"), 14, 20, 600],
+			claimStatusType: [expect.stringContaining("inter"), 12, 16, 600],
+			focusHierarchy: ["workbench-current", "workbench-claim"],
+			hierarchy: ["workbench-history", "workbench-focus"],
+			summaryHeight: 44,
+			summaryHierarchy: [
+				"live-badge",
+				"workbench-claim-summary",
+				"workbench-latest",
+				"workbench-pane",
+			],
+			summaryValuesSingleLine: true,
+			takeBackHeight: 44,
+			takeBackType: [expect.stringContaining("inter"), 12, 16, 600],
+			technicalKickerType: [expect.stringMatching(/mono|consolas/), 9, 12, 700],
+		});
+		expect(claimed.workbench?.historyRatio).toBeCloseTo(0.26, 2);
+		expect(claimed.workbench?.currentRatio).toBeCloseTo(0.55, 2);
 		expect(claimed.headerClaim).toMatchObject({
 			beacon: "rgb(163, 230, 53)",
 			label: "Claimed by",
@@ -256,7 +246,6 @@ test(
 		expect(claimed.headerClaim?.idType.slice(1)).toEqual([10, 14]);
 		expect(claimed.headerClaim?.labelType[0]).toContain("inter");
 		expect(claimed.headerClaim?.idType[0]).toMatch(/mono|consolas/);
-
 		const beforeCamera = await claimCounts(browser);
 		expect(
 			await browser.eval<boolean>(`(() => {
@@ -277,7 +266,6 @@ test(
 		const afterCamera = await claimCounts(browser);
 		expect(afterCamera.holds - beforeCamera.holds).toBe(0);
 		expect(afterCamera.sent - beforeCamera.sent).toBe(0);
-
 		const step = "moving the queue out of the payment path";
 		const claimedWrite = await request<WriteBody>(`/api/elements?board=${BOARD}`, {
 			method: "POST",
@@ -297,7 +285,19 @@ test(
 		expect(narrated.copy).toBe(
 			"Agent edits are serialized while this claim is active. You can return control at any time.",
 		);
-
+		expect(narrated.workbench).toMatchObject({
+			currentType: [expect.stringContaining("inter"), 16, 22, 600],
+			historyRowMinHeight: 30,
+			historyTextType: [expect.stringContaining("inter"), 12, 17, 500],
+			summaryValuesSingleLine: true,
+			timeColumnWidth: 68,
+			timeNoWrap: true,
+			timeType: [expect.stringMatching(/mono|consolas/), 10, 14, 500],
+			theme: "light",
+		});
+		expect(narrated.workbench?.historyRowHeight).toBeGreaterThanOrEqual(30);
+		expect(narrated.workbench?.technicalContrast).toHaveLength(5);
+		expect(narrated.workbench?.technicalContrast.every(({ ratio }) => ratio >= 4.5)).toBe(true);
 		expect((await request("/api/panes/open", { method: "POST", body: {} })).status).toBe(200);
 		const split = await pollUntil(
 			async () => (await request<PaneList>("/api/panes")).body,
