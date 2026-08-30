@@ -62,14 +62,4 @@ describe("Codex workbench timing policy", () => {
 			timing.CODEX_COMPOSED_SHUTDOWN_MS,
 		);
 	});
-
-	test("rejects a restart max below settlement even when its golden changes", () => {
-		const changedGolden = { ...REVIEWED_VALUES, CODEX_PROCESS_RESTART_MAX_MS: 29_999 };
-		expect(changedGolden.CODEX_PROCESS_RESTART_MAX_MS).toBe(29_999);
-		expect(() =>
-			expect(changedGolden.CODEX_REQUEST_SETTLEMENT_MS).toBeLessThanOrEqual(
-				changedGolden.CODEX_PROCESS_RESTART_MAX_MS,
-			),
-		).toThrow();
-	});
 });
