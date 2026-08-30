@@ -103,7 +103,7 @@ select:focus-visible {
 	position: relative;
 	z-index: 30;
 	display: grid;
-	grid-template-columns: 240px minmax(440px, 1fr) 380px;
+	grid-template-columns: 184px minmax(440px, 1fr) 380px;
 	align-items: center;
 	min-width: 0;
 	border-bottom: 1px solid var(--border);
@@ -328,6 +328,7 @@ select:focus-visible {
 	box-shadow: none;
 }
 .btn:disabled,
+.icon-btn:disabled,
 .name-button:disabled {
 	opacity: 0.46;
 	cursor: default;
@@ -383,7 +384,7 @@ select:focus-visible {
 	border-radius: 4px;
 	background: transparent;
 }
-.icon-btn:hover,
+.icon-btn:hover:not(:disabled),
 .notice-dismiss:hover,
 .modal-close:hover {
 	border-color: var(--border);
@@ -395,7 +396,7 @@ select:focus-visible {
 	min-width: 0;
 	min-height: 0;
 	display: grid;
-	grid-template-columns: 240px minmax(440px, 1fr) 380px;
+	grid-template-columns: 184px minmax(440px, 1fr) 380px;
 	overflow: hidden;
 }
 .board-nav {
@@ -411,8 +412,8 @@ select:focus-visible {
 }
 .board-nav-header {
 	position: relative;
-	min-height: 65px;
-	padding: 13px 10px 11px 15px;
+	min-height: 54px;
+	padding: 5px 5px 5px 9px;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -421,16 +422,17 @@ select:focus-visible {
 .board-nav-header::after {
 	content: "";
 	position: absolute;
-	left: 15px;
+	left: 9px;
 	bottom: -1px;
-	width: 48px;
+	width: 36px;
 	height: 1px;
 	background: var(--accent);
 	box-shadow: none;
 }
 .board-nav-title {
 	display: grid;
-	gap: 5px;
+	gap: 2px;
+	min-width: 0;
 	color: var(--ink);
 	font-size: 11px;
 	font-weight: 750;
@@ -438,6 +440,7 @@ select:focus-visible {
 	text-transform: uppercase;
 }
 .board-nav-title small {
+	overflow: hidden;
 	color: var(--faint);
 	font:
 		8px/1.2 ui-monospace,
@@ -445,16 +448,27 @@ select:focus-visible {
 		Consolas,
 		monospace;
 	letter-spacing: 0.08em;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 .board-nav-tools {
 	display: flex;
 	gap: 2px;
+	flex: none;
+	margin-left: 2px;
+	border-left: 1px solid var(--border);
+	padding-left: 2px;
+}
+.board-nav-tools .icon-btn {
+	width: 44px;
+	height: 44px;
 }
 .board-nav-list {
 	flex: 1;
 	min-height: 0;
-	padding: 10px 8px 12px;
+	padding: 6px 5px 8px;
 	overflow-y: auto;
+	overflow-x: hidden;
 	scrollbar-color: color-mix(in srgb, var(--faint) 55%, transparent) transparent;
 	scrollbar-width: thin;
 }
@@ -463,8 +477,8 @@ select:focus-visible {
 	display: grid;
 	place-items: center;
 	width: 100%;
-	min-height: 92px;
-	padding: 16px;
+	min-height: 88px;
+	padding: 12px;
 	border: 0;
 	color: var(--muted);
 	background: transparent;
@@ -477,7 +491,8 @@ select:focus-visible {
 }
 .board-group {
 	position: relative;
-	margin-bottom: 7px;
+	min-width: 0;
+	margin-bottom: 4px;
 	border: 1px solid transparent;
 	border-radius: 4px;
 }
@@ -489,18 +504,18 @@ select:focus-visible {
 	content: "";
 	position: absolute;
 	left: -1px;
-	top: 14px;
-	bottom: 14px;
+	top: 8px;
+	bottom: 8px;
 	width: 1px;
 	background: var(--accent);
 	box-shadow: none;
 }
 .board-group-name {
-	min-height: 54px;
-	padding: 8px 10px;
+	min-height: 42px;
+	padding: 4px 5px;
 	display: grid;
-	grid-template-columns: 34px minmax(0, 1fr);
-	gap: 9px;
+	grid-template-columns: 28px minmax(0, 1fr);
+	gap: 6px;
 	align-items: center;
 }
 .board-group-name-hidden {
@@ -515,19 +530,19 @@ select:focus-visible {
 	position: relative;
 	display: grid;
 	place-items: center;
-	width: 34px;
-	height: 34px;
+	width: 28px;
+	height: 28px;
 	border: 1px solid var(--border);
 	border-radius: 3px;
 	color: var(--muted);
 	background: color-mix(in srgb, var(--paper) 58%, transparent);
 	font:
-		800 9px/1 ui-monospace,
+		800 8px/1 ui-monospace,
 		"SFMono-Regular",
 		Consolas,
 		monospace;
 	letter-spacing: 0.08em;
-	clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
+	clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
 }
 .board-glyph::after {
 	content: "";
@@ -555,16 +570,16 @@ select:focus-visible {
 }
 .board-group-copy strong {
 	overflow: hidden;
-	font-size: 13px;
+	font-size: 12px;
 	font-weight: 710;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 .board-group-copy small {
-	margin-top: 3px;
+	margin-top: 1px;
 	color: var(--muted);
 	font:
-		8px/1.2 ui-monospace,
+		7px/1.2 ui-monospace,
 		"SFMono-Regular",
 		Consolas,
 		monospace;
@@ -573,8 +588,8 @@ select:focus-visible {
 }
 .board-variants {
 	position: relative;
-	margin: 0 8px 8px 52px;
-	padding-left: 10px;
+	margin: 0 4px 4px 37px;
+	padding-left: 6px;
 	display: grid;
 	gap: 2px;
 }
@@ -589,8 +604,9 @@ select:focus-visible {
 }
 .board-nav-row {
 	position: relative;
-	min-height: 38px;
-	padding: 6px 9px;
+	min-height: 44px;
+	padding: 5px 6px;
+	overflow: hidden;
 	border: 0;
 	border-radius: 3px;
 	color: var(--muted);
@@ -598,10 +614,10 @@ select:focus-visible {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 8px;
+	gap: 4px;
 	cursor: pointer;
 	text-align: left;
-	font-size: 12px;
+	font-size: 11px;
 }
 .board-variants .board-nav-row {
 	width: 100%;
@@ -609,8 +625,8 @@ select:focus-visible {
 .board-variants .board-nav-row::before {
 	content: "";
 	position: absolute;
-	left: -13px;
-	top: 16px;
+	left: -9px;
+	top: 19px;
 	width: 5px;
 	height: 5px;
 	border: 1px solid var(--faint);
@@ -632,8 +648,8 @@ select:focus-visible {
 	box-shadow: none;
 }
 .board-variants .board-nav-row-current::before {
-	left: -14px;
-	top: 15px;
+	left: -10px;
+	top: 18px;
 	width: 7px;
 	height: 7px;
 	border: 0;
@@ -650,22 +666,46 @@ select:focus-visible {
 }
 .board-nav-level,
 .board-nav-state {
-	margin-left: auto;
+	margin-left: 0;
+	padding: 2px 3px;
+	border: 1px solid var(--border);
+	border-radius: 2px;
 	color: var(--faint);
 	font:
-		9px/1.2 ui-monospace,
+		7px/1.2 ui-monospace,
 		"SFMono-Regular",
 		Consolas,
 		monospace;
 	text-transform: uppercase;
 	white-space: nowrap;
 }
+.board-nav-markers {
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 2px;
+	min-width: 0;
+	margin-left: auto;
+	overflow: hidden;
+}
+.board-nav-level {
+	color: var(--muted);
+	border-color: var(--border);
+	background: color-mix(in srgb, var(--paper) 68%, transparent);
+}
+.board-nav-on-screen {
+	color: var(--live-ink);
+	border-color: color-mix(in srgb, var(--status) 46%, var(--border));
+	background: var(--live-soft);
+}
 .board-nav-state {
 	color: var(--warn);
+	border-color: color-mix(in srgb, var(--warn) 38%, var(--border));
+	background: var(--warn-soft);
 }
 .scratch-section {
 	margin: auto 0 0;
-	padding: 10px 12px 12px;
+	padding: 6px 5px 8px;
 	border: 0;
 	border-top: 1px solid var(--border);
 	border-radius: 0;
@@ -673,35 +713,25 @@ select:focus-visible {
 }
 .scratch-card {
 	position: relative;
-	padding: 11px;
+	padding: 5px;
 	overflow: hidden;
 	border: 1px solid var(--border);
 	border-radius: 4px;
 	background: var(--surface-raised);
 }
 .scratch-card::before {
-	content: "UNFILED / 01";
-	position: absolute;
-	right: 9px;
-	top: 7px;
-	color: var(--faint);
-	font:
-		7px/1.2 ui-monospace,
-		"SFMono-Regular",
-		Consolas,
-		monospace;
-	letter-spacing: 0.08em;
+	display: none;
 }
 .scratch-top {
 	width: 100%;
 	justify-content: flex-start;
-	padding: 4px 0;
+	padding: 4px;
 }
 .name-button {
 	position: relative;
 	width: 100%;
-	min-height: 42px;
-	margin-top: 9px;
+	min-height: 44px;
+	margin-top: 5px;
 	border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
 	border-radius: 4px;
 	color: var(--accent-hover);
@@ -1516,7 +1546,7 @@ select:focus-visible {
 @media (max-width: 1180px) {
 	.bar,
 	.workspace {
-		grid-template-columns: 220px minmax(360px, 1fr) 320px;
+		grid-template-columns: 176px minmax(360px, 1fr) 320px;
 	}
 	.bar::before {
 		left: calc(100% - 320px);
@@ -1599,14 +1629,14 @@ select:focus-visible {
 	.board-nav {
 		grid-row: 1;
 		display: grid;
-		grid-template: 46px minmax(0, 1fr) / minmax(0, 1fr) 220px;
+		grid-template: 48px minmax(0, 1fr) / minmax(0, 2fr) minmax(0, 1fr);
 		border-right: 0;
 		border-bottom: 1px solid var(--border);
 	}
 	.board-nav-header {
 		grid-column: 1 / -1;
-		min-height: 46px;
-		padding-block: 7px;
+		min-height: 48px;
+		padding: 2px 5px 2px 9px;
 	}
 	.board-nav-title {
 		display: flex;
@@ -1617,46 +1647,65 @@ select:focus-visible {
 		grid-column: 1;
 		grid-row: 2;
 		display: flex;
-		gap: 7px;
-		padding: 7px;
+		gap: 3px;
+		padding: 0 3px;
 		overflow-x: auto;
 		overflow-y: hidden;
+		scrollbar-width: thin;
 	}
 	.board-group {
-		flex: 0 0 210px;
+		flex: 0 0 132px;
 		margin: 0;
 		border-color: var(--border);
 		background: var(--surface-raised);
 	}
 	.board-group-name {
-		min-height: 46px;
-		padding: 5px 8px;
+		min-height: 44px;
+		padding: 3px 4px;
 	}
 	.board-glyph {
-		width: 30px;
-		height: 30px;
+		width: 26px;
+		height: 26px;
 	}
 	.board-variants {
-		margin: 0 7px 5px 43px;
+		height: 44px;
+		margin: 0 3px;
+		padding-left: 0;
+		display: flex;
+		overflow-x: auto;
+		overflow-y: hidden;
+		scrollbar-width: none;
 	}
-	.board-variants .board-nav-row:not([aria-current="page"]) {
+	.board-variants::before,
+	.board-variants .board-nav-row::before {
 		display: none;
+	}
+	.board-variants .board-nav-row {
+		width: max-content;
+		max-width: none;
+		flex: 0 0 auto;
+		min-width: 44px;
+		padding-inline: 4px;
+	}
+	.board-nav-markers {
+		flex: none;
+		overflow: visible;
 	}
 	.scratch-section {
 		grid-column: 2;
 		grid-row: 2;
 		min-width: 0;
 		margin: 0;
-		padding: 7px;
+		padding: 0 3px;
 		border: 0;
 		border-left: 1px solid var(--border);
 		background: transparent;
 	}
 	.scratch-card {
 		height: 100%;
-		padding: 5px 7px;
+		padding: 0 4px;
 		display: grid;
-		grid-template-rows: minmax(0, 1fr) 38px;
+		grid-template-rows: 44px 44px;
 		align-items: center;
 		gap: 2px;
 	}
@@ -1664,14 +1713,14 @@ select:focus-visible {
 		display: none;
 	}
 	.scratch-top {
-		min-height: 30px;
+		min-height: 44px;
 	}
 	.scratch-top .board-glyph {
 		display: none;
 	}
 	.name-button {
 		width: 100%;
-		min-height: 38px;
+		min-height: 44px;
 		margin: 0;
 		padding: 0 34px 0 12px;
 	}

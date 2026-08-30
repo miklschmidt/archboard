@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import type { BoardIdentity, BoardListing } from "../types";
 import { Icon } from "./Icons";
 
@@ -57,11 +57,21 @@ export function BoardNavigator({
 			grouped.set(entry.identity.board, list);
 		}
 
+		const groupPriority = (variants: BoardEntry[]): number => {
+			if (variants.some((entry) => entry.key === currentKey)) return 0;
+			if (variants.some((entry) => entry.onScreen)) return 1;
+			return 2;
+		};
 		const allGroups = [...grouped.entries()]
-			.toSorted(([a], [b]) => a.localeCompare(b))
+			.toSorted(([a, aVariants], [b, bVariants]) => {
+				const priority = groupPriority(aVariants) - groupPriority(bVariants);
+				return priority || a.localeCompare(b);
+			})
 			.map(([board, variants]) => ({
 				board,
 				variants: variants.toSorted((a, b) => {
+					if (a.key === currentKey) return -1;
+					if (b.key === currentKey) return 1;
 					if (a.identity.variant === "current") return -1;
 					if (b.identity.variant === "current") return 1;
 					return a.identity.variant.localeCompare(b.identity.variant);
@@ -72,7 +82,22 @@ export function BoardNavigator({
 			groups: allGroups.filter((group) => group.board !== "scratch"),
 			scratch: scratchGroup?.variants[0] ?? null,
 		};
-	}, [listing]);
+	}, [listing, currentKey]);
+	const variantCount = groups.reduce((count, group) => count + group.variants.length, 0);
+	const renderedCurrentKey = groups.some((group) =>
+		group.variants.some((entry) => entry.key === currentKey),
+	)
+		? currentKey
+		: scratch?.key === currentKey
+			? currentKey
+			: null;
+	const currentRowRef = useRef<HTMLButtonElement | null>(null);
+	useEffect(() => {
+		const row = currentRowRef.current;
+		if (row?.dataset.boardKey === renderedCurrentKey) {
+			row.scrollIntoView({ block: "nearest", inline: "nearest" });
+		}
+	}, [renderedCurrentKey]);
 	const selectEntry = useCallback(
 		(event: React.MouseEvent<HTMLButtonElement>): void => {
 			const key = event.currentTarget.dataset.boardKey;
@@ -80,22 +105,16 @@ export function BoardNavigator({
 		},
 		[onSelect],
 	);
-	const selectScratch = useCallback(
-		(event: React.MouseEvent<HTMLButtonElement>): void => {
-			const key = event.currentTarget.dataset.boardKey;
-			if (key) onSelect(key);
-		},
-		[onSelect],
-	);
-
 	return (
 		<aside className="board-nav" aria-label="Boards and variants">
 			<div className="board-nav-header">
 				<div className="board-nav-title">
-					<span>Board atlas</span>
+					<span>Boards</span>
 					{listing && (
-						<small>
-							{groups.length} boards / {listing.boards.length} variants
+						<small
+							aria-label={`${groups.length} board${groups.length === 1 ? "" : "s"}, ${variantCount} variant${variantCount === 1 ? "" : "s"}`}
+						>
+							{groups.length}B / {variantCount}V
 						</small>
 					)}
 				</div>
@@ -106,6 +125,7 @@ export function BoardNavigator({
 						onClick={onRefresh}
 						title="Refresh boards"
 						aria-label="Refresh boards"
+						disabled={busy}
 					>
 						<Icon name="refresh" size={16} />
 					</button>
@@ -115,6 +135,7 @@ export function BoardNavigator({
 						onClick={onNew}
 						title="New board"
 						aria-label="New board"
+						disabled={busy}
 					>
 						<Icon name="plus" size={17} />
 					</button>
@@ -124,7 +145,13 @@ export function BoardNavigator({
 			<div className="board-nav-list">
 				{!listing && !error && <div className="board-nav-empty">Reading the vault…</div>}
 				{error && (
-					<button className="board-nav-error" type="button" onClick={onRefresh}>
+					<button
+						className="board-nav-error"
+						type="button"
+						onClick={onRefresh}
+						aria-label="Retry board listing"
+						disabled={busy}
+					>
 						Could not read the vault. Try again.
 					</button>
 				)}
@@ -137,7 +164,7 @@ export function BoardNavigator({
 						key={group.board}
 						aria-label={group.board}
 					>
-						<div className="board-group-name">
+						<div className="board-group-name" title={group.board}>
 							<span className="board-glyph">{group.board.slice(0, 2).toUpperCase()}</span>
 							<span className="board-group-copy">
 								<strong>{group.board}</strong>
@@ -159,13 +186,20 @@ export function BoardNavigator({
 										key={entry.key}
 										disabled={busy}
 										aria-current={selected ? "page" : undefined}
+										ref={selected ? currentRowRef : undefined}
 										onClick={selectEntry}
 										data-board-key={entry.key}
 										title={`${entry.key}${entry.onScreen ? " · on screen" : entry.open ? " · open" : ""}`}
 									>
 										<span className="board-nav-variant">{label}</span>
-										{entry.onScreen && <span className="board-nav-level">on canvas</span>}
-										{!entry.inVault && <span className="board-nav-state">draft</span>}
+										<span className="board-nav-markers">
+											{entry.onScreen ? (
+												<span className="board-nav-level board-nav-on-screen">on canvas</span>
+											) : (
+												entry.open && <span className="board-nav-level board-nav-open">open</span>
+											)}
+											{!entry.inVault && <span className="board-nav-state">draft</span>}
+										</span>
 									</button>
 								);
 							})}
@@ -183,7 +217,8 @@ export function BoardNavigator({
 							className={`board-nav-row scratch-top${scratch?.key === currentKey ? " board-nav-row-current" : ""}`}
 							disabled={busy || !scratch}
 							aria-current={scratch?.key === currentKey ? "page" : undefined}
-							onClick={selectScratch}
+							ref={scratch?.key === currentKey ? currentRowRef : undefined}
+							onClick={selectEntry}
 							data-board-key={scratch?.key}
 						>
 							<span className="board-glyph">SC</span>
