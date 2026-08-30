@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-08-30 21:53'
+updated_date: '2026-08-30 21:58'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -50,4 +50,8 @@ Delegation profile: gpt-5.6-luna, high.
 
 <!-- SECTION:NOTES:BEGIN -->
 Batch reservation at integration HEAD ac86591: exact scoped ready leaves are TASK-143.01.13 and TASK-143.01.17. They are path-disjoint. Worker slots 3 and 4 are intentionally unused because no additional TASK-143/TASK-144 leaf is ready; the other ready scoped entries are parent containers and every remaining leaf is dependency-blocked. TASK-141 and TASK-142 are unrelated CI-restoration bugs outside this implementation scope.
+
+Implemented in commit 5e64171. Added exact @openai/codex 0.151.0 dev dependency and lock entries, plus the repository-policy owner that resolves the project-local executable, runs the disposable generator through runCodexProtocolConformance, verifies the recorded 820-file digest and version, snapshots checkout status, and reports regeneration plus decoder/inventory review recovery.
+
+Validation: bun install --frozen-lockfile passed; focused root owner 3 pass / 14 expect; production conformance 10 pass / 36 expect; repository lane 121 pass / 377 expect; module lane passed; bun run type-check, bun run lint, bun run fmt:check, and git diff --check passed.
 <!-- SECTION:NOTES:END -->
