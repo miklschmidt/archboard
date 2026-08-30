@@ -1,4 +1,13 @@
+---
+status: superseded by ADR-0019
+---
+
 # Push to a live Codex thread via app-server injection
+
+ADR-0019 supersedes this decision's control-socket transport, environment-based
+task routing, opt-in switch, and loud-injection experiment. Its product intent
+remains: a bound Codex task receives compact semantic human changes without
+polling, and an agent never receives its own drawing back as context.
 
 When the board changes, archboard reaches the agent through the Codex
 app-server control socket: `thread/inject_items` for quiet state updates that do

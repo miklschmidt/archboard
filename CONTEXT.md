@@ -148,6 +148,27 @@ repository, folder
 
 ### Working
 
+**Workhorse**:
+The primary Codex task linked to a pane for sustained code, repository, and
+multi-step work. It may continue working while a voice coordinator answers and
+investigates separately.
+_Avoid_: main agent, coding thread, backend agent, worker (that is also an agent
+role)
+
+**Thread link**:
+The explicit runtime association between a pane and one controllable Codex
+workhorse on Archboard's owned app-server child. It never lives in the board or
+follows another client's active task, and child exit invalidates it.
+_Avoid_: binding (that means node-to-code here), attachment, selected thread,
+active task
+
+**Voice coordinator**:
+The persistent fast Codex task linked to one pane and workhorse. Realtime voice
+attaches to it; it handles conversation and bounded direct work while routing
+sustained work to the workhorse.
+_Avoid_: voice model (that is only one part of the realtime path), voice agent,
+router, facilitator, copilot
+
 **Read-back**:
 The agent re-reading a board after a human has changed it, so that the change
 can be interpreted as a statement about the design.
