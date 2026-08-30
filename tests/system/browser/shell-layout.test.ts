@@ -19,7 +19,8 @@ type PanesBody = { paneCount?: number; panes?: Array<{ board?: string }> };
 type DesktopShell = {
 	navLeftOfCanvas: boolean;
 	navWidth: number;
-	railRightOfCanvas: boolean;
+	workbenchBelowPane: boolean;
+	workbenchInsideCanvas: boolean;
 	columnsAlign: boolean;
 	canvasLargest: boolean;
 	actionHeights: number[];
@@ -65,7 +66,7 @@ type NarrowShell = {
 	navAboveCanvas: boolean;
 	navHeight: number;
 	navWidth: number;
-	railBelowCanvas: boolean;
+	workbenchBelowPane: boolean;
 	fitsViewport: boolean;
 	canvasLargest: boolean;
 	wordmarkVisible: boolean;
@@ -250,37 +251,64 @@ test("the shell stays usable from desktop width through 420 pixels", async () =>
 	expect(themes[0]?.background).not.toBe(themes[1]?.background); // themes keep distinct neutral fields
 
 	const desktop = await browser.eval<DesktopShell | null>(`(() => {
-    const nav = document.querySelector('.board-nav');
-    const canvas = document.querySelector('.canvas-zone');
-    const rail = document.querySelector('.agent-rail');
+	    const nav = document.querySelector('.board-nav');
+	    const canvas = document.querySelector('.canvas-zone');
+	    const rail = document.querySelector('.agent-rail');
+	    const pane = document.querySelector('.pane');
     const actions = [...document.querySelectorAll('.bar-actions .btn')];
     const current = document.querySelector('.board-nav-row[aria-current="page"]');
-    if (!nav || !canvas || !rail || !current) return null;
+	    if (!nav || !canvas || !rail || !pane || !current) return null;
     const navRect = nav.getBoundingClientRect();
     const canvasRect = canvas.getBoundingClientRect();
-    const railRect = rail.getBoundingClientRect();
-    return {
+	    const railRect = rail.getBoundingClientRect();
+	    const paneRect = pane.getBoundingClientRect();
+	    return {
       navLeftOfCanvas: navRect.right <= canvasRect.left + 0.5,
       navWidth: navRect.width,
-      railRightOfCanvas: railRect.left >= canvasRect.right - 0.5,
-      columnsAlign: Math.abs(navRect.top - canvasRect.top) < 1 &&
-        Math.abs(navRect.bottom - canvasRect.bottom) < 1 &&
-        Math.abs(railRect.top - canvasRect.top) < 1,
-      canvasLargest: canvasRect.width > navRect.width && canvasRect.width > railRect.width,
+	      workbenchBelowPane: railRect.top >= paneRect.bottom - 0.5,
+	      workbenchInsideCanvas: railRect.left >= canvasRect.left - 0.5 &&
+	        railRect.right <= canvasRect.right + 0.5 && railRect.bottom <= canvasRect.bottom + 0.5,
+	      columnsAlign: Math.abs(navRect.top - canvasRect.top) < 1 &&
+	        Math.abs(navRect.bottom - canvasRect.bottom) < 1,
+	      canvasLargest: canvasRect.width > navRect.width && paneRect.height > railRect.height,
       actionHeights: actions.map(button => button.getBoundingClientRect().height),
       currentBoard: current.textContent.trim()
     };
   })()`);
 	expect(desktop?.navLeftOfCanvas).toBe(true); // check-fixed-point.mjs:1955
 	expect(desktop?.navWidth).toBeCloseTo(184, 0); // approved compact desktop operator strip
-	expect(desktop?.railRightOfCanvas).toBe(true); // check-fixed-point.mjs:1955
+	expect(desktop?.workbenchBelowPane).toBe(true);
+	expect(desktop?.workbenchInsideCanvas).toBe(true);
 	expect(desktop?.columnsAlign).toBe(true); // check-fixed-point.mjs:1955
 	expect(desktop?.canvasLargest).toBe(true); // approved canvas-primary desktop composition
 	expect(desktop?.actionHeights.length).toBeGreaterThanOrEqual(5); // check-fixed-point.mjs:1962
 	expect(desktop?.actionHeights.every((height) => height >= 43.5)).toBe(true); // check-fixed-point.mjs:1962
 	expect(desktop?.currentBoard.includes("Current")).toBe(true); // check-fixed-point.mjs:1968
 
+	const collapsedPaneHeight = await browser.eval<number>(
+		"document.querySelector('.pane').getBoundingClientRect().height",
+	);
+	expect(
+		await browser.eval<boolean>(
+			"document.querySelector('.workbench-toggle').getAttribute('aria-expanded') === 'false'",
+		),
+	).toBe(true);
+	await browser.run(["click", ".workbench-toggle"]);
+	const expandedPaneHeight = await pollUntil(
+		() => browser.eval<number>("document.querySelector('.pane').getBoundingClientRect().height"),
+		(height) => height < collapsedPaneHeight - 100,
+		"the expanded workbench to yield space from the canvas",
+	);
+	expect(expandedPaneHeight).toBeLessThan(collapsedPaneHeight);
+	await browser.run(["click", ".workbench-toggle"]);
+	await pollUntil(
+		() => browser.eval<number>("document.querySelector('.pane').getBoundingClientRect().height"),
+		(height) => Math.abs(height - collapsedPaneHeight) < 1,
+		"collapse to restore the canvas height",
+	);
+
 	await browser.run(["set", "viewport", "420", "700"]);
+	await browser.run(["click", ".workbench-toggle"]);
 	for (const [index, doing] of activityLines.entries()) {
 		const wrote = await api(`/api/elements?board=fixedpoint&doing=${encodeURIComponent(doing)}`, {
 			method: "POST",
@@ -301,8 +329,9 @@ test("the shell stays usable from desktop width through 420 pixels", async () =>
         const rail = document.querySelector('.agent-rail');
         const panel = document.querySelector('.pane-doing');
         const lines = [...document.querySelectorAll('.pane-doing-line')];
-        const canvas = document.querySelector('.canvas-zone');
-        if (!rail || !panel || !canvas || lines.length !== 5) return null;
+	        const canvas = document.querySelector('.canvas-zone');
+	        const pane = document.querySelector('.pane');
+	        if (!rail || !panel || !canvas || !pane || lines.length !== 5) return null;
         const railRect = rail.getBoundingClientRect();
         const panelRect = panel.getBoundingClientRect();
         const timestamps = [...document.querySelectorAll('.pane-doing-when')]
@@ -312,7 +341,7 @@ test("the shell stays usable from desktop width through 420 pixels", async () =>
           linesFit: lines.every(line => line.scrollWidth <= line.clientWidth),
           panelFits: panelRect.left >= railRect.left && panelRect.right <= railRect.right &&
             panelRect.bottom <= railRect.bottom,
-          canvasClear: railRect.top >= canvas.getBoundingClientRect().bottom - 0.5,
+	          canvasClear: railRect.top >= pane.getBoundingClientRect().bottom - 0.5,
           timestampsAlign: timestamps.every(left => Math.abs(left - timestamps[0]) < 0.5)
         };
       })()`),
@@ -325,6 +354,7 @@ test("the shell stays usable from desktop width through 420 pixels", async () =>
 	expect(activity?.panelFits).toBe(true); // check-fixed-point.mjs:2033
 	expect(activity?.canvasClear).toBe(true); // check-fixed-point.mjs:2033
 	expect(activity?.timestampsAlign).toBe(true); // check-fixed-point.mjs:2040
+	await browser.run(["click", ".workbench-toggle"]);
 
 	const narrow = await browser.eval<NarrowShell | null>(`(() => {
     const nav = document.querySelector('.board-nav');
@@ -348,10 +378,10 @@ test("the shell stays usable from desktop width through 420 pixels", async () =>
       navAboveCanvas: navRect.bottom < paneRect.top,
       navHeight: navRect.height,
       navWidth: navRect.width,
-      railBelowCanvas: railRect.top >= canvasRect.bottom - 0.5,
+	      workbenchBelowPane: railRect.top >= paneRect.bottom - 0.5,
       fitsViewport: [navRect, paneRect, barRect, railRect].every(rect =>
         rect.left >= -0.5 && rect.right <= innerWidth + 0.5),
-      canvasLargest: canvasRect.height > navRect.height && canvasRect.height > railRect.height,
+      canvasLargest: paneRect.height > navRect.height && paneRect.height > railRect.height,
       wordmarkVisible: wordmark.getBoundingClientRect().width > 0,
       brandIconCount: document.querySelectorAll('.bar-brand svg, .brand-mark').length,
       headerHeight: barRect.height,
@@ -369,7 +399,7 @@ test("the shell stays usable from desktop width through 420 pixels", async () =>
 	expect(narrow?.navAboveCanvas).toBe(true); // check-fixed-point.mjs:2067
 	expect(narrow?.navHeight).toBeCloseTo(136, 0); // strip stays inside its reserved workspace row
 	expect(narrow?.navWidth).toBeCloseTo(420, 0); // strip never covers or widens the canvas
-	expect(narrow?.railBelowCanvas).toBe(true); // check-fixed-point.mjs:2067
+	expect(narrow?.workbenchBelowPane).toBe(true);
 	expect(narrow?.fitsViewport).toBe(true); // check-fixed-point.mjs:2072
 	expect(narrow?.canvasLargest).toBe(true); // canvas remains the largest stacked region
 	expect(narrow?.wordmarkVisible).toBe(true);

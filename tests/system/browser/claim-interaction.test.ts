@@ -56,7 +56,10 @@ interface ClaimBanner {
 	copy: string | null;
 	heading: string | null;
 	holder: string | null;
+	live: string | null;
+	pane: string | null;
 	reason: string | null;
+	state: string | null;
 	steps: string[];
 	take: string | null;
 	view: boolean | null;
@@ -68,6 +71,7 @@ type Request = ReturnType<typeof createJsonRequester>;
 async function openSeededBoard(resources: AsyncDisposableStack): Promise<{
 	browser: AgentBrowserSession;
 	canvas: Awaited<ReturnType<typeof startOwnedCanvas>>;
+	clientId: string;
 	request: Request;
 }> {
 	const { ownerRoot } = browserTestRoots();
@@ -117,7 +121,7 @@ async function openSeededBoard(resources: AsyncDisposableStack): Promise<{
 		"the pane to render the seeded board",
 	);
 	await browser.run(["click", ".excalidraw"]);
-	return { browser, canvas, request };
+	return { browser, canvas, clientId: panes.panes[0]!.clientId, request };
 }
 
 const installClaimRecorder = (browser: AgentBrowserSession): Promise<unknown> =>
@@ -163,10 +167,13 @@ const readBanner = (browser: AgentBrowserSession): Promise<ClaimBanner> =>
 		return {
 			beacon: document.querySelector(".claim-beacon span")?.textContent?.trim() ?? null,
 			holder: document.querySelector(".claim-kicker")?.textContent?.trim() ?? null,
+			live: document.querySelector(".workbench-overview")?.getAttribute("aria-live") ?? null,
+			pane: document.querySelector(".workbench-pane")?.lastChild?.textContent?.trim() ?? null,
 			heading: what?.querySelector("small")?.textContent?.trim() ?? null,
 			reason: what?.lastChild?.textContent?.trim() ?? null,
 			copy: document.querySelector(".claim-copy")?.textContent?.replace(/\\s+/g, " ").trim() ?? null,
 			take: document.querySelector(".pane-claim-take")?.textContent?.trim() ?? null,
+			state: document.querySelector(".agent-workbench")?.getAttribute("data-state") ?? null,
 			steps: [...document.querySelectorAll(".pane-doing-text")]
 				.map(line => line.textContent?.trim() ?? ""),
 			bar: document.querySelector(".doing-now")?.textContent?.trim() ?? null,
@@ -187,8 +194,11 @@ test(
 	"claims remain readable and camera-safe while content and take-back revoke them",
 	async () => {
 		await using resources = new AsyncDisposableStack();
-		const { browser, canvas, request } = await openSeededBoard(resources);
+		const { browser, canvas, clientId, request } = await openSeededBoard(resources);
 		await installClaimRecorder(browser);
+		await browser.run(["click", ".workbench-toggle"]);
+		const initial = await readBanner(browser);
+		expect(initial).toMatchObject({ live: "polite", pane: "Pane A", state: "ready" });
 
 		const claimWhy = "redrawing the payment path";
 		const claim = await request<ClaimBody>(`/api/boards/claim?board=${BOARD}`, {
@@ -209,7 +219,8 @@ test(
 		expect(claimed.view).toBe(false);
 		expect(claimed.take).toBe("Take back control");
 		expect(claimed.beacon).toBe("Agent claim");
-		expect(claimed.heading).toBe("Current campaign");
+		expect(claimed.heading).toBe("Active claim");
+		expect(claimed.state).toBe("working");
 		expect(claimed.copy).toBe(
 			"Agent edits are serialized while this claim is active. You can return control at any time.",
 		);
@@ -253,6 +264,47 @@ test(
 		expect(narrated.holder).toBe("Agent has the board");
 		expect(narrated.copy).toBe(
 			"Agent edits are serialized while this claim is active. You can return control at any time.",
+		);
+
+		expect((await request("/api/panes/open", { method: "POST", body: {} })).status).toBe(200);
+		const split = await pollUntil(
+			async () => (await request<PaneList>("/api/panes")).body,
+			(report) => report.paneCount === 2,
+			"a second pane to mount for focused workbench transfer",
+		);
+		const secondClientId = split.panes.find((pane) => pane.clientId !== clientId)?.clientId;
+		expect(typeof secondClientId).toBe("string");
+		expect(
+			(
+				await request("/api/boards/new", {
+					method: "POST",
+					body: { board: "workbench-other", pane: secondClientId },
+				})
+			).status,
+		).toBe(200);
+		await browser.run(["click", '.pane[aria-label="Pane B"] .excalidraw']);
+		const paneB = await pollUntil(
+			() => readBanner(browser),
+			(value) => value.pane === "Pane B",
+			"the workbench to follow Pane B focus",
+		);
+		expect(paneB).toMatchObject({ state: "ready", what: null, bar: null, steps: [] });
+		await browser.run(["click", '.pane[aria-label="Pane A"] .excalidraw']);
+		const paneA = await pollUntil(
+			() => readBanner(browser),
+			(value) => value.pane === "Pane A" && value.bar === step,
+			"the workbench to restore Pane A claim and progress",
+		);
+		expect(paneA).toMatchObject({ state: "working", reason: claimWhy });
+		await browser.run(["click", '.pane[aria-label="Pane B"] .excalidraw']);
+		expect(
+			(await request("/api/panes/close", { method: "POST", body: { pane: secondClientId } }))
+				.status,
+		).toBe(200);
+		await pollUntil(
+			() => readBanner(browser),
+			(value) => value.pane === "Pane A" && value.reason === claimWhy,
+			"the surviving pane to regain workbench focus",
 		);
 
 		const takeoverId = claimedWrite.body.elements?.[0]?.id ?? claimedWrite.body.element?.id;
@@ -374,6 +426,7 @@ test(
 		);
 		expect(returned.what).toBeNull();
 		expect(returned.view).toBe(false);
+		expect(returned.state).toBe("ready");
 
 		const lost = await request<WriteBody>(`/api/elements?board=${BOARD}`, {
 			method: "POST",
@@ -390,13 +443,26 @@ test(
 			).status,
 		).toBe(200);
 
-		await canvas.dispose();
+		await canvas.restart();
 		const disconnected = await pollUntil(
 			() => readBanner(browser),
-			(value) => value.view === true,
+			(value) => value.view === true && value.state === "offline",
 			"the disconnected pane to fail closed as held",
 		);
-		expect(disconnected.view).toBe(true);
+		expect(disconnected).toMatchObject({ view: true, state: "offline" });
+		const reconnected = await pollUntil(
+			() => readBanner(browser),
+			(value) => value.view === false && value.state === "ready",
+			"the workbench and pane to recover after reconnection",
+		);
+		expect(reconnected).toMatchObject({ view: false, state: "ready" });
+
+		await canvas.dispose();
+		await pollUntil(
+			() => readBanner(browser),
+			(value) => value.view === true && value.state === "offline",
+			"the stopped canvas to remain fail closed",
+		);
 	},
 	TEST_BROWSER_COMMAND_TIMEOUT_MS * 6,
 );

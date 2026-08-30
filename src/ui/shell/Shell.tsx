@@ -19,7 +19,7 @@ import React, {
 import { CanvasPane } from "../canvas/CanvasPane";
 import { BoardBar } from "./BoardBar";
 import { BoardNavigator } from "./BoardNavigator";
-import { AgentRail } from "./AgentRail";
+import { AgentWorkbench } from "./AgentWorkbench";
 import { BoardDialog, type BoardDialogMode } from "./BoardDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { ConflictDialog } from "./ConflictDialog";
@@ -443,6 +443,7 @@ export function Shell(): React.JSX.Element {
 
 	const status = statuses[focused] ?? statuses[panes[0] ?? ""] ?? null;
 	const agentState = agentStates[focused] ?? agentStates[panes[0] ?? ""] ?? null;
+	const focusedPaneLabel = `Pane ${String.fromCharCode(65 + Math.max(0, panes.indexOf(focused)))}`;
 	const visibleNotice = presentationNotice(presentation, notice);
 	const boardKey = status?.boardKey ?? null;
 	const identity = status?.board ?? boardInfo?.identity ?? null;
@@ -1043,6 +1044,14 @@ export function Shell(): React.JSX.Element {
 						))}
 					</div>
 
+					<AgentWorkbench
+						paneLabel={focusedPaneLabel}
+						connected={status?.connected ?? false}
+						heldBy={agentState?.heldBy ?? null}
+						doing={visibleDoing}
+						takeBack={agentState?.takeBack}
+					/>
+
 					{visibleNotice && (
 						<div
 							className={`notice notice-shell notice-${visibleNotice.kind}${visibleNotice.hold ? " notice-hold" : ""}`}
@@ -1094,13 +1103,6 @@ export function Shell(): React.JSX.Element {
 						</div>
 					)}
 				</main>
-
-				<AgentRail
-					connected={status?.connected ?? false}
-					heldBy={agentState?.heldBy ?? null}
-					doing={visibleDoing}
-					takeBack={agentState?.takeBack}
-				/>
 			</div>
 
 			<footer className="statusbar">
