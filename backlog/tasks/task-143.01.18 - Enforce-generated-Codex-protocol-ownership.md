@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-30 22:43'
+updated_date: '2026-08-30 22:55'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -48,4 +48,12 @@ Own one repository-policy rule that makes generated Codex 0.151.0 bindings reach
 
 <!-- SECTION:NOTES:BEGIN -->
 Batch reservation at integration HEAD 7023de7: exact newly ready scoped leaves are TASK-143.01.18 and TASK-144.01. They are path-disjoint: one repository-policy owner versus the serialized package/lock seam. TASK-143.01.16 remains an active timing remediation and TASK-143.01.07 is in read-only review, so three leaf-worker slots are occupied after dispatch. Slot 4 is intentionally unused because no other TASK-143/TASK-144 leaf is ready; other scoped entries are parent containers or dependency-blocked, and TASK-141/TASK-142 are unrelated CI-restoration bugs.
+
+Implemented in commit 90949925b5801c02efc30cf5446c3929db220fce. Added the single owned policy owner at tests/system/repository-policy/codex-protocol-boundary.test.ts. It recognizes the exact ts-rs Codex binding header, requires the canonical ignored src/runtime/codex-protocol/generated/ directory, allows only the public codex-protocol adapter and generated peer imports, and checks tracked output plus static import forms.
+
+Validation: focused owner passed 6 tests / 32 expectations; relevant boundary, inventory, and conformance owners passed 56 tests / 179 expectations; bun run test:repository passed 136 tests / 452 expectations; codex-protocol and codex-realtime module owners passed 549 tests / 3512 expectations; bun run type-check passed both TypeScript projects; bun run lint, bun run fmt:check, and git diff --check passed.
+
+Mutation evidence: the pre-policy src/server/codex-session.ts deep-import fixture fails with a pathful deep-import finding and adapter recovery; the negative matrix produced 9 findings covering committed generated output, an alternate generated tree, two handwritten mirrors, and runtime/server/UI/scripts/tests bypasses. The positive adapter and temporary conformance fixtures produced zero findings.
+
+Scope audit: f7a5d0224f414f96c618ea5c23ce8cb64a996794..90949925b5801c02efc30cf5446c3929db220fce contains exactly one added file, with no diff-check errors. Final code status was clean before this Backlog note update.
 <!-- SECTION:NOTES:END -->
