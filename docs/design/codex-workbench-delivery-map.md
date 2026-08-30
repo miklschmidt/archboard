@@ -123,9 +123,13 @@ agent policy, or cross-module composition to a cheaper model.
    contract change returns to the parent instead of leaking into a peer leaf.
 4. Review independently with `gpt-5.6-sol`: medium for broad code review,
    higher architectural reasoning only when the seam changes. A reviewer must
-   reject weakened tests, lint, formatting, types, or public verification.
-5. Return findings to the same worker until clean, reconcile the reviewed
-   commit, run dependent contract owners, and finalize through Backlog.
+   reject weakened tests, lint, formatting, types, or public verification. Its
+   prompt names the parent callback thread and immutable source commit.
+5. The dispatcher does not poll or keep a turn open for review. The reviewer
+   callbacks the parent with `REVIEW_CLEAN` or complete actionable findings;
+   the parent returns findings to the same worker until clean, reconciles the
+   reviewed commit, runs dependent contract owners, and finalizes through
+   Backlog.
 6. Run `bun run check` at TASK-144, production composition, text UI, voice UI,
    and final TASK-143 boundaries.
 
