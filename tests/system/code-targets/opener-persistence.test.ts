@@ -12,6 +12,25 @@ type ActivationTimelineEntry =
 	| ["launch", LaunchCommand]
 	| ["activation-complete", "selection-a" | "caller-one" | "caller-two" | "restarted-caller"]
 	| ["restart-complete"];
+const CI_EXCLUDED_SYSTEM_OWNER_ENV = "ARCHBOARD_CI_EXCLUDED_SYSTEM_OWNER";
+const SYSTEM_OWNER_PATH = "tests/system/code-targets/opener-persistence.test.ts";
+
+function isExcludedFromHostedCi(environment: NodeJS.ProcessEnv): boolean {
+	const excludedOwner = environment[CI_EXCLUDED_SYSTEM_OWNER_ENV];
+	if (excludedOwner === undefined) return false;
+	if (environment.CI !== "true")
+		throw new Error(`${CI_EXCLUDED_SYSTEM_OWNER_ENV} requires CI=true.`);
+	if (excludedOwner !== SYSTEM_OWNER_PATH)
+		throw new Error(
+			`${CI_EXCLUDED_SYSTEM_OWNER_ENV} cannot exclude ${JSON.stringify(excludedOwner)}; only ${SYSTEM_OWNER_PATH} is allowed.`,
+		);
+	return true;
+}
+
+const excludedFromHostedCi = isExcludedFromHostedCi(process.env);
+if (excludedFromHostedCi)
+	process.stderr.write(`# CI-only system owner excluded: ${SYSTEM_OWNER_PATH}\n`);
+const persistenceTest = excludedFromHostedCi ? test.skip : test;
 
 async function save(fixture: OpenerFixture, selection: OpenerSelection): Promise<void> {
 	const result = await fixture.request("/api/settings/opener", {
@@ -30,7 +49,7 @@ async function activate(caller: ReturnType<OpenerFixture["caller"]>): Promise<vo
 }
 
 describe("machine-wide opener persistence", () => {
-	test(
+	persistenceTest(
 		"applies the latest save to independent callers and survives a restarted base",
 		async () => {
 			const previousVault = process.env.ARCHBOARD_VAULT;
