@@ -4,7 +4,7 @@ title: Control a live Codex task from the agent workbench
 status: To Do
 assignee: []
 created_date: '2026-08-30 11:44'
-updated_date: '2026-08-30 12:26'
+updated_date: '2026-08-30 13:08'
 labels: []
 dependencies:
   - TASK-140.03
@@ -16,18 +16,18 @@ references:
 parent_task_id: TASK-143
 priority: high
 type: feature
-ordinal: 165000
+ordinal: 166000
 ---
 
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Extend the collapsible claim and progress workbench with explicit Codex task attachment and text control. Use assistant-ui ExternalStoreRuntime for conversation composition and a small reviewed set of shadcn/Base UI source for interaction behavior. Archboard owns the closed browser reducer, connection-scoped task binding, command adapter, reverse-request lease, and visual styling. Diff review remains deferred.
+Extend the collapsible claim and progress workbench with explicit Codex task attachment and text control through the dedicated Archboard-owned app-server. Use assistant-ui ExternalStoreRuntime for conversation composition and a small reviewed set of shadcn/Base UI source for interaction behavior. Archboard owns the closed browser reducer, connection-scoped task binding, command adapter, reverse-request lease, and visual styling. Diff review remains deferred.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The focused pane can start a task for the current checkout or attach a task that the selected app-server proves is loaded and controllable by this connection. The task picker uses the session source-kinds policy, keeps a newly created appServer task visible after fresh listing or reconnect, shows loaded systemError, canAcceptDirectInput false or null, and rejoin refusal as disabled with the reported reason, and shows persisted notLoaded as disabled with ownership unknown. The first release never resumes or sends input to either unavailable class
+- [ ] #1 The focused pane can start a task for the current checkout or attach a task that the dedicated app-server proves is loaded and controllable by this connection. The task picker uses the session source-kinds policy, keeps a newly created appServer task visible after fresh listing or reconnect, shows loaded systemError, canAcceptDirectInput false or null, and rejoin refusal as disabled with the reported reason, and shows persisted notLoaded as disabled with ownership unknown. The first release never resumes or sends input to either unavailable class
 - [ ] #2 The pane binding restores after browser reconnect for the same live canvas session without changing thread configuration, never persists into the board note, and never follows a newly active Desktop or app-server task without an explicit user action
 - [ ] #3 Replacing a pane binding is refused while its task has an active turn, pending reverse request, or voice session; the workbench names the action needed to stop or resolve that state first
 - [ ] #4 Composer submit, steer while active, stop, streamed assistant text, reasoning summary, command and tool progress, file-change status, completion, interruption, failure, and unknown item fallback reflect the canonical closed browser reducer

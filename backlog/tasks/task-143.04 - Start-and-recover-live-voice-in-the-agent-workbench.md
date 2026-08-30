@@ -4,7 +4,7 @@ title: Start and recover live voice in the agent workbench
 status: To Do
 assignee: []
 created_date: '2026-08-30 11:44'
-updated_date: '2026-08-30 12:26'
+updated_date: '2026-08-30 13:08'
 labels: []
 dependencies:
   - TASK-143.02
@@ -15,7 +15,7 @@ references:
 parent_task_id: TASK-143
 priority: high
 type: feature
-ordinal: 166000
+ordinal: 167000
 ---
 
 ## Description
@@ -26,11 +26,11 @@ Integrate the internal Codex realtime voice module into the controllable workben
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Start voice is enabled only for a task proven controllable on a connection that accepted experimentalApi, asks for microphone access in response to the user action, and binds realtime start and SDP negotiation to that exact connection and thread. Rejection of the experimental capability disables voice with an actionable compatibility message
+- [ ] #1 Start voice is enabled only for a task proven controllable on the dedicated Archboard-owned app-server connection that accepted experimentalApi, asks for microphone access in response to the user action, and binds realtime start and SDP negotiation to that exact connection and thread. Rejection of the experimental capability disables voice with an actionable compatibility message
 - [ ] #2 The workbench exposes start, mute, unmute, and stop with visible listening and agent-speaking state, a restrained live level or waveform from AnalyserNode, remote playback only from the WebRTC track, visible realtime-events data-channel negotiation state, and equivalent text status for screen readers
 - [ ] #3 Canonical partial and final user and assistant transcript events join the bound task timeline without duplication, late deltas after stop are ignored, and typed and spoken turns preserve one chronological app-server history
 - [ ] #4 Changing pane focus never retargets or hides an active session: a persistent indicator names its source pane and task and keeps Stop reachable. Rebinding or closing the source pane is refused until voice stops
 - [ ] #5 Permission denial, no device, removed device, autoplay refusal, data-channel creation or open failure, data-channel error or close, SDP or ICE negotiation failure, experimental-capability rejection, app-server disconnect, realtime error, collapse, fullscreen, and browser reconnect each produce a truthful recoverable state and release media resources
-- [ ] #6 A deterministic browser lane uses controlled media, peer, and data-channel fakes to prove audio and the ordered oai-events channel exist before createOffer and to cover every state and cleanup path, while a manual microphone and speaker check against a compatible bundled shared daemon proves real audio input, agent output, transcript, stop, and restart
-- [ ] #7 The same smoke scenario runs against the exact-binary Archboard-owned fallback, and absence or rejection of the undocumented Desktop shared-daemon path does not disable Archboard voice
+- [ ] #6 A deterministic browser lane uses controlled media, peer, and data-channel fakes to prove audio and the ordered oai-events channel exist before createOffer and to cover every state and cleanup path, while a manual microphone and speaker check against the dedicated exact-binary app-server proves real audio input, agent output, transcript, stop, and restart
+- [ ] #7 The live smoke scenario starts from a clean Archboard process, reports the configured Codex version and dedicated child identity, survives a browser reconnect without retargeting the voice session, and proves that stopping Archboard closes realtime, media, MCP, and app-server resources without relying on a Desktop or shared-daemon path
 <!-- AC:END -->
