@@ -93,6 +93,42 @@ intentionally suitable for `gpt-5.6-luna`; the remaining 29 use
 This leaves a clear Luna majority without assigning visual design, authored
 agent policy, or cross-module composition to a cheaper model.
 
+## Root orchestration topology
+
+One persistent `gpt-5.6-sol` / `xhigh` root thread owns the complete global DAG
+directly. It does **not** create permanent child orchestrators for TASK-143.01
+through TASK-143.07 or TASK-144: cross-parent dependencies, shared package,
+CSS, and browser owners, and final composition would split ready-state and
+reconciliation authority.
+The root may create bounded worker and independent reviewer threads, but it
+never delegates scheduling or integration ownership.
+
+The root maintains one isolated integration branch from the reviewed plan
+commit, recomputes ready leaves from current Backlog dependencies after every
+reconciliation, and dispatches only leaves whose dependencies are Done. It
+starts at most four disjoint leaf workers and two reviewers concurrently,
+leaving capacity for the root, callbacks, validation, and recovery. A shared
+path or prefix is one serialized lane even when two tasks appear in the same
+conceptual wave.
+
+Each leaf gets one visible project-worktree worker starting from the current
+integration commit and the exact model/effort in its `Delegation profile`.
+That worker may mark only its leaf In Progress and record its researched plan;
+it owns only named paths, commits its implementation and focused evidence,
+never marks the task Done, never pushes, and remains the remediation worker for
+that leaf. A sibling leaf is a new responsibility, not an unannounced reuse of
+the thread.
+
+The root validates every callback, sends each immutable worker range to an
+independent reviewer, challenges findings against source and acceptance, and
+returns valid findings to the same worker until `REVIEW_CLEAN`. Only then does
+the root reconcile the reviewed commit into the integration branch, run the
+dependent contract owners, and finalize the leaf through Backlog. Root-owned
+boundary gates run sequentially in one validation lane. If scheduling,
+architecture, preserved work, or authority becomes ambiguous, the root pauses
+dispatch and callbacks its supervising source thread instead of inventing a
+new coordinator tier.
+
 ## Dependency waves
 
 1. Pin exact Codex generation, identities, timing, capabilities/login/thread
