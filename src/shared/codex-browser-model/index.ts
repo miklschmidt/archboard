@@ -1,5 +1,19 @@
+import { createBrowserSchemas, DeliveryOutcomeSchema } from "./lib/browser.js";
+import {
+	createIdentitySchemas,
+	JsonValueSchema,
+	boundedText,
+	boundedWireText,
+	NonNegativeIntegerSchema,
+	NullableNonNegativeIntegerSchema,
+	SafeUrlSchema,
+} from "./lib/scalars.js";
+import { createServerRequestSchemas, SERVER_REQUEST_METHODS } from "./lib/server-requests.js";
+import type { IdentityContext } from "./lib/scalars.js";
+
 export {
 	BEDROCK_SETUP_POLICIES,
+	BedrockSetupParamsSchema,
 	CurrentTimeReadResponseSchema,
 	INITIALIZE_CAPABILITIES,
 	InitializeCapabilitiesSchema,
@@ -10,67 +24,41 @@ export {
 	LOGIN_POLICIES,
 	LOGIN_VARIANTS,
 	ProtocolErrorSchema,
+	SupportedLoginAccountParamsSchema,
 	UNSUPPORTED_ATTESTATION_ERROR,
 	UNSUPPORTED_TOKEN_REFRESH_ERROR,
-	BedrockSetupParamsSchema,
 } from "./lib/authored.js";
 
+export { DeliveryOutcomeSchema };
 export {
-	BrowserAccountSchema,
-	BrowserApprovalSchema,
-	BrowserCommandLeaseSchema,
-	BrowserCommandSchema,
-	BrowserCoordinatorSchema,
-	BrowserDtoSchema,
-	DeliveryOutcomeSchema,
-	BrowserLoginSchema,
-	BrowserOperationOutcomeSchema,
-	BrowserQueueSchema,
-	BrowserReadinessSchema,
-	BrowserSemanticDeliverySchema,
-	BrowserSettingsSchema,
-	BrowserSnapshotSchema,
-	BrowserTextCommandSchema,
-	BrowserThreadLinkSchema,
-	BrowserTimelineSchema,
-	BrowserToolResultSchema,
-	BrowserVoiceSchema,
-} from "./lib/browser.js";
-
-export {
-	ApprovalIdSchema,
-	BrowserCommandIdSchema,
-	ChildEpochSchema,
-	ChildIdSchema,
-	DynamicToolCallIdSchema,
-	ItemIdSchema,
-	JsonRpcRequestIdSchema,
 	JsonValueSchema,
-	LoginIdSchema,
-	OpaqueIdentitySchema,
-	QueuedSubmissionIdSchema,
-	RealtimeSessionIdSchema,
+	NonNegativeIntegerSchema,
+	NullableNonNegativeIntegerSchema,
 	SafeUrlSchema,
-	ThreadIdSchema,
-	TurnIdSchema,
 	boundedText,
-} from "./lib/scalars.js";
+	boundedWireText,
+};
+export { SERVER_REQUEST_METHODS };
 
-export {
-	SERVER_REQUEST_METHODS,
-	ServerRequestMethodSchema,
-	ServerRequestResultSchema,
-	ServerRequestSchema,
-} from "./lib/server-requests.js";
+export function createCodexBrowserModel(context: IdentityContext) {
+	const identity = createIdentitySchemas(context);
+	return {
+		...identity,
+		...createBrowserSchemas(identity, context),
+		...createServerRequestSchemas(identity),
+	};
+}
+
+export type CodexBrowserModel = ReturnType<typeof createCodexBrowserModel>;
 
 export type {
 	BrowserAccount,
 	BrowserApproval,
+	BrowserApprovalResponse,
 	BrowserCommand,
 	BrowserCommandLease,
 	BrowserCoordinator,
 	BrowserDto,
-	DeliveryOutcome,
 	BrowserLogin,
 	BrowserOperationOutcome,
 	BrowserQueue,
@@ -83,7 +71,25 @@ export type {
 	BrowserTimeline,
 	BrowserToolResult,
 	BrowserVoice,
+	BrowserSchemas,
+	DeliveryOutcome,
 } from "./lib/browser.js";
+
+export type {
+	AnyIdentity,
+	CodexIdentity,
+	IdentityContext,
+	IdentitySchemas,
+	JsonValue,
+} from "./lib/scalars.js";
+
+export type {
+	CodexServerRequest,
+	ServerRequest,
+	ServerRequestMethod,
+	ServerRequestResult,
+	ServerRequestSchemas,
+} from "./lib/server-requests.js";
 
 export type {
 	CurrentTimeReadResponse,
@@ -91,13 +97,5 @@ export type {
 	LoginAccountParams,
 	LoginPolicy,
 	LoginVariant,
+	SupportedLoginAccountParams,
 } from "./lib/authored.js";
-
-export type { JsonValue } from "./lib/scalars.js";
-
-export type {
-	CodexServerRequest,
-	ServerRequest,
-	ServerRequestMethod,
-	ServerRequestResult,
-} from "./lib/server-requests.js";

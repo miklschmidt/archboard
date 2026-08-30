@@ -20,7 +20,6 @@ export function exhaustiveBrowserDto(dto: BrowserDto): string {
 		case "voice":
 		case "command_lease":
 		case "operation_outcome":
-		case "browser_command":
 			return dto.kind;
 		default: {
 			const neverDto: never = dto;
@@ -68,7 +67,6 @@ type _BrowserDtoIsClosed = Assert<
 		| "voice"
 		| "command_lease"
 		| "operation_outcome"
-		| "browser_command"
 	>
 >;
 
