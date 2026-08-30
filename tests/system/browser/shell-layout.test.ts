@@ -86,10 +86,8 @@ type NoticeLayout = {
 	flat: boolean;
 	text: string;
 };
-
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const serverPath = join(repoRoot, "src/server.ts");
-
 test("the desktop shell keeps its type, geometry, states, and touch targets at 1440x900", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
@@ -104,7 +102,6 @@ test("the desktop shell keeps its type, geometry, states, and touch targets at 1
 	registerCanvasBase(canvas.base);
 	const browser = resources.use(await createAgentBrowser());
 	const api = createJsonRequester(canvas);
-
 	await api("/api/boards/new", {
 		method: "POST",
 		body: { board: "fixedpoint", level: "service" },
@@ -118,6 +115,11 @@ test("the desktop shell keeps its type, geometry, states, and touch targets at 1
 	await browser.run(["open", canvas.base]);
 	expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
 	await browser.run(["set", "viewport", "1440", "900"]);
+	expect(
+		await browser.eval<string[]>(
+			`[...document.styleSheets].flatMap(sheet => [...sheet.cssRules]).filter(rule => rule instanceof CSSMediaRule && [...rule.media].some(query => Number(query.match(/max-width:\\s*(\\d+)px/)?.[1]) <= 900)).filter(rule => /\\.(shell|workspace|bar|board-nav|canvas-zone|canvas-stage|panes|pane-bar|agent-workbench|selection-inspector|statusbar)\\b/.test(rule.cssText)).map(rule => rule.conditionText)`,
+		),
+	).toEqual([]);
 	await pollUntil(
 		() => api<PanesBody>("/api/panes").then((response) => response.body),
 		(state) => (state.paneCount ?? 0) === 1,
