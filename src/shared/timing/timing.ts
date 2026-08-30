@@ -219,7 +219,7 @@ export const CODEX_PROCESS_RESTART_MAX_MS = 30_000;
 /** Uncertainty-bound classification. Pulls against a lost non-idempotent response before `outcome_unknown`. */
 export const CODEX_REQUEST_SETTLEMENT_MS = 30_000;
 
-/** Browser-command lease classification. Pulls against the 120,000 ms wait cap and approval expiry. */
+/** Browser-command lease classification. Pulls against the public browser wait contract and approval expiry. */
 export const CODEX_BROWSER_COMMAND_LEASE_MS = 150_000;
 
 /** Visual-approval expiry classification. Pulls against the browser-command lease. */
