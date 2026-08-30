@@ -71,6 +71,32 @@ available only through the two explicit `LoginAccountParams` credential forms
 above. Unsupported variants are rejected with a visual recovery path; they do
 not make the whole session incapable of a supported login.
 
+## Dedicated child environment
+
+The child environment is built from an empty object. If present and a valid
+NUL-free string, only these ambient keys are copied, in this order:
+
+```text
+HOME, USER, LOGNAME, SHELL, PATH, LANG, LC_ALL, LC_CTYPE, TZ, TERM, COLORTERM,
+TMPDIR, TMP, TEMP, XDG_CACHE_HOME, XDG_CONFIG_HOME, XDG_RUNTIME_DIR,
+HTTP_PROXY, HTTPS_PROXY, ALL_PROXY, NO_PROXY, http_proxy, https_proxy,
+all_proxy, no_proxy, SSL_CERT_FILE, SSL_CERT_DIR, NIX_SSL_CERT_FILE,
+GIT_SSL_CAINFO, NODE_EXTRA_CA_CERTS, SSH_AUTH_SOCK
+```
+
+The host then writes canonical absolute `CODEX_HOME` and `CODEX_SQLITE_HOME`
+values over that object. Those two values are never copied from ambient input.
+Every other variable is absent, including all other `CODEX_*`, `OPENAI_*`,
+`AWS_*`, credential/token, listener/auth, daemon, Desktop, Electron, MCP, and
+app-tools variables. Spawn also supplies the canonical checkout through the
+process `cwd`; it does not add `PWD`.
+
+Fixtures begin from a poisoned environment containing every retained key,
+conflicting Codex roots, representative stripped prefixes, and an unrelated
+sentinel. They assert the output key set exactly, copied values byte-for-byte,
+dedicated-root overwrite precedence, absent optional keys rather than empty
+strings, NUL rejection, and no ambient-key fallthrough.
+
 ## Literal thread profiles
 
 The workhorse `thread/start` contains exactly these fields after placeholders
@@ -206,7 +232,8 @@ A general-tool fork uses this complete `ThreadForkParams` profile:
 
 For a non-self fork, optional `beforeTurnId` is included only when supplied by
 the validated tool input. For a self-fork, caller `beforeTurnId` is ignored and
-the host inserts the executing request's server-supplied `beforeTurnId`.
+the host sets `ThreadForkParams.beforeTurnId` to the executing
+`DynamicToolCallParams.turnId`.
 `lastTurnId`, `path`, `model`, `modelProvider`, `serviceTier`, `approvalPolicy`,
 `approvalsReviewer`, `sandbox`, `permissions`, `config`, `baseInstructions`,
 and `deferGoalContinuation` are always omitted.
@@ -628,7 +655,8 @@ credentials, process identity, or an unbounded app-server object. `loaded` and
 
 Approval mapping: `create_thread`, `fork_thread`, and arbitrary
 `send_message_to_thread` require a fresh visual broker approval. A self-fork
-uses the server-supplied executing `beforeTurnId` and no caller override.
+sets `ThreadForkParams.beforeTurnId` to the executing
+`DynamicToolCallParams.turnId` and ignores any caller override.
 `list_threads` and `read_thread` are read-only. `wait_threads` is allowed only
 when the wait graph proves no transitive cycle.
 

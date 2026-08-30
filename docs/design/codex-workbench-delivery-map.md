@@ -43,7 +43,7 @@ owner now registers itself when it becomes runnable.
   stylesheet, TASK-144.09 freezes the aesthetic guide, and TASK-144.14 maps the
   existing shell stylesheet to semantic variables without rewriting markup.
 - Base UI source: TASK-144.04 tracks and hash-gates immutable upstream button
-  and dialog fixtures. TASK-144.07 reduces the button deep module,
+  and dialog fixtures. TASK-144.20 reduces the button deep module,
   TASK-144.19 consumes it and reduces the dialog deep module, and TASK-144.08
   migrates opener.
 - Frame/shell: TASK-143.03.10 owns the text frame; TASK-143.04.06 extends it.
@@ -70,8 +70,9 @@ composition root and TASK-143.05-.07 inputs.
 
 ## Delegation classes
 
-Every leaf records one literal model and effort. **53 of 83 leaves** are
-intentionally suitable for `gpt-5.6-luna`:
+Every leaf records one literal model and effort. **54 of 83 leaves** are
+intentionally suitable for `gpt-5.6-luna`; the remaining 29 use
+`gpt-5.6-sol`:
 
 - `gpt-5.6-luna`, high: bounded exploration, mechanical configuration,
   generated-boundary checks, exports, cleanup, documentation, and fixtures.
@@ -82,8 +83,8 @@ intentionally suitable for `gpt-5.6-luna`:
   lifecycle/process owners, and broad integration review.
 - `gpt-5.6-sol`, high: routine rendered UI and browser implementation. This
   includes TASK-143.03.03-.09, TASK-143.03.11, TASK-143.03.13,
-  TASK-143.04.02-.07, TASK-143.04.10, TASK-144.03, TASK-144.07-.08,
-  TASK-144.11, TASK-144.14, and TASK-144.19.
+  TASK-143.04.02-.07, TASK-143.04.10, TASK-144.03, TASK-144.08,
+  TASK-144.11, TASK-144.14, TASK-144.19, and TASK-144.20.
 - `gpt-5.6-sol`, xhigh: the substantial workbench-frame design in
   TASK-143.03.10 and any change to the reference-mockup/aesthetic contract.
 - `gpt-5.6-sol`, xhigh: TASK-143.01.17 authors the immutable agent/tool bytes.

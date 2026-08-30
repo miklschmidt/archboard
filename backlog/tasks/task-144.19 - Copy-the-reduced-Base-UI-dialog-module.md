@@ -4,9 +4,10 @@ title: Copy the reduced Base UI dialog module
 status: To Do
 assignee: []
 created_date: '2026-08-30 16:58'
+updated_date: '2026-08-30 17:51'
 labels: []
 dependencies:
-  - TASK-144.07
+  - TASK-144.20
 references:
   - docs/design/vendor/shadcn-base/dialog.tsx
   - docs/design/tailwind-base-ui-adoption-research.md
