@@ -1,15 +1,17 @@
 import { z } from "zod";
 
 import {
-	AccountSchema,
-	ActivePermissionProfileSchema,
-	ApprovalsReviewerSchema,
-	AskForApprovalSchema,
 	ConfigLayerMetadataSchema,
 	ConfigLayerSchema,
 	ConfigRequirementsSchema,
 	ConfigSchema,
 	ModelSchema,
+} from "./config-schemas.js";
+import {
+	AccountSchema,
+	ActivePermissionProfileSchema,
+	ApprovalsReviewerSchema,
+	AskForApprovalSchema,
 	MultiAgentModeSchema,
 	ReasoningEffortSchema,
 	SandboxPolicySchema,
@@ -38,6 +40,7 @@ export const InitializeResponseSchema = looseObject({
 
 export const ConfigReadResponseSchema = looseObject({
 	config: ConfigSchema,
+	/** Config keys are generated map keys supplied by the server. */
 	origins: z.record(z.string(), ConfigLayerMetadataSchema),
 	layers: z.array(ConfigLayerSchema).nullable(),
 });

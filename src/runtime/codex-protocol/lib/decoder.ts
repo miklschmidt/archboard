@@ -160,6 +160,7 @@ const ClientNotificationEnvelopeSchema = looseObject({ method: z.string() });
 const ServerRequestEnvelopeSchema = looseObject({
 	id: RequestIdSchema,
 	method: z.string(),
+	/** The generic JSON-RPC envelope is narrowed immediately by method schema. */
 	params: JsonValueSchema,
 });
 
@@ -251,6 +252,8 @@ export function decodeJsonRpcError(value: unknown, method = "<unknown>"): Decode
 
 const JsonRpcResultEnvelopeSchema = looseObject({
 	id: RequestIdSchema,
+	error: z.never().optional(),
+	/** The generic result is narrowed immediately by the response method schema. */
 	result: JsonValueSchema,
 });
 

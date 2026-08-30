@@ -98,8 +98,11 @@ const McpToolCallAppContextSchema = looseObject({
 	actionName: z.string().nullable(),
 });
 const McpToolCallResultSchema = looseObject({
+	/** MCP servers choose the content item shapes at runtime. */
 	content: z.array(JsonValueSchema),
+	/** MCP structured results and metadata are generated JSON extension points. */
 	structuredContent: JsonValueSchema.nullable(),
+	/** MCP structured results and metadata are generated JSON extension points. */
 	_meta: JsonValueSchema.nullable(),
 });
 const CollabAgentStateSchema = looseObject({
@@ -170,6 +173,7 @@ export const ThreadItemSchema = z.discriminatedUnion("type", [
 		server: z.string(),
 		tool: z.string(),
 		status: z.enum(["inProgress", "completed", "failed"]),
+		/** Dynamic MCP arguments are intentionally open JSON in generated code. */
 		arguments: JsonValueSchema,
 		appContext: McpToolCallAppContextSchema.nullable(),
 		mcpAppResourceUri: z.string().optional(),
@@ -184,6 +188,7 @@ export const ThreadItemSchema = z.discriminatedUnion("type", [
 		id: z.string(),
 		namespace: z.string().nullable(),
 		tool: z.string(),
+		/** Dynamic tool arguments are intentionally open JSON in generated code. */
 		arguments: JsonValueSchema,
 		status: z.enum(["inProgress", "completed", "failed"]),
 		contentItems: z.array(DynamicToolCallOutputContentItemSchema).nullable(),
@@ -210,6 +215,7 @@ export const ThreadItemSchema = z.discriminatedUnion("type", [
 		prompt: z.string().nullable(),
 		model: z.string().nullable(),
 		reasoningEffort: ReasoningEffortSchema.nullable(),
+		/** Agent ids are generated map keys; Codex supplies the key set at runtime. */
 		agentsStates: z.record(z.string(), CollabAgentStateSchema),
 	}),
 	looseObject({
@@ -224,6 +230,7 @@ export const ThreadItemSchema = z.discriminatedUnion("type", [
 		id: z.string(),
 		query: z.string(),
 		action: WebSearchActionSchema.nullable(),
+		/** Search result records are provider-defined generated JSON. */
 		results: z.array(JsonValueSchema).nullable(),
 	}),
 	looseObject({ type: z.literal("imageView"), id: z.string(), path: z.string() }),

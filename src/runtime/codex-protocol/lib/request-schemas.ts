@@ -1,14 +1,19 @@
 import { z } from "zod";
 
-import { CommandActionSchema, FileChangeSchema } from "./item-schemas.js";
+import { CommandActionSchema } from "./item-schemas.js";
 import type { ClientNotificationMethod, ServerRequestMethod } from "./methods.js";
 import {
-	ObjectSchema,
-	JsonRecordSchema,
-	JsonValueSchema,
-	RequestIdSchema,
-	looseObject,
-} from "./scalars.js";
+	AdditionalPermissionProfileSchema,
+	ApplyPatchApprovalParamsSchema,
+	CommandExecutionApprovalDecisionSchema,
+	ExecPolicyAmendmentSchema,
+	ExecCommandApprovalParamsSchema,
+	McpServerElicitationRequestParamsSchema,
+	NetworkApprovalContextSchema,
+	NetworkPolicyAmendmentSchema,
+	RequestPermissionProfileSchema,
+} from "./approval-schemas.js";
+import { JsonValueSchema, RequestIdSchema, looseObject } from "./scalars.js";
 
 export const ClientInfoSchema = z.strictObject({
 	name: z.string(),
@@ -36,7 +41,7 @@ export const LoginAccountParamsSchema = z.discriminatedUnion("type", [
 		type: z.literal("chatgpt"),
 		codexStreamlinedLogin: z.boolean().optional(),
 		useHostedLoginSuccessPage: z.boolean().optional(),
-		appBrand: JsonValueSchema.nullable().optional(),
+		appBrand: z.enum(["codex", "chatgpt"]).nullable().optional(),
 	}),
 	looseObject({ type: z.literal("chatgptDeviceCode") }),
 	looseObject({
@@ -58,12 +63,8 @@ export const LoginAccountParamsSchema = z.discriminatedUnion("type", [
 export const CancelLoginAccountParamsSchema = looseObject({ loginId: z.string() });
 export const AccountReadParamsSchema = looseObject({ refreshToken: z.boolean().optional() });
 
-const RequestPermissionSchema = looseObject({
-	network: JsonRecordSchema.nullable(),
-	fileSystem: JsonRecordSchema.nullable(),
-});
-
-export const CommandExecutionRequestApprovalParamsSchema = looseObject({
+/** Approval prompts are closed so an unrecognized permission cannot be acted on. */
+export const CommandExecutionRequestApprovalParamsSchema = z.strictObject({
 	kind: z.enum(["command", "writeStdin"]),
 	threadId: z.string(),
 	turnId: z.string(),
@@ -72,17 +73,17 @@ export const CommandExecutionRequestApprovalParamsSchema = looseObject({
 	approvalId: z.string().nullable().optional(),
 	environmentId: z.string().nullable(),
 	reason: z.string().nullable().optional(),
-	networkApprovalContext: ObjectSchema.nullable().optional(),
+	networkApprovalContext: NetworkApprovalContextSchema.nullable().optional(),
 	command: z.string().nullable().optional(),
 	cwd: z.string().nullable().optional(),
 	commandActions: z.array(CommandActionSchema).nullable().optional(),
-	additionalPermissions: RequestPermissionSchema.nullable().optional(),
-	proposedExecpolicyAmendment: z.array(z.string()).nullable().optional(),
-	proposedNetworkPolicyAmendments: z.array(ObjectSchema).nullable().optional(),
-	availableDecisions: z.array(JsonValueSchema).nullable().optional(),
+	additionalPermissions: AdditionalPermissionProfileSchema.nullable().optional(),
+	proposedExecpolicyAmendment: ExecPolicyAmendmentSchema.nullable().optional(),
+	proposedNetworkPolicyAmendments: z.array(NetworkPolicyAmendmentSchema).nullable().optional(),
+	availableDecisions: z.array(CommandExecutionApprovalDecisionSchema).nullable().optional(),
 });
 
-export const FileChangeRequestApprovalParamsSchema = looseObject({
+export const FileChangeRequestApprovalParamsSchema = z.strictObject({
 	threadId: z.string(),
 	turnId: z.string(),
 	itemId: z.string(),
@@ -109,37 +110,8 @@ export const ToolRequestUserInputParamsSchema = looseObject({
 	autoResolutionMs: z.number().finite().nullable(),
 });
 
-const McpElicitationBaseSchema = {
-	threadId: z.string(),
-	turnId: z.string().nullable(),
-	serverName: z.string(),
-};
-export const McpServerElicitationRequestParamsSchema = z.discriminatedUnion("mode", [
-	looseObject({
-		...McpElicitationBaseSchema,
-		mode: z.literal("form"),
-		_meta: JsonValueSchema.nullable(),
-		message: z.string(),
-		requestedSchema: ObjectSchema,
-	}),
-	looseObject({
-		...McpElicitationBaseSchema,
-		mode: z.literal("openai/form"),
-		_meta: JsonValueSchema.nullable(),
-		message: z.string(),
-		requestedSchema: JsonValueSchema,
-	}),
-	looseObject({
-		...McpElicitationBaseSchema,
-		mode: z.literal("url"),
-		_meta: JsonValueSchema.nullable(),
-		message: z.string(),
-		url: z.string(),
-		elicitationId: z.string(),
-	}),
-]);
-
-export const PermissionsRequestApprovalParamsSchema = looseObject({
+/** Filesystem/network permission requests are closed at the request boundary. */
+export const PermissionsRequestApprovalParamsSchema = z.strictObject({
 	threadId: z.string(),
 	turnId: z.string(),
 	itemId: z.string(),
@@ -147,7 +119,7 @@ export const PermissionsRequestApprovalParamsSchema = looseObject({
 	startedAtMs: z.number().finite(),
 	cwd: z.string(),
 	reason: z.string().nullable(),
-	permissions: RequestPermissionSchema,
+	permissions: RequestPermissionProfileSchema,
 });
 
 export const DynamicToolCallParamsSchema = looseObject({
@@ -156,6 +128,7 @@ export const DynamicToolCallParamsSchema = looseObject({
 	callId: z.string(),
 	namespace: z.string().nullable(),
 	tool: z.string(),
+	/** Dynamic tool arguments are intentionally open JSON from the generated contract. */
 	arguments: JsonValueSchema,
 });
 
@@ -165,36 +138,6 @@ export const ChatgptAuthTokensRefreshParamsSchema = looseObject({
 });
 export const AttestationGenerateParamsSchema = z.strictObject({});
 export const CurrentTimeReadParamsSchema = looseObject({ threadId: z.string() });
-
-const ParsedCommandSchema = z.discriminatedUnion("type", [
-	looseObject({ type: z.literal("read"), cmd: z.string(), name: z.string(), path: z.string() }),
-	looseObject({ type: z.literal("list_files"), cmd: z.string(), path: z.string().nullable() }),
-	looseObject({
-		type: z.literal("search"),
-		cmd: z.string(),
-		query: z.string().nullable(),
-		path: z.string().nullable(),
-	}),
-	looseObject({ type: z.literal("unknown"), cmd: z.string() }),
-]);
-
-export const ApplyPatchApprovalParamsSchema = looseObject({
-	conversationId: z.string(),
-	callId: z.string(),
-	fileChanges: z.record(z.string(), FileChangeSchema),
-	reason: z.string().nullable(),
-	grantRoot: z.string().nullable(),
-});
-
-export const ExecCommandApprovalParamsSchema = looseObject({
-	conversationId: z.string(),
-	callId: z.string(),
-	approvalId: z.string().nullable(),
-	command: z.array(z.string()),
-	cwd: z.string(),
-	reason: z.string().nullable(),
-	parsedCmd: z.array(ParsedCommandSchema),
-});
 
 export const SERVER_REQUEST_SCHEMAS = {
 	"item/commandExecution/requestApproval": CommandExecutionRequestApprovalParamsSchema,
@@ -216,9 +159,11 @@ export const CLIENT_NOTIFICATION_SCHEMAS = {
 
 export const JsonRpcErrorSchema = looseObject({
 	id: RequestIdSchema,
+	result: z.never().optional(),
 	error: looseObject({
 		code: z.number().int(),
 		message: z.string(),
+		/** JSON-RPC error data is an intentionally open standard extension. */
 		data: JsonValueSchema.optional(),
 	}),
 });

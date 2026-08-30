@@ -1,9 +1,14 @@
-import { existsSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
 import {
 	CLIENT_NOTIFICATION_METHODS,
+	CODEX_PROTOCOL_BINARY,
+	CODEX_PROTOCOL_BINARY_VERSION,
 	CODEX_PROTOCOL_GENERATED_FILE_COUNT,
 	CODEX_PROTOCOL_GENERATED_TREE_SHA256,
 	CODEX_PROTOCOL_VERSION,
@@ -21,21 +26,45 @@ import {
 	decodeServerRequest,
 	digestGeneratedTree,
 } from "../index.js";
-import {
-	clientNotificationFixtures,
-	notificationFixture,
-	responseFixtures,
-	serverRequestFixtures,
-} from "./fixtures.js";
-
-const GENERATED_ROOT = new URL("../generated/", import.meta.url).pathname;
+import { clientNotificationFixtures, responseFixtures, serverRequestFixtures } from "./fixtures.js";
+import { notificationFixture, serverNotificationFixtures } from "./notification-fixtures.js";
 
 describe("codex 0.151.0 manifest", () => {
-	test("records the exact generated tree when the ignored output is present", () => {
-		if (!existsSync(GENERATED_ROOT)) return;
-		const digest = digestGeneratedTree(GENERATED_ROOT);
-		expect(digest.fileCount).toBe(CODEX_PROTOCOL_GENERATED_FILE_COUNT);
-		expect(digest.sha256).toBe(CODEX_PROTOCOL_GENERATED_TREE_SHA256);
+	test("matches a fresh tree from the exact configured generator", () => {
+		let version: string;
+		try {
+			version = execFileSync(CODEX_PROTOCOL_BINARY, ["--version"], {
+				encoding: "utf8",
+				stdio: ["ignore", "pipe", "pipe"],
+			}).trim();
+		} catch (error) {
+			throw new Error(
+				`Codex protocol conformance prerequisite missing: could not run ${CODEX_PROTOCOL_BINARY} --version. Install/configure Codex ${CODEX_PROTOCOL_BINARY_VERSION} before running test:modules. ${String(error)}`,
+				{ cause: error },
+			);
+		}
+		expect(version).toBe(CODEX_PROTOCOL_BINARY_VERSION);
+
+		const generatedRoot = mkdtempSync(join(tmpdir(), "archboard-codex-generated-"));
+		try {
+			try {
+				execFileSync(
+					CODEX_PROTOCOL_BINARY,
+					["app-server", "generate-ts", "--experimental", "--out", generatedRoot],
+					{ encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+				);
+			} catch (error) {
+				throw new Error(
+					`Codex protocol conformance failed: ${CODEX_PROTOCOL_BINARY} could not generate the temporary tree. Confirm the installed binary supports app-server generate-ts --experimental. ${String(error)}`,
+					{ cause: error },
+				);
+			}
+			const digest = digestGeneratedTree(generatedRoot);
+			expect(digest.fileCount).toBe(CODEX_PROTOCOL_GENERATED_FILE_COUNT);
+			expect(digest.sha256).toBe(CODEX_PROTOCOL_GENERATED_TREE_SHA256);
+		} finally {
+			rmSync(generatedRoot, { recursive: true, force: true });
+		}
 	});
 });
 
@@ -62,6 +91,17 @@ describe("public notification boundary", () => {
 		test(`decodes ${method}`, () => {
 			const input = { method, params: notificationFixture(method), emittedAtMs: 42 };
 			expect(decodeServerNotification(input) as unknown).toEqual(input);
+		});
+
+	for (const method of SERVER_NOTIFICATION_METHODS)
+		test(`rejects an incomplete ${method}`, () => {
+			const fixture = serverNotificationFixtures[method];
+			const malformed = Object.keys(fixture as object).length
+				? Object.fromEntries(Object.entries(fixture as Record<string, unknown>).slice(1))
+				: { unexpected: true };
+			expect(() => decodeServerNotification({ method, params: malformed })).toThrow(
+				ProtocolDecodeError,
+			);
 		});
 
 	for (const method of CLIENT_NOTIFICATION_METHODS)
@@ -99,6 +139,16 @@ describe("reverse request boundary", () => {
 		};
 		expect(decodeJsonRpcError(error, "thread/start")).toEqual(error);
 	});
+
+	test("rejects a JSON-RPC object that contains both result and error", () => {
+		expect(() =>
+			decodeJsonRpcError({
+				id: 3,
+				result: {},
+				error: { code: -32602, message: "invalid params" },
+			}),
+		).toThrow(ProtocolDecodeError);
+	});
 });
 
 describe("fail-closed diagnostics", () => {
@@ -120,6 +170,135 @@ describe("fail-closed diagnostics", () => {
 
 	test("rejects malformed required response fields", () => {
 		expect(() => decodeResponse("thread/list", { data: [] })).toThrow(ProtocolDecodeError);
+	});
+
+	test("rejects a response envelope that contains both result and error", () => {
+		expect(() =>
+			decodeResponseEnvelope("turn/steer", {
+				id: 7,
+				result: { turnId: "turn-1" },
+				error: { code: -32602, message: "invalid params" },
+			}),
+		).toThrow(ProtocolDecodeError);
+	});
+
+	test("rejects unknown members of security-sensitive request unions", () => {
+		expect(() =>
+			decodeServerRequest({
+				id: 1,
+				method: "item/commandExecution/requestApproval",
+				params: {
+					...(serverRequestFixtures["item/commandExecution/requestApproval"] as Record<
+						string,
+						unknown
+					>),
+					availableDecisions: ["futureDecision"],
+				},
+			}),
+		).toThrow(ProtocolDecodeError);
+		expect(() =>
+			decodeServerRequest({
+				id: 1,
+				method: "item/permissions/requestApproval",
+				params: {
+					...(serverRequestFixtures["item/permissions/requestApproval"] as Record<string, unknown>),
+					permissions: {
+						network: null,
+						fileSystem: {
+							read: null,
+							write: null,
+							entries: [{ path: { type: "future" }, access: "read" }],
+						},
+					},
+				},
+			}),
+		).toThrow(ProtocolDecodeError);
+	});
+
+	test("accepts every command approval decision and permission branch", () => {
+		const params = {
+			...(serverRequestFixtures["item/commandExecution/requestApproval"] as Record<
+				string,
+				unknown
+			>),
+			networkApprovalContext: { host: "example.test", protocol: "https" },
+			additionalPermissions: {
+				network: { enabled: true },
+				fileSystem: {
+					read: ["/tmp/archboard"],
+					write: null,
+					globScanMaxDepth: 2,
+					entries: [
+						{
+							path: {
+								type: "special",
+								value: { kind: "project_roots", subpath: null },
+							},
+							access: "read",
+						},
+					],
+				},
+			},
+			proposedExecpolicyAmendment: ["prefix_rule"],
+			proposedNetworkPolicyAmendments: [{ host: "example.test", action: "allow" }],
+			availableDecisions: [
+				"accept",
+				"acceptForSession",
+				{ acceptWithExecpolicyAmendment: { execpolicy_amendment: ["prefix_rule"] } },
+				{
+					applyNetworkPolicyAmendment: {
+						network_policy_amendment: { host: "example.test", action: "deny" },
+					},
+				},
+				"decline",
+				"cancel",
+			],
+		};
+		const input = { id: 1, method: "item/commandExecution/requestApproval", params } as const;
+		expect(decodeServerRequest(input) as unknown).toEqual(input);
+	});
+
+	test("rejects unknown config security enums on the response graph", () => {
+		const configResponse = responseFixtures["config/read"] as {
+			config: Record<string, unknown>;
+			origins: Record<string, unknown>;
+			layers: null;
+		};
+		expect(() =>
+			decodeResponse("config/read", {
+				...configResponse,
+				config: { ...configResponse.config, forced_login_method: "future" },
+			}),
+		).toThrow(ProtocolDecodeError);
+	});
+
+	test("rejects unknown network policy values", () => {
+		expect(() =>
+			decodeServerRequest({
+				id: 1,
+				method: "item/commandExecution/requestApproval",
+				params: {
+					...(serverRequestFixtures["item/commandExecution/requestApproval"] as Record<
+						string,
+						unknown
+					>),
+					networkApprovalContext: { host: "example.test", protocol: "ftp" },
+					proposedNetworkPolicyAmendments: [{ host: "example.test", action: "future" }],
+				},
+			}),
+		).toThrow(ProtocolDecodeError);
+	});
+
+	test("rejects unknown notification union variants", () => {
+		expect(() =>
+			decodeServerNotification({
+				method: "item/autoApprovalReview/started",
+				params: {
+					...(notificationFixture("item/autoApprovalReview/started") as Record<string, unknown>),
+					action: { type: "futureAction" },
+				},
+			}),
+		).toThrow(ProtocolDecodeError);
 	});
 
 	test("rejects unknown discriminated thread status members", () => {
