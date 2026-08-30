@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 20:03'
+updated_date: '2026-08-30 20:11'
 labels: []
 dependencies:
   - TASK-143.01.12
@@ -51,6 +51,10 @@ Delegation profile: gpt-5.6-luna, max.
 8. Make JSON-RPC result/error envelopes mutually exclusive and add direct ambiguity regressions.
 
 9. Add a module-owned conformance owner that invokes the exact configured generator into a temporary directory, verifies version/file count/tree digest, and fails actionably when prerequisites are absent.
+
+10. Extract portable exact-generator conformance into a module-owned function that requires an explicit executable path, keeps the normal module suite deterministic, and records manual validation against the configured local binary without taking TASK-143.01.13's dependency/CI ownership.
+11. Make all public JSON-RPC request, result, and error envelopes strict and mutually exclusive, with direct extra-field regressions for each boundary.
+12. Add a generated-derived challenge matrix covering every union-bearing accepted notification and every closed nested union, with compile-time/runtime completeness checks and intentional JsonValue exceptions preserved.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes

@@ -3,10 +3,9 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 export const CODEX_PROTOCOL_VERSION = "0.151.0" as const;
-export const CODEX_PROTOCOL_BINARY = "/home/msc/.cache/.bun/bin/codex" as const;
 export const CODEX_PROTOCOL_BINARY_VERSION = "codex-cli 0.151.0" as const;
 export const CODEX_PROTOCOL_GENERATION_COMMAND =
-	"/home/msc/.cache/.bun/bin/codex app-server generate-ts --experimental --out src/runtime/codex-protocol/generated" as const;
+	"codex app-server generate-ts --experimental --out <temporary-directory>" as const;
 export const CODEX_PROTOCOL_GENERATED_FILE_COUNT = 820 as const;
 export const CODEX_PROTOCOL_GENERATED_TREE_SHA256 =
 	"cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273" as const;
@@ -22,6 +21,7 @@ export const CODEX_PROTOCOL_GENERATED_TREE_DIGEST_ALGORITHM =
 export const CODEX_PROTOCOL_MANIFEST = Object.freeze({
 	protocol: "codex-app-server",
 	version: CODEX_PROTOCOL_VERSION,
+	binaryVersion: CODEX_PROTOCOL_BINARY_VERSION,
 	generationCommand: CODEX_PROTOCOL_GENERATION_COMMAND,
 	generatedFileCount: CODEX_PROTOCOL_GENERATED_FILE_COUNT,
 	generatedTreeSha256: CODEX_PROTOCOL_GENERATED_TREE_SHA256,

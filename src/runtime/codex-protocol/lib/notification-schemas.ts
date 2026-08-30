@@ -280,7 +280,7 @@ const SERVER_NOTIFICATION_SCHEMAS = {
 
 export { SERVER_NOTIFICATION_SCHEMAS };
 
-export const ServerNotificationEnvelopeSchema = looseObject({
+export const ServerNotificationEnvelopeSchema = z.strictObject({
 	emittedAtMs: FiniteNumberSchema.optional(),
 	method: z.string(),
 	params: JsonObjectSchema,
