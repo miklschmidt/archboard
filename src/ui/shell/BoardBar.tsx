@@ -116,11 +116,8 @@ export function BoardBar({
 	return (
 		<header className="bar">
 			<div className="bar-brand" aria-label="archboard">
-				<span className="brand-mark">
-					<Icon name="boards" size={19} />
-				</span>
 				<span className="brand-copy">
-					<span className="wordmark">Archboard</span>
+					<span className="wordmark">archboard</span>
 					<span className="vault-name" title={vault ?? undefined}>
 						{vault ? `${vault} / autowrite` : "Connecting to vault"}
 					</span>

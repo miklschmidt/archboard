@@ -5,7 +5,7 @@
 // around it — which is what makes a second pane a one-line change in the shell
 // rather than a second copy of the sync logic.
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Excalidraw, getLibraryItemsHash } from "@excalidraw/excalidraw";
 import type { ExcalidrawImperativeAPI, LibraryItems, AppState } from "@excalidraw/excalidraw/types";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
@@ -103,6 +103,8 @@ export function CanvasPane({
 	// and write it to the server again, forever.
 	const [api, setApi] = useState<ExcalidrawImperativeAPI | null>(null);
 	const appliedHashRef = useRef(0);
+	const themeRef = useRef(theme);
+	const pendingThemeRef = useRef<"light" | "dark" | null>(null);
 
 	useEffect(() => {
 		if (!api) return;
@@ -116,8 +118,15 @@ export function CanvasPane({
 	// `initialData` while it mounts, so a theme picked in the header must also
 	// be applied to every mounted canvas. Its onChange then reports the same
 	// value back to the shell, keeping the built-in menu and our control in sync.
-	useEffect(() => {
-		if (!api || api.getAppState().theme === theme) return;
+	useLayoutEffect(() => {
+		if (themeRef.current !== theme) pendingThemeRef.current = theme;
+		themeRef.current = theme;
+		if (!api) return;
+		if (api.getAppState().theme === theme) {
+			pendingThemeRef.current = null;
+			return;
+		}
+		pendingThemeRef.current = theme;
 		api.updateScene({ appState: { theme } });
 	}, [api, theme]);
 
@@ -146,10 +155,18 @@ export function CanvasPane({
 	);
 	const handleChange = useCallback(
 		(elements: readonly Partial<ExcalidrawElement>[], appState: AppState): void => {
-			if (appState.theme && appState.theme !== theme) onThemeChange(appState.theme);
+			// Applying a header theme can make Excalidraw report its previous theme
+			// before it reports the requested one. Ignore those intermediate callbacks,
+			// or the old value bounces back into Shell until React unmounts the root.
+			const pendingTheme = pendingThemeRef.current;
+			if (pendingTheme) {
+				if (appState.theme === pendingTheme) pendingThemeRef.current = null;
+			} else if (appState.theme && appState.theme !== themeRef.current) {
+				onThemeChange(appState.theme);
+			}
 			session.handleChange(elements, appState);
 		},
-		[onThemeChange, session, theme],
+		[onThemeChange, session],
 	);
 	const initialData = useMemo(
 		() => ({
