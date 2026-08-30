@@ -104,30 +104,38 @@ The root may create bounded worker and independent reviewer threads, but it
 never delegates scheduling or integration ownership.
 
 The root maintains one isolated integration branch from the reviewed plan
-commit, recomputes ready leaves from current Backlog dependencies after every
-reconciliation, and dispatches only leaves whose dependencies are Done. It
-starts at most four disjoint leaf workers and two reviewers concurrently,
-leaving capacity for the root, callbacks, validation, and recovery. A shared
-path or prefix is one serialized lane even when two tasks appear in the same
-conceptual wave.
+commit plus an explicit leaf-keyed active set covering implementation, review,
+and remediation. Readiness comes only from a clean committed integration
+`HEAD`: dependencies must be Done there and the candidate must be absent from
+the active set. Before dispatch, the root marks the selected leaves In Progress
+through Backlog, commits that reservation, and starts every worker from exactly
+that commit. It starts at most four disjoint leaf workers and two reviewers
+concurrently, leaving capacity for the root, callbacks, validation, and
+recovery. A shared path or prefix is one serialized lane even when two tasks
+appear in the same conceptual wave.
 
-Each leaf gets one visible project-worktree worker starting from the current
-integration commit and the exact model/effort in its `Delegation profile`.
-That worker may mark only its leaf In Progress and record its researched plan;
-it owns only named paths, commits its implementation and focused evidence,
-never marks the task Done, never pushes, and remains the remediation worker for
-that leaf. A sibling leaf is a new responsibility, not an unannounced reuse of
-the thread.
+Each leaf gets one visible project-worktree worker starting from the committed
+reservation `HEAD` and the exact model/effort in its `Delegation profile`. That
+worker may record the researched plan only on its already-In-Progress leaf; it
+owns only named paths, commits its implementation and focused evidence, never
+marks the task Done, never pushes, and remains the remediation worker for that
+leaf. A sibling leaf is a new responsibility, not an unannounced reuse of the
+thread.
 
-The root validates every callback, sends each immutable worker range to an
-independent reviewer, challenges findings against source and acceptance, and
-returns valid findings to the same worker until `REVIEW_CLEAN`. Only then does
-the root reconcile the reviewed commit into the integration branch, run the
-dependent contract owners, and finalize the leaf through Backlog. Root-owned
-boundary gates run sequentially in one validation lane. If scheduling,
-architecture, preserved work, or authority becomes ambiguous, the root pauses
-dispatch and callbacks its supervising source thread instead of inventing a
-new coordinator tier.
+The root assigns one independent reviewer thread to each leaf review loop. That
+same reviewer rereviews the complete fixed worker `BASE` through each immutable
+remediation `HEAD` until `REVIEW_CLEAN`; the reviewer is not replaced between
+passes. The root validates callbacks, challenges findings against source and
+acceptance, and returns valid findings to the same worker. Only after clean
+review does the root reconcile the worker commit, run dependent validation,
+finalize the leaf through Backlog, and commit that finalization on the
+integration branch. It requires a clean checkout, advances the integration
+`HEAD`, removes the leaf from the active set, then recomputes readiness and
+starts downstream worktrees from exactly that new commit. Root-owned boundary
+gates run sequentially in one validation lane. If scheduling, architecture,
+preserved work, reviewer continuity, or authority becomes ambiguous, the root
+pauses dispatch and callbacks its supervising source thread instead of
+inventing a new coordinator tier.
 
 ## Dependency waves
 
@@ -151,22 +159,29 @@ new coordinator tier.
 
 ## Orchestration loop
 
-1. Select one leaf whose Backlog dependencies are Done. Read its record,
-   decisions, named owner path, neighbors, and public tests.
-2. Create an isolated worktree with the model/effort class above. The worker
-   marks the leaf In Progress and records its researched implementation plan.
-   Its dispatch prompt supplies the exact parent callback thread.
+1. From a clean committed integration `HEAD`, select leaves whose Backlog
+   dependencies are Done and which are absent from the implementation,
+   review, and remediation active set. Read each record, decisions, named owner
+   path, neighbors, and public tests.
+2. Mark the selected leaves In Progress through Backlog, commit that reservation,
+   then create isolated worktrees from that exact commit with the model/effort
+   class above. Each worker records its researched implementation plan. Its
+   dispatch prompt supplies the exact parent callback thread.
 3. Keep code and focused verification inside the named seam. A discovered
    contract change returns to the parent instead of leaking into a peer leaf.
-4. Review independently with `gpt-5.6-sol`: medium for broad code review,
-   higher architectural reasoning only when the seam changes. A reviewer must
-   reject weakened tests, lint, formatting, types, or public verification. Its
-   prompt names the parent callback thread and immutable source commit.
+4. Assign one independent reviewer thread to the leaf with `gpt-5.6-sol`:
+   medium for broad code review, higher architectural reasoning only when the
+   seam changes. It must reject weakened tests, lint, formatting, types, or
+   public verification, and its prompt names the parent callback thread, fixed
+   worker `BASE`, and current immutable `HEAD`.
 5. The dispatcher does not poll or keep a turn open for review. The reviewer
    callbacks the parent with `REVIEW_CLEAN` or complete actionable findings;
-   the parent returns findings to the same worker until clean, reconciles the
-   reviewed commit, runs dependent contract owners, and finalizes through
-   Backlog.
+   the parent returns findings to the same worker and requires the same
+   reviewer to rereview the complete fixed-BASE range after every remediation.
+   After clean review, reconcile the implementation, run dependent validation,
+   finalize through Backlog, commit the finalization, require a clean checkout,
+   remove the active leaf, and only then recompute readiness from the new
+   integration `HEAD`.
 6. Run `bun run check` at TASK-144, production composition, text UI, voice UI,
    and final TASK-143 boundaries.
 
