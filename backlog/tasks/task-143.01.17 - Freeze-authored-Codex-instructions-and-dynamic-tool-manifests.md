@@ -1,10 +1,11 @@
 ---
 id: TASK-143.01.17
 title: Freeze authored Codex instructions and dynamic-tool manifests
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-30 18:00'
+updated_date: '2026-08-30 21:53'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -34,3 +35,18 @@ Own the human-reviewed, byte-exact source contract for capabilities, login polic
 - [ ] #4 resolve_spoken_approval arms only from one matching final user item after the effect prompt; exact classifier bytes and child/thread/turn/call/manifest/session/item/sequence/effect/expiry validation supply the sole approval identity.
 - [ ] #5 A repository-policy owner parses every literal JSON block with duplicate-key rejection, checks the reviewed byte digests consumed by TASK-143.01.07, TASK-143.05.03, and TASK-143.07.07, and fails on prose/manifest drift until human re-review.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Audit the authored-contract source against ADR-0019, the delivery map, and the reviewed design research; preserve human authorship rather than deriving policy from implementation.
+2. Freeze the literal initialization/login/thread/session/timing/instruction/additional-context/realtime contracts and every eager dynamic-tool manifest, including exact ordered JSON bodies, projections, target-state rules, and partial outcomes.
+3. Freeze the distinct turn/start, turn/steer, thread/inject_items, fork, spoken-approval classifier, and complete identity-validation contracts with explicit fields and omissions.
+4. Add a repository-policy owner that rejects duplicate JSON keys, parses every literal block, pins reviewed byte digests for downstream consumers, and fails actionably on prose or manifest drift; run focused, repository, type/lint/format, and diff/status gates.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Batch reservation at integration HEAD ac86591: exact scoped ready leaves are TASK-143.01.13 and TASK-143.01.17. They are path-disjoint. Worker slots 3 and 4 are intentionally unused because no additional TASK-143/TASK-144 leaf is ready; the other ready scoped entries are parent containers and every remaining leaf is dependency-blocked. TASK-141 and TASK-142 are unrelated CI-restoration bugs outside this implementation scope.
+<!-- SECTION:NOTES:END -->
