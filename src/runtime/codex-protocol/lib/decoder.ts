@@ -19,7 +19,7 @@ import {
 	ServerNotificationEnvelopeSchema,
 	SERVER_NOTIFICATION_SCHEMAS,
 } from "./notification-schemas.js";
-import { JsonValueSchema, RequestIdSchema, looseObject } from "./scalars.js";
+import { JsonValueSchema, RequestIdSchema } from "./scalars.js";
 
 export type ProtocolDirection =
 	| "response"
@@ -156,8 +156,8 @@ export function decodeLoginAccountParams(value: unknown) {
 	return decoded;
 }
 
-const ClientNotificationEnvelopeSchema = looseObject({ method: z.string() });
-const ServerRequestEnvelopeSchema = looseObject({
+const ClientNotificationEnvelopeSchema = z.strictObject({ method: z.string() });
+const ServerRequestEnvelopeSchema = z.strictObject({
 	id: RequestIdSchema,
 	method: z.string(),
 	/** The generic JSON-RPC envelope is narrowed immediately by method schema. */
@@ -250,7 +250,7 @@ export function decodeJsonRpcError(value: unknown, method = "<unknown>"): Decode
 	return decodeSchema(method, "json-rpc-error", JsonRpcErrorSchema, value);
 }
 
-const JsonRpcResultEnvelopeSchema = looseObject({
+const JsonRpcResultEnvelopeSchema = z.strictObject({
 	id: RequestIdSchema,
 	error: z.never().optional(),
 	/** The generic result is narrowed immediately by the response method schema. */

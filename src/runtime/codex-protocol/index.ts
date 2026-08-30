@@ -1,5 +1,4 @@
 export {
-	CODEX_PROTOCOL_BINARY,
 	CODEX_PROTOCOL_BINARY_VERSION,
 	CODEX_PROTOCOL_GENERATED_FILE_COUNT,
 	CODEX_PROTOCOL_GENERATED_TREE_DIGEST_ALGORITHM,
@@ -11,6 +10,11 @@ export {
 	isSupportedCodexUserAgent,
 } from "./manifest.js";
 export type { GeneratedTreeDigest } from "./manifest.js";
+export { CodexProtocolConformanceError, runCodexProtocolConformance } from "./conformance.js";
+export type {
+	CodexProtocolConformancePhase,
+	CodexProtocolConformanceResult,
+} from "./conformance.js";
 
 export {
 	CLIENT_NOTIFICATION_METHODS,
