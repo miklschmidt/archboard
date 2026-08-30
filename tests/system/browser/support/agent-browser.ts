@@ -26,6 +26,7 @@ export const BROWSER_TEST_PATHS = [
 	"tests/system/browser/human-hold-persistence.test.ts",
 	"tests/system/browser/claim-interaction.test.ts",
 	"tests/system/browser/selection-inspector.test.ts",
+	"tests/system/browser/connected-path-focus.test.ts",
 	"tests/system/browser/opener-settings.test.ts",
 	"tests/system/browser/code-target-activation.test.ts",
 ] as const;

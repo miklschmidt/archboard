@@ -31,6 +31,7 @@
 	--live-ink: #315314;
 	--live-soft: #e7f9b7;
 	--dead: #b42318;
+	--path-focus-dim: rgba(244, 244, 241, 0.78);
 	position: relative;
 	isolation: isolate;
 	display: grid;
@@ -78,6 +79,7 @@
 	--live-ink: #d9ff84;
 	--live-soft: #273716;
 	--dead: #f97066;
+	--path-focus-dim: rgba(17, 18, 22, 0.76);
 }
 
 .shell::after {
@@ -894,6 +896,17 @@ select:focus-visible {
 .pane-canvas .excalidraw {
 	border-radius: 0;
 }
+.path-focus-overlay {
+	position: absolute;
+	z-index: 3;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+.path-focus-dimmer {
+	fill: var(--path-focus-dim);
+}
 
 /* Focused-pane selection inspector */
 .selection-inspector {
@@ -1049,7 +1062,8 @@ select:focus-visible {
 .selection-inspector-binding-malformed strong {
 	color: var(--danger);
 }
-.selection-inspector-open {
+.selection-inspector-open,
+.selection-inspector-focus {
 	width: 100%;
 	min-height: 44px;
 	margin-top: 12px;
@@ -1061,13 +1075,55 @@ select:focus-visible {
 	font-size: 12px;
 	font-weight: 760;
 }
-.selection-inspector-open:hover:not(:disabled) {
+.selection-inspector-open:hover:not(:disabled),
+.selection-inspector-focus:hover:not(:disabled) {
 	border-color: var(--accent-hover);
 	background: var(--accent-hover);
 }
-.selection-inspector-open:disabled {
+.selection-inspector-open:disabled,
+.selection-inspector-focus:disabled {
 	opacity: 0.52;
 	cursor: default;
+}
+.path-focus-section .selection-inspector-copy {
+	margin: 0;
+}
+.path-focus-state {
+	padding-top: 10px;
+	display: grid;
+	gap: 5px;
+	border-top: 1px solid var(--soft-border);
+}
+.path-focus-state strong {
+	color: var(--ink);
+	font-size: 12px;
+}
+.path-focus-state span {
+	color: var(--muted);
+	font-size: 11px;
+	line-height: 1.45;
+}
+.path-focus-connected strong {
+	color: var(--accent-hover);
+}
+.path-focus-none strong {
+	color: var(--warn);
+}
+.selection-inspector-exit {
+	width: 100%;
+	min-height: 44px;
+	margin-top: 7px;
+	border: 1px solid var(--border);
+	border-radius: 3px;
+	color: var(--ink);
+	background: var(--surface-raised);
+	cursor: pointer;
+	font-size: 11px;
+	font-weight: 730;
+}
+.selection-inspector-exit:hover {
+	border-color: var(--accent);
+	background: var(--accent-soft);
 }
 
 /* Browser-confirmed presentation. The pseudo-class prevents pending or

@@ -1,12 +1,16 @@
 import React, { useCallback, useId, useState } from "react";
 
+import type { PathFocusNoPathReason, PathFocusSnapshot } from "../path-focus/index.js";
 import type { SelectionProjection } from "./index.js";
 
 interface SelectionInspectorProps {
 	readonly paneLabel: string;
 	readonly boardKey: string | null;
 	readonly selection: SelectionProjection;
+	readonly pathFocus: PathFocusSnapshot;
 	readonly onOpenCode: (board: string, element: string) => void;
+	readonly onFocusPath: () => void;
+	readonly onExitPathFocus: () => void;
 }
 
 const METADATA_LABELS = {
@@ -62,11 +66,74 @@ function status(selection: SelectionProjection): string {
 	return "No selection";
 }
 
+function noPathMessage(reason: PathFocusNoPathReason): string {
+	if (reason === "broken") return "This arrow or bound label does not have two valid endpoints.";
+	if (reason === "isolated") return "This element has no canonical arrow-bound path.";
+	if (reason === "missing") return "The selected element is no longer on this board.";
+	if (reason === "multiple") return "Select one element to focus its connected path.";
+	return "Select one element to focus its connected path.";
+}
+
+function PathFocusSection({
+	pathFocus,
+	onFocus,
+	onExit,
+}: {
+	readonly pathFocus: PathFocusSnapshot;
+	readonly onFocus: () => void;
+	readonly onExit: () => void;
+}): React.JSX.Element {
+	return (
+		<section
+			className="selection-inspector-section path-focus-section"
+			aria-labelledby="path-focus"
+		>
+			<h2 id="path-focus">Architecture path</h2>
+			{pathFocus.state === "inactive" ? (
+				<>
+					<p className="selection-inspector-copy">
+						Dim everything outside this element's connected arrow path.
+					</p>
+					<button type="button" className="selection-inspector-focus" onClick={onFocus}>
+						Focus path
+					</button>
+				</>
+			) : pathFocus.state === "connected" ? (
+				<output className="path-focus-state path-focus-connected" aria-live="polite">
+					<strong>Path focused</strong>
+					<span>
+						{pathFocus.elementIds.length} connected element
+						{pathFocus.elementIds.length === 1 ? "" : "s"} remain at full emphasis.
+					</span>
+					<button type="button" className="selection-inspector-exit" onClick={onExit}>
+						Exit focus
+					</button>
+				</output>
+			) : (
+				<output
+					className="path-focus-state path-focus-none"
+					data-path-focus-reason={pathFocus.reason}
+					aria-live="polite"
+				>
+					<strong>No connected path</strong>
+					<span>{noPathMessage(pathFocus.reason)}</span>
+					<button type="button" className="selection-inspector-exit" onClick={onExit}>
+						Exit focus
+					</button>
+				</output>
+			)}
+		</section>
+	);
+}
+
 export function SelectionInspector({
 	paneLabel,
 	boardKey,
 	selection,
+	pathFocus,
 	onOpenCode,
+	onFocusPath,
+	onExitPathFocus,
 }: SelectionInspectorProps): React.JSX.Element {
 	const [expanded, setExpanded] = useState(false);
 	const bodyId = useId();
@@ -86,6 +153,7 @@ export function SelectionInspector({
 			className={`selection-inspector${expanded ? " selection-inspector-expanded" : ""}`}
 			aria-label={`${paneLabel} selection inspector`}
 			data-selection-state={selection.state}
+			data-path-focus-state={pathFocus.state}
 		>
 			<header className="selection-inspector-header">
 				<div>
@@ -110,7 +178,16 @@ export function SelectionInspector({
 
 			<div className="selection-inspector-body" id={bodyId}>
 				{!selected ? (
-					<EmptyState selection={selection} />
+					<>
+						<EmptyState selection={selection} />
+						{pathFocus.state !== "inactive" && (
+							<PathFocusSection
+								pathFocus={pathFocus}
+								onFocus={onFocusPath}
+								onExit={onExitPathFocus}
+							/>
+						)}
+					</>
 				) : (
 					<>
 						<section className="selection-inspector-section" aria-labelledby="selection-identity">
@@ -178,6 +255,12 @@ export function SelectionInspector({
 								</div>
 							)}
 						</section>
+
+						<PathFocusSection
+							pathFocus={pathFocus}
+							onFocus={onFocusPath}
+							onExit={onExitPathFocus}
+						/>
 					</>
 				)}
 			</div>
