@@ -485,6 +485,7 @@ async function main(): Promise<number> {
 		process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
 		return 1;
 	}
+	if (selection.files.length === 0) return 0;
 	try {
 		const browserExecutable = verifyPrerequisites(selection);
 		return await runSelection(selection, browserExecutable);

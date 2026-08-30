@@ -13,14 +13,13 @@ changing tests or CI, or when a browser check fails.
 
 `bun run check` is the complete local gate: lint, formatting, both TypeScript
 projects, and that complete test chain. `.github/workflows/ci.yml` invokes the
-same command with three exact hosted-only exceptions after clean-runner stalls:
-`tests/system/code-targets/opener-persistence.test.ts`,
-`tests/system/browser/human-edit-performance.test.ts`, and
-`tests/system/browser/fixed-point-document.test.ts`. All remain mandatory
-locally; TASK-141 and TASK-142 own restoring the system and fixed-point owners
-to hosted coverage. Repository policy pins all three and rejects a native test
-with no lane, more than one lane, no push path, a browser owner outside the
-serial adapter, recursive browser discovery, or any transitional `test:*` key.
+same command with two exact hosted-only exceptions after clean-runner stalls:
+`tests/system/code-targets/opener-persistence.test.ts` and the complete serial
+browser lane. All remain mandatory locally; TASK-141 and TASK-142 own restoring
+the system owner and all 15 browser owners to hosted coverage. Repository policy
+pins both exceptions and rejects a native test with no lane, more than one lane,
+no push path, a browser owner outside the serial adapter, recursive browser
+discovery, or any transitional `test:*` key.
 
 The whole chain's duration is machine-dependent. Browser owners run one at a
 time. Re-measure before making a timing claim.
@@ -83,8 +82,8 @@ adapter instead. The lane:
   when human-edit performance is selected — it exits 2 before building or
   starting an owner;
 - asserts `navigator.userAgent` says headless, because a window that maps
-  steals focus under Hyprland; local runs exercise all 15 owners and hosted
-  runs exercise the documented 13-owner subset;
+  steals focus under Hyprland; local runs exercise all 15 owners while hosted
+  runs exclude the lane until TASK-142 restores it;
 - runs one literal file child at a time, never concurrently. TASK-097 records that two owners
   sharing the machine is how one of them fails for no reason: contention
   stretches request and frame observations that the checks probe on purpose;
