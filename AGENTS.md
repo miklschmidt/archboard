@@ -23,7 +23,7 @@ Where things are written down:
 
 ## Shell platform contract
 
-Archboard's shell is desktop-only. Do not plan, implement, or gate phone/narrow
+Archboard’s shell is desktop-only. Do not plan, implement, or gate phone/narrow
 responsive layouts unless the user explicitly reverses this decision.
 Desktop-sized touch interaction for the Samsung Flip remains supported.
 

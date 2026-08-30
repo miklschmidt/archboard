@@ -17,7 +17,7 @@ board for a sustained session. The shell should make the current board, pane,
 selection, code binding, and agent claim easy to inspect without competing with
 the canvas.
 
-Archboard's shell is desktop-only. Do not plan, implement, or gate phone/narrow
+Archboard’s shell is desktop-only. Do not plan, implement, or gate phone/narrow
 responsive layouts unless the user explicitly reverses this decision.
 Desktop-sized touch interaction for the Samsung Flip remains supported.
 
