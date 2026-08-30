@@ -87,6 +87,22 @@ describe("codex workbench identities", () => {
 		expect(decoder.adoptThreadId(rawValues[0]!)).toBe(threadId);
 	});
 
+	test("rejects lone UTF-16 surrogates before encoding and preserves valid Unicode", () => {
+		const { decoder } = createIdentityAuthority();
+		expect(errorCode(() => decoder.adoptThreadId("\ud800"))).toBe("invalid-shape");
+		expect(errorCode(() => decoder.adoptThreadId("\udfff"))).toBe("invalid-shape");
+		const replacement = "\ufffd";
+		const musicalSymbol = "\ud834\udd1e";
+		const replacementId = decoder.adoptThreadId(replacement);
+		const musicalSymbolId = decoder.adoptThreadId(musicalSymbol);
+		expect(replacementId).not.toBe(musicalSymbolId);
+		expect(decoder.serializeCodexIdentity(replacementId)).toBe(replacement);
+		expect(decoder.serializeCodexIdentity(musicalSymbolId)).toBe(musicalSymbol);
+		expect(new TextEncoder().encode(decoder.serializeCodexIdentity(musicalSymbolId))).toEqual(
+			new TextEncoder().encode(musicalSymbol),
+		);
+	});
+
 	test("rejects empty, malformed, and caller-fabricated identities", () => {
 		const authority = createIdentityAuthority();
 		const { decoder, validator } = authority;
