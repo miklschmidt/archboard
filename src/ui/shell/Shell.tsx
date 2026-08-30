@@ -18,6 +18,7 @@ import React, {
 } from "react";
 import { CanvasPane } from "../canvas/CanvasPane";
 import { activateCodeTarget } from "../code-target";
+import type { MountedBoardPreviewController, MountedBoardPreviewScene } from "../board-preview";
 import { SelectionInspector } from "../selection-inspector/SelectionInspector";
 import type { PaneSelectionSnapshot, SelectionProjection } from "../selection-inspector";
 import type { PanePathFocusSnapshot, PathFocusController, PathFocusSnapshot } from "../path-focus";
@@ -346,6 +347,7 @@ export function Shell(): React.JSX.Element {
 		Record<string, PanePathFocusSnapshot>
 	>({});
 	const pathFocusControllersRef = useRef<Record<string, PathFocusController>>({});
+	const previewControllersRef = useRef<Record<string, MountedBoardPreviewController>>({});
 	// Pane ids are never reused. Numbering by list length would assign a reopened
 	// pane the id of the one just closed, and the server keys a pane's selection
 	// and its board by that id.
@@ -417,6 +419,9 @@ export function Shell(): React.JSX.Element {
 			pathFocusControllersRef.current;
 		void removedController;
 		pathFocusControllersRef.current = remainingControllers;
+		const { [paneId]: removedPreview, ...remainingPreviews } = previewControllersRef.current;
+		void removedPreview;
+		previewControllersRef.current = remainingPreviews;
 		if (closingPresentation) owner?.exit();
 	}, []);
 
@@ -521,6 +526,32 @@ export function Shell(): React.JSX.Element {
 			pathFocusControllersRef.current = remaining;
 		},
 		[],
+	);
+	const onPreviewController = useCallback(
+		(paneId: string, controller: MountedBoardPreviewController | null): void => {
+			if (controller) {
+				previewControllersRef.current = {
+					...previewControllersRef.current,
+					[paneId]: controller,
+				};
+				return;
+			}
+			const { [paneId]: removed, ...remaining } = previewControllersRef.current;
+			void removed;
+			previewControllersRef.current = remaining;
+		},
+		[],
+	);
+	const readMountedPreview = useCallback(
+		(key: string): MountedBoardPreviewScene | null => {
+			const paneOrder = [focused, ...panesRef.current.filter((paneId) => paneId !== focused)];
+			for (const paneId of paneOrder) {
+				const scene = previewControllersRef.current[paneId]?.read();
+				if (scene?.board === key) return scene;
+			}
+			return null;
+		},
+		[focused],
 	);
 
 	const status = statuses[focused] ?? statuses[panes[0] ?? ""] ?? null;
@@ -1084,6 +1115,8 @@ export function Shell(): React.JSX.Element {
 					listing={boardListing}
 					error={boardListingError}
 					currentKey={boardKey}
+					theme={theme}
+					readMountedPreview={readMountedPreview}
 					busy={busy}
 					onSelect={handleNavigate}
 					onRefresh={handleRefreshListing}
@@ -1154,6 +1187,7 @@ export function Shell(): React.JSX.Element {
 									onSelectionSnapshot={onSelectionSnapshot}
 									onPathFocusSnapshot={onPathFocusSnapshot}
 									onPathFocusController={onPathFocusController}
+									onPreviewController={onPreviewController}
 								/>
 							))}
 						</div>

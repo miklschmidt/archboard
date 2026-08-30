@@ -13,6 +13,7 @@ import { useCanvasSession } from "./useCanvasSession";
 import type { LockHolder, PaneStatus } from "../types";
 import type { CodeTargetNotice } from "../../shared/code-target";
 import { createCodeTargetLinkHandler } from "../code-target";
+import type { MountedBoardPreviewController } from "../board-preview";
 import {
 	projectSelection,
 	sameSelectionProjection,
@@ -68,6 +69,7 @@ interface CanvasPaneProps {
 	onSelectionSnapshot: (paneId: string, snapshot: PaneSelectionSnapshot) => void;
 	onPathFocusSnapshot: (paneId: string, snapshot: PanePathFocusSnapshot) => void;
 	onPathFocusController: (paneId: string, controller: PathFocusController | null) => void;
+	onPreviewController: (paneId: string, controller: MountedBoardPreviewController | null) => void;
 }
 
 function selectedIds(appState: AppState): string[] {
@@ -205,6 +207,7 @@ export function CanvasPane({
 	onSelectionSnapshot,
 	onPathFocusSnapshot,
 	onPathFocusController,
+	onPreviewController,
 }: CanvasPaneProps): React.JSX.Element {
 	const layout = useCallback(
 		(request: "open" | "close") => onLayoutRequest(paneId, request),
@@ -300,6 +303,20 @@ export function CanvasPane({
 		() => ({ focus: enterPathFocus, exit: exitPathFocus }),
 		[enterPathFocus, exitPathFocus],
 	);
+	const previewController = useMemo<MountedBoardPreviewController>(
+		() => ({
+			read: () => {
+				const instance = apiRef.current;
+				if (!instance || !session.boardKey) return null;
+				return {
+					board: session.boardKey,
+					elements: instance.getSceneElements(),
+					files: instance.getFiles(),
+				};
+			},
+		}),
+		[session.boardKey],
+	);
 	const publishSelection = useCallback(
 		(projection: PaneSelectionSnapshot["projection"]): void => {
 			const next = { boardKey: session.boardKey, projection };
@@ -327,6 +344,11 @@ export function CanvasPane({
 		onPathFocusController(paneId, pathFocusController);
 		return () => onPathFocusController(paneId, null);
 	}, [onPathFocusController, paneId, pathFocusController]);
+
+	useEffect(() => {
+		onPreviewController(paneId, previewController);
+		return () => onPreviewController(paneId, null);
+	}, [onPreviewController, paneId, previewController]);
 
 	useEffect(() => {
 		if (focusBoardKeyRef.current === session.boardKey) return;
