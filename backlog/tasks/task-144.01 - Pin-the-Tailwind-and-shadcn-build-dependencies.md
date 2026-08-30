@@ -1,11 +1,11 @@
 ---
 id: TASK-144.01
 title: Pin the Tailwind and shadcn build dependencies
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 23:12'
+updated_date: '2026-08-30 23:22'
 labels: []
 dependencies:
   - TASK-143.01.13
@@ -31,10 +31,10 @@ Delegation profile: gpt-5.6-luna, high.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Exact dev dependencies are tailwindcss 4.3.3, @tailwindcss/vite 4.3.3, and shadcn 4.19.0; exact runtime dependencies are clsx 2.1.1, tailwind-merge 3.6.0, and @base-ui/react 1.7.0.
-- [ ] #2 package.json adds one shadcn script invoking the pinned local CLI; no app code directly imports @radix-ui, assistant-cloud, registry runtime, class-variance-authority, lucide-react, tw-animate-css, AI SDK, second styling system, or speculative helper.
-- [ ] #3 Frozen Bun install, dependency/license inspection, type-check, frontend build, and bun run shadcn --help pass; an explicit reviewed transitive allowlist records unavoidable helper packages instead of asserting Radix or later assistant-ui transitives are absent.
-- [ ] #4 This root edit follows the exact Codex pin/conformance TASK-143.01.13 and precedes the separately serialized @assistant-ui/react TASK-143.03.12; no other ready leaf owns package.json or bun.lock.
+- [x] #1 Exact dev dependencies are tailwindcss 4.3.3, @tailwindcss/vite 4.3.3, and shadcn 4.19.0; exact runtime dependencies are clsx 2.1.1, tailwind-merge 3.6.0, and @base-ui/react 1.7.0.
+- [x] #2 package.json adds one shadcn script invoking the pinned local CLI; no app code directly imports @radix-ui, assistant-cloud, registry runtime, class-variance-authority, lucide-react, tw-animate-css, AI SDK, second styling system, or speculative helper.
+- [x] #3 Frozen Bun install, dependency/license inspection, type-check, frontend build, and bun run shadcn --help pass; an explicit reviewed transitive allowlist records unavoidable helper packages instead of asserting Radix or later assistant-ui transitives are absent.
+- [x] #4 This root edit follows the exact Codex pin/conformance TASK-143.01.13 and precedes the separately serialized @assistant-ui/react TASK-143.03.12; no other ready leaf owns package.json or bun.lock.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -88,4 +88,12 @@ Scope audit:
 - The implementation changes were limited to package.json and bun.lock while the same commit also recorded initial task evidence. This remediation changes only this TASK-144.01 note through the Backlog CLI.
 - No application code, config, CSS, components, CI, alternate lockfile, or test changes were made.
 - The pre-existing untracked src-DlBR1tzg.js was preserved.
+
+Parent integration at 6aa7c3c preserved the exact six direct pins and local shadcn script. Independent fixed-range review returned REVIEW_CLEAN after reproducing the 258-spec transitive graph and complete 662-package license inventory. Integration validation passed bun install --frozen-lockfile, shadcn help, both TypeScript projects, Vite frontend build, Oxlint, Oxfmt, repository policy 130/415, module lane 1013/7046, and diff/status checks.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Pinned the reviewed Tailwind 4, shadcn, Base UI, clsx, and tailwind-merge foundation without adding application code or later assistant-ui dependencies. Recorded the exact transitive and license audit, passed independent review, and verified the frozen install, local CLI, type-check, frontend build, lint, format, repository, and module gates on the integration branch.
+<!-- SECTION:FINAL_SUMMARY:END -->
