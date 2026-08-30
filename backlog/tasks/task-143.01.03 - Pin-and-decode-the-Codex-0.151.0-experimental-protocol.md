@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.03
 title: Pin and decode the Codex 0.151.0 experimental protocol
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 21:43'
+updated_date: '2026-08-30 21:52'
 labels: []
 dependencies:
   - TASK-143.01.12
@@ -29,10 +29,10 @@ Delegation profile: gpt-5.6-luna, max.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Generation runs codex app-server generate-ts --experimental from the exact binary and records binary version plus generated-tree digest without committing derived bindings.
-- [ ] #2 The adapter decodes every used initialize/account/config/thread/turn/item/queue/model/realtime/timeline response, JSON-RPC error, client notification, and server request, including optional emittedAtMs where supplied.
-- [ ] #3 Raw version-decoded realtime events leave this boundary without phase or transcript interpretation; TASK-143.02.03 is the sole reducer of realtime phase and canonical transcript.
-- [ ] #4 Module fixtures cover every accepted direction and fail closed on unknown union members, malformed payloads, version drift, and unsupported capabilities with the method, direction, expected version, and recovery action.
+- [x] #1 Generation runs codex app-server generate-ts --experimental from the exact binary and records binary version plus generated-tree digest without committing derived bindings.
+- [x] #2 The adapter decodes every used initialize/account/config/thread/turn/item/queue/model/realtime/timeline response, JSON-RPC error, client notification, and server request, including optional emittedAtMs where supplied.
+- [x] #3 Raw version-decoded realtime events leave this boundary without phase or transcript interpretation; TASK-143.02.03 is the sole reducer of realtime phase and canonical transcript.
+- [x] #4 Module fixtures cover every accepted direction and fail closed on unknown union members, malformed payloads, version drift, and unsupported capabilities with the method, direction, expected version, and recovery action.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -81,4 +81,12 @@ Third remediation implemented in source commit 1276e4b (protocol-only). Added pr
 Fourth remediation complete in source commit 542cfa1. Corrected all seven fixture scaffolds: appMetadata siblings, uppercase externalAgentConfig itemType branches and children, and array-member mutations for activeFlags and verifications. Each generated challenge now prepares a decoder-valid branch, applies exactly one named replacement, records its physical target path and only exact regular-union containing paths, and the aggregate audit covers all 281 prepared/mutated outcomes. Validation: focused protocol/conformance 522 pass; test:modules 956 pass; test:repository 118 pass; type-check; oxlint; oxfmt --check; git diff --check; exact manual Codex conformance passed for codex-cli 0.151.0 with 820 files and sha256 cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273. Task status remains In Progress, acceptance criteria remain unchecked, and TASK-143.01.13 ownership was not duplicated.
 
 Fifth remediation complete in source commit e9ad42e. Removed source and CodexErrorInfo containing-union allowances: the decoder now normalizes regular Zod unions by deterministic deepest-branch selection with input-key tie breaking, preserving independent top-level issues. FunctionCallOutputBody/output remains the only documented containing-union exception. Aggregate audit: 281 total, 267 direct target-path failures, 14 allowed output collapses; explicit 14-name exception assertion and five named direct-path regressions pass. Validation: focused protocol/conformance/diagnostic tests 525 pass; test:modules 959 pass; test:repository 118 pass; type-check; oxlint; oxfmt --check; git diff --check; exact manual Codex conformance passed for codex-cli 0.151.0 with 820 files and sha256 cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273. Task status remains In Progress, acceptance criteria remain unchecked, and TASK-143.01.13 ownership was not duplicated.
+
+Parent integration validation at 5f1a93e: review-clean sixth full-range audit verified all 281 generated-union challenges (267 direct issue paths and exactly 14 documented FunctionCallOutputBody/output collapses), 81 generated notification methods, strict envelope/security/realtime/media/secret preservation, and no test or policy weakening. Integrated checks passed: focused protocol 525 tests; full module lane 993 tests across 74 files; repository-policy 118 tests; both TypeScript projects; Oxlint; Oxfmt on 515 files; git diff --check; and exact /home/msc/.cache/.bun/bin/codex conformance for codex-cli 0.151.0, 820 generated files, sha256 cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Pinned and decoded the complete used Codex 0.151.0 experimental app-server protocol behind a strict public runtime boundary. Exact generator conformance records 820 ignored derived files and digest cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273; consumers use authored decoders only. Verified with an independent review-clean audit, 525 focused protocol tests, 993 module tests, 118 repository-policy tests, exact binary generation, type-check, lint, formatting, and diff checks.
+<!-- SECTION:FINAL_SUMMARY:END -->
