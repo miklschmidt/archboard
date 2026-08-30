@@ -23,8 +23,8 @@ import {
 } from "../../../src/shared/timing/timing.ts";
 import {
 	BROWSER_ADAPTER_PATH,
-	CI_EXCLUDED_BROWSER_OWNER,
-	CI_EXCLUDED_BROWSER_OWNER_ENV,
+	CI_EXCLUDED_BROWSER_OWNERS_ENV,
+	HUMAN_PERFORMANCE_BROWSER_OWNER,
 	applyCiBrowserOwnerExclusion,
 	browserCleanupObservationMs,
 	pollUntil,
@@ -37,8 +37,8 @@ import { ensureFreshFrontend, type FrontendBuildRequest } from "./support/fronte
 export {
 	BROWSER_ADAPTER_PATH,
 	BROWSER_TEST_PATHS,
-	CI_EXCLUDED_BROWSER_OWNER,
-	CI_EXCLUDED_BROWSER_OWNER_ENV,
+	CI_EXCLUDED_BROWSER_OWNERS_ENV,
+	HUMAN_PERFORMANCE_BROWSER_OWNER,
 	applyCiBrowserOwnerExclusion,
 	validateBrowserSelection,
 } from "./support/agent-browser.ts";
@@ -139,7 +139,8 @@ function configuredBrowserExecutable(): string | undefined {
 function verifyPrerequisites(selection: BrowserSelection): string | undefined {
 	const browserExecutable = configuredBrowserExecutable();
 	probe("agent-browser", ["--version"], "agent-browser");
-	if (selection.files.includes(CI_EXCLUDED_BROWSER_OWNER)) probe("strace", ["--version"], "strace");
+	if (selection.files.includes(HUMAN_PERFORMANCE_BROWSER_OWNER))
+		probe("strace", ["--version"], "strace");
 	return browserExecutable;
 }
 
@@ -173,7 +174,7 @@ function ownerEnvironment(
 		ARCHBOARD_TEST_BROWSER_OWNER_ROOT: ownerRoot,
 	};
 	if (browserExecutable) env.AGENT_BROWSER_EXECUTABLE_PATH = browserExecutable;
-	if (file === CI_EXCLUDED_BROWSER_OWNER) {
+	if (file === HUMAN_PERFORMANCE_BROWSER_OWNER) {
 		env.AGENT_BROWSER_DEFAULT_TIMEOUT = String(TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS);
 	}
 	return env;
@@ -478,8 +479,8 @@ async function main(): Promise<number> {
 	try {
 		selection = validateBrowserSelection(["bun", BROWSER_ADAPTER_PATH, ...process.argv.slice(2)]);
 		selection = applyCiBrowserOwnerExclusion(selection, process.env);
-		const excluded = process.env[CI_EXCLUDED_BROWSER_OWNER_ENV];
-		if (excluded) process.stderr.write(`# CI-only browser owner excluded: ${excluded}\n`);
+		const excluded = process.env[CI_EXCLUDED_BROWSER_OWNERS_ENV];
+		if (excluded) process.stderr.write(`# CI-only browser owners excluded: ${excluded}\n`);
 	} catch (error) {
 		process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
 		return 1;
