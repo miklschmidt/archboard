@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.02
 title: Define the closed Codex browser contract
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-08-30 20:13'
+updated_date: '2026-08-30 20:19'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -28,10 +28,10 @@ Define the closed browser DTOs plus the exhaustive host-side server-request cont
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The browser DTO union covers readiness, account/login, thread links, timelines, queue, settings, approvals/forms, text commands, semantic delivery, coordinator, voice, command leases, and delivered/not_delivered/outcome_unknown without generated imports.
-- [ ] #2 A closed host request union covers all eleven 0.151.0 variants: seven broker families, item/tool/call, currentTime/read, account/chatgptAuthTokens/refresh, and attestation/generate; no default/unknown branch can silently drop a request.
-- [ ] #3 The contract imports the literal InitializeCapabilities object and six-login support/refusal table from the reviewed authored contract, including exact extensions, notification opt-outs, time response, and protocol-error policies.
-- [ ] #4 Round-trip/schema fixtures reject unknown identities, methods, result media, status, capability, login variant, browser command, or server request and keep secrets out of browser snapshots.
+- [x] #1 The browser DTO union covers readiness, account/login, thread links, timelines, queue, settings, approvals/forms, text commands, semantic delivery, coordinator, voice, command leases, and delivered/not_delivered/outcome_unknown without generated imports.
+- [x] #2 A closed host request union covers all eleven 0.151.0 variants: seven broker families, item/tool/call, currentTime/read, account/chatgptAuthTokens/refresh, and attestation/generate; no default/unknown branch can silently drop a request.
+- [x] #3 The contract imports the literal InitializeCapabilities object and six-login support/refusal table from the reviewed authored contract, including exact extensions, notification opt-outs, time response, and protocol-error policies.
+- [x] #4 Round-trip/schema fixtures reject unknown identities, methods, result media, status, capability, login variant, browser command, or server request and keep secrets out of browser snapshots.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -62,4 +62,12 @@ Second remediation validation: bun test --isolate src/shared/codex-browser-model
 Third remediation applied: reverse-wire server request schemas now use ordinary z.string() fields without NUL rejection, including reason, cwd, command, MCP labels/defaults, and FileChange content. The reviewed browser-authored bounded projections and dynamic-tool envelope retain their existing safety checks. Added a JSON serialize/parse regression containing an actual U+0000 via String.fromCodePoint(0) in patch reason and FileChange content, and verified it round-trips.
 
 Third remediation validation: bun test --isolate src/shared/codex-browser-model (9 tests, 147 expectations); bun run type-check; bun run lint; bun run fmt:check; bun run test:modules (450 tests, 0 failures); bun run test:repository (118 tests, 0 failures); git diff --check (pass). Task remains In Progress for parent review.
+
+Parent integration validation at 99870de: focused browser-model suite 9 tests / 147 expectations; both TypeScript projects, Oxlint, Oxfmt, 468 module tests, 118 repository-policy tests, diff check, and clean-worktree audit passed. Independent fixed-base reviewer returned REVIEW_CLEAN at worker HEAD 60621075719cb1655108151d1aa862f11c46a8f4 after rerunning identity, request/result, secret, approval, state/source, large-patch, literal-policy, and actual U+0000 probes.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Defined the authority-bound, generated-import-independent Codex browser contract: closed publishable DTOs, transient secret-safe browser commands, all eleven exact 0.151.0 reverse requests with method-indexed results/errors, literal authored capability/login policies, and reachable-state validation. Four fixed-base review passes removed identity forgery, permissive protocol shapes, secret/media leaks, impossible coordinator/workhorse states, source loss, and invented wire bounds. Verified on the integrated branch with 9 focused tests / 147 expectations, type/lint/format, 468 module tests, 118 repository-policy tests, and REVIEW_CLEAN.
+<!-- SECTION:FINAL_SUMMARY:END -->
