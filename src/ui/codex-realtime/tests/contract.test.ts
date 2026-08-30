@@ -136,6 +136,13 @@ function auditSourceFile(sourceFile: ts.SourceFile): readonly string[] {
 		) {
 			auditModuleSpecifier(findings, node.moduleSpecifier.text);
 		}
+		if (
+			ts.isImportTypeNode(node) &&
+			ts.isLiteralTypeNode(node.argument) &&
+			ts.isStringLiteral(node.argument.literal)
+		) {
+			auditModuleSpecifier(findings, node.argument.literal.text);
+		}
 		if (ts.isImportExpression(node)) findings.add("dynamic import");
 		if (
 			ts.isCallExpression(node) &&
@@ -144,6 +151,8 @@ function auditSourceFile(sourceFile: ts.SourceFile): readonly string[] {
 		)
 			findings.add("require call");
 		if (ts.isIdentifier(node) || ts.isStringLiteral(node)) auditSpelling(node.text);
+		if (ts.isIdentifier(node) && node.text.toLowerCase() === "nodejs")
+			findings.add("forbidden NodeJS namespace");
 		ts.visitEachChild(node, (child) => {
 			visit(child);
 			return child;
@@ -181,6 +190,11 @@ const FORBIDDEN_SOURCE_FIXTURES = [
 		label: "caller-selected remote identity",
 		source: "interface Attachment { remoteId: string; }",
 	},
+	{ label: "React import type", source: 'type T=import("react").T;' },
+	{ label: "assistant-ui import type", source: 'type T=import("@assistant-ui/react/runtime").T;' },
+	{ label: "node: import type", source: 'type T=import("node:fs").T;' },
+	{ label: "bare Node import type", source: 'type T=import("fs").T;' },
+	{ label: "NodeJS namespace", source: "type T=NodeJS.Timeout;" },
 ] as const;
 
 async function auditPublicSources(): Promise<{
@@ -448,14 +462,6 @@ const callerSelectedRemote: RemoteMediaAttachment = {
 	attachTo: () => undefined,
 };
 void callerSelectedRemote;
-
-const validCommandOutcome: CommandOutcome = {
-	outcome: "outcome_unknown",
-	sessionId,
-	correlationId,
-	reason: "response_lost",
-};
-void validCommandOutcome;
 
 const impossibleAppendNotDelivered: AppendOutcome = {
 	outcome: "not_delivered",
