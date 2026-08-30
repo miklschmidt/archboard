@@ -1,0 +1,218 @@
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@import "../shell/shell.css";
+
+/* TASK-140 is the visual authority. These names expose that completed system to
+   Tailwind without giving framework defaults a second say in the palette. */
+:root {
+	--arch-font-ui: "Archboard Onest";
+	--arch-font-technical: "Archboard DM Mono";
+	--arch-weight-regular: 400;
+	--arch-weight-medium: 500;
+	--arch-weight-semibold: 600;
+	--arch-weight-bold: 700;
+	--arch-wordmark-tracking: -0.02027027027em;
+	--arch-text-kicker-size: 9px;
+	--arch-text-kicker-line: 12px;
+	--arch-text-technical-size: 10px;
+	--arch-text-technical-line: 14px;
+	--arch-text-body-size: 12px;
+	--arch-text-body-line: 16px;
+	--arch-text-control-size: 13px;
+	--arch-text-control-line: 18px;
+	--arch-text-title-size: 14px;
+	--arch-text-title-line: 20px;
+	--arch-text-primary-size: 16px;
+	--arch-text-primary-line: 22px;
+
+	--arch-color-selection: #155eef;
+	--arch-color-status: #a3e635;
+	--arch-color-foreground: #18181b;
+	--arch-color-muted-foreground: #5f6269;
+	--arch-color-faint-foreground: #777b84;
+	--arch-color-border: #cfd1d4;
+	--arch-color-border-subtle: #e3e4e6;
+	--arch-color-background: #f4f4f1;
+	--arch-color-surface: #fafaf8;
+	--arch-color-surface-raised: #fff;
+	--arch-color-surface-subtle: #eeeeeb;
+	--arch-color-surface-hover: #e7e8e8;
+	--arch-color-primary: var(--arch-color-selection);
+	--arch-color-primary-hover: #0b4dcc;
+	--arch-color-primary-subtle: #dce7ff;
+	--arch-color-primary-foreground: #fff;
+	--arch-color-destructive: #b42318;
+	--arch-color-destructive-subtle: #fee4e2;
+	--arch-color-warning: #8a4b08;
+	--arch-color-warning-subtle: #ffead5;
+	--arch-color-status-foreground: #315314;
+	--arch-color-status-subtle: #e7f9b7;
+	--arch-color-offline: #b42318;
+	--arch-color-path-focus-dim: rgba(244, 244, 241, 0.78);
+
+	--arch-radius-hairline: 1px;
+	--arch-radius-compact: 2px;
+	--arch-radius-control: 3px;
+	--arch-radius-panel: 4px;
+	--arch-radius-dialog: 5px;
+	--arch-radius-round: 50%;
+
+	--arch-space-rule: 1px;
+	--arch-space-compact: 2px;
+	--arch-space-tight: 4px;
+	--arch-space-control: 8px;
+	--arch-space-control-inline: 12px;
+	--arch-space-region: 16px;
+	--arch-space-panel: 22px;
+	--arch-size-touch-target: 44px;
+	--arch-size-header: 56px;
+
+	--arch-shadow-flat: none;
+	--arch-opacity-disabled-control: 0.46;
+	--arch-opacity-disabled-item: 0.5;
+	--arch-opacity-disabled-action: 0.52;
+	--arch-opacity-status-rest: 0.84;
+	--arch-opacity-status-active: 1;
+	--arch-duration-control: 140ms;
+	--arch-duration-status: 2.4s;
+	--arch-ease-control: ease;
+	--arch-ease-status: ease-in-out;
+	--arch-status-iteration-count: infinite;
+	--arch-animation-status: agent-pulse var(--arch-duration-status) var(--arch-ease-status)
+		var(--arch-status-iteration-count);
+}
+
+.shell[data-theme="dark"] {
+	--arch-color-selection: #155eef;
+	--arch-color-status: #a3e635;
+	--arch-color-foreground: #f4f4f0;
+	--arch-color-muted-foreground: #b5b7bd;
+	--arch-color-faint-foreground: #90949e;
+	--arch-color-border: #3b3e45;
+	--arch-color-border-subtle: #2d3036;
+	--arch-color-background: #17181b;
+	--arch-color-surface: #111216;
+	--arch-color-surface-raised: #1d1f24;
+	--arch-color-surface-subtle: #26282e;
+	--arch-color-surface-hover: #30333a;
+	--arch-color-primary: var(--arch-color-selection);
+	--arch-color-primary-hover: #8eb0ff;
+	--arch-color-primary-subtle: #1a3267;
+	--arch-color-primary-foreground: #fff;
+	--arch-color-destructive: #f97066;
+	--arch-color-destructive-subtle: #4b2424;
+	--arch-color-warning: #fdb022;
+	--arch-color-warning-subtle: #493115;
+	--arch-color-status-foreground: #d9ff84;
+	--arch-color-status-subtle: #273716;
+	--arch-color-offline: #f97066;
+	--arch-color-path-focus-dim: rgba(17, 18, 22, 0.76);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--arch-duration-control: 0.001ms;
+		--arch-duration-status: 0.001ms;
+		--arch-status-iteration-count: 1;
+	}
+}
+
+@theme inline {
+	--color-*: initial;
+	--font-*: initial;
+	--font-weight-*: initial;
+	--text-*: initial;
+	--tracking-*: initial;
+	--radius-*: initial;
+	--spacing: initial;
+	--spacing-*: initial;
+	--shadow-*: initial;
+	--opacity-*: initial;
+	--transition-duration-*: initial;
+	--ease-*: initial;
+	--animate-*: initial;
+
+	--color-background: var(--arch-color-background);
+	--color-foreground: var(--arch-color-foreground);
+	--color-muted: var(--arch-color-surface-subtle);
+	--color-muted-foreground: var(--arch-color-muted-foreground);
+	--color-faint-foreground: var(--arch-color-faint-foreground);
+	--color-border: var(--arch-color-border);
+	--color-border-subtle: var(--arch-color-border-subtle);
+	--color-input: var(--arch-color-border);
+	--color-ring: var(--arch-color-selection);
+	--color-surface: var(--arch-color-surface);
+	--color-surface-raised: var(--arch-color-surface-raised);
+	--color-surface-subtle: var(--arch-color-surface-subtle);
+	--color-surface-hover: var(--arch-color-surface-hover);
+	--color-card: var(--arch-color-surface);
+	--color-card-foreground: var(--arch-color-foreground);
+	--color-popover: var(--arch-color-surface-raised);
+	--color-popover-foreground: var(--arch-color-foreground);
+	--color-primary: var(--arch-color-primary);
+	--color-primary-hover: var(--arch-color-primary-hover);
+	--color-primary-subtle: var(--arch-color-primary-subtle);
+	--color-primary-foreground: var(--arch-color-primary-foreground);
+	--color-secondary: var(--arch-color-surface-subtle);
+	--color-secondary-foreground: var(--arch-color-foreground);
+	--color-accent: var(--arch-color-primary-subtle);
+	--color-accent-foreground: var(--arch-color-foreground);
+	--color-destructive: var(--arch-color-destructive);
+	--color-destructive-subtle: var(--arch-color-destructive-subtle);
+	--color-warning: var(--arch-color-warning);
+	--color-warning-subtle: var(--arch-color-warning-subtle);
+	--color-status: var(--arch-color-status);
+	--color-status-foreground: var(--arch-color-status-foreground);
+	--color-status-subtle: var(--arch-color-status-subtle);
+	--color-offline: var(--arch-color-offline);
+	--color-path-focus-dim: var(--arch-color-path-focus-dim);
+
+	--font-sans: var(--arch-font-ui);
+	--font-mono: var(--arch-font-technical);
+	--font-weight-regular: var(--arch-weight-regular);
+	--font-weight-medium: var(--arch-weight-medium);
+	--font-weight-semibold: var(--arch-weight-semibold);
+	--font-weight-bold: var(--arch-weight-bold);
+	--tracking-wordmark: var(--arch-wordmark-tracking);
+	--text-kicker: var(--arch-text-kicker-size);
+	--text-kicker--line-height: var(--arch-text-kicker-line);
+	--text-technical: var(--arch-text-technical-size);
+	--text-technical--line-height: var(--arch-text-technical-line);
+	--text-body: var(--arch-text-body-size);
+	--text-body--line-height: var(--arch-text-body-line);
+	--text-control: var(--arch-text-control-size);
+	--text-control--line-height: var(--arch-text-control-line);
+	--text-title: var(--arch-text-title-size);
+	--text-title--line-height: var(--arch-text-title-line);
+	--text-primary: var(--arch-text-primary-size);
+	--text-primary--line-height: var(--arch-text-primary-line);
+
+	--radius-hairline: var(--arch-radius-hairline);
+	--radius-compact: var(--arch-radius-compact);
+	--radius-control: var(--arch-radius-control);
+	--radius-panel: var(--arch-radius-panel);
+	--radius-dialog: var(--arch-radius-dialog);
+	--radius-round: var(--arch-radius-round);
+
+	--spacing-rule: var(--arch-space-rule);
+	--spacing-compact: var(--arch-space-compact);
+	--spacing-tight: var(--arch-space-tight);
+	--spacing-control: var(--arch-space-control);
+	--spacing-control-inline: var(--arch-space-control-inline);
+	--spacing-region: var(--arch-space-region);
+	--spacing-panel: var(--arch-space-panel);
+	--spacing-touch-target: var(--arch-size-touch-target);
+	--spacing-header: var(--arch-size-header);
+
+	--shadow-flat: var(--arch-shadow-flat);
+	--opacity-disabled-control: var(--arch-opacity-disabled-control);
+	--opacity-disabled-item: var(--arch-opacity-disabled-item);
+	--opacity-disabled-action: var(--arch-opacity-disabled-action);
+	--opacity-status-rest: var(--arch-opacity-status-rest);
+	--opacity-status-active: var(--arch-opacity-status-active);
+	--transition-duration-control: var(--arch-duration-control);
+	--transition-duration-status: var(--arch-duration-status);
+	--ease-control: var(--arch-ease-control);
+	--ease-status: var(--arch-ease-status);
+	--animate-status: var(--arch-animation-status);
+}
