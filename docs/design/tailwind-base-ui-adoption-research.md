@@ -258,6 +258,10 @@ Keep `bun run fmt:check` as the enforcement command. Add a small formatter fixtu
 `className`, `cn`, and `cva` before relying on the option, so a future Oxfmt upgrade
 cannot silently stop sorting the forms used by this codebase.
 
+The inspected Oxfmt 0.65.0 schema names the width option `printWidth`; the current
+configuration's `lineWidth` spelling should be corrected in the same formatter
+leaf while retaining the intended value of 100.
+
 Oxfmt sorting is normalization, not a design policy. It does not prove that a class
 exists, that two classes do not contradict each other, or that an arbitrary value is
 justified.
@@ -274,41 +278,26 @@ labels that API alpha and under active development. The existing local JS plugin
 not evidence that a third-party Tailwind plugin is a stable repository contract. Do
 not make an external Tailwind plugin through `jsPlugins` the first acceptance gate.
 
-### Additive drift policy
+### Native enforcement boundary
 
-The first Tailwind slice should add a narrow repository-policy owner, scoped to the
-new or migrated UI directories. It should fail on machine-observable conventions
-that protect the reference and the compiler:
+The adoption deliberately uses the strict native tooling the repository already
+owns. Oxfmt sorts Tailwind classes using the canonical v4 stylesheet and the exact
+composition helper names that the code actually uses. Oxlint keeps the existing
+type-aware, denied-warning React and JSX accessibility baseline. New copied source
+must satisfy that baseline without weakening it.
 
-- no interpolated Tailwind fragments such as `bg-${value}`; variant props map to
-  complete, statically present class strings;
-- no arbitrary color, spacing, radius, or shadow values in migrated component class
-  strings unless the rule has a named allowlist entry and a reason;
-- no raw color literals in migrated TSX class/style values; colors belong in the
-  canonical token CSS;
-- no inline style for fixed presentation; allow an explicit, documented exception for
-  runtime geometry or measurements that cannot be represented by a utility;
-- conditional class composition goes through the one shared `cn` helper (and
-  `cva` for typed variants), rather than ad hoc concatenation; and
-- the canonical stylesheet contains the required token aliases exactly once.
+Do not add a Tailwind-specific Oxlint rule, a second ESLint lane, or a repository
+policy that copies upstream palette, utility, arbitrary-value, contradiction, or
+ordering defaults. Those surfaces change with Tailwind and would turn a convenient
+default into an Archboard maintenance contract. Oxfmt already owns ordering and
+duplicate normalization.
 
-Keep the policy scoped to new code initially. A repository-wide ban would turn a
-useful migration guard into an unrelated rewrite of the existing shell. The test must
-include bad fixtures and report the file and violated convention, so it fails on the
-old behavior and stays stable across unrelated formatting changes.
-
-If the project needs compiler-aware checks for unknown or contradictory utilities,
-the direct maintained alternative reviewed here is
-[`eslint-plugin-tailwindcss` v4](https://github.com/francoismassart/eslint-plugin-tailwindcss/tree/v4).
-Its own rule list includes `no-arbitrary-value`, `no-custom-classname`,
-`no-contradicting-classname`, `no-unnecessary-arbitrary-value`, canonical spelling,
-and class ordering. Its v4 README requires a Tailwind 4 CSS configuration path and
-supports ESLint 10. This is an external ESLint lane, not an Oxlint feature. Add it only
-if the repository-owned policy is insufficient, pin exact versions, run it as an
-explicit additive `lint:tailwind` command, and include a compatibility fixture for
-the copied Base UI source. Do not weaken Oxlint, Oxfmt, or any existing test lane to
-make the plugin pass. The alternative adds a second linter and therefore is not the
-smallest first step.
+Complete static class strings and exhaustive typed variant maps remain the coding
+contract because Tailwind cannot discover interpolated fragments. Enforce that
+first through the named class-composition module, focused module tests, formatter
+fixtures, code review, and rendered behavior. Add a custom repository rule later
+only after a concrete recurring failure demonstrates that the rule removes more
+maintenance than it creates.
 
 ## Accessibility boundary
 
@@ -338,9 +327,9 @@ return behavior through a browser check.
 
 For every migrated or new interactive surface, browser acceptance should cover a
 keyboard-only path, visible focus in both themes, accessible names, disabled and
-error states, dialog/menu focus return, and narrow viewport behavior. Existing
-`jsx-a11y` lint remains useful but cannot observe focus order, portal stacking, or the
-operator's rendered visual hierarchy.
+error states, dialog/menu focus return, and supported desktop-sized Samsung Flip
+touch behavior. Existing `jsx-a11y` lint remains useful but cannot observe focus
+order, portal stacking, or the operator's rendered visual hierarchy.
 
 ## Canonical and reproducible artifacts
 
@@ -351,7 +340,7 @@ operator's rendered visual hierarchy.
 | `components.json`                                           | Canonical shadcn CLI choices, Base UI style, CSS entrypoint, aliases, and CSS-variable policy. It is optional only when the team intentionally uses copy-and-paste without the CLI. |
 | Canonical app CSS and token block                           | Canonical visual input. Keep semantic values and `@theme inline` mappings here, not in generated output.                                                                            |
 | Copied shadcn/Base UI source and `cn`/variant helpers       | Canonical application code after review. Generated source is not disposable vendor cache.                                                                                           |
-| Oxfmt config, repository policy test, docs, browser owners  | Canonical repository contracts.                                                                                                                                                     |
+| Oxfmt config, docs, and browser owners                      | Canonical repository contracts.                                                                                                                                                     |
 | `node_modules`, `dist/frontend`, Vite caches, generated CSS | Reproducible and ignored. A build must recreate them from the lockfile and source.                                                                                                  |
 | Registry JSON payloads and network responses                | Inputs to a deliberate copy operation, not the application source of truth. Review each file and dependency before committing it.                                                   |
 | `shadcn` CLI package/cache                                  | Reproducible tool input. Pin its version and registry/ref; never use `shadcn@latest` in a script or CI path.                                                                        |
@@ -383,18 +372,17 @@ owner may be disabled to admit Tailwind or copied source.
    misordered `className`, `cn`, and `cva` fixture; `bun run fmt:check` rejects the
    unformatted fixture and accepts the formatted result. The package implementation,
    not a standalone Oxfmt binary, must be used.
-4. **Class policy gate.** The scoped repository-policy owner rejects dynamic class
-   fragments, forbidden arbitrary values, raw token literals, and direct fixed inline
-   styles; it accepts complete static variant maps and documented runtime geometry.
-   If the ESLint alternative is later added, its own bad fixtures must prove unknown,
-   contradictory, and unnecessary arbitrary classes before it becomes required.
+4. **Native lint gate.** New and copied source passes the repository's existing
+   strict, type-aware Oxlint React and JSX accessibility baseline without a new
+   Tailwind-specific rule, override, warning allowance, or second lint lane.
 5. **Product and accessibility gate.** The changed primitive is reachable through the
    existing shell, has semantic names and visible focus, supports the expected
    keyboard interaction, and does not create a duplicate dialog, popup, or state
    owner. Any selection/focus presentation remains browser-only and does not write a
    board note.
-6. **Rendered visual gate.** Run the serial browser lane in both themes at a desktop
-   viewport and 420 pixels. Confirm that the canvas keeps the largest share, the board
+6. **Rendered visual gate.** Run the serial browser lane in both themes across the
+   supported desktop one-pane, two-pane, fullscreen, keyboard, and Samsung Flip touch
+   workflows. Confirm that the canvas keeps the largest share, the board
    strip/inspector/workbench hierarchy remains legible, the old product actions remain
    reachable, and the result follows the reference's flat dense visual direction.
    Compare against the reference image as a design authority, not as a pixel-perfect
@@ -461,4 +449,3 @@ The durable agent-facing guidance should require the following sequence:
   [Oxfmt quick start](https://oxc.rs/docs/guide/usage/formatter/quickstart),
   [Oxlint rules](https://oxc.rs/docs/guide/usage/linter/rules.html), and
   [Oxlint JS plugins](https://oxc.rs/docs/guide/usage/linter/js-plugins.html).
-- Optional external alternative: [eslint-plugin-tailwindcss v4 rule source](https://github.com/francoismassart/eslint-plugin-tailwindcss/tree/v4).
