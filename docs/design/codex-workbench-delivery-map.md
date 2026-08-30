@@ -137,6 +137,22 @@ preserved work, reviewer continuity, or authority becomes ambiguous, the root
 pauses dispatch and callbacks its supervising source thread instead of
 inventing a new coordinator tier.
 
+If dependent validation fails after implementation reconciliation, the success
+transition does not run. The leaf stays In Progress and in the remediation
+active set, and the root starts no new worktree from the failing integration
+`HEAD`. It sends the same worker the exact failed command and output, failing
+integration `HEAD`, and preserved-work evidence. The worker commits remediation
+on its existing branch without changing the fixed worker `BASE`; the same
+reviewer rereviews that complete range through the new immutable `HEAD`. After
+`REVIEW_CLEAN`, the root
+reconciles the remediation commit onto the failing integration branch and
+reruns the failed validation plus every focused gate invalidated by the change.
+This loop repeats until validation passes; only then may the root finalize,
+commit finalization, remove the active leaf, and recompute readiness. An
+irreparable or ambiguous ownership, cross-leaf causality, or recovery path
+callbacks the supervising source thread without creating another worker or
+coordinator tier.
+
 ## Dependency waves
 
 1. Pin exact Codex generation, identities, timing, capabilities/login/thread
@@ -178,11 +194,17 @@ inventing a new coordinator tier.
    callbacks the parent with `REVIEW_CLEAN` or complete actionable findings;
    the parent returns findings to the same worker and requires the same
    reviewer to rereview the complete fixed-BASE range after every remediation.
-   After clean review, reconcile the implementation, run dependent validation,
-   finalize through Backlog, commit the finalization, require a clean checkout,
-   remove the active leaf, and only then recompute readiness from the new
-   integration `HEAD`.
-6. Run `bun run check` at TASK-144, production composition, text UI, voice UI,
+   After clean review, reconcile the implementation and run dependent
+   validation. On failure, keep the leaf In Progress and active, freeze new
+   dispatch, send exact failure and integration evidence to the same worker,
+   retain the same complete-range reviewer, reconcile the reviewed remediation,
+   and rerun the failed and invalidated gates until green. Only then finalize
+   through Backlog, commit the finalization, require a clean checkout, remove
+   the active leaf, and recompute readiness from the new integration `HEAD`.
+6. If validation failure has ambiguous ownership or cross-leaf causality, pause
+   the lane and callback the supervising source; do not patch in the root or
+   create a replacement worker, reviewer, or coordinator.
+7. Run `bun run check` at TASK-144, production composition, text UI, voice UI,
    and final TASK-143 boundaries.
 
 Every delegated thread calls `codex_app__send_message_to_thread` for the exact
