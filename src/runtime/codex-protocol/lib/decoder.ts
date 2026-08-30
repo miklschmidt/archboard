@@ -39,6 +39,128 @@ export interface ProtocolDecodeErrorInit {
 	readonly recoveryAction?: string;
 }
 
+type IssuePath = readonly (string | number)[];
+type IssueRecord = Record<string, unknown>;
+
+function isIssueRecord(value: unknown): value is IssueRecord {
+	return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function issuePath(issue: unknown): IssuePath {
+	if (!isIssueRecord(issue) || !Array.isArray(issue.path)) return [];
+	return issue.path.map((segment) =>
+		typeof segment === "string" || typeof segment === "number" ? segment : String(segment),
+	);
+}
+
+function unionBranches(issue: IssueRecord): unknown[][] | undefined {
+	if (issue.code !== "invalid_union" || !Array.isArray(issue.errors)) return undefined;
+	const branches: unknown[][] = [];
+	for (const branch of issue.errors) {
+		if (!Array.isArray(branch)) return undefined;
+		branches.push(branch);
+	}
+	return branches;
+}
+
+function valueAtPath(value: unknown, path: IssuePath): unknown {
+	let current = value;
+	for (const segment of path) {
+		if (Array.isArray(current)) {
+			const index = typeof segment === "number" ? segment : Number(segment);
+			if (!Number.isInteger(index)) return undefined;
+			current = current[index];
+		} else if (isIssueRecord(current)) {
+			current = current[String(segment)];
+		} else {
+			return undefined;
+		}
+	}
+	return current;
+}
+
+function issuePaths(issue: unknown, prefix: IssuePath = []): IssuePath[] {
+	if (!isIssueRecord(issue)) return [prefix];
+	const path = [...prefix, ...issuePath(issue)];
+	const branches = unionBranches(issue);
+	if (!branches?.length) return [path];
+	return branches.flatMap((branch) =>
+		branch.length ? branch.flatMap((child) => issuePaths(child, path)) : [path],
+	);
+}
+
+interface UnionBranchScore {
+	readonly depth: number;
+	readonly inputKeyMatches: number;
+	readonly index: number;
+}
+
+function branchScore(
+	branch: readonly unknown[],
+	unionValue: unknown,
+	index: number,
+): UnionBranchScore {
+	const paths = branch.flatMap((issue) => issuePaths(issue));
+	const depth = Math.max(0, ...paths.map((path) => path.length));
+	const inputKeys = isIssueRecord(unionValue) ? new Set(Object.keys(unionValue)) : undefined;
+	const inputKeyMatches = inputKeys
+		? paths.reduce(
+				(matches, path) =>
+					matches + (path[0] !== undefined && inputKeys.has(String(path[0])) ? 1 : 0),
+				0,
+			)
+		: 0;
+	return { depth, inputKeyMatches, index };
+}
+
+function isBetterBranch(candidate: UnionBranchScore, current: UnionBranchScore): boolean {
+	if (candidate.depth !== current.depth) return candidate.depth > current.depth;
+	if (candidate.inputKeyMatches !== current.inputKeyMatches)
+		return candidate.inputKeyMatches > current.inputKeyMatches;
+	return candidate.index > current.index;
+}
+
+function deepestBranch(
+	branches: readonly (readonly unknown[])[],
+	unionValue: unknown,
+): readonly unknown[] | undefined {
+	let selected: readonly unknown[] | undefined;
+	let selectedScore: UnionBranchScore | undefined;
+	for (const [index, branch] of branches.entries()) {
+		const score = branchScore(branch, unionValue, index);
+		if (!selectedScore || isBetterBranch(score, selectedScore)) {
+			selected = branch;
+			selectedScore = score;
+		}
+	}
+	return selected;
+}
+
+function withIssuePath(issue: IssueRecord, path: IssuePath): IssueRecord {
+	return { ...issue, path };
+}
+
+function isFunctionCallOutputBodyUnion(issue: IssueRecord): boolean {
+	// FunctionCallOutputBodySchema is the one intentional regular union at an
+	// output field; retain its containing issue for the documented exception.
+	const path = issuePath(issue);
+	return path[path.length - 1] === "output";
+}
+
+function normalizeIssue(issue: unknown, prefix: IssuePath, rootValue: unknown): unknown[] {
+	if (!isIssueRecord(issue)) return [issue];
+	const path = [...prefix, ...issuePath(issue)];
+	const branches = unionBranches(issue);
+	if (!branches || isFunctionCallOutputBodyUnion(issue)) return [withIssuePath(issue, path)];
+	const selected = deepestBranch(branches, valueAtPath(rootValue, path));
+	if (!selected) return [withIssuePath(issue, path)];
+	return selected.flatMap((child) => normalizeIssue(child, path, rootValue));
+}
+
+function normalizeIssues(issues: readonly unknown[], value: unknown): readonly unknown[] {
+	return issues.flatMap((issue) => normalizeIssue(issue, [], value));
+}
+
 /** A versioned wire contract failed before an untyped payload could escape. */
 export class ProtocolDecodeError extends Error {
 	readonly method: string;
@@ -83,7 +205,11 @@ function decodeSchema<T extends z.ZodTypeAny>(
 ): z.infer<T> {
 	const result = schema.safeParse(value);
 	if (!result.success)
-		throw new ProtocolDecodeError({ method, direction, issues: result.error.issues });
+		throw new ProtocolDecodeError({
+			method,
+			direction,
+			issues: normalizeIssues(result.error.issues, value),
+		});
 	return result.data;
 }
 
