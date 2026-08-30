@@ -10,8 +10,18 @@ import {
 	CODEX_PROTOCOL_VERSION,
 	digestGeneratedTree,
 } from "./manifest.js";
+import {
+	CODEX_PROTOCOL_GENERATED_NOTIFICATION_UNION_PATHS,
+	deriveGeneratedNotificationUnionPaths,
+	type GeneratedNotificationUnionPath,
+} from "./generated-notification-inventory.js";
 
-export type CodexProtocolConformancePhase = "path" | "version" | "generation" | "digest";
+export type CodexProtocolConformancePhase =
+	| "path"
+	| "version"
+	| "generation"
+	| "digest"
+	| "inventory";
 
 export interface CodexProtocolConformanceResult {
 	readonly executablePath: string;
@@ -53,13 +63,65 @@ function conformanceError(
 	return new CodexProtocolConformanceError({ executablePath, phase, message, cause });
 }
 
-/**
- * Runs the pinned generator against an explicitly supplied executable path.
- * The only filesystem mutation is a temporary directory, which is removed
- * before this function returns or throws.
- */
-export function runCodexProtocolConformance(
+interface CodexProtocolConformanceExpectations {
+	readonly binaryVersion: string;
+	readonly generatedFileCount: number;
+	readonly generatedTreeSha256: string;
+	readonly notificationUnionPaths: readonly GeneratedNotificationUnionPath[];
+}
+
+const PRODUCTION_EXPECTATIONS: CodexProtocolConformanceExpectations = {
+	binaryVersion: CODEX_PROTOCOL_BINARY_VERSION,
+	generatedFileCount: CODEX_PROTOCOL_GENERATED_FILE_COUNT,
+	generatedTreeSha256: CODEX_PROTOCOL_GENERATED_TREE_SHA256,
+	notificationUnionPaths: CODEX_PROTOCOL_GENERATED_NOTIFICATION_UNION_PATHS,
+};
+
+function notificationPathKey(path: GeneratedNotificationUnionPath): string {
+	return `${path.method}:${path.path}`;
+}
+
+function duplicateNotificationPaths(paths: readonly GeneratedNotificationUnionPath[]): string[] {
+	const seen = new Set<string>();
+	const duplicates = new Set<string>();
+	for (const path of paths) {
+		const key = notificationPathKey(path);
+		if (seen.has(key)) duplicates.add(key);
+		seen.add(key);
+	}
+	return [...duplicates].toSorted();
+}
+
+function notificationInventoryMismatch(
+	expected: readonly GeneratedNotificationUnionPath[],
+	received: readonly GeneratedNotificationUnionPath[],
+): string | null {
+	const expectedKeys = expected.map(notificationPathKey);
+	const receivedKeys = received.map(notificationPathKey);
+	const expectedDuplicates = duplicateNotificationPaths(expected);
+	const receivedDuplicates = duplicateNotificationPaths(received);
+	const same =
+		expectedKeys.length === receivedKeys.length &&
+		expectedKeys.every((key, index) => key === receivedKeys[index]);
+	if (same && !expectedDuplicates.length && !receivedDuplicates.length) return null;
+	const firstDifferentIndex = expectedKeys.findIndex((key, index) => key !== receivedKeys[index]);
+	const index =
+		firstDifferentIndex === -1
+			? Math.min(expectedKeys.length, receivedKeys.length)
+			: firstDifferentIndex;
+	return [
+		`expected ${expectedKeys.length} paths, received ${receivedKeys.length}`,
+		`first difference at ${index}: expected ${expectedKeys[index] ?? "<end>"}, received ${receivedKeys[index] ?? "<end>"}`,
+		expectedDuplicates.length ? `duplicate expected paths: ${expectedDuplicates.join(", ")}` : "",
+		receivedDuplicates.length ? `duplicate received paths: ${receivedDuplicates.join(", ")}` : "",
+	]
+		.filter(Boolean)
+		.join("; ");
+}
+
+function runCodexProtocolConformanceWithExpectations(
 	executablePath: string,
+	expectations: CodexProtocolConformanceExpectations,
 ): CodexProtocolConformanceResult {
 	if (typeof executablePath !== "string" || !isAbsolute(executablePath))
 		throw conformanceError(
@@ -78,15 +140,15 @@ export function runCodexProtocolConformance(
 		throw conformanceError(
 			executablePath,
 			"version",
-			`could not run --version. Provide the exact Codex ${CODEX_PROTOCOL_BINARY_VERSION} executable; PATH lookup is disabled. ${failureDetail(cause)}`,
+			`could not run --version. Provide the exact Codex ${expectations.binaryVersion} executable; PATH lookup is disabled. ${failureDetail(cause)}`,
 			cause,
 		);
 	}
-	if (version !== CODEX_PROTOCOL_BINARY_VERSION)
+	if (version !== expectations.binaryVersion)
 		throw conformanceError(
 			executablePath,
 			"version",
-			`expected ${CODEX_PROTOCOL_BINARY_VERSION}, received ${version || "<empty output>"}`,
+			`expected ${expectations.binaryVersion}, received ${version || "<empty output>"}`,
 		);
 
 	let generatedRoot: string;
@@ -112,7 +174,7 @@ export function runCodexProtocolConformance(
 			throw conformanceError(
 				executablePath,
 				"generation",
-				`could not generate the experimental tree in the temporary directory. Confirm this is Codex ${CODEX_PROTOCOL_BINARY_VERSION} with app-server generate-ts support. ${failureDetail(cause)}`,
+				`could not generate the experimental tree in the temporary directory. Confirm this is Codex ${expectations.binaryVersion} with app-server generate-ts support. ${failureDetail(cause)}`,
 				cause,
 			);
 		}
@@ -129,13 +191,35 @@ export function runCodexProtocolConformance(
 			);
 		}
 		if (
-			digest.fileCount !== CODEX_PROTOCOL_GENERATED_FILE_COUNT ||
-			digest.sha256 !== CODEX_PROTOCOL_GENERATED_TREE_SHA256
+			digest.fileCount !== expectations.generatedFileCount ||
+			digest.sha256 !== expectations.generatedTreeSha256
 		)
 			throw conformanceError(
 				executablePath,
 				"digest",
-				`generated tree mismatch: expected ${CODEX_PROTOCOL_GENERATED_FILE_COUNT} files and ${CODEX_PROTOCOL_GENERATED_TREE_SHA256}, received ${digest.fileCount} files and ${digest.sha256}. Regenerate with the exact Codex ${CODEX_PROTOCOL_BINARY_VERSION} binary.`,
+				`generated tree mismatch: expected ${expectations.generatedFileCount} files and ${expectations.generatedTreeSha256}, received ${digest.fileCount} files and ${digest.sha256}. Regenerate with the exact Codex ${expectations.binaryVersion} binary.`,
+			);
+
+		let generatedNotificationPaths: GeneratedNotificationUnionPath[];
+		try {
+			generatedNotificationPaths = deriveGeneratedNotificationUnionPaths(generatedRoot);
+		} catch (cause) {
+			throw conformanceError(
+				executablePath,
+				"inventory",
+				`could not derive the generated notification-union inventory. Confirm the generated tree is complete and compatible with the pinned protocol. ${failureDetail(cause)}`,
+				cause,
+			);
+		}
+		const mismatch = notificationInventoryMismatch(
+			expectations.notificationUnionPaths,
+			generatedNotificationPaths,
+		);
+		if (mismatch)
+			throw conformanceError(
+				executablePath,
+				"inventory",
+				`generated notification-union inventory mismatch: ${mismatch}. Regenerate with the exact Codex ${expectations.binaryVersion} binary.`,
 			);
 
 		return {
@@ -147,4 +231,23 @@ export function runCodexProtocolConformance(
 	} finally {
 		rmSync(generatedRoot, { recursive: true, force: true });
 	}
+}
+
+/**
+ * Runs the pinned generator against an explicitly supplied executable path.
+ * The only filesystem mutation is a temporary directory, which is removed
+ * before this function returns or throws.
+ */
+export function runCodexProtocolConformance(
+	executablePath: string,
+): CodexProtocolConformanceResult {
+	return runCodexProtocolConformanceWithExpectations(executablePath, PRODUCTION_EXPECTATIONS);
+}
+
+/** Test-only manifest injection; intentionally not re-exported from the package entrypoint. */
+export function runCodexProtocolConformanceForTest(
+	executablePath: string,
+	expectations: CodexProtocolConformanceExpectations,
+): CodexProtocolConformanceResult {
+	return runCodexProtocolConformanceWithExpectations(executablePath, expectations);
 }
