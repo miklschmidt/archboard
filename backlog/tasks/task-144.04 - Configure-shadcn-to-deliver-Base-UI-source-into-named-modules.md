@@ -4,9 +4,13 @@ title: Configure shadcn to deliver Base UI source into named modules
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:11'
+updated_date: '2026-08-30 15:49'
 labels: []
 dependencies:
-  - TASK-144.02
+  - TASK-144.01
+  - TASK-144.03
+  - TASK-144.13
+  - TASK-144.17
 references:
   - docs/design/operator-canvas-shell.md
   - docs/design/tailwind-base-ui-adoption-research.md
@@ -21,12 +25,13 @@ ordinal: 218000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own `components.json` plus the matching resolver aliases as one source-delivery configuration seam. Generated source must land in named `src/ui/<module>` boundaries rather than a generic component bucket.
+Own `components.json` as the shadcn 4.19.0 source-delivery configuration. Choose `base-nova`, neutral generation values, Base UI, RSC false, TSX/CSS variables true, blank Tailwind config, `src/ui/theme/app.css`, and aliases into named modules.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Configuration selects an explicit Base UI `base-*` style, React Server Components false, CSS variables true, Tailwind v4 blank config, the canonical stylesheet, and the existing Archboard icon strategy.
-- [ ] #2 Aliases resolve identically in Vite, root TypeScript, and frontend TypeScript and target named module roots; no `components/ui`, generic utility bucket, or unreviewed registry block is generated.
-- [ ] #3 A pinned CLI dry-run/smoke and both TypeScript projects prove the configuration without making the CLI a browser runtime or application state owner.
+- [ ] #1 The file fixes style base-nova, rsc false, tsx true, tailwind.config empty, css src/ui/theme/app.css, baseColor neutral, cssVariables true, empty prefix, components @/ui, ui @/ui/dialog, utils/lib @/ui-classnames, and hooks @/ui/hooks.
+- [ ] #2 iconLibrary is explicitly lucide only as the official registry-generation input; accepted source replaces generated icon imports with src/ui/shell/Icons.tsx and TASK-144.01 proves lucide-react is not retained.
+- [ ] #3 The reproducible command is bun run shadcn add dialog --yes using pinned shadcn 4.19.0 and official @shadcn/dialog under base-nova; no init, add-all, overwrite, or third-party registry command is accepted.
+- [ ] #4 Schema/CLI dry-run plus Vite, root TypeScript, and frontend TypeScript prove exact aliases/destination without components/ui, generic lib bucket, unresolved imports, unreviewed blocks, or runtime CLI code.
 <!-- AC:END -->

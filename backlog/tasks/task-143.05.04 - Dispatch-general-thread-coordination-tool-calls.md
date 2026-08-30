@@ -4,6 +4,7 @@ title: Dispatch general thread-coordination tool calls
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
+updated_date: '2026-08-30 15:40'
 labels: []
 dependencies:
   - TASK-143.01.08
@@ -29,8 +30,9 @@ Own `item/tool/call` validation and the six-tool target-state matrix in `src/run
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Only server-supplied child/thread/turn/call/namespace/tool identity and decoded arguments are trusted; invalid identity, schema, namespace, tool, prior epoch, unavailable target, or cycle fails closed.
-- [ ] #2 List/read inspect persisted threads without loading them; create starts a general Archboard thread; fork requires a loaded controllable manifest-matched source; send and wait follow the explicit idle/active/attached/created target matrix.
-- [ ] #3 Create, fork, and arbitrary send require fresh approval; list/read/wait do not. Self-fork uses `beforeTurnId` equal to the executing turn and inherits without overrides.
-- [ ] #4 Real-process tests exercise all six tools, every target state, approval revalidation/decline, cancellation before and after mutation dispatch, cycle cleanup, text-only output, and two-home isolation.
+- [ ] #1 Only server-supplied child/thread/turn/call/namespace/tool identity and decoded arguments are trusted; each call records a stable operation correlation and invalid identity/schema/namespace/tool/epoch/target/cycle fails closed.
+- [ ] #2 A checked target-state table covers all six tools across persisted-not-loaded, current loaded controllable/uncontrollable, idle, active, attached, created, self, prior-epoch, failed, completed, and child-exit states with one exact result per cell.
+- [ ] #3 List/read inspect without loading; create uses reviewed instructions and manifest; fork requires loaded controllable manifest match; send/wait follow the table. Create/fork/arbitrary send require fresh broker approval; self-fork uses executing beforeTurnId and no overrides.
+- [ ] #4 Cancellation before dispatch prevents mutation; cancellation after an app-server mutation returns outcome_unknown unless the response proves delivered/not_delivered, and cleanup removes wait-graph/call state exactly once.
+- [ ] #5 Real-process tests in src/runtime/codex-dynamic-tools/tests exercise every schema and state cell, approval verdict, lost response, cancellation boundary, cycle cleanup, text-only result, and two-home isolation.
 <!-- AC:END -->

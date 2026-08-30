@@ -4,9 +4,12 @@ title: Own browser media and WebRTC lifecycle
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
+updated_date: '2026-08-30 15:48'
 labels: []
 dependencies:
   - TASK-143.02.01
+  - TASK-143.02.04
+  - TASK-143.02.05
 references:
   - docs/design/agent-workbench-ui-library-research.md
 modified_files:
@@ -25,8 +28,8 @@ Implement the framework-neutral media engine in `packages/codex-realtime/src/rea
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `getUserMedia`, `RTCPeerConnection`, an ordered `oai-events` data channel created before the offer, remote-track playback, `AudioContext`, and `AnalyserNode` implement permission, negotiation, levels, mute, unmute, and stop.
-- [ ] #2 The discriminated state model covers idle, permission, negotiating, connected/listening, muted, agent speaking, recovering, stopping, stopped, device loss, ICE/SDP/data-channel/adapter/transport failures, and repeated or late commands.
-- [ ] #3 Every owned track, peer, channel, audio node/context, listener, timer, and playback element is released exactly once on all terminal and recovery paths.
-- [ ] #4 Controlled browser fakes and one real-browser contract owner prove creation order, remote-track-only playback, late-event behavior, recovery, and no leaked resources.
+- [ ] #1 getUserMedia, RTCPeerConnection, an ordered oai-events data channel created before the offer, remote-track playback, AudioContext, and AnalyserNode implement permission, negotiation, levels, mute, unmute, and stop through the frozen package API.
+- [ ] #2 The package media machine covers idle, permission, negotiating, connected/listening, muted, agent-speaking, stopping, stopped, device loss, ICE/SDP/data-channel/adapter/transport failure, and repeated or late commands; host binding/realtime authority stays injected.
+- [ ] #3 Every track, peer, channel, audio node/context, listener, timer, and playback element is released exactly once on all terminal paths; recovery creates fresh resources only after the prior session is stopped and closed.
+- [ ] #4 Tests at packages/codex-realtime/src/realtime-session/tests use controlled browser fakes plus one package real-browser contract owner to prove creation order, remote-track-only playback, same-binding restart serialization, late events, recovery, and no leaks.
 <!-- AC:END -->

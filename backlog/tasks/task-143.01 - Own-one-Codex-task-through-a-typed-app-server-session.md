@@ -4,7 +4,7 @@ title: Own Codex threads through a typed app-server session
 status: To Do
 assignee: []
 created_date: '2026-08-30 11:43'
-updated_date: '2026-08-30 15:16'
+updated_date: '2026-08-30 15:48'
 labels: []
 dependencies: []
 references:
@@ -21,13 +21,13 @@ ordinal: 163000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Integration milestone for the shared identity/browser contracts, exact protocol, dedicated child, epoch store, JSON-RPC transport, authored instructions, typed session, thread-link classifier, and browser gateway delivered by TASK-143.01.01-.10.
+Integration milestone for shared contracts, ignored/generated exact protocol, serialized root conformance, dedicated process, epoch, JSON-RPC, instructions, session, thread links, workhorse start/bind, gateway, and canvas lifecycle integration delivered by TASK-143.01.01-.14.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The ten leaves compose into one exact 0.151.0 private stdio child and one typed session whose generated protocol remains runtime-private.
-- [ ] #2 Only a current-epoch loaded controllable thread can form an executable pane thread link; every other discovery, reconnect, sign-in, crash, and replacement state is explicit and non-executable.
-- [ ] #3 The dedicated Codex and effective SQLite homes, external epoch manifest, environment allowlist, account state, process lifecycle, browser lease, and two-session isolation are directly verified.
-- [ ] #4 Runtime/server/UI communicate only through the shared identities and closed browser contract with no forbidden area import.
+- [ ] #1 The fourteen leaves compose one exact 0.151.0 private stdio child and typed session whose generated protocol remains runtime-private and whose effective SQLite/account readiness is proven after initialize.
+- [ ] #2 Only a current-epoch loaded controllable thread forms an executable pane link; every discovery, create, partial failure, reconnect, sign-in, crash, and replacement state is explicit/non-executable when unsafe.
+- [ ] #3 Dedicated homes, epoch, environment, process/gateway hot-reload lifecycle, browser lease, workhorse transaction, root conformance, signal shutdown, orphan refusal, and two-session isolation are directly verified.
+- [ ] #4 Runtime/server/UI communicate only through shared identities, stable session/thread ports, and the closed browser contract with one mechanical canvas registration.
 <!-- AC:END -->

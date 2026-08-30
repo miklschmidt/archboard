@@ -4,10 +4,11 @@ title: Preserve board claim and doing as separate workbench state
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
+updated_date: '2026-08-30 15:41'
 labels: []
 dependencies:
   - TASK-143.06.02
-  - TASK-144
+  - TASK-144.14
 references:
   - docs/design/operator-canvas-shell.md
   - docs/design/agent-workbench-ui-library-research.md
@@ -27,7 +28,7 @@ Own the adapter and view for existing focused-pane connection, claim, doing hist
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Board connection, claim holder/reason, doing history, semantic-context delivery, and Take back control retain their existing behavior and remain visually distinct from Codex turn, queue, approval, coordinator, and voice state.
-- [ ] #2 Offline, reconnecting, unclaimed, claimed, stale context, delivery refused, and take-back outcomes are named and never conflated with thread execution.
-- [ ] #3 Existing TASK-140 claim/take-back browser assertions remain green and focused module tests cover the closed adapter states.
+- [ ] #1 Board connection, claim holder/reason, doing history, semantic-context delivery, and Take back control retain existing behavior and remain separate from Codex turn, queue, approval, coordinator, and voice state.
+- [ ] #2 Disconnected, reconnecting, unclaimed, claimed, take-back pending/success/failure, semantic fresh/stale/ambiguous/refused/outcome_unknown states are named and never conflated with thread execution.
+- [ ] #3 Existing TASK-140 claim/take-back browser assertions remain green; tests at src/ui/workbench-board-status/tests exhaust closed adapter states, accessibility status, keyboard focus, both themes, and no board-note write from presentation.
 <!-- AC:END -->

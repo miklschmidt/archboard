@@ -66,10 +66,9 @@ The implementation seam is therefore small:
    The version must be pinned in `package.json` and `bun.lock`; do not use an
    unconstrained install that can select an older plugin whose Vite peer range stops
    at Vite 7.
-2. Create one canonical CSS entrypoint under the shell UI module, for example
-   `src/ui/shell/app.css`, and point `components.json` and Oxfmt at that same file.
-   Import it once from `frontend/index.html` or `frontend/main.tsx`. The exact location
-   can differ, but it must remain inside the UI module boundary and must not result in
+2. Create the canonical CSS entrypoint at `src/ui/theme/app.css`, point
+   `components.json` and Oxfmt at that file, and import it once from
+   `frontend/main.tsx`. Keep the entrypoint inside the UI boundary and prevent
    duplicate Tailwind imports.
 3. Keep `assets/excalidraw.css` separate. Run a browser regression before deciding
    whether Tailwind Preflight is safe for the existing canvas and shell.
@@ -247,15 +246,15 @@ confirm that Tailwind utility sorting is built in, based on
 `prettier-plugin-tailwindcss`, and disabled by default. The object form accepts a v4
 `stylesheet` path, exact-match custom `functions`, additional exact-match `attributes`,
 and whitespace/duplicate options. The future configuration should point at the
-canonical CSS entrypoint and list every composition helper actually used, for example
-`cn`, `clsx`, `cva`, and `twMerge`. The function list is exact-match; regex patterns are
-not supported.
+canonical CSS entrypoint and list only composition helpers actually used. The accepted
+initial set is `className` plus `cn`; the function list is exact-match and regex
+patterns are not supported.
 
 The repository already runs the npm package through Bun, not the standalone binary.
 That distinction matters: Oxfmt's [quick start](https://oxc.rs/docs/guide/usage/formatter/quickstart)
 says the standalone binary does not support Tailwind sorting, while the package does.
 Keep `bun run fmt:check` as the enforcement command. Add a small formatter fixture for
-`className`, `cn`, and `cva` before relying on the option, so a future Oxfmt upgrade
+`className` and `cn` before relying on the option, so a future Oxfmt upgrade
 cannot silently stop sorting the forms used by this codebase.
 
 The inspected Oxfmt 0.65.0 schema names the width option `printWidth`; the current
@@ -369,7 +368,7 @@ owner may be disabled to admit Tailwind or copied source.
    the build contains no accidental duplicate entrypoint. If Preflight is enabled,
    the fixture and browser regression explicitly cover its reset effects.
 3. **Formatter gate.** Oxfmt's configured Tailwind sorter changes a deliberately
-   misordered `className`, `cn`, and `cva` fixture; `bun run fmt:check` rejects the
+   misordered `className` and `cn` fixture; `bun run fmt:check` rejects the
    unformatted fixture and accepts the formatted result. The package implementation,
    not a standalone Oxfmt binary, must be used.
 4. **Native lint gate.** New and copied source passes the repository's existing
@@ -403,8 +402,9 @@ The durable agent-facing guidance should require the following sequence:
 2. Use Tailwind utilities for new composition, but keep semantic token definitions in
    the canonical CSS entrypoint. Prefer named semantic utilities over default palette
    colors and arbitrary values.
-3. Use the configured `cn` helper and typed `cva` recipes. Write complete static
-   class maps; never construct utility names by interpolation. Run Oxfmt rather than
+3. Use the configured `cn` helper and keep exhaustive static variant maps in their
+   owning UI module; never construct utility names by interpolation. Add `cva` only
+   for a separately accepted component with a concrete need. Run Oxfmt rather than
    hand-ordering classes.
 4. Add one Base UI primitive at a time through the pinned shadcn CLI with the explicit
    Base UI choice. Read the generated registry item, dependencies, and source before

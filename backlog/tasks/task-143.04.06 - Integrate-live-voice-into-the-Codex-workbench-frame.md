@@ -4,9 +4,10 @@ title: Integrate live voice into the Codex workbench frame
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:10'
+updated_date: '2026-08-30 15:42'
 labels: []
 dependencies:
-  - TASK-143.03.10
+  - TASK-143.03.11
   - TASK-143.04.02
   - TASK-143.04.03
   - TASK-143.04.04
@@ -25,13 +26,13 @@ ordinal: 214000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Extend only `src/ui/workbench-frame` to compose voice controls, context, transcript, and voice-specific spoken approval while preserving the text workbench as the canonical fallback.
+Extend only `src/ui/workbench-frame` to fill its optional voice slot with controls, context, transcript, and spoken-approval presentation. Preserve the text workbench as canonical fallback; fullscreen projection is a separate shell leaf.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Voice start, active transport, context, transcript, and spoken state occupy the approved operator workbench regions without hiding text composer, ordinary approvals, queue, claim/doing, or Stop.
-- [ ] #2 The source thread link remains visible and immutable across pane focus changes, workbench collapse, one/two panes, and fullscreen; terminal stop restores the normal text layout.
-- [ ] #3 A deterministic browser owner uses controlled media, peer, audio, data-channel, transcript, semantic-context, callback, spoken-gate, and app-server fakes to prove the complete visible state and cleanup matrix.
-- [ ] #4 A documented clean-process manual smoke against exact 0.151.0 and the dedicated signed-in home proves real audio, quick coordinator answer, one board write, busy-workhorse queue/steer behavior, callback speech, one eligible spoken approval, stop, restart, and shutdown.
+- [ ] #1 Voice ready/start/active/recovering/stopping/failure states occupy the approved regions without hiding text composer, ordinary approvals, queue, board status, source thread link, or Stop.
+- [ ] #2 The bound source link remains visible and immutable across pane focus, one/two panes, collapse/expand, and frame-level failure; terminal stop restores the text-only layout with no stale slot content.
+- [ ] #3 Frame tests at src/ui/workbench-frame/tests/voice-composition.test.ts cover every voice-slot state, focus/log order, both themes, reduced motion, keyboard/pointer/touch, and no duplicate state owner.
+- [ ] #4 This leaf owns no browser inventory or real-audio smoke; deterministic integration belongs to TASK-143.04.07 and real acceptance to TASK-143.04.09.
 <!-- AC:END -->
