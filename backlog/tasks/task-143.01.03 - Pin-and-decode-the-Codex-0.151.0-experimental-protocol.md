@@ -1,10 +1,11 @@
 ---
 id: TASK-143.01.03
 title: Pin and decode the Codex 0.151.0 experimental protocol
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 17:58'
+updated_date: '2026-08-30 18:42'
 labels: []
 dependencies:
   - TASK-143.01.12
