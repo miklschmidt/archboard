@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 23:23'
+updated_date: '2026-08-30 23:31'
 labels: []
 dependencies:
   - TASK-144.01
@@ -34,8 +34,19 @@ Expose completed TASK-140 tokens as the canonical Tailwind semantic theme while 
 - [ ] #4 Theme changes preserve light/dark/high-contrast/reduced-motion contracts and defer rendered shell equivalence to TASK-144.14 browser coverage.
 <!-- AC:END -->
 
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Establish src/ui/theme/app.css as the single application stylesheet entrypoint, with Tailwind theme and utilities imports followed by the existing shell stylesheet and no Preflight import.
+2. Define one namespaced source token set from the completed TASK-140 shell values for light and dark color/state roles, pinned typography, compact spacing and radii, flat elevation, and restrained motion; expose only semantic Tailwind namespaces through @theme inline and remove relevant framework defaults.
+3. Add one module-owned static fixture that compiles app.css through Tailwind, supplies complete class candidates, and asserts emitted semantic utilities plus the absence of unknown and framework-palette utilities without treating source text or rendering as proof.
+4. Run the focused compile owner, module and repository policy lanes, both TypeScript projects, lint, formatting, frontend build where the fixed base permits it, and a final scope/status audit; record evidence without completing TASK-144.03.
+<!-- SECTION:PLAN:END -->
+
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Reserved after TASK-144.01 finalized at integration HEAD a098684. This leaf owns only the application-wide semantic Tailwind theme and static compile fixtures; Vite configuration and rendered-shell equivalence remain protected.
+
+Implemented the canonical src/ui/theme/app.css entrypoint and a module-owned Tailwind compiler fixture. The entrypoint imports Tailwind theme, Tailwind utilities, and the existing shell stylesheet in that order; omits Preflight; clears Tailwind visual defaults; preserves exact TASK-140 light/dark typography, color/state, compact geometry, flat elevation, and motion values behind namespaced source variables; and exposes semantic @theme inline utilities. Focused compiler proof passes 4 tests and 93 assertions for exact values, emitted utilities, refused unknown/default tokens, no Preflight output, forced-color preservation, and reduced motion.
 <!-- SECTION:NOTES:END -->
