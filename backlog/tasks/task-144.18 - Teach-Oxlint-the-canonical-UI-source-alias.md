@@ -4,6 +4,7 @@ title: Teach Oxlint the canonical UI source alias
 status: To Do
 assignee: []
 created_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 17:27'
 labels: []
 dependencies:
   - TASK-144.15
@@ -28,8 +29,8 @@ Own the narrow lint resolver/policy seam for @/ after both TypeScript aliases ex
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Oxlint resolves @/ to ./src/ in both frontend and root TypeScript owners, and existing area/module-entrypoint/deep-import rules judge the resolved canonical path.
-- [ ] #2 The change uses native resolver/config support where available and the smallest extension of the existing Archboard plugin otherwise; it adds no Tailwind-class rule, warning allowance, second alias table, or changing-upstream-default mirror.
-- [ ] #3 Repository fixtures prove valid UI entrypoint imports pass while @/ deep imports, cross-area imports, unknown aliases, and paths escaping src fail with existing actionable rule names.
-- [ ] #4 bun run lint remains deny-warnings clean and the alias policy matches Vite, root TypeScript, frontend TypeScript, and shadcn configuration.
+- [ ] #1 Oxlint resolves @/ to ./src/ consistently with Vite and both TypeScript owners; existing area/module-entrypoint/deep-import rules judge the canonical path.
+- [ ] #2 The smallest native resolver/plugin extension adds no Tailwind rule, warning allowance, second alias table, changing-default mirror, components.json read, or shadcn dry-run.
+- [ ] #3 Repository fixtures prove valid UI entrypoints pass while deep, cross-area, unknown, and escaping paths fail with existing actionable rule names.
+- [ ] #4 bun run lint stays deny-warnings clean. TASK-144.04 alone validates components.json agreement and runs shadcn after this alias owner completes.
 <!-- AC:END -->

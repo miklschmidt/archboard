@@ -4,7 +4,7 @@ title: Configure shadcn to deliver Base UI source into named modules
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-30 17:30'
 labels: []
 dependencies:
   - TASK-144.05
@@ -32,8 +32,8 @@ Configure shadcn base-nova for Base UI source delivery after every resolver/help
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 components.json selects base-nova/Base UI/TypeScript/CSS variables/Tailwind 4 with aliases components/ui/lib @/ui, utils @/ui/ui-classnames, hooks @/ui and no cva/icon/theme dependency.
-- [ ] #2 Tracked immutable fixtures are exact bytes from shadcn-ui/ui commit b4a618b97e35f5dadf3a00d51f410c84a2567d4d: button SHA-256 97bfee456444f0495deee6a321933c24267477645b0bf4bfea67c3c62d425a12 and dialog 85f9a33d1a8c495b0faecd066dae1581b8feb5d27f912ecf65f814386f6da3a9.
-- [ ] #3 A dry-run resolves all aliases/lint/helper config, compares generated inputs to tracked fixtures, reports upstream drift, and never modifies the checkout.
-- [ ] #4 Only reviewed named source may be copied; future updates repeat immutable provenance, hash, dependency, accessibility, aesthetic, and boundary review.
+- [ ] #1 components.json is byte-equivalent JSON to the reviewed literal: schema URL, style base-nova, rsc false, tsx true, tailwind config empty/css src/ui/theme/app.css/baseColor neutral/cssVariables true/prefix empty, and components/ui/lib/hooks @/ui plus utils @/ui/ui-classnames aliases.
+- [ ] #2 iconLibrary is intentionally omitted because the schema has no local-icon value. A non-mutating dry-run may report its default, but package/source adoption is refused; button/dialog fixtures match the immutable commit and exact hashes.
+- [ ] #3 The dry-run uses finished Vite/TypeScript/Oxlint aliases, validates literal components.json, compares generated inputs to tracked fixtures, reports default/icon/upstream drift, and never modifies the checkout.
+- [ ] #4 Only reviewed named source may be copied; reductions remove icon/default helpers and future updates repeat provenance, hash, dependency, accessibility, aesthetic, and boundary review.
 <!-- AC:END -->

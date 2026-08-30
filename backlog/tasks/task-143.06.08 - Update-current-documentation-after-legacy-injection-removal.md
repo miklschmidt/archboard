@@ -4,7 +4,7 @@ title: Update current documentation after legacy injection removal
 status: To Do
 assignee: []
 created_date: '2026-08-30 16:29'
-updated_date: '2026-08-30 16:34'
+updated_date: '2026-08-30 17:27'
 labels: []
 dependencies:
   - TASK-143.06.05
@@ -20,6 +20,7 @@ modified_files:
   - docs/agents/test-suite.md
   - docs/design/cli-command-audit.json
   - docs/design/stateless-server.md
+  - tests/system/repository-policy/legacy-injection-retirement.test.ts
 parent_task_id: TASK-143.06
 priority: high
 type: task
@@ -35,7 +36,7 @@ Update current user/agent/test/architecture documents and command audit to descr
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 Current setup/help/testing docs remove ARCHBOARD_INJECT*, shared-daemon injection commands/routes, and claims that users can arm legacy injection.
-- [ ] #2 Current architecture describes the exact thread-link semantic stream, one private stdio session, delivered/not_delivered/outcome_unknown, and the controlled/real workbench tests.
-- [ ] #3 ADR 0005 and historical research/design measurements remain unchanged or explicitly labelled superseded rather than rewritten; links stay valid.
-- [ ] #4 CLI audit, test-suite counts, README, TESTING, DESIGN, and AGENTS agree with executable routes/commands/tests and repository enforcement detects future stale current-doc claims.
+- [ ] #2 Current architecture describes exact thread-link semantic delivery, one private stdio session, outcomes, and controlled/real tests; AGENTS.md and test-suite.md are first reconciled to the executable pre-workbench baseline of 19 browser owners.
+- [ ] #3 ADR 0005 and historical research remain unchanged or explicitly superseded; links stay valid and no current document advertises a control socket.
+- [ ] #4 tests/system/repository-policy/legacy-injection-retirement.test.ts rejects stale control-socket/current-doc claims and count drift; CLI audit, README, TESTING, DESIGN, AGENTS, and executable routes/commands/tests agree.
 <!-- AC:END -->

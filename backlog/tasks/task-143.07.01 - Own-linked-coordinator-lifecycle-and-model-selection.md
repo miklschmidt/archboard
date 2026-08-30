@@ -4,7 +4,7 @@ title: Own linked coordinator lifecycle and model selection
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 17:03'
+updated_date: '2026-08-30 17:27'
 labels: []
 dependencies:
   - TASK-143.01.05
@@ -31,9 +31,9 @@ Own one persistent current-epoch coordinator using the literal reviewed ThreadSt
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 model/list is fully exhausted and gpt-5.6-luna with medium effort is required; absence refuses. Priority is included only in the reviewed priority-capable profile when advertised, otherwise the fallback profile omits it and exposes configured/effective state.
-- [ ] #2 Thread start exactly matches the authored coordinator profile: checkout cwd/sole runtime root, paginated persistence, startup/archboard source, composed instructions, realtime feature config, eager catalogues, model, and every intentional provider/approval/sandbox/permissions/personality/environment/experimental omission.
-- [ ] #3 The one subsequent settings update and the matching settings-updated notification match the authored bytes; model/medium effort/tier are proven and captured approval/sandbox remain unchanged before reuse.
+- [ ] #1 model/list is exhausted and gpt-5.6-luna with medium effort is required; absence refuses. Priority is included only when advertised, otherwise omitted with visible configured/effective state.
+- [ ] #2 Thread start exactly matches the authored coordinator profile: checkout cwd/root, paginated persistence, startup/archboard source, instructions, realtime config, eager catalogues, model, and every intentional omission.
+- [ ] #3 The one settings update and matching notification prove model, effort, and tier while preserving start-response approvalPolicy, approvalsReviewer, sandbox as notification sandboxPolicy, and activePermissionProfile; none is renamed permissions.
 - [ ] #4 Only a matching loaded controllable current-epoch coordinator with reviewed hashes/settings is reusable; others are inspect-only or replaced through the staged transaction.
 - [ ] #5 Normal web, shell, repository, approval, and bounded board capabilities remain available while instructions default sustained code work to delegation.
 <!-- AC:END -->

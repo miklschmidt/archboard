@@ -4,7 +4,7 @@ title: Expose typed thread-coordination tools to Archboard-created Codex agents
 status: To Do
 assignee: []
 created_date: '2026-08-30 13:07'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-08-30 17:27'
 labels: []
 dependencies: []
 references:
@@ -24,7 +24,7 @@ Integration milestone for the pure wait graph, seven-family approval broker, exa
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 General Archboard-created workhorse threads receive exactly the six reviewed `archboard_app` tools; attached threads never gain or replace persisted dynamic tools.
-- [ ] #2 The dispatcher enforces server identity, target availability/ownership, discriminated approval freshness, exact effect revalidation, cancellation semantics, and transitive wait-cycle refusal before app-server effects.
-- [ ] #3 Real-process tests cover all tools, every target state, exact-once text results, cancellation, cycles, self-fork, prior-epoch refusal, and two-home isolation.
+- [ ] #1 General Archboard-created workhorse threads receive exactly the six reviewed archboard_app tools; attached threads never gain or replace persisted dynamic tools.
+- [ ] #2 The dispatcher enforces the literal target-state matrix, approval freshness, exact effect revalidation, pagination/cursor contracts, cancellation, and transitive wait-cycle refusal before effects; module fake-port tests exhaust every matrix cell.
+- [ ] #3 TASK-143.01.15 owns composed real-process coverage for all six tools and two-home isolation; TASK-143.05 leaves own pure graph, broker, manifest, dispatcher, and fake-port policy coverage only.
 <!-- AC:END -->

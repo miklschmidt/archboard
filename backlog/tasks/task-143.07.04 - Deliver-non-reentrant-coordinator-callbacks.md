@@ -4,7 +4,7 @@ title: Deliver non-reentrant coordinator callbacks
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-30 17:32'
 labels: []
 dependencies:
   - TASK-143.01.07
@@ -15,6 +15,7 @@ dependencies:
   - TASK-143.01.16
 references:
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
+  - docs/design/codex-workbench-authored-contracts.md
 modified_files:
   - src/runtime/codex-coordinator-callbacks
 parent_task_id: TASK-143.07

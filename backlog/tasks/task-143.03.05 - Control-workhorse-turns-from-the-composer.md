@@ -4,7 +4,7 @@ title: Control workhorse turns from the composer
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-30 17:27'
 labels: []
 dependencies:
   - TASK-143.03.02
@@ -30,8 +30,8 @@ Own text composer submit/steer/interrupt behavior against the authoritative work
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Submit creates authoritative command/turn identity; active input steers only with exact expectedTurnId and Stop interrupts only the bound current turn.
-- [ ] #2 Only reviewed composer primitives are imported from assistant-ui. No assistant transport, queue/tool handler, setMessages, edit/reload/delete control, voice adapter, or copied Elements enter this module.
-- [ ] #3 Draft freezes while pending; refused/not_delivered/outcome_unknown restores it and blocks duplicate submit until authoritative reconciliation, while delivered clears only after matching events.
-- [ ] #4 Keyboard/newline/IME/paste limits, status, focus return, reconnect, late result, stale link, child exit, and turn replacement are deterministic.
+- [ ] #1 The module's only assistant-ui import is named root ComposerPrimitive; submit, steer, interrupt, draft, pending, and focus behavior remain Archboard-owned and target the captured current thread link/turn.
+- [ ] #2 Idle submit uses the literal turn/start body, active steer uses the literal turn/steer body with host-proven expectedTurnId, and interrupt targets the captured active turn; link/state changes before dispatch refuse.
+- [ ] #3 Composer disables during pending command lease, preserves or clears draft by documented delivered/not_delivered/outcome_unknown outcome, and never creates an optimistic assistant record.
+- [ ] #4 Keyboard, multiline, IME, screen-reader label, focus restoration, stale link, disconnect, late result, duplicate activation, and active-turn races are covered by module tests.
 <!-- AC:END -->
