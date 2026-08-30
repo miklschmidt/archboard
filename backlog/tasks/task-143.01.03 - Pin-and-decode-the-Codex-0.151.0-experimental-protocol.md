@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 20:11'
+updated_date: '2026-08-30 20:28'
 labels: []
 dependencies:
   - TASK-143.01.12
@@ -65,4 +65,6 @@ Implemented the pinned Codex 0.151.0 experimental protocol boundary under src/ru
 Validation: exact generation/version/digest check passed; bun run type-check passed; bun run test:modules passed (574 tests, 0 failures); protocol suite passed (140 tests, 0 failures); repository-policy suite passed (56 tests, 0 failures); oxlint, oxfmt --check, and git diff --check passed. Generated output remains ignored and no consumer imports it.
 
 Remediation 2026-08-30 (commit 056389e): replaced the fail-open notification fallback with explicit Codex 0.151.0 schemas and fixtures for all 81 server notifications; tightened the response/reverse graph and security-sensitive command, network, filesystem, configuration, and MCP unions; enforced mutually exclusive JSON-RPC result/error envelopes; and added a temporary exact-generator conformance owner with version, file-count, and digest checks. Validation passed: 662 module tests, 118 repository/inventory tests, 228 focused protocol tests, type-check, Oxlint, Oxfmt, diff check, and exact generator digest cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273.
+
+Second remediation complete in commit 55ae4a2. Removed the workstation-local Codex generator path from normal module tests; exported an explicit-path, fail-closed conformance helper that checks codex-cli 0.151.0, generates into a fresh temporary directory, verifies 820 files and digest cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273, and cleans up. Manual helper validation against /home/msc/.cache/.bun/bin/codex passed with the exact version, count, and digest. Strict request/result/error/notification envelopes now reject extras and mutually exclusive result/error siblings. Notification challenge coverage is complete for the accepted method inventory and nested closed unions, including mcpServer/startupStatus/updated and windowsSandbox/setupCompleted; JsonValue extension points remain open by design. Validation: focused protocol 429 pass; bun run test:modules 863 pass; bun run test:repository 118 pass; bun run type-check pass; oxlint, oxfmt --check, and git diff --check pass. TASK-143.01.13 remains the owner of dependency pinning and root-check registration.
 <!-- SECTION:NOTES:END -->
