@@ -4,7 +4,7 @@ title: Update current documentation after legacy injection removal
 status: To Do
 assignee: []
 created_date: '2026-08-30 16:29'
-updated_date: '2026-08-30 17:27'
+updated_date: '2026-08-30 17:54'
 labels: []
 dependencies:
   - TASK-143.06.05
@@ -36,7 +36,7 @@ Update current user/agent/test/architecture documents and command audit to descr
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 Current setup/help/testing docs remove ARCHBOARD_INJECT*, shared-daemon injection commands/routes, and claims that users can arm legacy injection.
-- [ ] #2 Current architecture describes exact thread-link semantic delivery, one private stdio session, outcomes, and controlled/real tests; AGENTS.md and test-suite.md are first reconciled to the executable pre-workbench baseline of 19 browser owners.
-- [ ] #3 ADR 0005 and historical research remain unchanged or explicitly superseded; links stay valid and no current document advertises a control socket.
-- [ ] #4 tests/system/repository-policy/legacy-injection-retirement.test.ts rejects stale control-socket/current-doc claims and count drift; CLI audit, README, TESTING, DESIGN, AGENTS, and executable routes/commands/tests agree.
+- [ ] #2 Current architecture describes exact thread-link semantic delivery, one private stdio session, outcomes, controlled/real tests, and the executable pre-workbench baseline of 19 browser owners; TESTING.md says Archboard owns dedicated CODEX_HOME, CODEX_SQLITE_HOME, config, and app-server state rather than user-global configuration, with coordinator voice separate from the linked workhorse.
+- [ ] #3 DESIGN.md permits spoken approval only from one matching final user item after the effect prompt and never from an assistant transcript; ADR 0005 and historical research remain unchanged or explicitly superseded, links stay valid, and no current document advertises a control socket.
+- [ ] #4 tests/system/repository-policy/legacy-injection-retirement.test.ts rejects the retired user-global/shared-thread/assistant-transcript claims, stale control-socket/current-doc claims, and count drift; CLI audit, README, TESTING, DESIGN, AGENTS, and executable routes/commands/tests agree.
 <!-- AC:END -->

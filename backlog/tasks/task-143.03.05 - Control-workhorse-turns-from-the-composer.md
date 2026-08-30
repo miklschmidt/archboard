@@ -4,12 +4,12 @@ title: Control workhorse turns from the composer
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 17:27'
+updated_date: '2026-08-30 17:51'
 labels: []
 dependencies:
   - TASK-143.03.02
   - TASK-143.03.03
-  - TASK-144.07
+  - TASK-144.20
   - TASK-144.14
 references:
   - docs/design/operator-canvas-shell.md
