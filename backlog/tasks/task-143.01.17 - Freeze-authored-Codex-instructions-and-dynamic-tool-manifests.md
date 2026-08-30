@@ -4,7 +4,7 @@ title: Freeze authored Codex instructions and dynamic-tool manifests
 status: To Do
 assignee: []
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-30 17:27'
+updated_date: '2026-08-30 18:00'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -13,6 +13,7 @@ references:
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
 modified_files:
   - docs/design/codex-workbench-authored-contracts.md
+  - tests/system/repository-policy/codex-authored-contracts.test.ts
 parent_task_id: TASK-143.01
 priority: high
 type: task
@@ -31,4 +32,5 @@ Own the human-reviewed, byte-exact source contract for capabilities, login polic
 - [ ] #2 Literal eager namespace manifests freeze ordered tools/descriptions/strict schemas/limits/results/refusals/approval mapping, exact target-state table, and create/fork/send/list/read/wait RPC bodies, pages, projections, and partial outcomes.
 - [ ] #3 The document distinguishes UserInput turn/start and turn/steer bodies from developer-role thread/inject_items, and freezes complete TurnStartParams, TurnSteerParams, and ThreadForkParams included fields and omissions.
 - [ ] #4 resolve_spoken_approval arms only from one matching final user item after the effect prompt; exact classifier bytes and child/thread/turn/call/manifest/session/item/sequence/effect/expiry validation supply the sole approval identity.
+- [ ] #5 A repository-policy owner parses every literal JSON block with duplicate-key rejection, checks the reviewed byte digests consumed by TASK-143.01.07, TASK-143.05.03, and TASK-143.07.07, and fails on prose/manifest drift until human re-review.
 <!-- AC:END -->
