@@ -65,6 +65,7 @@ import {
 	readBoardContent,
 	readBoardFile,
 	readBoardInspectionSnapshot,
+	renderContent,
 } from "../../../runtime/engine/board-io.js";
 import type { BoardContent, LoadedBoard } from "../../../runtime/engine/board-io.js";
 import {
@@ -88,6 +89,7 @@ import {
 	CURRENT_VARIANT,
 	boardKey,
 	classifyBoardSave,
+	hashBoardBytes,
 	listBoards,
 	makeIdentity,
 	normalizeBoardKey,
@@ -3363,6 +3365,66 @@ app.get("/api/boards", (req: Request, res: Response) => {
 		});
 	} catch (error) {
 		answerBoardError(res, error, "Error listing boards:");
+	}
+});
+
+// One noninteractive board preview. An open board is read through the same
+// request-local content seam as its pane; a vault-only board is inspected
+// without registering or opening it. The browser owns rendering so this route
+// remains a canonical scene read, never a second canvas or an SVG service.
+app.get("/api/boards/preview", (req: Request, res: Response) => {
+	let key = "";
+	try {
+		const asked = boardOfRequest(req);
+		if (!asked) {
+			return res.status(400).json({
+				success: false,
+				error: "Previewing a board needs ?board=<board>.",
+			});
+		}
+		key = boardKey(parseBoardKey(asked));
+		const open = boards.get(key);
+		if (open) {
+			const content = readBoardContent(open);
+			const fingerprint = hashBoardBytes(renderContent(open.identity, content).bytes);
+			return res.json({
+				success: true,
+				board: key,
+				fingerprint,
+				elements: copyElements(
+					stripBindingPresentationLinks(content.elements.values(), { boardKey: key }),
+				),
+				files: boardFilesMessage(content).files ?? {},
+			});
+		}
+
+		const vault = requireVaultRoot();
+		if (!listBoards(vault).some((entry) => entry.key === key)) {
+			return res.status(404).json({
+				success: false,
+				code: "BOARD_PREVIEW_NOT_FOUND",
+				error: `Board "${key}" was not found.`,
+			});
+		}
+		const snapshot = readBoardInspectionSnapshot(key);
+		if (!snapshot.renderScene) throw new Error("The board has no renderable scene.");
+		return res.json({
+			success: true,
+			board: key,
+			fingerprint: snapshot.fingerprint,
+			elements: copyElements(
+				stripBindingPresentationLinks(snapshot.renderScene.elements, { boardKey: key }),
+			),
+			files: snapshot.renderScene.files,
+		});
+	} catch (error) {
+		if (!key) return answerBoardError(res, error);
+		logger.warn(`Preview unavailable for board "${key}"`, error);
+		return res.status(422).json({
+			success: false,
+			code: "BOARD_PREVIEW_UNAVAILABLE",
+			error: `Preview unavailable for board "${key}".`,
+		});
 	}
 });
 

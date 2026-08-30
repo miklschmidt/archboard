@@ -7,17 +7,35 @@
 // question — which is the seam TASK-006 (panes reporting what the human is
 // looking at) lands on.
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+	useSyncExternalStore,
+} from "react";
 import { CanvasPane } from "../canvas/CanvasPane";
+import { activateCodeTarget } from "../code-target";
+import type { MountedBoardPreviewController, MountedBoardPreviewScene } from "../board-preview";
+import { SelectionInspector } from "../selection-inspector/SelectionInspector";
+import type { PaneSelectionSnapshot, SelectionProjection } from "../selection-inspector";
+import type { PanePathFocusSnapshot, PathFocusController, PathFocusSnapshot } from "../path-focus";
 import { BoardBar } from "./BoardBar";
 import { BoardNavigator } from "./BoardNavigator";
-import { AgentRail } from "./AgentRail";
+import { AgentWorkbench } from "./AgentWorkbench";
 import { BoardDialog, type BoardDialogMode } from "./BoardDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { ConflictDialog } from "./ConflictDialog";
 import { InstallLibraryDialog } from "./InstallLibraryDialog";
 import { OpenerSettingsDialog } from "../opener-settings";
 import { Icon } from "./Icons";
+import {
+	createFullscreenPresentation,
+	type FullscreenPresentation,
+	type FullscreenPresentationSnapshot,
+} from "./fullscreen-presentation";
 import { useLibrary } from "./useLibrary";
 import {
 	BoardConflictError,
@@ -52,6 +70,14 @@ const THEME_KEY = "archboard-theme";
 // same number said in the one place that renders it. It mirrors MAX_PANES in
 // src/runtime/engine/panes.ts, which is where the server's copy lives.
 const MAX_PANES = 2;
+const EMPTY_PRESENTATION: FullscreenPresentationSnapshot = Object.freeze({
+	paneId: null,
+	error: null,
+});
+const EMPTY_SELECTION: SelectionProjection = Object.freeze({ state: "empty" });
+const EMPTY_PATH_FOCUS: PathFocusSnapshot = Object.freeze({ state: "inactive" });
+const readEmptyPresentation = (): FullscreenPresentationSnapshot => EMPTY_PRESENTATION;
+const subscribeToNothing = (): (() => void) => () => undefined;
 
 function initialTheme(): "light" | "dark" {
 	if (typeof window === "undefined") return "light";
@@ -152,6 +178,77 @@ function saveNotice(saved: BoardSaveResult, paneCount: number): Notice {
 	return { kind: "info", text: wrote };
 }
 
+function canvasPresentation(
+	paneId: string,
+	presentedPaneId: string | null,
+): "current" | "hidden" | null {
+	if (!presentedPaneId) return null;
+	return paneId === presentedPaneId ? "current" : "hidden";
+}
+
+function presentationNotice(
+	presentation: FullscreenPresentationSnapshot,
+	notice: Notice | null,
+): Notice | null {
+	if (presentation.error && !presentation.paneId) {
+		return { kind: "error", text: presentation.error, hold: true };
+	}
+	return notice;
+}
+
+function shellClassName(presentedPaneId: string | null): string {
+	return presentedPaneId ? "shell shell-presenting" : "shell";
+}
+
+interface PresentationDockProps {
+	panes: string[];
+	presentation: FullscreenPresentationSnapshot;
+	dockRef: React.RefObject<HTMLDivElement | null>;
+	onTransfer: React.MouseEventHandler<HTMLButtonElement>;
+	onExit: () => void;
+}
+
+function PresentationDock({
+	panes,
+	presentation,
+	dockRef,
+	onTransfer,
+	onExit,
+}: PresentationDockProps): React.JSX.Element | null {
+	if (!presentation.paneId) return null;
+	return (
+		<div
+			className="presentation-dock"
+			role="toolbar"
+			aria-label="Presentation controls"
+			tabIndex={-1}
+			ref={dockRef}
+		>
+			<fieldset className="presentation-panes">
+				<legend>Canvas to present</legend>
+				{panes.map((paneId, index) => (
+					<button
+						type="button"
+						className="presentation-pane"
+						key={paneId}
+						data-pane-id={paneId}
+						aria-pressed={presentation.paneId === paneId}
+						aria-label={`Present Pane ${String.fromCharCode(65 + index)}`}
+						onClick={onTransfer}
+					>
+						Pane {String.fromCharCode(65 + index)}
+					</button>
+				))}
+			</fieldset>
+			{presentation.error && <span role="alert">{presentation.error}</span>}
+			<button type="button" className="presentation-exit" onClick={onExit}>
+				<Icon name="close" size={17} />
+				Exit
+			</button>
+		</div>
+	);
+}
+
 function samePaneStatus(existing: PaneStatus, status: PaneStatus): boolean {
 	// These nested values are replaced at their publication sites, never mutated
 	// in place. Reference equality therefore includes every field they carry.
@@ -168,6 +265,24 @@ function samePaneStatus(existing: PaneStatus, status: PaneStatus): boolean {
 		doing: existing.doing === status.doing,
 	} satisfies Record<keyof PaneStatus, boolean>;
 	return Object.values(same).every(Boolean);
+}
+
+function focusedSelection(
+	snapshots: Readonly<Record<string, PaneSelectionSnapshot>>,
+	paneId: string,
+	boardKey: string | null,
+): SelectionProjection {
+	const snapshot = snapshots[paneId];
+	return snapshot?.boardKey === boardKey ? snapshot.projection : EMPTY_SELECTION;
+}
+
+function focusedPathFocus(
+	snapshots: Readonly<Record<string, PanePathFocusSnapshot>>,
+	paneId: string,
+	boardKey: string | null,
+): PathFocusSnapshot {
+	const snapshot = snapshots[paneId];
+	return snapshot?.boardKey === boardKey ? snapshot.projection : EMPTY_PATH_FOCUS;
 }
 
 function createAttemptSave(args: {
@@ -187,7 +302,10 @@ function createAttemptSave(args: {
 	return (request) => {
 		void args.run(async () => {
 			try {
-				const saved = await saveBoard({ clientId: args.status?.clientId, ...request });
+				const saved = await saveBoard({
+					clientId: args.status?.clientId,
+					...request,
+				});
 				const kind = saved.saveKind ?? "same-board";
 				const holdingIt =
 					kind === "branch"
@@ -205,7 +323,11 @@ function createAttemptSave(args: {
 				if (!(error instanceof BoardConflictError)) throw error;
 				args.setDialog(null);
 				args.setDialogError(null);
-				args.setConflict({ conflict: error.conflict, request, hold: error.held ?? args.hold });
+				args.setConflict({
+					conflict: error.conflict,
+					request,
+					hold: error.held ?? args.hold,
+				});
 			}
 		});
 	};
@@ -218,25 +340,89 @@ export function Shell(): React.JSX.Element {
 	const [focused, setFocused] = useState("pane-1");
 	const [statuses, setStatuses] = useState<Record<string, PaneStatus>>({});
 	const [agentStates, setAgentStates] = useState<Record<string, AgentState>>({});
+	const [selectionSnapshots, setSelectionSnapshots] = useState<
+		Record<string, PaneSelectionSnapshot>
+	>({});
+	const [pathFocusSnapshots, setPathFocusSnapshots] = useState<
+		Record<string, PanePathFocusSnapshot>
+	>({});
+	const pathFocusControllersRef = useRef<Record<string, PathFocusController>>({});
+	const previewControllersRef = useRef<Record<string, MountedBoardPreviewController>>({});
 	// Pane ids are never reused. Numbering by list length would assign a reopened
 	// pane the id of the one just closed, and the server keys a pane's selection
 	// and its board by that id.
 	const nextPaneNumber = useRef(2);
+	const shellElementRef = useRef<HTMLDivElement | null>(null);
+	const presentationOwnerRef = useRef<FullscreenPresentation | null>(null);
+	const [presentationOwner, setPresentationOwner] = useState<FullscreenPresentation | null>(null);
+	const attachShellRoot = useCallback((root: HTMLDivElement | null): void => {
+		if (shellElementRef.current === root) return;
+		const previous = presentationOwnerRef.current;
+		if (previous) {
+			if (!root) previous.rootRemoved();
+			previous.dispose();
+		}
+		shellElementRef.current = root;
+		const next = root ? createFullscreenPresentation(root) : null;
+		presentationOwnerRef.current = next;
+		setPresentationOwner(next);
+	}, []);
+	const presentation = useSyncExternalStore(
+		presentationOwner?.subscribe ?? subscribeToNothing,
+		presentationOwner?.getSnapshot ?? readEmptyPresentation,
+		readEmptyPresentation,
+	);
+	const panesRef = useRef(panes);
+	useLayoutEffect(() => {
+		panesRef.current = panes;
+	}, [panes]);
 
 	// Layout can now be changed from outside the browser (`archboard pane open`),
 	// so these are the shell's two moves, reachable from the buttons and from a
 	// request arriving on a pane's socket.
 	const addPane = useCallback(() => {
-		setPanes((previous) =>
-			previous.length >= MAX_PANES ? previous : [...previous, `pane-${nextPaneNumber.current++}`],
-		);
+		setPanes((previous) => {
+			const next =
+				previous.length >= MAX_PANES ? previous : [...previous, `pane-${nextPaneNumber.current++}`];
+			panesRef.current = next;
+			return next;
+		});
 	}, []);
 
 	const closePane = useCallback((paneId: string) => {
+		const currentPanes = panesRef.current;
 		// Never the last one: an empty shell shows nothing and offers no way back.
-		setPanes((previous) =>
-			previous.length < 2 ? previous : previous.filter((id) => id !== paneId),
-		);
+		if (currentPanes.length < 2 || !currentPanes.includes(paneId)) return;
+		const survivor = currentPanes.find((id) => id !== paneId) ?? null;
+		const owner = presentationOwnerRef.current;
+		const closingPresentation = owner?.getTargetPaneId() === paneId && survivor;
+		if (closingPresentation) {
+			// Transfer before removal and exit. If the browser refuses exit, the
+			// mounted survivor remains visible instead of leaving a blank display.
+			owner?.present(survivor);
+			setFocused(survivor);
+		}
+		const next = currentPanes.filter((id) => id !== paneId);
+		panesRef.current = next;
+		setPanes(next);
+		setSelectionSnapshots((previous) => {
+			const { [paneId]: removed, ...remaining } = previous;
+			void removed;
+			return remaining;
+		});
+		setPathFocusSnapshots((previous) => {
+			const { [paneId]: removed, ...remaining } = previous;
+			void removed;
+			return remaining;
+		});
+		const { [paneId]: removedController, ...remainingControllers } =
+			pathFocusControllersRef.current;
+		void removedController;
+		pathFocusControllersRef.current = remainingControllers;
+		const { [paneId]: removedPreview, ...remainingPreviews } = previewControllersRef.current;
+		void removedPreview;
+		previewControllersRef.current = remainingPreviews;
+		if (closingPresentation) owner?.exit();
 	}, []);
 
 	// The canvas server owns the layout request; the shell owns the layout. A
@@ -268,6 +454,15 @@ export function Shell(): React.JSX.Element {
 	const [conflict, setConflict] = useState<ConflictState | null>(null);
 	const [busy, setBusy] = useState(false);
 	const [notice, setNotice] = useState<Notice | null>(null);
+	const presentButtonRef = useRef<HTMLButtonElement | null>(null);
+	const presentationDockRef = useRef<HTMLDivElement | null>(null);
+	const wasPresenting = useRef(false);
+
+	useEffect(() => {
+		if (presentation.paneId) presentationDockRef.current?.focus();
+		else if (wasPresenting.current) presentButtonRef.current?.focus();
+		wasPresenting.current = presentation.paneId !== null;
+	}, [presentation.paneId]);
 
 	// One palette behind however many panes are on screen, held on the server so
 	// that a second tab, a second machine and the agent all see the same one.
@@ -302,10 +497,71 @@ export function Shell(): React.JSX.Element {
 		},
 		[],
 	);
+	const onSelectionSnapshot = useCallback(
+		(paneId: string, snapshot: PaneSelectionSnapshot): void => {
+			setSelectionSnapshots((previous) => ({
+				...previous,
+				[paneId]: snapshot,
+			}));
+		},
+		[],
+	);
+	const onPathFocusSnapshot = useCallback(
+		(paneId: string, snapshot: PanePathFocusSnapshot): void => {
+			setPathFocusSnapshots((previous) => ({ ...previous, [paneId]: snapshot }));
+		},
+		[],
+	);
+	const onPathFocusController = useCallback(
+		(paneId: string, controller: PathFocusController | null): void => {
+			if (controller) {
+				pathFocusControllersRef.current = {
+					...pathFocusControllersRef.current,
+					[paneId]: controller,
+				};
+				return;
+			}
+			const { [paneId]: removed, ...remaining } = pathFocusControllersRef.current;
+			void removed;
+			pathFocusControllersRef.current = remaining;
+		},
+		[],
+	);
+	const onPreviewController = useCallback(
+		(paneId: string, controller: MountedBoardPreviewController | null): void => {
+			if (controller) {
+				previewControllersRef.current = {
+					...previewControllersRef.current,
+					[paneId]: controller,
+				};
+				return;
+			}
+			const { [paneId]: removed, ...remaining } = previewControllersRef.current;
+			void removed;
+			previewControllersRef.current = remaining;
+		},
+		[],
+	);
+	const readMountedPreview = useCallback(
+		(key: string): MountedBoardPreviewScene | null => {
+			const paneOrder = [focused, ...panesRef.current.filter((paneId) => paneId !== focused)];
+			for (const paneId of paneOrder) {
+				const scene = previewControllersRef.current[paneId]?.read();
+				if (scene?.board === key) return scene;
+			}
+			return null;
+		},
+		[focused],
+	);
 
 	const status = statuses[focused] ?? statuses[panes[0] ?? ""] ?? null;
 	const agentState = agentStates[focused] ?? agentStates[panes[0] ?? ""] ?? null;
+	const claimedBy = agentState?.heldBy?.claimed === true ? agentState.heldBy : null;
+	const focusedPaneLabel = `Pane ${String.fromCharCode(65 + Math.max(0, panes.indexOf(focused)))}`;
+	const visibleNotice = presentationNotice(presentation, notice);
 	const boardKey = status?.boardKey ?? null;
+	const inspectedSelection = focusedSelection(selectionSnapshots, focused, boardKey);
+	const inspectedPathFocus = focusedPathFocus(pathFocusSnapshots, focused, boardKey);
 	const identity = status?.board ?? boardInfo?.identity ?? null;
 	// Whether the board in front of the human is being written down. It comes
 	// from the pane rather than being asked for, because the pane is what finds
@@ -553,7 +809,11 @@ export function Shell(): React.JSX.Element {
 	const handleHoldClick = useCallback(() => {
 		if (!hold) return;
 		setDialogError(null);
-		setConflict({ conflict: hold.conflict, request: { board: hold.board }, hold });
+		setConflict({
+			conflict: hold.conflict,
+			request: { board: hold.board },
+			hold,
+		});
 	}, [hold]);
 	const handleNoteClick = useCallback(() => setAskingAboutNote(true), []);
 	const handleOpenDialog = useCallback(() => {
@@ -575,18 +835,56 @@ export function Shell(): React.JSX.Element {
 		const paneId = event.currentTarget.dataset.paneId;
 		if (paneId) setFocused(paneId);
 	}, []);
+	const handlePresent = useCallback(() => {
+		presentationOwner?.present(focused);
+	}, [focused, presentationOwner]);
+	const handlePresentationTransfer = useCallback(
+		(event: React.MouseEvent<HTMLButtonElement>) => {
+			const paneId = event.currentTarget.dataset.paneId;
+			if (!paneId) return;
+			setFocused(paneId);
+			presentationOwner?.present(paneId);
+		},
+		[presentationOwner],
+	);
+	const handlePresentationExit = useCallback(() => presentationOwner?.exit(), [presentationOwner]);
 	const handleBoardError = useCallback((error: string) => {
 		setNotice({ kind: "error", text: error, hold: true });
 	}, []);
 	const handleCodeTargetNotice = useCallback((next: CodeTargetNotice) => {
-		setNotice({ kind: "error", text: next.message, hold: true, actions: next.actions });
+		setNotice({
+			kind: "error",
+			text: next.message,
+			hold: true,
+			actions: next.actions,
+		});
 	}, []);
+	const handleOpenSelectedCode = useCallback(
+		(selectedBoard: string, elementId: string): void => {
+			activateCodeTarget({
+				boardKey: selectedBoard,
+				elementId,
+				onSuccess: () => undefined,
+				onFailure: handleCodeTargetNotice,
+			});
+		},
+		[handleCodeTargetNotice],
+	);
+	const handleFocusSelectedPath = useCallback((): void => {
+		pathFocusControllersRef.current[focused]?.focus();
+	}, [focused]);
+	const handleExitPathFocus = useCallback((): void => {
+		pathFocusControllersRef.current[focused]?.exit();
+	}, [focused]);
 	const handleOpenerSuccess = useCallback((message: string) => {
 		setNotice({ kind: "info", text: message });
 	}, []);
 	const openOpenerSettings = useCallback(() => setOpenerSettingsOpen(true), []);
 	const closeOpenerSettings = useCallback(() => setOpenerSettingsOpen(false), []);
-	const handleDismissNotice = useCallback(() => setNotice(null), []);
+	const handleDismissNotice = useCallback(() => {
+		if (presentation.error && !presentation.paneId) presentationOwner?.clearError();
+		else setNotice(null);
+	}, [presentation.error, presentation.paneId, presentationOwner]);
 	const handleCancelDialog = useCallback(() => {
 		setDialog(null);
 		setDialogError(null);
@@ -772,13 +1070,13 @@ export function Shell(): React.JSX.Element {
 	);
 
 	return (
-		<div className="shell" data-theme={theme}>
+		<div className={shellClassName(presentation.paneId)} data-theme={theme} ref={attachShellRoot}>
 			<BoardBar
 				identity={identity}
 				boardKey={boardKey}
-				vault={boardListing?.vault ?? null}
 				elementCount={status?.elementCount ?? 0}
 				connected={status?.connected ?? false}
+				claimedBy={claimedBy}
 				hold={hold}
 				// The one thing that opens the conflict dialog while somebody is
 				// drawing: them asking for it (TASK-079).
@@ -805,11 +1103,21 @@ export function Shell(): React.JSX.Element {
 				onClosePane={handleCloseLastPane}
 			/>
 
+			<PresentationDock
+				panes={panes}
+				presentation={presentation}
+				dockRef={presentationDockRef}
+				onTransfer={handlePresentationTransfer}
+				onExit={handlePresentationExit}
+			/>
+
 			<div className="workspace">
 				<BoardNavigator
 					listing={boardListing}
 					error={boardListingError}
 					currentKey={boardKey}
+					theme={theme}
+					readMountedPreview={readMountedPreview}
 					busy={busy}
 					onSelect={handleNavigate}
 					onRefresh={handleRefreshListing}
@@ -843,90 +1151,118 @@ export function Shell(): React.JSX.Element {
 								);
 							})}
 						</div>
-						<span className="pane-tip">Select a variant to replace the focused pane</span>
-					</div>
-
-					<div className={`panes panes-${panes.length}`}>
-						{panes.map((paneId, index) => (
-							<CanvasPane
-								key={paneId}
-								paneId={paneId}
-								primary={index === 0}
-								focused={paneId === focused}
-								theme={theme}
-								onStatus={onStatus}
-								onAgentState={onAgentState}
-								onThemeChange={setTheme}
-								onFocus={setFocused}
-								label={`Pane ${String.fromCharCode(65 + index)}`}
-								libraryItems={library.items}
-								onLibraryChange={library.reportFromPane}
-								onLibraryChangedElsewhere={library.applyFromServer}
-								onLayoutRequest={handleLayoutRequest}
-								onBoardError={handleBoardError}
-								onCodeTargetNotice={handleCodeTargetNotice}
-							/>
-						))}
-					</div>
-
-					{notice && (
-						<div
-							className={`notice notice-shell notice-${notice.kind}${notice.hold ? " notice-hold" : ""}`}
-							role={notice.kind === "error" ? "alert" : "status"}
+						<button
+							type="button"
+							className="present-button"
+							onClick={handlePresent}
+							disabled={!presentationOwner}
+							aria-label={`Present Pane ${String.fromCharCode(65 + Math.max(0, panes.indexOf(focused)))} fullscreen`}
+							ref={presentButtonRef}
 						>
-							<span className="notice-icon">
-								<Icon name={notice.kind === "error" ? "close" : "check"} size={16} />
-							</span>
-							<span className="notice-text">
-								{notice.text}
-								{notice.actions && (
-									<span className="notice-actions">
-										{notice.actions.map((action) => {
-											if (action.kind === "settings") {
-												return (
-													<button
-														key="settings"
-														className="btn btn-quiet"
-														onClick={openOpenerSettings}
-													>
-														{action.label}
-													</button>
-												);
-											}
-											const href = GitHubHttpsUrlSchema.safeParse(action.href);
-											return href.success ? (
-												<a
-													key={action.href}
-													className="btn btn-quiet"
-													href={href.data}
-													target="_blank"
-													rel="noopener noreferrer"
-												>
-													{action.label}
-												</a>
-											) : null;
-										})}
-									</span>
-								)}
-							</span>
-							<button
-								className="notice-dismiss"
-								type="button"
-								onClick={handleDismissNotice}
-								aria-label="Dismiss notice"
-							>
-								<Icon name="close" size={17} />
-							</button>
-						</div>
-					)}
-				</main>
+							<Icon name="fullscreen" size={16} />
+							Present
+						</button>
+					</div>
 
-				<AgentRail
-					connected={status?.connected ?? false}
-					heldBy={agentState?.heldBy ?? null}
-					doing={visibleDoing}
-					takeBack={agentState?.takeBack}
-				/>
+					<div className="canvas-stage">
+						<div className={`panes panes-${panes.length}`}>
+							{panes.map((paneId, index) => (
+								<CanvasPane
+									key={paneId}
+									paneId={paneId}
+									primary={index === 0}
+									focused={paneId === focused}
+									presentation={canvasPresentation(paneId, presentation.paneId)}
+									theme={theme}
+									onStatus={onStatus}
+									onAgentState={onAgentState}
+									onThemeChange={setTheme}
+									onFocus={setFocused}
+									label={`Pane ${String.fromCharCode(65 + index)}`}
+									libraryItems={library.items}
+									onLibraryChange={library.reportFromPane}
+									onLibraryChangedElsewhere={library.applyFromServer}
+									onLayoutRequest={handleLayoutRequest}
+									onBoardError={handleBoardError}
+									onCodeTargetNotice={handleCodeTargetNotice}
+									onSelectionSnapshot={onSelectionSnapshot}
+									onPathFocusSnapshot={onPathFocusSnapshot}
+									onPathFocusController={onPathFocusController}
+									onPreviewController={onPreviewController}
+								/>
+							))}
+
+							{visibleNotice && (
+								<div
+									className={`notice notice-shell notice-${visibleNotice.kind}${visibleNotice.hold ? " notice-hold" : ""}`}
+									role={visibleNotice.kind === "error" ? "alert" : "status"}
+								>
+									<span className="notice-icon">
+										<Icon name={visibleNotice.kind === "error" ? "close" : "check"} size={16} />
+									</span>
+									<span className="notice-text">
+										{visibleNotice.text}
+										{visibleNotice.actions && (
+											<span className="notice-actions">
+												{visibleNotice.actions.map((action) => {
+													if (action.kind === "settings") {
+														return (
+															<button
+																key="settings"
+																className="btn btn-quiet"
+																onClick={openOpenerSettings}
+															>
+																{action.label}
+															</button>
+														);
+													}
+													const href = GitHubHttpsUrlSchema.safeParse(action.href);
+													return href.success ? (
+														<a
+															key={action.href}
+															className="btn btn-quiet"
+															href={href.data}
+															target="_blank"
+															rel="noopener noreferrer"
+														>
+															{action.label}
+														</a>
+													) : null;
+												})}
+											</span>
+										)}
+									</span>
+									<button
+										className="notice-dismiss"
+										type="button"
+										onClick={handleDismissNotice}
+										aria-label="Dismiss notice"
+									>
+										<Icon name="close" size={17} />
+									</button>
+								</div>
+							)}
+						</div>
+
+						<SelectionInspector
+							paneLabel={focusedPaneLabel}
+							boardKey={boardKey}
+							selection={inspectedSelection}
+							pathFocus={inspectedPathFocus}
+							onOpenCode={handleOpenSelectedCode}
+							onFocusPath={handleFocusSelectedPath}
+							onExitPathFocus={handleExitPathFocus}
+						/>
+					</div>
+
+					<AgentWorkbench
+						paneLabel={focusedPaneLabel}
+						connected={status?.connected ?? false}
+						heldBy={agentState?.heldBy ?? null}
+						doing={visibleDoing}
+						takeBack={agentState?.takeBack}
+					/>
+				</main>
 			</div>
 
 			<footer className="statusbar">

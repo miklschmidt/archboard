@@ -37,6 +37,8 @@ export function createBrowserPreflightFixture(): {
 	browserExecutable: string;
 	versionMarker: string;
 	ownerPathMarker: string;
+	ownerOperationTimeoutMarker: string;
+	canvasOperationTimeoutMarker: string;
 	unexpectedMarker: string;
 } {
 	const root = fs.mkdtempSync(
@@ -44,21 +46,28 @@ export function createBrowserPreflightFixture(): {
 	);
 	const bin = path.join(root, "bin");
 	const temporary = path.join(root, "tmp");
-	fs.mkdirSync(bin);
-	fs.mkdirSync(temporary);
-	fs.symlinkSync(process.execPath, path.join(bin, "bun"));
-	fs.symlinkSync(process.execPath, path.join(bin, "bunx"));
-	const browserExecutable = path.join(root, "chrome");
-	fs.writeFileSync(browserExecutable, "#!/bin/sh\nexit 0\n", { mode: 0o755 });
-	return {
-		root,
-		bin,
-		temporary,
-		browserExecutable,
-		versionMarker: path.join(root, "agent-browser-version"),
-		ownerPathMarker: path.join(root, "owner-browser-path"),
-		unexpectedMarker: path.join(root, "agent-browser-unexpected"),
-	};
+	try {
+		fs.mkdirSync(bin);
+		fs.mkdirSync(temporary);
+		fs.symlinkSync(process.execPath, path.join(bin, "bun"));
+		fs.symlinkSync(process.execPath, path.join(bin, "bunx"));
+		const browserExecutable = path.join(root, "chrome");
+		fs.writeFileSync(browserExecutable, "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+		return {
+			root,
+			bin,
+			temporary,
+			browserExecutable,
+			versionMarker: path.join(root, "agent-browser-version"),
+			ownerPathMarker: path.join(root, "owner-browser-path"),
+			ownerOperationTimeoutMarker: path.join(root, "owner-operation-timeout"),
+			canvasOperationTimeoutMarker: path.join(root, "canvas-operation-timeout"),
+			unexpectedMarker: path.join(root, "agent-browser-unexpected"),
+		};
+	} catch (error) {
+		fs.rmSync(root, { recursive: true, force: true });
+		throw error;
+	}
 }
 
 export function installFakeAgentBrowser(
@@ -67,7 +76,7 @@ export function installFakeAgentBrowser(
 	const executable = path.join(fixture.bin, "agent-browser");
 	fs.writeFileSync(
 		executable,
-		`#!/bin/sh\nif [ "$1" = "--version" ]; then : > "${fixture.versionMarker}"; exit 0; fi\nprintf '%s' "$AGENT_BROWSER_EXECUTABLE_PATH" > "${fixture.ownerPathMarker}"\n: > "${fixture.unexpectedMarker}"\nexit 97\n`,
+		`#!/bin/sh\nif [ "$1" = "--version" ]; then : > "${fixture.versionMarker}"; exit 0; fi\nprintf '%s' "$AGENT_BROWSER_EXECUTABLE_PATH" > "${fixture.ownerPathMarker}"\nif [ "\${AGENT_BROWSER_DEFAULT_TIMEOUT+x}" = x ]; then printf 'present:%s' "$AGENT_BROWSER_DEFAULT_TIMEOUT"; else printf 'absent'; fi > "${fixture.ownerOperationTimeoutMarker}"\n: > "${fixture.unexpectedMarker}"\nexit 97\n`,
 		{ mode: 0o755 },
 	);
 }

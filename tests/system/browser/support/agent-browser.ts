@@ -17,17 +17,24 @@ export const BROWSER_TEST_PATHS = [
 	"tests/system/browser/arrow-binding-differential.test.ts",
 	"tests/system/browser/finding-export.test.ts",
 	"tests/system/browser/shell-layout.test.ts",
+	"tests/system/browser/board-navigator.test.ts",
+	"tests/system/browser/fullscreen-presentation.test.ts",
 	"tests/system/browser/typed-text.test.ts",
 	"tests/system/browser/live-session-convergence.test.ts",
 	"tests/system/browser/server-update-ordering.test.ts",
 	"tests/system/browser/hold-generation.test.ts",
 	"tests/system/browser/human-hold-persistence.test.ts",
 	"tests/system/browser/claim-interaction.test.ts",
+	"tests/system/browser/selection-inspector.test.ts",
+	"tests/system/browser/connected-path-focus.test.ts",
 	"tests/system/browser/opener-settings.test.ts",
 	"tests/system/browser/code-target-activation.test.ts",
 ] as const;
 
 export type BrowserTestPath = (typeof BROWSER_TEST_PATHS)[number];
+export const HUMAN_PERFORMANCE_BROWSER_OWNER = BROWSER_TEST_PATHS[0];
+export const CI_EXCLUDED_BROWSER_OWNERS_ENV = "ARCHBOARD_CI_EXCLUDED_BROWSER_OWNERS";
+const CI_EXCLUDED_BROWSER_OWNERS_VALUE = "all";
 export interface BrowserSelection {
 	mode: "package" | "focus";
 	files: BrowserTestPath[];
@@ -112,9 +119,31 @@ export function validateBrowserSelection(argv: readonly string[]): BrowserSelect
 		(selected.length !== BROWSER_TEST_PATHS.length ||
 			selected.some((file, index) => file !== BROWSER_TEST_PATHS[index]))
 	) {
-		selectionError("Package browser lane must name all 15 canonical paths in order.");
+		selectionError(
+			`Package browser lane must name all ${BROWSER_TEST_PATHS.length} canonical paths in order.`,
+		);
 	}
 	return { mode, files: selected as BrowserTestPath[] };
+}
+
+export function applyCiBrowserOwnerExclusion(
+	selection: BrowserSelection,
+	environment: Readonly<Record<string, string | undefined>>,
+): BrowserSelection {
+	const excluded = environment[CI_EXCLUDED_BROWSER_OWNERS_ENV];
+	if (excluded === undefined) return selection;
+	if (environment.CI !== "true")
+		selectionError(`${CI_EXCLUDED_BROWSER_OWNERS_ENV} requires CI=true.`);
+	if (selection.mode !== "package") {
+		selectionError(`${CI_EXCLUDED_BROWSER_OWNERS_ENV} is valid only for the package browser lane.`);
+	}
+	if (excluded !== CI_EXCLUDED_BROWSER_OWNERS_VALUE) {
+		selectionError(`${CI_EXCLUDED_BROWSER_OWNERS_ENV} cannot exclude \`${excluded}\`.`);
+	}
+	return {
+		...selection,
+		files: [],
+	};
 }
 
 function requiredEnvironment(name: (typeof REQUIRED_BROWSER_ENV)[number]): string {
@@ -151,6 +180,9 @@ export function browserTestEnvironment(): Record<string, string> {
 	for (const name of REQUIRED_BROWSER_ENV) env[name] = requiredEnvironment(name);
 	if (process.env.AGENT_BROWSER_EXECUTABLE_PATH) {
 		env.AGENT_BROWSER_EXECUTABLE_PATH = process.env.AGENT_BROWSER_EXECUTABLE_PATH;
+	}
+	if (process.env.AGENT_BROWSER_DEFAULT_TIMEOUT) {
+		env.AGENT_BROWSER_DEFAULT_TIMEOUT = process.env.AGENT_BROWSER_DEFAULT_TIMEOUT;
 	}
 	return env;
 }

@@ -280,7 +280,7 @@ test(
 			elsewhere: document.querySelector(".chip-elsewhere")?.textContent ?? null,
 		}))()`);
 		expect(saving.elsewhere).toBeNull();
-		expect(saving.metas).toContain("in the vault");
+		expect(saving.metas).toContain("In the vault");
 		expect(saving.metas.some((text) => /unsaved/.test(text ?? ""))).toBe(false);
 
 		const noteFile = (await request<{ file: string }>(`/api/boards/info?board=${BOARD}`)).body.file;
@@ -301,10 +301,10 @@ test(
 					dialog: document.querySelector(".modal-title")?.textContent ?? null,
 					elsewhere: document.querySelector(".chip-elsewhere")?.textContent ?? null,
 				}))()`),
-			(value) => /note changed on disk/.test(value.elsewhere ?? ""),
+			(value) => /Note changed on disk/.test(value.elsewhere ?? ""),
 			"the pre-write note-change notification to appear",
 		);
-		expect(noticed.elsewhere).toMatch(/note changed on disk/);
+		expect(noticed.elsewhere).toMatch(/Note changed on disk/);
 		expect(noticed.dialog).toBeNull();
 		expect((await request<ElementsBody>(`/api/elements?board=${BOARD}`)).body.held).toBeUndefined();
 
