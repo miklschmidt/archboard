@@ -2,40 +2,57 @@ import { z } from "zod";
 
 import {
 	AuthModeSchema,
+	PlanTypeSchema,
 	RealtimeConversationVersionSchema,
-	RateLimitSnapshotSchema,
 	ThreadRealtimeAudioChunkSchema,
-	ThreadGoalSchema,
-	ThreadSettingsSchema,
+	ThreadRealtimeItemSchema,
 	ThreadStatusSchema,
-	ThreadTokenUsageSchema,
+	ThreadGoalSchema,
 	TurnErrorSchema,
 	TurnPlanStepSchema,
-	PlanTypeSchema,
 } from "./core-schemas.js";
-import { FileUpdateChangeSchema, ThreadItemSchema } from "./item-schemas.js";
-import { SERVER_NOTIFICATION_METHODS, type ServerNotificationMethod } from "./methods.js";
 import {
-	FiniteNumberSchema,
-	JsonValueSchema,
-	ObjectSchema,
-	RequestIdSchema,
-	looseObject,
-} from "./scalars.js";
+	RateLimitSnapshotSchema,
+	ThreadSettingsSchema,
+	ThreadTokenUsageSchema,
+} from "./config-schemas.js";
+import { FileUpdateChangeSchema, ThreadItemSchema } from "./item-schemas.js";
+import type { ServerNotificationMethod } from "./methods.js";
+import {
+	AccountLoginCompletedSchema,
+	AppInfoSchema,
+	AutoApprovalReviewCompletedSchema,
+	AutoApprovalReviewStartedSchema,
+	CommandExecOutputDeltaSchema,
+	ExternalAgentConfigImportCompletedSchema,
+	ExternalAgentConfigImportProgressSchema,
+	FuzzyFileSearchResultSchema,
+	HookRunSummarySchema,
+	McpServerEventStreamNotificationSchema,
+	McpServerStartupStatusUpdatedSchema,
+	ProcessExitedSchema,
+	ProcessOutputDeltaSchema,
+	RawResponseCompletedSchema,
+	RawResponseItemCompletedSchema,
+	RemoteControlStatusChangedSchema,
+	StrictReviewRequiredSchema,
+	TextRangeSchema,
+	ThreadRealtimeItemAddedSchema,
+	TurnModerationMetadataSchema,
+} from "./notification-support-schemas.js";
+import { FiniteNumberSchema, JsonObjectSchema, RequestIdSchema, looseObject } from "./scalars.js";
 import { ThreadSchema, TurnSchema } from "./thread-schemas.js";
-import { ThreadRealtimeItemSchema } from "./core-schemas.js";
 
 const ThreadIdSchema = looseObject({ threadId: z.string() });
-const TurnItemDeltaSchema = looseObject({
+const ThreadTurnSchema = looseObject({ threadId: z.string(), turn: TurnSchema });
+const TextDeltaSchema = looseObject({
 	threadId: z.string(),
 	turnId: z.string(),
 	itemId: z.string(),
 	delta: z.string(),
 });
 
-const ThreadTurnSchema = looseObject({ threadId: z.string(), turn: TurnSchema });
-
-const SpecificNotificationSchemas = {
+const SERVER_NOTIFICATION_SCHEMAS = {
 	error: looseObject({
 		error: TurnErrorSchema,
 		willRetry: z.boolean(),
@@ -49,6 +66,7 @@ const SpecificNotificationSchemas = {
 	"thread/unarchived": ThreadIdSchema,
 	"thread/closed": ThreadIdSchema,
 	"thread/reverted": ThreadIdSchema,
+	"skills/changed": z.strictObject({}),
 	"thread/name/updated": looseObject({ threadId: z.string(), threadName: z.string().optional() }),
 	"thread/goal/updated": looseObject({
 		threadId: z.string(),
@@ -77,7 +95,17 @@ const SpecificNotificationSchemas = {
 		tokenUsage: ThreadTokenUsageSchema,
 	}),
 	"turn/started": ThreadTurnSchema,
+	"hook/started": looseObject({
+		threadId: z.string(),
+		turnId: z.string().nullable(),
+		run: HookRunSummarySchema,
+	}),
 	"turn/completed": ThreadTurnSchema,
+	"hook/completed": looseObject({
+		threadId: z.string(),
+		turnId: z.string().nullable(),
+		run: HookRunSummarySchema,
+	}),
 	"turn/diff/updated": looseObject({ threadId: z.string(), turnId: z.string(), diff: z.string() }),
 	"turn/plan/updated": looseObject({
 		threadId: z.string(),
@@ -91,18 +119,23 @@ const SpecificNotificationSchemas = {
 		turnId: z.string(),
 		startedAtMs: FiniteNumberSchema,
 	}),
+	"item/autoApprovalReview/started": AutoApprovalReviewStartedSchema,
+	"item/autoApprovalReview/completed": AutoApprovalReviewCompletedSchema,
+	"autoApprovalReview/strictReviewRequired": StrictReviewRequiredSchema,
 	"item/completed": looseObject({
 		item: ThreadItemSchema,
 		threadId: z.string(),
 		turnId: z.string(),
 		completedAtMs: FiniteNumberSchema,
 	}),
-	"item/agentMessage/delta": TurnItemDeltaSchema,
-	"item/plan/delta": TurnItemDeltaSchema,
-	"command/exec/outputDelta": ObjectSchema,
-	"process/outputDelta": ObjectSchema,
-	"process/exited": ObjectSchema,
-	"item/commandExecution/outputDelta": TurnItemDeltaSchema,
+	"rawResponseItem/completed": RawResponseItemCompletedSchema,
+	"rawResponse/completed": RawResponseCompletedSchema,
+	"item/agentMessage/delta": TextDeltaSchema,
+	"item/plan/delta": TextDeltaSchema,
+	"command/exec/outputDelta": CommandExecOutputDeltaSchema,
+	"process/outputDelta": ProcessOutputDeltaSchema,
+	"process/exited": ProcessExitedSchema,
+	"item/commandExecution/outputDelta": TextDeltaSchema,
 	"item/commandExecution/terminalInteraction": looseObject({
 		threadId: z.string(),
 		turnId: z.string(),
@@ -110,7 +143,7 @@ const SpecificNotificationSchemas = {
 		processId: z.string(),
 		stdin: z.string(),
 	}),
-	"item/fileChange/outputDelta": TurnItemDeltaSchema,
+	"item/fileChange/outputDelta": TextDeltaSchema,
 	"item/fileChange/patchUpdated": looseObject({
 		threadId: z.string(),
 		turnId: z.string(),
@@ -124,14 +157,26 @@ const SpecificNotificationSchemas = {
 		itemId: z.string(),
 		message: z.string(),
 	}),
+	"mcpServer/oauthLogin/completed": looseObject({
+		name: z.string(),
+		threadId: z.string().nullable(),
+		success: z.boolean(),
+		error: z.string().optional(),
+	}),
+	"mcpServer/startupStatus/updated": McpServerStartupStatusUpdatedSchema,
+	"mcpServer/event/stream/notification": McpServerEventStreamNotificationSchema,
 	"account/updated": looseObject({
 		authMode: AuthModeSchema.nullable(),
 		planType: PlanTypeSchema.nullable(),
 	}),
 	"account/rateLimits/updated": looseObject({ rateLimits: RateLimitSnapshotSchema }),
+	"app/list/updated": looseObject({ data: z.array(AppInfoSchema) }),
+	"remoteControl/status/changed": RemoteControlStatusChangedSchema,
+	"externalAgentConfig/import/progress": ExternalAgentConfigImportProgressSchema,
+	"externalAgentConfig/import/completed": ExternalAgentConfigImportCompletedSchema,
 	"fs/changed": looseObject({ watchId: z.string(), changedPaths: z.array(z.string()) }),
 	"item/reasoning/summaryTextDelta": looseObject({
-		...TurnItemDeltaSchema.shape,
+		...TextDeltaSchema.shape,
 		summaryIndex: FiniteNumberSchema,
 	}),
 	"item/reasoning/summaryPartAdded": looseObject({
@@ -141,7 +186,7 @@ const SpecificNotificationSchemas = {
 		summaryIndex: FiniteNumberSchema,
 	}),
 	"item/reasoning/textDelta": looseObject({
-		...TurnItemDeltaSchema.shape,
+		...TextDeltaSchema.shape,
 		contentIndex: FiniteNumberSchema,
 	}),
 	"thread/compacted": looseObject({ threadId: z.string(), turnId: z.string() }),
@@ -157,11 +202,7 @@ const SpecificNotificationSchemas = {
 		turnId: z.string(),
 		verifications: z.array(z.literal("trustedAccessForCyber")),
 	}),
-	"turn/moderationMetadata": looseObject({
-		threadId: z.string(),
-		turnId: z.string(),
-		metadata: JsonValueSchema,
-	}),
+	"turn/moderationMetadata": TurnModerationMetadataSchema,
 	"model/safetyBuffering/updated": looseObject({
 		threadId: z.string(),
 		turnId: z.string(),
@@ -178,14 +219,20 @@ const SpecificNotificationSchemas = {
 		summary: z.string(),
 		details: z.string().nullable(),
 		path: z.string().optional(),
-		range: ObjectSchema.optional(),
+		range: TextRangeSchema.optional(),
 	}),
+	"fuzzyFileSearch/sessionUpdated": looseObject({
+		sessionId: z.string(),
+		query: z.string(),
+		files: z.array(FuzzyFileSearchResultSchema),
+	}),
+	"fuzzyFileSearch/sessionCompleted": looseObject({ sessionId: z.string() }),
 	"thread/realtime/started": looseObject({
 		threadId: z.string(),
 		realtimeSessionId: z.string().nullable(),
 		version: RealtimeConversationVersionSchema,
 	}),
-	"thread/realtime/itemAdded": looseObject({ threadId: z.string(), item: JsonValueSchema }),
+	"thread/realtime/itemAdded": ThreadRealtimeItemAddedSchema,
 	"thread/realtime/item/started": looseObject({
 		threadId: z.string(),
 		item: ThreadRealtimeItemSchema,
@@ -201,11 +248,13 @@ const SpecificNotificationSchemas = {
 	}),
 	"thread/realtime/transcript/delta": looseObject({
 		threadId: z.string(),
+		/** Realtime transcript roles are an open generated string. */
 		role: z.string(),
 		delta: z.string(),
 	}),
 	"thread/realtime/transcript/done": looseObject({
 		threadId: z.string(),
+		/** Realtime transcript roles are an open generated string. */
 		role: z.string(),
 		text: z.string(),
 	}),
@@ -216,28 +265,25 @@ const SpecificNotificationSchemas = {
 	"thread/realtime/sdp": looseObject({ threadId: z.string(), sdp: z.string() }),
 	"thread/realtime/error": looseObject({ threadId: z.string(), message: z.string() }),
 	"thread/realtime/closed": looseObject({ threadId: z.string(), reason: z.string().nullable() }),
-	"account/login/completed": looseObject({
+	"windows/worldWritableWarning": looseObject({
+		samplePaths: z.array(z.string()),
+		extraCount: FiniteNumberSchema,
+		failedScan: z.boolean(),
+	}),
+	"windowsSandbox/setupCompleted": looseObject({
+		mode: z.enum(["elevated", "unelevated"]),
 		success: z.boolean(),
 		error: z.string().nullable(),
-		loginId: z.string().nullable(),
-		onboardingEntrypoint: JsonValueSchema.nullable(),
 	}),
-} as const;
+	"account/login/completed": AccountLoginCompletedSchema,
+} as const satisfies Record<ServerNotificationMethod, z.ZodTypeAny>;
 
-const GenericNotificationSchema = ObjectSchema;
-const GenericNotificationSchemas = Object.fromEntries(
-	SERVER_NOTIFICATION_METHODS.map((method) => [method, GenericNotificationSchema]),
-) as Record<ServerNotificationMethod, typeof GenericNotificationSchema>;
-
-export const SERVER_NOTIFICATION_SCHEMAS = {
-	...GenericNotificationSchemas,
-	...SpecificNotificationSchemas,
-} as typeof GenericNotificationSchemas & typeof SpecificNotificationSchemas;
+export { SERVER_NOTIFICATION_SCHEMAS };
 
 export const ServerNotificationEnvelopeSchema = looseObject({
 	emittedAtMs: FiniteNumberSchema.optional(),
 	method: z.string(),
-	params: ObjectSchema,
+	params: JsonObjectSchema,
 });
 
 export type ServerNotificationSchemas = typeof SERVER_NOTIFICATION_SCHEMAS;
