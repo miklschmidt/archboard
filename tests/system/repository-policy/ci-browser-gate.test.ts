@@ -316,7 +316,7 @@ describe("CI executable workflow steps", () => {
 });
 
 describe("browser executable adapter boundary", () => {
-	test("local package selection retains all 17 browser owners", () => {
+	test("local package selection retains all 18 browser owners", () => {
 		const selection = validateBrowserSelection([
 			"bun",
 			BROWSER_ADAPTER_PATH,
