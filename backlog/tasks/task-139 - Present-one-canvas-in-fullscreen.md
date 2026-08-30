@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-29 16:19'
-updated_date: '2026-08-30 06:16'
+updated_date: '2026-08-30 06:39'
 labels: []
 dependencies: []
 priority: medium
@@ -67,6 +67,10 @@ Focused implementation checkpoint: the coordinator owner passes 9 cases / 26 ass
 Review remediation evidence: the coordinator TDD RED passed 8 predecessor cases and failed the two new contracts exactly because getTargetPaneId and clearError were absent (2 failures, 25 assertions reached). GREEN now passes 11 cases / 37 assertions, including pending-entry removal, same-root transfer removal, and honest entry-error dismissal. The rendered owner passes 1 case / 37 assertions in a real native-fullscreen browser. It now dismisses and retries entry refusal, holds requestFullscreen pending, externally closes the requested Pane B, completes native entry from a real gesture, and proves clean exit with the original Pane A identity/selection/focus/held board intact and visible. To preserve the line policy, browser helpers moved to one 141-line focused support module; the rendered owner is 400 lines, coordinator owner 284, and coordinator module 173. Type-check, Oxlint, formatting, diff check, and the focused inventory owner (38 cases / 60 assertions) pass. No workflow file changed and no TASK-139 process remains; the one observed /home/msc/Projects/archboard server predates and is outside this checkout.
 
 TASK-138 release reconciliation: fetched exact signed origin/main 0f2b38a and anchored the prior signed review-clean checkpoint at codex/task-139-review-clean. Replayed all three TASK-139 commits with signing enabled. The only textual conflict was AGENTS.md; resolution retains TASK-138 hosted exclusions and TASK-141/TASK-142 ownership while updating the complete local lane to 16 owners. The workflow remains byte-identical to origin/main. Current reconciliation also updates the two stale test-suite owner counts, the repository-policy test title, and TASK-142 AC4/AC5 so its existing all-browser restoration scope includes the new fullscreen owner.
+
+Post-TASK-138 focused acceptance on rebased HEAD: coordinator 11 tests / 37 assertions; rendered fullscreen owner 1 / 37 through native Fullscreen API; inventory plus CI browser policy 81 tests / 164 assertions; type-check, Oxlint, formatting, and diff checks green. The complete exclusion-free serial lane passed all 16 owners in canonical order with 762 assertions. bun run test then passed 411 module tests / 3,181 assertions, 281 serialized system tests / 4,163 assertions, 115 repository-policy tests / 319 assertions, and all 16 browser owners / 762 assertions. The first bun run check reached its browser lane but arrow-binding-differential timed out at its unchanged 1,500 ms held-report boundary after 35 assertions; both prior complete lanes had passed it. The failed lane cleaned all owned processes and roots. The unchanged owner immediately passed focused with all 65 assertions, then one complete exclusion-free bun run check retry passed lint, formatting, both TypeScript projects, 411 modules / 3,181, 281 system / 4,163, 115 repository / 319, and all 16 browser owners / 762. No wait, assertion, timeout, owner, product code, or test code changed for the retry.
+
+Line and scope audit after reconciliation: new fullscreen-presentation.ts 173 lines, its module owner 284, rendered owner 400, and rendered support 141; all are below 500. Modified agent-browser support is 429, CI policy owner 495, and inventory owner 499. The fullscreen owner appears exactly once in package.json and once in BROWSER_TEST_PATHS. .github/workflows/ci.yml is byte-identical to green main, the CI-only all-browser sentinel remains fail-closed, TASK-141 remains untouched, and TASK-142 now owns restoring all 16 hosted owners. TASK-140 and b7be932 remain outside this lineage.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
