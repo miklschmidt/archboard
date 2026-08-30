@@ -139,3 +139,32 @@ export async function readExitButton(browser: AgentBrowserSession) {
 		};
 	})()`);
 }
+
+export const PERSISTENT_NOTICE_TEXT = "Persistent actionable notice survives presentation.";
+
+export function publishActionableNotice(browser: AgentBrowserSession): Promise<boolean> {
+	return browser.eval<boolean>(`(() => {
+		const pane = document.querySelector('.pane');
+		const key = pane && Object.keys(pane).find(candidate => candidate.startsWith('__reactFiber$'));
+		let fiber = key ? pane[key] : null;
+		for (let depth = 0; fiber && depth < 60; depth += 1, fiber = fiber.return) {
+			const notify = fiber.memoizedProps?.onCodeTargetNotice;
+			if (typeof notify !== 'function') continue;
+			notify({ message: ${JSON.stringify("Persistent actionable notice survives presentation.")},
+				actions: [{ kind: 'settings', label: 'Opener settings' }] });
+			return true;
+		}
+		return false;
+	})()`);
+}
+
+export function readShellNotice(browser: AgentBrowserSession) {
+	return browser.eval<{ text: string | null; action: string | null; visible: boolean }>(`(() => {
+		const notice = document.querySelector('.notice-shell');
+		return {
+			text: notice?.querySelector('.notice-text')?.childNodes[0]?.textContent?.trim() ?? null,
+			action: notice?.querySelector('.notice-actions button')?.textContent?.trim() ?? null,
+			visible: !!notice && getComputedStyle(notice).display !== 'none',
+		};
+	})()`);
+}

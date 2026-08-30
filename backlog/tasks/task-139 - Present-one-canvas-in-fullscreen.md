@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-29 16:19'
-updated_date: '2026-08-30 06:39'
+updated_date: '2026-08-30 06:49'
 labels: []
 dependencies: []
 priority: medium
@@ -57,6 +57,8 @@ A person presenting an architecture board needs a distraction-free view of one c
 12. Standards review remediation. Preserve the existing shell notice affordance and make it honest: add a coordinator clearError operation that clears only a non-presenting entry error, then have Shell's existing Dismiss notice action clear both ordinary notice state and that coordinator error. Do not let dismissal exit an active presentation or hide an exit-refusal alert in the fullscreen dock. Extend the coordinator refusal case to prove clearError removes the refusal while remaining non-presenting and Present can subsequently retry. In the rendered owner, click the visible Dismiss control after deterministic entry refusal, wait for the alert to disappear while fullscreen remains false, and then prove Present remains usable by continuing the existing re-entry path. Retain every predecessor assertion and focused gate.
 
 13. After TASK-138 FINALIZED_GREEN, replay the three signed TASK-139 commits onto exact green main 0f2b38a, retain its fail-closed hosted exclusions, update every current owner-count contract plus TASK-142 from 15 to 16, run focused and complete exclusion-free local gates sequentially, then reuse both independent reviewers over the complete rebased range before Backlog finalization and a non-force fast-forward push.
+
+14. Standards complete-range remediation. Preserve ordinary shell notice state across presentation attempts and confirmed fullscreen. Remove the eager ordinary-notice clear from handlePresent. When a non-presenting presentation refusal overlays an ordinary notice, Dismiss clears only the coordinator error so the ordinary notice becomes visible; otherwise Dismiss clears the ordinary notice. Add rendered proof with a persistent actionable notice across successful enter/exit, entry refusal, layered dismissal, and ordinary dismissal. Drive the rendered owner RED/GREEN, rerun focused coordinator/browser/policy/static gates, commit signed, and reuse the same Standards reviewer over the complete green-main range. Keep active exit-refusal dock alerts unchanged.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -84,5 +86,17 @@ Independent Spec review on signed HEAD f8b52af found one P2: pane removal during
 created: 2026-08-30 00:18
 ---
 Parent reconciliation accepted the Standards P2: the entry-refusal alert is coordinator-owned, while the visible Dismiss button currently clears only Shell notice state and makes a false promise. Remediation recorded in plan item 12.
+---
+
+author: @codex
+created: 2026-08-30 06:45
+---
+Complete-range Standards review on exact signed HEAD 37249e8cb4606c0309a46b47d1e60a6e24eae210 found one valid notice-ownership issue: presentation entry and refusal dismissal currently clear an unrelated ordinary actionable notice. Accepted for the narrow plan item 14 remediation; Spec remains REVIEW_CLEAN.
+---
+
+author: @codex
+created: 2026-08-30 06:49
+---
+Focused notice-ownership TDD at exact pre-remediation HEAD 37249e8: the expanded rendered owner failed after native fullscreen entry because the persistent actionable notice had been erased (received null text/action after 20 assertions). After removing the eager Shell notice clear and making dismissal select the visible owner, the same owner passed 1/1 with 42 assertions. Coordinator passed 11/11 with 37 assertions; inventory and CI policy passed 81/81 with 164 assertions; type-check, lint, fmt:check, and git diff --check passed. New browser owner/support files are 426/170 lines. Ordinary notice state now survives successful enter/exit and entry refusal; dismissing the refusal reveals it, and its own dismissal still removes it. Active exit-refusal behavior is unchanged.
 ---
 <!-- COMMENTS:END -->
