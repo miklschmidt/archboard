@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-08-30 21:58'
+updated_date: '2026-08-30 22:18'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -15,6 +15,9 @@ modified_files:
   - package.json
   - bun.lock
   - tests/system/repository-policy/codex-protocol-conformance.test.ts
+  - src/runtime/codex-protocol/conformance.ts
+  - src/runtime/codex-protocol/generated-method-inventory.ts
+  - src/runtime/codex-protocol/tests/conformance.test.ts
 parent_task_id: TASK-143.01
 priority: high
 type: task
@@ -54,4 +57,8 @@ Batch reservation at integration HEAD ac86591: exact scoped ready leaves are TAS
 Implemented in commit 5e64171. Added exact @openai/codex 0.151.0 dev dependency and lock entries, plus the repository-policy owner that resolves the project-local executable, runs the disposable generator through runCodexProtocolConformance, verifies the recorded 820-file digest and version, snapshots checkout status, and reports regeneration plus decoder/inventory review recovery.
 
 Validation: bun install --frozen-lockfile passed; focused root owner 3 pass / 14 expect; production conformance 10 pass / 36 expect; repository lane 121 pass / 377 expect; module lane passed; bun run type-check, bun run lint, bun run fmt:check, and git diff --check passed.
+
+Remediation commit 6d582cd: derived response/client-notification/server-request/server-notification method inventories once from the generated temp tree; compared authored decoder coverage with exact sets for the non-superset directions and the known currentTime/read response alias; added fail-first missing-generated and missing-authored decoder regressions for every direction. Hardened the root owner to resolve/run/status through one boundary, always capture post-status in finally, preserve the primary generation failure, and report checkout mutation separately with pinned-binary regeneration plus decoder/generated-inventory review recovery.
+
+Remediation validation: bun test --isolate src/runtime/codex-protocol/tests/conformance.test.ts tests/system/repository-policy/codex-protocol-conformance.test.ts passed 25 tests / 96 expect; bun run test:repository passed 125 tests / 391 expect; bun run test:modules passed 1001 tests / 7007 expect; bun run type-check, bun run lint, bun run fmt:check, git diff --check, and bun install --frozen-lockfile passed. Real project-local Codex 0.151.0 generation matched 820 files and the pinned digest.
 <!-- SECTION:NOTES:END -->
