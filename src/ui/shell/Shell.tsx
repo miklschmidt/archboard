@@ -715,7 +715,6 @@ export function Shell(): React.JSX.Element {
 		if (paneId) setFocused(paneId);
 	}, []);
 	const handlePresent = useCallback(() => {
-		setNotice(null);
 		presentationOwner?.present(focused);
 	}, [focused, presentationOwner]);
 	const handlePresentationTransfer = useCallback(
@@ -740,9 +739,9 @@ export function Shell(): React.JSX.Element {
 	const openOpenerSettings = useCallback(() => setOpenerSettingsOpen(true), []);
 	const closeOpenerSettings = useCallback(() => setOpenerSettingsOpen(false), []);
 	const handleDismissNotice = useCallback(() => {
-		setNotice(null);
-		presentationOwner?.clearError();
-	}, [presentationOwner]);
+		if (presentation.error && !presentation.paneId) presentationOwner?.clearError();
+		else setNotice(null);
+	}, [presentation.error, presentation.paneId, presentationOwner]);
 	const handleCancelDialog = useCallback(() => {
 		setDialog(null);
 		setDialogError(null);
