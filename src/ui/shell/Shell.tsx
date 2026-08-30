@@ -556,6 +556,7 @@ export function Shell(): React.JSX.Element {
 
 	const status = statuses[focused] ?? statuses[panes[0] ?? ""] ?? null;
 	const agentState = agentStates[focused] ?? agentStates[panes[0] ?? ""] ?? null;
+	const claimedBy = agentState?.heldBy?.claimed === true ? agentState.heldBy : null;
 	const focusedPaneLabel = `Pane ${String.fromCharCode(65 + Math.max(0, panes.indexOf(focused)))}`;
 	const visibleNotice = presentationNotice(presentation, notice);
 	const boardKey = status?.boardKey ?? null;
@@ -1073,9 +1074,9 @@ export function Shell(): React.JSX.Element {
 			<BoardBar
 				identity={identity}
 				boardKey={boardKey}
-				vault={boardListing?.vault ?? null}
 				elementCount={status?.elementCount ?? 0}
 				connected={status?.connected ?? false}
+				claimedBy={claimedBy}
 				hold={hold}
 				// The one thing that opens the conflict dialog while somebody is
 				// drawing: them asking for it (TASK-079).
@@ -1190,6 +1191,57 @@ export function Shell(): React.JSX.Element {
 									onPreviewController={onPreviewController}
 								/>
 							))}
+
+							{visibleNotice && (
+								<div
+									className={`notice notice-shell notice-${visibleNotice.kind}${visibleNotice.hold ? " notice-hold" : ""}`}
+									role={visibleNotice.kind === "error" ? "alert" : "status"}
+								>
+									<span className="notice-icon">
+										<Icon name={visibleNotice.kind === "error" ? "close" : "check"} size={16} />
+									</span>
+									<span className="notice-text">
+										{visibleNotice.text}
+										{visibleNotice.actions && (
+											<span className="notice-actions">
+												{visibleNotice.actions.map((action) => {
+													if (action.kind === "settings") {
+														return (
+															<button
+																key="settings"
+																className="btn btn-quiet"
+																onClick={openOpenerSettings}
+															>
+																{action.label}
+															</button>
+														);
+													}
+													const href = GitHubHttpsUrlSchema.safeParse(action.href);
+													return href.success ? (
+														<a
+															key={action.href}
+															className="btn btn-quiet"
+															href={href.data}
+															target="_blank"
+															rel="noopener noreferrer"
+														>
+															{action.label}
+														</a>
+													) : null;
+												})}
+											</span>
+										)}
+									</span>
+									<button
+										className="notice-dismiss"
+										type="button"
+										onClick={handleDismissNotice}
+										aria-label="Dismiss notice"
+									>
+										<Icon name="close" size={17} />
+									</button>
+								</div>
+							)}
 						</div>
 
 						<SelectionInspector
@@ -1210,57 +1262,6 @@ export function Shell(): React.JSX.Element {
 						doing={visibleDoing}
 						takeBack={agentState?.takeBack}
 					/>
-
-					{visibleNotice && (
-						<div
-							className={`notice notice-shell notice-${visibleNotice.kind}${visibleNotice.hold ? " notice-hold" : ""}`}
-							role={visibleNotice.kind === "error" ? "alert" : "status"}
-						>
-							<span className="notice-icon">
-								<Icon name={visibleNotice.kind === "error" ? "close" : "check"} size={16} />
-							</span>
-							<span className="notice-text">
-								{visibleNotice.text}
-								{visibleNotice.actions && (
-									<span className="notice-actions">
-										{visibleNotice.actions.map((action) => {
-											if (action.kind === "settings") {
-												return (
-													<button
-														key="settings"
-														className="btn btn-quiet"
-														onClick={openOpenerSettings}
-													>
-														{action.label}
-													</button>
-												);
-											}
-											const href = GitHubHttpsUrlSchema.safeParse(action.href);
-											return href.success ? (
-												<a
-													key={action.href}
-													className="btn btn-quiet"
-													href={href.data}
-													target="_blank"
-													rel="noopener noreferrer"
-												>
-													{action.label}
-												</a>
-											) : null;
-										})}
-									</span>
-								)}
-							</span>
-							<button
-								className="notice-dismiss"
-								type="button"
-								onClick={handleDismissNotice}
-								aria-label="Dismiss notice"
-							>
-								<Icon name="close" size={17} />
-							</button>
-						</div>
-					)}
 				</main>
 			</div>
 
