@@ -28,6 +28,8 @@ export const BROWSER_TEST_PATHS = [
 ] as const;
 
 export type BrowserTestPath = (typeof BROWSER_TEST_PATHS)[number];
+export const CI_EXCLUDED_BROWSER_OWNER_ENV = "ARCHBOARD_CI_EXCLUDED_BROWSER_OWNER";
+export const CI_EXCLUDED_BROWSER_OWNER = BROWSER_TEST_PATHS[0];
 export interface BrowserSelection {
 	mode: "package" | "focus";
 	files: BrowserTestPath[];
@@ -115,6 +117,23 @@ export function validateBrowserSelection(argv: readonly string[]): BrowserSelect
 		selectionError("Package browser lane must name all 15 canonical paths in order.");
 	}
 	return { mode, files: selected as BrowserTestPath[] };
+}
+
+export function applyCiBrowserOwnerExclusion(
+	selection: BrowserSelection,
+	environment: Readonly<Record<string, string | undefined>>,
+): BrowserSelection {
+	const excluded = environment[CI_EXCLUDED_BROWSER_OWNER_ENV];
+	if (excluded === undefined) return selection;
+	if (environment.CI !== "true")
+		selectionError(`${CI_EXCLUDED_BROWSER_OWNER_ENV} requires CI=true.`);
+	if (selection.mode !== "package") {
+		selectionError(`${CI_EXCLUDED_BROWSER_OWNER_ENV} is valid only for the package browser lane.`);
+	}
+	if (excluded !== CI_EXCLUDED_BROWSER_OWNER) {
+		selectionError(`${CI_EXCLUDED_BROWSER_OWNER_ENV} cannot exclude \`${excluded}\`.`);
+	}
+	return { ...selection, files: selection.files.filter((file) => file !== excluded) };
 }
 
 function requiredEnvironment(name: (typeof REQUIRED_BROWSER_ENV)[number]): string {

@@ -11,10 +11,15 @@ changing tests or CI, or when a browser check fails.
 - `test:repository`: isolated repository-policy tests, including inventory and no-MJS policy;
 - `test:serial-browser`: the 15 canonical browser owners through the strict adapter.
 
-`.github/workflows/ci.yml` runs `bun run check`, which runs lint, formatting, and
-that complete test chain. The repository inventory rejects a native test with
-no lane, more than one lane, no push path, a browser owner outside the serial
-adapter, recursive browser discovery, or any transitional `test:*` key.
+`bun run check` is the complete local gate: lint, formatting, both TypeScript
+projects, and that complete test chain. `.github/workflows/ci.yml` invokes the
+same command with one exact hosted-only exception: it excludes
+`tests/system/browser/human-edit-performance.test.ts` after repeated clean-runner
+pre-open stalls, then runs the other 14 browser owners serially. That owner
+remains mandatory locally. Repository policy pins the exception and rejects a
+native test with no lane, more than one lane, no push path, a browser owner
+outside the serial adapter, recursive browser discovery, or any transitional
+`test:*` key.
 
 The whole chain's duration is machine-dependent. Browser owners run one at a
 time. Re-measure before making a timing claim.
@@ -76,8 +81,9 @@ adapter instead. The lane:
 - refuses to claim a pass without `agent-browser` on PATH, or without `strace`
   when human-edit performance is selected — it exits 2 before building or
   starting an owner;
-- assert `navigator.userAgent` says headless, because a window that maps
-  steals focus under Hyprland and these run on every push;
+- asserts `navigator.userAgent` says headless, because a window that maps
+  steals focus under Hyprland; local runs exercise all 15 owners and hosted
+  runs exercise the documented 14-owner subset;
 - runs one literal file child at a time, never concurrently. TASK-097 records that two owners
   sharing the machine is how one of them fails for no reason: contention
   stretches request and frame observations that the checks probe on purpose;
