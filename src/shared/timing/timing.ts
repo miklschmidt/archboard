@@ -494,7 +494,7 @@ export const TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS = 3 * TEST_BROWSER_COMMAND_T
 export const TEST_BROWSER_POLL_MS = LOCK_POLL_MS;
 /** Extends the negative pane window past one debounce without reaching its settle cap. */
 export const TEST_PANE_DEBOUNCE_MARGIN_MS = 2 * TEST_BROWSER_POLL_MS;
-/** Aggregate Bun cases, not operation caps/SLAs: opener 15s clears 10,686.59ms stress; presentation 20s clears hosted 5,034ms / stressed 14,815.78ms. */
+/** Polls fake-opener lifecycle evidence within its 2s operation bound. */
 export const TEST_OPENER_LIFECYCLE = { pollMs: 20, timeoutMs: 2_000 } as const;
-export const TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS = 15_000;
+/** Aggregate Bun case, not an operation cap/SLA: 20s clears hosted 5,034ms and stressed 14,815.78ms. */
 export const TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS = 20_000;
