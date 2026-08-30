@@ -217,9 +217,9 @@ test(
 			agentTileCount: 0,
 			beacon: "rgb(163, 230, 53)",
 			bodyHeight: 184,
-			claimCopyType: [expect.stringContaining("inter"), 12, 18, 400],
-			claimReasonType: [expect.stringContaining("inter"), 14, 20, 600],
-			claimStatusType: [expect.stringContaining("inter"), 12, 16, 600],
+			claimCopyType: [expect.stringContaining("archboard onest"), 12, 18, 400],
+			claimReasonType: [expect.stringContaining("archboard onest"), 14, 20, 600],
+			claimStatusType: [expect.stringContaining("archboard onest"), 12, 16, 600],
 			focusHierarchy: ["workbench-current", "workbench-claim"],
 			hierarchy: ["workbench-history", "workbench-focus"],
 			summaryHeight: 44,
@@ -231,8 +231,8 @@ test(
 			],
 			summaryValuesSingleLine: true,
 			takeBackHeight: 44,
-			takeBackType: [expect.stringContaining("inter"), 12, 16, 600],
-			technicalKickerType: [expect.stringMatching(/mono|consolas/), 9, 12, 700],
+			takeBackType: [expect.stringContaining("archboard onest"), 12, 16, 600],
+			sectionTitleType: [expect.stringContaining("archboard onest"), 9, 12, 600],
 		});
 		expect(claimed.workbench?.historyRatio).toBeCloseTo(0.26, 2);
 		expect(claimed.workbench?.currentRatio).toBeCloseTo(0.55, 2);
@@ -244,8 +244,8 @@ test(
 		});
 		expect(claimed.headerClaim?.labelType.slice(1)).toEqual([12, 16]);
 		expect(claimed.headerClaim?.idType.slice(1)).toEqual([10, 14]);
-		expect(claimed.headerClaim?.labelType[0]).toContain("inter");
-		expect(claimed.headerClaim?.idType[0]).toMatch(/mono|consolas/);
+		expect(claimed.headerClaim?.labelType[0]).toContain("archboard onest");
+		expect(claimed.headerClaim?.idType[0]).toContain("archboard dm mono");
 		const beforeCamera = await claimCounts(browser);
 		expect(
 			await browser.eval<boolean>(`(() => {
@@ -286,13 +286,13 @@ test(
 			"Agent edits are serialized while this claim is active. You can return control at any time.",
 		);
 		expect(narrated.workbench).toMatchObject({
-			currentType: [expect.stringContaining("inter"), 16, 22, 600],
+			currentType: [expect.stringContaining("archboard onest"), 16, 22, 600],
 			historyRowMinHeight: 30,
-			historyTextType: [expect.stringContaining("inter"), 12, 17, 500],
+			historyTextType: [expect.stringContaining("archboard onest"), 12, 17, 500],
 			summaryValuesSingleLine: true,
 			timeColumnWidth: 68,
 			timeNoWrap: true,
-			timeType: [expect.stringMatching(/mono|consolas/), 10, 14, 500],
+			timeType: [expect.stringContaining("archboard dm mono"), 10, 14, 400],
 			theme: "light",
 		});
 		expect(narrated.workbench?.historyRowHeight).toBeGreaterThanOrEqual(30);

@@ -29,7 +29,7 @@ export interface WorkbenchMetrics {
 	takeBackHeight: number | null;
 	takeBackType: TypeMetric | null;
 	technicalContrast: WorkbenchTechnicalContrast[];
-	technicalKickerType: TypeMetric | null;
+	sectionTitleType: TypeMetric | null;
 	theme: string | null;
 	timeColumnWidth: number | null;
 	timeNoWrap: boolean | null;
@@ -161,7 +161,7 @@ export const WORKBENCH_SNAPSHOT_EXPRESSION = `(() => {
 			takeBackHeight: takeBack?.getBoundingClientRect().height ?? null,
 			takeBackType: type(takeBack),
 			technicalContrast,
-			technicalKickerType: type(document.querySelector(".workbench-section-title")),
+			sectionTitleType: type(document.querySelector(".workbench-section-title")),
 			theme: workbench.closest(".shell")?.getAttribute("data-theme") ?? null,
 			timeColumnWidth: activityTime?.getBoundingClientRect().width ?? null,
 			timeNoWrap: activityTime ? getComputedStyle(activityTime).whiteSpace === "nowrap" : null,
