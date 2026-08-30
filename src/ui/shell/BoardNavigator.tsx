@@ -31,10 +31,24 @@ interface PreviewDisclosure extends BoardPreviewTarget {
 	pinned: boolean;
 }
 
+interface FocusScrollProtection {
+	key: string;
+	expiresAfterFrame: number;
+}
+
 const entryLabel = (entry: BoardEntry): string =>
 	entry.identity.board === "scratch"
 		? "Scratch board"
 		: `${entry.identity.board} · ${entry.identity.variant === "current" ? "Current" : entry.identity.variant}`;
+
+const scrollsList = (key: string): boolean =>
+	key === "ArrowDown" ||
+	key === "ArrowUp" ||
+	key === "PageDown" ||
+	key === "PageUp" ||
+	key === "Home" ||
+	key === "End" ||
+	key === " ";
 
 export function BoardNavigator({
 	listing,
@@ -50,6 +64,7 @@ export function BoardNavigator({
 	onName,
 }: BoardNavigatorProps): React.JSX.Element {
 	const navRef = useRef<HTMLElement | null>(null);
+	const focusScrollProtectionRef = useRef<FocusScrollProtection | null>(null);
 	const [preview, setPreview] = useState<PreviewDisclosure | null>(null);
 	const { groups, scratch } = useMemo(() => {
 		if (!listing) return { groups: [], scratch: null };
@@ -182,12 +197,41 @@ export function BoardNavigator({
 		},
 		[entriesByKey, togglePinned],
 	);
-	const handleListScroll = useCallback(() => setPreview(null), []);
+	const cancelFocusScrollProtection = useCallback(() => {
+		const protection = focusScrollProtectionRef.current;
+		if (protection) cancelAnimationFrame(protection.expiresAfterFrame);
+		focusScrollProtectionRef.current = null;
+	}, []);
+	const protectFocusScroll = useCallback((key: string) => {
+		const previous = focusScrollProtectionRef.current;
+		if (previous) cancelAnimationFrame(previous.expiresAfterFrame);
+		const protection: FocusScrollProtection = { key, expiresAfterFrame: 0 };
+		focusScrollProtectionRef.current = protection;
+		protection.expiresAfterFrame = requestAnimationFrame(() => {
+			if (focusScrollProtectionRef.current === protection) {
+				focusScrollProtectionRef.current = null;
+			}
+		});
+	}, []);
+	useEffect(() => cancelFocusScrollProtection, [cancelFocusScrollProtection]);
+	const handleListKeyDown = useCallback(
+		(event: React.KeyboardEvent<HTMLDivElement>) => {
+			if (scrollsList(event.key)) cancelFocusScrollProtection();
+		},
+		[cancelFocusScrollProtection],
+	);
+	const handleListScroll = useCallback(() => {
+		const followsFocus = focusScrollProtectionRef.current?.key !== undefined;
+		setPreview((previous) => (followsFocus || previous?.pinned ? previous : null));
+	}, []);
 
 	const previewEvents = (entry: BoardEntry) => ({
 		onPointerEnter: (event: React.PointerEvent<HTMLElement>) => reveal(entry, event.currentTarget),
 		onPointerLeave: () => conceal(entry.key),
-		onFocus: (event: React.FocusEvent<HTMLElement>) => reveal(entry, event.currentTarget),
+		onFocus: (event: React.FocusEvent<HTMLElement>) => {
+			protectFocusScroll(entry.key);
+			reveal(entry, event.currentTarget);
+		},
 		onBlur: () => conceal(entry.key),
 	});
 	const previewControl = (entry: BoardEntry): React.JSX.Element => (
@@ -241,7 +285,13 @@ export function BoardNavigator({
 				</div>
 			</div>
 
-			<div className="board-nav-list" onScroll={handleListScroll}>
+			<div
+				className="board-nav-list"
+				onKeyDownCapture={handleListKeyDown}
+				onPointerDownCapture={cancelFocusScrollProtection}
+				onScroll={handleListScroll}
+				onWheelCapture={cancelFocusScrollProtection}
+			>
 				{!listing && !error && <div className="board-nav-empty">Reading the vault…</div>}
 				{error && (
 					<button

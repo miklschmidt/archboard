@@ -377,14 +377,13 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 	await browser.eval<boolean>(
 		`(() => { window.__previewProbe.delayBoard = 'gamma'; document.querySelector('[data-board-key="gamma"]')?.focus(); return true; })()`,
 	);
-	const loadingPreview = await pollUntil(
+	await pollUntil(
 		readPreview,
-		(view) => view.board === "gamma" && view.state === "loading",
+		(view) => view.board === "gamma" && view.state === "loading" && view.flat === true,
 		"the delayed preview request to begin",
 	);
-	expect(loadingPreview.flat).toBe(true);
 	await browser.eval<boolean>(
-		`(() => { document.querySelector('[data-board-key="secondary"]')?.focus(); return true; })()`,
+		`(() => { const row = document.querySelector('[data-board-key="secondary"]'); const list = document.querySelector('.board-nav-list'); row?.focus(); list?.dispatchEvent(new Event('scroll')); return Boolean(row && list); })()`,
 	);
 	await pollUntil(
 		readPreview,
@@ -394,6 +393,11 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 	);
 	await Bun.sleep(400);
 	expect((await readPreview()).board).not.toBe("gamma");
+	expect(
+		await browser.eval<boolean>(
+			`(async () => { const list = document.querySelector('.board-nav-list'); list?.dispatchEvent(new WheelEvent('wheel', { bubbles: true })); list?.dispatchEvent(new Event('scroll')); await new Promise(requestAnimationFrame); return Boolean(list) && !document.querySelector('.board-preview-card'); })()`,
+		),
+	).toBe(true);
 	expect(
 		await browser.eval<Array<{ board: string; method: string }>>("window.__previewProbe.requests"),
 	).toSatisfy(
