@@ -4,7 +4,7 @@ title: Register Codex protocol conformance in root checks
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:47'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -24,6 +24,8 @@ ordinal: 240000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own the serialized root dependency/check seam for @openai/codex 0.151.0 and protocol conformance. Generation always occurs in a disposable directory and compares without modifying the checkout.
+
+Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

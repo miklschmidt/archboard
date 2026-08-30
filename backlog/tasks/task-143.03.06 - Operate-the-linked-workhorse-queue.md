@@ -4,12 +4,12 @@ title: Operate the linked workhorse queue
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 15:41'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.03.01
   - TASK-143.07.02
-  - TASK-144.07
+  - TASK-144.19
   - TASK-144.14
 references:
   - docs/design/operator-canvas-shell.md
@@ -26,6 +26,8 @@ ordinal: 203000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own Archboard queue presentation and commands in `src/ui/workbench-queue`. This is owned source, not an assistant-ui Element; it consumes the exhaustive server snapshot and emits only legal add/edit/cancel/reorder/start commands.
+
+Delegation profile: gpt-5.6-sol, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

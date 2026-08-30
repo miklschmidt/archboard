@@ -4,7 +4,7 @@ title: Own Archboard Codex developer instructions
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.01.17
@@ -23,6 +23,8 @@ ordinal: 177000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Load, byte-freeze, hash, and compose the canonical authored contracts from the reviewed design record. Callers select a reviewed role and typed context; Luna implementers may not change prose or manifest semantics.
+
+Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

@@ -4,7 +4,7 @@ title: Integrate live voice into the Codex workbench frame
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:10'
-updated_date: '2026-08-30 15:42'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.03.11
@@ -27,6 +27,8 @@ ordinal: 214000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Extend only `src/ui/workbench-frame` to fill its optional voice slot with controls, context, transcript, and spoken-approval presentation. Preserve the text workbench as canonical fallback; fullscreen projection is a separate shell leaf.
+
+Delegation profile: gpt-5.6-sol, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

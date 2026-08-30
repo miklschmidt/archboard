@@ -4,7 +4,7 @@ title: Verify controlled live voice in the workbench browser
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.03.13
@@ -35,8 +35,8 @@ Own and register the canonical controlled browser owner for live voice through t
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Controlled getUserMedia, RTCPeerConnection, AudioContext, AnalyserNode, data channel, remote audio, and exact-version stdio fakes drive permission, offer/answer/started, listening/mute/processing/speaking, transcript, Stop, close, and recovery through public exports.
-- [ ] #2 The owner covers denial/device loss/ICE/data/autoplay/SDP failures, wrong/stale identity, stop during every phase, restart serialization, paginated timeline merge, uncertain append, visual approval fallback, off-focus source binding, and complete resource cleanup.
-- [ ] #3 At desktop/fullscreen/Flip viewports it proves persistent source identity, exact captured context/delivery outcomes, canonical transcript cross-links, 44px controls, keyboard/screen-reader/reduced-motion behavior, active fullscreen voice Stop, and no unexpected logs.
-- [ ] #4 It appends exactly one owner to every canonical browser inventory/count surface after TASK-143.03.13 and updates 20 to 21 without rewriting the text owner or spawning PATH Codex.
+- [ ] #1 Controlled media and exact-version stdio fakes drive permission, WebRTC offer/answer/started, listening/mute/processing/speaking, transcript, Stop, close, and recovery through public exports.
+- [ ] #2 The owner covers every media/identity/recovery failure plus spoken approval from one matching final user item after the effect prompt; assistant, provisional, stale-session, pre-prompt, duplicate, and ambiguous items cannot arm and fall back visually.
+- [ ] #3 At desktop/fullscreen/Flip viewports it proves source identity, captured context/outcomes, transcript links, 44px controls, keyboard/screen-reader/reduced-motion, active fullscreen Stop, and no unexpected logs.
+- [ ] #4 It appends exactly one owner to every canonical browser inventory/count surface after TASK-143.03.13 and updates 20 to 21 without rewriting text coverage or spawning PATH Codex.
 <!-- AC:END -->

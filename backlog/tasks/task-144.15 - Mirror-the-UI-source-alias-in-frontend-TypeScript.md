@@ -4,7 +4,7 @@ title: Mirror the UI source alias in frontend TypeScript
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:43'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-144.02
@@ -21,13 +21,13 @@ ordinal: 238000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the frontend TypeScript half of the single `@/* -> src/*` resolver alias in `tsconfig.frontend.json`. Vite owns the matching runtime alias in TASK-144.02; root TypeScript does not include frontend/UI source and receives no unused alias.
+Own the frontend TypeScript half of the single @/* -> ./src/* alias. Vite owns runtime resolution; TASK-144.17 later establishes the same mapping in root TypeScript. Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 compilerOptions.paths contains exactly @/* mapped to [./src/*] for the owning TypeScript config and does not add baseUrl.
-- [ ] #2 A self-contained root alias fixture resolves a public @/ module and rejects an unknown/deep path under the owning tsc project without depending on pre-created shadcn components.
-- [ ] #3 The mapping agrees with Vite and the peer TypeScript project, preserves bundler resolution/noEmit, and adds no second alias spelling.
-- [ ] #4 TASK-144.04 owns the actual shadcn dry-run after both aliases and Oxlint resolution are ready.
+- [ ] #1 tsconfig.frontend.json compilerOptions.paths contains exactly @/* mapped to [./src/*] and does not add baseUrl.
+- [ ] #2 A self-contained frontend alias fixture proves a public @/ module resolves and an unknown alias fails under tsconfig.frontend.json; it makes no deep-import enforcement claim.
+- [ ] #3 Bundler resolution/noEmit and existing frontend includes remain unchanged, with no second alias spelling.
+- [ ] #4 Cross-project agreement belongs to TASK-144.17, deep-import policy to TASK-144.18, and shadcn dry-run to TASK-144.04.
 <!-- AC:END -->

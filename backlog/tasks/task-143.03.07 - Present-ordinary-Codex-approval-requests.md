@@ -4,12 +4,12 @@ title: Present ordinary Codex approval requests
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.05.02
   - TASK-143.03.01
-  - TASK-144.07
+  - TASK-144.19
 references:
   - docs/design/operator-canvas-shell.md
   - docs/design/agent-workbench-ui-library-research.md

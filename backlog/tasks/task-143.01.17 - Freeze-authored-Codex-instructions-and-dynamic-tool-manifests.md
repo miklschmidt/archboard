@@ -4,6 +4,7 @@ title: Freeze authored Codex instructions and dynamic-tool manifests
 status: To Do
 assignee: []
 created_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -21,13 +22,13 @@ ordinal: 247000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the human-reviewed, byte-exact source contract for workhorse/coordinator instructions, additionalContext encoding, and both dynamic-tool catalogues before implementation begins. Luna workers may load, hash, validate, or dispatch these bytes; they may not author or reinterpret them. Delegation profile: gpt-5.6-sol, xhigh.
+Own the human-reviewed, byte-exact source contract for capabilities, login policy, thread profiles, workhorse/coordinator instructions, additionalContext, realtime handoff, spoken classifier input, and all dynamic-tool catalogues. Luna workers may load/hash/validate/dispatch; they may not author or reinterpret these bytes. Delegation profile: gpt-5.6-sol, xhigh.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The document contains literal UTF-8 workhorse and coordinator instruction bytes, their exact composition separator, one deterministic additionalContext key/value encoding, and explicit realtime startup/instruction/handoff choices.
-- [ ] #2 Literal eager namespace manifests freeze ordered tool names, descriptions, strict schemas, required and optional fields, limits, additionalProperties false, result/refusal tags, approval mapping, and text-only output for archboard_app, archboard_workhorse, and archboard_voice.
-- [ ] #3 resolve_spoken_approval accepts exactly one argument, verdict with accept or decline; the host supplies the sole pending approval identity only after child/thread/turn/call/manifest/session/expiry validation.
-- [ ] #4 A later ordinary coordinator turn, never realtime classification alone, invokes spoken resolution; hash fixtures in the implementation tasks must fail on any byte or manifest drift.
+- [ ] #1 The document freezes literal InitializeCapabilities, all-six login support/refusal policy, workhorse/coordinator ThreadStartParams profiles and omissions, coordinator settings update/notification, role instructions, separator, additionalContext, and realtime start choices.
+- [ ] #2 Literal eager namespace manifests freeze ordered tools/descriptions/strict schemas/limits/results/refusals/approval mapping and the exact create/fork/send/wait multi-RPC/page semantics.
+- [ ] #3 resolve_spoken_approval accepts only verdict accept|decline. The gate arms only from one matching final user item after the effect prompt, bound to immutable child/thread/realtime-session/item/sequence; assistant output can never arm it.
+- [ ] #4 The exact later ordinary coordinator classifier input bytes are frozen, and host validation supplies the sole approval identity only after child/thread/turn/call/manifest/session/item/sequence/effect/expiry checks.
 <!-- AC:END -->

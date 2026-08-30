@@ -4,7 +4,7 @@ title: Configure Tailwind 4 in Vite
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-144.01
@@ -23,6 +23,8 @@ ordinal: 216000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Configure Tailwind 4's Vite plugin and @/ runtime alias. Verification here uses a disposable self-contained Vite/Tailwind/alias fixture; production stylesheet and shell proof belong to TASK-144.13-.14.
+
+Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

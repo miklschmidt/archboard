@@ -136,13 +136,21 @@ only if `bun run type-check` and `bun run build` resolve the same imports.
 
 Generated source is application source. The official Tailwind 4 notes say shadcn code
 is what the application would write itself, with no hidden abstraction. The Base UI
-Button source currently published by shadcn demonstrates the boundary: it imports
-`Button` from [`@base-ui/react/button`](https://raw.githubusercontent.com/shadcn-ui/ui/main/apps/v4/registry/bases/base/ui/button.tsx),
+Button source reviewed at immutable shadcn-ui/ui commit
+`b4a618b97e35f5dadf3a00d51f410c84a2567d4d` demonstrates the boundary: it imports
+`Button` from [`@base-ui/react/button`](https://raw.githubusercontent.com/shadcn-ui/ui/b4a618b97e35f5dadf3a00d51f410c84a2567d4d/apps/v4/registry/bases/base/ui/button.tsx),
 uses `class-variance-authority`, and combines variants through a local `cn` helper.
-The Base UI Dialog source similarly imports [`@base-ui/react/dialog`](https://raw.githubusercontent.com/shadcn-ui/ui/main/apps/v4/registry/bases/base/ui/dialog.tsx)
+The Base UI Dialog source similarly imports [`@base-ui/react/dialog`](https://raw.githubusercontent.com/shadcn-ui/ui/b4a618b97e35f5dadf3a00d51f410c84a2567d4d/apps/v4/registry/bases/base/ui/dialog.tsx)
 and composes copied parts. Review and adapt each copied file to Archboard's tokens,
 module boundary, and product semantics. Do not add every available component or
 overwrite modified files with `add --all --overwrite`.
+
+TASK-144.04 will track the reviewed immutable bytes as implementation inputs
+under `docs/design/vendor/shadcn-base/`: Button SHA-256
+`97bfee456444f0495deee6a321933c24267477645b0bf4bfea67c3c62d425a12`
+and Dialog SHA-256
+`85f9a33d1a8c495b0faecd066dae1581b8feb5d27f912ecf65f814386f6da3a9`.
+Mutable `main` URLs are discovery/provenance links, never conformance inputs.
 
 ### Runtime and development dependencies
 
@@ -437,8 +445,8 @@ The durable agent-facing guidance should require the following sequence:
   [Base UI default announcement](https://ui.shadcn.com/docs/changelog/2026-07-base-ui-default),
   [registry item schema](https://ui.shadcn.com/docs/registry/registry-item-json),
   [current schema](https://ui.shadcn.com/schema.json),
-  [Base UI Button source](https://raw.githubusercontent.com/shadcn-ui/ui/main/apps/v4/registry/bases/base/ui/button.tsx),
-  [Base UI Dialog source](https://raw.githubusercontent.com/shadcn-ui/ui/main/apps/v4/registry/bases/base/ui/dialog.tsx), and
+  [pinned Base UI Button source](https://raw.githubusercontent.com/shadcn-ui/ui/b4a618b97e35f5dadf3a00d51f410c84a2567d4d/apps/v4/registry/bases/base/ui/button.tsx),
+  [pinned Base UI Dialog source](https://raw.githubusercontent.com/shadcn-ui/ui/b4a618b97e35f5dadf3a00d51f410c84a2567d4d/apps/v4/registry/bases/base/ui/dialog.tsx), and
   [CLI package manifest](https://raw.githubusercontent.com/shadcn-ui/ui/main/packages/shadcn/package.json).
 - Base UI: [quick start](https://base-ui.com/react/overview/quick-start),
   [accessibility](https://base-ui.com/react/overview/accessibility),

@@ -4,6 +4,7 @@ title: Import the canonical Archboard application stylesheet
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:38'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-144.02
@@ -22,6 +23,8 @@ ordinal: 235000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own the frontend entry seam that imports `src/ui/theme/app.css` exactly once from `frontend/main.tsx` and removes the direct shell stylesheet link from `frontend/index.html`. Excalidraw vendor CSS remains a separate static asset.
+
+Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

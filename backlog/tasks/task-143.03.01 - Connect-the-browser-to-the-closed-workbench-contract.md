@@ -4,7 +4,7 @@ title: Connect the browser to the closed workbench contract
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.01.14
@@ -23,6 +23,8 @@ ordinal: 198000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Connect the browser to the closed workbench gateway produced by the final server composition root. Own transport/reconnect/sequence behavior only; never instantiate a process, session, coordinator, queue, approval, semantic, or realtime owner in the UI.
+
+Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

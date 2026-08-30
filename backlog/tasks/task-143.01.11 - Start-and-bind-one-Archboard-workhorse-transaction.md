@@ -4,7 +4,7 @@ title: Start and bind one Archboard workhorse transaction
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 17:03'
 labels: []
 dependencies:
   - TASK-143.01.05
@@ -14,6 +14,7 @@ dependencies:
   - TASK-143.05.03
 references:
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
+  - docs/design/codex-workbench-authored-contracts.md
 modified_files:
   - src/runtime/codex-workhorse-start
 parent_task_id: TASK-143.01
@@ -25,13 +26,13 @@ ordinal: 224000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own one serialized start-and-bind transaction for an Archboard-created workhorse. It verifies the returned thread itself and compensates only a newly created, confirmed, idle root; it never selects or deletes by recency.
+Own one serialized start-and-bind transaction for an Archboard-created workhorse using the literal reviewed ThreadStartParams profile. It verifies the returned thread itself and compensates only a newly created, confirmed, idle root; it never selects or deletes by recency. Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The transaction stages a CAS operation, starts exactly one thread, and verifies returned ThreadId, absolute cwd, sole workspace root, persistent history mode, allowed source, Archboard threadSource, requested settings, loaded membership, and canAcceptDirectInput true before commit/bind.
-- [ ] #2 Confirmed success commits epoch provenance plus instruction/manifest hashes and binds once; any mismatched returned identity or configuration refuses without finding a replacement thread.
-- [ ] #3 Before a confirmed start, failure rolls back locally. After confirmed start but failed bind, cleanup may delete only that newly created idle root after re-reading identity/state; failed or lost delete becomes inspect_only.
-- [ ] #4 A lost thread/start response is outcome_unknown, never retried, inferred from recency, or cleaned up; process tests cover every boundary and stale concurrent pane mutation.
+- [ ] #1 The exact ThreadStartParams included fields and intentional omissions match the authored workhorse profile: checkout cwd/sole runtime root, paginated persistent history, startup source, archboard thread source, instructions, eager tools, inherited provider/model/approval/sandbox/environment policy, and disabled raw experimental events.
+- [ ] #2 The transaction stages a host operation, sends thread/start once, verifies returned ThreadId/cwd/root/history/source/threadSource/settings/loaded controllability, commits provenance/hashes, then binds exactly once.
+- [ ] #3 Before confirmed start, failure rolls back locally. After confirmed start but failed bind, delete is allowed only after re-reading that new idle root; failed/lost delete becomes inspect_only.
+- [ ] #4 A lost thread/start response is outcome_unknown, never retried, inferred, or cleaned up; every staged/confirmed/bind/cleanup boundary is tested.
 <!-- AC:END -->

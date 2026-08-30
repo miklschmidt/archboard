@@ -4,7 +4,7 @@ title: Enable native Oxfmt Tailwind class sorting
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-144.03
@@ -24,6 +24,8 @@ ordinal: 220000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Enable Oxfmt's native Tailwind v4 sorting using the canonical stylesheet and helper function. Keep className native; add no custom sorting rules or copied defaults.
+
+Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

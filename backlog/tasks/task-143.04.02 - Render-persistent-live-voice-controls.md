@@ -4,7 +4,7 @@ title: Render persistent live voice controls
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:10'
-updated_date: '2026-08-30 15:42'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.04.01
@@ -24,6 +24,8 @@ ordinal: 210000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own Start, Mute/Unmute, Stop, permission/negotiation progress, audio level, and persistent active transport in `src/ui/voice-controls`. It emits commands through the voice-session adapter and owns no media resources.
+
+Delegation profile: gpt-5.6-sol, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

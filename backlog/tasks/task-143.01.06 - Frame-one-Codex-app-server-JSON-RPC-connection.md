@@ -4,7 +4,7 @@ title: Frame one Codex app-server JSON-RPC connection
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -24,6 +24,8 @@ ordinal: 176000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own newline-delimited JSON-RPC framing, request/reverse-request correlation, cancellation settlement, late-result retention, and wire shutdown for one child epoch. It performs no semantic retry and constructs no tool result.
+
+Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

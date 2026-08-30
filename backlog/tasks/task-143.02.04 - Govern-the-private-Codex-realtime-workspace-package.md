@@ -4,7 +4,7 @@ title: Expose the Codex realtime public module
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.02.01
@@ -23,6 +23,8 @@ ordinal: 225000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own the single extraction-ready entrypoint for the browser-native realtime module. It exports only reviewed types/factories and keeps implementation files behind the module boundary; it does not edit root package metadata.
+
+Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

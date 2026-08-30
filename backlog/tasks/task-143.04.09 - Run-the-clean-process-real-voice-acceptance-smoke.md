@@ -4,7 +4,7 @@ title: Run the clean-process real voice acceptance smoke
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-30 16:36'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.01.15
@@ -23,12 +23,12 @@ ordinal: 230000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the reproducible human-run acceptance procedure for real audio and exact Codex 0.151.0 at `docs/design/codex-workbench-voice-acceptance.md`. This finalization leaf is the only owner of the nondeterministic microphone/service smoke.
+Own the reproducible clean-process human acceptance procedure for exact Codex 0.151.0 text plus real audio. Deterministic module/process/browser owners must pass first. Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The procedure starts a clean Archboard process and dedicated signed-in home, verifies exact 0.151.0/effective SQLite readiness, and records prerequisites and actionable failure evidence.
-- [ ] #2 The smoke proves real audio, a quick capable coordinator answer, one bounded board write, busy-workhorse queue or permitted steer, semantic callback speech, one eligible spoken approval with visual fallback, Stop, serialized restart, and graceful shutdown.
-- [ ] #3 The procedure distinguishes automated gates from manual observations, records no credentials or derived media, and requires all deterministic module, process, build, and browser owners to pass first.
+- [ ] #1 The procedure starts clean Archboard/dedicated signed-in roots, proves config.toml/effective SQLite and exact version, creates/links a workhorse, submits text, observes authoritative timeline, interrupts a turn, and recovers after reconnect without duplicate input.
+- [ ] #2 The voice path proves real audio, quick capable coordinator response, one bounded board write, queue or permitted steer, semantic callback, one final-user-derived eligible spoken approval with visual fallback, Stop, restart, and shutdown.
+- [ ] #3 It distinguishes automated gates from manual observations, records no credentials/media, captures actionable failure evidence, and requires every deterministic owner before the smoke.
 <!-- AC:END -->
