@@ -4,7 +4,7 @@ title: Reduce one typed Codex app-server session
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 17:27'
+updated_date: '2026-08-30 18:07'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -16,6 +16,7 @@ references:
   - docs/design/codex-workbench-authored-contracts.md
 modified_files:
   - src/runtime/codex-session
+  - src/runtime/codex-session/tests/session.test.ts
 parent_task_id: TASK-143.01
 priority: high
 type: task
@@ -35,4 +36,5 @@ Reduce one exact Codex 0.151.0 app-server session behind typed ports. This is th
 - [ ] #3 Effective-storage proof requires initialize.codexHome and config/read origins to identify the restrictive CODEX_HOME/config.toml sqlite_home, reconciles configRequirements/managed policy and CODEX roots by canonical realpath, and refuses null, redirected, conflicting, symlink-escaped, or unowned stores.
 - [ ] #4 The public port has exactly the authored initialize/config/account/model, thread/page/settings, turn, six queue, injection, realtime/timeline, and three auxiliary response method names. Page methods return one decoded page; authority callers exhaust them with cursor-loop detection and tool/UI callers use epoch/method/query-bound cursors.
 - [ ] #5 expectedTurnId is mandatory on steer. Non-idempotent mutations classify delivered, not_delivered, or outcome_unknown and never retry blindly; raw decoded realtime alone crosses to TASK-143.02.03.
+- [ ] #6 src/runtime/codex-session/tests/session.test.ts exhausts initialize ordering, pre-response buffering, capabilities, all login/refusal variants, storage proof, reverse requests, pagination, queue/turn/realtime methods, steer identity, and all three mutation outcomes through the typed transport port.
 <!-- AC:END -->

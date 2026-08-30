@@ -119,6 +119,7 @@ agent policy, or cross-module composition to a cheaper model.
    decisions, named owner path, neighbors, and public tests.
 2. Create an isolated worktree with the model/effort class above. The worker
    marks the leaf In Progress and records its researched implementation plan.
+   Its dispatch prompt supplies the exact parent callback thread.
 3. Keep code and focused verification inside the named seam. A discovered
    contract change returns to the parent instead of leaking into a peer leaf.
 4. Review independently with `gpt-5.6-sol`: medium for broad code review,
@@ -132,6 +133,16 @@ agent policy, or cross-module composition to a cheaper model.
    Backlog.
 6. Run `bun run check` at TASK-144, production composition, text UI, voice UI,
    and final TASK-143 boundaries.
+
+Every delegated thread calls `codex_app__send_message_to_thread` for the exact
+parent before its local final response. A worker reports `READY_FOR_REVIEW`, or
+conditionally `PLAN_APPROVAL_REQUIRED` / `BLOCKED`, with this complete envelope:
+`SOURCE`, `STATUS`, `BASE`, immutable implementation `HEAD`, `CHANGED_SCOPE`,
+`VALIDATION`, `PRESERVED_WORK_AUDIT`, `REMAINING_RISK`, and `PARENT_ACTION`. A
+reviewer reports `REVIEW_FINDINGS` or `REVIEW_CLEAN` with the same core fields
+plus complete `FINDINGS`. The parent owns Backlog acceptance and finalization;
+a worker never reports `FINALIZED` and a missing callback is not replaced by
+parent polling.
 
 ## Boundary reviews
 
