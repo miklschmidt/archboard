@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 21:06'
+updated_date: '2026-08-30 21:29'
 labels: []
 dependencies:
   - TASK-143.01.12
@@ -59,6 +59,8 @@ Delegation profile: gpt-5.6-luna, max.
 13. Move notification union completeness to production conformance metadata derived from the exact generated tree, require exact path equality with named challenge cases, and cover every generated reachable closed union/discriminator including the reviewer omissions while preserving intentional JsonValue openness.
 
 14. Add deterministic fake-executable conformance tests for generation failure, count/hash mismatches, successful generation, and temporary-directory cleanup after every outcome without weakening normal manifest expectations or duplicating TASK-143.01.13 ownership.
+
+15. Make every generated union challenge decode a valid prepared branch before applying exactly one named target mutation, record permitted containing-union collapse only where necessary, and aggregate-audit all 281 prepared/mutated outcomes.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -73,4 +75,6 @@ Remediation 2026-08-30 (commit 056389e): replaced the fail-open notification fal
 Second remediation complete in commit 55ae4a2. Removed the workstation-local Codex generator path from normal module tests; exported an explicit-path, fail-closed conformance helper that checks codex-cli 0.151.0, generates into a fresh temporary directory, verifies 820 files and digest cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273, and cleans up. Manual helper validation against /home/msc/.cache/.bun/bin/codex passed with the exact version, count, and digest. Strict request/result/error/notification envelopes now reject extras and mutually exclusive result/error siblings. Notification challenge coverage is complete for the accepted method inventory and nested closed unions, including mcpServer/startupStatus/updated and windowsSandbox/setupCompleted; JsonValue extension points remain open by design. Validation: focused protocol 429 pass; bun run test:modules 863 pass; bun run test:repository 118 pass; bun run type-check pass; oxlint, oxfmt --check, and git diff --check pass. TASK-143.01.13 remains the owner of dependency pinning and root-check registration.
 
 Third remediation implemented in source commit 1276e4b (protocol-only). Added production metadata and fresh exact-tree derivation for all 281 reachable closed union/literal-discriminator paths across 81 ServerNotification methods, exact named challenge equality, and JsonValue-open coverage. Added deterministic fake-executable tests for generator failure, file-count mismatch, same-count byte mismatch, inventory mismatch, success, and temp cleanup. Validation: focused protocol/conformance 521 pass; test:modules 955 pass; test:repository 118 pass; type-check, oxlint, oxfmt, git diff --check, and manual /home/msc/.cache/.bun/bin/codex conformance all passed (codex-cli 0.151.0, 820 files, cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273). Acceptance criteria and task status intentionally remain unchanged for parent review; TASK-143.01.13 owns dependency/root-check integration.
+
+Fourth remediation complete in source commit 542cfa1. Corrected all seven fixture scaffolds: appMetadata siblings, uppercase externalAgentConfig itemType branches and children, and array-member mutations for activeFlags and verifications. Each generated challenge now prepares a decoder-valid branch, applies exactly one named replacement, records its physical target path and only exact regular-union containing paths, and the aggregate audit covers all 281 prepared/mutated outcomes. Validation: focused protocol/conformance 522 pass; test:modules 956 pass; test:repository 118 pass; type-check; oxlint; oxfmt --check; git diff --check; exact manual Codex conformance passed for codex-cli 0.151.0 with 820 files and sha256 cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273. Task status remains In Progress, acceptance criteria remain unchecked, and TASK-143.01.13 ownership was not duplicated.
 <!-- SECTION:NOTES:END -->
