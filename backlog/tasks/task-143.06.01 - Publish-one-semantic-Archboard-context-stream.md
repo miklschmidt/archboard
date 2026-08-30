@@ -1,10 +1,11 @@
 ---
 id: TASK-143.06.01
 title: Publish one semantic Archboard context stream
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-30 22:55'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -35,3 +36,18 @@ Delegation profile: gpt-5.6-luna, max.
 - [ ] #3 Brief generation is deterministic, bounded to realtime limits, marks truncation/ambiguity/staleness, and includes repository/workhorse/coordinator/board/pane/version/selection/claim/doing/cursor/compact description.
 - [ ] #4 Module tests prove each port independently, source classification, rapid focus/selection without settle delay, fresh on-demand reads, and no duplicate subscription/timer after reload.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Reconcile the existing semantic change-feed settle boundary, pane focus/selection sources, shared identity/timing, and frozen realtime context limits.
+2. Implement one instance-scoped semantic-context publisher with explicit settled-change, immediate focus, immediate selection, and on-demand fresh-brief ports, reusing the existing settle timer and canonical board truth.
+3. Add deterministic module tests for every port, source/noise filtering, rapid focus and selection, freshness, bounded truncation/ambiguity, reload-safe subscription lifetime, and absence of duplicate timers or board snapshots.
+4. Run focused publisher tests, complete module and repository lanes, both TypeScript projects, lint, format, diff and clean-status checks; record evidence without finalizing before independent review.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Parallel reservation at integration HEAD 863ec41 after removing the unjustified worker/reviewer caps: TASK-143.06.01 is dependency-ready and path-disjoint from all active work. It is dispatched now; later thread delivery remains dependency-gated on the instruction/session/link owners.
+<!-- SECTION:NOTES:END -->
