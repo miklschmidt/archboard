@@ -14,6 +14,7 @@ import {
 	pollUntil,
 	registerCanvasBase,
 } from "./support/agent-browser.ts";
+import type { NavigatorContract } from "./support/shell-contract-types.ts";
 
 type PanesBody = PanesReport & { success: boolean };
 type Requester = ReturnType<typeof createJsonRequester>;
@@ -223,16 +224,8 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
 
-	const desktop = await browser.eval<{
-		boardCount: number;
-		draftMarkers: string[];
-		humanFonts: Array<{ family: string; lineHeight: number; size: number }>;
-		initials: number;
-		navWidth: number;
-		primaryVariants: string[];
-		targets: Array<{ height: number; width: number }>;
-	}>(
-		`(() => { const nav = document.querySelector('.board-nav'); const primaryRows = [...document.querySelectorAll('.board-group[aria-label="primary"] .board-nav-row')]; const targets = [...document.querySelectorAll('.board-nav-tools button, .board-preview-control, .board-variants .board-nav-row, .scratch-top, .name-button')]; const humanCopy = [...document.querySelectorAll('.board-group-copy strong, .board-group-copy small, .board-nav-variant, .board-nav-markers > span')]; return { boardCount: document.querySelectorAll('.board-group:not(.scratch-section)').length, draftMarkers: [...document.querySelectorAll('.board-group[aria-label="draft-probe"] .board-nav-markers > span')].map(node => node.textContent.trim()), humanFonts: humanCopy.map(node => { const style = getComputedStyle(node); return { family: style.fontFamily, size: parseFloat(style.fontSize), lineHeight: parseFloat(style.lineHeight) }; }), initials: document.querySelectorAll('.board-glyph').length, navWidth: nav.getBoundingClientRect().width, primaryVariants: primaryRows.map(row => row.dataset.boardKey), targets: targets.map(node => { const rect = node.getBoundingClientRect(); return { width: rect.width, height: rect.height }; }) }; })()`,
+	const desktop = await browser.eval<NavigatorContract>(
+		`(() => { const nav = document.querySelector('.board-nav'); const primaryRows = [...document.querySelectorAll('.board-group[aria-label="primary"] .board-nav-row')]; const targets = [...document.querySelectorAll('.board-nav-tools button, .board-preview-control, .board-variants .board-nav-row, .scratch-top, .name-button')]; const humanCopy = [...document.querySelectorAll('.board-group-copy strong, .board-group-copy small, .board-nav-variant')]; const technicalCopy = [...document.querySelectorAll('.board-nav-markers > span')]; return { boardCount: document.querySelectorAll('.board-group:not(.scratch-section)').length, draftMarkers: [...document.querySelectorAll('.board-group[aria-label="draft-probe"] .board-nav-markers > span')].map(node => node.textContent.trim()), humanFonts: humanCopy.map(node => { const style = getComputedStyle(node); return { family: style.fontFamily, size: parseFloat(style.fontSize), lineHeight: parseFloat(style.lineHeight), transform: style.textTransform }; }), initials: document.querySelectorAll('.board-glyph').length, navWidth: nav.getBoundingClientRect().width, primaryVariants: primaryRows.map(row => row.dataset.boardKey), targets: targets.map(node => { const rect = node.getBoundingClientRect(); return { width: rect.width, height: rect.height }; }), technicalFonts: technicalCopy.map(node => getComputedStyle(node).fontFamily.toLowerCase()) }; })()`,
 	);
 	expect(desktop.boardCount).toBe(6);
 	expect(desktop.navWidth).toBeCloseTo(184, 0);
@@ -240,9 +233,13 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 	expect(desktop.draftMarkers).toEqual(["open", "draft"]);
 	expect(desktop.initials).toBe(0);
 	expect(
-		desktop.humanFonts.every(({ family, size }) => /Inter|ui-sans/i.test(family) && size >= 12),
+		desktop.humanFonts.every(
+			({ family, size, transform }) =>
+				family.toLowerCase().includes("archboard onest") && size >= 12 && transform === "none",
+		),
 	).toBe(true);
 	expect(desktop.humanFonts.every(({ lineHeight, size }) => lineHeight >= size * 1.18)).toBe(true);
+	expect(desktop.technicalFonts.every((family) => family.includes("archboard dm mono"))).toBe(true);
 	expect(desktop.targets.every(({ width, height }) => width >= 43.5 && height >= 43.5)).toBe(true);
 
 	await browser.run(["click", `[data-board-key="${primary}"]`]);

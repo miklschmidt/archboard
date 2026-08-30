@@ -18,74 +18,14 @@ import {
 	PERSISTENT_NOTICE_TEXT,
 	publishActionableNotice,
 } from "./support/fullscreen-presentation.ts";
-
-type PanesBody = { paneCount?: number; panes?: Array<{ board?: string }> };
-type Metrics = { family: string; size: number; lineHeight: number; weight: number };
-type DesktopShell = {
-	navLeftOfCanvas: boolean;
-	navWidth: number;
-	workbenchBelowPane: boolean;
-	workbenchInsideCanvas: boolean;
-	columnsAlign: boolean;
-	canvasLargest: boolean;
-};
-type ThemeSnapshot = {
-	theme: "light" | "dark";
-	wordmark: string;
-	brandIconCount: number;
-	headerHeight: number;
-	selection: string;
-	status: string;
-	background: string;
-	inkContrast: number;
-	flatSurfaces: boolean;
-	shadowlessSurfaces: boolean;
-	visibleFocus: boolean;
-	boardIdentity: string;
-	level: string;
-	connectionState: string;
-	persistenceState: string;
-	paneIdentity: string;
-	legacyVaultLineCount: number;
-	boardLeftAligned: boolean;
-	tokens: string[];
-	wordmarkType: Metrics;
-	titleType: Metrics;
-	bodyType: Metrics;
-	kickerType: Metrics;
-	controlType: Metrics;
-	paneType: Metrics;
-	actionTargets: Array<{ width: number; height: number }>;
-	paneTarget: { width: number; height: number };
-	presentTarget: { width: number; height: number };
-};
-type PaneBarLayout = {
-	height: number;
-	tabCount: number;
-	tabHeights: number[];
-	focusedEdgeWidth: number;
-	focusedEdgeColor: string;
-	focusedDotColor: string;
-	labels: string[];
-};
-type ActivityLayout = {
-	lineCount: number;
-	linesFit: boolean;
-	panelFits: boolean;
-	canvasClear: boolean;
-	timestampsAlign: boolean;
-};
-type NoticeLayout = {
-	parentIsPanes: boolean;
-	insidePanes: boolean;
-	overlapsInspector: boolean;
-	width: number;
-	copyType: Metrics;
-	actionHeight: number;
-	dismissHeight: number;
-	flat: boolean;
-	text: string;
-};
+import type {
+	ActivityLayout,
+	DesktopShell,
+	NoticeLayout,
+	PaneBarLayout,
+	PanesBody,
+	ThemeSnapshot,
+} from "./support/shell-contract-types.ts";
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const serverPath = join(repoRoot, "src/server.ts");
 test("the desktop shell keeps its type, geometry, states, and touch targets at 1440x900", async () => {
@@ -136,6 +76,7 @@ test("the desktop shell keeps its type, geometry, states, and touch targets at 1
 		"fixedpoint to become the visible board",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
+	await browser.eval<boolean>("document.fonts.ready.then(() => true)");
 
 	const readTheme = () =>
 		browser.eval<ThemeSnapshot | null>(`(() => {
@@ -151,6 +92,11 @@ test("the desktop shell keeps its type, geometry, states, and touch targets at 1
 			const pane = document.querySelector('.pane-tab.focused');
 			const present = document.querySelector('.present-button');
 			const actions = [...document.querySelectorAll('.bar-actions .btn')];
+			const humanLabels = [
+				document.querySelector('.board-nav-title'),
+				document.querySelector('.selection-inspector-kicker'),
+				document.querySelector('.workbench-overview small'),
+			].filter(Boolean);
 			if (!shell || !bar || !wordmark || !open || !board || !meta || !level ||
 				!connection || !persistence || !pane || !present) return null;
 			const metrics = node => {
@@ -185,8 +131,14 @@ test("the desktop shell keeps its type, geometry, states, and touch targets at 1
 			const metaRect = meta.getBoundingClientRect();
 			return {
 				theme: shell.dataset.theme,
-				wordmark: wordmark.textContent.trim(),
-				brandIconCount: document.querySelectorAll('.bar-brand svg, .brand-mark').length,
+				wordmark: wordmark.getAttribute('aria-label'),
+				wordmarkMask: getComputedStyle(wordmark).maskImage ||
+					getComputedStyle(wordmark).webkitMaskImage,
+				wordmarkSize: (() => {
+					const rect = wordmark.getBoundingClientRect();
+					return { width: rect.width, height: rect.height };
+				})(),
+				unexpectedBrandIconCount: document.querySelectorAll('.bar-brand svg:not(.wordmark), .brand-mark').length,
 				headerHeight: bar.getBoundingClientRect().height,
 				selection: style.getPropertyValue('--selection').trim().toLowerCase(),
 				status: style.getPropertyValue('--status').trim().toLowerCase(),
@@ -207,7 +159,29 @@ test("the desktop shell keeps its type, geometry, states, and touch targets at 1
 					'--type-kicker', '--type-tech', '--type-body', '--type-control',
 					'--type-title', '--type-primary'
 				].map(name => style.getPropertyValue(name).trim()),
-				wordmarkType: metrics(wordmark),
+				weightTokens: [
+					'--weight-regular', '--weight-medium', '--weight-semibold', '--weight-bold'
+				].map(name => style.getPropertyValue(name).trim()),
+				wordmarkTracking: style.getPropertyValue('--wordmark-tracking').trim(),
+				fontChecks: [
+					document.fonts.check('400 14px "Archboard Onest"'),
+					document.fonts.check('500 14px "Archboard Onest"'),
+					document.fonts.check('600 14px "Archboard Onest"'),
+					document.fonts.check('700 14px "Archboard Onest"'),
+					document.fonts.check('400 10px "Archboard DM Mono"'),
+					document.fonts.check('500 10px "Archboard DM Mono"'),
+				],
+				fontResources: performance.getEntriesByType('resource')
+					.map(entry => entry.name)
+					.filter(name => /(?:Onest-wght|DMMono-(?:Regular|Medium)).*[.]ttf/.test(name)),
+				humanLabels: humanLabels.map(node => {
+					const value = getComputedStyle(node);
+					return {
+						family: value.fontFamily.toLowerCase(),
+						transform: value.textTransform,
+						weight: parseFloat(value.fontWeight),
+					};
+				}),
 				titleType: metrics(board),
 				bodyType: metrics(meta),
 				kickerType: metrics(level),
@@ -262,7 +236,10 @@ test("the desktop shell keeps its type, geometry, states, and touch targets at 1
 	expect(themes.map(({ theme }) => theme).toSorted()).toEqual(["dark", "light"]);
 	for (const snapshot of themes) {
 		expect(snapshot.wordmark).toBe("archboard");
-		expect(snapshot.brandIconCount).toBe(0);
+		expect(snapshot.wordmarkMask).toMatch(/archboard-wordmark(?:-[\w-]+)?[.]svg/);
+		expect(Math.abs(snapshot.wordmarkSize.width - 85.7815)).toBeLessThan(0.02);
+		expect(Math.abs(snapshot.wordmarkSize.height - 13.209)).toBeLessThan(0.02);
+		expect(snapshot.unexpectedBrandIconCount).toBe(0);
 		expect(snapshot.headerHeight).toBeCloseTo(56, 0);
 		expect(snapshot.selection).toBe("#155eef");
 		expect(snapshot.status).toBe("#a3e635");
@@ -285,17 +262,30 @@ test("the desktop shell keeps its type, geometry, states, and touch targets at 1
 			"14px/20px",
 			"16px/22px",
 		]);
-		expect(snapshot.wordmarkType).toMatchObject({ size: 18, lineHeight: 22, weight: 800 });
+		expect(snapshot.weightTokens).toEqual(["400", "500", "600", "700"]);
+		expect(Number.parseFloat(snapshot.wordmarkTracking)).toBeCloseTo(-0.02027027027, 6);
+		expect(snapshot.fontChecks).toEqual([true, true, true, true, true, true]);
+		expect(snapshot.fontResources).toHaveLength(3);
+		expect(
+			snapshot.fontResources.every((url) => new URL(url).origin === new URL(canvas.base).origin),
+		).toBe(true);
+		expect(snapshot.fontResources.join(" ")).toMatch(/Onest-wght.*DMMono-(?:Regular|Medium)/);
+		expect(snapshot.humanLabels).toHaveLength(3);
+		expect(
+			snapshot.humanLabels.every(
+				({ family, transform, weight }) =>
+					family.includes("archboard onest") && transform === "none" && [500, 600].includes(weight),
+			),
+		).toBe(true);
 		expect(snapshot.titleType).toMatchObject({ size: 14, lineHeight: 20, weight: 600 });
-		expect(snapshot.bodyType).toMatchObject({ size: 12, lineHeight: 16, weight: 500 });
-		expect(snapshot.kickerType).toMatchObject({ size: 9, lineHeight: 12, weight: 600 });
+		expect(snapshot.bodyType).toMatchObject({ size: 12, lineHeight: 16, weight: 400 });
+		expect(snapshot.kickerType).toMatchObject({ size: 9, lineHeight: 12, weight: 500 });
 		expect(snapshot.controlType).toMatchObject({ size: 13, lineHeight: 18, weight: 600 });
 		expect(snapshot.paneType).toMatchObject({ size: 13, lineHeight: 18, weight: 600 });
-		expect(snapshot.wordmarkType.family).toContain("inter");
-		expect(snapshot.titleType.family).toContain("inter");
-		expect(snapshot.bodyType.family).toContain("inter");
-		expect(snapshot.controlType.family).toContain("inter");
-		expect(snapshot.kickerType.family).toMatch(/mono|consolas/);
+		expect(snapshot.titleType.family).toContain("archboard onest");
+		expect(snapshot.bodyType.family).toContain("archboard onest");
+		expect(snapshot.controlType.family).toContain("archboard onest");
+		expect(snapshot.kickerType.family).toContain("archboard dm mono");
 		expect(
 			snapshot.actionTargets.every(({ width, height }) => width >= 43.5 && height >= 43.5),
 		).toBe(true);
@@ -493,7 +483,7 @@ test("the desktop shell keeps its type, geometry, states, and touch targets at 1
 	expect(notice.overlapsInspector).toBe(false);
 	expect(notice.width).toBeCloseTo(390, 0);
 	expect(notice.copyType).toMatchObject({ size: 12, lineHeight: 16, weight: 400 });
-	expect(notice.copyType.family).toContain("inter");
+	expect(notice.copyType.family).toContain("archboard onest");
 	expect(notice.actionHeight).toBeGreaterThanOrEqual(43.5);
 	expect(notice.dismissHeight).toBeGreaterThanOrEqual(43.5);
 	expect(notice.flat).toBe(true);

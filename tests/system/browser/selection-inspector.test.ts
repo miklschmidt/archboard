@@ -17,29 +17,13 @@ import {
 	registerCanvasBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
+import type { InspectorContract } from "./support/shell-contract-types.ts";
 
 type Panes = {
 	paneCount: number;
 	panes: Array<{ clientId: string; board: string; place: string }>;
 };
 type InspectorView = { state: string | null; text: string; pane: string; title: string };
-type TypeMetrics = { family: string; size: number; lineHeight: number };
-type InspectorContract = {
-	sections: string[];
-	titleType: TypeMetrics;
-	statusType: TypeMetrics;
-	kickerType: TypeMetrics;
-	sectionType: TypeMetrics;
-	labelType: TypeMetrics;
-	humanType: TypeMetrics;
-	technicalType: TypeMetrics;
-	copyType: TypeMetrics;
-	controlType: TypeMetrics;
-	kickerContrast: number;
-	labelContrast: number;
-	openHeight: number;
-	focusHeight: number;
-};
 type ChangeFeed = { feedId: string; cursor: number; events: unknown[] };
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
@@ -112,7 +96,9 @@ function readInspectorContract(browser: AgentBrowserSession): Promise<InspectorC
 			return {
 				family: style.fontFamily.toLowerCase(),
 				size: parseFloat(style.fontSize),
-				lineHeight: parseFloat(style.lineHeight)
+				lineHeight: parseFloat(style.lineHeight),
+				weight: parseFloat(style.fontWeight),
+				transform: style.textTransform,
 			};
 		};
 		const rgb = value => (value.match(/[\\d.]+/g) ?? []).slice(0, 3).map(Number);
@@ -366,11 +352,17 @@ test(
 			);
 			expect(
 				types
-					.filter((_, typeIndex) => ![2, 6].includes(typeIndex))
-					.every((type) => type.family.includes("inter")),
+					.filter((_, typeIndex) => typeIndex !== 6)
+					.every((type) => type.family.includes("archboard onest") && type.transform === "none"),
 			).toBe(true);
-			expect(contract.kickerType.family).toContain("ui-monospace");
-			expect(contract.technicalType.family).toContain("ui-monospace");
+			expect(contract.technicalType.family).toContain("archboard dm mono");
+			expect(contract).toMatchObject({
+				kickerType: { weight: 500 },
+				sectionType: { weight: 600 },
+				labelType: { weight: 400 },
+				humanType: { weight: 500 },
+				technicalType: { weight: 400 },
+			});
 			expect(contract.kickerContrast).toBeGreaterThanOrEqual(4.5);
 			expect(contract.labelContrast).toBeGreaterThanOrEqual(4.5);
 			expect(contract.openHeight).toBeGreaterThanOrEqual(44);

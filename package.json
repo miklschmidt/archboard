@@ -42,6 +42,7 @@
 		"test:repository": "bun test --isolate tests/system/repository-policy",
 		"test:serial-browser": "bun tests/system/browser/run-browser-lane.ts tests/system/browser/human-edit-performance.test.ts tests/system/browser/fixed-point-document.test.ts tests/system/browser/malformed-geometry-recovery.test.ts tests/system/browser/pane-telemetry-recovery.test.ts tests/system/browser/arrow-binding-differential.test.ts tests/system/browser/finding-export.test.ts tests/system/browser/shell-layout.test.ts tests/system/browser/board-navigator.test.ts tests/system/browser/fullscreen-presentation.test.ts tests/system/browser/typed-text.test.ts tests/system/browser/live-session-convergence.test.ts tests/system/browser/server-update-ordering.test.ts tests/system/browser/hold-generation.test.ts tests/system/browser/human-hold-persistence.test.ts tests/system/browser/claim-interaction.test.ts tests/system/browser/selection-inspector.test.ts tests/system/browser/connected-path-focus.test.ts tests/system/browser/opener-settings.test.ts tests/system/browser/code-target-activation.test.ts",
 		"generate:cli-contract": "bun scripts/generate-cli-contract.ts",
+		"generate:wordmark": "bun scripts/generate-wordmark.ts",
 		"reload": "bun scripts/reload.ts"
 	},
 	"dependencies": {
@@ -70,6 +71,7 @@
 		"@vitejs/plugin-react": "6.1.0",
 		"backlog.md": "1.50.1",
 		"concurrently": "10.0.5",
+		"opentype.js": "1.3.4",
 		"oxfmt": "0.65.0",
 		"oxlint": "1.80.0",
 		"oxlint-tsgolint": "7.0.2001",

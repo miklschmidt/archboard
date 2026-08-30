@@ -122,8 +122,10 @@ export function BoardBar({
 	const writtenLabel = writtenElsewhere ? noteLabel(writtenElsewhere) : null;
 	return (
 		<header className="bar">
-			<div className="bar-brand" aria-label="archboard">
-				<span className="wordmark">archboard</span>
+			<div className="bar-brand">
+				<svg className="wordmark" aria-label="archboard">
+					<title>archboard</title>
+				</svg>
 			</div>
 
 			<div className="bar-board">
