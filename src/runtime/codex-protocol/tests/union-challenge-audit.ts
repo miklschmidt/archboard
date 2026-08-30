@@ -57,11 +57,13 @@ export function assertChallengeFailure(
 	const directPath = issuePath(error.issues[0]);
 	const targetPath = pathKey(mutation.targetPath);
 	const allPaths = nestedIssuePaths(error.issues[0]).map(pathKey);
-	const allowedContainingPaths = mutation.allowedContainingUnionPaths.map(pathKey);
+	const allowedContainingPaths = new Set(mutation.allowedContainingUnionPaths.map(pathKey));
 
 	// Discriminated schemas report the replacement directly. These exact
 	// containing paths cover the regular Zod union collapses in the fixtures.
 	expect(allPaths).toContain(targetPath);
 	const directKey = pathKey(directPath);
-	expect(directKey === targetPath || allowedContainingPaths.includes(directKey)).toBe(true);
+	if (allowedContainingPaths.has(directKey))
+		expect(error.issues[0]).toMatchObject({ code: "invalid_union" });
+	expect(directKey === targetPath || allowedContainingPaths.has(directKey)).toBe(true);
 }
