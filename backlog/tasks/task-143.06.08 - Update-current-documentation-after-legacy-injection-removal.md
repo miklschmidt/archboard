@@ -4,7 +4,7 @@ title: Update current documentation after legacy injection removal
 status: To Do
 assignee: []
 created_date: '2026-08-30 16:29'
-updated_date: '2026-08-30 17:54'
+updated_date: '2026-08-30 17:58'
 labels: []
 dependencies:
   - TASK-143.06.05
@@ -12,6 +12,11 @@ dependencies:
   - TASK-143.06.07
   - TASK-144.12
   - TASK-144.16
+references:
+  - docs/adr/0005-push-to-codex-via-app-server.md
+  - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
+  - docs/design/codex-workbench-authored-contracts.md
+  - docs/design/codex-workbench-delivery-map.md
 modified_files:
   - AGENTS.md
   - README.md
