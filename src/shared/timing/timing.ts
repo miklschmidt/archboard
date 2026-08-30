@@ -479,7 +479,6 @@ export const TEST_PANE_MESSAGE_TIMEOUT_MS = 2_000;
 
 /** Four LOCK_WATCH_MS sweeps cover a timestamp boundary and board_note delivery. */
 export const TEST_NOTE_WATCH_MESSAGE_TIMEOUT_MS = 4 * LOCK_WATCH_MS;
-
 /**
  * LOCK_POLL_MS observes a delivered note-watch frame without polling faster
  * than the lock-file machinery that carries the notification.
@@ -488,8 +487,9 @@ export const TEST_NOTE_WATCH_MESSAGE_POLL_MS = LOCK_POLL_MS;
 
 /** One LOCK_WATCH_MS bounds the board_note clearing frame after reload. */
 export const TEST_NOTE_WATCH_CLEAR_TIMEOUT_MS = LOCK_WATCH_MS;
-/** Clears one slow browser CLI round trip while still bounding retained-child cleanup. */
+/** Ordinary browser commands stay at 30s; the 10k-element initial render gets three windows, finite and not an SLA. */
 export const TEST_BROWSER_COMMAND_TIMEOUT_MS = BROWSER_EXPORT_TIMEOUT_MS;
+export const TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS = 3 * TEST_BROWSER_COMMAND_TIMEOUT_MS;
 /** Matches the existing loopback and lock polling cadence without busy-waiting. */
 export const TEST_BROWSER_POLL_MS = LOCK_POLL_MS;
 /** Extends the negative pane window past one debounce without reaching its settle cap. */

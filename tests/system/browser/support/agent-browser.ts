@@ -250,9 +250,14 @@ export interface AgentBrowserSession extends AsyncDisposable {
 	readonly namespace: string;
 	readonly socketDir: string;
 	readonly env: Readonly<Record<string, string>>;
-	run(argv: readonly string[], stdin?: string): Promise<string>;
+	run(argv: readonly string[], options?: BrowserCommandOptions): Promise<string>;
 	eval<T>(source: string): Promise<T>;
 	close(): Promise<void>;
+}
+
+export interface BrowserCommandOptions {
+	readonly stdin?: string;
+	readonly timeoutMs?: number;
 }
 
 export async function createAgentBrowser(): Promise<AgentBrowserSession> {
@@ -282,8 +287,16 @@ export async function createAgentBrowser(): Promise<AgentBrowserSession> {
 	let used = false;
 	let disposal: Promise<void> | null = null;
 
-	const run = (argv: readonly string[], stdin = ""): Promise<string> =>
-		new Promise((resolveRun, rejectRun) => {
+	const run = (argv: readonly string[], options: BrowserCommandOptions = {}): Promise<string> => {
+		const timeoutMs = options.timeoutMs ?? TEST_BROWSER_COMMAND_TIMEOUT_MS;
+		if (!Number.isFinite(timeoutMs) || !Number.isInteger(timeoutMs) || timeoutMs <= 0) {
+			return Promise.reject(
+				new Error(
+					`Agent-browser command timeout must be a positive finite integer; received ${timeoutMs}.`,
+				),
+			);
+		}
+		return new Promise((resolveRun, rejectRun) => {
 			if (closed && argv[0] !== "close") {
 				rejectRun(new Error("Cannot run a command after closing the agent-browser session."));
 				return;
@@ -305,11 +318,8 @@ export async function createAgentBrowser(): Promise<AgentBrowserSession> {
 			const graceful = setTimeout(() => {
 				timedOut = true;
 				child.kill("SIGTERM");
-			}, TEST_BROWSER_COMMAND_TIMEOUT_MS);
-			const forced = setTimeout(
-				() => child.kill("SIGKILL"),
-				TEST_BROWSER_COMMAND_TIMEOUT_MS + TEST_BROWSER_POLL_MS,
-			);
+			}, timeoutMs);
+			const forced = setTimeout(() => child.kill("SIGKILL"), timeoutMs + TEST_BROWSER_POLL_MS);
 			child.stdout.on("data", (chunk: Buffer) => (stdout += chunk.toString()));
 			child.stderr.on("data", (chunk: Buffer) => (stderr += chunk.toString()));
 			child.once("error", (error) => {
@@ -329,13 +339,16 @@ export async function createAgentBrowser(): Promise<AgentBrowserSession> {
 					const exit = signal ? `signal ${signal}` : `exit ${code ?? "unknown"}`;
 					rejectRun(
 						new Error(
-							`agent-browser ${argv[0] ?? "command"} ended with ${exit}: ${(stderr || stdout).trim()}`,
+							timedOut
+								? `agent-browser ${argv[0] ?? "command"} timed out after ${timeoutMs}ms and ended with ${exit}: ${(stderr || stdout).trim()}`
+								: `agent-browser ${argv[0] ?? "command"} ended with ${exit}: ${(stderr || stdout).trim()}`,
 						),
 					);
 				}
 			});
-			child.stdin.end(stdin);
+			child.stdin.end(options.stdin ?? "");
 		});
+	};
 
 	const cleanup = async (): Promise<void> => {
 		if (disposal) return disposal;
@@ -372,7 +385,7 @@ export async function createAgentBrowser(): Promise<AgentBrowserSession> {
 		env,
 		run,
 		async eval<T>(source: string): Promise<T> {
-			const output = await run(["eval", "--stdin"], source);
+			const output = await run(["eval", "--stdin"], { stdin: source });
 			try {
 				return JSON.parse(output) as T;
 			} catch (error) {

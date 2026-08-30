@@ -9,6 +9,7 @@ import {
 	REPORT_PROGRESS_MS,
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
 	TEST_BROWSER_POLL_MS,
+	TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS,
 } from "../../../src/shared/timing/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { processExists, startOwnedCanvas } from "../support/owned-canvas.ts";
@@ -260,7 +261,9 @@ test(
 			doing: "checking human editing performance",
 		});
 
-		await browser.run(["open", canvas.base]);
+		await browser.run(["open", canvas.base], {
+			timeoutMs: TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS,
+		});
 		const panes = await pollUntil(
 			() => request<{ paneCount: number }>("/api/panes"),
 			(response) => response.body.paneCount === 1,
