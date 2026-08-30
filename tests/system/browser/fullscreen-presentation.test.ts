@@ -18,11 +18,14 @@ import {
 	registerCanvasBase,
 } from "./support/agent-browser.ts";
 import {
+	PERSISTENT_NOTICE_TEXT,
 	paneAppAction,
 	paneIdentities,
 	paneRects,
+	publishActionableNotice,
 	readExitButton,
 	readPageView,
+	readShellNotice,
 	seedBoard,
 	waitForPanes,
 } from "./support/fullscreen-presentation.ts";
@@ -144,8 +147,14 @@ test(
 			const rect = node.getBoundingClientRect();
 			return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
 		});
-		return window.__task139PaneRects;
-	})()`);
+			return window.__task139PaneRects;
+		})()`);
+		expect(await publishActionableNotice(browser)).toBe(true);
+		expect(await readShellNotice(browser)).toEqual({
+			text: PERSISTENT_NOTICE_TEXT,
+			action: "Opener settings",
+			visible: true,
+		});
 
 		await browser.run(["click", 'button[aria-label="Present Pane A fullscreen"]']);
 		const entered = await pollUntil(
@@ -163,6 +172,11 @@ test(
 			hidden: true,
 			inert: true,
 			rect: { x: 0, y: 0, width: 0, height: 0 },
+		});
+		expect(await readShellNotice(browser)).toEqual({
+			text: PERSISTENT_NOTICE_TEXT,
+			action: "Opener settings",
+			visible: false,
 		});
 
 		await browser.run(["click", 'button[aria-label="Present Pane B"]']);
@@ -234,8 +248,13 @@ test(
 				const rect = node.getBoundingClientRect();
 				return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
 			});
-		})()`),
+			})()`),
 		).toEqual(beforeDomRects);
+		expect(await readShellNotice(browser)).toEqual({
+			text: PERSISTENT_NOTICE_TEXT,
+			action: "Opener settings",
+			visible: true,
+		});
 
 		await browser.run(["click", 'button[aria-label="Present Pane B fullscreen"]']);
 		await pollUntil(
@@ -273,10 +292,17 @@ test(
 		);
 		expect(entryRefusal.fullscreen).toBe(false);
 		await browser.run(["click", ".notice-dismiss"]);
+		const preservedNotice = await pollUntil(
+			() => readShellNotice(browser),
+			(view) => view.text === PERSISTENT_NOTICE_TEXT && view.action === "Opener settings",
+			"the refused entry notice to reveal the preserved actionable notice",
+		);
+		expect(preservedNotice.visible).toBe(true);
+		await browser.run(["click", ".notice-dismiss"]);
 		await pollUntil(
 			() => browser.eval<boolean>("document.querySelector('.notice-shell') === null"),
 			Boolean,
-			"the refused entry notice to dismiss honestly",
+			"the ordinary actionable notice to dismiss",
 		);
 		await browser.eval<boolean>(`(() => {
 		document.querySelector('.shell').requestFullscreen = window.__task139Request;
