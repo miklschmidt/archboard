@@ -123,10 +123,11 @@ leaf. A sibling leaf is a new responsibility, not an unannounced reuse of the
 thread.
 
 The root assigns one independent reviewer thread to each leaf review loop. That
-same reviewer rereviews the complete fixed worker `BASE` through each immutable
-remediation `HEAD` until `REVIEW_CLEAN`; the reviewer is not replaced between
-passes. The root validates callbacks, challenges findings against source and
-acceptance, and returns valid findings to the same worker. Only after clean
+same reviewer rereviews the complete `BASE..HEAD` range within one fixed review
+epoch until `REVIEW_CLEAN`; neither reviewer nor `BASE` changes inside that
+epoch. The queued-reconciliation transition below is the sole permitted new
+`BASE` epoch. The root validates callbacks, challenges findings against source
+and acceptance, and returns valid findings to the same worker. Only after clean
 review does the root reconcile the worker commit, run dependent validation,
 finalize the leaf through Backlog, and commit that finalization on the
 integration branch. It requires a clean checkout, advances the integration
@@ -156,14 +157,26 @@ focused gate invalidated by the change. This loop repeats until validation
 passes. Only then may the root finalize that leaf, commit finalization, require
 a clean checkout, remove it from the active set, and advance integration.
 
-The root then drains queued reviewed leaves one at a time onto the new clean
-committed `HEAD`, running each leaf's dependent validation before finalization.
-A reconciliation conflict or changed validation result returns to that leaf's
-same worker and reviewer loop; it never receives a root patch or replacement
-thread. An irreparable or ambiguous ownership, cross-leaf causality, or
-recovery path callbacks the supervising source thread without creating another
-worker or coordinator tier. Readiness is recomputed only after the exclusive
-recovery and queued reconciliation lane is empty and clean.
+Each queued record preserves its original implementation `BASE` and `HEAD`,
+reviewed patch, changed-path set, validation evidence, `REVIEW_CLEAN`, and exact
+worker/reviewer identities. To drain one queued leaf, the root freezes the new
+clean committed integration `HEAD` as that leaf's queued-reconciliation `BASE`
+and sends the complete provenance record to the same worker. The worker alone
+transplants the leaf's named-scope commits onto that base and returns a new
+immutable `HEAD`; the root resolves no conflict. This is the sole explicit
+fixed-`BASE` epoch transition.
+
+The same reviewer verifies patch and intent equivalence against the preserved
+record and rereviews the complete new queued-reconciliation `BASE..HEAD` range.
+Repository checks prove the rebased diff contains only the leaf's named paths
+plus its Backlog task record and preserves the reviewed intended change. If the
+patch cannot be isolated, enters another leaf's ownership, or changes the
+leaf's contract, the root callbacks the supervisor. Only after the new range is
+`REVIEW_CLEAN` may the root reconcile it and run that leaf's dependent
+validation before finalization. A changed validation result enters the ordinary
+exclusive failure loop using this new fixed `BASE`, same worker, and same
+reviewer. Readiness is recomputed only after the exclusive recovery and queued
+reconciliation lane is empty, finalized, committed, and clean.
 
 ## Dependency waves
 
@@ -218,9 +231,12 @@ recovery and queued reconciliation lane is empty and clean.
 6. If validation failure has ambiguous ownership or cross-leaf causality, pause
    the lane and callback the supervising source; do not patch in the root or
    create a replacement worker, reviewer, or coordinator.
-7. A queued leaf that conflicts or validates differently returns to its same
-   worker/reviewer loop. Recompute readiness only after recovery and the queued
-   integration lane are empty, finalized, committed, and clean.
+7. For each queued leaf, preserve its original reviewed range/evidence, freeze
+   the current clean integration `HEAD` as its sole new reconciliation `BASE`,
+   have the same worker transplant only named-scope commits, and have the same
+   reviewer prove patch/provenance equivalence plus the complete new range.
+   Reject cross-owner or contract-changing replay to the supervisor; reconcile
+   and validate only after the new epoch is `REVIEW_CLEAN`.
 8. Run `bun run check` at TASK-144, production composition, text UI, voice UI,
    and final TASK-143 boundaries.
 
