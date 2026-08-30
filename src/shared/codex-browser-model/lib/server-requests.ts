@@ -8,8 +8,8 @@ import {
 import {
 	FileChangeSchema,
 	JsonValueSchema,
-	boundedWireText,
-	optionalNullableText,
+	boundedText,
+	wireText,
 } from "./server-request-scalars.js";
 import type { IdentitySchemas } from "./scalars.js";
 
@@ -29,12 +29,12 @@ export const SERVER_REQUEST_METHODS = [
 
 const WireNumberSchema = z.number();
 const WireIntegerSchema = z.number().int();
-const OptionalWireTextSchema = (maximum: number) => boundedWireText(maximum).optional();
+const OptionalWireTextSchema = () => wireText().optional();
 
 function createMcpElicitationSchema() {
 	const CommonStringFields = {
-		title: OptionalWireTextSchema(256),
-		description: OptionalWireTextSchema(2048),
+		title: OptionalWireTextSchema(),
+		description: OptionalWireTextSchema(),
 	};
 	const StringSchema = z
 		.object({
@@ -43,7 +43,7 @@ function createMcpElicitationSchema() {
 			minLength: WireIntegerSchema.nonnegative().optional(),
 			maxLength: WireIntegerSchema.nonnegative().optional(),
 			format: z.enum(["email", "uri", "date", "date-time"]).optional(),
-			default: boundedWireText(256).optional(),
+			default: wireText().optional(),
 		})
 		.strict();
 	const NumberSchema = z
@@ -62,14 +62,12 @@ function createMcpElicitationSchema() {
 			default: z.boolean().optional(),
 		})
 		.strict();
-	const ConstOptionSchema = z
-		.object({ const: boundedWireText(256), title: boundedWireText(256) })
-		.strict();
+	const ConstOptionSchema = z.object({ const: wireText(), title: wireText() }).strict();
 	const UntitledSingleSelectSchema = z
 		.object({
 			type: z.literal("string"),
 			...CommonStringFields,
-			enum: z.array(boundedWireText(256)),
+			enum: z.array(wireText()),
 			default: z.string().optional(),
 		})
 		.strict()
@@ -98,8 +96,8 @@ function createMcpElicitationSchema() {
 		.object({
 			type: z.literal("string"),
 			...CommonStringFields,
-			enum: z.array(boundedWireText(256)),
-			enumNames: z.array(boundedWireText(256)).optional(),
+			enum: z.array(wireText()),
+			enumNames: z.array(wireText()).optional(),
 			default: z.string().optional(),
 		})
 		.strict()
@@ -109,7 +107,7 @@ function createMcpElicitationSchema() {
 			}
 		});
 	const UntitledMultiItemsSchema = z
-		.object({ type: z.literal("string"), enum: z.array(boundedWireText(256)) })
+		.object({ type: z.literal("string"), enum: z.array(wireText()) })
 		.strict();
 	const TitledMultiItemsSchema = z.object({ anyOf: z.array(ConstOptionSchema) }).strict();
 	const UntitledMultiSelectSchema = z
@@ -119,7 +117,7 @@ function createMcpElicitationSchema() {
 			minItems: WireIntegerSchema.nonnegative().optional(),
 			maxItems: WireIntegerSchema.nonnegative().optional(),
 			items: UntitledMultiItemsSchema,
-			default: z.array(boundedWireText(256)).optional(),
+			default: z.array(wireText()).optional(),
 		})
 		.strict()
 		.superRefine((value, context) => {
@@ -134,7 +132,7 @@ function createMcpElicitationSchema() {
 			minItems: WireIntegerSchema.nonnegative().optional(),
 			maxItems: WireIntegerSchema.nonnegative().optional(),
 			items: TitledMultiItemsSchema,
-			default: z.array(boundedWireText(256)).optional(),
+			default: z.array(wireText()).optional(),
 		})
 		.strict()
 		.superRefine((value, context) => {
@@ -153,10 +151,10 @@ function createMcpElicitationSchema() {
 	const PrimitiveSchema = z.union([StringSchema, NumberSchema, BooleanSchema, EnumSchema]);
 	const SchemaSchema = z
 		.object({
-			$schema: OptionalWireTextSchema(2048),
+			$schema: OptionalWireTextSchema(),
 			type: z.literal("object"),
 			properties: z.record(z.string(), PrimitiveSchema),
-			required: z.array(boundedWireText(256)).optional(),
+			required: z.array(wireText()).optional(),
 		})
 		.strict();
 	return { SchemaSchema, PrimitiveSchema };
@@ -176,29 +174,27 @@ export function createServerRequestSchemas(identities: IdentitySchemas) {
 		.strict();
 	const NetworkApprovalContextSchema = z
 		.object({
-			host: boundedWireText(2048),
+			host: wireText(),
 			protocol: z.enum(["http", "https", "socks5Tcp", "socks5Udp"]),
 		})
 		.strict();
 	const FileSystemSpecialPathSchema = z.discriminatedUnion("kind", [
 		z.object({ kind: z.literal("root") }).strict(),
 		z.object({ kind: z.literal("minimal") }).strict(),
-		z
-			.object({ kind: z.literal("project_roots"), subpath: boundedWireText(16_384).nullable() })
-			.strict(),
+		z.object({ kind: z.literal("project_roots"), subpath: wireText().nullable() }).strict(),
 		z.object({ kind: z.literal("tmpdir") }).strict(),
 		z.object({ kind: z.literal("slash_tmp") }).strict(),
 		z
 			.object({
 				kind: z.literal("unknown"),
-				path: boundedWireText(16_384),
-				subpath: boundedWireText(16_384).nullable(),
+				path: wireText(),
+				subpath: wireText().nullable(),
 			})
 			.strict(),
 	]);
 	const FileSystemPathSchema = z.discriminatedUnion("type", [
-		z.object({ type: z.literal("path"), path: boundedWireText(16_384) }).strict(),
-		z.object({ type: z.literal("glob_pattern"), pattern: boundedWireText(16_384) }).strict(),
+		z.object({ type: z.literal("path"), path: wireText() }).strict(),
+		z.object({ type: z.literal("glob_pattern"), pattern: wireText() }).strict(),
 		z.object({ type: z.literal("special"), value: FileSystemSpecialPathSchema }).strict(),
 	]);
 	const FileSystemEntrySchema = z
@@ -206,8 +202,8 @@ export function createServerRequestSchemas(identities: IdentitySchemas) {
 		.strict();
 	const AdditionalFileSystemPermissionsSchema = z
 		.object({
-			read: z.array(boundedWireText(16_384)).nullable(),
-			write: z.array(boundedWireText(16_384)).nullable(),
+			read: z.array(wireText()).nullable(),
+			write: z.array(wireText()).nullable(),
 			globScanMaxDepth: WireIntegerSchema.optional(),
 			entries: z.array(FileSystemEntrySchema).optional(),
 		})
@@ -227,34 +223,34 @@ export function createServerRequestSchemas(identities: IdentitySchemas) {
 		})
 		.strict();
 	const NetworkPolicyAmendmentSchema = z
-		.object({ host: boundedWireText(2048), action: z.enum(["allow", "deny"]) })
+		.object({ host: wireText(), action: z.enum(["allow", "deny"]) })
 		.strict();
-	const ExecPolicyAmendmentSchema = z.array(boundedWireText(16_384));
+	const ExecPolicyAmendmentSchema = z.array(wireText());
 	const CommandActionSchema = z.discriminatedUnion("type", [
 		z
 			.object({
 				type: z.literal("read"),
-				command: boundedWireText(16_384),
-				name: boundedWireText(256),
-				path: boundedWireText(16_384),
+				command: wireText(),
+				name: wireText(),
+				path: wireText(),
 			})
 			.strict(),
 		z
 			.object({
 				type: z.literal("listFiles"),
-				command: boundedWireText(16_384),
-				path: boundedWireText(16_384).nullable(),
+				command: wireText(),
+				path: wireText().nullable(),
 			})
 			.strict(),
 		z
 			.object({
 				type: z.literal("search"),
-				command: boundedWireText(16_384),
-				query: boundedWireText(16_384).nullable(),
-				path: boundedWireText(16_384).nullable(),
+				command: wireText(),
+				query: wireText().nullable(),
+				path: wireText().nullable(),
 			})
 			.strict(),
-		z.object({ type: z.literal("unknown"), command: boundedWireText(16_384) }).strict(),
+		z.object({ type: z.literal("unknown"), command: wireText() }).strict(),
 	]);
 	const CommandExecutionApprovalDecisionSchema = z.union([
 		z.enum(["accept", "acceptForSession", "decline", "cancel"]),
@@ -277,11 +273,11 @@ export function createServerRequestSchemas(identities: IdentitySchemas) {
 		kind: z.enum(["command", "writeStdin"]),
 		startedAtMs: WireIntegerSchema,
 		approvalId: ApprovalIdSchema.nullable().optional(),
-		environmentId: boundedWireText(256).nullable(),
-		reason: optionalNullableText(16_384),
+		environmentId: wireText().nullable(),
+		reason: wireText().nullable().optional(),
 		networkApprovalContext: NetworkApprovalContextSchema.nullable().optional(),
-		command: boundedWireText(16_384).nullable().optional(),
-		cwd: boundedWireText(16_384).nullable().optional(),
+		command: wireText().nullable().optional(),
+		cwd: wireText().nullable().optional(),
 		commandActions: z.array(CommandActionSchema).nullable().optional(),
 		additionalPermissions: AdditionalPermissionProfileSchema.nullable().optional(),
 		proposedExecpolicyAmendment: ExecPolicyAmendmentSchema.nullable().optional(),
@@ -290,17 +286,17 @@ export function createServerRequestSchemas(identities: IdentitySchemas) {
 	}).strict();
 	const FileChangeRequestApprovalParamsSchema = RequestIdentityFieldsSchema.extend({
 		startedAtMs: WireIntegerSchema,
-		reason: optionalNullableText(16_384),
-		grantRoot: optionalNullableText(16_384),
+		reason: wireText().nullable().optional(),
+		grantRoot: wireText().nullable().optional(),
 	}).strict();
 	const ToolRequestUserInputOptionSchema = z
-		.object({ label: boundedWireText(256), description: boundedWireText(2048) })
+		.object({ label: wireText(), description: wireText() })
 		.strict();
 	const ToolRequestUserInputQuestionSchema = z
 		.object({
-			id: boundedWireText(256),
-			header: boundedWireText(256),
-			question: boundedWireText(4096),
+			id: wireText(),
+			header: wireText(),
+			question: wireText(),
 			isOther: z.boolean(),
 			isSecret: z.boolean(),
 			options: z.array(ToolRequestUserInputOptionSchema).nullable(),
@@ -316,10 +312,10 @@ export function createServerRequestSchemas(identities: IdentitySchemas) {
 		.object({
 			threadId: ThreadIdSchema,
 			turnId: TurnIdSchema.nullable(),
-			serverName: boundedWireText(256),
+			serverName: wireText(),
 			mode: z.literal("form"),
 			_meta: JsonValueSchema.nullable(),
-			message: boundedWireText(16_384),
+			message: wireText(),
 			requestedSchema: McpElicitationSchema,
 		})
 		.strict()
@@ -328,10 +324,10 @@ export function createServerRequestSchemas(identities: IdentitySchemas) {
 				.object({
 					threadId: ThreadIdSchema,
 					turnId: TurnIdSchema.nullable(),
-					serverName: boundedWireText(256),
+					serverName: wireText(),
 					mode: z.literal("openai/form"),
 					_meta: JsonValueSchema.nullable(),
-					message: boundedWireText(16_384),
+					message: wireText(),
 					requestedSchema: JsonValueSchema,
 				})
 				.strict(),
@@ -341,12 +337,12 @@ export function createServerRequestSchemas(identities: IdentitySchemas) {
 				.object({
 					threadId: ThreadIdSchema,
 					turnId: TurnIdSchema.nullable(),
-					serverName: boundedWireText(256),
+					serverName: wireText(),
 					mode: z.literal("url"),
 					_meta: JsonValueSchema.nullable(),
-					message: boundedWireText(16_384),
-					url: boundedWireText(2048),
-					elicitationId: boundedWireText(256),
+					message: wireText(),
+					url: wireText(),
+					elicitationId: wireText(),
 				})
 				.strict(),
 		);
@@ -355,10 +351,10 @@ export function createServerRequestSchemas(identities: IdentitySchemas) {
 			threadId: ThreadIdSchema,
 			turnId: TurnIdSchema,
 			itemId: ItemIdSchema,
-			environmentId: boundedWireText(256).nullable(),
+			environmentId: wireText().nullable(),
 			startedAtMs: WireIntegerSchema,
-			cwd: boundedWireText(16_384),
-			reason: boundedWireText(16_384).nullable(),
+			cwd: wireText(),
+			reason: wireText().nullable(),
 			permissions: RequestPermissionProfileSchema,
 		})
 		.strict();
@@ -367,59 +363,62 @@ export function createServerRequestSchemas(identities: IdentitySchemas) {
 			threadId: ThreadIdSchema,
 			turnId: TurnIdSchema,
 			callId: DynamicToolCallIdSchema,
-			namespace: boundedWireText(256).nullable(),
-			tool: boundedWireText(256),
+			namespace: wireText().nullable(),
+			tool: wireText(),
 			arguments: JsonValueSchema,
 		})
 		.strict();
 	const TokenRefreshParamsSchema = z
-		.object({ reason: z.literal("unauthorized"), previousAccountId: optionalNullableText(256) })
+		.object({
+			reason: z.literal("unauthorized"),
+			previousAccountId: wireText().nullable().optional(),
+		})
 		.strict();
 	const EmptyParamsSchema = z.object({}).strict();
 	const CurrentTimeReadParamsSchema = z.object({ threadId: ThreadIdSchema }).strict();
 	const PatchApprovalParamsSchema = z
 		.object({
 			conversationId: ThreadIdSchema,
-			callId: boundedWireText(256),
+			callId: wireText(),
 			fileChanges: z.record(z.string(), FileChangeSchema),
-			reason: boundedWireText(16_384).nullable(),
-			grantRoot: boundedWireText(16_384).nullable(),
+			reason: wireText().nullable(),
+			grantRoot: wireText().nullable(),
 		})
 		.strict();
 	const ParsedCommandSchema = z.discriminatedUnion("type", [
 		z
 			.object({
 				type: z.literal("read"),
-				cmd: boundedWireText(16_384),
-				name: boundedWireText(256),
-				path: boundedWireText(16_384),
+				cmd: wireText(),
+				name: wireText(),
+				path: wireText(),
 			})
 			.strict(),
 		z
 			.object({
 				type: z.literal("list_files"),
-				cmd: boundedWireText(16_384),
-				path: boundedWireText(16_384).nullable(),
+				cmd: wireText(),
+				path: wireText().nullable(),
 			})
 			.strict(),
 		z
 			.object({
 				type: z.literal("search"),
-				cmd: boundedWireText(16_384),
-				query: boundedWireText(16_384).nullable(),
-				path: boundedWireText(16_384).nullable(),
+				cmd: wireText(),
+				query: wireText().nullable(),
+				path: wireText().nullable(),
 			})
 			.strict(),
-		z.object({ type: z.literal("unknown"), cmd: boundedWireText(16_384) }).strict(),
+		z.object({ type: z.literal("unknown"), cmd: wireText() }).strict(),
 	]);
 	const ExecCommandApprovalParamsSchema = z
 		.object({
 			conversationId: ThreadIdSchema,
-			callId: boundedWireText(256),
+			callId: wireText(),
 			approvalId: ApprovalIdSchema.nullable(),
-			command: z.array(boundedWireText(16_384)),
-			cwd: boundedWireText(16_384),
-			reason: boundedWireText(16_384).nullable(),
+			command: z.array(wireText()),
+			cwd: wireText(),
+			reason: wireText().nullable(),
 			parsedCmd: z.array(ParsedCommandSchema),
 		})
 		.strict();
@@ -528,11 +527,11 @@ export function createServerRequestSchemas(identities: IdentitySchemas) {
 					.strict(),
 			})
 			.strict(),
-		z.object({ denied: z.object({ rejection: boundedWireText(16_384) }).strict() }).strict(),
+		z.object({ denied: z.object({ rejection: wireText() }).strict() }).strict(),
 		z.literal("timed_out"),
 		z.literal("abort"),
 	]);
-	const UserInputAnswerSchema = z.object({ answers: z.array(boundedWireText(16_384)) }).strict();
+	const UserInputAnswerSchema = z.object({ answers: z.array(wireText()) }).strict();
 	const UserInputResponseSchema = z
 		.object({ answers: z.record(z.string(), UserInputAnswerSchema) })
 		.strict();
@@ -543,13 +542,13 @@ export function createServerRequestSchemas(identities: IdentitySchemas) {
 			_meta: JsonValueSchema.nullable(),
 		})
 		.strict();
-	const DynamicToolOutputContentItemSchema = z.discriminatedUnion("type", [
-		z.object({ type: z.literal("inputText"), text: boundedWireText(16_384) }).strict(),
-		z.object({ type: z.literal("inputImage"), imageUrl: boundedWireText(2048) }).strict(),
-		z.object({ type: z.literal("inputAudio"), audioUrl: boundedWireText(2048) }).strict(),
-	]);
 	const DynamicToolCallResponseSchema = z
-		.object({ contentItems: z.array(DynamicToolOutputContentItemSchema), success: z.boolean() })
+		.object({
+			contentItems: z.tuple([
+				z.object({ type: z.literal("inputText"), text: boundedText(16_384) }).strict(),
+			]),
+			success: z.boolean(),
+		})
 		.strict();
 	const PermissionsResponseSchema = z
 		.object({

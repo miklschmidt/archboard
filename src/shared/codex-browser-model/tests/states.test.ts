@@ -21,6 +21,42 @@ test("browser DTOs cover reachable progress, partial, failure, and recovery stat
 			canAcceptDirectInput: false,
 			reason: "read only",
 		},
+		{
+			kind: "thread_link",
+			state: "inspect_only",
+			childId: null,
+			epoch: null,
+			threadId: identity.decoder.adoptThreadId("inspect-custom"),
+			source: { custom: "imported-client" },
+			status: "idle",
+			loaded: true,
+			canAcceptDirectInput: false,
+			reason: null,
+		},
+		{
+			kind: "thread_link",
+			state: "inspect_only",
+			childId: null,
+			epoch: null,
+			threadId: identity.decoder.adoptThreadId("inspect-subagent"),
+			source: { subAgent: "review" },
+			status: "active",
+			loaded: true,
+			canAcceptDirectInput: false,
+			reason: null,
+		},
+		{
+			kind: "thread_link",
+			state: "inspect_only",
+			childId: null,
+			epoch: null,
+			threadId: identity.decoder.adoptThreadId("inspect-unknown"),
+			source: "unknown",
+			status: "systemError",
+			loaded: false,
+			canAcceptDirectInput: false,
+			reason: "source is not classified",
+		},
 		{ kind: "queue", status: "reconnecting", entries: [] },
 		{
 			kind: "semantic_delivery",
@@ -57,4 +93,15 @@ test("browser DTOs cover reachable progress, partial, failure, and recovery stat
 	] as const;
 	for (const state of states)
 		expect(model.BrowserDtoSchema.safeParse(state as unknown).success).toBeTrue();
+	const inspectState = states[4];
+	if (inspectState?.kind !== "thread_link")
+		throw new Error("fixture is missing inspect-only state");
+	for (const source of [
+		{ custom: "imported-client", extra: true },
+		{ subAgent: { review: true } },
+		"future",
+	])
+		expect(
+			model.BrowserDtoSchema.safeParse({ ...inspectState, source } as unknown).success,
+		).toBeFalse();
 });
