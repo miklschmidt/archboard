@@ -27,7 +27,6 @@ const BOARD = LIVE_SESSION_BOARD;
 interface ElementsBody {
 	elements: ExcalidrawElement[];
 }
-
 interface PaneList {
 	paneCount: number;
 	panes: Array<{ board: string; clientId: string }>;
@@ -39,9 +38,8 @@ interface WriteBody {
 	elements?: ExcalidrawElement[];
 	error?: string;
 }
-
 interface ClaimBody {
-	claim: { holder: { kind?: string; reason?: string } };
+	claim: { holder: { id?: string; kind?: string; reason?: string; claimed?: boolean } };
 }
 
 interface ClaimCounts {
@@ -64,6 +62,14 @@ interface ClaimBanner {
 	take: string | null;
 	view: boolean | null;
 	what: string | null;
+	headerClaim: {
+		beacon: string;
+		label: string;
+		id: string;
+		labelType: [string, number, number];
+		idType: [string, number, number];
+		height: number;
+	} | null;
 }
 
 type Request = ReturnType<typeof createJsonRequester>;
@@ -164,6 +170,9 @@ const readBanner = (browser: AgentBrowserSession): Promise<ClaimBanner> =>
 	browser.eval(`(() => {
 		const app = ${EXCALIDRAW_APP_EXPRESSION};
 		const what = document.querySelector(".pane-claim-what");
+		const headerClaim = document.querySelector(".bar-claim");
+		const headerLabel = headerClaim?.querySelector(".claim-label");
+		const headerId = headerClaim?.querySelector(".claim-id");
 		return {
 			beacon: document.querySelector(".claim-beacon span")?.textContent?.trim() ?? null,
 			holder: document.querySelector(".claim-kicker")?.textContent?.trim() ?? null,
@@ -179,6 +188,18 @@ const readBanner = (browser: AgentBrowserSession): Promise<ClaimBanner> =>
 			bar: document.querySelector(".doing-now")?.textContent?.trim() ?? null,
 			view: app ? app.state.viewModeEnabled === true : null,
 			what: what?.textContent?.replace(/\\s+/g, " ").trim() ?? null,
+			headerClaim: headerClaim && headerLabel && headerId ? {
+				beacon: getComputedStyle(headerClaim.querySelector(".dot")).backgroundColor,
+				label: headerLabel.textContent?.trim() ?? "",
+				id: headerId.textContent?.trim() ?? "",
+				labelType: [getComputedStyle(headerLabel).fontFamily.toLowerCase(),
+					parseFloat(getComputedStyle(headerLabel).fontSize),
+					parseFloat(getComputedStyle(headerLabel).lineHeight)],
+				idType: [getComputedStyle(headerId).fontFamily.toLowerCase(),
+					parseFloat(getComputedStyle(headerId).fontSize),
+					parseFloat(getComputedStyle(headerId).lineHeight)],
+				height: headerClaim.getBoundingClientRect().height,
+			} : null,
 		};
 	})()`);
 
@@ -199,7 +220,7 @@ test(
 		await browser.run(["click", ".workbench-toggle"]);
 		const initial = await readBanner(browser);
 		expect(initial).toMatchObject({ live: "polite", pane: "Pane A", state: "ready" });
-
+		expect(initial.headerClaim).toBeNull();
 		const claimWhy = "redrawing the payment path";
 		const claim = await request<ClaimBody>(`/api/boards/claim?board=${BOARD}`, {
 			method: "POST",
@@ -208,6 +229,7 @@ test(
 		expect(claim.status).toBe(200);
 		expect(claim.body.claim.holder.kind).toBe("agent");
 		expect(claim.body.claim.holder.reason).toBe(claimWhy);
+		expect(claim.body.claim.holder.claimed).toBe(true);
 		const claimed = await pollUntil(
 			() => readBanner(browser),
 			(value) => value.reason === claimWhy,
@@ -224,6 +246,16 @@ test(
 		expect(claimed.copy).toBe(
 			"Agent edits are serialized while this claim is active. You can return control at any time.",
 		);
+		expect(claimed.headerClaim).toMatchObject({
+			beacon: "rgb(163, 230, 53)",
+			label: "Claimed by",
+			id: claim.body.claim.holder.id,
+			height: 44,
+		});
+		expect(claimed.headerClaim?.labelType.slice(1)).toEqual([12, 16]);
+		expect(claimed.headerClaim?.idType.slice(1)).toEqual([10, 14]);
+		expect(claimed.headerClaim?.labelType[0]).toContain("inter");
+		expect(claimed.headerClaim?.idType[0]).toMatch(/mono|consolas/);
 
 		const beforeCamera = await claimCounts(browser);
 		expect(
@@ -289,6 +321,7 @@ test(
 			"the workbench to follow Pane B focus",
 		);
 		expect(paneB).toMatchObject({ state: "ready", what: null, bar: null, steps: [] });
+		expect(paneB.headerClaim).toBeNull();
 		await browser.run(["click", '.pane[aria-label="Pane A"] .excalidraw']);
 		const paneA = await pollUntil(
 			() => readBanner(browser),
@@ -424,9 +457,7 @@ test(
 			(value) => value.what === null && value.view === false,
 			"one activation to return editable control",
 		);
-		expect(returned.what).toBeNull();
-		expect(returned.view).toBe(false);
-		expect(returned.state).toBe("ready");
+		expect(returned).toMatchObject({ what: null, view: false, state: "ready", headerClaim: null });
 
 		const lost = await request<WriteBody>(`/api/elements?board=${BOARD}`, {
 			method: "POST",
@@ -450,6 +481,7 @@ test(
 			"the disconnected pane to fail closed as held",
 		);
 		expect(disconnected).toMatchObject({ view: true, state: "offline" });
+		expect(disconnected.headerClaim).toBeNull();
 		const reconnected = await pollUntil(
 			() => readBanner(browser),
 			(value) => value.view === false && value.state === "ready",

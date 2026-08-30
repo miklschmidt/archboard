@@ -14,8 +14,13 @@ import {
 	pollUntil,
 	registerCanvasBase,
 } from "./support/agent-browser.ts";
+import {
+	PERSISTENT_NOTICE_TEXT,
+	publishActionableNotice,
+} from "./support/fullscreen-presentation.ts";
 
 type PanesBody = { paneCount?: number; panes?: Array<{ board?: string }> };
+type Metrics = { family: string; size: number; lineHeight: number; weight: number };
 type DesktopShell = {
 	navLeftOfCanvas: boolean;
 	navWidth: number;
@@ -23,8 +28,6 @@ type DesktopShell = {
 	workbenchInsideCanvas: boolean;
 	columnsAlign: boolean;
 	canvasLargest: boolean;
-	actionHeights: number[];
-	currentBoard: string;
 };
 type ThemeSnapshot = {
 	theme: "light" | "dark";
@@ -38,22 +41,32 @@ type ThemeSnapshot = {
 	flatSurfaces: boolean;
 	shadowlessSurfaces: boolean;
 	visibleFocus: boolean;
-	monospacedSecondary: boolean;
 	boardIdentity: string;
 	level: string;
 	connectionState: string;
 	persistenceState: string;
-	vaultState: string;
 	paneIdentity: string;
+	legacyVaultLineCount: number;
+	boardLeftAligned: boolean;
+	tokens: string[];
+	wordmarkType: Metrics;
+	titleType: Metrics;
+	bodyType: Metrics;
+	kickerType: Metrics;
+	controlType: Metrics;
+	paneType: Metrics;
 	actionTargets: Array<{ width: number; height: number }>;
+	paneTarget: { width: number; height: number };
+	presentTarget: { width: number; height: number };
 };
-type ThemeTransitionState = {
-	theme: string | null;
-	toggleLabel: string | null;
-	shellCount: number;
-	rootChildCount: number;
-	url: string;
-	bodyText: string;
+type PaneBarLayout = {
+	height: number;
+	tabCount: number;
+	tabHeights: number[];
+	focusedEdgeWidth: number;
+	focusedEdgeColor: string;
+	focusedDotColor: string;
+	labels: string[];
 };
 type ActivityLayout = {
 	lineCount: number;
@@ -62,29 +75,22 @@ type ActivityLayout = {
 	canvasClear: boolean;
 	timestampsAlign: boolean;
 };
-type NarrowShell = {
-	navAboveCanvas: boolean;
-	navHeight: number;
-	navWidth: number;
-	workbenchBelowPane: boolean;
-	fitsViewport: boolean;
-	canvasLargest: boolean;
-	wordmarkVisible: boolean;
-	brandIconCount: number;
-	headerHeight: number;
-	theme: "light" | "dark";
-	selection: string;
-	status: string;
-	pageWidth: number;
-	viewportWidth: number;
-	actionHeights: number[];
-	actionWidths: number[];
-	actionsFit: boolean;
+type NoticeLayout = {
+	parentIsPanes: boolean;
+	insidePanes: boolean;
+	overlapsInspector: boolean;
+	width: number;
+	copyType: Metrics;
+	actionHeight: number;
+	dismissHeight: number;
+	flat: boolean;
+	text: string;
 };
+
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const serverPath = join(repoRoot, "src/server.ts");
 
-test("the shell stays usable from desktop width through 420 pixels", async () => {
+test("the desktop shell keeps its type, geometry, states, and touch targets at 1440x900", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "vault");
@@ -131,159 +137,249 @@ test("the shell stays usable from desktop width through 420 pixels", async () =>
 
 	const readTheme = () =>
 		browser.eval<ThemeSnapshot | null>(`(() => {
-      const shell = document.querySelector('.shell');
-      const bar = document.querySelector('.bar');
-      const wordmark = document.querySelector('.wordmark');
-      const open = document.querySelector('.bar-actions [aria-label="Open board"]');
-      const board = document.querySelector('.board-name');
-      const level = document.querySelector('.level-tag');
-      const connection = document.querySelector('.status');
-      const persistence = document.querySelector('.meta-vault, .chip-held, .chip-elsewhere');
-      const vault = document.querySelector('.vault-name');
-      const pane = document.querySelector('.pane-tab.focused');
-      const actions = [...document.querySelectorAll('.bar-actions .btn')];
-      if (!shell || !bar || !wordmark || !open || !board || !level || !connection ||
-          !persistence || !vault || !pane) return null;
-      const style = getComputedStyle(shell);
-      const flat = [
-        '.shell', '.bar', '.board-nav', '.board-group.active-group',
-        '.board-nav-row-current', '.scratch-section', '.scratch-card',
-        '.canvas-zone', '.pane-bar', '.agent-rail', '.claim-card',
-        '.statusbar', '.btn-primary'
-      ].map(selector => document.querySelector(selector)).filter(Boolean);
-      const rgb = value => (value.match(/[\\d.]+/g) || []).slice(0, 3).map(Number);
-      const luminance = value => {
-        const channels = rgb(value).map(channel => {
-          const unit = channel / 255;
-          return unit <= 0.04045 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4;
-        });
-        return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
-      };
-      const foreground = luminance(getComputedStyle(wordmark).color);
-      const backdrop = luminance(getComputedStyle(bar).backgroundColor);
-      open.focus();
-      const focus = getComputedStyle(open);
-      return {
-        theme: shell.dataset.theme,
-        wordmark: wordmark.textContent.trim(),
-        brandIconCount: document.querySelectorAll('.bar-brand svg, .brand-mark').length,
-        headerHeight: bar.getBoundingClientRect().height,
-        selection: style.getPropertyValue('--selection').trim().toLowerCase(),
-        status: style.getPropertyValue('--status').trim().toLowerCase(),
-        background: getComputedStyle(shell).backgroundColor,
-        inkContrast: (Math.max(foreground, backdrop) + 0.05) /
-          (Math.min(foreground, backdrop) + 0.05),
-        flatSurfaces: flat.every(node => getComputedStyle(node).backgroundImage === 'none'),
-        shadowlessSurfaces: flat.every(node => getComputedStyle(node).boxShadow === 'none'),
-        visibleFocus: focus.outlineStyle !== 'none' && parseFloat(focus.outlineWidth) >= 2,
-        monospacedSecondary: /mono|consolas/i.test(getComputedStyle(vault).fontFamily),
-        boardIdentity: board.textContent.trim(),
-        level: level.textContent.trim(),
-        connectionState: connection.textContent.trim(),
-        persistenceState: persistence.textContent.trim(),
-        vaultState: vault.textContent.trim(),
-        paneIdentity: pane.textContent.trim(),
-        actionTargets: actions.map(button => {
-          const rect = button.getBoundingClientRect();
-          return { width: rect.width, height: rect.height };
-        })
-      };
-    })()`);
+			const shell = document.querySelector('.shell');
+			const bar = document.querySelector('.bar');
+			const wordmark = document.querySelector('.wordmark');
+			const open = document.querySelector('.bar-actions [aria-label="Open board"]');
+			const board = document.querySelector('.board-name');
+			const meta = document.querySelector('.bar-board-meta');
+			const level = document.querySelector('.level-tag');
+			const connection = document.querySelector('.status');
+			const persistence = document.querySelector('.meta-vault, .chip-held, .chip-elsewhere');
+			const pane = document.querySelector('.pane-tab.focused');
+			const present = document.querySelector('.present-button');
+			const actions = [...document.querySelectorAll('.bar-actions .btn')];
+			if (!shell || !bar || !wordmark || !open || !board || !meta || !level ||
+				!connection || !persistence || !pane || !present) return null;
+			const metrics = node => {
+				const value = getComputedStyle(node);
+				return {
+					family: value.fontFamily.toLowerCase(),
+					size: parseFloat(value.fontSize),
+					lineHeight: parseFloat(value.lineHeight),
+					weight: parseFloat(value.fontWeight),
+				};
+			};
+			const style = getComputedStyle(shell);
+			const flat = [
+				'.shell', '.bar', '.board-nav', '.board-group.active-group',
+				'.board-nav-row-current', '.scratch-section', '.scratch-card',
+				'.canvas-zone', '.pane-bar', '.agent-rail', '.claim-card',
+				'.statusbar', '.btn-primary'
+			].map(selector => document.querySelector(selector)).filter(Boolean);
+			const rgb = value => (value.match(/[\\d.]+/g) || []).slice(0, 3).map(Number);
+			const luminance = value => {
+				const channels = rgb(value).map(channel => {
+					const unit = channel / 255;
+					return unit <= 0.04045 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4;
+				});
+				return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+			};
+			const foreground = luminance(getComputedStyle(wordmark).color);
+			const backdrop = luminance(getComputedStyle(bar).backgroundColor);
+			open.focus();
+			const focus = getComputedStyle(open);
+			const boardRect = board.getBoundingClientRect();
+			const metaRect = meta.getBoundingClientRect();
+			return {
+				theme: shell.dataset.theme,
+				wordmark: wordmark.textContent.trim(),
+				brandIconCount: document.querySelectorAll('.bar-brand svg, .brand-mark').length,
+				headerHeight: bar.getBoundingClientRect().height,
+				selection: style.getPropertyValue('--selection').trim().toLowerCase(),
+				status: style.getPropertyValue('--status').trim().toLowerCase(),
+				background: getComputedStyle(shell).backgroundColor,
+				inkContrast: (Math.max(foreground, backdrop) + 0.05) /
+					(Math.min(foreground, backdrop) + 0.05),
+				flatSurfaces: flat.every(node => getComputedStyle(node).backgroundImage === 'none'),
+				shadowlessSurfaces: flat.every(node => getComputedStyle(node).boxShadow === 'none'),
+				visibleFocus: focus.outlineStyle !== 'none' && parseFloat(focus.outlineWidth) >= 2,
+				boardIdentity: board.textContent.trim(),
+				level: level.textContent.trim(),
+				connectionState: connection.textContent.trim(),
+				persistenceState: persistence.textContent.trim(),
+				paneIdentity: pane.textContent.trim(),
+				legacyVaultLineCount: document.querySelectorAll('.vault-name').length,
+				boardLeftAligned: Math.abs(boardRect.left - metaRect.left) < 0.5,
+				tokens: [
+					'--type-kicker', '--type-tech', '--type-body', '--type-control',
+					'--type-title', '--type-primary'
+				].map(name => style.getPropertyValue(name).trim()),
+				wordmarkType: metrics(wordmark),
+				titleType: metrics(board),
+				bodyType: metrics(meta),
+				kickerType: metrics(level),
+				controlType: metrics(open),
+				paneType: metrics(pane),
+				actionTargets: actions.map(button => {
+					const rect = button.getBoundingClientRect();
+					return { width: rect.width, height: rect.height };
+				}),
+				paneTarget: (() => { const rect = pane.getBoundingClientRect(); return { width: rect.width, height: rect.height }; })(),
+				presentTarget: (() => { const rect = present.getBoundingClientRect(); return { width: rect.width, height: rect.height }; })(),
+			};
+		})()`);
+
 	const firstTheme = await readTheme();
 	expect(firstTheme).not.toBeNull();
 	const nextTheme = firstTheme?.theme === "light" ? "dark" : "light";
-	const themeToggled = await browser.eval<boolean>(`(() => {
-    const button = document.querySelector('.bar-actions [aria-label="Use ${nextTheme} theme"]');
-    if (!button) return false;
-    button.click();
-    return true;
-  })()`);
-	expect(themeToggled).toBe(true);
+	expect(
+		await browser.eval<boolean>(`(() => {
+			const button = document.querySelector('.bar-actions [aria-label="Use ${nextTheme} theme"]');
+			if (!button) return false;
+			button.click();
+			return true;
+		})()`),
+	).toBe(true);
 	const themeTransition = await pollUntil(
 		() =>
-			browser.eval<ThemeTransitionState>(`(() => {
-        const shells = [...document.querySelectorAll('.shell')];
-        const shell = shells[0];
-        const toggle = document.querySelector('.bar-actions [aria-label^="Use "][aria-label$=" theme"]');
-        return {
-          theme: shell?.getAttribute('data-theme') ?? null,
-          toggleLabel: toggle?.getAttribute('aria-label') ?? null,
-          shellCount: shells.length,
-	          rootChildCount: document.getElementById('root')?.childElementCount ?? 0,
-	          url: location.href,
-	          bodyText: document.body.innerText.slice(0, 240)
-	        };
-      })()`),
+			browser.eval<
+				Record<"theme" | "toggleLabel", string | null> &
+					Record<"shellCount" | "rootChildCount", number>
+			>(`(() => {
+				const shells = [...document.querySelectorAll('.shell')];
+				const toggle = document.querySelector('.bar-actions [aria-label^="Use "][aria-label$=" theme"]');
+				return {
+					theme: shells[0]?.getAttribute('data-theme') ?? null,
+					toggleLabel: toggle?.getAttribute('aria-label') ?? null,
+					shellCount: shells.length,
+					rootChildCount: document.getElementById('root')?.childElementCount ?? 0,
+				};
+			})()`),
 		(state) =>
 			state.theme === nextTheme &&
 			state.toggleLabel === `Use ${firstTheme?.theme ?? "light"} theme`,
 		`${nextTheme} theme to become visible`,
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	expect(themeTransition.shellCount).toBe(1);
-	expect(themeTransition.rootChildCount).toBe(1);
+	expect(themeTransition).toMatchObject({ shellCount: 1, rootChildCount: 1 });
 	const secondTheme = await readTheme();
 	const themes = [firstTheme, secondTheme].filter(
 		(snapshot): snapshot is ThemeSnapshot => snapshot !== null,
 	);
-	expect(themes.map(({ theme }) => theme).toSorted()).toEqual(["dark", "light"]); // matched theme contract
+	expect(themes.map(({ theme }) => theme).toSorted()).toEqual(["dark", "light"]);
 	for (const snapshot of themes) {
-		expect(snapshot.wordmark).toBe("archboard"); // approved lowercase wordmark
-		expect(snapshot.brandIconCount).toBe(0); // the wordmark has no decorative icon tile
-		expect(snapshot.headerHeight).toBeCloseTo(56, 0); // approved compact desktop bar
-		expect(snapshot.selection).toBe("#155eef"); // literal cobalt selection token
-		expect(snapshot.status).toBe("#a3e635"); // literal acid-lime status token
+		expect(snapshot.wordmark).toBe("archboard");
+		expect(snapshot.brandIconCount).toBe(0);
+		expect(snapshot.headerHeight).toBeCloseTo(56, 0);
+		expect(snapshot.selection).toBe("#155eef");
+		expect(snapshot.status).toBe("#a3e635");
 		expect(snapshot.inkContrast).toBeGreaterThanOrEqual(4.5);
 		expect(snapshot.flatSurfaces).toBe(true);
 		expect(snapshot.shadowlessSurfaces).toBe(true);
 		expect(snapshot.visibleFocus).toBe(true);
-		expect(snapshot.monospacedSecondary).toBe(true);
 		expect(snapshot.boardIdentity).toBe("fixedpoint");
 		expect(snapshot.level.toLowerCase()).toBe("service");
 		expect(snapshot.connectionState).toContain("Live board");
-		expect(snapshot.persistenceState).toContain("in the vault");
-		expect(snapshot.vaultState).toContain("/ autowrite");
+		expect(snapshot.persistenceState).toContain("In the vault");
 		expect(snapshot.paneIdentity).toContain("fixedpoint");
+		expect(snapshot.legacyVaultLineCount).toBe(0);
+		expect(snapshot.boardLeftAligned).toBe(true);
+		expect(snapshot.tokens).toEqual([
+			"9px/12px",
+			"10px/14px",
+			"12px/16px",
+			"13px/18px",
+			"14px/20px",
+			"16px/22px",
+		]);
+		expect(snapshot.wordmarkType).toMatchObject({ size: 18, lineHeight: 22, weight: 800 });
+		expect(snapshot.titleType).toMatchObject({ size: 14, lineHeight: 20, weight: 600 });
+		expect(snapshot.bodyType).toMatchObject({ size: 12, lineHeight: 16, weight: 500 });
+		expect(snapshot.kickerType).toMatchObject({ size: 9, lineHeight: 12, weight: 600 });
+		expect(snapshot.controlType).toMatchObject({ size: 13, lineHeight: 18, weight: 600 });
+		expect(snapshot.paneType).toMatchObject({ size: 13, lineHeight: 18, weight: 600 });
+		expect(snapshot.wordmarkType.family).toContain("inter");
+		expect(snapshot.titleType.family).toContain("inter");
+		expect(snapshot.bodyType.family).toContain("inter");
+		expect(snapshot.controlType.family).toContain("inter");
+		expect(snapshot.kickerType.family).toMatch(/mono|consolas/);
 		expect(
 			snapshot.actionTargets.every(({ width, height }) => width >= 43.5 && height >= 43.5),
 		).toBe(true);
+		expect(snapshot.paneTarget.height).toBeGreaterThanOrEqual(43.5);
+		expect(snapshot.presentTarget.height).toBeGreaterThanOrEqual(43.5);
 	}
-	expect(themes[0]?.background).not.toBe(themes[1]?.background); // themes keep distinct neutral fields
+	expect(themes[0]?.background).not.toBe(themes[1]?.background);
 
 	const desktop = await browser.eval<DesktopShell | null>(`(() => {
-	    const nav = document.querySelector('.board-nav');
-	    const canvas = document.querySelector('.canvas-zone');
-	    const rail = document.querySelector('.agent-rail');
-	    const pane = document.querySelector('.pane');
-    const actions = [...document.querySelectorAll('.bar-actions .btn')];
-    const current = document.querySelector('.board-nav-row[aria-current="page"]');
-	    if (!nav || !canvas || !rail || !pane || !current) return null;
-    const navRect = nav.getBoundingClientRect();
-    const canvasRect = canvas.getBoundingClientRect();
-	    const railRect = rail.getBoundingClientRect();
-	    const paneRect = pane.getBoundingClientRect();
-	    return {
-      navLeftOfCanvas: navRect.right <= canvasRect.left + 0.5,
-      navWidth: navRect.width,
-	      workbenchBelowPane: railRect.top >= paneRect.bottom - 0.5,
-	      workbenchInsideCanvas: railRect.left >= canvasRect.left - 0.5 &&
-	        railRect.right <= canvasRect.right + 0.5 && railRect.bottom <= canvasRect.bottom + 0.5,
-	      columnsAlign: Math.abs(navRect.top - canvasRect.top) < 1 &&
-	        Math.abs(navRect.bottom - canvasRect.bottom) < 1,
-	      canvasLargest: canvasRect.width > navRect.width && paneRect.height > railRect.height,
-      actionHeights: actions.map(button => button.getBoundingClientRect().height),
-      currentBoard: current.textContent.trim()
-    };
-  })()`);
-	expect(desktop?.navLeftOfCanvas).toBe(true); // check-fixed-point.mjs:1955
-	expect(desktop?.navWidth).toBeCloseTo(184, 0); // approved compact desktop operator strip
+		const nav = document.querySelector('.board-nav');
+		const canvas = document.querySelector('.canvas-zone');
+		const rail = document.querySelector('.agent-rail');
+		const pane = document.querySelector('.pane');
+		if (!nav || !canvas || !rail || !pane) return null;
+		const navRect = nav.getBoundingClientRect();
+		const canvasRect = canvas.getBoundingClientRect();
+		const railRect = rail.getBoundingClientRect();
+		const paneRect = pane.getBoundingClientRect();
+		return {
+			navLeftOfCanvas: navRect.right <= canvasRect.left + 0.5,
+			navWidth: navRect.width,
+			workbenchBelowPane: railRect.top >= paneRect.bottom - 0.5,
+			workbenchInsideCanvas: railRect.left >= canvasRect.left - 0.5 &&
+				railRect.right <= canvasRect.right + 0.5 && railRect.bottom <= canvasRect.bottom + 0.5,
+			columnsAlign: Math.abs(navRect.top - canvasRect.top) < 1 &&
+				Math.abs(navRect.bottom - canvasRect.bottom) < 1,
+			canvasLargest: canvasRect.width > navRect.width && paneRect.height > railRect.height,
+		};
+	})()`);
+	expect(desktop?.navLeftOfCanvas).toBe(true);
+	expect(desktop?.navWidth).toBeCloseTo(184, 0);
 	expect(desktop?.workbenchBelowPane).toBe(true);
 	expect(desktop?.workbenchInsideCanvas).toBe(true);
-	expect(desktop?.columnsAlign).toBe(true); // check-fixed-point.mjs:1955
-	expect(desktop?.canvasLargest).toBe(true); // approved canvas-primary desktop composition
-	expect(desktop?.actionHeights.length).toBeGreaterThanOrEqual(5); // check-fixed-point.mjs:1962
-	expect(desktop?.actionHeights.every((height) => height >= 43.5)).toBe(true); // check-fixed-point.mjs:1962
-	expect(desktop?.currentBoard.includes("Current")).toBe(true); // check-fixed-point.mjs:1968
+	expect(desktop?.columnsAlign).toBe(true);
+	expect(desktop?.canvasLargest).toBe(true);
+
+	const readPaneBar = () =>
+		browser.eval<PaneBarLayout>(`(() => {
+			const bar = document.querySelector('.pane-bar');
+			const tabs = [...document.querySelectorAll('.pane-tab')];
+			const focused = document.querySelector('.pane-tab.focused');
+			const dot = focused?.querySelector('.focus-dot');
+			const focusedStyle = getComputedStyle(focused);
+			return {
+				height: bar.getBoundingClientRect().height,
+				tabCount: tabs.length,
+				tabHeights: tabs.map(tab => tab.getBoundingClientRect().height),
+				focusedEdgeWidth: parseFloat(focusedStyle.borderBottomWidth),
+				focusedEdgeColor: focusedStyle.borderBottomColor,
+				focusedDotColor: getComputedStyle(dot).backgroundColor,
+				labels: tabs.map(tab => tab.textContent.trim()),
+			};
+		})()`);
+	const onePaneBar = await readPaneBar();
+	expect(onePaneBar).toMatchObject({ height: 45, tabCount: 1 });
+	expect(onePaneBar.tabHeights.every((height) => height >= 43.5)).toBe(true);
+	expect(onePaneBar.focusedEdgeWidth).toBe(2);
+	expect(onePaneBar.focusedEdgeColor).toBe(onePaneBar.focusedDotColor);
+
+	expect((await api("/api/panes/open", { method: "POST", body: {} })).status).toBe(200);
+	await pollUntil(
+		() => api<PanesBody>("/api/panes").then((response) => response.body),
+		(state) => (state.paneCount ?? 0) === 2,
+		"the desktop shell to mount two panes",
+		{ timeoutMs: PANE_SETTLE_CAP_MS },
+	);
+	const twoPaneBar = await pollUntil(
+		readPaneBar,
+		(layout) => layout.tabCount === 2,
+		"the two-pane identity bar to render",
+		{ timeoutMs: PANE_SETTLE_CAP_MS },
+	);
+	expect(twoPaneBar.height).toBe(45);
+	expect(twoPaneBar.tabHeights.every((height) => height >= 43.5)).toBe(true);
+	expect(twoPaneBar.labels).toHaveLength(2);
+	expect(twoPaneBar.labels[0]).toContain("Pane A");
+	expect(twoPaneBar.labels[1]).toContain("Pane B");
+	expect(
+		(await api("/api/panes/close", { method: "POST", body: { pane: "focused" } })).status,
+	).toBe(200);
+	await pollUntil(
+		() => api<PanesBody>("/api/panes").then((response) => response.body),
+		(state) => (state.paneCount ?? 0) === 1,
+		"the desktop shell to return to one pane",
+		{ timeoutMs: PANE_SETTLE_CAP_MS },
+	);
 
 	const collapsedPaneHeight = await browser.eval<number>(
 		"document.querySelector('.pane').getBoundingClientRect().height",
@@ -293,21 +389,6 @@ test("the shell stays usable from desktop width through 420 pixels", async () =>
 			"document.querySelector('.workbench-toggle').getAttribute('aria-expanded') === 'false'",
 		),
 	).toBe(true);
-	await browser.run(["click", ".workbench-toggle"]);
-	const expandedPaneHeight = await pollUntil(
-		() => browser.eval<number>("document.querySelector('.pane').getBoundingClientRect().height"),
-		(height) => height < collapsedPaneHeight - 100,
-		"the expanded workbench to yield space from the canvas",
-	);
-	expect(expandedPaneHeight).toBeLessThan(collapsedPaneHeight);
-	await browser.run(["click", ".workbench-toggle"]);
-	await pollUntil(
-		() => browser.eval<number>("document.querySelector('.pane').getBoundingClientRect().height"),
-		(height) => Math.abs(height - collapsedPaneHeight) < 1,
-		"collapse to restore the canvas height",
-	);
-
-	await browser.run(["set", "viewport", "420", "700"]);
 	await browser.run(["click", ".workbench-toggle"]);
 	for (const [index, doing] of activityLines.entries()) {
 		const wrote = await api(`/api/elements?board=fixedpoint&doing=${encodeURIComponent(doing)}`, {
@@ -321,122 +402,97 @@ test("the shell stays usable from desktop width through 420 pixels", async () =>
 				height: 10,
 			},
 		});
-		expect([200, 201]).toContain(wrote.status); // check-fixed-point.mjs:1997
+		expect([200, 201]).toContain(wrote.status);
 	}
 	const activity = await pollUntil(
 		() =>
 			browser.eval<ActivityLayout | null>(`(() => {
-        const rail = document.querySelector('.agent-rail');
-        const panel = document.querySelector('.pane-doing');
-        const lines = [...document.querySelectorAll('.pane-doing-line')];
-	        const canvas = document.querySelector('.canvas-zone');
-	        const pane = document.querySelector('.pane');
-	        if (!rail || !panel || !canvas || !pane || lines.length !== 5) return null;
-        const railRect = rail.getBoundingClientRect();
-        const panelRect = panel.getBoundingClientRect();
-        const timestamps = [...document.querySelectorAll('.pane-doing-when')]
-          .map(node => node.getBoundingClientRect().left);
-        return {
-          lineCount: lines.length,
-          linesFit: lines.every(line => line.scrollWidth <= line.clientWidth),
-          panelFits: panelRect.left >= railRect.left && panelRect.right <= railRect.right &&
-            panelRect.bottom <= railRect.bottom,
-	          canvasClear: railRect.top >= pane.getBoundingClientRect().bottom - 0.5,
-          timestampsAlign: timestamps.every(left => Math.abs(left - timestamps[0]) < 0.5)
-        };
-      })()`),
+				const rail = document.querySelector('.agent-rail');
+				const panel = document.querySelector('.pane-doing');
+				const lines = [...document.querySelectorAll('.pane-doing-line')];
+				const pane = document.querySelector('.pane');
+				if (!rail || !panel || !pane || lines.length !== 5) return null;
+				const railRect = rail.getBoundingClientRect();
+				const panelRect = panel.getBoundingClientRect();
+				const timestamps = [...document.querySelectorAll('.pane-doing-when')]
+					.map(node => node.getBoundingClientRect().left);
+				return {
+					lineCount: lines.length,
+					linesFit: lines.every(line => line.scrollWidth <= line.clientWidth),
+					panelFits: panelRect.left >= railRect.left && panelRect.right <= railRect.right &&
+						panelRect.bottom <= railRect.bottom,
+					canvasClear: railRect.top >= pane.getBoundingClientRect().bottom - 0.5,
+					timestampsAlign: timestamps.every(left => Math.abs(left - timestamps[0]) < 0.5),
+				};
+			})()`),
 		(layout) => layout?.lineCount === 5,
-		"all five activity rows to render",
+		"all five desktop activity rows to render",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	expect(activity?.lineCount).toBe(5); // check-fixed-point.mjs:2028
-	expect(activity?.linesFit).toBe(true); // check-fixed-point.mjs:2033
-	expect(activity?.panelFits).toBe(true); // check-fixed-point.mjs:2033
-	expect(activity?.canvasClear).toBe(true); // check-fixed-point.mjs:2033
-	expect(activity?.timestampsAlign).toBe(true); // check-fixed-point.mjs:2040
+	expect(activity).toMatchObject({
+		lineCount: 5,
+		linesFit: true,
+		panelFits: true,
+		canvasClear: true,
+		timestampsAlign: true,
+	});
+	const expandedPaneHeight = await browser.eval<number>(
+		"document.querySelector('.pane').getBoundingClientRect().height",
+	);
+	expect(expandedPaneHeight).toBeLessThan(collapsedPaneHeight - 100);
 	await browser.run(["click", ".workbench-toggle"]);
 
-	const narrow = await browser.eval<NarrowShell | null>(`(() => {
-    const nav = document.querySelector('.board-nav');
-    const pane = document.querySelector('.pane');
-    const bar = document.querySelector('.bar');
-    const canvas = document.querySelector('.canvas-zone');
-    const rail = document.querySelector('.agent-rail');
-    const actions = [...document.querySelectorAll('.bar-actions .btn')];
-    if (!nav || !pane || !bar || !canvas || !rail) return null;
-    const navRect = nav.getBoundingClientRect();
-    const paneRect = pane.getBoundingClientRect();
-    const barRect = bar.getBoundingClientRect();
-    const canvasRect = canvas.getBoundingClientRect();
-    const railRect = rail.getBoundingClientRect();
-    const wordmark = document.querySelector('.wordmark');
-    const shell = document.querySelector('.shell');
-    const actionBar = document.querySelector('.bar-actions');
-    if (!wordmark || !shell || !actionBar) return null;
-    const shellStyle = getComputedStyle(shell);
-    return {
-      navAboveCanvas: navRect.bottom < paneRect.top,
-      navHeight: navRect.height,
-      navWidth: navRect.width,
-	      workbenchBelowPane: railRect.top >= paneRect.bottom - 0.5,
-      fitsViewport: [navRect, paneRect, barRect, railRect].every(rect =>
-        rect.left >= -0.5 && rect.right <= innerWidth + 0.5),
-      canvasLargest: paneRect.height > navRect.height && paneRect.height > railRect.height,
-      wordmarkVisible: wordmark.getBoundingClientRect().width > 0,
-      brandIconCount: document.querySelectorAll('.bar-brand svg, .brand-mark').length,
-      headerHeight: barRect.height,
-      theme: shell.dataset.theme,
-      selection: shellStyle.getPropertyValue('--selection').trim().toLowerCase(),
-      status: shellStyle.getPropertyValue('--status').trim().toLowerCase(),
-      pageWidth: document.documentElement.scrollWidth,
-      viewportWidth: innerWidth,
-      actionHeights: actions.map(button => button.getBoundingClientRect().height),
-      actionWidths: actions.map(button => button.getBoundingClientRect().width),
-      actionsFit: actionBar.scrollWidth <= actionBar.clientWidth
-    };
-  })()`);
-	expect(narrow?.viewportWidth).toBe(420); // approved 420-pixel contract
-	expect(narrow?.navAboveCanvas).toBe(true); // check-fixed-point.mjs:2067
-	expect(narrow?.navHeight).toBeCloseTo(136, 0); // strip stays inside its reserved workspace row
-	expect(narrow?.navWidth).toBeCloseTo(420, 0); // strip never covers or widens the canvas
-	expect(narrow?.workbenchBelowPane).toBe(true);
-	expect(narrow?.fitsViewport).toBe(true); // check-fixed-point.mjs:2072
-	expect(narrow?.canvasLargest).toBe(true); // canvas remains the largest stacked region
-	expect(narrow?.wordmarkVisible).toBe(true);
-	expect(narrow?.brandIconCount).toBe(0);
-	expect(narrow?.headerHeight).toBeCloseTo(104, 0);
-	expect(narrow?.selection).toBe("#155eef");
-	expect(narrow?.status).toBe("#a3e635");
-	expect(narrow?.pageWidth).toBe(narrow?.viewportWidth); // check-fixed-point.mjs:2072
-	expect(narrow?.actionHeights.every((height) => height >= 43.5)).toBe(true); // check-fixed-point.mjs:2072
-	expect(narrow?.actionWidths.every((width) => width >= 43.5)).toBe(true); // exact touch-target contract
-	expect(narrow?.actionsFit).toBe(true); // every action remains visible without an internal scroller
-
-	const otherNarrowTheme = narrow?.theme === "light" ? "dark" : "light";
-	const narrowThemeToggled = await browser.eval<boolean>(`(() => {
-    const button = document.querySelector('.bar-actions [aria-label="Use ${otherNarrowTheme} theme"]');
-    if (!button) return false;
-    button.click();
-    return true;
-  })()`);
-	expect(narrowThemeToggled).toBe(true);
-	const narrowTheme = await pollUntil(
+	expect(await publishActionableNotice(browser)).toBe(true);
+	const notice = await pollUntil(
 		() =>
-			browser.eval<{ theme?: string; width?: number; wordmark?: string }>(`(() => {
-        const shell = document.querySelector('.shell');
-        const wordmark = document.querySelector('.wordmark');
-        if (!shell || !wordmark) return {};
-        return {
-          theme: shell.dataset.theme,
-          width: document.documentElement.scrollWidth,
-          wordmark: wordmark.textContent.trim()
-        };
-      })()`),
-		(state) => state.theme === otherNarrowTheme,
-		`${otherNarrowTheme} theme to remain usable at 420 pixels`,
+			browser.eval<NoticeLayout | null>(`(() => {
+				const notice = document.querySelector('.notice-shell');
+				const panes = document.querySelector('.panes');
+				const inspector = document.querySelector('.selection-inspector');
+				const text = notice?.querySelector('.notice-text');
+				const action = notice?.querySelector('.notice-actions .btn');
+				const dismiss = notice?.querySelector('.notice-dismiss');
+				if (!notice || !panes || !inspector || !text || !action || !dismiss) return null;
+				const metrics = node => {
+					const value = getComputedStyle(node);
+					return {
+						family: value.fontFamily.toLowerCase(),
+						size: parseFloat(value.fontSize),
+						lineHeight: parseFloat(value.lineHeight),
+						weight: parseFloat(value.fontWeight),
+					};
+				};
+				const noticeRect = notice.getBoundingClientRect();
+				const panesRect = panes.getBoundingClientRect();
+				const inspectorRect = inspector.getBoundingClientRect();
+				return {
+					parentIsPanes: notice.parentElement === panes,
+					insidePanes: noticeRect.left >= panesRect.left && noticeRect.right <= panesRect.right &&
+						noticeRect.top >= panesRect.top && noticeRect.bottom <= panesRect.bottom,
+					overlapsInspector: noticeRect.left < inspectorRect.right && noticeRect.right > inspectorRect.left &&
+						noticeRect.top < inspectorRect.bottom && noticeRect.bottom > inspectorRect.top,
+					width: noticeRect.width,
+					copyType: metrics(text),
+					actionHeight: action.getBoundingClientRect().height,
+					dismissHeight: dismiss.getBoundingClientRect().height,
+					flat: getComputedStyle(notice).boxShadow === 'none' &&
+						getComputedStyle(notice).backgroundImage === 'none',
+					text: text.childNodes[0]?.textContent?.trim() ?? '',
+				};
+			})()`),
+		(layout) => layout?.text === PERSISTENT_NOTICE_TEXT,
+		"the canvas-contained recovery notice to render",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	expect(narrowTheme.theme).toBe(otherNarrowTheme);
-	expect(narrowTheme.width).toBe(420);
-	expect(narrowTheme.wordmark).toBe("archboard");
+	expect(notice).not.toBeNull();
+	if (!notice) throw new Error("the canvas-contained recovery notice did not render");
+	expect(notice.parentIsPanes).toBe(true);
+	expect(notice.insidePanes).toBe(true);
+	expect(notice.overlapsInspector).toBe(false);
+	expect(notice.width).toBeCloseTo(390, 0);
+	expect(notice.copyType).toMatchObject({ size: 12, lineHeight: 16, weight: 400 });
+	expect(notice.copyType.family).toContain("inter");
+	expect(notice.actionHeight).toBeGreaterThanOrEqual(43.5);
+	expect(notice.dismissHeight).toBeGreaterThanOrEqual(43.5);
+	expect(notice.flat).toBe(true);
 });
