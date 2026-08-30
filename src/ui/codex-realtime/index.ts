@@ -9,11 +9,16 @@ export {
 
 export type {
 	AnswerSdp,
+	AppendNotDeliveredReason,
 	AppendOutcome,
 	AppendOutcomeReason,
+	AppendOutcomeUnknownReason,
 	AppendSpeechRequest,
 	AppendTextRequest,
+	CommandNotDeliveredReason,
 	CommandOutcome,
+	CommandOutcomeReason,
+	CommandOutcomeUnknownReason,
 	CreateOfferSdp,
 	RealtimeCommandRequest,
 	RealtimeCorrelation,
