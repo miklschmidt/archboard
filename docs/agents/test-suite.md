@@ -13,13 +13,13 @@ changing tests or CI, or when a browser check fails.
 
 `bun run check` is the complete local gate: lint, formatting, both TypeScript
 projects, and that complete test chain. `.github/workflows/ci.yml` invokes the
-same command with one exact hosted-only exception: it excludes
-`tests/system/browser/human-edit-performance.test.ts` after repeated clean-runner
-pre-open stalls, then runs the other 14 browser owners serially. That owner
-remains mandatory locally. Repository policy pins the exception and rejects a
-native test with no lane, more than one lane, no push path, a browser owner
-outside the serial adapter, recursive browser discovery, or any transitional
-`test:*` key.
+same command with two exact hosted-only exceptions after repeated clean-runner
+stalls: `tests/system/code-targets/opener-persistence.test.ts` and
+`tests/system/browser/human-edit-performance.test.ts`. Both remain mandatory
+locally; TASK-141 owns restoring the system owner to hosted coverage. Repository
+policy pins both exceptions and rejects a native test with no lane, more than
+one lane, no push path, a browser owner outside the serial adapter, recursive
+browser discovery, or any transitional `test:*` key.
 
 The whole chain's duration is machine-dependent. Browser owners run one at a
 time. Re-measure before making a timing claim.

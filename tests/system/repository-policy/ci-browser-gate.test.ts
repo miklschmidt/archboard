@@ -23,6 +23,13 @@ const HOSTED_BROWSER_EXCLUSION = {
 	CI: "true",
 	ARCHBOARD_CI_EXCLUDED_BROWSER_OWNER: "tests/system/browser/human-edit-performance.test.ts",
 } as const;
+const CI_EXCLUDED_SYSTEM_OWNER_ENV = "ARCHBOARD_CI_EXCLUDED_SYSTEM_OWNER";
+const CI_EXCLUDED_SYSTEM_OWNER = "tests/system/code-targets/opener-persistence.test.ts";
+const HOSTED_SYSTEM_EXCLUSION = {
+	CI: "true",
+	[CI_EXCLUDED_SYSTEM_OWNER_ENV]: CI_EXCLUDED_SYSTEM_OWNER,
+} as const;
+const HOSTED_CHECK_ENV = { ...HOSTED_BROWSER_EXCLUSION, ...HOSTED_SYSTEM_EXCLUSION } as const;
 type BrowserPreflightFixture = ReturnType<typeof createBrowserPreflightFixture>;
 
 function usePreflightFixture(resources: AsyncDisposableStack): BrowserPreflightFixture {
@@ -39,6 +46,30 @@ function workflowWith(...commands: string[]): string {
 		...commands.map((command) => `      - run: ${JSON.stringify(command)}`),
 		"",
 	].join("\n");
+}
+
+function decode(bytes: Uint8Array): string {
+	return new TextDecoder().decode(bytes);
+}
+
+function runSystemOwner(environment: Record<string, string>): {
+	exitCode: number;
+	output: string;
+} {
+	const env = { ...process.env };
+	delete env.CI;
+	delete env.ARCHBOARD_VAULT;
+	delete env.ARCHBOARD_CI_EXCLUDED_BROWSER_OWNER;
+	delete env[CI_EXCLUDED_SYSTEM_OWNER_ENV];
+	Object.assign(env, environment);
+	const result = Bun.spawnSync({
+		cmd: ["bun", "test", CI_EXCLUDED_SYSTEM_OWNER],
+		cwd: repoRoot,
+		env,
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	return { exitCode: result.exitCode, output: decode(result.stdout) + decode(result.stderr) };
 }
 
 function runAdapter(
@@ -126,8 +157,37 @@ describe("CI executable workflow steps", () => {
 		expect(suite?.name).toBe("Lint, format, type check, build, and hosted test subset");
 		expect(suite?.steps?.some((step) => step.run?.includes("strace"))).toBeFalse();
 		const check = suite?.steps?.find((step) => step.run === "bun run check");
-		expect(check?.env).toEqual(HOSTED_BROWSER_EXCLUSION);
+		expect(check?.env).toEqual(HOSTED_CHECK_ENV);
 		expect(inspectWorkflow(workflowWith("bun run check"))).toEqual([]);
+	});
+
+	test("the exact hosted system exception visibly skips only opener persistence", () => {
+		const result = runSystemOwner(HOSTED_SYSTEM_EXCLUSION);
+		const lines = result.output.split(/\r?\n/);
+		expect(result.exitCode).toBe(0);
+		expect(lines.filter((line) => line.includes("CI-only system owner excluded:"))).toEqual([
+			`# CI-only system owner excluded: ${CI_EXCLUDED_SYSTEM_OWNER}`,
+		]);
+		expect(lines.filter((line) => /^\s*\d+ skip$/.test(line))).toEqual([" 1 skip"]);
+		expect(result.output).not.toContain("(pass)");
+	});
+
+	test.each([
+		[
+			"missing CI",
+			{ [CI_EXCLUDED_SYSTEM_OWNER_ENV]: CI_EXCLUDED_SYSTEM_OWNER },
+			"requires CI=true",
+		],
+		[
+			"wrong owner",
+			{ CI: "true", [CI_EXCLUDED_SYSTEM_OWNER_ENV]: "wrong.test.ts" },
+			"cannot exclude",
+		],
+		["empty owner", { CI: "true", [CI_EXCLUDED_SYSTEM_OWNER_ENV]: "" }, "cannot exclude"],
+	])("rejects a %s system exclusion", (_name, environment, diagnostic) => {
+		const result = runSystemOwner(environment);
+		expect(result.exitCode).toBe(1);
+		expect(result.output).toContain(diagnostic);
 	});
 
 	test("rejects a missing canonical check step", () => {
