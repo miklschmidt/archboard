@@ -4,7 +4,7 @@ title: Adopt Tailwind 4 and shadcn/Base UI as the Archboard UI foundation
 status: To Do
 assignee: []
 created_date: '2026-08-30 14:32'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-30 17:56'
 labels: []
 dependencies:
   - TASK-140
@@ -26,7 +26,7 @@ Map completed TASK-140 into a Tailwind 4 foundation and use shadcn/Base UI as im
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 TASK-144.01-.19 compose one canonical Tailwind stylesheet/theme, exact resolver agreement, immutable shadcn base-nova inputs, separate button/dialog modules, one opener consumer, automated format/browser/doc owners, and mandatory aesthetic guidance without rewriting the shell.
+- [ ] #1 The 19 active leaves—TASK-144.01-.06 and TASK-144.08-.20—compose one canonical Tailwind stylesheet/theme, exact resolver agreement, immutable shadcn base-nova inputs, separate button/dialog modules, one opener consumer, automated format/browser/doc owners, and mandatory aesthetic guidance without rewriting the shell.
 - [ ] #2 Oxfmt uses native Tailwind v4 sorting and actual helper names; existing strict native Oxlint remains, with no custom Tailwind lint, second formatter, copied defaults, warning allowance, or speculative cva.
 - [ ] #3 Preflight stays off, Excalidraw CSS stays separate, TASK-140 tokens integrate through semantic variables, pinned source provenance/hashes are tracked, and default aesthetics/icons/unneeded dependencies are removed.
 - [ ] #4 Frozen install, resolver aliases, both TypeScript projects, lint policy, format fixture, production build, module tests, opener browser owner, rendered shell equivalence, AGENTS link, and repository enforcement prove the result.
