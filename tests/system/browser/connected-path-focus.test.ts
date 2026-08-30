@@ -36,6 +36,11 @@ interface ExportBody {
 	readonly data?: string;
 }
 
+interface TypeMetrics {
+	readonly size: number;
+	readonly lineHeight: number;
+}
+
 interface FocusView {
 	readonly error?: string;
 	readonly state: string | null;
@@ -48,6 +53,11 @@ interface FocusView {
 	readonly theme: string;
 	readonly focusHeight: number;
 	readonly exitHeight: number;
+	readonly sections: string[];
+	readonly titleType: TypeMetrics;
+	readonly stateType: TypeMetrics | null;
+	readonly copyType: TypeMetrics;
+	readonly controlType: TypeMetrics;
 	readonly fullscreen: boolean;
 }
 
@@ -172,6 +182,12 @@ function focusView(browser: AgentBrowserSession): Promise<FocusView> {
   const inspector = document.querySelector('.selection-inspector');
   const overlay = document.querySelector('.path-focus-overlay');
   const dimmer = document.querySelector('.path-focus-dimmer');
+  const metrics = selector => {
+    const node = inspector?.querySelector(selector);
+    if (!node) return null;
+    const style = getComputedStyle(node);
+    return { size: parseFloat(style.fontSize), lineHeight: parseFloat(style.lineHeight) };
+  };
   return {
     state: inspector?.getAttribute('data-path-focus-state') ?? null,
     reason: document.querySelector('.path-focus-none')?.getAttribute('data-path-focus-reason') ?? null,
@@ -184,6 +200,12 @@ function focusView(browser: AgentBrowserSession): Promise<FocusView> {
     theme: document.querySelector('.shell')?.getAttribute('data-theme') ?? '',
     focusHeight: document.querySelector('.selection-inspector-focus')?.getBoundingClientRect().height ?? 0,
     exitHeight: document.querySelector('.selection-inspector-exit')?.getBoundingClientRect().height ?? 0,
+    sections: [...inspector.querySelectorAll('.selection-inspector-section > h2')]
+      .map(heading => heading.textContent),
+    titleType: metrics('.selection-inspector-title'),
+    stateType: metrics('.path-focus-state strong'),
+    copyType: metrics('.path-focus-state span, .path-focus-section .selection-inspector-copy'),
+    controlType: metrics('.selection-inspector-exit, .selection-inspector-focus'),
     fullscreen: Boolean(document.querySelector('.shell')) &&
       document.fullscreenElement === document.querySelector('.shell')
   };
@@ -323,6 +345,16 @@ test(
 		expect(view.focusedIds.toSorted()).toEqual(component.expected);
 		expect(new Set(view.focusedIds).size).toBe(view.focusedIds.length);
 		expect(view.pointerEvents).toBe("none");
+		expect(view.sections).toEqual([
+			"Architecture path",
+			"Code binding",
+			"Element",
+			"Archboard metadata",
+		]);
+		expect(view.titleType).toEqual({ size: 14, lineHeight: 20 });
+		expect(view.stateType).toEqual({ size: 14, lineHeight: 20 });
+		expect(view.copyType).toEqual({ size: 12, lineHeight: 16 });
+		expect(view.controlType).toEqual({ size: 12, lineHeight: 16 });
 
 		const originalTheme = view.theme;
 		const lightOrDarkFill = view.dim;
@@ -372,6 +404,9 @@ test(
 		await browser.run(["click", ".selection-inspector-exit"]);
 		view = await waitFocus(browser, "inactive");
 		expect(view.focusHeight).toBeGreaterThanOrEqual(44);
+		expect(view.sections[0]).toBe("Architecture path");
+		expect(view.copyType).toEqual({ size: 12, lineHeight: 16 });
+		expect(view.controlType).toEqual({ size: 12, lineHeight: 16 });
 		await browser.run(["click", ".selection-inspector-focus"]);
 		await waitFocus(browser, "connected");
 
