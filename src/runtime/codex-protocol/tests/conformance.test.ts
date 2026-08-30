@@ -13,6 +13,7 @@ import {
 	runCodexProtocolConformance,
 } from "../index.js";
 import { runCodexProtocolConformanceForTest } from "../conformance.js";
+import { deriveGeneratedProtocolMethodInventories } from "../generated-method-inventory.js";
 import { deriveGeneratedNotificationUnionPaths } from "../generated-notification-inventory.js";
 
 function temporaryGenerationDirectories(): string[] {
@@ -55,6 +56,50 @@ function copyGeneratedFixtureAction(fixtureRoot: string): string {
 		`cp -R ${shellQuote(fixtureRoot)}/. "$out"/`,
 		"exit 0",
 	].join("\n");
+}
+
+type MethodDirection = "response" | "clientNotification" | "serverRequest" | "serverNotification";
+
+const methodFixtureFiles = {
+	response: "ClientRequest.ts",
+	clientNotification: "ClientNotification.ts",
+	serverRequest: "ServerRequest.ts",
+	serverNotification: "ServerNotification.ts",
+} as const;
+
+const methodFixtureNames = {
+	response: "fixture/response",
+	clientNotification: "fixture/client",
+	serverRequest: "fixture/request",
+	serverNotification: "fixture/notification",
+} as const;
+
+const methodFixtureTypeNames = {
+	response: "ClientRequest",
+	clientNotification: "ClientNotification",
+	serverRequest: "ServerRequest",
+	serverNotification: "ServerNotification",
+} as const;
+
+function writeMethodFixtures(fixtureRoot: string, missingDirection?: MethodDirection): void {
+	for (const direction of Object.keys(methodFixtureFiles) as MethodDirection[]) {
+		const method =
+			direction === missingDirection
+				? `${methodFixtureNames[direction]}/other`
+				: methodFixtureNames[direction];
+		const params = direction === "clientNotification" ? "" : ', "params": FixtureParams';
+		writeFileSync(
+			join(fixtureRoot, methodFixtureFiles[direction]),
+			`export type ${methodFixtureTypeNames[direction]} = { "method": "${method}"${params} };\n`,
+		);
+	}
+}
+
+function writeNotificationUnionFixture(fixtureRoot: string): void {
+	writeFileSync(
+		join(fixtureRoot, "ServerNotification.ts"),
+		'export type ServerNotification = { "method": "fixture", "params": { item: { "type": "first" } | { "type": "second" } } };\n',
+	);
 }
 
 function expectTemporaryGenerationDirectoriesToBe(before: readonly string[]): void {
@@ -213,12 +258,15 @@ describe("portable Codex protocol conformance", () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-generator-success-"));
 		const fixtureRoot = join(root, "fixture");
 		mkdirSync(fixtureRoot);
+		writeMethodFixtures(fixtureRoot);
+		writeNotificationUnionFixture(fixtureRoot);
 		writeFileSync(
-			join(fixtureRoot, "ServerNotification.ts"),
-			'export type ServerNotification = { "method": "fixture", "params": FixtureParams };\nexport type FixtureParams = { item: FixtureItem };\nexport type FixtureItem = { "type": "first" } | { "type": "second" };\n',
+			join(fixtureRoot, "FixtureParams.ts"),
+			'export type FixtureParams = { item: FixtureItem };\nexport type FixtureItem = { "type": "first" } | { "type": "second" };\n',
 		);
 		const digest = digestGeneratedTree(fixtureRoot);
 		const notificationUnionPaths = deriveGeneratedNotificationUnionPaths(fixtureRoot);
+		const methodInventories = deriveGeneratedProtocolMethodInventories(fixtureRoot);
 		const executablePath = fakeCodexExecutable(root, copyGeneratedFixtureAction(fixtureRoot));
 		const before = temporaryGenerationDirectories();
 		try {
@@ -227,6 +275,7 @@ describe("portable Codex protocol conformance", () => {
 				generatedFileCount: digest.fileCount,
 				generatedTreeSha256: digest.sha256,
 				notificationUnionPaths,
+				methodInventories,
 			});
 			expect(result).toEqual({
 				executablePath,
@@ -244,9 +293,11 @@ describe("portable Codex protocol conformance", () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-generator-inventory-"));
 		const fixtureRoot = join(root, "fixture");
 		mkdirSync(fixtureRoot);
+		writeMethodFixtures(fixtureRoot);
+		writeNotificationUnionFixture(fixtureRoot);
 		writeFileSync(
-			join(fixtureRoot, "ServerNotification.ts"),
-			'export type ServerNotification = { "method": "fixture", "params": FixtureParams };\nexport type FixtureParams = { item: FixtureItem };\nexport type FixtureItem = { "type": "first" } | { "type": "second" };\n',
+			join(fixtureRoot, "FixtureParams.ts"),
+			"export type FixtureParams = { item: string };\n",
 		);
 		const digest = digestGeneratedTree(fixtureRoot);
 		const executablePath = fakeCodexExecutable(root, copyGeneratedFixtureAction(fixtureRoot));
@@ -274,6 +325,83 @@ describe("portable Codex protocol conformance", () => {
 			rmSync(root, { recursive: true, force: true });
 		}
 	});
+
+	test.each(Object.keys(methodFixtureFiles) as MethodDirection[])(
+		"reports a missing generated %s method as an actionable decoder gap",
+		(direction) => {
+			const root = mkdtempSync(join(tmpdir(), `archboard-generator-method-${direction}-`));
+			const fixtureRoot = join(root, "fixture");
+			mkdirSync(fixtureRoot);
+			writeMethodFixtures(fixtureRoot, direction);
+			const digest = digestGeneratedTree(fixtureRoot);
+			const executablePath = fakeCodexExecutable(root, copyGeneratedFixtureAction(fixtureRoot));
+			const methodInventories = {
+				response: [methodFixtureNames.response],
+				clientNotification: [methodFixtureNames.clientNotification],
+				serverRequest: [methodFixtureNames.serverRequest],
+				serverNotification: [methodFixtureNames.serverNotification],
+			};
+			try {
+				let thrown: unknown;
+				try {
+					runCodexProtocolConformanceForTest(executablePath, {
+						binaryVersion: CODEX_PROTOCOL_BINARY_VERSION,
+						generatedFileCount: digest.fileCount,
+						generatedTreeSha256: digest.sha256,
+						notificationUnionPaths: [],
+						methodInventories,
+					});
+				} catch (error) {
+					thrown = error;
+				}
+				expect(thrown).toBeInstanceOf(CodexProtocolConformanceError);
+				expect(thrown).toMatchObject({ phase: "inventory", executablePath });
+				expect((thrown as Error).message).toContain("decoder gap");
+				expect((thrown as Error).message).toContain(methodFixtureNames[direction]);
+			} finally {
+				rmSync(root, { recursive: true, force: true });
+			}
+		},
+	);
+
+	test.each(Object.keys(methodFixtureFiles) as MethodDirection[])(
+		"reports a missing authored %s decoder method as an actionable decoder gap",
+		(direction) => {
+			const root = mkdtempSync(join(tmpdir(), `archboard-decoder-method-${direction}-`));
+			const executablePath = fakeCodexExecutable(root, "exit 23");
+			const methodInventories = {
+				response: [methodFixtureNames.response],
+				clientNotification: [methodFixtureNames.clientNotification],
+				serverRequest: [methodFixtureNames.serverRequest],
+				serverNotification: [methodFixtureNames.serverNotification],
+			};
+			const decoderMethodInventories = {
+				...methodInventories,
+				[direction]: [],
+			};
+			try {
+				let thrown: unknown;
+				try {
+					runCodexProtocolConformanceForTest(executablePath, {
+						binaryVersion: CODEX_PROTOCOL_BINARY_VERSION,
+						generatedFileCount: 0,
+						generatedTreeSha256: "",
+						notificationUnionPaths: [],
+						methodInventories,
+						decoderMethodInventories,
+					});
+				} catch (error) {
+					thrown = error;
+				}
+				expect(thrown).toBeInstanceOf(CodexProtocolConformanceError);
+				expect(thrown).toMatchObject({ phase: "inventory", executablePath });
+				expect((thrown as Error).message).toContain("authored decoder registry mismatch");
+				expect((thrown as Error).message).toContain(methodFixtureNames[direction]);
+			} finally {
+				rmSync(root, { recursive: true, force: true });
+			}
+		},
+	);
 
 	test("keeps the manifest expectations explicit for manual conformance", () => {
 		expect(CODEX_PROTOCOL_GENERATED_FILE_COUNT).toBe(820);
