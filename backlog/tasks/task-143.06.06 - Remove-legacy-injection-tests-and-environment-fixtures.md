@@ -4,10 +4,13 @@ title: Remove remaining legacy injection environment sanitization
 status: To Do
 assignee: []
 created_date: '2026-08-30 16:29'
-updated_date: '2026-08-30 17:29'
+updated_date: '2026-08-30 17:58'
 labels: []
 dependencies:
   - TASK-143.06.05
+references:
+  - docs/adr/0005-push-to-codex-via-app-server.md
+  - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
 modified_files:
   - tests/system/process-contracts/support/process-http.ts
 parent_task_id: TASK-143.06
