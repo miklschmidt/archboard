@@ -1,11 +1,11 @@
 ---
 id: TASK-140.06
 title: Redesign navigator items with real lazy board previews
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 09:57'
-updated_date: '2026-08-30 10:06'
+updated_date: '2026-08-30 12:44'
 labels: []
 dependencies:
   - TASK-140.05
@@ -25,14 +25,14 @@ Bring the real desktop board and variant navigator materially closer to the appr
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Board and variant items present reference-level hierarchy, density, focused-pane state, on-canvas, open, draft, and variant relationships while remaining fully actionable without a preview
-- [ ] #2 Desktop pointer hover and keyboard focus lazily disclose a noninteractive preview of the actual selected board or variant, with explicit loading, empty, and recoverable unavailable states and no focus trap
-- [ ] #3 The browser exports preview SVG from canonical presentation elements using Excalidraw semantics and displays it without raw unsanitized HTML injection, fake thumbnails, initials presented as previews, server-side SVG rendering, or persisted preview artifacts
-- [ ] #4 Open boards use an authoritative mounted scene when available, and off-screen boards use only the narrowest read-only snapshot seam without opening or focusing a board, creating a client or session, claiming it, or exposing a machine-local path
-- [ ] #5 Preview work is bounded in memory by stable board identity, the real invalidation signal, and theme when output differs; stale in-flight results are discarded, failures remain local, and listing or switching never waits for preview generation
-- [ ] #6 Preview disclosure and refresh cause zero note writes, zero change-feed entries, no board-open or pane-focus side effect, and no difference in the canonical board or its exported elements
-- [ ] #7 Desktop one-pane, two-pane, fullscreen, light, dark, keyboard, pointer, and large-display touch selection workflows preserve existing navigation, loading, empty, retry, scratch, naming, and live-state contracts
-- [ ] #8 DESIGN.md, the operator-shell reference, and affected active tests record that the shell is desktop-only while preserving Samsung Flip desktop touch and replacing only obsolete phone-specific gates with desktop coverage
+- [x] #1 Board and variant items present reference-level hierarchy, density, focused-pane state, on-canvas, open, draft, and variant relationships while remaining fully actionable without a preview
+- [x] #2 Desktop pointer hover and keyboard focus lazily disclose a noninteractive preview of the actual selected board or variant, with explicit loading, empty, and recoverable unavailable states and no focus trap
+- [x] #3 The browser exports preview SVG from canonical presentation elements using Excalidraw semantics and displays it without raw unsanitized HTML injection, fake thumbnails, initials presented as previews, server-side SVG rendering, or persisted preview artifacts
+- [x] #4 Open boards use an authoritative mounted scene when available, and off-screen boards use only the narrowest read-only snapshot seam without opening or focusing a board, creating a client or session, claiming it, or exposing a machine-local path
+- [x] #5 Preview work is bounded in memory by stable board identity, the real invalidation signal, and theme when output differs; stale in-flight results are discarded, failures remain local, and listing or switching never waits for preview generation
+- [x] #6 Preview disclosure and refresh cause zero note writes, zero change-feed entries, no board-open or pane-focus side effect, and no difference in the canonical board or its exported elements
+- [x] #7 Desktop one-pane, two-pane, fullscreen, light, dark, keyboard, pointer, and large-display touch selection workflows preserve existing navigation, loading, empty, retry, scratch, naming, and live-state contracts
+- [x] #8 DESIGN.md, the operator-shell reference, and affected active tests record that the shell is desktop-only while preserving Samsung Flip desktop touch and replacing only obsolete phone-specific gates with desktop coverage
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -53,4 +53,12 @@ Bring the real desktop board and variant navigator materially closer to the appr
 Overlap search before creation found only completed TASK-140.02, whose original no-generated-thumbnail contract remains historically correct. TASK-140.06 owns the newly approved real-data preview and item redesign. The user established the shell as desktop-only; phone, 420px, and narrow-reflow work are excluded, while Samsung Flip desktop-sized touch selection remains supported. The requested writing-for-agents skill is not installed in this environment, so the approved narrow rule will be applied verbatim without broader AGENTS.md restructuring.
 
 Rendered user review added a cross-region parity requirement: the current shell is too mono-heavy, too small, and inconsistently spaced. All four visible UI workers were instructed to measure the 1440x900 reference rhythm and converge on one shared sans/mono role split and spacing system before their regional commits are accepted.
+
+Final evidence: real 1440x900 cropped light/dark browser inspections cover the redesigned navigator, actual-content hover/focus previews, loading/empty/unavailable recovery, one/two panes, fullscreen, claim/workbench/inspector/focus states, and 44px Samsung Flip targets. The read-only preview owner proves mounted and vault-only content, portable-binding retention, bounded browser cache, stale completion discard, zero note/feed/open/focus/claim/client effects, and no canonical export difference. Final validation at bff737fd7523a359f2ecd83f982a8cf08345fb00 passed production build; formatting; lint; both TypeScript projects; 434 module tests with 3235 assertions; 284 system tests with 4197 assertions; 115 repository-policy tests with 319 assertions; all 19 canonical serial-browser owners; and full-range diff check. Independent Standards and Spec review returned REVIEW_CLEAN for a8275ac230dbba315aa5768335f80fc5dcdf91ca..bff737fd7523a359f2ecd83f982a8cf08345fb00. A contaminated concurrent Bun 1.4 process-runner failure was diagnosed separately; exact base/head package owners were equivalent and the required lone complete lane passed. TASK-137 already records this existing process-runner class.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Redesigned the desktop board and variant navigator around real state and lazily rendered current-board previews. Browser-side Excalidraw SVG export, a bounded invalidating cache, and the narrow read-only snapshot endpoint preserve canonical notes and never open, focus, claim, or create another client. The initiative-wide desktop shell parity passes, all 19 browser owners, the complete local check chain, rendered light/dark desktop inspection, and independent Standards plus Spec review passed at bff737fd.
+<!-- SECTION:FINAL_SUMMARY:END -->
