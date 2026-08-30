@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-08-30 18:57'
+updated_date: '2026-08-30 19:03'
 labels: []
 dependencies: []
 references:
@@ -46,6 +46,8 @@ Delegation profile: gpt-5.6-luna, xhigh.
 6. Remediation: split the public validator from explicit host issuer and trusted protocol decoder capabilities; keep server-owned adoption/brand-producing parsing only on the trusted decoder, and retain host minting separately.
 7. Preserve raw server identity strings in the authority and expose one typed Codex serializer; expand runtime coverage through raw adoption, JSON round trip, byte-identical serialization, stale epoch, wrong-domain, and unissued cases.
 8. Replace the sampled type fixture with a complete pairwise non-interchangeability matrix for ThreadId, TurnId, ItemId, QueuedSubmissionId, LoginId, and JsonRpcRequestId, plus exact correlation-key assertions; remove the duplicate JSONRPCRequestId alias.
+
+9. Narrow follow-up: reject ill-formed UTF-16 before raw identity encoding so lone surrogates cannot collide after TextEncoder replacement; add high/low-surrogate rejection and distinct well-formed-Unicode byte-round-trip fixtures. Correct the recorded repository-check count to 48 tests and 145 assertions.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -59,5 +61,7 @@ Reviewer remediation accepted: the original authority exposed unrestricted brand
 
 Remediation implemented on the same worker branch for all five accepted review findings. IdentityAuthority now separates IdentityValidator (current child/epoch checks only), IdentityIssuer (host-owned browser-command, JSON-RPC request, realtime-session, and epoch minting), and TrustedIdentityDecoder (protocol-only brand parsing/adoption, exact correlation parsing, and one Codex serializer). Server-owned thread/turn/item/queue/login/request/dynamic-call/approval identities are adopted only by the trusted decoder; host-owned IDs remain issuer-minted. Raw Codex strings are encoded into opaque values with an authority map and serializeCodexIdentity returns the exact original string. The module root no longer exports unrestricted identity parsers or the duplicate JSONRPCRequestId alias.
 
-Remediation validation: bunx tsc --noEmit --listFiles --pretty false | rg the type-fixtures.ts absolute path (exit 0; fixture listed); bun test --isolate src/shared/codex-workbench-identity (exit 0, 6 passed, 59 assertions); bun run type-check (exit 0); bunx oxlint src/shared/codex-workbench-identity (exit 0); bunx oxfmt --check src/shared/codex-workbench-identity (exit 0); bun test --isolate tests/system/repository-policy/boundaries.test.ts tests/system/repository-policy/test-inventory.test.ts (exit 0, 57 passed, 145 assertions). Raw serializer fixture covers punctuation, whitespace, control characters, and Unicode with byte equality.
+Remediation validation: bunx tsc --noEmit --listFiles --pretty false | rg the type-fixtures.ts absolute path (exit 0; fixture listed); bun test --isolate src/shared/codex-workbench-identity (exit 0, 6 passed, 59 assertions); bun run type-check (exit 0); bunx oxlint src/shared/codex-workbench-identity (exit 0); bunx oxfmt --check src/shared/codex-workbench-identity (exit 0); bun test --isolate tests/system/repository-policy/boundaries.test.ts tests/system/repository-policy/test-inventory.test.ts (exit 0, 48 passed, 145 assertions). Raw serializer fixture covers punctuation, whitespace, control characters, and Unicode with byte equality.
+
+Rereview follow-up accepted: raw adoption must fail closed for lone UTF-16 surrogates because TextEncoder would otherwise replace them and collide with literal U+FFFD. The follow-up validates surrogate pairs/code points before encoding, adds high/low-surrogate rejection and distinct well-formed-Unicode fixtures, and records the corrected boundary/inventory result count above.
 <!-- SECTION:NOTES:END -->
