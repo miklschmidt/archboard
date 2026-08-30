@@ -5,9 +5,11 @@ export interface FullscreenPresentationSnapshot {
 
 export interface FullscreenPresentation {
 	readonly getSnapshot: () => FullscreenPresentationSnapshot;
+	readonly getTargetPaneId: () => string | null;
 	readonly subscribe: (listener: () => void) => () => void;
 	readonly present: (paneId: string) => void;
 	readonly exit: () => void;
+	readonly clearError: () => void;
 	readonly rootRemoved: () => void;
 	readonly dispose: () => void;
 }
@@ -109,6 +111,7 @@ export function createFullscreenPresentation(root: HTMLElement): FullscreenPrese
 
 	return {
 		getSnapshot: () => snapshot,
+		getTargetPaneId: () => (disposed ? null : wantedPaneId),
 		subscribe: (listener) => {
 			listeners.add(listener);
 			return () => listeners.delete(listener);
@@ -149,6 +152,10 @@ export function createFullscreenPresentation(root: HTMLElement): FullscreenPrese
 			} catch (error) {
 				reconcileExit(token, error);
 			}
+		},
+		clearError: () => {
+			if (disposed || snapshot.paneId || !snapshot.error) return;
+			publish(null, null);
 		},
 		rootRemoved: () => {
 			if (disposed) return;
