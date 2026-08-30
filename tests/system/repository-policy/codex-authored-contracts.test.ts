@@ -213,11 +213,30 @@ const workhorse = (): string => fenceAfter("### Workhorse developer instructions
 const coordinatorExtension = (): string => fenceAfter("### Coordinator role extension", "text");
 const coordinatorSeparator = "\n--- ARCHBOARD COORDINATOR ROLE ---\n";
 
+function composeCoordinatorInstructions(
+	workhorseBytes = workhorse(),
+	separatorBytes = coordinatorSeparator,
+	extensionBytes = coordinatorExtension(),
+): string {
+	if (!workhorseBytes.endsWith("\n") || workhorseBytes.endsWith("\n\n")) {
+		throw new Error("Workhorse instructions must end in exactly one LF before the separator.");
+	}
+	if (separatorBytes !== coordinatorSeparator) {
+		throw new Error("Coordinator separator must keep its exact leading and trailing LF bytes.");
+	}
+	if (extensionBytes.startsWith("\n") || !extensionBytes.endsWith("\n")) {
+		throw new Error(
+			"Coordinator extension must start immediately after the separator and end in one LF.",
+		);
+	}
+	return `${workhorseBytes}${separatorBytes}${extensionBytes}`;
+}
+
 const reviewedDigests: ReviewedDigest[] = [
 	{
 		name: "complete authored contract prose and literals",
 		consumer: "TASK-143.01.07, TASK-143.05.03, and TASK-143.07.07",
-		expected: "f3ddea1bf74854c9d7fac02ed363b7ca487f11c3ea07470e4fb01b1b2e94edec",
+		expected: "fc68d907adc9f0ab1403a25b28da3e51064e7978f66ec71bb4e4a4009cf42b8b",
 		read: () => contractBytes,
 	},
 	{
@@ -233,10 +252,16 @@ const reviewedDigests: ReviewedDigest[] = [
 		read: coordinatorExtension,
 	},
 	{
+		name: "coordinator instruction separator",
+		consumer: "TASK-143.01.07",
+		expected: "e64743b591f47a59eea6118686fc5b9f0bcca3e2d4e6af2dd8acfe55fe97653a",
+		read: () => coordinatorSeparator,
+	},
+	{
 		name: "composed coordinator instructions",
 		consumer: "TASK-143.01.07",
 		expected: "de6b52ca41c65ea73cdf24e2ecaf9fa0c1c2ea68178119c252f266f8ac90b61c",
-		read: () => `${workhorse()}${coordinatorSeparator}${coordinatorExtension()}`,
+		read: composeCoordinatorInstructions,
 	},
 	{
 		name: "archboard_app namespace manifest",
@@ -292,6 +317,32 @@ describe("Codex authored contract repository policy", () => {
 			"steer_workhorse",
 		]);
 		expect(namespaceToolNames("archboard_voice")).toEqual(["resolve_spoken_approval"]);
+	});
+
+	test("keeps exactly one blank line before the coordinator marker", () => {
+		const workhorseBytes = workhorse();
+		const extensionBytes = coordinatorExtension();
+		const composed = composeCoordinatorInstructions();
+		const boundary = composed.slice(
+			workhorseBytes.length - 1,
+			workhorseBytes.length + coordinatorSeparator.length + 3,
+		);
+		expect(boundary).toBe("\n\n--- ARCHBOARD COORDINATOR ROLE ---\nYou");
+		expect(composed.match(/\n\n--- ARCHBOARD COORDINATOR ROLE ---\n/g)).toHaveLength(1);
+
+		const attacks: [string, string, string][] = [
+			[workhorseBytes.slice(0, -1), coordinatorSeparator, extensionBytes],
+			[`${workhorseBytes}\n`, coordinatorSeparator, extensionBytes],
+			[workhorseBytes, coordinatorSeparator.slice(1), extensionBytes],
+			[workhorseBytes, `\n${coordinatorSeparator}`, extensionBytes],
+			[workhorseBytes, coordinatorSeparator.slice(0, -1), extensionBytes],
+			[workhorseBytes, `${coordinatorSeparator}\n`, extensionBytes],
+		];
+		for (const [changedWorkhorse, changedSeparator, unchangedExtension] of attacks) {
+			expect(() =>
+				composeCoordinatorInstructions(changedWorkhorse, changedSeparator, unchangedExtension),
+			).toThrow();
+		}
 	});
 
 	test("pins human-reviewed prose, instruction, classifier, and manifest bytes", () => {
