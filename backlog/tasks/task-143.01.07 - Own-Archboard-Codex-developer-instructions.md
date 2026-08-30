@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 22:34'
+updated_date: '2026-08-30 22:59'
 labels: []
 dependencies:
   - TASK-143.01.17
@@ -51,4 +51,6 @@ Delegation profile: gpt-5.6-luna, max.
 Batch reservation at integration HEAD 7e0c8ae: newly ready scoped leaves are exactly TASK-143.01.07 and TASK-143.01.16, with disjoint runtime/codex-instructions and shared/timing ownership. TASK-143.01.13 remains active on the protocol/package seam, so three of four leaf-worker slots are occupied. Slot 4 is intentionally unused because no other TASK-143/TASK-144 leaf is ready; all other ready scoped entries are parent containers and remaining leaves are dependency-blocked. TASK-141/TASK-142 remain unrelated CI-restoration bugs.
 
 Implemented the scoped src/runtime/codex-instructions boundary: tracked UTF-8 role documents load with fixed SHA-256 validation; canonical context, turn/start, turn/steer, thread/inject_items, and fork builders use strict schemas and deep-frozen outputs. Added byte/body mutation fixtures for encoding, boundary, order, schema, role, omission, and hash drift cases. Focused validation passed: 11 tests, 81 expectations; tsc, Oxlint, and Oxfmt checks passed.
+
+Review remediation applied without changing authored bytes or pending reason/kind domains: platform-native lexical checkout validation now rejects foreign and noncanonical roots; prompt and identity lower bounds reject empty values; exported validation schemas return independent deep-frozen values; independent tests pin the complete context key/known-domain oracle and negative paths. Final validation: focused module tests 46 pass/196 expectations; bun run test:modules 1,039 pass/7,171 expectations; bun run test:repository 122 pass/381 expectations; both TypeScript projects, Oxlint, Oxfmt, and diff check pass. Finding 1 remains pending authored-domain decision.
 <!-- SECTION:NOTES:END -->
