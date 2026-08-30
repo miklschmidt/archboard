@@ -1,10 +1,11 @@
 ---
 id: TASK-143.02.01
 title: Define the browser-native Codex realtime contract
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 17:54'
+updated_date: '2026-08-30 18:35'
 labels: []
 dependencies: []
 references:
