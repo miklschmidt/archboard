@@ -3,7 +3,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import type { PaneReport, PanesReport, Rect } from "../../../src/runtime/engine/panes.ts";
+import type { Rect } from "../../../src/runtime/engine/panes.ts";
 import {
 	PANE_SETTLE_CAP_MS,
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
@@ -16,8 +16,16 @@ import {
 	createAgentBrowser,
 	pollUntil,
 	registerCanvasBase,
-	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
+import {
+	paneAppAction,
+	paneIdentities,
+	paneRects,
+	readExitButton,
+	readPageView,
+	seedBoard,
+	waitForPanes,
+} from "./support/fullscreen-presentation.ts";
 
 interface HeldBoard {
 	board: string;
@@ -29,140 +37,11 @@ interface BoardBody {
 	file?: string;
 	held?: HeldBoard;
 }
-type PanesBody = PanesReport & { success: boolean };
-type Request = ReturnType<typeof createJsonRequester>;
-type PaneIdentity = Pick<PaneReport, "paneId" | "clientId" | "board" | "selection">;
-interface PaneDom {
-	label: string;
-	hidden: boolean;
-	inert: boolean;
-	rect: Rect;
-}
-interface PageView {
-	fullscreen: boolean;
-	chromeHidden: boolean;
-	controlDisplays: string[];
-	dockVisible: boolean;
-	dockFocused: boolean;
-	sameNodes: boolean;
-	panes: PaneDom[];
-}
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const serverPath = join(repoRoot, "src/server.ts");
 const CURRENT = "current-board";
 const PROPOSAL = "proposal";
-
-function paneIdentities(report: PanesBody): PaneIdentity[] {
-	return report.panes
-		.map(({ paneId, clientId, board, selection }) => ({ paneId, clientId, board, selection }))
-		.toSorted((left, right) => left.paneId.localeCompare(right.paneId));
-}
-
-function paneRects(report: PanesBody): Array<{ paneId: string; rect: Rect }> {
-	return report.panes
-		.map(({ paneId, rect }) => ({ paneId, rect }))
-		.toSorted((left, right) => left.paneId.localeCompare(right.paneId));
-}
-
-async function seedBoard(request: Request, board: string, elementId: string): Promise<void> {
-	expect(
-		(await request("/api/boards/new", { method: "POST", body: { board, level: "service" } }))
-			.status,
-	).toBe(200);
-	expect(
-		(
-			await request(`/api/elements/changes?board=${board}`, {
-				method: "POST",
-				body: {
-					origin: "agent",
-					upserts: [{ id: elementId, type: "rectangle", x: 80, y: 80, width: 160, height: 90 }],
-				},
-			})
-		).status,
-	).toBe(200);
-	expect((await request("/api/boards/save", { method: "POST", body: { board } })).status).toBe(200);
-}
-
-async function waitForPanes(
-	request: Request,
-	accepts: (report: PanesBody) => boolean,
-	description: string,
-): Promise<PanesBody> {
-	return pollUntil(
-		async () => (await request<PanesBody>("/api/panes")).body,
-		accepts,
-		description,
-		{ timeoutMs: PANE_SETTLE_CAP_MS },
-	);
-}
-
-async function paneAppAction(
-	browser: AgentBrowserSession,
-	label: string,
-	elementId: string,
-	action: "select" | "move",
-): Promise<boolean> {
-	return browser.eval<boolean>(`(() => {
-		const pane = [...document.querySelectorAll('.pane')]
-			.find(candidate => candidate.getAttribute('aria-label') === ${JSON.stringify(label)});
-		const node = pane?.querySelector('.excalidraw');
-		const key = node && Object.keys(node).find(candidate => candidate.startsWith('__reactFiber$'));
-		let fiber = key ? node[key] : null;
-		let app = null;
-		for (let depth = 0; fiber && depth < 60; depth += 1) {
-			if (fiber.stateNode?.scene?.getElementsIncludingDeleted) {
-				app = fiber.stateNode;
-				break;
-			}
-			fiber = fiber.return;
-		}
-		if (!app) return false;
-		if (${JSON.stringify(action)} === 'select') {
-			app.updateScene({ appState: { selectedElementIds: { ${JSON.stringify(elementId)}: true } } });
-		} else {
-			const elements = app.scene.getElementsIncludingDeleted().map(element =>
-				element.id === ${JSON.stringify(elementId)} ? { ...element, x: element.x + 7 } : element);
-			app.updateScene({ elements, captureUpdate: 'IMMEDIATELY' });
-		}
-		return true;
-	})()`);
-}
-
-async function readPageView(browser: AgentBrowserSession): Promise<PageView> {
-	return browser.eval<PageView>(`(() => {
-		const shell = document.querySelector('.shell');
-		const nodes = [...document.querySelectorAll('.pane')];
-		const rectOf = node => {
-			const rect = node.getBoundingClientRect();
-			return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
-		};
-		const hiddenChrome = ['.bar', '.board-nav', '.agent-rail', '.statusbar', '.pane-bar'];
-		const controls = [...document.querySelectorAll(
-			'.presentation-current .layer-ui__wrapper, ' +
-			'.presentation-current .App-menu, ' +
-			'.presentation-current .App-toolbar-container'
-		)];
-		return {
-			fullscreen: document.fullscreenElement === shell,
-			chromeHidden: hiddenChrome.every(selector => {
-				const node = document.querySelector(selector);
-				return !!node && getComputedStyle(node).display === 'none';
-			}),
-			controlDisplays: controls.map(node => getComputedStyle(node).display),
-			dockVisible: getComputedStyle(document.querySelector('.presentation-dock')).display !== 'none',
-			dockFocused: document.activeElement === document.querySelector('.presentation-dock'),
-			sameNodes: !!window.__task139PaneNodes &&
-				nodes.every((node, index) => node === window.__task139PaneNodes[index]),
-			panes: nodes.map(node => ({
-				label: node.getAttribute('aria-label'),
-				hidden: node.getAttribute('aria-hidden') === 'true',
-				inert: node.inert === true,
-				rect: rectOf(node),
-			})),
-		};
-	})()`);
-}
 
 test(
 	"fullscreen presents one live canvas and restores its exact session",
@@ -330,20 +209,11 @@ test(
 		await browser.eval<boolean>(
 			`(() => { document.exitFullscreen = window.__task139Exit; return true; })()`,
 		);
-		expect(
-			await browser.eval<{ display: string; height: number; text: string | null; width: number }>(
-				`(() => {
-				const button = document.querySelector('.presentation-exit');
-				const rect = button.getBoundingClientRect();
-				return {
-					display: getComputedStyle(button).display,
-					height: rect.height,
-					text: button.textContent?.trim() ?? null,
-					width: rect.width,
-				};
-			})()`,
-			),
-		).toMatchObject({ display: "flex", height: 44, text: "Exit" });
+		expect(await readExitButton(browser)).toMatchObject({
+			display: "flex",
+			height: 44,
+			text: "Exit",
+		});
 		await browser.run(["click", ".presentation-exit"]);
 		const restored = await waitForPanes(
 			request,
@@ -402,6 +272,12 @@ test(
 			"the refused entry to stay visible in the normal shell",
 		);
 		expect(entryRefusal.fullscreen).toBe(false);
+		await browser.run(["click", ".notice-dismiss"]);
+		await pollUntil(
+			() => browser.eval<boolean>("document.querySelector('.notice-shell') === null"),
+			Boolean,
+			"the refused entry notice to dismiss honestly",
+		);
 		await browser.eval<boolean>(`(() => {
 		document.querySelector('.shell').requestFullscreen = window.__task139Request;
 		return true;
@@ -445,20 +321,11 @@ test(
 		await browser.eval<boolean>(
 			`(() => { document.exitFullscreen = window.__task139Exit; return true; })()`,
 		);
-		expect(
-			await browser.eval<{ display: string; height: number; text: string | null; width: number }>(
-				`(() => {
-				const button = document.querySelector('.presentation-exit');
-				const rect = button.getBoundingClientRect();
-				return {
-					display: getComputedStyle(button).display,
-					height: rect.height,
-					text: button.textContent?.trim() ?? null,
-					width: rect.width,
-				};
-			})()`,
-			),
-		).toMatchObject({ display: "flex", height: 44, text: "Exit" });
+		expect(await readExitButton(browser)).toMatchObject({
+			display: "flex",
+			height: 44,
+			text: "Exit",
+		});
 		await browser.run(["click", ".presentation-exit"]);
 		await pollUntil(
 			() =>
@@ -472,6 +339,61 @@ test(
 			(view) => !view.fullscreen && view.paneId === null && view.alert === null,
 			"the survivor to leave presentation",
 			{ timeoutMs: PANE_SETTLE_CAP_MS },
+		);
+
+		expect((await request("/api/panes/open", { method: "POST", body: {} })).status).toBe(200);
+		const pendingSplit = await waitForPanes(
+			request,
+			(report) => report.paneCount === 2,
+			"a second pane for pending-entry removal",
+		);
+		const pendingTarget = pendingSplit.panes.find(
+			(pane) => pane.clientId !== currentPane.clientId,
+		)!;
+		await browser.run(["click", `.pane[aria-label="Pane B"] .excalidraw`]);
+		await waitForPanes(
+			request,
+			(report) => report.focused === pendingTarget.paneId,
+			"the pending-entry target to focus",
+		);
+		await browser.eval<boolean>(`(() => {
+			const shell = document.querySelector('.shell');
+			const nativeRequest = shell.requestFullscreen.bind(shell);
+			const resolves = [];
+			shell.requestFullscreen = () => new Promise(resolve => resolves.push(resolve));
+			const trigger = document.createElement('button');
+			trigger.id = 'task139-complete-entry';
+			trigger.style.cssText = 'position:fixed;left:0;top:0;z-index:2147483647';
+			trigger.onclick = () => void nativeRequest().then(() =>
+				resolves.splice(0).forEach(resolve => resolve()));
+			document.body.append(trigger);
+			return true;
+		})()`);
+		await browser.run(["click", 'button[aria-label="Present Pane B fullscreen"]']);
+		expect(
+			(await request("/api/panes/close", { method: "POST", body: { pane: "focused" } })).status,
+		).toBe(200);
+		const pendingSurvivor = await waitForPanes(
+			request,
+			(report) => report.paneCount === 1 && report.focused === report.panes[0]?.paneId,
+			"the pending-entry survivor to remain focused",
+		);
+		expect(paneIdentities(pendingSurvivor)).toEqual(
+			beforeIdentities.filter((pane) => pane.clientId === currentPane.clientId),
+		);
+		await browser.run(["click", "#task139-complete-entry"]);
+		await pollUntil(
+			() =>
+				browser.eval<boolean>(`document.fullscreenElement === null &&
+				document.querySelector('.presentation-dock') === null &&
+				document.querySelectorAll('.presentation-current, .presentation-hidden').length === 0 &&
+				document.querySelector('.pane').getBoundingClientRect().width > 0`),
+			Boolean,
+			"pending entry to relinquish fullscreen without hiding the survivor",
+			{ timeoutMs: PANE_SETTLE_CAP_MS },
+		);
+		expect((await request<BoardBody>(`/api/elements?board=${CURRENT}`)).body.held).toEqual(
+			heldBefore,
 		);
 	},
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,

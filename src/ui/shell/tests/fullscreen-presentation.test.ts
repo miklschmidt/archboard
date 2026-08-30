@@ -117,6 +117,43 @@ test("overlapping requests publish only the latest pane", async () => {
 	presentation.dispose();
 });
 
+test("pending-entry removal retargets synchronously and cancels before success", async () => {
+	const { document, root, presentation } = createFixture();
+	const first = deferred<void>();
+	const second = deferred<void>();
+	root.requestResults.push(first.promise, second.promise);
+	presentation.present("pane-1");
+	expect(presentation.getTargetPaneId()).toBe("pane-1");
+	presentation.present("pane-2");
+	expect(presentation.getTargetPaneId()).toBe("pane-2");
+	presentation.exit();
+	expect(presentation.getTargetPaneId()).toBeNull();
+	document.fullscreenElement = root as unknown as Element;
+	first.resolve();
+	second.resolve();
+	await settle();
+	expect(document.exitCalls).toBeGreaterThanOrEqual(1);
+	expect(presentation.getSnapshot()).toEqual({ paneId: null, error: null });
+	presentation.dispose();
+});
+
+test("same-root transfer removal retargets before subscriber work", async () => {
+	const { document, root, presentation } = createFixture();
+	presentation.present("pane-1");
+	document.enter(root);
+	await settle();
+	presentation.present("pane-2");
+	expect(presentation.getTargetPaneId()).toBe("pane-2");
+	presentation.present("pane-1");
+	expect(presentation.getTargetPaneId()).toBe("pane-1");
+	presentation.exit();
+	expect(presentation.getTargetPaneId()).toBe("pane-1");
+	document.lose();
+	expect(presentation.getTargetPaneId()).toBeNull();
+	expect(presentation.getSnapshot()).toEqual({ paneId: null, error: null });
+	presentation.dispose();
+});
+
 test("Escape during pending entry invalidates a later stale success", async () => {
 	const { document, root, presentation } = createFixture();
 	const request = deferred<void>();
@@ -158,6 +195,8 @@ test("entry refusal is recoverable and browser loss clears presentation", async 
 		paneId: null,
 		error: "Could not start presentation: not allowed. Try Present again.",
 	});
+	presentation.clearError();
+	expect(presentation.getSnapshot()).toEqual({ paneId: null, error: null });
 	presentation.present("pane-1");
 	document.enter(root);
 	await settle();
