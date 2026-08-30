@@ -17,18 +17,10 @@ import {
 
 type PanesBody = PanesReport & { success: boolean };
 type Requester = ReturnType<typeof createJsonRequester>;
-interface BoardsBody {
-	open: Array<{ key: string }>;
-}
-interface HealthBody {
-	websocket_clients: number;
-}
-interface ElementsBody {
-	elements: unknown[];
-}
-interface ChangesBody {
-	cursor: number;
-}
+type BoardsBody = { open: Array<{ key: string }> };
+type HealthBody = { websocket_clients: number };
+type ElementsBody = { elements: unknown[] };
+type ChangesBody = { cursor: number };
 interface PreviewView {
 	board?: string;
 	cardWidth?: number;
@@ -382,8 +374,12 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 		(view) => view.board === "gamma" && view.state === "loading" && view.flat === true,
 		"the delayed preview request to begin",
 	);
-	await browser.eval<boolean>(
-		`(() => { const row = document.querySelector('[data-board-key="secondary"]'); const list = document.querySelector('.board-nav-list'); row?.focus(); list?.dispatchEvent(new Event('scroll')); return Boolean(row && list); })()`,
+	await browser.eval<void>(
+		`{
+			document.querySelector('[data-board-key="secondary"]')?.focus();
+			document.querySelector('.board-nav-list')?.dispatchEvent(new Event('scroll'));
+			document.querySelector('[data-board-key=${JSON.stringify(option)}]')?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }));
+		}`,
 	);
 	await pollUntil(
 		readPreview,
@@ -393,11 +389,15 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 	);
 	await Bun.sleep(400);
 	expect((await readPreview()).board).not.toBe("gamma");
-	expect(
-		await browser.eval<boolean>(
-			`(async () => { const list = document.querySelector('.board-nav-list'); list?.dispatchEvent(new WheelEvent('wheel', { bubbles: true })); list?.dispatchEvent(new Event('scroll')); await new Promise(requestAnimationFrame); return Boolean(list) && !document.querySelector('.board-preview-card'); })()`,
-		),
-	).toBe(true);
+	await browser.eval<void>(
+		`{
+			const list = document.querySelector('.board-nav-list');
+			if (!list) throw new Error('Board navigator list is missing');
+			list.dispatchEvent(new WheelEvent('wheel', { bubbles: true }));
+			list.dispatchEvent(new Event('scroll'));
+		}`,
+	);
+	await pollUntil(readPreview, (view) => !view.board, "intentional list scroll dismissal");
 	expect(
 		await browser.eval<Array<{ board: string; method: string }>>("window.__previewProbe.requests"),
 	).toSatisfy(

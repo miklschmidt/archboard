@@ -226,7 +226,7 @@ export function BoardNavigator({
 	}, []);
 
 	const previewEvents = (entry: BoardEntry) => ({
-		onPointerEnter: (event: React.PointerEvent<HTMLElement>) => reveal(entry, event.currentTarget),
+		onPointerMove: (event: React.PointerEvent<HTMLElement>) => reveal(entry, event.currentTarget),
 		onPointerLeave: () => conceal(entry.key),
 		onFocus: (event: React.FocusEvent<HTMLElement>) => {
 			protectFocusScroll(entry.key);
