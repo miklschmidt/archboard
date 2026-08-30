@@ -10,8 +10,16 @@ import {
 	inspectWorkflow,
 	installFakeAgentBrowser,
 } from "./support/test-inventory.ts";
+import { TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+type BrowserPreflightFixture = ReturnType<typeof createBrowserPreflightFixture>;
+
+function usePreflightFixture(resources: AsyncDisposableStack): BrowserPreflightFixture {
+	const fixture = createBrowserPreflightFixture();
+	resources.defer(() => fs.rmSync(fixture.root, { recursive: true, force: true }));
+	return fixture;
+}
 
 function workflowWith(...commands: string[]): string {
 	return [
@@ -23,18 +31,29 @@ function workflowWith(...commands: string[]): string {
 	].join("\n");
 }
 
-function runAdapter(options: {
-	withAgentBrowser: boolean;
-	executablePath?: string;
-	ownerFixture?: string;
-	file?: (typeof BROWSER_TEST_PATHS)[number];
-}): {
+function runAdapter(
+	options: {
+		withAgentBrowser: boolean;
+		withStrace?: boolean;
+		executablePath?: string;
+		ownerFixture?: string;
+		file?: (typeof BROWSER_TEST_PATHS)[number];
+	},
+	resources: AsyncDisposableStack,
+): {
 	exitCode: number;
 	stderr: string;
-	fixture: ReturnType<typeof createBrowserPreflightFixture>;
+	fixture: BrowserPreflightFixture;
 } {
-	const fixture = createBrowserPreflightFixture();
+	const fixture = usePreflightFixture(resources);
 	if (options.withAgentBrowser) installFakeAgentBrowser(fixture);
+	if (options.withStrace) {
+		fs.writeFileSync(
+			path.join(fixture.bin, "strace"),
+			`#!/bin/sh\nif [ "$1" = "--version" ]; then exit 0; fi\nif [ "\${AGENT_BROWSER_DEFAULT_TIMEOUT+x}" = x ]; then printf 'present:%s' "$AGENT_BROWSER_DEFAULT_TIMEOUT"; else printf 'absent'; fi > "${fixture.canvasOperationTimeoutMarker}"\nwhile [ "$1" != "-o" ]; do shift; done\nshift\n: > "$1"\nshift\nexec "$@"\n`,
+			{ mode: 0o755 },
+		);
+	}
 	const env: Record<string, string> = { PATH: fixture.bin, TMPDIR: fixture.temporary };
 	if (options.executablePath !== undefined)
 		env.AGENT_BROWSER_EXECUTABLE_PATH = options.executablePath;
@@ -54,30 +73,26 @@ function runAdapter(options: {
 	};
 }
 
-function expectPreflightRefusal(
-	setup: (fixture: ReturnType<typeof createBrowserPreflightFixture>) => string | undefined,
+async function expectPreflightRefusal(
+	setup: (fixture: BrowserPreflightFixture) => string | undefined,
 	diagnostic: string,
-): void {
-	const fixture = createBrowserPreflightFixture();
+): Promise<void> {
+	await using resources = new AsyncDisposableStack();
+	const fixture = usePreflightFixture(resources);
 	const beforeBundle = browserBundleSnapshot(repoRoot);
-	try {
-		const result = runAdapter({
+	const result = runAdapter(
+		{
 			withAgentBrowser: true,
 			executablePath: setup(fixture),
-		});
-		try {
-			expect(result.exitCode).toBe(2);
-			expect(result.stderr).toContain(diagnostic);
-			expect(fs.existsSync(result.fixture.versionMarker)).toBeFalse();
-			expect(fs.existsSync(result.fixture.unexpectedMarker)).toBeFalse();
-			expect(fs.readdirSync(result.fixture.temporary)).toEqual([]);
-			expect(browserBundleSnapshot(repoRoot)).toEqual(beforeBundle);
-		} finally {
-			fs.rmSync(result.fixture.root, { recursive: true, force: true });
-		}
-	} finally {
-		fs.rmSync(fixture.root, { recursive: true, force: true });
-	}
+		},
+		resources,
+	);
+	expect(result.exitCode).toBe(2);
+	expect(result.stderr).toContain(diagnostic);
+	expect(fs.existsSync(result.fixture.versionMarker)).toBeFalse();
+	expect(fs.existsSync(result.fixture.unexpectedMarker)).toBeFalse();
+	expect(fs.readdirSync(result.fixture.temporary)).toEqual([]);
+	expect(browserBundleSnapshot(repoRoot)).toEqual(beforeBundle);
 }
 
 describe("CI executable workflow steps", () => {
@@ -209,94 +224,107 @@ describe("CI executable workflow steps", () => {
 });
 
 describe("browser executable adapter boundary", () => {
-	test("an unset local executable advances to PATH-based agent-browser discovery", () => {
+	test("an unset local executable advances to PATH-based agent-browser discovery", async () => {
+		await using resources = new AsyncDisposableStack();
 		const beforeBundle = browserBundleSnapshot(repoRoot);
-		const result = runAdapter({ withAgentBrowser: false });
-		try {
-			expect(result.exitCode).toBe(2);
-			expect(result.stderr).toContain("agent-browser prerequisite could not run");
-			expect(result.stderr).not.toContain("AGENT_BROWSER_EXECUTABLE_PATH");
-			expect(browserBundleSnapshot(repoRoot)).toEqual(beforeBundle);
-		} finally {
-			fs.rmSync(result.fixture.root, { recursive: true, force: true });
-		}
+		const result = runAdapter({ withAgentBrowser: false }, resources);
+		expect(result.exitCode).toBe(2);
+		expect(result.stderr).toContain("agent-browser prerequisite could not run");
+		expect(result.stderr).not.toContain("AGENT_BROWSER_EXECUTABLE_PATH");
+		expect(browserBundleSnapshot(repoRoot)).toEqual(beforeBundle);
 	});
 
-	test("a configured executable still requires agent-browser on PATH before the build", () => {
+	test("a configured executable still requires agent-browser on PATH before the build", async () => {
+		await using resources = new AsyncDisposableStack();
 		const beforeBundle = browserBundleSnapshot(repoRoot);
-		const fixture = createBrowserPreflightFixture();
-		const result = runAdapter({
-			withAgentBrowser: false,
-			executablePath: fixture.browserExecutable,
-		});
-		try {
-			expect(result.exitCode).toBe(2);
-			expect(result.stderr).toContain("agent-browser prerequisite could not run");
-			expect(browserBundleSnapshot(repoRoot)).toEqual(beforeBundle);
-		} finally {
-			fs.rmSync(fixture.root, { recursive: true, force: true });
-			fs.rmSync(result.fixture.root, { recursive: true, force: true });
-		}
+		const fixture = usePreflightFixture(resources);
+		const result = runAdapter(
+			{ withAgentBrowser: false, executablePath: fixture.browserExecutable },
+			resources,
+		);
+		expect(result.exitCode).toBe(2);
+		expect(result.stderr).toContain("agent-browser prerequisite could not run");
+		expect(browserBundleSnapshot(repoRoot)).toEqual(beforeBundle);
 	});
 
-	test("a missing configured executable refuses before agent-browser or the build", () => {
-		expectPreflightRefusal(() => "/missing/chrome", "does not exist");
+	test("a missing configured executable refuses before agent-browser or the build", async () => {
+		await expectPreflightRefusal(() => "/missing/chrome", "does not exist");
 	});
 
-	test("a relative configured executable refuses before agent-browser or the build", () => {
-		expectPreflightRefusal(() => "relative/chrome", "must be absolute");
+	test("a relative configured executable refuses before agent-browser or the build", async () => {
+		await expectPreflightRefusal(() => "relative/chrome", "must be absolute");
 	});
 
-	test("a configured directory refuses before agent-browser or the build", () => {
-		expectPreflightRefusal((fixture) => fixture.root, "is not a file");
+	test("a configured directory refuses before agent-browser or the build", async () => {
+		await expectPreflightRefusal((fixture) => fixture.root, "is not a file");
 	});
 
-	test("a non-executable configured file refuses before agent-browser or the build", () => {
-		expectPreflightRefusal((fixture) => {
+	test("a non-executable configured file refuses before agent-browser or the build", async () => {
+		await expectPreflightRefusal((fixture) => {
 			fs.chmodSync(fixture.browserExecutable, 0o644);
 			return fixture.browserExecutable;
 		}, "is not executable");
 	});
 
-	test("a missing strace refuses before the build or owner acquisition", () => {
+	test("a missing strace refuses before the build or owner acquisition", async () => {
+		await using resources = new AsyncDisposableStack();
 		const beforeBundle = browserBundleSnapshot(repoRoot);
-		const fixture = createBrowserPreflightFixture();
-		const result = runAdapter({
-			withAgentBrowser: true,
-			executablePath: fixture.browserExecutable,
-			file: BROWSER_TEST_PATHS[0],
-		});
-		try {
-			expect(result.exitCode).toBe(2);
-			expect(result.stderr).toContain("strace prerequisite could not run");
-			expect(browserBundleSnapshot(repoRoot)).toEqual(beforeBundle);
-		} finally {
-			fs.rmSync(fixture.root, { recursive: true, force: true });
-			fs.rmSync(result.fixture.root, { recursive: true, force: true });
-		}
+		const fixture = usePreflightFixture(resources);
+		const result = runAdapter(
+			{
+				withAgentBrowser: true,
+				executablePath: fixture.browserExecutable,
+				file: BROWSER_TEST_PATHS[0],
+			},
+			resources,
+		);
+		expect(result.exitCode).toBe(2);
+		expect(result.stderr).toContain("strace prerequisite could not run");
+		expect(browserBundleSnapshot(repoRoot)).toEqual(beforeBundle);
 	});
 
-	test("canonical owner argv ignores substitution input and receives the configured executable", () => {
-		const fixture = createBrowserPreflightFixture();
+	test("canonical owner argv ignores substitution input and receives the configured executable", async () => {
+		await using resources = new AsyncDisposableStack();
+		const fixture = usePreflightFixture(resources);
 		installFakeAgentBrowser(fixture);
 		const ownerFixture = path.join(fixture.root, "forbidden-owner.ts");
 		const ownerMarker = path.join(fixture.root, "forbidden-owner-ran");
 		const configuredPath = `${fixture.root}/unused/../chrome`;
 		fs.writeFileSync(ownerFixture, `Bun.write(${JSON.stringify(ownerMarker)}, "ran");`);
-		const result = runAdapter({
-			withAgentBrowser: true,
-			executablePath: configuredPath,
-			ownerFixture,
-		});
-		try {
-			expect(result.exitCode).toBe(1);
-			expect(fs.existsSync(ownerMarker)).toBeFalse();
-			expect(fs.readFileSync(result.fixture.ownerPathMarker, "utf8")).toBe(
-				fixture.browserExecutable,
-			);
-		} finally {
-			fs.rmSync(fixture.root, { recursive: true, force: true });
-			fs.rmSync(result.fixture.root, { recursive: true, force: true });
-		}
+		const result = runAdapter(
+			{ withAgentBrowser: true, executablePath: configuredPath, ownerFixture },
+			resources,
+		);
+		expect(result.exitCode).toBe(1);
+		expect(fs.existsSync(ownerMarker)).toBeFalse();
+		expect(fs.readFileSync(result.fixture.ownerPathMarker, "utf8")).toBe(fixture.browserExecutable);
+	});
+
+	test("scopes the long agent-browser operation timeout to the human-performance owner", async () => {
+		await using resources = new AsyncDisposableStack();
+		const fixture = usePreflightFixture(resources);
+		const ownerFixture = path.join(fixture.root, "forbidden-owner.ts");
+		fs.writeFileSync(ownerFixture, "throw new Error('forbidden owner fixture ran');");
+		const ordinary = runAdapter(
+			{ withAgentBrowser: true, executablePath: fixture.browserExecutable, ownerFixture },
+			resources,
+		);
+		const human = runAdapter(
+			{
+				withAgentBrowser: true,
+				withStrace: true,
+				executablePath: fixture.browserExecutable,
+				ownerFixture,
+				file: BROWSER_TEST_PATHS[0],
+			},
+			resources,
+		);
+		expect(ordinary.exitCode).toBe(1);
+		expect(fs.readFileSync(ordinary.fixture.ownerOperationTimeoutMarker, "utf8")).toBe("absent");
+		expect(human.exitCode).toBe(1);
+		expect(fs.readFileSync(human.fixture.ownerOperationTimeoutMarker, "utf8")).toBe(
+			`present:${TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS}`,
+		);
+		expect(fs.readFileSync(human.fixture.canvasOperationTimeoutMarker, "utf8")).toBe("absent");
 	});
 });
