@@ -17,6 +17,10 @@ board for a sustained session. The shell should make the current board, pane,
 selection, code binding, and agent claim easy to inspect without competing with
 the canvas.
 
+Archboard's shell is desktop-only. Do not plan, implement, or gate phone/narrow
+responsive layouts unless the user explicitly reverses this decision.
+Desktop-sized touch interaction for the Samsung Flip remains supported.
+
 ## Visual direction to preserve
 
 - Use the compact lowercase `archboard` wordmark without an icon tile.
@@ -47,6 +51,8 @@ The reference introduces three product additions worth building:
 - A bottom workbench that presents real connection, claim, and `doing` data.
 - A non-persistent focus mode for the architecture path connected to the
   selected element.
+- A lazy navigator preview that depicts the real current board scene without
+  opening, claiming, or changing that board.
 
 ## Illustrative details, not requirements
 
@@ -61,18 +67,18 @@ state:
   live board rather than accumulating behind a preview.
 - `Pause`, `Send`, and a prompt input are out of scope until Archboard owns a
   safe thread-control contract. The existing action is `Take back control`.
-- Board miniatures may remain compact identity tiles. This reference does not
-  require generated previews.
+- Illustrative or synthetic board miniatures are out of scope. A navigator
+  preview must depict real current board content and remain supplemental to
+  accessible board identity and state.
 - The drawing toolbar remains Excalidraw's responsibility. The mockup's tool
   rail communicates density and placement, not a second drawing toolset.
 
 ## Verification standard
 
-Adoption is complete only when rendered browser checks cover both themes at a
-desktop viewport and at 420 pixels, existing shell behavior remains reachable,
-and the canvas receives the largest share of the available workspace. Any new
-selection or focus presentation must remain browser-only view state and must
-not write to the board note.
+Adoption is complete only when rendered browser checks cover both themes at the
+supported desktop viewport, existing shell behavior remains reachable, and the
+canvas receives the largest share of the available workspace. Any new
+selection, focus, or preview presentation must not write to the board note.
 
 ## Provenance
 
