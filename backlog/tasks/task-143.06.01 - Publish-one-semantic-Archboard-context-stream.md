@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 22:55'
+updated_date: '2026-08-30 23:24'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -50,4 +50,12 @@ Delegation profile: gpt-5.6-luna, max.
 
 <!-- SECTION:NOTES:BEGIN -->
 Parallel reservation at integration HEAD 863ec41 after removing the unjustified worker/reviewer caps: TASK-143.06.01 is dependency-ready and path-disjoint from all active work. It is dispatched now; later thread delivery remains dependency-gated on the instruction/session/link owners.
+
+Implementation ready for review at commit 9853ff65fb967d08f6cc1f8ef5f3cff5b98c3e05.
+
+Decision: the publisher consumes the existing settled-feed callback and exposes one typed pane-signal adapter for immediate focus and selection; it owns no settle timer, board elements, or document snapshot. Fresh context is read only when requested. UTF-8 limits, cursor qualification, ambiguity, staleness, and immutable deterministic payloads are enforced in the module.
+
+Validation: focused publisher tests 7/7; bun run type-check; bun run lint; bun run fmt:check; bun run test:modules (1,020/1,020); bun run test:system (284/284); bun run test:repository (130/130); bun run test:serial-browser (all listed owners passed); git diff --check clean.
+
+Scope: only src/runtime/codex-semantic-context/** plus this task record. Task status, assignment, dependencies, acceptance criteria, and final summary were not changed.
 <!-- SECTION:NOTES:END -->
