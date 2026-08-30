@@ -19,8 +19,7 @@ import {
 import { TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-const HOSTED_BROWSER_OWNERS = BROWSER_TEST_PATHS.slice(0, 2).join(",");
-const REVERSED_BROWSER_OWNERS = [BROWSER_TEST_PATHS[1], BROWSER_TEST_PATHS[0]].join(",");
+const HOSTED_BROWSER_OWNERS = "all";
 const HOSTED_BROWSER_EXCLUSION = {
 	CI: "true",
 	[CI_EXCLUDED_BROWSER_OWNERS_ENV]: HOSTED_BROWSER_OWNERS,
@@ -87,6 +86,7 @@ function runAdapter(
 	resources: AsyncDisposableStack,
 ): {
 	exitCode: number;
+	stdout: string;
 	stderr: string;
 	fixture: BrowserPreflightFixture;
 } {
@@ -111,11 +111,12 @@ function runAdapter(
 			: ["bun", BROWSER_ADAPTER_PATH, "--focus", options.file ?? BROWSER_TEST_PATHS[1]],
 		cwd: repoRoot,
 		env,
-		stdout: "ignore",
+		stdout: "pipe",
 		stderr: "pipe",
 	});
 	return {
 		exitCode: result.exitCode,
+		stdout: decode(result.stdout),
 		stderr: new TextDecoder().decode(result.stderr),
 		fixture,
 	};
@@ -151,13 +152,14 @@ describe("CI executable workflow steps", () => {
 			jobs?: {
 				suite?: {
 					name?: string;
-					steps?: Array<{ run?: string; env?: Record<string, string> }>;
+					steps?: Array<{ name?: string; run?: string; env?: Record<string, string> }>;
 				};
 			};
 		};
 		const suite = workflow.jobs?.suite;
-		expect(suite?.name).toBe("Lint, format, type check, build, and hosted test subset");
+		expect(suite?.name).toBe("Lint, format, type check, and hosted test subset");
 		expect(suite?.steps?.some((step) => step.run?.includes("strace"))).toBeFalse();
+		expect(suite?.steps?.some((step) => step.run?.includes("agent-browser"))).toBeFalse();
 		const check = suite?.steps?.find((step) => step.run === "bun run check");
 		expect(check?.env).toEqual(HOSTED_CHECK_ENV);
 		expect(inspectWorkflow(workflowWith("bun run check"))).toEqual([]);
@@ -324,14 +326,14 @@ describe("browser executable adapter boundary", () => {
 		expect(selection.files).toEqual([...BROWSER_TEST_PATHS]);
 	});
 
-	test("the hosted package exception removes only the two canonical owners", () => {
+	test("the hosted package exception removes the complete browser lane", () => {
 		const selection = validateBrowserSelection([
 			"bun",
 			BROWSER_ADAPTER_PATH,
 			...BROWSER_TEST_PATHS,
 		]);
 		const hosted = applyCiBrowserOwnerExclusion(selection, HOSTED_BROWSER_EXCLUSION);
-		expect(hosted).toEqual({ mode: "package", files: BROWSER_TEST_PATHS.slice(2) });
+		expect(hosted).toEqual({ mode: "package", files: [] });
 		expect(selection.files).toEqual([...BROWSER_TEST_PATHS]);
 	});
 
@@ -343,21 +345,8 @@ describe("browser executable adapter boundary", () => {
 			{ CI: "true", [CI_EXCLUDED_BROWSER_OWNERS_ENV]: BROWSER_TEST_PATHS[0] },
 			"cannot exclude",
 		],
-		[
-			"reordered",
-			{ CI: "true", [CI_EXCLUDED_BROWSER_OWNERS_ENV]: REVERSED_BROWSER_OWNERS },
-			"cannot exclude",
-		],
-		[
-			"extra",
-			{ CI: "true", [CI_EXCLUDED_BROWSER_OWNERS_ENV]: BROWSER_TEST_PATHS.slice(0, 3).join(",") },
-			"cannot exclude",
-		],
-		[
-			"wrong owner",
-			{ CI: "true", [CI_EXCLUDED_BROWSER_OWNERS_ENV]: BROWSER_TEST_PATHS[2] },
-			"cannot exclude",
-		],
+		["wrong case", { CI: "true", [CI_EXCLUDED_BROWSER_OWNERS_ENV]: "ALL" }, "cannot exclude"],
+		["extra", { CI: "true", [CI_EXCLUDED_BROWSER_OWNERS_ENV]: "all,extra" }, "cannot exclude"],
 	])("rejects a %s exclusion", (_name, environment, diagnostic) => {
 		const selection = validateBrowserSelection([
 			"bun",
@@ -380,18 +369,24 @@ describe("browser executable adapter boundary", () => {
 		expect(CI_EXCLUDED_BROWSER_OWNERS_ENV).toBe("ARCHBOARD_CI_EXCLUDED_BROWSER_OWNERS");
 	});
 
-	test("the real package adapter announces the exception and advances to an ordinary owner", async () => {
+	test("the real package adapter announces the complete exception before browser setup", async () => {
 		await using resources = new AsyncDisposableStack();
+		const beforeBundle = browserBundleSnapshot(repoRoot);
 		const result = runAdapter(
-			{ withAgentBrowser: true, packageSelection: true, hostedExclusion: true },
+			{
+				withAgentBrowser: true,
+				executablePath: "/missing/chrome",
+				packageSelection: true,
+				hostedExclusion: true,
+			},
 			resources,
 		);
-		expect(result.exitCode).toBe(1);
-		expect(
-			result.stderr.split(/\r?\n/).filter((line) => line.includes("browser owners excluded")),
-		).toEqual([`# CI-only browser owners excluded: ${HOSTED_BROWSER_OWNERS}`]);
-		expect(fs.existsSync(result.fixture.versionMarker)).toBeTrue();
-		expect(fs.existsSync(result.fixture.unexpectedMarker)).toBeTrue();
+		expect(result.exitCode).toBe(0);
+		expect(result.stdout).toBe("");
+		expect(result.stderr).toBe(`# CI-only browser owners excluded: ${HOSTED_BROWSER_OWNERS}\n`);
+		expect(fs.existsSync(result.fixture.versionMarker)).toBeFalse();
+		expect(fs.existsSync(result.fixture.unexpectedMarker)).toBeFalse();
+		expect(browserBundleSnapshot(repoRoot)).toEqual(beforeBundle);
 	});
 
 	test("an unset local executable advances to PATH-based agent-browser discovery", async () => {

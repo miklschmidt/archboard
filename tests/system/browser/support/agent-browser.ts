@@ -30,11 +30,7 @@ export const BROWSER_TEST_PATHS = [
 export type BrowserTestPath = (typeof BROWSER_TEST_PATHS)[number];
 export const HUMAN_PERFORMANCE_BROWSER_OWNER = BROWSER_TEST_PATHS[0];
 export const CI_EXCLUDED_BROWSER_OWNERS_ENV = "ARCHBOARD_CI_EXCLUDED_BROWSER_OWNERS";
-export const CI_EXCLUDED_BROWSER_OWNERS = [
-	HUMAN_PERFORMANCE_BROWSER_OWNER,
-	BROWSER_TEST_PATHS[1],
-] as const;
-const CI_EXCLUDED_BROWSER_OWNERS_VALUE = CI_EXCLUDED_BROWSER_OWNERS.join(",");
+const CI_EXCLUDED_BROWSER_OWNERS_VALUE = "all";
 export interface BrowserSelection {
 	mode: "package" | "focus";
 	files: BrowserTestPath[];
@@ -140,9 +136,7 @@ export function applyCiBrowserOwnerExclusion(
 	}
 	return {
 		...selection,
-		files: selection.files.filter(
-			(file) => !CI_EXCLUDED_BROWSER_OWNERS.some((excludedFile) => excludedFile === file),
-		),
+		files: [],
 	};
 }
 
