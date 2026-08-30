@@ -7,6 +7,8 @@ export {
 	transitionRealtimeState,
 } from "./lib/contract.js";
 
+export { createRealtimeMediaSession, REALTIME_MEDIA_FEATURE } from "./lib/media-session.js";
+
 export type {
 	AnswerSdp,
 	AppendNotDeliveredReason,
@@ -42,3 +44,9 @@ export type {
 	RemoteMediaAttachment,
 	StopRequest,
 } from "./lib/contract.js";
+
+export type {
+	RealtimeMediaListener,
+	RealtimeMediaSession,
+	RealtimeMediaSnapshot,
+} from "./lib/media-session.js";
