@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 21:29'
+updated_date: '2026-08-30 21:43'
 labels: []
 dependencies:
   - TASK-143.01.12
@@ -61,6 +61,8 @@ Delegation profile: gpt-5.6-luna, max.
 14. Add deterministic fake-executable conformance tests for generation failure, count/hash mismatches, successful generation, and temporary-directory cleanup after every outcome without weakening normal manifest expectations or duplicating TASK-143.01.13 ownership.
 
 15. Make every generated union challenge decode a valid prepared branch before applying exactly one named target mutation, record permitted containing-union collapse only where necessary, and aggregate-audit all 281 prepared/mutated outcomes.
+
+16. Normalize regular source and CodexErrorInfo union failures to the deepest deterministic target issue at the protocol decoder boundary, retain only the 14 FunctionCallOutputBody/output containing collapses, and audit the exact exception family.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -77,4 +79,6 @@ Second remediation complete in commit 55ae4a2. Removed the workstation-local Cod
 Third remediation implemented in source commit 1276e4b (protocol-only). Added production metadata and fresh exact-tree derivation for all 281 reachable closed union/literal-discriminator paths across 81 ServerNotification methods, exact named challenge equality, and JsonValue-open coverage. Added deterministic fake-executable tests for generator failure, file-count mismatch, same-count byte mismatch, inventory mismatch, success, and temp cleanup. Validation: focused protocol/conformance 521 pass; test:modules 955 pass; test:repository 118 pass; type-check, oxlint, oxfmt, git diff --check, and manual /home/msc/.cache/.bun/bin/codex conformance all passed (codex-cli 0.151.0, 820 files, cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273). Acceptance criteria and task status intentionally remain unchanged for parent review; TASK-143.01.13 owns dependency/root-check integration.
 
 Fourth remediation complete in source commit 542cfa1. Corrected all seven fixture scaffolds: appMetadata siblings, uppercase externalAgentConfig itemType branches and children, and array-member mutations for activeFlags and verifications. Each generated challenge now prepares a decoder-valid branch, applies exactly one named replacement, records its physical target path and only exact regular-union containing paths, and the aggregate audit covers all 281 prepared/mutated outcomes. Validation: focused protocol/conformance 522 pass; test:modules 956 pass; test:repository 118 pass; type-check; oxlint; oxfmt --check; git diff --check; exact manual Codex conformance passed for codex-cli 0.151.0 with 820 files and sha256 cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273. Task status remains In Progress, acceptance criteria remain unchecked, and TASK-143.01.13 ownership was not duplicated.
+
+Fifth remediation complete in source commit e9ad42e. Removed source and CodexErrorInfo containing-union allowances: the decoder now normalizes regular Zod unions by deterministic deepest-branch selection with input-key tie breaking, preserving independent top-level issues. FunctionCallOutputBody/output remains the only documented containing-union exception. Aggregate audit: 281 total, 267 direct target-path failures, 14 allowed output collapses; explicit 14-name exception assertion and five named direct-path regressions pass. Validation: focused protocol/conformance/diagnostic tests 525 pass; test:modules 959 pass; test:repository 118 pass; type-check; oxlint; oxfmt --check; git diff --check; exact manual Codex conformance passed for codex-cli 0.151.0 with 820 files and sha256 cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273. Task status remains In Progress, acceptance criteria remain unchecked, and TASK-143.01.13 ownership was not duplicated.
 <!-- SECTION:NOTES:END -->
