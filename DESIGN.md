@@ -3,6 +3,11 @@
 What archboard is building on top of its Excalidraw base, and how it plugs into
 Codex + GPT-Live voice.
 
+The approved visual direction for the application chrome is the
+[operator canvas shell reference](docs/design/operator-canvas-shell.md). It
+separates the composition and visual language to adopt from the mockup details
+that do not represent real product state.
+
 Everything below marked "verified" was established by reading the Codex source
 at commit `f5a3dc5540` or by testing this build. Nothing here is inferred from
 documentation.
