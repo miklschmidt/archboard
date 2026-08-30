@@ -1,10 +1,11 @@
 ---
 id: TASK-143.01.12
 title: Ignore derived Codex protocol bindings
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-30 18:35'
 labels: []
 dependencies: []
 references:
