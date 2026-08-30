@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-30 22:26'
+updated_date: '2026-08-30 22:37'
 labels: []
 dependencies:
   - TASK-143.01.17
@@ -32,7 +32,7 @@ Own every new Codex workbench duration in the existing shared timing module. The
 <!-- AC:BEGIN -->
 - [ ] #1 The shared module exports exactly the twelve authored millisecond values: restart base 1000/max 30000, request settlement 30000, browser lease 150000, approval 90000, spoken gate 60000, semantic freshness 30000, realtime start 15000/stop 3000/recovery 45000, TERM grace 5000, and composed shutdown 10000.
 - [ ] #2 Comments preserve the authored expiry classifications, exponential-backoff reset rule, and shutdown order; no consumer defines a numeric duration locally or supplies an override.
-- [ ] #3 src/shared/timing/tests/codex-workbench-policy.test.ts proves base <= max, wait cap < browser lease, approval < browser lease, spoken <= approval, semantic freshness < realtime recovery, realtime stop < TERM grace, and realtime stop + TERM grace < composed shutdown.
+- [ ] #3 src/shared/timing/tests/codex-workbench-policy.test.ts proves base <= max, request settlement <= restart max, request settlement < browser lease, approval < browser lease, spoken <= approval, semantic freshness < realtime recovery, realtime stop < TERM grace, and realtime stop + TERM grace < composed shutdown.
 - [ ] #4 Legacy injection timing names remain until the later serialized TASK-143.06.07 removal, which must not change any accepted workbench duration.
 <!-- AC:END -->
 
@@ -43,6 +43,8 @@ Own every new Codex workbench duration in the existing shared timing module. The
 2. Export exactly the twelve named millisecond constants with authored expiry classifications, exponential-backoff reset rule, and realtime-first shutdown order documented beside the values.
 3. Add the module-owned policy test for every exact value and all required inequalities, plus repository-visible checks that prevent local consumer duration literals or override hooks.
 4. Run focused timing tests, module and repository gates, both TypeScript projects, lint, format, diff, and clean-status checks without changing consumers or performing TASK-143.06.07 cleanup early.
+
+5. Keep the public wait-cap relationship in TASK-143.05.03, whose public timeout schema owns that contract and depends on this timing policy; this leaf enforces only its owned module relationships.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -53,4 +55,8 @@ Batch reservation at integration HEAD 7e0c8ae: newly ready scoped leaves are exa
 Implemented the twelve CODEX_* workbench timing exports in src/shared/timing/timing.ts with authored classifications, pull-against comments, restart backoff/reset policy, and realtime-first shutdown order. Added src/shared/timing/tests/codex-workbench-policy.test.ts with exact values, required inequalities, exact CODEX_* export-set enforcement, and legacy injection-name retention checks. Focused test: 3 pass, 11 expectations; fmt, both TypeScript projects, lint, and diff check pass.
 
 Added the explicit authored 120,000 ms wait-cap < browser-command-lease assertion; focused policy test now passes 3 tests with 12 expectations, and the final type, lint, format, and diff checks remain green.
+
+Review remediation scope: add request settlement <= restart max with a 29,999 fail-first boundary probe. Remove the test-only public wait-cap literal and route that relationship to TASK-143.05.03, which owns the public timeout schema. This is a reviewed dependency correction, not a waived test.
+
+Remediation validation: focused policy test 4 pass, 15 expectations, including the 29,999 restart-max fail-first mutation; test:modules 997 pass, 0 fail, 6,990 expectations across 75 files; test:repository 122 pass, 0 fail, 381 expectations across 10 files; both TypeScript projects, lint, format, and diff check pass. Final review scope keeps the public wait-cap relationship in TASK-143.05.03.
 <!-- SECTION:NOTES:END -->
